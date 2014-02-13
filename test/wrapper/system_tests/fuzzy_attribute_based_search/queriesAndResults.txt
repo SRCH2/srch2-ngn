@@ -1,4 +1,4 @@
 Goods:category||5 100 2 6 12 16 17 18 19 27
 Goods:name Garden:category||
-Garden:category Retail:category||66 44 68
-Alaska:name Services:category||21 31 72 84 53
+Garden:category Retail:category||66 44 17 68
+Alaska:name Services:category||21 31 72 84

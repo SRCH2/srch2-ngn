@@ -204,7 +204,6 @@ private:
 
     ///Added for stemmer integration
     IndexData(const string& directoryName, Analyzer *analyzer, Schema *schema,
-            const string &trieBootstrapFileNameWithPath,
             const StemmerNormalizerFlagType &stemmerFlag);
             
     IndexData(const string& directoryName);
@@ -223,43 +222,17 @@ private:
     /**
      * Internal functions
      */
-    void loadCounts(const std::string &indeDataPathFileName)
-    {
-        std::ifstream ifs(indeDataPathFileName.c_str(), std::ios::binary);
-        boost::archive::binary_iarchive ia(ifs);
-        uint64_t readCount_tmp;
-        uint32_t writeCount_tmp, numDocs_tmp;
-        ia >> readCount_tmp;
-        ia >> writeCount_tmp;
-        ia >> numDocs_tmp;
-        this->readCounter = new ReadCounter(readCount_tmp);
-        this->writeCounter = new WriteCounter(writeCount_tmp, numDocs_tmp);
-        ifs.close();
-    };
-
-    void saveCounts(const std::string &indeDataPathFileName) const
-    {
-        std::ofstream ofs(indeDataPathFileName.c_str(), std::ios::binary);
-	if (! ofs.good()) throw std::runtime_error("Error opening " + indeDataPathFileName);
-        boost::archive::binary_oarchive oa(ofs);
-        uint64_t readCount_tmp = this->readCounter->getCount();
-        uint32_t writeCount_tmp = this->writeCounter->getCount();
-        uint32_t numDocs_tmp = this->writeCounter->getNumberOfDocuments();
-        oa << readCount_tmp;
-        oa << writeCount_tmp;
-        oa << numDocs_tmp;
-        ofs.close();
-    };
+    void loadCounts(const std::string &indeDataPathFileName);
+    void saveCounts(const std::string &indeDataPathFileName) const;
 
 public:
     
     inline static IndexData* create(const string& directoryName,
     			Analyzer *analyzer,
                 Schema *schema,
-                const string &trieBootstrapFileNameWithPath,
                 const StemmerNormalizerFlagType &stemmerFlag = srch2::instantsearch::DISABLE_STEMMER_NORMALIZER)
     { 
-        return new IndexData(directoryName, analyzer,schema, trieBootstrapFileNameWithPath, stemmerFlag );
+        return new IndexData(directoryName, analyzer,schema, stemmerFlag );
     }
     
     inline static IndexData* load(const string& directoryName)
@@ -292,8 +265,6 @@ public:
     inline uint32_t _getWriteCount() const { return this->writeCounter->getCount(); }
     inline uint32_t _getNumberOfDocumentsInIndex() const { return this->writeCounter->getNumberOfDocuments(); }
     
-    void addBootstrapKeywords(const string &trieBootstrapFileNameWithPath, Analyzer *analyzer);
-
     // merge the index
     INDEXWRITE_RETVAL _merge(bool updateHistogram);
 

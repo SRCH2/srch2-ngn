@@ -25,6 +25,7 @@ ChineseTokenizer::ChineseTokenizer(const string &chineseDictFilePath)
     mCurrentChineseTokens.reserve(32);  // Assuming most Chinese sentences have less than 32 tokens. It will grow automatically if larger.
 }
 
+
 bool ChineseTokenizer::processToken(){
     if ( mCurrentChineseTokens.size() == 0 ){
         return this->incrementToken();
@@ -49,12 +50,12 @@ bool ChineseTokenizer::incrementToken(){
     unsigned currentType = CharSet::DELIMITER_TYPE;
     CharType currentChar = 0;
 
-    while(currentType == CharSet::DELIMITER_TYPE){ // We ignore delimiters
+    while(currentType == CharSet::DELIMITER_TYPE || currentType == CharSet::WHITESPACE){ // We ignore delimiters and whitespaces
         if ( isEnd() ){
             return false;
         }
         currentChar = getCurrentChar();
-        currentType = CharSet::getCharacterType(currentChar);
+        currentType = characterSet.getCharacterType(currentChar);
         ++(tokenStreamContainer->offset);
     }
 
@@ -73,7 +74,7 @@ bool ChineseTokenizer::incrementToken(){
 int ChineseTokenizer::identifyEndOfChineseSequence(){
     while (!isEnd()){
         CharType currentChar = getCurrentChar();
-        if ( CharSet::getCharacterType(currentChar) != CharSet::HANZI_TYPE){
+        if ( characterSet.getCharacterType(currentChar) != CharSet::HANZI_TYPE){
             break;
         }
         ++(tokenStreamContainer->offset);
@@ -107,6 +108,7 @@ bool ChineseTokenizer::nonChineseIncrement(unsigned currentType, CharType curren
     while (true){
         switch(currentType){
             case CharSet::DELIMITER_TYPE:
+            case CharSet::WHITESPACE:
                 ASSERT(!pCurrentToken->empty());
                 return true;
             case CharSet::LATIN_TYPE:
@@ -132,7 +134,7 @@ bool ChineseTokenizer::nonChineseIncrement(unsigned currentType, CharType curren
         }
         currentChar = getCurrentChar();
         previousType = currentType;
-        currentType = CharSet::getCharacterType(currentChar);
+        currentType = characterSet.getCharacterType(currentChar);
         ++(tokenStreamContainer->offset);
     }
 

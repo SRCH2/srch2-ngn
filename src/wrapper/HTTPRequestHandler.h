@@ -12,11 +12,10 @@
 #include <instantsearch/QueryResults.h>
 #include <instantsearch/Indexer.h>
 #include <instantsearch/GlobalCache.h>
-#include <instantsearch/IndexSearcher.h>
 
 #include "query/QueryResultsInternal.h"
-#include "operation/IndexSearcherInternal.h"
-
+#include <instantsearch/QueryEvaluator.h>
+#include "operation/QueryEvaluatorInternal.h"
 #include "QueryPlan.h"
 
 #include "ParsedParameterContainer.h" // this include is to use enum ParameterName, after fixing the constant problem it must change
@@ -35,20 +34,20 @@ class HTTPRequestHandler
         static void searchCommand(evhttp_request *req, Srch2Server *server);
         static void suggestCommand(evhttp_request *req, Srch2Server *server);
         static void infoCommand(evhttp_request *req, Srch2Server *server, const string &versioninfo);
-        static void writeCommand_v0(evhttp_request *req, Srch2Server *server);
+        static void writeCommand(evhttp_request *req, Srch2Server *server);
         static void updateCommand(evhttp_request *req, Srch2Server *server);
         static void saveCommand(evhttp_request *req, Srch2Server *server);
         static void exportCommand(evhttp_request *req, Srch2Server *server);
+        static void resetLoggerCommand(evhttp_request *req, Srch2Server *server);
         static void lookupCommand(evhttp_request *req, Srch2Server *server);
-		static void writeCommand_v1(evhttp_request *req, Srch2Server *server);
 		static void activateCommand(evhttp_request *req, Srch2Server *server);
 		static void handleException(evhttp_request *req);
 
 	private:
 
 		static void printResults(evhttp_request *req, const evkeyvalq &headers,
-				const QueryPlan &queryPlan,
-				const ConfigManager *indexDataContainerConf,
+				const LogicalPlan &queryPlan,
+				const CoreInfo_t *indexDataConfig,
 				const QueryResults *queryResults,
 				const Query *query,
 				const srch2is::Indexer *indexer,
@@ -57,11 +56,11 @@ class HTTPRequestHandler
 				const unsigned retrievedResults,
 				const string & message,
 				const unsigned ts1,
-				struct timespec &tstart, struct timespec &tend);
+				struct timespec &tstart, struct timespec &tend, bool onlyFacets = false);
 
 		static void printOneResultRetrievedById(evhttp_request *req, const evkeyvalq &headers,
-				const QueryPlan &queryPlan,
-				const ConfigManager *indexDataContainerConf,
+				const LogicalPlan &queryPlan,
+				const CoreInfo_t *indexDataConfig,
 				const QueryResults *queryResults,
 				const srch2is::Indexer *indexer,
 				const string & message,

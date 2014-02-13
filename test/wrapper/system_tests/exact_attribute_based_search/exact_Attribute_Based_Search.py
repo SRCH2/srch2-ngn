@@ -2,13 +2,10 @@
 
 import sys, urllib2, json, time, subprocess, os, commands,signal
 
-port = '8081'
+sys.path.insert(0, 'srch2lib')
+import test_lib
 
-def pingServer():
-    info = 'curl -s http://localhost:' + port + '/search?q=Garden | grep -q results'
-    while os.system(info) !=0:
-          time.sleep(1)
-          info = 'curl -s http://localhost:' + port + '/search?q=Garden | grep -q results'
+port = '8087'
 
 #the function of checking the results
 def checkResult(query, responseJson, resultValue):
@@ -40,6 +37,8 @@ def checkResult(query, responseJson, resultValue):
 
     if isPass == 1:
         print  query+' test pass'
+        return 0
+    return 1
 
 #prepare the query based on the valid syntax
 def prepareQuery(queryKeywords):
@@ -70,16 +69,17 @@ def prepareQuery(queryKeywords):
     return query
 
 
-def testExactAttributeBasedSearch(queriesAndResultsPath, binary_path):
+def testExactAttributeBasedSearch(queriesAndResultsPath, binary_path,
+    configFile):
     # Start the engine server
-    binary= binary_path + '/srch2-search-server'
-    binary= binary+' --config-file=./exact_attribute_based_search/conf.xml &'
-    os.popen(binary)
+    args = [ binary_path, '--config-file=' + configFile ]
+    serverHandle = test_lib.startServer(args)
 
     #make sure that start the engine up
-    pingServer()
+    test_lib.pingServer(port)
 
     #construct the query
+    failCount = 0
     f_in = open(queriesAndResultsPath, 'r')
     for line in f_in:
         #get the query keyword and results
@@ -87,7 +87,7 @@ def testExactAttributeBasedSearch(queriesAndResultsPath, binary_path):
         queryValue=value[0].split()
         resultValue=(value[1]).split()
         #construct the query
-        query='http://localhost:' + port + '/search?'
+        query='http://localhost:' + str(port) + '/search?'
         query = query + prepareQuery(queryValue)
         #print query
         
@@ -96,23 +96,23 @@ def testExactAttributeBasedSearch(queriesAndResultsPath, binary_path):
         response_json = json.loads(response)
       
         #check the result
-        checkResult(query, response_json['results'], resultValue )
-        
+        failCount += checkResult(query, response_json['results'], resultValue )
 
-    #get pid of srch2-search-server and kill the process
+    f_in.close()
     print '=============================='
-    try:
-        s = commands.getoutput('ps aux | grep srch2-search-server')
-        stat = s.split()
-        os.kill(int(stat[1]), signal.SIGUSR1)
-    except: 
-        s = commands.getoutput("ps -A | grep -m1 srch2-search-server | awk '{print $1}'")
-        a = s.split()
-        cmd = "kill -9 {0}".format(a[-1])
-        os.system(cmd)
+    test_lib.killServer(serverHandle)
+    return failCount
+
 if __name__ == '__main__':     
     #Path of the query file
     #each line like "Alaska:name||3 89 8 10" ---- query||record_ids(results)
     binary_path = sys.argv[1]
     queriesAndResultsPath = sys.argv[2]
-    testExactAttributeBasedSearch(queriesAndResultsPath, binary_path)
+
+    exitCode = testExactAttributeBasedSearch(queriesAndResultsPath, binary_path,
+        './exact_attribute_based_search/conf.xml')
+    time.sleep(1) # give first server time to shutdown
+    exitCode += testExactAttributeBasedSearch(queriesAndResultsPath, binary_path,
+        './exact_attribute_based_search/conf_w_positional_info.xml')
+
+    os._exit(exitCode)

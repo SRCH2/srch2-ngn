@@ -1,7 +1,7 @@
 SET(LINK_SEARCH_START_STATIC ON)
 SET(LINK_SEARCH_END_STATIC ON)
 
-FILE(GLOB SRCH2_WRAPPER_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.cpp" "./util/xmlParser/*.cpp"
+FILE(GLOB SRCH2_WRAPPER_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.cpp" "./util/*.cpp" "./util/xmlParser/*.cpp"
 					"../../thirdparty/snappy-1.0.4/*.cc"
 					)
 					

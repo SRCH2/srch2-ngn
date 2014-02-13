@@ -110,19 +110,6 @@ public:
         return 2;
     }
 
-    /*
-     * This function computes the edit-distance based on the length of the keyword and a normalizationFactor
-     * which must be between 0 and 1.
-     * 0 means smaller edit-distance (0) and 1 means larger edit-distance (length of keyword)
-     */
-    static uint8_t getEditDistanceThreshold(unsigned keywordLength , float similarityThreshold){
-    	if(similarityThreshold < 0 || similarityThreshold > 1){
-    		ASSERT(false);
-    		return 0;
-    	}
-    	return keywordLength * (1 - similarityThreshold); // casting to unsigned int will do the floor operation automatically.
-    }
-
     Term(const std::string &keyword, TermType type,
             const float boost = 1.0, const float fuzzyMatchPenalty = 0.5, const uint8_t threshold = 0);
 
@@ -199,6 +186,7 @@ public:
 
     unsigned getAttributeToFilterTermHits() const;
 
+    string toString();
     /**
      * Destructor to free persistent resources used by the Term.
      *

@@ -15,12 +15,22 @@ namespace instantsearch {
  */
 class TokenFilter: public TokenStream {
 public:
-    TokenFilter(TokenStream* tokenStream) {
+    TokenFilter(TokenStream* tokenStream)
+    {
         this->tokenStream = tokenStream;
     }
     virtual ~TokenFilter() {
         delete tokenStream;
     }
+
+    virtual void clearState() {
+      // clear the state of the filter in the upstream
+      if (this->tokenStream != NULL)
+	this->tokenStream->clearState();
+
+      // clear our own states: nothing to do by default.
+    }
+
 protected:
     // a linker to a TokenFilter or a Tokenizer
     TokenStream* tokenStream;

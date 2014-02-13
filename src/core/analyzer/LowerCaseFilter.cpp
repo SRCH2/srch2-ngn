@@ -13,9 +13,11 @@ namespace srch2 {
 namespace instantsearch {
 
 LowerCaseFilter::LowerCaseFilter(TokenStream* tokenStream) :
-        TokenFilter(tokenStream) {
+    TokenFilter(tokenStream)
+{
     this->tokenStreamContainer = tokenStream->tokenStreamContainer;
 }
+
 void LowerCaseFilter::transformToLowerCase(vector<CharType> &token) {
     for (int i = 0; i < token.size(); i++) {
         if (token[i] >= (CharType) 'A' && token[i] <= (CharType) 'Z') {
@@ -23,6 +25,7 @@ void LowerCaseFilter::transformToLowerCase(vector<CharType> &token) {
         }
     }
 }
+
 bool LowerCaseFilter::processToken() {
     if (this->tokenStream->processToken()) {
         transformToLowerCase(tokenStreamContainer->currentToken);

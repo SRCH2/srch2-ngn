@@ -19,7 +19,7 @@ namespace httpwrapper
 
 struct IndexWriteUtil
 {
-    static void _insertCommand(Indexer *indexer, const ConfigManager *indexDataContainerConf, const Json::Value &root, Record *record, std::stringstream &log_str)
+    static void _insertCommand(Indexer *indexer, const CoreInfo_t *indexDataContainerConf, const Json::Value &root, Record *record, std::stringstream &log_str)
     {
     	Json::FastWriter writer;
     	if(JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root, indexDataContainerConf, log_str) == false){
@@ -41,11 +41,6 @@ struct IndexWriteUtil
 					log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"success\"}";
 					break;
 				}
-				case srch2::instantsearch::OP_KEYWORDID_SPACE_PROBLEM:
-				{
-					log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"failed\",\"reason\":\"The keywordid space problem.\"}";
-					break;
-				}
 				case srch2::instantsearch::OP_FAIL:
 				{
 					log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"failed\",\"reason\":\"The record with same primary key already exists\"}";
@@ -61,7 +56,7 @@ struct IndexWriteUtil
     	//std::cout << "INSERT request received. New number of documents = " << indexer->getNumberOfDocumentsInIndex() << "; Limit = " << indexDataContainerConf->getDocumentLimit() << "." << std::endl;
     }
 
-    static void _deleteCommand(Indexer *indexer, const ConfigManager *indexDataContainerConf, const Json::Value &root, std::stringstream &log_str)
+    static void _deleteCommand(Indexer *indexer, const CoreInfo_t *indexDataContainerConf, const Json::Value &root, std::stringstream &log_str)
     {
     	//set the primary key of the record we want to delete
     	std::string primaryKeyName = indexDataContainerConf->getPrimaryKey();
@@ -93,7 +88,7 @@ struct IndexWriteUtil
 
     }
 
-    static void _deleteCommand_QueryURI(Indexer *indexer, const ConfigManager *indexDataContainerConf, const evkeyvalq &headers, std::stringstream &log_str)
+    static void _deleteCommand_QueryURI(Indexer *indexer, const CoreInfo_t *indexDataContainerConf, const evkeyvalq &headers, std::stringstream &log_str)
 	{
 		//set the primary key of the record we want to delete
     	std::string primaryKeyName = indexDataContainerConf->getPrimaryKey();
@@ -131,57 +126,42 @@ struct IndexWriteUtil
 		}
 	}
 
-    static void _updateCommand(Indexer *indexer, const ConfigManager *indexDataContainerConf, const evkeyvalq &headers, const Json::Value &root, Record *record, std::stringstream &log_str)
+    static void _updateCommand(Indexer *indexer, const CoreInfo_t *indexDataContainerConf, const evkeyvalq &headers, const Json::Value &root, Record *record, std::stringstream &log_str)
     {
         /// step 1, delete old record
 
 		//set the primary key of the record we want to delete
     	std::string primaryKeyName = indexDataContainerConf->getPrimaryKey();
 
-    	const char *pKeyParamName = evhttp_find_header(&headers, primaryKeyName.c_str());
-
         unsigned deletedInternalRecordId;
         std::string primaryKeyStringValue;
 
+
     	Json::FastWriter writer;
-    	JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root, indexDataContainerConf, log_str);
-
-		if (pKeyParamName)
-		{
-			size_t sz;
-			char *pKeyParamName_cstar = evhttp_uridecode(pKeyParamName, 0, &sz);
-
-			//std::cout << "[" << termBoostsParamName_cstar << "]" << std::endl;
-			primaryKeyStringValue = string(pKeyParamName_cstar);
-			delete pKeyParamName_cstar;
-
-			log_str << "{\"rid\":\"" << primaryKeyStringValue << "\",\"update\":\"";
-
-            if (record->getPrimaryKey() != primaryKeyStringValue)
-            {
-                log_str << "failed\",\"reason\":\"new record has a different primary key\"}";
-                return;
-            }
-
-			//delete the record from the index
-			switch(indexer->deleteRecordGetInternalId(primaryKeyStringValue, deletedInternalRecordId))
-			{
-				case srch2::instantsearch::OP_FAIL:
-				{
-                    // record to update doesn't exit, will insert it
-                    break;
-				}
-				default: // OP_SUCCESS.
-				{
-					//log_str << "success\"}";
-				}
-			};
-		}
-		else
-		{
-            log_str << "{\"rid\":\"NULL\",\"update\":\"failed\",\"reason\":\"delete: no record with given primary key\"}";
+    	bool parseJson = JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root, indexDataContainerConf, log_str);
+        if(parseJson == false) {
+            log_str << "failed\",\"reason\":\"parse: The record is not in a correct json format\",";
             return;
-		}
+        }
+
+    	primaryKeyStringValue = record->getPrimaryKey();
+		log_str << "{\"rid\":\"" << primaryKeyStringValue << "\",\"update\":\"";
+
+		//delete the record from the index
+		bool recordExisted = false;
+		switch(indexer->deleteRecordGetInternalId(primaryKeyStringValue, deletedInternalRecordId))
+		{
+			case srch2::instantsearch::OP_FAIL:
+			{
+				// record to update doesn't exit, will insert it
+				break;
+			}
+			default: // OP_SUCCESS.
+			{
+			    recordExisted = true;
+			}
+		};
+
 
         /// step 2, insert new record
 
@@ -196,13 +176,12 @@ struct IndexWriteUtil
 			{
 				case srch2::instantsearch::OP_SUCCESS:
 				{
-					log_str << "success\"}";
+					if (recordExisted)
+					  log_str << "Existing record updated successfully\"}";
+					else
+					  log_str << "New record inserted successfully\"}";
+
 					return;
-				}
-				case srch2::instantsearch::OP_KEYWORDID_SPACE_PROBLEM:
-				{
-					log_str << "failed\",\"reason\":\"insert: The keywordid space problem.\",";
-					break;
 				}
 				case srch2::instantsearch::OP_FAIL:
 				{
@@ -247,7 +226,7 @@ struct IndexWriteUtil
         log_str << "{\"export\":\"success\"}";
     }
 
-    static void _commitCommand(Indexer *indexer, const ConfigManager *indexDataContainerConf, const uint64_t offset, std::stringstream &log_str)
+    static void _commitCommand(Indexer *indexer, const CoreInfo_t *indexDataContainerConf, const uint64_t offset, std::stringstream &log_str)
     {
     	//commit the index.
     	if ( indexer->commit() == srch2::instantsearch::OP_SUCCESS)

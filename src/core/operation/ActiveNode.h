@@ -67,8 +67,6 @@ public:
     typedef std::vector<const TrieNode* > TrieNodeSet;
     typedef boost::shared_ptr<TrieRootNodeAndFreeList > TrieRootNodeSharedPtr;
 
-    BusyBit *busyBit;
-
 private:
     std::vector<CharType> prefix;
     unsigned editDistanceThreshold;
@@ -96,7 +94,6 @@ public:
         this->trieNodeSetVectorComputed = false;
 
         this->flagResultsCached = false;
-        this->busyBit = new BusyBit();
 
         this->trieRootNodeSharedPtr = trieRootNodeSharedPtr;
         this->supportSwapInEditDistance = supportSwapInEditDistance;
@@ -145,10 +142,10 @@ public:
     };
 
     virtual ~PrefixActiveNodeSet() {
-        delete this->busyBit;
+
     };
 
-    PrefixActiveNodeSet *computeActiveNodeSetIncrementally(const CharType additionalChar);
+    boost::shared_ptr<PrefixActiveNodeSet> computeActiveNodeSetIncrementally(const CharType additionalChar);
 
     unsigned getEditDistanceThreshold() const {
         return editDistanceThreshold;
@@ -215,6 +212,12 @@ public:
 
     void printActiveNodes(const Trie* trie) const;// Deprecated due to removal of TrieNode->getParent() pointers.
 
+    /*
+     * This function prepares the 2D vector, trieNodeSetVector, which keeps all trie nodes ordered by their edit-distance.
+     */
+    void prepareForIteration(){
+    	_computeTrieNodeSetVector();
+    }
 private:
 
     //PAN:

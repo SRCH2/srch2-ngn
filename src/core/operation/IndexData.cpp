@@ -54,7 +54,6 @@ namespace instantsearch {
 IndexData::IndexData(const string &directoryName,
         Analyzer *analyzer,
         Schema *schema,
-        const string &trieBootstrapFileNameWithPath,
         const StemmerNormalizerFlagType &stemmerFlag)
 {
 
@@ -64,7 +63,7 @@ IndexData::IndexData(const string &directoryName,
         if (createDir(directoryName.c_str()) == -1){
             throw std::runtime_error("Index Directory can not be created");
         }
-	}
+    }
 
     this->schemaInternal = new SchemaInternal( *(dynamic_cast<SchemaInternal *>(schema)) );
 
@@ -73,16 +72,17 @@ IndexData::IndexData(const string &directoryName,
     this->trie = new Trie_Internal();
 
     this->forwardIndex = new ForwardIndex(this->schemaInternal);
-    if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
-        this->invertedIndex =new  InvertedIndex(this->forwardIndex);
-    else
+    if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex) {
+        this->invertedIndex =new InvertedIndex(this->forwardIndex);
+        this->quadTree = NULL;
+    } else {
         this->quadTree = new QuadTree(this->forwardIndex, this->trie);
+        this->invertedIndex = NULL;
+    }
 
     this->readCounter = new ReadCounter();
     this->writeCounter = new WriteCounter();
     this->flagBulkLoadDone = false;
-
-    this->addBootstrapKeywords(trieBootstrapFileNameWithPath, analyzer);
 
     this->rwMutexForIdReassign = new ReadWriteMutex(100); // for locking, <= 100 threads
 }
@@ -94,7 +94,7 @@ IndexData::IndexData(const string& directoryName)
     if(!checkDirExistence(directoryName.c_str())){
         Logger::error("Given index path %s does not exist", directoryName.c_str());
         throw std::runtime_error("Index load exception ");
-	}
+    }
     Serializer serializer;
     try{
     	this->schemaInternal = new SchemaInternal();
@@ -105,7 +105,9 @@ IndexData::IndexData(const string& directoryName)
     	this->forwardIndex = new ForwardIndex(this->schemaInternal);
     	serializer.load(*(this->trie),directoryName + "/" + IndexConfig::trieFileName);
     	if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
-    		this->invertedIndex =new  InvertedIndex(this->forwardIndex);
+            this->invertedIndex = new InvertedIndex(this->forwardIndex);
+        else
+            this->invertedIndex = NULL;
 
     	// set if it's a attributeBasedSearch
     	PositionIndexType positionIndexType = this->schemaInternal->getPositionIndexType();
@@ -119,6 +121,7 @@ IndexData::IndexData(const string& directoryName)
     	if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex){
     		serializer.load(*(this->invertedIndex), directoryName + "/" +  IndexConfig::invertedIndexFileName);
     		this->invertedIndex->setForwardIndex(this->forwardIndex);
+                quadTree = NULL;
     	} else {
     		this->quadTree = new QuadTree();
     		serializer.load(*(this->quadTree), directoryName + "/" +  IndexConfig::quadTreeFileName);
@@ -312,48 +315,6 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer
     return returnValue;
 }
 
-void IndexData::addBootstrapKeywords(const string &trieBootstrapFileNameWithPath, Analyzer* analyzer)
-{
-    try
-    {
-        std::ifstream infile;
-        infile.open (trieBootstrapFileNameWithPath.c_str());
-        if (infile.good())
-        {
-            std::string line;
-            while ( std::getline(infile, line) )
-            {
-                std::vector<PositionalTerm> tokensInfo;
-                //char c = '.';
-//                this->analyzerInternal->tokenizeQuery(line, keywords); iman: previous one
-                analyzer->tokenizeQuery(line, tokensInfo);
-
-                for (std::vector<PositionalTerm>::const_iterator kiter = tokensInfo.begin();
-                            kiter != tokensInfo.end();
-                            ++kiter)
-                {
-                    /// add words to trie
-                    unsigned invertedIndexOffset = 0;
-                    unsigned keywordId = 0;
-                    string keyword = kiter->term;
-                    keywordId = this->trie->addKeyword(getCharTypeVector(keyword), invertedIndexOffset);
-                    this->invertedIndex->incrementDummyHitCount(invertedIndexOffset);
-                }
-            }
-
-            // All the dummy keywords that are used to bootstrap trie have a unique keywordId and hence a invertedList.
-            // The invertedList cannot be of size 0 and also, it is initialised to have "0"s.
-            // We create a dummy first record to occupy internalRid "0" in forwardList.
-
-            this->forwardIndex->addDummyFirstRecord();
-        }
-    }
-    catch (std::exception& e)
-    {
-        Logger::error("trie bootstrap with english dictionary failed. File read error");
-    }
-}
-
 // delete a record with a specific id //TODO Give the correct return message for delete pass/fail
 INDEXWRITE_RETVAL IndexData::_deleteRecord(const std::string &externalRecordId)
 {
@@ -519,7 +480,6 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
     if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex){
     	invertedIndex = this->invertedIndex;
     }
-    this->trie->merge(invertedIndex , this->forwardIndex->getTotalNumberOfForwardLists_ReadView() , updateHistogram);
 
     // check if we need to reassign some keyword ids
     if (this->trie->needToReassignKeywordIds()) {
@@ -541,6 +501,8 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
         // (double) (tend.tv_nsec - tstart.tv_nsec) / (double)1000000L;
         // cout << "Commit phase: time spent to reassign keyword IDs in the forward index (ms): " << time << endl;
     }
+
+    this->trie->merge(invertedIndex , this->forwardIndex->getTotalNumberOfForwardLists_ReadView() , updateHistogram);
     
     if (this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex)
         this->quadTree->merge();
@@ -728,6 +690,35 @@ Schema* IndexData::getSchema()
     return dynamic_cast<Schema *>(this->schemaInternal);
 }
 
+
+void IndexData::loadCounts(const std::string &indeDataPathFileName)
+{
+    std::ifstream ifs(indeDataPathFileName.c_str(), std::ios::binary);
+    boost::archive::binary_iarchive ia(ifs);
+    uint64_t readCount_tmp;
+    uint32_t writeCount_tmp, numDocs_tmp;
+    ia >> readCount_tmp;
+    ia >> writeCount_tmp;
+    ia >> numDocs_tmp;
+    this->readCounter = new ReadCounter(readCount_tmp);
+    this->writeCounter = new WriteCounter(writeCount_tmp, numDocs_tmp);
+    ifs.close();
+}
+
+void IndexData::saveCounts(const std::string &indeDataPathFileName) const
+{
+    std::ofstream ofs(indeDataPathFileName.c_str(), std::ios::binary);
+if (! ofs.good()) throw std::runtime_error("Error opening " + indeDataPathFileName);
+    boost::archive::binary_oarchive oa(ofs);
+    uint64_t readCount_tmp = this->readCounter->getCount();
+    uint32_t writeCount_tmp = this->writeCounter->getCount();
+    uint32_t numDocs_tmp = this->writeCounter->getNumberOfDocuments();
+    oa << readCount_tmp;
+    oa << writeCount_tmp;
+    oa << numDocs_tmp;
+    ofs.close();
+}
+
 IndexData::~IndexData()
 {
     delete this->trie;
@@ -743,5 +734,8 @@ IndexData::~IndexData()
     delete this->schemaInternal;
     delete this->rwMutexForIdReassign;
 }
+
+
+
 
 }}

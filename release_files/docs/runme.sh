@@ -14,12 +14,15 @@
 # If so, copy the files under "/usr/share/wpgen" on a linux machine (e.g., calvin.calit2.uci.edu) 
 # to the folder /usr/share/wpgen.  Then the problem will be solved.
 
-echo wpgen.py updateall
-wpgen.py updateall
+wpgen=wpgen.py
+which $wpgen
+if [ $? -ne 0 ]; then wpgen=wpgen; fi
+echo $wpgen updateall
+$wpgen updateall
 
 # replace the "title" tag with the correct value
 
-echo "Replacing the HTML TITLE value from html/*.html files and producing new HTML files in the currnet folder"
+echo "Replacing the HTML TITLE value from html/*.html files and producing new HTML files in the current folder"
 if [ -f html/main.html ]; then sed -e 's#<title>.*</title>#<title>SRCH2: Manual</title>#g' html/main.html > main.html  ; fi
 if [ -f html/install.html ]; then sed -e 's#<title>.*</title>#<title>SRCH2: Installation</title>#g' html/install.html > install.html  ; fi
 if [ -f html/configuration.html ]; then sed -e 's#<title>.*</title>#<title>SRCH2: Configuration</title>#g' html/configuration.html > configuration.html  ; fi

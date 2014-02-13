@@ -143,20 +143,13 @@ void printVector(const vector<unsigned> *fl) {
 }
 
 // do binary search to probe in forward list
-bool ForwardIndex::haveWordInRange(const unsigned recordId,
+bool ForwardIndex::haveWordInRange(const unsigned recordId, const ForwardList* fl,
         const unsigned minId, const unsigned maxId,
         const unsigned termSearchableAttributeIdToFilterTermHits,
         unsigned &matchingKeywordId, unsigned &matchingKeywordAttributeBitmap,
         float &matchingKeywordRecordStaticScore) const {
     ASSERT(minId <= maxId);
     ASSERT(recordId < this->getTotalNumberOfForwardLists_ReadView());
-
-    bool valid = false;
-    const ForwardList* fl = this->getForwardList(recordId, valid);
-
-    // Deleted flag is set
-    if (valid == false)
-        return false;
 
     return fl->haveWordInRange(this->schemaInternal, minId, maxId,
             termSearchableAttributeIdToFilterTermHits, matchingKeywordId,
@@ -186,17 +179,17 @@ bool ForwardIndex::haveWordInRangeWithStemmer(const unsigned recordId,
 
 const ForwardList *ForwardIndex::getForwardList(unsigned recordId, bool &valid) const
 {
-    // A valid record ID is in the range [0, 1, ..., directorySize - 1]
-    if (recordId >= this->getTotalNumberOfForwardLists_ReadView())
-    {
-        valid = false;
-        return NULL;
-    }
 
     shared_ptr<vectorview<ForwardListPtr> > readView;
     this->forwardListDirectory->getReadView(readView);
-    valid = readView->getElement(recordId).second;
-    return readView->getElement(recordId).first;
+    // A valid record ID is in the range [0, 1, ..., directorySize - 1]
+    if(recordId >= readView->size()){
+    	valid = false;
+    	return NULL;
+    }
+    ForwardListPtr flPtr = readView->getElement(recordId);
+    valid = flPtr.second;
+    return flPtr.first;
 }
 
 ForwardList *ForwardIndex::getForwardList_ForCommit(unsigned recordId)
@@ -800,28 +793,39 @@ bool ForwardIndex::getExternalRecordIdFromInternalRecordId(const unsigned intern
 }
 
 bool ForwardList::isValidRecordTermHit(const SchemaInternal *schema,
-        unsigned keywordOffset, unsigned searchableAttributeId,
+        unsigned keywordOffset, 
+        unsigned termSearchableAttributeIdToFilterTermHits,
         unsigned &matchingKeywordAttributeBitmap,
         float &matchingKeywordRecordStaticScore) const {
     matchingKeywordRecordStaticScore = this->getKeywordRecordStaticScore(
             keywordOffset);
-    // support attribute-based search
-    if (searchableAttributeId == 0
-            || (schema->getPositionIndexType()
-                    != srch2::instantsearch::POSITION_INDEX_FIELDBIT)) {
+    // support attribute-based search. Here we check if attribute search
+    // is disabled, ie. the POSITION_INDEX_TYPE is neither FIELDBIT nor
+    // FULL. In this case, or if the masked attributes to validate is 0
+    // the the hit is always valid.
+    if (termSearchableAttributeIdToFilterTermHits == 0
+            || ((schema->getPositionIndexType()
+                    != srch2::instantsearch::POSITION_INDEX_FIELDBIT)
+            &&  (schema->getPositionIndexType()
+                    != srch2::instantsearch::POSITION_INDEX_FULL))) {
         return true;
     } else {
         ASSERT(
                 this->getKeywordAttributeBitmaps() != NULL and keywordOffset < this->getNumberOfKeywords());
-        bool AND = searchableAttributeId & 0x80000000; // test the highest bit
+         // test the highest bit
+        bool highestBit =
+          termSearchableAttributeIdToFilterTermHits & 0x80000000;
         matchingKeywordAttributeBitmap = getKeywordAttributeBitmap(
                 keywordOffset);
-        if (AND) {
-            searchableAttributeId &= 0x7fffffff; // turn off the highest bit
-            return (matchingKeywordAttributeBitmap & searchableAttributeId)
-                    == searchableAttributeId;
+        if (highestBit) {
+            // turn off the highest bit
+            termSearchableAttributeIdToFilterTermHits&= 0x7fffffff; 
+            return (matchingKeywordAttributeBitmap & 
+                termSearchableAttributeIdToFilterTermHits)
+                    == termSearchableAttributeIdToFilterTermHits;
         } else {
-            return (matchingKeywordAttributeBitmap & searchableAttributeId) != 0;
+            return (matchingKeywordAttributeBitmap & 
+                termSearchableAttributeIdToFilterTermHits) != 0;
         }
     }
 }

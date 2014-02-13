@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="generator" content="ReText Webpages generator 4.0.1">
+<meta name="generator" content="ReText Webpages generator 4.1.0">
 <link rel="stylesheet" type="text/css" href="style.css">
 <title>SRCH2: Control API</title>
 </head>
@@ -31,12 +31,26 @@
 
 <hr>
 
+<!-- Google Tag Manager -->
+
+<noscript><iframe src="//www.googletagmanager.com/ns.html?id=GTM-MQK794"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'//www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-MQK794');</script>
+
+<!-- End Google Tag Manager -->
+
 <div id="content" > <!-- Table of content, id=content-->
 <table><tbody><tr><td>
 <div><h3><a style="text-decoration: none;color:#ee2e24" href="#doc">Content</a></h3></div>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#system-status">1. Retrieving System Status</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#serialize-indexes">2. Serializing Indexes to Disk</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#serialize-records">3. Serializing Records to Disk</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#reset-log">4. Resetting Log File</a><br><br>
 
 </td></tr></tbody></table>
 
@@ -55,7 +69,7 @@
 
 <p></tr></tbody></table></div></p>
 <h1 id="doc" style="color:#ee2e24"><center>SRCH2 Manual: RESTful API - Control</center></h1>
-<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.1.0, Date: October 13, 2013</center></h6>
+<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.2.0, Date: November 27, 2013</center></h6>
 <p>The SRCH2 engine supports certain control messages through its RESTful API.</p>
 <p>Note that each RESTful request needs to use a proper <a href="http://www.w3schools.com/tags/ref_urlencode.asp">URL encoder</a> to be converted to characters in a format that can be transmitted properly.</p>
 <h2 id="system-status">1. Retrieving System Status</h2>
@@ -78,7 +92,7 @@ Content-Type: application/json; charset=UTF-8
 Content-Length: 138
 Date: Thu, 19 Sep 2013 18:52:52 GMT
 
-[{search_requests:0,write_requests:100,docs_in_index:100,&quot;last_merge&quot;:&quot;09/19/13 18:52:48&quot;,&quot;last_merge_time&quot;:&quot;0&quot;,&quot;doc_count&quot;:&quot;100&quot;}, 4.0.0]
+{&quot;engine_status&quot;:{&quot;search_requests&quot;:&quot;0&quot;,&quot;write_requests&quot;:&quot;100&quot;,&quot;docs_in_index&quot;:&quot;100&quot;,&quot;last_merge&quot;:&quot;02/10/14 23:11:21&quot;,&quot;last_merge_time&quot;:&quot;0&quot;,&quot;doc_count&quot;:&quot;100&quot;}, &quot;version&quot;:&quot;4.2.0&quot;}
 </code></pre>
 
 <h2 id="serialize-indexes">2. Serializing Indexes to Disk</h2>
@@ -92,6 +106,28 @@ Date: Thu, 19 Sep 2013 18:52:52 GMT
 </code></pre>
 
 <p>The engine will store the records in the file "mydata.json" in the folder specified by the parameter "dataDir".</p>
+<h2 id="reset-log">4. Reseting Log File</h2>
+<p>This API is used by a third-party tool such as
+<a href="http://linuxcommand.org/man_pages/logrotate8.html">logrotate</a> to manage the log file. Suppose the "logrotate" tool has renamed the log file "srch2-log.txt" to another file "srch2-log.txt.1".
+The tool also has re-created a file with the original name "srch2-log.txt".  The SRCH2 engine is still writing log messages to the file "srch2-log.txt.1".
+Now "logrotate" sends the following message:</p>
+<pre><code>$ curl -i &quot;http://localhost:8081/resetLogger&quot; -X PUT
+</code></pre>
+
+<p>It tells the SRCH2 engine to reset its log-file handle to continue using the original file name  "srch2-log.txt". In this way, the old log messages have been moved to the file ""srch2-log.txt.1", which can be managed by the "logrotate" tool. Here is an example configuration file for "lograte":</p>
+<pre><code>&quot;/home/joe/srch2/logs/srch2-log.txt&quot; {
+    weekly
+    missingok
+    rotate 52
+    notifempty
+    sharedscripts
+    postrotate
+            curl -i &quot;http://localhost:8081/resetLogger&quot; -X PUT
+    endscript
+    prerotate
+    endscript
+}
+</code></pre>
 
 </table>
 <hr>

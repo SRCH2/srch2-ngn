@@ -39,7 +39,7 @@
         Hostname and port number of the server. Make sure the port is open.
     -->
     <listeningHostname>127.0.0.1</listeningHostname>
-    <listeningPort>8081</listeningPort>
+    <listeningPort>8087</listeningPort>
  
     <!--
         Index Directoy Path
@@ -323,7 +323,7 @@
      
     </updatehandler>
 
-	<schema name="SRCH2" version="3">
+	<schema>
 	  
 	 <fields>
 	   <!--
@@ -426,6 +426,8 @@
 		            Disable Stop Word Filter: <filter name="StopFilter" words="" />
 		    -->
 		    <filter name="StopFilter" words="./analyzer_exact_a1/srch2_stop_words.txt" />
+
+            <filter name="protectedKeyWordsFilter" words="./analyzer_exact_a1/srch2_protected_words.txt" />
 		     
 		</analyzer>
 	    </fieldType>

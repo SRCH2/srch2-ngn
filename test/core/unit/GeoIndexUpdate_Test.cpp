@@ -10,8 +10,9 @@
 #include <instantsearch/Query.h>
 #include <instantsearch/Term.h>
 #include <instantsearch/QueryResults.h>
-#include <instantsearch/IndexSearcher.h>
+#include <instantsearch/QueryEvaluator.h>
 #include <instantsearch/GlobalCache.h>
+#include "analyzer/AnalyzerContainers.h"
 
 using namespace std;
 using namespace srch2::instantsearch;
@@ -151,7 +152,8 @@ void generateTermAddToQuery(const string &keyword, Query *query, bool isFuzzy)
 
 void searchRecords(const vector< pair<string, pair<string, Point> > > &recordsToSearch, Indexer *indexer, Analyzer *analyzer, bool shouldExist = true, bool isFuzzy = true)
 {
-    IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
+    QueryEvaluatorRuntimeParametersContainer runTimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer,&runTimeParameters );
 
     vector<PositionalTerm> queryKeywords;
 
@@ -184,10 +186,10 @@ void searchRecords(const vector< pair<string, pair<string, Point> > > &recordsTo
                              recordsToSearch[i].second.second.x + 0.05,
                              recordsToSearch[i].second.second.y + 0.05 );
 
-        	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), indexSearcher, query);
+        	QueryResults *queryResults = new QueryResults(new QueryResultFactory(), queryEvaluator, query);
 
             unsigned expectedRecordId = atoi(recordsToSearch[i].second.first.c_str());
-            indexSearcher->search(query, queryResults);
+            queryEvaluator->geoSearch(query, queryResults);
 
             bool pass = true;
             if(shouldExist)
@@ -236,7 +238,7 @@ void searchRecords(const vector< pair<string, pair<string, Point> > > &recordsTo
         queryKeywords.clear();
     }
 
-    delete indexSearcher;
+    delete queryEvaluator;
 }
 
 /*
@@ -559,11 +561,11 @@ void testDeletion(vector< pair<string, pair<string, Point> > > &recordsToSearch,
 
 void testSmallInitLargeInsertion(const string directoryName)
 {
-    Cache *cache = new Cache(134217728,20000);
+    CacheManager *cache = new CacheManager(134217728);
     IndexMetaData *indexMetaData = new IndexMetaData(cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		directoryName, "");
+    		directoryName);
     
     // Create a schema
     Schema *schema = Schema::create(LocationIndex);
@@ -572,8 +574,8 @@ void testSmallInitLargeInsertion(const string directoryName)
     schema->setSearchableAttribute("secondAttr", 7); // searchable text
 
     // Create an analyzer
-    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    SynonymContainer *syn = SynonymContainer::getInstance(string(""), SYNONYM_DONOT_KEEP_ORIGIN);
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, syn, "");
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     vector< pair<string, pair<string, Point> > > recordsToSearch;
@@ -617,15 +619,16 @@ void testSmallInitLargeInsertion(const string directoryName)
     delete analyzer;
     delete schema;
     delete indexMetaData;
+    syn->free();
 }
 
 void testIncrementalUpdateGeoIndex(const string directoryName)
 {
-    Cache *cache = new Cache(134217728,20000);
+    CacheManager *cache = new CacheManager(134217728);
     IndexMetaData *indexMetaData = new IndexMetaData(cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		directoryName, "");
+    		directoryName);
     
     // Create a schema
     Schema *schema = Schema::create(LocationIndex);
@@ -634,8 +637,8 @@ void testIncrementalUpdateGeoIndex(const string directoryName)
     schema->setSearchableAttribute("secondAttr", 7); // searchable text
 
     // Create an analyzer
-    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    SynonymContainer *syn = SynonymContainer::getInstance(string(""), SYNONYM_DONOT_KEEP_ORIGIN);
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, syn, "");
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     vector< pair<string, pair<string, Point> > > recordsToSearch;
@@ -679,6 +682,7 @@ void testIncrementalUpdateGeoIndex(const string directoryName)
     delete analyzer;
     delete schema;
     delete indexMetaData;
+    syn->free();
 
     cout<<"Increment insertion and deletion test cases pass" << endl;
 

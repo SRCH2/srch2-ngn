@@ -19,7 +19,7 @@
  */
 
 #include "QueryResultsInternal.h"
-#include "operation/IndexSearcherInternal.h"
+#include "operation/QueryEvaluatorInternal.h"
 
 
 using srch2::util::Logger;
@@ -45,8 +45,8 @@ QueryResults::QueryResults(){
 	impl = new QueryResultsInternal();
 }
 
-void QueryResults::init(QueryResultFactory * resultsFactory, const IndexSearcher* indexSearcher, Query* query){
-	impl->init(resultsFactory,dynamic_cast<const IndexSearcherInternal *>(indexSearcher),query);
+void QueryResults::init(QueryResultFactory * resultsFactory, const QueryEvaluator* queryEvaluator, Query* query){
+	impl->init(resultsFactory,queryEvaluator->impl,query);
 }
 
 /**
@@ -54,8 +54,8 @@ void QueryResults::init(QueryResultFactory * resultsFactory, const IndexSearcher
  * @param[in] indexSearcher the reference to an IndexSearcher object.
  * @param[in] query the reference to a Query object.
  */
-QueryResults::QueryResults(QueryResultFactory * resultsFactory, const  IndexSearcher* indexSearcher, Query* query){
-	impl = new QueryResultsInternal(resultsFactory,dynamic_cast<const IndexSearcherInternal *>(indexSearcher),query );
+QueryResults::QueryResults(QueryResultFactory * resultsFactory, const  QueryEvaluator* queryEvaluator, Query* query){
+	impl = new QueryResultsInternal(resultsFactory,queryEvaluator->impl,query );
 }
 
 QueryResults::~QueryResults(){
@@ -100,7 +100,7 @@ unsigned QueryResults::getInternalRecordId(unsigned position) const {
 
 std::string QueryResults::getInMemoryRecordString(unsigned position) const {
     unsigned internalRecordId = this->getInternalRecordId(position);
-    return impl->indexSearcherInternal->getInMemoryData(internalRecordId);
+    return impl->queryEvaluatorInternal->getInMemoryData(internalRecordId);
 }
 
 /**

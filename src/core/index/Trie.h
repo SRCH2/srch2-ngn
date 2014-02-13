@@ -132,6 +132,25 @@ private:
     }
 };
 
+class TrieNode;
+
+class SuggestionInfo {
+public:
+	unsigned distance;
+	float probabilityValue;
+	// The path from root to this trie node gives the query keyword. For example : "you"
+	const TrieNode * queryTermNode;
+	// The path from root to this trie node gives the prefix which is the completed suggestion of query keyword. For example "your" for query "you"
+	const TrieNode * suggestedCompleteTermNode;
+	SuggestionInfo(unsigned distance,
+			float probabilityValue,
+			const TrieNode * queryTermNode,
+			const TrieNode * suggestedCompleteTermNode) : queryTermNode(queryTermNode), suggestedCompleteTermNode(suggestedCompleteTermNode) {
+		this->distance = distance;
+		this->probabilityValue = probabilityValue;
+	}
+};
+
 
 class TrieNode
 {
@@ -203,6 +222,8 @@ private:
     // Maximum score of leaf nodes
     half maximumScoreOfLeafNodes;
 
+    unsigned numberOfTerminalNodes;
+
 
 private:
     friend class boost::serialization::access;
@@ -213,6 +234,7 @@ private:
         ar & character;
         ar & nodeHistogramValue;
         ar & maximumScoreOfLeafNodes;
+        ar & numberOfTerminalNodes;
         ar & id;
         ar & invertedListOffset;
         ar & leftMostDescendant;
@@ -344,6 +366,14 @@ public:
     	this->nodeHistogramValue = nodeHistogramValue;
     }
 
+    inline unsigned getNumberOfTerminalNodes() const{
+    	return this->numberOfTerminalNodes;
+    }
+
+    inline void setNumberOfTerminalNodes(unsigned numberOfTerminalNodes) {
+    	this->numberOfTerminalNodes = numberOfTerminalNodes;
+    }
+
     inline half getMaximumScoreOfLeafNodes() const {
     	return this->maximumScoreOfLeafNodes;
     }
@@ -368,20 +398,21 @@ public:
     }
 
     // it updates the histogram value of this node based on the information coming from the children
-    void updateInternalNodeProbabilityValueAndMaximumScoreOfLeafNodes(HistogramAggregationType aggrType);
+    void updateInternalNodeHistogramValues(HistogramAggregationType aggrType);
 
     // updates the maximum score of leaf nodes based on the values coming from children and
     // and returns true if anything changes and should be propagated up the trie
     bool updateInternalNodeMaximumScoreOfLeafNodes();
 
     // initializes the histogram value of this trie node
-    void initializeInternalNodeProbabilityValueAndMaximumSoreOfLeafNodes(HistogramAggregationType aggrType ,
+    void initializeInternalNodeHistogramValues(HistogramAggregationType aggrType ,
     		float initValue = -1,
     		half initValueFromArgForMaxScore = (half)0);
 
     // this function uses a weighted DFS (which means children are visited based on their histogramValue) and collects all frontier terminal nodes in its way.
     // stopping condition is that the number of terminal nodes are >= numberOfSuggestionsToReturn
-    void findMostPopularSuggestionsInThisSubTrie(unsigned ed, std::vector<std::pair< std::pair< float , unsigned > , const TrieNode *> > & suggestions,const int numberOfSuggestionsToFind = 10) const;
+    void findMostPopularSuggestionsInThisSubTrie(const TrieNode * suggestionActiveNode, unsigned ed, std::vector<SuggestionInfo > & suggestions,
+       		const int numberOfSuggestionsToFind = 10) const;
 
     void addChild(CharType character, TrieNode *childNode);
 
@@ -540,7 +571,7 @@ private:
         boost::serialization::split_member(ar, *this, file_version);
     }
 
-    void calculateNodeProbabilityValuesAndMaximumScoreOfLeafNodesFromChildren(TrieNode *root, const InvertedIndex * invertedIndex , const unsigned totalNumberOfRecords );
+    void calculateNodeHistogramValuesFromChildren(TrieNode *root, const InvertedIndex * invertedIndex , const unsigned totalNumberOfRecords );
 
 public:
 
@@ -678,7 +709,7 @@ public:
      * The traverse the trie in pre-order to calculate the nodeSubTrieValue for each TrieNode
      */
 
-    void calculateNodeProbabilityValuesAndMaximumScoreOfLeafNodesFromChildren(const InvertedIndex * invertedIndex ,  const unsigned totalNumberOfRecords);
+    void calculateNodeHistogramValuesFromChildren(const InvertedIndex * invertedIndex ,  const unsigned totalNumberOfRecords);
 
     void printTrieNodeSubTrieValues(std::vector<CharType> & prefix , TrieNode * root , unsigned depth = 0);
 

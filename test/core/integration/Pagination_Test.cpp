@@ -6,7 +6,7 @@
 
 #include <instantsearch/Analyzer.h>
 #include <instantsearch/Indexer.h>
-#include <instantsearch/IndexSearcher.h>
+#include <instantsearch/QueryEvaluator.h>
 #include <instantsearch/Query.h>
 #include <instantsearch/Term.h>
 #include <instantsearch/QueryResults.h>
@@ -35,17 +35,17 @@ void buildIndex(string data_file, string index_dir)
     schema->setScoringExpression("idf_score*doc_boost");
 
     /// Create an Analyzer
-    Analyzer *analyzer = new Analyzer(srch2is::DISABLE_STEMMER_NORMALIZER,
-                    "", "","", SYNONYM_DONOT_KEEP_ORIGIN, "", srch2is::STANDARD_ANALYZER);
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "",
+                                      srch2is::STANDARD_ANALYZER);
 
     /// Create an index writer
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
+    IndexMetaData *indexMetaData = new IndexMetaData( new CacheManager(),
     		mergeEveryNSeconds, mergeEveryMWrites,
-    		updateHistogramEveryPMerges, updateHistogramEveryQWrites, index_dir, "");
+    		updateHistogramEveryPMerges, updateHistogramEveryQWrites, index_dir);
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     Record *record = new Record(schema);
@@ -167,7 +167,7 @@ void updateIndex(string data_file, Indexer *index, Analyzer* analyzer)
 }
 
 // Read queries from file and do the search
-void compareTopK1andTopK2(string path, const Analyzer *analyzer, IndexSearcher *indexSearcher, const unsigned k1, const unsigned k2)
+void compareTopK1andTopK2(string path, const Analyzer *analyzer, QueryEvaluator *queryEvaluator, const unsigned k1, const unsigned k2)
 {
     string line;
 
@@ -185,7 +185,7 @@ void compareTopK1andTopK2(string path, const Analyzer *analyzer, IndexSearcher *
 
     for( vector<string>::iterator vectIter = keywordVector.begin(); vectIter!= keywordVector.end(); vectIter++ )
     {
-        if(!topK1ConsistentWithTopK2(analyzer, indexSearcher, *vectIter, k1, k2))
+        if(!topK1ConsistentWithTopK2(analyzer, queryEvaluator, *vectIter, k1, k2))
         {
             failedCounter++;
             cout << *vectIter << endl;
@@ -219,45 +219,46 @@ int main(int argc, char **argv)
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
+    IndexMetaData *indexMetaData = new IndexMetaData( new CacheManager(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		index_dir, "");
+    		index_dir);
     Indexer *index = Indexer::load(indexMetaData);
 
     cout << "Index loaded." << endl;
 
     Analyzer *analyzer = getAnalyzer();
 
-    IndexSearcher *indexSearcher = IndexSearcher::create(index);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 
     // test pagination before update
-    compareTopK1andTopK2(query_file, analyzer, indexSearcher, 5, 10);
-    compareTopK1andTopK2(query_file, analyzer, indexSearcher, 5, 15);
-    compareTopK1andTopK2(query_file, analyzer, indexSearcher, 5, 20);
-    compareTopK1andTopK2(query_file, analyzer, indexSearcher, 5, 40);
-    compareTopK1andTopK2(query_file, analyzer, indexSearcher, 10, 20);
-    compareTopK1andTopK2(query_file, analyzer, indexSearcher, 10, 25);
-    compareTopK1andTopK2(query_file, analyzer, indexSearcher, 10, 30);
-    compareTopK1andTopK2(query_file, analyzer, indexSearcher, 20, 30);
-    compareTopK1andTopK2(query_file, analyzer, indexSearcher, 20, 35);
-    compareTopK1andTopK2(query_file, analyzer, indexSearcher, 20, 40);
+//    compareTopK1andTopK2(query_file, analyzer, queryEvaluator, 5, 10);
+//    compareTopK1andTopK2(query_file, analyzer, queryEvaluator, 5, 15);
+//    compareTopK1andTopK2(query_file, analyzer, queryEvaluator, 5, 20);
+//    compareTopK1andTopK2(query_file, analyzer, queryEvaluator, 5, 40);
+    compareTopK1andTopK2(query_file, analyzer, queryEvaluator, 10, 20);
+    compareTopK1andTopK2(query_file, analyzer, queryEvaluator, 10, 25);
+    compareTopK1andTopK2(query_file, analyzer, queryEvaluator, 10, 30);
+    compareTopK1andTopK2(query_file, analyzer, queryEvaluator, 20, 30);
+    compareTopK1andTopK2(query_file, analyzer, queryEvaluator, 20, 35);
+    compareTopK1andTopK2(query_file, analyzer, queryEvaluator, 20, 40);
 
     updateIndex(update_data_file, index, analyzer);
     
     // test pagination after update
-    compareTopK1andTopK2(query_file, analyzer, indexSearcher, 5, 10);
-    compareTopK1andTopK2(query_file, analyzer, indexSearcher, 5, 15);
-    compareTopK1andTopK2(query_file, analyzer, indexSearcher, 5, 20);
-    compareTopK1andTopK2(query_file, analyzer, indexSearcher, 5, 40);
-    compareTopK1andTopK2(query_file, analyzer, indexSearcher, 10, 20);
-    compareTopK1andTopK2(query_file, analyzer, indexSearcher, 10, 25);
-    compareTopK1andTopK2(query_file, analyzer, indexSearcher, 10, 30);
-    compareTopK1andTopK2(query_file, analyzer, indexSearcher, 20, 30);
-    compareTopK1andTopK2(query_file, analyzer, indexSearcher, 20, 35);
-    compareTopK1andTopK2(query_file, analyzer, indexSearcher, 20, 40);
+    compareTopK1andTopK2(query_file, analyzer, queryEvaluator, 5, 10);
+    compareTopK1andTopK2(query_file, analyzer, queryEvaluator, 5, 15);
+    compareTopK1andTopK2(query_file, analyzer, queryEvaluator, 5, 20);
+    compareTopK1andTopK2(query_file, analyzer, queryEvaluator, 5, 40);
+    compareTopK1andTopK2(query_file, analyzer, queryEvaluator, 10, 20);
+    compareTopK1andTopK2(query_file, analyzer, queryEvaluator, 10, 25);
+    compareTopK1andTopK2(query_file, analyzer, queryEvaluator, 10, 30);
+    compareTopK1andTopK2(query_file, analyzer, queryEvaluator, 20, 30);
+    compareTopK1andTopK2(query_file, analyzer, queryEvaluator, 20, 35);
+    compareTopK1andTopK2(query_file, analyzer, queryEvaluator, 20, 40);
 
-    delete indexSearcher;
+    delete queryEvaluator;
     delete index;
     delete indexMetaData;
     delete analyzer;

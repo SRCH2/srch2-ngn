@@ -16,10 +16,11 @@
 
  * Copyright © 2010 SRCH2 Inc. All rights reserved
  */
-#include <instantsearch/SortFilter.h>
+#include <instantsearch/ResultsPostProcessor.h>
 #include <instantsearch/TypedValue.h>
 #include <map>
 #include <string>
+#include <sstream>
 
 using srch2::instantsearch::SortEvaluator;
 using srch2::instantsearch::TypedValue;
@@ -63,6 +64,14 @@ public:
 
 	}
 
+	string toString() const {
+		stringstream ss;
+		for(unsigned i=0 ; i<field.size() ; ++i){
+			ss << field[i].c_str();
+		}
+		ss << order ;
+		return ss.str();
+	}
 	std::vector<std::string> field;
 
 private:

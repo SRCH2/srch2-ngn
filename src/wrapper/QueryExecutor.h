@@ -22,7 +22,7 @@
 #ifndef _WRAPPER_QUERYEXECUTOR_H_
 #define _WRAPPER_QUERYEXECUTOR_H_
 
-#include "QueryPlan.h"
+#include "instantsearch/LogicalPlan.h"
 #include "instantsearch/QueryResults.h"
 #include "Srch2Server.h"
 
@@ -39,11 +39,10 @@ class QueryExecutor
 
 public:
 
-	QueryExecutor(QueryPlan & queryPlan , QueryResultFactory * resultsFactory ,Srch2Server *server, const ConfigManager * configManager );
+	QueryExecutor(LogicalPlan & queryPlan , QueryResultFactory * resultsFactory ,Srch2Server *server, const CoreInfo_t * configuration );
 
 	void execute(QueryResults * finalResults);
-	void executeTopK(QueryResults * finalResults);
-	void executeGetAllResults(QueryResults * finalResults);
+	void executeKeywordSearch(QueryResults * finalResults);
 	void executeGeo(QueryResults * finalResults);
 	void executeRetrieveById(QueryResults * finalResults);
 
@@ -51,11 +50,11 @@ public:
 
 
 private:
-	QueryPlan & queryPlan;
+	LogicalPlan & queryPlan;
 	QueryResultFactory * queryResultFactory;
 	Srch2Server * server;
-	IndexSearcher * indexSearcher;
-	const ConfigManager * configManager;
+	QueryEvaluator * queryEvaluator;
+	const CoreInfo_t * configuration;
 };
 
 }

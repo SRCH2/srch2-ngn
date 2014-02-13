@@ -28,9 +28,165 @@
 #include "WrapperConstants.h"
 #include "FilterQueryEvaluator.h"
 #include "SortFilterEvaluator.h"
+#include "instantsearch/LogicalPlan.h"
+#include "instantsearch/ResultsPostProcessor.h"
+
 
 namespace srch2 {
 namespace httpwrapper {
+
+/*
+ * This class contains the information required to make a Term object coming from the
+ * query. This information (such as rawQueryString and keywordSimilarityThreshold) are
+ * specified in the query, then saved in this class, and then copied to the constructor of
+ * Term.
+ */
+class TermIntermediateStructure{
+public:
+	TermIntermediateStructure(){
+		fieldFilterNumber = 0;
+		keywordBoostLevel = 1;
+		keywordSimilarityThreshold = 1;
+		keywordPrefixComplete = TERM_TYPE_NOT_SPECIFIED;
+		isPhraseKeywordFlag = false;
+	}
+	// termQueryString contains the keyword and all the modifiers. It's the original
+	// string coming from the query. For example, if the query is "foo*~0.5 AND author:bar",
+	// termQueryString is foo*~0.5 for the first term and "author:bar" for the second one.
+	string termQueryString;
+	// rawQueryKeyword is the actual searchable keyword. in the above example, "foo" and
+	// "bar" are the values that we keep in rawQueryKeyword.
+	string rawQueryKeyword;
+
+	float keywordSimilarityThreshold;
+	int keywordBoostLevel;
+	srch2::instantsearch::TermType keywordPrefixComplete;
+
+	vector<string> fieldFilter;
+	BooleanOperation fieldFilterOp;
+
+	bool isPhraseKeywordFlag ;
+	short phraseSlop;
+
+	unsigned fieldFilterNumber;
+
+	void print(){
+		Logger::console("Term : (%s %f %d %d) ",rawQueryKeyword.c_str(),keywordSimilarityThreshold,keywordBoostLevel,keywordPrefixComplete);
+	}
+};
+
+class ParseTreeNode{
+public:
+	LogicalPlanNodeType type;
+	ParseTreeNode * parent;
+	vector<ParseTreeNode *> children;
+	TermIntermediateStructure * termIntermediateStructure;
+
+//	static int objectCount;
+	ParseTreeNode(	LogicalPlanNodeType type,	ParseTreeNode * parent){
+	 this->type = type;
+	 this->parent = parent;
+	 this->termIntermediateStructure = NULL;
+//	 objectCount++;
+	}
+    ~ParseTreeNode(){
+		for(vector<ParseTreeNode *>::iterator child = children.begin() ; child != children.end() ; ++child){
+			if(*child != NULL) delete *child;
+		}
+
+		if(termIntermediateStructure != NULL){
+			delete termIntermediateStructure;
+		}
+//		objectCount--;
+	}
+
+	string indentation(unsigned indent){
+		string result = "";
+		for(unsigned i=0;i<indent;i++){
+			result += "\t";
+		}
+		return result;
+	}
+
+	void print(unsigned indent = 0){
+		switch (type) {
+			case LogicalPlanNodeTypeAnd:
+				cout << indentation(indent) << "-- AND" << endl;
+				break;
+			case LogicalPlanNodeTypeOr:
+				cout << indentation(indent) << "-- OR" << endl;
+				break;
+			case LogicalPlanNodeTypeNot:
+				cout << indentation(indent) << "-- NOT" << endl;
+				break;
+			case LogicalPlanNodeTypeTerm:
+				cout << indentation(indent) << "-- TERM" << endl;
+				break;
+		}
+		for(vector<ParseTreeNode *>::iterator child = children.begin() ; child != children.end() ; ++child){
+			(*child)->print(indent+1);
+		}
+		cout << indentation(indent) << "--" << endl;
+	}
+	bool checkValiditiyOfParentPointers(){
+		for(vector<ParseTreeNode *>::iterator child = children.begin() ; child != children.end() ; ++child){
+			if ((*child)->parent != this) return false;
+		}
+		return true;
+	}
+
+};
+
+
+class ParseTreeLeafNodeIterator{
+public:
+	unsigned leafNodeCursor;
+	vector<ParseTreeNode *> leafNodes;
+	ParseTreeLeafNodeIterator(ParseTreeNode * root){
+		init(root);
+	}
+	~ParseTreeLeafNodeIterator(){}
+
+	bool hasMore(){
+		return (leafNodeCursor < leafNodes.size());
+	}
+
+	/*
+	 * Initializing the iteration :
+	 * Traverses the tree in preorder and saves all leaf nodes for later getNext calls
+	 */
+	void init(ParseTreeNode * root){
+		leafNodes.clear();
+		traversePreOrderAndAppendLeafNodesToLeafNodesVector(root);
+		leafNodeCursor = 0;
+	}
+
+	/*
+	 * This function traverses the subtree of 'root' and appends discovered leaf node to
+	 * leafNodes vector. It's a recursive function.
+	 */
+	void traversePreOrderAndAppendLeafNodesToLeafNodesVector(ParseTreeNode * root){
+		if(root == NULL){
+			return;
+		}
+		if(root->type == LogicalPlanNodeTypeTerm){
+			leafNodes.push_back(root);
+			return;
+		}
+		for(unsigned childOffset = 0 ; childOffset != root->children.size() ; ++childOffset){
+			traversePreOrderAndAppendLeafNodesToLeafNodesVector(root->children.at(childOffset));
+		}
+	}
+
+	/*
+	 * Returns the next leaf node
+	 */
+	ParseTreeNode * getNext(){
+		ASSERT(leafNodeCursor < leafNodes.size());
+		return leafNodes.at(leafNodeCursor++);
+	}
+};
+
 
 class FilterQueryContainer {
 public:
@@ -67,25 +223,11 @@ public:
     SortFilterEvaluator * evaluator;
 };
 
-class FacetQueryContainer {
-
-public:
-    // these vectors must be parallel and same size all the time
-    std::vector<srch2::instantsearch::FacetType> types;
-    std::vector<std::string> fields;
-    std::vector<std::string> rangeStarts;
-    std::vector<std::string> rangeEnds;
-    std::vector<std::string> rangeGaps;
-    std::vector<int> numberOfTopGroupsToReturn;
-};
-
 class TopKParameterContainer {
 public:
 	// while we are parsing we populate this vector by the names of those members
 	// which are set. It's a summary of the query parameters.
 	std::vector<ParameterName> parametersInQuery;
-
-    // no parameters known as of now
 
 	//
 	bool hasParameterInQuery(ParameterName param){
@@ -95,24 +237,10 @@ public:
 
 class GetAllResultsParameterContainer {
 public:
-	GetAllResultsParameterContainer(){
-		facetQueryContainer = NULL;
-		sortQueryContainer = NULL;
-	}
-	~GetAllResultsParameterContainer(){
-		if(facetQueryContainer != NULL) delete facetQueryContainer;
-		if(sortQueryContainer != NULL) delete sortQueryContainer;
-	}
 
 	// while we are parsing we populate this vector by the names of those members
 	// which are set. It's a summary of the query parameters.
 	std::vector<ParameterName> parametersInQuery;
-
-
-	// facet parser parameters
-	FacetQueryContainer * facetQueryContainer;
-	// sort parser parameters
-	SortQueryContainer * sortQueryContainer;
 
 	bool hasParameterInQuery(ParameterName param){
 		return (std::find(parametersInQuery.begin() ,parametersInQuery.end() , param) != parametersInQuery.end());
@@ -122,24 +250,10 @@ public:
 
 class GeoParameterContainer {
 public:
-	GeoParameterContainer(){
-		facetQueryContainer = NULL;
-		sortQueryContainer = NULL;
-	}
-	~GeoParameterContainer(){
-		if(facetQueryContainer != NULL) delete facetQueryContainer;
-		if(sortQueryContainer != NULL) delete sortQueryContainer;
-	}
 	// while we are parsing we populate this vector by the names of those members
 	// which are set. It's a summary of the query parameters.
 	std::vector<ParameterName> parametersInQuery;
 
-
-	// this object is created in planGenerator but freed when the filter is being destroyed.
-	// facet parser parameters
-	FacetQueryContainer * facetQueryContainer;
-	// sort parser parameters
-	SortQueryContainer * sortQueryContainer;
 
 	// geo related parameters
 	float leftBottomLatitude, leftBottomLongitude, rightTopLatitude, rightTopLongitude;
@@ -150,14 +264,23 @@ public:
 	}
 };
 
+struct QueryFieldAttributeBoost{
+  std::string attribute;
+  float boost;
+};
+
+struct QueryFieldBoostContainer {
+  std::vector<QueryFieldAttributeBoost> boosts;
+};
+
 class ParsedParameterContainer {
 public:
 
     ParsedParameterContainer() {
         filterQueryContainer = NULL;
-        topKParameterContainer = NULL;
-        getAllResultsParameterContainer = NULL;
-        geoParameterContainer = NULL;
+    	facetQueryContainer = NULL;
+    	sortQueryContainer = NULL;
+        onlyFacets = false;
         isFuzzy=true;
         prefixMatchPenalty=0;
         isOmitHeader=false;
@@ -172,17 +295,19 @@ public:
         isFqBooleanOperatorSet=false;
         resultsStartOffset=0; // defaults to 0
         numberOfResults=10; // defaults to 10
+        parseTreeRoot = NULL;
+        qfContainer= NULL;
     }
 
     ~ParsedParameterContainer() {
         if (filterQueryContainer != NULL)
             delete filterQueryContainer;
-        if (topKParameterContainer != NULL)
-            delete topKParameterContainer;
-        if (getAllResultsParameterContainer != NULL)
-            delete getAllResultsParameterContainer;
-        if (geoParameterContainer != NULL)
-            delete geoParameterContainer;
+        // facet container is deleted by ResutlsPostProcessingInfo
+        if (sortQueryContainer != NULL)
+            delete sortQueryContainer;
+        if(parseTreeRoot != NULL){
+        	delete parseTreeRoot;
+        }
     }
     // while we are parsing we populate this vector by the names of those members
     // which are set. It's a summary of the query parameters.
@@ -190,21 +315,23 @@ public:
 
     std::string docIdForRetrieveByIdSearchType; // if docid parameter is given in the query, this member keeps the value of primary_key to be used later to retrieve the record
 
+    bool onlyFacets; //This flag specifies whether the engine only returns the facets (without matching records) in the response.
     bool isFuzzy; // stores the value of query parameter 'fuzzy'. if fuzzy == True, use keyword's SimilarityThreshold as specified with keywords. else set fuzzy level to 0
     float lengthBoost; // store the value of lengthboost query parameter
     float prefixMatchPenalty; // stores the value of 'pmp' query parameter.
 
-    // main query parser parameters
-    // the following six vectors must be parallel
-    std::vector<std::string> rawQueryKeywords; // stores the keywords in the query
-    std::vector<float> keywordSimilarityThreshold; // stores the fuzzy level of each keyword in the query
-    std::vector<int> keywordBoostLevel; // stores the boost level of each keyword in the query
-    std::vector<srch2::instantsearch::TermType> keywordPrefixComplete; // stores whether the keyword is prefix or complete or not specified.
-    std::vector<std::vector<std::string> > fieldFilter; // stores the fields where engine should search the corresponding keyword
-    std::vector<srch2::instantsearch::BooleanOperation> fieldFilterOps; // stores the boolean operator for the corresponding filedFilter fields.
-    std::vector<bool>isPhraseKeywordFlags; // vector to store is the corresponding keyword is part of phrase search or not?
-    std::vector<short>  PhraseSlops;   // vector to store proximity slops
-    std::vector<unsigned> fieldFilterNumbers; // to be calculated in QueryRewriter based on field filter vectors// we are not using it
+    // This object contains the boolean structure of terms. For example for query
+    // q= (A AND B)OR(C AND D)
+    // it contains a tree like this:
+    // OR ---> AND ---> {A}
+    // |        |-----> {B}
+    // |
+    // |-----> AND ---> {C}
+    //          |-----> {D}
+    //
+    //
+    ParseTreeNode * parseTreeRoot;
+
     // debug query parser parameters
     bool isDebugEnabled;
     QueryDebugLevel queryDebugLevel; // variable to store the debug level. see enum QueryDebugLevel for details.
@@ -213,7 +340,7 @@ public:
     std::vector<std::string> responseAttributesList; // if not empty, response should have only these fields. else check config file.
 
     // start offset parser parameters
-    unsigned resultsStartOffset; // start offset in the response vector. usefull in pagination
+    unsigned resultsStartOffset; // start offset in the response vector. useful in pagination
 
     // number of results parser
     unsigned numberOfResults; // number of records to return in the response. usefull in pagination
@@ -230,9 +357,17 @@ public:
     // filter query parser parameters
     FilterQueryContainer * filterQueryContainer; // contains all filter query related info.
 
+    // facet parser parameters
+    FacetQueryContainer * facetQueryContainer;
+    // sort parser parameters
+    SortQueryContainer * sortQueryContainer;
+    // query field boost parser parameters
+    QueryFieldBoostContainer * qfContainer; 
+
     // different search type specific parameters
     TopKParameterContainer * topKParameterContainer; // contains all Top k only parameters. currently none.
-    GetAllResultsParameterContainer * getAllResultsParameterContainer; //getAllResults specefic params
+    GetAllResultsParameterContainer * getAllResultsParameterContainer; //getAllResults specefic params. currently none.
+    // both of the above members are just place holders. They are actually used now.
     GeoParameterContainer * geoParameterContainer; // Geo specific params
 
     /// messages for the query processing pipeline
@@ -253,6 +388,9 @@ public:
             case MessageWarning:
                 result += "WARNING : " + m->second + "\n";
                 break;
+            case MessageNotice:
+            	result += "NOTICE : " + m->second + "\n";
+            	break;
             }
         }
         return result;

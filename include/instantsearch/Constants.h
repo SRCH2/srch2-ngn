@@ -80,8 +80,7 @@ typedef enum{
 
 typedef enum {
     OP_FAIL,
-    OP_SUCCESS,
-    OP_KEYWORDID_SPACE_PROBLEM
+    OP_SUCCESS
 } INDEXWRITE_RETVAL;
 
 /// Query constants
@@ -90,7 +89,8 @@ typedef enum
 {
     SearchTypeTopKQuery ,
     SearchTypeGetAllResultsQuery ,
-    SearchTypeMapQuery
+    SearchTypeMapQuery,
+    SearchTypeRetrieveById
 } QueryType;
 
 //TODO add prefix OP
@@ -205,6 +205,44 @@ typedef enum
 	HistogramAggregationTypeSummation,
 	HistogramAggregationTypeJointProbability
 } HistogramAggregationType;
+
+typedef enum {
+	LogicalPlanNodeTypeAnd,
+	LogicalPlanNodeTypeOr,
+	LogicalPlanNodeTypeTerm,
+	LogicalPlanNodeTypeNot,
+	LogicalPlanNodeTypePhrase
+} LogicalPlanNodeType;
+
+typedef enum {
+	PhysicalPlanNode_NOT_SPECIFIED,
+	PhysicalPlanNode_SortById,
+	PhysicalPlanNode_SortByScore,
+	PhysicalPlanNode_MergeTopK,
+	PhysicalPlanNode_MergeSortedById,
+	PhysicalPlanNode_MergeByShortestList,
+	PhysicalPlanNode_UnionSortedById,
+	PhysicalPlanNode_UnionLowestLevelTermVirtualList,
+	PhysicalPlanNode_UnionLowestLevelSimpleScanOperator,
+	PhysicalPlanNode_UnionLowestLevelSuggestion,
+	PhysicalPlanNode_RandomAccessTerm,
+	PhysicalPlanNode_RandomAccessAnd,
+	PhysicalPlanNode_RandomAccessOr,
+	PhysicalPlanNode_RandomAccessNot,
+	PhysicalPlanNode_Facet,
+	PhysicalPlanNode_SortByRefiningAttribute,
+	PhysicalPlanNode_FilterQuery,
+	PhysicalPlanNode_PhraseSearch,
+	PhysicalPlanNode_KeywordSearch
+} PhysicalPlanNodeType;
+
+typedef enum {
+	PhysicalPlanIteratorProperty_SortById,
+	PhysicalPlanIteratorProperty_SortByScore,
+	// This value should not be included in output properties of any operator. It's a mechanism
+	/// to always push down TVL operator and NULL operator.
+	PhysicalPlanIteratorProperty_LowestLevel
+} PhysicalPlanIteratorProperty;
 
 }
 }

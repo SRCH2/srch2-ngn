@@ -28,10 +28,8 @@
 
 using std::vector;
 
-namespace srch2
-{
-    namespace instantsearch
-    {
+namespace srch2 {
+  namespace instantsearch {
     // TODO: Copy comments from wiki page and expand it for each function
     class Ranker
     {
@@ -73,6 +71,14 @@ namespace srch2
         return 0.0;
         }
         
+        virtual float computeAggregatedRuntimeScoreForAnd(std::vector<float> runTimeTermRecordScores);
+
+        virtual float computeAggregatedRuntimeScoreForOr(std::vector<float> runTimeTermRecordScores);
+
+        virtual float computeScoreForNot(float score);
+
+
+
         virtual ~Ranker() {};
     };
     
@@ -104,7 +110,13 @@ namespace srch2
         // Convert degree value to radian value using the formula : radian = degree*PI/180
         virtual double degreeToRadian(double degreeValue) const;
     };
-    
+
+    /*
+     * This function computes the edit-distance, with adjustments for floating point conversion error (epsilon),
+     * based on the length of the keyword and a normalizationFactor which must be between 0 and 1.
+     * 0 means smaller edit-distance (0) and 1 means larger edit-distance (length of keyword).
+     */
+    uint8_t computeEditDistanceThreshold(unsigned keywordLength , float similarityThreshold);
     }
 }
 

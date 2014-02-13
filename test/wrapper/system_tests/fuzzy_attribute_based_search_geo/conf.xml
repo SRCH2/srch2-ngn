@@ -4,7 +4,7 @@
     contact@srch2.com if you have questions.
     In this documment, "attribute" and "field" are used interchangeably.
 -->
- 
+
 <config>
     <!--
         SRCH2 Home directory 
@@ -40,7 +40,7 @@
         Hostname and port number of the server. Make sure the port is open.
     -->
     <listeningHostname>127.0.0.1</listeningHostname>
-    <listeningPort>8081</listeningPort>
+    <listeningPort>8087</listeningPort>
  
     <!--
         Index Directoy Path
@@ -58,7 +58,7 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>./fuzzy_attribute_based_search_geo/data.json</dataFile>
+    <dataFile>./exact_attribute_based_search_geo/data.json</dataFile>
      
     <!--
 	Maximum Number of Threads
@@ -142,10 +142,10 @@
         </rankingAlgorithm>
  
         <!--
-            Query Term FuzzyPenalty 
+            Query Term Fuzzy Penalty 
             Optional
              
-            Defaults to 1
+            Defaults to 0.5
         -->
         <fuzzyMatchPenalty>0.5</fuzzyMatchPenalty>
          
@@ -216,7 +216,7 @@
             1: fuzzy match
             Defaults to 
         -->
-        <queryTermFuzzyType>1</queryTermFuzzyType>
+        <queryTermFuzzyType>0</queryTermFuzzyType>
          
                      
              
@@ -319,12 +319,12 @@
                  
                 Path to Access Log File
             -->
-            <accessLogFile>./data/exact_attribute_based_search_geo/log.txt</accessLogFile>
+            <accessLogFile>./data/fuzzy_attribute_based_search_geo/log.txt</accessLogFile>
         </updateLog>
      
     </updatehandler>
 
-	<schema name="SRCH2" version="3">
+	<schema>
 	  
 	 <fields>
 	   <!--
@@ -360,8 +360,8 @@
 	   -->
 	   <field name="category" type="text" indexed="true" />
 	   <field name="name" type="text" indexed="true" />
-	   <field name="lng" type="location_longitude" indexed="true"  />
-	   <field name="lat" type="location_latitude" indexed="true"   />
+	   <field name="lng" type="location_longitude" indexed="false"  />
+	   <field name="lat" type="location_latitude" indexed="false"   />
 	    
 	 </fields>
 	 

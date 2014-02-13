@@ -18,6 +18,7 @@
  */
 
 #include "AnalyzerInternal.h"
+#include "AnalyzerContainers.h"
 #include "StandardAnalyzer.h"
 #include "SimpleAnalyzer.h"
 #include "ChineseAnalyzer.h"
@@ -34,30 +35,27 @@ using std::stringstream;
 namespace srch2 {
 namespace instantsearch {
 
-Analyzer::Analyzer(const StemmerNormalizerFlagType &stemmerFlag,
-        const std::string &stemmerFilePath, const std::string &stopWordFilePath,
-        const std::string &synonymFilePath,
-        const SynonymKeepOriginFlag &synonymKeepOriginFlag,
-        const std::string &delimiters, 
-        const AnalyzerType &analyzerType, 
-        const std::string &chineseDictFilePath
-        ) {
+Analyzer::Analyzer(const StemmerContainer *stemmer,
+                   const StopWordContainer *stopWords,
+                   const ProtectedWordsContainer *protectedWords,
+                   const SynonymContainer *synonyms,
+                   const std::string &delimiters,
+                   const AnalyzerType &analyzerType,
+                   const std::string &chineseDictFilePath)
+{
     switch (analyzerType) {
     case SIMPLE_ANALYZER:
-        this->analyzerInternal = new SimpleAnalyzer(stemmerFlag,
-                stemmerFilePath, stopWordFilePath, synonymFilePath,
-                synonymKeepOriginFlag, delimiters);
+        this->analyzerInternal = new SimpleAnalyzer(stemmer, stopWords, protectedWords, synonyms,
+                                                    delimiters);
         break;
     case CHINESE_ANALYZER:
         this->analyzerInternal = new ChineseAnalyzer(chineseDictFilePath,
-                delimiters, stopWordFilePath, synonymFilePath,
-                synonymKeepOriginFlag);
+                                                     stopWords, protectedWords, synonyms, delimiters);
         break;
     case STANDARD_ANALYZER:
     default:
-        this->analyzerInternal = new StandardAnalyzer(stemmerFlag,
-                stemmerFilePath, stopWordFilePath, synonymFilePath,
-                synonymKeepOriginFlag, delimiters);
+        this->analyzerInternal = new StandardAnalyzer(stemmer, stopWords, protectedWords, synonyms,
+                                                      delimiters);
         break;
     }
     analyzerInternal->setTokenStream( analyzerInternal->createOperatorFlow());
@@ -91,8 +89,12 @@ const std::string& Analyzer::getRecordAllowedSpecialCharacters() const {
     return this->analyzerInternal->getRecordAllowedSpecialCharacters();
 }
 
-std::string Analyzer::applyFilters(std::string input){
-    return this->analyzerInternal->applyFilters(input);
+std::string Analyzer::applyFilters(std::string input, bool isPrefix = false){
+    return this->analyzerInternal->applyFilters(input, isPrefix);
+}
+
+void Analyzer::clearFilterStates(){
+    this->analyzerInternal->clearFilterStates();
 }
 
 void Analyzer::tokenizeQuery(const std::string &queryString,
@@ -105,7 +107,8 @@ void Analyzer::tokenizeRecord(const Record *record,
     this->analyzerInternal->tokenizeRecord(record,tokenAttributeHitsMap);
 }
 
-const AnalyzerType& Analyzer::getAnalyzerType() const {
+AnalyzerType Analyzer::getAnalyzerType() const
+{
     return this->analyzerInternal->getAnalyzerType();
 }
 

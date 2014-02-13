@@ -7,16 +7,11 @@
 
 import sys, urllib2, json, time, subprocess, os, commands,signal, argparse
 
-port = '8081'
-numberOfFacetFields= 3;
+sys.path.insert(0, 'srch2lib')
+import test_lib
 
-#make sure that start the engine up
-def pingServer():
-    info = 'curl -s http://localhost:' + port + '/search?q=Garden | grep -q results'
-    print info 
-    while os.system(info) != 0:
-        time.sleep(1)
-        info = 'curl -s http://localhost:' + port + '/search?q=Garden | grep -q results'
+port = '8087'
+numberOfFacetFields= 3;
 
 #the function of checking the results
 def checkResult(query, responseJsonAll,resultValue, facetResultValue):
@@ -51,6 +46,8 @@ def checkResult(query, responseJsonAll,resultValue, facetResultValue):
 
     if isPass == 1:
         print  query+' test pass'
+        return 0
+    return 1
 
 def checkFacetResults(query, responseJson, resultValue):
    if len(responseJson) != len(resultValue):
@@ -113,18 +110,18 @@ def prepareQuery(queryKeywords, facetedFields):
 
 def testMultiValuedAttributes(f_in , f_facet, binary_path):
     # Start the engine server
-    binary= binary_path + '/srch2-search-server'
-    binary= binary+' --config-file=./test_multi_valued_attributes/conf.xml &'
-    print 'starting engine: ' + binary 
-    os.popen(binary)
+    args = [ binary_path, '--config-file=./test_multi_valued_attributes/conf.xml' ]
+    print 'starting engine: ' + args[0] + ' ' + args[1]
+    serverHandle = test_lib.startServer(args)
     #make sure that start the engine up
-    pingServer()
+    test_lib.pingServer(port)
 
     #parse used to extract facet fields from input
     facet_parser= argparse.ArgumentParser()
     facet_parser.add_argument('-f',  metavar='facet', nargs='+', 
                                                     action='append')
     #construct the query
+    exitCodeTotal = 0
     for line in f_in:
         #get the query keyword and results
         value=line.split('||')
@@ -152,13 +149,11 @@ def testMultiValuedAttributes(f_in , f_facet, binary_path):
         response_json = json.loads(response)
       
         #check the result
-        checkResult(query, response_json, resultValue , facetResultValue )
+        exitCodeTotal += checkResult(query, response_json, resultValue , facetResultValue )
 
-    #get pid of srch2-search-server and kill the process
-    s = commands.getoutput('ps aux | grep srch2-search-server')
-    stat = s.split() 
-    os.kill(int(stat[1]), signal.SIGUSR1)
+    test_lib.killServer(serverHandle)
     print '=============================='
+    return exitCodeTotal
 
 if __name__ == '__main__':    
    #Path of the query file
@@ -177,5 +172,6 @@ if __name__ == '__main__':
    binary_path = args.binary_path
    queriesAndResultsPath = args.queriesAndResults
    facetResultsPath = args.facetResults
-   testMultiValuedAttributes(queriesAndResultsPath, facetResultsPath, binary_path)
-
+   exitCode = testMultiValuedAttributes(queriesAndResultsPath, facetResultsPath, binary_path)
+   
+   os._exit(exitCode)

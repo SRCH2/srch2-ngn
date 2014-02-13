@@ -34,19 +34,22 @@ public:
 
 	AnalyzerInternal(const AnalyzerInternal &analyzerInternal);
 
-	AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
-			const std::string &recordAllowedSpecialCharacters,
-			const std::string &stemmerFilePath = "",
-			const std::string &stopWordFilePath = "",
-			const std::string &synonymFilePath = "",
-			const SynonymKeepOriginFlag &synonymKeepOriginFlag = SYNONYM_KEEP_ORIGIN);
+	AnalyzerInternal(const StemmerContainer *stemmer,
+                         const StopWordContainer *stopWords,
+                         const ProtectedWordsContainer *protectedWords,
+                         const SynonymContainer *synonyms,
+                         const std::string &recordAllowedSpecialCharacters
+                         );
 
+	string applyFilters(string input, bool isPrefix) ;
 
-	string applyFilters(string input) ;
+	void clearFilterStates();
 
 
     void setTokenStream(TokenStream* stream){
         this->tokenStream = stream;
+        tokenStream->characterSet.setRecordAllowedSpecialCharacters(recordAllowedSpecialCharacters);
+        prepareRegexExpression();
     }
 
 	virtual TokenStream * createOperatorFlow() = 0;
@@ -57,15 +60,19 @@ public:
      *  Analyzer allows a set of special characters in queries. These two functions are setter/getter
      *  for setting/getting the special characters.
      */
-    void setRecordAllowedSpecialCharacters(const std::string &recordAllowedSpecialCharacters) {
-            this->recordAllowedSpecialCharacters = recordAllowedSpecialCharacters;
-            CharSet::setRecordAllowedSpecialCharacters(recordAllowedSpecialCharacters);
+    void setRecordAllowedSpecialCharacters(const std::string &recordAllowedSpecialCharacters)
+    {
+        this->recordAllowedSpecialCharacters = recordAllowedSpecialCharacters;
+        if (tokenStream != NULL) {
+            tokenStream->characterSet.setRecordAllowedSpecialCharacters(recordAllowedSpecialCharacters);
+            // TODO - should we call prepareRegexExpression() here?
+        }
     }
 
 	void prepareRegexExpression() {
 		//allow all characters
 		string regexString = "[^A-Za-z0-9 "
-				+ CharSet::getRecordAllowedSpecialCharacters() + "\x80-\xFF"
+				+ tokenStream->characterSet.getRecordAllowedSpecialCharacters() + "\x80-\xFF"
 				+ "]";
 		try {
 			disallowedCharactersRegex = boost::regex(regexString);
@@ -92,17 +99,7 @@ public:
 		return string3;
 	}
 
-	void load(boost::archive::binary_iarchive &ia) {
-		ia >> *this;
-		Logger::debug("#### AnalyzerInternal Variables:   \n");
-		Logger::debug("Stemmer Flag:                  %d\n", this->stemmerFlag);
-		Logger::debug("Stemmer File Path :            %s\n", this->stemmerFilePath.c_str());
-		Logger::debug("Stop Word File Path:           %s\n", this->stopWordFilePath.c_str());
-		Logger::debug("Synonym File Path is:          %s\n", this->synonymFilePath.c_str());
-		Logger::debug("Synonym Keep Origin Flag is:   %d\n", this->synonymKeepOriginFlag);
-		Logger::debug("Analyzer Type:                 %d\n\n\n", this->analyzerType);
-	    return;
-	};
+	void load(boost::archive::binary_iarchive &ia);
 
 	void save(boost::archive::binary_oarchive &oa) {
 		oa << *this;
@@ -134,23 +131,20 @@ public:
                     vector<unsigned> &filter) const;
 
     // getter for the protected fields
-    const AnalyzerType& getAnalyzerType() const;
-    const StemmerNormalizerFlagType& getStemmerFlag() const;
+    virtual AnalyzerType getAnalyzerType() const = 0;
     const string& getRecordAllowedSpecialCharacters() const;
-    const string& getStopWordFilePath() const;
-    const string& getSynonymFilePath() const;
-    const string& getStemmerFilePath() const;
-    const SynonymKeepOriginFlag& getSynonymKeepOriginFlag() const;
 
 protected:
 	TokenStream* tokenStream;
 	AnalyzerType analyzerType;
-	StemmerNormalizerFlagType stemmerFlag; // This flag shows that we want to stem or not.
-	string recordAllowedSpecialCharacters;
-	string stopWordFilePath;
-	string synonymFilePath;
-	string stemmerFilePath;
-	SynonymKeepOriginFlag synonymKeepOriginFlag;
+
+        // Data source specific filter data
+        // (will need to change from references to pointers if we ever want to re-use analyzers with different data sources)
+        std::string recordAllowedSpecialCharacters;
+        const StemmerContainer *stemmer;
+        const StopWordContainer *stopWords;
+        const SynonymContainer *synonyms;
+        const ProtectedWordsContainer *protectedWords;
 
 	boost::regex disallowedCharactersRegex;
 	boost::regex multipleSpaceRegex;
@@ -162,11 +156,6 @@ protected:
 	void serialize(Archive & ar, const unsigned int version) {
 		ar & recordAllowedSpecialCharacters;
 		ar & analyzerType;
-		ar & stopWordFilePath;
-		ar & synonymFilePath;
-		ar & synonymKeepOriginFlag;
-		ar & stemmerFilePath;
-		ar & stemmerFlag;
 	}
 
 };

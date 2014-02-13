@@ -2,7 +2,7 @@
 
 #include <instantsearch/Analyzer.h>
 #include <instantsearch/Indexer.h>
-#include <instantsearch/IndexSearcher.h>
+#include <instantsearch/QueryEvaluator.h>
 #include <instantsearch/Query.h>
 #include <instantsearch/Term.h>
 #include <instantsearch/QueryResults.h>
@@ -32,18 +32,18 @@ Indexer *buildIndex(string data_file, string index_dir, string expression)
     schema->setScoringExpression(expression);
 
     /// Create an Analyzer
-    Analyzer *analyzer = new Analyzer(srch2is::DISABLE_STEMMER_NORMALIZER,
-                    "", "","", SYNONYM_DONOT_KEEP_ORIGIN, "", srch2is::STANDARD_ANALYZER);
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "",
+                                      srch2is::STANDARD_ANALYZER);
 
     /// Create an index writer
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
+    IndexMetaData *indexMetaData = new IndexMetaData( new CacheManager(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		index_dir, "");
+    		index_dir);
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     Record *record = new Record(schema);
@@ -110,18 +110,18 @@ Indexer *buildGeoIndex(string data_file, string index_dir, string expression)
     schema->setScoringExpression(expression);
 
     /// Create an Analyzer
-    Analyzer *analyzer = new Analyzer(srch2is::DISABLE_STEMMER_NORMALIZER,
-                    "", "","", SYNONYM_DONOT_KEEP_ORIGIN, "", srch2is::STANDARD_ANALYZER);
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "",
+                                      srch2is::STANDARD_ANALYZER);
 
     /// Create an index writer
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
+    IndexMetaData *indexMetaData = new IndexMetaData( new CacheManager(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		index_dir, "");
+    		index_dir);
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     Record *record = new Record(schema);
@@ -189,7 +189,7 @@ Indexer *buildGeoIndex(string data_file, string index_dir, string expression)
     return indexer;
 }
 
-void validateDefaultIndexScoresExpression1(const Analyzer *analyzer, IndexSearcher *indexSearcher)
+void validateDefaultIndexScoresExpression1(const Analyzer *analyzer, QueryEvaluator *queryEvaluator)
 {
     // Targeted Record:
     //    name - "Fargen Matthew MD"
@@ -205,7 +205,7 @@ void validateDefaultIndexScoresExpression1(const Analyzer *analyzer, IndexSearch
     //                             = 11.34857165
     //                   total_score = idf_score * doc_boost
     //                               = 72.40648777351
-    float score1 = pingToGetTopScore(analyzer, indexSearcher, "fargen");
+    float score1 = pingToGetTopScore(analyzer, queryEvaluator, "fargen");
     cout << "Score: " << score1 << endl;
     //After the change of float to half float in forward list, we will lose some precision, so we extend the interval
     ASSERT(score1 > 72.4065-0.1 && score1 < 72.4065+0.1);
@@ -217,7 +217,7 @@ void validateDefaultIndexScoresExpression1(const Analyzer *analyzer, IndexSearch
     //                   prefixMatchPenalty = 0.95
     //                   total_score = idf_score * doc_boost * prefixMatchPenalty
     //                               = 68.78616338483
-    float score2 = pingToGetTopScore(analyzer, indexSearcher, "farge");
+    float score2 = pingToGetTopScore(analyzer, queryEvaluator, "farge");
     cout << "Score: " << score2 << endl;
     //After the change of float to half float in forward list, we will lose some precision, so we extend the interval
     ASSERT(score2 > 68.7862-0.1 && score2 < 68.7862+0.1);
@@ -231,7 +231,7 @@ void validateDefaultIndexScoresExpression1(const Analyzer *analyzer, IndexSearch
     //                                          = 1 - 1/6 = 5/6
     //                   total_score = idf_score * doc_boost * NormalizedEdSimilarity
     //                               = 60.33873981126
-    float score3 = pingToGetTopScore(analyzer, indexSearcher, "faugen");
+    float score3 = pingToGetTopScore(analyzer, queryEvaluator, "faugen");
     cout << "Score: " << score3 << endl;
     //After the change of float to half float in forward list, we will lose some precision, so we extend the interval
     ASSERT(score3 > 30.1302-0.1 && score3 < 30.1302+0.1);
@@ -246,7 +246,7 @@ void validateDefaultIndexScoresExpression1(const Analyzer *analyzer, IndexSearch
     //                                          = 1 - 1/5 = 4/5
     //                   total_score = idf_score * doc_boost * NormalizedEdSimilarity * prefixMatchPenalty
     //                               = 55.02893070786
-    float score4 = pingToGetTopScore(analyzer, indexSearcher, "fauge");
+    float score4 = pingToGetTopScore(analyzer, queryEvaluator, "fauge");
     cout << "Score: " << score4 << endl;
     //After the change of float to half float in forward list, we will lose some precision, so we extend the interval
     ASSERT(score4 > 27.4787-0.1 && score4 < 27.4787+0.1);
@@ -274,13 +274,13 @@ void validateDefaultIndexScoresExpression1(const Analyzer *analyzer, IndexSearch
     //
     //                   total_score = term1_total_score + term2_total_score
     //                               = 76.701294554
-    float score5 = pingToGetTopScore(analyzer, indexSearcher, "fauge+medican");
+    float score5 = pingToGetTopScore(analyzer, queryEvaluator, "fauge+medican");
     cout << "Score: " << score5 << endl;
     ASSERT(score5 > 38.3062-0.1 && score5 < 38.3062+0.1);
 
 }
 
-void validateDefaultIndexScoresExpression2(const Analyzer *analyzer, IndexSearcher *indexSearcher)
+void validateDefaultIndexScoresExpression2(const Analyzer *analyzer, QueryEvaluator *queryEvaluator)
 {
     // Targeted Record:
     //    name - "Fargen Matthew MD"
@@ -296,7 +296,7 @@ void validateDefaultIndexScoresExpression2(const Analyzer *analyzer, IndexSearch
     //                   total_score = doc_boost + ( 1 / (doc_length+1) )
     //                               = 6.38022916069 + ( 1 / (6+1) )
     //                               = 6.52308630355
-    float score1 = pingToGetTopScore(analyzer, indexSearcher, "fargen");
+    float score1 = pingToGetTopScore(analyzer, queryEvaluator, "fargen");
     cout << "Score: " << score1 << endl;
     //After the change of float to half float in forward list, we will lose some precision, so we extend the interval
     ASSERT(score1 > 6.5230-0.1 && score1 < 6.5231+0.1);
@@ -309,7 +309,7 @@ void validateDefaultIndexScoresExpression2(const Analyzer *analyzer, IndexSearch
     //                   total_score = ( doc_boost + ( 1 / (doc_length+1) ) ) * prefixMatchPenalty
     //                               = 6.52308630355 * 0.95
     //                               = 6.19693198837
-    float score2 = pingToGetTopScore(analyzer, indexSearcher, "farge");
+    float score2 = pingToGetTopScore(analyzer, queryEvaluator, "farge");
     cout << "Score: " << score2 << endl;
     //After the change of float to half float in forward list, we will lose some precision, so we extend the interval
     ASSERT(score2 > 6.1969-0.1 && score2 < 6.1970+0.1);
@@ -323,7 +323,7 @@ void validateDefaultIndexScoresExpression2(const Analyzer *analyzer, IndexSearch
     //                   total_score = ( doc_boost + ( 1 / (doc_length+1) ) ) * NormalizedEdSimilarity
     //                               = 6.52308630355 * 5/6 * 0.5
     //                               = 5.43590525296 * 0.5 = 2.7164
-    float score3 = pingToGetTopScore(analyzer, indexSearcher, "faugen");
+    float score3 = pingToGetTopScore(analyzer, queryEvaluator, "faugen");
     cout << "Score: " << score3 << endl;
     //After the change of float to half float in forward list, we will lose some precision, so we extend the interval
     ASSERT(score3 > 2.7164-0.1 && score3 < 2.7164+0.1);
@@ -338,7 +338,7 @@ void validateDefaultIndexScoresExpression2(const Analyzer *analyzer, IndexSearch
     //                   total_score = ( doc_boost + ( 1 / (doc_length+1) ) ) * NormalizedEdSimilarity * prefixMatchPenalty
     //                               = 6.52308630355 * 0.95 * 4/5 * 0.5
     //                               = 4.9575455907 * 0.5 = 2.4774
-    float score4 = pingToGetTopScore(analyzer, indexSearcher, "fauge");
+    float score4 = pingToGetTopScore(analyzer, queryEvaluator, "fauge");
     cout << "Score: " << score4 << endl;
     //After the change of float to half float in forward list, we will lose some precision, so we extend the interval
     ASSERT(score4 > 2.4774-0.1 && score4 < 2.4774+0.1);
@@ -364,14 +364,14 @@ void validateDefaultIndexScoresExpression2(const Analyzer *analyzer, IndexSearch
     //
     //                   total_score = term1_total_score + term2_total_score
     //                               = 10.26920158073
-    float score5 = pingToGetTopScore(analyzer, indexSearcher, "fauge+medican");
+    float score5 = pingToGetTopScore(analyzer, queryEvaluator, "fauge+medican");
     cout << "Score: " << score5 << endl;
     //After the change of float to half float in forward list, we will lose some precision, so we extend the interval
     ASSERT(score5 > 5.1318-0.1 && score5 < 5.1318+0.1);
 
 }
 
-void validateGeoIndexScoresExpression1(const Analyzer *analyzer, IndexSearcher *indexSearcher)
+void validateGeoIndexScoresExpression1(const Analyzer *analyzer, QueryEvaluator *queryEvaluator)
 {
     // Targeted Record:
     //    name - "Fargen Matthew MD"
@@ -408,7 +408,7 @@ void validateGeoIndexScoresExpression1(const Analyzer *analyzer, IndexSearcher *
     //                   total_score = idf_score * doc_boost * geo_score
     //                               = 5/3 * 6.38022916069 * 0.86168053715
     //                               = 9.16286548387
-    float score1 = pingToGetTopScoreGeo(analyzer, indexSearcher, "fargen",
+    float score1 = pingToGetTopScoreGeo(analyzer, queryEvaluator, "fargen",
                                         37.2, -86.6, 39.2, -84.6);
     cout << "Score: " << score1 << endl;
     ASSERT(score1 > 9.1628-0.1 && score1 < 9.1629+0.1);
@@ -422,7 +422,7 @@ void validateGeoIndexScoresExpression1(const Analyzer *analyzer, IndexSearcher *
     //                   total_score = idf_score * doc_boost * prefixMatchPenalty * geo_score
     //                               = 5/3 * 6.38022916069 * 0.95 * 0.86168053715
     //                               = 8.70472220968
-    float score2 = pingToGetTopScoreGeo(analyzer, indexSearcher, "farge",
+    float score2 = pingToGetTopScoreGeo(analyzer, queryEvaluator, "farge",
                                      37.2, -86.6, 39.2, -84.6);
     cout << "Score: " << score2 << endl;
     ASSERT(score2 > 8.7047-0.1 && score2 < 8.7048+0.1);
@@ -437,7 +437,7 @@ void validateGeoIndexScoresExpression1(const Analyzer *analyzer, IndexSearcher *
     //                   total_score = idf_score * doc_boost * NormalizedEdSimilarity * geo_score
     //                               = 5/3 * 6.38022916069 * 5/6 * 0.86168053715 * 0.5
     //                               = 7.63572123656 * 0.5
-    float score3 = pingToGetTopScoreGeo(analyzer, indexSearcher, "faugen",
+    float score3 = pingToGetTopScoreGeo(analyzer, queryEvaluator, "faugen",
                                      37.2, -86.6, 39.2, -84.6);
     cout << "Score: " << score3 << endl;
     ASSERT(score3 > 3.8147-0.1 && score3 < 3.8147+0.1);
@@ -453,7 +453,7 @@ void validateGeoIndexScoresExpression1(const Analyzer *analyzer, IndexSearcher *
     //                   total_score = idf_score * doc_boost * NormalizedEdSimilarity * prefixMatchPenalty * geo_score
     //                               = 5/3 * 6.38022916069 * 4/5 * 0.95 * 0.86168053715 * 0.5
     //                               = 6.96377776775 * 0.5
-    float score4 = pingToGetTopScoreGeo(analyzer, indexSearcher, "fauge",
+    float score4 = pingToGetTopScoreGeo(analyzer, queryEvaluator, "fauge",
                                      37.2, -86.6, 39.2, -84.6);
     cout << "Score: " << score4 << endl;
     ASSERT(score4 > 3.4790-0.1 && score4 < 3.4790+0.1);
@@ -484,14 +484,14 @@ void validateGeoIndexScoresExpression1(const Analyzer *analyzer, IndexSearcher *
     //                   total_score = (term1_total_score + term2_total_score) * geo_score
     //                               = (8.08162360354 + 6.92710594589) * 0.86168053715
     //                               = 12.93273014009
-    float score5 = pingToGetTopScoreGeo(analyzer, indexSearcher, "fauge+medican",
+    float score5 = pingToGetTopScoreGeo(analyzer, queryEvaluator, "fauge+medican",
                                      37.2, -86.6, 39.2, -84.6);
     cout << "Score: " << score5 << endl;
     ASSERT(score5 > 6.4610-0.1 && score5 < 6.4610+0.1);
 
 }
 
-void validateGeoIndexScoresExpression2(const Analyzer *analyzer, IndexSearcher *indexSearcher)
+void validateGeoIndexScoresExpression2(const Analyzer *analyzer, QueryEvaluator *queryEvaluator)
 {
     // Targeted Record:
     //    name - "Fargen Matthew MD"
@@ -527,7 +527,7 @@ void validateGeoIndexScoresExpression2(const Analyzer *analyzer, IndexSearcher *
     //                   total_score = ( doc_boost + ( 1 / (doc_length+1) ) ) * geo_score
     //                               = (6.38022916069 + ( 1/ (6+1) ) ) * 0.86168053715
     //                               = 5.62081650992
-    float score1 = pingToGetTopScoreGeo(analyzer, indexSearcher, "fargen",
+    float score1 = pingToGetTopScoreGeo(analyzer, queryEvaluator, "fargen",
                                         37.2, -86.6, 39.2, -84.6);
     cout << "Score: " << score1 << endl;
     ASSERT(score1 > 5.6208-0.1 && score1 < 5.6209+0.1);
@@ -540,7 +540,7 @@ void validateGeoIndexScoresExpression2(const Analyzer *analyzer, IndexSearcher *
     //                   total_score = ( doc_boost + ( 1 / (doc_length+1) ) ) * prefixMatchPenalty * geo_score
     //                               = (6.38022916069 + ( 1/ (6+1) ) ) * 0.95 * 0.86168053715
     //                               = 5.33977568442
-    float score2 = pingToGetTopScoreGeo(analyzer, indexSearcher, "farge",
+    float score2 = pingToGetTopScoreGeo(analyzer, queryEvaluator, "farge",
                                         37.2, -86.6, 39.2, -84.6);
     cout << "Score: " << score2 << endl;
     ASSERT(score2 > 5.3397-0.1 && score2 < 5.3398+0.1);
@@ -554,7 +554,7 @@ void validateGeoIndexScoresExpression2(const Analyzer *analyzer, IndexSearcher *
     //                   total_score = ( doc_boost + ( 1 / (doc_length+1) ) ) * NormalizedEdSimilarity * geo_score
     //                               = (6.38022916069 + ( 1/ (6+1) ) ) * 5/6 * 0.86168053715
     //                               = 4.68401375826
-    float score3 = pingToGetTopScoreGeo(analyzer, indexSearcher, "faugen",
+    float score3 = pingToGetTopScoreGeo(analyzer, queryEvaluator, "faugen",
                                         37.2, -86.6, 39.2, -84.6);
     cout << "Score: " << score3 << endl;
     ASSERT(score3 > 2.3407-0.1 && score3 < 2.3407+0.1);
@@ -569,7 +569,7 @@ void validateGeoIndexScoresExpression2(const Analyzer *analyzer, IndexSearcher *
     //                   total_score = ( doc_boost + ( 1 / (doc_length+1) ) ) * NormalizedEdSimilarity * prefixMatchPenalty * geo_score
     //                               = (6.38022916069 + ( 1/ (6+1) ) ) * 4/5 * 0.95 * 0.86168053715 * 0.5
     //                               = 4.27182054753 *0.5
-    float score4 = pingToGetTopScoreGeo(analyzer, indexSearcher, "fauge",
+    float score4 = pingToGetTopScoreGeo(analyzer, queryEvaluator, "fauge",
                                         37.2, -86.6, 39.2, -84.6);
     cout << "Score: " << score4 << endl;
     ASSERT(score4 > 2.1347-0.1 && score4 < 2.1347+0.1);
@@ -596,7 +596,7 @@ void validateGeoIndexScoresExpression2(const Analyzer *analyzer, IndexSearcher *
     //                   total_score = (term1_total_score + term2_total_score) * geo_score
     //                               = (4.9575455907 + 5.31165599003) * 0.86168053715
     //                               = 8.84877113419
-    float score5 = pingToGetTopScoreGeo(analyzer, indexSearcher, "fauge+medican",
+    float score5 = pingToGetTopScoreGeo(analyzer, queryEvaluator, "fauge+medican",
                                         37.2, -86.6, 39.2, -84.6);
     cout << "Score: " << score5 << endl;
     ASSERT(score5 > 4.4219-0.1 && score5 < 4.4219+0.1);
@@ -608,13 +608,13 @@ void testScoreDefaultIndex(string index_dir, string data_file)
     // test scoring with one ranking expression: idf_score * doc_boost
     Indexer *indexer1 = buildIndex(data_file, index_dir, "idf_score*doc_boost");
 
-    IndexSearcher *indexSearcher1 = IndexSearcher::create(indexer1);
-
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator1 = new QueryEvaluator(indexer1, &runtimeParameters);
     const Analyzer *analyzer1 = getAnalyzer();
 
-    validateDefaultIndexScoresExpression1(analyzer1, indexSearcher1);
+    validateDefaultIndexScoresExpression1(analyzer1, queryEvaluator1);
 
-    delete indexSearcher1;
+    delete queryEvaluator1;
     delete indexer1;
 
     cout << "Default Index with ranking expression1 pass." << endl;
@@ -622,13 +622,13 @@ void testScoreDefaultIndex(string index_dir, string data_file)
     // test scoring with another ranking expression: doc_boost + ( 1 / (doc_length+1) )
     Indexer *indexer2 = buildIndex(data_file, index_dir, "doc_boost+(1/(doc_length+1))");
 
-    IndexSearcher *indexSearcher2 = IndexSearcher::create(indexer2);
+    QueryEvaluator * queryEvaluator2 = new QueryEvaluator(indexer2, &runtimeParameters);
 
     const Analyzer *analyzer2 = getAnalyzer();
 
-    validateDefaultIndexScoresExpression2(analyzer2, indexSearcher2);
+    validateDefaultIndexScoresExpression2(analyzer2, queryEvaluator2);
 
-    delete indexSearcher2;
+    delete queryEvaluator2;
     delete indexer2;
 
     cout << "Default Index with ranking expression2 pass." << endl;
@@ -639,13 +639,14 @@ void testScoreGeoIndex(string index_dir, string data_file)
     // test scoring with one ranking expression: idf_score * doc_boost
     Indexer *indexer1 = buildGeoIndex(data_file, index_dir, "idf_score*doc_boost");
 
-    IndexSearcher *indexSearcher1 = IndexSearcher::create(indexer1);
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator1 = new QueryEvaluator(indexer1, &runtimeParameters);
 
     const Analyzer *analyzer1 = getAnalyzer();
 
-    validateGeoIndexScoresExpression1(analyzer1, indexSearcher1);
+    validateGeoIndexScoresExpression1(analyzer1, queryEvaluator1);
 
-    delete indexSearcher1;
+    delete queryEvaluator1;
     delete indexer1;
 
     cout << "Geo Index with ranking expression1 pass." << endl;
@@ -653,13 +654,13 @@ void testScoreGeoIndex(string index_dir, string data_file)
     // test scoring with another ranking expression: doc_boost + ( 1 / (doc_length+1) )
     Indexer *indexer2 = buildGeoIndex(data_file, index_dir, "doc_boost+(1/(doc_length+1))");
 
-    IndexSearcher *indexSearcher2 = IndexSearcher::create(indexer2);
+    QueryEvaluator * queryEvaluator2 = new QueryEvaluator(indexer2, &runtimeParameters);
 
     const Analyzer *analyzer2 = getAnalyzer();
 
-    validateGeoIndexScoresExpression2(analyzer2, indexSearcher2);
+    validateGeoIndexScoresExpression2(analyzer2, queryEvaluator2);
 
-    delete indexSearcher2;
+    delete queryEvaluator2;
     delete indexer2;
 
     cout << "Geo Index with ranking expression2 pass." << endl;

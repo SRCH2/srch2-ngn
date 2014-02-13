@@ -19,7 +19,8 @@
 
 #include "index/InvertedIndex.h"
 #include "operation/IndexerInternal.h"
-#include "operation/IndexSearcherInternal.h"
+#include "operation/QueryEvaluatorInternal.h"
+#include "analyzer/AnalyzerContainers.h"
 #include <iostream>
 #include <functional>
 #include <vector>
@@ -43,8 +44,9 @@ void addRecords()
 
     Record *record = new Record(schema);
 
-    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    SynonymContainer *syn = SynonymContainer::getInstance("", SYNONYM_DONOT_KEEP_ORIGIN);
+    syn->init();
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, syn, "");
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
@@ -53,7 +55,7 @@ void addRecords()
     IndexMetaData *indexMetaData = new IndexMetaData( GlobalCache::create(1000,1000),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
     
     Indexer *index = Indexer::create(indexMetaData, analyzer, schema);
     
@@ -129,6 +131,7 @@ void addRecords()
     delete record;
     delete analyzer;
     delete index;
+    syn->free();
 }
 
 bool test2()
@@ -221,14 +224,15 @@ bool test3()
     IndexMetaData *indexMetaData = new IndexMetaData( GlobalCache::create(1000,1000),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
     
     Indexer *indexer = Indexer::load(indexMetaData);
-    IndexSearcherInternal *indexSearcherInternal = dynamic_cast<IndexSearcherInternal *>(IndexSearcher::create(indexer));
 
+    QueryEvaluatorRuntimeParametersContainer runTimeParameters;
+    QueryEvaluatorInternal * queryEvaluatorInternal = new QueryEvaluatorInternal(dynamic_cast<IndexReaderWriter *>(indexer), &runTimeParameters);
     //(void)indexSearcherInternal;
     //indexSearcherInternal->getInvertedIndex()->print_test();
-    delete indexSearcherInternal;
+    delete queryEvaluatorInternal;
     //delete indexerInternal;
     //delete indexer;
     delete indexer;

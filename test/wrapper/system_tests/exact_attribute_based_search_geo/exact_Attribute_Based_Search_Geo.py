@@ -2,13 +2,10 @@
 
 import sys, urllib2, json, time, subprocess, os, commands,signal
 
-port = '8081'
+sys.path.insert(0, 'srch2lib')
+import test_lib
 
-def pingServer():
-    info = 'curl -s "http://localhost:' + port + '/search?q=goods&clat=61.18&clong=-149.1&radius=0.5" | grep -q results '
-    while os.system(info) !=0:
-          time.sleep(1)
-          info = 'curl -s "http://localhost:' + port + '/search?q=goods&clat=61.18&clong=-149.1&radius=0.5" | grep -q results '
+port = '8087'
 
 #the function of checking the results
 def checkResult(query, responseJson,resultValue):
@@ -40,6 +37,8 @@ def checkResult(query, responseJson,resultValue):
 
     if isPass == 1:
         print  query+' test pass'
+        return 0
+    return 1
 
 #prepare the query based on the valid syntax
 def prepareQuery(queryKeywords,ct_lat,ct_long,ct_radius):
@@ -76,13 +75,13 @@ def prepareQuery(queryKeywords,ct_lat,ct_long,ct_radius):
 
 def testExactAttributeBasedSearchGeo(queriesAndResultsPath, binary_path):
     # Start the engine server
-    binary= binary_path + '/srch2-search-server'
-    binary=binary+' --config-file=./exact_attribute_based_search_geo/conf.xml &'
-    os.popen(binary)
+    args = [ binary_path, '--config-file=./exact_attribute_based_search_geo/conf.xml' ]
+    serverHandle = test_lib.startServer(args)
     #make sure that start the engine up
-    pingServer()
+    test_lib.pingServer(port, 'q=goods&clat=61.18&clong=-149.1&radius=0.5')
 
     #construct the query
+    failCount = 0
     radius=0.5
     f_in = open(queriesAndResultsPath, 'r')
     for line in f_in:
@@ -102,23 +101,14 @@ def testExactAttributeBasedSearchGeo(queriesAndResultsPath, binary_path):
         response_json = json.loads(response)
       
         #check the result
-        checkResult(query, response_json['results'], resultValue )
+        failCount += checkResult(query, response_json['results'], resultValue )
         
+    test_lib.killServer(serverHandle)
+    return failCount
 
-    #get pid of srch2-search-server and kill the process
-    print '=============================='
-    try:
-        s = commands.getoutput('ps aux | grep srch2-search-server')
-        stat = s.split()
-        os.kill(int(stat[1]), signal.SIGUSR1)
-    except: 
-        s = commands.getoutput("ps -A | grep -m1 srch2-search-server | awk '{print $1}'")
-        a = s.split()
-        cmd = "kill -9 {0}".format(a[-1])
-        os.system(cmd)
 if __name__ == '__main__':    
     #Path of the query file
     binary_path = sys.argv[1]
     queriesAndResultsPath = sys.argv[2]
-    testExactAttributeBasedSearchGeo(queriesAndResultsPath, binary_path)
-
+    exitCode = testExactAttributeBasedSearchGeo(queriesAndResultsPath, binary_path)
+    os._exit(exitCode)

@@ -62,6 +62,11 @@ struct TokenAttributeHits {
 
 
 class Record;
+class StemmerContainer;
+class StopWordContainer;
+class  ProtectedWordsContainer;
+class  SynonymContainer;
+
 /**
  * An Analyzer is used at query time to tokenize a queryString into
  * a vector of query keywords and also prevents very common words from
@@ -70,22 +75,30 @@ class MYLIB_EXPORT Analyzer {
 public:
     Analyzer(Analyzer& analyzerObject);
 
-    Analyzer(const StemmerNormalizerFlagType &stemmerFlag,
-            const std::string &stemmerFilePath,
-            const std::string &stopWordFilePath,
-            const std::string &synonymFilePath,
-            const SynonymKeepOriginFlag &synonymKeepOriginFlag,
-            const std::string &delimiters,
-            const AnalyzerType &analyzerType = STANDARD_ANALYZER,
-            const std::string &chineseDictFilePath = ""
-            );
+    Analyzer(const StemmerContainer *stemmer,
+             const StopWordContainer *stopWords,
+             const ProtectedWordsContainer *protectedWords,
+             const SynonymContainer *synonyms,
+             const std::string &delimiters,
+             const AnalyzerType &analyzerType = STANDARD_ANALYZER,
+             const std::string &chineseDictFilePath = "");
 
 
 	void setRecordAllowedSpecialCharacters(const std::string &delimiters);
 
 	const std::string& getRecordAllowedSpecialCharacters() const ;
 
-	std::string applyFilters(std::string input);
+    /*
+     *  isPrefix is a way to inform the analyzer that stop filter should not be applied
+     *  the passed string.
+     */
+	std::string applyFilters(std::string input, bool isPrefix);
+
+	// clear the initial states of the filters in the analyzer, e.g.,
+	// for those filters that have an internal buffer to keep tokens.
+	// Such an internal buffer can have leftover tokens from
+	// the previous query (possibly an invalid query)
+	void clearFilterStates();
 
 	void tokenizeQuery(const std::string &queryString,
 			std::vector<PositionalTerm> &queryKeywords) const;
@@ -93,7 +106,7 @@ public:
 	void tokenizeRecord(const Record *record,
 	        std::map<string, TokenAttributeHits> &tokenAttributeHitsMap) const;
 
-	const AnalyzerType& getAnalyzerType() const;
+	AnalyzerType getAnalyzerType() const;
 
     void load(boost::archive::binary_iarchive &ia);
 

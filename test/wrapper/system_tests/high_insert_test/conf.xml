@@ -40,7 +40,7 @@
         Hostname and port number of the server. Make sure the port is open.
     -->
     <listeningHostname>0.0.0.0</listeningHostname>
-    <listeningPort>8082</listeningPort>
+    <listeningPort>8087</listeningPort>
  
     <!--
         Index Directoy Path
@@ -49,7 +49,7 @@
         The file path to the folder where we store serialized index files.
         REQUIRED, when "index-load-or-create" is set to 1.
     -->
-    <dataDir>./high_insert_test/index</dataDir>
+    <dataDir>./data/high_insert_test/</dataDir>
      
     <!--
         Data File
@@ -324,7 +324,7 @@
      
     </updatehandler>
 
-	<schema name="SRCH2" version="3">
+	<schema>
 	  
 	 <fields>
 	   <!--

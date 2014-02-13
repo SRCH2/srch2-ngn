@@ -2,14 +2,10 @@
 
 import sys, urllib2, json, time, subprocess, os, commands,signal
 
-port = '8081'
+sys.path.insert(0, 'srch2lib')
+import test_lib
 
-#make sure that start the engine up
-def pingServer():
-    info = 'curl -s http://localhost:' + port + '/search?q=Garden | grep -q results'
-    while os.system(info) != 0:
-        time.sleep(1)
-        info = 'curl -s http://localhost:' + port + '/search?q=Garden | grep -q results'
+port = '8087'
 
 #the function of checking the results
 def checkResult(query, responseJsonAll,resultValue):
@@ -41,8 +37,10 @@ def checkResult(query, responseJsonAll,resultValue):
 
     if isPass == 1:
         print  query+' test pass'
+        return 0
     else:
         print  query+' test failed'
+        return 1
 
 # This test tests search by ID api
 # 1. it searches for id=2 and it should find it
@@ -55,86 +53,91 @@ def checkResult(query, responseJsonAll,resultValue):
 # 8. it searches for id=2 and should find it again
 def testNewFeatures( binary_path):
     # Start the engine server
-    binary= binary_path + '/srch2-search-server'
-    binary= binary+' --config-file=./test_search_by_id/conf.xml &'
-    print 'starting engine: ' + binary 
-    os.popen(binary)
+    args = [ binary_path, '--config-file=./test_search_by_id/conf.xml' ]
+    print 'starting engine: ' + args[0] + ' ' + args[1]
+    serverHandle = test_lib.startServer(args)
     #make sure that start the engine up
-    pingServer()
+    test_lib.pingServer(port)
 
     ## first look for id=2
+    print "#1: search for id=2 and should find it"
     query = 'http://localhost:' + port + '/search?docid=2'    
     # do the query
     response = urllib2.urlopen(query).read()
     response_json = json.loads(response)
     #check the result
-    checkResult(query, response_json,['2'] )
+    failCount = checkResult(query, response_json,['2'] )
 
     # second search for 200 which is not there    
+    print "# 2. Search for id=200 and should not find it"
     query = 'http://localhost:' + port + '/search?docid=200'
     # do the query
     response = urllib2.urlopen(query).read()
     response_json = json.loads(response)
     #check the result
-    checkResult(query, response_json,[] )
+    # NOTE: If you inexplicably don't understand why this test fails and record 200 is found, try deleting
+    # the index files.  They're probably leftover from a prior execution.
+    failCount += checkResult(query, response_json,[] )
 
     # now insert 200
+    print "# 3. inserts id=200"
     insertCommand = 'curl "http://localhost:'+port+'/docs" -i -X PUT -d \'{"model": "BMW","price":1.5,"likes":1,"expiration":"01/01/1911", "category": "second verycommonword vitamin Food & Beverages Retail Goods Specialty", "name": "Moondog Visions", "relevance": 8.0312880237855993, "lat": 61.207107999999998, "lng": -149.86541, "id": "200"}\''
     print insertCommand
     os.system(insertCommand)
 
     time.sleep(10)
+
     # third search for 200 which is there    
+    print "# 4. search for id=200 and should find it this time"
     query = 'http://localhost:' + port + '/search?docid=200'
     # do the query
     response = urllib2.urlopen(query).read()
     response_json = json.loads(response)
     #check the result
-    checkResult(query, response_json,['200'] )
+    failCount += checkResult(query, response_json,['200'] )
 
 
     # now delete record 2
-    deleteCommand = 'curl "http://localhost:8081/docs?id=2" -i -X DELETE'
+    print "# 5. deletes id=2"
+    deleteCommand = 'curl "http://localhost:' + str(port) + '/docs?id=2" -i -X DELETE'
     print deleteCommand
     os.system(deleteCommand)
     time.sleep(10)
 
     # search for record 2 which should not be there
+    print "# 6. search for id=2 and should not find it"
     query = 'http://localhost:' + port + '/search?docid=2'
     # do the query
     response = urllib2.urlopen(query).read()
     response_json = json.loads(response)
     #check the result
-    checkResult(query, response_json,[] )
+    failCount += checkResult(query, response_json,[] )
 
 
     # now insert 2
+    print "# 7. insert id=2"
     insertCommand = 'curl "http://localhost:'+port+'/docs" -i -X PUT -d \'{"model": "BMW","price":1.5,"likes":1,"expiration":"01/01/1911", "category": "record 2 second verycommonword vitamin Food & Beverages Retail Goods Specialty", "name": "Moondog Visions", "relevance": 8.0312880237855993, "lat": 61.207107999999998, "lng": -149.86541, "id": "2"}\''
     print insertCommand
     os.system(insertCommand)
 
     time.sleep(10)
     # third search for 200 which is there    
+    print "# 8. searches for id=2 and should find it again"
     query = 'http://localhost:' + port + '/search?docid=2'
     # do the query
     response = urllib2.urlopen(query).read()
     response_json = json.loads(response)
+
     #check the result
-    checkResult(query, response_json,['2'] )
-    try:
-        s = commands.getoutput('ps aux | grep srch2-search-server')
-        stat = s.split()
-        os.kill(int(stat[1]), signal.SIGUSR1)
-    except: 
-        s = commands.getoutput("ps -A | grep -m1 srch2-search-server | awk '{print $1}'")
-        a = s.split()
-        cmd = "kill -9 {0}".format(a[-1])
-        os.system(cmd)
+    failCount += checkResult(query, response_json,['2'] )
+    test_lib.killServer(serverHandle)
     print '=============================='
+    return failCount
 
 if __name__ == '__main__':    
    #Path of the query file
    #each line like "trust||01c90b4effb2353742080000" ---- query||record_ids(results)
    binary_path = sys.argv[1]
-   testNewFeatures(binary_path)
+   exitCode = testNewFeatures(binary_path)
+   os._exit(exitCode)
 

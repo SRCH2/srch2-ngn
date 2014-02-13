@@ -15,14 +15,10 @@ To compile it:
 To run the binary package to generate a new license key, do the following command
 in the "build" folder:
 
- shell> ./licensecreator ../key/rsakey.pem name=bimaple_license,Expiry-Date=2012-08-01
+ shell> ./licensecreator ../key/rsakey.pem name=srch2_license_key.txt,Expiry-Date=2013-12-01
 
 The string after "Expiry-Date" specifies the expiration date.
 
-Copy and paste the output text
-
-Signature=i/t1+I08bu/rOU3P/DueG6cl1EwtUXmmvzny/b4RUoQepfPQTOUfB5gcpjRSh6x6UXeZYk0cKkT0maMH3Favvwx1mJHn45pGW4GBP0LVpBfTpzf8DH1At+bAP2lf/lsqsVfvdzTdaQfhmXvjDLtkTaM0bgyQXu0/nRG3h6RBH4c=,name=bimaple_license,Expiry-Date=2012-08-01
-
-to a file as the license key.
+Copy and paste the output text to a file as the license key.
 
 

@@ -29,6 +29,8 @@
 #include <boost/algorithm/string.hpp>
 #include "AnalyzerInternal.h"
 #include "util/encoding.h"
+#include "AnalyzerContainers.h"
+
 using std::pair;
 using namespace std;
 
@@ -67,38 +69,32 @@ bool isEmpty(const string &inString) {
  */
 
 AnalyzerInternal::AnalyzerInternal(const AnalyzerInternal &analyzerInternal) {
-    this->recordAllowedSpecialCharacters =
-            analyzerInternal.recordAllowedSpecialCharacters;
+    this->recordAllowedSpecialCharacters = analyzerInternal.recordAllowedSpecialCharacters;
     prepareRegexExpression();
-    this->stemmerFlag = analyzerInternal.stemmerFlag;
-    this->stemmerFilePath = analyzerInternal.stemmerFilePath;
-    this->stopWordFilePath = analyzerInternal.stopWordFilePath;
-    this->synonymFilePath = analyzerInternal.synonymFilePath;
-    this->synonymKeepOriginFlag = analyzerInternal.synonymKeepOriginFlag;
+
+    this->stemmer = analyzerInternal.stemmer;
+    this->stopWords = analyzerInternal.stopWords;
+    this->protectedWords = analyzerInternal.protectedWords;
+    this->synonyms = analyzerInternal.synonyms;
 }
 
-AnalyzerInternal::AnalyzerInternal(const StemmerNormalizerFlagType &stemmerFlag,
-        const string &recordAllowedSpecialCharacters,
-        const string &stemmerFilePath, const string &stopWordFilePath,
-        const string &synonymFilePath,
-        const SynonymKeepOriginFlag &synonymKeepOriginFlag) {
-
-    this->recordAllowedSpecialCharacters = recordAllowedSpecialCharacters;
-    CharSet::setRecordAllowedSpecialCharacters(recordAllowedSpecialCharacters);
-    prepareRegexExpression();
-    this->stemmerFlag = stemmerFlag;
-    this->stemmerFilePath = stemmerFilePath;
-    this->stopWordFilePath = stopWordFilePath;
-    this->synonymFilePath = synonymFilePath;
-    this->synonymKeepOriginFlag = synonymKeepOriginFlag;
-
+AnalyzerInternal::AnalyzerInternal(const StemmerContainer *stemmer,
+                                   const StopWordContainer *stopWords,
+                                   const ProtectedWordsContainer *protectedWords,
+                                   const SynonymContainer *synonyms,
+                                   const std::string &allowedSpecialCharacters
+                                   )
+{
+    this->recordAllowedSpecialCharacters = allowedSpecialCharacters;
+    this->stemmer = stemmer;
+    this->stopWords = stopWords;
+    this->protectedWords = protectedWords;
+    this->synonyms = synonyms;
 }
 
-string AnalyzerInternal::applyFilters(string input) {
+string AnalyzerInternal::applyFilters(string input, bool isPrefix) {
 
-   // TokenStream * tokenStream = this->createOperatorFlow();
-
-    this->tokenStream->fillInCharacters(input);
+    this->tokenStream->fillInCharacters(input, isPrefix);
 
     string result = "";
     while (tokenStream->processToken()) {
@@ -112,6 +108,34 @@ string AnalyzerInternal::applyFilters(string input) {
     return result;
 }
 
+
+void AnalyzerInternal::clearFilterStates() {
+  // clear the state of each filter on the chain
+  if (tokenStream != NULL) {
+    tokenStream->clearState();
+  }
+}
+
+void AnalyzerInternal::load(boost::archive::binary_iarchive &ia)
+{
+    ia >> *this;
+
+    Logger::debug("#### AnalyzerInternal Variables:   \n");
+    if (stemmer != NULL) {
+        Logger::debug("Stemmer File Path :            %s\n",
+                      stemmer->getFilePath().c_str());
+    }
+    if (stopWords != NULL) {
+        Logger::debug("Stop Word File Path:           %s\n",
+                      stopWords->getFilePath().c_str());
+    }
+    if (synonyms != NULL) {
+        Logger::debug("Synonym File Path is:          %s\n",
+                      synonyms->getFilePath().c_str());
+    }
+    Logger::debug("Synonym Keep Origin Flag is:   %d\n", this->synonyms->keepOrigin());
+    Logger::debug("Analyzer Type:                 %d\n\n\n", this->analyzerType);
+}
 
 /**
  * Function to tokenize a given record.
@@ -295,32 +319,8 @@ void AnalyzerInternal::tokenizeQueryWithFilter(const string &queryString,
         queryKeywords.clear();
 }
 
-const AnalyzerType& AnalyzerInternal::getAnalyzerType() const{
-    return this->analyzerType;
-}
-
-const StemmerNormalizerFlagType& AnalyzerInternal::getStemmerFlag() const{
-    return this->stemmerFlag;
-}
-
 const string& AnalyzerInternal::getRecordAllowedSpecialCharacters() const{
     return this->recordAllowedSpecialCharacters;
-}
-
-const string& AnalyzerInternal::getStopWordFilePath() const{
-    return stopWordFilePath;
-}
-
-const string& AnalyzerInternal::getSynonymFilePath() const{
-    return this->synonymFilePath;
-}
-
-const string& AnalyzerInternal::getStemmerFilePath() const{
-    return this->stemmerFilePath;
-}
-
-const SynonymKeepOriginFlag& AnalyzerInternal::getSynonymKeepOriginFlag() const{
-    return synonymKeepOriginFlag;
 }
 
 

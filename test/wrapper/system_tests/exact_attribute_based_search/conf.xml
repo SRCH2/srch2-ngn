@@ -40,7 +40,7 @@
         Hostname and port number of the server. Make sure the port is open.
     -->
     <listeningHostname>127.0.0.1</listeningHostname>
-    <listeningPort>8081</listeningPort>
+    <listeningPort>8087</listeningPort>
  
     <!--
         Index Directoy Path
@@ -49,7 +49,7 @@
         The file path to the folder where we store serialized index files.
         REQUIRED, when "index-load-or-create" is set to 1.
     -->
-    <dataDir>./data/fuzzy_attribute_based_search/</dataDir>
+    <dataDir>./data/exact_attribute_based_search/</dataDir>
      
     <!--
         Data File
@@ -80,6 +80,7 @@
                 1: Geo+Text Index
         -->
         <indexType>0</indexType>
+
         
 		<!--
             0: don't support swap operation in edit distance
@@ -319,12 +320,12 @@
                  
                 Path to Access Log File
             -->
-            <accessLogFile>./data/fuzzy_attribute_based_search/log.txt</accessLogFile>
+            <accessLogFile>./data/exact_attribute_based_search/log.txt</accessLogFile>
         </updateLog>
      
     </updatehandler>
 
-	<schema name="SRCH2" version="3">
+	<schema>
 	  
 	 <fields>
 	   <!--

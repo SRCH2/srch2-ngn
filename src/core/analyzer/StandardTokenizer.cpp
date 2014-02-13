@@ -40,12 +40,11 @@ bool StandardTokenizer::incrementToken() {
         }
         (tokenStreamContainer->offset)++;
         ///we need combine previous character and current character to decide a word
-        unsigned previousCharacterType = CharSet::getCharacterType(
-                previousChar);
-        unsigned currentCharacterType = CharSet::getCharacterType(currentChar);
+        unsigned previousCharacterType = characterSet.getCharacterType(previousChar);
+        unsigned currentCharacterType = characterSet.getCharacterType(currentChar);
 
         switch (currentCharacterType) {
-        case CharSet::DELIMITER_TYPE:
+        case CharSet::WHITESPACE:
             if (!(tokenStreamContainer->currentToken).empty()) {
             	tokenStreamContainer->currentTokenPosition++;
                 return true;
@@ -53,10 +52,22 @@ bool StandardTokenizer::incrementToken() {
             break;
         case CharSet::LATIN_TYPE:
         case CharSet::BOPOMOFO_TYPE:
+        case CharSet::DELIMITER_TYPE:
             //check if the types of previous character and  current character are the same
             if (previousCharacterType == currentCharacterType) {
                 (tokenStreamContainer->currentToken).push_back(currentChar);
-            } else {
+            } else if (previousCharacterType  == CharSet::DELIMITER_TYPE ||
+            		currentCharacterType == CharSet::DELIMITER_TYPE) {
+            	/*
+            	 *  delimiters will go with both LATIN and BOPPMOFO types.
+            	 *  e.g for C++  C is Latin type and + is Delimiter type. We do not want to split
+            	 *  them into to C and ++.
+            	 *
+            	 *  We also do not want to tokenize "c+b" because NonalphaNumericFilter will tokenize
+            	 *  it later.
+            	 */
+            	(tokenStreamContainer->currentToken).push_back(currentChar);
+            }else {
                 if (!(tokenStreamContainer->currentToken).empty()) //if the currentToken is not null, we need produce the token
                 {
                     (tokenStreamContainer->offset)--;
@@ -72,7 +83,6 @@ bool StandardTokenizer::incrementToken() {
             } else {
                 (tokenStreamContainer->currentToken).push_back(currentChar);
             }
-            tokenStreamContainer->currentTokenPosition++;
             if (tokenStreamContainer->currentToken.empty()) {
             	return false;
             } else {
