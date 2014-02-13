@@ -40,7 +40,7 @@
         Hostname and port number of the server. Make sure the port is open.
     -->
     <listeningHostname>127.0.0.1</listeningHostname>
-    <listeningPort>8081</listeningPort>
+    <listeningPort>8087</listeningPort>
  
     <!--
         Index Directoy Path
@@ -49,7 +49,7 @@
         The file path to the folder where we store serialized index files.
         REQUIRED, when "index-load-or-create" is set to 1.
     -->
-    <dataDir>./data/exact_a1/</dataDir>
+    <dataDir>./data/cache_a1/</dataDir>
      
     <!--
         Data File
@@ -58,7 +58,7 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>./exact_a1/data.json</dataFile>
+    <dataFile>./cache_a1/data.json</dataFile>
      
     <!--
 	Maximum Number of Threads
@@ -138,7 +138,7 @@
             record-score-expression=idf_score*doc_boost
         -->
         <rankingAlgorithm>
-            <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
+            <recordScoreExpression>doc_boost</recordScoreExpression>
         </rankingAlgorithm>
  
         <!--
@@ -294,7 +294,7 @@
             The number of write operations after which newly inserted/deleted records are merged into the indexes.
         -->
         <mergePolicy>
-          <mergeEveryNSeconds>10</mergeEveryNSeconds>
+          <mergeEveryNSeconds>3</mergeEveryNSeconds>
           <mergeEveryMWrites>100</mergeEveryMWrites>
         </mergePolicy>
          
@@ -324,7 +324,7 @@
      
     </updatehandler>
 
-	<schema name="SRCH2" version="3">
+	<schema>
 	  
 	 <fields>
 	   <!--

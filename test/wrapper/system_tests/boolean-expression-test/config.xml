@@ -23,6 +23,7 @@
             In this config file it should be as "data/sample-data.json"
     -->
     <srch2Home>./</srch2Home>
+    <!--<srch2Home>/home/jamshid/workspace-srch2-v4/srch2-ngn/test/wrapper/system_tests/</srch2Home>-->
  
     <!--
         License Key File
@@ -40,7 +41,7 @@
         Hostname and port number of the server. Make sure the port is open.
     -->
     <listeningHostname>127.0.0.1</listeningHostname>
-    <listeningPort>8081</listeningPort>
+    <listeningPort>8087</listeningPort>
  
     <!--
         Index Directoy Path
@@ -49,7 +50,7 @@
         The file path to the folder where we store serialized index files.
         REQUIRED, when "index-load-or-create" is set to 1.
     -->
-    <dataDir>./data/exact_a1/</dataDir>
+    <dataDir>./data/boolean-expression-test</dataDir>
      
     <!--
         Data File
@@ -58,7 +59,7 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>./exact_a1/data.json</dataFile>
+    <dataFile>./boolean-expression-test/data.json</dataFile>
      
     <!--
 	Maximum Number of Threads
@@ -68,9 +69,10 @@
 	Defaults to 1
     -->
     <maxSearchThreads>2</maxSearchThreads>
-     
-         
+
     <indexConfig>
+
+        <enablePositionIndex>1</enablePositionIndex> 
          
         <!--
             Index Type
@@ -110,7 +112,7 @@
             Attribute used as the boost value of a record.
             Need to be float type in the json objects in the data file.
         -->
-        <recordBoostField>relevance</recordBoostField>
+        <recordBoostField></recordBoostField>
          
          
         <!--
@@ -142,10 +144,10 @@
         </rankingAlgorithm>
  
         <!--
-            Query Term Fuzzy Penalty
+            Fuzzy Match Penalty
             Optional
              
-            Defaults to 1
+            Defaults to 0.5
         -->
         <fuzzyMatchPenalty>0.5</fuzzyMatchPenalty>
          
@@ -319,10 +321,11 @@
                  
                 Path to Access Log File
             -->
-            <accessLogFile>./data/exact_a1/log.txt</accessLogFile>
+            <accessLogFile>./data/boolean-expression-test/srch2-log.txt</accessLogFile>
         </updateLog>
      
     </updatehandler>
+
 
 	<schema name="SRCH2" version="3">
 	  
@@ -358,8 +361,9 @@
 		    here and indexed="false" it will be also used for sort,filtering and facet.
 		    - 
 	   -->
-	   <field name="category" type="text" indexed="true" />
-	   <field name="name" type="text" indexed="true" />
+	   <field name="title" type="text" indexed="true" />
+	   <field name="description" type="text" indexed="true" />
+	   <field name="genre" type="text" indexed="true" />
 	 </fields>
 	 
 	 <!--
@@ -381,6 +385,7 @@
 	  		- values are false (disabled) and true (enabled)
 	  		- By default it is disabled.
 	  -->
+
 	  <facetEnabled>true</facetEnabled>
 	  
 	  <facetFields>
@@ -426,7 +431,7 @@
 		        For Example:
 		            Disable Stop Word Filter: <filter name="StopFilter" words="" />
 		    -->
-		    <filter name="StopFilter" words="" />
+		    <filter name="StopFilter" words="./phraseSearch/srch2_stop_words.txt" />
 		     
 		    <!--
 		        Synonym Filter
@@ -445,4 +450,5 @@
 	</schema>
 </config>
  
+
 

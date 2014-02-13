@@ -40,7 +40,7 @@
         Hostname and port number of the server. Make sure the port is open.
     -->
     <listeningHostname>127.0.0.1</listeningHostname>
-    <listeningPort>8081</listeningPort>
+    <listeningPort>8087</listeningPort>
  
     <!--
         Index Directoy Path
@@ -49,7 +49,7 @@
         The file path to the folder where we store serialized index files.
         REQUIRED, when "index-load-or-create" is set to 1.
     -->
-    <dataDir>./data/exact_a1/</dataDir>
+    <dataDir>./data/exact_attribute_based_search_w_positional_info/</dataDir>
      
     <!--
         Data File
@@ -58,7 +58,7 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>./exact_a1/data.json</dataFile>
+    <dataFile>./fuzzy_attribute_based_search/data.json</dataFile>
      
     <!--
 	Maximum Number of Threads
@@ -80,13 +80,16 @@
                 1: Geo+Text Index
         -->
         <indexType>0</indexType>
+
+        <enablePositionIndex>1</enablePositionIndex>
+
         
 		<!--
             0: don't support swap operation in edit distance
             1: support swap operation in edit distance
             default value is true
         -->
-        <supportSwapInEditDistance>false</supportSwapInEditDistance> 
+        <supportSwapInEditDistance>false</supportSwapInEditDistance>  
          
         <!--
             Boost Values
@@ -100,7 +103,7 @@
                 - fields are sparated by one space
                 - if you do not provide any value for a field, it will be considered as 1
         -->
-        <fieldBoost></fieldBoost>
+        <fieldBoost>category^2 name^1</fieldBoost>
          
          
         <!-- 
@@ -110,7 +113,7 @@
             Attribute used as the boost value of a record.
             Need to be float type in the json objects in the data file.
         -->
-        <recordBoostField>relevance</recordBoostField>
+        <recordBoostField></recordBoostField>
          
          
         <!--
@@ -145,7 +148,7 @@
             Query Term Fuzzy Penalty
             Optional
              
-            Defaults to 1
+            Defaults to 0.5
         -->
         <fuzzyMatchPenalty>0.5</fuzzyMatchPenalty>
          
@@ -193,7 +196,7 @@
                 1 - Enable
             Note that to support field-based search, the number of searchable attributes cannot be bigger than 31.
         -->
-        <fieldBasedSearch>0</fieldBasedSearch>
+        <fieldBasedSearch>1</fieldBasedSearch>
          
          
         <!-- 
@@ -216,7 +219,7 @@
             1: fuzzy match
             Defaults to 0
         -->
-        <queryTermFuzzyType>0</queryTermFuzzyType>
+        <queryTermFuzzyType>1</queryTermFuzzyType>
          
                      
              
@@ -319,12 +322,12 @@
                  
                 Path to Access Log File
             -->
-            <accessLogFile>./data/exact_a1/log.txt</accessLogFile>
+            <accessLogFile>./data/exact_attribute_based_search/log.txt</accessLogFile>
         </updateLog>
      
     </updatehandler>
 
-	<schema name="SRCH2" version="3">
+	<schema>
 	  
 	 <fields>
 	   <!--
@@ -381,7 +384,7 @@
 	  		- values are false (disabled) and true (enabled)
 	  		- By default it is disabled.
 	  -->
-	  <facetEnabled>true</facetEnabled>
+	  <facetEnabled>false</facetEnabled>
 	  
 	  <facetFields>
 		  <!--

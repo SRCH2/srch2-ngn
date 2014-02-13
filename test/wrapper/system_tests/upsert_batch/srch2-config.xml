@@ -9,7 +9,7 @@
 -->
  
 <config>
-    <srch2Home></srch2Home>
+    <srch2Home>./upsert_batch/</srch2Home>
         <!-- Make sure to specify the home of your SRCH2 installation.  Example: 
 	  <srch2Home>/home/joe/srch2</srch2Home>
         -->
@@ -17,13 +17,13 @@
     <licenseFile>srch2_license_key.txt</licenseFile>
  
     <listeningHostname>0.0.0.0</listeningHostname>
-    <listeningPort>8081</listeningPort>
+    <listeningPort>8087</listeningPort>
  
     <dataDir>./indexes</dataDir>
      
     <dataSourceType>1</dataSourceType>
     
-    <dataFile>example-demo/sample-data.json</dataFile>
+    <dataFile>pre_10.json</dataFile>
 
     <!-- 
         Mongo DB settings
@@ -48,7 +48,7 @@
          
         <supportSwapInEditDistance>true</supportSwapInEditDistance>
 
-        <fieldBoost>title^2 director^1</fieldBoost>
+        <fieldBoost>title^2</fieldBoost>
 
         <defaultQueryTermBoost>1</defaultQueryTermBoost>
 
@@ -58,13 +58,13 @@
   
   
     <query>
-        <rankingAlgorithm>
+        <rankingalgorithm>
             <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
-        </rankingAlgorithm>
+        </rankingalgorithm>
  
-        <fuzzyMatchPenalty>0.5</fuzzyMatchPenalty>
+        <fuzzyMatchPenalty>0.75</fuzzyMatchPenalty>
 
-	<queryTermSimilarityThreshold>0.75</queryTermSimilarityThreshold>
+	<queryTermSimilarityThreshold>0.5</queryTermSimilarityThreshold>
          
         <prefixMatchPenalty>0.95</prefixMatchPenalty>
  
@@ -96,9 +96,9 @@
         
         <mergePolicy>
 
-          <mergeEveryNSeconds>10</mergeEveryNSeconds>
+          <mergeEveryNSeconds>1</mergeEveryNSeconds>
 
-          <mergeEveryMWrites>10</mergeEveryMWrites>
+          <mergeEveryMWrites>1</mergeEveryMWrites>
 
         </mergePolicy>
          
@@ -113,25 +113,28 @@
      
     </updatehandler>
 
-    <schema name="SRCH2" version="3">
+    <schema>
        <fields>
           <field name="title" type="text" indexed="true"/>
-          <field name="director" type="text" indexed="true"/>
-          <field name="genre" type="text" indexed="false" refining="true"
-                 default="HORROR" required="false"/>
-          <field name="year"  type="float"  indexed="false" refining="true"
-                 default="2000" required="false"/>
-          <field name="id" type="text" indexed="false"/>
+          <field name="body"  type="text" indexed="true"/>
+          <field name="tags"  type="text" indexed="false" refining="true"
+                 required="false"/>
+          <field name="creation_date"  type="time"    indexed="false"   refining="true"
+                 default="01/01/2000"  required="false"/>
+	  <field name="view_count"     type="integer" indexed="false"   refining="true"
+		 default="0"           required="false"/>
+	  <field name="answer_count"   type="integer" indexed="false"   refining="true"
+		 default="0"           required="false"/>
        </fields>
        
        <uniqueKey>id</uniqueKey>
            
        <facetEnabled>true</facetEnabled>
         
-        <facetFields>
-          <facetField name="genre" facetType="categorical"/>
-          <facetField name="year"  facetType="range" facetStart="1990" facetEnd="2050" facetGap="10"/>
-        </facetFields>
+        <facetfields>
+          <facetfield name="tags" facetType="categorical"/>
+          <facetfield name="creation_date"  facetType="range" facetStart="01/01/2005" facetEnd="12/31/2020" facetGap="YEAR"/>
+        </facetfields>
         
         <types>
           <fieldType name="text_en">
