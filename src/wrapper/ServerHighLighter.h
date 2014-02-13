@@ -34,7 +34,7 @@ class ParsedParameterContainer;
 class ServerHighLighter {
 public:
 	ServerHighLighter(QueryResults * queryResults,Srch2Server *server,
-			ParsedParameterContainer& param);
+			ParsedParameterContainer& param, unsigned offset, unsigned count);
 	virtual ~ServerHighLighter();
 	void generateSnippets(vector<RecordSnippet>& highlightInfo);
 private:
@@ -44,6 +44,8 @@ private:
 	Srch2Server *server;
 	RecordSerializer *compactRecDeserializer;
 	Schema * storedAttrSchema;
+	unsigned HighlightRecOffset;
+	unsigned HighlightRecCount;
 };
 
 } /* namespace httpwrapper */

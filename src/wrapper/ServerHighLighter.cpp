@@ -23,6 +23,10 @@ namespace httpwrapper {
 void ServerHighLighter::generateSnippets(vector<RecordSnippet>& highlightInfo){
 
 	for (unsigned i = 0; i < queryResults->getNumberOfResults(); ++i) {
+		if(i < HighlightRecOffset)
+			continue;
+		if (i >= HighlightRecOffset + HighlightRecCount)
+			break;
 		RecordSnippet recordSnippets;
 		unsigned recordId = queryResults->getInternalRecordId(i);
 		genSnippetsForSingleRecord(recordId, recordSnippets);
@@ -50,7 +54,8 @@ void ServerHighLighter::genSnippetsForSingleRecord(unsigned recordId, RecordSnip
         	snappy::Uncompress(attrdata,len, &uncompressedInMemoryRecordString);
         	try{
 				this->highlightAlgorithms->getSnippet(recordId, highlightAttributes[i].first,
-						uncompressedInMemoryRecordString.c_str(), attrSnippet.snippet);
+						uncompressedInMemoryRecordString, attrSnippet.snippet,
+						storedAttrSchema->isSearchableAttributeMultiValued(id));
         	}catch(exception ex) {
         		Logger::warn("could not generate a snippet for an record/attr %d/%d", recordId, id);
         	}
@@ -63,7 +68,7 @@ void ServerHighLighter::genSnippetsForSingleRecord(unsigned recordId, RecordSnip
 }
 
 ServerHighLighter::ServerHighLighter(QueryResults * queryResults,Srch2Server *server,
-		ParsedParameterContainer& param) {
+		ParsedParameterContainer& param, unsigned offset, unsigned count) {
 
 	this->queryResults = queryResults;
 
@@ -98,6 +103,8 @@ ServerHighLighter::ServerHighLighter(QueryResults * queryResults,Srch2Server *se
 	storedAttrSchema = Schema::create();
 	JSONRecordParser::populateStoredSchema(storedAttrSchema, server->indexer->getSchema());
 	compactRecDeserializer = new RecordSerializer(*storedAttrSchema);
+	this->HighlightRecOffset = offset;
+	this->HighlightRecCount = count;
 }
 
 ServerHighLighter::~ServerHighLighter() {

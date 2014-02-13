@@ -101,7 +101,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
     {
     	vector<string> attributeStringValues;
     	getJsonValueString(root, iter->first, attributeStringValues, "attributes-search");
-    	string singleString = boost::algorithm::join(attributeStringValues, " ");
+    	string singleString = boost::algorithm::join(attributeStringValues, " $$ ");
     	snappy::Compress(singleString.c_str(), singleString.length(), &compressedInputLine);
     	compactRecSerializer.addSearchableAttribute(iter->first, compressedInputLine);
     }

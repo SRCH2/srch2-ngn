@@ -127,18 +127,15 @@ AnalyzerBasedAlgorithm::AnalyzerBasedAlgorithm(Analyzer *analyzer,
 	this->analyzer = analyzer;
 }
 
-void AnalyzerBasedAlgorithm::getSnippet(unsigned recordId, unsigned /*not used*/, const char *dataIn, vector<string>& snippets) {
+void AnalyzerBasedAlgorithm::getSnippet(unsigned recordId, unsigned /*not used*/, const string& dataIn,
+		vector<string>& snippets, bool isMultiValued) {
 
-	if (!dataIn)
+	if (dataIn.length() == 0)
 		return;
 
 	vector<matchedTermInfo> highlightPositions;
 	set<unsigned> actualHighlightedSet;
 	vector<CharType> ctsnippet;
-	vector<CharType> ctv;
-	utf8StringToCharTypeVector(dataIn, ctv);
-	if (ctv.size() == 0)
-		return;
 
 	short mask = (1 << keywordStrToHighlight.size()) - 1;
 
@@ -150,7 +147,7 @@ void AnalyzerBasedAlgorithm::getSnippet(unsigned recordId, unsigned /*not used*/
 	 *   	prefix 0, Complete 1, Phrase 2, Hybrid (occurs in both phrase and regular query)  3
 	 *   4.
 	 */
-	this->analyzer->fillInCharacters(dataIn);
+	this->analyzer->fillInCharacters(dataIn.c_str());
 	while (this->analyzer->processToken()) {
 		vector<CharType>& charVector = this->analyzer->getProcessedToken();
 		unsigned offset = this->analyzer->getProcessedTokenOffset();
@@ -247,7 +244,7 @@ void AnalyzerBasedAlgorithm::getSnippet(unsigned recordId, unsigned /*not used*/
 
 	unsigned snippetLowerEnd = 0, snippetUpperEnd = highlightPositions.size() - 1;
 	/* no phrase for highlighting */
-	if (phrasesInfoList.size() == 0 ) {
+	if (phrasesInfoList.size() == 0 && !isMultiValued) {
 		unsigned j = snippetUpperEnd;
 		while(j > 0){
 			unsigned _id = highlightPositions[j].id;
@@ -258,12 +255,68 @@ void AnalyzerBasedAlgorithm::getSnippet(unsigned recordId, unsigned /*not used*/
 		};
 		snippetLowerEnd = j;
 	}
-
-	_genSnippet(ctv, ctsnippet, snippetUpperEnd, snippetLowerEnd, highlightPositions);
-	string snippet;
-	charTypeVectorToUtf8String(ctsnippet, snippet);
-	//cout << "DEBUG: snippet size is " << snippet.size() << endl;
-	snippets.push_back(snippet);
+	if (isMultiValued) {
+			const char * attrStartPos = dataIn.c_str();
+			const char * lastPos = dataIn.c_str();
+			snippetLowerEnd = 0; snippetUpperEnd = 0;
+			while(1) {
+				ctsnippet.clear();
+				const char * attrEndPos = strstr(lastPos, " $$ ");
+				if (attrEndPos == 0)
+					break;
+				unsigned matchCntInAttr = 0;
+				vector<matchedTermInfo> partHighlightPositions;
+				while(snippetUpperEnd <  highlightPositions.size() &&
+						highlightPositions[snippetUpperEnd].offset < (attrEndPos - attrStartPos)) {
+					partHighlightPositions.push_back(highlightPositions[snippetUpperEnd]);
+					partHighlightPositions.back().offset -=  (lastPos - attrStartPos);
+					snippetUpperEnd++;
+					matchCntInAttr++;
+				}
+				if (matchCntInAttr) {
+					vector<CharType> ctv;
+					string attrPartVal= dataIn.substr(lastPos - attrStartPos /*offset*/, attrEndPos - lastPos /*len*/);
+					utf8StringToCharTypeVector(attrPartVal, ctv);
+					_genSnippet(ctv, ctsnippet, 0, partHighlightPositions.size() - 1, partHighlightPositions);
+				}
+				string snippet;
+				charTypeVectorToUtf8String(ctsnippet, snippet);
+				snippets.push_back(snippet);
+				lastPos = attrEndPos + strlen(" $$ ");
+				snippetLowerEnd = snippetUpperEnd;
+			}
+			if (*lastPos != 0) {
+				ctsnippet.clear();
+				snippetUpperEnd = highlightPositions.size() - 1;
+				if (snippetLowerEnd <  highlightPositions.size() &&
+						highlightPositions[snippetLowerEnd].offset > (lastPos - attrStartPos)) {
+					vector<CharType> ctv;
+					string attrPartVal= dataIn.substr(lastPos - attrStartPos /*offset*/, string::npos /*len*/);
+					utf8StringToCharTypeVector(attrPartVal, ctv);
+					vector<matchedTermInfo> partHighlightPositions;
+					vector<matchedTermInfo>::iterator phpIter = highlightPositions.begin() + snippetLowerEnd;
+					while(phpIter != highlightPositions.end()){
+						partHighlightPositions.push_back(*phpIter);
+						partHighlightPositions.back().offset -=  (lastPos - attrStartPos);
+						++phpIter;
+					}
+					_genSnippet(ctv, ctsnippet, snippetUpperEnd, snippetLowerEnd, partHighlightPositions);
+				}
+				string snippet;
+				charTypeVectorToUtf8String(ctsnippet, snippet);
+				snippets.push_back(snippet);
+			}
+		}else {
+			vector<CharType> ctv;
+			utf8StringToCharTypeVector(dataIn, ctv);
+			if (ctv.size() == 0)
+				return;
+			_genSnippet(ctv, ctsnippet, snippetUpperEnd, snippetLowerEnd, highlightPositions);
+			string snippet;
+			charTypeVectorToUtf8String(ctsnippet, snippet);
+			//cout << "DEBUG: snippet size is " << snippet.size() << endl;
+			snippets.push_back(snippet);
+		}
 }
 
 void HighlightAlgorithm::_genSnippet(const vector<CharType>& dataIn, vector<CharType>& snippets,
@@ -282,7 +335,7 @@ void HighlightAlgorithm::_genSnippet(const vector<CharType>& dataIn, vector<Char
 
 	unsigned lowerOffset = highlightPositions[snippetLowerEnd].offset - 1;
 	unsigned upperOffset = highlightPositions[snippetUpperEnd].offset +
-			highlightPositions[snippetUpperEnd].len;
+			highlightPositions[snippetUpperEnd].len - 1;
 	if (upperOffset > dataIn.size() || lowerOffset > upperOffset) {
 		return;
 	}
@@ -292,7 +345,7 @@ void HighlightAlgorithm::_genSnippet(const vector<CharType>& dataIn, vector<Char
 	 */
 	unsigned tempOffset = upperOffset;
 	while(tempOffset < (upperOffset + 20) && tempOffset < dataIn.size()  &&
-			!isWhiteSpace(dataIn[tempOffset - 1])) {
+			!isWhiteSpace(dataIn[tempOffset])) {
 		tempOffset++;
 	}
 	upperOffset = tempOffset;
@@ -445,7 +498,9 @@ void HighlightAlgorithm::_genSnippet(const vector<CharType>& dataIn, vector<Char
 			}
 		}
 	}
-	snippets.insert(snippets.end(), filler.begin(), filler.end());
+	if (upperOffset < dataIn.size() - 1) {
+		snippets.insert(snippets.end(), filler.begin(), filler.end());
+	}
 }
 
 void HighlightAlgorithm::insertHighlightMarkerIntoSnippets(vector<CharType>& snippets,
@@ -486,10 +541,10 @@ TermOffsetAlgorithm::TermOffsetAlgorithm(const Indexer * indexer,
 	const IndexReaderWriter* rwIndexer =  dynamic_cast<const IndexReaderWriter *>(indexer);
 	fwdIndex = rwIndexer->getForwardIndex();
 }
-void TermOffsetAlgorithm::getSnippet(unsigned recordId, unsigned attributeId, const char *dataIn,
-		vector<string>& snippets) {
+void TermOffsetAlgorithm::getSnippet(unsigned recordId, unsigned attributeId,const string& dataIn,
+		vector<string>& snippets, bool isMultiValued) {
 
-	if (!dataIn)
+	if (dataIn.length() == 0)
 		return;
 
 	bool valid = false;
@@ -505,11 +560,6 @@ void TermOffsetAlgorithm::getSnippet(unsigned recordId, unsigned attributeId, co
 
 	vector<matchedTermInfo> highlightPositions;
 	vector<CharType> ctsnippet;
-	vector<CharType> ctv;
-	utf8StringToCharTypeVector(dataIn, ctv);
-
-	if(ctv.size() == 0)
-		return;
 
 	set<unsigned> visitedKeyword;
 	const unsigned *keywordIdsPtr = fwdList->getKeywordIds();
@@ -606,7 +656,7 @@ void TermOffsetAlgorithm::getSnippet(unsigned recordId, unsigned attributeId, co
 
 	unsigned snippetLowerEnd = 0, snippetUpperEnd = highlightPositions.size() - 1;
 	/* no phrase for highlighting */
-	if (phrasesInfoList.size() == 0 ) {
+	if (phrasesInfoList.size() == 0 && !isMultiValued) {
 		unsigned j = snippetUpperEnd;
 		while(j > 0){
 			unsigned _id = highlightPositions[j].id;
@@ -618,10 +668,68 @@ void TermOffsetAlgorithm::getSnippet(unsigned recordId, unsigned attributeId, co
 		snippetLowerEnd = j;
 	}
 
-	_genSnippet(ctv, ctsnippet, snippetUpperEnd, snippetLowerEnd, highlightPositions);
-	string snippet;
-	charTypeVectorToUtf8String(ctsnippet, snippet);
-	snippets.push_back(snippet);
+	if (isMultiValued) {
+		const char * attrStartPos = dataIn.c_str();
+		const char * lastPos = dataIn.c_str();
+		snippetLowerEnd = 0; snippetUpperEnd = 0;
+		while(1) {
+			ctsnippet.clear();
+			const char * attrEndPos = strstr(lastPos, " $$ ");
+			if (attrEndPos == 0)
+				break;
+			unsigned matchCntInAttr = 0;
+			vector<matchedTermInfo> partHighlightPositions;
+			while(snippetUpperEnd <  highlightPositions.size() &&
+					highlightPositions[snippetUpperEnd].offset < (attrEndPos - attrStartPos)) {
+				partHighlightPositions.push_back(highlightPositions[snippetUpperEnd]);
+				partHighlightPositions.back().offset -=  (lastPos - attrStartPos);
+				snippetUpperEnd++;
+				matchCntInAttr++;
+			}
+			if (matchCntInAttr) {
+				vector<CharType> ctv;
+				string attrPartVal= dataIn.substr(lastPos - attrStartPos /*offset*/, attrEndPos - lastPos /*len*/);
+				utf8StringToCharTypeVector(attrPartVal, ctv);
+				_genSnippet(ctv, ctsnippet, 0, partHighlightPositions.size() - 1, partHighlightPositions);
+			}
+			string snippet;
+			charTypeVectorToUtf8String(ctsnippet, snippet);
+			snippets.push_back(snippet);
+			lastPos = attrEndPos + strlen(" $$ ");
+			snippetLowerEnd = snippetUpperEnd;
+		}
+		if (*lastPos != 0) {
+			ctsnippet.clear();
+			snippetUpperEnd = highlightPositions.size() - 1;
+			if (snippetLowerEnd <  highlightPositions.size() &&
+					highlightPositions[snippetLowerEnd].offset > (lastPos - attrStartPos)) {
+				vector<CharType> ctv;
+				string attrPartVal= dataIn.substr(lastPos - attrStartPos /*offset*/, string::npos /*len*/);
+				utf8StringToCharTypeVector(attrPartVal, ctv);
+				vector<matchedTermInfo> partHighlightPositions;
+				vector<matchedTermInfo>::iterator phpIter = highlightPositions.begin() + snippetLowerEnd;
+				while(phpIter != highlightPositions.end()){
+					partHighlightPositions.push_back(*phpIter);
+					partHighlightPositions.back().offset -=  (lastPos - attrStartPos);
+					++phpIter;
+				}
+				_genSnippet(ctv, ctsnippet, snippetUpperEnd, snippetLowerEnd, partHighlightPositions);
+			}
+			string snippet;
+			charTypeVectorToUtf8String(ctsnippet, snippet);
+			snippets.push_back(snippet);
+		}
+	}else {
+		vector<CharType> ctv;
+		utf8StringToCharTypeVector(dataIn, ctv);  // we may not need to convert from utf8 to utf32
+		if(ctv.size() == 0)
+			return;
+		_genSnippet(ctv, ctsnippet, snippetUpperEnd, snippetLowerEnd, highlightPositions);
+		string snippet;
+		charTypeVectorToUtf8String(ctsnippet, snippet);
+		snippets.push_back(snippet);
+	}
+
 }
 
 } /* namespace instanstsearch */

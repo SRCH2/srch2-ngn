@@ -77,7 +77,7 @@ public:
 			std::map<string, PhraseInfo>& phrasesInfoMap, const HighlightConfig& hconfig);
 	HighlightAlgorithm(vector<keywordHighlightInfo>& keywordStrToHighlight,
 			vector<PhraseInfoForHighLight>& phrasesInfoList, const HighlightConfig& hconfig);
-	virtual void getSnippet(unsigned recordId, unsigned attributeId, const char *dataIn, vector<string>& snippets ) = 0;
+	virtual void getSnippet(unsigned recordId, unsigned attributeId, const string& dataIn, vector<string>& snippets, bool isMultiValued) = 0;
 
 	void _genSnippet(const vector<CharType>& dataIn, vector<CharType>& snippets, unsigned snippetUpperEnd,
 			unsigned snippetLowerEnd, const vector<matchedTermInfo>& highlightPositions);
@@ -103,7 +103,8 @@ public:
 			std::map<string, PhraseInfo>& phrasesInfoMap, const HighlightConfig& hconf);
 	AnalyzerBasedAlgorithm(Analyzer *analyzer, vector<keywordHighlightInfo>& keywordStrToHighlight,
 			vector<PhraseInfoForHighLight>& phrasesInfoList, const HighlightConfig& hconf);
-	void getSnippet(unsigned recordId, unsigned attributeId, const char *dataIn, vector<string>& snippets);
+	void getSnippet(unsigned recordId, unsigned attributeId, const string& dataIn, vector<string>& snippets,
+			bool isMultiValued);
 private:
 	Analyzer *analyzer;
 };
@@ -115,7 +116,7 @@ class TermOffsetAlgorithm : public HighlightAlgorithm {
 public:
 	TermOffsetAlgorithm(const Indexer * indexer, QueryResults * queryResults,
 			std::map<string, PhraseInfo>& phrasesInfoMap, const HighlightConfig& hconf);
-	void getSnippet(unsigned recordId, unsigned attributeId, const char *dataIn, vector<string>& snippets);
+	void getSnippet(unsigned recordId, unsigned attributeId, const string& dataIn, vector<string>& snippets, bool isMultiValued);
 private:
 	ForwardIndex* fwdIndex;
 	typedef std::map<unsigned, vector<unsigned> *>::iterator PrefixToCompleteMapIter;

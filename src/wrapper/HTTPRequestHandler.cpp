@@ -226,23 +226,24 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
 
                 string sbuffer = string();
                 sbuffer.reserve(1024);  //<< TODO: set this to max allowed snippet len
-                if (i < recordSnippets.size()
-                		&& recordSnippets[i].recordId == queryResults->getInternalRecordId(i)) {
+                unsigned _idx = i - start;
+                if (_idx < recordSnippets.size()
+                		&& recordSnippets[_idx].recordId == queryResults->getInternalRecordId(i)) {
                 	sbuffer.append("{");
-                	for (unsigned j = 0 ; j <  recordSnippets[i].fieldSnippets.size(); ++j) {
-                		sbuffer+='"'; sbuffer+=recordSnippets[i].fieldSnippets[j].FieldId; sbuffer+='"';
+                	for (unsigned j = 0 ; j <  recordSnippets[_idx].fieldSnippets.size(); ++j) {
+                		sbuffer+='"'; sbuffer+=recordSnippets[_idx].fieldSnippets[j].FieldId; sbuffer+='"';
                 		sbuffer+=":[";
-                		for (unsigned k = 0 ; k <  recordSnippets[i].fieldSnippets[j].snippet.size(); ++k) {
+                		for (unsigned k = 0 ; k <  recordSnippets[_idx].fieldSnippets[j].snippet.size(); ++k) {
                 			sbuffer+='"';
-                			cleanAndAppendToBuffer(recordSnippets[i].fieldSnippets[j].snippet[k], sbuffer);
+                			cleanAndAppendToBuffer(recordSnippets[_idx].fieldSnippets[j].snippet[k], sbuffer);
                 			sbuffer+='"';
                 			sbuffer+=',';
                 		}
-                		if (recordSnippets[i].fieldSnippets[j].snippet.size())
+                		if (recordSnippets[_idx].fieldSnippets[j].snippet.size())
                 			sbuffer.erase(sbuffer.length()-1);
                 		sbuffer+="],";
                 	}
-                	if (recordSnippets[i].fieldSnippets.size())
+                	if (recordSnippets[_idx].fieldSnippets.size())
                 		sbuffer.erase(sbuffer.length()-1);
                 	sbuffer.append("}");
                 } else {
@@ -474,10 +475,33 @@ void HTTPRequestHandler::genRecordJsonString(const srch2is::Indexer *indexer, un
 		snappy::Uncompress(attrdata,len, &uncompressedInMemoryRecordString);
 		sbuffer+='"'; sbuffer+=iter->first; sbuffer+='"';
 		sbuffer+=':';
-		sbuffer+='"';
-		cleanAndAppendToBuffer(uncompressedInMemoryRecordString, sbuffer);
-		sbuffer+='"';
-		sbuffer+=',';
+		if (storedAttrSchema->isSearchableAttributeMultiValued(id)) {
+			sbuffer+='[';
+			size_t lastpos = 0;
+			while(1) {
+				size_t pos = uncompressedInMemoryRecordString.find(" $$ ", lastpos) ;
+				if (pos == string::npos)
+					break;
+				string result =  uncompressedInMemoryRecordString.substr(lastpos, pos - lastpos);
+				sbuffer+='"';
+				cleanAndAppendToBuffer(result, sbuffer);
+				sbuffer+='"';
+				sbuffer+=',';
+				lastpos = pos + 4;
+			}
+			string result =  uncompressedInMemoryRecordString.substr(lastpos,
+														uncompressedInMemoryRecordString.length());
+			sbuffer+='"';
+			cleanAndAppendToBuffer(result, sbuffer);
+			sbuffer+='"';
+			sbuffer+=']';
+			sbuffer+=',';
+		} else {
+			sbuffer+='"';
+			cleanAndAppendToBuffer(uncompressedInMemoryRecordString, sbuffer);
+			sbuffer+='"';
+			sbuffer+=',';
+		}
 	}
 	if (storedAttrSchema->getSearchableAttribute().size())
 		sbuffer.erase(sbuffer.length()-1);
@@ -941,7 +965,8 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
 	vector<RecordSnippet> highlightInfo;
     if (server->indexDataConfig->getHighlightAttributeIdsVector().size() > 0) {
 
-    	ServerHighLighter highlighter =  ServerHighLighter(finalResults, server, paramContainer);
+    	ServerHighLighter highlighter =  ServerHighLighter(finalResults, server, paramContainer,
+    			logicalPlan.getOffset(), logicalPlan.getNumberOfResultsToRetrieve());
     	highlighter.generateSnippets(highlightInfo);
     	if (highlightInfo.size() == 0) {
     		Logger::error("Highligting is on but snippets are not generated!!");

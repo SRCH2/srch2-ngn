@@ -167,6 +167,7 @@ void AnalyzerInternal::tokenizeRecord(const Record *record,
 
         if (!attributeValues.empty()) {
 			tokens.clear();
+			unsigned prevAttrCombinedLen = 0;
         	for(unsigned valueOffset = 0 ; valueOffset != attributeValues.size() ; ++valueOffset){
         		string attributeValue = attributeValues.at(valueOffset);
 				this->tokenStream->fillInCharacters(attributeValue);
@@ -179,10 +180,11 @@ void AnalyzerInternal::tokenizeRecord(const Record *record,
 					unsigned charOffset = tokenStream->getProcessedTokenOffset();
 					charTypeVectorToUtf8String(charVector, currentToken);
 					// Bumps are added to the positions after tokenizer gives us the values.
-					PositionalTerm pterm = {currentToken, termOffset + valueOffset * MULTI_VALUED_ATTRIBUTE_POSITION_BUMP, charOffset};
+					PositionalTerm pterm = {currentToken, termOffset + valueOffset * MULTI_VALUED_ATTRIBUTE_POSITION_BUMP,
+							prevAttrCombinedLen+ charOffset};
 					tokens.push_back(pterm);
 				}
-
+				prevAttrCombinedLen += attributeValue.length() + 4 /*multivalue separator " $$ "*/;
         	}
 			for (unsigned i = 0; i< tokens.size(); ++i) {
 				if (tokens[i].term.size()) {
