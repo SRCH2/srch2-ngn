@@ -706,6 +706,12 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
             }
         }
     }
+
+    // maxSearchThreads used to be contained in <query> so warn if we find it here
+    childNode = queryNode.child(maxSearchThreadsString);
+    if (childNode && childNode.text()) {
+        Logger::warn("maxSearchThreads is no longer in <query>.  Move it under <config>");
+    }
 }
 
 /*

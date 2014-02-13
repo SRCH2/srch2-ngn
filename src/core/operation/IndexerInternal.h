@@ -177,10 +177,10 @@ public:
     inline const string getIndexHealth() const
     {
         std::stringstream str;
-        str << "{";
-        str << "search_requests:" << this->index->_getReadCount() << ",";
-        str << "write_requests:" <<  this->index->_getWriteCount() << ",";
-        str << "docs_in_index:" << this->index->_getNumberOfDocumentsInIndex() << ",";
+        str << "\"engine_status\":{";
+        str << "\"search_requests\":\"" << this->index->_getReadCount() << "\",";
+        str << "\"write_requests\":\"" <<  this->index->_getWriteCount() << "\",";
+        str << "\"docs_in_index\":\"" << this->index->_getNumberOfDocumentsInIndex() << "\",";
         str << this->indexHealthInfo.getIndexHealthString() << "}";
         return str.str();
     }

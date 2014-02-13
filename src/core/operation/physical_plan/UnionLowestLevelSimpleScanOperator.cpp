@@ -134,7 +134,7 @@ PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const Physi
 	newItem->setRecordMatchEditDistances(editDistances);
 	// matching prefix
 	vector<TrieNodePointer> matchingPrefixes;
-	matchingPrefixes.push_back(this->invertedListPrefixes.at(this->invertedListOffset));
+	matchingPrefixes.push_back(this->invertedListPrefixes.at(this->invertedListOffset)); 
 	newItem->setRecordMatchingPrefixes(matchingPrefixes);
 	// runtime score
 	bool isPrefixMatch = this->invertedListPrefixes.at(this->invertedListOffset) !=
