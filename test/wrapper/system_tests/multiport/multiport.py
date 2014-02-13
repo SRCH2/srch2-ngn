@@ -35,7 +35,7 @@ sys.path.insert(0, 'srch2lib')
 import test_lib
 
 port = '8087' # core1
-infoPort = '8088' # core1 - /info
+core1InfoPort = '8088' # core1 - /info
 core2ControlPort = '9087' # core2 - all the control messages
 
 #Function of checking the results
@@ -141,9 +141,12 @@ def testMultipleCores(queriesAndResultsPath, binary_path):
             failCount += checkResult(query, response_json['results'], resultValue)
 
             coreNum += 1
+    f_in.close()
 
     print "\nTest suite #2: Port security"
-    query='http://localhost:' + infoPort + '/info'
+
+    # Test if /info is indeed moved to another port
+    query='http://localhost:' + core1InfoPort + '/info'
     #do the query
     #print query
     response = urllib2.urlopen(query).read()
@@ -159,6 +162,103 @@ def testMultipleCores(queriesAndResultsPath, binary_path):
         failCount += 1
         print "Null response to info request"
 
+    # Test if /info is no longer on standard port (negative test)
+    query='http://localhost:' + port + '/info'
+    #do the query
+    #print query
+    try:
+        response = urllib2.urlopen(query).read()
+        #print response
+        response_json = json.loads(response)
+    except urllib2.HTTPError as err:
+        if err.code == 404:
+            print query + ' test pass'
+        else:
+            # did not get expected file not found error
+            failcount += 1
+            raise
+        
+    # Test if /search is not allowed in the /info port
+    query='http://localhost:' + core1InfoPort + '/search?q=foo'
+    #do the query
+    #print query
+    try:
+        response = urllib2.urlopen(query).read()
+        #print response
+        response_json = json.loads(response)
+    except urllib2.HTTPError as err:
+        if err.code == 404:
+            print query + ' test pass'
+        else:
+            # did not get expected file not found error
+            failcount += 1
+            raise
+
+    # Same tests but with core1 explicitly in the path
+    # Test if /core1/info is indeed moved to another port
+    query='http://localhost:' + core1InfoPort + '/core1/info'
+    #do the query
+    #print query
+    response = urllib2.urlopen(query).read()
+    #print response
+    response_json = json.loads(response)
+    if len(response_json) > 0:
+        if int(response_json['engine_status']['docs_in_index']) != 244:
+            failCount += 1
+            print "Info request did not return expected document count: Got " + str(response_json['engine_status']['docs_in_index']) + " but expected 244."
+        else:
+            print query + ' test pass'
+    else:
+        failCount += 1
+        print "Null response to info request"
+
+    # Test if /core1/info is no longer on standard port (negative test)
+    query='http://localhost:' + port + '/core1/info'
+    #do the query
+    #print query
+    try:
+        response = urllib2.urlopen(query).read()
+        #print response
+        response_json = json.loads(response)
+    except urllib2.HTTPError as err:
+        if err.code == 404:
+            print query + ' test pass'
+        else:
+            # did not get expected file not found error
+            failcount += 1
+            raise
+        
+    # Test if /search is not allowed in the /core1/info port
+    query='http://localhost:' + core1InfoPort + '/core1/search?q=foo'
+    #do the query
+    #print query
+    try:
+        response = urllib2.urlopen(query).read()
+        #print response
+        response_json = json.loads(response)
+    except urllib2.HTTPError as err:
+        if err.code == 404:
+            print query + ' test pass'
+        else:
+            # did not get expected file not found error
+            failcount += 1
+            raise
+        
+    # Test if /core2/info is not allowed in the /core1/info port
+    query='http://localhost:' + core1InfoPort + '/core2/info'
+    #do the query
+    #print query
+    try:
+        response = urllib2.urlopen(query).read()
+        #print response
+        response_json = json.loads(response)
+    except urllib2.HTTPError as err:
+        if err.code == 404:
+            print query + ' test pass'
+        else:
+            # did not get expected file not found error
+            failcount += 1
+            raise
         
     print "\nTest suite #3: Control Port security"
     # /save test
@@ -168,7 +268,7 @@ def testMultipleCores(queriesAndResultsPath, binary_path):
     #request.add_header('Content-Type', 'your/contenttype')
     request.get_method = lambda: 'PUT'
     #do the query
-    print query
+    #print query
     response = opener.open(request).read()
     # response = urllib2.urlopen(request).read()
     #print response
@@ -190,7 +290,7 @@ def testMultipleCores(queriesAndResultsPath, binary_path):
     #request.add_header('Content-Type', 'your/contenttype')
     request.get_method = lambda: 'PUT'
     #do the query
-    print query
+    #print query
     response = opener.open(request).read()
     # response = urllib2.urlopen(request).read()
     #print response
@@ -212,7 +312,7 @@ def testMultipleCores(queriesAndResultsPath, binary_path):
     #request.add_header('Content-Type', 'your/contenttype')
     request.get_method = lambda: 'PUT'
     #do the query
-    print query
+    #print query
     response = opener.open(request).read()
     # response = urllib2.urlopen(request).read()
     #print response
@@ -227,6 +327,195 @@ def testMultipleCores(queriesAndResultsPath, binary_path):
         failCount += 1
         print "Null response to resetLogger request"
 
+    # /core2/save on protected port test
+    query='http://localhost:' + port + '/core2/save'
+    opener = urllib2.build_opener(urllib2.HTTPHandler)
+    request = urllib2.Request(query, '')
+    #request.add_header('Content-Type', 'your/contenttype')
+    request.get_method = lambda: 'PUT'
+    #do the query
+    #print query
+    try:
+        response = opener.open(request).read()
+        #print response
+        response_json = json.loads(response)
+    except urllib2.HTTPError as err:
+        if err.code == 404:
+            print query + ' test pass'
+        else:
+            # did not get expected file not found error
+            failcount += 1
+            raise
+
+    # /core2/export on protected port test
+    query='http://localhost:' + port + '/core2/export?exported_data_file=core2-exported.json'
+    opener = urllib2.build_opener(urllib2.HTTPHandler)
+    request = urllib2.Request(query, '')
+    #request.add_header('Content-Type', 'your/contenttype')
+    request.get_method = lambda: 'PUT'
+    #do the query
+    #print query
+    try:
+        response = opener.open(request).read()
+        #print response
+        response_json = json.loads(response)
+    except urllib2.HTTPError as err:
+        if err.code == 404:
+            print query + ' test pass'
+        else:
+            # did not get expected file not found error
+            failcount += 1
+            raise
+
+    # /core2/resetLogger on protected port test
+    query='http://localhost:' + port + '/core2/resetLogger'
+    opener = urllib2.build_opener(urllib2.HTTPHandler)
+    request = urllib2.Request(query, '')
+    #request.add_header('Content-Type', 'your/contenttype')
+    request.get_method = lambda: 'PUT'
+    #do the query
+    #print query
+    try:
+        response = opener.open(request).read()
+        #print response
+        response_json = json.loads(response)
+    except urllib2.HTTPError as err:
+        if err.code == 404:
+            print query + ' test pass'
+        else:
+            # did not get expected file not found error
+            failcount += 1
+            raise
+
+    # /core2/save on protected port test
+    query='http://localhost:' + core1InfoPort + '/core2/save'
+    opener = urllib2.build_opener(urllib2.HTTPHandler)
+    request = urllib2.Request(query, '')
+    #request.add_header('Content-Type', 'your/contenttype')
+    request.get_method = lambda: 'PUT'
+    #do the query
+    #print query
+    try:
+        response = opener.open(request).read()
+        #print response
+        response_json = json.loads(response)
+    except urllib2.HTTPError as err:
+        if err.code == 404:
+            print query + ' test pass'
+        else:
+            # did not get expected file not found error
+            failcount += 1
+            raise
+
+    # /core2/export on protected port test
+    query='http://localhost:' + core1InfoPort + '/core2/export?exported_data_file=core2-exported.json'
+    opener = urllib2.build_opener(urllib2.HTTPHandler)
+    request = urllib2.Request(query, '')
+    #request.add_header('Content-Type', 'your/contenttype')
+    request.get_method = lambda: 'PUT'
+    #do the query
+    #print query
+    try:
+        response = opener.open(request).read()
+        #print response
+        response_json = json.loads(response)
+    except urllib2.HTTPError as err:
+        if err.code == 404:
+            print query + ' test pass'
+        else:
+            # did not get expected file not found error
+            failcount += 1
+            raise
+
+    # /core2/resetLogger on protected port test
+    query='http://localhost:' + core1InfoPort + '/core2/resetLogger'
+    opener = urllib2.build_opener(urllib2.HTTPHandler)
+    request = urllib2.Request(query, '')
+    #request.add_header('Content-Type', 'your/contenttype')
+    request.get_method = lambda: 'PUT'
+    #do the query
+    #print query
+    try:
+        response = opener.open(request).read()
+        #print response
+        response_json = json.loads(response)
+    except urllib2.HTTPError as err:
+        if err.code == 404:
+            print query + ' test pass'
+        else:
+            # did not get expected file not found error
+            failcount += 1
+            raise
+
+    print "\nTest suite #4 - Port security"
+    f_in = open(queriesAndResultsPath, 'r')
+    for line in f_in:
+        #get the query keyword and results
+        value=line.split('||')
+        queryValue=value[0].split()
+        allResults=value[1].split('@')
+
+        coreNum=0
+        for coreResult in allResults:
+            resultValue=coreResult.split()
+            #construct the query
+            if coreNum == 0:
+                # test default core (unnamed core) on 0th iteration
+                query='http://localhost:' + core1InfoPort + '/search?'
+            else:
+                query='http://localhost:' + core1InfoPort + '/core' + str(coreNum) + '/search?'
+            query = query + prepareQuery(queryValue, False)
+
+            try:
+                #do the query
+                response = urllib2.urlopen(query).read()
+                #print query + ' Got ==> ' + response
+
+                response_json = json.loads(response)
+            except urllib2.HTTPError as err:
+                if err.code == 404:
+                    print query + ' test pass'
+                else:
+                    # did not get expected file not found error
+                    failCount += 1
+                    raise
+
+            coreNum += 1
+    f_in.close()
+    f_in = open(queriesAndResultsPath, 'r')
+    for line in f_in:
+        #get the query keyword and results
+        value=line.split('||')
+        queryValue=value[0].split()
+        allResults=value[1].split('@')
+
+        coreNum=0
+        for coreResult in allResults:
+            resultValue=coreResult.split()
+            #construct the query
+            if coreNum == 0:
+                # test default core (unnamed core) on 0th iteration
+                query='http://localhost:' + core2ControlPort + '/search?'
+            else:
+                query='http://localhost:' + core2ControlPort + '/core' + str(coreNum) + '/search?'
+            query = query + prepareQuery(queryValue, False)
+
+            try:
+                #do the query
+                response = urllib2.urlopen(query).read()
+                #print query + ' Got ==> ' + response
+
+                response_json = json.loads(response)
+            except urllib2.HTTPError as err:
+                if err.code == 404:
+                    print query + ' test pass'
+                else:
+                    # did not get expected file not found error
+                    failCount += 1
+                    raise
+
+            coreNum += 1
+    f_in.close()
 
         
     test_lib.killServer(serverHandle)
