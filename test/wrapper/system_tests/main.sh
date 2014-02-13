@@ -378,8 +378,14 @@ test_id="test_solr_compatible_query_syntax"
 printTestBanner "$test_id"
 python ./test_solr_compatible_query_syntax/test_solr_compatible_query_syntax.py $SRCH2_ENGINE ./test_solr_compatible_query_syntax/queriesAndResults.txt ./test_solr_compatible_query_syntax/facetResults.txt >> system_test.log 2>&1
 
-# TODO - hack until we figure out why faceted results are do different
-echo "-- IGNORING FAILURE: $test_id"
+if [ $? -gt 0 ]; then
+    echo "FAILED: $test_id"
+    if [ $force -eq 0 ]; then
+	exit 255
+    fi
+else
+    echo "-- PASSED: $test_id"
+fi
 rm -rf data/ *.idx
 
 
