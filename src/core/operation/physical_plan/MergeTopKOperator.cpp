@@ -528,8 +528,15 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalP
 	 *      the cost of visiting one record from child i when we know the record is not
 	 *      a candidate and at least one of the random access verifications will fail.
 	 *
-	 * C-NCAN[i] = .... = // some conditional probability calculations =>
-	 *             Scn[i] + R[i+1] + P[i+1] *...* P[i-1] (R[i-1] - P[i-1](Ran[i+1] + ... + Ran[i-1]))
+	 * C-NCAN[i] = (1-P[0])Rnd[0] +
+	 *             P[0]*(1-P[1])*(Rnd[0] + Rnd[1]) +
+	 *             P[0]*P[1]*(1-P[2])*(Rnd[0] + Rnd[1 + Rnd[2]]) +
+	 *             ... +
+	 *             P[0]*...*P[T-2]*(1-P[T-1])*(Rnd[0] + ... + Rnd[T-1])
+	 *             - ( P[0] * P[1] * ... * P[i-1] * (1 - P[i]) * (Rnd[0] + ... + Rnd[i]) )
+	 *             + Scn[i]  // for this formula, we set P[i] = 1 temporary
+	 *                       // because when record comes from P[i] we don't check
+	 *                       // child i for random access so we always pass it
 	 * P-NCAN[i] = probability that a record from child i is not a candidate  =
 	 *             1 - P-CAN[i] = 1 - (6)
 	 * NormP-NCAN[i] = probability that a non-candidate record is from child i =
@@ -578,6 +585,9 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalP
 	  * K = number of top results to find (we calculate the score for K and then divide the result by K)
 	  */
 	unsigned K = params.k;
+	if(K == 0){
+		K = 1;
+	}
 	 /*
 	  * M = cursor value after termination (it means M records from each list is read)
 	  *   = (K * N^(T-1))^1/T   (Read the last part of the comment in the beginning of this function)
@@ -800,7 +810,6 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfClose(const PhysicalPla
 }
 PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
 	PhysicalPlanCost resultCost;
-	resultCost.addSmallFunctionCost();
 
 	// cost of opening children
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){

@@ -113,18 +113,14 @@ PhysicalPlanCost SortByScoreOptimizationOperator::getCostOfOpen(const PhysicalPl
 	 * O(1) + cost(child's open) + (cost(child's getNext) + O(1))*estimatedNumberOfResults + estimatedNumberOfResultsOfChild
 	 */
 	PhysicalPlanCost resultCost;
-	resultCost.addFunctionCallCost(2);
 	resultCost = resultCost + this->getChildAt(0)->getCostOfOpen(params); // cost(child's open)
 	// cost of fetching all the child's records
 	unsigned estimatedNumberOfResults = this->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
-	resultCost.addFunctionCallCost(2 * estimatedNumberOfResults);
-	resultCost.addInstructionCost(estimatedNumberOfResults);
 	resultCost = resultCost +
 			(this->getChildAt(0)->getCostOfGetNext(params).cost) * estimatedNumberOfResults; // (cost(child's getNext) + O(1))*estimatedNumberOfResults
 	// sorting
-	resultCost.addMediumFunctionCost(); // sort
-	resultCost.addSmallFunctionCost(estimatedNumberOfResults - params.k); // we assume make_heap calls estimatedNumberOfResults small functions
-	resultCost.addSmallFunctionCost(log2((double)params.k + 1) * params.k);
+	resultCost.cost += estimatedNumberOfResults - params.k; // we assume make_heap calls estimatedNumberOfResults small functions
+	resultCost.cost += log2((double)params.k + 1) * params.k;
 
 	return resultCost;
 }
@@ -135,26 +131,26 @@ PhysicalPlanCost SortByScoreOptimizationOperator::getCostOfGetNext(const Physica
 	 * cost : O(1) + log(estimatedNumberOfResults)
 	 */
 	PhysicalPlanCost resultCost;
-	resultCost.addSmallFunctionCost(5);
-	resultCost.addInstructionCost();
 	unsigned estimatedNumberOfResults = this->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
-	if(params.k < estimatedNumberOfResults){
-		estimatedNumberOfResults = params.k;
+	if(estimatedNumberOfResults == 0){
+		estimatedNumberOfResults = 1;
 	}
-	resultCost.addSmallFunctionCost((unsigned)(log2((double)estimatedNumberOfResults + 1))); // + 1 is to avoid 0
-	// we assume make_heap calls estimatedNumberOfResults small functions
+	if(params.k >= estimatedNumberOfResults){
+		resultCost.cost = 1;
+		return resultCost;
+	}
+	resultCost.cost = // amortized cost
+			(params.k + (estimatedNumberOfResults - params.k) * log2((double)(estimatedNumberOfResults - params.k))) / estimatedNumberOfResults;
 	return resultCost;
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.
 PhysicalPlanCost SortByScoreOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
 	PhysicalPlanCost resultCost ;
-	resultCost.addFunctionCallCost(2);
 	resultCost = resultCost + this->getChildAt(0)->getCostOfClose(params);
 	return resultCost;
 }
 PhysicalPlanCost SortByScoreOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
 	PhysicalPlanCost resultCost;
-	resultCost.addFunctionCallCost(2);
 	resultCost = resultCost + this->getChildAt(0)->getCostOfVerifyByRandomAccess(params);
 	return resultCost;
 }

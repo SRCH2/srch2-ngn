@@ -229,7 +229,7 @@ PhysicalPlanCost UnionLowestLevelTermVirtualListOptimizationOperator::getCostOfG
 	unsigned estimatedNumberOfTerminalNodes = this->getLogicalPlanNode()->stats->getEstimatedNumberOfLeafNodes();
 	PhysicalPlanCost resultCost;
 	resultCost.cost = (unsigned)(log2((double)estimatedNumberOfTerminalNodes));
-	resultCost.cost = resultCost.cost * 0.1 + 1;
+	resultCost.cost = resultCost.cost * 0.1;
 	return resultCost; // cost of sequential access
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.
@@ -243,7 +243,7 @@ PhysicalPlanCost UnionLowestLevelTermVirtualListOptimizationOperator::getCostOfV
 	unsigned estimatedNumberOfActiveNodes =
 			this->getLogicalPlanNode()->stats->getActiveNodeSetForEstimation(params.isFuzzy)->getNumberOfActiveNodes();
 	PhysicalPlanCost resultCost;
-	resultCost.cost = estimatedNumberOfActiveNodes * log(200.0);
+	resultCost.cost = estimatedNumberOfActiveNodes * log2(200.0);
 	return resultCost;
 }
 void UnionLowestLevelTermVirtualListOptimizationOperator::getOutputProperties(IteratorProperties & prop){

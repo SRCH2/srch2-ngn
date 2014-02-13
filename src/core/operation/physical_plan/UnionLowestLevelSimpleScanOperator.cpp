@@ -234,11 +234,10 @@ void UnionLowestLevelSimpleScanOperator::depthInitializeSimpleScanOperator(
 // The cost of open of a child is considered only once in the cost computation
 // of parent open function.
 PhysicalPlanCost UnionLowestLevelSimpleScanOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
+	// cost of going over leaf nodes and making the heap
 	unsigned estimatedNumberOfTerminalNodes = this->getLogicalPlanNode()->stats->getEstimatedNumberOfLeafNodes();
 	PhysicalPlanCost resultCost;
-	resultCost.addFunctionCallCost(3);
-	resultCost.addInstructionCost(3 + 3 * estimatedNumberOfTerminalNodes);
-	resultCost.addSmallFunctionCost(estimatedNumberOfTerminalNodes);
+	resultCost.cost = estimatedNumberOfTerminalNodes;
 	return resultCost ; // cost of going over leaf nodes.
 }
 // The cost of getNext of a child is multiplied by the estimated number of calls to this function
@@ -246,20 +245,20 @@ PhysicalPlanCost UnionLowestLevelSimpleScanOptimizationOperator::getCostOfOpen(c
 PhysicalPlanCost UnionLowestLevelSimpleScanOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
 
 	PhysicalPlanCost resultCost;
-	resultCost.addLargeFunctionCost();
+	resultCost.cost = 1;
 	return resultCost; // cost of sequential access
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.
 PhysicalPlanCost UnionLowestLevelSimpleScanOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
 	PhysicalPlanCost resultCost;
-	resultCost.addSmallFunctionCost();
+	resultCost.cost = 1;
 	return resultCost;
 }
 PhysicalPlanCost UnionLowestLevelSimpleScanOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
-	unsigned estimatedNumberOfTerminalNodes = this->getLogicalPlanNode()->stats->getEstimatedNumberOfLeafNodes();
+	unsigned estimatedNumberOfActiveNodes =
+			this->getLogicalPlanNode()->stats->getActiveNodeSetForEstimation(params.isFuzzy)->getNumberOfActiveNodes();
 	PhysicalPlanCost resultCost;
-	resultCost.addFunctionCallCost(5);
-	resultCost.addSmallFunctionCost(estimatedNumberOfTerminalNodes);
+	resultCost.cost = estimatedNumberOfActiveNodes * log2(200.0);
 	return resultCost;
 }
 void UnionLowestLevelSimpleScanOptimizationOperator::getOutputProperties(IteratorProperties & prop){
