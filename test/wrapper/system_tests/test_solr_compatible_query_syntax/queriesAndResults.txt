@@ -21,5 +21,5 @@ q=%7BdefaultFieldOperator=AND%20defaultPrefixComplete=PREFIX%20defaultSearchFiel
 q=%7BdefaultFieldOperator=AND%20defaultPrefixComplete=COMPLETE%20defaultSearchFields=description,title%7DAmerica*&facet=true&facet.field=primary_category&sort=relevance&orderby=asc&rows=3||14 18 60
 q=%7BdefaultFieldOperator=OR%20defaultSearchFields=description,title%7DAmerican&facet=true&facet.field=primary_category&sort=relevance&orderby=asc&rows=3||14 18 22
 q=American%20AND%20writer&facet=true&facet.field=primary_category&sort=relevance&orderby=asc&rows=1||14
-q=AmeriB*~%20AND%20writer&facet=true&facet.field=primary_category&sort=relevance&orderby=asc&rows=1||14
+q=AmeriB*~%20AND%20writer&facet=true&facet.field=primary_category&sort=relevance&orderby=asc&rows=1||76
 q=AmeriB*~%20AND%20writf*~&facet=true&facet.field=primary_category&sort=relevance&orderby=asc&rows=1||14
