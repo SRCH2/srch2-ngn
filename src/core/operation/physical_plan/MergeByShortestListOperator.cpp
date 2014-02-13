@@ -372,8 +372,10 @@ PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfGetNext(const
 	vector<unsigned> Scn;
 	vector<unsigned> Rnd;
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
-		Scn.push_back(this->getChildAt(childOffset)->getCostOfGetNext(params).cost);
-		Rnd.push_back(this->getChildAt(childOffset)->getCostOfVerifyByRandomAccess(params).cost);
+//		Scn.push_back(this->getChildAt(childOffset)->getCostOfGetNext(params).cost);
+//		Rnd.push_back(this->getChildAt(childOffset)->getCostOfVerifyByRandomAccess(params).cost);
+		Scn.push_back(1);
+		Rnd.push_back(3);
 	}
 
 	unsigned SigmaRnd = 0;
