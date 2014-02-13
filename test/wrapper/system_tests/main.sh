@@ -99,11 +99,11 @@ python ./boolean-expression-test/boolean-expression.py $SRCH2_ENGINE ./boolean-e
 
 if [ $? -gt 0 ]; then
     echo "FAILED: $test_id"
-    if [ $force -eq 0]; then
+    if [ $force -eq 0 ]; then
         exit 255
     fi
 else
-    echo "-- PASSED $test_id"
+    echo "-- PASSED: $test_id"
 fi
 rm -rf data/ *.idx
 
@@ -565,6 +565,21 @@ else
     echo "-- PASSED: $test_id"
 fi
 rm -rf data/ multicore/core?/*.idx
+
+test_id="multiport"
+printTestBanner "$test_id"
+rm -f ./multiport/core?/*.idx ./multiport/core?/srch2-log.txt
+python ./multiport/multiport.py $SRCH2_ENGINE ./multiport/queriesAndResults.txt >> system_test.log 2>&1
+
+if [ $? -gt 0 ]; then
+    echo "FAILED: $test_id"
+    if [ $force -eq 0 ]; then
+	exit 255
+    fi
+else
+    echo "-- PASSED: $test_id"
+fi
+rm -rf data/ multiport/core?/*.idx
 
 
 # clear the output directory. First make sure that we are in correct directory
