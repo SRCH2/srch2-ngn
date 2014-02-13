@@ -36,6 +36,7 @@ struct AttributeHighlights {
 struct keywordHighlightInfo{
 	uint8_t flag;  // prefix = 0, complete = 1, unverified phraseOnly = 2, Hybrid = 3
 	vector<CharType> key;
+	unsigned editDistance;
 	keywordHighlightInfo(){
 		flag = 0;
 	}
@@ -58,8 +59,7 @@ struct PhraseInfoForHighLight{
 };
 
 struct HighlightConfig{
-	std::string highlightMarkerPre;
-	std::string highlightMarkerPost;
+	vector<std::pair<string, string> > highlightMarkers;
 	unsigned snippetSize;
 };
 
@@ -72,6 +72,7 @@ public:
 			unsigned id;
 			unsigned offset;
 			unsigned len;
+			unsigned tagIndex;
 		};
 	HighlightAlgorithm(vector<keywordHighlightInfo>& keywordStrToHighlight,
 			std::map<string, PhraseInfo>& phrasesInfoMap, const HighlightConfig& hconfig);
@@ -86,11 +87,11 @@ public:
 			const vector<matchedTermInfo>& highlightPositions,
 			unsigned snippetLowerEnd, unsigned snippetUpperEnd);
 	void removeInvalidPositionInPlace(vector<matchedTermInfo>& highlightPositions);
+	void genDefaultSnippet(const string& dataIn, vector<string>& snippets, bool isMultivalued);
 	virtual ~HighlightAlgorithm() {}
 private:
 	unsigned snippetSize;
-	string highlightMarkerPre;
-	string highlightMarkerPost;
+	vector<std::pair<string, string> > highlightMarkers; // holds marker for fuzzy or exact match
 protected:
 	vector<keywordHighlightInfo>& keywordStrToHighlight;
 	vector<PhraseInfoForHighLight> phrasesInfoList;

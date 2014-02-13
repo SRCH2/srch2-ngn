@@ -282,6 +282,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		queryResults->impl->sortedFinalResults.push_back(queryResult);
 
 		queryResult->internalRecordId = newRecord->getRecordId();
+		newRecord->getRecordMatchEditDistances(queryResult->editDistances);
 		//
 		queryResult->_score.setTypedValue(newRecord->getRecordRuntimeScore());
 		vector< TrieNodePointer > matchingKeywordTrieNodes;
@@ -312,6 +313,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 				else
 					keyInfo.flag = 0;
 				keyInfo.key = temp;
+				keyInfo.editDistance = queryResult->editDistances.at(i);
 				//Logger::debug("prefix = %s", str.c_str());
 				queryResults->impl->keywordStrToHighlight.push_back(keyInfo);
 				if (getPrefixToCompleteInfo) {
@@ -328,7 +330,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		}
 		//cout << endl;
 		newRecord->getRecordMatchAttributeBitmaps(queryResult->attributeBitmaps);
-		newRecord->getRecordMatchEditDistances(queryResult->editDistances);
+
 		this->getForwardIndex()->getExternalRecordIdFromInternalRecordId(queryResult->internalRecordId,queryResult->externalRecordId );
 	}
 

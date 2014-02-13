@@ -75,16 +75,47 @@ HighlightAlgorithm::HighlightAlgorithm(vector<keywordHighlightInfo>& keywordStrT
 		++iter;
 	}
 	this->snippetSize = (hconf.snippetSize > MIN_SNIPPET_SIZE) ? hconf.snippetSize : MIN_SNIPPET_SIZE;
-	this->highlightMarkerPre = hconf.highlightMarkerPre;
-	this->highlightMarkerPost = hconf.highlightMarkerPost;
+	this->highlightMarkers = hconf.highlightMarkers;
 }
 
 HighlightAlgorithm::HighlightAlgorithm(vector<keywordHighlightInfo>& keywordStrToHighlight,
 		vector<PhraseInfoForHighLight>& phrasesInfoList, const HighlightConfig& hconf):
 		keywordStrToHighlight(keywordStrToHighlight), phrasesInfoList(phrasesInfoList){
 	this->snippetSize = (hconf.snippetSize > MIN_SNIPPET_SIZE) ? hconf.snippetSize : MIN_SNIPPET_SIZE;
-	this->highlightMarkerPre = hconf.highlightMarkerPre;
-	this->highlightMarkerPost = hconf.highlightMarkerPost;
+	this->highlightMarkers = hconf.highlightMarkers;
+}
+
+void _genDefaultSnippet(const string& dataIn, vector<string>& snippets, unsigned snippetSize);
+void _genDefaultSnippet(const string& dataIn, vector<string>& snippets, unsigned snippetSize) {
+	const char * snippetStart = dataIn.c_str();
+	unsigned snippetOffset = snippetSize > dataIn.size() ? dataIn.size() - 1 : snippetSize;
+	const char * snippetEnd = snippetStart + snippetOffset;
+	if (snippetOffset == snippetSize)
+		while(snippetEnd - snippetStart > snippetOffset - 10 && !isWhiteSpace(*snippetEnd))
+			snippetEnd--;
+	string buf;
+	buf.reserve(snippetEnd - snippetStart + strlen("...") + 1);
+	buf.insert(0, snippetStart, snippetEnd - snippetStart + 1);
+	if (snippetOffset == snippetSize)
+		buf.insert(buf.size(), "...");
+	snippets.push_back(buf);
+}
+void HighlightAlgorithm::genDefaultSnippet(const string& dataIn, vector<string>& snippets, bool isMultivalued){
+	if (isMultivalued) {
+		const char * attrStartPos = dataIn.c_str();
+		const char * lastPos = dataIn.c_str();
+		while(1) {
+			const char * attrEndPos = strstr(lastPos, " $$ ");
+			if (attrEndPos == 0)
+				break;
+			_genDefaultSnippet(string(lastPos,attrEndPos), snippets, snippetSize);
+			lastPos = attrEndPos + strlen(" $$ ");;
+		}
+		if (*lastPos != 0)
+			_genDefaultSnippet(string(lastPos), snippets, snippetSize);
+	} else {
+		_genDefaultSnippet(dataIn, snippets, snippetSize);
+	}
 }
 
 void HighlightAlgorithm::removeInvalidPositionInPlace(vector<matchedTermInfo>& highlightPositions){
@@ -174,7 +205,9 @@ void AnalyzerBasedAlgorithm::getSnippet(unsigned recordId, unsigned /*not used*/
 			}
 			if (result) {
 				matchedTermInfo info = {keywordStrToHighlight[i].flag, i, offset,
-						keywordStrToHighlight[i].key.size()};
+						keywordStrToHighlight[i].key.size(), 0};
+				if (keywordStrToHighlight[i].editDistance > 0)
+					info.tagIndex = 1;
 			 	highlightPositions.push_back(info);
 			 	if (keywordStrToHighlight[i].flag == 2 || keywordStrToHighlight[i].flag == 3) {
 			 		/*
@@ -238,6 +271,7 @@ void AnalyzerBasedAlgorithm::getSnippet(unsigned recordId, unsigned /*not used*/
 	removeInvalidPositionInPlace(highlightPositions);
 
 	if (highlightPositions.size() == 0) {
+		genDefaultSnippet(dataIn, snippets, isMultiValued);
 		Logger::debug("could not generate a snippet because keywords could not be found in attribute.");
 		return;
 	}
@@ -325,8 +359,8 @@ void HighlightAlgorithm::_genSnippet(const vector<CharType>& dataIn, vector<Char
 
 	ASSERT(highlightPositions.size() > 0);
 
-	unsigned markerCharSize = (snippetUpperEnd - snippetLowerEnd) *
-						  (this->highlightMarkerPre.size() + this->highlightMarkerPost.size());
+	unsigned markerCharSize = 1.5 * (snippetUpperEnd - snippetLowerEnd) *
+						  (this->highlightMarkers[0].first.size() + this->highlightMarkers[0].first.size());
 	snippets.reserve(this->snippetSize + markerCharSize + 6);
 	unsigned maxSnippetLen = this->snippetSize;
 
@@ -516,9 +550,10 @@ void HighlightAlgorithm::insertHighlightMarkerIntoSnippets(vector<CharType>& sni
 			break;
 		snippets.insert(snippets.end(), dataIn.begin() + copyStartOffset, dataIn.begin() + highlightPositions[i].offset - 1);
 		copyStartOffset = highlightPositions[i].offset - 1;
-		snippets.insert(snippets.end(), this->highlightMarkerPre.begin(), this->highlightMarkerPre.end());
+		unsigned index = highlightPositions[i].tagIndex;
+		snippets.insert(snippets.end(), this->highlightMarkers[index].first.begin(), this->highlightMarkers[index].first.end());
 		snippets.insert(snippets.end(), dataIn.begin() + copyStartOffset, dataIn.begin() + copyStartOffset + highlightPositions[i].len);
-		snippets.insert(snippets.end(), this->highlightMarkerPost.begin(), this->highlightMarkerPost.end());
+		snippets.insert(snippets.end(), this->highlightMarkers[index].second.begin(), this->highlightMarkers[index].second.end());
 		copyStartOffset += highlightPositions[i].len;
 	}
 	if (copyStartOffset < upperOffset)
@@ -650,6 +685,7 @@ void TermOffsetAlgorithm::getSnippet(unsigned recordId, unsigned attributeId,con
 	removeInvalidPositionInPlace(highlightPositions);
 
 	if (highlightPositions.size() == 0) {
+		genDefaultSnippet(dataIn, snippets, isMultiValued);
 		Logger::debug("could not generate a snippet because keywords could not be found in attribute.");
 		return;
 	}

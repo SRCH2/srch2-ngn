@@ -125,8 +125,10 @@ const char* const ConfigManager::singleCoreString = "core";
 const char* const ConfigManager::defaultCoreNameString = "defaultcorename";
 const char* const ConfigManager::highLightString = "highlight";
 const char* const ConfigManager::highLighterString = "highlighter";
-const char* const ConfigManager::markerPre = "markerpre";
-const char* const ConfigManager::markerPost = "markerpost";
+const char* const ConfigManager::exactTagPre = "exacttagpre";
+const char* const ConfigManager::exactTagPost = "exacttagpost";
+const char* const ConfigManager::fuzzyTagPre = "fuzzytagpre";
+const char* const ConfigManager::fuzzyTagPost = "fuzzytagpost";
 const char* const ConfigManager::snippetSize = "snippetsize";
 
 
@@ -626,31 +628,55 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
         }
     }
 
-    coreInfo->highlightMarkerPre = "<b>";
-    coreInfo->highlightMarkerPost = "</b>";
+    coreInfo->fhighlightMarkerPre = "<b>";
+    coreInfo->fhighlightMarkerPost = "</b>";
+    coreInfo->ehighlightMarkerPre = "<b>";
+    coreInfo->ehighlightMarkerPost = "</b>";
     coreInfo->highlightSnippetLen = 150;
 
     childNode = queryNode.child(highLighterString).child(snippetSize);
     if (childNode && childNode.text()) {
     	coreInfo->highlightSnippetLen = childNode.text().as_int();
     }
-    childNode = queryNode.child(highLighterString).child(markerPre);
+    childNode = queryNode.child(highLighterString).child(exactTagPre);
     if (childNode) {
     	string marker = childNode.attribute("value").value();
     	boost::algorithm::trim(marker);
     	if (marker.length() > 0){
-    		coreInfo->highlightMarkerPre = marker;
+    		coreInfo->ehighlightMarkerPre = marker;
     	} else {
     		parseError << "The highlighter pre marker is an empty string. Using the default marker";
     		return;
     	}
     }
-    childNode = queryNode.child(highLighterString).child(markerPost);
+    childNode = queryNode.child(highLighterString).child(exactTagPost);
     if (childNode) {
     	string marker = childNode.attribute("value").value();
     	boost::algorithm::trim(marker);
     	if (marker.length() > 0){
-    		coreInfo->highlightMarkerPost = marker;
+    		coreInfo->ehighlightMarkerPost = marker;
+    	} else {
+    		parseError << "The highlighter post marker is an empty string. Using the default marker";
+    		return;
+    	}
+	}
+    childNode = queryNode.child(highLighterString).child(fuzzyTagPre);
+    if (childNode) {
+    	string marker = childNode.attribute("value").value();
+    	boost::algorithm::trim(marker);
+    	if (marker.length() > 0){
+    		coreInfo->fhighlightMarkerPre = marker;
+    	} else {
+    		parseError << "The highlighter pre marker is an empty string. Using the default marker";
+    		return;
+    	}
+    }
+    childNode = queryNode.child(highLighterString).child(fuzzyTagPost);
+    if (childNode) {
+    	string marker = childNode.attribute("value").value();
+    	boost::algorithm::trim(marker);
+    	if (marker.length() > 0){
+    		coreInfo->fhighlightMarkerPost = marker;
     	} else {
     		parseError << "The highlighter post marker is an empty string. Using the default marker";
     		return;

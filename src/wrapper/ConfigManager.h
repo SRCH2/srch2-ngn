@@ -422,8 +422,10 @@ private:
     static const char* const schemaFileString;
     static const char* const highLightString;
     static const char* const highLighterString;
-    static const char* const markerPre;
-    static const char* const markerPost;
+    static const char* const exactTagPre;
+    static const char* const exactTagPost;
+    static const char* const fuzzyTagPre;
+    static const char* const fuzzyTagPost;
     static const char* const snippetSize;
 };
 
@@ -554,12 +556,19 @@ public:
     const vector<std::pair<unsigned, string> >& getHighlightAttributeIdsVector() const { return highlightAttributes; }
     void setHighlightAttributeIdsVector(vector<std::pair<unsigned, string> >& in) { highlightAttributes = in; }
 
-    void getHighLightMarkerPre(string& markerStr) const{
-    	markerStr = highlightMarkerPre;
+    void getExactHighLightMarkerPre(string& markerStr) const{
+    	markerStr = ehighlightMarkerPre;
     }
 
-    void getHighLightMarkerPost(string& markerStr) const{
-    	markerStr = highlightMarkerPost;
+    void getExactHighLightMarkerPost(string& markerStr) const{
+    	markerStr = ehighlightMarkerPost;
+    }
+    void getFuzzyHighLightMarkerPre(string& markerStr) const{
+    	markerStr = fhighlightMarkerPre;
+    }
+
+    void getFuzzyHighLightMarkerPost(string& markerStr) const{
+    	markerStr = fhighlightMarkerPost;
     }
     void getHighLightSnippetSize(unsigned& snippetSize) const{
     	snippetSize = highlightSnippetLen;
@@ -674,8 +683,10 @@ protected:
     unsigned updateHistogramEveryPMerges;
     unsigned updateHistogramEveryQWrites;
     vector<std::pair<unsigned, string> > highlightAttributes;
-    string highlightMarkerPre;
-    string highlightMarkerPost;
+    string ehighlightMarkerPre;
+    string ehighlightMarkerPost;
+    string fhighlightMarkerPre;
+    string fhighlightMarkerPost;
     unsigned highlightSnippetLen;
 };
 

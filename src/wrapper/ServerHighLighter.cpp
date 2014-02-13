@@ -73,8 +73,13 @@ ServerHighLighter::ServerHighLighter(QueryResults * queryResults,Srch2Server *se
 	this->queryResults = queryResults;
 
 	HighlightConfig hconf;
-	server->indexDataConfig->getHighLightMarkerPre(hconf.highlightMarkerPre);
-	server->indexDataConfig->getHighLightMarkerPost(hconf.highlightMarkerPost);
+	string pre, post;
+	server->indexDataConfig->getExactHighLightMarkerPre(pre);
+	server->indexDataConfig->getExactHighLightMarkerPost(post);
+	hconf.highlightMarkers.push_back(make_pair(pre, post));
+	server->indexDataConfig->getFuzzyHighLightMarkerPre(pre);
+	server->indexDataConfig->getFuzzyHighLightMarkerPost(post);
+	hconf.highlightMarkers.push_back(make_pair(pre, post));
 	server->indexDataConfig->getHighLightSnippetSize(hconf.snippetSize);
 
 	if (!isEnabledWordPositionIndex(server->indexer->getSchema()->getPositionIndexType())){
