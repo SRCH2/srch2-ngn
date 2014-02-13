@@ -2344,6 +2344,7 @@ bool ConfigManager::isValidGetAllResultsKAlternative(string kpt){
     return false;
 }
 
+// Note: For release mode compiles, logLevel can still be 4 (debug), but debug output will be suppressed.
 bool ConfigManager::isValidLogLevel(string& logLevel) {
     if (logLevel.compare("0") == 0 || logLevel.compare("1") == 0 || logLevel.compare("2") == 0
         || logLevel.compare("3") == 0 || logLevel.compare("4") == 0) {

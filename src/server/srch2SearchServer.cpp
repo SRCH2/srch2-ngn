@@ -666,7 +666,7 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
                 port = globalDefaultPort;
             }
             evhttp_set_cb(http_server, portList[j].path, portList[j].callback, defaultCore);
-            Logger::info("Routing port %d route %s to default core %s", port, portList[j].path, defaultCore->getCoreName().c_str());
+            Logger::debug("Routing port %d route %s to default core %s", port, portList[j].path, defaultCore->getCoreName().c_str());
         }
         evhttp_set_gencb(http_server, cb_notfound, NULL);
 
@@ -684,7 +684,7 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
                     }
                     evhttp_set_cb(http_server, path.c_str(), portList[j].callback, iterator->second);
 
-                    Logger::info("Adding port %d route %s to core %s", port, path.c_str(), coreName.c_str());
+                    Logger::debug("Adding port %d route %s to core %s", port, path.c_str(), coreName.c_str());
                 }
             }
         }

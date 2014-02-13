@@ -100,7 +100,7 @@
 		    <mergeEveryMWrites>10</mergeEveryMWrites>
 		</mergePolicy>
 		<updateLog>
-		    <logLevel>3</logLevel>
+		    <logLevel>4</logLevel>
 		    <accessLogFile>srch2-log.txt</accessLogFile>
 		</updateLog>
 	    </updatehandler>
@@ -191,7 +191,7 @@
 		    <mergeEveryMWrites>10</mergeEveryMWrites>
 		</mergePolicy>
 		<updateLog>
-		    <logLevel>3</logLevel>
+		    <logLevel>4</logLevel>
 		    <accessLogFile>srch2-log.txt</accessLogFile>
 		</updateLog>
 	    </updatehandler>
