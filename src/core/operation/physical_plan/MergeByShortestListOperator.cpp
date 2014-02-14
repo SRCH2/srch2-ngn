@@ -369,16 +369,16 @@ PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfGetNext(const
 	 * Rnd[] = array of random access cost values of children (Rnd[i] is the random access cost of child i)
 	 *
 	 */
-	vector<unsigned> Scn;
-	vector<unsigned> Rnd;
+	vector<double> Scn;
+	vector<double> Rnd;
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
-//		Scn.push_back(this->getChildAt(childOffset)->getCostOfGetNext(params).cost);
-//		Rnd.push_back(this->getChildAt(childOffset)->getCostOfVerifyByRandomAccess(params).cost);
-		Scn.push_back(1);
-		Rnd.push_back(3);
+		Scn.push_back(this->getChildAt(childOffset)->getCostOfGetNext(params).cost);
+		Rnd.push_back(this->getChildAt(childOffset)->getCostOfVerifyByRandomAccess(params).cost);
+//		Scn.push_back(1);
+//		Rnd.push_back(3);
 	}
 
-	unsigned SigmaRnd = 0;
+	double SigmaRnd = 0;
 	for(unsigned c = 0 ; c < T ; c++){
 		SigmaRnd += Rnd[c];
 	}
@@ -390,7 +390,7 @@ PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfGetNext(const
 	 * cost_candidates = R * (Scn[S] + Rnd[0] + ... + Rnd[S-1] + Rnd[S+1] + ... + Rnd[T-1])
 	 *
 	 */
-	 unsigned cost_candidates = R * (Scn[S] + SigmaRnd - Rnd[S]);
+	 double cost_candidates = R * (Scn[S] + SigmaRnd - Rnd[S]);
 	/*
 	 * COST_NC = (1-P[0])Rnd[0] +
 	 *             P[0]*(1-P[1])*(Rnd[0] + Rnd[1]) +
@@ -402,7 +402,7 @@ PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfGetNext(const
 	 *                       // because when record comes from P[S] we don't check
 	 *                       // child S for random access so we always pass it
 	 */
-	 unsigned COST_NC = 0;
+	 double COST_NC = 0;
 	 float PSBackup = P[S];
 	 P[S] = 1;
 	 float PPart = 1;
@@ -420,7 +420,7 @@ PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfGetNext(const
 	 /*
 	 * cost_noncandidates = (l[S] - R) * COST_NC
 	 */
-	 unsigned cost_noncandidates = (estimatedLengthOfShortestList - R) * COST_NC;
+	 double cost_noncandidates = (estimatedLengthOfShortestList - R) * COST_NC;
 	 /*
 	 * cost = (cost_candidates + cost_noncandidates) / R ;
 	 */

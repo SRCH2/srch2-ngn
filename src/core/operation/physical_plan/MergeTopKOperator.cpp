@@ -619,8 +619,8 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalP
 	 * Scn[i] = cost of scanning one record from child i
 	 * Rnd[i] = cost of doing random access for a record on child i
 	 */
-	vector<unsigned> Scn;
-	vector<unsigned> Rnd;
+	vector<double> Scn;
+	vector<double> Rnd;
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
 		Scn.push_back(this->getChildAt(childOffset)->getCostOfGetNext(params).cost);
 		Rnd.push_back(this->getChildAt(childOffset)->getCostOfVerifyByRandomAccess(params).cost);
@@ -685,11 +685,11 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalP
 	 * 		candidate and all forward index verifications return true
 	 * C-CAN[i] = Scn[i] + 	Rnd[0] + Rnd[1] + ... + Rnd[i-1] + Rnd[i+1] + ... + Rnd[T-1]
 	 */
-	unsigned SigmaRnd = 0;
+	double SigmaRnd = 0;
 	for(unsigned c = 0; c < P.size(); ++c){
 		SigmaRnd += Rnd[c];
 	}
-	vector<unsigned> C_CAN;
+	vector<double> C_CAN;
 	for(unsigned c = 0; c < P.size(); ++c){
 		C_CAN.push_back(SigmaRnd - Rnd[c] + Scn[c]);
 	}
@@ -721,7 +721,7 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalP
 	 /* Cost_candidates = cost of visiting all candidate records =
 	 *          C-CAN[0] * CAN[0] + .... + C-CAN[T-1] * CAN[T-1]
 	 */
-	unsigned cost_candidates = 0;
+	double cost_candidates = 0;
 	for(unsigned c = 0; c < P.size(); ++c){
 		cost_candidates += C_CAN[c] * CAN[c];
 	}
@@ -739,9 +739,9 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalP
 	 *                       // because when record comes from P[i] we don't check
 	 *                       // child i for random access so we always pass it
 	 */
-	vector<unsigned> C_NCAN;
+	vector<double> C_NCAN;
 	for(unsigned c = 0; c < P.size(); ++c){
-		unsigned C_NCAN_c = 0;
+		double C_NCAN_c = 0;
 		float PcBackup = P[c];
 		P[c] = 1;
 		float PPart = 1;
@@ -785,7 +785,7 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalP
 	 /* Cost_noncandidates = cost of visiting all non-candidate records =
 	 *         C-NCAN[0] * NCAN[0] + ... + C-NCAN[T-1] * NCAN[T-1]
 	 */
-	unsigned cost_noncandidates = 0;
+	double cost_noncandidates = 0;
 	for(unsigned c = 0; c < P.size(); ++c){
 		cost_noncandidates += C_NCAN[c] * NCAN[c];
 	}

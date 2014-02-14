@@ -301,7 +301,7 @@ public:
  * cost = RlogR * some number of instructions  + R * cost of child's getNext
  */
 struct PhysicalPlanCost{
-	unsigned cost;
+	double cost;
 	PhysicalPlanCost(){
 		cost = 0;
 	}
@@ -314,8 +314,8 @@ struct PhysicalPlanCost{
 	PhysicalPlanCost operator+(const PhysicalPlanCost & rightValue){
 		return PhysicalPlanCost( cost + rightValue.cost);
 	}
-	PhysicalPlanCost operator+(const unsigned & rightValue){
-		return PhysicalPlanCost(cost + rightValue);
+	PhysicalPlanCost operator+(const double & rightValue){
+		return PhysicalPlanCost( cost + rightValue);
 	}
 	void addInstructionCost(unsigned numberOfInstructions = 1){
 		cost += 2 * numberOfInstructions;
