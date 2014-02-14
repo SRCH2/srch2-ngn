@@ -207,6 +207,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 	PhysicalPlanNode * bottomOfChain = NULL;
 	FacetOperator * facetOperatorPtr = NULL;
 	SortByRefiningAttributeOperator * sortOperator = NULL;
+	bool needToGetAllResults = false; // if this variable is true we get all results even if the search type is topk
 	if(logicalPlan->getPostProcessingInfo() != NULL){
 		if(logicalPlan->getPostProcessingInfo()->getfacetInfo() != NULL){
 			facetOperatorPtr = new FacetOperator(this, logicalPlan->getPostProcessingInfo()->getfacetInfo()->types,
@@ -221,6 +222,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 			facetOptimizationOperatorPtr->setExecutableNode(facetOperatorPtr);
 
 			topOperator = bottomOfChain =  facetOperatorPtr;
+			needToGetAllResults = true;
 		}
 		if(logicalPlan->getPostProcessingInfo()->getSortEvaluator() != NULL){
 			sortOperator = new SortByRefiningAttributeOperator(logicalPlan->getPostProcessingInfo()->getSortEvaluator());
@@ -235,6 +237,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 			}else{
 				topOperator = bottomOfChain = sortOperator;
 			}
+			needToGetAllResults = true;
 		}
 	}
 
@@ -258,7 +261,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 
 
 	unsigned numberOfIterations ;
-	if(logicalPlan->getQueryType() == SearchTypeTopKQuery){
+	if(logicalPlan->getQueryType() == SearchTypeTopKQuery && needToGetAllResults == false){
 		numberOfIterations = logicalPlan->offset + logicalPlan->numberOfResultsToRetrieve;
 	}else{
 		numberOfIterations = -1; // to set it to a very big number
