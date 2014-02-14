@@ -505,6 +505,9 @@ rm -rf data/ *.idx reset_logger/indexes
 
 test_id="tests_used_for_statemedia"
 printTestBanner "$test_id"
+# server is a little slow to exit for reset_logger, causing the server in statemedia's first test (write_correctness)
+# to fail to bind the port, hanging the test script, so wait just a sec here
+sleep 1
 NODECMD=${NODE_CMD:-node} ./tests_used_for_statemedia/autotest.sh $SRCH2_ENGINE >> system_test.log 2>&1
 
 # TODO - hack until we figure out why tests_used_for_statemedia/large_insertion_test/large_insertion_test.rb
