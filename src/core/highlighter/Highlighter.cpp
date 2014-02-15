@@ -330,25 +330,28 @@ void AnalyzerBasedAlgorithm::getSnippet(const QueryResults* qr, unsigned recIdx,
 					snippetUpperEnd++;
 					matchCntInAttr++;
 				}
+				string attrPartVal= dataIn.substr(lastPos - attrStartPos /*offset*/, attrEndPos - lastPos /*len*/);
 				if (matchCntInAttr) {
 					vector<CharType> ctv;
-					string attrPartVal= dataIn.substr(lastPos - attrStartPos /*offset*/, attrEndPos - lastPos /*len*/);
 					utf8StringToCharTypeVector(attrPartVal, ctv);
 					_genSnippet(ctv, ctsnippet, 0, partHighlightPositions.size() - 1, partHighlightPositions);
+					string snippet;
+					charTypeVectorToUtf8String(ctsnippet, snippet);
+					snippets.push_back(snippet);
+				} else {
+					genDefaultSnippet(attrPartVal, snippets, false);
 				}
-				string snippet;
-				charTypeVectorToUtf8String(ctsnippet, snippet);
-				snippets.push_back(snippet);
+
 				lastPos = attrEndPos + strlen(" $$ ");
 				snippetLowerEnd = snippetUpperEnd;
 			}
 			if (*lastPos != 0) {
 				ctsnippet.clear();
 				snippetUpperEnd = highlightPositions.size() - 1;
+				string attrPartVal= dataIn.substr(lastPos - attrStartPos /*offset*/, string::npos /*len*/);
 				if (snippetLowerEnd <  highlightPositions.size() &&
 						highlightPositions[snippetLowerEnd].offset > (lastPos - attrStartPos)) {
 					vector<CharType> ctv;
-					string attrPartVal= dataIn.substr(lastPos - attrStartPos /*offset*/, string::npos /*len*/);
 					utf8StringToCharTypeVector(attrPartVal, ctv);
 					vector<matchedTermInfo> partHighlightPositions;
 					vector<matchedTermInfo>::iterator phpIter = highlightPositions.begin() + snippetLowerEnd;
@@ -358,10 +361,12 @@ void AnalyzerBasedAlgorithm::getSnippet(const QueryResults* qr, unsigned recIdx,
 						++phpIter;
 					}
 					_genSnippet(ctv, ctsnippet, snippetUpperEnd, snippetLowerEnd, partHighlightPositions);
+					string snippet;
+					charTypeVectorToUtf8String(ctsnippet, snippet);
+					snippets.push_back(snippet);
+				} else {
+					genDefaultSnippet(attrPartVal, snippets, false);
 				}
-				string snippet;
-				charTypeVectorToUtf8String(ctsnippet, snippet);
-				snippets.push_back(snippet);
 			}
 		}else {
 			vector<CharType> ctv;
