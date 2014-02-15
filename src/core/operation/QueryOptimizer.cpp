@@ -47,11 +47,6 @@ void QueryOptimizer::buildPhysicalPlanFirstVersion(PhysicalPlan & physicalPlan, 
 	//1. Choose the search type based on user's request and post processing
 	chooseSearchTypeOfPhysicalPlan(physicalPlan);
 
-	//2. Prepare runtime parameters for when the physical plan is going to be executed.
-	//---- These parameters are needed to compute costs so we should prepare them here
-	//---- and not in the PhysicalPlanExecutor
-	preparePhysicalPlanExecutionParamters(physicalPlan);
-
 
 	//3. Build all the options for physical plan tree
 	vector<PhysicalPlanOptimizationNode *> treeOptions;
@@ -88,20 +83,6 @@ void QueryOptimizer::buildPhysicalPlanFirstVersion(PhysicalPlan & physicalPlan, 
 void QueryOptimizer::chooseSearchTypeOfPhysicalPlan(PhysicalPlan & physicalPlan){
 	// TODO : for now, we just simply pass the same search type
 	physicalPlan.setSearchType(logicalPlan->getQueryType());
-}
-
-void QueryOptimizer::preparePhysicalPlanExecutionParamters(PhysicalPlan & physicalPlan){
-	// Parameter K for TopK. If searchType is not TopK this parameter is passed as 0 and it's
-	// ---- NOT going to be used in execution.
-	unsigned k = 0;
-	if(physicalPlan.getSearchType() == srch2is::SearchTypeTopKQuery){
-		k = logicalPlan->getNumberOfResultsToRetrieve() + logicalPlan->getOffset() ;
-	}
-	// Parameter exactOnly for exact/fuzzy policy.
-	PhysicalPlanExecutionParameters * parameters = new PhysicalPlanExecutionParameters(k , logicalPlan->isFuzzy(),
-			logicalPlan->exactQuery->getPrefixMatchPenalty(), logicalPlan->getQueryType());
-
-	physicalPlan.setExecutionParameters(parameters);
 }
 
 void QueryOptimizer::buildIncompleteTreeOptions(vector<PhysicalPlanOptimizationNode *> & treeOptions){

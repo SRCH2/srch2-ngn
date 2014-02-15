@@ -65,8 +65,6 @@ private:
 
 	void chooseSearchTypeOfPhysicalPlan(PhysicalPlan & physicalPlan);
 
-	void preparePhysicalPlanExecutionParamters(PhysicalPlan & physicalPlan);
-
 	void buildIncompleteTreeOptions(vector<PhysicalPlanOptimizationNode *> & treeOptions);
 
 	void buildIncompleteSubTreeOptions(LogicalPlanNode * root, vector<PhysicalPlanOptimizationNode *> & treeOptions);

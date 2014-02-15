@@ -228,7 +228,7 @@ PhysicalPlanCost UnionLowestLevelTermVirtualListOptimizationOperator::getCostOfO
 PhysicalPlanCost UnionLowestLevelTermVirtualListOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
 	unsigned estimatedNumberOfTerminalNodes = this->getLogicalPlanNode()->stats->getEstimatedNumberOfLeafNodes();
 	PhysicalPlanCost resultCost;
-	resultCost.cost = log2((double)estimatedNumberOfTerminalNodes);
+	resultCost.cost = log2((double)estimatedNumberOfTerminalNodes + 1);
 	resultCost.cost = resultCost.cost * 0.1;
 	return resultCost; // cost of sequential access
 }

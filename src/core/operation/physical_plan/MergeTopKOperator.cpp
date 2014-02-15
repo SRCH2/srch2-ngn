@@ -579,9 +579,9 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalP
 	 /*
 	  * N = total number of records in the data
 	  */
-	unsigned N = this->getChildAt(0)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults() /
-			this->getChildAt(0)->getLogicalPlanNode()->stats->getEstimatedProbability();
+	unsigned N = params.totalNumberOfRecords;
 	 /*
+	  *
 	  * K = number of top results to find (we calculate the score for K and then divide the result by K)
 	  */
 	unsigned K = params.k;

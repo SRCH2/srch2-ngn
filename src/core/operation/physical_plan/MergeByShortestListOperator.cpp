@@ -339,8 +339,7 @@ PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfGetNext(const
 	 /*
 	  * N = total number of records
 	  */
-	unsigned N = this->getChildAt(0)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults() /
-			this->getChildAt(0)->getLogicalPlanNode()->stats->getEstimatedProbability();
+	unsigned N = params.totalNumberOfRecords;
 	 /*
 	  * P[] = array of probabilities of terms (length of list i mentioned as li = P[i] * N)
 	  */
