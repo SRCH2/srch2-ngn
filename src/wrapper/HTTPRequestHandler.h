@@ -22,6 +22,7 @@
 #include <sys/queue.h>
 #include <event.h>
 #include <evhttp.h>
+#include "highlighter/Highlighter.h"
 
 namespace srch2
 {
@@ -80,6 +81,8 @@ class HTTPRequestHandler
 		static void cleanAndAppendToBuffer(const string& in, string& out);
 		static void genRecordJsonString(const srch2is::Indexer *indexer, unsigned recordId,
 				const string& externalId, string& sbuffer);
+		static void genRecordJsonString(const srch2is::Indexer *indexer, unsigned recordId,
+				const string& externalId, string& sbuffer,const vector<string>* attrToReturn);
 };
 
 }

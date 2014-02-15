@@ -2347,7 +2347,8 @@ bool ConfigManager::isValidResponseFormat(string& responseFormat) {
 }
 
 bool ConfigManager::isValidResponseContentType(string responseContentType) {
-    if (responseContentType.compare("0") == 0 || responseContentType.compare("1") == 0){
+    if (responseContentType.compare("0") == 0 || responseContentType.compare("1") == 0
+    		|| responseContentType.compare("2") == 0){
         return true;
     }
     return false;

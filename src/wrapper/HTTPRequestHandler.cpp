@@ -222,6 +222,15 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
                     // The class CustomizableJsonWriter allows us to
                     // attach the data string to the JSON tree without parsing it.
                     root["results"][counter][internalRecordTags.first] = sbuffer;
+                } else if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SELECTED_ATTR){
+                	unsigned internalRecordId = queryResults->getInternalRecordId(i);
+                	string sbuffer;
+                	const vector<string> *attrToReturn = indexDataConfig->getAttributesToReturn();
+                	genRecordJsonString(indexer, internalRecordId, queryResults->getRecordId(i),
+                			sbuffer, attrToReturn);
+                	// The class CustomizableJsonWriter allows us to
+                	// attach the data string to the JSON tree without parsing it.
+                	root["results"][counter][internalRecordTags.first] = sbuffer;
                 }
 
                 string sbuffer = string();
@@ -453,6 +462,11 @@ void HTTPRequestHandler::printOneResultRetrievedById(evhttp_request *req, const 
 
 void HTTPRequestHandler::genRecordJsonString(const srch2is::Indexer *indexer, unsigned internalRecordId,
 		const string& extrnalRecordId, string& sbuffer){
+	genRecordJsonString(indexer, internalRecordId, extrnalRecordId,
+	                    		 sbuffer, NULL);
+}
+void HTTPRequestHandler::genRecordJsonString(const srch2is::Indexer *indexer, unsigned internalRecordId,
+		const string& extrnalRecordId, string& sbuffer, const vector<string>* attrToReturn){
 	Schema * storedAttrSchema = Schema::create();
 	JSONRecordParser::populateStoredSchema(storedAttrSchema, indexer->getSchema());
 	RecordSerializer compactRecDeserializer = RecordSerializer(*storedAttrSchema);
@@ -465,6 +479,10 @@ void HTTPRequestHandler::genRecordJsonString(const srch2is::Indexer *indexer, un
 	sbuffer+=":\""; sbuffer+=extrnalRecordId; sbuffer+="\",";
 	for ( ; iter != storedAttrSchema->getSearchableAttribute().end(); iter++)
 	{
+		if (attrToReturn &&
+		    std::find(attrToReturn->begin(), attrToReturn->end(), iter->first) == attrToReturn->end()) {
+			continue;
+		}
 		unsigned id = storedAttrSchema->getSearchableAttributeId(iter->first);
 		unsigned lenOffset = compactRecDeserializer.getSearchableOffset(id);
 		const char *attrdata = buffer.start + *((unsigned *)(buffer.start + lenOffset));
@@ -503,7 +521,43 @@ void HTTPRequestHandler::genRecordJsonString(const srch2is::Indexer *indexer, un
 			sbuffer+=',';
 		}
 	}
-	if (storedAttrSchema->getSearchableAttribute().size())
+	iter = storedAttrSchema->getRefiningAttributes()->begin();
+	for ( ; iter != storedAttrSchema->getRefiningAttributes()->end(); iter++)
+	{
+		if (attrToReturn &&
+				std::find(attrToReturn->begin(), attrToReturn->end(), iter->first) == attrToReturn->end()) {
+			continue;
+		}
+		unsigned id = storedAttrSchema->getRefiningAttributeId(iter->first);
+		unsigned lenOffset = compactRecDeserializer.getRefiningOffset(id);
+		sbuffer+='"'; sbuffer+=iter->first; sbuffer+='"';
+		sbuffer+=':';
+		sbuffer+='"';
+		switch(storedAttrSchema->getTypeOfRefiningAttribute(id)){
+		case srch2is::ATTRIBUTE_TYPE_FLOAT:
+		{
+			float attrdata = *((float *)(buffer.start + lenOffset));
+			stringstream ss;
+			ss << attrdata;
+			sbuffer += ss.str();
+			break;
+		}
+		case srch2is::ATTRIBUTE_TYPE_UNSIGNED:
+		{
+			unsigned attrdata = *((unsigned *)(buffer.start + lenOffset));
+			stringstream ss;
+			ss << attrdata;
+			sbuffer += ss.str();
+			break;
+		}
+		default: break;
+			// should not come here.
+		}
+		sbuffer+='"';
+		sbuffer+=',';
+	}
+	if (storedAttrSchema->getRefiningAttributes()->size() > 0 ||
+			storedAttrSchema->getSearchableAttribute().size() > 0)
 		sbuffer.erase(sbuffer.length()-1);
 	sbuffer.append("}");
 

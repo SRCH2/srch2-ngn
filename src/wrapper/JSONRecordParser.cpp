@@ -89,15 +89,12 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
         return false;// Raise Error
     }
 
-    /*
-     *  We store only searchable attribute in forward index.
-     */
     // storing searchable attributes code begin.
     string compressedInputLine;
-
-    typedef map<string , SearchableAttributeInfoContainer>::const_iterator SearchableAttrIter;
-    for (SearchableAttrIter iter = indexDataContainerConf->getSearchableAttributes()->begin();
-    		iter != indexDataContainerConf->getSearchableAttributes()->end(); ++iter)
+    typedef map<string , unsigned>::const_iterator SearchableAttrIter;
+    const Schema& storageSchema = compactRecSerializer.getStorageSchema();
+    for (SearchableAttrIter iter = storageSchema.getSearchableAttribute().begin();
+    		iter != storageSchema.getSearchableAttribute().end(); ++iter)
     {
     	vector<string> attributeStringValues;
     	getJsonValueString(root, iter->first, attributeStringValues, "attributes-search");
@@ -105,10 +102,41 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
     	snappy::Compress(singleString.c_str(), singleString.length(), &compressedInputLine);
     	compactRecSerializer.addSearchableAttribute(iter->first, compressedInputLine);
     }
+    // Now we need to store the refining attributes
+    typedef map<string , unsigned>::const_iterator  RefineAttrIter;
+    for (RefineAttrIter iter = storageSchema.getRefiningAttributes()->begin();
+    		iter != storageSchema.getRefiningAttributes()->end(); ++iter) {
+    	vector<string> attributeStringValues;
+    	getJsonValueString(root, iter->first, attributeStringValues, "refining-attributes");
+    	srch2is::FilterType type = storageSchema.getTypeOfRefiningAttribute(iter->second);
+		switch (type) {
+		case srch2is::ATTRIBUTE_TYPE_UNSIGNED:
+		{
+			string& singleString = attributeStringValues[0];
+			unsigned val = atoi(singleString.c_str());
+			compactRecSerializer.addRefiningAttribute(iter->first, val);
+			break;
+		}
+		case srch2is::ATTRIBUTE_TYPE_FLOAT:
+		{
+			string& singleString = attributeStringValues[0];
+			float val = atof(singleString.c_str());
+			compactRecSerializer.addRefiningAttribute(iter->first, val);
+			break;
+		}
+		default:
+		{
+			// not possible
+			break;
+		}
+		}
+    }
     RecordSerializerBuffer compactBuffer = compactRecSerializer.serialize();
     record->setInMemoryData(compactBuffer.start, compactBuffer.length);
     compactRecSerializer.nextRecord();
     //delete[] (char *)compactBuffer.start;
+
+
 
     for (map<string , SearchableAttributeInfoContainer>::const_iterator attributeIter
     		= indexDataContainerConf->getSearchableAttributes()->begin();
@@ -306,9 +334,9 @@ bool JSONRecordParser::populateRecordFromJSON(const string &inputLine,
 
 void JSONRecordParser::populateStoredSchema(Schema* storedSchema, const Schema *schema) {
 
-	unsigned id = 0;
 	const string* primaryKey = schema->getPrimaryKey();
 	bool pk_found = false;
+	std::set<string> visitedAttr;
 	std::map<std::string, unsigned>::const_iterator searchableAttributeIter =
 			schema->getSearchableAttribute().begin();
 	for ( ; searchableAttributeIter != schema->getSearchableAttribute().end();
@@ -317,22 +345,36 @@ void JSONRecordParser::populateStoredSchema(Schema* storedSchema, const Schema *
 		bool isMultiValued = schema->isSearchableAttributeMultiValued(searchableAttributeIter->second);
 		bool isHighLight = schema->isHighlightEnabled(searchableAttributeIter->second);
 		storedSchema->setSearchableAttribute(searchableAttributeIter->first, 1, isMultiValued, isHighLight);
-//		if (*primaryKey == searchableAttributeIter->first)
-//			pk_found = true;
+		visitedAttr.insert(searchableAttributeIter->first);
 	}
-//	if (!pk_found)
-//		storedSchema->setSearchableAttribute(primaryKey, 1, false);
 
-	// do we need to store or highlight refining attributes ?? ..currently refining attributes
-	// are stored in fwd index separately
-//	id = 0;
-//	map<string, RefiningAttributeInfoContainer>::const_iterator refiningAttributeIter =
-//			config->getRefiningAttributes()->begin();
-//	for ( ; refiningAttributeIter != config->getRefiningAttributes()->end();
-//			refiningAttributeIter++)
-//	{
-//		schema->addStoredRefiningAttribute(refiningAttributeIter->first, id++);
-//	}
+	map<string, unsigned>::const_iterator refiningAttributeIter =
+			schema->getRefiningAttributes()->begin();
+	for ( ; refiningAttributeIter != schema->getRefiningAttributes()->end();
+			refiningAttributeIter++)
+	{
+		if (visitedAttr.count(refiningAttributeIter->first) > 0){
+			continue;
+		}
+		bool isMultiValued = schema->isRefiningAttributeMultiValued(refiningAttributeIter->second);
+		if (isMultiValued) {
+			storedSchema->setSearchableAttribute(refiningAttributeIter->first,
+								1, true, false);
+			continue;
+		}
+		srch2is::FilterType type = schema->getTypeOfRefiningAttribute(refiningAttributeIter->second);
+		switch (type) {
+		case srch2is::ATTRIBUTE_TYPE_UNSIGNED:
+		case srch2is::ATTRIBUTE_TYPE_FLOAT:
+			storedSchema->setRefiningAttribute(refiningAttributeIter->first,
+					type, *schema->getDefaultValueOfRefiningAttribute(refiningAttributeIter->second),
+					false);
+			break;
+		default:
+			storedSchema->setSearchableAttribute(refiningAttributeIter->first,
+					1, false, false);
+		}
+	}
 }
 
 srch2is::Schema* JSONRecordParser::createAndPopulateSchema(const CoreInfo_t *indexDataContainerConf)

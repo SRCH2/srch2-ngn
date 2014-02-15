@@ -135,7 +135,8 @@ class RecordSerializer {
 
   template<typename T>
   void addRefiningAttribute(const int, const T&);
-
+  template<typename T>
+  void addRefiningAttribute(const std::string &refiningAttrName, const T&);
   template<typename T>
   void addSearchableAttribute(const int, const T&);
   template<typename T>
@@ -148,6 +149,7 @@ class RecordSerializer {
 
   //Cleans up after previous serialize call
   RecordSerializer& nextRecord();
+  const Schema& getStorageSchema() { return schema; }
 };
 inline RecordSerializerBuffer::RecordSerializerBuffer(void* start,
     size_t length) : start(start), length(length) {}
@@ -180,7 +182,13 @@ void RecordSerializer::addRefiningAttribute(const int refiningId,
 
   add(offsets.second.at(refiningId), attribute);
 }
-
+template<typename T>
+void RecordSerializer::addRefiningAttribute(const std::string &refiningAttrName,
+		const T& attribute){
+	unsigned refiningId = schema.getRefiningAttributeId(refiningAttrName);
+	ASSERT(0 <= refiningId && refiningId < offsets.second.size());
+	add(offsets.second.at(refiningId), attribute);
+}
 template<typename T> inline
 void RecordSerializer::addSearchableAttribute(const int searchableId,
     const T& attribute) {
