@@ -305,7 +305,7 @@ struct PhysicalPlanCost{
 	PhysicalPlanCost(){
 		cost = 0;
 	}
-	PhysicalPlanCost(unsigned c){
+	PhysicalPlanCost(double c){
 		cost = c;
 	}
 	PhysicalPlanCost(const PhysicalPlanCost & src){
