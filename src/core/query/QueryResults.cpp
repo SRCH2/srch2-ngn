@@ -180,6 +180,12 @@ void QueryResults::getMatchedAttributes(const unsigned position, std::vector<std
 		}
 	}
 }
+
+void QueryResults::getTermTypes(unsigned position, vector<TermType>& tt) const{
+	tt.assign(impl->sortedFinalResults[position]->termTypes.begin(),
+    		impl->sortedFinalResults[position]->termTypes.end());
+}
+
 /*
  *   In Geo search return distance between location of the result and center of the query rank.
  *   TODO: Change the name to getGeoDistance()

@@ -265,7 +265,6 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 	}
 
 	bool getPrefixToCompleteInfo = isEnabledCharPositionIndex(this->indexer->getSchema()->getPositionIndexType());
-	boost::unordered_set<string> visitedMatchingKeyword;
 	while(true){
 
 		PhysicalPlanRecordItem * newRecord = topOperator->getNext(dummy);
@@ -287,9 +286,9 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		queryResult->_score.setTypedValue(newRecord->getRecordRuntimeScore());
 		vector< TrieNodePointer > matchingKeywordTrieNodes;
 		newRecord->getRecordMatchingPrefixes(matchingKeywordTrieNodes);
-		vector<TermType> termTypes;
-		newRecord->getTermTypes(termTypes);
-		keywordHighlightInfo keyInfo;
+
+		newRecord->getTermTypes(queryResult->termTypes);
+
 		for(unsigned i=0; i < matchingKeywordTrieNodes.size() ; i++){
 			std::vector<CharType> temp;
 			boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
@@ -299,36 +298,20 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 			string str;
 			charTypeVectorToUtf8String(temp, str);
 			queryResult->matchingKeywords.push_back(str);
-			//cout << str << "("<< termTypes.at(i) << ")"<< ",";
 			/*
-			 *  Code below is a setup for highlighter module when the term offsets are present in
-			 *  the forward index.
+			 *  Code below is a setup for highlighter module
 			 */
-			if (visitedMatchingKeyword.count(str) == 0) {
-				visitedMatchingKeyword.insert(str);
-				if(termTypes.at(i) == TERM_TYPE_COMPLETE)
-					keyInfo.flag = 1;
-				else if (termTypes.at(i) == TERM_TYPE_PHRASE)
-					keyInfo.flag = 2;
-				else
-					keyInfo.flag = 0;
-				keyInfo.key = temp;
-				keyInfo.editDistance = queryResult->editDistances.at(i);
-				//Logger::debug("prefix = %s", str.c_str());
-				queryResults->impl->keywordStrToHighlight.push_back(keyInfo);
-				if (getPrefixToCompleteInfo) {
-					unsigned idxKey = queryResults->impl->keywordStrToHighlight.size() - 1;
-					vector<unsigned> *vPtr = new vector<unsigned>();
-					queryResults->impl->prefixToCompleteMap.insert(make_pair(idxKey, vPtr));
-					if (keyInfo.flag != 0 && matchingKeywordTrieNodes[i]->isTerminalNode()) {
-						vPtr->push_back(matchingKeywordTrieNodes[i]->id);
-					} else {
-						findChildNodesForPrefixNode(matchingKeywordTrieNodes[i], *vPtr);
-					}
+			if (getPrefixToCompleteInfo) {
+				//unsigned idxKey = queryResults->impl->keywordStrToHighlight.size() - 1;
+				vector<unsigned> *vPtr = new vector<unsigned>();
+				queryResult->prefixToCompleteMap.push_back(vPtr);
+				if (queryResult->termTypes.at(i) != TERM_TYPE_PREFIX && matchingKeywordTrieNodes[i]->isTerminalNode()) {
+					vPtr->push_back(matchingKeywordTrieNodes[i]->id);
+				} else {
+					findChildNodesForPrefixNode(matchingKeywordTrieNodes[i], *vPtr);
 				}
 			}
 		}
-		//cout << endl;
 		newRecord->getRecordMatchAttributeBitmaps(queryResult->attributeBitmaps);
 
 		this->getForwardIndex()->getExternalRecordIdFromInternalRecordId(queryResult->internalRecordId,queryResult->externalRecordId );

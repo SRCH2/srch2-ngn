@@ -26,8 +26,6 @@
 #include <instantsearch/Stat.h>
 #include <instantsearch/Ranker.h>
 #include <instantsearch/TypedValue.h>
-#include "highlighter/Highlighter.h"
-
 #include "index/ForwardIndex.h"
 #include "util/Assert.h"
 #include "util/Logger.h"
@@ -59,6 +57,9 @@ public:
     std::vector<std::string> matchingKeywords;
     std::vector<unsigned> attributeBitmaps;
     std::vector<unsigned> editDistances;
+    std::vector<TermType> termTypes;
+    //vector<keywordHighlightInfo> keywordStrToHighlight;
+    vector<vector<unsigned> *> prefixToCompleteMap;
     // only the results of MapQuery have this
     double physicalDistance; // TODO check if there is a better way to structure the "location result"
     TypedValue getResultScore() const
@@ -195,12 +196,6 @@ public:
      */
 	std::map<std::string , std::pair< FacetType , std::vector<std::pair<std::string, float> > > > facetResults;
     Stat *stat;
-    vector<keywordHighlightInfo> keywordStrToHighlight;
-    /*
-     *  key  =  index of keywordStrToHighlight
-     *  val  =  vector of possible completion
-     */
-    std::map<unsigned, vector<unsigned> *> prefixToCompleteMap;
  private:
     Query* query;
     unsigned nextK;

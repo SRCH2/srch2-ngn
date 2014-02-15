@@ -38,7 +38,7 @@ public:
 	virtual ~ServerHighLighter();
 	void generateSnippets(vector<RecordSnippet>& highlightInfo);
 private:
-	void genSnippetsForSingleRecord(unsigned recordId, RecordSnippet& recordSnippets);
+	void genSnippetsForSingleRecord(const QueryResults *qr, unsigned idx, RecordSnippet& recordSnippets);
 	QueryResults * queryResults;
 	HighlightAlgorithm* highlightAlgorithms;
 	Srch2Server *server;

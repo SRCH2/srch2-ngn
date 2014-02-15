@@ -13,6 +13,7 @@
 #include "util/RecordSerializer.h"
 
 using namespace srch2::util;
+using namespace srch2::instantsearch;
 
 namespace srch2 {
 namespace httpwrapper {
@@ -29,7 +30,7 @@ void ServerHighLighter::generateSnippets(vector<RecordSnippet>& highlightInfo){
 			break;
 		RecordSnippet recordSnippets;
 		unsigned recordId = queryResults->getInternalRecordId(i);
-		genSnippetsForSingleRecord(recordId, recordSnippets);
+		genSnippetsForSingleRecord(queryResults, i, recordSnippets);
 		recordSnippets.recordId =recordId;
 		highlightInfo.push_back(recordSnippets);
 	}
@@ -38,8 +39,9 @@ void ServerHighLighter::generateSnippets(vector<RecordSnippet>& highlightInfo){
  *   The function generates snippet for all the highlight attributes of a given query result.
  *   Attribute values are fetched from a compact representation stored in forward index.
  */
-void ServerHighLighter::genSnippetsForSingleRecord(unsigned recordId, RecordSnippet& recordSnippets) {
+void ServerHighLighter::genSnippetsForSingleRecord(const QueryResults *qr, unsigned recIdx, RecordSnippet& recordSnippets) {
 
+		unsigned recordId = qr->getInternalRecordId(recIdx);
         StoredRecordBuffer buffer =  server->indexer->getInMemoryData(recordId);
         const vector<std::pair<unsigned, string> >&highlightAttributes = server->indexDataConfig->getHighlightAttributeIdsVector();
         for (unsigned i = 0 ; i < highlightAttributes.size(); ++i) {
@@ -53,10 +55,10 @@ void ServerHighLighter::genSnippetsForSingleRecord(unsigned recordId, RecordSnip
         	std::string uncompressedInMemoryRecordString;
         	snappy::Uncompress(attrdata,len, &uncompressedInMemoryRecordString);
         	try{
-				this->highlightAlgorithms->getSnippet(recordId, highlightAttributes[i].first,
+				this->highlightAlgorithms->getSnippet(qr, recIdx, highlightAttributes[i].first,
 						uncompressedInMemoryRecordString, attrSnippet.snippet,
 						storedAttrSchema->isSearchableAttributeMultiValued(id));
-        	}catch(exception ex) {
+        	}catch(const exception& ex) {
         		Logger::warn("could not generate a snippet for an record/attr %d/%d", recordId, id);
         	}
         	attrSnippet.FieldId = highlightAttributes[i].second;
@@ -98,11 +100,11 @@ ServerHighLighter::ServerHighLighter(QueryResults * queryResults,Srch2Server *se
 	// Note: check for server schema not the configuration.
 	if (isEnabledCharPositionIndex(server->indexer->getSchema()->getPositionIndexType())) {
 		this->highlightAlgorithms  = new TermOffsetAlgorithm(server->indexer,
-				queryResults, param.PhraseKeyWordsInfoMap, hconf);
+				 param.PhraseKeyWordsInfoMap, hconf);
 	} else {
 		Analyzer *currentAnalyzer = AnalyzerFactory::getCurrentThreadAnalyzer(server->indexDataConfig);
 		this->highlightAlgorithms  = new AnalyzerBasedAlgorithm(currentAnalyzer,
-				queryResults, param.PhraseKeyWordsInfoMap, hconf);
+				 param.PhraseKeyWordsInfoMap, hconf);
 	}
 	this->server = server;
 	storedAttrSchema = Schema::create();

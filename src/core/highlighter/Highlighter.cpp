@@ -45,24 +45,35 @@ bool isWhiteSpace(CharType c) {
 	return false;
 }
 
-HighlightAlgorithm::HighlightAlgorithm(vector<keywordHighlightInfo>& keywordStrToHighlight,
-									std::map<string, PhraseInfo>& phrasesInfoMap,
-									const HighlightConfig& hconf) :
-				keywordStrToHighlight(keywordStrToHighlight){
+HighlightAlgorithm::HighlightAlgorithm(std::map<string, PhraseInfo>& phrasesInfoMap,
+									const HighlightConfig& hconf) {
+	phrasesInfoMap.swap(phrasesInfoMap);
+	this->snippetSize = (hconf.snippetSize > MIN_SNIPPET_SIZE) ? hconf.snippetSize : MIN_SNIPPET_SIZE;
+	this->highlightMarkers = hconf.highlightMarkers;
+}
+
+HighlightAlgorithm::HighlightAlgorithm(vector<PhraseInfoForHighLight>& phrasesInfoList,
+		const HighlightConfig& hconf): phrasesInfoMap(std::map<string, PhraseInfo>()),
+		 phrasesInfoList(phrasesInfoList){
+	this->snippetSize = (hconf.snippetSize > MIN_SNIPPET_SIZE) ? hconf.snippetSize : MIN_SNIPPET_SIZE;
+	this->highlightMarkers = hconf.highlightMarkers;
+}
+
+void HighlightAlgorithm::setupPhrasePositionList(vector<keywordHighlightInfo>& keywordStrToHighlight) {
 	std::map<string, PhraseInfo>::iterator iter = phrasesInfoMap.begin();
 	// The code below populates the phrasesInfoList vector which is used to find valid phrase
 	// positions and offsets.
 	while(iter != phrasesInfoMap.end()) {
 		PhraseInfoForHighLight pifh;
-		pifh.phraseKeyWords.resize(this->keywordStrToHighlight.size());
+		pifh.phraseKeyWords.resize(keywordStrToHighlight.size());
 		for (unsigned i = 0; i < iter->second.phraseKeyWords.size(); ++i) {
 			vector<CharType> temp;
 			utf8StringToCharTypeVector(iter->second.phraseKeyWords[i], temp);
-			for(unsigned k = 0; k < this->keywordStrToHighlight.size(); ++k) {
-				if (this->keywordStrToHighlight[k].flag != 0 &&
-					compareVectors(this->keywordStrToHighlight[k].key, temp)){
-					if (this->keywordStrToHighlight[k].flag == 1)
-						this->keywordStrToHighlight[k].flag = 3; // word present in both phrase and normal query
+			for(unsigned k = 0; k < keywordStrToHighlight.size(); ++k) {
+				if (keywordStrToHighlight[k].flag != 0 &&
+						compareVectors(keywordStrToHighlight[k].key, temp)){
+					if (keywordStrToHighlight[k].flag == 1)
+						keywordStrToHighlight[k].flag = 3; // word present in both phrase and normal query
 					PhraseTermInfo pti;
 					pti.recordPosition = new vector<unsigned>();  // to be filled later
 					pti.queryPosition = iter->second.phraseKeywordPositionIndex[i];
@@ -74,17 +85,7 @@ HighlightAlgorithm::HighlightAlgorithm(vector<keywordHighlightInfo>& keywordStrT
 		this->phrasesInfoList.push_back(pifh);
 		++iter;
 	}
-	this->snippetSize = (hconf.snippetSize > MIN_SNIPPET_SIZE) ? hconf.snippetSize : MIN_SNIPPET_SIZE;
-	this->highlightMarkers = hconf.highlightMarkers;
 }
-
-HighlightAlgorithm::HighlightAlgorithm(vector<keywordHighlightInfo>& keywordStrToHighlight,
-		vector<PhraseInfoForHighLight>& phrasesInfoList, const HighlightConfig& hconf):
-		keywordStrToHighlight(keywordStrToHighlight), phrasesInfoList(phrasesInfoList){
-	this->snippetSize = (hconf.snippetSize > MIN_SNIPPET_SIZE) ? hconf.snippetSize : MIN_SNIPPET_SIZE;
-	this->highlightMarkers = hconf.highlightMarkers;
-}
-
 void _genDefaultSnippet(const string& dataIn, vector<string>& snippets, unsigned snippetSize);
 void _genDefaultSnippet(const string& dataIn, vector<string>& snippets, unsigned snippetSize) {
 	const char * snippetStart = dataIn.c_str();
@@ -146,19 +147,40 @@ void HighlightAlgorithm::removeInvalidPositionInPlace(vector<matchedTermInfo>& h
 }
 
 AnalyzerBasedAlgorithm::AnalyzerBasedAlgorithm(Analyzer *analyzer,
-		QueryResults *queryResults, std::map<string, PhraseInfo>& phrasesInfoMap,
+		std::map<string, PhraseInfo>& phrasesInfoMap,
 		const HighlightConfig& hconf):
-		HighlightAlgorithm(queryResults->impl->keywordStrToHighlight, phrasesInfoMap, hconf){
+		HighlightAlgorithm(phrasesInfoMap, hconf){
 		this->analyzer = analyzer;
 }
 AnalyzerBasedAlgorithm::AnalyzerBasedAlgorithm(Analyzer *analyzer,
-		vector<keywordHighlightInfo>& keywordStrToHighlight, vector<PhraseInfoForHighLight>& phrasesInfoList,
+		vector<PhraseInfoForHighLight>& phrasesInfoList,
 		const HighlightConfig& hconf):
-		HighlightAlgorithm(keywordStrToHighlight, phrasesInfoList, hconf){
+		HighlightAlgorithm(phrasesInfoList, hconf){
 	this->analyzer = analyzer;
 }
 
-void AnalyzerBasedAlgorithm::getSnippet(unsigned recordId, unsigned /*not used*/, const string& dataIn,
+void HighlightAlgorithm::buildKeywordHighlightInfo(const QueryResults * qr, unsigned recIdx,
+		vector<keywordHighlightInfo>& keywordStrToHighlight){
+	vector<string> matchingKeywords;
+	qr->getMatchingKeywords(recIdx, matchingKeywords);
+	vector<TermType> termTypes;
+	qr->getTermTypes(recIdx, termTypes);
+	vector<unsigned> editDistances;
+	qr->getEditDistances(recIdx, editDistances);
+	for (unsigned i = 0; i <  matchingKeywords.size(); ++i) {
+		keywordHighlightInfo keyInfo;
+		if(termTypes.at(i) == TERM_TYPE_COMPLETE)
+			keyInfo.flag = 1;
+		else if (termTypes.at(i) == TERM_TYPE_PHRASE)
+			keyInfo.flag = 2;
+		else
+			keyInfo.flag = 0;
+		utf8StringToCharTypeVector(matchingKeywords[i], keyInfo.key);
+		keyInfo.editDistance = editDistances.at(i);
+		keywordStrToHighlight.push_back(keyInfo);
+	}
+}
+void AnalyzerBasedAlgorithm::getSnippet(const QueryResults* qr, unsigned recIdx, unsigned /*not used*/, const string& dataIn,
 		vector<string>& snippets, bool isMultiValued) {
 
 	if (dataIn.length() == 0)
@@ -167,7 +189,8 @@ void AnalyzerBasedAlgorithm::getSnippet(unsigned recordId, unsigned /*not used*/
 	vector<matchedTermInfo> highlightPositions;
 	set<unsigned> actualHighlightedSet;
 	vector<CharType> ctsnippet;
-
+	vector<keywordHighlightInfo> keywordStrToHighlight;
+	buildKeywordHighlightInfo(qr, recIdx, keywordStrToHighlight);
 	short mask = (1 << keywordStrToHighlight.size()) - 1;
 
 	/*
@@ -567,21 +590,19 @@ bool operator < (HighlightAlgorithm::matchedTermInfo l, HighlightAlgorithm::matc
 		return false;
 }
 
-TermOffsetAlgorithm::TermOffsetAlgorithm(const Indexer * indexer,
-		QueryResults *queryResults,
-		std::map<string, PhraseInfo>& phrasesInfoMap,const HighlightConfig& hconf):
-				HighlightAlgorithm(queryResults->impl->keywordStrToHighlight, phrasesInfoMap, hconf),
-				keywordPrefixToCompleteMap(queryResults->impl->prefixToCompleteMap){
+TermOffsetAlgorithm::TermOffsetAlgorithm (const Indexer * indexer,
+		std::map<string, PhraseInfo>& phrasesInfoMap, const HighlightConfig& hconf):
+				HighlightAlgorithm(phrasesInfoMap, hconf){
 
 	const IndexReaderWriter* rwIndexer =  dynamic_cast<const IndexReaderWriter *>(indexer);
 	fwdIndex = rwIndexer->getForwardIndex();
 }
-void TermOffsetAlgorithm::getSnippet(unsigned recordId, unsigned attributeId,const string& dataIn,
-		vector<string>& snippets, bool isMultiValued) {
+void TermOffsetAlgorithm::getSnippet(const QueryResults* qr, unsigned recidx, unsigned attributeId,
+		const string& dataIn, vector<string>& snippets, bool isMultiValued) {
 
 	if (dataIn.length() == 0)
 		return;
-
+	unsigned recordId = qr->getInternalRecordId(recidx);
 	bool valid = false;
 	const ForwardList * fwdList = fwdIndex->getForwardList(recordId, valid);
 	if (!valid) {
@@ -593,6 +614,9 @@ void TermOffsetAlgorithm::getSnippet(unsigned recordId, unsigned attributeId,con
 		return;
 	}
 
+	vector<keywordHighlightInfo> keywordStrToHighlight;
+	buildKeywordHighlightInfo(qr, recidx, keywordStrToHighlight);
+
 	vector<matchedTermInfo> highlightPositions;
 	vector<CharType> ctsnippet;
 
@@ -600,10 +624,12 @@ void TermOffsetAlgorithm::getSnippet(unsigned recordId, unsigned attributeId,con
 	const unsigned *keywordIdsPtr = fwdList->getKeywordIds();
 	unsigned keywordsInRec =  fwdList->getNumberOfKeywords();
 
-	for(PrefixToCompleteMapIter iter = keywordPrefixToCompleteMap.begin();
-			iter != keywordPrefixToCompleteMap.end(); ++iter) {
+	vector<vector<unsigned> * >& prefixToComplete =
+			qr->impl->sortedFinalResults[recidx]->prefixToCompleteMap;
+
+	for(unsigned indx = 0; indx < prefixToComplete.size(); ++indx) {
 		unsigned i = 0, j = 0;
-		vector<unsigned>& keywordIds = *(iter->second);
+		vector<unsigned>& keywordIds = *(prefixToComplete[indx]);
 		while(i < keywordIds.size() && j < keywordsInRec) {
 			if (keywordIds[i] > keywordIdsPtr[j])
 				++j;
@@ -615,17 +641,19 @@ void TermOffsetAlgorithm::getSnippet(unsigned recordId, unsigned attributeId,con
 					vector<unsigned> offsetPosition;
 					vector<unsigned> wordPosition;
 					fwdList->getKeyWordOffsetInRecordField(j, attributeId, attributeBitMap, offsetPosition);
-					visitedKeyword.insert(iter->first);
+					visitedKeyword.insert(indx);
 					for (unsigned _idx = 0; _idx < offsetPosition.size(); ++_idx){
-						matchedTermInfo mti = {keywordStrToHighlight[iter->first].flag, iter->first, offsetPosition[_idx],
-							keywordStrToHighlight[iter->first].key.size()};
+						matchedTermInfo mti = {keywordStrToHighlight[indx].flag, indx, offsetPosition[_idx],
+							keywordStrToHighlight[indx].key.size(), 0};
+						if (keywordStrToHighlight[i].editDistance > 0)
+								mti.tagIndex = 1;
 						highlightPositions.push_back(mti);
 					}
 					if (phrasesInfoList.size() > 0) {
 						fwdList->getKeyWordPostionsInRecordField(j, attributeId, attributeBitMap, wordPosition);
 						for(unsigned pidx = 0 ; pidx < phrasesInfoList.size(); ++pidx) {
-							if (phrasesInfoList[pidx].phraseKeyWords[iter->first].recordPosition) {
-								phrasesInfoList[pidx].phraseKeyWords[iter->first].recordPosition->
+							if (phrasesInfoList[pidx].phraseKeyWords[indx].recordPosition) {
+								phrasesInfoList[pidx].phraseKeyWords[indx].recordPosition->
 								assign(wordPosition.begin(), wordPosition.end());
 							}
 						}
