@@ -186,6 +186,11 @@ bool UnionLowestLevelTermVirtualListOperator::close(PhysicalPlanExecutionParamet
         if (currentItem != NULL)
             delete currentItem;
     }
+    unsigned cursorValue = 0;
+    for(int i=0;i<cursorVector.size() ; ++i){
+    	cursorValue += cursorVector[i];
+    }
+    cout << (cursorValue - cursorVector.size()) << "\t" ;
     this->itemsHeap.clear();
     this->cursorVector.clear();
     this->invertedListReadViewVector.clear();

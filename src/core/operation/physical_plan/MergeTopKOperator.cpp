@@ -294,7 +294,7 @@ bool MergeTopKOperator::close(PhysicalPlanExecutionParameters & params){
 		childrenCacheEntries.push_back(params.cacheObject);
 		params.cacheObject = NULL;
 	}
-
+	cout << endl;
 	// cache
 	//1. cache stuff of children is returned through params
 	//2. prepare key
@@ -600,6 +600,7 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalP
 	unsigned estimatedLengthOfShortestList = -1; // -1 is a very big number
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
 		P.push_back(this->getChildAt(childOffset)->getLogicalPlanNode()->stats->getEstimatedProbability());
+		cout << unsigned(P[P.size()-1]*N) << "\t";
 		if(estimatedLengthOfShortestList >
 				this->getChildAt(childOffset)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults()){
 			estimatedLengthOfShortestList =
@@ -632,7 +633,7 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalP
 	 * If min(|Li|) < K, // it means we will finish the shortest list anyways
 	 *	M = min(|Li|)
 	 */
-	if(R <= K){
+	if(R <= K || M > estimatedLengthOfShortestList){
 		M = estimatedLengthOfShortestList;
 	}
 	 /*
@@ -764,7 +765,7 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalP
 	vector<float> P_NCAN;
 	float SigmaP_NCAN = 0 ;
 	for(unsigned c = 0; c < P.size(); ++c){
-		P_NCAN.push_back(1 - P_CAN[c]);
+		P_NCAN.push_back(1 - PiP / P[c]);
 		SigmaP_NCAN += P_NCAN[P_NCAN.size()-1];
 	}
 	 /* NormP-NCAN[i] = probability that a non-candidate record is from child i =

@@ -23,13 +23,13 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 	 // this for is a two iteration loop, to avoid copying the code for exact and fuzzy
 	for(unsigned fuzzyPolicyIter = 0 ; fuzzyPolicyIter < 2 ; fuzzyPolicyIter++ ){
 
-		if(fuzzyPolicyIter == 0){
-			cout << "Exact:\t";
-		}else{
-			cout << "Fuzzy:\t";
-		}
+//		if(fuzzyPolicyIter == 0){
+//			cout << "Exact:\t";
+//		}else{
+//			cout << "Fuzzy:\t";
+//		}
 		unsigned numberOfIterations = logicalPlan->offset + logicalPlan->numberOfResultsToRetrieve;
-		for(unsigned planOffset = 0 ; planOffset < 7 ; planOffset ++){
+		for(unsigned planOffset = 0 ; planOffset < 1 ; planOffset ++){
 			// start the timer for search
 			struct timespec tstart;
 			clock_gettime(CLOCK_REALTIME, &tstart);
@@ -115,11 +115,11 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 			clock_gettime(CLOCK_REALTIME, &tend);
 			unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000000
 					+ (tend.tv_nsec - tstart.tv_nsec) / 1000;
-			cout << "Plan" << planOffset << "(" << ts1*1.0/1000 << ")\t" ;
+//			cout << "Plan" << planOffset << "(" << ts1*1.0/1000 << ")\t" ;
 //			cout << ts1*1.0/1000 << endl;
 
 		}
-		cout << endl;
+//		cout << endl;
 		if(fuzzyPolicyIter == 0){
 			if(isFuzzy == true && results.size() < numberOfIterations){
 				logicalPlan->setFuzzy(true);

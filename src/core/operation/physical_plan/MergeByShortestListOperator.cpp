@@ -343,17 +343,15 @@ PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfGetNext(const
 	 /*
 	  * P[] = array of probabilities of terms (length of list i mentioned as li = P[i] * N)
 	  */
+	unsigned S = getShortestListOffsetInChildren(); // keeps index of the shortest child
+
+	unsigned estimatedLengthOfShortestList =
+			this->getChildAt(S)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
+
+
 	vector<float> P;
-	unsigned estimatedLengthOfShortestList = -1; // -1 is a very big number
-	unsigned S = 0; // keeps index of the shortest child
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
 		P.push_back(this->getChildAt(childOffset)->getLogicalPlanNode()->stats->getEstimatedProbability());
-		if(estimatedLengthOfShortestList >
-				this->getChildAt(childOffset)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults()){
-			estimatedLengthOfShortestList =
-					this->getChildAt(childOffset)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
-			S = childOffset;
-		}
 	}
 	 /*
 	 * R = estimated number of results = P[0]*...*P[T-1]*N
