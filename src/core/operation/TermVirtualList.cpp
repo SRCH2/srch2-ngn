@@ -227,7 +227,6 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
             this->maxScoreForBitSetCase = 0;
             for (; !iter.isDone(); iter.next()) {
                 iter.getItem(trieNode, distance);
-                distance = prefixActiveNodeSet->getEditdistanceofPrefix(trieNode);
                 float runTimeScoreOfThisLeafNode = DefaultTopKRanker::computeTermRecordRuntimeScore(trieNode->getMaximumScoreOfLeafNodes(),
     					distance,
     					term->getKeyword()->size(),
@@ -250,7 +249,6 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
                 TrieNodePointer trieNode;
                 unsigned distance;
                 iter.getItem(trieNode, distance);
-                distance = prefixActiveNodeSet->getEditdistanceofPrefix(trieNode);
                 depthInitializeTermVirtualListElement(trieNode, distance, term->getThreshold());
             }
         }

@@ -50,7 +50,6 @@ bool UnionLowestLevelSimpleScanOperator::open(QueryEvaluatorInternal * queryEval
             TrieNodePointer trieNode;
             unsigned distance;
             iter.getItem(trieNode, distance);
-            distance = activeNodeSet->getEditdistanceofPrefix(trieNode);
             depthInitializeSimpleScanOperator(trieNode, trieNode, distance, term->getThreshold());
         }
 	}
