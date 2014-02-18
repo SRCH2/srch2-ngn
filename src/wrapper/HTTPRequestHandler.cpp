@@ -859,10 +859,6 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     QueryResults * finalResults = new QueryResults();
     qe.execute(finalResults);
 
-	// set estimated number of results
-	finalResults->impl->estimatedNumberOfResults = logicalPlan.getTree()->stats->getEstimatedNumberOfResults();
-
-
     // compute elapsed time in ms , end the timer
     struct timespec tend;
     clock_gettime(CLOCK_REALTIME, &tend);

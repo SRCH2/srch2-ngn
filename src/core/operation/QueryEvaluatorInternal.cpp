@@ -304,6 +304,9 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		delete facetOperatorPtr;
 	}
 
+	// set estimated number of results
+	queryResults->impl->estimatedNumberOfResults = logicalPlan->getTree()->stats->getEstimatedNumberOfResults();
+
 	// save in cache
 	boost::shared_ptr<QueryResultsCacheEntry> cacheObject ;
 	cacheObject.reset(new QueryResultsCacheEntry());

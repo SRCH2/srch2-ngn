@@ -75,23 +75,21 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 		//1. Open the physical plan by opening the root
 		physicalPlan.getPlanTree()->open(queryEvaluator , params);
 		//2. call getNext for K times
-		for(unsigned i=0;(physicalPlan.getSearchType() == SearchTypeGetAllResultsQuery ? true : (i < numberOfIterations) );i++){
+		while(true){
 			PhysicalPlanRecordItem * newRecord = physicalPlan.getPlanTree()->getNext( params);
 			if(newRecord == NULL){
 				break;
 			}
-			// check if we are in the fuzzyPolicyIter session, if yes, we should not repeat a record
-			if(fuzzyPolicyIter > 0){
-				if(find(resultIds.begin(),resultIds.end(),newRecord->getRecordId()) != resultIds.end()){
-					continue;
-				}
-			}
+			//we should not repeat a record
 			if(find(resultIds.begin(),resultIds.end(),newRecord->getRecordId()) != resultIds.end()){
 				continue;
 			}
 			//
 			resultIds.push_back(newRecord->getRecordId());
 			results.push_back(newRecord);
+			if(physicalPlan.getSearchType() == SearchTypeTopKQuery && resultIds.size() >= numberOfIterations){
+				break;
+			}
 
 		}
 
