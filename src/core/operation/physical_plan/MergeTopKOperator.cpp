@@ -580,10 +580,15 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalP
 	  */
 	unsigned N = params.totalNumberOfRecords;
 	 /*
+	  * R = estimated total number of results from these children (R ~= P[0] * ... P[T-1] * N )
+	  */
+	unsigned R = this->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
+
+	 /*
 	  *
 	  * K = number of top results to find (we calculate the score for K and then divide the result by K)
 	  */
-	unsigned K = params.k;
+	unsigned K = R/2;
 	if(K == 0){
 		K = 1;
 	}
@@ -606,10 +611,7 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalP
 					this->getChildAt(childOffset)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
 		}
 	}
-	 /*
-	  * R = estimated total number of results from these children (R ~= P[0] * ... P[T-1] * N )
-	  */
-	unsigned R = this->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
+
 	 /* Li = the name we use to mention list of child i, i.e. P(Li) = P[i]
 	 * Qi = the name of the top portion of list Li that has M records in it,
 	 * 					 i.e. Qi is a subset of Li, P(Qi) = M/N
