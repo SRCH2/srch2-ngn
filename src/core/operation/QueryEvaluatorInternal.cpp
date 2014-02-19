@@ -287,10 +287,10 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		queryResult->_score.setTypedValue(newRecord->getRecordRuntimeScore());
 		vector< TrieNodePointer > matchingKeywordTrieNodes;
 		newRecord->getRecordMatchingPrefixes(matchingKeywordTrieNodes);
+		boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
+		this->getTrie()->getTrieRootNode_ReadView(trieRootNode_ReadView);
 		for(unsigned i=0; i < matchingKeywordTrieNodes.size() ; i++){
 			std::vector<CharType> temp;
-			boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
-			this->getTrie()->getTrieRootNode_ReadView(trieRootNode_ReadView);
 			this->getTrie()->getPrefixString(trieRootNode_ReadView->root,
 												   matchingKeywordTrieNodes.at(i), temp);
 			string str;
