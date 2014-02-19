@@ -58,6 +58,7 @@ public:
     std::vector<unsigned> attributeBitmaps;
     std::vector<unsigned> editDistances;
     std::vector<TermType> termTypes;
+    vector< TrieNodePointer > matchingKeywordTrieNodes;
     //vector<keywordHighlightInfo> keywordStrToHighlight;
     vector<vector<unsigned> *> prefixToCompleteMap;
     // only the results of MapQuery have this
@@ -90,6 +91,8 @@ private:
     	matchingKeywords = copy_from_me.matchingKeywords;
     	attributeBitmaps = copy_from_me.attributeBitmaps;
     	editDistances = copy_from_me.editDistances;
+    	termTypes = copy_from_me.termTypes;
+    	matchingKeywordTrieNodes = copy_from_me.matchingKeywordTrieNodes;
     }
     QueryResult(){
     };
@@ -196,6 +199,7 @@ public:
      */
 	std::map<std::string , std::pair< FacetType , std::vector<std::pair<std::string, float> > > > facetResults;
     Stat *stat;
+    std::map<string, vector<unsigned> *> prefixToCompleteStore;
  private:
     Query* query;
     unsigned nextK;

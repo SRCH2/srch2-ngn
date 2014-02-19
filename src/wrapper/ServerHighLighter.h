@@ -46,6 +46,8 @@ private:
 	Schema * storedAttrSchema;
 	unsigned HighlightRecOffset;
 	unsigned HighlightRecCount;
+	std::string uncompressedInMemoryRecordString;
+    std::map<string, vector<unsigned> *> prefixToCompleteStore;
 };
 
 } /* namespace httpwrapper */

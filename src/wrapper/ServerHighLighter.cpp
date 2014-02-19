@@ -11,6 +11,7 @@
 #include <instantsearch/QueryResults.h>
 #include "ParsedParameterContainer.h"
 #include "util/RecordSerializer.h"
+#include "query/QueryResultsInternal.h"
 
 using namespace srch2::util;
 using namespace srch2::instantsearch;
@@ -23,16 +24,56 @@ namespace httpwrapper {
  */
 void ServerHighLighter::generateSnippets(vector<RecordSnippet>& highlightInfo){
 
-	for (unsigned i = 0; i < queryResults->getNumberOfResults(); ++i) {
-		if(i < HighlightRecOffset)
-			continue;
-		if (i >= HighlightRecOffset + HighlightRecCount)
-			break;
+	unsigned upperLimit = queryResults->getNumberOfResults();
+	if (upperLimit > HighlightRecOffset + HighlightRecCount)
+		upperLimit = HighlightRecOffset + HighlightRecCount;
+	unsigned lowerLimit = HighlightRecOffset;
+	for (unsigned i = lowerLimit; i < upperLimit; ++i) {
 		RecordSnippet recordSnippets;
 		unsigned recordId = queryResults->getInternalRecordId(i);
 		genSnippetsForSingleRecord(queryResults, i, recordSnippets);
 		recordSnippets.recordId =recordId;
 		highlightInfo.push_back(recordSnippets);
+	}
+}
+void findChildNodesForPrefixNode(TrieNodePointer prefixNode, vector<unsigned>& completeKeywordsId);
+void findChildNodesForPrefixNode(TrieNodePointer prefixNode, vector<unsigned>& completeKeywordsId){
+	vector<TrieNodePointer> buffer;
+	buffer.reserve(1000);  // reserve ~4KB to avoid frequent resizing
+	TrieNodePointer currNode = prefixNode;
+	buffer.push_back(prefixNode);
+	while(buffer.size() > 0) {
+		TrieNodePointer currNode = buffer.back(); buffer.pop_back();
+		if (currNode->isTerminalNode()) {
+			completeKeywordsId.push_back(currNode->id);
+			//continue; ... terminal node can also have childs...e.g good and goods
+		}
+		for(signed i = currNode->getChildrenCount() - 1; i >= 0; --i) {
+			buffer.push_back(currNode->getChild(i));
+		}
+	}
+}
+void buildKeywordHighlightInfo(const QueryResults * qr, unsigned recIdx,
+		vector<keywordHighlightInfo>& keywordStrToHighlight);
+void buildKeywordHighlightInfo(const QueryResults * qr, unsigned recIdx,
+		vector<keywordHighlightInfo>& keywordStrToHighlight){
+	vector<string> matchingKeywords;
+	qr->getMatchingKeywords(recIdx, matchingKeywords);
+	vector<TermType> termTypes;
+	qr->getTermTypes(recIdx, termTypes);
+	vector<unsigned> editDistances;
+	qr->getEditDistances(recIdx, editDistances);
+	for (unsigned i = 0; i <  matchingKeywords.size(); ++i) {
+		keywordHighlightInfo keyInfo;
+		if(termTypes.at(i) == TERM_TYPE_COMPLETE)
+			keyInfo.flag = 1;
+		else if (termTypes.at(i) == TERM_TYPE_PHRASE)
+			keyInfo.flag = 2;
+		else
+			keyInfo.flag = 0;
+		utf8StringToCharTypeVector(matchingKeywords[i], keyInfo.key);
+		keyInfo.editDistance = editDistances.at(i);
+		keywordStrToHighlight.push_back(keyInfo);
 	}
 }
 /*
@@ -41,7 +82,41 @@ void ServerHighLighter::generateSnippets(vector<RecordSnippet>& highlightInfo){
  */
 void ServerHighLighter::genSnippetsForSingleRecord(const QueryResults *qr, unsigned recIdx, RecordSnippet& recordSnippets) {
 
+		/*
+		 *  Code below is a setup for highlighter module
+		 */
 		unsigned recordId = qr->getInternalRecordId(recIdx);
+
+		bool termOffsetInfoPresent = isEnabledCharPositionIndex(server->indexer->getSchema()->getPositionIndexType());
+		if (termOffsetInfoPresent) {
+			vector<string>& matchingKeys =  qr->impl->sortedFinalResults[recIdx]->matchingKeywords;
+			for (unsigned i =0 ; i < matchingKeys.size(); ++i) {
+				string& str = matchingKeys[i];
+				vector<unsigned> *vPtr;
+				std::map<string, vector<unsigned> *>::iterator iter =
+						this->prefixToCompleteStore.find(str);
+				if (iter != this->prefixToCompleteStore.end()) {
+					vPtr = iter->second;
+				} else {
+					vPtr = new vector<unsigned>();
+					this->prefixToCompleteStore.insert(make_pair(str, vPtr));
+					if (qr->impl->sortedFinalResults[recIdx]->termTypes.at(i) != TERM_TYPE_PREFIX &&
+							qr->impl->sortedFinalResults[recIdx]->matchingKeywordTrieNodes[i]->isTerminalNode()) {
+						vPtr->push_back(qr->impl->sortedFinalResults[recIdx]->matchingKeywordTrieNodes[i]->id);
+					} else {
+						// arbitrary reserving space for 4k elements
+						// ToDo: reserve based on distance between leftmost and rightmost child
+						vPtr->reserve(4096);
+						findChildNodesForPrefixNode(qr->impl->sortedFinalResults[recIdx]->matchingKeywordTrieNodes[i], *vPtr);
+					}
+				}
+				qr->impl->sortedFinalResults[recIdx]->prefixToCompleteMap.push_back(vPtr);
+			}
+		}
+
+		vector<keywordHighlightInfo> keywordStrToHighlight;
+		buildKeywordHighlightInfo(qr, recIdx, keywordStrToHighlight);
+
         StoredRecordBuffer buffer =  server->indexer->getInMemoryData(recordId);
         const vector<std::pair<unsigned, string> >&highlightAttributes = server->indexDataConfig->getHighlightAttributeIdsVector();
         for (unsigned i = 0 ; i < highlightAttributes.size(); ++i) {
@@ -51,13 +126,11 @@ void ServerHighLighter::genSnippetsForSingleRecord(const QueryResults *qr, unsig
         	const char *attrdata = buffer.start + *((unsigned *)(buffer.start + lenOffset));
         	unsigned len = *(((unsigned *)(buffer.start + lenOffset)) + 1) -
         			*((unsigned *)(buffer.start + lenOffset));
-
-        	std::string uncompressedInMemoryRecordString;
         	snappy::Uncompress(attrdata,len, &uncompressedInMemoryRecordString);
         	try{
 				this->highlightAlgorithms->getSnippet(qr, recIdx, highlightAttributes[i].first,
 						uncompressedInMemoryRecordString, attrSnippet.snippet,
-						storedAttrSchema->isSearchableAttributeMultiValued(id));
+						storedAttrSchema->isSearchableAttributeMultiValued(id), keywordStrToHighlight);
         	}catch(const exception& ex) {
         		Logger::warn("could not generate a snippet for an record/attr %d/%d", recordId, id);
         	}
@@ -112,12 +185,19 @@ ServerHighLighter::ServerHighLighter(QueryResults * queryResults,Srch2Server *se
 	compactRecDeserializer = new RecordSerializer(*storedAttrSchema);
 	this->HighlightRecOffset = offset;
 	this->HighlightRecCount = count;
+	this->uncompressedInMemoryRecordString.reserve(4096);
 }
 
 ServerHighLighter::~ServerHighLighter() {
 	delete this->compactRecDeserializer;
 	delete this->highlightAlgorithms;
 	delete storedAttrSchema;
+    std::map<string, vector<unsigned> *>::iterator iter =
+    						prefixToCompleteStore.begin();
+    while(iter != prefixToCompleteStore.end()) {
+    	delete iter->second;
+    	++iter;
+	}
 }
 
 } /* namespace httpwrapper */

@@ -956,6 +956,19 @@ void HTTPRequestHandler::lookupCommand(evhttp_request *req,
     evhttp_clear_headers(&headers);
 }
 
+void decodeAmpersand(const char *uri, unsigned len, string& decodeUri) {
+	char c;
+	decodeUri.reserve(len);
+	for (unsigned i = 0; i < len - 2; ++i) {
+		if (uri[i] == '%' && uri[i+1] == '2' && uri[i+2] == '6') {
+			decodeUri.push_back('&');
+			i += 2;
+		} else {
+			decodeUri.push_back(uri[i]);
+		}
+	}
+}
+
 void HTTPRequestHandler::searchCommand(evhttp_request *req,
         Srch2Server *server) {
 
@@ -967,6 +980,8 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
 
     ParsedParameterContainer paramContainer;
 
+//    string decodedUri;
+//    decodeAmpersand(req->uri, strlen(req->uri), decodedUri);
     evkeyvalq headers;
     evhttp_parse_query(req->uri, &headers);
 
@@ -1017,7 +1032,15 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     qe.execute(finalResults);
 
 	vector<RecordSnippet> highlightInfo;
-    if (server->indexDataConfig->getHighlightAttributeIdsVector().size() > 0) {
+	/*
+	 *  Do snippet generation only if
+	 *  1. There are attributes marked to be highlighted
+	 *  2. Query is not facet only
+	 *  3. Highlight is not turned off in the query ( default is on ) << TODO
+	 */
+    if (server->indexDataConfig->getHighlightAttributeIdsVector().size() > 0 &&
+    		!paramContainer.onlyFacets &&
+    		paramContainer.isHighlightOn) {
 
     	ServerHighLighter highlighter =  ServerHighLighter(finalResults, server, paramContainer,
     			logicalPlan.getOffset(), logicalPlan.getNumberOfResultsToRetrieve());
@@ -1041,7 +1064,8 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
                 server->indexer, logicalPlan.getOffset(),
                 finalResults->getNumberOfResults(),
                 finalResults->getNumberOfResults(),
-                paramContainer.getMessageString(), ts1, tstart, tend, highlightInfo);
+                paramContainer.getMessageString(), ts1, tstart, tend, highlightInfo,
+                paramContainer.onlyFacets);
         break;
 
     case srch2is::SearchTypeGetAllResultsQuery:

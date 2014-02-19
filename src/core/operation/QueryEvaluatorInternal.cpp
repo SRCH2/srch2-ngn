@@ -264,7 +264,6 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		numberOfIterations = -1; // to set it to a very big number
 	}
 
-	bool getPrefixToCompleteInfo = isEnabledCharPositionIndex(this->indexer->getSchema()->getPositionIndexType());
 	while(true){
 
 		PhysicalPlanRecordItem * newRecord = topOperator->getNext(dummy);
@@ -284,33 +283,20 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		newRecord->getRecordMatchEditDistances(queryResult->editDistances);
 		//
 		queryResult->_score.setTypedValue(newRecord->getRecordRuntimeScore());
-		vector< TrieNodePointer > matchingKeywordTrieNodes;
-		newRecord->getRecordMatchingPrefixes(matchingKeywordTrieNodes);
+		//vector< TrieNodePointer > matchingKeywordTrieNodes;
+		newRecord->getRecordMatchingPrefixes(queryResult->matchingKeywordTrieNodes);
 
 		newRecord->getTermTypes(queryResult->termTypes);
 
-		for(unsigned i=0; i < matchingKeywordTrieNodes.size() ; i++){
+		for(unsigned i=0; i < queryResult->matchingKeywordTrieNodes.size() ; i++){
 			std::vector<CharType> temp;
 			boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
 			this->getTrie()->getTrieRootNode_ReadView(trieRootNode_ReadView);
 			this->getTrie()->getPrefixString(trieRootNode_ReadView->root,
-												   matchingKeywordTrieNodes.at(i), temp);
+					queryResult->matchingKeywordTrieNodes.at(i), temp);
 			string str;
 			charTypeVectorToUtf8String(temp, str);
 			queryResult->matchingKeywords.push_back(str);
-			/*
-			 *  Code below is a setup for highlighter module
-			 */
-			if (getPrefixToCompleteInfo) {
-				//unsigned idxKey = queryResults->impl->keywordStrToHighlight.size() - 1;
-				vector<unsigned> *vPtr = new vector<unsigned>();
-				queryResult->prefixToCompleteMap.push_back(vPtr);
-				if (queryResult->termTypes.at(i) != TERM_TYPE_PREFIX && matchingKeywordTrieNodes[i]->isTerminalNode()) {
-					vPtr->push_back(matchingKeywordTrieNodes[i]->id);
-				} else {
-					findChildNodesForPrefixNode(matchingKeywordTrieNodes[i], *vPtr);
-				}
-			}
 		}
 		newRecord->getRecordMatchAttributeBitmaps(queryResult->attributeBitmaps);
 
@@ -337,22 +323,6 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 
 	return queryResults->impl->sortedFinalResults.size();
 
-}
-void findChildNodesForPrefixNode(TrieNodePointer prefixNode, vector<unsigned>& completeKeywordsId){
-	vector<TrieNodePointer> buffer;
-	buffer.reserve(1000);  // reserve ~4KB to avoid frequest
-	TrieNodePointer currNode = prefixNode;
-	buffer.push_back(prefixNode);
-	while(buffer.size() > 0) {
-		TrieNodePointer currNode = buffer.back(); buffer.pop_back();
-		if (currNode->isTerminalNode()) {
-			completeKeywordsId.push_back(currNode->id);
-			//continue; ... terminal node can also have childs...e.g good and goods
-		}
-		for(signed i = currNode->getChildrenCount() - 1; i >= 0; --i) {
-			buffer.push_back(currNode->getChild(i));
-		}
-	}
 }
 
 /**

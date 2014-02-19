@@ -322,6 +322,7 @@ public:
     bool isFuzzy; // stores the value of query parameter 'fuzzy'. if fuzzy == True, use keyword's SimilarityThreshold as specified with keywords. else set fuzzy level to 0
     float lengthBoost; // store the value of lengthboost query parameter
     float prefixMatchPenalty; // stores the value of 'pmp' query parameter.
+    bool isHighlightOn;
 
     // This object contains the boolean structure of terms. For example for query
     // q= (A AND B)OR(C AND D)

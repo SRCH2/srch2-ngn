@@ -65,6 +65,7 @@ const char* const QueryParser::facetRangeEnd = "end";
 const char* const QueryParser::facetRangeStart = "start";
 const char* const QueryParser::facetField = "facet.field";
 const char* const QueryParser::facetRangeField = "facet.range";
+const char* const QueryParser::highlightSwitch = "hl";
 
 //searchType
 const char* const QueryParser::searchType = "searchType";
@@ -217,6 +218,7 @@ bool QueryParser::parse() {
         this->lengthBoostParser();
         this->prefixMatchPenaltyParser();
         this->extractSearchType();
+        this->highlightParser();
         if (this->container->hasParameterInQuery(GeoSearchType)) {
             this->geoParser();
         } else if (this->container->hasParameterInQuery(
@@ -355,6 +357,32 @@ bool QueryParser::attachParseTreeAndMainQueryParallelVectors(){
         vectorsIndex ++;
     }
     return true;
+}
+
+void QueryParser::highlightParser() {
+
+	/*
+	 *  Check whether the highlight option is present. By default, highlighting is ON if the attributes
+	 *  are marked for highlighting in the config file.
+	 */
+	 const char * hlTemp = evhttp_find_header(&headers,
+			 QueryParser::highlightSwitch);
+	 if (hlTemp) {
+		 string hlStr;
+		 decodeString(hlTemp, hlStr);
+		 if (boost::iequals("on", hlStr)) {
+			 this->container->isHighlightOn = true;
+		 } else if (boost::iequals("off", hlStr)) {
+			 this->container->isHighlightOn = false;
+		 } else {
+			 this->container->isHighlightOn = true;
+			 this->container->messages.push_back(
+					 make_pair(MessageWarning,
+							 "Invalid hl option values. It should be on/off. Setting to default (true)"));
+		 }
+	 } else {
+		 this->container->isHighlightOn = true;
+	 }
 }
 
 void QueryParser::isFuzzyParser() {
