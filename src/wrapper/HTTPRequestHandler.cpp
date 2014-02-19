@@ -811,7 +811,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
 
     evkeyvalq headers;
     evhttp_parse_query(req->uri, &headers);
-//    cout << "Query: " << req->uri << endl;
+    cout << "Query: " << req->uri << endl;
     // simple example for query is : q={boost=2}name:foo~0.5 AND bar^3*&fq=name:"John"
     //1. first create query parser to parse the url
     QueryParser qp(headers, &paramContainer);
@@ -864,7 +864,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     clock_gettime(CLOCK_REALTIME, &tend);
     unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
             + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-    cout << ts1 << endl;
+//    cout << ts1 << endl;
     //5. call the print function to print out the results
     switch (logicalPlan.getQueryType()) {
     case srch2is::SearchTypeTopKQuery:
