@@ -249,6 +249,7 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
                 TrieNodePointer trieNode;
                 unsigned distance;
                 iter.getItem(trieNode, distance);
+                // distance = prefixActiveNodeSet->getEditdistanceofPrefix(trieNode); // TODO (Check)
                 depthInitializeTermVirtualListElement(trieNode, distance, term->getThreshold());
             }
         }
