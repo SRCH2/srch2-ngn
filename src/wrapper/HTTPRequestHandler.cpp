@@ -864,7 +864,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     clock_gettime(CLOCK_REALTIME, &tend);
     unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
             + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-
+    cout << ts1 << endl;
     //5. call the print function to print out the results
     switch (logicalPlan.getQueryType()) {
     case srch2is::SearchTypeTopKQuery:
