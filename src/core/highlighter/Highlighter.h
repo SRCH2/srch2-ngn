@@ -116,14 +116,28 @@ class Indexer;
 class ForwardIndex;
 
 class TermOffsetAlgorithm : public HighlightAlgorithm {
+	struct CandidateKeywordInfo{
+			short prefixKeyIdx;
+			unsigned keywordOffset;
+			CandidateKeywordInfo(short arg1, unsigned arg2) {
+				prefixKeyIdx = arg1; keywordOffset = arg2;
+			}
+		};
 public:
 	TermOffsetAlgorithm(const Indexer * indexer,
 			std::map<string, PhraseInfo>& phrasesInfoMap, const HighlightConfig& hconf);
 	void getSnippet(const QueryResults *qr,unsigned recIdx, unsigned attributeId, const string& dataIn,
 			vector<string>& snippets, bool isMultiValued, vector<keywordHighlightInfo>& keywordStrToHighlight);
+	~TermOffsetAlgorithm() {
+		boost::unordered_map<unsigned, vector<CandidateKeywordInfo>*>::iterator iter = cache.begin();
+		while (iter != cache.end()) {
+			delete iter->second;
+			++iter;
+		}
+	}
 private:
 	ForwardIndex* fwdIndex;
-	typedef vector<vector<unsigned> *>::iterator PrefixToCompleteMapIter;
+	boost::unordered_map<unsigned, vector<CandidateKeywordInfo>* > cache;
 };
 
 } /* namespace instanstsearch */

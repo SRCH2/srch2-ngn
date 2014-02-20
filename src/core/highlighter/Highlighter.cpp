@@ -311,7 +311,7 @@ void AnalyzerBasedAlgorithm::getSnippet(const QueryResults* qr, unsigned recIdx,
 				if (matchCntInAttr) {
 					vector<CharType> ctv;
 					utf8StringToCharTypeVector(attrPartVal, ctv);
-					_genSnippet(ctv, ctsnippet, 0, partHighlightPositions.size() - 1, partHighlightPositions);
+					_genSnippet(ctv, ctsnippet, partHighlightPositions.size() - 1, 0, partHighlightPositions);
 					string snippet;
 					charTypeVectorToUtf8String(ctsnippet, snippet);
 					snippets.push_back(snippet);
@@ -337,7 +337,7 @@ void AnalyzerBasedAlgorithm::getSnippet(const QueryResults* qr, unsigned recIdx,
 						partHighlightPositions.back().offset -=  (lastPos - attrStartPos);
 						++phpIter;
 					}
-					_genSnippet(ctv, ctsnippet, snippetUpperEnd, snippetLowerEnd, partHighlightPositions);
+					_genSnippet(ctv, ctsnippet, partHighlightPositions.size() - 1, 0, partHighlightPositions);
 					string snippet;
 					charTypeVectorToUtf8String(ctsnippet, snippet);
 					snippets.push_back(snippet);
@@ -604,46 +604,63 @@ void TermOffsetAlgorithm::getSnippet(const QueryResults* qr, unsigned recidx, un
 	set<unsigned> visitedKeyword;
 	const unsigned *keywordIdsPtr = fwdList->getKeywordIds();
 	unsigned keywordsInRec =  fwdList->getNumberOfKeywords();
-
-	vector<vector<unsigned> * >& prefixToComplete =
-			qr->impl->sortedFinalResults[recidx]->prefixToCompleteMap;
-
-	for(unsigned indx = 0; indx < prefixToComplete.size(); ++indx) {
-		unsigned i = 0, j = 0;
-		vector<unsigned>& keywordIds = *(prefixToComplete[indx]);
-		while(i < keywordIds.size() && j < keywordsInRec) {
-			if (keywordIds[i] > keywordIdsPtr[j])
-				++j;
-			else if (keywordIds[i] < keywordIdsPtr[j])
-				++i;
-			else {
-				unsigned attributeBitMap =	fwdList->getKeywordAttributeBitmap(j);
-				if (attributeBitMap & (1 << attributeId)) {
-					vector<unsigned> offsetPosition;
-					vector<unsigned> wordPosition;
-					fwdList->getKeyWordOffsetInRecordField(j, attributeId, attributeBitMap, offsetPosition);
-					visitedKeyword.insert(indx);
-					for (unsigned _idx = 0; _idx < offsetPosition.size(); ++_idx){
-						matchedTermInfo mti = {keywordStrToHighlight[indx].flag, indx, offsetPosition[_idx],
-							keywordStrToHighlight[indx].key.size(), 0};
-						if (keywordStrToHighlight[indx].editDistance > 0)
-								mti.tagIndex = 1;
-						highlightPositions.push_back(mti);
-					}
-					if (phrasesInfoList.size() > 0) {
-						fwdList->getKeyWordPostionsInRecordField(j, attributeId, attributeBitMap, wordPosition);
-						for(unsigned pidx = 0 ; pidx < phrasesInfoList.size(); ++pidx) {
-							if (phrasesInfoList[pidx].phraseKeyWords[indx].recordPosition) {
-								phrasesInfoList[pidx].phraseKeyWords[indx].recordPosition->
-								assign(wordPosition.begin(), wordPosition.end());
-							}
-						}
-						for (unsigned _idx = 0; _idx < wordPosition.size(); ++_idx){
-							positionToOffsetMap.insert(make_pair(wordPosition[_idx], highlightPositions.size() - offsetPosition.size() + _idx));
-						}
+	vector<CandidateKeywordInfo> *candidateKeywordsId;
+	boost::unordered_map<unsigned, vector<CandidateKeywordInfo>*>::iterator iter = cache.find(recidx);
+	/*
+	 *  The get snippet code is called x number of times per record. Where x is number of attributes
+	 *  to highlight. We compute the candidate kewordIds once for each record and then use it for all the
+	 *  attributes.
+	 */
+	if (iter == cache.end()) {
+		candidateKeywordsId = new vector<CandidateKeywordInfo>;
+		candidateKeywordsId->reserve(100);
+		vector<vector<unsigned> * >& prefixToComplete =
+				qr->impl->sortedFinalResults[recidx]->prefixToCompleteMap;
+		for(unsigned indx = 0; indx < prefixToComplete.size(); ++indx) {
+			unsigned i = 0, j = 0;
+			vector<unsigned>& keywordIds = *(prefixToComplete[indx]);
+			while(i < keywordIds.size() && j < keywordsInRec) {
+				if (keywordIds[i] > keywordIdsPtr[j])
+					++j;
+				else if (keywordIds[i] < keywordIdsPtr[j])
+					++i;
+				else {
+					candidateKeywordsId->push_back(CandidateKeywordInfo(indx, j));
+					++i; ++j;
+				}
+			}
+		}
+		cache.insert(make_pair(recidx, candidateKeywordsId));
+	} else {
+		candidateKeywordsId = iter->second;
+	}
+	for (unsigned i = 0; i < candidateKeywordsId->size(); ++i) {
+		CandidateKeywordInfo info = (*candidateKeywordsId)[i];
+		unsigned attributeBitMap =	fwdList->getKeywordAttributeBitmap(info.keywordOffset);
+		if (attributeBitMap & (1 << attributeId)) {
+			vector<unsigned> offsetPosition;
+			vector<unsigned> wordPosition;
+			fwdList->getKeyWordOffsetInRecordField(info.keywordOffset, attributeId, attributeBitMap, offsetPosition);
+			visitedKeyword.insert(info.prefixKeyIdx);
+			for (unsigned _idx = 0; _idx < offsetPosition.size(); ++_idx){
+				matchedTermInfo mti = {keywordStrToHighlight[info.prefixKeyIdx].flag,
+						info.prefixKeyIdx, offsetPosition[_idx],
+						keywordStrToHighlight[info.prefixKeyIdx].key.size(), 0};
+				if (keywordStrToHighlight[info.prefixKeyIdx].editDistance > 0)
+					mti.tagIndex = 1;
+				highlightPositions.push_back(mti);
+			}
+			if (phrasesInfoList.size() > 0) {
+				fwdList->getKeyWordPostionsInRecordField(info.keywordOffset, attributeId, attributeBitMap, wordPosition);
+				for(unsigned pidx = 0 ; pidx < phrasesInfoList.size(); ++pidx) {
+					if (phrasesInfoList[pidx].phraseKeyWords[info.prefixKeyIdx].recordPosition) {
+						phrasesInfoList[pidx].phraseKeyWords[info.prefixKeyIdx].recordPosition->
+						assign(wordPosition.begin(), wordPosition.end());
 					}
 				}
-				++i; ++j;
+				for (unsigned _idx = 0; _idx < wordPosition.size(); ++_idx){
+					positionToOffsetMap.insert(make_pair(wordPosition[_idx], highlightPositions.size() - offsetPosition.size() + _idx));
+				}
 			}
 		}
 	}
@@ -770,6 +787,7 @@ void TermOffsetAlgorithm::getSnippet(const QueryResults* qr, unsigned recidx, un
 		}
 	}else {
 		vector<CharType> ctv;
+		ctv.reserve(dataIn.size());
 		utf8StringToCharTypeVector(dataIn, ctv);  // we may not need to convert from utf8 to utf32
 		if(ctv.size() == 0)
 			return;

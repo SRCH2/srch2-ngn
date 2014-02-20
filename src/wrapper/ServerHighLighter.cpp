@@ -46,7 +46,6 @@ void findChildNodesForPrefixNode(TrieNodePointer prefixNode, vector<unsigned>& c
 		TrieNodePointer currNode = buffer.back(); buffer.pop_back();
 		if (currNode->isTerminalNode()) {
 			completeKeywordsId.push_back(currNode->id);
-			//continue; ... terminal node can also have childs...e.g good and goods
 		}
 		for(signed i = currNode->getChildrenCount() - 1; i >= 0; --i) {
 			buffer.push_back(currNode->getChild(i));

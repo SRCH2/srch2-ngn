@@ -300,6 +300,7 @@ public:
         numberOfResults=10; // defaults to 10
         parseTreeRoot = NULL;
         qfContainer= NULL;
+        isHighlightOn=true;
     }
 
     ~ParsedParameterContainer() {

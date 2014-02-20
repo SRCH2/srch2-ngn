@@ -151,7 +151,6 @@ void QueryEvaluatorInternal::findKMostPopularSuggestionsSorted(Term *term ,
     // now sort the suggestions
     std::sort(suggestionPairs.begin() , suggestionPairs.end() , suggestionComparator);
 }
-void findChildNodesForPrefixNode(TrieNodePointer prefixNode, vector<unsigned>& completeKeywordsId);
 /*
  * Returns the estimated number of results
  */

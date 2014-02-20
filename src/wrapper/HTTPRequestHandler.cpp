@@ -145,7 +145,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
         const Indexer *indexer, const unsigned start, const unsigned end,
         const unsigned retrievedResults, const string & message,
         const unsigned ts1, struct timespec &tstart, struct timespec &tend ,
-        const vector<RecordSnippet>& recordSnippets, bool onlyFacets) {
+        const vector<RecordSnippet>& recordSnippets, unsigned hlTime, bool onlyFacets) {
 
     Json::Value root;
     static pair<string, string> internalRecordTags("srch2_internal_record_123456789", "record");
@@ -235,33 +235,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
 
                 string sbuffer = string();
                 sbuffer.reserve(1024);  //<< TODO: set this to max allowed snippet len
-                unsigned _idx = i - start;
-                if (_idx < recordSnippets.size()
-                		&& recordSnippets[_idx].recordId == queryResults->getInternalRecordId(i)) {
-                	sbuffer.append("{");
-                	for (unsigned j = 0 ; j <  recordSnippets[_idx].fieldSnippets.size(); ++j) {
-                		sbuffer+='"'; sbuffer+=recordSnippets[_idx].fieldSnippets[j].FieldId; sbuffer+='"';
-                		sbuffer+=":[";
-                		for (unsigned k = 0 ; k <  recordSnippets[_idx].fieldSnippets[j].snippet.size(); ++k) {
-                			sbuffer+='"';
-                			cleanAndAppendToBuffer(recordSnippets[_idx].fieldSnippets[j].snippet[k], sbuffer);
-                			sbuffer+='"';
-                			sbuffer+=',';
-                		}
-                		if (recordSnippets[_idx].fieldSnippets[j].snippet.size())
-                			sbuffer.erase(sbuffer.length()-1);
-                		sbuffer+="],";
-                	}
-                	if (recordSnippets[_idx].fieldSnippets.size())
-                		sbuffer.erase(sbuffer.length()-1);
-                	sbuffer.append("}");
-                } else {
-                	sbuffer += "[ ]";
-                	if (recordSnippets.size() != 0) {
-                		Logger::warn("snippet not found for record id = %s !!",
-                				queryResults->getRecordId(i).c_str());
-                	}
-                }
+                genSnippetJSONString(i, start, recordSnippets, sbuffer, queryResults);
                 root["results"][counter][internalSnippetTags.first] = sbuffer;
                 ++counter;
             }
@@ -388,8 +362,8 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
 
     root["message"] = message;
     Logger::info(
-            "ip: %s, port: %d GET query: %s, searcher_time: %d ms, payload_access_time: %d ms",
-            req->remote_host, req->remote_port, req->uri + 1, ts1, ts2);
+            "ip: %s, port: %d GET query: %s, searcher_time: %d ms, highlighter_time: %d ms, payload_access_time: %d ms",
+            req->remote_host, req->remote_port, req->uri + 1, ts1, hlTime, ts2);
     bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", writer.write(root), headers);
 }
 
@@ -439,6 +413,15 @@ void HTTPRequestHandler::printOneResultRetrievedById(evhttp_request *req, const 
             string sbuffer;
             genRecordJsonString(indexer, internalRecordId, queryResults->getRecordId(i), sbuffer);
             root["results"][counter][internalRecordTags.first] = sbuffer;
+        } else if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SELECTED_ATTR){
+        	unsigned internalRecordId = queryResults->getInternalRecordId(i);
+        	string sbuffer;
+        	const vector<string> *attrToReturn = indexDataConfig->getAttributesToReturn();
+        	genRecordJsonString(indexer, internalRecordId, queryResults->getRecordId(i),
+        			sbuffer, attrToReturn);
+        	// The class CustomizableJsonWriter allows us to
+        	// attach the data string to the JSON tree without parsing it.
+        	root["results"][counter][internalRecordTags.first] = sbuffer;
         }
         ++counter;
     }
@@ -561,6 +544,37 @@ void HTTPRequestHandler::genRecordJsonString(const srch2is::Indexer *indexer, un
 		sbuffer.erase(sbuffer.length()-1);
 	sbuffer.append("}");
 
+}
+
+void HTTPRequestHandler::genSnippetJSONString(unsigned recIdx, unsigned start,
+		const vector<RecordSnippet>& recordSnippets, string& sbuffer,const QueryResults *queryResults) {
+	unsigned _idx = recIdx - start;
+	if (_idx < recordSnippets.size()
+			&& recordSnippets[_idx].recordId == queryResults->getInternalRecordId(recIdx)) {
+		sbuffer.append("{");
+		for (unsigned j = 0 ; j <  recordSnippets[_idx].fieldSnippets.size(); ++j) {
+			sbuffer+='"'; sbuffer+=recordSnippets[_idx].fieldSnippets[j].FieldId; sbuffer+='"';
+			sbuffer+=":[";
+			for (unsigned k = 0 ; k <  recordSnippets[_idx].fieldSnippets[j].snippet.size(); ++k) {
+				sbuffer+='"';
+				cleanAndAppendToBuffer(recordSnippets[_idx].fieldSnippets[j].snippet[k], sbuffer);
+				sbuffer+='"';
+				sbuffer+=',';
+			}
+			if (recordSnippets[_idx].fieldSnippets[j].snippet.size())
+				sbuffer.erase(sbuffer.length()-1);
+			sbuffer+="],";
+		}
+		if (recordSnippets[_idx].fieldSnippets.size())
+			sbuffer.erase(sbuffer.length()-1);
+		sbuffer.append("}");
+	} else {
+		sbuffer += "[ ]";
+		if (recordSnippets.size() != 0) {
+			Logger::warn("snippet not found for record id = %s !!",
+					queryResults->getRecordId(recIdx).c_str());
+		}
+	}
 }
 void HTTPRequestHandler::printSuggestions(evhttp_request *req, const evkeyvalq &headers,
         const vector<string> & suggestions,
@@ -1031,29 +1045,39 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     QueryResults * finalResults = new QueryResults();
     qe.execute(finalResults);
 
-	vector<RecordSnippet> highlightInfo;
-	/*
-	 *  Do snippet generation only if
-	 *  1. There are attributes marked to be highlighted
-	 *  2. Query is not facet only
-	 *  3. Highlight is not turned off in the query ( default is on ) << TODO
-	 */
+    // compute elapsed time in ms , end the timer
+    struct timespec tend;
+    clock_gettime(CLOCK_REALTIME, &tend);
+    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
+            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+
+    vector<RecordSnippet> highlightInfo;
+    /*
+     *  Do snippet generation only if
+     *  1. There are attributes marked to be highlighted
+     *  2. Query is not facet only
+     *  3. Highlight is not turned off in the query ( default is on ) << TODO
+     */
+    struct timespec hltstart;
+    clock_gettime(CLOCK_REALTIME, &hltstart);
+
     if (server->indexDataConfig->getHighlightAttributeIdsVector().size() > 0 &&
     		!paramContainer.onlyFacets &&
     		paramContainer.isHighlightOn) {
 
     	ServerHighLighter highlighter =  ServerHighLighter(finalResults, server, paramContainer,
     			logicalPlan.getOffset(), logicalPlan.getNumberOfResultsToRetrieve());
+    	highlightInfo.reserve(logicalPlan.getNumberOfResultsToRetrieve());
     	highlighter.generateSnippets(highlightInfo);
-    	if (highlightInfo.size() == 0) {
-    		Logger::error("Highligting is on but snippets are not generated!!");
+    	if (highlightInfo.size() == 0 && finalResults->getNumberOfResults() > 0) {
+    		Logger::warn("Highligting is on but snippets were not generated!!");
     	}
     }
-    // compute elapsed time in ms , end the timer
-    struct timespec tend;
-    clock_gettime(CLOCK_REALTIME, &tend);
-    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
-            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+
+    struct timespec hltend;
+    clock_gettime(CLOCK_REALTIME, &hltend);
+    unsigned hlTime = (hltend.tv_sec - hltstart.tv_sec) * 1000
+            + (hltend.tv_nsec - hltstart.tv_nsec) / 1000000;
 
     //5. call the print function to print out the results
     switch (logicalPlan.getQueryType()) {
@@ -1064,7 +1088,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
                 server->indexer, logicalPlan.getOffset(),
                 finalResults->getNumberOfResults(),
                 finalResults->getNumberOfResults(),
-                paramContainer.getMessageString(), ts1, tstart, tend, highlightInfo,
+                paramContainer.getMessageString(), ts1, tstart, tend, highlightInfo, hlTime,
                 paramContainer.onlyFacets);
         break;
 
@@ -1079,7 +1103,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
                     logicalPlan.getExactQuery(), server->indexer,
                     logicalPlan.getOffset(), finalResults->getNumberOfResults(),
                     finalResults->getNumberOfResults(),
-                    paramContainer.getMessageString(), ts1, tstart, tend , highlightInfo,
+                    paramContainer.getMessageString(), ts1, tstart, tend , highlightInfo, hlTime,
                     paramContainer.onlyFacets);
         } else { // Case where you have return 10,20, but we got only 0,25 results and so return 10,20
             HTTPRequestHandler::printResults(req, headers, logicalPlan,
@@ -1088,7 +1112,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
                     logicalPlan.getOffset(),
                     logicalPlan.getOffset() + logicalPlan.getNumberOfResultsToRetrieve(),
                     finalResults->getNumberOfResults(),
-                    paramContainer.getMessageString(), ts1, tstart, tend, highlightInfo,
+                    paramContainer.getMessageString(), ts1, tstart, tend, highlightInfo, hlTime,
                     paramContainer.onlyFacets);
         }
         break;
