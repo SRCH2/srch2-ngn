@@ -51,8 +51,15 @@ bool UnionLowestLevelTermVirtualListOperator::open(QueryEvaluatorInternal * quer
             TrieNodePointer trieNode;
             unsigned distance;
             iter.getItem(trieNode, distance);
-            // distance = prefixActiveNodeSet->getEditdistanceofPrefix(trieNode); // TODO: Check it
-            depthInitializeTermVirtualListElement(trieNode, distance, term->getThreshold());
+            unsigned prefixDistance = prefixActiveNodeSet->getEditdistanceofPrefix(trieNode);
+			if (trieNode->isTerminalNode())
+				initialiseTermVirtualListElement(NULL, trieNode, distance);
+			if (prefixDistance < term->getThreshold()) {
+				for (unsigned int childIterator = 0; childIterator < trieNode->getChildrenCount(); childIterator++) {
+				    const TrieNode *child = trieNode->getChild(childIterator);
+				    depthInitializeTermVirtualListElement(child, prefixDistance+1, term->getThreshold());
+				}
+			}
         }
     }
 

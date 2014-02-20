@@ -50,8 +50,27 @@ bool UnionLowestLevelSimpleScanOperator::open(QueryEvaluatorInternal * queryEval
             TrieNodePointer trieNode;
             unsigned distance;
             iter.getItem(trieNode, distance);
-            depthInitializeSimpleScanOperator(trieNode, trieNode, distance, term->getThreshold());
-        }
+            unsigned prefixDistance = activeNodeSet->getEditdistanceofPrefix(trieNode);
+
+			if (trieNode->isTerminalNode()){
+				// get inverted list pointer and save it
+				shared_ptr<vectorview<unsigned> > invertedListReadView;
+				this->queryEvaluator->getInvertedIndex()->
+						getInvertedListReadView(trieNode->getInvertedListOffset() , invertedListReadView);
+				this->invertedListsSharedPointers.push_back(invertedListReadView);
+				this->invertedLists.push_back(invertedListReadView.get());
+				this->invertedListPrefixes.push_back(trieNode);
+				this->invertedListLeafNodes.push_back(trieNode);
+				this->invertedListDistances.push_back(distance);
+				this->invertedListIDs.push_back(trieNode->getInvertedListOffset() );
+			}
+			if (prefixDistance < term->getThreshold()) {
+				for (unsigned int childIterator = 0; childIterator < trieNode->getChildrenCount(); childIterator++) {
+				    const TrieNode *child = trieNode->getChild(childIterator);
+				    depthInitializeSimpleScanOperator(child, trieNode, prefixDistance+1, term->getThreshold());
+				}
+			}
+		}
 	}
 
 	// check cache

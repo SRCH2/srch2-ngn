@@ -227,6 +227,7 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
             this->maxScoreForBitSetCase = 0;
             for (; !iter.isDone(); iter.next()) {
                 iter.getItem(trieNode, distance);
+                unsigned prefixDistance = prefixActiveNodeSet->getEditdistanceofPrefix(trieNode);
                 float runTimeScoreOfThisLeafNode = DefaultTopKRanker::computeTermRecordRuntimeScore(trieNode->getMaximumScoreOfLeafNodes(),
     					distance,
     					term->getKeyword()->size(),
@@ -236,7 +237,23 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
                 	this->maxScoreForBitSetCase = runTimeScoreOfThisLeafNode;
                 }
                 // loop the distance depth of the trie to add the term invertedlist to Bitset
-                depthInitializeBitSet(trieNode, distance, term->getThreshold());
+                if (trieNode->isTerminalNode()) {
+                        unsigned invertedListId = trieNode->getInvertedListOffset();
+                        this->invertedIndex->getInvertedListReadView(invertedListId, invertedListReadView);
+                        for (unsigned invertedListCounter = 0; invertedListCounter < invertedListReadView->size(); invertedListCounter++) {
+                            // set the bit of the record id to be true
+                            if (!bitSet.getAndSet(invertedListReadView->at(invertedListCounter)))
+                                bitSetSize++;
+                        }
+                        //termCount++;
+                        //totalInveretListLength  += invertedListReadView->size();
+                    }
+                    if (prefixDistance < term->getThreshold()) {
+                        for (unsigned int childIterator = 0; childIterator < trieNode->getChildrenCount(); childIterator++) {
+                            const TrieNode *child = trieNode->getChild(childIterator);
+                            depthInitializeTermVirtualListElement(child, prefixDistance+1, term->getThreshold());
+                        }
+                    }
             }
 
             //cout << "term count:" << numberOfLeafNodes << endl;
@@ -249,8 +266,18 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
                 TrieNodePointer trieNode;
                 unsigned distance;
                 iter.getItem(trieNode, distance);
-                // distance = prefixActiveNodeSet->getEditdistanceofPrefix(trieNode); // TODO (Check)
-                depthInitializeTermVirtualListElement(trieNode, distance, term->getThreshold());
+                unsigned prefixDistance = prefixActiveNodeSet->getEditdistanceofPrefix(trieNode);
+
+                if (trieNode->isTerminalNode())
+                {
+                        initialiseTermVirtualListElement(NULL, trieNode, distance);
+                }
+                if (prefixDistance < term->getThreshold()) {
+                    for (unsigned int childIterator = 0; childIterator < trieNode->getChildrenCount(); childIterator++) {
+                        const TrieNode *child = trieNode->getChild(childIterator);
+                        depthInitializeTermVirtualListElement(child, prefixDistance+1, term->getThreshold());
+                    }
+                }
             }
         }
     }
