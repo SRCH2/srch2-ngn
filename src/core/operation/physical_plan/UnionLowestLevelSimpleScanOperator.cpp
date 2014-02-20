@@ -47,29 +47,20 @@ bool UnionLowestLevelSimpleScanOperator::open(QueryEvaluatorInternal * queryEval
         }
 	}else{ // complete term
         for (ActiveNodeSetIterator iter(activeNodeSet.get(), term->getThreshold()); !iter.isDone(); iter.next()) {
+        	// For a pivotal active node (PAN) (e.g., "game") and a query term (e.g., "garden"),
+        	// there are two distances between them. One is the PAN's internal distance as a prefix, which is 2,
+        	// which corresponds to the distance between "game" and "garde" where the last two characters
+        	// match.  The other distance is their real edit distance between "game" and "garden", which is 3.
+        	// We use the first distance, called "panDistance", when we traverse the descendants to populate the
+        	// term vritual list (TVL).  However, if this node is a terminal node, we use the second distance
+        	// called "editDistance".  So implement this logic by passing both distances and a "usingEditDistance"
+        	// flag.
             TrieNodePointer trieNode;
-            unsigned distance;
-            iter.getItem(trieNode, distance);
-            unsigned prefixDistance = activeNodeSet->getEditdistanceofPrefix(trieNode);
-
-			if (trieNode->isTerminalNode()){
-				// get inverted list pointer and save it
-				shared_ptr<vectorview<unsigned> > invertedListReadView;
-				this->queryEvaluator->getInvertedIndex()->
-						getInvertedListReadView(trieNode->getInvertedListOffset() , invertedListReadView);
-				this->invertedListsSharedPointers.push_back(invertedListReadView);
-				this->invertedLists.push_back(invertedListReadView.get());
-				this->invertedListPrefixes.push_back(trieNode);
-				this->invertedListLeafNodes.push_back(trieNode);
-				this->invertedListDistances.push_back(distance);
-				this->invertedListIDs.push_back(trieNode->getInvertedListOffset() );
-			}
-			if (prefixDistance < term->getThreshold()) {
-				for (unsigned int childIterator = 0; childIterator < trieNode->getChildrenCount(); childIterator++) {
-				    const TrieNode *child = trieNode->getChild(childIterator);
-				    depthInitializeSimpleScanOperator(child, trieNode, prefixDistance+1, term->getThreshold());
-				}
-			}
+            unsigned editDistance;
+            iter.getItem(trieNode, editDistance);
+            unsigned panDistance = activeNodeSet->getEditdistanceofPrefix(trieNode);
+            bool usingEditDistance = true;
+            depthInitializeSimpleScanOperator(trieNode, trieNode, editDistance, usingEditDistance, panDistance, term->getThreshold());
 		}
 	}
 
@@ -228,7 +219,7 @@ bool UnionLowestLevelSimpleScanOperator::verifyByRandomAccess(PhysicalPlanRandom
  * So if the term type is prefix, and the match is exact, still we can have multiple leaf nodes.
  */
 void UnionLowestLevelSimpleScanOperator::depthInitializeSimpleScanOperator(
-		const TrieNode* trieNode, const TrieNode* prefixNode, unsigned distance, unsigned bound){
+		const TrieNode* trieNode, const TrieNode* prefixNode, unsigned editDistance, bool usingEditDistance, unsigned panDistance,  unsigned bound){
     if (trieNode->isTerminalNode()){
         // get inverted list pointer and save it
         shared_ptr<vectorview<unsigned> > invertedListReadView;
@@ -238,13 +229,13 @@ void UnionLowestLevelSimpleScanOperator::depthInitializeSimpleScanOperator(
         this->invertedLists.push_back(invertedListReadView.get());
         this->invertedListPrefixes.push_back(prefixNode);
         this->invertedListLeafNodes.push_back(trieNode);
-        this->invertedListDistances.push_back(distance);
+        this->invertedListDistances.push_back(usingEditDistance ? editDistance : panDistance);
         this->invertedListIDs.push_back(trieNode->getInvertedListOffset() );
     }
-    if (distance < bound) {
+    if (panDistance < bound) {
         for (unsigned int childIterator = 0; childIterator < trieNode->getChildrenCount(); childIterator++) {
             const TrieNode *child = trieNode->getChild(childIterator);
-            depthInitializeSimpleScanOperator(child, trieNode, distance+1, bound);
+            depthInitializeSimpleScanOperator(child, trieNode, 0, false, panDistance + 1, bound);
         }
     }
 }

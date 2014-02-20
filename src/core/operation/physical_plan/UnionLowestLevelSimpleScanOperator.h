@@ -53,7 +53,7 @@ private:
 	UnionLowestLevelSimpleScanOperator() ;
 
 	void depthInitializeSimpleScanOperator(
-			const TrieNode* trieNode,const TrieNode* prefixNode, unsigned distance, unsigned bound);
+			const TrieNode* trieNode,const TrieNode* prefixNode, unsigned editDistance, bool usingEditDistance, unsigned panDistance, unsigned bound);
 
     //this flag is set to true when the parent is feeding this operator
     // a cache entry and expects a newer one in close()

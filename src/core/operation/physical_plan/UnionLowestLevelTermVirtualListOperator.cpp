@@ -48,18 +48,20 @@ bool UnionLowestLevelTermVirtualListOperator::open(QueryEvaluatorInternal * quer
         cursorVector.reserve(iter.size());
         invertedListReadViewVector.reserve(iter.size());
         for (; !iter.isDone(); iter.next()) {
+           	// For a pivotal active node (PAN) (e.g., "game") and a query term (e.g., "garden"),
+          	// there are two distances between them. One is the PAN's internal distance as a prefix, which is 2,
+           	// which corresponds to the distance between "game" and "garde" where the last two characters
+           	// match.  The other distance is their real edit distance between "game" and "garden", which is 3.
+           	// We use the first distance, called "panDistance", when we traverse the descendants to populate the
+           	// term vritual list (TVL).  However, if this node is a terminal node, we use the second distance
+           	// called "editDistance".  So implement this logic by passing both distances and a "usingEditDistance"
+           	// flag.
             TrieNodePointer trieNode;
-            unsigned distance;
-            iter.getItem(trieNode, distance);
-            unsigned prefixDistance = prefixActiveNodeSet->getEditdistanceofPrefix(trieNode);
-			if (trieNode->isTerminalNode())
-				initialiseTermVirtualListElement(NULL, trieNode, distance);
-			if (prefixDistance < term->getThreshold()) {
-				for (unsigned int childIterator = 0; childIterator < trieNode->getChildrenCount(); childIterator++) {
-				    const TrieNode *child = trieNode->getChild(childIterator);
-				    depthInitializeTermVirtualListElement(child, prefixDistance+1, term->getThreshold());
-				}
-			}
+            unsigned editDistance;
+            iter.getItem(trieNode, editDistance);
+            unsigned panDistance = prefixActiveNodeSet->getEditdistanceofPrefix(trieNode);
+            bool usingEditDistance = true;
+            depthInitializeTermVirtualListElement(trieNode, editDistance, usingEditDistance, panDistance, term->getThreshold());
         }
     }
 
@@ -353,14 +355,14 @@ void UnionLowestLevelTermVirtualListOperator::initialiseTermVirtualListElement(T
 }
 
 
-void UnionLowestLevelTermVirtualListOperator::depthInitializeTermVirtualListElement(const TrieNode* trieNode, unsigned distance, unsigned bound)
+void UnionLowestLevelTermVirtualListOperator::depthInitializeTermVirtualListElement(const TrieNode* trieNode, unsigned editDistance, bool usingEditDistance, unsigned panDistance, unsigned bound)
 {
     if (trieNode->isTerminalNode())
-        initialiseTermVirtualListElement(NULL, trieNode, distance);
-    if (distance < bound) {
+        initialiseTermVirtualListElement(NULL, trieNode, usingEditDistance ? editDistance : panDistance);
+    if (panDistance < bound) {
         for (unsigned int childIterator = 0; childIterator < trieNode->getChildrenCount(); childIterator++) {
             const TrieNode *child = trieNode->getChild(childIterator);
-            depthInitializeTermVirtualListElement(child, distance+1, bound);
+            depthInitializeTermVirtualListElement(child, 0, false, panDistance + 1, bound);
         }
     }
 }

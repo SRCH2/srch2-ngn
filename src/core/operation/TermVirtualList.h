@@ -131,7 +131,7 @@ public:
 
     void initialiseTermVirtualListElement(TrieNodePointer prefixNode, TrieNodePointer leafNode, unsigned distance);
     // check bound-distance depth from trieNode and initialize TermVirtualListElement when it's a leaf
-    void depthInitializeTermVirtualListElement(const TrieNode* trieNode, unsigned distance, unsigned bound);
+    void depthInitializeTermVirtualListElement(const TrieNode* trieNode, unsigned editDistance, bool usingEditDistance, unsigned panDistance, unsigned bound);
     void depthInitializeBitSet(const TrieNode* trieNode, unsigned distance, unsigned bound);
     bool getNext(HeapItemForIndexSearcher *heapItem);
     void getPrefixActiveNodeSet(PrefixActiveNodeSet* &prefixActiveNodeSet);
