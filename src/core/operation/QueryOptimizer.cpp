@@ -363,9 +363,9 @@ PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<Phy
 	if(treeOptions.size() == 1){
 		return treeOptions.at(0);
 	}
-	if(planOffset < treeOptions.size()-1){
-		return treeOptions.at(planOffset);
-	}
+//	if(planOffset < treeOptions.size()-1){
+//		return treeOptions.at(planOffset);
+//	}
 
 	unsigned treeOptionIndexChosen = 0 ;
 //	cout << "QO(";
