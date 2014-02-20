@@ -44,7 +44,7 @@ bool MergeByShortestListOperator::open(QueryEvaluatorInternal * queryEvaluator, 
 	// A complete documentation about Cache is here :
 	// https://docs.google.com/a/srch2.com/document/d/1Zw4MKSeimsAhbFAWb0VJTB5Msrq_HocVm9Xer4McJuU/edit?disco=AAAAAEouq-w#heading=h.v4ed6yoj3ddf
 	boost::shared_ptr<PhysicalOperatorCacheObject> cacheHit;
-	if(this->queryEvaluator != NULL && // this is for CTEST ShortestList_Test, in normal cases, queryEvaluator cannot be NULL
+	if(false && this->queryEvaluator != NULL && // this is for CTEST ShortestList_Test, in normal cases, queryEvaluator cannot be NULL
 			this->queryEvaluator->getCacheManager()->getPhysicalOperatorsCache()->
 			getPhysicalOperatorsInfo(key ,  cacheHit)){ // cache has key
 		MergeByShortestListCacheEntry * mergeShortestCacheEntry = (MergeByShortestListCacheEntry *) cacheHit.get();
