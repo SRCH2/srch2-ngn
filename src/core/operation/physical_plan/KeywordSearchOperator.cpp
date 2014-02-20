@@ -24,16 +24,16 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 	 // this for is a two iteration loop, to avoid copying the code for exact and fuzzy
 	for(unsigned fuzzyPolicyIter = 0 ; fuzzyPolicyIter < 2 ; fuzzyPolicyIter++ ){
 
-		if(fuzzyPolicyIter == 0){
-			cout << "Exact:\t";
-		}else{
-			cout << "Fuzzy:\t";
-		}
+//		if(fuzzyPolicyIter == 0){
+//			cout << "Exact:\t";
+//		}else{
+//			cout << "Fuzzy:\t";
+//		}
 		unsigned numberOfIterations = logicalPlan->offset + logicalPlan->numberOfResultsToRetrieve;
-		for(unsigned planOffset = 0 ; planOffset < 7 ; planOffset ++){
+//		for(unsigned planOffset = 0 ; planOffset < 7 ; planOffset ++){
 			// start the timer for search
-			struct timespec tstart;
-			clock_gettime(CLOCK_REALTIME, &tstart);
+//			struct timespec tstart;
+//			clock_gettime(CLOCK_REALTIME, &tstart);
 			/*
 			 * 1. Use CatalogManager to collect statistics and meta data about the logical plan
 			 * ---- 1.1. computes and attaches active node sets for each term
@@ -80,7 +80,7 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 			params.cacheObject = NULL;
 			physicalPlan.setExecutionParameters(&params);
 
-			queryOptimizer.buildAndOptimizePhysicalPlan(physicalPlan,logicalPlan,planOffset);
+			queryOptimizer.buildAndOptimizePhysicalPlan(physicalPlan,logicalPlan,0);
 			if(physicalPlan.getPlanTree() == NULL){
 				return true;
 			}
@@ -111,16 +111,16 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 			physicalPlan.getPlanTree()->close(params);
 
 
-			// compute elapsed time in ms , end the timer
-			struct timespec tend;
-			clock_gettime(CLOCK_REALTIME, &tend);
-			unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000000
-					+ (tend.tv_nsec - tstart.tv_nsec) / 1000;
-			cout << "Plan" << planOffset << "(" << ts1*1.0/1000 << ")\t" ;
-//			cout << ts1/1000 << endl;
-
-		}
-		cout << endl;
+//			// compute elapsed time in ms , end the timer
+//			struct timespec tend;
+//			clock_gettime(CLOCK_REALTIME, &tend);
+//			unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000000
+//					+ (tend.tv_nsec - tstart.tv_nsec) / 1000;
+//			cout << "Plan" << planOffset << "(" << ts1*1.0/1000 << ")\t" ;
+////			cout << ts1/1000 << endl;
+//
+//		}
+//		cout << endl;
 
 		if(fuzzyPolicyIter == 0){
 			if(isFuzzy == true && results.size() < numberOfIterations){

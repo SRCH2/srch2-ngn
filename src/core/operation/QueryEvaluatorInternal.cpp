@@ -177,13 +177,13 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 
 	ASSERT(logicalPlan != NULL);
 	//1. first check to see if we have this query in cache
-//	string key = logicalPlan->getUniqueStringForCaching();
-//	boost::shared_ptr<QueryResultsCacheEntry> cachedObject ;
-//	if(this->cacheManager->getQueryResultsCache()->getQueryResults(key , cachedObject) == true){
-//		// cache hit
-//		cachedObject->copyToQueryResultsInternal(queryResults->impl);
-//		return queryResults->impl->sortedFinalResults.size();
-//	}
+	string key = logicalPlan->getUniqueStringForCaching();
+	boost::shared_ptr<QueryResultsCacheEntry> cachedObject ;
+	if(this->cacheManager->getQueryResultsCache()->getQueryResults(key , cachedObject) == true){
+		// cache hit
+		cachedObject->copyToQueryResultsInternal(queryResults->impl);
+		return queryResults->impl->sortedFinalResults.size();
+	}
 	 /*
 	  * 3. Execute physical plan
 	 */
@@ -310,11 +310,11 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 	topOperator->close(dummy);
 
 
-//	 save in cache
-//	boost::shared_ptr<QueryResultsCacheEntry> cacheObject ;
-//	cacheObject.reset(new QueryResultsCacheEntry());
-//	cacheObject->copyFromQueryResultsInternal(queryResults->impl);
-//	this->cacheManager->getQueryResultsCache()->setQueryResults(key , cacheObject);
+	// save in cache
+	boost::shared_ptr<QueryResultsCacheEntry> cacheObject ;
+	cacheObject.reset(new QueryResultsCacheEntry());
+	cacheObject->copyFromQueryResultsInternal(queryResults->impl);
+	this->cacheManager->getQueryResultsCache()->setQueryResults(key , cacheObject);
 
 
 //	// compute elapsed time in ms , end the timer
