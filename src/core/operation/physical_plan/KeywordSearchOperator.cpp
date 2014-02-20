@@ -19,27 +19,31 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 	logicalPlan->setFuzzy(false);
 	PhysicalPlanExecutionParameters params(0, logicalPlan->isFuzzy() , logicalPlan->getExactQuery()->getPrefixMatchPenalty(), logicalPlan->getQueryType());
 	params.totalNumberOfRecords = queryEvaluator->getForwardIndex()->getTotalNumberOfForwardLists_ReadView();
-	//2. Apply exact/fuzzy policy and run
-	vector<unsigned> resultIds;
+//	//2. Apply exact/fuzzy policy and run
+//	vector<unsigned> resultIds;
 	 // this for is a two iteration loop, to avoid copying the code for exact and fuzzy
 	for(unsigned fuzzyPolicyIter = 0 ; fuzzyPolicyIter < 2 ; fuzzyPolicyIter++ ){
 
-//		if(fuzzyPolicyIter == 0){
-//			cout << "Exact:\t";
-//		}else{
-//			cout << "Fuzzy:\t";
-//		}
+		if(fuzzyPolicyIter == 0){
+			cout << "Exact:\t";
+		}else{
+			cout << "Fuzzy:\t";
+		}
 		unsigned numberOfIterations = logicalPlan->offset + logicalPlan->numberOfResultsToRetrieve;
-//		for(unsigned planOffset = 0 ; planOffset < 7 ; planOffset ++){
+		for(unsigned planOffset = 0 ; planOffset < 7 ; planOffset ++){
 //			// start the timer for search
-//			struct timespec tstart;
-//			clock_gettime(CLOCK_REALTIME, &tstart);
+			struct timespec tstart;
+			clock_gettime(CLOCK_REALTIME, &tstart);
 			/*
 			 * 1. Use CatalogManager to collect statistics and meta data about the logical plan
 			 * ---- 1.1. computes and attaches active node sets for each term
 			 * ---- 1.2. estimates and saves the number of results of each internal logical operator
 			 * ---- 1.3. ...
 			 */
+			//2. Apply exact/fuzzy policy and run
+			vector<unsigned> resultIds;
+			results.clear();
+
 			HistogramManager histogramManager(queryEvaluator);
 			histogramManager.annotate(logicalPlan);
 			/*
@@ -54,7 +58,7 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 
 			physicalPlan.setExecutionParameters(&params);
 
-			queryOptimizer.buildAndOptimizePhysicalPlan(physicalPlan,logicalPlan,0);
+			queryOptimizer.buildAndOptimizePhysicalPlan(physicalPlan,logicalPlan,planOffset);
 
 			if(physicalPlan.getPlanTree() == NULL){
 				return true;
@@ -88,17 +92,17 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 			//1. Open the physical plan by opening the root
 			physicalPlan.getPlanTree()->open(queryEvaluator , params);
 			//2. call getNext for K times
-			for(unsigned i=0;(physicalPlan.getSearchType() == SearchTypeGetAllResultsQuery ? true : (i < numberOfIterations) );i++){
+			while(true){
 				PhysicalPlanRecordItem * newRecord = physicalPlan.getPlanTree()->getNext( params);
 				if(newRecord == NULL){
 					break;
 				}
-				// check if we are in the fuzzyPolicyIter session, if yes, we should not repeat a record
-				if(fuzzyPolicyIter > 0){
-					if(find(resultIds.begin(),resultIds.end(),newRecord->getRecordId()) != resultIds.end()){
-						continue;
-					}
-				}
+//				// check if we are in the fuzzyPolicyIter session, if yes, we should not repeat a record
+//				if(fuzzyPolicyIter > 0){
+//					if(find(resultIds.begin(),resultIds.end(),newRecord->getRecordId()) != resultIds.end()){
+//						continue;
+//					}
+//				}
 				if(find(resultIds.begin(),resultIds.end(),newRecord->getRecordId()) != resultIds.end()){
 					continue;
 				}
@@ -106,21 +110,27 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 				resultIds.push_back(newRecord->getRecordId());
 				results.push_back(newRecord);
 
+				if(physicalPlan.getSearchType() != SearchTypeGetAllResultsQuery){
+					if(results.size() >= numberOfIterations){
+						break;
+					}
+				}
+
 			}
 
 			physicalPlan.getPlanTree()->close(params);
 
 
-//			// compute elapsed time in ms , end the timer
-//			struct timespec tend;
-//			clock_gettime(CLOCK_REALTIME, &tend);
-//			unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000000
-//					+ (tend.tv_nsec - tstart.tv_nsec) / 1000;
-//			cout << "Plan" << planOffset << "(" << ts1*1.0/1000 << ")\t" ;
-////			cout << ts1/1000 << endl;
-//
-//		}
-//		cout << endl;
+			// compute elapsed time in ms , end the timer
+			struct timespec tend;
+			clock_gettime(CLOCK_REALTIME, &tend);
+			unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000000
+					+ (tend.tv_nsec - tstart.tv_nsec) / 1000;
+			cout << "Plan" << planOffset << "(" << ts1*1.0/1000 << ")\t" ;
+//			cout << ts1/1000 << endl;
+
+		}
+		cout << endl;
 		if(fuzzyPolicyIter == 0){
 			if(isFuzzy == true && results.size() < numberOfIterations){
 				logicalPlan->setFuzzy(true);
