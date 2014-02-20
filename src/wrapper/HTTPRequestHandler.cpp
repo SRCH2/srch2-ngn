@@ -803,10 +803,10 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
 
     // start the timer for search
     struct timespec tstart;
-    struct timespec tstart2;
+//    struct timespec tstart2;
     struct timespec tend;
     clock_gettime(CLOCK_REALTIME, &tstart);
-    clock_gettime(CLOCK_REALTIME, &tstart2);
+//    clock_gettime(CLOCK_REALTIME, &tstart2);
 
     const CoreInfo_t *indexDataContainerConf = server->indexDataConfig;
 
@@ -814,7 +814,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
 
     evkeyvalq headers;
     evhttp_parse_query(req->uri, &headers);
-    cout << "Query: " << req->uri << endl;
+//    cout << "Query: " << req->uri << endl;
     // simple example for query is : q={boost=2}name:foo~0.5 AND bar^3*&fq=name:"John"
     //1. first create query parser to parse the url
     QueryParser qp(headers, &paramContainer);
@@ -826,9 +826,9 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
         return;
     }
 
-    clock_gettime(CLOCK_REALTIME, &tend);
-    unsigned parserTime = (tend.tv_sec - tstart2.tv_sec) * 1000
-            + (tend.tv_nsec - tstart2.tv_nsec) / 1000000;
+//    clock_gettime(CLOCK_REALTIME, &tend);
+//    unsigned parserTime = (tend.tv_sec - tstart2.tv_sec) * 1000
+//            + (tend.tv_nsec - tstart2.tv_nsec) / 1000000;
 
     //2. validate the query
     QueryValidator qv(*(server->indexer->getSchema()),
@@ -843,10 +843,10 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
         return;
     }
 
-    clock_gettime(CLOCK_REALTIME, &tend);
-    unsigned validatorTime = (tend.tv_sec - tstart2.tv_sec) * 1000
-            + (tend.tv_nsec - tstart2.tv_nsec) / 1000000;
-    validatorTime -= parserTime;
+//    clock_gettime(CLOCK_REALTIME, &tend);
+//    unsigned validatorTime = (tend.tv_sec - tstart2.tv_sec) * 1000
+//            + (tend.tv_nsec - tstart2.tv_nsec) / 1000000;
+//    validatorTime -= parserTime;
 
     //3. rewrite the query and apply analyzer and other stuff ...
     QueryRewriter qr(server->indexDataConfig,
@@ -861,10 +861,10 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
         return;
     }
 
-    clock_gettime(CLOCK_REALTIME, &tend);
-    unsigned rewriterTime = (tend.tv_sec - tstart2.tv_sec) * 1000
-            + (tend.tv_nsec - tstart2.tv_nsec) / 1000000;
-    rewriterTime -= (validatorTime + parserTime);
+//    clock_gettime(CLOCK_REALTIME, &tend);
+//    unsigned rewriterTime = (tend.tv_sec - tstart2.tv_sec) * 1000
+//            + (tend.tv_nsec - tstart2.tv_nsec) / 1000000;
+//    rewriterTime -= (validatorTime + parserTime);
 
     //4. now execute the plan
     srch2is::QueryResultFactory * resultsFactory =
@@ -879,7 +879,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     clock_gettime(CLOCK_REALTIME, &tend);
     unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
             + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-    unsigned executionTime = ts1 - (validatorTime + rewriterTime + parserTime);
+//    unsigned executionTime = ts1 - (validatorTime + rewriterTime + parserTime);
 //    cout << ts1 << endl;
     //5. call the print function to print out the results
     switch (logicalPlan.getQueryType()) {
@@ -930,11 +930,11 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
         break;
     }
 
-    clock_gettime(CLOCK_REALTIME, &tend);
-    unsigned printTime = (tend.tv_sec - tstart2.tv_sec) * 1000
-            + (tend.tv_nsec - tstart2.tv_nsec) / 1000000;
-    printTime -= (validatorTime + rewriterTime + executionTime + parserTime);
-    cout << "Times : " << parserTime << "\t" << validatorTime << "\t" << rewriterTime << "\t" << executionTime << "\t" << printTime << endl;
+//    clock_gettime(CLOCK_REALTIME, &tend);
+//    unsigned printTime = (tend.tv_sec - tstart2.tv_sec) * 1000
+//            + (tend.tv_nsec - tstart2.tv_nsec) / 1000000;
+//    printTime -= (validatorTime + rewriterTime + executionTime + parserTime);
+//    cout << "Times : " << parserTime << "\t" << validatorTime << "\t" << rewriterTime << "\t" << executionTime << "\t" << printTime << endl;
     // 6. delete allocated structures
     // Free the objects
     evhttp_clear_headers(&headers);
