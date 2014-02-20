@@ -43,12 +43,16 @@ void InvertedListContainer::sortAndMergeBeforeCommit(const unsigned keywordId, c
     // sort this inverted list only if the flag is true.
     // if the flag is false, we only need to commit.
     if (needToSortEachInvertedList) {
+        shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
+        forwardIndex->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
+
         vectorview<unsigned>* &writeView = this->invList->getWriteView();
 
         vector<InvertedListIdAndScore> invertedListElements(writeView->size());
         for (unsigned i = 0; i< writeView->size(); i++) {
             invertedListElements[i].recordId = writeView->getElement(i);
-            invertedListElements[i].score = forwardIndex->getTermRecordStaticScore(invertedListElements[i].recordId, forwardIndex->getKeywordOffset(invertedListElements[i].recordId, keywordId));
+            invertedListElements[i].score = forwardIndex->getTermRecordStaticScore(invertedListElements[i].recordId,
+            		forwardIndex->getKeywordOffset(forwardListDirectoryReadView, invertedListElements[i].recordId, keywordId));
         }
         std::sort(invertedListElements.begin(), invertedListElements.end(), InvertedListContainer::InvertedListElementGreaterThan());
 
@@ -62,6 +66,9 @@ void InvertedListContainer::sortAndMergeBeforeCommit(const unsigned keywordId, c
 
 void InvertedListContainer::sortAndMerge(const unsigned keywordId, const ForwardIndex *forwardIndex)
 {
+    shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
+    forwardIndex->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
+
     shared_ptr<vectorview<unsigned> > readView;
     this->invList->getReadView(readView);
     unsigned readViewListSize = readView->size();
@@ -73,7 +80,8 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, const Forward
 
     for (unsigned i = 0; i< writeView->size(); i++) {
         invertedListElements[i].recordId = writeView->getElement(i);
-        invertedListElements[i].score = forwardIndex->getTermRecordStaticScore(invertedListElements[i].recordId, forwardIndex->getKeywordOffset(invertedListElements[i].recordId, keywordId));
+        invertedListElements[i].score = forwardIndex->getTermRecordStaticScore(invertedListElements[i].recordId,
+        		forwardIndex->getKeywordOffset(forwardListDirectoryReadView, invertedListElements[i].recordId, keywordId));
     }
 
     Logger::debug("SortnMerge: | %d | %d ", readViewListSize, writeViewListSize);
@@ -128,20 +136,22 @@ InvertedIndex::~InvertedIndex()
     }
 }
 
-bool InvertedIndex::isValidTermPositionHit(unsigned forwardListId, unsigned keywordOffset,
+bool InvertedIndex::isValidTermPositionHit(shared_ptr<vectorview<ForwardListPtr> > & forwardIndexDirectoryReadView,
+		unsigned forwardListId,
+		unsigned keywordOffset,
         unsigned searchableAttributeId, unsigned& termAttributeBitmap, float &termRecordStaticScore) const
 {
-    return this->forwardIndex->isValidRecordTermHit(forwardListId, keywordOffset,
+    return this->forwardIndex->isValidRecordTermHit(forwardIndexDirectoryReadView, forwardListId, keywordOffset,
             searchableAttributeId, termAttributeBitmap, termRecordStaticScore);
 }
 
 // given a forworListId and invertedList offset, return the keyword offset
-unsigned InvertedIndex::getKeywordOffset(unsigned forwardListId, unsigned invertedListOffset) const
+unsigned InvertedIndex::getKeywordOffset(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+		shared_ptr<vectorview<unsigned> > invertedIndexKeywordIdsReadView,
+		unsigned forwardListId, unsigned invertedListOffset) const
 {
-    shared_ptr<vectorview<unsigned> > readView;
-    this->keywordIds->getReadView(readView);
     //transfer the invertedList offset to keywordId
-    return this->forwardIndex->getKeywordOffset(forwardListId, readView->getElement(invertedListOffset));
+    return this->forwardIndex->getKeywordOffset(forwardListDirectoryReadView, forwardListId, invertedIndexKeywordIdsReadView->getElement(invertedListOffset));
 }
 
 // For Trie bootstrap
@@ -337,12 +347,20 @@ void InvertedIndex::addInvertedListElement(unsigned keywordId, unsigned recordId
     writeView->at(keywordId)->addInvertedListElement(recordId);
 }
 
-void InvertedIndex::getInvertedListReadView(const unsigned invertedListId, shared_ptr<vectorview<unsigned> >& invertedListReadView) const
+void InvertedIndex::getInvertedListReadView(shared_ptr<vectorview<InvertedListContainerPtr> > & invertedListDirectoryReadView,
+		const unsigned invertedListId, shared_ptr<vectorview<unsigned> >& invertedListReadView) const
 {
-    assert(invertedListId < this->getTotalNumberOfInvertedLists_ReadView());
-    shared_ptr<vectorview<InvertedListContainerPtr> > invertedListDirectoryReadView;
-    this->invertedIndexVector->getReadView(invertedListDirectoryReadView);
+    ASSERT(invertedListId < this->getTotalNumberOfInvertedLists_ReadView());
     invertedListDirectoryReadView->getElement(invertedListId)->getInvertedList(invertedListReadView);
+}
+
+void InvertedIndex::getInvertedIndexDirectory_ReadView(
+		shared_ptr<vectorview<InvertedListContainerPtr> > & invertedListDirectoryReadView) const{
+	this->invertedIndexVector->getReadView(invertedListDirectoryReadView);
+}
+
+void InvertedIndex::getInvertedIndexKeywordIds_ReadView(shared_ptr<vectorview<unsigned> > & invertedIndexKeywordIdsReadView) const{
+	this->keywordIds->getReadView(invertedIndexKeywordIdsReadView);
 }
 
 //ReadView InvertedListSize

@@ -90,7 +90,9 @@ bool QueryResultsInternal::checkCacheHit(
 
         // compute the virtual list for this term
         TermVirtualList *termVirtualList = new TermVirtualList(
-                queryEvaluatorInternal->getInvertedIndex(), termActiveNodeSet.get(),
+                queryEvaluatorInternal->getInvertedIndex(),
+                queryEvaluatorInternal->getForwardIndex(),
+                termActiveNodeSet.get(),
                 term, query->getPrefixMatchPenalty());
 
         this->virtualListVector->push_back(termVirtualList);
@@ -186,9 +188,12 @@ void QueryResultsInternal::finalizeResults(const ForwardIndex *forwardIndex) {
     unsigned index = 0;
     unsigned falseHits = 0; // Deleted Rids
 
+    shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
+    forwardIndex->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
+
     while (this->nextKResultsHeap.size() > 0) {
         string externalRecordId;
-        if (forwardIndex->getExternalRecordIdFromInternalRecordId(
+        if (forwardIndex->getExternalRecordIdFromInternalRecordId(forwardListDirectoryReadView,
                 this->nextKResultsHeap.top()->internalRecordId,
                 externalRecordId)) {
             QueryResult * qs = resultsFactory->impl->createQueryResult();

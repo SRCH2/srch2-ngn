@@ -123,7 +123,7 @@ Trie *constructTrie()
     trie->addKeyword(getCharTypeVector("cat"), invertedIndexOffset);
     trie->addKeyword(getCharTypeVector("dog"), invertedIndexOffset);
     trie->commit();
-    trie->finalCommit_finalizeHistogramInformation(NULL , 0);
+    trie->finalCommit_finalizeHistogramInformation(NULL, NULL , 0);
 
     return trie;
 }
@@ -385,7 +385,7 @@ Trie *constructNoFuzzyTrie()
     trie->addKeyword(getCharTypeVector("ㄕㄢ"), invertedIndexOffset);
 
     trie->commit();
-    trie->finalCommit_finalizeHistogramInformation(NULL , 0);
+    trie->finalCommit_finalizeHistogramInformation(NULL , NULL, 0);
 
     return trie;
 }
@@ -633,7 +633,7 @@ void testActiveNodeWithTrieUpdate()
     trie->addKeyword_ThreadSafe(getCharTypeVector("peo"), invertedIndexOffset);
     trie->addKeyword_ThreadSafe(getCharTypeVector("people"), invertedIndexOffset);
 
-    trie->merge(NULL , 0, false);
+    trie->merge(NULL , NULL, 0, false);
 
     vector<std::pair<string, unsigned> > leafIteratorResultVector;
     boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
@@ -682,7 +682,7 @@ void testLeafNodeIteratorWithTrieUpdate()
     //trie->addKeyword_ThreadSafe("zzzzzz", invertedIndexOffset);
     trie->addKeyword_ThreadSafe(getCharTypeVector("peo"), invertedIndexOffset);
     trie->addKeyword_ThreadSafe(getCharTypeVector("people"), invertedIndexOffset);
-    trie->merge(NULL , 0, false);
+    trie->merge(NULL , NULL,  0, false);
 
     vector<std::pair<string, unsigned> > stringDistanceVector;
     boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;

@@ -55,7 +55,8 @@ PhysicalPlanRecordItem * PhraseSearchOperator::getNext(const PhysicalPlanExecuti
 	}
 
 	ForwardIndex * forwardIndex = this->queryEvaluatorInternal->getForwardIndex();
-
+    shared_ptr<vectorview<ForwardListPtr> > readView;
+    this->queryEvaluatorInternal->getForwardIndex_ReadView(readView);
     /*
      *  Loop over the input records  and apply the phrase filter
      */
@@ -66,7 +67,7 @@ PhysicalPlanRecordItem * PhraseSearchOperator::getNext(const PhysicalPlanExecuti
 			return NULL;
 		}
         bool isValid = false;
-        const ForwardList* forwardListPtr = forwardIndex->getForwardList(nextRecord->getRecordId(), isValid);
+        const ForwardList* forwardListPtr = forwardIndex->getForwardList(readView, nextRecord->getRecordId(), isValid);
         if (false == isValid){
         	continue;
         }

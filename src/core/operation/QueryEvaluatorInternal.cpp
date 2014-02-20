@@ -65,6 +65,7 @@ QueryEvaluatorInternal::QueryEvaluatorInternal(IndexReaderWriter *indexer , Quer
     this->indexer = indexer;
     setPhysicalOperatorFactory(new PhysicalOperatorFactory());
     setPhysicalPlanRecordItemFactory(new PhysicalPlanRecordItemFactory());
+    setForwardIndex_ReadView();
 }
 
 /*
@@ -299,7 +300,8 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		}
 		newRecord->getRecordMatchAttributeBitmaps(queryResult->attributeBitmaps);
 		newRecord->getRecordMatchEditDistances(queryResult->editDistances);
-		this->getForwardIndex()->getExternalRecordIdFromInternalRecordId(queryResult->internalRecordId,queryResult->externalRecordId );
+		this->getForwardIndex()->getExternalRecordIdFromInternalRecordId(this->forwardIndexDirectoryReadView,
+				queryResult->internalRecordId,queryResult->externalRecordId );
 	}
 
 	if(facetOperatorPtr != NULL){
@@ -376,7 +378,9 @@ void QueryEvaluatorInternal::search(const std::string & primaryKey, QueryResults
 	// The query result to be returned.
 	// First check to see if the record is valid.
 	bool validForwardList;
-	this->indexData->forwardIndex->getForwardList(internalRecordId, validForwardList);
+    shared_ptr<vectorview<ForwardListPtr> > readView;
+    this->indexData->forwardIndex->getForwardListDirectory_ReadView(readView);
+	this->indexData->forwardIndex->getForwardList(readView, internalRecordId, validForwardList);
 	if (validForwardList == false) {
 		return;
 	}

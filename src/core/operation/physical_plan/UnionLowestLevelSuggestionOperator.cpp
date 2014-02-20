@@ -17,6 +17,9 @@ UnionLowestLevelSuggestionOperator::~UnionLowestLevelSuggestionOperator(){
 bool UnionLowestLevelSuggestionOperator::open(QueryEvaluatorInternal * queryEvaluatorIntrnal, PhysicalPlanExecutionParameters & params){
 
 	this->queryEvaluatorIntrnal = queryEvaluatorIntrnal;
+	this->queryEvaluatorIntrnal->getInvertedIndex()->getInvertedIndexDirectory_ReadView(invertedListDirectoryReadView);
+	this->queryEvaluatorIntrnal->getInvertedIndex()->getInvertedIndexKeywordIds_ReadView(invertedIndexKeywordIdsReadView);
+	this->queryEvaluatorIntrnal->getForwardIndex()->getForwardListDirectory_ReadView(forwardIndexDirectoryReadView);
 	// 1. first iterate on active nodes and find best estimated leaf nodes.
 	Term * term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->getTerm(params.isFuzzy);
 	unsigned numberOfSuggestionsToFind = 10;
@@ -37,7 +40,8 @@ PhysicalPlanRecordItem * UnionLowestLevelSuggestionOperator::getNext(const Physi
 	Term * term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->getTerm(params.isFuzzy);
 	shared_ptr<vectorview<unsigned> > invertedListReadView;
 	queryEvaluatorIntrnal->getInvertedIndex()->
-				getInvertedListReadView(suggestionPairs[suggestionPairCursor].suggestedCompleteTermNode->getInvertedListOffset(), invertedListReadView);
+				getInvertedListReadView(invertedListDirectoryReadView,
+						suggestionPairs[suggestionPairCursor].suggestedCompleteTermNode->getInvertedListOffset(), invertedListReadView);
 	unsigned termAttributeBitmap = 0;
 	float termRecordStaticScore = 0;
 	// move on inverted list and add the records which are valid
@@ -45,8 +49,12 @@ PhysicalPlanRecordItem * UnionLowestLevelSuggestionOperator::getNext(const Physi
 		if(invertedListCursor < invertedListReadView->size()){
 			unsigned recordId = invertedListReadView->getElement(invertedListCursor++);
 			unsigned recordOffset = queryEvaluatorIntrnal->getInvertedIndex()->getKeywordOffset(
+					this->forwardIndexDirectoryReadView,
+					this->invertedIndexKeywordIdsReadView,
 					recordId, suggestionPairs[suggestionPairCursor].suggestedCompleteTermNode->getInvertedListOffset());
-			if (queryEvaluatorIntrnal->getInvertedIndex()->isValidTermPositionHit(recordId, recordOffset,
+			if (queryEvaluatorIntrnal->getInvertedIndex()->isValidTermPositionHit(forwardIndexDirectoryReadView,
+					recordId,
+					recordOffset,
 					0x7fffffff,  termAttributeBitmap, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
 				// return the item.
 				PhysicalPlanRecordItem * newItem = this->queryEvaluatorIntrnal->getPhysicalPlanRecordItemFactory()->createRecordItem();
@@ -83,7 +91,8 @@ PhysicalPlanRecordItem * UnionLowestLevelSuggestionOperator::getNext(const Physi
 				return NULL;
 			}
 			queryEvaluatorIntrnal->getInvertedIndex()->
-						getInvertedListReadView(suggestionPairs[suggestionPairCursor].suggestedCompleteTermNode->getInvertedListOffset(), invertedListReadView);
+						getInvertedListReadView(invertedListDirectoryReadView,
+								suggestionPairs[suggestionPairCursor].suggestedCompleteTermNode->getInvertedListOffset(), invertedListReadView);
 			invertedListCursor = 0;
 		}
 	}

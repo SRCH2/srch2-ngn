@@ -267,7 +267,8 @@ PhysicalPlanRecordItem * FacetOperator::getNext(const PhysicalPlanExecutionParam
     Schema * schema = this->queryEvaluatorInternal->getSchema();
     ForwardIndex * forwardIndex = this->queryEvaluatorInternal->getForwardIndex();
 	// move on the results once and do all facet calculations.
-
+    shared_ptr<vectorview<ForwardListPtr> > readView;
+    this->queryEvaluatorInternal->getForwardIndex_ReadView(readView);
 
 
 	PhysicalPlanRecordItem *  resultIter = this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->getNext(params);
@@ -278,8 +279,7 @@ PhysicalPlanRecordItem * FacetOperator::getNext(const PhysicalPlanExecutionParam
 	// extract all facet related refining attribute values from this record
 	// by accessing the forward index only once.
 	bool isValid = false;
-	const ForwardList * list = forwardIndex->getForwardList(
-			resultIter->getRecordId() , isValid);
+	const ForwardList * list = forwardIndex->getForwardList(readView, resultIter->getRecordId() , isValid);
 	ASSERT(isValid);
 	const Byte * refiningAttributesData =
 			list->getRefiningAttributeContainerData();

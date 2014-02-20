@@ -26,12 +26,16 @@ bool UnionLowestLevelTermVirtualListOperator::open(QueryEvaluatorInternal * quer
 	Term * term = logicalPlanNode->getTerm(params.isFuzzy);
 
 	this->invertedIndex = queryEvaluator->getInvertedIndex();
+    this->invertedIndex->getInvertedIndexDirectory_ReadView(invertedListDirectoryReadView);
+    this->invertedIndex->getInvertedIndexKeywordIds_ReadView(invertedIndexKeywordIdsReadView);
+    this->queryEvaluator->getForwardIndex()->getForwardListDirectory_ReadView(forwardIndexDirectoryReadView);
     this->prefixActiveNodeSet = logicalPlanNode->stats->getActiveNodeSetForEstimation(params.isFuzzy);
     this->term = term;
     this->prefixMatchPenalty = params.prefixMatchPenalty;
     this->numberOfItemsInPartialHeap = 0;
     this->currentMaxEditDistanceOnHeap = 0;
     this->currentRecordID = -1;
+
     if (this->getTermType() == TERM_TYPE_PREFIX) { //case 1: Term is prefix
         LeafNodeSetIterator iter(prefixActiveNodeSet.get(), term->getThreshold());
         cursorVector.reserve(iter.size());
@@ -125,13 +129,18 @@ PhysicalPlanRecordItem * UnionLowestLevelTermVirtualListOperator::getNext(const 
 
             unsigned recordId = currentHeapMaxInvertedList->getElement(currentHeapMaxCursor);
             // calculate record offset online
-            unsigned recordOffset = this->invertedIndex->getKeywordOffset(recordId, currentHeapMaxInvertetedListId);
+            unsigned recordOffset = this->invertedIndex->getKeywordOffset(
+            		this->forwardIndexDirectoryReadView,
+            		this->invertedIndexKeywordIdsReadView,
+            		recordId, currentHeapMaxInvertetedListId);
             unsigned termAttributeBitmap = 0;
             currentHeapMaxCursor++;
 
             // check isValidTermPositionHit
             float termRecordStaticScore = 0;
-            if (this->invertedIndex->isValidTermPositionHit(recordId, recordOffset,
+            if (this->invertedIndex->isValidTermPositionHit(forwardIndexDirectoryReadView,
+            		recordId,
+            		recordOffset,
                     term->getAttributeToFilterTermHits(), termAttributeBitmap,
                     termRecordStaticScore)) {
                 foundValidHit = 1;
@@ -272,17 +281,21 @@ void UnionLowestLevelTermVirtualListOperator::initialiseTermVirtualListElement(T
     unsigned invertedListCounter = 0;
 
     shared_ptr<vectorview<unsigned> > invertedListReadView;
-    this->invertedIndex->getInvertedListReadView(invertedListId, invertedListReadView);
+    this->invertedIndex->getInvertedListReadView(invertedListDirectoryReadView,
+    		invertedListId, invertedListReadView);
     unsigned recordId = invertedListReadView->getElement(invertedListCounter);
     // calculate record offset online
-    unsigned recordOffset = this->invertedIndex->getKeywordOffset(recordId, invertedListId);
+    unsigned recordOffset = this->invertedIndex->getKeywordOffset(this->forwardIndexDirectoryReadView,
+    		this->invertedIndexKeywordIdsReadView, recordId, invertedListId);
     ++ invertedListCounter;
 
     bool foundValidHit = 0;
     float termRecordStaticScore = 0;
     unsigned termAttributeBitmap = 0;
     while (1) {
-        if (this->invertedIndex->isValidTermPositionHit(recordId, recordOffset,
+        if (this->invertedIndex->isValidTermPositionHit(forwardIndexDirectoryReadView,
+        		recordId,
+        		recordOffset,
                 term->getAttributeToFilterTermHits(), termAttributeBitmap,
                 termRecordStaticScore) ) {
             foundValidHit = 1;
@@ -292,7 +305,8 @@ void UnionLowestLevelTermVirtualListOperator::initialiseTermVirtualListElement(T
         if (invertedListCounter < invertedListReadView->size()) {
             recordId = invertedListReadView->getElement(invertedListCounter);
             // calculate record offset online
-            recordOffset = this->invertedIndex->getKeywordOffset(recordId, invertedListId);
+            recordOffset = this->invertedIndex->getKeywordOffset(this->forwardIndexDirectoryReadView,
+            		this->invertedIndexKeywordIdsReadView, recordId, invertedListId);
             ++invertedListCounter;
         } else {
             break;

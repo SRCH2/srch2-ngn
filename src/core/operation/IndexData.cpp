@@ -441,9 +441,11 @@ INDEXWRITE_RETVAL IndexData::finishBulkLoad()
          * (vs. integration of frequency and recordStaticScores) for nodeSubTrieValue of trie nodes.
          */
         if (isLocational){
-			this->trie->finalCommit_finalizeHistogramInformation(NULL , 0);
+			this->trie->finalCommit_finalizeHistogramInformation(NULL , NULL, 0);
         }else{
-			this->trie->finalCommit_finalizeHistogramInformation(this->invertedIndex , this->forwardIndex->getTotalNumberOfForwardLists_ReadView());
+			this->trie->finalCommit_finalizeHistogramInformation(this->invertedIndex ,
+					this->forwardIndex,
+					this->forwardIndex->getTotalNumberOfForwardLists_ReadView());
         }
         this->flagBulkLoadDone = true;
         return OP_SUCCESS;
@@ -502,7 +504,8 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
         // cout << "Commit phase: time spent to reassign keyword IDs in the forward index (ms): " << time << endl;
     }
 
-    this->trie->merge(invertedIndex , this->forwardIndex->getTotalNumberOfForwardLists_ReadView() , updateHistogram);
+    this->trie->merge(invertedIndex , this->forwardIndex,
+    		this->forwardIndex->getTotalNumberOfForwardLists_ReadView() , updateHistogram);
     
     if (this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex)
         this->quadTree->merge();
@@ -566,6 +569,10 @@ void IndexData::changeKeywordIdsOnForwardLists(const map<TrieNode *, unsigned> &
                                                map<unsigned, unsigned> &processedRecordIds)
 {
 	vectorview<unsigned>* &keywordIDsWriteView = this->invertedIndex->getKeywordIds()->getWriteView();
+
+	shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
+    this->forwardIndex->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
+
     for (map<TrieNode *, unsigned>::const_iterator iter = trieNodeIdMapper.begin();
             iter != trieNodeIdMapper.end(); ++ iter)
     {
@@ -578,7 +585,10 @@ void IndexData::changeKeywordIdsOnForwardLists(const map<TrieNode *, unsigned> &
         keywordIDsWriteView->at(invertedListId) = keywordIdMapperIter->second;
         // Jamshid : since it happens after the commit of other index structures it uses read view
         shared_ptr<vectorview<unsigned> > readview;
-        this->invertedIndex->getInvertedListReadView(invertedListId, readview);
+    	shared_ptr<vectorview<InvertedListContainerPtr> > invertedListDirectoryReadView;
+    	this->invertedIndex->getInvertedIndexDirectory_ReadView(invertedListDirectoryReadView);
+        this->invertedIndex->getInvertedListReadView(invertedListDirectoryReadView,
+        		invertedListId, readview);
         unsigned invertedListSize = readview->size();
         // go through each record id on the inverted list
         InvertedListElement invertedListElement;
@@ -590,7 +600,7 @@ void IndexData::changeKeywordIdsOnForwardLists(const map<TrieNode *, unsigned> &
             // re-map it only it is not done before
             if (processedRecordIds.find (recordId) == processedRecordIds.end()) {
 
-                this->forwardIndex->reassignKeywordIds(recordId, keywordIdMapper);
+                this->forwardIndex->reassignKeywordIds(forwardListDirectoryReadView, recordId,keywordIdMapper);
                 processedRecordIds[recordId] = 0; // add it to the set 
             }
         }
@@ -606,9 +616,12 @@ void IndexData::changeKeywordIdsOnForwardListsAndOCFilters(map<unsigned, unsigne
 {
     this->quadTree->gatherForwardListsAndAdjustOCFilters(keywordIdMapper, recordIdsToProcess);
 
+	shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
+    this->forwardIndex->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
+
     for (map<unsigned, unsigned>::const_iterator citer = recordIdsToProcess.begin();
             citer != recordIdsToProcess.end(); ++ citer)
-        this->forwardIndex->reassignKeywordIds(citer->first, keywordIdMapper);
+        this->forwardIndex->reassignKeywordIds(forwardListDirectoryReadView, citer->first, keywordIdMapper);
 
 }
 
@@ -621,7 +634,7 @@ void IndexData::_save(const string &directoryName) const
 {
 	Serializer serializer;
     if (this->trie->isMergeRequired())
-        this->trie->merge(NULL , 0 , false);
+        this->trie->merge(NULL , NULL,  0 , false);
     // serialize the data structures to disk
     try {
         serializer.save(*this->trie, directoryName + "/" + IndexConfig::trieFileName);

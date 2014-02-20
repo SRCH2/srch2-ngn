@@ -71,10 +71,12 @@ bool FilterQueryOperator::doPass(Schema * schema, ForwardIndex * forwardIndex ,P
         attributeIds.push_back(attr->second);
     }
 
+    shared_ptr<vectorview<ForwardListPtr> > readView;
+    this->queryEvaluatorInternal->getForwardIndex_ReadView(readView);
     // now fetch the values of different attributes from forward index
     vector<TypedValue> typedValues;
     bool isValid = false;
-    const ForwardList * list = forwardIndex->getForwardList(record->getRecordId() , isValid);
+    const ForwardList * list = forwardIndex->getForwardList(readView, record->getRecordId() , isValid);
     ASSERT(isValid);
     const Byte * refiningAttributesData = list->getRefiningAttributeContainerData();
     VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds,schema,refiningAttributesData ,&typedValues);

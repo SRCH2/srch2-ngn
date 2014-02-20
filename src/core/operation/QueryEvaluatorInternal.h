@@ -121,6 +121,13 @@ public:
         return this->indexData->forwardIndex;
     }
 
+    void getForwardIndex_ReadView(shared_ptr<vectorview<ForwardListPtr> > & readView){
+    	readView = this->forwardIndexDirectoryReadView;
+    }
+    void setForwardIndex_ReadView(){
+        this->indexData->forwardIndex->getForwardListDirectory_ReadView(forwardIndexDirectoryReadView);
+    }
+
     Schema * getSchema() {
         return this->indexData->schemaInternal;
     }
@@ -167,6 +174,8 @@ private:
     CacheManager *cacheManager;
     PhysicalOperatorFactory * physicalOperatorFactory;
     PhysicalPlanRecordItemFactory * physicalPlanRecordItemFactory;
+
+    shared_ptr<vectorview<ForwardListPtr> > forwardIndexDirectoryReadView;
     // search functions for map search
     int searchMapQuery(const Query *query, QueryResults* queryResults);
     void addMoreNodesToExpansion(const TrieNode* trieNode, unsigned distance, unsigned bound, MapSearcherTerm &mapSearcherTerm);
