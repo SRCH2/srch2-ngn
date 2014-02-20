@@ -267,7 +267,8 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 	}else{
 		numberOfIterations = -1; // to set it to a very big number
 	}
-
+	boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
+	this->getTrie()->getTrieRootNode_ReadView(trieRootNode_ReadView);
 	while(true){
 
 		PhysicalPlanRecordItem * newRecord = topOperator->getNext(dummy);
@@ -288,8 +289,6 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		queryResult->_score.setTypedValue(newRecord->getRecordRuntimeScore());
 		vector< TrieNodePointer > matchingKeywordTrieNodes;
 		newRecord->getRecordMatchingPrefixes(matchingKeywordTrieNodes);
-		boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
-		this->getTrie()->getTrieRootNode_ReadView(trieRootNode_ReadView);
 		for(unsigned i=0; i < matchingKeywordTrieNodes.size() ; i++){
 			std::vector<CharType> temp;
 			this->getTrie()->getPrefixString(trieRootNode_ReadView->root,
