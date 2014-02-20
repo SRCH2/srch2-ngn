@@ -30,7 +30,7 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 //			cout << "Fuzzy:\t";
 //		}
 		unsigned numberOfIterations = logicalPlan->offset + logicalPlan->numberOfResultsToRetrieve;
-//		for(unsigned planOffset = 0 ; planOffset < 7 ; planOffset ++){
+		for(unsigned planOffset = 6 ; planOffset >=0 ; planOffset --){
 //			// start the timer for search
 			struct timespec tstart;
 			clock_gettime(CLOCK_REALTIME, &tstart);
@@ -58,7 +58,7 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 
 			physicalPlan.setExecutionParameters(&params);
 
-			queryOptimizer.buildAndOptimizePhysicalPlan(physicalPlan,logicalPlan,0);
+			queryOptimizer.buildAndOptimizePhysicalPlan(physicalPlan,logicalPlan,planOffset);
 
 			if(physicalPlan.getPlanTree() == NULL){
 				return true;
@@ -97,12 +97,6 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 				if(newRecord == NULL){
 					break;
 				}
-//				// check if we are in the fuzzyPolicyIter session, if yes, we should not repeat a record
-//				if(fuzzyPolicyIter > 0){
-//					if(find(resultIds.begin(),resultIds.end(),newRecord->getRecordId()) != resultIds.end()){
-//						continue;
-//					}
-//				}
 				if(find(resultIds.begin(),resultIds.end(),newRecord->getRecordId()) != resultIds.end()){
 					continue;
 				}
@@ -126,11 +120,109 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 			clock_gettime(CLOCK_REALTIME, &tend);
 			unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000000
 					+ (tend.tv_nsec - tstart.tv_nsec) / 1000;
-//			cout << "Plan" << planOffset << "(" << ts1*1.0/1000 << ")\t" ;
-			cout << ts1/1000 << endl;
+			cout << "Plan" << planOffset << "(" << ts1*1.0/1000 << ")\t" ;
+//			cout << ts1/1000 << endl;
 
-//		}
-//		cout << endl;
+		}
+		cout << endl;
+
+		for(unsigned planOffset = 0 ; planOffset < 7 ; planOffset ++){
+
+//			// start the timer for search
+			struct timespec tstart;
+			clock_gettime(CLOCK_REALTIME, &tstart);
+			/*
+			 * 1. Use CatalogManager to collect statistics and meta data about the logical plan
+			 * ---- 1.1. computes and attaches active node sets for each term
+			 * ---- 1.2. estimates and saves the number of results of each internal logical operator
+			 * ---- 1.3. ...
+			 */
+			//2. Apply exact/fuzzy policy and run
+			vector<unsigned> resultIds;
+			results.clear();
+
+			HistogramManager histogramManager(queryEvaluator);
+			histogramManager.annotate(logicalPlan);
+			/*
+			 * 2. Use QueryOptimizer to build PhysicalPlan and optimize it
+			 * ---- 2.1. Builds the Physical plan by mapping each Logical operator to a/multiple Physical operator(s)
+			 *           and makes sure inputs and outputs of operators are consistent.
+			 * ---- 2.2. Applies optimization rules on the physical plan
+			 * ---- 2.3. ...
+			 */
+			QueryOptimizer queryOptimizer(queryEvaluator);
+			PhysicalPlan physicalPlan(queryEvaluator);
+
+			physicalPlan.setExecutionParameters(&params);
+
+			queryOptimizer.buildAndOptimizePhysicalPlan(physicalPlan,logicalPlan,planOffset);
+
+			if(physicalPlan.getPlanTree() == NULL){
+				return true;
+			}
+
+			if(physicalPlan.getSearchType() == SearchTypeTopKQuery){
+				if(logicalPlan->getPostProcessingInfo() != NULL){
+					if(logicalPlan->getPostProcessingInfo()->getfacetInfo() != NULL
+							|| logicalPlan->getPostProcessingInfo()->getSortEvaluator() != NULL
+							|| logicalPlan->getPostProcessingInfo()->getPhraseSearchInfoContainer() != NULL){
+						if(physicalPlan.getPlanTree()->getPhysicalPlanOptimizationNode()->
+								getLogicalPlanNode()->stats->getEstimatedNumberOfResults() > 500){
+							numberOfIterations = 500;
+						}else{
+							numberOfIterations = -1; // to set this to a very big number
+						}
+					}
+				}
+			}else if(physicalPlan.getSearchType() == SearchTypeGetAllResultsQuery){
+				if(physicalPlan.getPlanTree()->getPhysicalPlanOptimizationNode()->
+						getLogicalPlanNode()->stats->getEstimatedNumberOfResults() >
+				queryEvaluator->getQueryEvaluatorRuntimeParametersContainer()->getAllMaximumNumberOfResults){
+					numberOfIterations = queryEvaluator->getQueryEvaluatorRuntimeParametersContainer()->getAllTopKReplacementK;
+				}
+			}
+			params.k = numberOfIterations;
+			params.cacheObject = NULL;
+
+
+
+			//1. Open the physical plan by opening the root
+			physicalPlan.getPlanTree()->open(queryEvaluator , params);
+			//2. call getNext for K times
+			while(true){
+				PhysicalPlanRecordItem * newRecord = physicalPlan.getPlanTree()->getNext( params);
+				if(newRecord == NULL){
+					break;
+				}
+				if(find(resultIds.begin(),resultIds.end(),newRecord->getRecordId()) != resultIds.end()){
+					continue;
+				}
+				//
+				resultIds.push_back(newRecord->getRecordId());
+				results.push_back(newRecord);
+
+				if(physicalPlan.getSearchType() != SearchTypeGetAllResultsQuery){
+					if(results.size() >= numberOfIterations){
+						break;
+					}
+				}
+
+			}
+
+			physicalPlan.getPlanTree()->close(params);
+
+
+			// compute elapsed time in ms , end the timer
+			struct timespec tend;
+			clock_gettime(CLOCK_REALTIME, &tend);
+			unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000000
+					+ (tend.tv_nsec - tstart.tv_nsec) / 1000;
+			cout << "Plan" << planOffset << "(" << ts1*1.0/1000 << ")\t" ;
+//			cout << ts1/1000 << endl;
+
+
+		}
+		cout << endl;
 		if(fuzzyPolicyIter == 0){
 			if(isFuzzy == true && results.size() < numberOfIterations){
 				logicalPlan->setFuzzy(true);
