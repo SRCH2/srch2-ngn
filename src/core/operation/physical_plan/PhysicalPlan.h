@@ -108,7 +108,10 @@ class PhysicalPlanRecordItem;
  */
 struct PhysicalPlanRandomAccessVerificationParameters {
 	Ranker * ranker ;
-	PhysicalPlanRandomAccessVerificationParameters(Ranker * ranker){
+	PhysicalPlanRandomAccessVerificationParameters(Ranker * ranker,
+			shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView):
+				forwardListDirectoryReadView(forwardListDirectoryReadView)
+	{
 		this->ranker = ranker;
 	}
 
@@ -124,6 +127,7 @@ struct PhysicalPlanRandomAccessVerificationParameters {
     PhysicalPlanRecordItem * recordToVerify;
     bool isFuzzy;
 	float prefixMatchPenalty ;
+    shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView;
 };
 
 // This class is used to maintain the input/output properties of a PhysicalPlanIterator

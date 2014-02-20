@@ -19,6 +19,9 @@ UnionLowestLevelSimpleScanOperator::~UnionLowestLevelSimpleScanOperator(){
 bool UnionLowestLevelSimpleScanOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
 	// first save the pointer to QueryEvaluator
 	this->queryEvaluator = queryEvaluator;
+	this->queryEvaluator->getInvertedIndex()->getInvertedIndexDirectory_ReadView(invertedListDirectoryReadView);
+	this->queryEvaluator->getInvertedIndex()->getInvertedIndexKeywordIds_ReadView(invertedIndexKeywordIdsReadView);
+	this->queryEvaluator->getForwardIndex()->getForwardListDirectory_ReadView(forwardIndexDirectoryReadView);
 
 	// 1. get the pointer to logical plan node
 	LogicalPlanNode * logicalPlanNode = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode();
@@ -27,9 +30,6 @@ bool UnionLowestLevelSimpleScanOperator::open(QueryEvaluatorInternal * queryEval
 	// 3. Get the ActiveNodeSet from the logical plan
 	boost::shared_ptr<PrefixActiveNodeSet> activeNodeSet = logicalPlanNode->stats->getActiveNodeSetForEstimation(params.isFuzzy);
 
-	this->queryEvaluator->getInvertedIndex()->getInvertedIndexDirectory_ReadView(invertedListDirectoryReadView);
-	this->queryEvaluator->getInvertedIndex()->getInvertedIndexKeywordIds_ReadView(invertedIndexKeywordIdsReadView);
-	this->queryEvaluator->getForwardIndex()->getForwardListDirectory_ReadView(forwardIndexDirectoryReadView);
 
 	// 4. Create the iterator and save it as a member of the class for future calls to getNext
 	if (term->getTermType() == TERM_TYPE_PREFIX) { // prefix term

@@ -214,7 +214,7 @@ public:
                     unsigned searchableAttributeId, unsigned& termAttributeBitmap, float &termRecordStaticScore) const;
 
     unsigned getKeywordOffset(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
-    		shared_ptr<vectorview<unsigned> > invertedIndexKeywordIdsReadView,
+    		shared_ptr<vectorview<unsigned> > & invertedIndexKeywordIdsReadView,
     		unsigned forwardListId, unsigned invertedListOffset) const;
 
     /**

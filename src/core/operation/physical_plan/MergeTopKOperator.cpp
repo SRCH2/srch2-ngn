@@ -20,6 +20,8 @@ bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPl
 
 	this->queryEvaluator = queryEvaluator;
 
+	queryEvaluator->getForwardIndex()->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
+
 	/*
 	 * 0. Cache:
 	 * 1. check to see if cache has this query w/o last keyword
@@ -75,7 +77,8 @@ bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPl
 				// now check the result with the new keyword and if it's a match, append new info to
 				// these vectors.
 				for(unsigned childOffset = mergeTopKCacheEntry->children.size(); childOffset < numberOfChildren; ++childOffset){
-					PhysicalPlanRandomAccessVerificationParameters parameters(params.ranker);
+					PhysicalPlanRandomAccessVerificationParameters parameters(params.ranker,
+							this->forwardListDirectoryReadView);
 					parameters.recordToVerify = mergeTopKCacheEntry->candidatesList.at(i);
 					parameters.isFuzzy = params.isFuzzy;
 					parameters.prefixMatchPenalty = params.prefixMatchPenalty;
@@ -384,7 +387,8 @@ bool MergeTopKOperator::verifyRecordWithChildren(PhysicalPlanRecordItem * record
 			recordItem->getPositionIndexOffsets(recordPositionIndexOffsets);
 			positionIndexOffsets.insert(positionIndexOffsets.end(),recordPositionIndexOffsets.begin(),recordPositionIndexOffsets.end());
 		}else{
-			PhysicalPlanRandomAccessVerificationParameters parameters(params.ranker);
+			PhysicalPlanRandomAccessVerificationParameters parameters(params.ranker,
+					this->forwardListDirectoryReadView);
 			parameters.recordToVerify = recordItem;
 			parameters.isFuzzy = params.isFuzzy;
 			parameters.prefixMatchPenalty = params.prefixMatchPenalty;

@@ -418,6 +418,7 @@ public:
 private:
 	MergeByShortestListOperator() ;
 	QueryEvaluatorInternal * queryEvaluator;
+	shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
 	// this variable keeps the index of the shortest list child
 	unsigned indexOfShortestListChild ;
 	// if the shortest list is exhausted, this boolean is set to true

@@ -145,6 +145,8 @@ private:
 
 	QueryEvaluatorInternal * queryEvaluator;
 
+	shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
+
 	/* this vector always contains the next record coming out of children
 	* this means each record first goes to this vector and then it can be used
 	* by the operator.

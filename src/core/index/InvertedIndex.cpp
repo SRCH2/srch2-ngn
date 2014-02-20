@@ -147,7 +147,7 @@ bool InvertedIndex::isValidTermPositionHit(shared_ptr<vectorview<ForwardListPtr>
 
 // given a forworListId and invertedList offset, return the keyword offset
 unsigned InvertedIndex::getKeywordOffset(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
-		shared_ptr<vectorview<unsigned> > invertedIndexKeywordIdsReadView,
+		shared_ptr<vectorview<unsigned> > & invertedIndexKeywordIdsReadView,
 		unsigned forwardListId, unsigned invertedListOffset) const
 {
     //transfer the invertedList offset to keywordId

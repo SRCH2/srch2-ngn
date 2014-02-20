@@ -18,6 +18,8 @@ MergeByShortestListOperator::~MergeByShortestListOperator(){
 bool MergeByShortestListOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
 	this->queryEvaluator = queryEvaluator;
 
+	queryEvaluator->getForwardIndex()->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
+
 	// prepare the cache key
 	string key;
 	// "true" means we want to ignore the last leaf node
@@ -257,7 +259,8 @@ bool MergeByShortestListOperator::verifyRecordWithChildren(PhysicalPlanRecordIte
 			 * We should verify this record with all children (except for the shortest list one) and if all of them
 			 * pass, then we should copy the verification info.
 			 */
-			PhysicalPlanRandomAccessVerificationParameters parameters(params.ranker);
+			PhysicalPlanRandomAccessVerificationParameters parameters(params.ranker,
+					this->forwardListDirectoryReadView);
 			parameters.recordToVerify = recordItem;
 			parameters.isFuzzy = params.isFuzzy;
 			parameters.prefixMatchPenalty = params.prefixMatchPenalty;
