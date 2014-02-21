@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# curl -F uploadedfile=@submit.php "http://dilbert.calit2.uci.edu/CDash-2-0-2/system_tests_submit.php"
-# Content-Type: multipart/form-data
-
 PWD_DIR=$(pwd)
 
 if [ $# -lt 2 ]; then
@@ -10,19 +7,53 @@ if [ $# -lt 2 ]; then
     exit 1
 fi
 
-# -f or --force option: continue executing tests even after one fails
-force=0
-if [ "$1" = '-f' ] || [ "$1" = '--force' ]; then
-    force=1
-    shift
-fi
+machine=`uname -m`
+os=`uname -o | sed -e s#/#-#g`
 
-# --html option: Format output in HTML (for dashboard)
+# process options
+force=0
+output='/dev/tty'
 html=0
-if [ "$1" = '--html' ]; then
-    html=1
-    shift
-fi
+upload=''
+while [ "$#" -gt 2 ]
+do
+    # -f or --force option: continue executing tests even after one fails
+    if [ "$1" = '-f' ] || [ "$1" = '--force' ]; then
+	force=1
+	shift
+	continue
+    fi
+
+    # --html option: Format output in HTML (for dashboard)
+    if [ "$1" = '--html' ]; then
+	html=1
+	shift
+	continue
+    fi
+
+    # --outfile option: Where to send output
+    # required if also specifying --upload
+    if [ "$1" = '-o' ] || [ "$1" = '--output' ] || [ "$1" = '--output-file' ]; then
+	output="$2"
+	shift 2
+	continue
+    fi
+
+    # --upload option: Upload output file to dashboard server
+    # This curl command uses Content-Type: multipart/form-data
+    if [ "$1" = '--upload' ]; then
+	if [ "$output" = '/dev/tty' ]; then
+	    output="report-`date +%F-%R`-${machine}-${os}.html"
+	fi
+	upload="curl -F \"uploadedfile=@${output}\" \"http://dilbert.calit2.uci.edu/CDash-2-0-2/system_tests_submit.php\""
+	echo "Uploading $output to $upload"
+	shift
+	continue
+    fi
+
+    echo "$0: Unrecognized option: $1"
+    break;
+done
 
 # $1 is <srch2-main-dir>/test/wrapper/system_tests
 SYSTEM_TEST_DIR=$1
@@ -63,9 +94,14 @@ function printTestBanner {
 	banner="${banner}-"
     done
     banner="${banner}${html_post}"
-    echo "$banner"
+    echo "$banner" >> ${output}
     echo "${html_results_anchor}${banner}" >> system_test.log
 }
+
+# Clear output file if file was specified
+if [ -f "$output" ]; then
+    rm -f "$output"
+fi
 
 # setup some common HTML highlighting
 if [ "$html" -gt 0 ]; then
@@ -73,8 +109,8 @@ if [ "$html" -gt 0 ]; then
     html_fail_post='</font>'
 
     rm -f system_test.log
-    html_title="System Tests - `date`"
-    echo "<html><head><title>${html_title}</title></head><body><h1>${html_title}</h1><h2>Test Summary</h2>"
+    html_title="System Tests - `date` - ${machine} ${os}"
+    echo "<html><head><title>${html_title}</title></head><body><h1>${html_title}</h1><h2>Test Summary</h2>" >> ${output}
 else
     html_fail_pre=''
     html_fail_post=''
@@ -90,7 +126,7 @@ if [ $? -eq 0 ]; then
     HAVE_RUBY=1
 else
     HAVE_RUBY=0
-    echo "WARNING: Could not find ruby, which some tests require.  Try: sudo apt-get install ruby1.9.1"
+    echo "WARNING: Could not find ruby, which some tests require.  Try: sudo apt-get install ruby1.9.1" >> ${output}
 fi
 
 # Test for node.js framework
@@ -107,7 +143,7 @@ else
 	NODE_CMD=node
     else
 	HAVE_NODE=0
-	echo "WARNING: Could not find node (node.js), which some tests require.  Try: sudo apt-get install nodejs"
+	echo "WARNING: Could not find node (node.js), which some tests require.  Try: sudo apt-get install nodejs" >> ${output}
     fi
 fi
 
@@ -120,12 +156,12 @@ printTestBanner "$test_id"
 python ./cache_a1/cache_A1.py $SRCH2_ENGINE ./cache_a1/queriesAndResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}"
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
         exit 255
     fi
 else
-    echo "-- PASSED: $test_id"
+    echo "-- PASSED: $test_id" >> ${output}
 fi
 rm -rf data/ *.idx
 
@@ -135,12 +171,12 @@ printTestBanner "$test_id"
 python ./boolean-expression-test/boolean-expression.py $SRCH2_ENGINE ./boolean-expression-test/queries.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}"
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
         exit 255
     fi
 else
-    echo "-- PASSED: $test_id"
+    echo "-- PASSED: $test_id" >> ${output}
 fi
 rm -rf data/ *.idx
 
@@ -150,12 +186,12 @@ printTestBanner "$test_id"
 python ./qf_dynamic_ranking/qf_dynamic_ranking.py $SRCH2_ENGINE ./qf_dynamic_ranking/queriesAndResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}"
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
 	exit 255
     fi
 else
-    echo "-- PASSED: $test_id"
+    echo "-- PASSED: $test_id" >> ${output}
 fi
 rm -rf data/ *.idx
 
@@ -164,12 +200,12 @@ printTestBanner "$test_id"
 python ./phraseSearch/phrase_search.py $SRCH2_ENGINE ./phraseSearch/queries.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}"
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
 #    if [ $force -eq 0 ]; then
 #	exit 255
 #    fi
 else
-    echo "-- PASSED: $test_id"
+    echo "-- PASSED: $test_id" >> ${output}
 fi
 rm -rf data/ *.idx
 
@@ -178,12 +214,12 @@ printTestBanner "$test_id"
 python ./phraseSearch/phrase_search.py $SRCH2_ENGINE ./phraseSearch/booleanQueries.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_idi${html_fail_post}"
+    echo "${html_fail_pre}FAILED: $test_idi${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
         exit 255
     fi
 else
-    echo "-- PASSED: $test_id"
+    echo "-- PASSED: $test_id" >> ${output}
 fi
 rm -rf data/ *.idx
 
@@ -192,12 +228,12 @@ printTestBanner "$test_id"
 python ./test_multi_valued_attributes/test_multi_valued_attributes.py '--srch' $SRCH2_ENGINE '--qryNrslt' ./test_multi_valued_attributes/queriesAndResults.txt '--frslt' ./test_multi_valued_attributes/facetResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}"
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
 	exit 255
     fi
 else
-    echo "-- PASSED: $test_id"
+    echo "-- PASSED: $test_id" >> ${output}
 fi
 rm -rf data/ *.idx
 
@@ -205,12 +241,12 @@ test_id="save_shutdown_restart"
 printTestBanner "$test_id"
 python ./save_shutdown_restart_export_test/save_shutdown_restart_export_test.py $SRCH2_ENGINE >> system_test.log 2>&1
 if [ $? -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}"
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
 	exit 255
     fi
 else
-    echo "-- PASSED: $test_id"
+    echo "-- PASSED: $test_id" >> ${output}
 fi
 rm -rf data/ *.idx
 
@@ -219,12 +255,12 @@ test_id="empty_index"
 printTestBanner "$test_id"
 python ./empty_index/empty_index.py $SRCH2_ENGINE >> system_test.log 2>&1
 if [ $? -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}"
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
 	exit 255
     fi
 else
-    echo "-- PASSED: $test_id"
+    echo "-- PASSED: $test_id" >> ${output}
 fi
 rm -rf data/ *.idx
 
@@ -232,15 +268,15 @@ rm -rf data/ *.idx
 test_id="high_insert"
 printTestBanner "$test_id"
 # ./high_insert_test/autotest.sh $SRCH2_ENGINE >> system_test.log 2>&1
-echo "SKIPPING high_insert_test"
+echo "SKIPPING high_insert_test" >> ${output}
 
 #if [ $? -gt 0 ]; then
-#    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}"
+#    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
 #    if [ $force -eq 0 ]; then
 #	exit 255
 #    fi
 #else
-#    echo "-- PASSED: $test_id"
+#    echo "-- PASSED: $test_id" >> ${output}
 #fi
 rm -rf data/ *.idx
 
@@ -249,12 +285,12 @@ printTestBanner "$test_id"
 python ./exact_a1/exact_A1.py $SRCH2_ENGINE ./exact_a1/queriesAndResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}"
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
 	exit 255
     fi
 else
-    echo "-- PASSED: $test_id"
+    echo "-- PASSED: $test_id" >> ${output}
 fi
 rm -rf data/ *.idx
 
@@ -264,12 +300,12 @@ printTestBanner "$test_id"
 python ./fuzzy_a1/fuzzy_A1.py $SRCH2_ENGINE ./fuzzy_a1/queriesAndResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}"
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
 	exit 255
     fi
 else
-    echo "-- PASSED: $test_id"
+    echo "-- PASSED: $test_id" >> ${output}
 fi
 rm -rf data/ *.idx
 
@@ -279,12 +315,12 @@ printTestBanner "$test_id"
 python ./exact_m1/exact_M1.py $SRCH2_ENGINE ./exact_m1/queriesAndResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}"
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
 	exit 255
     fi
 else
-    echo "-- PASSED: $test_id"
+    echo "-- PASSED: $test_id" >> ${output}
 fi
 rm -rf data/ *.idx
 
@@ -294,12 +330,12 @@ printTestBanner "$test_id"
 python ./fuzzy_m1/fuzzy_M1.py $SRCH2_ENGINE ./fuzzy_m1/queriesAndResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}"
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
 	exit 255
     fi
 else
-    echo "-- PASSED: $test_id"
+    echo "-- PASSED: $test_id" >> ${output}
 fi
 rm -rf data/ *.idx
 
@@ -308,12 +344,12 @@ test_id="exact_Attribute_Based_Search"
 printTestBanner "$test_id"
 python ./exact_attribute_based_search/exact_Attribute_Based_Search.py $SRCH2_ENGINE ./exact_attribute_based_search/queriesAndResults.txt >> system_test.log 2>&1
 if [ $? -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}"
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
 	exit 255
     fi
 else
-    echo "-- PASSED: $test_id"
+    echo "-- PASSED: $test_id" >> ${output}
 fi
 rm -rf data/ *.idx
 
@@ -321,17 +357,17 @@ test_id="fuzzy_Attribute_Based_Search"
 printTestBanner "$test_id"
 python ./fuzzy_attribute_based_search/fuzzy_Attribute_Based_Search.py $SRCH2_ENGINE ./fuzzy_attribute_based_search/queriesAndResults.txt >> system_test.log 2>&1
 #if [ $? -gt 0 ]; then
-#    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}"
+#    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
 #    exit 255
 #fi
-#echo "-- IGNORING FAILURE: $test_id"
+#echo "-- IGNORING FAILURE: $test_id" >> ${output}
 if [ $? -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}"
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
         exit 255
     fi
 else
-    echo "-- PASSED: $test_id"
+    echo "-- PASSED: $test_id" >> ${output}
 fi
 rm -rf data/ *.idx
 
@@ -341,12 +377,12 @@ printTestBanner "$test_id"
 python ./exact_attribute_based_search_geo/exact_Attribute_Based_Search_Geo.py $SRCH2_ENGINE ./exact_attribute_based_search_geo/queriesAndResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}"
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
 	exit 255
     fi
 else
-    echo "-- PASSED: $test_id"
+    echo "-- PASSED: $test_id" >> ${output}
 fi
 rm -rf data/ *.idx
 
@@ -356,12 +392,12 @@ printTestBanner "$test_id"
 python ./fuzzy_attribute_based_search_geo/fuzzy_Attribute_Based_Search_Geo.py $SRCH2_ENGINE ./fuzzy_attribute_based_search_geo/queriesAndResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}"
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
 	exit 255
     fi
 else
-    echo "-- PASSED: $test_id"
+    echo "-- PASSED: $test_id" >> ${output}
 fi
 rm -rf data/ *.idx
 
@@ -371,12 +407,12 @@ printTestBanner "$test_id"
 python ./faceted_search/faceted_search.py '--srch' $SRCH2_ENGINE '--qryNrslt' ./faceted_search/queriesAndResults.txt '--frslt' ./faceted_search/facetResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}"
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
 	exit 255
     fi
 else
-    echo "-- PASSED: $test_id"
+    echo "-- PASSED: $test_id" >> ${output}
 fi
 rm -rf data/ *.idx
 
@@ -386,12 +422,12 @@ printTestBanner "$test_id"
 python ./sort_filter/sort_filter.py $SRCH2_ENGINE ./sort_filter/queriesAndResults.txt ./sort_filter/facetResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}"
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
 	exit 255
     fi
 else
-    echo "-- PASSED: $test_id"
+    echo "-- PASSED: $test_id" >> ${output}
 fi
 rm -rf data/ *.idx
 
@@ -401,12 +437,12 @@ printTestBanner "$test_id"
 python ./filter_query/filter_query.py $SRCH2_ENGINE ./filter_query/queriesAndResults.txt ./filter_query/facetResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}"
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
 	exit 255
     fi
 else
-    echo "-- PASSED: $test_id"
+    echo "-- PASSED: $test_id" >> ${output}
 fi
 rm -rf data/ *.idx
 
@@ -416,35 +452,35 @@ printTestBanner "$test_id"
 python ./test_solr_compatible_query_syntax/test_solr_compatible_query_syntax.py $SRCH2_ENGINE ./test_solr_compatible_query_syntax/queriesAndResults.txt ./test_solr_compatible_query_syntax/facetResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}"
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
 	exit 255
     fi
 else
-    echo "-- PASSED: $test_id"
+    echo "-- PASSED: $test_id" >> ${output}
 fi
 rm -rf data/ *.idx
 
 
 #if [ $? -gt 0 ]; then
-#    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}"
+#    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
 #if [ $force -eq 0 ]; then
 #    exit 255
 #fi
 #fi
-#echo "-- PASSED: $test_id"
+#echo "-- PASSED: $test_id" >> ${output}
 
 test_id="test_search_by_id"
 printTestBanner "$test_id"
 python ./test_search_by_id/test_search_by_id.py $SRCH2_ENGINE >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}"
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
 	exit 255
     fi
 else
-    echo "-- PASSED:$test_id"
+    echo "-- PASSED:$test_id" >> ${output}
 fi
 rm -rf data/ *.idx
 
@@ -454,12 +490,12 @@ printTestBanner "$test_id"
 python ./date_time_new_features_test/date_time_new_features_test.py $SRCH2_ENGINE ./date_time_new_features_test/queriesAndResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}"
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
 	exit 255
     fi
 else
-    echo "-- PASSED: $test_id"
+    echo "-- PASSED: $test_id" >> ${output}
 fi
 rm -rf data/ *.idx
 
@@ -469,12 +505,12 @@ printTestBanner "$test_id"
 python ./geo/geo.py $SRCH2_ENGINE ./geo/queriesAndResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}"
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
 	exit 255
     fi
 else
-    echo "-- PASSED: $test_id"
+    echo "-- PASSED: $test_id" >> ${output}
 fi
 rm -rf data/ *.idx
 
@@ -484,12 +520,12 @@ printTestBanner "$test_id"
 python ./term_type/term_type.py $SRCH2_ENGINE ./term_type/queriesAndResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}"
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
 	exit 255
     fi
 else
-    echo "-- PASSED: $test_id"
+    echo "-- PASSED: $test_id" >> ${output}
 fi
 rm -rf data/ *.idx
 
@@ -499,12 +535,12 @@ printTestBanner "$test_id"
 python ./analyzer_exact_a1/analyzer_exact_A1.py $SRCH2_ENGINE ./analyzer_exact_a1/queriesAndResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}"
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
 	exit 255
     fi
 else
-    echo "-- PASSED: $test_id"
+    echo "-- PASSED: $test_id" >> ${output}
 fi
 rm -rf data/ *.idx
 
@@ -514,12 +550,12 @@ printTestBanner "$test_id"
 python ./top_k/test_srch2_top_k.py $SRCH2_ENGINE food 10 20 >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}"
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
 	exit 255
     fi
 else
-    echo "-- PASSED: $test_id"
+    echo "-- PASSED: $test_id" >> ${output}
 fi
 rm -rf data/ *.idx
 
@@ -530,12 +566,12 @@ printTestBanner "$test_id"
 python ./reset_logger/test_reset_logger.py $SRCH2_ENGINE >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}"
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
 	exit 255
     fi
 else
-    echo "-- PASSED: $test_id"
+    echo "-- PASSED: $test_id" >> ${output}
 fi
 rm -rf data/ *.idx reset_logger/indexes
 
@@ -549,29 +585,29 @@ NODECMD=${NODE_CMD:-node} ./tests_used_for_statemedia/autotest.sh $SRCH2_ENGINE 
 
 # TODO - hack until we figure out why tests_used_for_statemedia/large_insertion_test/large_insertion_test.rb
 # won't run and tests_used_for_statemedia/update_endpoint_test
-echo "-- IGNORING FAILURE: $test_id"
+echo "-- IGNORING FAILURE: $test_id" >> ${output}
 rm -rf data/ *.idx
 
 
 #if [ $? -gt 0 ]; then
-#    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}"
+#    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
 #if [ $force -eq 0 ]; then
 #    exit 255
 #fi
 #fi
-#echo "-- PASSED: $test_id"
+#echo "-- PASSED: $test_id" >> ${output}
 
 test_id="batch upsert"
 printTestBanner "$test_id"
 python ./upsert_batch/test_upsert_batch.py $SRCH2_ENGINE >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}"
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
 	exit 255
     fi
 else
-    echo "-- PASSED: $test_id"
+    echo "-- PASSED: $test_id" >> ${output}
 fi
 rm -rf data/ *.idx upsert_batch/indexes upsert_batch/*.idx upsert_batch/indexes/*.idx
 
@@ -581,12 +617,12 @@ printTestBanner "$test_id"
 python ./upsert_batch/test_insert_batch.py $SRCH2_ENGINE >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}"
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
 	exit 255
     fi
 else
-    echo "-- PASSED: $test_id"
+    echo "-- PASSED: $test_id" >> ${output}
 fi
 rm -rf data/ upsert_batch/*.idx upsert_batch/indexes/*.idx
 
@@ -597,12 +633,12 @@ rm -f ./multicore/core?/*.idx ./multicore/core?/srch2-log.txt
 python ./multicore/multicore.py $SRCH2_ENGINE ./multicore/queriesAndResults.txt ./multicore/queriesAndResults2.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}"
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
 	exit 255
     fi
 else
-    echo "-- PASSED: $test_id"
+    echo "-- PASSED: $test_id" >> ${output}
 fi
 rm -rf data/ multicore/core?/*.idx
 
@@ -612,12 +648,12 @@ rm -f ./multiport/core?/*.idx ./multiport/core?/srch2-log.txt
 python ./multiport/multiport.py $SRCH2_ENGINE ./multiport/queriesAndResults.txt >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}"
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
 	exit 255
     fi
 else
-    echo "-- PASSED: $test_id"
+    echo "-- PASSED: $test_id" >> ${output}
 fi
 rm -rf data/ multiport/core?/*.idx
 
@@ -628,10 +664,15 @@ if [ "$(pwd)" = "$SYSTEM_TEST_DIR" ]; then
 fi
 
 if [ "$html" -gt 0 ]; then
-    echo '<pre>'
-    cat system_test.log
-    echo '</pre>'
-    echo '</body></html>'
+    echo '<pre>' >> ${output}
+    cat system_test.log >> ${output}
+    echo '</pre>' >> ${output}
+    echo '</body></html>' >> ${output}
+fi
+
+if [ "$upload" != '' ]; then
+    echo "Uploading $output to $upload"
+    eval $upload
 fi
 
 cd $PWD_DIR
