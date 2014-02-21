@@ -59,8 +59,9 @@ bool UnionLowestLevelTermVirtualListOperator::open(QueryEvaluatorInternal * quer
             TrieNodePointer trieNode;
             unsigned editDistance;
             iter.getItem(trieNode, editDistance);
+            // For example search python36 in data {python16, pythoni}, we first got python16 with distance 1, and then pythoni with distance 2
+            // We will keep the smaller one according to  https://bitbucket.org/srch2inc/srch2-ngn/src/2b4293ccaccaaecd9c16526bd5c6bbfd02dded52/src/core/operation/ActiveNode.h?at=master#cl-457
             unsigned panDistance = prefixActiveNodeSet->getEditdistanceofPrefix(trieNode);
-            bool usingEditDistance = true;
             depthInitializeTermVirtualListElement(trieNode, editDistance, panDistance, term->getThreshold());
         }
     }
