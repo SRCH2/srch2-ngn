@@ -49,12 +49,12 @@ bool UnionLowestLevelTermVirtualListOperator::open(QueryEvaluatorInternal * quer
         invertedListReadViewVector.reserve(iter.size());
         for (; !iter.isDone(); iter.next()) {
            	// For a pivotal active node (PAN) (e.g., "game") and a query term (e.g., "garden"),
-          	// there are two distances between them. One is the PAN's internal distance as a prefix, which is 2,
-           	// which corresponds to the distance between "game" and "garde" where the last two characters
-           	// match.  The other distance is their real edit distance between "game" and "garden", which is 3.
-           	// We use the first distance, called "panDistance", when we traverse the descendants to populate the
-           	// term vritual list (TVL).  However, if this node is a terminal node, we use the second distance
-           	// called "editDistance".  So implement this logic by passing both distances and a "usingEditDistance"
+          	// there are two distances between them. One is their real edit distance between "game" and "garden",
+        	// which is 3.  The other one is the PAN's internal distance as a prefix, which is 2,
+        	// corresponding to the distance between "game" and "garde" where the last two matched characters
+           	// We use the second distance, called "panDistance", when we traverse the descendants to populate the
+           	// term virtual list (TVL).  However, if this node is a terminal node, we use the first distance
+           	// called "editDistance".  Here we implement this logic by passing both distances and a "usingEditDistance"
            	// flag.
             TrieNodePointer trieNode;
             unsigned editDistance;
