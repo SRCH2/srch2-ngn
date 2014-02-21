@@ -193,7 +193,7 @@ private:
     }
     void initialiseTermVirtualListElement(TrieNodePointer prefixNode,
             TrieNodePointer leafNode, unsigned distance);
-    void depthInitializeTermVirtualListElement(const TrieNode* trieNode, unsigned editDistance, bool usingEditDistance, unsigned panDistance, unsigned bound);
+    void depthInitializeTermVirtualListElement(const TrieNode* trieNode, unsigned editDistance, unsigned panDistance, unsigned bound);
     //Called when this->numberOfItemsInPartialHeap = 0
     bool _addItemsToPartialHeap();
 
