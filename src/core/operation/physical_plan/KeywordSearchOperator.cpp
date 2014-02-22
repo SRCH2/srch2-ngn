@@ -9,8 +9,8 @@ namespace instantsearch {
 
 bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & p){
 
-//	struct timespec tstart;
-//	clock_gettime(CLOCK_REALTIME, &tstart);
+	struct timespec tstart;
+	clock_gettime(CLOCK_REALTIME, &tstart);
 
 	//1. Find the right value for K (if search type is topK)
 	bool isFuzzy = logicalPlan->isFuzzy();
@@ -133,13 +133,13 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 
 	}
 
-//	// compute elapsed time in ms , end the timer
-//	struct timespec tend;
-//	clock_gettime(CLOCK_REALTIME, &tend);
-//	unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000000
-//			+ (tend.tv_nsec - tstart.tv_nsec) / 1000;
+	// compute elapsed time in ms , end the timer
+	struct timespec tend;
+	clock_gettime(CLOCK_REALTIME, &tend);
+	unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000000
+			+ (tend.tv_nsec - tstart.tv_nsec) / 1000;
 ////			cout << "Plan" << planOffset << "(" << ts1*1.0/1000 << ")\t" ;
-//	cout << ts1/1000 << "\t" ;
+	cout << ts1/1000 << endl ;
 	cursorOnResults = 0;
 	return true;
 }
