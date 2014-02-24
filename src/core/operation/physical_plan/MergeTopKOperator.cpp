@@ -39,7 +39,7 @@ bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPl
 	// 1(if a cache hit). USE CACHE HIT TO START FROM MIDDLE OF LAST EXECUTION
 	// 2(else). OR JUST START A FRESH NEW EXECUTION
 	boost::shared_ptr<PhysicalOperatorCacheObject> cacheHit;
-	if(this->queryEvaluator != NULL && // this is for CTEST MergeTopK_Test, in normal cases, queryEvaluator cannot be NULL
+	if(false && this->queryEvaluator != NULL && // this is for CTEST MergeTopK_Test, in normal cases, queryEvaluator cannot be NULL
 			this->queryEvaluator->getCacheManager()->getPhysicalOperatorsCache()->
 			getPhysicalOperatorsInfo(key ,  cacheHit)){ // cache has key
 
