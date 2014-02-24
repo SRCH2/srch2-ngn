@@ -46,7 +46,6 @@ do
 	    output="report-`date +%F-%R`-${machine}-${os}.html"
 	fi
 	upload="curl -F \"uploadedfile=@${output}\" \"http://dilbert.calit2.uci.edu/CDash-2-0-2/system_tests_submit.php\""
-	echo "Uploading $output to $upload"
 	shift
 	continue
     fi
@@ -665,6 +664,7 @@ if [ "$(pwd)" = "$SYSTEM_TEST_DIR" ]; then
 fi
 
 if [ "$html" -gt 0 ]; then
+    echo '<h2>Individual Test Results - Log Output</h2>' >> ${output}
     echo '<pre>' >> ${output}
     cat system_test.log >> ${output}
     echo '</pre>' >> ${output}
@@ -672,7 +672,6 @@ if [ "$html" -gt 0 ]; then
 fi
 
 if [ "$upload" != '' ]; then
-    echo "Uploading $output to $upload"
     eval $upload
 fi
 
