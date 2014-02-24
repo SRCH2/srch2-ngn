@@ -204,6 +204,7 @@ if [ $? -gt 0 ]; then
 #    if [ $force -eq 0 ]; then
 #	exit 255
 #    fi
+    echo "-- IGNORING FAILURE: $test_id" >> ${output}
 else
     echo "-- PASSED: $test_id" >> ${output}
 fi
