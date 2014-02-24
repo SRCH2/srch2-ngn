@@ -19,8 +19,8 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 	logicalPlan->setFuzzy(false);
 	PhysicalPlanExecutionParameters params(0, logicalPlan->isFuzzy() , logicalPlan->getExactQuery()->getPrefixMatchPenalty(), logicalPlan->getQueryType());
 	params.totalNumberOfRecords = queryEvaluator->getForwardIndex()->getTotalNumberOfForwardLists_ReadView();
-	//2. Apply exact/fuzzy policy and run
-	vector<unsigned> resultIds;
+//	//2. Apply exact/fuzzy policy and run
+//	vector<unsigned> resultIds;
 	 // this for is a two iteration loop, to avoid copying the code for exact and fuzzy
 	for(unsigned fuzzyPolicyIter = 0 ; fuzzyPolicyIter < 2 ; fuzzyPolicyIter++ ){
 
@@ -41,8 +41,8 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 			 * ---- 1.3. ...
 			 */
 			//2. Apply exact/fuzzy policy and run
-//			vector<unsigned> resultIds;
-//			results.clear();
+			vector<unsigned> resultIds;
+			results.clear();
 
 			HistogramManager histogramManager(queryEvaluator);
 			histogramManager.annotate(logicalPlan);
