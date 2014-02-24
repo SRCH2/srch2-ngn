@@ -117,6 +117,7 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 			unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000000
 					+ (tend.tv_nsec - tstart.tv_nsec) / 1000;
 			cout << "Plan" << planOffset << "(" << ts1*1.0/1000 << ")\t" ;
+			queryEvaluator->getPhysicalPlanRecordItemFactory()->refresh();
 //			cout << ts1/1000 << endl;
 
 		}

@@ -541,16 +541,7 @@ void QueryEvaluatorInternal::addMoreNodesToExpansion(const TrieNode* trieNode, u
 
 QueryEvaluatorInternal::~QueryEvaluatorInternal() {
 	delete physicalOperatorFactory;
-    // start the timer for search
-    struct timespec tstart;
-    struct timespec tend;
-    clock_gettime(CLOCK_REALTIME, &tstart);
 	delete physicalPlanRecordItemFactory;
-    // compute elapsed time in ms , end the timer
-    clock_gettime(CLOCK_REALTIME, &tend);
-    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
-            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-    cout << ts1 << endl;
 }
 
 PhysicalOperatorFactory * QueryEvaluatorInternal::getPhysicalOperatorFactory(){

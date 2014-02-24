@@ -221,19 +221,19 @@ class PhysicalPlanRecordItemFactory{
 public:
 
 	PhysicalPlanRecordItemFactory(){
-		size = 0;
+//		size = 0;
 	}
 
 	PhysicalPlanRecordItem * createRecordItem(){
-		if(size >= 10000){
+//		if(size >= 10000){
 			PhysicalPlanRecordItem  * newObj = new PhysicalPlanRecordItem();
 			extraObjects.push_back(newObj);
 			return newObj;
-		}else{
-			PhysicalPlanRecordItem * toReturn = &(objects[size]);
-			size ++;
-			return toReturn;
-		}
+//		}else{
+//			PhysicalPlanRecordItem * toReturn = &(objects[size]);
+//			size ++;
+//			return toReturn;
+//		}
 	}
 
 	// if we get a pointer from this function, we are responsible of
@@ -282,22 +282,55 @@ public:
 	}
 
 
+	void refresh(){
+		vector<PhysicalPlanRecordItem *> backup;
+		for(int i=0;i< extraObjects.size(); i++){
+			backup.push_back(extraObjects.at(i));
+		}
+		extraObjects.clear();
+		backups.push_back(backup);
+	}
+
 	~PhysicalPlanRecordItemFactory(){
-		cout << size + extraObjects.size() << "$";
+//		cout << size + extraObjects.size() << "$";
+//		if(extraObjects.size() > 0){
+//			for(unsigned i =0 ; i< extraObjects.size() ; ++i){
+//				if(extraObjects.at(i) == NULL){
+//					ASSERT(false);
+//				}else{
+//					delete extraObjects.at(i);
+//				}
+//			}
+//		}
 		if(extraObjects.size() > 0){
-			for(unsigned i =0 ; i< extraObjects.size() ; ++i){
-				if(extraObjects.at(i) == NULL){
+			cout << "extraObjectSize : " << extraObjects.size() << "\t";
+		}
+		for(int b = 0; b<backups.size();++b){
+		    // start the timer for search
+		    struct timespec tstart;
+		    struct timespec tend;
+		    clock_gettime(CLOCK_REALTIME, &tstart);
+		    cout << backups.at(b).size() << "$";
+			for(unsigned i =0 ; i< backups.at(b).size() ; ++i){
+				if(backups.at(b).at(i) == NULL){
 					ASSERT(false);
 				}else{
-					delete extraObjects.at(i);
+					delete backups.at(b).at(i);
 				}
 			}
+		    // compute elapsed time in ms , end the timer
+		    clock_gettime(CLOCK_REALTIME, &tend);
+		    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000000
+		            + (tend.tv_nsec - tstart.tv_nsec) / 1000;
+		    cout << ts1*1.0/1000 << "\t";
 		}
+		cout << endl;
 	}
 private:
 	vector<PhysicalPlanRecordItem *> extraObjects;
-	PhysicalPlanRecordItem objects[10000];
-	unsigned size;
+	vector<vector<PhysicalPlanRecordItem *> > backups;
+//	PhysicalPlanRecordItem objects[10000];
+//	unsigned size;
 };
 
 // The iterator interface used to implement iterator model
