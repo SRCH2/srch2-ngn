@@ -225,7 +225,7 @@ public:
 	}
 
 	PhysicalPlanRecordItem * createRecordItem(){
-		if(size >= 100000){
+		if(size >= 10000){
 			PhysicalPlanRecordItem  * newObj = new PhysicalPlanRecordItem();
 			extraObjects.push_back(newObj);
 			return newObj;
@@ -283,6 +283,7 @@ public:
 
 
 	~PhysicalPlanRecordItemFactory(){
+		cout << size + extraObjects.size() << "$";
 		if(extraObjects.size() > 0){
 			for(unsigned i =0 ; i< extraObjects.size() ; ++i){
 				if(extraObjects.at(i) == NULL){
@@ -295,7 +296,7 @@ public:
 	}
 private:
 	vector<PhysicalPlanRecordItem *> extraObjects;
-	PhysicalPlanRecordItem objects[100000];
+	PhysicalPlanRecordItem objects[10000];
 	unsigned size;
 };
 
