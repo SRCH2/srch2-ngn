@@ -99,6 +99,10 @@ PhysicalOperatorsCache * CacheManager::getPhysicalOperatorsCache(){
 	return this->pCache;
 }
 
+PhysicalPlanRecordItemFactory * CacheManager::getPhysicalPlanRecordItemFactory(){
+	return this->physicalPlanRecordItemFactory;
+}
+
 bool QueryResultsCache::getQueryResults(string & key, boost::shared_ptr<QueryResultsCacheEntry> & in){
 	return this->cacheContainer->get(key , in);
 }
@@ -110,7 +114,7 @@ int QueryResultsCache::clear(){
 }
 
 int CacheManager::clear(){
-	return this->aCache->clear() && this->qCache->clear() && this->pCache->clear();
+	return this->aCache->clear() && this->qCache->clear() && this->pCache->clear() && this->physicalPlanRecordItemFactory->clear();
 }
 
 

@@ -99,7 +99,7 @@ PhysicalPlanRecordItem * UnionLowestLevelTermVirtualListOperator::getNext(const 
         		UnionLowestLevelTermVirtualListOperator::UnionLowestLevelTermVirtualListOperatorHeapItemCmp());
 
         // allocate new item and fill it out
-        PhysicalPlanRecordItem * newItem = this->queryEvaluator->getPhysicalPlanRecordItemFactory()->createRecordItem();
+        PhysicalPlanRecordItem * newItem = this->queryEvaluator->getPhysicalPlanRecordItemPool()->createRecordItem();
         newItem->setRecordId(currentHeapMax->recordId);
         newItem->setRecordRuntimeScore(currentHeapMax->termRecordRuntimeScore);
         vector<TrieNodePointer> prefixes;

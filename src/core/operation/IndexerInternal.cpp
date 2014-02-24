@@ -196,7 +196,7 @@ void IndexReaderWriter::save(const std::string& directoryName)
 
 INDEXWRITE_RETVAL IndexReaderWriter::merge(bool updateHistogram)
 {
-    if (this->cache != NULL)
+    if (this->cache != NULL && this->index->isMergeRequired())
         this->cache->clear();
 
     // increment the mergeCounterForUpdatingHistogram

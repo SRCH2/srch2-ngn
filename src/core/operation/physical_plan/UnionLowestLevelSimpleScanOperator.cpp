@@ -138,7 +138,7 @@ PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const Physi
     }
 
 	// return the item.
-	PhysicalPlanRecordItem * newItem = this->queryEvaluator->getPhysicalPlanRecordItemFactory()->createRecordItem();
+	PhysicalPlanRecordItem * newItem = this->queryEvaluator->getPhysicalPlanRecordItemPool()->createRecordItem();
 	// record id
 	newItem->setRecordId(recordID);
 	// edit distance

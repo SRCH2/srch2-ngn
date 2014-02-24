@@ -26,6 +26,7 @@
 #include "index/Trie.h"
 #include "index/InvertedIndex.h"
 #include "operation/HistogramManager.h"
+#include "operation/PhysicalPlanRecordItemFactory.h"
 
 using namespace std;
 
@@ -98,7 +99,6 @@ struct PhysicalPlanExecutionParameters {
 	}
 };
 
-class PhysicalPlanRecordItem;
 /*
  * This structure is used to move information when verifyByRandomAccess() of an
  * operator is called.
@@ -136,201 +136,6 @@ public:
 	bool isMatchAsInputTo(const IteratorProperties & prop, IteratorProperties & reason);
 	void addProperty(PhysicalPlanIteratorProperty prop);
 	vector<PhysicalPlanIteratorProperty> properties;
-};
-
-/*
- * This class is the 'tuple' in this iterator model.
- * When the physical plan is being executed, the pointers to
- * PhysicalPlanRecordItem objects are passed around.
- */
-class PhysicalPlanRecordItem{
-public:
-	// getters
-	inline unsigned getRecordId() const {
-		return this->recordId;
-	}
-	inline float getRecordStaticScore() const{
-		return this->recordStaticScore;
-	}
-	inline float getRecordRuntimeScore() const{
-		return this->recordRuntimeScore;
-	}
-	inline void getRecordMatchingPrefixes(vector<TrieNodePointer> & matchingPrefixes) const{
-		matchingPrefixes.insert(matchingPrefixes.end(),this->matchingPrefixes.begin(),this->matchingPrefixes.end());
-	}
-	inline void getRecordMatchEditDistances(vector<unsigned> & editDistances) const{
-		editDistances.insert(editDistances.end(),this->editDistances.begin(),this->editDistances.end());
-	}
-	inline void getRecordMatchAttributeBitmaps(vector<unsigned> & attributeBitmaps) const{
-		attributeBitmaps.insert(attributeBitmaps.end(),this->attributeBitmaps.begin(),this->attributeBitmaps.end());
-	}
-	inline void getPositionIndexOffsets(vector<unsigned> & positionIndexOffsets)const {
-		positionIndexOffsets.insert(positionIndexOffsets.end(),this->positionIndexOffsets.begin(),this->positionIndexOffsets.end());
-	}
-
-	// setters
-	inline void setRecordId(unsigned id) {
-		this->recordId = id;
-	}
-	inline void setRecordStaticScore(float staticScore) {
-		this->recordStaticScore = staticScore;
-	}
-	inline void setRecordRuntimeScore(float runtimeScore) {
-		this->recordRuntimeScore = runtimeScore;
-	}
-	inline void setRecordMatchingPrefixes(const vector<TrieNodePointer> & matchingPrefixes) {
-		this->matchingPrefixes = matchingPrefixes;
-	}
-	inline void setRecordMatchEditDistances(const vector<unsigned> & editDistances) {
-		this->editDistances = editDistances;
-	}
-	inline void setRecordMatchAttributeBitmaps(const vector<unsigned> & attributeBitmaps) {
-		this->attributeBitmaps = attributeBitmaps;
-	}
-	inline void setPositionIndexOffsets(const vector<unsigned> & positionIndexOffsets){
-		this->positionIndexOffsets = positionIndexOffsets;
-	}
-
-    unsigned getNumberOfBytes(){
-    	return sizeof(recordId) +
-    			sizeof(recordRuntimeScore) +
-    			sizeof(recordStaticScore) +
-    			sizeof(TrieNodePointer) * matchingPrefixes.size() +
-    			sizeof(unsigned) * editDistances.size() +
-    			sizeof(unsigned) * attributeBitmaps.size() +
-    			sizeof(unsigned) * positionIndexOffsets.size();
-    }
-
-	~PhysicalPlanRecordItem(){};
-
-    std::map<std::string,TypedValue> valuesOfParticipatingRefiningAttributes;
-private:
-	unsigned recordId;
-	float recordStaticScore;
-	float recordRuntimeScore;
-	vector<TrieNodePointer> matchingPrefixes;
-	vector<unsigned> editDistances;
-	vector<unsigned> attributeBitmaps;
-	vector<unsigned> positionIndexOffsets;
-};
-
-/*
- * The factory class of PhysicalPlanRecordItem;
- */
-class PhysicalPlanRecordItemFactory{
-public:
-
-	PhysicalPlanRecordItemFactory(){
-//		size = 0;
-	}
-
-	PhysicalPlanRecordItem * createRecordItem(){
-//		if(size >= 10000){
-			PhysicalPlanRecordItem  * newObj = new PhysicalPlanRecordItem();
-			extraObjects.push_back(newObj);
-			return newObj;
-//		}else{
-//			PhysicalPlanRecordItem * toReturn = &(objects[size]);
-//			size ++;
-//			return toReturn;
-//		}
-	}
-
-	// if we get a pointer from this function, we are responsible of
-	// deallocating it
-	PhysicalPlanRecordItem * cloneForCache(PhysicalPlanRecordItem * oldObj){
-		PhysicalPlanRecordItem  * newObj = new PhysicalPlanRecordItem();
-		newObj->setRecordId(oldObj->getRecordId());
-		newObj->setRecordRuntimeScore(oldObj->getRecordRuntimeScore());
-		vector<TrieNodePointer> matchingPrefixes;
-		oldObj->getRecordMatchingPrefixes(matchingPrefixes);
-		newObj->setRecordMatchingPrefixes(matchingPrefixes);
-		vector<unsigned> editDistances;
-		oldObj->getRecordMatchEditDistances(editDistances);
-		newObj->setRecordMatchEditDistances(editDistances);
-		vector<unsigned> attributeBitmaps;
-		oldObj->getRecordMatchAttributeBitmaps(attributeBitmaps);
-		newObj->setRecordMatchAttributeBitmaps(attributeBitmaps);
-		vector<unsigned> positionIndexOffsets;
-		oldObj->getPositionIndexOffsets(positionIndexOffsets);
-		newObj->setPositionIndexOffsets(positionIndexOffsets);
-
-		return newObj;
-	}
-
-	/*
-	 * This factory will take care of deallocation of these pointers.
-	 */
-	PhysicalPlanRecordItem * clone(PhysicalPlanRecordItem * oldObj){
-		PhysicalPlanRecordItem  * newObj = createRecordItem();
-		newObj->setRecordId(oldObj->getRecordId());
-		newObj->setRecordRuntimeScore(oldObj->getRecordRuntimeScore());
-		vector<TrieNodePointer> matchingPrefixes;
-		oldObj->getRecordMatchingPrefixes(matchingPrefixes);
-		newObj->setRecordMatchingPrefixes(matchingPrefixes);
-		vector<unsigned> editDistances;
-		oldObj->getRecordMatchEditDistances(editDistances);
-		newObj->setRecordMatchEditDistances(editDistances);
-		vector<unsigned> attributeBitmaps;
-		oldObj->getRecordMatchAttributeBitmaps(attributeBitmaps);
-		newObj->setRecordMatchAttributeBitmaps(attributeBitmaps);
-		vector<unsigned> positionIndexOffsets;
-		oldObj->getPositionIndexOffsets(positionIndexOffsets);
-		newObj->setPositionIndexOffsets(positionIndexOffsets);
-
-		return newObj;
-	}
-
-
-	void refresh(){
-		vector<PhysicalPlanRecordItem *> backup;
-		for(int i=0;i< extraObjects.size(); i++){
-			backup.push_back(extraObjects.at(i));
-		}
-		extraObjects.clear();
-		backups.push_back(backup);
-	}
-
-	~PhysicalPlanRecordItemFactory(){
-//		cout << size + extraObjects.size() << "$";
-		if(extraObjects.size() > 0){
-			for(unsigned i =0 ; i< extraObjects.size() ; ++i){
-				if(extraObjects.at(i) == NULL){
-					ASSERT(false);
-				}else{
-					delete extraObjects.at(i);
-				}
-			}
-		}
-//		if(extraObjects.size() > 0){
-//			cout << "extraObjectSize : " << extraObjects.size() << "\t";
-//		}
-		for(int b = 0; b<backups.size();++b){
-//		    // start the timer for search
-//		    struct timespec tstart;
-//		    struct timespec tend;
-//		    clock_gettime(CLOCK_REALTIME, &tstart);
-//		    cout << backups.at(b).size() << "$";
-			for(unsigned i =0 ; i< backups.at(b).size() ; ++i){
-				if(backups.at(b).at(i) == NULL){
-					ASSERT(false);
-				}else{
-					delete backups.at(b).at(i);
-				}
-			}
-//		    // compute elapsed time in ms , end the timer
-//		    clock_gettime(CLOCK_REALTIME, &tend);
-//		    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000000
-//		            + (tend.tv_nsec - tstart.tv_nsec) / 1000;
-//		    cout << ts1*1.0/1000 << "\t";
-		}
-//		cout << endl;
-	}
-private:
-	vector<PhysicalPlanRecordItem *> extraObjects;
-	vector<vector<PhysicalPlanRecordItem *> > backups;
-//	PhysicalPlanRecordItem objects[10000];
-//	unsigned size;
 };
 
 // The iterator interface used to implement iterator model

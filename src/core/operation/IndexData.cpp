@@ -85,6 +85,7 @@ IndexData::IndexData(const string &directoryName,
     this->flagBulkLoadDone = false;
 
     this->rwMutexForIdReassign = new ReadWriteMutex(100); // for locking, <= 100 threads
+    this->mergeRequired = true;
 }
 
 IndexData::IndexData(const string& directoryName)
@@ -138,6 +139,7 @@ IndexData::IndexData(const string& directoryName)
     }
 
     this->rwMutexForIdReassign = new ReadWriteMutex(100); // for locking, <= 100 threads
+    this->mergeRequired = true;
 }
 
 // check whether the keyword id list is sorted. This is called from ASSERT statement below to

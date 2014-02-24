@@ -64,7 +64,7 @@ QueryEvaluatorInternal::QueryEvaluatorInternal(IndexReaderWriter *indexer , Quer
     this->cacheManager = dynamic_cast<CacheManager*>(indexer->getCache());
     this->indexer = indexer;
     setPhysicalOperatorFactory(new PhysicalOperatorFactory());
-    setPhysicalPlanRecordItemFactory(new PhysicalPlanRecordItemFactory());
+    setPhysicalPlanRecordItemFactory(this->cacheManager->getPhysicalPlanRecordItemFactory());
     setForwardIndex_ReadView();
 }
 
@@ -541,7 +541,7 @@ void QueryEvaluatorInternal::addMoreNodesToExpansion(const TrieNode* trieNode, u
 
 QueryEvaluatorInternal::~QueryEvaluatorInternal() {
 	delete physicalOperatorFactory;
-	delete physicalPlanRecordItemFactory;
+	this->physicalPlanRecordItemFactory->closeRecordItemPool(this->physicalPlanRecordItemPoolHandle);
 }
 
 PhysicalOperatorFactory * QueryEvaluatorInternal::getPhysicalOperatorFactory(){
@@ -551,11 +551,12 @@ void QueryEvaluatorInternal::setPhysicalOperatorFactory(PhysicalOperatorFactory 
 	this->physicalOperatorFactory = physicalOperatorFactory;
 }
 
-PhysicalPlanRecordItemFactory * QueryEvaluatorInternal::getPhysicalPlanRecordItemFactory(){
-	return this->physicalPlanRecordItemFactory;
+PhysicalPlanRecordItemPool * QueryEvaluatorInternal::getPhysicalPlanRecordItemPool(){
+	return this->physicalPlanRecordItemFactory->getRecordItemPool(this->physicalPlanRecordItemPoolHandle);
 }
 void QueryEvaluatorInternal::setPhysicalPlanRecordItemFactory(PhysicalPlanRecordItemFactory * physicalPlanRecordItemFactory){
 	this->physicalPlanRecordItemFactory = physicalPlanRecordItemFactory;
+	this->physicalPlanRecordItemPoolHandle = this->physicalPlanRecordItemFactory->openRecordItemPool();
 }
 
 //DEBUG function. Used in CacheIntegration_Test

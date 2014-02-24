@@ -114,7 +114,7 @@ bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPl
 
 			}
 
-			candidatesList.push_back(queryEvaluator->getPhysicalPlanRecordItemFactory()->
+			candidatesList.push_back(queryEvaluator->getPhysicalPlanRecordItemPool()->
 					clone(mergeTopKCacheEntry->candidatesList.at(i)));
 			fullCandidatesListForCache.push_back(candidatesList.at(candidatesList.size()-1));
 		}
@@ -123,7 +123,7 @@ bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPl
 			if(mergeTopKCacheEntry->nextItemsFromChildren.at(i) == NULL){
 				nextItemsFromChildren.push_back(NULL);
 			}else{
-				nextItemsFromChildren.push_back(queryEvaluator->getPhysicalPlanRecordItemFactory()->
+				nextItemsFromChildren.push_back(queryEvaluator->getPhysicalPlanRecordItemPool()->
 						clone(mergeTopKCacheEntry->nextItemsFromChildren.at(i)));
 			}
 		}

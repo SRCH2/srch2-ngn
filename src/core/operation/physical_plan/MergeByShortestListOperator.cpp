@@ -68,7 +68,7 @@ bool MergeByShortestListOperator::open(QueryEvaluatorInternal * queryEvaluator, 
 
 		// get candidate lists from cache
 		for(unsigned candidateOffset = 0 ; candidateOffset < mergeShortestCacheEntry->candidatesList.size() ; ++candidateOffset){
-			candidateListFromCache.push_back(queryEvaluator->getPhysicalPlanRecordItemFactory()->
+			candidateListFromCache.push_back(queryEvaluator->getPhysicalPlanRecordItemPool()->
 								clone(mergeShortestCacheEntry->candidatesList.at(candidateOffset)));
 		}
 	}else{

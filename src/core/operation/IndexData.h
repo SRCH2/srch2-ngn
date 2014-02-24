@@ -250,6 +250,10 @@ public:
     RankerExpression *rankerExpression;
     ReadWriteMutex *rwMutexForIdReassign; // for locking the KeywordIdReassign, <= 100 threads
     
+    inline bool isMergeRequired() const{
+    	return mergeRequired;
+    }
+
     virtual ~IndexData();
 
     void getReadView(IndexReadStateSharedPtr_Token &readToken)

@@ -57,7 +57,7 @@ PhysicalPlanRecordItem * UnionLowestLevelSuggestionOperator::getNext(const Physi
 					recordOffset,
 					0x7fffffff,  termAttributeBitmap, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
 				// return the item.
-				PhysicalPlanRecordItem * newItem = this->queryEvaluatorIntrnal->getPhysicalPlanRecordItemFactory()->createRecordItem();
+				PhysicalPlanRecordItem * newItem = this->queryEvaluatorIntrnal->getPhysicalPlanRecordItemPool()->createRecordItem();
 				// record id
 				newItem->setRecordId(recordId);
 				// edit distance

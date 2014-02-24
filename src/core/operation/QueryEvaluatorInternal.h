@@ -146,7 +146,7 @@ public:
 
     PhysicalOperatorFactory * getPhysicalOperatorFactory();
     void setPhysicalOperatorFactory(PhysicalOperatorFactory * physicalOperatorFactory);
-    PhysicalPlanRecordItemFactory * getPhysicalPlanRecordItemFactory();
+    PhysicalPlanRecordItemPool * getPhysicalPlanRecordItemPool();
     void setPhysicalPlanRecordItemFactory(PhysicalPlanRecordItemFactory * physicalPlanRecordItemFactory);
 
     //DEBUG function. Used in CacheIntegration_Test
@@ -174,6 +174,7 @@ private:
     CacheManager *cacheManager;
     PhysicalOperatorFactory * physicalOperatorFactory;
     PhysicalPlanRecordItemFactory * physicalPlanRecordItemFactory;
+    unsigned physicalPlanRecordItemPoolHandle;
 
     shared_ptr<vectorview<ForwardListPtr> > forwardIndexDirectoryReadView;
     // search functions for map search

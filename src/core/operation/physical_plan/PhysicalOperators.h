@@ -448,7 +448,7 @@ public:
 		this->indexOfShortestListChild = indexOfShortestListChild;
 		this->isShortestListFinished = isShortestListFinished;
 		for(unsigned i = 0; i < candidatesList.size() ; ++i){
-			this->candidatesList.push_back(queryEvaluator->getPhysicalPlanRecordItemFactory()->
+			this->candidatesList.push_back(queryEvaluator->getPhysicalPlanRecordItemPool()->
 					cloneForCache(candidatesList.at(i)));
 		}
 	}
