@@ -219,10 +219,21 @@ private:
  */
 class PhysicalPlanRecordItemFactory{
 public:
+
+	PhysicalPlanRecordItemFactory(){
+		size = 0;
+	}
+
 	PhysicalPlanRecordItem * createRecordItem(){
-		PhysicalPlanRecordItem  * newObj = new PhysicalPlanRecordItem();
-		objects.push_back(newObj);
-		return newObj;
+		if(size >= 100000){
+			PhysicalPlanRecordItem  * newObj = new PhysicalPlanRecordItem();
+			extraObjects.push_back(newObj);
+			return newObj;
+		}else{
+			PhysicalPlanRecordItem * toReturn = &(objects[size]);
+			size ++;
+			return toReturn;
+		}
 	}
 
 	// if we get a pointer from this function, we are responsible of
@@ -251,7 +262,7 @@ public:
 	 * This factory will take care of deallocation of these pointers.
 	 */
 	PhysicalPlanRecordItem * clone(PhysicalPlanRecordItem * oldObj){
-		PhysicalPlanRecordItem  * newObj = new PhysicalPlanRecordItem();
+		PhysicalPlanRecordItem  * newObj = createRecordItem();
 		newObj->setRecordId(oldObj->getRecordId());
 		newObj->setRecordRuntimeScore(oldObj->getRecordRuntimeScore());
 		vector<TrieNodePointer> matchingPrefixes;
@@ -267,23 +278,25 @@ public:
 		oldObj->getPositionIndexOffsets(positionIndexOffsets);
 		newObj->setPositionIndexOffsets(positionIndexOffsets);
 
-		objects.push_back(newObj);
-
 		return newObj;
 	}
 
 
 	~PhysicalPlanRecordItemFactory(){
-		for(unsigned i =0 ; i< objects.size() ; ++i){
-			if(objects.at(i) == NULL){
-				ASSERT(false);
-			}else{
-				delete objects.at(i);
+		if(extraObjects.size() > 0){
+			for(unsigned i =0 ; i< extraObjects.size() ; ++i){
+				if(extraObjects.at(i) == NULL){
+					ASSERT(false);
+				}else{
+					delete extraObjects.at(i);
+				}
 			}
 		}
 	}
 private:
-	vector<PhysicalPlanRecordItem *> objects;
+	vector<PhysicalPlanRecordItem *> extraObjects;
+	PhysicalPlanRecordItem objects[100000];
+	unsigned size;
 };
 
 // The iterator interface used to implement iterator model
