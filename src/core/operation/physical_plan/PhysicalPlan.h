@@ -293,24 +293,24 @@ public:
 
 	~PhysicalPlanRecordItemFactory(){
 //		cout << size + extraObjects.size() << "$";
-//		if(extraObjects.size() > 0){
-//			for(unsigned i =0 ; i< extraObjects.size() ; ++i){
-//				if(extraObjects.at(i) == NULL){
-//					ASSERT(false);
-//				}else{
-//					delete extraObjects.at(i);
-//				}
-//			}
-//		}
 		if(extraObjects.size() > 0){
-			cout << "extraObjectSize : " << extraObjects.size() << "\t";
+			for(unsigned i =0 ; i< extraObjects.size() ; ++i){
+				if(extraObjects.at(i) == NULL){
+					ASSERT(false);
+				}else{
+					delete extraObjects.at(i);
+				}
+			}
 		}
+//		if(extraObjects.size() > 0){
+//			cout << "extraObjectSize : " << extraObjects.size() << "\t";
+//		}
 		for(int b = 0; b<backups.size();++b){
-		    // start the timer for search
-		    struct timespec tstart;
-		    struct timespec tend;
-		    clock_gettime(CLOCK_REALTIME, &tstart);
-		    cout << backups.at(b).size() << "$";
+//		    // start the timer for search
+//		    struct timespec tstart;
+//		    struct timespec tend;
+//		    clock_gettime(CLOCK_REALTIME, &tstart);
+//		    cout << backups.at(b).size() << "$";
 			for(unsigned i =0 ; i< backups.at(b).size() ; ++i){
 				if(backups.at(b).at(i) == NULL){
 					ASSERT(false);
@@ -318,13 +318,13 @@ public:
 					delete backups.at(b).at(i);
 				}
 			}
-		    // compute elapsed time in ms , end the timer
-		    clock_gettime(CLOCK_REALTIME, &tend);
-		    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000000
-		            + (tend.tv_nsec - tstart.tv_nsec) / 1000;
-		    cout << ts1*1.0/1000 << "\t";
+//		    // compute elapsed time in ms , end the timer
+//		    clock_gettime(CLOCK_REALTIME, &tend);
+//		    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000000
+//		            + (tend.tv_nsec - tstart.tv_nsec) / 1000;
+//		    cout << ts1*1.0/1000 << "\t";
 		}
-		cout << endl;
+//		cout << endl;
 	}
 private:
 	vector<PhysicalPlanRecordItem *> extraObjects;
