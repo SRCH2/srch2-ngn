@@ -1,0 +1,5 @@
+Hospitla||1 50 33
+Goods Garedn||78 17 6 44 66
+Goods Gardne Retail||44 66
+Personal Serivces||29 36 10 37 69 13 52 8
+python63||103 102
