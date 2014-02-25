@@ -1,9 +1,8 @@
-american%20AND%20redemption%20OR%20fiction||1 2
-%28american%20AND%20redemption%29%20OR%20fiction%20OR%20%28square%20OR%20american%29||2 1 3
+american%20AND%20redemption%20OR%20fiction||2 1
+%28american%20AND%20redemption%29%20OR%20fiction%20OR%20%28square%20OR%20american%29||2 3 1 905 907 135001 135002 492002 492003
 %28american%20AND%20shawshenk~%29%20OR%20%28american%20AND%20hit%29||1 2
 %28%28american%20AND%20shawshenk~%29%20OR%20%28american%20AND%20hit%29%29%20AND%20NOT%20drama||1
 american%20AND%20NOT%201994||
-american%20AND%20%28NOT%201994%29||
 american%20AND%20NOT%20title%3Apulp||2
 comedy%20and%20%282004%20OR%20boy*%29%20AND%20%28%28NOT%20weitz%20OR%20wes%29%20AND%20wondr~%29||259005
 fiction%20and%20%282003%20OR%20lord%29%20AND%20%28%28king%20OR%20towers%29%20AND%20%28jackson%20OR%20NOT%20nonmatch%20AND%20%28peter%20OR%20rings%29%29%29||492003 492002
