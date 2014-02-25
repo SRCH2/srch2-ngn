@@ -311,6 +311,21 @@ else
 fi
 rm -rf data/ *.idx
 
+test_id="fuzzy_A1_swap test"
+printTestBanner "$test_id"
+python ./fuzzy_a1_swap/fuzzy_A1_swap.py $SRCH2_ENGINE ./fuzzy_a1_swap/queriesAndResults.txt >> system_test.log 2>&1
+
+if [ $? -gt 0 ]; then
+    echo "FAILED: $test_id"
+    if [ $force -eq 0 ]; then
+	exit 255
+    fi
+else
+    echo "-- PASSED: $test_id"
+fi
+rm -rf data/ *.idx
+
+
 
 test_id="exact_M1"
 printTestBanner "$test_id"
