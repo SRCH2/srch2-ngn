@@ -365,9 +365,9 @@ PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<Phy
 	}
 
 	unsigned treeOptionIndexChosen = 0 ;
-//	if(planOffset >= treeOptions.size()-1){
+	if(planOffset >= treeOptions.size()-1){
 		cout << "QO(";
-//	}
+	}
 	for(unsigned treeOptionIndex = 0 ; treeOptionIndex < treeOptions.size()-1 ; treeOptionIndex++){
 		PhysicalPlanOptimizationNode * treeOption = treeOptions.at(treeOptionIndex);
 		PhysicalPlanCost cost;
@@ -387,9 +387,9 @@ PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<Phy
 				numberOfGetNextCalls;
 		cost = cost + treeOption->getCostOfClose(*(physicalPlan.getExecutionParameters()));
 
-//		if(planOffset >= treeOptions.size()-1){
+		if(planOffset >= treeOptions.size()-1){
 			cout << "C("  << treeOptionIndex << ","<< cost.cost << ")$" ;
-//		}
+		}
 
 		if(minPlan == NULL){
 			minPlan = treeOption;
@@ -403,12 +403,12 @@ PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<Phy
 			}
 		}
 	}
-//	if(planOffset >= treeOptions.size()-1){
+	if(planOffset >= treeOptions.size()-1){
 		cout << treeOptionIndexChosen << ")\t";
-//	}
-//	if(planOffset < treeOptions.size()-1){
-//		return treeOptions.at(planOffset);
-//	}
+	}
+	if(planOffset < treeOptions.size()-1){
+		return treeOptions.at(planOffset);
+	}
 //	cout << minCost << "\t" ;
 	return minPlan;
 }
