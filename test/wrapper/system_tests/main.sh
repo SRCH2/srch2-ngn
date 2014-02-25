@@ -110,9 +110,11 @@ if [ "$html" -gt 0 ]; then
     rm -f system_test.log
     html_title="System Tests - `date` - ${machine} ${os}"
     echo "<html><head><title>${html_title}</title></head><body><h1>${html_title}</h1><h2>Test Summary</h2>" >> ${output}
+    html_escape_command="sed -e 's/</\&lt;/g' | sed -e 's/>/\&gt;/g'"
 else
     html_fail_pre=''
     html_fail_post=''
+    html_escape_command='cat'
 fi
 
 echo ''
@@ -152,7 +154,7 @@ rm -rf data/ *.idx
 
 test_id="cache_A1"
 printTestBanner "$test_id"
-python ./cache_a1/cache_A1.py $SRCH2_ENGINE ./cache_a1/queriesAndResults.txt >> system_test.log 2>&1
+python ./cache_a1/cache_A1.py $SRCH2_ENGINE ./cache_a1/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
@@ -167,7 +169,7 @@ rm -rf data/ *.idx
 
 test_id="boolean expression"
 printTestBanner "$test_id"
-python ./boolean-expression-test/boolean-expression.py $SRCH2_ENGINE ./boolean-expression-test/queries.txt >> system_test.log 2>&1
+python ./boolean-expression-test/boolean-expression.py $SRCH2_ENGINE ./boolean-expression-test/queries.txt | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
@@ -182,7 +184,7 @@ rm -rf data/ *.idx
 
 test_id="qf_dynamic_ranking"
 printTestBanner "$test_id"
-python ./qf_dynamic_ranking/qf_dynamic_ranking.py $SRCH2_ENGINE ./qf_dynamic_ranking/queriesAndResults.txt >> system_test.log 2>&1
+python ./qf_dynamic_ranking/qf_dynamic_ranking.py $SRCH2_ENGINE ./qf_dynamic_ranking/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
@@ -196,7 +198,7 @@ rm -rf data/ *.idx
 
 test_id="phrase search"
 printTestBanner "$test_id"
-python ./phraseSearch/phrase_search.py $SRCH2_ENGINE ./phraseSearch/queries.txt >> system_test.log 2>&1
+python ./phraseSearch/phrase_search.py $SRCH2_ENGINE ./phraseSearch/queries.txt | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
@@ -211,7 +213,7 @@ rm -rf data/ *.idx
 
 test_id="phrase search with boolean expression"
 printTestBanner "$test_id"
-python ./phraseSearch/phrase_search.py $SRCH2_ENGINE ./phraseSearch/booleanQueries.txt >> system_test.log 2>&1
+python ./phraseSearch/phrase_search.py $SRCH2_ENGINE ./phraseSearch/booleanQueries.txt | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_idi${html_fail_post}" >> ${output}
@@ -225,7 +227,7 @@ rm -rf data/ *.idx
 
 test_id="multi valued attribute"
 printTestBanner "$test_id"
-python ./test_multi_valued_attributes/test_multi_valued_attributes.py '--srch' $SRCH2_ENGINE '--qryNrslt' ./test_multi_valued_attributes/queriesAndResults.txt '--frslt' ./test_multi_valued_attributes/facetResults.txt >> system_test.log 2>&1
+python ./test_multi_valued_attributes/test_multi_valued_attributes.py '--srch' $SRCH2_ENGINE '--qryNrslt' ./test_multi_valued_attributes/queriesAndResults.txt '--frslt' ./test_multi_valued_attributes/facetResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
@@ -239,7 +241,7 @@ rm -rf data/ *.idx
 
 test_id="save_shutdown_restart"
 printTestBanner "$test_id"
-python ./save_shutdown_restart_export_test/save_shutdown_restart_export_test.py $SRCH2_ENGINE >> system_test.log 2>&1
+python ./save_shutdown_restart_export_test/save_shutdown_restart_export_test.py $SRCH2_ENGINE | eval "${html_escape_command}" >> system_test.log 2>&1
 if [ $? -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
@@ -253,7 +255,7 @@ rm -rf data/ *.idx
 
 test_id="empty_index"
 printTestBanner "$test_id"
-python ./empty_index/empty_index.py $SRCH2_ENGINE >> system_test.log 2>&1
+python ./empty_index/empty_index.py $SRCH2_ENGINE | eval "${html_escape_command}" >> system_test.log 2>&1
 if [ $? -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
@@ -267,7 +269,7 @@ rm -rf data/ *.idx
 
 test_id="high_insert"
 printTestBanner "$test_id"
-# ./high_insert_test/autotest.sh $SRCH2_ENGINE >> system_test.log 2>&1
+# ./high_insert_test/autotest.sh $SRCH2_ENGINE | eval "${html_escape_command}" >> system_test.log 2>&1
 echo "SKIPPING high_insert_test" >> ${output}
 
 #if [ $? -gt 0 ]; then
@@ -282,7 +284,7 @@ rm -rf data/ *.idx
 
 test_id="exact_A1"
 printTestBanner "$test_id"
-python ./exact_a1/exact_A1.py $SRCH2_ENGINE ./exact_a1/queriesAndResults.txt >> system_test.log 2>&1
+python ./exact_a1/exact_A1.py $SRCH2_ENGINE ./exact_a1/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
@@ -297,7 +299,7 @@ rm -rf data/ *.idx
 
 test_id="fuzzy_A1"
 printTestBanner "$test_id"
-python ./fuzzy_a1/fuzzy_A1.py $SRCH2_ENGINE ./fuzzy_a1/queriesAndResults.txt >> system_test.log 2>&1
+python ./fuzzy_a1/fuzzy_A1.py $SRCH2_ENGINE ./fuzzy_a1/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
@@ -312,7 +314,7 @@ rm -rf data/ *.idx
 
 test_id="exact_M1"
 printTestBanner "$test_id"
-python ./exact_m1/exact_M1.py $SRCH2_ENGINE ./exact_m1/queriesAndResults.txt >> system_test.log 2>&1
+python ./exact_m1/exact_M1.py $SRCH2_ENGINE ./exact_m1/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
@@ -327,7 +329,7 @@ rm -rf data/ *.idx
 
 test_id="fuzzy_M1"
 printTestBanner "$test_id"
-python ./fuzzy_m1/fuzzy_M1.py $SRCH2_ENGINE ./fuzzy_m1/queriesAndResults.txt >> system_test.log 2>&1
+python ./fuzzy_m1/fuzzy_M1.py $SRCH2_ENGINE ./fuzzy_m1/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
@@ -342,7 +344,7 @@ rm -rf data/ *.idx
 
 test_id="exact_Attribute_Based_Search"
 printTestBanner "$test_id"
-python ./exact_attribute_based_search/exact_Attribute_Based_Search.py $SRCH2_ENGINE ./exact_attribute_based_search/queriesAndResults.txt >> system_test.log 2>&1
+python ./exact_attribute_based_search/exact_Attribute_Based_Search.py $SRCH2_ENGINE ./exact_attribute_based_search/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
 if [ $? -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
@@ -355,7 +357,7 @@ rm -rf data/ *.idx
 
 test_id="fuzzy_Attribute_Based_Search"
 printTestBanner "$test_id"
-python ./fuzzy_attribute_based_search/fuzzy_Attribute_Based_Search.py $SRCH2_ENGINE ./fuzzy_attribute_based_search/queriesAndResults.txt >> system_test.log 2>&1
+python ./fuzzy_attribute_based_search/fuzzy_Attribute_Based_Search.py $SRCH2_ENGINE ./fuzzy_attribute_based_search/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
 #if [ $? -gt 0 ]; then
 #    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
 #    exit 255
@@ -374,7 +376,7 @@ rm -rf data/ *.idx
 
 test_id="exact_Attribute_Based_Search_Geo"
 printTestBanner "$test_id"
-python ./exact_attribute_based_search_geo/exact_Attribute_Based_Search_Geo.py $SRCH2_ENGINE ./exact_attribute_based_search_geo/queriesAndResults.txt >> system_test.log 2>&1
+python ./exact_attribute_based_search_geo/exact_Attribute_Based_Search_Geo.py $SRCH2_ENGINE ./exact_attribute_based_search_geo/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
@@ -389,7 +391,7 @@ rm -rf data/ *.idx
 
 test_id="fuzzy_Attribute_Based_Search_Geo"
 printTestBanner "$test_id"
-python ./fuzzy_attribute_based_search_geo/fuzzy_Attribute_Based_Search_Geo.py $SRCH2_ENGINE ./fuzzy_attribute_based_search_geo/queriesAndResults.txt >> system_test.log 2>&1
+python ./fuzzy_attribute_based_search_geo/fuzzy_Attribute_Based_Search_Geo.py $SRCH2_ENGINE ./fuzzy_attribute_based_search_geo/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
@@ -404,7 +406,7 @@ rm -rf data/ *.idx
 
 test_id="faceted search"
 printTestBanner "$test_id"
-python ./faceted_search/faceted_search.py '--srch' $SRCH2_ENGINE '--qryNrslt' ./faceted_search/queriesAndResults.txt '--frslt' ./faceted_search/facetResults.txt >> system_test.log 2>&1
+python ./faceted_search/faceted_search.py '--srch' $SRCH2_ENGINE '--qryNrslt' ./faceted_search/queriesAndResults.txt '--frslt' ./faceted_search/facetResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
@@ -419,7 +421,7 @@ rm -rf data/ *.idx
 
 test_id="sort filter"
 printTestBanner "$test_id"
-python ./sort_filter/sort_filter.py $SRCH2_ENGINE ./sort_filter/queriesAndResults.txt ./sort_filter/facetResults.txt >> system_test.log 2>&1
+python ./sort_filter/sort_filter.py $SRCH2_ENGINE ./sort_filter/queriesAndResults.txt ./sort_filter/facetResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
@@ -434,7 +436,7 @@ rm -rf data/ *.idx
 
 test_id="filter query"
 printTestBanner "$test_id"
-python ./filter_query/filter_query.py $SRCH2_ENGINE ./filter_query/queriesAndResults.txt ./filter_query/facetResults.txt >> system_test.log 2>&1
+python ./filter_query/filter_query.py $SRCH2_ENGINE ./filter_query/queriesAndResults.txt ./filter_query/facetResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
@@ -449,7 +451,7 @@ rm -rf data/ *.idx
 
 test_id="test_solr_compatible_query_syntax"
 printTestBanner "$test_id"
-python ./test_solr_compatible_query_syntax/test_solr_compatible_query_syntax.py $SRCH2_ENGINE ./test_solr_compatible_query_syntax/queriesAndResults.txt ./test_solr_compatible_query_syntax/facetResults.txt >> system_test.log 2>&1
+python ./test_solr_compatible_query_syntax/test_solr_compatible_query_syntax.py $SRCH2_ENGINE ./test_solr_compatible_query_syntax/queriesAndResults.txt ./test_solr_compatible_query_syntax/facetResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
@@ -472,7 +474,7 @@ rm -rf data/ *.idx
 
 test_id="test_search_by_id"
 printTestBanner "$test_id"
-python ./test_search_by_id/test_search_by_id.py $SRCH2_ENGINE >> system_test.log 2>&1
+python ./test_search_by_id/test_search_by_id.py $SRCH2_ENGINE | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
@@ -487,7 +489,7 @@ rm -rf data/ *.idx
 
 test_id="date and time implementation"
 printTestBanner "$test_id"
-python ./date_time_new_features_test/date_time_new_features_test.py $SRCH2_ENGINE ./date_time_new_features_test/queriesAndResults.txt >> system_test.log 2>&1
+python ./date_time_new_features_test/date_time_new_features_test.py $SRCH2_ENGINE ./date_time_new_features_test/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
@@ -502,7 +504,7 @@ rm -rf data/ *.idx
 
 test_id="geo"
 printTestBanner "$test_id"
-python ./geo/geo.py $SRCH2_ENGINE ./geo/queriesAndResults.txt >> system_test.log 2>&1
+python ./geo/geo.py $SRCH2_ENGINE ./geo/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
@@ -517,7 +519,7 @@ rm -rf data/ *.idx
 
 test_id="term type"
 printTestBanner "$test_id"
-python ./term_type/term_type.py $SRCH2_ENGINE ./term_type/queriesAndResults.txt >> system_test.log 2>&1
+python ./term_type/term_type.py $SRCH2_ENGINE ./term_type/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
@@ -532,7 +534,7 @@ rm -rf data/ *.idx
 
 test_id="analyzer end to end"
 printTestBanner "$test_id"
-python ./analyzer_exact_a1/analyzer_exact_A1.py $SRCH2_ENGINE ./analyzer_exact_a1/queriesAndResults.txt >> system_test.log 2>&1
+python ./analyzer_exact_a1/analyzer_exact_A1.py $SRCH2_ENGINE ./analyzer_exact_a1/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
@@ -547,7 +549,7 @@ rm -rf data/ *.idx
 
 test_id="top_k"
 printTestBanner "$test_id"
-python ./top_k/test_srch2_top_k.py $SRCH2_ENGINE food 10 20 >> system_test.log 2>&1
+python ./top_k/test_srch2_top_k.py $SRCH2_ENGINE food 10 20 | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
@@ -562,7 +564,7 @@ rm -rf data/ *.idx
 
 test_id="reset logger"
 printTestBanner "$test_id"
-#python ./reset_logger/test_reset_logger.py ./reset_logger/srch2-search-server >> system_test.log 2>&1
+#python ./reset_logger/test_reset_logger.py ./reset_logger/srch2-search-server | eval "${html_escape_command}" >> system_test.log 2>&1
 python ./reset_logger/test_reset_logger.py $SRCH2_ENGINE >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
@@ -581,7 +583,7 @@ printTestBanner "$test_id"
 # server is a little slow to exit for reset_logger, causing the server in statemedia's first test (write_correctness)
 # to fail to bind the port, hanging the test script, so wait just a sec here
 sleep 1
-NODECMD=${NODE_CMD:-node} ./tests_used_for_statemedia/autotest.sh $SRCH2_ENGINE >> system_test.log 2>&1
+NODECMD=${NODE_CMD:-node} ./tests_used_for_statemedia/autotest.sh $SRCH2_ENGINE | eval "${html_escape_command}" >> system_test.log 2>&1
 
 # TODO - hack until we figure out why tests_used_for_statemedia/large_insertion_test/large_insertion_test.rb
 # won't run and tests_used_for_statemedia/update_endpoint_test
@@ -599,7 +601,7 @@ rm -rf data/ *.idx
 
 test_id="batch upsert"
 printTestBanner "$test_id"
-python ./upsert_batch/test_upsert_batch.py $SRCH2_ENGINE >> system_test.log 2>&1
+python ./upsert_batch/test_upsert_batch.py $SRCH2_ENGINE | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
@@ -614,7 +616,7 @@ rm -rf data/ *.idx upsert_batch/indexes upsert_batch/*.idx upsert_batch/indexes/
 
 test_id="batch insert"
 printTestBanner "$test_id"
-python ./upsert_batch/test_insert_batch.py $SRCH2_ENGINE >> system_test.log 2>&1
+python ./upsert_batch/test_insert_batch.py $SRCH2_ENGINE | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
@@ -630,7 +632,7 @@ rm -rf data/ upsert_batch/*.idx upsert_batch/indexes/*.idx
 test_id="multicore"
 printTestBanner "$test_id"
 rm -f ./multicore/core?/*.idx ./multicore/core?/srch2-log.txt
-python ./multicore/multicore.py $SRCH2_ENGINE ./multicore/queriesAndResults.txt ./multicore/queriesAndResults2.txt >> system_test.log 2>&1
+python ./multicore/multicore.py $SRCH2_ENGINE ./multicore/queriesAndResults.txt ./multicore/queriesAndResults2.txt | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
@@ -645,7 +647,7 @@ rm -rf data/ multicore/core?/*.idx
 test_id="multiport"
 printTestBanner "$test_id"
 rm -f ./multiport/core?/*.idx ./multiport/core?/srch2-log.txt
-python ./multiport/multiport.py $SRCH2_ENGINE ./multiport/queriesAndResults.txt >> system_test.log 2>&1
+python ./multiport/multiport.py $SRCH2_ENGINE ./multiport/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ $? -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
