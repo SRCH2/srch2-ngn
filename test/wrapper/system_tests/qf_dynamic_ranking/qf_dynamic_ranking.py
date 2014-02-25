@@ -135,10 +135,10 @@ def testQF(queriesAndResultsPath, binary_path):
 
         #check the result
         failCount += checkResult(query, response_json['results'], resultValue)
-    return failCount
 
     test_lib.killServer(serverHandle)
     print '=============================='
+    return failCount
 
 if __name__ == '__main__':      
     #Path of the query file
