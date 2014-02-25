@@ -21,7 +21,7 @@
 { "id" : 135007, "title" : "The Lost Boys", "description" : "1987 Joel Schumacher Horror", "genre" : "horror" }
 { "id" : 135009, "title" : "The Royal Tenenbaums", "description" : "2001 Wes Anderson Drama", "genre" : "drama" }
 { "id" : 135011, "title" : "A Nightmare On Elm Street", "description" : "1984 Wes Craven Horror", "genre" : "horror" }
-{ "id" : 135012, "title" : "Dumb and Dumber", "description" : "19 94 Peter Farrelly Comedy", "genre" : "comedy", "genre" : "comedy" }
+{ "id" : 135012, "title" : "Dumb and Dumber", "description" : "19 94 Peter Farrelly Comedy", "genre" : "comedy" }
 { "id" : 135013, "title" : "Elf", "description" : "2003 Jon Favreau Comedy", "genre" : "comedy" }
 { "id" : 135014, "title" : "Monty Python and the Holy Grail", "description" : "1975 Terry Jones Comedy", "genre" : "comedy" }
 { "id" : 140001, "title" : "Bourne Identity", "description" : "2004 Doug Liman Mystery", "genre" : "mystery" }
