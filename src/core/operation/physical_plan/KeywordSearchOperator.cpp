@@ -20,7 +20,7 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 	PhysicalPlanExecutionParameters params(0, logicalPlan->isFuzzy() , logicalPlan->getExactQuery()->getPrefixMatchPenalty(), logicalPlan->getQueryType());
 	params.totalNumberOfRecords = queryEvaluator->getForwardIndex()->getTotalNumberOfForwardLists_ReadView();
 //	//2. Apply exact/fuzzy policy and run
-	vector<unsigned> resultIds;
+//	vector<unsigned> resultIds;
 	 // this for is a two iteration loop, to avoid copying the code for exact and fuzzy
 	for(unsigned fuzzyPolicyIter = 0 ; fuzzyPolicyIter < 2 ; fuzzyPolicyIter++ ){
 
@@ -30,16 +30,16 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 //			cout << "Fuzzy:\t";
 //		}
 		unsigned numberOfIterations = logicalPlan->offset + logicalPlan->numberOfResultsToRetrieve;
-//		for(unsigned planOffset = 0 ; planOffset < 7 ; planOffset ++){
+		for(unsigned planOffset = 0 ; planOffset < 7 ; planOffset ++){
 			/*
 			 * 1. Use CatalogManager to collect statistics and meta data about the logical plan
 			 * ---- 1.1. computes and attaches active node sets for each term
 			 * ---- 1.2. estimates and saves the number of results of each internal logical operator
 			 * ---- 1.3. ...
 			 */
-//			//2. Apply exact/fuzzy policy and run
-//			vector<unsigned> resultIds;
-//			results.clear();
+			//2. Apply exact/fuzzy policy and run
+			vector<unsigned> resultIds;
+			results.clear();
 
 			HistogramManager histogramManager(queryEvaluator);
 			histogramManager.annotate(logicalPlan);
@@ -77,7 +77,7 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 			params.cacheObject = NULL;
 			physicalPlan.setExecutionParameters(&params);
 
-			queryOptimizer.buildAndOptimizePhysicalPlan(physicalPlan,logicalPlan,0);
+			queryOptimizer.buildAndOptimizePhysicalPlan(physicalPlan,logicalPlan,planOffset);
 			if(physicalPlan.getPlanTree() == NULL){
 				return true;
 			}
@@ -117,10 +117,10 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 			unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000000
 					+ (tend.tv_nsec - tstart.tv_nsec) / 1000;
 //			cout << "Plan" << planOffset << "(" << ts1*1.0/1000 << ")\t" ;
-			cout << ts1*1.0/1000 << endl;
+			cout << ts1*1.0/1000 << "\t";
 
-//		}
-//		cout << endl;
+		}
+		cout << endl;
 
 //		// compute elapsed time in ms , end the timer
 //		struct timespec tend;
