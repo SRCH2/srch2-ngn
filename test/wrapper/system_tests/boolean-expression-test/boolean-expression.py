@@ -33,7 +33,7 @@ def checkResult(query, responseJson,resultValue):
         maxLen = max(len(responseJson),len(resultValue))
         for i in range(0, maxLen):
             if i >= len(resultValue):
-                print responseJson[i]['record']['id']+'||'
+                print str(responseJson[i]['record']['id'])+'||'
             elif i >= len(responseJson):
                 print '  '+'||'+resultValue[i]
             else:
