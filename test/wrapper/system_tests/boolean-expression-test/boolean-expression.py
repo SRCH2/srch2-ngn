@@ -62,8 +62,11 @@ def testBooleanExpression(queriesAndResultsPath, binary_path):
         expectedRecordIds=(value[1]).split()
         query='http://localhost:' + port + '/search?q='+ urllib.quote(phrase)
         print query
-        response = urllib2.urlopen(query).read()
-        response_json = json.loads(response)
+        try:
+            response = urllib2.urlopen(query).read()
+            response_json = json.loads(response)
+        except urllib2.HTTPError as err:
+            failCount += 1
         #print response_json['results']
         #check the result
         failCount += checkResult(query, response_json['results'], expectedRecordIds)
