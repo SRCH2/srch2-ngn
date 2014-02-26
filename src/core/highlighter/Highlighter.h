@@ -13,11 +13,14 @@
 #include <instantsearch/ResultsPostProcessor.h>
 #include "boost/unordered_map.hpp"
 #include "boost/unordered_set.hpp"
+#include "index/Trie.h"
 
 using namespace std;
 
 namespace srch2 {
 namespace instantsearch {
+
+typedef const TrieNode* TrieNodePointer;
 
 class Analyzer;
 struct AttributeSnippet{
@@ -136,6 +139,9 @@ public:
 		}
 	}
 private:
+	void findMatchingKeywordsFromPrefixNode(TrieNodePointer prefixNode, unsigned indx,
+			vector<CandidateKeywordInfo>& completeKeywordsId,
+			const unsigned *keywordIdsPtr, unsigned keywordsInRec);
 	ForwardIndex* fwdIndex;
 	boost::unordered_map<unsigned, vector<CandidateKeywordInfo>* > cache;
 };

@@ -580,6 +580,85 @@ TermOffsetAlgorithm::TermOffsetAlgorithm (const Indexer * indexer,
 	fwdIndex = rwIndexer->getForwardIndex();
 }
 
+
+/*
+ *  Function:  findMatchingKeywordsFromPrefixNode
+ *  This function uses the leftmost and rightmost descendant's ids of a node in the trie rooted at
+ *  prefixNode to probe the sorted keyword ids in the forward list. The algorithm traverse the trie
+ *  in a bread first search manner. Each Id is probed using a binary search.
+ */
+void TermOffsetAlgorithm::findMatchingKeywordsFromPrefixNode(TrieNodePointer prefixNode, unsigned indx,
+		vector<CandidateKeywordInfo>& completeKeywordsId,
+		const unsigned *keywordIdsPtr, unsigned keywordsInRec){
+
+	unsigned low = 0, high = keywordsInRec;
+
+	vector<vector<TrieNodePointer> > workingSets= vector<vector<TrieNodePointer> >(2);
+	unsigned currSetIdx = 0;
+	unsigned nextSetIdx =  1;
+
+	workingSets[currSetIdx].push_back(prefixNode);
+	while(workingSets[currSetIdx].size()) {
+		vector<TrieNodePointer>& currentSet = workingSets[currSetIdx];
+		vector<TrieNodePointer>& nextSet = workingSets[nextSetIdx];
+		unsigned lowerOffset = 0, higherOffset = 0;
+		for(unsigned i = 0; i < currentSet.size(); ++i) {
+			TrieNodePointer currNode = currentSet[i];
+			// Check leftmost descendant first.
+			const unsigned * iter = std::lower_bound(keywordIdsPtr + low , keywordIdsPtr + high, currNode->leftMostDescendant->id);
+
+			// if below criteria is met then neither current node's children nor its sibling will
+			// be in the keyword list. So break from here.
+			if (iter >= keywordIdsPtr + high){
+				break;
+			}
+			lowerOffset = std::distance(keywordIdsPtr, iter);
+
+			if (*iter == currNode->leftMostDescendant->id) {
+				completeKeywordsId.push_back(CandidateKeywordInfo(indx, lowerOffset));
+				lowerOffset++;
+			}
+
+			// only move the lower bound for the left most node in the working set
+			if ( i == 0)
+				low = lowerOffset;
+
+			if (lowerOffset >= high)
+				break;
+
+			iter = std::lower_bound(keywordIdsPtr + lowerOffset , keywordIdsPtr + high, currNode->rightMostDescendant->id);
+			higherOffset = std::distance(keywordIdsPtr, iter);
+
+			// If the below condition is not met then the current sub-trie node cannot have any matching
+			// keywords. Just skip the sub-trie.
+			if (higherOffset > lowerOffset)
+			{
+				// store the children to next working set.
+				for (unsigned j = 0; j < currNode->getChildrenCount(); ++j){
+					nextSet.push_back(currNode->getChild(j));
+				}
+			}
+
+			// If all the keywords are less than the rightmost descendant node then do not go further
+			// on current working list. Skip the siblings and their children.
+			if (higherOffset >= high)
+				break;
+
+			// shrink high end mark for the right most node.
+			if (i == currentSet.size() - 1)
+				high = higherOffset;
+
+			if (*iter == currNode->rightMostDescendant->id) {
+				completeKeywordsId.push_back(CandidateKeywordInfo(indx, higherOffset));
+			}
+		}
+		if (low >= high)
+			return;
+		currentSet.clear();
+		std::swap(nextSetIdx, currSetIdx);
+	}
+}
+
 void TermOffsetAlgorithm::getSnippet(const QueryResults* qr, unsigned recidx, unsigned attributeId,
 		const string& dataIn, vector<string>& snippets, bool isMultiValued,
 		vector<keywordHighlightInfo>& keywordStrToHighlight) {
@@ -613,21 +692,22 @@ void TermOffsetAlgorithm::getSnippet(const QueryResults* qr, unsigned recidx, un
 	 */
 	if (iter == cache.end()) {
 		candidateKeywordsId = new vector<CandidateKeywordInfo>;
-		candidateKeywordsId->reserve(100);
-		vector<vector<unsigned> * >& prefixToComplete =
-				qr->impl->sortedFinalResults[recidx]->prefixToCompleteMap;
-		for(unsigned indx = 0; indx < prefixToComplete.size(); ++indx) {
-			unsigned i = 0, j = 0;
-			vector<unsigned>& keywordIds = *(prefixToComplete[indx]);
-			while(i < keywordIds.size() && j < keywordsInRec) {
-				if (keywordIds[i] > keywordIdsPtr[j])
-					++j;
-				else if (keywordIds[i] < keywordIdsPtr[j])
-					++i;
-				else {
-					candidateKeywordsId->push_back(CandidateKeywordInfo(indx, j));
-					++i; ++j;
+		candidateKeywordsId->reserve(1000);
+		vector< TrieNodePointer > & prefixNodes = qr->impl->sortedFinalResults[recidx]->matchingKeywordTrieNodes;
+		for(unsigned indx = 0; indx < prefixNodes.size(); ++indx) {
+			if (qr->impl->sortedFinalResults[recidx]->termTypes.at(indx) != TERM_TYPE_PREFIX &&
+			    qr->impl->sortedFinalResults[recidx]->matchingKeywordTrieNodes[indx]->isTerminalNode()) {
+				unsigned id = qr->impl->sortedFinalResults[recidx]->matchingKeywordTrieNodes[indx]->id;
+				const unsigned * iter = lower_bound(keywordIdsPtr, keywordIdsPtr + keywordsInRec - 1, id);
+				unsigned matchOffset = std::distance(keywordIdsPtr, iter);
+				if (matchOffset < keywordsInRec) {
+					candidateKeywordsId->push_back(CandidateKeywordInfo(indx, matchOffset));
 				}
+				else{
+					ASSERT(true);
+				}
+			} else {
+				findMatchingKeywordsFromPrefixNode(prefixNodes[indx], indx, *candidateKeywordsId, keywordIdsPtr, keywordsInRec);
 			}
 		}
 		cache.insert(make_pair(recidx, candidateKeywordsId));
@@ -781,9 +861,6 @@ void TermOffsetAlgorithm::getSnippet(const QueryResults* qr, unsigned recidx, un
 			} else {
 				genDefaultSnippet(attrPartVal, snippets, false);
 			}
-			string snippet;
-			charTypeVectorToUtf8String(ctsnippet, snippet);
-			snippets.push_back(snippet);
 		}
 	}else {
 		vector<CharType> ctv;

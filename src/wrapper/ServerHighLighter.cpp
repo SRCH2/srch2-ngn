@@ -87,32 +87,6 @@ void ServerHighLighter::genSnippetsForSingleRecord(const QueryResults *qr, unsig
 		unsigned recordId = qr->getInternalRecordId(recIdx);
 
 		bool termOffsetInfoPresent = isEnabledCharPositionIndex(server->indexer->getSchema()->getPositionIndexType());
-		if (termOffsetInfoPresent) {
-			vector<string>& matchingKeys =  qr->impl->sortedFinalResults[recIdx]->matchingKeywords;
-			for (unsigned i =0 ; i < matchingKeys.size(); ++i) {
-				string& str = matchingKeys[i];
-				vector<unsigned> *vPtr;
-				std::map<string, vector<unsigned> *>::iterator iter =
-						this->prefixToCompleteStore.find(str);
-				if (iter != this->prefixToCompleteStore.end()) {
-					vPtr = iter->second;
-				} else {
-					vPtr = new vector<unsigned>();
-					this->prefixToCompleteStore.insert(make_pair(str, vPtr));
-					if (qr->impl->sortedFinalResults[recIdx]->termTypes.at(i) != TERM_TYPE_PREFIX &&
-							qr->impl->sortedFinalResults[recIdx]->matchingKeywordTrieNodes[i]->isTerminalNode()) {
-						vPtr->push_back(qr->impl->sortedFinalResults[recIdx]->matchingKeywordTrieNodes[i]->id);
-					} else {
-						// arbitrary reserving space for 4k elements
-						// ToDo: reserve based on distance between leftmost and rightmost child
-						vPtr->reserve(4096);
-						findChildNodesForPrefixNode(qr->impl->sortedFinalResults[recIdx]->matchingKeywordTrieNodes[i], *vPtr);
-					}
-				}
-				qr->impl->sortedFinalResults[recIdx]->prefixToCompleteMap.push_back(vPtr);
-			}
-		}
-
 		vector<keywordHighlightInfo> keywordStrToHighlight;
 		buildKeywordHighlightInfo(qr, recIdx, keywordStrToHighlight);
 
