@@ -51,10 +51,9 @@ bool UnionLowestLevelSimpleScanOperator::open(QueryEvaluatorInternal * queryEval
             // there are two distances between them. One is their real edit distance between "game" and "garden",
             // which is 3.  The other one is the PAN's internal distance as a prefix, which is 2,
             // corresponding to the distance between "game" and "garde" where the last two matched characters
-            // We use the second distance, called "panDistance", when we traverse the descendants to populate the
-            // term virtual list (TVL).  However, if this node is a terminal node, we use the first distance
-            // called "editDistance".  Here we implement this logic by passing both distances and a "usingEditDistance"
-            // flag.
+            // We need both distances in the function call depthInitializeSimpleScanOperator() in order to compute the real edit
+            // distance of a descendant of the current trie node. More details of the approach
+            // http://www.ics.uci.edu/~chenli/pub/2011-vldbj-fuzzy-search.pdf Section 4.3.1.
             TrieNodePointer trieNode;
             unsigned editDistance;
             iter.getItem(trieNode, editDistance);
