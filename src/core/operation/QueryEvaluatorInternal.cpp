@@ -151,12 +151,6 @@ void QueryEvaluatorInternal::findKMostPopularSuggestionsSorted(Term *term ,
     // now sort the suggestions
     std::sort(suggestionPairs.begin() , suggestionPairs.end() , suggestionComparator);
 }
-/*
- * Returns the estimated number of results
- */
-unsigned QueryEvaluatorInternal::estimateNumberOfResults(const LogicalPlan * logicalPlan){
-	return 0; // TODO
-}
 
 /**
  * If the search type is set to TopK in LogicalPlan, this function
@@ -257,7 +251,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 
 
 	unsigned numberOfIterations ;
-	if(logicalPlan->getQueryType() == SearchTypeTopKQuery){
+	if(logicalPlan->getQueryType() == SearchTypeTopKQuery ){
 		numberOfIterations = logicalPlan->offset + logicalPlan->numberOfResultsToRetrieve;
 	}else{
 		numberOfIterations = -1; // to set it to a very big number
@@ -272,7 +266,8 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		}
 
 		if(queryResults->impl->sortedFinalResults.size() >= numberOfIterations){
-			continue; // because for some operators like facet, it needs us to call getNext until the end
+			break; // although some operators like facet need us to call getNext until the end
+			        // we shouldn't continue because if the user want everything, he uses searchType=getAll
 		}
 
 		QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
@@ -313,6 +308,8 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		delete facetOperatorPtr;
 	}
 
+	// set estimated number of results
+	queryResults->impl->estimatedNumberOfResults = logicalPlan->getTree()->stats->getEstimatedNumberOfResults();
 
 	// save in cache
 	boost::shared_ptr<QueryResultsCacheEntry> cacheObject ;

@@ -47,12 +47,19 @@ bool UnionLowestLevelSimpleScanOperator::open(QueryEvaluatorInternal * queryEval
         }
 	}else{ // complete term
         for (ActiveNodeSetIterator iter(activeNodeSet.get(), term->getThreshold()); !iter.isDone(); iter.next()) {
+            // For a pivotal active node (PAN) (e.g., "game") and a query term (e.g., "garden"),
+            // there are two distances between them. One is their real edit distance between "game" and "garden",
+            // which is 3.  The other one is the PAN's internal distance as a prefix, which is 2,
+            // corresponding to the distance between "game" and "garde" where the last two matched characters
+            // We need both distances in the function call depthInitializeSimpleScanOperator() in order to compute the real edit
+            // distance of a descendant of the current trie node. More details of the approach
+            // http://www.ics.uci.edu/~chenli/pub/2011-vldbj-fuzzy-search.pdf Section 4.3.1.
             TrieNodePointer trieNode;
-            unsigned distance;
-            iter.getItem(trieNode, distance);
-            distance = activeNodeSet->getEditdistanceofPrefix(trieNode);
-            depthInitializeSimpleScanOperator(trieNode, trieNode, distance, term->getThreshold());
-        }
+            unsigned editDistance;
+            iter.getItem(trieNode, editDistance);
+            unsigned panDistance = activeNodeSet->getEditdistanceofPrefix(trieNode);
+            depthInitializeSimpleScanOperator(trieNode, trieNode, editDistance, panDistance, term->getThreshold());
+		}
 	}
 
 	// check cache
@@ -210,7 +217,7 @@ bool UnionLowestLevelSimpleScanOperator::verifyByRandomAccess(PhysicalPlanRandom
  * So if the term type is prefix, and the match is exact, still we can have multiple leaf nodes.
  */
 void UnionLowestLevelSimpleScanOperator::depthInitializeSimpleScanOperator(
-		const TrieNode* trieNode, const TrieNode* prefixNode, unsigned distance, unsigned bound){
+		const TrieNode* trieNode, const TrieNode* prefixNode, unsigned editDistance, unsigned panDistance,  unsigned bound){
     if (trieNode->isTerminalNode()){
         // get inverted list pointer and save it
         shared_ptr<vectorview<unsigned> > invertedListReadView;
@@ -220,13 +227,13 @@ void UnionLowestLevelSimpleScanOperator::depthInitializeSimpleScanOperator(
         this->invertedLists.push_back(invertedListReadView.get());
         this->invertedListPrefixes.push_back(prefixNode);
         this->invertedListLeafNodes.push_back(trieNode);
-        this->invertedListDistances.push_back(distance);
+        this->invertedListDistances.push_back(editDistance > panDistance ? editDistance : panDistance);
         this->invertedListIDs.push_back(trieNode->getInvertedListOffset() );
     }
-    if (distance < bound) {
+    if (panDistance < bound) {
         for (unsigned int childIterator = 0; childIterator < trieNode->getChildrenCount(); childIterator++) {
             const TrieNode *child = trieNode->getChild(childIterator);
-            depthInitializeSimpleScanOperator(child, trieNode, distance+1, bound);
+            depthInitializeSimpleScanOperator(child, trieNode, editDistance, panDistance + 1, bound);
         }
     }
 }

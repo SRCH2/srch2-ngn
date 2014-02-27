@@ -32,3 +32,5 @@
 * Improved query performance
 
 * Implemented incremental caching for instant search.
+
+* Support for operations on different ports.

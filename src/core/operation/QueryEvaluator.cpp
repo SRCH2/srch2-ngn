@@ -47,13 +47,6 @@ int QueryEvaluator::suggest(const string & keyword, float fuzzyMatchPenalty , co
 	return this->impl->suggest(keyword , fuzzyMatchPenalty , numberOfSuggestionsToReturn, suggestions);
 }
 
-/*
- * Returns the estimated number of results
- */
-unsigned QueryEvaluator::estimateNumberOfResults(const LogicalPlan * logicalPlan){
-	return this->impl->estimateNumberOfResults(logicalPlan);
-}
-
 /**
  * If the search type is set to TopK in LogicalPlan, this function
  * finds the next topK answers starting from
