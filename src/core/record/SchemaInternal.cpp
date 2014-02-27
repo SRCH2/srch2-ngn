@@ -257,9 +257,9 @@ unsigned SchemaInternal::getNumberOfRefiningAttributes() const {
     return this->refiningAttributeNameToId.size();
 }
 
-bool SchemaInternal::isHighlightEnabled(unsigned id) const {
-	if (id < this->searchableAttributeHighlightEnabled.size()) {
-		return this->searchableAttributeHighlightEnabled[id];
+bool SchemaInternal::isHighlightEnabled(unsigned attributeId) const {
+	if (attributeId < this->searchableAttributeHighlightEnabled.size()) {
+		return this->searchableAttributeHighlightEnabled[attributeId];
 	} else {
 		return false;
 	}

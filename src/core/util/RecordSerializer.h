@@ -165,8 +165,7 @@ RecordSerializer::getSearchableOffset(const unsigned searchableId) {
 inline offset_type
 RecordSerializer::getSearchableOffset(const std::string &searchableAttrName) {
   unsigned searchableId = schema.getSearchableAttributeId(searchableAttrName);
-  ASSERT(0 <= searchableId && searchableId < offsets.first.size());
-  return offsets.first.at(searchableId);
+  return getSearchableOffset(searchableId);
 }
 
 inline

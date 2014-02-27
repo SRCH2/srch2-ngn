@@ -596,18 +596,18 @@ public:
     void setHighlightAttributeIdsVector(vector<std::pair<unsigned, string> >& in) { highlightAttributes = in; }
 
     void getExactHighLightMarkerPre(string& markerStr) const{
-    	markerStr = ehighlightMarkerPre;
+    	markerStr = exactHighlightMarkerPre;
     }
 
     void getExactHighLightMarkerPost(string& markerStr) const{
-    	markerStr = ehighlightMarkerPost;
+    	markerStr = exactHighlightMarkerPost;
     }
     void getFuzzyHighLightMarkerPre(string& markerStr) const{
-    	markerStr = fhighlightMarkerPre;
+    	markerStr = fuzzyHighlightMarkerPre;
     }
 
     void getFuzzyHighLightMarkerPost(string& markerStr) const{
-    	markerStr = fhighlightMarkerPost;
+    	markerStr = fuzzyHighlightMarkerPost;
     }
     void getHighLightSnippetSize(unsigned& snippetSize) const{
     	snippetSize = highlightSnippetLen;
@@ -726,10 +726,10 @@ protected:
     unsigned updateHistogramEveryPMerges;
     unsigned updateHistogramEveryQWrites;
     vector<std::pair<unsigned, string> > highlightAttributes;
-    string ehighlightMarkerPre;
-    string ehighlightMarkerPost;
-    string fhighlightMarkerPre;
-    string fhighlightMarkerPost;
+    string exactHighlightMarkerPre;
+    string exactHighlightMarkerPost;
+    string fuzzyHighlightMarkerPre;
+    string fuzzyHighlightMarkerPost;
     unsigned highlightSnippetLen;
 
     // array of local HTTP ports (if any) index by port type enum

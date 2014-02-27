@@ -63,16 +63,16 @@ void buildKeywordHighlightInfo(const QueryResults * qr, unsigned recIdx,
 	vector<unsigned> editDistances;
 	qr->getEditDistances(recIdx, editDistances);
 	for (unsigned i = 0; i <  matchingKeywords.size(); ++i) {
-		keywordHighlightInfo keyInfo;
+		keywordHighlightInfo keywordInfo;
 		if(termTypes.at(i) == TERM_TYPE_COMPLETE)
-			keyInfo.flag = 1;
+			keywordInfo.flag = 1;
 		else if (termTypes.at(i) == TERM_TYPE_PHRASE)
-			keyInfo.flag = 2;
+			keywordInfo.flag = 2;
 		else
-			keyInfo.flag = 0;
-		utf8StringToCharTypeVector(matchingKeywords[i], keyInfo.key);
-		keyInfo.editDistance = editDistances.at(i);
-		keywordStrToHighlight.push_back(keyInfo);
+			keywordInfo.flag = 0;
+		utf8StringToCharTypeVector(matchingKeywords[i], keywordInfo.key);
+		keywordInfo.editDistance = editDistances.at(i);
+		keywordStrToHighlight.push_back(keywordInfo);
 	}
 }
 /*

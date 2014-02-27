@@ -230,13 +230,13 @@ PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionP
 		}
 		numberOfRecordsVisitedForOneResult++;
 		//3.
-        std::vector<float> runTimeTermRecordScores;
-        std::vector<float> staticTermRecordScores;
-        std::vector<TrieNodePointer> termRecordMatchingKeywords;
-        std::vector<unsigned> attributeBitmaps;
-        std::vector<unsigned> prefixEditDistances;
-        std::vector<unsigned> positionIndexOffsets;
-        std::vector<TermType> termTypes;
+		std::vector<float> runTimeTermRecordScores;
+		std::vector<float> staticTermRecordScores;
+		std::vector<TrieNodePointer> termRecordMatchingKeywords;
+		std::vector<unsigned> attributeBitmaps;
+		std::vector<unsigned> prefixEditDistances;
+		std::vector<unsigned> positionIndexOffsets;
+		std::vector<TermType> termTypes;
 
 		if(verifyRecordWithChildren(nextRecord, childToGetNextRecordFrom,  runTimeTermRecordScores, staticTermRecordScores,
 				termRecordMatchingKeywords, attributeBitmaps, prefixEditDistances , positionIndexOffsets, termTypes, params ) == false){

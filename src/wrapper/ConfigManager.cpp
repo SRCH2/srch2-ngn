@@ -642,10 +642,10 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
         }
     }
 
-    coreInfo->fhighlightMarkerPre = "<b>";
-    coreInfo->fhighlightMarkerPost = "</b>";
-    coreInfo->ehighlightMarkerPre = "<b>";
-    coreInfo->ehighlightMarkerPost = "</b>";
+    coreInfo->fuzzyHighlightMarkerPre = "<b>";
+    coreInfo->fuzzyHighlightMarkerPost = "</b>";
+    coreInfo->exactHighlightMarkerPre = "<b>";
+    coreInfo->exactHighlightMarkerPost = "</b>";
     coreInfo->highlightSnippetLen = 150;
 
     childNode = queryNode.child(highLighterString).child(snippetSize);
@@ -657,7 +657,7 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
     	string marker = childNode.attribute("value").value();
     	boost::algorithm::trim(marker);
     	if (marker.length() > 0){
-    		coreInfo->ehighlightMarkerPre = marker;
+    		coreInfo->exactHighlightMarkerPre = marker;
     	} else {
     		parseError << "The highlighter pre marker is an empty string. Using the default marker";
     		return;
@@ -668,7 +668,7 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
     	string marker = childNode.attribute("value").value();
     	boost::algorithm::trim(marker);
     	if (marker.length() > 0){
-    		coreInfo->ehighlightMarkerPost = marker;
+    		coreInfo->exactHighlightMarkerPost = marker;
     	} else {
     		parseError << "The highlighter post marker is an empty string. Using the default marker";
     		return;
@@ -679,7 +679,7 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
     	string marker = childNode.attribute("value").value();
     	boost::algorithm::trim(marker);
     	if (marker.length() > 0){
-    		coreInfo->fhighlightMarkerPre = marker;
+    		coreInfo->fuzzyHighlightMarkerPre = marker;
     	} else {
     		parseError << "The highlighter pre marker is an empty string. Using the default marker";
     		return;
@@ -690,7 +690,7 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
     	string marker = childNode.attribute("value").value();
     	boost::algorithm::trim(marker);
     	if (marker.length() > 0){
-    		coreInfo->fhighlightMarkerPost = marker;
+    		coreInfo->fuzzyHighlightMarkerPost = marker;
     	} else {
     		parseError << "The highlighter post marker is an empty string. Using the default marker";
     		return;

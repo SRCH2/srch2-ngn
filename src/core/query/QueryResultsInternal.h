@@ -58,9 +58,7 @@ public:
     std::vector<unsigned> attributeBitmaps;
     std::vector<unsigned> editDistances;
     std::vector<TermType> termTypes;
-    vector< TrieNodePointer > matchingKeywordTrieNodes;
-    //vector<keywordHighlightInfo> keywordStrToHighlight;
-    vector<vector<unsigned> *> prefixToCompleteMap;
+    std::vector< TrieNodePointer > matchingKeywordTrieNodes;
     // only the results of MapQuery have this
     double physicalDistance; // TODO check if there is a better way to structure the "location result"
     TypedValue getResultScore() const

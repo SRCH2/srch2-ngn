@@ -92,11 +92,6 @@ unsigned QueryResults::getInternalRecordId(unsigned position) const {
     return impl->sortedFinalResults.at(position)->internalRecordId;
 }
 
-std::string QueryResults::getInMemoryRecordString(unsigned position) const {
-    unsigned internalRecordId = this->getInternalRecordId(position);
-    return "";
-    //return impl->queryEvaluatorInternal->getInMemoryData(internalRecordId);
-}
 
 /**
  * Gets the score of the 'position'-th item in the QueryResults object.

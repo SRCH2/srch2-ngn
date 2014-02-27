@@ -153,7 +153,6 @@ public:
     		PrefixActiveNodeSet * activeNodes,
     		unsigned numberOfSuggestionsToReturn ,
     		std::vector<SuggestionInfo > & suggestionPairs) const;
-	std::map<const TrieNode*, vector<unsigned>, TrieNodePreOrderComparator> prefixToCompleteKeywords;
 private:
     const IndexData *indexData;
     IndexReaderWriter *indexer;
