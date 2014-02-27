@@ -591,7 +591,7 @@ public:
 
     unsigned int getNumberOfThreads() const { return configManager->getNumberOfThreads(); }
 
-<<<<<<< HEAD
+
     const vector<std::pair<unsigned, string> >& getHighlightAttributeIdsVector() const { return highlightAttributes; }
     void setHighlightAttributeIdsVector(vector<std::pair<unsigned, string> >& in) { highlightAttributes = in; }
 
@@ -612,10 +612,10 @@ public:
     void getHighLightSnippetSize(unsigned& snippetSize) const{
     	snippetSize = highlightSnippetLen;
     }
-=======
+
     unsigned short getPort(PortType_t portType) const;
     void setPort(PortType_t portType, unsigned short portNumber);
->>>>>>> master
+
 
 protected:
     string name; // of core
@@ -725,18 +725,16 @@ protected:
     // no config option for this yet
     unsigned updateHistogramEveryPMerges;
     unsigned updateHistogramEveryQWrites;
-<<<<<<< HEAD
     vector<std::pair<unsigned, string> > highlightAttributes;
     string ehighlightMarkerPre;
     string ehighlightMarkerPost;
     string fhighlightMarkerPre;
     string fhighlightMarkerPost;
     unsigned highlightSnippetLen;
-=======
 
     // array of local HTTP ports (if any) index by port type enum
     vector<unsigned short> ports;
->>>>>>> master
+
 };
 
 }
