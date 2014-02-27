@@ -69,6 +69,10 @@ if [ ! -x "$SRCH2_ENGINE" ]; then
     exit 1
 fi
 
+# Turn off Python stdout buffering so we don't lose output messages
+PYTHONUNBUFFERED=True
+export PYTHONUNBUFFERED=Tru
+
 function printTestBanner {
     testName="$1"
     totalLength=79 # width to make banner
@@ -316,12 +320,12 @@ printTestBanner "$test_id"
 python ./fuzzy_a1_swap/fuzzy_A1_swap.py $SRCH2_ENGINE ./fuzzy_a1_swap/queriesAndResults.txt >> system_test.log 2>&1
 
 if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "FAILED: $test_id"
+    echo "FAILED: $test_id" >> ${output}
     if [ $force -eq 0 ]; then
 	exit 255
     fi
 else
-    echo "-- PASSED: $test_id"
+    echo "-- PASSED: $test_id" >> ${output}
 fi
 rm -rf data/ *.idx
 
@@ -574,8 +578,7 @@ rm -rf data/ *.idx
 
 test_id="reset logger"
 printTestBanner "$test_id"
-#python ./reset_logger/test_reset_logger.py ./reset_logger/srch2-search-server | eval "${html_escape_command}" >> system_test.log 2>&1
-python ./reset_logger/test_reset_logger.py $SRCH2_ENGINE >> system_test.log 2>&1
+python ./reset_logger/test_reset_logger.py $SRCH2_ENGINE | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ ${PIPESTATUS[0]} -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
