@@ -352,9 +352,9 @@ private:
 
     /*
      * The format of data in this array is :
-     * ------------------------------------------------------------------------------------------------------------------
-     * | keywordIDs | keywordRecordStaticScores | nonSearchableAttributeValues | keywordAttributeBitMap | positionIndex |
-     * ------------------------------------------------------------------------------------------------------------------
+      * ---------------------------------------------------------------------------------------------------------------------------------
+     * | keywordIDs | keywordRecordStaticScores | nonSearchableAttributeValues | keywordAttributeBitMap | positionIndex |  offsetIndex |
+     * ---------------------------------------------------------------------------------------------------------------------------------
      */
     Byte * data;
 
@@ -455,9 +455,9 @@ private:
     inline uint8_t * getOffsetIndexPointer() const{
     	/*
     	 * The format of data in this array is :
-    	 * ------------------------------------------------------------------------------------------------------------------
-    	 * | keywordIDs | keywordRecordStaticScores | nonSearchableAttributeValues | keywordAttributeBitMap | positionIndex |
-    	 * ------------------------------------------------------------------------------------------------------------------
+    	 * ---------------------------------------------------------------------------------------------------------------------------------
+    	 * | keywordIDs | keywordRecordStaticScores | nonSearchableAttributeValues | keywordAttributeBitMap | positionIndex |  offsetIndex |
+    	 * ---------------------------------------------------------------------------------------------------------------------------------
     	 */
     	return getPositionIndexPointer() + positionIndexSize;
     }

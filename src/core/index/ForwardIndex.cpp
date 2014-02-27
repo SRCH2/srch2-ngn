@@ -396,7 +396,7 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     		convertToVarLengthArray(positionListVector, tempPositionIndexBuffer);
     		convertToVarLengthArray(offsetVector, tempOffsetBuffer);
     		positionListVector.clear();
-			offsetVector.clear();
+    		offsetVector.clear();
 
     	}
     }
@@ -777,11 +777,8 @@ float ForwardList::computeFieldBoostSummation(const Schema *schema,
 }
 
 unsigned ForwardList::getNumberOfBytes() const {
-    unsigned numberOfBytes = sizeof(ForwardList) + this->externalRecordId.size()
-            + this->inMemoryDataLen
-            + 2 * this->getNumberOfKeywords() * sizeof(unsigned);
-    if (this->getKeywordAttributeBitmaps() != NULL)
-        numberOfBytes += this->getNumberOfKeywords() * sizeof(unsigned);
+    unsigned numberOfBytes = sizeof(ForwardList)
+            + this->inMemoryDataLen + this->dataSize;
     return numberOfBytes;
 }
 
