@@ -36,12 +36,22 @@ struct AttributeHighlights {
 	vector<char *> snippets;
 };
 
+enum KeywordHighlightInfoFlag{
+	HIGHLIGHT_KEYWORD_IS_PERFIX,
+	HIGHLIGHT_KEYWORD_IS_COMPLETE,
+	// keyword is mentioned only within a phrase in a query.
+	HIGHLIGHT_KEYWORD_IS_PHRASE,
+	// keyword is both in phrase and without phrase in a query.
+	HIGHLIGHT_KEYWORD_IS_HYBRID,
+	// the phrase term is verified from record positions that it forms a phrase
+	HIGHLIGHT_KEYWORD_IS_VERIFIED_PHRASE
+};
 struct keywordHighlightInfo{
-	uint8_t flag;  // prefix = 0, complete = 1, unverified phraseOnly = 2, Hybrid = 3
+	KeywordHighlightInfoFlag flag;  // prefix = 0, complete = 1, unverified phraseOnly = 2, Hybrid = 3
 	vector<CharType> key;
 	unsigned editDistance;
 	keywordHighlightInfo(){
-		flag = 0;
+		flag = HIGHLIGHT_KEYWORD_IS_PERFIX;
 	}
 };
 
@@ -71,7 +81,7 @@ const unsigned MIN_SNIPPET_SIZE = 100;
 class HighlightAlgorithm {
 public:
 	struct matchedTermInfo{
-			uint8_t flag;
+			KeywordHighlightInfoFlag flag;
 			unsigned id;
 			unsigned offset;
 			unsigned len;

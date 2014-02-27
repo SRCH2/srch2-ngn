@@ -63,16 +63,16 @@ void buildKeywordHighlightInfo(const QueryResults * qr, unsigned recIdx,
 	vector<unsigned> editDistances;
 	qr->getEditDistances(recIdx, editDistances);
 	for (unsigned i = 0; i <  matchingKeywords.size(); ++i) {
-		keywordHighlightInfo keyInfo;
+		keywordHighlightInfo keywordInfo;
 		if(termTypes.at(i) == TERM_TYPE_COMPLETE)
-			keyInfo.flag = 1;
+			keywordInfo.flag = HIGHLIGHT_KEYWORD_IS_COMPLETE;
 		else if (termTypes.at(i) == TERM_TYPE_PHRASE)
-			keyInfo.flag = 2;
+			keywordInfo.flag = HIGHLIGHT_KEYWORD_IS_PHRASE;
 		else
-			keyInfo.flag = 0;
-		utf8StringToCharTypeVector(matchingKeywords[i], keyInfo.key);
-		keyInfo.editDistance = editDistances.at(i);
-		keywordStrToHighlight.push_back(keyInfo);
+			keywordInfo.flag = HIGHLIGHT_KEYWORD_IS_PERFIX;
+		utf8StringToCharTypeVector(matchingKeywords[i], keywordInfo.key);
+		keywordInfo.editDistance = editDistances.at(i);
+		keywordStrToHighlight.push_back(keywordInfo);
 	}
 }
 /*
@@ -86,7 +86,6 @@ void ServerHighLighter::genSnippetsForSingleRecord(const QueryResults *qr, unsig
 		 */
 		unsigned recordId = qr->getInternalRecordId(recIdx);
 
-		bool termOffsetInfoPresent = isEnabledCharPositionIndex(server->indexer->getSchema()->getPositionIndexType());
 		vector<keywordHighlightInfo> keywordStrToHighlight;
 		buildKeywordHighlightInfo(qr, recIdx, keywordStrToHighlight);
 

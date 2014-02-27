@@ -108,6 +108,7 @@ void HTTPRequestHandler::cleanAndAppendToBuffer(const string& in, string& out) {
 	unsigned inLen = in.length();
 	unsigned inIdx = 0;
 	while (inIdx < inLen) {
+		// remove non printable characters
 		if (in[inIdx] < 32) {
 			++inIdx; continue;
 		}
@@ -183,6 +184,15 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
                     // The class CustomizableJsonWriter allows us to
                     // attach the data string to the JSON tree without parsing it.
                     root["results"][counter][internalRecordTags.first] = sbuffer;
+                } else if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SELECTED_ATTR){
+                	unsigned internalRecordId = queryResults->getInternalRecordId(i);
+                	string sbuffer;
+                	const vector<string> *attrToReturn = indexDataConfig->getAttributesToReturn();
+                	genRecordJsonString(indexer, internalRecordId, queryResults->getRecordId(i),
+                			sbuffer, attrToReturn);
+                	// The class CustomizableJsonWriter allows us to
+                	// attach the data string to the JSON tree without parsing it.
+                	root["results"][counter][internalRecordTags.first] = sbuffer;
                 }
                 ++counter;
             }
@@ -379,8 +389,7 @@ void HTTPRequestHandler::printOneResultRetrievedById(evhttp_request *req, const 
         const srch2is::Indexer *indexer,
         const string & message,
         const unsigned ts1,
-        struct timespec &tstart, struct timespec &tend,
-        const vector<RecordSnippet>& recordSnippets){
+        struct timespec &tstart, struct timespec &tend){
 
     Json::Value root;
     pair<string, string> internalRecordTags("srch2_internal_record_123456789", "record");
@@ -943,6 +952,8 @@ void HTTPRequestHandler::lookupCommand(evhttp_request *req,
     evhttp_clear_headers(&headers);
 }
 
+// This code is not used anywhere yet. The function converts %26 to '&' character
+// in the query so that the libevent can treat it as a header delimiter.
 void decodeAmpersand(const char *uri, unsigned len, string& decodeUri) {
 	char c;
 	decodeUri.reserve(len);
@@ -1100,8 +1111,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
                 finalResults ,
                 server->indexer ,
                 paramContainer.getMessageString() ,
-                ts1, tstart , tend,
-                highlightInfo);
+                ts1, tstart , tend);
         break;
     default:
         break;

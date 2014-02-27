@@ -68,8 +68,7 @@ class HTTPRequestHandler
 				const srch2is::Indexer *indexer,
 				const string & message,
 				const unsigned ts1,
-				struct timespec &tstart, struct timespec &tend,
-				const vector<RecordSnippet>& recordSnippets);
+				struct timespec &tstart, struct timespec &tend);
 
 		static void printSuggestions(evhttp_request *req, const evkeyvalq &headers,
 				const vector<string> & suggestions,

@@ -70,10 +70,10 @@ void HighlightAlgorithm::setupPhrasePositionList(vector<keywordHighlightInfo>& k
 			vector<CharType> temp;
 			utf8StringToCharTypeVector(iter->second.phraseKeyWords[i], temp);
 			for(unsigned k = 0; k < keywordStrToHighlight.size(); ++k) {
-				if (keywordStrToHighlight[k].flag != 0 &&
+				if (keywordStrToHighlight[k].flag != HIGHLIGHT_KEYWORD_IS_PERFIX &&
 						compareVectors(keywordStrToHighlight[k].key, temp)){
-					if (keywordStrToHighlight[k].flag == 1)
-						keywordStrToHighlight[k].flag = 3; // word present in both phrase and normal query
+					if (keywordStrToHighlight[k].flag == HIGHLIGHT_KEYWORD_IS_COMPLETE)
+						keywordStrToHighlight[k].flag = HIGHLIGHT_KEYWORD_IS_HYBRID; // word present in both phrase and normal query
 					PhraseTermInfo pti;
 					pti.recordPosition = new vector<unsigned>();  // to be filled later
 					pti.queryPosition = iter->second.phraseKeywordPositionIndex[i];
@@ -134,7 +134,7 @@ void HighlightAlgorithm::removeInvalidPositionInPlace(vector<matchedTermInfo>& h
 	unsigned writeIdx = 0;
 	unsigned currIdx = 0;
 	while (currIdx < highlightPositions.size()) {
-		if ( writeIdx == 0 || (highlightPositions[currIdx].flag != 2 &&
+		if ( writeIdx == 0 || (highlightPositions[currIdx].flag != HIGHLIGHT_KEYWORD_IS_PHRASE &&
 				highlightPositions[currIdx].offset != highlightPositions[writeIdx-1].offset)) {
 			if (currIdx - writeIdx > 0) {
 				highlightPositions[writeIdx] = highlightPositions[currIdx];
@@ -181,35 +181,38 @@ void AnalyzerBasedAlgorithm::getSnippet(const QueryResults* qr, unsigned recIdx,
 	this->analyzer->fillInCharacters(dataIn.c_str());
 	while (this->analyzer->processToken()) {
 		vector<CharType>& charVector = this->analyzer->getProcessedToken();
-		unsigned offset = this->analyzer->getProcessedTokenCharOffset();
+		unsigned charOffset = this->analyzer->getProcessedTokenCharOffset();
 		unsigned position = this->analyzer->getProcessedTokenPosition();
-		bool result = false;
+		bool matchFound = false;
 
 		if (mask == 0 && phrasesInfoList.size() == 0)  // for phrase we cannot assume much.
 			break;
 
 		for (unsigned i =0; i < keywordStrToHighlight.size(); ++i) {
 			switch (keywordStrToHighlight[i].flag) {
-			case 0:  // prefix
+			case HIGHLIGHT_KEYWORD_IS_PERFIX:  // prefix
 			{
-				result = isPrefix(keywordStrToHighlight[i].key, charVector);
+				matchFound = isPrefix(keywordStrToHighlight[i].key, charVector);
 				break;
 			}
-			case 1:
-			case 2:
-			case 3:
+			case HIGHLIGHT_KEYWORD_IS_COMPLETE:
+			case HIGHLIGHT_KEYWORD_IS_PHRASE:
+			// added just to ignore compiler warning. This flag is computed later.
+			case HIGHLIGHT_KEYWORD_IS_VERIFIED_PHRASE:
+			case HIGHLIGHT_KEYWORD_IS_HYBRID:
 			{
-				result = compareVectors(keywordStrToHighlight[i].key, charVector);
+				matchFound = compareVectors(keywordStrToHighlight[i].key, charVector);
 				break;
 			}
 			}
-			if (result) {
-				matchedTermInfo info = {keywordStrToHighlight[i].flag, i, offset,
+			if (matchFound) {
+				matchedTermInfo info = {keywordStrToHighlight[i].flag, i, charOffset,
 						keywordStrToHighlight[i].key.size(), 0};
 				if (keywordStrToHighlight[i].editDistance > 0)
 					info.tagIndex = 1;
 			 	highlightPositions.push_back(info);
-			 	if (keywordStrToHighlight[i].flag == 2 || keywordStrToHighlight[i].flag == 3) {
+			 	if (keywordStrToHighlight[i].flag == HIGHLIGHT_KEYWORD_IS_COMPLETE
+			 			|| keywordStrToHighlight[i].flag == HIGHLIGHT_KEYWORD_IS_HYBRID) {
 			 		/*
 			 		 *   Go over all phrases and add position info for the matched keyword
 			 		 */
@@ -262,7 +265,7 @@ void AnalyzerBasedAlgorithm::getSnippet(const QueryResults* qr, unsigned recIdx,
 				boost::unordered_map<unsigned, unsigned>::iterator iter =
 						positionToOffsetMap.find(currPhraseMatchedPosition[k]);
 				if (iter != positionToOffsetMap.end())
-					highlightPositions[iter->second].flag = 4;
+					highlightPositions[iter->second].flag = HIGHLIGHT_KEYWORD_IS_VERIFIED_PHRASE;
 			}
 		}
 	}
@@ -781,7 +784,7 @@ void TermOffsetAlgorithm::getSnippet(const QueryResults* qr, unsigned recidx, un
 				boost::unordered_map<unsigned, unsigned>::iterator iter =
 						positionToOffsetMap.find(currPhraseMatchedPosition[k]);
 				if (iter != positionToOffsetMap.end())
-					highlightPositions[iter->second].flag = 4;
+					highlightPositions[iter->second].flag = HIGHLIGHT_KEYWORD_IS_VERIFIED_PHRASE;
 			}
 		}
 	}

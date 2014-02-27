@@ -145,6 +145,7 @@ void Srch2Server::createHighlightAttributesVector(const srch2is::Schema * schema
 			schema->getSearchableAttribute().begin();
 	for ( ; iter != schema->getSearchableAttribute().end(); iter++)
 	{
+		// only searchable attributes are highlightable.
 		if (schema->isHighlightEnabled(iter->second))
 		{
 			highlightAttributes.push_back(make_pair(iter->second, iter->first));

@@ -277,7 +277,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		newRecord->getRecordMatchEditDistances(queryResult->editDistances);
 		//
 		queryResult->_score.setTypedValue(newRecord->getRecordRuntimeScore());
-		//vector< TrieNodePointer > matchingKeywordTrieNodes;
+
 		newRecord->getRecordMatchingPrefixes(queryResult->matchingKeywordTrieNodes);
 
 		newRecord->getTermTypes(queryResult->termTypes);

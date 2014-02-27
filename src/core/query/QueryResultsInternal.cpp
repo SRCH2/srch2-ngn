@@ -116,12 +116,6 @@ QueryResultsInternal::~QueryResultsInternal() {
 		delete this->stat;
     }
 
-//    std::map<string, vector<unsigned *> >::iterator iter =
-//    						prefixToCompleteStore.begin();
-//    while(iter != prefixToCompleteStore.end()) {
-//    	delete iter->second;
-//    	++iter;
-//	}
 }
 
 void QueryResultsInternal::setNextK(const unsigned k) {
