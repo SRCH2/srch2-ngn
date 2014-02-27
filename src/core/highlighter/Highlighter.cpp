@@ -181,7 +181,7 @@ void AnalyzerBasedAlgorithm::getSnippet(const QueryResults* qr, unsigned recIdx,
 	this->analyzer->fillInCharacters(dataIn.c_str());
 	while (this->analyzer->processToken()) {
 		vector<CharType>& charVector = this->analyzer->getProcessedToken();
-		unsigned offset = this->analyzer->getProcessedTokenOffset();
+		unsigned offset = this->analyzer->getProcessedTokenCharOffset();
 		unsigned position = this->analyzer->getProcessedTokenPosition();
 		bool result = false;
 
@@ -858,6 +858,9 @@ void TermOffsetAlgorithm::getSnippet(const QueryResults* qr, unsigned recidx, un
 					++phpIter;
 				}
 				_genSnippet(ctv, ctsnippet, partHighlightPositions.size() - 1, 0, partHighlightPositions);
+				string snippet;
+				charTypeVectorToUtf8String(ctsnippet, snippet);
+				snippets.push_back(snippet);
 			} else {
 				genDefaultSnippet(attrPartVal, snippets, false);
 			}

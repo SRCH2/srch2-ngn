@@ -38,7 +38,7 @@ class AnalyzerInternal;
 struct PositionalTerm {
 	string term;
 	unsigned position;
-	unsigned charPosition;
+	unsigned charOffset;
 };
 
 struct TokenAttributeHits {
@@ -59,7 +59,7 @@ struct TokenAttributeHits {
      *
      */
     vector<unsigned> attributeList;
-    vector<unsigned> offsetOfTermInAttribute;
+    vector<unsigned> charOffsetOfTermInAttribute;
 };
 
 
@@ -127,7 +127,7 @@ public:
 	void fillInCharacters(const char * data);
 	bool processToken();
 	std::vector<CharType> & getProcessedToken();
-	unsigned getProcessedTokenOffset();
+	unsigned getProcessedTokenCharOffset();
 	unsigned getProcessedTokenPosition();
 	/**
 	 * Destructor to free persistent resources used by the Analyzer.

@@ -365,7 +365,7 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     		for (unsigned j = 0; j < iterator->second.attributeList.size(); ++j) {
     			unsigned attributeId = (iterator->second.attributeList[j] >> 24) - 1; // 0th based
     			unsigned position =  (iterator->second.attributeList[j] & 0xFFFFFF);  // Non Zero
-    			unsigned offset =  (iterator->second.offsetOfTermInAttribute[j]);  // Non Zero
+    			unsigned offset =  (iterator->second.charOffsetOfTermInAttribute[j]);  // Non Zero
 
     			// if it is a first element or current attribute is same as
     			// previous attribute id. then continue to push the position

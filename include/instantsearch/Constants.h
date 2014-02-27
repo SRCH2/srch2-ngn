@@ -38,6 +38,8 @@ const std::string MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER = ",";
  */
 const unsigned MULTI_VALUED_ATTRIBUTE_POSITION_BUMP = 100000;
 
+static const char * MULTI_VAL_ATTR_DELIMITER = " $$ ";
+const unsigned MULTI_VAL_ATTR_DELIMITER_LEN = 4;
 /// Analyzer related constants
 typedef enum {
     // there is no numbering for this enum. By default the numbers start from 0
@@ -165,7 +167,7 @@ typedef enum
 
 typedef enum
 {
-	POSITION_INDEX_FULL,
+    POSITION_INDEX_FULL,
     POSITION_INDEX_WORD , // the word offset of keyword in the record
     POSITION_INDEX_CHAR , // the character offset of keyword in the record
     POSITION_INDEX_FIELDBIT ,// keeps the attribute in which a keyword appears in
@@ -209,7 +211,7 @@ enum DateTimeType{
 /// response type
 typedef enum
 {
-	RESPONSE_WITH_STORED_ATTR,
+    RESPONSE_WITH_STORED_ATTR,
     RESPONSE_WITH_NO_STORED_ATTR,
     RESPONSE_WITH_SELECTED_ATTR
 } ResponseType;

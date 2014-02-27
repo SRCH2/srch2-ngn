@@ -137,8 +137,8 @@ bool Analyzer::processToken() {
 std::vector<CharType> & Analyzer::getProcessedToken() {
 	return this->analyzerInternal->getTokenStream()->getProcessedToken();
 }
-unsigned Analyzer::getProcessedTokenOffset() {
-	return this->analyzerInternal->getTokenStream()->getProcessedTokenOffset();
+unsigned Analyzer::getProcessedTokenCharOffset() {
+	return this->analyzerInternal->getTokenStream()->getProcessedTokenCharOffset();
 }
 unsigned Analyzer::getProcessedTokenPosition() {
 	return this->analyzerInternal->getTokenStream()->getProcessedTokenPosition();

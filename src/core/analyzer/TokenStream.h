@@ -49,7 +49,7 @@ public:
             return tokenStreamContainer->currentTokenPosition;
     }
 
-    unsigned getProcessedTokenOffset() {
+    unsigned getProcessedTokenCharOffset() {
     	return tokenStreamContainer->currentTokenOffset;
     }
 
