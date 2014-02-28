@@ -121,6 +121,7 @@ if __name__ == '__main__':
     print '----------------------------------------------------'
     testRunId = 1
     exitCode |= runTest(queriesAndResultsPath, binary_path, './highlight/highlighter_with_char_offset.xml')
+    time.sleep(3);
     print '----------------------------------------------------'
     print 'case 3: snippet generation with offset information but different highlighter tags'
     print '----------------------------------------------------'
