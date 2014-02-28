@@ -47,7 +47,7 @@ bool isWhiteSpace(CharType c) {
 
 HighlightAlgorithm::HighlightAlgorithm(std::map<string, PhraseInfo>& phrasesInfoMap,
 									const HighlightConfig& hconf) {
-	phrasesInfoMap.swap(phrasesInfoMap);
+	this->phrasesInfoMap.swap(phrasesInfoMap);
 	this->snippetSize = (hconf.snippetSize > MIN_SNIPPET_SIZE) ? hconf.snippetSize : MIN_SNIPPET_SIZE;
 	this->highlightMarkers = hconf.highlightMarkers;
 }
@@ -134,8 +134,8 @@ void HighlightAlgorithm::removeInvalidPositionInPlace(vector<matchedTermInfo>& h
 	unsigned writeIdx = 0;
 	unsigned currIdx = 0;
 	while (currIdx < highlightPositions.size()) {
-		if ( writeIdx == 0 || (highlightPositions[currIdx].flag != HIGHLIGHT_KEYWORD_IS_PHRASE &&
-				highlightPositions[currIdx].offset != highlightPositions[writeIdx-1].offset)) {
+		if (highlightPositions[currIdx].flag != HIGHLIGHT_KEYWORD_IS_PHRASE &&
+			(writeIdx == 0 || highlightPositions[currIdx].offset != highlightPositions[writeIdx-1].offset)) {
 			if (currIdx - writeIdx > 0) {
 				highlightPositions[writeIdx] = highlightPositions[currIdx];
 			}
@@ -159,11 +159,16 @@ AnalyzerBasedAlgorithm::AnalyzerBasedAlgorithm(Analyzer *analyzer,
 	this->analyzer = analyzer;
 }
 
-void AnalyzerBasedAlgorithm::getSnippet(const QueryResults* qr, unsigned recIdx, unsigned /*not used*/, const string& dataIn,
+void AnalyzerBasedAlgorithm::getSnippet(const QueryResults* /*not used*/, unsigned /* not used*/,
+		unsigned /*not used*/, const string& dataIn,
 		vector<string>& snippets, bool isMultiValued, vector<keywordHighlightInfo>& keywordStrToHighlight) {
 
 	if (dataIn.length() == 0)
 		return;
+	// One of the constructors of this class allows to pass phraseInfoList directly (used in ctest).
+	// If the phraseInfoList is already present then do not re-calculate.
+	if(phrasesInfoList.size() == 0)
+		setupPhrasePositionList(keywordStrToHighlight);
 
 	vector<matchedTermInfo> highlightPositions;
 	set<unsigned> actualHighlightedSet;
@@ -211,7 +216,7 @@ void AnalyzerBasedAlgorithm::getSnippet(const QueryResults* qr, unsigned recIdx,
 				if (keywordStrToHighlight[i].editDistance > 0)
 					info.tagIndex = 1;
 			 	highlightPositions.push_back(info);
-			 	if (keywordStrToHighlight[i].flag == HIGHLIGHT_KEYWORD_IS_COMPLETE
+			 	if (keywordStrToHighlight[i].flag == HIGHLIGHT_KEYWORD_IS_PHRASE
 			 			|| keywordStrToHighlight[i].flag == HIGHLIGHT_KEYWORD_IS_HYBRID) {
 			 		/*
 			 		 *   Go over all phrases and add position info for the matched keyword
@@ -679,7 +684,7 @@ void TermOffsetAlgorithm::getSnippet(const QueryResults* qr, unsigned recidx, un
 		Logger::warn("Attribute info not found in forward List!!");
 		return;
 	}
-
+	setupPhrasePositionList(keywordStrToHighlight);
 	vector<matchedTermInfo> highlightPositions;
 	vector<CharType> ctsnippet;
 
