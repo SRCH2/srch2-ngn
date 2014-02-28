@@ -456,6 +456,11 @@ private:
     static const char* const fuzzyTagPost;
     static const char* const snippetSize;
 
+    static const char* const defaultFuzzyPreTag;
+    static const char* const defaultFuzzyPostTag;
+    static const char* const defaultExactPreTag;
+    static const char* const defaultExactPostTag;
+
     static const char* const searchPortString;
     static const char* const suggestPortString;
     static const char* const infoPortString;

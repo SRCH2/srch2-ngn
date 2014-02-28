@@ -591,11 +591,11 @@ TermOffsetAlgorithm::TermOffsetAlgorithm (const Indexer * indexer,
 
 /*
  *  Function:  findMatchingKeywordsFromPrefixNode
- *  This function uses the leftmost and rightmost descendant's ids of a node in the trie rooted at
- *  prefixNode to probe the sorted keyword ids in the forward list. The algorithm traverse the trie
- *  in a bread first search manner. Each Id is probed using a binary search.
+ *  This function uses the leftmost and rightmost descendants' ids of a node in the trie rooted at
+ *  prefixNode to probe the sorted keyword ids in the forward list. The algorithm traverses the trie
+ *  in a breadth first search manner. Each Id is probed using a binary search.
  */
-void TermOffsetAlgorithm::findMatchingKeywordsFromPrefixNode(TrieNodePointer prefixNode, unsigned indx,
+void TermOffsetAlgorithm::findMatchingKeywordsFromPrefixNode(TrieNodePointer prefixNode, unsigned prefixIndex,
 		vector<CandidateKeywordInfo>& completeKeywordsId,
 		const unsigned *keywordIdsPtr, unsigned keywordsInRec){
 
@@ -615,7 +615,7 @@ void TermOffsetAlgorithm::findMatchingKeywordsFromPrefixNode(TrieNodePointer pre
 			// Check leftmost descendant first.
 			const unsigned * iter = std::lower_bound(keywordIdsPtr + low , keywordIdsPtr + high, currNode->leftMostDescendant->id);
 
-			// if below criteria is met then neither current node's children nor its sibling will
+			// if below criterion is met then neither current node's children nor its sibling will
 			// be in the keyword list. So break from here.
 			if (iter >= keywordIdsPtr + high){
 				break;
@@ -623,7 +623,7 @@ void TermOffsetAlgorithm::findMatchingKeywordsFromPrefixNode(TrieNodePointer pre
 			lowerOffset = std::distance(keywordIdsPtr, iter);
 
 			if (*iter == currNode->leftMostDescendant->id) {
-				completeKeywordsId.push_back(CandidateKeywordInfo(indx, lowerOffset));
+				completeKeywordsId.push_back(CandidateKeywordInfo(prefixIndex, lowerOffset));
 				lowerOffset++;
 			}
 
@@ -639,8 +639,7 @@ void TermOffsetAlgorithm::findMatchingKeywordsFromPrefixNode(TrieNodePointer pre
 
 			// If the below condition is not met then the current sub-trie node cannot have any matching
 			// keywords. Just skip the sub-trie.
-			if (higherOffset > lowerOffset)
-			{
+			if (higherOffset > lowerOffset) {
 				// store the children to next working set.
 				for (unsigned j = 0; j < currNode->getChildrenCount(); ++j){
 					nextSet.push_back(currNode->getChild(j));
@@ -657,7 +656,7 @@ void TermOffsetAlgorithm::findMatchingKeywordsFromPrefixNode(TrieNodePointer pre
 				high = higherOffset;
 
 			if (*iter == currNode->rightMostDescendant->id) {
-				completeKeywordsId.push_back(CandidateKeywordInfo(indx, higherOffset));
+				completeKeywordsId.push_back(CandidateKeywordInfo(prefixIndex, higherOffset));
 			}
 		}
 		if (low >= high)

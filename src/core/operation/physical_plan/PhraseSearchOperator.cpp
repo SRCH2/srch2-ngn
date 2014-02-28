@@ -189,7 +189,7 @@ bool PhraseSearchOperator::matchPhrase(const ForwardList* forwardListPtr, const 
     	const vector<unsigned> & phraseOffsetRef = phraseInfo.phraseKeywordPositionIndex;
 
     	PhraseSearcher *phraseSearcher = new PhraseSearcher();
-    	// This vector stores all the valid matched positiona for a given phrase in the record.
+    	// This vector stores all the valid matched positions for a given phrase in the record.
     	vector< vector<unsigned> > matchedPositions;
     	//vector<unsigned> matchedPosition;
         unsigned slop = phraseInfo.proximitySlop;

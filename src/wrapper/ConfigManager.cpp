@@ -132,6 +132,11 @@ const char* const ConfigManager::fuzzyTagPre = "fuzzytagpre";
 const char* const ConfigManager::fuzzyTagPost = "fuzzytagpost";
 const char* const ConfigManager::snippetSize = "snippetsize";
 
+const char* const ConfigManager::defaultFuzzyPreTag = "<b>";
+const char* const ConfigManager::defaultFuzzyPostTag = "</b>";
+const char* const ConfigManager::defaultExactPreTag = "<b>";
+const char* const ConfigManager::defaultExactPostTag = "</b>";
+
 const char* const ConfigManager::searchPortString = "searchport";
 const char* const ConfigManager::suggestPortString = "suggestport";
 const char* const ConfigManager::infoPortString = "infoport";
@@ -642,10 +647,10 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
         }
     }
 
-    coreInfo->fuzzyHighlightMarkerPre = "<b>";
-    coreInfo->fuzzyHighlightMarkerPost = "</b>";
-    coreInfo->exactHighlightMarkerPre = "<b>";
-    coreInfo->exactHighlightMarkerPost = "</b>";
+    coreInfo->fuzzyHighlightMarkerPre = defaultFuzzyPreTag;
+    coreInfo->fuzzyHighlightMarkerPost = defaultFuzzyPostTag;
+    coreInfo->exactHighlightMarkerPre = defaultExactPreTag;
+    coreInfo->exactHighlightMarkerPost = defaultExactPostTag;
     coreInfo->highlightSnippetLen = 150;
 
     childNode = queryNode.child(highLighterString).child(snippetSize);
