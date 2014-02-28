@@ -36,22 +36,7 @@ void ServerHighLighter::generateSnippets(vector<RecordSnippet>& highlightInfo){
 		highlightInfo.push_back(recordSnippets);
 	}
 }
-void findChildNodesForPrefixNode(TrieNodePointer prefixNode, vector<unsigned>& completeKeywordsId);
-void findChildNodesForPrefixNode(TrieNodePointer prefixNode, vector<unsigned>& completeKeywordsId){
-	vector<TrieNodePointer> buffer;
-	buffer.reserve(1000);  // reserve ~4KB to avoid frequent resizing
-	TrieNodePointer currNode = prefixNode;
-	buffer.push_back(prefixNode);
-	while(buffer.size() > 0) {
-		TrieNodePointer currNode = buffer.back(); buffer.pop_back();
-		if (currNode->isTerminalNode()) {
-			completeKeywordsId.push_back(currNode->id);
-		}
-		for(signed i = currNode->getChildrenCount() - 1; i >= 0; --i) {
-			buffer.push_back(currNode->getChild(i));
-		}
-	}
-}
+
 void buildKeywordHighlightInfo(const QueryResults * qr, unsigned recIdx,
 		vector<keywordHighlightInfo>& keywordStrToHighlight);
 void buildKeywordHighlightInfo(const QueryResults * qr, unsigned recIdx,

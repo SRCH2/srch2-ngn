@@ -181,7 +181,8 @@ void AnalyzerBasedAlgorithm::getSnippet(const QueryResults* /*not used*/, unsign
 	 *   3. Compare each token with the candidate prefixes stored in keywordStrToHighlight vector.
 	 *   	The vector contains 4 kinds of terms :
 	 *   	prefix 0, Complete 1, Phrase 2, Hybrid (occurs in both phrase and regular query)  3
-	 *   4.
+	 *   4. Store the term char offset in a vector. If it is a phrase term then also store the term
+	 *      positions for phrase processing later.
 	 */
 	this->analyzer->fillInCharacters(dataIn.c_str());
 	while (this->analyzer->processToken()) {
@@ -234,9 +235,41 @@ void AnalyzerBasedAlgorithm::getSnippet(const QueryResults* /*not used*/, unsign
 		}
 	}
 
-	/*
-	 *   Now for the phrases, find the valid positions.
-	 */
+	validatePhrasePositions(highlightPositions);
+
+	// sweep out invalid positions
+	removeInvalidPositionInPlace(highlightPositions);
+
+	if (highlightPositions.size() == 0) {
+		genDefaultSnippet(dataIn, snippets, isMultiValued);
+		Logger::debug("could not generate a snippet because keywords could not be found in attribute.");
+		return;
+	}
+
+	buildSnippetUsingHighlightPositions(dataIn, highlightPositions, actualHighlightedSet,
+			ctsnippet, snippets, isMultiValued);
+
+}
+
+/*
+ *   The function first compute the valid phrase positions. Then it goes over the highlight positions
+ *   computed earlier without the phrase consideration, and mark the correct phrase positions of
+ *   the phrase terms only.
+ *
+ *   e.g  phrase "A B"
+ *   highlight positions (term, position, flag):[ (A, 13, 2) (A, 18, 2) (B, 19, 2) (D, 33, 1)]
+ *
+ *   flag meaning : (see enum KeywordHighlightInfoFlag in header file)
+ *   flag 1 --> exact term ( not in phrase)
+ *   flag 2 --> phrase term position ( not validated)
+ *   flag 4 --> phrase term position (validated)
+ *
+ *   validated positions: [ (A, 13, 2) (A, 18, 4) (B, 19, 4) (D, 33, 1)]
+ *
+ *   Now we know that the term A at position 13 does not make a valid phrase.
+ */
+void HighlightAlgorithm::validatePhrasePositions(vector<matchedTermInfo>& highlightPositions) {
+
 	PhraseSearcher phraseSearcher;
 	vector<vector<vector<unsigned> > > allPhrasesMatchedPositions;
 	for (unsigned j = 0; j < phrasesInfoList.size(); ++j) {
@@ -274,29 +307,28 @@ void AnalyzerBasedAlgorithm::getSnippet(const QueryResults* /*not used*/, unsign
 			}
 		}
 	}
-
-	// sweep out invalid positions
-	removeInvalidPositionInPlace(highlightPositions);
-
-	if (highlightPositions.size() == 0) {
-		genDefaultSnippet(dataIn, snippets, isMultiValued);
-		Logger::debug("could not generate a snippet because keywords could not be found in attribute.");
-		return;
-	}
+}
+/*
+ *  Now that the highlight positions are computed, start snippet generation. For multi-value attributes
+ *  break, generate snippet for each individual attributes.
+ */
+void HighlightAlgorithm::buildSnippetUsingHighlightPositions(const string& dataIn,
+		vector<matchedTermInfo>& highlightPositions, set<unsigned>& visitedKeyword,
+		vector<CharType>& ctsnippet, vector<string>& snippets, bool isMultiValued) {
 
 	unsigned snippetLowerEnd = 0, snippetUpperEnd = highlightPositions.size() - 1;
-	/* no phrase for highlighting */
 	if (phrasesInfoList.size() == 0 && !isMultiValued) {
 		unsigned j = snippetUpperEnd;
 		while(j > 0){
 			unsigned _id = highlightPositions[j].id;
-			actualHighlightedSet.erase(_id);
-			if (actualHighlightedSet.empty())
+			visitedKeyword.erase(_id);
+			if (visitedKeyword.empty())
 				break;
 			--j;
 		};
 		snippetLowerEnd = j;
 	}
+
 	if (isMultiValued) {
 			const char * attrStartPos = dataIn.c_str();
 			const char * lastPos = dataIn.c_str();
@@ -752,46 +784,8 @@ void TermOffsetAlgorithm::getSnippet(const QueryResults* qr, unsigned recidx, un
 		}
 	}
 
-	/*
-	 *   Now for the phrases, find the valid positions.
-	 */
-	PhraseSearcher phraseSearcher;
-	vector<vector<vector<unsigned> > > allPhrasesMatchedPositions;
-	for (unsigned j = 0; j < phrasesInfoList.size(); ++j) {
-		PhraseInfoForHighLight &phraseInfo = phrasesInfoList[j];
-		vector<vector<unsigned> > positionListVector;
-		vector<vector<unsigned> > matchedPositions;
-		vector<unsigned> keyWordPosInPhrase;
-		for ( unsigned k = 0 ; k < phraseInfo.phraseKeyWords.size(); ++k) {
-			if (phraseInfo.phraseKeyWords[k].recordPosition) {
-				positionListVector.push_back(*(phraseInfo.phraseKeyWords[k].recordPosition));
-				keyWordPosInPhrase.push_back(phraseInfo.phraseKeyWords[k].queryPosition);
-			}
-		}
-		if (phraseInfo.slop > 0) {
-			phraseSearcher.proximityMatch(positionListVector, keyWordPosInPhrase, phraseInfo.slop,
-					matchedPositions, false);
-		} else {
-			phraseSearcher.exactMatch(positionListVector, keyWordPosInPhrase,
-					matchedPositions, false);
-		}
-		allPhrasesMatchedPositions.push_back(matchedPositions);
-	}
+	validatePhrasePositions(highlightPositions);
 
-	// mark the valid position in highlightPositions vector
-	vector<unsigned> allPhrasesOffsetInData;
-	for(unsigned i = 0; i < allPhrasesMatchedPositions.size(); ++i) {
-		vector<vector<unsigned> >&  currPhraseMatchedPositions = allPhrasesMatchedPositions[i];
-		for (unsigned j = 0; j < currPhraseMatchedPositions.size(); ++j) {
-			vector<unsigned> &currPhraseMatchedPosition = currPhraseMatchedPositions[j];
-			for (unsigned k = 0; k < currPhraseMatchedPosition.size(); ++k) {
-				boost::unordered_map<unsigned, unsigned>::iterator iter =
-						positionToOffsetMap.find(currPhraseMatchedPosition[k]);
-				if (iter != positionToOffsetMap.end())
-					highlightPositions[iter->second].flag = HIGHLIGHT_KEYWORD_IS_VERIFIED_PHRASE;
-			}
-		}
-	}
 	std::sort(highlightPositions.begin(), highlightPositions.end());
 
 	// sweep out invalid positions
@@ -803,86 +797,8 @@ void TermOffsetAlgorithm::getSnippet(const QueryResults* qr, unsigned recidx, un
 		return;
 	}
 
-	unsigned snippetLowerEnd = 0, snippetUpperEnd = highlightPositions.size() - 1;
-	/* no phrase for highlighting */
-	if (phrasesInfoList.size() == 0 && !isMultiValued) {
-		unsigned j = snippetUpperEnd;
-		while(j > 0){
-			unsigned _id = highlightPositions[j].id;
-			visitedKeyword.erase(_id);
-			if (visitedKeyword.empty())
-				break;
-			--j;
-		};
-		snippetLowerEnd = j;
-	}
-
-	if (isMultiValued) {
-		const char * attrStartPos = dataIn.c_str();
-		const char * lastPos = dataIn.c_str();
-		snippetLowerEnd = 0; snippetUpperEnd = 0;
-		while(1) {
-			ctsnippet.clear();
-			const char * attrEndPos = strstr(lastPos, " $$ ");
-			if (attrEndPos == 0)
-				break;
-			unsigned matchCntInAttr = 0;
-			vector<matchedTermInfo> partHighlightPositions;
-			while(snippetUpperEnd <  highlightPositions.size() &&
-					highlightPositions[snippetUpperEnd].offset < (attrEndPos - attrStartPos)) {
-				partHighlightPositions.push_back(highlightPositions[snippetUpperEnd]);
-				partHighlightPositions.back().offset -=  (lastPos - attrStartPos);
-				snippetUpperEnd++;
-				matchCntInAttr++;
-			}
-			string attrPartVal= dataIn.substr(lastPos - attrStartPos /*offset*/, attrEndPos - lastPos /*len*/);
-			if (matchCntInAttr) {
-				vector<CharType> ctv;
-				utf8StringToCharTypeVector(attrPartVal, ctv);
-				_genSnippet(ctv, ctsnippet,  partHighlightPositions.size() - 1, 0, partHighlightPositions);
-			}else {
-				genDefaultSnippet(attrPartVal, snippets, false);
-			}
-			string snippet;
-			charTypeVectorToUtf8String(ctsnippet, snippet);
-			snippets.push_back(snippet);
-			lastPos = attrEndPos + strlen(" $$ ");
-			snippetLowerEnd = snippetUpperEnd;
-		}
-		if (*lastPos != 0) {
-			ctsnippet.clear();
-			snippetUpperEnd = highlightPositions.size() - 1;
-			string attrPartVal= dataIn.substr(lastPos - attrStartPos /*offset*/, string::npos /*len*/);
-			if (snippetLowerEnd <  highlightPositions.size() &&
-					highlightPositions[snippetLowerEnd].offset > (lastPos - attrStartPos)) {
-				vector<CharType> ctv;
-				utf8StringToCharTypeVector(attrPartVal, ctv);
-				vector<matchedTermInfo> partHighlightPositions;
-				vector<matchedTermInfo>::iterator phpIter = highlightPositions.begin() + snippetLowerEnd;
-				while(phpIter != highlightPositions.end()){
-					partHighlightPositions.push_back(*phpIter);
-					partHighlightPositions.back().offset -=  (lastPos - attrStartPos);
-					++phpIter;
-				}
-				_genSnippet(ctv, ctsnippet, partHighlightPositions.size() - 1, 0, partHighlightPositions);
-				string snippet;
-				charTypeVectorToUtf8String(ctsnippet, snippet);
-				snippets.push_back(snippet);
-			} else {
-				genDefaultSnippet(attrPartVal, snippets, false);
-			}
-		}
-	}else {
-		vector<CharType> ctv;
-		ctv.reserve(dataIn.size());
-		utf8StringToCharTypeVector(dataIn, ctv);  // we may not need to convert from utf8 to utf32
-		if(ctv.size() == 0)
-			return;
-		_genSnippet(ctv, ctsnippet, snippetUpperEnd, snippetLowerEnd, highlightPositions);
-		string snippet;
-		charTypeVectorToUtf8String(ctsnippet, snippet);
-		snippets.push_back(snippet);
-	}
+	buildSnippetUsingHighlightPositions(dataIn, highlightPositions, visitedKeyword,
+				ctsnippet, snippets, isMultiValued);
 
 }
 

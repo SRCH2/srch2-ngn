@@ -50,6 +50,7 @@ struct keywordHighlightInfo{
 	unsigned editDistance;
 	keywordHighlightInfo(){
 		flag = HIGHLIGHT_KEYWORD_IS_PERFIX;
+		editDistance = 0;
 	}
 };
 
@@ -89,7 +90,9 @@ public:
 	HighlightAlgorithm ( vector<PhraseInfoForHighLight>& phrasesInfoList, const HighlightConfig& hconfig);
 	virtual void getSnippet(const QueryResults *qr,unsigned recIdx, unsigned attributeId, const string& dataIn,
 			vector<string>& snippets, bool isMultiValued, vector<keywordHighlightInfo>& keywordStrToHighlight) = 0;
+	virtual ~HighlightAlgorithm() {}
 
+protected:
 	void _genSnippet(const vector<CharType>& dataIn, vector<CharType>& snippets, unsigned snippetUpperEnd,
 			unsigned snippetLowerEnd, const vector<matchedTermInfo>& highlightPositions);
 	void insertHighlightMarkerIntoSnippets(vector<CharType>& snippets,
@@ -101,7 +104,11 @@ public:
 	void setupPhrasePositionList(vector<keywordHighlightInfo>& keywordStrToHighlight);
 	void buildKeywordHighlightInfo(const QueryResults * qr, unsigned recIdx,
 			vector<keywordHighlightInfo>& keywordStrToHighlight);
-	virtual ~HighlightAlgorithm() {}
+	void buildSnippetUsingHighlightPositions(const string& dataIn,
+			vector<matchedTermInfo>& highlightPositions, set<unsigned>& visitedKeyword,
+			vector<CharType>& ctsnippet, vector<string>& snippets, bool isMultiValued);
+	void validatePhrasePositions(vector<matchedTermInfo>& highlightPositions);
+
 private:
 	unsigned snippetSize;
 	vector<std::pair<string, string> > highlightMarkers; // holds marker for fuzzy or exact match
