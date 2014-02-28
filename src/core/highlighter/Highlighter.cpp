@@ -595,23 +595,23 @@ TermOffsetAlgorithm::TermOffsetAlgorithm (const Indexer * indexer,
  *  prefixNode to probe the sorted keyword ids in the forward list. The algorithm traverses the trie
  *  in a breadth first search manner. Each Id is probed using a binary search.
  */
-void TermOffsetAlgorithm::findMatchingKeywordsFromPrefixNode(TrieNodePointer prefixNode, unsigned prefixIndex,
+void TermOffsetAlgorithm::findMatchingKeywordsFromPrefixNode(const TrieNode* prefixNode, unsigned prefixIndex,
 		vector<CandidateKeywordInfo>& completeKeywordsId,
 		const unsigned *keywordIdsPtr, unsigned keywordsInRec){
 
 	unsigned low = 0, high = keywordsInRec;
 
-	vector<vector<TrieNodePointer> > workingSets= vector<vector<TrieNodePointer> >(2);
+	vector<vector<const TrieNode*> > workingSets= vector<vector<const TrieNode*> >(2);
 	unsigned currSetIdx = 0;
 	unsigned nextSetIdx =  1;
 
 	workingSets[currSetIdx].push_back(prefixNode);
 	while(workingSets[currSetIdx].size()) {
-		vector<TrieNodePointer>& currentSet = workingSets[currSetIdx];
-		vector<TrieNodePointer>& nextSet = workingSets[nextSetIdx];
+		vector<const TrieNode*>& currentSet = workingSets[currSetIdx];
+		vector<const TrieNode*>& nextSet = workingSets[nextSetIdx];
 		unsigned lowerOffset = 0, higherOffset = 0;
 		for(unsigned i = 0; i < currentSet.size(); ++i) {
-			TrieNodePointer currNode = currentSet[i];
+			const TrieNode* currNode = currentSet[i];
 			// Check leftmost descendant first.
 			const unsigned * iter = std::lower_bound(keywordIdsPtr + low , keywordIdsPtr + high, currNode->leftMostDescendant->id);
 
@@ -700,7 +700,7 @@ void TermOffsetAlgorithm::getSnippet(const QueryResults* qr, unsigned recidx, un
 	if (iter == cache.end()) {
 		candidateKeywordsId = new vector<CandidateKeywordInfo>;
 		candidateKeywordsId->reserve(1000);
-		vector< TrieNodePointer > & prefixNodes = qr->impl->sortedFinalResults[recidx]->matchingKeywordTrieNodes;
+		vector< const TrieNode* > & prefixNodes = qr->impl->sortedFinalResults[recidx]->matchingKeywordTrieNodes;
 		for(unsigned indx = 0; indx < prefixNodes.size(); ++indx) {
 			if (qr->impl->sortedFinalResults[recidx]->termTypes.at(indx) != TERM_TYPE_PREFIX &&
 			    qr->impl->sortedFinalResults[recidx]->matchingKeywordTrieNodes[indx]->isTerminalNode()) {

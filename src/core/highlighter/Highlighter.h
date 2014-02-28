@@ -20,8 +20,6 @@ using namespace std;
 namespace srch2 {
 namespace instantsearch {
 
-typedef const TrieNode* TrieNodePointer;
-
 class Analyzer;
 struct AttributeSnippet{
 	string FieldId;
@@ -149,7 +147,7 @@ public:
 		}
 	}
 private:
-	void findMatchingKeywordsFromPrefixNode(TrieNodePointer prefixNode, unsigned indx,
+	void findMatchingKeywordsFromPrefixNode(const TrieNode* prefixNode, unsigned indx,
 			vector<CandidateKeywordInfo>& completeKeywordsId,
 			const unsigned *keywordIdsPtr, unsigned keywordsInRec);
 	ForwardIndex* fwdIndex;
