@@ -127,6 +127,10 @@ public:
 	PhysicalPlanRecordItemPool(){
 		size = 0;
 	}
+	// returns the number of objects created in this pool so far
+	unsigned getNumberOfObjects(){
+		return extraObjects.size();
+	}
 	PhysicalPlanRecordItem * createRecordItem(){
 		if(size >= 10000){
 			if(size - 10000 >= extraObjects.size()){
@@ -230,6 +234,13 @@ public:
 				inactivePools.begin(); inactivePoolItr != inactivePools.end(); ++inactivePoolItr){
 			delete *inactivePoolItr;
 		}
+		// remove active pools
+		// NOTE: The instance of PhysicalPlanRecordItemFactory is kept in Cache so it will be destroyed
+		// when the whole system is shutting down. So at that point it's safe to delete even active pools
+		for(map<unsigned , PhysicalPlanRecordItemPool *>::iterator activePoolItr = activePools.begin();
+				activePoolItr != activePools.end() ; ++activePoolItr){
+			delete activePoolItr->second;
+		}
 	}
 
 	bool clear(){
@@ -251,9 +262,24 @@ public:
 		// check to see if we have any inactive pool
 		PhysicalPlanRecordItemPool * newPool = NULL;
 		if(inactivePools.size() > 0){
+			// Choose the pool which has the most number of objects created
+			// we want to reduce the chance of needing more objects by giving out
+			// big pools first
+			boost::unordered_set<PhysicalPlanRecordItemPool *>::iterator poolToReturn = inactivePools.end();
+			for(boost::unordered_set<PhysicalPlanRecordItemPool *>::iterator poolItr = inactivePools.begin();
+					poolItr != inactivePools.end() ; ++ poolItr){
+				if(poolToReturn == inactivePools.end()){
+					poolToReturn = poolItr;
+				}else{
+					if((*poolItr)->getNumberOfObjects() > (*poolToReturn)->getNumberOfObjects()){
+						poolToReturn = poolItr;
+					}
+				}
+			}
+
 			// remove pool from inactive pools
-			newPool =  *(inactivePools.begin());
-			inactivePools.erase(inactivePools.begin());
+			newPool =  *(poolToReturn);
+			inactivePools.erase(poolToReturn);
 		}else{ // we don't have inactive pools, so we should make a new one
 			// create a new pool
 			newPool = new PhysicalPlanRecordItemPool();
@@ -269,11 +295,18 @@ public:
 		// lock
 		boost::unique_lock< boost::shared_mutex > lock(_access);
 		// get pool from map by using handle
-		PhysicalPlanRecordItemPool * poolToReturn = activePools[handle];
-		// unlock
-		lock.unlock();
-		// return pool
-		return poolToReturn;
+		map<unsigned , PhysicalPlanRecordItemPool *>::iterator poolToReturnItr = activePools.find(handle);
+		if(poolToReturnItr == activePools.end()){
+			// unlock
+			lock.unlock();
+			return NULL;
+		}else{
+			PhysicalPlanRecordItemPool * poolToReturn = poolToReturnItr->second;
+			// unlock
+			lock.unlock();
+			// return pool
+			return poolToReturn;
+		}
 	}
 	void closeRecordItemPool(unsigned handle){
 		//lock
