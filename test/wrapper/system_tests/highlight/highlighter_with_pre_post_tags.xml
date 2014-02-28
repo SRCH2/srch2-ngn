@@ -1,0 +1,158 @@
+<!--
+    Configuration file for SRCH2 search server. 
+
+    For more information about how to use this configuration file, please
+    visit http://www.srch2.com/downloads.html and select the correct
+    documentation version.
+
+    Please email contact@srch2.com if you have questions.
+-->
+ 
+<config>
+    <srch2Home>/Users/srch2/repos/srch2-ngn/test/wrapper/system_tests/</srch2Home>
+        <!-- Make sure to specify the home of your SRCH2 installation.  Example: 
+	  <srch2Home>/home/joe/srch2</srch2Home>
+        -->
+ 
+    <licenseFile>../conf/srch2_license_key.txt</licenseFile>
+ 
+    <listeningHostname>0.0.0.0</listeningHostname>
+    <listeningPort>8087</listeningPort>
+ 
+    <dataDir>./data/highlight/indexes</dataDir>
+     
+    <dataSourceType>1</dataSourceType>
+    
+    <dataFile>./highlight/yelp.json</dataFile>
+
+    <!-- 
+        Mongo DB settings
+        Required if dataSourceType = 2
+    -->
+    <!--
+    <dataSourceType>2</dataSourceType>
+    <mongodb>
+        <host>localhost</host>
+        <port>27017</port>
+        <db>demo</db>
+        <collection>movies</collection>
+        <listenerWaitTime>3</listenerWaitTime>
+    </mongodb>
+    -->     
+         
+    <indexConfig>
+         
+        <indexType>0</indexType>
+         
+        <supportSwapInEditDistance>true</supportSwapInEditDistance>
+
+       <!--  <fieldBoost>title^12 tags^16</fieldBoost> -->
+        <fieldBoost>text^30</fieldBoost>
+
+        <recordBoostField>stars</recordBoostField>
+
+        <defaultQueryTermBoost>1</defaultQueryTermBoost>
+
+	<enablePositionIndex>1</enablePositionIndex> 
+    <enableCharOffsetIndex>1</enableCharOffsetIndex>
+    
+    </indexConfig>
+  
+    <KeywordPopularityThreshold>10000</KeywordPopularityThreshold>
+    <getAllResultsMaxResultsThreshold>2000</getAllResultsMaxResultsThreshold>
+    <getAllResultsKAlternative>500</getAllResultsKAlternative>
+ 
+    <query>
+        <rankingalgorithm>
+            <recordScoreExpression>(idf_score*(log(doc_boost+1)^1.5))/(idf_score+log(doc_boost+1))</recordScoreExpression>
+        </rankingalgorithm>
+ 
+        <fuzzyMatchPenalty>0.75</fuzzyMatchPenalty>
+
+	<queryTermSimilarityThreshold>0.8</queryTermSimilarityThreshold>
+         
+        <prefixMatchPenalty>0.85</prefixMatchPenalty>
+ 
+        <cacheSize>65536000</cacheSize>
+
+        <rows>10</rows>
+
+        <maxSearchThreads>8</maxSearchThreads>
+        
+        <fieldBasedSearch>0</fieldBasedSearch>
+         
+        <searcherType>0</searcherType>
+         
+        <queryTermFuzzyType>1</queryTermFuzzyType>
+         
+        <queryTermPrefixType>0</queryTermPrefixType>
+ 
+        <queryResponseWriter>
+
+            <responseFormat>1</responseFormat>
+
+        </queryResponseWriter>
+
+        <highlighter>
+            <snippetSize>250</snippetSize>
+            <fuzzyTagPre value = '<fuzzy>' ></fuzzyTagPre>
+            <fuzzyTagPost value = '</fuzzy>'></fuzzyTagPost>
+            <exactTagPre value = '<exact>' ></exactTagPre>
+            <exactTagPost value = '</exact>'></exactTagPost>
+        </highlighter>
+
+    </query>
+  
+    <updatehandler>
+
+        <maxDocs>15000000</maxDocs>
+ 
+        <maxMemory>10000000</maxMemory>
+        
+        <mergePolicy>
+
+          <mergeEveryNSeconds>10</mergeEveryNSeconds>
+
+          <mergeEveryMWrites>10</mergeEveryMWrites>
+
+        </mergePolicy>
+         
+         
+        <updateLog>
+
+            <logLevel>3</logLevel>
+                         
+            <accessLogFile>./data/highlight/srch2-log.txt</accessLogFile>
+
+        </updateLog>
+     
+    </updatehandler>
+
+    <schema name="SRCH2" version="3">
+       <fields>
+          <field name="text"  type="text" indexed="true" highlight="true"/>
+       </fields>
+       
+       <uniqueKey>review_id</uniqueKey>
+           
+       <facetEnabled>true</facetEnabled>
+        
+        <facetFields>
+          <facetField name="stars" facetType="categorical"/>
+        </facetFields>
+        
+        <types>
+          <fieldType name="text_en">
+              <analyzer>
+
+                  <filter name="PorterStemFilter" dictionary="" />
+                   
+                  <filter name="StopFilter" words="./highlight/srch2_stop_words.txt" />	
+
+		          <filter name="protectedKeyWordsFilter" words="" />
+                   
+              </analyzer>
+          </fieldType>
+       </types>
+    </schema>
+</config>
