@@ -20,7 +20,7 @@
 
 #include "QueryResultsInternal.h"
 #include "operation/QueryEvaluatorInternal.h"
-
+#include "util/RecordSerializerUtil.h"
 
 using srch2::util::Logger;
 namespace srch2
@@ -92,6 +92,15 @@ unsigned QueryResults::getInternalRecordId(unsigned position) const {
     return impl->sortedFinalResults.at(position)->internalRecordId;
 }
 
+/*
+ *   this function is called from unit test. Do not use it in wrapper layer.
+ */
+std::string QueryResults::getInMemoryRecordString(unsigned position) const {
+    unsigned internalRecordId = this->getInternalRecordId(position);
+    StoredRecordBuffer buffer = impl->queryEvaluatorInternal->getInMemoryData(internalRecordId);
+    string inMemoryString = string(buffer.start, buffer.length);
+    return inMemoryString;
+}
 
 /**
  * Gets the score of the 'position'-th item in the QueryResults object.

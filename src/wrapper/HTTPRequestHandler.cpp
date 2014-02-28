@@ -27,6 +27,7 @@
 #include "util/FileOps.h"
 #include "ServerHighLighter.h"
 #include "util/RecordSerializer.h"
+#include "util/RecordSerializerUtil.h"
 
 #define SEARCH_TYPE_OF_RANGE_QUERY_WITHOUT_KEYWORDS 2
 
@@ -458,100 +459,12 @@ void HTTPRequestHandler::genRecordJsonString(const srch2is::Indexer *indexer, un
 	                    		 sbuffer, NULL);
 }
 void HTTPRequestHandler::genRecordJsonString(const srch2is::Indexer *indexer, unsigned internalRecordId,
-		const string& extrnalRecordId, string& sbuffer, const vector<string>* attrToReturn){
-	Schema * storedAttrSchema = Schema::create();
-	JSONRecordParser::populateStoredSchema(storedAttrSchema, indexer->getSchema());
-	RecordSerializer compactRecDeserializer = RecordSerializer(*storedAttrSchema);
-	StoredRecordBuffer buffer =  indexer->getInMemoryData(internalRecordId);
-	std::map<std::string, unsigned>::const_iterator iter =
-			storedAttrSchema->getSearchableAttribute().begin();
-	sbuffer.reserve(1.25 * buffer.length);
-	sbuffer.append("{") ;
-	sbuffer+='"'; sbuffer+=*(indexer->getSchema()->getPrimaryKey()); sbuffer+='"';
-	sbuffer+=":\""; sbuffer+=extrnalRecordId; sbuffer+="\",";
-	for ( ; iter != storedAttrSchema->getSearchableAttribute().end(); iter++)
-	{
-		if (attrToReturn &&
-		    std::find(attrToReturn->begin(), attrToReturn->end(), iter->first) == attrToReturn->end()) {
-			continue;
-		}
-		unsigned id = storedAttrSchema->getSearchableAttributeId(iter->first);
-		unsigned lenOffset = compactRecDeserializer.getSearchableOffset(id);
-		const char *attrdata = buffer.start + *((unsigned *)(buffer.start + lenOffset));
-		unsigned len = *(((unsigned *)(buffer.start + lenOffset)) + 1) -
-				*((unsigned *)(buffer.start + lenOffset));
+		const string& externalRecordId, string& sbuffer, const vector<string>* attrToReturn){
 
-		std::string uncompressedInMemoryRecordString;
-		snappy::Uncompress(attrdata,len, &uncompressedInMemoryRecordString);
-		sbuffer+='"'; sbuffer+=iter->first; sbuffer+='"';
-		sbuffer+=':';
-		if (storedAttrSchema->isSearchableAttributeMultiValued(id)) {
-			sbuffer+='[';
-			size_t lastpos = 0;
-			while(1) {
-				size_t pos = uncompressedInMemoryRecordString.find(" $$ ", lastpos) ;
-				if (pos == string::npos)
-					break;
-				string result =  uncompressedInMemoryRecordString.substr(lastpos, pos - lastpos);
-				sbuffer+='"';
-				cleanAndAppendToBuffer(result, sbuffer);
-				sbuffer+='"';
-				sbuffer+=',';
-				lastpos = pos + 4;
-			}
-			string result =  uncompressedInMemoryRecordString.substr(lastpos,
-														uncompressedInMemoryRecordString.length());
-			sbuffer+='"';
-			cleanAndAppendToBuffer(result, sbuffer);
-			sbuffer+='"';
-			sbuffer+=']';
-			sbuffer+=',';
-		} else {
-			sbuffer+='"';
-			cleanAndAppendToBuffer(uncompressedInMemoryRecordString, sbuffer);
-			sbuffer+='"';
-			sbuffer+=',';
-		}
-	}
-	iter = storedAttrSchema->getRefiningAttributes()->begin();
-	for ( ; iter != storedAttrSchema->getRefiningAttributes()->end(); iter++)
-	{
-		if (attrToReturn &&
-				std::find(attrToReturn->begin(), attrToReturn->end(), iter->first) == attrToReturn->end()) {
-			continue;
-		}
-		unsigned id = storedAttrSchema->getRefiningAttributeId(iter->first);
-		unsigned lenOffset = compactRecDeserializer.getRefiningOffset(id);
-		sbuffer+='"'; sbuffer+=iter->first; sbuffer+='"';
-		sbuffer+=':';
-		sbuffer+='"';
-		switch(storedAttrSchema->getTypeOfRefiningAttribute(id)){
-		case srch2is::ATTRIBUTE_TYPE_FLOAT:
-		{
-			float attrdata = *((float *)(buffer.start + lenOffset));
-			stringstream ss;
-			ss << attrdata;
-			sbuffer += ss.str();
-			break;
-		}
-		case srch2is::ATTRIBUTE_TYPE_UNSIGNED:
-		{
-			unsigned attrdata = *((unsigned *)(buffer.start + lenOffset));
-			stringstream ss;
-			ss << attrdata;
-			sbuffer += ss.str();
-			break;
-		}
-		default: break;
-			// should not come here.
-		}
-		sbuffer+='"';
-		sbuffer+=',';
-	}
-	if (storedAttrSchema->getRefiningAttributes()->size() > 0 ||
-			storedAttrSchema->getSearchableAttribute().size() > 0)
-		sbuffer.erase(sbuffer.length()-1);
-	sbuffer.append("}");
+	StoredRecordBuffer buffer =  indexer->getInMemoryData(internalRecordId);
+	Schema * storedSchema = Schema::create();
+	RecordSerializerUtil::populateStoredSchema(storedSchema, indexer->getSchema());
+	RecordSerializerUtil::convertCompactToJSONString(storedSchema, buffer, externalRecordId, sbuffer, attrToReturn);
 
 }
 

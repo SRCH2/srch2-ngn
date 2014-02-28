@@ -20,7 +20,7 @@
 #include <instantsearch/Constants.h>
 #include "Srch2Server.h"
 #include "IndexWriteUtil.h"
-
+#include "util/RecordSerializerUtil.h"
 using namespace std;
 
 namespace srch2 {
@@ -189,7 +189,7 @@ bool BSONParser::parse(srch2is::Record * record, const mongo::BSONObj& bsonObj, 
 
     stringstream error;
     Schema * storedSchema =  Schema::create();
-    JSONRecordParser::populateStoredSchema(storedSchema, record->getSchema());
+    RecordSerializerUtil::populateStoredSchema(storedSchema, record->getSchema());
     RecordSerializer recSerializer = RecordSerializer(*storedSchema);
 
     bool result = JSONRecordParser::populateRecordFromJSON(bsonObj.jsonString(), config, record, error, recSerializer);

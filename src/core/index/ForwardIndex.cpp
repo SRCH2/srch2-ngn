@@ -30,6 +30,8 @@
 #include "boost/algorithm/string/split.hpp"
 #include "boost/algorithm/string/classification.hpp"
 #include <boost/array.hpp>
+#include "util/RecordSerializerUtil.h"
+
 using srch2::util::Logger;
 using std::string;
 using std::pair;
@@ -1173,6 +1175,8 @@ void ForwardIndex::exportData(ForwardIndex &forwardIndex, const string &exported
     forwardIndex.forwardListDirectory->getReadView(forwardListDirectoryReadView);
     string uncompressedInMemoryRecordString;
     // loop all the forwardList Index
+    Schema * storedSchema = Schema::create();
+    RecordSerializerUtil::populateStoredSchema(storedSchema, forwardIndex.getSchema());
     for (unsigned counter = 0; counter < forwardListDirectoryReadView->size(); ++counter) {
         bool valid = false;
         const ForwardList* fl = forwardIndex.getForwardList(counter, valid);
@@ -1180,8 +1184,9 @@ void ForwardIndex::exportData(ForwardIndex &forwardIndex, const string &exported
         if (valid == false)
             continue;
         StoredRecordBuffer buff = fl->getInMemoryData();
-        snappy::Uncompress(buff.start, buff.length, &uncompressedInMemoryRecordString);
-        out << uncompressedInMemoryRecordString << endl;
+        string jsonBuffer;
+        RecordSerializerUtil::convertCompactToJSONString(storedSchema, buff, fl->getExternalRecordId(),jsonBuffer);
+        out << jsonBuffer << endl;
     }
     out.close();
 }

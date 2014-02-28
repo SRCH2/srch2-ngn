@@ -329,7 +329,7 @@ bool test2(int argc, char** argv) {
     cout << "Creating new index from JSON file..." << endl;
     std::stringstream log_str;
     Schema * storedAttrSchema = Schema::create();
-    srch2http::JSONRecordParser::populateStoredSchema(storedAttrSchema, indexer->getSchema());
+    srch2::util::RecordSerializerUtil::populateStoredSchema(storedAttrSchema, indexer->getSchema());
     srch2http::DaemonDataSource::createNewIndexFromFile(indexer, storedAttrSchema, core);
     indexer->commit();
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
