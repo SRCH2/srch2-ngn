@@ -16,7 +16,7 @@ class Bimaple
   headers "Content-Type" => "application/json"
 
   def self.base_url
-    "http://localhost:8082"
+    "http://localhost:8087"
   end
 
   def self.insert(record)
@@ -64,7 +64,7 @@ end
 puts "Starting search"
 100.times do
   kw = keywords.sample
-  kw = "%7BdefaultPreficComplete=COMPLETE%7D" + kw + "*"
+  kw = "%7BdefaultPrefixComplete=COMPLETE%7D" + kw + "*"
   Bimaple.search(kw)
    #puts "search: #{kw}"
 end
