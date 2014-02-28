@@ -122,7 +122,7 @@ PhysicalPlanCost SortByScoreOptimizationOperator::getCostOfOpen(const PhysicalPl
 	if(estimatedNumberOfResults < params.k){
 		estimatedNumberOfResults = params.k;
 	}
-	resultCost.cost += estimatedNumberOfResults - params.k; // we assume make_heap calls estimatedNumberOfResults small functions
+	resultCost.cost += estimatedNumberOfResults - params.k;
 	resultCost.cost += log2((double)params.k + 1) * params.k;
 
 	return resultCost;

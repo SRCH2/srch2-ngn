@@ -173,9 +173,6 @@ bool MergeSortedByIDOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerif
 PhysicalPlanCost MergeSortedByIDOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
 
 	PhysicalPlanCost resultCost;
-	resultCost.addInstructionCost(3 + this->getChildrenCount()); // 3 + number of open calls
-	resultCost.addSmallFunctionCost(); // clear()
-	resultCost.addFunctionCallCost(2 + this->getChildrenCount()); // 2 + number of open calls
 
 	// cost of opening children
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
@@ -198,26 +195,21 @@ PhysicalPlanCost MergeSortedByIDOptimizationOperator::getCostOfGetNext(const Phy
 	if(estimatedNumberOfResults == 0){
 		estimatedNumberOfResults = 1;
 	}
-	unsigned numberOfGetNextCallsOfChildren = 0;
+	double costOfGetNextCallsOfChildren = 0;
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
 		unsigned thisChildsLength = this->getChildAt(childOffset)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
-		numberOfGetNextCallsOfChildren +=
+		costOfGetNextCallsOfChildren +=
 				((thisChildsLength * 1.0) / estimatedNumberOfResults) * this->getChildAt(childOffset)->getCostOfGetNext(params).cost;
 	}
 	PhysicalPlanCost resultCost ;
 	// cost of other instructions in getNext
-	resultCost.addSmallFunctionCost(numberOfGetNextCallsOfChildren);
-	resultCost.addMediumFunctionCost(); // copying the result
-
+	resultCost.cost = costOfGetNextCallsOfChildren;
 
 	return resultCost;
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.
 PhysicalPlanCost MergeSortedByIDOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
 	PhysicalPlanCost resultCost;
-	resultCost.addInstructionCost(3 + this->getChildrenCount()); // 3 + number of open calls
-	resultCost.addSmallFunctionCost(); // clear()
-	resultCost.addFunctionCallCost(2 + this->getChildrenCount()); // 2 + number of open calls
 
 	// cost of closing children
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
@@ -228,8 +220,6 @@ PhysicalPlanCost MergeSortedByIDOptimizationOperator::getCostOfClose(const Physi
 }
 PhysicalPlanCost MergeSortedByIDOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
 	PhysicalPlanCost resultCost;
-	resultCost.addFunctionCallCost(2);
-	resultCost.addSmallFunctionCost();
 
 	// cost of opening children
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){

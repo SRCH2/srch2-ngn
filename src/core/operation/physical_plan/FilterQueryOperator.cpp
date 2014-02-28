@@ -100,7 +100,7 @@ PhysicalPlanCost FilterQueryOptimizationOperator::getCostOfOpen(const PhysicalPl
 // The cost of getNext of a child is multiplied by the estimated number of calls to this function
 // when the cost of parent is being calculated.
 PhysicalPlanCost FilterQueryOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
-	return this->getChildAt(0)->getCostOfGetNext(params) + 1;
+	return this->getChildAt(0)->getCostOfGetNext(params);
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.
 PhysicalPlanCost FilterQueryOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
