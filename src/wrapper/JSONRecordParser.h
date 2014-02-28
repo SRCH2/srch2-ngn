@@ -28,7 +28,6 @@ class JSONRecordParser
   static bool _JSONValueObjectToRecord(srch2is::Record *record, const std::string &inputLine, const Json::Value &root,
 				       const CoreInfo_t *indexDataContainerConf, std::stringstream &error, RecordSerializer& compactRecSerializer);
   static srch2is::Schema* createAndPopulateSchema( const CoreInfo_t *indexDataContainerConf);
-  static void populateStoredSchema(Schema* storedSchema, const Schema *schema);
 
  private:
   static void getJsonValueString(const Json::Value &jsonValue, const std::string &key, std::vector< std::string>  &stringValue, const string &configName);

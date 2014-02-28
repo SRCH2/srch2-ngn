@@ -23,6 +23,7 @@
 
 #include "boost/algorithm/string/split.hpp"
 #include "boost/algorithm/string/classification.hpp"
+#include "util/RecordSerializerUtil.h"
 
 using namespace snappy;
 
@@ -332,50 +333,6 @@ bool JSONRecordParser::populateRecordFromJSON(const string &inputLine,
     return parseSuccess;
 }
 
-void JSONRecordParser::populateStoredSchema(Schema* storedSchema, const Schema *schema) {
-
-	const string* primaryKey = schema->getPrimaryKey();
-	bool pk_found = false;
-	std::set<string> visitedAttr;
-	std::map<std::string, unsigned>::const_iterator searchableAttributeIter =
-			schema->getSearchableAttribute().begin();
-	for ( ; searchableAttributeIter != schema->getSearchableAttribute().end();
-			searchableAttributeIter++)
-	{
-		bool isMultiValued = schema->isSearchableAttributeMultiValued(searchableAttributeIter->second);
-		bool isHighLight = schema->isHighlightEnabled(searchableAttributeIter->second);
-		storedSchema->setSearchableAttribute(searchableAttributeIter->first, 1, isMultiValued, isHighLight);
-		visitedAttr.insert(searchableAttributeIter->first);
-	}
-
-	map<string, unsigned>::const_iterator refiningAttributeIter =
-			schema->getRefiningAttributes()->begin();
-	for ( ; refiningAttributeIter != schema->getRefiningAttributes()->end();
-			refiningAttributeIter++)
-	{
-		if (visitedAttr.count(refiningAttributeIter->first) > 0){
-			continue;
-		}
-		bool isMultiValued = schema->isRefiningAttributeMultiValued(refiningAttributeIter->second);
-		if (isMultiValued) {
-			storedSchema->setSearchableAttribute(refiningAttributeIter->first,
-								1, true, false);
-			continue;
-		}
-		srch2is::FilterType type = schema->getTypeOfRefiningAttribute(refiningAttributeIter->second);
-		switch (type) {
-		case srch2is::ATTRIBUTE_TYPE_UNSIGNED:
-		case srch2is::ATTRIBUTE_TYPE_FLOAT:
-			storedSchema->setRefiningAttribute(refiningAttributeIter->first,
-					type, *schema->getDefaultValueOfRefiningAttribute(refiningAttributeIter->second),
-					false);
-			break;
-		default:
-			storedSchema->setSearchableAttribute(refiningAttributeIter->first,
-					1, false, false);
-		}
-	}
-}
 
 srch2is::Schema* JSONRecordParser::createAndPopulateSchema(const CoreInfo_t *indexDataContainerConf)
 {

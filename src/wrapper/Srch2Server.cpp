@@ -2,7 +2,7 @@
 
 #include <syslog.h>
 #include "Srch2Server.h"
-
+#include "util/RecordSerializerUtil.h"
 namespace srch2
 {
 namespace httpwrapper
@@ -180,7 +180,7 @@ void Srch2Server::createAndBootStrapIndexer()
 	        {
 		    // Create from JSON and save to index-dir
 		    Logger::console("Creating indexes from JSON file...");
-		    JSONRecordParser::populateStoredSchema(storedAttrSchema, indexer->getSchema());
+		    RecordSerializerUtil::populateStoredSchema(storedAttrSchema, indexer->getSchema());
 		    unsigned indexedCounter = DaemonDataSource::createNewIndexFromFile(indexer,
 		    		storedAttrSchema, indexDataConfig);
 		    /*
@@ -229,7 +229,7 @@ void Srch2Server::createAndBootStrapIndexer()
 	    	Logger::warn("support-attribute-based-search has changed in the config file"
 	    		        		" remove all index files and run it again!");
 	    }
-	    JSONRecordParser::populateStoredSchema(storedAttrSchema, indexer->getSchema());
+	    RecordSerializerUtil::populateStoredSchema(storedAttrSchema, indexer->getSchema());
 	    break;
 	}
     }

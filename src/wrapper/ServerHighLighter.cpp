@@ -12,6 +12,7 @@
 #include "ParsedParameterContainer.h"
 #include "util/RecordSerializer.h"
 #include "query/QueryResultsInternal.h"
+#include "util/RecordSerializerUtil.h"
 
 using namespace srch2::util;
 using namespace srch2::instantsearch;
@@ -138,7 +139,7 @@ ServerHighLighter::ServerHighLighter(QueryResults * queryResults,Srch2Server *se
 	}
 	this->server = server;
 	storedAttrSchema = Schema::create();
-	JSONRecordParser::populateStoredSchema(storedAttrSchema, server->indexer->getSchema());
+	RecordSerializerUtil::populateStoredSchema(storedAttrSchema, server->indexer->getSchema());
 	compactRecDeserializer = new RecordSerializer(*storedAttrSchema);
 	this->HighlightRecOffset = offset;
 	this->HighlightRecCount = count;

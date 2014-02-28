@@ -10,6 +10,7 @@
 #include "evhttp.h"
 #include "thirdparty/snappy-1.0.4/snappy.h"
 #include "URLParser.h"
+#include "util/RecordSerializerUtil.h"
 using namespace snappy;
 
 namespace srch2
@@ -22,7 +23,7 @@ struct IndexWriteUtil
     static void _insertCommand(Indexer *indexer, const CoreInfo_t *indexDataContainerConf, const Json::Value &root, Record *record, std::stringstream &log_str)
     {
     	Schema * storedSchema = Schema::create();
-    	JSONRecordParser::populateStoredSchema(storedSchema, indexer->getSchema());
+    	RecordSerializerUtil::populateStoredSchema(storedSchema, indexer->getSchema());
     	RecordSerializer recSerializer = RecordSerializer(*storedSchema);
     	Json::FastWriter writer;
     	if(JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root, indexDataContainerConf, log_str, recSerializer) == false){
@@ -140,7 +141,7 @@ struct IndexWriteUtil
         std::string primaryKeyStringValue;
 
         Schema * storedSchema = Schema::create();
-        JSONRecordParser::populateStoredSchema(storedSchema, indexer->getSchema());
+        RecordSerializerUtil::populateStoredSchema(storedSchema, indexer->getSchema());
         RecordSerializer recSerializer = RecordSerializer(*storedSchema);
     	Json::FastWriter writer;
     	bool parseJson = JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root,
