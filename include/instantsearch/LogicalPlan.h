@@ -64,7 +64,7 @@ public:
     	}
     }
 
-    string toString();
+    virtual string toString();
     string getSubtreeUniqueString();
     Term * getTerm(bool isFuzzy){
     	if(isFuzzy){
@@ -89,6 +89,13 @@ public:
 		phraseInfo->phraseKeyWords = phraseKeyWords;
 		phraseInfo->phraseKeywordPositionIndex = phraseKeywordsPosition;
 		phraseInfo->proximitySlop = slop;
+	}
+	string toString() {
+		string key = LogicalPlanNode::toString();
+		if (phraseInfo) {
+			key += phraseInfo->toString();
+		}
+		return key;
 	}
 	~LogicalPlanPhraseNode() { delete phraseInfo;}
 	PhraseInfo * getPhraseInfo() { return phraseInfo; }
