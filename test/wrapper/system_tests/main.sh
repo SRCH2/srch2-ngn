@@ -596,19 +596,21 @@ printTestBanner "$test_id"
 sleep 1
 NODECMD=${NODE_CMD:-node} ./tests_used_for_statemedia/autotest.sh $SRCH2_ENGINE | eval "${html_escape_command}" >> system_test.log 2>&1
 
+if [ ${PIPESTATUS[0]} -gt 0 ]; then
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
+    if [ $force -eq 0 ]; then
+        exit 255
+    fi
+else
+    echo "-- PASSED: $test_id" >> ${output}
+fi
+
 # TODO - hack until we figure out why tests_used_for_statemedia/large_insertion_test/large_insertion_test.rb
 # won't run and tests_used_for_statemedia/update_endpoint_test
-echo "-- IGNORING FAILURE: $test_id" >> ${output}
+#echo "-- IGNORING FAILURE: $test_id" >> ${output}
+
 rm -rf data/ *.idx
 
-
-#if [ ${PIPESTATUS[0]} -gt 0 ]; then
-#    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-#if [ $force -eq 0 ]; then
-#    exit 255
-#fi
-#fi
-#echo "-- PASSED: $test_id" >> ${output}
 
 test_id="batch upsert"
 printTestBanner "$test_id"
