@@ -1190,6 +1190,13 @@ bool QueryParser::termParser(string &input) {
      */
     string keywordStr = ""; // this will store the parsed keyword.
     bool isPhraseKeyword = false;
+    if (input.length() == 0) {
+    	string err = "Parse error: no keyword found after the field = " + field;
+    	this->container->messages.push_back(
+    			make_pair(MessageError, err));
+    	this->isParsedError = true;
+    	return false;
+    }
     if (input.at(0) == '"') {  // check if the keyword starts with a quote
         /* see if there is another '"'
          * true: remove the leading and trailing '"'
