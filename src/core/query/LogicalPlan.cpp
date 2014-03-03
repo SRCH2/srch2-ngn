@@ -52,6 +52,9 @@ void LogicalPlanNode::setFuzzyTerm(Term * fuzzyTerm){
 string LogicalPlanNode::toString(){
 	stringstream ss;
 	ss << this->nodeType;
+	if(this->nodeType == LogicalPlanNodeTypePhrase){
+		ss << ((reinterpret_cast<LogicalPlanPhraseNode *>(this))->getPhraseInfo()->toString());
+	}
 	if(this->exactTerm != NULL){
 		ss << this->exactTerm->toString();
 	}
@@ -64,7 +67,7 @@ string LogicalPlanNode::toString(){
 
 string LogicalPlanNode::getSubtreeUniqueString(){
 
-	string result = toString();
+	string result = this->toString();
 	for(unsigned childOffset = 0 ; childOffset < this->children.size() ; ++childOffset){
 		ASSERT(this->children.at(childOffset) != NULL);
 		result += this->children.at(childOffset)->getSubtreeUniqueString();
