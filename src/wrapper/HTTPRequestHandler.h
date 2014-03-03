@@ -40,7 +40,6 @@ class HTTPRequestHandler
         static void exportCommand(evhttp_request *req, Srch2Server *server);
         static void resetLoggerCommand(evhttp_request *req, Srch2Server *server);
         static void lookupCommand(evhttp_request *req, Srch2Server *server);
-		static void activateCommand(evhttp_request *req, Srch2Server *server);
 		static void handleException(evhttp_request *req);
 
 	private:

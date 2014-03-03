@@ -98,13 +98,33 @@ struct CoreConfigParseState_t {
     bool hasLatitude;
     bool hasLongitude;
     vector<string> searchableFieldsVector;
-	vector<string> searchableFieldTypesVector;
+    vector<string> searchableFieldTypesVector;
     vector<bool> searchableAttributesRequiredFlagVector;
     vector<string> searchableAttributesDefaultVector;
     vector<bool> searchableAttributesIsMultiValued;
 
     CoreConfigParseState_t() : hasLatitude(false), hasLongitude(false) {};
 };
+
+// enum to allow loop iteration over listening ports
+enum PortType_t {
+    SearchPort,
+    SuggestPort,
+    InfoPort,
+    DocsPort,
+    UpdatePort,
+    SavePort,
+    ExportPort,
+    ResetLoggerPort,
+    EndOfPortType // stop value - not valid (also used to indicate all/default ports)
+};
+
+inline  enum PortType_t incrementPortType(PortType_t &oldValue)
+{
+    unsigned int newValue = static_cast<int> (oldValue);
+    newValue++;
+    return static_cast<PortType_t> (newValue);
+}
 
 class ConfigManager {
 public:
@@ -199,6 +219,7 @@ protected:
 
     // <config><cores>
     string defaultCoreName;
+    bool defaultCoreSetFlag; // false unless <cores defaultCoreName="..."> has been parsed
 
     // parsing helper functions for modularity
     void parseIndexConfig(const xml_node &indexConfigNode, CoreInfo_t *coreInfo, map<string, unsigned> &boostsMap, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
@@ -318,6 +339,12 @@ public:
         return defaultCoreName;
     }
 
+    // true if config specifically names a default core
+    const bool getDefaultCoreSetFlag() const
+    {
+        return defaultCoreSetFlag;
+    }
+
     CoreInfo_t *getDefaultCoreInfo() const;
 
 private:
@@ -414,6 +441,14 @@ private:
     static const char* const hostPortString;
     static const char* const instanceDirString;
     static const char* const schemaFileString;
+    static const char* const searchPortString;
+    static const char* const suggestPortString;
+    static const char* const infoPortString;
+    static const char* const docsPortString;
+    static const char* const updatePortString;
+    static const char* const savePortString;
+    static const char* const exportPortString;
+    static const char* const resetLoggerPortString;
 };
 
 // definitions for data source(s) (srch2Server objects within one HTTP server)
@@ -539,6 +574,9 @@ public:
 
     unsigned int getNumberOfThreads() const { return configManager->getNumberOfThreads(); }
 
+    unsigned short getPort(PortType_t portType) const;
+    void setPort(PortType_t portType, unsigned short portNumber);
+
 protected:
     string name; // of core
 
@@ -646,6 +684,9 @@ protected:
     // no config option for this yet
     unsigned updateHistogramEveryPMerges;
     unsigned updateHistogramEveryQWrites;
+
+    // array of local HTTP ports (if any) index by port type enum
+    vector<unsigned short> ports;
 };
 
 }

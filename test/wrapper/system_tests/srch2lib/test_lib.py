@@ -17,12 +17,15 @@ def startServer(argList):
 # make sure the server is started
 # curl's a request to the server until it gets a response
 # blocks until server is up (!)
-def pingServer(port, query = 'q=march'):
+def pingServer(port, query = 'q=march', timeout = 15):
     info = 'curl -s \"http://localhost:' + str(port) + '/search?' + query + '\" | grep -q results'
     #print "Pinging with: " + info
-    while subprocess.call(info, shell=True) != 0:
+    while timeout >= 0 and subprocess.call(info, shell=True) != 0:
+        timeout -= 1
         time.sleep(1)
     #print 'server is built!'
+    if timeout < 0:
+        print "WARNING: Timed out waiting for the server to start!"
 
 # Tell the server to shutdown by sending it a signal
 def killServer(serverHandle):

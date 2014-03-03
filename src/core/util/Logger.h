@@ -44,6 +44,7 @@ private:
 	static char* formatLogString(char* buffer, const char* prefix);
 	static void writeToFile(FILE* out, const char* str);
 public:
+        // Logger now owns FILE * - it may close it (for example, upon /resetLogger request)
 	static inline void setOutputFile(FILE* file) {
 		if (file != NULL){
 			_out_file = file;
@@ -64,6 +65,8 @@ public:
 	static void info(const char *format, ...);
 	static void debug(const char *format, ...);
 	static FILE* swapLoggerFile(FILE * newLogger);
+
+        static void close() { if (_out_file != NULL) { fclose(_out_file);} }
 };
 
 }

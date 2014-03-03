@@ -40,6 +40,8 @@
     </mongodb>
     -->     
          
+    <maxSearchThreads>2</maxSearchThreads>
+    
     <indexConfig>
          
         <indexType>0</indexType>
@@ -70,8 +72,6 @@
 
         <rows>10</rows>
 
-        <maxSearchThreads>2</maxSearchThreads>
-        
         <fieldBasedSearch>1</fieldBasedSearch>
          
         <searcherType>0</searcherType>

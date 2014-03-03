@@ -610,33 +610,6 @@ void HTTPRequestHandler::updateCommand(evhttp_request *req,
     };
 }
 
-void HTTPRequestHandler::activateCommand(evhttp_request *req,
-        Srch2Server *server) {
-    /* Yes, we are expecting a post request */
-    switch (req->type) {
-    case EVHTTP_REQ_PUT: {
-        //size_t length = EVBUFFER_LENGTH(req->input_buffer);
-        //const char *post_data = (char *)EVBUFFER_DATA(req->input_buffer);
-
-        std::stringstream log_str;
-        IndexWriteUtil::_commitCommand(server->indexer,
-                server->indexDataConfig, 0, log_str);
-
-        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
-                "{\"message\":\"The initialization phase has started successfully\", \"log\":["
-                        + log_str.str() + "]}\n");
-        Logger::info("%s", log_str.str().c_str());
-        break;
-    }
-    default: {
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
-                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
-        Logger::error(
-                "The request has an invalid or missing argument. See Srch2 API documentation for details");
-    }
-    };
-}
-
 void HTTPRequestHandler::saveCommand(evhttp_request *req, Srch2Server *server) {
     /* Yes, we are expecting a post request */
     switch (req->type) {
@@ -676,14 +649,14 @@ void HTTPRequestHandler::resetLoggerCommand(evhttp_request *req, Srch2Server *se
             Logger::error("Reopen Log file %s failed.",
                     server->indexDataConfig->getHTTPServerAccessLogFile().c_str());
             bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "REQUEST FAILED",
-                "{\"message\":\"The logger file repointing is failed. Could not create new logger file\", \"log\":["
-                         + server->indexDataConfig->getHTTPServerAccessLogFile() + "]}\n");
+                "{\"message\":\"The logger file repointing failed. Could not create new logger file\", \"log\":\""
+                         + server->indexDataConfig->getHTTPServerAccessLogFile() + "\"}\n");
         } else {
             FILE * oldLogger = Logger::swapLoggerFile(logFile);
             fclose(oldLogger);
             bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
-                "{\"message\":\"The logger file repointing is done successfully\", \"log\":["
-                         + server->indexDataConfig->getHTTPServerAccessLogFile() + "]}\n");
+                "{\"message\":\"The logger file repointing succeeded\", \"log\":\""
+                         + server->indexDataConfig->getHTTPServerAccessLogFile() + "\"}\n");
         }
         break;
     }
@@ -745,8 +718,8 @@ void HTTPRequestHandler::infoCommand(evhttp_request *req, Srch2Server *server,
     evkeyvalq headers;
     evhttp_parse_query(req->uri, &headers);
 
-    string combinedInfo = "[" + server->indexer->getIndexHealth() + ", "
-            + versioninfo + "]";
+    string combinedInfo = "{" + server->indexer->getIndexHealth() + ", "
+        + "\"version\":\"" + versioninfo + "\"}";
 
     bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", combinedInfo, headers);
     evhttp_clear_headers(&headers);
@@ -890,12 +863,13 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
                 server->indexer, logicalPlan.getOffset(),
                 finalResults->getNumberOfResults(),
                 finalResults->getNumberOfResults(),
-                paramContainer.getMessageString(), ts1, tstart, tend);
+                paramContainer.getMessageString(), ts1, tstart, tend, paramContainer.onlyFacets);
         break;
 
     case srch2is::SearchTypeGetAllResultsQuery:
     case srch2is::SearchTypeMapQuery:
         finalResults->printStats();
+        finalResults->impl->estimatedNumberOfResults = finalResults->impl->sortedFinalResults.size();
         if (logicalPlan.getOffset() + logicalPlan.getNumberOfResultsToRetrieve()
                 > finalResults->getNumberOfResults()) {
             // Case where you have return 10,20, but we got only 0,15 results.

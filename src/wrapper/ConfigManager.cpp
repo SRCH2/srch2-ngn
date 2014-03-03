@@ -122,11 +122,21 @@ const char* const ConfigManager::getAllResultsKAlternative = "getallresultskalte
 const char* const ConfigManager::multipleCoresString = "cores";
 const char* const ConfigManager::singleCoreString = "core";
 const char* const ConfigManager::defaultCoreNameString = "defaultcorename";
+const char* const ConfigManager::searchPortString = "searchport";
+const char* const ConfigManager::suggestPortString = "suggestport";
+const char* const ConfigManager::infoPortString = "infoport";
+const char* const ConfigManager::docsPortString = "docsport";
+const char* const ConfigManager::updatePortString = "updateport";
+const char* const ConfigManager::savePortString = "saveport";
+const char* const ConfigManager::exportPortString = "exportport";
+const char* const ConfigManager::resetLoggerPortString = "resetloggerport";
+
 
 ConfigManager::ConfigManager(const string& configFile)
 {
     this->configFile = configFile;
     defaultCoreName = "__DEFAULTCORE__";
+    defaultCoreSetFlag = false;
 }
 
 void ConfigManager::loadConfigFile()
@@ -292,6 +302,8 @@ CoreInfo_t::CoreInfo_t(const CoreInfo_t &src)
     protectedWordsFilePath = src.protectedWordsFilePath;
 
     allowedRecordTokenizerCharacters = src.allowedRecordTokenizerCharacters;
+
+    ports = src.ports;
 }
 
 void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode, CoreInfo_t *coreInfo, map<string, unsigned> &boostsMap, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
@@ -624,6 +636,12 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
             }
         }
     }
+
+    // maxSearchThreads used to be contained in <query> so warn if we find it here
+    childNode = queryNode.child(maxSearchThreadsString);
+    if (childNode && childNode.text()) {
+        Logger::warn("maxSearchThreads is no longer in <query>.  Move it under <config>");
+    }
 }
 
 /*
@@ -665,6 +683,7 @@ void ConfigManager::parseMultipleCores(const xml_node &coresNode, bool &configSu
         // <cores defaultCoreName = "foo">
         if (coresNode.attribute(defaultCoreNameString) && string(coresNode.attribute(defaultCoreNameString).value()).compare("") != 0) {
             defaultCoreName = coresNode.attribute(defaultCoreNameString).value();
+            defaultCoreSetFlag = true;
         } else {
             parseWarnings << "Cores defaultCoreName not set <cores defaultCoreName=...>";
         }
@@ -739,6 +758,30 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_
                 "You should set it as <dataFile>path/to/data/file</dataFile> in the config file.\n";
             configSuccess = false;
             return;
+        }
+    }
+
+    // map of port type enums to strings to simplify code
+    struct portNameMap_t {
+        enum PortType_t portType;
+        const char *portName;
+    };
+    static portNameMap_t portNameMap[] = {
+        { SearchPort, searchPortString },
+        { SuggestPort, suggestPortString },
+        { InfoPort, infoPortString },
+        { DocsPort, docsPortString },
+        { UpdatePort, updatePortString },
+        { SavePort, savePortString },
+        { ExportPort, exportPortString },
+        { ResetLoggerPort, resetLoggerPortString },
+        { EndOfPortType, NULL }
+    };
+
+    for (unsigned int i = 0; portNameMap[i].portName != NULL; i++) {
+        childNode = parentNode.child(portNameMap[i].portName);
+        if (childNode && childNode.text()) { // checks if the config/port has any text in it or not
+            coreInfo->setPort(portNameMap[i].portType, childNode.text().as_int());
         }
     }
 
@@ -2307,9 +2350,10 @@ bool ConfigManager::isValidGetAllResultsKAlternative(string kpt){
     return false;
 }
 
+// Note: For release mode compiles, logLevel can still be 4 (debug), but debug output will be suppressed.
 bool ConfigManager::isValidLogLevel(string& logLevel) {
     if (logLevel.compare("0") == 0 || logLevel.compare("1") == 0 || logLevel.compare("2") == 0
-            || logLevel.compare("3") == 0) {
+        || logLevel.compare("3") == 0 || logLevel.compare("4") == 0) {
         return true;
     }
     return false;
@@ -2416,6 +2460,40 @@ CoreInfo_t *ConfigManager::getDefaultCoreInfo() const
     CoreInfo_t *coreInfo = ((CoreInfoMap_t) coreInfoMap)[n];
     return coreInfo;
     //        return coreInfoMap[getDefaultCoreName()];
+}
+
+unsigned short CoreInfo_t::getPort(PortType_t portType) const
+{
+    if (static_cast<unsigned int> (portType) >= ports.size()) {
+        return 0;
+    }
+
+    unsigned short portNumber = ports[portType];
+    return portNumber;
+}
+
+void CoreInfo_t::setPort(PortType_t portType, unsigned short portNumber)
+{
+    if (static_cast<unsigned int> (portType) >= ports.size()) {
+        ports.resize(static_cast<unsigned int> (EndOfPortType), 0);
+    }
+
+    switch (portType) {
+    case SearchPort:
+    case SuggestPort:
+    case InfoPort:
+    case DocsPort:
+    case UpdatePort:
+    case SavePort:
+    case ExportPort:
+    case ResetLoggerPort:
+        ports[portType] = portNumber;
+        break;
+
+    default:
+        Logger::error("Unrecognized HTTP listening port type: %d", static_cast<int> (portType));
+        break;
+    }
 }
 
 // JUST FOR Wrapper TEST

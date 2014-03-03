@@ -1,10 +1,11 @@
 #! /usr/bin/python
 
 # Test case to test multi-core functionality
-# The configuration file for this test case specifies 3 different cores, each with a different
-# data source.  Three search terms are tested, each expected to be returned by one and only one
-# of the cores.  The usual syntax of the queriesAndResults.txt file has been extended to the
-# following format: <search-term>||<core1 ID result set>@<core2 ID result set>@<core3 ID result set>
+# The configuration file for this test case specifies 4 different cores.  The first 3 have a
+# different data source.  Three search terms are tested, each expected to be returned by one
+# and only one of the cores.  The usual syntax of the queriesAndResults.txt file has been
+# extended to the following format:
+#     <search-term>||<core1 ID result set>@<core2 ID result set>@<core3 ID result set>
 # where each ID result set is a space separated list of record IDs expected from the server.
 
 import sys, urllib2, json, time, subprocess, os, commands, signal, re
@@ -144,7 +145,7 @@ def testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path
     #    of 0.85, and should not return any matching records.                             #
     #######################################################################################
 
-    print "\nSecond suite #2: Comparing different engine configurations on the same data source"
+    print "\nTest suite #2: Comparing different engine configurations on the same data source"
     f_in = open(queriesAndResultsPath2, 'r')
     for line in f_in:
         #get the query keyword and results
@@ -166,7 +167,7 @@ def testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path
 
             # TODO - Replace srch2 bad JSON (spurious comma).  Ticket SRCN-335 already filed.
             #response = re.sub('[,][}]', '}', response)
-            #print query + ' Got ==> ' + response
+            # print query + ' Got ==> ' + response
 
             response_json = json.loads(response)
 

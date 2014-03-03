@@ -91,11 +91,6 @@ public:
 	// TODO : FIXME: This function is not compatible with the new api
     int suggest(const string & keyword, float fuzzyMatchPenalty , const unsigned numberOfSuggestionsToReturn , vector<string> & suggestions );
 
-    /*
-     * Returns the estimated number of results
-     */
-    unsigned estimateNumberOfResults(const LogicalPlan * logicalPlan);
-
     /**
      * If the search type is set to TopK in LogicalPlan, this function
      * finds the next topK answers starting from

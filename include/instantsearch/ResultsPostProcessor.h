@@ -84,8 +84,10 @@ public:
     	stringstream ss;
     	for(unsigned index = 0 ; index < types.size() ; ++index){
     		ss << types[index] << fields[index].c_str() <<
-    				rangeStarts[index].c_str() << rangeGaps[index].c_str() <<  rangeEnds[index].c_str() <<
-    				numberOfTopGroupsToReturn[index] ;
+    				rangeStarts[index].c_str() << rangeGaps[index].c_str() <<  rangeEnds[index].c_str();
+    		if(index < numberOfTopGroupsToReturn.size()){
+    			ss << numberOfTopGroupsToReturn[index] ;
+    		}
     	}
     	return ss.str();
     }

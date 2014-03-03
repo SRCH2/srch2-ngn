@@ -66,6 +66,12 @@ void testLevel(const char* filename, Logger::LogLevel curLevel) {
 	char buffer[64];
 	Logger::setLogLevel(curLevel);
 	int level = Logger::SRCH2_LOG_SILENT + 1;
+#ifdef NDEBUG
+        // on release builds, DEBUG level is also silent
+        if (curLevel >= Logger::SRCH2_LOG_DEBUG) {
+            curLevel = static_cast<Logger::LogLevel> (Logger::SRCH2_LOG_DEBUG - 1);
+        }
+#endif
 	for (; level <= curLevel; level++) {
 		sprintf(buffer, "current level is %d", level);
 		logToFile(filename, level, buffer);

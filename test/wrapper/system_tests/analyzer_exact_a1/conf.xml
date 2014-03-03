@@ -59,6 +59,14 @@
     -->
     <dataFile>./analyzer_exact_a1/data.json</dataFile>
      
+    <!--
+	Maximum Number of Threads
+	Optional
+	
+	Number of threads that serve the requests.
+	Defaults to 1
+    -->
+    <maxSearchThreads>2</maxSearchThreads>
      
          
     <indexConfig>
@@ -175,14 +183,6 @@
             Defaults to 10.
         -->
         <rows>10</rows>
-        <!--
-            Maximum Number of Threads
-            Optional
-             
-            Number of threads that serve the requests.
-            Defaults to 1
-        -->
-        <maxSearchThreads>2</maxSearchThreads>
         <!--
             Field Based Search
             Optional

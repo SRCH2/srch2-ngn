@@ -1,3 +1,103 @@
 {"id" : 1, "title" : "pulp fiction" , "description" : "Pulp Fiction is a 1994 super hit American dark comedy", "genre" : "crime gangster"}
 {"id" : 2, "title" : "shawshank redemption" , "description" : "pulp The Shawshank Redemption is a 1994 American drama " , "genre" : "drama"}
 {"id" : 3, "title" : "king of new york" , "description" : "the movie king of new new york time square hudson river is famous" , "genre" : "drama"}
+{ "id" : 901, "title" : "Eurotrip", "description" : "2004 director Jeff Schaffer Comedy", "genre" : "comedy" }
+{ "id" : 905, "title" : "Star Wars: Episode III - Revenge of the Sith", "description" : "2005 director George Lucas Fiction", "genre" : "fiction" }
+{ "id" : 907, "title" : "Bicentennial Man", "description" : "1999 director Chris Columbus Fiction", "genre" : "fiction" }
+{ "id" : 908, "title" : "Lord of the Rings: The Return of the King", "description" : "2003 Peter Jackson Adventure", "genre" : "adventure" }
+{ "id" : 910, "title" : "Spider Man 2", "description" : "2004 Sam Raimi Action", "genre" : "action" }
+{ "id" : 921, "title" : "Smallville: Season 3", "description" : "2004 Alfred Gough Drama", "genre" : "drama" }
+{ "id" : 925, "title" : "The Majestic", "description" : "2001 Frank Darabont Romance", "genre" : "romance" }
+{ "id" : 926, "title" : "Insomnia", "description" : "2002 Christopher Nolan Crime-Gangster", "genre" : "gangster" }
+{ "id" : 927, "title" : "Lord of the Rings: The Two Towers", "description" : "2002 Peter Jackson Adventure", "genre" : "adventure" }
+{ "id" : 928, "title" : "Daredevil", "description" : "2003 Mark Steven Johnson Action", "genre" : "action" }
+{ "id" : 929, "title" : "Spider Man", "description" : "2002 Sam Raimi Action", "genre" : "action" }
+{ "id" : 48011, "title" : "The Phantom of the Opera", "description" : "2004 Joel Schumacher classic", "genre" : "classic" }
+{ "id" : 135001, "title" : "12 Monkeys", "description" : "1995 Terry Gilliam SCIENCE FICTION", "genre" : "science fiction" }
+{ "id" : 135002, "title" : "Blade Runner", "description" : "1982 Ridley Scott SCIENCE FICTION", "genre" : "science fiction" }
+{ "id" : 135004, "title" : "The Usual Suspects", "description" : "1995 Bryan Singer Drama", "genre" : "drama" }
+{ "id" : 135005, "title" : "Zoolander", "description" : "2001 Ben Stiller Comedy", "genre" : "comedy" }
+{ "id" : 135006, "title" : "The Life Aquatic", "description" : "2004 Wes Anderson Comedy", "genre" : "comedy" }
+{ "id" : 135007, "title" : "The Lost Boys", "description" : "1987 Joel Schumacher Horror", "genre" : "horror" }
+{ "id" : 135009, "title" : "The Royal Tenenbaums", "description" : "2001 Wes Anderson Drama", "genre" : "drama" }
+{ "id" : 135011, "title" : "A Nightmare On Elm Street", "description" : "1984 Wes Craven Horror", "genre" : "horror" }
+{ "id" : 135012, "title" : "Dumb and Dumber", "description" : "19 94 Peter Farrelly Comedy", "genre" : "comedy" }
+{ "id" : 135013, "title" : "Elf", "description" : "2003 Jon Favreau Comedy", "genre" : "comedy" }
+{ "id" : 135014, "title" : "Monty Python and the Holy Grail", "description" : "1975 Terry Jones Comedy", "genre" : "comedy" }
+{ "id" : 140001, "title" : "Bourne Identity", "description" : "2004 Doug Liman Mystery", "genre" : "mystery" }
+{ "id" : 140003, "title" : "Mr. and Mrs. Smith", "description" : "2005 Doug Liman Action", "genre" : "action" }
+{ "id" : 140004, "title" : "Gone in 60 Seconds", "description" : "2000 Dominic Sena Crime", "genre" : "crime" }
+{ "id" : 140009, "title" : "Bride and Prejudice", "description" : "2005 Gurinder Chadha Musical", "genre" : "musical" }
+{ "id" : 140010, "title" : "The Hunted", "description" : "2003 William Friedkin Action", "genre" : "action" }
+{ "id" : 150001, "title" : "Charlie and the Chocolate Factory", "description" : "2005 Tim Burton Commedy", "genre" : "commedy" }
+{ "id" : 150002, "title" : "Are We There Yet", "description" : "2005 Brian Levant Drama", "genre" : "drama" }
+{ "id" : 150003, "title" : "Beautiful Boxer", "description" : "2005 Ekachai Uekrongtham Commedy", "genre" : "commedy" }
+{ "id" : 150004, "title" : "Alone in the Dark ", "description" : "2005 Uwe Boll Coming-of-Age-Drama", "genre" : "drama" }
+{ "id" : 150005, "title" : "Hide and Seek", "description" : "2005 John Polson Adventure", "genre" : "adventure" }
+{ "id" : 150006, "title" : "Coach Carter", "description" : "2005 Thomas Carter Adventure", "genre" : "adventure" }
+{ "id" : 150008, "title" : "Racing Stripes", "description" : "2005 Frederik Du Chau Action", "genre" : "action" }
+{ "id" : 150009, "title" : "Kingdom of Heaven", "description" : "2005 Ridley Scott Action", "genre" : "action" }
+{ "id" : 150010, "title" : "Alexander", "description" : "2005 Oliver Stone Coming-of-Age-Drama", "genre" : "drama" }
+{ "id" : 156001, "title" : "Aviator", "description" : "2004 Martin Scorsese Drama", "genre" : "drama" }
+{ "id" : 156003, "title" : "Love the Hard Way", "description" : "2001 Peter Sehr Crime", "genre" : "crime" }
+{ "id" : 156005, "title" : "The Terminator", "description" : "1984 James Cameron Action", "genre" : "action" }
+{ "id" : 156006, "title" : "Jurassic Park", "description" : "1993 Steven Spielberg Action", "genre" : "action" }
+{ "id" : 156008, "title" : "Snatch", "description" : "2000 Guy Ritchie Crime", "genre" : "crime" }
+{ "id" : 217002, "title" : "The New World", "description" : "2005 Terrence Malick Adventure", "genre" : "adventure" }
+{ "id" : 217003, "title" : "Hide And Seek", "description" : "2005 John Polson Drama", "genre" : "drama" }
+{ "id" : 217005, "title" : "Racing Stripes", "description" : "2005 Frederik Du Chau Adventure", "genre" : "adventure" }
+{ "id" : 217006, "title" : "Cinderella Man", "description" : "2005 Ron Howard Action", "genre" : "action" }
+{ "id" : 217007, "title" : "The Ring 2", "description" : "2005 Hideo Nakata Drama", "genre" : "drama" }
+{ "id" : 217008, "title" : "Robots", "description" : "2005 Chris Wedge Fantasy", "genre" : "fantasy" }
+{ "id" : 217009, "title" : "Son Of The Mask", "description" : "2005 Larry Guterman Action", "genre" : "action" }
+{ "id" : 217010, "title" : "Kingdom Of Heaven", "description" : "2005 Ridley Scott Drama", "genre" : "drama" }
+{ "id" : 217011, "title" : "Bride And Prejudice", "description" : "2004 Gurinder Chadha dummyGenre2", "genre" : "dummygenre2" }
+{ "id" : 217012, "title" : "Miss Congeniality 2: ARMED AND FABULOUS", "description" : "2005 John Pasquin Action", "genre" : "action" }
+{ "id" : 217013, "title" : "Swimming Upstream", "description" : "2003 Russell Mulcahy Drama", "genre" : "drama" }
+{ "id" : 217014, "title" : "Cube Zero", "description" : "2004 Ernie Barbarash Drama", "genre" : "drama" }
+{ "id" : 217015, "title" : "Unleashed", "description" : "2005 Louis Leterrier Action", "genre" : "action" }
+{ "id" : 217016, "title" : "Spiderman 2", "description" : "2005 Sam Raimi Action", "genre" : "action" }
+{ "id" : 217017, "title" : "Hitch", "description" : "2005 Andy Tennant dummyGenre2", "genre" : "dummygenre2" }
+{ "id" : 217018, "title" : "Million Dollar Baby", "description" : "2005 Clint Eastwood Drama", "genre" : "drama" }
+{ "id" : 217019, "title" : "The Machinist", "description" : "2005 Brad Anderson Drama", "genre" : "drama" }
+{ "id" : 217020, "title" : "Alexander", "description" : "2004 Oliver Stone Action", "genre" : "action" }
+{ "id" : 259001, "title" : "About A Boy", "description" : "2002 Chris Weitz Comedy", "genre" : "comedy" }
+{ "id" : 259003, "title" : "Hero", "description" : "2002 Yimou Zhang Mystery", "genre" : "mystery" }
+{ "id" : 259004, "title" : "Lost In Translation", "description" : "2003 Sofia Coppola Comedy", "genre" : "comedy" }
+{ "id" : 259005, "title" : "Wonder Boys", "description" : "2000 Curtis Hanson Comedy", "genre" : "comedy" }
+{ "id" : 259006, "title" : "Before Sunrise", "description" : "1995 Richard Linklater Comedy", "genre" : "comedy" }
+{ "id" : 259008, "title" : "Requiem For a Dream", "description" : "2000 Darren Aronofsky Comedy", "genre" : "comedy" }
+{ "id" : 326002, "title" : "Godsend", "description" : "2004 Nick Hamm Drama", "genre" : "drama" }
+{ "id" : 326004, "title" : "Along Came Polly", "description" : "2004 John Hamburg Comedy", "genre" : "comedy" }
+{ "id" : 326005, "title" : "Bruce Almighty", "description" : "2003 Tom Shadyac Drama", "genre" : "drama" }
+{ "id" : 326006, "title" : "Lemony Snicket's A Series of Unfortunate Events", "description" : "2004 Brad Silberling Family", "genre" : "family" }
+{ "id" : 326008, "title" : "Birth", "description" : "2004 Jonathan Glazer Mystery", "genre" : "mystery" }
+{ "id" : 412002, "title" : "Snatch.", "description" : "2000 Guy Ritchie Crime", "genre" : "crime" }
+{ "id" : 412004, "title" : "X2", "description" : "2003 Bryan Singer Thriller", "genre" : "thriller" }
+{ "id" : 412005, "title" : "The Merchant of Venice", "description" : "2004 Michael Radford Drama", "genre" : "drama" }
+{ "id" : 412007, "title" : "Vanilla Sky", "description" : "2001 Cameron Crowe Thriller", "genre" : "thriller" }
+{ "id" : 412008, "title" : "White Noise", "description" : "2005 Geoffrey Sax Drama", "genre" : "drama" }
+{ "id" : 422102, "title" : "Eternal Sunshine of the Spotless Mind", "description" : "2004 Michel Gondry Drama", "genre" : "drama" }
+{ "id" : 422103, "title" : "Le Fabuleux destin dAm?ie Poulain", "description" : "2001 Jean-Pierre Jeunet Foreign", "genre" : "foreign" }
+{ "id" : 422104, "title" : "Ghost World", "description" : "2004 Terry Zwigoff Indie", "genre" : "indie" }
+{ "id" : 422105, "title" : "Girl with a Pearl Earring", "description" : "2003 Peter Webber Drama", "genre" : "drama" }
+{ "id" : 422106, "title" : "I Heart Huckabees", "description" : "2004 David O. Russell Drama", "genre" : "drama" }
+{ "id" : 422108, "title" : "Donnie Darko", "description" : "2001 Richard Kelly Drama", "genre" : "drama" }
+{ "id" : 422109, "title" : "The Princess Bride", "description" : "1987 Rob Reiner Drama", "genre" : "drama" }
+{ "id" : 422110, "title" : "Vampire Effect", "description" : "2003 Dante Lam Drama", "genre" : "drama" }
+{ "id" : 490003, "title" : "Hostage", "description" : "2005 Florent Emilio Siri Crime", "genre" : "crime" }
+{ "id" : 490006, "title" : "Cold Mountain", "description" : "2003 Anthony Minghella War", "genre" : "war" }
+{ "id" : 490008, "title" : "The Sound of Music", "description" : "1965 Robert Wise Musical", "genre" : "musical" }
+{ "id" : 490010, "title" : "Walk in the Clouds", "description" : "1995 Alfonso Arau War", "genre" : "war" }
+{ "id" : 490011, "title" : "Traffic", "description" : "2000 Steven Soderbergh Crime", "genre" : "crime" }
+{ "id" : 490012, "title" : "Pretty Woman", "description" : "1990 Gary Marshall Comedy", "genre" : "comedy" }
+{ "id" : 490015, "title" : "Notting Hill", "description" : "1999 Roger Michell Drama", "genre" : "drama" }
+{ "id" : 490016, "title" : "Stepmom", "description" : "1998 Chris Columbus Drama", "genre" : "drama" }
+{ "id" : 492001, "title" : "Star Wars", "description" : "2005 George Lucas Musicals", "genre" : "musicals" }
+{ "id" : 492002, "title" : "The Lord of the Rings: The Return of the King", "description" : "2003 Peter Jackson Science Fiction", "genre" : "science fiction" }
+{ "id" : 492003, "title" : "The Lord of the Rings: The Two Towers", "description" : "2002 Peter Jackson Science Fiction", "genre" : "science fiction" }
+{ "id" : 492006, "title" : "In Good Company", "description" : "2004 Paul Weitz Comedy", "genre" : "comedy" }
+{ "id" : 492009, "title" : "Hotel Rwanda", "description" : "2004 Terry George Drama", "genre" : "drama" }
+{ "id" : 525001, "title" : "Dr. No", "description" : "1962 Terence Young spy", "genre" : "spy" }
+{ "id" : 525002, "title" : "From Russia with Love", "description" : "1963 Terence Young spy", "genre" : "spy" }
+{ "id" : 525003, "title" : "Goldfinger", "description" : "1964 Guy Hamilton spy", "genre" : "spy" }

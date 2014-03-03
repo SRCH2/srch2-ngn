@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="generator" content="ReText Webpages generator 4.0.0">
+<meta name="generator" content="ReText Webpages generator 4.1.0">
 <link rel="stylesheet" type="text/css" href="style.css">
 <title>SRCH2: Configuration</title>
 </head>
@@ -30,6 +30,19 @@
 </div> <!-- Links to main pages, id=linkpool-->
 
 <hr>
+
+<!-- Google Tag Manager -->
+
+<noscript><iframe src="//www.googletagmanager.com/ns.html?id=GTM-MQK794"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'//www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-MQK794');</script>
+
+<!-- End Google Tag Manager -->
 
 <div id="content" > <!-- Table of content, id=content-->
 <table><tbody><tr><td>
@@ -127,12 +140,32 @@ should reference the data file's location as
 
 <p>This parameter is the network identification (i.e., IP address or host name) of the server on which the SRCH2 engine is listening.
 NOTE: If you want the server to accept all incoming packets, use "<b>0.0.0.0</b>" (without the quotes).</p>
+<p>The following parameters allow moving certain operations to a different port.  This feature allows network based security
+to be implemented using standard firewall functionality.  Typically, the search and info operations remain on a port
+accessible from any IP address, and suggest, docs, update, save, export, and resetLogger are placed on a port to
+which access is restricted by a firewall to internal IP addresses.</p>
+<h3 id="searchPort">4.1 SearchPort, Optional</h3>
+<p>This setting overrides listeningPort for search requests.  Search requests must be sent to this port instead.</p>
+<h3 id="SuggestPort&quot;">4.2 SuggestPort, Optional</h3>
+<p>This setting overrides listeningPort for suggest requests.  Suggest requests must be sent to this port instead.</p>
+<h3 id="InfoPort">4.3 InfoPort, Optional</h3>
+<p>This setting overrides listeningPort for info requests.  Info requests must be sent to this port instead.</p>
+<h3 id="DocsPort">4.4 DocsPort, Optional</h3>
+<p>This setting overrides listeningPort for docs requests.  Docs requests must be sent to this port instead.</p>
+<h3 id="UpdatePort">4.5 UpdatePort, Optional</h3>
+<p>This setting overrides listeningPort for update requests.  Update requests must be sent to this port instead.</p>
+<h3 id="SavePort">4.6 SavePort, Optional</h3>
+<p>This setting overrides listeningPort for save requests.  Save requests must be sent to this port instead.</p>
+<h3 id="ExportPort">4.7 ExportPort, Optional</h3>
+<p>This setting overrides listeningPort for export requests.  Export requests must be sent to this port instead.</p>
+<h3 id="ResetLoggerPort">4.8 ResetLoggerPort, Optional</h3>
+<p>This setting overrides listeningPort for resetlogger requests.  ResetLogger requests must be sent to this port instead.</p>
 <h2 id="dataDir">5. Data Directory, Required</h2>
 <pre><code>&lt;dataDir&gt;/path/to/data/directory/&lt;/dataDir&gt;
 </code></pre>
 
 <p>This value specifies the path of a folder where the engine stores serialized index files. <br></p>
-<h2 id="maxSearchThreads">6. Number of Search Threads, Optional:</h2>
+<h2 id="maxSearchThreads">6. Number of Search Threads, Optional</h2>
 <pre><code>&lt;maxSearchThreads&gt;2&lt;/maxSearchThreads&gt;
 </code></pre>
 

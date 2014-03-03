@@ -1,3 +1,12 @@
+<!-- Google Tag Manager -->
+<noscript><iframe src="//www.googletagmanager.com/ns.html?id=GTM-MQK794"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'//www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-MQK794');</script>
+<!-- End Google Tag Manager -->
 <div id="content" > <!-- Table of content, id=content-->
 <table><tbody><tr><td>
 <div><h3><a style="text-decoration: none;color:#ee2e24" href="#doc">Content</a></h3></div>
@@ -51,7 +60,7 @@ Content-Type: application/json; charset=UTF-8
 Content-Length: 138
 Date: Thu, 19 Sep 2013 18:52:52 GMT
 
-[{search_requests:0,write_requests:100,docs_in_index:100,"last_merge":"09/19/13 18:52:48","last_merge_time":"0","doc_count":"100"}, 4.0.0]
+{"engine_status":{"search_requests":"0","write_requests":"100","docs_in_index":"100","last_merge":"02/10/14 23:11:21","last_merge_time":"0","doc_count":"100"}, "version":"4.2.0"}
 ```
 
 ##2. Serializing Indexes to Disk##{id="serialize-indexes"}
