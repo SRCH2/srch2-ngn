@@ -52,9 +52,6 @@ void LogicalPlanNode::setFuzzyTerm(Term * fuzzyTerm){
 string LogicalPlanNode::toString(){
 	stringstream ss;
 	ss << this->nodeType;
-	if(this->nodeType == LogicalPlanNodeTypePhrase){
-		ss << ((reinterpret_cast<LogicalPlanPhraseNode *>(this))->getPhraseInfo()->toString());
-	}
 	if(this->exactTerm != NULL){
 		ss << this->exactTerm->toString();
 	}
