@@ -18,7 +18,9 @@ MergeByShortestListOperator::~MergeByShortestListOperator(){
 bool MergeByShortestListOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
 	this->queryEvaluator = queryEvaluator;
 
-	queryEvaluator->getForwardIndex()->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
+	if(queryEvaluator != NULL){ // Only for mergeByShortestList test case queryEvaluator can be NULL
+		queryEvaluator->getForwardIndex()->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
+	}
 
 	// prepare the cache key
 	string key;

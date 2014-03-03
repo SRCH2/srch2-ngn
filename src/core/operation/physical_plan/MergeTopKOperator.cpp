@@ -20,7 +20,9 @@ bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPl
 
 	this->queryEvaluator = queryEvaluator;
 
-	queryEvaluator->getForwardIndex()->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
+	if(this->queryEvaluator != NULL){ // only for mergeTopK ctest queryEvaluator can be NULL
+		queryEvaluator->getForwardIndex()->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
+	}
 
 	/*
 	 * 0. Cache:
