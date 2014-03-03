@@ -246,10 +246,6 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 	}
 
 
-//	// start the timer for search
-//	struct timespec tstart;
-//	clock_gettime(CLOCK_REALTIME, &tstart);
-
 	PhysicalPlanExecutionParameters dummy(0,true,1,SearchTypeTopKQuery); // this parameter will be created inside KeywordSearchOperator
 	topOperator->open(this, dummy );
 
@@ -303,11 +299,6 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 
 	topOperator->close(dummy);
 
-	if(facetOperatorPtr != NULL){
-		delete facetOperatorPtr->getPhysicalPlanOptimizationNode();
-		delete facetOperatorPtr;
-	}
-
 	// set estimated number of results
 	queryResults->impl->estimatedNumberOfResults = logicalPlan->getTree()->stats->getEstimatedNumberOfResults();
 
@@ -317,13 +308,6 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 	cacheObject->copyFromQueryResultsInternal(queryResults->impl);
 	this->cacheManager->getQueryResultsCache()->setQueryResults(key , cacheObject);
 
-
-//	// compute elapsed time in ms , end the timer
-//	struct timespec tend;
-//	clock_gettime(CLOCK_REALTIME, &tend);
-//	unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000000
-//			+ (tend.tv_nsec - tstart.tv_nsec) / 1000;
-//	cout << ts1/1000 << endl;
 
 	if(facetOperatorPtr != NULL){
 		delete facetOperatorPtr->getPhysicalPlanOptimizationNode();
