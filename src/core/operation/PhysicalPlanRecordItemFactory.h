@@ -19,6 +19,8 @@
 #ifndef __PHYSICALPLANRECORDITEMFACTORY_H__
 #define __PHYSICALPLANRECORDITEMFACTORY_H__
 
+#define INITIAL_NUMBER_OF_RECORD_ITEMS_IN_A_GROUP 10000
+
 #include "util/Assert.h"
 
 #include <map>
@@ -132,14 +134,14 @@ public:
 		return extraObjects.size();
 	}
 	PhysicalPlanRecordItem * createRecordItem(){
-		if(size >= 10000){
-			if(size - 10000 >= extraObjects.size()){
+		if(size >= INITIAL_NUMBER_OF_RECORD_ITEMS_IN_A_GROUP){
+			if(size - INITIAL_NUMBER_OF_RECORD_ITEMS_IN_A_GROUP >= extraObjects.size()){
 				PhysicalPlanRecordItem  * newObj = new PhysicalPlanRecordItem();
 				extraObjects.push_back(newObj);
 				size++;
 				return newObj;
 			}else{
-				PhysicalPlanRecordItem * toReturn = extraObjects.at(size - 10000);
+				PhysicalPlanRecordItem * toReturn = extraObjects.at(size - INITIAL_NUMBER_OF_RECORD_ITEMS_IN_A_GROUP);
 				toReturn->clear();
 				size ++;
 				return toReturn;
@@ -213,12 +215,22 @@ public:
 		}
 	}
 
+	/*
+	 * Refresh prepares this pool for another fresh query. Since we
+	 * don't want to delete any objects at this point (it's expensive) we only set the size to
+	 * zero.
+	 */
 	void refresh(){
 		size = 0;
 	}
 private:
+	/*
+	 * Each pool has 10000 tuples created in the beginning. If a reader
+	 * keeps asking for more tuples (more than 10000), we start allocating
+	 * new tuples and save them in extraObjects vector.
+	 */
+	PhysicalPlanRecordItem objects[INITIAL_NUMBER_OF_RECORD_ITEMS_IN_A_GROUP];
 	vector<PhysicalPlanRecordItem *> extraObjects;
-	PhysicalPlanRecordItem objects[10000];
 	unsigned size;
 };
 
@@ -231,14 +243,14 @@ public:
 	~PhysicalPlanRecordItemFactory(){
 		// remove inactive pools
 		for(boost::unordered_set<PhysicalPlanRecordItemPool *>::iterator inactivePoolItr =
-				inactivePools.begin(); inactivePoolItr != inactivePools.end(); ++inactivePoolItr){
+				idlePools.begin(); inactivePoolItr != idlePools.end(); ++inactivePoolItr){
 			delete *inactivePoolItr;
 		}
 		// remove active pools
 		// NOTE: The instance of PhysicalPlanRecordItemFactory is kept in Cache so it will be destroyed
 		// when the whole system is shutting down. So at that point it's safe to delete even active pools
-		for(map<unsigned , PhysicalPlanRecordItemPool *>::iterator activePoolItr = activePools.begin();
-				activePoolItr != activePools.end() ; ++activePoolItr){
+		for(map<unsigned , PhysicalPlanRecordItemPool *>::iterator activePoolItr = busyPools.begin();
+				activePoolItr != busyPools.end() ; ++activePoolItr){
 			delete activePoolItr->second;
 		}
 	}
@@ -246,7 +258,7 @@ public:
 	bool clear(){
 		// clear inactive pools (removes extraObjects from them)
 		for(boost::unordered_set<PhysicalPlanRecordItemPool *>::iterator inactivePoolItr =
-				inactivePools.begin(); inactivePoolItr != inactivePools.end(); ++inactivePoolItr){
+				idlePools.begin(); inactivePoolItr != idlePools.end(); ++inactivePoolItr){
 			(*inactivePoolItr)->clear();
 		}
 		return true;
@@ -261,14 +273,14 @@ public:
 
 		// check to see if we have any inactive pool
 		PhysicalPlanRecordItemPool * newPool = NULL;
-		if(inactivePools.size() > 0){
+		if(idlePools.size() > 0){
 			// Choose the pool which has the most number of objects created
 			// we want to reduce the chance of needing more objects by giving out
 			// big pools first
-			boost::unordered_set<PhysicalPlanRecordItemPool *>::iterator poolToReturn = inactivePools.end();
-			for(boost::unordered_set<PhysicalPlanRecordItemPool *>::iterator poolItr = inactivePools.begin();
-					poolItr != inactivePools.end() ; ++ poolItr){
-				if(poolToReturn == inactivePools.end()){
+			boost::unordered_set<PhysicalPlanRecordItemPool *>::iterator poolToReturn = idlePools.end();
+			for(boost::unordered_set<PhysicalPlanRecordItemPool *>::iterator poolItr = idlePools.begin();
+					poolItr != idlePools.end() ; ++ poolItr){
+				if(poolToReturn == idlePools.end()){
 					poolToReturn = poolItr;
 				}else{
 					if((*poolItr)->getNumberOfObjects() > (*poolToReturn)->getNumberOfObjects()){
@@ -279,13 +291,13 @@ public:
 
 			// remove pool from inactive pools
 			newPool =  *(poolToReturn);
-			inactivePools.erase(poolToReturn);
+			idlePools.erase(poolToReturn);
 		}else{ // we don't have inactive pools, so we should make a new one
 			// create a new pool
 			newPool = new PhysicalPlanRecordItemPool();
 		}
 		// add (newHandle,pool) to active pools
-		activePools[newHandle] = newPool;
+		busyPools[newHandle] = newPool;
 		// unlock
 		lock.unlock();
 		// return handle
@@ -295,8 +307,8 @@ public:
 		// lock
 		boost::unique_lock< boost::shared_mutex > lock(_access);
 		// get pool from map by using handle
-		map<unsigned , PhysicalPlanRecordItemPool *>::iterator poolToReturnItr = activePools.find(handle);
-		if(poolToReturnItr == activePools.end()){
+		map<unsigned , PhysicalPlanRecordItemPool *>::iterator poolToReturnItr = busyPools.find(handle);
+		if(poolToReturnItr == busyPools.end()){
 			// unlock
 			lock.unlock();
 			return NULL;
@@ -312,16 +324,16 @@ public:
 		//lock
 		boost::unique_lock< boost::shared_mutex > lock(_access);
 		// find the pool
-		map<unsigned , PhysicalPlanRecordItemPool *>::iterator poolItr = activePools.find(handle);
-		ASSERT(poolItr != activePools.end());
+		map<unsigned , PhysicalPlanRecordItemPool *>::iterator poolItr = busyPools.find(handle);
+		ASSERT(poolItr != busyPools.end());
 		PhysicalPlanRecordItemPool * poolToClose = poolItr->second;
 
 		// erase pool from active pools
-		activePools.erase(poolItr);
+		busyPools.erase(poolItr);
 		// refresh this pool for later use
 		poolToClose->refresh();
 		// insert pool in inactive pools
-		inactivePools.insert(poolToClose);
+		idlePools.insert(poolToClose);
 		//unlock
 		lock.unlock();
 	}
@@ -329,11 +341,22 @@ private:
 	// lock
 	mutable boost::shared_mutex _access;
 
+	/*
+	 * Factory contains two types of pools : busy and idle.
+	 * Busies are those that are opened but not closed yet. These pools are
+	 * never deallocated because maybe a reader is using them. Whenever a busy
+	 * pool is closed, we return it back to idle pools.
+	 * Idle pools are those that are created upon the request of an
+	 * old query but they are closed and not opened anymore. When a new
+	 * query comes, we first check to see if we have any idle pools.
+	 * if we do we open this pool and move it to busy ones, otherwise we create a new pool.
+	 */
+
 	// map from handles to pool objects
-	map<unsigned , PhysicalPlanRecordItemPool *> activePools;
+	map<unsigned , PhysicalPlanRecordItemPool *> busyPools;
 
 	// set which keeps all pools
-	boost::unordered_set<PhysicalPlanRecordItemPool *> inactivePools;
+	boost::unordered_set<PhysicalPlanRecordItemPool *> idlePools;
 
 	// handle value
 	unsigned handleCounter;
