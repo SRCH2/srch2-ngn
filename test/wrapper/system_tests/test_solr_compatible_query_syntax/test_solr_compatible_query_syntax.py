@@ -77,7 +77,7 @@ def prepareQuery(queryKeywords):
     #################  prepare main query part
     #query = query + ''
     # local parameters
-    query = query + queryKeywords
+    query = query + queryKeywords + "&searchType=getAll"
 
     #print 'Query : ' + query
     ##################################
