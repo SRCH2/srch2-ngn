@@ -172,30 +172,29 @@ public:
 		return true;
 	}
 	bool get(string & key, boost::shared_ptr<T> & objectPointer) {
-		return false;
-//		boost::unique_lock< boost::shared_mutex > lock(_access);
-////		ASSERT(checkCacheConsistency());
-//		//1. compute the hashed key
-//		unsigned hashedKeyToFind = hashDJB2(key.c_str());
-//		typename map<unsigned , pair< CacheEntry<T> * , HashedKeyLinkListElement * > >::iterator cacheEntry = cacheEntries.find(hashedKeyToFind);
-//		if(cacheEntry == cacheEntries.end()){ // hashed key doesn't exist
-//			lock.unlock();
-////			ASSERT(checkCacheConsistency());
-//			return false;
-//		}
-//		if(cacheEntry->second.first->getKey().compare(key) != 0){
-//			lock.unlock();
-////			ASSERT(checkCacheConsistency());
-//			return false;
-//		}
-//		// cache hit , move the corresponding linked list element to the last position to make it
-//		// get kicked out laster
-//		moveLinkedListElementToLast(cacheEntry->second.second);
-//		// and return the object
-//		objectPointer = cacheEntry->second.first->getObjectPointer();
-//		lock.unlock();
-////		ASSERT(checkCacheConsistency());
-//		return true;
+		boost::unique_lock< boost::shared_mutex > lock(_access);
+//		ASSERT(checkCacheConsistency());
+		//1. compute the hashed key
+		unsigned hashedKeyToFind = hashDJB2(key.c_str());
+		typename map<unsigned , pair< CacheEntry<T> * , HashedKeyLinkListElement * > >::iterator cacheEntry = cacheEntries.find(hashedKeyToFind);
+		if(cacheEntry == cacheEntries.end()){ // hashed key doesn't exist
+			lock.unlock();
+//			ASSERT(checkCacheConsistency());
+			return false;
+		}
+		if(cacheEntry->second.first->getKey().compare(key) != 0){
+			lock.unlock();
+//			ASSERT(checkCacheConsistency());
+			return false;
+		}
+		// cache hit , move the corresponding linked list element to the last position to make it
+		// get kicked out laster
+		moveLinkedListElementToLast(cacheEntry->second.second);
+		// and return the object
+		objectPointer = cacheEntry->second.first->getObjectPointer();
+		lock.unlock();
+//		ASSERT(checkCacheConsistency());
+		return true;
 	}
 
 
