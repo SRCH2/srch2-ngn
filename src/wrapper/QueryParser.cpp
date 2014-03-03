@@ -1952,34 +1952,10 @@ bool QueryParser::parseBooleanExpressionRecursive(ParseTreeNode * parent, string
     // Example : ((((EXP1) OR (EXP2)))) => (EXP1) OR (EXP2)
     removeOuterParenthesisPair(input);
 
+    // 1. make sure parentheses are first and last character (if any) by trimming
+    boost::algorithm::trim(input);
     /*
-    * 3. Since AND has the highest priority, first we try to break the string by AND
-    * Example : "(A AND B) OR C AND (NOT D OR E)" =>
-    * [AND]_______ (A AND B) OR C
-    *  |
-    *  |__________ (NOT D OR E)
-    */
-
-    vector<string> conjuncts;
-    tokenizeAndDontBreakParentheses(input, conjuncts , "AND");
-    if(conjuncts.size() >= 2){
-        // This AND operator object
-        expressionNode = new ParseTreeNode(LogicalPlanNodeTypeAnd, parent);
-        for(vector<string>::iterator conjunct = conjuncts.begin() ; conjunct != conjuncts.end() ; ++conjunct){
-            ParseTreeNode * newChild = NULL;
-            // Call this function on each expression and put the result as a child of this AND operator
-            if(parseBooleanExpressionRecursive(expressionNode, *conjunct,  newChild) == false) {
-                delete expressionNode;
-                expressionNode = NULL;
-                return false;
-            }
-            expressionNode->children.push_back(newChild);
-        }
-        return true;
-    }
-
-    /*
-    * 4. OR has the next priority, so now we try to break the string by OR
+    * 3. OR has the next priority (after AND), so now we try to break the string by OR first
     * Example : "(A AND B) OR C AND (NOT D OR E)" =>
     * ==== Step 3 :
     * [AND]_______ (A AND B) OR C
@@ -2013,6 +1989,31 @@ bool QueryParser::parseBooleanExpressionRecursive(ParseTreeNode * parent, string
         return true;
     }
 
+    /*
+    * 4. Since AND has the highest priority, first we try to break the string by AND (after breaking it by OR)
+    * Example : "(A AND B) OR C AND (NOT D OR E)" =>
+    * [AND]_______ (A AND B) OR C
+    *  |
+    *  |__________ (NOT D OR E)
+    */
+
+    vector<string> conjuncts;
+    tokenizeAndDontBreakParentheses(input, conjuncts , "AND");
+    if(conjuncts.size() >= 2){
+        // This AND operator object
+        expressionNode = new ParseTreeNode(LogicalPlanNodeTypeAnd, parent);
+        for(vector<string>::iterator conjunct = conjuncts.begin() ; conjunct != conjuncts.end() ; ++conjunct){
+            ParseTreeNode * newChild = NULL;
+            // Call this function on each expression and put the result as a child of this AND operator
+            if(parseBooleanExpressionRecursive(expressionNode, *conjunct,  newChild) == false) {
+                delete expressionNode;
+                expressionNode = NULL;
+                return false;
+            }
+            expressionNode->children.push_back(newChild);
+        }
+        return true;
+    }
 
     /*
     * 5. If the string is not breakable by AND and OR, we try find NOT in the beginning.
