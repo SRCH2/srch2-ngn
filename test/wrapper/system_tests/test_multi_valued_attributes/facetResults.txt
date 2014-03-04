@@ -1,1 +1,1 @@
-model||bmw,2.0|toyota,1.0|jeep,1.0|
+model||bmw,1.0|toyota,1.0|

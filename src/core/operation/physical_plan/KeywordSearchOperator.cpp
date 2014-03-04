@@ -29,7 +29,6 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 //		}else{
 //			cout << "Fuzzy:\t";
 //		}
-		unsigned numberOfIterations = logicalPlan->offset + logicalPlan->numberOfResultsToRetrieve;
 //		for(unsigned planOffset = 0 ; planOffset < 7 ; planOffset ++){
 			/*
 			 * 1. Use CatalogManager to collect statistics and meta data about the logical plan
@@ -53,27 +52,8 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 			QueryOptimizer queryOptimizer(queryEvaluator);
 			PhysicalPlan physicalPlan(queryEvaluator);
 
-			if(logicalPlan->getQueryType() == SearchTypeTopKQuery){
-				if(logicalPlan->getPostProcessingInfo() != NULL){
-					if(logicalPlan->getPostProcessingInfo()->getfacetInfo() != NULL
-							|| logicalPlan->getPostProcessingInfo()->getSortEvaluator() != NULL
-							|| logicalPlan->getPostProcessingInfo()->getPhraseSearchInfoContainer() != NULL){
-						if(logicalPlan->getTree()->stats->getEstimatedNumberOfResults() > 500){
-							numberOfIterations = 500;
-						}else{
-							numberOfIterations = -1; // to set this to a very big number
-						}
-					}
-				}
-			}else if(logicalPlan->getQueryType() == SearchTypeGetAllResultsQuery){
-				if(logicalPlan->getTree()->stats->getEstimatedNumberOfResults() >
-				queryEvaluator->getQueryEvaluatorRuntimeParametersContainer()->getAllMaximumNumberOfResults){
-					numberOfIterations = queryEvaluator->getQueryEvaluatorRuntimeParametersContainer()->getAllTopKReplacementK;
-				}else{
-					numberOfIterations = -1;
-				}
-			}
-			params.k = numberOfIterations;
+			params.k = numberOfResultsToRetrievePolicy(queryEvaluator);
+
 			params.cacheObject = NULL;
 			physicalPlan.setExecutionParameters(&params);
 
@@ -100,10 +80,7 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 				resultIds.push_back(newRecord->getRecordId());
 				results.push_back(newRecord);
 
-				if(physicalPlan.getSearchType() == SearchTypeTopKQuery && resultIds.size() >= numberOfIterations){
-					break;
-				}else if(physicalPlan.getSearchType() == SearchTypeGetAllResultsQuery &&
-						resultIds.size() >= numberOfIterations ){
+				if(resultIds.size() >= params.k  ){
 					break;
 				}
 
@@ -132,7 +109,7 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 //		cout << ts1*1.0/1000 << endl ;
 
 		if(fuzzyPolicyIter == 0){
-			if(isFuzzy == true && results.size() < numberOfIterations){
+			if(isFuzzy == true && results.size() < params.k){
 				logicalPlan->setFuzzy(true);
 				params.isFuzzy = true;
 			}else{
@@ -180,6 +157,36 @@ KeywordSearchOperator::~KeywordSearchOperator(){
 }
 KeywordSearchOperator::KeywordSearchOperator(LogicalPlan * logicalPlan){
 	this->logicalPlan = logicalPlan;
+}
+
+/*
+ * This function determines the number of times that getNext should be called
+ * on the physical plan build inside open of this function. This number depends
+ * on our policy related to 1.searchType 2.Having or not having Facet/Sort.
+ */
+unsigned KeywordSearchOperator::numberOfResultsToRetrievePolicy(QueryEvaluatorInternal * queryEvaluator){
+	unsigned decidedNumberOfResultsToFetch = 0;
+
+	// if search type is searchTopK, we only fetch offset + rows results no matter we have facet or not
+	if(logicalPlan->getQueryType() == SearchTypeTopKQuery){
+
+		decidedNumberOfResultsToFetch = logicalPlan->offset + logicalPlan->numberOfResultsToRetrieve;
+
+	// if search type is getAll,
+	// if expected number of results is greater than a constant we only fetch some number of results
+	// otherwise, we get everything.
+	}else if(logicalPlan->getQueryType() == SearchTypeGetAllResultsQuery){
+		decidedNumberOfResultsToFetch = -1; // a very big number which results in fetching all possible results.
+
+		// but if the expected total number of results is more than a threshold we only search for
+		// a certain number of results to keep performance.
+		if(logicalPlan->getTree()->stats->getEstimatedNumberOfResults() >
+		queryEvaluator->getQueryEvaluatorRuntimeParametersContainer()->getAllMaximumNumberOfResults){
+			decidedNumberOfResultsToFetch = queryEvaluator->getQueryEvaluatorRuntimeParametersContainer()->getAllTopKReplacementK;
+		}
+	}
+
+	return decidedNumberOfResultsToFetch;
 }
 // The cost of open of a child is considered only once in the cost computation
 // of parent open function.

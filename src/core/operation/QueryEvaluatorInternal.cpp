@@ -250,12 +250,6 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 	topOperator->open(this, dummy );
 
 
-	unsigned numberOfIterations ;
-	if(logicalPlan->getQueryType() == SearchTypeTopKQuery ){
-		numberOfIterations = logicalPlan->offset + logicalPlan->numberOfResultsToRetrieve;
-	}else{
-		numberOfIterations = -1; // to set it to a very big number
-	}
 	boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
 	this->getTrie()->getTrieRootNode_ReadView(trieRootNode_ReadView);
 	while(true){
@@ -264,11 +258,6 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 
 		if(newRecord == NULL){
 			break;
-		}
-
-		if(queryResults->impl->sortedFinalResults.size() >= numberOfIterations){
-			break; // although some operators like facet need us to call getNext until the end
-			        // we shouldn't continue because if the user want everything, he uses searchType=getAll
 		}
 
 		QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
