@@ -1,12 +1,18 @@
 
 how to run system test case:
 
-/path/to/system/test/dir/main.sh /path/to/system/test/dir /path/to/srch2-engine-executable
+/path/to/system/test/dir/main.sh [options] /path/to/system/test/dir /path/to/srch2-engine-executable
 
 if you are running it for the sytem test directory itself then 
 
 ./main.sh . /path/to/srch2-search-server
 
+
+options:
+	-f or --force : Continue executing tests even after one fails
+	--html : Format output in HTML (primarily for the dashboard)
+	-o or --outfile <filename> : Specify that output should go to <filename> instead of standard out
+	--upload : Upload output file to the dashboard server
 
 
 *** BELOW IS THE OLD CONTENT OF README.TXT WHICH IS MAINLY ABOUT STATEMEDIA TESTS ***
