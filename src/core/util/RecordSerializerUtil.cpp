@@ -8,6 +8,7 @@
 #include "RecordSerializerUtil.h"
 #include <set>
 #include <sstream>
+#include <algorithm>
 #include "thirdparty/snappy-1.0.4/snappy.h"
 
 using namespace srch2::instantsearch;

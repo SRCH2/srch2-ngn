@@ -9,7 +9,7 @@
 #define __RECORDSERIALIZERUTIL_H__
 
 #include <string>
-#include <instantsearch/schema.h>
+#include <instantsearch/Schema.h>
 #include <instantsearch/Record.h>
 #include "util/RecordSerializer.h"
 #include <vector>
