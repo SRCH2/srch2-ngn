@@ -175,6 +175,9 @@ void sequentialAccessTest(const vector<RecordWithKeywordInfo> &recordWithKeyword
     double time_span = 0.0;
     unsigned counter = 0;
 
+    shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
+    forwardIndex->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
+
     for(unsigned i = 0; i < recordWithKeywordInfoVector.size(); i++)
     {
         float score = 0;
@@ -192,12 +195,7 @@ void sequentialAccessTest(const vector<RecordWithKeywordInfo> &recordWithKeyword
             {
                 clock_gettime(CLOCK_REALTIME, &t1);
 
-                bool valid = false;
-				const ForwardList* fl = forwardIndex->getForwardList(i, valid);
-                bool result = false;
-                if(valid == true){
-                	forwardIndex->haveWordInRange(i, fl, minMaxVector[k].first, minMaxVector[k].second, -1, keywordId, attributeBitmap, score);
-                }
+                bool result = forwardIndex->haveWordInRange(forwardListDirectoryReadView, i, minMaxVector[k].first, minMaxVector[k].second, -1, keywordId, attributeBitmap, score);
 
                 clock_gettime(CLOCK_REALTIME, &t2);
 
@@ -247,6 +245,9 @@ void randomAccessTest(const vector<RecordWithKeywordInfo> &recordWithKeywordInfo
     unsigned negCounter = 0;
     unsigned posCounter = 0;
 
+    shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
+    forwardIndex->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
+
     while((negCounter + posCounter) < RAND_ACCESS_LOOP_NUMBER)
     {
         unsigned recordId;
@@ -266,12 +267,8 @@ void randomAccessTest(const vector<RecordWithKeywordInfo> &recordWithKeywordInfo
                 
             clock_gettime(CLOCK_REALTIME, &t1);
 
-            bool valid = false;
-			const ForwardList* fl = forwardIndex->getForwardList(recordId, valid);
             bool result = false;
-            if(valid == true){
-            	forwardIndex->haveWordInRange(recordId,fl, minMaxVector[j].first, minMaxVector[j].second, -1, keywordId, attributeBitmap, score);
-            }
+			result = forwardIndex->haveWordInRange(forwardListDirectoryReadView, recordId, minMaxVector[j].first, minMaxVector[j].second, -1, keywordId, attributeBitmap, score);
         
             clock_gettime(CLOCK_REALTIME, &t2);
 
@@ -314,7 +311,7 @@ int main(int argc, char *argv[])
 
     /// Commit the trie
 	trie->commit();
-    trie->finalCommit_finalizeHistogramInformation(NULL , 0);
+    trie->finalCommit_finalizeHistogramInformation(NULL, NULL , 0);
 
 	typedef boost::shared_ptr<TrieRootNodeAndFreeList > TrieRootNodeSharedPtr;
 	TrieRootNodeSharedPtr rootSharedPtr;

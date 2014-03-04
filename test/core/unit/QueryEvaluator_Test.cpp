@@ -100,12 +100,12 @@ void ActiveNodeSet_test()
     ASSERT(checkContainment(similarPrefixes, "cance"));
     similarPrefixes.clear();
 
-    delete term;
-    delete indexMetaData;
-    delete indexer;
     // We don't need to delete prefixActiveNodeSet since it's cached and will be
     // deleted in the destructor of indexSearchInternal
     delete queryEvaluator;
+    delete term;
+    delete indexMetaData;
+    delete indexer;
     syn->free();
 }
 

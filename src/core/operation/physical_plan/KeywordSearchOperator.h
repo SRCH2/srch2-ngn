@@ -51,6 +51,7 @@ public:
 	bool close(PhysicalPlanExecutionParameters & params);
 	string toString();
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
+	unsigned numberOfResultsToRetrievePolicy(QueryEvaluatorInternal * queryEvaluator);
 	~KeywordSearchOperator();
 	KeywordSearchOperator(LogicalPlan * logicalPlan);
 private:

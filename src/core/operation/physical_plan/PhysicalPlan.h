@@ -26,6 +26,7 @@
 #include "index/Trie.h"
 #include "index/InvertedIndex.h"
 #include "operation/HistogramManager.h"
+#include "operation/PhysicalPlanRecordItemFactory.h"
 
 using namespace std;
 
@@ -66,6 +67,8 @@ struct PhysicalPlanExecutionParameters {
 	// If this member is true, then cacheObject contains a cache feed from parent
 	bool parentIsCacheEnabled;
 	PhysicalOperatorCacheObject * cacheObject ;
+	unsigned totalNumberOfRecords;
+
 	PhysicalPlanExecutionParameters(unsigned k,bool isFuzzy,float prefixMatchPenalty,srch2is::QueryType searchType){
 		this->k = k;
 		this->isFuzzy = isFuzzy ;
@@ -96,7 +99,6 @@ struct PhysicalPlanExecutionParameters {
 	}
 };
 
-class PhysicalPlanRecordItem;
 /*
  * This structure is used to move information when verifyByRandomAccess() of an
  * operator is called.
@@ -106,7 +108,10 @@ class PhysicalPlanRecordItem;
  */
 struct PhysicalPlanRandomAccessVerificationParameters {
 	Ranker * ranker ;
-	PhysicalPlanRandomAccessVerificationParameters(Ranker * ranker){
+	PhysicalPlanRandomAccessVerificationParameters(Ranker * ranker,
+			shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView):
+				forwardListDirectoryReadView(forwardListDirectoryReadView)
+	{
 		this->ranker = ranker;
 	}
 
@@ -122,6 +127,7 @@ struct PhysicalPlanRandomAccessVerificationParameters {
     PhysicalPlanRecordItem * recordToVerify;
     bool isFuzzy;
 	float prefixMatchPenalty ;
+    shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView;
 };
 
 // This class is used to maintain the input/output properties of a PhysicalPlanIterator
@@ -130,154 +136,6 @@ public:
 	bool isMatchAsInputTo(const IteratorProperties & prop, IteratorProperties & reason);
 	void addProperty(PhysicalPlanIteratorProperty prop);
 	vector<PhysicalPlanIteratorProperty> properties;
-};
-
-/*
- * This class is the 'tuple' in this iterator model.
- * When the physical plan is being executed, the pointers to
- * PhysicalPlanRecordItem objects are passed around.
- */
-class PhysicalPlanRecordItem{
-public:
-	// getters
-	inline unsigned getRecordId() const {
-		return this->recordId;
-	}
-	inline float getRecordStaticScore() const{
-		return this->recordStaticScore;
-	}
-	inline float getRecordRuntimeScore() const{
-		return this->recordRuntimeScore;
-	}
-	inline void getRecordMatchingPrefixes(vector<TrieNodePointer> & matchingPrefixes) const{
-		matchingPrefixes.insert(matchingPrefixes.end(),this->matchingPrefixes.begin(),this->matchingPrefixes.end());
-	}
-	inline void getRecordMatchEditDistances(vector<unsigned> & editDistances) const{
-		editDistances.insert(editDistances.end(),this->editDistances.begin(),this->editDistances.end());
-	}
-	inline void getRecordMatchAttributeBitmaps(vector<unsigned> & attributeBitmaps) const{
-		attributeBitmaps.insert(attributeBitmaps.end(),this->attributeBitmaps.begin(),this->attributeBitmaps.end());
-	}
-	inline void getPositionIndexOffsets(vector<unsigned> & positionIndexOffsets)const {
-		positionIndexOffsets.insert(positionIndexOffsets.end(),this->positionIndexOffsets.begin(),this->positionIndexOffsets.end());
-	}
-
-	// setters
-	inline void setRecordId(unsigned id) {
-		this->recordId = id;
-	}
-	inline void setRecordStaticScore(float staticScore) {
-		this->recordStaticScore = staticScore;
-	}
-	inline void setRecordRuntimeScore(float runtimeScore) {
-		this->recordRuntimeScore = runtimeScore;
-	}
-	inline void setRecordMatchingPrefixes(const vector<TrieNodePointer> & matchingPrefixes) {
-		this->matchingPrefixes = matchingPrefixes;
-	}
-	inline void setRecordMatchEditDistances(const vector<unsigned> & editDistances) {
-		this->editDistances = editDistances;
-	}
-	inline void setRecordMatchAttributeBitmaps(const vector<unsigned> & attributeBitmaps) {
-		this->attributeBitmaps = attributeBitmaps;
-	}
-	inline void setPositionIndexOffsets(const vector<unsigned> & positionIndexOffsets){
-		this->positionIndexOffsets = positionIndexOffsets;
-	}
-
-    unsigned getNumberOfBytes(){
-    	return sizeof(recordId) +
-    			sizeof(recordRuntimeScore) +
-    			sizeof(recordStaticScore) +
-    			sizeof(TrieNodePointer) * matchingPrefixes.size() +
-    			sizeof(unsigned) * editDistances.size() +
-    			sizeof(unsigned) * attributeBitmaps.size() +
-    			sizeof(unsigned) * positionIndexOffsets.size();
-    }
-
-	~PhysicalPlanRecordItem(){};
-
-    std::map<std::string,TypedValue> valuesOfParticipatingRefiningAttributes;
-private:
-	unsigned recordId;
-	float recordStaticScore;
-	float recordRuntimeScore;
-	vector<TrieNodePointer> matchingPrefixes;
-	vector<unsigned> editDistances;
-	vector<unsigned> attributeBitmaps;
-	vector<unsigned> positionIndexOffsets;
-};
-
-/*
- * The factory class of PhysicalPlanRecordItem;
- */
-class PhysicalPlanRecordItemFactory{
-public:
-	PhysicalPlanRecordItem * createRecordItem(){
-		PhysicalPlanRecordItem  * newObj = new PhysicalPlanRecordItem();
-		objects.push_back(newObj);
-		return newObj;
-	}
-
-	// if we get a pointer from this function, we are responsible of
-	// deallocating it
-	PhysicalPlanRecordItem * cloneForCache(PhysicalPlanRecordItem * oldObj){
-		PhysicalPlanRecordItem  * newObj = new PhysicalPlanRecordItem();
-		newObj->setRecordId(oldObj->getRecordId());
-		newObj->setRecordRuntimeScore(oldObj->getRecordRuntimeScore());
-		vector<TrieNodePointer> matchingPrefixes;
-		oldObj->getRecordMatchingPrefixes(matchingPrefixes);
-		newObj->setRecordMatchingPrefixes(matchingPrefixes);
-		vector<unsigned> editDistances;
-		oldObj->getRecordMatchEditDistances(editDistances);
-		newObj->setRecordMatchEditDistances(editDistances);
-		vector<unsigned> attributeBitmaps;
-		oldObj->getRecordMatchAttributeBitmaps(attributeBitmaps);
-		newObj->setRecordMatchAttributeBitmaps(attributeBitmaps);
-		vector<unsigned> positionIndexOffsets;
-		oldObj->getPositionIndexOffsets(positionIndexOffsets);
-		newObj->setPositionIndexOffsets(positionIndexOffsets);
-
-		return newObj;
-	}
-
-	/*
-	 * This factory will take care of deallocation of these pointers.
-	 */
-	PhysicalPlanRecordItem * clone(PhysicalPlanRecordItem * oldObj){
-		PhysicalPlanRecordItem  * newObj = new PhysicalPlanRecordItem();
-		newObj->setRecordId(oldObj->getRecordId());
-		newObj->setRecordRuntimeScore(oldObj->getRecordRuntimeScore());
-		vector<TrieNodePointer> matchingPrefixes;
-		oldObj->getRecordMatchingPrefixes(matchingPrefixes);
-		newObj->setRecordMatchingPrefixes(matchingPrefixes);
-		vector<unsigned> editDistances;
-		oldObj->getRecordMatchEditDistances(editDistances);
-		newObj->setRecordMatchEditDistances(editDistances);
-		vector<unsigned> attributeBitmaps;
-		oldObj->getRecordMatchAttributeBitmaps(attributeBitmaps);
-		newObj->setRecordMatchAttributeBitmaps(attributeBitmaps);
-		vector<unsigned> positionIndexOffsets;
-		oldObj->getPositionIndexOffsets(positionIndexOffsets);
-		newObj->setPositionIndexOffsets(positionIndexOffsets);
-
-		objects.push_back(newObj);
-
-		return newObj;
-	}
-
-
-	~PhysicalPlanRecordItemFactory(){
-		for(unsigned i =0 ; i< objects.size() ; ++i){
-			if(objects.at(i) == NULL){
-				ASSERT(false);
-			}else{
-				delete objects.at(i);
-			}
-		}
-	}
-private:
-	vector<PhysicalPlanRecordItem *> objects;
 };
 
 // The iterator interface used to implement iterator model
@@ -301,11 +159,11 @@ public:
  * cost = RlogR * some number of instructions  + R * cost of child's getNext
  */
 struct PhysicalPlanCost{
-	unsigned cost;
+	double cost;
 	PhysicalPlanCost(){
 		cost = 0;
 	}
-	PhysicalPlanCost(unsigned c){
+	PhysicalPlanCost(double c){
 		cost = c;
 	}
 	PhysicalPlanCost(const PhysicalPlanCost & src){
@@ -314,27 +172,10 @@ struct PhysicalPlanCost{
 	PhysicalPlanCost operator+(const PhysicalPlanCost & rightValue){
 		return PhysicalPlanCost( cost + rightValue.cost);
 	}
-	PhysicalPlanCost operator+(const unsigned & rightValue){
-		return PhysicalPlanCost(cost + rightValue);
+	PhysicalPlanCost operator+(const double & rightValue){
+		return PhysicalPlanCost( cost + rightValue);
 	}
-	void addInstructionCost(unsigned numberOfInstructions = 1){
-		cost += 2 * numberOfInstructions;
-	}
-	void addFunctionCallCost(unsigned numberOfCalls = 1){
-		cost += 3 * numberOfCalls;
-	}
-	void addSmallFunctionCost(unsigned numberOfCalls = 1){
-		addFunctionCallCost(numberOfCalls);
-		cost += 10 * numberOfCalls;
-	}
-	void addMediumFunctionCost(unsigned numberOfCalls = 1){
-		addFunctionCallCost(numberOfCalls);
-		cost += 50 * numberOfCalls;
-	}
-	void addLargeFunctionCost(unsigned numberOfCalls = 1){
-		addFunctionCallCost(numberOfCalls);
-		cost += 100 * numberOfCalls;
-	}
+
 };
 
 // The iterator interface used to implement iterator model

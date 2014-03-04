@@ -23,6 +23,7 @@
 #include "operation/ActiveNode.h"
 #include "query/QueryResultsInternal.h"
 #include "CacheBase.h"
+#include "PhysicalPlanRecordItemFactory.h"
 
 #include <boost/shared_ptr.hpp>
 
@@ -159,17 +160,21 @@ public:
         aCache = new ActiveNodesCache(byteSizeOfCache);
         qCache = new QueryResultsCache(byteSizeOfCache);
         pCache = new PhysicalOperatorsCache(byteSizeOfCache);
+        physicalPlanRecordItemFactory = new PhysicalPlanRecordItemFactory();
     }
     virtual ~CacheManager(){
         delete aCache;
         delete qCache;
         delete pCache;
+        delete physicalPlanRecordItemFactory;
     }
 
     int clear();
     ActiveNodesCache * getActiveNodesCache();
     QueryResultsCache * getQueryResultsCache();
     PhysicalOperatorsCache * getPhysicalOperatorsCache();
+    PhysicalPlanRecordItemFactory * getPhysicalPlanRecordItemFactory();
+
 
 private:
     ActiveNodesCache * aCache;
@@ -177,6 +182,8 @@ private:
     QueryResultsCache * qCache;
 
     PhysicalOperatorsCache * pCache;
+
+    PhysicalPlanRecordItemFactory * physicalPlanRecordItemFactory;
 
 };
 

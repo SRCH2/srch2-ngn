@@ -103,7 +103,7 @@ def prepareQuery(queryKeywords, facetedFields):
     for field in facetedFields:
         query = query + '&' + prepareFacet(field)
     ################# rows parameter
-    query = query + '&rows=1'
+    query = query + '&rows=1&searchType=getAll'
     print 'Query : ' + query
     ##################################
     return query

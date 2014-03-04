@@ -238,6 +238,8 @@ void QuadTree::rangeQuery(QueryResultsInternal *queryResultsInternal, const Shap
 
 void QuadTree::rangeQueryInternal(QueryResultsInternal *queryResultsInternal, const Shape &shape, vector<MapSearcherTerm> mapSearcherTermVector, const SpatialRanker *ranker, QuadNode *node, set<unsigned> &setOfTrueAnswersForPickedTerm, const float prefixMatchPenalty, double &timer) const
 {
+    shared_ptr<vectorview<ForwardListPtr> > readView;
+    this->forwardIndex->getForwardListDirectory_ReadView(readView);
     if(node->isLeaf) // if the current quadtree node is a leaf node
     {
         //cout << node->numElements << endl;
@@ -248,7 +250,7 @@ void QuadTree::rangeQueryInternal(QueryResultsInternal *queryResultsInternal, co
             {
                 bool isValidForwardList = false;
                 unsigned forwardListID = this->geoElementIndex[offset]->forwardListID;
-                const ForwardList *fl = this->forwardIndex->getForwardList(forwardListID, isValidForwardList);
+                const ForwardList *fl = this->forwardIndex->getForwardList(readView, forwardListID, isValidForwardList);
                 if (!isValidForwardList)
                     continue;
 
@@ -296,7 +298,8 @@ void QuadTree::rangeQueryInternal(QueryResultsInternal *queryResultsInternal, co
         //      we need to find the "best" term to search on o-filter and use other terms to do verification,
         //      so that the total number of the verifications can be minimized.
         //      Some failed approaches can be found before v3017.
-        
+        shared_ptr<vectorview<ForwardListPtr> > readView;
+        this->forwardIndex->getForwardListDirectory_ReadView(readView);
         // pick up the terms one by one to search their expansions on o-filter
         for(unsigned termIndex = 0; termIndex < mapSearcherTermVector.size(); termIndex++)
         {
@@ -323,7 +326,7 @@ void QuadTree::rangeQueryInternal(QueryResultsInternal *queryResultsInternal, co
 
                         bool isValidForwardList= false;
                         unsigned forwardListID = geoElement->forwardListID;
-                        const ForwardList *fl = this->forwardIndex->getForwardList(forwardListID, isValidForwardList);
+                        const ForwardList *fl = this->forwardIndex->getForwardList(readView, forwardListID, isValidForwardList);
                         if(!isValidForwardList)
                             continue;
 

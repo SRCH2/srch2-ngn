@@ -52,6 +52,9 @@ private:
 	unsigned suggestionPairCursor ;
 	unsigned invertedListCursor ;
 	QueryEvaluatorInternal * queryEvaluatorIntrnal;
+	shared_ptr<vectorview<InvertedListContainerPtr> > invertedListDirectoryReadView;
+    shared_ptr<vectorview<unsigned> > invertedIndexKeywordIdsReadView;
+	shared_ptr<vectorview<ForwardListPtr> > forwardIndexDirectoryReadView;
 
 };
 

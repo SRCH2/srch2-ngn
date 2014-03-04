@@ -1,4 +1,4 @@
 q=verycommonword&fq=expiration%3A01%2F01%2F2000%20OR%20expiration%3A%5B01%2F01%2F1990%20TO%2001%2F01%2F1999%5D&sort=expiration&orderby=desc&rows=11||91 90 89 88 87 86 85 84 83 82 81 
 q=verycommonword&fq=expiration%3A01%2F01%2F2000%20OR%20expiration%3A%5B01%2F01%2F1990%20TO%2001%2F01%2F1999%5D&sort=expiration&orderby=asc&rows=11||81 82 83 84 85 86 87 88 89 90 91
 q=verycommonword&fq=expiration%3A%5B01%2F01%2F1990%20TO%2001%2F01%2F1999%5D&sort=expiration&orderby=asc&rows=11||81 82 83 84 85 86 87 88 89 90
-q=verycommonword&fq=expiration%3A%5B*%20TO%2001%2F01%2F1911%5D&sort=expiration&orderby=asc&rows=1||1
+q=verycommonword&fq=expiration%3A%5B*%20TO%2001%2F01%2F1911%5D&sort=expiration&orderby=asc&rows=1||2
