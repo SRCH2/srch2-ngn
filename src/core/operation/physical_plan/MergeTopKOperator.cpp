@@ -469,7 +469,7 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalP
 	 * T = number of terms
 	 * N = total number of records in the data
 	 * K = number of top results to find (we calculate the score for K and then divide the result by K)
-	 * M = cursor value after termination (it means M records from each list is read)
+	 * M = cursor value after termination (it means M records from each list are read)
 	 * P[] = the probability array of children (P[i]*N = estimated length of child i)
 	 * R = estimated total number of results from these children (R ~= P[0] * ... P[T-1] * N )
 	 * Li = the name we use to mention list of child i, i.e. P(Li) = P[i]

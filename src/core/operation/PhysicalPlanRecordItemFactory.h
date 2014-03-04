@@ -40,6 +40,15 @@ namespace instantsearch
  * This class is the 'tuple' in this iterator model.
  * When the physical plan is being executed, the pointers to
  * PhysicalPlanRecordItem objects are passed around.
+ * The object allocation of this class is only performed through
+ * PhysicalPlanRecordItemFactory which can open a new PhysicalPlanRecordItemPool.
+ *
+ * Since tuple objects are created for each and every "record" visited in query processing,
+ * it's expensive and keep allocating and destroying these objects. So we use a factory/pool
+ * architecture to save this cost. The pointer to a tuple object is retrieved from a pool and
+ * physical operators use this pointer to work with a tuple. When a tuple is not needed by an operator
+ * (e.g. record is not verified by F.I.) the pointer is simply discarded because operators don't have to
+ * worry about tuple memory deallocation since it's done by the pool.
  */
 class PhysicalPlanRecordItem{
 public:
@@ -226,8 +235,8 @@ public:
 private:
 	/*
 	 * Each pool has 10000 tuples created in the beginning. If a reader
-	 * keeps asking for more tuples (more than 10000), we start allocating
-	 * new tuples and save them in extraObjects vector.
+	 * keeps asking for more tuples (more than INITIAL_NUMBER_OF_RECORD_ITEMS_IN_A_GROUP),
+	 * we start allocating new tuples and save them in extraObjects vector.
 	 */
 	PhysicalPlanRecordItem objects[INITIAL_NUMBER_OF_RECORD_ITEMS_IN_A_GROUP];
 	vector<PhysicalPlanRecordItem *> extraObjects;
@@ -242,24 +251,24 @@ public:
 	}
 	~PhysicalPlanRecordItemFactory(){
 		// remove inactive pools
-		for(boost::unordered_set<PhysicalPlanRecordItemPool *>::iterator inactivePoolItr =
-				idlePools.begin(); inactivePoolItr != idlePools.end(); ++inactivePoolItr){
-			delete *inactivePoolItr;
+		for(boost::unordered_set<PhysicalPlanRecordItemPool *>::iterator idlePoolItr =
+				idlePools.begin(); idlePoolItr != idlePools.end(); ++idlePoolItr){
+			delete *idlePoolItr;
 		}
 		// remove active pools
 		// NOTE: The instance of PhysicalPlanRecordItemFactory is kept in Cache so it will be destroyed
 		// when the whole system is shutting down. So at that point it's safe to delete even active pools
-		for(map<unsigned , PhysicalPlanRecordItemPool *>::iterator activePoolItr = busyPools.begin();
-				activePoolItr != busyPools.end() ; ++activePoolItr){
-			delete activePoolItr->second;
+		for(map<unsigned , PhysicalPlanRecordItemPool *>::iterator busyPoolItr = busyPools.begin();
+				busyPoolItr != busyPools.end() ; ++busyPoolItr){
+			delete busyPoolItr->second;
 		}
 	}
 
 	bool clear(){
 		// clear inactive pools (removes extraObjects from them)
-		for(boost::unordered_set<PhysicalPlanRecordItemPool *>::iterator inactivePoolItr =
-				idlePools.begin(); inactivePoolItr != idlePools.end(); ++inactivePoolItr){
-			(*inactivePoolItr)->clear();
+		for(boost::unordered_set<PhysicalPlanRecordItemPool *>::iterator idlePoolItr =
+				idlePools.begin(); idlePoolItr != idlePools.end(); ++idlePoolItr){
+			(*idlePoolItr)->clear();
 		}
 		return true;
 	}
@@ -269,10 +278,10 @@ public:
 		// lock
 		boost::unique_lock< boost::shared_mutex > lock(_access);
 		// prepare the handle = number of pools we have so far
-		unsigned newHandle = handleCounter ++;
+		unsigned newHandleForNewBusyPool = handleCounter ++;
 
 		// check to see if we have any inactive pool
-		PhysicalPlanRecordItemPool * newPool = NULL;
+		PhysicalPlanRecordItemPool * newBusyPool = NULL;
 		if(idlePools.size() > 0){
 			// Choose the pool which has the most number of objects created
 			// we want to reduce the chance of needing more objects by giving out
@@ -290,18 +299,18 @@ public:
 			}
 
 			// remove pool from inactive pools
-			newPool =  *(poolToReturn);
+			newBusyPool =  *(poolToReturn);
 			idlePools.erase(poolToReturn);
 		}else{ // we don't have inactive pools, so we should make a new one
 			// create a new pool
-			newPool = new PhysicalPlanRecordItemPool();
+			newBusyPool = new PhysicalPlanRecordItemPool();
 		}
 		// add (newHandle,pool) to active pools
-		busyPools[newHandle] = newPool;
+		busyPools[newHandleForNewBusyPool] = newBusyPool;
 		// unlock
 		lock.unlock();
 		// return handle
-		return newHandle;
+		return newHandleForNewBusyPool;
 	}
 	PhysicalPlanRecordItemPool * getRecordItemPool(unsigned handle){
 		// lock

@@ -1948,11 +1948,11 @@ bool QueryParser::parseBooleanExpressionRecursive(ParseTreeNode * parent, string
     // 1. make sure parentheses are first and last character (if any) by trimming
     boost::algorithm::trim(input);
 
-    // 2. Keep removing outer parentheses from the input
+    // 2.1. Keep removing outer parentheses from the input
     // Example : ((((EXP1) OR (EXP2)))) => (EXP1) OR (EXP2)
     removeOuterParenthesisPair(input);
 
-    // 1. make sure parentheses are first and last character (if any) by trimming
+    // 2.2. after removing parentheses we should trim the string again.
     boost::algorithm::trim(input);
     /*
     * 3. OR has the next priority (after AND), so now we try to break the string by OR first
