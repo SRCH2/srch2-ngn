@@ -51,7 +51,7 @@ std::string WStringToString(const std::wstring& s)
 
 bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const std::string &inputLine,
                         const Json::Value &root, 
-                        const ConfigManager *indexDataContainerConf,
+                        const CoreInfo_t *indexDataContainerConf,
                         std::stringstream &error)
 {
     if (not (root.type() == Json::objectValue))
@@ -68,10 +68,10 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
     std::vector<string> stringValues;
     getJsonValueString(root, primaryKeyName, stringValues, "primary-key");
 
-    if (stringValues.empty() || (
-    		stringValues.at(0).compare("NULL") != 0 && stringValues.at(0).compare("") != 0 ))
+    if (stringValues.empty() ||
+        (stringValues.at(0).compare("NULL") != 0 && stringValues.at(0).compare("") != 0 ))
     {
-		string primaryKeyStringValue = stringValues.at(0);
+        string primaryKeyStringValue = stringValues.at(0);
     	// trim to avoid any mismatch due to leading and trailing white space
     	boost::algorithm::trim(primaryKeyStringValue);
         const std::string primaryKey = primaryKeyStringValue.c_str();
@@ -99,10 +99,10 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
         Json::FastWriter local_writer;
         Json::Value local_root;
 
-        const vector<std::string> *attributesToReturnName = indexDataContainerConf->getAttributesToReturnName();
-        for (int i=0; i<attributesToReturnName->size(); i++)
+        const vector<std::string> *attributesToReturn = indexDataContainerConf->getAttributesToReturn();
+        for (int i=0; i<attributesToReturn->size(); i++)
         {
-            local_root[attributesToReturnName->at(i)] = root[attributesToReturnName->at(i)];
+            local_root[attributesToReturn->at(i)] = root[attributesToReturn->at(i)];
         }
 
         const string local_inputLine = local_writer.write(local_root);
@@ -123,32 +123,31 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
         getJsonValueString(root, attributeKeyName, attributeStringValues, "attributes-search");
 
         if (!attributeStringValues.empty() &&
-        		std::find(attributeStringValues.begin() , attributeStringValues.end() , "NULL") == attributeStringValues.end())
+            std::find(attributeStringValues.begin() , attributeStringValues.end() , "NULL") == attributeStringValues.end())
         {
-        	if (attributeIter->second.isMultiValued) {
-        		record->setSearchableAttributeValues(attributeKeyName,attributeStringValues);
-        	}
-        	else {
+            if (attributeIter->second.isMultiValued) {
+                record->setSearchableAttributeValues(attributeKeyName,attributeStringValues);
+            } else {
                 record->setSearchableAttributeValue(attributeKeyName,attributeStringValues[0]);
-        	}
+            }
         }else{ // error if required or set to default
-        	if(attributeIter->second.required){ // true means required
-        		// ERROR
+            if(attributeIter->second.required){ // true means required
+                // ERROR
                 error << "\nRequired field has a null value.";
                 return false;// Raise Error
-        	}else{
-        		// passing the default value from config file
-        		if(attributeStringValues.empty()){
-        			attributeStringValues.push_back(attributeIter->second.defaultValue);
-        		}else{
-					std::replace(attributeStringValues.begin() , attributeStringValues.end() , (string)"NULL" , attributeIter->second.defaultValue);
-        		}
-        		if (attributeIter->second.isMultiValued) {
-        			record->setSearchableAttributeValues(attributeKeyName,attributeStringValues);
-        		} else {
-        			record->setSearchableAttributeValue(attributeKeyName,attributeStringValues[0]);
-        		}
-        	}
+            }else{
+                // passing the default value from config file
+                if(attributeStringValues.empty()){
+                    attributeStringValues.push_back(attributeIter->second.defaultValue);
+                }else{
+                    std::replace(attributeStringValues.begin() , attributeStringValues.end() , (string)"NULL" , attributeIter->second.defaultValue);
+                }
+                if (attributeIter->second.isMultiValued) {
+                    record->setSearchableAttributeValues(attributeKeyName,attributeStringValues);
+                } else {
+                    record->setSearchableAttributeValue(attributeKeyName,attributeStringValues[0]);
+                }
+            }
         }
     }
 
@@ -163,50 +162,50 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
 
         // if type is date/time, check the syntax
         if( attributeIter->second.attributeType == srch2is::ATTRIBUTE_TYPE_TIME){
-        	vector<string> attributeStringValues;
-        	getJsonValueDateAndTime(root, attributeKeyName, attributeStringValues,"refining-attributes" );
-        	if(attributeStringValues.empty()){
-        		// ERROR
+            vector<string> attributeStringValues;
+            getJsonValueDateAndTime(root, attributeKeyName, attributeStringValues,"refining-attributes" );
+            if(attributeStringValues.empty()){
+                // ERROR
                 error << "\nDATE/TIME field has non recognizable format.";
                 return false;// Raise Error
-        	}else{
+            }else{
                 if (std::find(attributeStringValues.begin() , attributeStringValues.end() , "NULL") != attributeStringValues.end() &&
-                		attributeIter->second.required ){
+                    attributeIter->second.required ){
                     // ERROR
                     error << "\nRequired refining attribute is null.";
                     return false;// Raise Error
                 }
                 if (std::find(attributeStringValues.begin() , attributeStringValues.end() , "NULL") != attributeStringValues.end()){
-                	std::replace(attributeStringValues.begin() , attributeStringValues.end() , (string)"NULL" , attributeIter->second.defaultValue);
+                    std::replace(attributeStringValues.begin() , attributeStringValues.end() , (string)"NULL" , attributeIter->second.defaultValue);
                 }
-				string attributeStringValue = "";
-				for(vector<string>::iterator stringValueIter = attributeStringValues.begin() ; stringValueIter != attributeStringValues.end() ; ++stringValueIter){
-					if(stringValueIter != attributeStringValues.begin()){
-						attributeStringValue += MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER;
-					}
-					attributeStringValue += *stringValueIter;
-				}
-					// set the default value
-				record->setRefiningAttributeValue(attributeKeyName, attributeStringValue);
-        	}
+                string attributeStringValue = "";
+                for(vector<string>::iterator stringValueIter = attributeStringValues.begin() ; stringValueIter != attributeStringValues.end() ; ++stringValueIter){
+                    if(stringValueIter != attributeStringValues.begin()){
+                        attributeStringValue += MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER;
+                    }
+                    attributeStringValue += *stringValueIter;
+                }
+                // set the default value
+                record->setRefiningAttributeValue(attributeKeyName, attributeStringValue);
+            }
         }else{
 
             vector<string> attributeStringValues;
             getJsonValueString(root, attributeKeyName, attributeStringValues, "refining-attributes");
 
             if (!attributeStringValues.empty() &&
-            		std::find(attributeStringValues.begin() , attributeStringValues.end() , "NULL") == attributeStringValues.end()
-            		&& std::find(attributeStringValues.begin() , attributeStringValues.end() , "") == attributeStringValues.end())
+                std::find(attributeStringValues.begin() , attributeStringValues.end() , "NULL") == attributeStringValues.end()
+                && std::find(attributeStringValues.begin() , attributeStringValues.end() , "") == attributeStringValues.end())
             {
-				string attributeStringValue = "";
-				for(vector<string>::iterator stringValueIter = attributeStringValues.begin() ; stringValueIter != attributeStringValues.end() ; ++stringValueIter){
-					if(stringValueIter != attributeStringValues.begin()){
-						attributeStringValue += MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER;
-					}
-					attributeStringValue += *stringValueIter;
-				}
-				std::string attributeStringValueLowercase = attributeStringValue;
-				std::transform(attributeStringValueLowercase.begin(), attributeStringValueLowercase.end(), attributeStringValueLowercase.begin(), ::tolower);
+                string attributeStringValue = "";
+                for(vector<string>::iterator stringValueIter = attributeStringValues.begin() ; stringValueIter != attributeStringValues.end() ; ++stringValueIter){
+                    if(stringValueIter != attributeStringValues.begin()){
+                        attributeStringValue += MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER;
+                    }
+                    attributeStringValue += *stringValueIter;
+                }
+                std::string attributeStringValueLowercase = attributeStringValue;
+                std::transform(attributeStringValueLowercase.begin(), attributeStringValueLowercase.end(), attributeStringValueLowercase.begin(), ::tolower);
                 record->setRefiningAttributeValue(attributeKeyName, attributeStringValueLowercase);
             }else{
                 if(attributeIter->second.required){
@@ -214,21 +213,21 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
                     error << "\nRequired refining attribute is null.";
                     return false;// Raise Error
                 }else{
-                	if(attributeStringValues.empty()){
-                		attributeStringValues.push_back("");
-                	}
-                	std::replace(attributeStringValues.begin() , attributeStringValues.end() , (string)"NULL" , attributeIter->second.defaultValue);
-                	std::replace(attributeStringValues.begin() , attributeStringValues.end() , (string)"" , attributeIter->second.defaultValue);
+                    if(attributeStringValues.empty()){
+                        attributeStringValues.push_back("");
+                    }
+                    std::replace(attributeStringValues.begin() , attributeStringValues.end() , (string)"NULL" , attributeIter->second.defaultValue);
+                    std::replace(attributeStringValues.begin() , attributeStringValues.end() , (string)"" , attributeIter->second.defaultValue);
                     // set the default value
-    				string attributeStringValue = "";
-    				for(vector<string>::iterator stringValueIter = attributeStringValues.begin() ; stringValueIter != attributeStringValues.end() ; ++stringValueIter){
-    					if(stringValueIter != attributeStringValues.begin()){
-    						attributeStringValue += MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER;
-    					}
-    					attributeStringValue += *stringValueIter;
-    				}
-    				std::string attributeStringValueLowercase = attributeStringValue;
-    				std::transform(attributeStringValueLowercase.begin(), attributeStringValueLowercase.end(), attributeStringValueLowercase.begin(), ::tolower);
+                    string attributeStringValue = "";
+                    for(vector<string>::iterator stringValueIter = attributeStringValues.begin() ; stringValueIter != attributeStringValues.end() ; ++stringValueIter){
+                        if(stringValueIter != attributeStringValues.begin()){
+                            attributeStringValue += MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER;
+                        }
+                        attributeStringValue += *stringValueIter;
+                    }
+                    std::string attributeStringValueLowercase = attributeStringValue;
+                    std::transform(attributeStringValueLowercase.begin(), attributeStringValueLowercase.end(), attributeStringValueLowercase.begin(), ::tolower);
                     record->setRefiningAttributeValue(attributeKeyName,attributeStringValueLowercase);
                 }
             }
@@ -247,7 +246,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
 
         // Change an invalid (negative) boost value to the default value 1.
         if (recordBoost > 0.0)
-          record->setRecordBoost(recordBoost);
+            record->setRecordBoost(recordBoost);
     }
 
     if (indexDataContainerConf->getIndexType() == 1)
@@ -277,7 +276,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
     return true;
 }
 
-bool JSONRecordParser::populateRecordFromJSON( const string &inputLine, const ConfigManager *indexDataContainerConf, srch2is::Record *record, std::stringstream &error)
+bool JSONRecordParser::populateRecordFromJSON(const string &inputLine, const CoreInfo_t *indexDataContainerConf, srch2is::Record *record, std::stringstream &error)
 {
     string::const_iterator end_it = utf8::find_invalid(inputLine.begin(), inputLine.end());
     if (end_it != inputLine.end()) {
@@ -305,7 +304,7 @@ bool JSONRecordParser::populateRecordFromJSON( const string &inputLine, const Co
     return parseSuccess;
 }
 
-srch2is::Schema* JSONRecordParser::createAndPopulateSchema( const ConfigManager *indexDataContainerConf)
+srch2is::Schema* JSONRecordParser::createAndPopulateSchema(const CoreInfo_t *indexDataContainerConf)
 {
     srch2::instantsearch::IndexType indexType;
     srch2::instantsearch::PositionIndexType positionIndexType;
@@ -381,9 +380,9 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema( const ConfigManager 
 /*
  *  Create indexes using records from json file and return the total indexed records.
  */
-unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const ConfigManager *indexDataContainerConf)
+unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const CoreInfo_t *indexDataContainerConf)
 {
-    string filePath = indexDataContainerConf->getFilePath();
+    string filePath = indexDataContainerConf->getDataFilePath();
     ifstream in(filePath.c_str());
     if (in.fail())
     {
@@ -402,6 +401,15 @@ unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, con
         while(getline(in, line))
         {
             bool parseSuccess = false;
+
+	    // remove the trailing space or "," characters
+	    while (!line.empty() && (
+				    line.at(line.length() - 1) == ' ' || 
+                                    line.at(line.length() - 1) == ','
+                                    )
+                  ) {
+              line.erase(line.length() - 1);
+	    }
 
             std::stringstream error;
             parseSuccess = JSONRecordParser::populateRecordFromJSON(line, indexDataContainerConf, record, error);
@@ -440,37 +448,37 @@ unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, con
 // convert other types to string
 template<class T>
 string convertToStr(T value) {
-  std::ostringstream o;
-  if (!(o << value))
-    return "";
-  return o.str();
+    std::ostringstream o;
+    if (!(o << value))
+        return "";
+    return o.str();
 }
 
 // convert a Json value to string
 void convertValueToString(Json::Value value, vector< string > &stringValues){
-	if (value.isString())
-	    	stringValues.push_back(value.asString()) ;
-	    else if(value.isDouble())
-	    	stringValues.push_back(convertToStr<double>(value.asDouble()));
-	    else if(value.isInt())
-	    	stringValues.push_back(convertToStr<int>(value.asInt()));
-	    else if(value.isArray())
-	    {
-	    	for(Json::Value::iterator iter = value.begin(); iter != value.end(); iter++)
-	    	{
-	    		convertValueToString(*iter, stringValues);
-	    	}
-	    }else if (value.isObject()){
-	    	// for certain data sources such as mongo db, the field value may be
-	    	// JSON object ( e.g mongo db primary key "_id")
-	    	// For JSON object, recursively concatenate all keys' value
-	    	vector<string> keys = value.getMemberNames();
-	    	for (int i= 0; i < keys.size(); ++i) {
-	    		convertValueToString(value.get(keys[i], "NULL"), stringValues);
-	    	}
-	    }
-	    else // if the type is not string, set it to the empty string
-	    	stringValues.clear();
+    if (value.isString())
+        stringValues.push_back(value.asString()) ;
+    else if(value.isDouble())
+        stringValues.push_back(convertToStr<double>(value.asDouble()));
+    else if(value.isInt())
+        stringValues.push_back(convertToStr<int>(value.asInt()));
+    else if(value.isArray())
+    {
+        for(Json::Value::iterator iter = value.begin(); iter != value.end(); iter++)
+        {
+            convertValueToString(*iter, stringValues);
+        }
+    }else if (value.isObject()){
+        // for certain data sources such as mongo db, the field value may be
+        // JSON object ( e.g mongo db primary key "_id")
+        // For JSON object, recursively concatenate all keys' value
+        vector<string> keys = value.getMemberNames();
+        for (int i= 0; i < keys.size(); ++i) {
+            convertValueToString(value.get(keys[i], "NULL"), stringValues);
+        }
+    }
+    else // if the type is not string, set it to the empty string
+        stringValues.clear();
 }
 
   // get the string from a json value based on a key value.  Check the type first before
@@ -483,14 +491,14 @@ void JSONRecordParser::getJsonValueString(const Json::Value &jsonValue,
 		std::vector<std::string> &stringValues,
 		const string &configName)
 {
-	if(!jsonValue.isMember(key))
-	{
-		stringValues.clear();
-		cout << "[Warning] Wrong value setting for " << configName << ". There is no such attribute <" << key << ">.\n Please set it to IGNORE in the configure file if you don't need it." << endl;
-		return;
-	}
-	Json::Value value = jsonValue.get(key, "NULL");
-	convertValueToString(value, stringValues);
+    if(!jsonValue.isMember(key))
+    {
+        stringValues.clear();
+        cout << "[Warning] Wrong value setting for " << configName << ". There is no such attribute <" << key << ">.\n Please set it to IGNORE in the configure file if you don't need it." << endl;
+        return;
+    }
+    Json::Value value = jsonValue.get(key, "NULL");
+    convertValueToString(value, stringValues);
 }
 
 
@@ -500,69 +508,69 @@ void JSONRecordParser::getJsonValueDateAndTime(const Json::Value &jsonValue,
 		const std::string &key,
 		vector< std::string> &stringValues,
 		const string &configName){
-	if(!jsonValue.isMember(key)){
+    if(!jsonValue.isMember(key)){
 
-		stringValues.clear();
-		cout << "[Warning] Wrong value setting for " << configName << ". There is no such attribute <" << key << ">.\n Please set it to IGNORE in the configure file if you don't need it." << endl;
-		return;
-	}
-	vector<string> temp;
-	Json::Value value = jsonValue.get(key, "NULL");
-	convertValueToString(value, temp);
+        stringValues.clear();
+        cout << "[Warning] Wrong value setting for " << configName << ". There is no such attribute <" << key << ">.\n Please set it to IGNORE in the configure file if you don't need it." << endl;
+        return;
+    }
+    vector<string> temp;
+    Json::Value value = jsonValue.get(key, "NULL");
+    convertValueToString(value, temp);
 
-	// now check to see if it has proper date/time format
-	// if the value of the array was ["12:34:45","12:34:24","12:02:45"], it's now changed to
-	// vector : <12:34:45,12:34:24,12:02:45>.
-	// Now we should
-	// 1. iterate on vector
-	// 2. convert it to unix time
-	// 3. prepare the string again to become something like "1234245,3654665,56456687"
+    // now check to see if it has proper date/time format
+    // if the value of the array was ["12:34:45","12:34:24","12:02:45"], it's now changed to
+    // vector : <12:34:45,12:34:24,12:02:45>.
+    // Now we should
+    // 1. iterate on vector
+    // 2. convert it to unix time
+    // 3. prepare the string again to become something like "1234245,3654665,56456687"
 
-	string stringValue = "";
-	for(vector<string>::iterator valueToken = temp.begin() ; valueToken != temp.end() ; ++valueToken){
-		boost::algorithm::trim(*valueToken);
-		if(srch2is::DateAndTimeHandler::verifyDateTimeString(*valueToken , srch2is::DateTimeTypePointOfTime)
-				|| srch2is::DateAndTimeHandler::verifyDateTimeString(*valueToken , srch2is::DateTimeTypeDurationOfTime) ){
-			stringstream buffer;
-			buffer << srch2::instantsearch::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*valueToken);
-			stringValues.push_back(buffer.str());
-		}else{
-			stringValues.clear();
-			return;
-		}
-	}
+    string stringValue = "";
+    for(vector<string>::iterator valueToken = temp.begin() ; valueToken != temp.end() ; ++valueToken){
+        boost::algorithm::trim(*valueToken);
+        if(srch2is::DateAndTimeHandler::verifyDateTimeString(*valueToken , srch2is::DateTimeTypePointOfTime)
+           || srch2is::DateAndTimeHandler::verifyDateTimeString(*valueToken , srch2is::DateTimeTypeDurationOfTime) ){
+            stringstream buffer;
+            buffer << srch2::instantsearch::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*valueToken);
+            stringValues.push_back(buffer.str());
+        }else{
+            stringValues.clear();
+            return;
+        }
+    }
     return;
 
 }
 
-  // get the double from a json value based on a key value.  Check the type first before
-  // calling "asDouble()" to deal with the case where the input data was not formatted
-  // properly.
-  // Written by CHENLI
-  void JSONRecordParser::getJsonValueDouble(const Json::Value &jsonValue, 
-                       const std::string &key,
-                       double &doubleValue,
-                       const string& configName)
-  {
-	if(!jsonValue.isMember(key))
-	{
-		doubleValue = 0;
-		cout << "[Warning] value setting for " << configName << ". There is no such attribute <" << key << ">.\n Please set it to IGNORE in the configure file if you don't need it." << endl;
-		return;
-	}
+// get the double from a json value based on a key value.  Check the type first before
+// calling "asDouble()" to deal with the case where the input data was not formatted
+// properly.
+// Written by CHENLI
+void JSONRecordParser::getJsonValueDouble(const Json::Value &jsonValue, 
+                                          const std::string &key,
+                                          double &doubleValue,
+                                          const string& configName)
+{
+    if(!jsonValue.isMember(key))
+    {
+        doubleValue = 0;
+        cout << "[Warning] value setting for " << configName << ". There is no such attribute <" << key << ">.\n Please set it to IGNORE in the configure file if you don't need it." << endl;
+        return;
+    }
     Json::Value value = jsonValue.get(key, "NULL");
     if (value.isDouble())
-    	doubleValue = value.asDouble();
+        doubleValue = value.asDouble();
     else if (value.isInt())
-    	doubleValue = value.asInt();
+        doubleValue = value.asInt();
     else if (value.isUInt())
-    	doubleValue = value.asUInt();
+        doubleValue = value.asUInt();
     else // if the type is not double not int, set it to 0
     {
-    	doubleValue = 0;
-    	cout << "[Warning] The attribute <" << key << "> was set to be \"" << value.asString() << "\".  It should be a float or integer." << endl;
+        doubleValue = 0;
+        cout << "[Warning] The attribute <" << key << "> was set to be \"" << value.asString() << "\".  It should be a float or integer." << endl;
     }
-  }
+}
 
 }
 }

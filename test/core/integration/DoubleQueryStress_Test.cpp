@@ -20,7 +20,6 @@
 
 #include <instantsearch/Analyzer.h>
 #include <instantsearch/Indexer.h>
-#include <instantsearch/IndexSearcher.h>
 #include <instantsearch/Query.h>
 #include <instantsearch/Term.h>
 #include <instantsearch/QueryResults.h>
@@ -91,15 +90,16 @@ int main(int argc, char **argv)
     {
         // create an index searcher
         //GlobalCache *cache = GlobalCache::create(100000,1000); // To test aCache
-        Cache *cache = new Cache();// create an index writer
+        CacheManager *cache = new CacheManager();// create an index writer
         unsigned mergeEveryNSeconds = 3;
         unsigned mergeEveryMWrites = 5;
         unsigned updateHistogramEveryPMerges = 1;
         unsigned updateHistogramEveryQWrites = 5;
         IndexMetaData *indexMetaData = new IndexMetaData(cache,
-        		mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, index_dir, "");
+        		mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, index_dir);
         Indexer *indexer = Indexer::load(indexMetaData);
-        IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
+        QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+        QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer, &runtimeParameters);
         const Analyzer *analyzer = getAnalyzer();
 
         for (vector<string>::iterator vectIter = file.begin(); vectIter!= file.end(); vectIter ++) {
@@ -108,7 +108,7 @@ int main(int argc, char **argv)
             clock_gettime(CLOCK_REALTIME, &tstart_each);
 
             unsigned resultCount = 10;
-            pingNormalQuery(analyzer, indexSearcher,*vectIter,resultCount,0);
+            pingNormalQuery(analyzer, queryEvaluator,*vectIter,resultCount,0);
 
             clock_gettime(CLOCK_REALTIME, &tend_each);
             double ts2 = (tend_each.tv_sec - tstart_each.tv_sec) * 1000 + (tend_each.tv_nsec - tstart_each.tv_nsec)/1000000;
@@ -117,7 +117,7 @@ int main(int argc, char **argv)
             out << *vectIter << "," << ts2;
             output_print.push_back(out.str());
         }
-        delete indexSearcher;
+        delete queryEvaluator;
         delete analyzer;
         delete indexer;
         delete cache;
@@ -132,15 +132,16 @@ int main(int argc, char **argv)
     {
         // create an index searcher
         //GlobalCache *cache = GlobalCache::create(100000,1000); // To test aCache
-        Cache *cache = new Cache();// create an index writer
+        CacheManager *cache = new CacheManager();// create an index writer
         unsigned mergeEveryNSeconds = 3;
         unsigned mergeEveryMWrites = 5;
         unsigned updateHistogramEveryPMerges = 1;
         unsigned updateHistogramEveryQWrites = 5;
         IndexMetaData *indexMetaData = new IndexMetaData( cache,
-        		mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, index_dir, "");
+        		mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, index_dir);
         Indexer *indexer = Indexer::load(indexMetaData);
-        IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
+        QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+        QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer, &runtimeParameters);
         const Analyzer *analyzer = getAnalyzer();
         for (vector<string>::iterator vectIter = file.begin(); vectIter!= file.end(); vectIter ++) {
             //for( vector<string>::iterator vectIter = file.begin(); vectIter!= file.begin()+200; vectIter++ )
@@ -148,7 +149,7 @@ int main(int argc, char **argv)
 
             unsigned resultCount = 10;
             std::cout << "[[" << *vectIter << "]]" << std::endl;
-            doubleSearcherPing(analyzer, indexSearcher,*vectIter,resultCount,0);
+            doubleSearcherPing(analyzer, queryEvaluator,*vectIter,resultCount,0);
     
             clock_gettime(CLOCK_REALTIME, &tend_d_each);
             double ts2 = (tend_d_each.tv_sec - tstart_d_each.tv_sec) * 1000 
@@ -158,7 +159,7 @@ int main(int argc, char **argv)
             out << *vectIter << "," << ts2;
             output_print.push_back(out.str());
         }
-        delete indexSearcher;
+        delete queryEvaluator;
         delete indexer;
         delete cache;
         delete analyzer;

@@ -29,7 +29,7 @@ namespace httpwrapper {
 class Srch2Server;
 class MongoDataSource {
 public:
-    static unsigned createNewIndexes(srch2is::Indexer* indexer, const ConfigManager *configManager);
+    static unsigned createNewIndexes(srch2is::Indexer* indexer, const CoreInfo_t *config);
     static void spawnUpdateListener( Srch2Server * server);
     static time_t bulkLoadEndTime;
 private:
@@ -40,7 +40,7 @@ private:
 
 class BSONParser {
 public:
-    static bool parse(srch2is::Record * record, const mongo::BSONObj& bsonObj, const ConfigManager *configManager);
+    static bool parse(srch2is::Record * record, const mongo::BSONObj& bsonObj, const CoreInfo_t *config);
 };
 
 }

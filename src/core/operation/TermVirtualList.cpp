@@ -38,17 +38,22 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
     unsigned invertedListCounter = 0;
 
     shared_ptr<vectorview<unsigned> > invertedListReadView;
-    this->invertedIndex->getInvertedListReadView(invertedListId, invertedListReadView);
+    this->invertedIndex->getInvertedListReadView(this->invertedListDirectoryReadView,
+    		invertedListId, invertedListReadView);
     unsigned recordId = invertedListReadView->getElement(invertedListCounter);
     // calculate record offset online
-    unsigned recordOffset = this->invertedIndex->getKeywordOffset(recordId, invertedListId);
+    unsigned recordOffset = this->invertedIndex->getKeywordOffset(this->forwardIndexDirectoryReadView,
+    		this->invertedIndexKeywordIdsReadView,
+    		recordId, invertedListId);
     ++ invertedListCounter;
 
     bool foundValidHit = 0;
     float termRecordStaticScore = 0;
     unsigned termAttributeBitmap = 0;
     while (1) {
-        if (this->invertedIndex->isValidTermPositionHit(recordId, recordOffset,
+        if (this->invertedIndex->isValidTermPositionHit(this->forwardIndexDirectoryReadView,
+        		recordId,
+        		recordOffset,
                 term->getAttributeToFilterTermHits(), termAttributeBitmap,
                 termRecordStaticScore) ) {
             foundValidHit = 1;
@@ -58,7 +63,9 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
         if (invertedListCounter < invertedListReadView->size()) {
             recordId = invertedListReadView->getElement(invertedListCounter);
             // calculate record offset online
-            recordOffset = this->invertedIndex->getKeywordOffset(recordId, invertedListId);
+            recordOffset = this->invertedIndex->getKeywordOffset(this->forwardIndexDirectoryReadView,
+            		this->invertedIndexKeywordIdsReadView,
+            		recordId, invertedListId);
             ++invertedListCounter;
         } else {
             break;
@@ -102,45 +109,52 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
     }
 }
 
-void TermVirtualList::depthInitializeTermVirtualListElement(const TrieNode* trieNode, unsigned distance, unsigned bound)
+void TermVirtualList::depthInitializeTermVirtualListElement(const TrieNode* trieNode, unsigned editDistance,
+		unsigned panDistance, unsigned bound)
 {
-    if (trieNode->isTerminalNode())
-        initialiseTermVirtualListElement(NULL, trieNode, distance);
-    if (distance < bound) {
+    if (trieNode->isTerminalNode()) {
+        initialiseTermVirtualListElement(NULL, trieNode, editDistance > panDistance ? editDistance : panDistance);
+    }
+
+    if (panDistance < bound) {
         for (unsigned int childIterator = 0; childIterator < trieNode->getChildrenCount(); childIterator++) {
             const TrieNode *child = trieNode->getChild(childIterator);
-            depthInitializeTermVirtualListElement(child, distance+1, bound);
+            depthInitializeTermVirtualListElement(child, editDistance, panDistance + 1, bound);
         }
     }
 }
 
 // this function will depth initialize bitset, which will be used for complete term
-void TermVirtualList::depthInitializeBitSet(const TrieNode* trieNode, unsigned distance, unsigned bound)
+void TermVirtualList::depthInitializeBitSet(const TrieNode* trieNode, unsigned editDistance, unsigned panDistance, unsigned bound)
 {
     if (trieNode->isTerminalNode()) {
         unsigned invertedListId = trieNode->getInvertedListOffset();
-        this->invertedIndex->getInvertedListReadView(invertedListId, invertedListReadView);
+        this->invertedIndex->getInvertedListReadView(this->invertedListDirectoryReadView,
+        		invertedListId, invertedListReadView);
         for (unsigned invertedListCounter = 0; invertedListCounter < invertedListReadView->size(); invertedListCounter++) {
             // set the bit of the record id to be true
             if (!bitSet.getAndSet(invertedListReadView->at(invertedListCounter)))
                 bitSetSize++;
         }
-        //termCount++;
-        //totalInveretListLength  += invertedListReadView->size();
     }
-    if (distance < bound) {
+    if (panDistance < bound) {
         for (unsigned int childIterator = 0; childIterator < trieNode->getChildrenCount(); childIterator++) {
             const TrieNode *child = trieNode->getChild(childIterator);
-            depthInitializeTermVirtualListElement(child, distance+1, bound);
+            // As we visit the children of the current trie node, we use "panDistance + 1" as the new
+            // edit distance and ignore the "edit distance" value passed from the caller by using "0" and "false".
+            depthInitializeBitSet(child,  editDistance, panDistance + 1, bound);
         }
     }
 }
 
 // Iterate over active nodes, fill the vector, and call make_heap on it.
-TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiveNodeSet *prefixActiveNodeSet,
+TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex,  const ForwardIndex * forwardIndex, PrefixActiveNodeSet *prefixActiveNodeSet,
                                  Term *term, float prefixMatchPenalty, float shouldIterateToLeafNodesAndScoreOfTopRecord )
 {
     this->invertedIndex = invertedIndex;
+    this->invertedIndex->getInvertedIndexDirectory_ReadView(this->invertedListDirectoryReadView);
+    this->invertedIndex->getInvertedIndexKeywordIds_ReadView(this->invertedIndexKeywordIdsReadView);
+    forwardIndex->getForwardListDirectory_ReadView(this->forwardIndexDirectoryReadView);
     this->prefixActiveNodeSet = prefixActiveNodeSet;
     this->term = term;
     this->prefixMatchPenalty = prefixMatchPenalty;
@@ -187,7 +201,8 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
                 	this->maxScoreForBitSetCase = runTimeScoreOfThisLeafNode;
                 }
                 unsigned invertedListId = leafNode->getInvertedListOffset();
-                this->invertedIndex->getInvertedListReadView(invertedListId, invertedListReadView);
+                this->invertedIndex->getInvertedListReadView(this->invertedListDirectoryReadView,
+                		invertedListId, invertedListReadView);
                 // loop the inverted list to add it to the Bitset
                 for (unsigned invertedListCounter = 0; invertedListCounter < invertedListReadView->size(); invertedListCounter++) {
                     // We compute the union of these bitsets. We increment the number of bits only if the previous bit was 0.
@@ -221,23 +236,24 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
         if (this->usingBitset) { // if this term virtual list is merged to a Bitset
             bitSet.resize(this->invertedIndex->getRecordNumber());
             TrieNodePointer trieNode;
-            unsigned distance;
+            unsigned editDistance;
             //numberOfLeafNodes = 0;
             //totalInveretListLength  = 0;
             this->maxScoreForBitSetCase = 0;
             for (; !iter.isDone(); iter.next()) {
-                iter.getItem(trieNode, distance);
-                distance = prefixActiveNodeSet->getEditdistanceofPrefix(trieNode);
+                iter.getItem(trieNode, editDistance);
                 float runTimeScoreOfThisLeafNode = DefaultTopKRanker::computeTermRecordRuntimeScore(trieNode->getMaximumScoreOfLeafNodes(),
-    					distance,
+    					editDistance,
     					term->getKeyword()->size(),
     					false,
     					this->prefixMatchPenalty , term->getSimilarityBoost());
                 if( runTimeScoreOfThisLeafNode > this->maxScoreForBitSetCase){
                 	this->maxScoreForBitSetCase = runTimeScoreOfThisLeafNode;
                 }
-                // loop the distance depth of the trie to add the term invertedlist to Bitset
-                depthInitializeBitSet(trieNode, distance, term->getThreshold());
+
+                unsigned panDistance = prefixActiveNodeSet->getEditdistanceofPrefix(trieNode);
+                // we always use the panDistance between this pivotal active node (PAN) and the query term
+                depthInitializeBitSet(trieNode, editDistance, panDistance, term->getThreshold());
             }
 
             //cout << "term count:" << numberOfLeafNodes << endl;
@@ -248,10 +264,11 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
             invertedListReadViewVector.reserve(iter.size());
             for (; !iter.isDone(); iter.next()) {
                 TrieNodePointer trieNode;
-                unsigned distance;
-                iter.getItem(trieNode, distance);
-                distance = prefixActiveNodeSet->getEditdistanceofPrefix(trieNode);
-                depthInitializeTermVirtualListElement(trieNode, distance, term->getThreshold());
+                unsigned editDistance;
+                iter.getItem(trieNode, editDistance);
+                unsigned panDistance = prefixActiveNodeSet->getEditdistanceofPrefix(trieNode);
+
+                depthInitializeTermVirtualListElement(trieNode, editDistance, panDistance, term->getThreshold());
             }
         }
     }
@@ -281,12 +298,7 @@ TermVirtualList::~TermVirtualList()
     this->term = NULL;
     this->invertedIndex = NULL;
 
-    if (prefixActiveNodeSet->isResultsCached() == true)
-        prefixActiveNodeSet->busyBit->setFree();
-    else
-        delete prefixActiveNodeSet;
 }
-
 //Called when this->numberOfItemsInPartialHeap = 0
 bool TermVirtualList::_addItemsToPartialHeap()
 {
@@ -392,13 +404,17 @@ bool TermVirtualList::getNext(HeapItemForIndexSearcher *returnHeapItem)
 
                 unsigned recordId = currentHeapMaxInvertedList->getElement(currentHeapMaxCursor);
                 // calculate record offset online
-                unsigned recordOffset = this->invertedIndex->getKeywordOffset(recordId, currentHeapMaxInvertetedListId);
+                unsigned recordOffset = this->invertedIndex->getKeywordOffset(this->forwardIndexDirectoryReadView,
+                		this->invertedIndexKeywordIdsReadView,
+                		recordId, currentHeapMaxInvertetedListId);
                 unsigned termAttributeBitmap = 0;
                 currentHeapMaxCursor++;
 
                 // check isValidTermPositionHit
                 float termRecordStaticScore = 0;
-                if (this->invertedIndex->isValidTermPositionHit(recordId, recordOffset,
+                if (this->invertedIndex->isValidTermPositionHit(forwardIndexDirectoryReadView,
+                		recordId,
+                		recordOffset,
                         term->getAttributeToFilterTermHits(), termAttributeBitmap,
                         termRecordStaticScore)) {
                     foundValidHit = 1;

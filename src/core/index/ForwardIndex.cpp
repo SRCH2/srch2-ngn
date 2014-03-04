@@ -74,11 +74,16 @@ ForwardIndex::~ForwardIndex()
     delete this->forwardListDirectory;
 }
 
+/*
+ * this function uses forward index lock inside and it's expensive, so it should be used carefully inside a loop
+ */
 unsigned ForwardIndex::getTotalNumberOfForwardLists_WriteView() const
 {
     return this->forwardListDirectory->getWriteView()->size();
 }
-    
+/*
+ * this function uses forward index lock inside and it's expensive, so it should be used carefully inside a loop
+ */
 unsigned ForwardIndex::getTotalNumberOfForwardLists_ReadView() const
 {
     shared_ptr<vectorview<ForwardListPtr> > readView;
@@ -143,7 +148,8 @@ void printVector(const vector<unsigned> *fl) {
 }
 
 // do binary search to probe in forward list
-bool ForwardIndex::haveWordInRange(const unsigned recordId,
+bool ForwardIndex::haveWordInRange(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+		const unsigned recordId,
         const unsigned minId, const unsigned maxId,
         const unsigned termSearchableAttributeIdToFilterTermHits,
         unsigned &matchingKeywordId, unsigned &matchingKeywordAttributeBitmap,
@@ -152,7 +158,7 @@ bool ForwardIndex::haveWordInRange(const unsigned recordId,
     ASSERT(recordId < this->getTotalNumberOfForwardLists_ReadView());
 
     bool valid = false;
-    const ForwardList* fl = this->getForwardList(recordId, valid);
+    const ForwardList* fl = this->getForwardList(forwardListDirectoryReadView, recordId, valid);
 
     // Deleted flag is set
     if (valid == false)
@@ -163,16 +169,16 @@ bool ForwardIndex::haveWordInRange(const unsigned recordId,
             matchingKeywordAttributeBitmap, matchingKeywordRecordStaticScore);
 }
 
-bool ForwardIndex::haveWordInRangeWithStemmer(const unsigned recordId,
+bool ForwardIndex::haveWordInRangeWithStemmer(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+		const unsigned recordId,
         const unsigned minId, const unsigned maxId,
         const unsigned termSearchableAttributeIdToFilterTermHits,
         unsigned &matchingKeywordId, unsigned &matchingKeywordAttributeBitmap,
         float &matchingKeywordRecordStaticScore, bool &isStemmed) const {
     assert(minId <= maxId);
     ASSERT(recordId < this->getTotalNumberOfForwardLists_ReadView());
-
     bool valid = false;
-    const ForwardList* fl = this->getForwardList(recordId, valid);
+    const ForwardList* fl = this->getForwardList(forwardListDirectoryReadView, recordId, valid);
 
     // Deleted flag is set
     if (valid == false)
@@ -184,94 +190,24 @@ bool ForwardIndex::haveWordInRangeWithStemmer(const unsigned recordId,
             isStemmed);
 }
 
-const ForwardList *ForwardIndex::getForwardList(unsigned recordId, bool &valid) const
+const ForwardList *ForwardIndex::getForwardList(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+		unsigned recordId, bool &valid) const
 {
-    // A valid record ID is in the range [0, 1, ..., directorySize - 1]
-    if (recordId >= this->getTotalNumberOfForwardLists_ReadView())
-    {
-        valid = false;
-        return NULL;
-    }
 
-    shared_ptr<vectorview<ForwardListPtr> > readView;
-    this->forwardListDirectory->getReadView(readView);
-    valid = readView->getElement(recordId).second;
-    return readView->getElement(recordId).first;
+    // A valid record ID is in the range [0, 1, ..., directorySize - 1]
+    if(recordId >= forwardListDirectoryReadView->size()){
+    	valid = false;
+    	return NULL;
+    }
+    ForwardListPtr flPtr = forwardListDirectoryReadView->getElement(recordId);
+    valid = flPtr.second;
+    return flPtr.first;
 }
 
 ForwardList *ForwardIndex::getForwardList_ForCommit(unsigned recordId)
 {
     ASSERT (recordId < this->getTotalNumberOfForwardLists_WriteView());
     return  this->forwardListDirectory->getWriteView()->at(recordId).first;
-}
-
-//unsigned ForwardList::getForwardListElement(unsigned cursor) const
-//{
-/*  unsigned offset = this->forwardListDirectory[recordId].offset;
-
- ASSERT(cursor < this->forwardListDirectory[recordId].numberOfKeywords);
- ASSERT(offset + this->forwardListDirectory[recordId].numberOfKeywords <= this->getTotalLengthOfForwardLists());
-
- return &(keywordVector[offset + cursor]);*/
-//TODO check bounds
-//   return this->keywordIdVector->at(cursor);
-//}
-TypedValue ForwardList::getForwardListRefiningAttributeTypedValue(
-        const SchemaInternal* schemaInternal,
-        unsigned schemaRefiningAttributeId) const {
-
-    ASSERT(
-            schemaRefiningAttributeId
-                    < schemaInternal->getNumberOfRefiningAttributes());
-
-    FilterType filterType = schemaInternal->getTypeOfRefiningAttribute(
-            schemaRefiningAttributeId);
-    bool isMultiValued = schemaInternal->isRefiningAttributeMultiValued(schemaRefiningAttributeId);
-
-    TypedValue typedValue;
-
-    if(isMultiValued == false){ // single value
-		switch (filterType) {
-			case srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED:
-				typedValue.setTypedValue(VariableLengthAttributeContainer::getUnsignedAttribute(schemaRefiningAttributeId, schemaInternal , getRefiningAttributeValuesDataPointer()));
-				break;
-			case srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT:
-				typedValue.setTypedValue(VariableLengthAttributeContainer::getFloatAttribute(schemaRefiningAttributeId, schemaInternal, getRefiningAttributeValuesDataPointer()));
-				break;
-			case srch2::instantsearch::ATTRIBUTE_TYPE_TEXT:
-				typedValue.setTypedValue(VariableLengthAttributeContainer::getTextAttribute(schemaRefiningAttributeId, schemaInternal , getRefiningAttributeValuesDataPointer()));
-				break;
-			case srch2::instantsearch::ATTRIBUTE_TYPE_TIME:
-				typedValue.setTypedValue(VariableLengthAttributeContainer::getTimeAttribute(schemaRefiningAttributeId, schemaInternal , getRefiningAttributeValuesDataPointer()));
-				break;
-			case srch2::instantsearch::ATTRIBUTE_TYPE_DURATION:
-				ASSERT(false);
-				break;
-			default :break;
-		}
-    }else{ // multi value
-		switch (filterType) {
-			case srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED:
-				typedValue.setTypedValue(VariableLengthAttributeContainer::getMultiUnsignedAttribute(schemaRefiningAttributeId, schemaInternal , getRefiningAttributeValuesDataPointer()));
-				break;
-			case srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT:
-				typedValue.setTypedValue(VariableLengthAttributeContainer::getMultiFloatAttribute(schemaRefiningAttributeId, schemaInternal, getRefiningAttributeValuesDataPointer()));
-				break;
-			case srch2::instantsearch::ATTRIBUTE_TYPE_TEXT:
-				typedValue.setTypedValue(VariableLengthAttributeContainer::getMultiTextAttribute(schemaRefiningAttributeId, schemaInternal , getRefiningAttributeValuesDataPointer()));
-				break;
-			case srch2::instantsearch::ATTRIBUTE_TYPE_TIME:
-				typedValue.setTypedValue(VariableLengthAttributeContainer::getMultiTimeAttribute(schemaRefiningAttributeId, schemaInternal , getRefiningAttributeValuesDataPointer()));
-				break;
-			case srch2::instantsearch::ATTRIBUTE_TYPE_DURATION:
-				ASSERT(false);
-				break;
-			default:break;
-		}
-    }
-
-    return typedValue;
-
 }
 
 void ForwardIndex::commit()
@@ -479,14 +415,18 @@ void ForwardIndex::addDummyFirstRecord()			// For Trie bootstrap
     this->forwardListDirectory->getWriteView()->push_back(managedForwardListPtr);
 }
 
+void ForwardIndex::getForwardListDirectory_ReadView(shared_ptr<vectorview<ForwardListPtr> > & readView) const{
+	this->forwardListDirectory->getReadView(readView);
+}
+
 // convert the keyword ids for a given record using the given id mapper
-void ForwardIndex::reassignKeywordIds(const unsigned recordId,
+void ForwardIndex::reassignKeywordIds(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+		const unsigned recordId,
         const map<unsigned, unsigned> &keywordIdMapper) {
     bool valid = false;
     // currently the read view and the write view should be the same
     //ForwardList *forwardList = getForwardListToChange(recordId, valid); 
-    ForwardList *forwardList = const_cast<ForwardList *>(getForwardList(
-            recordId, valid));
+    ForwardList *forwardList = const_cast<ForwardList *>(getForwardList(forwardListDirectoryReadView,recordId, valid));
 
     // ingore the deleted records
     if (valid == false)
@@ -594,6 +534,9 @@ void ForwardIndex::finalCommit() {
     this->commited_WriteView = true;
 }
 
+/*
+ * this function uses forward index lock inside and it's expensive, so it should be used carefully inside a loop
+ */
 unsigned ForwardIndex::getNumberOfBytes() const {
     unsigned totalSize = 0;
 
@@ -623,7 +566,7 @@ void ForwardIndex::print_test() {
 
     for (unsigned counter = 0; counter < readView->size(); ++counter) {
         bool valid = false;
-        const ForwardList* fl = this->getForwardList(counter, valid);
+        const ForwardList* fl = this->getForwardList(readView, counter, valid);
 
         if (valid == false)
             continue;
@@ -636,6 +579,65 @@ void ForwardIndex::print_size() const {
 }
 
 /************ForwardList*********************/
+
+TypedValue ForwardList::getForwardListRefiningAttributeTypedValue(
+        const SchemaInternal* schemaInternal,
+        unsigned schemaRefiningAttributeId) const {
+
+    ASSERT(
+            schemaRefiningAttributeId
+                    < schemaInternal->getNumberOfRefiningAttributes());
+
+    FilterType filterType = schemaInternal->getTypeOfRefiningAttribute(
+            schemaRefiningAttributeId);
+    bool isMultiValued = schemaInternal->isRefiningAttributeMultiValued(schemaRefiningAttributeId);
+
+    TypedValue typedValue;
+
+    if(isMultiValued == false){ // single value
+		switch (filterType) {
+			case srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED:
+				typedValue.setTypedValue(VariableLengthAttributeContainer::getUnsignedAttribute(schemaRefiningAttributeId, schemaInternal , getRefiningAttributeValuesDataPointer()));
+				break;
+			case srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT:
+				typedValue.setTypedValue(VariableLengthAttributeContainer::getFloatAttribute(schemaRefiningAttributeId, schemaInternal, getRefiningAttributeValuesDataPointer()));
+				break;
+			case srch2::instantsearch::ATTRIBUTE_TYPE_TEXT:
+				typedValue.setTypedValue(VariableLengthAttributeContainer::getTextAttribute(schemaRefiningAttributeId, schemaInternal , getRefiningAttributeValuesDataPointer()));
+				break;
+			case srch2::instantsearch::ATTRIBUTE_TYPE_TIME:
+				typedValue.setTypedValue(VariableLengthAttributeContainer::getTimeAttribute(schemaRefiningAttributeId, schemaInternal , getRefiningAttributeValuesDataPointer()));
+				break;
+			case srch2::instantsearch::ATTRIBUTE_TYPE_DURATION:
+				ASSERT(false);
+				break;
+			default :break;
+		}
+    }else{ // multi value
+		switch (filterType) {
+			case srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED:
+				typedValue.setTypedValue(VariableLengthAttributeContainer::getMultiUnsignedAttribute(schemaRefiningAttributeId, schemaInternal , getRefiningAttributeValuesDataPointer()));
+				break;
+			case srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT:
+				typedValue.setTypedValue(VariableLengthAttributeContainer::getMultiFloatAttribute(schemaRefiningAttributeId, schemaInternal, getRefiningAttributeValuesDataPointer()));
+				break;
+			case srch2::instantsearch::ATTRIBUTE_TYPE_TEXT:
+				typedValue.setTypedValue(VariableLengthAttributeContainer::getMultiTextAttribute(schemaRefiningAttributeId, schemaInternal , getRefiningAttributeValuesDataPointer()));
+				break;
+			case srch2::instantsearch::ATTRIBUTE_TYPE_TIME:
+				typedValue.setTypedValue(VariableLengthAttributeContainer::getMultiTimeAttribute(schemaRefiningAttributeId, schemaInternal , getRefiningAttributeValuesDataPointer()));
+				break;
+			case srch2::instantsearch::ATTRIBUTE_TYPE_DURATION:
+				ASSERT(false);
+				break;
+			default:break;
+		}
+    }
+
+    return typedValue;
+
+}
+
 //low_bound return a pointer to the first element in the range [first, last) which is less than val
 const unsigned* lower_bound(const unsigned* first, const unsigned* last,
         const unsigned val) {
@@ -782,13 +784,14 @@ unsigned ForwardList::getNumberOfBytes() const {
 }
 
 // READER accesses this function
-bool ForwardIndex::getExternalRecordIdFromInternalRecordId(const unsigned internalRecordId,
+bool ForwardIndex::getExternalRecordIdFromInternalRecordId(
+		shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+		const unsigned internalRecordId,
         std::string &externalRecordId) const {
     ASSERT(internalRecordId < this->getTotalNumberOfForwardLists_ReadView());
 
     bool valid = false;
-    const ForwardList* forwardList = this->getForwardList(internalRecordId,
-            valid);
+    const ForwardList* forwardList = this->getForwardList(forwardListDirectoryReadView, internalRecordId,valid);
 
     if (valid == false) {
         externalRecordId = -1;
@@ -996,8 +999,9 @@ unsigned getBitSetPositionOfAttr(unsigned attrBitMap, unsigned attributeId) {
 /**********************************************/
 std::string ForwardIndex::getInMemoryData(unsigned internalRecordId) const {
     bool valid = false;
-    const ForwardList* forwardList = this->getForwardList(internalRecordId,
-            valid);
+    shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
+    this->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
+    const ForwardList* forwardList = this->getForwardList(forwardListDirectoryReadView, internalRecordId,valid);
     if (valid == false)
         return string("");
     else
@@ -1007,21 +1011,22 @@ std::string ForwardIndex::getInMemoryData(unsigned internalRecordId) const {
 float ForwardIndex::getTermRecordStaticScore(unsigned forwardIndexId,
         unsigned keywordOffset) const {
     bool valid = false;
-    const ForwardList* forwardList = this->getForwardList(forwardIndexId,
-            valid);
+    shared_ptr<vectorview<ForwardListPtr> > readView;
+    this->getForwardListDirectory_ReadView(readView);
+    const ForwardList* forwardList = this->getForwardList(readView, forwardIndexId,valid);
     if (valid == false)
         return 0;
     else
         return forwardList->getKeywordRecordStaticScore(keywordOffset);
 }
 
-bool ForwardIndex::isValidRecordTermHit(unsigned forwardIndexId,
+bool ForwardIndex::isValidRecordTermHit(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+		unsigned forwardIndexId,
         unsigned keywordOffset, unsigned searchableAttributeId,
         unsigned &matchingKeywordAttributeBitmap,
         float& matchingKeywordRecordStaticScore) const {
     bool valid = false;
-    const ForwardList* forwardList = this->getForwardList(forwardIndexId,
-            valid);
+    const ForwardList* forwardList = this->getForwardList(forwardListDirectoryReadView, forwardIndexId,valid);
     if (valid && forwardList != NULL)
         return forwardList->isValidRecordTermHit(this->schemaInternal,
                 keywordOffset, searchableAttributeId,
@@ -1036,7 +1041,9 @@ bool ForwardIndex::isValidRecordTermHitWithStemmer(unsigned forwardIndexId,
         unsigned &matchingKeywordAttributeBitmap,
         float &matchingKeywordRecordStaticScore, bool &isStemmed) const {
     bool valid = false;
-    const ForwardList* forwardList = this->getForwardList(forwardIndexId,
+    shared_ptr<vectorview<ForwardListPtr> > readView;
+    this->getForwardListDirectory_ReadView(readView);
+    const ForwardList* forwardList = this->getForwardList(readView, forwardIndexId,
             valid);
     if (valid && forwardList != NULL)
         return forwardList->isValidRecordTermHitWithStemmer(
@@ -1109,7 +1116,9 @@ INDEXLOOKUP_RETVAL ForwardIndex::lookupRecord(
     }
 
     bool valid = false;
-    this->getForwardList(internalRecordId, valid);
+    shared_ptr<vectorview<ForwardListPtr> > readView;
+    this->getForwardListDirectory_ReadView(readView);
+    this->getForwardList(readView, internalRecordId, valid);
 
     if (valid == false)
         return LU_TO_BE_INSERTED;
@@ -1126,10 +1135,11 @@ bool ForwardIndex::getInternalRecordIdFromExternalRecordId(
 
 }
 
-unsigned ForwardIndex::getKeywordOffset(unsigned forwardListId,
+unsigned ForwardIndex::getKeywordOffset(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+		unsigned forwardListId,
         unsigned keywordId) const {
     bool valid = false;
-    const ForwardList* forwardList = this->getForwardList(forwardListId, valid);
+    const ForwardList* forwardList = this->getForwardList(forwardListDirectoryReadView, forwardListId, valid);
     return forwardList->getKeywordOffset(keywordId);
 }
 
@@ -1146,7 +1156,7 @@ void ForwardIndex::exportData(ForwardIndex &forwardIndex, const string &exported
     // loop all the forwardList Index
     for (unsigned counter = 0; counter < forwardListDirectoryReadView->size(); ++counter) {
         bool valid = false;
-        const ForwardList* fl = forwardIndex.getForwardList(counter, valid);
+        const ForwardList* fl = forwardIndex.getForwardList(forwardListDirectoryReadView, counter, valid);
         // ignore the invalid record
         if (valid == false)
             continue;

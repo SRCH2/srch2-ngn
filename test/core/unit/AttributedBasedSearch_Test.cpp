@@ -2,11 +2,13 @@
 
 #include <analyzer/AnalyzerInternal.h>
 #include <instantsearch/Indexer.h>
-#include <instantsearch/IndexSearcher.h>
+#include <instantsearch/QueryEvaluator.h>
 #include <instantsearch/Query.h>
 #include <instantsearch/Term.h>
 #include <instantsearch/QueryResults.h>
 #include "analyzer/StandardAnalyzer.h"
+#include "UnitTestHelper.h"
+#include "analyzer/AnalyzerContainers.h"
 
 #include <iostream>
 #include <fstream>
@@ -31,18 +33,21 @@ Indexer *buildIndex(string data_file, string index_dir, string expression)
     schema->setScoringExpression(expression);
 
     /// Create an Analyzer
-    Analyzer *analyzer = new Analyzer(srch2is::DISABLE_STEMMER_NORMALIZER, "","","",
-            srch2is::SYNONYM_DONOT_KEEP_ORIGIN,"",srch2is::STANDARD_ANALYZER);
+    SynonymContainer *syn = SynonymContainer::getInstance(string(""), SYNONYM_DONOT_KEEP_ORIGIN);
+    ProtectedWordsContainer *prot = ProtectedWordsContainer::getInstance("");
+    AnalyzerInternal *simpleAnlyzer = new StandardAnalyzer(NULL, NULL, prot, syn, string(""));
+
+    Analyzer *analyzer = new Analyzer(NULL, NULL, prot, syn, "", srch2is::STANDARD_ANALYZER);
 
     /// Create an index writer
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
+    IndexMetaData *indexMetaData = new IndexMetaData( new CacheManager(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		index_dir, "");
+    		index_dir);
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     Record *record = new Record(schema);
@@ -96,15 +101,18 @@ Indexer *buildIndex(string data_file, string index_dir, string expression)
 
     data.close();
 
+    prot->free();
+    syn->free();
+
     return indexer;
 }
 
-void fireSearch(IndexSearcher *indexSearcher, unsigned filter, unsigned k, const vector<string> &searchKeywords,
+void fireSearch(QueryEvaluator * queryEvaluator, unsigned filter, unsigned k, const vector<string> &searchKeywords,
                 unsigned numOfResults, const vector<string> &resultIds, const vector<vector<unsigned> > &resultAttributeBitmap)
 {
     
     Query *query = new Query(srch2::instantsearch::SearchTypeTopKQuery);
-    QueryResults * queryResults = new QueryResults(new QueryResultFactory() ,indexSearcher, query);
+    QueryResults * queryResults = new QueryResults(new QueryResultFactory() ,queryEvaluator, query);
 
     for (unsigned i = 0; i < searchKeywords.size(); ++i)
     {
@@ -115,8 +123,11 @@ void fireSearch(IndexSearcher *indexSearcher, unsigned filter, unsigned k, const
         query->add(term);
     }
 
-    indexSearcher->search(query, queryResults, k);
 
+    LogicalPlan * logicalPlan = prepareLogicalPlanForUnitTests(query , NULL, 0, 10, false, srch2::instantsearch::SearchTypeTopKQuery);
+    queryEvaluator->search(logicalPlan , queryResults);
+//    QueryEvaluatorRuntimeParametersContainer runTimeParameters;
+//    QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer,&runTimeParameters );
     ASSERT(queryResults->getNumberOfResults() == numOfResults);
 
     vector<unsigned> matchedAttributeBitmap;
@@ -137,7 +148,8 @@ void test(string index_dir, string data_file)
 {
     Indexer *indexer = buildIndex(data_file, index_dir, "idf_score*doc_boost");
 
-    IndexSearcher *indexSearcher = IndexSearcher::create(indexer);
+    QueryEvaluatorRuntimeParametersContainer runTimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer,&runTimeParameters );
 
     unsigned filter = 0;
     int k = 10;
@@ -161,7 +173,7 @@ void test(string index_dir, string data_file)
     resultAttributeBitmap[1].push_back(2);
     resultAttributeBitmap[2].push_back(2);
 
-    fireSearch(indexSearcher, filter, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
+    fireSearch(queryEvaluator, filter, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
 
     resultIds.clear();
     resultAttributeBitmap.clear();
@@ -178,7 +190,7 @@ void test(string index_dir, string data_file)
     resultAttributeBitmap[0].push_back(3);
     resultAttributeBitmap[1].push_back(1);
 
-    fireSearch(indexSearcher, filter, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
+    fireSearch(queryEvaluator, filter, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
 
     resultIds.clear();
     resultAttributeBitmap.clear();
@@ -199,7 +211,7 @@ void test(string index_dir, string data_file)
     resultAttributeBitmap[2].push_back(2);
     resultAttributeBitmap[3].push_back(2);
 
-    fireSearch(indexSearcher, filter, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
+    fireSearch(queryEvaluator, filter, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
 
     resultIds.clear();
     resultAttributeBitmap.clear();
@@ -215,7 +227,7 @@ void test(string index_dir, string data_file)
     resultAttributeBitmap.resize(1);
     resultAttributeBitmap[0].push_back(3);
 
-    fireSearch(indexSearcher, filter, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
+    fireSearch(queryEvaluator, filter, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
 
     resultIds.clear();
     resultAttributeBitmap.clear();
@@ -236,13 +248,13 @@ void test(string index_dir, string data_file)
     resultAttributeBitmap[2].push_back(2);
     resultAttributeBitmap[3].push_back(2);
 
-    fireSearch(indexSearcher, filter, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
+    fireSearch(queryEvaluator, filter, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
 
     resultIds.clear();
 
     cout << "case 5 passed." << endl;
 
-    delete indexSearcher;
+    delete queryEvaluator;
     delete indexer;
 
 }

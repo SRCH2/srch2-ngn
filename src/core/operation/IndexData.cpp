@@ -54,7 +54,6 @@ namespace instantsearch {
 IndexData::IndexData(const string &directoryName,
         Analyzer *analyzer,
         Schema *schema,
-        const string &trieBootstrapFileNameWithPath,
         const StemmerNormalizerFlagType &stemmerFlag)
 {
 
@@ -64,7 +63,7 @@ IndexData::IndexData(const string &directoryName,
         if (createDir(directoryName.c_str()) == -1){
             throw std::runtime_error("Index Directory can not be created");
         }
-	}
+    }
 
     this->schemaInternal = new SchemaInternal( *(dynamic_cast<SchemaInternal *>(schema)) );
 
@@ -73,18 +72,20 @@ IndexData::IndexData(const string &directoryName,
     this->trie = new Trie_Internal();
 
     this->forwardIndex = new ForwardIndex(this->schemaInternal);
-    if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
-        this->invertedIndex =new  InvertedIndex(this->forwardIndex);
-    else
+    if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex) {
+        this->invertedIndex =new InvertedIndex(this->forwardIndex);
+        this->quadTree = NULL;
+    } else {
         this->quadTree = new QuadTree(this->forwardIndex, this->trie);
+        this->invertedIndex = NULL;
+    }
 
     this->readCounter = new ReadCounter();
     this->writeCounter = new WriteCounter();
     this->flagBulkLoadDone = false;
 
-    this->addBootstrapKeywords(trieBootstrapFileNameWithPath, analyzer);
-
     this->rwMutexForIdReassign = new ReadWriteMutex(100); // for locking, <= 100 threads
+    this->mergeRequired = true;
 }
 
 IndexData::IndexData(const string& directoryName)
@@ -94,7 +95,7 @@ IndexData::IndexData(const string& directoryName)
     if(!checkDirExistence(directoryName.c_str())){
         Logger::error("Given index path %s does not exist", directoryName.c_str());
         throw std::runtime_error("Index load exception ");
-	}
+    }
     Serializer serializer;
     try{
     	this->schemaInternal = new SchemaInternal();
@@ -105,7 +106,9 @@ IndexData::IndexData(const string& directoryName)
     	this->forwardIndex = new ForwardIndex(this->schemaInternal);
     	serializer.load(*(this->trie),directoryName + "/" + IndexConfig::trieFileName);
     	if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
-    		this->invertedIndex =new  InvertedIndex(this->forwardIndex);
+            this->invertedIndex = new InvertedIndex(this->forwardIndex);
+        else
+            this->invertedIndex = NULL;
 
     	// set if it's a attributeBasedSearch
     	PositionIndexType positionIndexType = this->schemaInternal->getPositionIndexType();
@@ -119,6 +122,7 @@ IndexData::IndexData(const string& directoryName)
     	if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex){
     		serializer.load(*(this->invertedIndex), directoryName + "/" +  IndexConfig::invertedIndexFileName);
     		this->invertedIndex->setForwardIndex(this->forwardIndex);
+                quadTree = NULL;
     	} else {
     		this->quadTree = new QuadTree();
     		serializer.load(*(this->quadTree), directoryName + "/" +  IndexConfig::quadTreeFileName);
@@ -135,6 +139,7 @@ IndexData::IndexData(const string& directoryName)
     }
 
     this->rwMutexForIdReassign = new ReadWriteMutex(100); // for locking, <= 100 threads
+    this->mergeRequired = true;
 }
 
 // check whether the keyword id list is sorted. This is called from ASSERT statement below to
@@ -312,48 +317,6 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer
     return returnValue;
 }
 
-void IndexData::addBootstrapKeywords(const string &trieBootstrapFileNameWithPath, Analyzer* analyzer)
-{
-    try
-    {
-        std::ifstream infile;
-        infile.open (trieBootstrapFileNameWithPath.c_str());
-        if (infile.good())
-        {
-            std::string line;
-            while ( std::getline(infile, line) )
-            {
-                std::vector<PositionalTerm> tokensInfo;
-                //char c = '.';
-//                this->analyzerInternal->tokenizeQuery(line, keywords); iman: previous one
-                analyzer->tokenizeQuery(line, tokensInfo);
-
-                for (std::vector<PositionalTerm>::const_iterator kiter = tokensInfo.begin();
-                            kiter != tokensInfo.end();
-                            ++kiter)
-                {
-                    /// add words to trie
-                    unsigned invertedIndexOffset = 0;
-                    unsigned keywordId = 0;
-                    string keyword = kiter->term;
-                    keywordId = this->trie->addKeyword(getCharTypeVector(keyword), invertedIndexOffset);
-                    this->invertedIndex->incrementDummyHitCount(invertedIndexOffset);
-                }
-            }
-
-            // All the dummy keywords that are used to bootstrap trie have a unique keywordId and hence a invertedList.
-            // The invertedList cannot be of size 0 and also, it is initialised to have "0"s.
-            // We create a dummy first record to occupy internalRid "0" in forwardList.
-
-            this->forwardIndex->addDummyFirstRecord();
-        }
-    }
-    catch (std::exception& e)
-    {
-        Logger::error("trie bootstrap with english dictionary failed. File read error");
-    }
-}
-
 // delete a record with a specific id //TODO Give the correct return message for delete pass/fail
 INDEXWRITE_RETVAL IndexData::_deleteRecord(const std::string &externalRecordId)
 {
@@ -480,9 +443,11 @@ INDEXWRITE_RETVAL IndexData::finishBulkLoad()
          * (vs. integration of frequency and recordStaticScores) for nodeSubTrieValue of trie nodes.
          */
         if (isLocational){
-			this->trie->finalCommit_finalizeHistogramInformation(NULL , 0);
+			this->trie->finalCommit_finalizeHistogramInformation(NULL , NULL, 0);
         }else{
-			this->trie->finalCommit_finalizeHistogramInformation(this->invertedIndex , this->forwardIndex->getTotalNumberOfForwardLists_ReadView());
+			this->trie->finalCommit_finalizeHistogramInformation(this->invertedIndex ,
+					this->forwardIndex,
+					this->forwardIndex->getTotalNumberOfForwardLists_ReadView());
         }
         this->flagBulkLoadDone = true;
         return OP_SUCCESS;
@@ -541,7 +506,8 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
         // cout << "Commit phase: time spent to reassign keyword IDs in the forward index (ms): " << time << endl;
     }
 
-    this->trie->merge(invertedIndex , this->forwardIndex->getTotalNumberOfForwardLists_ReadView() , updateHistogram);
+    this->trie->merge(invertedIndex , this->forwardIndex,
+    		this->forwardIndex->getTotalNumberOfForwardLists_ReadView() , updateHistogram);
     
     if (this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex)
         this->quadTree->merge();
@@ -605,6 +571,10 @@ void IndexData::changeKeywordIdsOnForwardLists(const map<TrieNode *, unsigned> &
                                                map<unsigned, unsigned> &processedRecordIds)
 {
 	vectorview<unsigned>* &keywordIDsWriteView = this->invertedIndex->getKeywordIds()->getWriteView();
+
+	shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
+    this->forwardIndex->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
+
     for (map<TrieNode *, unsigned>::const_iterator iter = trieNodeIdMapper.begin();
             iter != trieNodeIdMapper.end(); ++ iter)
     {
@@ -617,7 +587,10 @@ void IndexData::changeKeywordIdsOnForwardLists(const map<TrieNode *, unsigned> &
         keywordIDsWriteView->at(invertedListId) = keywordIdMapperIter->second;
         // Jamshid : since it happens after the commit of other index structures it uses read view
         shared_ptr<vectorview<unsigned> > readview;
-        this->invertedIndex->getInvertedListReadView(invertedListId, readview);
+    	shared_ptr<vectorview<InvertedListContainerPtr> > invertedListDirectoryReadView;
+    	this->invertedIndex->getInvertedIndexDirectory_ReadView(invertedListDirectoryReadView);
+        this->invertedIndex->getInvertedListReadView(invertedListDirectoryReadView,
+        		invertedListId, readview);
         unsigned invertedListSize = readview->size();
         // go through each record id on the inverted list
         InvertedListElement invertedListElement;
@@ -629,7 +602,7 @@ void IndexData::changeKeywordIdsOnForwardLists(const map<TrieNode *, unsigned> &
             // re-map it only it is not done before
             if (processedRecordIds.find (recordId) == processedRecordIds.end()) {
 
-                this->forwardIndex->reassignKeywordIds(recordId, keywordIdMapper);
+                this->forwardIndex->reassignKeywordIds(forwardListDirectoryReadView, recordId,keywordIdMapper);
                 processedRecordIds[recordId] = 0; // add it to the set 
             }
         }
@@ -645,9 +618,12 @@ void IndexData::changeKeywordIdsOnForwardListsAndOCFilters(map<unsigned, unsigne
 {
     this->quadTree->gatherForwardListsAndAdjustOCFilters(keywordIdMapper, recordIdsToProcess);
 
+	shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
+    this->forwardIndex->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
+
     for (map<unsigned, unsigned>::const_iterator citer = recordIdsToProcess.begin();
             citer != recordIdsToProcess.end(); ++ citer)
-        this->forwardIndex->reassignKeywordIds(citer->first, keywordIdMapper);
+        this->forwardIndex->reassignKeywordIds(forwardListDirectoryReadView, citer->first, keywordIdMapper);
 
 }
 
@@ -660,7 +636,7 @@ void IndexData::_save(const string &directoryName) const
 {
 	Serializer serializer;
     if (this->trie->isMergeRequired())
-        this->trie->merge(NULL , 0 , false);
+        this->trie->merge(NULL , NULL,  0 , false);
     // serialize the data structures to disk
     try {
         serializer.save(*this->trie, directoryName + "/" + IndexConfig::trieFileName);

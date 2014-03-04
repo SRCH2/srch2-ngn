@@ -181,13 +181,16 @@ unsigned QuadNode::findChildContainingPoint(Point point) const
 
 void QuadNode::fetchRawFiltersFromleafNodesUnderThisNode(const Trie *trie, const ForwardIndex *forwardIndex, const vector<GeoElement*> &geoElementIndex, CFilterMapPtr cMapPtr, OFilterMapPtr oMapPtr, bool isDirectChild, unsigned childBit)
 {
+    shared_ptr<vectorview<ForwardListPtr> > readView;
+    forwardIndex->getForwardListDirectory_ReadView(readView);
+
     if(this->isLeaf) // quad  node is a leaf node
     {
         for(unsigned i = 0; i < this->numElements; i++)
         {
             intptr_t geoElementOffset = (intptr_t)this->entries[i];
             bool isValidForwardList = false;
-            const ForwardList* forwardList = forwardIndex->getForwardList(geoElementIndex[geoElementOffset]->forwardListID, isValidForwardList);
+            const ForwardList* forwardList = forwardIndex->getForwardList(readView, geoElementIndex[geoElementOffset]->forwardListID, isValidForwardList);
             if (!isValidForwardList)
                 continue;
 
@@ -465,6 +468,9 @@ void QuadNode::splitOFilter(QuadTree *quadtree, const Trie *trie, OFilterMapPtr 
                             const Prefix &prefixFromParent, const vector<OFilterMapPtr> &skipList, const set<unsigned> &insertedKeywords, Prefix &matchingPrefixOnOFilter)
 {
 
+    shared_ptr<vectorview<ForwardListPtr> > readView;
+    quadtree->getForwardIndex()->getForwardListDirectory_ReadView(readView);
+
 	// the structure to keep the new OFilter.
     OFilterMapPtr deltaOFilterMap = new OFilterMap();
 
@@ -475,7 +481,7 @@ void QuadNode::splitOFilter(QuadTree *quadtree, const Trie *trie, OFilterMapPtr 
         unsigned geoElementOffset = geoElementList->geoElementOffsets[i];
         unsigned forwardListID = quadtree->geoElementIndex[geoElementOffset]->forwardListID;
         bool isValidForwardList = false;
-        const ForwardList *fl = quadtree->getForwardIndex()->getForwardList(forwardListID, isValidForwardList);
+        const ForwardList *fl = quadtree->getForwardIndex()->getForwardList(readView, forwardListID, isValidForwardList);
         if (!isValidForwardList)
             continue;
 
@@ -646,6 +652,9 @@ void QuadNode::recoverCFiltersOnThisNode(QuadTree *quadtree, CFilterMapPtr cMapP
 {
     ASSERT( cMapPtr->cmp->find(prefixToRecover) == cMapPtr->cmp->end() );
 
+    shared_ptr<vectorview<ForwardListPtr> > readView;
+    quadtree->getForwardIndex()->getForwardListDirectory_ReadView(readView);
+
     (*cMapPtr->cmp)[prefixToRecover].reset();
 
     for (unsigned i = 0; i < geoElementList.geoElementOffsets.size(); i++)
@@ -654,7 +663,7 @@ void QuadNode::recoverCFiltersOnThisNode(QuadTree *quadtree, CFilterMapPtr cMapP
         unsigned geoElementOffset = geoElementList.geoElementOffsets[i];
         unsigned forwardListID = quadtree->geoElementIndex[geoElementOffset]->forwardListID;
         bool isValidForwardList = false;
-        const ForwardList *fl = quadtree->getForwardIndex()->getForwardList(forwardListID, isValidForwardList);
+        const ForwardList *fl = quadtree->getForwardIndex()->getForwardList(readView, forwardListID, isValidForwardList);
         if (!isValidForwardList)
             continue;
 
@@ -851,6 +860,10 @@ void QuadNode::fixFiltersBroadenOnOneNode(const QuadTree *quadtree, vector<Prefi
  */
 void QuadNode::gatherForwardListsAndAdjustOCFilters(QuadTree *quadtree, unsigned oldKeywordId, unsigned newKeywordId, map<unsigned, unsigned> &recordIdsToProcess) const
 {
+
+    shared_ptr<vectorview<ForwardListPtr> > readView;
+    quadtree->getForwardIndex()->getForwardListDirectory_ReadView(readView);
+
     if (this->isLeaf)
     {
     	// if it is a leaf we just check the geo elements to see if they should be updated or not
@@ -859,7 +872,7 @@ void QuadNode::gatherForwardListsAndAdjustOCFilters(QuadTree *quadtree, unsigned
             intptr_t geoElementOffset = (intptr_t)this->entries[elementCounter];
             unsigned forwardListID = quadtree->geoElementIndex[geoElementOffset]->forwardListID;
             bool isValidForwardList = false;
-            const ForwardList *fl = quadtree->getForwardIndex()->getForwardList(forwardListID, isValidForwardList);
+            const ForwardList *fl = quadtree->getForwardIndex()->getForwardList(readView, forwardListID, isValidForwardList);
             if (!isValidForwardList)
                 continue;
 

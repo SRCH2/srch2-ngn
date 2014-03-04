@@ -4,7 +4,7 @@
 #include <boost/program_options.hpp>
 #include <instantsearch/Indexer.h>
 #include "wrapper/JSONRecordParser.h"
-#include "operation/IndexSearcherInternal.h"
+#include "operation/QueryEvaluatorInternal.h"
 #include "operation/IndexerInternal.h"
 #include "license/LicenseVerifier.h"
 #include "util/Logger.h"
@@ -187,76 +187,75 @@ void test1(int argc, char** argv) {
 
     srch2http::ConfigManager *serverConf = new srch2http::ConfigManager(srch2_config_file);
     serverConf->loadConfigFile();
+	srch2http::CoreInfo_t *core = serverConf->getDefaultCoreInfo();
 
     std::stringstream message;
-    message << "Srch2Home: " << serverConf->getSrch2Home() << "\n";
-    message << "LicenseKeyFileName: " << serverConf->getLicenseKeyFileName() << "\n";
-    message << "IndexPath: " << serverConf->getIndexPath() << "\n";
-    message << "FilePath: " << serverConf->getFilePath() << "\n";
-    message << "HTTPServerListeningHostname: " << serverConf->getHTTPServerListeningHostname() << "\n";
-    message << "HTTPServerListeningPort: " << serverConf->getHTTPServerListeningPort() << "\n";
+    message << "Srch2Home: " << core->getSrch2Home() << "\n";
+    message << "LicenseKeyFileName: " << core->getLicenseKeyFileName() << "\n";
+    message << "IndexPath: " << core->getIndexPath() << "\n";
+    message << "FilePath: " << core->getDataFilePath() << "\n";
+    message << "HTTPServerListeningHostname: " << core->getHTTPServerListeningHostname() << "\n";
+    message << "HTTPServerListeningPort: " << core->getHTTPServerListeningPort() << "\n";
     message << "\n";
 
-    message << "DocumentLimit: " << serverConf->getDocumentLimit() << "\n";
-    message << "MemoryLimit: " << serverConf->getMemoryLimit() << "\n";
-    message << "PrimaryKey: " << serverConf->getPrimaryKey() << "\n";
-    message << "IsPrimSearchable: " << serverConf->getIsPrimSearchable() << "\n";
-    message << "IsFuzzyTermsQuery: " << serverConf->getIsFuzzyTermsQuery() << "\n";
-    message << "QueryTermPrefixType: " << serverConf->getQueryTermPrefixType() << "\n";
+    message << "DocumentLimit: " << core->getDocumentLimit() << "\n";
+    message << "MemoryLimit: " << core->getMemoryLimit() << "\n";
+    message << "PrimaryKey: " << core->getPrimaryKey() << "\n";
+    message << "IsPrimSearchable: " << core->getIsPrimSearchable() << "\n";
+    message << "IsFuzzyTermsQuery: " << core->getIsFuzzyTermsQuery() << "\n";
+    message << "QueryTermPrefixType: " << core->getQueryTermPrefixType() << "\n";
     message << "\n";
 
-    message << "IndexType: " << serverConf->getIndexType() << "\n";
-    message << "SearchType: " << serverConf->getSearchType() << "\n";
-    message << "DataSourceType: " << serverConf->getDataSourceType() << "\n";
-    message << "AttributeLatitude: " << serverConf->getAttributeLatitude()<< "\n";
-    message << "AttributeLongitude: " << serverConf->getAttributeLongitude()<< "\n";
+    message << "IndexType: " << core->getIndexType() << "\n";
+    message << "SearchType: " << core->getSearchType() << "\n";
+    message << "DataSourceType: " << core->getDataSourceType() << "\n";
+    message << "AttributeLatitude: " << core->getAttributeLatitude()<< "\n";
+    message << "AttributeLongitude: " << core->getAttributeLongitude()<< "\n";
     message << "\n";
 
-    message << "StemmerFlag: " << serverConf->getStemmerFlag() << "\n";
-    message << "SynonymFilePath: " << serverConf->getSynonymFilePath() << "\n";
-    message << "SynonymKeepOrigFlag: " << serverConf->getSynonymKeepOrigFlag() << "\n";
-    message << "StopFilePath: " << serverConf->getStopFilePath() << "\n";
-    message << "StemmerFile: " << serverConf->getStemmerFile() << "\n";
+    message << "StemmerFlag: " << core->getStemmerFlag() << "\n";
+    message << "SynonymFilePath: " << core->getSynonymFilePath() << "\n";
+    message << "SynonymKeepOrigFlag: " << core->getSynonymKeepOrigFlag() << "\n";
+    message << "StopFilePath: " << core->getStopFilePath() << "\n";
+    message << "StemmerFile: " << core->getStemmerFile() << "\n";
     message << "\n";
 
-    message << "QueryTermBoost: " << serverConf->getQueryTermBoost() << "\n";
-    message << "FuzzyMatchPenalty: " << serverConf->getFuzzyMatchPenalty() << "\n";
-    message << "QueryTermLengthBoost: " << serverConf->getQueryTermLengthBoost() << "\n";
-    message << "PrefixMatchPenalty: " << serverConf->getPrefixMatchPenalty() << "\n";
-    message << "AttributeRecordBoostName: " << serverConf->getAttributeRecordBoostName() << "\n";
-    message << "SupportAttributeBasedSearch: " << serverConf->getSupportAttributeBasedSearch() << "\n";
-    message << "DefaultResultsToRetrieve: " << serverConf->getDefaultResultsToRetrieve() << "\n";
+    message << "QueryTermBoost: " << core->getQueryTermBoost() << "\n";
+    message << "FuzzyMatchPenalty: " << core->getFuzzyMatchPenalty() << "\n";
+    message << "QueryTermLengthBoost: " << core->getQueryTermLengthBoost() << "\n";
+    message << "PrefixMatchPenalty: " << core->getPrefixMatchPenalty() << "\n";
+    message << "AttributeRecordBoostName: " << core->getAttributeRecordBoostName() << "\n";
+    message << "SupportAttributeBasedSearch: " << core->getSupportAttributeBasedSearch() << "\n";
+    message << "DefaultResultsToRetrieve: " << core->getDefaultResultsToRetrieve() << "\n";
     message << "\n";
 
-    message << "AttributeToSort: " << serverConf->getAttributeToSort() << "\n";
-    message << "Ordering: " << serverConf->getOrdering() << "\n";
-    message << "FuzzyMatchPenalty: " << serverConf->getFuzzyMatchPenalty() << "\n";
-    message << "RecordAllowedSpecialCharacters: " << serverConf->getRecordAllowedSpecialCharacters() << "\n";
-    message << "CacheSizeInBytes: " << serverConf->getCacheSizeInBytes() << "\n";
-    message << "WriteApiType: " << serverConf->getWriteApiType() << "\n";
-    message << "SearchResponseFormat: " << serverConf->getSearchResponseFormat() << "\n";
+    message << "AttributeToSort: " << core->getAttributeToSort() << "\n";
+    message << "Ordering: " << core->getOrdering() << "\n";
+    message << "FuzzyMatchPenalty: " << core->getFuzzyMatchPenalty() << "\n";
+    message << "RecordAllowedSpecialCharacters: " << core->getRecordAllowedSpecialCharacters() << "\n";
+    message << "CacheSizeInBytes: " << core->getCacheSizeInBytes() << "\n";
+    message << "SearchResponseFormat: " << core->getSearchResponseFormat() << "\n";
 
-    message << "TrieBootstrapDictFileName: " << serverConf->getTrieBootstrapDictFileName() << "\n";
-    message << "HTTPServerAccessLogFile: " << serverConf->getHTTPServerAccessLogFile() << "\n";
-    message << "HTTPServerLogLevel: " << serverConf->getHTTPServerLogLevel() << "\n";
+    message << "HTTPServerAccessLogFile: " << core->getHTTPServerAccessLogFile() << "\n";
+    message << "HTTPServerLogLevel: " << core->getHTTPServerLogLevel() << "\n";
 
-    message << "isRecordBoostAttributeSet: " << serverConf->isRecordBoostAttributeSet() << "\n";
+    message << "isRecordBoostAttributeSet: " << core->isRecordBoostAttributeSet() << "\n";
 
-    message << "DefaultSpatialQueryBoundingBox: " << serverConf->getDefaultSpatialQueryBoundingBox() << "\n";
-    message << "SearchResponseJSONFormat: " << serverConf->getSearchResponseJSONFormat() << "\n";
-    message << "NumberOfThreads: " << serverConf->getNumberOfThreads() << "\n";
-    message << "MergeEveryNSeconds: " << serverConf->getMergeEveryNSeconds() << "\n";
-    message << "MergeEveryMWrites: " << serverConf->getMergeEveryMWrites() << "\n";
-    message << "ScoringExpressionString: " << serverConf->getScoringExpressionString() << "\n";
+    message << "DefaultSpatialQueryBoundingBox: " << core->getDefaultSpatialQueryBoundingBox() << "\n";
+    message << "SearchResponseJSONFormat: " << core->getSearchResponseJSONFormat() << "\n";
+    message << "NumberOfThreads: " << core->getNumberOfThreads() << "\n";
+    message << "MergeEveryNSeconds: " << core->getMergeEveryNSeconds() << "\n";
+    message << "MergeEveryMWrites: " << core->getMergeEveryMWrites() << "\n";
+    message << "ScoringExpressionString: " << core->getScoringExpressionString() << "\n";
 
-    const map<string, srch2http::SearchableAttributeInfoContainer > * searchableAttributes = serverConf->getSearchableAttributes();
+    const map<string, srch2http::SearchableAttributeInfoContainer > * searchableAttributes = core->getSearchableAttributes();
     map<string, srch2http::SearchableAttributeInfoContainer >::const_iterator iter;
     message << "Searchable Attributes:\n";
     for (iter = searchableAttributes->begin(); iter != searchableAttributes->end(); iter++) {
         message << iter->first << "  " << iter->second.offset << "  " << iter->second.boost << "\n";
     }
 
-    const vector<string> * attToReturn = serverConf->getAttributesToReturnName();
+    const vector<string> * attToReturn = core->getAttributesToReturn();
     message << "Attributes to return:\n";
     for (int i = 0; i < attToReturn->size(); i++) {
         message << (*attToReturn)[i] << "  ";
@@ -287,51 +286,54 @@ bool test2(int argc, char** argv) {
 
     srch2http::ConfigManager *serverConf = new srch2http::ConfigManager(srch2_config_file);
     serverConf->loadConfigFile();
+	srch2http::CoreInfo_t *core = serverConf->getDefaultCoreInfo();
 
-    string srch2home = serverConf->getSrch2Home();
-    string licenseKeyFile =serverConf->getLicenseKeyFileName();
+    string srch2home = core->getSrch2Home();
+    string licenseKeyFile =core->getLicenseKeyFileName();
     cout << "-  srch2home: " << srch2home << endl;
     cout << "-  Lincense File: " << licenseKeyFile << endl;
 
-    string accessLogFile = serverConf->getHTTPServerAccessLogFile();
+    string accessLogFile = core->getHTTPServerAccessLogFile();
     cout << "-  Log File: " << accessLogFile << endl;
 
-    string dataFile =  serverConf->getFilePath();
+    string dataFile =  core->getDataFilePath();
     cout << "-  Data File: " << dataFile << endl;
-    serverConf->setFilePath(dataFile);
+    core->setDataFilePath(dataFile);
 
-    cout << "-  index File: " << serverConf->getIndexPath()<< endl;
+    cout << "-  index File: " << core->getIndexPath()<< endl;
     // check the license file
     LicenseVerifier::testFile(licenseKeyFile);
 
     FILE *logFile = fopen(accessLogFile.c_str(), "a");
     if (logFile == NULL) {
         Logger::setOutputFile(stdout);
-        Logger::error("Open Log file %s failed.", serverConf->getHTTPServerAccessLogFile().c_str());
+        Logger::error("Open Log file %s failed.", core->getHTTPServerAccessLogFile().c_str());
     } else {
         Logger::setOutputFile(logFile);
     }
-    Logger::setLogLevel(serverConf->getHTTPServerLogLevel());
+    Logger::setLogLevel(core->getHTTPServerLogLevel());
 
     // create IndexMetaData
     srch2http::Srch2Server srch2Server;
-    srch2is::IndexMetaData *indexMetaData = srch2Server.createIndexMetaData(serverConf);
+    srch2is::IndexMetaData *indexMetaData = srch2Server.createIndexMetaData(core);
 
     // Create an analyzer
-    srch2is::Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "", "", "",
-            SYNONYM_DONOT_KEEP_ORIGIN, serverConf->getRecordAllowedSpecialCharacters());
+    srch2is::Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL,
+                                               core->getRecordAllowedSpecialCharacters());
 
     // Create a schema to the data source definition in the Srch2ServerConf
-    srch2is::Schema *schema = srch2http::JSONRecordParser::createAndPopulateSchema(serverConf);
+    srch2is::Schema *schema = srch2http::JSONRecordParser::createAndPopulateSchema(core);
 
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
 
     cout << "Creating new index from JSON file..." << endl;
     std::stringstream log_str;
-    srch2http::DaemonDataSource::createNewIndexFromFile(indexer, serverConf);
+    srch2http::DaemonDataSource::createNewIndexFromFile(indexer, core);
     indexer->commit();
-    srch2is::IndexSearcherInternal *ii = new IndexSearcherInternal(dynamic_cast<srch2is::IndexReaderWriter*>(indexer));
-    ii->getTrie()->print_Trie();
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer, &runtimeParameters);
+    QueryEvaluatorInternal * queryEvaluatorInternal = queryEvaluator->impl;
+    queryEvaluatorInternal->getTrie()->print_Trie();
 
 	delete indexMetaData;
 	delete indexer;

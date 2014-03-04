@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
     record->setRecordBoost(20);
 
     /// Create an Analyzer
-    AnalyzerInternal *analyzer = new StandardAnalyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER, "");
+    AnalyzerInternal *analyzer = new StandardAnalyzer(NULL, NULL, NULL, NULL, "");
     analyzer->setTokenStream(analyzer->createOperatorFlow());
     map<string, TokenAttributeHits > tokenAttributeHitsMap;
 
@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
         trie->addKeyword(mapIterator->first, invertedIndexOffset);
     }
     trie->commit();
-    trie->finalCommit_finalizeHistogramInformation(NULL , 0);
+    trie->finalCommit_finalizeHistogramInformation(NULL , NULL, 0);
 
     KeywordIdKeywordStringInvertedListIdTriple keywordIdList;
 
@@ -119,9 +119,11 @@ int main(int argc, char *argv[])
     forwardIndex->addRecord(record, internalRecordId, keywordIdList, tokenAttributeHitsMap);
 
     bool dummy = false;
-    float boost1 = forwardIndex->getForwardList(0, dummy)->getKeywordRecordStaticScore(0);
-    float boost2 = forwardIndex->getForwardList(0, dummy)->getKeywordRecordStaticScore(1);
-    float boost3 = forwardIndex->getForwardList(0, dummy)->getKeywordRecordStaticScore(2);
+    shared_ptr<vectorview<ForwardListPtr> > readView;
+    forwardIndex->getForwardListDirectory_ReadView(readView);
+    float boost1 = forwardIndex->getForwardList(readView, 0, dummy)->getKeywordRecordStaticScore(0);
+    float boost2 = forwardIndex->getForwardList(readView, 0, dummy)->getKeywordRecordStaticScore(1);
+    float boost3 = forwardIndex->getForwardList(readView, 0, dummy)->getKeywordRecordStaticScore(2);
 
     ASSERT(approximateFloatEqual(boost1, 1.8));
     ASSERT(approximateFloatEqual(boost2, 1.2));

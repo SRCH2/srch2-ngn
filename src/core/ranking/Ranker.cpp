@@ -22,6 +22,7 @@
 #include "util/Assert.h"
 #include <iostream>
 #include <math.h>
+#include "util/AttributeIterator.h"
 #include <cfloat>
 
 using std::vector;
@@ -111,6 +112,33 @@ namespace srch2
     		return leftRecordTypedValue > rightRecordTypedValue;
     }
 
+
+    float DefaultTopKRanker::computeAggregatedRuntimeScoreForAnd(std::vector<float> runTimeTermRecordScores){
+
+    	float resultScore = 0;
+
+    	for(vector<float>::iterator score = runTimeTermRecordScores.begin(); score != runTimeTermRecordScores.end(); ++score){
+    		resultScore += *(score);
+    	}
+    	return resultScore;
+    }
+
+    float DefaultTopKRanker::computeAggregatedRuntimeScoreForOr(std::vector<float> runTimeTermRecordScores){
+
+    	// max
+    	float resultScore = -1;
+
+    	for(vector<float>::iterator score = runTimeTermRecordScores.begin(); score != runTimeTermRecordScores.end(); ++score){
+    		if((*score) > resultScore){
+    			resultScore = (*score);
+    		}
+    	}
+    	return resultScore;
+    }
+
+    float DefaultTopKRanker::computeScoreForNot(float score){
+    	return 1 - score;
+    }
 
     /*float DefaultTopKRanker::computeOverallRecordScore(const Query *query, const vector<float> &queryResultTermScores, unsigned recordLength) const
       {
@@ -217,7 +245,6 @@ double SpatialRanker::degreeToRadian(double degreeValue) const
     return degreeValue * PI / 180.0;
 }
 
-
 uint8_t computeEditDistanceThreshold(unsigned keywordLength , float similarityThreshold)
 {
 	if(similarityThreshold < 0 || similarityThreshold > 1) {
@@ -228,7 +255,5 @@ uint8_t computeEditDistanceThreshold(unsigned keywordLength , float similarityTh
 	float fresult = keywordLength * (1 - similarityThreshold + FLT_EPSILON);
 	return fresult; // casting to unsigned int will do the floor operation automatically.
 }
-}
-}
 
-
+}}

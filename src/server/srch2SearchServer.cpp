@@ -34,6 +34,7 @@
 #include <signal.h>
 
 #include <sys/types.h>
+#include <map>
 
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
@@ -59,7 +60,11 @@ using std::string;
 #define MAX_SESSIONS 2
 #define SESSION_TTL 120
 
-srch2http::Srch2Server server;
+// map from port numbers (shared among cores) to socket file descriptors
+typedef std::map<unsigned short /*portNumber*/, int /*fd*/> PortSocketMap_t;
+
+// named access to multiple "cores" (ala Solr)
+typedef std::map<const std::string, srch2http::Srch2Server *> CoreNameServerMap_t;
 
 /* Convert an amount of bytes into a human readable string in the form
  * of 100B, 2G, 100M, 4K, and so forth.
@@ -83,121 +88,133 @@ void bytesToHuman(char *s, unsigned long long n) {
     }
 }
 
-// Uses spinlock and volatile to increment count.
-#define PREFIX_SIZE (sizeof(size_t))
-/*
- static size_t used_memory = 0;
- pthread_mutex_t used_memory_mutex = PTHREAD_MUTEX_INITIALIZER;
-
- struct MemCounter
- {
- static void increment(size_t size)
- {
- pthread_mutex_lock(&used_memory_mutex);
- used_memory += size;
- pthread_mutex_unlock(&used_memory_mutex);
- }
-
- static void decrement(size_t size)
- {
- pthread_mutex_lock(&used_memory_mutex);
- used_memory -= size;
- pthread_mutex_unlock(&used_memory_mutex);
- }
-
- static size_t getUsedMemory()
- {
- return used_memory;
- }
- };*/
-
-// http://stackoverflow.com/questions/852072/simple-c-implementation-to-track-memory-malloc-free
-// http://eli.thegreenplace.net/2011/02/17/the-many-faces-of-operator-new-in-c/
-/*void* operator new(size_t size) throw (std::bad_alloc)
- {
- //cerr << "allocating " << sz << " bytes\n";
- void *ptr = malloc(size+PREFIX_SIZE);
-
- *((size_t*)ptr) = size;
- MemCounter::increment(size + PREFIX_SIZE);
-
-
- if (ptr)
- return (char*)ptr+PREFIX_SIZE;
- else
- throw std::bad_alloc();
- }
-
- void operator delete(void* ptr) throw()
- {
- void *realptr;
- size_t oldsize;
-
- if (ptr == NULL) return;
-
- realptr = (char*)ptr-PREFIX_SIZE;
- oldsize = *((size_t*)realptr);
-
- MemCounter::decrement(oldsize+PREFIX_SIZE);
-
- free(realptr);
- }*/
-/*
- void getMemoryInfo(std::string &meminfo)
- {
- char hmem[64];
- //char peak_hmem[64];
-
- bytesToHuman(hmem, MemCounter::getUsedMemory());
- //bytesToHuman(peak_hmem,server.stat_peak_memory);
-
- //if (sections++) info = sdscat(info,"\r\n");
- stringstream mem_info;
- mem_info
- << "{" << "\"used_memory\":" << MemCounter::getUsedMemory()
- << ",\"used_memory_human\":\"" << hmem << "\"}";
-
- meminfo = mem_info.str();
- }*/
-
 std::string getCurrentVersion() {
     return Version::getCurrentVersion();
 }
 
-/*
- // A handler for the ajax get message endpoint.
- static void ajax_search_command(struct mg_connection *conn,
- const struct mg_request_info *request_info,
- Srch2Server *server)
- {
- HTTPRequestHandler::searchCommand(conn, request_info, server);
- }
+/**
+ * NotFound event handler.
+ * @param req evhttp request object
+ * @param arg optional argument
  */
+static void cb_notfound(evhttp_request *req, void *arg)
+{
+    evhttp_add_header(req->output_headers, "Content-Type",
+            "application/json; charset=UTF-8");
+    try {
+        evhttp_send_reply(req, HTTP_NOTFOUND, "Not found", NULL);
+    } catch (exception& e) {
+        // exception caught
+        Logger::error(e.what());
+        srch2http::HTTPRequestHandler::handleException(req);
+    }
+}
 
-/*// A handler for the /ajax/send_message endpoint.
- static void ajax_health_command(struct mg_connection *conn,
- const struct mg_request_info *request_info,
- Srch2Server *server)
- {
- std::stringstream str;
- str << HTTPServerEndpoints::ajax_search_pass
- << server->indexer->getIndexHealth()
- << "Memory usage:"
- << get_memory_usage(getpid())/1024;
- mg_write(conn, str.str().c_str(), str.str().length() );
- }*/
+/*
+ * Helper function to parse HTTP port from it's input headers.  Assumes a little knowledge of http_request
+ * internals in libevent.
+ *
+ * Typical usage:
+ * void cb_search(evhttp_request *req, void *arg)
+ * {
+ *     int portNumber = getLibeventHttpRequestPort(req);
+ * }
+ *
+ * where cb_search() is a callback invoked by libevent.
+ * If "req" is from "localhost:8082/core1/search", then this function will extract "8082" from "req".
+ */
+static short int getLibeventHttpRequestPort(struct evhttp_request *req)
+{
+    const char *host = NULL;
+    const char *p;
+    short int port = -1;
+
+    host = evhttp_find_header(req->input_headers, "Host");
+    /* The Host: header may include a port. Look for it here, else return -1 as an error. */
+    if (host) {
+        p = strchr(host,  ':');
+        if (p != NULL) {
+            p++; // skip past colon
+            port = 0;
+            while (isdigit(*p)) {
+                port = (10 * port) + (*p++ - '0');
+            }
+            if (*p != '\000') {
+                Logger::error("Did not reach end of Host input header");
+                port = -1;
+            }
+        }
+    }
+
+    return port;
+}
+
+static bool checkOperationPermission(evhttp_request *req, Srch2Server *srch2Server, srch2http::PortType_t portType)
+{
+    struct portMap_t {
+        srch2http::PortType_t portType;
+        const char *operationName;
+    };
+    struct portMap_t portTypeOperationMap[] = {
+        { srch2http::SearchPort, "search" },
+        { srch2http::SuggestPort, "suggest" },
+        { srch2http::InfoPort, "info" },
+        { srch2http::DocsPort, "docs" },
+        { srch2http::UpdatePort, "update" },
+        { srch2http::SavePort, "save" },
+        { srch2http::ExportPort, "export" },
+        { srch2http::ResetLoggerPort, "resetlogger" },
+        { srch2http::EndOfPortType, NULL },
+    };
+
+    if (portType >= srch2http::EndOfPortType) {
+        Logger::error("Illegal port type: %d", static_cast<int> (portType));
+        cb_notfound(req, static_cast<void *> (srch2Server));
+        return false;
+    }
+
+    const srch2http::CoreInfo_t *coreInfo = srch2Server->indexDataConfig;
+    unsigned short configuredPort = coreInfo->getPort(portType);
+    short arrivalPort = getLibeventHttpRequestPort(req);
+
+    if (arrivalPort < 0) {
+        Logger::warn("Unable to ascertain arrival port from request headers.");
+        return false;
+    }
+
+    if (configuredPort == 0) {
+        // this operation not set to a specific port so only accepted on the default port
+        configuredPort = atoi(srch2Server->indexDataConfig->getHTTPServerListeningPort().c_str());
+    }
+
+    // compare arrival port to configuration file port
+    if (configuredPort != arrivalPort) {
+        string coreName = srch2Server->getCoreName();
+        Logger::warn("/%s request for %s core arriving on port %d denied (port %d will permit)", portTypeOperationMap[portType].operationName, coreName.c_str(), arrivalPort, configuredPort);
+        cb_notfound(req, static_cast<void *> (srch2Server));
+        return false;
+    }
+
+    return true;
+}
 
 /**
  * 'search' callback function
  * @param req evhttp request object
  * @param arg optional argument
  */
-void cb_bmsearch(evhttp_request *req, void *arg) {
-    Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
+static void cb_search(evhttp_request *req, void *arg)
+{
+    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
+
+    if (checkOperationPermission(req, srch2Server, srch2http::SearchPort) == false) {
+        return;
+    }
+
     try {
-        srch2http::HTTPRequestHandler::searchCommand(req, server);
+        srch2http::HTTPRequestHandler::searchCommand(req, srch2Server);
     } catch (exception& e) {
         // exception caught
         Logger::error(e.what());
@@ -210,36 +227,23 @@ void cb_bmsearch(evhttp_request *req, void *arg) {
  * @param req evhttp request object
  * @param arg optional argument
  */
-void cb_bmsuggest(evhttp_request *req, void *arg) {
-    Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
+static void cb_suggest(evhttp_request *req, void *arg)
+{
+    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
+
+    if (checkOperationPermission(req, srch2Server, srch2http::SuggestPort) == false) {
+        return;
+    }
+
     try {
-        srch2http::HTTPRequestHandler::suggestCommand(req, server);
+        srch2http::HTTPRequestHandler::suggestCommand(req, srch2Server);
     } catch (exception& e) {
         // exception caught
         Logger::error(e.what());
         srch2http::HTTPRequestHandler::handleException(req);
     }
-}
-
-/**
- * 'lookup' callback function
- * @param req evhttp request object
- * @param arg optional argument
- */
-void cb_bmlookup(evhttp_request *req, void *arg) {
-    Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
-    evhttp_add_header(req->output_headers, "Content-Type",
-            "application/json; charset=UTF-8");
-    try {
-        srch2http::HTTPRequestHandler::lookupCommand(req, server);
-    } catch (exception& e) {
-        // exception caught
-        Logger::error(e.what());
-        srch2http::HTTPRequestHandler::handleException(req);
-    }
-
 }
 
 /**
@@ -247,15 +251,19 @@ void cb_bmlookup(evhttp_request *req, void *arg) {
  * @param req evhttp request object
  * @param arg optional argument
  */
-void cb_bminfo(evhttp_request *req, void *arg) {
-    Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
+static void cb_info(evhttp_request *req, void *arg)
+{
+    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
-    /*string meminfo;
-     getMemoryInfo(meminfo);*/
+
+    if (checkOperationPermission(req, srch2Server, srch2http::InfoPort) == false) {
+        return;
+    }
+
     string versioninfo = getCurrentVersion();
     try {
-        HTTPRequestHandler::infoCommand(req, server, versioninfo);
+        HTTPRequestHandler::infoCommand(req, srch2Server, versioninfo);
     } catch (exception& e) {
         // exception caught
         Logger::error(e.what());
@@ -269,54 +277,77 @@ void cb_bminfo(evhttp_request *req, void *arg) {
  * @param req evhttp request object
  * @param arg optional argument
  */
-void cb_bmwrite_v0(evhttp_request *req, void *arg) {
-    Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
-    evhttp_add_header(req->output_headers, "Content-Type",
-            "application/json; charset=UTF-8");
-    try {
-        HTTPRequestHandler::writeCommand_v0(req, server);
-    } catch (exception& e) {
-        // exception caught
-        Logger::error(e.what());
-        srch2http::HTTPRequestHandler::handleException(req);
-    }
-
-}
-
-void cb_bmupdate(evhttp_request *req, void *arg) {
-    Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
-    evhttp_add_header(req->output_headers, "Content-Type",
-            "application/json; charset=UTF-8");
-    try {
-        HTTPRequestHandler::updateCommand(req, server);
-    } catch (exception& e) {
-        // exception caught
-        Logger::error(e.what());
-        srch2http::HTTPRequestHandler::handleException(req);
-    }
-
-}
-
-void cb_bmsave(evhttp_request *req, void *arg) {
-    Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
-    evhttp_add_header(req->output_headers, "Content-Type",
-            "application/json; charset=UTF-8");
-    try {
-        HTTPRequestHandler::saveCommand(req, server);
-    } catch (exception& e) {
-        // exception caught
-        Logger::error(e.what());
-        srch2http::HTTPRequestHandler::handleException(req);
-    }
-
-}
-
-void cb_bmexport(evhttp_request *req, void *arg)
+static void cb_write(evhttp_request *req, void *arg)
 {
-    Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
+    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
+    evhttp_add_header(req->output_headers, "Content-Type",
+            "application/json; charset=UTF-8");
+
+    if (checkOperationPermission(req, srch2Server, srch2http::DocsPort) == false) {
+        return;
+    }
+
+    try {
+        HTTPRequestHandler::writeCommand(req, srch2Server);
+    } catch (exception& e) {
+        // exception caught
+        Logger::error(e.what());
+        srch2http::HTTPRequestHandler::handleException(req);
+    }
+
+}
+
+static void cb_update(evhttp_request *req, void *arg)
+{
+    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
+    evhttp_add_header(req->output_headers, "Content-Type",
+            "application/json; charset=UTF-8");
+
+    if (checkOperationPermission(req, srch2Server, srch2http::UpdatePort) == false) {
+        return;
+    }
+
+    try {
+        HTTPRequestHandler::updateCommand(req, srch2Server);
+    } catch (exception& e) {
+        // exception caught
+        Logger::error(e.what());
+        srch2http::HTTPRequestHandler::handleException(req);
+    }
+
+}
+
+static void cb_save(evhttp_request *req, void *arg)
+{
+    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
+    evhttp_add_header(req->output_headers, "Content-Type",
+            "application/json; charset=UTF-8");
+
+    if (checkOperationPermission(req, srch2Server, srch2http::SavePort) == false) {
+        return;
+    }
+
+    try {
+        HTTPRequestHandler::saveCommand(req, srch2Server);
+    } catch (exception& e) {
+        // exception caught
+        Logger::error(e.what());
+        srch2http::HTTPRequestHandler::handleException(req);
+    }
+
+}
+
+static void cb_export(evhttp_request *req, void *arg)
+{
+    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
                       "application/json; charset=UTF-8");
-    HTTPRequestHandler::exportCommand(req, server);
+
+    if (checkOperationPermission(req, srch2Server, srch2http::ExportPort) == false) {
+        return;
+    }
+
+    HTTPRequestHandler::exportCommand(req, srch2Server);
 }
 
 /**
@@ -324,12 +355,18 @@ void cb_bmexport(evhttp_request *req, void *arg)
  *  @param req evhttp request object
  *  @param arg optional argument
  */
-void cb_bmresetLogger(evhttp_request *req, void *arg) {
-    Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
+static void cb_resetLogger(evhttp_request *req, void *arg)
+{
+    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
+
+    if (checkOperationPermission(req, srch2Server, srch2http::ResetLoggerPort) == false) {
+        return;
+    }
+
     try {
-    	HTTPRequestHandler::resetLoggerCommand(req, server);
+    	HTTPRequestHandler::resetLoggerCommand(req, srch2Server);
     } catch (exception& e) {
         // exception caught
         Logger::error(e.what());
@@ -337,68 +374,14 @@ void cb_bmresetLogger(evhttp_request *req, void *arg) {
     }
 }
 
-
-/**
- * 'write/v2/' callback function
- * @param req evhttp request object
- * @param arg optional argument
- */
-void cb_bmwrite_v1(evhttp_request *req, void *arg) {
-    Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
-    evhttp_add_header(req->output_headers, "Content-Type",
-            "application/json; charset=UTF-8");
-    try {
-        HTTPRequestHandler::writeCommand_v1(req, server);
-    } catch (exception& e) {
-        // exception caught
-        Logger::error(e.what());
-        srch2http::HTTPRequestHandler::handleException(req);
-    }
-
-}
-
-/**
- * 'activate' callback function
- * @param req evhttp request object
- * @param arg optional argument
- */
-void cb_bmactivate(evhttp_request *req, void *arg) {
-    Srch2Server *server = reinterpret_cast<Srch2Server *>(arg);
-    evhttp_add_header(req->output_headers, "Content-Type",
-            "application/json; charset=UTF-8");
-    try {
-        HTTPRequestHandler::activateCommand(req, server);
-    } catch (exception& e) {
-        // exception caught
-        Logger::error(e.what());
-        srch2http::HTTPRequestHandler::handleException(req);
-    }
-
-}
-
-/**
- * NotFound event handler.
- * @param req evhttp request object
- * @param arg optional argument
- */
-void cb_notfound(evhttp_request *req, void *arg) {
-    evhttp_add_header(req->output_headers, "Content-Type",
-            "application/json; charset=UTF-8");
-    try {
-        evhttp_send_reply(req, HTTP_NOTFOUND, "Not found", NULL);
-    } catch (exception& e) {
-        // exception caught
-        Logger::error(e.what());
-        srch2http::HTTPRequestHandler::handleException(req);
-    }
-}
 
 /**
  * Busy 409 event handler.
  * @param req evhttp request object
  * @param arg optional argument
  */
-void cb_busy_indexing(evhttp_request *req, void *arg) {
+static void cb_busy_indexing(evhttp_request *req, void *arg)
+{
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
     try {
@@ -454,7 +437,9 @@ int bindSocket(const char * hostname, int port) {
     return nfd;
 }
 
+// entry point for each thread
 void* dispatch(void *arg) {
+    // ask libevent to loop on events
     event_base_dispatch((struct event_base*) arg);
     return NULL;
 }
@@ -478,12 +463,12 @@ void parseProgramArguments(int argc, char** argv,
     }
 }
 
-pthread_t *threads;
-int MAX_THREADS;
+pthread_t *threads = NULL;
+unsigned int MAX_THREADS = 0;
 
 // These are global variables that store host and port information for srch2 engine
-short http_port;
-const char *http_addr;
+short globalDefaultPort;
+const char *globalHostName;
 
 #ifdef __MACH__
 /*
@@ -512,7 +497,7 @@ void makeHttpRequest(){
      */
     char hostIpAddr[20];
 	memset(hostIpAddr, 0, sizeof(hostIpAddr));
-    struct hostent * host = gethostbyname(http_addr);
+    struct hostent * host = gethostbyname(globalHostName);
     if (host == NULL) {
     	// nothing much can be done..let us try 0.0.0.0
     	strncpy(hostIpAddr, "0.0.0.0", 7);
@@ -521,12 +506,13 @@ void makeHttpRequest(){
     	struct in_addr **addr_list = (struct in_addr **) host->h_addr_list;
     	strcpy(hostIpAddr, inet_ntoa(*addr_list[0]));
     }
-    conn = evhttp_connection_new( hostIpAddr, http_port);
+    conn = evhttp_connection_new( hostIpAddr, globalDefaultPort);
     evhttp_connection_set_timeout(conn, 1);
     req = evhttp_request_new(dummyRequestHandler, (void*)NULL);
     evhttp_make_request(conn, req, EVHTTP_REQ_GET, "/info");
 }
 #endif
+
 /**
  * Kill the server.  This function can be called from another thread to kill the server
  */
@@ -545,6 +531,179 @@ static void killServer(int signal) {
      */
     makeHttpRequest();
 #endif
+}
+
+/*
+ * Start the srch2 servers, one per core in the config
+ */
+static int startServers(ConfigManager *config, vector<struct event_base *> *evBases, vector<struct evhttp *> *evServers, CoreNameServerMap_t *coreNameServerMap, PortSocketMap_t *globalPortSocketMap)
+{
+    // Step 1: Waiting server
+    // http://code.google.com/p/imhttpd/source/browse/trunk/MHttpd.c
+    /* 1). event initialization */
+    globalDefaultPort = atoi(config->getHTTPServerListeningPort().c_str());
+    globalHostName = config->getHTTPServerListeningHostname().c_str(); //"127.0.0.1";
+
+    // bind the default port
+    if (globalDefaultPort > 0 && globalPortSocketMap->find(globalDefaultPort) == globalPortSocketMap->end()) {
+        int socketFd = bindSocket(globalHostName, globalDefaultPort);
+        if ((*globalPortSocketMap)[globalDefaultPort] < 0) {
+            perror("socket bind error");
+            return 255;
+        }
+        (*globalPortSocketMap)[globalDefaultPort] = socketFd;
+    }
+
+    // create a server (core) for each data source in config file
+    for (ConfigManager::CoreInfoMap_t::const_iterator iterator = config->coreInfoIterateBegin();
+         iterator != config->coreInfoIterateEnd(); iterator++) {
+
+        srch2http::Srch2Server *core = new srch2http::Srch2Server;
+        core->setCoreName(iterator->second->getName());
+        (*coreNameServerMap)[iterator->second->getName()] = core;
+    }
+
+    // make sure we have identified the default core
+    srch2http::Srch2Server *defaultCore = NULL;
+    if (coreNameServerMap->find(config->getDefaultCoreName()) != coreNameServerMap->end()) {
+        defaultCore = (*coreNameServerMap)[config->getDefaultCoreName()];
+    }
+    if (defaultCore == NULL)
+    {
+        perror("Null default core");
+        return 255;
+    }
+
+    //load the index from the data source
+    try{
+        for (CoreNameServerMap_t::iterator iterator = coreNameServerMap->begin(); iterator != coreNameServerMap->end(); iterator++) {
+            iterator->second->init(config);
+        }
+    }catch(exception& ex) {
+    	/*
+    	 *  We got some fatal error during server initialization. Print the error message and
+    	 *  exit the process. Note: Other internal modules should make sure that no recoverable
+    	 *  exception reaches this point. All exceptions that reach here are considered fatal
+    	 *  and the server will stop.
+    	 */
+    	Logger::error(ex.what());
+    	return 255;
+    }
+    //cout << "srch2 server started." << endl;
+
+    // loop over cores setting up mongodb and binding all ports to use
+    for (CoreNameServerMap_t::const_iterator iterator = coreNameServerMap->begin(); iterator != coreNameServerMap->end(); iterator++) {
+        const srch2http::CoreInfo_t *coreInfo = config->getCoreInfo(iterator->second->getCoreName());
+        if (coreInfo != NULL) {
+            if (coreInfo->getDataSourceType() == srch2::httpwrapper::DATA_SOURCE_MONGO_DB) {
+                // set current time as cut off time for further updates
+                // this is a temporary solution. TODO
+                srch2http::MongoDataSource::bulkLoadEndTime = time(NULL);
+                srch2http::MongoDataSource::spawnUpdateListener(iterator->second);
+            }
+
+            // bind once each port defined for use by this core
+            for (enum srch2http::PortType_t portType = static_cast<srch2http::PortType_t> (0); portType < srch2http::EndOfPortType; portType = srch2http::incrementPortType(portType)) {
+                int port = coreInfo->getPort(portType);
+                if (port > 0 && (globalPortSocketMap->find(port) == globalPortSocketMap->end() || (*globalPortSocketMap)[port] < 0)) {
+                    int socketFd = bindSocket(globalHostName, port);
+                    if ((*globalPortSocketMap)[port] < 0) {
+                        perror("socket bind error");
+                        return 255;
+                    }
+                    (*globalPortSocketMap)[port] = socketFd;
+                }
+            }
+        } else {
+            Logger::warn("Did not find config for core %s", iterator->second->getCoreName().c_str());
+        }
+    }
+
+    MAX_THREADS = config->getNumberOfThreads();
+    Logger::console("Starting Srch2 server with %d serving threads at %s:%d",
+            MAX_THREADS, globalHostName, globalDefaultPort);
+
+    // Step 2: Serving server
+    threads = new pthread_t[MAX_THREADS];
+    for (int i = 0; i < MAX_THREADS; i++) {
+
+        struct event_base *evbase = event_base_new();
+        if (NULL == evbase) {
+            perror("event_base_new");
+            return 255;
+        }
+        evBases->push_back(evbase);
+
+        struct evhttp *http_server = evhttp_new(evbase);
+        if (NULL == http_server) {
+            perror("evhttp_new");
+            return 255;
+        }
+        evServers->push_back(http_server);
+
+        // helper array - loop instead of repetitous code
+        struct PortList_t {
+            const char *path;
+            srch2http::PortType_t portType;
+            void (*callback)(struct evhttp_request *, void *);
+        };
+        PortList_t portList[] = {
+            { "/search", srch2http::SearchPort, cb_search },
+            { "/suggest", srch2http::SuggestPort, cb_suggest },
+            { "/info", srch2http::InfoPort, cb_info },
+            { "/docs", srch2http::DocsPort, cb_write },
+            { "/update", srch2http::UpdatePort, cb_update },
+            { "/save", srch2http::SavePort, cb_save },
+            { "/export", srch2http::ExportPort, cb_export },
+            { "/resetLogger", srch2http::ResetLoggerPort, cb_resetLogger },
+            { NULL, srch2http::EndOfPortType, NULL }
+        };
+
+        // setup default core callbacks for queries that don't specify a core name
+        for (int j = 0; portList[j].path != NULL; j++) {
+            unsigned int port = config->getDefaultCoreInfo()->getPort(portList[j].portType);
+            if (port < 1) {
+                port = globalDefaultPort;
+            }
+            evhttp_set_cb(http_server, portList[j].path, portList[j].callback, defaultCore);
+            Logger::debug("Routing port %d route %s to default core %s", port, portList[j].path, defaultCore->getCoreName().c_str());
+        }
+        evhttp_set_gencb(http_server, cb_notfound, NULL);
+
+        if (config->getDefaultCoreSetFlag() == true) {
+            // for every core, for every OTHER port that core uses, do accept
+            for (CoreNameServerMap_t::const_iterator iterator = coreNameServerMap->begin(); iterator != coreNameServerMap->end(); iterator++) {
+                string coreName = iterator->second->getCoreName();
+                for (unsigned int j = 0; portList[j].path != NULL; j++) {
+                    string path = string("/") + coreName + string(portList[j].path);
+
+                    // look if listener already exists for this core on this port
+                    unsigned int port = config->getCoreInfo(coreName)->getPort(portList[j].portType);
+                    if (port < 1) {
+                        port = globalDefaultPort;
+                    }
+                    evhttp_set_cb(http_server, path.c_str(), portList[j].callback, iterator->second);
+
+                    Logger::debug("Adding port %d route %s to core %s", port, path.c_str(), coreName.c_str());
+                }
+            }
+        }
+
+        /* 4). accept bound socket */
+        for (PortSocketMap_t::iterator iterator = globalPortSocketMap->begin(); iterator != globalPortSocketMap->end(); iterator++) {
+            if (evhttp_accept_socket(http_server, iterator->second) != 0) {
+                perror("evhttp_accept_socket");
+                return 255;
+            }
+            Logger::debug("Socket accept by thread %d on port %d", i, iterator->first);
+        }
+
+        //fprintf(stderr, "Server started on port %d\n", globalDefaultPort);
+        if (pthread_create(&threads[i], NULL, dispatch, evbase) != 0)
+            return 255;
+    }
+
+    return 0;
 }
 
 int main(int argc, char** argv) {
@@ -598,179 +757,19 @@ int main(int argc, char** argv) {
         Logger::setOutputFile(stdout);
         Logger::error("Open Log file %s failed.",
                 serverConf->getHTTPServerAccessLogFile().c_str());
-    } else
+    } else {
         Logger::setOutputFile(logFile);
+    }
     Logger::setLogLevel(serverConf->getHTTPServerLogLevel());
 
-    //load the index from the data source
-    try{
-    	server.init(serverConf);
-    }catch(exception& ex) {
-    	/*
-    	 *  We got some fatal error during server initialization. Print the error message and
-    	 *  exit the process. Note: Other internal modules should make sure that no recoverable
-    	 *  exception reaches at this point. All exceptions reached here are considered fatal
-    	 *  and server will stop.
-    	 */
-    	Logger::error(ex.what());
-        if (logFile)
-            fclose(logFile);
-    	exit(-1);
-    }
-    //cout << "srch2 server started." << endl;
-    if (serverConf->getDataSourceType() == srch2::httpwrapper::DATA_SOURCE_MONGO_DB) {
-    	// set current time as cut off time for further updates
-    	// this is a temporary solution. TODO
-    	srch2http::MongoDataSource::bulkLoadEndTime = time(NULL);
-    	srch2http::MongoDataSource::spawnUpdateListener(&server);
-    }
-
-    //sleep(200);
-
-    http_port = atoi(serverConf->getHTTPServerListeningPort().c_str());
-    http_addr =
-            serverConf->getHTTPServerListeningHostname().c_str(); //"127.0.0.1";
-    struct evhttp *http_server = NULL;
-    struct event_base *evbase = NULL;
-
-    //std::cout << "Started Srch2 server:" << http_addr << ":" << http_port << std::endl;
-
-    // Step 1: Waiting server
-    // http://code.google.com/p/imhttpd/source/browse/trunk/MHttpd.c
-    /* 1). event initialization */
-    evbase = event_init();
-    if (NULL == evbase) {
-        perror("event_base_new");
-        return 1;
-    }
-
-    /* 2). event http initialization */
-    http_server = evhttp_new(evbase);
-    //evhttp_set_max_body_size(http_server, (size_t)server.indexDataContainerConf->getWriteReadBufferInBytes() );
-
-    if (NULL == http_server) {
-        perror("evhttp_new");
-        return 2;
-    }
-
-    /* 3). set general callback of http request */
-    evhttp_set_gencb(http_server, cb_busy_indexing, NULL);
-
-    if (server.indexDataContainerConf->getWriteApiType()
-            == srch2http::HTTPWRITEAPI) {
-        //std::cout << "HTTPWRITEAPI:ON" << std::endl;
-        //evhttp_set_cb(http_server, "/docs", cb_bmwrite_v1, &server);
-        //evhttp_set_cb(http_server, "/docs_v0", cb_bmwrite_v0, &server);
-
-        evhttp_set_cb(http_server, "/docs", cb_bmwrite_v0, &server); // CHENLI: we use v0
-
-        evhttp_set_cb(http_server, "/update", cb_bmupdate, &server);
-
-        evhttp_set_cb(http_server, "/save", cb_bmsave, &server);
-
-        evhttp_set_cb(http_server, "/export", cb_bmexport, &server);
-
-        evhttp_set_cb(http_server, "/activate", cb_bmactivate, &server);
-
-        evhttp_set_cb(http_server, "/resetLogger", cb_bmresetLogger, &server);
-    }
-
-    /* 4). bind socket */
-    if (0 != evhttp_bind_socket(http_server, http_addr, http_port)) {
-        perror("evhttp_bind_socket");
-        return 3;
-    }
-
-    /* 5). start http server */
-    struct timeval ten_sec;
-    ten_sec.tv_sec = 1;
-    ten_sec.tv_usec = 0;
-
-    /* Now we run the event_base for a series of 5-second intervals, checking every 5 seconds if index was commited.
-     * For a much better way to implement a 5-second timer, see the section below about persistent timer events.
-     * http://www.wangafu.net/~nickm/libevent-book/Ref3_eventloop.html
-     * */
-    while (not server.indexer->isCommited()) {
-        /* This schedules an exit ten seconds from now. */
-        event_base_loopexit(evbase, &ten_sec);
-        event_base_dispatch(evbase);
-    }
-
-    /* 6). free resource before exit */
-    evhttp_free(http_server);
-    event_base_free(evbase);
-
-    MAX_THREADS = serverConf->getNumberOfThreads();
-
-    Logger::console("Starting Srch2 server with %d serving threads at %s:%d",
-            MAX_THREADS, http_addr, http_port);
-
-    //string meminfo;
-    //getMemoryInfo(meminfo);
-
-    //std::cout << meminfo << std::endl;
-    // Step 2: Serving server
-
-    int fd = bindSocket(http_addr, http_port);
-    threads = new pthread_t[MAX_THREADS];
-    vector<struct event_base *> evbases;
-    vector<struct evhttp *> http_servers;
-    for (int i = 0; i < MAX_THREADS; i++) {
-        evbase = event_init();
-        evbases.push_back(evbase);
-        if (NULL == evbase) {
-            perror("event_base_new");
-            return 1;
-        }
-
-        http_server = evhttp_new(evbase);
-        http_servers.push_back(http_server);
-        //evhttp_set_max_body_size(http_server, (size_t)server.indexDataContainerConf->getWriteReadBufferInBytes() );
-
-        if (NULL == http_server) {
-            perror("evhttp_new");
-            return 2;
-        }
-
-        //http_server = evhttp_start(http_addr, http_port);
-        evhttp_set_cb(http_server, "/search", cb_bmsearch, &server);
-
-        evhttp_set_cb(http_server, "/suggest", cb_bmsuggest, &server);
-
-        //evhttp_set_cb(http_server, "/lookup", cb_bmlookup, &server);
-        evhttp_set_cb(http_server, "/info", cb_bminfo, &server);
-
-        if (server.indexDataContainerConf->getWriteApiType()
-                == srch2http::HTTPWRITEAPI) {
-            // std::cout << "HTTPWRITEAPI:ON" << std::endl;
-            //evhttp_set_cb(http_server, "/docs", cb_bmwrite_v1, &server);
-            //evhttp_set_cb(http_server, "/docs_v0", cb_bmwrite_v0, &server);
-            evhttp_set_cb(http_server, "/docs", cb_bmwrite_v0, &server); // CHENLI: we use v0
-
-            evhttp_set_cb(http_server, "/update", cb_bmupdate, &server);
-
-            evhttp_set_cb(http_server, "/save", cb_bmsave, &server);
-
-            evhttp_set_cb(http_server, "/export", cb_bmexport, &server);
-
-            evhttp_set_cb(http_server, "/activate", cb_bmactivate, &server);
-
-            evhttp_set_cb(http_server, "/resetLogger", cb_bmresetLogger, &server);
-        }
-
-        evhttp_set_gencb(http_server, cb_notfound, NULL);
-
-        /* 4). bind socket */
-        //if(0 != evhttp_bind_socket(http_server, http_addr, http_port))
-        if (0 != evhttp_accept_socket(http_server, fd)) {
-            perror("evhttp_bind_socket");
-            return 3;
-        }
-
-        //fprintf(stderr, "Server started on port %d\n", http_port);
-        //event_base_dispatch(evbase);
-        if (pthread_create(&threads[i], NULL, dispatch, evbase) != 0)
-            return -1;
+    vector<struct event_base *> evBases; // all libevent base objects (one per thread)
+    vector<struct evhttp *> evServers;
+    PortSocketMap_t globalPortSocketMap;  // map of all ports across all cores to shared socket file descriptors
+    CoreNameServerMap_t coreNameServerMap; // map from core names to Srch2Servers
+    int start = startServers(serverConf, &evBases, &evServers, &coreNameServerMap, &globalPortSocketMap);
+    if (start != 0) {
+        Logger::close();
+        return start; // startup failed
     }
 
     /* Set signal handlers */
@@ -796,19 +795,26 @@ int main(int argc, char** argv) {
     }
 
     delete[] threads;
-    server.indexer->save();
-// free resources before we exit
-    for (int i = 0; i < MAX_THREADS; i++) {
-        evhttp_free(http_servers[i]);
-        event_base_free(evbases[i]);
+
+    for (CoreNameServerMap_t::iterator iterator = coreNameServerMap.begin(); iterator != coreNameServerMap.end(); iterator++) {
+        iterator->second->indexer->save();
+        delete iterator->second;
     }
-    StemmerContainer::free();
-    SynonymContainer::free();
-    StopWordContainer::free();
+
+    for (unsigned int i = 0; i < MAX_THREADS; i++) {
+        event_base_free(evBases[i]);
+        evhttp_free(evServers[i]);
+    }
+
+    // use global port map to close each file descriptor just once
+    for (PortSocketMap_t::iterator iterator = globalPortSocketMap.begin(); iterator != globalPortSocketMap.end(); iterator++) {
+        shutdown(iterator->second, SHUT_RD);
+    }
+
+    AnalyzerContainer::freeAll();
+    delete serverConf;
+
     Logger::console("Server stopped successfully");
-    // if no log file is set in config file. This variable should be null.
-    // Hence, we should do null check before calling fclose
-    if (logFile)
-        fclose(logFile);
+    Logger::close();
     return EXIT_SUCCESS;
 }

@@ -47,6 +47,7 @@ ADD_TEST(ActiveNode_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/ActiveNode_Test 
 ADD_TEST(Cowvector_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Cowvector_Test "--verbose")
 
 ADD_TEST(Cache_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Cache_Test "--verbose")
+ADD_TEST(CacheManager_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/CacheManager_Test "--verbose")
 ADD_TEST(Compression_S16_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Compression_S16_Test "--verbose")
 	
 ADD_TEST(TermVirtualList_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/TermVirtualList_Test "--verbose")
@@ -55,7 +56,7 @@ ADD_TEST(Licensing_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Licensing_Test "-
 
 ADD_TEST(IndexerInternal_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/IndexerInternal_Test "--verbose")
 	
-ADD_TEST(IndexSearcherInternal_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/IndexSearcherInternal_Test "--verbose")
+ADD_TEST(QueryEvaluator_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/QueryEvaluator_Test "--verbose")
 
 ADD_TEST(Trie_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Trie_Test "--verbose")
 
@@ -69,6 +70,8 @@ ADD_TEST(ReadWriteMutexCondWait_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/ReadW
 ADD_TEST(AttributedBasedSearch_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/AttributedBasedSearch_Test "--verbose")
 SET_TESTS_PROPERTIES(AttributedBasedSearch_Test
   PROPERTIES ENVIRONMENT "index_dir=${UNIT_TEST_INDEX_DIR}attr_based_search/")
+
+ADD_TEST(RecordSerializer_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/RecordSerializer_Test "--verbose")
 ############INTEGRATION TESTS#################
     
 SET(INTEGRATION_TEST_INDEX_DIR ${CMAKE_SOURCE_DIR}/test/core/integration/test_data/)
@@ -78,9 +81,9 @@ ADD_TEST(BuildIndexesForIntegration_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/integ
 SET_TESTS_PROPERTIES(BuildIndexesForIntegration_Test 
   PROPERTIES ENVIRONMENT "index_dir=${INTEGRATION_TEST_INDEX_DIR}dblp/")
 
-ADD_TEST(CacheIntegration_Test ${CMAKE_CURRENT_BINARY_DIR}/core/integration/CacheIntegration_Test "--verbose")
-SET_TESTS_PROPERTIES(CacheIntegration_Test 
-				PROPERTIES ENVIRONMENT "index_dir=${INTEGRATION_TEST_INDEX_DIR}dblp/;query_file=${INTEGRATION_TEST_INDEX_DIR}stress-test-queries/QW-1.dat")
+#ADD_TEST(CacheIntegration_Test ${CMAKE_CURRENT_BINARY_DIR}/core/integration/CacheIntegration_Test "--verbose")
+#SET_TESTS_PROPERTIES(CacheIntegration_Test 
+#			PROPERTIES ENVIRONMENT "index_dir=${INTEGRATION_TEST_INDEX_DIR}dblp/;query_file=${INTEGRATION_TEST_INDEX_DIR}stress-test-queries/QW-1.dat")
          
 #SET_TESTS_PROPERTIES(QueryStress_Test PROPERTIES ENVIRONMENT "index_dir=${INTEGRATION_TEST_INDEX_DIR}/dblp/;query_file=${INTEGRATION_TEST_INDEX_DIR}/stress-test-queries/factual-queries/categories.txt")
 
@@ -155,7 +158,23 @@ ADD_TEST(ULEB128_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/ULEB128_Test "--verb
 ADD_TEST(PhraseSearch_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/PhraseSearch_Test "--verbose")
 SET_TESTS_PROPERTIES(PhraseSearch_Test PROPERTIES ENVIRONMENT "positionIndexFile=${CMAKE_SOURCE_DIR}/test/core/unit/test_data/phraseSearch/positionIndex.txt")
 
+ADD_TEST(MergeByShortestList_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/MergeByShortestList_Test "--verbose")
 
+ADD_TEST(MergeSortedById_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/MergeSortedById_Test "--verbose")
+
+ADD_TEST(MergeTopK_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/MergeTopK_Test "--verbose")
+
+ADD_TEST(SortById_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/SortById_Test "--verbose")
+
+ADD_TEST(SortByScore_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/SortByScore_Test "--verbose")
+
+ADD_TEST(UnionSortedById_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/UnionSortedById_Test "--verbose")
+
+ADD_TEST(RandomAccessVerificationAnd_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/RandomAccessVerificationAnd_Test "--verbose")
+
+ADD_TEST(RandomAccessVerificationOr_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/RandomAccessVerificationOr_Test "--verbose")
+
+ADD_TEST(RandomAccessVerificationNot_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/RandomAccessVerificationNot_Test "--verbose")
 
 
 #wrapper related tests should be added below this line

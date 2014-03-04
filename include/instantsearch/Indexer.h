@@ -48,8 +48,7 @@ public:
                    unsigned _mergeEveryMWrites,
                    unsigned _updateHistogramEveryPMerges,
                    unsigned _updateHistogramEveryQWrites,
-                   const std::string &_directoryName,
-                   const std::string &_trieBootstrapFileNameWithPath)
+                   const std::string &_directoryName)
     {
         cache = _cache;
 
@@ -79,7 +78,6 @@ public:
 
 
         directoryName = _directoryName;
-        trieBootstrapFileNameWithPath = _trieBootstrapFileNameWithPath;
     }
     
     ~IndexMetaData()
@@ -88,7 +86,6 @@ public:
     }
 
     std::string directoryName;
-    std::string trieBootstrapFileNameWithPath;
     GlobalCache *cache;
     unsigned mergeEveryNSeconds;
     unsigned mergeEveryMWrites;

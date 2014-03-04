@@ -39,8 +39,10 @@ namespace srch2 {
 namespace instantsearch {
 
 StopFilter::StopFilter(TokenStream *tokenStream,
-		std::string &stopFilterFilePath) : TokenFilter(tokenStream),
-				stopWordsContainer(StopWordContainer::getInstance()) {
+                       const StopWordContainer *_stopWordsContainer) :
+    TokenFilter(tokenStream),
+    stopWordsContainer(_stopWordsContainer)
+{
 	this->tokenStreamContainer = tokenStream->tokenStreamContainer; // copies the shared_ptr: sharedToken
 }
 
@@ -49,7 +51,7 @@ StopFilter::StopFilter(TokenStream *tokenStream,
  * */
 bool StopFilter::isStopWord(const std::string &token) const {
 	// returns true if the given token is a stop word, else it reaturns false
-	return stopWordsContainer.contains(token);
+	return stopWordsContainer->contains(token);
 }
 
 bool StopFilter::processToken() {

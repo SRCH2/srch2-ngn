@@ -40,9 +40,8 @@ bool StandardTokenizer::incrementToken() {
         }
         (tokenStreamContainer->offset)++;
         ///we need combine previous character and current character to decide a word
-        unsigned previousCharacterType = CharSet::getCharacterType(
-                previousChar);
-        unsigned currentCharacterType = CharSet::getCharacterType(currentChar);
+        unsigned previousCharacterType = characterSet.getCharacterType(previousChar);
+        unsigned currentCharacterType = characterSet.getCharacterType(currentChar);
 
         switch (currentCharacterType) {
         case CharSet::WHITESPACE:
