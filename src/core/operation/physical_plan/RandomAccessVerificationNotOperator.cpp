@@ -56,7 +56,6 @@ bool RandomAccessVerificationNotOperator::verifyByRandomAccess(PhysicalPlanRando
 // of parent open function.
 PhysicalPlanCost RandomAccessVerificationNotOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
 	PhysicalPlanCost resultCost ;
-	resultCost = resultCost + 1;
 	resultCost = resultCost + this->getChildAt(0)->getCostOfOpen(params);
 	return resultCost;
 }
@@ -68,13 +67,11 @@ PhysicalPlanCost RandomAccessVerificationNotOptimizationOperator::getCostOfGetNe
 // the cost of close of a child is only considered once since each node's close function is only called once.
 PhysicalPlanCost RandomAccessVerificationNotOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
 	PhysicalPlanCost resultCost ;
-	resultCost = resultCost + 1;
 	resultCost = resultCost + this->getChildAt(0)->getCostOfClose(params);
 	return resultCost;
 }
 PhysicalPlanCost RandomAccessVerificationNotOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
 	PhysicalPlanCost resultCost;
-	resultCost = resultCost + 1; // O(1)
 	resultCost = resultCost + this->getChildAt(0)->getCostOfVerifyByRandomAccess(params);
 	return resultCost;
 }

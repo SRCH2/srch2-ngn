@@ -125,25 +125,21 @@ void testIndexData()
 
     /// test ForwardIndex
     ForwardIndex *forwardIndex = indexData->forwardIndex;
-
+    shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
+    forwardIndex->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
     float score = 0;
     unsigned keywordId = 1;
     // define the attributeBitmap only in debug mode
 #if ASSERT_LEVEL > 0
     unsigned attributeBitmap = 0;
 #endif
-    bool forwardListValid = false;
-    const ForwardList* fl = forwardIndex->getForwardList(0, forwardListValid);
-    ASSERT(forwardListValid);
-    ASSERT( forwardIndex->haveWordInRange(0, fl,  trie->getTrieNodeFromUtf8String( root, "jack")->getId(),
+    ASSERT( forwardIndex->haveWordInRange(forwardListDirectoryReadView, 0,  trie->getTrieNodeFromUtf8String( root, "jack")->getId(),
                                              trie->getTrieNodeFromUtf8String( root, "lennon")->getId(), -1, keywordId, attributeBitmap, score) == true );
-    ASSERT( forwardIndex->haveWordInRange(0, fl,  trie->getTrieNodeFromUtf8String( root, "smith")->getId() + 1,
+    ASSERT( forwardIndex->haveWordInRange(forwardListDirectoryReadView, 0,  trie->getTrieNodeFromUtf8String( root, "smith")->getId() + 1,
                                              trie->getTrieNodeFromUtf8String( root, "tom")->getId() - 1, -1, keywordId, attributeBitmap, score) == false );
-    fl = forwardIndex->getForwardList(1, forwardListValid);
-    ASSERT(forwardListValid);
-    ASSERT( forwardIndex->haveWordInRange(1, fl, trie->getTrieNodeFromUtf8String( root, "hendrix")->getId(),
+    ASSERT( forwardIndex->haveWordInRange(forwardListDirectoryReadView, 1, trie->getTrieNodeFromUtf8String( root, "hendrix")->getId(),
                                              trie->getTrieNodeFromUtf8String( root, "jimi")->getId(), -1, keywordId, attributeBitmap, score) == true );
-    ASSERT( forwardIndex->haveWordInRange(1, fl, trie->getTrieNodeFromUtf8String( root, "wing")->getId() + 1,
+    ASSERT( forwardIndex->haveWordInRange(forwardListDirectoryReadView, 1, trie->getTrieNodeFromUtf8String( root, "wing")->getId() + 1,
                                              trie->getTrieNodeFromUtf8String( root, "wing")->getId() + 2, -1, keywordId, attributeBitmap, score) == false );
 
     /// test InvertedIndex

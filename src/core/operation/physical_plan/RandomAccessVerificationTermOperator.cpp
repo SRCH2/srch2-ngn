@@ -52,28 +52,24 @@ bool RandomAccessVerificationTermOperator::verifyByRandomAccess(PhysicalPlanRand
 // of parent open function.
 PhysicalPlanCost RandomAccessVerificationTermOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
 	PhysicalPlanCost resultCost;
-	resultCost.addInstructionCost(2);
 	return resultCost;
 }
 // The cost of getNext of a child is multiplied by the estimated number of calls to this function
 // when the cost of parent is being calculated.
 PhysicalPlanCost RandomAccessVerificationTermOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
 	PhysicalPlanCost resultCost;
-	resultCost.addInstructionCost();
 	return resultCost;
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.
 PhysicalPlanCost RandomAccessVerificationTermOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
 	PhysicalPlanCost resultCost;
-	resultCost.addInstructionCost();
 	return resultCost;
 }
 PhysicalPlanCost RandomAccessVerificationTermOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
-	unsigned estimatedNumberOfTerminalNodes =
+	unsigned estimatedNumberOfActiveNodes =
 			this->getLogicalPlanNode()->stats->getActiveNodeSetForEstimation(params.isFuzzy)->getNumberOfActiveNodes();
 	PhysicalPlanCost resultCost;
-	resultCost.addFunctionCallCost(5);
-	resultCost.addMediumFunctionCost(estimatedNumberOfTerminalNodes);
+	resultCost.cost = estimatedNumberOfActiveNodes * log2(200.0);
 	return resultCost;
 }
 void RandomAccessVerificationTermOptimizationOperator::getOutputProperties(IteratorProperties & prop){

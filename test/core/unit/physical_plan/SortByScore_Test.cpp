@@ -11,24 +11,26 @@ void test1(){
 	 * Output : (3,8),(8,7),(7,6),(1,5),(2,4),(6,3),(5,2),(4,1)
 	 */
 	PhysicalPlanRecordItemFactory recordFactory;
+	unsigned poolHandle = recordFactory.openRecordItemPool();
+	PhysicalPlanRecordItemPool & recordPool = *(recordFactory.getRecordItemPool(poolHandle));
 
 	// List1 : (3,8),(5,2),(4,1),(6,3),(1,5),(2,4),(7,6),(8,7)
 	vector<PhysicalPlanRecordItem *> List1;
-	PhysicalPlanRecordItem * record = recordFactory.createRecordItem();
+	PhysicalPlanRecordItem * record = recordPool.createRecordItem();
 	record->setRecordId(3); record->setRecordRuntimeScore(8); List1.push_back(record);
-	record = recordFactory.createRecordItem();
+	record = recordPool.createRecordItem();
 	record->setRecordId(5); record->setRecordRuntimeScore(2); List1.push_back(record);
-	record = recordFactory.createRecordItem();
+	record = recordPool.createRecordItem();
 	record->setRecordId(4); record->setRecordRuntimeScore(1); List1.push_back(record);
-	record = recordFactory.createRecordItem();
+	record = recordPool.createRecordItem();
 	record->setRecordId(6); record->setRecordRuntimeScore(3); List1.push_back(record);
-	record = recordFactory.createRecordItem();
+	record = recordPool.createRecordItem();
 	record->setRecordId(1); record->setRecordRuntimeScore(5); List1.push_back(record);
-	record = recordFactory.createRecordItem();
+	record = recordPool.createRecordItem();
 	record->setRecordId(2); record->setRecordRuntimeScore(4); List1.push_back(record);
-	record = recordFactory.createRecordItem();
+	record = recordPool.createRecordItem();
 	record->setRecordId(7); record->setRecordRuntimeScore(6); List1.push_back(record);
-	record = recordFactory.createRecordItem();
+	record = recordPool.createRecordItem();
 	record->setRecordId(8); record->setRecordRuntimeScore(7); List1.push_back(record);
 	TestLowLevelOperator list1Op(List1);
 	TestLowLevelOptimizationOperator list1OpOp(PhysicalPlanNode_RandomAccessTerm);
@@ -61,6 +63,7 @@ void test1(){
 	vector<unsigned> correctResults(correctResultsArray , correctResultsArray+8);
 	ASSERT(checkResults(correctResults,operatorResults));
 
+	recordFactory.closeRecordItemPool(poolHandle);
 }
 
 
@@ -71,6 +74,8 @@ void test2(){
 	 * Output : EMPTY
 	 */
 	PhysicalPlanRecordItemFactory recordFactory;
+	unsigned poolHandle = recordFactory.openRecordItemPool();
+	PhysicalPlanRecordItemPool & recordPool = *(recordFactory.getRecordItemPool(poolHandle));
 
 	// List1 : EMPTY
 	vector<PhysicalPlanRecordItem *> List1;
@@ -103,6 +108,7 @@ void test2(){
 	vector<unsigned> correctResults; // empty
 	ASSERT(checkResults(correctResults,operatorResults));
 
+	recordFactory.closeRecordItemPool(poolHandle);
 }
 
 void test3(){
@@ -112,24 +118,26 @@ void test3(){
 	 * Output : (8,7),(7,6),(1,5),(2,4),(6,3),(3,1),(4,1),(5,1)
 	 */
 	PhysicalPlanRecordItemFactory recordFactory;
+	unsigned poolHandle = recordFactory.openRecordItemPool();
+	PhysicalPlanRecordItemPool & recordPool = *(recordFactory.getRecordItemPool(poolHandle));
 
 	// List1 : (3,8),(5,2),(4,1),(6,3),(1,5),(2,4),(7,6),(8,7)
 	vector<PhysicalPlanRecordItem *> List1;
-	PhysicalPlanRecordItem * record = recordFactory.createRecordItem();
+	PhysicalPlanRecordItem * record = recordPool.createRecordItem();
 	record->setRecordId(3); record->setRecordRuntimeScore(1); List1.push_back(record);
-	record = recordFactory.createRecordItem();
+	record = recordPool.createRecordItem();
 	record->setRecordId(5); record->setRecordRuntimeScore(1); List1.push_back(record);
-	record = recordFactory.createRecordItem();
+	record = recordPool.createRecordItem();
 	record->setRecordId(4); record->setRecordRuntimeScore(1); List1.push_back(record);
-	record = recordFactory.createRecordItem();
+	record = recordPool.createRecordItem();
 	record->setRecordId(6); record->setRecordRuntimeScore(3); List1.push_back(record);
-	record = recordFactory.createRecordItem();
+	record = recordPool.createRecordItem();
 	record->setRecordId(1); record->setRecordRuntimeScore(5); List1.push_back(record);
-	record = recordFactory.createRecordItem();
+	record = recordPool.createRecordItem();
 	record->setRecordId(2); record->setRecordRuntimeScore(4); List1.push_back(record);
-	record = recordFactory.createRecordItem();
+	record = recordPool.createRecordItem();
 	record->setRecordId(7); record->setRecordRuntimeScore(6); List1.push_back(record);
-	record = recordFactory.createRecordItem();
+	record = recordPool.createRecordItem();
 	record->setRecordId(8); record->setRecordRuntimeScore(7); List1.push_back(record);
 	TestLowLevelOperator list1Op(List1);
 	TestLowLevelOptimizationOperator list1OpOp(PhysicalPlanNode_RandomAccessTerm);
@@ -162,6 +170,7 @@ void test3(){
 	vector<unsigned> correctResults(correctResultsArray , correctResultsArray+8);
 	ASSERT(checkResults(correctResults,operatorResults));
 
+	recordFactory.closeRecordItemPool(poolHandle);
 }
 
 int main(int argc, char *argv[]) {

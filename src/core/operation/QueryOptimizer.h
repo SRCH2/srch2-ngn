@@ -53,7 +53,7 @@ public:
 	 *           and makes sure inputs and outputs of operators are consistent.
 	 * ---- 2.2. Applies optimization rules on the physical plan
 	 */
-	void buildAndOptimizePhysicalPlan(PhysicalPlan & physicalPlan, LogicalPlan * logicalPlan);
+	void buildAndOptimizePhysicalPlan(PhysicalPlan & physicalPlan, LogicalPlan * logicalPlan, unsigned planOffset);
 
 private:
 
@@ -61,11 +61,9 @@ private:
 	 * This function maps LogicalPlan nodes to Physical nodes and builds a very first
 	 * version of the PhysicalPlan. This plan will optimizer in next steps.
 	 */
-	void buildPhysicalPlanFirstVersion(PhysicalPlan & physicalPlan);
+	void buildPhysicalPlanFirstVersion(PhysicalPlan & physicalPlan, unsigned planOffset);
 
 	void chooseSearchTypeOfPhysicalPlan(PhysicalPlan & physicalPlan);
-
-	void preparePhysicalPlanExecutionParamters(PhysicalPlan & physicalPlan);
 
 	void buildIncompleteTreeOptions(vector<PhysicalPlanOptimizationNode *> & treeOptions);
 
@@ -78,7 +76,7 @@ private:
 	void injectRequiredSortOperators(PhysicalPlanOptimizationNode * root);
 
 
-	PhysicalPlanOptimizationNode * findTheMinimumCostTree(vector<PhysicalPlanOptimizationNode *> & treeOptions, PhysicalPlan & physicalPlan);
+	PhysicalPlanOptimizationNode * findTheMinimumCostTree(vector<PhysicalPlanOptimizationNode *> & treeOptions, PhysicalPlan & physicalPlan, unsigned planOffset);
 
 	PhysicalPlanNode * buildPhysicalPlanFirstVersionFromTreeStructure(PhysicalPlanOptimizationNode * chosenTree);
 	/*

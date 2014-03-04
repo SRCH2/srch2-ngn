@@ -79,17 +79,14 @@ PhysicalPlanCost SortByIdOptimizationOperator::getCostOfOpen(const PhysicalPlanE
 	 * O(1) + cost(child's open) + (cost(child's getNext) + O(1))*estimatedNumberOfResults + estimatedNumberOfResultsOfChild
 	 */
 	PhysicalPlanCost resultCost;
-	resultCost.addFunctionCallCost(2);
 	resultCost = resultCost + this->getChildAt(0)->getCostOfOpen(params); // cost(child's open)
 	// cost of fetching all the child's records
 	unsigned estimatedNumberOfResults = this->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
-	resultCost.addFunctionCallCost(2 * estimatedNumberOfResults);
-	resultCost.addInstructionCost(estimatedNumberOfResults);
 	resultCost = resultCost +
 			(this->getChildAt(0)->getCostOfGetNext(params).cost) * estimatedNumberOfResults; // (cost(child's getNext) + O(1))*estimatedNumberOfResults
 	// sorting
-	resultCost.addMediumFunctionCost(); // make_ueap
-	resultCost.addSmallFunctionCost(estimatedNumberOfResults); // we assume make_heap calls estimatedNumberOfResults small functions
+	// making heap = O(N)
+	resultCost = resultCost + estimatedNumberOfResults;
 
 	return resultCost;
 }
@@ -97,27 +94,22 @@ PhysicalPlanCost SortByIdOptimizationOperator::getCostOfOpen(const PhysicalPlanE
 // when the cost of parent is being calculated.
 PhysicalPlanCost SortByIdOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
 	/*
-	 * cost : O(1) + log(estimatedNumberOfResults)
+	 * cost : log(estimatedNumberOfResults)
 	 */
 	PhysicalPlanCost resultCost;
-	resultCost.addSmallFunctionCost(5);
-	resultCost.addInstructionCost();
 	unsigned estimatedNumberOfResults = this->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
-	resultCost.addSmallFunctionCost((unsigned)(log2((double)estimatedNumberOfResults + 1))); // + 1 is to avoid 0
-	// we assume make_heap calls estimatedNumberOfResults small functions
+	resultCost = resultCost + (unsigned)(log2((double)estimatedNumberOfResults + 1)); // + 1 is to avoid 0
 	return resultCost;
 }
 
 // the cost of close of a child is only considered once since each node's close function is only called once.
 PhysicalPlanCost SortByIdOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
 	PhysicalPlanCost resultCost ;
-	resultCost.addFunctionCallCost(2);
 	resultCost = resultCost + this->getChildAt(0)->getCostOfClose(params);
 	return resultCost;
 }
 PhysicalPlanCost SortByIdOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
 	PhysicalPlanCost resultCost;
-	resultCost.addFunctionCallCost(2);
 	resultCost = resultCost + this->getChildAt(0)->getCostOfVerifyByRandomAccess(params);
 	return resultCost;
 }

@@ -140,8 +140,6 @@ bool UnionSortedByIDOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerif
 // of parent open function.
 PhysicalPlanCost UnionSortedByIDOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
 	PhysicalPlanCost resultCost;
-	resultCost.addFunctionCallCost(8 * this->getChildrenCount());
-	resultCost.addSmallFunctionCost(); /// clear
 	// cost of opening children
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
 		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfOpen(params);
@@ -160,23 +158,21 @@ PhysicalPlanCost UnionSortedByIDOptimizationOperator::getCostOfGetNext(const Phy
 	/*
 	 * cost : sum of size of all children / estimatedNumberOfResults
 	 */
-	unsigned sumOfAllLengths = 0;
+	double sumOfAllCosts = 0;
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
-		sumOfAllLengths += this->getChildAt(childOffset)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
+		sumOfAllCosts += this->getChildAt(childOffset)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults() *
+				this->getChildAt(childOffset)->getCostOfGetNext(params).cost;
 	}
 	unsigned estimatedNumberOfResults = this->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
 
 	PhysicalPlanCost resultCost;
-	resultCost.addMediumFunctionCost((unsigned)(((sumOfAllLengths*1.0)/estimatedNumberOfResults) + 1));
+	resultCost = ( (sumOfAllCosts*1.0) / estimatedNumberOfResults ) + 1;
 	return resultCost;
 
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.
 PhysicalPlanCost UnionSortedByIDOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
 	PhysicalPlanCost resultCost;
-	resultCost.addInstructionCost(2 + this->getChildrenCount()); // 3 + number of open calls
-	resultCost.addSmallFunctionCost(3); // clear()
-	resultCost.addFunctionCallCost(4 * this->getChildrenCount()); // 2 + number of open calls
 
 	// cost of closing children
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
@@ -187,7 +183,6 @@ PhysicalPlanCost UnionSortedByIDOptimizationOperator::getCostOfClose(const Physi
 }
 PhysicalPlanCost UnionSortedByIDOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
 	PhysicalPlanCost resultCost;
-	resultCost.addSmallFunctionCost();
 
 	// cost of verifying children
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){

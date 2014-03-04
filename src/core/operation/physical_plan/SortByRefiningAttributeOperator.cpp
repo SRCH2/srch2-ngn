@@ -39,6 +39,8 @@ bool SortByRefiningAttributeOperator::open(QueryEvaluatorInternal * queryEvaluat
     Schema * schema = queryEvaluatorInternal->getSchema();
     ForwardIndex * forwardIndex = queryEvaluatorInternal->getForwardIndex();
 
+    shared_ptr<vectorview<ForwardListPtr> > readView;
+    queryEvaluatorInternal->getForwardIndex_ReadView(readView);
     this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->open(queryEvaluatorInternal,params);
     // extract all the information from forward index
     // 1. find the participating attributes
@@ -62,7 +64,7 @@ bool SortByRefiningAttributeOperator::open(QueryEvaluatorInternal * queryEvaluat
     	}
     	results.push_back(nextRecord);
     	bool isValid = false;
-		const ForwardList * list = forwardIndex->getForwardList(nextRecord->getRecordId(), isValid);
+		const ForwardList * list = forwardIndex->getForwardList(readView, nextRecord->getRecordId(), isValid);
 		ASSERT(isValid);
 		const Byte * refiningAttributesData =
 				list->getRefiningAttributeContainerData();

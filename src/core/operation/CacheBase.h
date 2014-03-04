@@ -110,6 +110,7 @@ public:
 			delete cacheEntry->second.first ;
 		}
 		cacheEntries.clear();
+		lock.unlock();
 	};
 
 	bool put(string & key, boost::shared_ptr<T> & objectPointer){

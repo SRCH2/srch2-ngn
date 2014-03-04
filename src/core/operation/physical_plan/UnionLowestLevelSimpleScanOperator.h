@@ -60,7 +60,9 @@ private:
     bool parentIsCacheEnabled;
 
 	QueryEvaluatorInternal * queryEvaluator;
-
+	shared_ptr<vectorview<InvertedListContainerPtr> > invertedListDirectoryReadView;
+    shared_ptr<vectorview<unsigned> > invertedIndexKeywordIdsReadView;
+	shared_ptr<vectorview<ForwardListPtr> >  forwardIndexDirectoryReadView;
 	vector< vectorview<unsigned> * > invertedLists;
 	vector< shared_ptr<vectorview<unsigned> > > invertedListsSharedPointers;
 	vector< unsigned > invertedListDistances;
