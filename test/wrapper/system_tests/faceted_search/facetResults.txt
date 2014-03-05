@@ -1,5 +1,5 @@
-likes||lessThanStart,0.0|0,0.0|10,0.0|20,1.0|30,0.0|40,1.0|50,0.0|
-model||jeep,1.0|toyota,1.0|
+likes||lessThanStart,0.0|0,18.0|10,20.0|20,20.0|30,20.0|40,20.0|50,3.0|
+model||toyota,25.0|mazda,25.0|jeep,20.0|honda,15.0|ford,10.0|bmw,5.0|singleton,1.0|
 price||lessThanStart,0.0|0,10.0|10,10.0|20,10.0|30,10.0|40,10.0|50,10.0|60,10.0|70,10.0|80,10.0|90,11.0|100,0.0|
 model||toyota,1.0|
 likes||lessThanStart,84.0|43,17.0|
