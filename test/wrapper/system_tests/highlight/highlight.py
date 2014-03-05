@@ -13,6 +13,8 @@
 # 8. proximity phrase
 # 9. Phrase
 # 10. Phrase and complete term
+# 11. Attribute specific search term (TODO: does not yet check if highlighting also correct in the query named attribute)
+# 12. Match term in a different attribute (name)
 #
 import sys, urllib2, urllib, json, time, subprocess, os, commands, signal
 # these imports have test results.
@@ -44,10 +46,10 @@ def checkResult(query, responseJson,resultValue, queryId):
                 isPass=0
                 break;
             else:
-                if  responseJson[i]["snippet"]["text"] != expectedResults[testRunId][queryId][i]:
-                    print "snippets mismatch !!"
-                    print "expected >> " + expectedResults[testRunId][queryId][i]
-                    print "generated >> " + responseJson[i]["snippet"]["text"]
+                if  responseJson[i]["snippet"]["text"][0] != expectedResults[testRunId][queryId][i][0]:
+                    print "Test run " + str(testRunId) + " query " + str(queryId) + " response record " + str(i) + " snippets mismatch !!"
+                    print "expected >> " + str(expectedResults[testRunId][queryId][i][0])
+                    print "generated >> " + str(responseJson[i]["snippet"]["text"][0])
                     isPass = 0
                     break;
     else:
