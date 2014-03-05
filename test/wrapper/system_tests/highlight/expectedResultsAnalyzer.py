@@ -2,7 +2,7 @@ results =  { 1 :
 [
 [u"... is as sweet as can be.  Perhaps sweeter than the cookies or ice cream.Here's the lowdown: Giant ice cream cookie <b>sandwiches</b> for super cheap.  The flavor permutations are basically endless.  I had snickerdoodle with cookies and cream ice ..."],
 [u"... best BBQ Chicken pizza I have ever had.  I have tried other things too, like the tomato basil soup, and many of their <b>sandwiches</b> ... very good, very fresh - every time.  The 5 stars is for the pizza, but if I were to rate Jason's Deli over all ..."],
-[u'... full even on a Tuesday evening; we had secured reservations just a couple days before.My friend and I had sampled <b>sandwiches</b> at the Farm Kitchen earlier that week, and were impressed enough to want to eat at the restaurant.  The crisp, fresh ...'],
+[u'... full even on a Tuesday evening; we had secured reservations just a couple days before.My friend and I had sampled <b>sandwiches</b> at the Farm Kitchen earlier that week, and were impressed enough to want to eat at the restaurant.  The crisp, fresh ...']
 ],
 
 2:
@@ -10,23 +10,23 @@ results =  { 1 :
 [u"... is as sweet as can be.  Perhaps sweeter than the cookies or ice cream.Here's the lowdown: Giant ice cream cookie <b>sandwiches</b> for super cheap.  The flavor permutations are basically endless.  I had snickerdoodle with cookies and cream ice ..."],
 [u"... best BBQ Chicken pizza I have ever had.  I have tried other things too, like the tomato basil soup, and many of their <b>sandwiches</b> ... very good, very fresh - every time.  The 5 stars is for the pizza, but if I were to rate Jason's Deli over all ..."],
 [u'... full even on a Tuesday evening; we had secured reservations just a couple days before.My friend and I had sampled <b>sandwiches</b> at the Farm Kitchen earlier that week, and were impressed enough to want to eat at the restaurant.  The crisp, fresh ...'],
-[u'Wonderful Vietnamese <b>sandwich</b> shoppe. Their baguettes are great hot out of the oven with butter or in one of their many sandwich choices. They have a modest selection of baked goods along with some of the best egg rolls around. Bring cash or your ...'],
+[u'Wonderful Vietnamese <b>sandwich</b> shoppe. Their baguettes are great hot out of the oven with butter or in one of their many sandwich choices. They have a modest selection of baked goods along with some of the best egg rolls around. Bring cash or your ...']
 ],
 
 3:
 [
-[u"They have a limited time thing going on right now with BBQ <b>chicken</b> <b>piz</b>za (not sure how long it's going to last) but let me just say it was amazing.  Probably THE best BBQ Chicken pizza I have ever had.  I have tried other things too, like the ..."],
+[u"They have a limited time thing going on right now with BBQ <b>chicken</b> <b>piz</b>za (not sure how long it's going to last) but let me just say it was amazing.  Probably THE best BBQ Chicken pizza I have ever had.  I have tried other things too, like the ..."]
 ],
 
 4:
 [
 [u"They have a limited time thing going on right now with BBQ <b>chicken</b> <b>piz</b>za (not sure how long it's going to last) but let me just say it was amazing.  Probably THE best BBQ Chicken pizza I have ever had.  I have tried other things too, like the ..."],
-[u'... our orders once we decided what we wanted at 6:02. We shared the baked spaghetti calzone and the small "Here\'s The Beef" <b>piz</b>za so we can both try them. The calzone was huge and we got the smallest one (personal) and got the small 11" pizza. Both ...'],
+[u'... our orders once we decided what we wanted at 6:02. We shared the baked spaghetti calzone and the small "Here\'s The Beef" <b>piz</b>za so we can both try them. The calzone was huge and we got the smallest one (personal) and got the small 11" pizza. Both ...']
 ],
 
 5:
 [
-[u"... received our's), and no one bothered to explain the situation until the maitre'd apologized almost 45 minutes later.  <b>App</b>arently the chef was unhappy with the sauce on my entree, so he started anew.  This isn't really a problem, but they should ..."],
+[u"... received our's), and no one bothered to explain the situation until the maitre'd apologized almost 45 minutes later.  <b>App</b>arently the chef was unhappy with the sauce on my entree, so he started anew.  This isn't really a problem, but they should ..."]
 ],
 
 6:
@@ -40,26 +40,36 @@ results =  { 1 :
 [u'... great hot out of the oven with butter or in one of their many sandwich choices. They have a modest selection of baked <b>goo</b>ds along with some of the best egg rolls around. Bring cash or your ATM card as no credit cards are accepted but they have ...'],
 [u"... looking for. I chose Jet to do a cover-up for me and he worked with me on the design and our ideas and communication <b>flo</b>wed very well. He's a very personable guy, is friendly and keeps the conversation going while he's working on you, and he ..."],
 [u"General Manager Scott Petello is a <b>goo</b>d egg!!! Not to go into detail, but let me assure you if you have any issues (albeit rare) speak with Scott and treat the guy with some respect as you state your case and I'd be surprised if you don't walk out ..."],
-[u"... pizza I have ever had.  I have tried other things too, like the tomato basil soup, and many of their sandwiches ... very <b>goo</b>d, very fresh - every time.  The 5 stars is for the pizza, but if I were to rate Jason's Deli over all they would get ..."],
+[u"... pizza I have ever had.  I have tried other things too, like the tomato basil soup, and many of their sandwiches ... very <b>goo</b>d, very fresh - every time.  The 5 stars is for the pizza, but if I were to rate Jason's Deli over all they would get ..."]
 ],
 
 7: 
 [
-[u'... The prices were very good as well. We placed our orders once we decided what we wanted at 6:02. We shared the <b>baked</b> <b>spaghetti</b> calzone and the small "Here\'s The Beef" pizza so we can both try them. The calzone was huge and we got the smallest ...'],
+[u'... The prices were very good as well. We placed our orders once we decided what we wanted at 6:02. We shared the <b>baked</b> <b>spaghetti</b> calzone and the small "Here\'s The Beef" pizza so we can both try them. The calzone was huge and we got the smallest ...']
 ],
 
 8:
 [
-[u"... be.  Perhaps sweeter than the cookies or <b>ice</b> <b>cream</b>.Here's the lowdown: Giant <b>ice</b> <b>cream</b> cookie sandwiches for super cheap.  The flavor permutations are basically endless.  I had snickerdoodle with cookies and <b>cream</b> <b>ice</b> <b>cream</b>.  It was marvelous."],
+[u"... be.  Perhaps sweeter than the cookies or <b>ice</b> <b>cream</b>.Here's the lowdown: Giant <b>ice</b> <b>cream</b> cookie sandwiches for super cheap.  The flavor permutations are basically endless.  I had snickerdoodle with cookies and <b>cream</b> <b>ice</b> <b>cream</b>.  It was marvelous."]
 ],
 
 9:
 [
-[u"<b>delicious</b> <b>meals</b> but the shrimp burro stole the show.  So much flavor.  I snagged some bites from my hubbys mole and mahi mahi ...was too hot, in fact it all was, but I'm a big wimp when it comes to hot peppers. The horchata is handmade and <b>delicious</b>...."],
+[u"<b>delicious</b> <b>meals</b> but the shrimp burro stole the show.  So much flavor.  I snagged some bites from my hubbys mole and mahi mahi ...was too hot, in fact it all was, but I'm a big wimp when it comes to hot peppers. The horchata is handmade and <b>delicious</b>...."]
 ],
 
 10:
 [
-[u"<b>Dog</b> <b>Park</b>!!! It's very convenient and surrounded by a ...and a lake with ducks.The Scottsdale <b>Park</b> and Rec Dept. does a wonderful job of keeping the <b>park</b> clean and shaded.  You can find trash cans and poopy-pick up mitts located all over the <b>park</b>..."],
+[u"<b>Dog</b> <b>Park</b>!!! It's very convenient and surrounded by a ...and a lake with ducks.The Scottsdale <b>Park</b> and Rec Dept. does a wonderful job of keeping the <b>park</b> clean and shaded.  You can find trash cans and poopy-pick up mitts located all over the <b>park</b>..."]
+],
+
+11:
+[
+[u"... right on to all of our needs, didn't have to ask for a thing They were always spot on...Place gets crowded in the evening especially if you plan on sitting outside. I only wish there was one in Apollo Beach or Brandon for those who are not so <b>rich</b>!"]
+],
+
+12:
+[
+[u"Our CEO <b>Dev</b> loved the gyro plate. Rice is so good and I also dig their candy selection :)"]
 ]
 }

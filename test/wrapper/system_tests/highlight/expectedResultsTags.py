@@ -61,5 +61,14 @@ results = { 1 :
 10:
 [
 [u"<exact>Dog</exact> <exact>Park</exact>!!! It's very convenient and surrounded by a ...and a lake with ducks.The Scottsdale <exact>Park</exact> and Rec Dept. does a wonderful job of keeping the <exact>park</exact> clean and shaded.  You can find trash cans and poopy-pick up mitts located all over the <exact>park</exact>..."]
-]
-}
+],
+
+11:
+[
+[u"... right on to all of our needs, didn't have to ask for a thing They were always spot on...Place gets crowded in the evening especially if you plan on sitting outside. I only wish there was one in Apollo Beach or Brandon for those who are not so <exact>rich</exact>!"]
+],
+
+12:
+[
+[u"Our CEO <exact>Dev</exact> loved the gyro plate. Rice is so good and I also dig their candy selection :)"]
+]}

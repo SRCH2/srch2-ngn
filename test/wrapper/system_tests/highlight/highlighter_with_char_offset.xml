@@ -19,6 +19,8 @@
     <listeningHostname>0.0.0.0</listeningHostname>
     <listeningPort>8087</listeningPort>
  
+    <maxSearchThreads>8</maxSearchThreads>
+    
     <dataDir>./data/highlight/indexes</dataDir>
      
     <dataSourceType>1</dataSourceType>
@@ -77,8 +79,6 @@
 
         <rows>10</rows>
 
-        <maxSearchThreads>8</maxSearchThreads>
-        
         <fieldBasedSearch>0</fieldBasedSearch>
          
         <searcherType>0</searcherType>
@@ -95,8 +95,10 @@
 
         <highlighter>
             <snippetSize>250</snippetSize>
-            <markerPre value = '<b>' ></markerPre>
-            <markerPost value = '</b>'></markerPost>
+            <fuzzyTagPre value = '<b>' ></fuzzyTagPre>
+            <fuzzyTagPost value = '</b>'></fuzzyTagPost>
+            <exactTagPre value = '<b>' ></exactTagPre>
+            <exactTagPost value = '</b>'></exactTagPost>
         </highlighter>
 
     </query>
@@ -129,6 +131,8 @@
     <schema name="SRCH2" version="3">
        <fields>
           <field name="text"  type="text" indexed="true" highlight="true"/>
+          <field name="name"  type="text" indexed="true" highlight="true"/>
+          <field name="genre"  type="text" indexed="true" highlight="true" multivalued="true"/>
        </fields>
        
        <uniqueKey>review_id</uniqueKey>
