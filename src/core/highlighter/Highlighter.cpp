@@ -237,8 +237,6 @@ void AnalyzerBasedAlgorithm::getSnippet(const QueryResults* /*not used*/, unsign
 	}
 
 	validatePhrasePositions(highlightPositions);
-	// Clear the list so that the phrase info list is recalculated for next attribute/record.
-	phrasesInfoList.clear();
 	// sweep out invalid positions
 	removeInvalidPositionInPlace(highlightPositions);
 
@@ -251,6 +249,8 @@ void AnalyzerBasedAlgorithm::getSnippet(const QueryResults* /*not used*/, unsign
 	buildSnippetUsingHighlightPositions(dataIn, highlightPositions, actualHighlightedSet,
 			ctsnippet, snippets, isMultiValued);
 
+	// Clear the list so that the phrase info list is recalculated for next attribute/record.
+	phrasesInfoList.clear();
 }
 
 /*
