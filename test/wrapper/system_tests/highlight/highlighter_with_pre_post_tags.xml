@@ -9,7 +9,7 @@
 -->
  
 <config>
-    <srch2Home>/Users/srch2/repos/srch2-ngn/test/wrapper/system_tests/</srch2Home>
+    <srch2Home>./</srch2Home>
         <!-- Make sure to specify the home of your SRCH2 installation.  Example: 
 	  <srch2Home>/home/joe/srch2</srch2Home>
         -->
