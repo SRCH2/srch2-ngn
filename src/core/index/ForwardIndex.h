@@ -529,6 +529,11 @@ public:
 
     void addDummyFirstRecord(); // For Trie bootstrap
 
+    /*
+     * Returns the forward list directory read view
+     */
+    void getForwardListDirectory_ReadView(shared_ptr<vectorview<ForwardListPtr> > & readView) const;
+
     /**
      * Add a new record, represented by a list of keyword IDs. The keywordIds are unique and have no order.
      * If the record ID already exists, do nothing. Else, add the record.
@@ -556,13 +561,16 @@ public:
      * If the recordId does not exist, return false.
      */
     ///Added for stemmer
-    bool haveWordInRangeWithStemmer(const unsigned recordId,
+    bool haveWordInRangeWithStemmer(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+    		const unsigned recordId,
             const unsigned minId, const unsigned maxId,
             const unsigned termSearchableAttributeIdToFilterTermHits,
             unsigned &matchingKeywordId,
             unsigned &matchingKeywordAttributeBitmap,
             float &matchingKeywordRecordStaticScore, bool &isStemmed) const;
-    bool haveWordInRange(const unsigned recordId, const ForwardList* fl, const unsigned minId,
+    bool haveWordInRange(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView ,
+    		const unsigned recordId,
+    		const unsigned minId,
             const unsigned maxId,
             const unsigned termSearchableAttributeIdToFilterTermHits,
             unsigned &matchingKeywordId,
@@ -584,7 +592,8 @@ public:
     /**
      * Build Phase functions
      */
-    const ForwardList *getForwardList(unsigned recordId, bool &valid) const;
+    const ForwardList *getForwardList(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+    		unsigned recordId, bool &valid) const;
     //ForwardList *getForwardListToChange(unsigned recordId, bool &valid); // CHENLI
     ForwardList *getForwardList_ForCommit(unsigned recordId);
 
@@ -653,7 +662,9 @@ public:
      * for key a2, we append [2, 0].
      * for key a3, we append [6, 8, 0].
      */
-    bool isValidRecordTermHit(unsigned forwardIndexId, unsigned keywordOffset,
+    bool isValidRecordTermHit(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+    		unsigned forwardIndexId,
+    		unsigned keywordOffset,
             unsigned searchableAttributeId, unsigned &termAttributeBitmap,
             float& termRecordStaticScore) const;
     bool isValidRecordTermHitWithStemmer(unsigned forwardIndexId,
@@ -661,7 +672,8 @@ public:
             unsigned &matchingKeywordAttributeBitmap,
             float &matchingKeywordRecordStaticScore, bool &isStemmed) const;
 
-    unsigned getKeywordOffset(unsigned forwardListId, unsigned keywordId) const;
+    unsigned getKeywordOffset(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+    		unsigned forwardListId, unsigned keywordId) const;
 
     /*****-record-id-converter*****/
     /**
@@ -686,7 +698,8 @@ public:
     INDEXLOOKUP_RETVAL lookupRecord(
             const std::string &externalRecordId) const;
 
-    void reassignKeywordIds(const unsigned recordId,
+    void reassignKeywordIds(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+    		const unsigned recordId,
             const map<unsigned, unsigned> &keywordIdMapper);
     //void reassignKeywordIds(map<unsigned, unsigned> &reassignedKeywordIdMapper);
 
@@ -694,7 +707,9 @@ public:
      * For the given internalRecordId, returns the ExternalRecordId. ASSERT if the internalRecordId
      * is out of bound of RecordIdVector.
      */
-    bool getExternalRecordIdFromInternalRecordId(const unsigned internalRecordId,
+    bool getExternalRecordIdFromInternalRecordId(
+    		shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+    		const unsigned internalRecordId,
             std::string &externalRecordId) const; // Goes to forwardIndex-read
 
     bool getInternalRecordIdFromExternalRecordId(const std::string &externalRecordId,

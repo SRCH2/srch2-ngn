@@ -71,10 +71,12 @@ bool FilterQueryOperator::doPass(Schema * schema, ForwardIndex * forwardIndex ,P
         attributeIds.push_back(attr->second);
     }
 
+    shared_ptr<vectorview<ForwardListPtr> > readView;
+    this->queryEvaluatorInternal->getForwardIndex_ReadView(readView);
     // now fetch the values of different attributes from forward index
     vector<TypedValue> typedValues;
     bool isValid = false;
-    const ForwardList * list = forwardIndex->getForwardList(record->getRecordId() , isValid);
+    const ForwardList * list = forwardIndex->getForwardList(readView, record->getRecordId() , isValid);
     ASSERT(isValid);
     const Byte * refiningAttributesData = list->getRefiningAttributeContainerData();
     VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds,schema,refiningAttributesData ,&typedValues);
@@ -98,7 +100,7 @@ PhysicalPlanCost FilterQueryOptimizationOperator::getCostOfOpen(const PhysicalPl
 // The cost of getNext of a child is multiplied by the estimated number of calls to this function
 // when the cost of parent is being calculated.
 PhysicalPlanCost FilterQueryOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
-	return this->getChildAt(0)->getCostOfGetNext(params) + 1;
+	return this->getChildAt(0)->getCostOfGetNext(params);
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.
 PhysicalPlanCost FilterQueryOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {

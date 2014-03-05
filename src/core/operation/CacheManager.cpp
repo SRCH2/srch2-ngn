@@ -50,7 +50,7 @@ int PhysicalOperatorsCache::clear(){
 
 int ActiveNodesCache::findLongestPrefixActiveNodes(Term *term, boost::shared_ptr<PrefixActiveNodeSet> &in){
 
-	// find the longest prefix with active nodes in the cache
+	/*// find the longest prefix with active nodes in the cache
 	unsigned termThreshold = term->getThreshold();
 	string *keyword = term->getKeyword();
 	for (int i = keyword->size(); i >= 2; i --)
@@ -66,7 +66,7 @@ int ActiveNodesCache::findLongestPrefixActiveNodes(Term *term, boost::shared_ptr
 			in = cacheHit;
 			return 1;
 		}
-	}
+	}*/
     // no prefix has a cached PrefixActiveNodeSet
 	return 0;
 
@@ -99,6 +99,10 @@ PhysicalOperatorsCache * CacheManager::getPhysicalOperatorsCache(){
 	return this->pCache;
 }
 
+PhysicalPlanRecordItemFactory * CacheManager::getPhysicalPlanRecordItemFactory(){
+	return this->physicalPlanRecordItemFactory;
+}
+
 bool QueryResultsCache::getQueryResults(string & key, boost::shared_ptr<QueryResultsCacheEntry> & in){
 	return this->cacheContainer->get(key , in);
 }
@@ -110,7 +114,7 @@ int QueryResultsCache::clear(){
 }
 
 int CacheManager::clear(){
-	return this->aCache->clear() && this->qCache->clear() && this->pCache->clear();
+	return this->aCache->clear() && this->qCache->clear() && this->pCache->clear() && this->physicalPlanRecordItemFactory->clear();
 }
 
 

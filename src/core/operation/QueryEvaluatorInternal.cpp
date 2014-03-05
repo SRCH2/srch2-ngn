@@ -64,7 +64,8 @@ QueryEvaluatorInternal::QueryEvaluatorInternal(IndexReaderWriter *indexer , Quer
     this->cacheManager = dynamic_cast<CacheManager*>(indexer->getCache());
     this->indexer = indexer;
     setPhysicalOperatorFactory(new PhysicalOperatorFactory());
-    setPhysicalPlanRecordItemFactory(new PhysicalPlanRecordItemFactory());
+    setPhysicalPlanRecordItemFactory(this->cacheManager->getPhysicalPlanRecordItemFactory());
+    setForwardIndex_ReadView();
 }
 
 /*
@@ -168,7 +169,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 
 
 	ASSERT(logicalPlan != NULL);
-//	//1. first check to see if we have this query in cache
+	//1. first check to see if we have this query in cache
 	string key = logicalPlan->getUniqueStringForCaching();
 	boost::shared_ptr<QueryResultsCacheEntry> cachedObject ;
 	if(this->cacheManager->getQueryResultsCache()->getQueryResults(key , cachedObject) == true){
@@ -245,29 +246,18 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 	}
 
 
-
 	PhysicalPlanExecutionParameters dummy(0,true,1,SearchTypeTopKQuery); // this parameter will be created inside KeywordSearchOperator
 	topOperator->open(this, dummy );
 
 
-	unsigned numberOfIterations ;
-	if(logicalPlan->getQueryType() == SearchTypeTopKQuery ){
-		numberOfIterations = logicalPlan->offset + logicalPlan->numberOfResultsToRetrieve;
-	}else{
-		numberOfIterations = -1; // to set it to a very big number
-	}
-
+	boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
+	this->getTrie()->getTrieRootNode_ReadView(trieRootNode_ReadView);
 	while(true){
 
 		PhysicalPlanRecordItem * newRecord = topOperator->getNext(dummy);
 
 		if(newRecord == NULL){
 			break;
-		}
-
-		if(queryResults->impl->sortedFinalResults.size() >= numberOfIterations){
-			break; // although some operators like facet need us to call getNext until the end
-			        // we shouldn't continue because if the user want everything, he uses searchType=getAll
 		}
 
 		QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
@@ -284,8 +274,6 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 
 		for(unsigned i=0; i < queryResult->matchingKeywordTrieNodes.size() ; i++){
 			std::vector<CharType> temp;
-			boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
-			this->getTrie()->getTrieRootNode_ReadView(trieRootNode_ReadView);
 			this->getTrie()->getPrefixString(trieRootNode_ReadView->root,
 					queryResult->matchingKeywordTrieNodes.at(i), temp);
 			string str;
@@ -294,7 +282,8 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		}
 		newRecord->getRecordMatchAttributeBitmaps(queryResult->attributeBitmaps);
 
-		this->getForwardIndex()->getExternalRecordIdFromInternalRecordId(queryResult->internalRecordId,queryResult->externalRecordId );
+		this->getForwardIndex()->getExternalRecordIdFromInternalRecordId(this->forwardIndexDirectoryReadView,
+				queryResult->internalRecordId,queryResult->externalRecordId );
 	}
 
 	if(facetOperatorPtr != NULL){
@@ -302,11 +291,6 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 	}
 
 	topOperator->close(dummy);
-
-	if(facetOperatorPtr != NULL){
-		delete facetOperatorPtr->getPhysicalPlanOptimizationNode();
-		delete facetOperatorPtr;
-	}
 
 	// set estimated number of results
 	queryResults->impl->estimatedNumberOfResults = logicalPlan->getTree()->stats->getEstimatedNumberOfResults();
@@ -316,6 +300,12 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 	cacheObject.reset(new QueryResultsCacheEntry());
 	cacheObject->copyFromQueryResultsInternal(queryResults->impl);
 	this->cacheManager->getQueryResultsCache()->setQueryResults(key , cacheObject);
+
+
+	if(facetOperatorPtr != NULL){
+		delete facetOperatorPtr->getPhysicalPlanOptimizationNode();
+		delete facetOperatorPtr;
+	}
 
 	return queryResults->impl->sortedFinalResults.size();
 
@@ -364,7 +354,9 @@ void QueryEvaluatorInternal::search(const std::string & primaryKey, QueryResults
 	// The query result to be returned.
 	// First check to see if the record is valid.
 	bool validForwardList;
-	this->indexData->forwardIndex->getForwardList(internalRecordId, validForwardList);
+    shared_ptr<vectorview<ForwardListPtr> > readView;
+    this->indexData->forwardIndex->getForwardListDirectory_ReadView(readView);
+	this->indexData->forwardIndex->getForwardList(readView, internalRecordId, validForwardList);
 	if (validForwardList == false) {
 		return;
 	}
@@ -526,7 +518,7 @@ void QueryEvaluatorInternal::addMoreNodesToExpansion(const TrieNode* trieNode, u
 
 QueryEvaluatorInternal::~QueryEvaluatorInternal() {
 	delete physicalOperatorFactory;
-	delete physicalPlanRecordItemFactory;
+	this->physicalPlanRecordItemFactory->closeRecordItemPool(this->physicalPlanRecordItemPoolHandle);
 }
 
 PhysicalOperatorFactory * QueryEvaluatorInternal::getPhysicalOperatorFactory(){
@@ -536,11 +528,12 @@ void QueryEvaluatorInternal::setPhysicalOperatorFactory(PhysicalOperatorFactory 
 	this->physicalOperatorFactory = physicalOperatorFactory;
 }
 
-PhysicalPlanRecordItemFactory * QueryEvaluatorInternal::getPhysicalPlanRecordItemFactory(){
-	return this->physicalPlanRecordItemFactory;
+PhysicalPlanRecordItemPool * QueryEvaluatorInternal::getPhysicalPlanRecordItemPool(){
+	return this->physicalPlanRecordItemFactory->getRecordItemPool(this->physicalPlanRecordItemPoolHandle);
 }
 void QueryEvaluatorInternal::setPhysicalPlanRecordItemFactory(PhysicalPlanRecordItemFactory * physicalPlanRecordItemFactory){
 	this->physicalPlanRecordItemFactory = physicalPlanRecordItemFactory;
+	this->physicalPlanRecordItemPoolHandle = this->physicalPlanRecordItemFactory->openRecordItemPool();
 }
 
 //DEBUG function. Used in CacheIntegration_Test

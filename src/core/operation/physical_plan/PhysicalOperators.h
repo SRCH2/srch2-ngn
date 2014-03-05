@@ -419,6 +419,7 @@ public:
 private:
 	MergeByShortestListOperator() ;
 	QueryEvaluatorInternal * queryEvaluator;
+	shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
 	// this variable keeps the index of the shortest list child
 	unsigned indexOfShortestListChild ;
 	// if the shortest list is exhausted, this boolean is set to true
@@ -448,7 +449,7 @@ public:
 		this->indexOfShortestListChild = indexOfShortestListChild;
 		this->isShortestListFinished = isShortestListFinished;
 		for(unsigned i = 0; i < candidatesList.size() ; ++i){
-			this->candidatesList.push_back(queryEvaluator->getPhysicalPlanRecordItemFactory()->
+			this->candidatesList.push_back(queryEvaluator->getPhysicalPlanRecordItemPool()->
 					cloneForCache(candidatesList.at(i)));
 		}
 	}

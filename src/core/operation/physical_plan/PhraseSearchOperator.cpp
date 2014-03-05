@@ -55,7 +55,8 @@ PhysicalPlanRecordItem * PhraseSearchOperator::getNext(const PhysicalPlanExecuti
 	}
 
 	ForwardIndex * forwardIndex = this->queryEvaluatorInternal->getForwardIndex();
-
+    shared_ptr<vectorview<ForwardListPtr> > readView;
+    this->queryEvaluatorInternal->getForwardIndex_ReadView(readView);
     /*
      *  Loop over the input records  and apply the phrase filter
      */
@@ -66,7 +67,7 @@ PhysicalPlanRecordItem * PhraseSearchOperator::getNext(const PhysicalPlanExecuti
 			return NULL;
 		}
         bool isValid = false;
-        const ForwardList* forwardListPtr = forwardIndex->getForwardList(nextRecord->getRecordId(), isValid);
+        const ForwardList* forwardListPtr = forwardIndex->getForwardList(readView, nextRecord->getRecordId(), isValid);
         if (false == isValid){
         	continue;
         }
@@ -222,7 +223,6 @@ bool PhraseSearchOperator::matchPhrase(const ForwardList* forwardListPtr, const 
 PhysicalPlanCost PhraseSearchOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params) {
 
 	PhysicalPlanCost resultCost;
-	resultCost.addFunctionCallCost();
 	resultCost = resultCost + this->getChildAt(0)->getCostOfOpen(params);
 	return resultCost;
 }
@@ -230,8 +230,6 @@ PhysicalPlanCost PhraseSearchOptimizationOperator::getCostOfOpen(const PhysicalP
 // when the cost of parent is being calculated.
 PhysicalPlanCost PhraseSearchOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
 	PhysicalPlanCost resultCost;
-	resultCost.addFunctionCallCost(3);
-	resultCost.addLargeFunctionCost();
 	resultCost = resultCost + this->getChildAt(0)->getCostOfGetNext(params);
 	return resultCost;
 }
@@ -239,13 +237,12 @@ PhysicalPlanCost PhraseSearchOptimizationOperator::getCostOfGetNext(const Physic
 PhysicalPlanCost PhraseSearchOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
 
 	PhysicalPlanCost resultCost;
-	resultCost.addFunctionCallCost();
 	resultCost = resultCost + this->getChildAt(0)->getCostOfClose(params);
 	return resultCost;
 }
 PhysicalPlanCost PhraseSearchOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
 	PhysicalPlanCost resultCost;
-	// Random access is not implmented.
+	// Random access is not implemented.
 	return resultCost;
 }
 void PhraseSearchOptimizationOperator::getOutputProperties(IteratorProperties & prop){

@@ -68,7 +68,7 @@ namespace instantsearch
 {
 
 class InvertedIndex;
-
+class ForwardIndex;
 // this character is reserved as a special symbol for the trie
 #define TRIE_MARKER_CHARACTER ('$')
 
@@ -571,7 +571,10 @@ private:
         boost::serialization::split_member(ar, *this, file_version);
     }
 
-    void calculateNodeHistogramValuesFromChildren(TrieNode *root, const InvertedIndex * invertedIndex , const unsigned totalNumberOfRecords );
+    void calculateNodeHistogramValuesFromChildren(TrieNode *root,
+    		const InvertedIndex * invertedIndex ,
+    		const ForwardIndex * forwardIndex ,
+    		const unsigned totalNumberOfRecords );
 
 public:
 
@@ -709,13 +712,17 @@ public:
      * The traverse the trie in pre-order to calculate the nodeSubTrieValue for each TrieNode
      */
 
-    void calculateNodeHistogramValuesFromChildren(const InvertedIndex * invertedIndex ,  const unsigned totalNumberOfRecords);
+    void calculateNodeHistogramValuesFromChildren(const InvertedIndex * invertedIndex ,
+    		const ForwardIndex * forwardIndex ,
+    		const unsigned totalNumberOfRecords);
 
     void printTrieNodeSubTrieValues(std::vector<CharType> & prefix , TrieNode * root , unsigned depth = 0);
 
     // invertedIndex and totalNumberOfResults are used to update histogram information on the trie
     // updateHistogram is the flag which tells us if we should update histogram or not.
-    void merge(const InvertedIndex * invertedIndex , const unsigned totalNumberOfResults  , bool updateHistogram);
+    void merge(const InvertedIndex * invertedIndex ,
+    		const ForwardIndex * forwardIndex ,
+    		const unsigned totalNumberOfResults  , bool updateHistogram);
     bool isMergeRequired() { return mergeRequired; }
 
     void commit();
@@ -725,7 +732,9 @@ public:
      * Final commit must be called after InvertedInde and ForwardIndex commits are done unless invertedIndex
      * is NULL (which is the case of M1), in which case this value is actually just the frequency of leaf nodes in each subtrie.
      */
-    void finalCommit_finalizeHistogramInformation(const InvertedIndex * invertedIndex , const unsigned totalNumberOfResults );
+    void finalCommit_finalizeHistogramInformation(const InvertedIndex * invertedIndex ,
+    		const ForwardIndex * forwardIndex,
+    		const unsigned totalNumberOfResults );
 
     const std::vector<unsigned> *getOldIdToNewIdMapVector() const;
 

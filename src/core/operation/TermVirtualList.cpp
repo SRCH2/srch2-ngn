@@ -38,17 +38,22 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
     unsigned invertedListCounter = 0;
 
     shared_ptr<vectorview<unsigned> > invertedListReadView;
-    this->invertedIndex->getInvertedListReadView(invertedListId, invertedListReadView);
+    this->invertedIndex->getInvertedListReadView(this->invertedListDirectoryReadView,
+    		invertedListId, invertedListReadView);
     unsigned recordId = invertedListReadView->getElement(invertedListCounter);
     // calculate record offset online
-    unsigned recordOffset = this->invertedIndex->getKeywordOffset(recordId, invertedListId);
+    unsigned recordOffset = this->invertedIndex->getKeywordOffset(this->forwardIndexDirectoryReadView,
+    		this->invertedIndexKeywordIdsReadView,
+    		recordId, invertedListId);
     ++ invertedListCounter;
 
     bool foundValidHit = 0;
     float termRecordStaticScore = 0;
     unsigned termAttributeBitmap = 0;
     while (1) {
-        if (this->invertedIndex->isValidTermPositionHit(recordId, recordOffset,
+        if (this->invertedIndex->isValidTermPositionHit(this->forwardIndexDirectoryReadView,
+        		recordId,
+        		recordOffset,
                 term->getAttributeToFilterTermHits(), termAttributeBitmap,
                 termRecordStaticScore) ) {
             foundValidHit = 1;
@@ -58,7 +63,9 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
         if (invertedListCounter < invertedListReadView->size()) {
             recordId = invertedListReadView->getElement(invertedListCounter);
             // calculate record offset online
-            recordOffset = this->invertedIndex->getKeywordOffset(recordId, invertedListId);
+            recordOffset = this->invertedIndex->getKeywordOffset(this->forwardIndexDirectoryReadView,
+            		this->invertedIndexKeywordIdsReadView,
+            		recordId, invertedListId);
             ++invertedListCounter;
         } else {
             break;
@@ -122,7 +129,8 @@ void TermVirtualList::depthInitializeBitSet(const TrieNode* trieNode, unsigned e
 {
     if (trieNode->isTerminalNode()) {
         unsigned invertedListId = trieNode->getInvertedListOffset();
-        this->invertedIndex->getInvertedListReadView(invertedListId, invertedListReadView);
+        this->invertedIndex->getInvertedListReadView(this->invertedListDirectoryReadView,
+        		invertedListId, invertedListReadView);
         for (unsigned invertedListCounter = 0; invertedListCounter < invertedListReadView->size(); invertedListCounter++) {
             // set the bit of the record id to be true
             if (!bitSet.getAndSet(invertedListReadView->at(invertedListCounter)))
@@ -140,10 +148,13 @@ void TermVirtualList::depthInitializeBitSet(const TrieNode* trieNode, unsigned e
 }
 
 // Iterate over active nodes, fill the vector, and call make_heap on it.
-TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiveNodeSet *prefixActiveNodeSet,
+TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex,  const ForwardIndex * forwardIndex, PrefixActiveNodeSet *prefixActiveNodeSet,
                                  Term *term, float prefixMatchPenalty, float shouldIterateToLeafNodesAndScoreOfTopRecord )
 {
     this->invertedIndex = invertedIndex;
+    this->invertedIndex->getInvertedIndexDirectory_ReadView(this->invertedListDirectoryReadView);
+    this->invertedIndex->getInvertedIndexKeywordIds_ReadView(this->invertedIndexKeywordIdsReadView);
+    forwardIndex->getForwardListDirectory_ReadView(this->forwardIndexDirectoryReadView);
     this->prefixActiveNodeSet = prefixActiveNodeSet;
     this->term = term;
     this->prefixMatchPenalty = prefixMatchPenalty;
@@ -190,7 +201,8 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiv
                 	this->maxScoreForBitSetCase = runTimeScoreOfThisLeafNode;
                 }
                 unsigned invertedListId = leafNode->getInvertedListOffset();
-                this->invertedIndex->getInvertedListReadView(invertedListId, invertedListReadView);
+                this->invertedIndex->getInvertedListReadView(this->invertedListDirectoryReadView,
+                		invertedListId, invertedListReadView);
                 // loop the inverted list to add it to the Bitset
                 for (unsigned invertedListCounter = 0; invertedListCounter < invertedListReadView->size(); invertedListCounter++) {
                     // We compute the union of these bitsets. We increment the number of bits only if the previous bit was 0.
@@ -392,13 +404,17 @@ bool TermVirtualList::getNext(HeapItemForIndexSearcher *returnHeapItem)
 
                 unsigned recordId = currentHeapMaxInvertedList->getElement(currentHeapMaxCursor);
                 // calculate record offset online
-                unsigned recordOffset = this->invertedIndex->getKeywordOffset(recordId, currentHeapMaxInvertetedListId);
+                unsigned recordOffset = this->invertedIndex->getKeywordOffset(this->forwardIndexDirectoryReadView,
+                		this->invertedIndexKeywordIdsReadView,
+                		recordId, currentHeapMaxInvertetedListId);
                 unsigned termAttributeBitmap = 0;
                 currentHeapMaxCursor++;
 
                 // check isValidTermPositionHit
                 float termRecordStaticScore = 0;
-                if (this->invertedIndex->isValidTermPositionHit(recordId, recordOffset,
+                if (this->invertedIndex->isValidTermPositionHit(forwardIndexDirectoryReadView,
+                		recordId,
+                		recordOffset,
                         term->getAttributeToFilterTermHits(), termAttributeBitmap,
                         termRecordStaticScore)) {
                     foundValidHit = 1;

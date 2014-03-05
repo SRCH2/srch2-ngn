@@ -64,7 +64,7 @@ string LogicalPlanNode::toString(){
 
 string LogicalPlanNode::getSubtreeUniqueString(){
 
-	string result = toString();
+	string result = this->toString();
 	for(unsigned childOffset = 0 ; childOffset < this->children.size() ; ++childOffset){
 		ASSERT(this->children.at(childOffset) != NULL);
 		result += this->children.at(childOffset)->getSubtreeUniqueString();

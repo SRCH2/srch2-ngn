@@ -18,6 +18,10 @@ MergeByShortestListOperator::~MergeByShortestListOperator(){
 bool MergeByShortestListOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
 	this->queryEvaluator = queryEvaluator;
 
+	if(queryEvaluator != NULL){ // Only for mergeByShortestList test case queryEvaluator can be NULL
+		queryEvaluator->getForwardIndex()->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
+	}
+
 	// prepare the cache key
 	string key;
 	// "true" means we want to ignore the last leaf node
@@ -66,7 +70,7 @@ bool MergeByShortestListOperator::open(QueryEvaluatorInternal * queryEvaluator, 
 
 		// get candidate lists from cache
 		for(unsigned candidateOffset = 0 ; candidateOffset < mergeShortestCacheEntry->candidatesList.size() ; ++candidateOffset){
-			candidateListFromCache.push_back(queryEvaluator->getPhysicalPlanRecordItemFactory()->
+			candidateListFromCache.push_back(queryEvaluator->getPhysicalPlanRecordItemPool()->
 								clone(mergeShortestCacheEntry->candidatesList.at(candidateOffset)));
 		}
 	}else{
@@ -264,7 +268,8 @@ bool MergeByShortestListOperator::verifyRecordWithChildren(PhysicalPlanRecordIte
 			 * We should verify this record with all children (except for the shortest list one) and if all of them
 			 * pass, then we should copy the verification info.
 			 */
-			PhysicalPlanRandomAccessVerificationParameters parameters(params.ranker);
+			PhysicalPlanRandomAccessVerificationParameters parameters(params.ranker,
+					this->forwardListDirectoryReadView);
 			parameters.recordToVerify = recordItem;
 			parameters.isFuzzy = params.isFuzzy;
 			parameters.prefixMatchPenalty = params.prefixMatchPenalty;
@@ -298,10 +303,6 @@ bool MergeByShortestListOperator::verifyRecordWithChildren(PhysicalPlanRecordIte
 PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
 
 	PhysicalPlanCost resultCost;
-	resultCost.addInstructionCost(3 + this->getChildrenCount()); // 3 + number of open calls
-	resultCost.addSmallFunctionCost(); // clear()
-	resultCost.addFunctionCallCost(2 + this->getChildrenCount()); // 2 + number of open calls
-
 	// cost of opening children
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
 		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfOpen(params);
@@ -313,46 +314,136 @@ PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfOpen(const Ph
 // when the cost of parent is being calculated.
 PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
 	/*
-	 * If shortest list has 10 records, and the estimated number of results for this AND
-	 * is 5, it means 2 records are processed in average per getNext(...)
-	 * So, the cost of getNext is
-	 * (estimated length of shortest list / estimated number of results of this and) * ( child's getNextCost + sum of verification costs + O(1) ) + O(1)
+	 * Theory :
+	 *
+	 * Constants and notation:
+	 * T = number of terms
+	 * N = total number of records
+	 * P[] = array of probabilities of terms (length of list i mentioned as li = P[i] * N)
+	 * R = estimated number of results = P[0]*...*P[T-1]*N
+	 * Scn[] = array of scan cost values of children (Scn[i] is the scan cost of child i)
+	 * Rnd[] = array of random access cost values of children (Rnd[i] is the random access cost of child i)
+	 * S = index of shortest list among children
+	 *
+	 *
+	 * Cost calculation:
+	 * cost_candidates = R * (Scn[S] + Rnd[0] + ... + Rnd[S-1] + Rnd[S+1] + ... + Rnd[T-1])
+	 *
+	 * COST_NC = (1-P[0])Rnd[0] +
+	 *             P[0]*(1-P[1])*(Rnd[0] + Rnd[1]) +
+	 *             P[0]*P[1]*(1-P[2])*(Rnd[0] + Rnd[1 + Rnd[2]]) +
+	 *             ... +
+	 *             P[0]*...*P[T-2]*(1-P[T-1])*(Rnd[0] + ... + Rnd[T-1])
+	 *             - ( P[0] * P[1] * ... * P[S-1] * (1 - P[S]) * (Rnd[0] + ... + Rnd[S]) )
+	 *             + Scn[S]  // for this formula, we set P[S] = 1 temporary
+	 *                       // because when record comes from P[S] we don't check
+	 *                       // child S for random access so we always pass it
+	 *
+	 * cost_noncandidates = (l[S] - R) * COST_NC
+	 * cost = (cost_candidates + cost_noncandidates) / R ;
 	 */
-	unsigned indexOfShortestList = getShortestListOffsetInChildren();
-	unsigned estimatedLengthOfShortestList = this->getChildAt(indexOfShortestList)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
-	unsigned estimatedNumberOfResults = this->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
-	if(estimatedNumberOfResults == 0){
-		estimatedNumberOfResults = 1;
-	}
-	// initialize record processing cost by cost of child's get next
-	PhysicalPlanCost recordProcessingCost = this->getChildAt(indexOfShortestList)->getCostOfGetNext(params);
-	// cost of verification on other children
+
+	/*
+	 * Theory :
+	 *
+	 * Constants and notation:
+	 * T = number of terms
+	 */
+	unsigned T = this->getChildrenCount();
+	 /*
+	  * N = total number of records
+	  */
+	unsigned N = params.totalNumberOfRecords;
+	 /*
+	  * P[] = array of probabilities of terms (length of list i mentioned as li = P[i] * N)
+	  */
+	unsigned S = getShortestListOffsetInChildren(); // keeps index of the shortest child
+
+	unsigned estimatedLengthOfShortestList =
+			this->getChildAt(S)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
+
+
+	vector<float> P;
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
-		if(childOffset == indexOfShortestList){
-			continue;
-		}
-		recordProcessingCost = recordProcessingCost +
-				this->getChildAt(childOffset)->getCostOfVerifyByRandomAccess(params);
+		P.push_back(this->getChildAt(childOffset)->getLogicalPlanNode()->stats->getEstimatedProbability());
 	}
-	recordProcessingCost.addMediumFunctionCost(); // cost of verify record with children
-	recordProcessingCost.addFunctionCallCost(15); // function calls
-	recordProcessingCost.addInstructionCost(4); // simple instructions and conditions
-	recordProcessingCost.addSmallFunctionCost(5); // small functions like push_back
+	 /*
+	 * R = estimated number of results = P[0]*...*P[T-1]*N
+	 */
+	unsigned R = this->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
+	if(R == 0){
+		R = 1;
+	}
+	 /*
+	 *
+	 * Scn[] = array of scan cost values of children (Scn[i] is the scan cost of child i)
+	 * Rnd[] = array of random access cost values of children (Rnd[i] is the random access cost of child i)
+	 *
+	 */
+	vector<double> Scn;
+	vector<double> Rnd;
+	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
+		Scn.push_back(this->getChildAt(childOffset)->getCostOfGetNext(params).cost);
+		Rnd.push_back(this->getChildAt(childOffset)->getCostOfVerifyByRandomAccess(params).cost);
+//		Scn.push_back(1);
+//		Rnd.push_back(3);
+	}
 
+	double SigmaRnd = 0;
+	for(unsigned c = 0 ; c < T ; c++){
+		SigmaRnd += Rnd[c];
+	}
+	 /*
+	 * S = index of shortest list among children
+	 */
+	 /*
+	 * Cost calculation:
+	 * cost_candidates = R * (Scn[S] + Rnd[0] + ... + Rnd[S-1] + Rnd[S+1] + ... + Rnd[T-1])
+	 *
+	 */
+	 double cost_candidates = R * (Scn[S] + SigmaRnd - Rnd[S]);
+	/*
+	 * COST_NC = (1-P[0])Rnd[0] +
+	 *             P[0]*(1-P[1])*(Rnd[0] + Rnd[1]) +
+	 *             P[0]*P[1]*(1-P[2])*(Rnd[0] + Rnd[1 + Rnd[2]]) +
+	 *             ... +
+	 *             P[0]*...*P[T-2]*(1-P[T-1])*(Rnd[0] + ... + Rnd[T-1])
+	 *             - ( P[0] * P[1] * ... * P[S-1] * (1 - P[S]) * (Rnd[0] + ... + Rnd[S]) )
+	 *             + Scn[S]  // for this formula, we set P[S] = 1 temporary
+	 *                       // because when record comes from P[S] we don't check
+	 *                       // child S for random access so we always pass it
+	 */
+	 double COST_NC = 0;
+	 float PSBackup = P[S];
+	 P[S] = 1;
+	 float PPart = 1;
+	 unsigned RndPart = 0;
+	 for(unsigned d = 0; d < P.size(); ++d){
+		 RndPart += Rnd[d];
+		 if(d != S){
+			 COST_NC += PPart * (1 - P[d]) * RndPart;
+		 }
+		 PPart *= P[d];
+	 }
+	 COST_NC += Scn[S];
+	 //
+	 P[S] = PSBackup;
+	 /*
+	 * cost_noncandidates = (l[S] - R) * COST_NC
+	 */
+	 double cost_noncandidates = (estimatedLengthOfShortestList - R) * COST_NC;
+	 /*
+	 * cost = (cost_candidates + cost_noncandidates) / R ;
+	 */
+	 PhysicalPlanCost resultCost ;
+	 resultCost.cost = (cost_candidates + cost_noncandidates) / R ;
 
-	recordProcessingCost.cost = (unsigned)( recordProcessingCost.cost * ( (estimatedLengthOfShortestList * 1.0) / (estimatedNumberOfResults) ));
-	// we assume results are distributed normally in the shortest list
+	 return resultCost;
 
-
-	return recordProcessingCost;
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.
 PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
 	PhysicalPlanCost resultCost;
-	resultCost.addInstructionCost(3 + this->getChildrenCount()); // 3 + number of open calls
-	resultCost.addSmallFunctionCost(); // clear()
-	resultCost.addFunctionCallCost(2 + 4 * this->getChildrenCount()); // 2 + number of open calls
-
 	// cost of closing children
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
 		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfClose(params);
@@ -363,8 +454,6 @@ PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfClose(const P
 PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
 
 	PhysicalPlanCost resultCost;
-	resultCost.addFunctionCallCost(2);
-	resultCost.addSmallFunctionCost();
 
 	// cost of opening children
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){

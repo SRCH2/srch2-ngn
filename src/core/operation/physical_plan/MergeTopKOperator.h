@@ -68,7 +68,7 @@ public:
 							bool listsHaveMoreRecordsInThem,
 							unsigned childRoundRobinOffset){
 		for(unsigned i = 0; i < candidatesList.size() ; ++i){
-			this->candidatesList.push_back(queryEvaluator->getPhysicalPlanRecordItemFactory()->
+			this->candidatesList.push_back(queryEvaluator->getPhysicalPlanRecordItemPool()->
 					cloneForCache(candidatesList.at(i)));
 		}
 
@@ -76,7 +76,7 @@ public:
 			if(nextItemsFromChildren.at(i) == NULL){
 				this->nextItemsFromChildren.push_back(NULL);
 			}else{
-				this->nextItemsFromChildren.push_back(queryEvaluator->getPhysicalPlanRecordItemFactory()->
+				this->nextItemsFromChildren.push_back(queryEvaluator->getPhysicalPlanRecordItemPool()->
 						cloneForCache(nextItemsFromChildren.at(i)));
 			}
 		}
@@ -144,6 +144,8 @@ public:
 private:
 
 	QueryEvaluatorInternal * queryEvaluator;
+
+	shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
 
 	/* this vector always contains the next record coming out of children
 	* this means each record first goes to this vector and then it can be used

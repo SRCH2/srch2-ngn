@@ -3,6 +3,7 @@
 #include "MergeTopKOperator.h"
 #include "operation/QueryEvaluatorInternal.h"
 #include "PhysicalOperatorsHelper.h"
+#include <cmath>
 
 namespace srch2 {
 namespace instantsearch {
@@ -18,6 +19,10 @@ MergeTopKOperator::~MergeTopKOperator(){
 bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
 
 	this->queryEvaluator = queryEvaluator;
+
+	if(this->queryEvaluator != NULL){ // only for mergeTopK ctest queryEvaluator can be NULL
+		queryEvaluator->getForwardIndex()->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
+	}
 
 	/*
 	 * 0. Cache:
@@ -76,7 +81,8 @@ bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPl
 				// now check the result with the new keyword and if it's a match, append new info to
 				// these vectors.
 				for(unsigned childOffset = mergeTopKCacheEntry->children.size(); childOffset < numberOfChildren; ++childOffset){
-					PhysicalPlanRandomAccessVerificationParameters parameters(params.ranker);
+					PhysicalPlanRandomAccessVerificationParameters parameters(params.ranker,
+							this->forwardListDirectoryReadView);
 					parameters.recordToVerify = mergeTopKCacheEntry->candidatesList.at(i);
 					parameters.isFuzzy = params.isFuzzy;
 					parameters.prefixMatchPenalty = params.prefixMatchPenalty;
@@ -114,7 +120,7 @@ bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPl
 
 			}
 
-			candidatesList.push_back(queryEvaluator->getPhysicalPlanRecordItemFactory()->
+			candidatesList.push_back(queryEvaluator->getPhysicalPlanRecordItemPool()->
 					clone(mergeTopKCacheEntry->candidatesList.at(i)));
 			fullCandidatesListForCache.push_back(candidatesList.at(candidatesList.size()-1));
 		}
@@ -123,7 +129,7 @@ bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPl
 			if(mergeTopKCacheEntry->nextItemsFromChildren.at(i) == NULL){
 				nextItemsFromChildren.push_back(NULL);
 			}else{
-				nextItemsFromChildren.push_back(queryEvaluator->getPhysicalPlanRecordItemFactory()->
+				nextItemsFromChildren.push_back(queryEvaluator->getPhysicalPlanRecordItemPool()->
 						clone(mergeTopKCacheEntry->nextItemsFromChildren.at(i)));
 			}
 		}
@@ -299,7 +305,6 @@ bool MergeTopKOperator::close(PhysicalPlanExecutionParameters & params){
 		childrenCacheEntries.push_back(params.cacheObject);
 		params.cacheObject = NULL;
 	}
-
 	// cache
 	//1. cache stuff of children is returned through params
 	//2. prepare key
@@ -394,7 +399,8 @@ bool MergeTopKOperator::verifyRecordWithChildren(PhysicalPlanRecordItem * record
 			recordItem->getTermTypes(recTermTypes);
 			termTypes.insert(termTypes.end(),recTermTypes.begin(),recTermTypes.end());
 		}else{
-			PhysicalPlanRandomAccessVerificationParameters parameters(params.ranker);
+			PhysicalPlanRandomAccessVerificationParameters parameters(params.ranker,
+					this->forwardListDirectoryReadView);
 			parameters.recordToVerify = recordItem;
 			parameters.isFuzzy = params.isFuzzy;
 			parameters.prefixMatchPenalty = params.prefixMatchPenalty;
@@ -452,9 +458,6 @@ void MergeTopKOperator::initializeNextItemsFromChildren(PhysicalPlanExecutionPar
 PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
 
 	PhysicalPlanCost resultCost;
-	resultCost.addInstructionCost(2 + 2 * this->getChildrenCount()); // 2 + number of open calls + number of getNext calls
-	resultCost.addSmallFunctionCost(2); // clear()
-	resultCost.addFunctionCallCost(8 * this->getChildrenCount()); // 4 * (  number of open calls + number of getNext calls
 
 	// cost of opening children
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
@@ -472,61 +475,350 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfOpen(const PhysicalPlan
 // when the cost of parent is being calculated.
 PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
 	/*
-	 * ***** cost =
-	 *  costOfVisitingOneRecord * estimatedNumberOfRecordsToVisitForOneCandidate * estimatedNumberOfCandidatesToFindForTop1
+	 * Theory :
+	 * Constants and notation:
+	 * T = number of terms
+	 * N = total number of records in the data
+	 * K = number of top results to find (we calculate the score for K and then divide the result by K)
+	 * M = cursor value after termination (it means M records from each list are read)
+	 * P[] = the probability array of children (P[i]*N = estimated length of child i)
+	 * R = estimated total number of results from these children (R ~= P[0] * ... P[T-1] * N )
+	 * Li = the name we use to mention list of child i, i.e. P(Li) = P[i]
+	 * Qi = the name of the top portion of list Li that has M records in it,
+	 * 					 i.e. Qi is a subset of Li, P(Qi) = M/N
+	 * U(A,B) = A|B = the union of lists A and B
+	 * I(A,B) = A^B = the intersection of lists A and B, i.e. I(Li) is the intersection of all L1 to LT-1
 	 *
-	 * that :
-	 * costOfVisitingOneRecord = 1 getNext + (X-1) verifications , i.e. that X is the number of children
-	 * NOTE: since getNext cost is different for different children, we use the average. So :
-	 * ***** costOfVisitingOneRecord =
-	 *       SUM [1<=i<=X]( getNext(i) + SUM[1<=j<=X,j != i](verify(j))) / X
-	 * ***** estimatedNumberOfRecordsToVisitForOneCandidate =
-	 *       SUM[1<=i<=X](length(i)) / estimatedTotalNumberOfCandidates
-	 * ***** estimatedNumberOfCandidatesToFindForTop1 = This value depends on scores, for now we assume it's 10
-	 * So :
-	 * ******* cost =
-	 * 				( ( SUM [1<=i<=X]( getNext(i) + SUM[1<=j<=X,j != i](verify(j))) / X ) + O(1) ) *
-	 * 				( (SUM[1<=i<=X](length(i)) / estimatedTotalNumberOfCandidates) + O(1) ) *
-	 * 				10
+	 * Scn[i] = cost of scanning one record from child i
+	 * Ran[i] = cost of doing random access for a record on child i
+	 *
+	 *
+	 * How to calculate this cost :
+	 *
+	 * If min(|Li|) < K, // it means we will finish the shortest list anyways
+	 *     M = min(|Li|)
+	 *
+	 * CN: total number of candidate records visited until cursor = M
+	 * CN = |U(Qi)| * P( I(Li) | U(Qi) )
+	 * (records which are in the intersection of all lists with the condition that they come from
+	 * the top M records of a list)
+	 * P( I(Li) | U(Qi) ) = P( I(Li) ^ U(Qi) ) / P( U(Qi) )                                        (1)
+	 * I(Li) ^ U(Qi) = (L1 ^ ... ^ Lt-1) ^ (Q1 | ... | Qt-1) =
+	 *                 (Q1 ^ L2 ^ L3 ^ ... ^ Lt-1) | .... | (L1 ^ L2 ^ ... ^ Lt-2 ^ Qt-1)
+	 * (using the fact that Qi is a subset of Li and pushing intersection into union)
+	 *
+	 * now if we define Xi = P(L1 ^ L2 ^ ... ^ Li-1 ^ Qi ^ Li+1 ^ ... ^ Lt-1) =
+	 * 						 P[0] * P[1] * ... * P[i-1] * M/N * P[i+1] * ... P[t-1]
+	 * then P( I(Li) ^ U(Qi) ) = JointProbability(X0, X1, ..., XT)                                 (2)
+	 * and we know  P( U(Qi) ) = JointProbability(P(Q0), ..., P(Qt-1)) =
+	 * 							 JointProbability(M/N, M/N, ..., M/N)  = 1 - (1 - M/N)^T           (3)
+	 * so from (1), (2) and (3) :
+	 * P( I(Li) | U(Qi) ) = JointProbability(X0, X1, ..., XT) / (1 - (1 - M/N)^T)                  (4)
+	 * and therefore CN = |U(Qi)| * (4) = N * JointProbability(X0, X1, ..., XT)
+	 *
+	 * NCN = total number of non-candidate records visited until cursor is M
+	 * NCN = |U(Qi)| - CN
+	 * using (3) :
+	 * NCN = N * (1 - (1 - M/N)^T) - CN                                                            (5)
+	 *
+	 *
+	 * Computing Costs :
+	 *
+	 * C-CAN[i] =
+	 * 		the cost of visiting one record from child i when we know the record is a
+	 * 		candidate and all forward index verifications return true
+	 * C-CAN[i] = Scn[i] + 	Ran[0] + Ran[1] + ... + Ran[i-1] + Ran[i+1] + ... + Ran[T-1]
+	 * P-CAN[i] = probability that a record from child i is a candidate  =
+	 * 			  R / |Li| = (P[0] * ... * P[T-1] * N ) / (P[i] * N) =
+	 * 			  P[0] * ... P[i-1] * P[i+1] * ... P[T-1]                                           (6)
+	 * NormP-CAN[i] = probability that a candidate record is from child i =
+	 * 			   P-CAN[i] / (P-CAN[0] + ... + P-CAN[T-1])
+	 * CAN[i] = number of visited candidates from child i =
+	 *          total number of visited candidates * NormP-CAN[i]
+	 *          CN * NormP-CAN[i]
+	 *
+	 * Cost_candidates = cost of visiting all candidate records =
+	 *          C-CAN[0] * CAN[0] + .... + C-CAN[T-1] * CAN[T-1]
+	 *
+	 * C-NCAN[i] =
+	 *      the cost of visiting one record from child i when we know the record is not
+	 *      a candidate and at least one of the random access verifications will fail.
+	 *
+	 * C-NCAN[i] = (1-P[0])Rnd[0] +
+	 *             P[0]*(1-P[1])*(Rnd[0] + Rnd[1]) +
+	 *             P[0]*P[1]*(1-P[2])*(Rnd[0] + Rnd[1 + Rnd[2]]) +
+	 *             ... +
+	 *             P[0]*...*P[T-2]*(1-P[T-1])*(Rnd[0] + ... + Rnd[T-1])
+	 *             - ( P[0] * P[1] * ... * P[i-1] * (1 - P[i]) * (Rnd[0] + ... + Rnd[i]) )
+	 *             + Scn[i]  // for this formula, we set P[i] = 1 temporary
+	 *                       // because when record comes from P[i] we don't check
+	 *                       // child i for random access so we always pass it
+	 * P-NCAN[i] = probability that a record from child i is not a candidate  =
+	 *             1 - P-CAN[i] = 1 - (6)
+	 * NormP-NCAN[i] = probability that a non-candidate record is from child i =
+	 *             P-NCAN[i] / (P-NCAN[0] + ... + P-NCAN[T-1])
+	 * NCAN[i] = number of visited non-candidates from child i =
+	 *           total number of visited non-candidate records * NormP-NCAN[i] =
+	 *           NCN * NormP-NCAN[i]
+	 *
+	 * Cost_noncandidates = cost of visiting all non-candidate records =
+	 *         C-NCAN[0] * NCAN[0] + ... + C-NCAN[T-1] * NCAN[T-1]
+	 *
+	 * cost = (Cost_candidates + Cost_noncandidates) / K
+	 *
+	 * ----
+	 *
+	 * But we don't know about M (the cursor value at the end) yet. so we cannot actually
+	 * compute the value of costs using this formula. To solve this problem, we should
+	 * note that if K+1 results are present in all top-M portions of lists (all Qis) then
+	 * we can prove that the score of these K+1 records must be higher than the max combined
+	 * score of unvisited records, which means early termination should have happened earlier
+	 * and it's a contradiction. Therefore, the maximum size of intersection of all top-M
+	 * parts is no more than K. So
+	 * |I( Qi )| <= K                                                      -->
+	 *                               |Q0 ^ ... ^ Qt-1| <= K                -->
+	 *                               N * (M/N * M/N * M/N ... * M/N) <= K  -->
+	 *                               M^T / (N^(T-1)) <= K                  -->
+	 *                               M <= (K * N^(T-1))^1/T                                         (7)
+	 *
+	 * so (7) gives the upper bound of M and using this upper bound we can find the upper-bound for cost.
+	 *
+	 *
 	 */
-	double costOfVisitingOneRecord = 0;
-	for(unsigned childOffset = 0 ; childOffset < this->getChildrenCount() ; ++childOffset){
-		costOfVisitingOneRecord = costOfVisitingOneRecord + this->getChildAt(childOffset)->getCostOfGetNext(params).cost;
-		for(unsigned childOffset2 = 0 ; childOffset2 != this->getChildrenCount() ; ++childOffset2){
-			if(childOffset == childOffset2){
-				continue;
+
+
+	/*
+	 * Constants and notation:
+	 * T = number of terms
+	 */
+	unsigned T = this->getChildrenCount();
+	 /*
+	  * N = total number of records in the data
+	  */
+	unsigned N = params.totalNumberOfRecords;
+	 /*
+	  * R = estimated total number of results from these children (R ~= P[0] * ... P[T-1] * N )
+	  */
+	unsigned R = this->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
+
+	 /*
+	  *
+	  * K = number of top results to find (we calculate the score for K and then divide the result by K)
+	  */
+	unsigned K = R/2;
+	if(K == 0){
+		K = 1;
+	}
+	 /*
+	  * M = cursor value after termination (it means M records from each list is read)
+	  *   = (K * N^(T-1))^1/T   (Read the last part of the comment in the beginning of this function)
+	  */
+	unsigned M = (unsigned)pow(K * pow((double)N, (double)T-1), 1.0 / T);
+	 /*
+	  * P[] = the probability array of children (P[i]*N = estimated length of child i)
+	  */
+	vector<float> P;
+	unsigned estimatedLengthOfShortestList = -1; // -1 is a very big number
+	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
+		P.push_back(this->getChildAt(childOffset)->getLogicalPlanNode()->stats->getEstimatedProbability());
+//		cout << unsigned(P[P.size()-1]*N) << "\t";
+		if(estimatedLengthOfShortestList >
+				this->getChildAt(childOffset)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults()){
+			estimatedLengthOfShortestList =
+					this->getChildAt(childOffset)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
+		}
+	}
+
+	 /* Li = the name we use to mention list of child i, i.e. P(Li) = P[i]
+	 * Qi = the name of the top portion of list Li that has M records in it,
+	 * 					 i.e. Qi is a subset of Li, P(Qi) = M/N
+	 * U(A,B) = A|B = the union of lists A and B
+	 * I(A,B) = A^B = the intersection of lists A and B, i.e. I(Li) is the intersection of all L1 to LT-1
+	 *
+	 * Scn[i] = cost of scanning one record from child i
+	 * Rnd[i] = cost of doing random access for a record on child i
+	 */
+	vector<double> Scn;
+	vector<double> Rnd;
+	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
+		Scn.push_back(this->getChildAt(childOffset)->getCostOfGetNext(params).cost);
+		Rnd.push_back(this->getChildAt(childOffset)->getCostOfVerifyByRandomAccess(params).cost);
+	}
+
+	 /*
+	 * How to calculate this cost :
+	 *
+	 * If min(|Li|) < K, // it means we will finish the shortest list anyways
+	 *	M = min(|Li|)
+	 */
+	if(R <= K || M > estimatedLengthOfShortestList){
+		M = estimatedLengthOfShortestList;
+	}
+	 /*
+	 * CN: total number of candidate records visited until cursor = M
+	 * CN = |U(Qi)| * P( I(Li) | U(Qi) )
+	 * (records which are in the intersection of all lists with the condition that they come from
+	 * the top M records of a list)
+	 * P( I(Li) | U(Qi) ) = P( I(Li) ^ U(Qi) ) / P( U(Qi) )                                        (1)
+	 * I(Li) ^ U(Qi) = (L1 ^ ... ^ Lt-1) ^ (Q1 | ... | Qt-1) =
+	 *                 (Q1 ^ L2 ^ L3 ^ ... ^ Lt-1) | .... | (L1 ^ L2 ^ ... ^ Lt-2 ^ Qt-1)
+	 * (using the fact that Qi is a subset of Li and pushing intersection into union)
+	 *
+	 * now if we define Xi = P(L1 ^ L2 ^ ... ^ Li-1 ^ Qi ^ Li+1 ^ ... ^ Lt-1) =
+	 * 						 P[0] * P[1] * ... * P[i-1] * M/N * P[i+1] * ... P[t-1]
+	 */
+	vector<float> X;
+	float PiP = 1; // multiplication of all probabilities
+	for(unsigned c = 0 ; c < P.size() ; ++c){
+		PiP *= P[c];
+	}
+	for(unsigned c = 0 ; c < P.size() ; ++c){
+		X.push_back(((PiP / P[c]) * M) / N);
+	}
+	 /*
+	  * then P( I(Li) ^ U(Qi) ) = JointProbability(X0, X1, ..., XT)                                 (2)
+	  */
+	float JointProb_X = 0;
+	for(unsigned c = 0; c < P.size(); ++c){
+		JointProb_X = JointProb_X + X[c] - JointProb_X * X[c];
+	}
+	 /* and we know  P( U(Qi) ) = JointProbability(P(Q0), ..., P(Qt-1)) =
+	 * 							 JointProbability(M/N, M/N, ..., M/N)  = 1 - (1 - M/N)^T           (3)
+	 * so from (1), (2) and (3) :
+	 * P( I(Li) | U(Qi) ) = JointProbability(X0, X1, ..., XT) / (1 - (1 - M/N)^T)                  (4)
+	 * and therefore CN = |U(Qi)| * (4) = N * JointProbability(X0, X1, ..., XT)
+	 */
+	float JointProb_Q = 1 - pow(1-(M*1.0/N) , (double)T);
+	unsigned CN = N * JointProb_X ;
+	 /* NCN = total number of non-candidate records visited until cursor is M
+	 * NCN = |U(Qi)| - CN
+	 * using (3) :
+	 * NCN = N * (1 - (1 - M/N)^T) - CN                                                            (5)
+	 */
+	unsigned NCN = N *JointProb_Q - CN;
+	 /*
+	 * Computing Costs :
+	 *
+	 * C-CAN[i] =
+	 * 		the cost of visiting one record from child i when we know the record is a
+	 * 		candidate and all forward index verifications return true
+	 * C-CAN[i] = Scn[i] + 	Rnd[0] + Rnd[1] + ... + Rnd[i-1] + Rnd[i+1] + ... + Rnd[T-1]
+	 */
+	double SigmaRnd = 0;
+	for(unsigned c = 0; c < P.size(); ++c){
+		SigmaRnd += Rnd[c];
+	}
+	vector<double> C_CAN;
+	for(unsigned c = 0; c < P.size(); ++c){
+		C_CAN.push_back(SigmaRnd - Rnd[c] + Scn[c]);
+	}
+	 /* P-CAN[i] = probability that a record from child i is a candidate  =
+	 * 			  R / |Li| = (P[0] * ... * P[T-1] * N ) / (P[i] * N) =
+	 * 			  P[0] * ... P[i-1] * P[i+1] * ... P[T-1]                                           (6)
+	 */
+	vector<float> P_CAN;
+	float SigmaP_CAN = 0;
+	for(unsigned c = 0; c < P.size(); ++c){
+		P_CAN.push_back(PiP / P[c]);
+		SigmaP_CAN += P_CAN[P_CAN.size()-1];
+	}
+	 /* NormP-CAN[i] = probability that a candidate record is from child i =
+	 * 			   P-CAN[i] / (P-CAN[0] + ... + P-CAN[T-1])
+	 */
+	vector<float> NormP_CAN;
+	for(unsigned c = 0; c < P.size(); ++c){
+		NormP_CAN.push_back(P_CAN[c] / SigmaP_CAN);
+	}
+	 /* CAN[i] = number of visited candidates from child i =
+	 *          total number of visited candidates * NormP-CAN[i]
+	 *          CN * NormP-CAN[i]
+	 */
+	vector<unsigned> CAN;
+	for(unsigned c = 0; c < P.size(); ++c){
+		CAN.push_back(CN * NormP_CAN[c]);
+	}
+	 /* Cost_candidates = cost of visiting all candidate records =
+	 *          C-CAN[0] * CAN[0] + .... + C-CAN[T-1] * CAN[T-1]
+	 */
+	double cost_candidates = 0;
+	for(unsigned c = 0; c < P.size(); ++c){
+		cost_candidates += C_CAN[c] * CAN[c];
+	}
+	 /* C-NCAN[i] =
+	 *      the cost of visiting one record from child i when we know the record is not
+	 *      a candidate and at least one of the random access verifications will fail.
+	 *
+	 * C-NCAN[i] = (1-P[0])Rnd[0] +
+	 *             P[0]*(1-P[1])*(Rnd[0] + Rnd[1]) +
+	 *             P[0]*P[1]*(1-P[2])*(Rnd[0] + Rnd[1 + Rnd[2]]) +
+	 *             ... +
+	 *             P[0]*...*P[T-2]*(1-P[T-1])*(Rnd[0] + ... + Rnd[T-1])
+	 *             - ( P[0] * P[1] * ... * P[i-1] * (1 - P[i]) * (Rnd[0] + ... + Rnd[i]) )
+	 *             + Scn[i]  // for this formula, we set P[i] = 1 temporary
+	 *                       // because when record comes from P[i] we don't check
+	 *                       // child i for random access so we always pass it
+	 */
+	vector<double> C_NCAN;
+	for(unsigned c = 0; c < P.size(); ++c){
+		double C_NCAN_c = 0;
+		float PcBackup = P[c];
+		P[c] = 1;
+		float PPart = 1;
+		unsigned RndPart = 0;
+		for(unsigned d = 0; d < P.size(); ++d){
+			RndPart += Rnd[d];
+			if(d != c){
+				C_NCAN_c += PPart * (1 - P[d]) * RndPart;
 			}
-			costOfVisitingOneRecord = costOfVisitingOneRecord + this->getChildAt(childOffset2)->getCostOfVerifyByRandomAccess(params).cost;
+			PPart *= P[d];
 		}
+		C_NCAN_c += Scn[c];
+		C_NCAN.push_back(C_NCAN_c);
+		//
+		P[c] = PcBackup;
 	}
-	ASSERT(this->getChildrenCount() != 0);
-	costOfVisitingOneRecord = costOfVisitingOneRecord / this->getChildrenCount();
-
-	unsigned minOfChildrenLenghts =  this->getChildAt(0)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
-	for(unsigned childOffset = 1 ; childOffset < this->getChildrenCount() ; ++childOffset){
-		if(minOfChildrenLenghts > this->getChildAt(childOffset)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults()){
-			minOfChildrenLenghts = this->getChildAt(childOffset)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
-		}
+	 /* P-NCAN[i] = probability that a record from child i is not a candidate  =
+	 *             1 - P-CAN[i] = 1 - (6)
+	 */
+	vector<float> P_NCAN;
+	float SigmaP_NCAN = 0 ;
+	for(unsigned c = 0; c < P.size(); ++c){
+		P_NCAN.push_back(1 - PiP / P[c]);
+		SigmaP_NCAN += P_NCAN[P_NCAN.size()-1];
 	}
-
-	unsigned estimatedTotalNumberOfCandidates = this->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
-	double estimatedNumberOfRecordsToVisitForOneCandidate = ((minOfChildrenLenghts * 1.0) / (estimatedTotalNumberOfCandidates + 1)) *
-			this->getChildrenCount();
-	estimatedNumberOfRecordsToVisitForOneCandidate *= 10;
+	 /* NormP-NCAN[i] = probability that a non-candidate record is from child i =
+	 *             P-NCAN[i] / (P-NCAN[0] + ... + P-NCAN[T-1])
+	 */
+	vector<float> NormP_NCAN;
+	for(unsigned c = 0; c < P.size(); ++c){
+		NormP_NCAN.push_back(P_NCAN[c] / SigmaP_NCAN);
+	}
+	 /* NCAN[i] = number of visited non-candidates from child i =
+	 *           total number of visited non-candidate records * NormP-NCAN[i] =
+	 *           NCN * NormP-NCAN[i]
+	 */
+	vector<unsigned> NCAN;
+	for(unsigned c = 0; c < P.size(); ++c){
+		NCAN.push_back(NCN * NormP_NCAN[c]);
+	}
+	 /* Cost_noncandidates = cost of visiting all non-candidate records =
+	 *         C-NCAN[0] * NCAN[0] + ... + C-NCAN[T-1] * NCAN[T-1]
+	 */
+	double cost_noncandidates = 0;
+	for(unsigned c = 0; c < P.size(); ++c){
+		cost_noncandidates += C_NCAN[c] * NCAN[c];
+	}
+	 /* cost = (Cost_candidates + Cost_noncandidates) / K
+	 *
+	 */
 	PhysicalPlanCost resultCost;
-	resultCost = resultCost + (unsigned )( ( costOfVisitingOneRecord + 1 ) * estimatedNumberOfRecordsToVisitForOneCandidate );
-
-
-	resultCost.addMediumFunctionCost(); // finding the records
+	resultCost.cost = (cost_candidates + cost_noncandidates) / K;
 	return resultCost;
 
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.
 PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
 	PhysicalPlanCost resultCost;
-	resultCost.addInstructionCost(2 + this->getChildrenCount()); // 3 + number of open calls
-	resultCost.addSmallFunctionCost(3); // clear()
-	resultCost.addFunctionCallCost(4 * this->getChildrenCount()); // 2 + number of open calls
 
 	// cost of closing children
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
@@ -537,7 +829,6 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfClose(const PhysicalPla
 }
 PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
 	PhysicalPlanCost resultCost;
-	resultCost.addSmallFunctionCost();
 
 	// cost of opening children
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){

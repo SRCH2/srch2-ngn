@@ -26,12 +26,16 @@ bool UnionLowestLevelTermVirtualListOperator::open(QueryEvaluatorInternal * quer
 	Term * term = logicalPlanNode->getTerm(params.isFuzzy);
 
 	this->invertedIndex = queryEvaluator->getInvertedIndex();
+    this->invertedIndex->getInvertedIndexDirectory_ReadView(invertedListDirectoryReadView);
+    this->invertedIndex->getInvertedIndexKeywordIds_ReadView(invertedIndexKeywordIdsReadView);
+    this->queryEvaluator->getForwardIndex()->getForwardListDirectory_ReadView(forwardIndexDirectoryReadView);
     this->prefixActiveNodeSet = logicalPlanNode->stats->getActiveNodeSetForEstimation(params.isFuzzy);
     this->term = term;
     this->prefixMatchPenalty = params.prefixMatchPenalty;
     this->numberOfItemsInPartialHeap = 0;
     this->currentMaxEditDistanceOnHeap = 0;
     this->currentRecordID = -1;
+
     if (this->getTermType() == TERM_TYPE_PREFIX) { //case 1: Term is prefix
         LeafNodeSetIterator iter(prefixActiveNodeSet.get(), term->getThreshold());
         cursorVector.reserve(iter.size());
@@ -64,7 +68,6 @@ bool UnionLowestLevelTermVirtualListOperator::open(QueryEvaluatorInternal * quer
             depthInitializeTermVirtualListElement(trieNode, editDistance, panDistance, term->getThreshold());
         }
     }
-
 
     // check cache
     parentIsCacheEnabled = params.parentIsCacheEnabled;
@@ -105,7 +108,7 @@ PhysicalPlanRecordItem * UnionLowestLevelTermVirtualListOperator::getNext(const 
         		UnionLowestLevelTermVirtualListOperator::UnionLowestLevelTermVirtualListOperatorHeapItemCmp());
 
         // allocate new item and fill it out
-        PhysicalPlanRecordItem * newItem = this->queryEvaluator->getPhysicalPlanRecordItemFactory()->createRecordItem();
+        PhysicalPlanRecordItem * newItem = this->queryEvaluator->getPhysicalPlanRecordItemPool()->createRecordItem();
         newItem->setRecordId(currentHeapMax->recordId);
         newItem->setRecordRuntimeScore(currentHeapMax->termRecordRuntimeScore);
         vector<TrieNodePointer> prefixes;
@@ -136,13 +139,18 @@ PhysicalPlanRecordItem * UnionLowestLevelTermVirtualListOperator::getNext(const 
 
             unsigned recordId = currentHeapMaxInvertedList->getElement(currentHeapMaxCursor);
             // calculate record offset online
-            unsigned recordOffset = this->invertedIndex->getKeywordOffset(recordId, currentHeapMaxInvertetedListId);
+            unsigned recordOffset = this->invertedIndex->getKeywordOffset(
+            		this->forwardIndexDirectoryReadView,
+            		this->invertedIndexKeywordIdsReadView,
+            		recordId, currentHeapMaxInvertetedListId);
             unsigned termAttributeBitmap = 0;
             currentHeapMaxCursor++;
 
             // check isValidTermPositionHit
             float termRecordStaticScore = 0;
-            if (this->invertedIndex->isValidTermPositionHit(recordId, recordOffset,
+            if (this->invertedIndex->isValidTermPositionHit(forwardIndexDirectoryReadView,
+            		recordId,
+            		recordOffset,
                     term->getAttributeToFilterTermHits(), termAttributeBitmap,
                     termRecordStaticScore)) {
                 foundValidHit = 1;
@@ -230,12 +238,7 @@ PhysicalPlanCost UnionLowestLevelTermVirtualListOptimizationOperator::getCostOfO
 	// cost of going over leaf nodes and making the heap
 	unsigned estimatedNumberOfTerminalNodes = this->getLogicalPlanNode()->stats->getEstimatedNumberOfLeafNodes();
 	PhysicalPlanCost resultCost;
-	resultCost.addFunctionCallCost(3);
-	resultCost.addInstructionCost(3 + 3 * estimatedNumberOfTerminalNodes);
-	resultCost.addSmallFunctionCost(estimatedNumberOfTerminalNodes);
-	// make_heap
-	resultCost.addFunctionCallCost();
-	resultCost.addSmallFunctionCost(estimatedNumberOfTerminalNodes);
+	resultCost.cost = estimatedNumberOfTerminalNodes;
 	return resultCost ; // cost of going over leaf nodes.
 
 }
@@ -244,23 +247,22 @@ PhysicalPlanCost UnionLowestLevelTermVirtualListOptimizationOperator::getCostOfO
 PhysicalPlanCost UnionLowestLevelTermVirtualListOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params) {
 	unsigned estimatedNumberOfTerminalNodes = this->getLogicalPlanNode()->stats->getEstimatedNumberOfLeafNodes();
 	PhysicalPlanCost resultCost;
-	resultCost.addLargeFunctionCost();
-	resultCost.addSmallFunctionCost((unsigned)(log2((double)estimatedNumberOfTerminalNodes)));
+	resultCost.cost = log2((double)estimatedNumberOfTerminalNodes + 1);
+	resultCost.cost = resultCost.cost * 0.1;
 	return resultCost; // cost of sequential access
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.
 PhysicalPlanCost UnionLowestLevelTermVirtualListOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
 	unsigned estimatedNumberOfTerminalNodes = this->getLogicalPlanNode()->stats->getEstimatedNumberOfLeafNodes();
 	PhysicalPlanCost resultCost;
-	resultCost.addInstructionCost(2 + estimatedNumberOfTerminalNodes);
-	resultCost.addSmallFunctionCost(3);
+	resultCost.cost = estimatedNumberOfTerminalNodes;
 	return resultCost; // cost of deleting heap items
 }
 PhysicalPlanCost UnionLowestLevelTermVirtualListOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
-	unsigned estimatedNumberOfTerminalNodes = this->getLogicalPlanNode()->stats->getEstimatedNumberOfLeafNodes();
+	unsigned estimatedNumberOfActiveNodes =
+			this->getLogicalPlanNode()->stats->getActiveNodeSetForEstimation(params.isFuzzy)->getNumberOfActiveNodes();
 	PhysicalPlanCost resultCost;
-	resultCost.addFunctionCallCost(5);
-	resultCost.addSmallFunctionCost(estimatedNumberOfTerminalNodes);
+	resultCost.cost = estimatedNumberOfActiveNodes * log2(200.0);
 	return resultCost;
 }
 void UnionLowestLevelTermVirtualListOptimizationOperator::getOutputProperties(IteratorProperties & prop){
@@ -289,17 +291,21 @@ void UnionLowestLevelTermVirtualListOperator::initialiseTermVirtualListElement(T
     unsigned invertedListCounter = 0;
 
     shared_ptr<vectorview<unsigned> > invertedListReadView;
-    this->invertedIndex->getInvertedListReadView(invertedListId, invertedListReadView);
+    this->invertedIndex->getInvertedListReadView(invertedListDirectoryReadView,
+    		invertedListId, invertedListReadView);
     unsigned recordId = invertedListReadView->getElement(invertedListCounter);
     // calculate record offset online
-    unsigned recordOffset = this->invertedIndex->getKeywordOffset(recordId, invertedListId);
+    unsigned recordOffset = this->invertedIndex->getKeywordOffset(this->forwardIndexDirectoryReadView,
+    		this->invertedIndexKeywordIdsReadView, recordId, invertedListId);
     ++ invertedListCounter;
 
     bool foundValidHit = 0;
     float termRecordStaticScore = 0;
     unsigned termAttributeBitmap = 0;
     while (1) {
-        if (this->invertedIndex->isValidTermPositionHit(recordId, recordOffset,
+        if (this->invertedIndex->isValidTermPositionHit(forwardIndexDirectoryReadView,
+        		recordId,
+        		recordOffset,
                 term->getAttributeToFilterTermHits(), termAttributeBitmap,
                 termRecordStaticScore) ) {
             foundValidHit = 1;
@@ -309,7 +315,8 @@ void UnionLowestLevelTermVirtualListOperator::initialiseTermVirtualListElement(T
         if (invertedListCounter < invertedListReadView->size()) {
             recordId = invertedListReadView->getElement(invertedListCounter);
             // calculate record offset online
-            recordOffset = this->invertedIndex->getKeywordOffset(recordId, invertedListId);
+            recordOffset = this->invertedIndex->getKeywordOffset(this->forwardIndexDirectoryReadView,
+            		this->invertedIndexKeywordIdsReadView, recordId, invertedListId);
             ++invertedListCounter;
         } else {
             break;

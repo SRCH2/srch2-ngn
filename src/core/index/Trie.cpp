@@ -28,6 +28,7 @@
 using srch2::util::Logger;
 // we need to include inverted index in here to get information about list frequencies to do query suggestions
 #include "index/InvertedIndex.h"
+#include "index/ForwardIndex.h"
 
 namespace srch2
 {
@@ -1263,35 +1264,47 @@ void Trie::reassignKeywordIds(map<TrieNode *, unsigned> &trieNodeIdMapper)
 }
 
 
-void Trie::calculateNodeHistogramValuesFromChildren(const InvertedIndex * invertedIndex , const unsigned totalNumberOfRecords){
+void Trie::calculateNodeHistogramValuesFromChildren(const InvertedIndex * invertedIndex ,
+		const ForwardIndex * forwardIndex ,
+		const unsigned totalNumberOfRecords){
     boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
     this->getTrieRootNode_ReadView(trieRootNode_ReadView);
     TrieNode *root = trieRootNode_ReadView->root;
     if(root == NULL){
     	return;
     }
-    calculateNodeHistogramValuesFromChildren(root, invertedIndex , totalNumberOfRecords);
+    calculateNodeHistogramValuesFromChildren(root, invertedIndex  , forwardIndex, totalNumberOfRecords);
 }
 
-void Trie::calculateNodeHistogramValuesFromChildren(TrieNode *node, const InvertedIndex * invertedIndex , const unsigned totalNumberOfRecords){
+void Trie::calculateNodeHistogramValuesFromChildren(TrieNode *node,
+		const InvertedIndex * invertedIndex ,
+		const ForwardIndex * forwardIndex ,
+		const unsigned totalNumberOfRecords){
     if(node == NULL){
     	return;
     }
     // first iterate on children an calculate this value for them
     for(unsigned childIterator = 0; childIterator < node->getChildrenCount() ; childIterator ++){
-    	calculateNodeHistogramValuesFromChildren(node->getChild(childIterator) , invertedIndex , totalNumberOfRecords);
+    	calculateNodeHistogramValuesFromChildren(node->getChild(childIterator) , invertedIndex , forwardIndex, totalNumberOfRecords);
     }
 
     // now we should initialize the value of this node
     if(node->isTerminalNode()){
     	// this case means this node is a terminal node
     	// NOTE: this node can still have children because internal nodes in this trie can also be terminal nodes.
-    	if(invertedIndex == NULL){ // this case happens in M1
+    	if(invertedIndex == NULL || forwardIndex == NULL){ // this case happens in M1
             // if inverted index is null, nodeSubTrieValue is actually the frequency of leaf nodes.
             node->initializeInternalNodeHistogramValues(HistogramAggregationTypeSummation, 1);
     	}else{ // this is the case of A1
+    		shared_ptr<vectorview<InvertedListContainerPtr> > invertedListDirectoryReadView;
+    		invertedIndex->getInvertedIndexDirectory_ReadView(invertedListDirectoryReadView);
+    	    shared_ptr<vectorview<ForwardListPtr> > forwardIndexDirectoryReadView;
+    	    forwardIndex->getForwardListDirectory_ReadView(forwardIndexDirectoryReadView);
+    	    shared_ptr<vectorview<unsigned> > invertedIndexKeywordIdsReadView;
+    	    invertedIndex->getInvertedIndexKeywordIds_ReadView(invertedIndexKeywordIdsReadView);
 			shared_ptr<vectorview<unsigned> > invertedListReadView;
-			invertedIndex->getInvertedListReadView(node->getInvertedListOffset(), invertedListReadView);
+			invertedIndex->getInvertedListReadView(invertedListDirectoryReadView,
+					node->getInvertedListOffset(), invertedListReadView);
 
 			float termRecordStaticScore = 0;
 			unsigned termAttributeBitmap = 0;
@@ -1299,8 +1312,10 @@ void Trie::calculateNodeHistogramValuesFromChildren(TrieNode *node, const Invert
 			unsigned invertedListCursor = 0;
 			while(invertedListCursor < invertedListReadView->size()){
 				unsigned recordId = invertedListReadView->getElement(invertedListCursor++);
-				unsigned recordOffset = invertedIndex->getKeywordOffset(recordId, node->getInvertedListOffset());
-				if (invertedIndex->isValidTermPositionHit(recordId, recordOffset,
+				unsigned recordOffset = invertedIndex->getKeywordOffset(forwardIndexDirectoryReadView,
+						invertedIndexKeywordIdsReadView, recordId, node->getInvertedListOffset());
+				if (invertedIndex->isValidTermPositionHit(forwardIndexDirectoryReadView, recordId,
+						recordOffset,
 						0x7fffffff,  termAttributeBitmap, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
 					break;
 				}
@@ -1445,13 +1460,15 @@ void Trie::printTrieNodeSubTrieValues(std::vector<CharType> & prefix , TrieNode 
 }
 
 
-void Trie::merge(const InvertedIndex * invertedIndex , const unsigned totalNumberOfRecords  , bool updateHistogram)
+void Trie::merge(const InvertedIndex * invertedIndex ,
+		const ForwardIndex * forwardIndex ,
+		const unsigned totalNumberOfRecords  , bool updateHistogram)
 {
 
 	// if it's the time for updating histogram (because we don't do it for all merges, it's for example every 10 merges)
 	// then update the histogram information in Trie.
 	if(updateHistogram == true){
-		this->calculateNodeHistogramValuesFromChildren(invertedIndex , totalNumberOfRecords);
+		this->calculateNodeHistogramValuesFromChildren(invertedIndex , forwardIndex , totalNumberOfRecords);
 	}
     // In each merge, we first put the current read view to the end of the queue,
     // and reset the current read view. Then we go through the read views one by one
@@ -1505,9 +1522,11 @@ void Trie::commit()
     this->commitSubTrie(this->root_readview.get()->root, finalKeywordIdCounter, sparsityFactor);
 }
 
-void Trie::finalCommit_finalizeHistogramInformation(const InvertedIndex * invertedIndex , const unsigned totalNumberOfResults ){
+void Trie::finalCommit_finalizeHistogramInformation(const InvertedIndex * invertedIndex ,
+		const ForwardIndex * forwardIndex,
+		const unsigned totalNumberOfResults ){
 	// traverse the trie in preorder to calculate nodeSubTrieValue
-	calculateNodeHistogramValuesFromChildren(invertedIndex , totalNumberOfResults);
+	calculateNodeHistogramValuesFromChildren(invertedIndex , forwardIndex , totalNumberOfResults);
 	// now set the commit flag to true to indicate commit is finished
     this->commited = true;
 }

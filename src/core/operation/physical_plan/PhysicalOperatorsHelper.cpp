@@ -19,10 +19,6 @@ namespace instantsearch {
 bool verifyByRandomAccessHelper(QueryEvaluatorInternal * queryEvaluator, PrefixActiveNodeSet *prefixActiveNodeSet, Term * term, PhysicalPlanRandomAccessVerificationParameters & parameters){
 	unsigned termSearchableAttributeIdToFilterTermHits = term->getAttributeToFilterTermHits();
 	// assume the iterator returns the ActiveNodes in the increasing order based on edit distance
-	bool valid = false;
-	const ForwardList* fl =
-			queryEvaluator->getForwardIndex()->getForwardList(parameters.recordToVerify->getRecordId(), valid);
-	if(valid == false) return false;
 
 	for (ActiveNodeSetIterator iter(prefixActiveNodeSet, term->getThreshold());
 			!iter.isDone(); iter.next()) {
@@ -42,8 +38,8 @@ bool verifyByRandomAccessHelper(QueryEvaluatorInternal * queryEvaluator, PrefixA
 		unsigned matchingKeywordId;
 		float termRecordStaticScore;
 		unsigned termAttributeBitmap;
-		if (queryEvaluator->getForwardIndex()->haveWordInRange(parameters.recordToVerify->getRecordId(),
-				fl,
+		if (queryEvaluator->getForwardIndex()->haveWordInRange(parameters.forwardListDirectoryReadView,
+				parameters.recordToVerify->getRecordId(),
 				minId, maxId,
 				termSearchableAttributeIdToFilterTermHits,
 				matchingKeywordId, termAttributeBitmap, termRecordStaticScore)) {
