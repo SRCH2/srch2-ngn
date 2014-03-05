@@ -14,6 +14,8 @@
 #include "boost/unordered_map.hpp"
 #include "boost/unordered_set.hpp"
 #include "index/Trie.h"
+#include "boost/shared_ptr.hpp"
+#include "util/cowvector/cowvector.h"
 
 using namespace std;
 
@@ -132,6 +134,8 @@ private:
 
 class Indexer;
 class ForwardIndex;
+class ForwardList;
+typedef std::pair<ForwardList*, bool> ForwardListPtr;
 
 class TermOffsetAlgorithm : public HighlightAlgorithm {
 	struct CandidateKeywordInfo{
@@ -158,6 +162,7 @@ private:
 			vector<CandidateKeywordInfo>& completeKeywordsId,
 			const unsigned *keywordIdsPtr, unsigned keywordsInRec);
 	ForwardIndex* fwdIndex;
+	boost::shared_ptr<vectorview<ForwardListPtr> > readView;
 	boost::unordered_map<unsigned, vector<CandidateKeywordInfo>* > cache;
 };
 

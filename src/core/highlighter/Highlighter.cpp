@@ -620,6 +620,8 @@ TermOffsetAlgorithm::TermOffsetAlgorithm (const Indexer * indexer,
 
 	const IndexReaderWriter* rwIndexer =  dynamic_cast<const IndexReaderWriter *>(indexer);
 	fwdIndex = rwIndexer->getForwardIndex();
+	fwdIndex->getForwardListDirectory_ReadView(readView);
+
 }
 
 
@@ -708,7 +710,7 @@ void TermOffsetAlgorithm::getSnippet(const QueryResults* qr, unsigned recidx, un
 		return;
 	unsigned recordId = qr->getInternalRecordId(recidx);
 	bool valid = false;
-	const ForwardList * fwdList = fwdIndex->getForwardList(recordId, valid);
+	const ForwardList * fwdList = fwdIndex->getForwardList(readView, recordId, valid);
 	if (!valid) {
 		Logger::error("Invalid forward list for record id = %d", recordId);
 		return;
