@@ -12,12 +12,12 @@
 #include <vector>
 #include <iostream>
 #include "utf8.h"
-
+#include <instantsearch/Constants.h>
 using std::string;
 using std::vector;
 using std::ostream;
 
-typedef unsigned CharType;
+using namespace srch2::instantsearch;
 
 //This is the upper bound of the characters, on which we do fuzzy search
 const unsigned int CHARTYPE_FUZZY_UPPERBOUND = 128;
