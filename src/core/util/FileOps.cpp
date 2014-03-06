@@ -26,6 +26,11 @@ bool checkDirExistence(const char *dirName)
 int createDir(const char *pathName)
 {
     char dirName[PATH_MAX];
+
+    if (pathName[0] == '\000') {
+        Logger::error("Null directory path - cannot create");
+        return -1;
+    }
     strncpy(dirName, pathName, PATH_MAX-1);
     unsigned len = strlen(dirName);
     if (dirName[len-1]!='/')

@@ -10,8 +10,27 @@
   https://bitbucket.org/srch2inc/srch2-ngn/pull-request/251/analyzer-changes/diff#chg-release_files/docs/configuration.mkd
   . It's not included in release 4.2 since it's not fully tested.
 
+* Introduced a new postprocessing step to dynamically boost ranking of results
+  based the attribute which keyword matches fall in.
+  See the doc change at 
+
+ https://bitbucket.org/srch2inc/srch2-ngn/pull-request/263/support-for-solr-qf-boosting/diff#chg-release_files/docs/ranking.html 
+
+  for more details
+
 * Strip leading and trailing whitespace from configuration file values that are directory paths or filenames.
 
 * Implemented batch insert and batch update.
 
 * Added support of a new Refining date format YYYY-MM-DD
+
+* Support multiple cores for different data sources, all running within a single web server process.
+  See Section 13 in the Configuration chapter of the SRCH2 Manual for more details.
+
+* Support boolean expressions in queries. 
+
+* Improved query performance
+
+* Implemented incremental caching for instant search.
+
+* Support for operations on different ports.

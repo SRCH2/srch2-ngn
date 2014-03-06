@@ -51,8 +51,7 @@ public:
 	 * Sets sharedToken.
 	 */
 	SynonymFilter(TokenStream *tokenStream,
-			const string &synonymFilterFilePath,
-			const SynonymKeepOriginFlag &synonymKeepOriginFlag);
+                      const SynonymContainer *synonymContainer);
 
 	/*
 	 * IncrementToken() is a virtual function of class TokenOperator.
@@ -88,7 +87,7 @@ private:
 	 * returns the row of the map which has input as its key
 	 * returns NULL if there is no such a key
 	 */
-	pair<SynonymTokenType, std::string> getValuePairOf(const std::string &key);
+	pair<SynonymTokenType, std::string> getValuePairOf(const std::string &key) const;
 
 
 	/*
@@ -100,8 +99,7 @@ private:
 	 */
 	void emitCurrentToken();
 
-	SynonymContainer& synonymContainer;
-
+	const SynonymContainer *synonymContainer;
 };
 
 }}

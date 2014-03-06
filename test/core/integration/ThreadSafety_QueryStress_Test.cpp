@@ -19,7 +19,7 @@
 
 #include <instantsearch/Analyzer.h>
 #include "operation/IndexerInternal.h"
-#include <instantsearch/IndexSearcher.h>
+#include <instantsearch/QueryEvaluator.h>
 #include <instantsearch/Query.h>
 #include <instantsearch/Term.h>
 #include <instantsearch/Schema.h>
@@ -58,7 +58,7 @@ typedef struct
 
 struct IndexerDataContainer {
     Indexer *indexer;
-    Cache *cache;
+    CacheManager *cache;
     const Analyzer *analyzer;
     std::vector<std::string> queryFile;
 };
@@ -78,19 +78,20 @@ void queryStressTest(double &time)
     struct timespec tend;
 
     // create an index searcher
-    //srch2is::Cache *cache = new srch2is::Cache();
-    IndexSearcher *indexSearcher = IndexSearcher::create(indexerDataContainer.indexer);
+    //srch2is::CacheManager *cache = new srch2is::CacheManager();
+    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(indexerDataContainer.indexer, &runtimeParameters);
 
     clock_gettime(CLOCK_REALTIME, &tstart);
     for( vector<string>::iterator vectIter = indexerDataContainer.queryFile.begin(); vectIter!= indexerDataContainer.queryFile.end(); vectIter++ )
     {
-        pingDummyStressTest(indexerDataContainer.analyzer, indexSearcher,*vectIter);//,resultCount,0);
+        pingDummyStressTest(indexerDataContainer.analyzer, queryEvaluator,*vectIter);//,resultCount,0);
     }
 
     clock_gettime(CLOCK_REALTIME, &tend);
     double ts2 = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
 
-    delete indexSearcher;
+    delete queryEvaluator;
 
     time = ts2;
     //cout << "Executed " << file.size() << "queries in " << ts2 << " milliseconds." << endl;
@@ -184,11 +185,11 @@ int main(int argc, char *argv[])
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
-    indexerDataContainer.cache = new srch2is::Cache(134217728,20000); // 134217728 bytes = 1GB
+    indexerDataContainer.cache = new srch2is::CacheManager(134217728); // 134217728 bytes = 1GB
     IndexMetaData *indexMetaData1 = new IndexMetaData( indexerDataContainer.cache,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
     indexerDataContainer.indexer = Indexer::load(indexMetaData1);
     indexerDataContainer.analyzer = getAnalyzer();
 

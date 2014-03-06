@@ -12,14 +12,16 @@ class ChineseAnalyzer: public AnalyzerInternal{
 public:
     // We do not need the English stemmer for the Chinese analyzer
     ChineseAnalyzer(const std::string &dictFile,
-            const std::string &recordAllowedSpecialCharacters = "",
-            const std::string &stopWordFilePath = "",
-            const std::string &synonymFilePath = "",
-            const SynonymKeepOriginFlag &synonymKeepOriginFlag = SYNONYM_KEEP_ORIGIN
-            ); 
+                    const StopWordContainer *stopWords,
+                    const ProtectedWordsContainer *protectedWords,
+                    const SynonymContainer *synonyms,
+                    const std::string &delimiters);
     ChineseAnalyzer(const ChineseAnalyzer &analyzer);
 
     TokenStream *createOperatorFlow();
+
+    AnalyzerType getAnalyzerType() const;
+
 private:
     const std::string mDictFilePath;
 };

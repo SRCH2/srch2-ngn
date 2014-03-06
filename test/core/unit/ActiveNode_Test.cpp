@@ -20,7 +20,6 @@
 #include "index/Trie.h"
 #include "operation/ActiveNode.h"
 #include "util/Assert.h"
-
 #include <iostream>
 #include <functional>
 #include <vector>
@@ -124,7 +123,7 @@ Trie *constructTrie()
     trie->addKeyword(getCharTypeVector("cat"), invertedIndexOffset);
     trie->addKeyword(getCharTypeVector("dog"), invertedIndexOffset);
     trie->commit();
-    trie->finalCommit_finalizeHistogramInformation(NULL , 0);
+    trie->finalCommit_finalizeHistogramInformation(NULL, NULL , 0);
 
     return trie;
 }
@@ -140,11 +139,12 @@ void testPrefixActiveNodeSet()
 {
     Trie *trie = constructTrie();
 
-    PrefixActiveNodeSet *prefixActiveNodeSet, *newPrefixActiveNodeSet;
+    boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
+    boost::shared_ptr<PrefixActiveNodeSet> newPrefixActiveNodeSet;
     vector<string> similarPrefixes;
 
     // case 1: an empty string of exact matching
-    prefixActiveNodeSet = new PrefixActiveNodeSet(trie, 0);
+    prefixActiveNodeSet.reset(new PrefixActiveNodeSet(trie, 0));
     ASSERT(prefixActiveNodeSet->getPrefixUtf8String() == "");
 
     prefixActiveNodeSet->getComputedSimilarPrefixes(trie, similarPrefixes);
@@ -159,12 +159,8 @@ void testPrefixActiveNodeSet()
     ASSERT(checkContainment(similarPrefixes, "c"));
     similarPrefixes.clear();
 
-    delete prefixActiveNodeSet;
-    delete newPrefixActiveNodeSet;
-
-
     // case 2: an empty string with an edit distance 1
-    prefixActiveNodeSet= new PrefixActiveNodeSet(trie, 1);
+    prefixActiveNodeSet.reset(new PrefixActiveNodeSet(trie, 1));
     prefixActiveNodeSet->getComputedSimilarPrefixes(trie, similarPrefixes);
 
     ASSERT(similarPrefixes.size() == 1);
@@ -185,13 +181,10 @@ void testPrefixActiveNodeSet()
     //ASSERT(checkContainment(similarPrefixes, "ca"));
     similarPrefixes.clear();
 
-    delete prefixActiveNodeSet;
-    delete newPrefixActiveNodeSet;
-
 
 
     // case 3: an empty string with an edit distance 2
-    prefixActiveNodeSet= new PrefixActiveNodeSet(trie, 2);
+    prefixActiveNodeSet.reset(new PrefixActiveNodeSet(trie, 2));
     prefixActiveNodeSet->getComputedSimilarPrefixes(trie, similarPrefixes);
 
     ASSERT(similarPrefixes.size() == 1);
@@ -216,12 +209,9 @@ void testPrefixActiveNodeSet()
     //ASSERT(checkContainment(similarPrefixes, "do"));
     similarPrefixes.clear();
 
-    delete prefixActiveNodeSet;
-    delete newPrefixActiveNodeSet;
-
 
     // case 4: an empty string with an edit distance 3
-    prefixActiveNodeSet= new PrefixActiveNodeSet(trie, 3);
+    prefixActiveNodeSet.reset(new PrefixActiveNodeSet(trie, 3));
     prefixActiveNodeSet->getComputedSimilarPrefixes(trie, similarPrefixes);
     ASSERT(similarPrefixes.size() == 1);
     ASSERT(checkContainment(similarPrefixes, ""));
@@ -250,17 +240,13 @@ void testPrefixActiveNodeSet()
     //ASSERT(checkContainment(similarPrefixes, "dog"));
     similarPrefixes.clear();
 
-    delete prefixActiveNodeSet;
-    delete newPrefixActiveNodeSet;
-
-
 
     // case 5.1: try a longer string. start with an empty string with an edit distance 1 and deletion
-    prefixActiveNodeSet = new PrefixActiveNodeSet(trie, 1);
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('a'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('e'); delete prefixActiveNodeSet;
+    prefixActiveNodeSet.reset(new PrefixActiveNodeSet(trie, 1));
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('a'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('e');
     //ASSERT(*(newPrefixActiveNodeSet->getPrefix()) == "cace");
 
 
@@ -269,15 +255,13 @@ void testPrefixActiveNodeSet()
     ASSERT(checkContainment(similarPrefixes, "cance"));
     similarPrefixes.clear();
 
-    delete newPrefixActiveNodeSet;
-
 
     // case 5.2: try a longer string. start with an empty string with an edit distance 1 and substitution
-    prefixActiveNodeSet = new PrefixActiveNodeSet(trie, 1);
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('e'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('n'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c'); delete prefixActiveNodeSet;
+    prefixActiveNodeSet.reset(new PrefixActiveNodeSet(trie, 1));
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('e'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('n'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c');
     //ASSERT(*(newPrefixActiveNodeSet->getPrefix()) == "cace");
 
 
@@ -285,16 +269,14 @@ void testPrefixActiveNodeSet()
     ASSERT(similarPrefixes.size() == 1);
     ASSERT(checkContainment(similarPrefixes, "canc"));
     similarPrefixes.clear();
-
-    delete newPrefixActiveNodeSet;
 
     // case 5.3: try a longer string. start with an empty string with an edit distance 1 and insertion
-    prefixActiveNodeSet = new PrefixActiveNodeSet(trie, 1);
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('a'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('n'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('n'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c'); delete prefixActiveNodeSet;
+    prefixActiveNodeSet.reset(new PrefixActiveNodeSet(trie, 1));
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('a'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('n'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('n'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c');
     //ASSERT(*(newPrefixActiveNodeSet->getPrefix()) == "cace");
 
 
@@ -303,14 +285,12 @@ void testPrefixActiveNodeSet()
     ASSERT(checkContainment(similarPrefixes, "canc"));
     similarPrefixes.clear();
 
-    delete newPrefixActiveNodeSet;
-
     // case 5.4: try a longer string. start with an empty string with an edit distance 1 and matching correctly
-    prefixActiveNodeSet = new PrefixActiveNodeSet(trie, 1);
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('a'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('n'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c'); delete prefixActiveNodeSet;
+    prefixActiveNodeSet.reset(new PrefixActiveNodeSet(trie, 1));
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('a'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('n'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c');
     //ASSERT(*(newPrefixActiveNodeSet->getPrefix()) == "cace");
 
 
@@ -320,13 +300,11 @@ void testPrefixActiveNodeSet()
     ASSERT(checkContainment(similarPrefixes, "can"));
     similarPrefixes.clear();
 
-    delete newPrefixActiveNodeSet;
-
     // case 6.1: try a longer string. start with an empty string with an edit distance 2 and deletion
-    prefixActiveNodeSet = new PrefixActiveNodeSet(trie, 2);
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('n'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('e'); delete prefixActiveNodeSet;
+    prefixActiveNodeSet.reset(new PrefixActiveNodeSet(trie, 2));
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('n'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('e');
     //ASSERT(*(newPrefixActiveNodeSet->getPrefix()) == "nce");
 
     newPrefixActiveNodeSet->getComputedSimilarPrefixes(trie, similarPrefixes);
@@ -336,15 +314,13 @@ void testPrefixActiveNodeSet()
     ASSERT(checkContainment(similarPrefixes, "cance"));
     similarPrefixes.clear();
 
-    delete newPrefixActiveNodeSet;
-
     // case 6.2: try a longer string. start with an empty string with an edit distance 2 and substitution
-    prefixActiveNodeSet = new PrefixActiveNodeSet(trie, 2);
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('k'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('a'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('n'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('k'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('e'); delete prefixActiveNodeSet;
+    prefixActiveNodeSet.reset(new PrefixActiveNodeSet(trie, 2));
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('k'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('a'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('n'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('k'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('e');
     //ASSERT(*(newPrefixActiveNodeSet->getPrefix()) == "nce");
 
     newPrefixActiveNodeSet->getComputedSimilarPrefixes(trie, similarPrefixes);
@@ -355,17 +331,15 @@ void testPrefixActiveNodeSet()
     ASSERT(checkContainment(similarPrefixes, "cante"));
     similarPrefixes.clear();
 
-    delete newPrefixActiveNodeSet;
-
     // case 6.3: try a longer string. start with an empty string with an edit distance 2 and insertion
-    prefixActiveNodeSet = new PrefixActiveNodeSet(trie, 2);
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('a'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('n'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('n'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('e'); delete prefixActiveNodeSet;
+    prefixActiveNodeSet.reset(new PrefixActiveNodeSet(trie, 2));
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('a'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('n'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('n'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('e');
     //ASSERT(*(newPrefixActiveNodeSet->getPrefix()) == "nce");
 
     newPrefixActiveNodeSet->getComputedSimilarPrefixes(trie, similarPrefixes);
@@ -375,15 +349,13 @@ void testPrefixActiveNodeSet()
     ASSERT(checkContainment(similarPrefixes, "cance"));
     similarPrefixes.clear();
 
-    delete newPrefixActiveNodeSet;
-
     // case 6.4: try a longer string. start with an empty string with an edit distance 2 and exactly matching
-    prefixActiveNodeSet = new PrefixActiveNodeSet(trie, 2);
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('a'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('n'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('e'); delete prefixActiveNodeSet;
+    prefixActiveNodeSet.reset(new PrefixActiveNodeSet(trie, 2));
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('a'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('n'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('e');
     //ASSERT(*(newPrefixActiveNodeSet->getPrefix()) == "nce");
 
     newPrefixActiveNodeSet->getComputedSimilarPrefixes(trie, similarPrefixes);
@@ -394,8 +366,6 @@ void testPrefixActiveNodeSet()
     ASSERT(checkContainment(similarPrefixes, "cante"));
     ASSERT(checkContainment(similarPrefixes, "cantee"));
     similarPrefixes.clear();
-
-    delete newPrefixActiveNodeSet;
 
     // finally, we can delete the trie
     delete trie;
@@ -415,7 +385,7 @@ Trie *constructNoFuzzyTrie()
     trie->addKeyword(getCharTypeVector("ㄕㄢ"), invertedIndexOffset);
 
     trie->commit();
-    trie->finalCommit_finalizeHistogramInformation(NULL , 0);
+    trie->finalCommit_finalizeHistogramInformation(NULL , NULL, 0);
 
     return trie;
 }
@@ -425,19 +395,21 @@ void testNoFuzzyPrefixActiveNodeSet()
 
         Trie *trie = constructNoFuzzyTrie();
 
-        PrefixActiveNodeSet *prefixActiveNodeSet = NULL, *newPrefixActiveNodeSet = NULL;
+        boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
+        boost::shared_ptr<PrefixActiveNodeSet> newPrefixActiveNodeSet;
         vector<string> similarPrefixes;
 
-        prefixActiveNodeSet = new PrefixActiveNodeSet(trie, 2);
+        prefixActiveNodeSet.reset(new PrefixActiveNodeSet(trie, 2));
         vector<CharType> charTypeVector = getCharTypeVector("ㄉㄨㄥ");
-        for(unsigned i = 0; i < charTypeVector.size(); i++)
-                newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally(charTypeVector[i]); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
+        for(unsigned i = 0; i < charTypeVector.size(); i++){
+			newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally(charTypeVector[i]);
+			prefixActiveNodeSet = newPrefixActiveNodeSet;
+
+        }
 
         prefixActiveNodeSet->getComputedSimilarPrefixes(trie, similarPrefixes);
         ASSERT(similarPrefixes.size() == 1);
         ASSERT(checkContainment(similarPrefixes, "ㄉㄨㄥ"));
-
-        delete newPrefixActiveNodeSet;
 
         // finally, we can delete the trie
         delete trie;
@@ -447,18 +419,19 @@ void testPrefixIterators()
 {
     Trie *trie = constructTrie();
     vector<std::pair<string, unsigned> > stringDistanceVector;
-    PrefixActiveNodeSet *prefixActiveNodeSet, *newPrefixActiveNodeSet;
+    boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
+    boost::shared_ptr<PrefixActiveNodeSet> newPrefixActiveNodeSet;
 
-    prefixActiveNodeSet = new PrefixActiveNodeSet(trie, 2);
+    prefixActiveNodeSet.reset(new PrefixActiveNodeSet(trie, 2));
 
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('n'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('e'); delete prefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('n'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('e');
     ASSERT(newPrefixActiveNodeSet->getPrefixUtf8String() == "nce");
 
     stringDistanceVector.clear();
     // test ActiveNodeSetIterator (with the edit distance bound "2")
-    for (ActiveNodeSetIterator iter(newPrefixActiveNodeSet, 2); !iter.isDone(); iter.next())
+    for (ActiveNodeSetIterator iter(newPrefixActiveNodeSet.get(), 2); !iter.isDone(); iter.next())
     {
         const TrieNode *trieNode;
         unsigned distance;
@@ -478,7 +451,7 @@ void testPrefixIterators()
 
     // test LeafNodeSetIterator
     vector<LeafIteratorResultItem> leafIteratorResultVector;
-    for (LeafNodeSetIterator lnsi(newPrefixActiveNodeSet, 2); !lnsi.isDone(); lnsi.next()) {
+    for (LeafNodeSetIterator lnsi(newPrefixActiveNodeSet.get(), 2); !lnsi.isDone(); lnsi.next()) {
         const TrieNode *prefixNode;
         const TrieNode *leafNode;
         unsigned distance;
@@ -506,7 +479,6 @@ void testPrefixIterators()
     ASSERT(checkContainment(leafIteratorResultVector, "c", "canteen", 2));
     leafIteratorResultVector.clear();
 
-    delete newPrefixActiveNodeSet;
     delete trie;
 }
 
@@ -516,18 +488,20 @@ void testPrefixIteratorsWithRanges()
     Trie *trie = constructTrie();
 
     vector<std::pair<string, unsigned> > stringDistanceVector;
-    PrefixActiveNodeSet *prefixActiveNodeSet, *newPrefixActiveNodeSet;
+    boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
+    boost::shared_ptr<PrefixActiveNodeSet> newPrefixActiveNodeSet;
 
-    prefixActiveNodeSet = new PrefixActiveNodeSet(trie, 2);
+    prefixActiveNodeSet.reset(new PrefixActiveNodeSet(trie, 2));
 
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('a'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('n'); delete prefixActiveNodeSet;
+
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('a'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('n');
     ASSERT(newPrefixActiveNodeSet->getPrefixUtf8String() == "can");
 
     stringDistanceVector.clear();
     // test ActiveNodeSetIterator (with the edit distance bound "1")
-    for (ActiveNodeSetIterator iter(newPrefixActiveNodeSet, 1); !iter.isDone(); iter.next())
+    for (ActiveNodeSetIterator iter(newPrefixActiveNodeSet.get(), 1); !iter.isDone(); iter.next())
     {
         const TrieNode *trieNode;
         unsigned distance;
@@ -550,7 +524,7 @@ void testPrefixIteratorsWithRanges()
 
     vector<LeafIteratorResultItem> leafIteratorResultVector;
     // test LeafNodeSetIterator (using "1" as an upper bound of edit distance)
-    for (LeafNodeSetIterator lnsi(newPrefixActiveNodeSet, 1); !lnsi.isDone(); lnsi.next()) {
+    for (LeafNodeSetIterator lnsi(newPrefixActiveNodeSet.get(), 1); !lnsi.isDone(); lnsi.next()) {
         const TrieNode *prefixNode;
         const TrieNode *leafNode;
         unsigned distance;
@@ -578,7 +552,7 @@ void testPrefixIteratorsWithRanges()
     leafIteratorResultVector.clear();
 
     // test LeafNodeSetIterator (using "0" as an upper bound of edit distance)
-    for (LeafNodeSetIterator lnsi(newPrefixActiveNodeSet, 0); !lnsi.isDone(); lnsi.next()) {
+    for (LeafNodeSetIterator lnsi(newPrefixActiveNodeSet.get(), 0); !lnsi.isDone(); lnsi.next()) {
         const TrieNode *prefixNode;
         const TrieNode *leafNode;
         unsigned distance;
@@ -605,7 +579,6 @@ void testPrefixIteratorsWithRanges()
     ASSERT(checkContainment(leafIteratorResultVector, "can", "canteen", 0));
     leafIteratorResultVector.clear();
 
-    delete newPrefixActiveNodeSet;
     delete trie;
 }
 
@@ -614,18 +587,19 @@ void testCompleteIterators()
     Trie *trie = constructTrie();
 
     vector<std::pair<string, unsigned> > leafIteratorResultVector;
-    PrefixActiveNodeSet *prefixActiveNodeSet, *newPrefixActiveNodeSet;
+    boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
+    boost::shared_ptr<PrefixActiveNodeSet> newPrefixActiveNodeSet;
 
-    prefixActiveNodeSet = new PrefixActiveNodeSet(trie, 0);
+    prefixActiveNodeSet.reset(new PrefixActiveNodeSet(trie, 0));
 
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('a'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('n'); delete prefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('a'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('n');
     ASSERT(newPrefixActiveNodeSet->getPrefixUtf8String() == "can");
 
     leafIteratorResultVector.clear();
     // test ActiveNodeSetIterator
-    for (ActiveNodeSetIterator iter(newPrefixActiveNodeSet, 0); !iter.isDone(); iter.next())
+    for (ActiveNodeSetIterator iter(newPrefixActiveNodeSet.get(), 0); !iter.isDone(); iter.next())
     {
         const TrieNode *trieNode;
         unsigned distance;
@@ -645,7 +619,6 @@ void testCompleteIterators()
     ASSERT(checkContainment(leafIteratorResultVector, std::make_pair("can", 0)));
     leafIteratorResultVector.clear();
 
-    delete newPrefixActiveNodeSet;
     delete trie;
 }
 
@@ -660,21 +633,22 @@ void testActiveNodeWithTrieUpdate()
     trie->addKeyword_ThreadSafe(getCharTypeVector("peo"), invertedIndexOffset);
     trie->addKeyword_ThreadSafe(getCharTypeVector("people"), invertedIndexOffset);
 
-    trie->merge(NULL , 0, false);
+    trie->merge(NULL , NULL, 0, false);
 
     vector<std::pair<string, unsigned> > leafIteratorResultVector;
-    PrefixActiveNodeSet *prefixActiveNodeSet, *newPrefixActiveNodeSet;
+    boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
+    boost::shared_ptr<PrefixActiveNodeSet> newPrefixActiveNodeSet;
 
-    prefixActiveNodeSet = new PrefixActiveNodeSet(trie, 0);
+    prefixActiveNodeSet.reset(new PrefixActiveNodeSet(trie, 0));
 
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('p'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('e'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('o'); delete prefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('p'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('e'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('o');
     ASSERT(newPrefixActiveNodeSet->getPrefixUtf8String() == "peo");
 
     leafIteratorResultVector.clear();
     // test ActiveNodeSetIterator
-    for (ActiveNodeSetIterator iter(newPrefixActiveNodeSet, 0); !iter.isDone(); iter.next())
+    for (ActiveNodeSetIterator iter(newPrefixActiveNodeSet.get(), 0); !iter.isDone(); iter.next())
     {
         const TrieNode *trieNode;
         unsigned distance;
@@ -696,7 +670,6 @@ void testActiveNodeWithTrieUpdate()
     ASSERT(checkContainment(leafIteratorResultVector, std::make_pair("peo", 0)));
     leafIteratorResultVector.clear();
 
-    delete newPrefixActiveNodeSet;
     delete trie;
 }
 
@@ -709,21 +682,22 @@ void testLeafNodeIteratorWithTrieUpdate()
     //trie->addKeyword_ThreadSafe("zzzzzz", invertedIndexOffset);
     trie->addKeyword_ThreadSafe(getCharTypeVector("peo"), invertedIndexOffset);
     trie->addKeyword_ThreadSafe(getCharTypeVector("people"), invertedIndexOffset);
-    trie->merge(NULL , 0, false);
+    trie->merge(NULL , NULL,  0, false);
 
     vector<std::pair<string, unsigned> > stringDistanceVector;
-    PrefixActiveNodeSet *prefixActiveNodeSet, *newPrefixActiveNodeSet;
+    boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
+    boost::shared_ptr<PrefixActiveNodeSet> newPrefixActiveNodeSet;
 
-    prefixActiveNodeSet = new PrefixActiveNodeSet(trie, 2);
+    prefixActiveNodeSet.reset(new PrefixActiveNodeSet(trie, 2));
 
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('a'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('n'); delete prefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('c'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('a'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('n');
     ASSERT(newPrefixActiveNodeSet->getPrefixUtf8String() == "can");
 
     vector<LeafIteratorResultItem> leafIteratorResultVector;
     // test LeafNodeSetIterator (using "1" as an upper bound of edit distance)
-    for (LeafNodeSetIterator lnsi(newPrefixActiveNodeSet, 1); !lnsi.isDone(); lnsi.next()) {
+    for (LeafNodeSetIterator lnsi(newPrefixActiveNodeSet.get(), 1); !lnsi.isDone(); lnsi.next()) {
         const TrieNode *prefixNode;
         const TrieNode *leafNode;
         unsigned distance;
@@ -747,16 +721,15 @@ void testLeafNodeIteratorWithTrieUpdate()
     ASSERT(checkContainment(leafIteratorResultVector, "can", "cancer", 0));
     ASSERT(checkContainment(leafIteratorResultVector, "can", "canteen", 0));
 
-    delete newPrefixActiveNodeSet;
-    prefixActiveNodeSet = new PrefixActiveNodeSet(trie, 2);
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('p'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('e'); delete prefixActiveNodeSet; prefixActiveNodeSet = newPrefixActiveNodeSet;
-    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('o'); delete prefixActiveNodeSet;
+    prefixActiveNodeSet.reset(new PrefixActiveNodeSet(trie, 2));
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('p'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('e'); prefixActiveNodeSet = newPrefixActiveNodeSet;
+    newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally('o');
     ASSERT(newPrefixActiveNodeSet->getPrefixUtf8String() == "peo");
 
     leafIteratorResultVector.clear();
     // test LeafNodeSetIterator (using "1" as an upper bound of edit distance)
-    for (LeafNodeSetIterator lnsi(newPrefixActiveNodeSet, 1); !lnsi.isDone(); lnsi.next()) {
+    for (LeafNodeSetIterator lnsi(newPrefixActiveNodeSet.get(), 1); !lnsi.isDone(); lnsi.next()) {
         const TrieNode *prefixNode;
         const TrieNode *leafNode;
         unsigned distance;
@@ -777,13 +750,12 @@ void testLeafNodeIteratorWithTrieUpdate()
     ASSERT(leafIteratorResultVector.size() == 2);
 
     newPrefixActiveNodeSet->printActiveNodes(trie);
-    LeafNodeSetIterator iterPrint(newPrefixActiveNodeSet, 1);
+    LeafNodeSetIterator iterPrint(newPrefixActiveNodeSet.get(), 1);
     iterPrint.printLeafNodes(trie);
 
     ASSERT(checkContainment(leafIteratorResultVector, "peo", "peo", 0));
     ASSERT(checkContainment(leafIteratorResultVector, "peo", "people", 0));
 
-    delete newPrefixActiveNodeSet;
     delete trie;
 }
 

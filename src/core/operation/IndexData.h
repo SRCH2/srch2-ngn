@@ -204,7 +204,6 @@ private:
 
     ///Added for stemmer integration
     IndexData(const string& directoryName, Analyzer *analyzer, Schema *schema,
-            const string &trieBootstrapFileNameWithPath,
             const StemmerNormalizerFlagType &stemmerFlag);
             
     IndexData(const string& directoryName);
@@ -231,10 +230,9 @@ public:
     inline static IndexData* create(const string& directoryName,
     			Analyzer *analyzer,
                 Schema *schema,
-                const string &trieBootstrapFileNameWithPath,
                 const StemmerNormalizerFlagType &stemmerFlag = srch2::instantsearch::DISABLE_STEMMER_NORMALIZER)
     { 
-        return new IndexData(directoryName, analyzer,schema, trieBootstrapFileNameWithPath, stemmerFlag );
+        return new IndexData(directoryName, analyzer,schema, stemmerFlag );
     }
     
     inline static IndexData* load(const string& directoryName)
@@ -252,6 +250,10 @@ public:
     RankerExpression *rankerExpression;
     ReadWriteMutex *rwMutexForIdReassign; // for locking the KeywordIdReassign, <= 100 threads
     
+    inline bool isMergeRequired() const{
+    	return mergeRequired;
+    }
+
     virtual ~IndexData();
 
     void getReadView(IndexReadStateSharedPtr_Token &readToken)
@@ -267,8 +269,6 @@ public:
     inline uint32_t _getWriteCount() const { return this->writeCounter->getCount(); }
     inline uint32_t _getNumberOfDocumentsInIndex() const { return this->writeCounter->getNumberOfDocuments(); }
     
-    void addBootstrapKeywords(const string &trieBootstrapFileNameWithPath, Analyzer *analyzer);
-
     // merge the index
     INDEXWRITE_RETVAL _merge(bool updateHistogram);
 

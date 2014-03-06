@@ -4,7 +4,7 @@
 
 #include <instantsearch/Analyzer.h>
 #include <instantsearch/Indexer.h>
-#include <instantsearch/IndexSearcher.h>
+#include <instantsearch/QueryEvaluator.h>
 #include <instantsearch/Query.h>
 #include <instantsearch/Term.h>
 #include <instantsearch/Schema.h>
@@ -12,7 +12,7 @@
 #include <instantsearch/QueryResults.h>
 
 #include <query/QueryResultsInternal.h>
-#include <operation/IndexSearcherInternal.h>
+#include <operation/QueryEvaluatorInternal.h>
 
 #include <boost/algorithm/string.hpp>
 
@@ -241,7 +241,7 @@ void printGeoResults(srch2is::QueryResults *queryResults, unsigned offset = 0)
 	}
 }
 
-float pingToGetTopScoreGeo(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, float lb_lat, float lb_lng, float rt_lat, float rt_lng)
+float pingToGetTopScoreGeo(const Analyzer *analyzer, QueryEvaluator * queryEvaluator, string queryString, float lb_lat, float lb_lng, float rt_lat, float rt_lng)
 {
     Query *query = new Query(srch2::instantsearch::SearchTypeMapQuery);
 
@@ -264,9 +264,9 @@ float pingToGetTopScoreGeo(const Analyzer *analyzer, IndexSearcher *indexSearche
     //cout << "[" << queryString << "]" << endl;
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),queryEvaluator, query);
 
-    indexSearcher->search(query, queryResults);
+    queryEvaluator->geoSearch(query, queryResults);
     //printGeoResults(queryResults);
 
     float resVal = queryResults->getResultScore(0).getFloatTypedValue();
@@ -275,7 +275,7 @@ float pingToGetTopScoreGeo(const Analyzer *analyzer, IndexSearcher *indexSearche
     return resVal;
 }
 
-int pingToCheckIfHasResults(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, float lb_lat, float lb_lng, float rt_lat, float rt_lng, int ed)
+int pingToCheckIfHasResults(const Analyzer *analyzer, QueryEvaluator * queryEvaluator, string queryString, float lb_lat, float lb_lng, float rt_lat, float rt_lng, int ed)
 {
     Query *query = new Query(srch2::instantsearch::SearchTypeMapQuery);
 
@@ -304,9 +304,9 @@ int pingToCheckIfHasResults(const Analyzer *analyzer, IndexSearcher *indexSearch
     //cout << "[" << queryString << "]" << endl;
 
     // for each keyword in the user input, add a term to the query
-    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcher, query);
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),queryEvaluator, query);
 
-    indexSearcher->search(query, queryResults);
+    queryEvaluator->geoSearch(query, queryResults);
     //printGeoResults(queryResults);
     //cout << "num of res: " << queryResults->getNumberOfResults() << endl;
 
@@ -316,7 +316,7 @@ int pingToCheckIfHasResults(const Analyzer *analyzer, IndexSearcher *indexSearch
     return returnValue;
 }
 
-unsigned existsInTopKGeo(const Analyzer *analyzer, IndexSearcher *indexSearcher, string queryString, string primaryKey, int k, float lb_lat, float lb_lng, float rt_lat, float rt_lng)
+unsigned existsInTopKGeo(const Analyzer *analyzer, QueryEvaluator *  queryEvaluator, string queryString, string primaryKey, int k, float lb_lat, float lb_lng, float rt_lat, float rt_lng)
 {
     Query *query = new Query(srch2::instantsearch::SearchTypeMapQuery);
 
@@ -333,9 +333,9 @@ unsigned existsInTopKGeo(const Analyzer *analyzer, IndexSearcher *indexSearcher,
     }
 
     query->setRange(lb_lat, lb_lng, rt_lat, rt_lng);
-    QueryResults *queryResultsK = new QueryResults(new QueryResultFactory(),indexSearcher, query);
+    QueryResults *queryResultsK = new QueryResults(new QueryResultFactory(),queryEvaluator, query);
 
-    indexSearcher->search(query, queryResultsK);
+    queryEvaluator->geoSearch(query, queryResultsK);
 
     //printResults(queryResultsK1);
 

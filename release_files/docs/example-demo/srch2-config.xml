@@ -40,6 +40,8 @@
     </mongodb>
     -->     
          
+    <maxSearchThreads>2</maxSearchThreads>
+    
     <indexConfig>
          
         <indexType>0</indexType>
@@ -70,8 +72,6 @@
 
         <rows>10</rows>
 
-        <maxSearchThreads>2</maxSearchThreads>
-        
         <fieldBasedSearch>1</fieldBasedSearch>
          
         <searcherType>0</searcherType>
@@ -104,7 +104,7 @@
      
     </updatehandler>
 
-    <schema name="SRCH2" version="3">
+    <schema>
        <fields>
           <field name="title" type="text" indexed="true"/>
           <field name="director" type="text" indexed="true"/>

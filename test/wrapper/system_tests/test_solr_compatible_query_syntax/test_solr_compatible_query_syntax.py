@@ -2,22 +2,18 @@
 
 import sys, urllib2, json, time, subprocess, os, commands,signal
 
-port = '8081'
+sys.path.insert(0, 'srch2lib')
+import test_lib
 
-#make sure that start the engine up
-def pingServer():
-    info = 'curl -s http://localhost:' + port + '/search?q=Garden | grep -q results'
-    while os.system(info) != 0:
-        time.sleep(1)
-        info = 'curl -s http://localhost:' + port + '/search?q=Garden | grep -q results'
+port = '8087'
 
 #the function of checking the results
 def checkResult(query, responseJsonAll,resultValue, facetResultValue):
     responseJson = responseJsonAll['results']
     isPass=1
     if  len(responseJson) == len(resultValue):
-         for i in range(0, len(resultValue)):
-                #print response_json['results'][i]['record']['id']
+        for i in range(0, len(resultValue)):
+            #print responseJson[i]['record']['id']
             if responseJson[i]['record']['id'] !=  resultValue[i]:
                 isPass=0
                 print query+' test failed'
@@ -33,11 +29,11 @@ def checkResult(query, responseJsonAll,resultValue, facetResultValue):
         maxLen = max(len(responseJson),len(resultValue))
         for i in range(0, maxLen):
             if i >= len(resultValue):
-                 print str(responseJson[i]['record']['id']) + '||'
+                print str(responseJson[i]['record']['id']) + '||'
             elif i >= len(responseJson):
-                 print '  '+'||'+resultValue[i]
+                print '  '+'||'+resultValue[i]
             else:
-                 print str(responseJson[i]['record']['id']) + '||' + resultValue[i]
+                print str(responseJson[i]['record']['id']) + '||' + resultValue[i]
     if isPass == 1:
         isPass = checkFacetResults(query , responseJsonAll['facets'] , facetResultValue)
 
@@ -49,19 +45,30 @@ def checkResult(query, responseJsonAll,resultValue, facetResultValue):
         return 1
 
 def checkFacetResults(query, responseJson, facetResultValue):
-   for i in range(0,len(responseJson)):
-      facet_line = ''
-      facet_field_name = responseJson[i]['facet_field_name']
-      facet_line = facet_line + facet_field_name + '||'
-      facet_info = responseJson[i]['facet_info']
-      for j in range(0,len(facet_info)):
-         facet_line = facet_line + facet_info[j]['category_name'] + ',' + str(facet_info[j]['category_value']) + '|'
-      if facetResultValue != facet_line:
-         print facetResultValue
-         print 'vs.'
-         print facet_line
-         return False
-   return True
+    expected_facet_name = facetResultValue.split("||")[0]
+    if len(facetResultValue.split("||")[1]) > 0:
+        expected_facet_values = facetResultValue.split("||")[1].split("|")
+    else:
+        expected_facet_values = [] # hack because split returns at least one result even on null input
+    expected_facet_values.sort()
+    for i in range(0,len(responseJson)):
+        actual_facet_name = responseJson[i]['facet_field_name']
+
+        facet_info = responseJson[i]['facet_info']
+        actual_facet_values = []
+        for j in range(0,len(facet_info)):
+            actual_facet_values.append(str(facet_info[j]['category_name'] + ',' + str(facet_info[j]['category_value'])))
+        actual_facet_values.sort()
+
+        if actual_facet_name != expected_facet_name:
+            print expected_facet_name + ' (expected) vs. ' + actual_facet_name + ' (actual)'
+            return False
+
+        if expected_facet_values != actual_facet_values:
+            print str(expected_facet_values) + ' (expected) vs. ' + str(actual_facet_values) + ' (actual)'
+            return False
+
+        return True
 
 
 #prepare the query based on the valid syntax
@@ -70,7 +77,7 @@ def prepareQuery(queryKeywords):
     #################  prepare main query part
     #query = query + ''
     # local parameters
-    query = query + queryKeywords
+    query = query + queryKeywords + "&searchType=getAll"
 
     #print 'Query : ' + query
     ##################################
@@ -78,12 +85,11 @@ def prepareQuery(queryKeywords):
 
 def testNewFeatures(queriesAndResultsPath,facetResultsPath, binary_path):
     # Start the engine server
-    binary= binary_path + '/srch2-search-server'
-    binary= binary+' --config-file=./test_solr_compatible_query_syntax/conf.xml &'
-    print 'starting engine: ' + binary 
-    os.popen(binary)
+    args = [ binary_path, '--config-file=./test_solr_compatible_query_syntax/conf.xml' ]
+    print 'starting engine: ' + args[0] + ' ' + args[1]
+    serverHandle = test_lib.startServer(args)
     #make sure that start the engine up
-    pingServer()
+    test_lib.pingServer(port)
 
     # get facet correct result from file
     f_facet = open(facetResultsPath , 'r')
@@ -113,16 +119,8 @@ def testNewFeatures(queriesAndResultsPath,facetResultsPath, binary_path):
         j=j+1
         #print j
         #print '------------------------------------------------------------------'
-    try:
-        s = commands.getoutput('ps aux | grep srch2-search-server')
-        stat = s.split()
-        os.kill(int(stat[1]), signal.SIGUSR1)
-    except: 
-        s = commands.getoutput("ps -A | grep -m1 srch2-search-server | awk '{print $1}'")
-        a = s.split()
-        cmd = "kill -9 {0}".format(a[-1])
-        os.system(cmd)
     print '=============================='
+    test_lib.killServer(serverHandle)
     return failCount
 
 if __name__ == '__main__':    

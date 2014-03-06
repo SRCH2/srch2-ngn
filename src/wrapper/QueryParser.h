@@ -14,7 +14,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright ������ 2013 SRCH2 Inc. All rights reserved
+ * Copyright © 2013 SRCH2 Inc. All rights reserved
  */
 
 #ifndef _WRAPPER_QUERYPARSER_H__
@@ -22,6 +22,10 @@
 #include<cassert>
 #include <boost/algorithm/string.hpp>
 #include <boost/regex.hpp>
+#include <boost/foreach.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/iter_find.hpp>
+#include <boost/tokenizer.hpp>
 #include <iostream>
 #include <sys/queue.h>
 #include <event.h>
@@ -98,6 +102,18 @@ private:
     ParsedParameterContainer * container;
     const evkeyvalq & headers;
 
+    // main query parser parameters
+    // the following six vectors must be parallel
+    std::vector<std::string> rawQueryKeywords; // stores the keywords in the query
+    std::vector<float> keywordSimilarityThreshold; // stores the fuzzy level of each keyword in the query
+    std::vector<int> keywordBoostLevel; // stores the boost level of each keyword in the query
+    std::vector<srch2::instantsearch::TermType> keywordPrefixComplete; // stores whether the keyword is prefix or complete or not specified.
+    std::vector<std::vector<std::string> > fieldFilter; // stores the fields where engine should search the corresponding keyword
+    std::vector<srch2::instantsearch::BooleanOperation> fieldFilterOps; // stores the boolean operator for the corresponding filedFilter fields.
+    std::vector<bool>isPhraseKeywordFlags; // vector to store is the corresponding keyword is part of phrase search or not?
+    std::vector<short>  PhraseSlops;   // vector to store proximity slops
+    std::vector<unsigned> fieldFilterNumbers; // to be calculated in QueryRewriter based on field filter vectors// we are not using it
+
     // constants used by this class
     static const char* const fieldListDelimiter; //solr
     static const char* const fieldListParamName; //solr
@@ -118,6 +134,7 @@ private:
     static const char* const lengthBoostParamName; //srch2
     static const char* const prefixMatchPenaltyParamName; //srch2
     static const char* const filterQueryParamName; //solr
+    static const char* const queryFieldBoostParamName;//solr
     static const char* const isFuzzyParamName; //srch2
     static const char* const docIdParamName;
     // local parameter params
@@ -170,6 +187,12 @@ private:
      * 2. calls the keywordParser();
      */
     void mainQueryParser();
+
+    /*
+     * This function reads all the extracted information from parallel vectors of main query and puts them in the
+     * parse tree leaf nodes.
+     */
+    bool attachParseTreeAndMainQueryParallelVectors();
 
     /*
      * checks to see if "fuzzy" exists in parameters.
@@ -250,6 +273,15 @@ private:
      *
      */
     bool filterQueryParameterParser();
+
+    /*
+     * it looks to see if there is any post processing dynamic boosting
+     * if there is then it fills up the container accordingly
+     *
+     * example: 'qf=price^100+popularity^100'
+     *
+     */
+    bool queryFieldBoostParser();
 
     /*
      * example:  facet=true&facet.field=Author&facet.field=Title&facet.range=price&f.price.facet.start=10&f.price.facet.end=100&f.price.facet.gap=10
@@ -529,6 +561,87 @@ private:
      * fieldFilterOps
      */
     void clearMainQueryParallelVectorsIfNeeded();
+
+    /*
+     * This function extracts the boolean parse tree of the query and
+     * attaches a tree to root.
+     * Example:
+     * (Author:Kundera AND mark*~0.8) OR (NOT hello AND apple)
+     * ======>
+     * [OR]____ [AND]____ {Author:Kundera}
+     *   |        |
+     *   |        |______ {mark*~0.8}
+     *   |
+     *   |_____ [AND]____ [NOT]____ {hello}
+     *            |
+     *            |______ {apple}
+     */
+    bool parseBooleanExpression(string input, ParseTreeNode *& root);
+
+    /*
+     * This function checks to see if open/close parentheses are well formatted.
+     */
+    bool checkParentheses(const string & input);
+
+
+    /*
+     * This function is a recursive function to parse and build the parse tree of an expression
+     * which contains AND,OR,NOT and nested parentheses.
+     * Example: "(A OR1 B) AND1 NOT1 (C OR2 D) AND1 (E AND2 F) OR3 ((NOT2 G OR4 H) AND3 I)"
+     * The tree will look like:
+     * (NOTE : Numbers are just to help the reader map the query and the figure more easily.
+     * So AND1 and AND2 are both just simple ANDs)
+     * [AND1]__ [OR1]__ A
+     *   |        |____ B
+     *   |
+     *   |_____ [NOT1]__ [OR2]__ C
+     *   |                |____ D
+     *   |
+     *   |_____ [OR3] __ [AND2]__ E
+     *           |         |_____ F
+     *           |
+     *           |______ [AND3]__ [OR4]__ [NOT2]__ G
+     *                     |       |
+     *                     |       |_____ H
+     *                     |
+     *                     |_____ I
+     */
+    bool parseBooleanExpressionRecursive(ParseTreeNode * parent, string input, ParseTreeNode *& expressionNode);
+
+    /*
+     * This function removes the outer parentheses of an expression
+     * Example : (((A AND B) OR C)) => (A AND B) OR C
+     * Assumption of this function is that parentheses are well formatted.
+     */
+    void removeOuterParenthesisPair(string & input);
+
+    /*
+     * This function tokenizes a string by a string delimiter (e.g. 'AND') while it is
+     * careful not to break any pair of parentheses.
+     * For example,if we want to tokenize expression "(A AND B) OR C" by "AND", we shouldn't
+     * return "(A" and "B) OR C" and we should only return on token which is the expression itself.
+     * NOTE1 : Assumption of this function is that the input is well formatted in terms of
+     * parentheses.
+     */
+    void tokenizeAndDontBreakParentheses(const string & inputArg , vector<string> & tokensArg, const string & delimiter);
+
+    /*
+     * This function removes nodeToRemove from its parent's children list
+     */
+    void removeFromParentChildren(ParseTreeNode * nodeToRemove);
+
+    /*
+     * This function changes the pointer to nodeFrom to nodeTo in the children list of nodeFrom's parent.
+     */
+    void changePointerInParentChildrenList(ParseTreeNode * nodeFrom, ParseTreeNode * nodeTo);
+
+    /*
+     * This function removes nodeToRemove from a tree that its root is 'root'
+     * if the root changes, the 'root' variable is assigned to the new root (which
+     *  might be null in case the entire tree is deleted)
+     */
+    void removeFromTree(ParseTreeNode * nodeToRemove, ParseTreeNode *& root);
+
 };
 
 }

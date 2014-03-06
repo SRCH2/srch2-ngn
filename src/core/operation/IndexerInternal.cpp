@@ -196,7 +196,7 @@ void IndexReaderWriter::save(const std::string& directoryName)
 
 INDEXWRITE_RETVAL IndexReaderWriter::merge(bool updateHistogram)
 {
-    if (this->cache != NULL)
+    if (this->cache != NULL && this->index->isMergeRequired())
         this->cache->clear();
 
     // increment the mergeCounterForUpdatingHistogram
@@ -224,9 +224,8 @@ IndexReaderWriter::IndexReaderWriter(IndexMetaData* indexMetaData, Analyzer *ana
 {
      // CREATE NEW Index
      this->index =  IndexData::create(indexMetaData->directoryName,
-     		                         analyzer,
+     		                          analyzer,
                                       schema,
-                                      indexMetaData->trieBootstrapFileNameWithPath,
                                       srch2::instantsearch::DISABLE_STEMMER_NORMALIZER
                                       );
      this->initIndexReaderWriter(indexMetaData);
@@ -243,7 +242,7 @@ IndexReaderWriter::IndexReaderWriter(IndexMetaData* indexMetaData)
 
 void IndexReaderWriter::initIndexReaderWriter(IndexMetaData* indexMetaData)
  {
-     this->cache = dynamic_cast<Cache*>(indexMetaData->cache);
+     this->cache = dynamic_cast<CacheManager*>(indexMetaData->cache);
      this->mergeEveryNSeconds = indexMetaData->mergeEveryNSeconds;
      this->mergeEveryMWrites = indexMetaData->mergeEveryMWrites;
      this->updateHistogramEveryPMerges = indexMetaData->updateHistogramEveryPMerges;

@@ -1,3 +1,12 @@
+<!-- Google Tag Manager -->
+<noscript><iframe src="//www.googletagmanager.com/ns.html?id=GTM-MQK794"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'//www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-MQK794');</script>
+<!-- End Google Tag Manager -->
 <div id="content" > <!-- Table of content, id=content-->
 <table><tbody><tr><td>
 <div><h3><a style="text-decoration: none;color:#ee2e24" href="#doc">Content</a></h3></div>
@@ -11,6 +20,7 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fuzzySearch">3.3.2 Fuzzy Search</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#boostingTerm">3.3.3 Boosting A Term</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#proximitySearch">3.3.4 Proximity Search</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#booleanOperators">3.4. Boolean Operators</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryComponents">4. Query Components</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#localParams"/>5. Local Parameters</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryParams">6. Query Parameters</a></br><br>
@@ -199,6 +209,23 @@ q="saving ryan"~1
 (q=%22saving%20ryan%22~1)
 ```
 Notice that a proximity search does not support edit-distance-based fuzzy match, i.e., we do not allow typos in the keywords in the quotes.
+
+
+### 3.4. Boolean Operators {id="booleanOperators"}
+
+The SRCH2 engine supports three boolean operators: AND, OR, and NOT. For example:
+```
+q=(star^4 AND wars) OR "George Lucas"
+```
+returns all records which either contain "star" and "wars" or the phrase "George Lucas". As you see Term Modifilers and Phrase Search can be used with a boolean expression. A few more examples are:
+
+```
+q=("star wars" AND "episode 3") OR ("George Lucas" AND NOT "Indiana Jones")
+
+q=big AND fish AND ("Tim Burton" OR MacGregor~0.5)
+
+q=pulp AND fiction AND (Tarenti~0.6* OR Travolta OR Jackson) AND NOT "Jesse Jackson"
+```
 
 ##4. Understanding different query components{id="queryComponents"}
 

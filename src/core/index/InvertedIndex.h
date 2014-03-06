@@ -203,15 +203,22 @@ public:
      * [invertedList.offset,invertedList.currentHitCount] and return the InvertedListElement at invertedList.offset + cursor.
      * We make assertions to check if offset, offset + currentHitCount is within getTotalLengthOfInvertedLists(). Also, assert to check if currentHitCount > cursor.
      */
-    void getInvertedListReadView(const unsigned invertedListId, shared_ptr<vectorview<unsigned> >& readview) const;
+    void getInvertedListReadView(shared_ptr<vectorview<InvertedListContainerPtr> > & invertedListDirectoryReadView,
+    		const unsigned invertedListId, shared_ptr<vectorview<unsigned> >& readview) const;
+    void getInvertedIndexDirectory_ReadView(shared_ptr<vectorview<InvertedListContainerPtr> > & invertedListDirectoryReadView) const;
+    void getInvertedIndexKeywordIds_ReadView(shared_ptr<vectorview<unsigned> > & invertedIndexKeywordIdsReadView) const;
     unsigned getInvertedListSize_ReadView(const unsigned invertedListId) const;
 
     unsigned getRecordNumber() const;
 
-    bool isValidTermPositionHit(unsigned forwardListId, unsigned keywordOffset, 
+    bool isValidTermPositionHit(shared_ptr<vectorview<ForwardListPtr> > & forwardIndexDirectoryReadView,
+    		unsigned forwardListId,
+    		unsigned keywordOffset,
                     unsigned searchableAttributeId, unsigned& termAttributeBitmap, float &termRecordStaticScore) const;
 
-    unsigned getKeywordOffset(unsigned forwardListId, unsigned invertedListOffset) const;
+    unsigned getKeywordOffset(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+    		shared_ptr<vectorview<unsigned> > & invertedIndexKeywordIdsReadView,
+    		unsigned forwardListId, unsigned invertedListOffset) const;
 
     /**
      * Writer Functions called by IndexerInternal
@@ -254,21 +261,25 @@ public:
 
     void printInvList(const unsigned invertedListId) const
     {
-        shared_ptr<vectorview<InvertedListContainerPtr> > readView;
-        this->invertedIndexVector->getReadView(readView);
+        shared_ptr<vectorview<InvertedListContainerPtr> > invertedIndexVectorReadView;
+        this->invertedIndexVector->getReadView(invertedIndexVectorReadView);
+		shared_ptr<vectorview<ForwardListPtr> > forwardIndexDirectoryReadView;
+		this->forwardIndex->getForwardListDirectory_ReadView(forwardIndexDirectoryReadView);
 
-        unsigned readViewListSize = readView->getElement(invertedListId)->getReadViewSize();
+        unsigned readViewListSize = invertedIndexVectorReadView->getElement(invertedListId)->getReadViewSize();
 
         Logger::error("Print invListid: %d size %d" , invertedListId, readViewListSize);
         InvertedListElement invertedListElement;
         for (unsigned i = 0; i < readViewListSize; i++)
         {
-        	readView->getElement(invertedListId)->getInvertedListElement(i);
+        	invertedIndexVectorReadView->getElement(invertedListId)->getInvertedListElement(i);
             unsigned recordId = invertedListElement.recordId;
             unsigned positionIndexOffset = invertedListElement.positionIndexOffset;
             float score;
             unsigned termAttributeBitmap;
-            if (isValidTermPositionHit(recordId, positionIndexOffset, -1, termAttributeBitmap, score) ){
+
+            if (isValidTermPositionHit(forwardIndexDirectoryReadView, recordId,
+            		positionIndexOffset, -1, termAttributeBitmap, score) ){
                 Logger::debug("%d | %d | %.5f", recordId, positionIndexOffset, score);
             }
         }

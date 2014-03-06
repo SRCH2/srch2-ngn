@@ -35,7 +35,7 @@ class QueryValidator {
 public:
 
     QueryValidator(const Schema & schema,
-            const ConfigManager &indexDataContainerConf,
+            const CoreInfo_t &indexDataContainerConf,
             ParsedParameterContainer * paramContainer);
 
     // this function goes through the summary and based on that validates the query.
@@ -44,7 +44,7 @@ public:
 private:
     ParsedParameterContainer * paramContainer;
     const Schema & schema;
-    const ConfigManager &indexDataContainerConf;
+    const CoreInfo_t &indexDataContainerConf;
 
     /*
      * This function goes over the field names in Filter List and
@@ -52,11 +52,21 @@ private:
      */
     bool validateExistenceOfAttributesInFieldList();
 
+    bool validateExistenceOfAttributesInQueryFieldBoost();
+
     bool validateExistenceOfAttributesInSortFiler();
 
     bool validateExistenceOfAttributesInFacetFiler();
 
     bool validateFilterQuery();
+
+    bool validateParseTreeBooleanStructure();
+
+    bool validateParseTreeStructureWithRegardToComputability();
+    bool isParseSubtreeComputableRecursive(ParseTreeNode * node);
+
+    bool validateParseTreeStructureForGeo();
+
 
 //    // this function validates the value stored in "value" based on the type which is passed to it by "type"
 //    // for example, if the string is "123rt" and the type is UNSIGNED it returns false

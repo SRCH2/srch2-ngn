@@ -55,7 +55,7 @@ bool ChineseTokenizer::incrementToken(){
             return false;
         }
         currentChar = getCurrentChar();
-        currentType = CharSet::getCharacterType(currentChar);
+        currentType = characterSet.getCharacterType(currentChar);
         ++(tokenStreamContainer->offset);
     }
 
@@ -74,7 +74,7 @@ bool ChineseTokenizer::incrementToken(){
 int ChineseTokenizer::identifyEndOfChineseSequence(){
     while (!isEnd()){
         CharType currentChar = getCurrentChar();
-        if ( CharSet::getCharacterType(currentChar) != CharSet::HANZI_TYPE){
+        if ( characterSet.getCharacterType(currentChar) != CharSet::HANZI_TYPE){
             break;
         }
         ++(tokenStreamContainer->offset);
@@ -134,7 +134,7 @@ bool ChineseTokenizer::nonChineseIncrement(unsigned currentType, CharType curren
         }
         currentChar = getCurrentChar();
         previousType = currentType;
-        currentType = CharSet::getCharacterType(currentChar);
+        currentType = characterSet.getCharacterType(currentChar);
         ++(tokenStreamContainer->offset);
     }
 

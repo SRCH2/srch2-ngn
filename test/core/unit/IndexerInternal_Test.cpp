@@ -23,6 +23,7 @@
 #include "instantsearch/Schema.h"
 #include "instantsearch/Analyzer.h"
 #include "instantsearch/Record.h"
+#include "analyzer/AnalyzerContainers.h"
 #include "util/Assert.h"
 #include "index/InvertedIndex.h"
 #include <iostream>
@@ -46,15 +47,16 @@ void testIndexData()
     schema->setSearchableAttribute("article_title", 7); // searchable text
 
     /// Create Analyzer
-    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    SynonymContainer *syn = SynonymContainer::getInstance("", SYNONYM_DONOT_KEEP_ORIGIN);
+    syn->init();
+
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, syn, "");
 
     /// Create IndexData
     string INDEX_DIR = ".";
     IndexData *indexData = IndexData::create(INDEX_DIR,
                                             analyzer,
                                             schema,
-                                            "",
                                             srch2::instantsearch::DISABLE_STEMMER_NORMALIZER);
 
     Record *record = new Record(schema);
@@ -123,20 +125,21 @@ void testIndexData()
 
     /// test ForwardIndex
     ForwardIndex *forwardIndex = indexData->forwardIndex;
-
+    shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
+    forwardIndex->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
     float score = 0;
     unsigned keywordId = 1;
     // define the attributeBitmap only in debug mode
 #if ASSERT_LEVEL > 0
     unsigned attributeBitmap = 0;
 #endif
-    ASSERT( forwardIndex->haveWordInRange(0, trie->getTrieNodeFromUtf8String( root, "jack")->getId(),
+    ASSERT( forwardIndex->haveWordInRange(forwardListDirectoryReadView, 0,  trie->getTrieNodeFromUtf8String( root, "jack")->getId(),
                                              trie->getTrieNodeFromUtf8String( root, "lennon")->getId(), -1, keywordId, attributeBitmap, score) == true );
-    ASSERT( forwardIndex->haveWordInRange(0, trie->getTrieNodeFromUtf8String( root, "smith")->getId() + 1,
+    ASSERT( forwardIndex->haveWordInRange(forwardListDirectoryReadView, 0,  trie->getTrieNodeFromUtf8String( root, "smith")->getId() + 1,
                                              trie->getTrieNodeFromUtf8String( root, "tom")->getId() - 1, -1, keywordId, attributeBitmap, score) == false );
-    ASSERT( forwardIndex->haveWordInRange(1, trie->getTrieNodeFromUtf8String( root, "hendrix")->getId(),
+    ASSERT( forwardIndex->haveWordInRange(forwardListDirectoryReadView, 1, trie->getTrieNodeFromUtf8String( root, "hendrix")->getId(),
                                              trie->getTrieNodeFromUtf8String( root, "jimi")->getId(), -1, keywordId, attributeBitmap, score) == true );
-    ASSERT( forwardIndex->haveWordInRange(1, trie->getTrieNodeFromUtf8String( root, "wing")->getId() + 1,
+    ASSERT( forwardIndex->haveWordInRange(forwardListDirectoryReadView, 1, trie->getTrieNodeFromUtf8String( root, "wing")->getId() + 1,
                                              trie->getTrieNodeFromUtf8String( root, "wing")->getId() + 2, -1, keywordId, attributeBitmap, score) == false );
 
     /// test InvertedIndex
@@ -165,6 +168,7 @@ void testIndexData()
     delete record;
     delete analyzer;
     delete indexData;
+    syn->free();
 }
 
 void test1()
@@ -178,18 +182,19 @@ void test1()
     schema->setSearchableAttribute("article_title", 7); // searchable text
 
     // create an analyzer
-    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    SynonymContainer *syn = SynonymContainer::getInstance("", SYNONYM_DONOT_KEEP_ORIGIN);
+    syn->init();
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, syn, "");
     
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
     string INDEX_DIR = "test";
-    IndexMetaData *indexMetaData = new IndexMetaData( new Cache(),
+    IndexMetaData *indexMetaData = new IndexMetaData( new CacheManager(),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
     
     Indexer *index = Indexer::create(indexMetaData, analyzer, schema);
     Record *record = new Record(schema);
@@ -240,9 +245,10 @@ void addRecords()
     schema->setSearchableAttribute("article_authors", 2); // searchable text
     schema->setSearchableAttribute("article_title", 7); // searchable text
     
+    SynonymContainer *syn = SynonymContainer::getInstance("", SYNONYM_DONOT_KEEP_ORIGIN);
+    syn->init();
     Record *record = new Record(schema);
-    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-    		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, syn, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
@@ -252,7 +258,7 @@ void addRecords()
     IndexMetaData *indexMetaData = new IndexMetaData( NULL,
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
     Indexer *index = Indexer::create(indexMetaData, analyzer, schema);
     
     record->setPrimaryKey(1001);
@@ -289,6 +295,7 @@ void addRecords()
     delete record;
     delete analyzer;
     delete index;
+    syn->free();
 }
 
 void test3()
@@ -297,8 +304,10 @@ void test3()
     
     /// Test the Trie
 
-    Analyzer *analyzer = new Analyzer(srch2::instantsearch::DISABLE_STEMMER_NORMALIZER,
-       		"", "", "", SYNONYM_DONOT_KEEP_ORIGIN, "");
+    SynonymContainer *syn = SynonymContainer::getInstance("", SYNONYM_DONOT_KEEP_ORIGIN);
+    syn->init();
+
+    Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, syn, "");
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
@@ -308,7 +317,7 @@ void test3()
     IndexMetaData *indexMetaData = new IndexMetaData( GlobalCache::create(1000,1000),
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
-    		INDEX_DIR, "");
+    		INDEX_DIR);
     
     Indexer *indexer = Indexer::load(indexMetaData);
 

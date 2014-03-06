@@ -4,7 +4,6 @@
  *  Created on: 2013-5-17
  */
 
-#include <sys/stat.h>
 #include "StandardAnalyzer.h"
 #include "StandardTokenizer.h"
 #include "LowerCaseFilter.h"
@@ -18,41 +17,38 @@ using srch2::util::Logger;
 namespace srch2 {
 namespace instantsearch {
 
+StandardAnalyzer::StandardAnalyzer(const StemmerContainer *stemmer,
+                                   const StopWordContainer *stopWords,
+                                   const ProtectedWordsContainer *protectedWords,
+                                   const SynonymContainer *synonyms,
+                                   const std::string &allowedRecordSpecialCharacters) :
+    AnalyzerInternal(stemmer, stopWords, protectedWords, synonyms, allowedRecordSpecialCharacters)
+{
+    this->analyzerType = STANDARD_ANALYZER;
+}
 
+AnalyzerType StandardAnalyzer::getAnalyzerType() const
+{
+    return STANDARD_ANALYZER;
+}
 
 // create operator flow and link share pointer to the data
 TokenStream * StandardAnalyzer::createOperatorFlow() {
 	TokenStream *tokenStream = new StandardTokenizer();
 	tokenStream = new LowerCaseFilter(tokenStream);
 
-    tokenStream = new NonAlphaNumericFilter(tokenStream);
+        tokenStream = new NonAlphaNumericFilter(tokenStream, protectedWords);
 
-	if (this->stopWordFilePath.compare("") != 0) {
-		struct stat stResult;
-		if(stat(this->stopWordFilePath.c_str(), &stResult) == 0) {
-		    tokenStream = new StopFilter(tokenStream, this->stopWordFilePath);
-		} else {
-		    Logger::warn("The stop word file %s is not valid. Please provide a valid file path.", this->stopWordFilePath.c_str() );
-		}
+        if (stopWords != NULL) {
+            tokenStream = new StopFilter(tokenStream, stopWords);
+        }
+
+	if (this->synonyms != NULL) {
+            tokenStream = new SynonymFilter(tokenStream, synonyms);
 	}
 
-	if (this->synonymFilePath.compare("") != 0) {
-		struct stat stResult;
-		if(stat(this->synonymFilePath.c_str(), &stResult) == 0) {
-		    tokenStream = new SynonymFilter(tokenStream, this->synonymFilePath, this->synonymKeepOriginFlag);
-		} else {
-            Logger::warn("The synonym file %s is not valid. Please provide a valid file path.", this->synonymFilePath.c_str());
-		}
-	}
-
-	if (this->stemmerFlag == ENABLE_STEMMER_NORMALIZER) {
-		struct stat stResult;
-		if(stat(this->stemmerFilePath.c_str(), &stResult) == 0) {
-		    tokenStream = new StemmerFilter(tokenStream, this->stemmerFilePath);
-		} else {
-			this->stemmerFlag = DISABLE_STEMMER_NORMALIZER;
-            Logger::warn("The stemmer file %s is not valid. Please provide a valid file path.", this->stemmerFilePath.c_str());
-		}
+	if (this->stemmer != NULL) {
+            tokenStream = new StemmerFilter(tokenStream, stemmer);
 	}
 
 	return tokenStream;

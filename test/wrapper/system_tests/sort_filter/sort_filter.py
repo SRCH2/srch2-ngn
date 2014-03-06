@@ -2,14 +2,10 @@
 
 import sys, urllib2, json, time, subprocess, os, commands,signal
 
-port = '8081'
+sys.path.insert(0, 'srch2lib')
+import test_lib
 
-#make sure that start the engine up
-def pingServer():
-    info = 'curl -s http://localhost:' + port + '/search?q=Garden | grep -q results'
-    while os.system(info) != 0:
-        time.sleep(1)
-        info = 'curl -s http://localhost:' + port + '/search?q=Garden | grep -q results'
+port = '8087'
 
 #the function of checking the results
 def checkResult(query, responseJson,resultValue):
@@ -70,12 +66,11 @@ def prepareQuery(queryKeywords):
 
 def testSortFilter(queriesAndResultsPath, binary_path):
     # Start the engine server
-    binary= binary_path + '/srch2-search-server'
-    binary= binary+' --config-file=./sort_filter/conf.xml &'
-    print 'starting engine: ' + binary 
-    os.popen(binary)
+    args = [ binary_path, '--config-file=./sort_filter/conf.xml' ]
+    print 'starting engine: ' + args[0] + ' ' + args[1]
+    serverHandle = test_lib.startServer(args)
     #make sure that start the engine up
-    pingServer()
+    test_lib.pingServer(port)
 
     #construct the query
 
@@ -97,12 +92,8 @@ def testSortFilter(queriesAndResultsPath, binary_path):
       
         #check the result
         failCount += checkResult(query, response_json['results'], resultValue )
-    
 
-    #get pid of srch2-search-server and kill the process
-    s = commands.getoutput('ps aux | grep srch2-search-server')
-    stat = s.split() 
-    os.kill(int(stat[1]), signal.SIGUSR1)
+    test_lib.killServer(serverHandle)
     print '=============================='
     return failCount
 

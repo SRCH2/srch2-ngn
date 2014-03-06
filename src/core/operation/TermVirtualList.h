@@ -22,7 +22,7 @@
 #define __TERMVIRTUALLIST_H__
 
 #include "ActiveNode.h"
-//#include "index/InvertedIndex.h"
+#include "index/InvertedIndex.h"
 #include <instantsearch/Term.h>
 //#include <instantsearch/Query.h>
 #include <instantsearch/Ranker.h>
@@ -126,13 +126,13 @@ public:
     // TODO: the default value of prefixMatchPenality is 0.95.  This constant is used
     // in 3 places: this function, BimaleServeConf.cpp, and Query.cpp.
     // Unify them.
-    TermVirtualList(const InvertedIndex* invertedIndex, PrefixActiveNodeSet *prefixActiveNodeSet,
+    TermVirtualList(const InvertedIndex* invertedIndex, const ForwardIndex * forwardIndex, PrefixActiveNodeSet *prefixActiveNodeSet,
                     Term *term, float prefixMatchPenalty = 0.95 , float shouldIterateToLeafNodesAndScoreOfTopRecord = -1);
 
     void initialiseTermVirtualListElement(TrieNodePointer prefixNode, TrieNodePointer leafNode, unsigned distance);
     // check bound-distance depth from trieNode and initialize TermVirtualListElement when it's a leaf
-    void depthInitializeTermVirtualListElement(const TrieNode* trieNode, unsigned distance, unsigned bound);
-    void depthInitializeBitSet(const TrieNode* trieNode, unsigned distance, unsigned bound);
+    void depthInitializeTermVirtualListElement(const TrieNode* trieNode, unsigned editDistance, unsigned panDistance, unsigned bound);
+    void depthInitializeBitSet(const TrieNode* trieNode, unsigned editDistance, unsigned distance, unsigned bound);
     bool getNext(HeapItemForIndexSearcher *heapItem);
     void getPrefixActiveNodeSet(PrefixActiveNodeSet* &prefixActiveNodeSet);
     void setCursors(vector<unsigned> *invertedListCursors);
@@ -187,6 +187,11 @@ private:
 
     PrefixActiveNodeSet *prefixActiveNodeSet;
     const InvertedIndex *invertedIndex;
+    // the shared pointer to inverted index read view, we don't want to get this variable
+    // from inverted index too many times because it has locking and is expensive
+    shared_ptr<vectorview<InvertedListContainerPtr> > invertedListDirectoryReadView;
+    shared_ptr<vectorview<unsigned> > invertedIndexKeywordIdsReadView;
+    shared_ptr<vectorview<ForwardListPtr> > forwardIndexDirectoryReadView;
     vector<HeapItem* > itemsHeap;
     Term *term;
     float prefixMatchPenalty;

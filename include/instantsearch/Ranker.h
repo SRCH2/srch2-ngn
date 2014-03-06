@@ -28,10 +28,8 @@
 
 using std::vector;
 
-namespace srch2
-{
-    namespace instantsearch
-    {
+namespace srch2 {
+  namespace instantsearch {
     // TODO: Copy comments from wiki page and expand it for each function
     class Ranker
     {
@@ -73,6 +71,14 @@ namespace srch2
         return 0.0;
         }
         
+        virtual float computeAggregatedRuntimeScoreForAnd(std::vector<float> runTimeTermRecordScores);
+
+        virtual float computeAggregatedRuntimeScoreForOr(std::vector<float> runTimeTermRecordScores);
+
+        virtual float computeScoreForNot(float score);
+
+
+
         virtual ~Ranker() {};
     };
     

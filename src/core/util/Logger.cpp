@@ -119,7 +119,8 @@ FILE* Logger::swapLoggerFile(FILE * newLogger) {
 }
 
 void Logger::debug(const char *format, ...) {
-#ifndef SRCH2_SHIPPING
+#ifndef NDEBUG
+    // NDEBUG is defined when we have run cmake BUILD_RELEASE=ON ..
 	if (_logLevel >= Logger::SRCH2_LOG_DEBUG) {
 		va_list args;
 		va_start(args, format);

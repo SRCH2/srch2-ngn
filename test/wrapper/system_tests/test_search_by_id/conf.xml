@@ -40,7 +40,7 @@
         Hostname and port number of the server. Make sure the port is open.
     -->
     <listeningHostname>127.0.0.1</listeningHostname>
-    <listeningPort>8081</listeningPort>
+    <listeningPort>8087</listeningPort>
  
     <!--
         Index Directoy Path
@@ -60,6 +60,14 @@
     -->
     <dataFile>./test_search_by_id/sample-data.json</dataFile>
      
+    <!--
+	Maximum Number of Threads
+	Optional
+	
+	Number of threads that serve the requests.
+	Defaults to 1
+    -->
+    <maxSearchThreads>2</maxSearchThreads>
      
          
     <indexConfig>
@@ -176,14 +184,6 @@
             Defaults to 10.
         -->
         <rows>10</rows>
-        <!--
-            Maximum Number of Threads
-            Optional
-             
-            Number of threads that serve the requests.
-            Defaults to 1
-        -->
-        <maxSearchThreads>2</maxSearchThreads>
         <!--
             Field Based Search
             Optional
@@ -319,12 +319,12 @@
                  
                 Path to Access Log File
             -->
-            <accessLogFile>./data/test_new_query_syntax/log.txt</accessLogFile>
+            <accessLogFile>./data/test_search_by_id/log.txt</accessLogFile>
         </updateLog>
      
     </updatehandler>
  
-<schema name="SRCH2" version="3">
+<schema>
   
  <fields>
    <!--

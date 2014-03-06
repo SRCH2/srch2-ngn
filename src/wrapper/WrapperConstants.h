@@ -56,7 +56,8 @@ typedef enum {
     FacetQueryHandler,
     SortQueryHandler,
     GeoTypeRectangular,
-    GeoTypeCircular
+    GeoTypeCircular,
+    QueryFieldBoostFlag
 } ParameterName;
 
 typedef enum {
@@ -87,8 +88,6 @@ typedef enum {
 	DATA_SOURCE_JSON_FILE,
 	DATA_SOURCE_MONGO_DB
 } DataSourceType;
-
-
 
 }
 
