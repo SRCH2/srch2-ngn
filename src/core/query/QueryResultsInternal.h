@@ -26,7 +26,6 @@
 #include <instantsearch/Stat.h>
 #include <instantsearch/Ranker.h>
 #include <instantsearch/TypedValue.h>
-
 #include "index/ForwardIndex.h"
 #include "util/Assert.h"
 #include "util/Logger.h"
@@ -58,6 +57,8 @@ public:
     std::vector<std::string> matchingKeywords;
     std::vector<unsigned> attributeBitmaps;
     std::vector<unsigned> editDistances;
+    std::vector<TermType> termTypes;
+    std::vector< TrieNodePointer > matchingKeywordTrieNodes;
     // only the results of MapQuery have this
     double physicalDistance; // TODO check if there is a better way to structure the "location result"
     TypedValue getResultScore() const
@@ -88,6 +89,8 @@ private:
     	matchingKeywords = copy_from_me.matchingKeywords;
     	attributeBitmaps = copy_from_me.attributeBitmaps;
     	editDistances = copy_from_me.editDistances;
+    	termTypes = copy_from_me.termTypes;
+    	matchingKeywordTrieNodes = copy_from_me.matchingKeywordTrieNodes;
     }
     QueryResult(){
     };
@@ -132,7 +135,7 @@ public:
 	std::vector<QueryResult *> queryResultPointers;
 };
 
-
+//struct keywordHighlightInfo;
 
 ////////////////////////////////////// QueryResultsInternal Header //////////////////////////////////
 class QueryResultsInternal
@@ -194,11 +197,10 @@ public:
      */
 	std::map<std::string , std::pair< FacetType , std::vector<std::pair<std::string, float> > > > facetResults;
     Stat *stat;
-    
+    std::map<string, vector<unsigned> *> prefixToCompleteStore;
  private:
     Query* query;
     unsigned nextK;
-
     const QueryEvaluatorInternal *queryEvaluatorInternal;
 
     QueryResultFactory * resultsFactory;

@@ -155,6 +155,28 @@ fi
 # We remove the old indexes, if any, before doing the test.
 rm -rf data/ *.idx
 
+###############################################################################################################
+#
+#  SYSTEM TEST CASES SHOULD BE ADDED BELOW THIS MESSAGE
+#
+#  NOTE:  If you decide to add your new test case as a first test case (i.e right after this message), then
+#         please change "> system_test.log" to ">> system_test.log" in the original initial test case. First
+#         test case should overwrite the log and the rest should append to the log.
+#
+###############################################################################################################
+
+test_id="highlighter"
+printTestBanner "$test_id"
+python ./highlight/highlight.py $SRCH2_ENGINE ./highlight/queries.txt  | eval "${html_escape_command}" >> system_test.log 2>&1
+if [ ${PIPESTATUS[0]} -gt 0 ]; then
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
+    if [ $force -eq 0 ]; then
+	exit 255
+    fi
+else
+    echo "-- PASSED: $test_id"
+fi
+rm -rf data/ *.idx
 
 test_id="cache_A1"
 printTestBanner "$test_id"

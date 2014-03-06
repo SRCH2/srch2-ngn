@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="generator" content="ReText Webpages generator 4.1.0">
+<meta name="generator" content="ReText Webpages generator 4.0.1">
 <link rel="stylesheet" type="text/css" href="style.css">
 <title>SRCH2: Configuration</title>
 </head>
@@ -63,6 +63,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#recordBoostField">8.3. Record Boost Field</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#defaultQueryTermBoost">8.4. Default Query Term Boost</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#enablePositionIndex">8.5. Enable Positional Index</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#enableCharOffsetIndex">8.5. Enable Character Offset Index</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryConfig">9. Query Parameters</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rankingAlgorithm">9.1. Ranking</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fuzzyMatchPenalty">9.2. Fuzzy Match Penalty</a></br><br>
@@ -75,6 +76,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#searcherType">9.9. Search Type</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermFuzzyType">9.10. Term Fuzzy Type</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermPrefixType">9.11. Term Prefix Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#highlighter">9.12. Highlighter</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryResponseWriter">10. Response Writer</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#ResponseContent">10.1. Response Content</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#updateHandler">11. Update Handler</a></br><br>
@@ -248,6 +250,13 @@ example shows how to enable this indexing:</p>
 </code></pre>
 
 <p>Note that the positional index takes more memory resources. By default it is disabled.<br></p>
+<h3 id="enableCharOffsetIndex">8.6. Enable Character Offset Index, Optional</h3>
+<p>A character offset index supports fast keyword <a href="#highlighter">highlighting</a> during the snippet generation. The "enableCharOffsetIndex" tag can be used to enable or disable character offset indexing.  For instance, the following
+example shows how to enable this indexing:</p>
+<pre><code>&lt;enableCharOffsetIndex&gt;1&lt;/enableCharOffsetIndex&gt;
+</code></pre>
+
+<p>Note that the character offset index takes more memory resources. By default it is disabled.<br></p>
 <h2 id="queryConfig">9. Query Parameters:</h2>
 <p>The following tag includes parameters related to queries.</p>
 <pre><code>&lt;query&gt;
@@ -366,6 +375,26 @@ to retrieve the next "page" of results. The default value of "Rows" is 10.<br></
 1: complete match (the entire word must match the search term).<br></p>
 </blockquote>
 <p>Its default value is 0.</p>
+<h3 id="highlighter">9.12. Highlighter, Optional</h3>
+<p>The engine supports the feature to generate brief extract (snippet) of the searchable field's text. Each matching keyword is tagged to highlight its position in the snippet. A snippet with keywords highlighting allows user to fetch more meaningful information from field's text. It also reduces the network bandwidth usage by reducing a payload size. </p>
+<pre><code>&lt;highlighter&gt;
+    &lt;snippetSize&gt;250&lt;/snippetSize&gt;
+    &lt;fuzzyTagPre value = '&lt;span class=&quot;fuzzy&quot;&gt;'&gt;&lt;/fuzzyTagPre&gt;
+    &lt;fuzzyTagPost value = '&lt;/span&gt;'&gt;&lt;/fuzzyTagPost&gt;
+    &lt;exactTagPre value = '&lt;span class=&quot;exact&quot;&gt;' &gt;&lt;/exactTagPre&gt;
+    &lt;exactTagPost value = '&lt;/span&gt;'&gt;&lt;/exactTagPost&gt;
+&lt;/highlighter&gt;
+</code></pre>
+
+<p>This composite parameter allows a user to specify snippet size and tags to enclose the matched keywords. </p>
+<blockquote>
+<p><b>snippetSize</b>: specifies the characters size of snippet to be generated for an attribute.<br>
+<b>fuzzyTagPre</b>: specifies the tag value to be prefixed to a fuzzy keyword match.<br>
+<b>fuzzyTagPost</b>: specifies the tag value to be suffixed to a fuzzy keyword match.<br>
+<b>exactTagPre</b>: specifies the tag value to be prefixed to a exact keyword match.<br>
+<b>exactTagPost</b>: specifies the tag value to be suffixed to a exact keyword match.<br></p>
+</blockquote>
+<p>Note: To improve the query search time when the highlighting is enabled, consider enabling the <a href="#enableCharOffsetIndex">character offset index</a>. </p>
 <h2 id="queryResponseWriter">10. Response Writer:</h2>
 <p>This tag has parameters related to configuring the response of a query.</p>
 <pre><code>&lt;queryResponseWriter&gt;
@@ -476,7 +505,7 @@ The attribute must be of type text.<br></p>
 
 <p>Here is an example:</p>
 <pre><code>&lt;field name=&quot;category&quot; type=&quot;text&quot; searchable=&quot;true&quot; /&gt;
-&lt;field name=&quot;name&quot; type=&quot;text&quot; indexed=&quot;true&quot; /&gt;
+&lt;field name=&quot;name&quot; type=&quot;text&quot; indexed=&quot;true&quot; highlight=&quot;true&quot; /&gt;
 &lt;field name=&quot;model&quot; default=&quot;benz&quot; required=&quot;true&quot; type=&quot;text&quot; refining=&quot;true&quot;/&gt;
 &lt;field name=&quot;price&quot; default=&quot;200&quot; required=&quot;true&quot; type=&quot;float&quot; refining=&quot;true&quot;/&gt;
 &lt;field name=&quot;likes&quot; default=&quot;0&quot; required=&quot;true&quot; type=&quot;integer&quot; refining=&quot;true&quot;/&gt;
@@ -507,10 +536,11 @@ The attribute must be of type text.<br></p>
 <li><b>refining</b>: If true, then the engine will include its values in the indices to support post-processing operations on query results, such as additional filtering predicates (e.g., "price &lt; 20"), sort, and facet.<br></li>
 <li><b>indexed</b>: If this flag is true, then the engine will treat the field as both a searchable and a refining attribute. <br></li>
 <li><b>multivalued</b>: If this flag is true, then the field is considered a multi-valued attribute. If so, then the corresponding JSON value in the data file must be a valid array in JSON (e.g. [1245332,3435645,53465,6456745]). Also please note that if the attribute is multi-valued, the value of the 'default' property must be a comma-separated list of values.<br></li>
+<li><b>highlight</b>: If this flag is true, then the engine will generate a snippet for this attribute with matching keyword highlighted. <br></li>
 </ul>
 <p>In the example above, we can do keyword search on the attributes
 "category" and "name".  We can do post-processing on attributes
-"name", "model", "price", "likes" and "seller_id".</p>
+"name", "model", "price", "likes" and "seller_id". The engine will generate snippet for the attribute "name".</p>
 <p>Note:</p>
 <ul>
 <li>For geo search, two fields are required with the types location_latitude and location_longitude, respectively. The values of these geo fields should be a float type in the data file.<br></li>

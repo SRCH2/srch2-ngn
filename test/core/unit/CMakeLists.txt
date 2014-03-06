@@ -117,6 +117,10 @@ ADD_EXECUTABLE(PhraseSearch_Test PhraseSearch_Test.cpp)
 TARGET_LINK_LIBRARIES(PhraseSearch_Test ${UNIT_TEST_LIBS})  
 LIST(APPEND UNIT_TESTS PhraseSearch_Test)
 
+ADD_EXECUTABLE(Highlighter_Test Highlighter_Test.cpp)
+TARGET_LINK_LIBRARIES(Highlighter_Test ${UNIT_TEST_LIBS})  
+LIST(APPEND UNIT_TESTS Highlighter_Test)
+
 ADD_EXECUTABLE(RecordSerializer_Test RecordSerializer_Test.cpp)
 TARGET_LINK_LIBRARIES(RecordSerializer_Test  ${UNIT_TEST_LIBS})  
 LIST(APPEND UNIT_TESTS RecordSerializer_Test)

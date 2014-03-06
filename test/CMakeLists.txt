@@ -158,6 +158,9 @@ ADD_TEST(ULEB128_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/ULEB128_Test "--verb
 ADD_TEST(PhraseSearch_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/PhraseSearch_Test "--verbose")
 SET_TESTS_PROPERTIES(PhraseSearch_Test PROPERTIES ENVIRONMENT "positionIndexFile=${CMAKE_SOURCE_DIR}/test/core/unit/test_data/phraseSearch/positionIndex.txt")
 
+ADD_TEST(Highlighter_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Highlighter_Test "--verbose")
+SET_TESTS_PROPERTIES(Highlighter_Test PROPERTIES ENVIRONMENT "recordsFile=${CMAKE_SOURCE_DIR}/test/core/unit/test_data/highlight/records.txt")
+
 ADD_TEST(MergeByShortestList_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/MergeByShortestList_Test "--verbose")
 
 ADD_TEST(MergeSortedById_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/MergeSortedById_Test "--verbose")

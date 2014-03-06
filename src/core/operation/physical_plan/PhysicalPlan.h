@@ -123,6 +123,7 @@ struct PhysicalPlanRandomAccessVerificationParameters {
     std::vector<unsigned> attributeBitmaps;
     std::vector<unsigned> prefixEditDistances;
     std::vector<unsigned> positionIndexOffsets;
+    std::vector<TermType> termTypes;
     // the record which is going to be verified by forward index
     PhysicalPlanRecordItem * recordToVerify;
     bool isFuzzy;

@@ -2,7 +2,7 @@
 
 #include <syslog.h>
 #include "Srch2Server.h"
-
+#include "util/RecordSerializerUtil.h"
 namespace srch2
 {
 namespace httpwrapper
@@ -137,7 +137,22 @@ IndexMetaData *Srch2Server::createIndexMetaData(const CoreInfo_t *indexDataConfi
 
     return indexMetaData;
 }
+void Srch2Server::createHighlightAttributesVector(const srch2is::Schema * schema) {
 
+	CoreInfo_t *indexConfig = const_cast<CoreInfo_t *> (this->indexDataConfig);
+	vector<std::pair<unsigned, string> > highlightAttributes;
+	std::map<std::string, unsigned>::const_iterator iter =
+			schema->getSearchableAttribute().begin();
+	for ( ; iter != schema->getSearchableAttribute().end(); iter++)
+	{
+		// Currently only searchable attributes are highlightable.
+		if (schema->isHighlightEnabled(iter->second))
+		{
+			highlightAttributes.push_back(make_pair(iter->second, iter->first));
+		}
+	}
+	indexConfig->setHighlightAttributeIdsVector(highlightAttributes);
+}
 void Srch2Server::createAndBootStrapIndexer()
 {
     // create IndexMetaData
@@ -147,7 +162,7 @@ void Srch2Server::createAndBootStrapIndexer()
         indexCreateOrLoad = srch2http::INDEXLOAD;
     else
         indexCreateOrLoad = srch2http::INDEXCREATE;
-
+    Schema * storedAttrSchema = Schema::create();
     switch (indexCreateOrLoad)
     {
     case srch2http::INDEXCREATE:
@@ -165,7 +180,9 @@ void Srch2Server::createAndBootStrapIndexer()
 	        {
 		    // Create from JSON and save to index-dir
 		    Logger::console("Creating indexes from JSON file...");
-		    unsigned indexedCounter = DaemonDataSource::createNewIndexFromFile(indexer, indexDataConfig);
+		    RecordSerializerUtil::populateStoredSchema(storedAttrSchema, indexer->getSchema());
+		    unsigned indexedCounter = DaemonDataSource::createNewIndexFromFile(indexer,
+		    		storedAttrSchema, indexDataConfig);
 		    /*
 		     *  commit the indexes once bulk load is done and then save it to the disk only
 		     *  if number of indexed record is > 0.
@@ -204,17 +221,20 @@ void Srch2Server::createAndBootStrapIndexer()
 	    AnalyzerHelper::loadAnalyzerResource(this->indexDataConfig);
 	    indexer->getSchema()->setSupportSwapInEditDistance(indexDataConfig->getSupportSwapInEditDistance());
 	    bool isAttributeBasedSearch = false;
-	    if (indexer->getSchema()->getPositionIndexType() == srch2::instantsearch::POSITION_INDEX_FIELDBIT ||
-		indexer->getSchema()->getPositionIndexType() == srch2::instantsearch::POSITION_INDEX_FULL) {
+	    if (isEnabledAttributeBasedSearch(indexer->getSchema()->getPositionIndexType())) {
 	        isAttributeBasedSearch =true;
 	    }
 	    if(isAttributeBasedSearch != indexDataConfig->getSupportAttributeBasedSearch())
 	    {
-	        cout << "[Warning] support-attribute-based-search changed in config file, remove all index files and run it again!"<< endl;
+	    	Logger::warn("support-attribute-based-search has changed in the config file"
+	    		        		" remove all index files and run it again!");
 	    }
+	    RecordSerializerUtil::populateStoredSchema(storedAttrSchema, indexer->getSchema());
 	    break;
 	}
     }
+    createHighlightAttributesVector(storedAttrSchema);
+    delete storedAttrSchema;
     // start merger thread
     indexer->createAndStartMergeThreadLoop();
 }

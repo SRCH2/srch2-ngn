@@ -163,18 +163,23 @@ bool QueryRewriter::applyAnalyzer() {
 		// keyword. In future we should handle synonyms TODO
 		string keywordAfterAnalyzer = "";
 		if (leafNode->termIntermediateStructure->isPhraseKeywordFlag){
+			PhraseInfo pi;
 			std::vector<PositionalTerm> analyzedQueryKeywords;
 			analyzerNotConst.tokenizeQuery(leafNode->termIntermediateStructure->rawQueryKeyword, analyzedQueryKeywords);
 			keywordAfterAnalyzer.clear();
-			vector<unsigned> positionIndexes;
 			for (int i=0; i < analyzedQueryKeywords.size(); ++i){
 				if (i)
 					keywordAfterAnalyzer.append(" ");
 				keywordAfterAnalyzer.append(analyzedQueryKeywords[i].term);
-				positionIndexes.push_back(analyzedQueryKeywords[i].position);
+				pi.phraseKeyWords.push_back(analyzedQueryKeywords[i].term);
+				pi.phraseKeywordPositionIndex.push_back(analyzedQueryKeywords[i].position);
 			}
-			if (positionIndexes.size() > 0)
-				paramContainer->PhraseKeyWordsPositionMap[keywordAfterAnalyzer] = positionIndexes;
+			pi.proximitySlop = leafNode->termIntermediateStructure->phraseSlop;
+			pi.attributeBitMap = leafNode->termIntermediateStructure->fieldFilterNumber;
+			if (analyzedQueryKeywords.size() > 0) {
+				paramContainer->PhraseKeyWordsInfoMap[keywordAfterAnalyzer] = pi;
+			}
+
 		}else{
 			TermType termType = leafNode->termIntermediateStructure->keywordPrefixComplete;
 			keywordAfterAnalyzer = analyzerNotConst.applyFilters(leafNode->termIntermediateStructure->rawQueryKeyword , termType == srch2is::TERM_TYPE_PREFIX);
@@ -502,23 +507,29 @@ LogicalPlanNode * QueryRewriter::buildLogicalPlan(ParseTreeNode * root, LogicalP
 					 *                    |-------- {a}
 					 *   [PhraseOP] --[ MergOp]	--- {b}
 					 *   		          |-------- {c}
+					 *
+					 *   Note: if term position index is missing then the phrase gets converted to
+					 *   AND query. "A B C" -> A and B and C
 					 */
 					ASSERT(root->children.size() == 0);
 					string& phrase = root->termIntermediateStructure->rawQueryKeyword;
 					vector<string> phraseKeyWords;
 					boost::algorithm::split(phraseKeyWords,	phrase, boost::is_any_of("\t "));
-
-					std::map<string, vector<unsigned> >::const_iterator iter =
-							paramContainer->PhraseKeyWordsPositionMap.find(phrase);
-
-					ASSERT(iter != paramContainer->PhraseKeyWordsPositionMap.end());
-					ASSERT(iter->second.size() == phraseKeyWords.size());
-					result = logicalPlan.createPhraseLogicalPlanNode(phraseKeyWords,iter->second,
-							        root->termIntermediateStructure->phraseSlop,
-					    			root->termIntermediateStructure->fieldFilterNumber);
-
 					LogicalPlanNode * mergeNode = logicalPlan.createOperatorLogicalPlanNode(LogicalPlanNodeTypeAnd);
-					result->children.push_back(mergeNode);
+					if (isEnabledWordPositionIndex(this->schema.getPositionIndexType())){
+						std::map<string, PhraseInfo >::const_iterator iter =
+								paramContainer->PhraseKeyWordsInfoMap.find(phrase);
+
+						ASSERT(iter != paramContainer->PhraseKeyWordsInfoMap.end());
+						ASSERT(iter->second.phraseKeywordPositionIndex.size() == phraseKeyWords.size());
+						result = logicalPlan.createPhraseLogicalPlanNode(phraseKeyWords,
+								iter->second.phraseKeywordPositionIndex,
+								root->termIntermediateStructure->phraseSlop,
+								root->termIntermediateStructure->fieldFilterNumber);
+						result->children.push_back(mergeNode);
+					}else {
+						result = mergeNode;
+					}
 
 					for (unsigned pIndx =0; pIndx < phraseKeyWords.size(); ++pIndx) {
 						LogicalPlanNode * termNode = logicalPlan.createTermLogicalPlanNode(
@@ -565,6 +576,8 @@ LogicalPlanNode * QueryRewriter::buildLogicalPlan(ParseTreeNode * root, LogicalP
                 }
 			}
 			break;
+		default:
+			ASSERT(true);  // 1.avoids compiler warning. 2. Informs developer that they made some mistake
 	}
 	for(vector<ParseTreeNode *>::iterator childOfRoot = root->children.begin() ; childOfRoot != root->children.end() ; ++childOfRoot){
 		result->children.push_back(buildLogicalPlan(*childOfRoot, logicalPlan));

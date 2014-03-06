@@ -15,6 +15,7 @@ WhiteSpaceTokenizer::WhiteSpaceTokenizer()
 
 bool WhiteSpaceTokenizer::incrementToken() {
     (tokenStreamContainer->currentToken).clear();
+    tokenStreamContainer->currentTokenOffset = tokenStreamContainer->offset + 1;
     while (true) {
         if ((tokenStreamContainer->offset)
                 < (tokenStreamContainer->completeCharVector).size()) {
@@ -27,7 +28,7 @@ bool WhiteSpaceTokenizer::incrementToken() {
                 	tokenStreamContainer->currentTokenPosition++;
                     return true;
                 } else {
-                    (tokenStreamContainer->offset)++;
+                    (tokenStreamContainer->currentTokenOffset)++;
                 }
                 break;
             default:

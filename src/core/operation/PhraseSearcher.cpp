@@ -40,7 +40,7 @@ PhraseSearcher::PhraseSearcher() {
  */
 bool PhraseSearcher::exactMatch(const vector<vector<unsigned> > &positionListVector,
                                 const vector<unsigned>& keyWordPositionsInPhrase,
-                                vector<unsigned>& matchedPosition) {
+                                vector<vector<unsigned> >& matchedPositions, bool stopAtFirstMatch = true) {
     bool searchDone = false;
     bool matchFound = false;
     unsigned prevKeyWordPosition = 0;
@@ -67,7 +67,7 @@ bool PhraseSearcher::exactMatch(const vector<vector<unsigned> > &positionListVec
     }
 
     vector<unsigned> cursorPosition(positionListVector.size());
-
+    bool atleastOneMatchFound = false;
     while(1) {
 
         prevKeyWordPosition = positionListVector[0][cursorPosition[0]];
@@ -117,17 +117,22 @@ bool PhraseSearcher::exactMatch(const vector<vector<unsigned> > &positionListVec
 
         if (listIndex == positionListVector.size()){
             // we found the match, break from while loop
+        	vector<unsigned> matchedPosition;
             for (unsigned i =0; i < cursorPosition.size(); ++i)
             {
                 matchedPosition.push_back(positionListVector[i][cursorPosition[i]]);
+            	//matchedPosition.push_back(cursorPosition[i]);
             }
-            return true;  // match found
+            matchedPositions.push_back(matchedPosition);
+            if (stopAtFirstMatch)
+            	return true;  // match found
+            atleastOneMatchFound = true;
         }
 
         ++cursorPosition[0];
         if (cursorPosition[0] >= positionListVector[0].size() || searchDone)
         {
-        	return false; // match not found
+        	return atleastOneMatchFound;
         }
     }
     // We should not reach here...This statement is to avoid compiler warning
@@ -144,7 +149,7 @@ bool PhraseSearcher::exactMatch(const vector<vector<unsigned> > &positionListVec
  */
 bool PhraseSearcher::proximityMatch(const vector<vector<unsigned> >& positionListVector,
                     const vector<unsigned>& offsetsInPhrase, unsigned inputSlop,
-                    vector<unsigned>& matchedPosition)
+                    vector<vector<unsigned> >& matchedPositions, bool stopAtFirstMatch = true)
 {
     // pre-conditions
 
@@ -195,6 +200,8 @@ bool PhraseSearcher::proximityMatch(const vector<vector<unsigned> >& positionLis
     for (unsigned i = 0; i < totalKeyWords; ++i) {
         minHeap.push(make_pair(positionListVector[i].front(),i));
     }
+    vector<unsigned> matchedPosition;
+    bool atleasFoundOneMatch = false;
     while(1) {
     	// clear the matchedPosition vector in case we loop back
         matchedPosition.clear();
@@ -203,7 +210,10 @@ bool PhraseSearcher::proximityMatch(const vector<vector<unsigned> >& positionLis
         	matchedPosition.push_back(pos);
         }
         if ((signed)inputSlop >= getPhraseSlop(offsetsInPhrase, matchedPosition)) {
-        	return true;
+        	matchedPositions.push_back(matchedPosition);
+        	if (stopAtFirstMatch)
+        		return true;
+        	atleasFoundOneMatch = true;
         }
 
         unsigned currentListIndex = minHeap.top().second;
@@ -218,7 +228,7 @@ bool PhraseSearcher::proximityMatch(const vector<vector<unsigned> >& positionLis
         minHeap.push(make_pair( next, currentListIndex));
     }
 
-    return false;
+    return atleasFoundOneMatch;
 }
 
 /*

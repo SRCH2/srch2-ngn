@@ -16,6 +16,8 @@ StandardTokenizer::StandardTokenizer()
 
 bool StandardTokenizer::incrementToken() {
     (tokenStreamContainer->currentToken).clear();
+    // CharOffset starts from 1.
+    tokenStreamContainer->currentTokenOffset = tokenStreamContainer->offset + 1;
     CharType previousChar = (CharType) ' ';
     //originally, set the previous character is ' ';
     while (true) {
@@ -49,6 +51,7 @@ bool StandardTokenizer::incrementToken() {
             	tokenStreamContainer->currentTokenPosition++;
                 return true;
             }
+            tokenStreamContainer->currentTokenOffset++;
             break;
         case CharSet::LATIN_TYPE:
         case CharSet::BOPOMOFO_TYPE:

@@ -38,6 +38,7 @@ class AnalyzerInternal;
 struct PositionalTerm {
 	string term;
 	unsigned position;
+	unsigned charOffset;
 };
 
 struct TokenAttributeHits {
@@ -58,6 +59,7 @@ struct TokenAttributeHits {
      *
      */
     vector<unsigned> attributeList;
+    vector<unsigned> charOffsetOfTermInAttribute;
 };
 
 
@@ -66,7 +68,7 @@ class StemmerContainer;
 class StopWordContainer;
 class  ProtectedWordsContainer;
 class  SynonymContainer;
-
+typedef unsigned CharType;
 /**
  * An Analyzer is used at query time to tokenize a queryString into
  * a vector of query keywords and also prevents very common words from
@@ -122,7 +124,11 @@ public:
 			const std::map<std::string, unsigned> &searchableAttributesNameToId,
 			std::vector<unsigned> &filter) const ;
 
-
+	void fillInCharacters(const char * data);
+	bool processToken();
+	std::vector<CharType> & getProcessedToken();
+	unsigned getProcessedTokenCharOffset();
+	unsigned getProcessedTokenPosition();
 	/**
 	 * Destructor to free persistent resources used by the Analyzer.
 	 */

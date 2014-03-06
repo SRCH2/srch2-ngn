@@ -134,6 +134,8 @@ public:
     virtual AnalyzerType getAnalyzerType() const = 0;
     const string& getRecordAllowedSpecialCharacters() const;
 
+    TokenStream* getTokenStream();
+
 protected:
 	TokenStream* tokenStream;
 	AnalyzerType analyzerType;

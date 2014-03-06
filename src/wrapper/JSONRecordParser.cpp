@@ -23,11 +23,13 @@
 
 #include "boost/algorithm/string/split.hpp"
 #include "boost/algorithm/string/classification.hpp"
+#include "util/RecordSerializerUtil.h"
 
 using namespace snappy;
 
 using namespace std;
 namespace srch2is = srch2::instantsearch;
+using namespace srch2::util;
 
 namespace srch2
 {
@@ -52,7 +54,8 @@ std::string WStringToString(const std::wstring& s)
 bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const std::string &inputLine,
                         const Json::Value &root, 
                         const CoreInfo_t *indexDataContainerConf,
-                        std::stringstream &error)
+                        std::stringstream &error,
+                        RecordSerializer& compactRecSerializer)
 {
     if (not (root.type() == Json::objectValue))
     {
@@ -87,31 +90,54 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
         return false;// Raise Error
     }
 
-    if (indexDataContainerConf->getSearchResponseFormat() == 0)
+    // storing searchable attributes code begin.
+    string compressedInputLine;
+    typedef map<string , unsigned>::const_iterator SearchableAttrIter;
+    const Schema& storageSchema = compactRecSerializer.getStorageSchema();
+    for (SearchableAttrIter iter = storageSchema.getSearchableAttribute().begin();
+    		iter != storageSchema.getSearchableAttribute().end(); ++iter)
     {
-        string compressedInputLine;
-        snappy::Compress(inputLine.c_str(), inputLine.size(), &compressedInputLine);
-    
-        record->setInMemoryData(compressedInputLine);
+    	vector<string> attributeStringValues;
+    	getJsonValueString(root, iter->first, attributeStringValues, "attributes-search");
+    	string singleString = boost::algorithm::join(attributeStringValues, " $$ ");
+    	snappy::Compress(singleString.c_str(), singleString.length(), &compressedInputLine);
+    	compactRecSerializer.addSearchableAttribute(iter->first, compressedInputLine);
     }
-    else if (indexDataContainerConf->getSearchResponseFormat() == 2)
-    {
-        Json::FastWriter local_writer;
-        Json::Value local_root;
-
-        const vector<std::string> *attributesToReturn = indexDataContainerConf->getAttributesToReturn();
-        for (int i=0; i<attributesToReturn->size(); i++)
-        {
-            local_root[attributesToReturn->at(i)] = root[attributesToReturn->at(i)];
-        }
-
-        const string local_inputLine = local_writer.write(local_root);
-
-        string compressedInputLine;
-        snappy::Compress(local_inputLine.c_str(), local_inputLine.size(), &compressedInputLine);
-    
-        record->setInMemoryData(compressedInputLine);
+    // Now we need to store the refining attributes
+    typedef map<string , unsigned>::const_iterator  RefineAttrIter;
+    for (RefineAttrIter iter = storageSchema.getRefiningAttributes()->begin();
+    		iter != storageSchema.getRefiningAttributes()->end(); ++iter) {
+    	vector<string> attributeStringValues;
+    	getJsonValueString(root, iter->first, attributeStringValues, "refining-attributes");
+    	srch2is::FilterType type = storageSchema.getTypeOfRefiningAttribute(iter->second);
+		switch (type) {
+		case srch2is::ATTRIBUTE_TYPE_UNSIGNED:
+		{
+			string& singleString = attributeStringValues[0];
+			unsigned val = atoi(singleString.c_str());
+			compactRecSerializer.addRefiningAttribute(iter->first, val);
+			break;
+		}
+		case srch2is::ATTRIBUTE_TYPE_FLOAT:
+		{
+			string& singleString = attributeStringValues[0];
+			float val = atof(singleString.c_str());
+			compactRecSerializer.addRefiningAttribute(iter->first, val);
+			break;
+		}
+		default:
+		{
+			// not possible
+			break;
+		}
+		}
     }
+    RecordSerializerBuffer compactBuffer = compactRecSerializer.serialize();
+    record->setInMemoryData(compactBuffer.start, compactBuffer.length);
+    compactRecSerializer.nextRecord();
+    //delete[] (char *)compactBuffer.start;
+
+
 
     for (map<string , SearchableAttributeInfoContainer>::const_iterator attributeIter
     		= indexDataContainerConf->getSearchableAttributes()->begin();
@@ -276,7 +302,9 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
     return true;
 }
 
-bool JSONRecordParser::populateRecordFromJSON(const string &inputLine, const CoreInfo_t *indexDataContainerConf, srch2is::Record *record, std::stringstream &error)
+bool JSONRecordParser::populateRecordFromJSON(const string &inputLine,
+		const CoreInfo_t *indexDataContainerConf, srch2is::Record *record, std::stringstream &error,
+		RecordSerializer& compactRecSerializer)
 {
     string::const_iterator end_it = utf8::find_invalid(inputLine.begin(), inputLine.end());
     if (end_it != inputLine.end()) {
@@ -299,15 +327,17 @@ bool JSONRecordParser::populateRecordFromJSON(const string &inputLine, const Cor
     }
     else
     {
-    	parseSuccess = JSONRecordParser::_JSONValueObjectToRecord(record, inputLine, root, indexDataContainerConf, error);
+    	parseSuccess = JSONRecordParser::_JSONValueObjectToRecord(record, inputLine, root,
+    			indexDataContainerConf, error, compactRecSerializer);
     }
     return parseSuccess;
 }
 
+
 srch2is::Schema* JSONRecordParser::createAndPopulateSchema(const CoreInfo_t *indexDataContainerConf)
 {
     srch2::instantsearch::IndexType indexType;
-    srch2::instantsearch::PositionIndexType positionIndexType;
+    srch2::instantsearch::PositionIndexType positionIndexType = srch2::instantsearch::POSITION_INDEX_NONE;
 
     if (indexDataContainerConf->getIndexType() == 0)
     {
@@ -318,18 +348,21 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema(const CoreInfo_t *ind
         indexType = srch2is::LocationIndex;
     }
 
-    // if position index is ebabled then attribute based search is also enabled
+    // if position word/offset index is enabled then attribute based search is also enabled
     // so check whether position index is enabled first
-    if (indexDataContainerConf->isPositionIndexEnabled()){
-    	positionIndexType = srch2::instantsearch::POSITION_INDEX_FULL ;
+    if (indexDataContainerConf->isPositionIndexWordEnabled()){
+    	positionIndexType = srch2::instantsearch::POSITION_INDEX_WORD ;
     }
-    else if (indexDataContainerConf->getSupportAttributeBasedSearch())
+    if (indexDataContainerConf->isPositionIndexCharEnabled()) {
+    	if (positionIndexType == srch2::instantsearch::POSITION_INDEX_WORD)
+    		positionIndexType = srch2::instantsearch::POSITION_INDEX_FULL ;
+    	else
+    		positionIndexType = srch2::instantsearch::POSITION_INDEX_CHAR ;
+    }
+    if (positionIndexType == srch2::instantsearch::POSITION_INDEX_NONE &&
+    		indexDataContainerConf->getSupportAttributeBasedSearch())
     {
         positionIndexType = srch2::instantsearch::POSITION_INDEX_FIELDBIT;
-    }
-    else
-    {
-        positionIndexType = srch2::instantsearch::POSITION_INDEX_NONE;
     }
 
     srch2is::Schema* schema = srch2is::Schema::create(indexType, positionIndexType);
@@ -352,7 +385,8 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema(const CoreInfo_t *ind
     {
         schema->setSearchableAttribute(searchableAttributeIter->first,
         		searchableAttributeIter->second.boost ,
-        		searchableAttributeIter->second.isMultiValued ); // searchable text
+        		searchableAttributeIter->second.isMultiValued,
+        		searchableAttributeIter->second.highlight); // searchable text
     }
 
 
@@ -380,7 +414,8 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema(const CoreInfo_t *ind
 /*
  *  Create indexes using records from json file and return the total indexed records.
  */
-unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, const CoreInfo_t *indexDataContainerConf)
+unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, Schema * storedAttrSchema,
+		const CoreInfo_t *indexDataContainerConf)
 {
     string filePath = indexDataContainerConf->getDataFilePath();
     ifstream in(filePath.c_str());
@@ -397,6 +432,9 @@ unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, con
     unsigned indexedRecordsCount = 0;
     // use same analyzer object for all the records
     srch2is::Analyzer *analyzer = AnalyzerFactory::createAnalyzer(indexDataContainerConf); 
+
+    RecordSerializer compactRecSerializer = RecordSerializer(*storedAttrSchema);
+
     if(in.good()){
         while(getline(in, line))
         {
@@ -412,7 +450,7 @@ unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, con
 	    }
 
             std::stringstream error;
-            parseSuccess = JSONRecordParser::populateRecordFromJSON(line, indexDataContainerConf, record, error);
+            parseSuccess = JSONRecordParser::populateRecordFromJSON(line, indexDataContainerConf, record, error, compactRecSerializer);
 
             if(parseSuccess)
             {

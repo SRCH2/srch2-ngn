@@ -161,6 +161,7 @@ private:
     static const char* const facetRangeStart;
     static const char* const facetField;
     static const char* const facetRangeField;
+    static const char* const highlightSwitch;
     static const string getFacetRangeKey(const string &facetField,
             const string &facetRangeProperty) {
         return "f."+facetField+".facet."+facetRangeProperty;
@@ -193,6 +194,10 @@ private:
      * parse tree leaf nodes.
      */
     bool attachParseTreeAndMainQueryParallelVectors();
+    /*
+     *   Parse highlight options
+     */
+    void highlightParser();
 
     /*
      * checks to see if "fuzzy" exists in parameters.

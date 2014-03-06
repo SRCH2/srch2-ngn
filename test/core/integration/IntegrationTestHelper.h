@@ -125,7 +125,7 @@ void buildIndex(string indexDir)
         cellCounter = 0;
         std::stringstream  lineStream(line);
         std::string        cell;
-        record->setInMemoryData(line);
+        record->setInMemoryData(line.c_str(), line.length());
 
         while(std::getline(lineStream,cell,','))
         {
@@ -218,7 +218,7 @@ void buildFactualIndex(string indexDir, unsigned docsToIndex)
         cellCounter = 0;
         std::stringstream  lineStream(line);
         std::string        cell;
-        record->setInMemoryData(line);
+        record->setInMemoryData(line.c_str(), line.length());
 
         while(std::getline(lineStream,cell,'^'))
         {

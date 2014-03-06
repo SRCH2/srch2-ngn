@@ -42,7 +42,6 @@ class Srch2Server
 public:
     Indexer *indexer;
     const CoreInfo_t *indexDataConfig;
-
     /* Fields used only for stats */
     time_t stat_starttime;          /* Server start time */
     long long stat_numcommands;     /* Number of processed commands */
@@ -72,6 +71,7 @@ public:
 
     IndexMetaData *createIndexMetaData(const CoreInfo_t *indexDataConfig);
     void createAndBootStrapIndexer();
+    void createHighlightAttributesVector(const srch2is::Schema * schema);
 
     void setCoreName(const string &name);
     const string &getCoreName();

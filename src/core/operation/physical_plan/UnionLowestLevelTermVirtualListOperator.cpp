@@ -124,6 +124,7 @@ PhysicalPlanRecordItem * UnionLowestLevelTermVirtualListOperator::getNext(const 
         positionIndexOffsets.push_back(currentHeapMax->positionIndexOffset);
         newItem->setPositionIndexOffsets(positionIndexOffsets);
 
+        newItem->addTermType(term->getTermType());
 
         unsigned currentHeapMaxCursor = this->cursorVector[currentHeapMax->cursorVectorPosition];
         unsigned currentHeapMaxInvertetedListId = currentHeapMax->invertedListId;

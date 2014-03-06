@@ -59,6 +59,8 @@ SchemaInternal::SchemaInternal(const SchemaInternal &schemaInternal) {
             schemaInternal.refiningAttributeDefaultValueVector;
     this->refiningAttributeIsMultiValuedVector =
     		schemaInternal.refiningAttributeIsMultiValuedVector;
+    this->searchableAttributeHighlightEnabled =
+    		schemaInternal.searchableAttributeHighlightEnabled;
     this->scoringExpressionString = schemaInternal.scoringExpressionString;
     this->indexType = schemaInternal.indexType;
     this->positionIndexType = schemaInternal.positionIndexType;
@@ -115,7 +117,7 @@ const std::string* SchemaInternal::getPrimaryKey() const {
 }
 
 int SchemaInternal::setSearchableAttribute(const string &attributeName,
-        unsigned attributeBoost, bool isMultiValued ) {
+        unsigned attributeBoost, bool isMultiValued, bool enableHiglight) {
     //ASSERT (this->boostVector.size() <= 255);
 
 //    if( this->searchableAttributeNameToId.size() > 255)
@@ -132,6 +134,7 @@ int SchemaInternal::setSearchableAttribute(const string &attributeName,
     if (iter != this->searchableAttributeNameToId.end()) {
         this->searchableAttributeBoostVector[iter->second] = attributeBoost;
         this->searchableAttributeIsMultiValuedVector[iter->second] = isMultiValued;
+        this->searchableAttributeHighlightEnabled[iter->second] = enableHiglight;
         return iter->second;
     } else {
         int searchAttributeMapSize = this->searchableAttributeNameToId.size();
@@ -139,6 +142,7 @@ int SchemaInternal::setSearchableAttribute(const string &attributeName,
                 searchAttributeMapSize;
         this->searchableAttributeBoostVector.push_back(attributeBoost);
         this->searchableAttributeIsMultiValuedVector.push_back(isMultiValued);
+        this->searchableAttributeHighlightEnabled.push_back(enableHiglight);
     }
     return this->searchableAttributeNameToId.size() - 1;
 }
@@ -252,6 +256,15 @@ unsigned SchemaInternal::getNumberOfRefiningAttributes() const {
 
     return this->refiningAttributeNameToId.size();
 }
+
+bool SchemaInternal::isHighlightEnabled(unsigned attributeId) const {
+	if (attributeId < this->searchableAttributeHighlightEnabled.size()) {
+		return this->searchableAttributeHighlightEnabled[attributeId];
+	} else {
+		return false;
+	}
+}
+
 
 }
 }
