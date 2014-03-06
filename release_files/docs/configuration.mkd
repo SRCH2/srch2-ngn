@@ -26,6 +26,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#recordBoostField">8.3. Record Boost Field</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#defaultQueryTermBoost">8.4. Default Query Term Boost</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#enablePositionIndex">8.5. Enable Positional Index</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#enableCharOffsetIndex">8.5. Enable Character Offset Index</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryConfig">9. Query Parameters</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rankingAlgorithm">9.1. Ranking</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fuzzyMatchPenalty">9.2. Fuzzy Match Penalty</a></br><br>
@@ -38,6 +39,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#searcherType">9.9. Search Type</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermFuzzyType">9.10. Term Fuzzy Type</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermPrefixType">9.11. Term Prefix Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#highlighter">9.12. Highlighter</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryResponseWriter">10. Response Writer</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#ResponseContent">10.1. Response Content</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#updateHandler">11. Update Handler</a></br><br>
@@ -244,6 +246,16 @@ example shows how to enable this indexing:
 ```  
 Note that the positional index takes more memory resources. By default it is disabled.<br>
 
+###8.6. Enable Character Offset Index, Optional{id="enableCharOffsetIndex"}
+
+A character offset index supports fast keyword [highlighting](#highlighter) during the snippet generation. The "enableCharOffsetIndex" tag can be used to enable or disable character offset indexing.  For instance, the following
+example shows how to enable this indexing:
+
+```
+<enableCharOffsetIndex>1</enableCharOffsetIndex>
+```  
+Note that the character offset index takes more memory resources. By default it is disabled.<br>
+
 
 ##9. Query Parameters:##{id="queryConfig"}
 
@@ -379,6 +391,25 @@ This value specifies how to treat a term by default with respect to match comple
 
 Its default value is 0.
 
+###9.12. Highlighter, Optional{id="highlighter"}
+```
+<highlighter>
+    <snippetSize>250</snippetSize>
+    <fuzzyTagPre value = '<fuzzy>' ></fuzzyTagPre>
+    <fuzzyTagPost value = '</fuzzy>'></fuzzyTagPost>
+    <exactTagPre value = '<exact>' ></exactTagPre>
+    <exactTagPost value = '</exact>'></exactTagPost>
+</highlighter>
+```
+This composite parameter allows user to specify snippet size and tags to enclose the matched keywords.
+> <b>snippetSize</b>: specify the size of snippet to be generated for an attribute.<br>
+> <b>fuzzyTagPre</b>: specify the tag value to be prefixed to a fuzzy keyword match.<br>
+> <b>fuzzyTagPost</b>: specify the tag value to be suffixed to a fuzzy keyword match.<br>
+> <b>exactTagPre</b>: specify the tag value to be prefixed to a exact keyword match.<br>
+> <b>exactTagPost</b>: specify the tag value to be suffixed to a exact keyword match.<br>
+
+Note: To improve the query search time when the highlighting is enabled, consider enabling the [character offset index](#enableCharOffsetIndex). 
+
 ##10. Response Writer:##{id="queryResponseWriter"}
 
 This tag has parameters related to configuring the response of a query.
@@ -502,7 +533,7 @@ Here is an example:
 
 ```
 <field name="category" type="text" searchable="true" />
-<field name="name" type="text" indexed="true" />
+<field name="name" type="text" indexed="true" highlight="true" />
 <field name="model" default="benz" required="true" type="text" refining="true"/>
 <field name="price" default="200" required="true" type="float" refining="true"/>
 <field name="likes" default="0" required="true" type="integer" refining="true"/>
@@ -534,10 +565,11 @@ Each field has certain properties:
  - <b>refining</b>: If true, then the engine will include its values in the indices to support post-processing operations on query results, such as additional filtering predicates (e.g., "price < 20"), sort, and facet.<br>
  - <b>indexed</b>: If this flag is true, then the engine will treat the field as both a searchable and a refining attribute. <br>
  - <b>multivalued</b>: If this flag is true, then the field is considered a multi-valued attribute. If so, then the corresponding JSON value in the data file must be a valid array in JSON (e.g. [1245332,3435645,53465,6456745]). Also please note that if the attribute is multi-valued, the value of the 'default' property must be a comma-separated list of values.<br>
+ - <b>highlight</b>: If this flag is true, then the engine will generate a snippet for this attribute with matching keyword highlighted. <br>
 
 In the example above, we can do keyword search on the attributes
 "category" and "name".  We can do post-processing on attributes
-"name", "model", "price", "likes" and "seller_id".
+"name", "model", "price", "likes" and "seller_id". The engine will generate snippet for the attribute "name".
 
 Note:
 
