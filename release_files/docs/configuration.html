@@ -376,22 +376,23 @@ to retrieve the next "page" of results. The default value of "Rows" is 10.<br></
 </blockquote>
 <p>Its default value is 0.</p>
 <h3 id="highlighter">9.12. Highlighter, Optional</h3>
+<p>The engine supports the feature to generate brief extract (snippet) of the searchable field's text. Each matching keyword is tagged to highlight its position in the snippet. A snippet with keywords highlighting allows user to fetch more meaningful information from field's text. It also reduces the network bandwidth usage by reducing a payload size. </p>
 <pre><code>&lt;highlighter&gt;
     &lt;snippetSize&gt;250&lt;/snippetSize&gt;
-    &lt;fuzzyTagPre value = '&lt;fuzzy&gt;' &gt;&lt;/fuzzyTagPre&gt;
-    &lt;fuzzyTagPost value = '&lt;/fuzzy&gt;'&gt;&lt;/fuzzyTagPost&gt;
-    &lt;exactTagPre value = '&lt;exact&gt;' &gt;&lt;/exactTagPre&gt;
-    &lt;exactTagPost value = '&lt;/exact&gt;'&gt;&lt;/exactTagPost&gt;
+    &lt;fuzzyTagPre value = '&lt;span class=&quot;fuzzy&quot;&gt;'&gt;&lt;/fuzzyTagPre&gt;
+    &lt;fuzzyTagPost value = '&lt;/span&gt;'&gt;&lt;/fuzzyTagPost&gt;
+    &lt;exactTagPre value = '&lt;span class=&quot;exact&quot;&gt;' &gt;&lt;/exactTagPre&gt;
+    &lt;exactTagPost value = '&lt;/span&gt;'&gt;&lt;/exactTagPost&gt;
 &lt;/highlighter&gt;
 </code></pre>
 
-<p>This composite parameter allows user to specify snippet size and tags to enclose the matched keywords.</p>
+<p>This composite parameter allows a user to specify snippet size and tags to enclose the matched keywords. </p>
 <blockquote>
-<p><b>snippetSize</b>: specify the size of snippet to be generated for an attribute.<br>
-<b>fuzzyTagPre</b>: specify the tag value to be prefixed to a fuzzy keyword match.<br>
-<b>fuzzyTagPost</b>: specify the tag value to be suffixed to a fuzzy keyword match.<br>
-<b>exactTagPre</b>: specify the tag value to be prefixed to a exact keyword match.<br>
-<b>exactTagPost</b>: specify the tag value to be suffixed to a exact keyword match.<br></p>
+<p><b>snippetSize</b>: specifies the characters size of snippet to be generated for an attribute.<br>
+<b>fuzzyTagPre</b>: specifies the tag value to be prefixed to a fuzzy keyword match.<br>
+<b>fuzzyTagPost</b>: specifies the tag value to be suffixed to a fuzzy keyword match.<br>
+<b>exactTagPre</b>: specifies the tag value to be prefixed to a exact keyword match.<br>
+<b>exactTagPost</b>: specifies the tag value to be suffixed to a exact keyword match.<br></p>
 </blockquote>
 <p>Note: To improve the query search time when the highlighting is enabled, consider enabling the <a href="#enableCharOffsetIndex">character offset index</a>. </p>
 <h2 id="queryResponseWriter">10. Response Writer:</h2>
