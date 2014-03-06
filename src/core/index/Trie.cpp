@@ -399,7 +399,8 @@ Trie::~Trie()
      * that we do not get into a double free situation. 'root_readview' is a shared_pointer
      * which automatically deletes the pointer it is holding.
      */
-    if (this->root_writeview != this->root_readview->root)
+    if (this->root_writeview != this->root_readview->root
+    		&& this->root_writeview != NULL)
         delete this->root_writeview;
 
     pthread_spin_destroy(&m_spinlock);

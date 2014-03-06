@@ -117,10 +117,13 @@ private:
     template<class Archive>
     void serialize(Archive & ar, const unsigned int version)
     {
-        cowvector<unsigned> *invListPtr = invList;
-        if (invListPtr == NULL)
-            invListPtr = new cowvector<unsigned>();
-        ar & *invListPtr;
+    	// invList should not be NULL. In the debug mode, alert a developer via ASSERT
+    	ASSERT(invList != NULL);
+        if (invList == NULL)  // In release mode, create new memory.
+        	invList = new cowvector<unsigned>();
+        // Always use the object reference instead of pointer for boost serialization. During the load phase
+        // boost tends to allocate new memory for the pointer leaking the existing one.
+        ar & *invList;
     }
 
 public:
@@ -317,14 +320,18 @@ private:
     template<class Archive>
     void save(Archive & ar, const unsigned int version) const
     {
-        cowvector<InvertedListContainerPtr> *invertedIndexVectorPtr = invertedIndexVector;
-        if (invertedIndexVectorPtr == NULL)
-    	    invertedIndexVectorPtr = new cowvector<InvertedListContainerPtr>();
-        ar & *invertedIndexVectorPtr;
-        cowvector<unsigned> *keywordIdsPtr = keywordIds;
-        if (keywordIdsPtr == NULL)
-            keywordIdsPtr = new cowvector<unsigned>();
-        ar & *keywordIdsPtr;
+    	//invertedIndexVector should no be NULL. In debug mode,Alert developer that it is NULL
+    	ASSERT(invertedIndexVector != NULL);
+    	// In release mode , allocate new memory.
+        if (invertedIndexVector == NULL)
+        	invertedIndexVector = new cowvector<InvertedListContainerPtr>();
+        ar & *invertedIndexVector;
+        //invertedIndexVector should no be NULL. In debug mode,Alert developer that it is NULL
+        ASSERT(keywordIds != NULL);
+        // In release mode , allocate new memory.
+        if (keywordIds == NULL)
+        	keywordIds = new cowvector<unsigned>();
+        ar & *keywordIds;
     }
 
     template<class Archive>

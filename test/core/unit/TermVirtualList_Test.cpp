@@ -491,7 +491,6 @@ void TermVirtualList_Tests()
     Test_Complete_Fuzzy(queryEvaluatorInternal);
     Test_Prefix_Fuzzy(queryEvaluatorInternal);
 
-    delete indexSearcherInternal;
     delete indexer;
     delete indexMetaData;
 }
