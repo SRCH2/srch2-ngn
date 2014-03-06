@@ -44,6 +44,11 @@ def checkResult(query, responseJsonAll,resultValue, facetResultValue):
         return 0
     return 1
 
+# check if the faceted results are as expected
+# Note: Query parameter &rows=1 prevents the number of values for any facet category from every
+# being more than 1.
+# If ranking ever changes, the record used to calculate facet counts will also change and
+# this check will likely begin failing.
 def checkFacetResults(query, responseJson, resultValue):
    if len(responseJson) != len(resultValue):
       return False
@@ -55,9 +60,9 @@ def checkFacetResults(query, responseJson, resultValue):
       for j in range(0,len(facet_info)):
          facet_line = facet_line + facet_info[j]['category_name'] + ',' + str(facet_info[j]['category_value']) + '|'
       if resultValue[i] != facet_line:
-         print resultValue[i]
-         print 'vs.'
-         print facet_line
+         print 'Expected facet results: ' + resultValue[i]
+         print 'vs. Actual facet results: ' + facet_line
+         print 'Facet test failed'
          return False
    return True
 

@@ -317,7 +317,7 @@ q=pulp AND fiction AND (Tarenti~0.6* OR Travolta OR Jackson) AND NOT &quot;Jesse
 <p>Please note: the attributes used in "fq" must have the "refining" property set to true in the configuration file. The SRCH2 movie demo does not normally configure refining for all fields used as examples in this document. Also, only the attributes of type INT and FLOAT can be used in the "boolexp$$" block.</p>
 <h2 id="facetParams">7. Facet Query Params</h2>
 <h3 id="facetEnabled">7.1. facet</h3>
-<p>It is either "true", "false" or "only", indicating whether we want to enable faceting. To turn faceting on, we need to include the following</p>
+<p>This value is "true", "false" or "only", indicating whether we want to enable faceting. To turn faceting on, we need to include the following</p>
 <pre><code>facet=true
 </code></pre>
 
@@ -330,12 +330,13 @@ q=pulp AND fiction AND (Tarenti~0.6* OR Travolta OR Jackson) AND NOT &quot;Jesse
 <pre><code>facet=true&amp;facet.field=year&amp;facet.field=genre
 </code></pre>
 
+<p>This query specifies <i>"facet=true"</i> to turn on faceting. The parameters <i>facet.field</i> request that the engine include in the response the facets for the fields <i>year</i> and <i>genre</i>.</p>
 <h3 id="facetFieldRows">7.2.2 f.<i>category</i>.rows</h3>
 <p>This is the maximum number of categories with maximal frequencies to be returned. All categories are returned by default. Example: adding the following parameter to the query will tell the engine to return the top 10 most popular genres.</p>
 <pre><code>f.year.rows=10
 </code></pre>
 
-<p>The query above includes <i>"facet=true"</i> to turn on faceting. The parameter <i>facet.field</i> requests the engine to include the facet response for the field <i>genre</i> in the response. Note the different query parameter name of <i>field</i> instead of <i>f</i> for backward compatibility to Solr.</p>
+<p>Note the different query parameter name of <i>f</i> instead of <i>field</i> for backward compatibility to Solr.</p>
 <h3 id="facetByRange">7.3. Facet by Range</h3>
 <h3 id="facetRange">7.3.1 facet.range</h3>
 <p>This parameter can be used to specify a field that should be treated as a range facet. It allows us to specify fields for which only facets within a specified range will be included. Example:</p>
@@ -344,20 +345,20 @@ q=pulp AND fiction AND (Tarenti~0.6* OR Travolta OR Jackson) AND NOT &quot;Jesse
 
 <p>The response of the above query includes facet information for the <i>year</i> field. <br></p>
 <p>Please note: the <a href="configuration.html#facetFields">configuration file</a> should define the default <i>facet.start</i>, <i>facet.end</i>, and <i>facet.gap</i> values.</p>
-<h3 id="facetStart">7.3.2. facet.range.start</h3>
+<h3 id="facetStart">7.3.2. f.<i>category</i>.range.start</h3>
 <p>This is the minimum value (inclusive) of the range. Example:</p>
 <pre><code>f.year.facet.start=1995
 </code></pre>
 
 <p>The above query defines the lower bounds of the facet range for the <i>year</i> field.</p>
-<h3 id="facetEnd">7.3.3. facet.range.end</h3>
+<h3 id="facetEnd">7.3.3. f.<i>category</i>.range.end</h3>
 <p>It is the upper bound (exclusive) of the range. Example:</p>
 <pre><code>f.year.facet.end=2020
 </code></pre>
 
 <p>The above query defines the upper bounds of the facet range for the <i>year</i> field.</p>
-<h3 id="facetGap">7.3.4. facet.range.gap</h3>
-<p>It is the size of each range starting from the minimum value. Example:</p>
+<h3 id="facetGap">7.3.4. f.<i>category</i>.range.gap</h3>
+<p>This parameter determines the size of each range by which to group the facet values starting from the minimum value. Example:</p>
 <pre><code>f.year.facet.gap=5
 </code></pre>
 

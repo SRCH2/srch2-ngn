@@ -78,7 +78,13 @@ if __name__ == '__main__':
     size_3 = os.path.getsize(logFileName)
     #print 'size_3 = ' + str(size_3)
     #get the size of old renamed logger file
-    size_4 = os.path.getsize(str(logFileName) + '.1')
+    try:
+        size_4 = os.path.getsize(str(logFileName) + '.1')
+    except Exception, err:
+        print "Exception checking size of old, renamed logfile " + str(logFileName) + '.1'
+        tester.killServer()
+        os._exit(1)
+
     #print 'size_4 = ' + str(size_4)
     assert (size_3 == 0) and (size_4 == size_2), 'Error, failed to create/switch to new logger file'
 

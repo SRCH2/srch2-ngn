@@ -333,7 +333,7 @@ Please note: the attributes used in "fq" must have the "refining" property set t
 
 ### 7.1. facet {id="facetEnabled"}
 
-It is either "true", "false" or "only", indicating whether we want to enable faceting. To turn faceting on, we need to include the following
+This value is "true", "false" or "only", indicating whether we want to enable faceting. To turn faceting on, we need to include the following
 ```
 facet=true
 ```
@@ -350,14 +350,15 @@ This parameter specifies a field to be treated as a categorical facet. It finds 
 ```
 facet=true&facet.field=year&facet.field=genre
 ```
+This query specifies <i>"facet=true"</i> to turn on faceting. The parameters <i>facet.field</i> request that the engine include in the response the facets for the fields <i>year</i> and <i>genre</i>.
+  
 ### 7.2.2 f.<i>category</i>.rows {id="facetFieldRows"}
 This is the maximum number of categories with maximal frequencies to be returned. All categories are returned by default. Example: adding the following parameter to the query will tell the engine to return the top 10 most popular genres.
 ```
 f.year.rows=10
 ```
+Note the different query parameter name of <i>f</i> instead of <i>field</i> for backward compatibility to Solr.
 
-The query above includes <i>"facet=true"</i> to turn on faceting. The parameter <i>facet.field</i> requests the engine to include the facet response for the field <i>genre</i> in the response. Note the different query parameter name of <i>field</i> instead of <i>f</i> for backward compatibility to Solr.
-  
 ### 7.3. Facet by Range {id="facetByRange"}
 
 ###7.3.1 facet.range {id="facetRange"}
@@ -370,7 +371,7 @@ The response of the above query includes facet information for the <i>year</i> f
 
 Please note: the [configuration file](configuration.html#facetFields) should define the default <i>facet.start</i>, <i>facet.end</i>, and <i>facet.gap</i> values.
 
-###7.3.2. facet.range.start {id="facetStart"}
+###7.3.2. f.<i>category</i>.range.start {id="facetStart"}
 
 This is the minimum value (inclusive) of the range. Example:
 ```
@@ -378,7 +379,7 @@ f.year.facet.start=1995
 ```
 The above query defines the lower bounds of the facet range for the <i>year</i> field.
 
-###7.3.3. facet.range.end {id="facetEnd"}
+###7.3.3. f.<i>category</i>.range.end {id="facetEnd"}
 
 It is the upper bound (exclusive) of the range. Example:
 ```
@@ -386,9 +387,9 @@ f.year.facet.end=2020
 ```
 The above query defines the upper bounds of the facet range for the <i>year</i> field.
 
-###7.3.4. facet.range.gap {id="facetGap"}
+###7.3.4. f.<i>category</i>.range.gap {id="facetGap"}
 
-It is the size of each range starting from the minimum value. Example:
+This parameter determines the size of each range by which to group the facet values starting from the minimum value. Example:
 ```
 f.year.facet.gap=5
 ```

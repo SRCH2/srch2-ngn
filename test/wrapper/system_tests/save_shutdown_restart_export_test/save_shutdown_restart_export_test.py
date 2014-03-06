@@ -17,9 +17,15 @@ def testSaveShutdownRestart(binary_path):
     test_lib.pingServer(port)
 
     #save the index
-    saveCommand='curl -s http://localhost:' + port + '/save -X PUT'
-    os.system(saveCommand)
-
+    saveQuery='http://localhost:' + port + '/save'
+    opener = urllib2.build_opener(urllib2.HTTPHandler)
+    request = urllib2.Request(saveQuery, '')
+    request.get_method = lambda: 'PUT'
+    response = opener.open(request).read()
+    jsonResponse = json.loads(response)
+    if jsonResponse['log'][0]['save'] != "success":
+        print "Save operation failed: " + response
+        exit(-1)
     
     #shutdown
     subprocess.call(["kill", "-2", "%d" % proc.pid])
@@ -48,8 +54,15 @@ def testSaveShutdownRestart(binary_path):
         print 'server start'
 
     #export data to json
-    exportCommand='curl -i http://localhost:' + port + '/export?exported_data_file=exportData.json -X PUT'
-    os.system(exportCommand)
+    exportQuery='http://localhost:' + port + '/export?exported_data_file=exportData.json'
+    opener = urllib2.build_opener(urllib2.HTTPHandler)
+    request = urllib2.Request(exportQuery, '')
+    request.get_method = lambda: 'PUT'
+    response = opener.open(request).read()
+    jsonResponse = json.loads(response)
+    if jsonResponse['log'][0]['export'] != "success":
+        print "Export operation failed: " + response
+        exit(-1)
 
     #get pid of srch2-search-server and kill the process
     proc.send_signal(signal.SIGUSR1)
