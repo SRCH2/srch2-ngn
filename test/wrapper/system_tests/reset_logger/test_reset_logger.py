@@ -73,6 +73,7 @@ if __name__ == '__main__':
 
     #send a command to rotate logger file by using the 3rd-party program 'logrotate' 
     status, output = commands.getstatusoutput("logrotate -s ./reset_logger/myLogrotate/status ./reset_logger/myLogrotate/logrotate.conf")
+    sleep(1)
 
     #get the size of new empty logger file
     size_3 = os.path.getsize(logFileName)
@@ -83,6 +84,7 @@ if __name__ == '__main__':
     except Exception, err:
         print "Exception checking size of old, renamed logfile " + str(logFileName) + '.1'
         tester.killServer()
+        os.popen("ls -la ./reset_logger/logs")
         os._exit(1)
 
     #print 'size_4 = ' + str(size_4)
