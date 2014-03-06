@@ -81,10 +81,15 @@ def testNewFeatures( binary_path):
 
     # now insert 200
     print "# 3. inserts id=200"
-    insertCommand = 'curl "http://localhost:'+port+'/docs" -i -X PUT -d \'{"model": "BMW","price":1.5,"likes":1,"expiration":"01/01/1911", "category": "second verycommonword vitamin Food & Beverages Retail Goods Specialty", "name": "Moondog Visions", "relevance": 8.0312880237855993, "lat": 61.207107999999998, "lng": -149.86541, "id": "200"}\''
-    print insertCommand
-    os.system(insertCommand)
-
+    insertQuery = 'http://localhost:' + port + '/docs'
+    opener = urllib2.build_opener(urllib2.HTTPHandler)
+    request = urllib2.Request(insertQuery, '{"model": "BMW","price":1.5,"likes":1,"expiration":"01/01/1911", "category": "second verycommonword vitamin Food & Beverages Retail Goods Specialty", "name": "Moondog Visions", "relevance": 8.0312880237855993, "lat": 61.207107999999998, "lng": -149.86541, "id": "200"}')
+    request.get_method = lambda: 'PUT'
+    response = opener.open(request).read()
+    jsonResponse = json.loads(response)
+    if jsonResponse['log'][0]['insert'] != "success":
+        print "Insertion of record 200 failed: " + response
+        failCount += 1
     time.sleep(10)
 
     # third search for 200 which is there    
@@ -98,10 +103,16 @@ def testNewFeatures( binary_path):
 
 
     # now delete record 2
-    print "# 5. deletes id=2"
-    deleteCommand = 'curl "http://localhost:' + str(port) + '/docs?id=2" -i -X DELETE'
-    print deleteCommand
-    os.system(deleteCommand)
+    print "# 5. delete id=2"
+    deleteQuery = 'http://localhost:' + str(port) + '/docs?id=2'
+    opener = urllib2.build_opener(urllib2.HTTPHandler)
+    request = urllib2.Request(deleteQuery, '')
+    request.get_method = lambda: 'DELETE'
+    response = opener.open(request).read()
+    jsonResponse = json.loads(response)
+    if jsonResponse['log'][0]['delete'] != "success":
+        print "Deletion of record 2 failed: " + response
+        failCount += 1
     time.sleep(10)
 
     # search for record 2 which should not be there
@@ -116,11 +127,17 @@ def testNewFeatures( binary_path):
 
     # now insert 2
     print "# 7. insert id=2"
-    insertCommand = 'curl "http://localhost:'+port+'/docs" -i -X PUT -d \'{"model": "BMW","price":1.5,"likes":1,"expiration":"01/01/1911", "category": "record 2 second verycommonword vitamin Food & Beverages Retail Goods Specialty", "name": "Moondog Visions", "relevance": 8.0312880237855993, "lat": 61.207107999999998, "lng": -149.86541, "id": "2"}\''
-    print insertCommand
-    os.system(insertCommand)
-
+    insertQuery = 'http://localhost:' + port + '/docs'
+    opener = urllib2.build_opener(urllib2.HTTPHandler)
+    request = urllib2.Request(insertQuery, '{"model": "BMW","price":1.5,"likes":1,"expiration":"01/01/1911", "category": "record 2 second verycommonword vitamin Food & Beverages Retail Goods Specialty", "name": "Moondog Visions", "relevance": 8.0312880237855993, "lat": 61.207107999999998, "lng": -149.86541, "id": "2"}')
+    request.get_method = lambda: 'PUT'
+    response = opener.open(request).read()
+    jsonResponse = json.loads(response)
+    if jsonResponse['log'][0]['insert'] != "success":
+        print "Insertion of record 2 failed: " + response
+        failCount += 1
     time.sleep(10)
+
     # third search for 200 which is there    
     print "# 8. searches for id=2 and should find it again"
     query = 'http://localhost:' + port + '/search?docid=2'
