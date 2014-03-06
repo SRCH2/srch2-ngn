@@ -27,6 +27,7 @@
 namespace srch2 {
 namespace instantsearch {
 
+typedef unsigned CharType;
 
 const std::string MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER = ",";
 

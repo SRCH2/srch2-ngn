@@ -68,7 +68,6 @@ class StemmerContainer;
 class StopWordContainer;
 class  ProtectedWordsContainer;
 class  SynonymContainer;
-typedef unsigned CharType;
 /**
  * An Analyzer is used at query time to tokenize a queryString into
  * a vector of query keywords and also prevents very common words from
