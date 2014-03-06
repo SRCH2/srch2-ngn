@@ -92,7 +92,11 @@ inline void SingleBufferAllocator::deallocate(pointer p, size_type) {
   buffer = NULL;
 }
 
-inline SingleBufferAllocator::pointer 
+/*
+ *  Caller of this function should make sure that the original "buffer" pointer is freed or
+ *  saved somewhere before this call.
+ */
+inline SingleBufferAllocator::pointer
 SingleBufferAllocator::allocate(size_type n, const_pointer) {
   size_t allocateRound = round(n);
   char allocatePowerOfTwo = (char) __builtin_ffs(allocateRound);
@@ -103,11 +107,7 @@ SingleBufferAllocator::allocate(size_type n, const_pointer) {
     return buffer;
   }
   
-  char *oldBuffer = buffer;
   buffer = new char[allocateRound];
-
-  //deallocate the oldBuffer to prevent leaks
-  if(oldBuffer) delete [] oldBuffer;
 
   powerOfTwoSizeOfBuffer = allocatePowerOfTwo;
 

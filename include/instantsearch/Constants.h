@@ -27,6 +27,7 @@
 namespace srch2 {
 namespace instantsearch {
 
+typedef unsigned CharType;
 
 const std::string MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER = ",";
 
@@ -38,6 +39,8 @@ const std::string MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER = ",";
  */
 const unsigned MULTI_VALUED_ATTRIBUTE_POSITION_BUMP = 100000;
 
+static const char * MULTI_VAL_ATTR_DELIMITER = " $$ ";
+const unsigned MULTI_VAL_ATTR_DELIMITER_LEN = 4;
 /// Analyzer related constants
 typedef enum {
     // there is no numbering for this enum. By default the numbers start from 0
@@ -165,18 +168,38 @@ typedef enum
 
 typedef enum
 {
-    POSITION_INDEX_FULL , // the index of keyword in the record
+    POSITION_INDEX_FULL,
+    POSITION_INDEX_WORD , // the word offset of keyword in the record
+    POSITION_INDEX_CHAR , // the character offset of keyword in the record
     POSITION_INDEX_FIELDBIT ,// keeps the attribute in which a keyword appears in
     POSITION_INDEX_NONE // For stemmer to work, positionIndex must be enabled.
 } PositionIndexType;
 
+bool inline isEnabledAttributeBasedSearch(PositionIndexType positionIndexType) {
+	return (positionIndexType == POSITION_INDEX_FIELDBIT
+			|| positionIndexType == POSITION_INDEX_WORD
+			|| positionIndexType == POSITION_INDEX_CHAR
+			|| positionIndexType == POSITION_INDEX_FULL);
+
+}
+
+bool inline isEnabledWordPositionIndex(PositionIndexType positionIndexType) {
+	return (positionIndexType == POSITION_INDEX_WORD
+			|| positionIndexType == POSITION_INDEX_FULL);
+}
+
+bool inline isEnabledCharPositionIndex(PositionIndexType positionIndexType) {
+	return (positionIndexType == POSITION_INDEX_CHAR
+			|| positionIndexType == POSITION_INDEX_FULL);
+}
 /// Term constants
 
 typedef enum
 {
     TERM_TYPE_PREFIX ,
     TERM_TYPE_COMPLETE ,
-    TERM_TYPE_NOT_SPECIFIED
+    TERM_TYPE_NOT_SPECIFIED,
+    TERM_TYPE_PHRASE
 } TermType;
 
 ///
@@ -189,9 +212,9 @@ enum DateTimeType{
 /// response type
 typedef enum
 {
-    RESPONSE_WITH_RECORD,
-    RESPONSE_BASIC,
-    RESPONSE_WITH_SPECIFIED_ATTRIBUTES
+    RESPONSE_WITH_STORED_ATTR,
+    RESPONSE_WITH_NO_STORED_ATTR,
+    RESPONSE_WITH_SELECTED_ATTR
 } ResponseType;
 
 ///

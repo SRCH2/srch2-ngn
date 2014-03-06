@@ -89,6 +89,7 @@ PhysicalPlanRecordItem * UnionSortedByIDOperator::getNext(const PhysicalPlanExec
 	vector<unsigned> recordKeywordMatchEditDistances;
 	vector<unsigned> recordKeywordMatchBitmaps;
 	vector<unsigned> positionIndexOffsets;
+	vector<TermType> termTypes;
 	for(unsigned childOffset = 0; childOffset < numberOfChildren; ++childOffset){
 		if(this->nextItemsFromChildren.at(childOffset) != NULL &&
 				this->nextItemsFromChildren.at(childOffset)->getRecordId() == minIDRecord->getRecordId()){
@@ -97,6 +98,7 @@ PhysicalPlanRecordItem * UnionSortedByIDOperator::getNext(const PhysicalPlanExec
 			this->nextItemsFromChildren.at(childOffset)->getRecordMatchEditDistances(recordKeywordMatchEditDistances);
 			this->nextItemsFromChildren.at(childOffset)->getRecordMatchAttributeBitmaps(recordKeywordMatchBitmaps);
 			this->nextItemsFromChildren.at(childOffset)->getPositionIndexOffsets(positionIndexOffsets);
+			this->nextItemsFromChildren.at(childOffset)->getTermTypes(termTypes);
 			// static score, not for now
 			// and remove it from this list by substituting it by the next one
 			this->nextItemsFromChildren.at(childOffset) =
@@ -109,6 +111,7 @@ PhysicalPlanRecordItem * UnionSortedByIDOperator::getNext(const PhysicalPlanExec
 	minIDRecord->setRecordMatchEditDistances(recordKeywordMatchEditDistances);
 	minIDRecord->setRecordMatchAttributeBitmaps(recordKeywordMatchBitmaps);
 	minIDRecord->setPositionIndexOffsets(positionIndexOffsets);
+	minIDRecord->setTermTypes(termTypes);
 
 	this->visitedRecords.push_back(minIDRecord->getRecordId());
 

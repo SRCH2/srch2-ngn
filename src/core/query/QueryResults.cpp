@@ -20,19 +20,13 @@
 
 #include "QueryResultsInternal.h"
 #include "operation/QueryEvaluatorInternal.h"
-
+#include "util/RecordSerializerUtil.h"
 
 using srch2::util::Logger;
 namespace srch2
 {
 namespace instantsearch
 {
-
-
-
-
-
-
 
 QueryResultFactory::QueryResultFactory(){
 	impl = new QueryResultFactoryInternal();
@@ -98,9 +92,14 @@ unsigned QueryResults::getInternalRecordId(unsigned position) const {
     return impl->sortedFinalResults.at(position)->internalRecordId;
 }
 
+/*
+ *   this function is called from unit test. Do not use it in wrapper layer.
+ */
 std::string QueryResults::getInMemoryRecordString(unsigned position) const {
     unsigned internalRecordId = this->getInternalRecordId(position);
-    return impl->queryEvaluatorInternal->getInMemoryData(internalRecordId);
+    StoredRecordBuffer buffer = impl->queryEvaluatorInternal->getInMemoryData(internalRecordId);
+    string inMemoryString = string(buffer.start, buffer.length);
+    return inMemoryString;
 }
 
 /**
@@ -185,6 +184,12 @@ void QueryResults::getMatchedAttributes(const unsigned position, std::vector<std
 		}
 	}
 }
+
+void QueryResults::getTermTypes(unsigned position, vector<TermType>& tt) const{
+	tt.assign(impl->sortedFinalResults[position]->termTypes.begin(),
+    		impl->sortedFinalResults[position]->termTypes.end());
+}
+
 /*
  *   In Geo search return distance between location of the result and center of the query rank.
  *   TODO: Change the name to getGeoDistance()

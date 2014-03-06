@@ -22,6 +22,7 @@
 #include <sys/queue.h>
 #include <event.h>
 #include <evhttp.h>
+#include "highlighter/Highlighter.h"
 
 namespace srch2
 {
@@ -55,7 +56,10 @@ class HTTPRequestHandler
 				const unsigned retrievedResults,
 				const string & message,
 				const unsigned ts1,
-				struct timespec &tstart, struct timespec &tend, bool onlyFacets = false);
+				struct timespec &tstart, struct timespec &tend,
+				const vector<RecordSnippet>& recordSnippets, unsigned hltime,
+				bool onlyFacets = false
+				);
 
 		static void printOneResultRetrievedById(evhttp_request *req, const evkeyvalq &headers,
 				const LogicalPlan &queryPlan,
@@ -72,6 +76,14 @@ class HTTPRequestHandler
 				const string & message,
 				const unsigned ts1,
 				struct timespec &tstart, struct timespec &tend);
+		static void cleanAndAppendToBuffer(const string& in, string& out);
+		static void genRecordJsonString(const srch2is::Indexer *indexer, unsigned recordId,
+				const string& externalId, string& sbuffer);
+		static void genRecordJsonString(const srch2is::Indexer *indexer, unsigned recordId,
+				const string& externalId, string& sbuffer,const vector<string>* attrToReturn);
+		static void genSnippetJSONString(unsigned recIdx, unsigned start,
+				const vector<RecordSnippet>& recordSnippets, string& sbuffer,
+				const QueryResults *queryResults);
 };
 
 }

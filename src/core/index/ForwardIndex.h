@@ -107,12 +107,14 @@ public:
         this->externalRecordId = externalRecordId;
     }
 
-    std::string getInMemoryData() const {
-        return inMemoryData;
+    StoredRecordBuffer getInMemoryData() const {
+    	StoredRecordBuffer r = StoredRecordBuffer(this->inMemoryData, this->inMemoryDataLen);
+    	return r;
     }
 
-    void setInMemoryData(std::string inMemoryData) {
-        this->inMemoryData = inMemoryData;
+    void setInMemoryData(StoredRecordBuffer inMemoryData) {
+        this->inMemoryData = inMemoryData.start;
+        this->inMemoryDataLen = inMemoryData.length;
     }
 
     const std::string getRefiningAttributeValue(unsigned iter,
@@ -126,9 +128,9 @@ public:
 
     /*
      * The format of data in this array is :
-     * ------------------------------------------------------------------------------------------------------------------
-     * | keywordIDs | keywordRecordStaticScores | nonSearchableAttributeValues | keywordAttributeBitMap | positionIndex |
-     * ------------------------------------------------------------------------------------------------------------------
+     * ---------------------------------------------------------------------------------------------------------------------------------
+     * | keywordIDs | keywordRecordStaticScores | nonSearchableAttributeValues | keywordAttributeBitMap | positionIndex |  offsetIndex |
+     * ---------------------------------------------------------------------------------------------------------------------------------
      *
      * This function will calculate and prepare nonSearchableAttribute byte array in its place.
      * and will allocate the whole space and copy the last part (positional index)
@@ -138,17 +140,19 @@ public:
     void allocateSpaceAndSetNSAValuesAndPosIndex(const Schema * schema,
     		const vector<vector<string> > & nonSearchableAttributeValues,
     		bool shouldAttributeBitMapBeAllocated,
-    		vector<uint8_t>& positionIndexDataVector){
+    		vector<uint8_t>& positionIndexDataVector,
+    		vector<uint8_t>& offsetIndexDataVector){
     	this->nonSearchableAttributeValuesDataSize = VariableLengthAttributeContainer::getSizeNeededForAllocation(schema, nonSearchableAttributeValues);
         /////
     	this->positionIndexSize = positionIndexDataVector.size();
+    	this->offsetIndexSize = offsetIndexDataVector.size();
         //
     	// first two blocks are for keywordIDs and keywordRecordStaticScores.
     	dataSize = getKeywordIdsSizeInBytes() + getKeywordRecordStaticScoresSizeInBytes();
     	data = new Byte[dataSize +
     	                          this->nonSearchableAttributeValuesDataSize +
     	                          this->getKeywordAttributeBitmapsSizeInBytes() +
-    	                          this->getPositionIndexSize()];
+    	                          this->getPositionIndexSize() + this->offsetIndexSize];
     	// next block is for nonSearchableAttributeValues
     	dataSize = dataSize + this->nonSearchableAttributeValuesDataSize;
     	// fourth block is attributeBitmap
@@ -160,6 +164,9 @@ public:
     	/////
     	copy(positionIndexDataVector.begin() , positionIndexDataVector.end(), data + this->dataSize);
     	dataSize = dataSize + this->getPositionIndexSize();
+
+    	copy(offsetIndexDataVector.begin() , offsetIndexDataVector.end(), data + this->dataSize);
+    	dataSize = dataSize + this->offsetIndexSize;
 
     	// now that memory is allocated and position index is copied we can fill nonSearchableData in place.
     	VariableLengthAttributeContainer::fillWithoutAllocation(schema, nonSearchableAttributeValues, getRefiningAttributeValuesDataPointer() );
@@ -209,18 +216,23 @@ public:
             keywordListCapacity = KEYWORD_THRESHOLD;
         numberOfKeywords = 0;
         recordBoost = 0.5;
-        inMemoryData = "";
+        inMemoryData = NULL;
+        inMemoryDataLen = 0;
         // the dataSize and data are initialized temporarily. They will actually be initialized in
         // allocateSpaceAndSetNSAValuesAndPosIndex when other pieces of data are also ready.
         dataSize = 0;
         data = NULL;
         nonSearchableAttributeValuesDataSize = 0;
         positionIndexSize = 0;
+        offsetIndexSize = 0;
     }
 
     virtual ~ForwardList() {
         if(data != NULL){
         	delete[] data;  // data is allocated as an array with new[]
+        }
+        if(inMemoryData != NULL){
+        	delete inMemoryData;
         }
     }
 
@@ -289,6 +301,11 @@ public:
     // Position Indexes APIs
     void getKeyWordPostionsInRecordField(unsigned keywordId, unsigned attributeId,
     		unsigned attributeBitMap, vector<unsigned>& positionList) const;
+    void fetchDataFromVLBArray(unsigned keyOffset, unsigned attributeId,
+    		unsigned currKeyattributeBitMap, vector<unsigned>& pl,
+    		const uint8_t * piPtr, unsigned piOffset) const;
+    void getKeyWordOffsetInRecordField(unsigned keyOffset, unsigned attributeId,
+    		unsigned currKeyattributeBitMap, vector<unsigned>& pl) const;
 
 private:
     friend class boost::serialization::access;
@@ -300,7 +317,9 @@ private:
         ar & this->recordBoost;
         ar & this->nonSearchableAttributeValuesDataSize;
         ar & this->positionIndexSize;
+        ar & this->offsetIndexSize;
         ar & this->dataSize;
+        ar & this->inMemoryDataLen;
         /*
          * Since we don't have access to ForwardIndex and we don't know whether attributeBasedSearch is on, our encodin
          * scheme is :
@@ -310,32 +329,39 @@ private:
         // In loading process, we need to allocate space for the members first.
         if (load) {
         	this->data = new Byte[this->dataSize];
+        	if (inMemoryDataLen > 0)
+        		this->inMemoryData = new char[inMemoryDataLen];
+        	else
+        		this->inMemoryData = NULL;
         }
         ar
                 & boost::serialization::make_array(this->data,
                         this->dataSize);
         ar & this->externalRecordId;
-        ar & this->inMemoryData;
+        if (this->inMemoryDataLen > 0)
+        	ar & boost::serialization::make_array((char *)this->inMemoryData, this->inMemoryDataLen);
     }
 
     // members
     unsigned numberOfKeywords;
     half recordBoost;
     std::string externalRecordId;
-    std::string inMemoryData;
+    const char * inMemoryData;
+    unsigned inMemoryDataLen;
 
 
     /*
      * The format of data in this array is :
-     * ------------------------------------------------------------------------------------------------------------------
-     * | keywordIDs | keywordRecordStaticScores | nonSearchableAttributeValues | keywordAttributeBitMap | positionIndex |
-     * ------------------------------------------------------------------------------------------------------------------
+      * ---------------------------------------------------------------------------------------------------------------------------------
+     * | keywordIDs | keywordRecordStaticScores | nonSearchableAttributeValues | keywordAttributeBitMap | positionIndex |  offsetIndex |
+     * ---------------------------------------------------------------------------------------------------------------------------------
      */
     Byte * data;
 
     unsigned nonSearchableAttributeValuesDataSize;
     unsigned positionIndexSize;
     unsigned dataSize;
+    unsigned offsetIndexSize;
 
 
     ///////////////////     Keyword IDs Helper Functions //////////////////////////////////////
@@ -426,12 +452,21 @@ private:
     			getNonSearchableAttributeValuesDataSize() +
     			getKeywordAttributeBitmapsSizeInBytes());
     }
+    inline uint8_t * getOffsetIndexPointer() const{
+    	/*
+    	 * The format of data in this array is :
+    	 * ---------------------------------------------------------------------------------------------------------------------------------
+    	 * | keywordIDs | keywordRecordStaticScores | nonSearchableAttributeValues | keywordAttributeBitMap | positionIndex |  offsetIndex |
+    	 * ---------------------------------------------------------------------------------------------------------------------------------
+    	 */
+    	return getPositionIndexPointer() + positionIndexSize;
+    }
     inline unsigned getPositionIndexSize(){
     	return positionIndexSize;
     }
-
-
-
+    inline unsigned getOffsetIndexSize(){
+    	return offsetIndexSize;
+    }
 
 };
 
@@ -683,7 +718,7 @@ public:
     /**
      * Access the InMemoryData of a record using InternalRecordId
      */
-    std::string getInMemoryData(unsigned internalRecordId) const;
+    StoredRecordBuffer getInMemoryData(unsigned internalRecordId) const;
 
     void convertToVarLengthArray(const vector<unsigned>& positionListVector,
     							 vector<uint8_t>& grandBuffer);

@@ -128,6 +128,22 @@ void Analyzer::load(boost::archive::binary_iarchive &ia){
     this->analyzerInternal->load(ia);
 }
 
+void Analyzer::fillInCharacters(const char *data) {
+	this->analyzerInternal->getTokenStream()->fillInCharacters(data);
+}
+bool Analyzer::processToken() {
+	return this->analyzerInternal->getTokenStream()->processToken();
+}
+std::vector<CharType> & Analyzer::getProcessedToken() {
+	return this->analyzerInternal->getTokenStream()->getProcessedToken();
+}
+unsigned Analyzer::getProcessedTokenCharOffset() {
+	return this->analyzerInternal->getTokenStream()->getProcessedTokenCharOffset();
+}
+unsigned Analyzer::getProcessedTokenPosition() {
+	return this->analyzerInternal->getTokenStream()->getProcessedTokenPosition();
+}
+
 void Analyzer::save(boost::archive::binary_oarchive &oa) {
     this->analyzerInternal->save(oa);
 }

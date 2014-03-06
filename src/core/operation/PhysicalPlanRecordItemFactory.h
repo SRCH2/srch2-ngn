@@ -74,6 +74,12 @@ public:
 	inline void getPositionIndexOffsets(vector<unsigned> & positionIndexOffsets)const {
 		positionIndexOffsets.insert(positionIndexOffsets.end(),this->positionIndexOffsets.begin(),this->positionIndexOffsets.end());
 	}
+	inline void getTermTypes(vector<TermType> & rTermTypes) const {
+		rTermTypes.insert(rTermTypes.end(),this->termTypes.begin(),this->termTypes.end());
+	}
+	vector<TermType> & getTermTypesRef(){
+		return termTypes;
+	}
 
 	// setters
 	inline void setRecordId(unsigned id) {
@@ -97,7 +103,12 @@ public:
 	inline void setPositionIndexOffsets(const vector<unsigned> & positionIndexOffsets){
 		this->positionIndexOffsets = positionIndexOffsets;
 	}
-
+	inline void setTermTypes(const vector<TermType> & rTermType){
+		this->termTypes = rTermType;
+	}
+	inline void addTermType(const TermType & rTermType){
+		this->termTypes.push_back(rTermType);
+	}
     unsigned getNumberOfBytes(){
     	return sizeof(recordId) +
     			sizeof(recordRuntimeScore) +
@@ -105,7 +116,8 @@ public:
     			sizeof(TrieNodePointer) * matchingPrefixes.size() +
     			sizeof(unsigned) * editDistances.size() +
     			sizeof(unsigned) * attributeBitmaps.size() +
-    			sizeof(unsigned) * positionIndexOffsets.size();
+    			sizeof(unsigned) * positionIndexOffsets.size() +
+    			sizeof(unsigned) * termTypes.size();
     }
 
     void clear(){
@@ -127,6 +139,7 @@ private:
 	vector<unsigned> editDistances;
 	vector<unsigned> attributeBitmaps;
 	vector<unsigned> positionIndexOffsets;
+	vector<TermType> termTypes;
 };
 
 
@@ -180,6 +193,7 @@ public:
 		vector<unsigned> positionIndexOffsets;
 		oldObj->getPositionIndexOffsets(positionIndexOffsets);
 		newObj->setPositionIndexOffsets(positionIndexOffsets);
+		oldObj->getTermTypes(newObj->getTermTypesRef());
 
 		return newObj;
 	}
@@ -203,7 +217,7 @@ public:
 		vector<unsigned> positionIndexOffsets;
 		oldObj->getPositionIndexOffsets(positionIndexOffsets);
 		newObj->setPositionIndexOffsets(positionIndexOffsets);
-
+		oldObj->getTermTypes(newObj->getTermTypesRef());
 		return newObj;
 	}
 

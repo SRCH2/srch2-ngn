@@ -16,8 +16,15 @@ def testEmptyIndex(binary_path):
 
     test_lib.pingServer(port)
     #add an record
-    addCommand='curl "http://localhost:' + str(port) + '/docs" -i -X PUT -d \'{"id":"1234", "name":"Toy Story", "category":"shop"}\''
-    os.system(addCommand)
+    addQuery='http://localhost:' + str(port) + '/docs'
+    opener = urllib2.build_opener(urllib2.HTTPHandler)
+    request = urllib2.Request(addQuery, '{"id":"1234", "name":"Toy Story", "category":"shop"}')
+    request.get_method = lambda: 'PUT'
+    response = opener.open(request).read()
+    jsonResponse = json.loads(response)
+    if jsonResponse['log'][0]['insert'] != "success":
+        print "/docs operation failed: " + response
+        return -1
 
     time.sleep(11)
 

@@ -264,20 +264,24 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		queryResults->impl->sortedFinalResults.push_back(queryResult);
 
 		queryResult->internalRecordId = newRecord->getRecordId();
+		newRecord->getRecordMatchEditDistances(queryResult->editDistances);
 		//
 		queryResult->_score.setTypedValue(newRecord->getRecordRuntimeScore());
-		vector< TrieNodePointer > matchingKeywordTrieNodes;
-		newRecord->getRecordMatchingPrefixes(matchingKeywordTrieNodes);
-		for(unsigned i=0; i < matchingKeywordTrieNodes.size() ; i++){
+
+		newRecord->getRecordMatchingPrefixes(queryResult->matchingKeywordTrieNodes);
+
+		newRecord->getTermTypes(queryResult->termTypes);
+
+		for(unsigned i=0; i < queryResult->matchingKeywordTrieNodes.size() ; i++){
 			std::vector<CharType> temp;
 			this->getTrie()->getPrefixString(trieRootNode_ReadView->root,
-												   matchingKeywordTrieNodes.at(i), temp);
+					queryResult->matchingKeywordTrieNodes.at(i), temp);
 			string str;
 			charTypeVectorToUtf8String(temp, str);
 			queryResult->matchingKeywords.push_back(str);
 		}
 		newRecord->getRecordMatchAttributeBitmaps(queryResult->attributeBitmaps);
-		newRecord->getRecordMatchEditDistances(queryResult->editDistances);
+
 		this->getForwardIndex()->getExternalRecordIdFromInternalRecordId(this->forwardIndexDirectoryReadView,
 				queryResult->internalRecordId,queryResult->externalRecordId );
 	}
@@ -306,7 +310,6 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 	return queryResults->impl->sortedFinalResults.size();
 
 }
-
 
 /**
  * Does Map Search
@@ -367,7 +370,7 @@ void QueryEvaluatorInternal::search(const std::string & primaryKey, QueryResults
 }
 
 // Get the in memory data stored with the record in the forwardindex. Access through the internal recordid.
-std::string QueryEvaluatorInternal::getInMemoryData(unsigned internalRecordId) const {
+StoredRecordBuffer QueryEvaluatorInternal::getInMemoryData(unsigned internalRecordId) const {
 	return this->indexData->forwardIndex->getInMemoryData(internalRecordId);
 }
 

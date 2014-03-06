@@ -103,7 +103,7 @@ public:
      *  @param attributeBoost The boost value in the range [1-100].
      */
     int setSearchableAttribute(const std::string &attributeName,
-            unsigned attributeBoost = 1, bool isMultiValued = false);
+            unsigned attributeBoost = 1, bool isMultiValued = false, bool higlightEnabled = false);
 
     int setSortableAttribute(const std::string &attributeName, FilterType type,
             std::string defaultValue);
@@ -170,6 +170,9 @@ public:
     void setScoringExpression(const std::string &scoringExpression);
     const std::string getScoringExpression() const;
 
+    virtual bool isHighlightEnabled(unsigned id) const;
+
+
     /**
      * Destructor to free persistent resources used by the Schema
      */
@@ -188,6 +191,7 @@ private:
 
     std::vector<unsigned> searchableAttributeBoostVector;
     std::vector<unsigned> searchableAttributeIsMultiValuedVector;
+    std::vector<unsigned> searchableAttributeHighlightEnabled;
 
     std::map<std::string, unsigned> refiningAttributeNameToId;
     std::vector<FilterType> refiningAttributeTypeVector;
@@ -215,6 +219,7 @@ private:
         ar & refiningAttributeTypeVector;
         ar & refiningAttributeDefaultValueVector;
         ar & refiningAttributeIsMultiValuedVector;
+        ar & searchableAttributeHighlightEnabled;
         ar & indexType;
         ar & positionIndexType;
     }

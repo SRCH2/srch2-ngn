@@ -10,6 +10,7 @@
 #include "evhttp.h"
 #include "thirdparty/snappy-1.0.4/snappy.h"
 #include "URLParser.h"
+#include "util/RecordSerializerUtil.h"
 using namespace snappy;
 
 namespace srch2
@@ -21,8 +22,11 @@ struct IndexWriteUtil
 {
     static void _insertCommand(Indexer *indexer, const CoreInfo_t *indexDataContainerConf, const Json::Value &root, Record *record, std::stringstream &log_str)
     {
+    	Schema * storedSchema = Schema::create();
+    	RecordSerializerUtil::populateStoredSchema(storedSchema, indexer->getSchema());
+    	RecordSerializer recSerializer = RecordSerializer(*storedSchema);
     	Json::FastWriter writer;
-    	if(JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root, indexDataContainerConf, log_str) == false){
+    	if(JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root, indexDataContainerConf, log_str, recSerializer) == false){
     		log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"failed\"}";
     		return;
     	}
@@ -136,9 +140,12 @@ struct IndexWriteUtil
         unsigned deletedInternalRecordId;
         std::string primaryKeyStringValue;
 
-
+        Schema * storedSchema = Schema::create();
+        RecordSerializerUtil::populateStoredSchema(storedSchema, indexer->getSchema());
+        RecordSerializer recSerializer = RecordSerializer(*storedSchema);
     	Json::FastWriter writer;
-    	bool parseJson = JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root, indexDataContainerConf, log_str);
+    	bool parseJson = JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root,
+    			indexDataContainerConf, log_str, recSerializer);
         if(parseJson == false) {
             log_str << "failed\",\"reason\":\"parse: The record is not in a correct json format\",";
             return;

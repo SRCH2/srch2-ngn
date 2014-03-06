@@ -300,7 +300,7 @@ public:
 
     const std::string& getLicenseFileNameWithPath() const { return this->licenseFileNameWithPath; }
 
-    std::string getInMemoryData(unsigned internalRecordId) const
+    StoredRecordBuffer getInMemoryData(unsigned internalRecordId) const
     {
         return this->forwardIndex->getInMemoryData(internalRecordId);
     }

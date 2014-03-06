@@ -75,7 +75,8 @@ void ActiveNodeSet_test()
 
 	record->setPrimaryKey(1001);
 	record->setSearchableAttributeValue("article_title", "cancer canada canteen can cat dog");
-	record->setInMemoryData("test string");
+	string testRecord = "test string";
+	record->setInMemoryData(testRecord.c_str(), testRecord.length());
 	indexer->addRecord(record, analyzer);
 	indexer->commit();
 
@@ -150,7 +151,8 @@ void addRecords() {
     record->setSearchableAttributeValue("article_title",
             "come Yesterday Once More");
     record->setRecordBoost(10);
-    record->setInMemoryData("test string");
+	string testRecord = "test string";
+	record->setInMemoryData(testRecord.c_str(), testRecord.length());
     index->addRecord(record, analyzer);
 
     record->clear();
@@ -158,21 +160,21 @@ void addRecords() {
     record->setSearchableAttributeValue(0, "George Harris");
     record->setSearchableAttributeValue(1, "Here comes the sun");
     record->setRecordBoost(20);
-    record->setInMemoryData("test string");
+    record->setInMemoryData(testRecord.c_str(), testRecord.length());
     index->addRecord(record, analyzer);
     record->clear();
     record->setPrimaryKey(1003);
     record->setSearchableAttributeValue(0, "Pink Floyd");
     record->setSearchableAttributeValue(1, "Shine on you crazy diamond");
     record->setRecordBoost(30);
-    record->setInMemoryData("test string");
+    record->setInMemoryData(testRecord.c_str(), testRecord.length());
     index->addRecord(record, analyzer);
     record->clear();
     record->setPrimaryKey(1004);
     record->setSearchableAttributeValue(0, "Uriah Hepp");
     record->setSearchableAttributeValue(1, "Come Shine away Melinda ");
     record->setRecordBoost(40);
-    record->setInMemoryData("test string");
+    record->setInMemoryData(testRecord.c_str(), testRecord.length());
     index->addRecord(record, analyzer);
     record->clear();
     record->setPrimaryKey(1005);
@@ -180,25 +182,28 @@ void addRecords() {
     record->setSearchableAttributeValue(1,
             "Shinesyponzi on Wish you were here");
     record->setRecordBoost(50);
-    record->setInMemoryData("test string");
+    record->setInMemoryData(testRecord.c_str(), testRecord.length());
     index->addRecord(record, analyzer);
     record->clear();
     record->setPrimaryKey(1006);
     record->setSearchableAttributeValue(0, "U2 2345 Pink");
     record->setSearchableAttributeValue(1, "with or without you");
     record->setRecordBoost(60);
+    record->setInMemoryData(testRecord.c_str(), testRecord.length());
     index->addRecord(record, analyzer);
     record->clear();
     record->setPrimaryKey(1007);
     record->setSearchableAttributeValue(0, "Led Zepplelin");
     record->setSearchableAttributeValue(1, "Stairway to Heaven pink floyd");
     record->setRecordBoost(80);
+    record->setInMemoryData(testRecord.c_str(), testRecord.length());
     index->addRecord(record, analyzer);
     record->clear();
     record->setPrimaryKey(1008);
     record->setSearchableAttributeValue(0, "Jimi Hendrix");
     record->setSearchableAttributeValue(1, "Little wing");
     record->setRecordBoost(90);
+    record->setInMemoryData(testRecord.c_str(), testRecord.length());
     index->addRecord(record, analyzer);
     ///TODO: Assert that This record must not be added
     /// 1) Repeat of primary key

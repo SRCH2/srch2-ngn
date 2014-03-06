@@ -47,6 +47,8 @@ struct Record::Impl
     float boost;
     const Schema *schema;
     std::string inMemoryRecordString;
+    char * inMemoryStoredRecord;
+    unsigned inMemoryStoredRecordLen;
 
     //Point : The location lat,lang value of the geo object
     Point point;
@@ -63,6 +65,8 @@ Record::Record(const Schema *schema):impl(new Impl)
     impl->primaryKey = "";
     impl->point.x = 0;
     impl->point.y = 0;
+    impl->inMemoryStoredRecord = 0;
+    impl->inMemoryStoredRecordLen = 0;
 }
 
 
@@ -238,15 +242,21 @@ const Schema* Record::getSchema() const
 {
     return impl->schema;
 }
-
-void Record::setInMemoryData(const std::string &inMemoryRecordString)
-{
-    impl->inMemoryRecordString = inMemoryRecordString;
+void Record::setInMemoryData(const void * ptr, unsigned len) {
+	impl->inMemoryStoredRecord = new char[len];
+	memcpy(impl->inMemoryStoredRecord, ptr, len);
+	impl->inMemoryStoredRecordLen = len;
 }
 
-std::string Record::getInMemoryData() const
+//void Record::setInMemoryData(const std::string &inMemoryRecordString)
+//{
+//    impl->inMemoryRecordString = inMemoryRecordString;
+//}
+
+StoredRecordBuffer Record::getInMemoryData() const
 {
-    return impl->inMemoryRecordString;
+	StoredRecordBuffer r = StoredRecordBuffer(impl->inMemoryStoredRecord, impl->inMemoryStoredRecordLen);
+    return r;
 }
 
 void Record::setRecordBoost(const float recordBoost)

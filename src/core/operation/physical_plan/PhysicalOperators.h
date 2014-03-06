@@ -413,6 +413,7 @@ public:
 						std::vector<unsigned> & attributeBitmaps,
 						std::vector<unsigned> & prefixEditDistances,
 						std::vector<unsigned> & positionIndexOffsets,
+						std::vector<TermType>& termTypes,
 						const PhysicalPlanExecutionParameters & params, unsigned onlyThisChild = -1 );
 	~MergeByShortestListOperator();
 private:

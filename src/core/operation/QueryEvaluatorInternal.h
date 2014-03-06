@@ -105,7 +105,7 @@ public:
     //virtual int searchWithStemmer(const Query *query, QueryResults *queryResults, const int nextK = 0, bool &isStemmed) = 0;
 
     /// Get the in memory data stored with the record in the forwardindex. Access through the internal recordid.
-    std::string getInMemoryData(unsigned internalRecordId) const ;
+    StoredRecordBuffer getInMemoryData(unsigned internalRecordId) const ;
 
     const InvertedIndex *getInvertedIndex() {
         return this->indexData->invertedIndex;
@@ -163,7 +163,6 @@ public:
 private:
     const IndexData *indexData;
     IndexReaderWriter *indexer;
-
     QueryEvaluatorRuntimeParametersContainer parameters;
     CacheManager *cacheManager;
     PhysicalOperatorFactory * physicalOperatorFactory;

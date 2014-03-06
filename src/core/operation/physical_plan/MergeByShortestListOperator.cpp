@@ -124,20 +124,22 @@ PhysicalPlanRecordItem * MergeByShortestListOperator::getNext(const PhysicalPlan
 		std::vector<unsigned> attributeBitmaps;
 		std::vector<unsigned> prefixEditDistances;
 		std::vector<unsigned> positionIndexOffsets;
+		std::vector<TermType> termTypes;
 		if(recordComesFromCache){ // if record is from cache, it has some result info in it
 			runTimeTermRecordScores.push_back(nextRecord->getRecordRuntimeScore());
 			staticTermRecordScores.push_back(nextRecord->getRecordStaticScore());
 			nextRecord->getRecordMatchingPrefixes(termRecordMatchingKeywords);
 			nextRecord->getRecordMatchAttributeBitmaps(attributeBitmaps);
 			nextRecord->getRecordMatchEditDistances(prefixEditDistances);
+			nextRecord->getTermTypes(termTypes);
 			if(verifyRecordWithChildren(nextRecord,  runTimeTermRecordScores, staticTermRecordScores,
-					termRecordMatchingKeywords, attributeBitmaps, prefixEditDistances , positionIndexOffsets, params,
+					termRecordMatchingKeywords, attributeBitmaps, prefixEditDistances , positionIndexOffsets, termTypes, params,
 					this->getPhysicalPlanOptimizationNode()->getChildrenCount() - 1) == false){
 				continue;	// 2.1. and 2.2.
 			}
 		}else{
 			if(verifyRecordWithChildren(nextRecord,  runTimeTermRecordScores, staticTermRecordScores,
-					termRecordMatchingKeywords, attributeBitmaps, prefixEditDistances , positionIndexOffsets, params ) == false){
+					termRecordMatchingKeywords, attributeBitmaps, prefixEditDistances , positionIndexOffsets, termTypes, params ) == false){
 				continue;	// 2.1. and 2.2.
 			}
 		}
@@ -149,6 +151,7 @@ PhysicalPlanRecordItem * MergeByShortestListOperator::getNext(const PhysicalPlan
 		nextRecord->setRecordMatchEditDistances(prefixEditDistances);
 		nextRecord->setRecordMatchingPrefixes(termRecordMatchingKeywords);
 		nextRecord->setPositionIndexOffsets(positionIndexOffsets);
+		nextRecord->setTermTypes(termTypes);
 		// nextRecord->setRecordStaticScore() Should we set static score as well ?
 		nextRecord->setRecordRuntimeScore(params.ranker->computeAggregatedRuntimeScoreForAnd( runTimeTermRecordScores));
 		// save it in previousResultsVector
@@ -224,6 +227,7 @@ bool MergeByShortestListOperator::verifyRecordWithChildren(PhysicalPlanRecordIte
 					std::vector<unsigned> & attributeBitmaps,
 					std::vector<unsigned> & prefixEditDistances,
 					std::vector<unsigned> & positionIndexOffsets,
+					std::vector<TermType>& termTypes,
 					const PhysicalPlanExecutionParameters & params, unsigned onlyThisChild){
 
 	// move on children and call verifyByRandomAccess
@@ -256,6 +260,9 @@ bool MergeByShortestListOperator::verifyRecordWithChildren(PhysicalPlanRecordIte
 			vector<unsigned> recordPositionIndexOffsets;
 			recordItem->getPositionIndexOffsets(recordPositionIndexOffsets);
 			positionIndexOffsets.insert(positionIndexOffsets.end(),recordPositionIndexOffsets.begin(),recordPositionIndexOffsets.end());
+			std::vector<TermType> recTermTypes;
+			recordItem->getTermTypes(recTermTypes);
+			termTypes.insert(termTypes.end(),recTermTypes.begin(),recTermTypes.end());
 		}else{
 			/*
 			 * We should verify this record with all children (except for the shortest list one) and if all of them
@@ -282,6 +289,8 @@ bool MergeByShortestListOperator::verifyRecordWithChildren(PhysicalPlanRecordIte
 					prefixEditDistances.end(),parameters.prefixEditDistances.begin(),parameters.prefixEditDistances.end());
 			positionIndexOffsets.insert(
 					positionIndexOffsets.end(),parameters.positionIndexOffsets.begin(),parameters.positionIndexOffsets.end());
+			termTypes.insert(
+					termTypes.end(),parameters.termTypes.begin(),parameters.termTypes.end());
 		}
 	}
 

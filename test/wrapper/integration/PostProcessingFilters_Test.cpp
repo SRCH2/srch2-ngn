@@ -112,7 +112,8 @@ void addRecords() {
     record->setRefiningAttributeValue("price", "10.34");
     record->setRefiningAttributeValue("class", "A");
     record->setRecordBoost(10);
-    record->setInMemoryData("test string");
+    string rec= "test string";
+    record->setInMemoryData(rec.c_str(), rec.length());
     index->addRecord(record, analyzer);
 
     record->clear();
@@ -123,7 +124,8 @@ void addRecords() {
     record->setRefiningAttributeValue("price", "9.34");
     record->setRefiningAttributeValue("class", "A");
     record->setRecordBoost(20);
-    record->setInMemoryData("test string");
+    rec= "test string";
+    record->setInMemoryData(rec.c_str(), rec.length());
     index->addRecord(record, analyzer);
 
     record->clear();
@@ -134,7 +136,8 @@ void addRecords() {
     record->setRefiningAttributeValue("price", "8.34");
     record->setRefiningAttributeValue("class", "B");
     record->setRecordBoost(30);
-    record->setInMemoryData("test string");
+    rec= "test string";
+    record->setInMemoryData(rec.c_str(), rec.length());
     index->addRecord(record,analyzer);
 
     record->clear();
@@ -145,7 +148,8 @@ void addRecords() {
     record->setRefiningAttributeValue("price", "7.34");
     record->setRefiningAttributeValue("class", "B");
     record->setRecordBoost(40);
-    record->setInMemoryData("test string");
+    rec= "test string";
+    record->setInMemoryData(rec.c_str(), rec.length());
     index->addRecord(record, analyzer);
 
     record->clear();
@@ -157,7 +161,8 @@ void addRecords() {
     record->setRefiningAttributeValue("price", "6.34");
     record->setRefiningAttributeValue("class", "C");
     record->setRecordBoost(50);
-    record->setInMemoryData("test string");
+    rec= "test string";
+    record->setInMemoryData(rec.c_str(), rec.length());
     index->addRecord(record,analyzer);
 
     record->clear();
@@ -168,6 +173,7 @@ void addRecords() {
     record->setRefiningAttributeValue("price", "5.34");
     record->setRefiningAttributeValue("class", "C");
     record->setRecordBoost(60);
+    record->setInMemoryData(rec.c_str(), rec.length());
     index->addRecord(record, analyzer);
 
     record->clear();
@@ -178,6 +184,7 @@ void addRecords() {
     record->setRefiningAttributeValue("price", "4.34");
     record->setRefiningAttributeValue("class", "D");
     record->setRecordBoost(80);
+    record->setInMemoryData(rec.c_str(), rec.length());
     index->addRecord(record, analyzer);
 
     record->clear();
@@ -188,6 +195,7 @@ void addRecords() {
     record->setRefiningAttributeValue("price", "3.34");
     record->setRefiningAttributeValue("class", "E");
     record->setRecordBoost(90);
+    record->setInMemoryData(rec.c_str(), rec.length());
     index->addRecord(record, analyzer);
 
     index->commit();

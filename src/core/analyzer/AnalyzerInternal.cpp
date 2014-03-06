@@ -154,20 +154,27 @@ void AnalyzerInternal::tokenizeRecord(const Record *record,
     const Schema *schema = record->getSchema();
     // token string to vector<CharType>
     vector<PositionalTerm> tokens;
-
     for (unsigned attributeIterator = 0;
             attributeIterator < schema->getNumberOfSearchableAttributes();
             attributeIterator++) {
     	/*
+    	 * Multi Value attributes
+    	 * Position information example:
     	 * Example : Suppose the value of this attribute is <'A B C', 'D E F', 'G H'>
     	 * Assuming the bump value is 100000, after this iteration, the positions given to these tokens are
     	 * Tokens : <A,1> <B,2> <C,3> <D,100004> <E,100005> <F, 100006> <G, 200007 > <H, 200008>
+    	 *
+    	 * For char offset we do not use offset bumps. Instead we treat the multi-value attributes
+    	 * as one attribute concatenated via special delimiter.
+    	 * Example: ["apple", "berry"]  --> "apple $$ berry"
+    	 * offset : apple : 1, berry : 10
     	 */
         vector<string> attributeValues;
         record->getSearchableAttributeValues(attributeIterator , attributeValues);
 
         if (!attributeValues.empty()) {
 			tokens.clear();
+			unsigned prevAttrCombinedLen = 0;
         	for(unsigned valueOffset = 0 ; valueOffset != attributeValues.size() ; ++valueOffset){
         		string attributeValue = attributeValues.at(valueOffset);
 				this->tokenStream->fillInCharacters(attributeValue);
@@ -176,19 +183,23 @@ void AnalyzerInternal::tokenizeRecord(const Record *record,
 				{
 					vector<CharType> charVector;
 					charVector = tokenStream->getProcessedToken();
-					unsigned position = tokenStream->getProcessedTokenPosition();
+					unsigned termPosition = tokenStream->getProcessedTokenPosition();
+					unsigned charOffset = tokenStream->getProcessedTokenCharOffset();
 					charTypeVectorToUtf8String(charVector, currentToken);
 					// Bumps are added to the positions after tokenizer gives us the values.
-					PositionalTerm pterm = {currentToken, position + valueOffset * MULTI_VALUED_ATTRIBUTE_POSITION_BUMP};
+					PositionalTerm pterm = {currentToken, termPosition + valueOffset * MULTI_VALUED_ATTRIBUTE_POSITION_BUMP,
+							prevAttrCombinedLen+ charOffset};
 					tokens.push_back(pterm);
 				}
-
+				prevAttrCombinedLen += attributeValue.length() + MULTI_VAL_ATTR_DELIMITER_LEN /*multivalue separator " $$ "*/;
         	}
 			for (unsigned i = 0; i< tokens.size(); ++i) {
 				if (tokens[i].term.size()) {
 					tokenAttributeHitsMap[tokens[i].term].attributeList.push_back(
 							setAttributePositionBitVector(attributeIterator,
 									tokens[i].position));
+					tokenAttributeHitsMap[tokens[i].term].charOffsetOfTermInAttribute.push_back(
+							tokens[i].charOffset);
 				}
 			}
 
@@ -323,6 +334,8 @@ const string& AnalyzerInternal::getRecordAllowedSpecialCharacters() const{
     return this->recordAllowedSpecialCharacters;
 }
 
-
+TokenStream* AnalyzerInternal::getTokenStream() {
+	return this->tokenStream;
+}
 }
 }

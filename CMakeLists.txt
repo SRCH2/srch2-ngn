@@ -119,7 +119,7 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
     string(COMPARE LESS ${gcc_compiler_version} "4.6" _compiler_version_lt_4.6)
     
     if (_compiler_version_lt_4.6)
-       SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -Wno-long-long -Wno-conversion -Wno-sign-compare -Wno-unused")
+       SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -Wno-long-long -Wno-conversion -Wno-sign-compare -Wno-unused -Wno-gnu -Wno-c++11-extensions -Wno-c++11-extra-semi")
     else()
        SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -Wno-long-long -Wno-conversion -Wno-sign-compare -Wno-unused -Wno-int-to-pointer-cast")
     endif()

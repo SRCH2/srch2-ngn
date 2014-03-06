@@ -114,12 +114,19 @@ PhysicalPlanRecordItem * MergeSortedByIDOperator::getNext(const PhysicalPlanExec
 			for(vector<PhysicalPlanRecordItem *>::iterator match = recordMatches.begin() ; match != recordMatches.end(); ++match){
 				(*match)->getPositionIndexOffsets(positionIndexOffsets);
 			}
+			vector<TermType> termTypes;
+			for(vector<PhysicalPlanRecordItem *>::iterator match = recordMatches.begin() ; match != recordMatches.end(); ++match){
+				//Note: the function getTermTypes appends values to termTypes vector that is
+				// passed in.
+				(*match)->getTermTypes(termTypes);
+			}
 			// static score, not for now
 			record->setRecordRuntimeScore(params.ranker->computeAggregatedRuntimeScoreForAnd(runtimeScores));
 			record->setRecordMatchingPrefixes(recordKeywordMatchPrefixes);
 			record->setRecordMatchEditDistances(recordKeywordMatchEditDistances);
 			record->setRecordMatchAttributeBitmaps(recordKeywordMatchBitmaps);
 			record->setPositionIndexOffsets(positionIndexOffsets);
+			record->setTermTypes(termTypes);
 			// static score ignored for now
 
 			// add to previousResultsFound

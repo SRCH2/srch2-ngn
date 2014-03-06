@@ -152,6 +152,7 @@ public:
     virtual void getMatchedAttributeBitmaps(const unsigned position, std::vector<unsigned> &matchedAttributeBitmaps) const ;
 
     void getMatchedAttributes(const unsigned position, std::vector<std::vector<unsigned> > &matchedAttributes) const ;
+    void getTermTypes(unsigned position, std::vector<TermType>& tt) const;
     /*
      *   In Geo search return distance between location of the result and center of the query rank.
      *   TODO: Change the name to getGeoDistance()

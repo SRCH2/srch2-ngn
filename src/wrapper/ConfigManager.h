@@ -35,19 +35,22 @@ public:
 	offset = 0;
 	boost = 1;
 	isMultiValued = false;
+	highlight = false;
     }
     SearchableAttributeInfoContainer(const string & name,
 				     const bool required,
 				     const string & defaultValue ,
 				     const unsigned offset,
 				     const unsigned boost,
-				     const bool isMultiValued){
+				     const bool isMultiValued,
+				     bool highlight = false){
         this->attributeName = name;
         this->required = required;
         this->defaultValue = defaultValue;
         this->offset = offset;
         this->boost = boost;
         this->isMultiValued = isMultiValued;
+        this->highlight = highlight;
     }
     // NO GETTER OR SETTERS ARE IMPLEMENTED FOR THESE MEMBERS
     // BECAUSE THIS CLASS IS MEANT TO BE A VERY SIMPLE CONTAINER WHICH ONLY CONTAINS THE
@@ -58,6 +61,7 @@ public:
     unsigned offset;
     unsigned boost;
     bool isMultiValued;
+    bool highlight;
 };
 
 class RefiningAttributeInfoContainer {
@@ -102,6 +106,7 @@ struct CoreConfigParseState_t {
     vector<bool> searchableAttributesRequiredFlagVector;
     vector<string> searchableAttributesDefaultVector;
     vector<bool> searchableAttributesIsMultiValued;
+    vector<bool> highlight;
 
     CoreConfigParseState_t() : hasLatitude(false), hasLongitude(false) {};
 };
@@ -363,6 +368,7 @@ private:
     static const char* const defaultQueryTermBoostString;
     static const char* const dictionaryString;
     static const char* const enablePositionIndexString;
+    static const char* const enableCharOffsetIndexString;
     static const char* const expandString;
     static const char* const facetEnabledString;
     static const char* const facetEndString;
@@ -441,6 +447,20 @@ private:
     static const char* const hostPortString;
     static const char* const instanceDirString;
     static const char* const schemaFileString;
+
+    static const char* const highLightString;
+    static const char* const highLighterString;
+    static const char* const exactTagPre;
+    static const char* const exactTagPost;
+    static const char* const fuzzyTagPre;
+    static const char* const fuzzyTagPost;
+    static const char* const snippetSize;
+
+    static const char* const defaultFuzzyPreTag;
+    static const char* const defaultFuzzyPostTag;
+    static const char* const defaultExactPreTag;
+    static const char* const defaultExactPostTag;
+
     static const char* const searchPortString;
     static const char* const suggestPortString;
     static const char* const infoPortString;
@@ -449,6 +469,7 @@ private:
     static const char* const savePortString;
     static const char* const exportPortString;
     static const char* const resetLoggerPortString;
+
 };
 
 // definitions for data source(s) (srch2Server objects within one HTTP server)
@@ -505,7 +526,8 @@ public:
     uint32_t getCacheSizeInBytes() const;
     int getDefaultResultsToRetrieve() const;
 
-    bool isPositionIndexEnabled() const { return enablePositionIndex; }
+    bool isPositionIndexWordEnabled() const { return enableWordPositionIndex; }
+    bool isPositionIndexCharEnabled() const { return enableCharOffsetIndex; }
 
     bool getSupportSwapInEditDistance() const
         { return supportSwapInEditDistance; }
@@ -574,8 +596,31 @@ public:
 
     unsigned int getNumberOfThreads() const { return configManager->getNumberOfThreads(); }
 
+
+    const vector<std::pair<unsigned, string> >& getHighlightAttributeIdsVector() const { return highlightAttributes; }
+    void setHighlightAttributeIdsVector(vector<std::pair<unsigned, string> >& in) { highlightAttributes = in; }
+
+    void getExactHighLightMarkerPre(string& markerStr) const{
+    	markerStr = exactHighlightMarkerPre;
+    }
+
+    void getExactHighLightMarkerPost(string& markerStr) const{
+    	markerStr = exactHighlightMarkerPost;
+    }
+    void getFuzzyHighLightMarkerPre(string& markerStr) const{
+    	markerStr = fuzzyHighlightMarkerPre;
+    }
+
+    void getFuzzyHighLightMarkerPost(string& markerStr) const{
+    	markerStr = fuzzyHighlightMarkerPost;
+    }
+    void getHighLightSnippetSize(unsigned& snippetSize) const{
+    	snippetSize = highlightSnippetLen;
+    }
+
     unsigned short getPort(PortType_t portType) const;
     void setPort(PortType_t portType, unsigned short portNumber);
+
 
 protected:
     string name; // of core
@@ -616,7 +661,8 @@ protected:
     // <IndexConfig>
     bool supportSwapInEditDistance;
 
-    bool enablePositionIndex;
+    bool enableWordPositionIndex;
+    bool enableCharOffsetIndex;
 
     bool recordBoostFieldFlag;
     string recordBoostField;
@@ -684,9 +730,16 @@ protected:
     // no config option for this yet
     unsigned updateHistogramEveryPMerges;
     unsigned updateHistogramEveryQWrites;
+    vector<std::pair<unsigned, string> > highlightAttributes;
+    string exactHighlightMarkerPre;
+    string exactHighlightMarkerPost;
+    string fuzzyHighlightMarkerPre;
+    string fuzzyHighlightMarkerPost;
+    unsigned highlightSnippetLen;
 
     // array of local HTTP ports (if any) index by port type enum
     vector<unsigned short> ports;
+
 };
 
 }

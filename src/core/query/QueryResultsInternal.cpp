@@ -117,6 +117,7 @@ QueryResultsInternal::~QueryResultsInternal() {
     if(this->stat != NULL){
 		delete this->stat;
     }
+
 }
 
 void QueryResultsInternal::setNextK(const unsigned k) {

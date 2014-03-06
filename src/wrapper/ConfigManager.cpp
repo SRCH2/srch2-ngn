@@ -47,6 +47,7 @@ const char* const ConfigManager::defaultString = "default";
 const char* const ConfigManager::defaultQueryTermBoostString = "defaultquerytermboost";
 const char* const ConfigManager::dictionaryString = "dictionary";
 const char* const ConfigManager::enablePositionIndexString = "enablepositionindex";
+const char* const ConfigManager::enableCharOffsetIndexString = "enablecharoffsetindex";
 const char* const ConfigManager::expandString = "expand";
 const char* const ConfigManager::facetEnabledString = "facetenabled";
 const char* const ConfigManager::facetEndString = "facetend";
@@ -122,6 +123,20 @@ const char* const ConfigManager::getAllResultsKAlternative = "getallresultskalte
 const char* const ConfigManager::multipleCoresString = "cores";
 const char* const ConfigManager::singleCoreString = "core";
 const char* const ConfigManager::defaultCoreNameString = "defaultcorename";
+
+const char* const ConfigManager::highLightString = "highlight";
+const char* const ConfigManager::highLighterString = "highlighter";
+const char* const ConfigManager::exactTagPre = "exacttagpre";
+const char* const ConfigManager::exactTagPost = "exacttagpost";
+const char* const ConfigManager::fuzzyTagPre = "fuzzytagpre";
+const char* const ConfigManager::fuzzyTagPost = "fuzzytagpost";
+const char* const ConfigManager::snippetSize = "snippetsize";
+
+const char* const ConfigManager::defaultFuzzyPreTag = "<b>";
+const char* const ConfigManager::defaultFuzzyPostTag = "</b>";
+const char* const ConfigManager::defaultExactPreTag = "<b>";
+const char* const ConfigManager::defaultExactPostTag = "</b>";
+
 const char* const ConfigManager::searchPortString = "searchport";
 const char* const ConfigManager::suggestPortString = "suggestport";
 const char* const ConfigManager::infoPortString = "infoport";
@@ -130,6 +145,7 @@ const char* const ConfigManager::updatePortString = "updateport";
 const char* const ConfigManager::savePortString = "saveport";
 const char* const ConfigManager::exportPortString = "exportport";
 const char* const ConfigManager::resetLoggerPortString = "resetloggerport";
+
 
 
 ConfigManager::ConfigManager(const string& configFile)
@@ -276,7 +292,8 @@ CoreInfo_t::CoreInfo_t(const CoreInfo_t &src)
 
     supportSwapInEditDistance = src.supportSwapInEditDistance;
 
-    enablePositionIndex = src.enablePositionIndex;
+    enableWordPositionIndex = src.enableWordPositionIndex;
+    enableCharOffsetIndex = src.enableCharOffsetIndex;
 
     recordBoostFieldFlag = src.recordBoostFieldFlag;
     recordBoostField = src.recordBoostField;
@@ -337,21 +354,37 @@ void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode, CoreInfo_t
         }
     }
 
-    coreInfo->enablePositionIndex = false; // by default it is false
+    coreInfo->enableWordPositionIndex = false; // by default it is false
     childNode = indexConfigNode.child(enablePositionIndexString);
     if (childNode && childNode.text()) {
         string configValue = childNode.text().get();
         if (isValidBooleanValue(configValue)) {
-            coreInfo->enablePositionIndex = childNode.text().as_bool();
+            coreInfo->enableWordPositionIndex = childNode.text().as_bool();
         } else {
             parseError << "enablePositionIndex should be either 0 or 1.\n";
             configSuccess = false;
             return;
         }
-        if (coreInfo->enablePositionIndex) {
+        if (coreInfo->enableWordPositionIndex) {
             Logger::info("turning on attribute based search because position index is enabled");
             coreInfo->supportAttributeBasedSearch = true;
         } // else leave supportAttributeBasedSearch set to previous value
+    }
+    coreInfo->enableCharOffsetIndex = false; // by default it is false
+    childNode = indexConfigNode.child(enableCharOffsetIndexString);
+    if (childNode && childNode.text()) {
+    	string configValue = childNode.text().get();
+    	if (isValidBooleanValue(configValue)) {
+    		coreInfo->enableCharOffsetIndex = childNode.text().as_bool();
+    	} else {
+    		parseError << "enableCharOffsetIndex should be either 0 or 1.\n";
+    		configSuccess = false;
+    		return;
+    	}
+    	if (!coreInfo->enableWordPositionIndex && coreInfo->enableCharOffsetIndex) {
+    		Logger::info("turning on attribute based search because position index is enabled");
+    		coreInfo->supportAttributeBasedSearch = true;
+    	} // else leave supportAttributeBasedSearch set to previous value
     }
 
     childNode = indexConfigNode.child(fieldBoostString);
@@ -553,7 +586,8 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
     }
 
     // fieldBasedSearch is an optional field
-    if (coreInfo->enablePositionIndex == false) {
+    if (coreInfo->enableWordPositionIndex == false &&
+    		coreInfo->enableCharOffsetIndex == false ) {
         coreInfo->supportAttributeBasedSearch = false; // by default it is false
         childNode = queryNode.child(fieldBasedSearchString);
         if (childNode && childNode.text()) {
@@ -612,6 +646,61 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
             return;
         }
     }
+
+    coreInfo->fuzzyHighlightMarkerPre = defaultFuzzyPreTag;
+    coreInfo->fuzzyHighlightMarkerPost = defaultFuzzyPostTag;
+    coreInfo->exactHighlightMarkerPre = defaultExactPreTag;
+    coreInfo->exactHighlightMarkerPost = defaultExactPostTag;
+    coreInfo->highlightSnippetLen = 150;
+
+    childNode = queryNode.child(highLighterString).child(snippetSize);
+    if (childNode && childNode.text()) {
+    	coreInfo->highlightSnippetLen = childNode.text().as_int();
+    }
+    childNode = queryNode.child(highLighterString).child(exactTagPre);
+    if (childNode) {
+    	string marker = childNode.attribute("value").value();
+    	boost::algorithm::trim(marker);
+    	if (marker.length() > 0){
+    		coreInfo->exactHighlightMarkerPre = marker;
+    	} else {
+    		parseError << "The highlighter pre marker is an empty string. Using the default marker";
+    		return;
+    	}
+    }
+    childNode = queryNode.child(highLighterString).child(exactTagPost);
+    if (childNode) {
+    	string marker = childNode.attribute("value").value();
+    	boost::algorithm::trim(marker);
+    	if (marker.length() > 0){
+    		coreInfo->exactHighlightMarkerPost = marker;
+    	} else {
+    		parseError << "The highlighter post marker is an empty string. Using the default marker";
+    		return;
+    	}
+	}
+    childNode = queryNode.child(highLighterString).child(fuzzyTagPre);
+    if (childNode) {
+    	string marker = childNode.attribute("value").value();
+    	boost::algorithm::trim(marker);
+    	if (marker.length() > 0){
+    		coreInfo->fuzzyHighlightMarkerPre = marker;
+    	} else {
+    		parseError << "The highlighter pre marker is an empty string. Using the default marker";
+    		return;
+    	}
+    }
+    childNode = queryNode.child(highLighterString).child(fuzzyTagPost);
+    if (childNode) {
+    	string marker = childNode.attribute("value").value();
+    	boost::algorithm::trim(marker);
+    	if (marker.length() > 0){
+    		coreInfo->fuzzyHighlightMarkerPost = marker;
+    	} else {
+    		parseError << "The highlighter post marker is an empty string. Using the default marker";
+    		return;
+    	}
+	}
 
     // responseContent is an optional field
     coreInfo->searchResponseContent = (ResponseType)0; // by default it is 0
@@ -872,14 +961,16 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_
                 SearchableAttributeInfoContainer(coreParseState.searchableFieldsVector[i] ,
                                                  coreParseState.searchableAttributesRequiredFlagVector[i] ,
                                                  coreParseState.searchableAttributesDefaultVector[i] ,
-                                                 0 , 1 , coreParseState.searchableAttributesIsMultiValued[i]);
+                                                 0 , 1 , coreParseState.searchableAttributesIsMultiValued[i],
+                                                 coreParseState.highlight[i]);
         } else {
             coreInfo->searchableAttributesInfo[coreParseState.searchableFieldsVector[i]] =
                 SearchableAttributeInfoContainer(coreParseState.searchableFieldsVector[i] ,
                                                  coreParseState.searchableAttributesRequiredFlagVector[i] ,
                                                  coreParseState.searchableAttributesDefaultVector[i] ,
                                                  0 , boostsMap[coreParseState.searchableFieldsVector[i]] ,
-                                                 coreParseState.searchableAttributesIsMultiValued[i]);
+                                                 coreParseState.searchableAttributesIsMultiValued[i],
+                                                 coreParseState.highlight[i]);
         }
     }
 
@@ -1027,6 +1118,16 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
                  *       else => attribute is not used for post processing
                  * }
                  */
+                coreParseState->highlight.push_back(false);
+                if(string(field.attribute(highLightString).value()).compare("") != 0){
+                	tempUse = string(field.attribute(highLightString).value());
+                	if (isValidBool(tempUse)){
+                		if(field.attribute(indexedString).as_bool()){
+                			coreParseState->highlight[coreParseState->highlight.size() - 1] = true;
+                		}
+                	}
+                }
+
                 bool isSearchable = false;
                 bool isRefining = false;
                 if(string(field.attribute(indexedString).value()).compare("") != 0){
@@ -2291,7 +2392,7 @@ bool ConfigManager::isValidResponseFormat(string& responseFormat) {
 
 bool ConfigManager::isValidResponseContentType(string responseContentType) {
     if (responseContentType.compare("0") == 0 || responseContentType.compare("1") == 0
-            || responseContentType.compare("2") == 0) {
+    		|| responseContentType.compare("2") == 0){
         return true;
     }
     return false;
@@ -2401,9 +2502,11 @@ int ConfigManager::parseFacetType(string& facetType){
 bool ConfigManager::isPositionIndexEnabled(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->enablePositionIndex;
+        return (getDefaultCoreInfo()->enableWordPositionIndex ||
+        		getDefaultCoreInfo()->enableCharOffsetIndex);
     }
-    return ((CoreInfoMap_t) coreInfoMap)[coreName]->enablePositionIndex;
+    return (((CoreInfoMap_t) coreInfoMap)[coreName]->enableWordPositionIndex
+    		|| ((CoreInfoMap_t) coreInfoMap)[coreName]->enableCharOffsetIndex);
 }
 
 const string& ConfigManager::getMongoServerHost(const string &coreName) const
