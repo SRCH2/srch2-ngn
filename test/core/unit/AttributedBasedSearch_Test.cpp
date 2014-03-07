@@ -107,7 +107,6 @@ Indexer *buildIndex(string data_file, string index_dir, string expression)
     prot->free();
     syn->free();
 
->>>>>>> 344cc8cef8eac4d5456954ea56be1bbdf05cc328
     return indexer;
 }
 

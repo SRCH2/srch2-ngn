@@ -322,15 +322,9 @@ private:
     {
     	//invertedIndexVector should no be NULL. In debug mode,Alert developer that it is NULL
     	ASSERT(invertedIndexVector != NULL);
-    	// In release mode , allocate new memory.
-        if (invertedIndexVector == NULL)
-        	invertedIndexVector = new cowvector<InvertedListContainerPtr>();
         ar & *invertedIndexVector;
         //invertedIndexVector should no be NULL. In debug mode,Alert developer that it is NULL
         ASSERT(keywordIds != NULL);
-        // In release mode , allocate new memory.
-        if (keywordIds == NULL)
-        	keywordIds = new cowvector<unsigned>();
         ar & *keywordIds;
     }
 
