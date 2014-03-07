@@ -52,6 +52,11 @@ struct Record::Impl
 
     //Point : The location lat,lang value of the geo object
     Point point;
+    ~Impl() {
+    	if (inMemoryStoredRecord) {
+    		delete[] inMemoryStoredRecord;
+    	}
+    }
 };
 
 Record::Record(const Schema *schema):impl(new Impl)
@@ -293,6 +298,15 @@ void Record::clear()
     impl->inMemoryRecordString = "";
     impl->point.x = 0;
     impl->point.y = 0;
+    if (impl->inMemoryStoredRecord) {
+    	delete[] impl->inMemoryStoredRecord;
+    	impl->inMemoryStoredRecord = NULL;
+    }
+}
+
+void Record::disownInMemoryData() {
+	// forget about it.
+	impl->inMemoryStoredRecord = NULL;
 }
 
 }}

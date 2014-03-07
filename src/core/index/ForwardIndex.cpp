@@ -256,6 +256,9 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     forwardList->setExternalRecordId(record->getPrimaryKey());
     forwardList->setRecordBoost(record->getRecordBoost());
     forwardList->setInMemoryData(record->getInMemoryData());
+    // now forward Index took the ownership of this pointer. Record object should not free it.
+    // casting away constness to circumvent compiler error/design issue.
+    ((Record *)record)->disownInMemoryData();
     forwardList->setNumberOfKeywords(uniqueKeywordIdList.size());
 
     //Adding Non searchable Attribute list
@@ -1206,6 +1209,7 @@ void ForwardIndex::exportData(ForwardIndex &forwardIndex, const string &exported
         out << jsonBuffer << endl;
     }
     out.close();
+    delete storedSchema;
 }
 
 }
