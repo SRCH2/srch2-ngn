@@ -2,13 +2,14 @@
     position:fixed;
     	left:10px;
 	top:20px;
-    padding: 5.5px;
+    padding-left: 5.5px;
+    padding-right: 5.5px;
+    padding-top: 0px;
+    padding-bottom: 0px;
     font-size: 13px;
     //line-height: 20px;
     word-break: break-all;
     word-wrap: break-word;
-    white-space: pre;
-    white-space: pre-wrap;
     background-color: #f5f5f5;
     border: 1px solid #ccc;
     border: 1px solid rgba(0, 0, 0, 0.15);
@@ -72,6 +73,25 @@ html{
     display: inline-block
 }
 
+#linkpool {
+    padding-top: 0px;
+    padding-bottom: 0px;
+    padding-left: 0px;
+    padding-right: 0px
+}
+
+#content {
+    padding-top: 0px;
+    padding-bottom: 0px;
+    padding-left: 0px;
+    padding-right: 0px
+}
+
+#toc_ruler {
+    margin-top: 0px;
+    margin-bottom: 0px
+}
+
 * {
-   font-family: arial;
+   font-family: arial
 }

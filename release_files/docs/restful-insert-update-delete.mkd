@@ -28,7 +28,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
 </td></tr></tbody></table></div>
 
-#<center>SRCH2 Manual: RESTful API - Insert/Delete/Update</center>#{id="doc" style="color:#ee2e24" }
+#<center><a href="http://www.srch2.com" target="_blankt"><img style="height:24px" src="images/logo.png"></a> Manual: RESTful API - Insert/Delete/Update</center>#{id="doc" style="color:#ee2e24" }
 ######<center>Version: 4.2.0, Date: November 27, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 
 Using the RESTful API of the SRCH2 engine, a user can send requests to insert new records, delete existing records, and update existing records.  The engine has a background thread that periodically merges the inserted/deleted/updated records into the indexes, based on two parameters specified in the configuration file, namely "mergeEveryNSeconds" (time interval) and "mergeEveryMWrites" (number of write requests) .

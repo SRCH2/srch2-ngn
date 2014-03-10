@@ -18,7 +18,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 })(window,document,'script','dataLayer','GTM-MQK794');</script>
 <!-- End Google Tag Manager -->
 
-#<center>SRCH2 Manual</center>#{id="doc" style="color:#ee2e24" }
+#<center><a href="http://www.srch2.com" target="_blankt"><img style="height:24px" src="images/logo.png"></a> Manual</center>#{id="doc" style="color:#ee2e24" }
 ######<center>Version: 4.2.0, Date: November 27, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 
 
