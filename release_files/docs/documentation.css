@@ -1,7 +1,13 @@
+#menubar {
+   position: fixed;
+   left: 10px;
+   top: 10px;
+}
+
 #sidebar{
     position:fixed;
     	left:10px;
-	top:20px;
+	top:44px;
     padding-left: 5.5px;
     padding-right: 5.5px;
     padding-top: 0px;

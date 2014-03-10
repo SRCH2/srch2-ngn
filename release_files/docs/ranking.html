@@ -9,7 +9,21 @@
 
 <body>
 
+<!-- menubar -->
+<table id="menubar">
+<tr style="background-color: #f5f5f5">
+<td style="width:100%; padding: 0px">
+<a href="http://www.srch2.com" target="_blankt"><img style="height:24px" src="images/logo.png" align="left"></a>&nbsp;
+</td>
+<td style="align:right; white-space: nowrap; padding: 0px; font-size: 12px">
+Version: 4.3.0, Date: March 10, 2014
+</td>
+</tr>
+</table>
+<!-- end of menubar -->
+
 <table style="width:100%;table-layout:fixed" >
+
 <tr>
 <td id="sideBarTd" style="width:25%">
 <div id="sidebar"> <!-- Sidebar -->
@@ -62,7 +76,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 </td>
 
 <td id="docBody" style="width:70%">
-<a href="http://www.srch2.com" target="_blankt"><img style="height:24px" src="images/logo.png" align="right"></a>
 
 </br>
 
@@ -75,7 +88,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
 <p></tr></tbody></table></div></p>
 <h1 id="doc" style="color:#ee2e24"><center>SRCH2 Manual: Ranking</center></h1>
-<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.3.0, Date: March 10, 2014</center></h6>
 <h2 id="overview">1. Overview</h2>
 <p>The SRCH2 engine allows a user to customize the ranking of records by providing a framework with various tunable parameters that can be specified in the configuration file. In addition to using classic features such as TF/IDF, field boosts, and record boosts, the framework also provides more control specifically needed in the context of instant search and fuzzy search. In particular, the engine allows the user to control the following:</p>
 <ul>

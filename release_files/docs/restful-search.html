@@ -9,7 +9,21 @@
 
 <body>
 
+<!-- menubar -->
+<table id="menubar">
+<tr style="background-color: #f5f5f5">
+<td style="width:100%; padding: 0px">
+<a href="http://www.srch2.com" target="_blankt"><img style="height:24px" src="images/logo.png" align="left"></a>&nbsp;
+</td>
+<td style="align:right; white-space: nowrap; padding: 0px; font-size: 12px">
+Version: 4.3.0, Date: March 10, 2014
+</td>
+</tr>
+</table>
+<!-- end of menubar -->
+
 <table style="width:100%;table-layout:fixed" >
+
 <tr>
 <td id="sideBarTd" style="width:25%">
 <div id="sidebar"> <!-- Sidebar -->
@@ -89,7 +103,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 </td>
 
 <td id="docBody" style="width:70%">
-<a href="http://www.srch2.com" target="_blankt"><img style="height:24px" src="images/logo.png" align="right"></a> 
 </br>
 <div><table><tbody><tr><td>
 <div><h3><a style="text-decoration: none;color:#ee2e24" href="#doc"></a></h3></div>
@@ -98,7 +111,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
 <p></tr></tbody></table></div></p>
 <h1 id="doc" style="color:#ee2e24"><center>SRCH2 Manual: RESTful API - Search</center></h1>
-<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.3.0, March 10, 2014</center></h6>
 <h2 id="overview">1. Overview</h2>
 <p>The SRCH2 engine provides a RESTful API that receives a request (query, insert/delete/update, or a control message) and gives a response in the JSON format.  This documentation describes the detail of the search API.  It begins with a set of sample queries to give an overview of the query language. It then dives into the language with an explanation of its basic concepts. Then it gives details of the structural components of a query with emphasis on their syntax specifications.  </p>
 <p>Refer to <a href="restful-insert-update-delete.html">this page</a> about the insert/dete/update API and <a href="restful-control.html">this page</a> about the control API. </p>
