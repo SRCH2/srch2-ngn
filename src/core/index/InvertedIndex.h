@@ -117,7 +117,13 @@ private:
     template<class Archive>
     void serialize(Archive & ar, const unsigned int version)
     {
-        ar & invList;
+    	// invList should not be NULL. In the debug mode, alert a developer via ASSERT
+    	ASSERT(invList != NULL);
+        if (invList == NULL)  // In release mode, create new memory.
+        	invList = new cowvector<unsigned>();
+        // Always use the object reference instead of pointer for boost serialization. During the load phase
+        // boost tends to allocate new memory for the pointer leaking the existing one.
+        ar & *invList;
     }
 
 public:
@@ -314,15 +320,23 @@ private:
     template<class Archive>
     void save(Archive & ar, const unsigned int version) const
     {
-        ar & invertedIndexVector;
-        ar & keywordIds;
+    	//invertedIndexVector should no be NULL. In debug mode,Alert developer that it is NULL
+    	ASSERT(invertedIndexVector != NULL);
+        ar & *invertedIndexVector;
+        //invertedIndexVector should no be NULL. In debug mode,Alert developer that it is NULL
+        ASSERT(keywordIds != NULL);
+        ar & *keywordIds;
     }
 
     template<class Archive>
     void load(Archive & ar, const unsigned int version)
     {
-        ar & invertedIndexVector;
-        ar & keywordIds;
+        if (invertedIndexVector == NULL)
+            invertedIndexVector = new cowvector<InvertedListContainerPtr>();
+        ar & *invertedIndexVector;
+        if (keywordIds == NULL)
+            keywordIds = new cowvector<unsigned>();
+        ar & *keywordIds;
         commited_WriteView = true;
     }
 

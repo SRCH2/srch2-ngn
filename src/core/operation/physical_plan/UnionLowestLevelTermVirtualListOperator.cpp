@@ -15,6 +15,9 @@ UnionLowestLevelTermVirtualListOperator::UnionLowestLevelTermVirtualListOperator
 }
 
 UnionLowestLevelTermVirtualListOperator::~UnionLowestLevelTermVirtualListOperator(){
+	for (unsigned j  = 0; j < itemsHeap.size(); ++j) {
+		delete itemsHeap[j];
+	}
 }
 bool UnionLowestLevelTermVirtualListOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
 

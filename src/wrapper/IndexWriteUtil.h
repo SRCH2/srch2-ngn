@@ -56,7 +56,7 @@ struct IndexWriteUtil
     	{
     		log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"failed\",\"reason\":\"document limit reached. Email support@srch2.com for account upgrade.\"}";
     	}
-
+    	delete storedSchema;
     	//std::cout << "INSERT request received. New number of documents = " << indexer->getNumberOfDocumentsInIndex() << "; Limit = " << indexDataContainerConf->getDocumentLimit() << "." << std::endl;
     }
 
@@ -146,6 +146,7 @@ struct IndexWriteUtil
     	Json::FastWriter writer;
     	bool parseJson = JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root,
     			indexDataContainerConf, log_str, recSerializer);
+    	delete storedSchema;
         if(parseJson == false) {
             log_str << "failed\",\"reason\":\"parse: The record is not in a correct json format\",";
             return;

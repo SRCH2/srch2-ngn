@@ -86,6 +86,8 @@ LogicalPlan::~LogicalPlan(){
 	if(postProcessingInfo != NULL){
 		delete postProcessingInfo;
 	}
+	delete postProcessingPlan;
+	delete fuzzyQuery; delete exactQuery;
 }
 
 LogicalPlanNode * LogicalPlan::createTermLogicalPlanNode(const std::string &queryKeyword, TermType type,const float boost, const float fuzzyMatchPenalty, const uint8_t threshold , unsigned fieldFilter){

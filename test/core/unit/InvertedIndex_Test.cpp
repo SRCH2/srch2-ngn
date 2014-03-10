@@ -131,6 +131,7 @@ void addRecords()
     delete record;
     delete analyzer;
     delete index;
+    delete indexMetaData;
     syn->free();
 }
 
@@ -236,6 +237,7 @@ bool test3()
     //delete indexerInternal;
     //delete indexer;
     delete indexer;
+    delete indexMetaData;
     return true;
 }
 
