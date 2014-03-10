@@ -15,7 +15,6 @@ UnionLowestLevelTermVirtualListOperator::UnionLowestLevelTermVirtualListOperator
 }
 
 UnionLowestLevelTermVirtualListOperator::~UnionLowestLevelTermVirtualListOperator(){
-	// Jamshid should verify this
 	for (unsigned j  = 0; j < itemsHeap.size(); ++j) {
 		delete itemsHeap[j];
 	}
