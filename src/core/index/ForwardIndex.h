@@ -229,7 +229,7 @@ public:
 
     virtual ~ForwardList() {
         if(data != NULL){
-        	delete data;
+        	delete[] data;  // data is allocated as an array with new[]
         }
         if(inMemoryData != NULL){
         	delete inMemoryData;
@@ -503,7 +503,7 @@ private:
 
     template<class Archive>
     void serialize(Archive & ar, const unsigned int version) {
-        ar & forwardListDirectory;
+        ar & *forwardListDirectory;
         ar & externalToInternalRecordIdMap;
         ar & commited_WriteView;
     }

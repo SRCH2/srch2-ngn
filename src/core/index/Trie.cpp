@@ -47,7 +47,7 @@ TrieNode::TrieNode()
     //this->character = '$'; // dummy character. charT on depth=0 is always invalid.
     this->setDepth(0);
     this->setTerminalFlag(false);
-
+    this->insertCounters = 0;
     this->setLeftInsertCounter(1); // default values: 1
     this->setRightInsertCounter(1);
 }
@@ -67,7 +67,7 @@ TrieNode::TrieNode(bool create_root)
     this->character = TRIE_MARKER_CHARACTER; // dummy character. charT on depth=0 is always invalid.
     this->setDepth(0);
     this->setTerminalFlag(false);
-
+    this->insertCounters = 0;
     this->setLeftInsertCounter(1); // default values: 1
     this->setRightInsertCounter(1);
 }
@@ -85,7 +85,7 @@ TrieNode::TrieNode(int depth, CharType character)
 
     this->setDepth(depth);
     this->setTerminalFlag(false);
-
+    this->insertCounters = 0;
     this->setLeftInsertCounter(1); // default values: 1
     this->setRightInsertCounter(1);
 }
@@ -103,7 +103,7 @@ TrieNode::TrieNode(const TrieNode *src)
     this->terminalFlag1bDepth7b = src->terminalFlag1bDepth7b;
     this->childrenPointerList.resize(src->childrenPointerList.size());
     std::copy(src->childrenPointerList.begin(), src->childrenPointerList.end(), this->childrenPointerList.begin());
-
+    this->insertCounters = 0;
     this->setLeftInsertCounter(src->getLeftInsertCounter());
     this->setRightInsertCounter(src->getRightInsertCounter());
 }
@@ -394,6 +394,15 @@ Trie::~Trie()
         TrieNode* childNode = root->getChild(childIterator);
         this->deleteTrieNode( childNode );
     }
+
+    /* Free root_writeview pointer. The if condition is a defensive check to make sure
+     * that we do not get into a double free situation. 'root_readview' is a shared_pointer
+     * which automatically deletes the pointer it is holding.
+     */
+    if (this->root_writeview != this->root_readview->root
+    		&& this->root_writeview != NULL)
+        delete this->root_writeview;
+
     pthread_spin_destroy(&m_spinlock);
 }
 

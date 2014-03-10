@@ -53,7 +53,7 @@ public:
 template <class T>
 class vectorview {
 public:
-    vectorview() {};
+    //vectorview() {};
 
     vectorview(vectorview<T>& vv)
     {
@@ -63,7 +63,7 @@ public:
         this->setNeedToFreeArray(true);
     }
 
-    vectorview(size_t capacity)
+    vectorview(size_t capacity = 1)
     {
         m_array =new array<T>(capacity);
         this->setSize(0);
@@ -202,6 +202,8 @@ private:
 
         array<T>* acopy = new array<T>(this->size());
         ar >> boost::serialization::make_array(acopy->extent, this->size());
+        if (m_array)
+           delete m_array;
         m_array = acopy;
     }
 
@@ -229,7 +231,7 @@ private:
     template<class Archive>
     void save(Archive & ar, const unsigned int version) const
     {
-        ar << this->m_readView;
+        ar << *this->m_readView;
     }
 
     template<class Archive>
@@ -237,7 +239,9 @@ private:
     {
         if(m_readView.get() != m_writeView)
             delete m_writeView;
-        ar >> this->m_readView;
+        ar >> *this->m_readView;
+        m_readView->setReadView();
+        m_readView->setNeedToFreeArray(true);
         m_writeView = new vectorview<T>(*m_readView);
         m_writeView->setNeedToFreeArray(false);
     }

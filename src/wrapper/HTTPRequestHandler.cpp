@@ -465,7 +465,7 @@ void HTTPRequestHandler::genRecordJsonString(const srch2is::Indexer *indexer, un
 	Schema * storedSchema = Schema::create();
 	RecordSerializerUtil::populateStoredSchema(storedSchema, indexer->getSchema());
 	RecordSerializerUtil::convertCompactToJSONString(storedSchema, buffer, externalRecordId, sbuffer, attrToReturn);
-
+	delete storedSchema;
 }
 
 void HTTPRequestHandler::genSnippetJSONString(unsigned recIdx, unsigned start,

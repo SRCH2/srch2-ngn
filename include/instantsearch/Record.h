@@ -190,6 +190,7 @@ public:
      */
     virtual ~Record();
 
+    void disownInMemoryData();
 private:
     struct Impl;
     Impl *impl;

@@ -563,6 +563,9 @@ private:
         // We do NOT need to read the "oldIdToNewIdMapVector" from the disk since it's only used before the commit and is no longer needed.
         commited = true;
         ar >> root_readview;
+        // free any old memory pointed by this->root_writeview to avoid memory leaks.
+        if (this->root_writeview)
+        	delete this->root_writeview;
         this->root_writeview = new TrieNode(this->root_readview.get()->root);
     }
 
