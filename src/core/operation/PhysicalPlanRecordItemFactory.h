@@ -126,6 +126,7 @@ public:
     	editDistances.clear();
     	attributeBitmaps.clear();
     	positionIndexOffsets.clear();
+	termTypes.clear();
     }
 
 	~PhysicalPlanRecordItem(){};
