@@ -23,13 +23,14 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 </td>
 
 <td id="docBody" style="width:70%">
-<br>
+<a href="http://www.srch2.com" target="_blankt"><img style="height:24px" src="images/logo.png" align="right"></a> 
+<br/>
 <div><table><tbody><tr><td>
 <div><h3><a style="text-decoration: none;color:#ee2e24" href="#doc"></a></h3></div>
 
 </td></tr></tbody></table></div>
-#<center><a href="http://www.srch2.com" target="_blankt"><img style="height:24px" src="images/logo.png"></a> Manual: Geo Search</center>#{id="doc" style="color:#ee2e24" }
-######<center>Version: 4.2.0, Date: November 27, 2013</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
+#<center>SRCH2 Manual: Geo Search</center>#{id="doc" style="color:#ee2e24" }
+######<center>Version: 4.3.0, Date: March 10, 2014</center>{id="versionInfo" style="font-size: 12px; margin-top: -20px;"}
 
 
 This documentation discusses how to use the SRCH2 engine to do powerful geo search (location-based search). The engine can index records with location information specified as a latitude and a longitude, and do search based on both keywords and locations. For example, we can use the engine to find stores called "ghirardelli" within two miles to a location in San Francisco.  The engine provides all the features such as instant search and fuzzy search, making it easy to develop an application to provide great user experiences.
