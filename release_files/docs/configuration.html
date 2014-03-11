@@ -2,14 +2,28 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="generator" content="ReText Webpages generator 4.0.1">
+<meta name="generator" content="ReText Webpages generator 4.1.0">
 <link rel="stylesheet" type="text/css" href="style.css">
 <title>SRCH2: Configuration</title>
 </head>
 
 <body>
 
+<!-- menubar -->
+<table id="menubar">
+<tr style="background-color: #f5f5f5">
+<td style="width:100%; padding: 0px">
+<a href="http://www.srch2.com" target="_blankt"><img style="height:24px" src="images/logo.png" align="left"></a>&nbsp;
+</td>
+<td style="align:right; white-space: nowrap; padding: 0px; font-size: 12px">
+Version: 4.3.0, Date: March 10, 2014
+</td>
+</tr>
+</table>
+<!-- end of menubar -->
+
 <table style="width:100%;table-layout:fixed" >
+
 <tr>
 <td id="sideBarTd" style="width:25%">
 <div id="sidebar"> <!-- Sidebar -->
@@ -26,23 +40,9 @@
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a><br><br>
 </td></tr></tbody></table>
 
-<span ><a href="http://www.srch2.com" target="_blankt"><img style="width:100px" src="images/logo.png"></a></span>
 </div> <!-- Links to main pages, id=linkpool-->
 
-<hr>
-
-<!-- Google Tag Manager -->
-
-<noscript><iframe src="//www.googletagmanager.com/ns.html?id=GTM-MQK794"
-height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-
-<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-'//www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','GTM-MQK794');</script>
-
-<!-- End Google Tag Manager -->
+<hr id="toc_ruler">
 
 <div id="content" > <!-- Table of content, id=content-->
 <table><tbody><tr><td>
@@ -102,6 +102,19 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
 <!-- Table of content, id=content-->
 
+<!-- Google Tag Manager -->
+
+<noscript><iframe src="//www.googletagmanager.com/ns.html?id=GTM-MQK794"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'//www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-MQK794');</script>
+
+<!-- End Google Tag Manager -->
+
 <p></div> <!-- Sidebar --></p>
 </td>
 
@@ -114,7 +127,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
 <p></tr></tbody></table></div></p>
 <h1 id="doc" style="color:#ee2e24"><center>SRCH2 Manual: Engine Configuration</center></h1>
-<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.2.0, Date: November 27, 2013</center></h6>
 <h2 id="overview">1. Overview</h2>
 <p>The SRCH2 engine can be customized using a configuration file in XML. This documentation describes the details of how to do this configuration.  The package includes a sample <a href="example-demo/srch2-config.xml">configuration file</a>.  Each parameter in the file can have one of the following two labels: "Required" means this tag must be present in the configuration file, and "Optional" means this tag does not need to be present.</p>
 <p>Tag names and tag attribute names (but not values) are case insensitive.</p>

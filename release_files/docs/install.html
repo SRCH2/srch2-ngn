@@ -9,7 +9,21 @@
 
 <body>
 
+<!-- menubar -->
+<table id="menubar">
+<tr style="background-color: #f5f5f5">
+<td style="width:100%; padding: 0px">
+<a href="http://www.srch2.com" target="_blankt"><img style="height:24px" src="images/logo.png" align="left"></a>&nbsp;
+</td>
+<td style="align:right; white-space: nowrap; padding: 0px; font-size: 12px">
+Version: 4.3.0, Date: March 10, 2014
+</td>
+</tr>
+</table>
+<!-- end of menubar -->
+
 <table style="width:100%;table-layout:fixed" >
+
 <tr>
 <td id="sideBarTd" style="width:25%">
 <div id="sidebar"> <!-- Sidebar -->
@@ -26,23 +40,9 @@
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a><br><br>
 </td></tr></tbody></table>
 
-<span ><a href="http://www.srch2.com" target="_blankt"><img style="width:100px" src="images/logo.png"></a></span>
 </div> <!-- Links to main pages, id=linkpool-->
 
-<hr>
-
-<!-- Google Tag Manager -->
-
-<noscript><iframe src="//www.googletagmanager.com/ns.html?id=GTM-MQK794"
-height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-
-<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-'//www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','GTM-MQK794');</script>
-
-<!-- End Google Tag Manager -->
+<hr id="toc_ruler">
 
 <div id="content" > <!-- Table of content, id=content-->
 
@@ -64,6 +64,19 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
 <!-- Table of content, id=content-->
 
+<!-- Google Tag Manager -->
+
+<noscript><iframe src="//www.googletagmanager.com/ns.html?id=GTM-MQK794"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'//www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-MQK794');</script>
+
+<!-- End Google Tag Manager -->
+
 <p></div> <!-- Sidebar --></p>
 </td>
 
@@ -80,7 +93,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
 <p></tr></tbody></table></div></p>
 <h1 id="doc" style="color:#ee2e24"><center>SRCH2 Manual: Engine Installation</center></h1>
-<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.2.0, Date: November 27, 2013</center></h6>
 <p>This documentation gives step-by-step instructions on how to use the SRCH2 engine to setup a simple search service on movie information. The provided package includes a sample data file with movie records, with information such as title, year, director, and genre. A live demo is available at <a href="http://demo.srch2.com/movies/">here</a>.</p>
 <h2 id="serverConfig">1. Download and Run Server</h2>
 <p><b>Step 1</b>: Download the latest SRCH2 engine from <a href="http://www.srch2.com/download">here</a> and unzip it to a folder, e.g., "/home/joe/srch2". The tar ball includes the following files and a folder:</p>

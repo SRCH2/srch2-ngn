@@ -9,7 +9,21 @@
 
 <body>
 
+<!-- menubar -->
+<table id="menubar">
+<tr style="background-color: #f5f5f5">
+<td style="width:100%; padding: 0px">
+<a href="http://www.srch2.com" target="_blankt"><img style="height:24px" src="images/logo.png" align="left"></a>&nbsp;
+</td>
+<td style="align:right; white-space: nowrap; padding: 0px; font-size: 12px">
+Version: 4.3.0, Date: March 10, 2014
+</td>
+</tr>
+</table>
+<!-- end of menubar -->
+
 <table style="width:100%;table-layout:fixed" >
+
 <tr>
 <td id="sideBarTd" style="width:25%">
 <div id="sidebar"> <!-- Sidebar -->
@@ -26,23 +40,9 @@
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a><br><br>
 </td></tr></tbody></table>
 
-<span ><a href="http://www.srch2.com" target="_blankt"><img style="width:100px" src="images/logo.png"></a></span>
 </div> <!-- Links to main pages, id=linkpool-->
 
-<hr>
-
-<!-- Google Tag Manager -->
-
-<noscript><iframe src="//www.googletagmanager.com/ns.html?id=GTM-MQK794"
-height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-
-<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-'//www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','GTM-MQK794');</script>
-
-<!-- End Google Tag Manager -->
+<hr id="toc_ruler">
 
 <div id="content" > <!-- Table of content, id=content-->
 <table><tbody><tr><td>
@@ -56,6 +56,15 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 </div>
 
 <p><!-- Table of content, id=content-->
+<!-- Google Tag Manager -->
+<noscript><iframe src="//www.googletagmanager.com/ns.html?id=GTM-MQK794"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&amp;l='+l:'';j.async=true;j.src=
+'//www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-MQK794');</script>
+<!-- End Google Tag Manager -->
 </div> <!-- Sidebar --></p>
 </td>
 
@@ -68,7 +77,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
 <p></tr></tbody></table></div></p>
 <h1 id="doc" style="color:#ee2e24"><center>SRCH2 Manual: RESTful API - Insert/Delete/Update</center></h1>
-<h6 id="versionInfo" style="font-size: 12px; margin-top: -20px;"><center>Version: 4.2.0, Date: November 27, 2013</center></h6>
 <p>Using the RESTful API of the SRCH2 engine, a user can send requests to insert new records, delete existing records, and update existing records.  The engine has a background thread that periodically merges the inserted/deleted/updated records into the indexes, based on two parameters specified in the configuration file, namely "mergeEveryNSeconds" (time interval) and "mergeEveryMWrites" (number of write requests) .</p>
 <p>Note that each RESTful request needs to use a proper <a href="http://www.w3schools.com/tags/ref_urlencode.asp">URL encoder</a> to be converted to characters in a format that can be transmitted properly.</p>
 <h2 id="insert">1. Insert</h2>
