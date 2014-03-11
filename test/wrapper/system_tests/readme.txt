@@ -7,6 +7,9 @@ if you are running it for the sytem test directory itself then
 
 ./main.sh . /path/to/srch2-search-server
 
+Example: 
+  shell> cd srch2-ngn/test/wrapper/system_tests
+  shell> ./main.sh . ../../../build/src/server/srch2-search-server 
 
 options:
 	-f or --force : Continue executing tests even after one fails
