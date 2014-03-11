@@ -243,6 +243,7 @@ int main() {
 	vector<unsigned> * k1Array = new vector<unsigned>();
 	vector<unsigned> * k2Array = new vector<unsigned>();
 	vector<unsigned> * k3Array = new vector<unsigned>();
+	vector<unsigned> * k4Array = new vector<unsigned>();
 
 	pifh.slop = 0;
 	pifh.phraseKeyWords.clear();
@@ -253,7 +254,7 @@ int main() {
 
 	pifh.slop = 0;
 	pifh.phraseKeyWords.clear();
-	pti.queryPosition = 1; pti.recordPosition = k1Array; pifh.phraseKeyWords.push_back(pti);
+	pti.queryPosition = 1; pti.recordPosition = k4Array; pifh.phraseKeyWords.push_back(pti);
 	pti.queryPosition = 2; pti.recordPosition = NULL; pifh.phraseKeyWords.push_back(pti);
 	pti.queryPosition = 2; pti.recordPosition = k3Array; pifh.phraseKeyWords.push_back(pti);
 	phrasesInfoList.push_back(pifh);
@@ -265,9 +266,7 @@ int main() {
 	expectedResults.push_back("<exact>storage</exact> <exact>engines</exact>. A number of ... of these two <exact>storage</exact> <exact>systems</exact> can certainly ... using the <exact>storage</exact> <exact>engines</exact> through Riak, ... of embedded <exact>storage</exact> <exact>engines</exact>....");
 	callSnippetGen(algo, records[2].c_str(), snippets, keywordStrToHighlight, expectedResults);
 
-	delete k1Array; delete k2Array; delete k3Array;
 	delete algo;
-
 	delete analyzer;
 }
 
