@@ -2,7 +2,7 @@
 
 # Library of useful srch2 system test functions
 
-import subprocess, time, signal, urllib2
+import sys, subprocess, time, signal, urllib2
 
 # Start the srch2 search engine server
 # Non-blocking (background process)
@@ -37,7 +37,8 @@ def confirmPortAvailable(port) :
     try:
         response = opener.open(request).read()
     except urllib2.URLError as err:
-        if hasattr(err, 'reason') and hasattr(err.reason, 'errno') and err.reason.errno == 111:
+        # err code is 111 on Ubuntu Linux and 61 on Mac (darwin)
+        if hasattr(err, 'reason') and hasattr(err.reason, 'errno') and ((sys.platform == 'linux2' and err.reason.errno == 111) or (sys.platform == 'darwin' and err.reason.errno == 61)):
             return True # connection refused - port available
         return False # unexpected error response - nonetheless port must be in use
     return False # no error - port already in use
