@@ -8,10 +8,7 @@ if [ $# -lt 2 ]; then
 fi
 
 machine=`uname -m`
-os=`uname -o 2> /dev/null| sed -e s#/#-#g`
-if [ $? -ne 0 ]; then
-    os=`uname -s`
-fi
+os=`uname -s`
 
 # process options
 force=0
@@ -165,8 +162,7 @@ rm -rf data/ *.idx
 #  SYSTEM TEST CASES SHOULD BE ADDED BELOW THIS MESSAGE
 #
 #  NOTE:  If you decide to add your new test case as a first test case (i.e right after this message), then
-#         please change "> system_test.log" to ">> system_test.log" in the original initial test case. First
-#         test case should overwrite the log and the rest should append to the log.
+#         please be sure to append output using ">> system_test.log".
 #
 ###############################################################################################################
 
