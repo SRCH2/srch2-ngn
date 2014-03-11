@@ -8,7 +8,10 @@ if [ $# -lt 2 ]; then
 fi
 
 machine=`uname -m`
-os=`uname -o | sed -e s#/#-#g`
+os=`uname -o 2> /dev/null| sed -e s#/#-#g`
+if [ $? -ne 0 ]; then
+    os=`uname -s`
+fi
 
 # process options
 force=0
@@ -625,17 +628,20 @@ if [ $HAVE_NODE -gt 0 ]; then
 	echo "-- ruby NOT INSTALLED - SKIPPING large_insertion component of ${test_id}" >> ${output}
     fi
 
-    NODECMD=${NODE_CMD:-node} ./tests_used_for_statemedia/autotest.sh $SRCH2_ENGINE | eval "${html_escape_command}" >> system_test.log 2>&1
+    if [ `uname -s` != 'Darwin' ]; then
+        NODECMD=${NODE_CMD:-node} ./tests_used_for_statemedia/autotest.sh $SRCH2_ENGINE | eval "${html_escape_command}" >> system_test.log 2>&1
 
-    if [ ${PIPESTATUS[0]} -gt 0 ]; then
-	echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-	if [ $force -eq 0 ]; then
-            exit 255
-	fi
+        if [ ${PIPESTATUS[0]} -gt 0 ]; then
+	    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
+            if [ $force -eq 0 ]; then
+                exit 255
+	    fi
+        else
+	    echo "-- PASSED: $test_id" >> ${output}
+        fi
     else
-	echo "-- PASSED: $test_id" >> ${output}
+        echo "-- IGNORING $test_id on MacOS"
     fi
-
 else
     echo "-- node.js NOT INSTALLED - SKIPPING: ${test_id}" >> ${output}
 fi
