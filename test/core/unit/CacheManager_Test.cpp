@@ -45,7 +45,9 @@ void test1(srch2is::CacheContainer<CachedStruct> * cacheContainer){
 		boost::shared_ptr<CachedStruct> ai ;
 		ai.reset(new CachedStruct(i));
 
-		string key = "" + i;
+                ostringstream convert; // convert the unsigned to a string
+                convert << i;
+		string key = convert.str();
 		cacheContainer->put(key , ai);
 
 		boost::shared_ptr<CachedStruct> aiHit ;
