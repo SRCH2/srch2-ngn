@@ -44,6 +44,10 @@ if __name__ == '__main__':
     #each line like "trust||01c90b4effb2353742080000" ---- query||record_ids(results)
     binary_path = sys.argv[1]
 
+    if test_lib.confirmPortAvailable(port) == False:
+        print 'Port ' + str(port) + ' already in use - aborting'
+        os._exit(-1)
+
     tester = logTester(binary_path)
     tester.startServer()
     tester.pingServer()

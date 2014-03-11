@@ -11,6 +11,11 @@ port = '8087'
 def testEmptyIndex(binary_path):
     #Start the engine server
     args = [ binary_path, '--config-file=./empty_index/conf.xml' ]
+
+    if test_lib.confirmPortAvailable(port) == False:
+        print 'Port ' + str(port) + ' already in use - aborting'
+        return -1
+
     print 'starting engine: ' + args[0] + ' ' + args[1]
     serverHandle = test_lib.startServer(args)
 

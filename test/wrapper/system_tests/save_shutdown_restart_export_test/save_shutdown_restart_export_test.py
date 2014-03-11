@@ -11,6 +11,11 @@ port = '8087'
 def testSaveShutdownRestart(binary_path):
     #Start the engine server
     binary= [ binary_path, '--config-file=./save_shutdown_restart_export_test/conf.xml' ]
+
+    if test_lib.confirmPortAvailable(port) == False:
+        print 'Port ' + str(port) + ' already in use - aborting'
+        return -1
+
     print 'starting engine: ' + binary[0] + ' ' + binary[1]
     proc = subprocess.Popen(binary)
 

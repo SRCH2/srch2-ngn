@@ -55,6 +55,11 @@ def prepareQuery(ct_lat,ct_long,ct_radius):
 def testGeo(queriesAndResultsPath, binary_path):
     # Start the engine server
     args = [ binary_path, '--config-file=./geo/conf.xml' ]
+
+    if test_lib.confirmPortAvailable(port) == False:
+        print 'Port ' + str(port) + ' already in use - aborting'
+        return -1
+
     serverHandle = test_lib.startServer(args)
     #make sure that start the engine up
     test_lib.pingServer(port, 'q=goods&clat=61.18&clong=-149.1&radius=0.5')
