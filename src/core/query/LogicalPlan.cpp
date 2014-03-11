@@ -79,6 +79,7 @@ LogicalPlan::LogicalPlan(){
 	tree = NULL;
 	postProcessingInfo = NULL;
 	fuzzyQuery = exactQuery = NULL;
+	postProcessingPlan = NULL;
 }
 
 LogicalPlan::~LogicalPlan(){
