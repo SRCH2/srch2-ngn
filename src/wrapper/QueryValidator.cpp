@@ -545,6 +545,9 @@ bool QueryValidator::isParseSubtreeComputableRecursive(ParseTreeNode * node){
 			}
 			return true;
 			break;
+
+                 default:
+			break;
 	}
 	return true;
 }
