@@ -179,7 +179,7 @@ if [ ${PIPESTATUS[0]} -gt 0 ]; then
 	exit 255
     fi
 else
-    echo "-- PASSED: $test_id"
+    echo "-- PASSED: $test_id" >> ${output}
 fi
 rm -rf data/ *.idx
 
