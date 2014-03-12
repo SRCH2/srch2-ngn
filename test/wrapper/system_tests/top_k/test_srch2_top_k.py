@@ -71,8 +71,12 @@ def verify(jsonA, topk_A, jsonB, topk_B):
 if __name__ == "__main__":
     #Start the engine server
     args = [ sys.argv[1], '--config-file=./top_k/conf.xml' ]
-    serverHandle = test_lib.startServer(args)
 
+    if test_lib.confirmPortAvailable(port) == False:
+        print 'Port ' + str(port) + ' already in use - aborting'
+        os._exit(-1)
+
+    serverHandle = test_lib.startServer(args)
     test_lib.pingServer(port)
 
     base = 'http://localhost:' + port

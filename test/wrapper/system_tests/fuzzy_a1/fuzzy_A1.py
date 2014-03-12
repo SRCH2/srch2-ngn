@@ -63,6 +63,11 @@ def prepareQuery(queryKeywords):
 
 def testFuzzyA1(queriesAndResultsPath, binary_path):
     args = [ binary_path, '--config-file=./fuzzy_a1/conf.xml' ]
+
+    if test_lib.confirmPortAvailable(port) == False:
+        print 'Port ' + str(port) + ' already in use - aborting'
+        return -1
+
     print 'starting engine: ' + args[0] + ' ' + args[1]
     serverHandle = test_lib.startServer(args)
     test_lib.pingServer(port)

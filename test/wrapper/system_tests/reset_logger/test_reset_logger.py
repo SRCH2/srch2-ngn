@@ -44,6 +44,10 @@ if __name__ == '__main__':
     #each line like "trust||01c90b4effb2353742080000" ---- query||record_ids(results)
     binary_path = sys.argv[1]
 
+    if test_lib.confirmPortAvailable(port) == False:
+        print 'Port ' + str(port) + ' already in use - aborting'
+        os._exit(-1)
+
     tester = logTester(binary_path)
     tester.startServer()
     tester.pingServer()
@@ -73,7 +77,7 @@ if __name__ == '__main__':
 
     #send a command to rotate logger file by using the 3rd-party program 'logrotate' 
     status, output = commands.getstatusoutput("logrotate -s ./reset_logger/myLogrotate/status ./reset_logger/myLogrotate/logrotate.conf")
-    sleep(1)
+    time.sleep(1)
 
     #get the size of new empty logger file
     size_3 = os.path.getsize(logFileName)

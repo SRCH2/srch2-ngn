@@ -55,6 +55,10 @@ if __name__ == '__main__':
 
     binary_path = sys.argv[1]
 
+    if test_lib.confirmPortAvailable(port) == False:
+        print 'Port ' + str(port) + ' already in use - aborting'
+        os._exit(-1)
+
     tester = UpsertTester(binary_path)
     tester.startServer()
     tester.pingServer()
