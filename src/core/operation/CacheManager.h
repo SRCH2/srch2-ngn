@@ -112,18 +112,22 @@ public:
         facetResults = destination->facetResults;
     }
 
-    unsigned getNumberOfBytes(){
-        unsigned result = 0;
+    unsigned getNumberOfBytes() {
+        unsigned result = sizeof(QueryResultsCacheEntry);   // This adds up size of all elements in this class
         for(std::map<std::string, std::pair< FacetType , std::vector<std::pair<std::string, float> > > >::iterator attr =
                 facetResults.begin(); attr != facetResults.end(); ++attr){
-            result += sizeof(attr->first);
-            result += sizeof(attr->second.first);
+            result += sizeof(attr->first) + attr->first.capacity();   // String Type
+            result += sizeof(attr->second.first);                     // Enum Type
+            result += sizeof(attr->second.second);                    // Vector Type
+            result += attr->second.second.capacity() * sizeof(std::pair<std::string, float>);
             for(std::vector<std::pair<std::string, float> >::iterator f = attr->second.second.begin() ;
                     f != attr->second.second.end() ; ++f){
-                result += sizeof(f->first) + sizeof(float);
+                result += f->first.capacity();
             }
+            // We estimate the overhead of STL ordered map to be 32 bytes per node.
+            result += 32;
         }
-        result += sizeof(bool) + sizeof(long int);
+        result += sortedFinalResults.capacity() * sizeof(QueryResult *);
         for(std::vector<QueryResult *>::iterator q = sortedFinalResults.begin();
                 q != sortedFinalResults.end() ; ++q){
             result += (*q)->getNumberOfBytes();

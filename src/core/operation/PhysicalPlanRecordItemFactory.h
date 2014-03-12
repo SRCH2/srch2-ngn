@@ -227,6 +227,7 @@ public:
 	}
 
 	void clear(){
+		vector<PhysicalPlanRecordItem *> emptyVector;
 		if(extraObjects.size() > 0){
 			for(unsigned i =0 ; i< extraObjects.size() ; ++i){
 				if(extraObjects.at(i) == NULL){
@@ -236,6 +237,9 @@ public:
 				}
 			}
 			extraObjects.clear();
+			// Clear does not free internal memory of vector. swap internal memory with empty
+			// vector. empty vector will free the memory when it goes out of scope.
+			extraObjects.swap(emptyVector);
 		}
 	}
 
