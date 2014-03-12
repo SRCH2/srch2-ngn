@@ -67,18 +67,16 @@ public:
     }
 
     unsigned getNumberOfBytes(){
-    	unsigned result = 0;
-    	result += externalRecordId.capacity() + sizeof(externalRecordId);
-    	result += sizeof(internalRecordId);
-    	result += _score.getNumberOfBytes();
-    	for(unsigned i=0 ; i<matchingKeywords.size(); ++i){
-    		result += sizeof(matchingKeywords[i]) + matchingKeywords[i].capacity();
+    	unsigned result = sizeof(QueryResult);
+    	result += externalRecordId.capacity();
+    	result += _score.getNumberOfBytes() - sizeof(TypedValue);
+    	for(unsigned i=0 ; i< matchingKeywords.size(); ++i){
+    		result += matchingKeywords[i].capacity();
     	}
     	result += attributeBitmaps.capacity() * sizeof(unsigned);
     	result += editDistances.capacity() * sizeof(unsigned);
     	result += termTypes.capacity() * sizeof(unsigned);
     	result += matchingKeywordTrieNodes.capacity() * sizeof(TrieNodePointer);
-    	result += sizeof(physicalDistance);
     	return result;
     }
     friend class QueryResultFactoryInternal;
