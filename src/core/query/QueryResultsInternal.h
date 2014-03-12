@@ -68,18 +68,16 @@ public:
 
     unsigned getNumberOfBytes(){
     	unsigned result = 0;
-    	result += externalRecordId.size();
+    	result += externalRecordId.capacity() + sizeof(externalRecordId);
     	result += sizeof(internalRecordId);
-    	// Below sizeof usage could be wrong. For correctness, TypedValue should have sizeOf() member
-    	// function which returns TypedValue's actual size based on its data type.-Surendra
-    	result += sizeof(_score);
+    	result += _score.getNumberOfBytes();
     	for(unsigned i=0 ; i<matchingKeywords.size(); ++i){
-    		result += matchingKeywords[i].size();
+    		result += sizeof(matchingKeywords[i]) + matchingKeywords[i].capacity();
     	}
-    	result += attributeBitmaps.size() * sizeof(unsigned);
-    	result += editDistances.size() * sizeof(unsigned);
-    	result += termTypes.size() * sizeof(unsigned);
-    	result += matchingKeywordTrieNodes.size() * sizeof(TrieNodePointer);
+    	result += attributeBitmaps.capacity() * sizeof(unsigned);
+    	result += editDistances.capacity() * sizeof(unsigned);
+    	result += termTypes.capacity() * sizeof(unsigned);
+    	result += matchingKeywordTrieNodes.capacity() * sizeof(TrieNodePointer);
     	result += sizeof(physicalDistance);
     	return result;
     }

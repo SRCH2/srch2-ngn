@@ -70,6 +70,23 @@ namespace srch2
     		return valueType;
     	}
 
+    	unsigned getNumberOfBytes() {
+    		unsigned capacity = 0;
+    		capacity += sizeof(valueType);
+    		capacity += sizeof(intTypedValue);
+    		capacity += sizeof(floatTypedValue);
+    		capacity += sizeof(stringTypedValue) + stringTypedValue.capacity();
+    		capacity += sizeof(timeTypedValue);
+    		capacity += sizeof(intTypedMultiValue) + intTypedMultiValue.capacity() * sizeof(unsigned);  // vector<unsigned>
+    		capacity += sizeof(floatTypedMultiValue) + floatTypedMultiValue.capacity() * sizeof(float); // vector<float> ;
+    		capacity += sizeof(stringTypedMultiValue) + stringTypedMultiValue.capacity() * sizeof(string);  //vector<string>
+    		for (unsigned i = 0 ; i < stringTypedMultiValue.size(); ++i)
+    			capacity += stringTypedMultiValue[i].capacity();
+    		capacity += sizeof(timeTypedMultiValue) + timeTypedMultiValue.capacity() * sizeof(long); ; // vector<long>
+        	//
+        	capacity += timeDurationTypedValue.getNumberOfBytes();
+        	return capacity;
+    	}
     	unsigned getIntTypedValue() const;
     	float getFloatTypedValue() const;
     	double getDoubleTypedValue() const;
