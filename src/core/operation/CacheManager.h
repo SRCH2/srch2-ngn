@@ -124,7 +124,7 @@ public:
                     f != attr->second.second.end() ; ++f){
                 result += f->first.capacity();
             }
-            // We estimate the overhead of STL ordered map to be 32 bytes.
+            // We estimate the overhead of STL ordered map to be 32 bytes per node.
             result += 32;
         }
         result += sortedFinalResults.capacity() * sizeof(QueryResult *);
