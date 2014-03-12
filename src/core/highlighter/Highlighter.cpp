@@ -60,7 +60,7 @@ HighlightAlgorithm::HighlightAlgorithm(vector<PhraseInfoForHighLight>& phrasesIn
 }
 
 void HighlightAlgorithm::setupPhrasePositionList(vector<keywordHighlightInfo>& keywordStrToHighlight) {
-	this->phrasesInfoList.clear();
+	clearPhraseInfoList();
 	std::map<string, PhraseInfo>::iterator iter = phrasesInfoMap.begin();
 	// The code below populates the phrasesInfoList vector which is used to find valid phrase
 	// positions and offsets.
@@ -250,7 +250,7 @@ void AnalyzerBasedAlgorithm::getSnippet(const QueryResults* /*not used*/, unsign
 			ctsnippet, snippets, isMultiValued);
 
 	// Clear the list so that the phrase info list is recalculated for next attribute/record.
-	phrasesInfoList.clear();
+	clearPhraseInfoList();
 }
 
 /*

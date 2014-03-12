@@ -92,8 +92,9 @@ public:
 	HighlightAlgorithm ( vector<PhraseInfoForHighLight>& phrasesInfoList, const HighlightConfig& hconfig);
 	virtual void getSnippet(const QueryResults *qr,unsigned recIdx, unsigned attributeId, const string& dataIn,
 			vector<string>& snippets, bool isMultiValued, vector<keywordHighlightInfo>& keywordStrToHighlight) = 0;
-	virtual ~HighlightAlgorithm() {}
-
+	virtual ~HighlightAlgorithm() {
+		clearPhraseInfoList();
+	}
 protected:
 	void _genSnippet(const vector<CharType>& dataIn, vector<CharType>& snippets, unsigned snippetUpperEnd,
 			unsigned snippetLowerEnd, const vector<matchedTermInfo>& highlightPositions);
@@ -110,7 +111,16 @@ protected:
 			vector<matchedTermInfo>& highlightPositions, set<unsigned>& visitedKeyword,
 			vector<CharType>& ctsnippet, vector<string>& snippets, bool isMultiValued);
 	void validatePhrasePositions(vector<matchedTermInfo>& highlightPositions);
-
+	void clearPhraseInfoList() {
+		for (unsigned i = 0; i < phrasesInfoList.size(); ++i) {
+			for (unsigned j = 0; j < phrasesInfoList.size(); ++j)  {
+				// No need to check for NULL pointer. delete is NULL safe.
+				delete phrasesInfoList[i].phraseKeyWords[j].recordPosition;
+				phrasesInfoList[i].phraseKeyWords[j].recordPosition = NULL;
+			}
+		}
+		phrasesInfoList.clear();
+	}
 private:
 	unsigned snippetSize;
 	vector<std::pair<string, string> > highlightMarkers; // holds marker for fuzzy or exact match
