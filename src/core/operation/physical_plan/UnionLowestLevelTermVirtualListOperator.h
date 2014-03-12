@@ -159,19 +159,11 @@ class UnionLowestLevelTermVirtualListOperator : public PhysicalPlanNode {
 	friend class PhysicalOperatorFactory;
 public:
 
-    struct UnionLowestLevelTermVirtualListOperatorHeapItemCmp {
-        unsigned termLength; // length of the query term
-
-        UnionLowestLevelTermVirtualListOperatorHeapItemCmp() {
-        }
-
-        // this operator should be consistent with two others in InvertedIndex.h and QueryResultsInternal.h
-        bool operator() (const UnionLowestLevelTermVirtualListOperatorHeapItem *lhs, const UnionLowestLevelTermVirtualListOperatorHeapItem *rhs) const {
+        static bool compareHeapItem(const UnionLowestLevelTermVirtualListOperatorHeapItem *lhs, const UnionLowestLevelTermVirtualListOperatorHeapItem *rhs)
+        {
             return DefaultTopKRanker::compareRecordsLessThan(lhs->termRecordRuntimeScore, lhs->recordId,
                     rhs->termRecordRuntimeScore, rhs->recordId);
-
         }
-    };
 
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
