@@ -87,21 +87,29 @@ public:
 	}
 
     unsigned getNumberOfBytes() {
-    	unsigned numberOfButes = 0;
+    	unsigned numberOfBytes = 0;
+    	numberOfBytes += sizeof(MergeTopKCacheEntry);
+
+    	// candidateList
+    	numberOfBytes += candidatesList.capacity() * sizeof(PhysicalPlanRecordItem *);
     	for(unsigned i = 0 ; i < candidatesList.size() ; ++i){
-    		numberOfButes += candidatesList.at(i)->getNumberOfBytes();
+    		numberOfBytes += candidatesList.at(i)->getNumberOfBytes();
     	}
+
+    	// nextItemsFromChildren
+    	numberOfBytes += nextItemsFromChildren.capacity() * sizeof(PhysicalPlanRecordItem *);
     	for(unsigned i = 0 ; i < nextItemsFromChildren.size() ; i++){
     		if(nextItemsFromChildren.at(i) != NULL){
-				numberOfButes += nextItemsFromChildren.at(i)->getNumberOfBytes();
+				numberOfBytes += nextItemsFromChildren.at(i)->getNumberOfBytes();
     		}
     	}
-    	numberOfButes += sizeof(unsigned) * visitedRecords.size() +
-    			sizeof(listsHaveMoreRecordsInThem) + sizeof(childRoundRobinOffset);
+
+    	// visited records
+    	numberOfBytes += sizeof(unsigned) * visitedRecords.size();
     	for(unsigned childOffset = 0 ; childOffset < children.size() ; ++childOffset){
-    		numberOfButes += children.at(childOffset)->getNumberOfBytes();
+    		numberOfBytes += children.at(childOffset)->getNumberOfBytes();
     	}
-    	return numberOfButes;
+    	return numberOfBytes;
     }
 
 	~MergeTopKCacheEntry(){

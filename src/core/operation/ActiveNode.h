@@ -153,17 +153,30 @@ public:
 
     unsigned getNumberOfBytes() const {
 
-        unsigned trieNodeSetVectorSize = 0;
+    	unsigned totalNumberOfBytes = 0;
+    	totalNumberOfBytes += sizeof(PrefixActiveNodeSet);
 
-        for (std::vector<TrieNodeSet>::const_iterator vectorIter = trieNodeSetVector.begin(); vectorIter != trieNodeSetVector.end(); vectorIter++ ) {
-            trieNodeSetVectorSize += (*vectorIter).capacity() * sizeof(*vectorIter);
+    	// prefix
+    	totalNumberOfBytes += prefix.capacity() * sizeof(CharType);
+
+    	// trieNodeSetVector : vector< vector< TrieNode * > >
+    	totalNumberOfBytes += trieNodeSetVector.capacity() * sizeof(TrieNodeSet);
+        for (std::vector<TrieNodeSet>::const_iterator vectorIter = trieNodeSetVector.begin();
+        		vectorIter != trieNodeSetVector.end(); vectorIter++ ) {
+        	totalNumberOfBytes += vectorIter->capacity() * sizeof(TrieNode*);
+        	// Trie nodes are attached to Trie and have no additional memory for cache
+        	// so we shouldn't actually consider their cost (no need to loop over trie node vector)
         }
-        trieNodeSetVectorSize += trieNodeSetVector.size() * sizeof(TrieNodeSet)
-                                 + (this->trieNodeSetVector.capacity() - trieNodeSetVector.size()) * sizeof(void*);
 
-        return this->prefix.size()
-               + sizeof(this->editDistanceThreshold)
-               + trieNodeSetVectorSize;
+        for (std::map<const TrieNode*, PivotalActiveNode >::const_iterator mapIterator = PANMap.begin();
+                mapIterator != PANMap.end(); mapIterator ++) {
+
+        }
+        // PANMap
+       	totalNumberOfBytes += PANMap.size() * (sizeof(TrieNode*) + sizeof(PivotalActiveNode) + 32);
+
+        return totalNumberOfBytes;
+
     }
 
     unsigned getNumberOfActiveNodes() {

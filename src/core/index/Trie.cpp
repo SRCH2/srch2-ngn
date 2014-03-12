@@ -237,11 +237,7 @@ int TrieNode::findChildNodePosition(CharType childCharacter) const
 
 unsigned TrieNode::getByteSizeOfCurrentNode() const
 {
-    return (sizeof(terminalFlag1bDepth7b) + sizeof(character) + sizeof(this->getNodeProbabilityValue()) + sizeof(invertedListOffset) +
-            //sizeof(hitCount) +
-            sizeof(id)+ sizeof(leftMostDescendant)+ sizeof(rightMostDescendant) + sizeof(childrenPointerList)
-            + sizeof(nodeHistogramValue) + sizeof(insertCounters) + sizeof(maximumScoreOfLeafNodes)
-            + sizeof(numberOfTerminalNodes));
+	return sizeof(TrieNode) + childrenPointerList.capacity() * sizeof(TrieNode *);
 }
 
 
