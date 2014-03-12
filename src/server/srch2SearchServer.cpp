@@ -774,6 +774,8 @@ int main(int argc, char** argv) {
 
     /* Set signal handlers */
     sigset_t sigset;
+    sigemptyset(&sigset);
+
     // handle signal of Ctrl-C interruption
     sigaddset(&sigset, SIGINT);
     // handle signal of terminate(kill)
