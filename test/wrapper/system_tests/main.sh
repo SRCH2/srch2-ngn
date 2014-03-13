@@ -210,6 +210,7 @@ rm -rf data/ *.idx
 
 
 test_id="qf_dynamic_ranking"
+# qf disabled for now - will fail until we integrate with Jamshid's boolean expression changes
 #printTestBanner "$test_id"
 #python ./qf_dynamic_ranking/qf_dynamic_ranking.py $SRCH2_ENGINE ./qf_dynamic_ranking/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
 
