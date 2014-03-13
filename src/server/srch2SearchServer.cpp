@@ -547,7 +547,7 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
     // bind the default port
     if (globalDefaultPort > 0 && globalPortSocketMap->find(globalDefaultPort) == globalPortSocketMap->end()) {
         int socketFd = bindSocket(globalHostName, globalDefaultPort);
-        if ((*globalPortSocketMap)[globalDefaultPort] < 0) {
+        if (socketFd < 0) {
             perror("socket bind error");
             return 255;
         }
