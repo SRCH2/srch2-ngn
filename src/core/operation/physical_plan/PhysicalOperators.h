@@ -455,7 +455,15 @@ public:
 	}
 
     unsigned getNumberOfBytes() {
-    	return sizeof(indexOfShortestListChild) + sizeof(isShortestListFinished);
+    	unsigned numberOfBytes = sizeof(MergeByShortestListCacheEntry);
+
+    	// candidateList
+    	numberOfBytes += candidatesList.capacity() * sizeof(PhysicalPlanRecordItem *);
+    	for(unsigned i = 0 ; i < candidatesList.size() ; ++i){
+    		numberOfBytes += candidatesList.at(i)->getNumberOfBytes();
+    	}
+
+    	return numberOfBytes;
     }
 
 	~MergeByShortestListCacheEntry(){
