@@ -2343,8 +2343,8 @@ bool ConfigManager::isValidPrefixMatch(string& prefixmatch) {
 }
 
 bool ConfigManager::isValidCacheSize(string& cacheSize) {
-    unsigned minCacheSize = 6553600;     // 50MB  6,553,600< x < 65,536,000
-    unsigned maxCacheSize = 65536000;    // 500MB
+    unsigned minCacheSize = 50 * 1048576;     // 50MB
+    unsigned maxCacheSize = 500 * 1048576;    // 500MB
     if (this->isOnlyDigits(cacheSize)) {
         int cs = atoi(cacheSize.c_str());
         if (cs >= minCacheSize && cs <= maxCacheSize) {
