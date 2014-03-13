@@ -168,12 +168,14 @@ public:
         	// so we shouldn't actually consider their cost (no need to loop over trie node vector)
         }
 
-        for (std::map<const TrieNode*, PivotalActiveNode >::const_iterator mapIterator = PANMap.begin();
-                mapIterator != PANMap.end(); mapIterator ++) {
-
-        }
         // PANMap
-       	totalNumberOfBytes += PANMap.size() * (sizeof(TrieNode*) + sizeof(PivotalActiveNode) + 32);
+        // we assume the overhead of map is 32 bytes for each entry
+        totalNumberOfBytes += PANMap.size() * (sizeof(TrieNode*) + sizeof(PivotalActiveNode) + 32);
+
+       	// TrieRootNodeSharedPtr
+       	// we assume that memory overhead of shared_ptr is 24 bytes.
+       	totalNumberOfBytes += 24 +
+       			trieRootNodeSharedPtr->free_list.capacity() * sizeof(TrieNode*) + sizeof(TrieNode*) ;
 
         return totalNumberOfBytes;
 

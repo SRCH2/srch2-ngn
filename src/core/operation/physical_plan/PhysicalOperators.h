@@ -455,8 +455,7 @@ public:
 	}
 
     unsigned getNumberOfBytes() {
-    	unsigned numberOfBytes = 0;
-    	numberOfBytes += sizeof(MergeByShortestListCacheEntry);
+    	unsigned numberOfBytes = sizeof(MergeByShortestListCacheEntry);
 
     	// candidateList
     	numberOfBytes += candidatesList.capacity() * sizeof(PhysicalPlanRecordItem *);

@@ -161,9 +161,9 @@ class CacheManager : public GlobalCache
 {
 public:
     CacheManager(unsigned long byteSizeOfCache = 134217728){
-        aCache = new ActiveNodesCache(byteSizeOfCache);
-        qCache = new QueryResultsCache(byteSizeOfCache);
-        pCache = new PhysicalOperatorsCache(byteSizeOfCache);
+        aCache = new ActiveNodesCache(byteSizeOfCache * 3.0/9); // we don't allocate cache budget equally
+        qCache = new QueryResultsCache(byteSizeOfCache * 2.0/9);
+        pCache = new PhysicalOperatorsCache(byteSizeOfCache * 4.0/9);
         physicalPlanRecordItemFactory = new PhysicalPlanRecordItemFactory();
     }
     virtual ~CacheManager(){

@@ -136,7 +136,7 @@ public:
     	for(std::map<std::string,TypedValue>::iterator mapItr = valuesOfParticipatingRefiningAttributes.begin();
     			mapItr != valuesOfParticipatingRefiningAttributes.end(); ++mapItr){
     		totalNumberOfBytes += sizeof(string) + mapItr->first.capacity() + mapItr->second.getNumberOfBytes();
-    		// for map
+    		// we assume the overhead of map is 32 bytes per entry
     		totalNumberOfBytes += 32;
     	}
 

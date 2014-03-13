@@ -124,8 +124,7 @@ public:
     }
 
     unsigned getNumberOfBytes(){
-    	unsigned numberOfBytes = 0;
-    	numberOfBytes += sizeof(UnionLowestLevelTermVirtualListCacheEntry);
+    	unsigned numberOfBytes = sizeof(UnionLowestLevelTermVirtualListCacheEntry);
 
     	// items heap
     	numberOfBytes += itemsHeap.capacity() * sizeof(UnionLowestLevelTermVirtualListOperatorHeapItem* );
