@@ -156,6 +156,8 @@ public:
 
     struct UnionLowestLevelTermVirtualListOperatorHeapItemCmp {
 
+        UnionLowestLevelTermVirtualListOperatorHeapItemCmp() {};
+
         // this operator should be consistent with two others in InvertedIndex.h and QueryResultsInternal.h
         bool operator() (const UnionLowestLevelTermVirtualListOperatorHeapItem *lhs, const UnionLowestLevelTermVirtualListOperatorHeapItem *rhs) const {
             return DefaultTopKRanker::compareRecordsLessThan(lhs->termRecordRuntimeScore, lhs->recordId,
