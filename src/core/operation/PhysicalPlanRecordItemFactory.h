@@ -110,14 +110,37 @@ public:
 		this->termTypes.push_back(rTermType);
 	}
     unsigned getNumberOfBytes(){
-    	return sizeof(recordId) +
-    			sizeof(recordRuntimeScore) +
-    			sizeof(recordStaticScore) +
-    			sizeof(TrieNodePointer) * matchingPrefixes.size() +
-    			sizeof(unsigned) * editDistances.size() +
-    			sizeof(unsigned) * attributeBitmaps.size() +
-    			sizeof(unsigned) * positionIndexOffsets.size() +
-    			sizeof(unsigned) * termTypes.size();
+    	unsigned totalNumberOfBytes = sizeof(PhysicalPlanRecordItem);
+
+    	//matchingPrefixes
+    	totalNumberOfBytes += matchingPrefixes.capacity() * sizeof(TrieNodePointer);
+    	// no need to loop over matching prefixes because TrieNodes are not considered in cache byte usage
+
+    	// editDistance
+    	totalNumberOfBytes += editDistances.capacity() * sizeof(unsigned);
+    	// no need to loop over vector
+
+    	// attributeBitmaps
+    	totalNumberOfBytes += attributeBitmaps.capacity() * sizeof(unsigned);
+    	// no need to loop over vector
+
+    	// positionIndexOffsets
+    	totalNumberOfBytes += positionIndexOffsets.capacity() * sizeof(unsigned);
+    	// no need to loop over vector
+
+    	// term types
+    	totalNumberOfBytes += termTypes.capacity() * sizeof(TermType);
+    	// no need to loop over vector
+
+    	// valuesOfParticipatingRefiningAttributes
+    	for(std::map<std::string,TypedValue>::iterator mapItr = valuesOfParticipatingRefiningAttributes.begin();
+    			mapItr != valuesOfParticipatingRefiningAttributes.end(); ++mapItr){
+    		totalNumberOfBytes += sizeof(string) + mapItr->first.capacity() + mapItr->second.getNumberOfBytes();
+    		// we assume the overhead of map is 32 bytes per entry
+    		totalNumberOfBytes += 32;
+    	}
+
+    	return totalNumberOfBytes;
     }
 
     void clear(){
@@ -227,6 +250,7 @@ public:
 	}
 
 	void clear(){
+		vector<PhysicalPlanRecordItem *> emptyVector;
 		if(extraObjects.size() > 0){
 			for(unsigned i =0 ; i< extraObjects.size() ; ++i){
 				if(extraObjects.at(i) == NULL){
@@ -236,6 +260,9 @@ public:
 				}
 			}
 			extraObjects.clear();
+			// Clear does not free internal memory of vector. swap internal memory with empty
+			// vector. empty vector will free the memory when it goes out of scope.
+			extraObjects.swap(emptyVector);
 		}
 	}
 

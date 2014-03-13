@@ -84,7 +84,7 @@ public:
 	}
 
     unsigned getNumberOfBytes() {
-    	return sizeof(invertedListOffset) + sizeof(cursorOnInvertedList);
+    	return sizeof(UnionLowestLevelSimpleScanCacheEntry);
     }
 
 	~UnionLowestLevelSimpleScanCacheEntry(){

@@ -87,21 +87,35 @@ public:
 	}
 
     unsigned getNumberOfBytes() {
-    	unsigned numberOfButes = 0;
+    	unsigned numberOfBytes = 0;
+    	numberOfBytes += sizeof(MergeTopKCacheEntry);
+
+    	// candidateList
+    	numberOfBytes += candidatesList.capacity() * sizeof(PhysicalPlanRecordItem *);
     	for(unsigned i = 0 ; i < candidatesList.size() ; ++i){
-    		numberOfButes += candidatesList.at(i)->getNumberOfBytes();
-    	}
-    	for(unsigned i = 0 ; i < nextItemsFromChildren.size() ; i++){
-    		if(nextItemsFromChildren.at(i) != NULL){
-				numberOfButes += nextItemsFromChildren.at(i)->getNumberOfBytes();
+    		ASSERT(candidatesList.at(i) != NULL);
+    		if(candidatesList.at(i) != NULL){ // just for safety. These pointers shouldn't be ever null
+    			numberOfBytes += candidatesList.at(i)->getNumberOfBytes();
     		}
     	}
-    	numberOfButes += sizeof(unsigned) * visitedRecords.size() +
-    			sizeof(listsHaveMoreRecordsInThem) + sizeof(childRoundRobinOffset);
-    	for(unsigned childOffset = 0 ; childOffset < children.size() ; ++childOffset){
-    		numberOfButes += children.at(childOffset)->getNumberOfBytes();
+
+    	// nextItemsFromChildren
+    	numberOfBytes += nextItemsFromChildren.capacity() * sizeof(PhysicalPlanRecordItem *);
+    	for(unsigned i = 0 ; i < nextItemsFromChildren.size() ; i++){
+    		if(nextItemsFromChildren.at(i) != NULL){
+				numberOfBytes += nextItemsFromChildren.at(i)->getNumberOfBytes();
+    		}
     	}
-    	return numberOfButes;
+
+    	// visited records
+    	// 1.25 is because there must be a fudge factor in unordered_set implementation
+    	// and since we assume unordered_set has a bucket implementation this fudge factor
+    	// should be about %80. so 1/%80 is 1.25.
+    	numberOfBytes += sizeof(unsigned) * visitedRecords.size() * 1.25;
+    	for(unsigned childOffset = 0 ; childOffset < children.size() ; ++childOffset){
+    		numberOfBytes += children.at(childOffset)->getNumberOfBytes();
+    	}
+    	return numberOfBytes;
     }
 
 	~MergeTopKCacheEntry(){
