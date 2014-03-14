@@ -211,6 +211,10 @@ void AnalyzerBasedAlgorithm::getSnippet(const QueryResults* /*not used*/, unsign
 				matchFound = compareVectors(keywordStrToHighlight[i].key, charVector);
 				break;
 			}
+			default:
+				//1. Other flags should not be present. IF they are then developers should handle them.
+				//2. Avoid compiler warning
+				assert(true);
 			}
 			if (matchFound) {
 				matchedTermInfo info = {keywordStrToHighlight[i].flag, i, charOffset,
@@ -323,7 +327,13 @@ void HighlightAlgorithm::buildSnippetUsingHighlightPositions(const string& dataI
 		unsigned j = snippetUpperEnd;
 		while(j > 0){
 			unsigned _id = highlightPositions[j].id;
-			visitedKeyword.erase(_id);
+			set<unsigned>::iterator iter;
+			iter = visitedKeyword.find(_id);
+			if (iter != visitedKeyword.end()) {
+				visitedKeyword.erase(iter);
+			} else {
+				highlightPositions[j].flag = HIGHLIGHT_KEYWORD_INSIGNIFICANT;
+			}
 			if (visitedKeyword.empty())
 				break;
 			--j;
@@ -490,7 +500,16 @@ void HighlightAlgorithm::_genSnippet(const vector<CharType>& dataIn, vector<Char
 		bool snippetShortened = false;
 		vector<std::pair<unsigned, unsigned> > intervalVect;
 		while(index < snippetUpperEnd) {
-			intervalGap = highlightPositions[index + 1].offset -
+			if (highlightPositions[index].flag == HIGHLIGHT_KEYWORD_INSIGNIFICANT) {
+				++index;
+				continue;
+			}
+			unsigned nextPos = index + 1;
+			while(nextPos < snippetUpperEnd &&
+					highlightPositions[nextPos].flag == HIGHLIGHT_KEYWORD_INSIGNIFICANT)
+				++nextPos;
+
+			intervalGap = highlightPositions[nextPos].offset -
 					(highlightPositions[index].offset + highlightPositions[index].len);
 			if (intervalGap > (signed)extraChars) {
 				unsigned currentIndexOffset =
@@ -505,7 +524,7 @@ void HighlightAlgorithm::_genSnippet(const vector<CharType>& dataIn, vector<Char
 								highlightPositions, snippetLowerEnd, snippetUpperEnd);
 				snippets.insert(snippets.end(), filler.begin(), filler.end()); // add "..."
 
-				unsigned nextIndexOffset = highlightPositions[index + 1].offset;
+				unsigned nextIndexOffset = highlightPositions[nextPos].offset;
 						//+ highlightPositions[index + 1].len;
 				intermediateOffset = nextIndexOffset  - ((intervalGap - extraChars) / 2);
 				while(intermediateOffset < nextIndexOffset
@@ -522,7 +541,7 @@ void HighlightAlgorithm::_genSnippet(const vector<CharType>& dataIn, vector<Char
 				if (intervalGap < 0) intervalGap = 0; // negative interval does not make much sense
 				intervalVect.push_back(std::make_pair(intervalGap, index));
 			}
-			++index;
+			index = nextPos;
 		}
 
 		if (!snippetShortened && intervalVect.size() > 0){
@@ -541,7 +560,18 @@ void HighlightAlgorithm::_genSnippet(const vector<CharType>& dataIn, vector<Char
 				unsigned endOffset = 0;
 
 				while(index < snippetUpperEnd) {
-					intervalGap = highlightPositions[index + 1].offset -
+
+					if (highlightPositions[index].flag == HIGHLIGHT_KEYWORD_INSIGNIFICANT) {
+						++index;
+						continue;
+					}
+					unsigned nextPos = index + 1;
+					while(nextPos < snippetUpperEnd &&
+							highlightPositions[nextPos].flag == HIGHLIGHT_KEYWORD_INSIGNIFICANT) {
+						++nextPos;
+					}
+
+					intervalGap = highlightPositions[nextPos].offset -
 							(highlightPositions[index].offset + highlightPositions[index].len);
 					startOffset = highlightPositions[index].offset - 1;
 					if (intervalGap >= (signed)cutOffinterval){
@@ -558,8 +588,8 @@ void HighlightAlgorithm::_genSnippet(const vector<CharType>& dataIn, vector<Char
 						snippets.insert(snippets.end(), filler.begin(), filler.end()); // add "..."
 
 
-						startOffset = highlightPositions[index + 1].offset - 1 - (cushion / 2);
-						endOffset = highlightPositions[index + 1].offset - 1;
+						startOffset = highlightPositions[nextPos].offset - 1 - (cushion / 2);
+						endOffset = highlightPositions[nextPos].offset - 1;
 						while(startOffset < endOffset
 								&& !isWhiteSpace(dataIn[startOffset])){
 							startOffset++;
@@ -567,11 +597,11 @@ void HighlightAlgorithm::_genSnippet(const vector<CharType>& dataIn, vector<Char
 						insertHighlightMarkerIntoSnippets(snippets, dataIn, startOffset, endOffset,
 								highlightPositions, snippetLowerEnd, snippetUpperEnd);
 					} else {
-						endOffset = highlightPositions[index + 1].offset - 1;
+						endOffset = highlightPositions[nextPos].offset - 1;
 						insertHighlightMarkerIntoSnippets(snippets, dataIn, startOffset, endOffset,
 								highlightPositions, snippetLowerEnd, snippetUpperEnd);
 					}
-					++index;
+					index = nextPos;
 				}
 				startOffset = highlightPositions[index].offset - 1;
 				insertHighlightMarkerIntoSnippets(snippets, dataIn, startOffset, upperOffset,
