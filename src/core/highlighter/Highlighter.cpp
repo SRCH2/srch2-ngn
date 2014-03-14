@@ -323,6 +323,16 @@ void HighlightAlgorithm::buildSnippetUsingHighlightPositions(const string& dataI
 		vector<CharType>& ctsnippet, vector<string>& snippets, bool isMultiValued) {
 
 	unsigned snippetLowerEnd = 0, snippetUpperEnd = highlightPositions.size() - 1;
+	/*
+	 *  The code block below tries to eliminate the matching positions which should not affect the
+	 *  snippet generation. We start from the last position and continue to mark the duplicate positions
+	 *  for a already seen keyword as "insignificant" till we have seen all the matching keywords once.
+	 *
+	 *  e.g  A A B A A C A A A C
+	 *           ^ X X X X X ^ ^
+	 *
+	 *  Note: we do not take distance between keywords into consideration yet.
+	 */
 	if (phrasesInfoList.size() == 0 && !isMultiValued) {
 		unsigned j = snippetUpperEnd;
 		while(j > 0){
