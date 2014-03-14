@@ -774,6 +774,8 @@ int main(int argc, char** argv) {
 
     /* Set signal handlers */
     sigset_t sigset;
+    sigemptyset(&sigset);
+
     // handle signal of Ctrl-C interruption
     sigaddset(&sigset, SIGINT);
     // handle signal of terminate(kill)
@@ -803,7 +805,6 @@ int main(int argc, char** argv) {
 
     for (unsigned int i = 0; i < MAX_THREADS; i++) {
         event_base_free(evBases[i]);
-        evhttp_free(evServers[i]);
     }
 
     // use global port map to close each file descriptor just once
