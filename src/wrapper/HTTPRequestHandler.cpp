@@ -71,7 +71,8 @@ void bmhelper_check_add_callback(evbuffer *buf, const evkeyvalq &headers,
         evbuffer_add_printf(buf, "%s(%s)", jsonpCallBack_cstar,
                 out_payload.c_str());
 
-        delete jsonpCallBack_cstar;
+        // libevent uses malloc for memory allocation. Hence, use free
+        free(jsonpCallBack_cstar);
     } else {
         evbuffer_add_printf(buf, "%s", out_payload.c_str());
     }

@@ -198,7 +198,7 @@
             # OPTIONAL. Defaults to 50MB = 6553600 bytes.
             #cache-size=1073741824
         -->
-        <cacheSize>6553601</cacheSize>
+        <cacheSize>60553601</cacheSize>
         
         
         <!-- SOLR:

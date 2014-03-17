@@ -15,9 +15,9 @@ UnionLowestLevelTermVirtualListOperator::UnionLowestLevelTermVirtualListOperator
 }
 
 UnionLowestLevelTermVirtualListOperator::~UnionLowestLevelTermVirtualListOperator(){
-	for (unsigned j  = 0; j < itemsHeap.size(); ++j) {
-		delete itemsHeap[j];
-	}
+	/*
+	 *   heapItem vector is deleted in current operator's close function.
+	 */
 }
 bool UnionLowestLevelTermVirtualListOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
 
@@ -38,43 +38,41 @@ bool UnionLowestLevelTermVirtualListOperator::open(QueryEvaluatorInternal * quer
     this->numberOfItemsInPartialHeap = 0;
     this->currentMaxEditDistanceOnHeap = 0;
     this->currentRecordID = -1;
-
-    if (this->getTermType() == TERM_TYPE_PREFIX) { //case 1: Term is prefix
-        LeafNodeSetIterator iter(prefixActiveNodeSet.get(), term->getThreshold());
-        cursorVector.reserve(iter.size());
-        invertedListReadViewVector.reserve(iter.size());
-        for (; !iter.isDone(); iter.next()) {
-            TrieNodePointer leafNode;
-            TrieNodePointer prefixNode;
-            unsigned distance;
-            iter.getItem(prefixNode, leafNode, distance);
-            initialiseTermVirtualListElement(prefixNode, leafNode, distance);
-        }
-    } else { // case 2: Term is complete
-        ActiveNodeSetIterator iter(prefixActiveNodeSet.get(), term->getThreshold());
-        cursorVector.reserve(iter.size());
-        invertedListReadViewVector.reserve(iter.size());
-        for (; !iter.isDone(); iter.next()) {
-            // For a pivotal active node (PAN) (e.g., "game") and a query term (e.g., "garden"),
-            // there are two distances between them. One is their real edit distance between "game" and "garden",
-            // which is 3.  The other one is the PAN's internal distance as a prefix, which is 2,
-            // corresponding to the distance between "game" and "garde" where the last two matched characters
-            // We need both distances in the function call depthInitializeSimpleScanOperator() in order to compute the real edit
-            // distance of a descendant of the current trie node. More details of the approach
-            // http://www.ics.uci.edu/~chenli/pub/2011-vldbj-fuzzy-search.pdf Section 4.3.1.
-            TrieNodePointer trieNode;
-            unsigned editDistance;
-            iter.getItem(trieNode, editDistance);
-            // For example search python36 in data {python16, pythoni}, we first got python16 with distance 1, and then pythoni with distance 2
-            // We will keep the smaller one according to  https://bitbucket.org/srch2inc/srch2-ngn/src/2b4293ccaccaaecd9c16526bd5c6bbfd02dded52/src/core/operation/ActiveNode.h?at=master#cl-457
-            unsigned panDistance = prefixActiveNodeSet->getEditdistanceofPrefix(trieNode);
-            depthInitializeTermVirtualListElement(trieNode, editDistance, panDistance, term->getThreshold());
-        }
-    }
-
     // check cache
     parentIsCacheEnabled = params.parentIsCacheEnabled;
     if(params.parentIsCacheEnabled == false || params.cacheObject == NULL){
+    	if (this->getTermType() == TERM_TYPE_PREFIX) { //case 1: Term is prefix
+    		LeafNodeSetIterator iter(prefixActiveNodeSet.get(), term->getThreshold());
+    		cursorVector.reserve(iter.size());
+    		invertedListReadViewVector.reserve(iter.size());
+    		for (; !iter.isDone(); iter.next()) {
+    			TrieNodePointer leafNode;
+    			TrieNodePointer prefixNode;
+    			unsigned distance;
+    			iter.getItem(prefixNode, leafNode, distance);
+    			initialiseTermVirtualListElement(prefixNode, leafNode, distance);
+    		}
+    	} else { // case 2: Term is complete
+    		ActiveNodeSetIterator iter(prefixActiveNodeSet.get(), term->getThreshold());
+    		cursorVector.reserve(iter.size());
+    		invertedListReadViewVector.reserve(iter.size());
+    		for (; !iter.isDone(); iter.next()) {
+    			// For a pivotal active node (PAN) (e.g., "game") and a query term (e.g., "garden"),
+    			// there are two distances between them. One is their real edit distance between "game" and "garden",
+    			// which is 3.  The other one is the PAN's internal distance as a prefix, which is 2,
+    			// corresponding to the distance between "game" and "garde" where the last two matched characters
+    			// We need both distances in the function call depthInitializeSimpleScanOperator() in order to compute the real edit
+    			// distance of a descendant of the current trie node. More details of the approach
+    			// http://www.ics.uci.edu/~chenli/pub/2011-vldbj-fuzzy-search.pdf Section 4.3.1.
+    			TrieNodePointer trieNode;
+    			unsigned editDistance;
+    			iter.getItem(trieNode, editDistance);
+    			// For example search python36 in data {python16, pythoni}, we first got python16 with distance 1, and then pythoni with distance 2
+    			// We will keep the smaller one according to  https://bitbucket.org/srch2inc/srch2-ngn/src/2b4293ccaccaaecd9c16526bd5c6bbfd02dded52/src/core/operation/ActiveNode.h?at=master#cl-457
+    			unsigned panDistance = prefixActiveNodeSet->getEditdistanceofPrefix(trieNode);
+    			depthInitializeTermVirtualListElement(trieNode, editDistance, panDistance, term->getThreshold());
+    		}
+    	}
     	// parent is not feeding us with cache info and does not expect cache entry
     	// or there was no cache hit
 		// Make partial heap by calling make_heap from begin() to begin()+"number of items within edit distance threshold"
