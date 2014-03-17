@@ -75,6 +75,11 @@ def prepareQuery(queryKeywords, ct_lat, ct_long, ct_radius):
 def testFuzzyM1(queriesAndResultsPath, binary_path):
     # Start the engine server
     args = [ binary_path, '--config-file=./fuzzy_m1/conf.xml' ]
+
+    if test_lib.confirmPortAvailable(port) == False:
+        print 'Port ' + str(port) + ' already in use - aborting'
+        return -1
+
     print 'starting server: ' + args[0] + ' ' + args[1]
     serverHandle = test_lib.startServer(args)
 

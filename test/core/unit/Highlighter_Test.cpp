@@ -49,15 +49,6 @@ void callSnippetGen(AnalyzerBasedAlgorithm *algo, const string& record, vector<s
 	}
 	ASSERT(snippets[0].compare(expectedResult[0]) == 0);
 }
-void freeRecordPositionForPhrase(vector<PhraseInfoForHighLight>  phrasesInfoList) {
-	for(unsigned j =0; j < phrasesInfoList.size(); ++j) {
-		PhraseInfoForHighLight pifh = phrasesInfoList[j];
-		for (unsigned i = 0; i < pifh.phraseKeyWords.size(); ++i) {
-			if (pifh.phraseKeyWords[i].recordPosition)
-				delete pifh.phraseKeyWords[i].recordPosition;
-		}
-	}
-}
 
 /*
  *  Test Plan:
@@ -174,8 +165,6 @@ int main() {
 	expectedResults.clear();
 	expectedResults.push_back("... obvious right storage engine to use. It provides low latency, <exact>solid</exact> <exact>predictability</exact>, is robust in the face of crashes, and is friendly from a ...");
 	callSnippetGen(algo, records[3].c_str(), snippets, keywordStrToHighlight, expectedResults);
-
-	freeRecordPositionForPhrase(phrasesInfoList);
 	delete algo;
 	//------------------------------------------------------------------------
 	// proximity "shard hashed"~1
@@ -197,7 +186,6 @@ int main() {
 	expectedResults.push_back("If you shard an empty collection using a <exact>hashed</exact> <exact>shard</exact> key, MongoDB will automatically create and migrate chunks so that each shard has two chunks. ...");
 	callSnippetGen(algo, records[1].c_str(), snippets, keywordStrToHighlight, expectedResults);
 
-	freeRecordPositionForPhrase(phrasesInfoList);
 	delete algo;
 	//------------------------------------------------------------------------
 	phrasesInfoList.clear();
@@ -220,7 +208,6 @@ int main() {
 	expectedResults.push_back("If you <exact>shard</exact> an empty collection using a <exact>hashed</exact> <exact>shard</exact> key, MongoDB will automatically create and migrate chunks so that each <exact>shard</exact> has two ...");
 	callSnippetGen(algo, records[1].c_str(), snippets, keywordStrToHighlight, expectedResults);
 
-	freeRecordPositionForPhrase(phrasesInfoList);
 	delete algo;
 	//------------------------------------------------------------------------
 	phrasesInfoList.clear();
@@ -243,7 +230,6 @@ int main() {
 	expectedResults.push_back("... attention to LevelDB, which was recently released by <exact>Google</exact>. LevelDBs <exact>storage</exact> <exact>architecture</exact> is more like BigTables memtable/sstable model than it ...");
 	callSnippetGen(algo, records[3].c_str(), snippets, keywordStrToHighlight, expectedResults);
 
-	freeRecordPositionForPhrase(phrasesInfoList);
 	delete algo;
 	//------------------------------------------------------------------------
 	// multiple phrases
@@ -257,6 +243,7 @@ int main() {
 	vector<unsigned> * k1Array = new vector<unsigned>();
 	vector<unsigned> * k2Array = new vector<unsigned>();
 	vector<unsigned> * k3Array = new vector<unsigned>();
+	vector<unsigned> * k4Array = new vector<unsigned>();
 
 	pifh.slop = 0;
 	pifh.phraseKeyWords.clear();
@@ -267,7 +254,7 @@ int main() {
 
 	pifh.slop = 0;
 	pifh.phraseKeyWords.clear();
-	pti.queryPosition = 1; pti.recordPosition = k1Array; pifh.phraseKeyWords.push_back(pti);
+	pti.queryPosition = 1; pti.recordPosition = k4Array; pifh.phraseKeyWords.push_back(pti);
 	pti.queryPosition = 2; pti.recordPosition = NULL; pifh.phraseKeyWords.push_back(pti);
 	pti.queryPosition = 2; pti.recordPosition = k3Array; pifh.phraseKeyWords.push_back(pti);
 	phrasesInfoList.push_back(pifh);
@@ -279,9 +266,7 @@ int main() {
 	expectedResults.push_back("<exact>storage</exact> <exact>engines</exact>. A number of ... of these two <exact>storage</exact> <exact>systems</exact> can certainly ... using the <exact>storage</exact> <exact>engines</exact> through Riak, ... of embedded <exact>storage</exact> <exact>engines</exact>....");
 	callSnippetGen(algo, records[2].c_str(), snippets, keywordStrToHighlight, expectedResults);
 
-	delete k1Array; delete k2Array; delete k3Array;
 	delete algo;
-
 	delete analyzer;
 }
 

@@ -8,7 +8,7 @@ if [ $# -lt 2 ]; then
 fi
 
 machine=`uname -m`
-os=`uname -o | sed -e s#/#-#g`
+os=`uname -s`
 
 # process options
 force=0
@@ -71,7 +71,7 @@ fi
 
 # Turn off Python stdout buffering so we don't lose output messages
 PYTHONUNBUFFERED=True
-export PYTHONUNBUFFERED=Tru
+export PYTHONUNBUFFERED
 
 function printTestBanner {
     testName="$1"
@@ -135,12 +135,14 @@ else
 fi
 
 # Test for node.js framework
+echo 'Checking node nodejs executable' >> system_test.log 2>&1
 nodejs --version >> system_test.log 2>&1
 if [ $? -eq 0 ]; then
     HAVE_NODE=1
     NODE_CMD=nodejs
 else
     # maybe it's called just node, but need to test due to another package with the same name
+    echo 'Checking for nodejs executable as just node' >> system_test.log 2>&1
     NODE_TEST=`node -e 'console.log(1);'` 2>> system_test.log
     node --version >> system_test.log 2>&1
     if [ $? -eq 0 ] && [ "${NODE_TEST:-0}" -eq 1 ]; then
@@ -160,8 +162,7 @@ rm -rf data/ *.idx
 #  SYSTEM TEST CASES SHOULD BE ADDED BELOW THIS MESSAGE
 #
 #  NOTE:  If you decide to add your new test case as a first test case (i.e right after this message), then
-#         please change "> system_test.log" to ">> system_test.log" in the original initial test case. First
-#         test case should overwrite the log and the rest should append to the log.
+#         please be sure to append output using ">> system_test.log".
 #
 ###############################################################################################################
 
@@ -174,7 +175,7 @@ if [ ${PIPESTATUS[0]} -gt 0 ]; then
 	exit 255
     fi
 else
-    echo "-- PASSED: $test_id"
+    echo "-- PASSED: $test_id" >> ${output}
 fi
 rm -rf data/ *.idx
 
@@ -617,15 +618,28 @@ printTestBanner "$test_id"
 # to fail to bind the port, hanging the test script, so wait just a sec here
 sleep 1
 rm -rf data/tests_used_for_statemedia
-NODECMD=${NODE_CMD:-node} ./tests_used_for_statemedia/autotest.sh $SRCH2_ENGINE | eval "${html_escape_command}" >> system_test.log 2>&1
+if [ $HAVE_NODE -gt 0 ]; then
 
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-        exit 255
+    if [ $HAVE_RUBY -eq 0 ]; then
+	echo "-- ruby NOT INSTALLED - SKIPPING large_insertion component of ${test_id}" >> ${output}
+    fi
+
+    if [ `uname -s` != 'Darwin' ]; then
+        NODECMD=${NODE_CMD:-node} ./tests_used_for_statemedia/autotest.sh $SRCH2_ENGINE | eval "${html_escape_command}" >> system_test.log 2>&1
+
+        if [ ${PIPESTATUS[0]} -gt 0 ]; then
+	    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
+            if [ $force -eq 0 ]; then
+                exit 255
+	    fi
+        else
+	    echo "-- PASSED: $test_id" >> ${output}
+        fi
+    else
+        echo "-- IGNORING $test_id on MacOS"
     fi
 else
-    echo "-- PASSED: $test_id" >> ${output}
+    echo "-- node.js NOT INSTALLED - SKIPPING: ${test_id}" >> ${output}
 fi
 
 # TODO - hack until we figure out why tests_used_for_statemedia/large_insertion_test/large_insertion_test.rb

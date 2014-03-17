@@ -109,6 +109,11 @@ def prepareQuery(queryKeywords, boostValue):
 def testQF(queriesAndResultsPath, binary_path):
     #Start the engine server
     args = [ binary_path, '--config-file=./qf_dynamic_ranking/conf.xml' ]
+
+    if test_lib.confirmPortAvailable(port) == False:
+        print 'Port ' + str(port) + ' already in use - aborting'
+        return -1
+
     # print 'starting engine: ' + args[0] + ' ' + args[1]
     serverHandle = test_lib.startServer(args);
 

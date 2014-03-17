@@ -141,12 +141,21 @@ void Srch2Server::createHighlightAttributesVector(const srch2is::Schema * schema
 
 	CoreInfo_t *indexConfig = const_cast<CoreInfo_t *> (this->indexDataConfig);
 	vector<std::pair<unsigned, string> > highlightAttributes;
+
+	const map<string, SearchableAttributeInfoContainer > * searchableAttrsFromConfig
+	 	 = indexConfig->getSearchableAttributes();
+
+	map<string, SearchableAttributeInfoContainer >::const_iterator cIter;
+
 	std::map<std::string, unsigned>::const_iterator iter =
 			schema->getSearchableAttribute().begin();
 	for ( ; iter != schema->getSearchableAttribute().end(); iter++)
 	{
-		// Currently only searchable attributes are highlightable.
-		if (schema->isHighlightEnabled(iter->second))
+		// Currently only searchable attributes are highlightable. Cross validate the schema
+		// attribute with configuration attributes. (There could be a mismatch when index is loaded
+		// from file).
+		cIter =  searchableAttrsFromConfig->find(iter->first);
+		if (cIter != searchableAttrsFromConfig->end() && cIter->second.highlight)
 		{
 			highlightAttributes.push_back(make_pair(iter->second, iter->first));
 		}

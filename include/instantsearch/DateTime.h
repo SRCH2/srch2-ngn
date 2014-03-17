@@ -54,6 +54,10 @@ public:
 
 	string toString() const;
 
+	unsigned getNumberOfBytes() {
+		return sizeof(yearDuration) + sizeof(monthDuration) + sizeof(dayWeekDuration)
+				+ sizeof(secondMinuteHourDuration);
+	}
 };
 
 

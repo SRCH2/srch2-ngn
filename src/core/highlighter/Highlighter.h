@@ -44,7 +44,12 @@ enum KeywordHighlightInfoFlag{
 	// keyword is both in phrase and without phrase in a query.
 	HIGHLIGHT_KEYWORD_IS_HYBRID,
 	// the phrase term is verified from record positions that it forms a phrase
-	HIGHLIGHT_KEYWORD_IS_VERIFIED_PHRASE
+	HIGHLIGHT_KEYWORD_IS_VERIFIED_PHRASE,
+	// the keyword position does not influence snippet generation. If it happens to be in a snippet
+	// range then we highlight it.
+	HIGHLIGHT_KEYWORD_INSIGNIFICANT,
+	// Do not highlight this position.
+	HIGHLIGHT_KEYWORD_INVALID
 };
 struct keywordHighlightInfo{
 	KeywordHighlightInfoFlag flag;  // prefix = 0, complete = 1, unverified phraseOnly = 2, Hybrid = 3
@@ -92,8 +97,9 @@ public:
 	HighlightAlgorithm ( vector<PhraseInfoForHighLight>& phrasesInfoList, const HighlightConfig& hconfig);
 	virtual void getSnippet(const QueryResults *qr,unsigned recIdx, unsigned attributeId, const string& dataIn,
 			vector<string>& snippets, bool isMultiValued, vector<keywordHighlightInfo>& keywordStrToHighlight) = 0;
-	virtual ~HighlightAlgorithm() {}
-
+	virtual ~HighlightAlgorithm() {
+		clearPhraseInfoList();
+	}
 protected:
 	void _genSnippet(const vector<CharType>& dataIn, vector<CharType>& snippets, unsigned snippetUpperEnd,
 			unsigned snippetLowerEnd, const vector<matchedTermInfo>& highlightPositions);
@@ -110,7 +116,16 @@ protected:
 			vector<matchedTermInfo>& highlightPositions, set<unsigned>& visitedKeyword,
 			vector<CharType>& ctsnippet, vector<string>& snippets, bool isMultiValued);
 	void validatePhrasePositions(vector<matchedTermInfo>& highlightPositions);
-
+	void clearPhraseInfoList() {
+		for (unsigned i = 0; i < phrasesInfoList.size(); ++i) {
+			for (unsigned j = 0; j < phrasesInfoList.size(); ++j)  {
+				// No need to check for NULL pointer. delete is NULL safe.
+				delete phrasesInfoList[i].phraseKeyWords[j].recordPosition;
+				phrasesInfoList[i].phraseKeyWords[j].recordPosition = NULL;
+			}
+		}
+		phrasesInfoList.clear();
+	}
 private:
 	unsigned snippetSize;
 	vector<std::pair<string, string> > highlightMarkers; // holds marker for fuzzy or exact match

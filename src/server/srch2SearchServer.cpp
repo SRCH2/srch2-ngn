@@ -547,7 +547,7 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
     // bind the default port
     if (globalDefaultPort > 0 && globalPortSocketMap->find(globalDefaultPort) == globalPortSocketMap->end()) {
         int socketFd = bindSocket(globalHostName, globalDefaultPort);
-        if ((*globalPortSocketMap)[globalDefaultPort] < 0) {
+        if (socketFd < 0) {
             perror("socket bind error");
             return 255;
         }
@@ -774,6 +774,8 @@ int main(int argc, char** argv) {
 
     /* Set signal handlers */
     sigset_t sigset;
+    sigemptyset(&sigset);
+
     // handle signal of Ctrl-C interruption
     sigaddset(&sigset, SIGINT);
     // handle signal of terminate(kill)
@@ -803,7 +805,6 @@ int main(int argc, char** argv) {
 
     for (unsigned int i = 0; i < MAX_THREADS; i++) {
         event_base_free(evBases[i]);
-        evhttp_free(evServers[i]);
     }
 
     // use global port map to close each file descriptor just once

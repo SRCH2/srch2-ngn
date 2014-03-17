@@ -53,6 +53,7 @@ public:
 	boost::shared_ptr<PrefixActiveNodeSet> activeNodeSetFuzzy;
 
 	LogicalPlanNodeAnnotation(){
+		estimatedNumberOfLeafNodes = 0;
 		estimatedNumberOfResults = 0;
 		estimatedProbability = 0;
 	}

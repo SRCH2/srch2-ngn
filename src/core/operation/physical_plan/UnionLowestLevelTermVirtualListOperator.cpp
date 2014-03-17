@@ -78,7 +78,7 @@ bool UnionLowestLevelTermVirtualListOperator::open(QueryEvaluatorInternal * quer
     	// parent is not feeding us with cache info and does not expect cache entry
     	// or there was no cache hit
 		// Make partial heap by calling make_heap from begin() to begin()+"number of items within edit distance threshold"
-		make_heap(itemsHeap.begin(), itemsHeap.begin()+numberOfItemsInPartialHeap, UnionLowestLevelTermVirtualListOperator::UnionLowestLevelTermVirtualListOperatorHeapItemCmp());
+        make_heap(itemsHeap.begin(), itemsHeap.begin()+numberOfItemsInPartialHeap, UnionLowestLevelTermVirtualListOperator::UnionLowestLevelTermVirtualListOperatorHeapItemCmp());
     }else if(params.cacheObject != NULL){
     	// parent is feeding us with cache hit info and does expect newer cache entry.
     	UnionLowestLevelTermVirtualListCacheEntry * cacheEntry =
@@ -108,7 +108,7 @@ PhysicalPlanRecordItem * UnionLowestLevelTermVirtualListOperator::getNext(const 
         // Elements are there in PartialHeap and pop them out to calling function
         UnionLowestLevelTermVirtualListOperatorHeapItem *currentHeapMax = *(itemsHeap.begin());
         pop_heap(itemsHeap.begin(), itemsHeap.begin() + this->numberOfItemsInPartialHeap,
-        		UnionLowestLevelTermVirtualListOperator::UnionLowestLevelTermVirtualListOperatorHeapItemCmp());
+                 UnionLowestLevelTermVirtualListOperator::UnionLowestLevelTermVirtualListOperatorHeapItemCmp());
 
         // allocate new item and fill it out
         PhysicalPlanRecordItem * newItem = this->queryEvaluator->getPhysicalPlanRecordItemPool()->createRecordItem();

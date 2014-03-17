@@ -324,13 +324,13 @@ private:
 		typename map<unsigned , pair< CacheEntry<T> * , HashedKeyLinkListElement * > >::iterator entryToRemove = cacheEntries.find(hashedKeyToRemove);
 		ASSERT(entryToRemove != cacheEntries.end());
 		unsigned numberOfUsedBytesToGetRidOf = getNumberOfBytesUsedByEntry(entryToRemove->second.first);
-		cacheEntries.erase(entryToRemove); // remove it from map
-		ASSERT(totalSizeUsed >= numberOfUsedBytesToGetRidOf);
-		totalSizeUsed -= numberOfUsedBytesToGetRidOf;
 		// This delete operation deletes the instance of CacheEntry. Since
 		// ts_shared_ptr<T> objectPointer is a member, it's destructor will be called
 		// and the counter of shared pointer is decremented by one.
 		delete entryToRemove->second.first;
+		cacheEntries.erase(entryToRemove); // remove it from map
+		ASSERT(totalSizeUsed >= numberOfUsedBytesToGetRidOf);
+		totalSizeUsed -= numberOfUsedBytesToGetRidOf;
 	}
 
 	// does not update the size

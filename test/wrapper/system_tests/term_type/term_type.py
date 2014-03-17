@@ -75,8 +75,11 @@ def prepareQuery(queryKeywords):
 def testTermType(queriesAndResultsPath, conf, binary_path):
 	#Start the engine server
 	args = [ binary_path, '--config-file=' + conf ]
-	serverHandle = test_lib.startServer(args)
+        if test_lib.confirmPortAvailable(port) == False:
+            print 'Port ' + str(port) + ' already in use - aborting'
+            return -1
 
+	serverHandle = test_lib.startServer(args)
 	test_lib.pingServer(port)
 
 	#construct the query
