@@ -13,8 +13,8 @@ python scons.py platform=linux-gcc
 echo "BUILDING LIBEVENT..."
 
 cd ../../event
-tar -xvf libevent-2.0.18-stable.tar.gz
-cd libevent-2.0.18-stable
+tar -xvf libevent-2.0.21-stable.tar.gz
+cd libevent-2.0.21-stable
 
 CURRENTDIR=$(pwd)
 echo "INSTALLING LIBEVENT in $CURRENTDIR/../"
