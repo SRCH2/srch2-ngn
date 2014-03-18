@@ -197,7 +197,7 @@ private:
     // the current recordId, initial value is -1
     int currentRecordID;
     // current inverted list Readview
-    shared_ptr<vectorview<unsigned> > invertedListReadView;
+    //shared_ptr<vectorview<unsigned> > invertedListReadView;
     //int numberOfLeafNodes;
     //int totalInveretListLength ;
 
