@@ -908,6 +908,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
         // if the query is not valid print the error message to the response
         bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request",
                 paramContainer.getMessageString(), headers);
+        evhttp_clear_headers(&headers);
         return;
     }
 
@@ -925,6 +926,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
         // if the query is not valid, print the error message to the response
         bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request",
                 paramContainer.getMessageString(), headers);
+        evhttp_clear_headers(&headers);
         return;
     }
     //3. rewrite the query and apply analyzer and other stuff ...
@@ -937,6 +939,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
         // if the query is not valid, print the error message to the response
         bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request",
                 paramContainer.getMessageString(), headers);
+        evhttp_clear_headers(&headers);
         return;
     }
 
@@ -964,7 +967,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
      *  Do snippet generation only if
      *  1. There are attributes marked to be highlighted
      *  2. Query is not facet only
-     *  3. Highlight is not turned off in the query ( default is on ) << TODO
+     *  3. Highlight is not turned off in the query ( default is on )
      */
     struct timespec hltstart;
     clock_gettime(CLOCK_REALTIME, &hltstart);
