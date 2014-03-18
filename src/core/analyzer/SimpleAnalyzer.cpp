@@ -34,7 +34,7 @@ TokenStream * SimpleAnalyzer::createOperatorFlow() {
 	return tokenStream;
 }
 SimpleAnalyzer::~SimpleAnalyzer() {
-	// TODO Auto-generated destructor stub
+	delete this->tokenStream;
 }
 
 AnalyzerType SimpleAnalyzer::getAnalyzerType() const

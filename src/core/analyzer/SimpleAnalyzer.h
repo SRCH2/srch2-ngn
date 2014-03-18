@@ -27,6 +27,7 @@ public:
                    const std::string &allowedRecordSpecialCharacters) :
         AnalyzerInternal(stemmer, stopWords, protectedWords, synonyms, allowedRecordSpecialCharacters)
         {
+    		this->tokenStream = NULL;
             this->analyzerType = SIMPLE_ANALYZER;
         }
 
