@@ -81,15 +81,12 @@ SingleBufferAllocator::address(const_reference x) {
 
 inline void SingleBufferAllocator::deallocate(pointer p, size_type) {
   //Can not deallocate part of current buffer or an empty pointer
-  if(!p)  {
+  if(!p || p == buffer ||
+	      (p > buffer && p < buffer + (1 << powerOfTwoSizeOfBuffer)))  {
       return;
   }
 
   delete [] p;
-
-  //null pointer for safety: Dangling Pointers :(
-  if (p == buffer)
-	  buffer = NULL;
 }
 
 /*
