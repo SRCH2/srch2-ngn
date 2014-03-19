@@ -76,6 +76,7 @@ void testStandardAnalyzer()
     string src="We are美丽 Chineseㄓㄠ";
     AnalyzerInternal *standardAnalyzer = new StandardAnalyzer(NULL, stop, prot, syn, string(""));
     TokenStream * tokenStream = standardAnalyzer->createOperatorFlow();
+    standardAnalyzer->setTokenStream(tokenStream);
     tokenStream->fillInCharacters(src);
     vector<string> vectorString;
     vectorString.push_back("we");
@@ -93,7 +94,6 @@ void testStandardAnalyzer()
         ASSERT(vectorString[i] == src);
         i++;
     }
-    delete tokenStream;
     delete standardAnalyzer;
     stem->free();
     stop->free();
@@ -108,6 +108,7 @@ void testChineseAnalyzer(const string &dataDir){
     src += "END";
     AnalyzerInternal *chineseAnalyzer = new ChineseAnalyzer(dictPath, NULL, NULL, NULL, string(""));
     TokenStream * tokenStream = chineseAnalyzer->createOperatorFlow();
+    chineseAnalyzer->setTokenStream(tokenStream);
     tokenStream->fillInCharacters(src);
     vector<string> vectorString;
     vectorString.push_back("we");
@@ -157,7 +158,6 @@ void testChineseAnalyzer(const string &dataDir){
         i++;
     }
     ASSERT(i==vectorString.size());
-    delete tokenStream;
     delete chineseAnalyzer;
 }
 
@@ -169,6 +169,7 @@ void testLowerCase() {
     ProtectedWordsContainer *prot = ProtectedWordsContainer::getInstance("");
     AnalyzerInternal *simpleAnlyzer = new StandardAnalyzer(NULL, NULL, prot, syn, string(""));
     TokenStream * tokenStream = simpleAnlyzer->createOperatorFlow();
+    simpleAnlyzer->setTokenStream(tokenStream);
 
     string src = "Here IS A Set OF some inStructIOns fOR WHo has the bOOks";
     tokenStream->fillInCharacters(src);
@@ -212,7 +213,6 @@ void testLowerCase() {
     }
 
     // deleting the objects
-    delete tokenStream;
     delete simpleAnlyzer;
     syn->free();
     prot->free();
@@ -230,6 +230,7 @@ void testStemmerFilter(string dataDir) {
     StemmerContainer *stem = StemmerContainer::getInstance(dataDir + "/StemmerHeadwords.txt");
     AnalyzerInternal *simpleAnlyzer = new SimpleAnalyzer(stem, NULL, NULL, syn, string(""));
     TokenStream * tokenStream = simpleAnlyzer->createOperatorFlow();
+    simpleAnlyzer->setTokenStream(tokenStream);
 
     cout << "TEST 1: No Stemming" << endl;
     // TEST 1 (no stemming)
@@ -332,7 +333,6 @@ void testStemmerFilter(string dataDir) {
     }
 
     // deleting the objects
-    delete tokenStream;
     delete simpleAnlyzer;
     syn->free();
     stem->free();
@@ -352,7 +352,7 @@ void testStopFilter(string dataDir) {
     StopWordContainer *stop = StopWordContainer::getInstance(dataDir + "/stopWordsFile.txt");
     AnalyzerInternal *simpleAnlyzer = new StandardAnalyzer(stem, stop, NULL, syn, string(""));
     TokenStream * tokenStream = simpleAnlyzer->createOperatorFlow();
-
+    simpleAnlyzer->setTokenStream(tokenStream);
     string src = "Here IS A Set OF some instructions for who has the books";
     tokenStream->fillInCharacters(src);
     // to print out the results
@@ -391,7 +391,6 @@ void testStopFilter(string dataDir) {
     }
 
     // deleting the objects
-    delete tokenStream;
     delete simpleAnlyzer;
     syn->free();
     stem->free();
@@ -405,6 +404,7 @@ void testStopFilter(string dataDir) {
             "" // special characters
             );
     tokenStream = chineseAnalyzer->createOperatorFlow();
+    chineseAnalyzer->setTokenStream(tokenStream);
 
     src = "Here IS A Set我的不过滤，这个的要过滤 是";
     tokenStream->fillInCharacters(src);
@@ -429,7 +429,6 @@ void testStopFilter(string dataDir) {
     ASSERT(i == vectorString.size());
 
     // deleting the objects
-    delete tokenStream;
     delete chineseAnalyzer;
     stop->free();
 }
@@ -450,7 +449,7 @@ void testSynonymFilter(string dataDir) {
     StopWordContainer *stop = StopWordContainer::getInstance(dataDir + "/stopWordsFile.txt");
     AnalyzerInternal *simpleAnlyzer = new SimpleAnalyzer(stem, stop, NULL, syn, string(""));
     TokenStream * tokenStream = simpleAnlyzer->createOperatorFlow();
-
+    simpleAnlyzer->setTokenStream(tokenStream);
     // TEST 1
     // input string
 
@@ -478,10 +477,13 @@ void testSynonymFilter(string dataDir) {
         i++;
     }
 
+    delete simpleAnlyzer;
     // TEST 2
     // input string
     simpleAnlyzer = new SimpleAnalyzer(stem, stop, NULL, syn, string(""));
     tokenStream = simpleAnlyzer->createOperatorFlow();
+    simpleAnlyzer->setTokenStream(tokenStream);
+
     src = "new wal new wal mart new york new new york city";
     tokenStream->fillInCharacters(src);
     // to print out the results
@@ -512,12 +514,13 @@ void testSynonymFilter(string dataDir) {
         i++;
     }
 
-
+    delete simpleAnlyzer;
 
     // TEST 3
     // input string
     simpleAnlyzer = new SimpleAnalyzer(stem, stop, NULL, syn, string(""));
     tokenStream = simpleAnlyzer->createOperatorFlow();
+    simpleAnlyzer->setTokenStream(tokenStream);
     src = "new bill bring your own bill bring your own beverage your own beverage bring";
     tokenStream->fillInCharacters(src);
     // to print out the results
@@ -552,11 +555,13 @@ void testSynonymFilter(string dataDir) {
         i++;
     }
 
+    delete simpleAnlyzer;
 
     // TEST 4
     // input string
     simpleAnlyzer = new SimpleAnalyzer(stem, NULL, NULL, syn, string(""));
     tokenStream = simpleAnlyzer->createOperatorFlow();
+    simpleAnlyzer->setTokenStream(tokenStream);
     src = "a b c d e f g a b c d e f t a b c d e f";
     tokenStream->fillInCharacters(src);
     // to print out the results
@@ -598,10 +603,12 @@ void testSynonymFilter(string dataDir) {
         i++;
     }
 
+    delete simpleAnlyzer;
     // TEST 5
     // input string
     simpleAnlyzer = new SimpleAnalyzer(stem, NULL, NULL, syn, string(""));
     tokenStream = simpleAnlyzer->createOperatorFlow();
+    simpleAnlyzer->setTokenStream(tokenStream);
     src = "a b d e f new york g a b c d e f t a b c d e f wal mart آسان bill 美 ایمان برجسته";
     tokenStream->fillInCharacters(src);
     // to print out the results
@@ -657,11 +664,13 @@ void testSynonymFilter(string dataDir) {
         ASSERT(vectorString[i] == src);
         i++;
     }
+    delete simpleAnlyzer;
 
     // TEST 6
     // input string
     simpleAnlyzer = new SimpleAnalyzer(stem, stop, NULL, syn, string(""));
     tokenStream = simpleAnlyzer->createOperatorFlow();
+    simpleAnlyzer->setTokenStream(tokenStream);
     src = "bill";
     tokenStream->fillInCharacters(src);
     // to print out the results
@@ -682,11 +691,13 @@ void testSynonymFilter(string dataDir) {
         i++;
     }
 
+    delete simpleAnlyzer;
     syn->free();
     syn = SynonymContainer::getInstance(dataDir + "/synonymFile.txt", SYNONYM_DONOT_KEEP_ORIGIN);
     syn->init();
     simpleAnlyzer = new SimpleAnalyzer(stem, stop, NULL, syn, string(""));
     tokenStream = simpleAnlyzer->createOperatorFlow();
+    simpleAnlyzer->setTokenStream(tokenStream);
 
     // TEST 7
     // input string
@@ -709,11 +720,12 @@ void testSynonymFilter(string dataDir) {
         ASSERT(vectorString[i] == src);
         i++;
     }
-
+    delete simpleAnlyzer;
     // TEST 8
     // input string
     simpleAnlyzer = new SimpleAnalyzer(stem, stop, NULL, syn, string(""));
     tokenStream = simpleAnlyzer->createOperatorFlow();
+    simpleAnlyzer->setTokenStream(tokenStream);
     src = "new wal new wal mart new york new new york city";
     tokenStream->fillInCharacters(src);
     // to print out the results
@@ -736,10 +748,11 @@ void testSynonymFilter(string dataDir) {
         ASSERT(vectorString[i] == src);
         i++;
     }
-
+    delete simpleAnlyzer;
     // TEST 9
     simpleAnlyzer = new SimpleAnalyzer(stem, stop, NULL, syn, string(""));
     tokenStream = simpleAnlyzer->createOperatorFlow();
+    simpleAnlyzer->setTokenStream(tokenStream);
     src = "new bill bring your own bill bring your own beverage your own beverage bring";
     tokenStream->fillInCharacters(src);
     // to print out the results
@@ -765,10 +778,11 @@ void testSynonymFilter(string dataDir) {
         i++;
     }
 
-
+    delete simpleAnlyzer;
     // TEST 10
     simpleAnlyzer = new SimpleAnalyzer(stem, NULL, NULL, syn, string(""));
     tokenStream = simpleAnlyzer->createOperatorFlow();
+    simpleAnlyzer->setTokenStream(tokenStream);
     src = "a b c d e f g a b c d e f t a b c d e f";
     tokenStream->fillInCharacters(src);
     cout << "## Test 10:  " << src << endl;
@@ -794,7 +808,6 @@ void testSynonymFilter(string dataDir) {
 
 
     // deleting the objects
-    delete tokenStream;
     delete simpleAnlyzer;
 
     // TEST 11 : Test ChineseAnayzer
@@ -802,6 +815,7 @@ void testSynonymFilter(string dataDir) {
     AnalyzerInternal* chineseAnalyzer = new ChineseAnalyzer(
             dataDir + "/srch2_dict_ch.core", stop, NULL, syn, "");
     tokenStream = chineseAnalyzer->createOperatorFlow();
+    chineseAnalyzer->setTokenStream(tokenStream);
     src = "ok~dd 美丽还是美";
     tokenStream->fillInCharacters(src);
     cout << "## Test 11:  " << src << endl;
@@ -825,7 +839,6 @@ void testSynonymFilter(string dataDir) {
     ASSERT(i==vectorString.size());
 
     // deleting the objects
-    delete tokenStream;
     delete chineseAnalyzer;
     syn->free();
     stem->free();
@@ -982,6 +995,7 @@ void testLastTokenAsStopWord(string dataDir){
 
     AnalyzerInternal *standardAnlyzer = new StandardAnalyzer(stem, stop, prot, syn, string(""));
     TokenStream * tokenStream = standardAnlyzer->createOperatorFlow();
+    standardAnlyzer->setTokenStream(tokenStream);
 
 	string src = "the"; //"the last word is theater"
 	tokenStream->fillInCharacters(src, true);
@@ -992,7 +1006,6 @@ void testLastTokenAsStopWord(string dataDir){
 	runAnalyzer(tokenStream, tokenizedWords);
 
 	// deleting the objects
-	delete tokenStream;
 	delete standardAnlyzer;
     stop->free();
     syn->free();
@@ -1012,6 +1025,7 @@ void testProtectedWords(string dataDir){
 
     AnalyzerInternal *standardAnlyzer = new StandardAnalyzer(NULL, stop, prot, syn, string(""));
     TokenStream * tokenStream = standardAnlyzer->createOperatorFlow();
+    standardAnlyzer->setTokenStream(tokenStream);
 
 	string src = "C++ is successor of C. .NET Framework (pronounced dot net) is developed by Microsoft.";
 	tokenStream->fillInCharacters(src);
@@ -1076,7 +1090,6 @@ void testProtectedWords(string dataDir){
     runAnalyzer(tokenStream, tokenizedWords);
 
 	// deleting the objects
-	delete tokenStream;
 	delete standardAnlyzer;
 
     syn->free();

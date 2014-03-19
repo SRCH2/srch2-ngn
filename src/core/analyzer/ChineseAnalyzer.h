@@ -22,6 +22,9 @@ public:
 
     AnalyzerType getAnalyzerType() const;
 
+    ~ChineseAnalyzer() {
+    	delete this->tokenStream;
+    }
 private:
     const std::string mDictFilePath;
 };

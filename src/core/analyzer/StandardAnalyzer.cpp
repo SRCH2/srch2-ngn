@@ -24,6 +24,7 @@ StandardAnalyzer::StandardAnalyzer(const StemmerContainer *stemmer,
                                    const std::string &allowedRecordSpecialCharacters) :
     AnalyzerInternal(stemmer, stopWords, protectedWords, synonyms, allowedRecordSpecialCharacters)
 {
+    this->tokenStream = NULL;
     this->analyzerType = STANDARD_ANALYZER;
 }
 
@@ -55,7 +56,7 @@ TokenStream * StandardAnalyzer::createOperatorFlow() {
 }
 
 StandardAnalyzer::~StandardAnalyzer() {
-	// TODO Auto-generated destructor stub
+	delete this->tokenStream;
 }
 
 }
