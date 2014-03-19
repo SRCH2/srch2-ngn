@@ -120,7 +120,7 @@ void RecordSerializer::add<std::string>(
 
 RecordSerializerBuffer RecordSerializer::serialize() {
   char* rtn = buffer;
-  buffer = allocator.allocate(maxOffsetOfBuffer);
+  //buffer = allocator.allocate(maxOffsetOfBuffer);
   return RecordSerializerBuffer(rtn, lastOffsetOfWrittenBuffer);
 }
 

@@ -30,9 +30,11 @@ void AnalyzerContainer::free(const string &path)
 
 void AnalyzerContainer::freeAll()
 {
-    if (containers.size() > 0) {
-        containers.erase(containers.begin(), containers.end());
+	AnalyzerContainer::Map_t::iterator iter = containers.begin();
+    for (; iter != containers.end(); ++iter) {
+       delete iter->second;
     }
+    containers.erase(containers.begin(), containers.end());
 }
 
 AnalyzerContainer::~AnalyzerContainer()

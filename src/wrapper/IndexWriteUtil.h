@@ -28,6 +28,7 @@ struct IndexWriteUtil
     	Json::FastWriter writer;
     	if(JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root, indexDataContainerConf, log_str, recSerializer) == false){
     		log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"failed\"}";
+    		delete storedSchema;
     		return;
     	}
     	//add the record to the index
@@ -179,7 +180,7 @@ struct IndexWriteUtil
     	{
             Analyzer* analyzer = AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf);
     		srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->addRecord(record, analyzer);
-
+    		delete analyzer;
     		switch( ret )
 			{
 				case srch2::instantsearch::OP_SUCCESS:
