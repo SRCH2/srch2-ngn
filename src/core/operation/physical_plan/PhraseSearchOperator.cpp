@@ -36,6 +36,7 @@ bool PhraseSearchOperator::open(QueryEvaluatorInternal * queryEvaluatorInternal,
 					trieRootNode_ReadView->root, keywordString);
 			if (trieNode == NULL){
 				Logger::warn("TrieNode is null for phrase keyword = %s", keywordString.c_str());
+				phraseErr = true;
 				return false;
 			}
 			unsigned keywordId = trieNode->getId();
@@ -49,6 +50,9 @@ bool PhraseSearchOperator::open(QueryEvaluatorInternal * queryEvaluatorInternal,
 	return true;
 }
 PhysicalPlanRecordItem * PhraseSearchOperator::getNext(const PhysicalPlanExecutionParameters & params) {
+
+	if (phraseErr)
+		return NULL;
 
 	if (this->queryEvaluatorInternal == NULL) {
 		return NULL;  // open should be called first
@@ -84,7 +88,9 @@ PhysicalPlanRecordItem * PhraseSearchOperator::getNext(const PhysicalPlanExecuti
 }
 bool PhraseSearchOperator::close(PhysicalPlanExecutionParameters & params){
 	this->queryEvaluatorInternal = NULL;
-	this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->close(params);
+	// If there was a phrase error then the operator did not open its child. So no need to close it
+	if (!phraseErr)
+		this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->close(params);
 	return true;
 }
 
@@ -106,6 +112,7 @@ PhraseSearchOperator::~PhraseSearchOperator(){
 PhraseSearchOperator::PhraseSearchOperator(const PhraseInfo& phraseSearchInfo) {
 	this->phraseSearchInfo = phraseSearchInfo;
 	this->queryEvaluatorInternal = NULL;
+	this->phraseErr = false;
 }
 
 // match phrase on attributes. do OR or AND logic depending upon the 32 bit of attributeBitMap
