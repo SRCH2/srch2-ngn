@@ -26,6 +26,7 @@
 
 #include <cstring>
 #include <ctime>
+#include <instantsearch/Constants.h>
 #include <instantsearch/Schema.h>
 #include <instantsearch/DateTime.h>
 #include <vector>
@@ -50,7 +51,9 @@ namespace srch2
     	bool operator>=(const TypedValue& typedValue) const;
     	TypedValue operator+(const TypedValue& a);
 
-    	TypedValue(){
+        TypedValue() : 
+            valueType(ATTRIBUTE_TYPE_UNSIGNED), intTypedValue(0), floatTypedValue(0.0), timeTypedValue(0)
+        {
     	};
     	void setTypedValue(unsigned intTypeValue);
     	void setTypedValue(float floatTypeValue);
