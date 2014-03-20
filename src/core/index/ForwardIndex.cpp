@@ -661,8 +661,9 @@ const unsigned* lower_bound(const unsigned* first, const unsigned* last,
     unsigned step;
     unsigned count = last - first;
     while (count > 0) {
-        step = count / 2;
-        it = first + step;
+//        step = count / 2;
+    	step = count >> 1;
+    	it = first + step;
         if (*it < val) {
             first = ++it;
             count -= step + 1;
