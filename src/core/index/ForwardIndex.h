@@ -13,7 +13,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright © 2010 SRCH2 Inc. All rights reserved */
+ * Copyright �� 2010 SRCH2 Inc. All rights reserved */
 
 #pragma once
 #ifndef __FORWARDINDEX_H__
@@ -24,6 +24,7 @@
 #include <boost/serialization/map.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
+#include <boost/unordered_set.hpp>
 #include <fstream>
 #include <vector>
 #include <string>
@@ -55,6 +56,8 @@ using namespace snappy;
 #define KEYWORD_THRESHOLD ((1<<24) - 1)
 // The upper bound of the number of sortable attributes in a record is FF
 #define SORTABLE_ATTRIBUTES_THRESHOLD ((1<<8) - 1)
+
+#define FORWADLIST_NOTVALID (unsigned (-1))
 
 namespace srch2 {
 namespace instantsearch {
@@ -494,12 +497,12 @@ private:
     // Set to true when the commit function is called. Set to false, when the addRecord function is called.
     bool commited_WriteView;
     bool mergeRequired;
+    boost::unordered_set<unsigned> deletedRecordInternalIds; // store internal IDs of records marked deleted
 
     // Initialised in constructor and used in calculation of offset in filterAttributesVector. This is lighter than serialising the schema itself.
     const SchemaInternal *schemaInternal;
 
     friend class boost::serialization::access;
-
 
     template<class Archive>
     void serialize(Archive & ar, const unsigned int version) {
@@ -627,9 +630,26 @@ public:
         return this->commited_WriteView;
     }
     bool isMergeRequired() const { return mergeRequired; }
-    /*std::vector<unsigned>* getRecordOrderVector() {
-     return &recordOrder;
-     };*/
+
+    // Free the space of those forward lists that have been marked deleted
+    void freeSpaceOfDeletedRecords() {
+      // TODO: deal with thread safety
+
+      vectorview<ForwardListPtr> *writeView = this->forwardListDirectory->getWriteView();
+
+      for(boost::unordered_set<unsigned>::iterator iter = this->deletedRecordInternalIds.begin();
+          iter != this->deletedRecordInternalIds.end(); ++ iter) {
+            unsigned internalRecordId = *iter;
+            // free the memory if it's no longer valid
+            ASSERT(writeView->at(internalRecordId).second == false);
+            ASSERT(writeView->at(internalRecordId).first != NULL);
+            delete writeView->at(internalRecordId).first;
+            writeView->at(internalRecordId).first = NULL;
+        }
+      // clear the set
+    this->deletedRecordInternalIds.clear();
+
+    }
 
     void setSchema(SchemaInternal *schema) {
         this->schemaInternal = schema;
@@ -672,7 +692,8 @@ public:
             unsigned &matchingKeywordAttributeBitmap,
             float &matchingKeywordRecordStaticScore, bool &isStemmed) const;
 
-    unsigned getKeywordOffset(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+    // return FORWADLIST_NOTVALID if the forward is not valid (e.g., already deleted)
+    unsigned getKeywordOffsetForwardIndex(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
     		unsigned forwardListId, unsigned keywordId) const;
 
     /*****-record-id-converter*****/

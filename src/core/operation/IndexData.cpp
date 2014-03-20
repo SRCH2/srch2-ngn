@@ -15,7 +15,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright © 2010 SRCH2 Inc. All rights reserved
+ * Copyright �� 2010 SRCH2 Inc. All rights reserved
  */
 
 #include "IndexData.h"
@@ -645,8 +645,9 @@ void IndexData::_save(const string &directoryName) const
     }
     //this->forwardIndex->print_test();
     //this->invertedIndex->print_test();
-    if(this->forwardIndex->isMergeRequired())
+    if(this->forwardIndex->isMergeRequired()) {
         this->forwardIndex->merge();
+    }
 
     try {
         serializer.save(*this->forwardIndex, directoryName + "/" + IndexConfig::forwardIndexFileName);

@@ -14,7 +14,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright �� 2010 SRCH2 Inc. All rights reserved
+ * Copyright ������ 2010 SRCH2 Inc. All rights reserved
  */
 
 #include "ForwardIndex.h"
@@ -227,13 +227,12 @@ void ForwardIndex::commit()
 // WriteView
 void ForwardIndex::merge()
 {
-    if ( this->mergeRequired )
-    {
+    if ( this->mergeRequired ) {
         // make sure the read view is pointing to the write view
         this->forwardListDirectory->merge();
-
         // writeView->forceCreateCopy();
         this->mergeRequired = false;
+        this->freeSpaceOfDeletedRecords();
     }
 }
 
@@ -1121,6 +1120,7 @@ bool ForwardIndex::deleteRecordGetInternalId(
     if (found == true) {
         this->setDeleteFlag(internalRecordId);
         this->externalToInternalRecordIdMap.erase(externalRecordId);
+        this->deletedRecordInternalIds.insert(internalRecordId); // remember this deleted record ID
         this->mergeRequired = true; // tell the merge thread to merge
     }
 
@@ -1137,6 +1137,8 @@ bool ForwardIndex::recoverRecord(const std::string &externalRecordId,
     if (found == false) {
         this->resetDeleteFlag(internalRecordId); // set the flag in the forward index back to true
         this->externalToInternalRecordIdMap.setValue(externalRecordId , internalRecordId); // add the external record id back to the externalToInternalRecordIdMap
+        // we need to remove this ID from the set of deleted IDs
+        this->deletedRecordInternalIds.erase(internalRecordId);
         this->mergeRequired = true; // tell the merge thread to merge
     }
 
@@ -1176,11 +1178,14 @@ bool ForwardIndex::getInternalRecordIdFromExternalRecordId(
 
 }
 
-unsigned ForwardIndex::getKeywordOffset(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+unsigned ForwardIndex::getKeywordOffsetForwardIndex(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
 		unsigned forwardListId,
         unsigned keywordId) const {
     bool valid = false;
     const ForwardList* forwardList = this->getForwardList(forwardListDirectoryReadView, forwardListId, valid);
+    // if the record is not valid (e.g., marked deleted), we return a special flag
+    if (!valid)
+       return FORWADLIST_NOTVALID;
     return forwardList->getKeywordOffset(keywordId);
 }
 

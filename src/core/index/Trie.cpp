@@ -20,7 +20,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright © 2010 SRCH2 Inc. All rights reserved
+ * Copyright �� 2010 SRCH2 Inc. All rights reserved
  */
 
 #include "index/Trie.h"
@@ -1317,10 +1317,16 @@ void Trie::calculateNodeHistogramValuesFromChildren(TrieNode *node,
 			unsigned invertedListCursor = 0;
 			while(invertedListCursor < invertedListReadView->size()){
 				unsigned recordId = invertedListReadView->getElement(invertedListCursor++);
-				unsigned recordOffset = invertedIndex->getKeywordOffset(forwardIndexDirectoryReadView,
+				// check if the record is valid
+				// forwardIndexDirectoryReadView
+				unsigned keywordOffset = invertedIndex->getKeywordOffsetInvertedIndex(forwardIndexDirectoryReadView,
 						invertedIndexKeywordIdsReadView, recordId, node->getInvertedListOffset());
+
+				// if the record is not valid (e.g., deleted), ignore it.
+				if (keywordOffset == FORWADLIST_NOTVALID)
+					continue;
 				if (invertedIndex->isValidTermPositionHit(forwardIndexDirectoryReadView, recordId,
-						recordOffset,
+						keywordOffset,
 						0x7fffffff,  termAttributeBitmap, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
 					break;
 				}
@@ -1479,7 +1485,7 @@ void Trie::merge(const InvertedIndex * invertedIndex ,
     // and reset the current read view. Then we go through the read views one by one
     // in the order of their arrival. For each read view, we check its reference count.
     // If the count is > 1, then it means there are readers that are still using it,
-    // so we do nothing and return. If the read view’s reference count is 1,
+    // so we do nothing and return. If the read view���s reference count is 1,
     // then it means the current merge thread is the last thread using this read view,
     // so we can delete it and move onto the next read view on the queue.
     // We repeat the process until either we reach the end of the queue or we

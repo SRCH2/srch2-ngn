@@ -48,13 +48,15 @@ PhysicalPlanRecordItem * UnionLowestLevelSuggestionOperator::getNext(const Physi
     while(true){
         if(invertedListCursor < invertedListReadView->size()){
             unsigned recordId = invertedListReadView->getElement(invertedListCursor++);
-            unsigned recordOffset = queryEvaluatorIntrnal->getInvertedIndex()->getKeywordOffset(
+            unsigned keywordOffset = queryEvaluatorIntrnal->getInvertedIndex()->getKeywordOffsetInvertedIndex(
                     this->forwardIndexDirectoryReadView,
                     this->invertedIndexKeywordIdsReadView,
                     recordId, suggestionPairs[suggestionPairCursor].suggestedCompleteTermNode->getInvertedListOffset());
-            if (queryEvaluatorIntrnal->getInvertedIndex()->isValidTermPositionHit(forwardIndexDirectoryReadView,
+            // We check the record only if it's valid
+            if (keywordOffset != FORWADLIST_NOTVALID &&
+                queryEvaluatorIntrnal->getInvertedIndex()->isValidTermPositionHit(forwardIndexDirectoryReadView,
                     recordId,
-                    recordOffset,
+                    keywordOffset,
                     0x7fffffff,  termAttributeBitmap, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
                 // return the item.
                 PhysicalPlanRecordItem * newItem = this->queryEvaluatorIntrnal->getPhysicalPlanRecordItemPool()->createRecordItem();

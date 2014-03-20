@@ -15,7 +15,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright © 2010 SRCH2 Inc. All rights reserved
+ * Copyright �� 2010 SRCH2 Inc. All rights reserved
  */
 
 #include "index/InvertedIndex.h"
@@ -52,7 +52,7 @@ void InvertedListContainer::sortAndMergeBeforeCommit(const unsigned keywordId, c
         for (unsigned i = 0; i< writeView->size(); i++) {
             invertedListElements[i].recordId = writeView->getElement(i);
             invertedListElements[i].score = forwardIndex->getTermRecordStaticScore(invertedListElements[i].recordId,
-            		forwardIndex->getKeywordOffset(forwardListDirectoryReadView, invertedListElements[i].recordId, keywordId));
+            		forwardIndex->getKeywordOffsetForwardIndex(forwardListDirectoryReadView, invertedListElements[i].recordId, keywordId));
         }
         std::sort(invertedListElements.begin(), invertedListElements.end(), InvertedListContainer::InvertedListElementGreaterThan());
 
@@ -81,7 +81,7 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, const Forward
     for (unsigned i = 0; i< writeView->size(); i++) {
         invertedListElements[i].recordId = writeView->getElement(i);
         invertedListElements[i].score = forwardIndex->getTermRecordStaticScore(invertedListElements[i].recordId,
-        		forwardIndex->getKeywordOffset(forwardListDirectoryReadView, invertedListElements[i].recordId, keywordId));
+        		forwardIndex->getKeywordOffsetForwardIndex(forwardListDirectoryReadView, invertedListElements[i].recordId, keywordId));
     }
 
     Logger::debug("SortnMerge: | %d | %d ", readViewListSize, writeViewListSize);
@@ -146,12 +146,12 @@ bool InvertedIndex::isValidTermPositionHit(shared_ptr<vectorview<ForwardListPtr>
 }
 
 // given a forworListId and invertedList offset, return the keyword offset
-unsigned InvertedIndex::getKeywordOffset(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+unsigned InvertedIndex::getKeywordOffsetInvertedIndex(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
 		shared_ptr<vectorview<unsigned> > & invertedIndexKeywordIdsReadView,
 		unsigned forwardListId, unsigned invertedListOffset) const
 {
     //transfer the invertedList offset to keywordId
-    return this->forwardIndex->getKeywordOffset(forwardListDirectoryReadView, forwardListId, invertedIndexKeywordIdsReadView->getElement(invertedListOffset));
+    return this->forwardIndex->getKeywordOffsetForwardIndex(forwardListDirectoryReadView, forwardListId, invertedIndexKeywordIdsReadView->getElement(invertedListOffset));
 }
 
 // For Trie bootstrap

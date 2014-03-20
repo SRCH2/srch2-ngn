@@ -15,7 +15,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright © 2010 SRCH2 Inc. All rights reserved
+ * Copyright �� 2010 SRCH2 Inc. All rights reserved
  */
 
 #include <instantsearch/Ranker.h>
@@ -42,7 +42,7 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
     		invertedListId, invertedListReadView);
     unsigned recordId = invertedListReadView->getElement(invertedListCounter);
     // calculate record offset online
-    unsigned recordOffset = this->invertedIndex->getKeywordOffset(this->forwardIndexDirectoryReadView,
+    unsigned keywordOffset = this->invertedIndex->getKeywordOffsetInvertedIndex(this->forwardIndexDirectoryReadView,
     		this->invertedIndexKeywordIdsReadView,
     		recordId, invertedListId);
     ++ invertedListCounter;
@@ -51,9 +51,11 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
     float termRecordStaticScore = 0;
     unsigned termAttributeBitmap = 0;
     while (1) {
-        if (this->invertedIndex->isValidTermPositionHit(this->forwardIndexDirectoryReadView,
-        		recordId,
-        		recordOffset,
+        // We ignore the record if it's no longer valid
+        if (keywordOffset != FORWADLIST_NOTVALID &&
+            this->invertedIndex->isValidTermPositionHit(this->forwardIndexDirectoryReadView,
+                recordId,
+                keywordOffset,
                 term->getAttributeToFilterTermHits(), termAttributeBitmap,
                 termRecordStaticScore) ) {
             foundValidHit = 1;
@@ -63,7 +65,7 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
         if (invertedListCounter < invertedListReadView->size()) {
             recordId = invertedListReadView->getElement(invertedListCounter);
             // calculate record offset online
-            recordOffset = this->invertedIndex->getKeywordOffset(this->forwardIndexDirectoryReadView,
+            keywordOffset = this->invertedIndex->getKeywordOffsetInvertedIndex(this->forwardIndexDirectoryReadView,
             		this->invertedIndexKeywordIdsReadView,
             		recordId, invertedListId);
             ++invertedListCounter;
@@ -72,7 +74,7 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
         }
     }
 
-    if (foundValidHit == 1) {
+    if (keywordOffset != FORWADLIST_NOTVALID && foundValidHit == 1) {
         this->numberOfItemsInPartialHeap ++; // increment partialHeap counter
 
         if (this->numberOfItemsInPartialHeap == 0)
@@ -88,7 +90,7 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
                         this->prefixMatchPenalty , term->getSimilarityBoost());
             this->itemsHeap.push_back(new HeapItem(invertedListId, this->cursorVector.size(),
                                                    recordId, termAttributeBitmap, termRecordRuntimeScore,
-                                                   recordOffset, prefixNode,
+                                                   keywordOffset, prefixNode,
                                                    distance, isPrefixMatch));
         } else { // complete term
             float termRecordRuntimeScore =
@@ -99,7 +101,7 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
                         this->prefixMatchPenalty , term->getSimilarityBoost());// prefix match == false
             this->itemsHeap.push_back(new HeapItem(invertedListId, this->cursorVector.size(),
                                                    recordId, termAttributeBitmap, termRecordRuntimeScore,
-                                                   recordOffset, leafNode, distance, false));
+                                                   keywordOffset, leafNode, distance, false));
         }
 
         // Cursor points to the next element on InvertedList
@@ -404,17 +406,21 @@ bool TermVirtualList::getNext(HeapItemForIndexSearcher *returnHeapItem)
 
                 unsigned recordId = currentHeapMaxInvertedList->getElement(currentHeapMaxCursor);
                 // calculate record offset online
-                unsigned recordOffset = this->invertedIndex->getKeywordOffset(this->forwardIndexDirectoryReadView,
+                unsigned keywordOffset = this->invertedIndex->getKeywordOffsetInvertedIndex(this->forwardIndexDirectoryReadView,
                 		this->invertedIndexKeywordIdsReadView,
                 		recordId, currentHeapMaxInvertetedListId);
                 unsigned termAttributeBitmap = 0;
                 currentHeapMaxCursor++;
 
+                // igore the record if it's no longer valid (e.g., marked deleted)
+                if (keywordOffset == FORWADLIST_NOTVALID)
+                    continue;
+
                 // check isValidTermPositionHit
                 float termRecordStaticScore = 0;
                 if (this->invertedIndex->isValidTermPositionHit(forwardIndexDirectoryReadView,
                 		recordId,
-                		recordOffset,
+                		keywordOffset,
                         term->getAttributeToFilterTermHits(), termAttributeBitmap,
                         termRecordStaticScore)) {
                     foundValidHit = 1;
@@ -429,7 +435,7 @@ bool TermVirtualList::getNext(HeapItemForIndexSearcher *returnHeapItem)
                                 currentHeapMax->isPrefixMatch,
                                 this->prefixMatchPenalty , term->getSimilarityBoost());
                     currentHeapMax->attributeBitMap = termAttributeBitmap;
-                    currentHeapMax->positionIndexOffset = recordOffset;
+                    currentHeapMax->positionIndexOffset = keywordOffset;
                     push_heap(itemsHeap.begin(), itemsHeap.begin()+this->numberOfItemsInPartialHeap,
                               TermVirtualList::HeapItemCmp());
                     break;
