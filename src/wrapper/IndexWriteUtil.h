@@ -35,9 +35,10 @@ struct IndexWriteUtil
 
     	if ( indexer->getNumberOfDocumentsInIndex() < indexDataContainerConf->getDocumentLimit() )
     	{
-            srch2::instantsearch::Analyzer * analyzer = AnalyzerFactory::createAnalyzer(indexDataContainerConf);
+    		// Do NOT delete analyzer because it is thread specific. It will be reused for
+    		// search/update/delete operations.
+            srch2::instantsearch::Analyzer * analyzer = AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf);
     		srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->addRecord(record, analyzer);
-            delete analyzer;
 
     		switch( ret )
 			{
@@ -178,9 +179,10 @@ struct IndexWriteUtil
 
     	if ( indexer->getNumberOfDocumentsInIndex() < indexDataContainerConf->getDocumentLimit() )
     	{
+    		// Do NOT delete analyzer because it is thread specific. It will be reused for
+    		// search/update/delete operations.
             Analyzer* analyzer = AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf);
     		srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->addRecord(record, analyzer);
-    		delete analyzer;
     		switch( ret )
 			{
 				case srch2::instantsearch::OP_SUCCESS:
