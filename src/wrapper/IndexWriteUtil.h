@@ -107,7 +107,7 @@ struct IndexWriteUtil
 
 			//std::cout << "[" << termBoostsParamName_cstar << "]" << std::endl;
 			const std::string primaryKeyStringValue = string(pKeyParamName_cstar);
-			delete pKeyParamName_cstar;
+			free(pKeyParamName_cstar);
 
 			log_str << "{\"rid\":\"" << primaryKeyStringValue << "\",\"delete\":\"";
 
