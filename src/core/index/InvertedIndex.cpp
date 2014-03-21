@@ -81,7 +81,7 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, const Forward
     for (unsigned i = 0; i< writeView->size(); i++) {
         invertedListElements[i].recordId = writeView->getElement(i);
         invertedListElements[i].score = forwardIndex->getTermRecordStaticScore(invertedListElements[i].recordId,
-        		forwardIndex->getKeywordOffsetForwardIndex(forwardListDirectoryReadView, invertedListElements[i].recordId, keywordId));
+        forwardIndex->getKeywordOffsetForwardIndex(forwardListDirectoryReadView, invertedListElements[i].recordId, keywordId));
     }
 
     Logger::debug("SortnMerge: | %d | %d ", readViewListSize, writeViewListSize);
