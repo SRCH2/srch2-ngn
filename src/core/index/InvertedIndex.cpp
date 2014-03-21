@@ -74,19 +74,42 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, const Forward
     unsigned readViewListSize = readView->size();
 
     vectorview<unsigned>* &writeView = this->invList->getWriteView();
-
     unsigned writeViewListSize = writeView->size();
-    vector<InvertedListIdAndScore> invertedListElements(writeView->size());
+    Logger::debug("SortnMerge: | %d | %d ", readViewListSize, writeViewListSize);
+    ASSERT(readViewListSize <= writeViewListSize);
 
-    for (unsigned i = 0; i< writeView->size(); i++) {
-        invertedListElements[i].recordId = writeView->getElement(i);
-        invertedListElements[i].score = forwardIndex->getTermRecordStaticScore(invertedListElements[i].recordId,
-        forwardIndex->getKeywordOffsetForwardIndex(forwardListDirectoryReadView, invertedListElements[i].recordId, keywordId));
+    // copy the elements from the write view to a vector to sort
+    // OPT: avoid this copy
+    vector<InvertedListIdAndScore> invertedListElements;
+    unsigned validRecordCountFromReadView = 0; // count # of records that are not deleted
+    unsigned validRecordCountFromWriteView = 0; // count # of records that are not deleted
+
+    for (unsigned i = 0; i < writeView->size(); i++) {
+        unsigned recordId = writeView->getElement(i);
+
+        bool valid = false;
+        const ForwardList* forwardList = forwardIndex->getForwardList(forwardListDirectoryReadView,
+               recordId, valid);
+        // if the record is not valid (e.g., marked deleted), we ignore it
+        if (!valid)
+            continue;
+
+        float score = forwardIndex->getTermRecordStaticScore(recordId,
+           forwardIndex->getKeywordOffsetForwardIndex(forwardListDirectoryReadView, recordId, keywordId));
+
+        // add this new <recordId, score> pair to the vector
+        InvertedListIdAndScore iliasEntry = {recordId, score};
+        invertedListElements.push_back(iliasEntry);
+        if (i < readViewListSize)
+           validRecordCountFromReadView ++; // count the # of valid records
+        else
+           validRecordCountFromWriteView ++;
     }
 
-    Logger::debug("SortnMerge: | %d | %d ", readViewListSize, writeViewListSize);
-
-    std::sort(invertedListElements.begin() + readViewListSize, invertedListElements.begin() + writeViewListSize, InvertedListContainer::InvertedListElementGreaterThan());
+    unsigned newTotalSize = invertedListElements.size();
+    std::sort(invertedListElements.begin() + validRecordCountFromReadView,
+              invertedListElements.begin() + newTotalSize,
+              InvertedListContainer::InvertedListElementGreaterThan());
     // if the read view and the write view are the same, it means we have added a new keyword with a new COWvector.
     // In this case, instead of calling "merge()", we call "commit()" to let this COWvector commit.
     if (readView.get() == writeView) {
@@ -94,13 +117,18 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, const Forward
         return;
     }
 
-    std::inplace_merge (invertedListElements.begin(), invertedListElements.begin() + readViewListSize, invertedListElements.begin() + writeViewListSize, InvertedListContainer::InvertedListElementGreaterThan());
+    std::inplace_merge (invertedListElements.begin(),
+            invertedListElements.begin() + readViewListSize,
+            invertedListElements.begin() + newTotalSize,
+            InvertedListContainer::InvertedListElementGreaterThan());
 
     // If the read view and write view are sharing the same array, we have to separate the write view from the read view.
     if (writeView->getArray() == readView->getArray())
         writeView->forceCreateCopy();
 
-    for (unsigned i = 0; i< writeView->size(); i++) {
+    // OPT: resize the vector to shrink it if needed
+    writeView->setSize(newTotalSize);
+    for (unsigned i = 0; i < writeView->size(); i++) {
         writeView->at(i) = invertedListElements[i].recordId;
     }
 
@@ -290,7 +318,8 @@ void InvertedIndex::merge()
     // get keywordIds writeView
     vectorview<unsigned>* &keywordIdsWriteView = this->keywordIds->getWriteView();
 
-    for ( set<unsigned>::const_iterator iter = this->invertedListSetToMerge.begin(); iter != this->invertedListSetToMerge.end(); ++iter) {
+    for (set<unsigned>::const_iterator iter = this->invertedListSetToMerge.begin();
+        iter != this->invertedListSetToMerge.end(); ++iter) {
         writeView->at(*iter)->sortAndMerge(keywordIdsWriteView->getElement(*iter), this->forwardIndex);
     }
     this->invertedListSetToMerge.clear();
