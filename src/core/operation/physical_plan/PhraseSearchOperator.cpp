@@ -8,7 +8,6 @@
 #include "instantsearch/TypedValue.h"
 #include "util/DateAndTimeHandler.h"
 #include "operation/QueryEvaluatorInternal.h"
-#include "operation/PhraseSearcher.h"
 
 namespace srch2 {
 namespace instantsearch {
@@ -107,12 +106,13 @@ bool PhraseSearchOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerifica
 	return false;
 }
 PhraseSearchOperator::~PhraseSearchOperator(){
-
+	delete this->phraseSearcher;
 }
 PhraseSearchOperator::PhraseSearchOperator(const PhraseInfo& phraseSearchInfo) {
 	this->phraseSearchInfo = phraseSearchInfo;
 	this->queryEvaluatorInternal = NULL;
 	this->phraseErr = false;
+	this->phraseSearcher = new PhraseSearcher();
 }
 
 // match phrase on attributes. do OR or AND logic depending upon the 32 bit of attributeBitMap
@@ -196,17 +196,16 @@ bool PhraseSearchOperator::matchPhrase(const ForwardList* forwardListPtr, const 
 
     	const vector<unsigned> & phraseOffsetRef = phraseInfo.phraseKeywordPositionIndex;
 
-    	PhraseSearcher *phraseSearcher = new PhraseSearcher();
     	// This vector stores all the valid matched positions for a given phrase in the record.
     	vector< vector<unsigned> > matchedPositions;
     	//vector<unsigned> matchedPosition;
         unsigned slop = phraseInfo.proximitySlop;
 
         if (slop > 0){
-            result = phraseSearcher->proximityMatch(positionListVector, phraseOffsetRef, slop,
+            result = this->phraseSearcher->proximityMatch(positionListVector, phraseOffsetRef, slop,
             		matchedPositions, true);  // true means we stop at first match
         } else {
-            result = phraseSearcher->exactMatch(positionListVector, phraseOffsetRef,
+            result = this->phraseSearcher->exactMatch(positionListVector, phraseOffsetRef,
             		matchedPositions, true);  // true means we stop at first match
         }
         // AND operation and we didn't find result so we should break
