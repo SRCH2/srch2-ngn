@@ -64,6 +64,15 @@ void InvertedListContainer::sortAndMergeBeforeCommit(const unsigned keywordId, c
     this->invList->commit();
 }
 
+// Main idea:
+// 1) go through the elements in the write view. For each element,
+// check if it's a valid record (i.e., not deleted in the forward index).
+// 2) Count such valid records from the read view and write view separately;
+// assuming those from the read view are already sorted based on scores.
+// 3) Store these valid records into a temporary vector with their scores.
+// Sort them assuming those from the read view are already sorted.
+// 4) Copy them back to the write view, which is resized based on the
+// total number of valid records.
 void InvertedListContainer::sortAndMerge(const unsigned keywordId, const ForwardIndex *forwardIndex)
 {
     shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
@@ -110,6 +119,9 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, const Forward
     std::sort(invertedListElements.begin() + validRecordCountFromReadView,
               invertedListElements.begin() + newTotalSize,
               InvertedListContainer::InvertedListElementGreaterThan());
+    cout << "readViewListSize = " << readViewListSize << ", writeViewListSize" << writeViewListSize
+         << ", validRecordCountFromReadView = " << validRecordCountFromReadView
+         << ", validRecordCountFromWriteView " << validRecordCountFromWriteView << endl;
     // if the read view and the write view are the same, it means we have added a new keyword with a new COWvector.
     // In this case, instead of calling "merge()", we call "commit()" to let this COWvector commit.
     if (readView.get() == writeView) {
