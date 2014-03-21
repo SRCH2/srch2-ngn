@@ -53,7 +53,7 @@ PhysicalPlanRecordItem * UnionLowestLevelSuggestionOperator::getNext(const Physi
                     this->invertedIndexKeywordIdsReadView,
                     recordId, suggestionPairs[suggestionPairCursor].suggestedCompleteTermNode->getInvertedListOffset());
             // We check the record only if it's valid
-            if (keywordOffset != FORWADLIST_NOTVALID &&
+            if (keywordOffset != FORWARDLIST_NOTVALID &&
                 queryEvaluatorIntrnal->getInvertedIndex()->isValidTermPositionHit(forwardIndexDirectoryReadView,
                     recordId,
                     keywordOffset,

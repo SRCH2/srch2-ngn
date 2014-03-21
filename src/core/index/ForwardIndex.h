@@ -13,7 +13,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright �� 2010 SRCH2 Inc. All rights reserved */
+ * Copyright 2010 SRCH2 Inc. All rights reserved */
 
 #pragma once
 #ifndef __FORWARDINDEX_H__
@@ -57,7 +57,8 @@ using namespace snappy;
 // The upper bound of the number of sortable attributes in a record is FF
 #define SORTABLE_ATTRIBUTES_THRESHOLD ((1<<8) - 1)
 
-#define FORWADLIST_NOTVALID (unsigned (-1))
+// an indicator that a forward list has been physically deleted
+#define FORWARDLIST_NOTVALID (unsigned (-1))
 
 namespace srch2 {
 namespace instantsearch {
@@ -647,8 +648,7 @@ public:
             writeView->at(internalRecordId).first = NULL;
         }
       // clear the set
-    this->deletedRecordInternalIds.clear();
-
+      this->deletedRecordInternalIds.clear();
     }
 
     void setSchema(SchemaInternal *schema) {
@@ -692,7 +692,7 @@ public:
             unsigned &matchingKeywordAttributeBitmap,
             float &matchingKeywordRecordStaticScore, bool &isStemmed) const;
 
-    // return FORWADLIST_NOTVALID if the forward is not valid (e.g., already deleted)
+    // return FORWARDLIST_NOTVALID if the forward is not valid (e.g., already deleted)
     unsigned getKeywordOffsetForwardIndex(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
     		unsigned forwardListId, unsigned keywordId) const;
 

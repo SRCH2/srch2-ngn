@@ -15,7 +15,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright �� 2010 SRCH2 Inc. All rights reserved
+ * Copyright 2010 SRCH2 Inc. All rights reserved
  */
 
 #include <instantsearch/Ranker.h>
@@ -52,7 +52,7 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
     unsigned termAttributeBitmap = 0;
     while (1) {
         // We ignore the record if it's no longer valid
-        if (keywordOffset != FORWADLIST_NOTVALID &&
+        if (keywordOffset != FORWARDLIST_NOTVALID &&
             this->invertedIndex->isValidTermPositionHit(this->forwardIndexDirectoryReadView,
                 recordId,
                 keywordOffset,
@@ -74,7 +74,7 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
         }
     }
 
-    if (keywordOffset != FORWADLIST_NOTVALID && foundValidHit == 1) {
+    if (keywordOffset != FORWARDLIST_NOTVALID && foundValidHit == 1) {
         this->numberOfItemsInPartialHeap ++; // increment partialHeap counter
 
         if (this->numberOfItemsInPartialHeap == 0)
@@ -412,15 +412,13 @@ bool TermVirtualList::getNext(HeapItemForIndexSearcher *returnHeapItem)
                 unsigned termAttributeBitmap = 0;
                 currentHeapMaxCursor++;
 
-                // igore the record if it's no longer valid (e.g., marked deleted)
-                if (keywordOffset == FORWADLIST_NOTVALID)
-                    continue;
-
                 // check isValidTermPositionHit
                 float termRecordStaticScore = 0;
-                if (this->invertedIndex->isValidTermPositionHit(forwardIndexDirectoryReadView,
-                		recordId,
-                		keywordOffset,
+                // ignore the record if it's no longer valid (e.g., marked deleted)
+                if (keywordOffset != FORWARDLIST_NOTVALID &&
+                        this->invertedIndex->isValidTermPositionHit(forwardIndexDirectoryReadView,
+                        recordId,
+                        keywordOffset,
                         term->getAttributeToFilterTermHits(), termAttributeBitmap,
                         termRecordStaticScore)) {
                     foundValidHit = 1;

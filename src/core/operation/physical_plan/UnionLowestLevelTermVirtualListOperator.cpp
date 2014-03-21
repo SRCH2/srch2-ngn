@@ -157,7 +157,7 @@ PhysicalPlanRecordItem * UnionLowestLevelTermVirtualListOperator::getNext(const 
             float termRecordStaticScore = 0;
 
             // We check the record only if it's valid
-            if (keywordOffset != FORWADLIST_NOTVALID &&
+            if (keywordOffset != FORWARDLIST_NOTVALID &&
                 this->invertedIndex->isValidTermPositionHit(forwardIndexDirectoryReadView,
                     recordId,
                     keywordOffset,
@@ -314,7 +314,7 @@ void UnionLowestLevelTermVirtualListOperator::initialiseTermVirtualListElement(T
     unsigned termAttributeBitmap = 0;
     while (1) {
         // We check the record only if it's valid
-        if (keywordOffset != FORWADLIST_NOTVALID &&
+        if (keywordOffset != FORWARDLIST_NOTVALID &&
             this->invertedIndex->isValidTermPositionHit(forwardIndexDirectoryReadView,
                 recordId,
                 keywordOffset,
@@ -335,7 +335,7 @@ void UnionLowestLevelTermVirtualListOperator::initialiseTermVirtualListElement(T
         }
     }
 
-    if (keywordOffset != FORWADLIST_NOTVALID && foundValidHit == 1) {
+    if (keywordOffset != FORWARDLIST_NOTVALID && foundValidHit == 1) {
         this->numberOfItemsInPartialHeap ++; // increment partialHeap counter
 
         if (this->numberOfItemsInPartialHeap == 0)

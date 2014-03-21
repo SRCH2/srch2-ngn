@@ -109,7 +109,7 @@ PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const Physi
     unsigned termAttributeBitmap = 0;
     while (1) {
         // We check the record only if it's valid
-        if (keywordOffset != FORWADLIST_NOTVALID &&
+        if (keywordOffset != FORWARDLIST_NOTVALID &&
             this->queryEvaluator->getInvertedIndex()->isValidTermPositionHit(forwardIndexDirectoryReadView,
                 recordID,
                 keywordOffset,

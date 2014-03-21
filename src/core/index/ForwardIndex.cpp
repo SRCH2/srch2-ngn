@@ -14,7 +14,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright ������ 2010 SRCH2 Inc. All rights reserved
+ * Copyright 2010 SRCH2 Inc. All rights reserved
  */
 
 #include "ForwardIndex.h"
@@ -1185,7 +1185,7 @@ unsigned ForwardIndex::getKeywordOffsetForwardIndex(shared_ptr<vectorview<Forwar
     const ForwardList* forwardList = this->getForwardList(forwardListDirectoryReadView, forwardListId, valid);
     // if the record is not valid (e.g., marked deleted), we return a special flag
     if (!valid)
-       return FORWADLIST_NOTVALID;
+       return FORWARDLIST_NOTVALID;
     return forwardList->getKeywordOffset(keywordId);
 }
 
