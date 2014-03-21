@@ -166,6 +166,9 @@ void AnalyzerBasedAlgorithm::getSnippet(const QueryResults* /*not used*/, unsign
 
 	if (dataIn.length() == 0)
 		return;
+
+	positionToOffsetMap.clear();
+
 	// One of the constructors of this class allows to pass phraseInfoList directly (used in ctest).
 	// If the phraseInfoList is already present then do not re-calculate.
 	if(phrasesInfoList.size() == 0)
@@ -300,7 +303,6 @@ void HighlightAlgorithm::validatePhrasePositions(vector<matchedTermInfo>& highli
 	}
 
 	// mark the valid position in highlightPositions vector
-	vector<unsigned> allPhrasesOffsetInData;
 	for(unsigned i = 0; i < allPhrasesMatchedPositions.size(); ++i) {
 		vector<vector<unsigned> >&  currPhraseMatchedPositions = allPhrasesMatchedPositions[i];
 		for (unsigned j = 0; j < currPhraseMatchedPositions.size(); ++j) {
@@ -759,6 +761,9 @@ void TermOffsetAlgorithm::getSnippet(const QueryResults* qr, unsigned recidx, un
 		Logger::warn("Attribute info not found in forward List!!");
 		return;
 	}
+
+	positionToOffsetMap.clear();
+
 	setupPhrasePositionList(keywordStrToHighlight);
 	vector<matchedTermInfo> highlightPositions;
 	vector<CharType> ctsnippet;

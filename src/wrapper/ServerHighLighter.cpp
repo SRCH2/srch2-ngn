@@ -90,14 +90,14 @@ void ServerHighLighter::genSnippetsForSingleRecord(const QueryResults *qr, unsig
 						uncompressedInMemoryRecordString, attrSnippet.snippet,
 						storedAttrSchema->isSearchableAttributeMultiValued(id), keywordStrToHighlight);
         	}catch(const exception& ex) {
-        		Logger::warn("could not generate a snippet for an record/attr %d/%d", recordId, id);
+        		Logger::debug("could not generate a snippet for an record/attr %d/%d", recordId, id);
         	}
         	attrSnippet.FieldId = highlightAttributes[i].second;
         	if (attrSnippet.snippet.size() > 0)
         		recordSnippets.fieldSnippets.push_back(attrSnippet);
         }
         if (recordSnippets.fieldSnippets.size() == 0)
-        	Logger::error("could not generate a snippet because search keywords could not be found in any attribute of record!!");
+        	Logger::warn("could not generate a snippet because search keywords could not be found in any attribute of record!!");
 }
 
 ServerHighLighter::ServerHighLighter(QueryResults * queryResults,Srch2Server *server,
