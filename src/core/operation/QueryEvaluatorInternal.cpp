@@ -13,7 +13,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright © 2010 SRCH2 Inc. All rights reserved
+ * Copyright 2010 SRCH2 Inc. All rights reserved
  */
 
 #include "operation/QueryEvaluatorInternal.h"
@@ -316,9 +316,9 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
  */
 int QueryEvaluatorInternal::geoSearch(const Query *query, QueryResults *queryResults){
     this->indexer->rwMutexForWriter->lockRead(); // need to lock the mutex
-    this->indexData->rwMutexForIdReassign->lockRead(); // need to lock the mutex
+    this->indexData->globalRwMutexForReadersWriters->lockRead(); // need to lock the mutex
     int returnValue = this->searchMapQuery(query, queryResults);
-    this->indexData->rwMutexForIdReassign->unlockRead();
+    this->indexData->globalRwMutexForReadersWriters->unlockRead();
     this->indexer->rwMutexForWriter->unlockRead();
     return returnValue;
 }
@@ -327,10 +327,10 @@ int QueryEvaluatorInternal::geoSearch(const Query *query, QueryResults *queryRes
 void QueryEvaluatorInternal::geoSearch(const Circle &queryCircle, QueryResults *queryResults){
     QueryResultsInternal *queryResultsInternal = queryResults->impl;
     this->indexer->rwMutexForWriter->lockRead(); // need to lock the mutex
-    this->indexData->rwMutexForIdReassign->lockRead(); // need to lock the mutex
+    this->indexData->globalRwMutexForReadersWriters->lockRead(); // need to lock the mutex
     this->indexData->quadTree->rangeQueryWithoutKeywordInformation(queryCircle,queryResultsInternal);
     queryResultsInternal->finalizeResults(this->indexData->forwardIndex);
-    this->indexData->rwMutexForIdReassign->unlockRead();
+    this->indexData->globalRwMutexForReadersWriters->unlockRead();
     this->indexer->rwMutexForWriter->unlockRead();
 }
 
@@ -338,10 +338,10 @@ void QueryEvaluatorInternal::geoSearch(const Circle &queryCircle, QueryResults *
 void QueryEvaluatorInternal::geoSearch(const Rectangle &queryRectangle, QueryResults *queryResults){
     QueryResultsInternal *queryResultsInternal = queryResults->impl;
     this->indexer->rwMutexForWriter->lockRead(); // need to lock the mutex
-    this->indexData->rwMutexForIdReassign->lockRead(); // need to lock the mutex
+    this->indexData->globalRwMutexForReadersWriters->lockRead(); // need to lock the mutex
     this->indexData->quadTree->rangeQueryWithoutKeywordInformation(queryRectangle,queryResultsInternal);
     queryResultsInternal->finalizeResults(this->indexData->forwardIndex);
-    this->indexData->rwMutexForIdReassign->unlockRead();
+    this->indexData->globalRwMutexForReadersWriters->unlockRead();
     this->indexer->rwMutexForWriter->unlockRead();
 }
 

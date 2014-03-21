@@ -84,7 +84,7 @@ IndexData::IndexData(const string &directoryName,
     this->writeCounter = new WriteCounter();
     this->flagBulkLoadDone = false;
 
-    this->rwMutexForIdReassign = new ReadWriteMutex(100); // for locking, <= 100 threads
+    this->globalRwMutexForReadersWriters = new ReadWriteMutex(100); // for locking, <= 100 threads
     this->mergeRequired = true;
 }
 
@@ -137,7 +137,7 @@ IndexData::IndexData(const string& directoryName)
     	throw ex;
     }
 
-    this->rwMutexForIdReassign = new ReadWriteMutex(100); // for locking, <= 100 threads
+    this->globalRwMutexForReadersWriters = new ReadWriteMutex(100); // for locking, <= 100 threads
     this->mergeRequired = true;
 }
 
@@ -470,6 +470,11 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
     // cout << time << "-trie merge" << endl;
     
     this->forwardIndex->merge();
+    // free the space for deleted records.
+    // need the global lock to block other readers
+    this->globalRwMutexForReadersWriters->lockWrite();
+    this->forwardIndex->freeSpaceOfDeletedRecords();
+    this->globalRwMutexForReadersWriters->unlockWrite();
 
     if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
         this->invertedIndex->merge();
@@ -494,9 +499,9 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
     	// reassign id is not thread safe so we need to grab an exclusive lock
     	// NOTE : all index structure commits are happened before reassign id phase. Only QuadTree is left
     	//        because we need new ids in quadTree commit phase.
-        this->rwMutexForIdReassign->lockWrite(); // need locking to block other readers
+        this->globalRwMutexForReadersWriters->lockWrite(); // need locking to block other readers
         this->reassignKeywordIds();
-        this->rwMutexForIdReassign->unlockWrite();
+        this->globalRwMutexForReadersWriters->unlockWrite();
       
         // struct timespec tend;
         // clock_gettime(CLOCK_REALTIME, &tend);
@@ -647,6 +652,11 @@ void IndexData::_save(const string &directoryName) const
     //this->invertedIndex->print_test();
     if(this->forwardIndex->isMergeRequired()) {
         this->forwardIndex->merge();
+        // free the space for deleted records.
+        // need the global lock to block other readers
+        this->globalRwMutexForReadersWriters->lockWrite();
+        this->forwardIndex->freeSpaceOfDeletedRecords();
+        this->globalRwMutexForReadersWriters->unlockWrite();
     }
 
     try {
@@ -747,7 +757,7 @@ IndexData::~IndexData()
         delete this->quadTree;
 
     delete this->schemaInternal;
-    delete this->rwMutexForIdReassign;
+    delete this->globalRwMutexForReadersWriters;
     delete this->readCounter;
     delete this->writeCounter;
     delete this->rankerExpression;

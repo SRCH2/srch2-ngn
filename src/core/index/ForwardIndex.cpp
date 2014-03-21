@@ -236,6 +236,21 @@ void ForwardIndex::merge()
     }
 }
 
+void ForwardIndex::freeSpaceOfDeletedRecords() {
+  vectorview<ForwardListPtr> *writeView = this->forwardListDirectory->getWriteView();
+  for(boost::unordered_set<unsigned>::iterator iter = this->deletedRecordInternalIds.begin();
+      iter != this->deletedRecordInternalIds.end(); ++ iter) {
+        unsigned internalRecordId = *iter;
+        // free the memory if it's no longer valid
+        ASSERT(writeView->at(internalRecordId).second == false);
+        ASSERT(writeView->at(internalRecordId).first != NULL);
+        delete writeView->at(internalRecordId).first;
+        writeView->at(internalRecordId).first = NULL;
+    }
+  // clear the set
+  this->deletedRecordInternalIds.clear();
+}
+
 void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
         KeywordIdKeywordStringInvertedListIdTriple &uniqueKeywordIdList,
         map<string, TokenAttributeHits> &tokenAttributeHitsMap) {

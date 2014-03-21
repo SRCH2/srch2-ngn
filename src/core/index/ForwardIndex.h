@@ -633,24 +633,10 @@ public:
     bool isMergeRequired() const { return mergeRequired; }
 
     // Free the space of those forward lists that have been marked deleted
-    void freeSpaceOfDeletedRecords() {
-      // TODO: deal with thread safety
-
-      vectorview<ForwardListPtr> *writeView = this->forwardListDirectory->getWriteView();
-
-      for(boost::unordered_set<unsigned>::iterator iter = this->deletedRecordInternalIds.begin();
-          iter != this->deletedRecordInternalIds.end(); ++ iter) {
-            unsigned internalRecordId = *iter;
-            // free the memory if it's no longer valid
-            ASSERT(writeView->at(internalRecordId).second == false);
-            ASSERT(writeView->at(internalRecordId).first != NULL);
-            delete writeView->at(internalRecordId).first;
-            writeView->at(internalRecordId).first = NULL;
-        }
-      // clear the set
-      this->deletedRecordInternalIds.clear();
-    }
-
+    // The caller must acquire the necessary lock to make sure
+    // no readers can access the forward index since some of
+    // its forward lists are being freed.
+    void freeSpaceOfDeletedRecords();
     void setSchema(SchemaInternal *schema) {
         this->schemaInternal = schema;
     }
