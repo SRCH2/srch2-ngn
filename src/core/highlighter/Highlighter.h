@@ -118,7 +118,7 @@ protected:
 	void validatePhrasePositions(vector<matchedTermInfo>& highlightPositions);
 	void clearPhraseInfoList() {
 		for (unsigned i = 0; i < phrasesInfoList.size(); ++i) {
-			for (unsigned j = 0; j < phrasesInfoList.size(); ++j)  {
+			for (unsigned j = 0; j < phrasesInfoList[i].phraseKeyWords.size(); ++j)  {
 				// No need to check for NULL pointer. delete is NULL safe.
 				delete phrasesInfoList[i].phraseKeyWords[j].recordPosition;
 				phrasesInfoList[i].phraseKeyWords[j].recordPosition = NULL;
