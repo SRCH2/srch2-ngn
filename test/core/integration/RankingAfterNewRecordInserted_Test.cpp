@@ -39,7 +39,7 @@ void buildIndex(string data_file, string index_dir)
                                       srch2is::STANDARD_ANALYZER);
 
     /// Create an index writer
-    unsigned mergeEveryNSeconds = 3;
+    unsigned mergeEveryNSeconds = 2;
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -161,7 +161,7 @@ void updateIndex(string data_file, Indexer *index)
 
     cout << "#New Docs Inserted:" << docsCounter << endl;
 
-    sleep(11);
+    sleep(4);
     cout << "Index updated." << endl;
 
     data.close();
@@ -242,7 +242,7 @@ int main(int argc, char **argv)
 
     buildIndex(init_data_file, index_dir);
 
-    unsigned mergeEveryNSeconds = 10;
+    unsigned mergeEveryNSeconds = 2;
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;

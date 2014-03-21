@@ -58,7 +58,7 @@ void addSimpleRecords()
 
     Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
     
-    unsigned mergeEveryNSeconds = 3;    
+    unsigned mergeEveryNSeconds = 2;    
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -114,7 +114,7 @@ void addAdvancedRecordsWithScoreSortableAttributes()
     Record *record = new Record(schema);
 
     Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
-    unsigned mergeEveryNSeconds = 3;    
+    unsigned mergeEveryNSeconds = 2;    
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -167,7 +167,7 @@ void test1()
 {
     addSimpleRecords();
     // create an index searcher
-    unsigned mergeEveryNSeconds = 3;    
+    unsigned mergeEveryNSeconds = 2;    
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -265,7 +265,7 @@ void test1()
 void test2()
 {
     // create an index searcher
-    unsigned mergeEveryNSeconds = 3;    
+    unsigned mergeEveryNSeconds = 2;    
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -355,7 +355,7 @@ void test2()
 void test3()
 {
     // create an index searcher
-    unsigned mergeEveryNSeconds = 3;    
+    unsigned mergeEveryNSeconds = 2;    
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -437,7 +437,7 @@ void test3()
 void test4()
 {
     // create an index searcher
-    unsigned mergeEveryNSeconds = 3;    
+    unsigned mergeEveryNSeconds = 1;    
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -497,7 +497,7 @@ void test4()
 void test5()
 {
     // create an index searcher
-    unsigned mergeEveryNSeconds = 3;    
+    unsigned mergeEveryNSeconds = 2;    
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -562,7 +562,7 @@ void test5()
 void test6()
 {
     // create an index searcher
-    unsigned mergeEveryNSeconds = 3;    
+    unsigned mergeEveryNSeconds = 2;    
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -613,7 +613,7 @@ void test7()
 
     /*
     // create an index searcher
-    unsigned mergeEveryNSeconds = 3;    
+    unsigned mergeEveryNSeconds = 2;    
     unsigned mergeEveryMWrites = 5;
     IndexMetaData *indexMetaData1 = new IndexMetaData( new CacheManager(), mergeEveryNSeconds, mergeEveryMWrites, INDEX_DIR, "", "");
            
@@ -672,7 +672,7 @@ void test7()
 void test8()
 {
     // create an index searcher
-    unsigned mergeEveryNSeconds = 3;    
+    unsigned mergeEveryNSeconds = 2;    
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -756,7 +756,7 @@ void test9()
     addAdvancedRecordsWithScoreSortableAttributes();
 
     // create an index searcher
-    unsigned mergeEveryNSeconds = 3;    
+    unsigned mergeEveryNSeconds = 2;    
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -838,7 +838,7 @@ void test9()
 void test10()
 {
     // create an index searcher
-    unsigned mergeEveryNSeconds = 3;    
+    unsigned mergeEveryNSeconds = 2;    
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -942,7 +942,7 @@ void test11()
 
     Record *record = new Record(schema);
     Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
-    unsigned mergeEveryNSeconds = 3;    
+    unsigned mergeEveryNSeconds = 2;    
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
