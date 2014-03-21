@@ -41,6 +41,7 @@ public:
 	~PhraseSearchOperator();
 	PhraseSearchOperator(const PhraseInfo& phraseSearchInfo) ;
 private:
+	bool phraseErr;
 	PhraseInfo phraseSearchInfo;
 	QueryEvaluatorInternal * queryEvaluatorInternal;
 	// match phrase on attributes. do OR or AND logic depending upon the 32 bit of attributeBitMap

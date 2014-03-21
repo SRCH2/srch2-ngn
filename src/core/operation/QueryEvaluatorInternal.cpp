@@ -307,6 +307,11 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		delete facetOperatorPtr;
 	}
 
+	if (sortOperator) {
+		delete sortOperator->getPhysicalPlanOptimizationNode();
+		delete sortOperator;
+	}
+
 	return queryResults->impl->sortedFinalResults.size();
 
 }

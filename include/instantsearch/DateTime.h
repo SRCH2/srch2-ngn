@@ -46,7 +46,7 @@ public:
 	boost::gregorian::months monthDuration;
 	boost::gregorian::years yearDuration;
 
-	TimeDuration():monthDuration(0),yearDuration(0){}
+        TimeDuration(): dayWeekDuration(0), monthDuration(0),yearDuration(0){}
 
 	boost::posix_time::ptime operator+(const boost::posix_time::ptime & pTime) const;
 	long operator+(const long pTime) const;
