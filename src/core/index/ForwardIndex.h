@@ -679,7 +679,7 @@ public:
             float &matchingKeywordRecordStaticScore, bool &isStemmed) const;
 
     // return FORWARDLIST_NOTVALID if the forward is not valid (e.g., already deleted)
-    unsigned getKeywordOffsetForwardIndex(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+    unsigned getKeywordOffset(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
     		unsigned forwardListId, unsigned keywordId) const;
 
     /*****-record-id-converter*****/

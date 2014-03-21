@@ -81,7 +81,6 @@ struct IndexHealthInfo
         //returnString << "\"last_insert\":\"" << lastWriteTimeString << "\"";
         //returnString << ",\"last_merge\":\"" << lastMergeTimeString << "\"";
         returnString << "\"last_merge\":\"" << lastMergeTimeString << "\"";
-//        returnString << ",\"last_merge_time\":\"" << lastMergeTime << "\"";
         returnString << ",\"doc_count\":\"" << doc_count << "\"";
         return returnString.str();
     }

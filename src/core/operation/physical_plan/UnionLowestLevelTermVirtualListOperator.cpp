@@ -146,7 +146,7 @@ PhysicalPlanRecordItem * UnionLowestLevelTermVirtualListOperator::getNext(const 
 
             unsigned recordId = currentHeapMaxInvertedList->getElement(currentHeapMaxCursor);
             // calculate record offset online
-            unsigned keywordOffset = this->invertedIndex->getKeywordOffsetInvertedIndex(
+            unsigned keywordOffset = this->invertedIndex->getKeywordOffset(
             		this->forwardIndexDirectoryReadView,
             		this->invertedIndexKeywordIdsReadView,
             		recordId, currentHeapMaxInvertetedListId);
@@ -305,7 +305,7 @@ void UnionLowestLevelTermVirtualListOperator::initialiseTermVirtualListElement(T
     		invertedListId, invertedListReadView);
     unsigned recordId = invertedListReadView->getElement(invertedListCounter);
     // calculate record offset online
-    unsigned keywordOffset = this->invertedIndex->getKeywordOffsetInvertedIndex(this->forwardIndexDirectoryReadView,
+    unsigned keywordOffset = this->invertedIndex->getKeywordOffset(this->forwardIndexDirectoryReadView,
     		this->invertedIndexKeywordIdsReadView, recordId, invertedListId);
     ++ invertedListCounter;
 
@@ -327,7 +327,7 @@ void UnionLowestLevelTermVirtualListOperator::initialiseTermVirtualListElement(T
         if (invertedListCounter < invertedListReadView->size()) {
             recordId = invertedListReadView->getElement(invertedListCounter);
             // calculate record offset online
-            keywordOffset = this->invertedIndex->getKeywordOffsetInvertedIndex(this->forwardIndexDirectoryReadView,
+            keywordOffset = this->invertedIndex->getKeywordOffset(this->forwardIndexDirectoryReadView,
             		this->invertedIndexKeywordIdsReadView, recordId, invertedListId);
             ++invertedListCounter;
         } else {

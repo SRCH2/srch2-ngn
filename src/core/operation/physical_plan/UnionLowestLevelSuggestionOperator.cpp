@@ -48,7 +48,7 @@ PhysicalPlanRecordItem * UnionLowestLevelSuggestionOperator::getNext(const Physi
     while(true){
         if(invertedListCursor < invertedListReadView->size()){
             unsigned recordId = invertedListReadView->getElement(invertedListCursor++);
-            unsigned keywordOffset = queryEvaluatorIntrnal->getInvertedIndex()->getKeywordOffsetInvertedIndex(
+            unsigned keywordOffset = queryEvaluatorIntrnal->getInvertedIndex()->getKeywordOffset(
                     this->forwardIndexDirectoryReadView,
                     this->invertedIndexKeywordIdsReadView,
                     recordId, suggestionPairs[suggestionPairCursor].suggestedCompleteTermNode->getInvertedListOffset());

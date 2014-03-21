@@ -1193,7 +1193,7 @@ bool ForwardIndex::getInternalRecordIdFromExternalRecordId(
 
 }
 
-unsigned ForwardIndex::getKeywordOffsetForwardIndex(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+unsigned ForwardIndex::getKeywordOffset(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
 		unsigned forwardListId,
         unsigned keywordId) const {
     bool valid = false;

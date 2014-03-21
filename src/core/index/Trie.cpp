@@ -1319,7 +1319,7 @@ void Trie::calculateNodeHistogramValuesFromChildren(TrieNode *node,
 				unsigned recordId = invertedListReadView->getElement(invertedListCursor++);
 				// check if the record is valid
 				// forwardIndexDirectoryReadView
-				unsigned keywordOffset = invertedIndex->getKeywordOffsetInvertedIndex(forwardIndexDirectoryReadView,
+				unsigned keywordOffset = invertedIndex->getKeywordOffset(forwardIndexDirectoryReadView,
 						invertedIndexKeywordIdsReadView, recordId, node->getInvertedListOffset());
 
 				// if the record is not valid (e.g., deleted), ignore it.

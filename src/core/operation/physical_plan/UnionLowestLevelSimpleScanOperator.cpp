@@ -100,7 +100,7 @@ PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const Physi
     unsigned recordID = this->invertedLists.at(this->invertedListOffset)->at(this->cursorOnInvertedList);
 
     unsigned keywordOffset =
-            this->queryEvaluator->getInvertedIndex()->getKeywordOffsetInvertedIndex(this->forwardIndexDirectoryReadView,
+            this->queryEvaluator->getInvertedIndex()->getKeywordOffset(this->forwardIndexDirectoryReadView,
                     this->invertedIndexKeywordIdsReadView,
                     recordID, this->invertedListIDs.at(this->invertedListOffset));
 
@@ -123,7 +123,7 @@ PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const Physi
             recordID = this->invertedLists.at(this->invertedListOffset)->at(this->cursorOnInvertedList);
             // calculate record offset online
             keywordOffset =
-                        this->queryEvaluator->getInvertedIndex()->getKeywordOffsetInvertedIndex(this->forwardIndexDirectoryReadView,
+                        this->queryEvaluator->getInvertedIndex()->getKeywordOffset(this->forwardIndexDirectoryReadView,
                                 this->invertedIndexKeywordIdsReadView,
                                 recordID, this->invertedListIDs.at(this->invertedListOffset));
         } else {
@@ -133,7 +133,7 @@ PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const Physi
                 recordID = this->invertedLists.at(this->invertedListOffset)->at(this->cursorOnInvertedList);
                 // calculate record offset online
                 keywordOffset =
-                            this->queryEvaluator->getInvertedIndex()->getKeywordOffsetInvertedIndex(this->forwardIndexDirectoryReadView,
+                            this->queryEvaluator->getInvertedIndex()->getKeywordOffset(this->forwardIndexDirectoryReadView,
                                     this->invertedIndexKeywordIdsReadView,
                                     recordID, this->invertedListIDs.at(this->invertedListOffset));
             }else{
