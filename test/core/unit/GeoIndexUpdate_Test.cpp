@@ -17,7 +17,7 @@
 using namespace std;
 using namespace srch2::instantsearch;
 
-const unsigned mergeEveryNSeconds = 10;
+const unsigned mergeEveryNSeconds = 2;
 const unsigned mergeEveryMWrites = 5;
 const unsigned updateHistogramEveryPMerges = 1;
 const unsigned updateHistogramEveryQWrites = 5;

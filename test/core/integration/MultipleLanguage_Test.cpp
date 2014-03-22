@@ -39,7 +39,7 @@ void addSimpleChineseRecords() {
 
 	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -192,7 +192,7 @@ void addSimpleChineseRecords() {
 void testSimpleChinese() {
 	addSimpleChineseRecords();
 	// create an index searcher
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -436,7 +436,7 @@ void addSimpleZhuyinRecords() {
 
 	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -589,7 +589,7 @@ void addSimpleZhuyinRecords() {
 void testSimpleZhuyin() {
 	addSimpleZhuyinRecords();
 	// create an index searcher
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -837,7 +837,7 @@ void addJapaneseRecords() {
 
 	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -957,7 +957,7 @@ void addJapaneseRecords() {
 void testJapanese() {
 	addJapaneseRecords();
 	// create an index searcher
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -1148,7 +1148,7 @@ void addFrenchRecords() {
 
 	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -1253,7 +1253,7 @@ void addFrenchRecords() {
 void testFrench() {
 	addFrenchRecords();
 	// create an index searcher
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -1424,7 +1424,7 @@ void addTranditionalChineseRecords() {
 
 	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -1501,7 +1501,7 @@ void addTranditionalChineseRecords() {
 void testTranditionalChinese() {
 	addTranditionalChineseRecords();
 	// create an index searcher
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -1575,7 +1575,7 @@ void addBulgarianRecords() {
 
 	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -1655,7 +1655,7 @@ void addBulgarianRecords() {
 void testBulgarian() {
 	addBulgarianRecords();
 	// create an index searcher
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -1712,7 +1712,7 @@ void addPinyinChineseRecords() {
 
 	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -1791,7 +1791,7 @@ void addPinyinChineseRecords() {
 void testPinyinChinese() {
 	addPinyinChineseRecords();
 	// create an index searcher
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -1880,7 +1880,7 @@ void addZhuyinChineseRecords() {
 
 	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -1960,7 +1960,7 @@ void addZhuyinChineseRecords() {
 void testZhuyinChinese() {
 	addZhuyinChineseRecords();
 	// create an index searcher
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -2055,7 +2055,7 @@ void addCroatianRecords() {
 
 	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -2134,7 +2134,7 @@ void addCroatianRecords() {
 void testCroatian() {
 	addCroatianRecords();
 	// create an index searcher
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -2207,7 +2207,7 @@ void addCzechRecords() {
 
 	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -2288,7 +2288,7 @@ void addCzechRecords() {
 void testCzech() {
 	addCzechRecords();
 	// create an index searcher
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -2361,7 +2361,7 @@ void addDanishRecords() {
 
 	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -2441,7 +2441,7 @@ void addDanishRecords() {
 void testDanish() {
 	addDanishRecords();
 	// create an index searcher
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -2513,7 +2513,7 @@ void addDutchRecords() {
 
 	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -2593,7 +2593,7 @@ void addDutchRecords() {
 void testDutch() {
 	addDutchRecords();
 	// create an index searcher
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -2664,7 +2664,7 @@ void addEstonianRecords() {
 
 	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -2743,7 +2743,7 @@ void addEstonianRecords() {
 void testEstonian() {
 	addEstonianRecords();
 	// create an index searcher
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -2800,7 +2800,7 @@ void addFinnishRecords() {
 
 	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -2879,7 +2879,7 @@ void addFinnishRecords() {
 void testFinnish() {
 	addFinnishRecords();
 	// create an index searcher
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -2952,7 +2952,7 @@ void addGermanRecords() {
 
 	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -3032,7 +3032,7 @@ void addGermanRecords() {
 void testGerman() {
 	addGermanRecords();
 	// create an index searcher
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -3104,7 +3104,7 @@ void addGreekRecords() {
 
 	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -3184,7 +3184,7 @@ void addGreekRecords() {
 void testGreek() {
 	addGreekRecords();
 	// create an index searcher
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -3249,7 +3249,7 @@ void addHungarianRecords() {
 
 	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -3328,7 +3328,7 @@ void addHungarianRecords() {
 void testHungarian() {
 	addHungarianRecords();
 	// create an index searcher
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -3401,7 +3401,7 @@ void addIndonesiaRecords() {
 
 	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -3479,7 +3479,7 @@ void addIndonesiaRecords() {
 void testIndonesia() {
 	addIndonesiaRecords();
 	// create an index searcher
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -3537,7 +3537,7 @@ void addItalianRecords() {
 
 	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -3614,7 +3614,7 @@ void addItalianRecords() {
 void testItalian() {
 	addItalianRecords();
 	// create an index searcher
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -3685,7 +3685,7 @@ void addKoreanRecords() {
 
 	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -3762,7 +3762,7 @@ void addKoreanRecords() {
 void testKorean() {
 	addKoreanRecords();
 	// create an index searcher
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -3831,7 +3831,7 @@ void addLatvianRecords() {
 
 	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -3909,7 +3909,7 @@ void addLatvianRecords() {
 void testLatvian() {
 	addLatvianRecords();
 	// create an index searcher
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -3964,7 +3964,7 @@ void addLithuanianRecords() {
 
 	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -4042,7 +4042,7 @@ void addLithuanianRecords() {
 void testLithuanian() {
 	addLithuanianRecords();
 	// create an index searcher
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -4098,7 +4098,7 @@ void addNorwegianRecords() {
 
 	Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -4176,7 +4176,7 @@ void addNorwegianRecords() {
 void testNorwegian() {
 	addNorwegianRecords();
 	// create an index searcher
-	unsigned mergeEveryNSeconds = 3;
+	unsigned mergeEveryNSeconds = 2;
 	unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
