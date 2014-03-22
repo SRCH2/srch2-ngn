@@ -62,10 +62,11 @@ bool SortByRefiningAttributeOperator::open(QueryEvaluatorInternal * queryEvaluat
     	if(nextRecord == NULL){
     		break;
     	}
-    	results.push_back(nextRecord);
     	bool isValid = false;
 		const ForwardList * list = forwardIndex->getForwardList(readView, nextRecord->getRecordId(), isValid);
-		ASSERT(isValid);
+		if (!isValid) // ignore the record if it's already deleted
+                   continue;
+    	results.push_back(nextRecord);
 		const Byte * refiningAttributesData =
 				list->getRefiningAttributeContainerData();
 		// now parse the values by VariableLengthAttributeContainer
