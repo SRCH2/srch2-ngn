@@ -71,7 +71,7 @@ PhysicalPlanRecordItem * PhraseSearchOperator::getNext(const PhysicalPlanExecuti
 		}
         bool isValid = false;
         const ForwardList* forwardListPtr = forwardIndex->getForwardList(readView, nextRecord->getRecordId(), isValid);
-        if (false == isValid){
+        if (false == isValid){ // ignore this record if it's already deleted
         	continue;
         }
         if (matchPhrase(forwardListPtr, this->phraseSearchInfo)){
