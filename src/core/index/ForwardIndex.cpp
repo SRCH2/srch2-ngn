@@ -232,7 +232,6 @@ void ForwardIndex::merge()
         this->forwardListDirectory->merge();
         // writeView->forceCreateCopy();
         this->mergeRequired = false;
-        this->freeSpaceOfDeletedRecords();
     }
 }
 
