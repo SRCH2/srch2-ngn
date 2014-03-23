@@ -224,6 +224,7 @@ void AnalyzerBasedAlgorithm::getSnippet(const QueryResults* /*not used*/, unsign
 						keywordStrToHighlight[i].key.size(), 0};
 				if (keywordStrToHighlight[i].editDistance > 0)
 					info.tagIndex = 1;
+				ASSERT(charOffset < 1000000); // CHEN: try to catch a bug
 			 	highlightPositions.push_back(info);
 			 	if (keywordStrToHighlight[i].flag == HIGHLIGHT_KEYWORD_IS_PHRASE
 			 			|| keywordStrToHighlight[i].flag == HIGHLIGHT_KEYWORD_IS_HYBRID) {
