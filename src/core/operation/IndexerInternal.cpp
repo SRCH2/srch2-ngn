@@ -14,7 +14,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright © 2010 SRCH2 Inc. All rights reserved
+ * Copyright 2010 SRCH2 Inc. All rights reserved
  */
 
 
@@ -211,7 +211,7 @@ INDEXWRITE_RETVAL IndexReaderWriter::merge(bool updateHistogram)
     clock_gettime(CLOCK_REALTIME, &tend);
     unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
 
-    indexHealthInfo.notifyMerge(time,  this->index->_getNumberOfDocumentsInIndex());
+    indexHealthInfo.getLatestHealthInfo(this->index->_getNumberOfDocumentsInIndex());
     return returnValue;
 }
 

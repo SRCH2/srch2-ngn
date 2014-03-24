@@ -76,14 +76,16 @@ void ServerHighLighter::genSnippetsForSingleRecord(const QueryResults *qr, unsig
 		buildKeywordHighlightInfo(qr, recIdx, keywordStrToHighlight);
 
         StoredRecordBuffer buffer =  server->indexer->getInMemoryData(recordId);
+        if (buffer.start.get() == NULL)
+        	return;
         const vector<std::pair<unsigned, string> >&highlightAttributes = server->indexDataConfig->getHighlightAttributeIdsVector();
         for (unsigned i = 0 ; i < highlightAttributes.size(); ++i) {
     		AttributeSnippet attrSnippet;
         	unsigned id = highlightAttributes[i].first;
         	unsigned lenOffset = compactRecDeserializer->getSearchableOffset(id);
-        	const char *attrdata = buffer.start + *((unsigned *)(buffer.start + lenOffset));
-        	unsigned len = *(((unsigned *)(buffer.start + lenOffset)) + 1) -
-        			*((unsigned *)(buffer.start + lenOffset));
+        	const char *attrdata = buffer.start.get() + *((unsigned *)(buffer.start.get() + lenOffset));
+        	unsigned len = *(((unsigned *)(buffer.start.get() + lenOffset)) + 1) -
+        			*((unsigned *)(buffer.start.get() + lenOffset));
         	snappy::Uncompress(attrdata,len, &uncompressedInMemoryRecordString);
         	try{
 				this->highlightAlgorithms->getSnippet(qr, recIdx, highlightAttributes[i].first,

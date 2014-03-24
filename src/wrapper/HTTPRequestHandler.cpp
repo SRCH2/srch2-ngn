@@ -164,7 +164,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
 
     // For logging
     string logQueries;
-
+    unsigned resultFound = retrievedResults;
     root["searcher_time"] = ts1;
     clock_gettime(CLOCK_REALTIME, &tstart);
 
@@ -175,22 +175,26 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
                 && query->getQueryTerms()->empty()) //check if the query type is range query without keywords
         {
             for (unsigned i = start; i < end; ++i) {
+            	unsigned internalRecordId = queryResults->getInternalRecordId(i);
+            	StoredRecordBuffer inMemoryData = indexer->getInMemoryData(internalRecordId);
+            	if (inMemoryData.start.get() == NULL) {
+            		--resultFound;
+            		continue;
+            	}
                 root["results"][counter]["record_id"] = queryResults->getRecordId(
                         i);
                 root["results"][counter]["score"] = (0
                         - queryResults->getResultScore(i).getFloatTypedValue()); //the actual distance between the point of record and the center point of the range
                 if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_STORED_ATTR){
-                    unsigned internalRecordId = queryResults->getInternalRecordId(i);
                     string sbuffer;
-                    genRecordJsonString(indexer, internalRecordId, queryResults->getRecordId(i), sbuffer);
+                    genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i), sbuffer);
                     // The class CustomizableJsonWriter allows us to
                     // attach the data string to the JSON tree without parsing it.
                     root["results"][counter][internalRecordTags.first] = sbuffer;
                 } else if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SELECTED_ATTR){
-                	unsigned internalRecordId = queryResults->getInternalRecordId(i);
                 	string sbuffer;
                 	const vector<string> *attrToReturn = indexDataConfig->getAttributesToReturn();
-                	genRecordJsonString(indexer, internalRecordId, queryResults->getRecordId(i),
+                	genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
                 			sbuffer, attrToReturn);
                 	// The class CustomizableJsonWriter allows us to
                 	// attach the data string to the JSON tree without parsing it.
@@ -203,6 +207,12 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
         {
 
             for (unsigned i = start; i < end; ++i) {
+            	unsigned internalRecordId = queryResults->getInternalRecordId(i);
+            	StoredRecordBuffer inMemoryData = indexer->getInMemoryData(internalRecordId);
+            	if (inMemoryData.start.get() == NULL) {
+            		--resultFound;
+            		continue;
+            	}
                 root["results"][counter]["record_id"] = queryResults->getRecordId(i);
                 root["results"][counter]["score"] = queryResults->getResultScore(i)
                         .getFloatTypedValue();
@@ -229,7 +239,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
                 if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_STORED_ATTR) {
                     unsigned internalRecordId = queryResults->getInternalRecordId(i);
                     string sbuffer;
-                    genRecordJsonString(indexer, internalRecordId, queryResults->getRecordId(i),
+                    genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
                     		 sbuffer);
                     // The class CustomizableJsonWriter allows us to
                     // attach the data string to the JSON tree without parsing it.
@@ -238,7 +248,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
                 	unsigned internalRecordId = queryResults->getInternalRecordId(i);
                 	string sbuffer;
                 	const vector<string> *attrToReturn = indexDataConfig->getAttributesToReturn();
-                	genRecordJsonString(indexer, internalRecordId, queryResults->getRecordId(i),
+                	genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
                 			sbuffer, attrToReturn);
                 	// The class CustomizableJsonWriter allows us to
                 	// attach the data string to the JSON tree without parsing it.
@@ -305,13 +315,13 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
 //    if (queryPlan.getSearchType() == GetAllResultsSearchType
 //            || queryPlan.getSearchType() == GeoSearchType) // facet output must be added here.
 //                    {
-    root["results_found"] = retrievedResults;
+    root["results_found"] = resultFound;
 
     long int estimatedNumberOfResults = queryResults->getEstimatedNumberOfResults();
     // Since estimation of number of results can return a wrong number, if this value is less
     // than the actual number of found results, we use the real number.
-    if(estimatedNumberOfResults < (long int)retrievedResults){
-    	estimatedNumberOfResults = (long int)retrievedResults;
+    if(estimatedNumberOfResults < (long int)resultFound){
+    	estimatedNumberOfResults = (long int)resultFound;
     }
     if(estimatedNumberOfResults != -1){
         // at this point we know for sure that estimatedNumberOfResults is positive, so we can cast
@@ -415,20 +425,26 @@ void HTTPRequestHandler::printOneResultRetrievedById(evhttp_request *req, const 
     clock_gettime(CLOCK_REALTIME, &tstart);
     unsigned counter = 0;
 
+    unsigned resultFound = queryResults->getNumberOfResults();
     for (unsigned i = 0; i < queryResults->getNumberOfResults(); ++i) {
-
+    	unsigned internalRecordId = queryResults->getInternalRecordId(i);
+    	StoredRecordBuffer inMemoryData = indexer->getInMemoryData(internalRecordId);
+    	if (inMemoryData.start.get() == NULL) {
+    		--resultFound;
+    		continue;
+    	}
         root["results"][counter]["record_id"] = queryResults->getRecordId(i);
 
         if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_STORED_ATTR) {
             unsigned internalRecordId = queryResults->getInternalRecordId(i);
             string sbuffer;
-            genRecordJsonString(indexer, internalRecordId, queryResults->getRecordId(i), sbuffer);
+            genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i), sbuffer);
             root["results"][counter][internalRecordTags.first] = sbuffer;
         } else if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SELECTED_ATTR){
         	unsigned internalRecordId = queryResults->getInternalRecordId(i);
         	string sbuffer;
         	const vector<string> *attrToReturn = indexDataConfig->getAttributesToReturn();
-        	genRecordJsonString(indexer, internalRecordId, queryResults->getRecordId(i),
+        	genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
         			sbuffer, attrToReturn);
         	// The class CustomizableJsonWriter allows us to
         	// attach the data string to the JSON tree without parsing it.
@@ -445,7 +461,7 @@ void HTTPRequestHandler::printOneResultRetrievedById(evhttp_request *req, const 
     // return some meta data
 
     root["type"] = queryPlan.getQueryType();
-    root["results_found"] = queryResults->getNumberOfResults();
+    root["results_found"] = resultFound;
 
     root["message"] = message;
     Logger::info(
@@ -454,15 +470,13 @@ void HTTPRequestHandler::printOneResultRetrievedById(evhttp_request *req, const 
     bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", writer.write(root), headers);
 }
 
-void HTTPRequestHandler::genRecordJsonString(const srch2is::Indexer *indexer, unsigned internalRecordId,
+void HTTPRequestHandler::genRecordJsonString(const srch2is::Indexer *indexer, StoredRecordBuffer buffer,
 		const string& extrnalRecordId, string& sbuffer){
-	genRecordJsonString(indexer, internalRecordId, extrnalRecordId,
+	genRecordJsonString(indexer, buffer, extrnalRecordId,
 	                    		 sbuffer, NULL);
 }
-void HTTPRequestHandler::genRecordJsonString(const srch2is::Indexer *indexer, unsigned internalRecordId,
+void HTTPRequestHandler::genRecordJsonString(const srch2is::Indexer *indexer, StoredRecordBuffer buffer,
 		const string& externalRecordId, string& sbuffer, const vector<string>* attrToReturn){
-
-	StoredRecordBuffer buffer =  indexer->getInMemoryData(internalRecordId);
 	Schema * storedSchema = Schema::create();
 	RecordSerializerUtil::populateStoredSchema(storedSchema, indexer->getSchema());
 	RecordSerializerUtil::convertCompactToJSONString(storedSchema, buffer, externalRecordId, sbuffer, attrToReturn);

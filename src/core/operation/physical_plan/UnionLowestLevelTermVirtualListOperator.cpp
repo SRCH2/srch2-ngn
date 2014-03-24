@@ -146,7 +146,7 @@ PhysicalPlanRecordItem * UnionLowestLevelTermVirtualListOperator::getNext(const 
 
             unsigned recordId = currentHeapMaxInvertedList->getElement(currentHeapMaxCursor);
             // calculate record offset online
-            unsigned recordOffset = this->invertedIndex->getKeywordOffset(
+            unsigned keywordOffset = this->invertedIndex->getKeywordOffset(
             		this->forwardIndexDirectoryReadView,
             		this->invertedIndexKeywordIdsReadView,
             		recordId, currentHeapMaxInvertetedListId);
@@ -155,9 +155,12 @@ PhysicalPlanRecordItem * UnionLowestLevelTermVirtualListOperator::getNext(const 
 
             // check isValidTermPositionHit
             float termRecordStaticScore = 0;
-            if (this->invertedIndex->isValidTermPositionHit(forwardIndexDirectoryReadView,
-            		recordId,
-            		recordOffset,
+
+            // We check the record only if it's valid
+            if (keywordOffset != FORWARDLIST_NOTVALID &&
+                this->invertedIndex->isValidTermPositionHit(forwardIndexDirectoryReadView,
+                    recordId,
+                    keywordOffset,
                     term->getAttributeToFilterTermHits(), termAttributeBitmap,
                     termRecordStaticScore)) {
                 foundValidHit = 1;
@@ -173,7 +176,7 @@ PhysicalPlanRecordItem * UnionLowestLevelTermVirtualListOperator::getNext(const 
                             this->prefixMatchPenalty , term->getSimilarityBoost())/*added by Jamshid*/*term->getBoost();
                 currentHeapMax->termRecordStaticScore = termRecordStaticScore;
                 currentHeapMax->attributeBitMap = termAttributeBitmap;
-                currentHeapMax->positionIndexOffset = recordOffset;
+                currentHeapMax->positionIndexOffset = keywordOffset;
                 push_heap(itemsHeap.begin(), itemsHeap.begin()+this->numberOfItemsInPartialHeap,
                           UnionLowestLevelTermVirtualListOperator::UnionLowestLevelTermVirtualListOperatorHeapItemCmp());
                 break;
@@ -302,7 +305,7 @@ void UnionLowestLevelTermVirtualListOperator::initialiseTermVirtualListElement(T
     		invertedListId, invertedListReadView);
     unsigned recordId = invertedListReadView->getElement(invertedListCounter);
     // calculate record offset online
-    unsigned recordOffset = this->invertedIndex->getKeywordOffset(this->forwardIndexDirectoryReadView,
+    unsigned keywordOffset = this->invertedIndex->getKeywordOffset(this->forwardIndexDirectoryReadView,
     		this->invertedIndexKeywordIdsReadView, recordId, invertedListId);
     ++ invertedListCounter;
 
@@ -310,9 +313,11 @@ void UnionLowestLevelTermVirtualListOperator::initialiseTermVirtualListElement(T
     float termRecordStaticScore = 0;
     unsigned termAttributeBitmap = 0;
     while (1) {
-        if (this->invertedIndex->isValidTermPositionHit(forwardIndexDirectoryReadView,
-        		recordId,
-        		recordOffset,
+        // We check the record only if it's valid
+        if (keywordOffset != FORWARDLIST_NOTVALID &&
+            this->invertedIndex->isValidTermPositionHit(forwardIndexDirectoryReadView,
+                recordId,
+                keywordOffset,
                 term->getAttributeToFilterTermHits(), termAttributeBitmap,
                 termRecordStaticScore) ) {
             foundValidHit = 1;
@@ -322,7 +327,7 @@ void UnionLowestLevelTermVirtualListOperator::initialiseTermVirtualListElement(T
         if (invertedListCounter < invertedListReadView->size()) {
             recordId = invertedListReadView->getElement(invertedListCounter);
             // calculate record offset online
-            recordOffset = this->invertedIndex->getKeywordOffset(this->forwardIndexDirectoryReadView,
+            keywordOffset = this->invertedIndex->getKeywordOffset(this->forwardIndexDirectoryReadView,
             		this->invertedIndexKeywordIdsReadView, recordId, invertedListId);
             ++invertedListCounter;
         } else {
@@ -330,7 +335,7 @@ void UnionLowestLevelTermVirtualListOperator::initialiseTermVirtualListElement(T
         }
     }
 
-    if (foundValidHit == 1) {
+    if (keywordOffset != FORWARDLIST_NOTVALID && foundValidHit == 1) {
         this->numberOfItemsInPartialHeap ++; // increment partialHeap counter
 
         if (this->numberOfItemsInPartialHeap == 0)
@@ -347,7 +352,7 @@ void UnionLowestLevelTermVirtualListOperator::initialiseTermVirtualListElement(T
             this->itemsHeap.push_back(new UnionLowestLevelTermVirtualListOperatorHeapItem(invertedListId, this->cursorVector.size(),
                                                    recordId, termAttributeBitmap, termRecordRuntimeScore,
                                                    termRecordStaticScore,
-                                                   recordOffset, prefixNode,
+                                                   keywordOffset, prefixNode,
                                                    distance, isPrefixMatch));
         } else { // complete term
             float termRecordRuntimeScore =
@@ -359,7 +364,7 @@ void UnionLowestLevelTermVirtualListOperator::initialiseTermVirtualListElement(T
             this->itemsHeap.push_back(new UnionLowestLevelTermVirtualListOperatorHeapItem(invertedListId, this->cursorVector.size(),
                                                    recordId, termAttributeBitmap, termRecordRuntimeScore,
                                                    termRecordStaticScore,
-                                                   recordOffset, leafNode, distance, false));
+                                                   keywordOffset, leafNode, distance, false));
         }
 
         // Cursor points to the next element on InvertedList

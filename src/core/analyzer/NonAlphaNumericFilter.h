@@ -38,7 +38,7 @@ private:
 	// offset is the char position of token in the original string fetched from upstream.
 	// e.g java-script =>  [ (java, 0) , (script, 5)]
 	//     #tag => [(tag, 1)]
-	queue< std::pair<vector<CharType>, short> > internalTokenBuffer;
+	queue< std::pair<vector<CharType>, unsigned> > internalTokenBuffer;
 };
 
 } /* namespace instanstsearch */

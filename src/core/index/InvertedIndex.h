@@ -15,7 +15,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright © 2010 SRCH2 Inc. All rights reserved
+ * Copyright 2010 SRCH2 Inc. All rights reserved
  */
 
 #pragma once
@@ -219,6 +219,7 @@ public:
     		unsigned keywordOffset,
                     unsigned searchableAttributeId, unsigned& termAttributeBitmap, float &termRecordStaticScore) const;
 
+    // return FORWARDLIST_NOTVALID if the forward list is not valid (e.g., already deleted)
     unsigned getKeywordOffset(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
     		shared_ptr<vectorview<unsigned> > & invertedIndexKeywordIdsReadView,
     		unsigned forwardListId, unsigned invertedListOffset) const;

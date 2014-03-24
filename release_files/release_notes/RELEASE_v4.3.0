@@ -1,26 +1,25 @@
 
  *------------------------------------------------------------------
  *  RELEASE NOTES Version 4.3.0
- *  Date: ${MONTH} ${DAY}, ${YEAR} 
+ *  Date: March 24, 2014
  *------------------------------------------------------------------
 
 * Support boolean expressions in queries. 
 
 * Support multiple cores for different data sources, all running within a 
-  single web server process.
+  single server process.
 
-* Support muliple ports for different operations.
+* Support multiple ports for different operations.
+
+* Support batch inserts and batch updates.
+
+* Reduced in-memory index size.
+
+* Support server-side highlighting and snippet generation.
+
+* Improved query performance by various optimizations including incremental caching. 
 
 * Support a new filter called "protectedKeyWordsFilter" to preserve 
   special keywords such as .NET, AT&T, and C++.  
 
-* Support batch inserts and batch updates.
-
 * Support a new format (YYYY-MM-DD) for a refining date attribute.
-
-* Support server-side highlighting and snippet generation.
-
-* Reduced in-memory index size.
-
-* Improved query performance by various optimizations including incremental caching. 
-

@@ -99,7 +99,7 @@ PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const Physi
     // find the next record and check the its validity
     unsigned recordID = this->invertedLists.at(this->invertedListOffset)->at(this->cursorOnInvertedList);
 
-    unsigned recordOffset =
+    unsigned keywordOffset =
             this->queryEvaluator->getInvertedIndex()->getKeywordOffset(this->forwardIndexDirectoryReadView,
                     this->invertedIndexKeywordIdsReadView,
                     recordID, this->invertedListIDs.at(this->invertedListOffset));
@@ -108,9 +108,11 @@ PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const Physi
     float termRecordStaticScore = 0;
     unsigned termAttributeBitmap = 0;
     while (1) {
-        if (this->queryEvaluator->getInvertedIndex()->isValidTermPositionHit(forwardIndexDirectoryReadView,
+        // We check the record only if it's valid
+        if (keywordOffset != FORWARDLIST_NOTVALID &&
+            this->queryEvaluator->getInvertedIndex()->isValidTermPositionHit(forwardIndexDirectoryReadView,
                 recordID,
-                recordOffset,
+                keywordOffset,
                 term->getAttributeToFilterTermHits(), termAttributeBitmap,
                 termRecordStaticScore) ) {
             foundValidHit = 1;
@@ -120,7 +122,7 @@ PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const Physi
         if (this->cursorOnInvertedList < this->invertedLists.at(this->invertedListOffset)->size()) {
             recordID = this->invertedLists.at(this->invertedListOffset)->at(this->cursorOnInvertedList);
             // calculate record offset online
-            recordOffset =
+            keywordOffset =
                         this->queryEvaluator->getInvertedIndex()->getKeywordOffset(this->forwardIndexDirectoryReadView,
                                 this->invertedIndexKeywordIdsReadView,
                                 recordID, this->invertedListIDs.at(this->invertedListOffset));
@@ -130,7 +132,7 @@ PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const Physi
             if(this->invertedListOffset < this->invertedLists.size()){
                 recordID = this->invertedLists.at(this->invertedListOffset)->at(this->cursorOnInvertedList);
                 // calculate record offset online
-                recordOffset =
+                keywordOffset =
                             this->queryEvaluator->getInvertedIndex()->getKeywordOffset(this->forwardIndexDirectoryReadView,
                                     this->invertedIndexKeywordIdsReadView,
                                     recordID, this->invertedListIDs.at(this->invertedListOffset));
