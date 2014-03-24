@@ -470,11 +470,13 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
     // cout << time << "-trie merge" << endl;
     
     this->forwardIndex->merge();
-    // free the space for deleted records.
-    // need the global lock to block other readers
-    this->globalRwMutexForReadersWriters->lockWrite();
-    this->forwardIndex->freeSpaceOfDeletedRecords();
-    this->globalRwMutexForReadersWriters->unlockWrite();
+    if (this->forwardIndex->hasDeletedRecords()) {
+      // free the space for deleted records.
+      // need the global lock to block other readers
+      this->globalRwMutexForReadersWriters->lockWrite();
+      this->forwardIndex->freeSpaceOfDeletedRecords();
+      this->globalRwMutexForReadersWriters->unlockWrite();
+    }
 
     if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
         this->invertedIndex->merge();

@@ -636,6 +636,7 @@ public:
     // no readers can access the forward index since some of
     // its forward lists are being freed.
     void freeSpaceOfDeletedRecords();
+    bool hasDeletedRecords() { return deletedRecordInternalIds.size() > 0; }
     void setSchema(SchemaInternal *schema) {
         this->schemaInternal = schema;
     }
