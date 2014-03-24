@@ -39,7 +39,7 @@ SRCH2 provides a RESTful API, which can be used easily to do search queries, ins
 
 You decide! We let you use the combination of rich search features you care about most. Easy configuration is the whole point. Decide how many errors you want to tolerate, or configure your ranking prioritization. For example, news and social sites might put the most recent records on top, while e-commerce sites might favor profitability, or relevance, or inventory in stock.
 
- This document illustrates how to set up a simple SRCH2 implementation. We’ll take you through all the basic steps required to download SRCH2, index your data in standard JSON format, configure search features, and run your search server. Enjoy!
+ This document illustrates how to set up a simple SRCH2 implementation. We'll take you through all the basic steps required to download SRCH2, index your data in standard JSON format, configure search features, and run your search server. Enjoy!
 </br>
 
 ##System Requirements##

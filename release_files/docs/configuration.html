@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="generator" content="ReText Webpages generator 4.1.0">
+<meta name="generator" content="ReText Webpages generator 4.0.0">
 <link rel="stylesheet" type="text/css" href="style.css">
 <title>SRCH2: Configuration</title>
 </head>
@@ -16,7 +16,7 @@
 <a href="http://www.srch2.com" target="_blankt"><img style="height:24px" src="images/logo.png" align="left"></a>&nbsp;
 </td>
 <td style="align:right; white-space: nowrap; padding: 0px; font-size: 12px">
-Version: 4.3.0, Date: March 10, 2014
+Version: 4.3.0, Date: March 24, 2014&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </td>
 </tr>
 </table>
@@ -93,7 +93,7 @@ Version: 4.3.0, Date: March 10, 2014
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#analyzer">12.5. Analyzer</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#PorterStemFilter">12.5.1 Stemmer</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#StopFilter">12.5.2 Stop Words</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#ProtectedKeywordsFilter">12.5.3 Prtoected Keywords</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#ProtectedKeywordsFilter">12.5.3 Protected Keywords</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#Cores">13 Cores</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#Core">13.1 Core</a></br><br>
 </td></tr></tbody></table>
@@ -231,7 +231,7 @@ which access is restricted by a firewall to internal IP addresses.</p>
 <pre><code>&lt;fieldBoost&gt;&lt;/fieldBoost&gt;
 </code></pre>
 
-<p>This setting is used to increase or decrease the weight of fields when calculating the rankign of search results.  It specifies boost values for the <a href="#indexConfig">searchable attributes</a> and has a range of [1,100]. If the value is outside the range, it will be set to 1. For example, the boost values for two searchable attributes can be specified as: <br></p>
+<p>This setting is used to increase or decrease the weight of fields when calculating the ranking of search results.  It specifies boost values for the <a href="#indexConfig">searchable attributes</a> and has a range of [1,100]. If the value is outside the range, it will be set to 1. For example, the boost values for two searchable attributes can be specified as: <br></p>
 <pre><code>&lt;fieldBoost&gt;title^2 director^1&lt;/fieldBoost&gt;
 </code></pre>
 
@@ -384,7 +384,7 @@ to retrieve the next "page" of results. The default value of "Rows" is 10.<br></
 
 <p>This value specifies how to treat a term by default with respect to match completeness.</p>
 <blockquote>
-<p>0: prefix match (the query term can match just the beginniner of a word);<br>
+<p>0: prefix match (the query term can match just the beginner of a word);<br>
 1: complete match (the entire word must match the search term).<br></p>
 </blockquote>
 <p>Its default value is 0.</p>
