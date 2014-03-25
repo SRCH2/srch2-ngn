@@ -326,34 +326,28 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
  * Does Map Search
  */
 int QueryEvaluatorInternal::geoSearch(const Query *query, QueryResults *queryResults){
-    this->indexer->rwMutexForWriter->lockRead(); // need to lock the mutex
     this->indexData->globalRwMutexForReadersWriters->lockRead(); // need to lock the mutex
     int returnValue = this->searchMapQuery(query, queryResults);
     this->indexData->globalRwMutexForReadersWriters->unlockRead();
-    this->indexer->rwMutexForWriter->unlockRead();
     return returnValue;
 }
 
 // for doing a geo range query with a circle
 void QueryEvaluatorInternal::geoSearch(const Circle &queryCircle, QueryResults *queryResults){
     QueryResultsInternal *queryResultsInternal = queryResults->impl;
-    this->indexer->rwMutexForWriter->lockRead(); // need to lock the mutex
     this->indexData->globalRwMutexForReadersWriters->lockRead(); // need to lock the mutex
     this->indexData->quadTree->rangeQueryWithoutKeywordInformation(queryCircle,queryResultsInternal);
     queryResultsInternal->finalizeResults(this->indexData->forwardIndex);
     this->indexData->globalRwMutexForReadersWriters->unlockRead();
-    this->indexer->rwMutexForWriter->unlockRead();
 }
 
 // for doing a geo range query with a rectangle
 void QueryEvaluatorInternal::geoSearch(const Rectangle &queryRectangle, QueryResults *queryResults){
     QueryResultsInternal *queryResultsInternal = queryResults->impl;
-    this->indexer->rwMutexForWriter->lockRead(); // need to lock the mutex
     this->indexData->globalRwMutexForReadersWriters->lockRead(); // need to lock the mutex
     this->indexData->quadTree->rangeQueryWithoutKeywordInformation(queryRectangle,queryResultsInternal);
     queryResultsInternal->finalizeResults(this->indexData->forwardIndex);
     this->indexData->globalRwMutexForReadersWriters->unlockRead();
-    this->indexer->rwMutexForWriter->unlockRead();
 }
 
 // for retrieving only one result by having the primary key
