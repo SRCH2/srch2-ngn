@@ -470,14 +470,11 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
     // cout << time << "-trie merge" << endl;
     
     this->forwardIndex->merge();
-    //if (this->forwardIndex->hasDeletedRecords()) {
-    if (true) { // TODO: for debugging purposes
+    if (this->forwardIndex->hasDeletedRecords()) {
       // free the space for deleted records.
       // need the global lock to block other readers
       this->globalRwMutexForReadersWriters->lockWrite();
-      cout << "------ Start: free space of deleted records" << endl;
       this->forwardIndex->freeSpaceOfDeletedRecords();
-      cout << "------ End: free space of deleted records" << endl;
       this->globalRwMutexForReadersWriters->unlockWrite();
     }
 
@@ -653,15 +650,16 @@ void IndexData::_save(const string &directoryName) const
         Logger::error("Error writing trie index file: %s/%s", directoryName.c_str(), IndexConfig::trieFileName);
 	// can keep running - don't rethrow exception
     }
-    //this->forwardIndex->print_test();
-    //this->invertedIndex->print_test();
+
     if(this->forwardIndex->isMergeRequired()) {
         this->forwardIndex->merge();
-        // free the space for deleted records.
-        // need the global lock to block other readers
-        this->globalRwMutexForReadersWriters->lockWrite();
-        this->forwardIndex->freeSpaceOfDeletedRecords();
-        this->globalRwMutexForReadersWriters->unlockWrite();
+        if (this->forwardIndex->hasDeletedRecords()) {
+	  // free the space for deleted records.
+	  // need the global lock to block other readers
+	  this->globalRwMutexForReadersWriters->lockWrite();
+	  this->forwardIndex->freeSpaceOfDeletedRecords();
+	  this->globalRwMutexForReadersWriters->unlockWrite();
+	}
     }
 
     try {
