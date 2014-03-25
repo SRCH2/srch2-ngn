@@ -80,8 +80,8 @@ public:
       cout << "++++++++++++++++lockWrite: before pthread_mutex_lock" << endl;
         pthread_mutex_lock(&mutex);
 
-        for (int i = 0; i < max_readers; i++) {
-            sem_wait(m_semaphore);
+        for (int i = 0; i < max_readers;) {
+            if(sem_wait(m_semaphore) == 0) ++i;
         }
 	cout << "++++++++++++++++unlockWrite: after sem_wait" << endl;
     }
