@@ -470,11 +470,14 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
     // cout << time << "-trie merge" << endl;
     
     this->forwardIndex->merge();
-    if (this->forwardIndex->hasDeletedRecords()) {
+    //if (this->forwardIndex->hasDeletedRecords()) {
+    if (true) { // TODO: for debugging purposes
       // free the space for deleted records.
       // need the global lock to block other readers
       this->globalRwMutexForReadersWriters->lockWrite();
+      cout << "------ Start: free space of deleted records" << endl;
       this->forwardIndex->freeSpaceOfDeletedRecords();
+      cout << "------ End: free space of deleted records" << endl;
       this->globalRwMutexForReadersWriters->unlockWrite();
     }
 
