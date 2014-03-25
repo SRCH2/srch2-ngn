@@ -91,7 +91,7 @@ class IndexReaderWriter: public Indexer
 public:
 
     //TODO put it as private
-    ReadWriteMutex  *rwMutexForWriter;
+    pthread_mutex_t writeLock;
 
     IndexReaderWriter(IndexMetaData* indexMetaData, Analyzer *analyzer, Schema *schema);
 
@@ -102,15 +102,15 @@ public:
     {
     	if (this->mergeThreadStarted == true)
     	{
-    		this->rwMutexForWriter->lockWrite();
+        pthread_mutex_lock(&writeLock);
     		this->mergeThreadStarted = false;
     		pthread_cond_signal(&countThresholdConditionVariable);
-    		this->rwMutexForWriter->unlockWrite();
+
+        pthread_mutex_unlock(&writeLock);
 
     		pthread_join(mergerThread, NULL); // waiting to JOINABLE merge thread.
     	}
         delete this->index;
-        delete this->rwMutexForWriter;
     };
 
     uint32_t getNumberOfDocumentsInIndex() const;

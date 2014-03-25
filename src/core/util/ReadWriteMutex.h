@@ -104,8 +104,8 @@ public:
 
         rc = pthread_cond_timedwait(cond, &mutex, ts);
 
-        for (int i = 0; i < max_readers; i++) {
-            sem_wait(m_semaphore);
+        for (int i = 0; i < max_readers;) {
+            if(sem_wait(m_semaphore) == 0) ++i;
         }
 
         return rc;
