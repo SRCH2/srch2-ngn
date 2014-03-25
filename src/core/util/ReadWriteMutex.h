@@ -81,7 +81,10 @@ public:
         pthread_mutex_lock(&mutex);
 
         for (int i = 0; i < max_readers;) {
-            if(sem_wait(m_semaphore) == 0) ++i;
+          //only count lock if actually recieved; sem_wait return is two 
+          //cases: when it decrements count (returns 0), or if 
+          //signal handler interrupts it (return < 0)
+          if(sem_wait(m_semaphore) == 0) ++i;
         }
 	cout << "++++++++++++++++unlockWrite: after sem_wait" << endl;
     }

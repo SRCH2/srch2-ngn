@@ -91,7 +91,7 @@ class IndexReaderWriter: public Indexer
 public:
 
     //TODO put it as private
-    pthread_mutex_t writeLock;
+    pthread_mutex_t lockForWriters;
 
     IndexReaderWriter(IndexMetaData* indexMetaData, Analyzer *analyzer, Schema *schema);
 
@@ -100,15 +100,13 @@ public:
     void initIndexReaderWriter(IndexMetaData* indexMetaData);
     virtual ~IndexReaderWriter()
     {
-    	if (this->mergeThreadStarted == true)
-    	{
-        pthread_mutex_lock(&writeLock);
-    		this->mergeThreadStarted = false;
-    		pthread_cond_signal(&countThresholdConditionVariable);
-
-        pthread_mutex_unlock(&writeLock);
-
-    		pthread_join(mergerThread, NULL); // waiting to JOINABLE merge thread.
+    	if (this->mergeThreadStarted == true) {
+        pthread_mutex_lock(&lockForWriters);
+        this->mergeThreadStarted = false;
+        pthread_cond_signal(&countThresholdConditionVariable);
+        pthread_mutex_unlock(&lockForWriters);
+        
+        pthread_join(mergerThread, NULL); // waiting to JOINABLE merge thread.
     	}
         delete this->index;
     };

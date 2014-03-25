@@ -28,7 +28,7 @@ namespace instantsearch
     
 INDEXWRITE_RETVAL IndexReaderWriter::commit()
 {    
-    pthread_mutex_lock(&writeLock);
+    pthread_mutex_lock(&lockForWriters);
     INDEXWRITE_RETVAL commitReturnValue;
     if (!this->index->isBulkLoadDone()) {
     	commitReturnValue = this->index->finishBulkLoad();
@@ -46,14 +46,14 @@ INDEXWRITE_RETVAL IndexReaderWriter::commit()
     }
     this->writesCounterForMerge = 0;
     
-    pthread_mutex_unlock(&writeLock);
+    pthread_mutex_unlock(&lockForWriters);
 
     return commitReturnValue;
 }
 
 INDEXWRITE_RETVAL IndexReaderWriter::addRecord(const Record *record, Analyzer* analyzer)
 {
-    pthread_mutex_lock(&writeLock);
+    pthread_mutex_lock(&lockForWriters);
     INDEXWRITE_RETVAL returnValue = this->index->_addRecord(record, analyzer);
     if (returnValue == OP_SUCCESS) {
     	this->writesCounterForMerge++;
@@ -63,13 +63,13 @@ INDEXWRITE_RETVAL IndexReaderWriter::addRecord(const Record *record, Analyzer* a
     	}
     }
 
-    pthread_mutex_unlock(&writeLock);
+    pthread_mutex_unlock(&lockForWriters);
     return returnValue;
 }
 
 INDEXWRITE_RETVAL IndexReaderWriter::deleteRecord(const std::string &primaryKeyID)
 {
-    pthread_mutex_lock(&writeLock);
+    pthread_mutex_lock(&lockForWriters);
 
     INDEXWRITE_RETVAL returnValue = this->index->_deleteRecord(primaryKeyID);
     if (returnValue == OP_SUCCESS) {
@@ -80,13 +80,13 @@ INDEXWRITE_RETVAL IndexReaderWriter::deleteRecord(const std::string &primaryKeyI
     	}
     }
     
-    pthread_mutex_unlock(&writeLock);
+    pthread_mutex_unlock(&lockForWriters);
     return returnValue;
 }
 
 INDEXWRITE_RETVAL IndexReaderWriter::deleteRecordGetInternalId(const std::string &primaryKeyID, unsigned &internalRecordId)
 {
-    pthread_mutex_lock(&writeLock);
+    pthread_mutex_lock(&lockForWriters);
 
     INDEXWRITE_RETVAL returnValue = this->index->_deleteRecordGetInternalId(primaryKeyID, internalRecordId);
     if (returnValue == OP_SUCCESS) {
@@ -97,13 +97,13 @@ INDEXWRITE_RETVAL IndexReaderWriter::deleteRecordGetInternalId(const std::string
     	}
     }
 
-    pthread_mutex_unlock(&writeLock);
+    pthread_mutex_unlock(&lockForWriters);
     return returnValue;
 }
 
 INDEXWRITE_RETVAL IndexReaderWriter::recoverRecord(const std::string &primaryKeyID, unsigned internalRecordId)
 {
-    pthread_mutex_lock(&writeLock);
+    pthread_mutex_lock(&lockForWriters);
 
     INDEXWRITE_RETVAL returnValue = this->index->_recoverRecord(primaryKeyID, internalRecordId);
     if (returnValue == OP_SUCCESS) {
@@ -114,7 +114,7 @@ INDEXWRITE_RETVAL IndexReaderWriter::recoverRecord(const std::string &primaryKey
     	}
     }
 
-    pthread_mutex_unlock(&writeLock);
+    pthread_mutex_unlock(&lockForWriters);
     return returnValue;
 }
 
@@ -124,11 +124,11 @@ INDEXLOOKUP_RETVAL IndexReaderWriter::lookupRecord(const std::string &primaryKey
     // we need to acquire the writelock
     // but do NOT need to increase the merge counter
 
-    pthread_mutex_lock(&writeLock);
+    pthread_mutex_lock(&lockForWriters);
     
     INDEXLOOKUP_RETVAL returnValue = this->index->_lookupRecord(primaryKeyID);
 
-    pthread_mutex_unlock(&writeLock);
+    pthread_mutex_unlock(&lockForWriters);
 
     return returnValue;
 }
@@ -136,7 +136,7 @@ INDEXLOOKUP_RETVAL IndexReaderWriter::lookupRecord(const std::string &primaryKey
 void IndexReaderWriter::exportData(const string &exportedDataFileName)
 {
     // add write lock
-    pthread_mutex_lock(&writeLock);
+    pthread_mutex_lock(&lockForWriters);
 
     // merge the index
     // we don't have to update histogram information when we want to export.
@@ -147,16 +147,16 @@ void IndexReaderWriter::exportData(const string &exportedDataFileName)
     this->index->_exportData(exportedDataFileName);
 
     // free write lock
-    pthread_mutex_unlock(&writeLock);
+    pthread_mutex_unlock(&lockForWriters);
 }
 
 void IndexReaderWriter::save()
 {
-    pthread_mutex_lock(&writeLock);
+    pthread_mutex_lock(&lockForWriters);
 
     // If no insert/delete/update is performed, we don't need to save.
     if(this->needToSaveIndexes == false){
-      pthread_mutex_unlock(&writeLock);
+      pthread_mutex_unlock(&lockForWriters);
     	return;
     }
 
@@ -173,12 +173,12 @@ void IndexReaderWriter::save()
     // we should set this flag back to false for future save calls.
     this->needToSaveIndexes = false;
 
-    pthread_mutex_unlock(&writeLock);
+    pthread_mutex_unlock(&lockForWriters);
 }
 
 void IndexReaderWriter::save(const std::string& directoryName)
 {
-    pthread_mutex_lock(&writeLock);
+    pthread_mutex_lock(&lockForWriters);
 
     // we don't have to update histogram information when we want to export.
     this->merge(false);
@@ -186,6 +186,7 @@ void IndexReaderWriter::save(const std::string& directoryName)
 
     this->index->_save(directoryName);
 
+    pthread_mutex_unlock(&lockForWriters);
 }
 
 /*
@@ -251,7 +252,8 @@ void IndexReaderWriter::initIndexReaderWriter(IndexMetaData* indexMetaData)
      this->needToSaveIndexes = false;
 
      this->mergeThreadStarted = false; // No threads running
-     pthread_mutex_init(&writeLock, 0);
+     pthread_mutex_init(&lockForWriters, 0); 
+     //zero indicates that that the lockForWriters is unset
  }
 
 uint32_t IndexReaderWriter::getNumberOfDocumentsInIndex() const
@@ -279,18 +281,18 @@ void IndexReaderWriter::startMergeThreadLoop()
     /*
      *  There should be only one merger thread per indexer object
      */
-    pthread_mutex_lock(&writeLock);
+    pthread_mutex_lock(&lockForWriters);
     if (mergeThreadStarted) {
-      pthread_mutex_unlock(&writeLock);
+      pthread_mutex_unlock(&lockForWriters);
     	Logger::warn("Only one merge thread per index is supported!");
     	return;
     }
     if (!this->index->isBulkLoadDone()) {
-      pthread_mutex_unlock(&writeLock);
+      pthread_mutex_unlock(&lockForWriters);
       Logger::warn("Merge thread can be called only after first commit!");
       return;
     }
-    pthread_mutex_unlock(&writeLock);
+    pthread_mutex_unlock(&lockForWriters);
     mergeThreadStarted = true;
     /*
      *  Initialize condition variable for the first time before loop starts.
@@ -305,9 +307,9 @@ void IndexReaderWriter::startMergeThreadLoop()
         ts.tv_nsec = tp.tv_usec * 1000;
         ts.tv_sec += this->mergeEveryNSeconds;
 
-        pthread_mutex_lock(&writeLock);
+        pthread_mutex_lock(&lockForWriters);
         rc = pthread_cond_timedwait(&countThresholdConditionVariable,
-            &writeLock, &ts);
+            &lockForWriters, &ts);
 
         if (mergeThreadStarted == false)
             break;
@@ -321,11 +323,11 @@ void IndexReaderWriter::startMergeThreadLoop()
             }
             this->merge(updateHistogramFlag);
             writesCounterForMerge = 0;
-            pthread_mutex_unlock(&writeLock);
+            pthread_mutex_unlock(&lockForWriters);
         }
     }
     pthread_cond_destroy(&countThresholdConditionVariable);
-    pthread_mutex_unlock(&writeLock);
+    pthread_mutex_unlock(&lockForWriters);
     return;
 }
 
