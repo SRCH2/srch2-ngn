@@ -64,20 +64,15 @@ public:
     }
 
     inline void lockRead() {
-      // cout << "^^^^^^^lockRead: before sem_wait()" << endl;
         sem_wait(m_semaphore);
-//	cout << "^^^^^^^lockRead: after sem_wait()" << endl;
     }
 
     inline void unlockRead() {
-      // cout << "#######unlockRead: before sem_wait()" << endl;
         sem_post(m_semaphore);
-//	cout << "#######unlockRead: after sem_wait()" << endl;
     }
 
     inline void lockWrite() {
         //pthread_spin_lock(&m_spinlock);
-      // cout << "++++++++++++++++lockWrite: before pthread_mutex_lock" << endl;
         pthread_mutex_lock(&mutex);
 
         for (int i = 0; i < max_readers;) {
@@ -86,18 +81,15 @@ public:
           //signal handler interrupts it (return < 0)
           if(sem_wait(m_semaphore) == 0) ++i;
         }
-	// cout << "++++++++++++++++lockWrite: after sem_wait" << endl;
     }
 
     inline void unlockWrite() {
-      // cout << "%%%%%%%unlockWrite: before sem_post()" << endl;
         for (int i = 0; i < max_readers; i++) {
             sem_post(m_semaphore);
         }
 
         //pthread_spin_unlock(&m_spinlock);
         pthread_mutex_unlock(&mutex);
-	// cout << "%%%%%%%unlockWrite: after pthread_mutex_unlock()" << endl;
     }
 
     inline int writeLockWithCondTimedWait(pthread_cond_t *cond, const struct timespec *ts) {
