@@ -79,7 +79,8 @@ public:
           //only count lock if actually recieved; sem_wait returns in two 
           //cases: when it decrements count (returns 0), or if 
           //signal handler interrupts it (return < 0)
-          if(sem_wait(m_semaphore) == 0) ++i;
+          if(sem_wait(m_semaphore) == 0) 
+	    ++i;
         }
     }
 
@@ -100,7 +101,8 @@ public:
         rc = pthread_cond_timedwait(cond, &mutex, ts);
 
         for (int i = 0; i < max_readers;) {
-            if(sem_wait(m_semaphore) == 0) ++i;
+            if(sem_wait(m_semaphore) == 0) 
+	      ++i;
         }
 
         return rc;

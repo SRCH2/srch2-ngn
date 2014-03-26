@@ -101,12 +101,12 @@ public:
     virtual ~IndexReaderWriter()
     {
     	if (this->mergeThreadStarted == true) {
-        pthread_mutex_lock(&lockForWriters);
-        this->mergeThreadStarted = false;
-        pthread_cond_signal(&countThresholdConditionVariable);
-        pthread_mutex_unlock(&lockForWriters);
+	  pthread_mutex_lock(&lockForWriters);
+	  this->mergeThreadStarted = false;
+	  pthread_cond_signal(&countThresholdConditionVariable);
+	  pthread_mutex_unlock(&lockForWriters);
         
-        pthread_join(mergerThread, NULL); // waiting to JOINABLE merge thread.
+	  pthread_join(mergerThread, NULL); // waiting to JOINABLE merge thread.
     	}
         delete this->index;
     };

@@ -252,8 +252,8 @@ void IndexReaderWriter::initIndexReaderWriter(IndexMetaData* indexMetaData)
      this->needToSaveIndexes = false;
 
      this->mergeThreadStarted = false; // No threads running
+     //zero indicates that the lockForWriters is unset
      pthread_mutex_init(&lockForWriters, 0); 
-     //zero indicates that that the lockForWriters is unset
  }
 
 uint32_t IndexReaderWriter::getNumberOfDocumentsInIndex() const

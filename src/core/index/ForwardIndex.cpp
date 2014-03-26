@@ -195,8 +195,6 @@ bool ForwardIndex::haveWordInRangeWithStemmer(shared_ptr<vectorview<ForwardListP
 const ForwardList *ForwardIndex::getForwardList(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
 		unsigned recordId, bool &valid) const
 {
-
-
     // A valid record ID is in the range [0, 1, ..., directorySize - 1]
     if(recordId >= forwardListDirectoryReadView->size()){
     	valid = false;
@@ -205,9 +203,6 @@ const ForwardList *ForwardIndex::getForwardList(shared_ptr<vectorview<ForwardLis
 
     ForwardListPtr flPtr = forwardListDirectoryReadView->getElement(recordId);
     valid = flPtr.second;
-
-    // TODO: For debugging purposes
-    assert(this->forwardListDirectory->getWriteView()->at(recordId).second == valid);
 
     return flPtr.first;
 }
