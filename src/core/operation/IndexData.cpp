@@ -163,6 +163,11 @@ bool isSortedAlphabetically(const KeywordIdKeywordStringInvertedListIdTriple& ke
 /// Add a record
 INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer)
 {
+
+    if(this->schemaInternal->getIndexType() 
+        == srch2::instantsearch::LocationIndex) {
+      globalRwMutexForReadersWriters->lockWrite();
+    }
     INDEXWRITE_RETVAL returnValue = OP_FAIL; // not added
 
     /// Get the internalRecordId
@@ -313,6 +318,10 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer
         returnValue = OP_FAIL;
     }
 
+    if(this->schemaInternal->getIndexType() 
+        == srch2::instantsearch::LocationIndex) {
+      globalRwMutexForReadersWriters->unlockWrite();
+    }
     return returnValue;
 }
 
