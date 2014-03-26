@@ -524,8 +524,12 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
     this->trie->merge(invertedIndex , this->forwardIndex,
     		this->forwardIndex->getTotalNumberOfForwardLists_ReadView() , updateHistogram);
     
-    if (this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex)
-        this->quadTree->merge();
+    if (this->schemaInternal->getIndexType() == 
+        srch2::instantsearch::LocationIndex) {
+      globalRwMutexForReadersWriters->lockWrite();
+      this->quadTree->merge();
+      globalRwMutexForReadersWriters->unlockWrite();
+    }
 
     this->mergeRequired = false;
 
