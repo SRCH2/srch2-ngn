@@ -1021,7 +1021,9 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     case srch2is::SearchTypeGetAllResultsQuery:
     case srch2is::SearchTypeMapQuery:
         finalResults->printStats();
-        finalResults->impl->estimatedNumberOfResults = finalResults->impl->sortedFinalResults.size();
+        if(finalResults->impl->estimatedNumberOfResults < finalResults->impl->sortedFinalResults.size()){
+			finalResults->impl->estimatedNumberOfResults = finalResults->impl->sortedFinalResults.size();
+        }
         if (logicalPlan.getOffset() + logicalPlan.getNumberOfResultsToRetrieve()
                 > finalResults->getNumberOfResults()) {
             // Case where you have return 10,20, but we got only 0,15 results.
