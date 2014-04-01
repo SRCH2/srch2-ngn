@@ -127,7 +127,7 @@ static short int getLibeventHttpRequestPort(struct evhttp_request *req)
 {
     const char *host = NULL;
     const char *p;
-    short int port = -1;
+    unsigned short int port = 0;
 
     host = evhttp_find_header(req->input_headers, "Host");
     /* The Host: header may include a port. Look for it here, else return -1 as an error. */
@@ -141,7 +141,7 @@ static short int getLibeventHttpRequestPort(struct evhttp_request *req)
             }
             if (*p != '\000') {
                 Logger::error("Did not reach end of Host input header");
-                port = -1;
+                port = 0;
             }
         }
     }
@@ -175,9 +175,9 @@ static bool checkOperationPermission(evhttp_request *req, Srch2Server *srch2Serv
 
     const srch2http::CoreInfo_t *coreInfo = srch2Server->indexDataConfig;
     unsigned short configuredPort = coreInfo->getPort(portType);
-    short arrivalPort = getLibeventHttpRequestPort(req);
+    unsigned short arrivalPort = getLibeventHttpRequestPort(req);
 
-    if (arrivalPort < 0) {
+    if (arrivalPort == 0) {
         Logger::warn("Unable to ascertain arrival port from request headers.");
         return false;
     }
@@ -397,7 +397,7 @@ void printVersion() {
     std::cout << "SRCH2 server version:" << getCurrentVersion() << std::endl;
 }
 
-int bindSocket(const char * hostname, int port) {
+int bindSocket(const char * hostname, unsigned short port) {
     int r;
     int nfd;
     nfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -467,7 +467,7 @@ pthread_t *threads = NULL;
 unsigned int MAX_THREADS = 0;
 
 // These are global variables that store host and port information for srch2 engine
-short globalDefaultPort;
+unsigned short globalDefaultPort;
 const char *globalHostName;
 
 #ifdef __MACH__
@@ -604,7 +604,7 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
 
             // bind once each port defined for use by this core
             for (enum srch2http::PortType_t portType = static_cast<srch2http::PortType_t> (0); portType < srch2http::EndOfPortType; portType = srch2http::incrementPortType(portType)) {
-                int port = coreInfo->getPort(portType);
+                unsigned short port = coreInfo->getPort(portType);
                 if (port > 0 && (globalPortSocketMap->find(port) == globalPortSocketMap->end() || (*globalPortSocketMap)[port] < 0)) {
                     int socketFd = bindSocket(globalHostName, port);
                     if ((*globalPortSocketMap)[port] < 0) {
@@ -661,8 +661,8 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
 
         // setup default core callbacks for queries that don't specify a core name
         for (int j = 0; portList[j].path != NULL; j++) {
-            unsigned int port = config->getDefaultCoreInfo()->getPort(portList[j].portType);
-            if (port < 1) {
+            unsigned short port = config->getDefaultCoreInfo()->getPort(portList[j].portType);
+            if (port == 1) {
                 port = globalDefaultPort;
             }
             evhttp_set_cb(http_server, portList[j].path, portList[j].callback, defaultCore);
@@ -678,7 +678,7 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
                     string path = string("/") + coreName + string(portList[j].path);
 
                     // look if listener already exists for this core on this port
-                    unsigned int port = config->getCoreInfo(coreName)->getPort(portList[j].portType);
+                    unsigned short port = config->getCoreInfo(coreName)->getPort(portList[j].portType);
                     if (port < 1) {
                         port = globalDefaultPort;
                     }
