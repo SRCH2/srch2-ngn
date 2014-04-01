@@ -34,6 +34,15 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
     for(unsigned fuzzyPolicyIter = 0 ; fuzzyPolicyIter < 2 ; fuzzyPolicyIter++ ){
 
 
+    	/*
+    	 * GetAll queries compute everything anyways so if fuzzy is needed we can go
+    	 * to fuzzy directly.
+    	 */
+    	if(logicalPlan->getQueryType() == SearchTypeGetAllResultsQuery){
+            logicalPlan->setFuzzy(isFuzzy);
+            params.isFuzzy = isFuzzy;
+    	}
+
         /*
          * 1. Use CatalogManager to collect statistics and meta data about the logical plan
          * ---- 1.1. computes and attaches active node sets for each term
@@ -92,6 +101,14 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 
         physicalPlan.getPlanTree()->close(params);
 
+
+    	/*
+    	 * GetAll queries compute everything anyways so if fuzzy is needed we can go
+    	 * to fuzzy directly. So there is no need for two iterations.
+    	 */
+    	if(logicalPlan->getQueryType() == SearchTypeGetAllResultsQuery){
+            break;
+    	}
 
 
         if(fuzzyPolicyIter == 0){
