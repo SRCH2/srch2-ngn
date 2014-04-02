@@ -61,6 +61,7 @@ using std::string;
 #define SESSION_TTL 120
 
 // map from port numbers (shared among cores) to socket file descriptors
+// IETF RFC 6335 specifies port number range is 0 - 65535: http://tools.ietf.org/html/rfc6335#page-11
 typedef std::map<unsigned short /*portNumber*/, int /*fd*/> PortSocketMap_t;
 
 // named access to multiple "cores" (ala Solr)
@@ -123,11 +124,12 @@ static void cb_notfound(evhttp_request *req, void *arg)
  * where cb_search() is a callback invoked by libevent.
  * If "req" is from "localhost:8082/core1/search", then this function will extract "8082" from "req".
  */
-static short int getLibeventHttpRequestPort(struct evhttp_request *req)
+static unsigned short int getLibeventHttpRequestPort(struct evhttp_request *req)
 {
     const char *host = NULL;
     const char *p;
-    unsigned short int port = 0;
+    unsigned short int port = 0; // IETF RFC 6335 specifies port number range is 0 - 65535: http://tools.ietf.org/html/rfc6335#page-11
+
 
     host = evhttp_find_header(req->input_headers, "Host");
     /* The Host: header may include a port. Look for it here, else return -1 as an error. */
@@ -137,7 +139,13 @@ static short int getLibeventHttpRequestPort(struct evhttp_request *req)
             p++; // skip past colon
             port = 0;
             while (isdigit(*p)) {
-                port = (10 * port) + (*p++ - '0');
+                unsigned int newValue = (10 * port) + (*p++ - '0'); // check for overflow (must be int)
+                if (newValue <= USHRT_MAX) {
+                    port = newValue;
+                } else {
+                    port = 0;
+                    break;
+                }
             }
             if (*p != '\000') {
                 Logger::error("Did not reach end of Host input header");
@@ -174,6 +182,7 @@ static bool checkOperationPermission(evhttp_request *req, Srch2Server *srch2Serv
     }
 
     const srch2http::CoreInfo_t *coreInfo = srch2Server->indexDataConfig;
+    // IETF RFC 6335 specifies port number range is 0 - 65535: http://tools.ietf.org/html/rfc6335#page-11
     unsigned short configuredPort = coreInfo->getPort(portType);
     unsigned short arrivalPort = getLibeventHttpRequestPort(req);
 
@@ -604,6 +613,7 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
 
             // bind once each port defined for use by this core
             for (enum srch2http::PortType_t portType = static_cast<srch2http::PortType_t> (0); portType < srch2http::EndOfPortType; portType = srch2http::incrementPortType(portType)) {
+                // IETF RFC 6335 specifies port number range is 0 - 65535: http://tools.ietf.org/html/rfc6335#page-11
                 unsigned short port = coreInfo->getPort(portType);
                 if (port > 0 && (globalPortSocketMap->find(port) == globalPortSocketMap->end() || (*globalPortSocketMap)[port] < 0)) {
                     int socketFd = bindSocket(globalHostName, port);
