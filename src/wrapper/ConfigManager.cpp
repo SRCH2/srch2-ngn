@@ -432,6 +432,12 @@ void ConfigManager::parseMongoDb(const xml_node &mongoDbNode, CoreInfo_t *coreIn
     childNode = mongoDbNode.child(portString);
     if (childNode && childNode.text()) {
         coreInfo->mongoPort = string(childNode.text().get());
+        int value = atoi(coreInfo->mongoPort.c_str());
+        if (value <= 0 || value > USHRT_MAX) {
+            parseError << "mongoPort must be between 1 and " << USHRT_MAX;
+            configSuccess = false;
+            return;
+        }
     } else {
         coreInfo->mongoPort = ""; // use default port
     }
@@ -870,7 +876,14 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_
     for (unsigned int i = 0; portNameMap[i].portName != NULL; i++) {
         childNode = parentNode.child(portNameMap[i].portName);
         if (childNode && childNode.text()) { // checks if the config/port has any text in it or not
-            coreInfo->setPort(portNameMap[i].portType, childNode.text().as_int());
+            int portValue = childNode.text().as_int();
+            if (portValue <= 0 || portValue > USHRT_MAX) {
+                parseError << portNameMap[i].portName << " must be between 1 and " << USHRT_MAX;
+                configSuccess = false;
+                return;
+            }
+            Logger::warn("Parsed %s value of %d", portNameMap[i].portName, portValue);
+            coreInfo->setPort(portNameMap[i].portType, portValue);
         }
     }
 
@@ -1744,6 +1757,12 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
     childNode = configNode.child(listeningPortString);
     if (childNode && childNode.text()) { // checks if the config/listeningPort has any text in it or not
         this->httpServerListeningPort = string(childNode.text().get());
+        int value = atoi(httpServerListeningPort.c_str());
+        if (value <= 0 || value > USHRT_MAX) {
+            parseError << listeningPortString << " must be between 1 and " << USHRT_MAX;
+            configSuccess = false;
+            return;
+        }
     } else {
         parseError << "listeningPort is not set.\n";
         configSuccess = false;
