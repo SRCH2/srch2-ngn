@@ -882,7 +882,6 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_
                 configSuccess = false;
                 return;
             }
-            Logger::warn("Parsed %s value of %d", portNameMap[i].portName, portValue);
             coreInfo->setPort(portNameMap[i].portType, portValue);
         }
     }
