@@ -22,7 +22,6 @@
  
     <listeningHostname>0.0.0.0</listeningHostname>
     <listeningPort>8087</listeningPort>
-    <infoPort>8088</infoPort>
 
     <!-- moved from <query> which is now per core -->
     <maxSearchThreads>2</maxSearchThreads>
