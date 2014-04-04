@@ -66,8 +66,22 @@ PhysicalPlanCost RandomAccessVerificationTermOptimizationOperator::getCostOfClos
 	return resultCost;
 }
 PhysicalPlanCost RandomAccessVerificationTermOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
-	unsigned estimatedNumberOfActiveNodes =
-			this->getLogicalPlanNode()->stats->getActiveNodeSetForEstimation(params.isFuzzy)->getNumberOfActiveNodes();
+	unsigned estimatedNumberOfActiveNodes = 0;
+
+	Term * term = this->getLogicalPlanNode()->getTerm(params.isFuzzy);
+	if(term->getTermType() == TERM_TYPE_COMPLETE){
+		for (ActiveNodeSetIterator iter(this->getLogicalPlanNode()->stats->getActiveNodeSetForEstimation(params.isFuzzy).get(), term->getThreshold());
+				!iter.isDone(); iter.next()) {
+			const TrieNode *trieNode;
+			unsigned distance;
+			iter.getItem(trieNode, distance);
+			if (trieNode->isTerminalNode()){
+				estimatedNumberOfActiveNodes ++;
+			}
+		}
+	}else{ // prefix
+		estimatedNumberOfActiveNodes = this->getLogicalPlanNode()->stats->getActiveNodeSetForEstimation(params.isFuzzy)->getNumberOfActiveNodes();
+	}
 	PhysicalPlanCost resultCost;
 	resultCost.cost = estimatedNumberOfActiveNodes * log2(200.0);
 	return resultCost;
