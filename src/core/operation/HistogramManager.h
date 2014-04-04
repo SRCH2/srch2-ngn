@@ -121,8 +121,18 @@ private:
 	unsigned countNumberOfKeywords(LogicalPlanNode * node , bool isFuzzy);
 
 	boost::shared_ptr<PrefixActiveNodeSet> computeActiveNodeSet(Term *term) const;
-	void computeEstimatedProbabilityOfPrefixAndNumberOfLeafNodes(PrefixActiveNodeSet * activeNodes ,
+	void computeEstimatedProbabilityOfPrefixAndNumberOfLeafNodes(TermType termType, PrefixActiveNodeSet * activeNodes ,
 			unsigned threshold, float & probability, unsigned & numberOfLeafNodes) const;
+
+	// this function is only used when term is complete so we need to
+	// go further down the Trie
+	void depthAggregateProbabilityAndNumberOfLeafNodes(const TrieNode* trieNode,
+			unsigned editDistance,
+			unsigned panDistance,
+			unsigned bound,
+			float & aggregatedProbability ,
+			unsigned & aggregatedNumberOfLeafNodes) const;
+
 	unsigned computeEstimatedNumberOfResults(float probability);
 
 };

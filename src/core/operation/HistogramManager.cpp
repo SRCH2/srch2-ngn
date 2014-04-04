@@ -166,10 +166,11 @@ void HistogramManager::annotateWithEstimatedProbabilitiesAndNumberOfResults(Logi
 		case LogicalPlanNodeTypeTerm:
 		{
 			unsigned thresholdForEstimation = isFuzzy ? node->fuzzyTerm->getThreshold() : node->exactTerm->getThreshold();
+			TermType termType = isFuzzy ? node->fuzzyTerm->getTermType() : node->exactTerm->getTermType();
 			boost::shared_ptr<PrefixActiveNodeSet> activeNodeSetForEstimation =  node->stats->getActiveNodeSetForEstimation(isFuzzy);
 			float termProbability;
 			unsigned numberOfLeafNodes;
-			computeEstimatedProbabilityOfPrefixAndNumberOfLeafNodes(activeNodeSetForEstimation.get(), thresholdForEstimation, termProbability, numberOfLeafNodes);
+			computeEstimatedProbabilityOfPrefixAndNumberOfLeafNodes(termType, activeNodeSetForEstimation.get(), thresholdForEstimation, termProbability, numberOfLeafNodes);
 			node->stats->setEstimatedProbability(termProbability);
 			node->stats->setEstimatedNumberOfResults(computeEstimatedNumberOfResults(node->stats->getEstimatedProbability()));
 			node->stats->setEstimatedNumberOfLeafNodes(numberOfLeafNodes);
@@ -253,8 +254,29 @@ boost::shared_ptr<PrefixActiveNodeSet> HistogramManager::computeActiveNodeSet(Te
     return prefixActiveNodeSet;
 }
 
-void HistogramManager::computeEstimatedProbabilityOfPrefixAndNumberOfLeafNodes(PrefixActiveNodeSet * activeNodes ,
+void HistogramManager::computeEstimatedProbabilityOfPrefixAndNumberOfLeafNodes(TermType termType, PrefixActiveNodeSet * activeNodes ,
 		unsigned threshold, float & probability, unsigned & numberOfLeafNodes) const{
+
+	/*
+	 * If termType is complete, we shouldn't estimate
+	 * numberOfLeafNodes or probability value. we can use their exact values
+	 */
+	if(termType == TERM_TYPE_COMPLETE){
+	    unsigned aggregatedNumberOfLeafNodes = 0;
+		float aggregatedProbability = 0;
+	    for (ActiveNodeSetIterator iter(activeNodes, threshold); !iter.isDone(); iter.next()) {
+	        TrieNodePointer trieNode;
+	        unsigned distance;
+	        iter.getItem(trieNode, distance);
+	        unsigned panDistance = activeNodes->getEditdistanceofPrefix(trieNode);
+	        depthAggregateProbabilityAndNumberOfLeafNodes(trieNode,
+	        		distance, panDistance, threshold , aggregatedProbability, aggregatedNumberOfLeafNodes );
+	    }
+	    numberOfLeafNodes = aggregatedNumberOfLeafNodes;
+	    probability = aggregatedProbability;
+	    return;
+
+	}
 
 	/*
 	 * Example :
@@ -330,6 +352,40 @@ void HistogramManager::computeEstimatedProbabilityOfPrefixAndNumberOfLeafNodes(P
     numberOfLeafNodes = aggregatedNumberOfLeafNodes;
 
 }
+
+
+void HistogramManager::depthAggregateProbabilityAndNumberOfLeafNodes(const TrieNode* trieNode,
+		unsigned editDistance,
+		unsigned panDistance,
+		unsigned bound,
+		float & aggregatedProbability ,
+		unsigned & aggregatedNumberOfLeafNodes) const{
+    if (trieNode->isTerminalNode()){
+    	aggregatedNumberOfLeafNodes ++; // each terminal node is one leaf node when term is complete
+
+		// fetch the inverted list to get its size
+		shared_ptr<vectorview<InvertedListContainerPtr> > invertedListDirectoryReadView;
+		queryEvaluator->getInvertedIndex()->getInvertedIndexDirectory_ReadView(invertedListDirectoryReadView);
+		shared_ptr<vectorview<unsigned> > invertedListReadView;
+		queryEvaluator->getInvertedIndex()->getInvertedListReadView(invertedListDirectoryReadView,
+				trieNode->getInvertedListOffset(), invertedListReadView);
+		// calculate the probability of this node by using invertedlist size
+		float individualProbabilityOfCompleteTermTrieNode = (invertedListReadView->size() * 1.0) /
+				this->queryEvaluator->indexData->forwardIndex->getTotalNumberOfForwardLists_ReadView();
+		// use new probability in joint probability
+		aggregatedProbability =
+				trieNode->aggregateValueByJointProbability(aggregatedProbability , individualProbabilityOfCompleteTermTrieNode);
+    }
+    if (panDistance < bound) {
+        for (unsigned int childIterator = 0; childIterator < trieNode->getChildrenCount(); childIterator++) {
+            const TrieNode *child = trieNode->getChild(childIterator);
+            depthAggregateProbabilityAndNumberOfLeafNodes(child, editDistance,
+            		panDistance + 1, bound ,
+            		aggregatedProbability, aggregatedNumberOfLeafNodes);
+        }
+    }
+}
+
 
 unsigned HistogramManager::computeEstimatedNumberOfResults(float probability){
 	return (unsigned)(probability * this->queryEvaluator->indexData->forwardIndex->getTotalNumberOfForwardLists_ReadView());
