@@ -80,6 +80,16 @@ bool UnionLowestLevelSimpleScanOperator::open(QueryEvaluatorInternal * queryEval
         this->cursorOnInvertedList = cacheEntry->cursorOnInvertedList;
     }
 
+    /*
+     * Printing number of leaf nodes and total sum of inverted lists
+     */
+    cout << "\tshortestinfo(" << invertedListLeafNodes.size() << "$";
+    unsigned totalSizeOfInvertedLists = 0;
+    for(unsigned ii = 0; ii < invertedLists.size() ; ++ii){
+    	totalSizeOfInvertedLists += invertedLists.at(ii)->size();
+    }
+    cout << totalSizeOfInvertedLists << ")\t";
+
     return true;
 
 }
