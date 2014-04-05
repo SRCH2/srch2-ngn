@@ -279,7 +279,6 @@ PhysicalPlanCost UnionLowestLevelSimpleScanOptimizationOperator::getCostOfGetNex
 
     PhysicalPlanCost resultCost;
     resultCost.cost = 1;
-    resultCost.cost = resultCost.cost * 0.1;
     return resultCost; // cost of sequential access
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.
@@ -292,7 +291,7 @@ PhysicalPlanCost UnionLowestLevelSimpleScanOptimizationOperator::getCostOfVerify
     unsigned estimatedNumberOfActiveNodes =
             this->getLogicalPlanNode()->stats->getActiveNodeSetForEstimation(params.isFuzzy)->getNumberOfActiveNodes();
     PhysicalPlanCost resultCost;
-    resultCost.cost = estimatedNumberOfActiveNodes * log2(200.0);
+    resultCost.cost = estimatedNumberOfActiveNodes * log2(85.0);
     return resultCost;
 }
 void UnionLowestLevelSimpleScanOptimizationOperator::getOutputProperties(IteratorProperties & prop){

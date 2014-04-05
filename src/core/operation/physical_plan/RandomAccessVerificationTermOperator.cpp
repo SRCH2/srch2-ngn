@@ -83,7 +83,7 @@ PhysicalPlanCost RandomAccessVerificationTermOptimizationOperator::getCostOfVeri
 		estimatedNumberOfActiveNodes = this->getLogicalPlanNode()->stats->getActiveNodeSetForEstimation(params.isFuzzy)->getNumberOfActiveNodes();
 	}
 	PhysicalPlanCost resultCost;
-	resultCost.cost = estimatedNumberOfActiveNodes * log2(200.0);
+	resultCost.cost = estimatedNumberOfActiveNodes * log2(85.0);
 	return resultCost;
 }
 void RandomAccessVerificationTermOptimizationOperator::getOutputProperties(IteratorProperties & prop){
