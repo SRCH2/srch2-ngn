@@ -18,9 +18,9 @@ void freeStatsOfLogicalPlanTree(LogicalPlanNode * node) {
 }
 bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & p){
 
-	struct timespec tstart;
-    struct timespec tend;
-	clock_gettime(CLOCK_REALTIME, &tstart);
+	//struct timespec tstart;
+        //struct timespec tend;
+	//clock_gettime(CLOCK_REALTIME, &tstart);
 
 	//1. Find the right value for K (if search type is topK)
 	bool isFuzzy = logicalPlan->isFuzzy();
@@ -105,10 +105,10 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 
 	}
 
-	clock_gettime(CLOCK_REALTIME, &tend);
-	unsigned searchTime = (tend.tv_sec - tstart.tv_sec) * 1000
-			+ (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-	cout << "\tTime:" << searchTime << endl;
+	//clock_gettime(CLOCK_REALTIME, &tend);
+	//unsigned searchTime = (tend.tv_sec - tstart.tv_sec) * 1000
+        //		+ (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+	//cout << "\tTime:" << searchTime << endl;
 
 
 	cursorOnResults = 0;

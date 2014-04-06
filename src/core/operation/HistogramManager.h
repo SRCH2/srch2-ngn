@@ -133,7 +133,7 @@ private:
 			double & aggregatedProbability ,
 			unsigned & aggregatedNumberOfLeafNodes) const;
 
-	unsigned computeEstimatedNumberOfResults(float probability);
+	unsigned computeEstimatedNumberOfResults(double probability);
 
 };
 
