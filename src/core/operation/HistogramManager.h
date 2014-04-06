@@ -47,7 +47,7 @@ namespace instantsearch
 class LogicalPlanNodeAnnotation{
 public:
 	unsigned estimatedNumberOfResults;
-	float estimatedProbability;
+	double estimatedProbability;
 	unsigned estimatedNumberOfLeafNodes;
 	boost::shared_ptr<PrefixActiveNodeSet> activeNodeSetExact;
 	boost::shared_ptr<PrefixActiveNodeSet> activeNodeSetFuzzy;
@@ -76,10 +76,10 @@ public:
 		this->estimatedNumberOfLeafNodes = estimatedNumberOfLeafNodes;
 	}
 
-	float getEstimatedProbability() const{
+	double getEstimatedProbability() const{
 		return estimatedProbability;
 	}
-	void setEstimatedProbability(float p){
+	void setEstimatedProbability(double p){
 		estimatedProbability = p;
 	}
 	boost::shared_ptr<PrefixActiveNodeSet> getActiveNodeSetForEstimation(bool isFuzzy){
@@ -122,7 +122,7 @@ private:
 
 	boost::shared_ptr<PrefixActiveNodeSet> computeActiveNodeSet(Term *term) const;
 	void computeEstimatedProbabilityOfPrefixAndNumberOfLeafNodes(TermType termType, PrefixActiveNodeSet * activeNodes ,
-			unsigned threshold, float & probability, unsigned & numberOfLeafNodes) const;
+			unsigned threshold, double & probability, unsigned & numberOfLeafNodes) const;
 
 	// this function is only used when term is complete so we need to
 	// go further down the Trie
@@ -130,7 +130,7 @@ private:
 			unsigned editDistance,
 			unsigned panDistance,
 			unsigned bound,
-			float & aggregatedProbability ,
+			double & aggregatedProbability ,
 			unsigned & aggregatedNumberOfLeafNodes) const;
 
 	unsigned computeEstimatedNumberOfResults(float probability);
