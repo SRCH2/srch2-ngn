@@ -126,6 +126,9 @@ void HistogramManager::annotateWithEstimatedProbabilitiesAndNumberOfResults(Logi
 			}
 			node->stats->setEstimatedProbability(conjunctionAggregatedProbability);
 			node->stats->setEstimatedNumberOfResults(computeEstimatedNumberOfResults(node->stats->getEstimatedProbability()));
+			if(conjunctionAggregatedProbability != 0 && node->stats->getEstimatedNumberOfResults() == 0){
+				node->stats->setEstimatedNumberOfResults(1);
+			}
 			break;
 		}
 		case LogicalPlanNodeTypeOr:
@@ -142,6 +145,9 @@ void HistogramManager::annotateWithEstimatedProbabilitiesAndNumberOfResults(Logi
 			}
 			node->stats->setEstimatedProbability(disjunctionAggregatedProbability);
 			node->stats->setEstimatedNumberOfResults(computeEstimatedNumberOfResults(node->stats->getEstimatedProbability()));
+			if(disjunctionAggregatedProbability != 0 && node->stats->getEstimatedNumberOfResults() == 0){
+				node->stats->setEstimatedNumberOfResults(1);
+			}
 			break;
 		}
 		case LogicalPlanNodeTypeNot:
@@ -154,6 +160,9 @@ void HistogramManager::annotateWithEstimatedProbabilitiesAndNumberOfResults(Logi
 			float negationProbability = 1 - childProbability;
 			node->stats->setEstimatedProbability(negationProbability);
 			node->stats->setEstimatedNumberOfResults(computeEstimatedNumberOfResults(node->stats->getEstimatedProbability()));
+			if(negationProbability != 0 && node->stats->getEstimatedNumberOfResults() == 0){
+				node->stats->setEstimatedNumberOfResults(1);
+			}
 			break;
 		}
 		case LogicalPlanNodeTypePhrase:
@@ -174,6 +183,9 @@ void HistogramManager::annotateWithEstimatedProbabilitiesAndNumberOfResults(Logi
 			node->stats->setEstimatedProbability(termProbability);
 			node->stats->setEstimatedNumberOfResults(computeEstimatedNumberOfResults(node->stats->getEstimatedProbability()));
 			node->stats->setEstimatedNumberOfLeafNodes(numberOfLeafNodes);
+			if(termProbability != 0 && node->stats->getEstimatedNumberOfResults() == 0){
+				node->stats->setEstimatedNumberOfResults(1);
+			}
 			break;
 		}
 	}
