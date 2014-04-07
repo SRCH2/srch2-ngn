@@ -21,7 +21,7 @@ namespace util {
 class RecordSerializer;
 } }
 
-using namespace srch2::instantsearch;;
+using namespace srch2::instantsearch;
 using namespace std;
 using namespace srch2::util;
 

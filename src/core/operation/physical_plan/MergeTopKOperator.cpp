@@ -383,21 +383,11 @@ bool MergeTopKOperator::verifyRecordWithChildren(PhysicalPlanRecordItem * record
 		if(childOffset == childOffsetOfRecord){
 			runTimeTermRecordScores.push_back(recordItem->getRecordRuntimeScore());
 			staticTermRecordScores.push_back(recordItem->getRecordStaticScore());
-			vector<TrieNodePointer> matchingPrefixes;
-			recordItem->getRecordMatchingPrefixes(matchingPrefixes);
-			termRecordMatchingKeywords.insert(termRecordMatchingKeywords.end(),matchingPrefixes.begin(),matchingPrefixes.end());
-			vector<unsigned> recordAttributeBitmaps;
-			recordItem->getRecordMatchAttributeBitmaps(recordAttributeBitmaps);
-			attributeBitmaps.insert(attributeBitmaps.end(),recordAttributeBitmaps.begin(),recordAttributeBitmaps.end());
-			vector<unsigned> recordPrefixEditDistances;
-			recordItem->getRecordMatchEditDistances(recordPrefixEditDistances);
-			prefixEditDistances.insert(prefixEditDistances.end(),recordPrefixEditDistances.begin(),recordPrefixEditDistances.end());
-			vector<unsigned> recordPositionIndexOffsets;
-			recordItem->getPositionIndexOffsets(recordPositionIndexOffsets);
-			positionIndexOffsets.insert(positionIndexOffsets.end(),recordPositionIndexOffsets.begin(),recordPositionIndexOffsets.end());
-			std::vector<TermType> recTermTypes;
-			recordItem->getTermTypes(recTermTypes);
-			termTypes.insert(termTypes.end(),recTermTypes.begin(),recTermTypes.end());
+			recordItem->getRecordMatchingPrefixes(termRecordMatchingKeywords);
+			recordItem->getRecordMatchAttributeBitmaps(attributeBitmaps);
+			recordItem->getRecordMatchEditDistances(prefixEditDistances);
+			recordItem->getPositionIndexOffsets(positionIndexOffsets);
+			recordItem->getTermTypes(termTypes);
 		}else{
 			PhysicalPlanRandomAccessVerificationParameters parameters(params.ranker,
 					this->forwardListDirectoryReadView);

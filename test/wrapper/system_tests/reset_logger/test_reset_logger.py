@@ -76,20 +76,18 @@ if __name__ == '__main__':
     assert int(flagNum) == 0, 'Error, please install logrotate for reset_logger_system_test'
 
     #send a command to rotate logger file by using the 3rd-party program 'logrotate' 
-    status, output = commands.getstatusoutput("logrotate -s ./reset_logger/myLogrotate/status ./reset_logger/myLogrotate/logrotate.conf")
-    time.sleep(1)
+    status, output = commands.getstatusoutput("logrotate -f -s ./reset_logger/myLogrotate/status ./reset_logger/myLogrotate/logrotate.conf")
 
     #get the size of new empty logger file
     size_3 = os.path.getsize(logFileName)
     #print 'size_3 = ' + str(size_3)
+
     #get the size of old renamed logger file
-    try:
+    if (os.path.exists(str(logFileName) + '.1')):
         size_4 = os.path.getsize(str(logFileName) + '.1')
-    except Exception, err:
-        print "Exception checking size of old, renamed logfile " + str(logFileName) + '.1'
-        tester.killServer()
-        os.popen("ls -la ./reset_logger/logs")
-        os._exit(1)
+    else:
+        size_4 = 0
+        print "Renamed logfile " + str(logFileName) + '.1 missing - Logrotate probably did not rotate it because its already been rotated recently.'
 
     #print 'size_4 = ' + str(size_4)
     assert (size_3 == 0) and (size_4 == size_2), 'Error, failed to create/switch to new logger file'
