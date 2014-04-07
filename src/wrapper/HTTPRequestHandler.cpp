@@ -913,7 +913,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
 //    decodeAmpersand(req->uri, strlen(req->uri), decodedUri);
     evkeyvalq headers;
     evhttp_parse_query(req->uri, &headers);
-    cout << "Query: " << req->uri << endl;
+    //cout << "Query: " << req->uri << endl;
     // simple example for query is : q={boost=2}name:foo~0.5 AND bar^3*&fq=name:"John"
     //1. first create query parser to parse the url
     QueryParser qp(headers, &paramContainer);

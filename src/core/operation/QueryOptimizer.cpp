@@ -383,7 +383,7 @@ PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<Phy
         cost = cost + treeOption->getCostOfClose(*(physicalPlan.getExecutionParameters()));
 
 //        if(planOffset >= treeOptions.size()-1){
-            cout << "C("  << treeOptionIndex << ","<< cost.cost << ")$" ;
+//            cout << "C("  << treeOptionIndex << ","<< cost.cost << ")$" ;
 //        }
 
         if(minPlan == NULL){
@@ -405,8 +405,8 @@ PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<Phy
 //        return treeOptions.at(planOffset);
 //    }
 //    cout << minCost << "\t" ;
-    return treeOptions.at(1);
-//    return minPlan;
+//    return treeOptions.at(0);
+    return minPlan;
 }
 
 PhysicalPlanNode * QueryOptimizer::buildPhysicalPlanFirstVersionFromTreeStructure(PhysicalPlanOptimizationNode * chosenTree){

@@ -128,7 +128,6 @@ void HistogramManager::annotateWithEstimatedProbabilitiesAndNumberOfResults(Logi
 			node->stats->setEstimatedNumberOfResults(computeEstimatedNumberOfResults(node->stats->getEstimatedProbability()));
 			if(conjunctionAggregatedProbability != 0 && node->stats->getEstimatedNumberOfResults() == 0){
 				node->stats->setEstimatedNumberOfResults(1);
-				cout << "ZERO AND" << endl;
 			}
 			break;
 		}
@@ -186,7 +185,6 @@ void HistogramManager::annotateWithEstimatedProbabilitiesAndNumberOfResults(Logi
 			node->stats->setEstimatedNumberOfLeafNodes(numberOfLeafNodes);
 			if(termProbability != 0 && node->stats->getEstimatedNumberOfResults() == 0){
 				node->stats->setEstimatedNumberOfResults(1);
-				cout << "ZERO TERM" << endl;
 			}
 			break;
 		}
@@ -401,7 +399,7 @@ void HistogramManager::depthAggregateProbabilityAndNumberOfLeafNodes(const TrieN
 }
 
 
-unsigned HistogramManager::computeEstimatedNumberOfResults(float probability){
+unsigned HistogramManager::computeEstimatedNumberOfResults(double probability){
 	return (unsigned)(probability * this->queryEvaluator->indexData->forwardIndex->getTotalNumberOfForwardLists_ReadView());
 }
 
