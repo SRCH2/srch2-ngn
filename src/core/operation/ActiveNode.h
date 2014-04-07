@@ -526,8 +526,8 @@ private:
 class LeafNodeSetIteratorForComplete
 {
 private:
-    std::vector<LeafNodeSetIteratorItemComplete > resultVector;
-    unsigned cursor;
+	map<const TrieNode*, unsigned, TrieNodePreOrderComparator> resultVector;
+	map<const TrieNode*, unsigned, TrieNodePreOrderComparator>::iterator cursor;
 
 public:
 
@@ -547,7 +547,7 @@ public:
 
     bool isDone() {
         //if (cursor >= leafNodesVector.size())
-        if (cursor >= resultVector.size())
+        if (cursor == resultVector.end())
             return true;
         return false;
     }
@@ -561,8 +561,8 @@ public:
             leafNode = NULL;
             distance = 0;
         } else {
-            leafNode = resultVector.at(cursor).leafNode;
-            distance = resultVector.at(cursor).distance;
+            leafNode = cursor->first;
+            distance = cursor->second;
         }
     }
 
@@ -574,7 +574,6 @@ public:
 private:
     void _initLeafNodeSetIterator(PrefixActiveNodeSet *prefixActiveNodeSet, unsigned bound) {
 
-    	map<const TrieNode*, unsigned, TrieNodePreOrderComparator> activeNodes; // this map stores the minimum edit-distance for terminal nodes
         const TrieNode *trieNode;
         unsigned distance;
 
@@ -582,20 +581,16 @@ private:
         for (; !ani.isDone(); ani.next()) {
             ani.getItem(trieNode, distance);
             unsigned panDistance = prefixActiveNodeSet->getEditdistanceofPrefix(trieNode);
-			depthTraverseTerminalNodes(activeNodes,trieNode , distance, panDistance, bound);
-        }
-        for(map<const TrieNode*, unsigned, TrieNodePreOrderComparator>::iterator activeNodeIter = activeNodes.begin();
-        		activeNodeIter != activeNodes.end() ; ++activeNodeIter){
-        	resultVector.push_back(LeafNodeSetIteratorItemComplete(activeNodeIter->first , activeNodeIter->second));
+			depthTraverseTerminalNodes(resultVector,trieNode , distance, panDistance, bound);
         }
 
-        cursor = 0;
+        cursor = resultVector.begin();
     }
 
     void depthTraverseTerminalNodes(map<const TrieNode*, unsigned, TrieNodePreOrderComparator> & activeNodes,
     		const TrieNode* trieNode, unsigned editDistance, unsigned panDistance, unsigned bound){
         if (trieNode->isTerminalNode()){
-			map<const TrieNode*, unsigned>::iterator nodeIter = activeNodes.find(trieNode);
+			map<const TrieNode*, unsigned, TrieNodePreOrderComparator>::iterator nodeIter = activeNodes.find(trieNode);
 			unsigned newEditDistance = editDistance > panDistance ? editDistance : panDistance;
         	if(nodeIter != activeNodes.end()){ // use the minimal edis-distance
         		activeNodes[trieNode] = std::min<unsigned>(newEditDistance , activeNodes[trieNode]);
