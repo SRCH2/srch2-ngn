@@ -276,14 +276,29 @@ void HistogramManager::computeEstimatedProbabilityOfPrefixAndNumberOfLeafNodes(T
 	if(termType == TERM_TYPE_COMPLETE){
 	    unsigned aggregatedNumberOfLeafNodes = 0;
 	    double aggregatedProbability = 0;
-	    for (ActiveNodeSetIterator iter(activeNodes, threshold); !iter.isDone(); iter.next()) {
+
+	    for(LeafNodeSetIteratorForComplete iter(activeNodes , threshold); !iter.isDone(); iter.next()){
 	        TrieNodePointer trieNode;
 	        unsigned distance;
 	        iter.getItem(trieNode, distance);
-	        unsigned panDistance = activeNodes->getEditdistanceofPrefix(trieNode);
-	        depthAggregateProbabilityAndNumberOfLeafNodes(trieNode,
-	        		distance, panDistance, threshold , aggregatedProbability, aggregatedNumberOfLeafNodes );
+
+			aggregatedNumberOfLeafNodes ++; // each terminal node is one leaf node when term is complete
+
+			// fetch the inverted list to get its size
+			shared_ptr<vectorview<InvertedListContainerPtr> > invertedListDirectoryReadView;
+			queryEvaluator->getInvertedIndex()->getInvertedIndexDirectory_ReadView(invertedListDirectoryReadView);
+			shared_ptr<vectorview<unsigned> > invertedListReadView;
+			queryEvaluator->getInvertedIndex()->getInvertedListReadView(invertedListDirectoryReadView,
+					trieNode->getInvertedListOffset(), invertedListReadView);
+			// calculate the probability of this node by using invertedlist size
+			double individualProbabilityOfCompleteTermTrieNode = (invertedListReadView->size() * 1.0) /
+					this->queryEvaluator->indexData->forwardIndex->getTotalNumberOfForwardLists_ReadView();
+			// use new probability in joint probability
+			aggregatedProbability =
+					trieNode->aggregateValueByJointProbabilityDouble(aggregatedProbability , individualProbabilityOfCompleteTermTrieNode);
+
 	    }
+
 	    numberOfLeafNodes = aggregatedNumberOfLeafNodes;
 	    probability = aggregatedProbability;
 	    return;
@@ -373,20 +388,7 @@ void HistogramManager::depthAggregateProbabilityAndNumberOfLeafNodes(const TrieN
 		double & aggregatedProbability ,
 		unsigned & aggregatedNumberOfLeafNodes) const{
     if (trieNode->isTerminalNode()){
-    	aggregatedNumberOfLeafNodes ++; // each terminal node is one leaf node when term is complete
 
-		// fetch the inverted list to get its size
-		shared_ptr<vectorview<InvertedListContainerPtr> > invertedListDirectoryReadView;
-		queryEvaluator->getInvertedIndex()->getInvertedIndexDirectory_ReadView(invertedListDirectoryReadView);
-		shared_ptr<vectorview<unsigned> > invertedListReadView;
-		queryEvaluator->getInvertedIndex()->getInvertedListReadView(invertedListDirectoryReadView,
-				trieNode->getInvertedListOffset(), invertedListReadView);
-		// calculate the probability of this node by using invertedlist size
-		double individualProbabilityOfCompleteTermTrieNode = (invertedListReadView->size() * 1.0) /
-				this->queryEvaluator->indexData->forwardIndex->getTotalNumberOfForwardLists_ReadView();
-		// use new probability in joint probability
-		aggregatedProbability =
-				trieNode->aggregateValueByJointProbabilityDouble(aggregatedProbability , individualProbabilityOfCompleteTermTrieNode);
     }
     if (panDistance < bound) {
         for (unsigned int childIterator = 0; childIterator < trieNode->getChildrenCount(); childIterator++) {

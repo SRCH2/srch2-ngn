@@ -33,7 +33,7 @@ bool UnionLowestLevelSimpleScanOperator::open(QueryEvaluatorInternal * queryEval
 
     // 4. Create the iterator and save it as a member of the class for future calls to getNext
     if (term->getTermType() == TERM_TYPE_PREFIX) { // prefix term
-        for (LeafNodeSetIterator iter (activeNodeSet.get(), term->getThreshold()); !iter.isDone(); iter.next()) {
+        for (LeafNodeSetIteratorForPrefix iter (activeNodeSet.get(), term->getThreshold()); !iter.isDone(); iter.next()) {
             TrieNodePointer leafNode;
             TrieNodePointer prefixNode;
             unsigned distance;
@@ -51,20 +51,24 @@ bool UnionLowestLevelSimpleScanOperator::open(QueryEvaluatorInternal * queryEval
             this->invertedListIDs.push_back(leafNode->getInvertedListOffset());
         }
     }else{ // complete term
-        for (ActiveNodeSetIterator iter(activeNodeSet.get(), term->getThreshold()); !iter.isDone(); iter.next()) {
-            // For a pivotal active node (PAN) (e.g., "game") and a query term (e.g., "garden"),
-            // there are two distances between them. One is their real edit distance between "game" and "garden",
-            // which is 3.  The other one is the PAN's internal distance as a prefix, which is 2,
-            // corresponding to the distance between "game" and "garde" where the last two matched characters
-            // We need both distances in the function call depthInitializeSimpleScanOperator() in order to compute the real edit
-            // distance of a descendant of the current trie node. More details of the approach
-            // http://www.ics.uci.edu/~chenli/pub/2011-vldbj-fuzzy-search.pdf Section 4.3.1.
-            TrieNodePointer trieNode;
-            unsigned editDistance;
-            iter.getItem(trieNode, editDistance);
-            unsigned panDistance = activeNodeSet->getEditdistanceofPrefix(trieNode);
-            depthInitializeSimpleScanOperator(trieNode, trieNode, editDistance, panDistance, term->getThreshold());
-        }
+
+		LeafNodeSetIteratorForComplete iter(activeNodeSet.get() , term->getThreshold());
+		for(; !iter.isDone(); iter.next()){
+			TrieNodePointer trieNode;
+			unsigned editDistance;
+			iter.getItem(trieNode, editDistance);
+	        // get inverted list pointer and save it
+	        shared_ptr<vectorview<unsigned> > invertedListReadView;
+	        this->queryEvaluator->getInvertedIndex()->
+	                getInvertedListReadView(invertedListDirectoryReadView,
+	                        trieNode->getInvertedListOffset() , invertedListReadView);
+	        this->invertedListsSharedPointers.push_back(invertedListReadView);
+	        this->invertedLists.push_back(invertedListReadView.get());
+	        this->invertedListPrefixes.push_back(trieNode);
+	        this->invertedListLeafNodes.push_back(trieNode);
+	        this->invertedListDistances.push_back(editDistance);
+	        this->invertedListIDs.push_back(trieNode->getInvertedListOffset() );
+		}
     }
 
     // check cache
@@ -244,17 +248,7 @@ bool UnionLowestLevelSimpleScanOperator::verifyByRandomAccess(PhysicalPlanRandom
 void UnionLowestLevelSimpleScanOperator::depthInitializeSimpleScanOperator(
         const TrieNode* trieNode, const TrieNode* prefixNode, unsigned editDistance, unsigned panDistance,  unsigned bound){
     if (trieNode->isTerminalNode()){
-        // get inverted list pointer and save it
-        shared_ptr<vectorview<unsigned> > invertedListReadView;
-        this->queryEvaluator->getInvertedIndex()->
-                getInvertedListReadView(invertedListDirectoryReadView,
-                        trieNode->getInvertedListOffset() , invertedListReadView);
-        this->invertedListsSharedPointers.push_back(invertedListReadView);
-        this->invertedLists.push_back(invertedListReadView.get());
-        this->invertedListPrefixes.push_back(prefixNode);
-        this->invertedListLeafNodes.push_back(trieNode);
-        this->invertedListDistances.push_back(editDistance > panDistance ? editDistance : panDistance);
-        this->invertedListIDs.push_back(trieNode->getInvertedListOffset() );
+
     }
     if (panDistance < bound) {
         for (unsigned int childIterator = 0; childIterator < trieNode->getChildrenCount(); childIterator++) {

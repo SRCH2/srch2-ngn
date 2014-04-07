@@ -70,15 +70,9 @@ PhysicalPlanCost RandomAccessVerificationTermOptimizationOperator::getCostOfVeri
 
 	Term * term = this->getLogicalPlanNode()->getTerm(params.isFuzzy);
 	if(term->getTermType() == TERM_TYPE_COMPLETE){
-		for (ActiveNodeSetIterator iter(this->getLogicalPlanNode()->stats->getActiveNodeSetForEstimation(params.isFuzzy).get(), term->getThreshold());
-				!iter.isDone(); iter.next()) {
-			const TrieNode *trieNode;
-			unsigned distance;
-			iter.getItem(trieNode, distance);
-			if (trieNode->isTerminalNode()){
-				estimatedNumberOfActiveNodes ++;
-			}
-		}
+		LeafNodeSetIteratorForComplete iter(this->getLogicalPlanNode()->stats->getActiveNodeSetForEstimation(params.isFuzzy).get()
+						, term->getThreshold());
+		estimatedNumberOfActiveNodes = iter.size();
 	}else{ // prefix
 		estimatedNumberOfActiveNodes = this->getLogicalPlanNode()->stats->getActiveNodeSetForEstimation(params.isFuzzy)->getNumberOfActiveNodes();
 	}

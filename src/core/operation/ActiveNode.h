@@ -390,8 +390,20 @@ struct LeafNodeSetIteratorItem {
 
 };
 
+struct LeafNodeSetIteratorItemComplete {
+    const TrieNode *leafNode;
+    unsigned distance;
 
-class LeafNodeSetIterator
+    // TODO: OPT. Return the length of the prefix instead of the prefixNode pointer?
+    LeafNodeSetIteratorItemComplete(const TrieNode *leafNode, unsigned distance) {
+        this->leafNode = leafNode;
+        this->distance = distance;
+    }
+
+};
+
+
+class LeafNodeSetIteratorForPrefix
 {
 private:
     std::vector<LeafNodeSetIteratorItem > resultVector;
@@ -408,7 +420,7 @@ public:
     //                 based on their edit distance,
     //                 2. get their leaf nodes, and keep track of the visited nodes so that
     //                   each node is visited only once.
-    LeafNodeSetIterator(PrefixActiveNodeSet *prefixActiveNodeSet, const unsigned edUpperBound) {
+    LeafNodeSetIteratorForPrefix(PrefixActiveNodeSet *prefixActiveNodeSet, const unsigned edUpperBound) {
         _initLeafNodeSetIterator(prefixActiveNodeSet, edUpperBound);
     }
 
@@ -510,6 +522,97 @@ private:
     }
 
 };
+
+class LeafNodeSetIteratorForComplete
+{
+private:
+    std::vector<LeafNodeSetIteratorItemComplete > resultVector;
+    unsigned cursor;
+
+public:
+
+    /*
+     * This iterator traverses on the terminal nodes close by the active nodes of prefixActiveNodeSet
+     * to find those within edit-distance threshold.
+     */
+    LeafNodeSetIteratorForComplete(PrefixActiveNodeSet *prefixActiveNodeSet, unsigned bound){
+    	_initLeafNodeSetIterator(prefixActiveNodeSet, bound);
+    }
+
+    void next() {
+        if (isDone())
+            return;
+        cursor ++;
+    }
+
+    bool isDone() {
+        //if (cursor >= leafNodesVector.size())
+        if (cursor >= resultVector.size())
+            return true;
+        return false;
+    }
+
+    size_t size() const{
+        return resultVector.size();
+    }
+
+    void getItem(const TrieNode *&leafNode, unsigned &distance) {
+        if (isDone()) {
+            leafNode = NULL;
+            distance = 0;
+        } else {
+            leafNode = resultVector.at(cursor).leafNode;
+            distance = resultVector.at(cursor).distance;
+        }
+    }
+
+    // Deprecated due to removal of TrieNode->getParent() pointers.
+    void printLeafNodes(const Trie* trie) const {
+
+    }
+
+private:
+    void _initLeafNodeSetIterator(PrefixActiveNodeSet *prefixActiveNodeSet, unsigned bound) {
+
+    	map<const TrieNode*, unsigned, TrieNodePreOrderComparator> activeNodes; // this map stores the minimum edit-distance for terminal nodes
+        const TrieNode *trieNode;
+        unsigned distance;
+
+        ActiveNodeSetIterator ani(prefixActiveNodeSet, bound);
+        for (; !ani.isDone(); ani.next()) {
+            ani.getItem(trieNode, distance);
+            unsigned panDistance = prefixActiveNodeSet->getEditdistanceofPrefix(trieNode);
+			depthTraverseTerminalNodes(activeNodes,trieNode , distance, panDistance, bound);
+        }
+        for(map<const TrieNode*, unsigned, TrieNodePreOrderComparator>::iterator activeNodeIter = activeNodes.begin();
+        		activeNodeIter != activeNodes.end() ; ++activeNodeIter){
+        	resultVector.push_back(LeafNodeSetIteratorItemComplete(activeNodeIter->first , activeNodeIter->second));
+        }
+
+        cursor = 0;
+    }
+
+    void depthTraverseTerminalNodes(map<const TrieNode*, unsigned, TrieNodePreOrderComparator> & activeNodes,
+    		const TrieNode* trieNode, unsigned editDistance, unsigned panDistance, unsigned bound){
+        if (trieNode->isTerminalNode()){
+			map<const TrieNode*, unsigned>::iterator nodeIter = activeNodes.find(trieNode);
+			unsigned newEditDistance = editDistance > panDistance ? editDistance : panDistance;
+        	if(nodeIter != activeNodes.end()){ // use the minimal edis-distance
+        		activeNodes[trieNode] = std::min<unsigned>(newEditDistance , activeNodes[trieNode]);
+        	}else{
+        		activeNodes[trieNode] = newEditDistance;
+        	}
+        }
+        if (panDistance < bound) {
+            for (unsigned int childIterator = 0; childIterator < trieNode->getChildrenCount(); childIterator++) {
+                const TrieNode *child = trieNode->getChild(childIterator);
+                depthTraverseTerminalNodes(activeNodes, child, editDistance, panDistance + 1, bound);
+            }
+        }
+    }
+
+};
+
 
 }
 }
