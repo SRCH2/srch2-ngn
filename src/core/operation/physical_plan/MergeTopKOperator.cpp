@@ -617,7 +617,7 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalP
 	 /*
 	  * P[] = the probability array of children (P[i]*N = estimated length of child i)
 	  */
-	vector<float> P;
+	vector<double> P;
 	unsigned estimatedLengthOfShortestList = -1; // -1 is a very big number
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
 		P.push_back(this->getChildAt(childOffset)->getLogicalPlanNode()->stats->getEstimatedProbability());
@@ -667,8 +667,8 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalP
 	 * now if we define Xi = P(L1 ^ L2 ^ ... ^ Li-1 ^ Qi ^ Li+1 ^ ... ^ Lt-1) =
 	 * 						 P[0] * P[1] * ... * P[i-1] * M/N * P[i+1] * ... P[t-1]
 	 */
-	vector<float> X;
-	float PiP = 1; // multiplication of all probabilities
+	vector<double> X;
+	double PiP = 1; // multiplication of all probabilities
 	for(unsigned c = 0 ; c < P.size() ; ++c){
 		PiP *= P[c];
 	}
@@ -678,7 +678,7 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalP
 	 /*
 	  * then P( I(Li) ^ U(Qi) ) = JointProbability(X0, X1, ..., XT)                                 (2)
 	  */
-	float JointProb_X = 0;
+	double JointProb_X = 0;
 	for(unsigned c = 0; c < P.size(); ++c){
 		JointProb_X = JointProb_X + X[c] - JointProb_X * X[c];
 	}
@@ -688,7 +688,7 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalP
 	 * P( I(Li) | U(Qi) ) = JointProbability(X0, X1, ..., XT) / (1 - (1 - M/N)^T)                  (4)
 	 * and therefore CN = |U(Qi)| * (4) = N * JointProbability(X0, X1, ..., XT)
 	 */
-	float JointProb_Q = 1 - pow(1-(M*1.0/N) , (double)T);
+	double JointProb_Q = 1 - pow(1-(M*1.0/N) , (double)T);
 	unsigned CN = N * JointProb_X ;
 	 /* NCN = total number of non-candidate records visited until cursor is M
 	 * NCN = |U(Qi)| - CN
@@ -717,7 +717,7 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalP
 	 * 			  P[0] * ... P[i-1] * P[i+1] * ... P[T-1]                                           (6)
 	 */
 	vector<float> P_CAN;
-	float SigmaP_CAN = 0;
+	double SigmaP_CAN = 0;
 	for(unsigned c = 0; c < P.size(); ++c){
 		P_CAN.push_back(PiP / P[c]);
 		SigmaP_CAN += P_CAN[P_CAN.size()-1];
@@ -725,7 +725,7 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalP
 	 /* NormP-CAN[i] = probability that a candidate record is from child i =
 	 * 			   P-CAN[i] / (P-CAN[0] + ... + P-CAN[T-1])
 	 */
-	vector<float> NormP_CAN;
+	vector<double> NormP_CAN;
 	for(unsigned c = 0; c < P.size(); ++c){
 		NormP_CAN.push_back(P_CAN[c] / SigmaP_CAN);
 	}
@@ -761,9 +761,9 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalP
 	vector<double> C_NCAN;
 	for(unsigned c = 0; c < P.size(); ++c){
 		double C_NCAN_c = 0;
-		float PcBackup = P[c];
+		double PcBackup = P[c];
 		P[c] = 1;
-		float PPart = 1;
+		double PPart = 1;
 		unsigned RndPart = 0;
 		for(unsigned d = 0; d < P.size(); ++d){
 			RndPart += Rnd[d];
@@ -780,8 +780,8 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalP
 	 /* P-NCAN[i] = probability that a record from child i is not a candidate  =
 	 *             1 - P-CAN[i] = 1 - (6)
 	 */
-	vector<float> P_NCAN;
-	float SigmaP_NCAN = 0 ;
+	vector<double> P_NCAN;
+	double SigmaP_NCAN = 0 ;
 	for(unsigned c = 0; c < P.size(); ++c){
 		P_NCAN.push_back(1 - PiP / P[c]);
 		SigmaP_NCAN += P_NCAN[P_NCAN.size()-1];
@@ -789,7 +789,7 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalP
 	 /* NormP-NCAN[i] = probability that a non-candidate record is from child i =
 	 *             P-NCAN[i] / (P-NCAN[0] + ... + P-NCAN[T-1])
 	 */
-	vector<float> NormP_NCAN;
+	vector<double> NormP_NCAN;
 	for(unsigned c = 0; c < P.size(); ++c){
 		NormP_NCAN.push_back(P_NCAN[c] / SigmaP_NCAN);
 	}

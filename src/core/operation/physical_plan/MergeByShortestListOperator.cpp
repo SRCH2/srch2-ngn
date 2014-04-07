@@ -363,7 +363,7 @@ PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfGetNext(const
 			this->getChildAt(S)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
 
 
-	vector<float> P;
+	vector<double> P;
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
 		P.push_back(this->getChildAt(childOffset)->getLogicalPlanNode()->stats->getEstimatedProbability());
 	}
@@ -414,9 +414,9 @@ PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfGetNext(const
 	 *                       // child S for random access so we always pass it
 	 */
 	 double COST_NC = 0;
-	 float PSBackup = P[S];
+	 double PSBackup = P[S];
 	 P[S] = 1;
-	 float PPart = 1;
+	 double PPart = 1;
 	 unsigned RndPart = 0;
 	 for(unsigned d = 0; d < P.size(); ++d){
 		 RndPart += Rnd[d];
