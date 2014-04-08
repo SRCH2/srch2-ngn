@@ -595,12 +595,8 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfGetNext(const PhysicalP
 	  *
 	  * K = number of top results to find (we calculate the score for K and then divide the result by K)
 	  */
-	unsigned K = 1;
-	if(T <= 3){
-		K = R/2;
-	}else{
-		K = 1;
-	}
+	unsigned K = R / 2;
+
 	if(K == 0){
 		K = 1;
 	}
