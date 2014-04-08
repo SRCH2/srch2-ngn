@@ -126,6 +126,11 @@ void HistogramManager::annotateWithEstimatedProbabilitiesAndNumberOfResults(Logi
 			}
 			node->stats->setEstimatedProbability(conjunctionAggregatedProbability);
 			node->stats->setEstimatedNumberOfResults(computeEstimatedNumberOfResults(node->stats->getEstimatedProbability()));
+			/*
+			 * if probability is not zero but estimated number of results is zero, it means probability has
+			 * become very small. But since this zero will be multiplied to many other parts of costing
+			 * it shouldn't be zero or it disables them ...
+			 */
 			if(conjunctionAggregatedProbability != 0 && node->stats->getEstimatedNumberOfResults() == 0){
 				node->stats->setEstimatedNumberOfResults(1);
 			}
@@ -145,6 +150,11 @@ void HistogramManager::annotateWithEstimatedProbabilitiesAndNumberOfResults(Logi
 			}
 			node->stats->setEstimatedProbability(disjunctionAggregatedProbability);
 			node->stats->setEstimatedNumberOfResults(computeEstimatedNumberOfResults(node->stats->getEstimatedProbability()));
+			/*
+			 * if probability is not zero but estimated number of results is zero, it means probability has
+			 * become very small. But since this zero will be multiplied to many other parts of costing
+			 * it shouldn't be zero or it disables them ...
+			 */
 			if(disjunctionAggregatedProbability != 0 && node->stats->getEstimatedNumberOfResults() == 0){
 				node->stats->setEstimatedNumberOfResults(1);
 			}
@@ -160,6 +170,11 @@ void HistogramManager::annotateWithEstimatedProbabilitiesAndNumberOfResults(Logi
 			double negationProbability = 1 - childProbability;
 			node->stats->setEstimatedProbability(negationProbability);
 			node->stats->setEstimatedNumberOfResults(computeEstimatedNumberOfResults(node->stats->getEstimatedProbability()));
+			/*
+			 * if probability is not zero but estimated number of results is zero, it means probability has
+			 * become very small. But since this zero will be multiplied to many other parts of costing
+			 * it shouldn't be zero or it disables them ...
+			 */
 			if(negationProbability != 0 && node->stats->getEstimatedNumberOfResults() == 0){
 				node->stats->setEstimatedNumberOfResults(1);
 			}
@@ -183,6 +198,11 @@ void HistogramManager::annotateWithEstimatedProbabilitiesAndNumberOfResults(Logi
 			node->stats->setEstimatedProbability(termProbability);
 			node->stats->setEstimatedNumberOfResults(computeEstimatedNumberOfResults(node->stats->getEstimatedProbability()));
 			node->stats->setEstimatedNumberOfLeafNodes(numberOfLeafNodes);
+			/*
+			 * if probability is not zero but estimated number of results is zero, it means probability has
+			 * become very small. But since this zero will be multiplied to many other parts of costing
+			 * it shouldn't be zero or it disables them ...
+			 */
 			if(termProbability != 0 && node->stats->getEstimatedNumberOfResults() == 0){
 				node->stats->setEstimatedNumberOfResults(1);
 			}
@@ -272,6 +292,11 @@ void HistogramManager::computeEstimatedProbabilityOfPrefixAndNumberOfLeafNodes(T
 	/*
 	 * If termType is complete, we shouldn't estimate
 	 * numberOfLeafNodes or probability value. we can use their exact values
+	 *
+	 * For example, for a complete keyword "mic", we can use the length of the inverted
+	 * list of the terminal node "mic" to compute its exact probability, without considering other
+	 * leaf nodes of this node, such as "michael" and "microsoft".
+	 *
 	 */
 	if(termType == TERM_TYPE_COMPLETE){
 	    unsigned aggregatedNumberOfLeafNodes = 0;
