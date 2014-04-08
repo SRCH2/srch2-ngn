@@ -18,6 +18,7 @@ ChineseAnalyzer::ChineseAnalyzer(const std::string &chineseDictionaryFile,
     : AnalyzerInternal(NULL/*stemmer*/, stopWords, protectedWords, synonyms, delimiters),
       mDictFilePath(chineseDictionaryFile)
 {
+	this->tokenStream = NULL;
     this->analyzerType = CHINESE_ANALYZER;
 }
 

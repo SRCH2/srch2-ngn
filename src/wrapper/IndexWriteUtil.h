@@ -28,15 +28,17 @@ struct IndexWriteUtil
     	Json::FastWriter writer;
     	if(JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root, indexDataContainerConf, log_str, recSerializer) == false){
     		log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"failed\"}";
+    		delete storedSchema;
     		return;
     	}
     	//add the record to the index
 
     	if ( indexer->getNumberOfDocumentsInIndex() < indexDataContainerConf->getDocumentLimit() )
     	{
-            srch2::instantsearch::Analyzer * analyzer = AnalyzerFactory::createAnalyzer(indexDataContainerConf);
+    		// Do NOT delete analyzer because it is thread specific. It will be reused for
+    		// search/update/delete operations.
+            srch2::instantsearch::Analyzer * analyzer = AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf);
     		srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->addRecord(record, analyzer);
-            delete analyzer;
 
     		switch( ret )
 			{
@@ -106,7 +108,7 @@ struct IndexWriteUtil
 
 			//std::cout << "[" << termBoostsParamName_cstar << "]" << std::endl;
 			const std::string primaryKeyStringValue = string(pKeyParamName_cstar);
-			delete pKeyParamName_cstar;
+			free(pKeyParamName_cstar);
 
 			log_str << "{\"rid\":\"" << primaryKeyStringValue << "\",\"delete\":\"";
 
@@ -177,9 +179,10 @@ struct IndexWriteUtil
 
     	if ( indexer->getNumberOfDocumentsInIndex() < indexDataContainerConf->getDocumentLimit() )
     	{
+    		// Do NOT delete analyzer because it is thread specific. It will be reused for
+    		// search/update/delete operations.
             Analyzer* analyzer = AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf);
     		srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->addRecord(record, analyzer);
-
     		switch( ret )
 			{
 				case srch2::instantsearch::OP_SUCCESS:

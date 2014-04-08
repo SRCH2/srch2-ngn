@@ -60,23 +60,24 @@ bool SortByRefiningAttributeOperator::open(QueryEvaluatorInternal * queryEvaluat
     while(true){
     	PhysicalPlanRecordItem * nextRecord = this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->getNext(params);
     	if(nextRecord == NULL){
-    		break;
+          break;
     	}
-    	results.push_back(nextRecord);
     	bool isValid = false;
-		const ForwardList * list = forwardIndex->getForwardList(readView, nextRecord->getRecordId(), isValid);
-		ASSERT(isValid);
-		const Byte * refiningAttributesData =
-				list->getRefiningAttributeContainerData();
-		// now parse the values by VariableLengthAttributeContainer
-		vector<TypedValue> typedValues;
-		VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds, schema , refiningAttributesData,&typedValues);
-		// save the values in QueryResult objects
-		for(std::vector<string>::const_iterator attributesIterator = attributes->begin() ;
-				attributesIterator != attributes->end() ; ++attributesIterator){
-			nextRecord->valuesOfParticipatingRefiningAttributes[*attributesIterator] =
-					typedValues.at(std::distance(attributes->begin() , attributesIterator));
-		}
+	const ForwardList * list = forwardIndex->getForwardList(readView, nextRecord->getRecordId(), isValid);
+	if (!isValid) // ignore the record if it's already deleted
+          continue;
+    	results.push_back(nextRecord);
+	const Byte * refiningAttributesData =
+			list->getRefiningAttributeContainerData();
+	// now parse the values by VariableLengthAttributeContainer
+	vector<TypedValue> typedValues;
+	VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds, schema , refiningAttributesData,&typedValues);
+	// save the values in QueryResult objects
+	for(std::vector<string>::const_iterator attributesIterator = attributes->begin() ;
+			attributesIterator != attributes->end() ; ++attributesIterator){
+		nextRecord->valuesOfParticipatingRefiningAttributes[*attributesIterator] =
+				typedValues.at(std::distance(attributes->begin() , attributesIterator));
+	}
     }
 
     // 3. now sort the results based on the comparator

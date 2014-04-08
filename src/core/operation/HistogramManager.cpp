@@ -69,9 +69,7 @@ void HistogramManager::allocateLogicalPlanNodeAnnotations(LogicalPlanNode * node
 	if(node == NULL){
 		return;
 	}
-//	if(node->stats == NULL){
-		node->stats = new LogicalPlanNodeAnnotation();
-//	}
+	node->stats = new LogicalPlanNodeAnnotation();
 	for(vector<LogicalPlanNode * >::iterator child = node->children.begin(); child != node->children.end() ; ++child){
 		allocateLogicalPlanNodeAnnotations(*child);
 	}
@@ -88,8 +86,10 @@ void HistogramManager::annotateWithActiveNodeSets(LogicalPlanNode * node , bool 
 		case LogicalPlanNodeTypeNot:
 			break;
 		case LogicalPlanNodeTypeTerm:
-			node->stats->activeNodeSetExact = computeActiveNodeSet(node->exactTerm);
-			if(isFuzzy == true){
+			if(isFuzzy == false){
+				node->stats->activeNodeSetExact = computeActiveNodeSet(node->exactTerm);
+			}
+			else {
 				node->stats->activeNodeSetFuzzy = computeActiveNodeSet(node->fuzzyTerm);
 			}
 			break;

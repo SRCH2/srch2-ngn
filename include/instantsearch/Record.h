@@ -25,7 +25,7 @@
 
 #include <string>
 #include <vector>
-
+#include <boost/shared_ptr.hpp>
 namespace srch2
 {
 namespace instantsearch
@@ -33,11 +33,14 @@ namespace instantsearch
 class Schema;
 
 struct StoredRecordBuffer {
-  const char* start;
+  boost::shared_ptr<const char> start;
   size_t length;
-  StoredRecordBuffer() { start = NULL; length = 0; }
+  StoredRecordBuffer() { start.reset(); length = 0; }
   StoredRecordBuffer(const char* s, size_t l) {
-	  start = s; length = l;
+	  start.reset(s); length = l;
+  }
+  StoredRecordBuffer(const boost::shared_ptr<const char>& s, size_t l) {
+  	  start = s; length = l;
   }
 };
 

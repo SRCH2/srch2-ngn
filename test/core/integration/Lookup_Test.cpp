@@ -20,7 +20,7 @@ using namespace std;
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
 
-unsigned mergeEveryNSeconds = 10;
+unsigned mergeEveryNSeconds = 2;
 unsigned mergeEveryMWrites = 5;
 unsigned updateHistogramEveryPMerges = 1;
 unsigned updateHistogramEveryQWrites = 5;

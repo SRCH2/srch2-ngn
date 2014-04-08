@@ -8,7 +8,6 @@
 #include "instantsearch/TypedValue.h"
 #include "util/DateAndTimeHandler.h"
 #include "operation/QueryEvaluatorInternal.h"
-#include "operation/PhraseSearcher.h"
 
 namespace srch2 {
 namespace instantsearch {
@@ -35,7 +34,8 @@ bool PhraseSearchOperator::open(QueryEvaluatorInternal * queryEvaluatorInternal,
 			const TrieNode *trieNode = queryEvaluatorInternal->getTrie()->getTrieNodeFromUtf8String(
 					trieRootNode_ReadView->root, keywordString);
 			if (trieNode == NULL){
-				Logger::warn("TrieNode is null for phrase keyword = %s", keywordString.c_str());
+				Logger::warn("keyword = '%s' of a phrase query was not found!", keywordString.c_str());
+				phraseErr = true;
 				return false;
 			}
 			unsigned keywordId = trieNode->getId();
@@ -49,6 +49,9 @@ bool PhraseSearchOperator::open(QueryEvaluatorInternal * queryEvaluatorInternal,
 	return true;
 }
 PhysicalPlanRecordItem * PhraseSearchOperator::getNext(const PhysicalPlanExecutionParameters & params) {
+
+	if (phraseErr)
+		return NULL;
 
 	if (this->queryEvaluatorInternal == NULL) {
 		return NULL;  // open should be called first
@@ -68,7 +71,7 @@ PhysicalPlanRecordItem * PhraseSearchOperator::getNext(const PhysicalPlanExecuti
 		}
         bool isValid = false;
         const ForwardList* forwardListPtr = forwardIndex->getForwardList(readView, nextRecord->getRecordId(), isValid);
-        if (false == isValid){
+        if (false == isValid){ // ignore this record if it's already deleted
         	continue;
         }
         if (matchPhrase(forwardListPtr, this->phraseSearchInfo)){
@@ -84,7 +87,9 @@ PhysicalPlanRecordItem * PhraseSearchOperator::getNext(const PhysicalPlanExecuti
 }
 bool PhraseSearchOperator::close(PhysicalPlanExecutionParameters & params){
 	this->queryEvaluatorInternal = NULL;
-	this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->close(params);
+	// If there was a phrase error then the operator did not open its child. So no need to close it
+	if (!phraseErr)
+		this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->close(params);
 	return true;
 }
 
@@ -101,11 +106,13 @@ bool PhraseSearchOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerifica
 	return false;
 }
 PhraseSearchOperator::~PhraseSearchOperator(){
-
+	delete this->phraseSearcher;
 }
 PhraseSearchOperator::PhraseSearchOperator(const PhraseInfo& phraseSearchInfo) {
 	this->phraseSearchInfo = phraseSearchInfo;
 	this->queryEvaluatorInternal = NULL;
+	this->phraseErr = false;
+	this->phraseSearcher = new PhraseSearcher();
 }
 
 // match phrase on attributes. do OR or AND logic depending upon the 32 bit of attributeBitMap
@@ -189,17 +196,16 @@ bool PhraseSearchOperator::matchPhrase(const ForwardList* forwardListPtr, const 
 
     	const vector<unsigned> & phraseOffsetRef = phraseInfo.phraseKeywordPositionIndex;
 
-    	PhraseSearcher *phraseSearcher = new PhraseSearcher();
     	// This vector stores all the valid matched positions for a given phrase in the record.
     	vector< vector<unsigned> > matchedPositions;
     	//vector<unsigned> matchedPosition;
         unsigned slop = phraseInfo.proximitySlop;
 
         if (slop > 0){
-            result = phraseSearcher->proximityMatch(positionListVector, phraseOffsetRef, slop,
+            result = this->phraseSearcher->proximityMatch(positionListVector, phraseOffsetRef, slop,
             		matchedPositions, true);  // true means we stop at first match
         } else {
-            result = phraseSearcher->exactMatch(positionListVector, phraseOffsetRef,
+            result = this->phraseSearcher->exactMatch(positionListVector, phraseOffsetRef,
             		matchedPositions, true);  // true means we stop at first match
         }
         // AND operation and we didn't find result so we should break

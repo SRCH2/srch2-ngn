@@ -270,19 +270,24 @@ PhysicalPlanRecordItem * FacetOperator::getNext(const PhysicalPlanExecutionParam
     shared_ptr<vectorview<ForwardListPtr> > readView;
     this->queryEvaluatorInternal->getForwardIndex_ReadView(readView);
 
+    const ForwardList *forwardList;
+    PhysicalPlanRecordItem *resultIter;
+    // loop to find the next valid record (i.e., not deleted)
+    while (true) {
+      resultIter = this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->getNext(params);
+      if(resultIter == NULL){
+	return NULL;
+      }
+      // extract all facet related refining attribute values from this record
+      // by accessing the forward index only once.
+      bool isValid = false;
+      forwardList = forwardIndex->getForwardList(readView, resultIter->getRecordId() , isValid);
+      if (isValid) // found a valid one; otherwise, continue
+	break;
+    }
 
-	PhysicalPlanRecordItem *  resultIter = this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->getNext(params);
-
-	if(resultIter == NULL){
-		return NULL;
-	}
-	// extract all facet related refining attribute values from this record
-	// by accessing the forward index only once.
-	bool isValid = false;
-	const ForwardList * list = forwardIndex->getForwardList(readView, resultIter->getRecordId() , isValid);
-	ASSERT(isValid);
 	const Byte * refiningAttributesData =
-			list->getRefiningAttributeContainerData();
+			forwardList->getRefiningAttributeContainerData();
 	// this vector is parallel to attributeIds vector
 	std::vector<TypedValue> attributeDataValues;
 	VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds, schema,refiningAttributesData, &attributeDataValues);

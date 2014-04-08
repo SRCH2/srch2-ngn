@@ -77,7 +77,9 @@ bool FilterQueryOperator::doPass(Schema * schema, ForwardIndex * forwardIndex ,P
     vector<TypedValue> typedValues;
     bool isValid = false;
     const ForwardList * list = forwardIndex->getForwardList(readView, record->getRecordId() , isValid);
-    ASSERT(isValid);
+    // return false if this record is not valid (i.e., already deleted)
+    if (!isValid)
+      return false;
     const Byte * refiningAttributesData = list->getRefiningAttributeContainerData();
     VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds,schema,refiningAttributesData ,&typedValues);
 

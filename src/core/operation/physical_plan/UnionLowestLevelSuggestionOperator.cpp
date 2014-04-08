@@ -37,6 +37,10 @@ bool UnionLowestLevelSuggestionOperator::open(QueryEvaluatorInternal * queryEval
     return true;
 }
 PhysicalPlanRecordItem * UnionLowestLevelSuggestionOperator::getNext(const PhysicalPlanExecutionParameters & params) {
+    if (suggestionPairCursor >= suggestionPairs.size()) {
+        return NULL;
+    }
+
     Term * term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->getTerm(params.isFuzzy);
     shared_ptr<vectorview<unsigned> > invertedListReadView;
     queryEvaluatorIntrnal->getInvertedIndex()->
@@ -46,15 +50,17 @@ PhysicalPlanRecordItem * UnionLowestLevelSuggestionOperator::getNext(const Physi
     float termRecordStaticScore = 0;
     // move on inverted list and add the records which are valid
     while(true){
-        if(invertedListCursor < invertedListReadView->size()){
+        if(invertedListCursor < invertedListReadView->size() && suggestionPairCursor < suggestionPairs.size()){
             unsigned recordId = invertedListReadView->getElement(invertedListCursor++);
-            unsigned recordOffset = queryEvaluatorIntrnal->getInvertedIndex()->getKeywordOffset(
+            unsigned keywordOffset = queryEvaluatorIntrnal->getInvertedIndex()->getKeywordOffset(
                     this->forwardIndexDirectoryReadView,
                     this->invertedIndexKeywordIdsReadView,
                     recordId, suggestionPairs[suggestionPairCursor].suggestedCompleteTermNode->getInvertedListOffset());
-            if (queryEvaluatorIntrnal->getInvertedIndex()->isValidTermPositionHit(forwardIndexDirectoryReadView,
+            // We check the record only if it's valid
+            if (keywordOffset != FORWARDLIST_NOTVALID &&
+                queryEvaluatorIntrnal->getInvertedIndex()->isValidTermPositionHit(forwardIndexDirectoryReadView,
                     recordId,
-                    recordOffset,
+                    keywordOffset,
                     0x7fffffff,  termAttributeBitmap, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
                 // return the item.
                 PhysicalPlanRecordItem * newItem = this->queryEvaluatorIntrnal->getPhysicalPlanRecordItemPool()->createRecordItem();

@@ -84,9 +84,9 @@ void RecordSerializerUtil::convertCompactToJSONString(Schema * storedAttrSchema,
 			}
 			unsigned id = storedAttrSchema->getSearchableAttributeId(iter->first);
 			unsigned lenOffset = compactRecDeserializer.getSearchableOffset(id);
-			const char *attrdata = buffer.start + *((unsigned *)(buffer.start + lenOffset));
-			unsigned len = *(((unsigned *)(buffer.start + lenOffset)) + 1) -
-					*((unsigned *)(buffer.start + lenOffset));
+			const char *attrdata = buffer.start.get() + *((unsigned *)(buffer.start.get() + lenOffset));
+			unsigned len = *(((unsigned *)(buffer.start.get() + lenOffset)) + 1) -
+					*((unsigned *)(buffer.start.get() + lenOffset));
 
 			std::string uncompressedInMemoryRecordString;
 			snappy::Uncompress(attrdata,len, &uncompressedInMemoryRecordString);
@@ -135,7 +135,7 @@ void RecordSerializerUtil::convertCompactToJSONString(Schema * storedAttrSchema,
 			switch(storedAttrSchema->getTypeOfRefiningAttribute(id)){
 			case srch2is::ATTRIBUTE_TYPE_FLOAT:
 			{
-				float attrdata = *((float *)(buffer.start + lenOffset));
+				float attrdata = *((float *)(buffer.start.get() + lenOffset));
 				stringstream ss;
 				ss << attrdata;
 				jsonBuffer += ss.str();
@@ -143,7 +143,7 @@ void RecordSerializerUtil::convertCompactToJSONString(Schema * storedAttrSchema,
 			}
 			case srch2is::ATTRIBUTE_TYPE_UNSIGNED:
 			{
-				unsigned attrdata = *((unsigned *)(buffer.start + lenOffset));
+				unsigned attrdata = *((unsigned *)(buffer.start.get() + lenOffset));
 				stringstream ss;
 				ss << attrdata;
 				jsonBuffer += ss.str();

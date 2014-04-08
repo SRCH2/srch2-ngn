@@ -15,7 +15,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright © 2010 SRCH2 Inc. All rights reserved
+ * Copyright 2010 SRCH2 Inc. All rights reserved
  */
 
 #pragma once
@@ -45,13 +45,12 @@ struct IndexHealthInfo
 {
     //std::string lastWriteTimeString;
     std::string lastMergeTimeString;
-    unsigned lastMergeTime;
     unsigned doc_count;
 
     IndexHealthInfo()
     {
         //this->notifyWrite();
-        this->notifyMerge(0, 0);
+        this->getLatestHealthInfo(0);
     }
 
     void getString(struct std::tm *timenow, string &in)
@@ -68,12 +67,11 @@ struct IndexHealthInfo
         IndexHealthInfo::getString(timenow, this->lastWriteTimeString);
     }*/
 
-    void notifyMerge(unsigned mergeTime, unsigned doc_count)
+    void getLatestHealthInfo(unsigned doc_count)
     {
         time_t timer = time(NULL);
         struct std::tm* timenow = gmtime(&timer);
         IndexHealthInfo::getString(timenow, this->lastMergeTimeString);
-        this->lastMergeTime = mergeTime;
         this->doc_count = doc_count;
     }
 
@@ -83,7 +81,6 @@ struct IndexHealthInfo
         //returnString << "\"last_insert\":\"" << lastWriteTimeString << "\"";
         //returnString << ",\"last_merge\":\"" << lastMergeTimeString << "\"";
         returnString << "\"last_merge\":\"" << lastMergeTimeString << "\"";
-        returnString << ",\"last_merge_time\":\"" << lastMergeTime << "\"";
         returnString << ",\"doc_count\":\"" << doc_count << "\"";
         return returnString.str();
     }
@@ -94,7 +91,7 @@ class IndexReaderWriter: public Indexer
 public:
 
     //TODO put it as private
-    ReadWriteMutex  *rwMutexForWriter;
+    pthread_mutex_t lockForWriters;
 
     IndexReaderWriter(IndexMetaData* indexMetaData, Analyzer *analyzer, Schema *schema);
 
@@ -103,17 +100,15 @@ public:
     void initIndexReaderWriter(IndexMetaData* indexMetaData);
     virtual ~IndexReaderWriter()
     {
-    	if (this->mergeThreadStarted == true)
-    	{
-    		this->rwMutexForWriter->lockWrite();
-    		this->mergeThreadStarted = false;
-    		pthread_cond_signal(&countThresholdConditionVariable);
-    		this->rwMutexForWriter->unlockWrite();
-
-    		pthread_join(mergerThread, NULL); // waiting to JOINABLE merge thread.
+    	if (this->mergeThreadStarted == true) {
+	  pthread_mutex_lock(&lockForWriters);
+	  this->mergeThreadStarted = false;
+	  pthread_cond_signal(&countThresholdConditionVariable);
+	  pthread_mutex_unlock(&lockForWriters);
+        
+	  pthread_join(mergerThread, NULL); // waiting to JOINABLE merge thread.
     	}
         delete this->index;
-        delete this->rwMutexForWriter;
     };
 
     uint32_t getNumberOfDocumentsInIndex() const;

@@ -15,7 +15,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright © 2010 SRCH2 Inc. All rights reserved
+ * Copyright 2010 SRCH2 Inc. All rights reserved
  */
 
 #include "index/InvertedIndex.h"
@@ -81,7 +81,7 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, const Forward
     for (unsigned i = 0; i< writeView->size(); i++) {
         invertedListElements[i].recordId = writeView->getElement(i);
         invertedListElements[i].score = forwardIndex->getTermRecordStaticScore(invertedListElements[i].recordId,
-        		forwardIndex->getKeywordOffset(forwardListDirectoryReadView, invertedListElements[i].recordId, keywordId));
+        forwardIndex->getKeywordOffset(forwardListDirectoryReadView, invertedListElements[i].recordId, keywordId));
     }
 
     Logger::debug("SortnMerge: | %d | %d ", readViewListSize, writeViewListSize);

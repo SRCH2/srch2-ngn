@@ -14,7 +14,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright �� 2010 SRCH2 Inc. All rights reserved
+ * Copyright 2010 SRCH2 Inc. All rights reserved
  */
 
 #include "ForwardIndex.h"
@@ -195,14 +195,15 @@ bool ForwardIndex::haveWordInRangeWithStemmer(shared_ptr<vectorview<ForwardListP
 const ForwardList *ForwardIndex::getForwardList(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
 		unsigned recordId, bool &valid) const
 {
-
     // A valid record ID is in the range [0, 1, ..., directorySize - 1]
     if(recordId >= forwardListDirectoryReadView->size()){
     	valid = false;
     	return NULL;
     }
+
     ForwardListPtr flPtr = forwardListDirectoryReadView->getElement(recordId);
     valid = flPtr.second;
+
     return flPtr.first;
 }
 
@@ -227,14 +228,27 @@ void ForwardIndex::commit()
 // WriteView
 void ForwardIndex::merge()
 {
-    if ( this->mergeRequired )
-    {
+    if ( this->mergeRequired ) {
         // make sure the read view is pointing to the write view
         this->forwardListDirectory->merge();
-
         // writeView->forceCreateCopy();
         this->mergeRequired = false;
     }
+}
+
+void ForwardIndex::freeSpaceOfDeletedRecords() {
+  vectorview<ForwardListPtr> *writeView = this->forwardListDirectory->getWriteView();
+  for(boost::unordered_set<unsigned>::iterator iter = this->deletedRecordInternalIds.begin();
+      iter != this->deletedRecordInternalIds.end(); ++ iter) {
+        unsigned internalRecordId = *iter;
+        // free the memory if it's no longer valid
+        ASSERT(writeView->at(internalRecordId).second == false);
+        ASSERT(writeView->at(internalRecordId).first != NULL);
+        delete writeView->at(internalRecordId).first;
+        writeView->at(internalRecordId).first = NULL;
+    }
+  // clear the set
+  this->deletedRecordInternalIds.clear();
 }
 
 void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
@@ -662,7 +676,7 @@ const unsigned* lower_bound(const unsigned* first, const unsigned* last,
     unsigned count = last - first;
     while (count > 0) {
         step = count / 2;
-        it = first + step;
+    	it = first + step;
         if (*it < val) {
             first = ++it;
             count -= step + 1;
@@ -1121,6 +1135,7 @@ bool ForwardIndex::deleteRecordGetInternalId(
     if (found == true) {
         this->setDeleteFlag(internalRecordId);
         this->externalToInternalRecordIdMap.erase(externalRecordId);
+        this->deletedRecordInternalIds.insert(internalRecordId); // remember this deleted record ID
         this->mergeRequired = true; // tell the merge thread to merge
     }
 
@@ -1137,6 +1152,8 @@ bool ForwardIndex::recoverRecord(const std::string &externalRecordId,
     if (found == false) {
         this->resetDeleteFlag(internalRecordId); // set the flag in the forward index back to true
         this->externalToInternalRecordIdMap.setValue(externalRecordId , internalRecordId); // add the external record id back to the externalToInternalRecordIdMap
+        // we need to remove this ID from the set of deleted IDs
+        this->deletedRecordInternalIds.erase(internalRecordId);
         this->mergeRequired = true; // tell the merge thread to merge
     }
 
@@ -1181,6 +1198,9 @@ unsigned ForwardIndex::getKeywordOffset(shared_ptr<vectorview<ForwardListPtr> > 
         unsigned keywordId) const {
     bool valid = false;
     const ForwardList* forwardList = this->getForwardList(forwardListDirectoryReadView, forwardListId, valid);
+    // if the record is not valid (e.g., marked deleted), we return a special flag
+    if (!valid)
+       return FORWARDLIST_NOTVALID;
     return forwardList->getKeywordOffset(keywordId);
 }
 

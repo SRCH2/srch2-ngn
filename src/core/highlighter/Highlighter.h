@@ -44,7 +44,12 @@ enum KeywordHighlightInfoFlag{
 	// keyword is both in phrase and without phrase in a query.
 	HIGHLIGHT_KEYWORD_IS_HYBRID,
 	// the phrase term is verified from record positions that it forms a phrase
-	HIGHLIGHT_KEYWORD_IS_VERIFIED_PHRASE
+	HIGHLIGHT_KEYWORD_IS_VERIFIED_PHRASE,
+	// the keyword position does not influence snippet generation. If it happens to be in a snippet
+	// range then we highlight it.
+	HIGHLIGHT_KEYWORD_INSIGNIFICANT,
+	// Do not highlight this position.
+	HIGHLIGHT_KEYWORD_INVALID
 };
 struct keywordHighlightInfo{
 	KeywordHighlightInfoFlag flag;  // prefix = 0, complete = 1, unverified phraseOnly = 2, Hybrid = 3
@@ -113,7 +118,7 @@ protected:
 	void validatePhrasePositions(vector<matchedTermInfo>& highlightPositions);
 	void clearPhraseInfoList() {
 		for (unsigned i = 0; i < phrasesInfoList.size(); ++i) {
-			for (unsigned j = 0; j < phrasesInfoList.size(); ++j)  {
+			for (unsigned j = 0; j < phrasesInfoList[i].phraseKeyWords.size(); ++j)  {
 				// No need to check for NULL pointer. delete is NULL safe.
 				delete phrasesInfoList[i].phraseKeyWords[j].recordPosition;
 				phrasesInfoList[i].phraseKeyWords[j].recordPosition = NULL;

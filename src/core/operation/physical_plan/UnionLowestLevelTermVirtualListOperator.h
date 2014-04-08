@@ -155,16 +155,13 @@ class UnionLowestLevelTermVirtualListOperator : public PhysicalPlanNode {
 public:
 
     struct UnionLowestLevelTermVirtualListOperatorHeapItemCmp {
-        unsigned termLength; // length of the query term
 
-        UnionLowestLevelTermVirtualListOperatorHeapItemCmp() {
-        }
+        UnionLowestLevelTermVirtualListOperatorHeapItemCmp() {};
 
         // this operator should be consistent with two others in InvertedIndex.h and QueryResultsInternal.h
         bool operator() (const UnionLowestLevelTermVirtualListOperatorHeapItem *lhs, const UnionLowestLevelTermVirtualListOperatorHeapItem *rhs) const {
             return DefaultTopKRanker::compareRecordsLessThan(lhs->termRecordRuntimeScore, lhs->recordId,
                     rhs->termRecordRuntimeScore, rhs->recordId);
-
         }
     };
 
@@ -200,7 +197,7 @@ private:
     // the current recordId, initial value is -1
     int currentRecordID;
     // current inverted list Readview
-    shared_ptr<vectorview<unsigned> > invertedListReadView;
+    //shared_ptr<vectorview<unsigned> > invertedListReadView;
     //int numberOfLeafNodes;
     //int totalInveretListLength ;
 

@@ -15,7 +15,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright © 2010 SRCH2 Inc. All rights reserved
+ * Copyright 2010 SRCH2 Inc. All rights reserved
  */
 
 /*
@@ -248,7 +248,10 @@ public:
     SchemaInternal *schemaInternal;
     
     RankerExpression *rankerExpression;
-    ReadWriteMutex *rwMutexForIdReassign; // for locking the KeywordIdReassign, <= 100 threads
+    // a global RW lock for readers and writers;
+    // Used in several places, such as KeywordIdReassign and memory
+    // recollection for deleted records
+    ReadWriteMutex *globalRwMutexForReadersWriters;
     
     inline bool isMergeRequired() const{
     	return mergeRequired;

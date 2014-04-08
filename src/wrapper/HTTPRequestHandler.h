@@ -77,9 +77,9 @@ class HTTPRequestHandler
 				const unsigned ts1,
 				struct timespec &tstart, struct timespec &tend);
 		static void cleanAndAppendToBuffer(const string& in, string& out);
-		static void genRecordJsonString(const srch2is::Indexer *indexer, unsigned recordId,
+		static void genRecordJsonString(const srch2is::Indexer *indexer, StoredRecordBuffer buffer,
 				const string& externalId, string& sbuffer);
-		static void genRecordJsonString(const srch2is::Indexer *indexer, unsigned recordId,
+		static void genRecordJsonString(const srch2is::Indexer *indexer, StoredRecordBuffer buffer,
 				const string& externalId, string& sbuffer,const vector<string>* attrToReturn);
 		static void genSnippetJSONString(unsigned recIdx, unsigned start,
 				const vector<RecordSnippet>& recordSnippets, string& sbuffer,
