@@ -405,6 +405,7 @@ PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<Phy
 //        return treeOptions.at(planOffset);
 //    }
 //    cout << minCost << "\t" ;
+//    return treeOptions.at(0);
     return minPlan;
 }
 

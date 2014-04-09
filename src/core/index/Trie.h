@@ -397,6 +397,9 @@ public:
     	return (p1 + p2) - (p1 * p2);
     }
 
+    inline double aggregateValueByJointProbabilityDouble(double p1, double p2) const{
+    	return (p1 + p2) - (p1 * p2);
+    }
     // it updates the histogram value of this node based on the information coming from the children
     void updateInternalNodeHistogramValues(HistogramAggregationType aggrType);
 

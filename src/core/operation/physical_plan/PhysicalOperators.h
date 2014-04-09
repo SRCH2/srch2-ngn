@@ -463,6 +463,12 @@ public:
     		numberOfBytes += candidatesList.at(i)->getNumberOfBytes();
     	}
 
+    	for(unsigned childOffset = 0 ; childOffset < children.size() ; ++childOffset){
+    		if(children.at(childOffset) != NULL){
+				numberOfBytes += children.at(childOffset)->getNumberOfBytes();
+    		}
+    	}
+
     	return numberOfBytes;
     }
 
