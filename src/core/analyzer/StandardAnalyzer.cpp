@@ -37,19 +37,24 @@ AnalyzerType StandardAnalyzer::getAnalyzerType() const
 TokenStream * StandardAnalyzer::createOperatorFlow() {
 	TokenStream *tokenStream = new StandardTokenizer();
 	tokenStream = new LowerCaseFilter(tokenStream);
+        tokenStream->characterSet.setRecordAllowedSpecialCharacters(recordAllowedSpecialCharacters);
 
         tokenStream = new NonAlphaNumericFilter(tokenStream, protectedWords);
+        tokenStream->characterSet.setRecordAllowedSpecialCharacters(recordAllowedSpecialCharacters);
 
         if (stopWords != NULL) {
             tokenStream = new StopFilter(tokenStream, stopWords);
+            tokenStream->characterSet.setRecordAllowedSpecialCharacters(recordAllowedSpecialCharacters);
         }
 
 	if (this->synonyms != NULL) {
             tokenStream = new SynonymFilter(tokenStream, synonyms);
+            tokenStream->characterSet.setRecordAllowedSpecialCharacters(recordAllowedSpecialCharacters);
 	}
 
 	if (this->stemmer != NULL) {
             tokenStream = new StemmerFilter(tokenStream, stemmer);
+            tokenStream->characterSet.setRecordAllowedSpecialCharacters(recordAllowedSpecialCharacters);
 	}
 
 	return tokenStream;

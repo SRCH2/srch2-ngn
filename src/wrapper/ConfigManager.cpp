@@ -123,6 +123,16 @@ const char* const ConfigManager::getAllResultsKAlternative = "getallresultskalte
 const char* const ConfigManager::multipleCoresString = "cores";
 const char* const ConfigManager::singleCoreString = "core";
 const char* const ConfigManager::defaultCoreNameString = "defaultcorename";
+const char *const ConfigManager::allowedRecordSpecialCharactersString = "allowedrecordspecialcharacters";
+
+const char* const ConfigManager::searchPortString = "searchport";
+const char* const ConfigManager::suggestPortString = "suggestport";
+const char* const ConfigManager::infoPortString = "infoport";
+const char* const ConfigManager::docsPortString = "docsport";
+const char* const ConfigManager::updatePortString = "updateport";
+const char* const ConfigManager::savePortString = "saveport";
+const char* const ConfigManager::exportPortString = "exportport";
+const char* const ConfigManager::resetLoggerPortString = "resetloggerport";
 
 const char* const ConfigManager::highLightString = "highlight";
 const char* const ConfigManager::highLighterString = "highlighter";
@@ -136,15 +146,6 @@ const char* const ConfigManager::defaultFuzzyPreTag = "<b>";
 const char* const ConfigManager::defaultFuzzyPostTag = "</b>";
 const char* const ConfigManager::defaultExactPreTag = "<b>";
 const char* const ConfigManager::defaultExactPostTag = "</b>";
-
-const char* const ConfigManager::searchPortString = "searchport";
-const char* const ConfigManager::suggestPortString = "suggestport";
-const char* const ConfigManager::infoPortString = "infoport";
-const char* const ConfigManager::docsPortString = "docsport";
-const char* const ConfigManager::updatePortString = "updateport";
-const char* const ConfigManager::savePortString = "saveport";
-const char* const ConfigManager::exportPortString = "exportport";
-const char* const ConfigManager::resetLoggerPortString = "resetloggerport";
 
 
 
@@ -1556,6 +1557,8 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
                                     coreInfo->protectedWordsFilePath = boost::filesystem::path(srch2Home + tempUse).normalize().string();
                                 }
                             }
+                        } else if (string(field.name()).compare(allowedRecordSpecialCharactersString) == 0) {
+                            coreInfo->allowedRecordTokenizerCharacters = field.text().get();
                         }
                     }
                 }
