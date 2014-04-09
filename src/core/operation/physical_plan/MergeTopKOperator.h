@@ -113,7 +113,9 @@ public:
     	// should be about %80. so 1/%80 is 1.25.
     	numberOfBytes += sizeof(unsigned) * visitedRecords.size() * 1.25;
     	for(unsigned childOffset = 0 ; childOffset < children.size() ; ++childOffset){
-    		numberOfBytes += children.at(childOffset)->getNumberOfBytes();
+    		if(children.at(childOffset) != NULL){
+				numberOfBytes += children.at(childOffset)->getNumberOfBytes();
+    		}
     	}
     	return numberOfBytes;
     }

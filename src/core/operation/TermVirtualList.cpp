@@ -175,7 +175,7 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex,  const Forw
     }
     // check the TermType
     if (this->getTermType() == TERM_TYPE_PREFIX) { //case 1: Term is prefix
-        LeafNodeSetIterator iter(prefixActiveNodeSet, term->getThreshold());
+        LeafNodeSetIteratorForPrefix iter(prefixActiveNodeSet, term->getThreshold());
         // This is our query-optimization logic. If the total number of leaf nodes for the term is
         // greater than a threshold, we use bitset to do the union/intersection operations.
         if (iter.size() >= TERM_COUNT_THRESHOLD){

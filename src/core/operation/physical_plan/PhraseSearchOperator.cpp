@@ -102,7 +102,37 @@ string PhraseSearchOperator::toString(){
 }
 
 bool PhraseSearchOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
-	ASSERT(false);
+
+	if (phraseErr)
+		return false;
+
+	if (this->queryEvaluatorInternal == NULL) {
+		return false;  // open should be called first
+	}
+
+	bool verifiedForKeywordExistance = this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->verifyByRandomAccess(parameters);
+
+	if(verifiedForKeywordExistance == false){
+		return false;
+	}
+
+	ForwardIndex * forwardIndex = this->queryEvaluatorInternal->getForwardIndex();
+    shared_ptr<vectorview<ForwardListPtr> > readView;
+    this->queryEvaluatorInternal->getForwardIndex_ReadView(readView);
+
+    bool isValid = false;
+    const ForwardList* forwardListPtr = forwardIndex->getForwardList(readView, parameters.recordToVerify->getRecordId(), isValid);
+    if (false == isValid){ // ignore this record if it's already deleted
+    	false;
+    }
+    if (matchPhrase(forwardListPtr, this->phraseSearchInfo)){
+    	vector<TermType> recordMatchingTermTypes = parameters.recordToVerify->getTermTypesRef();
+    	for (unsigned i = 0; i < recordMatchingTermTypes.size(); ++i) {
+    		recordMatchingTermTypes[i] = TERM_TYPE_PHRASE;
+    	}
+    	return true;
+    }
+
 	return false;
 }
 PhraseSearchOperator::~PhraseSearchOperator(){
@@ -248,7 +278,7 @@ PhysicalPlanCost PhraseSearchOptimizationOperator::getCostOfClose(const Physical
 }
 PhysicalPlanCost PhraseSearchOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
 	PhysicalPlanCost resultCost;
-	// Random access is not implemented.
+	resultCost = resultCost + this->getChildAt(0)->getCostOfVerifyByRandomAccess(params);
 	return resultCost;
 }
 void PhraseSearchOptimizationOperator::getOutputProperties(IteratorProperties & prop){
