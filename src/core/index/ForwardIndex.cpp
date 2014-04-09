@@ -112,7 +112,7 @@ void printForwardList(unsigned id, const ForwardList *fl , const Schema * schema
     Logger::debug("refiningAttributeList:");
 
 	for (unsigned idx = 0; idx < schema->getNumberOfRefiningAttributes(); idx ++) {
-		Logger::debug("[%.5f]", fl->getRefiningAttributeValue(idx , schema).c_str());
+//		Logger::debug("[%.5f]", fl->getRefiningAttributeValue(idx , schema).c_str());
 	}
 	//keyword Id list
 	Logger::debug("keywordIdList: ");
@@ -610,63 +610,71 @@ void ForwardIndex::print_size() const {
 
 /************ForwardList*********************/
 
-TypedValue ForwardList::getForwardListRefiningAttributeTypedValue(
-        const SchemaInternal* schemaInternal,
-        unsigned schemaRefiningAttributeId) const {
-
-    ASSERT(
-            schemaRefiningAttributeId
-                    < schemaInternal->getNumberOfRefiningAttributes());
-
-    FilterType filterType = schemaInternal->getTypeOfRefiningAttribute(
-            schemaRefiningAttributeId);
-    bool isMultiValued = schemaInternal->isRefiningAttributeMultiValued(schemaRefiningAttributeId);
-
-    TypedValue typedValue;
-
-    if(isMultiValued == false){ // single value
-		switch (filterType) {
-			case srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED:
-				typedValue.setTypedValue(VariableLengthAttributeContainer::getUnsignedAttribute(schemaRefiningAttributeId, schemaInternal , getRefiningAttributeValuesDataPointer()));
-				break;
-			case srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT:
-				typedValue.setTypedValue(VariableLengthAttributeContainer::getFloatAttribute(schemaRefiningAttributeId, schemaInternal, getRefiningAttributeValuesDataPointer()));
-				break;
-			case srch2::instantsearch::ATTRIBUTE_TYPE_TEXT:
-				typedValue.setTypedValue(VariableLengthAttributeContainer::getTextAttribute(schemaRefiningAttributeId, schemaInternal , getRefiningAttributeValuesDataPointer()));
-				break;
-			case srch2::instantsearch::ATTRIBUTE_TYPE_TIME:
-				typedValue.setTypedValue(VariableLengthAttributeContainer::getTimeAttribute(schemaRefiningAttributeId, schemaInternal , getRefiningAttributeValuesDataPointer()));
-				break;
-			case srch2::instantsearch::ATTRIBUTE_TYPE_DURATION:
-				ASSERT(false);
-				break;
-			default :break;
-		}
-    }else{ // multi value
-		switch (filterType) {
-			case srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED:
-				typedValue.setTypedValue(VariableLengthAttributeContainer::getMultiUnsignedAttribute(schemaRefiningAttributeId, schemaInternal , getRefiningAttributeValuesDataPointer()));
-				break;
-			case srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT:
-				typedValue.setTypedValue(VariableLengthAttributeContainer::getMultiFloatAttribute(schemaRefiningAttributeId, schemaInternal, getRefiningAttributeValuesDataPointer()));
-				break;
-			case srch2::instantsearch::ATTRIBUTE_TYPE_TEXT:
-				typedValue.setTypedValue(VariableLengthAttributeContainer::getMultiTextAttribute(schemaRefiningAttributeId, schemaInternal , getRefiningAttributeValuesDataPointer()));
-				break;
-			case srch2::instantsearch::ATTRIBUTE_TYPE_TIME:
-				typedValue.setTypedValue(VariableLengthAttributeContainer::getMultiTimeAttribute(schemaRefiningAttributeId, schemaInternal , getRefiningAttributeValuesDataPointer()));
-				break;
-			case srch2::instantsearch::ATTRIBUTE_TYPE_DURATION:
-				ASSERT(false);
-				break;
-			default:break;
-		}
-    }
-
-    return typedValue;
-
-}
+//TypedValue ForwardList::getForwardListRefiningAttributeTypedValue(
+//        const SchemaInternal* schemaInternal,
+//        unsigned schemaRefiningAttributeId) const {
+//
+//    ASSERT(
+//            schemaRefiningAttributeId
+//                    < schemaInternal->getNumberOfRefiningAttributes());
+//
+//    FilterType filterType = schemaInternal->getTypeOfRefiningAttribute(
+//            schemaRefiningAttributeId);
+//    bool isMultiValued = schemaInternal->isRefiningAttributeMultiValued(schemaRefiningAttributeId);
+//
+//    TypedValue typedValue;
+//
+//    if(isMultiValued == false){ // single value
+//		switch (filterType) {
+//			case srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED:
+//				typedValue.setTypedValue(VariableLengthAttributeContainer::getUnsignedAttribute(
+//						schemaRefiningAttributeId, schemaInternal , this->inMemoryData.get()));
+//				break;
+//			case srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT:
+//				typedValue.setTypedValue(VariableLengthAttributeContainer::getFloatAttribute(
+//						schemaRefiningAttributeId, schemaInternal, this->inMemoryData.get()));
+//				break;
+//			case srch2::instantsearch::ATTRIBUTE_TYPE_TEXT:
+//				typedValue.setTypedValue(VariableLengthAttributeContainer::getTextAttribute(
+//						schemaRefiningAttributeId, schemaInternal , this->inMemoryData.get()));
+//				break;
+//			case srch2::instantsearch::ATTRIBUTE_TYPE_TIME:
+//				typedValue.setTypedValue(VariableLengthAttributeContainer::getTimeAttribute(
+//						schemaRefiningAttributeId, schemaInternal , this->inMemoryData.get()));
+//				break;
+//			case srch2::instantsearch::ATTRIBUTE_TYPE_DURATION:
+//				ASSERT(false);
+//				break;
+//			default :break;
+//		}
+//    }else{ // multi value
+//		switch (filterType) {
+//			case srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED:
+//				typedValue.setTypedValue(VariableLengthAttributeContainer::getMultiUnsignedAttribute(
+//						schemaRefiningAttributeId, schemaInternal , this->inMemoryData.get()));
+//				break;
+//			case srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT:
+//				typedValue.setTypedValue(VariableLengthAttributeContainer::getMultiFloatAttribute(
+//						schemaRefiningAttributeId, schemaInternal, this->inMemoryData.get()));
+//				break;
+//			case srch2::instantsearch::ATTRIBUTE_TYPE_TEXT:
+//				typedValue.setTypedValue(VariableLengthAttributeContainer::getMultiTextAttribute(
+//						schemaRefiningAttributeId, schemaInternal , this->inMemoryData.get()));
+//				break;
+//			case srch2::instantsearch::ATTRIBUTE_TYPE_TIME:
+//				typedValue.setTypedValue(VariableLengthAttributeContainer::getMultiTimeAttribute(
+//						schemaRefiningAttributeId, schemaInternal , this->inMemoryData.get()));
+//				break;
+//			case srch2::instantsearch::ATTRIBUTE_TYPE_DURATION:
+//				ASSERT(false);
+//				break;
+//			default:break;
+//		}
+//    }
+//
+//    return typedValue;
+//
+//}
 
 //low_bound return a pointer to the first element in the range [first, last) which is less than val
 const unsigned* lower_bound(const unsigned* first, const unsigned* last,

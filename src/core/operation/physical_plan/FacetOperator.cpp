@@ -286,11 +286,11 @@ PhysicalPlanRecordItem * FacetOperator::getNext(const PhysicalPlanExecutionParam
 	break;
     }
 
-	const Byte * refiningAttributesData =
-			forwardList->getRefiningAttributeContainerData();
+	StoredRecordBuffer refiningAttributesData =
+			forwardList->getInMemoryData();
 	// this vector is parallel to attributeIds vector
 	std::vector<TypedValue> attributeDataValues;
-	VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds, schema,refiningAttributesData, &attributeDataValues);
+	VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds, schema,refiningAttributesData.start.get(), &attributeDataValues);
 
 	// now iterate on attributes and incrementally update the facet results
 	for(std::vector<std::string>::iterator facetField = fields.begin();

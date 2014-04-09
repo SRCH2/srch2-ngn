@@ -68,7 +68,7 @@ bool SortByRefiningAttributeOperator::open(QueryEvaluatorInternal * queryEvaluat
           continue;
     	results.push_back(nextRecord);
 	const Byte * refiningAttributesData =
-			list->getRefiningAttributeContainerData();
+			list->getInMemoryData().start.get();
 	// now parse the values by VariableLengthAttributeContainer
 	vector<TypedValue> typedValues;
 	VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds, schema , refiningAttributesData,&typedValues);

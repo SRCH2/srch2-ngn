@@ -80,8 +80,8 @@ bool FilterQueryOperator::doPass(Schema * schema, ForwardIndex * forwardIndex ,P
     // return false if this record is not valid (i.e., already deleted)
     if (!isValid)
       return false;
-    const Byte * refiningAttributesData = list->getRefiningAttributeContainerData();
-    VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds,schema,refiningAttributesData ,&typedValues);
+    StoredRecordBuffer refiningAttributesData = list->getInMemoryData();
+    VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds, schema,refiningAttributesData.start.get() ,&typedValues);
 
     // now call the evaluator to see if this record passes the criteria or not
     // A criterion can be for example price:12 or price:[* TO 100]
