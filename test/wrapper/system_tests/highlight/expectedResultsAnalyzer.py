@@ -65,7 +65,7 @@ results =  { 1 :
 
 11:
 [
-[u"... right on to all of our needs, didn't have to ask for a thing They were always spot on...Place gets crowded in the evening especially if you plan on sitting outside. I only wish there was one in Apollo Beach or Brandon for those who are not so <b>rich</b>!"]
+[u"Definitely come for Happy hour! Prices are amazing, sake bombers for $3...Great atmosphere and wait staff was incredibly nice and right on to all of our needs, didn't have to ask for a thing They were always spot on...Place gets crowded in the ..."]
 ],
 
 12:
