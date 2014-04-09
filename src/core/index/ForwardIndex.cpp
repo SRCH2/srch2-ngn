@@ -853,13 +853,13 @@ bool ForwardList::isValidRecordTermHit(const SchemaInternal *schema,
                 keywordOffset);
         if (highestBit) {
             // turn off the highest bit
-            termSearchableAttributeIdToFilterTermHits&= 0x7fffffff; 
-            return (matchingKeywordAttributeBitmap & 
-                termSearchableAttributeIdToFilterTermHits)
-                    == termSearchableAttributeIdToFilterTermHits;
+            termSearchableAttributeIdToFilterTermHits &= 0x7fffffff;
+            matchingKeywordAttributeBitmap &=  termSearchableAttributeIdToFilterTermHits;
+            return (matchingKeywordAttributeBitmap
+                    == termSearchableAttributeIdToFilterTermHits);
         } else {
-            return (matchingKeywordAttributeBitmap & 
-                termSearchableAttributeIdToFilterTermHits) != 0;
+        	matchingKeywordAttributeBitmap &=  termSearchableAttributeIdToFilterTermHits;
+            return (matchingKeywordAttributeBitmap != 0);
         }
     }
 }

@@ -55,9 +55,11 @@ struct keywordHighlightInfo{
 	KeywordHighlightInfoFlag flag;  // prefix = 0, complete = 1, unverified phraseOnly = 2, Hybrid = 3
 	vector<CharType> key;
 	unsigned editDistance;
+	unsigned attrBitMap;
 	keywordHighlightInfo(){
 		flag = HIGHLIGHT_KEYWORD_IS_PERFIX;
 		editDistance = 0;
+		attrBitMap = 0xffffffff;
 	}
 };
 
