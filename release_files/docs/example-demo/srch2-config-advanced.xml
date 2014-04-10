@@ -1,0 +1,332 @@
+<!--
+    An advanced configuration file for SRCH2 search server.  This file demonstrates how to configure
+    some of the search engine's more advanced features.
+
+    For more information about how to use this configuration file, please
+    visit http://www.srch2.com/downloads.html and select the correct
+    documentation version.
+
+    Please email contact@srch2.com if you have questions.
+-->
+ 
+<config>
+    <srch2Home>.</srch2Home>
+        <!-- Make sure to specify the home of your SRCH2 installation.  Example: 
+	  <srch2Home>/home/joe/srch2</srch2Home>
+        -->
+ 
+    <licenseFile>srch2_license_key.txt</licenseFile>
+ 
+    <listeningHostname>0.0.0.0</listeningHostname>
+    <listeningPort>8081</listeningPort>
+ 
+    <!-- 
+        Mongo DB settings
+        Required if dataSourceType = 2
+    -->
+    <!--
+    <dataSourceType>2</dataSourceType>
+    <mongodb>
+        <host>localhost</host>
+        <port>27017</port>
+        <db>demo</db>
+        <collection>movies</collection>
+        <listenerWaitTime>3</listenerWaitTime>
+    </mongodb>
+    -->     
+
+    <!-- Use more threads to increase total overall throughput of the search engine.  On a dedicated
+         machine, our recommendation is that you can add as many threads as you have CPU cores.
+    -->
+    <maxSearchThreads>4</maxSearchThreads>
+
+    <!-- Operate multiple data sources, each on their own SRCH2 core.  This feature requires less
+         system administration overhead than running separate search engines.  The search query URL
+         is compatible with Solr's format: http://hostname/corename/search/q=term where corename
+         matches the name below.  If the URL does not specify the core, the core specified below in
+         defaultCoreName will handle the request.
+    -->
+    <cores defaultCoreName="movies">
+        <core name="movies">
+            <!-- The configuration settings that are specific to the data source occur inside each core tag
+            -->
+            <dataFile>../movie-data.json</dataFile>
+            <dataDir>movies</dataDir>
+            <dataSourceType>1</dataSourceType>
+
+            <!-- Operations can also be assigned to special ports.  This supports network based security
+                 used by all modern firewall.  Below, we move http://hostname/update operations to a
+                 different port.
+            -->
+	    <updatePort>8088</updatePort>
+
+            <indexConfig>
+                <indexType>0</indexType>
+                <supportSwapInEditDistance>true</supportSwapInEditDistance>
+                <fieldBoost>title^2 director^1</fieldBoost>
+                <defaultQueryTermBoost>1</defaultQueryTermBoost>
+                <enablePositionIndex>1</enablePositionIndex> 
+            </indexConfig>
+	    <query>
+	        <rankingAlgorithm>
+		    <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
+	        </rankingAlgorithm>
+		<fuzzyMatchPenalty>0.9</fuzzyMatchPenalty>
+		<queryTermSimilarityThreshold>0.75</queryTermSimilarityThreshold>
+		<prefixMatchPenalty>0.95</prefixMatchPenalty>
+		<cacheSize>65536000</cacheSize>
+		<rows>10</rows>
+		<fieldBasedSearch>1</fieldBasedSearch>
+		<searcherType>0</searcherType>
+
+		<!-- 0: exact match; 1: fuzzy match.-->
+		<queryTermFuzzyType>0</queryTermFuzzyType>
+
+		<!-- 0: prefix match; 1: complete match -->
+		<queryTermPrefixType>1</queryTermPrefixType>
+
+		<queryResponseWriter>
+		    <responseFormat>1</responseFormat>
+		</queryResponseWriter>
+	    </query>
+            <schema>
+                <fields>
+                    <field name="title" type="text" indexed="true"/>
+                    <field name="director" type="text" indexed="true"/>
+                    <field name="genre" type="text" indexed="true"
+                           default="HORROR" required="false"/>
+                    <field name="year" type="integer" indexed="false" refining="true"
+                           default="2000" required="false"/>
+                    <field name="id" type="text" refining="true" indexed="false"/>
+                </fields>
+              
+                <uniqueKey>id</uniqueKey>
+              
+                <facetEnabled>true</facetEnabled>
+                <facetFields>
+                    <facetField name="genre" facetType="categorical"/>
+                    <facetField name="year"  facetType="range" facetStart="1990" facetEnd="2050"
+                                facetGap="10"/>
+                </facetFields>
+              
+                <types>
+                    <fieldType name="text_en">
+                        <analyzer>
+                            <filter name="PorterStemFilter" dictionary="" />
+                            <filter name="StopFilter" words="stop-words.txt" />
+                        </analyzer>
+                    </fieldType>
+                </types>
+            </schema>
+	    <updatehandler>
+	        <maxDocs>15000000</maxDocs>
+		<maxMemory>10000000</maxMemory>
+		<mergePolicy>
+		    <mergeEveryNSeconds>10</mergeEveryNSeconds>
+		    <mergeEveryMWrites>10</mergeEveryMWrites>
+		</mergePolicy>
+		<updateLog>
+		    <logLevel>4</logLevel>
+		    <accessLogFile>srch2-log.txt</accessLogFile>
+		</updateLog>
+	    </updatehandler>
+        </core>
+
+	<!-- A second core loaded with posts from Stackoverflow.  A search request on this data
+             would take the form: http://hostname/stack/search?q=...
+        -->
+        <core name="stack">
+            <dataDir>stack</dataDir>
+            <dataSourceType>1</dataSourceType>
+            <dataFile>../stackoverflow-data.json</dataFile>
+
+	    <!-- Here we move all control and write operations to a dedicated port.  This could be a
+	         typical configuration for those wishing to limit most users to just search requests
+                 by using functionality typically available in a firewall.  To complete this setup,
+                 a network administrator would configure rules in the firewall to only allow access to
+                 port 9081 from certain VLANs or IP addresses.
+	    -->
+	    <savePort>9081</savePort>
+	    <exportPort>9081</exportPort>
+	    <resetLoggerPort>9081</resetLoggerPort>
+	    <docsPort>9081</docsPort>
+	    <updatePort>9081</updatePort>
+
+            <indexConfig>
+                <indexType>0</indexType>
+                <supportSwapInEditDistance>true</supportSwapInEditDistance>
+                <!--  <fieldBoost>title^12 tags^16</fieldBoost> -->
+                <fieldBoost>title^30 tags^20</fieldBoost>
+                <recordBoostField>votes_count</recordBoostField>
+                <defaultQueryTermBoost>1</defaultQueryTermBoost>
+                <enablePositionIndex>1</enablePositionIndex> 
+            </indexConfig>
+            
+	    <query>
+	        <rankingalgorithm>
+		    <recordScoreExpression>(idf_score*(log(doc_boost+1)^1.5))/(idf_score+log(doc_boost+1))</recordScoreExpression>
+		</rankingalgorithm>
+		<fuzzyMatchPenalty>0.75</fuzzyMatchPenalty>
+		<queryTermSimilarityThreshold>0.8</queryTermSimilarityThreshold>
+		<prefixMatchPenalty>0.85</prefixMatchPenalty>
+		<cacheSize>65536000</cacheSize>
+		<rows>10</rows>
+		<fieldBasedSearch>0</fieldBasedSearch>
+		<searcherType>0</searcherType>
+
+		<!-- 0: exact match; 1: fuzzy match.-->
+		<queryTermFuzzyType>1</queryTermFuzzyType>
+
+		<!-- 0: prefix match; 1: complete match -->
+		<queryTermPrefixType>1</queryTermPrefixType>
+
+		<queryResponseWriter>
+		    <responseFormat>1</responseFormat>
+		</queryResponseWriter>
+	    </query>
+
+            <KeywordPopularityThreshold>10000</KeywordPopularityThreshold>
+            <getAllResultsMaxResultsThreshold>2000</getAllResultsMaxResultsThreshold>
+            <getAllResultsKAlternative>500</getAllResultsKAlternative>
+            <schema>
+                <fields>
+                    <field name="title"          type="text"    indexed="true"/>
+                    <field name="body"           type="text"    indexed="true"/>
+                    <field name="author_name"    type="text"    indexed="true"/>
+                    <field name="tags"           type="text"    indexed="true"    refining="true"
+                           required="false" multivalued="true"/>
+                    <field name="creation_date"  type="time"    indexed="false"   refining="true" default="01/01/2000"  required="false"/>
+                    <field name="view_count"     type="integer" indexed="false"   refining="true"
+                           default="0"           required="false"/>
+                    <field name="answer_count"   type="integer" indexed="false"   refining="true"
+                           default="0"           required="false"/>
+                    <field name="votes_count"    type="integer" indexed="false"   refining="true"
+                           default="0"           required="false"/>
+                </fields>
+              
+                <uniqueKey>id</uniqueKey>
+                <facetEnabled>true</facetEnabled>
+                <facetFields>
+                    <facetField name="tags" facetType="categorical"/>
+                </facetFields>
+              
+                <types>
+                    <fieldType name="text_en">
+                      <analyzer>
+                        <filter name="PorterStemFilter" dictionary="" />
+                        <filter name="StopFilter" words="stop-words.txt" />
+
+			<!-- Specify certain words are complete, searchable terms, despite punctuation
+			     in them.  This allows searches on terms such as C++ or .NET .
+			 -->
+                        <filter name="protectedKeyWordsFilter" words="protected_words.txt" />
+                      </analyzer>
+                    </fieldType>
+                </types>
+            </schema>
+	    <updatehandler>
+	        <maxDocs>15000000</maxDocs>
+		<maxMemory>10000000</maxMemory>
+		<mergePolicy>
+		    <mergeEveryNSeconds>10</mergeEveryNSeconds>
+		    <mergeEveryMWrites>10</mergeEveryMWrites>
+		</mergePolicy>
+		<updateLog>
+		    <logLevel>4</logLevel>
+		    <accessLogFile>srch2-log.txt</accessLogFile>
+		</updateLog>
+	    </updatehandler>
+        </core>
+
+    </cores>
+    <indexConfig>
+         
+        <indexType>0</indexType>
+         
+        <supportSwapInEditDistance>true</supportSwapInEditDistance>
+
+        <fieldBoost>title^2 director^1</fieldBoost>
+
+        <defaultQueryTermBoost>1</defaultQueryTermBoost>
+
+	<enablePositionIndex>1</enablePositionIndex> 
+    
+    </indexConfig>
+  
+  
+    <query>
+        <rankingAlgorithm>
+            <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
+        </rankingAlgorithm>
+ 
+        <fuzzyMatchPenalty>0.9</fuzzyMatchPenalty>
+
+	<queryTermSimilarityThreshold>0.75</queryTermSimilarityThreshold>
+         
+        <prefixMatchPenalty>0.95</prefixMatchPenalty>
+ 
+        <cacheSize>65536000</cacheSize>
+
+        <rows>10</rows>
+
+        <fieldBasedSearch>1</fieldBasedSearch>
+         
+        <searcherType>0</searcherType>
+         
+        <queryTermFuzzyType>1</queryTermFuzzyType>
+         
+        <queryTermPrefixType>0</queryTermPrefixType>
+ 
+        <queryResponseWriter>
+            <responseFormat>1</responseFormat>
+        </queryResponseWriter>
+
+    </query>
+  
+    <updatehandler>
+
+        <maxDocs>15000000</maxDocs>
+ 
+        <maxMemory>10000000</maxMemory>
+        
+        <mergePolicy>
+          <mergeEveryNSeconds>10</mergeEveryNSeconds>
+          <mergeEveryMWrites>10</mergeEveryMWrites>
+        </mergePolicy>
+         
+        <updateLog>
+            <logLevel>3</logLevel>
+            <accessLogFile>./logs/srch2-log.txt</accessLogFile>
+        </updateLog>
+     
+    </updatehandler>
+
+    <schema>
+       <fields>
+          <field name="title" type="text" indexed="true"/>
+          <field name="director" type="text" indexed="true"/>
+          <field name="genre" type="text" indexed="true"
+                 default="HORROR" required="false"/>
+          <field name="year" type="integer" indexed="false" refining="true"
+                 default="2000" required="false"/>
+          <field name="id" type="text" refining="true" indexed="false"/>
+       </fields>
+       
+       <uniqueKey>id</uniqueKey>
+           
+       <facetEnabled>true</facetEnabled>
+        <facetFields>
+          <facetField name="genre" facetType="categorical"/>
+          <facetField name="year"  facetType="range" facetStart="1990" facetEnd="2050" facetGap="10"/>
+        </facetFields>
+        
+        <types>
+          <fieldType name="text_en">
+              <analyzer>
+                  <filter name="PorterStemFilter" dictionary="" />
+                  <filter name="StopFilter" words="" />
+              </analyzer>
+          </fieldType>
+       </types>
+    </schema>
+</config>

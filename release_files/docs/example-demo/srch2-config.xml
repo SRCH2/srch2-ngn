@@ -9,7 +9,7 @@
 -->
  
 <config>
-    <srch2Home></srch2Home>
+    <srch2Home>.</srch2Home>
         <!-- Make sure to specify the home of your SRCH2 installation.  Example: 
 	  <srch2Home>/home/joe/srch2</srch2Home>
         -->
@@ -23,7 +23,7 @@
      
     <dataSourceType>1</dataSourceType>
     
-    <dataFile>example-demo/sample-data.json</dataFile>
+    <dataFile>movie-data.json</dataFile>
 
     <!-- 
         Mongo DB settings
