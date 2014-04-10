@@ -161,7 +161,7 @@ AnalyzerBasedAlgorithm::AnalyzerBasedAlgorithm(Analyzer *analyzer,
 }
 
 void AnalyzerBasedAlgorithm::getSnippet(const QueryResults* /*not used*/, unsigned /* not used*/,
-		unsigned /*not used*/, const string& dataIn,
+		unsigned attributeId, const string& dataIn,
 		vector<string>& snippets, bool isMultiValued, vector<keywordHighlightInfo>& keywordStrToHighlight) {
 
 	if (dataIn.length() == 0)
@@ -199,6 +199,14 @@ void AnalyzerBasedAlgorithm::getSnippet(const QueryResults* /*not used*/, unsign
 			break;
 
 		for (unsigned i =0; i < keywordStrToHighlight.size(); ++i) {
+			/*
+			 * If a user specify a query keyword to be searched in a given attribute then we
+			 * should only highlight its occurrence in that attribute.The Condition below checks
+			 * whether the current attribute is allowed for a given query keyword's.
+			 */
+			if (!(keywordStrToHighlight[i].attrBitMap & (1 << attributeId)))
+				continue;
+
 			switch (keywordStrToHighlight[i].flag) {
 			case HIGHLIGHT_KEYWORD_IS_PERFIX:  // prefix
 			{
@@ -804,6 +812,14 @@ void TermOffsetAlgorithm::getSnippet(const QueryResults* qr, unsigned recidx, un
 	}
 	for (unsigned i = 0; i < candidateKeywordsId->size(); ++i) {
 		CandidateKeywordInfo info = (*candidateKeywordsId)[i];
+		/*
+		 * If a user specify a query keyword to be searched in a given attribute then we
+		 * should only highlight its occurrence in that attribute.The Condition below checks
+		 * whether the current attribute is allowed for a given query keyword's.
+		 */
+		if (!(keywordStrToHighlight[info.prefixKeyIdx].attrBitMap & (1 << attributeId)))
+			continue;
+
 		unsigned attributeBitMap =	fwdList->getKeywordAttributeBitmap(info.keywordOffset);
 		if (attributeBitMap & (1 << attributeId)) {
 			vector<unsigned> offsetPosition;
