@@ -66,7 +66,10 @@ if __name__ == '__main__':
     size_2 = os.path.getsize(logFileName)
     #print 'size_2 = ' + str(size_2)
     #check increasing
-    assert size_2 > size_1, 'Error, log into not written into logger file!'
+    if size_2 <= size_1:
+        print 'Error, log into not written into logger file!'
+        tester.killServer()
+        os._exit(1)
 
     #check if logrotate is installed
     flagNum, output = commands.getstatusoutput('logrotate --usage')
@@ -90,7 +93,10 @@ if __name__ == '__main__':
         print "Renamed logfile " + str(logFileName) + '.1 missing - Logrotate probably did not rotate it because its already been rotated recently.'
 
     #print 'size_4 = ' + str(size_4)
-    assert (size_3 == 0) and (size_4 == size_2), 'Error, failed to create/switch to new logger file'
+    if (size_3 != 0) or (size_4 != size_2):
+        print 'Error, failed to create/switch to new logger file'
+        tester.killServer()
+        os._exit(2)
 
     #fire several queries
     for i in range(0, numOfQueries):
@@ -98,7 +104,10 @@ if __name__ == '__main__':
  
     size_5 = os.path.getsize(logFileName)
     #print 'size_5 = ' + str(size_5)
-    assert size_5 > size_3, 'Error, failed to write log info into new logger file'
+    if size_5 <= size_3:
+        print 'Error, failed to write log info into new logger file'
+        tester.killServer()
+        os._exit(3)
 
     tester.killServer()
 

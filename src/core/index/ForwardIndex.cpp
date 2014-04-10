@@ -853,13 +853,29 @@ bool ForwardList::isValidRecordTermHit(const SchemaInternal *schema,
                 keywordOffset);
         if (highestBit) {
             // turn off the highest bit
-            termSearchableAttributeIdToFilterTermHits&= 0x7fffffff; 
-            return (matchingKeywordAttributeBitmap & 
-                termSearchableAttributeIdToFilterTermHits)
-                    == termSearchableAttributeIdToFilterTermHits;
+            termSearchableAttributeIdToFilterTermHits &= 0x7fffffff;
+            /*
+             *  Mask the record's keyword attribute bit map with query's keyword attribute bit map.
+             *  e.g:
+             *  if a keyword python is in attributes title, tags, and body. Whereas a user searched
+             *  python only in attribute body. Then we should set matchingKeywordAttributeBitmap to
+             *  only have 'body' attribute set.
+             */
+            matchingKeywordAttributeBitmap &=  termSearchableAttributeIdToFilterTermHits;
+            /*
+             *  For AND condition on attributes e.g  title and body : python
+             *  The masked bitmap should be same as query bit map to be considered as a valid hit.
+             */
+            return (matchingKeywordAttributeBitmap
+                    == termSearchableAttributeIdToFilterTermHits);
         } else {
-            return (matchingKeywordAttributeBitmap & 
-                termSearchableAttributeIdToFilterTermHits) != 0;
+        	matchingKeywordAttributeBitmap &=  termSearchableAttributeIdToFilterTermHits;
+        	/*
+        	 *  For OR condition on attributes e.g  title or body : python
+        	 *  The masked bitmap should have atleast one query attribute set to be considered as
+        	 *  a valid hit.
+        	 */
+            return (matchingKeywordAttributeBitmap != 0);
         }
     }
 }
