@@ -8,7 +8,6 @@
 #include "instantsearch/TypedValue.h"
 #include "util/DateAndTimeHandler.h"
 #include "operation/QueryEvaluatorInternal.h"
-#include "operation/PhraseSearcher.h"
 
 namespace srch2 {
 namespace instantsearch {
@@ -72,7 +71,7 @@ PhysicalPlanRecordItem * PhraseSearchOperator::getNext(const PhysicalPlanExecuti
 		}
         bool isValid = false;
         const ForwardList* forwardListPtr = forwardIndex->getForwardList(readView, nextRecord->getRecordId(), isValid);
-        if (false == isValid){
+        if (false == isValid){ // ignore this record if it's already deleted
         	continue;
         }
         if (matchPhrase(forwardListPtr, this->phraseSearchInfo)){
@@ -103,16 +102,47 @@ string PhraseSearchOperator::toString(){
 }
 
 bool PhraseSearchOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) {
-	ASSERT(false);
+
+	if (phraseErr)
+		return false;
+
+	if (this->queryEvaluatorInternal == NULL) {
+		return false;  // open should be called first
+	}
+
+	bool verifiedForKeywordExistance = this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->verifyByRandomAccess(parameters);
+
+	if(verifiedForKeywordExistance == false){
+		return false;
+	}
+
+	ForwardIndex * forwardIndex = this->queryEvaluatorInternal->getForwardIndex();
+    shared_ptr<vectorview<ForwardListPtr> > readView;
+    this->queryEvaluatorInternal->getForwardIndex_ReadView(readView);
+
+    bool isValid = false;
+    const ForwardList* forwardListPtr = forwardIndex->getForwardList(readView, parameters.recordToVerify->getRecordId(), isValid);
+    if (false == isValid){ // ignore this record if it's already deleted
+    	false;
+    }
+    if (matchPhrase(forwardListPtr, this->phraseSearchInfo)){
+    	vector<TermType> recordMatchingTermTypes = parameters.recordToVerify->getTermTypesRef();
+    	for (unsigned i = 0; i < recordMatchingTermTypes.size(); ++i) {
+    		recordMatchingTermTypes[i] = TERM_TYPE_PHRASE;
+    	}
+    	return true;
+    }
+
 	return false;
 }
 PhraseSearchOperator::~PhraseSearchOperator(){
-
+	delete this->phraseSearcher;
 }
 PhraseSearchOperator::PhraseSearchOperator(const PhraseInfo& phraseSearchInfo) {
 	this->phraseSearchInfo = phraseSearchInfo;
 	this->queryEvaluatorInternal = NULL;
 	this->phraseErr = false;
+	this->phraseSearcher = new PhraseSearcher();
 }
 
 // match phrase on attributes. do OR or AND logic depending upon the 32 bit of attributeBitMap
@@ -196,17 +226,16 @@ bool PhraseSearchOperator::matchPhrase(const ForwardList* forwardListPtr, const 
 
     	const vector<unsigned> & phraseOffsetRef = phraseInfo.phraseKeywordPositionIndex;
 
-    	PhraseSearcher *phraseSearcher = new PhraseSearcher();
     	// This vector stores all the valid matched positions for a given phrase in the record.
     	vector< vector<unsigned> > matchedPositions;
     	//vector<unsigned> matchedPosition;
         unsigned slop = phraseInfo.proximitySlop;
 
         if (slop > 0){
-            result = phraseSearcher->proximityMatch(positionListVector, phraseOffsetRef, slop,
+            result = this->phraseSearcher->proximityMatch(positionListVector, phraseOffsetRef, slop,
             		matchedPositions, true);  // true means we stop at first match
         } else {
-            result = phraseSearcher->exactMatch(positionListVector, phraseOffsetRef,
+            result = this->phraseSearcher->exactMatch(positionListVector, phraseOffsetRef,
             		matchedPositions, true);  // true means we stop at first match
         }
         // AND operation and we didn't find result so we should break
@@ -249,7 +278,7 @@ PhysicalPlanCost PhraseSearchOptimizationOperator::getCostOfClose(const Physical
 }
 PhysicalPlanCost PhraseSearchOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
 	PhysicalPlanCost resultCost;
-	// Random access is not implemented.
+	resultCost = resultCost + this->getChildAt(0)->getCostOfVerifyByRandomAccess(params);
 	return resultCost;
 }
 void PhraseSearchOptimizationOperator::getOutputProperties(IteratorProperties & prop){

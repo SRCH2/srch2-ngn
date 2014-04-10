@@ -37,6 +37,10 @@ bool UnionLowestLevelSuggestionOperator::open(QueryEvaluatorInternal * queryEval
     return true;
 }
 PhysicalPlanRecordItem * UnionLowestLevelSuggestionOperator::getNext(const PhysicalPlanExecutionParameters & params) {
+    if (suggestionPairCursor >= suggestionPairs.size()) {
+        return NULL;
+    }
+
     Term * term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->getTerm(params.isFuzzy);
     shared_ptr<vectorview<unsigned> > invertedListReadView;
     queryEvaluatorIntrnal->getInvertedIndex()->
@@ -46,9 +50,9 @@ PhysicalPlanRecordItem * UnionLowestLevelSuggestionOperator::getNext(const Physi
     float termRecordStaticScore = 0;
     // move on inverted list and add the records which are valid
     while(true){
-        if(invertedListCursor < invertedListReadView->size()){
+        if(invertedListCursor < invertedListReadView->size() && suggestionPairCursor < suggestionPairs.size()){
             unsigned recordId = invertedListReadView->getElement(invertedListCursor++);
-            unsigned keywordOffset = queryEvaluatorIntrnal->getInvertedIndex()->getKeywordOffsetInvertedIndex(
+            unsigned keywordOffset = queryEvaluatorIntrnal->getInvertedIndex()->getKeywordOffset(
                     this->forwardIndexDirectoryReadView,
                     this->invertedIndexKeywordIdsReadView,
                     recordId, suggestionPairs[suggestionPairCursor].suggestedCompleteTermNode->getInvertedListOffset());

@@ -44,8 +44,10 @@ HighInsertTest(){
     startServer
     PID=$!
     bundle exec ruby ./high_insert_test/boom.rb
+    exitCode="$?"
     endServer $PID
+    return ${exitCode}
 }
 
 HighInsertTest
-
+exit ${exitCode}

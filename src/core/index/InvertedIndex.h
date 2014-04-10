@@ -220,7 +220,7 @@ public:
                     unsigned searchableAttributeId, unsigned& termAttributeBitmap, float &termRecordStaticScore) const;
 
     // return FORWARDLIST_NOTVALID if the forward list is not valid (e.g., already deleted)
-    unsigned getKeywordOffsetInvertedIndex(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+    unsigned getKeywordOffset(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
     		shared_ptr<vectorview<unsigned> > & invertedIndexKeywordIdsReadView,
     		unsigned forwardListId, unsigned invertedListOffset) const;
 

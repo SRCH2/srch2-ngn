@@ -120,12 +120,20 @@ void HistogramManager::annotateWithEstimatedProbabilitiesAndNumberOfResults(Logi
 			/*
 			 * P(A AND B AND C) = P(A) * P(B) * P(C)
 			 */
-			float conjunctionAggregatedProbability = 1;
+			double conjunctionAggregatedProbability = 1;
 			for(vector<LogicalPlanNode * >::iterator child = node->children.begin(); child != node->children.end() ; ++child){
 				conjunctionAggregatedProbability = conjunctionAggregatedProbability * (*child)->stats->getEstimatedProbability();
 			}
 			node->stats->setEstimatedProbability(conjunctionAggregatedProbability);
 			node->stats->setEstimatedNumberOfResults(computeEstimatedNumberOfResults(node->stats->getEstimatedProbability()));
+			/*
+			 * if probability is not zero but estimated number of results is zero, it means probability has
+			 * become very small. But since this zero will be multiplied to many other parts of costing
+			 * it shouldn't be zero or it disables them ...
+			 */
+			if(conjunctionAggregatedProbability != 0 && node->stats->getEstimatedNumberOfResults() == 0){
+				node->stats->setEstimatedNumberOfResults(1);
+			}
 			break;
 		}
 		case LogicalPlanNodeTypeOr:
@@ -134,7 +142,7 @@ void HistogramManager::annotateWithEstimatedProbabilitiesAndNumberOfResults(Logi
 			 * P(A1 OR A2 OR ... OR An) = P((A1 OR A2 OR ... OR An-1) OR An),
 			 * P(X OR Y) = P(X) + P(Y) - P(X) * P(Y)
 			 */
-			float disjunctionAggregatedProbability = 0;
+			double disjunctionAggregatedProbability = 0;
 			for(vector<LogicalPlanNode * >::iterator child = node->children.begin(); child != node->children.end() ; ++child){
 				disjunctionAggregatedProbability =
 						disjunctionAggregatedProbability + (*child)->stats->getEstimatedProbability()
@@ -142,6 +150,14 @@ void HistogramManager::annotateWithEstimatedProbabilitiesAndNumberOfResults(Logi
 			}
 			node->stats->setEstimatedProbability(disjunctionAggregatedProbability);
 			node->stats->setEstimatedNumberOfResults(computeEstimatedNumberOfResults(node->stats->getEstimatedProbability()));
+			/*
+			 * if probability is not zero but estimated number of results is zero, it means probability has
+			 * become very small. But since this zero will be multiplied to many other parts of costing
+			 * it shouldn't be zero or it disables them ...
+			 */
+			if(disjunctionAggregatedProbability != 0 && node->stats->getEstimatedNumberOfResults() == 0){
+				node->stats->setEstimatedNumberOfResults(1);
+			}
 			break;
 		}
 		case LogicalPlanNodeTypeNot:
@@ -150,15 +166,23 @@ void HistogramManager::annotateWithEstimatedProbabilitiesAndNumberOfResults(Logi
 			 * P(NOT A) = 1 - P(A)
 			 */
 			ASSERT(node->children.size() == 1); // NOT should have exactly one child
-			float childProbability = node->children.at(0)->stats->getEstimatedProbability();
-			float negationProbability = 1 - childProbability;
+			double childProbability = node->children.at(0)->stats->getEstimatedProbability();
+			double negationProbability = 1 - childProbability;
 			node->stats->setEstimatedProbability(negationProbability);
 			node->stats->setEstimatedNumberOfResults(computeEstimatedNumberOfResults(node->stats->getEstimatedProbability()));
+			/*
+			 * if probability is not zero but estimated number of results is zero, it means probability has
+			 * become very small. But since this zero will be multiplied to many other parts of costing
+			 * it shouldn't be zero or it disables them ...
+			 */
+			if(negationProbability != 0 && node->stats->getEstimatedNumberOfResults() == 0){
+				node->stats->setEstimatedNumberOfResults(1);
+			}
 			break;
 		}
 		case LogicalPlanNodeTypePhrase:
 		{
-			float childProbability = node->children.at(0)->stats->getEstimatedProbability();
+			double childProbability = node->children.at(0)->stats->getEstimatedProbability();
 			node->stats->setEstimatedProbability(childProbability);
 			node->stats->setEstimatedNumberOfResults(computeEstimatedNumberOfResults(node->stats->getEstimatedProbability()));
 			break;
@@ -166,13 +190,22 @@ void HistogramManager::annotateWithEstimatedProbabilitiesAndNumberOfResults(Logi
 		case LogicalPlanNodeTypeTerm:
 		{
 			unsigned thresholdForEstimation = isFuzzy ? node->fuzzyTerm->getThreshold() : node->exactTerm->getThreshold();
+			TermType termType = isFuzzy ? node->fuzzyTerm->getTermType() : node->exactTerm->getTermType();
 			boost::shared_ptr<PrefixActiveNodeSet> activeNodeSetForEstimation =  node->stats->getActiveNodeSetForEstimation(isFuzzy);
-			float termProbability;
+			double termProbability;
 			unsigned numberOfLeafNodes;
-			computeEstimatedProbabilityOfPrefixAndNumberOfLeafNodes(activeNodeSetForEstimation.get(), thresholdForEstimation, termProbability, numberOfLeafNodes);
+			computeEstimatedProbabilityOfPrefixAndNumberOfLeafNodes(termType, activeNodeSetForEstimation.get(), thresholdForEstimation, termProbability, numberOfLeafNodes);
 			node->stats->setEstimatedProbability(termProbability);
 			node->stats->setEstimatedNumberOfResults(computeEstimatedNumberOfResults(node->stats->getEstimatedProbability()));
 			node->stats->setEstimatedNumberOfLeafNodes(numberOfLeafNodes);
+			/*
+			 * if probability is not zero but estimated number of results is zero, it means probability has
+			 * become very small. But since this zero will be multiplied to many other parts of costing
+			 * it shouldn't be zero or it disables them ...
+			 */
+			if(termProbability != 0 && node->stats->getEstimatedNumberOfResults() == 0){
+				node->stats->setEstimatedNumberOfResults(1);
+			}
 			break;
 		}
 	}
@@ -253,8 +286,49 @@ boost::shared_ptr<PrefixActiveNodeSet> HistogramManager::computeActiveNodeSet(Te
     return prefixActiveNodeSet;
 }
 
-void HistogramManager::computeEstimatedProbabilityOfPrefixAndNumberOfLeafNodes(PrefixActiveNodeSet * activeNodes ,
-		unsigned threshold, float & probability, unsigned & numberOfLeafNodes) const{
+void HistogramManager::computeEstimatedProbabilityOfPrefixAndNumberOfLeafNodes(TermType termType, PrefixActiveNodeSet * activeNodes ,
+		unsigned threshold, double & probability, unsigned & numberOfLeafNodes) const{
+
+	/*
+	 * If termType is complete, we shouldn't estimate
+	 * numberOfLeafNodes or probability value. we can use their exact values
+	 *
+	 * For example, for a complete keyword "mic", we can use the length of the inverted
+	 * list of the terminal node "mic" to compute its exact probability, without considering other
+	 * leaf nodes of this node, such as "michael" and "microsoft".
+	 *
+	 */
+	if(termType == TERM_TYPE_COMPLETE){
+	    unsigned aggregatedNumberOfLeafNodes = 0;
+	    double aggregatedProbability = 0;
+
+	    for(LeafNodeSetIteratorForComplete iter(activeNodes , threshold); !iter.isDone(); iter.next()){
+	        TrieNodePointer trieNode;
+	        unsigned distance;
+	        iter.getItem(trieNode, distance);
+
+			aggregatedNumberOfLeafNodes ++; // each terminal node is one leaf node when term is complete
+
+			// fetch the inverted list to get its size
+			shared_ptr<vectorview<InvertedListContainerPtr> > invertedListDirectoryReadView;
+			queryEvaluator->getInvertedIndex()->getInvertedIndexDirectory_ReadView(invertedListDirectoryReadView);
+			shared_ptr<vectorview<unsigned> > invertedListReadView;
+			queryEvaluator->getInvertedIndex()->getInvertedListReadView(invertedListDirectoryReadView,
+					trieNode->getInvertedListOffset(), invertedListReadView);
+			// calculate the probability of this node by using invertedlist size
+			double individualProbabilityOfCompleteTermTrieNode = (invertedListReadView->size() * 1.0) /
+					this->queryEvaluator->indexData->forwardIndex->getTotalNumberOfForwardLists_ReadView();
+			// use new probability in joint probability
+			aggregatedProbability =
+					trieNode->aggregateValueByJointProbabilityDouble(aggregatedProbability , individualProbabilityOfCompleteTermTrieNode);
+
+	    }
+
+	    numberOfLeafNodes = aggregatedNumberOfLeafNodes;
+	    probability = aggregatedProbability;
+	    return;
+
+	}
 
 	/*
 	 * Example :
@@ -318,11 +392,11 @@ void HistogramManager::computeEstimatedProbabilityOfPrefixAndNumberOfLeafNodes(P
 
     // now we have the top level trieNodes
     // we move on all top trie nodes and aggregate their probability by using Joint Probability formula
-    float aggregatedProbability = 0;
+    double aggregatedProbability = 0;
     unsigned aggregatedNumberOfLeafNodes = 0;
     for(std::vector<TrieNodePointer>::iterator trieNodeIter = topTrieNodes.begin() ; trieNodeIter != topTrieNodes.end() ; ++trieNodeIter){
     	TrieNodePointer topTrieNode = *trieNodeIter;
-    	aggregatedProbability = topTrieNode->aggregateValueByJointProbability(aggregatedProbability , topTrieNode->getNodeProbabilityValue());
+    	aggregatedProbability = topTrieNode->aggregateValueByJointProbabilityDouble(aggregatedProbability , topTrieNode->getNodeProbabilityValue());
     	aggregatedNumberOfLeafNodes += topTrieNode->getNumberOfTerminalNodes();
     }
 
@@ -331,7 +405,28 @@ void HistogramManager::computeEstimatedProbabilityOfPrefixAndNumberOfLeafNodes(P
 
 }
 
-unsigned HistogramManager::computeEstimatedNumberOfResults(float probability){
+
+void HistogramManager::depthAggregateProbabilityAndNumberOfLeafNodes(const TrieNode* trieNode,
+		unsigned editDistance,
+		unsigned panDistance,
+		unsigned bound,
+		double & aggregatedProbability ,
+		unsigned & aggregatedNumberOfLeafNodes) const{
+    if (trieNode->isTerminalNode()){
+
+    }
+    if (panDistance < bound) {
+        for (unsigned int childIterator = 0; childIterator < trieNode->getChildrenCount(); childIterator++) {
+            const TrieNode *child = trieNode->getChild(childIterator);
+            depthAggregateProbabilityAndNumberOfLeafNodes(child, editDistance,
+            		panDistance + 1, bound ,
+            		aggregatedProbability, aggregatedNumberOfLeafNodes);
+        }
+    }
+}
+
+
+unsigned HistogramManager::computeEstimatedNumberOfResults(double probability){
 	return (unsigned)(probability * this->queryEvaluator->indexData->forwardIndex->getTotalNumberOfForwardLists_ReadView());
 }
 

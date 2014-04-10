@@ -98,7 +98,9 @@ unsigned QueryResults::getInternalRecordId(unsigned position) const {
 std::string QueryResults::getInMemoryRecordString(unsigned position) const {
     unsigned internalRecordId = this->getInternalRecordId(position);
     StoredRecordBuffer buffer = impl->queryEvaluatorInternal->getInMemoryData(internalRecordId);
-    string inMemoryString = string(buffer.start, buffer.length);
+    string inMemoryString = "";
+    if (!buffer.start)
+    	inMemoryString = string(buffer.start.get(), buffer.length);
     return inMemoryString;
 }
 

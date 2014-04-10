@@ -163,6 +163,13 @@ bool isSortedAlphabetically(const KeywordIdKeywordStringInvertedListIdTriple& ke
 /// Add a record
 INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer)
 {
+
+  //For M1, since we don't use shared pointers for quad trees, readers 
+  //and writers need to share the global rwMutex
+    if(this->schemaInternal->getIndexType() 
+        == srch2::instantsearch::LocationIndex) {
+      globalRwMutexForReadersWriters->lockWrite();
+    }
     INDEXWRITE_RETVAL returnValue = OP_FAIL; // not added
 
     /// Get the internalRecordId
@@ -312,7 +319,13 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer
     {
         returnValue = OP_FAIL;
     }
-
+    
+    //For M1, since we don't use shared pointers for quad trees, readers 
+    //and writers need to share the global rwMutex
+    if(this->schemaInternal->getIndexType() 
+        == srch2::instantsearch::LocationIndex) {
+      globalRwMutexForReadersWriters->unlockWrite();
+    }
     return returnValue;
 }
 
@@ -470,11 +483,13 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
     // cout << time << "-trie merge" << endl;
     
     this->forwardIndex->merge();
-    // free the space for deleted records.
-    // need the global lock to block other readers
-    this->globalRwMutexForReadersWriters->lockWrite();
-    this->forwardIndex->freeSpaceOfDeletedRecords();
-    this->globalRwMutexForReadersWriters->unlockWrite();
+    if (this->forwardIndex->hasDeletedRecords()) {
+      // free the space for deleted records.
+      // need the global lock to block other readers
+      this->globalRwMutexForReadersWriters->lockWrite();
+      this->forwardIndex->freeSpaceOfDeletedRecords();
+      this->globalRwMutexForReadersWriters->unlockWrite();
+    }
 
     if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
         this->invertedIndex->merge();
@@ -489,6 +504,15 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
     	invertedIndex = this->invertedIndex;
     }
 
+    //Need to block reader for both trie reassignment and quadtree merge in
+    //M1
+    bool haveGlobalLockForM1 = false;
+    if (this->schemaInternal->getIndexType() == 
+        srch2::instantsearch::LocationIndex) {
+      globalRwMutexForReadersWriters->lockWrite();
+      haveGlobalLockForM1 = true;
+    }
+
     // check if we need to reassign some keyword ids
     if (this->trie->needToReassignKeywordIds()) {
 
@@ -499,9 +523,11 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
     	// reassign id is not thread safe so we need to grab an exclusive lock
     	// NOTE : all index structure commits are happened before reassign id phase. Only QuadTree is left
     	//        because we need new ids in quadTree commit phase.
-        this->globalRwMutexForReadersWriters->lockWrite(); // need locking to block other readers
+        if(!haveGlobalLockForM1) // need locking to block other readers
+          this->globalRwMutexForReadersWriters->lockWrite(); 
         this->reassignKeywordIds();
-        this->globalRwMutexForReadersWriters->unlockWrite();
+        if(!haveGlobalLockForM1) 
+          this->globalRwMutexForReadersWriters->unlockWrite();
       
         // struct timespec tend;
         // clock_gettime(CLOCK_REALTIME, &tend);
@@ -513,8 +539,13 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
     this->trie->merge(invertedIndex , this->forwardIndex,
     		this->forwardIndex->getTotalNumberOfForwardLists_ReadView() , updateHistogram);
     
-    if (this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex)
-        this->quadTree->merge();
+    if (this->schemaInternal->getIndexType() == 
+        srch2::instantsearch::LocationIndex) {
+      this->quadTree->merge();
+     
+      //still have Global lock in M1 
+      globalRwMutexForReadersWriters->unlockWrite();
+    }
 
     this->mergeRequired = false;
 
@@ -648,15 +679,16 @@ void IndexData::_save(const string &directoryName) const
         Logger::error("Error writing trie index file: %s/%s", directoryName.c_str(), IndexConfig::trieFileName);
 	// can keep running - don't rethrow exception
     }
-    //this->forwardIndex->print_test();
-    //this->invertedIndex->print_test();
+
     if(this->forwardIndex->isMergeRequired()) {
         this->forwardIndex->merge();
-        // free the space for deleted records.
-        // need the global lock to block other readers
-        this->globalRwMutexForReadersWriters->lockWrite();
-        this->forwardIndex->freeSpaceOfDeletedRecords();
-        this->globalRwMutexForReadersWriters->unlockWrite();
+        if (this->forwardIndex->hasDeletedRecords()) {
+	  // free the space for deleted records.
+	  // need the global lock to block other readers
+	  this->globalRwMutexForReadersWriters->lockWrite();
+	  this->forwardIndex->freeSpaceOfDeletedRecords();
+	  this->globalRwMutexForReadersWriters->unlockWrite();
+	}
     }
 
     try {

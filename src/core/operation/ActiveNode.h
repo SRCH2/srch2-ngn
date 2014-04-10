@@ -390,25 +390,27 @@ struct LeafNodeSetIteratorItem {
 
 };
 
-
-class LeafNodeSetIterator
+/*
+* for a set of active nodes, given a threshold edUpperBound, find
+* all the leaf nodes whose minimal edit distance (among all their prefixes)
+* is within the edUpperBound.
+* Provide an iterator that can return the leaf nodes sorted by their
+* minimal edit distance
+*
+* Implementation: 1. Get the set of active nodes with an edit distance <= edUpperBound, sorted
+*                 based on their edit distance,
+*                 2. get their leaf nodes, and keep track of the visited nodes so that
+*
+*                  each node is visited only once.
+*/
+class LeafNodeSetIteratorForPrefix
 {
 private:
     std::vector<LeafNodeSetIteratorItem > resultVector;
     unsigned cursor;
 
 public:
-    // for a set of active nodes, given a threshold edUpperBound, find
-    // all the leaf nodes whose minimal edit distance (among all their prefixes)
-    // is within the edUpperBound.
-    // Provide an iterator that can return the leaf nodes sorted by their
-    // minimal edit distance
-
-    // Implementation: 1. Get the set of active nodes with an edit distance <= edUpperBound, sorted
-    //                 based on their edit distance,
-    //                 2. get their leaf nodes, and keep track of the visited nodes so that
-    //                   each node is visited only once.
-    LeafNodeSetIterator(PrefixActiveNodeSet *prefixActiveNodeSet, const unsigned edUpperBound) {
+    LeafNodeSetIteratorForPrefix(PrefixActiveNodeSet *prefixActiveNodeSet, const unsigned edUpperBound) {
         _initLeafNodeSetIterator(prefixActiveNodeSet, edUpperBound);
     }
 
@@ -510,6 +512,111 @@ private:
     }
 
 };
+
+/*
+ * This struct keeps the TrieNode and its edit-distance of terminal nodes in the LeafNodeSetIteratorForComplete.
+ */
+struct LeafNodeSetIteratorItemComplete {
+    const TrieNode *leafNode;
+    unsigned distance;
+
+    LeafNodeSetIteratorItemComplete(const TrieNode *leafNode, unsigned distance) {
+        this->leafNode = leafNode;
+        this->distance = distance;
+    }
+
+};
+
+/*
+ * When keyword is complete, ANS consists of a terminal node (keyword itself) and
+ * if it is also fuzzy a group of non-terminal nodes. This group of non-terminal nodes
+ * must be used to find terminal nodes that are close to them (within the edit-distance threshold.)
+ *
+ */
+class LeafNodeSetIteratorForComplete
+{
+private:
+	map<const TrieNode*, unsigned, TrieNodePreOrderComparator> leafNodesWithinDistance;
+	map<const TrieNode*, unsigned, TrieNodePreOrderComparator>::iterator cursor;
+
+public:
+
+    /*
+     * This iterator traverses on the terminal nodes close by the active nodes of prefixActiveNodeSet
+     * to find those within edit-distance threshold.
+     */
+    LeafNodeSetIteratorForComplete(PrefixActiveNodeSet *prefixActiveNodeSet, unsigned bound){
+    	_initLeafNodeSetIterator(prefixActiveNodeSet, bound);
+    }
+
+    void next() {
+        if (isDone())
+            return;
+        cursor ++;
+    }
+
+    bool isDone() {
+        //if (cursor >= leafNodesVector.size())
+        if (cursor == leafNodesWithinDistance.end())
+            return true;
+        return false;
+    }
+
+    size_t size() const{
+        return leafNodesWithinDistance.size();
+    }
+
+    void getItem(const TrieNode *&leafNode, unsigned &distance) {
+        if (isDone()) {
+            leafNode = NULL;
+            distance = 0;
+        } else {
+            leafNode = cursor->first;
+            distance = cursor->second;
+        }
+    }
+
+private:
+    void _initLeafNodeSetIterator(PrefixActiveNodeSet *prefixActiveNodeSet, unsigned bound) {
+
+        const TrieNode *trieNode;
+        unsigned distance;
+
+        ActiveNodeSetIterator ani(prefixActiveNodeSet, bound);
+        for (; !ani.isDone(); ani.next()) {
+            ani.getItem(trieNode, distance);
+            unsigned panDistance = prefixActiveNodeSet->getEditdistanceofPrefix(trieNode);
+			computeTerminalNodesWithinDistance(leafNodesWithinDistance,trieNode , distance, panDistance, bound);
+        }
+
+        cursor = leafNodesWithinDistance.begin();
+    }
+
+    /*
+     * This is a recursive function which traverses the Trie to find closeby terminal nodes
+     * within edit-distance threshold of trieNode
+     */
+    void computeTerminalNodesWithinDistance(map<const TrieNode*, unsigned, TrieNodePreOrderComparator> & activeNodesWithinEditDistance,
+    		const TrieNode* trieNode, unsigned editDistance, unsigned panDistance, unsigned bound){
+        if (trieNode->isTerminalNode()){
+			map<const TrieNode*, unsigned, TrieNodePreOrderComparator>::iterator nodeIter = activeNodesWithinEditDistance.find(trieNode);
+			unsigned realNewEditDistance = editDistance > panDistance ? editDistance : panDistance;
+        	if(nodeIter != activeNodesWithinEditDistance.end()){ // use the minimal edis-distance
+        		activeNodesWithinEditDistance[trieNode] = std::min<unsigned>(realNewEditDistance , activeNodesWithinEditDistance[trieNode]);
+        	}else{
+        		activeNodesWithinEditDistance[trieNode] = realNewEditDistance;
+        	}
+        }
+        if (panDistance < bound) {
+            for (unsigned int childIterator = 0; childIterator < trieNode->getChildrenCount(); childIterator++) {
+                const TrieNode *child = trieNode->getChild(childIterator);
+                computeTerminalNodesWithinDistance(activeNodesWithinEditDistance, child, editDistance, panDistance + 1, bound);
+            }
+        }
+    }
+
+};
+
 
 }
 }

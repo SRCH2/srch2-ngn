@@ -248,21 +248,11 @@ bool MergeByShortestListOperator::verifyRecordWithChildren(PhysicalPlanRecordIte
 			 */
 			runTimeTermRecordScores.push_back(recordItem->getRecordRuntimeScore());
 			staticTermRecordScores.push_back(recordItem->getRecordStaticScore());
-			vector<TrieNodePointer> matchingPrefixes;
-			recordItem->getRecordMatchingPrefixes(matchingPrefixes);
-			termRecordMatchingKeywords.insert(termRecordMatchingKeywords.end(),matchingPrefixes.begin(),matchingPrefixes.end());
-			vector<unsigned> recordAttributeBitmaps;
-			recordItem->getRecordMatchAttributeBitmaps(recordAttributeBitmaps);
-			attributeBitmaps.insert(attributeBitmaps.end(),recordAttributeBitmaps.begin(),recordAttributeBitmaps.end());
-			vector<unsigned> recordPrefixEditDistances;
-			recordItem->getRecordMatchEditDistances(recordPrefixEditDistances);
-			prefixEditDistances.insert(prefixEditDistances.end(),recordPrefixEditDistances.begin(),recordPrefixEditDistances.end());
-			vector<unsigned> recordPositionIndexOffsets;
-			recordItem->getPositionIndexOffsets(recordPositionIndexOffsets);
-			positionIndexOffsets.insert(positionIndexOffsets.end(),recordPositionIndexOffsets.begin(),recordPositionIndexOffsets.end());
-			std::vector<TermType> recTermTypes;
-			recordItem->getTermTypes(recTermTypes);
-			termTypes.insert(termTypes.end(),recTermTypes.begin(),recTermTypes.end());
+			recordItem->getRecordMatchingPrefixes(termRecordMatchingKeywords);
+			recordItem->getRecordMatchAttributeBitmaps(attributeBitmaps);
+			recordItem->getRecordMatchEditDistances(prefixEditDistances);
+			recordItem->getPositionIndexOffsets(positionIndexOffsets);
+			recordItem->getTermTypes(termTypes);
 		}else{
 			/*
 			 * We should verify this record with all children (except for the shortest list one) and if all of them
@@ -363,7 +353,7 @@ PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfGetNext(const
 			this->getChildAt(S)->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
 
 
-	vector<float> P;
+	vector<double> P;
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
 		P.push_back(this->getChildAt(childOffset)->getLogicalPlanNode()->stats->getEstimatedProbability());
 	}
@@ -414,9 +404,9 @@ PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfGetNext(const
 	 *                       // child S for random access so we always pass it
 	 */
 	 double COST_NC = 0;
-	 float PSBackup = P[S];
+	 double PSBackup = P[S];
 	 P[S] = 1;
-	 float PPart = 1;
+	 double PPart = 1;
 	 unsigned RndPart = 0;
 	 for(unsigned d = 0; d < P.size(); ++d){
 		 RndPart += Rnd[d];

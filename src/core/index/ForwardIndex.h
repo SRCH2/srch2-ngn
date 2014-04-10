@@ -116,7 +116,7 @@ public:
     	return r;
     }
 
-    void setInMemoryData(StoredRecordBuffer inMemoryData) {
+    void setInMemoryData(const StoredRecordBuffer& inMemoryData) {
         this->inMemoryData = inMemoryData.start;
         this->inMemoryDataLen = inMemoryData.length;
     }
@@ -220,7 +220,7 @@ public:
             keywordListCapacity = KEYWORD_THRESHOLD;
         numberOfKeywords = 0;
         recordBoost = 0.5;
-        inMemoryData = NULL;
+        inMemoryData.reset();
         inMemoryDataLen = 0;
         // the dataSize and data are initialized temporarily. They will actually be initialized in
         // allocateSpaceAndSetNSAValuesAndPosIndex when other pieces of data are also ready.
@@ -234,9 +234,6 @@ public:
     virtual ~ForwardList() {
         if(data != NULL){
         	delete[] data;  // data is allocated as an array with new[]
-        }
-        if(inMemoryData != NULL){
-        	delete inMemoryData;
         }
     }
 
@@ -323,6 +320,8 @@ private:
         ar & this->positionIndexSize;
         ar & this->offsetIndexSize;
         ar & this->dataSize;
+        if (this->inMemoryData.get() == NULL)
+        	this->inMemoryDataLen = 0;
         ar & this->inMemoryDataLen;
         /*
          * Since we don't have access to ForwardIndex and we don't know whether attributeBasedSearch is on, our encodin
@@ -334,23 +333,23 @@ private:
         if (load) {
         	this->data = new Byte[this->dataSize];
         	if (inMemoryDataLen > 0)
-        		this->inMemoryData = new char[inMemoryDataLen];
+        		this->inMemoryData.reset(new char[inMemoryDataLen]);
         	else
-        		this->inMemoryData = NULL;
+        		this->inMemoryData.reset();
         }
         ar
                 & boost::serialization::make_array(this->data,
                         this->dataSize);
         ar & this->externalRecordId;
         if (this->inMemoryDataLen > 0)
-        	ar & boost::serialization::make_array((char *)this->inMemoryData, this->inMemoryDataLen);
+        	ar & boost::serialization::make_array((char *)this->inMemoryData.get(), this->inMemoryDataLen);
     }
 
     // members
     unsigned numberOfKeywords;
     half recordBoost;
     std::string externalRecordId;
-    const char * inMemoryData;
+    boost::shared_ptr<const char> inMemoryData;
     unsigned inMemoryDataLen;
 
 
@@ -637,6 +636,7 @@ public:
     // no readers can access the forward index since some of
     // its forward lists are being freed.
     void freeSpaceOfDeletedRecords();
+    bool hasDeletedRecords() { return deletedRecordInternalIds.size() > 0; }
     void setSchema(SchemaInternal *schema) {
         this->schemaInternal = schema;
     }
@@ -679,7 +679,7 @@ public:
             float &matchingKeywordRecordStaticScore, bool &isStemmed) const;
 
     // return FORWARDLIST_NOTVALID if the forward is not valid (e.g., already deleted)
-    unsigned getKeywordOffsetForwardIndex(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+    unsigned getKeywordOffset(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
     		unsigned forwardListId, unsigned keywordId) const;
 
     /*****-record-id-converter*****/

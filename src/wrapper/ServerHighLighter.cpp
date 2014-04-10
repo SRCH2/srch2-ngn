@@ -48,6 +48,8 @@ void buildKeywordHighlightInfo(const QueryResults * qr, unsigned recIdx,
 	qr->getTermTypes(recIdx, termTypes);
 	vector<unsigned> editDistances;
 	qr->getEditDistances(recIdx, editDistances);
+	vector<unsigned> matchedKeywordsAttrBitmaps;
+	qr->getMatchedAttributeBitmaps(recIdx, matchedKeywordsAttrBitmaps);
 	for (unsigned i = 0; i <  matchingKeywords.size(); ++i) {
 		keywordHighlightInfo keywordInfo;
 		if(termTypes.at(i) == TERM_TYPE_COMPLETE)
@@ -58,6 +60,7 @@ void buildKeywordHighlightInfo(const QueryResults * qr, unsigned recIdx,
 			keywordInfo.flag = HIGHLIGHT_KEYWORD_IS_PERFIX;
 		utf8StringToCharTypeVector(matchingKeywords[i], keywordInfo.key);
 		keywordInfo.editDistance = editDistances.at(i);
+		keywordInfo.attrBitMap = matchedKeywordsAttrBitmaps.at(i);
 		keywordStrToHighlight.push_back(keywordInfo);
 	}
 }
@@ -76,28 +79,30 @@ void ServerHighLighter::genSnippetsForSingleRecord(const QueryResults *qr, unsig
 		buildKeywordHighlightInfo(qr, recIdx, keywordStrToHighlight);
 
         StoredRecordBuffer buffer =  server->indexer->getInMemoryData(recordId);
+        if (buffer.start.get() == NULL)
+        	return;
         const vector<std::pair<unsigned, string> >&highlightAttributes = server->indexDataConfig->getHighlightAttributeIdsVector();
         for (unsigned i = 0 ; i < highlightAttributes.size(); ++i) {
     		AttributeSnippet attrSnippet;
         	unsigned id = highlightAttributes[i].first;
         	unsigned lenOffset = compactRecDeserializer->getSearchableOffset(id);
-        	const char *attrdata = buffer.start + *((unsigned *)(buffer.start + lenOffset));
-        	unsigned len = *(((unsigned *)(buffer.start + lenOffset)) + 1) -
-        			*((unsigned *)(buffer.start + lenOffset));
+        	const char *attrdata = buffer.start.get() + *((unsigned *)(buffer.start.get() + lenOffset));
+        	unsigned len = *(((unsigned *)(buffer.start.get() + lenOffset)) + 1) -
+        			*((unsigned *)(buffer.start.get() + lenOffset));
         	snappy::Uncompress(attrdata,len, &uncompressedInMemoryRecordString);
         	try{
 				this->highlightAlgorithms->getSnippet(qr, recIdx, highlightAttributes[i].first,
 						uncompressedInMemoryRecordString, attrSnippet.snippet,
 						storedAttrSchema->isSearchableAttributeMultiValued(id), keywordStrToHighlight);
         	}catch(const exception& ex) {
-        		Logger::warn("could not generate a snippet for an record/attr %d/%d", recordId, id);
+        		Logger::debug("could not generate a snippet for an record/attr %d/%d", recordId, id);
         	}
         	attrSnippet.FieldId = highlightAttributes[i].second;
         	if (attrSnippet.snippet.size() > 0)
         		recordSnippets.fieldSnippets.push_back(attrSnippet);
         }
         if (recordSnippets.fieldSnippets.size() == 0)
-        	Logger::error("could not generate a snippet because search keywords could not be found in any attribute of record!!");
+        	Logger::warn("could not generate a snippet because search keywords could not be found in any attribute of record!!");
 }
 
 ServerHighLighter::ServerHighLighter(QueryResults * queryResults,Srch2Server *server,

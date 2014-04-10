@@ -292,6 +292,8 @@ public:
 		handleCounter = 0;
 	}
 	~PhysicalPlanRecordItemFactory(){
+		// lock
+		boost::unique_lock< boost::shared_mutex > lock(_access);
 		// remove inactive pools
 		for(boost::unordered_set<PhysicalPlanRecordItemPool *>::iterator idlePoolItr =
 				idlePools.begin(); idlePoolItr != idlePools.end(); ++idlePoolItr){
@@ -304,14 +306,20 @@ public:
 				busyPoolItr != busyPools.end() ; ++busyPoolItr){
 			delete busyPoolItr->second;
 		}
+		// unlock
+		lock.unlock();
 	}
 
 	bool clear(){
+		// lock
+		boost::unique_lock< boost::shared_mutex > lock(_access);
 		// clear inactive pools (removes extraObjects from them)
 		for(boost::unordered_set<PhysicalPlanRecordItemPool *>::iterator idlePoolItr =
 				idlePools.begin(); idlePoolItr != idlePools.end(); ++idlePoolItr){
 			(*idlePoolItr)->clear();
 		}
+		// unlock
+		lock.unlock();
 		return true;
 	}
 

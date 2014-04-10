@@ -42,7 +42,7 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
     		invertedListId, invertedListReadView);
     unsigned recordId = invertedListReadView->getElement(invertedListCounter);
     // calculate record offset online
-    unsigned keywordOffset = this->invertedIndex->getKeywordOffsetInvertedIndex(this->forwardIndexDirectoryReadView,
+    unsigned keywordOffset = this->invertedIndex->getKeywordOffset(this->forwardIndexDirectoryReadView,
     		this->invertedIndexKeywordIdsReadView,
     		recordId, invertedListId);
     ++ invertedListCounter;
@@ -65,7 +65,7 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
         if (invertedListCounter < invertedListReadView->size()) {
             recordId = invertedListReadView->getElement(invertedListCounter);
             // calculate record offset online
-            keywordOffset = this->invertedIndex->getKeywordOffsetInvertedIndex(this->forwardIndexDirectoryReadView,
+            keywordOffset = this->invertedIndex->getKeywordOffset(this->forwardIndexDirectoryReadView,
             		this->invertedIndexKeywordIdsReadView,
             		recordId, invertedListId);
             ++invertedListCounter;
@@ -175,7 +175,7 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex,  const Forw
     }
     // check the TermType
     if (this->getTermType() == TERM_TYPE_PREFIX) { //case 1: Term is prefix
-        LeafNodeSetIterator iter(prefixActiveNodeSet, term->getThreshold());
+        LeafNodeSetIteratorForPrefix iter(prefixActiveNodeSet, term->getThreshold());
         // This is our query-optimization logic. If the total number of leaf nodes for the term is
         // greater than a threshold, we use bitset to do the union/intersection operations.
         if (iter.size() >= TERM_COUNT_THRESHOLD){
@@ -406,7 +406,7 @@ bool TermVirtualList::getNext(HeapItemForIndexSearcher *returnHeapItem)
 
                 unsigned recordId = currentHeapMaxInvertedList->getElement(currentHeapMaxCursor);
                 // calculate record offset online
-                unsigned keywordOffset = this->invertedIndex->getKeywordOffsetInvertedIndex(this->forwardIndexDirectoryReadView,
+                unsigned keywordOffset = this->invertedIndex->getKeywordOffset(this->forwardIndexDirectoryReadView,
                 		this->invertedIndexKeywordIdsReadView,
                 		recordId, currentHeapMaxInvertetedListId);
                 unsigned termAttributeBitmap = 0;

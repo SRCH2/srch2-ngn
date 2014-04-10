@@ -405,6 +405,7 @@ PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<Phy
 //        return treeOptions.at(planOffset);
 //    }
 //    cout << minCost << "\t" ;
+//    return treeOptions.at(0);
     return minPlan;
 }
 
@@ -416,8 +417,12 @@ PhysicalPlanNode * QueryOptimizer::buildPhysicalPlanFirstVersionFromTreeStructur
     // allocate filter query operator to be attached to a term (if this filter exists)
     FilterQueryOperator * filterQueryOp = NULL;
     if(logicalPlan->getPostProcessingInfo() != NULL &&
-            (chosenTree->getType() == PhysicalPlanNode_UnionLowestLevelTermVirtualList
-                    || chosenTree->getType() == PhysicalPlanNode_UnionLowestLevelSimpleScanOperator)){
+        (chosenTree->getType() == 
+         PhysicalPlanNode_UnionLowestLevelTermVirtualList || 
+         chosenTree->getType() == 
+         PhysicalPlanNode_UnionLowestLevelSimpleScanOperator
+         || chosenTree->getType() == 
+         PhysicalPlanNode_UnionLowestLevelSuggestion)){
         if(logicalPlan->getPostProcessingInfo()->getFilterQueryEvaluator() != NULL){
             filterQueryOp = this->queryEvaluator->getPhysicalOperatorFactory()->
                     createFilterQueryOperator(logicalPlan->getPostProcessingInfo()->getFilterQueryEvaluator() );

@@ -25,6 +25,7 @@
 #include "index/InvertedIndex.h"
 #include "operation/HistogramManager.h"
 #include "PhysicalPlan.h"
+#include "operation/PhraseSearcher.h"
 
 using namespace std;
 
@@ -44,6 +45,7 @@ private:
 	bool phraseErr;
 	PhraseInfo phraseSearchInfo;
 	QueryEvaluatorInternal * queryEvaluatorInternal;
+	PhraseSearcher *phraseSearcher;
 	// match phrase on attributes. do OR or AND logic depending upon the 32 bit of attributeBitMap
 	bool matchPhrase(const ForwardList* forwardListPtr, const PhraseInfo& phraseInfo);
 	PhysicalPlanRecordItem * getNextCandidateRecord(const PhysicalPlanExecutionParameters & params);

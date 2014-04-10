@@ -96,10 +96,6 @@ SET_TESTS_PROPERTIES(EditDistance_Test
   PROPERTIES ENVIRONMENT "index_dir=${INTEGRATION_TEST_INDEX_DIR}small-test-data/;")
 
   
-ADD_TEST(IndexUpdater_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/integration/IndexUpdater_Test "--verbose")
-SET_TESTS_PROPERTIES(IndexUpdater_Test 
-    				PROPERTIES ENVIRONMENT "data_file=${INTEGRATION_TEST_INDEX_DIR}dblp/dblp40000records.csv;index_dir=${INTEGRATION_TEST_INDEX_DIR}update-test-data/;")
-
 ADD_TEST(MultipleLanguage_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/integration/MultipleLanguage_Test "--verbose")
 SET_TESTS_PROPERTIES(MultipleLanguage_Test 
 				PROPERTIES ENVIRONMENT "small_index_dir=${INTEGRATION_TEST_INDEX_DIR}small-test-data/;")
@@ -148,10 +144,6 @@ SET_TESTS_PROPERTIES(GeoCompleteTermSearch_Test PROPERTIES ENVIRONMENT "index_di
 ADD_TEST(QuadTree_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/QuadTree_Test "--verbose")
 SET_TESTS_PROPERTIES(QuadTree_Test PROPERTIES ENVIRONMENT "directoryName=${CMAKE_SOURCE_DIR}/test/core/unit/test_data")
 	  
-ADD_TEST(GeoIndexUpdate_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/GeoIndexUpdate_Test "--verbose")
-SET_TESTS_PROPERTIES(GeoIndexUpdate_Test PROPERTIES ENVIRONMENT "directoryName=${CMAKE_SOURCE_DIR}/test/core/unit/test_data")
-
-
 ADD_TEST(VariableLengthAttributeContainer_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/VariableLengthAttributeContainer_Test "--verbose")
 ADD_TEST(ULEB128_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/ULEB128_Test "--verbose")
 
@@ -188,6 +180,13 @@ ADD_TEST(PostProcessingFilter_Test ${CMAKE_CURRENT_BINARY_DIR}/wrapper/integrati
 
 ADD_TEST(XMLParser_Test ${CMAKE_CURRENT_BINARY_DIR}/wrapper/integration/XMLParser_Test   "--verbose")
 SET_TESTS_PROPERTIES(XMLParser_Test PROPERTIES ENVIRONMENT "XmlFilePath=${CMAKE_SOURCE_DIR}/test/wrapper/data/test_data/XmlParserTest.xml")
+
+ADD_TEST(IndexUpdater_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/integration/IndexUpdater_Test "--verbose")
+SET_TESTS_PROPERTIES(IndexUpdater_Test 
+    				PROPERTIES ENVIRONMENT "data_file=${INTEGRATION_TEST_INDEX_DIR}dblp/dblp40000records.csv;index_dir=${INTEGRATION_TEST_INDEX_DIR}update-test-data/;")
+
+ADD_TEST(GeoIndexUpdate_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/GeoIndexUpdate_Test "--verbose")
+SET_TESTS_PROPERTIES(GeoIndexUpdate_Test PROPERTIES ENVIRONMENT "directoryName=${CMAKE_SOURCE_DIR}/test/core/unit/test_data")
 
 if (SYSTEM_TEST_ENABLED)
     ADD_TEST( System_Tests ${CMAKE_SOURCE_DIR}/test/wrapper/system_tests/main.sh ${CMAKE_SOURCE_DIR}/test/wrapper/system_tests ${CMAKE_BINARY_DIR}/src/server)

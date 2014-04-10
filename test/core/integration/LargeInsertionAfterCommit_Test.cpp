@@ -36,7 +36,7 @@ void buildIndex(string data_file, string index_dir)
     Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "", srch2is::STANDARD_ANALYZER);
 
     /// Create an index writer
-    unsigned mergeEveryNSeconds = 3;
+    unsigned mergeEveryNSeconds = 2;
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
@@ -201,7 +201,7 @@ int main(int argc, char **argv)
 
     buildIndex(init_data_file, index_dir);
 
-    unsigned mergeEveryNSeconds = 3;
+    unsigned mergeEveryNSeconds = 2;
     unsigned mergeEveryMWrites = 5;
     unsigned updateHistogramEveryPMerges = 1;
     unsigned updateHistogramEveryQWrites = 5;
