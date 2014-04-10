@@ -59,7 +59,7 @@ struct keywordHighlightInfo{
 	keywordHighlightInfo(){
 		flag = HIGHLIGHT_KEYWORD_IS_PERFIX;
 		editDistance = 0;
-		attrBitMap = 0xffffffff;
+		attrBitMap = 0xffffffff; // set all bits to 1 which means all attributes.
 	}
 };
 
