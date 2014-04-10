@@ -174,7 +174,7 @@ void test(string index_dir, string data_file)
     resultIds.push_back("3");
     numOfResults = 3;
     resultAttributeBitmap.resize(3);
-    resultAttributeBitmap[0].push_back(3);
+    resultAttributeBitmap[0].push_back(2);
     resultAttributeBitmap[1].push_back(2);
     resultAttributeBitmap[2].push_back(2);
 
@@ -192,7 +192,7 @@ void test(string index_dir, string data_file)
     resultIds.push_back("1");
     numOfResults = 2;
     resultAttributeBitmap.resize(2);
-    resultAttributeBitmap[0].push_back(3);
+    resultAttributeBitmap[0].push_back(1);
     resultAttributeBitmap[1].push_back(1);
 
     fireSearch(queryEvaluator, filter, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
