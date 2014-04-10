@@ -659,10 +659,10 @@ configured to add characters that should not be considered delimiters between wo
 characters that include those characters will be treated as a single term and will not be broken into
 separate words.
 
-Here is an example for this setting to allow apostrophe to occur within a single words:
+Here is an example for this setting to allow apostrophes, dashes, underscores, and at signs to occur within single words:
 
 ```
-<allowedRecordSpecialCharacters>`</allowedRecordSpecialCharacters>
+<allowedRecordSpecialCharacters>`-_@</allowedRecordSpecialCharacters>
 ```
 
 ##13. Cores, Optional{id="Cores"}
