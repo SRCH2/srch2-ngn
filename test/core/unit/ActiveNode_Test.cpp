@@ -33,7 +33,7 @@ using srch2is::TrieNode;
 using srch2is::PrefixActiveNodeSet;
 using srch2is::print_trace;
 using srch2is::ActiveNodeSetIterator;
-using srch2is::LeafNodeSetIterator;
+using srch2is::LeafNodeSetIteratorForPrefix;
 
 // a structure to record information of each node
 class LeafIteratorResultItem
@@ -449,9 +449,9 @@ void testPrefixIterators()
     ASSERT(checkContainment(stringDistanceVector, std::make_pair("cance", 2)));
     stringDistanceVector.clear();
 
-    // test LeafNodeSetIterator
+    // test LeafNodeSetIteratorForPrefix
     vector<LeafIteratorResultItem> leafIteratorResultVector;
-    for (LeafNodeSetIterator lnsi(newPrefixActiveNodeSet.get(), 2); !lnsi.isDone(); lnsi.next()) {
+    for (LeafNodeSetIteratorForPrefix lnsi(newPrefixActiveNodeSet.get(), 2); !lnsi.isDone(); lnsi.next()) {
         const TrieNode *prefixNode;
         const TrieNode *leafNode;
         unsigned distance;
@@ -524,7 +524,7 @@ void testPrefixIteratorsWithRanges()
 
     vector<LeafIteratorResultItem> leafIteratorResultVector;
     // test LeafNodeSetIterator (using "1" as an upper bound of edit distance)
-    for (LeafNodeSetIterator lnsi(newPrefixActiveNodeSet.get(), 1); !lnsi.isDone(); lnsi.next()) {
+    for (LeafNodeSetIteratorForPrefix lnsi(newPrefixActiveNodeSet.get(), 1); !lnsi.isDone(); lnsi.next()) {
         const TrieNode *prefixNode;
         const TrieNode *leafNode;
         unsigned distance;
@@ -552,7 +552,7 @@ void testPrefixIteratorsWithRanges()
     leafIteratorResultVector.clear();
 
     // test LeafNodeSetIterator (using "0" as an upper bound of edit distance)
-    for (LeafNodeSetIterator lnsi(newPrefixActiveNodeSet.get(), 0); !lnsi.isDone(); lnsi.next()) {
+    for (LeafNodeSetIteratorForPrefix lnsi(newPrefixActiveNodeSet.get(), 0); !lnsi.isDone(); lnsi.next()) {
         const TrieNode *prefixNode;
         const TrieNode *leafNode;
         unsigned distance;
@@ -697,7 +697,7 @@ void testLeafNodeIteratorWithTrieUpdate()
 
     vector<LeafIteratorResultItem> leafIteratorResultVector;
     // test LeafNodeSetIterator (using "1" as an upper bound of edit distance)
-    for (LeafNodeSetIterator lnsi(newPrefixActiveNodeSet.get(), 1); !lnsi.isDone(); lnsi.next()) {
+    for (LeafNodeSetIteratorForPrefix lnsi(newPrefixActiveNodeSet.get(), 1); !lnsi.isDone(); lnsi.next()) {
         const TrieNode *prefixNode;
         const TrieNode *leafNode;
         unsigned distance;
@@ -729,7 +729,7 @@ void testLeafNodeIteratorWithTrieUpdate()
 
     leafIteratorResultVector.clear();
     // test LeafNodeSetIterator (using "1" as an upper bound of edit distance)
-    for (LeafNodeSetIterator lnsi(newPrefixActiveNodeSet.get(), 1); !lnsi.isDone(); lnsi.next()) {
+    for (LeafNodeSetIteratorForPrefix lnsi(newPrefixActiveNodeSet.get(), 1); !lnsi.isDone(); lnsi.next()) {
         const TrieNode *prefixNode;
         const TrieNode *leafNode;
         unsigned distance;
@@ -750,7 +750,7 @@ void testLeafNodeIteratorWithTrieUpdate()
     ASSERT(leafIteratorResultVector.size() == 2);
 
     newPrefixActiveNodeSet->printActiveNodes(trie);
-    LeafNodeSetIterator iterPrint(newPrefixActiveNodeSet.get(), 1);
+    LeafNodeSetIteratorForPrefix iterPrint(newPrefixActiveNodeSet.get(), 1);
     iterPrint.printLeafNodes(trie);
 
     ASSERT(checkContainment(leafIteratorResultVector, "peo", "peo", 0));

@@ -222,6 +222,7 @@ private:
         ar & searchableAttributeHighlightEnabled;
         ar & indexType;
         ar & positionIndexType;
+        ar & supportSwapInEditDistance;
     }
 };
 

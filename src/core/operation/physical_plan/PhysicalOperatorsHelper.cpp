@@ -20,44 +20,85 @@ bool verifyByRandomAccessHelper(QueryEvaluatorInternal * queryEvaluator, PrefixA
 	unsigned termSearchableAttributeIdToFilterTermHits = term->getAttributeToFilterTermHits();
 	// assume the iterator returns the ActiveNodes in the increasing order based on edit distance
 
-	for (ActiveNodeSetIterator iter(prefixActiveNodeSet, term->getThreshold());
-			!iter.isDone(); iter.next()) {
-		const TrieNode *trieNode;
-		unsigned distance;
-		iter.getItem(trieNode, distance);
-
-		unsigned minId = trieNode->getMinId();
-		unsigned maxId = trieNode->getMaxId();
-		if (term->getTermType() == srch2::instantsearch::TERM_TYPE_COMPLETE) {
+	if (term->getTermType() == srch2::instantsearch::TERM_TYPE_COMPLETE) {
+		for(LeafNodeSetIteratorForComplete iter(prefixActiveNodeSet , term->getThreshold());
+				!iter.isDone(); iter.next()){
+			const TrieNode *trieNode;
+			unsigned distance;
+			iter.getItem(trieNode, distance);
+			unsigned minId = trieNode->getMinId();
+			unsigned maxId = trieNode->getMaxId();
 			if (trieNode->isTerminalNode())
 				maxId = minId;
 			else
-				continue;  // ignore non-terminal nodes
-		}
+				ASSERT(false);  // ignore non-terminal nodes
 
-		unsigned matchingKeywordId;
-		float termRecordStaticScore;
-		unsigned termAttributeBitmap;
-		if (queryEvaluator->getForwardIndex()->haveWordInRange(parameters.forwardListDirectoryReadView,
-				parameters.recordToVerify->getRecordId(),
-				minId, maxId,
-				termSearchableAttributeIdToFilterTermHits,
-				matchingKeywordId, termAttributeBitmap, termRecordStaticScore)) {
-			parameters.termRecordMatchingPrefixes.push_back(trieNode);
-			parameters.attributeBitmaps.push_back(termAttributeBitmap);
-			parameters.prefixEditDistances.push_back(distance);
-			bool isPrefixMatch = ( (!trieNode->isTerminalNode()) || (minId != matchingKeywordId) );
-			parameters.runTimeTermRecordScore = parameters.ranker->computeTermRecordRuntimeScore(termRecordStaticScore, distance,
+			unsigned matchingKeywordId;
+			float termRecordStaticScore;
+			unsigned termAttributeBitmap;
+			if (queryEvaluator->getForwardIndex()->haveWordInRange(parameters.forwardListDirectoryReadView,
+					parameters.recordToVerify->getRecordId(),
+					minId, maxId,
+					termSearchableAttributeIdToFilterTermHits,
+					matchingKeywordId, termAttributeBitmap, termRecordStaticScore)) {
+				parameters.termRecordMatchingPrefixes.push_back(trieNode);
+				parameters.attributeBitmaps.push_back(termAttributeBitmap);
+				parameters.prefixEditDistances.push_back(distance);
+				bool isPrefixMatch = ( (!trieNode->isTerminalNode()) || (minId != matchingKeywordId) );
+				parameters.runTimeTermRecordScore = parameters.ranker->computeTermRecordRuntimeScore(termRecordStaticScore, distance,
 						term->getKeyword()->size(),
 						isPrefixMatch,
 						parameters.prefixMatchPenalty , term->getSimilarityBoost() * term->getBoost()) ;
-			parameters.staticTermRecordScore = termRecordStaticScore ;
-			parameters.termTypes.push_back(term->getTermType());
-			// parameters.positionIndexOffsets ????
-			return true;
+				parameters.staticTermRecordScore = termRecordStaticScore ;
+				parameters.termTypes.push_back(term->getTermType());
+				// parameters.positionIndexOffsets ????
+				return true;
+			}
 		}
+		return false;
+
+	}else{
+		for (ActiveNodeSetIterator iter(prefixActiveNodeSet, term->getThreshold());
+				!iter.isDone(); iter.next()) {
+			const TrieNode *trieNode;
+			unsigned distance;
+			iter.getItem(trieNode, distance);
+
+			unsigned minId = trieNode->getMinId();
+			unsigned maxId = trieNode->getMaxId();
+			if (term->getTermType() == srch2::instantsearch::TERM_TYPE_COMPLETE) {
+				if (trieNode->isTerminalNode())
+					maxId = minId;
+				else
+					continue;  // ignore non-terminal nodes
+			}
+
+			unsigned matchingKeywordId;
+			float termRecordStaticScore;
+			unsigned termAttributeBitmap;
+			if (queryEvaluator->getForwardIndex()->haveWordInRange(parameters.forwardListDirectoryReadView,
+					parameters.recordToVerify->getRecordId(),
+					minId, maxId,
+					termSearchableAttributeIdToFilterTermHits,
+					matchingKeywordId, termAttributeBitmap, termRecordStaticScore)) {
+				parameters.termRecordMatchingPrefixes.push_back(trieNode);
+				parameters.attributeBitmaps.push_back(termAttributeBitmap);
+				parameters.prefixEditDistances.push_back(distance);
+				bool isPrefixMatch = ( (!trieNode->isTerminalNode()) || (minId != matchingKeywordId) );
+				parameters.runTimeTermRecordScore = parameters.ranker->computeTermRecordRuntimeScore(termRecordStaticScore, distance,
+						term->getKeyword()->size(),
+						isPrefixMatch,
+						parameters.prefixMatchPenalty , term->getSimilarityBoost() * term->getBoost()) ;
+				parameters.staticTermRecordScore = termRecordStaticScore ;
+				parameters.termTypes.push_back(term->getTermType());
+				// parameters.positionIndexOffsets ????
+				return true;
+			}
+		}
+		return false;
+
 	}
-	return false;
+
 }
 
 

@@ -41,6 +41,7 @@ SchemaInternal::SchemaInternal(srch2::instantsearch::IndexType indexType,
     this->refiningAttributeDefaultValueVector.clear();
     this->refiningAttributeTypeVector.clear();
     this->refiningAttributeIsMultiValuedVector.clear();
+    this->supportSwapInEditDistance = true;
 }
 
 SchemaInternal::SchemaInternal(const SchemaInternal &schemaInternal) {
@@ -65,6 +66,7 @@ SchemaInternal::SchemaInternal(const SchemaInternal &schemaInternal) {
     this->indexType = schemaInternal.indexType;
     this->positionIndexType = schemaInternal.positionIndexType;
     this->commited = schemaInternal.commited;
+    this->supportSwapInEditDistance =  schemaInternal.supportSwapInEditDistance;
 }
 
 srch2::instantsearch::IndexType SchemaInternal::getIndexType() const {
