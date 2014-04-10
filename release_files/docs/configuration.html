@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="generator" content="ReText Webpages generator 4.0.0">
+<meta name="generator" content="ReText Webpages generator 4.1.0">
 <link rel="stylesheet" type="text/css" href="style.css">
 <title>SRCH2: Configuration</title>
 </head>
@@ -94,6 +94,7 @@ Version: 4.3.0, Date: March 24, 2014&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#PorterStemFilter">12.5.1 Stemmer</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#StopFilter">12.5.2 Stop Words</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#ProtectedKeywordsFilter">12.5.3 Protected Keywords</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#AllowedSpecialCharacters">12.5.4 Allowed Special Characters</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#Cores">13 Cores</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#Core">13.1 Core</a></br><br>
 </td></tr></tbody></table>
@@ -621,6 +622,16 @@ span the entire facetGap. Also all facet fields must be declared in a
 <h3 id="ProtectedKeywordsFilter">12.5.3 Protected Keywords Filter, Optional</h3>
 <p>It specifies a file of special protected keywords that should be preserved by the analyzer, such as "C++", "C#", ".NET", and "AT&amp;T". Providing an empty string ("") for the "words" parameter disables this filter.</p>
 <pre><code>&lt;filter name=&quot;protectedKeyWordsFilter&quot; words=&quot;srch2_protected_words.txt&quot; /&gt;
+</code></pre>
+
+<h3 id="AllowedSpecialCharacters">12.5.4 Allowed Special Characters, Optional</h3>
+<p>The engine has a number of rules regarding with what characters words can be composed, and what characters
+are punctuation or delimiters separating words.  To provide additional flexibility, the engine can be
+configured to add characters that should not be considered delimiters between words.  Those sequences of
+characters that include those characters will be treated as a single term and will not be broken into
+separate words.</p>
+<p>Here is an example for this setting to allow apostrophe to occur within a single words:</p>
+<pre><code>&lt;allowedRecordSpecialCharacters&gt;`&lt;/allowedRecordSpecialCharacters&gt;
 </code></pre>
 
 <h2 id="Cores">13. Cores, Optional</h2>
