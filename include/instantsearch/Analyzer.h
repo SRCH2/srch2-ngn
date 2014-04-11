@@ -80,12 +80,12 @@ public:
              const StopWordContainer *stopWords,
              const ProtectedWordsContainer *protectedWords,
              const SynonymContainer *synonyms,
-             const std::string &delimiters,
+             const std::string &allowedSpecialCharacters,
              const AnalyzerType &analyzerType = STANDARD_ANALYZER,
              const std::string &chineseDictFilePath = "");
 
 
-	void setRecordAllowedSpecialCharacters(const std::string &delimiters);
+	void setRecordAllowedSpecialCharacters(const std::string &allowedSpecialCharacters);
 
 	const std::string& getRecordAllowedSpecialCharacters() const ;
 

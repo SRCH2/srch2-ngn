@@ -18,6 +18,7 @@
 #include "util/DateAndTimeHandler.h"
 #include "ParserUtility.h"
 #include "util/Assert.h"
+#include "analyzer/CharSet.h"
 
 #include "boost/algorithm/string_regex.hpp"
 #include "boost/filesystem/path.hpp"
@@ -123,6 +124,16 @@ const char* const ConfigManager::getAllResultsKAlternative = "getallresultskalte
 const char* const ConfigManager::multipleCoresString = "cores";
 const char* const ConfigManager::singleCoreString = "core";
 const char* const ConfigManager::defaultCoreNameString = "defaultcorename";
+const char *const ConfigManager::allowedRecordSpecialCharactersString = "allowedrecordspecialcharacters";
+
+const char* const ConfigManager::searchPortString = "searchport";
+const char* const ConfigManager::suggestPortString = "suggestport";
+const char* const ConfigManager::infoPortString = "infoport";
+const char* const ConfigManager::docsPortString = "docsport";
+const char* const ConfigManager::updatePortString = "updateport";
+const char* const ConfigManager::savePortString = "saveport";
+const char* const ConfigManager::exportPortString = "exportport";
+const char* const ConfigManager::resetLoggerPortString = "resetloggerport";
 
 const char* const ConfigManager::highLightString = "highlight";
 const char* const ConfigManager::highLighterString = "highlighter";
@@ -136,15 +147,6 @@ const char* const ConfigManager::defaultFuzzyPreTag = "<b>";
 const char* const ConfigManager::defaultFuzzyPostTag = "</b>";
 const char* const ConfigManager::defaultExactPreTag = "<b>";
 const char* const ConfigManager::defaultExactPostTag = "</b>";
-
-const char* const ConfigManager::searchPortString = "searchport";
-const char* const ConfigManager::suggestPortString = "suggestport";
-const char* const ConfigManager::infoPortString = "infoport";
-const char* const ConfigManager::docsPortString = "docsport";
-const char* const ConfigManager::updatePortString = "updateport";
-const char* const ConfigManager::savePortString = "saveport";
-const char* const ConfigManager::exportPortString = "exportport";
-const char* const ConfigManager::resetLoggerPortString = "resetloggerport";
 
 
 
@@ -1556,6 +1558,31 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
                                     coreInfo->protectedWordsFilePath = boost::filesystem::path(srch2Home + tempUse).normalize().string();
                                 }
                             }
+                        } else if (string(field.name()).compare(allowedRecordSpecialCharactersString) == 0) {
+                            CharSet charTyper;
+                            string in = field.text().get(), out; // TODO: Using type string NOT multi-lingual?
+
+                            // validate allowed characters
+                            for (std::string::iterator iterator = in.begin(); iterator != in.end(); iterator++) {
+                                switch (charTyper.getCharacterType(*iterator)) {
+                                case CharSet::DELIMITER_TYPE:
+                                    out += *iterator;
+                                    break;
+                                case CharSet::LATIN_TYPE:
+                                case CharSet::BOPOMOFO_TYPE:
+                                case CharSet::HANZI_TYPE:
+                                    Logger::warn("%s character %c already included in terms, ignored", allowedRecordSpecialCharactersString, *iterator);
+                                    break;
+                                case CharSet::WHITESPACE:
+                                    Logger::warn("%s character %c is whitespace and cannot be treated as part of a term, ignored", allowedRecordSpecialCharactersString, *iterator);
+                                    break;
+                                default:
+                                    Logger::warn("%s character %c of unexpected type %d, ignored", allowedRecordSpecialCharactersString, *iterator, static_cast<int> (charTyper.getCharacterType(*iterator)));
+                                    break;
+                                }
+                            }
+
+                            coreInfo->allowedRecordTokenizerCharacters = out;
                         }
                     }
                 }

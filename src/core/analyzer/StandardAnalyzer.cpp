@@ -39,6 +39,7 @@ TokenStream * StandardAnalyzer::createOperatorFlow() {
 	tokenStream = new LowerCaseFilter(tokenStream);
 
         tokenStream = new NonAlphaNumericFilter(tokenStream, protectedWords);
+        tokenStream->characterSet.setRecordAllowedSpecialCharacters(recordAllowedSpecialCharacters);
 
         if (stopWords != NULL) {
             tokenStream = new StopFilter(tokenStream, stopWords);
