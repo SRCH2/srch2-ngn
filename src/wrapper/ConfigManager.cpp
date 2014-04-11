@@ -1566,13 +1566,15 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
                             for (std::string::iterator iterator = in.begin(); iterator != in.end(); iterator++) {
                                 switch (charTyper.getCharacterType(*iterator)) {
                                 case CharSet::DELIMITER_TYPE:
-                                case CharSet::WHITESPACE:
                                     out += *iterator;
                                     break;
                                 case CharSet::LATIN_TYPE:
                                 case CharSet::BOPOMOFO_TYPE:
                                 case CharSet::HANZI_TYPE:
                                     Logger::warn("%s character %c already included in terms, ignored", allowedRecordSpecialCharactersString, *iterator);
+                                    break;
+                                case CharSet::WHITESPACE:
+                                    Logger::warn("%s character %c is whitespace and cannot be treated as part of a term, ignored", allowedRecordSpecialCharactersString, *iterator);
                                     break;
                                 default:
                                     Logger::warn("%s character %c of unexpected type %d, ignored", allowedRecordSpecialCharactersString, *iterator, static_cast<int> (charTyper.getCharacterType(*iterator)));
