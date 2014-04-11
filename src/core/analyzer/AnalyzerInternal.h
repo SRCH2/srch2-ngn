@@ -65,7 +65,7 @@ public:
         this->recordAllowedSpecialCharacters = recordAllowedSpecialCharacters;
         if (tokenStream != NULL) {
             tokenStream->characterSet.setRecordAllowedSpecialCharacters(recordAllowedSpecialCharacters);
-            // TODO - should we call prepareRegexExpression() here?
+            prepareRegexExpression();
         }
     }
 

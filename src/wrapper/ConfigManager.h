@@ -447,6 +447,16 @@ private:
     static const char* const hostPortString;
     static const char* const instanceDirString;
     static const char* const schemaFileString;
+    static const char* const allowedRecordSpecialCharactersString;
+
+    static const char* const searchPortString;
+    static const char* const suggestPortString;
+    static const char* const infoPortString;
+    static const char* const docsPortString;
+    static const char* const updatePortString;
+    static const char* const savePortString;
+    static const char* const exportPortString;
+    static const char* const resetLoggerPortString;
 
     static const char* const highLightString;
     static const char* const highLighterString;
@@ -460,15 +470,6 @@ private:
     static const char* const defaultFuzzyPostTag;
     static const char* const defaultExactPreTag;
     static const char* const defaultExactPostTag;
-
-    static const char* const searchPortString;
-    static const char* const suggestPortString;
-    static const char* const infoPortString;
-    static const char* const docsPortString;
-    static const char* const updatePortString;
-    static const char* const savePortString;
-    static const char* const exportPortString;
-    static const char* const resetLoggerPortString;
 
 };
 
@@ -717,6 +718,7 @@ protected:
     std::string stopFilterFilePath;
     std::string protectedWordsFilePath;
 
+    // characters to specially treat as part of words, and not as a delimiter
     std::string allowedRecordTokenizerCharacters;
 
     // <core><updatehandler>
