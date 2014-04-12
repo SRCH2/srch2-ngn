@@ -667,6 +667,8 @@ Here is an example for this setting to allow apostrophes, dashes, underscores, a
 
 This example will allow a search on "L'Absinthe" to match and return a record with the phrase "Edgar Degas' painting L'Absinthe hangs in the Musée d'Orsay in Paris." in an indexed attribute.
 
+Note that whitespace characters will also be considered word delimiters and are not permitted in this field.
+
 ##13. Cores, Optional{id="Cores"}
 
 The "Cores" tag can be used to support the creation of multiple search engines (called cores) within the same server.  Typically, each engine
