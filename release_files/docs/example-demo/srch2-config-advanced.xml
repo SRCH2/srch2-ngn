@@ -25,12 +25,12 @@
     -->
     <maxSearchThreads>4</maxSearchThreads>
 
-    <!-- Operate multiple data sources, each on their own SRCH2 core.  This feature requires less
+    <!-- Operate multiple data sources, each on their own SRCH2 "core".  This feature requires less
          system administration overhead than running separate search engines.  The search query
-         can specify the target core explicitly in the URL:
+         can specify the target "core" explicitly in the URL:
 	     http://hostname/corename/search/q=term
-         where corename matches the name="corename" as used below.  If the URL does not specify the
-         core, the core specified below in defaultCoreName will handle the request.
+         where "corename" matches the name="corename" as used below.  If the URL does not specify a
+         "corename", the "core" specified below in "defaultCoreName" will handle the request.
     -->
     <cores defaultCoreName="movies">
         <core name="movies">
@@ -137,7 +137,7 @@
 	    </updatehandler>
         </core>
 
-	<!-- A second core loaded with posts from Stackoverflow.  A search request on this data
+	<!-- A second "core" loaded with posts from Stackoverflow.  A search request on this data
              would take the form: http://hostname/stack/search?q=...
 
              Intellectual property: Stackoverflow data is available under the Create Commons
