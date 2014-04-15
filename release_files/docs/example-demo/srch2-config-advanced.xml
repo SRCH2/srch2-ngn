@@ -88,11 +88,30 @@
 		<queryResponseWriter>
 		    <responseFormat>1</responseFormat>
 		</queryResponseWriter>
+
+		<!-- Client user interface features for displaying matching records -->
+		<highlighter>
+		    <!-- Length of text snippet surrounding matches -->
+		    <snippetSize>250</snippetSize>
+
+		    <!-- Markup (or any other kind of text) in which to surround matching terms, fuzzy or otherwise.
+			 This feature allows matching terms in returned results to be tagged with CSS styles, raw HTML, ...
+			 Note the need for highlight="true" in schema <field> nodes below.  Markup is returned in a
+			 snippet JSON structure similar to and at the same level of the XML tree, as record.
+		    -->
+		    <snippetSize>250</snippetSize>
+		    <fuzzyTagPre value = '<span class="fuzzy">'></fuzzyTagPre>
+		    <fuzzyTagPost value = '</span>'></fuzzyTagPost>
+		    <exactTagPre value = '<span class="exact">' ></exactTagPre>
+		    <exactTagPost value = '</span>'></exactTagPost>
+		</highlighter>
+
 	    </query>
             <schema>
                 <fields>
-                    <field name="title" type="text" indexed="true"/>
-                    <field name="director" type="text" indexed="true"/>
+		    <!-- highlight="true" must be enabled per field to turn on markup around matches -->
+                    <field name="title" type="text" indexed="true" highlight="true"/>
+                    <field name="director" type="text" indexed="true" highlight="true"/>
                     <field name="genre" type="text" indexed="true"
                            default="HORROR" required="false"/>
                     <field name="year" type="integer" indexed="false" refining="true"
