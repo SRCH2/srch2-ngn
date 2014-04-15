@@ -174,6 +174,7 @@
             <indexConfig>
                 <indexType>0</indexType>
                 <supportSwapInEditDistance>true</supportSwapInEditDistance>
+
                 <!--  <fieldBoost>title^12 tags^16</fieldBoost> -->
                 <fieldBoost>title^30 tags^20</fieldBoost>
                 <recordBoostField>votes_count</recordBoostField>
@@ -183,10 +184,16 @@
             
 	    <query>
 	        <rankingalgorithm>
+		    <!-- Ranking formula can be a complex expression -->
 		    <recordScoreExpression>(idf_score*(log(doc_boost+1)^1.5))/(idf_score+log(doc_boost+1))</recordScoreExpression>
 		</rankingalgorithm>
 		<fuzzyMatchPenalty>0.75</fuzzyMatchPenalty>
+
+		<!-- queryTermSimilarityThreshold basically determines in how many letters one error will
+		     be tolerated and the term will still match
+		-->
 		<queryTermSimilarityThreshold>0.8</queryTermSimilarityThreshold>
+
 		<prefixMatchPenalty>0.85</prefixMatchPenalty>
 		<cacheSize>65536000</cacheSize>
 		<rows>10</rows>
@@ -239,6 +246,9 @@
 			     in them.  This allows searches on terms such as C++ or .NET .
 			 -->
                         <filter name="protectedKeyWordsFilter" words="protected_words.txt" />
+
+			<!-- Match Twitter hash tags and user names -->
+			<allowedRecordSpecialCharacters>#@</allowedRecordSpecialCharacters>
                       </analyzer>
                     </fieldType>
                 </types>
@@ -258,94 +268,4 @@
         </core>
 
     </cores>
-    <indexConfig>
-         
-        <indexType>0</indexType>
-         
-        <supportSwapInEditDistance>true</supportSwapInEditDistance>
-
-        <fieldBoost>title^2 director^1</fieldBoost>
-
-        <defaultQueryTermBoost>1</defaultQueryTermBoost>
-
-	<enablePositionIndex>1</enablePositionIndex> 
-    
-    </indexConfig>
-  
-  
-    <query>
-        <rankingAlgorithm>
-            <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
-        </rankingAlgorithm>
- 
-        <fuzzyMatchPenalty>0.9</fuzzyMatchPenalty>
-
-	<queryTermSimilarityThreshold>0.75</queryTermSimilarityThreshold>
-         
-        <prefixMatchPenalty>0.95</prefixMatchPenalty>
- 
-        <cacheSize>65536000</cacheSize>
-
-        <rows>10</rows>
-
-        <fieldBasedSearch>1</fieldBasedSearch>
-         
-        <searcherType>0</searcherType>
-         
-        <queryTermFuzzyType>1</queryTermFuzzyType>
-         
-        <queryTermPrefixType>0</queryTermPrefixType>
- 
-        <queryResponseWriter>
-            <responseFormat>1</responseFormat>
-        </queryResponseWriter>
-
-    </query>
-  
-    <updatehandler>
-
-        <maxDocs>15000000</maxDocs>
- 
-        <maxMemory>10000000</maxMemory>
-        
-        <mergePolicy>
-          <mergeEveryNSeconds>10</mergeEveryNSeconds>
-          <mergeEveryMWrites>10</mergeEveryMWrites>
-        </mergePolicy>
-         
-        <updateLog>
-            <logLevel>3</logLevel>
-            <accessLogFile>./logs/srch2-log.txt</accessLogFile>
-        </updateLog>
-     
-    </updatehandler>
-
-    <schema>
-       <fields>
-          <field name="title" type="text" indexed="true"/>
-          <field name="director" type="text" indexed="true"/>
-          <field name="genre" type="text" indexed="true"
-                 default="HORROR" required="false"/>
-          <field name="year" type="integer" indexed="false" refining="true"
-                 default="2000" required="false"/>
-          <field name="id" type="text" refining="true" indexed="false"/>
-       </fields>
-       
-       <uniqueKey>id</uniqueKey>
-           
-       <facetEnabled>true</facetEnabled>
-        <facetFields>
-          <facetField name="genre" facetType="categorical"/>
-          <facetField name="year"  facetType="range" facetStart="1990" facetEnd="2050" facetGap="10"/>
-        </facetFields>
-        
-        <types>
-          <fieldType name="text_en">
-              <analyzer>
-                  <filter name="PorterStemFilter" dictionary="" />
-                  <filter name="StopFilter" words="" />
-              </analyzer>
-          </fieldType>
-       </types>
-    </schema>
 </config>
