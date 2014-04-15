@@ -20,6 +20,7 @@
 #include <vector>
 #include <string>
 #include <algorithm>
+#include "util/RecordSerializer.h"
 //
 using namespace std;
 namespace srch2is = srch2::instantsearch;
@@ -91,6 +92,8 @@ void addRecords() {
     Record *record = new Record(schema);
     Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 
+    Schema * storedSchema = Schema::create();
+    RecordSerializerUtil::populateStoredSchema(storedSchema, schema);
 
     unsigned mergeEveryNSeconds = 3;
     unsigned mergeEveryMWrites = 5;
@@ -112,8 +115,14 @@ void addRecords() {
     record->setRefiningAttributeValue("price", "10.34");
     record->setRefiningAttributeValue("class", "A");
     record->setRecordBoost(10);
-    string rec= "test string";
-    record->setInMemoryData(rec.c_str(), rec.length());
+    {
+    	RecordSerializer recSerializer(*storedSchema);
+    	recSerializer.addRefiningAttribute("citation", 1);
+    	recSerializer.addRefiningAttribute("price", (float)10.34);
+    	recSerializer.addSearchableAttribute("class",(string)"A");
+    	RecordSerializerBuffer compactBuffer = recSerializer.serialize();
+    	record->setInMemoryData(compactBuffer.start, compactBuffer.length);
+    }
     index->addRecord(record, analyzer);
 
     record->clear();
@@ -124,8 +133,15 @@ void addRecords() {
     record->setRefiningAttributeValue("price", "9.34");
     record->setRefiningAttributeValue("class", "A");
     record->setRecordBoost(20);
-    rec= "test string";
-    record->setInMemoryData(rec.c_str(), rec.length());
+    {
+        RecordSerializer recSerializer(*storedSchema);
+        recSerializer.addRefiningAttribute("citation", 2);
+        recSerializer.addRefiningAttribute("price", (float)9.34);
+        recSerializer.addSearchableAttribute("class", (string)"A");
+        RecordSerializerBuffer compactBuffer = recSerializer.serialize();
+        record->setInMemoryData(compactBuffer.start, compactBuffer.length);
+    }
+
     index->addRecord(record, analyzer);
 
     record->clear();
@@ -136,8 +152,16 @@ void addRecords() {
     record->setRefiningAttributeValue("price", "8.34");
     record->setRefiningAttributeValue("class", "B");
     record->setRecordBoost(30);
-    rec= "test string";
-    record->setInMemoryData(rec.c_str(), rec.length());
+    {
+        RecordSerializer recSerializer(*storedSchema);
+        recSerializer.addRefiningAttribute("citation", 3);
+        recSerializer.addRefiningAttribute("price", (float)8.34);
+        recSerializer.addSearchableAttribute("class", (string)"B");
+        RecordSerializerBuffer compactBuffer = recSerializer.serialize();
+        record->setInMemoryData(compactBuffer.start, compactBuffer.length);
+    }
+
+
     index->addRecord(record,analyzer);
 
     record->clear();
@@ -148,8 +172,16 @@ void addRecords() {
     record->setRefiningAttributeValue("price", "7.34");
     record->setRefiningAttributeValue("class", "B");
     record->setRecordBoost(40);
-    rec= "test string";
-    record->setInMemoryData(rec.c_str(), rec.length());
+    {
+        RecordSerializer recSerializer(*storedSchema);
+        recSerializer.addRefiningAttribute("citation", 4);
+        recSerializer.addRefiningAttribute("price", (float)7.34);
+        recSerializer.addSearchableAttribute("class", (string)"B");
+        RecordSerializerBuffer compactBuffer = recSerializer.serialize();
+        record->setInMemoryData(compactBuffer.start, compactBuffer.length);
+    }
+
+
     index->addRecord(record, analyzer);
 
     record->clear();
@@ -161,8 +193,16 @@ void addRecords() {
     record->setRefiningAttributeValue("price", "6.34");
     record->setRefiningAttributeValue("class", "C");
     record->setRecordBoost(50);
-    rec= "test string";
-    record->setInMemoryData(rec.c_str(), rec.length());
+    record->setRecordBoost(40);
+    {
+        RecordSerializer recSerializer(*storedSchema);
+        recSerializer.addRefiningAttribute("citation", 5);
+        recSerializer.addRefiningAttribute("price", (float)6.34);
+        recSerializer.addSearchableAttribute("class", (string)"C");
+        RecordSerializerBuffer compactBuffer = recSerializer.serialize();
+        record->setInMemoryData(compactBuffer.start, compactBuffer.length);
+    }
+
     index->addRecord(record,analyzer);
 
     record->clear();
@@ -173,7 +213,16 @@ void addRecords() {
     record->setRefiningAttributeValue("price", "5.34");
     record->setRefiningAttributeValue("class", "C");
     record->setRecordBoost(60);
-    record->setInMemoryData(rec.c_str(), rec.length());
+    record->setRecordBoost(40);
+    {
+        RecordSerializer recSerializer(*storedSchema);
+        recSerializer.addRefiningAttribute("citation", 6);
+        recSerializer.addRefiningAttribute("price", (float)5.34);
+        recSerializer.addSearchableAttribute("class", (string)"C");
+        RecordSerializerBuffer compactBuffer = recSerializer.serialize();
+        record->setInMemoryData(compactBuffer.start, compactBuffer.length);
+    }
+
     index->addRecord(record, analyzer);
 
     record->clear();
@@ -184,7 +233,16 @@ void addRecords() {
     record->setRefiningAttributeValue("price", "4.34");
     record->setRefiningAttributeValue("class", "D");
     record->setRecordBoost(80);
-    record->setInMemoryData(rec.c_str(), rec.length());
+    record->setRecordBoost(40);
+    {
+        RecordSerializer recSerializer(*storedSchema);
+        recSerializer.addRefiningAttribute("citation", 7);
+        recSerializer.addRefiningAttribute("price", (float)4.34);
+        recSerializer.addSearchableAttribute("class", (string)"D");
+        RecordSerializerBuffer compactBuffer = recSerializer.serialize();
+        record->setInMemoryData(compactBuffer.start, compactBuffer.length);
+    }
+
     index->addRecord(record, analyzer);
 
     record->clear();
@@ -195,7 +253,16 @@ void addRecords() {
     record->setRefiningAttributeValue("price", "3.34");
     record->setRefiningAttributeValue("class", "E");
     record->setRecordBoost(90);
-    record->setInMemoryData(rec.c_str(), rec.length());
+    record->setRecordBoost(40);
+    {
+        RecordSerializer recSerializer(*storedSchema);
+        recSerializer.addRefiningAttribute("citation", 8);
+        recSerializer.addRefiningAttribute("price", (float)3.34);
+        recSerializer.addSearchableAttribute("class",(string) "E");
+        RecordSerializerBuffer compactBuffer = recSerializer.serialize();
+        record->setInMemoryData(compactBuffer.start, compactBuffer.length);
+    }
+
     index->addRecord(record, analyzer);
 
     index->commit();
