@@ -50,12 +50,12 @@ bool SortByRefiningAttributeOperator::open(QueryEvaluatorInternal * queryEvaluat
      */
     const vector<string> * attributes =
             sortEvaluator->getParticipatingAttributes();
-    vector<unsigned> attributeIds;
-    for (vector<string>::const_iterator attributeName = attributes->begin();
-            attributeName != attributes->end(); ++attributeName) {
-        unsigned id = schema->getRefiningAttributeId(*attributeName);
-        attributeIds.push_back(id);
-    }
+//    vector<unsigned> attributeIds;
+//    for (vector<string>::const_iterator attributeName = attributes->begin();
+//            attributeName != attributes->end(); ++attributeName) {
+//        unsigned id = schema->getRefiningAttributeId(*attributeName);
+//        attributeIds.push_back(id);
+//    }
     // 2. extract the data from forward index.
     while(true){
     	PhysicalPlanRecordItem * nextRecord = this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->getNext(params);
@@ -71,7 +71,7 @@ bool SortByRefiningAttributeOperator::open(QueryEvaluatorInternal * queryEvaluat
 			list->getInMemoryData().start.get();
 	// now parse the values by VariableLengthAttributeContainer
 	vector<TypedValue> typedValues;
-	VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds, schema , refiningAttributesData,&typedValues);
+	VariableLengthAttributeContainer::getBatchOfAttributes(*attributes, schema , refiningAttributesData,&typedValues);
 	// save the values in QueryResult objects
 	for(std::vector<string>::const_iterator attributesIterator = attributes->begin() ;
 			attributesIterator != attributes->end() ; ++attributesIterator){

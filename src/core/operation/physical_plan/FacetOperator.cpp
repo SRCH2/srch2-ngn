@@ -248,10 +248,10 @@ bool FacetOperator::open(QueryEvaluatorInternal * queryEvaluatorInternal, Physic
     preFilter(this->queryEvaluatorInternal);
 
     // translate list of attribute names to list of attribute IDs
-    for(std::vector<std::string>::iterator facetField = fields.begin();
-            facetField != fields.end() ; ++facetField){
-        attributeIds.push_back(schema->getRefiningAttributeId(*facetField));
-    }
+//    for(std::vector<std::string>::iterator facetField = fields.begin();
+//            facetField != fields.end() ; ++facetField){
+//        attributeNames.push_back(*facetField);
+//    }
 
     this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->open(this->queryEvaluatorInternal,params);
     return true;
@@ -290,7 +290,7 @@ PhysicalPlanRecordItem * FacetOperator::getNext(const PhysicalPlanExecutionParam
 			forwardList->getInMemoryData();
 	// this vector is parallel to attributeIds vector
 	std::vector<TypedValue> attributeDataValues;
-	VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds, schema,refiningAttributesData.start.get(), &attributeDataValues);
+	VariableLengthAttributeContainer::getBatchOfAttributes(fields, schema,refiningAttributesData.start.get(), &attributeDataValues);
 
 	// now iterate on attributes and incrementally update the facet results
 	for(std::vector<std::string>::iterator facetField = fields.begin();
@@ -322,7 +322,6 @@ bool FacetOperator::close(PhysicalPlanExecutionParameters & params){
 	this->rangeStarts.clear();
 	this->rangeEnds.clear();
 	this->rangeGaps.clear();
-	this->attributeIds.clear();
 	this->numberOfGroupsToReturnVector.clear();
 	this->facetHelpers.clear();
 	this->facetResults.clear();

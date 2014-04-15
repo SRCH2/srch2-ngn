@@ -183,7 +183,6 @@ private:
     std::vector<std::string> rangeStarts;
     std::vector<std::string> rangeEnds;
     std::vector<std::string> rangeGaps;
-    std::vector<unsigned> attributeIds;
     std::vector<int> numberOfGroupsToReturnVector;
 
     // These two vectors are parallel with fields.

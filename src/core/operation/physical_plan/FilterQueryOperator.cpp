@@ -64,11 +64,9 @@ FilterQueryOperator::FilterQueryOperator(RefiningAttributeExpressionEvaluator * 
 bool FilterQueryOperator::doPass(Schema * schema, ForwardIndex * forwardIndex ,PhysicalPlanRecordItem * record){
     // fetch the names and ids of non searchable attributes from schema
     vector<string> attributes;
-    vector<unsigned> attributeIds;
     for(map<string,unsigned>::const_iterator attr = schema->getRefiningAttributes()->begin();
             attr != schema->getRefiningAttributes()->end() ; ++attr ){
         attributes.push_back(attr->first);
-        attributeIds.push_back(attr->second);
     }
 
     shared_ptr<vectorview<ForwardListPtr> > readView;
@@ -81,7 +79,7 @@ bool FilterQueryOperator::doPass(Schema * schema, ForwardIndex * forwardIndex ,P
     if (!isValid)
       return false;
     StoredRecordBuffer refiningAttributesData = list->getInMemoryData();
-    VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds, schema,refiningAttributesData.start.get() ,&typedValues);
+    VariableLengthAttributeContainer::getBatchOfAttributes(attributes, schema,refiningAttributesData.start.get() ,&typedValues);
 
     // now call the evaluator to see if this record passes the criteria or not
     // A criterion can be for example price:12 or price:[* TO 100]
