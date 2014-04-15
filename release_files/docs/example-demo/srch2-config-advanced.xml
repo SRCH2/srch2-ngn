@@ -3,7 +3,7 @@
     some of the search engine's more advanced features.
 
     For more information about how to use this configuration file, please
-    visit http://www.srch2.com/downloads.html and select the correct
+    visit http://srch2.com/download/ and select the correct
     documentation version.
 
     Please email contact@srch2.com if you have questions.
@@ -20,35 +20,21 @@
     <listeningHostname>0.0.0.0</listeningHostname>
     <listeningPort>8081</listeningPort>
  
-    <!-- 
-        Mongo DB settings
-        Required if dataSourceType = 2
-    -->
-    <!--
-    <dataSourceType>2</dataSourceType>
-    <mongodb>
-        <host>localhost</host>
-        <port>27017</port>
-        <db>demo</db>
-        <collection>movies</collection>
-        <listenerWaitTime>3</listenerWaitTime>
-    </mongodb>
-    -->     
-
     <!-- Use more threads to increase total overall throughput of the search engine.  On a dedicated
          machine, our recommendation is that you can add as many threads as you have CPU cores.
     -->
     <maxSearchThreads>4</maxSearchThreads>
 
     <!-- Operate multiple data sources, each on their own SRCH2 core.  This feature requires less
-         system administration overhead than running separate search engines.  The search query URL
-         is compatible with Solr's format: http://hostname/corename/search/q=term where corename
-         matches the name below.  If the URL does not specify the core, the core specified below in
-         defaultCoreName will handle the request.
+         system administration overhead than running separate search engines.  The search query
+         can specify the target core explicitly in the URL:
+	     http://hostname/corename/search/q=term
+         where corename matches the name="corename" as used below.  If the URL does not specify the
+         core, the core specified below in defaultCoreName will handle the request.
     -->
     <cores defaultCoreName="movies">
         <core name="movies">
-            <!-- The configuration settings that are specific to the data source occur inside each core tag
+            <!-- The configuration settings that are specific to the data source occur inside each "core" tag
             -->
             <dataFile>../movie-data.json</dataFile>
             <dataDir>movies</dataDir>
@@ -153,6 +139,11 @@
 
 	<!-- A second core loaded with posts from Stackoverflow.  A search request on this data
              would take the form: http://hostname/stack/search?q=...
+
+             Intellectual property: Stackoverflow data is available under the Create Commons
+             license and cc-wiki license.  Please see the Stack Overflow Created Commons Data
+             Dump page: http://blog.stackoverflow.com/2009/06/stack-overflow-creative-commons-data-dump/
+             for more information.
         -->
         <core name="stack">
             <dataDir>stack</dataDir>
@@ -268,4 +259,19 @@
         </core>
 
     </cores>
+
+    <!-- 
+        Mongo DB settings
+        Required if dataSourceType = 2
+    -->
+    <!--
+    <dataSourceType>2</dataSourceType>
+    <mongodb>
+        <host>localhost</host>
+        <port>27017</port>
+        <db>demo</db>
+        <collection>movies</collection>
+        <listenerWaitTime>3</listenerWaitTime>
+    </mongodb>
+    -->     
 </config>

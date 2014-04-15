@@ -2,7 +2,7 @@
     Configuration file for SRCH2 search server. 
 
     For more information about how to use this configuration file, please
-    visit http://www.srch2.com/downloads.html and select the correct
+    visit http://srch2.com/download/ and select the correct
     documentation version.
 
     Please email contact@srch2.com if you have questions.
@@ -25,21 +25,6 @@
     
     <dataFile>movie-data.json</dataFile>
 
-    <!-- 
-        Mongo DB settings
-        Required if dataSourceType = 2
-    -->
-    <!--
-    <dataSourceType>2</dataSourceType>
-    <mongodb>
-        <host>localhost</host>
-        <port>27017</port>
-        <db>demo</db>
-        <collection>movies</collection>
-        <listenerWaitTime>3</listenerWaitTime>
-    </mongodb>
-    -->     
-         
     <maxSearchThreads>2</maxSearchThreads>
     
     <indexConfig>
@@ -132,4 +117,19 @@
           </fieldType>
        </types>
     </schema>
+
+    <!-- 
+        Mongo DB settings
+        Required if dataSourceType = 2
+    -->
+    <!--
+    <dataSourceType>2</dataSourceType>
+    <mongodb>
+        <host>localhost</host>
+        <port>27017</port>
+        <db>demo</db>
+        <collection>movies</collection>
+        <listenerWaitTime>3</listenerWaitTime>
+    </mongodb>
+    -->     
 </config>
