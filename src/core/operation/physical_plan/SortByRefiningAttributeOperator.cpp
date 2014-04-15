@@ -50,12 +50,7 @@ bool SortByRefiningAttributeOperator::open(QueryEvaluatorInternal * queryEvaluat
      */
     const vector<string> * attributes =
             sortEvaluator->getParticipatingAttributes();
-//    vector<unsigned> attributeIds;
-//    for (vector<string>::const_iterator attributeName = attributes->begin();
-//            attributeName != attributes->end(); ++attributeName) {
-//        unsigned id = schema->getRefiningAttributeId(*attributeName);
-//        attributeIds.push_back(id);
-//    }
+
     // 2. extract the data from forward index.
     while(true){
     	PhysicalPlanRecordItem * nextRecord = this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->getNext(params);

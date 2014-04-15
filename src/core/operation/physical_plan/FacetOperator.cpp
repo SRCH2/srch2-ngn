@@ -247,12 +247,6 @@ bool FacetOperator::open(QueryEvaluatorInternal * queryEvaluatorInternal, Physic
 	// first prepare internal structures based on the input
     preFilter(this->queryEvaluatorInternal);
 
-    // translate list of attribute names to list of attribute IDs
-//    for(std::vector<std::string>::iterator facetField = fields.begin();
-//            facetField != fields.end() ; ++facetField){
-//        attributeNames.push_back(*facetField);
-//    }
-
     this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->open(this->queryEvaluatorInternal,params);
     return true;
 }

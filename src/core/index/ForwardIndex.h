@@ -126,10 +126,6 @@ public:
 //        return VariableLengthAttributeContainer::getAttribute(iter, schema, this->getRefiningAttributeValuesDataPointer());
 //    }
 
-//    const Byte * getRefiningAttributeContainerData() const {
-//        return getRefiningAttributeValuesDataPointer();
-//    }
-
     /*
      * The format of data in this array is :
      * ---------------------------------------------------------------------------------------------------------------------------------
@@ -236,10 +232,6 @@ public:
             const TokenAttributeHits &hits) const;
 
     //unsigned getForwardListElement(unsigned cursor) const;
-
-//    TypedValue getForwardListRefiningAttributeTypedValue(
-//            const SchemaInternal* schemaInternal,
-//            unsigned schemaNonSearchableAttributeId) const;
 
     bool haveWordInRangeWithStemmer(const SchemaInternal* schema,
             const unsigned minId, const unsigned maxId,
@@ -397,23 +389,6 @@ private:
     inline unsigned getKeywordRecordStaticScoresSizeInBytes() const {
     	return getKeywordRecordStaticScoresSizeInBytes(this->getNumberOfKeywords());
     }
-
-
-    //////////////// Non Searchable Attribute Values Helper Function /////////////////////////
-//    inline Byte * getRefiningAttributeValuesDataPointer() const{
-//        /*
-//         * The format of data in this array is :
-//         * -------------------------------------------------------------------------------------------------
-//         * | keywordIDs | keywordRecordStaticScores | keywordAttributeBitMap | positionIndex | offsetIndex |
-//         * -------------------------------------------------------------------------------------------------
-//         */
-//    	return data +
-//    			getKeywordIdsSizeInBytes() +
-//    			getKeywordRecordStaticScoresSizeInBytes();
-//    }
-//    inline unsigned getNonSearchableAttributeValuesDataSize() const{
-//    	return this->nonSearchableAttributeValuesDataSize;
-//    }
 
 
     //////////////////// Keyword Attributes Bitmap Helper Functions ////////////////////////////
