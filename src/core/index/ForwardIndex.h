@@ -37,13 +37,12 @@
 #include "util/Logger.h"
 #include "util/encoding.h"
 #include "util/half.h"
-#include "util/VariableLengthAttributeContainer.h"
 #include "instantsearch/TypedValue.h"
 #include "util/mytime.h"
 #include "util/ULEB128.h"
 #include "thirdparty/snappy-1.0.4/snappy.h"
 #include "util/ThreadSafeMap.h"
-
+#define Byte char
 using std::vector;
 using std::fstream;
 using std::string;

@@ -9,6 +9,8 @@
 #include "instantsearch/TypedValue.h"
 #include <vector>
 #include "string"
+#include "util/RecordSerializerUtil.h"
+using namespace srch2::util;
 
 namespace srch2
 {
@@ -79,7 +81,7 @@ bool FilterQueryOperator::doPass(Schema * schema, ForwardIndex * forwardIndex ,P
     if (!isValid)
       return false;
     StoredRecordBuffer refiningAttributesData = list->getInMemoryData();
-    VariableLengthAttributeContainer::getBatchOfAttributes(attributes, schema,refiningAttributesData.start.get() ,&typedValues);
+    RecordSerializerUtil::getBatchOfAttributes(attributes, schema,refiningAttributesData.start.get() ,&typedValues);
 
     // now call the evaluator to see if this record passes the criteria or not
     // A criterion can be for example price:12 or price:[* TO 100]

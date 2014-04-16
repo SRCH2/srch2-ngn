@@ -11,6 +11,8 @@
 #include "instantsearch/TypedValue.h"
 #include "util/DateAndTimeHandler.h"
 #include "operation/QueryEvaluatorInternal.h"
+#include "util/RecordSerializerUtil.h"
+using namespace srch2::util;
 
 namespace srch2 {
 namespace instantsearch {
@@ -284,7 +286,7 @@ PhysicalPlanRecordItem * FacetOperator::getNext(const PhysicalPlanExecutionParam
 			forwardList->getInMemoryData();
 	// this vector is parallel to attributeIds vector
 	std::vector<TypedValue> attributeDataValues;
-	VariableLengthAttributeContainer::getBatchOfAttributes(fields, schema,refiningAttributesData.start.get(), &attributeDataValues);
+	RecordSerializerUtil::getBatchOfAttributes(fields, schema,refiningAttributesData.start.get(), &attributeDataValues);
 
 	// now iterate on attributes and incrementally update the facet results
 	for(std::vector<std::string>::iterator facetField = fields.begin();

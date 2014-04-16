@@ -26,8 +26,10 @@
 #include "instantsearch/Schema.h"
 #include "index/ForwardIndex.h"
 #include "instantsearch/TypedValue.h"
-
+#include "util/RecordSerializerUtil.h"
 using namespace std;
+
+using namespace srch2::util;
 
 namespace srch2 {
 namespace instantsearch {
@@ -66,7 +68,7 @@ bool SortByRefiningAttributeOperator::open(QueryEvaluatorInternal * queryEvaluat
 			list->getInMemoryData().start.get();
 	// now parse the values by VariableLengthAttributeContainer
 	vector<TypedValue> typedValues;
-	VariableLengthAttributeContainer::getBatchOfAttributes(*attributes, schema , refiningAttributesData,&typedValues);
+	RecordSerializerUtil::getBatchOfAttributes(*attributes, schema , refiningAttributesData,&typedValues);
 	// save the values in QueryResult objects
 	for(std::vector<string>::const_iterator attributesIterator = attributes->begin() ;
 			attributesIterator != attributes->end() ; ++attributesIterator){

@@ -21,7 +21,8 @@
 #include <string>
 #include <algorithm>
 #include "util/RecordSerializer.h"
-//
+#include "util/RecordSerializerUtil.h"
+using namespace srch2::util;
 using namespace std;
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;

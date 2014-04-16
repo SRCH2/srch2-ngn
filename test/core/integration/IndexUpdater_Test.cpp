@@ -29,7 +29,7 @@
 #include "util/Assert.h"
 #include "IntegrationTestHelper.h"
 #include <stdlib.h>
-
+#include "util/RecordSerializerUtil.h"
 #include <time.h>
 #include <iostream>
 #include <cstdlib>
@@ -38,7 +38,7 @@
 #include <string>
 #include <vector>
 #include <cstring>
-
+using namespace srch2::util;
 using namespace std;
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;

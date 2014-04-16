@@ -8,7 +8,7 @@
 #include "IntegrationTestHelper.h"
 #include "MapSearchTestHelper.h"
 #include "analyzer/StandardAnalyzer.h"
-
+#include "util/RecordSerializerUtil.h"
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -17,7 +17,7 @@
 #define MAX_QUERY_NUMBER 5000
 
 using namespace std;
-
+using namespace srch2::util;
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
 
