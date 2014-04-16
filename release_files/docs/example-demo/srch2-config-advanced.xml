@@ -46,6 +46,37 @@
             -->
 	    <updatePort>8088</updatePort>
 
+            <schema>
+                <fields>
+		    <!-- highlight="true" must be enabled per field to turn on markup around matches -->
+                    <field name="title" type="text" indexed="true" highlight="true"/>
+                    <field name="director" type="text" indexed="true" highlight="true"/>
+                    <field name="genre" type="text" indexed="true"
+                           default="HORROR" required="false"/>
+                    <field name="year" type="integer" indexed="false" refining="true"
+                           default="2000" required="false"/>
+                    <field name="id" type="text" refining="true" indexed="false"/>
+                </fields>
+              
+                <uniqueKey>id</uniqueKey>
+              
+                <facetEnabled>true</facetEnabled>
+                <facetFields>
+                    <facetField name="genre" facetType="categorical"/>
+                    <facetField name="year"  facetType="range" facetStart="1990" facetEnd="2050"
+                                facetGap="10"/>
+                </facetFields>
+              
+                <types>
+                    <fieldType name="text_en">
+                        <analyzer>
+                            <filter name="PorterStemFilter" dictionary="" />
+                            <filter name="StopFilter" words="stop-words.txt" />
+                        </analyzer>
+                    </fieldType>
+                </types>
+            </schema>
+
             <indexConfig>
                 <indexType>0</indexType>
                 <supportSwapInEditDistance>true</supportSwapInEditDistance>
@@ -53,6 +84,7 @@
                 <defaultQueryTermBoost>1</defaultQueryTermBoost>
                 <enablePositionIndex>1</enablePositionIndex> 
             </indexConfig>
+
 	    <query>
 	        <rankingAlgorithm>
 		    <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
@@ -93,36 +125,7 @@
 		</highlighter>
 
 	    </query>
-            <schema>
-                <fields>
-		    <!-- highlight="true" must be enabled per field to turn on markup around matches -->
-                    <field name="title" type="text" indexed="true" highlight="true"/>
-                    <field name="director" type="text" indexed="true" highlight="true"/>
-                    <field name="genre" type="text" indexed="true"
-                           default="HORROR" required="false"/>
-                    <field name="year" type="integer" indexed="false" refining="true"
-                           default="2000" required="false"/>
-                    <field name="id" type="text" refining="true" indexed="false"/>
-                </fields>
-              
-                <uniqueKey>id</uniqueKey>
-              
-                <facetEnabled>true</facetEnabled>
-                <facetFields>
-                    <facetField name="genre" facetType="categorical"/>
-                    <facetField name="year"  facetType="range" facetStart="1990" facetEnd="2050"
-                                facetGap="10"/>
-                </facetFields>
-              
-                <types>
-                    <fieldType name="text_en">
-                        <analyzer>
-                            <filter name="PorterStemFilter" dictionary="" />
-                            <filter name="StopFilter" words="stop-words.txt" />
-                        </analyzer>
-                    </fieldType>
-                </types>
-            </schema>
+
 	    <updatehandler>
 	        <maxDocs>15000000</maxDocs>
 		<maxMemory>10000000</maxMemory>
@@ -161,6 +164,46 @@
 	    <resetLoggerPort>9081</resetLoggerPort>
 	    <docsPort>9081</docsPort>
 	    <updatePort>9081</updatePort>
+
+            <schema>
+                <fields>
+                    <field name="title"          type="text"    indexed="true"/>
+                    <field name="body"           type="text"    indexed="true"/>
+                    <field name="author_name"    type="text"    indexed="true"/>
+                    <field name="tags"           type="text"    indexed="true"    refining="true"
+                           required="false" multivalued="true"/>
+                    <field name="creation_date"  type="time"    indexed="false"   refining="true" default="01/01/2000"  required="false"/>
+                    <field name="view_count"     type="integer" indexed="false"   refining="true"
+                           default="0"           required="false"/>
+                    <field name="answer_count"   type="integer" indexed="false"   refining="true"
+                           default="0"           required="false"/>
+                    <field name="votes_count"    type="integer" indexed="false"   refining="true"
+                           default="0"           required="false"/>
+                </fields>
+              
+                <uniqueKey>id</uniqueKey>
+                <facetEnabled>true</facetEnabled>
+                <facetFields>
+                    <facetField name="tags" facetType="categorical"/>
+                </facetFields>
+              
+                <types>
+                    <fieldType name="text_en">
+                      <analyzer>
+                        <filter name="PorterStemFilter" dictionary="" />
+                        <filter name="StopFilter" words="stop-words.txt" />
+
+			<!-- Specify certain words are complete, searchable terms, despite punctuation
+			     in them.  This allows searches on terms such as C++ or .NET .
+			 -->
+                        <filter name="protectedKeyWordsFilter" words="protected_words.txt" />
+
+			<!-- Match Twitter hash tags and user names -->
+			<allowedRecordSpecialCharacters>#@</allowedRecordSpecialCharacters>
+                      </analyzer>
+                    </fieldType>
+                </types>
+            </schema>
 
             <indexConfig>
                 <indexType>0</indexType>
@@ -205,45 +248,7 @@
             <KeywordPopularityThreshold>10000</KeywordPopularityThreshold>
             <getAllResultsMaxResultsThreshold>2000</getAllResultsMaxResultsThreshold>
             <getAllResultsKAlternative>500</getAllResultsKAlternative>
-            <schema>
-                <fields>
-                    <field name="title"          type="text"    indexed="true"/>
-                    <field name="body"           type="text"    indexed="true"/>
-                    <field name="author_name"    type="text"    indexed="true"/>
-                    <field name="tags"           type="text"    indexed="true"    refining="true"
-                           required="false" multivalued="true"/>
-                    <field name="creation_date"  type="time"    indexed="false"   refining="true" default="01/01/2000"  required="false"/>
-                    <field name="view_count"     type="integer" indexed="false"   refining="true"
-                           default="0"           required="false"/>
-                    <field name="answer_count"   type="integer" indexed="false"   refining="true"
-                           default="0"           required="false"/>
-                    <field name="votes_count"    type="integer" indexed="false"   refining="true"
-                           default="0"           required="false"/>
-                </fields>
-              
-                <uniqueKey>id</uniqueKey>
-                <facetEnabled>true</facetEnabled>
-                <facetFields>
-                    <facetField name="tags" facetType="categorical"/>
-                </facetFields>
-              
-                <types>
-                    <fieldType name="text_en">
-                      <analyzer>
-                        <filter name="PorterStemFilter" dictionary="" />
-                        <filter name="StopFilter" words="stop-words.txt" />
 
-			<!-- Specify certain words are complete, searchable terms, despite punctuation
-			     in them.  This allows searches on terms such as C++ or .NET .
-			 -->
-                        <filter name="protectedKeyWordsFilter" words="protected_words.txt" />
-
-			<!-- Match Twitter hash tags and user names -->
-			<allowedRecordSpecialCharacters>#@</allowedRecordSpecialCharacters>
-                      </analyzer>
-                    </fieldType>
-                </types>
-            </schema>
 	    <updatehandler>
 	        <maxDocs>15000000</maxDocs>
 		<maxMemory>10000000</maxMemory>
