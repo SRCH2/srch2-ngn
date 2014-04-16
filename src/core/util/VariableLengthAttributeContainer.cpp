@@ -26,6 +26,8 @@
 
 #include "thirdparty/snappy-1.0.4/snappy.h"
 #include "util/DateAndTimeHandler.h"
+#include "instantsearch/Constants.h"
+
 using namespace snappy;
 
 namespace srch2 {
@@ -50,6 +52,7 @@ void VariableLengthAttributeContainer::getBatchOfAttributes(
         convertByteArrayToTypedValue(name , multiVal, type, recSerializer, data , &attributeValue);
         typedValues.push_back(attributeValue);
     }
+    delete storedSchema;
 }
 
 FilterType VariableLengthAttributeContainer::getAttributeType(const string& name,
@@ -147,7 +150,7 @@ void VariableLengthAttributeContainer::convertByteArrayToTypedValue(const string
 		snappy::Uncompress(attrdata,len, &stringValue);
 		size_t lastpos = 0;
 		while(1) {
-			size_t pos = stringValue.find(" $$ ", lastpos) ;
+			size_t pos = stringValue.find(MULTI_VAL_ATTR_DELIMITER, lastpos) ;
 			if (pos == string::npos)
 				break;
 			string result =  stringValue.substr(lastpos, pos - lastpos);
