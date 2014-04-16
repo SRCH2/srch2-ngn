@@ -42,7 +42,6 @@
 #include "util/ULEB128.h"
 #include "thirdparty/snappy-1.0.4/snappy.h"
 #include "util/ThreadSafeMap.h"
-#define Byte char
 using std::vector;
 using std::fstream;
 using std::string;

@@ -194,6 +194,10 @@ void RecordSerializerUtil::cleanAndAppendToBuffer(const string& in, string& out)
 	}
 }
 
+/*
+ *  The function returns the list of values for the list of refining attributes from
+ *  the in-memory representation in forward Index.
+ */
 void RecordSerializerUtil::getBatchOfAttributes(
         const std::vector<string> & refiningAttributes, const Schema * schema, const Byte* data,
         std::vector<TypedValue> * typedValuesArg)  {
@@ -221,7 +225,9 @@ FilterType RecordSerializerUtil::getAttributeType(const string& name,
 	return schema->getTypeOfRefiningAttribute(id);
 }
 
-
+/*
+ *  read a unsigned int value at an offset (= startOffset) from the data pointer.
+ */
 unsigned RecordSerializerUtil::convertByteArrayToUnsigned(
         unsigned startOffset , const Byte * data) {
 
@@ -230,12 +236,18 @@ unsigned RecordSerializerUtil::convertByteArrayToUnsigned(
     return *unsignedPointer;
 }
 
+/*
+ *  read a float value at an offset (= startOffset) from the data pointer.
+ */
 float RecordSerializerUtil::convertByteArrayToFloat(unsigned startOffset, const Byte * data) {
     const Byte * bytePointer = data + startOffset;
     float * floatPointer = (float *) bytePointer;
     return *floatPointer;
 }
 
+/*
+ *  read a long value at an offset (= startOffset) from the data pointer.
+ */
 long RecordSerializerUtil::convertByteArrayToLong(
         unsigned startOffset, const Byte * data) {
     const Byte * bytePointer = data + startOffset;
@@ -243,6 +255,15 @@ long RecordSerializerUtil::convertByteArrayToLong(
     return *longPointer;
 }
 
+/*
+ *   Given a refining attribute name and type, Fetch its value from in-memory compact representation.
+ *   - Single value refining attribute of type int , float and long are stored as it is in the byte
+ *     array.
+ *   - Multivalue refining attributes are stored as single compressed string where each values is
+ *     separated by a delimiter.
+ *   - Single Value refining attributes of type text and time are stored as compressed string.
+ *     Note: time string is converted to long format.
+ */
 void RecordSerializerUtil::convertByteArrayToTypedValue(const string& name,
 		bool isMultiValued, const FilterType& type, RecordSerializer& recSerializer, const Byte * data,
 		TypedValue * result) {

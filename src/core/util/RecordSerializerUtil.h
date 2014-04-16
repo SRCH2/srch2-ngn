@@ -20,7 +20,6 @@ using namespace srch2::instantsearch;
 
 namespace srch2 {
 namespace util {
-#define Byte char
 
 class RecordSerializerUtil {
 public:
