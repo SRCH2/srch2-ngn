@@ -226,7 +226,7 @@ FilterType RecordSerializerUtil::getAttributeType(const string& name,
 }
 
 /*
- *  read a unsigned int value at an offset (= startOffset) from the data pointer.
+ *  read an unsigned int value at an offset (= startOffset) from the data pointer.
  */
 unsigned RecordSerializerUtil::convertByteArrayToUnsigned(
         unsigned startOffset , const Byte * data) {
@@ -256,11 +256,11 @@ long RecordSerializerUtil::convertByteArrayToLong(
 }
 
 /*
- *   Given a refining attribute name and type, Fetch its value from in-memory compact representation.
+ *   Given a refining attribute name and type, fetch its value from in-memory compact representation.
  *   - Single value refining attribute of type int , float and long are stored as it is in the byte
  *     array.
  *   - Multivalue refining attributes are stored as single compressed string where each values is
- *     separated by a delimiter.
+ *     separated by a delimiter (MULTI_VAL_ATTR_DELIMITER defined in Constants.h).
  *   - Single Value refining attributes of type text and time are stored as compressed string.
  *     Note: time string is converted to long format.
  */
@@ -299,6 +299,7 @@ void RecordSerializerUtil::convertByteArrayToTypedValue(const string& name,
 			unsigned len = *(((unsigned *)(data + lenOffset)) + 1) -
 					*((unsigned *)(data + lenOffset));
 			snappy::Uncompress(attrdata,len, &stringValue);
+			std::transform(stringValue.begin(), stringValue.end(), stringValue.begin(), ::tolower);
 			result->setTypedValue(stringValue);
 			break;
 		}
@@ -335,10 +336,13 @@ void RecordSerializerUtil::convertByteArrayToTypedValue(const string& name,
 			if (pos == string::npos)
 				break;
 			string result =  stringValue.substr(lastpos, pos - lastpos);
+			std::transform(result.begin(), result.end(), result.begin(), ::tolower);
 			multiValues.push_back(result);
 			lastpos = pos + 4;
 		}
-		multiValues.push_back(stringValue.substr(lastpos, stringValue.size()));
+		string lastVal = stringValue.substr(lastpos, stringValue.size());
+		std::transform(lastVal.begin(), lastVal.end(), lastVal.begin(), ::tolower);
+		multiValues.push_back(lastVal);
 
 		vector<unsigned> intValues;
 		vector<float> floatValues;
