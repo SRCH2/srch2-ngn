@@ -39,23 +39,24 @@ Analyzer::Analyzer(const StemmerContainer *stemmer,
                    const StopWordContainer *stopWords,
                    const ProtectedWordsContainer *protectedWords,
                    const SynonymContainer *synonyms,
-                   const std::string &delimiters,
+                   const std::string &allowedSpecialCharacters,
                    const AnalyzerType &analyzerType,
                    const std::string &chineseDictFilePath)
 {
     switch (analyzerType) {
     case SIMPLE_ANALYZER:
         this->analyzerInternal = new SimpleAnalyzer(stemmer, stopWords, protectedWords, synonyms,
-                                                    delimiters);
+                                                    allowedSpecialCharacters);
         break;
     case CHINESE_ANALYZER:
         this->analyzerInternal = new ChineseAnalyzer(chineseDictFilePath,
-                                                     stopWords, protectedWords, synonyms, delimiters);
+                                                     stopWords, protectedWords, synonyms,
+                                                     allowedSpecialCharacters);
         break;
     case STANDARD_ANALYZER:
     default:
         this->analyzerInternal = new StandardAnalyzer(stemmer, stopWords, protectedWords, synonyms,
-                                                      delimiters);
+                                                      allowedSpecialCharacters);
         break;
     }
     analyzerInternal->setTokenStream( analyzerInternal->createOperatorFlow());

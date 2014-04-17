@@ -48,6 +48,7 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#PorterStemFilter">12.5.1 Stemmer</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#StopFilter">12.5.2 Stop Words</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#ProtectedKeywordsFilter">12.5.3 Protected Keywords</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#AllowedSpecialCharacters">12.5.4 Allowed Special Characters</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#Cores">13 Cores</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#Core">13.1 Core</a></br><br>
 </td></tr></tbody></table>
@@ -93,10 +94,10 @@ which includes the binary, a folder "example-demo" with a movie
 example, a license file, and other files needed by the engine. Other
 file paths used in the configuration should be relative to this home
 path. For example, if we give the engine a data file at
-"/usr/joe/srch2/example-data/sample-data.json", and the SRCH2 home
+"/usr/joe/srch2/example-data/movie-data.json", and the SRCH2 home
 directory is set to "/usr/joe/srch2", then the configuration file
 should reference the data file's location as
-"example-data/sample-data.json".
+"example-data/movie-data.json".
 
 ##3. License Key File, Required##{id="licenseFile"}
 ```
@@ -116,7 +117,8 @@ NOTE: If you want the server to accept all incoming packets, use "<b>0.0.0.0</b>
 The following parameters allow moving certain operations to a different port.  This feature allows network based security
 to be implemented using standard firewall functionality.  Typically, the search and info operations remain on a port
 accessible from any IP address, and suggest, docs, update, save, export, and resetLogger are placed on a port to
-which access is restricted by a firewall to internal IP addresses.
+which access is restricted by a firewall to internal IP addresses.  An example of relocating ports is provided in
+the advanced example configuration file in example-demo/srch2-config-advanced.xml .
 
 ###4.1 SearchPort, Optional{id="searchPort"}
 This setting overrides listeningPort for search requests.  Search requests must be sent to this port instead.
@@ -169,7 +171,7 @@ This value specifies the type of data source to be searched.
 ###7.2. Data File, Required if "dataSourceType" is 1 {id="dataFile"}
 
 ```
-<dataFile>./example-demo/data.json</dataFile>
+<dataFile>./example-demo/movie-data.json</dataFile>
 ```
 This value specifies a JSON data file to be loaded by the engine. Notice that it is a path relative to [srch2Home](#srch2Home).<br>
 
@@ -281,7 +283,7 @@ This expression is used to compute the static score of a record with respect to 
 - <b>doc_boost</b>: the boost value of the record as specified in an attribute;
 - <b>doc_length</b>: number of unique keywords in the record.
 
-The expression allows operators such as +, -, /, *, (, ), 0-9, etc.  Check the [Ranking Section](ranking.html) to see how this static score is used in ranking.
+The expression allows operators such as +, -, /, *, (, ), 0-9, etc.  Check the [Ranking Section](ranking.html) to see how this static score is used in ranking.  An example of the power and complexity of this expression is provided in the advanced example in example-demo/srch2-config-advanced.xml .
 
 ###9.2. Fuzzy Match Penalty, Optional{id="fuzzyMatchPenalty"}
 
@@ -394,7 +396,7 @@ Its default value is 0.
 
 ###9.12. Highlighter, Optional{id="highlighter"}
 
-The engine supports the feature to generate brief extract (snippet) of the searchable field's text. Each matching keyword is tagged to highlight its position in the snippet. A snippet with keywords highlighting allows user to fetch more meaningful information from field's text. It also reduces the network bandwidth usage by reducing a payload size. 
+The engine supports a feature to generate a brief extract (snippet) of the searchable field's text. Each matching keyword is tagged to highlight its position in the snippet. A snippet with keywords highlighting allows users to fetch more meaningful information from the field's text. It also reduces the network bandwidth usage by reducing the payload size. 
 
 ```
 <highlighter>
@@ -411,6 +413,8 @@ This composite parameter allows a user to specify snippet size and tags to enclo
 > <b>fuzzyTagPost</b>: specifies the tag value to be suffixed to a fuzzy keyword match.<br>
 > <b>exactTagPre</b>: specifies the tag value to be prefixed to a exact keyword match.<br>
 > <b>exactTagPost</b>: specifies the tag value to be suffixed to a exact keyword match.<br>
+
+Snippets will be returned for, and highlighting will be applied to, record fields which have the highlight attribute enabled in the schema configuration section described below.  There is also an example of highlighting in example-demo/srch2-config-advance.xml .
 
 Note: To improve the query search time when the highlighting is enabled, consider enabling the [character offset index](#enableCharOffsetIndex). 
 
@@ -639,16 +643,40 @@ The engine supports [Porter Stemming](http://tartarus.org/martin/PorterStemmer/)
 ```
 ###12.5.2 Stop Words, Optional{id="StopFilter"}
 
-This tag specifies a file of stop words that will be ignored by the engine. Stop words will not be indexed, and will not match any search term.  This will consume fewer system resources.  Providing an empty string ("") for the "words" parameter disables this filter.
+This tag specifies a file of stop words that will be ignored by the engine. Stop words will not be indexed, and will not match any search term.  This will consume fewer system resources. In English grammar, particle words have no meaning by themselves, and could be considered for inclusion as stop words.  Providing an empty string ("") for the "words" parameter disables this filter.
 ```
 <filter name="StopFilter" words="srch2_stop_words.txt" />
 ```
+The advanced example in example-demo/srch2-config-advanced.xml provides a working example of stop words.
 
 ###12.5.3 Protected Keywords Filter, Optional{id="ProtectedKeywordsFilter"}
 It specifies a file of special protected keywords that should be preserved by the analyzer, such as "C++", "C#", ".NET", and "AT&T". Providing an empty string ("") for the "words" parameter disables this filter.
 ```
 <filter name="protectedKeyWordsFilter" words="srch2_protected_words.txt" />
 ```
+
+The advanced example in example-demo/srch2-config-advanced.xml provides a working example of protected keywords.
+
+###12.5.4 Allowed Special Characters, Optional{id="AllowedSpecialCharacters"}
+
+The engine has a number of rules regarding with what characters words can be composed, and what characters
+are punctuation or delimiters separating words.  To provide additional flexibility, the engine can be
+configured to add characters that should not be considered delimiters between words.  Those sequences of
+characters that include those characters will be treated as a single term and will not be broken into
+separate words.
+
+Here is an example for this setting to allow apostrophes, dashes, underscores, and at signs to occur within single words:
+
+```
+<allowedRecordSpecialCharacters>`-_@</allowedRecordSpecialCharacters>
+```
+
+This example will allow a search on "L'Absinthe" to match and return a record with the phrase "Edgar Degas' painting L'Absinthe hangs in the Musée d'Orsay in Paris." in an indexed attribute.
+
+Note that whitespace characters will also be considered word delimiters and are not permitted in this field.
+
+The advanced example in example-demo/srch2-config-advanced.xml provides an example of allowing Twitter hashtag like terms to be queried.
+
 ##13. Cores, Optional{id="Cores"}
 
 The "Cores" tag can be used to support the creation of multiple search engines (called cores) within the same server.  Typically, each engine
@@ -662,6 +690,8 @@ http://localhost:8081/example-core/search/q=term
 ```
 requests that "example-core" process a search request for "term".  In the case when no core is
 specified in a query to a multi-core server, the server will use the sore specified by "defaultCoreName".
+
+A working multicore configuration is provided in example-demo/srch2-config-advanced.xml .
 
 ###13.1 Core, Optional{id="Core"}
 
