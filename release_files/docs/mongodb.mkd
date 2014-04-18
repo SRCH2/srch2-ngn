@@ -41,10 +41,10 @@ Notice that the SRCH2 engine works with a MongoDB server running with the replic
 
 ##2. Populate MongoDB###{id="populate-mongo"}
 
-Download a <a href=example-demo/sample-data.json>sample data file</a> with movie information to a local folder. Run the following MongoDB command to insert those records into a collection called "movies" in a database called "demo".
+Download a <a href=example-demo/movie-data.json>sample data file</a> with movie information to a local folder. Run the following MongoDB command to insert those records into a collection called "movies" in a database called "demo".
 
 ```
-shell> mongoimport --db demo --collection movies --type json --file sample-data.json 
+shell> mongoimport --db demo --collection movies --type json --file movie-data.json 
 ```
 To check if the data has been loaded, run following commands:
 
