@@ -149,22 +149,68 @@ private:
         unsigned now = time(0);
         sprintf(semaphoreName +SEMAPHORE_NAME_LENGTH, "%x", now);
     }
+    friend class ExceptionSafeRWLockForRead;
+    friend class ExceptionSafeRWLockForWrite;
 };
 
 /*
  *   This class is a helper class for readers. It acquires the RW lock on
  *   instance initialization and releases the RW lock on instance destruction.
+ *
+ *   Usage Example:
+ *   1.
+ *   {
+ *   	ExceptionSafeRWLockForRead auto(object_to_lock)
+ *   	// critical section starts
+ *    	...
+ *    	...
+ *    	// critical section ends (lock is automatically released)
+ *   }
+ *
+ *   2. Scoping the lock
+ *
+ *   {
+ *    ... some code ...
+ *    ...
+ *   {
+ *    	ExceptionSafeRWLockForRead auto(object_to_lock)
+ *    	// critical section starts
+ *    	...
+ *    	...
+ *    	// critical section ends (lock is automatically released)
+ *   }
+ *   ...
+ *   ...
+ *   }
+ *
+ *   3. Conditional lock
+ *   {
+ *   	ExceptionSafeRWLockForRead auto(object_to_lock, (foo == bar))
+ *   	// critical section starts only if foo == bar is true otherwise lock is not acquired.
+ *    	...
+ *    	...
+ *    	// critical section ends (lock is automatically released)
+ *   }
+ *
  */
 class ExceptionSafeRWLockForRead{
 public:
-	ExceptionSafeRWLockForRead(ReadWriteMutex& lock):_lock(lock) { lock.lockRead();}
-	~ExceptionSafeRWLockForRead() { _lock.unlockRead(); }
+	ExceptionSafeRWLockForRead(ReadWriteMutex& lock, bool condition = true):
+		_lock(lock), _condition(condition) {
+		if (_condition)
+			lock.lockRead();
+	}
+	~ExceptionSafeRWLockForRead() {
+		if (_condition)
+			_lock.unlockRead();
+	}
 private:
 	ReadWriteMutex& _lock;
+	bool _condition;
 };
 
 /*
- *   This class is a helper class for readers. It conditionally acquires the RW lock on
+ *   This class is a helper class for writers. It conditionally acquires the RW lock on
  *   instance initialization and releases the RW lock (if any) on instance destruction.
  */
 class ExceptionSafeRWLockForWrite{

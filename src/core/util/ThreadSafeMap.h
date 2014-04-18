@@ -54,27 +54,24 @@ public:
     }
 
     void setValue(const KEY & key, const VALUE & value){
-    	rwMutexForData->lockWrite();
+    	ExceptionSafeRWLockForWrite autolock(*rwMutexForData);
     	data[key] = value;
-    	rwMutexForData->unlockWrite();
     }
 
     bool getValue(const KEY & key, VALUE & value) const{
-    	rwMutexForData->lockRead();
+    	ExceptionSafeRWLockForRead autolock(*rwMutexForData);
     	typename std::map<KEY, VALUE>::const_iterator mapIter = this->data.find(key);
     	if(mapIter == this->data.end()){
-    		rwMutexForData->unlockRead();
+
     		return false;
     	}
     	value = mapIter->second;
-    	rwMutexForData->unlockRead();
     	return true;
     }
 
     void erase(const KEY & key){
-    	rwMutexForData->lockWrite();
+    	ExceptionSafeRWLockForWrite autolock(*rwMutexForData);
     	data.erase(key);
-    	rwMutexForData->unlockWrite();
     }
 
     friend class boost::serialization::access;

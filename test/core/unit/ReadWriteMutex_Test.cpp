@@ -36,16 +36,13 @@ void *writer(void *seconds)
 {
     time_t t1, t2;
     time(&t1);
-
-    rw_mutex.lockWrite(); 
+    ExceptionSafeRWLockForWrite autolock(rw_mutex);
 
     time(&t2);
     *((int *) seconds) = (int)difftime(t2, t1);
 
     printf("Write Thread\n");
     sleep(2);
-
-    rw_mutex.unlockWrite(); 
 
     pthread_exit(0);
 }
@@ -55,15 +52,13 @@ void *reader(void *seconds)
     time_t t1, t2;
     time(&t1);
 
-    rw_mutex.lockRead(); 
+    ExceptionSafeRWLockForRead autolock(rw_mutex);
 
     time(&t2);
     *((int *) seconds) = (int)difftime(t2, t1);
 
     printf("Read Thread\n");
     sleep(2);
-
-    rw_mutex.unlockRead(); 
 
     pthread_exit(0);
 }
