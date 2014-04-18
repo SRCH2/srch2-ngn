@@ -80,7 +80,7 @@ public:
           //cases: when it decrements count (returns 0), or if 
           //signal handler interrupts it (return < 0)
           if(sem_wait(m_semaphore) == 0) 
-	    ++i;
+        	  ++i;
         }
     }
 
@@ -149,6 +149,38 @@ private:
         unsigned now = time(0);
         sprintf(semaphoreName +SEMAPHORE_NAME_LENGTH, "%x", now);
     }
+};
+
+/*
+ *   This class is a helper class for readers. It acquires the RW lock on
+ *   instance initialization and releases the RW lock on instance destruction.
+ */
+class ExceptionSafeRWLockForRead{
+public:
+	ExceptionSafeRWLockForRead(ReadWriteMutex& lock):_lock(lock) { lock.lockRead();}
+	~ExceptionSafeRWLockForRead() { _lock.unlockRead(); }
+private:
+	ReadWriteMutex& _lock;
+};
+
+/*
+ *   This class is a helper class for readers. It conditionally acquires the RW lock on
+ *   instance initialization and releases the RW lock (if any) on instance destruction.
+ */
+class ExceptionSafeRWLockForWrite{
+public:
+	ExceptionSafeRWLockForWrite(ReadWriteMutex& lock, bool condition = true):
+		_lock(lock),_condition(condition) {
+		if (_condition)
+			lock.lockWrite();
+	}
+	~ExceptionSafeRWLockForWrite() {
+		if (_condition)
+			_lock.unlockWrite();
+	}
+private:
+	ReadWriteMutex& _lock;
+	bool _condition;
 };
 
 }

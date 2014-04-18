@@ -79,9 +79,8 @@ int QueryEvaluatorInternal::suggest(const string & keyword, float fuzzyMatchPena
 		return 0;
 	}
 
-    this->indexData->globalRwMutexForReadersWriters->lockRead(); // need to lock the mutex
+	ExceptionSafeRWLockForRead readerLock(*this->indexData->globalRwMutexForReadersWriters);
     if (this->indexData->isBulkLoadDone() == false){
-	this->indexData->globalRwMutexForReadersWriters->unlockRead(); // need to unlock the mutex
         return -1;
     }
 
@@ -115,7 +114,6 @@ int QueryEvaluatorInternal::suggest(const string & keyword, float fuzzyMatchPena
                                                suggestion->suggestedCompleteTermNode, suggestionString);
     	suggestions.push_back(suggestionString);
     }
-	this->indexData->globalRwMutexForReadersWriters->unlockRead(); // need to unlock the mutex
 	return 0;
 }
 
@@ -171,16 +169,14 @@ void QueryEvaluatorInternal::findKMostPopularSuggestionsSorted(Term *term ,
  */
 int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *queryResults){
 
-
+	ExceptionSafeRWLockForRead readerLock(*this->indexData->globalRwMutexForReadersWriters);
 	ASSERT(logicalPlan != NULL);
-        this->indexData->globalRwMutexForReadersWriters->lockRead(); // need to lock the mutex
 	//1. first check to see if we have this query in cache
 	string key = logicalPlan->getUniqueStringForCaching();
 	boost::shared_ptr<QueryResultsCacheEntry> cachedObject ;
 	if(this->cacheManager->getQueryResultsCache()->getQueryResults(key , cachedObject) == true){
 		// cache hit
 		cachedObject->copyToQueryResultsInternal(queryResults->impl);
-                this->indexData->globalRwMutexForReadersWriters->unlockRead(); // need to unlock the mutex
 		return queryResults->impl->sortedFinalResults.size();
 	}
 	 /*
@@ -318,7 +314,6 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		delete sortOperator;
 	}
 
-        this->indexData->globalRwMutexForReadersWriters->unlockRead(); // need to unlock the mutex
 	return queryResults->impl->sortedFinalResults.size();
 }
 
@@ -326,36 +321,32 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
  * Does Map Search
  */
 int QueryEvaluatorInternal::geoSearch(const Query *query, QueryResults *queryResults){
-    this->indexData->globalRwMutexForReadersWriters->lockRead(); // need to lock the mutex
+	ExceptionSafeRWLockForRead readerLock(*this->indexData->globalRwMutexForReadersWriters);
     int returnValue = this->searchMapQuery(query, queryResults);
-    this->indexData->globalRwMutexForReadersWriters->unlockRead();
     return returnValue;
 }
 
 // for doing a geo range query with a circle
 void QueryEvaluatorInternal::geoSearch(const Circle &queryCircle, QueryResults *queryResults){
     QueryResultsInternal *queryResultsInternal = queryResults->impl;
-    this->indexData->globalRwMutexForReadersWriters->lockRead(); // need to lock the mutex
+    ExceptionSafeRWLockForRead readerLock(*this->indexData->globalRwMutexForReadersWriters);
     this->indexData->quadTree->rangeQueryWithoutKeywordInformation(queryCircle,queryResultsInternal);
     queryResultsInternal->finalizeResults(this->indexData->forwardIndex);
-    this->indexData->globalRwMutexForReadersWriters->unlockRead();
 }
 
 // for doing a geo range query with a rectangle
 void QueryEvaluatorInternal::geoSearch(const Rectangle &queryRectangle, QueryResults *queryResults){
     QueryResultsInternal *queryResultsInternal = queryResults->impl;
-    this->indexData->globalRwMutexForReadersWriters->lockRead(); // need to lock the mutex
+    ExceptionSafeRWLockForRead readerLock(*this->indexData->globalRwMutexForReadersWriters);
     this->indexData->quadTree->rangeQueryWithoutKeywordInformation(queryRectangle,queryResultsInternal);
     queryResultsInternal->finalizeResults(this->indexData->forwardIndex);
-    this->indexData->globalRwMutexForReadersWriters->unlockRead();
 }
 
 // for retrieving only one result by having the primary key
 void QueryEvaluatorInternal::search(const std::string & primaryKey, QueryResults *queryResults){
+	ExceptionSafeRWLockForRead readerLock(*this->indexData->globalRwMutexForReadersWriters);
 	unsigned internalRecordId ; // ForwardListId is the same as InternalRecordId
-        this->indexData->globalRwMutexForReadersWriters->lockRead(); // need to lock the mutex
 	if ( this->indexData->forwardIndex->getInternalRecordIdFromExternalRecordId(primaryKey , internalRecordId) == false ){
-                this->indexData->globalRwMutexForReadersWriters->unlockRead(); // need to unlock the mutex
 		return;
 	}
 	// The query result to be returned.
@@ -373,7 +364,6 @@ void QueryEvaluatorInternal::search(const std::string & primaryKey, QueryResults
 	queryResult->internalRecordId = internalRecordId;
 	queryResult->_score.setTypedValue((float)0.0);
 	queryResults->impl->sortedFinalResults.push_back(queryResult);
-        this->indexData->globalRwMutexForReadersWriters->unlockRead(); // need to unlock the mutex
 	return;
 }
 
