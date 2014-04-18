@@ -34,32 +34,34 @@ ReadWriteMutex rw_mutex(3);
 
 void *writer(void *seconds)
 {
-    time_t t1, t2;
-    time(&t1);
-    ExceptionSafeRWLockForWrite autolock(rw_mutex);
+	{
+		time_t t1, t2;
+		time(&t1);
+		ExceptionSafeRWLockForWrite autolock(rw_mutex);
 
-    time(&t2);
-    *((int *) seconds) = (int)difftime(t2, t1);
+		time(&t2);
+		*((int *) seconds) = (int)difftime(t2, t1);
 
-    printf("Write Thread\n");
-    sleep(2);
+		printf("Write Thread\n");
+		sleep(2);
+	}
 
     pthread_exit(0);
 }
 
 void *reader(void *seconds)
 {
-    time_t t1, t2;
-    time(&t1);
+    {
+    	time_t t1, t2;
+    	time(&t1);
+    	ExceptionSafeRWLockForRead autolock(rw_mutex);
 
-    ExceptionSafeRWLockForRead autolock(rw_mutex);
+    	time(&t2);
+    	*((int *) seconds) = (int)difftime(t2, t1);
 
-    time(&t2);
-    *((int *) seconds) = (int)difftime(t2, t1);
-
-    printf("Read Thread\n");
-    sleep(2);
-
+    	printf("Read Thread\n");
+    	sleep(2);
+    }
     pthread_exit(0);
 }
 
