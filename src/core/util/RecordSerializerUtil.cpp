@@ -278,40 +278,56 @@ void RecordSerializerUtil::convertByteArrayToTypedValue(const string& name,
 		case ATTRIBUTE_TYPE_UNSIGNED:
 		{
 			unsigned startOffset = 0;
-			startOffset = recSerializer.getRefiningOffset(name);
-			intValue = convertByteArrayToUnsigned(startOffset,data);
+			if (recSerializer.getStorageSchema().getRefiningAttributeId(name) != -1) {
+				startOffset = recSerializer.getRefiningOffset(name);
+				intValue = convertByteArrayToUnsigned(startOffset,data);
+			} else {
+				ASSERT(false);  // for Debug mode
+			}
 			result->setTypedValue(intValue);
 			break;
 		}
 		case ATTRIBUTE_TYPE_FLOAT:
 		{
 			unsigned startOffset = 0;
-			startOffset = recSerializer.getRefiningOffset(name);
-			floatValue = convertByteArrayToFloat(startOffset,data);
+			if (recSerializer.getStorageSchema().getRefiningAttributeId(name) != -1) {
+				startOffset = recSerializer.getRefiningOffset(name);
+				floatValue = convertByteArrayToFloat(startOffset,data);
+			} else {
+				ASSERT(false);  // for Debug mode
+			}
 			result->setTypedValue(floatValue);
 			break;
 		}
 		case ATTRIBUTE_TYPE_TEXT:
 		{
 			unsigned lenOffset = 0;
-			lenOffset = recSerializer.getSearchableOffset(name);
-			const char *attrdata = data + *((unsigned *)(data + lenOffset));
-			unsigned len = *(((unsigned *)(data + lenOffset)) + 1) -
-					*((unsigned *)(data + lenOffset));
-			snappy::Uncompress(attrdata,len, &stringValue);
-			std::transform(stringValue.begin(), stringValue.end(), stringValue.begin(), ::tolower);
+			if (recSerializer.getStorageSchema().getSearchableAttributeId(name) != -1) {
+				lenOffset = recSerializer.getSearchableOffset(name);
+				const char *attrdata = data + *((unsigned *)(data + lenOffset));
+				unsigned len = *(((unsigned *)(data + lenOffset)) + 1) -
+						*((unsigned *)(data + lenOffset));
+				snappy::Uncompress(attrdata,len, &stringValue);
+				std::transform(stringValue.begin(), stringValue.end(), stringValue.begin(), ::tolower);
+			} else {
+				ASSERT(false);  // for Debug mode
+			}
 			result->setTypedValue(stringValue);
 			break;
 		}
 		case ATTRIBUTE_TYPE_TIME:
 		{
 			unsigned lenOffset = 0;
-			lenOffset = recSerializer.getSearchableOffset(name);
-			const char *attrdata = data + *((unsigned *)(data + lenOffset));
-			unsigned len = *(((unsigned *)(data + lenOffset)) + 1) -
-					*((unsigned *)(data + lenOffset));
-			snappy::Uncompress(attrdata,len, &stringValue);
-			longValue = DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(stringValue);
+			if (recSerializer.getStorageSchema().getSearchableAttributeId(name) != -1) {
+				lenOffset = recSerializer.getSearchableOffset(name);
+				const char *attrdata = data + *((unsigned *)(data + lenOffset));
+				unsigned len = *(((unsigned *)(data + lenOffset)) + 1) -
+						*((unsigned *)(data + lenOffset));
+				snappy::Uncompress(attrdata,len, &stringValue);
+				longValue = DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(stringValue);
+			} else {
+				ASSERT(false);  // for Debug mode
+			}
 			result->setTypedValue(longValue);
 			break;
 		}
@@ -325,24 +341,28 @@ void RecordSerializerUtil::convertByteArrayToTypedValue(const string& name,
 		unsigned lenOffset = 0;
 		string stringValue = "";
 		vector<string> multiValues;
-		lenOffset = recSerializer.getSearchableOffset(name);
-		const char *attrdata = data + *((unsigned *)(data + lenOffset));
-		unsigned len = *(((unsigned *)(data + lenOffset)) + 1) -
-				*((unsigned *)(data + lenOffset));
-		snappy::Uncompress(attrdata,len, &stringValue);
-		size_t lastpos = 0;
-		while(1) {
-			size_t pos = stringValue.find(MULTI_VAL_ATTR_DELIMITER, lastpos) ;
-			if (pos == string::npos)
-				break;
-			string result =  stringValue.substr(lastpos, pos - lastpos);
-			std::transform(result.begin(), result.end(), result.begin(), ::tolower);
-			multiValues.push_back(result);
-			lastpos = pos + 4;
+		if (recSerializer.getStorageSchema().getSearchableAttributeId(name) != -1) {
+			lenOffset = recSerializer.getSearchableOffset(name);
+			const char *attrdata = data + *((unsigned *)(data + lenOffset));
+			unsigned len = *(((unsigned *)(data + lenOffset)) + 1) -
+					*((unsigned *)(data + lenOffset));
+			snappy::Uncompress(attrdata,len, &stringValue);
+			size_t lastpos = 0;
+			while(1) {
+				size_t pos = stringValue.find(MULTI_VAL_ATTR_DELIMITER, lastpos) ;
+				if (pos == string::npos)
+					break;
+				string result =  stringValue.substr(lastpos, pos - lastpos);
+				std::transform(result.begin(), result.end(), result.begin(), ::tolower);
+				multiValues.push_back(result);
+				lastpos = pos + 4;
+			}
+			string lastVal = stringValue.substr(lastpos, stringValue.size());
+			std::transform(lastVal.begin(), lastVal.end(), lastVal.begin(), ::tolower);
+			multiValues.push_back(lastVal);
+		} else {
+			ASSERT(false);  // for debug ..else we return empty values
 		}
-		string lastVal = stringValue.substr(lastpos, stringValue.size());
-		std::transform(lastVal.begin(), lastVal.end(), lastVal.begin(), ::tolower);
-		multiValues.push_back(lastVal);
 
 		vector<unsigned> intValues;
 		vector<float> floatValues;
