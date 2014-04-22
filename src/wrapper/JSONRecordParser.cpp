@@ -436,7 +436,7 @@ unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, Sch
     RecordSerializer compactRecSerializer = RecordSerializer(*storedAttrSchema);
 
     if(in.good()){
-        bool isArray = false;
+        bool isArrayOfJsonRecords = false;
         while(getline(in, line))
         {
             bool parseSuccess = false;
@@ -453,12 +453,12 @@ unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, Sch
             boost::trim(line);
             if (indexedRecordsCount == 0 &&  line == "[") {
                 // Solr style data source - array of JSON records
-                isArray = true;
+                isArrayOfJsonRecords = true;
                 continue;
             }
-            if (isArray == true && line == "]") {
+            if (isArrayOfJsonRecords == true && line == "]") {
                 // end of JSON array in Solr style data source
-                break;
+                break; // assume nothing follows array (will ignore more records or another array)
             }
 
             std::stringstream error;
