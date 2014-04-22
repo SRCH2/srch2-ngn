@@ -505,7 +505,7 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
     //M1
     bool haveGlobalLockForM1 = true;
     boost::unique_lock< boost::shared_mutex > lock(globalRwMutexForReadersWriters);
-    if (this->schemaInternal->getIndexType() == 
+    if (this->schemaInternal->getIndexType() !=
         srch2::instantsearch::LocationIndex) {
       lock.unlock();
       haveGlobalLockForM1 = false;
