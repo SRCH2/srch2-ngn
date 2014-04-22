@@ -450,7 +450,8 @@ unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, Sch
                 line.erase(line.length() - 1);
 	    }
 
-            if (lineCounter == 0 && line == "[") {
+            boost::trim(line);
+            if (indexedRecordsCount == 0 &&  line == "[") {
                 // Solr style data source - array of JSON records
                 isArray = true;
                 continue;
