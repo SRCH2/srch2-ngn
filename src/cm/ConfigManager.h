@@ -74,53 +74,62 @@ enum NODESTATE {
 
 
 class Node {
-public:
-	Node(unsigned nodeId, unsigned ipAddress, unsigned Port);
+ public:
+  Node(unsigned nodeId, unsigned ipAddress, unsigned portNumber);
 
-	ShardMetaData getShardInfoById(const std::string& shardId);
-	unsigned getTotalPrimaryShards();
-	unsigned getTotalReplicaShards();
+  ShardMetaData getShardMetaDataById(const std::string& shardId);
+  void addShardMetaData(const ShardMetaData& shardId);
+  void removeShard(const std::string& shardId);
 
-	const Node& operator = (const Node& node);
-	void addShardInfo(const ShardMetaData& shard);
-	void removeShard(const std::string& shardId);
+  // TODO: Ask Surendra
+  unsigned getTotalPrimaryShards(); // for all the cores on this node
+  unsigned getTotalReplicaShards(); // for all the cores on this node
 
+  const Node& operator = (const Node& node);
 
-	class NodeIterator {
-	public:
-		unsigned first;
-		ShardMetaData second;
-		bool operator == (NodeIterator* rhs);
-	};
-	typedef NodeIterator * Iterator;
-	Iterator begin();
-	Iterator next();
-	Iterator end();
+  class NodeIterator {
+  public:
+    unsigned first; // TODO: Ask Surendra
+    ShardMetaData second;
+    bool operator == (NodeIterator* rhs);
+  };
 
-    bool thisIsMe; // temporary for V0
+  typedef NodeIterator * Iterator;
+  Iterator begin();
+  Iterator next();
+  Iterator end();
+  
+  bool thisIsMe; // temporary for V0
 
 private:
-	unsigned nodeId;
-	std::string ipAddress;
-	unsigned port;
-	unsigned numberOfPrimaryShards;
-	unsigned numberofReplicaShards;
-	boost::unordered_map<std::string, ShardMetaData> shards;
-	// "primary to replicas" map
-	// e.g., primary "P0" has replicas "R1_0" and "R2_0"
-	boost::unordered_map<std::string, std::vector<std::string> > primaryToReplicaMap;
+  unsigned nodeId;
+  std::string ipAddress;
+  unsigned portNumber;
 
-	 // Allow this node to be eligible as a master node (enabled by default).
-    bool nodeMaster;
-    // Allow this node to store data (enabled by default). If enabled, the node is eligible to store data shards.
-    bool nodeData;
-    // Home directory for all the index files of shards on this node.
-    // We don't want the user to specify them for a particular core since
-    // different nodes can have different environments, and shards
-    // can move to different nodes. We
-    string dataPathHome;
-    unsigned int numberOfThreads;
-    // other node-related info
+  // TODO: Ask Surendra
+  unsigned numberOfPrimaryShards;
+  unsigned numberofReplicaShards;
+  boost::unordered_map<std::string, ShardMetaData> shards;
+
+  // "primary to replicas" map
+  // e.g., primary "P0" has replicas "R1_0" and "R2_0"
+  boost::unordered_map<std::string, std::vector<std::string> > primaryToReplicaMap;
+
+  // Allow this node to be eligible as a master node (enabled by default).
+  bool nodeMaster;
+
+  // Allow this node to store data (enabled by default). If enabled, the node is eligible to store data shards.
+  bool nodeData;
+
+  // Home directory for all the index files of shards on this node.
+  // We don't want the user to specify them for a particular core since
+  // different nodes can have different environments, and shards
+  // can move to different nodes. We
+  string dataPathHome;
+
+  unsigned int numberOfThreads;
+
+  // other node-related info
 };
 
 class CoreSchema {
@@ -129,7 +138,7 @@ class CoreSchema {
    string fieldLatitude;
    string fieldLongitude;
 
-   int isPrimSearchable;
+   int isPrimaryKeySearchable;
 
    // characters to specially treat as part of words, and not as a delimiter
    std::string allowedRecordTokenizerCharacters;
@@ -246,7 +255,7 @@ class Core {
    // In V0, the "number_of_shards" is a one-time setting for a
    // core. In the future (possibly after V1), we can support dynamic
    // migration by allowing this number to change.
-   unsigned numberOfShards;
+   unsigned numberOfPrimaryShards;
 
    // Number of replicas (additional copies) of an index (1 by
    // default). The "number_of_replicas" can be increased or
@@ -255,48 +264,54 @@ class Core {
    // balancing, relocating, gathering the results from nodes, etc.
    // ES: core.number_of_replicas: 1 // index.number_of_replicas: 1
    unsigned numberOfReplicas; // always 0 for V0
-
+   
    CoreSchema coreSchema;
-
+   
    CoreIndex coreIndex;
-
+   
    CoreQuery coreQuery;
-
+   
    CoreUpdateHandler coreUpdateHandler;
-
+   
    CoreMongoDB coreMongoDB;
 };
 
 enum CLUSTERSTATE {
-	CLUSTERSTATE_GREEN,  // all nodes are green
-	CLUSTERSTATE_RED,    // all nodes are red ..possible ?
-	CLUSTERSTATE_YELLOW  // not all nodes are green.
+  CLUSTERSTATE_GREEN,  // all nodes are green
+  CLUSTERSTATE_RED,    // all nodes are red ..possible ?
+  CLUSTERSTATE_YELLOW  // not all nodes are green.
 };
 
 class Cluster{
-	bool isMasterNode(unsigned nodeId);
-	unsigned getMasterNode();
-	CLUSTERSTATE getClusterState();
-	unsigned getTotalPrimaryShards();
-	unsigned getTotalReplicaShards();
-	Node getNodeById(unsigned id);
-	unsigned getTotalNodes();
-	unsigned getTotalShards();
+  CLUSTERSTATE getClusterState();
+  string       getClusterName();
 
-private:
-     string clusterName;
+  unsigned     getMasterNodeId();
+  bool         isMasterNode(unsigned nodeId);
 
-     std::vector<Node> nodes;
-     std::vector<Core> cores;
+  void         getNodeById(unsigned id, Node& node);
+  unsigned     getTotalNumberOfNodes();
 
-	// predetermined by the config file. cannot be changed in V1 (no dynamic primaries yet)
-	unsigned numberOfPrimaryShards;
-	// predetermined by the config file. can be changed
-	unsigned numberOfReplicaShards;
-	unsigned totalShards;  // = numberOfPrimaryShards * (1 + numberOfReplicaShards)
-	unsigned masterNodeId;
-	CLUSTERSTATE clusterState;
-	friend class SynchronizationManager;
+  // TODO: Ask Surendra
+  unsigned     getTotalPrimaryShards(); // for all the nodes in the cluster
+  unsigned     getTotalReplicaShards(); // for all the nodes in the cluster
+  unsigned     getTotalShards();  // for all the nodes in the cluster
+
+ private:
+  string clusterName;
+  CLUSTERSTATE clusterState;
+  unsigned masterNodeId;
+
+  std::vector<Node> nodes;  // nodes in the cluster
+  std::vector<Core> cores;  // cores in the cluster
+
+  // TODO: Ask Surendra
+  // predetermined by the config file. cannot be changed in V1 (no dynamic primaries yet)
+  unsigned numberOfPrimaryShards;
+  unsigned numberOfReplicas;
+  unsigned totalNumberOfShards;  // = numberOfPrimaryShards * (1 + numberOfReplicas)
+
+  // friend class SynchronizationManager;
 };
 
 
@@ -324,13 +339,12 @@ private:
    // load a configuration and populate a Cluster object
    ConfigManager(const string& configfile);
    
-    void getClusterInfo(Cluster& cluster);
+    void getCluster(Cluster& cluster);
     string licenseKeyFile;
  };
-
-
 }
- 
+
+
 }
 
 #endif // __CONFIG_MANAGER__
