@@ -46,7 +46,7 @@ class ShardMetaData{
   unsigned getCoreId();
   unsigned getPrimaryId();
 
-private:
+ private:
   // shard ids are strings with following naming conventions:
   //
   // A primary shard starts with a "P" followed by an integer id.
@@ -81,39 +81,35 @@ class Node {
   void addShardMetaData(const ShardMetaData& shardId);
   void removeShard(const std::string& shardId);
 
-  // TODO: Ask Surendra
   unsigned getTotalPrimaryShards(); // for all the cores on this node
   unsigned getTotalReplicaShards(); // for all the cores on this node
 
-  const Node& operator = (const Node& node);
-
-  class NodeIterator {
-  public:
-    unsigned first; // TODO: Ask Surendra
-    ShardMetaData second;
-    bool operator == (NodeIterator* rhs);
-  };
-
-  typedef NodeIterator * Iterator;
-  Iterator begin();
-  Iterator next();
-  Iterator end();
-  
   bool thisIsMe; // temporary for V0
 
-private:
+  // const Node& operator = (const Node& node);
+
+  // an iterator to go through the shards in this node
+  //class ShardIterator {
+  //public:
+  //unsigned first; // TODO: Ask Surendra
+  //ShardMetaData second;
+  //bool operator == (NodeIterator* rhs);
+  //};
+
+  //typedef NodeIterator * Iterator;
+  //Iterator begin();
+  //Iterator next();
+  //Iterator end();
+
+ private:
   unsigned nodeId;
   std::string ipAddress;
   unsigned portNumber;
 
-  // TODO: Ask Surendra
-  unsigned numberOfPrimaryShards;
-  unsigned numberofReplicaShards;
-  boost::unordered_map<std::string, ShardMetaData> shards;
-
-  // "primary to replicas" map
-  // e.g., primary "P0" has replicas "R1_0" and "R2_0"
-  boost::unordered_map<std::string, std::vector<std::string> > primaryToReplicaMap;
+  // coreName -> shards mapping
+  // movie -> <shard0, shard1, shard3>
+  // customer -> <shard2, shard3>
+  boost::unordered_map<std::string, std::vector<ShardMetaData> > coreToShardsMap;
 
   // Allow this node to be eligible as a master node (enabled by default).
   bool nodeMaster;
@@ -282,9 +278,9 @@ enum CLUSTERSTATE {
   CLUSTERSTATE_YELLOW  // not all nodes are green.
 };
 
-class Cluster{
-  CLUSTERSTATE getClusterState();
+class Cluster {
   string       getClusterName();
+  CLUSTERSTATE getClusterState();
 
   unsigned     getMasterNodeId();
   bool         isMasterNode(unsigned nodeId);
@@ -292,24 +288,21 @@ class Cluster{
   void         getNodeById(unsigned id, Node& node);
   unsigned     getTotalNumberOfNodes();
 
-  // TODO: Ask Surendra
-  unsigned     getTotalPrimaryShards(); // for all the nodes in the cluster
-  unsigned     getTotalReplicaShards(); // for all the nodes in the cluster
-  unsigned     getTotalShards();  // for all the nodes in the cluster
+  // get the node ID and coreId for a given shard Id
+  void     getNodeId(const string& shardId, unsigned& nodeId, unsigned& coreId);
 
  private:
-  string clusterName;
+  string       clusterName;
   CLUSTERSTATE clusterState;
-  unsigned masterNodeId;
 
   std::vector<Node> nodes;  // nodes in the cluster
+  unsigned          masterNodeId;
+
   std::vector<Core> cores;  // cores in the cluster
 
-  // TODO: Ask Surendra
-  // predetermined by the config file. cannot be changed in V1 (no dynamic primaries yet)
-  unsigned numberOfPrimaryShards;
-  unsigned numberOfReplicas;
-  unsigned totalNumberOfShards;  // = numberOfPrimaryShards * (1 + numberOfReplicas)
+  // "primary to replicas" map: from a primary shard id to ids of replica shards
+  // e.g., primary shard "P0" has replicas "R1_0" and "R2_0"
+  boost::unordered_map<std::string, std::vector<std::string> > primaryToReplicaMap;
 
   // friend class SynchronizationManager;
 };
