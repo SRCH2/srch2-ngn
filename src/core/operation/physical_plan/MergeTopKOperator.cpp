@@ -115,6 +115,7 @@ bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPl
 				mergeTopKCacheEntry->candidatesList.at(i)->setRecordMatchEditDistances(prefixEditDistances);
 				mergeTopKCacheEntry->candidatesList.at(i)->setRecordMatchingPrefixes(termRecordMatchingKeywords);
 				mergeTopKCacheEntry->candidatesList.at(i)->setPositionIndexOffsets(positionIndexOffsets);
+				mergeTopKCacheEntry->candidatesList.at(i)->setTermTypes(termTypes);
 				// nextRecord->setRecordStaticScore() Should we set static score as well ?
 				mergeTopKCacheEntry->candidatesList.at(i)->setRecordRuntimeScore(params.ranker->computeAggregatedRuntimeScoreForAnd( runTimeTermRecordScores));
 
