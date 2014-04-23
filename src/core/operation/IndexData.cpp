@@ -40,6 +40,10 @@
 #include <memory>
 #include <exception>
 
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/shared_mutex.hpp>
+#include <boost/thread/locks.hpp>
+
 using std::string;
 using std::vector;
 using std::map;
@@ -84,7 +88,6 @@ IndexData::IndexData(const string &directoryName,
     this->writeCounter = new WriteCounter();
     this->flagBulkLoadDone = false;
 
-    this->globalRwMutexForReadersWriters = new ReadWriteMutex(100); // for locking, <= 100 threads
     this->mergeRequired = true;
 }
 
@@ -137,7 +140,6 @@ IndexData::IndexData(const string& directoryName)
     	throw ex;
     }
 
-    this->globalRwMutexForReadersWriters = new ReadWriteMutex(100); // for locking, <= 100 threads
     this->mergeRequired = true;
 }
 
@@ -164,11 +166,13 @@ bool isSortedAlphabetically(const KeywordIdKeywordStringInvertedListIdTriple& ke
 INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer)
 {
 
-  //For M1, since we don't use shared pointers for quad trees, readers 
-  //and writers need to share the global rwMutex
+    boost::unique_lock< boost::shared_mutex > lock(globalRwMutexForReadersWriters);
+    //For M1, since we don't use shared pointers for quad trees, readers
+    //and writers need to share the global rwMutex
+    // For A1 , we do not need lock , so unlock the lock.
     if(this->schemaInternal->getIndexType() 
-        == srch2::instantsearch::LocationIndex) {
-      globalRwMutexForReadersWriters->lockWrite();
+            != srch2::instantsearch::LocationIndex) {
+        lock.unlock();   // Double unlock is fine. First is here and second will be in destructor of lock
     }
     INDEXWRITE_RETVAL returnValue = OP_FAIL; // not added
 
@@ -320,12 +324,6 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer
         returnValue = OP_FAIL;
     }
     
-    //For M1, since we don't use shared pointers for quad trees, readers 
-    //and writers need to share the global rwMutex
-    if(this->schemaInternal->getIndexType() 
-        == srch2::instantsearch::LocationIndex) {
-      globalRwMutexForReadersWriters->unlockWrite();
-    }
     return returnValue;
 }
 
@@ -486,9 +484,8 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
     if (this->forwardIndex->hasDeletedRecords()) {
       // free the space for deleted records.
       // need the global lock to block other readers
-      this->globalRwMutexForReadersWriters->lockWrite();
+      boost::unique_lock< boost::shared_mutex > lock(globalRwMutexForReadersWriters);
       this->forwardIndex->freeSpaceOfDeletedRecords();
-      this->globalRwMutexForReadersWriters->unlockWrite();
     }
 
     if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
@@ -506,11 +503,12 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
 
     //Need to block reader for both trie reassignment and quadtree merge in
     //M1
-    bool haveGlobalLockForM1 = false;
-    if (this->schemaInternal->getIndexType() == 
+    bool haveGlobalLockForM1 = true;
+    boost::unique_lock< boost::shared_mutex > lock(globalRwMutexForReadersWriters);
+    if (this->schemaInternal->getIndexType() !=
         srch2::instantsearch::LocationIndex) {
-      globalRwMutexForReadersWriters->lockWrite();
-      haveGlobalLockForM1 = true;
+      lock.unlock();
+      haveGlobalLockForM1 = false;
     }
 
     // check if we need to reassign some keyword ids
@@ -524,10 +522,10 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
     	// NOTE : all index structure commits are happened before reassign id phase. Only QuadTree is left
     	//        because we need new ids in quadTree commit phase.
         if(!haveGlobalLockForM1) // need locking to block other readers
-          this->globalRwMutexForReadersWriters->lockWrite(); 
+        	lock.lock();
         this->reassignKeywordIds();
         if(!haveGlobalLockForM1) 
-          this->globalRwMutexForReadersWriters->unlockWrite();
+        	lock.unlock();
       
         // struct timespec tend;
         // clock_gettime(CLOCK_REALTIME, &tend);
@@ -542,9 +540,6 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
     if (this->schemaInternal->getIndexType() == 
         srch2::instantsearch::LocationIndex) {
       this->quadTree->merge();
-     
-      //still have Global lock in M1 
-      globalRwMutexForReadersWriters->unlockWrite();
     }
 
     this->mergeRequired = false;
@@ -683,12 +678,11 @@ void IndexData::_save(const string &directoryName) const
     if(this->forwardIndex->isMergeRequired()) {
         this->forwardIndex->merge();
         if (this->forwardIndex->hasDeletedRecords()) {
-	  // free the space for deleted records.
-	  // need the global lock to block other readers
-	  this->globalRwMutexForReadersWriters->lockWrite();
-	  this->forwardIndex->freeSpaceOfDeletedRecords();
-	  this->globalRwMutexForReadersWriters->unlockWrite();
-	}
+        	// free the space for deleted records.
+        	// need the global lock to block other readers
+        	boost::unique_lock< boost::shared_mutex > lock(globalRwMutexForReadersWriters);
+        	this->forwardIndex->freeSpaceOfDeletedRecords();
+        }
     }
 
     try {
@@ -789,7 +783,6 @@ IndexData::~IndexData()
         delete this->quadTree;
 
     delete this->schemaInternal;
-    delete this->globalRwMutexForReadersWriters;
     delete this->readCounter;
     delete this->writeCounter;
     delete this->rankerExpression;
