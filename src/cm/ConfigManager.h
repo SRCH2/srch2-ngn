@@ -7,7 +7,6 @@
 #include <string>
 #include <vector>
 #include <boost/unordered_map.hpp>
-//#include <boost/unordered_set.hpp>
 
 using std::vector;
 using std::string;
@@ -33,10 +32,10 @@ namespace instantsearch {
 //	Index* index;  // current srch2's index class.
 //};
 
-class Shard{
+class Shard {
  public:
   Shard(SHARDSTATE newState, unsigned nodeId,
-		unsigned coreId,bool isReplica = false, unsigned primaryId = -1);
+	unsigned coreId, bool isReplica = false, unsigned primaryId = -1);
   void setShardState(SHARDSTATE newState);
   void setOwnerNodeId(unsigned id);
   
@@ -47,6 +46,8 @@ class Shard{
   unsigned getPrimaryId();
 
  private:
+  // TODO (for Surendra and Prateek): should we add core id to the shard name?
+
   // shard ids are strings with following naming conventions:
   //
   // A primary shard starts with a "P" followed by an integer id.
@@ -55,16 +56,14 @@ class Shard{
   // A replica shard starts with an "R" followed by a replica count and then its primary's id.
   // E.g., for the above cluster, replicas of "P0" will be named "R1_0" and "R2_0".
   // Similarly, replicas of "P3" will be named "R1_3" and "R2_3".
-  //
-  // This replica naming convention helps in debugging and understanding shard distribution.
-  std::string currentShardId;
-  SHARDSTATE ShardState;
+
+  std::string shardId;
+  SHARDSTATE shardState;
   unsigned nodeId;
   unsigned coreId;
   bool replicaFlag; // a flag to indicate if it's a replica
-  std::string primaryId;  // if current shard is replica
+  std::string primaryId;  // if current shard is a replica
 };
-
 
 enum NODESTATE {
   NODESTATE_GREEN,  // node is up and all shards are working
@@ -72,10 +71,9 @@ enum NODESTATE {
   NODESTATE_YELLOW  // node is up and all shards are not ready
 };
 
-
 class Node {
  public:
-  Node(unsigned nodeId, unsigned ipAddress, unsigned portNumber);
+  Node(unsigned nodeId, std::string& ipAddress, unsigned portNumber);
 
   Shard getShardById(const std::string& shardId);
   void addShard(const Shard& shardId);
@@ -86,6 +84,7 @@ class Node {
 
   bool thisIsMe; // temporary for V0
 
+  // TODO (for Surendra): refine this iterator
   // const Node& operator = (const Node& node);
 
   // an iterator to go through the shards in this node
@@ -118,10 +117,7 @@ class Node {
   bool nodeData;
 
   // Home directory for all the index files of shards on this node.
-  // We don't want the user to specify them for a particular core since
-  // different nodes can have different environments, and shards
-  // can move to different nodes. We
-  string dataPathHome;
+  string homeDir;
 
   unsigned int numberOfThreads;
 
@@ -289,7 +285,7 @@ class Cluster {
   unsigned     getTotalNumberOfNodes();
 
   // get the node ID and coreId for a given shard Id
-  void     getNodeIdAndCoreId(const string& shardId, unsigned& nodeId, unsigned& coreId);
+  void         getNodeIdAndCoreId(const string& shardId, unsigned& nodeId, unsigned& coreId);
 
  private:
   string       clusterName;
