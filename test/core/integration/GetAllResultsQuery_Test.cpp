@@ -8,7 +8,7 @@
 #include "IntegrationTestHelper.h"
 #include "MapSearchTestHelper.h"
 #include "analyzer/StandardAnalyzer.h"
-
+#include "util/RecordSerializerUtil.h"
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -17,7 +17,7 @@
 #define MAX_QUERY_NUMBER 5000
 
 using namespace std;
-
+using namespace srch2::util;
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
 
@@ -51,6 +51,10 @@ Indexer *buildIndex(string data_file, string index_dir, string expression, map<s
 
     Record *record = new Record(schema);
 
+    Schema * storedSchema = Schema::create();
+    RecordSerializerUtil::populateStoredSchema(storedSchema, schema);
+    RecordSerializer recSerializer(*storedSchema);
+
     unsigned docsCounter = 0;
     string line;
 
@@ -71,15 +75,18 @@ Indexer *buildIndex(string data_file, string index_dir, string expression, map<s
             {
                 record->setPrimaryKey(cell.c_str());
                 record->setRefiningAttributeValue(0, cell); // use the id number to be one sortable attribute
+                recSerializer.addRefiningAttribute(0, atoi(cell.c_str()));
                 sort1Map[cell] = atoi(cell.c_str());
             }
             else if (cellCounter == 1)
             {
                 record->setSearchableAttributeValue(0, cell);
+                recSerializer.addSearchableAttribute(0, cell);
             }
             else if (cellCounter == 2)
             {
                 record->setSearchableAttributeValue(1, cell);
+                recSerializer.addSearchableAttribute(1, cell);
             }
             else if (cellCounter == 3)
             {
@@ -88,11 +95,17 @@ Indexer *buildIndex(string data_file, string index_dir, string expression, map<s
             else if (cellCounter == 4)
             {
                 record->setRefiningAttributeValue(1, cell); // use the latitude to be another sortable attribute
-                sort2Map[record->getPrimaryKey()] = atof(cell.c_str());
+                float latitude = atof(cell.c_str());
+                recSerializer.addRefiningAttribute(1, latitude);
+                sort2Map[record->getPrimaryKey()] = latitude;
             }
 
             cellCounter++;
         }
+
+        RecordSerializerBuffer compactBuffer = recSerializer.serialize();
+        record->setInMemoryData(compactBuffer.start, compactBuffer.length);
+        recSerializer.nextRecord();
 
         indexer->addRecord(record, analyzer);
 

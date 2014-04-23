@@ -29,7 +29,7 @@
 #include "util/Assert.h"
 #include "IntegrationTestHelper.h"
 #include <stdlib.h>
-
+#include "util/RecordSerializerUtil.h"
 #include <time.h>
 #include <iostream>
 #include <cstdlib>
@@ -38,7 +38,7 @@
 #include <string>
 #include <vector>
 #include <cstring>
-
+using namespace srch2::util;
 using namespace std;
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -56,6 +56,10 @@ void addSimpleRecords()
 
     Record *record = new Record(schema);
 
+    Schema * storedSchema = Schema::create();
+    RecordSerializerUtil::populateStoredSchema(storedSchema, schema);
+    RecordSerializer recSerializer(*storedSchema);
+
     Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
     
     unsigned mergeEveryNSeconds = 2;    
@@ -72,6 +76,14 @@ void addSimpleRecords()
     record->setPrimaryKey(1001);
     record->setSearchableAttributeValue("article_authors", "Tom Smith and Jack Lennon");
     record->setSearchableAttributeValue("article_title", "Come Yesterday Once More");
+    {
+    	recSerializer.addSearchableAttribute("article_authors", (string)"Tom Smith and Jack Lennon");
+    	recSerializer.addSearchableAttribute("article_title", (string)"Come Yesterday Once More");
+    	RecordSerializerBuffer compactBuffer = recSerializer.serialize();
+    	record->setInMemoryData(compactBuffer.start, compactBuffer.length);
+    	recSerializer.nextRecord();
+    }
+
     record->setRecordBoost(90);
     index->addRecord(record, analyzer);
 
@@ -79,6 +91,13 @@ void addSimpleRecords()
     record->setPrimaryKey(1002);
     record->setSearchableAttributeValue(1, "Jimi Hendrix");
     record->setSearchableAttributeValue(2, "Little wing");
+    {
+    	recSerializer.addSearchableAttribute("article_authors", (string)"Jimi Hendrix");
+    	recSerializer.addSearchableAttribute("article_title", (string)"Little wing");
+    	RecordSerializerBuffer compactBuffer = recSerializer.serialize();
+    	record->setInMemoryData(compactBuffer.start, compactBuffer.length);
+    	recSerializer.nextRecord();
+    }
     record->setRecordBoost(90);
     index->addRecord(record, analyzer);
 
@@ -86,6 +105,13 @@ void addSimpleRecords()
     record->setPrimaryKey(1003);
     record->setSearchableAttributeValue(1, "Tom Smith and Jack The Ripper");
     record->setSearchableAttributeValue(2, "Come Tomorrow Two More");
+    {
+    	recSerializer.addSearchableAttribute("article_authors", (string)"Tom Smith and Jack The Ripper");
+    	recSerializer.addSearchableAttribute("article_title", (string)"Come Tomorrow Two More");
+    	RecordSerializerBuffer compactBuffer = recSerializer.serialize();
+    	record->setInMemoryData(compactBuffer.start, compactBuffer.length);
+    	recSerializer.nextRecord();
+    }
     record->setRecordBoost(10);
     index->addRecord(record, analyzer);
 
@@ -96,6 +122,7 @@ void addSimpleRecords()
     delete record;
     delete analyzer;
     delete index;
+    delete storedSchema;
 }
 
 void addAdvancedRecordsWithScoreSortableAttributes()
@@ -112,6 +139,10 @@ void addAdvancedRecordsWithScoreSortableAttributes()
     schema->setRefiningAttribute("pagerank", srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT, "1" );
 
     Record *record = new Record(schema);
+
+    Schema * storedSchema = Schema::create();
+    RecordSerializerUtil::populateStoredSchema(storedSchema, schema);
+    RecordSerializer recSerializer(*storedSchema);
 
     Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
     unsigned mergeEveryNSeconds = 2;    
@@ -130,6 +161,15 @@ void addAdvancedRecordsWithScoreSortableAttributes()
     record->setRecordBoost(90);
     record->setRefiningAttributeValue(0, "100");
     record->setRefiningAttributeValue(1, "9.1");
+    {
+    	recSerializer.addSearchableAttribute("article_authors", (string)"Tom Smith and Jack Lennon");
+    	recSerializer.addSearchableAttribute("article_title", (string)"Come Yesterday Once More");
+    	recSerializer.addRefiningAttribute(0, 100);
+    	recSerializer.addRefiningAttribute(1, (float)9.1);
+    	RecordSerializerBuffer compactBuffer = recSerializer.serialize();
+    	record->setInMemoryData(compactBuffer.start, compactBuffer.length);
+    	recSerializer.nextRecord();
+    }
     index->addRecord(record, analyzer);
 
     record->clear();
@@ -139,6 +179,15 @@ void addAdvancedRecordsWithScoreSortableAttributes()
     record->setRefiningAttributeValue(0, "200");
     record->setRefiningAttributeValue(1, "3.14159265");
     record->setRecordBoost(90);
+    {
+    	recSerializer.addSearchableAttribute("article_authors", (string)"Jimi Hendrix");
+    	recSerializer.addSearchableAttribute("article_title", (string)"Little wing");
+    	recSerializer.addRefiningAttribute(0, 200);
+    	recSerializer.addRefiningAttribute(1, (float)3.14159265);
+    	RecordSerializerBuffer compactBuffer = recSerializer.serialize();
+    	record->setInMemoryData(compactBuffer.start, compactBuffer.length);
+    	recSerializer.nextRecord();
+    }
     index->addRecord(record, analyzer);
 
     record->clear();
@@ -148,6 +197,15 @@ void addAdvancedRecordsWithScoreSortableAttributes()
     record->setRefiningAttributeValue(0, "300");
     record->setRefiningAttributeValue(1, "4.234");
     record->setRecordBoost(10);
+    {
+    	recSerializer.addSearchableAttribute("article_authors", (string)"Tom Smith and Jack The Ripper");
+    	recSerializer.addSearchableAttribute("article_title", (string)"Come Tomorrow Two More");
+    	recSerializer.addRefiningAttribute(0, 300);
+    	recSerializer.addRefiningAttribute(1, (float)4.234);
+    	RecordSerializerBuffer compactBuffer = recSerializer.serialize();
+    	record->setInMemoryData(compactBuffer.start, compactBuffer.length);
+    	recSerializer.nextRecord();
+    }
     index->addRecord(record, analyzer);
 
     //indexer->print_Index();
@@ -202,6 +260,17 @@ void test1()
     record->setSearchableAttributeValue(1, "steve jobs tom");
     record->setSearchableAttributeValue(2, "digital magician");
     record->setRecordBoost(90);
+    {
+    	Schema * storedSchema = Schema::create();
+    	RecordSerializerUtil::populateStoredSchema(storedSchema, index->getSchema());
+    	RecordSerializer recSerializer(*storedSchema);
+    	recSerializer.addSearchableAttribute("article_authors", (string)"steve jobs tom");
+    	recSerializer.addSearchableAttribute("article_title", (string)"digital magician");
+    	RecordSerializerBuffer compactBuffer = recSerializer.serialize();
+    	record->setInMemoryData(compactBuffer.start, compactBuffer.length);
+    	recSerializer.nextRecord();
+    	delete storedSchema;
+    }
     index->addRecord(record, analyzer);
 
     sleep(mergeEveryNSeconds+1);
@@ -517,6 +586,17 @@ void test5()
     record->setPrimaryKey(1998);
     record->setSearchableAttributeValue(1, "jimi hendrix");// THis record must not be added to index
     record->setSearchableAttributeValue(2, "steve jobs shot the sheriff");
+    {
+    	Schema * storedSchema = Schema::create();
+    	RecordSerializerUtil::populateStoredSchema(storedSchema, index->getSchema());
+    	RecordSerializer recSerializer(*storedSchema);
+    	recSerializer.addSearchableAttribute("article_authors", (string)"jimi hendrix");
+    	recSerializer.addSearchableAttribute("article_title", (string)"steve jobs shot the sheriff");
+    	RecordSerializerBuffer compactBuffer = recSerializer.serialize();
+    	record->setInMemoryData(compactBuffer.start, compactBuffer.length);
+    	recSerializer.nextRecord();
+    	delete storedSchema;
+    }
     record->setRecordBoost(100);
     index->addRecord(record, analyzer);
 
@@ -794,6 +874,18 @@ void test9()
     record->setRefiningAttributeValue(0, "400");
     record->setRefiningAttributeValue(1, "2.234");
     record->setRecordBoost(90);
+    {
+        Schema * storedSchema = Schema::create();
+        RecordSerializerUtil::populateStoredSchema(storedSchema, index->getSchema());
+        RecordSerializer recSerializer(*storedSchema);
+    	recSerializer.addSearchableAttribute("article_authors", (string)"steve jobs tom");
+    	recSerializer.addSearchableAttribute("article_title", (string)"digital magician");
+    	recSerializer.addRefiningAttribute(0, 400);
+    	recSerializer.addRefiningAttribute(1, (float)2.234);
+    	RecordSerializerBuffer compactBuffer = recSerializer.serialize();
+    	record->setInMemoryData(compactBuffer.start, compactBuffer.length);
+    	recSerializer.nextRecord();
+    }
     index->addRecord(record, analyzer);
 
     sleep(mergeEveryNSeconds+1);

@@ -11,6 +11,8 @@
 #include "instantsearch/TypedValue.h"
 #include "util/DateAndTimeHandler.h"
 #include "operation/QueryEvaluatorInternal.h"
+#include "util/RecordSerializerUtil.h"
+using namespace srch2::util;
 
 namespace srch2 {
 namespace instantsearch {
@@ -247,12 +249,6 @@ bool FacetOperator::open(QueryEvaluatorInternal * queryEvaluatorInternal, Physic
 	// first prepare internal structures based on the input
     preFilter(this->queryEvaluatorInternal);
 
-    // translate list of attribute names to list of attribute IDs
-    for(std::vector<std::string>::iterator facetField = fields.begin();
-            facetField != fields.end() ; ++facetField){
-        attributeIds.push_back(schema->getRefiningAttributeId(*facetField));
-    }
-
     this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->open(this->queryEvaluatorInternal,params);
     return true;
 }
@@ -286,11 +282,11 @@ PhysicalPlanRecordItem * FacetOperator::getNext(const PhysicalPlanExecutionParam
 	break;
     }
 
-	const Byte * refiningAttributesData =
-			forwardList->getRefiningAttributeContainerData();
+	StoredRecordBuffer refiningAttributesData =
+			forwardList->getInMemoryData();
 	// this vector is parallel to attributeIds vector
 	std::vector<TypedValue> attributeDataValues;
-	VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds, schema,refiningAttributesData, &attributeDataValues);
+	RecordSerializerUtil::getBatchOfAttributes(fields, schema,refiningAttributesData.start.get(), &attributeDataValues);
 
 	// now iterate on attributes and incrementally update the facet results
 	for(std::vector<std::string>::iterator facetField = fields.begin();
@@ -322,7 +318,6 @@ bool FacetOperator::close(PhysicalPlanExecutionParameters & params){
 	this->rangeStarts.clear();
 	this->rangeEnds.clear();
 	this->rangeGaps.clear();
-	this->attributeIds.clear();
 	this->numberOfGroupsToReturnVector.clear();
 	this->facetHelpers.clear();
 	this->facetResults.clear();

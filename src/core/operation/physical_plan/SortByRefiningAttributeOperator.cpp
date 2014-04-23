@@ -26,8 +26,10 @@
 #include "instantsearch/Schema.h"
 #include "index/ForwardIndex.h"
 #include "instantsearch/TypedValue.h"
-
+#include "util/RecordSerializerUtil.h"
 using namespace std;
+
+using namespace srch2::util;
 
 namespace srch2 {
 namespace instantsearch {
@@ -50,12 +52,7 @@ bool SortByRefiningAttributeOperator::open(QueryEvaluatorInternal * queryEvaluat
      */
     const vector<string> * attributes =
             sortEvaluator->getParticipatingAttributes();
-    vector<unsigned> attributeIds;
-    for (vector<string>::const_iterator attributeName = attributes->begin();
-            attributeName != attributes->end(); ++attributeName) {
-        unsigned id = schema->getRefiningAttributeId(*attributeName);
-        attributeIds.push_back(id);
-    }
+
     // 2. extract the data from forward index.
     while(true){
     	PhysicalPlanRecordItem * nextRecord = this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->getNext(params);
@@ -68,10 +65,10 @@ bool SortByRefiningAttributeOperator::open(QueryEvaluatorInternal * queryEvaluat
           continue;
     	results.push_back(nextRecord);
 	const Byte * refiningAttributesData =
-			list->getRefiningAttributeContainerData();
+			list->getInMemoryData().start.get();
 	// now parse the values by VariableLengthAttributeContainer
 	vector<TypedValue> typedValues;
-	VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds, schema , refiningAttributesData,&typedValues);
+	RecordSerializerUtil::getBatchOfAttributes(*attributes, schema , refiningAttributesData,&typedValues);
 	// save the values in QueryResult objects
 	for(std::vector<string>::const_iterator attributesIterator = attributes->begin() ;
 			attributesIterator != attributes->end() ; ++attributesIterator){

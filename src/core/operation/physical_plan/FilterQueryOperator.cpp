@@ -9,6 +9,8 @@
 #include "instantsearch/TypedValue.h"
 #include <vector>
 #include "string"
+#include "util/RecordSerializerUtil.h"
+using namespace srch2::util;
 
 namespace srch2
 {
@@ -64,11 +66,9 @@ FilterQueryOperator::FilterQueryOperator(RefiningAttributeExpressionEvaluator * 
 bool FilterQueryOperator::doPass(Schema * schema, ForwardIndex * forwardIndex ,PhysicalPlanRecordItem * record){
     // fetch the names and ids of non searchable attributes from schema
     vector<string> attributes;
-    vector<unsigned> attributeIds;
     for(map<string,unsigned>::const_iterator attr = schema->getRefiningAttributes()->begin();
             attr != schema->getRefiningAttributes()->end() ; ++attr ){
         attributes.push_back(attr->first);
-        attributeIds.push_back(attr->second);
     }
 
     shared_ptr<vectorview<ForwardListPtr> > readView;
@@ -80,8 +80,8 @@ bool FilterQueryOperator::doPass(Schema * schema, ForwardIndex * forwardIndex ,P
     // return false if this record is not valid (i.e., already deleted)
     if (!isValid)
       return false;
-    const Byte * refiningAttributesData = list->getRefiningAttributeContainerData();
-    VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds,schema,refiningAttributesData ,&typedValues);
+    StoredRecordBuffer refiningAttributesData = list->getInMemoryData();
+    RecordSerializerUtil::getBatchOfAttributes(attributes, schema,refiningAttributesData.start.get() ,&typedValues);
 
     // now call the evaluator to see if this record passes the criteria or not
     // A criterion can be for example price:12 or price:[* TO 100]

@@ -75,7 +75,6 @@
 //#include "license/LicenseVerifier.h"
 //#include "operation/Cache.h"
 #include "util/RankerExpression.h"
-#include "util/ReadWriteMutex.h"  // for locking
 
 #include <string>
 #include <vector>
