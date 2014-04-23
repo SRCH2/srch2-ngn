@@ -1715,6 +1715,31 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
 
     xml_node configNode = configDoc.child(configString);
 
+    xml_node clusterName = configNode.child("cluster-name");
+    if (clusterName && clusterName.text()) { // checks if the config/srch2Home has any text in it or not
+    	cout<<clusterName.child_value();
+          tempUse = string(clusterName.text().get());
+          cout<<"Clustername is :"<<tempUse<<"\n";
+          cout<<flush;
+      } else {
+          parseError << "Clusername is not set.\n";
+          configSuccess = false;
+          return;
+      }
+
+    tempUse = "";
+
+    for(xml_node nodeTemp=configNode.child("node"); nodeTemp; nodeTemp=nodeTemp.next_sibling("node"))
+        {
+        	for (xml_node childNode = nodeTemp.first_child(); childNode; childNode = childNode.next_sibling()) {
+
+        	            if (childNode && childNode.text()) { // checks if the config/srch2Home has any text in it or not
+        	                    std::cout<<childNode.name()<<" "<<string(childNode.text().get())<<"\n";
+        	                    cout<<flush;
+        	                }
+        	        }
+        }
+
     // srch2Home is a required field
     xml_node childNode = configNode.child(srch2HomeString);
     if (childNode && childNode.text()) { // checks if the config/srch2Home has any text in it or not

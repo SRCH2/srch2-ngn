@@ -33,9 +33,9 @@ namespace instantsearch {
 //	Index* index;  // current srch2's index class.
 //};
 
-class ShardMetaData{
+class Shard{
  public:
-  ShardMetaData(SHARDSTATE newState, unsigned nodeId,
+  Shard(SHARDSTATE newState, unsigned nodeId,
 		unsigned coreId,bool isReplica = false, unsigned primaryId = -1);
   void setShardState(SHARDSTATE newState);
   void setOwnerNodeId(unsigned id);
@@ -77,8 +77,8 @@ class Node {
  public:
   Node(unsigned nodeId, unsigned ipAddress, unsigned portNumber);
 
-  ShardMetaData getShardMetaDataById(const std::string& shardId);
-  void addShardMetaData(const ShardMetaData& shardId);
+  Shard getShardById(const std::string& shardId);
+  void addShard(const Shard& shardId);
   void removeShard(const std::string& shardId);
 
   unsigned getTotalPrimaryShards(); // for all the cores on this node
@@ -92,7 +92,7 @@ class Node {
   //class ShardIterator {
   //public:
   //unsigned first; // TODO: Ask Surendra
-  //ShardMetaData second;
+  //Shard second;
   //bool operator == (NodeIterator* rhs);
   //};
 
@@ -109,7 +109,7 @@ class Node {
   // coreName -> shards mapping
   // movie -> <shard0, shard1, shard3>
   // customer -> <shard2, shard3>
-  boost::unordered_map<std::string, std::vector<ShardMetaData> > coreToShardsMap;
+  boost::unordered_map<std::string, std::vector<Shard> > coreToShardsMap;
 
   // Allow this node to be eligible as a master node (enabled by default).
   bool nodeMaster;
@@ -289,7 +289,7 @@ class Cluster {
   unsigned     getTotalNumberOfNodes();
 
   // get the node ID and coreId for a given shard Id
-  void     getNodeId(const string& shardId, unsigned& nodeId, unsigned& coreId);
+  void     getNodeIdAndCoreId(const string& shardId, unsigned& nodeId, unsigned& coreId);
 
  private:
   string       clusterName;
