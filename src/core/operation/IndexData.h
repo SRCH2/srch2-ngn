@@ -251,7 +251,7 @@ public:
     // a global RW lock for readers and writers;
     // Used in several places, such as KeywordIdReassign and memory
     // recollection for deleted records
-    ReadWriteMutex *globalRwMutexForReadersWriters;
+    mutable boost::shared_mutex globalRwMutexForReadersWriters;
     
     inline bool isMergeRequired() const{
     	return mergeRequired;
