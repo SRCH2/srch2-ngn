@@ -19,7 +19,6 @@
 #ifndef __UTIL_THREADSAFEMAP_H__
 #define __UTIL_THREADSAFEMAP_H__
 
-#include "ReadWriteMutex.h"
 
 #include <map>
 #include <boost/serialization/map.hpp>

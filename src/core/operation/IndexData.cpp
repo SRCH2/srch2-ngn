@@ -24,7 +24,6 @@
 #include "index/Trie.h"
 #include "index/InvertedIndex.h"
 #include "index/ForwardIndex.h"
-#include "util/ReadWriteMutex.h"  // for locking
 #include "util/Assert.h"
 #include "util/Logger.h"
 #include "geo/QuadTree.h"
