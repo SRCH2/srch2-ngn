@@ -175,8 +175,8 @@ ADD_TEST(PostProcessingFilter_Test ${CMAKE_CURRENT_BINARY_DIR}/wrapper/integrati
 ADD_TEST(XMLParser_Test ${CMAKE_CURRENT_BINARY_DIR}/wrapper/integration/XMLParser_Test   "--verbose")
 SET_TESTS_PROPERTIES(XMLParser_Test PROPERTIES ENVIRONMENT "XmlFilePath=${CMAKE_SOURCE_DIR}/test/wrapper/data/test_data/XmlParserTest.xml")
 
-ADD_TEST(ConfigManager_Test ${CMAKE_CURRENT_BINARY_DIR}/wrapper/integration/ConfigManager_Test   "--verbose")
-SET_TESTS_PROPERTIES(ConfigManager_Test PROPERTIES ENVIRONMENT "ConfigManagerFilePath=${CMAKE_SOURCE_DIR}/test/wrapper/data/test_data/ConfigManagerTest.xml")
+ADD_TEST(ConfigManagerTmp_Test ${CMAKE_CURRENT_BINARY_DIR}/wrapper/integration/ConfigManagerTmp_Test   "--verbose")
+SET_TESTS_PROPERTIES(ConfigManagerTmp_Test PROPERTIES ENVIRONMENT "ConfigManagerFilePath=${CMAKE_SOURCE_DIR}/test/wrapper/data/test_data/ConfigManagerTest.xml")
 
 ADD_TEST(IndexUpdater_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/integration/IndexUpdater_Test "--verbose")
 SET_TESTS_PROPERTIES(IndexUpdater_Test 
