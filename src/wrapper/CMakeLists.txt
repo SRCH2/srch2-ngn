@@ -1,9 +1,7 @@
 SET(LINK_SEARCH_START_STATIC ON)
 SET(LINK_SEARCH_END_STATIC ON)
 
-FILE(GLOB SRCH2_WRAPPER_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.cpp" "./util/*.cpp" "./util/xmlParser/*.cpp"
-					"../../thirdparty/snappy-1.0.4/*.cc"
-					)
+FILE(GLOB SRCH2_WRAPPER_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.cpp")
 					
 MESSAGE(STATUS "CMAKE_REQUIRED_LIBRARIES="  ${CMAKE_REQUIRED_LIBRARIES})
 MESSAGE(STATUS "Srch2InstantSearch_LIBRARIES="  ${Srch2InstantSearch_LIBRARIES} )
@@ -12,6 +10,7 @@ INCLUDE_DIRECTORIES(
 	${CMAKE_BINARY_DIR}/include
 	${CMAKE_SOURCE_DIR}/src/wrapper/
 	${CMAKE_SOURCE_DIR}/src/core/
+	${CMAKE_SOURCE_DIR}/src/server/
     ${Boost_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/thirdparty/event/include

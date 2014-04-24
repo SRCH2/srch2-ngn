@@ -3,12 +3,17 @@ EXEC_PROGRAM( ${CMAKE_CXX_COMPILER}
                   OUTPUT_VARIABLE gcc_compiler_version)
 SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src-0.5.0/libs/linux-gcc-${gcc_compiler_version}/libjson_linux-gcc-${gcc_compiler_version}_libmt.a)
 
+FILE(GLOB SRCH2_SERVER_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.cpp" "./util/*.cpp" "./util/xmlParser/*.cpp"
+                    "../../thirdparty/snappy-1.0.4/*.cc")
+LIST(REMOVE_ITEM SRCH2_SERVER_SRC "srch2SearchServer.cpp") 
+
 SET(SRCH2_SERVER_NAME srch2-search-server)
 
 INCLUDE_DIRECTORIES(
 	${CMAKE_BINARY_DIR}/include
 	${CMAKE_SOURCE_DIR}/src/wrapper/
 	${CMAKE_SOURCE_DIR}/src/core/
+	${CMAKE_SOURCE_DIR}/src/server/
     ${Boost_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/thirdparty/event/include
@@ -16,6 +21,9 @@ INCLUDE_DIRECTORIES(
     ${CMAKE_SOURCE_DIR}/thirdparty/gperftools/include
     ${CMAKE_SOURCE_DIR}/thirdparty/mongo-cxx-driver-v2.4/src/
 )
+
+add_library(SERVER_OBJECTS OBJECT ${SRCH2_SERVER_SRC})
+
 set(GPERFTOOL_LIBS "")
 IF(ENABLE_PROFILER)
     set(GPERFTOOL_LIBS ${CMAKE_SOURCE_DIR}/thirdparty/gperftools/lib/libprofiler.a ${CMAKE_SOURCE_DIR}/thirdparty/libunwind/lib/libunwind.a)
@@ -23,7 +31,7 @@ ENDIF()
 
 set(MONGO_CLIENT_LIBRARY ${CMAKE_SOURCE_DIR}/thirdparty/mongo-cxx-driver-v2.4/libmongoclient.a)
 
-ADD_EXECUTABLE(${SRCH2_SERVER_NAME} srch2SearchServer.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS>)
+ADD_EXECUTABLE(${SRCH2_SERVER_NAME} srch2SearchServer.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:SERVER_OBJECTS>)
 TARGET_LINK_LIBRARIES(${SRCH2_SERVER_NAME} 
                         ${Srch2InstantSearch_LIBRARIES} 
                         ${jsoncpp_LIBRARY}      ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
