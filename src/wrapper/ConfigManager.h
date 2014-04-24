@@ -91,48 +91,54 @@ Node(const Node& cpy)
 	this->portNumber = 0;
 	this->nodeMaster = true;
 	this->nodeData = true;
+	this->dataDir = "";
 	this->homeDir = "";
-	this->numberOfThreads = 0;
+	this->numberOfThreads = 1;
+    this->thisIsMe = false;
 
 	//coreToShardsMap has to be initialized
   
   }
 
-  Node(std::string& nodeName, std::string& ipAddress, unsigned portNumber)
-  {
+  Node(std::string& nodeName, std::string& ipAddress, unsigned portNumber, bool thisIsMe){
+	this->nodeId = 0;
 	this->nodeName = nodeName;
 	this->ipAddress = ipAddress;
     this->portNumber = portNumber;
+    this->thisIsMe = thisIsMe;
+	this->nodeMaster = true;
+	this->nodeData = true;
+	this->dataDir = "";
+	this->homeDir = "";
+	this->numberOfThreads = 1;
   }
 
-  Node(std::string& nodeName, std::string& ipAddress, unsigned portNumber, bool nodeMaster, bool nodeData, std::string& homeDir) //Added new constructor for initializing other memebrs
-  {
+  Node(std::string& nodeName, std::string& ipAddress, unsigned portNumber,bool thisIsMe, bool nodeMaster, bool nodeData,std::string& dataDir, std::string& homeDir) {
+	this->nodeId = 0;
 	this->nodeName = nodeName;
 	this->ipAddress = ipAddress;
 	this->portNumber = portNumber;
+	this->thisIsMe = thisIsMe;
 	this->nodeMaster = nodeMaster;
 	this->nodeData = nodeData;
+	this->dataDir = dataDir;
 	this->homeDir = homeDir;
 	this->numberOfThreads = numberOfThreads;	
   }	
 
-  std::string getName()
-  {
+  std::string getName(){
 	  return this->nodeName;
   }
 
-  std::string getIpAddress()
-  {
+  std::string getIpAddress(){
 	  return this->ipAddress;
   }
 
-  unsigned int getId()
-  {
+  unsigned int getId(){
 	  return this->nodeId;
   }
 
-  unsigned int getPortNumber()
-  {
+  unsigned int getPortNumber(){
 	  return this->portNumber;
   }
   Shard getShardById(const std::string& shardId);
@@ -179,6 +185,7 @@ Node(const Node& cpy)
   // Home directory for all the index files of shards on this node.
   string homeDir;
 
+  string dataDir;
   unsigned int numberOfThreads;
   // other node-related info
 };
@@ -707,6 +714,17 @@ public:
 private:
 
 // configuration file tag and attribute names for ConfigManager
+
+    static const char* const nodeListeningHostNameTag;
+    static const char* const nodeListeningPortTag;
+    static const char* const nodeCurrentTag;
+    static const char* const nodeNameTag;
+    static const char* const nodeMasterTag;
+    static const char* const nodeDataTag;
+    static const char* const nodeHomeTag;
+    static const char* const nodeDataDirTag;
+
+
     static const char* const accessLogFileString;
     static const char* const analyzerString;
     static const char* const cacheSizeString;

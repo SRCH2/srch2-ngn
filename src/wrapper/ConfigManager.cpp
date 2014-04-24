@@ -35,6 +35,16 @@ namespace httpwrapper {
 
 // configuration file tag and attribute names for ConfigManager
 // *MUST* be lowercase
+
+const char* const ConfigManager::nodeListeningHostNameTag = "listeninghostname";
+const char* const ConfigManager::nodeListeningPortTag = "listeningport";
+const char* const ConfigManager::nodeCurrentTag = "this-is-me";
+const char* const ConfigManager::nodeNameTag = "node-name";
+const char* const ConfigManager::nodeMasterTag = "node-master";
+const char* const ConfigManager::nodeDataTag = "node-data";
+const char* const ConfigManager::nodeHomeTag = "srch2home";
+const char* const ConfigManager::nodeDataDirTag = "dataDir";
+
 const char* const ConfigManager::accessLogFileString = "accesslogfile";
 const char* const ConfigManager::analyzerString = "analyzer";
 const char* const ConfigManager::cacheSizeString = "cachesize";
@@ -1724,7 +1734,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
           //cout<<"member variable is "<<cluster.getClusterName()<<flush;
           //cout<<flush;
       } else {
-          parseError << "Clusername is not set.\n";
+          parseError << "Clustername is not set.\n";
           configSuccess = false;
           return;
       }
@@ -1872,62 +1882,63 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
     }
 }
 
-void ConfigManager::parseNode(std::vector<Node>& nodes, xml_node nodeTag)
-{
-	   for(xml_node nodeTemp=nodeTag; nodeTemp; nodeTemp=nodeTemp.next_sibling("node"))
-        {
-    	std::string ipAddress = "", dataDir = "", nodeName = "";
-    	unsigned nodeId = 0, portNumber = 0, numOfThreads = 0;
-    	bool nodeMaster,nodeData,thisIsMe;
 
-        	for (xml_node childNode = nodeTemp.first_child(); childNode; childNode = childNode.next_sibling()) {
-  	            if (childNode && childNode.text()) {
+//TODO: Pass by referencem, space after =
+void ConfigManager::parseNode(std::vector<Node>& nodes, xml_node nodeTag) {
 
-        	            		std:: string name = (string)childNode.name();
+    for (xml_node nodeTemp = nodeTag; nodeTemp; nodeTemp = nodeTemp.next_sibling("node")) {
 
-        	            		if(name.compare("node-name") == 0)
-        	            		{
-        	            			nodeName = string(childNode.text().get());cout<<nodeName<<"\n";
-        	            		}
-        	            		if(name.compare("listeninghostname") == 0)
-        	            		{
-        	            			ipAddress = string(childNode.text().get());cout<<ipAddress<<"\n";
-        	            		}
-        	            		if(name.compare("listeningport") == 0)
-        	            		{
-        	            			portNumber = (childNode.text().as_uint());cout<<portNumber<<"\n";
-        	            		}
-        	            		if(name.compare("this-is-me") == 0)
-        	            		{
-        	            			thisIsMe = childNode.text().as_bool();cout<<thisIsMe<<" \n";
-        	            		}
-        	            		if(name.compare("node-master") == 0)
-        	            		{
-        	            			nodeMaster = childNode.text().as_bool();cout<<nodeMaster<<"\n";
-        	            		}
-        	            		if(name.compare("node-data") == 0)
-        	            		{
-        	            			nodeData = childNode.text().as_bool();cout<<nodeData<<"\n";
-        	            		}
-        	            		if(name.compare("dataDir") == 0)
-        	            		{
-        	            			dataDir = string(childNode.text().get());cout<<dataDir<<"\n";
-        	            		}
+        std::string ipAddress = "", dataDir = "", nodeName = "", nodeHome = "";
+		unsigned nodeId = 0, portNumber = 0, numOfThreads = 0;
+		bool nodeMaster, nodeData, thisIsMe;
 
-        	                    cout<<flush;
-        	                }
-        	}
+		for (xml_node childNode = nodeTemp.first_child(); childNode; childNode = childNode.next_sibling()) {
+			if (childNode && childNode.text()) {
 
-        	if(thisIsMe == true)
-        	{
-        	       nodes.push_back(Node(nodeName, ipAddress, portNumber, nodeMaster, nodeData, dataDir));
-        	}
-        	else if(thisIsMe == false)
-        	{
-        	       nodes.push_back(Node(nodeName, ipAddress, portNumber));
-        	}
+				std::string name = (string) childNode.name();
 
-        }
+				if (name.compare(nodeName) == 0) {
+					nodeName = string(childNode.text().get());
+					//cout << nodeName << "\n";
+				}
+				if (name.compare(nodeListeningHostNameTag) == 0) {
+					ipAddress = string(childNode.text().get());
+					//cout << ipAddress << "\n";
+				}
+				if (name.compare(nodeListeningPortTag) == 0) {
+					portNumber = (childNode.text().as_uint());
+					//cout << portNumber << "\n";
+				}
+				if (name.compare(nodeCurrentTag) == 0) {
+					thisIsMe = childNode.text().as_bool();
+					//cout << thisIsMe << " \n";
+				}
+				if (name.compare(nodeMasterTag) == 0) {
+					nodeMaster = childNode.text().as_bool();
+					//cout << nodeMaster << "\n";
+				}
+				if (name.compare(nodeDataTag) == 0) {
+					nodeData = childNode.text().as_bool();
+					//cout << nodeData << "\n";
+				}
+				if (name.compare(nodeDataDirTag) == 0) {
+					dataDir = string(childNode.text().get());
+					//cout << dataDir << "\n";
+				}
+				if(name.compare(nodeHomeTag) == 0){
+					nodeHome = string(childNode.text().get());
+				}
+				//cout << flush;
+			}
+		}
+
+		if (thisIsMe == true) {
+			nodes.push_back(Node(nodeName, ipAddress, portNumber, thisIsMe, nodeMaster, nodeData, dataDir, nodeHome));
+		} else if (thisIsMe == false) {
+			nodes.push_back(Node(nodeName, ipAddress, portNumber, thisIsMe));
+		}
+
+	}
 
 }
 
