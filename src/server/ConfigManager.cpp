@@ -1,3 +1,4 @@
+
 //$Id: ConfigManager.h 2013-07-5 02:11:13Z iman $
 
 #include "ConfigManager.h"
@@ -1884,7 +1885,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
 
 
 //TODO: Pass by referencem, space after =
-void ConfigManager::parseNode(std::vector<Node>& nodes, xml_node nodeTag) {
+void ConfigManager::parseNode(std::vector<Node>& nodes, xml_node& nodeTag) {
 
     for (xml_node nodeTemp = nodeTag; nodeTemp; nodeTemp = nodeTemp.next_sibling("node")) {
 

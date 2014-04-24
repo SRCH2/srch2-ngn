@@ -28,44 +28,55 @@ namespace srch2 {
 namespace httpwrapper {
 
 //Adding portions of new header file, beginning from here
- enum SHARDSTATE {
+ enum ShardState {
     SHARDSTATE_ALLOCATED,  // must have a valid node
     SHARDSTATE_UNALLOCATED,
     SHARDSTATE_MIGRATING,
     SHARDSTATE_INDEXING
   };
 
+ enum ShardType {
+   SHARDTYPE_PRIMARY,
+   SHARDTYPE_REPLICA
+  };
+
+   // A shard id consists of a type (primary or replica), code id, and a sequence id)
+
+ class ShardId {
+   unsigned  coreId;
+   unsigned sequenceId; // 0, 1, 2, ...
+   ShardType shardType; // primary or replica
+
+   std::string toString() {
+   // TODO for Prateek:
+   // A primary shard starts with a "P" followed by an integer id.
+   // E.g., a cluster with 4 shards of core 8 will have shards named "8_P0", "8_P1", "8_P2", and "8_P3".
+   //
+   // A replica shard starts with an "R" followed by a replica count and then its primary's id.
+   // E.g., for the above cluster, replicas of "P0" will be named "8_R1_0" and "8_R2_0".
+   // Similarly, replicas of "P3" will be named "8_R1_3" and "8_R2_3".
+    return "TMP"; // TODO
+   };
+ };
+
  class Shard {
   public:
-   Shard(SHARDSTATE newState, unsigned nodeId,
+   Shard(ShardState newState, unsigned nodeId,
          unsigned coreId, bool isReplica = false, unsigned primaryId = -1);
-   void setShardState(SHARDSTATE newState);
+   void setShardState(ShardState newState);
    void setOwnerNodeId(unsigned id);
 
-   SHARDSTATE getShardState();
+   ShardState getShardState();
    unsigned getOwnerNodeId();
    bool isReplica();
    unsigned getCoreId();
    unsigned getPrimaryId();
 
   private:
-   // TODO (for Surendra and Prateek): should we add core id to the shard name?
-
-   // shard ids are strings with following naming conventions:
-   //
-   // A primary shard starts with a "P" followed by an integer id.
-   // E.g., a cluster with 4 shards will have shards named "P0", "P1", "P2", and "P3".
-   //
-   // A replica shard starts with an "R" followed by a replica count and then its primary's id.
-   // E.g., for the above cluster, replicas of "P0" will be named "R1_0" and "R2_0".
-   // Similarly, replicas of "P3" will be named "R1_3" and "R2_3".
-
-   std::string shardId;
-   SHARDSTATE shardState;
+   ShardId shardId;
+   ShardState shardState;
    unsigned nodeId;
-   unsigned coreId;
-   bool replicaFlag; // a flag to indicate if it's a replica
-   std::string primaryId;  // if current shard is a replica
+   ShardId primaryShardId;  // if current shard is a replica
  };
 
 
@@ -143,9 +154,9 @@ Node(const Node& cpy)
   unsigned int getPortNumber(){
 	  return this->portNumber;
   }
-  Shard getShardById(const std::string& shardId);
-  void addShard(const Shard& shardId);
-  void removeShard(const std::string& shardId);
+  Shard getShardById(const ShardId& shardId);
+  void addShard(const ShardId& shardId);
+  void removeShard(const ShardId& shardId);
 
   unsigned getTotalPrimaryShards(); // for all the cores on this node
   unsigned getTotalReplicaShards(); // for all the cores on this node
@@ -365,7 +376,7 @@ class Cluster {
   }
 
   // get the node ID and coreId for a given shard Id
-  void         getNodeIdAndCoreId(const string& shardId, unsigned& nodeId, unsigned& coreId);
+  void         getNodeIdAndCoreId(const ShardId& shardId, unsigned& nodeId, unsigned& coreId);
 
  private:
   string       clusterName;
@@ -610,7 +621,7 @@ public:
     virtual ~ConfigManager();
 
     //Declaring function to parse node tags
-    void parseNode(std::vector<Node>& nodes, xml_node childNode);
+    void parseNode(std::vector<Node>& nodes, xml_node& childNode);
 
     CoreInfo_t *getCoreInfoMap(const string &coreName) const;
     CoreInfoMap_t::iterator coreInfoIterateBegin() { return coreInfoMap.begin(); }
