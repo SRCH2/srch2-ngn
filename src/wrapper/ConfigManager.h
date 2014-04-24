@@ -97,13 +97,13 @@ Node(const Node& cpy)
 	//coreToShardsMap has to be initialized
   
   }
+
   Node(std::string& nodeName, std::string& ipAddress, unsigned portNumber)
-{
+  {
 	this->nodeName = nodeName;
 	this->ipAddress = ipAddress;
-        this->portNumber = portNumber;
-
-}
+    this->portNumber = portNumber;
+  }
 
   Node(std::string& nodeName, std::string& ipAddress, unsigned portNumber, bool nodeMaster, bool nodeData, std::string& homeDir) //Added new constructor for initializing other memebrs
   {
@@ -116,6 +116,25 @@ Node(const Node& cpy)
 	this->numberOfThreads = numberOfThreads;	
   }	
 
+  std::string getName()
+  {
+	  return this->nodeName;
+  }
+
+  std::string getIpAddress()
+  {
+	  return this->ipAddress;
+  }
+
+  unsigned int getId()
+  {
+	  return this->nodeId;
+  }
+
+  unsigned int getPortNumber()
+  {
+	  return this->portNumber;
+  }
   Shard getShardById(const std::string& shardId);
   void addShard(const Shard& shardId);
   void removeShard(const std::string& shardId);
@@ -141,7 +160,7 @@ Node(const Node& cpy)
   //Iterator next();
   //Iterator end();
 
- private:
+  private:
   unsigned nodeId;
   std::string ipAddress;
   unsigned portNumber;
@@ -161,15 +180,8 @@ Node(const Node& cpy)
   string homeDir;
 
   unsigned int numberOfThreads;
-
-
-
   // other node-related info
 };
-
-
-
-
 
 class CoreSchema {
    string primaryKey;
@@ -361,9 +373,6 @@ class Cluster {
 
   // friend class SynchronizationManager;
 };
-
-
-
 
 // This class is used to collect information from the config file and pass them other modules
 // in the system.
@@ -590,6 +599,9 @@ protected:
 public:
     ConfigManager(const string& configfile);
     virtual ~ConfigManager();
+
+    //Declaring function to parse node tags
+    void parseNode(std::vector<Node>& nodes, xml_node childNode);
 
     CoreInfo_t *getCoreInfoMap(const string &coreName) const;
     CoreInfoMap_t::iterator coreInfoIterateBegin() { return coreInfoMap.begin(); }
