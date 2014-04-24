@@ -1711,16 +1711,18 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
 {
     string tempUse = ""; // This is just for temporary use.
 
+    Cluster cluster;
     CoreInfo_t *defaultCoreInfo = NULL;
 
     xml_node configNode = configDoc.child(configString);
 
     xml_node clusterName = configNode.child("cluster-name");
     if (clusterName && clusterName.text()) { // checks if the config/srch2Home has any text in it or not
-    	cout<<clusterName.child_value();
+    	  //cout<<clusterName.child_value();
           tempUse = string(clusterName.text().get());
-          cout<<"Clustername is :"<<tempUse<<"\n";
-          cout<<flush;
+          cluster.setClusterName(tempUse);
+          //cout<<"member variable is "<<cluster.getClusterName()<<flush;
+          //cout<<flush;
       } else {
           parseError << "Clusername is not set.\n";
           configSuccess = false;
@@ -1729,16 +1731,71 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
 
     tempUse = "";
 
+    std::vector<Node> nodes;
+
     for(xml_node nodeTemp=configNode.child("node"); nodeTemp; nodeTemp=nodeTemp.next_sibling("node"))
         {
+    	std::string ipAddress = "", dataDir = "", nodeName = "";
+    	        		unsigned nodeId = 0, portNumber = 0, numOfThreads = 0;
+    	        		bool nodeMaster,nodeData,thisIsMe;
+
+
         	for (xml_node childNode = nodeTemp.first_child(); childNode; childNode = childNode.next_sibling()) {
 
+
         	            if (childNode && childNode.text()) { // checks if the config/srch2Home has any text in it or not
-        	                    std::cout<<childNode.name()<<" "<<string(childNode.text().get())<<"\n";
+        	                   // std::cout<<childNode.name()<<" "<<string(childNode.text().get())<<"\n";
+        	            		std:: string name = (string)childNode.name();
+
+        	            		if(name.compare("node-name") == 0)
+        	            		{
+        	            			nodeName = string(childNode.text().get());cout<<nodeName<<" \n";
+        	            		}
+        	            		if(name.compare("listeninghostname") == 0)
+        	            		{
+        	            			ipAddress = string(childNode.text().get());cout<<ipAddress<<" \n";
+        	            		}
+        	            		if(name.compare("listeningport") == 0)
+        	            		{
+        	            			portNumber = (childNode.text().as_uint());cout<<portNumber<<" \n";
+        	            		}
+        	            		if(name.compare("this-is-me") == 0)
+        	            		{
+        	            			//cout<<"printing this is me "<<childNode.text().get()<<flush;
+        	            			thisIsMe = childNode.text().as_bool();cout<<thisIsMe<<" \n";
+        	            		}
+        	            		if(name.compare("node-master") == 0)
+        	            		{
+        	            			nodeMaster = childNode.text().as_bool();cout<<nodeMaster<<"\n";
+        	            		}
+        	            		if(name.compare("node-data") == 0)
+        	            		{
+        	            			nodeData = childNode.text().as_bool();cout<<nodeData<<"\n";
+        	            		}
+        	            		if(name.compare("dataDir") == 0)
+        	            		{
+        	            			dataDir = string(childNode.text().get());cout<<dataDir<<"\n";
+        	            		}
+
+
         	                    cout<<flush;
         	                }
-        	        }
+
+        	}
+        	            if(thisIsMe == true)
+        	            {
+        	            	//tempNode = new Node(nodeId, ipAddress, portNumber, nodeMaster, nodeData, dataDir);
+        	            	nodes.push_back(Node(nodeName, ipAddress, portNumber, nodeMaster, nodeData, dataDir));
+        	            }
+        	            else if(thisIsMe == false)
+        	            {
+        	            //	Node tempNode = new Node(nodeName, ipAddress, portNumber);
+        	            	nodes.push_back(Node(nodeName, ipAddress, portNumber));
+        	            }
+
+
         }
+
 
     // srch2Home is a required field
     xml_node childNode = configNode.child(srch2HomeString);
