@@ -2,7 +2,9 @@
 
 #ifndef __WRAPPER__SRCH2SERVERCONG_H__
 #define __WRAPPER__SRCH2SERVERCONG_H__
+
 #include "util/xmlParser/pugixml.hpp"
+
 #include <instantsearch/Schema.h>
 #include <instantsearch/Constants.h>
 #include "WrapperConstants.h"
@@ -123,7 +125,7 @@ Node(const Node& cpy)
 	this->nodeData = nodeData;
 	this->dataDir = dataDir;
 	this->homeDir = homeDir;
-	this->numberOfThreads = numberOfThreads;	
+	this->numberOfThreads = 1; // default value is 1
   }	
 
   std::string getName(){
