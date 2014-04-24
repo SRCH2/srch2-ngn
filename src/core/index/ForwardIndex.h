@@ -37,13 +37,11 @@
 #include "util/Logger.h"
 #include "util/encoding.h"
 #include "util/half.h"
-#include "util/VariableLengthAttributeContainer.h"
 #include "instantsearch/TypedValue.h"
 #include "util/mytime.h"
 #include "util/ULEB128.h"
 #include "thirdparty/snappy-1.0.4/snappy.h"
 #include "util/ThreadSafeMap.h"
-
 using std::vector;
 using std::fstream;
 using std::string;
@@ -121,14 +119,10 @@ public:
         this->inMemoryDataLen = inMemoryData.length;
     }
 
-    const std::string getRefiningAttributeValue(unsigned iter,
-            const Schema * schema) const {
-        return VariableLengthAttributeContainer::getAttribute(iter, schema, this->getRefiningAttributeValuesDataPointer());
-    }
-
-    const Byte * getRefiningAttributeContainerData() const {
-        return getRefiningAttributeValuesDataPointer();
-    }
+//    const std::string getRefiningAttributeValue(unsigned iter,
+//            const Schema * schema) const {
+//        return VariableLengthAttributeContainer::getAttribute(iter, schema, this->getRefiningAttributeValuesDataPointer());
+//    }
 
     /*
      * The format of data in this array is :
@@ -146,20 +140,17 @@ public:
     		bool shouldAttributeBitMapBeAllocated,
     		vector<uint8_t>& positionIndexDataVector,
     		vector<uint8_t>& offsetIndexDataVector){
-    	this->nonSearchableAttributeValuesDataSize = VariableLengthAttributeContainer::getSizeNeededForAllocation(schema, nonSearchableAttributeValues);
-        /////
+
     	this->positionIndexSize = positionIndexDataVector.size();
     	this->offsetIndexSize = offsetIndexDataVector.size();
         //
     	// first two blocks are for keywordIDs and keywordRecordStaticScores.
     	dataSize = getKeywordIdsSizeInBytes() + getKeywordRecordStaticScoresSizeInBytes();
     	data = new Byte[dataSize +
-    	                          this->nonSearchableAttributeValuesDataSize +
     	                          this->getKeywordAttributeBitmapsSizeInBytes() +
     	                          this->getPositionIndexSize() + this->offsetIndexSize];
-    	// next block is for nonSearchableAttributeValues
-    	dataSize = dataSize + this->nonSearchableAttributeValuesDataSize;
-    	// fourth block is attributeBitmap
+
+    	// third block is attributeBitmap
     	/////
     	if(shouldAttributeBitMapBeAllocated == true){
 			dataSize = dataSize + this->getKeywordAttributeBitmapsSizeInBytes();
@@ -172,8 +163,6 @@ public:
     	copy(offsetIndexDataVector.begin() , offsetIndexDataVector.end(), data + this->dataSize);
     	dataSize = dataSize + this->offsetIndexSize;
 
-    	// now that memory is allocated and position index is copied we can fill nonSearchableData in place.
-    	VariableLengthAttributeContainer::fillWithoutAllocation(schema, nonSearchableAttributeValues, getRefiningAttributeValuesDataPointer() );
     }
 
     const unsigned* getKeywordIds() const {
@@ -241,10 +230,6 @@ public:
             const TokenAttributeHits &hits) const;
 
     //unsigned getForwardListElement(unsigned cursor) const;
-
-    TypedValue getForwardListRefiningAttributeTypedValue(
-            const SchemaInternal* schemaInternal,
-            unsigned schemaNonSearchableAttributeId) const;
 
     bool haveWordInRangeWithStemmer(const SchemaInternal* schema,
             const unsigned minId, const unsigned maxId,
@@ -355,9 +340,9 @@ private:
 
     /*
      * The format of data in this array is :
-      * ---------------------------------------------------------------------------------------------------------------------------------
-     * | keywordIDs | keywordRecordStaticScores | nonSearchableAttributeValues | keywordAttributeBitMap | positionIndex |  offsetIndex |
-     * ---------------------------------------------------------------------------------------------------------------------------------
+      * -------------------------------------------------------------------------------------------------
+     * | keywordIDs | keywordRecordStaticScores | keywordAttributeBitMap | positionIndex |  offsetIndex |
+     * --------------------------------------------------------------------------------------------------
      */
     Byte * data;
 
@@ -371,9 +356,9 @@ private:
     inline unsigned * getKeywordIdsPointer() const{
         /*
          * The format of data in this array is :
-         * ------------------------------------------------------------------------------------------------------------------
-         * | keywordIDs | keywordRecordStaticScores | nonSearchableAttributeValues | keywordAttributeBitMap | positionIndex |
-         * ------------------------------------------------------------------------------------------------------------------
+         * -------------------------------------------------------------------------------------------------
+         * | keywordIDs | keywordRecordStaticScores | keywordAttributeBitMap | positionIndex | offsetIndex |
+         * -------------------------------------------------------------------------------------------------
          */
     	// keyword IDs start from the 0th position.
     	return (unsigned *)(data + 0);
@@ -390,9 +375,9 @@ private:
     inline half* getKeywordRecordStaticScoresPointer() const{
         /*
          * The format of data in this array is :
-         * ------------------------------------------------------------------------------------------------------------------
-         * | keywordIDs | keywordRecordStaticScores | nonSearchableAttributeValues | keywordAttributeBitMap | positionIndex |
-         * ------------------------------------------------------------------------------------------------------------------
+         * -------------------------------------------------------------------------------------------------
+         * | keywordIDs | keywordRecordStaticScores | keywordAttributeBitMap | positionIndex | offsetIndex |
+         * -------------------------------------------------------------------------------------------------
          */
     	return (half *)(data + getKeywordIdsSizeInBytes());
     }
@@ -404,35 +389,17 @@ private:
     }
 
 
-    //////////////// Non Searchable Attribute Values Helper Function /////////////////////////
-    inline Byte * getRefiningAttributeValuesDataPointer() const{
-        /*
-         * The format of data in this array is :
-         * ------------------------------------------------------------------------------------------------------------------
-         * | keywordIDs | keywordRecordStaticScores | nonSearchableAttributeValues | keywordAttributeBitMap | positionIndex |
-         * ------------------------------------------------------------------------------------------------------------------
-         */
-    	return data +
-    			getKeywordIdsSizeInBytes() +
-    			getKeywordRecordStaticScoresSizeInBytes();
-    }
-    inline unsigned getNonSearchableAttributeValuesDataSize() const{
-    	return this->nonSearchableAttributeValuesDataSize;
-    }
-
-
     //////////////////// Keyword Attributes Bitmap Helper Functions ////////////////////////////
     inline unsigned * getKeywordAttributeBitmapsPointer() const{
         /*
          * The format of data in this array is :
-         * ------------------------------------------------------------------------------------------------------------------
-         * | keywordIDs | keywordRecordStaticScores | nonSearchableAttributeValues | keywordAttributeBitMap | positionIndex |
-         * ------------------------------------------------------------------------------------------------------------------
+         * -------------------------------------------------------------------------------------------------
+         * | keywordIDs | keywordRecordStaticScores | keywordAttributeBitMap | positionIndex | offsetIndex |
+         * -------------------------------------------------------------------------------------------------
          */
     	return (unsigned *)(data +
     			getKeywordIdsSizeInBytes() +
-    			getKeywordRecordStaticScoresSizeInBytes() +
-    			getNonSearchableAttributeValuesDataSize());
+    			getKeywordRecordStaticScoresSizeInBytes());
     }
     inline unsigned getKeywordAttributeBitmapsSizeInBytes(unsigned sizeInUnsigned) const{
     	return sizeInUnsigned * (sizeof(unsigned) / sizeof(Byte));
@@ -445,22 +412,21 @@ private:
     inline uint8_t * getPositionIndexPointer() const{
         /*
          * The format of data in this array is :
-         * ------------------------------------------------------------------------------------------------------------------
-         * | keywordIDs | keywordRecordStaticScores | nonSearchableAttributeValues | keywordAttributeBitMap | positionIndex |
-         * ------------------------------------------------------------------------------------------------------------------
+         * ------------------------------------------------------------------------------------
+         * | keywordIDs | keywordRecordStaticScores |  keywordAttributeBitMap | positionIndex |
+         * ------------------------------------------------------------------------------------
          */
     	return (uint8_t *)(data +
     			getKeywordIdsSizeInBytes() +
     			getKeywordRecordStaticScoresSizeInBytes() +
-    			getNonSearchableAttributeValuesDataSize() +
     			getKeywordAttributeBitmapsSizeInBytes());
     }
     inline uint8_t * getOffsetIndexPointer() const{
     	/*
     	 * The format of data in this array is :
-    	 * ---------------------------------------------------------------------------------------------------------------------------------
-    	 * | keywordIDs | keywordRecordStaticScores | nonSearchableAttributeValues | keywordAttributeBitMap | positionIndex |  offsetIndex |
-    	 * ---------------------------------------------------------------------------------------------------------------------------------
+    	 * --------------------------------------------------------------------------------------------------
+    	 * | keywordIDs | keywordRecordStaticScores | keywordAttributeBitMap | positionIndex |  offsetIndex |
+    	 * --------------------------------------------------------------------------------------------------
     	 */
     	return getPositionIndexPointer() + positionIndexSize;
     }

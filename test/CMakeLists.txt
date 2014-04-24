@@ -10,6 +10,7 @@ ADD_SUBDIRECTORY(core/unit)
 ADD_SUBDIRECTORY(core/integration)
 ADD_SUBDIRECTORY(wrapper/unit)
 ADD_SUBDIRECTORY(wrapper/integration)
+ADD_SUBDIRECTORY(sharding/unit)
 
 SET(MEMORYCHECK_COMMAND "/usr/bin/valgrind")
 SET(MEMORYCHECK_COMMAND_OPTIONS "${MEMORYCHECK_COMMAND_OPTIONS} --trace-children=yes --leak-check=full --show-reachable=yes")
@@ -63,10 +64,6 @@ ADD_TEST(Trie_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Trie_Test "--verbose")
 ADD_TEST(Analyzer_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Analyzer_Test "--verbose")
 SET_TESTS_PROPERTIES(Analyzer_Test PROPERTIES ENVIRONMENT "dataDir=${CMAKE_SOURCE_DIR}/test/core/unit/test_data/analyzer")
     
-ADD_TEST(ReadWriteMutex_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/ReadWriteMutex_Test "--verbose")
-
-ADD_TEST(ReadWriteMutexCondWait_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/ReadWriteMutexCondWait_Test "--verbose")
-
 ADD_TEST(AttributedBasedSearch_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/AttributedBasedSearch_Test "--verbose")
 SET_TESTS_PROPERTIES(AttributedBasedSearch_Test
   PROPERTIES ENVIRONMENT "index_dir=${UNIT_TEST_INDEX_DIR}attr_based_search/")
@@ -144,7 +141,6 @@ SET_TESTS_PROPERTIES(GeoCompleteTermSearch_Test PROPERTIES ENVIRONMENT "index_di
 ADD_TEST(QuadTree_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/QuadTree_Test "--verbose")
 SET_TESTS_PROPERTIES(QuadTree_Test PROPERTIES ENVIRONMENT "directoryName=${CMAKE_SOURCE_DIR}/test/core/unit/test_data")
 	  
-ADD_TEST(VariableLengthAttributeContainer_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/VariableLengthAttributeContainer_Test "--verbose")
 ADD_TEST(ULEB128_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/ULEB128_Test "--verbose")
 
 ADD_TEST(PhraseSearch_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/PhraseSearch_Test "--verbose")
@@ -174,8 +170,6 @@ ADD_TEST(RandomAccessVerificationNot_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/
 
 #wrapper related tests should be added below this line
 
-CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/test/wrapper/conf/conf.xml-input ${CMAKE_CURRENT_BINARY_DIR}/wrapper/integration/conf.xml-WrapperCreateIndexFromJsonFile_Test)
-ADD_TEST(WrapperCreateIndexFromJsonFile_Test  ${CMAKE_CURRENT_BINARY_DIR}/wrapper/integration/WrapperCreateIndexFromFile_Test "--config-file=${CMAKE_CURRENT_BINARY_DIR}/wrapper/integration/conf.xml-WrapperCreateIndexFromJsonFile_Test")
 ADD_TEST(PostProcessingFilter_Test ${CMAKE_CURRENT_BINARY_DIR}/wrapper/integration/PostProcessingFilter_Test "--verbose")
 
 ADD_TEST(XMLParser_Test ${CMAKE_CURRENT_BINARY_DIR}/wrapper/integration/XMLParser_Test   "--verbose")
@@ -190,6 +184,8 @@ SET_TESTS_PROPERTIES(IndexUpdater_Test
 
 ADD_TEST(GeoIndexUpdate_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/GeoIndexUpdate_Test "--verbose")
 SET_TESTS_PROPERTIES(GeoIndexUpdate_Test PROPERTIES ENVIRONMENT "directoryName=${CMAKE_SOURCE_DIR}/test/core/unit/test_data")
+
+ADD_TEST(ConfigManager_Test ${CMAKE_CURRENT_BINARY_DIR}/sharding/unit/ConfigManager_Test "--verbose")
 
 if (SYSTEM_TEST_ENABLED)
     ADD_TEST( System_Tests ${CMAKE_SOURCE_DIR}/test/wrapper/system_tests/main.sh ${CMAKE_SOURCE_DIR}/test/wrapper/system_tests ${CMAKE_BINARY_DIR}/src/server)

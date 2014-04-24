@@ -19,12 +19,14 @@
 #ifndef __UTIL_THREADSAFEMAP_H__
 #define __UTIL_THREADSAFEMAP_H__
 
-#include "ReadWriteMutex.h"
 
 #include <map>
 #include <boost/serialization/map.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/shared_mutex.hpp>
+#include <boost/thread/locks.hpp>
 
 using namespace std;
 
@@ -41,40 +43,34 @@ namespace instantsearch
 template <class KEY, class VALUE> class ThreadSafeMap {
 private:
     map<KEY, VALUE> data;
-    ReadWriteMutex  *rwMutexForData;
+    mutable boost::shared_mutex rwMutexForData;
 
 public:
 
     ThreadSafeMap(){
-    	rwMutexForData =  new ReadWriteMutex(100);
     }
 
     ~ThreadSafeMap(){
-    	delete rwMutexForData;
     }
 
     void setValue(const KEY & key, const VALUE & value){
-    	rwMutexForData->lockWrite();
+    	boost::unique_lock< boost::shared_mutex > lock(rwMutexForData);
     	data[key] = value;
-    	rwMutexForData->unlockWrite();
     }
 
     bool getValue(const KEY & key, VALUE & value) const{
-    	rwMutexForData->lockRead();
+    	boost::shared_lock< boost::shared_mutex > lock(rwMutexForData);
     	typename std::map<KEY, VALUE>::const_iterator mapIter = this->data.find(key);
     	if(mapIter == this->data.end()){
-    		rwMutexForData->unlockRead();
     		return false;
     	}
     	value = mapIter->second;
-    	rwMutexForData->unlockRead();
     	return true;
     }
 
     void erase(const KEY & key){
-    	rwMutexForData->lockWrite();
+    	boost::unique_lock< boost::shared_mutex > lock(rwMutexForData);
     	data.erase(key);
-    	rwMutexForData->unlockWrite();
     }
 
     friend class boost::serialization::access;

@@ -21,6 +21,7 @@
 #include <string>
 #include <sstream>
 #include <unistd.h>
+#include <fcntl.h>
 #ifdef __MACH__
 // This header is used only in mac osx related code
 #include <arpa/inet.h>

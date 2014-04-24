@@ -436,6 +436,7 @@ unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, Sch
     RecordSerializer compactRecSerializer = RecordSerializer(*storedAttrSchema);
 
     if(in.good()){
+        bool isArrayOfJsonRecords = false;
         while(getline(in, line))
         {
             bool parseSuccess = false;
@@ -446,8 +447,19 @@ unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, Sch
                                     line.at(line.length() - 1) == ','
                                     )
                   ) {
-              line.erase(line.length() - 1);
+                line.erase(line.length() - 1);
 	    }
+
+            boost::trim(line);
+            if (indexedRecordsCount == 0 &&  line == "[") {
+                // Solr style data source - array of JSON records
+                isArrayOfJsonRecords = true;
+                continue;
+            }
+            if (isArrayOfJsonRecords == true && line == "]") {
+                // end of JSON array in Solr style data source
+                break; // assume nothing follows array (will ignore more records or another array)
+            }
 
             std::stringstream error;
             parseSuccess = JSONRecordParser::populateRecordFromJSON(line, indexDataContainerConf, record, error, compactRecSerializer);
@@ -467,9 +479,9 @@ unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, Sch
             record->clear();
             int reportFreq = 10000;
             ++lineCounter;
-            if (lineCounter % reportFreq == 0)
+            if (indexedRecordsCount % reportFreq == 0)
             {
-              std::cout << "Indexing first " << lineCounter << " records" << "\r";
+                std::cout << "Indexing first " << indexedRecordsCount << " records" << "\r";
             }
         }
     }

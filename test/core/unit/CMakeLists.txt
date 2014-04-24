@@ -80,14 +80,6 @@ ADD_EXECUTABLE(Normalizer_Test Normalizer_Test.cpp)
 TARGET_LINK_LIBRARIES(Normalizer_Test ${UNIT_TEST_LIBS} )
 LIST(APPEND UNIT_TESTS Normalizer_Test)
 
-ADD_EXECUTABLE(ReadWriteMutex_Test ReadWriteMutex_Test.cpp)
-TARGET_LINK_LIBRARIES(ReadWriteMutex_Test ${UNIT_TEST_LIBS} )
-LIST(APPEND UNIT_TESTS ReadWriteMutex_Test)
-
-ADD_EXECUTABLE(ReadWriteMutexCondWait_Test ReadWriteMutexCondWait_Test.cpp)
-TARGET_LINK_LIBRARIES(ReadWriteMutexCondWait_Test ${UNIT_TEST_LIBS} )
-LIST(APPEND UNIT_TESTS ReadWriteMutexCondWait_Test)
-
 ADD_EXECUTABLE(AttributedBasedSearch_Test AttributedBasedSearch_Test.cpp)
 TARGET_LINK_LIBRARIES(AttributedBasedSearch_Test ${UNIT_TEST_LIBS} )
 LIST(APPEND UNIT_TESTS AttributedBasedSearch_Test)
@@ -99,10 +91,6 @@ LIST(APPEND UNIT_TESTS ForwardIndex_Performance_Test)
 ADD_EXECUTABLE(QuadTree_Test QuadTree_Test.cpp)
 TARGET_LINK_LIBRARIES(QuadTree_Test ${UNIT_TEST_LIBS})	
 LIST(APPEND UNIT_TESTS QuadTree_Test)
-
-ADD_EXECUTABLE(VariableLengthAttributeContainer_Test VariableLengthAttributeContainer_Test.cpp)
-TARGET_LINK_LIBRARIES(VariableLengthAttributeContainer_Test ${UNIT_TEST_LIBS})	
-LIST(APPEND UNIT_TESTS VariableLengthAttributeContainer_Test)
 
 ADD_EXECUTABLE(ULEB128_Test ULEB128_Test.cpp)
 TARGET_LINK_LIBRARIES(ULEB128_Test ${UNIT_TEST_LIBS})  

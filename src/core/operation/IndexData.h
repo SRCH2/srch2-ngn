@@ -75,7 +75,6 @@
 //#include "license/LicenseVerifier.h"
 //#include "operation/Cache.h"
 #include "util/RankerExpression.h"
-#include "util/ReadWriteMutex.h"  // for locking
 
 #include <string>
 #include <vector>
@@ -251,7 +250,7 @@ public:
     // a global RW lock for readers and writers;
     // Used in several places, such as KeywordIdReassign and memory
     // recollection for deleted records
-    ReadWriteMutex *globalRwMutexForReadersWriters;
+    mutable boost::shared_mutex globalRwMutexForReadersWriters;
     
     inline bool isMergeRequired() const{
     	return mergeRequired;

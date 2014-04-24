@@ -22,15 +22,6 @@ SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src-0.5.0/libs/
 
 set(MONGO_CLIENT_LIBRARY ${CMAKE_SOURCE_DIR}/thirdparty/mongo-cxx-driver-v2.4/libmongoclient.a)
 
-ADD_EXECUTABLE(WrapperCreateIndexFromFile_Test WrapperCreateIndexFromFile_Test.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS>)
-TARGET_LINK_LIBRARIES(WrapperCreateIndexFromFile_Test
-						${Srch2InstantSearch_LIBRARIES} 
-						${jsoncpp_LIBRARY}	${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
-						${MONGO_CLIENT_LIBRARY} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
-					)
-ADD_DEPENDENCIES(WrapperCreateIndexFromFile_Test srch2_core)
-					
-					
 ADD_EXECUTABLE(PostProcessingFilter_Test PostProcessingFilters_Test.cpp)
 TARGET_LINK_LIBRARIES(PostProcessingFilter_Test 
 						${Srch2InstantSearch_LIBRARIES} 
@@ -40,7 +31,7 @@ TARGET_LINK_LIBRARIES(PostProcessingFilter_Test
 ADD_DEPENDENCIES(PostProcessingFilter_Test srch2_core)
 
 					
-ADD_EXECUTABLE(XMLParser_Test XMLParser_Test.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS>)
+ADD_EXECUTABLE(XMLParser_Test XMLParser_Test.cpp $<TARGET_OBJECTS:SERVER_OBJECTS> $<TARGET_OBJECTS:WRAPPER_OBJECTS>)
 TARGET_LINK_LIBRARIES(XMLParser_Test
                         ${Srch2InstantSearch_LIBRARIES} 
                         ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 

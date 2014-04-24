@@ -20,7 +20,6 @@
 #define __CACHEBASE_H__
 
 #include <instantsearch/GlobalCache.h>
-#include "util/ReadWriteMutex.h"
 #include <instantsearch/Term.h>
 #include "util/BusyBit.h"
 #include "operation/ActiveNode.h"
