@@ -10,6 +10,7 @@ ADD_SUBDIRECTORY(core/unit)
 ADD_SUBDIRECTORY(core/integration)
 ADD_SUBDIRECTORY(wrapper/unit)
 ADD_SUBDIRECTORY(wrapper/integration)
+ADD_SUBDIRECTORY(sharding/unit)
 
 SET(MEMORYCHECK_COMMAND "/usr/bin/valgrind")
 SET(MEMORYCHECK_COMMAND_OPTIONS "${MEMORYCHECK_COMMAND_OPTIONS} --trace-children=yes --leak-check=full --show-reachable=yes")
@@ -180,6 +181,8 @@ SET_TESTS_PROPERTIES(IndexUpdater_Test
 
 ADD_TEST(GeoIndexUpdate_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/GeoIndexUpdate_Test "--verbose")
 SET_TESTS_PROPERTIES(GeoIndexUpdate_Test PROPERTIES ENVIRONMENT "directoryName=${CMAKE_SOURCE_DIR}/test/core/unit/test_data")
+
+ADD_TEST(ConfigManager_Test ${CMAKE_CURRENT_BINARY_DIR}/sharding/unit/ConfigManager_Test "--verbose")
 
 if (SYSTEM_TEST_ENABLED)
     ADD_TEST( System_Tests ${CMAKE_SOURCE_DIR}/test/wrapper/system_tests/main.sh ${CMAKE_SOURCE_DIR}/test/wrapper/system_tests ${CMAKE_BINARY_DIR}/src/server)
