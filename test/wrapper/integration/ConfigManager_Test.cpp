@@ -10,7 +10,7 @@ using namespace std;
 using namespace srch2::instantsearch;
 using namespace srch2::httpwrapper;
 
-void test(char* configFile)
+void testConfigurationParser(char* configFile)
 {
 	ConfigManager *configManager = new ConfigManager(configFile);
 	configManager->loadConfigFile();
@@ -40,7 +40,7 @@ void test(char* configFile)
 	ASSERT(configManager->getSrch2Home() == "./multicore//");
 }
 
-void testShard(char* configFile){
+void testShard(){
 
 	Shard* s1 = new Shard(1,1,1,1);
 	ASSERT(s1->getShardId().toString() == "C1_R1_1");
@@ -54,8 +54,9 @@ void testShard(char* configFile){
 
 
 int main() {
-    test(getenv("ConfigManagerFilePath"));
-    testShard(getenv("ConfigManagerFilePath"));
+    testShard();
+    testConfigurationParser(getenv("ConfigManagerFilePath"));
+
 }
 
 

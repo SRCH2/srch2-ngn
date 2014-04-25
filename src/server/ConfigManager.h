@@ -63,7 +63,7 @@ namespace httpwrapper {
    // A replica shard starts with an "R" followed by a replica count and then its primary's id.
    // E.g., for the above cluster, replicas of "P0" will be named "8_R1_0" and "8_R2_0".
    // Similarly, replicas of "P3" will be named "8_R3_1" and "8_R3_2".
-	   if(coreId != -1 || partitionId != -1 || replicaId != -1){
+	   if(coreId != unsigned(-1) || partitionId != unsigned(-1) || replicaId != unsigned(-1)){
 	   std::stringstream sstm;
 	   sstm << "C" << coreId << "_";
 	   if(isPrimaryShard()){
@@ -75,22 +75,16 @@ namespace httpwrapper {
 	   return sstm.str();
 	   }
 	   else{
-		   return "Error: shardId is not well formed";
+		   return "";
 	   }
    }
 
    ShardId(){
-	   coreId = -1;
-	   partitionId = -1;
-	   replicaId = -1;
+	   coreId = unsigned(-1);
+	   partitionId = unsigned(-1);
+	   replicaId = unsigned(-1);
    }
 
-   /*ShardId(unsigned coreId, unsigned partitionId, unsigned replicaId){
-
-	   this->coreId = coreId;
-	   this->partitionId = partitionId;
-	   this->replicaId = replicaId;
-   }*/
  };
 
  class Shard {
@@ -99,7 +93,6 @@ namespace httpwrapper {
    Shard(unsigned nodeId, unsigned coreId, unsigned partitionId = 0, unsigned replicaId = 0){
 	   this->nodeId = nodeId;
 	   this->shardState = SHARDSTATE_UNALLOCATED;
-	   this->shardId = *(new ShardId());
 	   this->shardId.coreId = coreId;
 	   this->shardId.partitionId = partitionId;
 	   this->shardId.replicaId = replicaId;
@@ -123,7 +116,7 @@ namespace httpwrapper {
 	   this->shardState = newState;
    }
 
-   void setOwnerNodeId(unsigned id){
+   void setNodeId(unsigned id){
 	   this->nodeId = id;
    }
 
@@ -131,18 +124,14 @@ namespace httpwrapper {
 	   return this->shardState;
    }
 
-   unsigned getOwnerNodeId(){
+   unsigned getNodeId(){
 	   return this->nodeId;
    }
-   //bool isReplica();
-   //unsigned getCoreId();
-   //unsigned getPrimaryId();
 
   private:
    ShardId shardId;
    ShardState shardState;
    unsigned nodeId;
-  // ShardId primaryShardId;  // if current shard is a replica
  };
 
 class Node {
