@@ -29,7 +29,7 @@
         <node-master>true</node-master>
         <node-data>true</node-data>
         <srch2Home>.</srch2Home>
-        <dataDir>Default </dataDir>
+        <dataDir>Default</dataDir>
     </node> 
 
     <node>

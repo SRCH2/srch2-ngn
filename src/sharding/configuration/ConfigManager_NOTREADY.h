@@ -1,4 +1,4 @@
-
+/*
 // $Id$
 
 #ifndef __CONFIG_MANAGER__
@@ -337,3 +337,5 @@ class Cluster {
 }
 
 #endif // __CONFIG_MANAGER__
+
+/*
