@@ -51,7 +51,8 @@ namespace httpwrapper {
    unsigned replicaId;
 
    bool isPrimaryShard() {
-    return (replicaId == 0); // replica #0 is always the primary shard
+    return (replicaId == 0);
+    // replica #0 is always the primary shard
    }
 
    std::string toString() {
@@ -62,7 +63,15 @@ namespace httpwrapper {
    // A replica shard starts with an "R" followed by a replica count and then its primary's id.
    // E.g., for the above cluster, replicas of "P0" will be named "8_R1_0" and "8_R2_0".
    // Similarly, replicas of "P3" will be named "8_R1_3" and "8_R2_3".
-    return "C8_R0_2"; // TODO
+	   std::stringstream sstm;
+	   sstm<<"C"<<coreId<<"_";
+	   if(isPrimaryShard()){
+		   sstm << "P" << partitionId;
+	   }
+	   else{
+		   sstm << "R" << replicaId << "_" << partitionId;
+	   }
+    return sstm.str(); // TODO
    }
  };
 
@@ -115,7 +124,6 @@ Node(const Node& cpy)
 	this->homeDir = "";
 	this->numberOfThreads = 1;
     this->thisIsMe = false;
-
 	//coreToShardsMap has to be initialized
   
   }
@@ -145,6 +153,21 @@ Node(const Node& cpy)
 	this->homeDir = homeDir;
 	this->numberOfThreads = 1; // default value is 1
   }	
+
+  std::string getHomeDir(){
+	  return this->homeDir;
+  }
+  std::string getDataDir(){
+	  return this->dataDir;
+  }
+
+  bool isMaster(){
+	  return nodeMaster;
+  }
+
+  bool isData(){
+	  return nodeData;
+  }
 
   std::string getName(){
 	  return this->nodeName;
@@ -194,7 +217,7 @@ Node(const Node& cpy)
   // coreName -> shards mapping
   // movie -> <shard0, shard1, shard3>
   // customer -> <shard2, shard3>
-  boost::unordered_map<std::string, std::vector<Shard> > coreToShardsMap;
+ boost::unordered_map<std::string, std::vector<Shard> > coreToShardsMap;
 
   // Allow this node to be eligible as a master node (enabled by default).
   bool nodeMaster;
@@ -209,6 +232,7 @@ Node(const Node& cpy)
   unsigned int numberOfThreads;
   // other node-related info
 };
+
 
 class CoreSchema {
    string primaryKey;
@@ -410,7 +434,7 @@ class Cluster {
 class SearchableAttributeInfoContainer {
 public:
     SearchableAttributeInfoContainer(){
-        attributeName = "";
+    attributeName = "";
 	required = false;
 	defaultValue = "";
 	offset = 0;
@@ -513,6 +537,8 @@ inline  enum PortType_t incrementPortType(PortType_t &oldValue)
 
 class ConfigManager {
 public:
+
+
     typedef std::map<const string, CoreInfo_t *> CoreInfoMap_t;
     Cluster getCluster(){
     	return this->cluster;
@@ -520,6 +546,7 @@ public:
 
 
 private:
+
     Cluster cluster;
     // <config>
     string licenseKeyFile;
