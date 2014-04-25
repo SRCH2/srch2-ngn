@@ -44,7 +44,7 @@ const char* const ConfigManager::nodeNameTag = "node-name";
 const char* const ConfigManager::nodeMasterTag = "node-master";
 const char* const ConfigManager::nodeDataTag = "node-data";
 const char* const ConfigManager::nodeHomeTag = "srch2home";
-const char* const ConfigManager::nodeDataDirTag = "dataDir";
+const char* const ConfigManager::nodeDataDirTag = "datadir";
 
 const char* const ConfigManager::accessLogFileString = "accesslogfile";
 const char* const ConfigManager::analyzerString = "analyzer";
@@ -1743,6 +1743,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
     tempUse = "";
 
     std::vector<Node>* nodes = cluster.getNodes();
+
     xml_node nodeTag = configNode.child("node");
     ConfigManager::parseNode(nodes, nodeTag);
 
@@ -1898,7 +1899,7 @@ void ConfigManager::parseNode(std::vector<Node>* nodes, xml_node& nodeTag) {
 
 				std::string name = (string) childNode.name();
 
-				if (name.compare(nodeName) == 0) {
+				if (name.compare(nodeNameTag) == 0) {
 					nodeName = string(childNode.text().get());
 					//cout << nodeName << "\n";
 				}
