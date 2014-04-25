@@ -39,11 +39,3 @@ TARGET_LINK_LIBRARIES(XMLParser_Test
                     )
 ADD_DEPENDENCIES(XMLParser_Test srch2_core)
 
-ADD_EXECUTABLE(ConfigManager_Test ConfigManager_Test.cpp $<TARGET_OBJECTS:SERVER_OBJECTS> $<TARGET_OBJECTS:WRAPPER_OBJECTS>)
-TARGET_LINK_LIBRARIES(ConfigManager_Test
-                        ${Srch2InstantSearch_LIBRARIES} 
-                        ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
-                        ${MONGO_CLIENT_LIBRARY} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
-                    )
-
-ADD_DEPENDENCIES(ConfigManager_Test srch2_core)

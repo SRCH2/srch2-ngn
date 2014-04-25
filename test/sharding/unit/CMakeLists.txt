@@ -16,6 +16,20 @@ ADD_EXECUTABLE(ConfigManager_NOTREADY_Test ConfigManager_NOTREADY_Test.cpp)
 TARGET_LINK_LIBRARIES(ConfigManager_NOTREADY_Test ${UNIT_TEST_LIBS})
 LIST(APPEND SHARD_UNIT_TESTS ConfigManager_NOTREADY_Test)
 
+#ADD_EXECUTABLE(ConfigManager_Test ConfigManager_Test.cpp)
+#TARGET_LINK_LIBRARIES(ConfigManager_Test ${UNIT_TEST_LIBS})
+
+ADD_EXECUTABLE(ConfigManager_Test ConfigManager_Test.cpp $<TARGET_OBJECTS:SERVER_OBJECTS> $<TARGET_OBJECTS:WRAPPER_OBJECTS>)
+TARGET_LINK_LIBRARIES(ConfigManager_Test
+                        ${Srch2InstantSearch_LIBRARIES} 
+                        ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
+                        ${MONGO_CLIENT_LIBRARY} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
+                    )
+LIST(APPEND SHARD_UNIT_TESTS ConfigManager_Test)
+ADD_DEPENDENCIES(ConfigManager_Test srch2_core)
+
+
+
 ADD_CUSTOM_TARGET(build_shard_unit_test ALL DEPENDS ${SHARD_UNIT_TESTS} )
 ADD_DEPENDENCIES(build_shard_unit_test srch2_core)
 foreach (target ${SHARD_UNIT_TESTS})
