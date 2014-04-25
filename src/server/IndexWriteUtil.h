@@ -5,7 +5,6 @@
 
 #include "json/json.h"
 #include "JSONRecordParser.h"
-//TODO: #include "ConfigManager.h"
 #include "src/sharding/configuration/ConfigManager.h"
 #include "AnalyzerFactory.h"
 #include "evhttp.h"

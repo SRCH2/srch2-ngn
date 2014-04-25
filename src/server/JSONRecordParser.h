@@ -10,7 +10,6 @@
 #include <instantsearch/Indexer.h>
 #include "util/RecordSerializer.h"
 
-//TODO: #include "ConfigManager.h"
 #include "src/sharding/configuration/ConfigManager.h"
 
 namespace srch2is = srch2::instantsearch;

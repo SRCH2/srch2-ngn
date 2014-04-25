@@ -8,7 +8,6 @@
 #define __CORE_ANALYZER_CHARSET_H__
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
-//TODO: #include "util/encoding.h"
 #include "src/core/util/encoding.h"
 
 namespace srch2

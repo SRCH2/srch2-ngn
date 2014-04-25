@@ -12,7 +12,6 @@
 #include <instantsearch/Indexer.h>
 #include <instantsearch/Record.h>
 #include <instantsearch/Schema.h>
-//TODO: #include "ConfigManager.h"
 #include "src/sharding/configuration/ConfigManager.h"
 #include "mongo/client/dbclient.h"
 #include "mongo/bson/bsonobj.h"

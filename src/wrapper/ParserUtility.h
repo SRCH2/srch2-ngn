@@ -11,7 +11,6 @@
 #include <sys/queue.h>
 #include "boost/regex.hpp"
 #include <boost/algorithm/string.hpp>
-//TODO: #include "util/Logger.h"
 #include "src/core/util/Logger.h"
 #include "WrapperConstants.h"
 using boost::posix_time::time_input_facet;
