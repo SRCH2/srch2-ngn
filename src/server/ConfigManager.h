@@ -1,7 +1,7 @@
 //$Id: ConfigManager.h 2013-07-5 02:11:13Z iman $
 
-#ifndef __WRAPPER__SRCH2SERVERCONG_H__
-#define __WRAPPER__SRCH2SERVERCONG_H__
+#ifndef __SERVER__SRCH2SERVERCONG_H__
+#define __SERVER__SRCH2SERVERCONG_H__
 
 #include "util/xmlParser/pugixml.hpp"
 
@@ -35,28 +35,35 @@ namespace httpwrapper {
     SHARDSTATE_INDEXING
   };
 
- enum ShardType {
-   SHARDTYPE_PRIMARY,
-   SHARDTYPE_REPLICA
-  };
-
-   // A shard id consists of a type (primary or replica), code id, and a sequence id)
-
+ // A shard id consists of a core id, a partition id, and replica id
+ // E.g.: a core with 7 partitions, each of which has a primary and 4 replicas
+ //
+ //   P0  R0_1 R0_2 R0_3 R0_4
+ //   P1  R1_1 R1_2 R1_3 R1_4
+ //   ... 
+ //   P6  R6_1 R6_2 R6_3 R6_4
+ //
  class ShardId {
    unsigned  coreId;
-   unsigned sequenceId; // 0, 1, 2, ...
-   ShardType shardType; // primary or replica
+   unsigned partitionId; // ID for a partition, numbered 0, 1, 2, ...
+
+   // ID for a specific primary/replica for a partition; assume #0 is always the primary shard.  For V0, replicaId is always 0
+   unsigned replicaId;
+
+   bool isPrimaryShard() {
+    return (replicaId == 0); // replica #0 is always the primary shard
+   }
 
    std::string toString() {
    // TODO for Prateek:
    // A primary shard starts with a "P" followed by an integer id.
-   // E.g., a cluster with 4 shards of core 8 will have shards named "8_P0", "8_P1", "8_P2", and "8_P3".
+   // E.g., a cluster with 4 shards of core 8 will have shards named "C8_P0", "C8_R0_1", "C8_R0_2", "C8_P3".
    //
    // A replica shard starts with an "R" followed by a replica count and then its primary's id.
    // E.g., for the above cluster, replicas of "P0" will be named "8_R1_0" and "8_R2_0".
    // Similarly, replicas of "P3" will be named "8_R1_3" and "8_R2_3".
-    return "TMP"; // TODO
-   };
+    return "C8_R0_2"; // TODO
+   }
  };
 
  class Shard {
@@ -1130,4 +1137,4 @@ protected:
 }
 }
 
-#endif /* __WRAPPER__SRCH2SERVERCONG_H__ */
+#endif // __SERVER__SRCH2SERVERCONG_H__ 
