@@ -236,6 +236,17 @@ const string& Record::getPrimaryKey() const
 }
 
 
+void Record::setShardingKey(unsigned shardingKey){
+    //TODO : we should probably keep shardingKey in a new class member
+}
+const unsigned Record::getShardingKey(){
+    std::stringstream pkey_string;
+    pkey_string << impl->primaryKey;
+    unsigned shardingKey = 0;
+    pkey_string >> shardingKey;
+    return shardingKey;
+}
+
 // set/get the boost of this record (0 - 100)
 float Record::getRecordBoost() const
 {

@@ -64,11 +64,19 @@ public:
     void setPrimaryKey(const std::string &primaryKey);
     void setPrimaryKey(const unsigned &primaryKey);
 
+
+
     /** 
      * Gets the primary key value.
      *  \returns Value of the primary key.
      */
     const std::string& getPrimaryKey() const;
+
+    /*
+     * Sets and gets the unsigned value used by DistributedProcessor for deciding on shard for a record
+     */
+    void setShardingKey(unsigned shardingKey);
+    const unsigned getShardingKey();
 
     /**
      * \returns the const reference to the Schema associated with the record.
