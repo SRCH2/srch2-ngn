@@ -1,7 +1,7 @@
 //$Id: ConfigManager.h 2013-07-5 02:11:13Z iman $
 
-#ifndef __SERVER__SRCH2SERVERCONG_H__
-#define __SERVER__SRCH2SERVERCONG_H__
+#ifndef __CONFIGMANAGER_H__
+#define __CONFIGMANAGER_H__
 
 #include "src/server/util/xmlParser/pugixml.hpp"
 
@@ -1193,7 +1193,23 @@ protected:
 
 };
 
+// requested by Surendra for the Synchronization Manager (SM)
+ class DiscoveryParams {
+ public:
+   unsigned pingInterval;
+   unsigned pingTimeout;
+   unsigned retryCount;
+ };
+ 
+ // If we are supporting multicast
+ class Multicast {
+ public:
+   std::string multicastAddress;  // Default value = 224.2.2.7
+   unsigned port;   // Default value = 92612
+ };
+ 
+
 }
 }
 
-#endif // __SERVER__SRCH2SERVERCONG_H__ 
+#endif // __CONFIGMANAGER_H__
