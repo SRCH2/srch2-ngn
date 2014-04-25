@@ -27,7 +27,8 @@
 #include "instantsearch/Schema.h"
 #include "analyzer/StandardAnalyzer.h"
 #include "analyzer/SimpleAnalyzer.h"
-#include "ConfigManager.h"
+//TODO: #include "ConfigManager.h"
+#include "src/sharding/configuration/ConfigManager.h"
 #include "instantsearch/LogicalPlan.h"
 
 using srch2::instantsearch::Analyzer;

@@ -4,7 +4,8 @@
 #include "ConfigManager.h"
 
 #include <algorithm>
-#include "util/xmlParser/pugixml.hpp"
+//TODO: #include "util/xmlParser/pugixml.hpp"
+#include "src/server/util/xmlParser/pugixml.hpp"
 #include <string>
 #include <vector>
 #include <iostream>
@@ -12,14 +13,19 @@
 #include <sstream>
 #include <boost/program_options.hpp>
 #include <assert.h>
-#include "util/Logger.h"
+//TODO: #include "util/Logger.h"
+#include "src/core/util/Logger.h"
 #include <boost/algorithm/string.hpp>
 #include <sys/stat.h>
 
-#include "util/DateAndTimeHandler.h"
-#include "ParserUtility.h"
-#include "util/Assert.h"
-#include "analyzer/CharSet.h"
+//TODO: #include "util/DateAndTimeHandler.h"
+#include "src/core/util/DateAndTimeHandler.h"
+//TODO: #include "ParserUtility.h"
+#include "src/wrapper/ParserUtility.h"
+//TODO: #include "util/Assert.h"
+#include "src/core/util/Assert.h"
+//TODO: #include "analyzer/CharSet.h"
+#include "src/core/analyzer/CharSet.h"
 
 #include "boost/algorithm/string_regex.hpp"
 #include "boost/filesystem/path.hpp"

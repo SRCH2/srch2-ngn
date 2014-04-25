@@ -3,7 +3,8 @@
 #ifndef __WRAPPER_HTTPREQUESTHANDLER_H__
 #define __WRAPPER_HTTPREQUESTHANDLER_H__
 
-#include "ConfigManager.h"
+//TODO: #include "ConfigManager.h"
+#include "src/sharding/configuration/ConfigManager.h"
 #include "json/json.h"
 #include "Srch2Server.h"
 

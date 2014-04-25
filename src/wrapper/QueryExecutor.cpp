@@ -22,7 +22,8 @@
 #include "ParsedParameterContainer.h" // only for ParameterName enum , FIXME : must be changed when we fix constants problem
 #include "query/QueryResultsInternal.h"
 #include "operation/QueryEvaluatorInternal.h"
-#include "ConfigManager.h"
+//TODO: #include "ConfigManager.h"
+#include "src/sharding/configuration/ConfigManager.h"
 #include "util/Assert.h"
 
 namespace srch2 {
