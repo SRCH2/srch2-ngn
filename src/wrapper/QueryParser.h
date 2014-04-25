@@ -32,7 +32,7 @@
 #include <evhttp.h>
 #include <event2/http.h>
 
-#include "ConfigManager.h"
+#include "src/sharding/configuration/ConfigManager.h"
 #include "instantsearch/Analyzer.h"
 #include "instantsearch/Schema.h"
 #include "ParsedParameterContainer.h"

@@ -5,7 +5,7 @@
 
 #include "json/json.h"
 #include "JSONRecordParser.h"
-#include "ConfigManager.h"
+#include "src/sharding/configuration/ConfigManager.h"
 #include "AnalyzerFactory.h"
 #include "evhttp.h"
 #include "thirdparty/snappy-1.0.4/snappy.h"

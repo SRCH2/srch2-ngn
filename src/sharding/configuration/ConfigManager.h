@@ -3,11 +3,11 @@
 #ifndef __SERVER__SRCH2SERVERCONG_H__
 #define __SERVER__SRCH2SERVERCONG_H__
 
-#include "util/xmlParser/pugixml.hpp"
+#include "src/server/util/xmlParser/pugixml.hpp"
 
 #include <instantsearch/Schema.h>
 #include <instantsearch/Constants.h>
-#include "WrapperConstants.h"
+#include "src/wrapper/WrapperConstants.h"
 #include <string>
 #include <vector>
 #include <sstream>
@@ -16,7 +16,7 @@
 #include <boost/unordered_map.hpp>
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
-#include "util/Logger.h"
+#include "src/core/util/Logger.h"
 
 using namespace std;
 using namespace srch2::util;

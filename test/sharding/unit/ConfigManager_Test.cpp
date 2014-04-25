@@ -4,7 +4,7 @@
 #include "util/Assert.h"
 #include <assert.h>
 
-#include "src/server/ConfigManager.h"
+#include "src/sharding/configuration/ConfigManager.h"
 using srch2http::ConfigManager;
 using namespace std;
 using namespace srch2::instantsearch;
