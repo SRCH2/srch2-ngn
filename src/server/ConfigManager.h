@@ -44,57 +44,106 @@ namespace httpwrapper {
  //   P6  R6_1 R6_2 R6_3 R6_4
  //
  class ShardId {
+ public:
+
    unsigned  coreId;
    unsigned partitionId; // ID for a partition, numbered 0, 1, 2, ...
 
    // ID for a specific primary/replica for a partition; assume #0 is always the primary shard.  For V0, replicaId is always 0
    unsigned replicaId;
-
    bool isPrimaryShard() {
     return (replicaId == 0);
     // replica #0 is always the primary shard
    }
 
    std::string toString() {
-   // TODO for Prateek:
    // A primary shard starts with a "P" followed by an integer id.
    // E.g., a cluster with 4 shards of core 8 will have shards named "C8_P0", "C8_R0_1", "C8_R0_2", "C8_P3".
    //
    // A replica shard starts with an "R" followed by a replica count and then its primary's id.
    // E.g., for the above cluster, replicas of "P0" will be named "8_R1_0" and "8_R2_0".
-   // Similarly, replicas of "P3" will be named "8_R1_3" and "8_R2_3".
+   // Similarly, replicas of "P3" will be named "8_R3_1" and "8_R3_2".
+	   if(coreId != -1 || partitionId != -1 || replicaId != -1){
 	   std::stringstream sstm;
-	   sstm<<"C"<<coreId<<"_";
+	   sstm << "C" << coreId << "_";
 	   if(isPrimaryShard()){
 		   sstm << "P" << partitionId;
 	   }
 	   else{
-		   sstm << "R" << replicaId << "_" << partitionId;
+		   sstm << "R" << partitionId << "_" << replicaId;
 	   }
-    return sstm.str(); // TODO
+	   return sstm.str();
+	   }
+	   else{
+		   return "Error: shardId is not well formed";
+	   }
    }
+
+   ShardId(){
+	   coreId = -1;
+	   partitionId = -1;
+	   replicaId = -1;
+   }
+
+   /*ShardId(unsigned coreId, unsigned partitionId, unsigned replicaId){
+
+	   this->coreId = coreId;
+	   this->partitionId = partitionId;
+	   this->replicaId = replicaId;
+   }*/
  };
 
  class Shard {
-  public:
-   Shard(ShardState newState, unsigned nodeId,
-         unsigned coreId, bool isReplica = false, unsigned primaryId = -1);
-   void setShardState(ShardState newState);
-   void setOwnerNodeId(unsigned id);
 
-   ShardState getShardState();
-   unsigned getOwnerNodeId();
-   bool isReplica();
-   unsigned getCoreId();
-   unsigned getPrimaryId();
+   public:
+   Shard(unsigned nodeId, unsigned coreId, unsigned partitionId = 0, unsigned replicaId = 0){
+	   this->nodeId = nodeId;
+	   this->shardState = SHARDSTATE_UNALLOCATED;
+	   this->shardId = *(new ShardId());
+	   this->shardId.coreId = coreId;
+	   this->shardId.partitionId = partitionId;
+	   this->shardId.replicaId = replicaId;
+   }
+
+   //Can be used in Migration
+    void setPartitionId(int partitionId){
+	this->shardId.partitionId = partitionId;
+    }
+
+	//Can be used in Migration
+    void setReplicaId(int replicaId){
+	this->shardId.replicaId = replicaId;
+    }
+
+   ShardId getShardId(){
+	   return this->shardId;
+   }
+
+   void setShardState(ShardState newState){
+	   this->shardState = newState;
+   }
+
+   void setOwnerNodeId(unsigned id){
+	   this->nodeId = id;
+   }
+
+   ShardState getShardState(){
+	   return this->shardState;
+   }
+
+   unsigned getOwnerNodeId(){
+	   return this->nodeId;
+   }
+   //bool isReplica();
+   //unsigned getCoreId();
+   //unsigned getPrimaryId();
 
   private:
    ShardId shardId;
    ShardState shardState;
    unsigned nodeId;
-   ShardId primaryShardId;  // if current shard is a replica
+  // ShardId primaryShardId;  // if current shard is a replica
  };
-
 
 class Node {
  public:
@@ -433,8 +482,8 @@ class Cluster {
 // in the system.
 class SearchableAttributeInfoContainer {
 public:
-    SearchableAttributeInfoContainer(){
-    attributeName = "";
+	SearchableAttributeInfoContainer(){
+	attributeName = "";
 	required = false;
 	defaultValue = "";
 	offset = 0;
@@ -484,7 +533,7 @@ public:
 				   const string & defaultValue,
 				   const bool required,
 				   const bool isMultiValued){
-        this->attributeName = name;
+    this->attributeName = name;
 	this->attributeType = type;
 	this->defaultValue = defaultValue;
 	this->required = required;
@@ -537,23 +586,19 @@ inline  enum PortType_t incrementPortType(PortType_t &oldValue)
 
 class ConfigManager {
 public:
-
-
     typedef std::map<const string, CoreInfo_t *> CoreInfoMap_t;
-    Cluster getCluster(){
-    	return this->cluster;
+    Cluster* getCluster(){
+    	return &(this->cluster);
     }
 
 
 private:
-
     Cluster cluster;
     // <config>
     string licenseKeyFile;
     string httpServerListeningHostname;
     string httpServerListeningPort;
     string srch2Home;
-
     unsigned int numberOfThreads;
 
     // <config><keywordPopularitythreshold>
@@ -563,17 +608,12 @@ private:
     Logger::LogLevel loglevel;
     string httpServerAccessLogFile;
     string httpServerErrorLogFile;
-
     uint32_t writeReadBufferInBytes;
-
     float defaultSpatialQueryBoundingBox;
-
     string attributeStringForMySQLQuery;
 
     //vector<string> searchableAttributes;
-
     //vector<unsigned> attributesBoosts;
-
     int ordering;
     //string httpServerDocumentRoot;
     string configFile;
@@ -583,11 +623,8 @@ private:
     // getAllResultsNumberOfResultsToFindInEstimationMode results.
     unsigned getAllResultsNumberOfResultsThreshold;
     unsigned getAllResultsNumberOfResultsToFindInEstimationMode;
-
-
     void splitString(string str, const string& delimiter, vector<string>& result);
     void splitBoostFieldValues(string boostString, map <string, unsigned>& boosts);
-
     bool isOnlyDigits(string& str);
     bool isFloat(string str);
     //Validate Functions
@@ -625,9 +662,7 @@ private:
 
     srch2::instantsearch::FilterType parseFieldType(string& fieldType);
     int parseFacetType(string& facetType);
-
     void lowerCaseNodeNames(xml_node &node);
-
     void trimSpacesFromValue(string &fieldValue, const char *fieldName, std::stringstream &parseWarnings, const char *append = NULL);
 
 protected:
