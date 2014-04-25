@@ -7,16 +7,31 @@ using namespace std;
 #include "sharding/configuration/ShardingConstants.h"
 #include <instantsearch/QueryResults.h>
 #include <core/query/QueryResultsInternal.h>
+#include <vector>
 
 namespace srch2 {
 namespace httpwrapper {
 
 
-struct SerializableSearchResults{
-	QueryResults * queryResults;
-	unsigned searcherTime;
-	// extra information to be added later
+class QueryResultPtr {
+  void *ptr;
+  unsigned pos;
 
+public:
+  QueryResult operator*();
+
+  //getterMethods;
+  TypedValue getResultsScore() const;
+
+  srch2::instantsearch::StoredRecordBuffer getInMemoryData() const;
+};
+
+class SerializableSearchResults {
+	QueryResults * queryResults;
+
+  public:
+	  unsigned searcherTime;
+   	// extra information to be added later
 
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
@@ -26,7 +41,9 @@ struct SerializableSearchResults{
     const SerializableSearchResults& deserialize(void*);
 
     //Returns the type of message which uses this kind of object as transport
-    ShardingMessageType messsageKind();
+    static ShardingMessageType messsageKind();
+
+    std::vector<QueryResultPtr> getSortedFinalResults();
 };
 
 
