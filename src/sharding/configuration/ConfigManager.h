@@ -390,30 +390,32 @@ class CoreMongoDB {
 };
 
 class Core {
-   string coreName;
+  unsigned coreId; // starting from 0, auto increment
 
-   // In V0, the "number_of_shards" is a one-time setting for a
-   // core. In the future (possibly after V1), we can support dynamic
-   // migration by allowing this number to change.
-   unsigned numberOfPrimaryShards;
+  string coreName;
 
-   // Number of replicas (additional copies) of an index (1 by
-   // default). The "number_of_replicas" can be increased or
-   // decreased anytime, by using the Index Update Settings API. We
-   // can do it in V0 or after V1. SRCH2 will take care about load
-   // balancing, relocating, gathering the results from nodes, etc.
-   // ES: core.number_of_replicas: 1 // index.number_of_replicas: 1
-   unsigned numberOfReplicas; // always 0 for V0
+  // In V0, the "number_of_shards" is a one-time setting for a
+  // core. In the future (possibly after V1), we can support dynamic
+  // migration by allowing this number to change.
+  unsigned numberOfPrimaryShards;
 
-   CoreSchema coreSchema;
+  // Number of replicas (additional copies) of an index (1 by
+  // default). The "number_of_replicas" can be increased or
+  // decreased anytime, by using the Index Update Settings API. We
+  // can do it in V0 or after V1. SRCH2 will take care about load
+  // balancing, relocating, gathering the results from nodes, etc.
+  // ES: core.number_of_replicas: 1 // index.number_of_replicas: 1
+  unsigned numberOfReplicas; // always 0 for V0
 
-   CoreIndex coreIndex;
-
-   CoreQuery coreQuery;
-
-   CoreUpdateHandler coreUpdateHandler;
-
-   CoreMongoDB coreMongoDB;
+  CoreSchema coreSchema;
+  
+  CoreIndex coreIndex;
+  
+  CoreQuery coreQuery;
+  
+  CoreUpdateHandler coreUpdateHandler;
+  
+  CoreMongoDB coreMongoDB;
 };
 
 enum CLUSTERSTATE {
@@ -425,14 +427,14 @@ enum CLUSTERSTATE {
 class CoreInfo_t;
 
 class Cluster {
-  public:
+ public:
 
-	std::vector<Node>* getNodes(){
-		return &nodes;
-	}
-  string getClusterName()
-  {
-	return this->clusterName;
+  std::vector<Node>* getNodes(){
+    return &nodes;
+  }
+
+  string getClusterName() {
+    return this->clusterName;
   }
 
   CLUSTERSTATE getClusterState();
