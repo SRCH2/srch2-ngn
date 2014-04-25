@@ -1720,9 +1720,9 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
                           std::stringstream &parseError,
                           std::stringstream &parseWarnings)
 {
+
     string tempUse = ""; // This is just for temporary use.
 
-    Cluster cluster;
     CoreInfo_t *defaultCoreInfo = NULL;
 
     xml_node configNode = configDoc.child(configString);
@@ -1742,7 +1742,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
 
     tempUse = "";
 
-    std::vector<Node> nodes;
+    std::vector<Node>* nodes = cluster.getNodes();
     xml_node nodeTag = configNode.child("node");
     ConfigManager::parseNode(nodes, nodeTag);
 
@@ -1885,7 +1885,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
 
 
 //TODO: Pass by referencem, space after =
-void ConfigManager::parseNode(std::vector<Node>& nodes, xml_node& nodeTag) {
+void ConfigManager::parseNode(std::vector<Node>* nodes, xml_node& nodeTag) {
 
     for (xml_node nodeTemp = nodeTag; nodeTemp; nodeTemp = nodeTemp.next_sibling("node")) {
 
@@ -1934,9 +1934,9 @@ void ConfigManager::parseNode(std::vector<Node>& nodes, xml_node& nodeTag) {
 		}
 
 		if (thisIsMe == true) {
-			nodes.push_back(Node(nodeName, ipAddress, portNumber, thisIsMe, nodeMaster, nodeData, dataDir, nodeHome));
+			nodes->push_back(Node(nodeName, ipAddress, portNumber, thisIsMe, nodeMaster, nodeData, dataDir, nodeHome));
 		} else if (thisIsMe == false) {
-			nodes.push_back(Node(nodeName, ipAddress, portNumber, thisIsMe));
+			nodes->push_back(Node(nodeName, ipAddress, portNumber, thisIsMe));
 		}
 
 	}

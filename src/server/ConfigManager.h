@@ -357,6 +357,10 @@ class CoreInfo_t;
 
 class Cluster {
   public:
+
+	std::vector<Node>* getNodes(){
+		return &nodes;
+	}
   string getClusterName()
   {
 	return this->clusterName;
@@ -503,9 +507,13 @@ inline  enum PortType_t incrementPortType(PortType_t &oldValue)
 class ConfigManager {
 public:
     typedef std::map<const string, CoreInfo_t *> CoreInfoMap_t;
+    Cluster getCluster(){
+    	return this->cluster;
+    }
+
 
 private:
-
+    Cluster cluster;
     // <config>
     string licenseKeyFile;
     string httpServerListeningHostname;
@@ -621,7 +629,7 @@ public:
     virtual ~ConfigManager();
 
     //Declaring function to parse node tags
-    void parseNode(std::vector<Node>& nodes, xml_node& childNode);
+    void parseNode(std::vector<Node>* nodes, xml_node& childNode);
 
     CoreInfo_t *getCoreInfoMap(const string &coreName) const;
     CoreInfoMap_t::iterator coreInfoIterateBegin() { return coreInfoMap.begin(); }

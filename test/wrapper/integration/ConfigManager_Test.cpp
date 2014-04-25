@@ -17,6 +17,10 @@ void test(char* configFile)
 	configManager->loadConfigFile();
 
 	ASSERT(configManager->getSrch2Home() == "./multicore//");
+
+
+
+
 }
 
 int main() {
