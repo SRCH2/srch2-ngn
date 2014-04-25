@@ -1,8 +1,10 @@
 //$Id: ConfigManager.h 2013-07-5 02:11:13Z iman $
 
-#ifndef __WRAPPER__SRCH2SERVERCONG_H__
-#define __WRAPPER__SRCH2SERVERCONG_H__
+#ifndef __SERVER__SRCH2SERVERCONG_H__
+#define __SERVER__SRCH2SERVERCONG_H__
+
 #include "util/xmlParser/pugixml.hpp"
+
 #include <instantsearch/Schema.h>
 #include <instantsearch/Constants.h>
 #include "WrapperConstants.h"
@@ -11,6 +13,7 @@
 #include <sstream>
 #include <stdint.h>
 
+#include <boost/unordered_map.hpp>
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
 #include "util/Logger.h"
@@ -23,6 +26,384 @@ using namespace pugi;
 
 namespace srch2 {
 namespace httpwrapper {
+
+//Adding portions of new header file, beginning from here
+ enum ShardState {
+    SHARDSTATE_ALLOCATED,  // must have a valid node
+    SHARDSTATE_UNALLOCATED,
+    SHARDSTATE_MIGRATING,
+    SHARDSTATE_INDEXING
+  };
+
+ // A shard id consists of a core id, a partition id, and replica id
+ // E.g.: a core with 7 partitions, each of which has a primary and 4 replicas
+ //
+ //   P0  R0_1 R0_2 R0_3 R0_4
+ //   P1  R1_1 R1_2 R1_3 R1_4
+ //   ... 
+ //   P6  R6_1 R6_2 R6_3 R6_4
+ //
+ class ShardId {
+   unsigned  coreId;
+   unsigned partitionId; // ID for a partition, numbered 0, 1, 2, ...
+
+   // ID for a specific primary/replica for a partition; assume #0 is always the primary shard.  For V0, replicaId is always 0
+   unsigned replicaId;
+
+   bool isPrimaryShard() {
+    return (replicaId == 0); // replica #0 is always the primary shard
+   }
+
+   std::string toString() {
+   // TODO for Prateek:
+   // A primary shard starts with a "P" followed by an integer id.
+   // E.g., a cluster with 4 shards of core 8 will have shards named "C8_P0", "C8_R0_1", "C8_R0_2", "C8_P3".
+   //
+   // A replica shard starts with an "R" followed by a replica count and then its primary's id.
+   // E.g., for the above cluster, replicas of "P0" will be named "8_R1_0" and "8_R2_0".
+   // Similarly, replicas of "P3" will be named "8_R1_3" and "8_R2_3".
+    return "C8_R0_2"; // TODO
+   }
+ };
+
+ class Shard {
+  public:
+   Shard(ShardState newState, unsigned nodeId,
+         unsigned coreId, bool isReplica = false, unsigned primaryId = -1);
+   void setShardState(ShardState newState);
+   void setOwnerNodeId(unsigned id);
+
+   ShardState getShardState();
+   unsigned getOwnerNodeId();
+   bool isReplica();
+   unsigned getCoreId();
+   unsigned getPrimaryId();
+
+  private:
+   ShardId shardId;
+   ShardState shardState;
+   unsigned nodeId;
+   ShardId primaryShardId;  // if current shard is a replica
+ };
+
+
+class Node {
+ public:
+/*
+Node(const Node& cpy)
+ {
+	//	this->coreToShardsMap = cpy.coreToShardsMap;
+	    this->nodeId = cpy.nodeId;
+	    this->nodeName = cpy.nodeName;
+		this->ipAddress = cpy.ipAddress;
+		this->portNumber = portNumber;
+		this->nodeMaster = nodeMaster;
+		this->nodeData = nodeData;
+		this->homeDir = homeDir;
+		this->numberOfThreads = numberOfThreads;
+ }
+*/
+  Node()
+  {
+	this->nodeId = 0;
+	this->nodeName = "";
+	this->ipAddress = "";
+	this->portNumber = 0;
+	this->nodeMaster = true;
+	this->nodeData = true;
+	this->dataDir = "";
+	this->homeDir = "";
+	this->numberOfThreads = 1;
+    this->thisIsMe = false;
+
+	//coreToShardsMap has to be initialized
+  
+  }
+
+  Node(std::string& nodeName, std::string& ipAddress, unsigned portNumber, bool thisIsMe){
+	this->nodeId = 0;
+	this->nodeName = nodeName;
+	this->ipAddress = ipAddress;
+    this->portNumber = portNumber;
+    this->thisIsMe = thisIsMe;
+	this->nodeMaster = true;
+	this->nodeData = true;
+	this->dataDir = "";
+	this->homeDir = "";
+	this->numberOfThreads = 1;
+  }
+
+  Node(std::string& nodeName, std::string& ipAddress, unsigned portNumber,bool thisIsMe, bool nodeMaster, bool nodeData,std::string& dataDir, std::string& homeDir) {
+	this->nodeId = 0;
+	this->nodeName = nodeName;
+	this->ipAddress = ipAddress;
+	this->portNumber = portNumber;
+	this->thisIsMe = thisIsMe;
+	this->nodeMaster = nodeMaster;
+	this->nodeData = nodeData;
+	this->dataDir = dataDir;
+	this->homeDir = homeDir;
+	this->numberOfThreads = 1; // default value is 1
+  }	
+
+  std::string getName(){
+	  return this->nodeName;
+  }
+
+  std::string getIpAddress(){
+	  return this->ipAddress;
+  }
+
+  unsigned int getId(){
+	  return this->nodeId;
+  }
+
+  unsigned int getPortNumber(){
+	  return this->portNumber;
+  }
+  Shard getShardById(const ShardId& shardId);
+  void addShard(const ShardId& shardId);
+  void removeShard(const ShardId& shardId);
+
+  unsigned getTotalPrimaryShards(); // for all the cores on this node
+  unsigned getTotalReplicaShards(); // for all the cores on this node
+
+  bool thisIsMe; // temporary for V0
+
+  // TODO (for Surendra): refine this iterator
+  // const Node& operator = (const Node& node);
+
+  // an iterator to go through the shards in this node
+  //class ShardIterator {
+  //public:
+  //unsigned first; // TODO: Ask Surendra
+  //Shard second;
+  //bool operator == (NodeIterator* rhs);
+  //};
+
+  //typedef NodeIterator * Iterator;
+  //Iterator begin();
+  //Iterator next();
+  //Iterator end();
+
+  private:
+  unsigned nodeId;
+  std::string ipAddress;
+  unsigned portNumber;
+  std::string nodeName;
+  // coreName -> shards mapping
+  // movie -> <shard0, shard1, shard3>
+  // customer -> <shard2, shard3>
+  boost::unordered_map<std::string, std::vector<Shard> > coreToShardsMap;
+
+  // Allow this node to be eligible as a master node (enabled by default).
+  bool nodeMaster;
+
+  // Allow this node to store data (enabled by default). If enabled, the node is eligible to store data shards.
+  bool nodeData;
+
+  // Home directory for all the index files of shards on this node.
+  string homeDir;
+
+  string dataDir;
+  unsigned int numberOfThreads;
+  // other node-related info
+};
+
+class CoreSchema {
+   string primaryKey;
+
+   string fieldLatitude;
+   string fieldLongitude;
+
+   int isPrimaryKeySearchable;
+
+   // characters to specially treat as part of words, and not as a delimiter
+   std::string allowedRecordTokenizerCharacters;
+
+   vector<std::pair<unsigned, string> > highlightAttributes;
+   string exactHighlightMarkerPre;
+   string exactHighlightMarkerPost;
+   string fuzzyHighlightMarkerPre;
+   string fuzzyHighlightMarkerPost;
+   unsigned highlightSnippetLen;
+   // array of local HTTP ports (if any) index by port type enum
+   // vector<unsigned short> ports;
+};
+
+class CoreIndex {
+   bool supportSwapInEditDistance;
+
+   bool enableWordPositionIndex;
+   bool enableCharOffsetIndex;
+
+   bool recordBoostFieldFlag;
+   string recordBoostField;
+   unsigned queryTermBoost;
+   //IndexCreateOrLoad indexCreateOrLoad;
+   unsigned indexCreateOrLoad;
+
+   // <schema><types><fieldType><analyzer><filter>
+   bool stemmerFlag;
+   std::string stemmerFile;
+   std::string synonymFilterFilePath;
+   bool synonymKeepOrigFlag;
+   std::string stopFilterFilePath;
+   std::string protectedWordsFilePath;
+
+};
+
+class CoreQuery {
+  // srch2::instantsearch::ResponseType searchResponseContent;
+  int searchResponseJsonFormat;
+  vector<string> attributesToReturn;
+
+  bool supportAttributeBasedSearch;
+
+  // facet
+  bool facetEnabled;
+  vector<int> facetTypes; // 0 : simple , 1 : range
+  vector<string> facetAttributes;
+  vector<string> facetStarts;
+  vector<string> facetEnds;
+  vector<string> facetGaps;
+
+  string dataDir;
+  string indexPath; // srch2Home + dataDir
+
+  //DataSourceType dataSourceType;
+  string dataFile;
+  string dataFilePath;
+
+  int indexType;
+
+   //map<string , SearchableAttributeInfoContainer> searchableAttributesInfo;
+   //map<string , RefiningAttributeInfoContainer > refiningAttributesInfo;
+
+   int searchType;
+
+   // <config><query><rankingAlgorithm>
+   string scoringExpressionString;
+
+   // <config><query>
+   float fuzzyMatchPenalty;
+   float queryTermSimilarityThreshold;
+   float queryTermLengthBoost;
+   float prefixMatchPenalty;
+
+   vector<string> sortableAttributes;
+   //vector<srch2::instantsearch::FilterType> sortableAttributesType; // Float or unsigned
+   vector<string> sortableAttributesDefaultValue;
+   int attributeToSort;
+   unsigned cacheSizeInBytes;
+   int resultsToRetrieve;
+   bool exactFuzzy;
+   bool queryTermPrefixType;
+
+   unsigned defaultNumberOfSuggestions;
+};
+
+class CoreUpdateHandler {
+  uint64_t memoryLimit;
+  uint32_t documentLimit;
+
+  // <config><updatehandler><mergePolicy>
+  unsigned mergeEveryNSeconds;
+  unsigned mergeEveryMWrites;
+
+  // no config option for this yet
+  unsigned updateHistogramEveryPMerges;
+  unsigned updateHistogramEveryQWrites;
+};
+
+class CoreMongoDB {
+  string mongoHost;
+  string mongoPort;
+  string mongoDbName;
+  string mongoCollection;
+  unsigned mongoListenerWaitTime;
+
+  // stores the value of maximum allowed retries when MongoDB listener encounters some problem.
+  unsigned mongoListenerMaxRetryOnFailure;
+};
+
+class Core {
+   string coreName;
+
+   // In V0, the "number_of_shards" is a one-time setting for a
+   // core. In the future (possibly after V1), we can support dynamic
+   // migration by allowing this number to change.
+   unsigned numberOfPrimaryShards;
+
+   // Number of replicas (additional copies) of an index (1 by
+   // default). The "number_of_replicas" can be increased or
+   // decreased anytime, by using the Index Update Settings API. We
+   // can do it in V0 or after V1. SRCH2 will take care about load
+   // balancing, relocating, gathering the results from nodes, etc.
+   // ES: core.number_of_replicas: 1 // index.number_of_replicas: 1
+   unsigned numberOfReplicas; // always 0 for V0
+
+   CoreSchema coreSchema;
+
+   CoreIndex coreIndex;
+
+   CoreQuery coreQuery;
+
+   CoreUpdateHandler coreUpdateHandler;
+
+   CoreMongoDB coreMongoDB;
+};
+
+enum CLUSTERSTATE {
+  CLUSTERSTATE_GREEN,  // all nodes are green
+  CLUSTERSTATE_RED,    // all nodes are red ..possible ?
+  CLUSTERSTATE_YELLOW  // not all nodes are green.
+};
+
+class CoreInfo_t;
+
+class Cluster {
+  public:
+
+	std::vector<Node>* getNodes(){
+		return &nodes;
+	}
+  string getClusterName()
+  {
+	return this->clusterName;
+  }
+
+  CLUSTERSTATE getClusterState();
+
+  unsigned     getMasterNodeId();
+  bool         isMasterNode(unsigned nodeId);
+
+  void         getNodeById(unsigned id, Node& node);
+  unsigned     getTotalNumberOfNodes();
+  
+  void setClusterName(std::string& clusterName)
+  {
+	this->clusterName = clusterName;
+  }
+
+  // get the node ID and coreId for a given shard Id
+  void         getNodeIdAndCoreId(const ShardId& shardId, unsigned& nodeId, unsigned& coreId);
+
+ private:
+  string       clusterName;
+  CLUSTERSTATE clusterState;
+
+  std::vector<Node> nodes;  // nodes in the cluster
+  unsigned          masterNodeId;
+
+  std::vector<CoreInfo_t> cores;  // cores in the cluster
+
+  // "primary to replicas" map: from a primary shard id to ids of replica shards
+  // e.g., primary shard "P0" has replicas "R1_0" and "R2_0"
+  boost::unordered_map<std::string, std::vector<std::string> > primaryToReplicaMap;
+
+  // friend class SynchronizationManager;
+};
 
 // This class is used to collect information from the config file and pass them other modules
 // in the system.
@@ -95,7 +476,6 @@ public:
     bool isMultiValued;
 };
 
-class CoreInfo_t;
 
 // helper state between different sections of the config file
 struct CoreConfigParseState_t {
@@ -134,9 +514,13 @@ inline  enum PortType_t incrementPortType(PortType_t &oldValue)
 class ConfigManager {
 public:
     typedef std::map<const string, CoreInfo_t *> CoreInfoMap_t;
+    Cluster getCluster(){
+    	return this->cluster;
+    }
+
 
 private:
-
+    Cluster cluster;
     // <config>
     string licenseKeyFile;
     string httpServerListeningHostname;
@@ -251,6 +635,9 @@ public:
     ConfigManager(const string& configfile);
     virtual ~ConfigManager();
 
+    //Declaring function to parse node tags
+    void parseNode(std::vector<Node>* nodes, xml_node& childNode);
+
     CoreInfo_t *getCoreInfoMap(const string &coreName) const;
     CoreInfoMap_t::iterator coreInfoIterateBegin() { return coreInfoMap.begin(); }
     CoreInfoMap_t::iterator coreInfoIterateEnd() { return coreInfoMap.end(); }
@@ -355,6 +742,17 @@ public:
 private:
 
 // configuration file tag and attribute names for ConfigManager
+
+    static const char* const nodeListeningHostNameTag;
+    static const char* const nodeListeningPortTag;
+    static const char* const nodeCurrentTag;
+    static const char* const nodeNameTag;
+    static const char* const nodeMasterTag;
+    static const char* const nodeDataTag;
+    static const char* const nodeHomeTag;
+    static const char* const nodeDataDirTag;
+
+
     static const char* const accessLogFileString;
     static const char* const analyzerString;
     static const char* const cacheSizeString;
@@ -747,4 +1145,4 @@ protected:
 }
 }
 
-#endif /* __WRAPPER__SRCH2SERVERCONG_H__ */
+#endif // __SERVER__SRCH2SERVERCONG_H__ 
