@@ -255,7 +255,7 @@ Node(const Node& cpy)
   // coreName -> shards mapping
   // movie -> <shard0, shard1, shard3>
   // customer -> <shard2, shard3>
- boost::unordered_map<std::string, std::vector<Shard> > coreToShardsMap;
+  boost::unordered_map<std::string, std::vector<Shard> > coreToShardsMap;   //not required, but leaving it, in case required
 
   // Allow this node to be eligible as a master node (enabled by default).
   bool nodeMaster;
@@ -389,34 +389,6 @@ class CoreMongoDB {
   unsigned mongoListenerMaxRetryOnFailure;
 };
 
-class Core {
-  unsigned coreId; // starting from 0, auto increment
-
-  string coreName;
-
-  // In V0, the "number_of_shards" is a one-time setting for a
-  // core. In the future (possibly after V1), we can support dynamic
-  // migration by allowing this number to change.
-  unsigned numberOfPrimaryShards;
-
-  // Number of replicas (additional copies) of an index (1 by
-  // default). The "number_of_replicas" can be increased or
-  // decreased anytime, by using the Index Update Settings API. We
-  // can do it in V0 or after V1. SRCH2 will take care about load
-  // balancing, relocating, gathering the results from nodes, etc.
-  // ES: core.number_of_replicas: 1 // index.number_of_replicas: 1
-  unsigned numberOfReplicas; // always 0 for V0
-
-  CoreSchema coreSchema;
-  
-  CoreIndex coreIndex;
-  
-  CoreQuery coreQuery;
-  
-  CoreUpdateHandler coreUpdateHandler;
-  
-  CoreMongoDB coreMongoDB;
-};
 
 enum CLUSTERSTATE {
   CLUSTERSTATE_GREEN,  // all nodes are green
@@ -428,6 +400,8 @@ class CoreInfo_t;
 
 class Cluster {
  public:
+
+  map<ShardId, Shard> listOfShards;
 
   std::vector<Node>* getNodes(){
     return &nodes;
@@ -581,7 +555,6 @@ public:
     Cluster* getCluster(){
     	return &(this->cluster);
     }
-
 
 private:
     Cluster cluster;
@@ -805,7 +778,6 @@ private:
     static const char* const nodeHomeTag;
     static const char* const nodeDataDirTag;
 
-
     static const char* const accessLogFileString;
     static const char* const analyzerString;
     static const char* const cacheSizeString;
@@ -928,6 +900,28 @@ private:
 class CoreInfo_t {
 
 public:
+	unsigned coreId; // starting from 0, auto increment
+	string coreName;
+
+	  // In V0, the "number_of_shards" is a one-time setting for a
+	  // core. In the future (possibly after V1), we can support dynamic
+	  // migration by allowing this number to change.
+	unsigned numberOfPrimaryShards;
+
+	  // Number of replicas (additional copies) of an index (1 by
+	  // default). The "number_of_replicas" can be increased or
+	  // decreased anytime, by using the Index Update Settings API. We
+	  // can do it in V0 or after V1. SRCH2 will take care about load
+	  // balancing, relocating, gathering the results from nodes, etc.
+	  // ES: core.number_of_replicas: 1 // index.number_of_replicas: 1
+	unsigned numberOfReplicas; // always 0 for V0
+	CoreSchema coreSchema;
+	CoreIndex coreIndex;
+	CoreQuery coreQuery;
+	CoreUpdateHandler coreUpdateHandler;
+	CoreMongoDB coreMongoDB;
+	vector<ShardId> shards;
+
     CoreInfo_t(class ConfigManager *manager) : configManager(manager) {};
     CoreInfo_t(const CoreInfo_t &src);
 
