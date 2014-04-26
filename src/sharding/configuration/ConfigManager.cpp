@@ -1720,7 +1720,6 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
                           std::stringstream &parseError,
                           std::stringstream &parseWarnings)
 {
-
     string tempUse = ""; // This is just for temporary use.
 
     CoreInfo_t *defaultCoreInfo = NULL;
@@ -1729,23 +1728,17 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
 
     xml_node clusterName = configNode.child("cluster-name");
     if (clusterName && clusterName.text()) { // checks if the config/srch2Home has any text in it or not
-    	  //cout<<clusterName.child_value();
           tempUse = string(clusterName.text().get());
           cluster.setClusterName(tempUse);
-          //cout<<"member variable is "<<cluster.getClusterName()<<flush;
-          //cout<<flush;
-      } else {
-          parseError << "Clustername is not set.\n";
-          configSuccess = false;
-          return;
-      }
+      } 
 
     tempUse = "";
 
     std::vector<Node>* nodes = cluster.getNodes();
 
     xml_node nodeTag = configNode.child("node");
-    ConfigManager::parseNode(nodes, nodeTag);
+    if (nodeTag)
+      ConfigManager::parseNode(nodes, nodeTag);
 
     // srch2Home is a required field
     xml_node childNode = configNode.child(srch2HomeString);
