@@ -1,4 +1,5 @@
-//$Id: ConfigManager.h 2013-07-5 02:11:13Z iman $
+
+// $Id$
 
 #ifndef __CONFIGMANAGER_H__
 #define __CONFIGMANAGER_H__
@@ -45,57 +46,80 @@ namespace httpwrapper {
  //
  class ShardId {
  public:
-
-   unsigned  coreId;
+   unsigned coreId;
    unsigned partitionId; // ID for a partition, numbered 0, 1, 2, ...
 
    // ID for a specific primary/replica for a partition; assume #0 is always the primary shard.  For V0, replicaId is always 0
    unsigned replicaId;
+
    bool isPrimaryShard() {
-    return (replicaId == 0);
-    // replica #0 is always the primary shard
+     return (replicaId == 0); // replica #0 is always the primary shard
    }
 
    std::string toString() {
-   // A primary shard starts with a "P" followed by an integer id.
-   // E.g., a cluster with 4 shards of core 8 will have shards named "C8_P0", "C8_R0_1", "C8_R0_2", "C8_P3".
-   //
-   // A replica shard starts with an "R" followed by a replica count and then its primary's id.
-   // E.g., for the above cluster, replicas of "P0" will be named "8_R1_0" and "8_R2_0".
-   // Similarly, replicas of "P3" will be named "8_R3_1" and "8_R3_2".
-	   if(coreId != unsigned(-1) || partitionId != unsigned(-1) || replicaId != unsigned(-1)){
-	   std::stringstream sstm;
-	   sstm << "C" << coreId << "_";
-	   if(isPrimaryShard()){
-		   sstm << "P" << partitionId;
-	   }
-	   else{
-		   sstm << "R" << partitionId << "_" << replicaId;
-	   }
-	   return sstm.str();
-	   }
-	   else{
-		   return "";
-	   }
+     // A primary shard starts with a "P" followed by an integer id.
+     // E.g., a cluster with 4 shards of core 8 will have shards named "C8_P0", "C8_R0_1", "C8_R0_2", "C8_P3".
+     //
+     // A replica shard starts with an "R" followed by a replica count and then its primary's id.
+     // E.g., for the above cluster, replicas of "P0" will be named "8_R1_0" and "8_R2_0".
+     // Similarly, replicas of "P3" will be named "8_R3_1" and "8_R3_2".
+     if(coreId != unsigned(-1) || partitionId != unsigned(-1) || replicaId != unsigned(-1)){
+       std::stringstream sstm;
+       sstm << "C" << coreId << "_";
+       if (isPrimaryShard()){
+	 sstm << "P" << partitionId;
+       }
+       else{
+	 sstm << "R" << partitionId << "_" << replicaId;
+       }
+       return sstm.str();
+     }
+     else{
+       return "";
+     }
    }
 
-   ShardId(){
-	   coreId = unsigned(-1);
-	   partitionId = unsigned(-1);
-	   replicaId = unsigned(-1);
+   ShardId() {
+     coreId = unsigned(-1);
+     partitionId = unsigned(-1);
+     replicaId = unsigned(-1);
    }
-
  };
 
- class Shard {
+ class ShardIdComparator {
+ public:
+   // returns s1 > s2
+   bool operator() (const ShardId s1, const ShardId s2) {
+     if (s1.coreId > s2.coreId)
+       return true;
 
+     if (s1.coreId < s2.coreId)
+       return false;
+
+     // they have equal coreId; we look at their partitionId
+     if (s1.partitionId > s2.partitionId)
+       return true;
+
+     if (s1.partitionId < s2.partitionId)
+       return false;
+
+     // they have equal partitionId; we look at their replicaId
+     if (s1.replicaId > s2.replicaId)
+       return true;
+
+     return false;
+   }
+ };
+
+
+ class Shard {
    public:
    Shard(unsigned nodeId, unsigned coreId, unsigned partitionId = 0, unsigned replicaId = 0){
-	   this->nodeId = nodeId;
-	   this->shardState = SHARDSTATE_UNALLOCATED;
-	   this->shardId.coreId = coreId;
-	   this->shardId.partitionId = partitionId;
-	   this->shardId.replicaId = replicaId;
+     this->nodeId = nodeId;
+     this->shardState = SHARDSTATE_UNALLOCATED;
+     this->shardId.coreId = coreId;
+     this->shardId.partitionId = partitionId;
+     this->shardId.replicaId = replicaId;
    }
 
    //Can be used in Migration
@@ -255,7 +279,7 @@ Node(const Node& cpy)
   // coreName -> shards mapping
   // movie -> <shard0, shard1, shard3>
   // customer -> <shard2, shard3>
- boost::unordered_map<std::string, std::vector<Shard> > coreToShardsMap;
+  boost::unordered_map<std::string, std::vector<Shard> > coreToShardsMap; // not required for now
 
   // Allow this node to be eligible as a master node (enabled by default).
   bool nodeMaster;
@@ -389,34 +413,6 @@ class CoreMongoDB {
   unsigned mongoListenerMaxRetryOnFailure;
 };
 
-class Core {
-  unsigned coreId; // starting from 0, auto increment
-
-  string coreName;
-
-  // In V0, the "number_of_shards" is a one-time setting for a
-  // core. In the future (possibly after V1), we can support dynamic
-  // migration by allowing this number to change.
-  unsigned numberOfPrimaryShards;
-
-  // Number of replicas (additional copies) of an index (1 by
-  // default). The "number_of_replicas" can be increased or
-  // decreased anytime, by using the Index Update Settings API. We
-  // can do it in V0 or after V1. SRCH2 will take care about load
-  // balancing, relocating, gathering the results from nodes, etc.
-  // ES: core.number_of_replicas: 1 // index.number_of_replicas: 1
-  unsigned numberOfReplicas; // always 0 for V0
-
-  CoreSchema coreSchema;
-  
-  CoreIndex coreIndex;
-  
-  CoreQuery coreQuery;
-  
-  CoreUpdateHandler coreUpdateHandler;
-  
-  CoreMongoDB coreMongoDB;
-};
 
 enum CLUSTERSTATE {
   CLUSTERSTATE_GREEN,  // all nodes are green
@@ -426,8 +422,10 @@ enum CLUSTERSTATE {
 
 class CoreInfo_t;
 
+
 class Cluster {
  public:
+  std::map<ShardId, Shard, ShardIdComparator> shardMap;
 
   std::vector<Node>* getNodes(){
     return &nodes;
@@ -581,7 +579,6 @@ public:
     Cluster* getCluster(){
     	return &(this->cluster);
     }
-
 
 private:
     Cluster cluster;
@@ -805,7 +802,6 @@ private:
     static const char* const nodeHomeTag;
     static const char* const nodeDataDirTag;
 
-
     static const char* const accessLogFileString;
     static const char* const analyzerString;
     static const char* const cacheSizeString;
@@ -928,6 +924,28 @@ private:
 class CoreInfo_t {
 
 public:
+	unsigned coreId; // starting from 0, auto increment
+	string coreName;
+
+	// In V0, the "number_of_shards" is a one-time setting for a
+	// core. In the future (possibly after V1), we can support dynamic
+	// migration by allowing this number to change.
+	unsigned numberOfPrimaryShards;
+
+	// Number of replicas (additional copies) of an index (1 by
+	// default). The "number_of_replicas" can be increased or
+	// decreased anytime, by using the Index Update Settings API. We
+	// can do it in V0 or after V1. SRCH2 will take care about load
+	// balancing, relocating, gathering the results from nodes, etc.
+	// ES: core.number_of_replicas: 1 // index.number_of_replicas: 1
+	unsigned numberOfReplicas; // always 0 for V0
+	CoreSchema coreSchema;
+	CoreIndex coreIndex;
+	CoreQuery coreQuery;
+	CoreUpdateHandler coreUpdateHandler;
+	CoreMongoDB coreMongoDB;
+	vector<ShardId> shards;
+
     CoreInfo_t(class ConfigManager *manager) : configManager(manager) {};
     CoreInfo_t(const CoreInfo_t &src);
 
