@@ -13,6 +13,12 @@ namespace httpwrapper {
 
 
 struct SerializableSearchResults{
+
+	SerializableSearchResults(){
+		queryResults = NULL;
+		searcherTime = 0;
+	}
+
 	QueryResults * queryResults;
 	unsigned searcherTime;
 	// extra information to be added later

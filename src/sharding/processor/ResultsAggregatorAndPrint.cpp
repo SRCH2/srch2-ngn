@@ -1,6 +1,5 @@
 #include "ResultsAggregatorAndPrint.h"
 
-
 namespace srch2is = srch2::instantsearch;
 using namespace std;
 
@@ -15,42 +14,63 @@ namespace httpwrapper {
  * this function uses aggregateRecords and aggregateFacets for
  * aggregating result records and calculated records
  */
-void ResultAggregatorAndPrint::aggregateSearchResults(RoutingManager::Message * messages){
+void SearchResultAggregatorAndPrint::callBack(vector<SerializableSearchResults *> responseObjects){
 
 
 	// move on all responses of all shards and use them
 	srch2is::QueryResultFactory * resultsFactory = new srch2is::QueryResultFactory();
-	for(int shardIndex = 0 ; shardIndex < routingManager->getNumberOfShards(this->coreShardInfo) ; ++shardIndex ){
-		if(messages[shardIndex].type == RoutingManager::QueryResultsMessageType){
-
-			QueryResults * resultsOfThisShard =
-					RoutingManager::QueryResultsMessage::parseQueryResultsMessage((RoutingManager::QueryResultsMessage *)&messages[shardIndex],
-							resultsFactory);
-			resultsOfAllShards.push_back(resultsOfThisShard);
-		}else if(messages[shardIndex].type == RoutingManager::MessageTimeout){
-			/// What should DP do on timeout?
-		}else{
-			/// This should not happen. Only two kinds of messages can come to this function
+	for(int responseIndex = 0 ; responseIndex < responseObjects.size() ; ++responseIndex ){
+		QueryResults * resultsOfThisShard = responseObjects.at(responseIndex)->queryResults;
+		resultsOfAllShards.push_back(resultsOfThisShard);
+		if(results.aggregatedSearcherTime < responseObjects.at(responseIndex)->searcherTime){
+			results.aggregatedSearcherTime = responseObjects.at(responseIndex)->searcherTime;
 		}
 	}
-
 	aggregateRecords();
 	aggregateFacets();
 
-
-	// print the results
-	printResults();
-
-
 }
 
-void ResultAggregatorAndPrint::printResults(){
+void SearchResultAggregatorAndPrint::printResults(){
 	// print results on HTTP channel
 
 
     evkeyvalq headers;
     evhttp_parse_query(req->uri, &headers);
 
+
+    vector<RecordSnippet> highlightInfo;
+    /*
+     *  Do snippet generation only if
+     *  1. There are attributes marked to be highlighted
+     *  2. Query is not facet only
+     *  3. Highlight is not turned off in the query ( default is on )
+     */
+    struct timespec hltstart;
+    clock_gettime(CLOCK_REALTIME, &hltstart);
+
+//    if (server->indexDataConfig->getHighlightAttributeIdsVector().size() > 0 &&
+//    		!paramContainer.onlyFacets &&
+//    		paramContainer.isHighlightOn) {
+//
+//    	ServerHighLighter highlighter =  ServerHighLighter(finalResults, server, paramContainer,
+//    			logicalPlan.getOffset(), logicalPlan.getNumberOfResultsToRetrieve());
+//    	highlightInfo.reserve(logicalPlan.getNumberOfResultsToRetrieve());
+//    	highlighter.generateSnippets(highlightInfo);
+//    	if (highlightInfo.size() == 0 && finalResults->getNumberOfResults() > 0) {
+//    		Logger::warn("Highligting is on but snippets were not generated!!");
+//    	}
+//    }
+
+    struct timespec hltend;
+    clock_gettime(CLOCK_REALTIME, &hltend);
+    unsigned hlTime = (hltend.tv_sec - hltstart.tv_sec) * 1000
+            + (hltend.tv_nsec - hltstart.tv_nsec) / 1000000;
+
+    struct timespec tend;
+    clock_gettime(CLOCK_REALTIME, &tend);
+    unsigned parseAndSearchTime = (tend.tv_sec - getStartTimer().tv_sec) * 1000
+            + (tend.tv_nsec - getStartTimer().tv_nsec) / 1000000;
 
 	//5. call the print function to print out the results
 	switch (logicalPlan->getQueryType()) {
@@ -61,7 +81,7 @@ void ResultAggregatorAndPrint::printResults(){
 				logicalPlan->getOffset(),
 				results.allResults.size(),
 				results.allResults.size(),
-				paramContainer.getMessageString(), ts1, tstart, tend, highlightInfo, hlTime,
+				paramContainer.getMessageString(), parseAndSearchTime , highlightInfo, hlTime,
 				paramContainer.onlyFacets);
 
 		break;
@@ -75,33 +95,33 @@ void ResultAggregatorAndPrint::printResults(){
 		if (logicalPlan->getOffset() + logicalPlan->getNumberOfResultsToRetrieve()
 				> results.allResults.size()) {
 			// Case where you have return 10,20, but we got only 0,15 results.
-			HTTPRequestHandler::printResults(req, headers, logicalPlan,
+			printResults(req, headers, logicalPlan,
 					indexDataContainerConf, results.allResults,
 					logicalPlan->getExactQuery(),
 					logicalPlan->getOffset(), results.allResults.size(),
 					results.allResults.size(),
-					paramContainer.getMessageString(), ts1, tstart, tend , highlightInfo, hlTime,
+					paramContainer.getMessageString(), parseAndSearchTime, highlightInfo, hlTime,
 					paramContainer.onlyFacets);
 		} else { // Case where you have return 10,20, but we got only 0,25 results and so return 10,20
-			HTTPRequestHandler::printResults(req, headers, logicalPlan,
+			printResults(req, headers, logicalPlan,
 					indexDataContainerConf, results.allResults,
 					logicalPlan->getExactQuery(),
 					logicalPlan->getOffset(),
 					logicalPlan->getOffset() + logicalPlan->getNumberOfResultsToRetrieve(),
 					results.allResults.size(),
-					paramContainer.getMessageString(), ts1, tstart, tend, highlightInfo, hlTime,
+					paramContainer.getMessageString(), parseAndSearchTime, highlightInfo, hlTime,
 					paramContainer.onlyFacets);
 		}
 		break;
 	case srch2is::SearchTypeRetrieveById:
 //		finalResults->printStats();
-		HTTPRequestHandler::printOneResultRetrievedById(req,
+		printOneResultRetrievedById(req,
 				headers,
 				logicalPlan ,
 				indexDataContainerConf,
 				results.allResults ,
 				paramContainer.getMessageString() ,
-				ts1, tstart , tend);
+				parseAndSearchTime);
 		break;
 	default:
 		break;
@@ -122,14 +142,18 @@ void ResultAggregatorAndPrint::printResults(){
  * Iterate over the recordIDs in queryResults and get the record.
  * Add the record information to the request.out string.
  */
-void ResultAggregatorAndPrint::printResults(evhttp_request *req,
+void SearchResultAggregatorAndPrint::printResults(evhttp_request *req,
         const evkeyvalq &headers, const LogicalPlan &queryPlan,
         const CoreInfo_t *indexDataConfig,
         const vector<QueryResult *> queryResultsVector, const Query *query,
         const unsigned start, const unsigned end,
         const unsigned retrievedResults, const string & message,
-        const unsigned ts1, struct timespec &tstart, struct timespec &tend ,
-        const vector<RecordSnippet>& recordSnippets, unsigned hlTime, bool onlyFacets) {
+        const unsigned ts1 , const vector<RecordSnippet>& recordSnippets, unsigned hlTime, bool onlyFacets) {
+
+    // start the timer for printing
+    struct timespec tstart;
+    // end the timer for printing
+    struct timespec tend;
 
     Json::Value root;
     static pair<string, string> internalRecordTags("srch2_internal_record_123456789", "record");
@@ -368,101 +392,87 @@ void ResultAggregatorAndPrint::printResults(evhttp_request *req,
 }
 
 
-
-
-/*
- * The main function responsible of aggregating info coming from
- * different shards
+/**
+ * Iterate over the recordIDs in queryResults and get the record.
+ * Add the record information to the request.out string.
  */
-void ResultAggregatorAndPrint::aggregateCoreInfo(RoutingManager::Message * messages){
+void SearchResultAggregatorAndPrint::printOneResultRetrievedById(evhttp_request *req, const evkeyvalq &headers,
+        const LogicalPlan &queryPlan,
+        const CoreInfo_t *indexDataConfig,
+        const QueryResults *queryResults,
+        const srch2is::Indexer *indexer,
+        const string & message,
+        const unsigned ts1){
 
-	vector<unsigned> shardCoreInfos;
-	// move on all responses of all shards and use them
-	for(int shardIndex = 0 ; shardIndex < routingManager->getNumberOfShards() ; ++shardIndex ){
-		if(messages[shardIndex].type == RoutingManager::GetInfoMessageType){
+	struct timespec tstart;
+	struct timespec tend;
 
-			unsigned thisShardInfo =
-					RoutingManager::CoreInfoMessage::parseCoreInfoMessage((RoutingManager::CoreInfoMessage *)&messages[shardIndex]);
+    Json::Value root;
+    pair<string, string> internalRecordTags("srch2_internal_record_123456789", "record");
+    pair<string, string> internalSnippetTags("srch2_internal_snippet_123456789", "snippet");
 
-			shardCoreInfos.push_back(thisShardInfo);
+    // In each pair, the first one is the internal json label for the unparsed text, and
+    // the second one is the final json label used in the print() function
+    vector<pair<string, string> > tags;
+    tags.push_back(internalRecordTags);tags.push_back(internalSnippetTags);
+    // We use CustomizableJsonWriter with the internal record tag so that we don't need to
+    // parse the internalRecordTag string to add it to the JSON object.
+    CustomizableJsonWriter writer(&tags);
 
-		}else if(messages[shardIndex].type == RoutingManager::MessageTimeout){
-			/// What should DP do on timeout?
-		}else{
-			/// This should not happen. Only two kinds of messages can come to this function
-		}
-	}
 
-	// aggregate core info objects
-	unsigned aggregation = 0 ; /// from shardCoreInfos vector
+    // For logging
+    string logQueries;
 
-	// print result info to HTTP channel
+    root["searcher_time"] = ts1;
+    root["results"].resize(queryResults->getNumberOfResults());
 
+    clock_gettime(CLOCK_REALTIME, &tstart);
+    unsigned counter = 0;
+
+    unsigned resultFound = queryResults->getNumberOfResults();
+    for (unsigned i = 0; i < queryResults->getNumberOfResults(); ++i) {
+    	unsigned internalRecordId = queryResults->getInternalRecordId(i);
+    	StoredRecordBuffer inMemoryData = indexer->getInMemoryData(internalRecordId);
+    	if (inMemoryData.start.get() == NULL) {
+    		--resultFound;
+    		continue;
+    	}
+        root["results"][counter]["record_id"] = queryResults->getRecordId(i);
+
+        if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_STORED_ATTR) {
+            unsigned internalRecordId = queryResults->getInternalRecordId(i);
+            string sbuffer;
+            genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i), sbuffer);
+            root["results"][counter][internalRecordTags.first] = sbuffer;
+        } else if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SELECTED_ATTR){
+        	unsigned internalRecordId = queryResults->getInternalRecordId(i);
+        	string sbuffer;
+        	const vector<string> *attrToReturn = indexDataConfig->getAttributesToReturn();
+        	genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
+        			sbuffer, attrToReturn);
+        	// The class CustomizableJsonWriter allows us to
+        	// attach the data string to the JSON tree without parsing it.
+        	root["results"][counter][internalRecordTags.first] = sbuffer;
+        }
+        ++counter;
+    }
+
+    clock_gettime(CLOCK_REALTIME, &tend);
+    unsigned ts2 = (tend.tv_sec - tstart.tv_sec) * 1000
+            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+    root["payload_access_time"] = ts2;
+
+    // return some meta data
+
+    root["type"] = queryPlan.getQueryType();
+    root["results_found"] = resultFound;
+
+    root["message"] = message;
+    Logger::info(
+            "ip: %s, port: %d GET query: %s, searcher_time: %d ms, payload_access_time: %d ms",
+            req->remote_host, req->remote_port, req->uri + 1, ts1, ts2);
+    bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", writer.write(root), headers);
 }
-
-
-/*
- * The main function responsible of aggregating success/failure of
- * serializing indexes and records
- */
-void ResultAggregatorAndPrint::aggregateSerlializingIndexesAndRecords(RoutingManager::Message * messages){
-
-
-	vector<bool> shardStatusValues;
-	// move on all responses of all shards and use them
-	for(int shardIndex = 0 ; shardIndex < routingManager->getNumberOfShards() ; ++shardIndex ){
-		if(messages[shardIndex].type == RoutingManager::StatusMessageType){
-
-			bool thisShardStatus =
-					RoutingManager::StatusMessage::parseStatusMessage((RoutingManager::StatusMessage *)&messages[shardIndex]);
-
-			shardStatusValues.push_back(thisShardStatus);
-
-		}else if(messages[shardIndex].type == RoutingManager::MessageTimeout){
-			/// What should DP do on timeout?
-		}else{
-			/// This should not happen. Only two kinds of messages can come to this function
-		}
-	}
-
-	// aggregate core info objects
-	bool status = 0 ; /// from shardCoreInfos vector
-
-	// print result info to HTTP channel
-}
-
-/*
- * The main function responsible of aggregating success/failure of
- * resetting logs
- */
-void ResultAggregatorAndPrint::aggregateResettingLogs(RoutingManager::Message * messages){
-
-	vector<bool> shardStatusValues;
-	// move on all responses of all shards and use them
-	for(int shardIndex = 0 ; shardIndex < routingManager->getNumberOfShards() ; ++shardIndex ){
-		if(messages[shardIndex].type == RoutingManager::StatusMessageType){
-
-			bool thisShardStatus =
-					RoutingManager::StatusMessage::parseStatusMessage((RoutingManager::StatusMessage *)&messages[shardIndex]);
-
-			shardStatusValues.push_back(thisShardStatus);
-
-		}else if(messages[shardIndex].type == RoutingManager::MessageTimeout){
-			/// What should DP do on timeout?
-		}else{
-			/// This should not happen. Only two kinds of messages can come to this function
-		}
-	}
-
-	// aggregate core info objects
-	bool status = 0 ; /// from shardCoreInfos vector
-
-	// print result info to HTTP channel
-}
-
-
-
-
 
 
 
@@ -470,7 +480,7 @@ void ResultAggregatorAndPrint::aggregateResettingLogs(RoutingManager::Message * 
  * Combines the results coming from all shards and
  * resorts them based on their scores
  */
-void ResultAggregatorAndPrint::aggregateRecords(){
+void SearchResultAggregatorAndPrint::aggregateRecords(){
 	// aggregate results
 	for(vector<QueryResults *>::iterator queryResultsItr = resultsOfAllShards.begin() ;
 			queryResultsItr != resultsOfAllShards.end() ; ++queryResultsItr){
@@ -482,14 +492,14 @@ void ResultAggregatorAndPrint::aggregateRecords(){
 	}
 
 	// sort final results
-	std::sort(results.allResults.begin(), results.allResults.end(), ResultAggregatorAndPrint::QueryResultsComparator());
+	std::sort(results.allResults.begin(), results.allResults.end(), SearchResultAggregatorAndPrint::QueryResultsComparator());
 }
 
 /*
  * Combines the facet results coming from all shards and
  * re-calculates facet values
  */
-void ResultAggregatorAndPrint::aggregateFacets(){
+void SearchResultAggregatorAndPrint::aggregateFacets(){
 
 	for(vector<QueryResults *>::iterator queryResultsItr = resultsOfAllShards.begin() ;
 			queryResultsItr != resultsOfAllShards.end() ; ++queryResultsItr){
@@ -517,7 +527,7 @@ void ResultAggregatorAndPrint::aggregateFacets(){
 /*
  * Merges destination with source and adds new items to source
  */
-void ResultAggregatorAndPrint::mergeFacetVectors(std::vector<std::pair<std::string, float> > & source,
+void SearchResultAggregatorAndPrint::mergeFacetVectors(std::vector<std::pair<std::string, float> > & source,
 		const std::vector<std::pair<std::string, float> > & destination){
 	for(std::vector<std::pair<std::string, float> >::const_iterator destinationItr = destination.begin();
 			destinationItr != destination.end(); ++destinationItr){
@@ -538,7 +548,7 @@ void ResultAggregatorAndPrint::mergeFacetVectors(std::vector<std::pair<std::stri
 }
 
 
-void ResultAggregatorAndPrint::aggregateEstimations(){
+void SearchResultAggregatorAndPrint::aggregateEstimations(){
 	results.isResultsApproximated = false;
 	for(vector<QueryResults *>::iterator queryResultsItr = resultsOfAllShards.begin() ;
 			queryResultsItr != resultsOfAllShards.end() ; ++queryResultsItr){
@@ -549,50 +559,6 @@ void ResultAggregatorAndPrint::aggregateEstimations(){
 	}
 }
 
-//###########################################################################
-//                       Partitioner
-//###########################################################################
-
-
-/*
- * Hash implementation :
- * 1. Uses getRecordValueToHash to find the value to be hashed for this record
- * 2. Uses TransportationManager to get total number of shards to know the hash space
- * 3. Uses hash(...) to choose which shard should be responsible for this record
- * 4. Returns the information of corresponding Shard (which can be discovered from SM)
- */
-unsigned Partitioner::getShardIDForRecord(Record * record){
-
-	unsigned valueToHash = getRecordValueToHash(record);
-
-	unsigned totalNumberOfShards = routingManager->getNumberOfShards();
-
-	return hash(valueToHash , totalNumberOfShards);
-}
-
-
-/*
- * Uses Configuration file and the given expression to
- * calculate the record corresponding value to be hashed
- * for example if this value is just ID for each record we just return
- * the value of ID
- */
-unsigned Partitioner::getRecordValueToHash(Record * record){
-
-	// When the record is being parsed, configuration is used to compute the hashable value of this
-	// record. It will be saved in record.
-	return 0;//TEMP
-}
-
-/*
- * Uses a hash function to hash valueToHash to a value in range [0,hashSpace)
- * and returns this value
- */
-unsigned Partitioner::hash(unsigned valueToHash, unsigned hashSpace){
-	// use a hash function
-	// now simply round robin
-	return valueToHash % hashSpace;
-}
 
 
 }

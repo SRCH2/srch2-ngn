@@ -44,9 +44,11 @@ public:
 
 
 	template<typename T>
-	void broadcast_wait_for_all_w_cb_n_timeout(Message * msg, T obj , TimeoutValue t, const CoreShardInfo * coreShardInfo);
+	void broadcast_wait_for_all_w_cb_n_timeout(void * msg, T obj , TimeoutValue t, const CoreShardInfo * coreShardInfo);
 	template<typename T>
 	void broadcast_w_cb_n_timeout(Message * msg, T obj, TimeoutValue t);
+	template<typename T>
+	void route_w_cb_n_timeout(void & msg, T * obj, TimeoutValue t);
 	Message connect_w_response_n_timeout(Message * msg, unsigned shardIndex, TimeoutValue timeout);
 	void route ( Message * msg, unsigned  shardID);
 };
@@ -56,7 +58,7 @@ class SynchronizationManager{
 };
 
 struct CoreShardInfo {
-
+	unsigned shardId;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -65,6 +67,13 @@ struct CoreShardInfo {
 class DPExternalRequestHandler {
 
 public:
+
+	DPExternalRequestHandler(ConfigManager * configurationManager, RoutingManager * routingManager, SynchronizationManager * synchronizationManager){
+		this->configurationManager = configurationManager;
+		this->routingManager = routingManager;
+		this->synchronizationManager = synchronizationManager;
+		partitioner = new Partitioner(routingManager,configurationManager);
+	}
 
 	// Public API which can be used by other modules
 
@@ -87,6 +96,15 @@ public:
 	void externalInsertCommand(evhttp_request *req);
 
 	/*
+	 * 1. Receives an update request from a client (not from another shard)
+	 * 2. Uses Partitioner to know which shard should handle this request
+	 * 3. sends this request to DPInternalRequestHandler objects of the chosen shard
+	 *    Since it's a blocking call, the results are retrieved at the same point and
+	 *    printed on the HTTP channel.
+	 */
+	void externalUpdateCommand(evhttp_request *req);
+
+	/*
 	 * 1. Receives an delete request from a client (not from another shard)
 	 * 2. Uses Partitioner to know which shard should handle this request
 	 * 3. sends this request to DPInternalRequestHandler objects of the chosen shard
@@ -96,48 +114,46 @@ public:
 	void externalDeleteCommand(evhttp_request *req);
 
 	/*
-	 * 1. Receives an update request from a client (not from another shard)
-	 * 2. Uses Partitioner to know which shard should handle this request
-	 * 3. sends this request to DPInternalRequestHandler objects of the chosen shard
-	 *    Since it's a blocking call, the results are retrieved at the same point and
-	 *    printed on the HTTP channel.
-	 */
-	void externalUpdateCommand(evhttp_request *req);
-
-
-	/*
 	 * 1. Receives a GetInfo request from a client (not from another shard)
 	 * 2. Broadcasts this command to all shards and blocks to get their response
 	 * 3. prints Success or Failure on HTTP channel
 	 */
-	void externalGetInfoCommand(evhttp_request *req);
+	void externalGetInfoCommand(evhttp_request *req, CoreShardInfo * coreShardInfo);
 
 	/*
 	 * 1. Receives a SerializeIndex request from a client (not from another shard)
 	 * 2. Broadcasts this command to all shards and blocks to get their response
 	 * 3. prints Success or Failure on HTTP channel
 	 */
-	void externalSerializeIndexCommand(evhttp_request *req);
+	void externalSerializeIndexCommand(evhttp_request *req, CoreShardInfo * coreShardInfo);
 
 	/*
 	 * 1. Receives a SerializeRecords request from a client (not from another shard)
 	 * 2. Broadcasts this command to all shards and blocks to get their response
 	 * 3. prints Success or Failure on HTTP channel
 	 */
-	void externalSerializeRecordsCommand(evhttp_request *req);
+	void externalSerializeRecordsCommand(evhttp_request *req, CoreShardInfo * coreShardInfo);
 
 	/*
 	 * 1. Receives a ResetLog request from a client (not from another shard)
 	 * 2. Broadcasts this command to all shards and blocks to get their response
 	 * 3. prints Success or Failure on HTTP channel
 	 */
-	void externalResetLogCommand(evhttp_request *req);
+	void externalResetLogCommand(evhttp_request *req, CoreShardInfo * coreShardInfo);
+
+	/*
+	 * Receives a commit request and boardcasts it to other shards
+	 */
+	void externalCommitCommand(evhttp_request *req, CoreShardInfo * coreShardInfo);
 
 
 private:
+	ConfigManager * configurationManager;
 	RoutingManager * routingManager;
 	SynchronizationManager * synchronizationManager;
-	ConfigManager * configurationManager;
+
+	// now, use Partitioner to choose a shard for this record
+	Partitioner * partitioner;
 
 };
 
