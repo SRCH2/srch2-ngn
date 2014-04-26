@@ -27,6 +27,12 @@ public:
 };
 
 class SerializableSearchResults {
+
+	SerializableSearchResults(){
+		queryResults = NULL;
+		searcherTime = 0;
+	}
+
 	QueryResults * queryResults;
 
   public:

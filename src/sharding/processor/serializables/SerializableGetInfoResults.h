@@ -1,22 +1,21 @@
-#ifndef __SHARDING_PROCESSOR_SERIALIZABLE_COMMAND_STATUS_H_
-#define __SHARDING_PROCESSOR_SERIALIZABLE_COMMAND_STATUS_H_
+#ifndef __SHARDING_PROCESSOR_SERIALIZABLE_GETINFO_RESULTS_H_
+#define __SHARDING_PROCESSOR_SERIALIZABLE_GETINFO_RESULTS_H_
 
 namespace srch2is = srch2::instantsearch;
 using namespace std;
-
-#include "sharding/configuration/ShardingConstants.h"
 
 namespace srch2 {
 namespace httpwrapper {
 
 
+struct SerializableGetInfoResults{
 
-struct SerializableCommandStatus{
-	unsigned commandNumber; // 0->insert, 1->update, 2->delete, 3->getInfo,
-	                         // 4->serializeIndex, 5->serializeRecords, 6->resetting logs
-	                         // 7->commit
-	bool status;
-    string message ;
+	unsigned readCount;
+	unsigned writeCount;
+	unsigned numberOfDocumentsInIndex;
+	string lastMergeTimeString;
+	unsigned docCount;
+	string versionInfo;
 
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
@@ -30,8 +29,7 @@ struct SerializableCommandStatus{
 
 };
 
-
 }
 }
 
-#endif // __SHARDING_PROCESSOR_SERIALIZABLE_COMMAND_STATUS_H_
+#endif // __SHARDING_PROCESSOR_SERIALIZABLE_GETINFO_RESULTS_H_

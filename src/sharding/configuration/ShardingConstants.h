@@ -4,22 +4,6 @@
 namespace srch2 {
 namespace httpwrapper {
 
-
-/*
- * Mapping between ShardingMessageType and callback functions in DP and ResultsAggregator :
- *
- * SearchCommandMessageType  => DPInternalRequestHandler::internalSearchCommand
- * InsertUpdateMessageType => DPInternalRequestHandler::internalInsertUpdateCommand
- * DeleteInfoMessageType => DPInternalRequestHandler::internalDeleteCommand
- * SerializeInfoMessageType => DPInternalRequestHandler::internalSerializeCommand
- * GetInfoMessageType => DPInternalRequestHandler::internalGetInfoCommand
- * ResettingLogMessageType => DPInternalRequestHandler::internalResetLogCommand
- *
- * SearchResultsMessageType => ResultAggregatorAndPrint::aggregateSearchResults
- * StatusMessageType => ResultAggregatorAndPrint::aggregateCommandStatus
- *
- *
- */
 enum ShardingMessageType{
     SearchCommandMessageType, // -> for LogicalPlan object
     SearchResultsMessageType, // -> for SerializedQueryResults object
@@ -27,6 +11,8 @@ enum ShardingMessageType{
     DeleteInfoMessageType, // -> for DeleteCommandInput object (used for delete)
     SerializeInfoMessageType, // -> for SerializeCommandInput object (used for serializing index and records)
     GetInfoMessageType, // -> for GetInfoCommandInput object (used for getInfo)
+    GetInfoResultsMessageType, // -> for GetInfoResults object
+    CommitCommandMessageType, // -> for CommitCommandInput object
     ResettingLogMessageType, // -> for ResetLogCommandInput (used for resetting log)
     StatusMessageType // -> for CommandStatus object (object returned from insert, delete, update)
 };
