@@ -295,125 +295,6 @@ Node(const Node& cpy)
   // other node-related info
 };
 
-
-class CoreSchema {
-   string primaryKey;
-
-   string fieldLatitude;
-   string fieldLongitude;
-
-   int isPrimaryKeySearchable;
-
-   // characters to specially treat as part of words, and not as a delimiter
-   std::string allowedRecordTokenizerCharacters;
-
-   vector<std::pair<unsigned, string> > highlightAttributes;
-   string exactHighlightMarkerPre;
-   string exactHighlightMarkerPost;
-   string fuzzyHighlightMarkerPre;
-   string fuzzyHighlightMarkerPost;
-   unsigned highlightSnippetLen;
-   // array of local HTTP ports (if any) index by port type enum
-   // vector<unsigned short> ports;
-};
-
-class CoreIndex {
-   bool supportSwapInEditDistance;
-
-   bool enableWordPositionIndex;
-   bool enableCharOffsetIndex;
-
-   bool recordBoostFieldFlag;
-   string recordBoostField;
-   unsigned queryTermBoost;
-   //IndexCreateOrLoad indexCreateOrLoad;
-   unsigned indexCreateOrLoad;
-
-   // <schema><types><fieldType><analyzer><filter>
-   bool stemmerFlag;
-   std::string stemmerFile;
-   std::string synonymFilterFilePath;
-   bool synonymKeepOrigFlag;
-   std::string stopFilterFilePath;
-   std::string protectedWordsFilePath;
-
-};
-
-class CoreQuery {
-  // srch2::instantsearch::ResponseType searchResponseContent;
-  int searchResponseJsonFormat;
-  vector<string> attributesToReturn;
-
-  bool supportAttributeBasedSearch;
-
-  // facet
-  bool facetEnabled;
-  vector<int> facetTypes; // 0 : simple , 1 : range
-  vector<string> facetAttributes;
-  vector<string> facetStarts;
-  vector<string> facetEnds;
-  vector<string> facetGaps;
-
-  string dataDir;
-  string indexPath; // srch2Home + dataDir
-
-  //DataSourceType dataSourceType;
-  string dataFile;
-  string dataFilePath;
-
-  int indexType;
-
-   //map<string , SearchableAttributeInfoContainer> searchableAttributesInfo;
-   //map<string , RefiningAttributeInfoContainer > refiningAttributesInfo;
-
-   int searchType;
-
-   // <config><query><rankingAlgorithm>
-   string scoringExpressionString;
-
-   // <config><query>
-   float fuzzyMatchPenalty;
-   float queryTermSimilarityThreshold;
-   float queryTermLengthBoost;
-   float prefixMatchPenalty;
-
-   vector<string> sortableAttributes;
-   //vector<srch2::instantsearch::FilterType> sortableAttributesType; // Float or unsigned
-   vector<string> sortableAttributesDefaultValue;
-   int attributeToSort;
-   unsigned cacheSizeInBytes;
-   int resultsToRetrieve;
-   bool exactFuzzy;
-   bool queryTermPrefixType;
-
-   unsigned defaultNumberOfSuggestions;
-};
-
-class CoreUpdateHandler {
-  uint64_t memoryLimit;
-  uint32_t documentLimit;
-
-  // <config><updatehandler><mergePolicy>
-  unsigned mergeEveryNSeconds;
-  unsigned mergeEveryMWrites;
-
-  // no config option for this yet
-  unsigned updateHistogramEveryPMerges;
-  unsigned updateHistogramEveryQWrites;
-};
-
-class CoreMongoDB {
-  string mongoHost;
-  string mongoPort;
-  string mongoDbName;
-  string mongoCollection;
-  unsigned mongoListenerWaitTime;
-
-  // stores the value of maximum allowed retries when MongoDB listener encounters some problem.
-  unsigned mongoListenerMaxRetryOnFailure;
-};
-
-
 enum CLUSTERSTATE {
   CLUSTERSTATE_GREEN,  // all nodes are green
   CLUSTERSTATE_RED,    // all nodes are red ..possible ?
@@ -939,11 +820,6 @@ public:
 	// balancing, relocating, gathering the results from nodes, etc.
 	// ES: core.number_of_replicas: 1 // index.number_of_replicas: 1
 	unsigned numberOfReplicas; // always 0 for V0
-	CoreSchema coreSchema;
-	CoreIndex coreIndex;
-	CoreQuery coreQuery;
-	CoreUpdateHandler coreUpdateHandler;
-	CoreMongoDB coreMongoDB;
 	vector<ShardId> shards;
 
     CoreInfo_t(class ConfigManager *manager) : configManager(manager) {};
