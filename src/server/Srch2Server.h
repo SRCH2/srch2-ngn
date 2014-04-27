@@ -10,7 +10,7 @@
 #include <instantsearch/GlobalCache.h>
 #include <instantsearch/QueryResults.h>
 
-#include "ConfigManager.h"
+#include "src/sharding/configuration/ConfigManager.h"
 #include "util/mypthread.h"
 
 #include "IndexWriteUtil.h"
