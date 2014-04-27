@@ -1,13 +1,14 @@
-//$Id: ConfigManager.h 2013-07-5 02:11:13Z iman $
 
-#ifndef __SERVER__SRCH2SERVERCONG_H__
-#define __SERVER__SRCH2SERVERCONG_H__
+// $Id$
 
-#include "util/xmlParser/pugixml.hpp"
+#ifndef __CONFIGMANAGER_H__
+#define __CONFIGMANAGER_H__
+
+#include "src/server/util/xmlParser/pugixml.hpp"
 
 #include <instantsearch/Schema.h>
 #include <instantsearch/Constants.h>
-#include "WrapperConstants.h"
+#include "src/wrapper/WrapperConstants.h"
 #include <string>
 #include <vector>
 #include <sstream>
@@ -16,7 +17,7 @@
 #include <boost/unordered_map.hpp>
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
-#include "util/Logger.h"
+#include "src/core/util/Logger.h"
 
 using namespace std;
 using namespace srch2::util;
@@ -44,48 +45,118 @@ namespace httpwrapper {
  //   P6  R6_1 R6_2 R6_3 R6_4
  //
  class ShardId {
-   unsigned  coreId;
+ public:
+   unsigned coreId;
    unsigned partitionId; // ID for a partition, numbered 0, 1, 2, ...
 
    // ID for a specific primary/replica for a partition; assume #0 is always the primary shard.  For V0, replicaId is always 0
    unsigned replicaId;
 
    bool isPrimaryShard() {
-    return (replicaId == 0); // replica #0 is always the primary shard
+     return (replicaId == 0); // replica #0 is always the primary shard
    }
 
    std::string toString() {
-   // TODO for Prateek:
-   // A primary shard starts with a "P" followed by an integer id.
-   // E.g., a cluster with 4 shards of core 8 will have shards named "C8_P0", "C8_R0_1", "C8_R0_2", "C8_P3".
-   //
-   // A replica shard starts with an "R" followed by a replica count and then its primary's id.
-   // E.g., for the above cluster, replicas of "P0" will be named "8_R1_0" and "8_R2_0".
-   // Similarly, replicas of "P3" will be named "8_R1_3" and "8_R2_3".
-    return "C8_R0_2"; // TODO
+     // A primary shard starts with a "P" followed by an integer id.
+     // E.g., a cluster with 4 shards of core 8 will have shards named "C8_P0", "C8_R0_1", "C8_R0_2", "C8_P3".
+     //
+     // A replica shard starts with an "R" followed by a replica count and then its primary's id.
+     // E.g., for the above cluster, replicas of "P0" will be named "8_R1_0" and "8_R2_0".
+     // Similarly, replicas of "P3" will be named "8_R3_1" and "8_R3_2".
+     if(coreId != unsigned(-1) || partitionId != unsigned(-1) || replicaId != unsigned(-1)){
+       std::stringstream sstm;
+       sstm << "C" << coreId << "_";
+       if (isPrimaryShard()){
+	 sstm << "P" << partitionId;
+       }
+       else{
+	 sstm << "R" << partitionId << "_" << replicaId;
+       }
+       return sstm.str();
+     }
+     else{
+       return "";
+     }
+   }
+
+   ShardId() {
+     coreId = unsigned(-1);
+     partitionId = unsigned(-1);
+     replicaId = unsigned(-1);
    }
  };
 
- class Shard {
-  public:
-   Shard(ShardState newState, unsigned nodeId,
-         unsigned coreId, bool isReplica = false, unsigned primaryId = -1);
-   void setShardState(ShardState newState);
-   void setOwnerNodeId(unsigned id);
+ class ShardIdComparator {
+ public:
+   // returns s1 > s2
+   bool operator() (const ShardId s1, const ShardId s2) {
+     if (s1.coreId > s2.coreId)
+       return true;
 
-   ShardState getShardState();
-   unsigned getOwnerNodeId();
-   bool isReplica();
-   unsigned getCoreId();
-   unsigned getPrimaryId();
+     if (s1.coreId < s2.coreId)
+       return false;
+
+     // they have equal coreId; we look at their partitionId
+     if (s1.partitionId > s2.partitionId)
+       return true;
+
+     if (s1.partitionId < s2.partitionId)
+       return false;
+
+     // they have equal partitionId; we look at their replicaId
+     if (s1.replicaId > s2.replicaId)
+       return true;
+
+     return false;
+   }
+ };
+
+
+ class Shard {
+   public:
+   Shard(unsigned nodeId, unsigned coreId, unsigned partitionId = 0, unsigned replicaId = 0){
+     this->nodeId = nodeId;
+     this->shardState = SHARDSTATE_UNALLOCATED;
+     this->shardId.coreId = coreId;
+     this->shardId.partitionId = partitionId;
+     this->shardId.replicaId = replicaId;
+   }
+
+   //Can be used in Migration
+    void setPartitionId(int partitionId){
+	this->shardId.partitionId = partitionId;
+    }
+
+	//Can be used in Migration
+    void setReplicaId(int replicaId){
+	this->shardId.replicaId = replicaId;
+    }
+
+   ShardId getShardId(){
+	   return this->shardId;
+   }
+
+   void setShardState(ShardState newState){
+	   this->shardState = newState;
+   }
+
+   void setNodeId(unsigned id){
+	   this->nodeId = id;
+   }
+
+   ShardState getShardState(){
+	   return this->shardState;
+   }
+
+   unsigned getNodeId(){
+	   return this->nodeId;
+   }
 
   private:
    ShardId shardId;
    ShardState shardState;
    unsigned nodeId;
-   ShardId primaryShardId;  // if current shard is a replica
  };
-
 
 class Node {
  public:
@@ -115,7 +186,6 @@ Node(const Node& cpy)
 	this->homeDir = "";
 	this->numberOfThreads = 1;
     this->thisIsMe = false;
-
 	//coreToShardsMap has to be initialized
   
   }
@@ -145,6 +215,21 @@ Node(const Node& cpy)
 	this->homeDir = homeDir;
 	this->numberOfThreads = 1; // default value is 1
   }	
+
+  std::string getHomeDir(){
+	  return this->homeDir;
+  }
+  std::string getDataDir(){
+	  return this->dataDir;
+  }
+
+  bool isMaster(){
+	  return nodeMaster;
+  }
+
+  bool isData(){
+	  return nodeData;
+  }
 
   std::string getName(){
 	  return this->nodeName;
@@ -194,7 +279,7 @@ Node(const Node& cpy)
   // coreName -> shards mapping
   // movie -> <shard0, shard1, shard3>
   // customer -> <shard2, shard3>
-  boost::unordered_map<std::string, std::vector<Shard> > coreToShardsMap;
+  boost::unordered_map<std::string, std::vector<Shard> > coreToShardsMap; // not required for now
 
   // Allow this node to be eligible as a master node (enabled by default).
   bool nodeMaster;
@@ -210,150 +295,6 @@ Node(const Node& cpy)
   // other node-related info
 };
 
-class CoreSchema {
-   string primaryKey;
-
-   string fieldLatitude;
-   string fieldLongitude;
-
-   int isPrimaryKeySearchable;
-
-   // characters to specially treat as part of words, and not as a delimiter
-   std::string allowedRecordTokenizerCharacters;
-
-   vector<std::pair<unsigned, string> > highlightAttributes;
-   string exactHighlightMarkerPre;
-   string exactHighlightMarkerPost;
-   string fuzzyHighlightMarkerPre;
-   string fuzzyHighlightMarkerPost;
-   unsigned highlightSnippetLen;
-   // array of local HTTP ports (if any) index by port type enum
-   // vector<unsigned short> ports;
-};
-
-class CoreIndex {
-   bool supportSwapInEditDistance;
-
-   bool enableWordPositionIndex;
-   bool enableCharOffsetIndex;
-
-   bool recordBoostFieldFlag;
-   string recordBoostField;
-   unsigned queryTermBoost;
-   //IndexCreateOrLoad indexCreateOrLoad;
-   unsigned indexCreateOrLoad;
-
-   // <schema><types><fieldType><analyzer><filter>
-   bool stemmerFlag;
-   std::string stemmerFile;
-   std::string synonymFilterFilePath;
-   bool synonymKeepOrigFlag;
-   std::string stopFilterFilePath;
-   std::string protectedWordsFilePath;
-
-};
-
-class CoreQuery {
-  // srch2::instantsearch::ResponseType searchResponseContent;
-  int searchResponseJsonFormat;
-  vector<string> attributesToReturn;
-
-  bool supportAttributeBasedSearch;
-
-  // facet
-  bool facetEnabled;
-  vector<int> facetTypes; // 0 : simple , 1 : range
-  vector<string> facetAttributes;
-  vector<string> facetStarts;
-  vector<string> facetEnds;
-  vector<string> facetGaps;
-
-  string dataDir;
-  string indexPath; // srch2Home + dataDir
-
-  //DataSourceType dataSourceType;
-  string dataFile;
-  string dataFilePath;
-
-  int indexType;
-
-   //map<string , SearchableAttributeInfoContainer> searchableAttributesInfo;
-   //map<string , RefiningAttributeInfoContainer > refiningAttributesInfo;
-
-   int searchType;
-
-   // <config><query><rankingAlgorithm>
-   string scoringExpressionString;
-
-   // <config><query>
-   float fuzzyMatchPenalty;
-   float queryTermSimilarityThreshold;
-   float queryTermLengthBoost;
-   float prefixMatchPenalty;
-
-   vector<string> sortableAttributes;
-   //vector<srch2::instantsearch::FilterType> sortableAttributesType; // Float or unsigned
-   vector<string> sortableAttributesDefaultValue;
-   int attributeToSort;
-   unsigned cacheSizeInBytes;
-   int resultsToRetrieve;
-   bool exactFuzzy;
-   bool queryTermPrefixType;
-
-   unsigned defaultNumberOfSuggestions;
-};
-
-class CoreUpdateHandler {
-  uint64_t memoryLimit;
-  uint32_t documentLimit;
-
-  // <config><updatehandler><mergePolicy>
-  unsigned mergeEveryNSeconds;
-  unsigned mergeEveryMWrites;
-
-  // no config option for this yet
-  unsigned updateHistogramEveryPMerges;
-  unsigned updateHistogramEveryQWrites;
-};
-
-class CoreMongoDB {
-  string mongoHost;
-  string mongoPort;
-  string mongoDbName;
-  string mongoCollection;
-  unsigned mongoListenerWaitTime;
-
-  // stores the value of maximum allowed retries when MongoDB listener encounters some problem.
-  unsigned mongoListenerMaxRetryOnFailure;
-};
-
-class Core {
-   string coreName;
-
-   // In V0, the "number_of_shards" is a one-time setting for a
-   // core. In the future (possibly after V1), we can support dynamic
-   // migration by allowing this number to change.
-   unsigned numberOfPrimaryShards;
-
-   // Number of replicas (additional copies) of an index (1 by
-   // default). The "number_of_replicas" can be increased or
-   // decreased anytime, by using the Index Update Settings API. We
-   // can do it in V0 or after V1. SRCH2 will take care about load
-   // balancing, relocating, gathering the results from nodes, etc.
-   // ES: core.number_of_replicas: 1 // index.number_of_replicas: 1
-   unsigned numberOfReplicas; // always 0 for V0
-
-   CoreSchema coreSchema;
-
-   CoreIndex coreIndex;
-
-   CoreQuery coreQuery;
-
-   CoreUpdateHandler coreUpdateHandler;
-
-   CoreMongoDB coreMongoDB;
-};
-
 enum CLUSTERSTATE {
   CLUSTERSTATE_GREEN,  // all nodes are green
   CLUSTERSTATE_RED,    // all nodes are red ..possible ?
@@ -362,15 +303,17 @@ enum CLUSTERSTATE {
 
 class CoreInfo_t;
 
-class Cluster {
-  public:
 
-	std::vector<Node>* getNodes(){
-		return &nodes;
-	}
-  string getClusterName()
-  {
-	return this->clusterName;
+class Cluster {
+ public:
+  std::map<ShardId, Shard, ShardIdComparator> shardMap;
+
+  std::vector<Node>* getNodes(){
+    return &nodes;
+  }
+
+  string getClusterName() {
+    return this->clusterName;
   }
 
   CLUSTERSTATE getClusterState();
@@ -409,8 +352,8 @@ class Cluster {
 // in the system.
 class SearchableAttributeInfoContainer {
 public:
-    SearchableAttributeInfoContainer(){
-        attributeName = "";
+	SearchableAttributeInfoContainer(){
+	attributeName = "";
 	required = false;
 	defaultValue = "";
 	offset = 0;
@@ -460,7 +403,7 @@ public:
 				   const string & defaultValue,
 				   const bool required,
 				   const bool isMultiValued){
-        this->attributeName = name;
+    this->attributeName = name;
 	this->attributeType = type;
 	this->defaultValue = defaultValue;
 	this->required = required;
@@ -514,10 +457,9 @@ inline  enum PortType_t incrementPortType(PortType_t &oldValue)
 class ConfigManager {
 public:
     typedef std::map<const string, CoreInfo_t *> CoreInfoMap_t;
-    Cluster getCluster(){
-    	return this->cluster;
+    Cluster* getCluster(){
+    	return &(this->cluster);
     }
-
 
 private:
     Cluster cluster;
@@ -526,7 +468,6 @@ private:
     string httpServerListeningHostname;
     string httpServerListeningPort;
     string srch2Home;
-
     unsigned int numberOfThreads;
 
     // <config><keywordPopularitythreshold>
@@ -536,17 +477,12 @@ private:
     Logger::LogLevel loglevel;
     string httpServerAccessLogFile;
     string httpServerErrorLogFile;
-
     uint32_t writeReadBufferInBytes;
-
     float defaultSpatialQueryBoundingBox;
-
     string attributeStringForMySQLQuery;
 
     //vector<string> searchableAttributes;
-
     //vector<unsigned> attributesBoosts;
-
     int ordering;
     //string httpServerDocumentRoot;
     string configFile;
@@ -556,11 +492,8 @@ private:
     // getAllResultsNumberOfResultsToFindInEstimationMode results.
     unsigned getAllResultsNumberOfResultsThreshold;
     unsigned getAllResultsNumberOfResultsToFindInEstimationMode;
-
-
     void splitString(string str, const string& delimiter, vector<string>& result);
     void splitBoostFieldValues(string boostString, map <string, unsigned>& boosts);
-
     bool isOnlyDigits(string& str);
     bool isFloat(string str);
     //Validate Functions
@@ -598,9 +531,7 @@ private:
 
     srch2::instantsearch::FilterType parseFieldType(string& fieldType);
     int parseFacetType(string& facetType);
-
     void lowerCaseNodeNames(xml_node &node);
-
     void trimSpacesFromValue(string &fieldValue, const char *fieldName, std::stringstream &parseWarnings, const char *append = NULL);
 
 protected:
@@ -752,7 +683,6 @@ private:
     static const char* const nodeHomeTag;
     static const char* const nodeDataDirTag;
 
-
     static const char* const accessLogFileString;
     static const char* const analyzerString;
     static const char* const cacheSizeString;
@@ -875,6 +805,23 @@ private:
 class CoreInfo_t {
 
 public:
+	unsigned coreId; // starting from 0, auto increment
+	string coreName;
+
+	// In V0, the "number_of_shards" is a one-time setting for a
+	// core. In the future (possibly after V1), we can support dynamic
+	// migration by allowing this number to change.
+	unsigned numberOfPrimaryShards;
+
+	// Number of replicas (additional copies) of an index (1 by
+	// default). The "number_of_replicas" can be increased or
+	// decreased anytime, by using the Index Update Settings API. We
+	// can do it in V0 or after V1. SRCH2 will take care about load
+	// balancing, relocating, gathering the results from nodes, etc.
+	// ES: core.number_of_replicas: 1 // index.number_of_replicas: 1
+	unsigned numberOfReplicas; // always 0 for V0
+	vector<ShardId> shards;
+
     CoreInfo_t(class ConfigManager *manager) : configManager(manager) {};
     CoreInfo_t(const CoreInfo_t &src);
 
@@ -1142,7 +1089,23 @@ protected:
 
 };
 
+// requested by Surendra for the Synchronization Manager (SM)
+ class DiscoveryParams {
+ public:
+   unsigned pingInterval;
+   unsigned pingTimeout;
+   unsigned retryCount;
+ };
+ 
+ // If we are supporting multicast
+ class Multicast {
+ public:
+   std::string multicastAddress;  // Default value = 224.2.2.7
+   unsigned port;   // Default value = 92612
+ };
+ 
+
 }
 }
 
-#endif // __SERVER__SRCH2SERVERCONG_H__ 
+#endif // __CONFIGMANAGER_H__

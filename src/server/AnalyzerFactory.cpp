@@ -6,7 +6,7 @@
  */
 
 #include "AnalyzerFactory.h"
-#include "ConfigManager.h"
+#include "src/sharding/configuration/ConfigManager.h"
 #include <string>
 #include <instantsearch/Analyzer.h>
 #include <analyzer/AnalyzerContainers.h>

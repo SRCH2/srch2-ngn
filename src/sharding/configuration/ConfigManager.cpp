@@ -4,7 +4,7 @@
 #include "ConfigManager.h"
 
 #include <algorithm>
-#include "util/xmlParser/pugixml.hpp"
+#include "src/server/util/xmlParser/pugixml.hpp"
 #include <string>
 #include <vector>
 #include <iostream>
@@ -12,14 +12,14 @@
 #include <sstream>
 #include <boost/program_options.hpp>
 #include <assert.h>
-#include "util/Logger.h"
+#include "src/core/util/Logger.h"
 #include <boost/algorithm/string.hpp>
 #include <sys/stat.h>
 
-#include "util/DateAndTimeHandler.h"
-#include "ParserUtility.h"
-#include "util/Assert.h"
-#include "analyzer/CharSet.h"
+#include "src/core/util/DateAndTimeHandler.h"
+#include "src/wrapper/ParserUtility.h"
+#include "src/core/util/Assert.h"
+#include "src/core/analyzer/CharSet.h"
 
 #include "boost/algorithm/string_regex.hpp"
 #include "boost/filesystem/path.hpp"
@@ -44,7 +44,7 @@ const char* const ConfigManager::nodeNameTag = "node-name";
 const char* const ConfigManager::nodeMasterTag = "node-master";
 const char* const ConfigManager::nodeDataTag = "node-data";
 const char* const ConfigManager::nodeHomeTag = "srch2home";
-const char* const ConfigManager::nodeDataDirTag = "dataDir";
+const char* const ConfigManager::nodeDataDirTag = "datadir";
 
 const char* const ConfigManager::accessLogFileString = "accesslogfile";
 const char* const ConfigManager::analyzerString = "analyzer";
@@ -1720,7 +1720,6 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
                           std::stringstream &parseError,
                           std::stringstream &parseWarnings)
 {
-
     string tempUse = ""; // This is just for temporary use.
 
     CoreInfo_t *defaultCoreInfo = NULL;
@@ -1729,22 +1728,17 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
 
     xml_node clusterName = configNode.child("cluster-name");
     if (clusterName && clusterName.text()) { // checks if the config/srch2Home has any text in it or not
-    	  //cout<<clusterName.child_value();
           tempUse = string(clusterName.text().get());
           cluster.setClusterName(tempUse);
-          //cout<<"member variable is "<<cluster.getClusterName()<<flush;
-          //cout<<flush;
-      } else {
-          parseError << "Clustername is not set.\n";
-          configSuccess = false;
-          return;
-      }
+      } 
 
     tempUse = "";
 
     std::vector<Node>* nodes = cluster.getNodes();
+
     xml_node nodeTag = configNode.child("node");
-    ConfigManager::parseNode(nodes, nodeTag);
+    if (nodeTag)
+      ConfigManager::parseNode(nodes, nodeTag);
 
     // srch2Home is a required field
     xml_node childNode = configNode.child(srch2HomeString);
@@ -1898,7 +1892,7 @@ void ConfigManager::parseNode(std::vector<Node>* nodes, xml_node& nodeTag) {
 
 				std::string name = (string) childNode.name();
 
-				if (name.compare(nodeName) == 0) {
+				if (name.compare(nodeNameTag) == 0) {
 					nodeName = string(childNode.text().get());
 					//cout << nodeName << "\n";
 				}

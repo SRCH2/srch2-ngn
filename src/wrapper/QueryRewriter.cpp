@@ -23,7 +23,7 @@
 #include <instantsearch/Term.h>
 #include <instantsearch/ResultsPostProcessor.h>
 #include "postprocessing/PhraseSearchFilter.h"
-#include "ConfigManager.h"
+#include "src/sharding/configuration/ConfigManager.h"
 
 #include "util/DateAndTimeHandler.h"
 #include "util/Assert.h"

@@ -12,7 +12,7 @@
 #include <instantsearch/Indexer.h>
 #include <instantsearch/Record.h>
 #include <instantsearch/Schema.h>
-#include "ConfigManager.h"
+#include "src/sharding/configuration/ConfigManager.h"
 #include "mongo/client/dbclient.h"
 #include "mongo/bson/bsonobj.h"
 #include <time.h>

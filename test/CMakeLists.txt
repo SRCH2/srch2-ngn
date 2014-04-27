@@ -175,8 +175,8 @@ ADD_TEST(PostProcessingFilter_Test ${CMAKE_CURRENT_BINARY_DIR}/wrapper/integrati
 ADD_TEST(XMLParser_Test ${CMAKE_CURRENT_BINARY_DIR}/wrapper/integration/XMLParser_Test   "--verbose")
 SET_TESTS_PROPERTIES(XMLParser_Test PROPERTIES ENVIRONMENT "XmlFilePath=${CMAKE_SOURCE_DIR}/test/wrapper/data/test_data/XmlParserTest.xml")
 
-ADD_TEST(ConfigManager_Test ${CMAKE_CURRENT_BINARY_DIR}/wrapper/integration/ConfigManager_Test   "--verbose")
-SET_TESTS_PROPERTIES(ConfigManager_Test PROPERTIES ENVIRONMENT "ConfigManagerFilePath=${CMAKE_SOURCE_DIR}/test/wrapper/data/test_data/ConfigManagerTest.xml")
+ADD_TEST(ConfigManager_Test ${CMAKE_CURRENT_BINARY_DIR}/sharding/unit/ConfigManager_Test   "--verbose")
+SET_TESTS_PROPERTIES(ConfigManager_Test PROPERTIES ENVIRONMENT "ConfigManagerFilePath=${CMAKE_SOURCE_DIR}/test/sharding/unit/test_data/ConfigManagerTest.xml")
 
 ADD_TEST(IndexUpdater_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/integration/IndexUpdater_Test "--verbose")
 SET_TESTS_PROPERTIES(IndexUpdater_Test 
@@ -184,8 +184,6 @@ SET_TESTS_PROPERTIES(IndexUpdater_Test
 
 ADD_TEST(GeoIndexUpdate_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/GeoIndexUpdate_Test "--verbose")
 SET_TESTS_PROPERTIES(GeoIndexUpdate_Test PROPERTIES ENVIRONMENT "directoryName=${CMAKE_SOURCE_DIR}/test/core/unit/test_data")
-
-ADD_TEST(ConfigManager_NOTREADY_Test ${CMAKE_CURRENT_BINARY_DIR}/sharding/unit/ConfigManager_NOTREADY_Test "--verbose")
 
 if (SYSTEM_TEST_ENABLED)
     ADD_TEST( System_Tests ${CMAKE_SOURCE_DIR}/test/wrapper/system_tests/main.sh ${CMAKE_SOURCE_DIR}/test/wrapper/system_tests ${CMAKE_BINARY_DIR}/src/server)

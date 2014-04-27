@@ -22,7 +22,8 @@
 
 #include "ParsedParameterContainer.h"
 #include <instantsearch/Schema.h>
-#include "ConfigManager.h"
+
+#include "src/sharding/configuration/ConfigManager.h"
 
 namespace srch2 {
 
