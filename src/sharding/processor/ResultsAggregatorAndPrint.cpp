@@ -18,7 +18,6 @@ void SearchResultAggregatorAndPrint::callBack(vector<SerializableSearchResults *
 
 
 	// move on all responses of all shards and use them
-	srch2is::QueryResultFactory * resultsFactory = new srch2is::QueryResultFactory();
 	for(int responseIndex = 0 ; responseIndex < responseObjects.size() ; ++responseIndex ){
 		QueryResults * resultsOfThisShard = responseObjects.at(responseIndex)->queryResults;
 		resultsOfAllShards.push_back(resultsOfThisShard);
@@ -31,8 +30,12 @@ void SearchResultAggregatorAndPrint::callBack(vector<SerializableSearchResults *
 
 }
 
+// print results on HTTP channel
 void SearchResultAggregatorAndPrint::printResults(){
-	// print results on HTTP channel
+
+    // CoreInfo_t is a view of configurationManager which contains all information for the
+    // core that we want to search on, this object is accesses through configurationManager.
+    const CoreInfo_t *indexDataContainerConf = configurationManager->getCoreInfo(coreShardInfo->coreName);
 
 
     evkeyvalq headers;
@@ -73,12 +76,12 @@ void SearchResultAggregatorAndPrint::printResults(){
             + (tend.tv_nsec - getStartTimer().tv_nsec) / 1000000;
 
 	//5. call the print function to print out the results
-	switch (logicalPlan->getQueryType()) {
+	switch (logicalPlan.getQueryType()) {
 	case srch2is::SearchTypeTopKQuery:
 		//	        finalResults->printStats();
 		printResults(req, headers, logicalPlan,
-				indexDataContainerConf, results.allResults, logicalPlan->getExactQuery(),
-				logicalPlan->getOffset(),
+				indexDataContainerConf, results.allResults, logicalPlan.getExactQuery(),
+				logicalPlan.getOffset(),
 				results.allResults.size(),
 				results.allResults.size(),
 				paramContainer.getMessageString(), parseAndSearchTime , highlightInfo, hlTime,
@@ -92,22 +95,22 @@ void SearchResultAggregatorAndPrint::printResults(){
 		if(results.aggregatedEstimatedNumberOfResults < results.allResults.size()){
 			results.aggregatedEstimatedNumberOfResults = results.allResults.size();
 		}
-		if (logicalPlan->getOffset() + logicalPlan->getNumberOfResultsToRetrieve()
+		if (logicalPlan.getOffset() + logicalPlan.getNumberOfResultsToRetrieve()
 				> results.allResults.size()) {
 			// Case where you have return 10,20, but we got only 0,15 results.
 			printResults(req, headers, logicalPlan,
 					indexDataContainerConf, results.allResults,
-					logicalPlan->getExactQuery(),
-					logicalPlan->getOffset(), results.allResults.size(),
+					logicalPlan.getExactQuery(),
+					logicalPlan.getOffset(), results.allResults.size(),
 					results.allResults.size(),
 					paramContainer.getMessageString(), parseAndSearchTime, highlightInfo, hlTime,
 					paramContainer.onlyFacets);
 		} else { // Case where you have return 10,20, but we got only 0,25 results and so return 10,20
 			printResults(req, headers, logicalPlan,
 					indexDataContainerConf, results.allResults,
-					logicalPlan->getExactQuery(),
-					logicalPlan->getOffset(),
-					logicalPlan->getOffset() + logicalPlan->getNumberOfResultsToRetrieve(),
+					logicalPlan.getExactQuery(),
+					logicalPlan.getOffset(),
+					logicalPlan.getOffset() + logicalPlan.getNumberOfResultsToRetrieve(),
 					results.allResults.size(),
 					paramContainer.getMessageString(), parseAndSearchTime, highlightInfo, hlTime,
 					paramContainer.onlyFacets);
@@ -399,8 +402,7 @@ void SearchResultAggregatorAndPrint::printResults(evhttp_request *req,
 void SearchResultAggregatorAndPrint::printOneResultRetrievedById(evhttp_request *req, const evkeyvalq &headers,
         const LogicalPlan &queryPlan,
         const CoreInfo_t *indexDataConfig,
-        const QueryResults *queryResults,
-        const srch2is::Indexer *indexer,
+        const vector<QueryResult *> queryResultsVector,
         const string & message,
         const unsigned ts1){
 
@@ -424,31 +426,31 @@ void SearchResultAggregatorAndPrint::printOneResultRetrievedById(evhttp_request 
     string logQueries;
 
     root["searcher_time"] = ts1;
-    root["results"].resize(queryResults->getNumberOfResults());
+    root["results"].resize(queryResultsVector.size());
 
     clock_gettime(CLOCK_REALTIME, &tstart);
     unsigned counter = 0;
 
-    unsigned resultFound = queryResults->getNumberOfResults();
-    for (unsigned i = 0; i < queryResults->getNumberOfResults(); ++i) {
-    	unsigned internalRecordId = queryResults->getInternalRecordId(i);
+    unsigned resultFound = queryResultsVector.size();
+    for (unsigned i = 0; i < queryResultsVector.size(); ++i) {
+    	unsigned internalRecordId = queryResultsVector.at(i)->internalRecordId;
     	StoredRecordBuffer inMemoryData = indexer->getInMemoryData(internalRecordId);
     	if (inMemoryData.start.get() == NULL) {
     		--resultFound;
     		continue;
     	}
-        root["results"][counter]["record_id"] = queryResults->getRecordId(i);
+        root["results"][counter]["record_id"] = queryResultsVector.at(i)->internalRecordId;
 
         if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_STORED_ATTR) {
-            unsigned internalRecordId = queryResults->getInternalRecordId(i);
+            unsigned internalRecordId = queryResultsVector.at(i)->internalRecordId;
             string sbuffer;
-            genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i), sbuffer);
+            genRecordJsonString(indexer, inMemoryData, queryResultsVector.at(i)->internalRecordId, sbuffer);
             root["results"][counter][internalRecordTags.first] = sbuffer;
         } else if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SELECTED_ATTR){
-        	unsigned internalRecordId = queryResults->getInternalRecordId(i);
+        	unsigned internalRecordId = queryResultsVector.at(i)->internalRecordId;
         	string sbuffer;
         	const vector<string> *attrToReturn = indexDataConfig->getAttributesToReturn();
-        	genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
+        	genRecordJsonString(indexer, inMemoryData, queryResultsVector.at(i)->internalRecordId,
         			sbuffer, attrToReturn);
         	// The class CustomizableJsonWriter allows us to
         	// attach the data string to the JSON tree without parsing it.
@@ -492,7 +494,7 @@ void SearchResultAggregatorAndPrint::aggregateRecords(){
 	}
 
 	// sort final results
-	std::sort(results.allResults.begin(), results.allResults.end(), SearchResultAggregatorAndPrint::QueryResultsComparator());
+	std::sort(results.allResults.begin(), results.allResults.end(), SearchResultAggregatorAndPrint::QueryResultsComparatorOnlyScore());
 }
 
 /*

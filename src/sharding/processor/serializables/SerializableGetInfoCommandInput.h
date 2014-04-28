@@ -11,7 +11,8 @@ namespace httpwrapper {
 
 
 
-struct SerializableGetInfoCommandInput{
+class SerializableGetInfoCommandInput{
+public:
 	// we don't need anything in this class for now
 
     //serializes the object to a byte array and places array into the region

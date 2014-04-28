@@ -9,8 +9,8 @@ using namespace std;
 namespace srch2 {
 namespace httpwrapper {
 
-struct SerializableCommitCommandInput{
-
+class SerializableCommitCommandInput{
+public:
 
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator

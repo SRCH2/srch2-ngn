@@ -15,9 +15,9 @@ namespace httpwrapper {
 class Partitioner {
 public:
 
-	Partitioner(RoutingManager * transportManager, ConfigManager * configurationManager){
-		this->routingManager = transportManager;
+	Partitioner(ConfigManager * configurationManager, RoutingManager * transportManager){
 		this->configurationManager = configurationManager;
+		this->routingManager = transportManager;
 	}
 
 	/*
@@ -28,6 +28,9 @@ public:
 	 * 4. Returns the information of corresponding Shard (which can be discovered from SM)
 	 */
 	CoreShardInfo getShardIDForRecord(Record * record);
+	// TODO : if the shard hash value of a record must be calculated by
+	// evaluating an expression given in configuration file, primaryKeyStringValue is not enough
+	// as the input of this method, this will change later ...
 	CoreShardInfo getShardIDForRecord(string primaryKeyStringValue);
 
 

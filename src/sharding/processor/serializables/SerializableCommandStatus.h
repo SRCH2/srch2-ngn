@@ -11,13 +11,26 @@ namespace httpwrapper {
 
 
 
-struct SerializableCommandStatus{
-	unsigned commandNumber; // 0->insert, 1->update, 2->delete, 3->getInfo,
-	                         // 4->serializeIndex, 5->serializeRecords, 6->resetting logs
-	                         // 7->commit
-	bool status;
-    string message ;
+class SerializableCommandStatus{
+public:
+	enum CommandCode{
+		INSERT_UPDATE,
+		INSERT,
+		UPDATE,
+		DELETE,
+		GET_INFO,
+		SERIALIZE,
+		SERIALIZE_INDEX,
+		SERIALIZE_RECORDS,
+		RESET_LOG,
+		COMMIT
+	};
 
+	SerializableCommandStatus(	CommandCode commandCode, bool status, string message){
+		this->commandCode = commandCode;
+		this->status = status;
+		this->message = message;
+	}
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
     void* serialize(std::allocator<char>);
@@ -28,6 +41,22 @@ struct SerializableCommandStatus{
     //Returns the type of message which uses this kind of object as transport
     ShardingMessageType messsageKind();
 
+	CommandCode getCommandCode() const {
+		return commandCode;
+	}
+
+	string getMessage() const {
+		return message;
+	}
+
+	bool getStatus() const {
+		return status;
+	}
+
+private:
+	CommandCode commandCode;
+	bool status;
+	string message ;
 };
 
 

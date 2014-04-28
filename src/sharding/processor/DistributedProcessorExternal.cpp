@@ -1,16 +1,45 @@
 
-
 #include "DistributedProcessorExternal.h"
+
+/*
+ * System and thirdparty libraries
+ */
+#include <sys/time.h>
+#include <sys/queue.h>
+#include <boost/algorithm/string.hpp>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <set>
+#include <event.h>
+#include <evhttp.h>
 #include <event2/http.h>
 #include "thirdparty/snappy-1.0.4/snappy.h"
+
+
+/*
+ * Utility libraries
+ */
 #include "util/Logger.h"
 #include "util/CustomizableJsonWriter.h"
 #include "util/RecordSerializer.h"
 #include "util/RecordSerializerUtil.h"
-#include <sys/queue.h>
-#include <event.h>
-#include <evhttp.h>
+#include "util/FileOps.h"
 
+/*
+ * Srch2 libraries
+ */
+#include "instantsearch/TypedValue.h"
+#include "instantsearch/ResultsPostProcessor.h"
+#include "ParsedParameterContainer.h"
+#include "QueryParser.h"
+#include "QueryValidator.h"
+#include "QueryRewriter.h"
+#include "QueryPlan.h"
+#include "ParserUtility.h"
+#include "HTTPRequestHandler.h"
+#include "IndexWriteUtil.h"
+#include "ServerHighLighter.h"
 #include "serializables/SerializableInsertUpdateCommandInput.h"
 #include "serializables/SerializableDeleteCommandInput.h"
 #include "serializables/SerializableGetInfoCommandInput.h"
@@ -42,10 +71,11 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , CoreS
     struct timespec tstart;
     struct timespec tend;
     clock_gettime(CLOCK_REALTIME, &tstart);
-    // configuration object is retrieved from ConfigManager by passing coreShardInfo
-    const CoreInfo_t *indexDataContainerConf = server->indexDataConfig;
+    // CoreInfo_t is a view of configurationManager which contains all information for the
+    // core that we want to search on, this object is accesses through configurationManager.
+    const CoreInfo_t *indexDataContainerConf = configurationManager->getCoreInfo(coreShardInfo->coreName);
 
-    SearchResultAggregatorAndPrint * resultAggregator = new SearchResultAggregatorAndPrint(routingManager , configurationManager,req, coreShardInfo);
+    SearchResultAggregatorAndPrint * resultAggregator = new SearchResultAggregatorAndPrint(configurationManager, routingManager, req, coreShardInfo);
 
     clock_gettime(CLOCK_REALTIME, &(resultAggregator->getStartTimer()));
 
@@ -66,7 +96,7 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , CoreS
 
     //2. validate the query
     QueryValidator qv(*(server->indexer->getSchema()),
-            *(server->indexDataConfig), resultAggregator->getParamContainer());
+            *(indexDataContainerConf), resultAggregator->getParamContainer());
 
     bool valid = qv.validate();
 
@@ -78,14 +108,12 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , CoreS
         return;
     }
     //3. rewrite the query and apply analyzer and other stuff ...
-    QueryRewriter qr(server->indexDataConfig,
+    QueryRewriter qr(indexDataContainerConf,
             *(server->indexer->getSchema()),
             *(AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf)),
             resultAggregator->getParamContainer());
 
-    LogicalPlan * logicalPlan = new LogicalPlan();
-    resultAggregator->setLogicalPlan(logicalPlan);
-    if(qr.rewrite(&logicalPlan) == false){
+    if(qr.rewrite(resultAggregator->getLogicalPlan()) == false){
         // if the query is not valid, print the error message to the response
         bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request",
         		resultAggregator->getParamContainer(), headers);
@@ -99,14 +127,16 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , CoreS
             + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
 
     resultAggregator->setParsingValidatingRewritingTime(ts1);
+
     // pass logical plan to broadcast through SerializableSearchCommandInput
-    SerializableSearchCommandInput searchInput;
-    searchInput.logicalPlan = logicalPlan;
+    SerializableSearchCommandInput searchInput(&resultAggregator->getLogicalPlan());
 
 	// broadcasting search request to all shards , non-blocking, with timeout and callback to ResultAggregator
-    routingManager->broadcast_wait_for_all_w_cb_n_timeout(searchInput,
-    		resultAggregator , 2000 , coreShardInfo);
+    routingManager->broadcast_wait_for_all_w_cb_n_timeout(searchInput, resultAggregator , 2000 , coreShardInfo);
     // aggregateSearchResults in ResultAggregator will get the responses of all shards and aggregate them
+
+
+    evhttp_clear_headers(&headers);
 }
 
 /*
@@ -116,7 +146,7 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , CoreS
  *    Since it's a blocking call, the results are retrieved at the same point and
  *    printed on the HTTP channel.
  */
-void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req){
+void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, CoreShardInfo * coreShardInfo){
 
 	// it must be an insert query
 	ASSERT(req->type == EVHTTP_REQ_PUT);
@@ -159,6 +189,9 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req){
             // Iterates over the sequence elements.
             for ( int index = 0; index < root.size(); ++index ) {
 
+            	/*
+            	 * SerializableInsertUpdateCommandInput destructor will deallocate Record objects
+            	 */
             	Record *record = new Record(server->indexer->getSchema());
 
                 Json::Value defaultValueToReturn = Json::Value("");
@@ -166,7 +199,8 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req){
                                             defaultValueToReturn);
 
             	Json::FastWriter writer;
-            	if(JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root, indexDataContainerConf, log_str, recSerializer) == false){
+            	if(JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root,
+            			configurationManager->getCoreInfo(coreShardInfo->coreName), log_str, recSerializer) == false){
             		log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"failed\"}";
 					if (index < root.size() - 1){
 						log_str << ",";
@@ -179,11 +213,16 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req){
 
             }
         } else {  // only one json object needs to be inserted
+
+        	/*
+        	 * SerializableInsertUpdateCommandInput destructor will deallocate Record objects
+        	 */
         	Record *record = new Record(server->indexer->getSchema());
 
             const Json::Value doc = root;
             Json::FastWriter writer;
-        	if(JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root, indexDataContainerConf, log_str, recSerializer) == false){
+        	if(JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root,
+        			configurationManager->getCoreInfo(coreShardInfo->coreName), log_str, recSerializer) == false){
 
         		log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"failed\"}";
 
@@ -220,15 +259,10 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req){
 
 		CoreShardInfo & coreShardInfo = partitioner->getShardIDForRecord(*recordItr);
 
-		SerializableInsertUpdateCommandInput insertUpdateInput;
-		insertUpdateInput.insertOrUpdate = false;//update
-		insertUpdateInput.record = *recordItr;
+		SerializableInsertUpdateCommandInput * insertUpdateInput = new SerializableInsertUpdateCommandInput(*recordItr,
+				SerializableInsertUpdateCommandInput::INSERT);
 
 		routingManager->route_w_cb_n_timeout(insertUpdateInput, resultsAggregator , 2000 );
-    }
-    // delete records
-    for(vector<Record *>::iterator recordItr = recordsToInsert.begin(); recordItr != recordsToInsert.end() ; ++recordItr){
-    	delete *recordItr;
     }
     // aggregated response will be prepared in CommandStatusAggregatorAndPrint::callBack and printed in
     // CommandStatusAggregatorAndPrint::finalize
@@ -241,7 +275,7 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req){
  *    Since it's a blocking call, the results are retrieved at the same point and
  *    printed on the HTTP channel.
  */
-void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req){
+void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, CoreShardInfo * coreShardInfo){
 
 	// it must be an update query
 	ASSERT(req->type == EVHTTP_REQ_PUT);
@@ -287,7 +321,9 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req){
 		if (root.type() == Json::arrayValue) {
 			//the record parameter is an array of json objects
 			for(Json::UInt index = 0; index < root.size(); index++) {
-
+            	/*
+            	 * SerializableInsertUpdateCommandInput destructor will deallocate Record objects
+            	 */
 				Record *record = new Record(server->indexer->getSchema());
 
 				Json::Value defaultValueToReturn = Json::Value("");
@@ -296,7 +332,7 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req){
 
 		    	Json::FastWriter writer;
 		    	bool parseJson = JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root,
-		    			indexDataContainerConf, log_str, recSerializer);
+		    			configurationManager->getCoreInfo(coreShardInfo->coreName), log_str, recSerializer);
 		        if(parseJson == false) {
 		            log_str << "failed\",\"reason\":\"parse: The record is not in a correct json format\",";
 					if (index < root.size() - 1){
@@ -309,13 +345,16 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req){
 
 			}
 		} else {
-			// the record parameter is a single json object
+        	/*
+        	 * the record parameter is a single json object
+        	 * SerializableInsertUpdateCommandInput destructor will deallocate Record objects
+        	 */
 			Record *record = new Record(server->indexer->getSchema());
 			const Json::Value doc = root;
 
 	    	Json::FastWriter writer;
 	    	bool parseJson = JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root,
-	    			indexDataContainerConf, log_str, recSerializer);
+	    			configurationManager->getCoreInfo(coreShardInfo->coreName), log_str, recSerializer);
 	        if(parseJson == false) {
 	            log_str << "failed\",\"reason\":\"parse: The record is not in a correct json format\",";
         		Logger::info("%s", log_str.str().c_str());
@@ -356,15 +395,9 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req){
 
 		CoreShardInfo & coreShardInfo = partitioner->getShardIDForRecord(*recordItr);
 
-		SerializableInsertUpdateCommandInput insertUpdateInput;
-		insertUpdateInput.insertOrUpdate = false;//update
-		insertUpdateInput.record = *recordItr;
+		SerializableInsertUpdateCommandInput insertUpdateInput(*recordItr, SerializableInsertUpdateCommandInput::UPDATE);
 
 		routingManager->route_w_cb_n_timeout(insertUpdateInput, resultsAggregator , 2000 );
-    }
-    // delete records
-    for(vector<Record *>::iterator recordItr = recordsToUpdate.begin(); recordItr != recordsToUpdate.end() ; ++recordItr){
-    	delete *recordItr;
     }
     // aggregated response will be prepared in CommandStatusAggregatorAndPrint::callBack and printed in
     // CommandStatusAggregatorAndPrint::finalize
@@ -378,11 +411,11 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req){
  *    Since it's a blocking call, the results are retrieved at the same point and
  *    printed on the HTTP channel.
  */
-void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req){
+void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, CoreShardInfo * coreShardInfo){
 
 
 	// it must be an update query
-	ASSERT(req->type == EVHTTP_REQ_PUT);
+	ASSERT(req->type == EVHTTP_REQ_DELETE);
 	if(req->type != EVHTTP_REQ_DELETE){
         Logger::error(
                 "error: The request has an invalid or missing argument. See Srch2 API documentation for details");
@@ -390,6 +423,9 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req){
                 "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
         return;
 	}
+
+
+	const CoreInfo_t * indexDataContainerConf = configurationManager->getCoreInfo(coreShardInfo->coreName);
 
     evkeyvalq headers;
     evhttp_parse_query(req->uri, &headers);
@@ -405,6 +441,7 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req){
 
 		size_t sz;
 		char *pKeyParamName_cstar = evhttp_uridecode(pKeyParamName, 0, &sz);
+		// TODO : should we free pKeyParamName_cstar?
 
 		//std::cout << "[" << termBoostsParamName_cstar << "]" << std::endl;
 		const std::string primaryKeyStringValue = string(pKeyParamName_cstar);
@@ -412,8 +449,7 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req){
 
 		CoreShardInfo & coreShardInfo = partitioner->getShardIDForRecord(primaryKeyStringValue);
 
-		SerializableDeleteCommandInput deleteInput;
-		deleteInput.primaryKey = primaryKeyStringValue;
+		SerializableDeleteCommandInput deleteInput(primaryKeyStringValue);
 
 		routingManager->route_w_cb_n_timeout(deleteInput, resultsAggregator , 2000 );
 	}else{
@@ -452,8 +488,7 @@ void DPExternalRequestHandler::externalSerializeIndexCommand(evhttp_request *req
     /* Yes, we are expecting a post request */
     switch (req->type) {
     case EVHTTP_REQ_PUT: {
-    	SerializableSerializeCommandInput serializeInput;
-    	serializeInput.indexOrRecord = true; // index
+    	SerializableSerializeCommandInput serializeInput(SerializableSerializeCommandInput::SERIALIZE_INDEX);
 
     	CommandStatusAggregatorAndPrint<SerializableSerializeCommandInput> * resultsAggregator =
     			new CommandStatusAggregatorAndPrint<SerializableSerializeCommandInput>(routingManager, configurationManager,req);
@@ -481,15 +516,14 @@ void DPExternalRequestHandler::externalSerializeRecordsCommand(evhttp_request *r
     switch (req->type) {
     case EVHTTP_REQ_PUT: {
         // if search-response-format is 0 or 2
-        if (server->indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_STORED_ATTR) {
+        if (configurationManager->getCoreInfo(coreShardInfo->coreName)->getSearchResponseFormat() == RESPONSE_WITH_STORED_ATTR) {
             std::stringstream log_str;
             evkeyvalq headers;
             evhttp_parse_query(req->uri, &headers);
             const char *exportedDataFileName = evhttp_find_header(&headers, URLParser::nameParamName);
+            // TODO : should we free exportedDataFileName?
             if(exportedDataFileName){
-            	SerializableSerializeCommandInput serializeInput;
-            	serializeInput.indexOrRecord = false; // record
-            	serializeInput.dataFileName = string(exportedDataFileName);
+            	SerializableSerializeCommandInput serializeInput(SerializableSerializeCommandInput::SERIALIZE_RECORDS, string(exportedDataFileName));
 
             	CommandStatusAggregatorAndPrint<SerializableSerializeCommandInput> * resultsAggregator =
             			new CommandStatusAggregatorAndPrint<SerializableSerializeCommandInput>(routingManager, configurationManager,req);

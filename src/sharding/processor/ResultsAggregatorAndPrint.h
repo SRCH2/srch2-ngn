@@ -64,20 +64,16 @@ class SearchResultAggregatorAndPrint : public ResultAggregatorAndPrint<Serializa
 
 public:
 
-	SearchResultAggregatorAndPrint(RoutingManager * routingManager,
-			ConfigManager * configurationManager,
+	SearchResultAggregatorAndPrint(ConfigManager * configurationManager,
+			RoutingManager * routingManager,
 			evhttp_request *req,
 			CoreShardInfo * coreShardInfo){
-		this->routingManager = routingManager;
 		this->configurationManager = configurationManager;
+		this->routingManager = routingManager;
 		this->req = req;
 		this->coreShardInfo = coreShardInfo;
 	}
-
-	void setLogicalPlan(LogicalPlan * logicalPlan){
-		this->logicalPlan = logicalPlan;
-	}
-	LogicalPlan * getLogicalPlan(){
+	LogicalPlan & getLogicalPlan(){
 		return logicalPlan;
 	}
 	ParsedParameterContainer * getParamContainer(){
@@ -153,12 +149,11 @@ public:
 	void printOneResultRetrievedById(evhttp_request *req, const evkeyvalq &headers,
 	        const LogicalPlan &queryPlan,
 	        const CoreInfo_t *indexDataConfig,
-	        const QueryResults *queryResults,
-	        const srch2is::Indexer *indexer,
+	        const vector<QueryResult *> queryResultsVector,
 	        const string & message,
 	        const unsigned ts1);
 
-	class QueryResultsComparator{
+	class QueryResultsComparatorOnlyScore{
 		bool operator()(QueryResult * left, QueryResult * right){
 			return (left->getResultScore() > right->getResultScore());
 		}
@@ -223,13 +218,15 @@ private:
 	SearchResultAggregatorAndPrint::AggregatedQueryResults results;
 	RoutingManager * routingManager;
 	ConfigManager * configurationManager;
-	LogicalPlan * logicalPlan;
-	unsigned parsingValidatingRewritingTime;
-	struct timespec tstart;
 	evhttp_request *req;
 	CoreShardInfo * coreShardInfo;
+
+	LogicalPlan logicalPlan;
+	unsigned parsingValidatingRewritingTime;
+	struct timespec tstart;
 	ParsedParameterContainer paramContainer;
 
+	// these members can be accessed concurrently by multiple threads
 	mutable boost::shared_mutex _access;
 	std::stringstream messages;
 };
@@ -265,29 +262,42 @@ public:
 	 */
 	void timeoutProcessing(CoreShardInfo * coreShardInfo, RequestWithStatusResponse * sentRequest,
 			ResultAggregatorAndPrint<RequestWithStatusResponse,SerializableCommandStatus>::Metadata metadata){
+
 		if(((string)"SerializableInsertUpdateCommandInput").compare(typeid(sentRequest).name()) == 0){// timeout in insert and update
+
 			boost::unique_lock< boost::shared_mutex > lock(_access);
 			SerializableInsertUpdateCommandInput * sentInsetUpdateRequest = dynamic_cast<SerializableInsertUpdateCommandInput>(sentRequest);
 			messages << "{\"rid\":\"" << rsentInsetUpdateRequest->record->getPrimaryKey()
 					<< "\",\""+sentInsetUpdateRequest->insertOrUpdate?"insert":"update"+"\":\"failed\",\"reason\":\"Corresponging shard ("<<
 							coreShardInfo->shardId<<") timedout.\"}";
+
 		}else if (((string)"SerializableDeleteCommandInput").compare(typeid(sentRequest).name()) == 0){
+
 			boost::unique_lock< boost::shared_mutex > lock(_access);
 			SerializableDeleteCommandInput * sentDeleteRequest = dynamic_cast<SerializableDeleteCommandInput>(sentRequest);
 			messages << "{\"rid\":\"" << sentDeleteRequest->primaryKey
 					<< "\",\"delete\":\"failed\",\"reason\":\"Corresponging ("<<
 							coreShardInfo->shardId<<") shard timedout.\"}";
+
 		}else if(((string)"SerializableSerializeCommandInput").compare(typeid(sentRequest).name()) == 0){
+
 			boost::unique_lock< boost::shared_mutex > lock(_access);
 			SerializableSerializeCommandInput * serializeRequest = dynamic_cast<SerializableSerializeCommandInput>(sentRequest);
 			messages << "{\""<< serializeRequest->indexOrRecord?"save":"export" <<"\":\"failed\",\"reason\":\"Corresponging ("<<
 							coreShardInfo->shardId<<") shard timedout.\"}";
+
 		}else if(((string)"SerializableResetLogCommandInput").compare(typeid(sentRequest).name()) == 0){
+
+			boost::unique_lock< boost::shared_mutex > lock(_access);
 			SerializableResetLogCommandInput * resetRequest = dynamic_cast<SerializableResetLogCommandInput>(sentRequest);
 			messages << "{\"reset_log\":\"failed\",\"reason\":\"Corresponging (" << coreShardInfo->shardId<<") shard timedout.\"}";
+
 		}else if(((string)"SerializableCommitCommandInput").compare(typeid(sentRequest).name()) == 0){
+
+			boost::unique_lock< boost::shared_mutex > lock(_access);
 			SerializableCommitCommandInput * resetRequest = dynamic_cast<SerializableCommitCommandInput>(sentRequest);
 			messages << "{\"commit\":\"failed\",\"reason\":\"Corresponging (" << coreShardInfo->shardId<<") shard timedout.\"}";
+
 		}else{
 			//TODO : what should we do here?
 			ASSERT(false);
@@ -302,7 +312,7 @@ public:
 	void callBack(SerializableCommandStatus * responseObject){
 
 		boost::unique_lock< boost::shared_mutex > lock(_access);
-		messages << responseObject->message;
+		messages << responseObject->getMessage();
 
 	}
 
@@ -310,7 +320,7 @@ public:
 
 		boost::unique_lock< boost::shared_mutex > lock(_access);
 		for(vector<SerializableCommandStatus *>::iterator responseItr = responseObjects.begin(); responseItr != responseObjects.end(); ++responseItr){
-			messages << (*responseItr)->message;
+			messages << (*responseItr)->getMessage();
 		}
 	}
 	/*
@@ -381,12 +391,12 @@ public:
 		boost::unique_lock< boost::shared_mutex > lock(_access);
 		for(vector<SerializableGetInfoResults *>::iterator responseItr = responseObjects.begin();
 				responseItr != responseObjects.end() ; ++responseItr){
-			this->readCount += (*responseItr)->readCount;
-			this->writeCount += (*responseItr)->writeCount;
-			this->numberOfDocumentsInIndex = (*responseItr)->numberOfDocumentsInIndex;
-			this->lastMergeTimeStrings.push_back((*responseItr)->lastMergeTimeString);
-			this->docCount += (*responseItr)->docCount;
-			this->versionInfoStrings.push_back((*responseItr)->versionInfo);
+			this->readCount += (*responseItr)->getReadCount();
+			this->writeCount += (*responseItr)->getWriteCount();
+			this->numberOfDocumentsInIndex = (*responseItr)->getNumberOfDocumentsInIndex();
+			this->lastMergeTimeStrings.push_back((*responseItr)->getLastMergeTimeString());
+			this->docCount += (*responseItr)->getDocCount();
+			this->versionInfoStrings.push_back((*responseItr)->getVersionInfo());
 		}
 	}
 

@@ -11,10 +11,12 @@ namespace srch2 {
 namespace httpwrapper {
 
 
-struct SerializableSearchCommandInput{
-	LogicalPlan * logicalPlan;
-	// extra information if needed
+class SerializableSearchCommandInput{
+public:
 
+	SerializableSearchCommandInput(LogicalPlan * logicalPlan){
+		this->logicalPlan = logicalPlan;
+	}
 
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
@@ -26,6 +28,12 @@ struct SerializableSearchCommandInput{
     //Returns the type of message which uses this kind of object as transport
     ShardingMessageType messsageKind();
 
+	LogicalPlan * getLogicalPlan(){
+		return logicalPlan;
+	}
+private:
+	LogicalPlan * logicalPlan;
+	// extra information if needed
 };
 
 

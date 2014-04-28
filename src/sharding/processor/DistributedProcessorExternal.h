@@ -48,7 +48,7 @@ public:
 	template<typename T>
 	void broadcast_w_cb_n_timeout(Message * msg, T obj, TimeoutValue t);
 	template<typename T>
-	void route_w_cb_n_timeout(void & msg, T * obj, TimeoutValue t);
+	void route_w_cb_n_timeout(void * msg, T * obj, TimeoutValue t);
 	Message connect_w_response_n_timeout(Message * msg, unsigned shardIndex, TimeoutValue timeout);
 	void route ( Message * msg, unsigned  shardID);
 };
@@ -57,8 +57,12 @@ class SynchronizationManager{
 
 };
 
+/*
+ * TODO: this struct must be replaced with something consistent with ConfigurationManager global structures ...
+ */
 struct CoreShardInfo {
 	unsigned shardId;
+	string coreName;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -72,7 +76,7 @@ public:
 		this->configurationManager = configurationManager;
 		this->routingManager = routingManager;
 		this->synchronizationManager = synchronizationManager;
-		partitioner = new Partitioner(routingManager,configurationManager);
+		partitioner = new Partitioner(configurationManager, routingManager);
 	}
 
 	// Public API which can be used by other modules
@@ -93,7 +97,7 @@ public:
 	 *    Since it's a blocking call, the results are retrieved at the same point and
 	 *    printed on the HTTP channel.
 	 */
-	void externalInsertCommand(evhttp_request *req);
+	void externalInsertCommand(evhttp_request *req, CoreShardInfo * coreShardInfo);
 
 	/*
 	 * 1. Receives an update request from a client (not from another shard)
@@ -102,7 +106,7 @@ public:
 	 *    Since it's a blocking call, the results are retrieved at the same point and
 	 *    printed on the HTTP channel.
 	 */
-	void externalUpdateCommand(evhttp_request *req);
+	void externalUpdateCommand(evhttp_request *req, CoreShardInfo * coreShardInfo);
 
 	/*
 	 * 1. Receives an delete request from a client (not from another shard)
@@ -111,7 +115,7 @@ public:
 	 *    Since it's a blocking call, the results are retrieved at the same point and
 	 *    printed on the HTTP channel.
 	 */
-	void externalDeleteCommand(evhttp_request *req);
+	void externalDeleteCommand(evhttp_request *req, CoreShardInfo * coreShardInfo);
 
 	/*
 	 * 1. Receives a GetInfo request from a client (not from another shard)

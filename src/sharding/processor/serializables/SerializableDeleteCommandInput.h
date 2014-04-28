@@ -10,10 +10,19 @@ namespace srch2 {
 namespace httpwrapper {
 
 
-struct SerializableDeleteCommandInput{
-	string primaryKey;
-	unsigned shardingKey;
+class SerializableDeleteCommandInput{
+public:
 
+	//TODO : primary key might not be enough in case we want to shard based on the value of
+	// an expression given in config manager
+	SerializableDeleteCommandInput(string primaryKey, unsigned shardingKey){
+		this->primaryKey = primaryKey;
+		this->shardingKey = shardingKey;
+	}
+
+	string getPrimaryKey(){
+		return this->primaryKey;
+	}
 
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
@@ -24,6 +33,10 @@ struct SerializableDeleteCommandInput{
 
     //Returns the type of message which uses this kind of object as transport
     ShardingMessageType messsageKind();
+private:
+
+	string primaryKey;
+	unsigned shardingKey;
 };
 
 

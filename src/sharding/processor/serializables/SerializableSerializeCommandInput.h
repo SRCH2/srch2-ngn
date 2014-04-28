@@ -10,10 +10,20 @@ namespace srch2 {
 namespace httpwrapper {
 
 
-struct SerializableSerializeCommandInput{
-	bool indexOrRecord; // true => index, false=> records
-
-	string dataFileName;
+class SerializableSerializeCommandInput{
+public:
+	enum OperationCode{
+		SERIALIZE_INDEX,
+		SERIALIZE_RECORDS
+	};
+	SerializableSerializeCommandInput(OperationCode code){
+		this->indexOrRecord = code;
+		this->dataFileName = "";
+	}
+	SerializableSerializeCommandInput(OperationCode code, const string &dataFileName){
+		this->indexOrRecord = code;
+		this->dataFileName = dataFileName;
+	}
 
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
@@ -23,7 +33,20 @@ struct SerializableSerializeCommandInput{
     const SerializableSerializeCommandInput& deserialize(void*);
 
     //Returns the type of message which uses this kind of object as transport
-    ShardingMessageType messsageKind();
+    ShardingMessageType messsageKind;
+
+	string getDataFileName() const {
+		ASSERT(indexOrRecord == SERIALIZE_RECORDS);
+		return dataFileName;
+	}
+
+	OperationCode getIndexOrRecord() const {
+		return indexOrRecord;
+	}
+
+private:
+	OperationCode indexOrRecord; // true => index, false=> records
+	string dataFileName;
 };
 
 

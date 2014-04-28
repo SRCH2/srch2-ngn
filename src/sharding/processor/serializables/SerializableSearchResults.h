@@ -27,17 +27,30 @@ public:
 };
 
 class SerializableSearchResults {
+  public:
 
 	SerializableSearchResults(){
-		queryResults = NULL;
-		searcherTime = 0;
+		this->queryResults = new QueryResults();
+		this->resultsFactory = new QueryResultFactory();
 	}
 
-	QueryResults * queryResults;
+	~SerializableSearchResults(){
+		delete this->queryResults;
+		delete this->resultsFactory;
+	}
 
-  public:
-	  unsigned searcherTime;
-   	// extra information to be added later
+	QueryResults * getQueryResults(){
+		return &queryResults;
+	}
+	QueryResultFactory * getQueryResultsFactory(){
+		return &resultsFactory;
+	}
+	void setSearcherTime(unsigned searcherTime){
+		this->searcherTime = searcherTime;
+	}
+	unsigned getSearcherTime(){
+		return searcherTime;
+	}
 
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
@@ -50,6 +63,13 @@ class SerializableSearchResults {
     static ShardingMessageType messsageKind();
 
     std::vector<QueryResultPtr> getSortedFinalResults();
+
+  private:
+	QueryResults * queryResults;
+    QueryResultFactory * resultsFactory;
+   	// extra information to be added later
+	unsigned searcherTime;
+
 };
 
 

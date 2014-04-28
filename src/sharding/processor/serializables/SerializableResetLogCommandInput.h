@@ -10,7 +10,8 @@ namespace srch2 {
 namespace httpwrapper {
 
 
-struct SerializableResetLogCommandInput{
+class SerializableResetLogCommandInput{
+public:
 	// we don't need anything in this class for now
 
     //serializes the object to a byte array and places array into the region
