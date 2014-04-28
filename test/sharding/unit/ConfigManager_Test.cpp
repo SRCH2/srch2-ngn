@@ -22,8 +22,8 @@ void testConfigurationParser(char* configFile)
 	for(int i = 0; i < nodesFromCluster->size(); i++){
 		if(i == 0){
 			ASSERT(nodesFromCluster->at(i).getIpAddress() == "192.168.1.54");
-			ASSERT(nodesFromCluster->at(i).getName() == " avatar ");
-			ASSERT(nodesFromCluster->at(i).getHomeDir() == ".");
+			ASSERT(nodesFromCluster->at(i).getName() == "avatar");
+			ASSERT(nodesFromCluster->at(i).getHomeDir() == "myHome");
 			ASSERT(nodesFromCluster->at(i).getDataDir() == "Default");
 			ASSERT(nodesFromCluster->at(i).isMaster() == true);
 			ASSERT(nodesFromCluster->at(i).isData() == true);
@@ -32,7 +32,7 @@ void testConfigurationParser(char* configFile)
 
 		if(i == 1){
 			ASSERT(nodesFromCluster->at(i).getIpAddress() == "192.168.1.55");
-			ASSERT(nodesFromCluster->at(i).getName() == " frozen ");
+			ASSERT(nodesFromCluster->at(i).getName() == "frozen");
 			ASSERT(nodesFromCluster->at(i).getPortNumber() == 8088);
 			ASSERT(nodesFromCluster->at(i).thisIsMe == false);
 		}

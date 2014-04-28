@@ -682,6 +682,8 @@ private:
     static const char* const nodeDataTag;
     static const char* const nodeHomeTag;
     static const char* const nodeDataDirTag;
+    static const char* const primaryShardTag;
+    static const char* const replicaShardTag;
 
     static const char* const accessLogFileString;
     static const char* const analyzerString;
@@ -806,7 +808,6 @@ class CoreInfo_t {
 
 public:
 	unsigned coreId; // starting from 0, auto increment
-	string coreName;
 
 	// In V0, the "number_of_shards" is a one-time setting for a
 	// core. In the future (possibly after V1), we can support dynamic

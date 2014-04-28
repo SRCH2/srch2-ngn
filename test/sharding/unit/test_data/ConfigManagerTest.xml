@@ -23,13 +23,13 @@
         -->
     <node>
         <listeningHostname>192.168.1.54</listeningHostname>
-        <listeningPort>8089</listeningPort>
-        <this-is-me>true</this-is-me>
+        <listeningPort> 8089 </listeningPort>
+        <this-is-me> true </this-is-me>
         <node-name> avatar </node-name>
-        <node-master>true</node-master>
-        <node-data>true</node-data>
-        <srch2Home>.</srch2Home>
-        <dataDir>Default</dataDir>
+        <node-master> true </node-master>
+        <node-data> true </node-data>
+        <srch2Home> myHome </srch2Home>
+        <dataDir> Default </dataDir>
     </node> 
 
     <node>
@@ -51,6 +51,9 @@
     <!-- Testing multiple cores here -->
     <cores defaultCoreName="core1">
         <core name="core1">
+	<core-number_of_shards>5</core-number_of_shards>
+	<core-number_of_replicas>1</core-number_of_replicas>
+
             <dataFile>movie-data.json</dataFile>
             <dataDir>core1</dataDir>
             <dataSourceType>1</dataSourceType>
@@ -127,6 +130,9 @@
         </core>
 
         <core name="core2">
+	<core-number_of_shards>5</core-number_of_shards>
+        <core-number_of_replicas>1</core-number_of_replicas>
+
             <dataDir>core2</dataDir>
             <dataSourceType>1</dataSourceType>
             <dataFile>stackoverflow-data-100.json</dataFile>
@@ -213,6 +219,9 @@
         </core>
 
         <core name="core3">
+	<core-number_of_shards>5</core-number_of_shards>
+        <core-number_of_replicas>1</core-number_of_replicas>
+
             <dataFile>business-directory-data.json</dataFile>
             <dataDir>core3</dataDir>
             <indexConfig>
@@ -568,7 +577,10 @@
         </core>
 
         <core name="core4">
-            <dataFile>../core1/movie-data.json</dataFile>
+        <core-number_of_shards>5</core-number_of_shards>
+        <core-number_of_replicas>1</core-number_of_replicas>
+   
+	 <dataFile>../core1/movie-data.json</dataFile>
             <dataDir>core4</dataDir>
             <dataSourceType>1</dataSourceType>
             <indexConfig>

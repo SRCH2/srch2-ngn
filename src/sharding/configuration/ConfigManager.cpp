@@ -45,6 +45,9 @@ const char* const ConfigManager::nodeMasterTag = "node-master";
 const char* const ConfigManager::nodeDataTag = "node-data";
 const char* const ConfigManager::nodeHomeTag = "srch2home";
 const char* const ConfigManager::nodeDataDirTag = "datadir";
+const char* const ConfigManager::primaryShardTag = "core-number_of_shards";
+const char* const ConfigManager::replicaShardTag = "core-number_of_replicas";
+
 
 const char* const ConfigManager::accessLogFileString = "accesslogfile";
 const char* const ConfigManager::analyzerString = "analyzer";
@@ -822,11 +825,23 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_
     CoreConfigParseState_t coreParseState;
 
     // <config><dataDir>core0/data OR <core><dataDir>
+
+    xml_node childNodeOfCores = parentNode.child(primaryShardTag);
+    if(childNodeOfCores && childNodeOfCores.text()){
+        coreInfo->numberOfPrimaryShards = childNodeOfCores.text().as_uint();
+    }
+
+    childNodeOfCores = parentNode.child(replicaShardTag);
+    if(childNodeOfCores && childNodeOfCores.text()){
+        coreInfo->numberOfReplicas = childNodeOfCores.text().as_uint();
+    }
+
     xml_node childNode = parentNode.child(dataDirString);
     if (childNode && childNode.text()) {
         coreInfo->dataDir = string(childNode.text().get());
         coreInfo->indexPath = srch2Home + coreInfo->dataDir;
     }
+
     if (coreInfo->dataDir.length() == 0) {
         parseWarnings << "Core " << coreInfo->name.c_str() << " has null dataDir\n";
     }
@@ -1710,7 +1725,8 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode, CoreIn
         this->httpServerAccessLogFile = this->srch2Home + "/" + coreInfo->getName() + "/" + tempUse;
     } else {
         parseError << "httpServerAccessLogFile is not set.\n";
-        configSuccess = false;
+        configSuccess = false;				std::string name = (string) childNode.name();
+
         return;
     }
 }
@@ -1886,6 +1902,7 @@ void ConfigManager::parseNode(std::vector<Node>* nodes, xml_node& nodeTag) {
         std::string ipAddress = "", dataDir = "", nodeName = "", nodeHome = "";
 		unsigned nodeId = 0, portNumber = 0, numOfThreads = 0;
 		bool nodeMaster, nodeData, thisIsMe;
+	    std::stringstream parseWarnings;
 
 		for (xml_node childNode = nodeTemp.first_child(); childNode; childNode = childNode.next_sibling()) {
 			if (childNode && childNode.text()) {
@@ -1894,36 +1911,66 @@ void ConfigManager::parseNode(std::vector<Node>* nodes, xml_node& nodeTag) {
 
 				if (name.compare(nodeNameTag) == 0) {
 					nodeName = string(childNode.text().get());
+					trimSpacesFromValue(nodeName, nodeNameTag, parseWarnings);
 					//cout << nodeName << "\n";
 				}
 				if (name.compare(nodeListeningHostNameTag) == 0) {
 					ipAddress = string(childNode.text().get());
+					trimSpacesFromValue(ipAddress, nodeListeningHostNameTag, parseWarnings);
+
 					//cout << ipAddress << "\n";
 				}
 				if (name.compare(nodeListeningPortTag) == 0) {
-					portNumber = (childNode.text().as_uint());
+					 string portNo = (childNode.text().get());
+
+					trimSpacesFromValue(portNo, nodeListeningPortTag, parseWarnings);
+					portNumber = (uint)atol(portNo.c_str());
 					//cout << portNumber << "\n";
 				}
 				if (name.compare(nodeCurrentTag) == 0) {
-					thisIsMe = childNode.text().as_bool();
-					//cout << thisIsMe << " \n";
+					string temp = (childNode.text().get());
+					trimSpacesFromValue(temp, nodeCurrentTag, parseWarnings);
+					if(temp.compare("true") == 0){
+						thisIsMe = true;
+					}
+					if(temp.compare("false") == 0){
+						thisIsMe = false;
+					}
+					//thisIsMe = childNode.text().as_bool();
+					cout << thisIsMe << "\n" << flush;
 				}
 				if (name.compare(nodeMasterTag) == 0) {
-					nodeMaster = childNode.text().as_bool();
-					//cout << nodeMaster << "\n";
+					string temp = (childNode.text().get());
+					trimSpacesFromValue(temp, nodeMasterTag, parseWarnings);
+					if(temp.compare("true") == 0){
+						nodeMaster = true;
+					}
+					if(temp.compare("false") == 0){
+						nodeMaster = false;
+					}
+
 				}
 				if (name.compare(nodeDataTag) == 0) {
-					nodeData = childNode.text().as_bool();
-					//cout << nodeData << "\n";
+					//nodeData = childNode.text().as_bool();
+					string temp = (childNode.text().get());
+					trimSpacesFromValue(temp, nodeDataTag, parseWarnings);
+					if(temp.compare("true") == 0){
+						nodeData = true;
+					}
+					if(temp.compare("false") == 0){
+						nodeData = false;
+					}
 				}
+
 				if (name.compare(nodeDataDirTag) == 0) {
 					dataDir = string(childNode.text().get());
-					//cout << dataDir << "\n";
+					trimSpacesFromValue(dataDir, nodeDataDirTag, parseWarnings);
+
 				}
 				if(name.compare(nodeHomeTag) == 0){
 					nodeHome = string(childNode.text().get());
+					trimSpacesFromValue(nodeHome, nodeHomeTag, parseWarnings);
 				}
-				//cout << flush;
 			}
 		}
 
