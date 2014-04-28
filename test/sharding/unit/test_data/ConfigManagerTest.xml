@@ -26,8 +26,9 @@
         <listeningPort> 8089 </listeningPort>
         <this-is-me> true </this-is-me>
         <node-name> avatar </node-name>
+	<node-name> queen </node-name>
         <node-master> true </node-master>
-        <node-data> true </node-data>
+        <node-data>truefalse</node-data>
         <srch2Home> myHome </srch2Home>
         <dataDir> Default </dataDir>
     </node> 

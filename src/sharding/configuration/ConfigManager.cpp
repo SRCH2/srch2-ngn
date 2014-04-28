@@ -47,6 +47,7 @@ const char* const ConfigManager::nodeHomeTag = "srch2home";
 const char* const ConfigManager::nodeDataDirTag = "datadir";
 const char* const ConfigManager::primaryShardTag = "core-number_of_shards";
 const char* const ConfigManager::replicaShardTag = "core-number_of_replicas";
+const char* const ConfigManager::clusterNameTag = "cluster-name";
 
 
 const char* const ConfigManager::accessLogFileString = "accesslogfile";
@@ -195,6 +196,7 @@ void ConfigManager::loadConfigFile()
 
     Logger::debug("WARNINGS while reading the configuration file:");
     Logger::debug("%s\n", parseWarnings.str().c_str());
+
     if (!configSuccess) {
         Logger::error("ERRORS while reading the configuration file");
         Logger::error("%s\n", parseError.str().c_str());
@@ -823,17 +825,28 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_
 {
     string tempUse = "";
     CoreConfigParseState_t coreParseState;
+    int flag_primaryShard = 0, flag_replica = 0;
 
     // <config><dataDir>core0/data OR <core><dataDir>
 
     xml_node childNodeOfCores = parentNode.child(primaryShardTag);
     if(childNodeOfCores && childNodeOfCores.text()){
-        coreInfo->numberOfPrimaryShards = childNodeOfCores.text().as_uint();
+    	flag_primaryShard++;
+        string temp = (childNodeOfCores.text().get());
+        trimSpacesFromValue(temp, primaryShardTag, parseWarnings);
+        coreInfo->numberOfPrimaryShards = (uint)atol(temp.c_str());
+        if(flag_primaryShard > 1)
+	        parseWarnings << "Duplicate " << primaryShardTag << "; Using current value " << coreInfo->numberOfPrimaryShards << "\n";
     }
 
     childNodeOfCores = parentNode.child(replicaShardTag);
     if(childNodeOfCores && childNodeOfCores.text()){
-        coreInfo->numberOfReplicas = childNodeOfCores.text().as_uint();
+    	flag_replica++;
+        string temp = (childNodeOfCores.text().get());
+        trimSpacesFromValue(temp, replicaShardTag, parseWarnings);
+        coreInfo->numberOfReplicas = (uint)atol(temp.c_str());
+        if(flag_replica > 1)
+        	parseWarnings << "Duplicate " << replicaShardTag << "; Using current value " << coreInfo->numberOfReplicas << "\n";
     }
 
     xml_node childNode = parentNode.child(dataDirString);
@@ -1725,8 +1738,7 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode, CoreIn
         this->httpServerAccessLogFile = this->srch2Home + "/" + coreInfo->getName() + "/" + tempUse;
     } else {
         parseError << "httpServerAccessLogFile is not set.\n";
-        configSuccess = false;				std::string name = (string) childNode.name();
-
+        configSuccess = false;
         return;
     }
 }
@@ -1737,15 +1749,19 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
                           std::stringstream &parseWarnings)
 {
     string tempUse = ""; // This is just for temporary use.
-
+    int flag_cluster = 0;
     CoreInfo_t *defaultCoreInfo = NULL;
 
     xml_node configNode = configDoc.child(configString);
 
-    xml_node clusterName = configNode.child("cluster-name");
+    xml_node clusterName = configNode.child(clusterNameTag);
     if (clusterName && clusterName.text()) { // checks if the config/srch2Home has any text in it or not
-          tempUse = string(clusterName.text().get());
+          flag_cluster++;
+    	  tempUse = string(clusterName.text().get());
+          trimSpacesFromValue(tempUse, clusterNameTag, parseWarnings);
           cluster.setClusterName(tempUse);
+          if(flag_cluster > 1)
+        	  parseWarnings << "Duplicate value of " << clusterNameTag<<"; Using current value " << tempUse;
       } 
 
     tempUse = "";
@@ -1754,7 +1770,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
 
     xml_node nodeTag = configNode.child("node");
     if (nodeTag)
-      ConfigManager::parseNode(nodes, nodeTag);
+      ConfigManager::parseNode(nodes, nodeTag, parseWarnings);
 
     // srch2Home is a required field
     xml_node childNode = configNode.child(srch2HomeString);
@@ -1895,81 +1911,126 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
 
 
 //TODO: Pass by referencem, space after =
-void ConfigManager::parseNode(std::vector<Node>* nodes, xml_node& nodeTag) {
+void ConfigManager::parseNode(std::vector<Node>* nodes, xml_node& nodeTag, std::stringstream &parseWarnings) {
 
     for (xml_node nodeTemp = nodeTag; nodeTemp; nodeTemp = nodeTemp.next_sibling("node")) {
 
+    	int flag_name = 0, flag_port = 0, flag_ip = 0, flag_current = 0, flag_master = 0, flag_data = 0, flag_dataDir = 0, flag_home = 0;
         std::string ipAddress = "", dataDir = "", nodeName = "", nodeHome = "";
 		unsigned nodeId = 0, portNumber = 0, numOfThreads = 0;
 		bool nodeMaster, nodeData, thisIsMe;
-	    std::stringstream parseWarnings;
+	    //std::stringstream parseWarnings;
 
 		for (xml_node childNode = nodeTemp.first_child(); childNode; childNode = childNode.next_sibling()) {
-			if (childNode && childNode.text()) {
 
+			if (childNode && childNode.text()) {
 				std::string name = (string) childNode.name();
 
 				if (name.compare(nodeNameTag) == 0) {
+					flag_name++;
 					nodeName = string(childNode.text().get());
 					trimSpacesFromValue(nodeName, nodeNameTag, parseWarnings);
-					//cout << nodeName << "\n";
+					if(flag_name>1){
+				        parseWarnings << "Duplicate " << nodeNameTag << "; Using current value " << nodeName << "\n";
+					     //cout << "Duplicate " << nodeNameTag << "; Using current value " << nodeName << "\n";
+					}
 				}
 				if (name.compare(nodeListeningHostNameTag) == 0) {
+					flag_ip++;
 					ipAddress = string(childNode.text().get());
 					trimSpacesFromValue(ipAddress, nodeListeningHostNameTag, parseWarnings);
-
-					//cout << ipAddress << "\n";
+					if(flag_ip>1)
+						parseWarnings << "Duplicate " << nodeListeningHostNameTag << "; Using current value " << ipAddress << "\n";
 				}
 				if (name.compare(nodeListeningPortTag) == 0) {
-					 string portNo = (childNode.text().get());
-
+					flag_port++;
+					string portNo = (childNode.text().get());
 					trimSpacesFromValue(portNo, nodeListeningPortTag, parseWarnings);
 					portNumber = (uint)atol(portNo.c_str());
-					//cout << portNumber << "\n";
+					if(flag_ip>1)
+						parseWarnings << "Duplicate " << nodeListeningPortTag << "; Using current value " << portNumber << "\n";
 				}
 				if (name.compare(nodeCurrentTag) == 0) {
+					flag_current++;
 					string temp = (childNode.text().get());
 					trimSpacesFromValue(temp, nodeCurrentTag, parseWarnings);
 					if(temp.compare("true") == 0){
 						thisIsMe = true;
 					}
-					if(temp.compare("false") == 0){
+					else if(temp.compare("false") == 0){
 						thisIsMe = false;
 					}
-					//thisIsMe = childNode.text().as_bool();
-					cout << thisIsMe << "\n" << flush;
+					else{
+						thisIsMe = true;
+						parseWarnings << "Invalid value for " << nodeCurrentTag << "; Using the default value true \n";
+					}
+					if(flag_current>1){
+						parseWarnings << "Duplicate " << nodeCurrentTag << "; Using current value ";
+						if(thisIsMe)
+							parseWarnings << "true "<< "\n";
+						else
+							parseWarnings << "false "<< "\n";
+					}
 				}
 				if (name.compare(nodeMasterTag) == 0) {
+					flag_master++;
 					string temp = (childNode.text().get());
 					trimSpacesFromValue(temp, nodeMasterTag, parseWarnings);
 					if(temp.compare("true") == 0){
 						nodeMaster = true;
 					}
-					if(temp.compare("false") == 0){
+					else if(temp.compare("false") == 0){
 						nodeMaster = false;
 					}
+					else{
+						nodeMaster = true;
+						parseWarnings << "Invalid value for " << nodeMasterTag << "; Using the default value true \n";
 
+					}
+					if(flag_current>1){
+						parseWarnings << "Duplicate " << nodeMasterTag << "; Using current value ";
+						if(nodeMaster)
+							parseWarnings << "true "<< "\n";
+						else
+							parseWarnings << "false "<< "\n";
+					}
 				}
 				if (name.compare(nodeDataTag) == 0) {
-					//nodeData = childNode.text().as_bool();
+					flag_data++;
 					string temp = (childNode.text().get());
 					trimSpacesFromValue(temp, nodeDataTag, parseWarnings);
 					if(temp.compare("true") == 0){
 						nodeData = true;
 					}
-					if(temp.compare("false") == 0){
+					else if(temp.compare("false") == 0){
 						nodeData = false;
+					}
+					else {
+						nodeData = true;
+						parseWarnings << "Invalid value for " << nodeDataTag << "; Using the default value true \n";
+					}
+					if(flag_data>1){
+						parseWarnings << "Duplicate " << nodeDataTag << "; Using current value ";
+						if(nodeData)
+							parseWarnings << "true "<< "\n";
+						else
+							parseWarnings << "false "<< "\n";
 					}
 				}
 
 				if (name.compare(nodeDataDirTag) == 0) {
+					flag_dataDir++;
 					dataDir = string(childNode.text().get());
 					trimSpacesFromValue(dataDir, nodeDataDirTag, parseWarnings);
-
+					if(flag_dataDir > 1)
+						parseWarnings << "Duplicate " << nodeDataDirTag << "; Using current value " << dataDir << "\n";
 				}
 				if(name.compare(nodeHomeTag) == 0){
+					flag_home++;
 					nodeHome = string(childNode.text().get());
 					trimSpacesFromValue(nodeHome, nodeHomeTag, parseWarnings);
+					if(flag_home > 1)
+						parseWarnings << "Duplicate " << nodeHomeTag << "; Using current value " << nodeHome << "\n";
 				}
 			}
 		}

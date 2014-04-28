@@ -22,7 +22,8 @@ void testConfigurationParser(char* configFile)
 	for(int i = 0; i < nodesFromCluster->size(); i++){
 		if(i == 0){
 			ASSERT(nodesFromCluster->at(i).getIpAddress() == "192.168.1.54");
-			ASSERT(nodesFromCluster->at(i).getName() == "avatar");
+			ASSERT(nodesFromCluster->at(i).getPortNumber() == 8089);
+			ASSERT(nodesFromCluster->at(i).getName() == "queen");
 			ASSERT(nodesFromCluster->at(i).getHomeDir() == "myHome");
 			ASSERT(nodesFromCluster->at(i).getDataDir() == "Default");
 			ASSERT(nodesFromCluster->at(i).isMaster() == true);
@@ -55,6 +56,7 @@ void testShard(){
 
 int main() {
     testShard();
+    Logger::setLogLevel(Logger::SRCH2_LOG_DEBUG);
     testConfigurationParser(getenv("ConfigManagerFilePath"));
 
 }

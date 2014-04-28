@@ -567,7 +567,7 @@ public:
     virtual ~ConfigManager();
 
     //Declaring function to parse node tags
-    void parseNode(std::vector<Node>* nodes, xml_node& childNode);
+    void parseNode(std::vector<Node>* nodes, xml_node& childNode, std::stringstream &parseWarnings);
 
     CoreInfo_t *getCoreInfoMap(const string &coreName) const;
     CoreInfoMap_t::iterator coreInfoIterateBegin() { return coreInfoMap.begin(); }
@@ -684,6 +684,7 @@ private:
     static const char* const nodeDataDirTag;
     static const char* const primaryShardTag;
     static const char* const replicaShardTag;
+    static const char* const clusterNameTag;
 
     static const char* const accessLogFileString;
     static const char* const analyzerString;
