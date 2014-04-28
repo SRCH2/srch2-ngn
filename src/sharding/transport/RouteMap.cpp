@@ -1,6 +1,8 @@
 #include "RouteMap.h"
 #include <netdb.h>
 
+using namespace srch2::httpwrapper;
+
 void RouteMap::addDestination(const Node& node) {
   hostent *routeHost = gethostbyname(node.getIpAddress().c_str());
   //  if(routeHost == -1) throw std::exception

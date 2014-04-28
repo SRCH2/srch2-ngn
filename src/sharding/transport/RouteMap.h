@@ -6,6 +6,9 @@
 #include <vector>
 #include <iterator>
 
+namespace srch2 {
+namespace httpwrapper {
+
 const static char GREETING_MESSAGE[] = "GREETING FROM SRCH2";
 const static char FAILED_GREETING_MESSAGE[] = "YOU KNOCKED AGAIN? ";
 
@@ -55,6 +58,7 @@ public:
   Connections getNeededConnections();
   void setBase(Node&);
   const Node& getBase() const;
+  Connection getConnection(NodeId);
 
   typedef std::map<NodeId, Connection>::iterator iterator;
   iterator begin();
@@ -71,10 +75,15 @@ Connections RouteMap::getNeededConnections() {
   return Connections(destinations);
 }
 
+Connection RouteMap::getConnection(NodeId nodeId) {
+  return map[nodeId];
+}
+
 void RouteMap::setBase(Node& base) { this->base = &base; }
 const Node& RouteMap::getBase() const { return *base; }
 
 RouteMap::iterator RouteMap::begin() { return map.begin(); }
 RouteMap::iterator RouteMap::end() { return map.end(); }
 
+}}
 #endif /* __TRANSPORT_ROUTE_MAP_H__ */
