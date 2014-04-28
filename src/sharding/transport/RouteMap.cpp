@@ -1,6 +1,8 @@
 #include "RouteMap.h"
 #include <netdb.h>
 
+using namespace srch2::httpwrapper;
+
 void RouteMap::addDestination(const Node& node) {
   hostent *routeHost = gethostbyname(node.getIpAddress().c_str());
   //  if(routeHost == -1) throw std::exception
@@ -104,3 +106,9 @@ void RouteMap::acceptRoute(int fd, struct sockaddr_in addr) {
 
   addNodeConnection(path->first.second, fd);
 }
+
+void RouteMap::addNodeConnection(NodeId addr, int fd) {
+  //look into map thread safety
+  map[addr] = fd;
+}
+
