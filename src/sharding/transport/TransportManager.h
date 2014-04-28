@@ -19,6 +19,7 @@ typedef std::vector<event_base*> EventBases;
 typedef std::vector<Node> Nodes;
 
 struct TransportManager {
+  struct RouteMap routeMap;
   TransportManger(EventBases&, Nodes&);
   /*
    *  Try to establish a connection with shardId. On failure return false
