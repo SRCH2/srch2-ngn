@@ -347,6 +347,14 @@ static void cb_save(evhttp_request *req, void *arg)
 
 }
 
+static void cb_transport_connect(int fd, short event, void* arg) {
+  char buf[50];
+  read(fd, buf, 20);
+  printf("%s\n", buf);
+  char life[] = "Life is good!!!\n";
+  send(fd, life, sizeof(life), 0);
+}
+
 static void cb_export(evhttp_request *req, void *arg)
 {
     Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
@@ -630,6 +638,7 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
         }
     }
 
+
     MAX_THREADS = config->getNumberOfThreads();
     Logger::console("Starting Srch2 server with %d serving threads at %s:%d",
             MAX_THREADS, globalHostName, globalDefaultPort);
@@ -644,6 +653,50 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
             return 255;
         }
         evBases->push_back(evbase);
+    }
+
+    short internalDefaultPort = 4041;
+    //atoi(config->InternalListeningPort().c_str());
+    char *internalHostName    = "0.0.0.0";
+      //config->InternalListeningHostname().c_str();
+
+
+    int internalFd = bindSocket(internalHostName, internalDefaultPort);
+
+    if (internalFd < 0) {
+      perror("socket bind error");
+      return NULL;
+    }
+
+    void *transport = NULL;
+
+/*    std::vector<Node>& map =  *config->getCluser()->getNodes();
+  // create Transport Module
+  Transport subway(evBases, map);*/
+
+  typedef vector<struct event_base *> EventBases;
+
+  EventBases *bases = (vector<struct event_base *>*) evBases;
+
+  int newfd;
+  while(1) {
+    struct sockaddr addr;
+    socklen_t addrlen;
+    if((newfd = accept(internalFd, &addr, &addrlen)) != -1) {
+      for(EventBases::iterator base = bases->begin(); 
+          base != bases->end(); ++base) {
+        struct event* ev = 
+          event_new(*base, newfd, EV_READ, cb_transport_connect, NULL);
+        event_add(ev, NULL);
+      }
+     break;
+    }
+  }
+
+  int i=0;
+  for(EventBases::iterator base = bases->begin(); base != bases->end(); 
+      ++base, ++i) {
+      event_base *evbase = *base; 
 
         struct evhttp *http_server = evhttp_new(evbase);
         if (NULL == http_server) {
@@ -651,6 +704,7 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
             return 255;
         }
         evServers->push_back(http_server);
+
 
         // helper array - loop instead of repetitous code
         struct PortList_t {
@@ -708,6 +762,7 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
             }
             Logger::debug("Socket accept by thread %d on port %d", i, iterator->first);
         }
+
 
         //fprintf(stderr, "Server started on port %d\n", globalDefaultPort);
         if (pthread_create(&threads[i], NULL, dispatch, evbase) != 0)
