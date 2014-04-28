@@ -36,23 +36,6 @@ namespace httpwrapper {
 ///////////////////////////////////////// TEMPORARY ////////////////////////////////////////////
 typedef unsigned TimeoutValue;
 
-class RoutingManager{
-public:
-
-
-	unsigned getNumberOfShards(CoreShardInfo * coreShardInfo);
-
-
-	template<typename T>
-	void broadcast_wait_for_all_w_cb_n_timeout(void * msg, T obj , TimeoutValue t, const CoreShardInfo * coreShardInfo);
-	template<typename T>
-	void broadcast_w_cb_n_timeout(Message * msg, T obj, TimeoutValue t);
-	template<typename T>
-	void route_w_cb_n_timeout(void * msg, T * obj, TimeoutValue t);
-	Message connect_w_response_n_timeout(Message * msg, unsigned shardIndex, TimeoutValue timeout);
-	void route ( Message * msg, unsigned  shardID);
-};
-
 class SynchronizationManager{
 
 };

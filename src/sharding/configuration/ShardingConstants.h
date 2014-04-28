@@ -7,13 +7,13 @@ namespace httpwrapper {
 enum ShardingMessageType{
     SearchCommandMessageType, // -> for LogicalPlan object
     SearchResultsMessageType, // -> for SerializedQueryResults object
-    InsertUpdateMessageType, // -> for Record object (used for insert and update)
-    DeleteInfoMessageType, // -> for DeleteCommandInput object (used for delete)
-    SerializeInfoMessageType, // -> for SerializeCommandInput object (used for serializing index and records)
-    GetInfoMessageType, // -> for GetInfoCommandInput object (used for getInfo)
+    InsertUpdateCommandMessageType, // -> for Record object (used for insert and update)
+    DeleteCommandMessageType, // -> for DeleteCommandInput object (used for delete)
+    SerializeCommandMessageType, // -> for SerializeCommandInput object (used for serializing index and records)
+    GetInfoCommandMessageType, // -> for GetInfoCommandInput object (used for getInfo)
     GetInfoResultsMessageType, // -> for GetInfoResults object
     CommitCommandMessageType, // -> for CommitCommandInput object
-    ResettingLogMessageType, // -> for ResetLogCommandInput (used for resetting log)
+    ResetLogCommandMessageType, // -> for ResetLogCommandInput (used for resetting log)
     StatusMessageType // -> for CommandStatus object (object returned from insert, delete, update)
 };
 

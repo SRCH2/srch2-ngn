@@ -33,13 +33,15 @@ public:
 	}
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
-    void* serialize(std::allocator<char>);
+	void* serialize(std::allocator<char>);
 
     //given a byte stream recreate the original object
-    const SerializableCommandStatus& deserialize(void*);
+    static const SerializableCommandStatus& deserialize(void*);
 
     //Returns the type of message which uses this kind of object as transport
-    ShardingMessageType messsageKind();
+    static ShardingMessageType messsageKind(){
+    	return StatusMessageType;
+    }
 
 	CommandCode getCommandCode() const {
 		return commandCode;

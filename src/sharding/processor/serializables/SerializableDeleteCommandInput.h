@@ -29,10 +29,12 @@ public:
     void* serialize(std::allocator<char>);
 
     //given a byte stream recreate the original object
-    const SerializableDeleteCommandInput& deserialize(void*);
+    static const SerializableDeleteCommandInput& deserialize(void*);
 
     //Returns the type of message which uses this kind of object as transport
-    ShardingMessageType messsageKind();
+    static ShardingMessageType messsageKind(){
+    	return DeleteCommandMessageType;
+    }
 private:
 
 	string primaryKey;

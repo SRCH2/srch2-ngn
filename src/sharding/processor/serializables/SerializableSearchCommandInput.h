@@ -23,10 +23,12 @@ public:
     void* serialize(std::allocator<char>);
 
     //given a byte stream recreate the original object
-    const SerializableSearchCommandInput& deserialize(void*);
+    static const SerializableSearchCommandInput& deserialize(void*);
 
     //Returns the type of message which uses this kind of object as transport
-    ShardingMessageType messsageKind();
+    static ShardingMessageType messsageKind(){
+    	return SearchCommandMessageType;
+    }
 
 	LogicalPlan * getLogicalPlan(){
 		return logicalPlan;

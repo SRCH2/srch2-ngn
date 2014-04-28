@@ -26,10 +26,12 @@ public:
     void* serialize(std::allocator<char>);
 
     //given a byte stream recreate the original object
-    const SerializableCommandStatus& deserialize(void*);
+    static const SerializableCommandStatus& deserialize(void*);
 
     //Returns the type of message which uses this kind of object as transport
-    ShardingMessageType messsageKind();
+    static ShardingMessageType messsageKind(){
+    	return GetInfoResultsMessageType;
+    }
 
 	unsigned getDocCount() const {
 		return docCount;

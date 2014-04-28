@@ -38,10 +38,12 @@ public:
     void* serialize(std::allocator<char>);
 
     //given a byte stream recreate the original object
-    const SerializableInsertUpdateCommandInput& deserialize(void*);
+    static const SerializableInsertUpdateCommandInput& deserialize(void*);
 
     //Returns the type of message which uses this kind of object as transport
-    ShardingMessageType messsageKind();
+    static ShardingMessageType messsageKind(){
+    	return InsertUpdateCommandMessageType;
+    }
 
 private:
     OperationCode insertOrUpdate; // true => insert, false=> update

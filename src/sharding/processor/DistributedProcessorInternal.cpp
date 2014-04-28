@@ -335,7 +335,7 @@ SerializableCommandStatus DPInternalRequestHandler::internalSerializeRecordsComm
  * 2. Uses core to reset log
  * 3. Sends the results to the shard which initiated this reset-log request(Failure or Success)
  */
-SerializableCommandStatus DPInternalRequestHandler::internalResetLogCommand(Srch2Server * server, SerializableSerializeCommandInput * resetData){
+SerializableCommandStatus DPInternalRequestHandler::internalResetLogCommand(Srch2Server * server, SerializableResetLogCommandInput * resetData){
 
 	if(resetData == NULL || server == NULL){
 		SerializableCommandStatus status(SerializableCommandStatus::RESET_LOG, false, "");

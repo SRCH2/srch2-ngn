@@ -57,10 +57,12 @@ class SerializableSearchResults {
     void* serialize(std::allocator<char>);
 
     //given a byte stream recreate the original object
-    const SerializableSearchResults& deserialize(void*);
+    static const SerializableSearchResults& deserialize(void*);
 
     //Returns the type of message which uses this kind of object as transport
-    static ShardingMessageType messsageKind();
+    static ShardingMessageType messsageKind(){
+    	return SearchResultsMessageType;
+    }
 
     std::vector<QueryResultPtr> getSortedFinalResults();
 

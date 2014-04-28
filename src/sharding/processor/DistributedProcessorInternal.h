@@ -87,7 +87,7 @@ public:
 	 * 2. Uses core to reset log
 	 * 3. Sends the results to the shard which initiated this reset-log request(Failure or Success)
 	 */
-	SerializableCommandStatus internalResetLogCommand(Srch2Server * server, SerializableSerializeCommandInput * resetData);
+	SerializableCommandStatus internalResetLogCommand(Srch2Server * server, SerializableResetLogCommandInput * resetData);
 
 
 	/*
