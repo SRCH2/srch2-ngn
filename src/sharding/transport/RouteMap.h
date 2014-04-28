@@ -1,9 +1,10 @@
 #ifndef __TRANSPORT_ROUTE_MAP_H__
-#define __TRANSPORT_ROUTE_MAP_H_
+#define __TRANSPORT_ROUTE_MAP_H__
 
 #include "configuration/ConfigManager.h"
 #include <netinet/in.h>
 #include <vector>
+#include <iterator>
 
 const static char GREETING_MESSAGE[] = "GREETING FROM SRCH2";
 const static char FAILED_GREETING_MESSAGE[] = "YOU KNOCKED AGAIN? ";
@@ -14,24 +15,66 @@ typedef std::pair<sockaddr_in, NodeId> ConnectionId;
 
 using srch2::httpwrapper::Node;
 
-struct Connections : std::iterator<forward_iterator_tag,
-  std::pair<ConnectionId, bool>&> {
-    Connections(std::vector<std::pair<ConnectionId, bool> >&);
+class Connections : public std::iterator<forward_iterator_tag,
+  std::pair<ConnectionId, bool> > {
+
+public:
+  typedef std::vector<std::pair<ConnectionId, bool> > Pool;
+
+  Connections(Pool&);
+  Connections(const Connections&);
+
+  Connections& operator++();
+  Connections operator++(int);
+
+  bool operator==(const Connections&);
+  bool operator!=(const Connections&);
+
+  std::pair<ConnectionId, bool>& operator*();
+  std::pair<ConnectionId, bool>* operator->();
+
+private:
+
+  Pool& pool;
+  Pool::iterator place;
+};
 
 
 class RouteMap {
-  typedef std::map<NodeId, Connection> Iterator;
   std::map<NodeId, Connection> map; 
   std::vector<std::pair<ConnectionId, bool> > destinations;
+  const Node* base;
 
+  void addNodeConnection(NodeId, int);
 public:
+
   bool initRoute(std::pair<ConnectionId, bool>&);
   void acceptRoute(int fd, struct sockaddr_in);
-  void addNodeConnection(const NodeId, const Connection);
   void addDestination(const Node&);
-  bool isConnected(const sockaddr_in &addr);
+  bool isTotallyConnected() const;
   Connections getNeededConnections();
+  void setBase(Node&);
+  const Node& getBase() const;
+
+  typedef std::map<NodeId, Connection>::iterator iterator;
+  iterator begin();
+  iterator end();
 };
 
+#include "ConnectionsInlines.h"
+
+bool RouteMap::isTotallyConnected() const {
+  return map.size() == destinations.size();
+}
+
+Connections RouteMap::getNeededConnections() {
+  return Connections(destinations);
+}
+
+void RouteMap::setBase(Node& base) { this->base = &base; }
+const Node& RouteMap::getBase() const { return *base; }
+
+RouteMap::iterator RouteMap::begin() { return map.begin(); }
+RouteMap::iterator RouteMap::end() { return map.end(); }
 
 #endif /* __TRANSPORT_ROUTE_MAP_H__ */

@@ -104,3 +104,9 @@ void RouteMap::acceptRoute(int fd, struct sockaddr_in addr) {
 
   addNodeConnection(path->first.second, fd);
 }
+
+void RouteMap::addNodeConnection(NodeId addr, int fd) {
+  //look into map thread safety
+  map[addr] = fd;
+}
+
