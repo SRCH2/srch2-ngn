@@ -216,34 +216,34 @@ Node(const Node& cpy)
 	this->numberOfThreads = 1; // default value is 1
   }	
 
-  std::string getHomeDir(){
+  std::string getHomeDir() const {
 	  return this->homeDir;
   }
-  std::string getDataDir(){
+  std::string getDataDir() const {
 	  return this->dataDir;
   }
 
-  bool isMaster(){
+  bool isMaster() const {
 	  return nodeMaster;
   }
 
-  bool isData(){
+  bool isData() const {
 	  return nodeData;
   }
 
-  std::string getName(){
+  std::string getName() const {
 	  return this->nodeName;
   }
 
-  std::string getIpAddress(){
+  std::string getIpAddress() const {
 	  return this->ipAddress;
   }
 
-  unsigned int getId(){
+  unsigned int getId() const {
 	  return this->nodeId;
   }
 
-  unsigned int getPortNumber(){
+  unsigned int getPortNumber() const {
 	  return this->portNumber;
   }
   Shard getShardById(const ShardId& shardId);
