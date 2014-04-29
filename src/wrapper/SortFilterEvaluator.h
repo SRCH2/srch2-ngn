@@ -72,6 +72,37 @@ public:
 		ss << order ;
 		return ss.str();
 	}
+
+
+	/*
+	 * Serialization scheme :
+	 * | order | field |
+	 */
+	void * serializeForNetwork(void * buffer) const {
+		buffer = srch2::util::serializeFixedTypes(this->order,buffer);
+		buffer = srch2::util::serializeVectorOfString(field, buffer);
+		return buffer;
+	}
+	/*
+	 * Serialization scheme :
+	 * | order | field |
+	 */
+	static void * deserializeForNetwork(SortEvaluator & info, void * buffer) {
+		buffer = srch2::util::deserializeFixedTypes(buffer, info.order);
+		buffer = srch2::util::deserializeVectorOfString(buffer, ((SortFilterEvaluator &)info).field);
+		return buffer;
+	}
+	/*
+	 * Serialization scheme :
+	 * | order | field |
+	 */
+	unsigned getNumberOfBytesForSerializationForNetwork() const{
+		unsigned numberOfBytes = 0;
+		numberOfBytes += sizeof(order);
+		numberOfBytes += srch2::util::getNumberOfBytesVectorOfString(field);
+		return numberOfBytes;
+	}
+
 	std::vector<std::string> field;
 
 private:

@@ -196,6 +196,22 @@ public:
      */
     void clear();
 
+
+    /*
+     * Returns the number of bytes used by this object for serialization
+     */
+    unsigned getNumberOfBytesSize();
+
+    /*
+     * Serializes Record object into byte array
+     */
+    void * serialize(void * buffer);
+
+    /*
+     * Deserializes byte array into Record object
+     */
+    static void * Record::deserialize(void * buffer, Record & record);
+
     /**
      * Destructor to free persistent resources used by the Record.
      */

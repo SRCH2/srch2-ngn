@@ -196,6 +196,16 @@ public:
      */
      virtual ~Term();
 
+     void * serializeForNetwork(void * buffer){
+     	return impl->serializeForNetwork(buffer);
+     }
+     static void * deserializeForNetwork(Term & term, void * buffer){
+     	return term.impl->deserializeForNetwork(buffer);
+     }
+     unsigned getNumberOfBytesForSerializationForNetwork(){
+     	return impl->getNumberOfBytesForNetwork();
+     }
+
     private:
         struct Impl;
         Impl *impl;

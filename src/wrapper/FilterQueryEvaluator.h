@@ -51,8 +51,14 @@ namespace httpwrapper {
 typedef enum {
     FqKeywordTypeComplex, FqKeywordTypeRange, FqKeywordTypeAssignment
 } FqKeywordType;
+
 class QueryExpression {
 public:
+	enum ExpressionType{
+		Range,
+		Equality,
+		Complex
+	};
     std::vector<std::pair<MessageType, string> > *messages;
     virtual bool parse(string &expressionString) = 0;
 
@@ -68,7 +74,10 @@ public:
     std::vector<std::pair<MessageType, string> >* getMessageContainer() {
         return this->messages;
     }
-
+    virtual ExpressionType getExpressionType() = 0;
+	virtual void * serializeForNetwork(void * buffer) const = 0;
+	virtual static void * deserializeForNetwork(QueryExpression & info, void * buffer) = 0;
+	virtual unsigned getNumberOfBytesForSerializationForNetwork() const= 0;
 private:
 };
 
@@ -198,7 +207,9 @@ public:
 
     ~RangeQueryExpression() {
     }
-
+    QueryExpression::ExpressionType getExpressionType(){
+    	return QueryExpression::Range;
+    }
 	string getUniqueStringForCaching() {
 		stringstream ss;
 		ss << attributeName.c_str();
@@ -208,6 +219,43 @@ public:
 		return ss.str();
 	}
 
+	/*
+	 * Serialization scheme :
+	 * | negative | attributeName | attributeValueLower | attributeValueUpper |
+	 */
+	void * serializeForNetwork(void * buffer) const {
+		buffer = srch2::util::serializeFixedTypes(negative, buffer);
+		buffer = srch2::util::serializeString(attributeName, buffer);
+		buffer = srch2::util::serializeString(attributeValueLower, buffer);
+		buffer = srch2::util::serializeString(attributeValueUpper, buffer);
+		// messages which is member of QueryExpression should not be serialized because it comes from outside
+		return buffer;
+	}
+
+	/*
+	 * Serialization scheme :
+	 * | negative | attributeName | attributeValueLower | attributeValueUpper |
+	 */
+	static void * deserializeForNetwork(QueryExpression & info, void * buffer){
+		buffer = srch2::util::deserializeFixedTypes(buffer, ((RangeQueryExpression &)info).negative);
+		buffer = srch2::util::deserializeString(buffer, ((RangeQueryExpression &)info).attributeName);
+		buffer = srch2::util::deserializeString(buffer, ((RangeQueryExpression &)info).attributeValueLower);
+		buffer = srch2::util::deserializeString(buffer, ((RangeQueryExpression &)info).attributeValueUpper);
+		return buffer;
+	}
+
+	/*
+	 * Serialization scheme :
+	 * | negative | attributeName | attributeValueLower | attributeValueUpper |
+	 */
+	unsigned getNumberOfBytesForSerializationForNetwork() const{
+		unsigned numberOfBytes = 0;
+		numberOfBytes += sizeof(negative);
+		numberOfBytes += sizeof(unsigned) + attributeName.size();
+		numberOfBytes += sizeof(unsigned) + attributeValueLower.size();
+		numberOfBytes += sizeof(unsigned) + attributeValueUpper.size();
+		return numberOfBytes;
+	}
 private:
     // the name of the attribute which is checked against the range
     std::string attributeName;
@@ -336,7 +384,9 @@ public:
 
     ~EqualityQueryExpression() {
     }
-
+    QueryExpression::ExpressionType getExpressionType(){
+    	return QueryExpression::Equality;
+    }
 	string getUniqueStringForCaching() {
 		stringstream ss;
 		ss << attributeName.c_str();
@@ -346,11 +396,48 @@ public:
 		return ss.str();
 	}
 
+	/*
+	 * Serialization scheme :
+	 * | negative | operation | attributeName | attributeValue |
+	 */
+	void * serializeForNetwork(void * buffer) const {
+		buffer = srch2::util::serializeFixedTypes(negative, buffer);
+		buffer = srch2::util::serializeFixedTypes(operation, buffer);
+		buffer = srch2::util::serializeString(attributeName, buffer);
+		buffer = srch2::util::serializeString(attributeValue, buffer);
+		// messages which is member of QueryExpression should not be serialized because it comes from outside
+		return buffer;
+	}
+
+	/*
+	 * Serialization scheme :
+	 * | negative | operation | attributeName | attributeValue |
+	 */
+	static void * deserializeForNetwork(QueryExpression & info, void * buffer){
+		buffer = srch2::util::deserializeFixedTypes(buffer, ((EqualityQueryExpression &)info).operation);
+		buffer = srch2::util::deserializeFixedTypes(buffer, ((EqualityQueryExpression &)info).negative);
+		buffer = srch2::util::deserializeString(buffer, ((EqualityQueryExpression &)info).attributeName);
+		buffer = srch2::util::deserializeString(buffer, ((EqualityQueryExpression &)info).attributeValue);
+		return buffer;
+	}
+
+	/*
+	 * Serialization scheme :
+	 * | negative | operation | attributeName | attributeValue |
+	 */
+	unsigned getNumberOfBytesForSerializationForNetwork() const{
+		unsigned numberOfBytes = 0;
+		numberOfBytes += sizeof(operation) ;
+		numberOfBytes += sizeof(negative);
+		numberOfBytes += sizeof(unsigned) + attributeName.size();
+		numberOfBytes += sizeof(unsigned) + attributeValue.size();
+		return numberOfBytes;
+	}
 private:
-    std::string attributeName;
-    string attributeValue;
     AttributeCriterionOperation operation;
     bool negative;
+    std::string attributeName;
+    string attributeValue;
 };
 
 // this class gets a string which is an expression of nuon-searchable attribute names,it evluates the expression
@@ -449,7 +536,41 @@ public:
 	string getUniqueStringForCaching() {
 		return parsedExpression.c_str();
 	}
+    QueryExpression::ExpressionType getExpressionType(){
+    	return QueryExpression::Complex;
+    }
 
+    /*
+     * Serialization scheme :
+     * | parseExpression |
+     *
+     * NOTE: after deserialization, validate should be called.
+     */
+	void * serializeForNetwork(void * buffer) const {
+		return srch2::util::serializeString(parsedExpression, buffer);
+	}
+
+    /*
+     * Serialization scheme :
+     * | parseExpression |
+     *
+     * NOTE: after deserialization, validate should be called.
+     */
+	static void * deserializeForNetwork(QueryExpression & info, void * buffer){
+		return srch2::util::deserializeString(buffer, ((ComplexQueryExpression &)info).parsedExpression);
+	}
+
+    /*
+     * Serialization scheme :
+     * | parseExpression |
+     *
+     * NOTE: after deserialization, validate should be called.
+     */
+	unsigned getNumberOfBytesForSerializationForNetwork() const{
+		unsigned numberOfBytes = 0;
+		numberOfBytes += sizeof(unsigned) + parsedExpression.size();
+		return numberOfBytes;
+	}
 private:
     string parsedExpression;
     exprtk::expression<double> expression;
@@ -629,15 +750,94 @@ public:
 		}
 		return ss.str();
 	}
+
+	/*
+	 * Serialization scheme
+	 * | isFqBoolOperatorSet | termFQBooleanOperator | expressions (<type1:expr1,type2:expr2, ...>) |
+	 * NOTE : message is passed from outside this class and is only needed in the
+	 * external layer so we do not serialize messages member
+	 */
+	void * serializeForNetwork(void * buffer) const {
+		buffer = srch2::util::serializeFixedTypes(isFqBoolOperatorSet, buffer);
+		buffer = srch2::util::serializeFixedTypes(termFQBooleanOperator, buffer);
+
+		buffer = srch2::util::serializeFixedTypes(expressions.size(), buffer);
+		for(unsigned exprIndex = 0 ; exprIndex < expressions.size(); ++exprIndex){
+			QueryExpression::ExpressionType type = expressions.at(exprIndex)->getExpressionType();
+			buffer = srch2::util::serializeFixedTypes(type, buffer);
+			buffer = expressions.at(exprIndex)->serializeForNetwork(buffer);
+		}
+		// messages should not be serialized
+		return buffer;
+	}
+
+	/*
+	 * Serialization scheme
+	 * | isFqBoolOperatorSet | termFQBooleanOperator | expressions |
+	 * NOTE : message is passed from outside this class and is only needed in the
+	 * external layer so we do not serialize messages member
+	 */
+	static void * deserializeForNetwork(RefiningAttributeExpressionEvaluator & info, void * buffer) {
+		buffer = srch2::util::deserializeFixedTypes(buffer, isFqBoolOperatorSet);
+		buffer = srch2::util::deserializeFixedTypes(buffer, termFQBooleanOperator);
+
+		unsigned numberOfExpressions = 0;
+		buffer = srch2::util::deserializeFixedTypes(buffer, numberOfExpressions);
+
+		for(unsigned exprIndex = 0; exprIndex < numberOfExpressions; ++exprIndex){
+			QueryExpression::ExpressionType type;
+			buffer = srch2::util::deserializeFixedTypes(buffer, type);
+			switch (type) {
+				case QueryExpression::Range:
+					RangeQueryExpression * rangeQueryExpression = new RangeQueryExpression("",NULL);
+					buffer = RangeQueryExpression::deserializeForNetwork(*rangeQueryExpression, buffer);
+					expressions.push_back(rangeQueryExpression);
+					break;
+				case QueryExpression::Equality:
+					EqualityQueryExpression * equalityQueryExpression = new EqualityQueryExpression("",NULL);
+					buffer = EqualityQueryExpression::deserializeForNetwork(*equalityQueryExpression, buffer);
+					expressions.push_back(equalityQueryExpression);
+					break;
+				case QueryExpression::Complex:
+					ComplexQueryExpression * complexQueryExpression = new ComplexQueryExpression(NULL);
+					buffer = ComplexQueryExpression::deserializeForNetwork(*complexQueryExpression, buffer);
+					expressions.push_back(complexQueryExpression);
+					break;
+			}
+		}
+		return buffer;
+
+	}
+
+	/*
+	 * Serialization scheme
+	 * | isFqBoolOperatorSet | termFQBooleanOperator | expressions |
+	 * NOTE : message is passed from outside this class and is only needed in the
+	 * external layer so we do not serialize messages member
+	 */
+	unsigned getNumberOfBytesForSerializationForNetwork() const{
+		unsigned numberOfBytes = 0;
+
+		numberOfBytes += sizeof(isFqBoolOperatorSet);
+		numberOfBytes += sizeof(termFQBooleanOperator);
+
+		numberOfBytes += sizeof(unsigned); // size of expressions vector
+		for(unsigned exprIndex = 0 ; exprIndex < expressions.size(); ++exprIndex){
+			numberOfBytes += sizeof(QueryExpression::ExpressionType); /// type of expression
+			numberOfBytes += expressions.at(exprIndex)->getNumberOfBytesForSerializationForNetwork();
+		}
+		// messages should not be serialized
+		return numberOfBytes;
+	}
 private:
     // each expression is one term (one conjuct or disjunc) of the query
     // for example: for fq= price:[10 TO 100] AND model:JEEP, this vector contains
     // two elements.
-    std::vector<QueryExpression *> expressions;
     // for example: for fq= price:[10 TO 100] AND model:JEEP, this member is AND
     bool isFqBoolOperatorSet; // to know if termFQBooleanOperator has been set or not
-    std::vector<std::pair<MessageType, string> > *messages;
     BooleanOperation termFQBooleanOperator; // to store the boolean operator for the filterquery terms.
+    std::vector<QueryExpression *> expressions;
+    std::vector<std::pair<MessageType, string> > *messages;
 
     bool parseFqField(string &input, string &field) {
         boost::regex re(FQ_FIELD_REGEX_STRING); //TODO: compile this regex when the engine starts.

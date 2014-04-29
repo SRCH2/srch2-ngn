@@ -56,6 +56,16 @@ QueryResults::~QueryResults(){
 	delete impl;
 }
 
+void * QueryResults::serializeForNetwork(void * buffer){
+	return impl->serializeForNetwork(buffer);
+}
+void * QueryResults::deserializeForNetwork(QueryResults &queryResults, void * buffer){
+	return queryResults.impl->deserializeForNetwork(buffer);
+}
+unsigned QueryResults::getNumberOfBytesForSerializationForNetwork(){
+	return impl->getNumberOfBytesForSerializationForNetwork();
+}
+
 /**
  * Checks if the iterator reaches the end. @return false if
  * there is no next item in the QueryResults.
