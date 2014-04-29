@@ -1,3 +1,10 @@
+/*
+template<Callback>
+void Multiplex::broadcast(Message &msg, Callback cb, timeval time) {
+  registerCallBack(msg, cb
+*/
+
+
 
 /*template<typename CallBack> 
 void callBack(CallBack& cb, SerializedQueryResults& qr) {
