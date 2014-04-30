@@ -53,12 +53,10 @@ class RoutingManager {
 public:
 
 
-	RoutingManager(ConfigManager * configurationManager, DPExternalRequestHandler * dpExternal,
-			DPInternalRequestHandler * dpInternal, SynchronizationManager * synchManager){
+	RoutingManager(ConfigManager * configurationManager, 
+			DPInternalRequestHandler * dpInternal) { 
 		this->configurationManager = configurationManager;
-		this->dpExternal = dpExternal;
 		this->dpInternal = dpInternal;
-		this->synchManager = synchManager;
 	}
 
 

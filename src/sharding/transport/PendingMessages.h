@@ -31,4 +31,5 @@ public:
   void addMessage(time_t, MessageTime_t, unsigned CallBack);
   void trigger_timeouts(time_t);
   void resolve(Message*);
+  unsigned registerCallBack();
 };

@@ -29,7 +29,6 @@ private:
   sendReply(Message*, void*);
  
 	RoutingManager&  routingManager;
-
 };
 
 }
