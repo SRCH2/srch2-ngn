@@ -45,7 +45,7 @@ public:
 		void * bufferWritePointer = buffer;
     	// and serialize things in calculate
 		bufferWritePointer = srch2::util::serializeFixedTypes(insertOrUpdate, bufferWritePointer);
-		bufferWritePointer = record->serialize(bufferWritePointer);
+		bufferWritePointer = record->serializeForNetwork(bufferWritePointer);
 
     	return bufferWritePointer;
     }

@@ -2,6 +2,9 @@
 #define __SHARDING_PROCESSOR_PARTITIONER_H_
 
 
+#include "sharding/configuration/ConfigManager.h"
+#include "sharding/routing/RoutingManager.h"
+
 namespace srch2is = srch2::instantsearch;
 using namespace std;
 

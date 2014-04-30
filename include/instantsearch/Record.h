@@ -205,12 +205,12 @@ public:
     /*
      * Serializes Record object into byte array
      */
-    void * serialize(void * buffer);
+    void * serializeForNetwork(void * buffer);
 
     /*
      * Deserializes byte array into Record object
      */
-    static void * Record::deserialize(void * buffer, Record & record);
+    static void * deserializeForNetwork(void * buffer, Record & record);
 
     /**
      * Destructor to free persistent resources used by the Record.
