@@ -334,6 +334,7 @@ CoreInfo_t::CoreInfo_t(const CoreInfo_t &src)
     allowedRecordTokenizerCharacters = src.allowedRecordTokenizerCharacters;
 
     ports = src.ports;
+    schema = src.schema;
 }
 
 void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode, CoreInfo_t *coreInfo, map<string, unsigned> &boostsMap, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
@@ -2728,6 +2729,84 @@ void CoreInfo_t::setPort(PortType_t portType, unsigned short portNumber)
         break;
     }
 }
+
+// create a Schema object based on the stored info inside the core.
+srch2is::Schema* CoreInfo_t::createSchema()
+{
+    srch2::instantsearch::IndexType indexType;
+    srch2::instantsearch::PositionIndexType positionIndexType = srch2::instantsearch::POSITION_INDEX_NONE;
+
+    if (this->getIndexType() == 0) {
+        indexType = srch2is::DefaultIndex;
+    }
+    else {
+        indexType = srch2is::LocationIndex;
+    }
+
+    // if position word/offset index is enabled then attribute based search is also enabled
+    // so check whether position index is enabled first
+    if (this->isPositionIndexWordEnabled()) {
+        positionIndexType = srch2::instantsearch::POSITION_INDEX_WORD ;
+    }
+    if (this->isPositionIndexCharEnabled()) {
+    	if (positionIndexType == srch2::instantsearch::POSITION_INDEX_WORD)
+    		positionIndexType = srch2::instantsearch::POSITION_INDEX_FULL ;
+    	else
+    		positionIndexType = srch2::instantsearch::POSITION_INDEX_CHAR ;
+    }
+    if (positionIndexType == srch2::instantsearch::POSITION_INDEX_NONE &&
+        this->getSupportAttributeBasedSearch()) {
+        positionIndexType = srch2::instantsearch::POSITION_INDEX_FIELDBIT;
+    }
+
+    schema = srch2is::Schema::create(indexType, positionIndexType);
+
+    // Set PrimaryKey
+    string primaryKey = this->getPrimaryKey();
+
+    schema->setPrimaryKey(primaryKey); // integer, not searchable unless set as an attribute using setSearchableAttribute() function.
+
+    if (this->getIsPrimSearchable()) {
+        schema->setSearchableAttribute(primaryKey); // searchable primaryKey
+    }
+
+    // Set SearchableAttributes
+    // map<string, pair<bool, pair<string, pair<unsigned,pair<unsigned , bool> > > > >
+    map<string, SearchableAttributeInfoContainer>::const_iterator searchableAttributeIter = this->getSearchableAttributes()->begin();
+    for ( ; searchableAttributeIter != this->getSearchableAttributes()->end();
+                    searchableAttributeIter++) {
+        schema->setSearchableAttribute(searchableAttributeIter->first,
+            searchableAttributeIter->second.boost ,
+            searchableAttributeIter->second.isMultiValued,
+            searchableAttributeIter->second.highlight); // searchable text
+    }
+
+
+    // Set NonSearchableAttributes
+    map<string, RefiningAttributeInfoContainer >::const_iterator
+    	nonSearchableAttributeIter = this->getRefiningAttributes()->begin();
+
+    for ( ; nonSearchableAttributeIter != this->getRefiningAttributes()->end();
+        ++nonSearchableAttributeIter) {
+        schema->setRefiningAttribute(nonSearchableAttributeIter->first,
+        		nonSearchableAttributeIter->second.attributeType,
+        		nonSearchableAttributeIter->second.defaultValue,
+        		nonSearchableAttributeIter->second.isMultiValued);
+    }
+
+    std::string scoringExpressionString = this->getScoringExpressionString();
+    schema->setScoringExpression(scoringExpressionString);
+    schema->setSupportSwapInEditDistance(this->getSupportSwapInEditDistance());
+
+    return schema;
+}
+
+
+srch2is::Schema* CoreInfo_t::getSchema()
+{
+    return this->schema;
+}
+
 
 // JUST FOR Wrapper TEST
 void CoreInfo_t::setDataFilePath(const string& path) {
