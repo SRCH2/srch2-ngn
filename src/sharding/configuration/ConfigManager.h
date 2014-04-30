@@ -25,6 +25,8 @@ using namespace srch2::instantsearch;
 namespace po = boost::program_options;
 using namespace pugi;
 
+//void testCore(char* configFile);
+
 namespace srch2 {
 namespace httpwrapper {
 
@@ -324,7 +326,7 @@ class Cluster {
   void         getNodeById(unsigned id, Node& node);
   unsigned     getTotalNumberOfNodes();
   
-  void setClusterName(std::string& clusterName)
+  void setClusterName(const std::string& clusterName)
   {
 	this->clusterName = clusterName;
   }
@@ -461,6 +463,7 @@ public:
     	return &(this->cluster);
     }
 
+    //friend void ::testCore(char* configFile);
 private:
     Cluster cluster;
     // <config>
@@ -685,6 +688,9 @@ private:
     static const char* const primaryShardTag;
     static const char* const replicaShardTag;
     static const char* const clusterNameTag;
+    static const int DefaultNumberOfPrimaryShards;
+    static const int DefaultNumberOfReplicas;
+    static const char* const DefaultClusterName;
 
     static const char* const accessLogFileString;
     static const char* const analyzerString;

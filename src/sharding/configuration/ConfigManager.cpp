@@ -48,6 +48,9 @@ const char* const ConfigManager::nodeDataDirTag = "datadir";
 const char* const ConfigManager::primaryShardTag = "core-number_of_shards";
 const char* const ConfigManager::replicaShardTag = "core-number_of_replicas";
 const char* const ConfigManager::clusterNameTag = "cluster-name";
+const int ConfigManager::DefaultNumberOfPrimaryShards = 5;
+const int ConfigManager::DefaultNumberOfReplicas = 1;
+const char* const ConfigManager::DefaultClusterName = "SRCH2Cluster";
 
 
 const char* const ConfigManager::accessLogFileString = "accesslogfile";
@@ -264,7 +267,7 @@ void ConfigManager::trimSpacesFromValue(string &fieldValue, const char *fieldNam
     string oldValue(fieldValue);
     trim(fieldValue);
     if (fieldValue.length() != oldValue.length()) {
-        parseWarnings << "Trimmed whitespace from the variable " << fieldName << "\"" << oldValue << "\"\n";
+        parseWarnings << "Trimmed whitespace from the variable " << fieldName << " \"" << oldValue << "\"\n";
     }
     if (append != NULL) {
         fieldValue += append;
@@ -804,7 +807,6 @@ void ConfigManager::parseMultipleCores(const xml_node &coresNode, bool &configSu
         // parse zero or more individual core settings
         for (xml_node coreNode = coresNode.first_child(); coreNode; coreNode = coreNode.next_sibling()) {
             CoreInfo_t *newCore = new CoreInfo_t(this);
-
             parseSingleCore(coreNode, newCore, configSuccess, parseError, parseWarnings);
             if (configSuccess) {
                 coreInfoMap[newCore->name] = newCore;
@@ -825,29 +827,39 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_
 {
     string tempUse = "";
     CoreConfigParseState_t coreParseState;
-    int flag_primaryShard = 0, flag_replica = 0;
-
     // <config><dataDir>core0/data OR <core><dataDir>
 
     xml_node childNodeOfCores = parentNode.child(primaryShardTag);
     if(childNodeOfCores && childNodeOfCores.text()){
-    	flag_primaryShard++;
-        string temp = (childNodeOfCores.text().get());
-        trimSpacesFromValue(temp, primaryShardTag, parseWarnings);
-        coreInfo->numberOfPrimaryShards = (uint)atol(temp.c_str());
-        if(flag_primaryShard > 1)
-	        parseWarnings << "Duplicate " << primaryShardTag << "; Using current value " << coreInfo->numberOfPrimaryShards << "\n";
+			string temp = (childNodeOfCores.text().get());
+			trimSpacesFromValue(temp, primaryShardTag, parseWarnings);
+			coreInfo->numberOfPrimaryShards = (uint)atol(temp.c_str());
+    	}
+    else{
+		coreInfo->numberOfPrimaryShards = DefaultNumberOfPrimaryShards;
+        parseWarnings << "Number of Primary shards is not defined. The engine will use the default value " << coreInfo->numberOfPrimaryShards << "\n";
     }
 
+    childNodeOfCores = parentNode.child(primaryShardTag);
+    xml_node primaryShardSibling = childNodeOfCores.next_sibling(primaryShardTag);
+    if(primaryShardSibling)
+        parseWarnings << "Duplicate definition of \"" << primaryShardTag << "\".  The engine will use the last value " << coreInfo->numberOfPrimaryShards << "\n";
+
     childNodeOfCores = parentNode.child(replicaShardTag);
+
     if(childNodeOfCores && childNodeOfCores.text()){
-    	flag_replica++;
-        string temp = (childNodeOfCores.text().get());
-        trimSpacesFromValue(temp, replicaShardTag, parseWarnings);
-        coreInfo->numberOfReplicas = (uint)atol(temp.c_str());
-        if(flag_replica > 1)
-        	parseWarnings << "Duplicate " << replicaShardTag << "; Using current value " << coreInfo->numberOfReplicas << "\n";
+    		 string temp = (childNodeOfCores.text().get());
+    		 trimSpacesFromValue(temp, replicaShardTag, parseWarnings);
+    		 coreInfo->numberOfReplicas = (uint)atol(temp.c_str());
     }
+    else{
+    	coreInfo->numberOfReplicas = DefaultNumberOfReplicas;
+    	parseWarnings << "Number of Replica is not defined. The engine will use the default value " << DefaultNumberOfReplicas << "\n";
+    }
+
+    xml_node replicaSibling = childNodeOfCores.next_sibling(replicaShardTag);
+    if(replicaSibling)
+    	parseWarnings << "Duplicate definition of \"" << replicaShardTag << "\".  The engine will use the last value " << coreInfo->numberOfReplicas << "\n";
 
     xml_node childNode = parentNode.child(dataDirString);
     if (childNode && childNode.text()) {
@@ -1753,16 +1765,19 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
     CoreInfo_t *defaultCoreInfo = NULL;
 
     xml_node configNode = configDoc.child(configString);
-
     xml_node clusterName = configNode.child(clusterNameTag);
     if (clusterName && clusterName.text()) { // checks if the config/srch2Home has any text in it or not
-          flag_cluster++;
-    	  tempUse = string(clusterName.text().get());
-          trimSpacesFromValue(tempUse, clusterNameTag, parseWarnings);
-          cluster.setClusterName(tempUse);
-          if(flag_cluster > 1)
-        	  parseWarnings << "Duplicate value of " << clusterNameTag<<"; Using current value " << tempUse;
-      } 
+			  tempUse = string(clusterName.text().get());
+			  trimSpacesFromValue(tempUse, clusterNameTag, parseWarnings);
+			  cluster.setClusterName(tempUse);
+    }else{
+    	cluster.setClusterName(string(DefaultClusterName));
+    	parseWarnings << "Cluster name is not specified. Engine will use the default value " << cluster.getClusterName() << "\n";
+    }
+
+    xml_node clusterNameSibling = clusterName.next_sibling(clusterNameTag);
+    if (clusterNameSibling && clusterNameSibling.text()){
+          parseWarnings << "Duplicate definition of \"" << clusterNameTag << "\".  The engine will use the last value: " << cluster.getClusterName() << "\n";    }
 
     tempUse = "";
 
@@ -1915,11 +1930,12 @@ void ConfigManager::parseNode(std::vector<Node>* nodes, xml_node& nodeTag, std::
 
     for (xml_node nodeTemp = nodeTag; nodeTemp; nodeTemp = nodeTemp.next_sibling("node")) {
 
-    	int flag_name = 0, flag_port = 0, flag_ip = 0, flag_current = 0, flag_master = 0, flag_data = 0, flag_dataDir = 0, flag_home = 0;
+    	bool nameDefined = false, portDefined = false, ipAddressDefined = false;
+    	bool thisIsMeDefined = false, masterDefined = false, nodeDataDefined = false;
+    	bool dataDirDefined = false, homeDefined = false;
         std::string ipAddress = "", dataDir = "", nodeName = "", nodeHome = "";
 		unsigned nodeId = 0, portNumber = 0, numOfThreads = 0;
 		bool nodeMaster, nodeData, thisIsMe;
-	    //std::stringstream parseWarnings;
 
 		for (xml_node childNode = nodeTemp.first_child(); childNode; childNode = childNode.next_sibling()) {
 
@@ -1927,110 +1943,133 @@ void ConfigManager::parseNode(std::vector<Node>* nodes, xml_node& nodeTag, std::
 				std::string name = (string) childNode.name();
 
 				if (name.compare(nodeNameTag) == 0) {
-					flag_name++;
-					nodeName = string(childNode.text().get());
-					trimSpacesFromValue(nodeName, nodeNameTag, parseWarnings);
-					if(flag_name>1){
-				        parseWarnings << "Duplicate " << nodeNameTag << "; Using current value " << nodeName << "\n";
-					     //cout << "Duplicate " << nodeNameTag << "; Using current value " << nodeName << "\n";
+					if(nameDefined == false){
+						nodeName = string(childNode.text().get());
+						trimSpacesFromValue(nodeName, nodeNameTag, parseWarnings);
+						nameDefined = true;
+					}
+					else{
+				        parseWarnings << "Duplicate definition of \"" << nodeNameTag << "\".  The engine will use the last value: " << nodeName << "\n";
 					}
 				}
 				if (name.compare(nodeListeningHostNameTag) == 0) {
-					flag_ip++;
-					ipAddress = string(childNode.text().get());
-					trimSpacesFromValue(ipAddress, nodeListeningHostNameTag, parseWarnings);
-					if(flag_ip>1)
-						parseWarnings << "Duplicate " << nodeListeningHostNameTag << "; Using current value " << ipAddress << "\n";
-				}
-				if (name.compare(nodeListeningPortTag) == 0) {
-					flag_port++;
-					string portNo = (childNode.text().get());
-					trimSpacesFromValue(portNo, nodeListeningPortTag, parseWarnings);
-					portNumber = (uint)atol(portNo.c_str());
-					if(flag_ip>1)
-						parseWarnings << "Duplicate " << nodeListeningPortTag << "; Using current value " << portNumber << "\n";
-				}
-				if (name.compare(nodeCurrentTag) == 0) {
-					flag_current++;
-					string temp = (childNode.text().get());
-					trimSpacesFromValue(temp, nodeCurrentTag, parseWarnings);
-					if(temp.compare("true") == 0){
-						thisIsMe = true;
-					}
-					else if(temp.compare("false") == 0){
-						thisIsMe = false;
+					if(ipAddressDefined == false){
+						ipAddress = string(childNode.text().get());
+						trimSpacesFromValue(ipAddress, nodeListeningHostNameTag, parseWarnings);
+						ipAddressDefined = true;
 					}
 					else{
-						thisIsMe = true;
-						parseWarnings << "Invalid value for " << nodeCurrentTag << "; Using the default value true \n";
+				        parseWarnings << "Duplicate definition of \"" << nodeListeningHostNameTag << "\".  The engine will use the last value: " << ipAddress << "\n";
 					}
-					if(flag_current>1){
-						parseWarnings << "Duplicate " << nodeCurrentTag << "; Using current value ";
+
+				}
+				if (name.compare(nodeListeningPortTag) == 0) {
+					if(portDefined == false){
+						string portNo;
+						portNo = string(childNode.text().get());
+						trimSpacesFromValue(ipAddress, nodeListeningPortTag, parseWarnings);
+						portNumber = (uint)atol(portNo.c_str());
+						portDefined = true;
+					}
+					else{
+				        parseWarnings << "Duplicate definition of \"" << nodeListeningPortTag << "\".  The engine will use the last value: " << portNumber << "\n";
+					}
+				}
+				if (name.compare(nodeCurrentTag) == 0) {
+					if(thisIsMeDefined == false){
+						string temp = (childNode.text().get());
+						trimSpacesFromValue(temp, nodeCurrentTag, parseWarnings);
+						if(temp.compare("true") == 0){
+							thisIsMe = true;
+						}
+						else if(temp.compare("false") == 0){
+							thisIsMe = false;
+						}
+						else{
+							thisIsMe = true;
+							parseWarnings << "Invalid value for " << nodeCurrentTag << "; Using the default value true \n";
+						}
+						thisIsMeDefined = true;
+					}
+
+					else{
+					    parseWarnings << "Duplicate definition of \"" << nodeCurrentTag << "\".  The engine will use the last value: ";
 						if(thisIsMe)
 							parseWarnings << "true "<< "\n";
 						else
 							parseWarnings << "false "<< "\n";
 					}
+
 				}
 				if (name.compare(nodeMasterTag) == 0) {
-					flag_master++;
-					string temp = (childNode.text().get());
-					trimSpacesFromValue(temp, nodeMasterTag, parseWarnings);
-					if(temp.compare("true") == 0){
-						nodeMaster = true;
-					}
-					else if(temp.compare("false") == 0){
-						nodeMaster = false;
+					if(masterDefined == false){
+						string temp = (childNode.text().get());
+						trimSpacesFromValue(temp, nodeMasterTag, parseWarnings);
+						if(temp.compare("true") == 0){
+							nodeMaster = true;
+						}
+						else if(temp.compare("false") == 0){
+							nodeMaster = false;
+						}
+						else{
+							nodeMaster = true;
+							parseWarnings << "Invalid value for " << nodeMasterTag << "; Using the default value true \n";
+						}
+						masterDefined = true;
 					}
 					else{
-						nodeMaster = true;
-						parseWarnings << "Invalid value for " << nodeMasterTag << "; Using the default value true \n";
-
-					}
-					if(flag_current>1){
-						parseWarnings << "Duplicate " << nodeMasterTag << "; Using current value ";
+					    parseWarnings << "Duplicate definition of \"" << nodeMasterTag << "\".  The engine will use the last value: ";
 						if(nodeMaster)
 							parseWarnings << "true "<< "\n";
 						else
 							parseWarnings << "false "<< "\n";
+						}
 					}
-				}
+
 				if (name.compare(nodeDataTag) == 0) {
-					flag_data++;
-					string temp = (childNode.text().get());
-					trimSpacesFromValue(temp, nodeDataTag, parseWarnings);
-					if(temp.compare("true") == 0){
-						nodeData = true;
-					}
-					else if(temp.compare("false") == 0){
-						nodeData = false;
-					}
-					else {
-						nodeData = true;
-						parseWarnings << "Invalid value for " << nodeDataTag << "; Using the default value true \n";
-					}
-					if(flag_data>1){
-						parseWarnings << "Duplicate " << nodeDataTag << "; Using current value ";
-						if(nodeData)
-							parseWarnings << "true "<< "\n";
-						else
-							parseWarnings << "false "<< "\n";
-					}
+					if(nodeDataDefined == false){
+						string temp = (childNode.text().get());
+						trimSpacesFromValue(temp, nodeDataTag, parseWarnings);
+						if(temp.compare("true") == 0){
+							nodeData = true;
+						}
+						else if(temp.compare("false") == 0){
+							nodeData = false;
+						}
+						else{
+							nodeData = true;
+							parseWarnings << "Invalid value for " << nodeDataTag << "; Using the default value true \n";
+						}
+						nodeDataDefined = true;
+						}
+						else{
+							parseWarnings << "Duplicate definition of \"" << nodeDataTag << "\".  The engine will use the last value: ";
+							if(nodeData)
+								parseWarnings << "true "<< "\n";
+							else
+								parseWarnings << "false "<< "\n";
+							}
 				}
 
 				if (name.compare(nodeDataDirTag) == 0) {
-					flag_dataDir++;
-					dataDir = string(childNode.text().get());
-					trimSpacesFromValue(dataDir, nodeDataDirTag, parseWarnings);
-					if(flag_dataDir > 1)
-						parseWarnings << "Duplicate " << nodeDataDirTag << "; Using current value " << dataDir << "\n";
+					if(dataDirDefined == false){
+						dataDir = string(childNode.text().get());
+						trimSpacesFromValue(dataDir, nodeDataDirTag, parseWarnings);
+						dataDirDefined = true;
+					}
+					else{
+						parseWarnings << "Duplicate definition of \"" << nodeDataDirTag << "\".  The engine will use the last value: " << dataDir << "\n";
+					}
 				}
 				if(name.compare(nodeHomeTag) == 0){
-					flag_home++;
-					nodeHome = string(childNode.text().get());
-					trimSpacesFromValue(nodeHome, nodeHomeTag, parseWarnings);
-					if(flag_home > 1)
-						parseWarnings << "Duplicate " << nodeHomeTag << "; Using current value " << nodeHome << "\n";
+					if(homeDefined == false){
+						nodeHome = string(childNode.text().get());
+						trimSpacesFromValue(nodeHome, nodeHomeTag, parseWarnings);
+						homeDefined = true;
+					}
+					else{
+						parseWarnings << "Duplicate definition of \"" << nodeHomeTag << "\".  The engine will use the last value: " << nodeHome << "\n";
+					}
 				}
 			}
 		}

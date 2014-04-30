@@ -35,7 +35,7 @@ public:
 		SRCH2_LOG_DEBUG = 4
 	} LogLevel;
 
-	static const int kMaxLengthOfMessage = 1024;
+	static const int kMaxLengthOfMessage = 1024*4;
 private:
 	static LogLevel _logLevel;
 	static FILE* _out_file;
