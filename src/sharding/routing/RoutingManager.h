@@ -4,10 +4,11 @@
 #include<sys/time.h>
 #include <map>
 
-#include <sharding/configuration/ConfigManager.h>
-#include <sharding/processor/DistributedProcessorExternal.h>
-#include <sharding/processor/DistributedProcessorInternal.h>
+#include <configuration/ConfigManager.h>
+#include <processor/DistributedProcessorExternal.h>
+#include <processor/DistributedProcessorInternal.h>
 #include <server/Srch2Server.h>
+
 using namespace std;
 
 namespace srch2is = srch2::instantsearch;
@@ -15,6 +16,10 @@ using namespace std;
 
 namespace srch2 {
 namespace httpwrapper {
+
+/*
+ * TODO: this struct must be replaced with something consistent with ConfigurationManager global structures ...
+ */
 
 /* All Objects sent and received from the RoutingManager must have the 
  * following functions calls:
@@ -52,14 +57,8 @@ class RoutingManager {
 
 public:
 
-
-	RoutingManager(ConfigManager * configurationManager, DPExternalRequestHandler * dpExternal,
-			DPInternalRequestHandler * dpInternal, SynchronizationManager * synchManager){
-		this->configurationManager = configurationManager;
-		this->dpExternal = dpExternal;
-		this->dpInternal = dpInternal;
-		this->synchManager = synchManager;
-	}
+	RoutingManager(ConfigManager&  configurationManager, TransportManager& tm);
+}
 
 
 	typedef unsigned CoreId;
@@ -104,7 +103,7 @@ public:
 			CallBack<ResultType>, timeval);
 	template<typename DataType, template<class ResultType> class CallBack,
 			class ResultType> void broadcast_wait_for_all_w_cb_n_timeout(
-			Core::Id, DataType&, CallBack<ResultType>, timeval);
+			CoreId, DataType&, CallBack<ResultType>, timeval);
 	/*
 	 *  Transmits a given message to a particular shard in a non-blocking fashion
 	 */
@@ -163,11 +162,10 @@ public:
 
 private:
 	std::map<ShardId, Srch2Server*> shardToIndex;
-	ConfigManager* configurationManager;
-	DPExternalRequestHandler* dpExternal;
-	DPInternalRequestHandler* dpInternal;
-	SynchronizationManager* synchManager;
+	ConfigManager& configurationManager;
+  TransportManager& tm;
+	DPInternalRequestHandler dpInternal;
 };
-}
-}
+
+} }
 #endif
