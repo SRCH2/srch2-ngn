@@ -166,7 +166,43 @@ const char* const ConfigManager::defaultFuzzyPostTag = "</b>";
 const char* const ConfigManager::defaultExactPreTag = "<b>";
 const char* const ConfigManager::defaultExactPostTag = "</b>";
 
+//In later version, this should be handled by SM
+void ConfigManager::setNodeId(){
+	Cluster &c = this->cluster;
+    vector<Node>* nodes = c.getNodes();
+    for(int i = 0; i < nodes->size(); i++){
+        (*nodes)[i].setId(i+1);
+    }
+}
 
+bool ConfigManager::isLocal(ShardId& shardId){
+	Cluster &c = this->cluster;
+	Shard s = c.shardMap[shardId];
+	if(this->getCurrentNodeId() == s.getNodeId()){
+		return true;
+	}else{
+		return false;
+	}
+}
+//Function Definition for Verifier, it checks if the XML file is consistent
+bool ConfigManager::verifier()
+{
+    Cluster* currentCluster = this->getCluster();
+    vector<Node>* nodes = currentCluster->getNodes();
+    Node currentNode;
+    for(int i = 0; i < nodes->size(); i++){
+        if(nodes->at(i).thisIsMe == true)
+    	    currentNode = nodes->at(i);
+    }
+    for(CoreInfoMap_t::iterator it = this->coreInfoIterateBegin(); it != this->coreInfoIterateEnd(); it++){
+
+        int num = (uint)atol(it->second->getHTTPServerListeningPort().c_str());
+        if(num == currentNode.getPortNumber()){
+    	    return false;
+        }
+    }
+    return true;
+}
 
 ConfigManager::ConfigManager(const string& configFile)
 {
@@ -196,6 +232,9 @@ void ConfigManager::loadConfigFile()
     std::stringstream parseWarnings;
     // parse the config file and set the variables.
     this->parse(configDoc, configSuccess, parseError, parseWarnings);
+
+    //The below function sets node Id for all the nodes, in later version this should be done by synchronization manager
+    this->setNodeId();
 
     Logger::debug("WARNINGS while reading the configuration file:");
     Logger::debug("%s\n", parseWarnings.str().c_str());

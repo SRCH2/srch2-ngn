@@ -177,7 +177,6 @@ SET_TESTS_PROPERTIES(XMLParser_Test PROPERTIES ENVIRONMENT "XmlFilePath=${CMAKE_
 
 ADD_TEST(ConfigManager_Test ${CMAKE_CURRENT_BINARY_DIR}/sharding/unit/ConfigManager_Test   "--verbose")
 
-
 set_property(
     TEST
         ConfigManager_Test
@@ -191,7 +190,13 @@ set_property(
     PROPERTY
         ENVIRONMENT "ConfigManagerFilePath2=${CMAKE_SOURCE_DIR}/test/sharding/unit/test_data/ConfigManagerTest2.xml"
 )
-
+set_property(
+    TEST
+        ConfigManager_Test
+    APPEND
+    PROPERTY
+        ENVIRONMENT "ConfigManagerFilePath3=${CMAKE_SOURCE_DIR}/test/sharding/unit/test_data/ConfigManagerTest3.xml"
+)
 
 ADD_TEST(IndexUpdater_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/integration/IndexUpdater_Test "--verbose")
 SET_TESTS_PROPERTIES(IndexUpdater_Test 

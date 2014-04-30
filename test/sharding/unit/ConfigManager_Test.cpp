@@ -100,8 +100,31 @@ void testCore(char* configFile){
 
 	ASSERT(c3->numberOfPrimaryShards == 1);
 	ASSERT(c3->numberOfReplicas == 1);
+
 }
 
+void testVerifierPositive(char* configFile){
+
+	ConfigManager *configManager = new ConfigManager(configFile);
+	configManager->loadConfigFile();
+	ASSERT(configManager->verifier() == true);
+
+}
+
+void testVerifierNegative(char* configFile){
+
+	ConfigManager *configManager = new ConfigManager(configFile);
+	configManager->loadConfigFile();
+	ASSERT(configManager->verifier() == false);
+
+}
+
+void testCurrentNodeId(char* configFile){
+
+	ConfigManager *configManager = new ConfigManager(configFile);
+	configManager->loadConfigFile();
+	ASSERT(configManager->getCurrentNodeId() == 1);
+}
 
 int main() {
 	testShard();
@@ -110,6 +133,12 @@ int main() {
 	testConfigurationParser2(getenv("ConfigManagerFilePath2"));
 	testCore(getenv("ConfigManagerFilePath1"));
 	testCore(getenv("ConfigManagerFilePath2"));   //Primary Shard tag and Replica Shard tag is missing
+
+	testVerifierPositive(getenv("ConfigManagerFilePath1"));
+	testVerifierNegative(getenv("ConfigManagerFilePath3"));
+
+	testCurrentNodeId(getenv("ConfigManagerFilePath1"));
+
 }
 
 

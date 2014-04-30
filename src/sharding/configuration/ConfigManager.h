@@ -114,6 +114,15 @@ namespace httpwrapper {
 
  class Shard {
    public:
+
+	Shard(){
+		this->nodeId = 0;
+		this->shardState = SHARDSTATE_UNALLOCATED;
+	    this->shardId.coreId = 0;
+	    this->shardId.partitionId = 0;
+	    this->shardId.replicaId = 0;
+	}
+
    Shard(unsigned nodeId, unsigned coreId, unsigned partitionId = 0, unsigned replicaId = 0){
      this->nodeId = nodeId;
      this->shardState = SHARDSTATE_UNALLOCATED;
@@ -243,9 +252,15 @@ Node(const Node& cpy)
 	  return this->nodeId;
   }
 
+  void setId(unsigned nodeId){
+  	  this->nodeId = nodeId;
+  }
+
   unsigned int getPortNumber(){
 	  return this->portNumber;
   }
+
+
   Shard getShardById(const ShardId& shardId);
   void addShard(const ShardId& shardId);
   void removeShard(const ShardId& shardId);
@@ -276,10 +291,6 @@ Node(const Node& cpy)
   std::string ipAddress;
   unsigned portNumber;
   std::string nodeName;
-  // coreName -> shards mapping
-  // movie -> <shard0, shard1, shard3>
-  // customer -> <shard2, shard3>
-  boost::unordered_map<std::string, std::vector<Shard> > coreToShardsMap; // not required for now
 
   // Allow this node to be eligible as a master node (enabled by default).
   bool nodeMaster;
@@ -461,6 +472,15 @@ public:
     	return &(this->cluster);
     }
 
+    unsigned getCurrentNodeId(){
+    	vector<Node>* nodes = this->cluster.getNodes();
+    	for(int i = 0; i < nodes->size(); i++){
+    		if(nodes->at(i).thisIsMe == true){
+    			return nodes->at(i).getId();
+    		}
+    	}
+    	return 0;
+    }
 private:
     Cluster cluster;
     // <config>
@@ -565,6 +585,9 @@ protected:
 public:
     ConfigManager(const string& configfile);
     virtual ~ConfigManager();
+    bool verifier();
+    void setNodeId();
+    bool isLocal(ShardId& shardId);
 
     //Declaring function to parse node tags
     void parseNode(std::vector<Node>* nodes, xml_node& childNode, std::stringstream &parseWarnings);
