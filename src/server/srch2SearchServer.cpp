@@ -529,7 +529,6 @@ static void killServer(int signal) {
 }
 
 static int getHttpServerMetadata(ConfigManager *config, 
-    vector<struct event_base *> *evBases, vector<struct evhttp *> *evServers, 
     PortSocketMap_t *globalPortSocketMap) {
   /* 1). event initialization */
   globalDefaultPort = atoi(config->getHTTPServerListeningPort().c_str());
@@ -545,10 +544,11 @@ static int getHttpServerMetadata(ConfigManager *config,
       (*globalPortSocketMap)[globalDefaultPort] = socketFd;
   }
 
-  typedef std::set<short> Ports_t;
-  Ports_t ports;
-  // loop over cores setting up mongodb and binding all ports to use
-  for ( ) {//iterator over cores) {  coreInfo
+  // loop over cores and extract all ports to use
+  std::set<short> ports;
+  for (CoreInfoMap_t::iterator core = config->coreInfoIterateBegin();
+         core != config->coreInfoIterateEnd(); ++core) {
+
     // bind once each port defined for use by this core
     unsigned short port;
     for (srch2http::PortType_t portType = (srch2http::PortType_t) 0; 
@@ -568,12 +568,11 @@ static int getHttpServerMetadata(ConfigManager *config,
     }
     (*globalPortSocketMap)[port] = socketFd;
   }
+}
 
-  MAX_THREADS = config->getNumberOfThreads();
-  Logger::console("Starting Srch2 server with %d serving threads at %s:%d",
-          MAX_THREADS, globalHostName, globalDefaultPort);
+static int createHTTPServersAndAccompanyingThreads( 
+    vector<struct event_base *> *evBases, vector<struct evhttp *> *evServers) {
 
-  // Step 2: Serving servers
   threads = new pthread_t[MAX_THREADS];
   for (int i = 0; i < MAX_THREADS; i++) {
    struct event_base *evbase = event_base_new();
@@ -591,6 +590,7 @@ static int getHttpServerMetadata(ConfigManager *config,
    evServers->push_back(http_server);
   }
 }
+
 
 // helper array - loop instead of repetitous code
 static const struct PortList_t {
@@ -731,15 +731,18 @@ int main(int argc, char** argv) {
     // map of all ports across all cores to shared socket file descriptors
     PortSocketMap_t globalPortSocketMap;  
 
-    int start = getHttpServerMetadata(serverConf, &evBases, 
-        &evServers, &globalPortSocketMap);
+    int start = getHttpServerMetadata(serverConf, &globalPortSocketMap);
 
     if (start != 0) {
         Logger::close();
         return start; // startup failed
     }
 
-    std::vector<Node>& map =  *serverConfig->getCluser()->getNodes();
+    MAX_THREADS = serverConf->getNumberOfThreads();
+
+    createHTTPServersAndAccompanyingThreads(&evBases, &evServers);
+
+    std::vector<Node>& map =  *serverConf->getCluser()->getNodes();
     
     // create Transport Module
     TransportManager subway(evBases, map);
