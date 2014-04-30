@@ -81,6 +81,3 @@ MessageTime_t TransportManager::route(NodeId node, Message *msg,
   //TODO: errors?
   return msg->time;
 }
-
-
-  

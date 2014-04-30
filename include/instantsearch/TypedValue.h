@@ -126,6 +126,23 @@ namespace srch2
     	string toString() const;
 
 
+    	/*
+    	 * Serialization scheme :
+    	 * |valueType | ... |
+    	 * | | intTypedValue |
+    	 * | | floatTypedValue |
+    	 * | | stringTypedValue |
+    	 * | | timeTypedValue |
+    	 * | | intTypedMultiValue |
+    	 * | | floatTypedMultiValue |
+    	 * | | stringTypedMultiValue |
+    	 * | | timeTypedMultiValue |
+    	 * NOTE : we don't serialize TimeDuration for now because we don't need it
+    	 */
+        void * serializeForNetwork(void * buffer);
+        static void * deserializeForNetwork(TypedValue &value, void * buffer);
+        unsigned getNumberOfBytesForSerializationForNetwork();
+
     private:
     	FilterType valueType;
     	unsigned intTypedValue;

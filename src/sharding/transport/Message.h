@@ -1,8 +1,8 @@
 #ifndef __SHARDING_ROUTING_MESSAGE_H_
 #define __SHARDING_ROUTING_MESSAGE_H_
 
-#include "configuration/ShardingConstants.h"
-#include "configuration/ConfigManager.h"
+#include "sharding/configuration/ShardingConstants.h"
+#include "sharding/configuration/ConfigManager.h"
 
 namespace srch2 {
 namespace httpwrapper {

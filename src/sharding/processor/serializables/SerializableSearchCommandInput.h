@@ -53,7 +53,7 @@ public:
     	buffer = srch2::util::deserializeFixedTypes(buffer, isNotNull);
     	if(isNotNull){
     		searchInput->logicalPlan = new LogicalPlan();
-    		buffer = LogicalPlan::deserializeForNetwork(*logicalPlan, buffer);
+    		buffer = LogicalPlan::deserializeForNetwork(*searchInput->logicalPlan, buffer);
     		return *searchInput;
     	}else{
     		return *searchInput;

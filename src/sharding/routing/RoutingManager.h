@@ -5,9 +5,10 @@
 #include <map>
 
 #include <sharding/configuration/ConfigManager.h>
-#include <sharding/processor/DistributedProcessorExternal.h>
+#include <sharding/transport/TransportManager.h>
 #include <sharding/processor/DistributedProcessorInternal.h>
 #include <server/Srch2Server.h>
+
 using namespace std;
 
 namespace srch2is = srch2::instantsearch;
@@ -15,6 +16,10 @@ using namespace std;
 
 namespace srch2 {
 namespace httpwrapper {
+
+/*
+ * TODO: this struct must be replaced with something consistent with ConfigurationManager global structures ...
+ */
 
 /* All Objects sent and received from the RoutingManager must have the 
  * following functions calls:
@@ -52,12 +57,7 @@ class RoutingManager {
 
 public:
 
-
-	RoutingManager(ConfigManager * configurationManager, 
-			DPInternalRequestHandler * dpInternal) { 
-		this->configurationManager = configurationManager;
-		this->dpInternal = dpInternal;
-	}
+	RoutingManager(ConfigManager&  configurationManager, TransportManager& tm);
 
 
 	typedef unsigned CoreId;
@@ -102,7 +102,7 @@ public:
 			CallBack<ResultType>, timeval);
 	template<typename DataType, template<class ResultType> class CallBack,
 			class ResultType> void broadcast_wait_for_all_w_cb_n_timeout(
-			Core::Id, DataType&, CallBack<ResultType>, timeval);
+			CoreId, DataType&, CallBack<ResultType>, timeval);
 	/*
 	 *  Transmits a given message to a particular shard in a non-blocking fashion
 	 */
@@ -139,33 +139,16 @@ public:
 	}
 
 
-	ConfigManager* getConfigurationManager()  {
-		return configurationManager;
-	}
-
-	DPExternalRequestHandler* getDpExternal() {
-		return dpExternal;
-	}
-
-	DPInternalRequestHandler* getDpInternal() {
-		return dpInternal;
-	}
-
-	std::map<ShardId, Srch2Server*> getShardToIndexMap() {
-		return shardToIndex;
-	}
-
-	SynchronizationManager* getSynchManager() {
-		return synchManager;
-	}
+	ConfigManager* getConfigurationManager();
+	DPInternalRequestHandler* getDpInternal();
+	std::map<ShardId, Srch2Server*> getShardToIndexMap();
 
 private:
 	std::map<ShardId, Srch2Server*> shardToIndex;
-	ConfigManager* configurationManager;
-	DPExternalRequestHandler* dpExternal;
-	DPInternalRequestHandler* dpInternal;
-	SynchronizationManager* synchManager;
+	ConfigManager& configurationManager;
+    TransportManager& tm;
+	DPInternalRequestHandler dpInternal;
 };
-}
-}
+
+} }
 #endif

@@ -40,10 +40,10 @@ class SerializableSearchResults {
 	}
 
 	QueryResults * getQueryResults(){
-		return &queryResults;
+		return queryResults;
 	}
 	QueryResultFactory * getQueryResultsFactory(){
-		return &resultsFactory;
+		return resultsFactory;
 	}
 	void setSearcherTime(unsigned searcherTime){
 		this->searcherTime = searcherTime;
@@ -83,7 +83,7 @@ class SerializableSearchResults {
 		if(isNotNull){
 			SerializableSearchResults * searchResults = new SerializableSearchResults();
 			buffer = QueryResults::deserializeForNetwork(*(searchResults->queryResults),buffer);
-			return searchResults;
+			return *searchResults;
 		}else{
 			SerializableSearchResults * searchResults = new SerializableSearchResults();
 			return *searchResults;

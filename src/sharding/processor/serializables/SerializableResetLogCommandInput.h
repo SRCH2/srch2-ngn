@@ -22,7 +22,7 @@ public:
 
     //given a byte stream recreate the original object
     static const SerializableResetLogCommandInput& deserialize(void* buffer){
-       	return *(new SerializableGetInfoCommandInput());
+       	return *(new SerializableResetLogCommandInput());
     }
 
     //Returns the type of message which uses this kind of object as transport

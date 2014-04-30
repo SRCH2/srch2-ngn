@@ -1,8 +1,17 @@
 #ifndef __SHARDING_PROCESSOR_DISTRIBUTED_PROCESSR_EXTERNAL_H_
 #define __SHARDING_PROCESSOR_DISTRIBUTED_PROCESSR_EXTERNAL_H_
 
+
 #include <instantsearch/Record.h>
 #include <instantsearch/LogicalPlan.h>
+
+#include <sharding/configuration/ConfigManager.h>
+#include <sharding/routing/RoutingManager.h>
+#include "sharding/processor/Partitioner.h"
+
+#include <event.h>
+#include <evhttp.h>
+#include <event2/http.h>
 
 #include <vector>
 /*
@@ -32,24 +41,6 @@ using srch2is::QueryResults;
 
 namespace srch2 {
 namespace httpwrapper {
-
-///////////////////////////////////////// TEMPORARY ////////////////////////////////////////////
-typedef unsigned TimeoutValue;
-
-class SynchronizationManager{
-
-};
-
-/*
- * TODO: this struct must be replaced with something consistent with ConfigurationManager global structures ...
- */
-struct CoreShardInfo {
-	unsigned shardId;
-	string coreName;
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 class DPExternalRequestHandler {
 

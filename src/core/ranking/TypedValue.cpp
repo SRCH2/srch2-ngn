@@ -843,7 +843,7 @@ namespace srch2
 
     	return buffer;
     }
-    static void * TypedValue::deserializeForNetwork(TypedValue &value, void * buffer){
+    void * TypedValue::deserializeForNetwork(TypedValue &value, void * buffer){
     	buffer = srch2::util::deserializeFixedTypes(buffer, value.valueType);
     	switch (value.valueType) {
     	case ATTRIBUTE_TYPE_UNSIGNED:

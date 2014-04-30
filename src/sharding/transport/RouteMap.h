@@ -1,7 +1,7 @@
 #ifndef __TRANSPORT_ROUTE_MAP_H__
 #define __TRANSPORT_ROUTE_MAP_H__
 
-#include "configuration/ConfigManager.h"
+#include "sharding/configuration/ConfigManager.h"
 #include <netinet/in.h>
 #include <vector>
 #include <iterator>

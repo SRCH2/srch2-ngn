@@ -418,14 +418,14 @@ unsigned Record::getNumberOfBytesSize(){
 /*
  * Serializes Record object into byte array
  */
-void * Record::serialize(void * buffer){
+void * Record::serializeForNetwork(void * buffer){
 	return impl->serialize(buffer);
 }
 
 /*
  * Deserializes byte array into Record object
  */
-void * Record::deserialize(void * buffer, Record & record){
+void * Record::deserializeForNetwork(void * buffer, Record & record){
 	return record.impl->deserialize(buffer);
 }
 

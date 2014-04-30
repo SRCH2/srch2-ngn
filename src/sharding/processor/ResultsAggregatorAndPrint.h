@@ -2,16 +2,33 @@
 #define __SHARDING_PROCESSOR_RESULTS_AGGREGATOR_AND_PRINT_H_
 
 #include <instantsearch/Record.h>
+#include "wrapper/ParsedParameterContainer.h"
+#include "wrapper/URLParser.h"
+
+#include "thirdparty/snappy-1.0.4/snappy.h"
+#include "util/Logger.h"
+#include "util/CustomizableJsonWriter.h"
+
+#include "serializables/SerializableInsertUpdateCommandInput.h"
+#include "serializables/SerializableSerializeCommandInput.h"
+#include "serializables/SerializableDeleteCommandInput.h"
 #include "serializables/SerializableSearchResults.h"
 #include "serializables/SerializableSearchCommandInput.h"
 #include "serializables/SerializableCommandStatus.h"
 #include "serializables/SerializableGetInfoCommandInput.h"
 #include "serializables/SerializableGetInfoResults.h"
-#include "Partitioner.h"
+#include "serializables/SerializableResetLogCommandInput.h"
+#include "serializables/SerializableCommitCommandInput.h"
 
+#include "Partitioner.h"
+#include "sharding/configuration/ConfigManager.h"
+#include "core/highlighter/Highlighter.h"
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/thread/locks.hpp>
+#include <event.h>
+#include <evhttp.h>
+#include <event2/http.h>
 
 namespace srch2is = srch2::instantsearch;
 using namespace std;
@@ -21,23 +38,90 @@ using namespace srch2is;
 namespace srch2 {
 namespace httpwrapper {
 
+/**
+ * Create evbuffer. If failed, send 503 response.
+ * @param req request
+ * @return buffer
+ */
+evbuffer *create_buffer(evhttp_request *req) {
+    evbuffer *buf = evbuffer_new();
+    if (!buf) {
+        fprintf(stderr, "Failed to create response buffer\n");
+        evhttp_send_reply(req, HTTP_SERVUNAVAIL,
+                "Failed to create response buffer", NULL);
+        return NULL;
+    }
+    return buf;
+}
+
+void bmhelper_check_add_callback(evbuffer *buf, const evkeyvalq &headers,
+        const string &out_payload) {
+    const char *jsonpCallBack = evhttp_find_header(&headers,
+            URLParser::jsonpCallBackName);
+    if (jsonpCallBack) {
+        size_t sz;
+        char *jsonpCallBack_cstar = evhttp_uridecode(jsonpCallBack, 0, &sz);
+        //std::cout << "[" << jsonpCallBack_cstar << "]" << std::endl;
+
+        evbuffer_add_printf(buf, "%s(%s)", jsonpCallBack_cstar,
+                out_payload.c_str());
+
+        // libevent uses malloc for memory allocation. Hence, use free
+        free(jsonpCallBack_cstar);
+    } else {
+        evbuffer_add_printf(buf, "%s", out_payload.c_str());
+    }
+}
+
+
+void bmhelper_add_content_length(evhttp_request *req, evbuffer *buf) {
+    size_t length = EVBUFFER_LENGTH(buf);
+    std::stringstream length_str;
+    length_str << length;
+    evhttp_add_header(req->output_headers, "Content-Length",
+            length_str.str().c_str());
+}
+
+void bmhelper_evhttp_send_reply(evhttp_request *req, int code,
+        const char *reason, const string &out_payload,
+        const evkeyvalq &headers) {
+    evbuffer *returnbuffer = create_buffer(req);
+    bmhelper_check_add_callback(returnbuffer, headers, out_payload);
+    bmhelper_add_content_length(req, returnbuffer);
+    evhttp_send_reply(req, code, reason, returnbuffer);
+    evbuffer_free(returnbuffer);
+}
+
+void bmhelper_evhttp_send_reply(evhttp_request *req, int code,
+        const char *reason, const string &out_payload) {
+    evbuffer *returnbuffer = create_buffer(req);
+
+    evbuffer_add_printf(returnbuffer, "%s", out_payload.c_str());
+    bmhelper_add_content_length(req, returnbuffer);
+
+    evhttp_send_reply(req, code, reason, returnbuffer);
+    evbuffer_free(returnbuffer);
+}
+
+struct ResultsAggregatorAndPrintMetadata{
+
+};
+
 template <class Request, class Response>
 class ResultAggregatorAndPrint {
 public:
-	struct Metadata{
 
-	};
 
 	/*
 	 * This function is always called by RoutingManager as the first call back function
 	 */
-	virtual void preProcessing(ResultAggregatorAndPrint::Metadata metadata){};
+	virtual void preProcessing(ResultsAggregatorAndPrintMetadata metadata){};
 	/*
 	 * This function is called by RoutingManager if a timeout happens, The call to
 	 * this function must be between preProcessing(...) and callBack()
 	 */
 	virtual void timeoutProcessing(CoreShardInfo * coreShardInfo,
-			Request * sentRequest, ResultAggregatorAndPrint::Metadata metadata){};
+			Request * sentRequest, ResultsAggregatorAndPrintMetadata metadata){};
 
 	/*
 	 * The callBack function used by routing manager
@@ -53,7 +137,7 @@ public:
 	 * 3. aggregateSearchResults()
 	 * 4. finalize()
 	 */
-	virtual void finalize(ResultAggregatorAndPrint::Metadata metadata){};
+	virtual void finalize(ResultsAggregatorAndPrintMetadata metadata){};
 
 
 	virtual ~ResultAggregatorAndPrint(){};
@@ -94,7 +178,7 @@ public:
 	/*
 	 * This function is always called by RoutingManager as the first call back function
 	 */
-	void preProcessing(ResultAggregatorAndPrint<SerializableSearchCommandInput ,SerializableSearchResults>::Metadata metadata){
+	void preProcessing(ResultsAggregatorAndPrintMetadata metadata){
 
 	}
 	/*
@@ -103,8 +187,7 @@ public:
 	 */
 	void timeoutProcessing(CoreShardInfo * coreShardInfo,
 			SerializableSearchCommandInput * sentRequest,
-			ResultAggregatorAndPrint<SerializableSearchCommandInput ,
-			SerializableSearchResults>::Metadata metadata){
+			ResultsAggregatorAndPrintMetadata metadata){
 		boost::unique_lock< boost::shared_mutex > lock(_access);
 		messages << "{\"search\":\"failed\",\"reason\":\"Corresponging shard ("<<
 						coreShardInfo->shardId<<") timedout.\"}";
@@ -126,7 +209,7 @@ public:
 	 * 3. aggregateSearchResults()
 	 * 4. finalize()
 	 */
-	void finalize(ResultAggregatorAndPrint<SerializableSearchCommandInput ,SerializableSearchResults>::Metadata metadata){
+	void finalize(ResultsAggregatorAndPrintMetadata metadata){
 		// print the results
 		printResults();
 	}
@@ -154,6 +237,7 @@ public:
 	        const unsigned ts1);
 
 	class QueryResultsComparatorOnlyScore{
+	public:
 		bool operator()(QueryResult * left, QueryResult * right){
 			return (left->getResultScore() > right->getResultScore());
 		}
@@ -253,49 +337,48 @@ public:
 	/*
 	 * This function is always called by RoutingManager as the first call back function
 	 */
-	void preProcessing(ResultAggregatorAndPrint<RequestWithStatusResponse,SerializableCommandStatus>::Metadata metadata){
+	void preProcessing(ResultsAggregatorAndPrintMetadata metadata){
 
 	}
 	/*
 	 * This function is called by RoutingManager if a timeout happens, The call to
 	 * this function must be between preProcessing(...) and callBack()
 	 */
-	void timeoutProcessing(CoreShardInfo * coreShardInfo, RequestWithStatusResponse * sentRequest,
-			ResultAggregatorAndPrint<RequestWithStatusResponse,SerializableCommandStatus>::Metadata metadata){
+	void timeoutProcessing(CoreShardInfo * coreShardInfo, RequestWithStatusResponse * sentRequest, ResultsAggregatorAndPrintMetadata metadata){
 
 		if(((string)"SerializableInsertUpdateCommandInput").compare(typeid(sentRequest).name()) == 0){// timeout in insert and update
 
 			boost::unique_lock< boost::shared_mutex > lock(_access);
-			SerializableInsertUpdateCommandInput * sentInsetUpdateRequest = dynamic_cast<SerializableInsertUpdateCommandInput>(sentRequest);
-			messages << "{\"rid\":\"" << rsentInsetUpdateRequest->record->getPrimaryKey()
-					<< "\",\""+sentInsetUpdateRequest->insertOrUpdate?"insert":"update"+"\":\"failed\",\"reason\":\"Corresponging shard ("<<
+			SerializableInsertUpdateCommandInput * sentInsetUpdateRequest = dynamic_cast<SerializableInsertUpdateCommandInput *>(sentRequest);
+			messages << "{\"rid\":\"" << sentInsetUpdateRequest->record->getPrimaryKey()
+					<< "\",\"" << (sentInsetUpdateRequest->insertOrUpdate?"insert":"update") << "\":\"failed\",\"reason\":\"Corresponging shard ("<<
 							coreShardInfo->shardId<<") timedout.\"}";
 
 		}else if (((string)"SerializableDeleteCommandInput").compare(typeid(sentRequest).name()) == 0){
 
 			boost::unique_lock< boost::shared_mutex > lock(_access);
-			SerializableDeleteCommandInput * sentDeleteRequest = dynamic_cast<SerializableDeleteCommandInput>(sentRequest);
+			SerializableDeleteCommandInput * sentDeleteRequest = dynamic_cast<SerializableDeleteCommandInput *>(sentRequest);
 			messages << "{\"rid\":\"" << sentDeleteRequest->primaryKey
 					<< "\",\"delete\":\"failed\",\"reason\":\"Corresponging ("<<
-							coreShardInfo->shardId<<") shard timedout.\"}";
+							coreShardInfo->shardId << ") shard timedout.\"}";
 
 		}else if(((string)"SerializableSerializeCommandInput").compare(typeid(sentRequest).name()) == 0){
 
 			boost::unique_lock< boost::shared_mutex > lock(_access);
-			SerializableSerializeCommandInput * serializeRequest = dynamic_cast<SerializableSerializeCommandInput>(sentRequest);
-			messages << "{\""<< serializeRequest->indexOrRecord?"save":"export" <<"\":\"failed\",\"reason\":\"Corresponging ("<<
-							coreShardInfo->shardId<<") shard timedout.\"}";
+			SerializableSerializeCommandInput * serializeRequest = dynamic_cast<SerializableSerializeCommandInput *>(sentRequest);
+			messages << "{\""<< (serializeRequest->indexOrRecord?"save":"export") << "\":\"failed\",\"reason\":\"Corresponging (" <<
+							coreShardInfo->shardId << ") shard timedout.\"}";
 
 		}else if(((string)"SerializableResetLogCommandInput").compare(typeid(sentRequest).name()) == 0){
 
 			boost::unique_lock< boost::shared_mutex > lock(_access);
-			SerializableResetLogCommandInput * resetRequest = dynamic_cast<SerializableResetLogCommandInput>(sentRequest);
+			SerializableResetLogCommandInput * resetRequest = dynamic_cast<SerializableResetLogCommandInput *>(sentRequest);
 			messages << "{\"reset_log\":\"failed\",\"reason\":\"Corresponging (" << coreShardInfo->shardId<<") shard timedout.\"}";
 
 		}else if(((string)"SerializableCommitCommandInput").compare(typeid(sentRequest).name()) == 0){
 
 			boost::unique_lock< boost::shared_mutex > lock(_access);
-			SerializableCommitCommandInput * resetRequest = dynamic_cast<SerializableCommitCommandInput>(sentRequest);
+			SerializableCommitCommandInput * resetRequest = dynamic_cast<SerializableCommitCommandInput *>(sentRequest);
 			messages << "{\"commit\":\"failed\",\"reason\":\"Corresponging (" << coreShardInfo->shardId<<") shard timedout.\"}";
 
 		}else{
@@ -331,7 +414,7 @@ public:
 	 * 3. aggregateSearchResults()
 	 * 4. finalize()
 	 */
-	void finalize(ResultAggregatorAndPrint<RequestWithStatusResponse,SerializableCommandStatus>::Metadata metadata){
+	void finalize(ResultsAggregatorAndPrintMetadata metadata){
         Logger::info("%s", messages.str().c_str());
 
         bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
@@ -369,7 +452,7 @@ public:
 	/*
 	 * This function is always called by RoutingManager as the first call back function
 	 */
-	void preProcessing(ResultAggregatorAndPrint<SerializableGetInfoCommandInput,SerializableGetInfoResults>::Metadata metadata){
+	void preProcessing(ResultsAggregatorAndPrintMetadata metadata){
 
 	}
 	/*
@@ -377,7 +460,7 @@ public:
 	 * this function must be between preProcessing(...) and callBack()
 	 */
 	void timeoutProcessing(CoreShardInfo * coreShardInfo, SerializableGetInfoCommandInput * sentRequest,
-			ResultAggregatorAndPrint<SerializableGetInfoCommandInput,SerializableGetInfoResults>::Metadata metadata){
+			ResultsAggregatorAndPrintMetadata metadata){
 		boost::unique_lock< boost::shared_mutex > lock(_access);
 		messages << "{\"shard getInfo\":\"failed\",\"reason\":\"Corresponging shard ("<<
 						coreShardInfo->shardId<<") timedout.\"}";
@@ -408,7 +491,7 @@ public:
 	 * 3. aggregateSearchResults()
 	 * 4. finalize()
 	 */
-	void finalize(ResultAggregatorAndPrint<SerializableGetInfoCommandInput,SerializableGetInfoResults>::Metadata metadata){
+	void finalize(ResultsAggregatorAndPrintMetadata metadata){
 
 		//TODO : this print should be checked to make sure it prints correct json format
 		std::stringstream str;
