@@ -54,10 +54,41 @@ class SerializableSearchResults {
 
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
-    void* serialize(std::allocator<char>);
+    void* serialize(std::allocator<char> aloc){
+    	if(queryResults == NULL){
+    		void * buffer = aloc.allocate(sizeof(bool));
+    		void * bufferWritePointer = buffer;
+    		bufferWritePointer = srch2::util::serializeFixedTypes(false, bufferWritePointer);
+    		return buffer;
+    	}
+    	// first calculate the number of bytes needed
+    	unsigned numberOfBytes = 0;
+    	numberOfBytes += sizeof(bool);
+    	numberOfBytes += queryResults->getNumberOfBytesForSerializationForNetwork();
+    	// allocate space
+    	void * buffer = aloc.allocate(numberOfBytes);
+    	// serialize
+    	void * bufferWritePointer = buffer;
+    	bufferWritePointer = srch2::util::serializeFixedTypes(true, bufferWritePointer);
+    	bufferWritePointer = queryResults->serializeForNetwork(bufferWritePointer);
+
+    	return buffer;
+    }
 
     //given a byte stream recreate the original object
-    static const SerializableSearchResults& deserialize(void*);
+    static const SerializableSearchResults& deserialize(void* buffer){
+
+    	bool isNotNull = false;
+		buffer = srch2::util::deserializeFixedTypes(buffer, isNotNull);
+		if(isNotNull){
+			SerializableSearchResults * searchResults = new SerializableSearchResults();
+			buffer = QueryResults::deserializeForNetwork(*(searchResults->queryResults),buffer);
+			return searchResults;
+		}else{
+			SerializableSearchResults * searchResults = new SerializableSearchResults();
+			return *searchResults;
+		}
+    }
 
     //Returns the type of message which uses this kind of object as transport
     static ShardingMessageType messsageKind(){
