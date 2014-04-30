@@ -14,10 +14,14 @@ public:
 
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
-    void* serialize(std::allocator<char>);
+    void* serialize(std::allocator<char> aloc){
+    	return aloc.allocate(0);
+    }
 
     //given a byte stream recreate the original object
-    static const SerializableDeleteCommandInput& deserialize(void*);
+    static const SerializableDeleteCommandInput& deserialize(void*){
+    	return *(new SerializableDeleteCommandInput());
+    }
 
 
     //Returns the type of message which uses this kind of object as transport

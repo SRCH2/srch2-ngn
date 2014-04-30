@@ -51,16 +51,16 @@ class FacetedSearchFilter;
 
 class QueryResult {
 public:
-    string externalRecordId;
     unsigned internalRecordId;
+    // only the results of MapQuery have this
+    double physicalDistance; // TODO check if there is a better way to structure the "location result"
     TypedValue _score;
-    std::vector<std::string> matchingKeywords;
+    string externalRecordId;
     std::vector<unsigned> attributeBitmaps;
     std::vector<unsigned> editDistances;
     std::vector<TermType> termTypes;
     std::vector< TrieNodePointer > matchingKeywordTrieNodes;
-    // only the results of MapQuery have this
-    double physicalDistance; // TODO check if there is a better way to structure the "location result"
+    std::vector<std::string> matchingKeywords;
     TypedValue getResultScore() const
     {
     	return _score;
@@ -79,8 +79,62 @@ public:
     	result += matchingKeywordTrieNodes.capacity() * sizeof(TrieNodePointer);
     	return result;
     }
-    friend class QueryResultFactoryInternal;
 
+    /*
+     * Serialization scheme :
+     * | internalRecordId | _score | externalRecordId | attributeBitmaps | \
+     *   editDistances | termTypes | matchingKeywords | physicalDistance |
+     */
+    void * serializeForNetwork(void * buffer){
+    	buffer = srch2::util::serializeFixedTypes(internalRecordId, buffer);
+    	buffer = srch2::util::serializeFixedTypes(physicalDistance, buffer);
+    	buffer = _score.serializeForNetwork(buffer);
+    	buffer = srch2::util::serializeString(externalRecordId, buffer);
+    	buffer = srch2::util::serializeVectorOfFixedTypes(attributeBitmaps, buffer);
+    	buffer = srch2::util::serializeVectorOfFixedTypes(editDistances, buffer);
+    	buffer = srch2::util::serializeVectorOfFixedTypes(termTypes, buffer);
+    	buffer = srch2::util::serializeVectorOfString(matchingKeywords, buffer);
+
+    	return buffer;
+    }
+    /*
+     * Serialization scheme :
+     * | physicalDistance | internalRecordId | _score | externalRecordId | attributeBitmaps | \
+     *   editDistances | termTypes | matchingKeywords |
+     */
+    static void * deserializeForNetwork(QueryResult * &queryResult, void * buffer){
+    	queryResult = new QueryResult();
+    	buffer = srch2::util::deserializeFixedTypes(buffer, queryResult->internalRecordId);
+    	buffer = srch2::util::deserializeFixedTypes(buffer, queryResult->physicalDistance);
+    	buffer = TypedValue::deserializeForNetwork(queryResult->_score, buffer);
+    	buffer = srch2::util::deserializeString(buffer, queryResult->externalRecordId);
+    	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, queryResult->attributeBitmaps);
+    	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, queryResult->editDistances);
+    	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, queryResult->termTypes);
+    	buffer = srch2::util::deserializeVectorOfString(buffer, queryResult->matchingKeywords);
+
+    	return buffer;
+    }
+    /*
+     * Serialization scheme :
+     * | internalRecordId | _score | externalRecordId | attributeBitmaps | \
+     *   editDistances | termTypes | matchingKeywords | physicalDistance |
+     */
+    unsigned getNumberOfBytesForSerializationForNetwork(){
+    	unsigned numberOfBytes = 0;
+    	numberOfBytes += sizeof(internalRecordId);
+    	numberOfBytes += sizeof(physicalDistance);
+    	numberOfBytes += _score.getNumberOfBytesForSerializationForNetwork();
+    	numberOfBytes += sizeof(unsigned) + externalRecordId.size();
+    	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(attributeBitmaps);
+    	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(editDistances);
+    	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(termTypes);
+    	numberOfBytes += srch2::util::getNumberOfBytesVectorOfString(matchingKeywords);
+
+    	return numberOfBytes;
+    }
+
+    friend class QueryResultFactoryInternal;
 private:
     QueryResult(const QueryResult& copy_from_me){
     	externalRecordId = copy_from_me.externalRecordId;
@@ -175,6 +229,15 @@ public:
     bool checkCacheHit(QueryEvaluatorInternal *queryEvaluatorInternal, Query *query);
     
     
+    /*
+     * Serialization scheme :
+     * | resultsApproximated | estimatedNumberOfResults | sortedFinalResults | facetResults |
+     */
+    void * serializeForNetwork(void * buffer);
+    void * deserializeForNetwork(void * buffer);
+    unsigned getNumberOfBytesForSerializationForNetwork();
+
+
     std::vector<QueryResult *> sortedFinalResults;
     std::vector<TermVirtualList* > *virtualListVector;
     
