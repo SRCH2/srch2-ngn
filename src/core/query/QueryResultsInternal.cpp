@@ -100,6 +100,108 @@ bool QueryResultsInternal::checkCacheHit(
     return returnValue;
 }
 
+/*
+ * Serialization scheme :
+ * | resultsApproximated | estimatedNumberOfResults | sortedFinalResults | facetResults |
+ */
+void * QueryResultsInternal::serializeForNetwork(void * buffer){
+
+	buffer = srch2::util::serializeFixedTypes(resultsApproximated , buffer);
+	buffer = srch2::util::serializeFixedTypes(estimatedNumberOfResults , buffer);
+
+	buffer = srch2::util::serializeFixedTypes(sortedFinalResults.size(), buffer); // number of query result objects in vector
+	for(unsigned queryResultIndex = 0 ; queryResultIndex < sortedFinalResults.size() ; ++queryResultIndex){
+		buffer = sortedFinalResults.at(queryResultIndex)->serializeForNetwork(buffer);
+	}
+	// 	std::map<std::string , std::pair< FacetType , std::vector<std::pair<std::string, float> > > > facetResults;
+	buffer = srch2::util::serializeFixedTypes(facetResults.size(), buffer); // size of map
+	for(std::map<std::string , std::pair< FacetType , std::vector<std::pair<std::string, float> > > >::iterator facetResultItr =
+			facetResults.begin() ; facetResultItr != facetResults.end() ; ++facetResultItr){
+		buffer = srch2::util::serializeString(facetResultItr->first, buffer); // string
+		buffer = srch2::util::serializeFixedTypes(facetResultItr->second.first, buffer); // FacetType
+		std::vector<std::pair<std::string, float> > & vectorToSerialize = facetResultItr->second.second;
+		buffer = srch2::util::serializeFixedTypes(vectorToSerialize.size(), buffer); // vector size
+		for(std::vector<std::pair<std::string, float> >::iterator pairItr = vectorToSerialize.begin();
+				pairItr != vectorToSerialize.end() ; ++pairItr){
+			buffer = srch2::util::serializeString(pairItr->first, buffer); // string
+			buffer = srch2::util::serializeFixedTypes(pairItr->second, buffer); // float
+		}
+	}
+
+	return buffer;
+
+}
+/*
+ * Serialization scheme :
+ * | resultsApproximated | estimatedNumberOfResults | sortedFinalResults | facetResults |
+ */
+void * QueryResultsInternal::deserializeForNetwork(void * buffer){
+
+	buffer = srch2::util::deserializeFixedTypes(buffer, resultsApproximated);
+	buffer = srch2::util::deserializeFixedTypes(buffer, estimatedNumberOfResults);
+
+	unsigned numberOfResults = 0;
+	buffer = srch2::util::deserializeFixedTypes(buffer, numberOfResults);
+	for(unsigned queryResultIndex = 0 ; queryResultIndex < numberOfResults ; ++queryResultIndex){
+		QueryResult * queryResult;
+		buffer = QueryResult::deserializeForNetwork(queryResult, buffer);
+		sortedFinalResults.push_back(queryResult);
+	}
+
+	// 	std::map<std::string , std::pair< FacetType , std::vector<std::pair<std::string, float> > > > facetResults;
+	unsigned numberOfFacets = 0 ;
+	buffer = srch2::util::deserializeFixedTypes(buffer, numberOfFacets); // size of map
+	for(unsigned facetIndex = 0 ; facetIndex < numberOfFacets; ++facetIndex){
+		string keyValue;
+		buffer = srch2::util::deserializeString(buffer, keyValue); // string
+		FacetType facetType;
+		buffer = srch2::util::deserializeFixedTypes(buffer,facetType); // FacetType
+		std::pair< FacetType , std::vector<std::pair<std::string, float> > > & newPair =
+				std::make_pair(facetType , std::vector<std::pair<std::string, float> >());
+		unsigned pairVectorSize = 0;
+		buffer = srch2::util::deserializeFixedTypes(buffer, pairVectorSize); // vector size
+		for(unsigned vectorElementIndex = 0; vectorElementIndex < pairVectorSize; ++vectorElementIndex){
+			newPair.second.push_back(std::make_pair("", 0));
+			buffer = srch2::util::deserializeString(buffer , newPair.second.at(newPair.second.size()-1).first); // string
+			buffer = srch2::util::deserializeFixedTypes(buffer, newPair.second.at(newPair.second.size()-1).second); // float
+		}
+	}
+
+	return buffer;
+}
+/*
+ * Serialization scheme :
+ * | resultsApproximated | estimatedNumberOfResults | sortedFinalResults | facetResults |
+ */
+unsigned QueryResultsInternal::getNumberOfBytesForSerializationForNetwork(){
+
+	unsigned numberOfBytes = 0;
+	numberOfBytes += sizeof(resultsApproximated);
+	numberOfBytes += sizeof(estimatedNumberOfResults);
+
+	numberOfBytes += sizeof(unsigned); // size
+	for(unsigned queryResultIndex = 0 ; queryResultIndex < sortedFinalResults.size() ; ++queryResultIndex){
+		sortedFinalResults.at(queryResultIndex)->getNumberOfBytesForSerializationForNetwork();
+	}
+
+	numberOfBytes += sizeof(unsigned); // size
+	for(std::map<std::string , std::pair< FacetType , std::vector<std::pair<std::string, float> > > >::iterator facetResultItr =
+			facetResults.begin() ; facetResultItr != facetResults.end() ; ++facetResultItr){
+		numberOfBytes += sizeof(unsigned) + facetResultItr->first.size();
+		numberOfBytes += sizeof(FacetType);
+		std::vector<std::pair<std::string, float> > & vectorToSerialize = facetResultItr->second.second;
+		numberOfBytes += sizeof(unsigned); // vector size
+		for(std::vector<std::pair<std::string, float> >::iterator pairItr = vectorToSerialize.begin();
+				pairItr != vectorToSerialize.end() ; ++pairItr){
+			numberOfBytes += sizeof(unsigned) + pairItr->first.size(); // string
+			numberOfBytes += sizeof(float); // float
+		}
+	}
+
+	return numberOfBytes;
+}
+
+
 QueryResultsInternal::~QueryResultsInternal() {
     // TODO: if we use caching, we can leave them in the cache
     if(virtualListVector != NULL){

@@ -35,10 +35,29 @@ public:
 	}
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
-    void* serialize(std::allocator<char>);
+    void* serialize(std::allocator<char> aloc){
+    	// calculate the size
+    	unsigned numberOfBytes = 0;
+    	numberOfBytes += sizeof(OperationCode);
+    	numberOfBytes += record->getNumberOfBytesSize();
+    	// allocate the space
+    	void * buffer = aloc.allocate(numberOfBytes);
+		void * bufferWritePointer = buffer;
+    	// and serialize things in calculate
+		bufferWritePointer = srch2::util::serializeFixedTypes(insertOrUpdate, bufferWritePointer);
+		bufferWritePointer = record->serialize(bufferWritePointer);
+
+    	return bufferWritePointer;
+    }
 
     //given a byte stream recreate the original object
-    static const SerializableInsertUpdateCommandInput& deserialize(void*);
+    static const SerializableInsertUpdateCommandInput& deserialize(void* buffer, const Schema * schema){
+    	Record * record = new Record(schema);
+    	buffer = Record::deserialize(buffer, *record);
+    	OperationCode insertOrUpdate ;
+    	buffer = srch2::util::deserializeFixedTypes(buffer, insertOrUpdate);
+    	return *(new SerializableInsertUpdateCommandInput(record, insertOrUpdate));
+    }
 
     //Returns the type of message which uses this kind of object as transport
     static ShardingMessageType messsageKind(){

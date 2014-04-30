@@ -38,20 +38,145 @@ class Term;
 
 struct Query::Impl
 {
-    QueryType type;
-    vector<Term* > *terms;
     unsigned sortableAttributeId;
     float lengthBoost;
     float prefixMatchPenalty;
+    QueryType type;
     srch2::instantsearch::SortOrder order;
-    Shape *range;
-    Ranker *ranker;
-
     std::string refiningAttributeName ;
     std::string refiningAttributeValue ;
-
-
+    vector<Term* > *terms;
+    Shape *range;
+    Ranker *ranker;
     ResultsPostProcessorPlan *  plan;
+
+
+
+
+    /*
+     * Serialization Scheme :
+     * | sortableAttributeId | lengthBoost | prefixMatchPenalty | type | order | refiningAttributeName |  \
+     *  refiningAttributeValue | isNULL | isNULL | [terms] | [range] | ranker |
+     *  NOTE : we do not serialize plan because it's not used anymore and it must be deleted from codebase
+     */
+    void * serializeForNetwork(void * buffer){
+    	// sortableAttributeId, lengthBoost, prefixMatchPenalty, type, order, refiningAttributeName and refiningAttributeValue
+    	buffer = srch2::util::serializeFixedTypes(sortableAttributeId, buffer);
+    	buffer = srch2::util::serializeFixedTypes(lengthBoost, buffer);
+    	buffer = srch2::util::serializeFixedTypes(prefixMatchPenalty, buffer);
+    	buffer = srch2::util::serializeFixedTypes(type, buffer);
+    	buffer = srch2::util::serializeFixedTypes(order, buffer);
+    	buffer = srch2::util::serializeString(refiningAttributeName, buffer);
+    	buffer = srch2::util::serializeString(refiningAttributeValue, buffer);
+
+       	buffer = srch2::util::serializeFixedTypes(terms != NULL, buffer); // isNULL
+       	buffer = srch2::util::serializeFixedTypes(range != NULL, buffer); // isNULL
+    	// terms vector
+		if(terms != NULL){
+			// size of vector
+			buffer = srch2::util::serializeFixedTypes(terms->size(), buffer);
+			for(unsigned termIndex = 0; termIndex < terms->size(); ++termIndex){
+				ASSERT(terms->at(termIndex) != NULL);
+				buffer = terms->at(termIndex)->serializeForNetwork(buffer);
+			}
+		}
+		if(range != NULL){
+			buffer = range->serializeForNetwork(buffer);
+		}
+
+    	// TODO ignore ResultsPostProcessorPlan for now
+    	return buffer;
+    }
+
+    /*
+     * Serialization Scheme :
+     * | sortableAttributeId | lengthBoost | prefixMatchPenalty | type | order | refiningAttributeName |  \
+     *  refiningAttributeValue | isNULL | isNULL | [terms] | [range] | ranker |
+     *  NOTE : we do not serialize plan because it's not used anymore and it must be deleted from codebase
+     */
+    void * deserializerForNetwork(void * buffer){
+       	// sortableAttributeId, lengthBoost, prefixMatchPenalty, type, order, refiningAttributeName and refiningAttributeValue
+    	buffer = srch2::util::deserializeFixedTypes(buffer, sortableAttributeId);
+    	buffer = srch2::util::deserializeFixedTypes(buffer, lengthBoost);
+    	buffer = srch2::util::deserializeFixedTypes(buffer, prefixMatchPenalty);
+    	buffer = srch2::util::deserializeFixedTypes(buffer, type);
+    	buffer = srch2::util::deserializeFixedTypes(buffer, order);
+    	buffer = srch2::util::deserializeString(buffer, refiningAttributeName);
+    	buffer = srch2::util::deserializeString(buffer, refiningAttributeValue);
+    	// terms vector
+		bool isTermsNotNull = false;
+		buffer = srch2::util::deserializeFixedTypes(buffer, isTermsNotNull);
+		bool isRangeNotNull = false;
+		buffer = srch2::util::deserializeFixedTypes(buffer, isRangeNotNull);
+
+		if(isTermsNotNull){
+			terms = new vector<Term *>();
+			unsigned numberOfTerms = 0;
+			buffer = srch2::util::deserializeFixedTypes(buffer, numberOfTerms);
+			for(unsigned termIndex = 0; termIndex < numberOfTerms; ++termIndex){
+				Term * term = new Term("", TERM_TYPE_NOT_SPECIFIED, 0,0,0);
+				buffer = Term::deserializeForNetwork(*term, buffer);
+				terms->push_back(term);
+			}
+		}
+		if(isRangeNotNull){
+			buffer = Shape::deserializeForNetwork(range, buffer);
+		}
+
+		if(ranker != NULL){
+			delete ranker;
+		}
+		switch ( type )
+		{
+			case srch2::instantsearch::SearchTypeTopKQuery:
+				ranker = new DefaultTopKRanker();
+				break;
+			case srch2::instantsearch::SearchTypeGetAllResultsQuery:
+				ranker = new GetAllResultsRanker();
+				break;
+			case srch2::instantsearch::SearchTypeMapQuery:
+				ranker = new SpatialRanker();
+				break;
+			default:
+				ranker = new DefaultTopKRanker();
+				break;
+		};
+    	// TODO ignore ResultsPostProcessorPlan for now
+
+    	return buffer;
+    }
+
+    /*
+     * Serialization Scheme :
+     * | sortableAttributeId | lengthBoost | prefixMatchPenalty | type | order | refiningAttributeName |  \
+     *  refiningAttributeValue | isNULL | isNULL | [terms] | [range] | ranker |
+     *  NOTE : we do not serialize plan because it's not used anymore and it must be deleted from codebase
+     */
+    unsigned getNumberOfBytesForNetwork(){
+    	unsigned numberOfBytes = 0;
+    	numberOfBytes += sizeof(sortableAttributeId);
+    	numberOfBytes += sizeof(lengthBoost);
+    	numberOfBytes += sizeof(prefixMatchPenalty);
+    	numberOfBytes += sizeof(type);
+    	numberOfBytes += sizeof(order);
+    	numberOfBytes += sizeof(unsigned) + refiningAttributeName.size();
+       	numberOfBytes += sizeof(unsigned) + refiningAttributeValue.size();
+
+    	numberOfBytes += sizeof(bool) * 2; // whether terms and range are null or not
+
+    	if(terms != NULL){
+    		numberOfBytes += sizeof(unsigned); // vector size
+    		for(unsigned termIndex = 0; termIndex < terms->size() ; ++termIndex){
+    			numberOfBytes += terms->at(termIndex)->getNumberOfBytesForSerializationForNetwork();
+    		}
+    	}
+    	if(range != NULL){
+    		numberOfBytes += range->getNumberOfBytesForSerializationForNetwork();
+    	}
+    	// TODO : ignore ResultsPostProcessorPlan for now
+    	return numberOfBytes;
+    }
+
 
     string toString(){
     	stringstream ss;
@@ -258,6 +383,16 @@ ResultsPostProcessorPlan * Query::getPostProcessingPlan(){
 
 string Query::toString(){
 	return this->impl->toString();
+}
+
+void * Query::serializeForNetwork(void * buffer){
+	return impl->serializeForNetwork(buffer);
+}
+void * Query::deserializeForNetwork(Query & query, void * buffer){
+	return query.impl->deserializerForNetwork(buffer);
+}
+unsigned Query::getNumberOfBytesForSerializationForNetwork(){
+	return impl->getNumberOfBytesForNetwork();
 }
 
 srch2::instantsearch::SortOrder Query::getSortableAttributeIdSortOrder() const
