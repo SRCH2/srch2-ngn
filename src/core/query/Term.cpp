@@ -190,6 +190,15 @@ string Term::toString(){
 	return this->impl->toString();
 }
 
+void * Term::serializeForNetwork(void * buffer){
+	return impl->serializeForNetwork(buffer);
+}
+void * Term::deserializeForNetwork(Term & term, void * buffer){
+	return term.impl->deserializeForNetwork(buffer);
+}
+unsigned Term::getNumberOfBytesForSerializationForNetwork(){
+	return impl->getNumberOfBytesForNetwork();
+}
 ////////////////////////
 
 Term* ExactTerm::create(const string &keyword, TermType type, const float boost, const float similarityBoost)

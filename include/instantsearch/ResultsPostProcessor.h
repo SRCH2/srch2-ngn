@@ -29,8 +29,7 @@
 #include "instantsearch/Query.h"
 #include "instantsearch/Schema.h"
 #include "instantsearch/TypedValue.h"
-#include "wrapper/SortFilterEvaluator.h"
-#include "wrapper/FilterQueryEvaluator.h"
+#include "util/SerializationHelper.h"
 
 
 namespace srch2
@@ -148,7 +147,6 @@ public:
 	virtual const std::vector<std::string> * getParticipatingAttributes() const = 0;
 	virtual string toString() const = 0;
 	virtual void * serializeForNetwork(void * buffer) const = 0;
-	virtual static void * deserializeForNetwork(SortEvaluator & info, void * buffer) = 0;
 	virtual unsigned getNumberOfBytesForSerializationForNetwork() const= 0;
 	virtual ~SortEvaluator(){};
 	SortOrder order;
@@ -161,7 +159,6 @@ public:
 	virtual ~RefiningAttributeExpressionEvaluator(){};
 	virtual string toString() = 0;
 	virtual void * serializeForNetwork(void * buffer) const = 0;
-	virtual static void * deserializeForNetwork(RefiningAttributeExpressionEvaluator & info, void * buffer) = 0;
 	virtual unsigned getNumberOfBytesForSerializationForNetwork() const= 0;
 };
 
