@@ -7,7 +7,18 @@ using namespace std;
 namespace srch2 {
 namespace httpwrapper {
 
-
+template<InputType, Deserializer, OutputType>
+void InternalMessageBroker::broker(Message *msg, Srch2Server* server,
+    Output* (*DpInternalMessage::fn) (Srch2Server*, Input*)) {
+  InputType *input = (msg->isLocal()) ? (InputType*) msg;
+                                  : Deserializer::deserialize(message->buffer);
+  OutputType *output = internalDp.*fn(server, input);
+  void *reply = (msg->isLocal())
+    ? (void*) input : input->serialize(routingManager.getMessageAllocator());
+  routingManager.sendReply(msg, reply);
+  if(!msg->isLocal()) 
+    delete input, output;
+}
 
 void InternalMessageBroker::processInternalMessage(Message * message){
 	if(message == NULL){
@@ -27,17 +38,10 @@ void InternalMessageBroker::processInternalMessage(Message * message){
 	//4. give the new message out
 	switch (message->type) {
 		case SearchCommandMessageType: // -> for LogicalPlan object
-		{
-			//1. Deserialize message and get command input object
-			SerializableSearchCommandInput & searchInput = SerializableSearchCommandInput::deserialize(message->buffer);
-			//2. Call the appropriate internal DP function and get the response object
-			SerializableSearchResults & searchResults = routingManager->getDpInternal()->internalSearchCommand(server, &searchInput);
-			//3. Serialize response object into a message
-			void * seralizedSearchResults = searchResults.serialize(routingManager->getAllocator());
-			//4. give the new message out
-			//TODO : sendReply(seralizedSearchResults)
-			break;
-		}
+      broker<SerializableSearchCommandInput, SerializableSearchCommandInput,
+        SerializableSearchResults>(message, server, 
+            &DPInternalRequestHandler::internalSearchCommand);
+		break;
 		case InsertUpdateCommandMessageType: // -> for Record object (used for insert and update)
 		{
 			//1. Deserialize message and get command input object
