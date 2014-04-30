@@ -4,8 +4,7 @@
 namespace srch2is = srch2::instantsearch;
 using namespace std;
 
-namespace srch2 {
-namespace httpwrapper {
+using srch2::httpwrapper;
 
 template<InputType, Deserializer, OutputType>
 void InternalMessageBroker::broker(Message *msg, Srch2Server* server,
@@ -13,9 +12,9 @@ void InternalMessageBroker::broker(Message *msg, Srch2Server* server,
   InputType *input = (msg->isLocal()) ? (InputType*) msg;
                                   : Deserializer::deserialize(message->buffer);
   OutputType *output = internalDp.*fn(server, input);
-  void *reply = (msg->isLocal())
-    ? (void*) input : input->serialize(routingManager.getMessageAllocator());
-  routingManager.sendReply(msg, reply);
+  void *reply = (msg->isLocal()) ? (void*) input 
+                                 : input->serialize(getMessageAllocator());
+  sendReply(msg, reply);
   if(!msg->isLocal()) 
     delete input, output;
 }
@@ -42,98 +41,65 @@ void InternalMessageBroker::processInternalMessage(Message * message){
         SerializableSearchResults>(message, server, 
             &DPInternalRequestHandler::internalSearchCommand);
 		break;
-		case InsertUpdateCommandMessageType: // -> for Record object (used for insert and update)
-		{
-			//1. Deserialize message and get command input object
-			SerializableInsertUpdateCommandInput & insertUpdateInput = SerializableInsertUpdateCommandInput::deserialize(message->buffer);
-			//2. Call the appropriate internal DP function and get the response object
-			SerializableCommandStatus & insertUpdateResults = routingManager->getDpInternal()->internalInsertUpdateCommand(server, &insertUpdateInput);
-			//3. Serialize response object into a message
-			void * seralizedInsertUpdateResults = insertUpdateResults.serialize(routingManager->getAllocator());
-			//4. give the new message out
-			//TODO : sendReply(seralizedInsertUpdateResults)
-		    break;
-		}
-		case DeleteCommandMessageType: // -> for DeleteCommandInput object (used for delete)
-		{
-			//1. Deserialize message and get command input object
-			SerializableDeleteCommandInput & deleteInput = SerializableDeleteCommandInput::deserialize(message->buffer);
-			//2. Call the appropriate internal DP function and get the response object
-			SerializableCommandStatus & deleteResults = routingManager->getDpInternal()->internalDeleteCommand(server, &deleteInput);
-			//3. Serialize response object into a message
-			void * seralizedDeleteResults = deleteResults.serialize(routingManager->getAllocator());
-			//4. give the new message out
-			//TODO : sendReply(seralizedDeleteResults)
-		    break;
-		}
-		case SerializeCommandMessageType: // -> for SerializeCommandInput object (used for serializing index and records)
-		{
-			//1. Deserialize message and get command input object
-			SerializableSerializeCommandInput & serializeInput = SerializableSerializeCommandInput::deserialize(message->buffer);
-			//2. Call the appropriate internal DP function and get the response object
-			SerializableCommandStatus & serializeResults = routingManager->getDpInternal()->internalSerializeCommand(server, &serializeInput);
-			//3. Serialize response object into a message
-			void * seralizedSerializeCommandResults = serializeResults.serialize(routingManager->getAllocator());
-			//4. give the new message out
-			//TODO : sendReply(seralizedSerializeCommandResults)
-		 	break;
-		}
-		case GetInfoCommandMessageType: // -> for GetInfoCommandInput object (used for getInfo)
-		{
-			//1. Deserialize message and get command input object
-			SerializableGetInfoCommandInput & getInfoInput = SerializableGetInfoCommandInput::deserialize(message->buffer);
-			//2. Call the appropriate internal DP function and get the response object
-			//TODO : where should we get version info from ?
-			SerializableGetInfoResults & getInfoResults = routingManager->getDpInternal()->internalGetInfoCommand(server, "version info" , &getInfoInput);
-			//3. Serialize response object into a message
-			void * seralizedGetInfoResults = getInfoResults.serialize(routingManager->getAllocator());
-			//4. give the new message out
-			//TODO : sendReply(seralizedGetInfoResults)
-			break;
-		}
+    // -> for Record object (used for insert and update)
+		case InsertUpdateCommandMessageType: 
+      broker<SerializableInsertUpdateCommandInput, 
+        SerializableInsertUpdateCommandInput, 
+        SerializableCommandStatus>(message, server, 
+            &DPInternalRequestHandler::internalInsertUpdateCommand);
+    break;
+    // -> for DeleteCommandInput object (used for delete)
+    case DeleteCommandMessageType: 
+      broker<SerializableDeleteCommandInput, SerializableDeleteCommandInput,
+        SerializableCommandStatus>(message, server, 
+            &DPInternalRequestHandler::internalDeleteCommand);
+    break;
+    // -> for SerializeCommandInput object
+    // (used for serializing index and records)
+    case SerializeCommandMessageType: 
+      broker<SerializableSerializeCommandInput, 
+        SerializableSerializeCommandInput,
+        SerializableCommandStatus>(message, server, 
+            &DPInternalRequestHandler::internalSerializeCommand);
+    break;
+    // -> for GetInfoCommandInput object (used for getInfo)
+		case GetInfoCommandMessageType:
+      broker<SerializableGetInfoCommandInput, SerializableGetInfoCommandInput,
+        SerializableGetInfoResults>(message, server, 
+            &DPInternalRequestHandler::internalGetInfoCommand);
+    break;
 		case CommitCommandMessageType: // -> for CommitCommandInput object
-		{
-			//1. Deserialize message and get command input object
-			SerializableCommitCommandInput & commitInput = SerializableCommitCommandInput::deserialize(message->buffer);
-			//2. Call the appropriate internal DP function and get the response object
-			//TODO : where should we get version info from ?
-			SerializableCommandStatus & commitResults = routingManager->getDpInternal()->internalCommitCommand(server , &commitInput);
-			//3. Serialize response object into a message
-			void * seralizedCommitResults = commitResults.serialize(routingManager->getAllocator());
-			//4. give the new message out
-			//TODO : sendReply(seralizedCommitResults)
-			break;
-		}
-		case ResetLogCommandMessageType: // -> for ResetLogCommandInput (used for resetting log)
-		{
-			//1. Deserialize message and get command input object
-			SerializableResetLogCommandInput & resetLogInput = SerializableResetLogCommandInput::deserialize(message->buffer);
-			//2. Call the appropriate internal DP function and get the response object
-			//TODO : where should we get version info from ?
-			SerializableCommandStatus & resetLogResults = routingManager->getDpInternal()->internalResetLogCommand(server , &resetLogInput);
-			//3. Serialize response object into a message
-			void * seralizedCommitResults = resetLogResults.serialize(routingManager->getAllocator());
-			//4. give the new message out
-			//TODO : sendReply(seralizedCommitResults)
-			break;
-		}
+      broker<SerializableCommitCommandInput, SerializableCommitCommandInput,
+        SerializableCommandStatus>(message, server, 
+            &DPInternalRequestHandler::internalCommitCommand);
+    break;
+    // -> for ResetLogCommandInput (used for resetting log)
+		case ResetLogCommandMessageType:
+      broker<SerializableResetLogCommandInput,SerializableResetLogCommandInput,
+        SerializableCommandStatus>(message, server, 
+            &DPInternalRequestHandler::internalResetLogCommand);
+    break;
 		default:
-		{
 			//TODO : what should we do here ?
-			break;
-		}
+		break;
 	}
 }
 
 Srch2Server * InternalMessageBroker::getShardIndex(ShardId & shardId){
 	//get shardId from message to use map to get Indexer object
-	std::map<ShardId, Srch2Server*>::iterator indexerItr = routingManager->getShardToIndexMap().find(shardId);
-	if(indexerItr == routingManager->getShardToIndexMap().end()){
+	std::map<ShardId, Srch2Server*>::iterator indexerItr = 
+    routingManager.getShardToIndexMap().find(shardId);
+	if(indexerItr == routingManager.getShardToIndexMap().end()){
 		return NULL;
 	}
 
 	return indexerItr->second;
 }
 
+std::allocator<char>* getMessageAllocator() {
+  return routingManager.transportManager.getMessageAllocator();
 }
+
+void sendReply(Message* msg, void* replyObject) {
+  routingManager.transportManager(msg, input);
 }
