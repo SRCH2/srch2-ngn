@@ -135,10 +135,13 @@ void cb_recieveMessage(int fd, short eventType, void *arg) {
   Message *msg = 
     readRestOfMessage(tm->messageAllocator, fd, &msgHeader);
 /*
-  if(msg.isReply()) tm->routeManager.handleRepy(*msg);
-  else {
-    tm->routeManager.trampoline(*msg);
-  }*/
+  if(msg.isReply()) tm->pendingMessages.resolve(*msg);
+  elseif(msg.isSM() {
+    sm->notify(*msg);
+  } else {
+   // tm->routeManager.trampoline(*msg);
+  }
+*/
 
   tm->messageAllocator.deallocate(msg);
 }
