@@ -177,22 +177,19 @@ SET_TESTS_PROPERTIES(XMLParser_Test PROPERTIES ENVIRONMENT "XmlFilePath=${CMAKE_
 
 ADD_TEST(ConfigManager_Test ${CMAKE_CURRENT_BINARY_DIR}/sharding/unit/ConfigManager_Test   "--verbose")
 
-#SET_TESTS_PROPERTIES(ConfigManager_Test PROPERTIES ENVIRONMENT "ConfigManagerFilePath=${CMAKE_SOURCE_DIR}/test/sharding/unit/test_data/ConfigManagerTest.xml"
-#"ConfigManagerFilePath1=${CMAKE_SOURCE_DIR}/test/sharding/unit/test_data/ConfigManagerTest1.xml"
-#"ConfigManagerFilePath2=${CMAKE_SOURCE_DIR}/test/sharding/unit/test_data/ConfigManagerTest2.xml")
 
 set_property(
     TEST
         ConfigManager_Test
     PROPERTY
-        ENVIRONMENT "ConfigManagerFilePath=${CMAKE_SOURCE_DIR}/test/sharding/unit/test_data/ConfigManagerTest.xml"
+        ENVIRONMENT "ConfigManagerFilePath1=${CMAKE_SOURCE_DIR}/test/sharding/unit/test_data/ConfigManagerTest1.xml"
 )
 set_property(
     TEST
         ConfigManager_Test
     APPEND
     PROPERTY
-        ENVIRONMENT "ConfigManagerFilePath1=${CMAKE_SOURCE_DIR}/test/sharding/unit/test_data/ConfigManagerTest1.xml"
+        ENVIRONMENT "ConfigManagerFilePath2=${CMAKE_SOURCE_DIR}/test/sharding/unit/test_data/ConfigManagerTest2.xml"
 )
 
 

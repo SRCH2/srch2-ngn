@@ -831,35 +831,37 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_
 
     xml_node childNodeOfCores = parentNode.child(primaryShardTag);
     if(childNodeOfCores && childNodeOfCores.text()){
-			string temp = (childNodeOfCores.text().get());
-			trimSpacesFromValue(temp, primaryShardTag, parseWarnings);
-			coreInfo->numberOfPrimaryShards = (uint)atol(temp.c_str());
-    	}
+    	string temp = (childNodeOfCores.text().get());
+    	trimSpacesFromValue(temp, primaryShardTag, parseWarnings);
+    	coreInfo->numberOfPrimaryShards = (uint)atol(temp.c_str());
+    }
     else{
-		coreInfo->numberOfPrimaryShards = DefaultNumberOfPrimaryShards;
-        parseWarnings << "Number of Primary shards is not defined. The engine will use the default value " << coreInfo->numberOfPrimaryShards << "\n";
+    	coreInfo->numberOfPrimaryShards = DefaultNumberOfPrimaryShards;
+        parseWarnings << "Number of primary shards is not defined. The engine will use the default value " << coreInfo->numberOfPrimaryShards << "\n";
     }
 
     childNodeOfCores = parentNode.child(primaryShardTag);
     xml_node primaryShardSibling = childNodeOfCores.next_sibling(primaryShardTag);
-    if(primaryShardSibling)
-        parseWarnings << "Duplicate definition of \"" << primaryShardTag << "\".  The engine will use the last value " << coreInfo->numberOfPrimaryShards << "\n";
+    if(primaryShardSibling){
+        parseWarnings << "Duplicate definition of \"" << primaryShardTag << "\".  The engine will use the first value " << coreInfo->numberOfPrimaryShards << "\n";
+    }
 
     childNodeOfCores = parentNode.child(replicaShardTag);
 
     if(childNodeOfCores && childNodeOfCores.text()){
-    		 string temp = (childNodeOfCores.text().get());
-    		 trimSpacesFromValue(temp, replicaShardTag, parseWarnings);
-    		 coreInfo->numberOfReplicas = (uint)atol(temp.c_str());
+    	string temp = (childNodeOfCores.text().get());
+    	trimSpacesFromValue(temp, replicaShardTag, parseWarnings);
+    	coreInfo->numberOfReplicas = (uint)atol(temp.c_str());
     }
     else{
     	coreInfo->numberOfReplicas = DefaultNumberOfReplicas;
-    	parseWarnings << "Number of Replica is not defined. The engine will use the default value " << DefaultNumberOfReplicas << "\n";
+    	parseWarnings << "Number of replicas is not defined. The engine will use the default value " << DefaultNumberOfReplicas << "\n";
     }
 
     xml_node replicaSibling = childNodeOfCores.next_sibling(replicaShardTag);
-    if(replicaSibling)
-    	parseWarnings << "Duplicate definition of \"" << replicaShardTag << "\".  The engine will use the last value " << coreInfo->numberOfReplicas << "\n";
+    if(replicaSibling){
+    	parseWarnings << "Duplicate definition of \"" << replicaShardTag << "\".  The engine will use the first value " << coreInfo->numberOfReplicas << "\n";
+    }
 
     xml_node childNode = parentNode.child(dataDirString);
     if (childNode && childNode.text()) {
@@ -1761,15 +1763,16 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
                           std::stringstream &parseWarnings)
 {
     string tempUse = ""; // This is just for temporary use.
+
     int flag_cluster = 0;
     CoreInfo_t *defaultCoreInfo = NULL;
 
     xml_node configNode = configDoc.child(configString);
     xml_node clusterName = configNode.child(clusterNameTag);
-    if (clusterName && clusterName.text()) { // checks if the config/srch2Home has any text in it or not
-			  tempUse = string(clusterName.text().get());
-			  trimSpacesFromValue(tempUse, clusterNameTag, parseWarnings);
-			  cluster.setClusterName(tempUse);
+    if (clusterName && clusterName.text()) {
+    	tempUse = string(clusterName.text().get());
+    	trimSpacesFromValue(tempUse, clusterNameTag, parseWarnings);
+    	cluster.setClusterName(tempUse);
     }else{
     	cluster.setClusterName(string(DefaultClusterName));
     	parseWarnings << "Cluster name is not specified. Engine will use the default value " << cluster.getClusterName() << "\n";
@@ -1777,7 +1780,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
 
     xml_node clusterNameSibling = clusterName.next_sibling(clusterNameTag);
     if (clusterNameSibling && clusterNameSibling.text()){
-          parseWarnings << "Duplicate definition of \"" << clusterNameTag << "\".  The engine will use the last value: " << cluster.getClusterName() << "\n";    }
+          parseWarnings << "Duplicate definition of \"" << clusterNameTag << "\".  The engine will use the first value: " << cluster.getClusterName() << "\n";    }
 
     tempUse = "";
 
@@ -1949,7 +1952,7 @@ void ConfigManager::parseNode(std::vector<Node>* nodes, xml_node& nodeTag, std::
 						nameDefined = true;
 					}
 					else{
-				        parseWarnings << "Duplicate definition of \"" << nodeNameTag << "\".  The engine will use the last value: " << nodeName << "\n";
+				        parseWarnings << "Duplicate definition of \"" << nodeNameTag << "\".  The engine will use the first value: " << nodeName << "\n";
 					}
 				}
 				if (name.compare(nodeListeningHostNameTag) == 0) {
@@ -1959,7 +1962,7 @@ void ConfigManager::parseNode(std::vector<Node>* nodes, xml_node& nodeTag, std::
 						ipAddressDefined = true;
 					}
 					else{
-				        parseWarnings << "Duplicate definition of \"" << nodeListeningHostNameTag << "\".  The engine will use the last value: " << ipAddress << "\n";
+				        parseWarnings << "Duplicate definition of \"" << nodeListeningHostNameTag << "\".  The engine will use the first value: " << ipAddress << "\n";
 					}
 
 				}
@@ -1972,7 +1975,7 @@ void ConfigManager::parseNode(std::vector<Node>* nodes, xml_node& nodeTag, std::
 						portDefined = true;
 					}
 					else{
-				        parseWarnings << "Duplicate definition of \"" << nodeListeningPortTag << "\".  The engine will use the last value: " << portNumber << "\n";
+				        parseWarnings << "Duplicate definition of \"" << nodeListeningPortTag << "\".  The engine will use the first value: " << portNumber << "\n";
 					}
 				}
 				if (name.compare(nodeCurrentTag) == 0) {
@@ -1993,7 +1996,7 @@ void ConfigManager::parseNode(std::vector<Node>* nodes, xml_node& nodeTag, std::
 					}
 
 					else{
-					    parseWarnings << "Duplicate definition of \"" << nodeCurrentTag << "\".  The engine will use the last value: ";
+					    parseWarnings << "Duplicate definition of \"" << nodeCurrentTag << "\".  The engine will use the first value: ";
 						if(thisIsMe)
 							parseWarnings << "true "<< "\n";
 						else
@@ -2018,7 +2021,7 @@ void ConfigManager::parseNode(std::vector<Node>* nodes, xml_node& nodeTag, std::
 						masterDefined = true;
 					}
 					else{
-					    parseWarnings << "Duplicate definition of \"" << nodeMasterTag << "\".  The engine will use the last value: ";
+					    parseWarnings << "Duplicate definition of \"" << nodeMasterTag << "\".  The engine will use the first value: ";
 						if(nodeMaster)
 							parseWarnings << "true "<< "\n";
 						else
@@ -2043,7 +2046,7 @@ void ConfigManager::parseNode(std::vector<Node>* nodes, xml_node& nodeTag, std::
 						nodeDataDefined = true;
 						}
 						else{
-							parseWarnings << "Duplicate definition of \"" << nodeDataTag << "\".  The engine will use the last value: ";
+							parseWarnings << "Duplicate definition of \"" << nodeDataTag << "\".  The engine will use the first value: ";
 							if(nodeData)
 								parseWarnings << "true "<< "\n";
 							else
@@ -2058,7 +2061,7 @@ void ConfigManager::parseNode(std::vector<Node>* nodes, xml_node& nodeTag, std::
 						dataDirDefined = true;
 					}
 					else{
-						parseWarnings << "Duplicate definition of \"" << nodeDataDirTag << "\".  The engine will use the last value: " << dataDir << "\n";
+						parseWarnings << "Duplicate definition of \"" << nodeDataDirTag << "\".  The engine will use the first value: " << dataDir << "\n";
 					}
 				}
 				if(name.compare(nodeHomeTag) == 0){
@@ -2068,7 +2071,7 @@ void ConfigManager::parseNode(std::vector<Node>* nodes, xml_node& nodeTag, std::
 						homeDefined = true;
 					}
 					else{
-						parseWarnings << "Duplicate definition of \"" << nodeHomeTag << "\".  The engine will use the last value: " << nodeHome << "\n";
+						parseWarnings << "Duplicate definition of \"" << nodeHomeTag << "\".  The engine will use the first value: " << nodeHome << "\n";
 					}
 				}
 			}

@@ -25,8 +25,6 @@ using namespace srch2::instantsearch;
 namespace po = boost::program_options;
 using namespace pugi;
 
-//void testCore(char* configFile);
-
 namespace srch2 {
 namespace httpwrapper {
 
@@ -463,7 +461,6 @@ public:
     	return &(this->cluster);
     }
 
-    //friend void ::testCore(char* configFile);
 private:
     Cluster cluster;
     // <config>
