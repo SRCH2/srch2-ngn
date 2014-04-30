@@ -189,7 +189,9 @@ public:
      */
     virtual ~QueryResults();
 
-
+    void * serializeForNetwork(void * buffer);
+    static void * deserializeForNetwork(QueryResults &queryResults, void * buffer);
+    unsigned getNumberOfBytesForSerializationForNetwork();
 
 
 

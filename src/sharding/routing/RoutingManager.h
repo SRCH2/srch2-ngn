@@ -4,9 +4,9 @@
 #include<sys/time.h>
 #include <map>
 
-#include <configuration/ConfigManager.h>
-#include <processor/DistributedProcessorExternal.h>
-#include <processor/DistributedProcessorInternal.h>
+#include <sharding/configuration/ConfigManager.h>
+#include <sharding/transport/TransportManager.h>
+#include <sharding/processor/DistributedProcessorInternal.h>
 #include <server/Srch2Server.h>
 
 using namespace std;
@@ -58,7 +58,6 @@ class RoutingManager {
 public:
 
 	RoutingManager(ConfigManager&  configurationManager, TransportManager& tm);
-}
 
 
 	typedef unsigned CoreId;
@@ -141,29 +140,23 @@ public:
 
 
 	ConfigManager* getConfigurationManager()  {
-		return configurationManager;
+		return &configurationManager;
 	}
 
-	DPExternalRequestHandler* getDpExternal() {
-		return dpExternal;
-	}
 
 	DPInternalRequestHandler* getDpInternal() {
-		return dpInternal;
+		return &dpInternal;
 	}
 
 	std::map<ShardId, Srch2Server*> getShardToIndexMap() {
 		return shardToIndex;
 	}
 
-	SynchronizationManager* getSynchManager() {
-		return synchManager;
-	}
 
 private:
 	std::map<ShardId, Srch2Server*> shardToIndex;
 	ConfigManager& configurationManager;
-  TransportManager& tm;
+    TransportManager& tm;
 	DPInternalRequestHandler dpInternal;
 };
 

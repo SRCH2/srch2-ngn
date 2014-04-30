@@ -7,6 +7,8 @@
 using namespace srch2::instantsearch;
 using namespace srch2::httpwrapper;
 
+void cb_recieveMessage(int fd, short eventType, void *arg);
+
 void* startListening(void* arg) {
   RouteMap *const map = (RouteMap*) arg;
   const Node& base =  map->getBase();
@@ -59,7 +61,7 @@ TransportManager::TransportManager(EventBases& bases, Nodes& map) {
     for(EventBases::iterator base = bases.begin(); 
         base != bases.end(); ++base) {
       struct event* ev = event_new(*base, route->second, 
-          EV_READ, broker_cb, routeManager.broker);
+          EV_READ, cb_recieveMessage, NULL);
       event_add(ev, NULL);
     }
   }

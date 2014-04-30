@@ -53,7 +53,7 @@ public:
     //given a byte stream recreate the original object
     static const SerializableInsertUpdateCommandInput& deserialize(void* buffer, const Schema * schema){
     	Record * record = new Record(schema);
-    	buffer = Record::deserialize(buffer, *record);
+    	buffer = Record::deserializeForNetwork(buffer, *record);
     	OperationCode insertOrUpdate ;
     	buffer = srch2::util::deserializeFixedTypes(buffer, insertOrUpdate);
     	return *(new SerializableInsertUpdateCommandInput(record, insertOrUpdate));

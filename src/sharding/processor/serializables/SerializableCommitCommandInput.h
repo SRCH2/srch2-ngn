@@ -19,8 +19,8 @@ public:
     }
 
     //given a byte stream recreate the original object
-    static const SerializableDeleteCommandInput& deserialize(void*){
-    	return *(new SerializableDeleteCommandInput());
+    static const SerializableCommitCommandInput& deserialize(void*){
+    	return *(new SerializableCommitCommandInput());
     }
 
 

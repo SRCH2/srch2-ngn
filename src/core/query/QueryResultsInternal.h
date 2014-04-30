@@ -29,6 +29,7 @@
 #include "index/ForwardIndex.h"
 #include "util/Assert.h"
 #include "util/Logger.h"
+#include "util/SerializationHelper.h"
 
 #include <vector>
 #include <queue>

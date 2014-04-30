@@ -11,9 +11,6 @@
 #include <sstream>
 #include <string>
 #include <set>
-#include <event.h>
-#include <evhttp.h>
-#include <event2/http.h>
 #include "thirdparty/snappy-1.0.4/snappy.h"
 
 
@@ -47,6 +44,7 @@
 #include "serializables/SerializableResetLogCommandInput.h"
 #include "serializables/SerializableCommitCommandInput.h"
 
+#include "sharding/processor/ResultsAggregatorAndPrint.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -99,7 +97,6 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , CoreS
             *(indexDataContainerConf), resultAggregator->getParamContainer());
 
     bool valid = qv.validate();
-
     if (!valid) {
         // if the query is not valid, print the error message to the response
         bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request",

@@ -76,7 +76,6 @@ public:
     }
     virtual ExpressionType getExpressionType() = 0;
 	virtual void * serializeForNetwork(void * buffer) const = 0;
-	virtual static void * deserializeForNetwork(QueryExpression & info, void * buffer) = 0;
 	virtual unsigned getNumberOfBytesForSerializationForNetwork() const= 0;
 private:
 };
@@ -778,8 +777,9 @@ public:
 	 * external layer so we do not serialize messages member
 	 */
 	static void * deserializeForNetwork(RefiningAttributeExpressionEvaluator & info, void * buffer) {
-		buffer = srch2::util::deserializeFixedTypes(buffer, isFqBoolOperatorSet);
-		buffer = srch2::util::deserializeFixedTypes(buffer, termFQBooleanOperator);
+		FilterQueryEvaluator & filterInfo = (FilterQueryEvaluator &)info;
+		buffer = srch2::util::deserializeFixedTypes(buffer, filterInfo.isFqBoolOperatorSet);
+		buffer = srch2::util::deserializeFixedTypes(buffer, filterInfo.termFQBooleanOperator);
 
 		unsigned numberOfExpressions = 0;
 		buffer = srch2::util::deserializeFixedTypes(buffer, numberOfExpressions);
@@ -789,20 +789,26 @@ public:
 			buffer = srch2::util::deserializeFixedTypes(buffer, type);
 			switch (type) {
 				case QueryExpression::Range:
+				{
 					RangeQueryExpression * rangeQueryExpression = new RangeQueryExpression("",NULL);
 					buffer = RangeQueryExpression::deserializeForNetwork(*rangeQueryExpression, buffer);
-					expressions.push_back(rangeQueryExpression);
+					filterInfo.expressions.push_back(rangeQueryExpression);
 					break;
+				}
 				case QueryExpression::Equality:
+				{
 					EqualityQueryExpression * equalityQueryExpression = new EqualityQueryExpression("",NULL);
 					buffer = EqualityQueryExpression::deserializeForNetwork(*equalityQueryExpression, buffer);
-					expressions.push_back(equalityQueryExpression);
+					filterInfo.expressions.push_back(equalityQueryExpression);
 					break;
+				}
 				case QueryExpression::Complex:
+				{
 					ComplexQueryExpression * complexQueryExpression = new ComplexQueryExpression(NULL);
 					buffer = ComplexQueryExpression::deserializeForNetwork(*complexQueryExpression, buffer);
-					expressions.push_back(complexQueryExpression);
+					filterInfo.expressions.push_back(complexQueryExpression);
 					break;
+				}
 			}
 		}
 		return buffer;

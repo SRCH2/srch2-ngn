@@ -4,6 +4,17 @@
 namespace srch2 {
 namespace httpwrapper {
 
+///////////////////////////////////////// TEMPORARY ////////////////////////////////////////////
+typedef unsigned TimeoutValue;
+
+class SynchronizationManager{
+
+};
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 enum ShardingMessageType{
     SearchCommandMessageType, // -> for LogicalPlan object
     SearchResultsMessageType, // -> for SerializedQueryResults object
