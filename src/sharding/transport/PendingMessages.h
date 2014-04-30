@@ -28,8 +28,7 @@ class PendingMessages {
   struct RegisteredCallBack callback[NUMBER_OF_BYTE_IN_PENDING_BITMASK*8];
 
 public:
-  void addMessage(time_t, MessageTime_t, CallBack*);
-  void addMessage(time_t, MessageTime_t*, size_t, CallBack*);
+  void addMessage(time_t, MessageTime_t, unsigned CallBack);
   void trigger_timeouts(time_t);
   void resolve(Message*);
 };

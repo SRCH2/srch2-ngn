@@ -21,7 +21,8 @@ struct TransportManager {
 
   TransportManager(EventBases&, Nodes&);
   
-  MessageTime_t route(Message*);
+  //third argument is a timeout in seconds
+  MessageTime_t route(NodeId, Message*, unsigned=0, unsigned=0);
 };
 
 }}

@@ -67,9 +67,13 @@ TransportManager::TransportManager(EventBases& bases, Nodes& map) {
   distributedTime = 0;
 }
 
-MessageTime_t TransportManager::route(Message *msg) {
-  Connection fd = routeMap.getConnection(msg->shard.coreId);
+MessageTime_t TransportManager::route(NodeId node, Message *msg, 
+    unsigned timeout, unsigned callback) {
+  Connection fd = routeMap.getConnection(node);
   msg->time = __sync_fetch_and_add(&distributedTime, 1);
+
+  time_t timeOfTimeout_time = timeout + time(NULL);
+  //pending_message( timeOfTimeout, msg->time, callback #)
 
   send(fd, msg, msg->bodySize + sizeof(Message), 0);
   //TODO: errors?
