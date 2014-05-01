@@ -175,8 +175,17 @@ static const struct portMap_t {
 };
 
 struct CoreShardInfo {
-  srch2http::CoreInfo_t& core;
   srch2http::DPExternalRequestHandler& dpHandler;
+  srch2http::CoreInfo_t& core;
+
+  CoreShardInfo(srch2http::DPExternalRequestHandler &dp,
+      srch2http::CoreInfo_t& core) : dpHandler(dp), core(core) {}
+  CoreShardInfo(const CoreShardInfo& toCpy) : dpHandler(toCpy.dpHandler), 
+      core(toCpy.core) {}
+  CoreShardInfo& operator=(const CoreShardInfo& toCpy) {
+    new (this) CoreShardInfo(toCpy);
+    return *this;
+  }
 };
 
 static bool checkOperationPermission(evhttp_request *req, 
@@ -562,7 +571,7 @@ static int getHttpServerMetadata(ConfigManager *config,
     for (srch2http::PortType_t portType = (srch2http::PortType_t) 0; 
         portType < srch2http::EndOfPortType; 
         portType = srch2http::incrementPortType(portType)) {
-      if(port = core->second->getPort(portType) < 0)
+      if((port = core->second->getPort(portType) < 0))
         ports.insert(port);
     }
   } 
@@ -581,7 +590,6 @@ static int getHttpServerMetadata(ConfigManager *config,
 static int createHTTPServersAndAccompanyingThreads( 
     vector<struct event_base *> *evBases, vector<struct evhttp *> *evServers) {
   return 0;
-/*
   threads = new pthread_t[MAX_THREADS];
   for (int i = 0; i < MAX_THREADS; i++) {
    struct event_base *evbase = event_base_new();
@@ -597,7 +605,7 @@ static int createHTTPServersAndAccompanyingThreads(
         return 255;
       }
    evServers->push_back(http_server);
-  }*/
+  }
 }
 
 
@@ -621,19 +629,21 @@ typedef unsigned CoreId;
 
 int setCallBacksonHTTPServer(ConfigManager *const config,
     evhttp *const http_server, event_base *const evbase, 
-    map<CoreId, srch2::httpwrapper::CoreShardInfo>& cores) {
+    std::vector<CoreShardInfo>& cores) {
 
   // setup default core callbacks for queries without a core name
   for (int j = 0; portList[j].path != NULL; j++) {
- /*   unsigned short port = 
+    unsigned short port = 
       config->getDefaultCoreInfo()->getPort(portList[j].portType);
     if (port == 1) port = globalDefaultPort;
 
+    srch2http::CoreInfo_t* defaultCore = config->getDefaultCoreInfo();
+
     evhttp_set_cb(http_server, portList[j].path, 
-        portList[j].callback, cores[config->getDefaultCoreInfo()->coreId]);
+        portList[j].callback, &cores[defaultCore->coreId]);
         
     Logger::debug("Routing port %d route %s to default core %s",
-        port, portList[j].path, defaultCore->getCoreName().c_str());*/
+        port, portList[j].path, defaultCore->getName().c_str());
   }
 
   evhttp_set_gencb(http_server, cb_notfound, NULL);
@@ -653,7 +663,7 @@ int setCallBacksonHTTPServer(ConfigManager *const config,
          }
               
          evhttp_set_cb(http_server, path.c_str(),
-             portList[j].callback, core->second);
+             portList[j].callback, &core->second);
               
          Logger::debug("Adding port %d route %s to core %s", 
                   port, path.c_str(), coreName.c_str());
@@ -753,30 +763,29 @@ int main(int argc, char** argv) {
     MAX_THREADS = serverConf->getNumberOfThreads();
 
     createHTTPServersAndAccompanyingThreads(&evBases, &evServers);
-/*
-    std::vector<Node>& map =  *serverConf->getCluser()->getNodes();
+
+    std::vector<srch2http::Node>& map = *serverConf->getCluster()->getNodes();
     
     // create Transport Module
-    TransportManager subway(evBases, map);
-    RoutingManager routes(subway);
-    DPExternalRequestHandler dpHandler(route);
+    srch2http::TransportManager subway(evBases, map);
+    srch2http::RoutingManager routes(*serverConf, subway);
+    srch2http::DPExternalRequestHandler dpHandler(serverConf, &routes);
     vector<struct CoreShardInfo> cores;
 
-    
     for(srch2http::ConfigManager::CoreInfoMap_t::iterator core = 
-        config->coreInfoIterateBegin();
-                core != config->coreInfoIterateEnd(); ++core)  {
-      cores.push_back(CoreShardInfo(dpHandler, core->second));
+        serverConf->coreInfoIterateBegin();
+                core != serverConf->coreInfoIterateEnd(); ++core)  {
+      cores.push_back(CoreShardInfo(dpHandler, *core->second));
     }
 
     for(int j=0; j < evServers.size(); ++j) {
-      setCallBacksonHTTPServer(serverConfig, 
-          evServers[j], evBases[j], cores, globalPortSocketMap);
+      setCallBacksonHTTPServer(serverConf, evServers[j], evBases[j], cores);
+      startListeningToRequest(evServers[j], globalPortSocketMap);
       
-      if (pthread_create(threads[j], NULL, dispatch, evbase[j]) != 0)
+      if (pthread_create(threads + j, NULL, dispatch, evBases[j]) != 0)
           return 255;
     }
- */
+
     /* Set signal handlers */
     sigset_t sigset;
     sigemptyset(&sigset);
