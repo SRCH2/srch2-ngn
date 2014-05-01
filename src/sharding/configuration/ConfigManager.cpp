@@ -168,34 +168,32 @@ const char* const ConfigManager::defaultExactPostTag = "</b>";
 
 //In later version, this should be handled by SM
 void ConfigManager::setNodeId(){
-	Cluster &c = this->cluster;
-    vector<Node>* nodes = c.getNodes();
+    vector<Node>* nodes = this->cluster.getNodes();
     for(int i = 0; i < nodes->size(); i++){
         (*nodes)[i].setId(i+1);
     }
 }
 
 bool ConfigManager::isLocal(ShardId& shardId){
-	Cluster &c = this->cluster;
-	Shard s = c.shardMap[shardId];
-	if(this->getCurrentNodeId() == s.getNodeId()){
-		return true;
-	}else{
-		return false;
-	}
+	Shard s = this->cluster.shardMap[shardId];
+	return this->getCurrentNodeId() == s.getNodeId();
 }
-//Function Definition for Verifier, it checks if the XML file is consistent
-bool ConfigManager::verifier()
+//Function Definition for verifyConsistency; it checks if the port number of core is different
+//from the port number being used by the node for communication with other nodes
+bool ConfigManager::verifyConsistency()
 {
     Cluster* currentCluster = this->getCluster();
     vector<Node>* nodes = currentCluster->getNodes();
     Node currentNode;
+
+    //The for loop below gets the current node
     for(int i = 0; i < nodes->size(); i++){
         if(nodes->at(i).thisIsMe == true)
     	    currentNode = nodes->at(i);
     }
-    for(CoreInfoMap_t::iterator it = this->coreInfoIterateBegin(); it != this->coreInfoIterateEnd(); it++){
 
+    //The for loop below compares the current node's port number with the port number of cores
+    for(CoreInfoMap_t::iterator it = this->coreInfoIterateBegin(); it != this->coreInfoIterateEnd(); it++){
         int num = (uint)atol(it->second->getHTTPServerListeningPort().c_str());
         if(num == currentNode.getPortNumber()){
     	    return false;

@@ -103,19 +103,19 @@ void testCore(char* configFile){
 
 }
 
-void testVerifierPositive(char* configFile){
+void testVerifyConsistencyPositive(char* configFile){
 
 	ConfigManager *configManager = new ConfigManager(configFile);
 	configManager->loadConfigFile();
-	ASSERT(configManager->verifier() == true);
+	ASSERT(configManager->verifyConsistency() == true);
 
 }
 
-void testVerifierNegative(char* configFile){
+void testVerifyConsistencyNegative(char* configFile){
 
 	ConfigManager *configManager = new ConfigManager(configFile);
 	configManager->loadConfigFile();
-	ASSERT(configManager->verifier() == false);
+	ASSERT(configManager->verifyConsistency() == false);
 
 }
 
@@ -134,8 +134,8 @@ int main() {
 	testCore(getenv("ConfigManagerFilePath1"));
 	testCore(getenv("ConfigManagerFilePath2"));   //Primary Shard tag and Replica Shard tag is missing
 
-	testVerifierPositive(getenv("ConfigManagerFilePath1"));
-	testVerifierNegative(getenv("ConfigManagerFilePath3"));
+	testVerifyConsistencyPositive(getenv("ConfigManagerFilePath1"));
+	testVerifyConsistencyNegative(getenv("ConfigManagerFilePath3"));
 
 	testCurrentNodeId(getenv("ConfigManagerFilePath1"));
 

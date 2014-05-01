@@ -115,13 +115,13 @@ namespace httpwrapper {
  class Shard {
    public:
 
-	Shard(){
-		this->nodeId = 0;
-		this->shardState = SHARDSTATE_UNALLOCATED;
-	    this->shardId.coreId = 0;
-	    this->shardId.partitionId = 0;
-	    this->shardId.replicaId = 0;
-	}
+   Shard(){
+     this->nodeId = 0;
+     this->shardState = SHARDSTATE_UNALLOCATED;
+     this->shardId.coreId = 0;
+     this->shardId.partitionId = 0;
+     this->shardId.replicaId = 0;
+   }
 
    Shard(unsigned nodeId, unsigned coreId, unsigned partitionId = 0, unsigned replicaId = 0){
      this->nodeId = nodeId;
@@ -132,33 +132,33 @@ namespace httpwrapper {
    }
 
    //Can be used in Migration
-    void setPartitionId(int partitionId){
-	this->shardId.partitionId = partitionId;
+   void setPartitionId(int partitionId){
+     this->shardId.partitionId = partitionId;
     }
 
 	//Can be used in Migration
-    void setReplicaId(int replicaId){
-	this->shardId.replicaId = replicaId;
+   void setReplicaId(int replicaId){
+     this->shardId.replicaId = replicaId;
     }
 
    ShardId getShardId(){
-	   return this->shardId;
+     return this->shardId;
    }
 
    void setShardState(ShardState newState){
-	   this->shardState = newState;
+     this->shardState = newState;
    }
 
    void setNodeId(unsigned id){
-	   this->nodeId = id;
+     this->nodeId = id;
    }
 
    ShardState getShardState(){
-	   return this->shardState;
+     return this->shardState;
    }
 
    unsigned getNodeId(){
-	   return this->nodeId;
+     return this->nodeId;
    }
 
   private:
@@ -169,20 +169,7 @@ namespace httpwrapper {
 
 class Node {
  public:
-/*
-Node(const Node& cpy)
- {
-	//	this->coreToShardsMap = cpy.coreToShardsMap;
-	    this->nodeId = cpy.nodeId;
-	    this->nodeName = cpy.nodeName;
-		this->ipAddress = cpy.ipAddress;
-		this->portNumber = portNumber;
-		this->nodeMaster = nodeMaster;
-		this->nodeData = nodeData;
-		this->homeDir = homeDir;
-		this->numberOfThreads = numberOfThreads;
- }
-*/
+
   Node()
   {
 	this->nodeId = 0;
@@ -203,8 +190,8 @@ Node(const Node& cpy)
 	this->nodeId = 0;
 	this->nodeName = nodeName;
 	this->ipAddress = ipAddress;
-    this->portNumber = portNumber;
-    this->thisIsMe = thisIsMe;
+	this->portNumber = portNumber;
+	this->thisIsMe = thisIsMe;
 	this->nodeMaster = true;
 	this->nodeData = true;
 	this->dataDir = "";
@@ -414,7 +401,7 @@ public:
 				   const string & defaultValue,
 				   const bool required,
 				   const bool isMultiValued){
-    this->attributeName = name;
+	this->attributeName = name;
 	this->attributeType = type;
 	this->defaultValue = defaultValue;
 	this->required = required;
@@ -585,7 +572,7 @@ protected:
 public:
     ConfigManager(const string& configfile);
     virtual ~ConfigManager();
-    bool verifier();
+    bool verifyConsistency();
     void setNodeId();
     bool isLocal(ShardId& shardId);
 
@@ -834,21 +821,21 @@ private:
 class CoreInfo_t {
 
 public:
-	unsigned coreId; // starting from 0, auto increment
+    unsigned coreId; // starting from 0, auto increment
 
-	// In V0, the "number_of_shards" is a one-time setting for a
-	// core. In the future (possibly after V1), we can support dynamic
-	// migration by allowing this number to change.
-	unsigned numberOfPrimaryShards;
+    // In V0, the "number_of_shards" is a one-time setting for a
+    // core. In the future (possibly after V1), we can support dynamic
+    // migration by allowing this number to change.
+    unsigned numberOfPrimaryShards;
 
-	// Number of replicas (additional copies) of an index (1 by
-	// default). The "number_of_replicas" can be increased or
-	// decreased anytime, by using the Index Update Settings API. We
-	// can do it in V0 or after V1. SRCH2 will take care about load
-	// balancing, relocating, gathering the results from nodes, etc.
-	// ES: core.number_of_replicas: 1 // index.number_of_replicas: 1
-	unsigned numberOfReplicas; // always 0 for V0
-	vector<ShardId> shards;
+    // Number of replicas (additional copies) of an index (1 by
+    // default). The "number_of_replicas" can be increased or
+    // decreased anytime, by using the Index Update Settings API. We
+    // can do it in V0 or after V1. SRCH2 will take care about load
+    // balancing, relocating, gathering the results from nodes, etc.
+    // ES: core.number_of_replicas: 1 // index.number_of_replicas: 1
+    unsigned numberOfReplicas; // always 0 for V0
+    vector<ShardId> shards;
 
     CoreInfo_t(class ConfigManager *manager) : configManager(manager) {};
     CoreInfo_t(const CoreInfo_t &src);
@@ -1120,16 +1107,16 @@ protected:
 // requested by Surendra for the Synchronization Manager (SM)
  class DiscoveryParams {
  public:
-   unsigned pingInterval;
-   unsigned pingTimeout;
-   unsigned retryCount;
+    unsigned pingInterval;
+    unsigned pingTimeout;
+    unsigned retryCount;
  };
  
  // If we are supporting multicast
  class Multicast {
  public:
-   std::string multicastAddress;  // Default value = 224.2.2.7
-   unsigned port;   // Default value = 92612
+    std::string multicastAddress;  // Default value = 224.2.2.7
+    unsigned port;   // Default value = 92612
  };
  
 
