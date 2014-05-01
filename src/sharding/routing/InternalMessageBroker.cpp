@@ -1,17 +1,27 @@
 #include "InternalMessageBroker.h"
-#include "transport/Message.h"
+#include "processor/serializables/SerializableSearchCommandInput.h"
+#include "processor/serializables/SerializableSearchCommandInput.h"
+#include "processor/serializables/SerializableSearchResults.h"
+#include "processor/serializables/SerializableInsertUpdateCommandInput.h"
+#include "processor/serializables/SerializableDeleteCommandInput.h"
+#include "processor/serializables/SerializableCommandStatus.h"
+#include "processor/serializables/SerializableSerializeCommandInput.h"
+#include "processor/serializables/SerializableResetLogCommandInput.h"
+#include "processor/serializables/SerializableCommitCommandInput.h"
+#include "processor/serializables/SerializableGetInfoCommandInput.h"
+#include "processor/serializables/SerializableGetInfoResults.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace std;
 
-using srch2::httpwrapper;
+using namespace srch2::httpwrapper;
 
-template<InputType, Deserializer, OutputType>
+template<typename InputType, typename Deserializer, typename OutputType>
 void InternalMessageBroker::broker(Message *msg, Srch2Server* server,
-    Output* (*DpInternalMessage::fn) (Srch2Server*, Input*)) {
-  InputType *input = (msg->isLocal()) ? (InputType*) msg;
-                                  : Deserializer::deserialize(message->buffer);
-  OutputType *output = internalDp.*fn(server, input);
+    OutputType (DPInternalRequestHandler::*fn) (Srch2Server*, InputType*)) {
+  InputType *input = (msg->isLocal()) ? (InputType*) msg->buffer
+               : (InputType*) &Deserializer::deserialize((void*) msg->buffer);
+  OutputType output((internalDP.*fn)(server, input));
   void *reply = (msg->isLocal()) ? (void*) input 
                                  : input->serialize(getMessageAllocator());
   sendReply(msg, reply);
@@ -43,10 +53,10 @@ void InternalMessageBroker::processInternalMessage(Message * message){
 		break;
     // -> for Record object (used for insert and update)
 		case InsertUpdateCommandMessageType: 
-      broker<SerializableInsertUpdateCommandInput, 
+ /*     broker<SerializableInsertUpdateCommandInput, 
         SerializableInsertUpdateCommandInput, 
         SerializableCommandStatus>(message, server, 
-            &DPInternalRequestHandler::internalInsertUpdateCommand);
+            &DPInternalRequestHandler::internalInsertUpdateCommand);*/
     break;
     // -> for DeleteCommandInput object (used for delete)
     case DeleteCommandMessageType: 
@@ -64,9 +74,11 @@ void InternalMessageBroker::processInternalMessage(Message * message){
     break;
     // -> for GetInfoCommandInput object (used for getInfo)
 		case GetInfoCommandMessageType:
+    //TODO: needs versionInfo
+    /*
       broker<SerializableGetInfoCommandInput, SerializableGetInfoCommandInput,
         SerializableGetInfoResults>(message, server, 
-            &DPInternalRequestHandler::internalGetInfoCommand);
+            &DPInternalRequestHandler::internalGetInfoCommand);*/
     break;
 		case CommitCommandMessageType: // -> for CommitCommandInput object
       broker<SerializableCommitCommandInput, SerializableCommitCommandInput,
@@ -95,11 +107,11 @@ Srch2Server * InternalMessageBroker::getShardIndex(ShardId & shardId){
 
 	return indexerItr->second;
 }
-
+/*
 std::allocator<char>* getMessageAllocator() {
   return routingManager.transportManager.getMessageAllocator();
 }
 
 void sendReply(Message* msg, void* replyObject) {
   routingManager.transportManager(msg, input);
-}
+}*/

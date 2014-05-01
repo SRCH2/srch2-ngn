@@ -18,6 +18,9 @@ struct Message {
    MessageTime_t time;
    MessageTime_t inital_time; //used by response type messages
    char buffer[0];
+
+   //helper Functions
+   bool isLocal();
 };
 
 }
