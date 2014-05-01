@@ -310,7 +310,7 @@ if [ $os != "$macName" ];then
     fi
     rm -rf data/ *.idx
 else
-	echo "-- skipping high_insert test on $macName"
+    echo "-- IGNORING high_insert test on $macName" >> ${output}
 fi
 
 test_id="exact_A1"
