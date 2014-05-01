@@ -825,7 +825,6 @@ public:
     CoreInfo_t(class ConfigManager *manager) : configManager(manager) {
         schema = NULL;
     };
-//    CoreInfo_t(const CoreInfo_t &src);
 
     ~CoreInfo_t() {
         if (schema != NULL)
