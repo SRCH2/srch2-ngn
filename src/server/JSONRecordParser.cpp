@@ -333,6 +333,84 @@ bool JSONRecordParser::populateRecordFromJSON(const string &inputLine,
     return parseSuccess;
 }
 
+
+srch2is::Schema* JSONRecordParser::createAndPopulateSchema(const CoreInfo_t *indexDataContainerConf)
+{
+    srch2::instantsearch::IndexType indexType;
+    srch2::instantsearch::PositionIndexType positionIndexType = srch2::instantsearch::POSITION_INDEX_NONE;
+
+    if (indexDataContainerConf->getIndexType() == 0)
+    {
+        indexType = srch2is::DefaultIndex;
+    }
+    else
+    {
+        indexType = srch2is::LocationIndex;
+    }
+
+    // if position word/offset index is enabled then attribute based search is also enabled
+    // so check whether position index is enabled first
+    if (indexDataContainerConf->isPositionIndexWordEnabled()){
+    	positionIndexType = srch2::instantsearch::POSITION_INDEX_WORD ;
+    }
+    if (indexDataContainerConf->isPositionIndexCharEnabled()) {
+    	if (positionIndexType == srch2::instantsearch::POSITION_INDEX_WORD)
+    		positionIndexType = srch2::instantsearch::POSITION_INDEX_FULL ;
+    	else
+    		positionIndexType = srch2::instantsearch::POSITION_INDEX_CHAR ;
+    }
+    if (positionIndexType == srch2::instantsearch::POSITION_INDEX_NONE &&
+    		indexDataContainerConf->getSupportAttributeBasedSearch())
+    {
+        positionIndexType = srch2::instantsearch::POSITION_INDEX_FIELDBIT;
+    }
+
+    srch2is::Schema* schema = srch2is::Schema::create(indexType, positionIndexType);
+
+    // Set PrimaryKey
+    string primaryKey = indexDataContainerConf->getPrimaryKey();
+
+    schema->setPrimaryKey(primaryKey); // integer, not searchable unless set as an attribute using setSearchableAttribute() function.
+
+    if (indexDataContainerConf->getIsPrimSearchable())
+    {
+        schema->setSearchableAttribute(primaryKey); // searchable primaryKey
+    }
+
+    // Set SearchableAttributes
+    // map<string, pair<bool, pair<string, pair<unsigned,pair<unsigned , bool> > > > >
+    map<string, SearchableAttributeInfoContainer>::const_iterator searchableAttributeIter = indexDataContainerConf->getSearchableAttributes()->begin();
+    for ( ; searchableAttributeIter != indexDataContainerConf->getSearchableAttributes()->end();
+                    searchableAttributeIter++)
+    {
+        schema->setSearchableAttribute(searchableAttributeIter->first,
+        		searchableAttributeIter->second.boost ,
+        		searchableAttributeIter->second.isMultiValued,
+        		searchableAttributeIter->second.highlight); // searchable text
+    }
+
+
+    // Set NonSearchableAttributes
+    map<string, RefiningAttributeInfoContainer >::const_iterator
+    	nonSearchableAttributeIter = indexDataContainerConf->getRefiningAttributes()->begin();
+
+    for ( ; nonSearchableAttributeIter != indexDataContainerConf->getRefiningAttributes()->end(); ++nonSearchableAttributeIter)
+    {
+
+        schema->setRefiningAttribute(nonSearchableAttributeIter->first,
+        		nonSearchableAttributeIter->second.attributeType,
+        		nonSearchableAttributeIter->second.defaultValue,
+        		nonSearchableAttributeIter->second.isMultiValued);
+    }
+
+
+    std::string scoringExpressionString = indexDataContainerConf->getScoringExpressionString();
+    schema->setScoringExpression(scoringExpressionString);
+    schema->setSupportSwapInEditDistance(indexDataContainerConf->getSupportSwapInEditDistance());
+
+    return schema;
+}
+
 /*
  *  Create indexes using records from json file and return the total indexed records.
  */

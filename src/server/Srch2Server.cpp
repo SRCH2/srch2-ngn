@@ -177,8 +177,9 @@ void Srch2Server::createAndBootStrapIndexer()
     case srch2http::INDEXCREATE:
 	{
 	    AnalyzerHelper::initializeAnalyzerResource(this->indexDataConfig);
-	    // Create a schema for this core
-	    srch2is::Schema *schema = indexDataConfig->createSchema();
+	    srch2is::Schema *schema = JSONRecordParser::createAndPopulateSchema(indexDataConfig);
+	    indexDataConfig->setSchema(schema);
+
 	    Analyzer *analyzer = AnalyzerFactory::createAnalyzer(this->indexDataConfig);
 	    indexer = Indexer::create(indexMetaData, analyzer, schema);
 	    delete analyzer;

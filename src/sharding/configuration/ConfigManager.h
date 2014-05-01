@@ -826,12 +826,6 @@ public:
         schema = NULL;
     };
 
-    ~CoreInfo_t() {
-        if (schema != NULL)
-           delete schema;
-    }
-
-
     friend class ConfigManager;
 
     // **** accessors for settings in every core ****
@@ -975,7 +969,6 @@ public:
     void setPort(PortType_t portType, unsigned short portNumber);
 
     // create a Schema object based on the stored info inside the core.
-    srch2is::Schema* createSchema();
     void setSchema(srch2is::Schema* schema) { this->schema = schema; };
     srch2is::Schema* getSchema() { return this->schema; };
 
