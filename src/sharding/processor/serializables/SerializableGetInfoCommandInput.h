@@ -18,8 +18,8 @@ public:
 
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
-    void* serialize(std::allocator<char> aloc){
-    	return aloc.allocate(0);
+    void* serialize(std::allocator<char> * aloc){
+    	return aloc->allocate(0);
     }
 
     //given a byte stream recreate the original object

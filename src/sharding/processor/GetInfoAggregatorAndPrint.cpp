@@ -81,7 +81,7 @@ void GetInfoAggregatorAndPrint::finalize(ResultsAggregatorAndPrintMetadata metad
     str << "\"messages\":[" << messages.str() << "]\n";
     Logger::info("%s", messages.str().c_str());
 
-    bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
+    bmhelper_evhttp_send_reply2(req, HTTP_OK, "OK",
             "{\"message\":\"The batch was processed successfully\",\"log\":["
                     + str.str() + "]}\n");
 }

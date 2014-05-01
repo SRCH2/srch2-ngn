@@ -27,6 +27,11 @@ using namespace std;
 namespace srch2 {
 namespace httpwrapper {
 
+
+
+DPInternalRequestHandler::DPInternalRequestHandler(ConfigManager * configurationManager){
+	this->configurationManager = configurationManager;
+}
 /*
  * 1. Receives a search request from a shard
  * 2. Uses core to evaluate this search query

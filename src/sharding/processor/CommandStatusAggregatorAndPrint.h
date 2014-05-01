@@ -24,15 +24,27 @@ template <class RequestWithStatusResponse>
 class CommandStatusAggregatorAndPrint : public ResultAggregatorAndPrint<RequestWithStatusResponse,SerializableCommandStatus> {
 public:
 
-	CommandStatusAggregatorAndPrint(ConfigManager * configurationManager, evhttp_request *req);
 
-	void setMessages(std::stringstream & log_str);
-	std::stringstream & getMessages();
+	CommandStatusAggregatorAndPrint(ConfigManager * configurationManager, evhttp_request *req){
+		this->configurationManager = configurationManager;
+		this->req = req;
+	}
+
+	void setMessages(std::stringstream & log_str){
+		this->messages << log_str.str();
+	}
+
+	std::stringstream & getMessages(){
+		return this->messages;
+	}
 
 	/*
 	 * This function is always called by RoutingManager as the first call back function
 	 */
-	void preProcessing(ResultsAggregatorAndPrintMetadata metadata);
+	void preProcessing(ResultsAggregatorAndPrintMetadata metadata){
+
+	}
+
 	/*
 	 * This function is called by RoutingManager if a timeout happens, The call to
 	 * this function must be between preProcessing(...) and callBack()
@@ -46,7 +58,7 @@ public:
 		if(((string)"SerializableInsertUpdateCommandInput").compare(typeid(sentRequest).name()) == 0){// timeout in insert and update
 
 			boost::unique_lock< boost::shared_mutex > lock(_access);
-			SerializableInsertUpdateCommandInput * sentInsetUpdateRequest = dynamic_cast<SerializableInsertUpdateCommandInput *>(sentRequest);
+			SerializableInsertUpdateCommandInput * sentInsetUpdateRequest = (SerializableInsertUpdateCommandInput *)(sentRequest);
 			messages << "{\"rid\":\"" << sentInsetUpdateRequest->getRecord()->getPrimaryKey()
 								<< "\",\"" << (sentInsetUpdateRequest->getInsertOrUpdate()?"insert":"update") << "\":\"failed\",\"reason\":\"Corresponging shard ("<<
 								shardInfo->toString()<<") timedout.\"}";
@@ -54,7 +66,7 @@ public:
 		}else if (((string)"SerializableDeleteCommandInput").compare(typeid(sentRequest).name()) == 0){
 
 			boost::unique_lock< boost::shared_mutex > lock(_access);
-			SerializableDeleteCommandInput * sentDeleteRequest = dynamic_cast<SerializableDeleteCommandInput *>(sentRequest);
+			SerializableDeleteCommandInput * sentDeleteRequest = (SerializableDeleteCommandInput *)(sentRequest);
 			messages << "{\"rid\":\"" << sentDeleteRequest->getPrimaryKey()
 					<< "\",\"delete\":\"failed\",\"reason\":\"Corresponging ("<<
 					shardInfo->toString() << ") shard timedout.\"}";
@@ -62,20 +74,20 @@ public:
 		}else if(((string)"SerializableSerializeCommandInput").compare(typeid(sentRequest).name()) == 0){
 
 			boost::unique_lock< boost::shared_mutex > lock(_access);
-			SerializableSerializeCommandInput * serializeRequest = dynamic_cast<SerializableSerializeCommandInput *>(sentRequest);
+			SerializableSerializeCommandInput * serializeRequest = (SerializableSerializeCommandInput *)(sentRequest);
 			messages << "{\""<< (serializeRequest->getIndexOrRecord()?"save":"export") << "\":\"failed\",\"reason\":\"Corresponging (" <<
 					shardInfo->toString() << ") shard timedout.\"}";
 
 		}else if(((string)"SerializableResetLogCommandInput").compare(typeid(sentRequest).name()) == 0){
 
 			boost::unique_lock< boost::shared_mutex > lock(_access);
-			SerializableResetLogCommandInput * resetRequest = dynamic_cast<SerializableResetLogCommandInput *>(sentRequest);
+			SerializableResetLogCommandInput * resetRequest = (SerializableResetLogCommandInput *)(sentRequest);
 			messages << "{\"reset_log\":\"failed\",\"reason\":\"Corresponging (" << shardInfo->toString()<<") shard timedout.\"}";
 
 		}else if(((string)"SerializableCommitCommandInput").compare(typeid(sentRequest).name()) == 0){
 
 			boost::unique_lock< boost::shared_mutex > lock(_access);
-			SerializableCommitCommandInput * resetRequest = dynamic_cast<SerializableCommitCommandInput *>(sentRequest);
+			SerializableCommitCommandInput * resetRequest = (SerializableCommitCommandInput *)(sentRequest);
 			messages << "{\"commit\":\"failed\",\"reason\":\"Corresponging (" << shardInfo->toString()<<") shard timedout.\"}";
 
 		}else{
@@ -85,13 +97,23 @@ public:
 		}
 	}
 
-
 	/*
 	 * The main function responsible of aggregating status (success or failure) results
 	 */
-	void callBack(SerializableCommandStatus * responseObject);
+	void callBack(SerializableCommandStatus * responseObject){
 
-	void callBack(vector<SerializableCommandStatus *> responseObjects);
+		boost::unique_lock< boost::shared_mutex > lock(_access);
+		messages << responseObject->getMessage();
+
+	}
+
+	void callBack(vector<SerializableCommandStatus *> responseObjects){
+
+		boost::unique_lock< boost::shared_mutex > lock(_access);
+		for(vector<SerializableCommandStatus *>::iterator responseItr = responseObjects.begin(); responseItr != responseObjects.end(); ++responseItr){
+			messages << (*responseItr)->getMessage();
+		}
+	}
 	/*
 	 * The last call back function called by RoutingManager in all cases.
 	 * Example of call back call order for search :
@@ -100,7 +122,13 @@ public:
 	 * 3. aggregateSearchResults()
 	 * 4. finalize()
 	 */
-	void finalize(ResultsAggregatorAndPrintMetadata metadata);
+	void finalize(ResultsAggregatorAndPrintMetadata metadata){
+		Logger::info("%s", messages.str().c_str());
+
+		bmhelper_evhttp_send_reply2(req, HTTP_OK, "OK",
+				"{\"message\":\"The batch was processed successfully\",\"log\":["
+				+ messages.str() + "]}\n");
+	}
 
 
 private:

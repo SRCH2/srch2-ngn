@@ -30,7 +30,7 @@ public:
 	/*
 	 * This function is always called by RoutingManager as the first call back function
 	 */
-	void preProcessing(ResultsAggregatorAndPrintMetadata metadata);
+	void preProcessing(ResultsAggregatorAndPrintMetadata metadata){};
 	/*
 	 * This function is called by RoutingManager if a timeout happens, The call to
 	 * this function must be between preProcessing(...) and callBack()

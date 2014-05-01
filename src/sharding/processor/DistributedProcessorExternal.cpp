@@ -105,7 +105,7 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , CoreS
     bool isSyntaxValid = qp.parse();
     if (!isSyntaxValid) {
         // if the query is not valid print the error message to the response
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request",
+        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Bad Request",
         		resultAggregator->getParamContainer()->getMessageString(), headers);
         evhttp_clear_headers(&headers);
         return;
@@ -171,14 +171,14 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, CoreSh
 	if(req->type != EVHTTP_REQ_PUT){
         Logger::error(
                 "error: The request has an invalid or missing argument. See Srch2 API documentation for details");
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
+        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "INVALID REQUEST",
                 "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
         return;
 	}
     size_t length = EVBUFFER_LENGTH(req->input_buffer);
 
     if (length == 0) {
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "BAD REQUEST",
+        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "BAD REQUEST",
                 "{\"message\":\"http body is empty\"}");
         Logger::warn("http body is empty");
         return;
@@ -246,7 +246,7 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, CoreSh
 
         		Logger::info("%s", log_str.str().c_str());
 
-                bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
+                bmhelper_evhttp_send_reply2(req, HTTP_OK, "OK",
                         "{\"message\":\"The batch was processed successfully\",\"log\":["
                                 + log_str.str() + "]}\n");
         		record->clear();
@@ -263,7 +263,7 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, CoreSh
     if(recordsToInsert.size() == 0){
 		Logger::info("%s", log_str.str().c_str());
 
-        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
+        bmhelper_evhttp_send_reply2(req, HTTP_OK, "OK",
                 "{\"message\":\"The batch was processed successfully\",\"log\":["
                         + log_str.str() + "]}\n");
         return;
@@ -301,7 +301,7 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, CoreSh
 	if(req->type != EVHTTP_REQ_PUT){
         Logger::error(
                 "error: The request has an invalid or missing argument. See Srch2 API documentation for details");
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
+        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "INVALID REQUEST",
                 "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
         return;
 	}
@@ -310,7 +310,7 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, CoreSh
 	size_t length = EVBUFFER_LENGTH(req->input_buffer);
 
 	if (length == 0) {
-		bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "BAD REQUEST",
+		bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "BAD REQUEST",
 				"{\"message\":\"http body is empty\"}");
 		Logger::warn("http body is empty");
 		return;
@@ -378,7 +378,7 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, CoreSh
 	            log_str << "failed\",\"reason\":\"parse: The record is not in a correct json format\",";
         		Logger::info("%s", log_str.str().c_str());
 
-                bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
+                bmhelper_evhttp_send_reply2(req, HTTP_OK, "OK",
                         "{\"message\":\"The batch was processed successfully\",\"log\":["
                                 + log_str.str() + "]}\n");
         		record->clear();
@@ -399,7 +399,7 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, CoreSh
     if(recordsToUpdate.size() == 0){
 		Logger::info("%s", log_str.str().c_str());
 
-        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
+        bmhelper_evhttp_send_reply2(req, HTTP_OK, "OK",
                 "{\"message\":\"The batch was processed successfully\",\"log\":["
                         + log_str.str() + "]}\n");
         return;
@@ -440,7 +440,7 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, CoreSh
 	if(req->type != EVHTTP_REQ_DELETE){
         Logger::error(
                 "error: The request has an invalid or missing argument. See Srch2 API documentation for details");
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
+        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "INVALID REQUEST",
                 "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
         return;
 	}
@@ -479,7 +479,7 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, CoreSh
 		std::stringstream log_str;
 		log_str << "{\"rid\":\"NULL\",\"delete\":\"failed\",\"reason\":\"wrong primary key\"}";
 		Logger::info("%s", log_str.str().c_str());
-		bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
+		bmhelper_evhttp_send_reply2(req, HTTP_OK, "OK",
 				"{\"message\":\"The batch was processed successfully\",\"log\":["
 				+ log_str.str() + "]}\n");
         // Free the objects
@@ -524,7 +524,7 @@ void DPExternalRequestHandler::externalSerializeIndexCommand(evhttp_request *req
         break;
     }
     default: {
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
+        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "INVALID REQUEST",
                 "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
         Logger::error(
                 "The request has an invalid or missing argument. See Srch2 API documentation for details");
@@ -559,19 +559,19 @@ void DPExternalRequestHandler::externalSerializeRecordsCommand(evhttp_request *r
             	t.tv_sec = 2000;
                 routingManager->broadcast_wait_for_all_w_cb_n_timeout(serializeInput, resultsAggregator, t, *coreShardInfo);
             }else {
-                bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
+                bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "INVALID REQUEST",
                         "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
                 Logger::error(
                         "The request has an invalid or missing argument. See Srch2 API documentation for details");
             }
         } else{
-            bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
+            bmhelper_evhttp_send_reply2(req, HTTP_OK, "OK",
                     "{\"message\":\"The indexed data failed to export to disk, The request need to set search-response-format to be 0 or 2\"}\n");
         }
         break;
     }
     default: {
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
+        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "INVALID REQUEST",
                 "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
         Logger::error(
                 "The request has an invalid or missing argument. See Srch2 API documentation for details");
@@ -600,7 +600,7 @@ void DPExternalRequestHandler::externalResetLogCommand(evhttp_request *req, Core
         break;
     }
     default: {
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
+        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "INVALID REQUEST",
                 "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
         Logger::error(
                 "The request has an invalid or missing argument. See Srch2 API documentation for details");

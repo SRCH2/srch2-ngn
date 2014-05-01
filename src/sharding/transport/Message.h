@@ -20,7 +20,9 @@ struct Message {
    char buffer[0];
 
    //helper Functions
-   bool isLocal();
+   bool isLocal(){
+
+   }
 };
 
 }

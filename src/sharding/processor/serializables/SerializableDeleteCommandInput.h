@@ -21,19 +21,22 @@ public:
 		this->shardingKey = shardingKey;
 	}
 
-	string getPrimaryKey(){
+	string getPrimaryKey() const{
 		return this->primaryKey;
+	}
+	unsigned getShardingKey() const{
+		return this->shardingKey;
 	}
 
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
-    void* serialize(std::allocator<char> aloc){
+    void* serialize(std::allocator<char> * aloc){
     	// calculate the needed size
     	unsigned numberOfBytes = 0 ;
     	numberOfBytes += sizeof(shardingKey);
     	numberOfBytes += sizeof(unsigned) + primaryKey.size();
     	// allocate memory
-    	void * buffer = aloc.allocate(numberOfBytes);
+    	void * buffer = aloc->allocate(numberOfBytes);
     	// copy data
 		void * bufferWritePointer = buffer;
 

@@ -36,13 +36,14 @@ public:
 	}
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
-    void* serialize(std::allocator<char> aloc){
+    void* serialize(std::allocator<char> * aloc){
+    	ASSERT(record != NULL);
     	// calculate the size
     	unsigned numberOfBytes = 0;
     	numberOfBytes += sizeof(OperationCode);
     	numberOfBytes += record->getNumberOfBytesSize();
     	// allocate the space
-    	void * buffer = aloc.allocate(numberOfBytes);
+    	void * buffer = aloc->allocate(numberOfBytes);
 		void * bufferWritePointer = buffer;
     	// and serialize things in calculate
 		bufferWritePointer = srch2::util::serializeFixedTypes(insertOrUpdate, bufferWritePointer);
