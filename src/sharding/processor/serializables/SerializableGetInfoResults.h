@@ -25,7 +25,7 @@ public:
 
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
-    void* serialize(std::allocator<char> aloc){
+    void* serialize(std::allocator<char> * aloc){
     	// calculate the number of bytes needed
     	unsigned numberOfBytes = 0;
     	numberOfBytes += sizeof(readCount);
@@ -36,7 +36,7 @@ public:
     	numberOfBytes += sizeof(versionInfo);
 
     	// allocate space
-    	void * buffer = aloc.allocate(numberOfBytes);
+    	void * buffer = aloc->allocate(numberOfBytes);
 		void * bufferWritePointer = buffer;
     	// copy data
     	bufferWritePointer = srch2::util::serializeFixedTypes(readCount, bufferWritePointer);

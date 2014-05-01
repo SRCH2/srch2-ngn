@@ -107,11 +107,13 @@ Srch2Server * InternalMessageBroker::getShardIndex(ShardId & shardId){
 
 	return indexerItr->second;
 }
-/*
-std::allocator<char>* getMessageAllocator() {
-  return routingManager.transportManager.getMessageAllocator();
+
+std::allocator<char>* InternalMessageBroker::getMessageAllocator() {
+ // return routingManager.transportManager.getMessageAllocator();
+	return NULL; //TODO
 }
 
-void sendReply(Message* msg, void* replyObject) {
-  routingManager.transportManager(msg, input);
-}*/
+void InternalMessageBroker::sendReply(Message* msg, void* replyObject) {
+//  routingManager.transportManager(msg, input);
+	//TODO
+}

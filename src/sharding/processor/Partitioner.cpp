@@ -53,9 +53,14 @@ unsigned Partitioner::getRecordValueToHash(Record * record){
 
 	// When the record is being parsed, configuration is used to compute the hashable value of this
 	// record. It will be saved in record.
-	return 0;//TEMP	Partitioner(ConfigManager * configurationManager){
-	this->configurationManager = configurationManager;
+	return 0;//TEMP	 TODO
 }
+
+
+unsigned Partitioner::getRecordValueToHash(string primaryKeyStringValue){
+	return 0; // TODO  TEMP
+}
+
 /*
  * Uses a hash function to hash valueToHash to a value in range [0,hashSpace)
  * and returns this value

@@ -52,9 +52,9 @@ class SerializableSearchResults {
 
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
-    void* serialize(std::allocator<char> aloc){
+    void* serialize(std::allocator<char> * aloc){
     	if(queryResults == NULL){
-    		void * buffer = aloc.allocate(sizeof(bool));
+    		void * buffer = aloc->allocate(sizeof(bool));
     		void * bufferWritePointer = buffer;
     		bufferWritePointer = srch2::util::serializeFixedTypes(false, bufferWritePointer);
     		return buffer;
@@ -64,7 +64,7 @@ class SerializableSearchResults {
     	numberOfBytes += sizeof(bool);
     	numberOfBytes += queryResults->getNumberOfBytesForSerializationForNetwork();
     	// allocate space
-    	void * buffer = aloc.allocate(numberOfBytes);
+    	void * buffer = aloc->allocate(numberOfBytes);
     	// serialize
     	void * bufferWritePointer = buffer;
     	bufferWritePointer = srch2::util::serializeFixedTypes(true, bufferWritePointer);

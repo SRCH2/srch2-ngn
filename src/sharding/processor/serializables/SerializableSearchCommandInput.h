@@ -25,10 +25,10 @@ public:
 	 * Serialization scheme:
 	 * | isLogicalPlanNULL | LogicalPlan(only is isLogicalPlanNULL is true) |
 	 */
-    void* serialize(std::allocator<char> aloc){
+    void* serialize(std::allocator<char> * aloc){
 
     	if(logicalPlan == NULL){
-    		void * buffer = aloc.allocate(sizeof(bool));
+    		void * buffer = aloc->allocate(sizeof(bool));
     		void * bufferWritePointer = buffer;
     		bufferWritePointer = srch2::util::serializeFixedTypes(false, bufferWritePointer); // NULL
     		return buffer;
@@ -38,7 +38,7 @@ public:
     	numberOfBytes += sizeof(bool); // Not NULL
     	numberOfBytes += logicalPlan->getNumberOfBytesForSerializationForNetwork();
     	// allocate the space
-    	void * buffer = aloc.allocate(numberOfBytes);
+    	void * buffer = aloc->allocate(numberOfBytes);
     	// serialize logical plan into buffer
 		void * bufferWritePointer = buffer;
 		bufferWritePointer = srch2::util::serializeFixedTypes(true, bufferWritePointer); // not NULL

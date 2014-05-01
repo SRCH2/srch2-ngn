@@ -416,7 +416,7 @@ void SearchResultAggregatorAndPrint::printResults(evhttp_request *req,
     Logger::info(
             "ip: %s, port: %d GET query: %s, searcher_time: %d ms, highlighter_time: %d ms, payload_access_time: %d ms",
             req->remote_host, req->remote_port, req->uri + 1, ts1, hlTime, ts2);
-    bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", writer.write(root), headers);
+    bmhelper_evhttp_send_reply2(req, HTTP_OK, "OK", writer.write(root), headers);
 }
 
 
@@ -498,7 +498,7 @@ void SearchResultAggregatorAndPrint::printOneResultRetrievedById(evhttp_request 
     Logger::info(
             "ip: %s, port: %d GET query: %s, searcher_time: %d ms, payload_access_time: %d ms",
             req->remote_host, req->remote_port, req->uri + 1, ts1, ts2);
-    bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", writer.write(root), headers);
+    bmhelper_evhttp_send_reply2(req, HTTP_OK, "OK", writer.write(root), headers);
 }
 
 

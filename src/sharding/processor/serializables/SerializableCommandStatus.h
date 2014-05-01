@@ -34,14 +34,14 @@ public:
 	}
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
-	void* serialize(std::allocator<char> allocatorObj){
+	void* serialize(std::allocator<char> * allocatorObj){
 		// calculate the size of object
 		unsigned numberOfBytes = 0;
 		numberOfBytes += sizeof(CommandCode);
 		numberOfBytes += sizeof(status);
 		numberOfBytes += (sizeof(unsigned) + message.size());
 		// allocate the space
-		void * buffer = allocatorObj.allocate(numberOfBytes);
+		void * buffer = allocatorObj->allocate(numberOfBytes);
 		void * bufferWritePointer = buffer;
 
 		bufferWritePointer = srch2::util::serializeFixedTypes(commandCode, bufferWritePointer);
