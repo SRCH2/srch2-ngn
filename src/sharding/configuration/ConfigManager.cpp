@@ -45,6 +45,13 @@ const char* const ConfigManager::nodeMasterTag = "node-master";
 const char* const ConfigManager::nodeDataTag = "node-data";
 const char* const ConfigManager::nodeHomeTag = "srch2home";
 const char* const ConfigManager::nodeDataDirTag = "datadir";
+const char* const ConfigManager::primaryShardTag = "core-number_of_shards";
+const char* const ConfigManager::replicaShardTag = "core-number_of_replicas";
+const char* const ConfigManager::clusterNameTag = "cluster-name";
+const int ConfigManager::DefaultNumberOfPrimaryShards = 5;
+const int ConfigManager::DefaultNumberOfReplicas = 1;
+const char* const ConfigManager::DefaultClusterName = "SRCH2Cluster";
+
 
 const char* const ConfigManager::accessLogFileString = "accesslogfile";
 const char* const ConfigManager::analyzerString = "analyzer";
@@ -159,7 +166,41 @@ const char* const ConfigManager::defaultFuzzyPostTag = "</b>";
 const char* const ConfigManager::defaultExactPreTag = "<b>";
 const char* const ConfigManager::defaultExactPostTag = "</b>";
 
+//In later version, this should be handled by SM
+void ConfigManager::setNodeId(){
+    vector<Node>* nodes = this->cluster.getNodes();
+    for(int i = 0; i < nodes->size(); i++){
+        (*nodes)[i].setId(i+1);
+    }
+}
 
+bool ConfigManager::isLocal(ShardId& shardId){
+	Shard s = this->cluster.shardMap[shardId];
+	return this->getCurrentNodeId() == s.getNodeId();
+}
+//Function Definition for verifyConsistency; it checks if the port number of core is different
+//from the port number being used by the node for communication with other nodes
+bool ConfigManager::verifyConsistency()
+{
+    Cluster* currentCluster = this->getCluster();
+    vector<Node>* nodes = currentCluster->getNodes();
+    Node currentNode;
+
+    //The for loop below gets the current node
+    for(int i = 0; i < nodes->size(); i++){
+        if(nodes->at(i).thisIsMe == true)
+    	    currentNode = nodes->at(i);
+    }
+
+    //The for loop below compares the current node's port number with the port number of cores
+    for(CoreInfoMap_t::iterator it = this->coreInfoIterateBegin(); it != this->coreInfoIterateEnd(); it++){
+        int num = (uint)atol(it->second->getHTTPServerListeningPort().c_str());
+        if(num == currentNode.getPortNumber()){
+    	    return false;
+        }
+    }
+    return true;
+}
 
 ConfigManager::ConfigManager(const string& configFile)
 {
@@ -190,8 +231,12 @@ void ConfigManager::loadConfigFile()
     // parse the config file and set the variables.
     this->parse(configDoc, configSuccess, parseError, parseWarnings);
 
+    //The below function sets node Id for all the nodes, in later version this should be done by synchronization manager
+    this->setNodeId();
+
     Logger::debug("WARNINGS while reading the configuration file:");
     Logger::debug("%s\n", parseWarnings.str().c_str());
+
     if (!configSuccess) {
         Logger::error("ERRORS while reading the configuration file");
         Logger::error("%s\n", parseError.str().c_str());
@@ -259,7 +304,7 @@ void ConfigManager::trimSpacesFromValue(string &fieldValue, const char *fieldNam
     string oldValue(fieldValue);
     trim(fieldValue);
     if (fieldValue.length() != oldValue.length()) {
-        parseWarnings << "Trimmed whitespace from the variable " << fieldName << "\"" << oldValue << "\"\n";
+        parseWarnings << "Trimmed whitespace from the variable " << fieldName << " \"" << oldValue << "\"\n";
     }
     if (append != NULL) {
         fieldValue += append;
@@ -272,68 +317,6 @@ CoreInfo_t *ConfigManager::getCoreInfoMap(const string &coreName) const
         return ((CoreInfoMap_t) coreInfoMap)[coreName];
     }
     return getDefaultCoreInfo();
-}
-
-CoreInfo_t::CoreInfo_t(const CoreInfo_t &src)
-{
-    name = src.name;
-
-    configManager = src.configManager;
-
-    dataDir = src.dataDir;
-    dataSourceType = src.dataSourceType;
-    dataFile = src.dataFile;
-    dataFilePath = src.dataFilePath;
-
-    mongoHost = src.mongoHost;
-    mongoPort = src.mongoPort;
-    mongoDbName = src.mongoDbName;
-    mongoCollection = src.mongoCollection;
-    mongoListenerWaitTime = src.mongoListenerWaitTime;
-    mongoListenerMaxRetryOnFailure = src.mongoListenerMaxRetryOnFailure;
-
-    isPrimSearchable = src.isPrimSearchable;
-
-    primaryKey = src.primaryKey;
-
-    fieldLatitude = src.fieldLatitude;
-    fieldLongitude = src.fieldLongitude;
-    indexType = src.indexType;
-
-    searchableAttributesInfo = src.searchableAttributesInfo;
-    refiningAttributesInfo = src.refiningAttributesInfo;
-
-    supportSwapInEditDistance = src.supportSwapInEditDistance;
-
-    enableWordPositionIndex = src.enableWordPositionIndex;
-    enableCharOffsetIndex = src.enableCharOffsetIndex;
-
-    recordBoostFieldFlag = src.recordBoostFieldFlag;
-    recordBoostField = src.recordBoostField;
-    queryTermBoost = src.queryTermBoost;
-    indexCreateOrLoad = src.indexCreateOrLoad;
-
-    searchType = src.searchType;
-
-    supportAttributeBasedSearch = src.supportAttributeBasedSearch;
-
-    facetEnabled = src.facetEnabled;
-    facetTypes = src.facetTypes;
-    facetAttributes = src.facetAttributes;
-    facetStarts = src.facetStarts;
-    facetEnds = src.facetEnds;
-    facetGaps = src.facetGaps;
-
-    stemmerFlag = src.stemmerFlag;
-    stemmerFile = src.stemmerFile;
-    synonymFilterFilePath = src.synonymFilterFilePath;
-    synonymKeepOrigFlag = src.synonymKeepOrigFlag;
-    stopFilterFilePath = src.stopFilterFilePath;
-    protectedWordsFilePath = src.protectedWordsFilePath;
-
-    allowedRecordTokenizerCharacters = src.allowedRecordTokenizerCharacters;
-
-    ports = src.ports;
 }
 
 void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode, CoreInfo_t *coreInfo, map<string, unsigned> &boostsMap, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
@@ -799,7 +782,6 @@ void ConfigManager::parseMultipleCores(const xml_node &coresNode, bool &configSu
         // parse zero or more individual core settings
         for (xml_node coreNode = coresNode.first_child(); coreNode; coreNode = coreNode.next_sibling()) {
             CoreInfo_t *newCore = new CoreInfo_t(this);
-
             parseSingleCore(coreNode, newCore, configSuccess, parseError, parseWarnings);
             if (configSuccess) {
                 coreInfoMap[newCore->name] = newCore;
@@ -820,13 +802,48 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_
 {
     string tempUse = "";
     CoreConfigParseState_t coreParseState;
-
     // <config><dataDir>core0/data OR <core><dataDir>
+
+    xml_node childNodeOfCores = parentNode.child(primaryShardTag);
+    if(childNodeOfCores && childNodeOfCores.text()){
+    	string temp = (childNodeOfCores.text().get());
+    	trimSpacesFromValue(temp, primaryShardTag, parseWarnings);
+    	coreInfo->numberOfPrimaryShards = (uint)atol(temp.c_str());
+    }
+    else{
+    	coreInfo->numberOfPrimaryShards = DefaultNumberOfPrimaryShards;
+        parseWarnings << "Number of primary shards is not defined. The engine will use the default value " << coreInfo->numberOfPrimaryShards << "\n";
+    }
+
+    childNodeOfCores = parentNode.child(primaryShardTag);
+    xml_node primaryShardSibling = childNodeOfCores.next_sibling(primaryShardTag);
+    if(primaryShardSibling){
+        parseWarnings << "Duplicate definition of \"" << primaryShardTag << "\".  The engine will use the first value " << coreInfo->numberOfPrimaryShards << "\n";
+    }
+
+    childNodeOfCores = parentNode.child(replicaShardTag);
+
+    if(childNodeOfCores && childNodeOfCores.text()){
+    	string temp = (childNodeOfCores.text().get());
+    	trimSpacesFromValue(temp, replicaShardTag, parseWarnings);
+    	coreInfo->numberOfReplicas = (uint)atol(temp.c_str());
+    }
+    else{
+    	coreInfo->numberOfReplicas = DefaultNumberOfReplicas;
+    	parseWarnings << "Number of replicas is not defined. The engine will use the default value " << DefaultNumberOfReplicas << "\n";
+    }
+
+    xml_node replicaSibling = childNodeOfCores.next_sibling(replicaShardTag);
+    if(replicaSibling){
+    	parseWarnings << "Duplicate definition of \"" << replicaShardTag << "\".  The engine will use the first value " << coreInfo->numberOfReplicas << "\n";
+    }
+
     xml_node childNode = parentNode.child(dataDirString);
     if (childNode && childNode.text()) {
         coreInfo->dataDir = string(childNode.text().get());
         coreInfo->indexPath = srch2Home + coreInfo->dataDir;
     }
+
     if (coreInfo->dataDir.length() == 0) {
         parseWarnings << "Core " << coreInfo->name.c_str() << " has null dataDir\n";
     }
@@ -1722,15 +1739,23 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
 {
     string tempUse = ""; // This is just for temporary use.
 
+    int flag_cluster = 0;
     CoreInfo_t *defaultCoreInfo = NULL;
 
     xml_node configNode = configDoc.child(configString);
+    xml_node clusterName = configNode.child(clusterNameTag);
+    if (clusterName && clusterName.text()) {
+    	tempUse = string(clusterName.text().get());
+    	trimSpacesFromValue(tempUse, clusterNameTag, parseWarnings);
+    	cluster.setClusterName(tempUse);
+    }else{
+    	cluster.setClusterName(string(DefaultClusterName));
+    	parseWarnings << "Cluster name is not specified. Engine will use the default value " << cluster.getClusterName() << "\n";
+    }
 
-    xml_node clusterName = configNode.child("cluster-name");
-    if (clusterName && clusterName.text()) { // checks if the config/srch2Home has any text in it or not
-          tempUse = string(clusterName.text().get());
-          cluster.setClusterName(tempUse);
-      } 
+    xml_node clusterNameSibling = clusterName.next_sibling(clusterNameTag);
+    if (clusterNameSibling && clusterNameSibling.text()){
+          parseWarnings << "Duplicate definition of \"" << clusterNameTag << "\".  The engine will use the first value: " << cluster.getClusterName() << "\n";    }
 
     tempUse = "";
 
@@ -1738,7 +1763,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
 
     xml_node nodeTag = configNode.child("node");
     if (nodeTag)
-      ConfigManager::parseNode(nodes, nodeTag);
+      ConfigManager::parseNode(nodes, nodeTag, parseWarnings);
 
     // srch2Home is a required field
     xml_node childNode = configNode.child(srch2HomeString);
@@ -1879,51 +1904,151 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
 
 
 //TODO: Pass by referencem, space after =
-void ConfigManager::parseNode(std::vector<Node>* nodes, xml_node& nodeTag) {
+void ConfigManager::parseNode(std::vector<Node>* nodes, xml_node& nodeTag, std::stringstream &parseWarnings) {
 
     for (xml_node nodeTemp = nodeTag; nodeTemp; nodeTemp = nodeTemp.next_sibling("node")) {
 
+    	bool nameDefined = false, portDefined = false, ipAddressDefined = false;
+    	bool thisIsMeDefined = false, masterDefined = false, nodeDataDefined = false;
+    	bool dataDirDefined = false, homeDefined = false;
         std::string ipAddress = "", dataDir = "", nodeName = "", nodeHome = "";
 		unsigned nodeId = 0, portNumber = 0, numOfThreads = 0;
 		bool nodeMaster, nodeData, thisIsMe;
 
 		for (xml_node childNode = nodeTemp.first_child(); childNode; childNode = childNode.next_sibling()) {
-			if (childNode && childNode.text()) {
 
+			if (childNode && childNode.text()) {
 				std::string name = (string) childNode.name();
 
 				if (name.compare(nodeNameTag) == 0) {
-					nodeName = string(childNode.text().get());
-					//cout << nodeName << "\n";
+					if(nameDefined == false){
+						nodeName = string(childNode.text().get());
+						trimSpacesFromValue(nodeName, nodeNameTag, parseWarnings);
+						nameDefined = true;
+					}
+					else{
+				        parseWarnings << "Duplicate definition of \"" << nodeNameTag << "\".  The engine will use the first value: " << nodeName << "\n";
+					}
 				}
 				if (name.compare(nodeListeningHostNameTag) == 0) {
-					ipAddress = string(childNode.text().get());
-					//cout << ipAddress << "\n";
+					if(ipAddressDefined == false){
+						ipAddress = string(childNode.text().get());
+						trimSpacesFromValue(ipAddress, nodeListeningHostNameTag, parseWarnings);
+						ipAddressDefined = true;
+					}
+					else{
+				        parseWarnings << "Duplicate definition of \"" << nodeListeningHostNameTag << "\".  The engine will use the first value: " << ipAddress << "\n";
+					}
+
 				}
 				if (name.compare(nodeListeningPortTag) == 0) {
-					portNumber = (childNode.text().as_uint());
-					//cout << portNumber << "\n";
+					if(portDefined == false){
+						string portNo;
+						portNo = string(childNode.text().get());
+						trimSpacesFromValue(ipAddress, nodeListeningPortTag, parseWarnings);
+						portNumber = (uint)atol(portNo.c_str());
+						portDefined = true;
+					}
+					else{
+				        parseWarnings << "Duplicate definition of \"" << nodeListeningPortTag << "\".  The engine will use the first value: " << portNumber << "\n";
+					}
 				}
 				if (name.compare(nodeCurrentTag) == 0) {
-					thisIsMe = childNode.text().as_bool();
-					//cout << thisIsMe << " \n";
+					if(thisIsMeDefined == false){
+						string temp = (childNode.text().get());
+						trimSpacesFromValue(temp, nodeCurrentTag, parseWarnings);
+						if(temp.compare("true") == 0){
+							thisIsMe = true;
+						}
+						else if(temp.compare("false") == 0){
+							thisIsMe = false;
+						}
+						else{
+							thisIsMe = true;
+							parseWarnings << "Invalid value for " << nodeCurrentTag << "; Using the default value true \n";
+						}
+						thisIsMeDefined = true;
+					}
+
+					else{
+					    parseWarnings << "Duplicate definition of \"" << nodeCurrentTag << "\".  The engine will use the first value: ";
+						if(thisIsMe)
+							parseWarnings << "true "<< "\n";
+						else
+							parseWarnings << "false "<< "\n";
+					}
+
 				}
 				if (name.compare(nodeMasterTag) == 0) {
-					nodeMaster = childNode.text().as_bool();
-					//cout << nodeMaster << "\n";
-				}
+					if(masterDefined == false){
+						string temp = (childNode.text().get());
+						trimSpacesFromValue(temp, nodeMasterTag, parseWarnings);
+						if(temp.compare("true") == 0){
+							nodeMaster = true;
+						}
+						else if(temp.compare("false") == 0){
+							nodeMaster = false;
+						}
+						else{
+							nodeMaster = true;
+							parseWarnings << "Invalid value for " << nodeMasterTag << "; Using the default value true \n";
+						}
+						masterDefined = true;
+					}
+					else{
+					    parseWarnings << "Duplicate definition of \"" << nodeMasterTag << "\".  The engine will use the first value: ";
+						if(nodeMaster)
+							parseWarnings << "true "<< "\n";
+						else
+							parseWarnings << "false "<< "\n";
+						}
+					}
+
 				if (name.compare(nodeDataTag) == 0) {
-					nodeData = childNode.text().as_bool();
-					//cout << nodeData << "\n";
+					if(nodeDataDefined == false){
+						string temp = (childNode.text().get());
+						trimSpacesFromValue(temp, nodeDataTag, parseWarnings);
+						if(temp.compare("true") == 0){
+							nodeData = true;
+						}
+						else if(temp.compare("false") == 0){
+							nodeData = false;
+						}
+						else{
+							nodeData = true;
+							parseWarnings << "Invalid value for " << nodeDataTag << "; Using the default value true \n";
+						}
+						nodeDataDefined = true;
+						}
+						else{
+							parseWarnings << "Duplicate definition of \"" << nodeDataTag << "\".  The engine will use the first value: ";
+							if(nodeData)
+								parseWarnings << "true "<< "\n";
+							else
+								parseWarnings << "false "<< "\n";
+							}
 				}
+
 				if (name.compare(nodeDataDirTag) == 0) {
-					dataDir = string(childNode.text().get());
-					//cout << dataDir << "\n";
+					if(dataDirDefined == false){
+						dataDir = string(childNode.text().get());
+						trimSpacesFromValue(dataDir, nodeDataDirTag, parseWarnings);
+						dataDirDefined = true;
+					}
+					else{
+						parseWarnings << "Duplicate definition of \"" << nodeDataDirTag << "\".  The engine will use the first value: " << dataDir << "\n";
+					}
 				}
 				if(name.compare(nodeHomeTag) == 0){
-					nodeHome = string(childNode.text().get());
+					if(homeDefined == false){
+						nodeHome = string(childNode.text().get());
+						trimSpacesFromValue(nodeHome, nodeHomeTag, parseWarnings);
+						homeDefined = true;
+					}
+					else{
+						parseWarnings << "Duplicate definition of \"" << nodeHomeTag << "\".  The engine will use the first value: " << nodeHome << "\n";
+					}
 				}
-				//cout << flush;
 			}
 		}
 
