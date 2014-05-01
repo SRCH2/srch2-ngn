@@ -19,10 +19,18 @@ struct MessageAllocator : public std::allocator<char> {
     allocator<char>::deallocate(p - sizeof(Message), n + sizeof(Message));
   }
 
- void deallocate(Message *msg) {
+    Message* allocateMessage(size_type bodyLength) {
+    Message *msg = 
+      (Message*) allocator<char>::allocate(bodyLength + sizeof(Message));
+    msg->bodySize = bodyLength;
+    return msg;
+  }
+  void deallocateMessage(Message *msg) {
     allocator<char>::deallocate((char*) msg, msg->bodySize + sizeof(Message));
   }
-
+  void deallocate(Message *msg) {
+    deallocateMessage(msg);
+  }
 };
 
 }}

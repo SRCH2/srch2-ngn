@@ -537,8 +537,7 @@ static void killServer(int signal) {
 static int getHttpServerMetadata(ConfigManager *config, 
     PortSocketMap_t *globalPortSocketMap) {
   return 0;
-  /*
-  /* 1). event initialization /
+  // 1). event initialization 
   globalDefaultPort = atoi(config->getHTTPServerListeningPort().c_str());
   globalHostName = config->getHTTPServerListeningHostname().c_str(); 
 
@@ -554,15 +553,16 @@ static int getHttpServerMetadata(ConfigManager *config,
 
   // loop over cores and extract all ports to use
   std::set<short> ports;
-  for (CoreInfoMap_t::iterator core = config->coreInfoIterateBegin();
-         core != config->coreInfoIterateEnd(); ++core) {
+  for(ConfigManager::CoreInfoMap_t::iterator core = 
+      config->coreInfoIterateBegin();
+      core != config->coreInfoIterateEnd(); ++core) {
 
     // bind once each port defined for use by this core
     unsigned short port;
     for (srch2http::PortType_t portType = (srch2http::PortType_t) 0; 
         portType < srch2http::EndOfPortType; 
         portType = srch2http::incrementPortType(portType)) {
-      if(port = coreInfo->getPort(portType) < 0)
+      if(port = core->second->getPort(portType) < 0)
         ports.insert(port);
     }
   } 
@@ -574,8 +574,8 @@ static int getHttpServerMetadata(ConfigManager *config,
       perror("socket bind error");
       return 255;
     }
-    (*globalPortSocketMap)[port] = socketFd;
-  }*/
+    (*globalPortSocketMap)[*port] = socketFd;
+  }
 }
 
 static int createHTTPServersAndAccompanyingThreads( 

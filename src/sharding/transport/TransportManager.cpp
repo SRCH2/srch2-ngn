@@ -21,7 +21,7 @@ void* startListening(void* arg) {
   memcpy(&routeAddress.sin_addr, routeHost->h_addr, routeHost->h_length);
   routeAddress.sin_port = htons(base.getPortNumber());
 
-  if(fd = socket(AF_INET, SOCK_STREAM, 0) < 0) {
+  if((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
     perror("listening socket failed to bind");
     exit(255);
   }

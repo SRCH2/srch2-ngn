@@ -21,7 +21,7 @@ struct Message {
 
    //helper Functions
    bool isLocal(){
-
+     return false;
    }
 };
 
