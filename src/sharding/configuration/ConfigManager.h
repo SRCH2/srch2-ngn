@@ -827,6 +827,12 @@ public:
     };
     CoreInfo_t(const CoreInfo_t &src);
 
+    ~CoreInfo_t() {
+        if (schema == NULL)
+           delete schema;
+    }
+
+
     friend class ConfigManager;
 
     // **** accessors for settings in every core ****
@@ -971,7 +977,10 @@ public:
 
     // create a Schema object based on the stored info inside the core.
     srch2is::Schema* createSchema();
-    srch2is::Schema* getSchema();
+    void setSchema(srch2is::Schema* schema) { this->schema = schema; };
+    srch2is::Schema* getSchema() { return this->schema; };
+
+//    srch2is::Schema* loadSchema(string schemaFileName);
 
 protected:
     string name; // of core

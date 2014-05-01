@@ -24,6 +24,9 @@
 #include "boost/algorithm/string_regex.hpp"
 #include "boost/filesystem/path.hpp"
 
+#include "record/SchemaInternal.h"
+#include "core/serialization/Serializer.h" // to load a schema file
+
 using namespace std;
 namespace srch2is = srch2::instantsearch;
 using namespace pugi;
@@ -334,7 +337,7 @@ CoreInfo_t::CoreInfo_t(const CoreInfo_t &src)
     allowedRecordTokenizerCharacters = src.allowedRecordTokenizerCharacters;
 
     ports = src.ports;
-    schema = src.schema;
+    schema = src.schema; // TODO: do we need to do a deep copy?
 }
 
 void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode, CoreInfo_t *coreInfo, map<string, unsigned> &boostsMap, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
@@ -2800,13 +2803,6 @@ srch2is::Schema* CoreInfo_t::createSchema()
 
     return schema;
 }
-
-
-srch2is::Schema* CoreInfo_t::getSchema()
-{
-    return this->schema;
-}
-
 
 // JUST FOR Wrapper TEST
 void CoreInfo_t::setDataFilePath(const string& path) {

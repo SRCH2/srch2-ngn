@@ -226,7 +226,9 @@ void Srch2Server::createAndBootStrapIndexer()
         {
 	    // Load from index-dir directly, skip creating an index initially.
 	    indexer = Indexer::load(indexMetaData);
-	    // Load Analayzer data from disk
+	    indexDataConfig->setSchema(indexer->getSchema());
+
+	    // Load Analyzer data from disk
 	    AnalyzerHelper::loadAnalyzerResource(this->indexDataConfig);
 	    indexer->getSchema()->setSupportSwapInEditDistance(indexDataConfig->getSupportSwapInEditDistance());
 	    bool isAttributeBasedSearch = false;
