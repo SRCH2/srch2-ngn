@@ -10,18 +10,18 @@ namespace srch2 {
 namespace util {
 
 template<class FixedType>
-void * serializeFixedTypes(const FixedType & obj, void * buffer){
+inline void * serializeFixedTypes(const FixedType & obj, void * buffer){
 	memcpy(buffer, (char *)(&obj), sizeof(obj));
 	return (char *)buffer + sizeof(obj);
 }
 
 template<class FixedType>
-void * deserializeFixedTypes(void * buffer, FixedType & obj){
+inline void * deserializeFixedTypes(void * buffer, FixedType & obj){
 	obj = *((FixedType *)(buffer));
 	return (char *)buffer + sizeof(obj);
 }
 
-void * serializeString(const string & msg, void * buffer){
+inline void * serializeString(const string & msg, void * buffer){
 	// first serialize size
 	unsigned msgSize = msg.size();
 	buffer = serializeFixedTypes(msgSize, buffer);
@@ -30,7 +30,7 @@ void * serializeString(const string & msg, void * buffer){
 	return (char *)buffer + msgSize;
 }
 
-void * deserializeString(void * buffer, string & msg){
+inline void * deserializeString(void * buffer, string & msg){
 	// first deserialize size
 	unsigned msgSize = *((unsigned *)buffer);
 	buffer = (char *)buffer + sizeof(unsigned);
@@ -43,7 +43,7 @@ void * deserializeString(void * buffer, string & msg){
 }
 
 template<class FixedType>
-void * serializeVectorOfFixedTypes(const vector<FixedType> & vectorObj, void * buffer){
+inline void * serializeVectorOfFixedTypes(const vector<FixedType> & vectorObj, void * buffer){
 
 	// first store the size
 	buffer = serializeFixedTypes(vectorObj.size() , buffer);
@@ -56,7 +56,7 @@ void * serializeVectorOfFixedTypes(const vector<FixedType> & vectorObj, void * b
 }
 
 template<class FixedType>
-void * deserializeVectorOfFixedTypes(void * buffer, vector<FixedType> & objVector){
+inline void * deserializeVectorOfFixedTypes(void * buffer, vector<FixedType> & objVector){
 
 	// first deserialize size of vector
 	unsigned sizeOfVector = 0;
@@ -71,7 +71,7 @@ void * deserializeVectorOfFixedTypes(void * buffer, vector<FixedType> & objVecto
 	return buffer;
 }
 
-void * serializeVectorOfString(const vector<string> & msgVector, void * buffer){
+inline void * serializeVectorOfString(const vector<string> & msgVector, void * buffer){
 	// first serialize size
 	unsigned vectorSize = msgVector.size();
 	buffer = serializeFixedTypes(vectorSize, buffer);
@@ -84,7 +84,7 @@ void * serializeVectorOfString(const vector<string> & msgVector, void * buffer){
 
 }
 
-void * deserializeVectorOfString(void * buffer, vector<string> & msgVector){
+inline void * deserializeVectorOfString(void * buffer, vector<string> & msgVector){
 	// first deserialize size
 	unsigned vectorSize = 0;
 	buffer = deserializeFixedTypes(buffer, vectorSize);
@@ -99,14 +99,14 @@ void * deserializeVectorOfString(void * buffer, vector<string> & msgVector){
 
 
 template<class FixedType>
-unsigned getNumberOfBytesVectorOfFixedTypes(const vector<FixedType> & vectorObj){
+inline unsigned getNumberOfBytesVectorOfFixedTypes(const vector<FixedType> & vectorObj){
 	unsigned numberOfBytes = 0;
 	numberOfBytes += sizeof(unsigned); // size of vector
 	numberOfBytes += sizeof(FixedType)*vectorObj.size(); // size of elements
 	return numberOfBytes;
 }
 
-unsigned getNumberOfBytesVectorOfString(const vector<string> & msgVector){
+inline unsigned getNumberOfBytesVectorOfString(const vector<string> & msgVector){
 	unsigned numberOfBytes = 0;
 	numberOfBytes += sizeof(unsigned); // size of vector
 	for(unsigned msgIndex = 0 ; msgIndex < msgVector.size() ; msgIndex++){

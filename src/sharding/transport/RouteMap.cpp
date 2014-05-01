@@ -1,6 +1,6 @@
 #include "RouteMap.h"
 #include <netdb.h>
-
+#include "ConnectionsInlines.h"
 using namespace srch2::httpwrapper;
 
 void RouteMap::addDestination(const Node& node) {
@@ -111,4 +111,22 @@ void RouteMap::addNodeConnection(NodeId addr, int fd) {
   //look into map thread safety
   map[addr] = fd;
 }
+
+bool RouteMap::isTotallyConnected() const {
+  return map.size() == destinations.size();
+}
+
+Connections RouteMap::getNeededConnections() {
+  return Connections(destinations);
+}
+
+Connection RouteMap::getConnection(NodeId nodeId) {
+  return map[nodeId];
+}
+
+void RouteMap::setBase(Node& base) { this->base = &base; }
+const Node& RouteMap::getBase() const { return *base; }
+
+RouteMap::iterator RouteMap::begin() { return map.begin(); }
+RouteMap::iterator RouteMap::end() { return map.end(); }
 
