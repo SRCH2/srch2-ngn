@@ -141,19 +141,9 @@ public:
 	}
 
 
-	ConfigManager* getConfigurationManager()  {
-		return &configurationManager;
-	}
-
-
-	DPInternalRequestHandler* getDpInternal() {
-		return &dpInternal;
-	}
-
-	std::map<ShardId, Srch2Server*> getShardToIndexMap() {
-		return shardToIndex;
-	}
-
+	ConfigManager* getConfigurationManager();
+	DPInternalRequestHandler* getDpInternal();
+	std::map<ShardId, Srch2Server*> getShardToIndexMap();
 
 private:
 	std::map<ShardId, Srch2Server*> shardToIndex;

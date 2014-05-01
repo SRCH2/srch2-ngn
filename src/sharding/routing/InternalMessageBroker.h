@@ -14,20 +14,21 @@ namespace httpwrapper {
 class InternalMessageBroker{
 public:
 
-	InternalMessageBroker(RoutingManager * routingManager){
+	InternalMessageBroker(RoutingManager&  routingManager)
 		this->routingManager;
 	}
 	void processInternalMessage(Message * message);
 	Srch2Server * getShardIndex(ShardId & shardId);
 
 
-	RoutingManager * getRoutingManager(){
-		return routingManager;
-	}
-
 private:
-
-	RoutingManager * routingManager;
+  template<InputType, Deserializer, OutputType>
+    void broker(Message *msg, Srch2Server* server,
+        OutputType* (*DpInternalMessage::fn) (Srch2Server*, InputType*));
+  std::allocator<char> getMessageAllocator()
+  sendReply(Message*, void*);
+ 
+	RoutingManager&  routingManager;
 };
 
 }

@@ -7,8 +7,6 @@
 using namespace srch2::instantsearch;
 using namespace srch2::httpwrapper;
 
-void cb_recieveMessage(int fd, short eventType, void *arg);
-
 void* startListening(void* arg) {
   RouteMap *const map = (RouteMap*) arg;
   const Node& base =  map->getBase();
@@ -40,6 +38,8 @@ void* startListening(void* arg) {
   return NULL;
 }
 
+#include "callback_functions.h"
+
 TransportManager::TransportManager(EventBases& bases, Nodes& map) {
   for(Nodes::iterator dest = map.begin(); dest!= map.end(); ++dest) {
     if(dest->thisIsMe) 
@@ -61,7 +61,7 @@ TransportManager::TransportManager(EventBases& bases, Nodes& map) {
     for(EventBases::iterator base = bases.begin(); 
         base != bases.end(); ++base) {
       struct event* ev = event_new(*base, route->second, 
-          EV_READ, cb_recieveMessage, NULL);
+          EV_READ, cb_recieveMessage, this);
       event_add(ev, NULL);
     }
   }
@@ -69,82 +69,15 @@ TransportManager::TransportManager(EventBases& bases, Nodes& map) {
   distributedTime = 0;
 }
 
-MessageTime_t TransportManager::route(Message *msg) {
-  Connection fd = routeMap.getConnection(msg->shard.coreId);
+MessageTime_t TransportManager::route(NodeId node, Message *msg, 
+    unsigned timeout, unsigned callback) {
+  Connection fd = routeMap.getConnection(node);
   msg->time = __sync_fetch_and_add(&distributedTime, 1);
+
+  time_t timeOfTimeout_time = timeout + time(NULL);
+  //pending_message( timeOfTimeout, msg->time, callback #)
 
   send(fd, msg, msg->bodySize + sizeof(Message), 0);
   //TODO: errors?
   return msg->time;
 }
-
-#include<unistd.h>
-#include<errno.h>
-
-bool findNextMagicNumberAndReadMessageHeader(Message *const msg,  int fd) {
-  while(true) {
-    int readRtn = read(fd, (void*) msg, sizeof(Message));
-
-    if(readRtn == -1) {
-      if(errno == EAGAIN || errno == EWOULDBLOCK) return false;
-
-      //v1: handle  error
-      return false;
-    }
-
-    if(readRtn < sizeof(Message)) {
-      //v1: broken message boundary 
-      continue;
-    }
-
-    //TODO:checkMagicNumbers
-
-    return true;
-  }
-}
-
-Message* readRestOfMessage(std::allocator<char> messageAllocator,
-    int fd, Message *const msgHeader) {
-  char *buffer= messageAllocator.allocate(msgHeader->bodySize);
-
-  int readReturnValue = read(fd, buffer, msgHeader->bodySize);
-
-  if(readReturnValue != msgHeader->bodySize); //handle error
-
-  Message* msg = (Message*) (buffer - sizeof(msgHeader));
-  memcpy(msg, msgHeader, sizeof(Message));
-
-  return msg;
-}
-  
-
-
-void cb_recieveMessage(int fd, short eventType, void *arg) {
-  TransportManager* tm = (TransportManager*) arg;
-  Message msgHeader;
-  if(!findNextMagicNumberAndReadMessageHeader(&msgHeader, fd)) return;
-
-  while(true) {
-    MessageTime_t time = tm->distributedTime;
-    //check if time needs to be incremented
-    if(msgHeader.time < time && 
-        /*zero break*/ time - msgHeader.time < UINT_MAX/2 ) break;
-    //make sure time did not change
-    if(__sync_bool_compare_and_swap(
-          &tm->distributedTime, time, msgHeader.time)) break;
-  }
-
-  Message *msg = 
-    readRestOfMessage(tm->messageAllocator, fd, &msgHeader);
-/*
-  if(msg.isReply()) tm->pendingMessages.resolve(*msg);
-  elseif(msg.isSM() {
-    sm->notify(*msg);
-  } else {
-   // tm->routeManager.trampoline(*msg);
-  }
-*/
-
-  tm->messageAllocator.deallocate(msg);
-}
-  
