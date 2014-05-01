@@ -102,6 +102,7 @@ IndexData::IndexData(const string& directoryName)
     try{
     	this->schemaInternal = new SchemaInternal();
     	serializer.load(*(this->schemaInternal), this->directoryName + "/" + IndexConfig::schemaFileName);
+
     	this->rankerExpression = new RankerExpression(this->schemaInternal->getScoringExpression());
 
     	this->trie = new Trie_Internal();

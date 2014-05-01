@@ -177,8 +177,9 @@ void Srch2Server::createAndBootStrapIndexer()
     case srch2http::INDEXCREATE:
 	{
 	    AnalyzerHelper::initializeAnalyzerResource(this->indexDataConfig);
-	    // Create a schema to the data source definition in the Srch2ServerConf
 	    srch2is::Schema *schema = JSONRecordParser::createAndPopulateSchema(indexDataConfig);
+	    indexDataConfig->setSchema(schema);
+
 	    Analyzer *analyzer = AnalyzerFactory::createAnalyzer(this->indexDataConfig);
 	    indexer = Indexer::create(indexMetaData, analyzer, schema);
 	    delete analyzer;
@@ -226,7 +227,9 @@ void Srch2Server::createAndBootStrapIndexer()
         {
 	    // Load from index-dir directly, skip creating an index initially.
 	    indexer = Indexer::load(indexMetaData);
-	    // Load Analayzer data from disk
+	    indexDataConfig->setSchema(indexer->getSchema());
+
+	    // Load Analyzer data from disk
 	    AnalyzerHelper::loadAnalyzerResource(this->indexDataConfig);
 	    indexer->getSchema()->setSupportSwapInEditDistance(indexDataConfig->getSupportSwapInEditDistance());
 	    bool isAttributeBasedSearch = false;

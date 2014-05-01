@@ -319,68 +319,6 @@ CoreInfo_t *ConfigManager::getCoreInfoMap(const string &coreName) const
     return getDefaultCoreInfo();
 }
 
-CoreInfo_t::CoreInfo_t(const CoreInfo_t &src)
-{
-    name = src.name;
-
-    configManager = src.configManager;
-
-    dataDir = src.dataDir;
-    dataSourceType = src.dataSourceType;
-    dataFile = src.dataFile;
-    dataFilePath = src.dataFilePath;
-
-    mongoHost = src.mongoHost;
-    mongoPort = src.mongoPort;
-    mongoDbName = src.mongoDbName;
-    mongoCollection = src.mongoCollection;
-    mongoListenerWaitTime = src.mongoListenerWaitTime;
-    mongoListenerMaxRetryOnFailure = src.mongoListenerMaxRetryOnFailure;
-
-    isPrimSearchable = src.isPrimSearchable;
-
-    primaryKey = src.primaryKey;
-
-    fieldLatitude = src.fieldLatitude;
-    fieldLongitude = src.fieldLongitude;
-    indexType = src.indexType;
-
-    searchableAttributesInfo = src.searchableAttributesInfo;
-    refiningAttributesInfo = src.refiningAttributesInfo;
-
-    supportSwapInEditDistance = src.supportSwapInEditDistance;
-
-    enableWordPositionIndex = src.enableWordPositionIndex;
-    enableCharOffsetIndex = src.enableCharOffsetIndex;
-
-    recordBoostFieldFlag = src.recordBoostFieldFlag;
-    recordBoostField = src.recordBoostField;
-    queryTermBoost = src.queryTermBoost;
-    indexCreateOrLoad = src.indexCreateOrLoad;
-
-    searchType = src.searchType;
-
-    supportAttributeBasedSearch = src.supportAttributeBasedSearch;
-
-    facetEnabled = src.facetEnabled;
-    facetTypes = src.facetTypes;
-    facetAttributes = src.facetAttributes;
-    facetStarts = src.facetStarts;
-    facetEnds = src.facetEnds;
-    facetGaps = src.facetGaps;
-
-    stemmerFlag = src.stemmerFlag;
-    stemmerFile = src.stemmerFile;
-    synonymFilterFilePath = src.synonymFilterFilePath;
-    synonymKeepOrigFlag = src.synonymKeepOrigFlag;
-    stopFilterFilePath = src.stopFilterFilePath;
-    protectedWordsFilePath = src.protectedWordsFilePath;
-
-    allowedRecordTokenizerCharacters = src.allowedRecordTokenizerCharacters;
-
-    ports = src.ports;
-}
-
 void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode, CoreInfo_t *coreInfo, map<string, unsigned> &boostsMap, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
 {
     xml_node childNode = indexConfigNode.child(indexTypeString);

@@ -582,7 +582,7 @@ public:
     CoreInfo_t *getCoreInfoMap(const string &coreName) const;
     CoreInfoMap_t::iterator coreInfoIterateBegin() { return coreInfoMap.begin(); }
     CoreInfoMap_t::iterator coreInfoIterateEnd() { return coreInfoMap.end(); }
-	const CoreInfo_t *getCoreInfo(const string &coreName) const { return ((CoreInfoMap_t) coreInfoMap)[coreName]; }
+    CoreInfo_t *getCoreInfo(const string &coreName) const { return ((CoreInfoMap_t) coreInfoMap)[coreName]; }
 
     void _setDefaultSearchableAttributeBoosts(const string &coreName, const vector<string> &searchableAttributesVector);
 
@@ -837,8 +837,9 @@ public:
     unsigned numberOfReplicas; // always 0 for V0
     vector<ShardId> shards;
 
-    CoreInfo_t(class ConfigManager *manager) : configManager(manager) {};
-    CoreInfo_t(const CoreInfo_t &src);
+    CoreInfo_t(class ConfigManager *manager) : configManager(manager) {
+        schema = NULL;
+    };
 
     friend class ConfigManager;
 
@@ -982,6 +983,8 @@ public:
     unsigned short getPort(PortType_t portType) const;
     void setPort(PortType_t portType, unsigned short portNumber);
 
+    void setSchema(srch2is::Schema* schema) { this->schema = schema; };
+    srch2is::Schema* getSchema() { return this->schema; };
 
 protected:
     string name; // of core
@@ -1102,6 +1105,7 @@ protected:
     // array of local HTTP ports (if any) index by port type enum
     vector<unsigned short> ports;
 
+    srch2is::Schema *schema;
 };
 
 // requested by Surendra for the Synchronization Manager (SM)
