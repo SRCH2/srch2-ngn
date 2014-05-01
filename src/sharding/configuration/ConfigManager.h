@@ -825,10 +825,10 @@ public:
     CoreInfo_t(class ConfigManager *manager) : configManager(manager) {
         schema = NULL;
     };
-    CoreInfo_t(const CoreInfo_t &src);
+//    CoreInfo_t(const CoreInfo_t &src);
 
     ~CoreInfo_t() {
-        if (schema == NULL)
+        if (schema != NULL)
            delete schema;
     }
 
@@ -979,8 +979,6 @@ public:
     srch2is::Schema* createSchema();
     void setSchema(srch2is::Schema* schema) { this->schema = schema; };
     srch2is::Schema* getSchema() { return this->schema; };
-
-//    srch2is::Schema* loadSchema(string schemaFileName);
 
 protected:
     string name; // of core
