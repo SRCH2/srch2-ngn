@@ -12,7 +12,14 @@ IF(BUILD_JNI)
 ENDIF()
 
 # additional includes
-INCLUDE_DIRECTORIES(. "${CMAKE_BINARY_DIR}/include" ${Boost_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR} "${CMAKE_SOURCE_DIR}/wrapper")
+INCLUDE_DIRECTORIES(. 
+    ${CMAKE_BINARY_DIR}/include
+    ${Boost_INCLUDE_DIRS}
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/src/wrapper
+    ${CMAKE_SOURCE_DIR}/src/server
+    ${CMAKE_SOURCE_DIR}/src/sharding
+)
 
 
 #CHENLI: generating a shared library if needed.

@@ -1,5 +1,9 @@
 INCLUDE_DIRECTORIES(
     ${CMAKE_SOURCE_DIR}/src/core/
+    ${CMAKE_SOURCE_DIR}/src/sharding/
+    ${CMAKE_SOURCE_DIR}/src/server/
+    ${CMAKE_SOURCE_DIR}/src/wrapper/
+    ${CMAKE_SOURCE_DIR}/src/
     ${CMAKE_BINARY_DIR}/include/
     ${Boost_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}

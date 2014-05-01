@@ -92,6 +92,13 @@ namespace httpwrapper {
      partitionId = unsigned(-1);
      replicaId = unsigned(-1);
    }
+
+   bool operator==(const ShardId&) const;
+   bool operator!=(const ShardId&) const;
+   bool operator>(const ShardId&) const;
+   bool operator<(const ShardId&) const;
+   bool operator>=(const ShardId&) const;
+   bool operator<=(const ShardId&) const;
  };
 
  class ShardIdComparator {
@@ -1130,7 +1137,39 @@ protected:
     std::string multicastAddress;  // Default value = 224.2.2.7
     unsigned port;   // Default value = 92612
  };
- 
+
+bool ShardId::operator==(const ShardId& rhs) const {
+  return coreId == rhs.coreId && partitionId == rhs.partitionId 
+    && replicaId == replicaId;
+}
+bool ShardId::operator!=(const ShardId& rhs) const {
+  return coreId != rhs.coreId || partitionId != rhs.partitionId 
+    || replicaId != replicaId;
+}
+bool ShardId::operator>(const ShardId& rhs) const {
+  return  coreId > rhs.coreId ||
+   (coreId == rhs.coreId && 
+    (partitionId > rhs.partitionId || 
+     (partitionId == rhs.partitionId && replicaId > replicaId)));
+}
+bool ShardId::operator<(const ShardId& rhs) const {
+  return  coreId < rhs.coreId ||
+   (coreId == rhs.coreId && 
+    (partitionId < rhs.partitionId || 
+     (partitionId == rhs.partitionId && replicaId < replicaId)));
+}
+bool ShardId::operator>=(const ShardId& rhs) const {
+  return  coreId > rhs.coreId ||
+   (coreId == rhs.coreId && 
+    (partitionId > rhs.partitionId || 
+     (partitionId == rhs.partitionId && replicaId >= replicaId)));
+}
+bool ShardId::operator<=(const ShardId& rhs) const {
+  return  coreId < rhs.coreId ||
+   (coreId == rhs.coreId && 
+    (partitionId < rhs.partitionId || 
+     (partitionId == rhs.partitionId && replicaId <= replicaId)));
+}
 
 }
 }

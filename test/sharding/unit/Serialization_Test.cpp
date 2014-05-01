@@ -6,16 +6,16 @@
 
 #include "src/sharding/configuration/ConfigManager.h"
 
-#include "sharding/processor/serializables/SerializableCommandStatus.h"
-#include "sharding/processor/serializables/SerializableCommitCommandInput.h"
-#include "sharding/processor/serializables/SerializableDeleteCommandInput.h"
-#include "sharding/processor/serializables/SerializableGetInfoCommandInput.h"
-#include "sharding/processor/serializables/SerializableGetInfoResults.h"
-#include "sharding/processor/serializables/SerializableInsertUpdateCommandInput.h"
-#include "sharding/processor/serializables/SerializableResetLogCommandInput.h"
-#include "sharding/processor/serializables/SerializableSearchCommandInput.h"
-#include "sharding/processor/serializables/SerializableSearchResults.h"
-#include "sharding/processor/serializables/SerializableSerializeCommandInput.h"
+#include "src/sharding/processor/serializables/SerializableCommandStatus.h"
+#include "src/sharding/processor/serializables/SerializableCommitCommandInput.h"
+#include "src/sharding/processor/serializables/SerializableDeleteCommandInput.h"
+#include "src/sharding/processor/serializables/SerializableGetInfoCommandInput.h"
+#include "src/sharding/processor/serializables/SerializableGetInfoResults.h"
+#include "src/sharding/processor/serializables/SerializableInsertUpdateCommandInput.h"
+#include "src/sharding/processor/serializables/SerializableResetLogCommandInput.h"
+#include "src/sharding/processor/serializables/SerializableSearchCommandInput.h"
+#include "src/sharding/processor/serializables/SerializableSearchResults.h"
+#include "src/sharding/processor/serializables/SerializableSerializeCommandInput.h"
 
 
 using srch2http::ConfigManager;

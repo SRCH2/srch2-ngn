@@ -23,8 +23,8 @@ class SerializableGetInfoResults;
 class DPInternalRequestHandler {
 
 public:
-
 	// Public API which can be used by other modules
+  DPInternalRequestHandler(ConfigManager *cm);
 
 	/*
 	 * 1. Receives a search request from a shard

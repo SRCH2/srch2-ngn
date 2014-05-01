@@ -1,6 +1,8 @@
 #ifndef __CORE_UTIL_SERIALIZATION_HELPER_H_
 #define __CORE_UTIL_SERIALIZATION_HELPER_H_
 
+#include<string.h>
+
 namespace srch2is = srch2::instantsearch;
 using namespace std;
 
