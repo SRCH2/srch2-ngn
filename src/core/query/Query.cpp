@@ -24,6 +24,7 @@
 #include <instantsearch/Ranker.h>
 #include "util/Logger.h"
 #include "record/LocationRecordUtil.h"
+#include "util/SerializationHelper.h"
 #include <string>
 #include <sstream>
 

@@ -5,10 +5,6 @@
 #include <instantsearch/Record.h>
 #include <instantsearch/LogicalPlan.h>
 
-#include <sharding/configuration/ConfigManager.h>
-#include <sharding/routing/RoutingManager.h>
-#include "sharding/processor/Partitioner.h"
-
 #include <event.h>
 #include <evhttp.h>
 #include <event2/http.h>
@@ -42,16 +38,16 @@ using srch2is::QueryResults;
 namespace srch2 {
 namespace httpwrapper {
 
+class ConfigManager;
+class RoutingManager;
+class Partitioner;
+class CoreShardInfo;
+
 class DPExternalRequestHandler {
 
 public:
 
-	DPExternalRequestHandler(ConfigManager * configurationManager, RoutingManager * routingManager, SynchronizationManager * synchronizationManager){
-		this->configurationManager = configurationManager;
-		this->routingManager = routingManager;
-		this->synchronizationManager = synchronizationManager;
-		partitioner = new Partitioner(configurationManager, routingManager);
-	}
+	DPExternalRequestHandler(ConfigManager * configurationManager, RoutingManager * routingManager);
 
 	// Public API which can be used by other modules
 
@@ -128,7 +124,6 @@ public:
 private:
 	ConfigManager * configurationManager;
 	RoutingManager * routingManager;
-	SynchronizationManager * synchronizationManager;
 
 	// now, use Partitioner to choose a shard for this record
 	Partitioner * partitioner;

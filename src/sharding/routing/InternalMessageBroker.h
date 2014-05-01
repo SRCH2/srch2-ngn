@@ -1,8 +1,8 @@
 #ifndef __SHARDING_ROUTING_INTERNAL_MESSAGE_BROKER_H_
 #define __SHARDING_ROUTING_INTERNAL_MESSAGE_BROKER_H_
 
-#include "sharding/processor/DistributedProcessorInternal.h"
-#include "Message.h"
+#include "processor/DistributedProcessorInternal.h"
+#include "transport/Message.h"
 #include "RoutingManager.h"
 
 namespace srch2is = srch2::instantsearch;
@@ -14,20 +14,19 @@ namespace httpwrapper {
 class InternalMessageBroker{
 public:
 
-	InternalMessageBroker(RoutingManager&  routingManager)
-		this->routingManager;
-	}
-	void processInternalMessage(Message * message);
-	Srch2Server * getShardIndex(ShardId & shardId);
+	InternalMessageBroker(RoutingManager&);
+	void processInternalMessage(Message*);
+	Srch2Server* getShardIndex(ShardId&);
 
 
 private:
-  template<InputType, Deserializer, OutputType>
-    void broker(Message *msg, Srch2Server* server,
-        OutputType* (*DpInternalMessage::fn) (Srch2Server*, InputType*));
-  std::allocator<char> getMessageAllocator()
-  sendReply(Message*, void*);
- 
+  template<typename InputType, typename Deserializer, typename OutputType>
+    void broker(Message*, Srch2Server*,
+        OutputType (DPInternalRequestHandler::*fn) (Srch2Server*, InputType*));
+  std::allocator<char> getMessageAllocator();
+  void sendReply(Message*, void*);
+  
+  DPInternalRequestHandler& internalDP;
 	RoutingManager&  routingManager;
 };
 

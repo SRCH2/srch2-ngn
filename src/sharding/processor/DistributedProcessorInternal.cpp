@@ -2,7 +2,19 @@
 
 
 #include "util/Logger.h"
+#include "util/FileOps.h"
+#include "server/Srch2Server.h"
 
+#include "serializables/SerializableInsertUpdateCommandInput.h"
+#include "serializables/SerializableSerializeCommandInput.h"
+#include "serializables/SerializableDeleteCommandInput.h"
+#include "serializables/SerializableSearchResults.h"
+#include "serializables/SerializableSearchCommandInput.h"
+#include "serializables/SerializableCommandStatus.h"
+#include "serializables/SerializableGetInfoCommandInput.h"
+#include "serializables/SerializableGetInfoResults.h"
+#include "serializables/SerializableResetLogCommandInput.h"
+#include "serializables/SerializableCommitCommandInput.h"
 
 #include "QueryExecutor.h"
 #include "instantsearch/LogicalPlan.h"
@@ -23,7 +35,7 @@ namespace httpwrapper {
 SerializableSearchResults DPInternalRequestHandler::internalSearchCommand(Srch2Server * server, SerializableSearchCommandInput * searchData){
 
 	if(searchData == NULL || server == NULL){
-		SerializableSearchResults searchResults(NULL, 0);
+		SerializableSearchResults searchResults;
 		return searchResults;
 	}
 	// first find the search URL
@@ -91,19 +103,19 @@ SerializableCommandStatus DPInternalRequestHandler::internalInsertCommand(Srch2S
 		// Do NOT delete analyzer because it is thread specific. It will be reused for
 		// search/update/delete operations.
         srch2::instantsearch::Analyzer * analyzer = AnalyzerFactory::getCurrentThreadAnalyzer(server->indexDataConfig);
-		srch2::instantsearch::INDEXWRITE_RETVAL ret = server->indexer->addRecord(insertUpdateData->record, analyzer);
+		srch2::instantsearch::INDEXWRITE_RETVAL ret = server->indexer->addRecord(insertUpdateData->getRecord(), analyzer);
 
 		switch( ret )
 		{
 			case srch2::instantsearch::OP_SUCCESS:
 			{
-				log_str << "{\"rid\":\"" << insertUpdateData->record->getPrimaryKey() << "\",\"insert\":\"success\"}";
+				log_str << "{\"rid\":\"" << insertUpdateData->getRecord()->getPrimaryKey() << "\",\"insert\":\"success\"}";
 				SerializableCommandStatus status(SerializableCommandStatus::INSERT, true, log_str.str());
 				return status;
 			}
 			case srch2::instantsearch::OP_FAIL:
 			{
-				log_str << "{\"rid\":\"" << insertUpdateData->record->getPrimaryKey() << "\",\"insert\":\"failed\",\"reason\":\"The record with same primary key already exists\"}";
+				log_str << "{\"rid\":\"" << insertUpdateData->getRecord()->getPrimaryKey() << "\",\"insert\":\"failed\",\"reason\":\"The record with same primary key already exists\"}";
 				SerializableCommandStatus status(SerializableCommandStatus::INSERT, false, log_str.str());
 				return status;
 			}
@@ -111,7 +123,7 @@ SerializableCommandStatus DPInternalRequestHandler::internalInsertCommand(Srch2S
 	}
 	else
 	{
-		log_str << "{\"rid\":\"" << insertUpdateData->record->getPrimaryKey() << "\",\"insert\":\"failed\",\"reason\":\"document limit reached. Email support@srch2.com for account upgrade.\"}";
+		log_str << "{\"rid\":\"" << insertUpdateData->getRecord()->getPrimaryKey() << "\",\"insert\":\"failed\",\"reason\":\"document limit reached. Email support@srch2.com for account upgrade.\"}";
 		SerializableCommandStatus status(SerializableCommandStatus::INSERT, false, log_str.str());
 		return status;
 	}
@@ -142,12 +154,12 @@ SerializableCommandStatus DPInternalRequestHandler::internalUpdateCommand(Srch2S
 
     unsigned deletedInternalRecordId;
     std::string primaryKeyStringValue;
-	primaryKeyStringValue = insertUpdateData->record->getPrimaryKey();
+	primaryKeyStringValue = insertUpdateData->getRecord()->getPrimaryKey();
 	log_str << "{\"rid\":\"" << primaryKeyStringValue << "\",\"update\":\"";
 
 	//delete the record from the index
 	bool recordExisted = false;
-	switch(indexer->deleteRecordGetInternalId(primaryKeyStringValue, deletedInternalRecordId))
+	switch(server->indexer->deleteRecordGetInternalId(primaryKeyStringValue, deletedInternalRecordId))
 	{
 		case srch2::instantsearch::OP_FAIL:
 		{
@@ -157,6 +169,7 @@ SerializableCommandStatus DPInternalRequestHandler::internalUpdateCommand(Srch2S
 		default: // OP_SUCCESS.
 		{
 		    recordExisted = true;
+		    break;
 		}
 	};
 
@@ -165,12 +178,12 @@ SerializableCommandStatus DPInternalRequestHandler::internalUpdateCommand(Srch2S
 
 	//add the record to the index
 
-	if ( indexer->getNumberOfDocumentsInIndex() < server->indexDataConfig->getDocumentLimit() )
+	if ( server->indexer->getNumberOfDocumentsInIndex() < server->indexDataConfig->getDocumentLimit() )
 	{
 		// Do NOT delete analyzer because it is thread specific. It will be reused for
 		// search/update/delete operations.
         Analyzer* analyzer = AnalyzerFactory::getCurrentThreadAnalyzer(server->indexDataConfig);
-		srch2::instantsearch::INDEXWRITE_RETVAL ret = server->indexer->addRecord(insertUpdateData->record, analyzer);
+		srch2::instantsearch::INDEXWRITE_RETVAL ret = server->indexer->addRecord(insertUpdateData->getRecord(), analyzer);
 		switch( ret )
 		{
 			case srch2::instantsearch::OP_SUCCESS:
@@ -197,7 +210,7 @@ SerializableCommandStatus DPInternalRequestHandler::internalUpdateCommand(Srch2S
 
     /// reaching here means the insert failed, need to resume the deleted old record
 
-    srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->recoverRecord(primaryKeyStringValue, deletedInternalRecordId);
+    srch2::instantsearch::INDEXWRITE_RETVAL ret = server->indexer->recoverRecord(primaryKeyStringValue, deletedInternalRecordId);
 
     switch ( ret )
     {
@@ -235,10 +248,10 @@ SerializableCommandStatus DPInternalRequestHandler::	internalDeleteCommand(Srch2
 		return status;
 	}
 	std::stringstream log_str;
-	log_str << "{\"rid\":\"" << deleteData->primaryKey << "\",\"delete\":\"";
+	log_str << "{\"rid\":\"" << deleteData->getPrimaryKey() << "\",\"delete\":\"";
 
 	//delete the record from the index
-	switch(server->indexer->deleteRecord(deleteData->primaryKey)){
+	switch(server->indexer->deleteRecord(deleteData->getPrimaryKey())){
 		case OP_FAIL:
 		{
 			log_str << "failed\",\"reason\":\"no record with given primary key\"}";
@@ -262,7 +275,7 @@ SerializableCommandStatus DPInternalRequestHandler::	internalDeleteCommand(Srch2
  */
 SerializableGetInfoResults DPInternalRequestHandler::internalGetInfoCommand(Srch2Server * server, string versionInfo, SerializableGetInfoCommandInput * getInfoData){
 	if(getInfoData == NULL || server == NULL){
-		SerializableGetInfoResults getInfoResult;
+		SerializableGetInfoResults getInfoResult(0,0,0,"",0,"");
 		return getInfoResult;
 	}
 	unsigned readCount;
@@ -270,7 +283,7 @@ SerializableGetInfoResults DPInternalRequestHandler::internalGetInfoCommand(Srch
 	unsigned numberOfDocumentsInIndex;
 	string lastMergeTimeString;
 	unsigned docCount;
-	server->indexer->getIndexHealth(readCount, writeCount, numberOfDocumentsInIndex, lastMergeTimeString ,docCount);
+	server->indexer->getIndexHealthThoughArguments(readCount, writeCount, numberOfDocumentsInIndex, lastMergeTimeString ,docCount);
 
 	SerializableGetInfoResults getInfoResult(readCount, writeCount, numberOfDocumentsInIndex, lastMergeTimeString, docCount, versionInfo);
 	return getInfoResult;
@@ -286,7 +299,7 @@ SerializableCommandStatus DPInternalRequestHandler::	internalSerializeCommand(Sr
 		SerializableCommandStatus status(SerializableCommandStatus::SERIALIZE, false, "");
 		return status;
 	}
-	if(serailizeData->indexOrRecord){ // serialize index
+	if(serailizeData->getIndexOrRecord()){ // serialize index
 		return this->internalSerializeIndexCommand(server, serailizeData);
 	}else{ // serialize records
 		return this->internalSerializeRecordsCommand(server, serailizeData);
@@ -320,7 +333,7 @@ SerializableCommandStatus DPInternalRequestHandler::internalSerializeRecordsComm
 		SerializableCommandStatus status(SerializableCommandStatus::SERIALIZE_RECORDS, false, "");
 		return status;
 	}
-	string exportedDataFileName = serailizeData->dataFileName;
+	string exportedDataFileName = serailizeData->getDataFileName();
     if(srch2::util::checkDirExistence(exportedDataFileName.c_str())){
         exportedDataFileName = "export_data.json";
     }
@@ -371,7 +384,7 @@ SerializableCommandStatus DPInternalRequestHandler::internalCommitCommand(Srch2S
 	}
 
 	//commit the index.
-	if ( indexer->commit() == srch2::instantsearch::OP_SUCCESS)
+	if ( server->indexer->commit() == srch2::instantsearch::OP_SUCCESS)
 	{
 		SerializableCommandStatus status(SerializableCommandStatus::COMMIT, true, "{\"commit\":\"success\"}");
 		return status;
@@ -379,8 +392,8 @@ SerializableCommandStatus DPInternalRequestHandler::internalCommitCommand(Srch2S
 	else
 	{
 		SerializableCommandStatus status(SerializableCommandStatus::COMMIT, false, "{\"commit\":\"failed\"}");
+		return status;
 	}
-	return status;
 }
 
 }

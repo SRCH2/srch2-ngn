@@ -5,7 +5,7 @@ namespace srch2is = srch2::instantsearch;
 using namespace std;
 
 #include "sharding/configuration/ShardingConstants.h"
-#include "util/SerializationHelper.h"
+#include "core/util/SerializationHelper.h"
 
 namespace srch2 {
 namespace httpwrapper {

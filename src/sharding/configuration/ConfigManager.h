@@ -36,6 +36,14 @@ namespace httpwrapper {
     SHARDSTATE_INDEXING
   };
 
+
+ class CoreShardInfo{
+ public:
+	 unsigned coreId;
+	 string coreName; // because currently you can get coreInfo_t from config only by passing the name ....
+ };
+
+
  // A shard id consists of a core id, a partition id, and replica id
  // E.g.: a core with 7 partitions, each of which has a primary and 4 replicas
  //
@@ -84,6 +92,40 @@ namespace httpwrapper {
      partitionId = unsigned(-1);
      replicaId = unsigned(-1);
    }
+
+   bool operator==(const ShardId& rhs) const {
+     return coreId == rhs.coreId && partitionId == rhs.partitionId
+       && replicaId == replicaId;
+   }
+   bool operator!=(const ShardId& rhs) const {
+     return coreId != rhs.coreId || partitionId != rhs.partitionId
+       || replicaId != replicaId;
+   }
+   bool operator>(const ShardId& rhs) const {
+     return  coreId > rhs.coreId ||
+      (coreId == rhs.coreId &&
+       (partitionId > rhs.partitionId ||
+        (partitionId == rhs.partitionId && replicaId > replicaId)));
+   }
+   bool operator<(const ShardId& rhs) const {
+     return  coreId < rhs.coreId ||
+      (coreId == rhs.coreId &&
+       (partitionId < rhs.partitionId ||
+        (partitionId == rhs.partitionId && replicaId < replicaId)));
+   }
+   bool operator>=(const ShardId& rhs) const {
+     return  coreId > rhs.coreId ||
+      (coreId == rhs.coreId &&
+       (partitionId > rhs.partitionId ||
+        (partitionId == rhs.partitionId && replicaId >= replicaId)));
+   }
+   bool operator<=(const ShardId& rhs) const {
+     return  coreId < rhs.coreId ||
+      (coreId == rhs.coreId &&
+       (partitionId < rhs.partitionId ||
+        (partitionId == rhs.partitionId && replicaId <= replicaId)));
+   }
+
  };
 
  class ShardIdComparator {
@@ -114,6 +156,15 @@ namespace httpwrapper {
 
  class Shard {
    public:
+
+   Shard(){
+     this->nodeId = 0;
+     this->shardState = SHARDSTATE_UNALLOCATED;
+     this->shardId.coreId = 0;
+     this->shardId.partitionId = 0;
+     this->shardId.replicaId = 0;
+   }
+
    Shard(unsigned nodeId, unsigned coreId, unsigned partitionId = 0, unsigned replicaId = 0){
      this->nodeId = nodeId;
      this->shardState = SHARDSTATE_UNALLOCATED;
@@ -123,33 +174,33 @@ namespace httpwrapper {
    }
 
    //Can be used in Migration
-    void setPartitionId(int partitionId){
-	this->shardId.partitionId = partitionId;
+   void setPartitionId(int partitionId){
+     this->shardId.partitionId = partitionId;
     }
 
 	//Can be used in Migration
-    void setReplicaId(int replicaId){
-	this->shardId.replicaId = replicaId;
+   void setReplicaId(int replicaId){
+     this->shardId.replicaId = replicaId;
     }
 
    ShardId getShardId(){
-	   return this->shardId;
+     return this->shardId;
    }
 
    void setShardState(ShardState newState){
-	   this->shardState = newState;
+     this->shardState = newState;
    }
 
    void setNodeId(unsigned id){
-	   this->nodeId = id;
+     this->nodeId = id;
    }
 
    ShardState getShardState(){
-	   return this->shardState;
+     return this->shardState;
    }
 
    unsigned getNodeId(){
-	   return this->nodeId;
+     return this->nodeId;
    }
 
   private:
@@ -160,20 +211,7 @@ namespace httpwrapper {
 
 class Node {
  public:
-/*
-Node(const Node& cpy)
- {
-	//	this->coreToShardsMap = cpy.coreToShardsMap;
-	    this->nodeId = cpy.nodeId;
-	    this->nodeName = cpy.nodeName;
-		this->ipAddress = cpy.ipAddress;
-		this->portNumber = portNumber;
-		this->nodeMaster = nodeMaster;
-		this->nodeData = nodeData;
-		this->homeDir = homeDir;
-		this->numberOfThreads = numberOfThreads;
- }
-*/
+
   Node()
   {
 	this->nodeId = 0;
@@ -194,8 +232,8 @@ Node(const Node& cpy)
 	this->nodeId = 0;
 	this->nodeName = nodeName;
 	this->ipAddress = ipAddress;
-    this->portNumber = portNumber;
-    this->thisIsMe = thisIsMe;
+	this->portNumber = portNumber;
+	this->thisIsMe = thisIsMe;
 	this->nodeMaster = true;
 	this->nodeData = true;
 	this->dataDir = "";
@@ -243,9 +281,15 @@ Node(const Node& cpy)
 	  return this->nodeId;
   }
 
-  unsigned int getPortNumber() const {
+  void setId(unsigned nodeId){
+  	  this->nodeId = nodeId;
+  }
+
+  unsigned int getPortNumber() const{
 	  return this->portNumber;
   }
+
+
   Shard getShardById(const ShardId& shardId);
   void addShard(const ShardId& shardId);
   void removeShard(const ShardId& shardId);
@@ -276,10 +320,6 @@ Node(const Node& cpy)
   std::string ipAddress;
   unsigned portNumber;
   std::string nodeName;
-  // coreName -> shards mapping
-  // movie -> <shard0, shard1, shard3>
-  // customer -> <shard2, shard3>
-  boost::unordered_map<std::string, std::vector<Shard> > coreToShardsMap; // not required for now
 
   // Allow this node to be eligible as a master node (enabled by default).
   bool nodeMaster;
@@ -324,7 +364,7 @@ class Cluster {
   void         getNodeById(unsigned id, Node& node);
   unsigned     getTotalNumberOfNodes();
   
-  void setClusterName(std::string& clusterName)
+  void setClusterName(const std::string& clusterName)
   {
 	this->clusterName = clusterName;
   }
@@ -403,7 +443,7 @@ public:
 				   const string & defaultValue,
 				   const bool required,
 				   const bool isMultiValued){
-    this->attributeName = name;
+	this->attributeName = name;
 	this->attributeType = type;
 	this->defaultValue = defaultValue;
 	this->required = required;
@@ -461,6 +501,15 @@ public:
     	return &(this->cluster);
     }
 
+    unsigned getCurrentNodeId(){
+    	vector<Node>* nodes = this->cluster.getNodes();
+    	for(int i = 0; i < nodes->size(); i++){
+    		if(nodes->at(i).thisIsMe == true){
+    			return nodes->at(i).getId();
+    		}
+    	}
+    	return 0;
+    }
 private:
     Cluster cluster;
     // <config>
@@ -565,14 +614,17 @@ protected:
 public:
     ConfigManager(const string& configfile);
     virtual ~ConfigManager();
+    bool verifyConsistency();
+    void setNodeId();
+    bool isLocal(ShardId& shardId);
 
     //Declaring function to parse node tags
-    void parseNode(std::vector<Node>* nodes, xml_node& childNode);
+    void parseNode(std::vector<Node>* nodes, xml_node& childNode, std::stringstream &parseWarnings);
 
     CoreInfo_t *getCoreInfoMap(const string &coreName) const;
     CoreInfoMap_t::iterator coreInfoIterateBegin() { return coreInfoMap.begin(); }
     CoreInfoMap_t::iterator coreInfoIterateEnd() { return coreInfoMap.end(); }
-	const CoreInfo_t *getCoreInfo(const string &coreName) const { return ((CoreInfoMap_t) coreInfoMap)[coreName]; }
+    CoreInfo_t *getCoreInfo(const string &coreName) const { return ((CoreInfoMap_t) coreInfoMap)[coreName]; }
 
     void _setDefaultSearchableAttributeBoosts(const string &coreName, const vector<string> &searchableAttributesVector);
 
@@ -682,6 +734,12 @@ private:
     static const char* const nodeDataTag;
     static const char* const nodeHomeTag;
     static const char* const nodeDataDirTag;
+    static const char* const primaryShardTag;
+    static const char* const replicaShardTag;
+    static const char* const clusterNameTag;
+    static const int DefaultNumberOfPrimaryShards;
+    static const int DefaultNumberOfReplicas;
+    static const char* const DefaultClusterName;
 
     static const char* const accessLogFileString;
     static const char* const analyzerString;
@@ -805,25 +863,25 @@ private:
 class CoreInfo_t {
 
 public:
-	unsigned coreId; // starting from 0, auto increment
-	string coreName;
+    unsigned coreId; // starting from 0, auto increment
 
-	// In V0, the "number_of_shards" is a one-time setting for a
-	// core. In the future (possibly after V1), we can support dynamic
-	// migration by allowing this number to change.
-	unsigned numberOfPrimaryShards;
+    // In V0, the "number_of_shards" is a one-time setting for a
+    // core. In the future (possibly after V1), we can support dynamic
+    // migration by allowing this number to change.
+    unsigned numberOfPrimaryShards;
 
-	// Number of replicas (additional copies) of an index (1 by
-	// default). The "number_of_replicas" can be increased or
-	// decreased anytime, by using the Index Update Settings API. We
-	// can do it in V0 or after V1. SRCH2 will take care about load
-	// balancing, relocating, gathering the results from nodes, etc.
-	// ES: core.number_of_replicas: 1 // index.number_of_replicas: 1
-	unsigned numberOfReplicas; // always 0 for V0
-	vector<ShardId> shards;
+    // Number of replicas (additional copies) of an index (1 by
+    // default). The "number_of_replicas" can be increased or
+    // decreased anytime, by using the Index Update Settings API. We
+    // can do it in V0 or after V1. SRCH2 will take care about load
+    // balancing, relocating, gathering the results from nodes, etc.
+    // ES: core.number_of_replicas: 1 // index.number_of_replicas: 1
+    unsigned numberOfReplicas; // always 0 for V0
+    vector<ShardId> shards;
 
-    CoreInfo_t(class ConfigManager *manager) : configManager(manager) {};
-    CoreInfo_t(const CoreInfo_t &src);
+    CoreInfo_t(class ConfigManager *manager) : configManager(manager) {
+        schema = NULL;
+    };
 
     friend class ConfigManager;
 
@@ -967,6 +1025,8 @@ public:
     unsigned short getPort(PortType_t portType) const;
     void setPort(PortType_t portType, unsigned short portNumber);
 
+    void setSchema(srch2is::Schema* schema) { this->schema = schema; };
+    srch2is::Schema* getSchema() { return this->schema; };
 
 protected:
     string name; // of core
@@ -1087,24 +1147,23 @@ protected:
     // array of local HTTP ports (if any) index by port type enum
     vector<unsigned short> ports;
 
+    srch2is::Schema *schema;
 };
 
 // requested by Surendra for the Synchronization Manager (SM)
  class DiscoveryParams {
  public:
-   unsigned pingInterval;
-   unsigned pingTimeout;
-   unsigned retryCount;
+    unsigned pingInterval;
+    unsigned pingTimeout;
+    unsigned retryCount;
  };
  
  // If we are supporting multicast
  class Multicast {
  public:
-   std::string multicastAddress;  // Default value = 224.2.2.7
-   unsigned port;   // Default value = 92612
+    std::string multicastAddress;  // Default value = 224.2.2.7
+    unsigned port;   // Default value = 92612
  };
- 
-
 }
 }
 

@@ -26,8 +26,8 @@
 #include <algorithm>
 
 #include "WrapperConstants.h"
-#include "FilterQueryEvaluator.h"
-#include "SortFilterEvaluator.h"
+#include "postprocessing/FilterQueryEvaluator.h"
+#include "postprocessing/SortFilterEvaluator.h"
 #include "instantsearch/LogicalPlan.h"
 #include "instantsearch/ResultsPostProcessor.h"
 

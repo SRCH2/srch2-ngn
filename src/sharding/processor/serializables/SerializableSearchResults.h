@@ -8,6 +8,8 @@ using namespace std;
 #include <instantsearch/QueryResults.h>
 #include <core/query/QueryResultsInternal.h>
 #include <vector>
+#include <boost/shared_ptr.hpp>
+#include "core/util/SerializationHelper.h"
 
 namespace srch2 {
 namespace httpwrapper {
@@ -30,20 +32,16 @@ class SerializableSearchResults {
   public:
 
 	SerializableSearchResults(){
-		this->queryResults = new QueryResults();
-		this->resultsFactory = new QueryResultFactory();
-	}
-
-	~SerializableSearchResults(){
-		delete this->queryResults;
-		delete this->resultsFactory;
+		this->queryResults = boost::shared_ptr<QueryResults>(new QueryResults());
+		this->resultsFactory = 
+      boost::shared_ptr<QueryResultFactory>(new QueryResultFactory());
 	}
 
 	QueryResults * getQueryResults(){
-		return queryResults;
+		return &(*queryResults);
 	}
 	QueryResultFactory * getQueryResultsFactory(){
-		return resultsFactory;
+		return &(*resultsFactory);
 	}
 	void setSearcherTime(unsigned searcherTime){
 		this->searcherTime = searcherTime;
@@ -98,8 +96,8 @@ class SerializableSearchResults {
     std::vector<QueryResultPtr> getSortedFinalResults();
 
   private:
-	QueryResults * queryResults;
-    QueryResultFactory * resultsFactory;
+    boost::shared_ptr<QueryResults> queryResults;
+    boost::shared_ptr<QueryResultFactory> resultsFactory;
    	// extra information to be added later
 	unsigned searcherTime;
 

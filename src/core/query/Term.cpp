@@ -26,6 +26,7 @@
 #include <stdint.h>
 #include "util/encoding.h"
 #include <sstream>
+#include "util/SerializationHelper.h"
 
 using std::string;
 using std::vector;

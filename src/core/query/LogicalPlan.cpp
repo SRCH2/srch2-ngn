@@ -318,13 +318,13 @@ void * LogicalPlan::serializeForNetwork(void * buffer){
  *  docIdForRetrieveByIdSearchType | isNULL | isNULL | isNULL | isNULL | \
  *   [exactQuery] | [fuzzyQuery] | [postProcessingInfo] | [tree] |
  */
-static void * LogicalPlan::deserializeForNetwork(LogicalPlan & logicalPlan , void * buffer){
+void * LogicalPlan::deserializeForNetwork(LogicalPlan & logicalPlan , void * buffer){
 
-	buffer = srch2::util::deserializeFixedTypes(buffer, this->offset);
-	buffer = srch2::util::deserializeFixedTypes(buffer, this->numberOfResultsToRetrieve);
-	buffer = srch2::util::deserializeFixedTypes(buffer, this->shouldRunFuzzyQuery);
-	buffer = srch2::util::deserializeFixedTypes(buffer, this->queryType);
-	buffer = srch2::util::deserializeString(buffer, this->docIdForRetrieveByIdSearchType);
+	buffer = srch2::util::deserializeFixedTypes(buffer, logicalPlan.offset);
+	buffer = srch2::util::deserializeFixedTypes(buffer, logicalPlan.numberOfResultsToRetrieve);
+	buffer = srch2::util::deserializeFixedTypes(buffer, logicalPlan.shouldRunFuzzyQuery);
+	buffer = srch2::util::deserializeFixedTypes(buffer, logicalPlan.queryType);
+	buffer = srch2::util::deserializeString(buffer, logicalPlan.docIdForRetrieveByIdSearchType);
 
 	bool isExactQueryNotNull = false;
 	buffer = srch2::util::deserializeFixedTypes(buffer, isExactQueryNotNull);
@@ -336,20 +336,20 @@ static void * LogicalPlan::deserializeForNetwork(LogicalPlan & logicalPlan , voi
 	buffer = srch2::util::deserializeFixedTypes(buffer, isTreeNotNull);
 
 	if(isExactQueryNotNull){
-		exactQuery = new Query(SearchTypeTopKQuery);
-		buffer = Query::deserializeForNetwork(*exactQuery, buffer);
+		logicalPlan.exactQuery = new Query(SearchTypeTopKQuery);
+		buffer = Query::deserializeForNetwork(*logicalPlan.exactQuery, buffer);
 	}
 	if(isFuzzyQueryNotNull){
-		fuzzyQuery = new Query(SearchTypeTopKQuery);
-		buffer = Query::deserializeForNetwork(*fuzzyQuery, buffer);
+		logicalPlan.fuzzyQuery = new Query(SearchTypeTopKQuery);
+		buffer = Query::deserializeForNetwork(*logicalPlan.fuzzyQuery, buffer);
 	}
 	// NOTE: postProcessingPlan is not serialized because it's not used anymore and it must be deleted
 	if(isPostProcessingInfoNotNull){
-		postProcessingInfo = new ResultsPostProcessingInfo();
-		ResultsPostProcessingInfo::deserializeForNetwork(*postProcessingInfo, buffer);
+		logicalPlan.postProcessingInfo = new ResultsPostProcessingInfo();
+		ResultsPostProcessingInfo::deserializeForNetwork(*logicalPlan.postProcessingInfo, buffer);
 	}
 	if(isTreeNotNull){
-		buffer = LogicalPlanNode::deserializeForNetwork(tree, buffer);
+		buffer = LogicalPlanNode::deserializeForNetwork(logicalPlan.tree, buffer);
 	}
 
 	return buffer;

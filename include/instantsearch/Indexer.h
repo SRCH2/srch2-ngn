@@ -14,7 +14,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright © 2010 SRCH2 Inc. All rights reserved
+ * Copyright 2010 SRCH2 Inc. All rights reserved
  */
 
 #ifndef __INDEXER_H__
@@ -131,7 +131,7 @@ public:
     virtual uint32_t getNumberOfDocumentsInIndex() const = 0;
 
     virtual const std::string getIndexHealth() const = 0;
-    virtual void getIndexHealth(unsigned & readCount, unsigned & writeCount, unsigned & numberOfIndexedDocuments
+    virtual void getIndexHealthThoughArguments(unsigned & readCount, unsigned & writeCount, unsigned & numberOfIndexedDocuments
     		, std::string lastMergeTimeString, unsigned docCount) const = 0;
 
     virtual const srch2::instantsearch::Schema *getSchema() const = 0;

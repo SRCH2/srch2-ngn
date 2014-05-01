@@ -5,28 +5,17 @@ using namespace std;
 #include <string>
 #include "instantsearch/Record.h"
 #include "sharding/configuration/ConfigManager.h"
-#include "sharding/routing/RoutingManager.h"
 
 using namespace srch2::instantsearch;
 
 namespace srch2 {
 namespace httpwrapper {
 
-/*
- * TODO: this struct must be replaced with something consistent with ConfigurationManager global structures ...
- */
-struct CoreShardInfo {
-	unsigned shardId;
-	string coreName;
-};
 
 class Partitioner {
 public:
 
-	Partitioner(ConfigManager * configurationManager, RoutingManager * routingManager){
-		this->configurationManager = configurationManager;
-		this->routingManager = routingManager;
-	}
+	Partitioner(ConfigManager * configurationManager);
 
 	/*
 	 * Hash implementation :
@@ -35,11 +24,11 @@ public:
 	 * 3. Uses hash(...) to choose which shard should be responsible for this record
 	 * 4. Returns the information of corresponding Shard (which can be discovered from SM)
 	 */
-	CoreShardInfo getShardIDForRecord(Record * record);
+	ShardId getShardIDForRecord(Record * record);
 	// TODO : if the shard hash value of a record must be calculated by
 	// evaluating an expression given in configuration file, primaryKeyStringValue is not enough
 	// as the input of this method, this will change later ...
-	CoreShardInfo getShardIDForRecord(string primaryKeyStringValue);
+	ShardId getShardIDForRecord(string primaryKeyStringValue);
 
 
 private:
@@ -57,11 +46,10 @@ private:
 	 */
 	unsigned hash(unsigned valueToHash, unsigned hashSpace);
 
-	CoreShardInfo convertUnsignedToCoreShardInfo(unsigned coreShardIndex);
+	ShardId convertUnsignedToCoreShardInfo(unsigned coreShardIndex);
 
 
 private:
-	RoutingManager * routingManager;
 	ConfigManager * configurationManager;
 };
 

@@ -156,7 +156,7 @@ void * QueryResultsInternal::deserializeForNetwork(void * buffer){
 		buffer = srch2::util::deserializeString(buffer, keyValue); // string
 		FacetType facetType;
 		buffer = srch2::util::deserializeFixedTypes(buffer,facetType); // FacetType
-		std::pair< FacetType , std::vector<std::pair<std::string, float> > > & newPair =
+		std::pair< FacetType , std::vector<std::pair<std::string, float> > > newPair =
 				std::make_pair(facetType , std::vector<std::pair<std::string, float> >());
 		unsigned pairVectorSize = 0;
 		buffer = srch2::util::deserializeFixedTypes(buffer, pairVectorSize); // vector size
