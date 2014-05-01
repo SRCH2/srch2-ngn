@@ -1,7 +1,7 @@
 #ifndef __SHARDING_PROCESSOR_SERIALIZABLE_GETINFO_RESULTS_H_
 #define __SHARDING_PROCESSOR_SERIALIZABLE_GETINFO_RESULTS_H_
 
-#include "util/SerializationHelper.h"
+#include "core/util/SerializationHelper.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace std;

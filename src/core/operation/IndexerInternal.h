@@ -186,7 +186,7 @@ public:
         return str.str();
     }
     
-    inline const void getIndexHealth(unsigned & readCount, unsigned & writeCount, unsigned & numberOfIndexedDocuments
+    inline void getIndexHealthThoughArguments(unsigned & readCount, unsigned & writeCount, unsigned & numberOfIndexedDocuments
     		, std::string lastMergeTimeString, unsigned docCount) const
     {
     	readCount = this->index->_getReadCount();

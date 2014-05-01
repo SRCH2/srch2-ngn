@@ -29,7 +29,7 @@
 #include <instantsearch/TypedValue.h>
 #include <instantsearch/ResultsPostProcessor.h>
 #include "instantsearch/Schema.h"
-#include "WrapperConstants.h"
+#include "instantsearch/Constants.h"
 #include "util/exprtk.hpp"
 #include "boost/regex.hpp"
 #include <boost/algorithm/string.hpp>

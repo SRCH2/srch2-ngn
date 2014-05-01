@@ -21,6 +21,8 @@
 #include <instantsearch/QueryEvaluator.h>
 #include "operation/QueryEvaluatorInternal.h"
 #include <instantsearch/ResultsPostProcessor.h>
+#include <postprocessing/SortFilterEvaluator.h>
+#include <postprocessing/FilterQueryEvaluator.h>
 #include <sstream>
 
 using namespace std;

@@ -36,6 +36,14 @@ namespace httpwrapper {
     SHARDSTATE_INDEXING
   };
 
+
+ class CoreShardInfo{
+ public:
+	 unsigned coreId;
+	 string coreName; // because currently you can get coreInfo_t from config only by passing the name ....
+ };
+
+
  // A shard id consists of a core id, a partition id, and replica id
  // E.g.: a core with 7 partitions, each of which has a primary and 4 replicas
  //

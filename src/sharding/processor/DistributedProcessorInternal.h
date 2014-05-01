@@ -1,30 +1,25 @@
 #ifndef __SHARDING_PROCESSOR_DISTRIBUTED_PROCESSR_INTERNAL_H_
 #define __SHARDING_PROCESSOR_DISTRIBUTED_PROCESSR_INTERNAL_H_
 
-#include "util/FileOps.h"
-#include "server/Srch2Server.h"
+#include <string>
 
-#include "serializables/SerializableInsertUpdateCommandInput.h"
-#include "serializables/SerializableSerializeCommandInput.h"
-#include "serializables/SerializableDeleteCommandInput.h"
-#include "serializables/SerializableSearchResults.h"
-#include "serializables/SerializableSearchCommandInput.h"
-#include "serializables/SerializableCommandStatus.h"
-#include "serializables/SerializableGetInfoCommandInput.h"
-#include "serializables/SerializableGetInfoResults.h"
-#include "serializables/SerializableResetLogCommandInput.h"
-#include "serializables/SerializableCommitCommandInput.h"
-
-
-namespace srch2is = srch2::instantsearch;
 using namespace std;
 
 namespace srch2 {
 namespace httpwrapper {
 
-class RoutingManager;
 class ConfigManager;
-
+class Srch2Server;
+class SerializableSearchCommandInput;
+class SerializableSearchResults;
+class SerializableInsertUpdateCommandInput;
+class SerializableDeleteCommandInput;
+class SerializableCommandStatus;
+class SerializableSerializeCommandInput;
+class SerializableResetLogCommandInput;
+class SerializableCommitCommandInput;
+class SerializableGetInfoCommandInput;
+class SerializableGetInfoResults;
 class DPInternalRequestHandler {
 
 public:
@@ -113,8 +108,6 @@ public:
 
 
 private:
-	RoutingManager * routingManager;
-	SynchronizationManager * synchronizationManager;
 	ConfigManager * configurationManager;
 };
 

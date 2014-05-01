@@ -28,6 +28,7 @@
 #include <cmath>
 #include <algorithm>
 #include "util/DateAndTimeHandler.h"
+#include "util/SerializationHelper.h"
 
 namespace srch2
 {

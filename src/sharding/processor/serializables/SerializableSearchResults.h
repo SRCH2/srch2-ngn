@@ -8,6 +8,7 @@ using namespace std;
 #include <instantsearch/QueryResults.h>
 #include <core/query/QueryResultsInternal.h>
 #include <vector>
+#include "core/util/SerializationHelper.h"
 
 namespace srch2 {
 namespace httpwrapper {

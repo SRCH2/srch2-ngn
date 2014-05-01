@@ -14,6 +14,10 @@ namespace httpwrapper {
 //###########################################################################
 
 
+Partitioner::Partitioner(ConfigManager * configurationManager){
+	this->configurationManager = configurationManager;
+}
+
 /*
  * Hash implementation :
  * 1. Uses getRecordValueToHash to find the value to be hashed for this record
@@ -21,19 +25,19 @@ namespace httpwrapper {
  * 3. Uses hash(...) to choose which shard should be responsible for this record
  * 4. Returns the information of corresponding Shard (which can be discovered from SM)
  */
-CoreShardInfo Partitioner::getShardIDForRecord(Record * record){
+ShardId Partitioner::getShardIDForRecord(Record * record){
 
 	unsigned valueToHash = getRecordValueToHash(record);
 
-	unsigned totalNumberOfShards = routingManager->getNumberOfShards();
+	unsigned totalNumberOfShards = 3; //routingManager->getNumberOfShards(); TODO  we need total number of shards
 
 	return convertUnsignedToCoreShardInfo(hash(valueToHash , totalNumberOfShards));
 }
 
-CoreShardInfo Partitioner::getShardIDForRecord(string primaryKeyStringValue){
+ShardId Partitioner::getShardIDForRecord(string primaryKeyStringValue){
 	unsigned valueToHash = getRecordValueToHash(primaryKeyStringValue);
 
-	unsigned totalNumberOfShards = routingManager->getNumberOfShards();
+	unsigned totalNumberOfShards = 3; // routingManager->getNumberOfShards(); TODO we need total number of shards
 
 	return convertUnsignedToCoreShardInfo(hash(valueToHash , totalNumberOfShards));
 }
@@ -49,15 +53,9 @@ unsigned Partitioner::getRecordValueToHash(Record * record){
 
 	// When the record is being parsed, configuration is used to compute the hashable value of this
 	// record. It will be saved in record.
-	return 0;//TEMP
+	return 0;//TEMP	Partitioner(ConfigManager * configurationManager){
+	this->configurationManager = configurationManager;
 }
-
-unsigned getRecordValueToHash(string primaryKeyStringValue){
-	// When the record is being parsed, configuration is used to compute the hashable value of this
-	// record. It will be saved in record.
-	return 0; // TEMP
-}
-
 /*
  * Uses a hash function to hash valueToHash to a value in range [0,hashSpace)
  * and returns this value
@@ -69,11 +67,11 @@ unsigned Partitioner::hash(unsigned valueToHash, unsigned hashSpace){
 }
 
 
-CoreShardInfo Partitioner::convertUnsignedToCoreShardInfo(unsigned coreShardIndex){
+ShardId Partitioner::convertUnsignedToCoreShardInfo(unsigned coreShardIndex){
 	//TODO
 }
 
-
-
 }
 }
+
+

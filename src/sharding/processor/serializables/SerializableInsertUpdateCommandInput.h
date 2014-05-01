@@ -6,6 +6,7 @@ using namespace std;
 
 #include "sharding/configuration/ShardingConstants.h"
 #include <instantsearch/Record.h>
+#include "core/util/SerializationHelper.h"
 
 namespace srch2 {
 namespace httpwrapper {

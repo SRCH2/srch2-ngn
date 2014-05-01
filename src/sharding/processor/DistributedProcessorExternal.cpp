@@ -37,14 +37,26 @@
 #include "HTTPRequestHandler.h"
 #include "IndexWriteUtil.h"
 #include "ServerHighLighter.h"
-#include "serializables/SerializableInsertUpdateCommandInput.h"
+
+
+
+#include "serializables/SerializableCommandStatus.h"
+#include "serializables/SerializableCommitCommandInput.h"
 #include "serializables/SerializableDeleteCommandInput.h"
 #include "serializables/SerializableGetInfoCommandInput.h"
-#include "serializables/SerializableSerializeCommandInput.h"
+#include "serializables/SerializableGetInfoResults.h"
+#include "serializables/SerializableInsertUpdateCommandInput.h"
 #include "serializables/SerializableResetLogCommandInput.h"
-#include "serializables/SerializableCommitCommandInput.h"
+#include "serializables/SerializableSearchCommandInput.h"
+#include "serializables/SerializableSearchResults.h"
+#include "serializables/SerializableSerializeCommandInput.h"
 
-#include "sharding/processor/ResultsAggregatorAndPrint.h"
+#include "sharding/configuration/ConfigManager.h"
+#include "sharding/routing/RoutingManager.h"
+#include "sharding/processor/Partitioner.h"
+#include "sharding/processor/SearchResultsAggregatorAndPrint.h"
+#include "sharding/processor/CommandStatusAggregatorAndPrint.h"
+#include "sharding/processor/GetInfoAggregatorAndPrint.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -56,6 +68,13 @@ namespace httpwrapper {
 //###########################################################################
 //                       External Distributed Processor
 //###########################################################################
+
+
+DPExternalRequestHandler::DPExternalRequestHandler(ConfigManager * configurationManager, RoutingManager * routingManager){
+	this->configurationManager = configurationManager;
+	this->routingManager = routingManager;
+	partitioner = new Partitioner(configurationManager);
+}
 /*
  * 1. Receives a search request from a client (not from another shard)
  * 2. broadcasts this request to DPInternalRequestHandler objects of other shards
@@ -73,7 +92,7 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , CoreS
     // core that we want to search on, this object is accesses through configurationManager.
     const CoreInfo_t *indexDataContainerConf = configurationManager->getCoreInfo(coreShardInfo->coreName);
 
-    SearchResultAggregatorAndPrint * resultAggregator = new SearchResultAggregatorAndPrint(configurationManager, routingManager, req, coreShardInfo);
+    SearchResultAggregatorAndPrint * resultAggregator = new SearchResultAggregatorAndPrint(configurationManager, req, coreShardInfo);
 
     clock_gettime(CLOCK_REALTIME, &(resultAggregator->getStartTimer()));
 
@@ -91,7 +110,7 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , CoreS
         evhttp_clear_headers(&headers);
         return;
     }
-
+/* TODO Schema
     //2. validate the query
     QueryValidator qv(*(server->indexer->getSchema()),
             *(indexDataContainerConf), resultAggregator->getParamContainer());
@@ -117,7 +136,7 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , CoreS
         evhttp_clear_headers(&headers);
         return;
     }
-
+*/
     // compute elapsed time in ms , end the timer
     clock_gettime(CLOCK_REALTIME, &tend);
     unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
@@ -129,7 +148,9 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , CoreS
     SerializableSearchCommandInput searchInput(&resultAggregator->getLogicalPlan());
 
 	// broadcasting search request to all shards , non-blocking, with timeout and callback to ResultAggregator
-    routingManager->broadcast_wait_for_all_w_cb_n_timeout(searchInput, resultAggregator , 2000 , coreShardInfo);
+    timeval t;
+    t.tv_sec = 2000;
+    routingManager->broadcast_wait_for_all_w_cb_n_timeout(searchInput, resultAggregator , t , *coreShardInfo);
     // aggregateSearchResults in ResultAggregator will get the responses of all shards and aggregate them
 
 
@@ -178,7 +199,7 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, CoreSh
         log_str << "JSON object parse error";
     } else {
 		Schema * storedSchema = Schema::create();
-		RecordSerializerUtil::populateStoredSchema(storedSchema, indexer->getSchema());
+		RecordSerializerUtil::populateStoredSchema(storedSchema, /*TODO schema*/ NULL);
 		RecordSerializer recSerializer = RecordSerializer(*storedSchema);
 
 
@@ -189,7 +210,7 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, CoreSh
             	/*
             	 * SerializableInsertUpdateCommandInput destructor will deallocate Record objects
             	 */
-            	Record *record = new Record(server->indexer->getSchema());
+            	Record *record = new Record(/*TODO schema*/ NULL);
 
                 Json::Value defaultValueToReturn = Json::Value("");
                 const Json::Value doc = root.get(index,
@@ -214,7 +235,7 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, CoreSh
         	/*
         	 * SerializableInsertUpdateCommandInput destructor will deallocate Record objects
         	 */
-        	Record *record = new Record(server->indexer->getSchema());
+        	Record *record = new Record(/*TODO schema*/ NULL);
 
             const Json::Value doc = root;
             Json::FastWriter writer;
@@ -250,16 +271,17 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, CoreSh
 
 
     CommandStatusAggregatorAndPrint<SerializableInsertUpdateCommandInput> * resultsAggregator =
-    		new CommandStatusAggregatorAndPrint<SerializableInsertUpdateCommandInput>(routingManager, configurationManager,req);
+    		new CommandStatusAggregatorAndPrint<SerializableInsertUpdateCommandInput>(configurationManager,req);
     resultsAggregator->setMessages(log_str);
     for(vector<Record *>::iterator recordItr = recordsToInsert.begin(); recordItr != recordsToInsert.end() ; ++recordItr){
 
-		CoreShardInfo & coreShardInfo = partitioner->getShardIDForRecord(*recordItr);
+    	ShardId shardInfo = partitioner->getShardIDForRecord(*recordItr);
 
-		SerializableInsertUpdateCommandInput * insertUpdateInput = new SerializableInsertUpdateCommandInput(*recordItr,
-				SerializableInsertUpdateCommandInput::INSERT);
+		SerializableInsertUpdateCommandInput  insertUpdateInput(*recordItr,SerializableInsertUpdateCommandInput::INSERT);
 
-		routingManager->route_w_cb_n_timeout(insertUpdateInput, resultsAggregator , 2000 );
+		timeval t;
+		t.tv_sec = 2000;
+		routingManager->route_w_cb_n_timeout(insertUpdateInput, resultsAggregator , t , shardInfo);
     }
     // aggregated response will be prepared in CommandStatusAggregatorAndPrint::callBack and printed in
     // CommandStatusAggregatorAndPrint::finalize
@@ -313,7 +335,7 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, CoreSh
 		evhttp_parse_query(req->uri, &headers);
 
 		Schema * storedSchema = Schema::create();
-		RecordSerializerUtil::populateStoredSchema(storedSchema, indexer->getSchema());
+		RecordSerializerUtil::populateStoredSchema(storedSchema, /*indexer->getSchema() TODO */ NULL);
 		RecordSerializer recSerializer = RecordSerializer(*storedSchema);
 		if (root.type() == Json::arrayValue) {
 			//the record parameter is an array of json objects
@@ -321,7 +343,7 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, CoreSh
             	/*
             	 * SerializableInsertUpdateCommandInput destructor will deallocate Record objects
             	 */
-				Record *record = new Record(server->indexer->getSchema());
+				Record *record = new Record(/*TODO schema*/NULL);
 
 				Json::Value defaultValueToReturn = Json::Value("");
 				const Json::Value doc = root.get(index,
@@ -346,7 +368,7 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, CoreSh
         	 * the record parameter is a single json object
         	 * SerializableInsertUpdateCommandInput destructor will deallocate Record objects
         	 */
-			Record *record = new Record(server->indexer->getSchema());
+			Record *record = new Record(/*TODO schema*/NULL);
 			const Json::Value doc = root;
 
 	    	Json::FastWriter writer;
@@ -386,15 +408,17 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, CoreSh
 
 
     CommandStatusAggregatorAndPrint<SerializableInsertUpdateCommandInput> * resultsAggregator =
-    		new CommandStatusAggregatorAndPrint<SerializableInsertUpdateCommandInput>(routingManager, configurationManager,req);
+    		new CommandStatusAggregatorAndPrint<SerializableInsertUpdateCommandInput>(configurationManager,req);
     resultsAggregator->setMessages(log_str);
     for(vector<Record *>::iterator recordItr = recordsToUpdate.begin(); recordItr != recordsToUpdate.end() ; ++recordItr){
 
-		CoreShardInfo & coreShardInfo = partitioner->getShardIDForRecord(*recordItr);
+    	ShardId shardInfo = partitioner->getShardIDForRecord(*recordItr);
 
 		SerializableInsertUpdateCommandInput insertUpdateInput(*recordItr, SerializableInsertUpdateCommandInput::UPDATE);
 
-		routingManager->route_w_cb_n_timeout(insertUpdateInput, resultsAggregator , 2000 );
+		timeval t;
+		t.tv_sec = 2000;
+		routingManager->route_w_cb_n_timeout(insertUpdateInput, resultsAggregator , t, shardInfo);
     }
     // aggregated response will be prepared in CommandStatusAggregatorAndPrint::callBack and printed in
     // CommandStatusAggregatorAndPrint::finalize
@@ -434,7 +458,7 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, CoreSh
 	//TODO : we should parse more than primary key later
 	if (pKeyParamName){
 	    CommandStatusAggregatorAndPrint<SerializableDeleteCommandInput> * resultsAggregator =
-	    		new CommandStatusAggregatorAndPrint<SerializableDeleteCommandInput>(routingManager, configurationManager,req);
+	    		new CommandStatusAggregatorAndPrint<SerializableDeleteCommandInput>(configurationManager,req);
 
 		size_t sz;
 		char *pKeyParamName_cstar = evhttp_uridecode(pKeyParamName, 0, &sz);
@@ -444,11 +468,13 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, CoreSh
 		const std::string primaryKeyStringValue = string(pKeyParamName_cstar);
 		free(pKeyParamName_cstar);
 
-		CoreShardInfo & coreShardInfo = partitioner->getShardIDForRecord(primaryKeyStringValue);
+		ShardId shardInfo = partitioner->getShardIDForRecord(primaryKeyStringValue);
 
-		SerializableDeleteCommandInput deleteInput(primaryKeyStringValue);
+		SerializableDeleteCommandInput deleteInput(primaryKeyStringValue,coreShardInfo->coreId); // TODO : do we need coreId here ?
 
-		routingManager->route_w_cb_n_timeout(deleteInput, resultsAggregator , 2000 );
+		timeval t;
+		t.tv_sec = 2000;
+		routingManager->route_w_cb_n_timeout(deleteInput, resultsAggregator , t , shardInfo);
 	}else{
 		std::stringstream log_str;
 		log_str << "{\"rid\":\"NULL\",\"delete\":\"failed\",\"reason\":\"wrong primary key\"}";
@@ -471,9 +497,11 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, CoreSh
  */
 void DPExternalRequestHandler::externalGetInfoCommand(evhttp_request *req, CoreShardInfo * coreShardInfo){
 
-    GetInfoAggregatorAndPrint * resultsAggregator =	new GetInfoAggregatorAndPrint(routingManager, configurationManager,req);
+    GetInfoAggregatorAndPrint * resultsAggregator =	new GetInfoAggregatorAndPrint(configurationManager,req);
     SerializableGetInfoCommandInput getInfoInput;
-    routingManager->broadcast_wait_for_all_w_cb_n_timeout(getInfoInput, resultsAggregator, 2000, coreShardInfo);
+    timeval t;
+    t.tv_sec = 2000;
+    routingManager->broadcast_wait_for_all_w_cb_n_timeout(getInfoInput, resultsAggregator, t, *coreShardInfo);
 }
 
 /*
@@ -488,9 +516,11 @@ void DPExternalRequestHandler::externalSerializeIndexCommand(evhttp_request *req
     	SerializableSerializeCommandInput serializeInput(SerializableSerializeCommandInput::SERIALIZE_INDEX);
 
     	CommandStatusAggregatorAndPrint<SerializableSerializeCommandInput> * resultsAggregator =
-    			new CommandStatusAggregatorAndPrint<SerializableSerializeCommandInput>(routingManager, configurationManager,req);
+    			new CommandStatusAggregatorAndPrint<SerializableSerializeCommandInput>(configurationManager,req);
 
-        routingManager->broadcast_wait_for_all_w_cb_n_timeout(serializeInput, resultsAggregator, 2000, coreShardInfo);
+    	timeval t;
+    	t.tv_sec = 2000;
+        routingManager->broadcast_wait_for_all_w_cb_n_timeout(serializeInput, resultsAggregator, t, *coreShardInfo);
         break;
     }
     default: {
@@ -523,9 +553,11 @@ void DPExternalRequestHandler::externalSerializeRecordsCommand(evhttp_request *r
             	SerializableSerializeCommandInput serializeInput(SerializableSerializeCommandInput::SERIALIZE_RECORDS, string(exportedDataFileName));
 
             	CommandStatusAggregatorAndPrint<SerializableSerializeCommandInput> * resultsAggregator =
-            			new CommandStatusAggregatorAndPrint<SerializableSerializeCommandInput>(routingManager, configurationManager,req);
+            			new CommandStatusAggregatorAndPrint<SerializableSerializeCommandInput>(configurationManager,req);
 
-                routingManager->broadcast_wait_for_all_w_cb_n_timeout(serializeInput, resultsAggregator, 2000, coreShardInfo);
+            	timeval t;
+            	t.tv_sec = 2000;
+                routingManager->broadcast_wait_for_all_w_cb_n_timeout(serializeInput, resultsAggregator, t, *coreShardInfo);
             }else {
                 bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
                         "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
@@ -560,9 +592,11 @@ void DPExternalRequestHandler::externalResetLogCommand(evhttp_request *req, Core
     case EVHTTP_REQ_PUT: {
     	SerializableResetLogCommandInput resetInput;
     	CommandStatusAggregatorAndPrint<SerializableResetLogCommandInput> * resultsAggregator =
-    			new CommandStatusAggregatorAndPrint<SerializableResetLogCommandInput>(routingManager, configurationManager,req);
+    			new CommandStatusAggregatorAndPrint<SerializableResetLogCommandInput>(configurationManager,req);
 
-        routingManager->broadcast_wait_for_all_w_cb_n_timeout(resetInput, resultsAggregator, 2000, coreShardInfo);
+    	timeval t;
+    	t.tv_sec = 2000;
+        routingManager->broadcast_wait_for_all_w_cb_n_timeout(resetInput, resultsAggregator, t, *coreShardInfo);
         break;
     }
     default: {
@@ -582,8 +616,10 @@ void DPExternalRequestHandler::externalResetLogCommand(evhttp_request *req, Core
 void DPExternalRequestHandler::externalCommitCommand(evhttp_request *req, CoreShardInfo * coreShardInfo){
 	SerializableCommitCommandInput commitInput;
 	CommandStatusAggregatorAndPrint<SerializableCommitCommandInput> * resultsAggregator =
-			new CommandStatusAggregatorAndPrint<SerializableCommitCommandInput>(routingManager, configurationManager, req);
-	routingManager->broadcast_wait_for_all_w_cb_n_timeout(commitInput, resultsAggregator, 2000, coreShardInfo);
+			new CommandStatusAggregatorAndPrint<SerializableCommitCommandInput>(configurationManager, req);
+	timeval t;
+	t.tv_sec = 2000;
+	routingManager->broadcast_wait_for_all_w_cb_n_timeout(commitInput, resultsAggregator, t, *coreShardInfo);
 }
 
 

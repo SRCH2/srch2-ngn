@@ -46,6 +46,7 @@
 #include "sharding/transport/TransportManager.h"
 #include "sharding/routing/RoutingManager.h"
 #include "sharding/processor/DistributedProcessorExternal.h"
+#include "sharding/configuration/ConfigManager.h"
 
 
 namespace po = boost::program_options;
@@ -611,7 +612,7 @@ static const struct PortList_t {
 
 int setCallBacksonHTTPServer(ConfigManager *const config,
     evhttp *const http_server, event_base *const evbase, 
-    map<CoreId, CoreShardInfo>& cores) {
+    map<CoreId, srch2::httpwrapper::CoreShardInfo>& cores) {
 
   // setup default core callbacks for queries without a core name
   for (int j = 0; portList[j].path != NULL; j++) {
