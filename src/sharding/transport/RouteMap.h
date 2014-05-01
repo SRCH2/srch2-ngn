@@ -42,6 +42,7 @@ private:
   Pool::iterator place;
 };
 
+#include "ConnectionsInlines.h"
 
 class RouteMap {
   std::map<NodeId, Connection> map; 
