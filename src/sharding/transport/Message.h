@@ -21,7 +21,11 @@ struct Message {
 
    //helper Functions
    bool isLocal(){
-     return false;
+     return mask & 0x2;
+   }
+
+   bool isReply() {
+     return mask & 0x1;
    }
 };
 
