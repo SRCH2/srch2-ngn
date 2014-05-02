@@ -6,6 +6,7 @@
 #include<pthread.h>
 #include "Message.h"
 #include "MessageAllocator.h"
+#include "PendingMessages.h"
 
 namespace srch2 {
 namespace httpwrapper {
@@ -23,18 +24,27 @@ struct TransportManager {
   MessageTime_t distributedTime;
   MessageAllocator messageAllocator;
   SMCallBackHandler *smHandler;
+  PendingMessages msgs;
 
 
   TransportManager(EventBases&, Nodes&);
   
   //third argument is a timeout in seconds
-  MessageTime_t route(NodeId, Message*, unsigned=0, unsigned=0);
+  MessageTime_t route(NodeId, Message*, unsigned=0, CallbackReference= 
+      CallbackReference());
   void register_callbackhandler_for_sm(SMCallBackHandler*);
+  CallbackReference registerCallback(void*,void*,
+      ShardingMessageType,bool,int = 1);
 };
 
 inline void TransportManager::register_callbackhandler_for_sm(SMCallBackHandler
     *callBackHandler) {
   smHandler = callBackHandler;
+}
+
+inline CallbackReference TransportManager::registerCallback(void* obj,void* cb,
+      ShardingMessageType type,bool all,int shards) {
+  return msgs.registerCallback(obj, cb, type, all, shards);
 }
 
 }}

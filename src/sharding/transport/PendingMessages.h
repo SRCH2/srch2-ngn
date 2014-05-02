@@ -53,8 +53,8 @@ public:
   void addMessage(time_t, MessageTime_t, CallbackReference);
   //void trigger_timeouts(time_t);
   void resolve(Message*);
-  CallbackReference registerCallBack(void*,void*,
-      ShardingMessageType,bool,int);
+  CallbackReference registerCallback(void*,void*,
+      ShardingMessageType,bool = false,int = 1);
 };
 
 }}

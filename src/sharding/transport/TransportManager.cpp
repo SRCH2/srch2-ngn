@@ -70,7 +70,7 @@ TransportManager::TransportManager(EventBases& bases, Nodes& map) {
 }
 
 MessageTime_t TransportManager::route(NodeId node, Message *msg, 
-    unsigned timeout, unsigned callback) {
+    unsigned timeout, CallbackReference callback) {
   Connection fd = routeMap.getConnection(node);
   msg->time = __sync_fetch_and_add(&distributedTime, 1);
 

@@ -10,6 +10,8 @@
 
 #include <server/Srch2Server.h>
 #include <sharding/processor/ResultsAggregatorAndPrint.h>
+#include "Multiplexer.h"
+#include "transport/PendingMessages.h"
 
 using namespace std;
 
@@ -68,9 +70,10 @@ public:
 	 *  Transmits a given message to all shards. The broadcast will not wait for
 	 *  confirmation from each receiving shard.
 	 */
-	template<typename RequestType> void broadcast(RequestType & , CoreShardInfo & ){
+	template<typename RequestType> void broadcast(RequestType &,
+      CoreShardInfo &);
 
-	}
+	
 	/*
 	 *  Transmits a given message to all shards. The broadcast block until
 	 *  confirmation from each shard is received. Returns false iff any
@@ -96,9 +99,9 @@ public:
 	 */
 	template<typename RequestType , typename ReseponseType>
 	void broadcast_wait_for_all_w_cb(RequestType & requestObj,
-			ResultAggregatorAndPrint<RequestType , ReseponseType> * aggregator, CoreShardInfo & coreInfo){
+			ResultAggregatorAndPrint<RequestType , ReseponseType> * aggregator, CoreShardInfo & coreInfo);
 
-	}
+	
 	/*
 	 *  Timeout version of their corresponding function. So, after a period of
 	 *  set milliseconds the timeout callback function is called
@@ -172,6 +175,24 @@ private:
     TransportManager& tm;
 	DPInternalRequestHandler dpInternal;
 };
+
+template<typename RequestType , typename ReseponseType> inline
+void RoutingManager::broadcast_wait_for_all_w_cb(RequestType & requestObj,
+			ResultAggregatorAndPrint<RequestType , ReseponseType> * aggregator, 
+      CoreShardInfo & coreInfo) {
+  Multiplexer broadcastResolver(configurationManager, coreInfo);
+  CallbackReference cb =
+    tm.registerCallback(requestObj, aggregator, RequestType::messageKind,
+        false, broadcastResolver.size());
+  Message* msg = (Message*) 
+    ((char*) requestObj.serialize(getAllocator()) - sizeof(Message));
+  for(UnicastIterator unicast = broadcastResolver.begin(); 
+      unicast != broadcastResolver.end(); ++unicast) {
+    msg->shard = unicast->shardId;
+    tm.route(unicast->nodeId, msg, 0, cb);
+  }
+ // getAllocator().deallocate(msg);
+} 
 
 } }
 #endif //__SHARDING_ROUTING_ROUTING_MANAGER_H__
