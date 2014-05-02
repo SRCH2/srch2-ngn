@@ -28,10 +28,10 @@ public:
 		delete record;
 	}
 
-	OperationCode getInsertOrUpdate(){
+	OperationCode getInsertOrUpdate() const{
 		return insertOrUpdate;
 	}
-	srch2is::Record * getRecord(){
+	srch2is::Record * getRecord() const{
 		return this->record;
 	}
     //serializes the object to a byte array and places array into the region
@@ -49,15 +49,15 @@ public:
 		bufferWritePointer = srch2::util::serializeFixedTypes(insertOrUpdate, bufferWritePointer);
 		bufferWritePointer = record->serializeForNetwork(bufferWritePointer);
 
-    	return bufferWritePointer;
+    	return buffer;
     }
 
     //given a byte stream recreate the original object
     static const SerializableInsertUpdateCommandInput& deserialize(void* buffer, const Schema * schema){
     	Record * record = new Record(schema);
-    	buffer = Record::deserializeForNetwork(buffer, *record);
     	OperationCode insertOrUpdate ;
     	buffer = srch2::util::deserializeFixedTypes(buffer, insertOrUpdate);
+    	buffer = Record::deserializeForNetwork(buffer, *record);
     	return *(new SerializableInsertUpdateCommandInput(record, insertOrUpdate));
     }
 

@@ -66,17 +66,12 @@ struct Record::Impl
     unsigned getNumberOfBytesSize(){
     	unsigned numberOfBytes = 0;
     	numberOfBytes += sizeof(unsigned) + primaryKey.size();
+    	numberOfBytes += sizeof(unsigned);
     	for(std::vector<vector<string> >::iterator searchableAttributeItr = searchableAttributeValues.begin();
     			searchableAttributeItr != searchableAttributeValues.end() ; ++searchableAttributeItr){
-        	for(std::vector<string>::iterator searchableAttributeItrItr = searchableAttributeItr->begin();
-        			searchableAttributeItrItr != searchableAttributeItr->end() ; ++searchableAttributeItrItr){
-        		numberOfBytes += sizeof(unsigned) + searchableAttributeItrItr->size();
-        	}
+       		numberOfBytes += srch2::util::getNumberOfBytesVectorOfString(*searchableAttributeItr);
     	}
-    	for(std::vector<string>::iterator refiningAttributeItr = refiningAttributeValues.begin();
-    			refiningAttributeItr != refiningAttributeValues.end() ; ++refiningAttributeItr){
-    		numberOfBytes += sizeof(unsigned) + refiningAttributeItr->size();
-    	}
+   		numberOfBytes += srch2::util::getNumberOfBytesVectorOfString(refiningAttributeValues);
     	numberOfBytes += sizeof(boost);
     	// we don't serialize schema because it's accessible in all shards and all nodes
     	numberOfBytes += sizeof(unsigned) + inMemoryRecordString.size();
@@ -94,7 +89,7 @@ struct Record::Impl
     	// searchable attributes
     	{
 			// 1. serialize size of vector
-			buffer = srch2::util::serializeFixedTypes(searchableAttributeValues.size(), buffer);
+			buffer = srch2::util::serializeFixedTypes((unsigned)searchableAttributeValues.size(), buffer);
 			// 2. serialize elements
 			for(unsigned attrIndex = 0; attrIndex < searchableAttributeValues.size() ; ++attrIndex){
 				buffer = srch2::util::serializeVectorOfString(searchableAttributeValues.at(attrIndex), buffer);
@@ -129,12 +124,11 @@ struct Record::Impl
 			buffer = srch2::util::deserializeFixedTypes(buffer, vectorSize);
 			// 2. deserialize elements
 			for(unsigned attrIndex = 0; attrIndex < vectorSize ; ++attrIndex){
-				searchableAttributeValues.push_back(vector<string>());
-				buffer = srch2::util::deserializeVectorOfString(buffer,
-						searchableAttributeValues.at(searchableAttributeValues.size()-1));
+				buffer = srch2::util::deserializeVectorOfString(buffer, searchableAttributeValues.at(attrIndex));
 			}
     	}
     	// refining attributes
+    	refiningAttributeValues.clear();
     	buffer = srch2::util::deserializeVectorOfString(buffer, refiningAttributeValues);
     	// boost
     	buffer = srch2::util::deserializeFixedTypes(buffer, boost);

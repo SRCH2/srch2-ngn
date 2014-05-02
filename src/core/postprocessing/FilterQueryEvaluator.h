@@ -760,7 +760,7 @@ public:
 		buffer = srch2::util::serializeFixedTypes(isFqBoolOperatorSet, buffer);
 		buffer = srch2::util::serializeFixedTypes(termFQBooleanOperator, buffer);
 
-		buffer = srch2::util::serializeFixedTypes(expressions.size(), buffer);
+		buffer = srch2::util::serializeFixedTypes(unsigned(expressions.size()), buffer);
 		for(unsigned exprIndex = 0 ; exprIndex < expressions.size(); ++exprIndex){
 			QueryExpression::ExpressionType type = expressions.at(exprIndex)->getExpressionType();
 			buffer = srch2::util::serializeFixedTypes(type, buffer);

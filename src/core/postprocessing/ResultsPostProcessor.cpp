@@ -194,13 +194,17 @@ string ResultsPostProcessingInfo::toString(){
 	return ss.str();
 }
 
+/*
+ * Serialization scheme :
+ * | isNULL | isNULL | isNULL | isNULL | facetInfo | sortEvaluator | filterQueryEvaluator | phraseSearchInfoContainer |
+ */
 void * ResultsPostProcessingInfo::serializeForNetwork(void * buffer){
 	// first serializeForNetwork 4 flags to know which ones are null
 	// if poiters are not null save the object
-	buffer = srch2::util::serializeFixedTypes(facetInfo != NULL, buffer);
-	buffer = srch2::util::serializeFixedTypes(sortEvaluator != NULL, buffer);
-	buffer = srch2::util::serializeFixedTypes(filterQueryEvaluator != NULL, buffer);
-	buffer = srch2::util::serializeFixedTypes(phraseSearchInfoContainer != NULL, buffer);
+	buffer = srch2::util::serializeFixedTypes(bool(facetInfo != NULL), buffer);
+	buffer = srch2::util::serializeFixedTypes(bool(sortEvaluator != NULL), buffer);
+	buffer = srch2::util::serializeFixedTypes(bool(filterQueryEvaluator != NULL), buffer);
+	buffer = srch2::util::serializeFixedTypes(bool(phraseSearchInfoContainer != NULL), buffer);
 
 	if(facetInfo != NULL){
 		buffer = facetInfo->serializeForNetwork(buffer);
@@ -242,7 +246,7 @@ void * ResultsPostProcessingInfo::deserializeForNetwork(ResultsPostProcessingInf
 		buffer = srch2::httpwrapper::SortFilterEvaluator::deserializeForNetwork(*(info.sortEvaluator), buffer);
 	}
 	if(isFilterQueryEvaluatorInfoNotNull){
-		info.filterQueryEvaluator = new srch2::httpwrapper::FilterQueryEvaluator(NULL);
+		info.filterQueryEvaluator = new srch2::httpwrapper::FilterQueryEvaluator(NULL); // we don't serialize message and don't use it after deserialization ...
 		buffer = srch2::httpwrapper::FilterQueryEvaluator::deserializeForNetwork(*(info.filterQueryEvaluator), buffer);
 	}
 	if(isPhraseSearchInfoContainerNotNull){
@@ -356,7 +360,7 @@ string PhraseSearchInfoContainer::toString(){
  * | phraseInfoVector |
  */
 void * PhraseSearchInfoContainer::serializeForNetwork(void * buffer) const {
-	buffer = srch2::util::serializeFixedTypes(phraseInfoVector.size(),  buffer);
+	buffer = srch2::util::serializeFixedTypes(unsigned(phraseInfoVector.size()),  buffer);
 	for(unsigned  pIndex = 0; pIndex < phraseInfoVector.size(); ++pIndex){
 		phraseInfoVector.at(pIndex).serializeForNetwork(buffer);
 	}

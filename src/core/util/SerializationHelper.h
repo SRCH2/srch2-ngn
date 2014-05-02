@@ -46,7 +46,7 @@ template<class FixedType>
 inline void * serializeVectorOfFixedTypes(const vector<FixedType> & vectorObj, void * buffer){
 
 	// first store the size
-	buffer = serializeFixedTypes(vectorObj.size() , buffer);
+	buffer = serializeFixedTypes(unsigned(vectorObj.size()) , buffer);
 	// and then store the elements
 	for(unsigned objIndex = 0 ; objIndex != vectorObj.size() ; objIndex ++){
 		buffer = serializeFixedTypes(vectorObj.at(objIndex), buffer);

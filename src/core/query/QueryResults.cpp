@@ -49,7 +49,11 @@ void QueryResults::init(QueryResultFactory * resultsFactory, const QueryEvaluato
  * @param[in] query the reference to a Query object.
  */
 QueryResults::QueryResults(QueryResultFactory * resultsFactory, const  QueryEvaluator* queryEvaluator, Query* query){
-	impl = new QueryResultsInternal(resultsFactory,queryEvaluator->impl,query );
+	if(queryEvaluator == NULL){
+		impl = new QueryResultsInternal(resultsFactory,NULL,query ); // used in test cases that queryEvaluator is passed null
+	}else{
+		impl = new QueryResultsInternal(resultsFactory,queryEvaluator->impl,query ); // correct execution
+	}
 }
 
 QueryResults::~QueryResults(){

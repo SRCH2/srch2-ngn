@@ -66,7 +66,7 @@ public:
     	return SearchCommandMessageType;
     }
 
-	LogicalPlan * getLogicalPlan(){
+	LogicalPlan * getLogicalPlan() const{
 		return logicalPlan;
 	}
 private:

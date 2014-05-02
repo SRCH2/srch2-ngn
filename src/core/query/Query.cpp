@@ -70,12 +70,12 @@ struct Query::Impl
     	buffer = srch2::util::serializeString(refiningAttributeName, buffer);
     	buffer = srch2::util::serializeString(refiningAttributeValue, buffer);
 
-       	buffer = srch2::util::serializeFixedTypes(terms != NULL, buffer); // isNULL
-       	buffer = srch2::util::serializeFixedTypes(range != NULL, buffer); // isNULL
+       	buffer = srch2::util::serializeFixedTypes(bool(terms != NULL), buffer); // isNULL
+       	buffer = srch2::util::serializeFixedTypes(bool(range != NULL), buffer); // isNULL
     	// terms vector
 		if(terms != NULL){
 			// size of vector
-			buffer = srch2::util::serializeFixedTypes(terms->size(), buffer);
+			buffer = srch2::util::serializeFixedTypes(unsigned(terms->size()), buffer);
 			for(unsigned termIndex = 0; termIndex < terms->size(); ++termIndex){
 				ASSERT(terms->at(termIndex) != NULL);
 				buffer = terms->at(termIndex)->serializeForNetwork(buffer);

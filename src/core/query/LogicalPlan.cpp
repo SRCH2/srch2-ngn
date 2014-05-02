@@ -95,8 +95,8 @@ void * LogicalPlanNode::serializeForNetwork(void * buffer){
 	buffer = srch2::util::serializeFixedTypes(nodeType, buffer);
 	buffer = srch2::util::serializeFixedTypes(forcedPhysicalNode, buffer);
 
-	buffer = srch2::util::serializeFixedTypes(this->exactTerm != NULL, buffer);
-	buffer = srch2::util::serializeFixedTypes(this->fuzzyTerm != NULL, buffer);
+	buffer = srch2::util::serializeFixedTypes(bool(this->exactTerm != NULL), buffer);
+	buffer = srch2::util::serializeFixedTypes(bool(this->fuzzyTerm != NULL), buffer);
 
 	if(this->exactTerm != NULL){
 		buffer = this->exactTerm->serializeForNetwork(buffer);
@@ -115,7 +115,7 @@ void * LogicalPlanNode::serializeForNetwork(void * buffer){
 	 */
 
 	// serialize the number of children
-	buffer = srch2::util::serializeFixedTypes(this->children.size(), buffer);
+	buffer = srch2::util::serializeFixedTypes(unsigned(this->children.size()), buffer);
 	// Serialize children
 	for(unsigned childOffset = 0 ; childOffset < this->children.size() ; ++childOffset){
 		ASSERT(this->children.at(childOffset) != NULL);
@@ -178,19 +178,27 @@ void * LogicalPlanNode::deserializeForNetwork(LogicalPlanNode * node, void * buf
 
 	return buffer;
 }
+
+/*
+ * Serialization scheme:
+ * | nodeType | forcedPhysicalNode | isNULL | isNULL | [exactTerm] | [fuzzyTerm] | [phraseInfo (if type is LogicalPlanNodePhraseType)] | children |
+ * NOTE : stats is NULL until logical plan reaches to the core so we don't serialize it...
+ */
 unsigned LogicalPlanNode::getNumberOfBytesForSerializationForNetwork(){
 	//calculate number of bytes
 	unsigned numberOfBytes = 0;
 	numberOfBytes += sizeof(nodeType);
+	numberOfBytes += sizeof(forcedPhysicalNode);
+
 	numberOfBytes += sizeof(bool);
 	if(this->exactTerm != NULL){
 		numberOfBytes += this->exactTerm->getNumberOfBytesForSerializationForNetwork();
 	}
+
 	numberOfBytes += sizeof(bool);
 	if(this->fuzzyTerm != NULL){
 		numberOfBytes += this->fuzzyTerm->getNumberOfBytesForSerializationForNetwork();
 	}
-	numberOfBytes += sizeof(forcedPhysicalNode);
 
 	if(nodeType == LogicalPlanNodeTypePhrase){
 		numberOfBytes +=  ((LogicalPlanPhraseNode *)this)->getPhraseInfo()->getNumberOfBytesForSerializationForNetwork();
@@ -291,11 +299,11 @@ void * LogicalPlan::serializeForNetwork(void * buffer){
 	buffer = srch2::util::serializeFixedTypes(this->queryType, buffer);
 	buffer = srch2::util::serializeString(this->docIdForRetrieveByIdSearchType, buffer);
 
-	buffer = srch2::util::serializeFixedTypes(exactQuery != NULL, buffer); // isNULL
-	buffer = srch2::util::serializeFixedTypes(fuzzyQuery != NULL, buffer); // isNULL
-	buffer = srch2::util::serializeFixedTypes(postProcessingInfo != NULL,buffer); // isNULL
+	buffer = srch2::util::serializeFixedTypes(bool(exactQuery != NULL), buffer); // isNULL
+	buffer = srch2::util::serializeFixedTypes(bool(fuzzyQuery != NULL), buffer); // isNULL
+	buffer = srch2::util::serializeFixedTypes(bool(postProcessingInfo != NULL),buffer); // isNULL
 	//NOTE: postProcessingPlan must be removed completely. It's not used anymore
-	buffer = srch2::util::serializeFixedTypes(tree != NULL, buffer); // isNULL
+	buffer = srch2::util::serializeFixedTypes(bool(tree != NULL), buffer); // isNULL
 
 	if(exactQuery != NULL){
 		buffer = exactQuery->serializeForNetwork(buffer);
@@ -372,18 +380,15 @@ unsigned LogicalPlan::getNumberOfBytesForSerializationForNetwork(){
 
 	numberOfBytes += sizeof(bool)*4; // isNULL
 	// exact query
-	numberOfBytes += sizeof(bool);
 	if(exactQuery != NULL){
 		numberOfBytes += exactQuery->getNumberOfBytesForSerializationForNetwork();
 	}
 	// fuzzy query
-	numberOfBytes += sizeof(bool);
 	if(fuzzyQuery != NULL){
 		numberOfBytes += fuzzyQuery->getNumberOfBytesForSerializationForNetwork();
 	}
 	//NOTE: postProcessingPlan is not counted because it's not used and it must be deleted
 	// postProcessingInfo
-	numberOfBytes += sizeof(bool);
 	if(postProcessingInfo != NULL){
 		numberOfBytes += postProcessingInfo->getNumberOfBytesForSerializationForNetwork();
 	}

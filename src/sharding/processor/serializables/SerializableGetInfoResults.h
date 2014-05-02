@@ -19,8 +19,8 @@ public:
 		this->writeCount = writeCount;
 		this->numberOfDocumentsInIndex = numberOfDocumentsInIndex;
 		this->lastMergeTimeString = lastMergeTimeString;
-		this->docCount;
-		this->versionInfo;
+		this->docCount = docCount;
+		this->versionInfo = versionInfo;
 	}
 
     //serializes the object to a byte array and places array into the region
@@ -32,8 +32,8 @@ public:
     	numberOfBytes += sizeof(writeCount);
     	numberOfBytes += sizeof(numberOfDocumentsInIndex);
     	numberOfBytes += sizeof(docCount);
-    	numberOfBytes += sizeof(lastMergeTimeString);
-    	numberOfBytes += sizeof(versionInfo);
+    	numberOfBytes += sizeof(unsigned) + lastMergeTimeString.size();
+    	numberOfBytes += sizeof(unsigned) + versionInfo.size();
 
     	// allocate space
     	void * buffer = aloc->allocate(numberOfBytes);

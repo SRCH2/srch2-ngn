@@ -32,21 +32,24 @@ class SerializableSearchResults {
   public:
 
 	SerializableSearchResults(){
-		this->queryResults = boost::shared_ptr<QueryResults>(new QueryResults());
-		this->resultsFactory = 
-      boost::shared_ptr<QueryResultFactory>(new QueryResultFactory());
+		this->queryResults = new QueryResults();
+		this->resultsFactory = new QueryResultFactory();
 	}
 
-	QueryResults * getQueryResults(){
-		return &(*queryResults);
+	QueryResults * getQueryResults() const{
+		return queryResults;
 	}
-	QueryResultFactory * getQueryResultsFactory(){
+	QueryResultFactory * getQueryResultsFactory() const{
 		return &(*resultsFactory);
 	}
 	void setSearcherTime(unsigned searcherTime){
 		this->searcherTime = searcherTime;
 	}
-	unsigned getSearcherTime(){
+	void setQueryResults(QueryResults * qr){
+		this->queryResults = qr ;
+	}
+
+	unsigned getSearcherTime() const{
 		return searcherTime;
 	}
 
@@ -96,8 +99,8 @@ class SerializableSearchResults {
     std::vector<QueryResultPtr> getSortedFinalResults();
 
   private:
-    boost::shared_ptr<QueryResults> queryResults;
-    boost::shared_ptr<QueryResultFactory> resultsFactory;
+    QueryResults * queryResults;
+    QueryResultFactory * resultsFactory;
    	// extra information to be added later
 	unsigned searcherTime;
 
