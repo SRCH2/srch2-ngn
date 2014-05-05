@@ -1,0 +1,3 @@
+6||insert||{"id":"128","creation_date":"06/07/2011","view_count":"0","body":"june wonderful","title":"NULL","tags":"NULL","answer_count":"NULL"}||{"rid":"128","insert":"success"}
+6||insert||{"id":"129","creation_date":"06/07/2011","view_count":"0","body":"june wonderful","title":"NULL","tags":"NULL","answer_count":"NULL"}||{"rid":"129","insert":"success"}
+6||insert||{"id":"130","creation_date":"06/07/2011","view_count":"0","body":"june wonderful","title":"NULL","tags":"NULL","answer_count":"NULL"}||{"rid":"130","insert":"success"}

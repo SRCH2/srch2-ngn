@@ -1,0 +1,151 @@
+<!--
+    Configuration file for SRCH2 search server. 
+
+    For more information about how to use this configuration file, please
+    visit http://www.srch2.com/downloads.html and select the correct
+    documentation version.
+
+    Please email contact@srch2.com if you have questions.
+-->
+ 
+<config>
+    <srch2Home>./</srch2Home>
+        <!-- Make sure to specify the home of your SRCH2 installation.  Example: 
+	  <srch2Home>/home/joe/srch2</srch2Home>
+        -->
+ 
+    <licenseFile>../conf/srch2_license_key.txt</licenseFile>
+ 
+    <listeningHostname>0.0.0.0</listeningHostname>
+    <listeningPort>8090</listeningPort>
+ 
+    <dataDir>./data/exact_a1</dataDir>
+     
+    <dataSourceType>1</dataSourceType>
+    
+    <dataFile>pre_10.json</dataFile>
+
+    <!-- 
+        Mongo DB settings
+        Required if dataSourceType = 2
+    -->
+    <!--
+    <dataSourceType>2</dataSourceType>
+    <mongodb>
+        <host>localhost</host>
+        <port>27017</port>
+        <db>demo</db>
+        <collection>movies</collection>
+        <listenerWaitTime>3</listenerWaitTime>
+    </mongodb>
+    -->     
+         
+    <maxSearchThreads>2</maxSearchThreads>
+    
+    <indexConfig>
+         
+        <indexType>0</indexType>
+         
+        <supportSwapInEditDistance>true</supportSwapInEditDistance>
+
+        <fieldBoost>title^2</fieldBoost>
+
+        <defaultQueryTermBoost>1</defaultQueryTermBoost>
+
+	<enablePositionIndex>1</enablePositionIndex> 
+    
+    </indexConfig>
+  
+  
+    <query>
+        <rankingalgorithm>
+            <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
+        </rankingalgorithm>
+ 
+        <fuzzyMatchPenalty>0.75</fuzzyMatchPenalty>
+
+	<queryTermSimilarityThreshold>0.5</queryTermSimilarityThreshold>
+         
+        <prefixMatchPenalty>0.95</prefixMatchPenalty>
+ 
+        <cacheSize>65536000</cacheSize>
+
+        <rows>10</rows>
+
+        <fieldBasedSearch>1</fieldBasedSearch>
+         
+        <searcherType>0</searcherType>
+         
+        <queryTermFuzzyType>1</queryTermFuzzyType>
+         
+        <queryTermPrefixType>0</queryTermPrefixType>
+ 
+        <queryResponseWriter>
+
+            <responseFormat>1</responseFormat>
+
+        </queryResponseWriter>
+
+    </query>
+  
+    <updatehandler>
+
+        <maxDocs>15000000</maxDocs>
+ 
+        <maxMemory>10000000</maxMemory>
+        
+        <mergePolicy>
+
+          <mergeEveryNSeconds>1</mergeEveryNSeconds>
+
+          <mergeEveryMWrites>1</mergeEveryMWrites>
+
+        </mergePolicy>
+         
+         
+        <updateLog>
+
+            <logLevel>3</logLevel>
+                         
+            <accessLogFile>./logs/srch2-log.txt</accessLogFile>
+
+        </updateLog>
+     
+    </updatehandler>
+
+    <schema>
+       <fields>
+          <field name="title" type="text" indexed="true"/>
+          <field name="body"  type="text" indexed="true"/>
+          <field name="tags"  type="text" indexed="false" refining="true"
+                 required="false"/>
+          <field name="creation_date"  type="time"    indexed="false"   refining="true"
+                 default="01/01/2000"  required="false"/>
+	  <field name="view_count"     type="integer" indexed="false"   refining="true"
+		 default="0"           required="false"/>
+	  <field name="answer_count"   type="integer" indexed="false"   refining="true"
+		 default="0"           required="false"/>
+       </fields>
+       
+       <uniqueKey>id</uniqueKey>
+           
+       <facetEnabled>true</facetEnabled>
+        
+        <facetfields>
+          <facetfield name="tags" facetType="categorical"/>
+          <facetfield name="creation_date"  facetType="range" facetStart="01/01/2005" facetEnd="12/31/2020" facetGap="YEAR"/>
+        </facetfields>
+        
+        <types>
+          <fieldType name="text_en">
+              <analyzer>
+
+                  <filter name="PorterStemFilter" dictionary="" />
+                   
+                  <filter name="StopFilter" words="" />
+                   
+              </analyzer>
+          </fieldType>
+       </types>
+    </schema>
+</config>
