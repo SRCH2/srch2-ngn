@@ -34,7 +34,7 @@ struct TransportManager {
   //third argument is a timeout in seconds
   MessageTime_t route(NodeId, Message*, unsigned=0, CallbackReference= 
       CallbackReference());
-  CallbackReference registerCallback(void*,void*,
+  CallbackReference registerCallback(void*,Callback*,
       ShardingMessageType,bool,int = 1);
   void register_callbackhandler_for_sm(CallBackHandler*);
 
@@ -45,8 +45,8 @@ inline void TransportManager::register_callbackhandler_for_sm(CallBackHandler
   smHandler = callBackHandler;
 }
 
-inline CallbackReference TransportManager::registerCallback(void* obj,void* cb,
-      ShardingMessageType type,bool all,int shards) {
+inline CallbackReference TransportManager::registerCallback(void* obj,
+    Callback* cb, ShardingMessageType type,bool all,int shards) {
   return msgs.registerCallback(obj, cb, type, all, shards);
 }
 

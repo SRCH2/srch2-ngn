@@ -8,9 +8,16 @@
 namespace srch2 {
 namespace httpwrapper {
 
+struct Callback {
+  virtual void timeout(void*) = 0;
+  virtual void callback(Message*) {};
+  virtual void callbackAll(vector<Message*>&) {};
+};
+
+
 struct RegisteredCallback {
   void* originalSerializableObject;
-  void* callbackObject;
+  Callback* callbackObject;
   int waitingOn;
   std::vector<Message*> reply;
 };
@@ -53,7 +60,7 @@ public:
   void addMessage(time_t, MessageTime_t, CallbackReference);
   //void trigger_timeouts(time_t);
   void resolve(Message*);
-  CallbackReference registerCallback(void*,void*,
+  CallbackReference registerCallback(void*, Callback*,
       ShardingMessageType,bool = false,int = 1);
 };
 

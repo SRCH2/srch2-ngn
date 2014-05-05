@@ -11,7 +11,8 @@ void PendingMessages::resolve(Message* msg) {
   if(!msg->isReply()) return;
 
   std::vector<PendingRequest>::iterator request = 
-    std::find(pendingRequests.begin(),pendingRequests.end(), msg->inital_time);
+    std::find(pendingRequests.begin(), 
+        pendingRequests.end(), msg->initial_time);
 
   RegisteredCallback *cb = request->callbackAndTypeMask.ptr;
 
@@ -21,7 +22,7 @@ void PendingMessages::resolve(Message* msg) {
 
     pendingRequests.erase(request);
     if(num == 0) {
-      //call -> callback on vector
+      cb->callbackObject->callbackAll(cb->reply);
       delete cb;
       for(std::vector<Message*>::iterator msg = cb->reply.begin(); 
           msg != cb->reply.end(); ++msg) {
@@ -29,14 +30,14 @@ void PendingMessages::resolve(Message* msg) {
       }
     } 
   } else {
-    //call callback
-    delete cb;
+    cb->callbackObject->callback(msg);
+    if(__sync_sub_and_fetch(&(cb->waitingOn), 1) == 0) delete cb;
     delete msg;
   }
 }
 
 CallbackReference 
-PendingMessages::registerCallback(void *obj, void *cb, 
+PendingMessages::registerCallback(void *obj, Callback *cb, 
     ShardingMessageType type, bool cbForAll, int shards) {
   RegisteredCallback* regcb = new RegisteredCallback;
 
