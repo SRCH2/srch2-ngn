@@ -17,8 +17,6 @@ def checkResult(query, responseJson,resultValue):
 #    for key, value in responseJson:
 #        print key, value
     isPass=1
-    #print 'argument passed to checkResult is' + responseJson
-    print 'len of response '+str(len(responseJson))
     if  len(responseJson) == len(resultValue):
         for i in range(0, len(resultValue)):
             #print response_json['results'][i]['record']['id']
@@ -115,12 +113,10 @@ def testInsertAndQuery(queriesAndResultsPath, binary_path):
             #construct the query
             query='http://localhost:' + nodes[nodeId[0]].portNo + '/search?'
             query = query + prepareQuery(queryValue)
-            print query
             #do the query
             response = urllib2.urlopen(query).read()
             response_json = json.loads(response)
             #check the result
-            print 'response is ' + response
             failCount += checkResult(query, response_json['results'], resultValue )
 
         if(operation[0] == 'insert'):
@@ -143,7 +139,7 @@ if __name__ == '__main__':
     parseNodes(nodesPath)
     binary_path = sys.argv[1]
     queriesAndResultsPath = sys.argv[2]
-    os.popen('rm -rf ./data/exact_a1')
+    os.popen('rm -rf ./data/2n-insertAB-queryAB')
     startEngines()
     exitCode=testInsertAndQuery(queriesAndResultsPath, binary_path)
     for i in range(len(serverHandles)):

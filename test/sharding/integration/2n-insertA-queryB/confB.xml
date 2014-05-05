@@ -49,7 +49,7 @@
         The file path to the folder where we store serialized index files.
         REQUIRED, when "index-load-or-create" is set to 1.
     -->
-    <dataDir>./data/exact_a1/</dataDir>
+    <dataDir>./data/2n-insertA-queryB/</dataDir>
      
     <!--
         Data File
@@ -58,7 +58,7 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>./exact_a1/dataEmpty.json</dataFile>
+    <dataFile>./2n-insertA-queryB/dataEmpty.json</dataFile>
      
     <!--
 	Maximum Number of Threads
