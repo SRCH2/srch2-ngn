@@ -228,7 +228,8 @@ class Node {
   
   }
 
-  Node(std::string& nodeName, std::string& ipAddress, unsigned portNumber, bool thisIsMe){
+  Node(const std::string& nodeName, const std::string& ipAddress, 
+      unsigned portNumber, bool thisIsMe){
 	this->nodeId = 0;
 	this->nodeName = nodeName;
 	this->ipAddress = ipAddress;

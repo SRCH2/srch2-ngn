@@ -15,7 +15,7 @@ typedef std::vector<event_base*> EventBases;
 typedef std::vector<Node> Nodes;
 
 struct SMCallBackHandler {
-  void notify(Message *msg) {}
+  void notify(Message *msg); 
 };
 
 struct TransportManager {

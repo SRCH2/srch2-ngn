@@ -22,15 +22,26 @@ void* startListening(void* arg) {
   routeAddress.sin_port = htons(base.getPortNumber());
 
   if((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    perror("listening socket failed to init");
+    exit(255);
+  }
+
+  if(bind(fd, (struct sockaddr*) &routeAddress, sizeof(routeAddress)) < 0) {
     perror("listening socket failed to bind");
     exit(255);
   }
 
+  if(listen(fd, 20) == -1) { 
+    perror("listening socket failed start");
+    exit(255);
+  }
+
   while(1) {
-    struct sockaddr addr;
-    socklen_t addrlen;
+    struct sockaddr_in addr;
+    socklen_t addrlen = sizeof(sockaddr_in);
+    memset(&addr, 0,sizeof(sockaddr_in));
     int newfd;
-    if((newfd = accept(fd, &addr, &addrlen)) != -1) {
+    if((newfd = accept(fd, (sockaddr*) &addr, &addrlen)) != -1) {
       map->acceptRoute(newfd, *((sockaddr_in*) &addr));
      }
   }
@@ -44,15 +55,15 @@ TransportManager::TransportManager(EventBases& bases, Nodes& map) {
   for(Nodes::iterator dest = map.begin(); dest!= map.end(); ++dest) {
     if(dest->thisIsMe) 
       routeMap.setBase(*dest);
-    else 
+    else
       routeMap.addDestination(*dest);
   }
   
   pthread_create(&listeningThread, NULL, startListening, &routeMap);
 
-  for(Connections dest = routeMap.getNeededConnections(); 
-        routeMap.isTotallyConnected(); ++dest) {
-    if(!(*dest).second) routeMap.initRoute(*dest);
+  routeMap.initRoutes();
+  
+  while(!routeMap.isTotallyConnected()) {
     sleep(10);
   }
 
@@ -75,7 +86,7 @@ MessageTime_t TransportManager::route(NodeId node, Message *msg,
   msg->time = __sync_fetch_and_add(&distributedTime, 1);
 
   time_t timeOfTimeout_time = timeout + time(NULL);
-  //pending_message( timeOfTimeout, msg->time, callback #)
+  msgs.addMessage(timeout, msg->time, callback);
 
   send(fd, msg, msg->bodySize + sizeof(Message), 0);
   //TODO: errors?
