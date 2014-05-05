@@ -114,6 +114,12 @@ public:
 
 	bool put(string & key, boost::shared_ptr<T> & objectPointer){
 		boost::unique_lock< boost::shared_mutex > lock(_access);
+
+	    // start the timer for search
+	    struct timespec tstart;
+	//    struct timespec tstart2;
+	    struct timespec tend;
+	    clock_gettime(CLOCK_REALTIME, &tstart);
 //		ASSERT(checkCacheConsistency());
 		CacheEntry<T> * newEntry = new CacheEntry<T>(key , objectPointer);
 		unsigned numberOfBytesNeededForNewEntry = getNumberOfBytesUsedByEntry(newEntry);
@@ -157,6 +163,11 @@ public:
 			cacheEntryWithSameHashedKey->second.first = newEntry;
 			// move the linked list element to front to make it kicked out later
 			moveLinkedListElementToLast(cacheEntryWithSameHashedKey->second.second);
+		    // compute elapsed time in ms , end the timer
+		    clock_gettime(CLOCK_REALTIME, &tend);
+		    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
+		            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+		    cout << "Cache put:" << ts1 << endl;
 			lock.unlock();
 //			ASSERT(checkCacheConsistency());
 			return true;
@@ -167,21 +178,41 @@ public:
 		totalSizeUsed += numberOfBytesNeededForNewEntry;
 		ASSERT(totalSizeUsed <= cacheTotalByteBudget);
 		lock.unlock();
+	    // compute elapsed time in ms , end the timer
+	    clock_gettime(CLOCK_REALTIME, &tend);
+	    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
+	            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+	    cout << "Cache put:" << ts1 << endl;
 //		ASSERT(checkCacheConsistency());
 		return true;
 	}
 	bool get(string & key, boost::shared_ptr<T> & objectPointer) {
 		boost::unique_lock< boost::shared_mutex > lock(_access);
+	    // start the timer for search
+	    struct timespec tstart;
+	//    struct timespec tstart2;
+	    struct timespec tend;
+	    clock_gettime(CLOCK_REALTIME, &tstart);
 //		ASSERT(checkCacheConsistency());
 		//1. compute the hashed key
 		unsigned hashedKeyToFind = hashDJB2(key.c_str());
 		typename map<unsigned , pair< CacheEntry<T> * , HashedKeyLinkListElement * > >::iterator cacheEntry = cacheEntries.find(hashedKeyToFind);
 		if(cacheEntry == cacheEntries.end()){ // hashed key doesn't exist
+		    // compute elapsed time in ms , end the timer
+		    clock_gettime(CLOCK_REALTIME, &tend);
+		    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
+		            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+		    cout << "Cache get:" << ts1 << endl;
 			lock.unlock();
 //			ASSERT(checkCacheConsistency());
 			return false;
 		}
 		if(cacheEntry->second.first->getKey().compare(key) != 0){
+		    // compute elapsed time in ms , end the timer
+		    clock_gettime(CLOCK_REALTIME, &tend);
+		    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
+		            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+		    cout << "Cache get:" << ts1 << endl;
 			lock.unlock();
 //			ASSERT(checkCacheConsistency());
 			return false;
@@ -191,6 +222,11 @@ public:
 		moveLinkedListElementToLast(cacheEntry->second.second);
 		// and return the object
 		objectPointer = cacheEntry->second.first->getObjectPointer();
+	    // compute elapsed time in ms , end the timer
+	    clock_gettime(CLOCK_REALTIME, &tend);
+	    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
+	            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+	    cout << "Cache get:" << ts1 << endl;
 		lock.unlock();
 //		ASSERT(checkCacheConsistency());
 		return true;
