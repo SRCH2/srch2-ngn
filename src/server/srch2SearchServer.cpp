@@ -767,15 +767,18 @@ int main(int argc, char** argv) {
     std::vector<srch2http::Node>& map = *serverConf->getCluster()->getNodes();
     
     // create Transport Module
-    srch2http::TransportManager subway(evBases, map);
-    srch2http::RoutingManager routes(*serverConf, subway);
-    srch2http::DPExternalRequestHandler dpHandler(serverConf, &routes);
+    srch2http::TransportManager *subway = 
+      new srch2http::TransportManager(evBases, map);
+    srch2http::RoutingManager *routes = 
+      new srch2http::RoutingManager(*serverConf, *subway);
+    srch2http::DPExternalRequestHandler *dpHandler = 
+      new srch2http::DPExternalRequestHandler(serverConf, routes);
     vector<struct CoreShardInfo> cores;
 
     for(srch2http::ConfigManager::CoreInfoMap_t::iterator core = 
         serverConf->coreInfoIterateBegin();
                 core != serverConf->coreInfoIterateEnd(); ++core)  {
-      cores.push_back(CoreShardInfo(dpHandler, *core->second));
+      cores.push_back(CoreShardInfo(*dpHandler, *core->second));
     }
 
     for(int j=0; j < evServers.size(); ++j) {
