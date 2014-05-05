@@ -69,7 +69,12 @@ bool sendGreeting(int fd, bool greeted, unsigned nodeId) {
       sizeof(GREETING_MESSAGE));
   *((int*)(greetings + sizeof(GREETING_MESSAGE))) = nodeId;
   while(true) {
-    int writeSize = send(fd, currentPos, remaining, MSG_NOSIGNAL);
+#ifdef __MACH__
+	  int flag = SO_NOSIGPIPE;
+#else
+	  int flag = MSG_NOSIGNAL;
+#endif
+    int writeSize = send(fd, currentPos, remaining, flag);
     remaining -= writeSize;
     if(writeSize == -1) {
       if(errno == EAGAIN || errno == EWOULDBLOCK) continue;
