@@ -3,6 +3,7 @@
 
 #include "processor/DistributedProcessorInternal.h"
 #include "transport/Message.h"
+#include "transport/CallbackHandler.h"
 #include "RoutingManager.h"
 
 namespace srch2is = srch2::instantsearch;
@@ -11,7 +12,7 @@ using namespace std;
 namespace srch2 {
 namespace httpwrapper {
 
-class InternalMessageBroker{
+class InternalMessageBroker : CallBackHandler {
 public:
 
 	InternalMessageBroker(RoutingManager&);
@@ -21,7 +22,7 @@ public:
 
 private:
   template<typename InputType, typename Deserializer, typename OutputType>
-    void broker(Message*, Srch2Server*,
+    void notify(Message*, Srch2Server*,
         OutputType (DPInternalRequestHandler::*fn) (Srch2Server*, InputType*));
   MessageAllocator * getMessageAllocator();
   void sendReply(Message*, void*);

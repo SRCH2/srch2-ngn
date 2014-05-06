@@ -29,7 +29,7 @@ void InternalMessageBroker::broker(Message *msg, Srch2Server* server,
     delete input, output;
 }
 
-void InternalMessageBroker::processInternalMessage(Message * message){
+void InternalMessageBroker::notify(Message * message){
 	if(message == NULL){
 		return;
 	}

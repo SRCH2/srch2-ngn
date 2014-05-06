@@ -13,6 +13,7 @@ class UnicastIterator {
     ShardId shardId;
   } id;
   std::vector<ShardId>::iterator i;
+  Cluster& cluser;
 
 public:
   UnicastIterator(const UnicastIterator&);
@@ -44,21 +45,25 @@ Multiplexer::Multiplexer(ConfigManager& cm, CoreShardInfo& info) :
   cm(cm), info(info), coreInfo(*cm.getCoreInfo(info.coreName)) {}
 
 inline UnicastIterator Multiplexer::begin() {
-  return UnicastIterator(coreInfo.coreId, coreInfo.shards.begin());
+  return UnicastIterator(coreInfo.shards.begin(), *cm.getCluster());
 }
 
 inline UnicastIterator Multiplexer::end() {
-  return UnicastIterator(coreInfo.coreId, coreInfo.shards.end());
+  return UnicastIterator(coreInfo.shards.end(), *cm.getCluster());
+}
+
+inline UnicastIterator::size() {
+  return coreInfo.shards.size();
 }
 
 inline UnicastIterator::UnicastIterator() {}
 inline UnicastIterator::UnicastIterator(const UnicastIterator& cpy) 
-  : id(cpy.id), i(cpy.i) {}
+  : id(cpy.id), i(cpy.i), cluster(cluser) {}
 
-inline UnicastIterator::UnicastIterator(unsigned nodeId,
-    const std::vector<ShardId>::iterator& i) : i(i) {
-  id.nodeId = nodeId;
+inline UnicastIterator::UnicastIterator(Cluster &cluster
+    const std::vector<ShardId>::iterator& i) : i(i), cluster(cluster) {
   id.shardId = *i;
+  id.nodeId = cluster.shardMap[id.shardId].getNodeId();
 }
 
 inline UnicastIterator& UnicastIterator::operator=(const UnicastIterator& c) {
@@ -69,13 +74,13 @@ inline UnicastIterator& UnicastIterator::operator=(const UnicastIterator& c) {
 inline UnicastIterator& UnicastIterator::operator++() {
   ++i;
   id.shardId = *i;
+  id.nodeId = cluster.shardMap[id.shardId].getNodeId();
   return *this;
 }
 
 inline UnicastIterator UnicastIterator::operator++(int) {
   UnicastIterator rtn(*this);
-  ++i;
-  id.shardId = *i;
+  ++*this;
   return rtn;
 }
 inline bool UnicastIterator::operator==(const UnicastIterator& rhs) {

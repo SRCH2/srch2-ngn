@@ -12,7 +12,7 @@
 #include <sharding/processor/ResultsAggregatorAndPrint.h>
 #include "Multiplexer.h"
 #include "RMCallback.h"
-#include "transport/PendingMessages.h"
+#include "transport/MessageAllocator.h"
 
 using namespace std;
 
@@ -168,33 +168,23 @@ public:
 
 	ConfigManager* getConfigurationManager();
 	DPInternalRequestHandler* getDpInternal();
-	std::map<ShardId, Srch2Server*> getShardToIndexMap();
+//	std::map<ShardId, Srch2Server*> getShardToIndexMap();
 
 private:
-	std::map<ShardId, Srch2Server*> shardToIndex;
+	//std::map<ShardId, Srch2Server*> shardToIndex;
+  Srch2Server *shards;
 	ConfigManager& configurationManager;
     TransportManager& tm;
 	DPInternalRequestHandler dpInternal;
+  MessageAllocator alloc;
 };
 
-template<typename RequestType , typename ResponseType> inline
-void RoutingManager::broadcast_wait_for_all_w_cb(RequestType & requestObj,
-			ResultAggregatorAndPrint<RequestType , ResponseType> * aggregator, 
-      CoreShardInfo & coreInfo) {
-  Multiplexer broadcastResolver(configurationManager, coreInfo);
-  CallbackReference cb =
-    tm.registerCallback(requestObj, 
-        new RMCallback<RequestType, ResponseType>(aggregator),
-        RequestType::messageKind, false, broadcastResolver.size());
-  Message* msg = (Message*) 
-    ((char*) requestObj.serialize(getAllocator()) - sizeof(Message));
-  for(UnicastIterator unicast = broadcastResolver.begin(); 
-      unicast != broadcastResolver.end(); ++unicast) {
-    msg->shard = unicast->shardId;
-    tm.route(unicast->nodeId, msg, 0, cb);
-  }
- // getAllocator().deallocate(msg);
-} 
+MessageAllocator getMessageAllocator() {
+  return alloc;
+}
+
+#include "BroadcastInlines.h"
 
 } }
+
 #endif //__SHARDING_ROUTING_ROUTING_MANAGER_H__

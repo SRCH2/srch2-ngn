@@ -18,18 +18,18 @@ struct RMCallback : Callback {
 };
 
 
-template <typename RequestType, typename ResponseType>
+template <typename RequestType, typename ResponseType> inline
 RMCallback<RequestType, ResponseType>::RMCallback(
     ResultAggregatorAndPrint<RequestType, ResponseType>& a) : aggregrate(a) {}
 
 
-template <typename RequestType, typename ResponseType>
+template <typename RequestType, typename ResponseType> inline
 void RMCallback<RequestType, ResponseType>::timeout(void*) {
 //  aggregrate.timeoutProcessing(//shardInfo, requestObject, metadata);
 }
 
 
-template <typename RequestType, typename ResponseType>
+template <typename RequestType, typename ResponseType> inline
 void RMCallback<RequestType, ResponseType>::callback(Message* msg) {
   ResponseType& response = ResponseType::deserialize(msg->buffer);
   aggregrate.callBack(&response);
@@ -37,7 +37,7 @@ void RMCallback<RequestType, ResponseType>::callback(Message* msg) {
   delete response;
 }
 
-template <typename RequestType, typename ResponseType>
+template <typename RequestType, typename ResponseType> inline
 void RMCallback<RequestType, ResponseType>::
 callbackAll(std::vector<Message*>& msgs) {
   typedef std::vector<Message*> Messages;

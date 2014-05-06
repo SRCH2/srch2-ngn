@@ -8,15 +8,16 @@ namespace httpwrapper {
 
 
 RoutingManager::RoutingManager(ConfigManager&  cm, TransportManager& tm)  : 
-    		configurationManager(cm),  tm(tm), dpInternal(&cm) {
+    		configurationManager(cm),  tm(tm), dpInternal(&cm), 
+        shards(new Srch2Server[cm.getCoreInfoMap.size()]) {
+  
 
 	// create a server (core) for each data source in config file
 	for(ConfigManager::CoreInfoMap_t::const_iterator iterator =
 			cm.coreInfoIterateBegin(); iterator != cm.coreInfoIterateEnd();
 			iterator++) {
-		Srch2Server *core = new Srch2Server;
+		Srch2Server *core = &shards[iterator->second->coreId];
 		core->setCoreName(iterator->second->getName());
-		//   shardToIndex[iterator->second->coreId] = core;
 
 		if(iterator->second->getDataSourceType() ==
 				srch2::httpwrapper::DATA_SOURCE_MONGO_DB) {
@@ -45,16 +46,18 @@ RoutingManager::RoutingManager(ConfigManager&  cm, TransportManager& tm)  :
 	}
 }
 
-ConfigManager* RoutingManager::getConfigurationManager(){
+ConfigManager* RoutingManager::getConfigurationManager() {
 	return &this->configurationManager;
 
 }
-DPInternalRequestHandler* RoutingManager::getDpInternal(){
+
+DPInternalRequestHandler* RoutingManager::getDpInternal() {
 	return &this->dpInternal;
 }
+/*
 std::map<ShardId, Srch2Server*> RoutingManager::getShardToIndexMap(){
 	return this->shardToIndex;
-}
+}*/
 
 } }
 //save indexes in deconstructor
