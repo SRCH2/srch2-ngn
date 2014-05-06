@@ -821,21 +821,30 @@ private:
 class CoreInfo_t {
 
 public:
-    unsigned coreId; // starting from 0, auto increment
 
-    // In V0, the "number_of_shards" is a one-time setting for a
-    // core. In the future (possibly after V1), we can support dynamic
-    // migration by allowing this number to change.
-    unsigned numberOfPrimaryShards;
+    unsigned getNumberOfPrimaryShards(){
+        return this->numberOfPrimaryShards;
+    }
 
-    // Number of replicas (additional copies) of an index (1 by
-    // default). The "number_of_replicas" can be increased or
-    // decreased anytime, by using the Index Update Settings API. We
-    // can do it in V0 or after V1. SRCH2 will take care about load
-    // balancing, relocating, gathering the results from nodes, etc.
-    // ES: core.number_of_replicas: 1 // index.number_of_replicas: 1
-    unsigned numberOfReplicas; // always 0 for V0
-    vector<ShardId> shards;
+    unsigned getNumberOfReplicas(){
+        return this->numberOfReplicas;
+    }
+
+    ShardId getPrimaryShardId(unsigned partitionId){
+        ShardId rtn ;
+        rtn.coreId = this->coreId;
+        rtn.partitionId = partitionId;
+        rtn.replicaId = 0;
+        return rtn;
+    }
+
+    void getPartitionAllShardIds(unsigned partitionId, vector<ShardId> & shardIds){ // fills shardIds vector by ShardId objects of primary and replica partitions corresponding to partitionId
+        for(int i = 0; i < this->shards.size(); i++){
+            if(this->shards[i].partitionId == partitionId){
+                shardIds.push_back(this->shards[i]);
+            }
+        }
+    }
 
     CoreInfo_t(class ConfigManager *manager) : configManager(manager) {
         schema = NULL;
@@ -987,7 +996,22 @@ public:
     srch2is::Schema* getSchema() { return this->schema; };
 
 protected:
+
     string name; // of core
+
+    unsigned coreId; // starting from 0, auto increment
+    vector<ShardId> shards;
+    // In V0, the "number_of_shards" is a one-time setting for a
+    // core. In the future (possibly after V1), we can support dynamic
+    // migration by allowing this number to change.
+    unsigned numberOfPrimaryShards;
+    // Number of replicas (additional copies) of an index (1 by
+    // default). The "number_of_replicas" can be increased or
+    // decreased anytime, by using the Index Update Settings API. We
+    // can do it in V0 or after V1. SRCH2 will take care about load
+    // balancing, relocating, gathering the results from nodes, etc.
+    // ES: core.number_of_replicas: 1 // index.number_of_replicas: 1
+    unsigned numberOfReplicas; // always 0 for V0
 
     ConfigManager *configManager;
 
