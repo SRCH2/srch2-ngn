@@ -6,6 +6,8 @@
 #include <vector>
 #include <iterator>
 
+void* tryToConnect(void*);
+
 namespace srch2 {
 namespace httpwrapper {
 
@@ -52,9 +54,10 @@ class RouteMap {
   void addNodeConnection(NodeId, int);
 public:
 
-  bool initRoute(std::pair<ConnectionId, bool>&);
+  void initRoutes();
+  void initRoute(std::pair<ConnectionId, bool>&);
   void acceptRoute(int fd, struct sockaddr_in);
-  void addDestination(const Node&);
+  std::pair<ConnectionId, bool>& addDestination(const Node&);
   bool isTotallyConnected() const;
   Connections getNeededConnections();
   void setBase(Node&);
@@ -64,6 +67,8 @@ public:
   typedef std::map<NodeId, Connection>::iterator iterator;
   iterator begin();
   iterator end();
+
+  friend void* ::tryToConnect(void*);
 };
 
 }}

@@ -1,9 +1,14 @@
 #include "RouteMap.h"
 #include <netdb.h>
 #include "ConnectionsInlines.h"
+#include <sys/unistd.h>
+#include <sys/socket.h>
+#include <sys/fcntl.h>
+#include <errno.h>
+
 using namespace srch2::httpwrapper;
 
-void RouteMap::addDestination(const Node& node) {
+std::pair<ConnectionId, bool>& RouteMap::addDestination(const Node& node) {
   hostent *routeHost = gethostbyname(node.getIpAddress().c_str());
   //  if(routeHost == -1) throw std::exception
   struct sockaddr_in routeAddress;
@@ -15,94 +20,157 @@ void RouteMap::addDestination(const Node& node) {
 
   destinations.push_back(std::pair<ConnectionId, bool>(
         ConnectionId(routeAddress, node.getId()), false));
+
+  return destinations.back();
 }
 
-bool recieveGreeting(int fd) {
-  char greetings[sizeof(GREETING_MESSAGE)];
+int recieveGreeting(int fd) {
+  char greetings[sizeof(GREETING_MESSAGE)+sizeof(int)+1];
+  memset(greetings, 0, sizeof(greetings)+sizeof(int));
+
+  char *currentPos = greetings;
+  int remaining = sizeof(GREETING_MESSAGE) + sizeof(int);
+  while(true) {
+    int readSize = read(fd, currentPos, remaining);
+    remaining -= readSize;
+    if(readSize == -1) {
+      if(errno == EAGAIN || errno == EWOULDBLOCK) continue;
+      close(fd);
+      return -1;
+    }
+    if(remaining == 0) {
+     if(!memcmp(greetings, GREETING_MESSAGE, sizeof(GREETING_MESSAGE))) 
+      break;
+     close(fd);
+     return -1;
+    }
+    currentPos += readSize;
+  }
+  return *((int*)(greetings + sizeof(GREETING_MESSAGE)));
+}
+
+typedef std::pair<ConnectionId, bool> Route;
+
+struct RouteAndMap {
+  RouteMap*const map;
+  Route*const route;
+  pthread_t connectingRouteThread;
+
+  RouteAndMap(RouteMap &map, Route& dest) : map(&map), route(&dest) {}
+};
+
+bool sendGreeting(int fd, bool greeted, unsigned nodeId) {
+  char greetings[sizeof(GREETING_MESSAGE)+sizeof(int)];
   memset(greetings, 0, sizeof(greetings));
 
   char *currentPos = greetings;
-  int remaining = sizeof(GREETING_MESSAGE);
+  int remaining = sizeof(GREETING_MESSAGE)+sizeof(int);
+  memcpy(greetings, (greeted) ? GREETING_MESSAGE : FAILED_GREETING_MESSAGE,
+      sizeof(GREETING_MESSAGE));
+  *((int*)(greetings + sizeof(GREETING_MESSAGE))) = nodeId;
   while(true) {
-    int readSize = read(fd, currentPos, sizeof(GREETING_MESSAGE));
-    remaining -= readSize;
-    if(readSize == -1) {
+#ifdef __MACH__
+	  int flag = SO_NOSIGPIPE;
+#else
+	  int flag = MSG_NOSIGNAL;
+#endif
+    int writeSize = send(fd, currentPos, remaining, flag);
+    remaining -= writeSize;
+    if(writeSize == -1) {
+      if(errno == EAGAIN || errno == EWOULDBLOCK) continue;
       close(fd);
       return false;
     }
     if(remaining == 0) {
-     if (!strcmp(greetings, GREETING_MESSAGE)) 
-      break;
-     close(fd);
-     return false;
-    }
-    currentPos += readSize;
-  }
-}
-
-void sendGreeting(int fd, bool greeted) {
-  char greetings[sizeof(GREETING_MESSAGE)];
-  memset(greetings, 0, sizeof(greetings));
-
-  char *currentPos = greetings;
-  int remaining = sizeof(GREETING_MESSAGE);
-  memcpy(greetings, (greeted) ? GREETING_MESSAGE : FAILED_GREETING_MESSAGE,
-      sizeof(GREETING_MESSAGE));
-  while(true) {
-    int writeSize = send(fd, currentPos, sizeof(GREETING_MESSAGE), 0);
-    remaining -= writeSize;
-    if(writeSize == -1) {
-      close(fd);
-      return;
-    }
-    if(remaining == 0) {
-     if (!strcmp(greetings, GREETING_MESSAGE)) 
-      break;
-     close(fd);
-     return;
+     return true;
     }
     currentPos += writeSize;
   }
 }
 
-bool RouteMap::initRoute(std::pair<ConnectionId, bool>& route) {
-  if(route.second) return true;
+void* tryToConnect(void *arg) {
+  RouteAndMap *map = (RouteAndMap*) arg;
 
-  int fd = socket(AF_INET, SOCK_STREAM, SOCK_NONBLOCK);
-  if(fd < 0) return false; 
+  while(!map->map->map.count(map->route->first.second)) {
+    sleep(5);
 
-  if(connect(fd, (struct sockaddr*) &route.first.first, 
-        sizeof(route.first.first)))
-    return false;
+    int fd = socket(AF_INET, SOCK_STREAM, 0);
+    if(fd < 0) continue; 
+    
+    if(connect(fd, (struct sockaddr*) &map->route->first.first, 
+        sizeof(map->route->first.first)) == -1) {
+      close(fd);
+      continue;
+    }
+   
+    while(!map->map->map.count(map->route->first.second)) {
+      if(!__sync_bool_compare_and_swap(&map->route->second, false,true)) {
+        continue;
+      }
+      break;
+    }
 
-  if(!__sync_bool_compare_and_swap(&route.second, false,true)) return false;
+    if(map->map->map.count(map->route->first.second)) break;
+    
+    if(!sendGreeting(fd, true, map->map->getBase().getId()) || 
+        recieveGreeting(fd) == -1) {
+      map->route->second = false;
+      continue;
+    }
 
-  bool greeted = recieveGreeting(fd);
+    fcntl(fd, F_SETFL, O_NONBLOCK);
+    map->map->addNodeConnection(map->route->first.second, fd);
+  }
+  delete map;
+  return NULL;
+}
 
-  if(!greeted)
-    return route.second = false;
+void RouteMap::initRoutes() {
+  for(std::vector<std::pair<ConnectionId, bool> >::iterator 
+      destination = destinations.begin(); destination != destinations.end();
+      ++destination) {
+    initRoute(*destination);
+  }
+}
 
-  addNodeConnection(route.first.second, fd);
-
-  return true;
+void RouteMap::initRoute(std::pair<ConnectionId, bool>& route) {
+  RouteAndMap *rNm = new RouteAndMap(*this, route);
+  pthread_create(&rNm->connectingRouteThread, NULL, tryToConnect, rNm);
 }
 
 void RouteMap::acceptRoute(int fd, struct sockaddr_in addr) {
   std::pair<ConnectionId, bool> * path = NULL;
-  for(std::vector<std::pair<ConnectionId, bool> >::iterator 
-      p = destinations.begin(); p != destinations.end(); ++p) {
-    path = &(*p);
-  }
-  if(!path) return;
-  if(!__sync_bool_compare_and_swap(&path->second, false, true)) {
-    sendGreeting(fd, false);
+  unsigned nodeId;
+  if((nodeId = recieveGreeting(fd)) == -1) {
+    close(fd);
     return;
   }
-  sendGreeting(fd, true);
-  if(!recieveGreeting(fd)) {
+  for(std::vector<std::pair<ConnectionId, bool> >::iterator 
+      p = destinations.begin(); p != destinations.end(); ++p) {
+    if(p->first.second == nodeId) {
+      path = &(*p);
+      break;
+    }
+  }
+  if(!path) {
+    sendGreeting(fd, false, nodeId);
+    close(fd);
+    return;
+  }
+  while(!__sync_bool_compare_and_swap(&path->second, false, true)) {
+   // if(map.count(path->first.second)) {
+      sendGreeting(fd, false, nodeId);
+      close(fd);
+      return;
+   // }
+  //  continue;
+  }
+
+  if(!sendGreeting(fd, true, nodeId)) {
     path->second = false;
     return;
   }
+
 
   addNodeConnection(path->first.second, fd);
 }

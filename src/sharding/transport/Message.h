@@ -16,12 +16,16 @@ struct Message {
    ShardId shard;
    unsigned bodySize; //size of buffer -> change name to bodySize?
    MessageTime_t time;
-   MessageTime_t inital_time; //used by response type messages
+   MessageTime_t initial_time; //used by response type messages
    char buffer[0];
 
    //helper Functions
    bool isLocal(){
+     return mask & 0x2;
+   }
 
+   bool isReply() {
+     return mask & 0x1;
    }
 };
 
