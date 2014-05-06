@@ -748,6 +748,7 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
 void ConfigManager::parseSingleCore(const xml_node &parentNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
 {
     // <core name="core0"
+	string tempUse = "";
     if (parentNode.attribute(nameString) && string(parentNode.attribute(nameString).value()).compare("") != 0) {
         coreInfo->name = parentNode.attribute(nameString).value();
     } else {
@@ -755,7 +756,6 @@ void ConfigManager::parseSingleCore(const xml_node &parentNode, CoreInfo_t *core
         configSuccess = false;
         return;
     }
-
 
     // Solr compatability - dataDir can be an attribute: <core dataDir="core0/data"
     if (parentNode.attribute(dataDirString) && string(parentNode.attribute(dataDirString).value()).compare("") != 0) {
@@ -1750,31 +1750,28 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
     xml_node configNode = configDoc.child(configString);
 
     xml_node discoveryNode = configNode.child(discoveryNodeTag);
-             if(discoveryNode){
-             	xml_node pingInterval = discoveryNode.child(pingIntervalTag);
-             	if(pingInterval && pingInterval.text()){
-                 	tempUse = string(pingInterval.text().get());
-                 	trimSpacesFromValue(tempUse, "pingInterval", parseWarnings);
-         			discovery.setPingInterval((uint)atol(tempUse.c_str()));
-                 }
+    if(discoveryNode){
+        xml_node pingInterval = discoveryNode.child(pingIntervalTag);
+        if(pingInterval && pingInterval.text()){
+           tempUse = string(pingInterval.text().get());
+           trimSpacesFromValue(tempUse, "pingInterval", parseWarnings);
+           discovery.setPingInterval((uint)atol(tempUse.c_str()));
+        }
 
-             	xml_node pingTimeout = discoveryNode.child(pingTimeoutTag);
-             	if(pingTimeout && pingTimeout.text()){
-             		tempUse = string(pingTimeout.text().get());
-             		trimSpacesFromValue(tempUse, "pingTimeout", parseWarnings);
-             		discovery.setPingTimeout((uint)atol(tempUse.c_str()));
-                 }
+        xml_node pingTimeout = discoveryNode.child(pingTimeoutTag);
+        if(pingTimeout && pingTimeout.text()){
+            tempUse = string(pingTimeout.text().get());
+            trimSpacesFromValue(tempUse, "pingTimeout", parseWarnings);
+            discovery.setPingTimeout((uint)atol(tempUse.c_str()));
+        }
 
-             	xml_node retryCount = discoveryNode.child(retryCountTag);
-             	if(retryCount && retryCount.text()){
-             		tempUse = string(retryCount.text().get());
-             		trimSpacesFromValue(tempUse, "retryCount", parseWarnings);
-             		discovery.setRetryCount((uint)atol(tempUse.c_str()));
-                 }
-             }
-
-
-
+        xml_node retryCount = discoveryNode.child(retryCountTag);
+        if(retryCount && retryCount.text()){
+            tempUse = string(retryCount.text().get());
+            trimSpacesFromValue(tempUse, "retryCount", parseWarnings);
+            discovery.setRetryCount((uint)atol(tempUse.c_str()));
+            }
+         }
 
     xml_node clusterName = configNode.child(clusterNameTag);
     if (clusterName && clusterName.text()) {
