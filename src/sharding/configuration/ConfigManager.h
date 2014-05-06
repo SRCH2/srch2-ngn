@@ -452,7 +452,6 @@ inline  enum PortType_t incrementPortType(PortType_t &oldValue)
     return static_cast<PortType_t> (newValue);
 }
 
-// requested by Surendra for the Synchronization Manager (SM)
  class DiscoveryParams {
  private:
     unsigned pingInterval;
@@ -461,9 +460,9 @@ inline  enum PortType_t incrementPortType(PortType_t &oldValue)
 
  public:
         DiscoveryParams(){
-    	pingInterval = 0;
-    	pingTimeout = 0;
-    	retryCount = 0;
+    	pingInterval = 1;
+    	pingTimeout = 1;
+    	retryCount = 1;
         }
 
         unsigned getPingInterval(){
@@ -585,6 +584,7 @@ private:
     int parseFacetType(string& facetType);
     void lowerCaseNodeNames(xml_node &node);
     void trimSpacesFromValue(string &fieldValue, const char *fieldName, std::stringstream &parseWarnings, const char *append = NULL);
+    bool isNumber(const string &s);
 
 protected:
     CoreInfoMap_t coreInfoMap;

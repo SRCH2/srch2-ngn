@@ -23,9 +23,9 @@
         -->
         
     <discovery>
-        <ping-interval>2</ping-interval>
-        <ping-timeout>8</ping-timeout>
-        <retry-count>10</retry-count>
+        <ping-interval>inv</ping-interval>
+        <ping-timeout>inv</ping-timeout>
+        <retry-count>inv</retry-count>
     </discovery>    
         
     <node>

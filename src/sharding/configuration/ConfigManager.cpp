@@ -1737,6 +1737,13 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode, CoreIn
     }
 }
 
+bool ConfigManager::isNumber(const std::string& s)
+{
+    std::string::const_iterator it = s.begin();
+    while (it != s.end() && std::isdigit(*it)) ++it;
+    return !s.empty() && it == s.end();
+}
+
 void ConfigManager::parse(const pugi::xml_document& configDoc,
                           bool &configSuccess,
                           std::stringstream &parseError,
@@ -1755,23 +1762,35 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
         if(pingInterval && pingInterval.text()){
            tempUse = string(pingInterval.text().get());
            trimSpacesFromValue(tempUse, "pingInterval", parseWarnings);
-           discovery.setPingInterval((uint)atol(tempUse.c_str()));
+           if(isNumber(tempUse))
+               discovery.setPingInterval((uint)atol(tempUse.c_str()));
+           else{
+        	   parseWarnings<<"Ping interval specified is not valid, engine will use the default value 1";
+           }
         }
 
         xml_node pingTimeout = discoveryNode.child(pingTimeoutTag);
         if(pingTimeout && pingTimeout.text()){
             tempUse = string(pingTimeout.text().get());
             trimSpacesFromValue(tempUse, "pingTimeout", parseWarnings);
-            discovery.setPingTimeout((uint)atol(tempUse.c_str()));
+            if(isNumber(tempUse))
+                discovery.setPingTimeout((uint)atol(tempUse.c_str()));
+            else{
+         	   parseWarnings<<"Ping timeout specified is not valid, engine will use the default value 1";
+            }
         }
 
         xml_node retryCount = discoveryNode.child(retryCountTag);
         if(retryCount && retryCount.text()){
             tempUse = string(retryCount.text().get());
             trimSpacesFromValue(tempUse, "retryCount", parseWarnings);
-            discovery.setRetryCount((uint)atol(tempUse.c_str()));
+            if(isNumber(tempUse))
+                discovery.setRetryCount((uint)atol(tempUse.c_str()));
+            else{
+                parseWarnings<<"Retry count specified is not valid, engine will use the default value 1";
             }
          }
+    }
 
     xml_node clusterName = configNode.child(clusterNameTag);
     if (clusterName && clusterName.text()) {

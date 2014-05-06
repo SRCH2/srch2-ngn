@@ -135,9 +135,17 @@ void testDiscovery(char* configFile){
 	ASSERT(discovery.getPingInterval() == 2);
 	ASSERT(discovery.getPingTimeout() == 8);
 	ASSERT(discovery.getRetryCount() == 10);
-
 }
+void testDiscoveryInvalid(char* configFile){
 
+	ConfigManager *configManager = new ConfigManager(configFile);
+	configManager->loadConfigFile();
+	DiscoveryParams discovery = configManager->getDiscovery();
+
+	ASSERT(discovery.getPingInterval() == 1);
+	ASSERT(discovery.getPingTimeout() == 1);
+	ASSERT(discovery.getRetryCount() == 1);
+}
 
 int main() {
 	testShard();
@@ -153,6 +161,7 @@ int main() {
 	testCurrentNodeId(getenv("ConfigManagerFilePath1"));
 
 	testDiscovery(getenv("ConfigManagerFilePath1"));
+	testDiscoveryInvalid(getenv("ConfigManagerFilePath3"));
 
 }
 
