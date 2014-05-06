@@ -24,14 +24,14 @@
         -->
         
      <discovery>
-        <ping-interval>2</ping-interval>
-        <ping-timeout>8</ping-timeout>
-        <retry-count>10</retry-count>
+        <ping-interval> 2 </ping-interval>
+        <ping-timeout> 8 </ping-timeout>
+        <retry-count> 10 </retry-count>
     </discovery>    
        
     <node>
-        <listeningHostname>192.168.1.54</listeningHostname>
-        <listeningHostname>192.168.1.52</listeningHostname>
+        <listeningHostname> 192.168.1.54 </listeningHostname>
+        <listeningHostname> 192.168.1.52 </listeningHostname>
         <listeningPort> 8087 </listeningPort>
         <listeningPort> 8089 </listeningPort>
         <this-is-me> true </this-is-me>
@@ -39,21 +39,21 @@
 	<node-name> LionKing </node-name>
         <node-master> true </node-master>
         <node-master> false </node-master>
-        <node-data>truefalse</node-data>
-        <node-data>truefalse</node-data>
+        <node-data> truefalse </node-data>
+        <node-data> truefalse </node-data>
         <srch2Home> myHome </srch2Home>
         <dataDir> Default </dataDir>
         <dataDir> NewDefault </dataDir>
     </node> 
 
     <node>
-        <this-is-me>false</this-is-me>
-        <listeningHostname>192.168.1.55</listeningHostname>
-        <listeningHostname>192.168.1.56</listeningHostname>
+        <this-is-me> false </this-is-me>
+        <listeningHostname> 192.168.1.55 </listeningHostname>
+        <listeningHostname> 192.168.1.56 </listeningHostname>
         <node-name> frozen </node-name>
         <node-name> liquid </node-name>
-        <listeningPort>8088</listeningPort>
-        <listeningPort>8089</listeningPort>
+        <listeningPort> 8088 </listeningPort>
+        <listeningPort> 8089 </listeningPort>
     </node> 
 
 
