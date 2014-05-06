@@ -21,6 +21,13 @@
         <!-- Make sure to specify the home of your SRCH2 installation.  Example: 
           <srch2Home>/home/joe/srch2</srch2Home>
         -->
+        
+    <discovery>
+        <ping-interval>2</ping-interval>
+        <ping-timeout>8</ping-timeout>
+        <retry-count>10</retry-count>
+    </discovery>    
+    
     <node>
         <listeningHostname>192.168.1.54</listeningHostname>
         <listeningPort> 8089 </listeningPort>
