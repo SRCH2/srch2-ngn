@@ -27,15 +27,14 @@ bool findNextMagicNumberAndReadMessageHeader(Message *const msg,  int fd) {
   }
 }
 
-Message* readRestOfMessage(std::allocator<char> messageAllocator,
+Message* readRestOfMessage(MessageAllocator& messageAllocator,
     int fd, Message *const msgHeader) {
-  char *buffer= messageAllocator.allocate(msgHeader->bodySize);
+  Message *msg= messageAllocator.allocateMessage(msgHeader->bodySize);
+  int readReturnValue = read(fd, msg->buffer, msgHeader->bodySize);
 
-  int readReturnValue = read(fd, buffer, msgHeader->bodySize);
+  if(readReturnValue != msgHeader->bodySize){  //handle error
+  }
 
-  if(readReturnValue != msgHeader->bodySize); //handle error
-
-  Message* msg = (Message*) (buffer - sizeof(msgHeader));
   memcpy(msg, msgHeader, sizeof(Message));
 
   return msg;
