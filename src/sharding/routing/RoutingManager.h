@@ -11,6 +11,7 @@
 #include <server/Srch2Server.h>
 #include <sharding/processor/ResultsAggregatorAndPrint.h>
 #include "Multiplexer.h"
+#include "RMCallback.h"
 #include "transport/PendingMessages.h"
 
 using namespace std;
@@ -176,14 +177,15 @@ private:
 	DPInternalRequestHandler dpInternal;
 };
 
-template<typename RequestType , typename ReseponseType> inline
+template<typename RequestType , typename ResponseType> inline
 void RoutingManager::broadcast_wait_for_all_w_cb(RequestType & requestObj,
-			ResultAggregatorAndPrint<RequestType , ReseponseType> * aggregator, 
+			ResultAggregatorAndPrint<RequestType , ResponseType> * aggregator, 
       CoreShardInfo & coreInfo) {
   Multiplexer broadcastResolver(configurationManager, coreInfo);
   CallbackReference cb =
-    tm.registerCallback(requestObj, aggregator, RequestType::messageKind,
-        false, broadcastResolver.size());
+    tm.registerCallback(requestObj, 
+        new RMCallback<RequestType, ResponseType>(aggregator),
+        RequestType::messageKind, false, broadcastResolver.size());
   Message* msg = (Message*) 
     ((char*) requestObj.serialize(getAllocator()) - sizeof(Message));
   for(UnicastIterator unicast = broadcastResolver.begin(); 
