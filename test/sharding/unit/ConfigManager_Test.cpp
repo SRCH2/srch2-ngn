@@ -92,9 +92,6 @@ void testCore(char* configFile){
 	CoreInfo_t* c2 = configManager->getCoreInfo("core2");
 	CoreInfo_t* c3 = configManager->getCoreInfo("core3");
 
-    unsigned temp1 = c1->getNumberOfPrimaryShards();
-    unsigned temp2 = c1->getNumberOfReplicas();
-
 	ASSERT(c1->getNumberOfPrimaryShards() == 5);
 	ASSERT(c1->getNumberOfReplicas() == 1);
 
