@@ -25,7 +25,9 @@ Partitioner::Partitioner(ConfigManager * configurationManager){
  * 3. Uses hash(...) to choose which shard should be responsible for this record
  * 4. Returns the information of corresponding Shard (which can be discovered from SM)
  */
-ShardId Partitioner::getShardIDForRecord(Record * record){
+ShardId Partitioner::getShardIDForRecord(Record * record, string coreName){
+
+    const CoreInfo_t *indexDataContainerConf = configurationManager->getCoreInfo(coreName);
 
 	unsigned valueToHash = getRecordValueToHash(record);
 
@@ -34,7 +36,7 @@ ShardId Partitioner::getShardIDForRecord(Record * record){
 	return convertUnsignedToCoreShardInfo(hash(valueToHash , totalNumberOfShards));
 }
 
-ShardId Partitioner::getShardIDForRecord(string primaryKeyStringValue){
+ShardId Partitioner::getShardIDForRecord(string primaryKeyStringValue, string coreName){
 	unsigned valueToHash = getRecordValueToHash(primaryKeyStringValue);
 
 	unsigned totalNumberOfShards = 3; // routingManager->getNumberOfShards(); TODO we need total number of shards
@@ -53,12 +55,13 @@ unsigned Partitioner::getRecordValueToHash(Record * record){
 
 	// When the record is being parsed, configuration is used to compute the hashable value of this
 	// record. It will be saved in record.
-	return 0;//TEMP	 TODO
+	string primaryKey = record->getPrimaryKey();
+	return hashDJB2(primaryKey.c_str());
 }
 
 
 unsigned Partitioner::getRecordValueToHash(string primaryKeyStringValue){
-	return 0; // TODO  TEMP
+	return hashDJB2(primaryKeyStringValue.c_str());
 }
 
 /*

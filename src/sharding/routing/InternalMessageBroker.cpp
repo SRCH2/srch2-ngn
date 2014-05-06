@@ -108,9 +108,9 @@ Srch2Server * InternalMessageBroker::getShardIndex(ShardId & shardId){
 	return indexerItr->second;
 }
 
-std::allocator<char>* InternalMessageBroker::getMessageAllocator() {
+MessageAllocator * InternalMessageBroker::getMessageAllocator() {
  // return routingManager.transportManager.getMessageAllocator();
-	return NULL; //TODO
+	return routingManager.getAllocator();
 }
 
 void InternalMessageBroker::sendReply(Message* msg, void* replyObject) {

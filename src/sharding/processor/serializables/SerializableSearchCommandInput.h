@@ -7,6 +7,7 @@ using namespace std;
 #include "sharding/configuration/ShardingConstants.h"
 #include <instantsearch/LogicalPlan.h>
 #include "core/util/SerializationHelper.h"
+#include "sharding/transport/MessageAllocator.h"
 
 namespace srch2 {
 namespace httpwrapper {
@@ -25,7 +26,7 @@ public:
 	 * Serialization scheme:
 	 * | isLogicalPlanNULL | LogicalPlan(only is isLogicalPlanNULL is true) |
 	 */
-    void* serialize(std::allocator<char> * aloc){
+    void* serialize(MessageAllocator * aloc){
 
     	if(logicalPlan == NULL){
     		void * buffer = aloc->allocate(sizeof(bool));

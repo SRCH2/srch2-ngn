@@ -23,7 +23,7 @@ private:
   template<typename InputType, typename Deserializer, typename OutputType>
     void broker(Message*, Srch2Server*,
         OutputType (DPInternalRequestHandler::*fn) (Srch2Server*, InputType*));
-  std::allocator<char>* getMessageAllocator();
+  MessageAllocator * getMessageAllocator();
   void sendReply(Message*, void*);
   
   DPInternalRequestHandler& internalDP;

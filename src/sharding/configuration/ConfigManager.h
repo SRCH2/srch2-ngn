@@ -1027,7 +1027,7 @@ public:
     void setPort(PortType_t portType, unsigned short portNumber);
 
     void setSchema(srch2is::Schema* schema) { this->schema = schema; };
-    srch2is::Schema* getSchema() { return this->schema; };
+    srch2is::Schema* getSchema() const { return this->schema; };
 
 protected:
     string name; // of core

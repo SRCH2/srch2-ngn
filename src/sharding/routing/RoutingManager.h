@@ -160,9 +160,9 @@ public:
 
 	}
 
-	std::allocator<char> getAllocator() {
+	MessageAllocator * getAllocator() {
 		//TODO
-		return std::allocator<char>();
+		return &(tm.messageAllocator);
 	}
 
 

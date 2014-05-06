@@ -241,7 +241,7 @@ static void cb_search(evhttp_request *req, void *arg) {
     return;
 
   try {
-   // core->dpHandler.externalSearchCommand(req, core);
+    core->dpHandler.externalSearchCommand(req, core);
   } catch (exception& e) {
     // exception caught
     Logger::error(e.what());

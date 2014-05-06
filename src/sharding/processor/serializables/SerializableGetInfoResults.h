@@ -2,6 +2,7 @@
 #define __SHARDING_PROCESSOR_SERIALIZABLE_GETINFO_RESULTS_H_
 
 #include "core/util/SerializationHelper.h"
+#include "sharding/transport/MessageAllocator.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace std;
@@ -25,7 +26,7 @@ public:
 
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
-    void* serialize(std::allocator<char> * aloc){
+    void* serialize(MessageAllocator * aloc){
     	// calculate the number of bytes needed
     	unsigned numberOfBytes = 0;
     	numberOfBytes += sizeof(readCount);

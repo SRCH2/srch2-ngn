@@ -24,11 +24,11 @@ public:
 	 * 3. Uses hash(...) to choose which shard should be responsible for this record
 	 * 4. Returns the information of corresponding Shard (which can be discovered from SM)
 	 */
-	ShardId getShardIDForRecord(Record * record);
+	ShardId getShardIDForRecord(Record * record, string coreName);
 	// TODO : if the shard hash value of a record must be calculated by
 	// evaluating an expression given in configuration file, primaryKeyStringValue is not enough
 	// as the input of this method, this will change later ...
-	ShardId getShardIDForRecord(string primaryKeyStringValue);
+	ShardId getShardIDForRecord(string primaryKeyStringValue, string coreName);
 
 
 private:
@@ -48,6 +48,18 @@ private:
 
 	ShardId convertUnsignedToCoreShardInfo(unsigned coreShardIndex);
 
+	// computes the hash value of a string
+	unsigned hashDJB2(const char *str) const
+	{
+	    unsigned hash = 5381;
+	    unsigned c;
+	    do
+	    {
+	        c = *str;
+	        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+	    }while(*str++);
+	    return hash;
+	}
 
 private:
 	ConfigManager * configurationManager;

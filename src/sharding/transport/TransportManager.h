@@ -37,7 +37,6 @@ struct TransportManager {
   CallbackReference registerCallback(void*,Callback*,
       ShardingMessageType,bool,int = 1);
   void register_callbackhandler_for_sm(CallBackHandler*);
-
 };
 
 inline void TransportManager::register_callbackhandler_for_sm(CallBackHandler

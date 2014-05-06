@@ -57,6 +57,7 @@
 #include "sharding/processor/SearchResultsAggregatorAndPrint.h"
 #include "sharding/processor/CommandStatusAggregatorAndPrint.h"
 #include "sharding/processor/GetInfoAggregatorAndPrint.h"
+#include "sharding/processor/ProcessorUtil.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -110,33 +111,31 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , CoreS
         evhttp_clear_headers(&headers);
         return;
     }
-/* TODO Schema
     //2. validate the query
-    QueryValidator qv(*(server->indexer->getSchema()),
+    QueryValidator qv(*(indexDataContainerConf->getSchema()),
             *(indexDataContainerConf), resultAggregator->getParamContainer());
 
     bool valid = qv.validate();
     if (!valid) {
         // if the query is not valid, print the error message to the response
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request",
+        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Bad Request",
         		resultAggregator->getParamContainer()->getMessageString(), headers);
         evhttp_clear_headers(&headers);
         return;
     }
     //3. rewrite the query and apply analyzer and other stuff ...
     QueryRewriter qr(indexDataContainerConf,
-            *(server->indexer->getSchema()),
+    		*(indexDataContainerConf->getSchema()),
             *(AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf)),
             resultAggregator->getParamContainer());
 
     if(qr.rewrite(resultAggregator->getLogicalPlan()) == false){
         // if the query is not valid, print the error message to the response
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request",
-        		resultAggregator->getParamContainer(), headers);
+        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Bad Request",
+        		resultAggregator->getParamContainer()->getMessageString().c_str(), headers);
         evhttp_clear_headers(&headers);
         return;
     }
-*/
     // compute elapsed time in ms , end the timer
     clock_gettime(CLOCK_REALTIME, &tend);
     unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
@@ -166,6 +165,8 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , CoreS
  */
 void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, CoreShardInfo * coreShardInfo){
 
+
+    const CoreInfo_t *indexDataContainerConf = configurationManager->getCoreInfo(coreShardInfo->coreName);
 	// it must be an insert query
 	ASSERT(req->type == EVHTTP_REQ_PUT);
 	if(req->type != EVHTTP_REQ_PUT){
@@ -199,7 +200,7 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, CoreSh
         log_str << "JSON object parse error";
     } else {
 		Schema * storedSchema = Schema::create();
-		RecordSerializerUtil::populateStoredSchema(storedSchema, /*TODO schema*/ NULL);
+		RecordSerializerUtil::populateStoredSchema(storedSchema, indexDataContainerConf->getSchema());
 		RecordSerializer recSerializer = RecordSerializer(*storedSchema);
 
 
@@ -210,7 +211,7 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, CoreSh
             	/*
             	 * SerializableInsertUpdateCommandInput destructor will deallocate Record objects
             	 */
-            	Record *record = new Record(/*TODO schema*/ NULL);
+            	Record *record = new Record(indexDataContainerConf->getSchema());
 
                 Json::Value defaultValueToReturn = Json::Value("");
                 const Json::Value doc = root.get(index,
@@ -235,7 +236,7 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, CoreSh
         	/*
         	 * SerializableInsertUpdateCommandInput destructor will deallocate Record objects
         	 */
-        	Record *record = new Record(/*TODO schema*/ NULL);
+        	Record *record = new Record(indexDataContainerConf->getSchema());
 
             const Json::Value doc = root;
             Json::FastWriter writer;
@@ -275,7 +276,7 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, CoreSh
     resultsAggregator->setMessages(log_str);
     for(vector<Record *>::iterator recordItr = recordsToInsert.begin(); recordItr != recordsToInsert.end() ; ++recordItr){
 
-    	ShardId shardInfo = partitioner->getShardIDForRecord(*recordItr);
+    	ShardId shardInfo = partitioner->getShardIDForRecord(*recordItr,coreShardInfo->coreName);
 
 		SerializableInsertUpdateCommandInput  insertUpdateInput(*recordItr,SerializableInsertUpdateCommandInput::INSERT);
 
@@ -296,6 +297,8 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, CoreSh
  */
 void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, CoreShardInfo * coreShardInfo){
 
+
+    const CoreInfo_t *indexDataContainerConf = configurationManager->getCoreInfo(coreShardInfo->coreName);
 	// it must be an update query
 	ASSERT(req->type == EVHTTP_REQ_PUT);
 	if(req->type != EVHTTP_REQ_PUT){
@@ -335,7 +338,7 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, CoreSh
 		evhttp_parse_query(req->uri, &headers);
 
 		Schema * storedSchema = Schema::create();
-		RecordSerializerUtil::populateStoredSchema(storedSchema, /*indexer->getSchema() TODO */ NULL);
+		RecordSerializerUtil::populateStoredSchema(storedSchema, indexDataContainerConf->getSchema());
 		RecordSerializer recSerializer = RecordSerializer(*storedSchema);
 		if (root.type() == Json::arrayValue) {
 			//the record parameter is an array of json objects
@@ -343,7 +346,7 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, CoreSh
             	/*
             	 * SerializableInsertUpdateCommandInput destructor will deallocate Record objects
             	 */
-				Record *record = new Record(/*TODO schema*/NULL);
+				Record *record = new Record(indexDataContainerConf->getSchema());
 
 				Json::Value defaultValueToReturn = Json::Value("");
 				const Json::Value doc = root.get(index,
@@ -368,7 +371,7 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, CoreSh
         	 * the record parameter is a single json object
         	 * SerializableInsertUpdateCommandInput destructor will deallocate Record objects
         	 */
-			Record *record = new Record(/*TODO schema*/NULL);
+			Record *record = new Record(indexDataContainerConf->getSchema());
 			const Json::Value doc = root;
 
 	    	Json::FastWriter writer;
@@ -412,7 +415,7 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, CoreSh
     resultsAggregator->setMessages(log_str);
     for(vector<Record *>::iterator recordItr = recordsToUpdate.begin(); recordItr != recordsToUpdate.end() ; ++recordItr){
 
-    	ShardId shardInfo = partitioner->getShardIDForRecord(*recordItr);
+    	ShardId shardInfo = partitioner->getShardIDForRecord(*recordItr,coreShardInfo->coreName);
 
 		SerializableInsertUpdateCommandInput insertUpdateInput(*recordItr, SerializableInsertUpdateCommandInput::UPDATE);
 
@@ -468,7 +471,7 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, CoreSh
 		const std::string primaryKeyStringValue = string(pKeyParamName_cstar);
 		free(pKeyParamName_cstar);
 
-		ShardId shardInfo = partitioner->getShardIDForRecord(primaryKeyStringValue);
+		ShardId shardInfo = partitioner->getShardIDForRecord(primaryKeyStringValue,coreShardInfo->coreName);
 
 		SerializableDeleteCommandInput deleteInput(primaryKeyStringValue,coreShardInfo->coreId); // TODO : do we need coreId here ?
 

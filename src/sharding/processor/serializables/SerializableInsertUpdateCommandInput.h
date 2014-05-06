@@ -7,6 +7,7 @@ using namespace std;
 #include "sharding/configuration/ShardingConstants.h"
 #include <instantsearch/Record.h>
 #include "core/util/SerializationHelper.h"
+#include "sharding/transport/MessageAllocator.h"
 
 namespace srch2 {
 namespace httpwrapper {
@@ -36,7 +37,7 @@ public:
 	}
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
-    void* serialize(std::allocator<char> * aloc){
+    void* serialize(MessageAllocator * aloc){
     	ASSERT(record != NULL);
     	// calculate the size
     	unsigned numberOfBytes = 0;

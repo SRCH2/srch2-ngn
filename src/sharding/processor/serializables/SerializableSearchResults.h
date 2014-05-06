@@ -10,6 +10,7 @@ using namespace std;
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include "core/util/SerializationHelper.h"
+#include "sharding/transport/MessageAllocator.h"
 
 namespace srch2 {
 namespace httpwrapper {
@@ -55,7 +56,7 @@ class SerializableSearchResults {
 
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
-    void* serialize(std::allocator<char> * aloc){
+    void* serialize(MessageAllocator * aloc){
     	if(queryResults == NULL){
     		void * buffer = aloc->allocate(sizeof(bool));
     		void * bufferWritePointer = buffer;
