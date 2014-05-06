@@ -51,6 +51,10 @@ const char* const ConfigManager::clusterNameTag = "cluster-name";
 const int ConfigManager::DefaultNumberOfPrimaryShards = 5;
 const int ConfigManager::DefaultNumberOfReplicas = 1;
 const char* const ConfigManager::DefaultClusterName = "SRCH2Cluster";
+const char* const ConfigManager::discoveryNodeTag = "discovery";
+const char* const ConfigManager::pingIntervalTag = "ping-interval";
+const char* const ConfigManager:: pingTimeoutTag= "ping-timeout";
+const char* const ConfigManager::retryCountTag = "retry-count";
 
 
 const char* const ConfigManager::accessLogFileString = "accesslogfile";
@@ -743,9 +747,8 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
  */
 void ConfigManager::parseSingleCore(const xml_node &parentNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
 {
-    string tempUse = "";
-
     // <core name="core0"
+	string tempUse = "";
     if (parentNode.attribute(nameString) && string(parentNode.attribute(nameString).value()).compare("") != 0) {
         coreInfo->name = parentNode.attribute(nameString).value();
     } else {
@@ -805,6 +808,8 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_
     // <config><dataDir>core0/data OR <core><dataDir>
 
     xml_node childNodeOfCores = parentNode.child(primaryShardTag);
+
+
     if(childNodeOfCores && childNodeOfCores.text()){
     	string temp = (childNodeOfCores.text().get());
     	trimSpacesFromValue(temp, primaryShardTag, parseWarnings);
@@ -1732,6 +1737,13 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode, CoreIn
     }
 }
 
+bool ConfigManager::isNumber(const std::string& s)
+{
+    std::string::const_iterator it = s.begin();
+    while (it != s.end() && std::isdigit(*it)) ++it;
+    return !s.empty() && it == s.end();
+}
+
 void ConfigManager::parse(const pugi::xml_document& configDoc,
                           bool &configSuccess,
                           std::stringstream &parseError,
@@ -1743,6 +1755,43 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
     CoreInfo_t *defaultCoreInfo = NULL;
 
     xml_node configNode = configDoc.child(configString);
+
+    xml_node discoveryNode = configNode.child(discoveryNodeTag);
+    if(discoveryNode){
+        xml_node pingInterval = discoveryNode.child(pingIntervalTag);
+        if(pingInterval && pingInterval.text()){
+           tempUse = string(pingInterval.text().get());
+           trimSpacesFromValue(tempUse, "pingInterval", parseWarnings);
+           if(isNumber(tempUse))
+               discovery.setPingInterval((uint)atol(tempUse.c_str()));
+           else{
+        	   parseWarnings<<"Ping interval specified is not valid, engine will use the default value 1";
+           }
+        }
+
+        xml_node pingTimeout = discoveryNode.child(pingTimeoutTag);
+        if(pingTimeout && pingTimeout.text()){
+            tempUse = string(pingTimeout.text().get());
+            trimSpacesFromValue(tempUse, "pingTimeout", parseWarnings);
+            if(isNumber(tempUse))
+                discovery.setPingTimeout((uint)atol(tempUse.c_str()));
+            else{
+         	   parseWarnings<<"Ping timeout specified is not valid, engine will use the default value 1";
+            }
+        }
+
+        xml_node retryCount = discoveryNode.child(retryCountTag);
+        if(retryCount && retryCount.text()){
+            tempUse = string(retryCount.text().get());
+            trimSpacesFromValue(tempUse, "retryCount", parseWarnings);
+            if(isNumber(tempUse))
+                discovery.setRetryCount((uint)atol(tempUse.c_str()));
+            else{
+                parseWarnings<<"Retry count specified is not valid, engine will use the default value 1";
+            }
+         }
+    }
+
     xml_node clusterName = configNode.child(clusterNameTag);
     if (clusterName && clusterName.text()) {
     	tempUse = string(clusterName.text().get());
@@ -1758,6 +1807,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
           parseWarnings << "Duplicate definition of \"" << clusterNameTag << "\".  The engine will use the first value: " << cluster.getClusterName() << "\n";    }
 
     tempUse = "";
+
 
     std::vector<Node>* nodes = cluster.getNodes();
 
@@ -1945,7 +1995,7 @@ void ConfigManager::parseNode(std::vector<Node>* nodes, xml_node& nodeTag, std::
 					if(portDefined == false){
 						string portNo;
 						portNo = string(childNode.text().get());
-						trimSpacesFromValue(ipAddress, nodeListeningPortTag, parseWarnings);
+						trimSpacesFromValue(portNo, nodeListeningPortTag, parseWarnings);
 						portNumber = (uint)atol(portNo.c_str());
 						portDefined = true;
 					}

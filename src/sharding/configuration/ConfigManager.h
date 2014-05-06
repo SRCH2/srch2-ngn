@@ -452,8 +452,51 @@ inline  enum PortType_t incrementPortType(PortType_t &oldValue)
     return static_cast<PortType_t> (newValue);
 }
 
+ class DiscoveryParams {
+ private:
+    unsigned pingInterval;
+    unsigned pingTimeout;
+    unsigned retryCount;
+
+ public:
+        DiscoveryParams(){
+    	pingInterval = 1;
+    	pingTimeout = 1;
+    	retryCount = 1;
+        }
+
+        unsigned getPingInterval(){
+    		return pingInterval;
+    	}
+
+    	unsigned getPingTimeout(){
+    		return pingTimeout;
+    	}
+
+    	unsigned getRetryCount(){
+    		return retryCount;
+    	}
+
+    	void setPingInterval(unsigned pingInterval){
+    		this->pingInterval = pingInterval;
+    	}
+
+    	void setPingTimeout(unsigned pingTimeout){
+    		 this->pingTimeout = pingTimeout;
+    	}
+
+    	void setRetryCount(unsigned retryCount){
+    		 this->retryCount = retryCount;
+    	}
+ };
+
 class ConfigManager {
 public:
+
+	 DiscoveryParams& getDiscovery(){
+		 return this->discovery;
+	 }
+
     typedef std::map<const string, CoreInfo_t *> CoreInfoMap_t;
     Cluster* getCluster(){
     	return &(this->cluster);
@@ -470,6 +513,7 @@ public:
     }
 private:
     Cluster cluster;
+    DiscoveryParams discovery;
     // <config>
     string licenseKeyFile;
     string httpServerListeningHostname;
@@ -540,6 +584,7 @@ private:
     int parseFacetType(string& facetType);
     void lowerCaseNodeNames(xml_node &node);
     void trimSpacesFromValue(string &fieldValue, const char *fieldName, std::stringstream &parseWarnings, const char *append = NULL);
+    bool isNumber(const string &s);
 
 protected:
     CoreInfoMap_t coreInfoMap;
@@ -698,6 +743,10 @@ private:
     static const int DefaultNumberOfPrimaryShards;
     static const int DefaultNumberOfReplicas;
     static const char* const DefaultClusterName;
+    static const char* const discoveryNodeTag;
+    static const char* const pingIntervalTag;
+    static const char* const pingTimeoutTag;
+    static const char* const retryCountTag;
 
     static const char* const accessLogFileString;
     static const char* const analyzerString;
@@ -1108,14 +1157,7 @@ protected:
     srch2is::Schema *schema;
 };
 
-// requested by Surendra for the Synchronization Manager (SM)
- class DiscoveryParams {
- public:
-    unsigned pingInterval;
-    unsigned pingTimeout;
-    unsigned retryCount;
- };
- 
+
  // If we are supporting multicast
  class Multicast {
  public:
