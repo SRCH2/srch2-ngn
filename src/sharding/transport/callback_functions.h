@@ -60,13 +60,13 @@ void cb_recieveMessage(int fd, short eventType, void *arg) {
   Message *msg = 
     readRestOfMessage(tm->messageAllocator, fd, &msgHeader);
 
-  tm->smHandler->notify(msg);
-/*
-   tm->handeMessage(msg)
-  if(msg.isReply()) tm->routeManager.handleRepy(*msg);
-  else {
-    tm->routeManager.trampoline(*msg);
-  }*/
+  if(msg.isReply()) {
+    tm->msgs.resolve(msg);
+  } else if(msg.isInternalMessage()) {
+    tm->internalTrampoline->notify(msg);
+  } else {
+    tm->smHandler->notify(msg);
+  }
 
   tm->messageAllocator.deallocate(msg);
 }
