@@ -7,30 +7,32 @@
 namespace srch2 {
 namespace httpwrapper {
 
-struct MessageAllocator : public std::allocator<char> {
-  char* allocate(size_type n) {
-    Message *msg = (Message*) allocator<char>::allocate(n + sizeof(Message));
-    msg->bodySize = n;
+class MessageAllocator : public std::allocator<char> {
+public:
 
-    return msg->buffer;
-  }
+	char* allocate(size_type n) {
+		Message *msg = (Message*) allocator<char>::allocate(n + sizeof(Message));
+		msg->bodySize = n;
 
-  void deallocate(pointer p, size_type n) {
-    allocator<char>::deallocate(p - sizeof(Message), n + sizeof(Message));
-  }
+		return msg->buffer;
+	}
 
-    Message* allocateMessage(size_type bodyLength) {
-    Message *msg = 
-      (Message*) allocator<char>::allocate(bodyLength + sizeof(Message));
-    msg->bodySize = bodyLength;
-    return msg;
-  }
-  void deallocateMessage(Message *msg) {
-    allocator<char>::deallocate((char*) msg, msg->bodySize + sizeof(Message));
-  }
-  void deallocate(Message *msg) {
-    deallocateMessage(msg);
-  }
+	void deallocate(pointer p, size_type n) {
+		allocator<char>::deallocate(p - sizeof(Message), n + sizeof(Message));
+	}
+
+	Message* allocateMessage(size_type bodyLength) {
+		Message *msg =
+				(Message*) allocator<char>::allocate(bodyLength + sizeof(Message));
+		msg->bodySize = bodyLength;
+		return msg;
+	}
+	void deallocateMessage(Message *msg) {
+		allocator<char>::deallocate((char*) msg, msg->bodySize + sizeof(Message));
+	}
+	void deallocate(Message *msg) {
+		deallocateMessage(msg);
+	}
 };
 
 }}

@@ -1,10 +1,10 @@
 #ifndef __SHARDING_ROUTING_INTERNAL_MESSAGE_BROKER_H_
 #define __SHARDING_ROUTING_INTERNAL_MESSAGE_BROKER_H_
 
-#include "processor/DistributedProcessorInternal.h"
-#include "transport/Message.h"
-#include "transport/CallbackHandler.h"
-#include "RoutingManager.h"
+#include "sharding/processor/DistributedProcessorInternal.h"
+#include "sharding/transport/Message.h"
+#include "sharding/transport/CallbackHandler.h"
+#include "sharding/routing/RoutingManager.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace std;
@@ -15,20 +15,30 @@ namespace httpwrapper {
 class InternalMessageBroker : CallBackHandler {
 public:
 
-	InternalMessageBroker(RoutingManager&);
-	void processInternalMessage(Message*);
+	InternalMessageBroker(RoutingManager & rm, DPInternalRequestHandler & internalDP):routingManager(rm),internalDP(internalDP){};
+
+	/*
+	 * Gets the internal message and routes it to one of the DPInternal functions
+	 */
+	void notify(Message*);
+
+	/*
+	 * This function gets the index for a particular shard
+	 */
 	Srch2Server* getShardIndex(ShardId&);
+	MessageAllocator * getMessageAllocator();
+	/*
+	 * Sends the reply back through TM
+	 */
+	void sendReply(Message*, void*);
 
 
 private:
-  template<typename InputType, typename Deserializer, typename OutputType>
-    void notify(Message*, Srch2Server*,
-        OutputType (DPInternalRequestHandler::*fn) (Srch2Server*, InputType*));
-  MessageAllocator * getMessageAllocator();
-  void sendReply(Message*, void*);
-  
-  DPInternalRequestHandler& internalDP;
+
+	DPInternalRequestHandler& internalDP;
 	RoutingManager&  routingManager;
+	template<typename InputType, typename Deserializer, typename OutputType>
+	void broker(Message*, Srch2Server*, OutputType (DPInternalRequestHandler::*fn) (Srch2Server*, InputType*));
 };
 
 }

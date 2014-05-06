@@ -86,9 +86,37 @@ MessageTime_t TransportManager::route(NodeId node, Message *msg,
   msg->time = __sync_fetch_and_add(&distributedTime, 1);
 
   time_t timeOfTimeout_time = timeout + time(NULL);
-  msgs.addMessage(timeout, msg->time, callback);
+  pendingMessages.addMessage(timeout, msg->time, callback);
 
   send(fd, msg, msg->bodySize + sizeof(Message), 0);
   //TODO: errors?
   return msg->time;
+}
+
+MessageTime_t TransportManager::getDistributedTime() const {
+	return distributedTime;
+}
+
+CallBackHandler* TransportManager::getInternalTrampoline() const {
+	return internalMessageBrokerHandler;
+}
+
+pthread_t TransportManager::getListeningThread() const {
+	return listeningThread;
+}
+
+MessageAllocator * TransportManager::getMessageAllocator() const {
+	return &messageAllocator;
+}
+
+PendingMessages * TransportManager::getMsgs() const {
+	return &pendingMessages;
+}
+
+RouteMap * TransportManager::getRouteMap() const {
+	return &routeMap;
+}
+
+CallBackHandler* TransportManager::getSmHandler() const {
+	return synchManagerHandler;
 }

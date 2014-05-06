@@ -8,9 +8,9 @@ namespace httpwrapper {
 
 
 RoutingManager::RoutingManager(ConfigManager&  cm, TransportManager& tm)  : 
-    		configurationManager(cm),  tm(tm), dpInternal(&cm), 
-        shards(new Srch2Server[cm.getCoreInfoMap.size()]) {
-  
+    				configurationManager(cm),  tm(tm), dpInternal(&cm),
+    				shards(new Srch2Server[cm.getCoreInfoMap.size()]) { //TODO compile error
+
 
 	// create a server (core) for each data source in config file
 	for(ConfigManager::CoreInfoMap_t::const_iterator iterator =
@@ -54,10 +54,10 @@ ConfigManager* RoutingManager::getConfigurationManager() {
 DPInternalRequestHandler* RoutingManager::getDpInternal() {
 	return &this->dpInternal;
 }
-/*
-std::map<ShardId, Srch2Server*> RoutingManager::getShardToIndexMap(){
-	return this->shardToIndex;
-}*/
+
+MessageAllocator * RoutingManager::getMessageAllocator() {
+	return tm.getMessageAllocator();
+}
 
 } }
 //save indexes in deconstructor

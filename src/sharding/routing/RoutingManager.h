@@ -72,9 +72,9 @@ public:
 	 *  confirmation from each receiving shard.
 	 */
 	template<typename RequestType> void broadcast(RequestType &,
-      CoreShardInfo &);
+			CoreShardInfo &);
 
-	
+
 	/*
 	 *  Transmits a given message to all shards. The broadcast block until
 	 *  confirmation from each shard is received. Returns false iff any
@@ -102,7 +102,7 @@ public:
 	void broadcast_wait_for_all_w_cb(RequestType & requestObj,
 			ResultAggregatorAndPrint<RequestType , ReseponseType> * aggregator, CoreShardInfo & coreInfo);
 
-	
+
 	/*
 	 *  Timeout version of their corresponding function. So, after a period of
 	 *  set milliseconds the timeout callback function is called
@@ -160,31 +160,30 @@ public:
 
 	}
 
-	MessageAllocator * getAllocator() {
-		//TODO
-		return &(tm.messageAllocator);
-	}
+	MessageAllocator * getMessageAllocator() ;
+
 
 
 	ConfigManager* getConfigurationManager();
 	DPInternalRequestHandler* getDpInternal();
-//	std::map<ShardId, Srch2Server*> getShardToIndexMap();
+
+	Srch2Server * getShardIndex(ShardId shardId){
+		//TODO
+		return NULL;
+	}
 
 private:
 	//std::map<ShardId, Srch2Server*> shardToIndex;
-  Srch2Server *shards;
+	Srch2Server *shards;
 	ConfigManager& configurationManager;
-    TransportManager& tm;
+	TransportManager& tm;
 	DPInternalRequestHandler dpInternal;
-  MessageAllocator alloc;
+	MessageAllocator alloc;
 };
 
-MessageAllocator getMessageAllocator() {
-  return alloc;
+}
 }
 
 #include "BroadcastInlines.h"
-
-} }
 
 #endif //__SHARDING_ROUTING_ROUTING_MANAGER_H__
