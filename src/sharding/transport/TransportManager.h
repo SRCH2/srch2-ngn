@@ -7,19 +7,16 @@
 #include "Message.h"
 #include "MessageAllocator.h"
 #include "PendingMessages.h"
+#include "routing/InternalMessageBroker.h"
+
+
+#include "CallbackHandler.h"
 
 namespace srch2 {
 namespace httpwrapper {
 
 typedef std::vector<event_base*> EventBases;
 typedef std::vector<Node> Nodes;
-
-
-class CallBackHandler {
-public:
-	virtual void notify(Message *msg) = 0;
-	virtual ~CallBackHandler() {}
-};
 
 struct TransportManager {
   class RouteMap routeMap;
@@ -28,6 +25,7 @@ struct TransportManager {
   MessageAllocator messageAllocator;
   PendingMessages msgs;
   CallBackHandler *smHandler;
+  CallBackHandler *internalTrampoline;
 
   TransportManager(EventBases&, Nodes&);
   
