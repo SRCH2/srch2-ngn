@@ -88,18 +88,18 @@ void testCore(char* configFile){
 
 	ConfigManager *configManager = new ConfigManager(configFile);
 	configManager->loadConfigFile();
-	const CoreInfo_t* c1 = configManager->getCoreInfo("core1");
-	const CoreInfo_t* c2 = configManager->getCoreInfo("core2");
-	const CoreInfo_t* c3 = configManager->getCoreInfo("core3");
+	CoreInfo_t* c1 = configManager->getCoreInfo("core1");
+	CoreInfo_t* c2 = configManager->getCoreInfo("core2");
+	CoreInfo_t* c3 = configManager->getCoreInfo("core3");
 
-	ASSERT(c1->numberOfPrimaryShards == 5);
-	ASSERT(c1->numberOfReplicas == 1);
+	ASSERT(c1->getNumberOfPrimaryShards() == 5);
+	ASSERT(c1->getNumberOfReplicas() == 1);
 
-	ASSERT(c2->numberOfPrimaryShards == 3);
-	ASSERT(c2->numberOfReplicas == 1);
+	ASSERT(c2->getNumberOfPrimaryShards() == 3);
+	ASSERT(c2->getNumberOfReplicas() == 1);
 
-	ASSERT(c3->numberOfPrimaryShards == 1);
-	ASSERT(c3->numberOfReplicas == 1);
+	ASSERT(c3->getNumberOfPrimaryShards() == 1);
+	ASSERT(c3->getNumberOfReplicas() == 1);
 
 }
 
@@ -126,6 +126,27 @@ void testCurrentNodeId(char* configFile){
 	ASSERT(configManager->getCurrentNodeId() == 1);
 }
 
+void testDiscovery(char* configFile){
+
+	ConfigManager *configManager = new ConfigManager(configFile);
+	configManager->loadConfigFile();
+	DiscoveryParams discovery = configManager->getDiscovery();
+
+	ASSERT(discovery.getPingInterval() == 2);
+	ASSERT(discovery.getPingTimeout() == 8);
+	ASSERT(discovery.getRetryCount() == 10);
+}
+void testDiscoveryInvalid(char* configFile){
+
+	ConfigManager *configManager = new ConfigManager(configFile);
+	configManager->loadConfigFile();
+	DiscoveryParams discovery = configManager->getDiscovery();
+
+	ASSERT(discovery.getPingInterval() == 1);
+	ASSERT(discovery.getPingTimeout() == 1);
+	ASSERT(discovery.getRetryCount() == 1);
+}
+
 int main() {
 	testShard();
 	Logger::setLogLevel(Logger::SRCH2_LOG_DEBUG);
@@ -138,6 +159,9 @@ int main() {
 	testVerifyConsistencyNegative(getenv("ConfigManagerFilePath3"));
 
 	testCurrentNodeId(getenv("ConfigManagerFilePath1"));
+
+	testDiscovery(getenv("ConfigManagerFilePath1"));
+	testDiscoveryInvalid(getenv("ConfigManagerFilePath3"));
 
 }
 
