@@ -81,18 +81,16 @@ public:
 	 *  receiving shard confirms with MESSAGE_FAILED message.
 	 */
 	template<typename RequestType> bool broadcast_wait_for_all_confirmation(RequestType & requestObject,
-			bool& timedout, timeval timeoutValue , CoreShardInfo & coreInfo){
+			bool& timedout, timeval timeoutValue , CoreShardInfo & coreInfo);
 
-	}
 	/*
 	 *  Transmits a given message to all shards. Upon receipt of a response from
 	 *  any shard, the callback is trigger with the corresponding Message.
 	 *  The callback will be called for each shard.
 	 */
 	template<typename RequestType , typename ReseponseType>
-	void broadcast_w_cb(RequestType& requestObj, ResultAggregatorAndPrint<RequestType , ReseponseType> * aggregator, CoreShardInfo & coreInfo){
+	void broadcast_w_cb(RequestType& requestObj, ResultAggregatorAndPrint<RequestType , ReseponseType> * aggregator, CoreShardInfo & coreInfo);
 
-	}
 	/*
 	 *  Transmits a given message to all shards. The return messages for each
 	 *  shard are held until all shard’s return messages received. Then the
@@ -112,41 +110,33 @@ public:
 	 */
 	template<typename RequestType , typename ReseponseType>
 	void broadcast_w_cb_n_timeout(RequestType& requestObj,ResultAggregatorAndPrint<RequestType , ReseponseType> * aggregator
-			, timeval timeoutValue , CoreShardInfo & coreInfo ){
-
-	}
-
-
+			, timeval timeoutValue , CoreShardInfo & coreInfo );
 	template<typename RequestType , typename ReseponseType>
 	void broadcast_wait_for_all_w_cb_n_timeout(RequestType & requestObj,
-			ResultAggregatorAndPrint<RequestType , ReseponseType> * aggregator , timeval timeoutValue, CoreShardInfo & coreInfo){
+			ResultAggregatorAndPrint<RequestType , ReseponseType> * aggregator , timeval timeoutValue, CoreShardInfo & coreInfo);
 
-	}
 
 	/*
 	 *  Transmits a given message to a particular shard in a non-blocking fashion
 	 */
-	template<typename RequestType> void route(RequestType& requestObj, ShardId & shardInfo){
+	template<typename RequestType> void route(RequestType& requestObj, ShardId & shardInfo);
 
-	}
 	/*
 	 *  Transmits a given message to a pariticular shards, and waits for
 	 *  confirmation. Returns false iff shard confirms with MESSAGE_FAILED
 	 *  message.
 	 */
 	template<typename RequestType> bool route_wait_for_confirmation(RequestType& requestObj, bool& timedout,
-			timeval timeoutValue , ShardId shardInfo){
-
-	}
+			timeval timeoutValue , ShardId shardInfo);
+	
 	/*
 	 *  Transmits a given message to a particular shards. Upon receipt of a
 	 *  response shard, the appropriate callback is trigger with the
 	 *  corresponding Message.
 	 */
 	template<typename RequestType , typename ReseponseType>
-	void route_w_cb(RequestType& requestObj, ResultAggregatorAndPrint<RequestType , ReseponseType> * aggregator , ShardId shardInfo){
+	void route_w_cb(RequestType& requestObj, ResultAggregatorAndPrint<RequestType , ReseponseType> * aggregator , ShardId shardInfo);
 
-	}
 	/*
 	 *  Timeout version of their corresponding function. So, after a period of
 	 *  set milliseconds the timeout callback function is called
@@ -156,14 +146,10 @@ public:
 	 */
 	template<typename RequestType , typename ReseponseType>
 	void route_w_cb_n_timeout(RequestType & requestObj,ResultAggregatorAndPrint<RequestType , ReseponseType> * aggregator
-			, timeval timeoutValue, ShardId shardInfo){
+			, timeval timeoutValue, ShardId shardInfo);
 
-	}
 
 	MessageAllocator * getMessageAllocator() ;
-
-
-
 	ConfigManager* getConfigurationManager();
 	DPInternalRequestHandler* getDpInternal();
 
