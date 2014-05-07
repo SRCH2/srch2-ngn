@@ -622,7 +622,7 @@ public:
     //Declaring function to parse node tags
     void parseNode(std::vector<Node>* nodes, xml_node& childNode, std::stringstream &parseWarnings);
 
-    CoreInfo_t *getCoreInfoMap(const string &coreName) const;
+    const CoreInfoMap_t& getCoreInfoMap() const;
     CoreInfoMap_t::iterator coreInfoIterateBegin() { return coreInfoMap.begin(); }
     CoreInfoMap_t::iterator coreInfoIterateEnd() { return coreInfoMap.end(); }
     CoreInfo_t *getCoreInfo(const string &coreName) const { return ((CoreInfoMap_t) coreInfoMap)[coreName]; }

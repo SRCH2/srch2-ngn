@@ -9,7 +9,7 @@ namespace httpwrapper {
 
 RoutingManager::RoutingManager(ConfigManager&  cm, TransportManager& tm)  : 
     				configurationManager(cm),  tm(tm), dpInternal(&cm),
-    				shards(new Srch2Server[cm.getCoreInfoMap.size()]) { //TODO compile error
+    				shards(new Srch2Server[cm.getCoreInfoMap().size()]) { 
 
 
 	// create a server (core) for each data source in config file

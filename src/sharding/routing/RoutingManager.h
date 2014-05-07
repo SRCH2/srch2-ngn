@@ -174,11 +174,10 @@ public:
 
 private:
 	//std::map<ShardId, Srch2Server*> shardToIndex;
-	Srch2Server *shards;
 	ConfigManager& configurationManager;
 	TransportManager& tm;
 	DPInternalRequestHandler dpInternal;
-	MessageAllocator alloc;
+	Srch2Server *shards;
 };
 
 }

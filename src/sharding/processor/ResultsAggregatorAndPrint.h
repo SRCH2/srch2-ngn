@@ -2,7 +2,7 @@
 #define __SHARDING_PROCESSOR_RESULTS_AGGREGATOR_AND_PRINT_H_
 
 #include "sharding/configuration/ConfigManager.h"
-#include "sharding/processor/ProcessorUtil.h"
+//#include "sharding/processor/ProcessorUtil.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace std;

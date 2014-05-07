@@ -16,14 +16,13 @@ UnicastIterator Multiplexer::begin() {
 }
 
 UnicastIterator Multiplexer::end() {
-  return UnicastIterator(coreInfo.shards.end(), *cm.getCluster());
+  return UnicastIterator(*cm.getCluster(), coreInfo.shards.end());
 }
 
 size_t Multiplexer::size() {
   return coreInfo.shards.size();
 }
 
-UnicastIterator::UnicastIterator() {}
 UnicastIterator::UnicastIterator(const UnicastIterator& cpy)
   : id(cpy.id), i(cpy.i), cluster(cpy.cluster) {}
 

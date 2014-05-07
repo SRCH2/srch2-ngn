@@ -311,12 +311,9 @@ void ConfigManager::trimSpacesFromValue(string &fieldValue, const char *fieldNam
     }
 }
 
-CoreInfo_t *ConfigManager::getCoreInfoMap(const string &coreName) const
+const CoreInfoMap_t& ConfigManager::getCoreInfoMap() const
 {
-    if (coreName.compare("") != 0) {
-        return ((CoreInfoMap_t) coreInfoMap)[coreName];
-    }
-    return getDefaultCoreInfo();
+  return (CoreInfoMap_t) coreInfoMap;
 }
 
 void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode, CoreInfo_t *coreInfo, map<string, unsigned> &boostsMap, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)

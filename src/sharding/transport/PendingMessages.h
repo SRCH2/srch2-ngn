@@ -52,13 +52,20 @@ private:
 };
 
 
-class CallbackReference{
+class CallbackReference {
 public:
-
-	CallbackReference():type(type),waitForAll(waitForAll),broadcastFlag(broadcastFlag),ptr(ptr){}//TODO how should we initialize these variables?
-	CallbackReference(ShardingMessageType type, bool waitForAll , bool broadcastFlag, RegisteredCallback* const ptr):
-	type(type),waitForAll(waitForAll),broadcastFlag(broadcastFlag),ptr(ptr){
-	}
+  CallbackReference() : type(NULLType), waitForAll(0), broadcastFlag(0),
+   extra1(0),extra2(0), ptr(0) {}
+	CallbackReference(ShardingMessageType type, 
+      bool waitForAll , bool broadcastFlag, RegisteredCallback* const ptr) :
+    type(type),waitForAll(waitForAll),broadcastFlag(broadcastFlag),ptr(ptr) {}
+  CallbackReference(const CallbackReference& cpy) :
+    type(cpy.type),waitForAll(cpy.waitForAll),broadcastFlag(cpy.broadcastFlag),
+    ptr(cpy.ptr) {}
+  CallbackReference& operator=(const CallbackReference& cpy) {
+    new (this) CallbackReference(cpy);
+    return *this;
+  }
 
 	bool isExtra1() const;
 	bool isExtra2() const;
