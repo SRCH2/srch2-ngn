@@ -14,9 +14,9 @@ void SMCallBackHandler::notify(Message *msg) {
 int main() {
   std::vector<Node>* nodes = new std::vector<Node>();
   nodes->push_back(
-      Node(std::string("apple"), std::string("127.0.0.1"), 9556, false));
+      Node(std::string("apple"), std::string("127.0.0.1"), 9552, false));
   nodes->push_back(
-      Node(std::string("apple"), std::string("127.0.0.1"), 9557, false));
+      Node(std::string("apple"), std::string("127.0.0.1"), 9551, false));
 
   int i=0;
   for(std::vector<Node>::iterator node = nodes->begin(); 
@@ -45,6 +45,6 @@ int main() {
 
   TransportManager *tm =  new TransportManager(eventbases, *nodes);
 
-  while( !tm->routeMap.isTotallyConnected())
+  while( !tm->getRouteMap()->isTotallyConnected())
     sleep(2);
 }

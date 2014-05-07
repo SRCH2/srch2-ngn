@@ -591,7 +591,6 @@ static int getHttpServerMetadata(ConfigManager *config,
 
 static int createHTTPServersAndAccompanyingThreads( 
     vector<struct event_base *> *evBases, vector<struct evhttp *> *evServers) {
-  return 0;
   threads = new pthread_t[MAX_THREADS];
   for (int i = 0; i < MAX_THREADS; i++) {
    struct event_base *evbase = event_base_new();
