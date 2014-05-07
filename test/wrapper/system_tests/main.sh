@@ -9,6 +9,7 @@ fi
 
 machine=`uname -m`
 os=`uname -s`
+macName='Darwin'
 
 # process options
 force=0
@@ -295,18 +296,22 @@ fi
 rm -rf data/ *.idx
 
 
-test_id="high_insert"
-printTestBanner "$test_id"
-./high_insert_test/autotest.sh $SRCH2_ENGINE | eval "${html_escape_command}" >> system_test.log 2>&1
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
+if [ $os != "$macName" ];then
+    test_id="high_insert"
+    printTestBanner "$test_id"
+    ./high_insert_test/autotest.sh $SRCH2_ENGINE | eval "${html_escape_command}" >> system_test.log 2>&1
+    if [ ${PIPESTATUS[0]} -gt 0 ]; then
+        echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
 	exit 255
     fi
+    else
+        echo "-- PASSED: $test_id" >> ${output}
+    fi
+    rm -rf data/ *.idx
 else
-    echo "-- PASSED: $test_id" >> ${output}
+    echo "-- IGNORING high_insert test on $macName" >> ${output}
 fi
-rm -rf data/ *.idx
 
 test_id="exact_A1"
 printTestBanner "$test_id"

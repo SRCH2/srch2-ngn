@@ -17,6 +17,12 @@ options:
 	-o or --outfile <filename> : Specify that output should go to <filename> instead of standard out
 	--upload : Upload output file to the dashboard server
 
+Note: To make all the system test cases run, please install the following packages:
+	sudo apt-get install nodejs
+	sudo apt-get install ruby1.9.1
+	sudo gem install bundler
+	bundler install
+
 
 *** BELOW IS THE OLD CONTENT OF README.TXT WHICH IS MAINLY ABOUT STATEMEDIA TESTS ***
 

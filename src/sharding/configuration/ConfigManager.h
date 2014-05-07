@@ -498,8 +498,51 @@ inline  enum PortType_t incrementPortType(PortType_t &oldValue)
     return static_cast<PortType_t> (newValue);
 }
 
+ class DiscoveryParams {
+ private:
+    unsigned pingInterval;
+    unsigned pingTimeout;
+    unsigned retryCount;
+
+ public:
+        DiscoveryParams(){
+    	pingInterval = 1;
+    	pingTimeout = 1;
+    	retryCount = 1;
+        }
+
+        unsigned getPingInterval(){
+    		return pingInterval;
+    	}
+
+    	unsigned getPingTimeout(){
+    		return pingTimeout;
+    	}
+
+    	unsigned getRetryCount(){
+    		return retryCount;
+    	}
+
+    	void setPingInterval(unsigned pingInterval){
+    		this->pingInterval = pingInterval;
+    	}
+
+    	void setPingTimeout(unsigned pingTimeout){
+    		 this->pingTimeout = pingTimeout;
+    	}
+
+    	void setRetryCount(unsigned retryCount){
+    		 this->retryCount = retryCount;
+    	}
+ };
+
 class ConfigManager {
 public:
+
+	 DiscoveryParams& getDiscovery(){
+		 return this->discovery;
+	 }
+
     typedef std::map<const string, CoreInfo_t *> CoreInfoMap_t;
     Cluster* getCluster(){
     	return &(this->cluster);
@@ -516,6 +559,7 @@ public:
     }
 private:
     Cluster cluster;
+    DiscoveryParams discovery;
     // <config>
     string licenseKeyFile;
     string httpServerListeningHostname;
@@ -586,6 +630,7 @@ private:
     int parseFacetType(string& facetType);
     void lowerCaseNodeNames(xml_node &node);
     void trimSpacesFromValue(string &fieldValue, const char *fieldName, std::stringstream &parseWarnings, const char *append = NULL);
+    bool isNumber(const string &s);
 
 protected:
     CoreInfoMap_t coreInfoMap;
@@ -744,6 +789,10 @@ private:
     static const int DefaultNumberOfPrimaryShards;
     static const int DefaultNumberOfReplicas;
     static const char* const DefaultClusterName;
+    static const char* const discoveryNodeTag;
+    static const char* const pingIntervalTag;
+    static const char* const pingTimeoutTag;
+    static const char* const retryCountTag;
 
     static const char* const accessLogFileString;
     static const char* const analyzerString;
@@ -867,21 +916,30 @@ private:
 class CoreInfo_t {
 
 public:
-    unsigned coreId; // starting from 0, auto increment
 
-    // In V0, the "number_of_shards" is a one-time setting for a
-    // core. In the future (possibly after V1), we can support dynamic
-    // migration by allowing this number to change.
-    unsigned numberOfPrimaryShards;
+    unsigned getNumberOfPrimaryShards(){
+        return this->numberOfPrimaryShards;
+    }
 
-    // Number of replicas (additional copies) of an index (1 by
-    // default). The "number_of_replicas" can be increased or
-    // decreased anytime, by using the Index Update Settings API. We
-    // can do it in V0 or after V1. SRCH2 will take care about load
-    // balancing, relocating, gathering the results from nodes, etc.
-    // ES: core.number_of_replicas: 1 // index.number_of_replicas: 1
-    unsigned numberOfReplicas; // always 0 for V0
-    vector<ShardId> shards;
+    unsigned getNumberOfReplicas(){
+        return this->numberOfReplicas;
+    }
+
+    ShardId getPrimaryShardId(unsigned partitionId){
+        ShardId rtn ;
+        rtn.coreId = this->coreId;
+        rtn.partitionId = partitionId;
+        rtn.replicaId = 0;
+        return rtn;
+    }
+
+    void getPartitionAllShardIds(unsigned partitionId, vector<ShardId> & shardIds){ // fills shardIds vector by ShardId objects of primary and replica partitions corresponding to partitionId
+        for(int i = 0; i < this->shards.size(); i++){
+            if(this->shards[i].partitionId == partitionId){
+                shardIds.push_back(this->shards[i]);
+            }
+        }
+    }
 
     CoreInfo_t(class ConfigManager *manager) : configManager(manager) {
         schema = NULL;
@@ -1033,7 +1091,22 @@ public:
     srch2is::Schema* getSchema() const { return this->schema; };
 
 protected:
+
     string name; // of core
+
+    unsigned coreId; // starting from 0, auto increment
+    vector<ShardId> shards;
+    // In V0, the "number_of_shards" is a one-time setting for a
+    // core. In the future (possibly after V1), we can support dynamic
+    // migration by allowing this number to change.
+    unsigned numberOfPrimaryShards;
+    // Number of replicas (additional copies) of an index (1 by
+    // default). The "number_of_replicas" can be increased or
+    // decreased anytime, by using the Index Update Settings API. We
+    // can do it in V0 or after V1. SRCH2 will take care about load
+    // balancing, relocating, gathering the results from nodes, etc.
+    // ES: core.number_of_replicas: 1 // index.number_of_replicas: 1
+    unsigned numberOfReplicas; // always 0 for V0
 
     ConfigManager *configManager;
 
@@ -1154,14 +1227,7 @@ protected:
     srch2is::Schema *schema;
 };
 
-// requested by Surendra for the Synchronization Manager (SM)
- class DiscoveryParams {
- public:
-    unsigned pingInterval;
-    unsigned pingTimeout;
-    unsigned retryCount;
- };
- 
+
  // If we are supporting multicast
  class Multicast {
  public:
