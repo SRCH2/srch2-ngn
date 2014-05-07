@@ -1,4 +1,5 @@
 2||insert||{"category": "Insurance Services Insurance Agent", "name": "Prescription Service Of California", "relevance": 3.0147461915737148, "lat": 61.171669000000001, "lng": -149.881021, "id": "101"}||{"rid":"101","insert":"success"}
-2||query||Prescription||101
+2||insert||{"category": "Insurance Services Insurance Agent", "name": "Prescription Service Of California", "relevance": 3.0147461915737148, "lat": 61.171669000000001, "lng": -149.881021, "id": "102"}||{"rid":"102","insert":"success"}
+2||query||Prescription Service||102 101
 
 
