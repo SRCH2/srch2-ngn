@@ -27,11 +27,6 @@ public:
 	 */
 	Srch2Server* getShardIndex(ShardId&);
 	MessageAllocator * getMessageAllocator();
-	/*
-	 * Sends the reply back through TM
-	 */
-	void sendReply(Message*, void*);
-
 
 private:
 

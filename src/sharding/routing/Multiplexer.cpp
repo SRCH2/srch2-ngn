@@ -4,10 +4,6 @@
 namespace srch2 {
 namespace httpwrapper {
 
-
-
-
-
 Multiplexer::Multiplexer(ConfigManager& cm, CoreShardInfo& info) :
   cm(cm), info(info), coreInfo(*cm.getCoreInfo(info.coreName)) {}
 

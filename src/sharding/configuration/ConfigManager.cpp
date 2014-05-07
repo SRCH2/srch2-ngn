@@ -313,7 +313,7 @@ void ConfigManager::trimSpacesFromValue(string &fieldValue, const char *fieldNam
 
 const ConfigManager::CoreInfoMap_t& ConfigManager::getCoreInfoMap() const
 {
-  return (CoreInfoMap_t) coreInfoMap;
+  return coreInfoMap;
 }
 
 void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode, CoreInfo_t *coreInfo, map<string, unsigned> &boostsMap, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)

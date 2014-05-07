@@ -48,6 +48,7 @@ public:
 
 private:
 	std::vector<ResponseType*> responsesToBeDeletedAfterFinalize;
+  ResultsAggregatorAndPrintMetadata meta;
 };
 
 
@@ -58,10 +59,9 @@ RMCallback<RequestType, ResponseType>::RMCallback(
 	preProcessing();
 }
 
-
 template <typename RequestType, typename ResponseType> inline
 void RMCallback<RequestType, ResponseType>::preProcessing() {
-	//TODO
+  aggregrate.preProcessing(meta);
 }
 
 template <typename RequestType, typename ResponseType> inline
@@ -96,8 +96,6 @@ void RMCallback<RequestType, ResponseType>::callbackAll(std::vector<Message*>& m
 
 	// call aggregator callback
 	aggregrate.callBack(responsesToBeDeletedAfterFinalize);
-
-
 }
 
 
@@ -105,18 +103,14 @@ template <typename RequestType, typename ResponseType> inline
 void RMCallback<RequestType, ResponseType>::finalize() {
 
 	typedef std::vector<ResponseType*> Responses;
-	/*
-	 * Finalize must call finalize of aggregator and delete the response objects after
-	 */
-	// TODO
-	// call finalize
-
-	// delete response objects
-	for(typename Responses::iterator response = responsesToBeDeletedAfterFinalize.begin();
+	// Finalize must call finalize of aggregator and 
+  // delete the response objects after
+  aggregrate.finalize(meta);
+	for(typename Responses::iterator response = 
+      responsesToBeDeletedAfterFinalize.begin();
 			response != responsesToBeDeletedAfterFinalize.end(); ++response) {
 		delete *response;
 	}
-
 }
 
 }}

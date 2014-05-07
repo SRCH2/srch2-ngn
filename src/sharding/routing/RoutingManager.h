@@ -168,8 +168,7 @@ public:
 	DPInternalRequestHandler* getDpInternal();
 
 	Srch2Server * getShardIndex(ShardId shardId){
-		//TODO
-		return NULL;
+    return &shards[shardId.coreId];
 	}
 
 private:
