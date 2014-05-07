@@ -23,12 +23,13 @@ RoutingManager::broadcast(RequestType& requestObj, CoreShardInfo &coreInfo) {
 
 	// create the message from the request object
 	Message* msg = (Message*)
-    		((char*) requestObj.serialize(getMessageAllocator()) - sizeof(Message));
+    ((char*) requestObj.serialize(getMessageAllocator()) - sizeof(Message));
 
 
 	for(UnicastIterator unicast = broadcastResolver.begin();
 			unicast != broadcastResolver.end(); ++unicast) {
 		msg->shard = unicast->shardId;
+    msg->mask |= INTERNAL_MASK;
 
 		tm.route(unicast->nodeId, msg, 0);
 	}
@@ -82,6 +83,7 @@ void RoutingManager::broadcast_w_cb(RequestType& requestObj,
 	for(UnicastIterator unicast = broadcastResolver.begin();
 			unicast != broadcastResolver.end(); ++unicast) {
 		msg->shard = unicast->shardId;
+    msg->mask |= INTERNAL_MASK;
 
 		tm.route(unicast->nodeId, msg, 0, cb);
 	}
@@ -124,6 +126,7 @@ void RoutingManager::broadcast_wait_for_all_w_cb(RequestType & requestObj,
 	for(UnicastIterator unicast = broadcastResolver.begin();
 			unicast != broadcastResolver.end(); ++unicast) {
 		msg->shard = unicast->shardId;
+    msg->mask |= INTERNAL_MASK;
 
 		tm.route(unicast->nodeId, msg, 0, cb);
 	}
@@ -168,6 +171,7 @@ void RoutingManager::broadcast_w_cb_n_timeout(RequestType& requestObj,
 	for(UnicastIterator unicast = broadcastResolver.begin();
 			unicast != broadcastResolver.end(); ++unicast) {
 		msg->shard = unicast->shardId;
+    msg->mask |= INTERNAL_MASK;
 
 		tm.route(unicast->nodeId, msg, timeoutValue.tv_sec, cb);
 	}
@@ -206,6 +210,7 @@ RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType& requestObj,
 	for(UnicastIterator unicast = broadcastResolver.begin();
 			unicast != broadcastResolver.end(); ++unicast) {
 		msg->shard = unicast->shardId;
+    msg->mask |= INTERNAL_MASK;
 
 		tm.route(unicast->nodeId, msg, timeoutValue.tv_sec, cb);
 	}
@@ -230,6 +235,7 @@ RoutingManager::route(RequestType& requestObj, ShardId & shardInfo) {
 
 
   msg->shard = shardInfo;
+  msg->mask |= INTERNAL_MASK;
 
   tm.route(nodeId, msg);
 
@@ -274,6 +280,7 @@ RoutingManager::route_w_cb(RequestType& requestObj,
 
 
   msg->shard = shardInfo;
+  msg->mask |= INTERNAL_MASK;
 
   tm.route(nodeId, msg, 0, cb);
 
@@ -311,6 +318,7 @@ RoutingManager::route_w_cb_n_timeout(RequestType & requestObj,
 
 
   msg->shard = shardInfo;
+  msg->mask |= INTERNAL_MASK;
 
   tm.route(nodeId, msg, timeoutValue.tv_sec, cb);
 
