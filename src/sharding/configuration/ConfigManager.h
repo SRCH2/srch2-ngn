@@ -41,6 +41,9 @@ namespace httpwrapper {
  public:
 	 unsigned coreId;
 	 string coreName; // because currently you can get coreInfo_t from config only by passing the name ....
+   CoreShardInfo(const unsigned id, const string& name) 
+     : coreId(id), coreName(name) {}
+   CoreShardInfo();
  };
 
 

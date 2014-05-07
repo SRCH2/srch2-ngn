@@ -177,11 +177,14 @@ static const struct portMap_t {
 struct CoreShardInfo {
   srch2http::DPExternalRequestHandler& dpHandler;
   srch2http::CoreInfo_t& core;
+  srch2http::CoreShardInfo info;
 
   CoreShardInfo(srch2http::DPExternalRequestHandler &dp,
-      srch2http::CoreInfo_t& core) : dpHandler(dp), core(core) {}
+      srch2http::CoreInfo_t& core) : dpHandler(dp), core(core), 
+      info(core.coreId, core.getName()) {}
+
   CoreShardInfo(const CoreShardInfo& toCpy) : dpHandler(toCpy.dpHandler), 
-      core(toCpy.core) {}
+      core(toCpy.core), info(toCpy.info) {}
   CoreShardInfo& operator=(const CoreShardInfo& toCpy) {
     new (this) CoreShardInfo(toCpy);
     return *this;
@@ -241,7 +244,7 @@ static void cb_search(evhttp_request *req, void *arg) {
     return;
 
   try {
-    core->dpHandler.externalSearchCommand(req, core);
+    core->dpHandler.externalSearchCommand(req, &core->info);
   } catch (exception& e) {
     // exception caught
     Logger::error(e.what());
@@ -264,7 +267,7 @@ static void cb_suggest(evhttp_request *req, void *arg) {
     return;
 
   try {
-//    core->dpHandler.externalSuggestCommand(req, core);
+    //core->dpHandler.externalSuggestCommand(req, &core->info);
   } catch (exception& e) {
     // exception caught
     Logger::error(e.what());
@@ -285,9 +288,8 @@ static void cb_info(evhttp_request *req, void *arg) {
   if(!checkOperationPermission(req, core, srch2http::InfoPort))
     return;
 
- string versioninfo = getCurrentVersion();
  try {
- //  core->dpHandler.externalGetInfoCommand(req, core, versioninfo);
+   core->dpHandler.externalGetInfoCommand(req, &core->info);
  } catch (exception& e) {
   // exception caught
   Logger::error(e.what());
@@ -309,7 +311,7 @@ static void cb_write(evhttp_request *req, void *arg) {
     return;
 
   try {
-//   core->dpHandler.externalWriteCommand(req, core, versioninfo);
+  // core->dpHandler.externalWriteCommand(req, &core->info, versioninfo);
   } catch (exception& e) {
    // exception caught
    Logger::error(e.what());
@@ -344,7 +346,7 @@ static void cb_save(evhttp_request *req, void *arg) {
    return;
 
  try {
- //  core->dpHandler.externalSaveCommand(req, core, versioninfo);
+   //core->dpHandler.externalSaveCommand(req, &core->info, versioninfo);
  } catch (exception& e) {
    // exception caught
    Logger::error(e.what());
@@ -360,7 +362,7 @@ static void cb_export(evhttp_request *req, void *arg) {
   if(!checkOperationPermission(req, core, srch2http::ExportPort)) 
     return;
 
- // core->dpHandler.externalExportCommand(req, core);
+ // core->dpHandler.externalExportCommand(req, &core->info);
 }
 
 /**
@@ -377,7 +379,7 @@ static void cb_resetLogger(evhttp_request *req, void *arg) {
     return;
 
   try {
- //   core->dpHandler.externalResetLoggerCommand(req, core);
+    core->dpHandler.externalResetLogCommand(req, &core->info);
   } catch (exception& e) {
     // exception caught
     Logger::error(e.what());
