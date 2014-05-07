@@ -28,6 +28,7 @@ def checkResult(query, responseJson,resultValue):
                 for i in range(0, len(responseJson)):
                     print responseJson[i]['record']['id']+'||'+resultValue[i]
                 break
+                raise
     else:
         isPass=0
         print query+' test failed'
@@ -41,6 +42,7 @@ def checkResult(query, responseJson,resultValue):
              print '  '+'||'+resultValue[i]
             else:
              print responseJson[i]['record']['id']+'||'+resultValue[i]
+        raise
     if isPass == 1:
         print  query+' test pass'
         return 0
@@ -128,7 +130,6 @@ def testInsertAndQuery(queriesAndResultsPath, binary_path):
             status, output = commands.getstatusoutput(command)
             flag = str(output).find(expectedValue[0]);
             assert flag > -1, 'Error, rid <no.> is not updated correctly!'
-
     return failCount
 
 if __name__ == '__main__':
@@ -137,9 +138,14 @@ if __name__ == '__main__':
     parseNodes(nodesPath)
     binary_path = sys.argv[1]
     queriesAndResultsPath = sys.argv[2]
-    os.popen('rm -rf ./core1')
+    os.popen('rm -rf ./core1/*.idx')
     startEngines()
-    exitCode=testInsertAndQuery(queriesAndResultsPath, binary_path)
-    for i in range(len(serverHandles)):
-        test_lib.killServer(serverHandles[i])
-    os._exit(exitCode)
+    try:
+        exitCode=testInsertAndQuery(queriesAndResultsPath, binary_path)
+        for i in range(len(serverHandles)):
+            test_lib.killServer(serverHandles[i])
+        os._exit(exitCode)
+    except:
+        print '==========test case 2n-insertAB-queryAB failed=========='
+        for i in range(len(serverHandles)):
+            test_lib.killServer(serverHandles[i])

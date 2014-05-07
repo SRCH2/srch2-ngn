@@ -22,7 +22,7 @@
             "/usr/share/srch2/data/sample-data.json"
             In this config file it should be as "data/sample-data.json"
     -->
-    <srch2Home>./</srch2Home>
+    <srch2Home>.</srch2Home>
     <cluster-name>SRCH2 Cluster</cluster-name>
 
     <discovery>
@@ -38,7 +38,7 @@
         <node-master> false </node-master>
         <node-data> true </node-data>
         <srch2Home> ./ </srch2Home>
-        <dataDir> ./data/2n-insertA-queryB/ </dataDir>
+        <dataDir> core1 </dataDir>
     </node>  
     <node>
         <listeningHostname> 127.0.0.1 </listeningHostname>
@@ -77,7 +77,7 @@
         The file path to the folder where we store serialized index files.
         REQUIRED, when "index-load-or-create" is set to 1.
     -->
-    <dataDir>./data/2n-insertA-queryB/</dataDir>
+    <dataDir>core1</dataDir>
      
     <!--
         Data File
@@ -86,7 +86,7 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>./input-data/empty-data.json</dataFile>
+    <dataFile>empty-data.json</dataFile>
      
     <!--
 	Maximum Number of Threads

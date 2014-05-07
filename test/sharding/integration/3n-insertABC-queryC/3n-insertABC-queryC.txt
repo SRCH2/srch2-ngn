@@ -1,0 +1,4 @@
+1||insert||{"category": "Insurance Services Insurance Agent", "name": "Prescription Service Of California", "relevance": 3.0147461915737148, "lat": 61.171669000000001, "lng": -149.881021, "id": "101"}||{"rid":"101","insert":"success"}
+2||insert||{"category": "Insurance Services Insurance Agent", "name": "Prescription Service Of California", "relevance": 3.0147461915737148, "lat": 61.171669000000001, "lng": -149.881021, "id": "101"}||{"rid":"101","insert":"failed","reason":"The record with same primary key already exists"}
+3||insert||{"category": "Insurance Services Insurance Agent", "name": "Prescription Service Of California", "relevance": 3.0147461915737148, "lat": 61.171669000000001, "lng": -149.881021, "id": "101"}||{"rid":"101","insert":"failed","reason":"The record with same primary key already exists"}
+3||query||Prescription Service||101

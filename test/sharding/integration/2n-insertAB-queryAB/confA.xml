@@ -23,7 +23,7 @@
             In this config file it should be as "data/sample-data.json"
     -->
     <cluster-name>SRCH2 Cluster</cluster-name>
-    <srch2Home>./</srch2Home>
+    <srch2Home>.</srch2Home>
     <discovery>
         <ping-interval>2</ping-interval>
         <ping-timeout>8</ping-timeout>
@@ -38,7 +38,7 @@
         <node-master> true </node-master>
         <node-data> true </node-data>
         <srch2Home> ./ </srch2Home>
-        <dataDir> ./data/2n-insertA-queryB/ </dataDir>
+        <dataDir> core1 </dataDir>
     </node> 
 
     <node>
@@ -78,7 +78,7 @@
         The file path to the folder where we store serialized index files.
         REQUIRED, when "index-load-or-create" is set to 1.
     -->
-    <dataDir>./data/2n-insertAB-queryAB/</dataDir>
+    <dataDir>core1</dataDir>
      
     <!--
         Data File
@@ -87,7 +87,7 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>./input-data/empty-data.json</dataFile>
+    <dataFile>empty-data.json</dataFile>
      
     <!--
 	Maximum Number of Threads

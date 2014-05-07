@@ -1,6 +1,6 @@
 #This tests insertion and querying
 #To run the code go to the parent directory and execute following command
-#python ./2n-insertA-queryB/testInsertAndQuery.py ../../../build/src/server/srch2-search-server ./2n-insertA-queryB/2n-insertA-queryB.txt ./2n-insertA-queryB/listOfNodes.txt 
+# python ./2n-insertAB-queryAB/testInsertAndQuery.py ../../../build/src/server/srch2-search-server ./2n-insertAB-queryAB/2n-insertAB-queryAB.txt ./2n-insertAB-queryAB/listOfNodes.txt
 # python <python code> <srch2-engine binary> <path to the file that contains records for insertion/querying> <path to the file containing list of nodes>
 
 
@@ -28,7 +28,7 @@ def checkResult(query, responseJson,resultValue):
                 for i in range(0, len(responseJson)):
                     print responseJson[i]['record']['id']+'||'+resultValue[i]
                 break
-                raise 
+                raise
     else:
         isPass=0
         print query+' test failed'
@@ -42,7 +42,7 @@ def checkResult(query, responseJson,resultValue):
              print '  '+'||'+resultValue[i]
             else:
              print responseJson[i]['record']['id']+'||'+resultValue[i]
-        raise
+        raise 
     if isPass == 1:
         print  query+' test pass'
         return 0
@@ -129,8 +129,7 @@ def testInsertAndQuery(queriesAndResultsPath, binary_path):
             command = 'curl "http://localhost:' + nodes[nodeId[0]].portNo + '/docs" -i -X PUT -d ' + '\''+insertValue+'\'';
             status, output = commands.getstatusoutput(command)
             flag = str(output).find(expectedValue[0]);
-            assert flag > -1, 'Error, rid <no.> is not updated correctly!'
-
+            assert flag > -1, 'Error, rid <no.> is not updated correctly!' 
     return failCount
 
 if __name__ == '__main__':
@@ -147,6 +146,6 @@ if __name__ == '__main__':
             test_lib.killServer(serverHandles[i])
         os._exit(exitCode)
     except:
-        print '==========test case 2n-insertA-queryB failed=========='
+        print '==========test case 2n-insertAABB failed=========='
         for i in range(len(serverHandles)):
             test_lib.killServer(serverHandles[i])

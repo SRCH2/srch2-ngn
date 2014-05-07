@@ -1,0 +1,5 @@
+2||insert||{"category": "Insurance Services Insurance Agent", "name": "Prescription Service Of California", "relevance": 3.0147461915737148, "lat": 61.171669000000001, "lng": -149.881021, "id": "101"}||{"rid":"101","insert":"success"}
+1||insert||{"category": "kindergarten academic school Social Services Services Child Care", "name": "Garden Montessori", "relevance": 5.3888513463129604, "lat": 61.111776999999996, "lng": -149.86153999999999, "id": "102"}||{"rid":"102","insert":"success"}
+1||insert||{"category": "Insurance Services Insurance Agent", "name": "Prescription Service Of California", "relevance": 3.0147461915737148, "lat": 61.171669000000001, "lng": -149.881021, "id": "101"}||{"rid":"101","insert":"success"}
+2||insert||{"category": "kindergarten academic school Social Services Services Child Care", "name": "Garden Montessori", "relevance": 5.3888513463129604, "lat": 61.111776999999996, "lng": -149.86153999999999, "id": "102"}||{"rid":"102","insert":"success"}
+
