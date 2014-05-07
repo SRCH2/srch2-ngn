@@ -22,7 +22,8 @@
             "/usr/share/srch2/data/sample-data.json"
             In this config file it should be as "data/sample-data.json"
     -->
-    <srch2Home>./</srch2Home>
+    <!-- <srch2Home>./</srch2Home>-->
+    <srch2Home>/home/jamshid/workspace-srch2-v4/srch2-ngn/test/sharding/integration</srch2Home>
     <cluster-name>SRCH2 Cluster</cluster-name>
 
     <discovery>

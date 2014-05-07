@@ -125,6 +125,7 @@ def testInsertAndQuery(queriesAndResultsPath, binary_path):
             expectedValue=value[3].split()
             #test , insert a record
             command = 'curl "http://localhost:' + nodes[nodeId[0]].portNo + '/docs" -i -X PUT -d ' + '\''+insertValue+'\'';
+            print command
             status, output = commands.getstatusoutput(command)
             flag = str(output).find(expectedValue[0]);
             assert flag > -1, 'Error, rid <no.> is not updated correctly!'
@@ -137,8 +138,8 @@ if __name__ == '__main__':
     parseNodes(nodesPath)
     binary_path = sys.argv[1]
     queriesAndResultsPath = sys.argv[2]
-    os.popen('rm -rf ./core1')
-    startEngines()
+    os.popen('rm -rf ./data/2n-insertA-queryB')
+    #startEngines()
     exitCode=testInsertAndQuery(queriesAndResultsPath, binary_path)
     for i in range(len(serverHandles)):
         test_lib.killServer(serverHandles[i])
