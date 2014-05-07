@@ -1,4 +1,0 @@
-1||8087||./exact_a1/conf.xml
-2||8088||./exact_a1/conf2.xml
-3||8089||./exact_a1/conf3.xml
-6||8090||./exact_a1/srch2-config.xml

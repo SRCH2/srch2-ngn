@@ -1,9 +1,0 @@
-1||query||Hospital||1
-2||query||Goods Garden||6 44 66
-1||query||Goods Garden Retail||44 66
-2||query||Personal Services Beauty||36 29 37
-2||insert||{"category": " Insurance Services Insurance Agent", "name": "Prescription Service Of California", "relevance": 3.0147461915737148, "lat": 61.171669000000001, "lng": -149.881021, "id": "100"}||{"rid":"100","insert":"failed","reason":"The record with same primary key already exists"}
-2||insert||{"category": " Insurance Services Insurance Agent", "name": "Prescription Service Of California", "relevance": 3.0147461915737148, "lat": 61.171669000000001, "lng": -149.881021, "id": "101"}||{"rid":"101","insert":"success"}
-6||insert||{"id":"128","creation_date":"06/07/2011","view_count":"0","body":"june wonderful","title":"NULL","tags":"NULL","answer_count":"NULL"}||{"rid":"128","insert":"success"}
-2||query||Insurance Services||101
-

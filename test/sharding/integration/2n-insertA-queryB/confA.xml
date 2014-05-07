@@ -58,7 +58,7 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>./2n-insertA-queryB/dataEmpty.json</dataFile>
+    <dataFile>./input-data/empty-data.json</dataFile>
      
     <!--
 	Maximum Number of Threads
@@ -294,8 +294,8 @@
             The number of write operations after which newly inserted/deleted records are merged into the indexes.
         -->
         <mergePolicy>
-          <mergeEveryNSeconds>10</mergeEveryNSeconds>
-          <mergeEveryMWrites>100</mergeEveryMWrites>
+          <mergeEveryNSeconds>1</mergeEveryNSeconds>
+          <mergeEveryMWrites>1</mergeEveryMWrites>
         </mergePolicy>
          
          

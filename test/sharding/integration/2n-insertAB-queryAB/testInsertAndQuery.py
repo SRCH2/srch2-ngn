@@ -118,18 +118,16 @@ def testInsertAndQuery(queriesAndResultsPath, binary_path):
             response_json = json.loads(response)
             #check the result
             failCount += checkResult(query, response_json['results'], resultValue )
+            print '=============================='
 
         if(operation[0] == 'insert'):
             insertValue=value[2]
             expectedValue=value[3].split()
-            print 'Insert value', insertValue
             #test , insert a record
             command = 'curl "http://localhost:' + nodes[nodeId[0]].portNo + '/docs" -i -X PUT -d ' + '\''+insertValue+'\'';
             status, output = commands.getstatusoutput(command)
-            print 'output is '+ output
             flag = str(output).find(expectedValue[0]);
             assert flag > -1, 'Error, rid <no.> is not updated correctly!'
-        print '=============================='
 
     return failCount
 

@@ -1,2 +1,0 @@
-1||./exact_a1/queriesAndResults.txt
-2||./exact_a1/queriesAndResults.txt

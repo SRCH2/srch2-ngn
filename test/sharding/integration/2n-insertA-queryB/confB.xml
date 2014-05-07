@@ -58,7 +58,7 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>./2n-insertA-queryB/dataEmpty.json</dataFile>
+    <dataFile>./input-data/empty-data.json</dataFile>
      
     <!--
 	Maximum Number of Threads
