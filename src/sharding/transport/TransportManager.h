@@ -7,7 +7,6 @@
 #include "Message.h"
 #include "MessageAllocator.h"
 #include "PendingMessages.h"
-#include "routing/InternalMessageBroker.h"
 
 
 #include "CallbackHandler.h"
@@ -33,19 +32,13 @@ public:
 
 
 
-	inline MessageTime_t getDistributedTime() const ;
-
-	inline CallBackHandler* getInternalTrampoline() const ;
-
-	inline pthread_t getListeningThread() const ;
-
-	inline MessageAllocator * getMessageAllocator() const ;
-
-	inline PendingMessages * getMsgs() const ;
-
-	inline RouteMap * getRouteMap() const ;
-
-	inline CallBackHandler* getSmHandler() const ;
+	MessageTime_t getDistributedTime() const ;
+	CallBackHandler* getInternalTrampoline() const ;
+	pthread_t getListeningThread() const ;
+	MessageAllocator * getMessageAllocator() const ;
+	PendingMessages * getMsgs() const ;
+	RouteMap * getRouteMap() const ;
+	CallBackHandler* getSmHandler() const ;
 
 
 private:

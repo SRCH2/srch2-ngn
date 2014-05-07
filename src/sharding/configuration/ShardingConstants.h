@@ -16,6 +16,7 @@ class SynchronizationManager{
 
 
 enum ShardingMessageType{
+    NULLType,
     SearchCommandMessageType, // -> for LogicalPlan object
     SearchResultsMessageType, // -> for SerializedQueryResults object
     InsertUpdateCommandMessageType, // -> for Record object (used for insert and update)

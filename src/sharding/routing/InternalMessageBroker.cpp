@@ -58,8 +58,8 @@ void InternalMessageBroker::notify(Message * message){
 										(message, server, &DPInternalRequestHandler::internalSearchCommand);
 		break;
 	case InsertUpdateCommandMessageType: // -> for Record object (used for insert and update)
-		broker<SerializableInsertUpdateCommandInput, SerializableInsertUpdateCommandInput, SerializableCommandStatus>
-		 	 	 	 	 	 	 	 	(message, server, &DPInternalRequestHandler::internalInsertUpdateCommand);
+		/*broker<SerializableInsertUpdateCommandInput, SerializableInsertUpdateCommandInput, SerializableCommandStatus>
+		 	 	 	 	 	 	 	 	(message, server, &DPInternalRequestHandler::internalInsertUpdateCommand);*/
 		// TODO : we also need to pass schema for insert/update
 		break;
 	case DeleteCommandMessageType: // -> for DeleteCommandInput object (used for delete)
@@ -68,8 +68,9 @@ void InternalMessageBroker::notify(Message * message){
 		break;
 	case SerializeCommandMessageType: // -> for SerializeCommandInput object
 		// (used for serializing index and records)
+    /*
 		broker<SerializableSerializeCommandInput, SerializableSerializeCommandInput, SerializableCommandStatus>
-										(message, server, &DPInternalRequestHandler::internalSerializeCommand);
+										(message, server, &DPInternalRequestHandler::internalSerializeCommand);*/
 		break;
 	case GetInfoCommandMessageType: // -> for GetInfoCommandInput object (used for getInfo)
 		//TODO: needs versionInfo

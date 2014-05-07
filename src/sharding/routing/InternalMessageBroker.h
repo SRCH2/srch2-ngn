@@ -4,7 +4,7 @@
 #include "sharding/processor/DistributedProcessorInternal.h"
 #include "sharding/transport/Message.h"
 #include "sharding/transport/CallbackHandler.h"
-#include "sharding/routing/RoutingManager.h"
+#include "RoutingManager.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace std;
@@ -15,7 +15,7 @@ namespace httpwrapper {
 class InternalMessageBroker : CallBackHandler {
 public:
 
-	InternalMessageBroker(RoutingManager & rm, DPInternalRequestHandler & internalDP):routingManager(rm),internalDP(internalDP){};
+	InternalMessageBroker(RoutingManager& rm, DPInternalRequestHandler& internalDP) : internalDP(internalDP), routingManager(rm) {};
 
 	/*
 	 * Gets the internal message and routes it to one of the DPInternal functions

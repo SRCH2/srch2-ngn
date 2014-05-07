@@ -4,7 +4,8 @@
 #include "ResultsAggregatorAndPrint.h"
 #include "serializables/SerializableSearchResults.h"
 #include "serializables/SerializableSearchCommandInput.h"
-
+#include <event2/http.h>
+#include "wrapper/ParsedParameterContainer.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace std;
