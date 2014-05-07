@@ -23,7 +23,33 @@
             In this config file it should be as "data/sample-data.json"
     -->
     <srch2Home>./</srch2Home>
+    <cluster-name>SRCH2 Cluster</cluster-name>
+
  
+    <discovery>
+        <ping-interval>2</ping-interval>
+        <ping-timeout>8</ping-timeout>
+        <retry-count>10</retry-count>
+    </discovery>    
+    
+    <node>
+        <listeningHostname> 127.0.0.1 </listeningHostname>
+        <listeningPort> 8087 </listeningPort>
+        <this-is-me> true </this-is-me>
+	<node-name> queen </node-name>
+        <node-master> true </node-master>
+        <node-data> true </node-data>
+        <srch2Home> ./ </srch2Home>
+        <dataDir> ./data/2n-insertA-queryB/ </dataDir>
+    </node> 
+
+    <node>
+        <this-is-me> false </this-is-me>
+        <listeningHostname> 127.0.0.1 </listeningHostname>
+        <node-name> frozen </node-name>
+        <listeningPort> 8088 </listeningPort>
+    </node> 
+
     <!--
         License Key File
         Required
@@ -41,7 +67,12 @@
     -->
     <listeningHostname>127.0.0.1</listeningHostname>
     <listeningPort>8087</listeningPort>
- 
+    	
+        <cores defaultCoreName="core1">
+        <core name="core1">
+        <core-number_of_shards>5</core-number_of_shards> 
+	<core-number_of_replicas>1</core-number_of_replicas>
+
     <!--
         Index Directoy Path
         Required
@@ -443,6 +474,8 @@
 	    </fieldType>
 	 </types>
 	</schema>
+      </core>
+   </cores>
 </config>
  
 
