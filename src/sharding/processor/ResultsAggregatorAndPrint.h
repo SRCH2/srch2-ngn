@@ -1,8 +1,19 @@
 #ifndef __SHARDING_PROCESSOR_RESULTS_AGGREGATOR_AND_PRINT_H_
 #define __SHARDING_PROCESSOR_RESULTS_AGGREGATOR_AND_PRINT_H_
 
+
 #include "sharding/configuration/ConfigManager.h"
-//#include "sharding/processor/ProcessorUtil.h"
+
+#include <instantsearch/Record.h>
+#include "wrapper/ParsedParameterContainer.h"
+#include "util/CustomizableJsonWriter.h"
+#include "util/Logger.h"
+
+#include "core/highlighter/Highlighter.h"
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/shared_mutex.hpp>
+#include <boost/thread/locks.hpp>
+#include "sharding/processor/ProcessorUtil.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace std;

@@ -1,7 +1,11 @@
 #include "ProcessorUtil.h"
-
-namespace srch2is = srch2::instantsearch;
-using namespace std;
+#include "sstream"
+#include "wrapper/URLParser.h"
+#include "thirdparty/snappy-1.0.4/snappy.h"
+#include "util/CustomizableJsonWriter.h"
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/shared_mutex.hpp>
+#include <boost/thread/locks.hpp>
 
 namespace srch2 {
 namespace httpwrapper {

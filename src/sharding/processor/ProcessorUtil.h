@@ -1,23 +1,11 @@
 #ifndef __PROCESSOR_UTIL_H_
 #define __PROCESSOR_UTIL_H_
 
-#include <instantsearch/Record.h>
-#include "wrapper/ParsedParameterContainer.h"
-#include "wrapper/URLParser.h"
-
-#include "thirdparty/snappy-1.0.4/snappy.h"
-#include "util/Logger.h"
-#include "util/CustomizableJsonWriter.h"
-
-#include "core/highlighter/Highlighter.h"
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/shared_mutex.hpp>
-#include <boost/thread/locks.hpp>
+#include "string"
 #include <event.h>
 #include <evhttp.h>
 #include <event2/http.h>
 
-namespace srch2is = srch2::instantsearch;
 using namespace std;
 
 namespace srch2 {
