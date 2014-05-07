@@ -137,7 +137,7 @@ if __name__ == '__main__':
     parseNodes(nodesPath)
     binary_path = sys.argv[1]
     queriesAndResultsPath = sys.argv[2]
-    os.popen('rm -rf ./data/2n-insertAB-queryAB')
+    os.popen('rm -rf ./core1')
     startEngines()
     exitCode=testInsertAndQuery(queriesAndResultsPath, binary_path)
     for i in range(len(serverHandles)):

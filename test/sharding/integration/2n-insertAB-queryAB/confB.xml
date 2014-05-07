@@ -22,9 +22,33 @@
             "/usr/share/srch2/data/sample-data.json"
             In this config file it should be as "data/sample-data.json"
     -->
+    <cluster-name>SRCH2 Cluster</cluster-name>
     <srch2Home>./</srch2Home>
- 
-    <!--
+   
+    <discovery>
+        <ping-interval>2</ping-interval>
+        <ping-timeout>8</ping-timeout>
+        <retry-count>10</retry-count>
+    </discovery>
+   
+    <node>
+        <this-is-me> true </this-is-me>
+        <listeningHostname> 127.0.0.1 </listeningHostname>
+        <node-name> frozen </node-name>
+        <listeningPort> 8088 </listeningPort>
+        <node-master> false </node-master>
+        <node-data> true </node-data>
+        <srch2Home> ./ </srch2Home>
+        <dataDir> ./data/2n-insertA-queryB/ </dataDir>
+    </node>  
+    <node>
+        <listeningHostname> 127.0.0.1 </listeningHostname>
+        <listeningPort> 8087 </listeningPort>
+        <this-is-me> false </this-is-me>
+	<node-name> queen </node-name>
+    </node>   
+
+ <!--
         License Key File
         Required
          
@@ -49,6 +73,11 @@
         The file path to the folder where we store serialized index files.
         REQUIRED, when "index-load-or-create" is set to 1.
     -->
+    <cores defaultCoreName="core1">
+        <core name="core1">
+        <core-number_of_shards>5</core-number_of_shards> 
+	<core-number_of_replicas>1</core-number_of_replicas>
+
     <dataDir>./data/2n-insertAB-queryAB/</dataDir>
      
     <!--
@@ -443,6 +472,8 @@
 	    </fieldType>
 	 </types>
 	</schema>
+       </core>
+    </cores>
 </config>
  
 
