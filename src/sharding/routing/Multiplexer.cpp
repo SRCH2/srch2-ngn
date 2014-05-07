@@ -8,15 +8,15 @@ Multiplexer::Multiplexer(ConfigManager& cm, CoreShardInfo& info) :
   cm(cm), info(info), coreInfo(*cm.getCoreInfo(info.coreName)) {}
 
 UnicastIterator Multiplexer::begin() {
-  return UnicastIterator(*cm.getCluster(),coreInfo.shards.begin());
+  return UnicastIterator(*cm.getCluster(),coreInfo.getShardsVector().begin());
 }
 
 UnicastIterator Multiplexer::end() {
-  return UnicastIterator(*cm.getCluster(), coreInfo.shards.end());
+  return UnicastIterator(*cm.getCluster(), coreInfo.getShardsVector().end());
 }
 
 size_t Multiplexer::size() {
-  return coreInfo.shards.size();
+  return coreInfo.getShardsVector().size();
 }
 
 UnicastIterator::UnicastIterator(const UnicastIterator& cpy)

@@ -181,7 +181,7 @@ struct CoreShardInfo {
 
   CoreShardInfo(srch2http::DPExternalRequestHandler &dp,
       srch2http::CoreInfo_t& core) : dpHandler(dp), core(core), 
-      info(core.coreId, core.getName()) {}
+      info(core.getCoreId(), core.getName()) {}
 
   CoreShardInfo(const CoreShardInfo& toCpy) : dpHandler(toCpy.dpHandler), 
       core(toCpy.core), info(toCpy.info) {}
@@ -642,7 +642,7 @@ int setCallBacksonHTTPServer(ConfigManager *const config,
     srch2http::CoreInfo_t* defaultCore = config->getDefaultCoreInfo();
 
     evhttp_set_cb(http_server, portList[j].path, 
-        portList[j].callback, &cores[defaultCore->coreId]);
+        portList[j].callback, &cores[defaultCore->getCoreId()]);
         
     Logger::debug("Routing port %d route %s to default core %s",
         port, portList[j].path, defaultCore->getName().c_str());

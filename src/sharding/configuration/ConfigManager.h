@@ -917,15 +917,22 @@ class CoreInfo_t {
 
 public:
 
-    unsigned getNumberOfPrimaryShards(){
+	vector<ShardId> getShardsVector() const{
+		return shards;
+	}
+	unsigned getCoreId() const{
+		return coreId;
+	}
+
+    unsigned getNumberOfPrimaryShards() const{
         return this->numberOfPrimaryShards;
     }
 
-    unsigned getNumberOfReplicas(){
+    unsigned getNumberOfReplicas() const{
         return this->numberOfReplicas;
     }
 
-    ShardId getPrimaryShardId(unsigned partitionId){
+    ShardId getPrimaryShardId(unsigned partitionId) const{
         ShardId rtn ;
         rtn.coreId = this->coreId;
         rtn.partitionId = partitionId;
@@ -933,7 +940,7 @@ public:
         return rtn;
     }
 
-    void getPartitionAllShardIds(unsigned partitionId, vector<ShardId> & shardIds){ // fills shardIds vector by ShardId objects of primary and replica partitions corresponding to partitionId
+    void getPartitionAllShardIds(unsigned partitionId, vector<ShardId> & shardIds) const{ // fills shardIds vector by ShardId objects of primary and replica partitions corresponding to partitionId
         for(int i = 0; i < this->shards.size(); i++){
             if(this->shards[i].partitionId == partitionId){
                 shardIds.push_back(this->shards[i]);

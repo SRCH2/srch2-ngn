@@ -16,7 +16,7 @@ RoutingManager::RoutingManager(ConfigManager&  cm, TransportManager& tm)  :
 	for(ConfigManager::CoreInfoMap_t::const_iterator iterator =
 			cm.coreInfoIterateBegin(); iterator != cm.coreInfoIterateEnd();
 			iterator++) {
-		Srch2Server *core = &shards[iterator->second->coreId];
+		Srch2Server *core = &shards[iterator->second->getCoreId()];
 		core->setCoreName(iterator->second->getName());
 
 		if(iterator->second->getDataSourceType() ==
