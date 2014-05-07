@@ -25,6 +25,8 @@ public:
 
 	//third argument is a timeout in seconds
 	MessageTime_t route(NodeId, Message*, unsigned=0, CallbackReference=CallbackReference());
+  //route message through a particular socket
+	MessageTime_t route(int fd, Message*);
 	CallbackReference registerCallback(void*,Callback*,
 			ShardingMessageType,bool,int = 1);
 	void registerCallbackHandlerForSynchronizeManager(CallBackHandler*);

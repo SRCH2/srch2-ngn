@@ -88,7 +88,30 @@ MessageTime_t TransportManager::route(NodeId node, Message *msg,
   time_t timeOfTimeout_time = timeout + time(NULL);
   pendingMessages.addMessage(timeout, msg->time, callback);
 
-  send(fd, msg, msg->bodySize + sizeof(Message), 0);
+#ifdef __MACH__
+      int flag = SO_NOSIGPIPE;
+#else
+      int flag = MSG_NOSIGNAL;
+#endif
+
+  send(fd, msg, msg->bodySize + sizeof(Message), flag);
+  //TODO: errors?
+  return msg->time;
+}
+
+MessageTime_t TransportManager::route(int fd, Message *msg) {
+  msg->time = __sync_fetch_and_add(&distributedTime, 1);
+
+  time_t timeOfTimeout_time = timeout + time(NULL);
+  pendingMessages.addMessage(timeout, msg->time, callback);
+
+#ifdef __MACH__
+      int flag = SO_NOSIGPIPE;
+#else
+      int flag = MSG_NOSIGNAL;
+#endif
+
+  send(fd, msg, msg->bodySize + sizeof(Message), flag);
   //TODO: errors?
   return msg->time;
 }

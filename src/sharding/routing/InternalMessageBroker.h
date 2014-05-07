@@ -20,7 +20,7 @@ public:
 	/*
 	 * Gets the internal message and routes it to one of the DPInternal functions
 	 */
-	void notify(Message*);
+	Message* notify(Message*);
 
 	/*
 	 * This function gets the index for a particular shard
@@ -38,7 +38,7 @@ private:
 	DPInternalRequestHandler& internalDP;
 	RoutingManager&  routingManager;
 	template<typename InputType, typename Deserializer, typename OutputType>
-	void broker(Message*, Srch2Server*, OutputType (DPInternalRequestHandler::*fn) (Srch2Server*, InputType*));
+	Message* broker(Message*, Srch2Server*, OutputType (DPInternalRequestHandler::*fn) (Srch2Server*, InputType*));
 };
 
 }

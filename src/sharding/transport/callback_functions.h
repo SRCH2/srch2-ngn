@@ -83,7 +83,9 @@ void cb_recieveMessage(int fd, short eventType, void *arg) {
 	if(msg->isReply()) {
 		tm->getMsgs().resolve(msg);
 	} else if(msg->isInternalMessage()) {
-		tm->getInternalTrampoline()->notify(msg);
+		if(Message* reply = tm->getInternalTrampoline()->notify(msg)) {
+      tm->route(fd, reply);
+      tm->getMessageAllocator()->deallocate(reply);
 	} else {
 		tm->getSmHandler()->notify(msg);
 	}
