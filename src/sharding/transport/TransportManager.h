@@ -28,7 +28,7 @@ public:
   //route message through a particular socket
 	MessageTime_t route(int fd, Message*);
 	CallbackReference registerCallback(void*,Callback*,
-			ShardingMessageType,bool,int = 1);
+			ShardingMessageType,bool=false,int = 1);
 	void registerCallbackHandlerForSynchronizeManager(CallBackHandler*);
 
 
