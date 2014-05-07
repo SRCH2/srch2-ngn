@@ -11,7 +11,7 @@ namespace httpwrapper {
  * resolving receiving messages.
  */
 template <typename RequestType, typename ResponseType>
-class RMCallback : Callback {
+class RMCallback : public Callback {
 public:
 	ResultAggregatorAndPrint<RequestType, ResponseType>& aggregrate;
 
@@ -74,7 +74,7 @@ template <typename RequestType, typename ResponseType> inline
 void RMCallback<RequestType, ResponseType>::callback(Message* msg) {
 	// deserialize the message into the response type
 	// example : msg deserializes into SerializableSearchResults
-	ResponseType& response = ResponseType::deserialize(msg->buffer);
+	const ResponseType& response = ResponseType::deserialize(msg->buffer);
 
 	// use aggregator callback and pass the deserialized msg
 	aggregrate.callBack(&response);
