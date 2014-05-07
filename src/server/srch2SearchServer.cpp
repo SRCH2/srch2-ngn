@@ -328,7 +328,7 @@ static void cb_update(evhttp_request *req, void *arg) {
     return;
 
   try {
- //  core->dpHandler.externalUpdateCommand(req, core);
+   core->dpHandler.externalUpdateCommand(req, &core->info);
   } catch (exception& e) {
     // exception caught
     Logger::error(e.what());
