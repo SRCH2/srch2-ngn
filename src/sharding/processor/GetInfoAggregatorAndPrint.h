@@ -34,7 +34,7 @@ public:
 	/*
 	 * The main function responsible of aggregating status (success or failure) results
 	 */
-	void callBack(vector<SerializableGetInfoResults *> responseObjects);
+	void callBack(vector<const SerializableGetInfoResults *> responseObjects);
 
 	/*
 	 * The last call back function called by RoutingManager in all cases.

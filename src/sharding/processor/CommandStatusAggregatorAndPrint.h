@@ -100,17 +100,17 @@ public:
 	/*
 	 * The main function responsible of aggregating status (success or failure) results
 	 */
-	void callBack(SerializableCommandStatus * responseObject){
+	void callBack(const SerializableCommandStatus * responseObject){
 
 		boost::unique_lock< boost::shared_mutex > lock(_access);
 		messages << responseObject->getMessage();
 
 	}
 
-	void callBack(vector<SerializableCommandStatus *> responseObjects){
+	void callBack(vector<const SerializableCommandStatus *> responseObjects){
 
 		boost::unique_lock< boost::shared_mutex > lock(_access);
-		for(vector<SerializableCommandStatus *>::iterator responseItr = responseObjects.begin(); responseItr != responseObjects.end(); ++responseItr){
+		for(vector<const SerializableCommandStatus *>::iterator responseItr = responseObjects.begin(); responseItr != responseObjects.end(); ++responseItr){
 			messages << (*responseItr)->getMessage();
 		}
 	}

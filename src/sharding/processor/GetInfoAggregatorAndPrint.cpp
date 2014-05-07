@@ -41,9 +41,9 @@ void GetInfoAggregatorAndPrint::timeoutProcessing(ShardId * shardInfo, Serializa
 /*
  * The main function responsible of aggregating status (success or failure) results
  */
-void GetInfoAggregatorAndPrint::callBack(vector<SerializableGetInfoResults *> responseObjects){
+void GetInfoAggregatorAndPrint::callBack(vector<const SerializableGetInfoResults *> responseObjects){
 	boost::unique_lock< boost::shared_mutex > lock(_access);
-	for(vector<SerializableGetInfoResults *>::iterator responseItr = responseObjects.begin();
+	for(vector<const SerializableGetInfoResults *>::iterator responseItr = responseObjects.begin();
 			responseItr != responseObjects.end() ; ++responseItr){
 		this->readCount += (*responseItr)->getReadCount();
 		this->writeCount += (*responseItr)->getWriteCount();

@@ -38,7 +38,7 @@ struct timespec & SearchResultAggregatorAndPrint::getStartTimer(){
  * this function uses aggregateRecords and aggregateFacets for
  * aggregating result records and calculated records
  */
-void SearchResultAggregatorAndPrint::callBack(vector<SerializableSearchResults *> responseObjects){
+void SearchResultAggregatorAndPrint::callBack(vector<const SerializableSearchResults *> responseObjects){
 
 
 	// move on all responses of all shards and use them

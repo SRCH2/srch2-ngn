@@ -46,8 +46,8 @@ public:
 	/*
 	 * The callBack function used by routing manager
 	 */
-	virtual void callBack(Response * responseObject){};
-	virtual void callBack(vector<Response *> responseObjects){};
+	virtual void callBack(const Response * responseObject){};
+	virtual void callBack(vector<const Response *> responseObjects){};
 
 	/*
 	 * The last call back function called by RoutingManager in all cases.
