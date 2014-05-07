@@ -72,7 +72,7 @@ TransportManager::TransportManager(EventBases& bases, Nodes& map) {
     for(EventBases::iterator base = bases.begin(); 
         base != bases.end(); ++base) {
       struct event* ev = event_new(*base, route->second, 
-          EV_READ, cb_recieveMessage, this);
+          EV_READ|EV_PERSIST, cb_recieveMessage, this);
       event_add(ev, NULL);
     }
   }
