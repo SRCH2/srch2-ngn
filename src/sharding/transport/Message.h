@@ -9,6 +9,10 @@ namespace httpwrapper {
 
 typedef unsigned MessageTime_t;
 
+const char LOCAL_MASK = 0x2;
+const char REPLY_MASK = 0x1;
+const char INTERNAL_MASK = 0x3;
+
 struct Message {
   //TODO: magic number
    ShardingMessageType type;
@@ -21,11 +25,13 @@ struct Message {
 
    //helper Functions
    bool isLocal(){
-     return mask & 0x2;
+     return mask & LOCAL_MASK;
    }
-
    bool isReply() {
-     return mask & 0x1;
+     return mask & REPLY_MASK;
+   }
+   bool isInternal() {
+     return mask & INTERNAL_MASK;
    }
 };
 

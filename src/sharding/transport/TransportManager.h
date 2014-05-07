@@ -34,13 +34,13 @@ public:
 
 
 
-	MessageTime_t getDistributedTime() const ;
-	CallBackHandler* getInternalTrampoline() const ;
-	pthread_t getListeningThread() const ;
-	MessageAllocator * getMessageAllocator() const ;
-	PendingMessages * getMsgs() const ;
-	RouteMap * getRouteMap() const ;
-	CallBackHandler* getSmHandler() const ;
+	MessageTime_t& getDistributedTime();
+	CallBackHandler* getInternalTrampoline();
+	pthread_t getListeningThread() const;
+	MessageAllocator * getMessageAllocator();
+	PendingMessages * getMsgs();
+	RouteMap * getRouteMap();
+	CallBackHandler* getSmHandler();
 
 
 private:

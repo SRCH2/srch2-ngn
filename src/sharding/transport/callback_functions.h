@@ -5,9 +5,7 @@
 #include<errno.h>
 #include "TransportManager.h"
 
-namespace srch2 {
-namespace httpwrapper {
-
+using namespace srch2::httpwrapper;
 
 /*
  * This function reads the stream until it finds the next valid message
@@ -81,11 +79,14 @@ void cb_recieveMessage(int fd, short eventType, void *arg) {
 			readRestOfMessage(*(tm->getMessageAllocator()), fd, &msgHeader);
 
 	if(msg->isReply()) {
-		tm->getMsgs().resolve(msg);
-	} else if(msg->isInternalMessage()) {
+		tm->getMsgs()->resolve(msg);
+	} else if(msg->isInternal()) {
 		if(Message* reply = tm->getInternalTrampoline()->notify(msg)) {
+      reply->initial_time = msg->time;
+      reply->mask |= REPLY_MASK & INTERNAL_MASK;
       tm->route(fd, reply);
       tm->getMessageAllocator()->deallocate(reply);
+    }
 	} else {
 		tm->getSmHandler()->notify(msg);
 	}
@@ -93,7 +94,4 @@ void cb_recieveMessage(int fd, short eventType, void *arg) {
 	tm->getMessageAllocator()->deallocate(msg);
 }
 
-
-}
-}
 #endif /* __TRANSPORT_CALLBACK_FUNCTIONS_H__ */

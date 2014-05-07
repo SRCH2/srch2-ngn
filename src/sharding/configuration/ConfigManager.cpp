@@ -311,7 +311,7 @@ void ConfigManager::trimSpacesFromValue(string &fieldValue, const char *fieldNam
     }
 }
 
-const CoreInfoMap_t& ConfigManager::getCoreInfoMap() const
+const ConfigManager::CoreInfoMap_t& ConfigManager::getCoreInfoMap() const
 {
   return (CoreInfoMap_t) coreInfoMap;
 }

@@ -11,11 +11,11 @@ void* RegisteredCallback::getOriginalSerializableObject() const {
 	return originalSerializableObject;
 }
 
-std::vector<Message*>& RegisteredCallback::getReply() const {
+std::vector<Message*>& RegisteredCallback::getReply() {
 	return reply;
 }
 
-int& RegisteredCallback::getWaitingOn() const {
+int& RegisteredCallback::getWaitingOn() {
 	return waitingOn;
 }
 
@@ -73,24 +73,24 @@ void PendingMessages::resolve(Message* msg) {
 			std::find(pendingRequests.begin(),
 					pendingRequests.end(), msg->initial_time);
 
-	RegisteredCallback *cb = request->callbackAndTypeMask.ptr;
+	RegisteredCallback *cb = request->getCallbackAndTypeMask().getPtr();
 
-	if(request->callbackAndTypeMask.waitForAll) {
-		cb->reply.push_back(msg);
-		int num = __sync_sub_and_fetch(&(cb->waitingOn), 1);
+	if(request->getCallbackAndTypeMask().isWaitForAll()) {
+		cb->getReply().push_back(msg);
+		int num = __sync_sub_and_fetch(&cb->getWaitingOn(), 1);
 
 		pendingRequests.erase(request);
 		if(num == 0) {
-			cb->callbackObject->callbackAll(cb->reply);
+			cb->getCallbackObject()->callbackAll(cb->getReply());
 			delete cb;
-			for(std::vector<Message*>::iterator msg = cb->reply.begin();
-					msg != cb->reply.end(); ++msg) {
+			for(std::vector<Message*>::iterator msg = cb->getReply().begin();
+					msg != cb->getReply().end(); ++msg) {
 				delete *msg;
 			}
 		}
 	} else {
-		cb->callbackObject->callback(msg);
-		if(__sync_sub_and_fetch(&(cb->waitingOn), 1) == 0) delete cb;
+		cb->getCallbackObject()->callback(msg);
+		if(__sync_sub_and_fetch(&cb->getWaitingOn(), 1) == 0) delete cb;
 		delete msg;
 	}
 }

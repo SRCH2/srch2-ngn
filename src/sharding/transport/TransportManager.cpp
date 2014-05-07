@@ -102,9 +102,6 @@ MessageTime_t TransportManager::route(NodeId node, Message *msg,
 MessageTime_t TransportManager::route(int fd, Message *msg) {
   msg->time = __sync_fetch_and_add(&distributedTime, 1);
 
-  time_t timeOfTimeout_time = timeout + time(NULL);
-  pendingMessages.addMessage(timeout, msg->time, callback);
-
 #ifdef __MACH__
       int flag = SO_NOSIGPIPE;
 #else
@@ -116,11 +113,11 @@ MessageTime_t TransportManager::route(int fd, Message *msg) {
   return msg->time;
 }
 
-MessageTime_t TransportManager::getDistributedTime() const {
+MessageTime_t& TransportManager::getDistributedTime() {
 	return distributedTime;
 }
 
-CallBackHandler* TransportManager::getInternalTrampoline() const {
+CallBackHandler* TransportManager::getInternalTrampoline() {
 	return internalMessageBrokerHandler;
 }
 
@@ -128,18 +125,18 @@ pthread_t TransportManager::getListeningThread() const {
 	return listeningThread;
 }
 
-MessageAllocator * TransportManager::getMessageAllocator() const {
+MessageAllocator * TransportManager::getMessageAllocator() {
 	return &messageAllocator;
 }
 
-PendingMessages * TransportManager::getMsgs() const {
+PendingMessages * TransportManager::getMsgs() {
 	return &pendingMessages;
 }
 
-RouteMap * TransportManager::getRouteMap() const {
+RouteMap * TransportManager::getRouteMap() {
 	return &routeMap;
 }
 
-CallBackHandler* TransportManager::getSmHandler() const {
+CallBackHandler* TransportManager::getSmHandler() {
 	return synchManagerHandler;
 }

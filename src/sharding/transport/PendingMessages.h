@@ -35,8 +35,8 @@ public:
 
 	Callback* getCallbackObject() const;
 	void* getOriginalSerializableObject() const ;
-	std::vector<Message*>& getReply() const ;
-	int& getWaitingOn() const ;
+	std::vector<Message*>& getReply();
+	int& getWaitingOn();
 
 private:
 
