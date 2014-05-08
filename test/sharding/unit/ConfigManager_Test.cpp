@@ -147,6 +147,16 @@ void testDiscoveryInvalid(char* configFile){
 	ASSERT(discovery.getRetryCount() == 1);
 }
 
+void testCurrentNode(char* configFile){
+
+	ConfigManager *configManager = new ConfigManager(configFile);
+	configManager->loadConfigFile();
+	Cluster *c = configManager->getCluster();
+	Node * currentNode = c->getCurrentNode();
+	ASSERT(currentNode->thisIsMe == true);
+
+}
+
 int main() {
 	testShard();
 	Logger::setLogLevel(Logger::SRCH2_LOG_DEBUG);
@@ -162,6 +172,8 @@ int main() {
 
 	testDiscovery(getenv("ConfigManagerFilePath1"));
 	testDiscoveryInvalid(getenv("ConfigManagerFilePath3"));
+
+	testCurrentNode(getenv("ConfigManagerFilePath1"));
 
 }
 

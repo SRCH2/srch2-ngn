@@ -304,6 +304,16 @@ class CoreInfo_t;
 
 class Cluster {
  public:
+
+    Node* getCurrentNode(){
+        vector<Node>* nodes =  this->getNodes();
+        for(int i = 0; i < nodes->size(); i++){
+            if(nodes->at(i).thisIsMe == true){
+                return &(nodes->at(i));
+            }
+        }
+    }
+
   std::map<ShardId, Shard, ShardIdComparator> shardMap;
 
   std::vector<Node>* getNodes(){
