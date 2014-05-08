@@ -541,10 +541,10 @@ void JSONRecordParser::getJsonValueString(const Json::Value &jsonValue,
 		std::vector<std::string> &stringValues,
 		const string &configName)
 {
-    if(!jsonValue.isMember(key))
-    {
+    if(!jsonValue.isMember(key)) {
         stringValues.clear();
-        cout << "[Warning] Wrong value setting for " << configName << ". There is no such attribute <" << key << ">.\n Please set it to IGNORE in the configure file if you don't need it." << endl;
+        Logger::warn("[Warning] Wrong value setting for %s. There is no such attribute %s.\n", configName.c_str(), key.c_str());
+        Logger::warn("Please set it to IGNORE in the configure file if you don't need it.");
         return;
     }
     Json::Value value = jsonValue.get(key, "NULL");
@@ -561,7 +561,8 @@ void JSONRecordParser::getJsonValueDateAndTime(const Json::Value &jsonValue,
     if(!jsonValue.isMember(key)){
 
         stringValues.clear();
-        cout << "[Warning] Wrong value setting for " << configName << ". There is no such attribute <" << key << ">.\n Please set it to IGNORE in the configure file if you don't need it." << endl;
+        Logger::warn("[Warning] Wrong value setting for %s. There is no such attribute %s.\n", configName.c_str(), key.c_str());
+        Logger::warn("Please set it to IGNORE in the configure file if you don't need it.");
         return;
     }
     vector<string> temp;
