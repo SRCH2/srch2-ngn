@@ -2,3 +2,5 @@
 2||insert||{"category": " Government Public Place Office", "name": "Senator Gary Stevens", "relevance": 5.0161041254013883, "lat": 59.641700999999998, "lng": -151.55141800000001, "id": "102"}||{"rid":"102","insert":"success"}
 3||insert||{"category": " Restaurant Food & Drink", "name": "Bradley House", "relevance": 4.7440935451275612, "lat": 61.119110999999997, "lng": -149.86381800000001, "id": "103"}||{"rid":"103","insert":"success"}
 3||query||Prescription Service||101
+1||query||Prescription Service||101
+2||query||Senator Gary||102
