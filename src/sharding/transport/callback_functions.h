@@ -4,6 +4,7 @@
 #include<unistd.h>
 #include<errno.h>
 #include "TransportManager.h"
+#include "MessageBuffer.h"
 
 using namespace srch2::httpwrapper;
 
@@ -23,7 +24,7 @@ bool findNextMagicNumberAndReadMessageHeader(Message *const msg,  int fd) {
 		}
 
 		if(readRtn < sizeof(Message)) {
-			//v1: broken message boundary
+			//v1: broken message boundary == seriously bad
 			continue;
 		}
 
@@ -37,18 +38,29 @@ bool findNextMagicNumberAndReadMessageHeader(Message *const msg,  int fd) {
 }
 
 Message* readRestOfMessage(MessageAllocator& messageAllocator,
-		int fd, Message *const msgHeader) {
+		int fd, Message *const msgHeader, int *readCount) {
 	Message *msg= messageAllocator.allocateMessage(msgHeader->bodySize);
-	int readReturnValue = read(fd, msg->buffer, msgHeader->bodySize);
-
-	if(readReturnValue != msgHeader->bodySize){  //handle error
-	}
+	*readCount= read(fd, msg->buffer, msgHeader->bodySize);
 
 	memcpy(msg, msgHeader, sizeof(Message));
 
 	return msg;
 }
 
+bool readPartialMessage(int fd, MessageBuffer& buffer) {
+  int toRead = buffer.msg->bodySize;
+  if(toRead == 0) {
+    //strangely we don't need to read anything;)
+    return true;
+  }
+
+	int readReturnValue = read(fd, buffer.msg->buffer, toRead);
+  if(readReturnValue < 0) {
+    //TODO: handle errors
+  }
+
+	return (readReturnValue == toRead);
+}
 
 /*
  * This callback function is called from transport layer upon receiving an internal DP/SM messages
@@ -75,8 +87,9 @@ void cb_recieveMessage(int fd, short eventType, void *arg) {
 				&tm->getDistributedTime(), time, msgHeader.time)) break;
 	}
 
+  int tmp;
 	Message *msg =
-			readRestOfMessage(*(tm->getMessageAllocator()), fd, &msgHeader);
+			readRestOfMessage(*(tm->getMessageAllocator()), fd, &msgHeader, tmp);
 
 	if(msg->isReply()) {
 		tm->getMsgs()->resolve(msg);

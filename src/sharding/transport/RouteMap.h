@@ -5,6 +5,8 @@
 #include <netinet/in.h>
 #include <vector>
 #include <iterator>
+#include <map>
+#include "MessageBuffer.h"
 
 void* tryToConnect(void*);
 
