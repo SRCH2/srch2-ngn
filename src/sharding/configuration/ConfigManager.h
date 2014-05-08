@@ -954,7 +954,11 @@ public:
     CoreInfo_t(class ConfigManager *manager) : configManager(manager) {
         schema = NULL;
     };
-
+    ~CoreInfo_t() {
+    	if(schema != NULL){
+			delete schema;
+    	}
+    };
     friend class ConfigManager;
 
     // **** accessors for settings in every core ****
@@ -1097,8 +1101,12 @@ public:
     unsigned short getPort(PortType_t portType) const;
     void setPort(PortType_t portType, unsigned short portNumber);
 
-    void setSchema(srch2is::Schema* schema) { this->schema = schema; };
-    srch2is::Schema* getSchema() const { return this->schema; };
+    void setSchema(srch2is::Schema* schema) {
+    	this->schema = schema;
+    };
+    srch2is::Schema* getSchema() const {
+    	return this->schema;
+    };
 
     vector<ShardId> shards;
 protected:

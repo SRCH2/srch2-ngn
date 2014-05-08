@@ -765,6 +765,7 @@ int startListeningToRequest(evhttp *const http_server,
 	/* 4). accept bound socket */
 	for(PortSocketMap_t::iterator iterator = globalPortSocketMap.begin();
 			iterator != globalPortSocketMap.end(); iterator++) {
+		cout << "Port " << iterator->first << " added to HTTP listener for external requests." << endl;
 		if(evhttp_accept_socket(http_server, iterator->second) != 0) {
 			perror("evhttp_accept_socket");
 			return 255;
