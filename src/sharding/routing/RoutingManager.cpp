@@ -9,6 +9,7 @@ namespace httpwrapper {
 
 RoutingManager::RoutingManager(ConfigManager&  cm, TransportManager& tm)  : 
     				configurationManager(cm),  tm(tm), dpInternal(&cm),
+            broker(*this, dpInternal), 
     				shards(new Srch2Server[cm.getCoreInfoMap().size()]) { 
 
 
@@ -44,6 +45,8 @@ RoutingManager::RoutingManager(ConfigManager&  cm, TransportManager& tm)  :
 			exit(-1);
 		}
 	}
+
+  tm.setInternalTrampoline(&broker);
 }
 
 ConfigManager* RoutingManager::getConfigurationManager() {

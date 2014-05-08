@@ -13,6 +13,7 @@
 #include "Multiplexer.h"
 #include "RMCallback.h"
 #include "transport/MessageAllocator.h"
+#include "InternalMessageBroker.h"
 
 using namespace std;
 
@@ -162,6 +163,7 @@ private:
 	ConfigManager& configurationManager;
 	TransportManager& tm;
 	DPInternalRequestHandler dpInternal;
+  InternalMessageBroker broker;
 	Srch2Server *shards;
 };
 

@@ -30,6 +30,7 @@ RoutingManager::broadcast(RequestType& requestObj, CoreShardInfo &coreInfo) {
 			unicast != broadcastResolver.end(); ++unicast) {
 		msg->shard = unicast->shardId;
     msg->mask |= INTERNAL_MASK;
+    msg->type = RequestType::messageKind();
 
 		tm.route(unicast->nodeId, msg, 0);
 	}
@@ -71,7 +72,7 @@ void RoutingManager::broadcast_w_cb(RequestType& requestObj,
 	 */
 	CallbackReference cb = tm.registerCallback(&requestObj,
 												new RMCallback<RequestType, ResponseType>(*aggregator),
-												RequestType::messageKind(),
+												ResponseType::messageKind(),
 												true,
 												broadcastResolver.size()-1); //hack for missing local
 
@@ -84,6 +85,7 @@ void RoutingManager::broadcast_w_cb(RequestType& requestObj,
 			unicast != broadcastResolver.end(); ++unicast) {
 		msg->shard = unicast->shardId;
     msg->mask |= INTERNAL_MASK;
+    msg->type = RequestType::messageKind();
 
 		tm.route(unicast->nodeId, msg, 0, cb);
 	}
@@ -114,7 +116,7 @@ void RoutingManager::broadcast_wait_for_all_w_cb(RequestType & requestObj,
 	 */
 	CallbackReference cb = tm.registerCallback(&requestObj,
 												new RMCallback<RequestType, ResponseType>(*aggregator),
-												RequestType::messageKind(),
+												ResponseType::messageKind(),
 												false,
 												broadcastResolver.size()-1); //hack for missing local
 
@@ -127,6 +129,7 @@ void RoutingManager::broadcast_wait_for_all_w_cb(RequestType & requestObj,
 			unicast != broadcastResolver.end(); ++unicast) {
 		msg->shard = unicast->shardId;
     msg->mask |= INTERNAL_MASK;
+    msg->type = RequestType::messageKind();
 
 		tm.route(unicast->nodeId, msg, 0, cb);
 	}
@@ -159,7 +162,7 @@ void RoutingManager::broadcast_w_cb_n_timeout(RequestType& requestObj,
 	 */
 	CallbackReference cb = tm.registerCallback(&requestObj,
 												new RMCallback<RequestType, ResponseType>(*aggregator),
-												RequestType::messageKind(),
+												ResponseType::messageKind(),
 												true,
 												broadcastResolver.size()-1); //hack for missing local
 
@@ -172,6 +175,7 @@ void RoutingManager::broadcast_w_cb_n_timeout(RequestType& requestObj,
 			unicast != broadcastResolver.end(); ++unicast) {
 		msg->shard = unicast->shardId;
     msg->mask |= INTERNAL_MASK;
+    msg->type = RequestType::messageKind();
 
 		tm.route(unicast->nodeId, msg, timeoutValue.tv_sec, cb);
 	}
@@ -198,7 +202,7 @@ RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType& requestObj,
 	 */
 	CallbackReference cb = tm.registerCallback(&requestObj,
 												new RMCallback<RequestType, ResponseType>(*aggregator),
-												RequestType::messsageKind(),
+												ResponseType::messageKind(),
 												true,
 												broadcastResolver.size()-1); //hack for missing local
 
@@ -211,6 +215,7 @@ RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType& requestObj,
 			unicast != broadcastResolver.end(); ++unicast) {
 		msg->shard = unicast->shardId;
     msg->mask |= INTERNAL_MASK;
+    msg->type = RequestType::messageKind();
 
 		tm.route(unicast->nodeId, msg, timeoutValue.tv_sec, cb);
 	}
@@ -236,6 +241,7 @@ RoutingManager::route(RequestType& requestObj, ShardId & shardInfo) {
 
   msg->shard = shardInfo;
   msg->mask |= INTERNAL_MASK;
+  msg->type = RequestType::messageKind();
 
   tm.route(nodeId, msg);
 
@@ -271,7 +277,7 @@ RoutingManager::route_w_cb(RequestType& requestObj,
 	 */
 	CallbackReference cb = tm.registerCallback(&requestObj,
 												new RMCallback<RequestType, ResponseType>(*aggregator),
-												RequestType::messageKind());
+												ResponseType::messageKind());
 
 
 	// create the message from the request object
@@ -281,6 +287,7 @@ RoutingManager::route_w_cb(RequestType& requestObj,
 
   msg->shard = shardInfo;
   msg->mask |= INTERNAL_MASK;
+  msg->type = RequestType::messageKind();
 
   tm.route(nodeId, msg, 0, cb);
 
@@ -319,6 +326,7 @@ RoutingManager::route_w_cb_n_timeout(RequestType & requestObj,
 
   msg->shard = shardInfo;
   msg->mask |= INTERNAL_MASK;
+  msg->type = RequestType::messageKind();
 
   tm.route(nodeId, msg, timeoutValue.tv_sec, cb);
 

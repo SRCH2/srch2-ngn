@@ -118,7 +118,7 @@ MessageTime_t& TransportManager::getDistributedTime() {
 }
 
 CallBackHandler* TransportManager::getInternalTrampoline() {
-	return internalMessageBrokerHandler;
+	return internalTrampoline;
 }
 
 pthread_t TransportManager::getListeningThread() const {

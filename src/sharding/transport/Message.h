@@ -11,7 +11,7 @@ typedef unsigned MessageTime_t;
 
 const char LOCAL_MASK = 0x2;
 const char REPLY_MASK = 0x1;
-const char INTERNAL_MASK = 0x3;
+const char INTERNAL_MASK = 0x4;
 
 struct Message {
   //TODO: magic number
