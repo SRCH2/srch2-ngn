@@ -95,6 +95,8 @@ namespace httpwrapper {
      partitionId = unsigned(-1);
      replicaId = unsigned(-1);
    }
+   ShardId(unsigned coreId, unsigned partitionId, unsigned replicaId=0) :
+     coreId(coreId), partitionId(partitionId), replicaId(replicaId) {}
 
    bool operator==(const ShardId& rhs) const {
      return coreId == rhs.coreId && partitionId == rhs.partitionId
@@ -168,7 +170,8 @@ namespace httpwrapper {
      this->shardId.replicaId = 0;
    }
 
-   Shard(unsigned nodeId, unsigned coreId, unsigned partitionId = 0, unsigned replicaId = 0){
+   Shard(unsigned nodeId, unsigned coreId, unsigned partitionId = 0,
+         unsigned replicaId = 0) {
      this->nodeId = nodeId;
      this->shardState = SHARDSTATE_UNALLOCATED;
      this->shardId.coreId = coreId;
@@ -177,12 +180,12 @@ namespace httpwrapper {
    }
 
    //Can be used in Migration
-   void setPartitionId(int partitionId){
+   void setPartitionId(int partitionId) {
      this->shardId.partitionId = partitionId;
     }
 
 	//Can be used in Migration
-   void setReplicaId(int replicaId){
+   void setReplicaId(int replicaId) {
      this->shardId.replicaId = replicaId;
     }
 
@@ -1097,12 +1100,12 @@ public:
     void setSchema(srch2is::Schema* schema) { this->schema = schema; };
     srch2is::Schema* getSchema() const { return this->schema; };
 
+    vector<ShardId> shards;
 protected:
 
     string name; // of core
 
     unsigned coreId; // starting from 0, auto increment
-    vector<ShardId> shards;
     // In V0, the "number_of_shards" is a one-time setting for a
     // core. In the future (possibly after V1), we can support dynamic
     // migration by allowing this number to change.

@@ -689,12 +689,12 @@ int startListeningToRequest(evhttp *const http_server,
       perror("evhttp_accept_socket");
       return 255;
     }
-    return 0;
   //  Logger::debug("Socket accept by thread %d on port %d", i, iterator->first);
   }
+  return 0;
 }
 
-
+void generateShards(srch2http::ConfigManager&);
 
 int main(int argc, char** argv) {
     if (argc > 1) {
@@ -784,6 +784,8 @@ int main(int argc, char** argv) {
                 core != serverConf->coreInfoIterateEnd(); ++core)  {
       cores.push_back(CoreShardInfo(*dpHandler, *core->second));
     }
+
+    generateShards(*serverConf);
 
     for(int j=0; j < evServers.size(); ++j) {
       setCallBacksonHTTPServer(serverConf, evServers[j], evBases[j], cores);
