@@ -17,8 +17,18 @@ const static char GREETING_MESSAGE[] = "GREETING FROM SRCH2";
 const static char FAILED_GREETING_MESSAGE[] = "YOU KNOCKED AGAIN? ";
 
 typedef unsigned NodeId;
-typedef int Connection;
+
+class Connection {
+public:
+  int fd;
+  MessageBuffer buffer;
+
+  Connection(int fd) : fd(fd) {}
+  Connection() {}
+};
+
 typedef std::pair<sockaddr_in, NodeId> ConnectionId;
+//typedef ConnectionBuffers std::map<int, Message* msg, Buffer>
 
 using srch2::httpwrapper::Node;
 

@@ -177,7 +177,7 @@ void RouteMap::acceptRoute(int fd, struct sockaddr_in addr) {
 
 void RouteMap::addNodeConnection(NodeId addr, int fd) {
   //look into map thread safety
-  map[addr] = fd;
+  map[addr] = Connection(fd);
 }
 
 bool RouteMap::isTotallyConnected() const {

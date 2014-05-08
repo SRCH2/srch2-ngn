@@ -540,7 +540,7 @@ static void killServer(int signal) {
     for(srch2http::RouteMap::iterator conn = 
         subway->getRouteMap()->begin();
         conn != subway->getRouteMap()->end(); ++conn) {
-      close(conn->second);
+      close(conn->second.fd);
     }
     pthread_cancel(subway->getListeningThread());
 #ifdef __MACH__
