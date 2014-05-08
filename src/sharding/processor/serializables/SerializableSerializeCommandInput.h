@@ -63,7 +63,7 @@ public:
     }
 
     //Returns the type of message which uses this kind of object as transport
-    static ShardingMessageType messsageKind(){
+    static ShardingMessageType messageKind(){
     	return SerializeCommandMessageType;
     }
 

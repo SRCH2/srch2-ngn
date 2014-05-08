@@ -12,6 +12,7 @@
 #include "processor/serializables/SerializableGetInfoResults.h"
 #include "transport/Message.h"
 #include "util/Version.h"
+#include "RoutingManager.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace std;
