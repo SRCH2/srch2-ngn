@@ -146,6 +146,6 @@ if __name__ == '__main__':
             test_lib.killServer(serverHandles[i])
         os._exit(exitCode)
     except:
-        print '==========test case 2n-insertAABB failed=========='
+        print '==========test case 2n-insert1122 failed=========='
         for i in range(len(serverHandles)):
             test_lib.killServer(serverHandles[i])

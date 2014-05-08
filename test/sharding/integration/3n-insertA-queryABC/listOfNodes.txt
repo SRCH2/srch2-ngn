@@ -1,3 +1,3 @@
-1||8087||./3n-insertA-queryABC/confA.xml
-2||8088||./3n-insertA-queryABC/confB.xml
-3||8089||./3n-insertA-queryABC/confC.xml
+A||8087||./3n-insertA-queryABC/confA.xml
+B||8088||./3n-insertA-queryABC/confB.xml
+C||8089||./3n-insertA-queryABC/confC.xml

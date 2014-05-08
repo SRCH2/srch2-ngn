@@ -1,2 +1,2 @@
-1||8087||2n-insertAABB/confA.xml
-2||8088||2n-insertAABB/confB.xml
+A||8087||2n-insertAABB/confA.xml
+B||8088||2n-insertAABB/confB.xml
