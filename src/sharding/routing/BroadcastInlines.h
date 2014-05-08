@@ -32,7 +32,7 @@ RoutingManager::broadcast(RequestType& requestObj, CoreShardInfo &coreInfo) {
     msg->mask |= INTERNAL_MASK;
     msg->type = RequestType::messageKind();
 
-		tm.route(unicast->nodeId, msg, 0);
+		transportManager.route(unicast->nodeId, msg, 0);
 	}
 
 	getMessageAllocator()->deallocateMessage(msg);
@@ -70,7 +70,7 @@ void RoutingManager::broadcast_w_cb(RequestType& requestObj,
 	 * We need to register callback functions to TM so that it calls them upon receiving a message
 	 * Here, we register a method around aggregator callback into TM.
 	 */
-	CallbackReference cb = tm.registerCallback(&requestObj,
+	CallbackReference cb = transportManager.registerCallback(&requestObj,
 												new RMCallback<RequestType, ResponseType>(*aggregator),
 												ResponseType::messageKind(),
 												true,
@@ -87,7 +87,7 @@ void RoutingManager::broadcast_w_cb(RequestType& requestObj,
     msg->mask |= INTERNAL_MASK;
     msg->type = RequestType::messageKind();
 
-		tm.route(unicast->nodeId, msg, 0, cb);
+		transportManager.route(unicast->nodeId, msg, 0, cb);
 	}
 
 	getMessageAllocator()->deallocateMessage(msg);
@@ -114,7 +114,7 @@ void RoutingManager::broadcast_wait_for_all_w_cb(RequestType & requestObj,
 	 * We need to register callback functions to TM so that it calls them upon receiving a message
 	 * Here, we register a method around aggregator callback into TM.
 	 */
-	CallbackReference cb = tm.registerCallback(&requestObj,
+	CallbackReference cb = transportManager.registerCallback(&requestObj,
 												new RMCallback<RequestType, ResponseType>(*aggregator),
 												ResponseType::messageKind(),
 												false,
@@ -131,7 +131,7 @@ void RoutingManager::broadcast_wait_for_all_w_cb(RequestType & requestObj,
     msg->mask |= INTERNAL_MASK;
     msg->type = RequestType::messageKind();
 
-		tm.route(unicast->nodeId, msg, 0, cb);
+		transportManager.route(unicast->nodeId, msg, 0, cb);
 	}
 
 	getMessageAllocator()->deallocateMessage(msg);
@@ -160,7 +160,7 @@ void RoutingManager::broadcast_w_cb_n_timeout(RequestType& requestObj,
 	 * We need to register callback functions to TM so that it calls them upon receiving a message
 	 * Here, we register a method around aggregator callback into TM.
 	 */
-	CallbackReference cb = tm.registerCallback(&requestObj,
+	CallbackReference cb = transportManager.registerCallback(&requestObj,
 												new RMCallback<RequestType, ResponseType>(*aggregator),
 												ResponseType::messageKind(),
 												true,
@@ -177,7 +177,7 @@ void RoutingManager::broadcast_w_cb_n_timeout(RequestType& requestObj,
     msg->mask |= INTERNAL_MASK;
     msg->type = RequestType::messageKind();
 
-		tm.route(unicast->nodeId, msg, timeoutValue.tv_sec, cb);
+		transportManager.route(unicast->nodeId, msg, timeoutValue.tv_sec, cb);
 	}
 
 	getMessageAllocator()->deallocateMessage(msg);
@@ -200,7 +200,7 @@ RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType& requestObj,
 	 * We need to register callback functions to TM so that it calls them upon receiving a message
 	 * Here, we register a method around aggregator callback into TM.
 	 */
-	CallbackReference cb = tm.registerCallback(&requestObj,
+	CallbackReference cb = transportManager.registerCallback(&requestObj,
 												new RMCallback<RequestType, ResponseType>(*aggregator),
 												ResponseType::messageKind(),
 												true,
@@ -217,7 +217,7 @@ RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType& requestObj,
     msg->mask |= INTERNAL_MASK;
     msg->type = RequestType::messageKind();
 
-		tm.route(unicast->nodeId, msg, timeoutValue.tv_sec, cb);
+		transportManager.route(unicast->nodeId, msg, timeoutValue.tv_sec, cb);
 	}
 
 	getMessageAllocator()->deallocateMessage(msg);
@@ -243,7 +243,7 @@ RoutingManager::route(RequestType& requestObj, ShardId & shardInfo) {
   msg->mask |= INTERNAL_MASK;
   msg->type = RequestType::messageKind();
 
-  tm.route(nodeId, msg);
+  transportManager.route(nodeId, msg);
 
 	getMessageAllocator()->deallocateMessage(msg);
 }
@@ -275,7 +275,7 @@ RoutingManager::route_w_cb(RequestType& requestObj,
 	 * We need to register callback functions to TM so that it calls them upon receiving a message
 	 * Here, we register a method around aggregator callback into TM.
 	 */
-	CallbackReference cb = tm.registerCallback(&requestObj,
+	CallbackReference cb = transportManager.registerCallback(&requestObj,
 												new RMCallback<RequestType, ResponseType>(*aggregator),
 												ResponseType::messageKind());
 
@@ -289,7 +289,7 @@ RoutingManager::route_w_cb(RequestType& requestObj,
   msg->mask |= INTERNAL_MASK;
   msg->type = RequestType::messageKind();
 
-  tm.route(nodeId, msg, 0, cb);
+  transportManager.route(nodeId, msg, 0, cb);
 
 	getMessageAllocator()->deallocateMessage(msg);
 
@@ -314,7 +314,7 @@ RoutingManager::route_w_cb_n_timeout(RequestType & requestObj,
 	 * We need to register callback functions to TM so that it calls them upon receiving a message
 	 * Here, we register a method around aggregator callback into TM.
 	 */
-	CallbackReference cb = tm.registerCallback(&requestObj,
+	CallbackReference cb = transportManager.registerCallback(&requestObj,
 												new RMCallback<RequestType, ResponseType>(*aggregator),
 												RequestType::messageKind());
 
@@ -328,7 +328,7 @@ RoutingManager::route_w_cb_n_timeout(RequestType & requestObj,
   msg->mask |= INTERNAL_MASK;
   msg->type = RequestType::messageKind();
 
-  tm.route(nodeId, msg, timeoutValue.tv_sec, cb);
+  transportManager.route(nodeId, msg, timeoutValue.tv_sec, cb);
 
 	getMessageAllocator()->deallocateMessage(msg);
 

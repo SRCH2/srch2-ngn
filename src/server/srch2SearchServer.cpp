@@ -68,7 +68,7 @@ using std::string;
 
 pthread_t *threads = NULL;
 unsigned int MAX_THREADS = 0;
-srch2http::TransportManager *subway;
+srch2http::TransportManager *transportManager;
 // These are global variables that store host and port information for srch2 engine
 unsigned short globalDefaultPort;
 const char *globalHostName;
@@ -182,25 +182,25 @@ static const struct portMap_t {
 		{ srch2http::EndOfPortType, NULL },
 };
 
-struct CoreShardInfo {
+struct DPExternalCoreHandle {
 	srch2http::DPExternalRequestHandler& dpHandler;
 	srch2http::CoreInfo_t& core;
 	srch2http::CoreShardInfo info;
 
-	CoreShardInfo(srch2http::DPExternalRequestHandler &dp,
+	DPExternalCoreHandle(srch2http::DPExternalRequestHandler &dp,
 			srch2http::CoreInfo_t& core) : dpHandler(dp), core(core),
 			info(core.getCoreId(), core.getName()) {}
 
-	CoreShardInfo(const CoreShardInfo& toCpy) : dpHandler(toCpy.dpHandler),
+	DPExternalCoreHandle(const DPExternalCoreHandle& toCpy) : dpHandler(toCpy.dpHandler),
 			core(toCpy.core), info(toCpy.info) {}
-	CoreShardInfo& operator=(const CoreShardInfo& toCpy) {
-		new (this) CoreShardInfo(toCpy);
+	DPExternalCoreHandle& operator=(const DPExternalCoreHandle& toCpy) {
+		new (this) DPExternalCoreHandle(toCpy);
 		return *this;
 	}
 };
 
 static bool checkOperationPermission(evhttp_request *req, 
-		CoreShardInfo *coreShardInfo, srch2http::PortType_t portType) {
+		DPExternalCoreHandle *coreShardInfo, srch2http::PortType_t portType) {
 	if (portType >= srch2http::EndOfPortType) {
 		Logger::error("Illegal port type: %d", static_cast<int> (portType));
 		cb_notfound(req, NULL);
@@ -244,7 +244,7 @@ static bool checkOperationPermission(evhttp_request *req,
  * @param arg optional argument
  */
 static void cb_search(evhttp_request *req, void *arg) {
-	CoreShardInfo *const core = (CoreShardInfo*) arg;
+	DPExternalCoreHandle *const core = (DPExternalCoreHandle*) arg;
 
 	evhttp_add_header(req->output_headers, "Content-Type",
 			"application/json; charset=UTF-8");
@@ -267,7 +267,7 @@ static void cb_search(evhttp_request *req, void *arg) {
  * @param arg optional argument
  */
 static void cb_suggest(evhttp_request *req, void *arg) {
-	CoreShardInfo *const core = (CoreShardInfo*) arg;
+	DPExternalCoreHandle *const core = (DPExternalCoreHandle*) arg;
 
 	evhttp_add_header(req->output_headers, "Content-Type",
 			"application/json; charset=UTF-8");
@@ -290,7 +290,7 @@ static void cb_suggest(evhttp_request *req, void *arg) {
  * @param arg optional argument
  */
 static void cb_info(evhttp_request *req, void *arg) {
-	CoreShardInfo *const core = (CoreShardInfo*) arg;
+	DPExternalCoreHandle *const core = (DPExternalCoreHandle*) arg;
 	evhttp_add_header(req->output_headers, "Content-Type",
 			"application/json; charset=UTF-8");
 
@@ -312,7 +312,7 @@ static void cb_info(evhttp_request *req, void *arg) {
  * @param arg optional argument
  */
 static void cb_write(evhttp_request *req, void *arg) {
-	CoreShardInfo *const core = (CoreShardInfo*) arg;
+	DPExternalCoreHandle *const core = (DPExternalCoreHandle*) arg;
 	evhttp_add_header(req->output_headers, "Content-Type",
 			"application/json; charset=UTF-8");
 
@@ -329,7 +329,7 @@ static void cb_write(evhttp_request *req, void *arg) {
 }
 
 static void cb_update(evhttp_request *req, void *arg) {
-	CoreShardInfo *const core = (CoreShardInfo*) arg;
+	DPExternalCoreHandle *const core = (DPExternalCoreHandle*) arg;
 	evhttp_add_header(req->output_headers, "Content-Type",
 			"application/json; charset=UTF-8");
 
@@ -347,7 +347,7 @@ static void cb_update(evhttp_request *req, void *arg) {
 }
 
 static void cb_save(evhttp_request *req, void *arg) {
-	CoreShardInfo *const core = (CoreShardInfo*) arg;
+	DPExternalCoreHandle *const core = (DPExternalCoreHandle*) arg;
 	evhttp_add_header(req->output_headers, "Content-Type",
 			"application/json; charset=UTF-8");
 
@@ -364,7 +364,7 @@ static void cb_save(evhttp_request *req, void *arg) {
 }
 
 static void cb_export(evhttp_request *req, void *arg) {
-	CoreShardInfo *const core = (CoreShardInfo*) arg;
+	DPExternalCoreHandle *const core = (DPExternalCoreHandle*) arg;
 	evhttp_add_header(req->output_headers, "Content-Type",
 			"application/json; charset=UTF-8");
 
@@ -380,7 +380,7 @@ static void cb_export(evhttp_request *req, void *arg) {
  *  @param arg optional argument
  */
 static void cb_resetLogger(evhttp_request *req, void *arg) {
-	CoreShardInfo *const core = (CoreShardInfo*) arg;
+	DPExternalCoreHandle *const core = (DPExternalCoreHandle*) arg;
 	evhttp_add_header(req->output_headers, "Content-Type",
 			"application/json; charset=UTF-8");
 
@@ -541,11 +541,16 @@ void makeHttpRequest(){
  */
 
 static void killServer(int signal) {
-	Logger::console("Stopping server.");
-	for (int i = 0; i < MAX_THREADS; i++) {
-		pthread_cancel(threads[i]);
-	}
-	pthread_cancel(subway->getListeningThread());
+    Logger::console("Stopping server.");
+    for (int i = 0; i < MAX_THREADS; i++) {
+        pthread_cancel(threads[i]);
+    }
+    for(srch2http::RouteMap::iterator conn = 
+        transportManager->getRouteMap()->begin();
+        conn != transportManager->getRouteMap()->end(); ++conn) {
+      close(conn->second);
+    }
+    pthread_cancel(transportManager->getListeningThread());
 #ifdef __MACH__
 	/*
 	 *  In MacOS, pthread_cancel could not cancel a thread when the thread is executing kevent syscall
@@ -577,14 +582,14 @@ static int getHttpServerMetadata(ConfigManager *config,
 
 	// loop over cores and extract all ports to use
 	std::set<short> ports;
-	ports.insert(8080); // search
-	ports.insert(8081); // suggest
-	ports.insert(8082); // info
-	ports.insert(8083); // docs
-	ports.insert(8084); // update
-	ports.insert(8085); // save
-	ports.insert(8086); // export
-	ports.insert(8087); // reset
+	ports.insert(9080); // search
+	ports.insert(9081); // suggest
+	ports.insert(9082); // info
+	ports.insert(9083); // docs
+	ports.insert(9084); // update
+	ports.insert(9085); // save
+	ports.insert(9086); // export
+	ports.insert(9087); // reset
 //	for(ConfigManager::CoreInfoMap_t::iterator core =
 //			config->coreInfoIterateBegin();
 //			core != config->coreInfoIterateEnd(); ++core) { // TODO : we need to iterate on all nodes on this machine instead of iterating over cores
@@ -614,6 +619,8 @@ static int getHttpServerMetadata(ConfigManager *config,
 
 static int createHTTPServersAndAccompanyingThreads(int MAX_THREADS,
 		vector<struct event_base *> *evBases, vector<struct evhttp *> *evServers) {
+	// for each thread, we bind an evbase and http_server object
+	// TODO : do we need to deallocate these objects anywhere ?
 	threads = new pthread_t[MAX_THREADS];
 	for (int i = 0; i < MAX_THREADS; i++) {
 		struct event_base *evbase = event_base_new();
@@ -653,19 +660,47 @@ static const struct PortList_t {
 typedef unsigned CoreId;
 
 int setCallBacksonHTTPServer(ConfigManager *const config,
-		evhttp *const http_server, event_base *const evbase,
-		std::vector<CoreShardInfo>& cores) {
+		evhttp *const http_server,
+		std::vector<DPExternalCoreHandle>& dpExternalCoreHandles) {
 
 	// setup default core callbacks for queries without a core name
 	for (int j = 0; portList[j].path != NULL; j++) {
-		unsigned short port =
-				config->getDefaultCoreInfo()->getPort(portList[j].portType);
+		unsigned short port = 0;
+//				config->getDefaultCoreInfo()->getPort(portList[j].portType); // TODO : we must get port from currentNode
+
+		switch (portList[j].portType) {
+			case srch2http::SearchPort:
+				port = 9080;
+				break;
+			case srch2http::SuggestPort:
+				port = 9081;
+				break;
+			case srch2http::InfoPort:
+				port = 9082;
+				break;
+			case srch2http::DocsPort:
+				port = 9083;
+				break;
+			case srch2http::UpdatePort:
+				port = 9084;
+				break;
+			case srch2http::SavePort:
+				port = 9085;
+				break;
+			case srch2http::ExportPort:
+				port = 9086;
+				break;
+			case srch2http::ResetLoggerPort:
+				port = 9087;
+				break;
+		}
+
 		if (port == 1) port = globalDefaultPort;
 
 		srch2http::CoreInfo_t* defaultCore = config->getDefaultCoreInfo();
 
 		evhttp_set_cb(http_server, portList[j].path,
-				portList[j].callback, &cores[defaultCore->getCoreId()]);
+				portList[j].callback, &dpExternalCoreHandles[defaultCore->getCoreId()]);
 
 		Logger::debug("Routing port %d route %s to default core %s",
 				port, portList[j].path, defaultCore->getName().c_str());
@@ -682,14 +717,40 @@ int setCallBacksonHTTPServer(ConfigManager *const config,
 			for(unsigned int j = 0; portList[j].path != NULL; j++) {
 				string path = string("/") + coreName + string(portList[j].path);
 
-				unsigned short port = core->second->getPort(portList[j].portType);
-				if(port < 1) {
-					port = globalDefaultPort;
+//				unsigned short port = core->second->getPort(portList[j].portType);
+//				if(port < 1) {
+//					port = globalDefaultPort;
+//				} //TODO ports must be accessed from the current node
+				unsigned short port =0;
+				switch (portList[j].portType) {
+					case srch2http::SearchPort:
+						port = 9080;
+						break;
+					case srch2http::SuggestPort:
+						port = 9081;
+						break;
+					case srch2http::InfoPort:
+						port = 9082;
+						break;
+					case srch2http::DocsPort:
+						port = 9083;
+						break;
+					case srch2http::UpdatePort:
+						port = 9084;
+						break;
+					case srch2http::SavePort:
+						port = 9085;
+						break;
+					case srch2http::ExportPort:
+						port = 9086;
+						break;
+					case srch2http::ResetLoggerPort:
+						port = 9087;
+						break;
 				}
 
 				evhttp_set_cb(http_server, path.c_str(),
 						portList[j].callback, &core->second);
-
 				Logger::debug("Adding port %d route %s to core %s",
 						port, path.c_str(), coreName.c_str());
 			}
@@ -788,29 +849,39 @@ int main(int argc, char** argv) {
 
 	createHTTPServersAndAccompanyingThreads(MAX_THREADS, &evBases, &evServers);
 
-	std::vector<srch2http::Node>& map = *serverConf->getCluster()->getNodes();
+	std::vector<srch2http::Node>& nodes = *serverConf->getCluster()->getNodes();
 
 	// create Transport Module
-	subway = new srch2http::TransportManager(evBases, map);
-	srch2http::RoutingManager *routes =
-			new srch2http::RoutingManager(*serverConf, *subway);
-	srch2http::DPExternalRequestHandler *dpHandler =
-			new srch2http::DPExternalRequestHandler(serverConf, routes);
-	vector<struct CoreShardInfo> cores;
+	transportManager = new srch2http::TransportManager(evBases, nodes);
+	// create Routing Module
+	srch2http::RoutingManager *routesManager =
+			new srch2http::RoutingManager(*serverConf, *transportManager);
+	// share the internal message broker from RM to TM
+	transportManager->setInternalMessageBroker(routesManager->getInternalMessageBroker());
 
+	// create DP external
+	srch2http::DPExternalRequestHandler *dpExternal =
+			new srch2http::DPExternalRequestHandler(serverConf, routesManager);
+
+
+	// create DPExternal,core pairs
+	vector<DPExternalCoreHandle> dpExternalCoreHandles;
 	for(srch2http::ConfigManager::CoreInfoMap_t::iterator core =
 			serverConf->coreInfoIterateBegin();
 			core != serverConf->coreInfoIterateEnd(); ++core)  {
-		cores.push_back(CoreShardInfo(*dpHandler, *core->second));
+		dpExternalCoreHandles.push_back(DPExternalCoreHandle(*dpExternal, *core->second));
 	}
 
+	// temporary call, just creates core/shard objects and puts them in
+	// config file. TODO
 	generateShards(*serverConf);
 
+	// bound http_server and evbase and core objects together
 	for(int j=0; j < evServers.size(); ++j) {
-		setCallBacksonHTTPServer(serverConf, evServers[j], evBases[j], cores);
+		setCallBacksonHTTPServer(serverConf, evServers[j], dpExternalCoreHandles);
 		startListeningToRequest(evServers[j], globalPortSocketMap);
 
-		if (pthread_create(threads + j, NULL, dispatch, evBases[j]) != 0)
+		if (pthread_create(&threads[j], NULL, dispatch, evBases[j]) != 0)
 			return 255;
 	}
 
@@ -838,8 +909,8 @@ int main(int argc, char** argv) {
 		Logger::console("Thread = <%u> stopped", threads[i]);
 	}
 
-	pthread_join(subway->getListeningThread(), NULL);
-	Logger::console("Thread = <%u> stopped", subway->getListeningThread());
+	pthread_join(transportManager->getListeningThread(), NULL);
+	Logger::console("Thread = <%u> stopped", transportManager->getListeningThread());
 
 	delete[] threads;
 
