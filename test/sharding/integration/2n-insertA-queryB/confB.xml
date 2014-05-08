@@ -35,7 +35,7 @@
         <this-is-me> true </this-is-me>
         <listeningHostname> 127.0.0.1 </listeningHostname>
         <node-name> frozen </node-name>
-        <listeningPort> 8087 </listeningPort>
+        <listeningPort> 8077 </listeningPort>
         <node-master> false </node-master>
         <node-data> true </node-data>
         <srch2Home> ./ </srch2Home>
@@ -43,7 +43,7 @@
     </node>  
     <node>
         <listeningHostname> 127.0.0.1 </listeningHostname>
-        <listeningPort> 8088 </listeningPort>
+        <listeningPort> 8078 </listeningPort>
         <this-is-me> false </this-is-me>
 	<node-name> queen </node-name>
   </node>   
@@ -64,7 +64,7 @@
         Hostname and port number of the server. Make sure the port is open.
     -->
     <listeningHostname>127.0.0.1</listeningHostname>
-    <listeningPort>8088</listeningPort>
+    <listeningPort>8081</listeningPort>
      
         <cores defaultCoreName="core1">
         <core name="core1">

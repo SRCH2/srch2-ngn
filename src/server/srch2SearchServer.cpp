@@ -65,6 +65,14 @@ using std::string;
 #define MAX_SESSIONS 2
 #define SESSION_TTL 120
 
+
+pthread_t *threads = NULL;
+unsigned int MAX_THREADS = 0;
+srch2http::TransportManager *subway;
+// These are global variables that store host and port information for srch2 engine
+unsigned short globalDefaultPort;
+const char *globalHostName;
+
 // map from port numbers (shared among cores) to socket file descriptors
 // IETF RFC 6335 specifies port number range is 0 - 65535: http://tools.ietf.org/html/rfc6335#page-11
 typedef std::map<unsigned short /*portNumber*/, int /*fd*/> PortSocketMap_t;
@@ -201,6 +209,7 @@ static bool checkOperationPermission(evhttp_request *req,
 
   const srch2http::CoreInfo_t *const coreInfo = &coreShardInfo->core;
   unsigned short configuredPort = coreInfo->getPort(portType);
+  if(!configuredPort) configuredPort = globalDefaultPort;
   unsigned short arrivalPort = getLibeventHttpRequestPort(req);
 
   if(!arrivalPort) {
@@ -475,12 +484,6 @@ void parseProgramArguments(int argc, char** argv,
     }
 }
 
-pthread_t *threads = NULL;
-unsigned int MAX_THREADS = 0;
-
-// These are global variables that store host and port information for srch2 engine
-unsigned short globalDefaultPort;
-const char *globalHostName;
 
 #ifdef __MACH__
 /*
@@ -534,6 +537,7 @@ static void killServer(int signal) {
     for (int i = 0; i < MAX_THREADS; i++) {
         pthread_cancel(threads[i]);
     }
+    pthread_cancel(subway->getListeningThread());
 #ifdef __MACH__
     /*
      *  In MacOS, pthread_cancel could not cancel a thread when the thread is executing kevent syscall
@@ -547,7 +551,6 @@ static void killServer(int signal) {
 
 static int getHttpServerMetadata(ConfigManager *config, 
     PortSocketMap_t *globalPortSocketMap) {
-  return 0;
   // 1). event initialization 
   globalDefaultPort = atoi(config->getHTTPServerListeningPort().c_str());
   globalHostName = config->getHTTPServerListeningHostname().c_str(); 
@@ -587,9 +590,10 @@ static int getHttpServerMetadata(ConfigManager *config,
     }
     (*globalPortSocketMap)[*port] = socketFd;
   }
+  return 0;
 }
 
-static int createHTTPServersAndAccompanyingThreads( 
+static int createHTTPServersAndAccompanyingThreads(int MAX_THREADS,
     vector<struct event_base *> *evBases, vector<struct evhttp *> *evServers) {
   threads = new pthread_t[MAX_THREADS];
   for (int i = 0; i < MAX_THREADS; i++) {
@@ -607,6 +611,7 @@ static int createHTTPServersAndAccompanyingThreads(
       }
    evServers->push_back(http_server);
   }
+  return 0;
 }
 
 
@@ -671,7 +676,6 @@ int setCallBacksonHTTPServer(ConfigManager *const config,
        }
      }
   }
-
 
  return 0;
 }
@@ -763,13 +767,12 @@ int main(int argc, char** argv) {
 
     MAX_THREADS = serverConf->getNumberOfThreads();
 
-    createHTTPServersAndAccompanyingThreads(&evBases, &evServers);
+    createHTTPServersAndAccompanyingThreads(MAX_THREADS, &evBases, &evServers);
 
     std::vector<srch2http::Node>& map = *serverConf->getCluster()->getNodes();
     
     // create Transport Module
-    srch2http::TransportManager *subway = 
-      new srch2http::TransportManager(evBases, map);
+    subway = new srch2http::TransportManager(evBases, map);
     srch2http::RoutingManager *routes = 
       new srch2http::RoutingManager(*serverConf, *subway);
     srch2http::DPExternalRequestHandler *dpHandler = 
@@ -813,6 +816,9 @@ int main(int argc, char** argv) {
         pthread_join(threads[i], NULL);
         Logger::console("Thread = <%u> stopped", threads[i]);
     }
+
+    pthread_join(subway->getListeningThread(), NULL);
+    Logger::console("Thread = <%u> stopped", subway->getListeningThread());
 
     delete[] threads;
 
