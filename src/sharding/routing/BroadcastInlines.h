@@ -23,14 +23,14 @@ RoutingManager::broadcast(RequestType& requestObj, CoreShardInfo &coreInfo) {
 
 	// create the message from the request object
 	Message* msg = (Message*)
-    ((char*) requestObj.serialize(getMessageAllocator()) - sizeof(Message));
+    		((char*) requestObj.serialize(getMessageAllocator()) - sizeof(Message));
 
 
 	for(UnicastIterator unicast = broadcastResolver.begin();
 			unicast != broadcastResolver.end(); ++unicast) {
 		msg->shard = unicast->shardId;
-    msg->mask |= INTERNAL_MASK;
-    msg->type = RequestType::messageKind();
+		msg->mask |= INTERNAL_MASK;
+		msg->type = RequestType::messageKind();
 
 		transportManager.route(unicast->nodeId, msg, 0);
 	}
@@ -46,9 +46,9 @@ RoutingManager::broadcast(RequestType& requestObj, CoreShardInfo &coreInfo) {
  */
 template<typename RequestType> inline bool 
 RoutingManager::broadcast_wait_for_all_confirmation(RequestType& requestObject,
-			bool& timedout, timeval timeoutValue , CoreShardInfo & coreInfo){
-//TODO
-  return false;
+		bool& timedout, timeval timeoutValue , CoreShardInfo & coreInfo){
+	//TODO
+	return false;
 }
 /*
  *  Transmits a given message to all shards. Upon receipt of a response from
@@ -57,8 +57,8 @@ RoutingManager::broadcast_wait_for_all_confirmation(RequestType& requestObject,
  */
 template<typename RequestType , typename ResponseType> inline
 void RoutingManager::broadcast_w_cb(RequestType& requestObj, 
-      ResultAggregatorAndPrint<RequestType , ResponseType> * aggregator,
-      CoreShardInfo & coreInfo){
+		ResultAggregatorAndPrint<RequestType , ResponseType> * aggregator,
+		CoreShardInfo & coreInfo){
 
 	/*
 	 * Multiplexer reads coreInfo object to understand which nodes we need to send this broadcast to
@@ -71,21 +71,21 @@ void RoutingManager::broadcast_w_cb(RequestType& requestObj,
 	 * Here, we register a method around aggregator callback into TM.
 	 */
 	CallbackReference cb = transportManager.prepareCallback(&requestObj,
-												new RMCallback<RequestType, ResponseType>(*aggregator),
-												ResponseType::messageKind(),
-												true,
-												broadcastResolver.size()-1); //hack for missing local
+			new RMCallback<RequestType, ResponseType>(*aggregator),
+			ResponseType::messageKind(),
+			true,
+			broadcastResolver.size()-1); //hack for missing local
 
-	// create the message from the request object
+			// create the message from the request object
 	Message* msg = (Message*)
-    		((char*) requestObj.serialize(getMessageAllocator()) - sizeof(Message));
+    				((char*) requestObj.serialize(getMessageAllocator()) - sizeof(Message));
 
 
 	for(UnicastIterator unicast = broadcastResolver.begin();
 			unicast != broadcastResolver.end(); ++unicast) {
 		msg->shard = unicast->shardId;
-    msg->mask |= INTERNAL_MASK;
-    msg->type = RequestType::messageKind();
+		msg->mask |= INTERNAL_MASK;
+		msg->type = RequestType::messageKind();
 
 		transportManager.route(unicast->nodeId, msg, 0, cb);
 	}
@@ -101,8 +101,8 @@ void RoutingManager::broadcast_w_cb(RequestType& requestObj,
  */
 template<typename RequestType , typename ResponseType> inline
 void RoutingManager::broadcast_wait_for_all_w_cb(RequestType & requestObj,
-			ResultAggregatorAndPrint<RequestType , ResponseType> *aggregator, 
-      CoreShardInfo & coreInfo) {
+		ResultAggregatorAndPrint<RequestType , ResponseType> *aggregator,
+		CoreShardInfo & coreInfo) {
 
 	/*
 	 * Multiplexer reads coreInfo object to understand which nodes we need to send this broadcast to
@@ -115,21 +115,21 @@ void RoutingManager::broadcast_wait_for_all_w_cb(RequestType & requestObj,
 	 * Here, we register a method around aggregator callback into TM.
 	 */
 	CallbackReference cb = transportManager.prepareCallback(&requestObj,
-												new RMCallback<RequestType, ResponseType>(*aggregator),
-												ResponseType::messageKind(),
-												false,
-												broadcastResolver.size()-1); //hack for missing local
+			new RMCallback<RequestType, ResponseType>(*aggregator),
+			ResponseType::messageKind(),
+			false,
+			broadcastResolver.size()-1); //hack for missing local
 
-	// create the message from the request object
+			// create the message from the request object
 	Message* msg = (Message*)
-    		((char*) requestObj.serialize(getMessageAllocator()) - sizeof(Message));
+    				((char*) requestObj.serialize(getMessageAllocator()) - sizeof(Message));
 
 
 	for(UnicastIterator unicast = broadcastResolver.begin();
 			unicast != broadcastResolver.end(); ++unicast) {
 		msg->shard = unicast->shardId;
-    msg->mask |= INTERNAL_MASK;
-    msg->type = RequestType::messageKind();
+		msg->mask |= INTERNAL_MASK;
+		msg->type = RequestType::messageKind();
 
 		transportManager.route(unicast->nodeId, msg, 0, cb);
 	}
@@ -147,8 +147,8 @@ void RoutingManager::broadcast_wait_for_all_w_cb(RequestType & requestObj,
  */
 template<typename RequestType , typename ResponseType> inline
 void RoutingManager::broadcast_w_cb_n_timeout(RequestType& requestObj,
-      ResultAggregatorAndPrint<RequestType , ResponseType> * aggregator,
-			timeval timeoutValue , CoreShardInfo & coreInfo ){
+		ResultAggregatorAndPrint<RequestType , ResponseType> * aggregator,
+		timeval timeoutValue , CoreShardInfo & coreInfo ){
 
 	/*
 	 * Multiplexer reads coreInfo object to understand which nodes we need to send this broadcast to
@@ -161,21 +161,21 @@ void RoutingManager::broadcast_w_cb_n_timeout(RequestType& requestObj,
 	 * Here, we register a method around aggregator callback into TM.
 	 */
 	CallbackReference cb = transportManager.prepareCallback(&requestObj,
-												new RMCallback<RequestType, ResponseType>(*aggregator),
-												ResponseType::messageKind(),
-												true,
-												broadcastResolver.size()-1); //hack for missing local
+			new RMCallback<RequestType, ResponseType>(*aggregator),
+			ResponseType::messageKind(),
+			true,
+			broadcastResolver.size()-1); //hack for missing local
 
-	// create the message from the request object
+			// create the message from the request object
 	Message* msg = (Message*)
-    		((char*) requestObj.serialize(getMessageAllocator()) - sizeof(Message));
+    				((char*) requestObj.serialize(getMessageAllocator()) - sizeof(Message));
 
 
 	for(UnicastIterator unicast = broadcastResolver.begin();
 			unicast != broadcastResolver.end(); ++unicast) {
 		msg->shard = unicast->shardId;
-    msg->mask |= INTERNAL_MASK;
-    msg->type = RequestType::messageKind();
+		msg->mask |= INTERNAL_MASK;
+		msg->type = RequestType::messageKind();
 
 		transportManager.route(unicast->nodeId, msg, timeoutValue.tv_sec, cb);
 	}
@@ -187,8 +187,8 @@ void RoutingManager::broadcast_w_cb_n_timeout(RequestType& requestObj,
 
 template<typename RequestType , typename ResponseType> inline void
 RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType& requestObj,
-			ResultAggregatorAndPrint<RequestType , ResponseType> * aggregator, 
-      timeval timeoutValue, CoreShardInfo & coreInfo){
+		ResultAggregatorAndPrint<RequestType , ResponseType> * aggregator,
+		timeval timeoutValue, CoreShardInfo & coreInfo){
 
 	/*
 	 * Multiplexer reads coreInfo object to understand which nodes we need to send this broadcast to
@@ -201,21 +201,21 @@ RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType& requestObj,
 	 * Here, we register a method around aggregator callback into TM.
 	 */
 	CallbackReference cb = transportManager.prepareCallback(&requestObj,
-												new RMCallback<RequestType, ResponseType>(*aggregator),
-												ResponseType::messageKind(),
-												true,
-												broadcastResolver.size()-1); //hack for missing local
+			new RMCallback<RequestType, ResponseType>(*aggregator),
+			ResponseType::messageKind(),
+			true,
+			broadcastResolver.size()-1); //hack for missing local
 
-	// create the message from the request object
+			// create the message from the request object
 	Message* msg = (Message*)
-    		((char*) requestObj.serialize(getMessageAllocator()) - sizeof(Message));
+    				((char*) requestObj.serialize(getMessageAllocator()) - sizeof(Message));
 
 
 	for(UnicastIterator unicast = broadcastResolver.begin();
 			unicast != broadcastResolver.end(); ++unicast) {
 		msg->shard = unicast->shardId;
-    msg->mask |= INTERNAL_MASK;
-    msg->type = RequestType::messageKind();
+		msg->mask |= INTERNAL_MASK;
+		msg->type = RequestType::messageKind();
 
 		transportManager.route(unicast->nodeId, msg, timeoutValue.tv_sec, cb);
 	}
@@ -227,23 +227,23 @@ RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType& requestObj,
 
 
 /*
-*  Transmits a given message to a particular shard in a non-blocking fashion
-*/
+ *  Transmits a given message to a particular shard in a non-blocking fashion
+ */
 template<typename RequestType> inline void 
 RoutingManager::route(RequestType& requestObj, ShardId & shardInfo) {
-  unsigned nodeId = 
-    configurationManager.getCluster()->shardMap[shardInfo].getNodeId();
+	unsigned nodeId =
+			configurationManager.getCluster()->shardMap[shardInfo].getNodeId();
 
 	// create the message from the request object
 	Message* msg = (Message*)
-    		((char*) requestObj.serialize(getMessageAllocator()) - sizeof(Message));
+    				((char*) requestObj.serialize(getMessageAllocator()) - sizeof(Message));
 
 
-  msg->shard = shardInfo;
-  msg->mask |= INTERNAL_MASK;
-  msg->type = RequestType::messageKind();
+	msg->shard = shardInfo;
+	msg->mask |= INTERNAL_MASK;
+	msg->type = RequestType::messageKind();
 
-  transportManager.route(nodeId, msg);
+	transportManager.route(nodeId, msg);
 
 	getMessageAllocator()->deallocateMessage(msg);
 }
@@ -255,8 +255,8 @@ RoutingManager::route(RequestType& requestObj, ShardId & shardInfo) {
  */
 template<typename RequestType> inline bool
 RoutingManager::route_wait_for_confirmation(RequestType& requestObj,
-    bool& timedout, timeval timeoutValue , ShardId shardInfo){
-  return false;
+		bool& timedout, timeval timeoutValue , ShardId shardInfo){
+	return false;
 }
 
 /*
@@ -266,30 +266,30 @@ RoutingManager::route_wait_for_confirmation(RequestType& requestObj,
  */
 template<typename RequestType , typename ResponseType> inline void 
 RoutingManager::route_w_cb(RequestType& requestObj,
-    ResultAggregatorAndPrint<RequestType , ResponseType> * aggregator, 
-    ShardId shardInfo) {
-  unsigned nodeId = 
-    configurationManager.getCluster()->shardMap[shardInfo].getNodeId();
+		ResultAggregatorAndPrint<RequestType , ResponseType> * aggregator,
+		ShardId shardInfo) {
+	unsigned nodeId =
+			configurationManager.getCluster()->shardMap[shardInfo].getNodeId();
 
 	/*
 	 * We need to register callback functions to TM so that it calls them upon receiving a message
 	 * Here, we register a method around aggregator callback into TM.
 	 */
 	CallbackReference cb = transportManager.prepareCallback(&requestObj,
-												new RMCallback<RequestType, ResponseType>(*aggregator),
-												ResponseType::messageKind());
+			new RMCallback<RequestType, ResponseType>(*aggregator),
+			ResponseType::messageKind());
 
 
 	// create the message from the request object
 	Message* msg = (Message*)
-    		((char*) requestObj.serialize(getMessageAllocator()) - sizeof(Message));
+    				((char*) requestObj.serialize(getMessageAllocator()) - sizeof(Message));
 
 
-  msg->shard = shardInfo;
-  msg->mask |= INTERNAL_MASK;
-  msg->type = RequestType::messageKind();
+	msg->shard = shardInfo;
+	msg->mask |= INTERNAL_MASK;
+	msg->type = RequestType::messageKind();
 
-  transportManager.route(nodeId, msg, 0, cb);
+	transportManager.route(nodeId, msg, 0, cb);
 
 	getMessageAllocator()->deallocateMessage(msg);
 
@@ -304,11 +304,11 @@ RoutingManager::route_w_cb(RequestType& requestObj,
  */
 template<typename RequestType , typename ResponseType> inline void 
 RoutingManager::route_w_cb_n_timeout(RequestType & requestObj,
-    ResultAggregatorAndPrint<RequestType , ResponseType> * aggregator,
-			timeval timeoutValue, ShardId shardInfo) {
+		ResultAggregatorAndPrint<RequestType , ResponseType> * aggregator,
+		timeval timeoutValue, ShardId shardInfo) {
 
-  unsigned nodeId = 
-    configurationManager.getCluster()->shardMap[shardInfo].getNodeId();
+	unsigned nodeId =
+			configurationManager.getCluster()->shardMap[shardInfo].getNodeId();
 
 	/*
 	 * We need to register callback functions to TM so that it calls them upon receiving a message
@@ -317,20 +317,20 @@ RoutingManager::route_w_cb_n_timeout(RequestType & requestObj,
 	 * and the number of shards to wait for is 1 by default
 	 */
 	CallbackReference cb = transportManager.prepareCallback(&requestObj,
-												new RMCallback<RequestType, ResponseType>(*aggregator),
-												RequestType::messageKind());
+			new RMCallback<RequestType, ResponseType>(*aggregator),
+			RequestType::messageKind());
 
 
 	// create the message from the request object
 	Message* msg = (Message*)
-    		((char*) requestObj.serialize(getMessageAllocator()) - sizeof(Message));
+    				((char*) requestObj.serialize(getMessageAllocator()) - sizeof(Message));
 
 
-  msg->shard = shardInfo;
-  msg->mask |= INTERNAL_MASK;
-  msg->type = RequestType::messageKind();
+	msg->shard = shardInfo;
+	msg->mask |= INTERNAL_MASK;
+	msg->type = RequestType::messageKind();
 
-  transportManager.route(nodeId, msg, timeoutValue.tv_sec, cb);
+	transportManager.route(nodeId, msg, timeoutValue.tv_sec, cb);
 
 	getMessageAllocator()->deallocateMessage(msg);
 
