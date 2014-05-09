@@ -37,6 +37,10 @@ public:
 	void* getOriginalSerializableObject() const ;
 	std::vector<Message*>& getReply();
 	int& getWaitingOn();
+	~RegisteredCallback(){
+	    delete callbackObject;
+//	    delete originalSerializableObject;
+	}
 
 private:
 

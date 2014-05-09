@@ -15,27 +15,27 @@ namespace httpwrapper {
  */
 template<typename RequestType> inline void
 RoutingManager::broadcast(RequestType& requestObj, CoreShardInfo &coreInfo) {
-	/*
-	 * Multiplexer reads coreInfo object to understand which nodes we need to send this broadcast to
-	 */
-	Multiplexer broadcastResolver(configurationManager, coreInfo);
+    /*
+     * Multiplexer reads coreInfo object to understand which nodes we need to send this broadcast to
+     */
+    Multiplexer broadcastResolver(configurationManager, coreInfo);
 
 
-	// create the message from the request object
-	Message* msg = (Message*)
-    		((char*) requestObj.serialize(getMessageAllocator()) - sizeof(Message));
+    // create the message from the request object
+    Message* msg = (Message*)
+            ((char*) requestObj.serialize(getMessageAllocator()) - sizeof(Message));
 
 
-	for(UnicastIterator unicast = broadcastResolver.begin();
-			unicast != broadcastResolver.end(); ++unicast) {
-		msg->shard = unicast->shardId;
-		msg->mask |= INTERNAL_MASK;
-		msg->type = RequestType::messageKind();
+    for(UnicastIterator unicast = broadcastResolver.begin();
+            unicast != broadcastResolver.end(); ++unicast) {
+        msg->shard = unicast->shardId;
+        msg->mask |= INTERNAL_MASK;
+        msg->type = RequestType::messageKind();
 
-		transportManager.route(unicast->nodeId, msg, 0);
-	}
+        transportManager.route(unicast->nodeId, msg, 0);
+    }
 
-	getMessageAllocator()->deallocateMessage(msg);
+    getMessageAllocator()->deallocateMessage(msg);
 }
 
 
@@ -60,10 +60,10 @@ void RoutingManager::broadcast_w_cb(RequestType& requestObj,
 		ResultAggregatorAndPrint<RequestType , ResponseType> * aggregator,
 		CoreShardInfo & coreInfo){
 
-	/*
-	 * Multiplexer reads coreInfo object to understand which nodes we need to send this broadcast to
-	 */
-	Multiplexer broadcastResolver(configurationManager, coreInfo);
+    /*
+     * Multiplexer reads coreInfo object to understand which nodes we need to send this broadcast to
+     */
+    Multiplexer broadcastResolver(configurationManager, coreInfo);
 
 
 	/*
@@ -87,10 +87,10 @@ void RoutingManager::broadcast_w_cb(RequestType& requestObj,
 		msg->mask |= INTERNAL_MASK;
 		msg->type = RequestType::messageKind();
 
-		transportManager.route(unicast->nodeId, msg, 0, cb);
-	}
+        transportManager.route(unicast->nodeId, msg, 0, cb);
+    }
 
-	getMessageAllocator()->deallocateMessage(msg);
+    getMessageAllocator()->deallocateMessage(msg);
 
 }
 
@@ -103,11 +103,10 @@ template<typename RequestType , typename ResponseType> inline
 void RoutingManager::broadcast_wait_for_all_w_cb(RequestType & requestObj,
 		ResultAggregatorAndPrint<RequestType , ResponseType> *aggregator,
 		CoreShardInfo & coreInfo) {
-
-	/*
-	 * Multiplexer reads coreInfo object to understand which nodes we need to send this broadcast to
-	 */
-	Multiplexer broadcastResolver(configurationManager, coreInfo);
+    /*
+     * Multiplexer reads coreInfo object to understand which nodes we need to send this broadcast to
+     */
+    Multiplexer broadcastResolver(configurationManager, coreInfo);
 
 
 	/*
@@ -131,10 +130,10 @@ void RoutingManager::broadcast_wait_for_all_w_cb(RequestType & requestObj,
 		msg->mask |= INTERNAL_MASK;
 		msg->type = RequestType::messageKind();
 
-		transportManager.route(unicast->nodeId, msg, 0, cb);
-	}
+        transportManager.route(unicast->nodeId, msg, 0, cb);
+    }
 
-	getMessageAllocator()->deallocateMessage(msg);
+    getMessageAllocator()->deallocateMessage(msg);
 }
 
 
@@ -150,10 +149,10 @@ void RoutingManager::broadcast_w_cb_n_timeout(RequestType& requestObj,
 		ResultAggregatorAndPrint<RequestType , ResponseType> * aggregator,
 		timeval timeoutValue , CoreShardInfo & coreInfo ){
 
-	/*
-	 * Multiplexer reads coreInfo object to understand which nodes we need to send this broadcast to
-	 */
-	Multiplexer broadcastResolver(configurationManager, coreInfo);
+    /*
+     * Multiplexer reads coreInfo object to understand which nodes we need to send this broadcast to
+     */
+    Multiplexer broadcastResolver(configurationManager, coreInfo);
 
 
 	/*
@@ -177,10 +176,10 @@ void RoutingManager::broadcast_w_cb_n_timeout(RequestType& requestObj,
 		msg->mask |= INTERNAL_MASK;
 		msg->type = RequestType::messageKind();
 
-		transportManager.route(unicast->nodeId, msg, timeoutValue.tv_sec, cb);
-	}
+        transportManager.route(unicast->nodeId, msg, timeoutValue.tv_sec, cb);
+    }
 
-	getMessageAllocator()->deallocateMessage(msg);
+    getMessageAllocator()->deallocateMessage(msg);
 
 }
 
@@ -190,10 +189,10 @@ RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType& requestObj,
 		ResultAggregatorAndPrint<RequestType , ResponseType> * aggregator,
 		timeval timeoutValue, CoreShardInfo & coreInfo){
 
-	/*
-	 * Multiplexer reads coreInfo object to understand which nodes we need to send this broadcast to
-	 */
-	Multiplexer broadcastResolver(configurationManager, coreInfo);
+    /*
+     * Multiplexer reads coreInfo object to understand which nodes we need to send this broadcast to
+     */
+    Multiplexer broadcastResolver(configurationManager, coreInfo);
 
 
 	/*
@@ -217,10 +216,10 @@ RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType& requestObj,
 		msg->mask |= INTERNAL_MASK;
 		msg->type = RequestType::messageKind();
 
-		transportManager.route(unicast->nodeId, msg, timeoutValue.tv_sec, cb);
-	}
+        transportManager.route(unicast->nodeId, msg, timeoutValue.tv_sec, cb);
+    }
 
-	getMessageAllocator()->deallocateMessage(msg);
+    getMessageAllocator()->deallocateMessage(msg);
 
 }
 
@@ -245,7 +244,7 @@ RoutingManager::route(RequestType& requestObj, ShardId & shardInfo) {
 
 	transportManager.route(nodeId, msg);
 
-	getMessageAllocator()->deallocateMessage(msg);
+    getMessageAllocator()->deallocateMessage(msg);
 }
 
 /*
@@ -291,7 +290,7 @@ RoutingManager::route_w_cb(RequestType& requestObj,
 
 	transportManager.route(nodeId, msg, 0, cb);
 
-	getMessageAllocator()->deallocateMessage(msg);
+    getMessageAllocator()->deallocateMessage(msg);
 
 }
 
@@ -332,7 +331,7 @@ RoutingManager::route_w_cb_n_timeout(RequestType & requestObj,
 
 	transportManager.route(nodeId, msg, timeoutValue.tv_sec, cb);
 
-	getMessageAllocator()->deallocateMessage(msg);
+    getMessageAllocator()->deallocateMessage(msg);
 
 
 }

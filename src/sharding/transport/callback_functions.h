@@ -23,38 +23,38 @@ struct TransportCallback {
  * Each message starts with a special value called magic number
  */
 bool findNextMagicNumberAndReadMessageHeader(Message *const msg,  int fd) {
-	while(true) {
-		int readRtn = read(fd, (void*) msg, sizeof(Message));
+    while(true) {
+        int readRtn = read(fd, (void*) msg, sizeof(Message));
 
-		if(readRtn == -1) {
-			if(errno == EAGAIN || errno == EWOULDBLOCK) return false;
+        if(readRtn == -1) {
+            if(errno == EAGAIN || errno == EWOULDBLOCK) return false;
 
-			//v1: handle  error
-			return false;
-		}
+            //v1: handle  error
+            return false;
+        }
 
-		if(readRtn < sizeof(Message)) {
-			//v1: broken message boundary == seriously bad
-			continue;
-		}
+        if(readRtn < sizeof(Message)) {
+            //v1: broken message boundary == seriously bad
+            continue;
+        }
 
-		//TODO:checkMagicNumbers
+        //TODO:checkMagicNumbers
 
-		return true;
-	}
+        return true;
+    }
 
-	//ASSERT(false);
-	return false;
+    //ASSERT(false);
+    return false;
 }
 
 Message* readRestOfMessage(MessageAllocator& messageAllocator,
-		int fd, Message *const msgHeader, int *readCount) {
-	Message *msg= messageAllocator.allocateMessage(msgHeader->bodySize);
-	*readCount= read(fd, msg->buffer, msgHeader->bodySize);
+        int fd, Message *const msgHeader, int *readCount) {
+    Message *msg= messageAllocator.allocateMessage(msgHeader->bodySize);
+    *readCount= read(fd, msg->buffer, msgHeader->bodySize);
 
-	memcpy(msg, msgHeader, sizeof(Message));
+    memcpy(msg, msgHeader, sizeof(Message));
 
-	return msg;
+    return msg;
 }
 
 bool readPartialMessage(int fd, MessageBuffer& buffer) {
@@ -71,7 +71,7 @@ bool readPartialMessage(int fd, MessageBuffer& buffer) {
 
 	buffer.readCount -= readReturnValue;
 
-	return (readReturnValue == toRead);
+    return (readReturnValue == toRead);
 }
 
 /*
@@ -143,7 +143,7 @@ void cb_recieveMessage(int fd, short eventType, void *arg) {
 		tm->getSmHandler()->notify(msg);
 	}
 
-	tm->getMessageAllocator()->deallocate(msg);
+    tm->getMessageAllocator()->deallocate(msg);
 }
 
 #endif /* __TRANSPORT_CALLBACK_FUNCTIONS_H__ */
