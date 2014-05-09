@@ -281,42 +281,8 @@ class Node {
 
   bool thisIsMe; // temporary for V0
 
-  //unsigned short getPort(PortType_t portType) const;
-  //void setPort(PortType_t portType, unsigned short portNumber);
-  unsigned short getPort(PortType_t portType) const
-  {
-      if (static_cast<unsigned int> (portType) >= ports.size()) {
-          return 0;
-      }
-
-      unsigned short portNumber = ports[portType];
-      return portNumber;
-  }
-
-  void setPort(PortType_t portType, unsigned short portNumber)
-  {
-      if (static_cast<unsigned int> (portType) >= ports.size()) {
-          ports.resize(static_cast<unsigned int> (EndOfPortType), 0);
-      }
-
-      switch (portType) {
-      case SearchPort:
-      case SuggestPort:
-      case InfoPort:
-      case DocsPort:
-      case UpdatePort:
-      case SavePort:
-      case ExportPort:
-      case ResetLoggerPort:
-          ports[portType] = portNumber;
-          break;
-
-      default:
-          Logger::error("Unrecognized HTTP listening port type: %d", static_cast<int> (portType));
-          break;
-      }
-  }
-
+  unsigned short getPort(PortType_t portType) const;
+  void setPort(PortType_t portType, unsigned short portNumber);
 
   // TODO (for Surendra): refine this iterator
   // const Node& operator = (const Node& node);

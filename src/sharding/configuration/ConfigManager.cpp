@@ -2934,6 +2934,40 @@ void CoreInfo_t::setPort(PortType_t portType, unsigned short portNumber)
     }
 }
 
+unsigned short Node::getPort(PortType_t portType) const
+{
+      if (static_cast<unsigned int> (portType) >= ports.size()) {
+          return 0;
+      }
+
+      unsigned short portNumber = ports[portType];
+      return portNumber;
+}
+
+void Node::setPort(PortType_t portType, unsigned short portNumber)
+{
+      if (static_cast<unsigned int> (portType) >= ports.size()) {
+          ports.resize(static_cast<unsigned int> (EndOfPortType), 0);
+      }
+
+      switch (portType) {
+      case SearchPort:
+      case SuggestPort:
+      case InfoPort:
+      case DocsPort:
+      case UpdatePort:
+      case SavePort:
+      case ExportPort:
+      case ResetLoggerPort:
+          ports[portType] = portNumber;
+          break;
+
+      default:
+          Logger::error("Unrecognized HTTP listening port type: %d", static_cast<int> (portType));
+          break;
+      }
+}
+
 
 
 // JUST FOR Wrapper TEST
