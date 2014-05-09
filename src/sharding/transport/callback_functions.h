@@ -131,6 +131,7 @@ void cb_recieveMessage(int fd, short eventType, void *arg) {
 
 	if(msg->isReply()) {
 		tm->getMsgs()->resolve(msg);
+		return;
 	} else if(msg->isInternal()) {
 		if(Message* reply = tm->getInternalTrampoline()->notify(msg)) {
 			reply->initial_time = msg->time;
