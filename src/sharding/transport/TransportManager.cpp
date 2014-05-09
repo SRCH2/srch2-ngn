@@ -36,7 +36,7 @@ void* startListening(void* arg) {
 		exit(255);
 	}
 
-	while(1) {
+	while(!map->isTotallyConnected()) {
 		struct sockaddr_in addr;
 		socklen_t addrlen = sizeof(sockaddr_in);
 		memset(&addr, 0,sizeof(sockaddr_in));
@@ -46,7 +46,8 @@ void* startListening(void* arg) {
 		}
 	}
 
-	return NULL;
+        close(fd);
+        Logger::console("Connected");
 }
 
 #include "callback_functions.h"
@@ -77,7 +78,7 @@ TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
 	for(RouteMap::iterator route = routeMap.begin(); route != routeMap.end(); ++route) {
 		for(EventBases::iterator base = bases.begin(); base != bases.end(); ++base) {
 			struct event* ev = event_new(*base, route->second,
-					EV_READ|EV_PERSIST, cb_recieveMessage, this);
+					EV_READ|EV_PERSIST, cb_recieveMessage, new TransportCallback(this, &route->second));
 			event_add(ev, NULL);
 		}
 	}
@@ -99,7 +100,7 @@ MessageTime_t TransportManager::route(NodeId node, Message *msg,
 	int flag = MSG_NOSIGNAL;
 #endif
 
-	send(fd, msg, msg->bodySize + sizeof(Message), flag);
+	send(conn.fd, msg, msg->bodySize + sizeof(Message), flag);
 	//TODO: errors?
 	return msg->time;
 }
