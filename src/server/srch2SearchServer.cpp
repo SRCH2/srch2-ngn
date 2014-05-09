@@ -548,9 +548,9 @@ static void killServer(int signal) {
     for(srch2http::RouteMap::iterator conn = 
         transportManager->getRouteMap()->begin();
         conn != transportManager->getRouteMap()->end(); ++conn) {
-      close(conn->second);
+      close(conn->second.fd);
     }
-    close(transportManager->getRouteMap()->getInternalConnection());
+//    close(transportManager->getRouteMap()->getInternalConnection());
     pthread_cancel(transportManager->getListeningThread());
 #ifdef __MACH__
 	/*

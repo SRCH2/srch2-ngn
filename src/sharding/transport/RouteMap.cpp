@@ -181,7 +181,7 @@ void RouteMap::acceptRoute(int fd, struct sockaddr_in addr) {
 
 void RouteMap::addNodeConnection(NodeId addr, int fd) {
 	//look into routeMap thread safety
-	nodeConnectionMap[addr] = fd;
+	nodeConnectionMap[addr] = Connection(fd);
 }
 
 bool RouteMap::isTotallyConnected() const {
@@ -198,12 +198,6 @@ Connection RouteMap::getConnection(NodeId nodeId) {
 	return nodeConnectionMap[nodeId];
 }
 
-Connection RouteMap::getInternalConnection() const{
-	return internalConnection;
-}
-void RouteMap::setInternalConnection(Connection con){
-	this->internalConnection = con;
-}
 
 void RouteMap::setCurrentNode(Node& currentNode) { this->currentNode = &currentNode; }
 const Node& RouteMap::getCurrentNode() const { return *currentNode; }
