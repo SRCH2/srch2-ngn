@@ -38,7 +38,7 @@ namespace httpwrapper {
 // *MUST* be lowercase
 
 const char* const ConfigManager::nodeListeningHostNameTag = "listeninghostname";
-const char* const ConfigManager::nodeListeningPortTag = "listeningport";
+const char* const ConfigManager::nodeListeningPortTag = "internalcommunicationport";
 const char* const ConfigManager::nodeCurrentTag = "this-is-me";
 const char* const ConfigManager::nodeNameTag = "node-name";
 const char* const ConfigManager::nodeMasterTag = "node-master";
@@ -1957,21 +1957,21 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
 void ConfigManager::parseNode(std::vector<Node>* nodes, xml_node& nodeTag, std::stringstream &parseWarnings, std::stringstream &parseError, bool configSuccess) {
 
 	// map of port type enums to strings to simplify code
-			    struct portNameMap_t {
-			        enum PortType_t portType;
-			        const char *portName;
-			    };
-			    static portNameMap_t portNameMap[] = {
-			        { SearchPort, searchPortString },
-			        { SuggestPort, suggestPortString },
-			        { InfoPort, infoPortString },
-			        { DocsPort, docsPortString },
-			        { UpdatePort, updatePortString },
-			        { SavePort, savePortString },
-			        { ExportPort, exportPortString },
-			        { ResetLoggerPort, resetLoggerPortString },
-			        { EndOfPortType, NULL }
-			    };
+	struct portNameMap_t {
+		enum PortType_t portType;
+		const char *portName;
+	};
+	static portNameMap_t portNameMap[] = {
+		{ SearchPort, searchPortString },
+		{ SuggestPort, suggestPortString },
+		{ InfoPort, infoPortString },
+		{ DocsPort, docsPortString },
+		{ UpdatePort, updatePortString },
+		{ SavePort, savePortString },
+		{ ExportPort, exportPortString },
+		{ ResetLoggerPort, resetLoggerPortString },
+		{ EndOfPortType, NULL }
+	};
 
 
     for (xml_node nodeTemp = nodeTag; nodeTemp; nodeTemp = nodeTemp.next_sibling("node")) {
@@ -2122,19 +2122,7 @@ void ConfigManager::parseNode(std::vector<Node>* nodes, xml_node& nodeTag, std::
 
 		if (thisIsMe == true) {
 			nodes->push_back(Node(nodeName, ipAddress, portNumber, thisIsMe, nodeMaster, nodeData, dataDir, nodeHome));
-			xml_node childNode, parentTag;
-			parentTag = nodeTag.parent();
-			cout << parentTag.name() << flush;
-			childNode = parentTag.child(listeningPortString);
-			if (childNode && childNode.text()) { // checks if the config/port has any text in it or not
-				int portValue = childNode.text().as_int();
-				if (portValue <= 0 || portValue > USHRT_MAX) {
-					parseError << childNode.name() << " must be between 1 and " << USHRT_MAX;
-					configSuccess = false;
-					return;
-				}
-				nodes->back().setPort(SearchPort, portValue);
-			}
+			xml_node childNode;
 
 			for (unsigned int i = 0; portNameMap[i].portName != NULL; i++) {
 				childNode = nodeTag.child(portNameMap[i].portName);
