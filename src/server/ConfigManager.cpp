@@ -368,7 +368,7 @@ void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode, CoreInfo_t
             return;
         }
         if (coreInfo->enableWordPositionIndex) {
-            Logger::info("turning on attribute based search because position index is enabled");
+            Logger::debug("turning on attribute based search because position index is enabled");
             coreInfo->supportAttributeBasedSearch = true;
         } // else leave supportAttributeBasedSearch set to previous value
     }
@@ -384,7 +384,7 @@ void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode, CoreInfo_t
     		return;
     	}
     	if (!coreInfo->enableWordPositionIndex && coreInfo->enableCharOffsetIndex) {
-    		Logger::info("turning on attribute based search because position index is enabled");
+    		Logger::debug("turning on attribute based search because position index is enabled");
     		coreInfo->supportAttributeBasedSearch = true;
     	} // else leave supportAttributeBasedSearch set to previous value
     }
