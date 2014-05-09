@@ -36,7 +36,7 @@ void* startListening(void* arg) {
     exit(255);
   }
 
-  while(1) {
+  while(!map->isTotallyConnected()) {
     struct sockaddr_in addr;
     socklen_t addrlen = sizeof(sockaddr_in);
     memset(&addr, 0,sizeof(sockaddr_in));
@@ -46,6 +46,8 @@ void* startListening(void* arg) {
      }
   }
 
+  close(fd);
+  Logger::console("Connected");
   return NULL;
 }
 

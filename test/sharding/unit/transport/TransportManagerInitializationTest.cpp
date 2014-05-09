@@ -48,3 +48,4 @@ int main() {
   while( !tm->getRouteMap()->isTotallyConnected())
     sleep(2);
 }
+

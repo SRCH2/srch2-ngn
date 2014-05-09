@@ -12,6 +12,7 @@ public:
 
 	char* allocate(size_type n) {
 		Message *msg = (Message*) allocator<char>::allocate(n + sizeof(Message));
+    memset(msg, 0, n + sizeof(Message));
 		msg->bodySize = n;
 
 		return msg->buffer;
@@ -24,6 +25,7 @@ public:
 	Message* allocateMessage(size_type bodyLength) {
 		Message *msg =
 				(Message*) allocator<char>::allocate(bodyLength + sizeof(Message));
+    memset(msg, 0, bodyLength + sizeof(Message));
 		msg->bodySize = bodyLength;
 		return msg;
 	}
