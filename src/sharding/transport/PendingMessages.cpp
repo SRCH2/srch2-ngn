@@ -96,7 +96,7 @@ void PendingMessages::resolve(Message* msg) {
 }
 
 CallbackReference 
-PendingMessages::registerCallback(void *obj, Callback *cb, 
+PendingMessages::prepareCallback(void *obj, Callback *cb, 
 		ShardingMessageType type, bool cbForAll, int shards) {
 
 	RegisteredCallback* regcb = new RegisteredCallback(obj, cb,shards);

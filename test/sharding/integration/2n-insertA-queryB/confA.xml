@@ -71,7 +71,7 @@
     	
         <cores defaultCoreName="core1">
         <core name="core1">
-        <core-number_of_shards>5</core-number_of_shards> 
+        <core-number_of_shards>2</core-number_of_shards> 
 	<core-number_of_replicas>1</core-number_of_replicas>
 
     <!--

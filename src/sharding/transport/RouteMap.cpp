@@ -198,6 +198,13 @@ Connection RouteMap::getConnection(NodeId nodeId) {
 	return nodeConnectionMap[nodeId];
 }
 
+Connection RouteMap::getInternalConnection() const{
+	return internalConnection;
+}
+void RouteMap::setInternalConnection(Connection con){
+	this->internalConnection = con;
+}
+
 void RouteMap::setCurrentNode(Node& currentNode) { this->currentNode = &currentNode; }
 const Node& RouteMap::getCurrentNode() const { return *currentNode; }
 

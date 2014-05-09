@@ -377,7 +377,7 @@ class Cluster {
   }
 
   // get the node ID and coreId for a given shard Id
-  void         getNodeIdAndCoreId(const ShardId& shardId, unsigned& nodeId, unsigned& coreId);
+  void getNodeIdAndCoreId(const ShardId& shardId, unsigned& nodeId, unsigned& coreId);
 
  private:
   string       clusterName;

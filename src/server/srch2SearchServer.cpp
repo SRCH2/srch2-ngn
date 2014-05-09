@@ -550,6 +550,7 @@ static void killServer(int signal) {
         conn != transportManager->getRouteMap()->end(); ++conn) {
       close(conn->second);
     }
+    close(transportManager->getRouteMap()->getInternalConnection());
     pthread_cancel(transportManager->getListeningThread());
 #ifdef __MACH__
 	/*

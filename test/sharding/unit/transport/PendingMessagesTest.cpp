@@ -28,7 +28,7 @@ int main() {
   MessageAllocator alloc;
 
   CallbackReference cbRef =
-  msg.registerCallback(NULL, new x, SearchCommandMessageType, 
+  msg.prepareCallback(NULL, new x, SearchCommandMessageType, 
     false, 4);
 
   msg.addMessage(0, 3, cbRef);

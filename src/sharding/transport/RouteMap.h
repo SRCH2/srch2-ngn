@@ -56,6 +56,7 @@ class RouteMap {
 	std::vector<Route > destinations;
 	const Node* currentNode;
 
+	Connection internalConnection;
 	void addNodeConnection(NodeId, int);
 public:
 
@@ -73,6 +74,9 @@ public:
 	void setCurrentNode(Node&);
 	const Node& getCurrentNode() const;
 	Connection getConnection(NodeId);
+
+	Connection getInternalConnection() const;
+	void setInternalConnection(Connection con);
 
 	typedef std::map<NodeId, Connection>::iterator iterator;
 	iterator begin();
