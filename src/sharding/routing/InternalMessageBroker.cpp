@@ -40,7 +40,7 @@ Message* InternalMessageBroker::broker(Message *msg, Srch2Server* server,
 	if(!msg->isLocal())
 		delete inputSerializedObject, outputSerializedObject;
 
-	return (Message*) reply - sizeof(Message);
+	return (Message*) (reply - sizeof(Message));
 }
 
 Message* InternalMessageBroker::notify(Message * message){
@@ -114,7 +114,7 @@ Message* InternalMessageBroker::notify(Message * message){
 		if(!message->isLocal())
 			delete inputSerializedObject, outputSerializedObject;
 
-		return (Message*) reply - sizeof(Message);
+		return (Message*) (reply - sizeof(Message));
 	}
 
 	case CommitCommandMessageType: // -> for CommitCommandInput object
