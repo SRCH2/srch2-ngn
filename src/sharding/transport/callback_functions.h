@@ -50,8 +50,16 @@ bool findNextMagicNumberAndReadMessageHeader(Message *const msg,  int fd) {
 Message* readRestOfMessage(MessageAllocator& messageAllocator,
 		int fd, Message *const msgHeader, int *readCount) {
 	Message *msg= messageAllocator.allocateMessage(msgHeader->bodySize);
-	*readCount= read(fd, msg->buffer, msgHeader->bodySize);
+	int rv = recv(fd, msg->buffer, msgHeader->bodySize, MSG_DONTWAIT);
 
+  if(rv == -1) {
+		if(errno == EAGAIN || errno == EWOULDBLOCK) return NULL;
+    
+    //v1: handle error
+    return NULL;
+  }
+
+  *readCount = rv;
 	memcpy(msg, msgHeader, sizeof(Message));
 
 	return msg;
@@ -61,17 +69,19 @@ bool readPartialMessage(int fd, MessageBuffer& buffer) {
   int toRead = buffer.msg->bodySize - buffer.readCount;
   if(toRead == 0) {
     //strangely we don't need to read anything;)
-    return true;
+    return false;
   }
 
-	int readReturnValue = read(fd, buffer.msg->buffer, toRead);
+	int readReturnValue = recv(fd, 
+      buffer.msg->buffer + buffer.readCount, toRead, MSG_DONTWAIT);
   if(readReturnValue < 0) {
     //TODO: handle errors
+    return false;
   }
 
-  buffer.readCount -= readReturnValue;
+  buffer.readCount += readReturnValue;
 
-	return (readReturnValue == toRead);
+	return (buffer.msg->bodySize == buffer.readCount);
 }
 
 /*
@@ -88,7 +98,7 @@ void cb_recieveMessage(int fd, short eventType, void *arg) {
 
   MessageBuffer& b = cb->conn->buffer;
   TransportManager *tm = cb->tm;
-  while(__sync_bool_compare_and_swap(&b.lock, false, true));
+  while(!__sync_bool_compare_and_swap(&b.lock, false, true));
 
   if(b.msg == NULL) {
 	  Message msgHeader;
@@ -112,8 +122,9 @@ void cb_recieveMessage(int fd, short eventType, void *arg) {
   				&tm->getDistributedTime(), time, msgHeader.time)) break;
   	}
   
-  	b.msg = readRestOfMessage(*(tm->getMessageAllocator()), 
-                              fd, &msgHeader, &b.readCount);
+  	if(!(b.msg = readRestOfMessage(*(tm->getMessageAllocator()), 
+                              fd, &msgHeader, &b.readCount))) return;
+
     if(b.readCount != b.msg->bodySize) {
       b.lock = false;
       return;
