@@ -77,7 +77,7 @@ TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
 	// that are bound to cb_recieveMessage. This way cb_recieveMessage receives all internal messages
 	for(RouteMap::iterator route = routeMap.begin(); route != routeMap.end(); ++route) {
 		for(EventBases::iterator base = bases.begin(); base != bases.end(); ++base) {
-			struct event* ev = event_new(*base, route->second,
+			struct event* ev = event_new(*base, route->second.fd,
 					EV_READ|EV_PERSIST, cb_recieveMessage, new TransportCallback(this, &route->second));
 			event_add(ev, NULL);
 		}
@@ -88,7 +88,7 @@ TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
 
 MessageTime_t TransportManager::route(NodeId node, Message *msg, 
 		unsigned timeout, CallbackReference callback) {
-	Connection fd = routeMap.getConnection(node);
+	Connection conn = routeMap.getConnection(node);
 	msg->time = __sync_fetch_and_add(&distributedTime, 1);
 
 	time_t timeOfTimeout_time = timeout + time(NULL);
