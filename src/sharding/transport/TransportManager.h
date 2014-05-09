@@ -36,7 +36,7 @@ public:
 
 	MessageTime_t& getDistributedTime();
 	CallBackHandler* getInternalTrampoline();
-	void setInternalTrampoline(CallBackHandler*);
+	void setInternalMessageBroker(CallBackHandler*);
 	pthread_t getListeningThread() const;
 	MessageAllocator * getMessageAllocator();
 	PendingMessages * getMsgs();
@@ -92,7 +92,7 @@ inline CallbackReference TransportManager::registerCallback(void* obj,
 	return pendingMessages.registerCallback(obj, cb, type, all, shards);
 }
 
-inline void TransportManager::setInternalTrampoline(CallBackHandler* cbh) {
+inline void TransportManager::setInternalMessageBroker(CallBackHandler* cbh) {
   internalTrampoline = cbh;
 }
 }}

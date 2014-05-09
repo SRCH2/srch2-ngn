@@ -24,7 +24,7 @@
     -->
     <!-- <srch2Home>./</srch2Home> -->
     <cluster-name>SRCH2 Cluster</cluster-name>
-    <srch2Home>.</srch2Home>
+    <srch2Home>/home/jamshid/workspace-srch2-v4/srch2-ngn/test/sharding/integration</srch2Home>
  
     <discovery>
         <ping-interval>2</ping-interval>
@@ -36,13 +36,13 @@
         <this-is-me> false </this-is-me>
         <listeningHostname> 127.0.0.1 </listeningHostname>
         <node-name> frozen </node-name>
-        <listeningPort> 8077 </listeningPort>
+        <listeningPort> 8097 </listeningPort>
     </node> 
 
    
     <node>
         <listeningHostname> 127.0.0.1 </listeningHostname>
-        <listeningPort> 8078 </listeningPort>
+        <listeningPort> 8098 </listeningPort>
         <this-is-me> true </this-is-me>
 	      <node-name> queen </node-name>
         <node-master> true </node-master>
@@ -67,7 +67,7 @@
         Hostname and port number of the server. Make sure the port is open.
     -->
     <listeningHostname>127.0.0.1</listeningHostname>
-    <listeningPort>8082</listeningPort>
+    <listeningPort>8090</listeningPort>
     	
         <cores defaultCoreName="core1">
         <core name="core1">

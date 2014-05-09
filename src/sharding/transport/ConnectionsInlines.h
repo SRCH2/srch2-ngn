@@ -8,18 +8,18 @@
 using namespace srch2::httpwrapper;
 
 inline
-Connections::Connections(Pool& pool) : pool(pool), place(pool.begin()) {}
+Connections::Connections(RoutePool& pool) : routePool(pool), place(pool.begin()) {}
 
 inline
 Connections::Connections(const Connections& toCpy) : 
-  pool(toCpy.pool), place(toCpy.place) {}
+  routePool(toCpy.routePool), place(toCpy.place) {}
 
 inline
 Connections& Connections::operator++() {
   for(int i=0; i < 2; ++i) {
-    while(++place != pool.end() && place->second);
-    if(place != pool.end()) return *this;
-    place = pool.begin();
+    while(++place != routePool.end() && place->second);
+    if(place != routePool.end()) return *this;
+    place = routePool.begin();
   }
   return *this;
 }
@@ -33,21 +33,21 @@ Connections Connections::operator++(int) {
 
 inline
 bool Connections::operator==(const Connections& rhs) {
-  return &pool == &rhs.pool && place == rhs.place;
+  return &routePool == &rhs.routePool && place == rhs.place;
 }
 
 inline
 bool Connections::operator!=(const Connections& rhs) {
-  return &pool == &rhs.pool && place == rhs.place;
+  return &routePool == &rhs.routePool && place == rhs.place;
 }
 
 inline
-std::pair<ConnectionId, bool>& Connections::operator*() {
+std::pair<ConnectionInfo, bool>& Connections::operator*() {
   return *place;
 }
 
 inline
-std::pair<ConnectionId, bool>* Connections::operator->() {
+std::pair<ConnectionInfo, bool>* Connections::operator->() {
   return place.operator->();
 }
 #endif /*__TRANSPORT_CONNECTIONS_INLINE_H__ */
