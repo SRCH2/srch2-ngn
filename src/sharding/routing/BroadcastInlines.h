@@ -70,7 +70,7 @@ void RoutingManager::broadcast_w_cb(RequestType& requestObj,
 	 * We need to register callback functions to TM so that it calls them upon receiving a message
 	 * Here, we register a method around aggregator callback into TM.
 	 */
-	CallbackReference cb = transportManager.registerCallback(&requestObj,
+	CallbackReference cb = transportManager.prepareCallback(&requestObj,
 												new RMCallback<RequestType, ResponseType>(*aggregator),
 												ResponseType::messageKind(),
 												true,
@@ -114,7 +114,7 @@ void RoutingManager::broadcast_wait_for_all_w_cb(RequestType & requestObj,
 	 * We need to register callback functions to TM so that it calls them upon receiving a message
 	 * Here, we register a method around aggregator callback into TM.
 	 */
-	CallbackReference cb = transportManager.registerCallback(&requestObj,
+	CallbackReference cb = transportManager.prepareCallback(&requestObj,
 												new RMCallback<RequestType, ResponseType>(*aggregator),
 												ResponseType::messageKind(),
 												false,
@@ -160,7 +160,7 @@ void RoutingManager::broadcast_w_cb_n_timeout(RequestType& requestObj,
 	 * We need to register callback functions to TM so that it calls them upon receiving a message
 	 * Here, we register a method around aggregator callback into TM.
 	 */
-	CallbackReference cb = transportManager.registerCallback(&requestObj,
+	CallbackReference cb = transportManager.prepareCallback(&requestObj,
 												new RMCallback<RequestType, ResponseType>(*aggregator),
 												ResponseType::messageKind(),
 												true,
@@ -200,7 +200,7 @@ RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType& requestObj,
 	 * We need to register callback functions to TM so that it calls them upon receiving a message
 	 * Here, we register a method around aggregator callback into TM.
 	 */
-	CallbackReference cb = transportManager.registerCallback(&requestObj,
+	CallbackReference cb = transportManager.prepareCallback(&requestObj,
 												new RMCallback<RequestType, ResponseType>(*aggregator),
 												ResponseType::messageKind(),
 												true,
@@ -275,7 +275,7 @@ RoutingManager::route_w_cb(RequestType& requestObj,
 	 * We need to register callback functions to TM so that it calls them upon receiving a message
 	 * Here, we register a method around aggregator callback into TM.
 	 */
-	CallbackReference cb = transportManager.registerCallback(&requestObj,
+	CallbackReference cb = transportManager.prepareCallback(&requestObj,
 												new RMCallback<RequestType, ResponseType>(*aggregator),
 												ResponseType::messageKind());
 
@@ -313,8 +313,10 @@ RoutingManager::route_w_cb_n_timeout(RequestType & requestObj,
 	/*
 	 * We need to register callback functions to TM so that it calls them upon receiving a message
 	 * Here, we register a method around aggregator callback into TM.
+	 * we only pass 3 arguments to registerCallback because we are not going to wait for all (false although it doesn't matter)
+	 * and the number of shards to wait for is 1 by default
 	 */
-	CallbackReference cb = transportManager.registerCallback(&requestObj,
+	CallbackReference cb = transportManager.prepareCallback(&requestObj,
 												new RMCallback<RequestType, ResponseType>(*aggregator),
 												RequestType::messageKind());
 

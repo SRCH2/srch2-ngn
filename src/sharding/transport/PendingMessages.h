@@ -143,7 +143,7 @@ public:
 	void addMessage(time_t, MessageTime_t, CallbackReference);
 	//void trigger_timeouts(time_t);
 	void resolve(Message*);
-	CallbackReference registerCallback(void*, Callback*,
+	CallbackReference prepareCallback(void*, Callback*,
 			ShardingMessageType,bool = false,int = 1);
 };
 

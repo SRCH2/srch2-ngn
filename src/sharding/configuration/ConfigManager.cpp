@@ -174,7 +174,7 @@ const char* const ConfigManager::defaultExactPostTag = "</b>";
 void ConfigManager::setNodeId(){
     vector<Node>* nodes = this->cluster.getNodes();
     for(int i = 0; i < nodes->size(); i++){
-        (*nodes)[i].setId(i+1);
+        (*nodes)[i].setId(i);
     }
 }
 

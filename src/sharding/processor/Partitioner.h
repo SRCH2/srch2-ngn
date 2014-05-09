@@ -46,7 +46,7 @@ private:
 	 */
 	unsigned hash(unsigned valueToHash, unsigned hashSpace);
 
-	ShardId convertUnsignedToCoreShardInfo(unsigned coreShardIndex);
+	ShardId convertUnsignedToCoreShardInfo(unsigned coreShardIndex, const CoreInfo_t *indexDataContainerConf);
 
 	// computes the hash value of a string
 	unsigned hashDJB2(const char *str) const

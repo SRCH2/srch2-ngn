@@ -27,7 +27,7 @@ public:
 	MessageTime_t route(NodeId, Message*, unsigned=0, CallbackReference=CallbackReference());
   //route message through a particular socket
 	MessageTime_t route(int fd, Message*);
-	CallbackReference registerCallback(void*,Callback*,
+	CallbackReference prepareCallback(void*,Callback*,
 			ShardingMessageType,bool=false,int = 1);
 	void registerCallbackHandlerForSynchronizeManager(CallBackHandler*);
 
@@ -87,9 +87,9 @@ inline void TransportManager::registerCallbackHandlerForSynchronizeManager(CallB
 	synchManagerHandler = callBackHandler;
 }
 
-inline CallbackReference TransportManager::registerCallback(void* obj,
+inline CallbackReference TransportManager::prepareCallback(void* obj,
 		Callback* cb, ShardingMessageType type,bool all,int shards) {
-	return pendingMessages.registerCallback(obj, cb, type, all, shards);
+	return pendingMessages.prepareCallback(obj, cb, type, all, shards);
 }
 
 inline void TransportManager::setInternalMessageBroker(CallBackHandler* cbh) {

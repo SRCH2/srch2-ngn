@@ -8,8 +8,8 @@ using namespace srch2::instantsearch;
 using namespace srch2::httpwrapper;
 
 void* startListening(void* arg) {
-	RouteMap *const map = (RouteMap*) arg;
-	const Node& currentNode =  map->getCurrentNode();
+	RouteMap *const routeMap = (RouteMap*) arg;
+	const Node& currentNode =  routeMap->getCurrentNode();
 
 	hostent *routeHost = gethostbyname(currentNode.getIpAddress().c_str());
 	//  if(routeHost == -1) throw std::exception
@@ -42,10 +42,12 @@ void* startListening(void* arg) {
 		memset(&addr, 0,sizeof(sockaddr_in));
 		int newfd;
 		if((newfd = accept(fd, (sockaddr*) &addr, &addrlen)) != -1) {
-			map->acceptRoute(newfd, *((sockaddr_in*) &addr));
+			routeMap->acceptRoute(newfd, *((sockaddr_in*) &addr));
 		}
 	}
 
+	// save the file descriptor in routeMap to close it in Kill
+	routeMap->setInternalConnection(fd);
 	return NULL;
 }
 

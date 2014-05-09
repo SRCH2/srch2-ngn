@@ -31,17 +31,20 @@ ShardId Partitioner::getShardIDForRecord(Record * record, string coreName){
 
 	unsigned valueToHash = getRecordValueToHash(record);
 
-	unsigned totalNumberOfShards = 3; //routingManager->getNumberOfShards(); TODO  we need total number of shards
+	unsigned totalNumberOfShards = indexDataContainerConf->getNumberOfPrimaryShards();
 
-	return convertUnsignedToCoreShardInfo(hash(valueToHash , totalNumberOfShards));
+	return convertUnsignedToCoreShardInfo(hash(valueToHash , totalNumberOfShards), indexDataContainerConf);
 }
 
 ShardId Partitioner::getShardIDForRecord(string primaryKeyStringValue, string coreName){
+
+    const CoreInfo_t *indexDataContainerConf = configurationManager->getCoreInfo(coreName);
+
 	unsigned valueToHash = getRecordValueToHash(primaryKeyStringValue);
 
-	unsigned totalNumberOfShards = 3; // routingManager->getNumberOfShards(); TODO we need total number of shards
+	unsigned totalNumberOfShards = indexDataContainerConf->getNumberOfPrimaryShards();
 
-	return convertUnsignedToCoreShardInfo(hash(valueToHash , totalNumberOfShards));
+	return convertUnsignedToCoreShardInfo(hash(valueToHash , totalNumberOfShards), indexDataContainerConf);
 }
 
 
@@ -75,8 +78,9 @@ unsigned Partitioner::hash(unsigned valueToHash, unsigned hashSpace){
 }
 
 
-ShardId Partitioner::convertUnsignedToCoreShardInfo(unsigned coreShardIndex){
-	//TODO
+ShardId Partitioner::convertUnsignedToCoreShardInfo(unsigned coreShardIndex, const CoreInfo_t *indexDataContainerConf){
+	// return indexDataContainerConf->getPrimaryShardId(coreShardIndex); TODO
+	return indexDataContainerConf->getPrimaryShardId(2);
 }
 
 }
