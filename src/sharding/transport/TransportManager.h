@@ -10,7 +10,7 @@
 
 
 #include "CallbackHandler.h"
-
+#include <boost/thread.hpp>
 namespace srch2 {
 namespace httpwrapper {
 
@@ -79,6 +79,8 @@ private:
 	 * Handles internal message broker callbacks
 	 */
 	CallBackHandler *internalMessageBrokerHandler;
+
+	boost::mutex socketLock;
 };
 
 inline void TransportManager::registerCallbackHandlerForSynchronizeManager(CallBackHandler

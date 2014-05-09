@@ -64,29 +64,35 @@ TransportManager::TransportManager(EventBases& bases, Nodes& map) {
   routeMap.initRoutes();
   
   while(!routeMap.isTotallyConnected()) {
+	  Logger::console("V0: waiting for other nodes!!");
     sleep(10);
   }
+  Logger::console("V0: all the nodes are connected!!");
 
   for(RouteMap::iterator route = routeMap.begin(); route != routeMap.end(); 
       ++route) {
     for(EventBases::iterator base = bases.begin(); 
         base != bases.end(); ++base) {
-      struct event* ev = event_new(*base, route->second, 
-          EV_READ|EV_PERSIST, cb_recieveMessage, this);
-      event_add(ev, NULL);
+
+      struct bufferevent * bev = bufferevent_socket_new(*base, route->second, BEV_OPT_CLOSE_ON_FREE);
+      bufferevent_setcb(bev,cb_recieveMessage , NULL, NULL, this);
+      bufferevent_enable(bev, EV_READ|EV_WRITE);
+      bufferevent_setwatermark(bev,  EV_READ, sizeof(Message), 0);
     }
   }
 
   distributedTime = 0;
+  synchManagerHandler = NULL;
 }
 
 MessageTime_t TransportManager::route(NodeId node, Message *msg, 
     unsigned timeout, CallbackReference callback) {
   Connection fd = routeMap.getConnection(node);
   msg->time = __sync_fetch_and_add(&distributedTime, 1);
-
-  time_t timeOfTimeout_time = timeout + time(NULL);
-  pendingMessages.addMessage(timeout, msg->time, callback);
+  if (timeout) {
+	  time_t timeOfTimeout_time = timeout + time(NULL);
+	  pendingMessages.addMessage(timeout, msg->time, callback);
+  }
 
 #ifdef __MACH__
       int flag = SO_NOSIGPIPE;
@@ -94,7 +100,24 @@ MessageTime_t TransportManager::route(NodeId node, Message *msg,
       int flag = MSG_NOSIGNAL;
 #endif
 
-  send(fd, msg, msg->bodySize + sizeof(Message), flag);
+  unsigned totalMsgSize = msg->bodySize + sizeof(Message);
+  do{
+	  boost::mutex::scoped_lock lock(socketLock);
+	  signed err = send(fd, msg, totalMsgSize, flag);
+	  if (err < 0) {
+		  if(errno == EAGAIN || errno == EWOULDBLOCK) {
+			  // wait and try again ?? buffer messages for write ?
+			  perror("Send Failed : ");
+			  break;
+		  } else {
+			  perror("Send Failed : ");
+			  break;
+		  }
+	  }
+	  if (err == totalMsgSize) {
+		  break;
+	  }
+  } while(0);
   //TODO: errors?
   return msg->time;
 }

@@ -41,7 +41,7 @@ namespace httpwrapper {
  public:
 	 unsigned coreId;
 	 string coreName; // because currently you can get coreInfo_t from config only by passing the name ....
-   CoreShardInfo(const unsigned id, const string& name) 
+   CoreShardInfo(const unsigned id, const string& name)
      : coreId(id), coreName(name) {}
    CoreShardInfo();
  };
@@ -129,6 +129,12 @@ namespace httpwrapper {
         (partitionId == rhs.partitionId && replicaId <= replicaId)));
    }
 
+   template<class binarystream>
+   void serialize(binarystream & ar, const unsigned int version) {
+	   ar & coreId;
+	   ar & partitionId;
+	   ar & replicaId;
+   }
  };
 
  class ShardIdComparator {
@@ -204,6 +210,13 @@ namespace httpwrapper {
 
    unsigned getNodeId(){
      return this->nodeId;
+   }
+
+   template<class binarystream>
+   void serialize(binarystream & ar, const unsigned int version) {
+	   ar & shardId;
+	   ar & shardState;
+	   ar & nodeId;
    }
 
   private:
@@ -303,21 +316,6 @@ class Node {
 
   bool thisIsMe; // temporary for V0
 
-  // TODO (for Surendra): refine this iterator
-  // const Node& operator = (const Node& node);
-
-  // an iterator to go through the shards in this node
-  //class ShardIterator {
-  //public:
-  //unsigned first; // TODO: Ask Surendra
-  //Shard second;
-  //bool operator == (NodeIterator* rhs);
-  //};
-
-  //typedef NodeIterator * Iterator;
-  //Iterator begin();
-  //Iterator next();
-  //Iterator end();
 
   private:
   unsigned nodeId;
@@ -337,6 +335,19 @@ class Node {
   string dataDir;
   unsigned int numberOfThreads;
   // other node-related info
+
+  template<class binarystream>
+  void serialize(binarystream & ar, const unsigned int version) {
+	   ar & nodeId;
+	   ar & ipAddress;
+	   ar & portNumber;
+	   ar & nodeName;
+	   ar & nodeMaster;
+	   ar & nodeData;
+	   ar & homeDir;
+	   ar & dataDir;
+	   ar & numberOfThreads;
+  }
 };
 
 enum CLUSTERSTATE {
@@ -366,7 +377,7 @@ class Cluster {
   bool         isMasterNode(unsigned nodeId);
 
   void         getNodeById(unsigned id, Node& node);
-  unsigned     getTotalNumberOfNodes();
+  unsigned     getTotalNumberOfNodes() { return nodes.size(); }
   
   void setClusterName(const std::string& clusterName)
   {
@@ -391,6 +402,7 @@ class Cluster {
 
   // friend class SynchronizationManager;
 };
+
 
 // This class is used to collect information from the config file and pass them other modules
 // in the system.
@@ -557,9 +569,12 @@ public:
     	}
     	return 0;
     }
+
+
 private:
     Cluster cluster;
     DiscoveryParams discovery;
+
     // <config>
     string licenseKeyFile;
     string httpServerListeningHostname;

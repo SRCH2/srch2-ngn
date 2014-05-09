@@ -26,7 +26,15 @@ enum ShardingMessageType{
     GetInfoResultsMessageType, // -> for GetInfoResults object
     CommitCommandMessageType, // -> for CommitCommandInput object
     ResetLogCommandMessageType, // -> for ResetLogCommandInput (used for resetting log)
-    StatusMessageType // -> for CommandStatus object (object returned from insert, delete, update)
+    StatusMessageType, // -> for CommandStatus object (object returned from insert, delete, update)
+
+    // For SM
+    HeartBeatMessageType,
+    ClientStatusMessageType,
+    ClusterStatusMessageType,
+    LeaderElectionProposalMessageType,
+    LeaderElectionAckMessageType,
+    LeaderElectionDenyMessageType
 };
 
 }
