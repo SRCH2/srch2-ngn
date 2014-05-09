@@ -72,6 +72,7 @@ TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
 		sleep(10);
 	}
 
+	// TODO : what if somebody sends a message at this point ?
 	// RouteMap iterates over routes. Routes are std::map<NodeId, Connection>
 	// which is basically NodeId to file descriptor
 	// We bound the route file descriptors (connection to other nodes) to event bases

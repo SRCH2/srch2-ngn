@@ -26,21 +26,21 @@ Message* InternalMessageBroker::broker(Message *msg, Srch2Server* server,
 
 	// TODO : currently nothing is local and the local messaging part doesn't work ...
 	InputType *inputSerializedObject = 
-    (msg->isLocal()) ? (InputType*) msg->buffer
-			               : (InputType*) 
-                          &Deserializer::deserialize((void*) msg->buffer);
+			(msg->isLocal()) ? (InputType*) msg->buffer
+					: (InputType*)
+					  &Deserializer::deserialize((void*) msg->buffer);
 
 	OutputType outputSerializedObject((internalDP.*internalDPRequestHandlerFunction)(server, inputSerializedObject));
 
 	// prepare the byte stream of reply
 	void *reply = 
-    (msg->isLocal()) ? (void*) &outputSerializedObject
-			               : outputSerializedObject.serialize(getMessageAllocator());
+			(msg->isLocal()) ? (void*) &outputSerializedObject
+					: outputSerializedObject.serialize(getMessageAllocator());
 
 	if(!msg->isLocal())
 		delete inputSerializedObject, outputSerializedObject;
-  
-  return (Message*) reply - sizeof(Message);
+
+	return (Message*) reply - sizeof(Message);
 }
 
 Message* InternalMessageBroker::notify(Message * message){
@@ -62,76 +62,76 @@ Message* InternalMessageBroker::notify(Message * message){
 	switch (message->type) {
 	case SearchCommandMessageType: // -> for LogicalPlan object
 		return broker<SerializableSearchCommandInput, SerializableSearchCommandInput,SerializableSearchResults>
-										(message, server, &DPInternalRequestHandler::internalSearchCommand);
+		(message, server, &DPInternalRequestHandler::internalSearchCommand);
 	case InsertUpdateCommandMessageType: {// -> for Record object (used for insert and update)
-    typedef SerializableInsertUpdateCommandInput In;
-    In *inputSerializedObject = 
-      (message->isLocal()) ? (In*)  message->buffer
-                           : (In*) &SerializableInsertUpdateCommandInput::
-                                      deserialize((void*) message->buffer,
-                                         server->indexDataConfig->getSchema());
-    SerializableCommandStatus 
-      outputSerializedObject(internalDP.internalInsertUpdateCommand(server, 
-                             inputSerializedObject));
+		typedef SerializableInsertUpdateCommandInput In;
+		In *inputSerializedObject =
+				(message->isLocal()) ? (In*)  message->buffer
+						: (In*) &SerializableInsertUpdateCommandInput::
+						  deserialize((void*) message->buffer,
+								  server->indexDataConfig->getSchema());
+		SerializableCommandStatus
+		outputSerializedObject(internalDP.internalInsertUpdateCommand(server,
+				inputSerializedObject));
 
-    // prepare the byte stream of reply
-    void *reply = (message->isLocal()) ? (void*) &outputSerializedObject
-      : outputSerializedObject.serialize(getMessageAllocator());
-    
-    if(!message->isLocal())
-      delete inputSerializedObject, outputSerializedObject;
-    
-    return (Message*) reply - sizeof(Message);
-  }
+		// prepare the byte stream of reply
+		void *reply = (message->isLocal()) ? (void*) &outputSerializedObject
+				: outputSerializedObject.serialize(getMessageAllocator());
+
+		if(!message->isLocal())
+			delete inputSerializedObject, outputSerializedObject;
+
+		return (Message*) (reply - sizeof(Message));
+	}
 
 	case DeleteCommandMessageType: // -> for DeleteCommandInput object (used for delete)
 		return broker<SerializableDeleteCommandInput, SerializableDeleteCommandInput, SerializableCommandStatus>
-										(message, server,
-                     &DPInternalRequestHandler::internalDeleteCommand);
+		(message, server,
+				&DPInternalRequestHandler::internalDeleteCommand);
 
 	case SerializeCommandMessageType: // -> for SerializeCommandInput object
 		// (used for serializing index and records)
 		return broker<SerializableSerializeCommandInput, SerializableSerializeCommandInput, SerializableCommandStatus>
-										(message, server,
-                     &DPInternalRequestHandler::internalSerializeCommand);
+		(message, server,
+				&DPInternalRequestHandler::internalSerializeCommand);
 
 
 	case GetInfoCommandMessageType: { // -> for GetInfoCommandInput object (used for getInfo)
-    typedef SerializableGetInfoCommandInput In;
-    In *inputSerializedObject = 
-     (message->isLocal()) ? (In*) message->buffer 
-                          : (In*) &SerializableGetInfoCommandInput
-                                     ::deserialize((void*) message->buffer);
+		typedef SerializableGetInfoCommandInput In;
+		In *inputSerializedObject =
+				(message->isLocal()) ? (In*) message->buffer
+						: (In*) &SerializableGetInfoCommandInput
+						  ::deserialize((void*) message->buffer);
 
-    SerializableGetInfoResults outputSerializedObject(
-      internalDP.internalGetInfoCommand(server, Version::getCurrentVersion(),
-                                        inputSerializedObject));
+		SerializableGetInfoResults outputSerializedObject(
+				internalDP.internalGetInfoCommand(server, Version::getCurrentVersion(),
+						inputSerializedObject));
 
-  	// prepare the byte stream of reply
-    void *reply = (message->isLocal()) ? (void*) &outputSerializedObject
-      : outputSerializedObject.serialize(getMessageAllocator());
+		// prepare the byte stream of reply
+		void *reply = (message->isLocal()) ? (void*) &outputSerializedObject
+				: outputSerializedObject.serialize(getMessageAllocator());
 
-    if(!message->isLocal())
-      delete inputSerializedObject, outputSerializedObject;
+		if(!message->isLocal())
+			delete inputSerializedObject, outputSerializedObject;
 
-    return (Message*) reply - sizeof(Message);
-  }
-  
-  case CommitCommandMessageType: // -> for CommitCommandInput object
+		return (Message*) reply - sizeof(Message);
+	}
+
+	case CommitCommandMessageType: // -> for CommitCommandInput object
 		return broker<SerializableCommitCommandInput, SerializableCommitCommandInput, SerializableCommandStatus>
-										(message, server, &DPInternalRequestHandler::internalCommitCommand);
+		(message, server, &DPInternalRequestHandler::internalCommitCommand);
 	case ResetLogCommandMessageType: // -> for ResetLogCommandInput (used for resetting log)
 		return broker<SerializableResetLogCommandInput,SerializableResetLogCommandInput, SerializableCommandStatus>
-										(message, server, &DPInternalRequestHandler::internalResetLogCommand);
+		(message, server, &DPInternalRequestHandler::internalResetLogCommand);
 	case SearchResultsMessageType: // -> for SerializedQueryResults object
 	case GetInfoResultsMessageType: // -> for GetInfoResults object
 	case StatusMessageType: // -> for CommandStatus object (object returned from insert, delete, update)
-  default:
+	default:
 		// These message types are only used for reponses to other requests and code should
 		// never reach to this point
-    return NULL;
+		return NULL;
 	}
-  return NULL;
+	return NULL;
 }
 
 Srch2Server * InternalMessageBroker::getShardIndex(ShardId & shardId){

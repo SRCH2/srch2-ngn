@@ -138,6 +138,7 @@ struct Record::Impl
     	buffer = srch2::util::deserializeFixedTypes(buffer, inMemoryStoredRecordLen);
     	// inMemoryStoredRecord
     	{
+    		inMemoryStoredRecord = new char[inMemoryStoredRecordLen];
     		memcpy(inMemoryStoredRecord, buffer, inMemoryStoredRecordLen);
     		buffer = (char *)buffer + inMemoryStoredRecordLen;
     	}

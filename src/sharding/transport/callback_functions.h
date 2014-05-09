@@ -11,10 +11,10 @@ using namespace srch2::httpwrapper;
 namespace srch2 {
 namespace httpwrapper {
 struct TransportCallback {
-  TransportManager *tm;
-  Connection* conn;
+	TransportManager *tm;
+	Connection* conn;
 
-  TransportCallback(TransportManager *tm, Connection *c) : tm(tm), conn(c) {}
+	TransportCallback(TransportManager *tm, Connection *c) : tm(tm), conn(c) {}
 };
 }}
 
@@ -58,18 +58,18 @@ Message* readRestOfMessage(MessageAllocator& messageAllocator,
 }
 
 bool readPartialMessage(int fd, MessageBuffer& buffer) {
-  int toRead = buffer.msg->bodySize - buffer.readCount;
-  if(toRead == 0) {
-    //strangely we don't need to read anything;)
-    return true;
-  }
+	int toRead = buffer.msg->bodySize - buffer.readCount;
+	if(toRead == 0) {
+		//strangely we don't need to read anything;)
+		return true;
+	}
 
 	int readReturnValue = read(fd, buffer.msg->buffer, toRead);
-  if(readReturnValue < 0) {
-    //TODO: handle errors
-  }
+	if(readReturnValue < 0) {
+		//TODO: handle errors
+	}
 
-  buffer.readCount -= readReturnValue;
+	buffer.readCount -= readReturnValue;
 
 	return (readReturnValue == toRead);
 }
@@ -81,63 +81,63 @@ void cb_recieveMessage(int fd, short eventType, void *arg) {
 
 	TransportCallback* cb = (TransportCallback*) arg;
 
-  if( fd != cb->conn->fd) {
-    //major error
-    return;
-  }
+	if( fd != cb->conn->fd) {
+		//major error
+		return;
+	}
 
-  MessageBuffer& b = cb->conn->buffer;
-  TransportManager *tm = cb->tm;
-  while(__sync_bool_compare_and_swap(&b.lock, false, true));
+	MessageBuffer& b = cb->conn->buffer;
+	TransportManager *tm = cb->tm;
+	while(__sync_bool_compare_and_swap(&b.lock, false, true));
 
-  if(b.msg == NULL) {
-	  Message msgHeader;
+	if(b.msg == NULL) {
+		Message msgHeader;
 
-	  if(!findNextMagicNumberAndReadMessageHeader(&msgHeader, fd)){
-		  // there is some sort of error in the stream so we can't
-      // get the next message
- //     b.lock = false;
-		  return;
-	  }
+		if(!findNextMagicNumberAndReadMessageHeader(&msgHeader, fd)){
+			// there is some sort of error in the stream so we can't
+			// get the next message
+			//     b.lock = false;
+			return;
+		}
 
-  	// sets the distributedTime of TM to the maximum time received by a message
-  	// in a thread safe fashion
-  	while(true) {
-  		MessageTime_t time = tm->getDistributedTime();
-  		//check if time needs to be incremented
-  		if(msgHeader.time < time &&
-  				/*zero break*/ time - msgHeader.time < UINT_MAX/2 ) break;
-  		//make sure time did not change
-  		if(__sync_bool_compare_and_swap(
-  				&tm->getDistributedTime(), time, msgHeader.time)) break;
-  	}
-  
-  	b.msg = readRestOfMessage(*(tm->getMessageAllocator()), 
-                              fd, &msgHeader, &b.readCount);
-    if(b.readCount != b.msg->bodySize) {
-      b.lock = false;
-      return;
-    }
-  } else {
-    if(!readPartialMessage(fd, b)) {
-      b.lock = false;
-      return;
-    }
-  }
+		// sets the distributedTime of TM to the maximum time received by a message
+		// in a thread safe fashion
+		while(true) {
+			MessageTime_t time = tm->getDistributedTime();
+			//check if time needs to be incremented
+			if(msgHeader.time < time &&
+					/*zero break*/ time - msgHeader.time < UINT_MAX/2 ) break;
+			//make sure time did not change
+			if(__sync_bool_compare_and_swap(
+					&tm->getDistributedTime(), time, msgHeader.time)) break;
+		}
 
-  Message* msg = b.msg;
-  b.msg = NULL;
-  b.lock = false;
+		b.msg = readRestOfMessage(*(tm->getMessageAllocator()),
+				fd, &msgHeader, &b.readCount);
+		if(b.readCount != b.msg->bodySize) {
+			b.lock = false;
+			return;
+		}
+	} else {
+		if(!readPartialMessage(fd, b)) {
+			b.lock = false;
+			return;
+		}
+	}
+
+	Message* msg = b.msg;
+	b.msg = NULL;
+	b.lock = false;
 
 	if(msg->isReply()) {
 		tm->getMsgs()->resolve(msg);
 	} else if(msg->isInternal()) {
 		if(Message* reply = tm->getInternalTrampoline()->notify(msg)) {
-      reply->initial_time = msg->time;
-      reply->mask |= REPLY_MASK & INTERNAL_MASK;
-      tm->route(fd, reply);
-      tm->getMessageAllocator()->deallocate(reply);
-    }
+			reply->initial_time = msg->time;
+			reply->mask |= (REPLY_MASK | INTERNAL_MASK);
+			tm->route(fd, reply);
+			tm->getMessageAllocator()->deallocate(reply);
+		}
 	} else {
 		tm->getSmHandler()->notify(msg);
 	}
