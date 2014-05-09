@@ -66,7 +66,7 @@ using namespace srch2::httpwrapper;
 struct TestHandler : public CallBackHandler {
   int messageRecieved;
   Message* notify(Message *msg) {
-    assert(!strcmp(msg->buffer, MESSAGE_CONTENTS[messageRecieved]));
+   // assert(!strcmp(msg->buffer, MESSAGE_CONTENTS[messageRecieved]));
     printf("%d: \t %s\n", msg->shard.coreId, msg->buffer);
     fflush(stdout);
     if(++messageRecieved == 52) pthread_exit(0);
@@ -109,14 +109,18 @@ int main() {
    }
   }
 
+  const int NUM_THREADS = 3;
   EventBases eventbases;
-  eventbases.push_back(event_base_new());
+  for(int t=0; t<NUM_THREADS; ++t) 
+    eventbases.push_back(event_base_new());
 
   TransportManager *tm =  new TransportManager(eventbases, *nodes);
   tm->setInternalTrampoline(new TestHandler());
 
-  pthread_t tmp;
-  pthread_create(&tmp, NULL, dispatch, eventbases[0]);
+  pthread_t tmp[NUM_THREADS];
+  for(int t=0;  t < NUM_THREADS; ++t) {
+    pthread_create(tmp + t, NULL, dispatch, eventbases[t]);
+  }
 
   for(std::vector<Node>::iterator node = nodes->begin(); 
       node != nodes->end(); ++node) {
@@ -133,7 +137,6 @@ int main() {
 
       tm->route(node->getId(), msg);
       tm->getMessageAllocator()->deallocateMessage(msg);
-      sleep(1);
     }
   }
 }

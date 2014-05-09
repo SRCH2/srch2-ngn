@@ -57,8 +57,7 @@ TransportManager::TransportManager(EventBases& bases, Nodes& map) {
   for(Nodes::iterator dest = map.begin(); dest!= map.end(); ++dest) {
     if(dest->thisIsMe) 
       routeMap.setBase(*dest);
-    else
-      routeMap.addDestination(*dest);
+    routeMap.addDestination(*dest);
   }
   
   pthread_create(&listeningThread, NULL, startListening, &routeMap);
@@ -66,7 +65,7 @@ TransportManager::TransportManager(EventBases& bases, Nodes& map) {
   routeMap.initRoutes();
   
   while(!routeMap.isTotallyConnected()) {
-    sleep(10);
+    sleep(3);
   }
 
   for(RouteMap::iterator route = routeMap.begin(); route != routeMap.end(); 
@@ -98,6 +97,7 @@ MessageTime_t TransportManager::route(NodeId node, Message *msg,
 #endif
 
   send(conn.fd, msg, msg->bodySize + sizeof(Message), flag);
+  
   //TODO: errors?
   return msg->time;
 }
@@ -143,3 +143,9 @@ RouteMap * TransportManager::getRouteMap() {
 CallBackHandler* TransportManager::getSmHandler() {
 	return synchManagerHandler;
 }
+
+
+//TODO:: TransportManager::~TransportManager() {
+  //bind threads
+  //close ports
+//}
