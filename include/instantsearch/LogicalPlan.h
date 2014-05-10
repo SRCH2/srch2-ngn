@@ -73,7 +73,7 @@ public:
      * NOTE : stats is NULL until logical plan reaches to the core so we don't serialize it...
      */
     void * serializeForNetwork(void * buffer);
-    static void * deserializeForNetwork(LogicalPlanNode * node, void * buffer);
+    static void * deserializeForNetwork(LogicalPlanNode * & node, void * buffer);
     unsigned getNumberOfBytesForSerializationForNetwork();
     Term * getTerm(bool isFuzzy){
     	if(isFuzzy){

@@ -144,6 +144,7 @@ private:
 	 * Search should not be blocking in failure case
 	 */
 	vector<QueryResults *> resultsOfAllShards;
+	vector<map<unsigned, string> > inMemoryRecordStrings;
 
 	/*
 	 * This variable contains the final aggregated results

@@ -45,6 +45,7 @@ void SearchResultAggregatorAndPrint::callBack(vector<const SerializableSearchRes
 	for(int responseIndex = 0 ; responseIndex < responseObjects.size() ; ++responseIndex ){
 		QueryResults * resultsOfThisShard = responseObjects.at(responseIndex)->getQueryResults();
 		resultsOfAllShards.push_back(resultsOfThisShard);
+		inMemoryRecordStrings.push_back(responseObjects.at(responseIndex)->getInMemoryRecordStrings());
 		if(results.aggregatedSearcherTime < responseObjects.at(responseIndex)->getSearcherTime()){
 			results.aggregatedSearcherTime = responseObjects.at(responseIndex)->getSearcherTime();
 		}
@@ -509,13 +510,14 @@ void SearchResultAggregatorAndPrint::printOneResultRetrievedById(evhttp_request 
  */
 void SearchResultAggregatorAndPrint::aggregateRecords(){
 	// aggregate results
-	for(vector<QueryResults *>::iterator queryResultsItr = resultsOfAllShards.begin() ;
-			queryResultsItr != resultsOfAllShards.end() ; ++queryResultsItr){
-		results.allResults.insert(results.allResults.end() , (*queryResultsItr)->impl->sortedFinalResults.begin(),
-				(*queryResultsItr)->impl->sortedFinalResults.end());
-		for(unsigned queryResultIndex = 0; queryResultIndex < (*queryResultsItr)->impl->sortedFinalResults.size();
+	for(unsigned resultSetIndex = 0 ; resultSetIndex < resultsOfAllShards.size() ; ++resultSetIndex){
+		QueryResults * queryResultsItr = resultsOfAllShards.at(resultSetIndex);
+		results.allResults.insert(results.allResults.end() , queryResultsItr->impl->sortedFinalResults.begin(),
+				queryResultsItr->impl->sortedFinalResults.end());
+		for(unsigned queryResultIndex = 0; queryResultIndex < queryResultsItr->impl->sortedFinalResults.size();
 				queryResultIndex ++){
-			results.recordData.push_back((*queryResultsItr)->getInMemoryRecordString(queryResultIndex));
+			unsigned resultKey = queryResultsItr->getInternalRecordId(queryResultIndex);
+			results.recordData.push_back(inMemoryRecordStrings.at(resultSetIndex)[resultKey]);
 		}
 	}
 
