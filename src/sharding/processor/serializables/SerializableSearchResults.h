@@ -137,7 +137,7 @@ class SerializableSearchResults {
     	// serialize map
     	for(unsigned recordDataIndex = 0; recordDataIndex < sizeOfMap ; ++recordDataIndex){
     		// deserialize key
-    		string key = 0;
+    		string key ;
         	buffer = srch2::util::deserializeString(buffer, key);
         	// serialize value
         	string value;

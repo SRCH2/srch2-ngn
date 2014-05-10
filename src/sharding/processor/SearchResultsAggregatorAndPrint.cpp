@@ -211,7 +211,9 @@ void SearchResultAggregatorAndPrint::printResults(evhttp_request *req,
                 && query->getQueryTerms()->empty()) //check if the query type is range query without keywords
         {
             for (unsigned i = start; i < end; ++i) {
-            	StoredRecordBuffer inMemoryData(allResults.at(i).second.c_str(), allResults.at(i).second.size());
+                char * inMemoryCharPtr = new char[allResults.at(i).second.size()];
+                memcpy(inMemoryCharPtr, allResults.at(i).second.c_str(), allResults.at(i).second.size());
+                StoredRecordBuffer inMemoryData(inMemoryCharPtr, allResults.at(i).second.size());
             	if (inMemoryData.start.get() == NULL) {
             		--resultFound;
             		continue;
@@ -241,7 +243,9 @@ void SearchResultAggregatorAndPrint::printResults(evhttp_request *req,
         {
 
             for (unsigned i = start; i < end; ++i) {
-            	StoredRecordBuffer inMemoryData(allResults.at(i).second.c_str(), allResults.at(i).second.size());
+                char * inMemoryCharPtr = new char[allResults.at(i).second.size()];
+                memcpy(inMemoryCharPtr, allResults.at(i).second.c_str(), allResults.at(i).second.size());
+            	StoredRecordBuffer inMemoryData(inMemoryCharPtr, allResults.at(i).second.size());
             	if (inMemoryData.start.get() == NULL) {
             		--resultFound;
             		continue;
@@ -459,8 +463,9 @@ void SearchResultAggregatorAndPrint::printOneResultRetrievedById(evhttp_request 
 
     unsigned resultFound = allResults.size();
     for (unsigned i = 0; i < allResults.size(); ++i) {
-    	unsigned internalRecordId = allResults.at(i).first->internalRecordId;
-    	StoredRecordBuffer inMemoryData(allResults.at(i).second.c_str(), allResults.at(i).second.size());
+        char * inMemoryCharPtr = new char[allResults.at(i).second.size()];
+        memcpy(inMemoryCharPtr, allResults.at(i).second.c_str(), allResults.at(i).second.size());
+        StoredRecordBuffer inMemoryData(inMemoryCharPtr, allResults.at(i).second.size());
     	if (inMemoryData.start.get() == NULL) {
     		--resultFound;
     		continue;
