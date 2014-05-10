@@ -73,7 +73,8 @@ public:
 	void printResults(evhttp_request *req,
 	        const evkeyvalq &headers, const LogicalPlan &queryPlan,
 	        const CoreInfo_t *indexDataConfig,
-	        const vector<QueryResult *> queryResultsVector, const Query *query,
+	        const vector<pair< QueryResult *, string> > allResults,
+	        const Query *query,
 	        const unsigned start, const unsigned end,
 	        const unsigned retrievedResults, const string & message,
 	        const unsigned ts1, const vector<RecordSnippet>& recordSnippets, unsigned hlTime, bool onlyFacets) ;
@@ -81,22 +82,26 @@ public:
 	void printOneResultRetrievedById(evhttp_request *req, const evkeyvalq &headers,
 	        const LogicalPlan &queryPlan,
 	        const CoreInfo_t *indexDataConfig,
-	        const vector<QueryResult *> queryResultsVector,
+	        const vector<pair< QueryResult *, string> > allResults,
 	        const string & message,
 	        const unsigned ts1);
 
+	void genRecordJsonString(const srch2::instantsearch::Schema * schema, StoredRecordBuffer buffer,
+	        const string& extrnalRecordId, string& sbuffer);
+	void genRecordJsonString(const srch2::instantsearch::Schema * schema, StoredRecordBuffer buffer,
+	        const string& externalRecordId, string& sbuffer, const vector<string>* attrToReturn);
+
 	class QueryResultsComparatorOnlyScore{
 	public:
-		bool operator()(QueryResult * left, QueryResult * right){
-			return (left->getResultScore() > right->getResultScore());
+		bool operator()(const pair< QueryResult *, string> & left, const pair< QueryResult *, string> &  right){
+			return (left.first->getResultScore() > right.first->getResultScore());
 		}
 	};
 
 
 	class AggregatedQueryResults{
 	public:
-		vector<QueryResult *> allResults;
-		vector<string> recordData;
+		vector<pair< QueryResult *, string> > allResults;
 		std::map<std::string, std::pair< FacetType , std::vector<std::pair<std::string, float> > > > aggregatedFacetResults;
 		unsigned aggregatedEstimatedNumberOfResults;
 		bool isResultsApproximated;
@@ -143,8 +148,7 @@ private:
 	 * If some shards fail or don't return any results we ignore them
 	 * Search should not be blocking in failure case
 	 */
-	vector<QueryResults *> resultsOfAllShards;
-	vector<map<unsigned, string> > inMemoryRecordStrings;
+	vector<pair< QueryResults *, map<string, string> > > resultsOfAllShards;
 
 	/*
 	 * This variable contains the final aggregated results

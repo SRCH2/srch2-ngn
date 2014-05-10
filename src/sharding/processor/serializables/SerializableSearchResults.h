@@ -40,7 +40,7 @@ class SerializableSearchResults {
 	QueryResults * getQueryResults() const{
 		return queryResults;
 	}
-	const map<unsigned, string> & getInMemoryRecordStrings() const {
+	const map<string, string> & getInMemoryRecordStrings() const {
 		return inMemoryRecordStrings;
 	}
 	QueryResultFactory * getQueryResultsFactory() const{
@@ -105,7 +105,7 @@ class SerializableSearchResults {
     	}
     	// iterate on query results and save the inMemoryStrings in the map
     	for(unsigned resultIndex = 0 ; resultIndex < queryResults->getNumberOfResults(); ++resultIndex){
-    		inMemoryRecordStrings[queryResults->getInternalRecordId(resultIndex)] =
+    		inMemoryRecordStrings[queryResults->getRecordId(resultIndex)] =
     				queryResults->getInMemoryRecordString(resultIndex);
     	}
     }
@@ -117,10 +117,10 @@ class SerializableSearchResults {
     	// serialize size of map
     	buffer = srch2::util::serializeFixedTypes(((unsigned)inMemoryRecordStrings.size()), buffer);
     	// serialize map
-    	for(map<unsigned,string>::iterator recordDataItr = inMemoryRecordStrings.begin();
+    	for(map<string,string>::iterator recordDataItr = inMemoryRecordStrings.begin();
     			recordDataItr != inMemoryRecordStrings.end() ; ++recordDataItr){
     		// serialize key
-        	buffer = srch2::util::serializeFixedTypes(recordDataItr->first, buffer);
+        	buffer = srch2::util::serializeString(recordDataItr->first, buffer);
         	// serialize value
         	buffer = srch2::util::serializeString(recordDataItr->second, buffer);
     	}
@@ -137,8 +137,8 @@ class SerializableSearchResults {
     	// serialize map
     	for(unsigned recordDataIndex = 0; recordDataIndex < sizeOfMap ; ++recordDataIndex){
     		// deserialize key
-    		unsigned key = 0;
-        	buffer = srch2::util::deserializeFixedTypes(buffer, key);
+    		string key = 0;
+        	buffer = srch2::util::deserializeString(buffer, key);
         	// serialize value
         	string value;
         	buffer = srch2::util::deserializeString(buffer, value);
@@ -155,10 +155,10 @@ class SerializableSearchResults {
     	// size of map
     	numberOfBytes += sizeof(unsigned);
     	// map
-    	for(map<unsigned,string>::iterator recordDataItr = inMemoryRecordStrings.begin();
+    	for(map<string,string>::iterator recordDataItr = inMemoryRecordStrings.begin();
     			recordDataItr != inMemoryRecordStrings.end() ; ++recordDataItr){
     		// key
-    		numberOfBytes += sizeof(unsigned);
+    		numberOfBytes += sizeof(unsigned) + recordDataItr->first.size();
     		// value
     		numberOfBytes += sizeof(unsigned) + recordDataItr->second.size();
     	}
@@ -174,7 +174,7 @@ class SerializableSearchResults {
 
   private:
     QueryResults * queryResults;
-    map<unsigned,string> inMemoryRecordStrings;
+    map<string,string> inMemoryRecordStrings;
     QueryResultFactory * resultsFactory;
    	// extra information to be added later
 	unsigned searcherTime;
