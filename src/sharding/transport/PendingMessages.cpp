@@ -82,11 +82,11 @@ void PendingMessages::resolve(Message* msg) {
 		pendingRequests.erase(request);
 		if(num == 0) {
 			cb->getCallbackObject()->callbackAll(cb->getReply());
-			delete cb;
 			for(std::vector<Message*>::iterator msg = cb->getReply().begin();
 					msg != cb->getReply().end(); ++msg) {
 				delete *msg;
 			}
+			delete cb;
 		}
 	} else {
 		cb->getCallbackObject()->callback(msg);
