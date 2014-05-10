@@ -78,7 +78,7 @@ class SerializableSearchResults {
     	void * bufferWritePointer = buffer;
     	bufferWritePointer = srch2::util::serializeFixedTypes(true, bufferWritePointer);
     	bufferWritePointer = queryResults->serializeForNetwork(bufferWritePointer);
-    	bufferWritePointer = serializeInMemoryRecordStrings(buffer);
+    	bufferWritePointer = serializeInMemoryRecordStrings(bufferWritePointer);
 
     	return buffer;
     }
@@ -135,7 +135,7 @@ class SerializableSearchResults {
     	unsigned sizeOfMap = 0;
     	buffer = srch2::util::deserializeFixedTypes(buffer, sizeOfMap);
     	// serialize map
-    	for(unsigned recordDataIndex = 0; recordDataIndex < sizeOfMap ; ++sizeOfMap){
+    	for(unsigned recordDataIndex = 0; recordDataIndex < sizeOfMap ; ++recordDataIndex){
     		// deserialize key
     		unsigned key = 0;
         	buffer = srch2::util::deserializeFixedTypes(buffer, key);
