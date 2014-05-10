@@ -78,7 +78,7 @@ class SerializableSearchResults {
     	void * bufferWritePointer = buffer;
     	bufferWritePointer = srch2::util::serializeFixedTypes(true, bufferWritePointer);
     	bufferWritePointer = queryResults->serializeForNetwork(bufferWritePointer);
-    	bufferWritePointer = serializeInMemoryRecordStrings(buffer);
+    	bufferWritePointer = serializeInMemoryRecordStrings(bufferWritePointer);
 
     	return buffer;
     }
