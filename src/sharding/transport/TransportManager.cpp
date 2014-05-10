@@ -86,13 +86,34 @@ TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
 	distributedTime = 0;
 }
 
+#define USE_SAME_THREAD_FOR_CURRENT_NODE_PROCESS
+
 MessageTime_t TransportManager::route(NodeId node, Message *msg, 
 		unsigned timeout, CallbackReference callback) {
-	Connection conn = routeMap.getConnection(node);
 	msg->time = __sync_fetch_and_add(&distributedTime, 1);
 
 	time_t timeOfTimeout_time = timeout + time(NULL);
 	pendingMessages.addMessage(timeout, msg->time, callback);
+
+#ifdef USE_SAME_THREAD_FOR_CURRENT_NODE_PROCESS
+  if(node == routeMap.getCurrentNode().getId()) {
+    MessageTime_t rtn = msg->time;
+    if(msg->isInternal()) {
+		  if(Message* reply = getInternalTrampoline()->notify(msg)) {
+        reply->initial_time = msg->time;
+        reply->mask |= REPLY_MASK | INTERNAL_MASK;
+        getMsgs()->resolve(msg);
+        getMessageAllocator()->deallocate(reply);
+      }
+    } else {
+      getSmHandler()->notify(msg);
+    }
+   return rtn;
+  }
+#endif
+
+
+	Connection conn = routeMap.getConnection(node);
 
 #ifdef __MACH__
 	int flag = SO_NOSIGPIPE;
