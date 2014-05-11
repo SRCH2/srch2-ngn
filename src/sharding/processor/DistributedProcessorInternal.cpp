@@ -304,7 +304,7 @@ SerializableCommandStatus DPInternalRequestHandler::	internalSerializeCommand(Sr
 		SerializableCommandStatus status(SerializableCommandStatus::SERIALIZE, false, "");
 		return status;
 	}
-	if(serailizeData->getIndexOrRecord()){ // serialize index
+	if(serailizeData->getIndexOrRecord() == SerializableSerializeCommandInput::SERIALIZE_INDEX){ // serialize index
 		return this->internalSerializeIndexCommand(server, serailizeData);
 	}else{ // serialize records
 		return this->internalSerializeRecordsCommand(server, serailizeData);
