@@ -320,7 +320,11 @@ static void cb_write(evhttp_request *req, void *arg) {
 		return;
 
 	try {
-		core->dpHandler.externalInsertCommand(req, &core->info);
+	    if(req->type == EVHTTP_REQ_PUT){
+            core->dpHandler.externalInsertCommand(req, &core->info);
+	    }else if(req->type == EVHTTP_REQ_DELETE){
+	        core->dpHandler.externalDeleteCommand(req, &core->info);
+	    }
 	} catch (exception& e) {
 		// exception caught
 		Logger::error(e.what());
@@ -355,7 +359,7 @@ static void cb_save(evhttp_request *req, void *arg) {
 		return;
 
 	try {
-		//core->dpHandler.externalSaveCommand(req, &core->info, versioninfo);
+		core->dpHandler.externalSerializeIndexCommand(req, &core->info);
 	} catch (exception& e) {
 		// exception caught
 		Logger::error(e.what());
@@ -371,7 +375,13 @@ static void cb_export(evhttp_request *req, void *arg) {
 	if(!checkOperationPermission(req, core, srch2http::ExportPort))
 		return;
 
-	// core->dpHandler.externalExportCommand(req, &core->info);
+	try{
+         core->dpHandler.externalSerializeRecordsCommand(req, &core->info);
+	} catch(exception& e){
+        // exception caught
+        Logger::error(e.what());
+        srch2http::HTTPRequestHandler::handleException(req);
+	}
 }
 
 /**
