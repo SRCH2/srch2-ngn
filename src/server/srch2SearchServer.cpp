@@ -591,29 +591,17 @@ static int getHttpServerMetadata(ConfigManager *config,
 		(*globalPortSocketMap)[globalDefaultPort] = socketFd;
 	}
 
-	// loop over cores and extract all ports to use
+	// loop over operations and extract all ports to use
 	std::set<short> ports;
-	ports.insert(7190); // search
-	ports.insert(7191); // suggest
-	ports.insert(7192); // info
-	ports.insert(7193); // docs
-	ports.insert(7194); // update
-	ports.insert(7195); // save
-	ports.insert(7196); // export
-	ports.insert(7197); // reset
-//	for(ConfigManager::CoreInfoMap_t::iterator core =
-//			config->coreInfoIterateBegin();
-//			core != config->coreInfoIterateEnd(); ++core) { // TODO : we need to iterate on all nodes on this machine instead of iterating over cores
-
-//		unsigned short port;
-//		for (srch2http::PortType_t portType = (srch2http::PortType_t) 0;
-//				portType < srch2http::EndOfPortType; portType = srch2http::incrementPortType(portType)) {
-//			port = core->second->getPort(portType); //TODO : we need to get these ports from node
-//			if( port < 0){
-//				ports.insert(port);
-//			}
-//		}
-//	}
+	const srch2::httpwrapper::Node * currentNode = config->getCluster()->getCurrentNode();
+	unsigned short port;
+	for (srch2http::PortType_t portType = (srch2http::PortType_t) 0;
+			portType < srch2http::EndOfPortType; portType = srch2http::incrementPortType(portType)) {
+		port = currentNode->getPort(portType);
+		if(port > 0){
+			ports.insert(port);
+		}
+	}
 
 	// bind once each port defined for use by this core
 	int socketFd;
@@ -674,37 +662,10 @@ int setCallBacksonHTTPServer(ConfigManager *const config,
 		evhttp *const http_server,
 		std::vector<DPExternalCoreHandle>& dpExternalCoreHandles) {
 
+	const srch2::httpwrapper::Node * currentNode = config->getCluster()->getCurrentNode();
 	// setup default core callbacks for queries without a core name
 	for (int j = 0; portList[j].path != NULL; j++) {
-		unsigned short port = 0;
-//				config->getDefaultCoreInfo()->getPort(portList[j].portType); // TODO : we must get port from currentNode
-
-		switch (portList[j].portType) {
-			case srch2http::SearchPort:
-				port = 7190;
-				break;
-			case srch2http::SuggestPort:
-				port = 7191;
-				break;
-			case srch2http::InfoPort:
-				port = 7192;
-				break;
-			case srch2http::DocsPort:
-				port = 7193;
-				break;
-			case srch2http::UpdatePort:
-				port = 7194;
-				break;
-			case srch2http::SavePort:
-				port = 7195;
-				break;
-			case srch2http::ExportPort:
-				port = 7196;
-				break;
-			case srch2http::ResetLoggerPort:
-				port = 7197;
-				break;
-		}
+		unsigned short port = currentNode->getPort(portList[j].portType);
 
 		if (port == 1) port = globalDefaultPort;
 
@@ -728,36 +689,9 @@ int setCallBacksonHTTPServer(ConfigManager *const config,
 			for(unsigned int j = 0; portList[j].path != NULL; j++) {
 				string path = string("/") + coreName + string(portList[j].path);
 
-//				unsigned short port = core->second->getPort(portList[j].portType);
-//				if(port < 1) {
-//					port = globalDefaultPort;
-//				} //TODO ports must be accessed from the current node
-				unsigned short port =0;
-				switch (portList[j].portType) {
-					case srch2http::SearchPort:
-						port = 7190;
-						break;
-					case srch2http::SuggestPort:
-						port = 7191;
-						break;
-					case srch2http::InfoPort:
-						port = 7192;
-						break;
-					case srch2http::DocsPort:
-						port = 7193;
-						break;
-					case srch2http::UpdatePort:
-						port = 7194;
-						break;
-					case srch2http::SavePort:
-						port = 7195;
-						break;
-					case srch2http::ExportPort:
-						port = 7196;
-						break;
-					case srch2http::ResetLoggerPort:
-						port = 7197;
-						break;
+				unsigned short port = currentNode->getPort(portList[j].portType);
+				if(port < 1){
+					port = globalDefaultPort;
 				}
 
 				evhttp_set_cb(http_server, path.c_str(),
