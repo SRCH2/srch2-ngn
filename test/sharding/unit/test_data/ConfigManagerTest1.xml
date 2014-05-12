@@ -30,27 +30,35 @@
     
     <node>
         <listeningHostname> 192.168.1.54 </listeningHostname>
-        <listeningPort> 8089 </listeningPort>
+        <internalCommunicationPort> 8089 </internalCommunicationPort>
         <this-is-me> true </this-is-me>
-	<node-name> queen </node-name>
+		<node-name> queen </node-name>
         <node-master> true </node-master>
         <node-data> true </node-data>
         <srch2Home> myHome </srch2Home>
         <dataDir> Default </dataDir>
+        <searchPort>8087</searchPort>
+        <savePort>9084</savePort>
+        <exportPort>9085</exportPort>
+        <resetLoggerPort>9086</resetLoggerPort>
+        <docsPort>9087</docsPort>
+        <updatePort>9088</updatePort>
+        <suggestPort>9089</suggestPort>
+        <infoPort>9090</infoPort>
     </node> 
 
     <node>
         <this-is-me> false </this-is-me>
         <listeningHostname> 192.168.1.55 </listeningHostname>
         <node-name> frozen </node-name>
-        <listeningPort> 8088 </listeningPort>
+        <internalCommunicationPort> 8088 </internalCommunicationPort>
     </node> 
 
-
+    <listeningPort>8087</listeningPort>
+    
     <licenseFile>../../conf/srch2_license_key.txt</licenseFile>
  
     <listeningHostname>0.0.0.0</listeningHostname>
-    <listeningPort>8087</listeningPort>
 
     <!-- moved from <query> which is now per core -->
     <maxSearchThreads>2</maxSearchThreads>

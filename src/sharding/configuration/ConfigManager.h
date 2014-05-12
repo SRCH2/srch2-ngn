@@ -215,6 +215,29 @@ namespace httpwrapper {
    unsigned nodeId;
  };
 
+
+
+ // enum to allow loop iteration over listening ports
+ enum PortType_t {
+     SearchPort,
+     SuggestPort,
+     InfoPort,
+     DocsPort,
+     UpdatePort,
+     SavePort,
+     ExportPort,
+     ResetLoggerPort,
+     EndOfPortType // stop value - not valid (also used to indicate all/default ports)
+ };
+
+ inline  enum PortType_t incrementPortType(PortType_t &oldValue)
+ {
+     unsigned int newValue = static_cast<int> (oldValue);
+     newValue++;
+     return static_cast<PortType_t> (newValue);
+ }
+
+
 class Node {
  public:
 
@@ -259,6 +282,7 @@ class Node {
 	this->dataDir = dataDir;
 	this->homeDir = homeDir;
 	this->numberOfThreads = 1; // default value is 1
+
   }	
 
   std::string getHomeDir() const {
@@ -306,6 +330,9 @@ class Node {
 
   bool thisIsMe; // temporary for V0
 
+  unsigned short getPort(PortType_t portType) const;
+  void setPort(PortType_t portType, unsigned short portNumber);
+
   // TODO (for Surendra): refine this iterator
   // const Node& operator = (const Node& node);
 
@@ -327,6 +354,7 @@ class Node {
   std::string ipAddress;
   unsigned portNumber;
   std::string nodeName;
+  vector<unsigned short> ports;
 
   // Allow this node to be eligible as a master node (enabled by default).
   bool nodeMaster;
@@ -350,9 +378,18 @@ enum CLUSTERSTATE {
 
 class CoreInfo_t;
 
-
 class Cluster {
  public:
+
+  const Node* getCurrentNode(){
+     vector<Node>& nodes =  (this->nodes);
+     for(int i = 0; i < nodes.size(); i++){
+        if(nodes[i].thisIsMe == true){
+           return &nodes[i];
+        }
+     }
+  }
+
   std::map<ShardId, Shard, ShardIdComparator> shardMap;
 
   std::vector<Node>* getNodes(){
@@ -480,26 +517,6 @@ struct CoreConfigParseState_t {
 
     CoreConfigParseState_t() : hasLatitude(false), hasLongitude(false) {};
 };
-
-// enum to allow loop iteration over listening ports
-enum PortType_t {
-    SearchPort,
-    SuggestPort,
-    InfoPort,
-    DocsPort,
-    UpdatePort,
-    SavePort,
-    ExportPort,
-    ResetLoggerPort,
-    EndOfPortType // stop value - not valid (also used to indicate all/default ports)
-};
-
-inline  enum PortType_t incrementPortType(PortType_t &oldValue)
-{
-    unsigned int newValue = static_cast<int> (oldValue);
-    newValue++;
-    return static_cast<PortType_t> (newValue);
-}
 
  class DiscoveryParams {
  private:
@@ -671,7 +688,7 @@ public:
     bool isLocal(ShardId& shardId);
 
     //Declaring function to parse node tags
-    void parseNode(std::vector<Node>* nodes, xml_node& childNode, std::stringstream &parseWarnings);
+    void parseNode(std::vector<Node>* nodes, xml_node& childNode, std::stringstream &parseWarnings, std::stringstream &parseError, bool configSuccess);
 
     const CoreInfoMap_t& getCoreInfoMap() const;
     CoreInfoMap_t::iterator coreInfoIterateBegin() { return coreInfoMap.begin(); }

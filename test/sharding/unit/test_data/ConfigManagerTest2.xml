@@ -32,8 +32,8 @@
     <node>
         <listeningHostname> 192.168.1.54 </listeningHostname>
         <listeningHostname> 192.168.1.52 </listeningHostname>
-        <listeningPort> 8087 </listeningPort>
-        <listeningPort> 8089 </listeningPort>
+        <internalCommunicationPort> 8087 </internalCommunicationPort>
+        <internalCommunicationPort> 8089 </internalCommunicationPort>
         <this-is-me> true </this-is-me>
         <node-name> avatar </node-name>
 	<node-name> LionKing </node-name>
@@ -52,8 +52,8 @@
         <listeningHostname> 192.168.1.56 </listeningHostname>
         <node-name> frozen </node-name>
         <node-name> liquid </node-name>
-        <listeningPort> 8088 </listeningPort>
-        <listeningPort> 8089 </listeningPort>
+        <internalCommunicationPort> 8088 </internalCommunicationPort>
+        <internalCommunicationPort> 8089 </internalCommunicationPort>
     </node> 
 
 
