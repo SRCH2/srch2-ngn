@@ -31,23 +31,31 @@
         <ping-timeout>8</ping-timeout>
         <retry-count>10</retry-count>
     </discovery> 
-     <node>
+    <node>
         <this-is-me> false </this-is-me>
         <listeningHostname> 127.0.0.1 </listeningHostname>
         <node-name> frozen </node-name>
-        <listeningPort> 3095</listeningPort>
+        <internalCommunicationPort> 3095</internalCommunicationPort>
     </node>
 
 
     <node>
         <listeningHostname> 127.0.0.1 </listeningHostname>
-        <listeningPort> 3096 </listeningPort>
+        <internalCommunicationPort> 3096 </internalCommunicationPort>
         <this-is-me> true </this-is-me>
-              <node-name> queen </node-name>
+        <node-name> queen </node-name>
         <!--<node-master> true </node-master>-->
         <node-data> true </node-data>
         <srch2Home> ./ </srch2Home>
         <dataDir> ./data/2n-insertA-queryB/queen </dataDir>
+        <searchPort>6091</searchPort>
+        <savePort>6092</savePort>
+        <exportPort>6093</exportPort>
+        <resetLoggerPort>6094</resetLoggerPort>
+        <docsPort>6095</docsPort>
+        <updatePort>6096</updatePort>
+        <suggestPort>6097</suggestPort>
+        <infoPort>6098</infoPort>
     </node>   
     <!--<node>
         <listeningHostname> 127.0.0.1 </listeningHostname>

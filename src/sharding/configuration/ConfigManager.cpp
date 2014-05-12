@@ -2122,7 +2122,7 @@ void ConfigManager::parseNode(std::vector<Node>* nodes, xml_node& nodeTag, std::
 			xml_node childNode;
 
 			for (unsigned int i = 0; portNameMap[i].portName != NULL; i++) {
-				childNode = nodeTag.child(portNameMap[i].portName);
+				childNode = nodeTemp.child(portNameMap[i].portName);
 				if (childNode && childNode.text()) { // checks if the config/port has any text in it or not
 					int portValue = childNode.text().as_int();
 					if (portValue <= 0 || portValue > USHRT_MAX) {
