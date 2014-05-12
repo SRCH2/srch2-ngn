@@ -31,35 +31,38 @@
         <ping-timeout>8</ping-timeout>
         <retry-count>10</retry-count>
     </discovery>    
-    <node>
-        <this-is-me> true </this-is-me>
+
+     <node>
+        <this-is-me> false </this-is-me>
         <listeningHostname> 127.0.0.1 </listeningHostname>
         <node-name> frozen </node-name>
         <listeningPort> 3095 </listeningPort>
-        <node-master> false </node-master>
-        <node-data> true </node-data>
-        <srch2Home> ./ </srch2Home>
-        <dataDir> ./data/2n-insertA-queryB/frozen </dataDir>
-    </node>
+    </node> 
+
+   
     <node>
         <listeningHostname> 127.0.0.1 </listeningHostname>
         <listeningPort> 3096 </listeningPort>
         <this-is-me> false </this-is-me>
-        <node-name> queen </node-name>
-    </node>
-    <!--<node>
+	<node-name> queen </node-name>
+    </node> 
+
+    <node>
         <listeningHostname> 127.0.0.1 </listeningHostname>
         <listeningPort> 3097 </listeningPort>
-        <this-is-me> false </this-is-me>
+        <this-is-me> true </this-is-me>
         <node-name> rio </node-name>
+        <!--<node-master> true </node-master>-->
+        <node-data> true </node-data>
+        <srch2Home> ./ </srch2Home>
+        <dataDir> ./data/2n-insertA-queryB/rio </dataDir>
     </node>
-
     <node>
         <listeningHostname> 127.0.0.1 </listeningHostname>
         <listeningPort> 3098 </listeningPort>
         <this-is-me> false </this-is-me>
         <node-name> lion </node-name>
-    </node>-->
+    </node>
     <!--
         License Key File
         Required
@@ -76,11 +79,11 @@
         Hostname and port number of the server. Make sure the port is open.
     -->
     <listeningHostname>127.0.0.1</listeningHostname>
-    <listeningPort>4090</listeningPort>
+    <listeningPort>4092</listeningPort>
     	
         <cores defaultCoreName="core1">
         <core name="core1">
-        <core-number_of_shards>2</core-number_of_shards> 
+        <core-number_of_shards>4</core-number_of_shards> 
 	<core-number_of_replicas>1</core-number_of_replicas>
 
     <!--
