@@ -15,6 +15,4 @@ shell> python ./AllTestCases/test-sharding.py ../../../build/src/server/srch2-se
 shell> python ./AllTestCases/test-sharding.py ../../../build/src/server/srch2-search-server ./AllTestCases/3n-insertABC-queryC ./AllTestCases/list-of-3-nodes.txt
 shell> python ./AllTestCases/test-sharding.py ../../../build/src/server/srch2-search-server ./AllTestCases/3n-insertA-queryABC ./AllTestCases/list-of-3-nodes.txt
 
-Logic behind the test case:
-- A record is inserted into one node and queried from another node.
 

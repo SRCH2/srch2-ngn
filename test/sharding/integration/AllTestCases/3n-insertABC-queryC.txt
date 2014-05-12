@@ -1,3 +1,5 @@
+# Record R1 is inserted in node A, B and C. Node B and C should give error "The record with same primary key already exists". R1 is then queried from node A 
+
 A||insert||{"category": "Insurance Services Insurance Agent", "name": "Prescription Service Of California", "relevance": 3.0147461915737148, "lat": 61.171669000000001, "lng": -149.881021, "id": "101"}||{"rid":"101","insert":"success"}
 B||insert||{"category": "Insurance Services Insurance Agent", "name": "Prescription Service Of California", "relevance": 3.0147461915737148, "lat": 61.171669000000001, "lng": -149.881021, "id": "101"}||{"rid":"101","insert":"failed","reason":"The record with same primary key already exists"}
 C||insert||{"category": "Insurance Services Insurance Agent", "name": "Prescription Service Of California", "relevance": 3.0147461915737148, "lat": 61.171669000000001, "lng": -149.881021, "id": "101"}||{"rid":"101","insert":"failed","reason":"The record with same primary key already exists"}
