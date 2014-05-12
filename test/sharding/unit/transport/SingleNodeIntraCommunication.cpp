@@ -84,8 +84,6 @@ int main() {
   std::vector<Node>* nodes = new std::vector<Node>();
   nodes->push_back(
       Node(std::string("apple"), std::string("127.0.0.1"), 9552, false));
-  nodes->push_back(
-      Node(std::string("apple"), std::string("127.0.0.1"), 9551, false));
 
   int i=0;
   for(std::vector<Node>::iterator node = nodes->begin(); 
@@ -94,20 +92,9 @@ int main() {
   }
 
   std::vector<Node>::iterator n = nodes->begin(); 
+  n->thisIsMe = true;
 
   int cid; i = 0;
-  while(true) {
-    if((cid = fork()) == 0) {
-      //in child
-      ++n, ++i;
-      if(n == nodes->end()) std::exit(0);
-      continue;
-    } else {
-      //in parent
-      n->thisIsMe = true;
-      break;
-   }
-  }
 
   const int NUM_THREADS = 3;
   EventBases eventbases;
@@ -115,28 +102,23 @@ int main() {
     eventbases.push_back(event_base_new());
 
   TransportManager *tm =  new TransportManager(eventbases, *nodes);
-  tm->setInternalTrampoline(new TestHandler());
+  tm->setInternalMessageBroker(new TestHandler());
 
   pthread_t tmp[NUM_THREADS];
   for(int t=0;  t < NUM_THREADS; ++t) {
     pthread_create(tmp + t, NULL, dispatch, eventbases[t]);
   }
+  
+  for(int m=0; m < 52; ++m) {
+    int messageLength = strlen(MESSAGE_CONTENTS[m]);
+    Message* msg = tm->getMessageAllocator()->allocateMessage(messageLength+1);
+    msg->type = StatusMessageType;
+    msg->mask |= INTERNAL_MASK;
+    msg->bodySize = messageLength+1;
+    msg->shard.coreId = n->getId();
+    memcpy(msg->buffer, MESSAGE_CONTENTS[m], messageLength);
 
-  for(std::vector<Node>::iterator node = nodes->begin(); 
-      node != nodes->end(); ++node) {
-    if(node == n) continue;
-    for(int m=0; m < 52; ++m) {
-
-      int messageLength = strlen(MESSAGE_CONTENTS[m]);
-      Message* msg = tm->getMessageAllocator()->allocateMessage(messageLength+1);
-      msg->type = StatusMessageType;
-      msg->mask |= INTERNAL_MASK;
-      msg->bodySize = messageLength+1;
-      msg->shard.coreId = n->getId();
-      memcpy(msg->buffer, MESSAGE_CONTENTS[m], messageLength);
-
-      tm->route(node->getId(), msg);
-      tm->getMessageAllocator()->deallocateMessage(msg);
-    }
+    tm->route(n->getId(), msg);
+    tm->getMessageAllocator()->deallocateMessage(msg);
   }
 }
