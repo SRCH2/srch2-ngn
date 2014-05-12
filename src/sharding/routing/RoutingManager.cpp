@@ -14,10 +14,11 @@ RoutingManager::RoutingManager(ConfigManager&  cm, TransportManager& transportMa
 
 
 	// create a server (core) for each data source in config file
+    unsigned coreInfoIndex = 0 ;
 	for(ConfigManager::CoreInfoMap_t::const_iterator iterator =
 			cm.coreInfoIterateBegin(); iterator != cm.coreInfoIterateEnd();
 			iterator++) {
-		Srch2Server *core = &shardServers[iterator->second->getCoreId()];
+		Srch2Server *core = &shardServers[coreInfoIndex];
 		core->setCoreName(iterator->second->getName());
 
 		if(iterator->second->getDataSourceType() ==
@@ -44,6 +45,8 @@ RoutingManager::RoutingManager(ConfigManager&  cm, TransportManager& transportMa
 			Logger::error(ex.what());
 			exit(-1);
 		}
+		//
+		coreInfoIndex ++;
 	}
 }
 
