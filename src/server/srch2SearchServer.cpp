@@ -593,14 +593,14 @@ static int getHttpServerMetadata(ConfigManager *config,
 
 	// loop over cores and extract all ports to use
 	std::set<short> ports;
-	ports.insert(9090); // search
-	ports.insert(9091); // suggest
-	ports.insert(9092); // info
-	ports.insert(9093); // docs
-	ports.insert(9094); // update
-	ports.insert(9095); // save
-	ports.insert(9096); // export
-	ports.insert(9097); // reset
+	ports.insert(8090); // search
+	ports.insert(8091); // suggest
+	ports.insert(8092); // info
+	ports.insert(8093); // docs
+	ports.insert(8094); // update
+	ports.insert(8095); // save
+	ports.insert(8096); // export
+	ports.insert(8097); // reset
 //	for(ConfigManager::CoreInfoMap_t::iterator core =
 //			config->coreInfoIterateBegin();
 //			core != config->coreInfoIterateEnd(); ++core) { // TODO : we need to iterate on all nodes on this machine instead of iterating over cores
@@ -681,28 +681,28 @@ int setCallBacksonHTTPServer(ConfigManager *const config,
 
 		switch (portList[j].portType) {
 			case srch2http::SearchPort:
-				port = 9090;
+				port = 8090;
 				break;
 			case srch2http::SuggestPort:
-				port = 9091;
+				port = 8091;
 				break;
 			case srch2http::InfoPort:
-				port = 9092;
+				port = 8092;
 				break;
 			case srch2http::DocsPort:
-				port = 9093;
+				port = 8093;
 				break;
 			case srch2http::UpdatePort:
-				port = 9094;
+				port = 8094;
 				break;
 			case srch2http::SavePort:
-				port = 9095;
+				port = 8095;
 				break;
 			case srch2http::ExportPort:
-				port = 9096;
+				port = 8096;
 				break;
 			case srch2http::ResetLoggerPort:
-				port = 9097;
+				port = 8097;
 				break;
 		}
 
@@ -735,28 +735,28 @@ int setCallBacksonHTTPServer(ConfigManager *const config,
 				unsigned short port =0;
 				switch (portList[j].portType) {
 					case srch2http::SearchPort:
-						port = 9090;
+						port = 8090;
 						break;
 					case srch2http::SuggestPort:
-						port = 9091;
+						port = 8091;
 						break;
 					case srch2http::InfoPort:
-						port = 9092;
+						port = 8092;
 						break;
 					case srch2http::DocsPort:
-						port = 9093;
+						port = 8093;
 						break;
 					case srch2http::UpdatePort:
-						port = 9094;
+						port = 8094;
 						break;
 					case srch2http::SavePort:
-						port = 9095;
+						port = 8095;
 						break;
 					case srch2http::ExportPort:
-						port = 9096;
+						port = 8096;
 						break;
 					case srch2http::ResetLoggerPort:
-						port = 9097;
+						port = 8097;
 						break;
 				}
 
