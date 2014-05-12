@@ -102,7 +102,7 @@ MessageTime_t TransportManager::route(NodeId node, Message *msg,
 		  if(Message* reply = getInternalTrampoline()->notify(msg)) {
         reply->initial_time = msg->time;
         reply->mask |= REPLY_MASK | INTERNAL_MASK;
-        getMsgs()->resolve(msg);
+        getMsgs()->resolve(reply);
         getMessageAllocator()->deallocate(reply);
       }
     } else {

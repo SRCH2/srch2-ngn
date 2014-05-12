@@ -74,7 +74,7 @@ void RoutingManager::broadcast_w_cb(RequestType& requestObj,
 			new RMCallback<RequestType, ResponseType>(*aggregator),
 			ResponseType::messageKind(),
 			true,
-			broadcastResolver.size()-1); //hack for missing local
+			broadcastResolver.size());
 
 			// create the message from the request object
 	Message* msg = (Message*)
@@ -117,7 +117,7 @@ void RoutingManager::broadcast_wait_for_all_w_cb(RequestType & requestObj,
 			new RMCallback<RequestType, ResponseType>(*aggregator),
 			ResponseType::messageKind(),
 			false,
-			broadcastResolver.size()-1); //hack for missing local
+			broadcastResolver.size()); 
 
 			// create the message from the request object
 	Message* msg = (Message*)
@@ -163,7 +163,7 @@ void RoutingManager::broadcast_w_cb_n_timeout(RequestType& requestObj,
 			new RMCallback<RequestType, ResponseType>(*aggregator),
 			ResponseType::messageKind(),
 			true,
-			broadcastResolver.size()-1); //hack for missing local
+			broadcastResolver.size());
 
 			// create the message from the request object
 	Message* msg = (Message*)
@@ -203,7 +203,7 @@ RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType& requestObj,
 			new RMCallback<RequestType, ResponseType>(*aggregator),
 			ResponseType::messageKind(),
 			true,
-			broadcastResolver.size()-1); //hack for missing local
+			broadcastResolver.size());
 
 			// create the message from the request object
 	Message* msg = (Message*)
