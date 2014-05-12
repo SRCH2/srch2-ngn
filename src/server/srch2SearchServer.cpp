@@ -201,7 +201,7 @@ struct DPExternalCoreHandle {
 
 static bool checkOperationPermission(evhttp_request *req, 
 		DPExternalCoreHandle *coreShardInfo, srch2http::PortType_t portType) {
-	if (portType >= srch2http::EndOfPortType) {
+/*	if (portType >= srch2http::EndOfPortType) {
 		Logger::error("Illegal port type: %d", static_cast<int> (portType));
 		cb_notfound(req, NULL);
 		return false;
@@ -234,7 +234,7 @@ static bool checkOperationPermission(evhttp_request *req,
 
 		cb_notfound(req, NULL);
 		return false;
-	}
+	}*/
 	return true;
 }
 
@@ -593,14 +593,14 @@ static int getHttpServerMetadata(ConfigManager *config,
 
 	// loop over cores and extract all ports to use
 	std::set<short> ports;
-	ports.insert(8090); // search
-	ports.insert(8091); // suggest
-	ports.insert(8092); // info
-	ports.insert(8093); // docs
-	ports.insert(8094); // update
-	ports.insert(8095); // save
-	ports.insert(8096); // export
-	ports.insert(8097); // reset
+	ports.insert(7190); // search
+	ports.insert(7191); // suggest
+	ports.insert(7192); // info
+	ports.insert(7193); // docs
+	ports.insert(7194); // update
+	ports.insert(7195); // save
+	ports.insert(7196); // export
+	ports.insert(7197); // reset
 //	for(ConfigManager::CoreInfoMap_t::iterator core =
 //			config->coreInfoIterateBegin();
 //			core != config->coreInfoIterateEnd(); ++core) { // TODO : we need to iterate on all nodes on this machine instead of iterating over cores
@@ -681,28 +681,28 @@ int setCallBacksonHTTPServer(ConfigManager *const config,
 
 		switch (portList[j].portType) {
 			case srch2http::SearchPort:
-				port = 8090;
+				port = 7190;
 				break;
 			case srch2http::SuggestPort:
-				port = 8091;
+				port = 7191;
 				break;
 			case srch2http::InfoPort:
-				port = 8092;
+				port = 7192;
 				break;
 			case srch2http::DocsPort:
-				port = 8093;
+				port = 7193;
 				break;
 			case srch2http::UpdatePort:
-				port = 8094;
+				port = 7194;
 				break;
 			case srch2http::SavePort:
-				port = 8095;
+				port = 7195;
 				break;
 			case srch2http::ExportPort:
-				port = 8096;
+				port = 7196;
 				break;
 			case srch2http::ResetLoggerPort:
-				port = 8097;
+				port = 7197;
 				break;
 		}
 
@@ -735,28 +735,28 @@ int setCallBacksonHTTPServer(ConfigManager *const config,
 				unsigned short port =0;
 				switch (portList[j].portType) {
 					case srch2http::SearchPort:
-						port = 8090;
+						port = 7190;
 						break;
 					case srch2http::SuggestPort:
-						port = 8091;
+						port = 7191;
 						break;
 					case srch2http::InfoPort:
-						port = 8092;
+						port = 7192;
 						break;
 					case srch2http::DocsPort:
-						port = 8093;
+						port = 7193;
 						break;
 					case srch2http::UpdatePort:
-						port = 8094;
+						port = 7194;
 						break;
 					case srch2http::SavePort:
-						port = 8095;
+						port = 7195;
 						break;
 					case srch2http::ExportPort:
-						port = 8096;
+						port = 7196;
 						break;
 					case srch2http::ResetLoggerPort:
-						port = 8097;
+						port = 7197;
 						break;
 				}
 
