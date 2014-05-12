@@ -48,30 +48,40 @@ bool findNextMagicNumberAndReadMessageHeader(Message *const msg,  int fd) {
 }
 
 Message* readRestOfMessage(MessageAllocator& messageAllocator,
-        int fd, Message *const msgHeader, int *readCount) {
-    Message *msg= messageAllocator.allocateMessage(msgHeader->bodySize);
-    *readCount= read(fd, msg->buffer, msgHeader->bodySize);
+		int fd, Message *const msgHeader, int *readCount) {
+	Message *msg= messageAllocator.allocateMessage(msgHeader->bodySize);
+	int rv = recv(fd, msg->buffer, msgHeader->bodySize, MSG_DONTWAIT);
 
-    memcpy(msg, msgHeader, sizeof(Message));
+  if(rv == -1) {
+		if(errno == EAGAIN || errno == EWOULDBLOCK) return NULL;
+    
+    //v1: handle error
+    return NULL;
+  }
+
+  *readCount = rv;
+	memcpy(msg, msgHeader, sizeof(Message));
 
     return msg;
 }
 
 bool readPartialMessage(int fd, MessageBuffer& buffer) {
-	int toRead = buffer.msg->bodySize - buffer.readCount;
-	if(toRead == 0) {
-		//strangely we don't need to read anything;)
-		return true;
-	}
+  int toRead = buffer.msg->bodySize - buffer.readCount;
+  if(toRead == 0) {
+    //strangely we don't need to read anything;)
+    return false;
+  }
 
-	int readReturnValue = read(fd, buffer.msg->buffer, toRead);
-	if(readReturnValue < 0) {
-		//TODO: handle errors
-	}
+	int readReturnValue = recv(fd, 
+      buffer.msg->buffer + buffer.readCount, toRead, MSG_DONTWAIT);
+  if(readReturnValue < 0) {
+    //TODO: handle errors
+    return false;
+  }
 
-	buffer.readCount -= readReturnValue;
+  buffer.readCount += readReturnValue;
 
-    return (readReturnValue == toRead);
+	return (buffer.msg->bodySize == buffer.readCount);
 }
 
 /*
@@ -81,14 +91,50 @@ void cb_recieveMessage(int fd, short eventType, void *arg) {
 
 	TransportCallback* cb = (TransportCallback*) arg;
 
-	if( fd != cb->conn->fd) {
-		//major error
-		return;
-	}
+  if( fd != cb->conn->fd) {
+    //major error
+    return;
+  }
 
-	MessageBuffer& b = cb->conn->buffer;
-	TransportManager *tm = cb->tm;
-	while(__sync_bool_compare_and_swap(&b.lock, false, true));
+  MessageBuffer& b = cb->conn->buffer;
+  TransportManager *tm = cb->tm;
+  while(!__sync_bool_compare_and_swap(&b.lock, false, true));
+
+  if(b.msg == NULL) {
+	  Message msgHeader;
+
+	  if(!findNextMagicNumberAndReadMessageHeader(&msgHeader, fd)){
+		  // there is some sort of error in the stream so we can't
+      // get the next message
+ //     b.lock = false;
+		  return;
+	  }
+
+  	// sets the distributedTime of TM to the maximum time received by a message
+  	// in a thread safe fashion
+  	while(true) {
+  		MessageTime_t time = tm->getDistributedTime();
+  		//check if time needs to be incremented
+  		if(msgHeader.time < time &&
+  				/*zero break*/ time - msgHeader.time < UINT_MAX/2 ) break;
+  		//make sure time did not change
+  		if(__sync_bool_compare_and_swap(
+  				&tm->getDistributedTime(), time, msgHeader.time)) break;
+  	}
+  
+  	if(!(b.msg = readRestOfMessage(*(tm->getMessageAllocator()), 
+                              fd, &msgHeader, &b.readCount))) return;
+
+    if(b.readCount != b.msg->bodySize) {
+      b.lock = false;
+      return;
+    }
+  } else {
+    if(!readPartialMessage(fd, b)) {
+      b.lock = false;
+      return;
+    }
+  }
 
 	if(b.msg == NULL) {
 		Message msgHeader;
