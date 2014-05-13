@@ -79,8 +79,7 @@ unsigned Partitioner::hash(unsigned valueToHash, unsigned hashSpace){
 
 
 ShardId Partitioner::convertUnsignedToCoreShardInfo(unsigned coreShardIndex, const CoreInfo_t *indexDataContainerConf){
-	// return indexDataContainerConf->getPrimaryShardId(coreShardIndex); TODO
-	return indexDataContainerConf->getPrimaryShardId(2);
+	 return indexDataContainerConf->getPrimaryShardId(coreShardIndex);
 }
 
 }

@@ -144,8 +144,11 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , CoreS
     resultAggregator->setParsingValidatingRewritingTime(ts1);
 
     // pass logical plan to broadcast through SerializableSearchCommandInput
-    SerializableSearchCommandInput searchInput(&resultAggregator->getLogicalPlan());
+    SerializableSearchCommandInput * searchInput =
+    		new SerializableSearchCommandInput(&resultAggregator->getLogicalPlan());
 
+    // add request object to results aggregator which is the callback object
+    resultAggregator->addRequestObject(searchInput);
 	// broadcasting search request to all shards , non-blocking, with timeout and callback to ResultAggregator
     timeval t;
     t.tv_sec = 2000;
@@ -278,8 +281,11 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, CoreSh
 
     	ShardId shardInfo = partitioner->getShardIDForRecord(*recordItr,coreShardInfo->coreName);
 
-		SerializableInsertUpdateCommandInput  insertUpdateInput(*recordItr,SerializableInsertUpdateCommandInput::INSERT);
+		SerializableInsertUpdateCommandInput  * insertUpdateInput=
+				new SerializableInsertUpdateCommandInput(*recordItr,SerializableInsertUpdateCommandInput::INSERT);
 
+		// add request object to results aggregator which is the callback object
+		resultsAggregator->addRequestObject(insertUpdateInput);
 		timeval t;
 		t.tv_sec = 2000;
 		routingManager->route_w_cb_n_timeout(insertUpdateInput, resultsAggregator , t , shardInfo);
@@ -417,8 +423,10 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, CoreSh
 
     	ShardId shardInfo = partitioner->getShardIDForRecord(*recordItr,coreShardInfo->coreName);
 
-		SerializableInsertUpdateCommandInput insertUpdateInput(*recordItr, SerializableInsertUpdateCommandInput::UPDATE);
-
+		SerializableInsertUpdateCommandInput * insertUpdateInput =
+				new SerializableInsertUpdateCommandInput(*recordItr, SerializableInsertUpdateCommandInput::UPDATE);
+		// add request object to results aggregator which is the callback object
+		resultsAggregator->addRequestObject(insertUpdateInput);
 		timeval t;
 		t.tv_sec = 2000;
 		routingManager->route_w_cb_n_timeout(insertUpdateInput, resultsAggregator , t, shardInfo);
@@ -473,8 +481,10 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, CoreSh
 
 		ShardId shardInfo = partitioner->getShardIDForRecord(primaryKeyStringValue,coreShardInfo->coreName);
 
-		SerializableDeleteCommandInput deleteInput(primaryKeyStringValue,coreShardInfo->coreId); // TODO : do we need coreId here ?
-
+		SerializableDeleteCommandInput * deleteInput =
+				new SerializableDeleteCommandInput(primaryKeyStringValue,coreShardInfo->coreId); // TODO : do we need coreId here ?
+		// add request object to results aggregator which is the callback object
+		resultsAggregator->addRequestObject(deleteInput);
 		timeval t;
 		t.tv_sec = 2000;
 		routingManager->route_w_cb_n_timeout(deleteInput, resultsAggregator , t , shardInfo);
@@ -501,7 +511,9 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, CoreSh
 void DPExternalRequestHandler::externalGetInfoCommand(evhttp_request *req, CoreShardInfo * coreShardInfo){
 
     GetInfoAggregatorAndPrint * resultsAggregator =	new GetInfoAggregatorAndPrint(configurationManager,req);
-    SerializableGetInfoCommandInput getInfoInput;
+    SerializableGetInfoCommandInput * getInfoInput = new SerializableGetInfoCommandInput();
+	// add request object to results aggregator which is the callback object
+	resultsAggregator->addRequestObject(getInfoInput);
     timeval t;
     t.tv_sec = 2000;
     routingManager->broadcast_wait_for_all_w_cb_n_timeout(getInfoInput, resultsAggregator, t, *coreShardInfo);
@@ -516,11 +528,13 @@ void DPExternalRequestHandler::externalSerializeIndexCommand(evhttp_request *req
     /* Yes, we are expecting a post request */
     switch (req->type) {
     case EVHTTP_REQ_PUT: {
-    	SerializableSerializeCommandInput serializeInput(SerializableSerializeCommandInput::SERIALIZE_INDEX);
-
     	CommandStatusAggregatorAndPrint<SerializableSerializeCommandInput> * resultsAggregator =
     			new CommandStatusAggregatorAndPrint<SerializableSerializeCommandInput>(configurationManager,req);
 
+    	SerializableSerializeCommandInput * serializeInput =
+    			new SerializableSerializeCommandInput(SerializableSerializeCommandInput::SERIALIZE_INDEX);
+    	// add request object to results aggregator which is the callback object
+    	resultsAggregator->addRequestObject(serializeInput);
     	timeval t;
     	t.tv_sec = 2000;
         routingManager->broadcast_wait_for_all_w_cb_n_timeout(serializeInput, resultsAggregator, t, *coreShardInfo);
@@ -553,11 +567,13 @@ void DPExternalRequestHandler::externalSerializeRecordsCommand(evhttp_request *r
             const char *exportedDataFileName = evhttp_find_header(&headers, URLParser::nameParamName);
             // TODO : should we free exportedDataFileName?
             if(exportedDataFileName){
-            	SerializableSerializeCommandInput serializeInput(SerializableSerializeCommandInput::SERIALIZE_RECORDS, string(exportedDataFileName));
-
             	CommandStatusAggregatorAndPrint<SerializableSerializeCommandInput> * resultsAggregator =
             			new CommandStatusAggregatorAndPrint<SerializableSerializeCommandInput>(configurationManager,req);
 
+            	SerializableSerializeCommandInput * serializeInput =
+            			new SerializableSerializeCommandInput(SerializableSerializeCommandInput::SERIALIZE_RECORDS, string(exportedDataFileName));
+            	// add request object to results aggregator which is the callback object
+            	resultsAggregator->addRequestObject(serializeInput);
             	timeval t;
             	t.tv_sec = 2000;
                 routingManager->broadcast_wait_for_all_w_cb_n_timeout(serializeInput, resultsAggregator, t, *coreShardInfo);
@@ -593,10 +609,11 @@ void DPExternalRequestHandler::externalSerializeRecordsCommand(evhttp_request *r
 void DPExternalRequestHandler::externalResetLogCommand(evhttp_request *req, CoreShardInfo * coreShardInfo){
     switch(req->type) {
     case EVHTTP_REQ_PUT: {
-    	SerializableResetLogCommandInput resetInput;
     	CommandStatusAggregatorAndPrint<SerializableResetLogCommandInput> * resultsAggregator =
     			new CommandStatusAggregatorAndPrint<SerializableResetLogCommandInput>(configurationManager,req);
-
+    	SerializableResetLogCommandInput * resetInput = new SerializableResetLogCommandInput();
+    	// add request object to results aggregator which is the callback object
+    	resultsAggregator->addRequestObject(resetInput);
     	timeval t;
     	t.tv_sec = 2000;
         routingManager->broadcast_wait_for_all_w_cb_n_timeout(resetInput, resultsAggregator, t, *coreShardInfo);
@@ -617,9 +634,12 @@ void DPExternalRequestHandler::externalResetLogCommand(evhttp_request *req, Core
  * Receives a commit request and boardcasts it to other shards
  */
 void DPExternalRequestHandler::externalCommitCommand(evhttp_request *req, CoreShardInfo * coreShardInfo){
-	SerializableCommitCommandInput commitInput;
 	CommandStatusAggregatorAndPrint<SerializableCommitCommandInput> * resultsAggregator =
 			new CommandStatusAggregatorAndPrint<SerializableCommitCommandInput>(configurationManager, req);
+
+	SerializableCommitCommandInput * commitInput = new SerializableCommitCommandInput();
+	// add request object to results aggregator which is the callback object
+	resultsAggregator->addRequestObject(commitInput);
 	timeval t;
 	t.tv_sec = 2000;
 	routingManager->broadcast_wait_for_all_w_cb_n_timeout(commitInput, resultsAggregator, t, *coreShardInfo);

@@ -39,7 +39,7 @@ public:
     		numberOfBytes += sizeof(unsigned) + dataFileName.size();
     	}
     	// allocate space
-    	void * buffer = aloc->allocate(numberOfBytes);
+    	void * buffer = aloc->allocateMessageReturnBody(numberOfBytes);
     	// serialize data now
 		void * bufferWritePointer = buffer;
 		bufferWritePointer = srch2::util::serializeFixedTypes(indexOrRecord, bufferWritePointer);
@@ -51,15 +51,15 @@ public:
     }
 
     //given a byte stream recreate the original object
-    static const SerializableSerializeCommandInput& deserialize(void* buffer){
+    static SerializableSerializeCommandInput* deserialize(void* buffer){
     	OperationCode indexOrRecord;
     	string dataFileName;
     	buffer = srch2::util::deserializeFixedTypes(buffer, indexOrRecord);
     	if(indexOrRecord == SERIALIZE_RECORDS){
 			buffer = srch2::util::deserializeString(buffer, dataFileName);
-			return *(new SerializableSerializeCommandInput(indexOrRecord, dataFileName));
+			return new SerializableSerializeCommandInput(indexOrRecord, dataFileName);
     	}
-    	return *(new SerializableSerializeCommandInput(indexOrRecord));
+    	return new SerializableSerializeCommandInput(indexOrRecord);
     }
 
     //Returns the type of message which uses this kind of object as transport

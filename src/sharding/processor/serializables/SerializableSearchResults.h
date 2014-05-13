@@ -61,7 +61,7 @@ class SerializableSearchResults {
     //allocated by given allocator
     void* serialize(MessageAllocator * aloc){
     	if(queryResults == NULL){
-    		void * buffer = aloc->allocate(sizeof(bool));
+    		void * buffer = aloc->allocateMessageReturnBody(sizeof(bool));
     		void * bufferWritePointer = buffer;
     		bufferWritePointer = srch2::util::serializeFixedTypes(false, bufferWritePointer);
     		return buffer;
@@ -73,7 +73,7 @@ class SerializableSearchResults {
     	numberOfBytes += queryResults->getNumberOfBytesForSerializationForNetwork();
     	numberOfBytes += getNumberOfBytesOfInMemoryRecordStrings();
     	// allocate space
-    	void * buffer = aloc->allocate(numberOfBytes);
+    	void * buffer = aloc->allocateMessageReturnBody(numberOfBytes);
     	// serialize
     	void * bufferWritePointer = buffer;
     	bufferWritePointer = srch2::util::serializeFixedTypes(true, bufferWritePointer);
@@ -84,7 +84,7 @@ class SerializableSearchResults {
     }
 
     //given a byte stream recreate the original object
-    static const SerializableSearchResults& deserialize(void* buffer){
+    static SerializableSearchResults * deserialize(void* buffer){
 
     	bool isNotNull = false;
 		buffer = srch2::util::deserializeFixedTypes(buffer, isNotNull);
@@ -92,10 +92,10 @@ class SerializableSearchResults {
 			SerializableSearchResults * searchResults = new SerializableSearchResults();
 			buffer = QueryResults::deserializeForNetwork(*(searchResults->queryResults),buffer);
 			buffer = deserializeInMemoryRecordStrings(buffer,searchResults);
-			return *searchResults;
+			return searchResults;
 		}else{
 			SerializableSearchResults * searchResults = new SerializableSearchResults();
-			return *searchResults;
+			return searchResults;
 		}
     }
 

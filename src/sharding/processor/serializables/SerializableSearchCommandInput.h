@@ -29,7 +29,7 @@ public:
     void* serialize(MessageAllocator * aloc){
 
     	if(logicalPlan == NULL){
-    		void * buffer = aloc->allocate(sizeof(bool));
+    		void * buffer = aloc->allocateMessageReturnBody(sizeof(bool));
     		void * bufferWritePointer = buffer;
     		bufferWritePointer = srch2::util::serializeFixedTypes(false, bufferWritePointer); // NULL
     		return buffer;
@@ -39,7 +39,7 @@ public:
     	numberOfBytes += sizeof(bool); // Not NULL
     	numberOfBytes += logicalPlan->getNumberOfBytesForSerializationForNetwork();
     	// allocate the space
-    	void * buffer = aloc->allocate(numberOfBytes);
+    	void * buffer = aloc->allocateMessageReturnBody(numberOfBytes);
     	// serialize logical plan into buffer
 		void * bufferWritePointer = buffer;
 		bufferWritePointer = srch2::util::serializeFixedTypes(true, bufferWritePointer); // not NULL
@@ -48,7 +48,7 @@ public:
     }
 
     //given a byte stream recreate the original object
-    static const SerializableSearchCommandInput& deserialize(void* buffer){
+    static SerializableSearchCommandInput * deserialize(void* buffer){
     	SerializableSearchCommandInput * searchInput = new SerializableSearchCommandInput(NULL);
 
     	bool isNotNull = false;
@@ -56,9 +56,9 @@ public:
     	if(isNotNull){
     		searchInput->logicalPlan = new LogicalPlan();
     		buffer = LogicalPlan::deserializeForNetwork(*searchInput->logicalPlan, buffer);
-    		return *searchInput;
+    		return searchInput;
     	}else{
-    		return *searchInput;
+    		return searchInput;
     	}
     }
 

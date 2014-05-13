@@ -14,7 +14,8 @@ namespace httpwrapper {
  */
 class CallBackHandler {
 public:
-	virtual Message* notify(Message *msg) = 0;
+	virtual Message* notifyWithReply(Message *msg) = 0;
+	virtual void notifyNoReply(Message * msg) = 0;
 	virtual ~CallBackHandler() {}
 };
 

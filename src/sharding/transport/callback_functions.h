@@ -23,65 +23,65 @@ struct TransportCallback {
  * Each message starts with a special value called magic number
  */
 bool findNextMagicNumberAndReadMessageHeader(Message *const msg,  int fd) {
-    while(true) {
-        int readRtn = read(fd, (void*) msg, sizeof(Message));
+	while(true) {
+		int readRtn = read(fd, (void*) msg, sizeof(Message));
 
-        if(readRtn == -1) {
-            if(errno == EAGAIN || errno == EWOULDBLOCK) return false;
+		if(readRtn == -1) {
+			if(errno == EAGAIN || errno == EWOULDBLOCK) return false;
 
-            //v1: handle  error
-            return false;
-        }
+			//v1: handle  error
+			return false;
+		}
 
-        if(readRtn < sizeof(Message)) {
-            //v1: broken message boundary == seriously bad
-            continue;
-        }
+		if(readRtn < sizeof(Message)) {
+			//v1: broken message boundary == seriously bad
+			continue;
+		}
 
-        //TODO:checkMagicNumbers
+		//TODO:checkMagicNumbers
 
-        return true;
-    }
+		return true;
+	}
 
-    //ASSERT(false);
-    return false;
+	//ASSERT(false);
+	return false;
 }
 
 Message* readRestOfMessage(MessageAllocator& messageAllocator,
 		int fd, Message *const msgHeader, int *readCount) {
-	Message *msg= messageAllocator.allocateMessage(msgHeader->bodySize);
-	int rv = recv(fd, msg->buffer, msgHeader->bodySize, MSG_DONTWAIT);
+	Message *msg= messageAllocator.allocateMessage(msgHeader->getBodySize());
+	int rv = recv(fd, msg->getBody(), msgHeader->getBodySize(), MSG_DONTWAIT);
 
-  if(rv == -1) {
+	if(rv == -1) {
 		if(errno == EAGAIN || errno == EWOULDBLOCK) return NULL;
-    
-    //v1: handle error
-    return NULL;
-  }
 
-  *readCount = rv;
+		//v1: handle error
+		return NULL;
+	}
+
+	*readCount = rv;
 	memcpy(msg, msgHeader, sizeof(Message));
 
-    return msg;
+	return msg;
 }
 
 bool readPartialMessage(int fd, MessageBuffer& buffer) {
-  int toRead = buffer.msg->bodySize - buffer.readCount;
-  if(toRead == 0) {
-    //strangely we don't need to read anything;)
-    return false;
-  }
+	int toRead = buffer.msg->getBodySize() - buffer.readCount;
+	if(toRead == 0) {
+		//strangely we don't need to read anything;)
+		return false;
+	}
 
 	int readReturnValue = recv(fd, 
-      buffer.msg->buffer + buffer.readCount, toRead, MSG_DONTWAIT);
-  if(readReturnValue < 0) {
-    //TODO: handle errors
-    return false;
-  }
+			buffer.msg->getBody() + buffer.readCount, toRead, MSG_DONTWAIT);
+	if(readReturnValue < 0) {
+		//TODO: handle errors
+		return false;
+	}
 
-  buffer.readCount += readReturnValue;
+	buffer.readCount += readReturnValue;
 
-	return (buffer.msg->bodySize == buffer.readCount);
+	return (buffer.msg->getBodySize() == buffer.readCount);
 }
 
 /*
@@ -91,50 +91,14 @@ void cb_recieveMessage(int fd, short eventType, void *arg) {
 
 	TransportCallback* cb = (TransportCallback*) arg;
 
-  if( fd != cb->conn->fd) {
-    //major error
-    return;
-  }
+	if( fd != cb->conn->fd) {
+		//major error
+		return;
+	}
 
-  MessageBuffer& b = cb->conn->buffer;
-  TransportManager *tm = cb->tm;
-  while(!__sync_bool_compare_and_swap(&b.lock, false, true));
-
-  if(b.msg == NULL) {
-	  Message msgHeader;
-
-	  if(!findNextMagicNumberAndReadMessageHeader(&msgHeader, fd)){
-		  // there is some sort of error in the stream so we can't
-      // get the next message
- //     b.lock = false;
-		  return;
-	  }
-
-  	// sets the distributedTime of TM to the maximum time received by a message
-  	// in a thread safe fashion
-  	while(true) {
-  		MessageTime_t time = tm->getDistributedTime();
-  		//check if time needs to be incremented
-  		if(msgHeader.time < time &&
-  				/*zero break*/ time - msgHeader.time < UINT_MAX/2 ) break;
-  		//make sure time did not change
-  		if(__sync_bool_compare_and_swap(
-  				&tm->getDistributedTime(), time, msgHeader.time)) break;
-  	}
-  
-  	if(!(b.msg = readRestOfMessage(*(tm->getMessageAllocator()), 
-                              fd, &msgHeader, &b.readCount))) return;
-
-    if(b.readCount != b.msg->bodySize) {
-      b.lock = false;
-      return;
-    }
-  } else {
-    if(!readPartialMessage(fd, b)) {
-      b.lock = false;
-      return;
-    }
-  }
+	MessageBuffer& b = cb->conn->buffer;
+	TransportManager *tm = cb->tm;
+	while(!__sync_bool_compare_and_swap(&b.lock, false, true));
 
 	if(b.msg == NULL) {
 		Message msgHeader;
@@ -151,16 +115,52 @@ void cb_recieveMessage(int fd, short eventType, void *arg) {
 		while(true) {
 			MessageTime_t time = tm->getDistributedTime();
 			//check if time needs to be incremented
-			if(msgHeader.time < time &&
-					/*zero break*/ time - msgHeader.time < UINT_MAX/2 ) break;
+			if(msgHeader.getTime() < time &&
+					/*zero break*/ time - msgHeader.getTime() < UINT_MAX/2 ) break;
 			//make sure time did not change
 			if(__sync_bool_compare_and_swap(
-					&tm->getDistributedTime(), time, msgHeader.time)) break;
+					&tm->getDistributedTime(), time, msgHeader.getTime())) break;
+		}
+
+		if(!(b.msg = readRestOfMessage(*(tm->getMessageAllocator()),
+				fd, &msgHeader, &b.readCount))) return;
+
+		if(b.readCount != b.msg->getBodySize()) {
+			b.lock = false;
+			return;
+		}
+	} else {
+		if(!readPartialMessage(fd, b)) {
+			b.lock = false;
+			return;
+		}
+	}
+
+	if(b.msg == NULL) {
+		Message msgHeader;
+
+		if(!findNextMagicNumberAndReadMessageHeader(&msgHeader, fd)){
+			// there is some sort of error in the stream so we can't
+			// get the next message
+			//     b.lock = false;
+			return;
+		}
+
+		// sets the distributedTime of TM to the maximum time received by a message
+		// in a thread safe fashion
+		while(true) {
+			MessageTime_t time = tm->getDistributedTime();
+			//check if time needs to be incremented
+			if(msgHeader.getTime() < time &&
+					/*zero break*/ time - msgHeader.getTime() < UINT_MAX/2 ) break;
+			//make sure time did not change
+			if(__sync_bool_compare_and_swap(
+					&tm->getDistributedTime(), time, msgHeader.getTime())) break;
 		}
 
 		b.msg = readRestOfMessage(*(tm->getMessageAllocator()),
 				fd, &msgHeader, &b.readCount);
-		if(b.readCount != b.msg->bodySize) {
+		if(b.readCount != b.msg->getBodySize()) {
 			b.lock = false;
 			return;
 		}
@@ -178,18 +178,30 @@ void cb_recieveMessage(int fd, short eventType, void *arg) {
 	if(msg->isReply()) {
 		tm->getMsgs()->resolve(msg);
 		return;
-	} else if(msg->isInternal()) {
-		if(Message* reply = tm->getInternalTrampoline()->notify(msg)) {
-			reply->initial_time = msg->time;
-			reply->mask |= (REPLY_MASK | INTERNAL_MASK);
-			tm->route(fd, reply);
-			tm->getMessageAllocator()->deallocate(reply);
+	} else if(msg->isInternal()) { // receiving a message which
+
+		if(msg->isNoReply()){
+			// This msg comes from another node and does not need a reply
+			// it comes from a broadcast or route with no callback
+			tm->getInternalTrampoline()->notifyNoReply(msg);
+			// and delete the msg
+			tm->getMessageAllocator()->deallocateByMessagePointer(msg);
+			return;
+		}
+		Message* replyMessage = tm->getInternalTrampoline()->notifyWithReply(msg);
+		if(replyMessage != NULL) {
+			replyMessage->setInitialTime(msg->getTime());
+			replyMessage->setReply()->setInternal();
+			tm->route(fd, replyMessage);
+			tm->getMessageAllocator()->deallocateByMessagePointer(msg);
+			tm->getMessageAllocator()->deallocateByMessagePointer(replyMessage);
+			return;
 		}
 	} else {
-		tm->getSmHandler()->notify(msg);
+		tm->getSmHandler()->notifyWithReply(msg);
 	}
 
-    tm->getMessageAllocator()->deallocate(msg);
+	tm->getMessageAllocator()->deallocateByMessagePointer(msg);
 }
 
 #endif /* __TRANSPORT_CALLBACK_FUNCTIONS_H__ */

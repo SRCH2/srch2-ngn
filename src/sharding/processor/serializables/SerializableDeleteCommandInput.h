@@ -37,7 +37,7 @@ public:
     	numberOfBytes += sizeof(shardingKey);
     	numberOfBytes += sizeof(unsigned) + primaryKey.size();
     	// allocate memory
-    	void * buffer = aloc->allocate(numberOfBytes);
+    	void * buffer = aloc->allocateMessageReturnBody(numberOfBytes);
     	// copy data
 		void * bufferWritePointer = buffer;
 
@@ -48,7 +48,7 @@ public:
     }
 
     //given a byte stream recreate the original object
-    static const SerializableDeleteCommandInput& deserialize(void* buffer){
+    static SerializableDeleteCommandInput * deserialize(void* buffer){
 
     	unsigned shardingKey;
     	string primaryKey;
@@ -56,7 +56,7 @@ public:
     	buffer = srch2::util::deserializeFixedTypes(buffer, shardingKey);
     	buffer = srch2::util::deserializeString(buffer, primaryKey);
 
-    	return *(new SerializableDeleteCommandInput(primaryKey, shardingKey));
+    	return new SerializableDeleteCommandInput(primaryKey, shardingKey);
     }
 
     //Returns the type of message which uses this kind of object as transport

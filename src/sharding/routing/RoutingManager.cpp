@@ -13,6 +13,7 @@ RoutingManager::RoutingManager(ConfigManager&  cm, TransportManager& transportMa
     						shardServers(new Srch2Server[cm.getCoreInfoMap().size()]) {
 
 
+	// TODO : do we have one Srch2Server per core?
 	// create a server (core) for each data source in config file
     unsigned coreInfoIndex = 0 ;
 	for(ConfigManager::CoreInfoMap_t::const_iterator iterator =

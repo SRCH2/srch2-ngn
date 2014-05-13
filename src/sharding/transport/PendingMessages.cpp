@@ -1,5 +1,7 @@
 #include "PendingMessages.h"
 
+#include "sharding/transport/TransportManager.h"
+
 using namespace srch2::httpwrapper;
 
 Callback* RegisteredCallback::getCallbackObject() const
@@ -11,8 +13,12 @@ void* RegisteredCallback::getOriginalSerializableObject() const {
 	return originalSerializableObject;
 }
 
-std::vector<Message*>& RegisteredCallback::getReply() {
-	return reply;
+std::vector<Message*>& RegisteredCallback::getReplyMessages() {
+	return replyMessages;
+}
+
+std::vector<Message*>& RegisteredCallback::getRequestMessages(){
+	return requestMessages;
 }
 
 int& RegisteredCallback::getWaitingOn() {
@@ -34,7 +40,7 @@ bool CallbackReference::isBroadcast() const {
 	return broadcastFlag;
 }
 
-RegisteredCallback* CallbackReference::getPtr() const {
+RegisteredCallback* CallbackReference::getRegisteredCallbackPtr() const {
 	return ptr;
 }
 
@@ -66,32 +72,43 @@ void PendingMessages::addMessage(time_t timeout,
 	pendingRequests.push_back(PendingRequest(time(NULL) + timeout, id, cb));
 }
 
-void PendingMessages::resolve(Message* msg) {
-	if(!msg->isReply()) return;
+void PendingMessages::resolve(Message* message) {
+	// only reply messages can enter this function
+	if(!message->isReply()){
+		return;
+	}
 
 	std::vector<PendingRequest>::iterator request =
 			std::find(pendingRequests.begin(),
-					pendingRequests.end(), msg->initial_time);
+					pendingRequests.end(), message->getInitialTime());
+	if(request == pendingRequests.end()){
+		//TODO
+		// what should we if there is no request for this response ? Maybe response is late?
+		transportManager->getMessageAllocator()->deallocateByMessagePointer(message);
+		return;
+	}
 
-	RegisteredCallback *cb = request->getCallbackAndTypeMask().getPtr();
+	RegisteredCallback *cb = request->getCallbackAndTypeMask().getRegisteredCallbackPtr();
 
 	if(request->getCallbackAndTypeMask().isWaitForAll()) {
-		cb->getReply().push_back(msg);
+		cb->getReplyMessages().push_back(message);
 		int num = __sync_sub_and_fetch(&cb->getWaitingOn(), 1);
 
 		pendingRequests.erase(request);
 		if(num == 0) {
-			cb->getCallbackObject()->callbackAll(cb->getReply());
-			for(std::vector<Message*>::iterator msg = cb->getReply().begin();
-					msg != cb->getReply().end(); ++msg) {
-				delete *msg;
+			cb->getCallbackObject()->callbackAll(cb->getReplyMessages());
+			for(std::vector<Message*>::iterator msgItr = cb->getReplyMessages().begin();
+					msgItr != cb->getReplyMessages().end(); ++msgItr) {
+				transportManager->getMessageAllocator()->deallocateByMessagePointer(*msgItr);
 			}
 			delete cb;
 		}
 	} else {
-		cb->getCallbackObject()->callback(msg);
-		if(__sync_sub_and_fetch(&cb->getWaitingOn(), 1) == 0) delete cb;
-		delete msg;
+		cb->getCallbackObject()->callback(message);
+		if(__sync_sub_and_fetch(&cb->getWaitingOn(), 1) == 0){
+			delete cb;
+		}
+		transportManager->getMessageAllocator()->deallocateByMessagePointer(message);
 	}
 }
 
@@ -106,3 +123,6 @@ PendingMessages::prepareCallback(void *obj, Callback *cb,
 	return rtn;
 };
 
+void PendingMessages::setTransportManager(TransportManager * transportManager){
+	this->transportManager = transportManager;
+}

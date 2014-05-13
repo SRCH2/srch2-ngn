@@ -46,8 +46,8 @@ public:
 	/*
 	 * The callBack function used by routing manager
 	 */
-	virtual void callBack(const Response * responseObject){};
-	virtual void callBack(vector<const Response *> responseObjects){};
+	virtual void callBack(Response * responseObject){};
+	virtual void callBack(vector<Response *> responseObjects){};
 
 	/*
 	 * The last call back function called by RoutingManager in all cases.
@@ -59,9 +59,44 @@ public:
 	 */
 	virtual void finalize(ResultsAggregatorAndPrintMetadata metadata){};
 
+	void addRequestObject(Request * req){
+		ASSERT(req != NULL);
+		if(req != NULL){
+			this->requestObjects.push_back(req);
+		}
+	};
+	void addResponseObject(Response * responseObject){
+		ASSERT(responseObject != NULL);
+		if(responseObject != NULL){
+			responseObjects.push_back(responseObject);
+		}
+	};
+	void addResponseObjects(vector<Response *> responseObjects){
+		this->responseObjects.insert(this->responseObjects.end(), responseObjects.begin(), responseObjects.end());
+	};
 
-	virtual ~ResultAggregatorAndPrint(){};
+	virtual ~ResultAggregatorAndPrint(){
+		// delete request objects
+		for(typename vector<Request *>::iterator reqIter = requestObjects.begin();
+				reqIter != requestObjects.end(); ++reqIter){
+			ASSERT(*reqIter != NULL);
+			if(*reqIter != NULL){
+				delete *reqIter;
+			}
+		}
+		// delete response objects
+		for(typename vector<Response *>::iterator resIter = responseObjects.begin();
+				resIter != responseObjects.end(); ++resIter){
+			ASSERT(*resIter != NULL);
+			if(*resIter != NULL){
+				delete *resIter;
+			}
+		}
+	};
 
+private:
+	vector<Request *> requestObjects;
+	vector<Response *> responseObjects;
 };
 
 }

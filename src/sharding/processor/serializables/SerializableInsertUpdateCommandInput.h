@@ -44,7 +44,7 @@ public:
     	numberOfBytes += sizeof(OperationCode);
     	numberOfBytes += record->getNumberOfBytesSize();
     	// allocate the space
-    	void * buffer = aloc->allocate(numberOfBytes);
+    	void * buffer = aloc->allocateMessageReturnBody(numberOfBytes);
 		void * bufferWritePointer = buffer;
     	// and serialize things in calculate
 		bufferWritePointer = srch2::util::serializeFixedTypes(insertOrUpdate, bufferWritePointer);
@@ -54,12 +54,12 @@ public:
     }
 
     //given a byte stream recreate the original object
-    static const SerializableInsertUpdateCommandInput& deserialize(void* buffer, const Schema * schema){
+    static SerializableInsertUpdateCommandInput* deserialize(void* buffer, const Schema * schema){
     	Record * record = new Record(schema);
     	OperationCode insertOrUpdate ;
     	buffer = srch2::util::deserializeFixedTypes(buffer, insertOrUpdate);
     	buffer = Record::deserializeForNetwork(buffer, *record);
-    	return *(new SerializableInsertUpdateCommandInput(record, insertOrUpdate));
+    	return new SerializableInsertUpdateCommandInput(record, insertOrUpdate);
     }
 
     //Returns the type of message which uses this kind of object as transport

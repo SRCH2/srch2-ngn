@@ -48,7 +48,7 @@ public:
 	 * this function uses aggregateRecords and aggregateFacets for
 	 * aggregating result records and calculated records
 	 */
-	void callBack(vector<const SerializableSearchResults *> responseObjects);
+	void callBack(vector<SerializableSearchResults *> responseObjects);
 
 	/*
 	 * The last call back function called by RoutingManager in all cases.

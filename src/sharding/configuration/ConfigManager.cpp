@@ -2973,6 +2973,83 @@ void CoreInfo_t::setDataFilePath(const string& path) {
 }
 
 
+bool ShardId::isPrimaryShard() {
+	return (replicaId == 0); // replica #0 is always the primary shard
+}
+bool ShardId::isInCurrentNode(ConfigManager& configurationManager){
+	// get destination node ID from config manager
+	unsigned nodeId =
+			configurationManager.getCluster()->shardMap[*this].getNodeId();
+
+	return (nodeId == configurationManager.getCurrentNodeId());
+}
+unsigned ShardId::getNodeId(ConfigManager& configurationManager){
+	return configurationManager.getCluster()->shardMap[*this].getNodeId();
+}
+std::string ShardId::toString() {
+	// A primary shard starts with a "P" followed by an integer id.
+	// E.g., a cluster with 4 shards of core 8 will have shards named "C8_P0", "C8_R0_1", "C8_R0_2", "C8_P3".
+	//
+	// A replica shard starts with an "R" followed by a replica count and then its primary's id.
+	// E.g., for the above cluster, replicas of "P0" will be named "8_R1_0" and "8_R2_0".
+	// Similarly, replicas of "P3" will be named "8_R3_1" and "8_R3_2".
+	if(coreId != unsigned(-1) || partitionId != unsigned(-1) || replicaId != unsigned(-1)){
+		std::stringstream sstm;
+		sstm << "C" << coreId << "_";
+		if (isPrimaryShard()){
+			sstm << "P" << partitionId;
+		}
+		else{
+			sstm << "R" << partitionId << "_" << replicaId;
+		}
+		return sstm.str();
+	}
+	else{
+		return "";
+	}
+}
+
+ShardId::ShardId() {
+	coreId = unsigned(-1);
+	partitionId = unsigned(-1);
+	replicaId = unsigned(-1);
+}
+ShardId::ShardId(unsigned coreId, unsigned partitionId, unsigned replicaId) :
+	coreId(coreId), partitionId(partitionId), replicaId(replicaId) {}
+
+bool ShardId::operator==(const ShardId& rhs) const {
+	return coreId == rhs.coreId && partitionId == rhs.partitionId
+			&& replicaId == replicaId;
+}
+bool ShardId::operator!=(const ShardId& rhs) const {
+	return coreId != rhs.coreId || partitionId != rhs.partitionId
+			|| replicaId != replicaId;
+}
+bool ShardId::operator>(const ShardId& rhs) const {
+	return  coreId > rhs.coreId ||
+			(coreId == rhs.coreId &&
+					(partitionId > rhs.partitionId ||
+							(partitionId == rhs.partitionId && replicaId > replicaId)));
+}
+bool ShardId::operator<(const ShardId& rhs) const {
+	return  coreId < rhs.coreId ||
+			(coreId == rhs.coreId &&
+					(partitionId < rhs.partitionId ||
+							(partitionId == rhs.partitionId && replicaId < replicaId)));
+}
+bool ShardId::operator>=(const ShardId& rhs) const {
+	return  coreId > rhs.coreId ||
+			(coreId == rhs.coreId &&
+					(partitionId > rhs.partitionId ||
+							(partitionId == rhs.partitionId && replicaId >= replicaId)));
+}
+bool ShardId::operator<=(const ShardId& rhs) const {
+	return  coreId < rhs.coreId ||
+			(coreId == rhs.coreId &&
+					(partitionId < rhs.partitionId ||
+							(partitionId == rhs.partitionId && replicaId <= replicaId)));
+}
+
 
 // end of namespaces
 }

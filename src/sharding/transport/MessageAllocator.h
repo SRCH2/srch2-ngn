@@ -10,33 +10,47 @@ namespace httpwrapper {
 class MessageAllocator : public std::allocator<char> {
 public:
 
-	char* allocate(size_type n) {
-		Message *msg = (Message*) allocator<char>::allocate(n + sizeof(Message));
-    memset(msg, 0, n + sizeof(Message));
-		msg->bodySize = n;
-
-		return msg->buffer;
+	/*
+	 * This function allocates a message including the header and the body
+	 * the size of header is always sizeof(Message) and bodySize is the size of body
+	 * to be used.
+	 * This function returns the pointer to the beginning of body.
+	 */
+	void* allocateMessageReturnBody(size_type bodySize) {
+		// allocate full message
+		Message *msg = (Message*) allocator<char>::allocate(bodySize + sizeof(Message));
+		// initalize all bits of message to zero
+		memset(msg, 0, bodySize + sizeof(Message));
+		// set the body size
+		msg->setBodySize(bodySize);
+		// return the pointer to the beginning of body
+		return msg->getBody();
 	}
 
-	void deallocate(pointer p, size_type n) {
-		allocator<char>::deallocate(p - sizeof(Message), n + sizeof(Message));
+	/*
+	 * this function receives the pointer to the body of a message and deallocates
+	 * this message completely.
+	 */
+	void deallocateByBodyPointer(pointer bodyPointer, size_type bodySize) {
+		allocator<char>::deallocate(bodyPointer - sizeof(Message), bodySize + sizeof(Message));
 	}
 
-	Message* allocateMessage(size_type bodyLength) {
-		Message *msg =
-				(Message*) allocator<char>::allocate(bodyLength + sizeof(Message));
-    memset(msg, 0, bodyLength + sizeof(Message));
-		msg->bodySize = bodyLength;
-		return msg;
+	/*
+	 * This function allocates a message with bodySize bytes for body.
+	 */
+	Message* allocateMessage(size_type bodySize) {
+		void * bodyPointer = allocateMessageReturnBody(bodySize);
+		return Message::getMessagePointerFromBodyPointer(bodyPointer);
 	}
-	void deallocateMessage(Message *msg) {
-		allocator<char>::deallocate((char*) msg, msg->bodySize + sizeof(Message));
-	}
-	void deallocate(Message *msg) {
-		deallocateMessage(msg);
+	/*
+	 * This function deallocates the message by receiving the message pointer
+	 */
+	void deallocateByMessagePointer(Message *msg) {
+		deallocateByBodyPointer(msg->getBody(), msg->getBodySize());
 	}
 };
 
 }}
 
 #endif /* __MESSAGE_ALLOCATOR_H__ */
+;

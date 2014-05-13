@@ -9,54 +9,106 @@
 namespace srch2 {
 namespace httpwrapper {
 
-inline
-void RoutingManager::sendInternalMessage(ShardingMessageType type,
-   ShardId shardId, void *requestObj) {
-  Message *msg = getMessageAllocator()->allocateMessage(sizeof(void*));
-  *((void**) &msg->buffer) = requestObj;
-  msg->shard = shardId;
-  msg->mask |= INTERNAL_MASK | LOCAL_MASK;
-  msg->type = type;
+template<typename RequestType > inline
+Message * RoutingManager::prepareInternalMessage(ShardId shardId,
+		RequestType *requestObjPointer){
+	// prepare a message which is just as big as a pointer
+	// allocate the message
+	Message *msg = getMessageAllocator()->allocateMessage(sizeof(RequestType *));
+	// initialize the message
+	// copy the address saved in requestObjPointer in msg->body
+	msg->setBodyAndBodySize(&requestObjPointer, sizeof(RequestType *));
+	msg->setDestinationShardId(shardId);
+	msg->setInternal()->setLocal();
+	msg->setType(RequestType::messageKind());
 
-  transportManager.route(0, msg, 0);
-
-  getMessageAllocator()->deallocateMessage(msg);
+	return msg;
 }
- 
-  
+
+template<typename RequestType > inline
+Message * RoutingManager::prepareExternalMessage(ShardId shardId,
+		RequestType *requestObjPointer){
+	// create the message from the request object
+	// 1. serialize the message and prepate the body
+	void * serializeRequestMessageBodyPointer = requestObjPointer->serialize(getMessageAllocator());
+	// 2. get the pointer to the Message
+	Message * msg = Message::getMessagePointerFromBodyPointer(serializeRequestMessageBodyPointer);
+
+
+	// initialize the message
+	msg->setDestinationShardId(shardId);
+	msg->setInternal();
+	msg->setType(RequestType::messageKind());
+	return msg;
+}
+
+inline void RoutingManager::sendInternalMessage(Message * msg,
+		ShardId shardId, timeval timeoutValue, CallbackReference cb) {
+
+	unsigned nodeId = shardId.getNodeId(configurationManager);
+	transportManager.route(nodeId, msg, timeoutValue.tv_sec, cb);
+}
+
+inline void RoutingManager::sendExternalMessage(Message * msg,
+		ShardId shardId, timeval timeoutValue, CallbackReference cb){
+
+	unsigned nodeId = shardId.getNodeId(configurationManager);
+	transportManager.route(nodeId, msg, timeoutValue.tv_sec, cb);
+
+}
+
+
 /*
  *  Transmits a given message to all shards. The broadcast will not wait for
  *  confirmation from each receiving shard.
  */
 template<typename RequestType> inline void
-RoutingManager::broadcast(RequestType& requestObj, CoreShardInfo &coreInfo) {
-    /*
-     * Multiplexer reads coreInfo object to understand which nodes we need to send this broadcast to
-     */
-    Multiplexer broadcastResolver(configurationManager, coreInfo);
+RoutingManager::broadcast(RequestType * requestObj, CoreShardInfo &coreInfo) {
+	/*
+	 * Multiplexer reads coreInfo object to understand which nodes we need to send this broadcast to
+	 */
+	Multiplexer broadcastResolver(configurationManager, coreInfo);
 
 
-    // create the message from the request object
-    Message* msg = (Message*)
-            ((char*) requestObj.serialize(getMessageAllocator()) - sizeof(Message));
+	Message * internalMessage = NULL;
+	Message * externalMessage = NULL;
 
-
-    for(UnicastIterator unicast = broadcastResolver.begin();
-            unicast != broadcastResolver.end(); ++unicast) {
-      if(unicast->nodeId == configurationManager.getCurrentNodeId()) {
-        sendInternalMessage(RequestType::messageKind(), unicast->shardId,
-            &requestObj);
-        continue;
-      }
-
-        msg->shard = unicast->shardId;
-        msg->mask |= INTERNAL_MASK;
-        msg->type = RequestType::messageKind();
-
-        transportManager.route(unicast->nodeId, msg, 0);
-    }
-
-    getMessageAllocator()->deallocateMessage(msg);
+	timeval timeValue;
+	timeValue.tv_sec = timeValue.tv_usec = 0;
+	// iterate on all destinations and send the message
+	for(UnicastIterator unicast = broadcastResolver.begin(); unicast != broadcastResolver.end(); ++unicast) {
+		// this shard is in the current node
+		if(unicast->shardId.isInCurrentNode(configurationManager)){
+			// so that we create the message only once
+			if(internalMessage == NULL){
+				internalMessage = prepareInternalMessage<RequestType>(unicast->shardId, requestObj);
+				// broadcast with no callback has no response
+				// this flag will be used in other places to
+				// understand whether we should deallocate this message or not
+				internalMessage->setNoReply();
+			}
+			internalMessage->setDestinationShardId(unicast->shardId);
+			sendInternalMessage(internalMessage, unicast->shardId, timeValue, CallbackReference());
+		}else{// this shard is in some other node
+			// so that we create the message only once
+			if(externalMessage == NULL){
+				externalMessage = prepareExternalMessage<RequestType>(unicast->shardId, requestObj);
+				// broadcast with no callback has no response
+				// this flag will be used in other places to
+				// understand whether we should deallocate this message or not
+				externalMessage->setNoReply();
+			}
+			externalMessage->setDestinationShardId(unicast->shardId);
+			sendExternalMessage(externalMessage, unicast->shardId, timeValue, CallbackReference());
+		}
+	}
+	// if internal message is created so it means a shard on the same node is
+	// going to use requestObj, so we don't delete it.
+	// internal message is NULL so requestObj is going to be used only through a message
+	// and we can delete it here.
+	if(internalMessage == NULL){
+		delete requestObj;
+	}
 }
 
 
@@ -66,7 +118,7 @@ RoutingManager::broadcast(RequestType& requestObj, CoreShardInfo &coreInfo) {
  *  receiving shard confirms with MESSAGE_FAILED message.
  */
 template<typename RequestType> inline bool 
-RoutingManager::broadcast_wait_for_all_confirmation(RequestType& requestObject,
+RoutingManager::broadcast_wait_for_all_confirmation(RequestType * requestObject,
 		bool& timedout, timeval timeoutValue , CoreShardInfo & coreInfo){
 	//TODO
 	return false;
@@ -77,47 +129,56 @@ RoutingManager::broadcast_wait_for_all_confirmation(RequestType& requestObject,
  *  The callback will be called for each shard.
  */
 template<typename RequestType , typename ResponseType> inline
-void RoutingManager::broadcast_w_cb(RequestType& requestObj, 
+void RoutingManager::broadcast_w_cb(RequestType * requestObj,
 		ResultAggregatorAndPrint<RequestType , ResponseType> * aggregator,
 		CoreShardInfo & coreInfo){
 
-    /*
-     * Multiplexer reads coreInfo object to understand which nodes we need to send this broadcast to
-     */
-    Multiplexer broadcastResolver(configurationManager, coreInfo);
+	/*
+	 * Multiplexer reads coreInfo object to understand which nodes we need to send this broadcast to
+	 */
+	Multiplexer broadcastResolver(configurationManager, coreInfo);
 
 
 	/*
 	 * We need to register callback functions to TM so that it calls them upon receiving a message
 	 * Here, we register a method around aggregator callback into TM.
 	 */
-	CallbackReference cb = transportManager.prepareCallback(&requestObj,
+	CallbackReference cb = transportManager.prepareCallback(requestObj,
 			new RMCallback<RequestType, ResponseType>(*aggregator),
 			ResponseType::messageKind(),
-			true,
+			false,
 			broadcastResolver.size());
 
-			// create the message from the request object
-	Message* msg = (Message*)
-    				((char*) requestObj.serialize(getMessageAllocator()) - sizeof(Message));
+	Message * internalMessage = NULL;
+	Message * externalMessage = NULL;
 
-
-	for(UnicastIterator unicast = broadcastResolver.begin();
-			unicast != broadcastResolver.end(); ++unicast) {
-    if(unicast->nodeId == configurationManager.getCurrentNodeId()) {
-      sendInternalMessage(RequestType::messageKind(), unicast->shardId,
-          &requestObj);
-     continue;
-    }
-
-		msg->shard = unicast->shardId;
-		msg->mask |= INTERNAL_MASK;
-		msg->type = RequestType::messageKind();
-
-        transportManager.route(unicast->nodeId, msg, 0, cb);
-    }
-
-    getMessageAllocator()->deallocateMessage(msg);
+	timeval timeValue;
+	timeValue.tv_sec = timeValue.tv_usec = 0;
+	// iterate on all destinations and send the message
+	for(UnicastIterator unicast = broadcastResolver.begin(); unicast != broadcastResolver.end(); ++unicast) {
+		// this shard is in the current node
+		if(unicast->shardId.isInCurrentNode(configurationManager)){
+			// so that we create the message only once
+			if(internalMessage == NULL){
+				internalMessage = prepareInternalMessage<RequestType>(unicast->shardId, requestObj);
+				// request message is stored in cb object to be deleted when replies are ready
+				// and cb object is being destroyed.
+				cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(internalMessage);
+			}
+			internalMessage->setDestinationShardId(unicast->shardId);
+			sendInternalMessage(internalMessage, unicast->shardId, timeValue, cb);
+		}else{// this shard is in some other node
+			// so that we create the message only once
+			if(externalMessage == NULL){
+				externalMessage = prepareExternalMessage<RequestType>(unicast->shardId, requestObj);
+				// request message is stored in cb object to be deleted when replies are ready
+				// and cb object is being destroyed.
+				cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(externalMessage);
+			}
+			externalMessage->setDestinationShardId(unicast->shardId);
+			sendExternalMessage(externalMessage, unicast->shardId, timeValue, cb);
+		}
+	}
 
 }
 
@@ -127,45 +188,55 @@ void RoutingManager::broadcast_w_cb(RequestType& requestObj,
  *  callback is triggers with an array of message results from each shard.
  */
 template<typename RequestType , typename ResponseType> inline
-void RoutingManager::broadcast_wait_for_all_w_cb(RequestType & requestObj,
+void RoutingManager::broadcast_wait_for_all_w_cb(RequestType * requestObj,
 		ResultAggregatorAndPrint<RequestType , ResponseType> *aggregator,
 		CoreShardInfo & coreInfo) {
-    /*
-     * Multiplexer reads coreInfo object to understand which nodes we need to send this broadcast to
-     */
-    Multiplexer broadcastResolver(configurationManager, coreInfo);
+	/*
+	 * Multiplexer reads coreInfo object to understand which nodes we need to send this broadcast to
+	 */
+	Multiplexer broadcastResolver(configurationManager, coreInfo);
 
 
 	/*
 	 * We need to register callback functions to TM so that it calls them upon receiving a message
 	 * Here, we register a method around aggregator callback into TM.
 	 */
-	CallbackReference cb = transportManager.prepareCallback(&requestObj,
+	CallbackReference cb = transportManager.prepareCallback(requestObj,
 			new RMCallback<RequestType, ResponseType>(*aggregator),
 			ResponseType::messageKind(),
-			false,
-			broadcastResolver.size()); 
+			true,
+			broadcastResolver.size());
 
-			// create the message from the request object
-	Message* msg = (Message*)
-    				((char*) requestObj.serialize(getMessageAllocator()) - sizeof(Message));
+	Message * internalMessage = NULL;
+	Message * externalMessage = NULL;
 
-
-	for(UnicastIterator unicast = broadcastResolver.begin();
-			unicast != broadcastResolver.end(); ++unicast) {
-    if(unicast->nodeId == configurationManager.getCurrentNodeId()) {
-      sendInternalMessage(RequestType::messageKind(), unicast->shardId,
-          &requestObj);
-     continue;
-    }
-		msg->shard = unicast->shardId;
-		msg->mask |= INTERNAL_MASK;
-		msg->type = RequestType::messageKind();
-
-        transportManager.route(unicast->nodeId, msg, 0, cb);
-    }
-
-    getMessageAllocator()->deallocateMessage(msg);
+	timeval timeValue;
+	timeValue.tv_sec = timeValue.tv_usec = 0;
+	// iterate on all destinations and send the message
+	for(UnicastIterator unicast = broadcastResolver.begin(); unicast != broadcastResolver.end(); ++unicast) {
+		// this shard is in the current node
+		if(unicast->shardId.isInCurrentNode(configurationManager)){
+			// so that we create the message only once
+			if(internalMessage == NULL){
+				internalMessage = prepareInternalMessage<RequestType>(unicast->shardId, requestObj);
+				// request message is stored in cb object to be deleted when replies are ready
+				// and cb object is being destroyed.
+				cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(internalMessage);
+			}
+			internalMessage->setDestinationShardId(unicast->shardId);
+			sendInternalMessage(internalMessage, unicast->shardId, timeValue, cb);
+		}else{// this shard is in some other node
+			// so that we create the message only once
+			if(externalMessage == NULL){
+				externalMessage = prepareExternalMessage<RequestType>(unicast->shardId, requestObj);
+				// request message is stored in cb object to be deleted when replies are ready
+				// and cb object is being destroyed.
+				cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(externalMessage);
+			}
+			externalMessage->setDestinationShardId(unicast->shardId);
+			sendExternalMessage(externalMessage, unicast->shardId, timeValue, cb);
+		}
+	}
 }
 
 
@@ -177,94 +248,106 @@ void RoutingManager::broadcast_wait_for_all_w_cb(RequestType & requestObj,
  *           from shard ***
  */
 template<typename RequestType , typename ResponseType> inline
-void RoutingManager::broadcast_w_cb_n_timeout(RequestType& requestObj,
+void RoutingManager::broadcast_w_cb_n_timeout(RequestType * requestObj,
 		ResultAggregatorAndPrint<RequestType , ResponseType> * aggregator,
 		timeval timeoutValue , CoreShardInfo & coreInfo ){
-
-    /*
-     * Multiplexer reads coreInfo object to understand which nodes we need to send this broadcast to
-     */
-    Multiplexer broadcastResolver(configurationManager, coreInfo);
+	/*
+	 * Multiplexer reads coreInfo object to understand which nodes we need to send this broadcast to
+	 */
+	Multiplexer broadcastResolver(configurationManager, coreInfo);
 
 
 	/*
 	 * We need to register callback functions to TM so that it calls them upon receiving a message
 	 * Here, we register a method around aggregator callback into TM.
 	 */
-	CallbackReference cb = transportManager.prepareCallback(&requestObj,
+	CallbackReference cb = transportManager.prepareCallback(requestObj,
 			new RMCallback<RequestType, ResponseType>(*aggregator),
 			ResponseType::messageKind(),
-			true,
+			false,
 			broadcastResolver.size());
 
-			// create the message from the request object
-	Message* msg = (Message*)
-    				((char*) requestObj.serialize(getMessageAllocator()) - sizeof(Message));
+	Message * internalMessage = NULL;
+	Message * externalMessage = NULL;
 
-
-	for(UnicastIterator unicast = broadcastResolver.begin();
-			unicast != broadcastResolver.end(); ++unicast) {
-    if(unicast->nodeId == configurationManager.getCurrentNodeId()) {
-      sendInternalMessage(RequestType::messageKind(), unicast->shardId,
-          &requestObj);
-     continue;
-    }
-
-		msg->shard = unicast->shardId;
-		msg->mask |= INTERNAL_MASK;
-		msg->type = RequestType::messageKind();
-
-        transportManager.route(unicast->nodeId, msg, timeoutValue.tv_sec, cb);
-    }
-
-    getMessageAllocator()->deallocateMessage(msg);
+	// iterate on all destinations and send the message
+	for(UnicastIterator unicast = broadcastResolver.begin(); unicast != broadcastResolver.end(); ++unicast) {
+		// this shard is in the current node
+		if(unicast->shardId.isInCurrentNode(configurationManager)){
+			// so that we create the message only once
+			if(internalMessage == NULL){
+				internalMessage = prepareInternalMessage<RequestType>(unicast->shardId, requestObj);
+				// request message is stored in cb object to be deleted when replies are ready
+				// and cb object is being destroyed.
+				cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(internalMessage);
+			}
+			internalMessage->setDestinationShardId(unicast->shardId);
+			sendInternalMessage(internalMessage, unicast->shardId, timeoutValue, cb);
+		}else{// this shard is in some other node
+			// so that we create the message only once
+			if(externalMessage == NULL){
+				externalMessage = prepareExternalMessage<RequestType>(unicast->shardId, requestObj);
+				// request message is stored in cb object to be deleted when replies are ready
+				// and cb object is being destroyed.
+				cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(externalMessage);
+			}
+			externalMessage->setDestinationShardId(unicast->shardId);
+			sendExternalMessage(externalMessage, unicast->shardId, timeoutValue, cb);
+		}
+	}
 
 }
 
 
 template<typename RequestType , typename ResponseType> inline void
-RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType& requestObj,
+RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType * requestObj,
 		ResultAggregatorAndPrint<RequestType , ResponseType> * aggregator,
 		timeval timeoutValue, CoreShardInfo & coreInfo){
 
-    /*
-     * Multiplexer reads coreInfo object to understand which nodes we need to send this broadcast to
-     */
-    Multiplexer broadcastResolver(configurationManager, coreInfo);
+	/*
+	 * Multiplexer reads coreInfo object to understand which nodes we need to send this broadcast to
+	 */
+	Multiplexer broadcastResolver(configurationManager, coreInfo);
 
 
 	/*
 	 * We need to register callback functions to TM so that it calls them upon receiving a message
 	 * Here, we register a method around aggregator callback into TM.
 	 */
-	CallbackReference cb = transportManager.prepareCallback(&requestObj,
+	CallbackReference cb = transportManager.prepareCallback(requestObj,
 			new RMCallback<RequestType, ResponseType>(*aggregator),
 			ResponseType::messageKind(),
 			true,
 			broadcastResolver.size());
 
-			// create the message from the request object
-	Message* msg = (Message*)
-    				((char*) requestObj.serialize(getMessageAllocator()) - sizeof(Message));
+	Message * internalMessage = NULL;
+	Message * externalMessage = NULL;
 
-
-	for(UnicastIterator unicast = broadcastResolver.begin();
-			unicast != broadcastResolver.end(); ++unicast) {
-    if(unicast->nodeId == configurationManager.getCurrentNodeId()) {
-      sendInternalMessage(RequestType::messageKind(), unicast->shardId,
-          &requestObj);
-     continue;
-    }
-
-		msg->shard = unicast->shardId;
-		msg->mask |= INTERNAL_MASK;
-		msg->type = RequestType::messageKind();
-
-    transportManager.route(unicast->nodeId, msg, timeoutValue.tv_sec, cb);
-  }
-
-    getMessageAllocator()->deallocateMessage(msg);
-
+	// iterate on all destinations and send the message
+	for(UnicastIterator unicast = broadcastResolver.begin(); unicast != broadcastResolver.end(); ++unicast) {
+		// this shard is in the current node
+		if(unicast->shardId.isInCurrentNode(configurationManager)){
+			// so that we create the message only once
+			if(internalMessage == NULL){
+				internalMessage = prepareInternalMessage<RequestType>(unicast->shardId, requestObj);
+				// request message is stored in cb object to be deleted when replies are ready
+				// and cb object is being destroyed.
+				cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(internalMessage);
+			}
+			internalMessage->setDestinationShardId(unicast->shardId);
+			sendInternalMessage(internalMessage, unicast->shardId, timeoutValue, cb);
+		}else{// this shard is in some other node
+			// so that we create the message only once
+			if(externalMessage == NULL){
+				externalMessage = prepareExternalMessage<RequestType>(unicast->shardId, requestObj);
+				// request message is stored in cb object to be deleted when replies are ready
+				// and cb object is being destroyed.
+				cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(externalMessage);
+			}
+			externalMessage->setDestinationShardId(unicast->shardId);
+			sendExternalMessage(externalMessage, unicast->shardId, timeoutValue, cb);
+		}
+	}
 }
 
 
@@ -273,28 +356,27 @@ RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType& requestObj,
  *  Transmits a given message to a particular shard in a non-blocking fashion
  */
 template<typename RequestType> inline void 
-RoutingManager::route(RequestType& requestObj, ShardId & shardInfo) {
-	unsigned nodeId =
-			configurationManager.getCluster()->shardMap[shardInfo].getNodeId();
+RoutingManager::route(RequestType * requestObj, ShardId & shardInfo) {
 
-  if(nodeId == configurationManager.getCurrentNodeId()) {
-    sendInternalMessage(RequestType::messageKind(), shardInfo,
-          &requestObj);
-    return;
-  }
-
-	// create the message from the request object
-	Message* msg = (Message*)
-    				((char*) requestObj.serialize(getMessageAllocator()) - sizeof(Message));
-
-
-	msg->shard = shardInfo;
-	msg->mask |= INTERNAL_MASK;
-	msg->type = RequestType::messageKind();
-
-	transportManager.route(nodeId, msg);
-
-    getMessageAllocator()->deallocateMessage(msg);
+	// if the destination is the current node, we don't serialize the request object
+	// instead, we serialize the pointer to the request object
+	Message * msg =  NULL;
+	timeval timeValue;
+	timeValue.tv_sec = timeValue.tv_usec = 0;
+	if(shardInfo.isInCurrentNode(configurationManager)) {
+		msg = prepareInternalMessage<RequestType>(shardInfo, requestObj);
+		msg->setNoReply();
+		sendInternalMessage(msg, shardInfo,timeValue,CallbackReference());
+		// local NO_REPLY messages and request objects get deleted in InternalMessageBroker
+	}else{
+		msg = prepareExternalMessage<RequestType>(shardInfo, requestObj);
+		msg->setNoReply();
+		sendExternalMessage(msg,shardInfo,timeValue,CallbackReference());
+		// request object of NO_REPLAY non-local messages get deleted here because
+		// we don't need it anymore
+		delete requestObj;
+		// message will be deleted in transportManager.route
+	}
 }
 
 /*
@@ -303,8 +385,9 @@ RoutingManager::route(RequestType& requestObj, ShardId & shardInfo) {
  *  message.
  */
 template<typename RequestType> inline bool
-RoutingManager::route_wait_for_confirmation(RequestType& requestObj,
+RoutingManager::route_wait_for_confirmation(RequestType * requestObj,
 		bool& timedout, timeval timeoutValue , ShardId shardInfo){
+	//TODO
 	return false;
 }
 
@@ -314,38 +397,40 @@ RoutingManager::route_wait_for_confirmation(RequestType& requestObj,
  *  corresponding Message.
  */
 template<typename RequestType , typename ResponseType> inline void 
-RoutingManager::route_w_cb(RequestType& requestObj,
+RoutingManager::route_w_cb(RequestType * requestObj,
 		ResultAggregatorAndPrint<RequestType , ResponseType> * aggregator,
 		ShardId shardInfo) {
-	unsigned nodeId =
-			configurationManager.getCluster()->shardMap[shardInfo].getNodeId();
 
 	/*
 	 * We need to register callback functions to TM so that it calls them upon receiving a message
 	 * Here, we register a method around aggregator callback into TM.
+	 * we only pass 3 arguments to registerCallback because we are not going to wait for all
+	 * (false although it doesn't matter) and the number of shards to wait for is 1 by default
 	 */
-	CallbackReference cb = transportManager.prepareCallback(&requestObj,
+	CallbackReference cb = transportManager.prepareCallback(requestObj,
 			new RMCallback<RequestType, ResponseType>(*aggregator),
-			ResponseType::messageKind());
-
-  if(nodeId == configurationManager.getCurrentNodeId()) {
-    sendInternalMessage(RequestType::messageKind(), shardInfo,
-          &requestObj);
-    return;
-  }
-
-	// create the message from the request object
-	Message* msg = (Message*)
-    				((char*) requestObj.serialize(getMessageAllocator()) - sizeof(Message));
+			RequestType::messageKind());
 
 
-	msg->shard = shardInfo;
-	msg->mask |= INTERNAL_MASK;
-	msg->type = RequestType::messageKind();
+	// if the destination is the current node, we don't serialize the request object
+	// instead, we serialize the pointer to the request object
+	Message * msg =  NULL;
+	timeval timeValue;
+	timeValue.tv_sec = timeValue.tv_usec = 0;
+	if(shardInfo.isInCurrentNode(configurationManager)) {
+		msg = prepareInternalMessage<RequestType>(shardInfo, requestObj);
+		// request message is stored in cb object to be deleted when replies are ready
+		// and cb object is being destroyed.
+		cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(msg);
+		sendInternalMessage(msg, shardInfo,timeValue,cb);
 
-	transportManager.route(nodeId, msg, 0, cb);
-
-    getMessageAllocator()->deallocateMessage(msg);
+	}else{
+		msg = prepareExternalMessage<RequestType>(shardInfo, requestObj);
+		// request message is stored in cb object to be deleted when replies are ready
+		// and cb object is being destroyed.
+		cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(msg);
+		sendExternalMessage(msg,shardInfo,timeValue,cb);
+	}
 
 }
 
@@ -357,42 +442,38 @@ RoutingManager::route_w_cb(RequestType& requestObj,
  *           from shard ***
  */
 template<typename RequestType , typename ResponseType> inline void 
-RoutingManager::route_w_cb_n_timeout(RequestType & requestObj,
+RoutingManager::route_w_cb_n_timeout(RequestType * requestObj,
 		ResultAggregatorAndPrint<RequestType , ResponseType> * aggregator,
 		timeval timeoutValue, ShardId shardInfo) {
-
-	unsigned nodeId =
-			configurationManager.getCluster()->shardMap[shardInfo].getNodeId();
 
 	/*
 	 * We need to register callback functions to TM so that it calls them upon receiving a message
 	 * Here, we register a method around aggregator callback into TM.
-	 * we only pass 3 arguments to registerCallback because we are not going to wait for all (false although it doesn't matter)
-	 * and the number of shards to wait for is 1 by default
+	 * we only pass 3 arguments to registerCallback because we are not going to wait for all
+	 * (false although it doesn't matter) and the number of shards to wait for is 1 by default
 	 */
-	CallbackReference cb = transportManager.prepareCallback(&requestObj,
+	CallbackReference cb = transportManager.prepareCallback(requestObj,
 			new RMCallback<RequestType, ResponseType>(*aggregator),
 			RequestType::messageKind());
 
 
-  if(nodeId == configurationManager.getCurrentNodeId()) {
-    sendInternalMessage(RequestType::messageKind(), shardInfo,
-          &requestObj);
-    return;
-  }
-	// create the message from the request object
-	Message* msg = (Message*)
-    				((char*) requestObj.serialize(getMessageAllocator()) - sizeof(Message));
+	// if the destination is the current node, we don't serialize the request object
+	// instead, we serialize the pointer to the request object
+	Message * msg =  NULL;
+	if(shardInfo.isInCurrentNode(configurationManager)) {
+		msg = prepareInternalMessage<RequestType>(shardInfo, requestObj);
+		// request message is stored in cb object to be deleted when replies are ready
+		// and cb object is being destroyed.
+		cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(msg);
+		sendInternalMessage(msg, shardInfo,timeoutValue,cb);
 
-
-	msg->shard = shardInfo;
-	msg->mask |= INTERNAL_MASK;
-	msg->type = RequestType::messageKind();
-
-	transportManager.route(nodeId, msg, timeoutValue.tv_sec, cb);
-
-    getMessageAllocator()->deallocateMessage(msg);
-
+	}else{
+		msg = prepareExternalMessage<RequestType>(shardInfo, requestObj);
+		// request message is stored in cb object to be deleted when replies are ready
+		// and cb object is being destroyed.
+		cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(msg);
+		sendExternalMessage(msg,shardInfo,timeoutValue,cb);
+	}
 
 }
 

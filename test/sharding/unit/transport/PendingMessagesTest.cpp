@@ -19,7 +19,7 @@ struct x : Callback {
 void x::timeout(void*) {}
 void x::callback(Message *reply) {
   ASSERT( reply->bodySize == sizeof(REPLY_MESSAGE_DETAILS) );
-  ASSERT( !memcmp(reply->buffer, REPLY_MESSAGE_DETAILS, 
+  ASSERT( !memcmp(reply->body, REPLY_MESSAGE_DETAILS, 
         sizeof(REPLY_MESSAGE_DETAILS) ));
 }
 
@@ -35,14 +35,14 @@ int main() {
 
   for(int i=0; i < 3; ++i) {
     Message *reply = alloc.allocateMessage(sizeof(REPLY_MESSAGE_DETAILS));
-    reply->initial_time = 3;
-    memcpy(reply->buffer, REPLY_MESSAGE_DETAILS, 
+    reply->initialTime = 3;
+    memcpy(reply->body, REPLY_MESSAGE_DETAILS, 
       sizeof(REPLY_MESSAGE_DETAILS));
     msg.resolve(reply);
   }
 
   Message *reply = alloc.allocateMessage(sizeof(REPLY_MESSAGE_DETAILS));
-  reply->initial_time = 3;
-  memcpy(reply->buffer, REPLY_MESSAGE_DETAILS, sizeof(REPLY_MESSAGE_DETAILS));
+  reply->initialTime = 3;
+  memcpy(reply->body, REPLY_MESSAGE_DETAILS, sizeof(REPLY_MESSAGE_DETAILS));
   msg.resolve(reply);
 }

@@ -13,7 +13,6 @@ namespace httpwrapper {
 typedef unsigned NodeId;
 class UnicastIterator {
   struct Unicast {
-    NodeId nodeId;
     ShardId shardId;
   } id;
   std::vector<ShardId>::iterator i;

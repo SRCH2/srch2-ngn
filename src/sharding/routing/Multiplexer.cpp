@@ -24,7 +24,6 @@ UnicastIterator::UnicastIterator(const UnicastIterator& cpy)
 
 UnicastIterator::UnicastIterator(Cluster &cluster, const std::vector<ShardId>::iterator& i) : i(i), cluster(cluster) {
   id.shardId = *i;
-  id.nodeId = cluster.shardMap[id.shardId].getNodeId();
 }
 
 UnicastIterator& UnicastIterator::operator=(const UnicastIterator& c) {
@@ -35,7 +34,6 @@ UnicastIterator& UnicastIterator::operator=(const UnicastIterator& c) {
 UnicastIterator& UnicastIterator::operator++() {
   ++i;
   id.shardId = *i;
-  id.nodeId = cluster.shardMap[id.shardId].getNodeId();
   return *this;
 }
 
@@ -45,10 +43,10 @@ UnicastIterator UnicastIterator::operator++(int) {
   return rtn;
 }
 bool UnicastIterator::operator==(const UnicastIterator& rhs) {
-  return id.nodeId == rhs.id.nodeId && i == rhs.i;
+  return i == rhs.i;
 }
 bool UnicastIterator::operator!=(const UnicastIterator& rhs) {
-  return id.nodeId != rhs.id.nodeId || i != rhs.i;
+  return i != rhs.i;
 }
 UnicastIterator::Unicast* UnicastIterator::operator->() {
   return &this->id;

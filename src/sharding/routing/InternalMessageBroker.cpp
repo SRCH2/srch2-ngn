@@ -13,6 +13,7 @@
 #include "transport/Message.h"
 #include "util/Version.h"
 #include "RoutingManager.h"
+#include "RoutingUtil.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace std;
@@ -20,35 +21,82 @@ using namespace std;
 using namespace srch2::httpwrapper;
 
 
-template<typename InputType, typename Deserializer, typename OutputType>
-Message* InternalMessageBroker::broker(Message *msg, Srch2Server* server,
-		OutputType (DPInternalRequestHandler::*internalDPRequestHandlerFunction) (Srch2Server*, InputType*)) {
+template<typename RequestType, typename ResponseType>
+Message* InternalMessageBroker::processRequestMessage(Message *msg, Srch2Server* server,
+		ResponseType * (DPInternalRequestHandler::*internalDPRequestHandlerFunction) (Srch2Server*, RequestType*)) {
 
-	// TODO : currently nothing is local and the local messaging part doesn't work ...
-	InputType *inputSerializedObject = 
-			(msg->isLocal()) ? (InputType*) msg->buffer
-					: (InputType*)
-					  &Deserializer::deserialize((void*) msg->buffer);
+	RequestType *inputSerializedObject = NULL;
+	if(msg->isLocal()){ // message comes from current node
+		// ASSERT(currentNodeId = msg->shardId->nodeId);
+		// This object (inputSerializedObject) will be deleted in aggregator because it's a local message
+		// and this object was originally created in DPExternal
+		inputSerializedObject = decodeInternalMessage<RequestType>(msg);
+	}else{
+		inputSerializedObject = decodeExternalMessage<RequestType>(msg);
+	}
 
-	OutputType outputSerializedObject((internalDP.*internalDPRequestHandlerFunction)(server, inputSerializedObject));
+	// if msg is local this response object will be deleted in results aggregator.
+	// otherwise, TODO red line
+	ResponseType * outputSerializedObject = (internalDP.*internalDPRequestHandlerFunction)(server, inputSerializedObject);
 
-	// prepare the byte stream of reply
-	void *reply = 
-			(msg->isLocal()) ? (void*) &outputSerializedObject
-					: outputSerializedObject.serialize(getMessageAllocator());
+	// prepare the reply message
+	Message *replyMessage = NULL;
+	if(msg->isLocal()){
+		// the message will contain only the pointer to response object
+		replyMessage = this->routingManager.prepareInternalMessage<ResponseType>(ShardId(), outputSerializedObject );
+		// this message object will be deleted in pendinMessages in TM
+	}else{
+		// the message will contain the serialized response object
+		replyMessage = this->routingManager.prepareExternalMessage<ResponseType>(ShardId(), outputSerializedObject );
+		// we delete this response object here because it's an external request and response
+		// will be wrapped in a Message from now on
+		delete outputSerializedObject,inputSerializedObject;
+	}
 
-	if(!msg->isLocal())
-		delete inputSerializedObject, outputSerializedObject;
-
-	return (Message*) (reply - sizeof(Message));
+	return replyMessage;
 }
 
-Message* InternalMessageBroker::notify(Message * message){
+Message* InternalMessageBroker::processRequestInsertUpdateMessage(Message *msg,
+		Srch2Server* server, const Schema * schema){
+	SerializableInsertUpdateCommandInput *inputSerializedObject = NULL;
+	if(msg->isLocal()){ // message comes from current node
+		// ASSERT(currentNodeId = msg->shardId->nodeId);
+		// This object (inputSerializedObject) will be deleted in aggregator because it's a local message
+		// and this object was originally created in DPExternal
+		inputSerializedObject = decodeInternalMessage<SerializableInsertUpdateCommandInput>(msg);
+	}else{
+		inputSerializedObject = decodeExternalInsertUpdateMessage(msg,schema);
+	}
+
+	// if msg is local this response object will be deleted in results aggregator.
+	// otherwise, TODO red line
+	SerializableCommandStatus * outputSerializedObject =
+			internalDP.internalInsertUpdateCommand(server,inputSerializedObject);
+
+	// prepare the reply message
+	Message *replyMessage = NULL;
+	if(msg->isLocal()){
+		// the message will contain only the pointer to response object
+		replyMessage = this->routingManager.prepareInternalMessage<SerializableCommandStatus>(ShardId(), outputSerializedObject );
+		// this message object will be deleted in pendinMessages in TM
+	}else{
+		// the message will contain the serialized response object
+		replyMessage = this->routingManager.prepareExternalMessage<SerializableCommandStatus>(ShardId(), outputSerializedObject );
+		// we delete this response object here because it's an external request and response
+		// will be wrapped in a Message from now on
+		delete outputSerializedObject,inputSerializedObject;
+	}
+
+	return replyMessage;
+}
+
+Message* InternalMessageBroker::notifyWithReply(Message * message){
 	if(message == NULL){
 		return NULL;
 	}
 
-	Srch2Server* server = getShardIndex(message->shard);
+	ShardId shardId = message->getDestinationShardId();
+	Srch2Server* server = getShardIndex(shardId);
 	if(server == NULL){
 		//TODO : what if message shardID is not present in the map?
 		// example : message is late and shard is not present anymore ....
@@ -59,79 +107,98 @@ Message* InternalMessageBroker::notify(Message * message){
 	//2. Call the appropriate internal DP function and get the response object
 	//3. Serialize response object into a message
 	//4. give the new message out
-	switch (message->type) {
+	switch (message->getType()) {
 	case SearchCommandMessageType: // -> for LogicalPlan object
-		return broker<SerializableSearchCommandInput, SerializableSearchCommandInput,SerializableSearchResults>
+		return processRequestMessage<SerializableSearchCommandInput,SerializableSearchResults>
 		(message, server, &DPInternalRequestHandler::internalSearchCommand);
-	case InsertUpdateCommandMessageType: {// -> for Record object (used for insert and update)
-		typedef SerializableInsertUpdateCommandInput In;
-		In *inputSerializedObject =
-				(message->isLocal()) ? (In*)  message->buffer
-						: (In*) &SerializableInsertUpdateCommandInput::
-						  deserialize((void*) message->buffer,
-								  server->indexDataConfig->getSchema());
-		SerializableCommandStatus
-		outputSerializedObject(internalDP.internalInsertUpdateCommand(server,
-				inputSerializedObject));
-
-		// prepare the byte stream of reply
-		void *reply = (message->isLocal()) ? (void*) &outputSerializedObject
-				: outputSerializedObject.serialize(getMessageAllocator());
-
-		if(!message->isLocal())
-			delete inputSerializedObject, outputSerializedObject;
-
-		return (Message*) (reply - sizeof(Message));
+	case InsertUpdateCommandMessageType: // -> for Record object (used for insert and update)
+		return processRequestInsertUpdateMessage(message, server, server->indexDataConfig->getSchema());
+	case DeleteCommandMessageType: // -> for DeleteCommandInput object (used for delete)
+		return processRequestMessage<SerializableDeleteCommandInput, SerializableCommandStatus>
+		(message, server,&DPInternalRequestHandler::internalDeleteCommand);
+	case SerializeCommandMessageType: // -> for SerializeCommandInput object
+		// (used for serializing index and records)
+		return processRequestMessage<SerializableSerializeCommandInput, SerializableCommandStatus>
+		(message, server,&DPInternalRequestHandler::internalSerializeCommand);
+	case GetInfoCommandMessageType: // -> for GetInfoCommandInput object (used for getInfo)
+		return processRequestMessage<SerializableGetInfoCommandInput, SerializableGetInfoResults>
+		(message, server,&DPInternalRequestHandler::internalGetInfoCommand);
+	case CommitCommandMessageType: // -> for CommitCommandInput object
+		return processRequestMessage<SerializableCommitCommandInput, SerializableCommandStatus>
+		(message, server, &DPInternalRequestHandler::internalCommitCommand);
+	case ResetLogCommandMessageType: // -> for ResetLogCommandInput (used for resetting log)
+		return processRequestMessage<SerializableResetLogCommandInput,SerializableCommandStatus>
+		(message, server, &DPInternalRequestHandler::internalResetLogCommand);
+	case SearchResultsMessageType: // -> for SerializedQueryResults object
+	case GetInfoResultsMessageType: // -> for GetInfoResults object
+	case StatusMessageType: // -> for CommandStatus object (object returned from insert, delete, update)
+	default:
+		// These message types are only used for responses to other requests and code should
+		// never reach to this point
+		return NULL;
 	}
+	return NULL;
+}
+
+
+template<typename RequestType> inline
+void InternalMessageBroker::processRequestMessageNoReply(Message *msg){
+	RequestType *inputSerializedObject = NULL;
+	if(msg->isLocal()){ // message comes from current node
+		// ASSERT(currentNodeId = msg->shardId->nodeId);
+		inputSerializedObject = decodeInternalMessage<RequestType>(msg);
+		//
+		// TODO do something with the message
+		//
+		// this msg contains a pointer to an object which must be deleted here
+		delete inputSerializedObject;
+	}else{
+		// TODO do something with the message
+	}
+}
+
+void InternalMessageBroker::notifyNoReply(Message * msg){
+	// use DP internal or some other module to process this message without reply
+	//TODO
+	switch (msg->getType()) {
+	case SearchCommandMessageType: // -> for LogicalPlan object
+		processRequestMessageNoReply<SerializableSearchCommandInput>(msg);
+		return;
+
+	case InsertUpdateCommandMessageType: // -> for Record object (used for insert and update)
+		processRequestMessageNoReply<SerializableInsertUpdateCommandInput>(msg);
+		return;
 
 	case DeleteCommandMessageType: // -> for DeleteCommandInput object (used for delete)
-		return broker<SerializableDeleteCommandInput, SerializableDeleteCommandInput, SerializableCommandStatus>
-		(message, server,
-				&DPInternalRequestHandler::internalDeleteCommand);
+		processRequestMessageNoReply<SerializableDeleteCommandInput>(msg);
+		return;
 
 	case SerializeCommandMessageType: // -> for SerializeCommandInput object
 		// (used for serializing index and records)
-		return broker<SerializableSerializeCommandInput, SerializableSerializeCommandInput, SerializableCommandStatus>
-		(message, server,
-				&DPInternalRequestHandler::internalSerializeCommand);
+		processRequestMessageNoReply<SerializableSerializeCommandInput>(msg);
+		return;
 
-
-	case GetInfoCommandMessageType: { // -> for GetInfoCommandInput object (used for getInfo)
-		typedef SerializableGetInfoCommandInput In;
-		In *inputSerializedObject =
-				(message->isLocal()) ? (In*) message->buffer
-						: (In*) &SerializableGetInfoCommandInput
-						  ::deserialize((void*) message->buffer);
-
-		SerializableGetInfoResults outputSerializedObject(
-				internalDP.internalGetInfoCommand(server, Version::getCurrentVersion(),
-						inputSerializedObject));
-
-		// prepare the byte stream of reply
-		void *reply = (message->isLocal()) ? (void*) &outputSerializedObject
-				: outputSerializedObject.serialize(getMessageAllocator());
-
-		if(!message->isLocal())
-			delete inputSerializedObject, outputSerializedObject;
-
-		return (Message*) (reply - sizeof(Message));
-	}
+	case GetInfoCommandMessageType: // -> for GetInfoCommandInput object (used for getInfo)
+		processRequestMessageNoReply<SerializableGetInfoCommandInput>(msg);
+		return;
 
 	case CommitCommandMessageType: // -> for CommitCommandInput object
-		return broker<SerializableCommitCommandInput, SerializableCommitCommandInput, SerializableCommandStatus>
-		(message, server, &DPInternalRequestHandler::internalCommitCommand);
+		processRequestMessageNoReply<SerializableCommitCommandInput>(msg);
+		return;
+
 	case ResetLogCommandMessageType: // -> for ResetLogCommandInput (used for resetting log)
-		return broker<SerializableResetLogCommandInput,SerializableResetLogCommandInput, SerializableCommandStatus>
-		(message, server, &DPInternalRequestHandler::internalResetLogCommand);
+		processRequestMessageNoReply<SerializableResetLogCommandInput>(msg);
+		return;
+
 	case SearchResultsMessageType: // -> for SerializedQueryResults object
 	case GetInfoResultsMessageType: // -> for GetInfoResults object
 	case StatusMessageType: // -> for CommandStatus object (object returned from insert, delete, update)
 	default:
 		// These message types are only used for reponses to other requests and code should
 		// never reach to this point
-		return NULL;
+		return ;
 	}
-	return NULL;
+	return ;
 }
 
 Srch2Server * InternalMessageBroker::getShardIndex(ShardId & shardId){

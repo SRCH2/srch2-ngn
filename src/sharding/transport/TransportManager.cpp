@@ -2,6 +2,7 @@
 #include<map>
 #include<sys/socket.h>
 #include<sys/types.h>
+#include <core/util/Assert.h>
 
 
 using namespace srch2::instantsearch;
@@ -46,13 +47,14 @@ void* startListening(void* arg) {
 		}
 	}
 
-  close(fd);
-  Logger::console("Connected");
+	close(fd);
+	Logger::console("Connected");
 }
 
 #include "callback_functions.h"
 
 TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
+	pendingMessages.setTransportManager(this);
 	// for each node we have, if it's us just store out event base
 	// otherwise it stores the node as a destination
 	for(Nodes::iterator dest = nodes.begin(); dest!= nodes.end(); ++dest) {
@@ -90,26 +92,42 @@ TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
 
 MessageTime_t TransportManager::route(NodeId node, Message *msg, 
 		unsigned timeout, CallbackReference callback) {
-	msg->time = __sync_fetch_and_add(&distributedTime, 1);
+	msg->setTime( __sync_fetch_and_add(&distributedTime, 1));
 
 	time_t timeOfTimeout_time = timeout + time(NULL);
-	pendingMessages.addMessage(timeout, msg->time, callback);
+	// only messages which expect reply will go to pending messages
+	if(! msg->isNoReply()){
+		pendingMessages.addMessage(timeout, msg->getTime(), callback);
+	}
 
 #ifdef USE_SAME_THREAD_FOR_CURRENT_NODE_PROCESS
-  if(msg->isLocal()) {
-    MessageTime_t rtn = msg->time;
-    if(msg->isInternal()) {
-		  if(Message* reply = getInternalTrampoline()->notify(msg)) {
-        reply->initial_time = msg->time;
-        reply->mask |= REPLY_MASK | INTERNAL_MASK;
-        getMsgs()->resolve(reply);
-        getMessageAllocator()->deallocate(reply);
-      }
-    } else {
-      getSmHandler()->notify(msg);
-    }
-   return rtn;
-  }
+	if(msg->isLocal()) {
+		MessageTime_t rtn = msg->getTime();
+		if(msg->isInternal()) {
+			if(msg->isNoReply()){
+				// this msg comes from a local broadcast or route with no call back
+				// so there is no reply for this msg.
+				// notifyNoReply should deallocate the obj in msg
+				// because msg just keeps a pointer to that object
+				// and that object itself needs to be deleted.
+				getInternalTrampoline()->notifyNoReply(msg);
+				// and delete the msg
+				getMessageAllocator()->deallocateByMessagePointer(msg);
+				return rtn;
+			}
+			Message* reply = getInternalTrampoline()->notifyWithReply(msg);
+			ASSERT(reply != NULL);
+			if(reply != NULL) {
+				reply->setInitialTime(msg->getTime());
+				reply->setReply()->setInternal();
+				getMsgs()->resolve(reply);
+			}
+			// what if resolve returns NULL for something?
+		} else {
+			getSmHandler()->notifyWithReply(msg);
+		}
+		return rtn;
+	}
 #endif
 
 
@@ -121,14 +139,20 @@ MessageTime_t TransportManager::route(NodeId node, Message *msg,
 	int flag = MSG_NOSIGNAL;
 #endif
 
-	send(conn.fd, msg, msg->bodySize + sizeof(Message), flag);
+	send(conn.fd, msg, msg->getBodySize() + sizeof(Message), flag);
 	//TODO: errors?
 
-	return msg->time;
+	/*
+	 * If we don't wait for reply we should delete the msg here
+	 */
+	if(msg->isNoReply()){
+		getMessageAllocator()->deallocateByMessagePointer(msg);
+	}
+	return msg->getTime();
 }
 
 MessageTime_t TransportManager::route(int fd, Message *msg) {
-	msg->time = __sync_fetch_and_add(&distributedTime, 1);
+	msg->setTime( __sync_fetch_and_add(&distributedTime, 1));
 
 #ifdef __MACH__
 	int flag = SO_NOSIGPIPE;
@@ -136,10 +160,10 @@ MessageTime_t TransportManager::route(int fd, Message *msg) {
 	int flag = MSG_NOSIGNAL;
 #endif
 
-	send(fd, msg, msg->bodySize + sizeof(Message), flag);
+	send(fd, msg, msg->getBodySize() + sizeof(Message), flag);
 	//TODO: errors?
 
-	return msg->time;
+	return msg->getTime();
 }
 
 MessageTime_t& TransportManager::getDistributedTime() {
@@ -172,6 +196,6 @@ CallBackHandler* TransportManager::getSmHandler() {
 
 
 //TODO:: TransportManager::~TransportManager() {
-  //bind threads
-  //close ports
+//bind threads
+//close ports
 //}
