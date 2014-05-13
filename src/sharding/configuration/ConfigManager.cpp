@@ -764,7 +764,8 @@ void ConfigManager::parseSingleCore(const xml_node &parentNode, CoreInfo_t *core
         trimSpacesFromValue(temp, coreIdTag, parseWarnings);
         coreInfo->setCoreId((uint)atol(temp.c_str()));
     }else{
-    	parseWarnings << "CoreId is not provided in core " + coreInfo->name + ", engine will use the default value \n";
+        // TODO: to be deleted in V1
+        Logger::console("!!!!!CoreId is not provided in core %s, engine will use the default value!!!!!", coreInfo->name.c_str());
         coreInfo->setCoreId(defaultCoreId);
         defaultCoreId++;
     }
