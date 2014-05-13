@@ -764,6 +764,8 @@ private:
     static const char* const pingIntervalTag;
     static const char* const pingTimeoutTag;
     static const char* const retryCountTag;
+    static const char* const coreIdTag;
+
 
     static const char* const accessLogFileString;
     static const char* const analyzerString;
@@ -887,6 +889,14 @@ private:
 class CoreInfo_t {
 
 public:
+
+	const unsigned getCoreId(){
+		return this->coreId;
+	}
+
+	void setCoreId(unsigned coreId){
+		this->coreId = coreId;
+	}
 
     unsigned getNumberOfPrimaryShards(){
         return this->numberOfPrimaryShards;

@@ -55,6 +55,7 @@ const char* const ConfigManager::discoveryNodeTag = "discovery";
 const char* const ConfigManager::pingIntervalTag = "ping-interval";
 const char* const ConfigManager:: pingTimeoutTag= "ping-timeout";
 const char* const ConfigManager::retryCountTag = "retry-count";
+const char* const ConfigManager::coreIdTag = "coreid";
 
 
 const char* const ConfigManager::accessLogFileString = "accesslogfile";
@@ -755,6 +756,13 @@ void ConfigManager::parseSingleCore(const xml_node &parentNode, CoreInfo_t *core
         parseError << "Core must have a name attribute";
         configSuccess = false;
         return;
+    }
+
+    xml_node childNode = parentNode.child(coreIdTag);
+    if(childNode && childNode.text()){
+        string temp = string(childNode.text().get());
+        trimSpacesFromValue(temp, coreIdTag, parseWarnings);
+        coreInfo->setCoreId((uint)atol(temp.c_str()));
     }
 
     // Solr compatability - dataDir can be an attribute: <core dataDir="core0/data"

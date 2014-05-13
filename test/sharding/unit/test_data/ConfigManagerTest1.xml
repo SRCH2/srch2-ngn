@@ -62,13 +62,14 @@
 
     <!-- moved from <query> which is now per core -->
     <maxSearchThreads>2</maxSearchThreads>
-        
+         
     <!-- Testing multiple cores here -->
     <cores defaultCoreName="core1">
         <core name="core1">
-	<core-number_of_shards>5</core-number_of_shards> 
-	<core-number_of_replicas>1</core-number_of_replicas>
-
+            <coreId>20</coreId>
+	        <core-number_of_shards>5</core-number_of_shards> 
+	        <core-number_of_replicas>1</core-number_of_replicas>
+            
             <dataFile>movie-data.json</dataFile>
             <dataDir>core1</dataDir>
             <dataSourceType>1</dataSourceType>
@@ -145,6 +146,7 @@
         </core>
 
         <core name="core2">
+            <coreId>30</coreId>
 	<core-number_of_shards>3</core-number_of_shards>
         <core-number_of_replicas>1</core-number_of_replicas>
 
@@ -234,6 +236,7 @@
         </core>
 
         <core name="core3">
+            <coreId>40</coreId>
 	<core-number_of_shards>1</core-number_of_shards>
         <core-number_of_replicas>1</core-number_of_replicas>
 
@@ -592,6 +595,7 @@
         </core>
 
         <core name="core4">
+            <coreId>50</coreId>
         <core-number_of_shards>5</core-number_of_shards>
         <core-number_of_replicas>1</core-number_of_replicas>
    
