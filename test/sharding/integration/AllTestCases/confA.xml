@@ -57,7 +57,7 @@
         Email contact@srch2.com to get a key file.  
         Make sure to set the variable to the SRCH2 license key file.
     -->
-    <licenseFile>../conf/srch2_license_key.txt</licenseFile>
+    <licenseFile>../../wrapper/conf/srch2_license_key.txt</licenseFile>
  
     <!--
         Hostname and Port Number

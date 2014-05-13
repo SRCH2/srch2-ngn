@@ -1,6 +1,0 @@
-A||insert||{"category": "Insurance Services Insurance Agent", "name": "Prescription Service Of California", "relevance": 3.0147461915737148, "lat": 61.171669000000001, "lng": -149.881021, "id": "101"}||{"rid":"101","insert":"success"}
-B||insert||{"category": " Government Public Place Office", "name": "Senator Gary Stevens", "relevance": 5.0161041254013883, "lat": 59.641700999999998, "lng": -151.55141800000001, "id": "102"}||{"rid":"102","insert":"success"}
-C||insert||{"category": " Restaurant Food & Drink", "name": "Bradley House", "relevance": 4.7440935451275612, "lat": 61.119110999999997, "lng": -149.86381800000001, "id": "103"}||{"rid":"103","insert":"success"}
-C||query||Prescription Service||101
-A||query||Prescription Service||101
-B||query||Senator Gary||102

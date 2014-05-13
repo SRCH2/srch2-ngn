@@ -1,8 +1,4 @@
-#This tests insertion and querying
-#To run the code go to the parent directory and execute following command
-#python ./2n-insertA-queryB/testInsertAndQuery.py ../../../build/src/server/srch2-search-server ./2n-insertA-queryB/2n-insertA-queryB.txt ./2n-insertA-queryB/listOfNodes.txt 
-# python <python code> <srch2-engine binary> <path to the file that contains records for insertion/querying> <path to the file containing list of nodes>
-
+#This tests insertion, querying and deletion from multiple nodes
 
 import sys, urllib2, json, time, subprocess, os, commands, signal
 
@@ -156,6 +152,7 @@ if __name__ == '__main__':
         os._exit(exitCode)
     except:
         print '==========test-sharding failed=========='
+        exitCode=1
         for i in range(len(serverHandles)):
             test_lib.killServer(serverHandles[i])
-
+        os._exit(exitCode)
