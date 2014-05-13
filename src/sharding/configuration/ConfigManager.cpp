@@ -785,7 +785,7 @@ void ConfigManager::parseSingleCore(const xml_node &parentNode, CoreInfo_t *core
 // only called by parseDataConfiguration()
 void ConfigManager::parseMultipleCores(const xml_node &coresNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
 {
-	defaultCoreId = 10;
+	defaultCoreId = 0;
     if (coresNode) {
 
         // <cores defaultCoreName = "foo">

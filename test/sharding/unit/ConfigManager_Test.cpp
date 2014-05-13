@@ -197,10 +197,10 @@ void testDefaultCoreId(char * configFile){
 	CoreInfo_t* c3 = configManager->getCoreInfo("core3");
 	CoreInfo_t* c4 = configManager->getCoreInfo("core4");
 
-	ASSERT(c1->getCoreId() == 10);
-	ASSERT(c2->getCoreId() == 11);
-	ASSERT(c3->getCoreId() == 12);
-	ASSERT(c4->getCoreId() == 13);
+	ASSERT(c1->getCoreId() == 0);
+	ASSERT(c2->getCoreId() == 1);
+	ASSERT(c3->getCoreId() == 2);
+	ASSERT(c4->getCoreId() == 3);
 }
 
 int main() {
