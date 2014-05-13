@@ -24,7 +24,7 @@ public:
 		// set the body size
 		msg->setBodySize(bodySize);
 		// return the pointer to the beginning of body
-		return msg->getBody();
+		return Message::getBodyPointerFromMessagePointer(msg);
 	}
 
 	/*
@@ -46,7 +46,7 @@ public:
 	 * This function deallocates the message by receiving the message pointer
 	 */
 	void deallocateByMessagePointer(Message *msg) {
-		deallocateByBodyPointer(msg->getBody(), msg->getBodySize());
+		deallocateByBodyPointer((char *)Message::getBodyPointerFromMessagePointer(msg), msg->getBodySize());
 	}
 };
 

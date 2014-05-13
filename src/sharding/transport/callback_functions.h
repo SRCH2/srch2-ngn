@@ -50,7 +50,7 @@ bool findNextMagicNumberAndReadMessageHeader(Message *const msg,  int fd) {
 Message* readRestOfMessage(MessageAllocator& messageAllocator,
 		int fd, Message *const msgHeader, int *readCount) {
 	Message *msg= messageAllocator.allocateMessage(msgHeader->getBodySize());
-	int rv = recv(fd, msg->getBody(), msgHeader->getBodySize(), MSG_DONTWAIT);
+	int rv = recv(fd, Message::getBodyPointerFromMessagePointer(msg), msgHeader->getBodySize(), MSG_DONTWAIT);
 
 	if(rv == -1) {
 		if(errno == EAGAIN || errno == EWOULDBLOCK) return NULL;
@@ -73,7 +73,7 @@ bool readPartialMessage(int fd, MessageBuffer& buffer) {
 	}
 
 	int readReturnValue = recv(fd, 
-			buffer.msg->getBody() + buffer.readCount, toRead, MSG_DONTWAIT);
+			Message::getBodyPointerFromMessagePointer(buffer.msg) + buffer.readCount, toRead, MSG_DONTWAIT);
 	if(readReturnValue < 0) {
 		//TODO: handle errors
 		return false;

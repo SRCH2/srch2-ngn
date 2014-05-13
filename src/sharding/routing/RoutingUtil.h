@@ -12,18 +12,18 @@ namespace httpwrapper {
 template<typename RequestType > inline
 RequestType * decodeInternalMessage(Message * message){
 	ASSERT(message->getBodySize() == sizeof(RequestType *));
-	void * body = message->getBody();
+	void * body = Message::getBodyPointerFromMessagePointer(message);
 	RequestType * objectPointer = NULL;
 	memcpy(&objectPointer, body, message->getBodySize());
 	return objectPointer;
 }
 template<typename RequestType > inline
 RequestType * decodeExternalMessage(Message * message){
-	return RequestType::deserialize((void*) message->getBody());
+	return RequestType::deserialize(Message::getBodyPointerFromMessagePointer(message));
 }
 
 inline SerializableInsertUpdateCommandInput * decodeExternalInsertUpdateMessage(Message * message, const srch2::instantsearch::Schema * schema){
-	return SerializableInsertUpdateCommandInput::deserialize((void*) message->getBody(),schema);
+	return SerializableInsertUpdateCommandInput::deserialize(Message::getBodyPointerFromMessagePointer(message),schema);
 }
 
 }

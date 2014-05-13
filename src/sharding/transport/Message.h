@@ -62,9 +62,6 @@ public:
    MessageTime_t getInitialTime(){
 	   return this->initialTime;
    }
-   char * getBody(){
-	   return this->body;
-   }
    void setBodyAndBodySize(void * src, unsigned bodySize){
 	   setBodySize(bodySize);
 	   memcpy(this->body, src, this->getBodySize());
@@ -85,9 +82,11 @@ public:
 	   this->bodySize = bodySize;
    }
    static Message * getMessagePointerFromBodyPointer( void * bodyPointer){
-	   return (Message *)(bodyPointer - sizeof(Message));
+	   return (Message *)((char *)bodyPointer - sizeof(Message));
    }
-
+   static void * getBodyPointerFromMessagePointer(Message * messagePointer){
+	   return (void *)(((char *)messagePointer) + sizeof(Message));
+   }
 
 
 
