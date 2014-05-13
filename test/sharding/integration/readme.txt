@@ -1,9 +1,11 @@
 
 Author: Prateek
 
-To run each the integration test case 2n-insertA-deleteA, run the following command
+To run the integration test case 2n-insertA-deleteA, run the following command
 
-shell> python ./2n-insertA-deleteA/testDelete.py ../../../build/src/server/srch2-search-server ./2n-insertA-deleteA/2n-insertA-deleteA.txt ./2n-insertA-deleteA/listOfNodes.txt
+shell> python ./2n-insertA-deleteA/test-sharding.py ../../../build/src/server/srch2-search-server ./2n-insertA-deleteA/2n-insertA-deleteA.txt ./2n-insertA-deleteA/list-of-2-nodes.txt
+
+The above test framework can be used to develop test cases where each node in different test cases require separate configuration file.
 
 To run all the test cases present in director AllTestCases run the command
 shell> runme.sh
