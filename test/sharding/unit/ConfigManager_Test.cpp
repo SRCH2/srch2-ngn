@@ -188,6 +188,21 @@ void testCoreID(char * configFile){
 	ASSERT(c4->getCoreId() == 50);
 }
 
+void testDefaultCoreId(char * configFile){
+
+	ConfigManager *configManager = new ConfigManager(configFile);
+	configManager->loadConfigFile();
+	CoreInfo_t* c1 = configManager->getCoreInfo("core1");
+	CoreInfo_t* c2 = configManager->getCoreInfo("core2");
+	CoreInfo_t* c3 = configManager->getCoreInfo("core3");
+	CoreInfo_t* c4 = configManager->getCoreInfo("core4");
+
+	ASSERT(c1->getCoreId() == 10);
+	ASSERT(c2->getCoreId() == 11);
+	ASSERT(c3->getCoreId() == 12);
+	ASSERT(c4->getCoreId() == 13);
+}
+
 int main() {
 	testShard();
 	Logger::setLogLevel(Logger::SRCH2_LOG_DEBUG);
@@ -209,6 +224,7 @@ int main() {
 	testPortsOfNode(getenv("ConfigManagerFilePath1"));
 
 	testCoreID(getenv("ConfigManagerFilePath1"));
+	testDefaultCoreId(getenv("ConfigManagerFilePath2"));
 
 }
 
