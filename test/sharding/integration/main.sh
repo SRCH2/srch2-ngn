@@ -99,7 +99,7 @@ function printTestBanner {
     done
     banner="${banner}${html_post}"
     echo "$banner" >> ${output}
-    echo "${html_results_anchor}${banner}" >> system_test.log
+    echo "${html_results_anchor}${banner}" >> ./test-data/core1/logs/system_test.log
 }
 
 # Clear output file if file was specified
@@ -112,7 +112,7 @@ if [ "$html" -gt 0 ]; then
     html_fail_pre='<font color="#FF0000">'
     html_fail_post='</font>'
 
-    rm -f system_test.log
+    rm -f ./test-data/core1/logs/system_test.log
     html_title="System Tests - `date` - ${machine} ${os}"
     echo "<html><head><title>${html_title}</title></head><body><h1>${html_title}</h1><h2>Test Summary</h2>" >> ${output}
     html_escape_command="sed -e 's/</\&lt;/g' | sed -e 's/>/\&gt;/g'"
@@ -129,7 +129,7 @@ echo ''
 # python ./2n-insertA-deleteA/test-sharding.py ../../../build/src/server/srch2-search-server ./2n-insertA-deleteA/2n-insertA-deleteA.txt ./2n-insertA-deleteA/list-of-2-nodes.txt
 test_id="2n-insertA-deleteA"
 printTestBanner "$test_id"
-python ./2n-insertA-deleteA/test-sharding.py $SRCH2_ENGINE ./2n-insertA-deleteA/2n-insertA-deleteA.txt ./2n-insertA-deleteA/list-of-2-nodes.txt | eval "${html_escape_command}" >> system_test.log 2>&1
+python ./2n-insertA-deleteA/test-sharding.py $SRCH2_ENGINE ./2n-insertA-deleteA/2n-insertA-deleteA.txt ./2n-insertA-deleteA/list-of-2-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
 if [ ${PIPESTATUS[0]} -gt 0 ]; then
     echo "${html_fail_pre}-- FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
@@ -138,13 +138,10 @@ if [ ${PIPESTATUS[0]} -gt 0 ]; then
 else
     echo "-- PASSED: $test_id" >> ${output}
 fi
-
-test_id="2n-insertA-R1-B-R2-deleteA-R1-B-R2"
-printTestBanner "$test_id"
 
 test_id="2n-insertA-deleteB"
 printTestBanner "$test_id"
-python ./AllTestCases/test-sharding.py $SRCH2_ENGINE ./AllTestCases/2n-insertA-deleteB.txt ./AllTestCases/list-of-2-nodes.txt | eval "${html_escape_command}" >> system_test.log 2>&1
+python ./AllTestCases/test-sharding.py $SRCH2_ENGINE ./AllTestCases/2n-insertA-deleteB.txt ./AllTestCases/list-of-2-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
 if [ ${PIPESTATUS[0]} -gt 0 ]; then
     echo "${html_fail_pre}-- FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
@@ -156,7 +153,7 @@ fi
 
 test_id="2n-insertA-R1-B-R2-deleteA-R1-B-R2"
 printTestBanner "$test_id"
-python ./AllTestCases/test-sharding.py $SRCH2_ENGINE ./AllTestCases/2n-insertA-R1-B-R2-deleteA-R1-B-R2.txt ./AllTestCases/list-of-2-nodes.txt | eval "${html_escape_command}" >> system_test.log 2>&1
+python ./AllTestCases/test-sharding.py $SRCH2_ENGINE ./AllTestCases/2n-insertA-R1-B-R2-deleteA-R1-B-R2.txt ./AllTestCases/list-of-2-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
 if [ ${PIPESTATUS[0]} -gt 0 ]; then
     echo "${html_fail_pre}-- FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
@@ -168,7 +165,7 @@ fi
 
 test_id="2n-insertA-R1-B-R2-deleteB-R1-A-R1"
 printTestBanner "$test_id"
-python ./AllTestCases/test-sharding.py $SRCH2_ENGINE ./AllTestCases/2n-insertA-R1-B-R2-deleteB-R1-A-R1.txt ./AllTestCases/list-of-2-nodes.txt | eval "${html_escape_command}" >> system_test.log 2>&1
+python ./AllTestCases/test-sharding.py $SRCH2_ENGINE ./AllTestCases/2n-insertA-R1-B-R2-deleteB-R1-A-R1.txt ./AllTestCases/list-of-2-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
 if [ ${PIPESTATUS[0]} -gt 0 ]; then
     echo "${html_fail_pre}-- FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
@@ -180,7 +177,7 @@ fi
 
 test_id="2n-insertA-R1-B-R2-deleteB-R1-queryA-R1"
 printTestBanner "$test_id"
-python ./AllTestCases/test-sharding.py $SRCH2_ENGINE ./AllTestCases/2n-insertA-R1-B-R2-deleteB-R1-queryA-R1.txt ./AllTestCases/list-of-2-nodes.txt | eval "${html_escape_command}" >> system_test.log 2>&1
+python ./AllTestCases/test-sharding.py $SRCH2_ENGINE ./AllTestCases/2n-insertA-R1-B-R2-deleteB-R1-queryA-R1.txt ./AllTestCases/list-of-2-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
 if [ ${PIPESTATUS[0]} -gt 0 ]; then
     echo "${html_fail_pre}-- FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
@@ -192,7 +189,7 @@ fi
 
 test_id="./AllTestCases/2n-insertAB-queryAB"
 printTestBanner "$test_id"
-python ./AllTestCases/test-sharding.py $SRCH2_ENGINE ./AllTestCases/2n-insertAB-queryAB.txt ./AllTestCases/list-of-2-nodes.txt | eval "${html_escape_command}" >> system_test.log 2>&1
+python ./AllTestCases/test-sharding.py $SRCH2_ENGINE ./AllTestCases/2n-insertAB-queryAB.txt ./AllTestCases/list-of-2-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
 if [ ${PIPESTATUS[0]} -gt 0 ]; then
     echo "${html_fail_pre}-- FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
@@ -204,7 +201,7 @@ fi
 
 test_id="./AllTestCases/2n-insertAABB"
 printTestBanner "$test_id"
-python ./AllTestCases/test-sharding.py $SRCH2_ENGINE ./AllTestCases/2n-insertAABB.txt ./AllTestCases/list-of-2-nodes.txt | eval "${html_escape_command}" >> system_test.log 2>&1
+python ./AllTestCases/test-sharding.py $SRCH2_ENGINE ./AllTestCases/2n-insertAABB.txt ./AllTestCases/list-of-2-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
 if [ ${PIPESTATUS[0]} -gt 0 ]; then
     echo "${html_fail_pre}-- FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
@@ -216,7 +213,7 @@ fi
 
 test_id="./AllTestCases/3n-insertABC-queryABC"
 printTestBanner "$test_id"
-python ./AllTestCases/test-sharding.py $SRCH2_ENGINE ./AllTestCases/3n-insertABC-queryABC ./AllTestCases/list-of-3-nodes.txt | eval "${html_escape_command}" >> system_test.log 2>&1
+python ./AllTestCases/test-sharding.py $SRCH2_ENGINE ./AllTestCases/3n-insertABC-queryABC ./AllTestCases/list-of-3-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
 if [ ${PIPESTATUS[0]} -gt 0 ]; then
     echo "${html_fail_pre}-- FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
@@ -228,7 +225,7 @@ fi
 
 test_id="./AllTestCases/3n-insertABC-queryC"
 printTestBanner "$test_id"
-python ./AllTestCases/test-sharding.py $SRCH2_ENGINE ./AllTestCases/3n-insertABC-queryC ./AllTestCases/list-of-3-nodes.txt | eval "${html_escape_command}" >> system_test.log 2>&1
+python ./AllTestCases/test-sharding.py $SRCH2_ENGINE ./AllTestCases/3n-insertABC-queryC ./AllTestCases/list-of-3-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
 if [ ${PIPESTATUS[0]} -gt 0 ]; then
     echo "${html_fail_pre}-- FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
@@ -240,7 +237,7 @@ fi
 
 test_id="./AllTestCases/3n-insertA-queryABC"
 printTestBanner "$test_id"
-python ./AllTestCases/test-sharding.py $SRCH2_ENGINE ./AllTestCases/3n-insertA-queryABC ./AllTestCases/list-of-3-nodes.txt | eval "${html_escape_command}" >> system_test.log 2>&1
+python ./AllTestCases/test-sharding.py $SRCH2_ENGINE ./AllTestCases/3n-insertA-queryABC ./AllTestCases/list-of-3-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
 if [ ${PIPESTATUS[0]} -gt 0 ]; then
     echo "${html_fail_pre}-- FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then

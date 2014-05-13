@@ -142,7 +142,7 @@ if __name__ == '__main__':
     parseNodes(nodesPath)
     binary_path = sys.argv[1]
     queriesAndResultsPath = sys.argv[2]
-    os.popen('rm -rf ./core1/*.idx')
+    os.popen('rm -rf ./test-data/core1/*.idx')
     startEngines()
     try:
         exitCode=testInsertAndQuery(queriesAndResultsPath, binary_path)
