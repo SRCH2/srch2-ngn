@@ -10,7 +10,7 @@ fi
 machine=`uname -m`
 os=`uname -s`
 macName='Darwin'
-
+LOG_DIRECTORY='./test-data/core1/logs'
 # process options
 force=0
 output='/dev/tty'
@@ -125,6 +125,8 @@ fi
 echo ''
 echo "NOTE: $0 will start numerous instances of the srch2 server.  Pre-existing server processes will interfere with this testing."
 echo ''
+
+mkdir -p $LOG_DIRECTORY
 
 # python ./2n-insertA-deleteA/test-sharding.py ../../../build/src/server/srch2-search-server ./2n-insertA-deleteA/2n-insertA-deleteA.txt ./2n-insertA-deleteA/list-of-2-nodes.txt
 test_id="2n-insertA-deleteA"
