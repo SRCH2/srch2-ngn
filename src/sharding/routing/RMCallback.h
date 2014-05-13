@@ -74,7 +74,9 @@ template <typename RequestType, typename ResponseType> inline
 void RMCallback<RequestType, ResponseType>::callback(Message* msg) {
 	// deserialize the message into the response type
 	// example : msg deserializes into SerializableSearchResults
-	const ResponseType& response = ResponseType::deserialize(msg->buffer);
+	const ResponseType& response = 
+    (!msg->isLocal()) ? ResponseType::deserialize(msg->buffer)
+                      : *((ResponseType*) msg->buffer);
 
 	// use aggregator callback and pass the deserialized msg
 	aggregrate.callBack(&response);
@@ -91,7 +93,9 @@ void RMCallback<RequestType, ResponseType>::callbackAll(std::vector<Message*>& m
 
 	// deserialize all messages into response objects
 	for(Messages::iterator msg = msgs.begin(); msg != msgs.end(); ++msg) {
-		responsesToBeDeletedAfterFinalize.push_back(&ResponseType::deserialize((*msg)->buffer));
+		responsesToBeDeletedAfterFinalize.push_back(
+           (!(*msg)->isLocal()) ? &ResponseType::deserialize((*msg)->buffer)
+                                : ((ResponseType*) (*msg)->buffer));
 	}
 
 	// call aggregator callback

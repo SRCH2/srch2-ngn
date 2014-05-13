@@ -160,6 +160,7 @@ public:
 	}
 
 private:
+  void sendInternalMessage(ShardingMessageType, ShardId, void*);
 	//std::map<ShardId, Srch2Server*> shardToIndex;
 	ConfigManager& configurationManager;
 	TransportManager& transportManager;

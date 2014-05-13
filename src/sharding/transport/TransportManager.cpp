@@ -96,7 +96,7 @@ MessageTime_t TransportManager::route(NodeId node, Message *msg,
 	pendingMessages.addMessage(timeout, msg->time, callback);
 
 #ifdef USE_SAME_THREAD_FOR_CURRENT_NODE_PROCESS
-  if(node == routeMap.getCurrentNode().getId()) {
+  if(msg->isLocal()) {
     MessageTime_t rtn = msg->time;
     if(msg->isInternal()) {
 		  if(Message* reply = getInternalTrampoline()->notify(msg)) {

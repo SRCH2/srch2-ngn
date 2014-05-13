@@ -9,6 +9,21 @@
 namespace srch2 {
 namespace httpwrapper {
 
+inline
+void RoutingManager::sendInternalMessage(ShardingMessageType type,
+   ShardId shardId, void *requestObj) {
+  Message *msg = getMessageAllocator()->allocateMessage(sizeof(void*));
+  *((void**) &msg->buffer) = requestObj;
+  msg->shard = shardId;
+  msg->mask |= INTERNAL_MASK | LOCAL_MASK;
+  msg->type = type;
+
+  transportManager.route(0, msg, 0);
+
+  getMessageAllocator()->deallocateMessage(msg);
+}
+ 
+  
 /*
  *  Transmits a given message to all shards. The broadcast will not wait for
  *  confirmation from each receiving shard.
@@ -28,6 +43,12 @@ RoutingManager::broadcast(RequestType& requestObj, CoreShardInfo &coreInfo) {
 
     for(UnicastIterator unicast = broadcastResolver.begin();
             unicast != broadcastResolver.end(); ++unicast) {
+      if(unicast->nodeId == configurationManager.getCurrentNodeId()) {
+        sendInternalMessage(RequestType::messageKind(), unicast->shardId,
+            &requestObj);
+        continue;
+      }
+
         msg->shard = unicast->shardId;
         msg->mask |= INTERNAL_MASK;
         msg->type = RequestType::messageKind();
@@ -83,6 +104,12 @@ void RoutingManager::broadcast_w_cb(RequestType& requestObj,
 
 	for(UnicastIterator unicast = broadcastResolver.begin();
 			unicast != broadcastResolver.end(); ++unicast) {
+    if(unicast->nodeId == configurationManager.getCurrentNodeId()) {
+      sendInternalMessage(RequestType::messageKind(), unicast->shardId,
+          &requestObj);
+     continue;
+    }
+
 		msg->shard = unicast->shardId;
 		msg->mask |= INTERNAL_MASK;
 		msg->type = RequestType::messageKind();
@@ -126,6 +153,11 @@ void RoutingManager::broadcast_wait_for_all_w_cb(RequestType & requestObj,
 
 	for(UnicastIterator unicast = broadcastResolver.begin();
 			unicast != broadcastResolver.end(); ++unicast) {
+    if(unicast->nodeId == configurationManager.getCurrentNodeId()) {
+      sendInternalMessage(RequestType::messageKind(), unicast->shardId,
+          &requestObj);
+     continue;
+    }
 		msg->shard = unicast->shardId;
 		msg->mask |= INTERNAL_MASK;
 		msg->type = RequestType::messageKind();
@@ -172,6 +204,12 @@ void RoutingManager::broadcast_w_cb_n_timeout(RequestType& requestObj,
 
 	for(UnicastIterator unicast = broadcastResolver.begin();
 			unicast != broadcastResolver.end(); ++unicast) {
+    if(unicast->nodeId == configurationManager.getCurrentNodeId()) {
+      sendInternalMessage(RequestType::messageKind(), unicast->shardId,
+          &requestObj);
+     continue;
+    }
+
 		msg->shard = unicast->shardId;
 		msg->mask |= INTERNAL_MASK;
 		msg->type = RequestType::messageKind();
@@ -212,12 +250,18 @@ RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType& requestObj,
 
 	for(UnicastIterator unicast = broadcastResolver.begin();
 			unicast != broadcastResolver.end(); ++unicast) {
+    if(unicast->nodeId == configurationManager.getCurrentNodeId()) {
+      sendInternalMessage(RequestType::messageKind(), unicast->shardId,
+          &requestObj);
+     continue;
+    }
+
 		msg->shard = unicast->shardId;
 		msg->mask |= INTERNAL_MASK;
 		msg->type = RequestType::messageKind();
 
-        transportManager.route(unicast->nodeId, msg, timeoutValue.tv_sec, cb);
-    }
+    transportManager.route(unicast->nodeId, msg, timeoutValue.tv_sec, cb);
+  }
 
     getMessageAllocator()->deallocateMessage(msg);
 
@@ -232,6 +276,12 @@ template<typename RequestType> inline void
 RoutingManager::route(RequestType& requestObj, ShardId & shardInfo) {
 	unsigned nodeId =
 			configurationManager.getCluster()->shardMap[shardInfo].getNodeId();
+
+  if(nodeId == configurationManager.getCurrentNodeId()) {
+    sendInternalMessage(RequestType::messageKind(), shardInfo,
+          &requestObj);
+    return;
+  }
 
 	// create the message from the request object
 	Message* msg = (Message*)
@@ -278,6 +328,11 @@ RoutingManager::route_w_cb(RequestType& requestObj,
 			new RMCallback<RequestType, ResponseType>(*aggregator),
 			ResponseType::messageKind());
 
+  if(nodeId == configurationManager.getCurrentNodeId()) {
+    sendInternalMessage(RequestType::messageKind(), shardInfo,
+          &requestObj);
+    return;
+  }
 
 	// create the message from the request object
 	Message* msg = (Message*)
@@ -320,6 +375,11 @@ RoutingManager::route_w_cb_n_timeout(RequestType & requestObj,
 			RequestType::messageKind());
 
 
+  if(nodeId == configurationManager.getCurrentNodeId()) {
+    sendInternalMessage(RequestType::messageKind(), shardInfo,
+          &requestObj);
+    return;
+  }
 	// create the message from the request object
 	Message* msg = (Message*)
     				((char*) requestObj.serialize(getMessageAllocator()) - sizeof(Message));
