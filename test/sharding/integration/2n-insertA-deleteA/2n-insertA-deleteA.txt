@@ -1,0 +1,5 @@
+# Record R1 is inserted into node A and deleted from the same node
+# This test cases is provided to serve as a starting point if additional test cases are to be developed where each node has a separate configuration file
+
+A||insert||{"category": "Insurance Services Insurance Agent", "name": "Prescription Service Of California", "relevance": 3.0147461915737148, "lat": 61.171669000000001, "lng": -149.881021, "id": "106"}||{"rid":"106","insert":"success"}
+A||delete||106||{"rid":"106","delete":"success"}
