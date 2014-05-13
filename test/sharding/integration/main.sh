@@ -126,6 +126,22 @@ echo ''
 echo "NOTE: $0 will start numerous instances of the srch2 server.  Pre-existing server processes will interfere with this testing."
 echo ''
 
+# python ./2n-insertA-deleteA/test-sharding.py ../../../build/src/server/srch2-search-server ./2n-insertA-deleteA/2n-insertA-deleteA.txt ./2n-insertA-deleteA/list-of-2-nodes.txt
+test_id="2n-insertA-deleteA"
+printTestBanner "$test_id"
+python ./2n-insertA-deleteA/test-sharding.py $SRCH2_ENGINE ./2n-insertA-deleteA/2n-insertA-deleteA.txt ./2n-insertA-deleteA/list-of-2-nodes.txt | eval "${html_escape_command}" >> system_test.log 2>&1
+if [ ${PIPESTATUS[0]} -gt 0 ]; then
+    echo "${html_fail_pre}-- FAILED: $test_id${html_fail_post}" >> ${output}
+    if [ $force -eq 0 ]; then
+        exit 255
+    fi
+else
+    echo "-- PASSED: $test_id" >> ${output}
+fi
+
+test_id="2n-insertA-R1-B-R2-deleteA-R1-B-R2"
+printTestBanner "$test_id"
+
 test_id="2n-insertA-deleteB"
 printTestBanner "$test_id"
 python ./AllTestCases/test-sharding.py $SRCH2_ENGINE ./AllTestCases/2n-insertA-deleteB.txt ./AllTestCases/list-of-2-nodes.txt | eval "${html_escape_command}" >> system_test.log 2>&1
