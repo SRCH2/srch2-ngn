@@ -146,8 +146,8 @@
         </core>
 
         <core name="core2">
-            <coreId>30</coreId>
-	<core-number_of_shards>3</core-number_of_shards>
+        <coreId>30</coreId>
+	    <core-number_of_shards>3</core-number_of_shards>
         <core-number_of_replicas>1</core-number_of_replicas>
 
             <dataDir>core2</dataDir>
@@ -236,8 +236,8 @@
         </core>
 
         <core name="core3">
-            <coreId>40</coreId>
-	<core-number_of_shards>1</core-number_of_shards>
+        <coreId>40</coreId>
+	    <core-number_of_shards>1</core-number_of_shards>
         <core-number_of_replicas>1</core-number_of_replicas>
 
             <dataFile>business-directory-data.json</dataFile>
@@ -595,7 +595,7 @@
         </core>
 
         <core name="core4">
-            <coreId>50</coreId>
+        <coreId>50</coreId>
         <core-number_of_shards>5</core-number_of_shards>
         <core-number_of_replicas>1</core-number_of_replicas>
    
