@@ -85,7 +85,7 @@ public:
 	   return (Message *)((char *)bodyPointer - sizeof(Message));
    }
    static void * getBodyPointerFromMessagePointer(Message * messagePointer){
-	   return (void *)(((char *)messagePointer) + sizeof(Message));
+	   return (void *)(messagePointer->body);
    }
 
 
