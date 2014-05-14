@@ -66,7 +66,6 @@ class SerializableSearchResults {
     		bufferWritePointer = srch2::util::serializeFixedTypes(false, bufferWritePointer);
     		return buffer;
     	}
-    	fillInMemoryRecordStrings();
     	// first calculate the number of bytes needed
     	unsigned numberOfBytes = 0;
     	numberOfBytes += sizeof(bool);

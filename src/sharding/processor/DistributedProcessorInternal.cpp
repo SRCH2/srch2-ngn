@@ -67,6 +67,7 @@ SerializableSearchResults * DPInternalRequestHandler::internalSearchCommand(Srch
             + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
 
     searchResults->setSearcherTime(ts1);
+    searchResults->fillInMemoryRecordStrings();
 
     return searchResults;
 
