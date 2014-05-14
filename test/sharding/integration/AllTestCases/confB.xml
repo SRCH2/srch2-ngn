@@ -22,7 +22,7 @@
             "/usr/share/srch2/data/sample-data.json"
             In this config file it should be as "data/sample-data.json"
     -->
-    <srch2Home>/home/jamshid/workspace-srch2-v4/srch2-ngn/test/sharding/integration</srch2Home>
+    <srch2Home>./test-data</srch2Home>
     <cluster-name>SRCH2 Cluster</cluster-name>
 
     <discovery>
@@ -38,30 +38,7 @@
         <node-master> false </node-master>
         <node-data> true </node-data>
         <srch2Home> ./ </srch2Home>
-        <!--<dataDir> ./data/2n-insertA-queryB/queen </dataDir>
-        <searchPort>6091</searchPort>
-        <savePort>6092</savePort>
-        <exportPort>6093</exportPort>
-        <resetLoggerPort>6094</resetLoggerPort>
-        <docsPort>6095</docsPort>
-        <updatePort>6096</updatePort>
-        <suggestPort>6097</suggestPort>
-        <infoPort>6098</infoPort>
-    </node>   
-    <node>
-        <listeningHostname> 127.0.0.1 </listeningHostname>
-        <internalCommunicationPort> 3097 </internalCommunicationPort>
-        <this-is-me> false </this-is-me>
-        <node-name> rio </node-name>
-    </node>
-
-    <node>
-        <listeningHostname> 127.0.0.1 </listeningHostname>
-        <internalCommunicationPort> 3098 </internalCommunicationPort>
-        <this-is-me> false </this-is-me>
-        <node-name> lion </node-name>
-    </node> -->
-        <dataDir> ./data/2n-insertA-queryB/ </dataDir>
+        <dataDir> core1 </dataDir>
     </node>  
     <node>
         <listeningHostname> 127.0.0.1 </listeningHostname>
@@ -77,7 +54,7 @@
         Email contact@srch2.com to get a key file.  
         Make sure to set the variable to the SRCH2 license key file.
     -->
-    <licenseFile>../conf/srch2_license_key.txt</licenseFile>
+    <licenseFile>../../../wrapper/conf/srch2_license_key.txt</licenseFile>
  
     <!--
         Hostname and Port Number
@@ -100,7 +77,7 @@
         The file path to the folder where we store serialized index files.
         REQUIRED, when "index-load-or-create" is set to 1.
     -->
-    <dataDir>./data/2n-insertA-queryB/</dataDir>
+    <dataDir>core1</dataDir>
      
     <!--
         Data File
@@ -109,7 +86,7 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>./input-data/empty-data.json</dataFile>
+    <dataFile>empty-data.json</dataFile>
      
     <!--
 	Maximum Number of Threads
@@ -370,7 +347,7 @@
                  
                 Path to Access Log File
             -->
-            <accessLogFile>./data/exact_a1/log.txt</accessLogFile>
+            <accessLogFile>./logs/log.txt</accessLogFile>
         </updateLog>
      
     </updatehandler>
