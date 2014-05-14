@@ -157,10 +157,11 @@ public:
 
 	Srch2Server * getShardIndex(ShardId shardId){
 		// should we get Serch2Server based one core ID?
-		if(shardId.coreId >= configurationManager.getCoreInfoMap().size()){
+		map<unsigned, Srch2Server *>::iterator shardServer = shardServers.find(shardId.coreId);
+		if(shardServer == shardServers.end()){
 			return NULL;
 		}
-		return &shardServers[shardId.coreId];
+		return shardServer->second;
 	}
 
 	/*
@@ -191,7 +192,8 @@ private:
 	TransportManager& transportManager;
 	DPInternalRequestHandler dpInternal;
 	InternalMessageBroker internalMessageBroker;
-	Srch2Server *shardServers;
+	// a map from coreId to Srch2Server //TODO : should it be a map from ShardId to shardServer?
+	std::map<unsigned, Srch2Server *> shardServers;
 };
 
 }
