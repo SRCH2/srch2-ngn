@@ -32,7 +32,7 @@ public:
 	 * this message completely.
 	 */
 	void deallocateByBodyPointer(pointer bodyPointer, size_type bodySize) {
-		allocator<char>::deallocate(bodyPointer - sizeof(Message), bodySize + sizeof(Message));
+		allocator<char>::deallocate((char *)(Message::getMessagePointerFromBodyPointer(bodyPointer)), bodySize + sizeof(Message));
 	}
 
 	/*
@@ -46,7 +46,7 @@ public:
 	 * This function deallocates the message by receiving the message pointer
 	 */
 	void deallocateByMessagePointer(Message *msg) {
-		deallocateByBodyPointer((char *)Message::getBodyPointerFromMessagePointer(msg), msg->getBodySize());
+		deallocateByBodyPointer(Message::getBodyPointerFromMessagePointer(msg), msg->getBodySize());
 	}
 };
 

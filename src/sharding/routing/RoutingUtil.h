@@ -12,7 +12,7 @@ namespace httpwrapper {
 template<typename RequestType > inline
 RequestType * decodeInternalMessage(Message * message){
 	ASSERT(message->getBodySize() == sizeof(RequestType *));
-	void * body = Message::getBodyPointerFromMessagePointer(message);
+	char * body = Message::getBodyPointerFromMessagePointer(message);
 	RequestType * objectPointer = NULL;
 	memcpy(&objectPointer, body, message->getBodySize());
 	return objectPointer;
