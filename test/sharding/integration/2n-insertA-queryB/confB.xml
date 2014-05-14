@@ -57,19 +57,19 @@
         <suggestPort>6097</suggestPort>
         <infoPort>6098</infoPort>
     </node>   
-    <!--<node>
+    <node>
         <listeningHostname> 127.0.0.1 </listeningHostname>
-        <listeningPort> 3097 </listeningPort>
+        <internalCommunicationPort> 3097 </internalCommunicationPort>
         <this-is-me> false </this-is-me>
         <node-name> rio </node-name>
     </node>
 
     <node>
         <listeningHostname> 127.0.0.1 </listeningHostname>
-        <listeningPort> 3098 </listeningPort>
+        <internalCommunicationPort> 3098 </internalCommunicationPort>
         <this-is-me> false </this-is-me>
         <node-name> lion </node-name>
-    </node>--> 
+    </node> 
     <!--
         License Key File
         Required
