@@ -38,7 +38,7 @@ namespace httpwrapper {
 // *MUST* be lowercase
 
 const char* const ConfigManager::nodeListeningHostNameTag = "listeninghostname";
-const char* const ConfigManager::nodeListeningPortTag = "listeningport";
+const char* const ConfigManager::nodeListeningPortTag = "internalcommunicationport";
 const char* const ConfigManager::nodeCurrentTag = "this-is-me";
 const char* const ConfigManager::nodeNameTag = "node-name";
 const char* const ConfigManager::nodeMasterTag = "node-master";
@@ -1810,7 +1810,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
 
     xml_node nodeTag = configNode.child("node");
     if (nodeTag)
-      ConfigManager::parseNode(nodes, nodeTag, parseWarnings);
+      ConfigManager::parseNode(nodes, nodeTag, parseWarnings, parseError, configSuccess);
 
     // srch2Home is a required field
     xml_node childNode = configNode.child(srch2HomeString);
@@ -1951,7 +1951,25 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
 
 
 //TODO: Pass by referencem, space after =
-void ConfigManager::parseNode(std::vector<Node>* nodes, xml_node& nodeTag, std::stringstream &parseWarnings) {
+void ConfigManager::parseNode(std::vector<Node>* nodes, xml_node& nodeTag, std::stringstream &parseWarnings, std::stringstream &parseError, bool configSuccess) {
+
+	// map of port type enums to strings to simplify code
+	struct portNameMap_t {
+		enum PortType_t portType;
+		const char *portName;
+	};
+	static portNameMap_t portNameMap[] = {
+		{ SearchPort, searchPortString },
+		{ SuggestPort, suggestPortString },
+		{ InfoPort, infoPortString },
+		{ DocsPort, docsPortString },
+		{ UpdatePort, updatePortString },
+		{ SavePort, savePortString },
+		{ ExportPort, exportPortString },
+		{ ResetLoggerPort, resetLoggerPortString },
+		{ EndOfPortType, NULL }
+	};
+
 
     for (xml_node nodeTemp = nodeTag; nodeTemp; nodeTemp = nodeTemp.next_sibling("node")) {
 
@@ -2043,7 +2061,7 @@ void ConfigManager::parseNode(std::vector<Node>* nodes, xml_node& nodeTag, std::
 						masterDefined = true;
 					}
 					else{
-					    parseWarnings << "Duplicate definition of \"" << nodeMasterTag << "\".  The engine will use the first value: ";
+						parseWarnings << "Duplicate definition of \"" << nodeMasterTag << "\".  The engine will use the first value: ";
 						if(nodeMaster)
 							parseWarnings << "true "<< "\n";
 						else
@@ -2101,12 +2119,24 @@ void ConfigManager::parseNode(std::vector<Node>* nodes, xml_node& nodeTag, std::
 
 		if (thisIsMe == true) {
 			nodes->push_back(Node(nodeName, ipAddress, portNumber, thisIsMe, nodeMaster, nodeData, dataDir, nodeHome));
+			xml_node childNode;
+
+			for (unsigned int i = 0; portNameMap[i].portName != NULL; i++) {
+				childNode = nodeTag.child(portNameMap[i].portName);
+				if (childNode && childNode.text()) { // checks if the config/port has any text in it or not
+					int portValue = childNode.text().as_int();
+					if (portValue <= 0 || portValue > USHRT_MAX) {
+						parseError << portNameMap[i].portName << " must be between 1 and " << USHRT_MAX;
+						configSuccess = false;
+						return;
+					}
+					nodes->back().setPort(portNameMap[i].portType, portValue);
+				}
+			}
 		} else if (thisIsMe == false) {
 			nodes->push_back(Node(nodeName, ipAddress, portNumber, thisIsMe));
 		}
-
 	}
-
 }
 
 void ConfigManager::_setDefaultSearchableAttributeBoosts(const string &coreName, const vector<string> &searchableAttributesVector)
@@ -2901,10 +2931,47 @@ void CoreInfo_t::setPort(PortType_t portType, unsigned short portNumber)
     }
 }
 
+unsigned short Node::getPort(PortType_t portType) const
+{
+      if (static_cast<unsigned int> (portType) >= ports.size()) {
+          return 0;
+      }
+
+      unsigned short portNumber = ports[portType];
+      return portNumber;
+}
+
+void Node::setPort(PortType_t portType, unsigned short portNumber)
+{
+      if (static_cast<unsigned int> (portType) >= ports.size()) {
+          ports.resize(static_cast<unsigned int> (EndOfPortType), 0);
+      }
+
+      switch (portType) {
+      case SearchPort:
+      case SuggestPort:
+      case InfoPort:
+      case DocsPort:
+      case UpdatePort:
+      case SavePort:
+      case ExportPort:
+      case ResetLoggerPort:
+          ports[portType] = portNumber;
+          break;
+
+      default:
+          Logger::error("Unrecognized HTTP listening port type: %d", static_cast<int> (portType));
+          break;
+      }
+}
+
+
+
 // JUST FOR Wrapper TEST
 void CoreInfo_t::setDataFilePath(const string& path) {
     dataFilePath = path;
 }
+
 
 
 // end of namespaces

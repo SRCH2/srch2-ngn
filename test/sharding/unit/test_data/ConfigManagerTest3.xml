@@ -30,7 +30,7 @@
         
     <node>
         <listeningHostname> 192.168.1.54 </listeningHostname>
-        <listeningPort> 8087 </listeningPort>
+        <internalCommunicationPort> 8087 </internalCommunicationPort>
         <this-is-me> true </this-is-me>
 	<node-name> queen </node-name>
         <node-master> true </node-master>
@@ -43,7 +43,7 @@
         <this-is-me> false </this-is-me>
         <listeningHostname> 192.168.1.55 </listeningHostname>
         <node-name> frozen </node-name>
-        <listeningPort> 8088 </listeningPort>
+        <internalCommunicationPort> 8088 </internalCommunicationPort>
     </node> 
 
 

@@ -147,6 +147,32 @@ void testDiscoveryInvalid(char* configFile){
 	ASSERT(discovery.getRetryCount() == 1);
 }
 
+void testCurrentNode(char* configFile){
+
+	ConfigManager *configManager = new ConfigManager(configFile);
+	configManager->loadConfigFile();
+	Cluster *c = configManager->getCluster();
+	const Node * currentNode = c->getCurrentNode();
+	ASSERT(currentNode->thisIsMe == true);
+
+}
+
+void testPortsOfNode(char * configFile){
+
+	ConfigManager *configManager = new ConfigManager(configFile);
+	configManager->loadConfigFile();
+	Cluster *c = configManager->getCluster();
+	const Node * currentNode = c->getCurrentNode();
+	ASSERT(currentNode->getPort(SearchPort) == 8087);
+	ASSERT(currentNode->getPort(SavePort) == 9084);
+	ASSERT(currentNode->getPort(UpdatePort) == 9088);
+	ASSERT(currentNode->getPort(DocsPort) == 9087);
+	ASSERT(currentNode->getPort(ResetLoggerPort) == 9086);
+	ASSERT(currentNode->getPort(SuggestPort) == 9089);
+	ASSERT(currentNode->getPort(InfoPort) == 9090);
+	ASSERT(currentNode->getPort(ResetLoggerPort) == 9086);
+}
+
 int main() {
 	testShard();
 	Logger::setLogLevel(Logger::SRCH2_LOG_DEBUG);
@@ -162,6 +188,10 @@ int main() {
 
 	testDiscovery(getenv("ConfigManagerFilePath1"));
 	testDiscoveryInvalid(getenv("ConfigManagerFilePath3"));
+
+	testCurrentNode(getenv("ConfigManagerFilePath1"));
+
+	testPortsOfNode(getenv("ConfigManagerFilePath1"));
 
 }
 
