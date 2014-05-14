@@ -116,7 +116,7 @@ std::string QueryResults::getInMemoryRecordString(unsigned position) const {
     unsigned internalRecordId = this->getInternalRecordId(position);
     StoredRecordBuffer buffer = impl->queryEvaluatorInternal->getInMemoryData(internalRecordId);
     string inMemoryString = "";
-    if (!buffer.start.get())
+    if (buffer.start.get() != NULL)
     	inMemoryString = string(buffer.start.get(), buffer.length);
     return inMemoryString;
 }
