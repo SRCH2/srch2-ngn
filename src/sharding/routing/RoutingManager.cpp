@@ -9,31 +9,30 @@ namespace httpwrapper {
 
 RoutingManager::RoutingManager(ConfigManager&  cm, TransportManager& transportManager)  : 
     						configurationManager(cm),  transportManager(transportManager), dpInternal(&cm),
-    						internalMessageBroker(*this, dpInternal),
-    						shardServers(new Srch2Server[cm.getCoreInfoMap().size()]) {
+    						internalMessageBroker(*this, dpInternal) {
 
 
-	// TODO : do we have one Srch2Server per core?
+	// TODO : do we have one Srch2Server per core? now, yes.
 	// create a server (core) for each data source in config file
-    unsigned coreInfoIndex = 0 ;
-	for(ConfigManager::CoreInfoMap_t::const_iterator iterator =
-			cm.coreInfoIterateBegin(); iterator != cm.coreInfoIterateEnd();
-			iterator++) {
-		Srch2Server *core = &shardServers[coreInfoIndex];
-		core->setCoreName(iterator->second->getName());
+	for(ConfigManager::CoreInfoMap_t::const_iterator coreInfoMapItr =
+			cm.coreInfoIterateBegin(); coreInfoMapItr != cm.coreInfoIterateEnd();
+			coreInfoMapItr++) {
+		shardServers.insert(std::pair<unsigned, Srch2Server *>(coreInfoMapItr->second->getCoreId(), new Srch2Server()));
+		Srch2Server *srch2Server = shardServers[coreInfoMapItr->second->getCoreId()];
+		srch2Server->setCoreName(coreInfoMapItr->second->getName());
 
-		if(iterator->second->getDataSourceType() ==
+		if(coreInfoMapItr->second->getDataSourceType() ==
 				srch2::httpwrapper::DATA_SOURCE_MONGO_DB) {
 			// set current time as cut off time for further updates
 			// this is a temporary solution. TODO
 			MongoDataSource::bulkLoadEndTime = time(NULL);
 			//require srch2Server
-			MongoDataSource::spawnUpdateListener(core);
+			MongoDataSource::spawnUpdateListener(srch2Server);
 		}
 
 		//load the index from the data source
 		try{
-			core->init(&cm);
+			srch2Server->init(&cm);
 		} catch(exception& ex) {
 			/*
 			 *  We got some fatal error during server initialization. Print the error
@@ -46,8 +45,6 @@ RoutingManager::RoutingManager(ConfigManager&  cm, TransportManager& transportMa
 			Logger::error(ex.what());
 			exit(-1);
 		}
-		//
-		coreInfoIndex ++;
 	}
 }
 
