@@ -1,8 +1,4 @@
-#This tests insertion and querying
-#To run the code go to the parent directory and execute following command
-#python ./2n-insertA-queryB/testInsertAndQuery.py ../../../build/src/server/srch2-search-server ./2n-insertA-queryB/2n-insertA-queryB.txt ./2n-insertA-queryB/listOfNodes.txt 
-# python <python code> <srch2-engine binary> <path to the file that contains records for insertion/querying> <path to the file containing list of nodes>
-
+#This tests insertion, querying and deletion from multiple nodes
 
 import sys, urllib2, json, time, subprocess, os, commands, signal
 
@@ -28,6 +24,7 @@ def checkResult(query, responseJson,resultValue):
                 for i in range(0, len(responseJson)):
                     print responseJson[i]['record']['id']+'||'+resultValue[i]
                 break
+                raise 
     else:
         isPass=0
         print query+' test failed'
@@ -41,6 +38,7 @@ def checkResult(query, responseJson,resultValue):
              print '  '+'||'+resultValue[i]
             else:
              print responseJson[i]['record']['id']+'||'+resultValue[i]
+        raise
     if isPass == 1:
         print  query+' test pass'
         return 0
@@ -101,7 +99,7 @@ def testInsertAndQuery(queriesAndResultsPath, binary_path):
     f_in = open(queriesAndResultsPath, 'r')
     for line in f_in:
         #time.sleep(3)
-        if (line.strip() == ''):
+        if ((line.strip() == '')or(line[0] == '#')):
             continue 
         #get the query keyword and results
         value=line.split('||')
@@ -125,11 +123,17 @@ def testInsertAndQuery(queriesAndResultsPath, binary_path):
             expectedValue=value[3].split()
             #test , insert a record
             command = 'curl "http://localhost:' + nodes[nodeId[0]].portNo + '/docs" -i -X PUT -d ' + '\''+insertValue+'\'';
-            print command
             status, output = commands.getstatusoutput(command)
             flag = str(output).find(expectedValue[0]);
             assert flag > -1, 'Error, rid <no.> is not updated correctly!'
-
+    
+        if(operation[0] == 'delete'):
+            deleteId=value[2].split()
+            expectedValue=value[3].split()
+            commandDelete = 'curl "http://localhost:'+nodes[nodeId[0]].portNo + '/docs?id='+deleteId[0]+'" -i -X DELETE';
+            status, output = commands.getstatusoutput(commandDelete)
+            flag = str(output).find(expectedValue[0]);
+            assert flag > -1, 'Error file could not be deleted'
     return failCount
 
 if __name__ == '__main__':
@@ -138,9 +142,17 @@ if __name__ == '__main__':
     parseNodes(nodesPath)
     binary_path = sys.argv[1]
     queriesAndResultsPath = sys.argv[2]
-    os.popen('rm -rf ./data/2n-insertA-queryB')
-    #startEngines()
-    exitCode=testInsertAndQuery(queriesAndResultsPath, binary_path)
-    for i in range(len(serverHandles)):
-        test_lib.killServer(serverHandles[i])
-    os._exit(exitCode)
+    os.popen('rm -rf ./test-data/core1/*.idx')
+    startEngines()
+    try:
+        exitCode=testInsertAndQuery(queriesAndResultsPath, binary_path)
+        for i in range(len(serverHandles)):
+            test_lib.killServer(serverHandles[i])
+        print '==========test 2n-insertA-deleteA passed=========='
+        os._exit(exitCode)
+    except:
+        print '==========test 2n-insertA-deleteA failed=========='
+        exitCode=1
+        for i in range(len(serverHandles)):
+            test_lib.killServer(serverHandles[i])
+        os._exit(exitCode)

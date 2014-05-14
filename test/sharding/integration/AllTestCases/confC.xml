@@ -22,16 +22,47 @@
             "/usr/share/srch2/data/sample-data.json"
             In this config file it should be as "data/sample-data.json"
     -->
-    <srch2Home>./</srch2Home>
- 
-    <!--
+    <cluster-name>SRCH2 Cluster</cluster-name>
+    <srch2Home>./test-data</srch2Home>
+   
+    <discovery>
+        <ping-interval>2</ping-interval>
+        <ping-timeout>8</ping-timeout>
+        <retry-count>10</retry-count>
+    </discovery>
+   
+    <node>
+        <this-is-me> true </this-is-me>
+        <listeningHostname> 127.0.0.1 </listeningHostname>
+        <node-name> Terminator </node-name>
+        <listeningPort> 8089 </listeningPort>
+        <node-master> false </node-master>
+        <node-data> true </node-data>
+        <srch2Home> . </srch2Home>
+        <dataDir> core1</dataDir>
+    </node>
+
+    <node>
+        <this-is-me> false </this-is-me>
+        <listeningHostname> 127.0.0.1 </listeningHostname>
+        <node-name> frozen </node-name>
+        <listeningPort> 8088 </listeningPort>
+    </node>  
+    <node>
+        <listeningHostname> 127.0.0.1 </listeningHostname>
+        <listeningPort> 8087 </listeningPort>
+        <this-is-me> false </this-is-me>
+	<node-name> queen </node-name>
+    </node>   
+
+ <!--
         License Key File
         Required
          
         Email contact@srch2.com to get a key file.  
         Make sure to set the variable to the SRCH2 license key file.
     -->
-    <licenseFile>../conf/srch2_license_key.txt</licenseFile>
+    <licenseFile>../../../wrapper/conf/srch2_license_key.txt</licenseFile>
  
     <!--
         Hostname and Port Number
@@ -40,7 +71,7 @@
         Hostname and port number of the server. Make sure the port is open.
     -->
     <listeningHostname>127.0.0.1</listeningHostname>
-    <listeningPort>8088</listeningPort>
+    <listeningPort>8089</listeningPort>
  
     <!--
         Index Directoy Path
@@ -49,7 +80,12 @@
         The file path to the folder where we store serialized index files.
         REQUIRED, when "index-load-or-create" is set to 1.
     -->
-    <dataDir>./data/2n-insertAB-queryAB/</dataDir>
+    <cores defaultCoreName="core1">
+        <core name="core1">
+        <core-number_of_shards>5</core-number_of_shards> 
+	<core-number_of_replicas>1</core-number_of_replicas>
+
+    <dataDir>core1</dataDir>
      
     <!--
         Data File
@@ -58,7 +94,7 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>./input-data/empty-data.json</dataFile>
+    <dataFile>empty-data.json</dataFile>
      
     <!--
 	Maximum Number of Threads
@@ -319,7 +355,7 @@
                  
                 Path to Access Log File
             -->
-            <accessLogFile>./data/exact_a1/log.txt</accessLogFile>
+            <accessLogFile>./logs/log.txt</accessLogFile>
         </updateLog>
      
     </updatehandler>
@@ -443,6 +479,8 @@
 	    </fieldType>
 	 </types>
 	</schema>
+       </core>
+    </cores>
 </config>
  
 
