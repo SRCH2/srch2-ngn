@@ -64,7 +64,7 @@ public:
    }
    void setBodyAndBodySize(void * src, unsigned bodySize){
 	   setBodySize(bodySize);
-	   memcpy(this->body, src, this->getBodySize());
+	   memcpy(this->body, (char *)src, this->getBodySize());
    }
    ShardingMessageType getType(){
 	   return this->type;
@@ -84,8 +84,8 @@ public:
    static Message * getMessagePointerFromBodyPointer( void * bodyPointer){
 	   return (Message *)((char *)bodyPointer - sizeof(Message));
    }
-   static void * getBodyPointerFromMessagePointer(Message * messagePointer){
-	   return (void *)(messagePointer->body);
+   static char * getBodyPointerFromMessagePointer(Message * messagePointer){
+	   return messagePointer->body;
    }
 
 
