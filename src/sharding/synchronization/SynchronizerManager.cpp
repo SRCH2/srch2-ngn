@@ -57,23 +57,35 @@ void Synchronizer::run(){
 	cout << "running synchronizer" << endl;
 	callBackHandler = new SMCallBackHandler(isCurrentNodeMaster);
 	transport.registerCallbackHandlerForSynchronizeManager(callBackHandler);
-
-	if (isCurrentNodeMaster) {
-		pthread_t masterCbHandlerThread;
-		pthread_create(&masterCbHandlerThread,  NULL, dispatchMasterMessageHandler, messageHandler);
-		while(1) {
-			sendHeartBeatToAllNodesInCluster();
-			// TODO check whether still master.
-			sleep(pingInterval);
-		}
-		pthread_cancel(masterCbHandlerThread);
-		pthread_join(masterCbHandlerThread, NULL);
-	} else {
-		while(1) {
-			messageHandler->lookForCallbackMessages(callBackHandler);
-			sleep(pingInterval);
+	while(1) {
+		if (isCurrentNodeMaster) {
+			pthread_t masterCbHandlerThread;
+			pthread_create(&masterCbHandlerThread,  NULL, dispatchMasterMessageHandler, messageHandler);
+			while(1) {
+				sendHeartBeatToAllNodesInCluster();
+				// TODO check whether still master.
+				if (!hasMajority()) {
+					//stepDown
+					isCurrentNodeMaster = false;
+					break;
+				}
+				sleep(pingInterval);
+			}
+			pthread_cancel(masterCbHandlerThread);
+			pthread_join(masterCbHandlerThread, NULL);
+		} else {
+			while(1) {
+				messageHandler->lookForCallbackMessages(callBackHandler);
+				sleep(pingInterval);
+				if (isCurrentNodeMaster)  // if this node get elected as leader.
+					break;
+			}
 		}
 	}
+}
+
+bool Synchronizer::hasMajority() {
+	return true; // TODO V1
 }
 
 void Synchronizer::sendHeartBeatToAllNodesInCluster() {
@@ -331,7 +343,8 @@ void MasterMessageHandler::lookForCallbackMessages(SMCallBackHandler* /*not used
 
 			} else { // no message for this node
 				unsigned timeElapsed;
-				boost::unordered_map<unsigned, unsigned>::iterator iter = perNodeTimeStampEntry.find(nodeId);
+				boost::unordered_map<unsigned, unsigned>::iterator iter =
+						perNodeTimeStampEntry.find(nodeId);
 				if (iter != perNodeTimeStampEntry.end()) {
 					std::time_t timeNow = time(NULL);
 					timeElapsed = timeNow - (*iter).second;

@@ -47,7 +47,7 @@
 #include "routing/RoutingManager.h"
 #include "processor/DistributedProcessorExternal.h"
 #include "configuration/ConfigManager.h"
-
+#include "synchronization/SynchronizerManager.h"
 
 namespace po = boost::program_options;
 namespace srch2is = srch2::instantsearch;
@@ -582,27 +582,27 @@ static int getHttpServerMetadata(ConfigManager *config,
 
 	// loop over cores and extract all ports to use
 	std::set<short> ports;
-	ports.insert(9080); // search
-	ports.insert(9081); // suggest
-	ports.insert(9082); // info
-	ports.insert(9083); // docs
-	ports.insert(9084); // update
-	ports.insert(9085); // save
-	ports.insert(9086); // export
-	ports.insert(9087); // reset
-//	for(ConfigManager::CoreInfoMap_t::iterator core =
-//			config->coreInfoIterateBegin();
-//			core != config->coreInfoIterateEnd(); ++core) { // TODO : we need to iterate on all nodes on this machine instead of iterating over cores
+//	ports.insert(9080); // search
+//	ports.insert(9081); // suggest
+//	ports.insert(9082); // info
+//	ports.insert(9083); // docs
+//	ports.insert(9084); // update
+//	ports.insert(9085); // save
+//	ports.insert(9086); // export
+//	ports.insert(9087); // reset
+	for(ConfigManager::CoreInfoMap_t::iterator core =
+			config->coreInfoIterateBegin();
+			core != config->coreInfoIterateEnd(); ++core) { // TODO : we need to iterate on all nodes on this machine instead of iterating over cores
 
-//		unsigned short port;
-//		for (srch2http::PortType_t portType = (srch2http::PortType_t) 0;
-//				portType < srch2http::EndOfPortType; portType = srch2http::incrementPortType(portType)) {
-//			port = core->second->getPort(portType); //TODO : we need to get these ports from node
-//			if( port < 0){
-//				ports.insert(port);
-//			}
-//		}
-//	}
+		unsigned short port;
+		for (srch2http::PortType_t portType = (srch2http::PortType_t) 0;
+				portType < srch2http::EndOfPortType; portType = srch2http::incrementPortType(portType)) {
+			port = core->second->getPort(portType); //TODO : we need to get these ports from node
+			if( port < 0){
+				ports.insert(port);
+			}
+		}
+	}
 
 	// bind once each port defined for use by this core
 	int socketFd;
@@ -860,6 +860,10 @@ int main(int argc, char** argv) {
 	// share the internal message broker from RM to TM
 	transportManager->setInternalMessageBroker(routesManager->getInternalMessageBroker());
 
+	srch2http::Synchronizer *syncManager = new srch2http::Synchronizer(*serverConf , *transportManager, 1);
+	pthread_t *synchronizerThread = new pthread_t;
+	pthread_create(synchronizerThread, NULL, srch2http::bootSynchronizer, (void *)syncManager);
+
 	// create DP external
 	srch2http::DPExternalRequestHandler *dpExternal =
 			new srch2http::DPExternalRequestHandler(serverConf, routesManager);
@@ -912,6 +916,10 @@ int main(int argc, char** argv) {
 
 	pthread_join(transportManager->getListeningThread(), NULL);
 	Logger::console("Thread = <%u> stopped", transportManager->getListeningThread());
+
+	pthread_cancel(*synchronizerThread);
+	pthread_join(*synchronizerThread, NULL);
+	Logger::console("synch thread stopped.");
 
 	delete[] threads;
 

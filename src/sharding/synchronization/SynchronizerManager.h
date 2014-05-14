@@ -15,6 +15,8 @@
 #include "util/Assert.h"
 #include <boost/thread.hpp>
 #include <boost/unordered_map.hpp>
+#include <iostream>
+using namespace std;
 using namespace srch2::httpwrapper;
 
 namespace srch2 {
@@ -38,6 +40,7 @@ private:
 	void registerForCallback();
 	void lookForCallbackMessages();
 	void route(NodeId node, Message *msg);
+	bool hasMajority();
 	bool isCurrentNodeMaster;
 	unsigned currentNodeId;
 	unsigned pingInterval;
