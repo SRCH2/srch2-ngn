@@ -55,7 +55,8 @@ const char* const ConfigManager::discoveryNodeTag = "discovery";
 const char* const ConfigManager::pingIntervalTag = "ping-interval";
 const char* const ConfigManager:: pingTimeoutTag= "ping-timeout";
 const char* const ConfigManager::retryCountTag = "retry-count";
-
+const char* const ConfigManager::coreIdTag = "coreid";
+static unsigned defaultCoreId;
 
 const char* const ConfigManager::accessLogFileString = "accesslogfile";
 const char* const ConfigManager::analyzerString = "analyzer";
@@ -757,6 +758,18 @@ void ConfigManager::parseSingleCore(const xml_node &parentNode, CoreInfo_t *core
         return;
     }
 
+    xml_node childNode = parentNode.child(coreIdTag);
+    if(childNode && childNode.text()){
+        string temp = string(childNode.text().get());
+        trimSpacesFromValue(temp, coreIdTag, parseWarnings);
+        coreInfo->setCoreId((uint)atol(temp.c_str()));
+    }else{
+        // TODO: to be deleted in V1
+        Logger::console("!!!!!CoreId is not provided in core %s, engine will use the default value!!!!!", coreInfo->name.c_str());
+        coreInfo->setCoreId(defaultCoreId);
+        defaultCoreId++;
+    }
+
     // Solr compatability - dataDir can be an attribute: <core dataDir="core0/data"
     if (parentNode.attribute(dataDirString) && string(parentNode.attribute(dataDirString).value()).compare("") != 0) {
         coreInfo->dataDir = parentNode.attribute(dataDirString).value();
@@ -772,6 +785,7 @@ void ConfigManager::parseSingleCore(const xml_node &parentNode, CoreInfo_t *core
 // only called by parseDataConfiguration()
 void ConfigManager::parseMultipleCores(const xml_node &coresNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
 {
+	defaultCoreId = 0;
     if (coresNode) {
 
         // <cores defaultCoreName = "foo">
