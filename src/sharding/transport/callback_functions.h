@@ -132,6 +132,9 @@ void cb_recieveMessage(int fd, short eventType, void *arg) {
 				b.lock = false;
 				return;
 			}
+		}else{
+		    b.msg= tm->getMessageAllocator()->allocateMessage(msgHeader.getBodySize());
+		    memcpy(b.msg, &msgHeader, sizeof(Message));
 		}
 	} else {
 		if(!readPartialMessage(fd, b)) {
