@@ -25,16 +25,21 @@ class CommandStatusAggregatorAndPrint : public ResultAggregatorAndPrint<RequestW
 public:
 
 
-	CommandStatusAggregatorAndPrint(ConfigManager * configurationManager, evhttp_request *req){
+	CommandStatusAggregatorAndPrint(ConfigManager * configurationManager, evhttp_request *req, bool multiRouteMode = false){
 		this->configurationManager = configurationManager;
 		this->req = req;
+		this->multiRouteMode = multiRouteMode; // this is the case where aggregator is shared with multiple callbacks
+		this->preProcessCalled = false;
+		this->numberOfFinalizeCallsSoFar = 0;
 	}
 
 	void setMessages(std::stringstream & log_str){
+		boost::unique_lock< boost::shared_mutex > lock(_access);
 		this->messages << log_str.str();
 	}
 
 	std::stringstream & getMessages(){
+		boost::unique_lock< boost::shared_mutex > lock(_access);
 		return this->messages;
 	}
 
@@ -42,7 +47,16 @@ public:
 	 * This function is always called by RoutingManager as the first call back function
 	 */
 	void preProcessing(ResultsAggregatorAndPrintMetadata metadata){
-
+		if(multiRouteMode){
+			// we need to make sure preProcess is only called once
+			boost::unique_lock< boost::shared_mutex > lock(_access);
+			if(preProcessCalled == true){ // already called once
+				return;
+			}else{ // not called yet, the first time
+				preProcessCalled = true;
+			}
+		}
+		//... code here
 	}
 
 	/*
@@ -123,6 +137,18 @@ public:
 	 * 4. finalize()
 	 */
 	void finalize(ResultsAggregatorAndPrintMetadata metadata){
+
+		if(multiRouteMode){
+			// we need to make sure finalize is only called once
+			boost::unique_lock< boost::shared_mutex > lock(_access);
+			numberOfFinalizeCallsSoFar ++;
+			if(ResultAggregatorAndPrint<RequestWithStatusResponse,SerializableCommandStatus>::getNumberOfRequests()
+					!= numberOfFinalizeCallsSoFar){
+				return;
+			} // ready to be finalized because all requests are finalized
+		}
+		//... code here
+		boost::unique_lock< boost::shared_mutex > lock(_access);
 		Logger::info("%s", messages.str().c_str());
 
 		bmhelper_evhttp_send_reply2(req, HTTP_OK, "OK",
@@ -137,8 +163,10 @@ private:
 
 	ConfigManager * configurationManager;
 	evhttp_request *req;
-
 	mutable boost::shared_mutex _access;
+	bool multiRouteMode;
+	bool preProcessCalled;
+	unsigned numberOfFinalizeCallsSoFar;
 	std::stringstream messages;
 };
 

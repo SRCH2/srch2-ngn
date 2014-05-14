@@ -221,7 +221,7 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, CoreSh
                                             defaultValueToReturn);
 
             	Json::FastWriter writer;
-            	if(JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root,
+            	if(JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(doc), doc,
             			configurationManager->getCoreInfo(coreShardInfo->coreName), log_str, recSerializer) == false){
             		log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"failed\"}";
 					if (index < root.size() - 1){
@@ -275,7 +275,7 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, CoreSh
 
 
     CommandStatusAggregatorAndPrint<SerializableInsertUpdateCommandInput> * resultsAggregator =
-    		new CommandStatusAggregatorAndPrint<SerializableInsertUpdateCommandInput>(configurationManager,req);
+    		new CommandStatusAggregatorAndPrint<SerializableInsertUpdateCommandInput>(configurationManager,req,true);
     resultsAggregator->setMessages(log_str);
     for(vector<Record *>::iterator recordItr = recordsToInsert.begin(); recordItr != recordsToInsert.end() ; ++recordItr){
 
@@ -359,7 +359,7 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, CoreSh
 						defaultValueToReturn);
 
 		    	Json::FastWriter writer;
-		    	bool parseJson = JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root,
+		    	bool parseJson = JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(doc), doc,
 		    			configurationManager->getCoreInfo(coreShardInfo->coreName), log_str, recSerializer);
 		        if(parseJson == false) {
 		            log_str << "failed\",\"reason\":\"parse: The record is not in a correct json format\",";
@@ -417,7 +417,7 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, CoreSh
 
 
     CommandStatusAggregatorAndPrint<SerializableInsertUpdateCommandInput> * resultsAggregator =
-    		new CommandStatusAggregatorAndPrint<SerializableInsertUpdateCommandInput>(configurationManager,req);
+    		new CommandStatusAggregatorAndPrint<SerializableInsertUpdateCommandInput>(configurationManager,req, true);
     resultsAggregator->setMessages(log_str);
     for(vector<Record *>::iterator recordItr = recordsToUpdate.begin(); recordItr != recordsToUpdate.end() ; ++recordItr){
 
