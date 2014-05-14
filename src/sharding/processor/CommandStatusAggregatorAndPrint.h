@@ -127,11 +127,15 @@ public:
 	void callBack(vector<SerializableCommandStatus *> responseObjects){
 
 		boost::unique_lock< boost::shared_mutex > lock(_access);
+		//TODO shard info can be better than just an index
+		unsigned shardIndex = 0;
 		for(vector<SerializableCommandStatus *>::iterator responseItr = responseObjects.begin(); responseItr != responseObjects.end(); ++responseItr){
 			if(messages.str().compare("") != 0){ // string not empty
 				messages << ",";
 			}
-			messages << (*responseItr)->getMessage();
+			messages << "\"shard_" << shardIndex << "\":" << (*responseItr)->getMessage();
+			//
+			shardIndex ++;
 		}
 	}
 	/*

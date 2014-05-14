@@ -67,20 +67,20 @@ void GetInfoAggregatorAndPrint::finalize(ResultsAggregatorAndPrintMetadata metad
 	//TODO : this print should be checked to make sure it prints correct json format
 	std::stringstream str;
     str << "\"engine_status\":{";
-    str << "\"search_requests\":\"" << this->readCount << "\",";
-    str << "\"write_requests\":\"" <<  this->writeCount << "\",";
-    str << "\"docs_in_index\":\"" << this->numberOfDocumentsInIndex << "\",";
+    str << "\"search_requests\":\"" << this->readCount << "\", ";
+    str << "\"write_requests\":\"" <<  this->writeCount << "\", ";
+    str << "\"docs_in_index\":\"" << this->numberOfDocumentsInIndex << "\", ";
     str << "\"shard_status\":[";
     for(unsigned i=0; i < lastMergeTimeStrings.size() ; ++i){
 		str << "\"shard_status_" << i << "\":{"; //TODO : we should use better information at this place
-    	str << "\"last_merge\":\"" << this->lastMergeTimeStrings.at(i) << "\",";
+    	str << "\"last_merge\":\"" << this->lastMergeTimeStrings.at(i) << "\", ";
     	str << "\"version\":\"" << this->versionInfoStrings.at(i) << "\"";
 		str << "}";
 		if(i < lastMergeTimeStrings.size()-1){
-			str << ",";
+			str << ", ";
 		}
     }
-    str << "]\"doc_count\":\"" << this->docCount << "\"}";
+    str << "], \"doc_count\":\"" << this->docCount << "\"}";
     if(messages.str().compare("") != 0){ // there is actually a message to show
 		str << ",\"messages\":[" << messages.str() << "]";
     }
