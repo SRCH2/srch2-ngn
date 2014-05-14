@@ -47,7 +47,7 @@ void GetInfoAggregatorAndPrint::callBack(vector<SerializableGetInfoResults *> re
 			responseItr != responseObjects.end() ; ++responseItr){
 		this->readCount += (*responseItr)->getReadCount();
 		this->writeCount += (*responseItr)->getWriteCount();
-		this->numberOfDocumentsInIndex = (*responseItr)->getNumberOfDocumentsInIndex();
+		this->numberOfDocumentsInIndex += (*responseItr)->getNumberOfDocumentsInIndex();
 		this->lastMergeTimeStrings.push_back((*responseItr)->getLastMergeTimeString());
 		this->docCount += (*responseItr)->getDocCount();
 		this->versionInfoStrings.push_back((*responseItr)->getVersionInfo());
@@ -70,19 +70,24 @@ void GetInfoAggregatorAndPrint::finalize(ResultsAggregatorAndPrintMetadata metad
     str << "\"search_requests\":\"" << this->readCount << "\",";
     str << "\"write_requests\":\"" <<  this->writeCount << "\",";
     str << "\"docs_in_index\":\"" << this->numberOfDocumentsInIndex << "\",";
+    str << "\"shard_status\":[";
     for(unsigned i=0; i < lastMergeTimeStrings.size() ; ++i){
-		str << "\"shard_status\":{";
+		str << "\"shard_status_" << i << "\":{"; //TODO : we should use better information at this place
     	str << "\"last_merge\":\"" << this->lastMergeTimeStrings.at(i) << "\",";
     	str << "\"version\":\"" << this->versionInfoStrings.at(i) << "\"";
-		str << "},";
+		str << "}";
+		if(i < lastMergeTimeStrings.size()-1){
+			str << ",";
+		}
     }
-    str << "\"doc_count\":\"" << this->docCount << "\",";
-    str << "}\n";
-    str << "\"messages\":[" << messages.str() << "]\n";
+    str << "]\"doc_count\":\"" << this->docCount << "\"}";
+    if(messages.str().compare("") != 0){ // there is actually a message to show
+		str << ",\"messages\":[" << messages.str() << "]";
+    }
     Logger::info("%s", messages.str().c_str());
 
     bmhelper_evhttp_send_reply2(req, HTTP_OK, "OK",
-            "{\"message\":\"The batch was processed successfully\",\"log\":["
+            "{\"log\":["
                     + str.str() + "]}\n");
 }
 

@@ -117,6 +117,9 @@ public:
 	void callBack(SerializableCommandStatus * responseObject){
 
 		boost::unique_lock< boost::shared_mutex > lock(_access);
+		if(messages.str().compare("") != 0){ // string not empty
+			messages << ",";
+		}
 		messages << responseObject->getMessage();
 
 	}
@@ -125,6 +128,9 @@ public:
 
 		boost::unique_lock< boost::shared_mutex > lock(_access);
 		for(vector<SerializableCommandStatus *>::iterator responseItr = responseObjects.begin(); responseItr != responseObjects.end(); ++responseItr){
+			if(messages.str().compare("") != 0){ // string not empty
+				messages << ",";
+			}
 			messages << (*responseItr)->getMessage();
 		}
 	}
