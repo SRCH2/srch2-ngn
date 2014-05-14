@@ -136,41 +136,6 @@ void cb_recieveMessage(int fd, short eventType, void *arg) {
 		}
 	}
 
-	if(b.msg == NULL) {
-		Message msgHeader;
-
-		if(!findNextMagicNumberAndReadMessageHeader(&msgHeader, fd)){
-			// there is some sort of error in the stream so we can't
-			// get the next message
-			//     b.lock = false;
-			return;
-		}
-
-		// sets the distributedTime of TM to the maximum time received by a message
-		// in a thread safe fashion
-		while(true) {
-			MessageTime_t time = tm->getDistributedTime();
-			//check if time needs to be incremented
-			if(msgHeader.getTime() < time &&
-					/*zero break*/ time - msgHeader.getTime() < UINT_MAX/2 ) break;
-			//make sure time did not change
-			if(__sync_bool_compare_and_swap(
-					&tm->getDistributedTime(), time, msgHeader.getTime())) break;
-		}
-
-		b.msg = readRestOfMessage(*(tm->getMessageAllocator()),
-				fd, &msgHeader, &b.readCount);
-		if(b.readCount != b.msg->getBodySize()) {
-			b.lock = false;
-			return;
-		}
-	} else {
-		if(!readPartialMessage(fd, b)) {
-			b.lock = false;
-			return;
-		}
-	}
-
 	Message* msg = b.msg;
 	b.msg = NULL;
 	b.lock = false;
