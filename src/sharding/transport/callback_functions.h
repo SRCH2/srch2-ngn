@@ -122,12 +122,16 @@ void cb_recieveMessage(int fd, short eventType, void *arg) {
 					&tm->getDistributedTime(), time, msgHeader.getTime())) break;
 		}
 
-		if(!(b.msg = readRestOfMessage(*(tm->getMessageAllocator()),
-				fd, &msgHeader, &b.readCount))) return;
+		// we have some types of message like GetInfoCommandInfo that currently don't
+		// have any information in them and therefore their body size is zero
+		if(msgHeader.getBodySize() != 0){
+			if(!(b.msg = readRestOfMessage(*(tm->getMessageAllocator()),
+					fd, &msgHeader, &b.readCount))) return;
 
-		if(b.readCount != b.msg->getBodySize()) {
-			b.lock = false;
-			return;
+			if(b.readCount != b.msg->getBodySize()) {
+				b.lock = false;
+				return;
+			}
 		}
 	} else {
 		if(!readPartialMessage(fd, b)) {

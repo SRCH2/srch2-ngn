@@ -277,18 +277,24 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, CoreSh
     CommandStatusAggregatorAndPrint<SerializableInsertUpdateCommandInput> * resultsAggregator =
     		new CommandStatusAggregatorAndPrint<SerializableInsertUpdateCommandInput>(configurationManager,req,true);
     resultsAggregator->setMessages(log_str);
+
+
+    vector<SerializableInsertUpdateCommandInput  *> inputs;
+    vector<ShardId> shardInfos;
     for(vector<Record *>::iterator recordItr = recordsToInsert.begin(); recordItr != recordsToInsert.end() ; ++recordItr){
 
-    	ShardId shardInfo = partitioner->getShardIDForRecord(*recordItr,coreShardInfo->coreName);
+    	shardInfos.push_back(partitioner->getShardIDForRecord(*recordItr,coreShardInfo->coreName));
 
 		SerializableInsertUpdateCommandInput  * insertUpdateInput=
 				new SerializableInsertUpdateCommandInput(*recordItr,SerializableInsertUpdateCommandInput::INSERT);
-
 		// add request object to results aggregator which is the callback object
 		resultsAggregator->addRequestObject(insertUpdateInput);
+		inputs.push_back(insertUpdateInput);
+    }
+    for(unsigned recordIndex = 0; recordIndex < inputs.size(); ++recordIndex){
 		timeval t;
 		t.tv_sec = 2000;
-		routingManager->route_w_cb_n_timeout(insertUpdateInput, resultsAggregator , t , shardInfo);
+		routingManager->route_w_cb_n_timeout(inputs.at(recordIndex), resultsAggregator , t , shardInfos.at(recordIndex));
     }
     // aggregated response will be prepared in CommandStatusAggregatorAndPrint::callBack and printed in
     // CommandStatusAggregatorAndPrint::finalize
@@ -419,17 +425,22 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, CoreSh
     CommandStatusAggregatorAndPrint<SerializableInsertUpdateCommandInput> * resultsAggregator =
     		new CommandStatusAggregatorAndPrint<SerializableInsertUpdateCommandInput>(configurationManager,req, true);
     resultsAggregator->setMessages(log_str);
+    vector<SerializableInsertUpdateCommandInput  *> inputs;
+    vector<ShardId> shardInfos;
     for(vector<Record *>::iterator recordItr = recordsToUpdate.begin(); recordItr != recordsToUpdate.end() ; ++recordItr){
 
-    	ShardId shardInfo = partitioner->getShardIDForRecord(*recordItr,coreShardInfo->coreName);
+    	shardInfos.push_back(partitioner->getShardIDForRecord(*recordItr,coreShardInfo->coreName));
 
-		SerializableInsertUpdateCommandInput * insertUpdateInput =
-				new SerializableInsertUpdateCommandInput(*recordItr, SerializableInsertUpdateCommandInput::UPDATE);
+		SerializableInsertUpdateCommandInput  * insertUpdateInput=
+				new SerializableInsertUpdateCommandInput(*recordItr,SerializableInsertUpdateCommandInput::UPDATE);
 		// add request object to results aggregator which is the callback object
 		resultsAggregator->addRequestObject(insertUpdateInput);
+		inputs.push_back(insertUpdateInput);
+    }
+    for(unsigned recordIndex = 0; recordIndex < inputs.size(); ++recordIndex){
 		timeval t;
 		t.tv_sec = 2000;
-		routingManager->route_w_cb_n_timeout(insertUpdateInput, resultsAggregator , t, shardInfo);
+		routingManager->route_w_cb_n_timeout(inputs.at(recordIndex), resultsAggregator , t , shardInfos.at(recordIndex));
     }
     // aggregated response will be prepared in CommandStatusAggregatorAndPrint::callBack and printed in
     // CommandStatusAggregatorAndPrint::finalize
