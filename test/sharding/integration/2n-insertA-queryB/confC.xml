@@ -36,30 +36,38 @@
         <this-is-me> false </this-is-me>
         <listeningHostname> 127.0.0.1 </listeningHostname>
         <node-name> frozen </node-name>
-        <listeningPort> 3095 </listeningPort>
+        <internalCommunicationPort> 3095 </internalCommunicationPort>
     </node> 
 
    
     <node>
         <listeningHostname> 127.0.0.1 </listeningHostname>
-        <listeningPort> 3096 </listeningPort>
+        <internalCommunicationPort> 3096 </internalCommunicationPort>
         <this-is-me> false </this-is-me>
 	<node-name> queen </node-name>
     </node> 
 
     <node>
         <listeningHostname> 127.0.0.1 </listeningHostname>
-        <listeningPort> 3097 </listeningPort>
+        <internalCommunicationPort> 3097 </internalCommunicationPort>
         <this-is-me> true </this-is-me>
         <node-name> rio </node-name>
         <!--<node-master> true </node-master>-->
         <node-data> true </node-data>
         <srch2Home> ./ </srch2Home>
         <dataDir> ./data/2n-insertA-queryB/rio </dataDir>
+        <searchPort>7091</searchPort>
+        <savePort>7092</savePort>
+        <exportPort>7093</exportPort>
+        <resetLoggerPort>7094</resetLoggerPort>
+        <docsPort>7095</docsPort>
+        <updatePort>7096</updatePort>
+        <suggestPort>7097</suggestPort>
+        <infoPort>7098</infoPort>
     </node>
     <node>
         <listeningHostname> 127.0.0.1 </listeningHostname>
-        <listeningPort> 3098 </listeningPort>
+        <internalCommunicationPort> 3098 </internalCommunicationPort>
         <this-is-me> false </this-is-me>
         <node-name> lion </node-name>
     </node>
@@ -83,7 +91,7 @@
     	
         <cores defaultCoreName="core1">
         <core name="core1">
-        <core-number_of_shards>4</core-number_of_shards> 
+        <core-number_of_shards>2</core-number_of_shards> 
 	<core-number_of_replicas>1</core-number_of_replicas>
 
     <!--
