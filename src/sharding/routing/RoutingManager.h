@@ -13,6 +13,7 @@
 #include "Multiplexer.h"
 #include "RMCallback.h"
 #include "transport/MessageAllocator.h"
+#include "InternalMessageBroker.h"
 
 using namespace std;
 
@@ -128,7 +129,7 @@ public:
 	 */
 	template<typename RequestType> bool route_wait_for_confirmation(RequestType& requestObj, bool& timedout,
 			timeval timeoutValue , ShardId shardInfo);
-	
+
 	/*
 	 *  Transmits a given message to a particular shards. Upon receipt of a
 	 *  response shard, the appropriate callback is trigger with the
@@ -152,17 +153,19 @@ public:
 	MessageAllocator * getMessageAllocator() ;
 	ConfigManager* getConfigurationManager();
 	DPInternalRequestHandler* getDpInternal();
+	InternalMessageBroker * getInternalMessageBroker();
 
 	Srch2Server * getShardIndex(ShardId shardId){
-    return &shards[shardId.coreId];
+		return &shardServers[shardId.coreId];
 	}
 
 private:
 	//std::map<ShardId, Srch2Server*> shardToIndex;
 	ConfigManager& configurationManager;
-	TransportManager& tm;
+	TransportManager& transportManager;
 	DPInternalRequestHandler dpInternal;
-	Srch2Server *shards;
+	InternalMessageBroker internalMessageBroker;
+	Srch2Server *shardServers;
 };
 
 }

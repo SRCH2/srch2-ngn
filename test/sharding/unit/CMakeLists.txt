@@ -51,7 +51,22 @@ TARGET_LINK_LIBRARIES(PendingMessagesTest
                     )
 LIST(APPEND SHARD_UNIT_TESTS PendingMessagesTest)
 
- 
+ ADD_EXECUTABLE(TMModuleTest transport/ModuleTest.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:SHARDING_OBJECTS> $<TARGET_OBJECTS:SERVER_OBJECTS>)
+TARGET_LINK_LIBRARIES(TMModuleTest
+                        ${Srch2InstantSearch_LIBRARIES} 
+                        ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
+                        ${MONGO_CLIENT_LIBRARY} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
+                    )
+LIST(APPEND SHARD_UNIT_TESTS TMModuleTest)
+
+ ADD_EXECUTABLE(SingleNodeIntraCommunicationTest transport/SingleNodeIntraCommunication.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:SHARDING_OBJECTS> $<TARGET_OBJECTS:SERVER_OBJECTS>)
+TARGET_LINK_LIBRARIES(SingleNodeIntraCommunicationTest 
+                        ${Srch2InstantSearch_LIBRARIES} 
+                        ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
+                        ${MONGO_CLIENT_LIBRARY} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
+                    )
+LIST(APPEND SHARD_UNIT_TESTS SingleNodeIntraCommunicationTest)
+
 
 ADD_CUSTOM_TARGET(build_shard_unit_test ALL DEPENDS ${SHARD_UNIT_TESTS} )
 ADD_DEPENDENCIES(build_shard_unit_test srch2_core)

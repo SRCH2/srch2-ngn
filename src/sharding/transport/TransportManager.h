@@ -36,6 +36,7 @@ public:
 
 	MessageTime_t& getDistributedTime();
 	CallBackHandler* getInternalTrampoline();
+	void setInternalMessageBroker(CallBackHandler*);
 	pthread_t getListeningThread() const;
 	MessageAllocator * getMessageAllocator();
 	PendingMessages * getMsgs();
@@ -78,9 +79,7 @@ private:
 	/*
 	 * Handles internal message broker callbacks
 	 */
-	CallBackHandler *internalMessageBrokerHandler;
-
-	boost::mutex socketLock;
+	CallBackHandler *internalTrampoline;
 };
 
 inline void TransportManager::registerCallbackHandlerForSynchronizeManager(CallBackHandler
@@ -93,6 +92,9 @@ inline CallbackReference TransportManager::registerCallback(void* obj,
 	return pendingMessages.registerCallback(obj, cb, type, all, shards);
 }
 
+inline void TransportManager::setInternalMessageBroker(CallBackHandler* cbh) {
+  internalTrampoline = cbh;
+}
 }}
 
 #endif /* __TRANSPORT_MANAGER_H__ */

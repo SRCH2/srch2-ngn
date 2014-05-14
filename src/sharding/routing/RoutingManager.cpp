@@ -7,16 +7,17 @@ namespace srch2 {
 namespace httpwrapper {
 
 
-RoutingManager::RoutingManager(ConfigManager&  cm, TransportManager& tm)  : 
-    				configurationManager(cm),  tm(tm), dpInternal(&cm),
-    				shards(new Srch2Server[cm.getCoreInfoMap().size()]) { 
+RoutingManager::RoutingManager(ConfigManager&  cm, TransportManager& transportManager)  : 
+    						configurationManager(cm),  transportManager(transportManager), dpInternal(&cm),
+    						internalMessageBroker(*this, dpInternal),
+    						shardServers(new Srch2Server[cm.getCoreInfoMap().size()]) {
 
 
 	// create a server (core) for each data source in config file
 	for(ConfigManager::CoreInfoMap_t::const_iterator iterator =
 			cm.coreInfoIterateBegin(); iterator != cm.coreInfoIterateEnd();
 			iterator++) {
-		Srch2Server *core = &shards[iterator->second->getCoreId()];
+		Srch2Server *core = &shardServers[iterator->second->getCoreId()];
 		core->setCoreName(iterator->second->getName());
 
 		if(iterator->second->getDataSourceType() ==
@@ -55,8 +56,12 @@ DPInternalRequestHandler* RoutingManager::getDpInternal() {
 	return &this->dpInternal;
 }
 
+InternalMessageBroker * RoutingManager::getInternalMessageBroker(){
+	return &this->internalMessageBroker;
+}
+
 MessageAllocator * RoutingManager::getMessageAllocator() {
-	return tm.getMessageAllocator();
+	return transportManager.getMessageAllocator();
 }
 
 } }

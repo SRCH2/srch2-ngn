@@ -183,7 +183,6 @@ void Srch2Server::createAndBootStrapIndexer()
 	    Analyzer *analyzer = AnalyzerFactory::createAnalyzer(this->indexDataConfig);
 	    indexer = Indexer::create(indexMetaData, analyzer, schema);
 	    delete analyzer;
-	    delete schema;
 	    switch(indexDataConfig->getDataSourceType())
 	    {
 	    case srch2http::DATA_SOURCE_JSON_FILE:

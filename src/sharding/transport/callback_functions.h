@@ -4,160 +4,155 @@
 #include<unistd.h>
 #include<errno.h>
 #include "TransportManager.h"
+#include "MessageBuffer.h"
 
 using namespace srch2::httpwrapper;
 
-///*
-// * This function reads the stream until it finds the next valid message
-// * Each message starts with a special value called magic number
-// */
-//bool findNextMagicNumberAndReadMessageHeader(Message *const msg,  int fd) {
-//	unsigned offset = 0;
-//	unsigned messageSize = sizeof(Message);
-//	while(true) {
-//		int readRtn = read(fd, msg + offset, messageSize);
-//
-//		if(readRtn == -1) {
-////			if(errno == EAGAIN || errno == EWOULDBLOCK) {
-////				perror("xxx eagain/ewouldblock error in message header parsing xxx");
-////				return false;
-////			}
-//			perror("xxx READ : HEADER : xxx");
-////			//v1: handle  error
-//			return false;
-//		}
-//
-//		if(readRtn < messageSize) {
-//			//v1: broken message boundary
-//			//Logger::console("*** incomplete read ***");
-//			offset += readRtn;
-//			messageSize -= readRtn;
-//			continue;
-//		}
-//
-//		//TODO:checkMagicNumbers
-//
-//		return true;
-//	}
-//
-//	//ASSERT(false);
-//	return false;
-//}
-//
-//Message* readRestOfMessage(MessageAllocator& messageAllocator,
-//		int fd, Message *const msgHeader) {
-//	Message *msg= messageAllocator.allocateMessage(msgHeader->bodySize);
-//	memcpy(msg, msgHeader, sizeof(Message));
-//
-//	unsigned offset = 0;
-//	unsigned messageSize = msgHeader->bodySize;
-//	while(messageSize) {
-//		int readReturnValue = read(fd, msg->buffer + offset, messageSize);
-//		if (readReturnValue < 0) {
-////			if(errno == EAGAIN || errno == EWOULDBLOCK) {
-////				sleep(1);
-////				cout << "got EAGAIN !!" << endl;
-////				continue;
-////			}
-////			msg->bodySize = 0;
-//			perror("xxx READ : BODY xxx ");
-//			return NULL;
-//		}
-//		if(readReturnValue < messageSize){
-//			offset += readReturnValue;
-//			messageSize -= readReturnValue;
-//		}
-//		if(readReturnValue == messageSize){
-//			break;
-//		}
-//	}
-//
-//	return msg;
-//}
+namespace srch2 {
+namespace httpwrapper {
+struct TransportCallback {
+  TransportManager *tm;
+  Connection* conn;
 
+  TransportCallback(TransportManager *tm, Connection *c) : tm(tm), conn(c) {}
+};
+}}
 
-void cb_recieveMessage(struct bufferevent *bev, void *arg){
+/*
+ * This function reads the stream until it finds the next valid message
+ * Each message starts with a special value called magic number
+ */
+bool findNextMagicNumberAndReadMessageHeader(Message *const msg,  int fd) {
+	while(true) {
+		int readRtn = read(fd, (void*) msg, sizeof(Message));
 
-	TransportManager* tm = (TransportManager*) arg;
-	Message msgHeader;
-	int n;
-	struct evbuffer *inp = bufferevent_get_input(bev);
-	signed totalLen = evbuffer_get_length(inp);
-	signed read = evbuffer_remove(inp, &msgHeader, sizeof(Message));
-	if (read != sizeof(Message)) {
-		cout << "XXX buffer read error XXX" << endl;
-		return;
-	}
-	//cout << "*** buffer read success ***" << msgHeader.bodySize << endl;
+		if(readRtn == -1) {
+			if(errno == EAGAIN || errno == EWOULDBLOCK) return false;
 
-	if (totalLen == msgHeader.bodySize + sizeof(Message)) {
-		//cout << "*** total len is good" << endl;
-	} else {
-		cout << "*** total len is bad" << endl;
+			//v1: handle  error
+			return false;
+		}
+
+		if(readRtn < sizeof(Message)) {
+			//v1: broken message boundary == seriously bad
+			continue;
+		}
+
+		//TODO:checkMagicNumbers
+
+		return true;
 	}
 
-	Message *msg =  tm->getMessageAllocator()->allocateMessage( msgHeader.bodySize);
-	memcpy(msg, &msgHeader, sizeof(Message));
-	evbuffer_remove(inp, msg->buffer, msgHeader.bodySize);
-	if (tm->getSmHandler())
-		tm->getSmHandler()->notify(msg);
-
-	tm->getMessageAllocator()->deallocate(msg);
+	//ASSERT(false);
+	return false;
 }
 
-///*
-// * This callback function is called from transport layer upon receiving an internal DP/SM messages
-// */
-//void cb_recieveMessage(int fd, short eventType, void *arg) {
-//
-//
-//	TransportManager* tm = (TransportManager*) arg;
-//	tm->acquireLock();
-//	Message msgHeader;
-//
-//	if(!findNextMagicNumberAndReadMessageHeader(&msgHeader, fd)){
-//		// there is some sort of error in the stream so we can't get the next message
-//		tm->releaseLock();
-//		return;
-//	}
-//
-//	// sets the distributedTime of TM to the maximum time received by a message
-//	// in a thread safe fashion
-//	while(true) {
-//		MessageTime_t time = tm->getDistributedTime();
-//		//check if time needs to be incremented
-//		if(msgHeader.time < time &&
-//				/*zero break*/ time - msgHeader.time < UINT_MAX/2 ) break;
-//		//make sure time did not change
-//		if(__sync_bool_compare_and_swap(
-//				&tm->getDistributedTime(), time, msgHeader.time)) break;
-//	}
-//
-//	Message *msg =
-//			readRestOfMessage(*(tm->getMessageAllocator()), fd, &msgHeader);
-//	tm->releaseLock();
-//	if (msg == NULL){
-//		return;
-//	}
-//	if(msg->isReply()) {
-//		tm->getMsgs()->resolve(msg);
-//	} else if(msg->isInternal()) {
-//		if(Message* reply = tm->getInternalTrampoline()->notify(msg)) {
-//			reply->initial_time = msg->time;
-//			reply->mask |= REPLY_MASK & INTERNAL_MASK;
-//			tm->route(fd, reply);
-//			tm->getMessageAllocator()->deallocate(reply);
-//		}
-//	} else {
-//		/*
-//		 *  It is possible that SM handler is not registered yet. If it is not registered then
-//		 *  skip the messages.
-//		 */
-//		if (tm->getSmHandler())
-//			tm->getSmHandler()->notify(msg);
-//	}
-//
-//	tm->getMessageAllocator()->deallocate(msg);
-//}
+Message* readRestOfMessage(MessageAllocator& messageAllocator,
+		int fd, Message *const msgHeader, int *readCount) {
+	Message *msg= messageAllocator.allocateMessage(msgHeader->bodySize);
+	int rv = recv(fd, msg->buffer, msgHeader->bodySize, MSG_DONTWAIT);
+
+  if(rv == -1) {
+		if(errno == EAGAIN || errno == EWOULDBLOCK) return NULL;
+    
+    //v1: handle error
+    return NULL;
+  }
+
+  *readCount = rv;
+	memcpy(msg, msgHeader, sizeof(Message));
+
+	return msg;
+}
+
+bool readPartialMessage(int fd, MessageBuffer& buffer) {
+  int toRead = buffer.msg->bodySize - buffer.readCount;
+  if(toRead == 0) {
+    //strangely we don't need to read anything;)
+    return false;
+  }
+
+	int readReturnValue = recv(fd, 
+      buffer.msg->buffer + buffer.readCount, toRead, MSG_DONTWAIT);
+  if(readReturnValue < 0) {
+    //TODO: handle errors
+    return false;
+  }
+
+  buffer.readCount += readReturnValue;
+
+	return (buffer.msg->bodySize == buffer.readCount);
+}
+
+/*
+ * This callback function is called from transport layer upon receiving an internal DP/SM messages
+ */
+void cb_recieveMessage(int fd, short eventType, void *arg) {
+
+	TransportCallback* cb = (TransportCallback*) arg;
+
+  if( fd != cb->conn->fd) {
+    //major error
+    return;
+  }
+
+  MessageBuffer& b = cb->conn->buffer;
+  TransportManager *tm = cb->tm;
+  while(!__sync_bool_compare_and_swap(&b.lock, false, true));
+
+  if(b.msg == NULL) {
+	  Message msgHeader;
+
+	  if(!findNextMagicNumberAndReadMessageHeader(&msgHeader, fd)){
+		  // there is some sort of error in the stream so we can't
+      // get the next message
+ //     b.lock = false;
+		  return;
+	  }
+
+  	// sets the distributedTime of TM to the maximum time received by a message
+  	// in a thread safe fashion
+  	while(true) {
+  		MessageTime_t time = tm->getDistributedTime();
+  		//check if time needs to be incremented
+  		if(msgHeader.time < time &&
+  				/*zero break*/ time - msgHeader.time < UINT_MAX/2 ) break;
+  		//make sure time did not change
+  		if(__sync_bool_compare_and_swap(
+  				&tm->getDistributedTime(), time, msgHeader.time)) break;
+  	}
+  
+  	if(!(b.msg = readRestOfMessage(*(tm->getMessageAllocator()), 
+                              fd, &msgHeader, &b.readCount))) return;
+
+    if(b.readCount != b.msg->bodySize) {
+      b.lock = false;
+      return;
+    }
+  } else {
+    if(!readPartialMessage(fd, b)) {
+      b.lock = false;
+      return;
+    }
+  }
+
+  Message* msg = b.msg;
+  b.msg = NULL;
+  b.lock = false;
+
+	if(msg->isReply()) {
+		tm->getMsgs()->resolve(msg);
+	} else if(msg->isInternal()) {
+		if(Message* reply = tm->getInternalTrampoline()->notify(msg)) {
+      reply->initial_time = msg->time;
+      reply->mask |= REPLY_MASK & INTERNAL_MASK;
+      tm->route(fd, reply);
+      tm->getMessageAllocator()->deallocate(reply);
+    }
+	} else {
+		tm->getSmHandler()->notify(msg);
+	}
+	tm->getMessageAllocator()->deallocate(msg);
+}
 
 #endif /* __TRANSPORT_CALLBACK_FUNCTIONS_H__ */
