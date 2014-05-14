@@ -70,7 +70,7 @@ TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
 	routeMap.initRoutes();
 
 	while(!routeMap.isTotallyConnected()) {
-		sleep(10);
+		sleep(3);
 	}
 
 	// RouteMap iterates over routes. Routes are std::map<NodeId, Connection>
@@ -79,8 +79,10 @@ TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
 	// that are bound to cb_recieveMessage. This way cb_recieveMessage receives all internal messages
 	for(RouteMap::iterator route = routeMap.begin(); route != routeMap.end(); ++route) {
 		for(EventBases::iterator base = bases.begin(); base != bases.end(); ++base) {
-			struct event* ev = event_new(*base, route->second.fd,
-					EV_READ|EV_PERSIST, cb_recieveMessage, new TransportCallback(this, &route->second));
+      TransportCallback *cb_ptr = new TransportCallback();
+			struct event* ev = event_new(*base, route->second.fd, EV_READ, 
+          cb_recieveMessage, cb_ptr);
+      new (cb_ptr) TransportCallback(this, &route->second, ev, *base);
 			event_add(ev, NULL);
 		}
 	}

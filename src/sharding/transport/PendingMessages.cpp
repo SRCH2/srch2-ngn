@@ -94,7 +94,7 @@ void PendingMessages::resolve(Message* message) {
 		cb->getReplyMessages().push_back(message);
 		int num = __sync_sub_and_fetch(&cb->getWaitingOn(), 1);
 
-		pendingRequests.erase(request);
+
 		if(num == 0) {
 			cb->getCallbackObject()->callbackAll(cb->getReplyMessages());
 			for(std::vector<Message*>::iterator msgItr = cb->getReplyMessages().begin();

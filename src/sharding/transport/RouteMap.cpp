@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <sys/fcntl.h>
 #include <errno.h>
+#include <stdlib.h>
 
 using namespace srch2::httpwrapper;
 
@@ -93,7 +94,7 @@ void* tryToConnect(void *arg) {
 	RouteMapAndRouteHandle *routeMapAndRouteHandle = (RouteMapAndRouteHandle*) arg;
 
 	while(!routeMapAndRouteHandle->routeMap->nodeConnectionMap.count(routeMapAndRouteHandle->route->first.second)) {
-		sleep(5);
+		sleep(random() % 2);
 
 		int fd = socket(AF_INET, SOCK_STREAM, 0);
 		if(fd < 0) continue;

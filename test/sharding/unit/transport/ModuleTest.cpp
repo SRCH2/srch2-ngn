@@ -1,6 +1,8 @@
 #include "transport/TransportManager.h"
 #include <event.h>
 #include <cstdlib>
+#include <sys/wait.h>
+#include <sys/types.h>
 
 static const char *const MESSAGE_CONTENTS[] =
 { "Well Costello, I'm going to New York with you. You know Bucky Harris, the Yankee's manager, gave me a job as coach for as long as you're on the team",
@@ -63,13 +65,21 @@ using namespace srch2::httpwrapper;
 
 #include <cstdio>
 
+static const int NUM_THREADS = 3;
+static pthread_t tmp[NUM_THREADS];
+
 struct TestHandler : public CallBackHandler {
   int messageRecieved;
   Message* notify(Message *msg) {
    // assert(!strcmp(msg->buffer, MESSAGE_CONTENTS[messageRecieved]));
     printf("%d: \t %s\n", msg->shardId.coreId, msg->body);
     fflush(stdout);
-    if(++messageRecieved == 52) pthread_exit(0);
+    if(++messageRecieved == 52) {
+      sleep(2);
+      for(int t=0; t < NUM_THREADS; ++t) {
+        pthread_cancel(tmp[t]);
+      }
+    }
     return NULL;
   }
   TestHandler() : messageRecieved(0) {}
@@ -109,15 +119,13 @@ int main() {
    }
   }
 
-  const int NUM_THREADS = 3;
   EventBases eventbases;
   for(int t=0; t<NUM_THREADS; ++t) 
     eventbases.push_back(event_base_new());
 
   TransportManager *tm =  new TransportManager(eventbases, *nodes);
-  tm->setInternalTrampoline(new TestHandler());
+  tm->setInternalMessageBroker(new TestHandler());
 
-  pthread_t tmp[NUM_THREADS];
   for(int t=0;  t < NUM_THREADS; ++t) {
     pthread_create(tmp + t, NULL, dispatch, eventbases[t]);
   }
@@ -139,4 +147,11 @@ int main() {
       tm->getMessageAllocator()->deallocateByMessagePointer(msg);
     }
   }
+
+  for(int t=0; t<NUM_THREADS; ++t) {
+    void *rtn;
+    pthread_join(tmp[t], &rtn);
+  }
+  int status;
+  waitpid(cid, &status, 0);
 }

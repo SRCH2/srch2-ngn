@@ -3,6 +3,7 @@
 
 #include<unistd.h>
 #include<errno.h>
+#include <event.h>
 #include "TransportManager.h"
 #include "MessageBuffer.h"
 
@@ -11,10 +12,14 @@ using namespace srch2::httpwrapper;
 namespace srch2 {
 namespace httpwrapper {
 struct TransportCallback {
-	TransportManager *tm;
-	Connection* conn;
+  TransportManager *const tm;
+  Connection *const conn;
+  struct event* ev;
+  const struct event_base *const base;
 
-	TransportCallback(TransportManager *tm, Connection *c) : tm(tm), conn(c) {}
+  TransportCallback(TransportManager *tm, Connection *c, event* e, 
+      event_base* b) : tm(tm), conn(c), ev(e), base(b) {}
+  TransportCallback() : tm(NULL), conn(NULL), ev(NULL), base(NULL) {}
 };
 }}
 
@@ -84,13 +89,8 @@ bool readPartialMessage(int fd, MessageBuffer& buffer) {
 	return (buffer.msg->getBodySize() == buffer.readCount);
 }
 
-/*
- * This callback function is called from transport layer upon receiving an internal DP/SM messages
- */
-void cb_recieveMessage(int fd, short eventType, void *arg) {
 
-	TransportCallback* cb = (TransportCallback*) arg;
-
+void recieveMessage(int fd, TransportCallback *cb) {
 	if( fd != cb->conn->fd) {
 		//major error
 		return;
@@ -106,7 +106,7 @@ void cb_recieveMessage(int fd, short eventType, void *arg) {
 		if(!findNextMagicNumberAndReadMessageHeader(&msgHeader, fd)){
 			// there is some sort of error in the stream so we can't
 			// get the next message
-			//     b.lock = false;
+			b.lock = false;
 			return;
 		}
 
@@ -167,6 +167,15 @@ void cb_recieveMessage(int fd, short eventType, void *arg) {
 	}
 
 	tm->getMessageAllocator()->deallocateByMessagePointer(msg);
+}
+
+/*
+ * This callback function is called from transport layer upon receiving an internal DP/SM messages
+ */
+void cb_recieveMessage(int fd, short eventType, void *arg) {
+	TransportCallback* cb = (TransportCallback*) arg;
+  recieveMessage(fd, cb);
+  event_add(cb->ev, NULL);
 }
 
 #endif /* __TRANSPORT_CALLBACK_FUNCTIONS_H__ */

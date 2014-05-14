@@ -98,9 +98,8 @@ private:
 	// two more bits to make it aligned
 	bool extra1 : 1;
 	bool extra2 : 1;
-	RegisteredCallback* ptr;
-}
-;
+	RegisteredCallback* const ptr;
+};
 
 /*
  * PendingRequest object is made for each message that we are waiting for its response
@@ -113,10 +112,14 @@ public:
 	bool operator==(const MessageTime_t msgId) {return this->msg_id == msgId;}
 	PendingRequest(time_t timeout, MessageTime_t msg_id, CallbackReference cb) :
 		timeout(timeout), msg_id(msg_id), callbackAndTypeMask(cb) {};
+   PendingRequest() : timeout(0), msg_id(0), 
+   callbackAndTypeMask(CallbackReference()) {}
 
 	CallbackReference getCallbackAndTypeMask() const ;
 	MessageTime_t getMsgId() const ;
 	time_t getTimeout() const ;
+   bool triggered();
+
 private:
 	/*
 	 * The physical clock time in seconds at which this request times out
@@ -135,6 +138,7 @@ private:
 };
 
 
+typedef std::vector<PendingRequest>& PendingRequests;
 /*
  * This class stores all pending messages and one object of it is
  * kept in TM
@@ -154,6 +158,7 @@ class PendingMessages {
 private:
 	std::vector<PendingRequest> pendingRequests;
 	TransportManager * transportManager;
+   volatile int version;
 
 public:
 	void setTransportManager(TransportManager * transportManager);
@@ -163,6 +168,15 @@ public:
 	CallbackReference prepareCallback(void*, Callback*,
 			ShardingMessageType,bool = false,int = 1);
 };
+
+inline bool PendingRequest::triggered() {
+   if(time_t to = timeout) {
+      //find out if cb has been triggered before by this request
+      if(to == -1 || 
+            !__sync_bool_compare_and_swap(&to, to, (time_t) -1)) return true;
+   }
+   return false;
+}
 
 }}
 
