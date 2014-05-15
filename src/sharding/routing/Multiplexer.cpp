@@ -4,52 +4,48 @@
 namespace srch2 {
 namespace httpwrapper {
 
-Multiplexer::Multiplexer(ConfigManager& cm, CoreShardInfo& info) :
-  cm(cm), info(info), coreInfo(*cm.getCoreInfo(info.coreName)) {}
+Multiplexer::Multiplexer(ConfigManager& configManager, CoreShardInfo& coreShardInfo) :
+  configManager(configManager), coreShardInfo(coreShardInfo), coreInfo(*configManager.getCoreInfo(coreShardInfo.coreName)) {
 
-UnicastIterator Multiplexer::begin() {
-  return UnicastIterator(*cm.getCluster(),coreInfo.getShardsVector().begin());
-}
+	// prepare the destination shardIds
+	destinations = coreInfo.getShardsVector();
 
-UnicastIterator Multiplexer::end() {
-  return UnicastIterator(*cm.getCluster(), coreInfo.getShardsVector().end());
+	// iteration is disabled by default
+	destinationsIterator = (unsigned)-1;
 }
 
 size_t Multiplexer::size() {
-  return coreInfo.getShardsVector().size();
+  return destinations.size();
 }
 
-UnicastIterator::UnicastIterator(const UnicastIterator& cpy)
-  : id(cpy.id), i(cpy.i), cluster(cpy.cluster) {}
-
-UnicastIterator::UnicastIterator(Cluster &cluster, const std::vector<ShardId>::iterator& i) : i(i), cluster(cluster) {
-  id.shardId = *i;
+// initializes the object and makes it ready for an iteration
+void Multiplexer::initIteration(){
+	destinationsIterator = 0;
+}
+// checks to see if iteration is finished.
+// if returns true, user can call getShardId()
+bool Multiplexer::hasMore(){
+	if(destinationsIterator >= destinations.size()){
+		// also disable the iterator
+		destinationsIterator = (unsigned)-1;
+		return false;
+	}
+	return true;
 }
 
-UnicastIterator& UnicastIterator::operator=(const UnicastIterator& c) {
-  new (this) UnicastIterator(c);
-  return *this;
+// after calling this function, iterator is ready to get next
+// shard by calling getNextShardId
+void Multiplexer::nextIteration(){
+	if(hasMore() == false){
+		return;
+	}
+	++destinationsIterator;
 }
-
-UnicastIterator& UnicastIterator::operator++() {
-  ++i;
-  id.shardId = *i;
-  return *this;
-}
-
-UnicastIterator UnicastIterator::operator++(int) {
-  UnicastIterator rtn(*this);
-  ++*this;
-  return rtn;
-}
-bool UnicastIterator::operator==(const UnicastIterator& rhs) {
-  return i == rhs.i;
-}
-bool UnicastIterator::operator!=(const UnicastIterator& rhs) {
-  return i != rhs.i;
-}
-UnicastIterator::Unicast* UnicastIterator::operator->() {
-  return &this->id;
+ShardId Multiplexer::getNextShardId(){
+	if(hasMore() == false){
+		return ShardId();
+	}
+	return destinations.at(destinationsIterator);
 }
 
 }}
