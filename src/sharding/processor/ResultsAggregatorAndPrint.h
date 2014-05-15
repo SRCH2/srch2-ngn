@@ -60,20 +60,29 @@ public:
 	virtual void finalize(ResultsAggregatorAndPrintMetadata metadata){};
 
 	void addRequestObject(Request * req){
+		// request objects are added sequentially so we don't use lock
+		// in fact, all request objects are added in the beginning and by one single thread
 		ASSERT(req != NULL);
 		if(req != NULL){
 			this->requestObjects.push_back(req);
 		}
 	};
 	void addResponseObject(Response * responseObject){
+		boost::unique_lock< boost::shared_mutex > lock(_access);
 		ASSERT(responseObject != NULL);
 		if(responseObject != NULL){
 			responseObjects.push_back(responseObject);
 		}
 	};
 	void addResponseObjects(vector<Response *> responseObjects){
+		boost::unique_lock< boost::shared_mutex > lock(_access);
 		this->responseObjects.insert(this->responseObjects.end(), responseObjects.begin(), responseObjects.end());
 	};
+
+	unsigned getNumberOfRequests(){
+		boost::unique_lock< boost::shared_mutex > lock(_access);
+		return this->requestObjects.size();
+	}
 
 	virtual ~ResultAggregatorAndPrint(){
 		// delete request objects
@@ -95,6 +104,8 @@ public:
 	};
 
 private:
+	// we need lock because multiple threads can access responseObjects together
+	mutable boost::shared_mutex _access;
 	vector<Request *> requestObjects;
 	vector<Response *> responseObjects;
 };

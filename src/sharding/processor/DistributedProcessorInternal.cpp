@@ -60,7 +60,7 @@ SerializableSearchResults * DPInternalRequestHandler::internalSearchCommand(Srch
     const CoreInfo_t *indexDataContainerConf = server->indexDataConfig;
     QueryExecutor qe(logicalPlan, searchResults->getQueryResultsFactory(), server , indexDataContainerConf);
     // in here just allocate an empty QueryResults object, it will be initialized in execute.
-    qe.execute(searchResults->getQueryResults());
+    qe.executeForDPInternal(searchResults->getQueryResults(), searchResults->getInMemoryRecordStringsWrite());
     // compute elapsed time in ms , end the timer
     clock_gettime(CLOCK_REALTIME, &tend);
     unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
@@ -393,7 +393,7 @@ SerializableCommandStatus * DPInternalRequestHandler::internalResetLogCommand(Sr
 		SerializableCommandStatus * status=
 				new SerializableCommandStatus(SerializableCommandStatus::RESET_LOG, false,
 				"{\"message\":\"The logger file repointing failed. Could not create new logger file\", \"log\":\""
-                + server->indexDataConfig->getHTTPServerAccessLogFile() + "\"}\n");
+                + server->indexDataConfig->getHTTPServerAccessLogFile() + "\"}");
 		return status;
     } else {
         FILE * oldLogger = srch2::util::Logger::swapLoggerFile(logFile);
@@ -401,7 +401,7 @@ SerializableCommandStatus * DPInternalRequestHandler::internalResetLogCommand(Sr
 		SerializableCommandStatus * status=
 				new SerializableCommandStatus(SerializableCommandStatus::RESET_LOG, true,
 				"{\"message\":\"The logger file repointing succeeded\", \"log\":\""
-				                + server->indexDataConfig->getHTTPServerAccessLogFile() + "\"}\n");
+				                + server->indexDataConfig->getHTTPServerAccessLogFile() + "\"}");
 		return status;
     }
 }

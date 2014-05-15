@@ -22,8 +22,7 @@
             "/usr/share/srch2/data/sample-data.json"
             In this config file it should be as "data/sample-data.json"
     -->
-    <!-- <srch2Home>./</srch2Home>-->
-    <srch2Home>/home/jamshid/workspace-srch2/srch2-ngn/test/sharding/integration/</srch2Home>
+    <srch2Home>/home/jamshid/workspace-srch2-v4/srch2-ngn/test/sharding/integration</srch2Home>
     <cluster-name>SRCH2 Cluster</cluster-name>
 
     <discovery>
@@ -31,23 +30,28 @@
         <ping-timeout>8</ping-timeout>
         <retry-count>10</retry-count>
     </discovery> 
+    
+    
+
+
+
+
     <node>
         <this-is-me> false </this-is-me>
         <listeningHostname> 127.0.0.1 </listeningHostname>
-        <node-name> frozen </node-name>
-        <internalCommunicationPort> 3095</internalCommunicationPort>
+        <node-name> queen </node-name>
+        <internalCommunicationPort> 3095 </internalCommunicationPort>
     </node>
-
 
     <node>
         <listeningHostname> 127.0.0.1 </listeningHostname>
         <internalCommunicationPort> 3096 </internalCommunicationPort>
         <this-is-me> true </this-is-me>
-        <node-name> queen </node-name>
+        <node-name> frozen </node-name>
         <!--<node-master> true </node-master>-->
         <node-data> true </node-data>
         <srch2Home> ./ </srch2Home>
-        <dataDir> ./data/2n-insertA-queryB/queen </dataDir>
+        <dataDir> ./data/2n-insertA-queryB/frozen </dataDir>
         <searchPort>6091</searchPort>
         <savePort>6092</savePort>
         <exportPort>6093</exportPort>
@@ -56,20 +60,22 @@
         <updatePort>6096</updatePort>
         <suggestPort>6097</suggestPort>
         <infoPort>6098</infoPort>
-    </node>   
-    <!--<node>
+    </node>
+
+    <node>
         <listeningHostname> 127.0.0.1 </listeningHostname>
-        <listeningPort> 3097 </listeningPort>
+        <internalCommunicationPort> 3097 </internalCommunicationPort>
         <this-is-me> false </this-is-me>
         <node-name> rio </node-name>
     </node>
 
     <node>
         <listeningHostname> 127.0.0.1 </listeningHostname>
-        <listeningPort> 3098 </listeningPort>
+        <internalCommunicationPort> 3098 </internalCommunicationPort>
         <this-is-me> false </this-is-me>
         <node-name> lion </node-name>
-    </node>--> 
+    </node>    
+
     <!--
         License Key File
         Required
@@ -77,8 +83,8 @@
         Email contact@srch2.com to get a key file.  
         Make sure to set the variable to the SRCH2 license key file.
     -->
-    <licenseFile>../conf/srch2_license_key.txt</licenseFile>
- 
+    <licenseFile>../../wrapper/conf/srch2_license_key.txt</licenseFile> 
+    
     <!--
         Hostname and Port Number
         Required
@@ -87,11 +93,12 @@
     -->
     <listeningHostname>127.0.0.1</listeningHostname>
     <listeningPort>4091</listeningPort>
-     
+
         <cores defaultCoreName="core1">
         <core name="core1">
-        <core-number_of_shards>2</core-number_of_shards> 
-	<core-number_of_replicas>1</core-number_of_replicas>
+        <coreId>1</coreId>
+        <core-number_of_shards>4</core-number_of_shards>
+        <core-number_of_replicas>1</core-number_of_replicas>
 
     <!--
         Index Directoy Path

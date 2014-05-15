@@ -94,6 +94,12 @@ void RMCallback<RequestType, ResponseType>::callback(Message* responseMessage) {
 
 template <typename RequestType, typename ResponseType> inline
 void RMCallback<RequestType, ResponseType>::callbackAll(std::vector<Message*>& responseMessages) {
+
+	/*
+	 * This function is entered always by only one thread.
+	 */
+
+
 	if(hasCalledPreProcess == false){
 		preProcessing();
 		hasCalledPreProcess = true;

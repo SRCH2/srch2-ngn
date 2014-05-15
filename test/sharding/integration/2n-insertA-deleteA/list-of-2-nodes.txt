@@ -1,0 +1,2 @@
+A||8087||./2n-insertA-deleteA/confA.xml
+B||8088||./2n-insertA-deleteA/confB.xml

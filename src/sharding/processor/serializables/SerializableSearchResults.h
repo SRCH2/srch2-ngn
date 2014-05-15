@@ -43,6 +43,9 @@ class SerializableSearchResults {
 	const map<string, string> & getInMemoryRecordStrings() const {
 		return inMemoryRecordStrings;
 	}
+	map<string,string> & getInMemoryRecordStringsWrite() {
+		return inMemoryRecordStrings;
+	}
 	QueryResultFactory * getQueryResultsFactory() const{
 		return &(*resultsFactory);
 	}
@@ -66,7 +69,6 @@ class SerializableSearchResults {
     		bufferWritePointer = srch2::util::serializeFixedTypes(false, bufferWritePointer);
     		return buffer;
     	}
-    	fillInMemoryRecordStrings();
     	// first calculate the number of bytes needed
     	unsigned numberOfBytes = 0;
     	numberOfBytes += sizeof(bool);
@@ -97,17 +99,6 @@ class SerializableSearchResults {
 			SerializableSearchResults * searchResults = new SerializableSearchResults();
 			return searchResults;
 		}
-    }
-
-    void fillInMemoryRecordStrings(){
-    	if(queryResults == NULL){
-    		return;
-    	}
-    	// iterate on query results and save the inMemoryStrings in the map
-    	for(unsigned resultIndex = 0 ; resultIndex < queryResults->getNumberOfResults(); ++resultIndex){
-    		inMemoryRecordStrings[queryResults->getRecordId(resultIndex)] =
-    				queryResults->getInMemoryRecordString(resultIndex);
-    	}
     }
 
     /*

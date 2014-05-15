@@ -76,30 +76,31 @@ RoutingManager::broadcast(RequestType * requestObj, CoreShardInfo &coreInfo) {
 	timeval timeValue;
 	timeValue.tv_sec = timeValue.tv_usec = 0;
 	// iterate on all destinations and send the message
-	for(UnicastIterator unicast = broadcastResolver.begin(); unicast != broadcastResolver.end(); ++unicast) {
+	for(broadcastResolver.initIteration(); broadcastResolver.hasMore(); broadcastResolver.nextIteration()) {
+		ShardId shardIdFromIteration = broadcastResolver.getNextShardId();
 		// this shard is in the current node
-		if(unicast->shardId.isInCurrentNode(configurationManager)){
+		if(shardIdFromIteration.isInCurrentNode(configurationManager)){
 			// so that we create the message only once
 			if(internalMessage == NULL){
-				internalMessage = prepareInternalMessage<RequestType>(unicast->shardId, requestObj);
+				internalMessage = prepareInternalMessage<RequestType>(shardIdFromIteration, requestObj);
 				// broadcast with no callback has no response
 				// this flag will be used in other places to
 				// understand whether we should deallocate this message or not
 				internalMessage->setNoReply();
 			}
-			internalMessage->setDestinationShardId(unicast->shardId);
-			sendInternalMessage(internalMessage, unicast->shardId, timeValue, CallbackReference());
+			internalMessage->setDestinationShardId(shardIdFromIteration);
+			sendInternalMessage(internalMessage, shardIdFromIteration, timeValue, CallbackReference());
 		}else{// this shard is in some other node
 			// so that we create the message only once
 			if(externalMessage == NULL){
-				externalMessage = prepareExternalMessage<RequestType>(unicast->shardId, requestObj);
+				externalMessage = prepareExternalMessage<RequestType>(shardIdFromIteration, requestObj);
 				// broadcast with no callback has no response
 				// this flag will be used in other places to
 				// understand whether we should deallocate this message or not
 				externalMessage->setNoReply();
 			}
-			externalMessage->setDestinationShardId(unicast->shardId);
-			sendExternalMessage(externalMessage, unicast->shardId, timeValue, CallbackReference());
+			externalMessage->setDestinationShardId(shardIdFromIteration);
+			sendExternalMessage(externalMessage, shardIdFromIteration, timeValue, CallbackReference());
 		}
 	}
 	// if internal message is created so it means a shard on the same node is
@@ -155,28 +156,29 @@ void RoutingManager::broadcast_w_cb(RequestType * requestObj,
 	timeval timeValue;
 	timeValue.tv_sec = timeValue.tv_usec = 0;
 	// iterate on all destinations and send the message
-	for(UnicastIterator unicast = broadcastResolver.begin(); unicast != broadcastResolver.end(); ++unicast) {
+	for(broadcastResolver.initIteration(); broadcastResolver.hasMore(); broadcastResolver.nextIteration()) {
+		ShardId shardIdFromIteration = broadcastResolver.getNextShardId();
 		// this shard is in the current node
-		if(unicast->shardId.isInCurrentNode(configurationManager)){
+		if(shardIdFromIteration.isInCurrentNode(configurationManager)){
 			// so that we create the message only once
 			if(internalMessage == NULL){
-				internalMessage = prepareInternalMessage<RequestType>(unicast->shardId, requestObj);
+				internalMessage = prepareInternalMessage<RequestType>(shardIdFromIteration, requestObj);
 				// request message is stored in cb object to be deleted when replies are ready
 				// and cb object is being destroyed.
 				cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(internalMessage);
 			}
-			internalMessage->setDestinationShardId(unicast->shardId);
-			sendInternalMessage(internalMessage, unicast->shardId, timeValue, cb);
+			internalMessage->setDestinationShardId(shardIdFromIteration);
+			sendInternalMessage(internalMessage, shardIdFromIteration, timeValue, cb);
 		}else{// this shard is in some other node
 			// so that we create the message only once
 			if(externalMessage == NULL){
-				externalMessage = prepareExternalMessage<RequestType>(unicast->shardId, requestObj);
+				externalMessage = prepareExternalMessage<RequestType>(shardIdFromIteration, requestObj);
 				// request message is stored in cb object to be deleted when replies are ready
 				// and cb object is being destroyed.
 				cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(externalMessage);
 			}
-			externalMessage->setDestinationShardId(unicast->shardId);
-			sendExternalMessage(externalMessage, unicast->shardId, timeValue, cb);
+			externalMessage->setDestinationShardId(shardIdFromIteration);
+			sendExternalMessage(externalMessage, shardIdFromIteration, timeValue, cb);
 		}
 	}
 
@@ -213,28 +215,29 @@ void RoutingManager::broadcast_wait_for_all_w_cb(RequestType * requestObj,
 	timeval timeValue;
 	timeValue.tv_sec = timeValue.tv_usec = 0;
 	// iterate on all destinations and send the message
-	for(UnicastIterator unicast = broadcastResolver.begin(); unicast != broadcastResolver.end(); ++unicast) {
+	for(broadcastResolver.initIteration(); broadcastResolver.hasMore(); broadcastResolver.nextIteration()) {
+		ShardId shardIdFromIteration = broadcastResolver.getNextShardId();
 		// this shard is in the current node
-		if(unicast->shardId.isInCurrentNode(configurationManager)){
+		if(shardIdFromIteration.isInCurrentNode(configurationManager)){
 			// so that we create the message only once
 			if(internalMessage == NULL){
-				internalMessage = prepareInternalMessage<RequestType>(unicast->shardId, requestObj);
+				internalMessage = prepareInternalMessage<RequestType>(shardIdFromIteration, requestObj);
 				// request message is stored in cb object to be deleted when replies are ready
 				// and cb object is being destroyed.
 				cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(internalMessage);
 			}
-			internalMessage->setDestinationShardId(unicast->shardId);
-			sendInternalMessage(internalMessage, unicast->shardId, timeValue, cb);
+			internalMessage->setDestinationShardId(shardIdFromIteration);
+			sendInternalMessage(internalMessage, shardIdFromIteration, timeValue, cb);
 		}else{// this shard is in some other node
 			// so that we create the message only once
 			if(externalMessage == NULL){
-				externalMessage = prepareExternalMessage<RequestType>(unicast->shardId, requestObj);
+				externalMessage = prepareExternalMessage<RequestType>(shardIdFromIteration, requestObj);
 				// request message is stored in cb object to be deleted when replies are ready
 				// and cb object is being destroyed.
 				cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(externalMessage);
 			}
-			externalMessage->setDestinationShardId(unicast->shardId);
-			sendExternalMessage(externalMessage, unicast->shardId, timeValue, cb);
+			externalMessage->setDestinationShardId(shardIdFromIteration);
+			sendExternalMessage(externalMessage, shardIdFromIteration, timeValue, cb);
 		}
 	}
 }
@@ -271,28 +274,29 @@ void RoutingManager::broadcast_w_cb_n_timeout(RequestType * requestObj,
 	Message * externalMessage = NULL;
 
 	// iterate on all destinations and send the message
-	for(UnicastIterator unicast = broadcastResolver.begin(); unicast != broadcastResolver.end(); ++unicast) {
+	for(broadcastResolver.initIteration(); broadcastResolver.hasMore(); broadcastResolver.nextIteration()) {
+		ShardId shardIdFromIteration = broadcastResolver.getNextShardId();
 		// this shard is in the current node
-		if(unicast->shardId.isInCurrentNode(configurationManager)){
+		if(shardIdFromIteration.isInCurrentNode(configurationManager)){
 			// so that we create the message only once
 			if(internalMessage == NULL){
-				internalMessage = prepareInternalMessage<RequestType>(unicast->shardId, requestObj);
+				internalMessage = prepareInternalMessage<RequestType>(shardIdFromIteration, requestObj);
 				// request message is stored in cb object to be deleted when replies are ready
 				// and cb object is being destroyed.
 				cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(internalMessage);
 			}
-			internalMessage->setDestinationShardId(unicast->shardId);
-			sendInternalMessage(internalMessage, unicast->shardId, timeoutValue, cb);
+			internalMessage->setDestinationShardId(shardIdFromIteration);
+			sendInternalMessage(internalMessage, shardIdFromIteration, timeoutValue, cb);
 		}else{// this shard is in some other node
 			// so that we create the message only once
 			if(externalMessage == NULL){
-				externalMessage = prepareExternalMessage<RequestType>(unicast->shardId, requestObj);
+				externalMessage = prepareExternalMessage<RequestType>(shardIdFromIteration, requestObj);
 				// request message is stored in cb object to be deleted when replies are ready
 				// and cb object is being destroyed.
 				cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(externalMessage);
 			}
-			externalMessage->setDestinationShardId(unicast->shardId);
-			sendExternalMessage(externalMessage, unicast->shardId, timeoutValue, cb);
+			externalMessage->setDestinationShardId(shardIdFromIteration);
+			sendExternalMessage(externalMessage, shardIdFromIteration, timeoutValue, cb);
 		}
 	}
 
@@ -324,28 +328,29 @@ RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType * requestObj,
 	Message * externalMessage = NULL;
 
 	// iterate on all destinations and send the message
-	for(UnicastIterator unicast = broadcastResolver.begin(); unicast != broadcastResolver.end(); ++unicast) {
+	for(broadcastResolver.initIteration(); broadcastResolver.hasMore(); broadcastResolver.nextIteration()) {
+		ShardId shardIdFromIteration = broadcastResolver.getNextShardId();
 		// this shard is in the current node
-		if(unicast->shardId.isInCurrentNode(configurationManager)){
+		if(shardIdFromIteration.isInCurrentNode(configurationManager)){
 			// so that we create the message only once
 			if(internalMessage == NULL){
-				internalMessage = prepareInternalMessage<RequestType>(unicast->shardId, requestObj);
+				internalMessage = prepareInternalMessage<RequestType>(shardIdFromIteration, requestObj);
 				// request message is stored in cb object to be deleted when replies are ready
 				// and cb object is being destroyed.
 				cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(internalMessage);
 			}
-			internalMessage->setDestinationShardId(unicast->shardId);
-			sendInternalMessage(internalMessage, unicast->shardId, timeoutValue, cb);
+			internalMessage->setDestinationShardId(shardIdFromIteration);
+			sendInternalMessage(internalMessage, shardIdFromIteration, timeoutValue, cb);
 		}else{// this shard is in some other node
 			// so that we create the message only once
 			if(externalMessage == NULL){
-				externalMessage = prepareExternalMessage<RequestType>(unicast->shardId, requestObj);
+				externalMessage = prepareExternalMessage<RequestType>(shardIdFromIteration, requestObj);
 				// request message is stored in cb object to be deleted when replies are ready
 				// and cb object is being destroyed.
 				cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(externalMessage);
 			}
-			externalMessage->setDestinationShardId(unicast->shardId);
-			sendExternalMessage(externalMessage, unicast->shardId, timeoutValue, cb);
+			externalMessage->setDestinationShardId(shardIdFromIteration);
+			sendExternalMessage(externalMessage, shardIdFromIteration, timeoutValue, cb);
 		}
 	}
 }
