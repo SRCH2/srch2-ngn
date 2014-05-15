@@ -32,19 +32,18 @@
         <retry-count>10</retry-count>
     </discovery> 
    
-     <node>
+    <node>
         <this-is-me> false </this-is-me>
         <listeningHostname> 127.0.0.1 </listeningHostname>
-        <node-name> frozen </node-name>
+        <node-name> queen </node-name>
         <internalCommunicationPort> 3095 </internalCommunicationPort>
     </node>
-
 
     <node>
         <listeningHostname> 127.0.0.1 </listeningHostname>
         <internalCommunicationPort> 3096 </internalCommunicationPort>
         <this-is-me> false </this-is-me>
-        <node-name> queen </node-name>
+        <node-name> frozen </node-name>
     </node>
 
     <node>
@@ -71,7 +70,9 @@
         <updatePort>8096</updatePort>
         <suggestPort>8097</suggestPort>
         <infoPort>8098</infoPort>
-    </node> 
+    </node>
+
+
     <!--
         License Key File
         Required
@@ -79,8 +80,7 @@
         Email contact@srch2.com to get a key file.  
         Make sure to set the variable to the SRCH2 license key file.
     -->
-    <licenseFile>../conf/srch2_license_key.txt</licenseFile>
- 
+    <licenseFile>../../wrapper/conf/srch2_license_key.txt</licenseFile> 
     <!--
         Hostname and Port Number
         Required
@@ -89,11 +89,12 @@
     -->
     <listeningHostname>127.0.0.1</listeningHostname>
     <listeningPort>4093</listeningPort>
-     
+
         <cores defaultCoreName="core1">
         <core name="core1">
-        <core-number_of_shards>2</core-number_of_shards> 
-	<core-number_of_replicas>1</core-number_of_replicas>
+        <coreId>1</coreId>
+        <core-number_of_shards>4</core-number_of_shards>
+        <core-number_of_replicas>1</core-number_of_replicas>
 
     <!--
         Index Directoy Path
