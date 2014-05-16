@@ -185,4 +185,33 @@ void cb_recieveMessage(int fd, short eventType, void *arg) {
   event_add(cb->ev, NULL);
 }
 
+void cb_recieveMessage1(struct bufferevent *bev, void *arg){
+
+	TransportManager* tm = (TransportManager*) arg;
+	Message msgHeader;
+	int n;
+	struct evbuffer *inp = bufferevent_get_input(bev);
+	signed totalLen = evbuffer_get_length(inp);
+	signed read = evbuffer_remove(inp, &msgHeader, sizeof(Message));
+	if (read != sizeof(Message)) {
+		cout << "XXX buffer read error XXX" << endl;
+		return;
+	}
+	//cout << "*** buffer read success ***" << msgHeader.bodySize << endl;
+
+	if (totalLen == msgHeader.bodySize + sizeof(Message)) {
+		//cout << "*** total len is good" << endl;
+	} else {
+		cout << "XXX "<< totalLen << "!=" << msgHeader.bodySize + sizeof(Message) << endl;
+	}
+
+	Message *msg =  tm->getMessageAllocator()->allocateMessage( msgHeader.bodySize);
+	memcpy(msg, &msgHeader, sizeof(Message));
+	evbuffer_remove(inp, msg->buffer, msgHeader.bodySize);
+	if (tm->getSmHandler())
+		tm->getSmHandler()->notify(msg);
+
+	tm->getMessageAllocator()->deallocate(msg);
+}
+
 #endif /* __TRANSPORT_CALLBACK_FUNCTIONS_H__ */

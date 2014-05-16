@@ -49,7 +49,9 @@ void* startListening(void* arg) {
 		}
 	}
 
-        return NULL;
+  close(fd);
+  Logger::console("Connected");
+  return NULL;
 }
 
 #include "callback_functions.h"
@@ -71,8 +73,11 @@ TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
 	routeMap.initRoutes();
 
 	while(!routeMap.isTotallyConnected()) {
-		sleep(3);
+		Logger::console("V0: waiting for other nodes!!");
+		sleep(10);
 	}
+	Logger::console("V0: all the nodes are connected!!");
+
 
 	close(routeMap.getListeningSocket());
 	Logger::console("Connected");
@@ -82,17 +87,27 @@ TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
 	// which is basically NodeId to file descriptor
 	// We bound the route file descriptors (connection to other nodes) to event bases
 	// that are bound to cb_recieveMessage. This way cb_recieveMessage receives all internal messages
-	for(RouteMap::iterator route = routeMap.begin(); route != routeMap.end(); ++route) {
-		for(EventBases::iterator base = bases.begin(); base != bases.end(); ++base) {
-      TransportCallback *cb_ptr = new TransportCallback();
-			struct event* ev = event_new(*base, route->second.fd, EV_READ, 
-          cb_recieveMessage, cb_ptr);
-      new (cb_ptr) TransportCallback(this, &route->second, ev, *base);
-			event_add(ev, NULL);
-		}
-	}
+//	for(RouteMap::iterator route = routeMap.begin(); route != routeMap.end(); ++route) {
+//		for(EventBases::iterator base = bases.begin(); base != bases.end(); ++base) {
+//			struct event* ev = event_new(*base, route->second.fd,
+//					EV_READ|EV_PERSIST, cb_recieveMessage, new TransportCallback(this, &route->second));
+//			event_add(ev, NULL);
+//		}
+//	}
+	  for(RouteMap::iterator route = routeMap.begin(); route != routeMap.end();
+	      ++route) {
+	    for(EventBases::iterator base = bases.begin();
+	        base != bases.end(); ++base) {
+
+	      struct bufferevent * bev = bufferevent_socket_new(*base, route->second.fd, BEV_OPT_CLOSE_ON_FREE);
+	      bufferevent_setcb(bev, cb_recieveMessage1 , NULL, NULL, this);
+	      bufferevent_enable(bev, EV_READ|EV_WRITE);
+	      bufferevent_setwatermark(bev,  EV_READ, sizeof(Message), 0);
+	    }
+	  }
 
 	distributedTime = 0;
+	synchManagerHandler = NULL;
 }
 
 #define USE_SAME_THREAD_FOR_CURRENT_NODE_PROCESS
@@ -101,40 +116,29 @@ MessageTime_t TransportManager::route(NodeId node, Message *msg,
 		unsigned timeout, CallbackReference callback) {
 	msg->setTime( __sync_fetch_and_add(&distributedTime, 1));
 
-	time_t timeOfTimeout_time = timeout + time(NULL);
-	// only messages which expect reply will go to pending messages
-	if(! msg->isNoReply()){
-		pendingMessages.addMessage(timeout, msg->getTime(), callback);
+	if (timeout) {
+		time_t timeOfTimeout_time = timeout + time(NULL);
+		pendingMessages.addMessage(timeout, msg->time, callback);
 	}
 
 #ifdef USE_SAME_THREAD_FOR_CURRENT_NODE_PROCESS
-	if(msg->isLocal()) {
-		MessageTime_t rtn = msg->getTime();
-		if(msg->isInternal()) {
-			if(msg->isNoReply()){
-				// this msg comes from a local broadcast or route with no call back
-				// so there is no reply for this msg.
-				// notifyNoReply should deallocate the obj in msg
-				// because msg just keeps a pointer to that object
-				// and that object itself needs to be deleted.
-				getInternalTrampoline()->notifyNoReply(msg);
-				// and delete the msg
-				getMessageAllocator()->deallocateByMessagePointer(msg);
-				return rtn;
-			}
-			Message* reply = getInternalTrampoline()->notifyWithReply(msg);
-			ASSERT(reply != NULL);
-			if(reply != NULL) {
-				reply->setInitialTime(msg->getTime());
-				reply->setReply()->setInternal();
-				getMsgs()->resolve(reply);
-			}
-			// what if resolve returns NULL for something?
-		} else {
-			getSmHandler()->notifyWithReply(msg);
-		}
-		return rtn;
-	}
+  if(node == routeMap.getCurrentNode().getId()) {
+	  Logger::console("<< ROUTING TO SAME NODE <<");
+    MessageTime_t rtn = msg->time;
+    if(msg->isInternal()) {
+		  if(Message* reply = getInternalTrampoline()->notify(msg)) {
+        reply->initial_time = msg->time;
+        reply->mask |= REPLY_MASK | INTERNAL_MASK;
+        getMsgs()->resolve(msg);
+        getMessageAllocator()->deallocate(reply);
+      }
+    } else {
+    	if (synchManagerHandler)
+    		getSmHandler()->notify(msg);
+    }
+   return rtn;
+  }
+
 #endif
 
 
