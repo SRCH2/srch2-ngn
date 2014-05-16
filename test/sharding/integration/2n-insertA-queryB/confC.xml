@@ -32,37 +32,47 @@
         <retry-count>10</retry-count>
     </discovery>    
 
-     <node>
+
+    <node>
         <this-is-me> false </this-is-me>
         <listeningHostname> 127.0.0.1 </listeningHostname>
+        <node-name> queen </node-name>
+        <internalCommunicationPort> 3095 </internalCommunicationPort>
+    </node>
+
+    <node>
+        <listeningHostname> 127.0.0.1 </listeningHostname>
+        <internalCommunicationPort> 3096 </internalCommunicationPort>
+        <this-is-me> false </this-is-me>
         <node-name> frozen </node-name>
-        <listeningPort> 3095 </listeningPort>
-    </node> 
-
-   
-    <node>
-        <listeningHostname> 127.0.0.1 </listeningHostname>
-        <listeningPort> 3096 </listeningPort>
-        <this-is-me> false </this-is-me>
-	<node-name> queen </node-name>
-    </node> 
+    </node>
 
     <node>
         <listeningHostname> 127.0.0.1 </listeningHostname>
-        <listeningPort> 3097 </listeningPort>
+        <internalCommunicationPort> 3097 </internalCommunicationPort>
         <this-is-me> true </this-is-me>
         <node-name> rio </node-name>
         <!--<node-master> true </node-master>-->
         <node-data> true </node-data>
         <srch2Home> ./ </srch2Home>
         <dataDir> ./data/2n-insertA-queryB/rio </dataDir>
+        <searchPort>7091</searchPort>
+        <savePort>7092</savePort>
+        <exportPort>7093</exportPort>
+        <resetLoggerPort>7094</resetLoggerPort>
+        <docsPort>7095</docsPort>
+        <updatePort>7096</updatePort>
+        <suggestPort>7097</suggestPort>
+        <infoPort>7098</infoPort>
     </node>
+
     <node>
         <listeningHostname> 127.0.0.1 </listeningHostname>
-        <listeningPort> 3098 </listeningPort>
+        <internalCommunicationPort> 3098 </internalCommunicationPort>
         <this-is-me> false </this-is-me>
         <node-name> lion </node-name>
     </node>
+
     <!--
         License Key File
         Required
@@ -70,7 +80,8 @@
         Email contact@srch2.com to get a key file.  
         Make sure to set the variable to the SRCH2 license key file.
     -->
-    <licenseFile>../conf/srch2_license_key.txt</licenseFile>
+    <licenseFile>../../wrapper/conf/srch2_license_key.txt</licenseFile>
+
  
     <!--
         Hostname and Port Number
@@ -83,6 +94,7 @@
     	
         <cores defaultCoreName="core1">
         <core name="core1">
+        <coreId>1</coreId>
         <core-number_of_shards>4</core-number_of_shards> 
 	<core-number_of_replicas>1</core-number_of_replicas>
 
