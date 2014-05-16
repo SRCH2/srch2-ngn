@@ -207,3 +207,11 @@ const Node& RouteMap::getCurrentNode() const { return *currentNode; }
 RouteMap::iterator RouteMap::begin() { return nodeConnectionMap.begin(); }
 RouteMap::iterator RouteMap::end() { return nodeConnectionMap.end(); }
 
+void RouteMap::setListeningSocket(int fd) {
+  listeningSocket = fd;
+}
+
+int RouteMap::getListeningSocket() const {
+  return listeningSocket;
+}
+

@@ -37,6 +37,8 @@ void* startListening(void* arg) {
 		exit(255);
 	}
 
+        routeMap->setListeningSocket(fd);
+
 	while(!routeMap->isTotallyConnected()) {
 		struct sockaddr_in addr;
 		socklen_t addrlen = sizeof(sockaddr_in);
@@ -47,8 +49,7 @@ void* startListening(void* arg) {
 		}
 	}
 
-	close(fd);
-	Logger::console("Connected");
+        return NULL;
 }
 
 #include "callback_functions.h"
@@ -72,6 +73,10 @@ TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
 	while(!routeMap.isTotallyConnected()) {
 		sleep(3);
 	}
+
+	close(routeMap.getListeningSocket());
+	Logger::console("Connected");
+
 
 	// RouteMap iterates over routes. Routes are std::map<NodeId, Connection>
 	// which is basically NodeId to file descriptor
