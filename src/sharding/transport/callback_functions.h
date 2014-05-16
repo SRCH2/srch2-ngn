@@ -208,8 +208,20 @@ void cb_recieveMessage1(struct bufferevent *bev, void *arg){
 	Message *msg =  tm->getMessageAllocator()->allocateMessage( msgHeader.bodySize);
 	memcpy(msg, &msgHeader, sizeof(Message));
 	evbuffer_remove(inp, msg->buffer, msgHeader.bodySize);
-	if (tm->getSmHandler())
+	if(msg->isReply()) {
+		tm->getMsgs()->resolve(msg);
+	} else if(msg->isInternal()) {
+		if(Message* reply = tm->getInternalTrampoline()->notify(msg)) {
+			reply->initial_time = msg->time;
+			reply->mask |= REPLY_MASK & INTERNAL_MASK;
+			unsigned fd = bufferevent_getfd(bev);
+			tm->route( fd, reply);
+			tm->getMessageAllocator()->deallocate(reply);
+		}
+	}
+	else if (tm->getSmHandler()) {
 		tm->getSmHandler()->notify(msg);
+	}
 
 	tm->getMessageAllocator()->deallocate(msg);
 }
