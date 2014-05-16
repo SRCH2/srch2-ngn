@@ -49,7 +49,6 @@ void* startListening(void* arg) {
 
 	close(fd);
 	Logger::console("Connected");
-	return NULL;
 }
 
 #include "callback_functions.h"
@@ -78,28 +77,15 @@ TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
 	// which is basically NodeId to file descriptor
 	// We bound the route file descriptors (connection to other nodes) to event bases
 	// that are bound to cb_recieveMessage. This way cb_recieveMessage receives all internal messages
-//	for(RouteMap::iterator route = routeMap.begin(); route != routeMap.end(); ++route) {
-//		for(EventBases::iterator base = bases.begin(); base != bases.end(); ++base) {
-//			struct event* ev = event_new(*base, route->second.fd,
-//					EV_READ|EV_PERSIST, cb_recieveMessage, new TransportCallback(this, &route->second));
-//			event_add(ev, NULL);
-//		}
-//	}
-	for(RouteMap::iterator route = routeMap.begin(); route != routeMap.end();
-			++route) {
-		// Add a comment to this line
-		for(EventBases::iterator base = bases.begin();
-				base != bases.end(); ++base) {
-
-			struct bufferevent * bev = bufferevent_socket_new(*base, route->second.fd, BEV_OPT_CLOSE_ON_FREE);
-			bufferevent_setcb(bev, cb_recieveMessage1 , NULL, NULL, this);
-			bufferevent_enable(bev, EV_READ|EV_WRITE);
-			bufferevent_setwatermark(bev,  EV_READ, sizeof(Message), 0);
+	for(RouteMap::iterator route = routeMap.begin(); route != routeMap.end(); ++route) {
+		for(EventBases::iterator base = bases.begin(); base != bases.end(); ++base) {
+			struct event* ev = event_new(*base, route->second.fd,
+					EV_READ|EV_PERSIST, cb_recieveMessage, new TransportCallback(this, &route->second));
+			event_add(ev, NULL);
 		}
 	}
 
 	distributedTime = 0;
-	synchManagerHandler = NULL;
 }
 
 #define USE_SAME_THREAD_FOR_CURRENT_NODE_PROCESS

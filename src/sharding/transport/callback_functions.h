@@ -35,7 +35,7 @@ bool findNextMagicNumberAndReadMessageHeader(Message *const msg,  int fd) {
 
 		if(readRtn < sizeof(Message)) {
 			//v1: broken message boundary == seriously bad
-			continue;
+			return false;
 		}
 
 		//TODO:checkMagicNumbers
@@ -172,63 +172,6 @@ void cb_recieveMessage(int fd, short eventType, void *arg) {
 	} else {
 		tm->getSmHandler()->notifyWithReply(msg);
 	}
-
-	tm->getMessageAllocator()->deallocateByMessagePointer(msg);
-}
-
-void cb_recieveMessage1(struct bufferevent *bev, void *arg){
-
-	TransportManager* tm = (TransportManager*) arg;
-	Message msgHeader;
-	int n;
-	struct evbuffer *inp = bufferevent_get_input(bev);
-	unsigned fd = bufferevent_getfd(bev);
-	signed totalLen = evbuffer_get_length(inp);
-	signed read = evbuffer_remove(inp, &msgHeader, sizeof(Message));
-	if (read != sizeof(Message)) {
-		cout << "XXX buffer read error XXX" << endl;
-		return;
-	}
-	//cout << "*** buffer read success ***" << msgHeader.bodySize << endl;
-
-	if (totalLen == msgHeader.getBodySize() + sizeof(Message)) {
-		//cout << "*** total len is good" << endl;
-	} else {
-		cout << "XXX "<< totalLen << "!=" << msgHeader.getBodySize() + sizeof(Message) << endl;
-	}
-
-	Message *msg =  tm->getMessageAllocator()->allocateMessage( msgHeader.getBodySize());
-	memcpy(msg, &msgHeader, sizeof(Message));
-	evbuffer_remove(inp, Message::getBodyPointerFromMessagePointer(msg), msgHeader.getBodySize());
-
-	if(msg->isReply()) {
-		tm->getMsgs()->resolve(msg);
-		return;
-	} else if(msg->isInternal()) { // receiving a message which
-
-		if(msg->isNoReply()){
-			// This msg comes from another node and does not need a reply
-			// it comes from a broadcast or route with no callback
-			tm->getInternalTrampoline()->notifyNoReply(msg);
-			// and delete the msg
-			tm->getMessageAllocator()->deallocateByMessagePointer(msg);
-			return;
-		}
-		Message* replyMessage = tm->getInternalTrampoline()->notifyWithReply(msg);
-		if(replyMessage != NULL) {
-			replyMessage->setInitialTime(msg->getTime());
-			replyMessage->setReply()->setInternal();
-			tm->route(fd, replyMessage);
-			tm->getMessageAllocator()->deallocateByMessagePointer(msg);
-			tm->getMessageAllocator()->deallocateByMessagePointer(replyMessage);
-			return;
-		}
-	} else {
-		if (tm->getSmHandler())
-			tm->getSmHandler()->notifyWithReply(msg);
-	}
-
-
 
 	tm->getMessageAllocator()->deallocateByMessagePointer(msg);
 }
