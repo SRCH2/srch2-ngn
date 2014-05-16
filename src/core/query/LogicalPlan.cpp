@@ -164,7 +164,7 @@ void * LogicalPlanNode::deserializeForNetwork(LogicalPlanNode * &node, void * bu
 	}
 
 	if(node->nodeType == LogicalPlanNodeTypePhrase){
-		((LogicalPlanPhraseNode *)node)->getPhraseInfo()->deserializeForNetwork(buffer);
+		buffer = ((LogicalPlanPhraseNode *)node)->getPhraseInfo()->deserializeForNetwork(buffer);
 	}
 	// get number of children
 	unsigned numberOfChilren = 0;
