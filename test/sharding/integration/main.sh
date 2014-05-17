@@ -212,7 +212,7 @@ if [ ${PIPESTATUS[0]} -gt 0 ]; then
 else
     echo "-- PASSED: $test_id" >> ${output}
 fi
-
+'
 test_id="./AllTestCases/3n-insertABC-queryABC"
 printTestBanner "$test_id"
 python ./AllTestCases/test-sharding.py $SRCH2_ENGINE ./AllTestCases/3n-insertABC-queryABC ./AllTestCases/list-of-3-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
@@ -248,4 +248,4 @@ if [ ${PIPESTATUS[0]} -gt 0 ]; then
 else
     echo "-- PASSED: $test_id" >> ${output}
 fi
-
+'

@@ -1,6 +1,4 @@
 # Record R1 is inserted into node A and queried from node B
 
-A||insert||{"category": "Insurance Services Insurance Agent", "name": "Prescription Service Of California", "relevance": 3.0147461915737148, "lat": 61.171669000000001, "lng": -149.881021, "id": "106"}||{"rid":"106","insert":"success"}
-B||query||Prescription Service||106
-
-
+A||insert||{"category": "Insurance Services Insurance Agent", "name": "Prescription Service Of California", "relevance": 3.0147461915737148, "lat": 61.171669000000001, "lng": -149.881021, "id": "109"}||{"rid":"109","insert":"success"}
+B||query||Prescription Service||"record":{"id":"109","category":"Insurance Services Insurance Agent","name":"Prescription Service Of California"}||"results_found":1

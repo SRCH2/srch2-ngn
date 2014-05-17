@@ -83,6 +83,21 @@ def startEngines():
     #for node in nodes:
     #Start the engine server
     for key in nodes:
+        '''
+	# we fork a process for each node and wait for them after loop
+	pid = os.fork()
+	if (pid == 0): # The first child.
+	   os.chdir("/")
+	   os.setsid()
+	   os.umask(0) 
+	   pid2 = os.fork() 
+	   if (pid2 == 0):  # Second child
+	     # YOUR CODE HERE
+	   else:
+	     sys.exit()    #First child exists
+	else:           # Parent Code
+	  sys.exit()   # Parent exists
+        '''
         args = [ binary_path, '--config-file='+(nodes[key].conf) ]
 #        print args
         if test_lib.confirmPortAvailable(nodes[key].portNo) == False:
@@ -91,6 +106,9 @@ def startEngines():
 
         print 'starting engine: ' + args[0] + ' ' + (nodes[key].conf)
         serverHandles.append(test_lib.startServer(args))
+    # sleep for 5 seconds
+    time.sleep(10)
+    for key in nodes:
         test_lib.pingServer(nodes[key].portNo)
 
 def testInsertAndQuery(queriesAndResultsPath, binary_path):    
@@ -143,6 +161,7 @@ if __name__ == '__main__':
     binary_path = sys.argv[1]
     queriesAndResultsPath = sys.argv[2]
     os.popen('rm -rf ./test-data/core1/*.idx')
+    time.sleep(10)
     startEngines()
     try:
         exitCode=testInsertAndQuery(queriesAndResultsPath, binary_path)

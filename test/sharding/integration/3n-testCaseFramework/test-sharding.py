@@ -161,7 +161,6 @@ if __name__ == '__main__':
     binary_path = sys.argv[1]
     queriesAndResultsPath = sys.argv[2]
     os.popen('rm -rf ./test-data/core1/*.idx')
-    time.sleep(40)
     startEngines()
     try:
         exitCode=testInsertAndQuery(queriesAndResultsPath, binary_path)

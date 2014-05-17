@@ -22,9 +22,9 @@
             "/usr/share/srch2/data/sample-data.json"
             In this config file it should be as "data/sample-data.json"
     -->
-    <srch2Home>./test-data</srch2Home>
     <cluster-name>SRCH2 Cluster</cluster-name>
 
+    <srch2Home>./test-data</srch2Home>
  
     <discovery>
         <ping-interval>2</ping-interval>
@@ -34,22 +34,24 @@
     
     <node>
         <listeningHostname> 127.0.0.1 </listeningHostname>
-        <listeningPort> 8087 </listeningPort>
-        <this-is-me> true </this-is-me>
-	<node-name> queen </node-name>
+        <internalCommunicationPort> 3095 </internalCommunicationPort>
+        <this-is-me> false </this-is-me>
+        <node-name> queen </node-name>
         <node-master> true </node-master>
         <node-data> true </node-data>
-        <srch2Home> ./ </srch2Home>
-        <dataDir> core1 </dataDir>
-    </node> 
-
+    </node>
     <node>
-        <this-is-me> false </this-is-me>
+        <this-is-me> true </this-is-me>
         <listeningHostname> 127.0.0.1 </listeningHostname>
         <node-name> frozen </node-name>
-        <listeningPort> 8088 </listeningPort>
-    </node> 
-
+        <internalCommunicationPort> 3096 </internalCommunicationPort>
+   </node> 
+    <node>
+        <listeningHostname> 127.0.0.1 </listeningHostname>
+        <internalCommunicationPort> 3097 </internalCommunicationPort>
+        <this-is-me> false </this-is-me>
+        <node-name> rio </node-name>
+    </node>
     <!--
         License Key File
         Required
@@ -66,11 +68,12 @@
         Hostname and port number of the server. Make sure the port is open.
     -->
     <listeningHostname>127.0.0.1</listeningHostname>
-    <listeningPort>8087</listeningPort>
+    <listeningPort>4091</listeningPort>
     	
         <cores defaultCoreName="core1">
         <core name="core1">
-        <core-number_of_shards>5</core-number_of_shards> 
+        <coreId>1</coreId>
+        <core-number_of_shards>4</core-number_of_shards> 
 	<core-number_of_replicas>1</core-number_of_replicas>
 
     <!--
@@ -80,7 +83,7 @@
         The file path to the folder where we store serialized index files.
         REQUIRED, when "index-load-or-create" is set to 1.
     -->
-    <dataDir>core1</dataDir>
+    <dataDir>./indexes/</dataDir>
      
     <!--
         Data File
