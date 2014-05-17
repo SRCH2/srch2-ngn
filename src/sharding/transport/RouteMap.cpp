@@ -27,7 +27,7 @@ Route& RouteMap::addDestination(const Node& node) {
 
 int recieveGreeting(int fd) {
 	char greetings[sizeof(GREETING_MESSAGE)+sizeof(int)+1];
-	memset(greetings, 0, sizeof(greetings)+sizeof(int));
+	memset(greetings, 0, sizeof(greetings));
 
 	char *currentPos = greetings;
 	int remaining = sizeof(GREETING_MESSAGE) + sizeof(int);
@@ -94,7 +94,7 @@ void* tryToConnect(void *arg) {
 	RouteMapAndRouteHandle *routeMapAndRouteHandle = (RouteMapAndRouteHandle*) arg;
 
 	while(!routeMapAndRouteHandle->routeMap->nodeConnectionMap.count(routeMapAndRouteHandle->route->first.second)) {
-		sleep(random() % 2);
+		sleep(random() % 2 + 1);
 
 		int fd = socket(AF_INET, SOCK_STREAM, 0);
 		if(fd < 0) continue;
@@ -119,8 +119,8 @@ void* tryToConnect(void *arg) {
 			routeMapAndRouteHandle->route->second = false;
 			continue;
 		}
-
 		fcntl(fd, F_SETFL, O_NONBLOCK);
+
 		routeMapAndRouteHandle->routeMap->addNodeConnection(routeMapAndRouteHandle->route->first.second, fd);
 	}
 	delete routeMapAndRouteHandle;
@@ -146,6 +146,7 @@ void RouteMap::initRoute(Route& route) {
 void RouteMap::acceptRoute(int fd, struct sockaddr_in addr) {
 	Route * path = NULL;
 	unsigned nodeId;
+
 	if((nodeId = recieveGreeting(fd)) == -1) {
 		close(fd);
 		return;

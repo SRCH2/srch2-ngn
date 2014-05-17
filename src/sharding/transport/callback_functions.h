@@ -40,7 +40,7 @@ bool findNextMagicNumberAndReadMessageHeader(Message *const msg,  int fd) {
 
 		if(readRtn < sizeof(Message)) {
 			//v1: broken message boundary == seriously bad
-			continue;
+			return false;
 		}
 
 		//TODO:checkMagicNumbers
