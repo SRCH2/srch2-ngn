@@ -111,6 +111,7 @@ struct Query::Impl
 		buffer = srch2::util::deserializeFixedTypes(buffer, isRangeNotNull);
 
 		if(isTermsNotNull){
+			//TODO : leak
 			terms = new vector<Term *>();
 			unsigned numberOfTerms = 0;
 			buffer = srch2::util::deserializeFixedTypes(buffer, numberOfTerms);

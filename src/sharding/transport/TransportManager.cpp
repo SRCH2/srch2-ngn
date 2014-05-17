@@ -28,16 +28,18 @@ void* startListening(void* arg) {
 	}
 
 	if(bind(fd, (struct sockaddr*) &routeAddress, sizeof(routeAddress)) < 0) {
+      close(fd);
 		perror("listening socket failed to bind");
 		exit(255);
 	}
 
 	if(listen(fd, 20) == -1) {
+      close(fd);
 		perror("listening socket failed start");
 		exit(255);
 	}
 
-        routeMap->setListeningSocket(fd);
+   routeMap->setListeningSocket(fd);
 
 	while(!routeMap->isTotallyConnected()) {
 		struct sockaddr_in addr;
@@ -49,7 +51,7 @@ void* startListening(void* arg) {
 		}
 	}
 
-        return NULL;
+   return NULL;
 }
 
 #include "callback_functions.h"
@@ -74,7 +76,7 @@ TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
 		sleep(3);
 	}
 
-	close(routeMap.getListeningSocket());
+	//close(routeMap.getListeningSocket());
 	Logger::console("Connected");
 
 

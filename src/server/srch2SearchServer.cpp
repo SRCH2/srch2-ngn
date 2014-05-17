@@ -560,8 +560,8 @@ static void killServer(int signal) {
         conn != transportManager->getRouteMap()->end(); ++conn) {
       close(conn->second.fd);
     }
-//    close(transportManager->getRouteMap()->getInternalConnection());
     pthread_cancel(transportManager->getListeningThread());
+    close(transportManager->getRouteMap()->getListeningSocket());
 #ifdef __MACH__
 	/*
 	 *  In MacOS, pthread_cancel could not cancel a thread when the thread is executing kevent syscall

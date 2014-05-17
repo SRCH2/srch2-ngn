@@ -229,13 +229,13 @@ void * ResultsPostProcessingInfo::serializeForNetwork(void * buffer){
 void * ResultsPostProcessingInfo::deserializeForNetwork(ResultsPostProcessingInfo & info, void * buffer){
 
 	bool isFacetInfoNotNull = false;
-	buffer = srch2::util::serializeFixedTypes(isFacetInfoNotNull, buffer);
+	buffer = srch2::util::deserializeFixedTypes(buffer, isFacetInfoNotNull);
 	bool isSortEvaluatorNotNull = false;
-	buffer = srch2::util::serializeFixedTypes(isSortEvaluatorNotNull, buffer);
+	buffer = srch2::util::deserializeFixedTypes(buffer, isSortEvaluatorNotNull);
 	bool isFilterQueryEvaluatorInfoNotNull = false;
-	buffer = srch2::util::serializeFixedTypes(isFilterQueryEvaluatorInfoNotNull, buffer);
+	buffer = srch2::util::deserializeFixedTypes(buffer, isFilterQueryEvaluatorInfoNotNull);
 	bool isPhraseSearchInfoContainerNotNull = false;
-	buffer = srch2::util::serializeFixedTypes(isPhraseSearchInfoContainerNotNull, buffer);
+	buffer = srch2::util::deserializeFixedTypes(buffer, isPhraseSearchInfoContainerNotNull);
 
 	if(isFacetInfoNotNull){
 		info.facetInfo = new FacetQueryContainer();

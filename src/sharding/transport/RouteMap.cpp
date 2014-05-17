@@ -1,4 +1,4 @@
-#include "RouteMap.h"
+include "RouteMap.h"
 #include <netdb.h>
 #include "ConnectionsInlines.h"
 #include <sys/unistd.h>
@@ -183,6 +183,7 @@ void RouteMap::acceptRoute(int fd, struct sockaddr_in addr) {
 
 void RouteMap::addNodeConnection(NodeId addr, int fd) {
 	//look into routeMap thread safety
+	boost::unique_lock< boost::shared_mutex > lock(_access);
 	nodeConnectionMap[addr] = Connection(fd);
 }
 
