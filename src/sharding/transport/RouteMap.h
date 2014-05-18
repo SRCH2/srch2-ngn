@@ -71,7 +71,7 @@ class RouteMap {
 	const Node* currentNode;
 	mutable boost::shared_mutex _access;
 	void addNodeConnection(NodeId, int);
-        int listeningSocket;
+   int listeningSocket;
 public:
 
 	void initRoutes();
@@ -93,8 +93,8 @@ public:
 	typedef std::map<NodeId, Connection>::iterator iterator;
 	iterator begin();
 	iterator end();
-        int getListeningSocket() const;
-        void setListeningSocket(int);
+   int getListeningSocket() const;
+   void setListeningSocket(int);
 
 	friend void* ::tryToConnect(void*);
 };

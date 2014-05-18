@@ -1,4 +1,4 @@
-include "RouteMap.h"
+#include "RouteMap.h"
 #include <netdb.h>
 #include "ConnectionsInlines.h"
 #include <sys/unistd.h>
@@ -34,8 +34,9 @@ int recieveGreeting(int fd) {
 	while(true) {
 		int readSize = read(fd, currentPos, remaining);
 		remaining -= readSize;
-		if(readSize == -1) {
-			if(errno == EAGAIN || errno == EWOULDBLOCK) continue;
+		if(readSize <= 0) {
+			if(readSize == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
+            continue;
 			close(fd);
 			return -1;
 		}

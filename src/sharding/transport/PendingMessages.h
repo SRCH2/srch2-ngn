@@ -5,6 +5,11 @@
 #include "Message.h"
 #include <vector>
 #include "core/util/Assert.h"
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/shared_mutex.hpp>
+#include <boost/thread/locks.hpp>
+
+
 
 namespace srch2 {
 namespace httpwrapper {
@@ -158,7 +163,7 @@ class PendingMessages {
 private:
 	std::vector<PendingRequest> pendingRequests;
 	TransportManager * transportManager;
-   volatile int version;
+	mutable boost::shared_mutex _access;
 
 public:
 	void setTransportManager(TransportManager * transportManager);

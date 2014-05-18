@@ -78,26 +78,35 @@ void PendingMessages::resolve(Message* message) {
 		return;
 	}
 
-	std::vector<PendingRequest>::iterator request =
-			std::find(pendingRequests.begin(),
-					pendingRequests.end(), message->getInitialTime());
-	if(request == pendingRequests.end()){
-		//TODO
-		// what should we if there is no request for this response ? Maybe response is late?
-		transportManager->getMessageAllocator()->deallocateByMessagePointer(message);
-		return;
-	}
+   PendingRequest resolution;
+   {
+	  boost::unique_lock< boost::shared_mutex > lock(_access);
+	  std::vector<PendingRequest>::iterator request =
+        std::find(pendingRequests.begin(),
+              pendingRequests.end(), message->getInitialTime());
+     if(request == pendingRequests.end()){
+        transportManager->getMessageAllocator()->deallocateByMessagePointer(
+              message);
+        return;
+     }
 
-	RegisteredCallback *cb = request->getCallbackAndTypeMask().getRegisteredCallbackPtr();
+     resolution = *request;
+     pendingRequests.erase(request);
+   }
 
-	if(request->getCallbackAndTypeMask().isWaitForAll()) {
+   RegisteredCallback* cb = 
+      resolution.getCallbackAndTypeMask().getRegisteredCallbackPtr();
+
+
+	if(resolution.getCallbackAndTypeMask().isWaitForAll()) {
 		cb->getReplyMessages().push_back(message);
 		int num = __sync_sub_and_fetch(&cb->getWaitingOn(), 1);
 
 
 		if(num == 0) {
 			cb->getCallbackObject()->callbackAll(cb->getReplyMessages());
-			for(std::vector<Message*>::iterator msgItr = cb->getReplyMessages().begin();
+			for(std::vector<Message*>::iterator msgItr = 
+               cb->getReplyMessages().begin();
 					msgItr != cb->getReplyMessages().end(); ++msgItr) {
 				transportManager->getMessageAllocator()->deallocateByMessagePointer(*msgItr);
 			}
@@ -105,7 +114,7 @@ void PendingMessages::resolve(Message* message) {
 		}
 	} else {
 		cb->getCallbackObject()->callback(message);
-		if(__sync_sub_and_fetch(&cb->getWaitingOn(), 1) == 0){
+		if(!__sync_sub_and_fetch(&cb->getWaitingOn(), 1)) {
 			delete cb;
 		}
 		transportManager->getMessageAllocator()->deallocateByMessagePointer(message);
