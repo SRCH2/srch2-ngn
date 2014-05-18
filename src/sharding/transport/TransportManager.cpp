@@ -41,7 +41,16 @@ void* startListening(void* arg) {
 
    routeMap->setListeningSocket(fd);
 
+   fd_set checkConnect;
+   timeval timeout;
 	while(!routeMap->isTotallyConnected()) {
+      //prevent infinite hanging in except so listening socket closes
+      FD_ZERO(&checkConnect);
+      FD_SET(fd, &checkConnect);
+      timeout.tv_sec = 1;
+      timeout.tv_usec = 0;
+      if(select(fd+1, &checkConnect, NULL, NULL, &timeout) !=1) continue;
+
 		struct sockaddr_in addr;
 		socklen_t addrlen = sizeof(sockaddr_in);
 		memset(&addr, 0,sizeof(sockaddr_in));
@@ -51,6 +60,8 @@ void* startListening(void* arg) {
 		}
 	}
 
+   shutdown(fd, SHUT_RDWR);
+   close(fd);
    return NULL;
 }
 

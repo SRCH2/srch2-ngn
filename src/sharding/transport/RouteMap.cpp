@@ -31,7 +31,7 @@ int recieveGreeting(int fd) {
 
 	char *currentPos = greetings;
 	int remaining = sizeof(GREETING_MESSAGE) + sizeof(int);
-	while(true) {
+	while(remaining) {
 		int readSize = read(fd, currentPos, remaining);
 		remaining -= readSize;
 		if(readSize <= 0) {
@@ -40,13 +40,12 @@ int recieveGreeting(int fd) {
 			close(fd);
 			return -1;
 		}
-		if(remaining == 0) {
-			if(!memcmp(greetings, GREETING_MESSAGE, sizeof(GREETING_MESSAGE)))
-				break;
-			close(fd);
-			return -1;
-		}
-		currentPos += readSize;
+     currentPos += readSize;
+   }
+   if(memcmp(greetings, GREETING_MESSAGE, sizeof(GREETING_MESSAGE))) {
+      //incorrect greeting
+      close(fd);
+      return -1;
 	}
 	return *((int*)(greetings + sizeof(GREETING_MESSAGE)));
 }
@@ -102,7 +101,8 @@ void* tryToConnect(void *arg) {
 
 		if(connect(fd, (struct sockaddr*) &routeMapAndRouteHandle->route->first.first,
 				sizeof(routeMapAndRouteHandle->route->first.first)) == -1) {
-			close(fd);
+         if(errno != ECONNREFUSED) 
+            close(fd);
 			continue;
 		}
 
