@@ -173,13 +173,19 @@ private:
 class PhysicalPlanRecordItemPool{
 public:
 	PhysicalPlanRecordItemPool(){
+		/* This code is disabled for now to check the memory effect of record pools
 		size = 0;
+		*/
 	}
 	// returns the number of objects created in this pool so far
 	unsigned getNumberOfObjects(){
+		/* This code is disabled for now to check the memory effect of record pools
 		return extraObjects.size();
+		*/
+		return recordItemObjects.size();
 	}
 	PhysicalPlanRecordItem * createRecordItem(){
+		/* This code is disabled for now to check the memory effect of record pools
 		if(size >= INITIAL_NUMBER_OF_RECORD_ITEMS_IN_A_GROUP){
 			if(size - INITIAL_NUMBER_OF_RECORD_ITEMS_IN_A_GROUP >= extraObjects.size()){
 				PhysicalPlanRecordItem  * newObj = new PhysicalPlanRecordItem();
@@ -198,6 +204,10 @@ public:
 			size ++;
 			return toReturn;
 		}
+		*/
+		PhysicalPlanRecordItem * newTuple = new PhysicalPlanRecordItem();
+		recordItemObjects.push_back(newTuple);
+		return newTuple;
 	}
 	// if we get a pointer from this function, we are responsible of
 	// deallocating it
@@ -250,6 +260,7 @@ public:
 	}
 
 	void clear(){
+		/* This code is disabled for now to check the memory effect of record pools
 		vector<PhysicalPlanRecordItem *> emptyVector;
 		if(extraObjects.size() > 0){
 			for(unsigned i =0 ; i< extraObjects.size() ; ++i){
@@ -264,6 +275,8 @@ public:
 			// vector. empty vector will free the memory when it goes out of scope.
 			extraObjects.swap(emptyVector);
 		}
+		*/
+		refresh();
 	}
 
 	/*
@@ -272,17 +285,28 @@ public:
 	 * zero.
 	 */
 	void refresh(){
+		/* This code is disabled for now to check the memory effect of record pools
 		size = 0;
+		*/
+		for(int r = 0 ; r < recordItemObjects.size() ; ++r){
+			delete recordItemObjects.at(r);
+		}
+		recordItemObjects.clear();
 	}
 private:
+
 	/*
 	 * Each pool has 10000 tuples created in the beginning. If a reader
 	 * keeps asking for more tuples (more than INITIAL_NUMBER_OF_RECORD_ITEMS_IN_A_GROUP),
 	 * we start allocating new tuples and save them in extraObjects vector.
 	 */
+	/* This code is disabled for now to check the memory effect of record pools
 	PhysicalPlanRecordItem objects[INITIAL_NUMBER_OF_RECORD_ITEMS_IN_A_GROUP];
 	vector<PhysicalPlanRecordItem *> extraObjects;
 	unsigned size;
+	*/
+
+	vector<PhysicalPlanRecordItem *> recordItemObjects;
 };
 
 class PhysicalPlanRecordItemFactory{
