@@ -117,30 +117,18 @@ def testInsertAndQuery(queriesAndResultsPath, binary_path):
             #construct the query
             query='http://localhost:' + nodes[nodeId[0]].portNo + '/search?'
             query = query + prepareQuery(queryValue) 
-            print "query is " + query
             qq = 'curl "'+ query +'"'
-            print "qq is " + qq 
             status, output = commands.getstatusoutput(qq)
-            print output
-            #do the query
-            #response = urllib2.urlopen(query).read()
-            #response_json = json.loads(response)
-            #output_json = json.loads(output)
-            #check the result
-            #failCount += checkResult(query, response_json['results'], resultValue )
-            #failCount += checkResult(query, output_json['results'], resultValue )
             flag1 = str(output).find(resultValue[0]);
             flag2 = str(output).find(numberOfResultsFound[0]);
             assert flag1 > -1, "querying failed - inconsistent output" 
             assert flag2 > -1, "Wrong number of results returned"
-            print '=============================='
 
         if(operation[0] == 'insert'):
             insertValue=value[2]
             expectedValue=value[3].split()
             #test , insert a record
             command = 'curl "http://localhost:' + nodes[nodeId[0]].portNo + '/docs" -i -X PUT -d ' + '\''+insertValue+'\'';
-            print command
             status, output = commands.getstatusoutput(command)
             flag = str(output).find(expectedValue[0]);
             assert flag > -1, 'Error, rid <no.> is not updated correctly!'
@@ -152,6 +140,15 @@ def testInsertAndQuery(queriesAndResultsPath, binary_path):
             status, output = commands.getstatusoutput(commandDelete)
             flag = str(output).find(expectedValue[0]);
             assert flag > -1, 'Error file could not be deleted'
+     
+        if(operation[0] == 'update'):
+            inputValue=value[2]
+            expectedValue=value[3]
+            command = 'curl "http://localhost:' + nodes[nodeId[0]].portNo + '/update" -i -X PUT -d ' + '\'' + inputValue + '\'';
+            status, output = commands.getstatusoutput(command)
+            flag = str(output).find(expectedValue[0]);
+            assert flag > -1, 'Error, record could not be updated'
+ 
     return failCount
 
 if __name__ == '__main__':
@@ -161,7 +158,6 @@ if __name__ == '__main__':
     binary_path = sys.argv[1]
     queriesAndResultsPath = sys.argv[2]
     os.popen('rm -rf ./test-data/core1/*.idx')
-    time.sleep(40)
     startEngines()
     try:
         exitCode=testInsertAndQuery(queriesAndResultsPath, binary_path)
