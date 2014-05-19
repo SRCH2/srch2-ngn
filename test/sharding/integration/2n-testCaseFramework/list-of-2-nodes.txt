@@ -1,0 +1,2 @@
+A||4090||./2n-testCaseFramework/confA.xml
+B||4091||./2n-testCaseFramework/confB.xml

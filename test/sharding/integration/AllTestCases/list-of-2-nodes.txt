@@ -1,2 +1,0 @@
-A||4090||./AllTestCases/configurationA.xml
-B||4091||./AllTestCases/configurationB.xml

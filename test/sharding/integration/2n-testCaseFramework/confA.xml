@@ -22,38 +22,31 @@
             "/usr/share/srch2/data/sample-data.json"
             In this config file it should be as "data/sample-data.json"
     -->
-    <srch2Home>./test-data</srch2Home>
     <cluster-name>SRCH2 Cluster</cluster-name>
-    <!--<srch2Home>/home/jamshid/workspace-srch2-v4/srch2-ngn/test/sharding/integration</srch2Home>-->
+
+    <srch2Home>./test-data</srch2Home>
  
     <discovery>
         <ping-interval>2</ping-interval>
         <ping-timeout>8</ping-timeout>
         <retry-count>10</retry-count>
     </discovery>    
+    
     <node>
-        <this-is-me> true </this-is-me>
         <listeningHostname> 127.0.0.1 </listeningHostname>
-        <node-name> frozen </node-name>
         <internalCommunicationPort> 3095 </internalCommunicationPort>
+        <this-is-me> true </this-is-me>
+        <node-name> queen </node-name>
         <node-master> true </node-master>
         <node-data> true </node-data>
         <srch2Home> ./ </srch2Home>
-        <searchPort>5091</searchPort>
-        <savePort>5092</savePort>
-        <exportPort>5093</exportPort>
-        <resetLoggerPort>5094</resetLoggerPort>
-        <docsPort>5095</docsPort>
-        <updatePort>5096</updatePort>
-        <suggestPort>5097</suggestPort>
-        <infoPort>5098</infoPort>
-        <dataDir> core1 </dataDir>
-    </node>
+        <dataDir> ./data/2n-insertA-queryB/queen </dataDir>
+   </node> 
     <node>
-        <listeningHostname> 127.0.0.1 </listeningHostname>
-        <internalCommunicationPort> 3096 </internalCommunicationPort>
         <this-is-me> false </this-is-me>
-        <node-name> queen </node-name>
+        <listeningHostname> 127.0.0.1 </listeningHostname>
+        <node-name> frozen </node-name>
+        <internalCommunicationPort> 3096 </internalCommunicationPort>
     </node>
     <!--
         License Key File
@@ -75,9 +68,10 @@
     	
         <cores defaultCoreName="core1">
         <core name="core1">
-        <core-number_of_shards>2</core-number_of_shards> 
-	<core-number_of_replicas>1</core-number_of_replicas>
         <coreId>1</coreId>
+        <core-number_of_shards>4</core-number_of_shards> 
+	<core-number_of_replicas>1</core-number_of_replicas>
+
     <!--
         Index Directoy Path
         Required
@@ -85,7 +79,7 @@
         The file path to the folder where we store serialized index files.
         REQUIRED, when "index-load-or-create" is set to 1.
     -->
-    <dataDir>core1</dataDir>
+    <dataDir>./indexes/</dataDir>
      
     <!--
         Data File
@@ -94,7 +88,7 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>empty-data.json</dataFile>
+    <dataFile>./empty-data.json</dataFile>
      
     <!--
 	Maximum Number of Threads
