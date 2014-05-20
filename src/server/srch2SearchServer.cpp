@@ -32,6 +32,7 @@
 #include "util/Logger.h"
 #include "util/Version.h"
 #include <event2/http.h>
+#include <event2/thread.h>
 #include <signal.h>
 
 #include <sys/types.h>
@@ -634,6 +635,7 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
     Logger::console("Starting Srch2 server with %d serving threads at %s:%d",
             MAX_THREADS, globalHostName, globalDefaultPort);
 
+    evthread_use_pthreads();
     // Step 2: Serving server
     threads = new pthread_t[MAX_THREADS];
     for (int i = 0; i < MAX_THREADS; i++) {
