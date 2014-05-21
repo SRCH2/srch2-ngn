@@ -26,6 +26,8 @@ void* startListening(void* arg) {
 		perror("listening socket failed to init");
 		exit(255);
 	}
+   const int optVal = 1;
+   setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (void*) &optVal, sizeof(optVal));
 
 	if(bind(fd, (struct sockaddr*) &routeAddress, sizeof(routeAddress)) < 0) {
       close(fd);
@@ -215,7 +217,10 @@ CallBackHandler* TransportManager::getSmHandler() {
 }
 
 
-//TODO:: TransportManager::~TransportManager() {
-//bind threads
-//close ports
-//}
+TransportManager::~TransportManager() {
+//TODO:bind threads
+   for(RouteMap::iterator i = routeMap.begin(); i != routeMap.end(); ++i) {
+      close(i->second.fd);
+   }
+   close(routeMap.getListeningSocket());
+}

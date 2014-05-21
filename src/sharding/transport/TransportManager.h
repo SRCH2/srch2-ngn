@@ -42,7 +42,7 @@ public:
 	PendingMessages * getMsgs();
 	RouteMap * getRouteMap();
 	CallBackHandler* getSmHandler();
-
+   ~TransportManager();
 
 private:
 	/*

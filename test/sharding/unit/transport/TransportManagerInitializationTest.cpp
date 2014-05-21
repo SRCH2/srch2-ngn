@@ -17,6 +17,11 @@ int main() {
       Node(std::string("apple"), std::string("127.0.0.1"), 9552, false));
   nodes->push_back(
       Node(std::string("apple"), std::string("127.0.0.1"), 9551, false));
+  nodes->push_back(
+      Node(std::string("apple"), std::string("127.0.0.1"), 9523, false));
+  nodes->push_back(
+      Node(std::string("apple"), std::string("127.0.0.1"), 9512, false));
+
 
   int i=0;
   for(std::vector<Node>::iterator node = nodes->begin(); 
@@ -47,5 +52,7 @@ int main() {
 
   while( !tm->getRouteMap()->isTotallyConnected())
     sleep(2);
+
+  delete tm;
 }
 

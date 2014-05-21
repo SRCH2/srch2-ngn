@@ -87,36 +87,50 @@ bool sendGreeting(int fd, bool greeted, unsigned nodeId) {
 	}
 }
 
+bool RouteMap::checkInMap(NodeId nodeId) {
+	boost::unique_lock< boost::shared_mutex > lock(_access);
+   
+   return nodeConnectionMap.count(nodeId);
+}
+
 /*
  * This function uses the routeMap to connect to other nodes in the cluster
  */
 void* tryToConnect(void *arg) {
-	RouteMapAndRouteHandle *routeMapAndRouteHandle = (RouteMapAndRouteHandle*) arg;
+	RouteMapAndRouteHandle *routeMapAndRouteHandle = 
+      (RouteMapAndRouteHandle*) arg;
 
-	while(!routeMapAndRouteHandle->routeMap->nodeConnectionMap.count(routeMapAndRouteHandle->route->first.second)) {
+   
+	while(!routeMapAndRouteHandle->routeMap
+               ->checkInMap(routeMapAndRouteHandle->route->first.second)) {
 		sleep(random() % 2 + 1);
 
 		int fd = socket(AF_INET, SOCK_STREAM, 0);
 		if(fd < 0) continue;
 
-		if(connect(fd, (struct sockaddr*) &routeMapAndRouteHandle->route->first.first,
-				sizeof(routeMapAndRouteHandle->route->first.first)) == -1) {
+		if(connect(fd, (struct sockaddr*) 
+                     &routeMapAndRouteHandle->route->first.first,
+                 sizeof(routeMapAndRouteHandle->route->first.first)) == -1) {
          if(errno != ECONNREFUSED) 
             close(fd);
 			continue;
 		}
 
-		while(!routeMapAndRouteHandle->routeMap->nodeConnectionMap.count(routeMapAndRouteHandle->route->first.second)) {
-			if(!__sync_bool_compare_and_swap(&routeMapAndRouteHandle->route->second, false,true)) {
+		while(!routeMapAndRouteHandle->routeMap
+                 ->checkInMap(routeMapAndRouteHandle->route->first.second)) {
+			if(!__sync_bool_compare_and_swap(&routeMapAndRouteHandle
+                                               ->route->second, false,true)) {
 				continue;
 			}
 			break;
 		}
 
-		if(routeMapAndRouteHandle->routeMap->nodeConnectionMap.count(routeMapAndRouteHandle->route->first.second)) break;
+		if(routeMapAndRouteHandle->routeMap->
+               checkInMap(routeMapAndRouteHandle->route->first.second)) break;
 
-		if(!sendGreeting(fd, true, routeMapAndRouteHandle->routeMap->getCurrentNode().getId()) ||
-				recieveGreeting(fd) == -1) {
+		if(!sendGreeting(fd, true, routeMapAndRouteHandle->
+                                       routeMap->getCurrentNode().getId()) 
+			||	recieveGreeting(fd) == -1) {
 			routeMapAndRouteHandle->route->second = false;
 			continue;
 		}

@@ -31,7 +31,6 @@ public:
 };
 typedef std::pair<sockaddr_in, NodeId> ConnectionInfo;
 typedef std::pair<ConnectionInfo, bool> Route;
-//typedef ConnectionBuffers std::map<int, Message* msg, Buffer>
 
 using srch2::httpwrapper::Node;
 
@@ -88,6 +87,7 @@ public:
 	void setCurrentNode(Node&);
 	const Node& getCurrentNode() const;
 	Connection getConnection(NodeId);
+   bool checkInMap(NodeId);
 
 
 	typedef std::map<NodeId, Connection>::iterator iterator;
