@@ -2,14 +2,15 @@
 #include<map>
 #include<sys/socket.h>
 #include<sys/types.h>
+#include <core/util/Assert.h>
 
 
 using namespace srch2::instantsearch;
 using namespace srch2::httpwrapper;
 
 void* startListening(void* arg) {
-	RouteMap *const map = (RouteMap*) arg;
-	const Node& currentNode =  map->getCurrentNode();
+	RouteMap *const routeMap = (RouteMap*) arg;
+	const Node& currentNode =  routeMap->getCurrentNode();
 
 	hostent *routeHost = gethostbyname(currentNode.getIpAddress().c_str());
 	//  if(routeHost == -1) throw std::exception
@@ -36,23 +37,27 @@ void* startListening(void* arg) {
 		exit(255);
 	}
 
-	while(!map->isTotallyConnected()) {
+        routeMap->setListeningSocket(fd);
+
+	while(!routeMap->isTotallyConnected()) {
 		struct sockaddr_in addr;
 		socklen_t addrlen = sizeof(sockaddr_in);
 		memset(&addr, 0,sizeof(sockaddr_in));
 		int newfd;
 		if((newfd = accept(fd, (sockaddr*) &addr, &addrlen)) != -1) {
-			map->acceptRoute(newfd, *((sockaddr_in*) &addr));
+			routeMap->acceptRoute(newfd, *((sockaddr_in*) &addr));
 		}
 	}
 
   close(fd);
   Logger::console("Connected");
+  return NULL;
 }
 
 #include "callback_functions.h"
 
 TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
+	pendingMessages.setTransportManager(this);
 	// for each node we have, if it's us just store out event base
 	// otherwise it stores the node as a destination
 	for(Nodes::iterator dest = nodes.begin(); dest!= nodes.end(); ++dest) {
@@ -68,22 +73,41 @@ TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
 	routeMap.initRoutes();
 
 	while(!routeMap.isTotallyConnected()) {
+		Logger::console("V0: waiting for other nodes!!");
 		sleep(10);
 	}
+	Logger::console("V0: all the nodes are connected!!");
+
+
+	close(routeMap.getListeningSocket());
+	Logger::console("Connected");
+
 
 	// RouteMap iterates over routes. Routes are std::map<NodeId, Connection>
 	// which is basically NodeId to file descriptor
 	// We bound the route file descriptors (connection to other nodes) to event bases
 	// that are bound to cb_recieveMessage. This way cb_recieveMessage receives all internal messages
-	for(RouteMap::iterator route = routeMap.begin(); route != routeMap.end(); ++route) {
-		for(EventBases::iterator base = bases.begin(); base != bases.end(); ++base) {
-			struct event* ev = event_new(*base, route->second.fd,
-					EV_READ|EV_PERSIST, cb_recieveMessage, new TransportCallback(this, &route->second));
-			event_add(ev, NULL);
-		}
-	}
+//	for(RouteMap::iterator route = routeMap.begin(); route != routeMap.end(); ++route) {
+//		for(EventBases::iterator base = bases.begin(); base != bases.end(); ++base) {
+//			struct event* ev = event_new(*base, route->second.fd,
+//					EV_READ|EV_PERSIST, cb_recieveMessage, new TransportCallback(this, &route->second));
+//			event_add(ev, NULL);
+//		}
+//	}
+	  for(RouteMap::iterator route = routeMap.begin(); route != routeMap.end();
+	      ++route) {
+	    for(EventBases::iterator base = bases.begin();
+	        base != bases.end(); ++base) {
+
+	      struct bufferevent * bev = bufferevent_socket_new(*base, route->second.fd, BEV_OPT_CLOSE_ON_FREE);
+	      bufferevent_setcb(bev, cb_recieveMessage1 , NULL, NULL, this);
+	      bufferevent_enable(bev, EV_READ|EV_WRITE);
+	      bufferevent_setwatermark(bev,  EV_READ, sizeof(Message), 0);
+	    }
+	  }
 
 	distributedTime = 0;
+	synchManagerHandler = NULL;
 }
 
 
@@ -91,13 +115,16 @@ TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
 
 MessageTime_t TransportManager::route(NodeId node, Message *msg, 
 		unsigned timeout, CallbackReference callback) {
-	msg->time = __sync_fetch_and_add(&distributedTime, 1);
+	msg->setTime( __sync_fetch_and_add(&distributedTime, 1));
 
-	time_t timeOfTimeout_time = timeout + time(NULL);
-	pendingMessages.addMessage(timeout, msg->time, callback);
+	if (timeout) {
+		time_t timeOfTimeout_time = timeout + time(NULL);
+		pendingMessages.addMessage(timeout, msg->time, callback);
+	}
 
 #ifdef USE_SAME_THREAD_FOR_CURRENT_NODE_PROCESS
   if(node == routeMap.getCurrentNode().getId()) {
+	  Logger::console("<< ROUTING TO SAME NODE <<");
     MessageTime_t rtn = msg->time;
     if(msg->isInternal()) {
 		  if(Message* reply = getInternalTrampoline()->notify(msg)) {
@@ -107,10 +134,12 @@ MessageTime_t TransportManager::route(NodeId node, Message *msg,
         getMessageAllocator()->deallocate(reply);
       }
     } else {
-      getSmHandler()->notify(msg);
+    	if (synchManagerHandler)
+    		getSmHandler()->notify(msg);
     }
    return rtn;
   }
+
 #endif
 
   Connection conn = routeMap.getConnection(node);
@@ -121,14 +150,20 @@ MessageTime_t TransportManager::route(NodeId node, Message *msg,
 	int flag = MSG_NOSIGNAL;
 #endif
 
-	send(conn.fd, msg, msg->bodySize + sizeof(Message), flag);
+	send(conn.fd, msg, msg->getBodySize() + sizeof(Message), flag);
 	//TODO: errors?
 
-	return msg->time;
+	/*
+	 * If we don't wait for reply we should delete the msg here
+	 */
+	if(msg->isNoReply()){
+		getMessageAllocator()->deallocateByMessagePointer(msg);
+	}
+	return msg->getTime();
 }
 
 MessageTime_t TransportManager::route(int fd, Message *msg) {
-	msg->time = __sync_fetch_and_add(&distributedTime, 1);
+	msg->setTime( __sync_fetch_and_add(&distributedTime, 1));
 
 #ifdef __MACH__
 	int flag = SO_NOSIGPIPE;
@@ -136,10 +171,10 @@ MessageTime_t TransportManager::route(int fd, Message *msg) {
 	int flag = MSG_NOSIGNAL;
 #endif
 
-	send(fd, msg, msg->bodySize + sizeof(Message), flag);
+	send(fd, msg, msg->getBodySize() + sizeof(Message), flag);
 	//TODO: errors?
 
-	return msg->time;
+	return msg->getTime();
 }
 
 MessageTime_t& TransportManager::getDistributedTime() {
@@ -172,6 +207,6 @@ CallBackHandler* TransportManager::getSmHandler() {
 
 
 //TODO:: TransportManager::~TransportManager() {
-  //bind threads
-  //close ports
+//bind threads
+//close ports
 //}

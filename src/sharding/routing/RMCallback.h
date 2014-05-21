@@ -1,7 +1,8 @@
-#ifndef __RM_CALLBACKS_H__
-#define __RM_CALLBACKS_H__
+#ifndef __SHARDING_RM_CALLBACKS_H__
+#define __SHARDING_RM_CALLBACKS_H__
 
-#include "transport/PendingMessages.h"
+#include "sharding/transport/PendingMessages.h"
+#include "sharding/routing/RoutingUtil.h"
 
 namespace srch2 {
 namespace httpwrapper {
@@ -13,8 +14,6 @@ namespace httpwrapper {
 template <typename RequestType, typename ResponseType>
 class RMCallback : public Callback {
 public:
-	ResultAggregatorAndPrint<RequestType, ResponseType>& aggregrate;
-
 	RMCallback(ResultAggregatorAndPrint<RequestType, ResponseType>&);
 
 	/*
@@ -37,80 +36,95 @@ public:
 	 */
 	void callbackAll(std::vector<Message*>&);
 
-	/*
-	 * Corresponding to ResultAggregatorAndPrint::finalize(ResultsAggregatorAndPrintMetadata metadata)
-	 */
-	void finalize();
-
 	virtual ~RMCallback(){
-		finalize();
+		// Finalize must call finalize of aggregator and
+		// delete the response objects after
+		aggregrate.finalize(meta);
+
 	};
 
 private:
-	std::vector<const ResponseType*> responsesToBeDeletedAfterFinalize;
-  ResultsAggregatorAndPrintMetadata meta;
+	ResultAggregatorAndPrint<RequestType, ResponseType>& aggregrate;
+	ResultsAggregatorAndPrintMetadata meta;
+	bool hasCalledPreProcess;
 };
 
 
 template <typename RequestType, typename ResponseType> inline
 RMCallback<RequestType, ResponseType>::RMCallback(
 		ResultAggregatorAndPrint<RequestType, ResponseType>& a) : aggregrate(a) {
-	//TODO decide on the place to call prePocessing
-	preProcessing();
+	hasCalledPreProcess = false;
 }
 
 template <typename RequestType, typename ResponseType> inline
 void RMCallback<RequestType, ResponseType>::preProcessing() {
-  aggregrate.preProcessing(meta);
+	aggregrate.preProcessing(meta);
 }
 
 template <typename RequestType, typename ResponseType> inline
 void RMCallback<RequestType, ResponseType>::timeout(void*) {
+	if(hasCalledPreProcess == false){
+		preProcessing();
+		hasCalledPreProcess = true;
+	}
 	//TODO : timeout is not implemented yet.
 }
 
 
 template <typename RequestType, typename ResponseType> inline
-void RMCallback<RequestType, ResponseType>::callback(Message* msg) {
+void RMCallback<RequestType, ResponseType>::callback(Message* responseMessage) {
+	if(hasCalledPreProcess == false){
+		preProcessing();
+		hasCalledPreProcess = true;
+	}
 	// deserialize the message into the response type
 	// example : msg deserializes into SerializableSearchResults
-	const ResponseType& response = ResponseType::deserialize(msg->buffer);
+	ResponseType * responseObject = NULL;
+	if(responseMessage->isLocal() == true){ // for local response we should just get the pointer
+		responseObject = decodeInternalMessage<ResponseType>(responseMessage);
+	}else{ // for non-local response we should deserialize the message
+		responseObject = decodeExternalMessage<ResponseType>(responseMessage);
+	}
 
 	// use aggregator callback and pass the deserialized msg
-	aggregrate.callBack(&response);
+	aggregrate.addResponseObject(responseObject);
+	aggregrate.callBack(responseObject);
 
-	// store the pointer to this response for deallocation in destructor
-	responsesToBeDeletedAfterFinalize.push_back(&response);
 }
 
 template <typename RequestType, typename ResponseType> inline
-void RMCallback<RequestType, ResponseType>::callbackAll(std::vector<Message*>& msgs) {
+void RMCallback<RequestType, ResponseType>::callbackAll(std::vector<Message*>& responseMessages) {
 
-	typedef std::vector<Message*> Messages;
-	typedef std::vector<const ResponseType*> Responses;
+	/*
+	 * This function is entered always by only one thread.
+	 */
 
+
+	if(hasCalledPreProcess == false){
+		preProcessing();
+		hasCalledPreProcess = true;
+	}
+
+	std::vector<ResponseType*> responseObjects;
 	// deserialize all messages into response objects
-	for(Messages::iterator msg = msgs.begin(); msg != msgs.end(); ++msg) {
-		responsesToBeDeletedAfterFinalize.push_back(&ResponseType::deserialize((*msg)->buffer));
+	for(std::vector<Message*>::iterator msgItr = responseMessages.begin(); msgItr != responseMessages.end(); ++msgItr) {
+		// deserialize the message into the response type
+		// example : msg deserializes into SerializableSearchResults
+		ResponseType * responseObject = NULL;
+		if((*msgItr)->isLocal() == true){ // for local response we should just get the pointer
+			responseObject = decodeInternalMessage<ResponseType>(*msgItr);
+		}else{ // for non-local response we should deserialize the message
+			responseObject = decodeExternalMessage<ResponseType>(*msgItr);
+		}
+		responseObjects.push_back(responseObject);
 	}
 
 	// call aggregator callback
-	aggregrate.callBack(responsesToBeDeletedAfterFinalize);
+	aggregrate.addResponseObjects(responseObjects);
+	aggregrate.callBack(responseObjects);
 }
 
 
-template <typename RequestType, typename ResponseType> inline
-void RMCallback<RequestType, ResponseType>::finalize() {
-
-	typedef std::vector<const ResponseType*> Responses;
-	// Finalize must call finalize of aggregator and 
-  // delete the response objects after
-    aggregrate.finalize(meta);
-	for(typename Responses::iterator response = responsesToBeDeletedAfterFinalize.begin();
-			response != responsesToBeDeletedAfterFinalize.end(); ++response) {
-		delete *response;
-	}
-}
 
 }}
-#endif /* __RM_CALLBACKS_H__ */
+#endif /* __SHARDING_RM_CALLBACKS_H__ */

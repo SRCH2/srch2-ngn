@@ -37,7 +37,7 @@ public:
     	numberOfBytes += sizeof(unsigned) + versionInfo.size();
 
     	// allocate space
-    	void * buffer = aloc->allocate(numberOfBytes);
+    	void * buffer = aloc->allocateMessageReturnBody(numberOfBytes);
 		void * bufferWritePointer = buffer;
     	// copy data
     	bufferWritePointer = srch2::util::serializeFixedTypes(readCount, bufferWritePointer);
@@ -51,7 +51,7 @@ public:
     }
 
     //given a byte stream recreate the original object
-    static const SerializableGetInfoResults& deserialize(void* buffer){
+    static SerializableGetInfoResults * deserialize(void* buffer){
     	unsigned readCount;
     	unsigned writeCount;
     	unsigned numberOfDocumentsInIndex;
@@ -66,7 +66,7 @@ public:
     	buffer = srch2::util::deserializeString(buffer, lastMergeTimeString);
     	buffer = srch2::util::deserializeString(buffer, versionInfo);
     	// create object and return it
-    	return *(new SerializableGetInfoResults(readCount, writeCount, numberOfDocumentsInIndex, lastMergeTimeString, docCount, versionInfo));
+    	return new SerializableGetInfoResults(readCount, writeCount, numberOfDocumentsInIndex, lastMergeTimeString, docCount, versionInfo);
     }
 
     //Returns the type of message which uses this kind of object as transport

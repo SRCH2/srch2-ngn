@@ -187,7 +187,7 @@ public:
     }
     
     inline void getIndexHealthThoughArguments(unsigned & readCount, unsigned & writeCount, unsigned & numberOfIndexedDocuments
-    		, std::string lastMergeTimeString, unsigned docCount) const
+    		, std::string & lastMergeTimeString, unsigned & docCount) const
     {
     	readCount = this->index->_getReadCount();
     	writeCount = this->index->_getWriteCount();

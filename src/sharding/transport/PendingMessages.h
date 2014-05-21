@@ -4,10 +4,12 @@
 #include "configuration/ShardingConstants.h"
 #include "Message.h"
 #include <vector>
+#include "core/util/Assert.h"
 
 namespace srch2 {
 namespace httpwrapper {
 
+class TransportManager;
 /*
  * This struct is for abstracting timeout and callback behaviour
  * currently used for TM
@@ -35,8 +37,20 @@ public:
 
 	Callback* getCallbackObject() const;
 	void* getOriginalSerializableObject() const ;
-	std::vector<Message*>& getReply();
+	std::vector<Message*>& getReplyMessages();
+	std::vector<Message*>& getRequestMessages();
 	int& getWaitingOn();
+	~RegisteredCallback(){
+		delete callbackObject;
+		// delete request messages
+		// reply messages are deleted outside in PendingMessages::resolve(Message)
+		for(std::vector<Message*>::iterator msgItr = requestMessages.begin(); msgItr != requestMessages.end(); ++msgItr){
+			ASSERT(*msgItr != NULL);
+			if(*msgItr != NULL){
+				delete *msgItr;
+			}
+		}
+	}
 
 private:
 
@@ -48,29 +62,30 @@ private:
 	int waitingOn;
 	// those replies that we received already
 	// reply.size() + waitingOn should always be equal to the size of broadcast
-	std::vector<Message*> reply;
+	std::vector<Message*> requestMessages;
+	std::vector<Message*> replyMessages;
 };
 
 
 class CallbackReference {
 public:
-  CallbackReference() : type(NULLType), waitForAll(0), broadcastFlag(0),
-   extra1(0),extra2(0), ptr(0) {}
+	CallbackReference() : type(NULLType), waitForAll(0), broadcastFlag(0),
+	extra1(0),extra2(0), ptr(0) {}
 	CallbackReference(ShardingMessageType type, 
-      bool waitForAll , bool broadcastFlag, RegisteredCallback* const ptr) :
-    type(type),waitForAll(waitForAll),broadcastFlag(broadcastFlag),ptr(ptr) {}
-  CallbackReference(const CallbackReference& cpy) :
-    type(cpy.type),waitForAll(cpy.waitForAll),broadcastFlag(cpy.broadcastFlag),
-    ptr(cpy.ptr) {}
-  CallbackReference& operator=(const CallbackReference& cpy) {
-    new (this) CallbackReference(cpy);
-    return *this;
-  }
+			bool waitForAll , bool broadcastFlag, RegisteredCallback* ptr) :
+				type(type),waitForAll(waitForAll),broadcastFlag(broadcastFlag),ptr(ptr) {}
+	CallbackReference(const CallbackReference& cpy) :
+		type(cpy.type),waitForAll(cpy.waitForAll),broadcastFlag(cpy.broadcastFlag),
+		ptr(cpy.ptr) {}
+	CallbackReference& operator=(const CallbackReference& cpy) {
+		new (this) CallbackReference(cpy);
+		return *this;
+	}
 
 	bool isExtra1() const;
 	bool isExtra2() const;
 	bool isBroadcast() const;
-	RegisteredCallback* getPtr() const;
+	RegisteredCallback* getRegisteredCallbackPtr() const;
 	ShardingMessageType getType() const;
 	bool isWaitForAll() const;
 
@@ -84,8 +99,7 @@ private:
 	bool extra1 : 1;
 	bool extra2 : 1;
 	RegisteredCallback* const ptr;
-}
-;
+};
 
 /*
  * PendingRequest object is made for each message that we are waiting for its response
@@ -98,10 +112,14 @@ public:
 	bool operator==(const MessageTime_t msgId) {return this->msg_id == msgId;}
 	PendingRequest(time_t timeout, MessageTime_t msg_id, CallbackReference cb) :
 		timeout(timeout), msg_id(msg_id), callbackAndTypeMask(cb) {};
+   PendingRequest() : timeout(0), msg_id(0), 
+   callbackAndTypeMask(CallbackReference()) {}
 
 	CallbackReference getCallbackAndTypeMask() const ;
 	MessageTime_t getMsgId() const ;
 	time_t getTimeout() const ;
+   bool triggered();
+
 private:
 	/*
 	 * The physical clock time in seconds at which this request times out
@@ -120,6 +138,7 @@ private:
 };
 
 
+typedef std::vector<PendingRequest>& PendingRequests;
 /*
  * This class stores all pending messages and one object of it is
  * kept in TM
@@ -138,14 +157,26 @@ class PendingMessages {
 
 private:
 	std::vector<PendingRequest> pendingRequests;
+	TransportManager * transportManager;
+   volatile int version;
 
 public:
+	void setTransportManager(TransportManager * transportManager);
 	void addMessage(time_t, MessageTime_t, CallbackReference);
 	//void trigger_timeouts(time_t);
 	void resolve(Message*);
-	CallbackReference registerCallback(void*, Callback*,
+	CallbackReference prepareCallback(void*, Callback*,
 			ShardingMessageType,bool = false,int = 1);
 };
+
+inline bool PendingRequest::triggered() {
+   if(time_t to = timeout) {
+      //find out if cb has been triggered before by this request
+      if(to == -1 || 
+            !__sync_bool_compare_and_swap(&to, to, (time_t) -1)) return true;
+   }
+   return false;
+}
 
 }}
 

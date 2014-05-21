@@ -72,7 +72,7 @@ public:
 	 *  Transmits a given message to all shards. The broadcast will not wait for
 	 *  confirmation from each receiving shard.
 	 */
-	template<typename RequestType> void broadcast(RequestType &,
+	template<typename RequestType> void broadcast(RequestType *,
 			CoreShardInfo &);
 
 
@@ -81,7 +81,7 @@ public:
 	 *  confirmation from each shard is received. Returns false iff any
 	 *  receiving shard confirms with MESSAGE_FAILED message.
 	 */
-	template<typename RequestType> bool broadcast_wait_for_all_confirmation(RequestType & requestObject,
+	template<typename RequestType> bool broadcast_wait_for_all_confirmation(RequestType * requestObject,
 			bool& timedout, timeval timeoutValue , CoreShardInfo & coreInfo);
 
 	/*
@@ -90,7 +90,7 @@ public:
 	 *  The callback will be called for each shard.
 	 */
 	template<typename RequestType , typename ReseponseType>
-	void broadcast_w_cb(RequestType& requestObj, ResultAggregatorAndPrint<RequestType , ReseponseType> * aggregator, CoreShardInfo & coreInfo);
+	void broadcast_w_cb(RequestType * requestObj, ResultAggregatorAndPrint<RequestType , ReseponseType> * aggregator, CoreShardInfo & coreInfo);
 
 	/*
 	 *  Transmits a given message to all shards. The return messages for each
@@ -98,7 +98,7 @@ public:
 	 *  callback is triggers with an array of message results from each shard.
 	 */
 	template<typename RequestType , typename ReseponseType>
-	void broadcast_wait_for_all_w_cb(RequestType & requestObj,
+	void broadcast_wait_for_all_w_cb(RequestType * requestObj,
 			ResultAggregatorAndPrint<RequestType , ReseponseType> * aggregator, CoreShardInfo & coreInfo);
 
 
@@ -110,24 +110,24 @@ public:
 	 *           from shard ***
 	 */
 	template<typename RequestType , typename ReseponseType>
-	void broadcast_w_cb_n_timeout(RequestType& requestObj,ResultAggregatorAndPrint<RequestType , ReseponseType> * aggregator
+	void broadcast_w_cb_n_timeout(RequestType * requestObj,ResultAggregatorAndPrint<RequestType , ReseponseType> * aggregator
 			, timeval timeoutValue , CoreShardInfo & coreInfo );
 	template<typename RequestType , typename ReseponseType>
-	void broadcast_wait_for_all_w_cb_n_timeout(RequestType & requestObj,
+	void broadcast_wait_for_all_w_cb_n_timeout(RequestType * requestObj,
 			ResultAggregatorAndPrint<RequestType , ReseponseType> * aggregator , timeval timeoutValue, CoreShardInfo & coreInfo);
 
 
 	/*
 	 *  Transmits a given message to a particular shard in a non-blocking fashion
 	 */
-	template<typename RequestType> void route(RequestType& requestObj, ShardId & shardInfo);
+	template<typename RequestType> void route(RequestType * requestObj, ShardId & shardInfo);
 
 	/*
 	 *  Transmits a given message to a pariticular shards, and waits for
 	 *  confirmation. Returns false iff shard confirms with MESSAGE_FAILED
 	 *  message.
 	 */
-	template<typename RequestType> bool route_wait_for_confirmation(RequestType& requestObj, bool& timedout,
+	template<typename RequestType> bool route_wait_for_confirmation(RequestType * requestObj, bool& timedout,
 			timeval timeoutValue , ShardId shardInfo);
 
 	/*
@@ -136,7 +136,7 @@ public:
 	 *  corresponding Message.
 	 */
 	template<typename RequestType , typename ReseponseType>
-	void route_w_cb(RequestType& requestObj, ResultAggregatorAndPrint<RequestType , ReseponseType> * aggregator , ShardId shardInfo);
+	void route_w_cb(RequestType * requestObj, ResultAggregatorAndPrint<RequestType , ReseponseType> * aggregator , ShardId shardInfo);
 
 	/*
 	 *  Timeout version of their corresponding function. So, after a period of
@@ -146,7 +146,7 @@ public:
 	 *           from shard ***
 	 */
 	template<typename RequestType , typename ReseponseType>
-	void route_w_cb_n_timeout(RequestType & requestObj,ResultAggregatorAndPrint<RequestType , ReseponseType> * aggregator
+	void route_w_cb_n_timeout(RequestType * requestObj,ResultAggregatorAndPrint<RequestType , ReseponseType> * aggregator
 			, timeval timeoutValue, ShardId shardInfo);
 
 
@@ -156,16 +156,44 @@ public:
 	InternalMessageBroker * getInternalMessageBroker();
 
 	Srch2Server * getShardIndex(ShardId shardId){
-		return &shardServers[shardId.coreId];
+		// should we get Serch2Server based one core ID?
+		map<unsigned, Srch2Server *>::iterator shardServer = shardServers.find(shardId.coreId);
+		if(shardServer == shardServers.end()){
+			return NULL;
+		}
+		return shardServer->second;
 	}
 
+	/*
+	 * This function sends the request object to a shard which resides
+	 * in the same node.
+	 */
+	template<typename RequestType >
+	Message * prepareInternalMessage(ShardId shardId,
+			RequestType *requestObjPointer);
+	template<typename RequestType >
+	Message * prepareExternalMessage(ShardId shardId,
+			RequestType *requestObjPointer);
+//	template<typename RequestType >
+//	static RequestType * decodeInternalMessage(Message * message);
+//	template<typename RequestType >
+//	static RequestType * decodeExternalMessage(Message * message);
+//	static SerializableInsertUpdateCommandInput * decodeExternalInsertUpdateMessage(Message * message,const Schema * schema);
+
 private:
+
+	void sendInternalMessage(Message * msg,
+			ShardId shardId, timeval timeoutValue, CallbackReference cb);
+	void sendExternalMessage(Message * msg,
+			ShardId shardId, timeval timeoutValue, CallbackReference cb);
+
 	//std::map<ShardId, Srch2Server*> shardToIndex;
 	ConfigManager& configurationManager;
 	TransportManager& transportManager;
 	DPInternalRequestHandler dpInternal;
 	InternalMessageBroker internalMessageBroker;
-	Srch2Server *shardServers;
+	// a map from coreId to Srch2Server //TODO : should it be a map from ShardId to shardServer?
+	std::map<unsigned, Srch2Server *> shardServers;
 };
 
 }

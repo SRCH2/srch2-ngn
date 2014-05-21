@@ -47,7 +47,7 @@
 #include "routing/RoutingManager.h"
 #include "processor/DistributedProcessorExternal.h"
 #include "configuration/ConfigManager.h"
-#include "synchronization/SynchronizerManager.h"
+
 
 namespace po = boost::program_options;
 namespace srch2is = srch2::instantsearch;
@@ -201,7 +201,7 @@ struct DPExternalCoreHandle {
 
 static bool checkOperationPermission(evhttp_request *req, 
 		DPExternalCoreHandle *coreShardInfo, srch2http::PortType_t portType) {
-	if (portType >= srch2http::EndOfPortType) {
+/*	if (portType >= srch2http::EndOfPortType) {
 		Logger::error("Illegal port type: %d", static_cast<int> (portType));
 		cb_notfound(req, NULL);
 		return false;
@@ -234,7 +234,7 @@ static bool checkOperationPermission(evhttp_request *req,
 
 		cb_notfound(req, NULL);
 		return false;
-	}
+	}*/
 	return true;
 }
 
@@ -320,7 +320,11 @@ static void cb_write(evhttp_request *req, void *arg) {
 		return;
 
 	try {
-		core->dpHandler.externalInsertCommand(req, &core->info);
+	    if(req->type == EVHTTP_REQ_PUT){
+            core->dpHandler.externalInsertCommand(req, &core->info);
+	    }else if(req->type == EVHTTP_REQ_DELETE){
+	        core->dpHandler.externalDeleteCommand(req, &core->info);
+	    }
 	} catch (exception& e) {
 		// exception caught
 		Logger::error(e.what());
@@ -355,7 +359,7 @@ static void cb_save(evhttp_request *req, void *arg) {
 		return;
 
 	try {
-		//core->dpHandler.externalSaveCommand(req, &core->info, versioninfo);
+		core->dpHandler.externalSerializeIndexCommand(req, &core->info);
 	} catch (exception& e) {
 		// exception caught
 		Logger::error(e.what());
@@ -371,7 +375,13 @@ static void cb_export(evhttp_request *req, void *arg) {
 	if(!checkOperationPermission(req, core, srch2http::ExportPort))
 		return;
 
-	// core->dpHandler.externalExportCommand(req, &core->info);
+	try{
+         core->dpHandler.externalSerializeRecordsCommand(req, &core->info);
+	} catch(exception& e){
+        // exception caught
+        Logger::error(e.what());
+        srch2http::HTTPRequestHandler::handleException(req);
+	}
 }
 
 /**
@@ -550,6 +560,7 @@ static void killServer(int signal) {
         conn != transportManager->getRouteMap()->end(); ++conn) {
       close(conn->second.fd);
     }
+//    close(transportManager->getRouteMap()->getInternalConnection());
     pthread_cancel(transportManager->getListeningThread());
 #ifdef __MACH__
 	/*
@@ -566,49 +577,33 @@ static int getHttpServerMetadata(ConfigManager *config,
 		PortSocketMap_t *globalPortSocketMap) {
 	// TODO : we should use default port if no port is provided. or just get rid of default port and move it to node
 	// as a <defaultPort>
-	// 1). getting port default values
-	globalDefaultPort = atoi(config->getHTTPServerListeningPort().c_str());
+	std::set<short> ports;
+
+	// global host name
 	globalHostName = config->getHTTPServerListeningHostname().c_str();
 
-	// bind the default port
+	// add the default port
+	globalDefaultPort = atoi(config->getHTTPServerListeningPort().c_str());
 	if (globalDefaultPort > 0) {
-		int socketFd = bindSocket(globalHostName, globalDefaultPort);
-		if (socketFd < 0) {
-			perror("socket bind error");
-			return 255;
-		}
-		(*globalPortSocketMap)[globalDefaultPort] = socketFd;
+		ports.insert(globalDefaultPort);
 	}
 
-	// loop over cores and extract all ports to use
-	std::set<short> ports;
-//	ports.insert(9080); // search
-//	ports.insert(9081); // suggest
-//	ports.insert(9082); // info
-//	ports.insert(9083); // docs
-//	ports.insert(9084); // update
-//	ports.insert(9085); // save
-//	ports.insert(9086); // export
-//	ports.insert(9087); // reset
-	for(ConfigManager::CoreInfoMap_t::iterator core =
-			config->coreInfoIterateBegin();
-			core != config->coreInfoIterateEnd(); ++core) { // TODO : we need to iterate on all nodes on this machine instead of iterating over cores
-
-		unsigned short port;
-		for (srch2http::PortType_t portType = (srch2http::PortType_t) 0;
-				portType < srch2http::EndOfPortType; portType = srch2http::incrementPortType(portType)) {
-			port = core->second->getPort(portType); //TODO : we need to get these ports from node
-			if( port < 0){
-				ports.insert(port);
-			}
+	// loop over operations and extract all port numbers of current node to use
+	const srch2::httpwrapper::Node * currentNode = config->getCluster()->getCurrentNode();
+	unsigned short port;
+	for (srch2http::PortType_t portType = (srch2http::PortType_t) 0;
+			portType < srch2http::EndOfPortType; portType = srch2http::incrementPortType(portType)) {
+		port = currentNode->getPort(portType);
+		if(port > 0){
+			ports.insert(port);
 		}
 	}
 
 	// bind once each port defined for use by this core
-	int socketFd;
 	for(std::set<short>::const_iterator port = ports.begin();
 			port != ports.end() ; ++port) {
-		if((socketFd = bindSocket(globalHostName, *port)) < 0) {
+		int socketFd = bindSocket(globalHostName, *port);
+		if(socketFd < 0) {
 			perror("socket bind error");
 			return 255;
 		}
@@ -617,6 +612,10 @@ static int getHttpServerMetadata(ConfigManager *config,
 	return 0;
 }
 
+/*
+ * This function just creates pairs of event_base and http_server objects
+ * in the maximum number of threads.
+ */
 static int createHTTPServersAndAccompanyingThreads(int MAX_THREADS,
 		vector<struct event_base *> *evBases, vector<struct evhttp *> *evServers) {
 	// for each thread, we bind an evbase and http_server object
@@ -642,11 +641,11 @@ static int createHTTPServersAndAccompanyingThreads(int MAX_THREADS,
 
 
 // helper array - loop instead of repetitous code
-static const struct PortList_t {
+static const struct UserRequestAttributes_t {
 	const char *path;
 	srch2http::PortType_t portType;
 	void (*callback)(struct evhttp_request *, void *);
-} portList[] = {
+} userRequestAttributesList[] = {
 		{ "/search", srch2http::SearchPort, cb_search },
 		{ "/suggest", srch2http::SuggestPort, cb_suggest },
 		{ "/info", srch2http::InfoPort, cb_info },
@@ -657,103 +656,63 @@ static const struct PortList_t {
 		{ "/resetLogger", srch2http::ResetLoggerPort, cb_resetLogger },
 		{ NULL, srch2http::EndOfPortType, NULL }
 };
-typedef unsigned CoreId;
+typedef unsigned CoreId;//TODO is it needed ? if not let's delete it.
 
+/*
+ * This function sets the callback functions to be used for different types of
+ * user request URLs.
+ * For URLs w/o core name we use the default core (only if default core is actually defined in config manager)
+ * For URLs with core names we use the specified core object.
+ */
 int setCallBacksonHTTPServer(ConfigManager *const config,
 		evhttp *const http_server,
-		std::vector<DPExternalCoreHandle>& dpExternalCoreHandles) {
+		std::map<unsigned, DPExternalCoreHandle> & dpExternalCoreHandles) {
 
+	const srch2::httpwrapper::Node * currentNode = config->getCluster()->getCurrentNode();
 	// setup default core callbacks for queries without a core name
-	for (int j = 0; portList[j].path != NULL; j++) {
-		unsigned short port = 0;
-//				config->getDefaultCoreInfo()->getPort(portList[j].portType); // TODO : we must get port from currentNode
+	// only if default core is available.
+	if(config->getDefaultCoreSetFlag() == true) {
+		// iterate on all operations and map the path (w/o core info)
+		// to a callback function.
+		// we pass DPExternalCoreHandle as the argument of callbacks
+		for (int j = 0; userRequestAttributesList[j].path != NULL; j++) {
 
-		switch (portList[j].portType) {
-			case srch2http::SearchPort:
-				port = 9080;
-				break;
-			case srch2http::SuggestPort:
-				port = 9081;
-				break;
-			case srch2http::InfoPort:
-				port = 9082;
-				break;
-			case srch2http::DocsPort:
-				port = 9083;
-				break;
-			case srch2http::UpdatePort:
-				port = 9084;
-				break;
-			case srch2http::SavePort:
-				port = 9085;
-				break;
-			case srch2http::ExportPort:
-				port = 9086;
-				break;
-			case srch2http::ResetLoggerPort:
-				port = 9087;
-				break;
+			srch2http::CoreInfo_t* defaultCore = config->getDefaultCoreInfo();
+
+			evhttp_set_cb(http_server, userRequestAttributesList[j].path,
+					userRequestAttributesList[j].callback, &(dpExternalCoreHandles.at(defaultCore->getCoreId())));
+
+			// just for print
+			unsigned short port = currentNode->getPort(userRequestAttributesList[j].portType);
+			if (port < 1) port = globalDefaultPort;
+			Logger::debug("Routing port %d route %s to default core %s",
+					port, userRequestAttributesList[j].path, defaultCore->getName().c_str());
 		}
-
-		if (port == 1) port = globalDefaultPort;
-
-		srch2http::CoreInfo_t* defaultCore = config->getDefaultCoreInfo();
-
-		evhttp_set_cb(http_server, portList[j].path,
-				portList[j].callback, &dpExternalCoreHandles[defaultCore->getCoreId()]);
-
-		Logger::debug("Routing port %d route %s to default core %s",
-				port, portList[j].path, defaultCore->getName().c_str());
 	}
+
 
 	evhttp_set_gencb(http_server, cb_notfound, NULL);
 
-	if(config->getDefaultCoreSetFlag() == true) {
-		// for every core, for every OTHER port that core uses, do accept
-		for(srch2http::ConfigManager::CoreInfoMap_t::iterator core =
-				config->coreInfoIterateBegin();
-				core != config->coreInfoIterateEnd(); ++core) {
-			string coreName = core->first;
-			for(unsigned int j = 0; portList[j].path != NULL; j++) {
-				string path = string("/") + coreName + string(portList[j].path);
+	// for every core, for every OTHER port that core uses, do accept
+	// NOTE : CoreInfoMap is a typedef of std::map<const string, CoreInfo_t *>
+	for(srch2http::ConfigManager::CoreInfoMap_t::iterator coreInfoMap =
+			config->coreInfoIterateBegin();
+			coreInfoMap != config->coreInfoIterateEnd(); ++coreInfoMap) {
+		string coreName = coreInfoMap->first;
+		unsigned coreId = coreInfoMap->second->getCoreId();
 
-//				unsigned short port = core->second->getPort(portList[j].portType);
-//				if(port < 1) {
-//					port = globalDefaultPort;
-//				} //TODO ports must be accessed from the current node
-				unsigned short port =0;
-				switch (portList[j].portType) {
-					case srch2http::SearchPort:
-						port = 9080;
-						break;
-					case srch2http::SuggestPort:
-						port = 9081;
-						break;
-					case srch2http::InfoPort:
-						port = 9082;
-						break;
-					case srch2http::DocsPort:
-						port = 9083;
-						break;
-					case srch2http::UpdatePort:
-						port = 9084;
-						break;
-					case srch2http::SavePort:
-						port = 9085;
-						break;
-					case srch2http::ExportPort:
-						port = 9086;
-						break;
-					case srch2http::ResetLoggerPort:
-						port = 9087;
-						break;
-				}
+		for(unsigned int j = 0; userRequestAttributesList[j].path != NULL; j++) {
+			string path = string("/") + coreName + string(userRequestAttributesList[j].path);
+			evhttp_set_cb(http_server, path.c_str(),
+					userRequestAttributesList[j].callback, &(dpExternalCoreHandles.at(coreId)));
 
-				evhttp_set_cb(http_server, path.c_str(),
-						portList[j].callback, &core->second);
-				Logger::debug("Adding port %d route %s to core %s",
-						port, path.c_str(), coreName.c_str());
+			// just for print
+			unsigned short port = currentNode->getPort(userRequestAttributesList[j].portType);
+			if(port < 1){
+				port = globalDefaultPort;
 			}
+			Logger::debug("Adding port %d route %s to core %s",
+					port, path.c_str(), coreName.c_str());
 		}
 	}
 
@@ -860,21 +819,22 @@ int main(int argc, char** argv) {
 	// share the internal message broker from RM to TM
 	transportManager->setInternalMessageBroker(routesManager->getInternalMessageBroker());
 
-	srch2http::Synchronizer *syncManager = new srch2http::Synchronizer(*serverConf , *transportManager, 1);
-	pthread_t *synchronizerThread = new pthread_t;
-	pthread_create(synchronizerThread, NULL, srch2http::bootSynchronizer, (void *)syncManager);
-
 	// create DP external
 	srch2http::DPExternalRequestHandler *dpExternal =
 			new srch2http::DPExternalRequestHandler(serverConf, routesManager);
 
 
 	// create DPExternal,core pairs
-	vector<DPExternalCoreHandle> dpExternalCoreHandles;
-	for(srch2http::ConfigManager::CoreInfoMap_t::iterator core =
+	// map from coreId to DPExternalCoreHandle which is a container of
+	// 1. DPExternal, 2. coreInfo and 3. CoreShardInfo
+	map<unsigned, DPExternalCoreHandle> dpExternalCoreHandles;
+	for(srch2http::ConfigManager::CoreInfoMap_t::iterator coreInfoMap =
 			serverConf->coreInfoIterateBegin();
-			core != serverConf->coreInfoIterateEnd(); ++core)  {
-		dpExternalCoreHandles.push_back(DPExternalCoreHandle(*dpExternal, *core->second));
+			coreInfoMap != serverConf->coreInfoIterateEnd(); ++coreInfoMap)  {
+		string coreName = coreInfoMap->first;
+		srch2http::CoreInfo_t * coreInfoPtr = coreInfoMap->second;
+
+		dpExternalCoreHandles.insert(std::pair<unsigned, DPExternalCoreHandle>(coreInfoPtr->getCoreId(),DPExternalCoreHandle(*dpExternal, *coreInfoPtr) ));
 	}
 
 	// temporary call, just creates core/shard objects and puts them in
@@ -917,10 +877,6 @@ int main(int argc, char** argv) {
 	pthread_join(transportManager->getListeningThread(), NULL);
 	Logger::console("Thread = <%u> stopped", transportManager->getListeningThread());
 
-	pthread_cancel(*synchronizerThread);
-	pthread_join(*synchronizerThread, NULL);
-	Logger::console("synch thread stopped.");
-
 	delete[] threads;
 
 	for (unsigned int i = 0; i < MAX_THREADS; i++) {
@@ -928,8 +884,8 @@ int main(int argc, char** argv) {
 	}
 
 	// use global port map to close each file descriptor just once
-	for (PortSocketMap_t::iterator iterator = globalPortSocketMap.begin(); iterator != globalPortSocketMap.end(); iterator++) {
-		shutdown(iterator->second, SHUT_RD);
+	for (PortSocketMap_t::iterator portSocket = globalPortSocketMap.begin(); portSocket != globalPortSocketMap.end(); portSocket++) {
+		shutdown(portSocket->second, SHUT_RD);
 	}
 
 	AnalyzerContainer::freeAll();

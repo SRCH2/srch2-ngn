@@ -17,12 +17,12 @@ public:
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
     void* serialize(MessageAllocator * aloc){
-    	return aloc->allocate(0);
+    	return aloc->allocateMessageReturnBody(0);
     }
 
     //given a byte stream recreate the original object
-    static const SerializableCommitCommandInput& deserialize(void*){
-    	return *(new SerializableCommitCommandInput());
+    static SerializableCommitCommandInput * deserialize(void*){
+    	return new SerializableCommitCommandInput();
     }
 
 

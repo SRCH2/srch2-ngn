@@ -41,13 +41,13 @@ void GetInfoAggregatorAndPrint::timeoutProcessing(ShardId * shardInfo, Serializa
 /*
  * The main function responsible of aggregating status (success or failure) results
  */
-void GetInfoAggregatorAndPrint::callBack(vector<const SerializableGetInfoResults *> responseObjects){
+void GetInfoAggregatorAndPrint::callBack(vector<SerializableGetInfoResults *> responseObjects){
 	boost::unique_lock< boost::shared_mutex > lock(_access);
-	for(vector<const SerializableGetInfoResults *>::iterator responseItr = responseObjects.begin();
+	for(vector<SerializableGetInfoResults *>::iterator responseItr = responseObjects.begin();
 			responseItr != responseObjects.end() ; ++responseItr){
 		this->readCount += (*responseItr)->getReadCount();
 		this->writeCount += (*responseItr)->getWriteCount();
-		this->numberOfDocumentsInIndex = (*responseItr)->getNumberOfDocumentsInIndex();
+		this->numberOfDocumentsInIndex += (*responseItr)->getNumberOfDocumentsInIndex();
 		this->lastMergeTimeStrings.push_back((*responseItr)->getLastMergeTimeString());
 		this->docCount += (*responseItr)->getDocCount();
 		this->versionInfoStrings.push_back((*responseItr)->getVersionInfo());
@@ -67,22 +67,27 @@ void GetInfoAggregatorAndPrint::finalize(ResultsAggregatorAndPrintMetadata metad
 	//TODO : this print should be checked to make sure it prints correct json format
 	std::stringstream str;
     str << "\"engine_status\":{";
-    str << "\"search_requests\":\"" << this->readCount << "\",";
-    str << "\"write_requests\":\"" <<  this->writeCount << "\",";
-    str << "\"docs_in_index\":\"" << this->numberOfDocumentsInIndex << "\",";
+    str << "\"search_requests\":\"" << this->readCount << "\", ";
+    str << "\"write_requests\":\"" <<  this->writeCount << "\", ";
+    str << "\"docs_in_index\":\"" << this->numberOfDocumentsInIndex << "\", ";
+    str << "\"shard_status\":[";
     for(unsigned i=0; i < lastMergeTimeStrings.size() ; ++i){
-		str << "\"shard_status\":{";
-    	str << "\"last_merge\":\"" << this->lastMergeTimeStrings.at(i) << "\",";
+		str << "\"shard_status_" << i << "\":{"; //TODO : we should use better information at this place
+    	str << "\"last_merge\":\"" << this->lastMergeTimeStrings.at(i) << "\", ";
     	str << "\"version\":\"" << this->versionInfoStrings.at(i) << "\"";
-		str << "},";
+		str << "}";
+		if(i < lastMergeTimeStrings.size()-1){
+			str << ", ";
+		}
     }
-    str << "\"doc_count\":\"" << this->docCount << "\",";
-    str << "}\n";
-    str << "\"messages\":[" << messages.str() << "]\n";
+    str << "], \"doc_count\":\"" << this->docCount << "\"}";
+    if(messages.str().compare("") != 0){ // there is actually a message to show
+		str << ",\"messages\":[" << messages.str() << "]";
+    }
     Logger::info("%s", messages.str().c_str());
 
     bmhelper_evhttp_send_reply2(req, HTTP_OK, "OK",
-            "{\"message\":\"The batch was processed successfully\",\"log\":["
+            "{\"log\":["
                     + str.str() + "]}\n");
 }
 

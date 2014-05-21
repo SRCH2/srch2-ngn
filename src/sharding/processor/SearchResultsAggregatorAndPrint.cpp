@@ -1,5 +1,5 @@
 #include "SearchResultsAggregatorAndPrint.h"
-
+#include "core/util/RecordSerializerUtil.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace std;
@@ -38,13 +38,14 @@ struct timespec & SearchResultAggregatorAndPrint::getStartTimer(){
  * this function uses aggregateRecords and aggregateFacets for
  * aggregating result records and calculated records
  */
-void SearchResultAggregatorAndPrint::callBack(vector<const SerializableSearchResults *> responseObjects){
+void SearchResultAggregatorAndPrint::callBack(vector<SerializableSearchResults *> responseObjects){
 
 
 	// move on all responses of all shards and use them
 	for(int responseIndex = 0 ; responseIndex < responseObjects.size() ; ++responseIndex ){
 		QueryResults * resultsOfThisShard = responseObjects.at(responseIndex)->getQueryResults();
-		resultsOfAllShards.push_back(resultsOfThisShard);
+		resultsOfAllShards.push_back(
+		        make_pair(resultsOfThisShard, responseObjects.at(responseIndex)->getInMemoryRecordStrings()));
 		if(results.aggregatedSearcherTime < responseObjects.at(responseIndex)->getSearcherTime()){
 			results.aggregatedSearcherTime = responseObjects.at(responseIndex)->getSearcherTime();
 		}
@@ -104,7 +105,8 @@ void SearchResultAggregatorAndPrint::printResults(){
 	case srch2is::SearchTypeTopKQuery:
 		//	        finalResults->printStats();
 		printResults(req, headers, logicalPlan,
-				indexDataContainerConf, results.allResults, logicalPlan.getExactQuery(),
+				indexDataContainerConf, results.allResults,
+				logicalPlan.getExactQuery(),
 				logicalPlan.getOffset(),
 				results.allResults.size(),
 				results.allResults.size(),
@@ -172,10 +174,12 @@ void SearchResultAggregatorAndPrint::printResults(){
 void SearchResultAggregatorAndPrint::printResults(evhttp_request *req,
         const evkeyvalq &headers, const LogicalPlan &queryPlan,
         const CoreInfo_t *indexDataConfig,
-        const vector<QueryResult *> queryResultsVector, const Query *query,
+        const vector<pair< QueryResult *, string> > allResults,
+        const Query *query,
         const unsigned start, const unsigned end,
         const unsigned retrievedResults, const string & message,
         const unsigned ts1 , const vector<RecordSnippet>& recordSnippets, unsigned hlTime, bool onlyFacets) {
+
 
     // start the timer for printing
     struct timespec tstart;
@@ -207,26 +211,27 @@ void SearchResultAggregatorAndPrint::printResults(evhttp_request *req,
                 && query->getQueryTerms()->empty()) //check if the query type is range query without keywords
         {
             for (unsigned i = start; i < end; ++i) {
-            	unsigned internalRecordId = queryResultsVector[i]->internalRecordId;
-            	StoredRecordBuffer inMemoryData ; // TODO = indexer->getInMemoryData(internalRecordId);
+                char * inMemoryCharPtr = new char[allResults.at(i).second.size()];
+                memcpy(inMemoryCharPtr, allResults.at(i).second.c_str(), allResults.at(i).second.size());
+                StoredRecordBuffer inMemoryData(inMemoryCharPtr, allResults.at(i).second.size());
             	if (inMemoryData.start.get() == NULL) {
             		--resultFound;
             		continue;
             	}
-                root["results"][counter]["record_id"] = queryResultsVector[i]->internalRecordId;
+                root["results"][counter]["record_id"] = allResults.at(i).first->internalRecordId;
                 root["results"][counter]["score"] = (0
-                        - queryResultsVector[i]->_score.getFloatTypedValue()); //the actual distance between the point of record and the center point of the range
+                        - allResults.at(i).first->_score.getFloatTypedValue()); //the actual distance between the point of record and the center point of the range
                 if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_STORED_ATTR){
                     string sbuffer;
-                    //TODO genRecordJsonString(indexer, inMemoryData, queryResultsVector[i]->internalRecordId, sbuffer);
+                    genRecordJsonString(indexDataConfig->getSchema(), inMemoryData, allResults.at(i).first->externalRecordId, sbuffer);
                     // The class CustomizableJsonWriter allows us to
                     // attach the data string to the JSON tree without parsing it.
                     root["results"][counter][internalRecordTags.first] = sbuffer;
                 } else if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SELECTED_ATTR){
                 	string sbuffer;
                 	const vector<string> *attrToReturn = indexDataConfig->getAttributesToReturn();
-                	//TODO genRecordJsonString(indexer, inMemoryData, queryResultsVector[i]->internalRecordId,
-                	//TODO		sbuffer, attrToReturn);
+                	genRecordJsonString(indexDataConfig->getSchema(), inMemoryData, allResults.at(i).first->externalRecordId,
+                			sbuffer, attrToReturn);
                 	// The class CustomizableJsonWriter allows us to
                 	// attach the data string to the JSON tree without parsing it.
                 	root["results"][counter][internalRecordTags.first] = sbuffer;
@@ -238,18 +243,19 @@ void SearchResultAggregatorAndPrint::printResults(evhttp_request *req,
         {
 
             for (unsigned i = start; i < end; ++i) {
-            	unsigned internalRecordId = queryResultsVector[i]->internalRecordId;
-            	StoredRecordBuffer inMemoryData ; //TODO = indexer->getInMemoryData(internalRecordId);
+                char * inMemoryCharPtr = new char[allResults.at(i).second.size()];
+                memcpy(inMemoryCharPtr, allResults.at(i).second.c_str(), allResults.at(i).second.size());
+            	StoredRecordBuffer inMemoryData(inMemoryCharPtr, allResults.at(i).second.size());
             	if (inMemoryData.start.get() == NULL) {
             		--resultFound;
             		continue;
             	}
-                root["results"][counter]["record_id"] = queryResultsVector[i]->internalRecordId;
-                root["results"][counter]["score"] = queryResultsVector[i]->_score.getFloatTypedValue();
+                root["results"][counter]["record_id"] = allResults.at(i).first->internalRecordId;
+                root["results"][counter]["score"] = allResults.at(i).first->_score.getFloatTypedValue();
 
                 // print edit distance vector
                 vector<unsigned> editDistances;
-                editDistances.assign(queryResultsVector[i]->editDistances.begin(), queryResultsVector[i]->editDistances.end() );
+                editDistances.assign(allResults.at(i).first->editDistances.begin(), allResults.at(i).first->editDistances.end() );
 
                 root["results"][counter]["edit_dist"].resize(editDistances.size());
                 for (unsigned int j = 0; j < editDistances.size(); ++j) {
@@ -258,7 +264,7 @@ void SearchResultAggregatorAndPrint::printResults(evhttp_request *req,
 
                 // print matching keywords vector
                 vector<std::string> matchingKeywords;
-                matchingKeywords.assign(queryResultsVector[i]->matchingKeywords.begin(), queryResultsVector[i]->matchingKeywords.end() );
+                matchingKeywords.assign(allResults.at(i).first->matchingKeywords.begin(), allResults.at(i).first->matchingKeywords.end() );
 
                 root["results"][counter]["matching_prefix"].resize(
                         matchingKeywords.size());
@@ -267,19 +273,18 @@ void SearchResultAggregatorAndPrint::printResults(evhttp_request *req,
                             matchingKeywords[j];
                 }
                 if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_STORED_ATTR) {
-                    unsigned internalRecordId = queryResultsVector[i]->internalRecordId;
+                    unsigned internalRecordId = allResults.at(i).first->internalRecordId;
                     string sbuffer;
-                    //TODO genRecordJsonString(indexer, inMemoryData, queryResultsVector[i]->internalRecordId,
-                    //		 sbuffer);
+                    genRecordJsonString(indexDataConfig->getSchema(), inMemoryData, allResults.at(i).first->externalRecordId,sbuffer);
                     // The class CustomizableJsonWriter allows us to
                     // attach the data string to the JSON tree without parsing it.
                     root["results"][counter][internalRecordTags.first] = sbuffer;
                 } else if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SELECTED_ATTR){
-                	unsigned internalRecordId = queryResultsVector[i]->internalRecordId;
+                	unsigned internalRecordId = allResults.at(i).first->internalRecordId;
                 	string sbuffer;
                 	const vector<string> *attrToReturn = indexDataConfig->getAttributesToReturn();
-                	//TODO genRecordJsonString(indexer, inMemoryData, queryResultsVector[i]->internalRecordId,
-                	//		sbuffer, attrToReturn);
+                	genRecordJsonString(indexDataConfig->getSchema(), inMemoryData, allResults.at(i).first->externalRecordId,
+                			sbuffer, attrToReturn);
                 	// The class CustomizableJsonWriter allows us to
                 	// attach the data string to the JSON tree without parsing it.
                 	root["results"][counter][internalRecordTags.first] = sbuffer;
@@ -427,7 +432,7 @@ void SearchResultAggregatorAndPrint::printResults(evhttp_request *req,
 void SearchResultAggregatorAndPrint::printOneResultRetrievedById(evhttp_request *req, const evkeyvalq &headers,
         const LogicalPlan &queryPlan,
         const CoreInfo_t *indexDataConfig,
-        const vector<QueryResult *> queryResultsVector,
+        const vector<pair< QueryResult *, string> > allResults,
         const string & message,
         const unsigned ts1){
 
@@ -451,32 +456,33 @@ void SearchResultAggregatorAndPrint::printOneResultRetrievedById(evhttp_request 
     string logQueries;
 
     root["searcher_time"] = ts1;
-    root["results"].resize(queryResultsVector.size());
+    root["results"].resize(allResults.size());
 
     clock_gettime(CLOCK_REALTIME, &tstart);
     unsigned counter = 0;
 
-    unsigned resultFound = queryResultsVector.size();
-    for (unsigned i = 0; i < queryResultsVector.size(); ++i) {
-    	unsigned internalRecordId = queryResultsVector.at(i)->internalRecordId;
-    	StoredRecordBuffer inMemoryData ; // TODO= indexer->getInMemoryData(internalRecordId);
+    unsigned resultFound = allResults.size();
+    for (unsigned i = 0; i < allResults.size(); ++i) {
+        char * inMemoryCharPtr = new char[allResults.at(i).second.size()];
+        memcpy(inMemoryCharPtr, allResults.at(i).second.c_str(), allResults.at(i).second.size());
+        StoredRecordBuffer inMemoryData(inMemoryCharPtr, allResults.at(i).second.size());
     	if (inMemoryData.start.get() == NULL) {
     		--resultFound;
     		continue;
     	}
-        root["results"][counter]["record_id"] = queryResultsVector.at(i)->internalRecordId;
+        root["results"][counter]["record_id"] = allResults.at(i).first->internalRecordId;
 
         if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_STORED_ATTR) {
-            unsigned internalRecordId = queryResultsVector.at(i)->internalRecordId;
+            unsigned internalRecordId = allResults.at(i).first->internalRecordId;
             string sbuffer;
-            //TODO genRecordJsonString(indexer, inMemoryData, queryResultsVector.at(i)->internalRecordId, sbuffer);
+            genRecordJsonString(indexDataConfig->getSchema(), inMemoryData, allResults.at(i).first->externalRecordId, sbuffer);
             root["results"][counter][internalRecordTags.first] = sbuffer;
         } else if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SELECTED_ATTR){
-        	unsigned internalRecordId = queryResultsVector.at(i)->internalRecordId;
+        	unsigned internalRecordId = allResults.at(i).first->internalRecordId;
         	string sbuffer;
         	const vector<string> *attrToReturn = indexDataConfig->getAttributesToReturn();
-        	//TODO genRecordJsonString(indexer, inMemoryData, queryResultsVector.at(i)->internalRecordId,
-        	//TODO		sbuffer, attrToReturn);
+        	genRecordJsonString(indexDataConfig->getSchema(), inMemoryData, allResults.at(i).first->externalRecordId,
+        	        sbuffer, attrToReturn);
         	// The class CustomizableJsonWriter allows us to
         	// attach the data string to the JSON tree without parsing it.
         	root["results"][counter][internalRecordTags.first] = sbuffer;
@@ -503,19 +509,34 @@ void SearchResultAggregatorAndPrint::printOneResultRetrievedById(evhttp_request 
 
 
 
+void SearchResultAggregatorAndPrint::genRecordJsonString(const srch2::instantsearch::Schema * schema, StoredRecordBuffer buffer,
+        const string& extrnalRecordId, string& sbuffer){
+    genRecordJsonString(schema, buffer, extrnalRecordId,
+                                 sbuffer, NULL);
+}
+void SearchResultAggregatorAndPrint::genRecordJsonString(const srch2::instantsearch::Schema * schema, StoredRecordBuffer buffer,
+        const string& externalRecordId, string& sbuffer, const vector<string>* attrToReturn){
+    Schema * storedSchema = Schema::create();
+    srch2::util::RecordSerializerUtil::populateStoredSchema(storedSchema, schema);
+    srch2::util::RecordSerializerUtil::convertCompactToJSONString(storedSchema, buffer, externalRecordId, sbuffer, attrToReturn);
+    delete storedSchema;
+}
+
 /*
  * Combines the results coming from all shards and
  * resorts them based on their scores
  */
 void SearchResultAggregatorAndPrint::aggregateRecords(){
 	// aggregate results
-	for(vector<QueryResults *>::iterator queryResultsItr = resultsOfAllShards.begin() ;
-			queryResultsItr != resultsOfAllShards.end() ; ++queryResultsItr){
-		results.allResults.insert(results.allResults.end() , (*queryResultsItr)->impl->sortedFinalResults.begin(),
-				(*queryResultsItr)->impl->sortedFinalResults.end());
-		for(unsigned queryResultIndex = 0; queryResultIndex < (*queryResultsItr)->impl->sortedFinalResults.size();
-				queryResultIndex ++){
-			results.recordData.push_back((*queryResultsItr)->getInMemoryRecordString(queryResultIndex));
+	for(unsigned resultSetIndex = 0 ; resultSetIndex < resultsOfAllShards.size() ; ++resultSetIndex){
+		QueryResults * queryResultsItr = resultsOfAllShards.at(resultSetIndex).first;
+		 map<string, string> & queryResultsRecordData = resultsOfAllShards.at(resultSetIndex).second;
+		for(unsigned queryResultIndex = 0; queryResultIndex < queryResultsItr->impl->sortedFinalResults.size();
+                queryResultIndex ++){
+		    string resultKey = queryResultsItr->getRecordId(queryResultIndex);
+		    results.allResults.push_back(
+		            make_pair(queryResultsItr->impl->sortedFinalResults.at(queryResultIndex),
+		                    queryResultsRecordData[resultKey] ));
 		}
 	}
 
@@ -529,10 +550,11 @@ void SearchResultAggregatorAndPrint::aggregateRecords(){
  */
 void SearchResultAggregatorAndPrint::aggregateFacets(){
 
-	for(vector<QueryResults *>::iterator queryResultsItr = resultsOfAllShards.begin() ;
-			queryResultsItr != resultsOfAllShards.end() ; ++queryResultsItr){
+	for(vector<pair< QueryResults *, map<string, string> > >::iterator resultsItr = resultsOfAllShards.begin() ;
+	        resultsItr != resultsOfAllShards.end() ; ++resultsItr){
+	    QueryResults * queryResultsItr = resultsItr->first;
 		const std::map<std::string, std::pair< FacetType , std::vector<std::pair<std::string, float> > > > *
-		facetResults = (*queryResultsItr)->getFacetResults();
+		facetResults = queryResultsItr->getFacetResults();
 		for(std::map<std::string, std::pair< FacetType , std::vector<std::pair<std::string, float> > > >::const_iterator facetGroupItr = facetResults->begin();
 				facetGroupItr != facetResults->end() ; ++facetGroupItr){
 
@@ -578,11 +600,12 @@ void SearchResultAggregatorAndPrint::mergeFacetVectors(std::vector<std::pair<std
 
 void SearchResultAggregatorAndPrint::aggregateEstimations(){
 	results.isResultsApproximated = false;
-	for(vector<QueryResults *>::iterator queryResultsItr = resultsOfAllShards.begin() ;
-			queryResultsItr != resultsOfAllShards.end() ; ++queryResultsItr){
-		results.isResultsApproximated  = results.isResultsApproximated || (*queryResultsItr)->impl->resultsApproximated;
-		if((*queryResultsItr)->impl->estimatedNumberOfResults != -1){
-			results.aggregatedEstimatedNumberOfResults += (*queryResultsItr)->impl->estimatedNumberOfResults;
+	for(vector<pair< QueryResults *, map<string, string> > >::iterator resultsItr = resultsOfAllShards.begin() ;
+	        resultsItr != resultsOfAllShards.end() ; ++resultsItr){
+	    QueryResults * queryResultsItr = resultsItr->first;
+		results.isResultsApproximated  = results.isResultsApproximated || queryResultsItr->impl->resultsApproximated;
+		if(queryResultsItr->impl->estimatedNumberOfResults != -1){
+			results.aggregatedEstimatedNumberOfResults += queryResultsItr->impl->estimatedNumberOfResults;
 		}
 	}
 }

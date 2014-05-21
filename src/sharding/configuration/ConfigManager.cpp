@@ -55,8 +55,8 @@ const char* const ConfigManager::discoveryNodeTag = "discovery";
 const char* const ConfigManager::pingIntervalTag = "ping-interval";
 const char* const ConfigManager:: pingTimeoutTag= "ping-timeout";
 const char* const ConfigManager::retryCountTag = "retry-count";
-
-
+const char* const ConfigManager::coreIdTag = "coreid";
+static unsigned defaultCoreId;
 const char* const ConfigManager::accessLogFileString = "accesslogfile";
 const char* const ConfigManager::analyzerString = "analyzer";
 const char* const ConfigManager::cacheSizeString = "cachesize";
@@ -174,7 +174,7 @@ const char* const ConfigManager::defaultExactPostTag = "</b>";
 void ConfigManager::setNodeId(){
     vector<Node>* nodes = this->cluster.getNodes();
     for(int i = 0; i < nodes->size(); i++){
-        (*nodes)[i].setId(i+1);
+        (*nodes)[i].setId(i);
     }
 }
 
@@ -754,6 +754,18 @@ void ConfigManager::parseSingleCore(const xml_node &parentNode, CoreInfo_t *core
         return;
     }
 
+    xml_node childNode = parentNode.child(coreIdTag);
+    if(childNode && childNode.text()){
+        string temp = string(childNode.text().get());
+        trimSpacesFromValue(temp, coreIdTag, parseWarnings);
+        coreInfo->setCoreId((uint)atol(temp.c_str()));
+    }else{
+        // TODO: to be deleted in V1
+        Logger::console("!!!!!CoreId is not provided in core %s, engine will use the default value!!!!!", coreInfo->name.c_str());
+        coreInfo->setCoreId(defaultCoreId);
+        defaultCoreId++;
+    }
+
     // Solr compatability - dataDir can be an attribute: <core dataDir="core0/data"
     if (parentNode.attribute(dataDirString) && string(parentNode.attribute(dataDirString).value()).compare("") != 0) {
         coreInfo->dataDir = parentNode.attribute(dataDirString).value();
@@ -769,6 +781,7 @@ void ConfigManager::parseSingleCore(const xml_node &parentNode, CoreInfo_t *core
 // only called by parseDataConfiguration()
 void ConfigManager::parseMultipleCores(const xml_node &coresNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
 {
+	defaultCoreId = 0;
     if (coresNode) {
 
         // <cores defaultCoreName = "foo">
@@ -2122,7 +2135,7 @@ void ConfigManager::parseNode(std::vector<Node>* nodes, xml_node& nodeTag, std::
 			xml_node childNode;
 
 			for (unsigned int i = 0; portNameMap[i].portName != NULL; i++) {
-				childNode = nodeTag.child(portNameMap[i].portName);
+				childNode = nodeTemp.child(portNameMap[i].portName);
 				if (childNode && childNode.text()) { // checks if the config/port has any text in it or not
 					int portValue = childNode.text().as_int();
 					if (portValue <= 0 || portValue > USHRT_MAX) {
@@ -2972,6 +2985,83 @@ void CoreInfo_t::setDataFilePath(const string& path) {
     dataFilePath = path;
 }
 
+
+bool ShardId::isPrimaryShard() {
+	return (replicaId == 0); // replica #0 is always the primary shard
+}
+bool ShardId::isInCurrentNode(ConfigManager& configurationManager){
+	// get destination node ID from config manager
+	unsigned nodeId =
+			configurationManager.getCluster()->shardMap[*this].getNodeId();
+
+	return (nodeId == configurationManager.getCurrentNodeId());
+}
+unsigned ShardId::getNodeId(ConfigManager& configurationManager){
+	return configurationManager.getCluster()->shardMap[*this].getNodeId();
+}
+std::string ShardId::toString() {
+	// A primary shard starts with a "P" followed by an integer id.
+	// E.g., a cluster with 4 shards of core 8 will have shards named "C8_P0", "C8_R0_1", "C8_R0_2", "C8_P3".
+	//
+	// A replica shard starts with an "R" followed by a replica count and then its primary's id.
+	// E.g., for the above cluster, replicas of "P0" will be named "8_R1_0" and "8_R2_0".
+	// Similarly, replicas of "P3" will be named "8_R3_1" and "8_R3_2".
+	if(coreId != unsigned(-1) || partitionId != unsigned(-1) || replicaId != unsigned(-1)){
+		std::stringstream sstm;
+		sstm << "C" << coreId << "_";
+		if (isPrimaryShard()){
+			sstm << "P" << partitionId;
+		}
+		else{
+			sstm << "R" << partitionId << "_" << replicaId;
+		}
+		return sstm.str();
+	}
+	else{
+		return "";
+	}
+}
+
+ShardId::ShardId() {
+	coreId = unsigned(-1);
+	partitionId = unsigned(-1);
+	replicaId = unsigned(-1);
+}
+ShardId::ShardId(unsigned coreId, unsigned partitionId, unsigned replicaId) :
+	coreId(coreId), partitionId(partitionId), replicaId(replicaId) {}
+
+bool ShardId::operator==(const ShardId& rhs) const {
+	return coreId == rhs.coreId && partitionId == rhs.partitionId
+			&& replicaId == replicaId;
+}
+bool ShardId::operator!=(const ShardId& rhs) const {
+	return coreId != rhs.coreId || partitionId != rhs.partitionId
+			|| replicaId != replicaId;
+}
+bool ShardId::operator>(const ShardId& rhs) const {
+	return  coreId > rhs.coreId ||
+			(coreId == rhs.coreId &&
+					(partitionId > rhs.partitionId ||
+							(partitionId == rhs.partitionId && replicaId > replicaId)));
+}
+bool ShardId::operator<(const ShardId& rhs) const {
+	return  coreId < rhs.coreId ||
+			(coreId == rhs.coreId &&
+					(partitionId < rhs.partitionId ||
+							(partitionId == rhs.partitionId && replicaId < replicaId)));
+}
+bool ShardId::operator>=(const ShardId& rhs) const {
+	return  coreId > rhs.coreId ||
+			(coreId == rhs.coreId &&
+					(partitionId > rhs.partitionId ||
+							(partitionId == rhs.partitionId && replicaId >= replicaId)));
+}
+bool ShardId::operator<=(const ShardId& rhs) const {
+	return  coreId < rhs.coreId ||
+			(coreId == rhs.coreId &&
+					(partitionId < rhs.partitionId ||
+							(partitionId == rhs.partitionId && replicaId <= replicaId)));
+}
 
 
 // end of namespaces

@@ -65,9 +65,9 @@ using namespace srch2::httpwrapper;
 
 struct TestHandler : public CallBackHandler {
   int messageRecieved;
-  Message* notify(Message *msg) {
+  Message* notifyWithReply(Message *msg) {
    // assert(!strcmp(msg->buffer, MESSAGE_CONTENTS[messageRecieved]));
-    printf("%d: \t %s\n", msg->shard.coreId, msg->buffer);
+    printf("%d: \t %s\n", msg->shardId.coreId, msg->body);
     fflush(stdout);
     if(++messageRecieved == 52) pthread_exit(0);
     return NULL;
@@ -115,10 +115,10 @@ int main() {
     msg->type = StatusMessageType;
     msg->mask |= INTERNAL_MASK;
     msg->bodySize = messageLength+1;
-    msg->shard.coreId = n->getId();
-    memcpy(msg->buffer, MESSAGE_CONTENTS[m], messageLength);
+    msg->shardId.coreId = n->getId();
+    memcpy(msg->body, MESSAGE_CONTENTS[m], messageLength);
 
     tm->route(n->getId(), msg);
-    tm->getMessageAllocator()->deallocateMessage(msg);
+    tm->getMessageAllocator()->deallocateByMessagePointer(msg);
   }
 }

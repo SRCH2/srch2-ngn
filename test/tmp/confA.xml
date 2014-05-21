@@ -22,48 +22,38 @@
             "/usr/share/srch2/data/sample-data.json"
             In this config file it should be as "data/sample-data.json"
     -->
-    <!--<srch2Home>/home/jamshid/workspace-srch2/srch2-ngn/test/sharding/integration/</srch2Home>-->
-    <srch2Home>./test-data</srch2Home>
     <cluster-name>SRCH2 Cluster</cluster-name>
 
+    <srch2Home>.</srch2Home>
+ 
     <discovery>
         <ping-interval>2</ping-interval>
         <ping-timeout>8</ping-timeout>
         <retry-count>10</retry-count>
-    </discovery> 
+    </discovery>    
+    
+    <node>
+        <listeningHostname> 127.0.0.1 </listeningHostname>
+        <internalCommunicationPort> 3095 </internalCommunicationPort>
+        <this-is-me> true </this-is-me>
+        <node-name> queen </node-name>
+        <node-master> true </node-master>
+        <node-data> true </node-data>
+        <srch2Home> ./ </srch2Home>
+        <dataDir> ./data/2n-insertA-queryB/queen </dataDir>
+   </node> 
     <node>
         <this-is-me> false </this-is-me>
         <listeningHostname> 127.0.0.1 </listeningHostname>
         <node-name> frozen </node-name>
-        <internalCommunicationPort> 3095</internalCommunicationPort>
-    </node>
-
-
-    <node>
-        <listeningHostname> 127.0.0.1 </listeningHostname>
         <internalCommunicationPort> 3096 </internalCommunicationPort>
-        <this-is-me> true </this-is-me>
-        <node-name> queen </node-name>
-        <!--<node-master> true </node-master>-->
-        <node-data> true </node-data>
-        <srch2Home> ./ </srch2Home>
-        <!--<dataDir> ./data/2n-insertA-queryB/queen </dataDir>-->
-        <searchPort>6091</searchPort>
-        <savePort>6092</savePort>
-        <exportPort>6093</exportPort>
-        <resetLoggerPort>6094</resetLoggerPort>
-        <docsPort>6095</docsPort>
-        <updatePort>6096</updatePort>
-        <suggestPort>6097</suggestPort>
-        <infoPort>6098</infoPort>
-        <dataDir> core1 </dataDir>
-    </node>  
+    </node>
     <node>
         <listeningHostname> 127.0.0.1 </listeningHostname>
-        <listeningPort> 3098 </listeningPort>
+        <internalCommunicationPort> 3097 </internalCommunicationPort>
         <this-is-me> false </this-is-me>
-        <node-name> lion </node-name>
-    </node> 
+        <node-name> rio </node-name>
+    </node>
     <!--
         License Key File
         Required
@@ -71,7 +61,7 @@
         Email contact@srch2.com to get a key file.  
         Make sure to set the variable to the SRCH2 license key file.
     -->
-    <licenseFile>../../../wrapper/conf/srch2_license_key.txt</licenseFile>
+    <licenseFile>../test/wrapper/conf/srch2_license_key.txt</licenseFile>
  
     <!--
         Hostname and Port Number
@@ -80,11 +70,12 @@
         Hostname and port number of the server. Make sure the port is open.
     -->
     <listeningHostname>127.0.0.1</listeningHostname>
-    <listeningPort>4091</listeningPort>
-     
+    <listeningPort>4090</listeningPort>
+    	
         <cores defaultCoreName="core1">
         <core name="core1">
-        <core-number_of_shards>2</core-number_of_shards> 
+        <coreId>1</coreId>
+        <core-number_of_shards>4</core-number_of_shards> 
 	<core-number_of_replicas>1</core-number_of_replicas>
 
     <!--
@@ -94,7 +85,7 @@
         The file path to the folder where we store serialized index files.
         REQUIRED, when "index-load-or-create" is set to 1.
     -->
-    <dataDir>core1</dataDir>
+    <dataDir>./data/2n-insertA-queryB/</dataDir>
      
     <!--
         Data File
@@ -103,7 +94,7 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>empty-data.json</dataFile>
+    <dataFile>./input-data/empty-data.json</dataFile>
      
     <!--
 	Maximum Number of Threads
@@ -364,7 +355,7 @@
                  
                 Path to Access Log File
             -->
-            <accessLogFile>./logs/log.txt</accessLogFile>
+            <accessLogFile>./data/exact_a1/log.txt</accessLogFile>
         </updateLog>
      
     </updatehandler>
@@ -489,7 +480,7 @@
 	 </types>
 	</schema>
       </core>
-    </cores>
+   </cores>
 </config>
  
 

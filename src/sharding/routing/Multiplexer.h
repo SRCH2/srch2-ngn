@@ -8,47 +8,36 @@ namespace srch2 {
 namespace httpwrapper {
 
 /*
- * This is used for iterating over nodes/shards for broadcast
- */
-typedef unsigned NodeId;
-class UnicastIterator {
-  struct Unicast {
-    NodeId nodeId;
-    ShardId shardId;
-  } id;
-  std::vector<ShardId>::iterator i;
-  /*
-   * We need cluster to map shardIds to nodes
-   */
-  Cluster& cluster;
-
-public:
-  UnicastIterator(const UnicastIterator&);
-  UnicastIterator(Cluster& cluser, const std::vector<ShardId>::iterator&);
-  UnicastIterator();
-
-  UnicastIterator& operator=(const UnicastIterator&);
-  UnicastIterator& operator++();
-  UnicastIterator operator++(int);
-  bool operator==(const UnicastIterator&);
-  bool operator!=(const UnicastIterator&);
-
-  Unicast* operator->();
-};
-
-/*
  * Multiplexer is responsibe of using the shard->node map to provide an iterator
  * on nodes which is used by RM methods such as broadcast
  */
-struct Multiplexer {
-  ConfigManager& cm;
-  CoreShardInfo& info;
-  CoreInfo_t& coreInfo;
-
+class Multiplexer {
+public:
   Multiplexer(ConfigManager& cm, CoreShardInfo& info);
+
+/*
+ * Usage of this iterator is like this :
+
+  void Usage(){
+
+	  for(initIteration(); hasMore(); nextIteration()){
+		  ShardId shardId = getNextShardId();
+		  // ...
+	  }
+  }
+
+*/
   size_t size();
-  UnicastIterator begin();
-  UnicastIterator end();
+  void initIteration();
+  bool hasMore();
+  void nextIteration();
+  ShardId getNextShardId();
+private:
+  ConfigManager& configManager;
+  CoreShardInfo& coreShardInfo;
+  CoreInfo_t& coreInfo;
+  vector<ShardId> destinations;
+  unsigned destinationsIterator;
 };
 }}
 #endif /* __MULTIPLEXER_H__ */

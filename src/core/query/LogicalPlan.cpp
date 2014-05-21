@@ -130,7 +130,7 @@ void * LogicalPlanNode::serializeForNetwork(void * buffer){
  * | nodeType | forcedPhysicalNode | isNULL | isNULL | [exactTerm] | [fuzzyTerm] | [phraseInfo (if type is LogicalPlanNodePhraseType)] | children |
  * NOTE : stats is NULL until logical plan reaches to the core so we don't serialize it...
  */
-void * LogicalPlanNode::deserializeForNetwork(LogicalPlanNode * node, void * buffer){
+void * LogicalPlanNode::deserializeForNetwork(LogicalPlanNode * &node, void * buffer){
 	LogicalPlanNodeType type;
 	buffer = srch2::util::deserializeFixedTypes(buffer, type);
 	switch (type) {
@@ -354,7 +354,7 @@ void * LogicalPlan::deserializeForNetwork(LogicalPlan & logicalPlan , void * buf
 	// NOTE: postProcessingPlan is not serialized because it's not used anymore and it must be deleted
 	if(isPostProcessingInfoNotNull){
 		logicalPlan.postProcessingInfo = new ResultsPostProcessingInfo();
-		ResultsPostProcessingInfo::deserializeForNetwork(*logicalPlan.postProcessingInfo, buffer);
+		buffer = ResultsPostProcessingInfo::deserializeForNetwork(*logicalPlan.postProcessingInfo, buffer);
 	}
 	if(isTreeNotNull){
 		buffer = LogicalPlanNode::deserializeForNetwork(logicalPlan.tree, buffer);

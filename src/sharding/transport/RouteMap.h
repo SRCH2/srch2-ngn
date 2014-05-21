@@ -68,6 +68,7 @@ class RouteMap {
 	const Node* currentNode;
 
 	void addNodeConnection(NodeId, int);
+        int listeningSocket;
 public:
 
 	void initRoutes();
@@ -85,9 +86,12 @@ public:
 	const Node& getCurrentNode() const;
 	Connection getConnection(NodeId);
 
+
 	typedef std::map<NodeId, Connection>::iterator iterator;
 	iterator begin();
 	iterator end();
+        int getListeningSocket() const;
+        void setListeningSocket(int);
 
 	friend void* ::tryToConnect(void*);
 };

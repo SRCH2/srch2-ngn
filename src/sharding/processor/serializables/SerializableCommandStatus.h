@@ -41,7 +41,7 @@ public:
 		numberOfBytes += sizeof(status);
 		numberOfBytes += (sizeof(unsigned) + message.size());
 		// allocate the space
-		void * buffer = allocatorObj->allocate(numberOfBytes);
+		void * buffer = allocatorObj->allocateMessageReturnBody(numberOfBytes);
 		void * bufferWritePointer = buffer;
 
 		bufferWritePointer = srch2::util::serializeFixedTypes(commandCode, bufferWritePointer);
@@ -54,7 +54,7 @@ public:
 	}
 
     //given a byte stream recreate the original object
-    static const SerializableCommandStatus& deserialize(void* buffer){
+    static SerializableCommandStatus * deserialize(void* buffer){
     	CommandCode commandCode;
     	bool status;
     	string message;
@@ -66,7 +66,7 @@ public:
     	buffer = srch2::util::deserializeString(buffer, message);
     	// allocate and construct the object
     	SerializableCommandStatus * commandStatus = new SerializableCommandStatus(commandCode,status, message);
-    	return *commandStatus;
+    	return commandStatus;
     }
 
     //Returns the type of message which uses this kind of object as transport
