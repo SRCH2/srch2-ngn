@@ -1,6 +1,7 @@
 #include "transport/TransportManager.h"
 #include <event.h>
 #include <cstdlib>
+#include <sys/wait.h>
 
 static const char MESSAGE_CONTENTS[] = "MESSAGE FROM SRCH2";
 
@@ -21,6 +22,12 @@ int main() {
       Node(std::string("apple"), std::string("127.0.0.1"), 9523, false));
   nodes->push_back(
       Node(std::string("apple"), std::string("127.0.0.1"), 9512, false));
+  nodes->push_back(
+      Node(std::string("apple"), std::string("127.0.0.1"), 9541, false));
+  nodes->push_back(
+      Node(std::string("apple"), std::string("127.0.0.1"), 9545, false));
+  nodes->push_back(
+      Node(std::string("apple"), std::string("127.0.0.1"), 9542, false));
 
 
   int i=0;
@@ -52,6 +59,9 @@ int main() {
 
   while( !tm->getRouteMap()->isTotallyConnected())
     sleep(2);
+
+  int rtnVal = 0;
+  if(cid) wait(NULL);
 
   delete tm;
 }

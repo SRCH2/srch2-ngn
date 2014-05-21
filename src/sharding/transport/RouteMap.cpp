@@ -25,13 +25,23 @@ Route& RouteMap::addDestination(const Node& node) {
 	return destinations.back();
 }
 
-int recieveGreeting(int fd) {
+int recieveGreeting(int fd, bool noTimeout = false) {
 	char greetings[sizeof(GREETING_MESSAGE)+sizeof(int)+1];
 	memset(greetings, 0, sizeof(greetings));
 
 	char *currentPos = greetings;
 	int remaining = sizeof(GREETING_MESSAGE) + sizeof(int);
+   fd_set checkConnect;
+   timeval timeout;
 	while(remaining) {
+      //prevent infinite hanging in except so listening socket closes
+      FD_ZERO(&checkConnect);
+      FD_SET(fd, &checkConnect);
+      timeout.tv_sec = 3;
+      timeout.tv_usec = 0;
+      if(select(fd+1, &checkConnect, NULL, NULL, (noTimeout) ? NULL : &timeout)
+            !=1) break;
+
 		int readSize = read(fd, currentPos, remaining);
 		remaining -= readSize;
 		if(readSize <= 0) {
@@ -42,7 +52,8 @@ int recieveGreeting(int fd) {
 		}
      currentPos += readSize;
    }
-   if(memcmp(greetings, GREETING_MESSAGE, sizeof(GREETING_MESSAGE))) {
+   if(remaining || 
+         memcmp(greetings, GREETING_MESSAGE, sizeof(GREETING_MESSAGE))) {
       //incorrect greeting
       close(fd);
       return -1;
@@ -108,13 +119,16 @@ void* tryToConnect(void *arg) {
 		int fd = socket(AF_INET, SOCK_STREAM, 0);
 		if(fd < 0) continue;
 
-		if(connect(fd, (struct sockaddr*) 
+		while(connect(fd, (struct sockaddr*) 
                      &routeMapAndRouteHandle->route->first.first,
                  sizeof(routeMapAndRouteHandle->route->first.first)) == -1) {
-         if(errno != ECONNREFUSED) 
+         if(errno == ECONNREFUSED) {
             close(fd);
-			continue;
+            fd = -1;
+            break;
+         }
 		}
+      if(fd == -1) continue;
 
 		while(!routeMapAndRouteHandle->routeMap
                  ->checkInMap(routeMapAndRouteHandle->route->first.second)) {
@@ -130,7 +144,7 @@ void* tryToConnect(void *arg) {
 
 		if(!sendGreeting(fd, true, routeMapAndRouteHandle->
                                        routeMap->getCurrentNode().getId()) 
-			||	recieveGreeting(fd) == -1) {
+			||	recieveGreeting(fd, true) == -1) {
 			routeMapAndRouteHandle->route->second = false;
 			continue;
 		}
@@ -163,6 +177,7 @@ void RouteMap::acceptRoute(int fd, struct sockaddr_in addr) {
 	unsigned nodeId;
 
 	if((nodeId = recieveGreeting(fd)) == -1) {
+		sendGreeting(fd, false, nodeId);
 		close(fd);
 		return;
 	}
@@ -193,7 +208,7 @@ void RouteMap::acceptRoute(int fd, struct sockaddr_in addr) {
 	}
 
 
-	addNodeConnection(path->first.second, fd);
+   addNodeConnection(path->first.second, fd);
 }
 
 void RouteMap::addNodeConnection(NodeId addr, int fd) {
