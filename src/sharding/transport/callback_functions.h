@@ -29,14 +29,14 @@ struct TransportCallback {
  */
 bool findNextMagicNumberAndReadMessageHeader(Message *const msg,  int fd) {
 	while(true) {
-		int readRtn = read(fd, (void*) msg, sizeof(Message));
+		int readRtn = recv(fd, (void*) msg, sizeof(Message), MSG_DONTWAIT);
 
 		if(readRtn == -1) {
 			if(errno == EAGAIN || errno == EWOULDBLOCK) return false;
 
 			//v1: handle  error
 			return false;
-		}
+      }
 
 		if(readRtn < sizeof(Message)) {
 			//v1: broken message boundary == seriously bad
@@ -126,7 +126,10 @@ void recieveMessage(int fd, TransportCallback *cb) {
 		// have any information in them and therefore their body size is zero
 		if(msgHeader.getBodySize() != 0){
 			if(!(b.msg = readRestOfMessage(*(tm->getMessageAllocator()),
-					fd, &msgHeader, &b.readCount))) return;
+					fd, &msgHeader, &b.readCount))) {
+            b.lock = false;
+            return;
+         }
 
 			if(b.readCount != b.msg->getBodySize()) {
 				b.lock = false;
