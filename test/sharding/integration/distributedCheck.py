@@ -190,7 +190,17 @@ def testInsertAndQuery(queriesAndResultsPath, binary_path):
             status, output = commands.getstatusoutput(command)
             flag = str(output).find(expectedValue[0]);
             assert flag > -1, 'Error, record could not be updated'
- 
+         
+        if(operation[0] == 'info'):
+            command = 'curl -i "http://' + nodes[nodeId[0]].ipAddress + ':' + nodes[nodeId[0]].portNo + '/info"'
+            status, output = commands.getstatusoutput(command)
+            print output   
+         
+        if(operation[0] == 'save'):
+            command = 'curl -i "http://' + nodes[nodeId[0]].ipAddress + ':' + nodes[nodeId[0]].portNo + '/save" -X PUT'         
+            status, output = commands.getstatusoutput(command)
+            print output
+
     return failCount
 
 if __name__ == '__main__':
