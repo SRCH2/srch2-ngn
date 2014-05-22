@@ -1,0 +1,9 @@
+# Record R1 is inserted into node A and record R2 into node B
+# Then record R1 is deleted by sending requrest to node B
+# We then query node A for record R1
+
+A||insert||{"category": "kindergarten academic school Social Services Services Child Care", "name": "Garden Montessori", "relevance": 5.3888513463129604, "lat": 61.111776999999996, "lng": -149.86153999999999, "id": "114"}||{"rid":"114","insert":"success"}
+B||insert||{"category": "Insurance Services Insurance Agent", "name": "Prescription Service Of California", "relevance": 3.0147461915737148, "lat": 61.171669000000001, "lng": -149.881021, "id": "115"}||{"rid":"115","insert":"success"}
+C||delete||114||{"rid":"114","delete":"success"}
+D||query||kindergarten||[]||"results_found":0 
+
