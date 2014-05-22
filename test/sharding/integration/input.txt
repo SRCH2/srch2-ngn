@@ -1,0 +1,2 @@
+A||128.195.185.134||10002||./multiNode/confC.xml
+B||128.195.185.107||10003||./multiNode/confD.xml
