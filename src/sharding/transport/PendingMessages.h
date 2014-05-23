@@ -45,6 +45,11 @@ public:
 	std::vector<Message*>& getReplyMessages();
 	std::vector<Message*>& getRequestMessages();
 	int& getWaitingOn();
+
+   void addReplyMessage(Message* msg) {
+	  boost::unique_lock< boost::shared_mutex > lock(_access);
+     replyMessages.push_back(msg);
+   }
 	~RegisteredCallback(){
 		delete callbackObject;
 		// delete request messages
@@ -59,6 +64,7 @@ public:
 
 private:
 
+	mutable boost::shared_mutex _access;
 	// request object
 	void* originalSerializableObject;
 	// callback object, example: RMCallback or SMCallback
