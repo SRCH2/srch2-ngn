@@ -31,7 +31,7 @@ bool findNextMagicNumberAndReadMessageHeader(Message *const msg,  int fd) {
 	while(true) {
 		int readRtn = recv(fd, (void*) msg, sizeof(Message), MSG_DONTWAIT);
 
-		if(readRtn == -1) {
+		if(readRtn == -1 || readRtn == 0) {
 			if(errno == EAGAIN || errno == EWOULDBLOCK) return false;
 
 			//v1: handle  error
@@ -58,10 +58,12 @@ Message* readRestOfMessage(MessageAllocator& messageAllocator,
 	int rv = recv(fd, Message::getBodyPointerFromMessagePointer(msg), msgHeader->getBodySize(), MSG_DONTWAIT);
 
 	if(rv == -1) {
-		if(errno == EAGAIN || errno == EWOULDBLOCK) return NULL;
-
-		//v1: handle error
-		return NULL;
+		if(errno == EAGAIN || errno == EWOULDBLOCK) {
+         rv = 0;
+      } else {
+		  //v1: handle error
+		  return NULL;
+      }
 	}
 
 	*readCount = rv;
@@ -74,7 +76,7 @@ bool readPartialMessage(int fd, MessageBuffer& buffer) {
 	int toRead = buffer.msg->getBodySize() - buffer.readCount;
 	if(toRead == 0) {
 		//strangely we don't need to read anything;)
-		return false;
+		return true;
 	}
 
 	int readReturnValue = recv(fd, 
@@ -115,11 +117,11 @@ void recieveMessage(int fd, TransportCallback *cb) {
 		while(true) {
 			MessageTime_t time = tm->getDistributedTime();
 			//check if time needs to be incremented
-			if(msgHeader.getTime() < time &&
+			if(msgHeader.getTime() <= time &&
 					/*zero break*/ time - msgHeader.getTime() < UINT_MAX/2 ) break;
 			//make sure time did not change
 			if(__sync_bool_compare_and_swap(
-					&tm->getDistributedTime(), time, msgHeader.getTime())) break;
+					&tm->getDistributedTime(), time, msgHeader.getTime()+1)) break;
 		}
 
 		// we have some types of message like GetInfoCommandInfo that currently don't
