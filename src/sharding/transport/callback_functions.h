@@ -29,14 +29,14 @@ struct TransportCallback {
  */
 bool findNextMagicNumberAndReadMessageHeader(Message *const msg,  int fd) {
 	while(true) {
-		int readRtn = read(fd, (void*) msg, sizeof(Message));
+		int readRtn = recv(fd, (void*) msg, sizeof(Message), MSG_DONTWAIT);
 
-		if(readRtn == -1) {
+		if(readRtn == -1 || readRtn == 0) {
 			if(errno == EAGAIN || errno == EWOULDBLOCK) return false;
 
 			//v1: handle  error
 			return false;
-		}
+      }
 
 		if(readRtn < sizeof(Message)) {
 			//v1: broken message boundary == seriously bad
@@ -58,10 +58,12 @@ Message* readRestOfMessage(MessageAllocator& messageAllocator,
 	int rv = recv(fd, Message::getBodyPointerFromMessagePointer(msg), msgHeader->getBodySize(), MSG_DONTWAIT);
 
 	if(rv == -1) {
-		if(errno == EAGAIN || errno == EWOULDBLOCK) return NULL;
-
-		//v1: handle error
-		return NULL;
+		if(errno == EAGAIN || errno == EWOULDBLOCK) {
+         rv = 0;
+      } else {
+		  //v1: handle error
+		  return NULL;
+      }
 	}
 
 	*readCount = rv;
@@ -74,14 +76,14 @@ bool readPartialMessage(int fd, MessageBuffer& buffer) {
 	int toRead = buffer.msg->getBodySize() - buffer.readCount;
 	if(toRead == 0) {
 		//strangely we don't need to read anything;)
-		return false;
+		return true;
 	}
 
 	int readReturnValue = recv(fd, 
 			Message::getBodyPointerFromMessagePointer(buffer.msg) + buffer.readCount, toRead, MSG_DONTWAIT);
 	if(readReturnValue < 0) {
 		//TODO: handle errors
-		return false;
+		return true;
 	}
 
 	buffer.readCount += readReturnValue;
@@ -115,18 +117,21 @@ void recieveMessage(int fd, TransportCallback *cb) {
 		while(true) {
 			MessageTime_t time = tm->getDistributedTime();
 			//check if time needs to be incremented
-			if(msgHeader.getTime() < time &&
+			if(msgHeader.getTime() <= time &&
 					/*zero break*/ time - msgHeader.getTime() < UINT_MAX/2 ) break;
 			//make sure time did not change
 			if(__sync_bool_compare_and_swap(
-					&tm->getDistributedTime(), time, msgHeader.getTime())) break;
+					&tm->getDistributedTime(), time, msgHeader.getTime()+1)) break;
 		}
 
 		// we have some types of message like GetInfoCommandInfo that currently don't
 		// have any information in them and therefore their body size is zero
 		if(msgHeader.getBodySize() != 0){
 			if(!(b.msg = readRestOfMessage(*(tm->getMessageAllocator()),
-					fd, &msgHeader, &b.readCount))) return;
+					fd, &msgHeader, &b.readCount))) {
+            b.lock = false;
+            return;
+         }
 
 			if(b.readCount != b.msg->getBodySize()) {
 				b.lock = false;

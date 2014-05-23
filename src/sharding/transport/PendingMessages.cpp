@@ -99,7 +99,7 @@ void PendingMessages::resolve(Message* message) {
 
 
 	if(resolution.getCallbackAndTypeMask().isWaitForAll()) {
-		cb->getReplyMessages().push_back(message);
+		cb->addReplyMessage(message);
 		int num = __sync_sub_and_fetch(&cb->getWaitingOn(), 1);
 
 
