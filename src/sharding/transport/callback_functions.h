@@ -81,7 +81,7 @@ bool readPartialMessage(int fd, MessageBuffer& buffer) {
 			Message::getBodyPointerFromMessagePointer(buffer.msg) + buffer.readCount, toRead, MSG_DONTWAIT);
 	if(readReturnValue < 0) {
 		//TODO: handle errors
-		return false;
+		return true;
 	}
 
 	buffer.readCount += readReturnValue;

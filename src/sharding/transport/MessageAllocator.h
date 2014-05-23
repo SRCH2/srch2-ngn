@@ -53,4 +53,3 @@ public:
 }}
 
 #endif /* __MESSAGE_ALLOCATOR_H__ */
-;
