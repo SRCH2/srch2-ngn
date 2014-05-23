@@ -1,5 +1,6 @@
-#This tInsert
-#tests insertion, querying and deletion from multiple nodes
+# This tests insertion, querying and deletion from multiple nodes
+# Sample script
+# shell> python ./distributedCheck.py ../../../build/src/server/srch2-search-server ./2nodeInCalvin-2nodeInDilbert/4n-insertA-queryB-infoCD.txt ./2nodeInCalvin-2nodeInDilbert/input.txt
 
 import sys, urllib2, json, time, subprocess, os, commands, signal, paramiko, socket
 
@@ -31,11 +32,11 @@ def createSSHConnections():
         sshClient[nodes[key].Id] = paramiko.SSHClient()
         sshClient[nodes[key].Id].set_missing_host_key_policy(paramiko.AutoAddPolicy())
         if(nodes[key].ipAddress == myIpAddress):
-            temp = subprocess.Popen(['../../../build/src/server/srch2-search-server','--config='+nodes[key].conf])
+            temp = subprocess.Popen([binary_path,'--config='+nodes[key].conf])
             nodes[key].pid = temp.pid
             continue
         sshClient[nodes[key].Id].connect(nodes[key].ipAddress)
-        stdin, stdout, stderr = sshClient[nodes[key].Id].exec_command('cd gitrepo/srch2-ngn/test/sharding/integration;echo $$;exec ../../../build/src/server/srch2-search-server --config='+ nodes[key].conf)
+        stdin, stdout, stderr = sshClient[nodes[key].Id].exec_command('cd gitrepo/srch2-ngn/test/sharding/integration;echo $$;exec '+binary_path+' --config='+ nodes[key].conf)
         nodes[key].pid = stdout.readline()
 
 
@@ -205,10 +206,9 @@ def testInsertAndQuery(queriesAndResultsPath, binary_path):
 
 if __name__ == '__main__':
     #Path of the query file
-    nodesPath = sys.argv[1]
+    nodesPath = sys.argv[3]
     parseNodes(nodesPath)
-    binary_path='../../../build/src/server/srch2-search-server'
-    #binary_path = sys.argv[1]
+    binary_path=sys.argv[1]
     queriesAndResultsPath = sys.argv[2]
     os.popen('rm -rf ./test-data/core1/*.idx')
     createSSHConnections()
