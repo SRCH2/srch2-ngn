@@ -108,6 +108,7 @@ TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
 	}
 
 	distributedTime = 0;
+	synchManagerHandler = 0;
 }
 
 #define USE_SAME_THREAD_FOR_CURRENT_NODE_PROCESS

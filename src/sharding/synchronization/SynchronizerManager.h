@@ -35,6 +35,7 @@ public:
 	// should be called in new thread otherwise current thread will block
 	void run();
 private:
+	void refresh() {};
 	unsigned findNextEligibleMaster();
 	void sendHeartBeatToAllNodesInCluster();
 	void registerForCallback();
@@ -52,7 +53,7 @@ private:
 	MessageHandler *messageHandler;
 	friend class ClientMessageHandler;
 	friend class MasterMessageHandler;
-
+	ConfigManager& config;
 	// temporary for V0
 	// keep local copy for nodes in cluster ..for V1 we should fetch/update config store.
 	std::vector<Node> nodesInCluster;
@@ -61,8 +62,11 @@ private:
 
 class SMCallBackHandler : public CallBackHandler{
 public:
-	Message*  notify(Message *message) {
-		switch(message->type){
+	void notifyNoReply(Message * msg) {
+		notifyWithReply(msg);
+	}
+	Message*  notifyWithReply(Message *message) {
+		switch(message->getType()){
 			case HeartBeatMessageType:
 			{
 				cout << "****delivered heart beat ***" << endl;
@@ -79,12 +83,12 @@ public:
 			case LeaderElectionAckMessageType:
 			case LeaderElectionProposalMessageType:
 			{
-				if (message->bodySize >= 4) {
-					unsigned nodeId = FETCH_UNSIGNED(message->buffer);
+				if (message->getBodySize() >= 4) {
+					unsigned nodeId = FETCH_UNSIGNED(message->getMessageBody());
 					cout << "*** delivered message received from client " << nodeId << endl ;
 					unsigned idx = nodeId % 1024;
-					Message * msg = msgAllocator.allocateMessage(message->bodySize);
-					memcpy(msg, message, sizeof(Message) + message->bodySize);
+					Message * msg = msgAllocator.allocateMessage(message->getBodySize());
+					memcpy(msg, message, sizeof(Message) + message->getBodySize());
 					boost::mutex::scoped_lock lock(messageQArray[idx].qGuard);
 					messageQArray[idx].messageQueue.push(msg);
 					cout << "node" << idx << " :: " << messageQArray[idx].messageQueue.size();
@@ -94,10 +98,9 @@ public:
 				break;
 			}
 			default:
-				if (message->bodySize >= 4) {
-					unsigned nodeId = FETCH_UNSIGNED(message->buffer);
-					cout << "*** bad message type (" << message->type <<  ") received from client "
-							<< nodeId << endl ;
+				if (message->getBodySize() >= 4) {
+					unsigned nodeId = FETCH_UNSIGNED(message->getMessageBody());
+					Logger::warn("SM-CB:bad message type received from node = %d", nodeId) ;
 				}
 				break;
 		}
@@ -125,7 +128,7 @@ public:
 			}
 		}
 		if (ptr)
-			msgAllocator.deallocate(ptr);
+			msgAllocator.deallocateByMessagePointer(ptr);
 	}
 
 	void getHeartBeatMessages(Message**msg) {
@@ -184,12 +187,12 @@ public:
 		return;
 	}
 	virtual void handleTimeOut(Message *message) {
-		if (message->bodySize < 4 ) {
+		if (message->getBodySize() < 4 ) {
 			Logger::error("Timeout with no node information!!");
 			return;
 		}
-		unsigned nodeId = FETCH_UNSIGNED(message->buffer);
-		switch(message->type) {
+		unsigned nodeId = FETCH_UNSIGNED( message->getMessageBody());
+		switch(message->getType()) {
 		case LeaderElectionProposalMessageType:
 			// check whether current master is up if not then send the request again.
 			startMasterElection();  // resend election request
@@ -203,7 +206,7 @@ public:
 	}
 
 	virtual void handleMessage(Message *message) {
-		switch(message->type) {
+		switch(message->getType()) {
 		case HeartBeatMessageType:
 			processHeartBeat(message);
 			break;
@@ -249,7 +252,7 @@ public:
 	}
 
 	virtual void handleMessage(Message *message) {
-		switch(message->type) {
+		switch(message->getType()) {
 		case ClientStatusMessageType:
 			updateNodeInCluster(message);
 			break;

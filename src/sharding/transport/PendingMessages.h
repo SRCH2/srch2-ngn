@@ -45,7 +45,7 @@ public:
 	std::vector<Message*>& getReplyMessages();
 	std::vector<Message*>& getRequestMessages();
 	int& getWaitingOn();
-
+	void incrementWaitOn() { ++waitingOn; }
    void addReplyMessage(Message* msg) {
 	  boost::unique_lock< boost::shared_mutex > lock(_access);
      replyMessages.push_back(msg);

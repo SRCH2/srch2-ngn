@@ -336,6 +336,7 @@ public:
 				return &nodes[i];
 			}
 		}
+		return NULL; // should not happen
 	}
 
 	std::map<ShardId, Shard, ShardIdComparator> shardMap;
@@ -354,7 +355,7 @@ public:
 	bool         isMasterNode(unsigned nodeId);
 
 	void         getNodeById(unsigned id, Node& node);
-	unsigned     getTotalNumberOfNodes();
+	unsigned     getTotalNumberOfNodes() { return nodes.size(); };
 
 	void setClusterName(const std::string& clusterName)
 	{
@@ -512,20 +513,60 @@ public:
 	}
 
 	typedef std::map<const string, CoreInfo_t *> CoreInfoMap_t;
-	Cluster* getCluster(){
+	Cluster* getCluster(){  // not safe
 		return &(this->cluster);
 	}
 
+	void removeNodeFromCluster(unsigned nodeId) {
+		//spin to acquire lock
+		//while (!__sync_bool_compare_and_swap (&isLocked, false, true)) ;
+
+		vector<Node>* nodes = this->cluster.getNodes();
+		unsigned index = 0;
+		for(; index < nodes->size(); ++index){
+			if((*nodes)[index].getId() == nodeId){
+				break;
+			}
+		}
+		if (index < nodes->size())
+			nodes->erase(nodes->begin() + index);
+
+		isLocked = false;
+	}
+
+	bool isValidNode(unsigned nodeId) {
+		//spin to acquire lock
+		//while (!__sync_bool_compare_and_swap (&isLocked, false, true)) ;
+
+		vector<Node>* nodes = this->cluster.getNodes();
+		unsigned index = 0;
+		unsigned totalNodes = nodes->size();
+		for(; index < totalNodes; ++index){
+			if((*nodes)[index].getId() == nodeId){
+				break;
+			}
+		}
+		isLocked = false;
+		if (index < totalNodes)
+			return true;
+		else
+			return false;
+	}
 	unsigned getCurrentNodeId(){
+		//spin to acquire lock
+		//while (!__sync_bool_compare_and_swap (&isLocked, false, true)) ;
+
 		vector<Node>* nodes = this->cluster.getNodes();
 		for(int i = 0; i < nodes->size(); i++){
 			if(nodes->at(i).thisIsMe == true){
 				return nodes->at(i).getId();
 			}
 		}
+		isLocked = false;
 		return 0;
 	}
 private:
+	volatile bool isLocked; //both read / write use this lock.
 	Cluster cluster;
 	DiscoveryParams discovery;
 	// <config>

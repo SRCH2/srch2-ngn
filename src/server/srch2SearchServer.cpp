@@ -47,6 +47,7 @@
 #include "routing/RoutingManager.h"
 #include "processor/DistributedProcessorExternal.h"
 #include "configuration/ConfigManager.h"
+#include "synchronization/SynchronizerManager.h"
 
 
 namespace po = boost::program_options;
@@ -823,6 +824,10 @@ int main(int argc, char** argv) {
 	srch2http::DPExternalRequestHandler *dpExternal =
 			new srch2http::DPExternalRequestHandler(serverConf, routesManager);
 
+	// run SM
+	srch2http::Synchronizer  *syncManager = new srch2http::Synchronizer(*serverConf , *transportManager, 1);
+	pthread_t *synchronizerThread = new pthread_t;
+	pthread_create(synchronizerThread, NULL, srch2http::bootSynchronizer, (void *)syncManager);
 
 	// create DPExternal,core pairs
 	// map from coreId to DPExternalCoreHandle which is a container of
@@ -876,6 +881,10 @@ int main(int argc, char** argv) {
 
 	pthread_join(transportManager->getListeningThread(), NULL);
 	Logger::console("Thread = <%u> stopped", transportManager->getListeningThread());
+
+	pthread_cancel(*synchronizerThread);
+	pthread_join(*synchronizerThread, NULL);
+	Logger::console("synch thread stopped.");
 
 	delete[] threads;
 

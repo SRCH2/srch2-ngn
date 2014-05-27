@@ -46,6 +46,7 @@ inline void RoutingManager::sendInternalMessage(Message * msg,
 		ShardId shardId, timeval timeoutValue, CallbackReference cb) {
 
 	unsigned nodeId = shardId.getNodeId(configurationManager);
+	cb.getRegisteredCallbackPtr()->incrementWaitOn();
 	transportManager.route(nodeId, msg, timeoutValue.tv_sec, cb);
 }
 
@@ -53,6 +54,7 @@ inline void RoutingManager::sendExternalMessage(Message * msg,
 		ShardId shardId, timeval timeoutValue, CallbackReference cb){
 
 	unsigned nodeId = shardId.getNodeId(configurationManager);
+	cb.getRegisteredCallbackPtr()->incrementWaitOn();
 	transportManager.route(nodeId, msg, timeoutValue.tv_sec, cb);
 
 }
@@ -322,7 +324,7 @@ RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType * requestObj,
 			new RMCallback<RequestType, ResponseType>(*aggregator),
 			ResponseType::messageKind(),
 			true,
-			broadcastResolver.size());
+			0);
 
 	Message * internalMessage = NULL;
 	Message * externalMessage = NULL;
@@ -331,7 +333,12 @@ RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType * requestObj,
 	for(broadcastResolver.initIteration(); broadcastResolver.hasMore(); broadcastResolver.nextIteration()) {
 		ShardId shardIdFromIteration = broadcastResolver.getNextShardId();
 		// this shard is in the current node
-		if(shardIdFromIteration.isInCurrentNode(configurationManager)){
+		unsigned nodeId = shardIdFromIteration.getNodeId(configurationManager);
+		if (!configurationManager.isValidNode(nodeId))
+			continue;
+		cout << "broadcasting to node " << nodeId << endl;
+
+		if(nodeId == configurationManager.getCurrentNodeId()){
 			// so that we create the message only once
 			if(internalMessage == NULL){
 				internalMessage = prepareInternalMessage<RequestType>(shardIdFromIteration, requestObj);

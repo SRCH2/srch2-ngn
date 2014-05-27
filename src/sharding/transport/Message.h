@@ -81,6 +81,10 @@ public:
    void setBodySize(unsigned bodySize){
 	   this->bodySize = bodySize;
    }
+
+   void setMask(char mask) { this->mask =  mask; }
+   char * getMessageBody() { return this->body; }
+
    static Message * getMessagePointerFromBodyPointer( void * bodyPointer){
 	   return (Message *)((char *)bodyPointer - sizeof(Message));
    }

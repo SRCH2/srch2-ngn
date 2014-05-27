@@ -175,7 +175,8 @@ void recieveMessage(int fd, TransportCallback *cb) {
 			return;
 		}
 	} else {
-		tm->getSmHandler()->notifyWithReply(msg);
+		if (tm->getSmHandler())
+			tm->getSmHandler()->notifyWithReply(msg);
 	}
 
 	tm->getMessageAllocator()->deallocateByMessagePointer(msg);
@@ -188,46 +189,6 @@ void cb_recieveMessage(int fd, short eventType, void *arg) {
 	TransportCallback* cb = (TransportCallback*) arg;
   recieveMessage(fd, cb);
   event_add(cb->ev, NULL);
-}
-
-void cb_recieveMessage1(struct bufferevent *bev, void *arg){
-
-	TransportManager* tm = (TransportManager*) arg;
-	Message msgHeader;
-	int n;
-	struct evbuffer *inp = bufferevent_get_input(bev);
-	signed totalLen = evbuffer_get_length(inp);
-	signed read = evbuffer_remove(inp, &msgHeader, sizeof(Message));
-	if (read != sizeof(Message)) {
-		cout << "XXX buffer read error XXX" << endl;
-		return;
-	}
-	//cout << "*** buffer read success ***" << msgHeader.bodySize << endl;
-
-	if (totalLen == msgHeader.bodySize + sizeof(Message)) {
-		//cout << "*** total len is good" << endl;
-	} else {
-		cout << "XXX "<< totalLen << "!=" << msgHeader.bodySize + sizeof(Message) << endl;
-	}
-
-	Message *msg =  tm->getMessageAllocator()->allocateMessage( msgHeader.bodySize);
-	memcpy(msg, &msgHeader, sizeof(Message));
-	evbuffer_remove(inp, msg->buffer, msgHeader.bodySize);
-	if(msg->isReply()) {
-		tm->getMsgs()->resolve(msg);
-	} else if(msg->isInternal()) {
-		if(Message* reply = tm->getInternalTrampoline()->notify(msg)) {
-			reply->initial_time = msg->time;
-			reply->mask |= REPLY_MASK & INTERNAL_MASK;
-			unsigned fd = bufferevent_getfd(bev);
-			tm->route( fd, reply);
-			tm->getMessageAllocator()->deallocate(reply);
-		}
-	}
-	else if (tm->getSmHandler()) {
-		tm->getSmHandler()->notify(msg);
-	}
-	tm->getMessageAllocator()->deallocate(msg);
 }
 
 #endif /* __TRANSPORT_CALLBACK_FUNCTIONS_H__ */

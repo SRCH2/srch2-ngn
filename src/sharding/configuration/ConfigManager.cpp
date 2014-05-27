@@ -211,6 +211,7 @@ ConfigManager::ConfigManager(const string& configFile)
     this->configFile = configFile;
     defaultCoreName = "__DEFAULTCORE__";
     defaultCoreSetFlag = false;
+    isLocked = false;
 }
 
 void ConfigManager::loadConfigFile()
