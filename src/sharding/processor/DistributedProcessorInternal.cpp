@@ -118,6 +118,7 @@ SerializableCommandStatus * DPInternalRequestHandler::internalInsertCommand(Srch
 			case srch2::instantsearch::OP_SUCCESS:
 			{
 				log_str << "{\"rid\":\"" << insertUpdateData->getRecord()->getPrimaryKey() << "\",\"insert\":\"success\"}";
+		        Logger::info("%s", log_str.str().c_str());
 				SerializableCommandStatus * status=
 						new SerializableCommandStatus(SerializableCommandStatus::INSERT, true, log_str.str());
 				return status;
@@ -125,6 +126,7 @@ SerializableCommandStatus * DPInternalRequestHandler::internalInsertCommand(Srch
 			case srch2::instantsearch::OP_FAIL:
 			{
 				log_str << "{\"rid\":\"" << insertUpdateData->getRecord()->getPrimaryKey() << "\",\"insert\":\"failed\",\"reason\":\"The record with same primary key already exists\"}";
+		        Logger::info("%s", log_str.str().c_str());
 				SerializableCommandStatus * status =
 						new SerializableCommandStatus(SerializableCommandStatus::INSERT, false, log_str.str());
 				return status;
@@ -134,6 +136,7 @@ SerializableCommandStatus * DPInternalRequestHandler::internalInsertCommand(Srch
 	else
 	{
 		log_str << "{\"rid\":\"" << insertUpdateData->getRecord()->getPrimaryKey() << "\",\"insert\":\"failed\",\"reason\":\"document limit reached. Email support@srch2.com for account upgrade.\"}";
+        Logger::info("%s", log_str.str().c_str());
 		SerializableCommandStatus * status =
 				new SerializableCommandStatus(SerializableCommandStatus::INSERT, false, log_str.str());
 		return status;
@@ -142,6 +145,7 @@ SerializableCommandStatus * DPInternalRequestHandler::internalInsertCommand(Srch
 	ASSERT(false);
 	SerializableCommandStatus * status =
 			new SerializableCommandStatus(SerializableCommandStatus::INSERT, false, log_str.str());
+    Logger::info("%s", log_str.str().c_str());
 	return status;
 
 
@@ -206,6 +210,7 @@ SerializableCommandStatus * DPInternalRequestHandler::internalUpdateCommand(Srch
 				else
 				  log_str << "New record inserted successfully\"}";
 
+		        Logger::info("%s", log_str.str().c_str());
 				SerializableCommandStatus * status =
 						new SerializableCommandStatus(SerializableCommandStatus::UPDATE, true, log_str.str());
 				return status;
@@ -231,6 +236,7 @@ SerializableCommandStatus * DPInternalRequestHandler::internalUpdateCommand(Srch
         case srch2::instantsearch::OP_FAIL:
         {
             log_str << "\"resume\":\"no record with given primary key\"}";
+            Logger::info("%s", log_str.str().c_str());
             SerializableCommandStatus * status =
             		new SerializableCommandStatus(SerializableCommandStatus::UPDATE, false, log_str.str());
 			return status;
@@ -238,6 +244,7 @@ SerializableCommandStatus * DPInternalRequestHandler::internalUpdateCommand(Srch
         default: // OP_SUCCESS.
         {
             log_str << "\"resume\":\"success\"}";
+            Logger::info("%s", log_str.str().c_str());
             SerializableCommandStatus * status =
             		new SerializableCommandStatus(SerializableCommandStatus::UPDATE, true, log_str.str());
 			return status;
@@ -246,6 +253,7 @@ SerializableCommandStatus * DPInternalRequestHandler::internalUpdateCommand(Srch
 
     // we should not reach here
     ASSERT(false);
+    Logger::info("%s", log_str.str().c_str());
     SerializableCommandStatus * status =
     		new SerializableCommandStatus(SerializableCommandStatus::UPDATE, false, log_str.str());
 	return status;
@@ -273,6 +281,7 @@ SerializableCommandStatus * DPInternalRequestHandler::	internalDeleteCommand(Src
 		case OP_FAIL:
 		{
 			log_str << "failed\",\"reason\":\"no record with given primary key\"}";
+	        Logger::info("%s", log_str.str().c_str());
 			SerializableCommandStatus * status =
 					new SerializableCommandStatus(SerializableCommandStatus::DELETE, false, log_str.str());
 			return status;
@@ -280,6 +289,7 @@ SerializableCommandStatus * DPInternalRequestHandler::	internalDeleteCommand(Src
 		default: // OP_SUCCESS.
 		{
 			log_str << "success\"}";
+	        Logger::info("%s", log_str.str().c_str());
 			SerializableCommandStatus * status =
 					new SerializableCommandStatus(SerializableCommandStatus::DELETE, true, log_str.str());
 			return status;
@@ -342,6 +352,7 @@ SerializableCommandStatus * DPInternalRequestHandler::internalSerializeIndexComm
 		return status;
 	}
 	server->indexer->save();
+    Logger::info("%s", "{\"save\":\"success\"}");
 	SerializableCommandStatus * status =
 			new SerializableCommandStatus(SerializableCommandStatus::SERIALIZE_INDEX, true, "{\"save\":\"success\"}");
 	return status;
@@ -364,6 +375,7 @@ SerializableCommandStatus * DPInternalRequestHandler::internalSerializeRecordsCo
         exportedDataFileName = "export_data.json";
     }
     server->indexer->exportData(exportedDataFileName);
+    Logger::info("%s", "{\"export\":\"success\"}");
 	SerializableCommandStatus * status =
 			new SerializableCommandStatus(SerializableCommandStatus::SERIALIZE_RECORDS, true, "{\"export\":\"success\"}");
 	return status;
@@ -390,6 +402,8 @@ SerializableCommandStatus * DPInternalRequestHandler::internalResetLogCommand(Sr
     if (logFile == NULL) {
         srch2::util::Logger::error("Reopen Log file %s failed.",
                 server->indexDataConfig->getHTTPServerAccessLogFile().c_str());
+        Logger::info("%s", string("{\"message\":\"The logger file repointing failed. Could not create new logger file\", \"log\":\""
+                + server->indexDataConfig->getHTTPServerAccessLogFile() + "\"}").c_str());
 		SerializableCommandStatus * status=
 				new SerializableCommandStatus(SerializableCommandStatus::RESET_LOG, false,
 				"{\"message\":\"The logger file repointing failed. Could not create new logger file\", \"log\":\""
@@ -398,6 +412,8 @@ SerializableCommandStatus * DPInternalRequestHandler::internalResetLogCommand(Sr
     } else {
         FILE * oldLogger = srch2::util::Logger::swapLoggerFile(logFile);
         fclose(oldLogger);
+        Logger::info("%s", string("{\"message\":\"The logger file repointing succeeded\", \"log\":\""
+				                + server->indexDataConfig->getHTTPServerAccessLogFile() + "\"}").c_str());
 		SerializableCommandStatus * status=
 				new SerializableCommandStatus(SerializableCommandStatus::RESET_LOG, true,
 				"{\"message\":\"The logger file repointing succeeded\", \"log\":\""
@@ -417,12 +433,14 @@ SerializableCommandStatus * DPInternalRequestHandler::internalCommitCommand(Srch
 	//commit the index.
 	if ( server->indexer->commit() == srch2::instantsearch::OP_SUCCESS)
 	{
+        Logger::info("%s", "{\"commit\":\"success\"}");
 		SerializableCommandStatus * status =
 				new SerializableCommandStatus(SerializableCommandStatus::COMMIT, true, "{\"commit\":\"success\"}");
 		return status;
 	}
 	else
 	{
+        Logger::info("%s", "{\"commit\":\"failed\"}");
 		SerializableCommandStatus * status =
 				new SerializableCommandStatus(SerializableCommandStatus::COMMIT, false, "{\"commit\":\"failed\"}");
 		return status;

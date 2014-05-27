@@ -7,6 +7,9 @@
 #include <iterator>
 #include <map>
 #include "MessageBuffer.h"
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/shared_mutex.hpp>
+#include <boost/thread/locks.hpp>
 
 void* tryToConnect(void*);
 
@@ -28,7 +31,6 @@ public:
 };
 typedef std::pair<sockaddr_in, NodeId> ConnectionInfo;
 typedef std::pair<ConnectionInfo, bool> Route;
-//typedef ConnectionBuffers std::map<int, Message* msg, Buffer>
 
 using srch2::httpwrapper::Node;
 
@@ -66,9 +68,9 @@ class RouteMap {
 	// bool is whether it's been connection or not so initially it's false
 	std::vector<Route > destinations;
 	const Node* currentNode;
-
+	mutable boost::shared_mutex _access;
 	void addNodeConnection(NodeId, int);
-        int listeningSocket;
+   int listeningSocket;
 public:
 
 	void initRoutes();
@@ -85,13 +87,14 @@ public:
 	void setCurrentNode(Node&);
 	const Node& getCurrentNode() const;
 	Connection getConnection(NodeId);
+   bool checkInMap(NodeId);
 
 
 	typedef std::map<NodeId, Connection>::iterator iterator;
 	iterator begin();
 	iterator end();
-        int getListeningSocket() const;
-        void setListeningSocket(int);
+   int getListeningSocket() const;
+   void setListeningSocket(int);
 
 	friend void* ::tryToConnect(void*);
 };

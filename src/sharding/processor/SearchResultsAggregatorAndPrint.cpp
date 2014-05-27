@@ -290,10 +290,10 @@ void SearchResultAggregatorAndPrint::printResults(evhttp_request *req,
                 	root["results"][counter][internalRecordTags.first] = sbuffer;
                 }
 
-                string sbuffer = string();
-                sbuffer.reserve(1024);  //<< TODO: set this to max allowed snippet len
-                //TODO genSnippetJSONString(i, start, recordSnippets, sbuffer, queryResults);
-                root["results"][counter][internalSnippetTags.first] = sbuffer;
+//                string sbuffer = string();
+//                sbuffer.reserve(1024);  //<< TODO: set this to max allowed snippet len
+//                //TODO genSnippetJSONString(i, start, recordSnippets, sbuffer, queryResults);
+//                root["results"][counter][internalSnippetTags.first] = sbuffer;
                 ++counter;
             }
 

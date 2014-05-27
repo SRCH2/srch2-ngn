@@ -1,0 +1,3 @@
+A||4090||./3n-testCaseFramework/confA.xml
+B||4091||./3n-testCaseFramework/confB.xml
+C||4092||./3n-testCaseFramework/confC.xml

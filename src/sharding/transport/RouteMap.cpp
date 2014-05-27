@@ -25,27 +25,38 @@ Route& RouteMap::addDestination(const Node& node) {
 	return destinations.back();
 }
 
-int recieveGreeting(int fd) {
+int recieveGreeting(int fd, bool noTimeout = false) {
 	char greetings[sizeof(GREETING_MESSAGE)+sizeof(int)+1];
 	memset(greetings, 0, sizeof(greetings));
 
 	char *currentPos = greetings;
 	int remaining = sizeof(GREETING_MESSAGE) + sizeof(int);
-	while(true) {
+   fd_set checkConnect;
+   timeval timeout;
+	while(remaining) {
+      //prevent infinite hanging in except so listening socket closes
+      FD_ZERO(&checkConnect);
+      FD_SET(fd, &checkConnect);
+      timeout.tv_sec = 3;
+      timeout.tv_usec = 0;
+      if(select(fd+1, &checkConnect, NULL, NULL, (noTimeout) ? NULL : &timeout)
+            !=1) break;
+
 		int readSize = read(fd, currentPos, remaining);
 		remaining -= readSize;
-		if(readSize == -1) {
-			if(errno == EAGAIN || errno == EWOULDBLOCK) continue;
+		if(readSize <= 0) {
+			if(readSize == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
+            continue;
 			close(fd);
 			return -1;
 		}
-		if(remaining == 0) {
-			if(!memcmp(greetings, GREETING_MESSAGE, sizeof(GREETING_MESSAGE)))
-				break;
-			close(fd);
-			return -1;
-		}
-		currentPos += readSize;
+     currentPos += readSize;
+   }
+   if(remaining || 
+         memcmp(greetings, GREETING_MESSAGE, sizeof(GREETING_MESSAGE))) {
+      //incorrect greeting
+      close(fd);
+      return -1;
 	}
 	return *((int*)(greetings + sizeof(GREETING_MESSAGE)));
 }
@@ -87,35 +98,53 @@ bool sendGreeting(int fd, bool greeted, unsigned nodeId) {
 	}
 }
 
+bool RouteMap::checkInMap(NodeId nodeId) {
+	boost::unique_lock< boost::shared_mutex > lock(_access);
+   
+   return nodeConnectionMap.count(nodeId);
+}
+
 /*
  * This function uses the routeMap to connect to other nodes in the cluster
  */
 void* tryToConnect(void *arg) {
-	RouteMapAndRouteHandle *routeMapAndRouteHandle = (RouteMapAndRouteHandle*) arg;
+	RouteMapAndRouteHandle *routeMapAndRouteHandle = 
+      (RouteMapAndRouteHandle*) arg;
 
-	while(!routeMapAndRouteHandle->routeMap->nodeConnectionMap.count(routeMapAndRouteHandle->route->first.second)) {
+   
+	while(!routeMapAndRouteHandle->routeMap
+               ->checkInMap(routeMapAndRouteHandle->route->first.second)) {
 		sleep(random() % 2 + 1);
 
 		int fd = socket(AF_INET, SOCK_STREAM, 0);
 		if(fd < 0) continue;
 
-		if(connect(fd, (struct sockaddr*) &routeMapAndRouteHandle->route->first.first,
-				sizeof(routeMapAndRouteHandle->route->first.first)) == -1) {
-			close(fd);
-			continue;
+		while(connect(fd, (struct sockaddr*) 
+                     &routeMapAndRouteHandle->route->first.first,
+                 sizeof(routeMapAndRouteHandle->route->first.first)) == -1) {
+         if(errno == ECONNREFUSED) {
+            close(fd);
+            fd = -1;
+            break;
+         }
 		}
+      if(fd == -1) continue;
 
-		while(!routeMapAndRouteHandle->routeMap->nodeConnectionMap.count(routeMapAndRouteHandle->route->first.second)) {
-			if(!__sync_bool_compare_and_swap(&routeMapAndRouteHandle->route->second, false,true)) {
+		while(!routeMapAndRouteHandle->routeMap
+                 ->checkInMap(routeMapAndRouteHandle->route->first.second)) {
+			if(!__sync_bool_compare_and_swap(&routeMapAndRouteHandle
+                                               ->route->second, false,true)) {
 				continue;
 			}
 			break;
 		}
 
-		if(routeMapAndRouteHandle->routeMap->nodeConnectionMap.count(routeMapAndRouteHandle->route->first.second)) break;
+		if(routeMapAndRouteHandle->routeMap->
+               checkInMap(routeMapAndRouteHandle->route->first.second)) break;
 
-		if(!sendGreeting(fd, true, routeMapAndRouteHandle->routeMap->getCurrentNode().getId()) ||
-				recieveGreeting(fd) == -1) {
+		if(!sendGreeting(fd, true, routeMapAndRouteHandle->
+                                       routeMap->getCurrentNode().getId()) 
+			||	recieveGreeting(fd, true) == -1) {
 			routeMapAndRouteHandle->route->second = false;
 			continue;
 		}
@@ -148,6 +177,7 @@ void RouteMap::acceptRoute(int fd, struct sockaddr_in addr) {
 	unsigned nodeId;
 
 	if((nodeId = recieveGreeting(fd)) == -1) {
+		sendGreeting(fd, false, nodeId);
 		close(fd);
 		return;
 	}
@@ -178,11 +208,12 @@ void RouteMap::acceptRoute(int fd, struct sockaddr_in addr) {
 	}
 
 
-	addNodeConnection(path->first.second, fd);
+   addNodeConnection(path->first.second, fd);
 }
 
 void RouteMap::addNodeConnection(NodeId addr, int fd) {
 	//look into routeMap thread safety
+	boost::unique_lock< boost::shared_mutex > lock(_access);
 	nodeConnectionMap[addr] = Connection(fd);
 }
 

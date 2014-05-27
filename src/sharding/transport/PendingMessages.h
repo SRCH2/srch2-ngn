@@ -5,6 +5,11 @@
 #include "Message.h"
 #include <vector>
 #include "core/util/Assert.h"
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/shared_mutex.hpp>
+#include <boost/thread/locks.hpp>
+
+
 
 namespace srch2 {
 namespace httpwrapper {
@@ -40,6 +45,11 @@ public:
 	std::vector<Message*>& getReplyMessages();
 	std::vector<Message*>& getRequestMessages();
 	int& getWaitingOn();
+
+   void addReplyMessage(Message* msg) {
+	  boost::unique_lock< boost::shared_mutex > lock(_access);
+     replyMessages.push_back(msg);
+   }
 	~RegisteredCallback(){
 		delete callbackObject;
 		// delete request messages
@@ -54,6 +64,7 @@ public:
 
 private:
 
+	mutable boost::shared_mutex _access;
 	// request object
 	void* originalSerializableObject;
 	// callback object, example: RMCallback or SMCallback
@@ -158,7 +169,7 @@ class PendingMessages {
 private:
 	std::vector<PendingRequest> pendingRequests;
 	TransportManager * transportManager;
-   volatile int version;
+	mutable boost::shared_mutex _access;
 
 public:
 	void setTransportManager(TransportManager * transportManager);

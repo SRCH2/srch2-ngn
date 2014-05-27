@@ -26,20 +26,33 @@ void* startListening(void* arg) {
 		perror("listening socket failed to init");
 		exit(255);
 	}
+   const int optVal = 1;
+   setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (void*) &optVal, sizeof(optVal));
 
 	if(bind(fd, (struct sockaddr*) &routeAddress, sizeof(routeAddress)) < 0) {
+      close(fd);
 		perror("listening socket failed to bind");
 		exit(255);
 	}
 
 	if(listen(fd, 20) == -1) {
+      close(fd);
 		perror("listening socket failed start");
 		exit(255);
 	}
 
-        routeMap->setListeningSocket(fd);
+   routeMap->setListeningSocket(fd);
 
+   fd_set checkConnect;
+   timeval timeout;
 	while(!routeMap->isTotallyConnected()) {
+      //prevent infinite hanging in except so listening socket closes
+      FD_ZERO(&checkConnect);
+      FD_SET(fd, &checkConnect);
+      timeout.tv_sec = 1;
+      timeout.tv_usec = 0;
+      if(select(fd+1, &checkConnect, NULL, NULL, &timeout) !=1) continue;
+
 		struct sockaddr_in addr;
 		socklen_t addrlen = sizeof(sockaddr_in);
 		memset(&addr, 0,sizeof(sockaddr_in));
@@ -49,9 +62,9 @@ void* startListening(void* arg) {
 		}
 	}
 
-  close(fd);
-  Logger::console("Connected");
-  return NULL;
+   shutdown(fd, SHUT_RDWR);
+   close(fd);
+   return NULL;
 }
 
 #include "callback_functions.h"
@@ -73,13 +86,10 @@ TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
 	routeMap.initRoutes();
 
 	while(!routeMap.isTotallyConnected()) {
-		Logger::console("V0: waiting for other nodes!!");
-		sleep(10);
+		sleep(3);
 	}
-	Logger::console("V0: all the nodes are connected!!");
 
-
-	close(routeMap.getListeningSocket());
+	//close(routeMap.getListeningSocket());
 	Logger::console("Connected");
 
 
@@ -87,29 +97,18 @@ TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
 	// which is basically NodeId to file descriptor
 	// We bound the route file descriptors (connection to other nodes) to event bases
 	// that are bound to cb_recieveMessage. This way cb_recieveMessage receives all internal messages
-//	for(RouteMap::iterator route = routeMap.begin(); route != routeMap.end(); ++route) {
-//		for(EventBases::iterator base = bases.begin(); base != bases.end(); ++base) {
-//			struct event* ev = event_new(*base, route->second.fd,
-//					EV_READ|EV_PERSIST, cb_recieveMessage, new TransportCallback(this, &route->second));
-//			event_add(ev, NULL);
-//		}
-//	}
-	  for(RouteMap::iterator route = routeMap.begin(); route != routeMap.end();
-	      ++route) {
-	    for(EventBases::iterator base = bases.begin();
-	        base != bases.end(); ++base) {
-
-	      struct bufferevent * bev = bufferevent_socket_new(*base, route->second.fd, BEV_OPT_CLOSE_ON_FREE);
-	      bufferevent_setcb(bev, cb_recieveMessage1 , NULL, NULL, this);
-	      bufferevent_enable(bev, EV_READ|EV_WRITE);
-	      bufferevent_setwatermark(bev,  EV_READ, sizeof(Message), 0);
-	    }
-	  }
+	for(RouteMap::iterator route = routeMap.begin(); route != routeMap.end(); ++route) {
+		for(EventBases::iterator base = bases.begin(); base != bases.end(); ++base) {
+      TransportCallback *cb_ptr = new TransportCallback();
+			struct event* ev = event_new(*base, route->second.fd, EV_READ, 
+          cb_recieveMessage, cb_ptr);
+      new (cb_ptr) TransportCallback(this, &route->second, ev, *base);
+			event_add(ev, NULL);
+		}
+	}
 
 	distributedTime = 0;
-	synchManagerHandler = NULL;
 }
-
 
 #define USE_SAME_THREAD_FOR_CURRENT_NODE_PROCESS
 
@@ -117,32 +116,44 @@ MessageTime_t TransportManager::route(NodeId node, Message *msg,
 		unsigned timeout, CallbackReference callback) {
 	msg->setTime( __sync_fetch_and_add(&distributedTime, 1));
 
-	if (timeout) {
-		time_t timeOfTimeout_time = timeout + time(NULL);
-		pendingMessages.addMessage(timeout, msg->time, callback);
+	time_t timeOfTimeout_time = timeout + time(NULL);
+	// only messages which expect reply will go to pending messages
+	if(! msg->isNoReply()){
+		pendingMessages.addMessage(timeout, msg->getTime(), callback);
 	}
 
 #ifdef USE_SAME_THREAD_FOR_CURRENT_NODE_PROCESS
-  if(node == routeMap.getCurrentNode().getId()) {
-	  Logger::console("<< ROUTING TO SAME NODE <<");
-    MessageTime_t rtn = msg->time;
-    if(msg->isInternal()) {
-		  if(Message* reply = getInternalTrampoline()->notify(msg)) {
-        reply->initial_time = msg->time;
-        reply->mask |= REPLY_MASK | INTERNAL_MASK;
-        getMsgs()->resolve(msg);
-        getMessageAllocator()->deallocate(reply);
-      }
-    } else {
-    	if (synchManagerHandler)
-    		getSmHandler()->notify(msg);
-    }
-   return rtn;
-  }
-
+	if(msg->isLocal()) {
+		MessageTime_t rtn = msg->getTime();
+		if(msg->isInternal()) {
+			if(msg->isNoReply()){
+				// this msg comes from a local broadcast or route with no call back
+				// so there is no reply for this msg.
+				// notifyNoReply should deallocate the obj in msg
+				// because msg just keeps a pointer to that object
+				// and that object itself needs to be deleted.
+				getInternalTrampoline()->notifyNoReply(msg);
+				// and delete the msg
+				getMessageAllocator()->deallocateByMessagePointer(msg);
+				return rtn;
+			}
+			Message* reply = getInternalTrampoline()->notifyWithReply(msg);
+			ASSERT(reply != NULL);
+			if(reply != NULL) {
+				reply->setInitialTime(msg->getTime());
+				reply->setReply()->setInternal();
+				getMsgs()->resolve(reply);
+			}
+			// what if resolve returns NULL for something?
+		} else {
+			getSmHandler()->notifyWithReply(msg);
+		}
+		return rtn;
+	}
 #endif
 
-  Connection conn = routeMap.getConnection(node);
+
+	Connection conn = routeMap.getConnection(node);
 
 #ifdef __MACH__
 	int flag = SO_NOSIGPIPE;
@@ -206,7 +217,10 @@ CallBackHandler* TransportManager::getSmHandler() {
 }
 
 
-//TODO:: TransportManager::~TransportManager() {
-//bind threads
-//close ports
-//}
+TransportManager::~TransportManager() {
+//TODO:bind threads
+   for(RouteMap::iterator i = routeMap.begin(); i != routeMap.end(); ++i) {
+      close(i->second.fd);
+   }
+   close(routeMap.getListeningSocket());
+}
