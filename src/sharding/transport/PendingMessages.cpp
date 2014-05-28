@@ -7,7 +7,6 @@ using namespace srch2::httpwrapper;
 Callback* RegisteredCallback::getCallbackObject() const
 {
 	// callback object can only be used if callback object is true
-	ASSERT(readyForCallback);
 	return callbackObject;
 }
 
@@ -131,7 +130,8 @@ void PendingMessagesHandler::resolveResponseMessage(Message* responseMessage) {
 		// if no response is left to wait for and callback object is open to responses,
 		// trigger callback object
 		// e.g. aggregation
-		if(numberOfResponsesLeft == 0 && registeredCallBack->isReadyForCallBack()) {
+		if(numberOfResponsesLeft == 0 &&
+				registeredCallBack->getTotalNumberOfRepliesToExpect() == registeredCallBack->getNumberOfReceivedReplies()) {
 			registeredCallBack->getCallbackObject()->callbackAll(registeredCallBack->getReplyMessages());
 			// destructor also calls finalize on the callback
 			delete registeredCallBack;
@@ -139,7 +139,7 @@ void PendingMessagesHandler::resolveResponseMessage(Message* responseMessage) {
 	} else { // if this request does not have to wait for all responses.
 		// if it's not supposed to wait for all, callback object must be ready to handle
 		// responses.
-		ASSERT(registeredCallBack->isReadyForCallBack());
+		ASSERT(registeredCallBack->getTotalNumberOfRepliesToExpect() == registeredCallBack->getNumberOfReceivedReplies());
 		registeredCallBack->getCallbackObject()->callback(responseMessage);
 
 		int numberOfResponsesLeft = registeredCallBack->decrementNumberOfRepliesToWaitFor();

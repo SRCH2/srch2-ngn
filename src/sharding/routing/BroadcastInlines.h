@@ -75,9 +75,15 @@ RoutingManager::broadcast(RequestType * requestObj, CoreShardInfo &coreInfo) {
 
 	timeval timeValue;
 	timeValue.tv_sec = timeValue.tv_usec = 0;
+
 	// iterate on all destinations and send the message
 	for(broadcastResolver.initIteration(); broadcastResolver.hasMore(); broadcastResolver.nextIteration()) {
 		ShardId shardIdFromIteration = broadcastResolver.getNextShardId();
+
+		unsigned nodeId = shardIdFromIteration.getNodeId(configurationManager);
+		if (!configurationManager.isValidNode(nodeId)){
+			continue;
+		}
 		// this shard is in the current node
 		if(shardIdFromIteration.isInCurrentNode(configurationManager)){
 			// so that we create the message only once
@@ -140,6 +146,22 @@ void RoutingManager::broadcast_w_cb(RequestType * requestObj,
 	Multiplexer broadcastResolver(configurationManager, coreInfo);
 
 
+	// find out how many shards are still within reach
+	unsigned totalNumberOfRepliesToExpect = 0;
+	for(broadcastResolver.initIteration(); broadcastResolver.hasMore(); broadcastResolver.nextIteration()) {
+		ShardId shardIdFromIteration = broadcastResolver.getNextShardId();
+
+		unsigned nodeId = shardIdFromIteration.getNodeId(configurationManager);
+		if (configurationManager.isValidNode(nodeId)){
+			totalNumberOfRepliesToExpect ++;
+		}
+	}
+
+	if(totalNumberOfRepliesToExpect == 0){
+		delete requestObj;
+		return;
+	}
+
 	/*
 	 * We need to register callback functions to TM so that it calls them upon receiving a message
 	 * Here, we register a method around aggregator callback into TM.
@@ -149,18 +171,24 @@ void RoutingManager::broadcast_w_cb(RequestType * requestObj,
 			ResponseType::messageKind(),
 			false,
 			broadcastResolver.size());
-
-	// Callback object is ready from the beginning for responses because this is not a wait for all case
-	cb.getRegisteredCallbackPtr()->setReadyForCallBack();
+	cb.getRegisteredCallbackPtr()->setTotalNumberOfRepliesToExpect(totalNumberOfRepliesToExpect);
 
 	Message * internalMessage = NULL;
 	Message * externalMessage = NULL;
 
 	timeval timeValue;
 	timeValue.tv_sec = timeValue.tv_usec = 0;
+
+
+
 	// iterate on all destinations and send the message
 	for(broadcastResolver.initIteration(); broadcastResolver.hasMore(); broadcastResolver.nextIteration()) {
 		ShardId shardIdFromIteration = broadcastResolver.getNextShardId();
+
+		unsigned nodeId = shardIdFromIteration.getNodeId(configurationManager);
+		if (!configurationManager.isValidNode(nodeId)){
+			continue;
+		}
 		// this shard is in the current node
 		if(shardIdFromIteration.isInCurrentNode(configurationManager)){
 			// so that we create the message only once
@@ -206,6 +234,21 @@ void RoutingManager::broadcast_wait_for_all_w_cb(RequestType * requestObj,
 	 */
 	Multiplexer broadcastResolver(configurationManager, coreInfo);
 
+	// find out how many shards are still within reach
+	unsigned totalNumberOfRepliesToExpect = 0;
+	for(broadcastResolver.initIteration(); broadcastResolver.hasMore(); broadcastResolver.nextIteration()) {
+		ShardId shardIdFromIteration = broadcastResolver.getNextShardId();
+
+		unsigned nodeId = shardIdFromIteration.getNodeId(configurationManager);
+		if (configurationManager.isValidNode(nodeId)){
+			totalNumberOfRepliesToExpect ++;
+		}
+	}
+
+	if(totalNumberOfRepliesToExpect == 0){
+		delete requestObj;
+		return;
+	}
 
 	/*
 	 * We need to register callback functions to TM so that it calls them upon receiving a message
@@ -216,15 +259,24 @@ void RoutingManager::broadcast_wait_for_all_w_cb(RequestType * requestObj,
 			ResponseType::messageKind(),
 			true,
 			broadcastResolver.size());
+	cb.getRegisteredCallbackPtr()->setTotalNumberOfRepliesToExpect(totalNumberOfRepliesToExpect);
+
 
 	Message * internalMessage = NULL;
 	Message * externalMessage = NULL;
 
 	timeval timeValue;
 	timeValue.tv_sec = timeValue.tv_usec = 0;
+
+
 	// iterate on all destinations and send the message
 	for(broadcastResolver.initIteration(); broadcastResolver.hasMore(); broadcastResolver.nextIteration()) {
 		ShardId shardIdFromIteration = broadcastResolver.getNextShardId();
+
+		unsigned nodeId = shardIdFromIteration.getNodeId(configurationManager);
+		if (!configurationManager.isValidNode(nodeId)){
+			continue;
+		}
 		// this shard is in the current node
 		if(shardIdFromIteration.isInCurrentNode(configurationManager)){
 			// so that we create the message only once
@@ -253,8 +305,6 @@ void RoutingManager::broadcast_wait_for_all_w_cb(RequestType * requestObj,
 		}
 	}
 
-	// callback object is not ready for responses unless all requests are sent.
-	cb.getRegisteredCallbackPtr()->setReadyForCallBack();
 }
 
 
@@ -275,6 +325,22 @@ void RoutingManager::broadcast_w_cb_n_timeout(RequestType * requestObj,
 	Multiplexer broadcastResolver(configurationManager, coreInfo);
 
 
+	// find out how many shards are still within reach
+	unsigned totalNumberOfRepliesToExpect = 0;
+	for(broadcastResolver.initIteration(); broadcastResolver.hasMore(); broadcastResolver.nextIteration()) {
+		ShardId shardIdFromIteration = broadcastResolver.getNextShardId();
+
+		unsigned nodeId = shardIdFromIteration.getNodeId(configurationManager);
+		if (configurationManager.isValidNode(nodeId)){
+			totalNumberOfRepliesToExpect ++;
+		}
+	}
+
+	if(totalNumberOfRepliesToExpect == 0){
+		delete requestObj;
+		return;
+	}
+
 	/*
 	 * We need to register callback functions to TM so that it calls them upon receiving a message
 	 * Here, we register a method around aggregator callback into TM.
@@ -284,16 +350,20 @@ void RoutingManager::broadcast_w_cb_n_timeout(RequestType * requestObj,
 			ResponseType::messageKind(),
 			false,
 			broadcastResolver.size());
-
-	// Callback object is ready from the beginning for responses because this is not a wait for all case
-	cb.getRegisteredCallbackPtr()->setReadyForCallBack();
+	cb.getRegisteredCallbackPtr()->setTotalNumberOfRepliesToExpect(totalNumberOfRepliesToExpect);
 
 	Message * internalMessage = NULL;
 	Message * externalMessage = NULL;
 
+
 	// iterate on all destinations and send the message
 	for(broadcastResolver.initIteration(); broadcastResolver.hasMore(); broadcastResolver.nextIteration()) {
 		ShardId shardIdFromIteration = broadcastResolver.getNextShardId();
+
+		unsigned nodeId = shardIdFromIteration.getNodeId(configurationManager);
+		if (configurationManager.isValidNode(nodeId)){
+			continue;
+		}
 		// this shard is in the current node
 		if(shardIdFromIteration.isInCurrentNode(configurationManager)){
 			// so that we create the message only once
@@ -336,6 +406,22 @@ RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType * requestObj,
 	Multiplexer broadcastResolver(configurationManager, coreInfo);
 
 
+	// find out how many shards are still within reach
+	unsigned totalNumberOfRepliesToExpect = 0;
+	for(broadcastResolver.initIteration(); broadcastResolver.hasMore(); broadcastResolver.nextIteration()) {
+		ShardId shardIdFromIteration = broadcastResolver.getNextShardId();
+
+		unsigned nodeId = shardIdFromIteration.getNodeId(configurationManager);
+		if (configurationManager.isValidNode(nodeId)){
+			totalNumberOfRepliesToExpect ++;
+		}
+	}
+
+	if(totalNumberOfRepliesToExpect == 0){
+		delete requestObj;
+		return;
+	}
+
 	/*
 	 * We need to register callback functions to TM so that it calls them upon receiving a message
 	 * Here, we register a method around aggregator callback into TM.
@@ -345,17 +431,20 @@ RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType * requestObj,
 			ResponseType::messageKind(),
 			true,
 			0);
+	cb.getRegisteredCallbackPtr()->setTotalNumberOfRepliesToExpect(totalNumberOfRepliesToExpect);
 
 	Message * internalMessage = NULL;
 	Message * externalMessage = NULL;
+
 
 	// iterate on all destinations and send the message
 	for(broadcastResolver.initIteration(); broadcastResolver.hasMore(); broadcastResolver.nextIteration()) {
 		ShardId shardIdFromIteration = broadcastResolver.getNextShardId();
 
 		unsigned nodeId = shardIdFromIteration.getNodeId(configurationManager);
-		if (!configurationManager.isValidNode(nodeId))
+		if (!configurationManager.isValidNode(nodeId)){
 			continue;
+		}
 		Logger::debug("sending request to node - %d", nodeId);
 
 		// this shard is in the current node
@@ -386,8 +475,6 @@ RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType * requestObj,
 		}
 	}
 
-	// callback object is not ready for responses unless all requests are sent.
-	cb.getRegisteredCallbackPtr()->setReadyForCallBack();
 }
 
 
@@ -397,6 +484,14 @@ RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType * requestObj,
  */
 template<typename RequestType> inline void 
 RoutingManager::route(RequestType * requestObj, ShardId & shardInfo) {
+
+
+	// find out whether shard is still within reach
+	unsigned nodeId = shardInfo.getNodeId(configurationManager);
+	if (!configurationManager.isValidNode(nodeId)){
+		delete requestObj;
+		return;
+	}
 
 	// if the destination is the current node, we don't serialize the request object
 	// instead, we serialize the pointer to the request object
@@ -441,6 +536,13 @@ RoutingManager::route_w_cb(RequestType * requestObj,
 		ResultAggregatorAndPrint<RequestType , ResponseType> * aggregator,
 		ShardId shardInfo) {
 
+	// find out whether shard is still within reach
+	unsigned nodeId = shardInfo.getNodeId(configurationManager);
+	if (!configurationManager.isValidNode(nodeId)){
+		delete requestObj;
+		return;
+	}
+
 	/*
 	 * We need to register callback functions to TM so that it calls them upon receiving a message
 	 * Here, we register a method around aggregator callback into TM.
@@ -452,7 +554,7 @@ RoutingManager::route_w_cb(RequestType * requestObj,
 			RequestType::messageKind());
 
 	// callback object is always ready because there is only one request
-	cb.getRegisteredCallbackPtr()->setReadyForCallBack();
+	cb.getRegisteredCallbackPtr()->setTotalNumberOfRepliesToExpect(1);
 
 	// if the destination is the current node, we don't serialize the request object
 	// instead, we serialize the pointer to the request object
@@ -492,6 +594,13 @@ RoutingManager::route_w_cb_n_timeout(RequestType * requestObj,
 		ResultAggregatorAndPrint<RequestType , ResponseType> * aggregator,
 		timeval timeoutValue, ShardId shardInfo) {
 
+	// find out whether shard is still within reach
+	unsigned nodeId = shardInfo.getNodeId(configurationManager);
+	if (!configurationManager.isValidNode(nodeId)){
+		delete requestObj;
+		return;
+	}
+
 	/*
 	 * We need to register callback functions to TM so that it calls them upon receiving a message
 	 * Here, we register a method around aggregator callback into TM.
@@ -503,7 +612,7 @@ RoutingManager::route_w_cb_n_timeout(RequestType * requestObj,
 			RequestType::messageKind());
 
 	// callback object is always ready because there is only one request
-	cb.getRegisteredCallbackPtr()->setReadyForCallBack();
+	cb.getRegisteredCallbackPtr()->setTotalNumberOfRepliesToExpect(1);
 
 	// if the destination is the current node, we don't serialize the request object
 	// instead, we serialize the pointer to the request object

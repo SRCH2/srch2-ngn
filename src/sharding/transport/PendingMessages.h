@@ -38,7 +38,7 @@ public:
 		this->originalSerializableRequestObject = originalSerializableObject;
 		this->callbackObject = callbackObject;
 		this->numberOfRepliesToWaitFor = waitingOn;
-		this->readyForCallback = false;
+		this->totalNumberOfRepliesToExpect = 0;
 	}
 
 	Callback* getCallbackObject() const;
@@ -53,14 +53,19 @@ public:
 		replyMessages.push_back(msg);
 	}
 
-	void setReadyForCallBack(){
-		boost::unique_lock< boost::shared_mutex > lock(_access);
-		this->readyForCallback = true;
+	unsigned getNumberOfReceivedReplies(){
+		boost::shared_lock< boost::shared_mutex > lock(_access);
+		return replyMessages.size();
 	}
 
-	bool isReadyForCallBack(){
+	void setTotalNumberOfRepliesToExpect(unsigned total){
+		boost::unique_lock< boost::shared_mutex > lock(_access);
+		this->totalNumberOfRepliesToExpect = total;
+	}
+
+	unsigned getTotalNumberOfRepliesToExpect(){
 		boost::shared_lock< boost::shared_mutex > lock(_access);
-		return readyForCallback;
+		return this->totalNumberOfRepliesToExpect;
 	}
 
 	~RegisteredCallback(){
@@ -97,7 +102,7 @@ private:
 	std::vector<Message*> replyMessages;
 
 	// call back object can be used only if this flag is true
-	bool readyForCallback;
+	unsigned totalNumberOfRepliesToExpect;
 };
 
 
