@@ -849,13 +849,13 @@ int main(int argc, char** argv) {
 		if (pthread_create(&threads[j], NULL, dispatch, evBases[j]) != 0)
 			return 255;
 	}
-        // run SM
-        while(! (::access("/tmp/startsm", F_OK) == 0)) ;
-	unsigned masterNodeId =  serverConf->getCluster()->getNodes()->at(0).getId(); // temporary for V0
-	srch2http::Synchronizer  *syncManager = new srch2http::Synchronizer(*serverConf ,
-			*transportManager, masterNodeId);
-	pthread_t *synchronizerThread = new pthread_t;
-	pthread_create(synchronizerThread, NULL, srch2http::bootSynchronizer, (void *)syncManager);
+//        // run SM
+//        while(! (::access("/tmp/startsm", F_OK) == 0)) ;
+//	unsigned masterNodeId =  serverConf->getCluster()->getNodes()->at(0).getId(); // temporary for V0
+//	srch2http::Synchronizer  *syncManager = new srch2http::Synchronizer(*serverConf ,
+//			*transportManager, masterNodeId);
+//	pthread_t *synchronizerThread = new pthread_t;
+//	pthread_create(synchronizerThread, NULL, srch2http::bootSynchronizer, (void *)syncManager);
 
 
 	/* Set signal handlers */
@@ -885,9 +885,9 @@ int main(int argc, char** argv) {
 	pthread_join(transportManager->getListeningThread(), NULL);
 	Logger::console("Thread = <%u> stopped", transportManager->getListeningThread());
 
-	pthread_cancel(*synchronizerThread);
-	pthread_join(*synchronizerThread, NULL);
-	Logger::console("synch thread stopped.");
+//	pthread_cancel(*synchronizerThread);
+//	pthread_join(*synchronizerThread, NULL);
+//	Logger::console("synch thread stopped.");
 
 	delete[] threads;
 
