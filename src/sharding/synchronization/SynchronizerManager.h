@@ -35,6 +35,8 @@ public:
 	// should be called in new thread otherwise current thread will block
 	void run();
 private:
+	unsigned getTimeout() { return initialTimeout ; }      // temp for V0 replace with pingTimeout in V1
+	void resetTimeout() { initialTimeout = pingTimeout; }  // temp for V0
 	void refresh() {};
 	unsigned findNextEligibleMaster();
 	void sendHeartBeatToAllNodesInCluster();
@@ -47,6 +49,7 @@ private:
 	unsigned pingInterval;
 	unsigned pingTimeout;
 	unsigned masterNodeId;
+	unsigned initialTimeout;
 	Cluster *cluster;
 	TransportManager& transport;
 	SMCallBackHandler *callBackHandler;
@@ -66,6 +69,7 @@ public:
 		notifyWithReply(msg);
 	}
 	Message*  notifyWithReply(Message *message) {
+                  
 		switch(message->getType()){
 			case HeartBeatMessageType:
 			{
@@ -85,7 +89,7 @@ public:
 			{
 				if (message->getBodySize() >= 4) {
 					unsigned nodeId = FETCH_UNSIGNED(message->getMessageBody());
-					//cout << "*** delivered message received from client " << nodeId << endl ;
+				//cout << "*** delivered message received from client " << nodeId << endl ;
 					unsigned idx = nodeId % 1024;
 					Message * msg = msgAllocator.allocateMessage(message->getBodySize());
 					memcpy(msg, message, sizeof(Message) + message->getBodySize());
@@ -244,7 +248,7 @@ private:
 
 class MasterMessageHandler : public MessageHandler{
 public:
-	MasterMessageHandler(Synchronizer *sm): MessageHandler(sm) {}
+	MasterMessageHandler(Synchronizer *sm): MessageHandler(sm) { firstTime = true;}
 	void lookForCallbackMessages(SMCallBackHandler*);
 	void handleFailure(Message *message) {
 	}
@@ -262,6 +266,7 @@ public:
 		}
 	}
 private:
+	bool firstTime;  // temp for V0
 	void updateNodeInCluster(Message *message);
 	void handleNodeFailure(unsigned nodeId);
 	// key = Node id , Value = Latest time when message was received from this node.

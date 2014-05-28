@@ -29,6 +29,7 @@ Synchronizer::Synchronizer(ConfigManager& cm, TransportManager& tm, unsigned mas
 
 	pingInterval = 2;
 	pingTimeout = 6;
+	initialTimeout = 60;  // for V0
 
 	nodesInCluster = *(cluster->getNodes());
 	for (unsigned i = 0; i < nodesInCluster.size(); ++i) {
@@ -119,7 +120,7 @@ void ClientMessageHandler::lookForCallbackMessages(SMCallBackHandler* callBackHa
 	{
 		std::time_t timeNow = time(NULL);
 		signed timeElapsed = timeNow - callBackHandler->getHeartBeatMessageTime();
-		if (timeElapsed > _syncMgrObj->pingTimeout) {
+		if (timeElapsed > _syncMgrObj->getTimeout()) {
 			_state = 1;
 			Logger::console("SM-C%d: Timeout!!. No heart beat received from master",
 					_syncMgrObj->currentNodeId);
@@ -252,6 +253,7 @@ void ClientMessageHandler::processHeartBeat(Message *message) {
 	heartBeatResponse->setBodyAndBodySize(&_syncMgrObj->currentNodeId, 4);
 	_syncMgrObj->route(masterId, heartBeatResponse);
 	msgAllocator.deallocateByMessagePointer(heartBeatResponse);
+	_syncMgrObj->resetTimeout();
 }
 
 void ClientMessageHandler::updateClusterState(Message *message){
@@ -357,12 +359,18 @@ void MasterMessageHandler::lookForCallbackMessages(SMCallBackHandler* /*not used
 					perNodeTimeStampEntry.insert(make_pair(nodeId, time(NULL)));
 				}
 
-				if (timeElapsed > _syncMgrObj->pingTimeout) {
+				if (timeElapsed > _syncMgrObj->getTimeout()) {
 					// mark node as inactive.
 					handleNodeFailure(i);
 				}
 			}
 		}
+
+		if (firstTime && perNodeTimeStampEntry.size() == nodes.size()) {
+			_syncMgrObj->resetTimeout();
+			firstTime = false;
+		}
+
 		sleep(_syncMgrObj->pingInterval);
 	}
 }
