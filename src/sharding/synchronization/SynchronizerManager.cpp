@@ -121,7 +121,8 @@ void ClientMessageHandler::lookForCallbackMessages(SMCallBackHandler* callBackHa
 		signed timeElapsed = timeNow - callBackHandler->getHeartBeatMessageTime();
 		if (timeElapsed > _syncMgrObj->pingTimeout) {
 			_state = 1;
-			Logger::console("SM-C%d: Timeout!!. No heart beat received from master");
+			Logger::console("SM-C%d: Timeout!!. No heart beat received from master",
+					_syncMgrObj->currentNodeId);
 			Message * message;
 			callBackHandler->getHeartBeatMessages(&message);
 			handleTimeOut(message);
@@ -136,7 +137,7 @@ void ClientMessageHandler::lookForCallbackMessages(SMCallBackHandler* callBackHa
 	}
 	case 1:
 	{
-		Logger::console("waiting for master ...");
+		//Logger::console("waiting for master ...");
 		//TODO: V1 handle master election
 		//handleMessage(callBackHandler->heartbeatMessage);
 		break;
