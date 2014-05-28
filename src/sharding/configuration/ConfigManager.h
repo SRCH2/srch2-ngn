@@ -519,7 +519,7 @@ public:
 
 	void removeNodeFromCluster(unsigned nodeId) {
 		//spin to acquire lock
-		//while (!__sync_bool_compare_and_swap (&isLocked, false, true)) ;
+		while (!__sync_bool_compare_and_swap (&isLocked, false, true)) ;
 
 		vector<Node>* nodes = this->cluster.getNodes();
 		unsigned index = 0;
@@ -536,7 +536,7 @@ public:
 
 	bool isValidNode(unsigned nodeId) {
 		//spin to acquire lock
-		//while (!__sync_bool_compare_and_swap (&isLocked, false, true)) ;
+		while (!__sync_bool_compare_and_swap (&isLocked, false, true)) ;
 
 		vector<Node>* nodes = this->cluster.getNodes();
 		unsigned index = 0;
@@ -554,11 +554,12 @@ public:
 	}
 	unsigned getCurrentNodeId(){
 		//spin to acquire lock
-		//while (!__sync_bool_compare_and_swap (&isLocked, false, true)) ;
+		while (!__sync_bool_compare_and_swap (&isLocked, false, true)) ;
 
 		vector<Node>* nodes = this->cluster.getNodes();
 		for(int i = 0; i < nodes->size(); i++){
 			if(nodes->at(i).thisIsMe == true){
+				isLocked = false;
 				return nodes->at(i).getId();
 			}
 		}

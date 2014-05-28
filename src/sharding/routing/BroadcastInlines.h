@@ -332,12 +332,13 @@ RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType * requestObj,
 	// iterate on all destinations and send the message
 	for(broadcastResolver.initIteration(); broadcastResolver.hasMore(); broadcastResolver.nextIteration()) {
 		ShardId shardIdFromIteration = broadcastResolver.getNextShardId();
-		// this shard is in the current node
+
 		unsigned nodeId = shardIdFromIteration.getNodeId(configurationManager);
 		if (!configurationManager.isValidNode(nodeId))
 			continue;
-		cout << "broadcasting to node " << nodeId << endl;
+		Logger::debug("sending request to node - %d", nodeId);
 
+		// this shard is in the current node
 		if(nodeId == configurationManager.getCurrentNodeId()){
 			// so that we create the message only once
 			if(internalMessage == NULL){

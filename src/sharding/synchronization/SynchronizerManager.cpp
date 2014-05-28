@@ -54,7 +54,7 @@ Synchronizer::~Synchronizer() {
 
 void * dispatchMasterMessageHandler(void *arg);
 void Synchronizer::run(){
-	cout << "running synchronizer" << endl;
+	Logger::console("running synchronizer");
 	callBackHandler = new SMCallBackHandler(isCurrentNodeMaster);
 	transport.registerCallbackHandlerForSynchronizeManager(callBackHandler);
 	while(1) {
@@ -121,25 +121,23 @@ void ClientMessageHandler::lookForCallbackMessages(SMCallBackHandler* callBackHa
 		signed timeElapsed = timeNow - callBackHandler->getHeartBeatMessageTime();
 		if (timeElapsed > _syncMgrObj->pingTimeout) {
 			_state = 1;
-			cout << "***timeout*** " << timeElapsed << endl;
+			Logger::console("SM-C%d: Timeout!!. No heart beat received from master");
 			Message * message;
 			callBackHandler->getHeartBeatMessages(&message);
 			handleTimeOut(message);
 			cMessageAllocator.deallocateByMessagePointer(message);
-		} else {//if (timeElapsed < 0 || timeElapsed > _syncMgrObj->pingInterval){
+		} else {
 			Message * message;
 			callBackHandler->getHeartBeatMessages(&message);
-			//cout << "***READER received ***" << endl;
 			handleMessage(message);
 			cMessageAllocator.deallocateByMessagePointer(message);
-//		} else {
-//			// do nothing
 		}
 		break;
 	}
 	case 1:
 	{
-		cout << "waiting for master election" << endl;
+		Logger::console("waiting for master ...");
+		//TODO: V1 handle master election
 		//handleMessage(callBackHandler->heartbeatMessage);
 		break;
 	}
@@ -289,13 +287,12 @@ void MasterMessageHandler::updateNodeInCluster(Message *message) {
 void MasterMessageHandler::handleNodeFailure(unsigned nodeIdIndex) {
 
 	unsigned nodeId = _syncMgrObj->nodesInCluster[nodeIdIndex].getId();
-	Logger::debug("SM-M%d-cluster node failed %d", _syncMgrObj->currentNodeId,
+	Logger::console("SM-M%d-cluster node %d failed", _syncMgrObj->currentNodeId,
 			nodeId);
 	// update configuration manager ..so that we do not ping this node again.
 	// If this node comes back then it is discovery manager's job to handle it.
 	// For V0 update only local sate.
 	_syncMgrObj->nodesInCluster.erase(_syncMgrObj->nodesInCluster.begin() + nodeIdIndex);
-	cout << "**** erasing node id " << nodeId << endl;
 	_syncMgrObj->config.removeNodeFromCluster(nodeId);
 	//_syncMgrObj->refresh();
 	Logger::console("[%d, %d, %d]", _syncMgrObj->config.getCluster()->getTotalNumberOfNodes(),

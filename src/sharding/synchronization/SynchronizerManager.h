@@ -69,13 +69,13 @@ public:
 		switch(message->getType()){
 			case HeartBeatMessageType:
 			{
-				cout << "****delivered heart beat ***" << endl;
+				//cout << "****delivered heart beat ***" << endl;
 				if (!isMaster) {
 					boost::mutex::scoped_lock lock(hbLock);
 					heartbeatMessageTimeEntry = time(NULL);
 					memcpy(heartbeatMessage, message, sizeof(Message) + 4);
 				} else {
-					cout << "Master should not receive heat beat request" << endl;
+					//cout << "Master should not receive heat beat request" << endl;
 				}
 				break;
 			}
@@ -85,22 +85,22 @@ public:
 			{
 				if (message->getBodySize() >= 4) {
 					unsigned nodeId = FETCH_UNSIGNED(message->getMessageBody());
-					cout << "*** delivered message received from client " << nodeId << endl ;
+					//cout << "*** delivered message received from client " << nodeId << endl ;
 					unsigned idx = nodeId % 1024;
 					Message * msg = msgAllocator.allocateMessage(message->getBodySize());
 					memcpy(msg, message, sizeof(Message) + message->getBodySize());
 					boost::mutex::scoped_lock lock(messageQArray[idx].qGuard);
 					messageQArray[idx].messageQueue.push(msg);
-					cout << "node" << idx << " :: " << messageQArray[idx].messageQueue.size();
+					//cout << "node" << idx << " :: " << messageQArray[idx].messageQueue.size();
 				} else {
-					cout << "XXX message  malformed from client " << endl ;
+					Logger::warn("SM-CB: Incomplete message received!!");
 				}
 				break;
 			}
 			default:
 				if (message->getBodySize() >= 4) {
 					unsigned nodeId = FETCH_UNSIGNED(message->getMessageBody());
-					Logger::warn("SM-CB:bad message type received from node = %d", nodeId) ;
+					Logger::warn("SM-CB: Bad message type received from node = %d", nodeId) ;
 				}
 				break;
 		}

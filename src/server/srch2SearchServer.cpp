@@ -825,7 +825,9 @@ int main(int argc, char** argv) {
 			new srch2http::DPExternalRequestHandler(serverConf, routesManager);
 
 	// run SM
-	srch2http::Synchronizer  *syncManager = new srch2http::Synchronizer(*serverConf , *transportManager, 1);
+	unsigned masterNodeId =  serverConf->getCluster()->getNodes()->at(0).getId(); // temporary for V0
+	srch2http::Synchronizer  *syncManager = new srch2http::Synchronizer(*serverConf ,
+			*transportManager, masterNodeId);
 	pthread_t *synchronizerThread = new pthread_t;
 	pthread_create(synchronizerThread, NULL, srch2http::bootSynchronizer, (void *)syncManager);
 
