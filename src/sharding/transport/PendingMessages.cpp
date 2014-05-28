@@ -78,10 +78,12 @@ void PendingMessages::resolve(Message* message) {
 	if(!message->isReply()){
 		return;
 	}
-	boost::unique_lock< boost::shared_mutex > lock(_access);
 
 	PendingRequest resolution;
-	std::vector<PendingRequest>::iterator request =
+        
+        {
+        boost::unique_lock< boost::shared_mutex > lock(_access);
+  	std::vector<PendingRequest>::iterator request =
 			std::find(pendingRequests.begin(),
 					pendingRequests.end(), message->getInitialTime());
 	if(request == pendingRequests.end()){
@@ -92,6 +94,8 @@ void PendingMessages::resolve(Message* message) {
 
 	resolution = *request;
 	pendingRequests.erase(request);
+        }
+
 
 	RegisteredCallback* cb =
 			resolution.getCallbackAndTypeMask().getRegisteredCallbackPtr();
