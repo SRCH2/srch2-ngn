@@ -24,9 +24,9 @@ public:
 	TransportManager(EventBases&, Nodes&);
 
 	//third argument is a timeout in seconds
-	MessageTime_t route(NodeId, Message*, unsigned=0, CallbackReference=CallbackReference());
+	MessageID_t route(NodeId, Message*, unsigned=0, CallbackReference=CallbackReference());
   //route message through a particular socket
-	MessageTime_t route(int fd, Message*);
+	MessageID_t route(int fd, Message*);
 	CallbackReference prepareCallback(void*,Callback*,
 			ShardingMessageType,bool=false,int = 1);
 	void registerCallbackHandlerForSynchronizeManager(CallBackHandler*);
@@ -34,12 +34,12 @@ public:
 
 
 
-	MessageTime_t& getDistributedTime();
+	MessageID_t& getDistributedTime();
 	CallBackHandler* getInternalTrampoline();
 	void setInternalMessageBroker(CallBackHandler*);
 	pthread_t getListeningThread() const;
 	MessageAllocator * getMessageAllocator();
-	PendingMessages * getMsgs();
+	PendingMessagesHandler * getPendingMessagesHandler();
 	RouteMap * getRouteMap();
 	CallBackHandler* getSmHandler();
    ~TransportManager();
@@ -59,7 +59,7 @@ private:
 	 * The current distributed time of system
 	 * It is synchronized in cb_recieveMessage(int fd, short eventType, void *arg)
 	 */
-	MessageTime_t distributedTime;
+	MessageID_t distributedTime;
 
 	/*
 	 * The allocator used for messaging
@@ -69,7 +69,7 @@ private:
 	/*
 	 * the data structure which stores all pending messages in this node
 	 */
-	PendingMessages pendingMessages;
+	PendingMessagesHandler pendingMessagesHandler;
 
 	/*
 	 * Handles SynchManager callbacks
@@ -87,9 +87,9 @@ inline void TransportManager::registerCallbackHandlerForSynchronizeManager(CallB
 	synchManagerHandler = callBackHandler;
 }
 
-inline CallbackReference TransportManager::prepareCallback(void* obj,
+inline CallbackReference TransportManager::prepareCallback(void* requestObj,
 		Callback* cb, ShardingMessageType type,bool all,int shards) {
-	return pendingMessages.prepareCallback(obj, cb, type, all, shards);
+	return pendingMessagesHandler.prepareCallback(requestObj, cb, type, all, shards);
 }
 
 inline void TransportManager::setInternalMessageBroker(CallBackHandler* cbh) {

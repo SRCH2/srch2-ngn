@@ -6,11 +6,13 @@ using namespace srch2::httpwrapper;
 
 Callback* RegisteredCallback::getCallbackObject() const
 {
+	// callback object can only be used if callback object is true
+	ASSERT(readyForCallback);
 	return callbackObject;
 }
 
 void* RegisteredCallback::getOriginalSerializableObject() const {
-	return originalSerializableObject;
+	return originalSerializableRequestObject;
 }
 
 std::vector<Message*>& RegisteredCallback::getReplyMessages() {
@@ -21,10 +23,22 @@ std::vector<Message*>& RegisteredCallback::getRequestMessages(){
 	return requestMessages;
 }
 
-int& RegisteredCallback::getWaitingOn() {
-	return waitingOn;
+int RegisteredCallback::getNumberOfRepliesToWaitFor() {
+	boost::shared_lock< boost::shared_mutex > lock(_access);
+	return numberOfRepliesToWaitFor;
 }
 
+int RegisteredCallback::incrementNumberOfRepliesToWaitFor() {
+	boost::unique_lock< boost::shared_mutex > lock(_access);
+	++numberOfRepliesToWaitFor;
+	return numberOfRepliesToWaitFor;
+}
+
+int RegisteredCallback::decrementNumberOfRepliesToWaitFor() {
+	boost::unique_lock< boost::shared_mutex > lock(_access);
+	--numberOfRepliesToWaitFor;
+	return numberOfRepliesToWaitFor;
+}
 
 
 bool CallbackReference::isExtra1() const
@@ -54,11 +68,11 @@ bool CallbackReference::isWaitForAll() const {
 
 
 
-CallbackReference PendingRequest::getCallbackAndTypeMask() const {
-	return callbackAndTypeMask;
+CallbackReference PendingRequest::getCallbackObjectReference() const {
+	return callbackObjectReference;
 }
 
-MessageTime_t PendingRequest::getMsgId() const {
+MessageID_t PendingRequest::getMsgId() const {
 	return msg_id;
 }
 
@@ -67,74 +81,86 @@ time_t PendingRequest::getTimeout() const {
 }
 
 
-void PendingMessages::addMessage(time_t timeout, 
-		MessageTime_t id, CallbackReference cb) {
+void PendingMessagesHandler::addPendingMessage(time_t timeout, 
+		MessageID_t id, CallbackReference cb) {
 	boost::unique_lock< boost::shared_mutex > lock(_access);
 	pendingRequests.push_back(PendingRequest(time(NULL) + timeout, id, cb));
 }
 
-void PendingMessages::resolve(Message* message) {
+void PendingMessagesHandler::resolveResponseMessage(Message* responseMessage) {
 	// only reply messages can enter this function
-	if(!message->isReply()){
+	if(!responseMessage->isReply()){
 		return;
 	}
 
-	PendingRequest resolution;
-        
-        {
-        boost::unique_lock< boost::shared_mutex > lock(_access);
-  	std::vector<PendingRequest>::iterator request =
-			std::find(pendingRequests.begin(),
-					pendingRequests.end(), message->getInitialTime());
-	if(request == pendingRequests.end()){
-		transportManager->getMessageAllocator()->deallocateByMessagePointer(
-				message);
-		return;
+	PendingRequest correspondingPendingRequest;
+
+	{
+		boost::unique_lock< boost::shared_mutex > lock(_access);
+		// find the pending message that its ID is the same as
+		// request message Id of this response
+		std::vector<PendingRequest>::iterator request =
+				std::find(pendingRequests.begin(),
+						pendingRequests.end(), responseMessage->getRequestMessageId());
+		if(request == pendingRequests.end()){
+			transportManager->getMessageAllocator()->deallocateByMessagePointer(
+					responseMessage);
+			return;
+		}
+
+		correspondingPendingRequest = *request;
+		pendingRequests.erase(request);
 	}
 
-	resolution = *request;
-	pendingRequests.erase(request);
-        }
+	/*
+	 * Since we have one PendingRequest per message at this point no two threads
+	 * can hold the same resolution object. BUT, RegisteredCallback can be shared between
+	 * pending requests.
+	 */
+
+	RegisteredCallback* registeredCallBack =
+			correspondingPendingRequest.getCallbackObjectReference().getRegisteredCallbackPtr();
 
 
-	RegisteredCallback* cb =
-			resolution.getCallbackAndTypeMask().getRegisteredCallbackPtr();
+	// If we are resolving a response which is for a request that needs to wait for
+	// all responses.
+	if(correspondingPendingRequest.getCallbackObjectReference().isWaitForAll()) {
+		registeredCallBack->addReplyMessage(responseMessage);
+		int numberOfResponsesLeft = registeredCallBack->decrementNumberOfRepliesToWaitFor();
 
-
-	if(resolution.getCallbackAndTypeMask().isWaitForAll()) {
-		cb->addReplyMessage(message);
-		int num = __sync_sub_and_fetch(&cb->getWaitingOn(), 1);
-
-
-		if(num == 0) {
-			cb->getCallbackObject()->callbackAll(cb->getReplyMessages());
-			for(std::vector<Message*>::iterator msgItr = 
-					cb->getReplyMessages().begin();
-					msgItr != cb->getReplyMessages().end(); ++msgItr) {
-				transportManager->getMessageAllocator()->deallocateByMessagePointer(*msgItr);
-			}
-			delete cb;
+		// if no response is left to wait for and callback object is open to responses,
+		// trigger callback object
+		// e.g. aggregation
+		if(numberOfResponsesLeft == 0 && registeredCallBack->isReadyForCallBack()) {
+			registeredCallBack->getCallbackObject()->callbackAll(registeredCallBack->getReplyMessages());
+			// destructor also calls finalize on the callback
+			delete registeredCallBack;
 		}
-	} else {
-		cb->getCallbackObject()->callback(message);
-		if(!__sync_sub_and_fetch(&cb->getWaitingOn(), 1)) {
-			delete cb;
+	} else { // if this request does not have to wait for all responses.
+		// if it's not supposed to wait for all, callback object must be ready to handle
+		// responses.
+		ASSERT(registeredCallBack->isReadyForCallBack());
+		registeredCallBack->getCallbackObject()->callback(responseMessage);
+
+		int numberOfResponsesLeft = registeredCallBack->decrementNumberOfRepliesToWaitFor();
+		if(numberOfResponsesLeft == 0) {
+			// calls finalize at the end
+			delete registeredCallBack;
 		}
-		transportManager->getMessageAllocator()->deallocateByMessagePointer(message);
 	}
 }
 
 CallbackReference 
-PendingMessages::prepareCallback(void *obj, Callback *cb, 
+PendingMessagesHandler::prepareCallback(void *requestObj, Callback *cb, 
 		ShardingMessageType type, bool cbForAll, int shards) {
 
-	RegisteredCallback* regcb = new RegisteredCallback(obj, cb,shards);
+	RegisteredCallback* regcb = new RegisteredCallback(requestObj, cb,shards);
 
 	CallbackReference rtn(type, cbForAll, shards, regcb);
 
 	return rtn;
 };
 
-void PendingMessages::setTransportManager(TransportManager * transportManager){
+void PendingMessagesHandler::setTransportManager(TransportManager * transportManager){
 	this->transportManager = transportManager;
 }

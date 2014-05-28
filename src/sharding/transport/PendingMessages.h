@@ -35,26 +35,46 @@ class RegisteredCallback {
 
 public:
 	RegisteredCallback(void* originalSerializableObject, Callback* callbackObject, int waitingOn){
-		this->originalSerializableObject = originalSerializableObject;
+		this->originalSerializableRequestObject = originalSerializableObject;
 		this->callbackObject = callbackObject;
-		this->waitingOn = waitingOn;
+		this->numberOfRepliesToWaitFor = waitingOn;
+		this->readyForCallback = false;
 	}
 
 	Callback* getCallbackObject() const;
 	void* getOriginalSerializableObject() const ;
 	std::vector<Message*>& getReplyMessages();
 	std::vector<Message*>& getRequestMessages();
-	int& getWaitingOn();
-	void incrementWaitOn() { ++waitingOn; }
-   void addReplyMessage(Message* msg) {
-	  boost::unique_lock< boost::shared_mutex > lock(_access);
-     replyMessages.push_back(msg);
-   }
+	int getNumberOfRepliesToWaitFor();
+	int incrementNumberOfRepliesToWaitFor() ;
+	int decrementNumberOfRepliesToWaitFor() ;
+	void addReplyMessage(Message* msg) {
+		boost::unique_lock< boost::shared_mutex > lock(_access);
+		replyMessages.push_back(msg);
+	}
+
+	void setReadyForCallBack(){
+		boost::unique_lock< boost::shared_mutex > lock(_access);
+		this->readyForCallback = true;
+	}
+
+	bool isReadyForCallBack(){
+		boost::shared_lock< boost::shared_mutex > lock(_access);
+		return readyForCallback;
+	}
+
 	~RegisteredCallback(){
 		delete callbackObject;
 		// delete request messages
-		// reply messages are deleted outside in PendingMessages::resolve(Message)
 		for(std::vector<Message*>::iterator msgItr = requestMessages.begin(); msgItr != requestMessages.end(); ++msgItr){
+			ASSERT(*msgItr != NULL);
+			if(*msgItr != NULL){
+				delete *msgItr;
+			}
+		}
+
+		// delete reply messages
+		for(std::vector<Message*>::iterator msgItr = replyMessages.begin(); msgItr != replyMessages.end(); ++msgItr){
 			ASSERT(*msgItr != NULL);
 			if(*msgItr != NULL){
 				delete *msgItr;
@@ -66,15 +86,18 @@ private:
 
 	mutable boost::shared_mutex _access;
 	// request object
-	void* originalSerializableObject;
+	void* originalSerializableRequestObject;
 	// callback object, example: RMCallback or SMCallback
 	Callback* callbackObject;
 	// number of shards that are still pending
-	int waitingOn;
+	int numberOfRepliesToWaitFor;
 	// those replies that we received already
 	// reply.size() + waitingOn should always be equal to the size of broadcast
 	std::vector<Message*> requestMessages;
 	std::vector<Message*> replyMessages;
+
+	// call back object can be used only if this flag is true
+	bool readyForCallback;
 };
 
 
@@ -120,32 +143,34 @@ private:
 class PendingRequest {
 public:
 
-	bool operator==(const MessageTime_t msgId) {return this->msg_id == msgId;}
-	PendingRequest(time_t timeout, MessageTime_t msg_id, CallbackReference cb) :
-		timeout(timeout), msg_id(msg_id), callbackAndTypeMask(cb) {};
-   PendingRequest() : timeout(0), msg_id(0), 
-   callbackAndTypeMask(CallbackReference()) {}
+	bool operator==(const MessageID_t msgId) {return this->msg_id == msgId;}
+	PendingRequest(time_t timeout, MessageID_t msg_id, CallbackReference cb) :
+		timeout(timeout), msg_id(msg_id), callbackObjectReference(cb) {};
+	PendingRequest() : timeout(0), msg_id(0), callbackObjectReference(CallbackReference()) {};
+	PendingRequest(const PendingRequest & source) : timeout(source.timeout), msg_id(source.msg_id),
+			callbackObjectReference(source.callbackObjectReference) {};
 
-	CallbackReference getCallbackAndTypeMask() const ;
-	MessageTime_t getMsgId() const ;
+	CallbackReference getCallbackObjectReference() const ;
+	MessageID_t getMsgId() const ;
 	time_t getTimeout() const ;
-   bool triggered();
+	//   bool triggered();
 
 private:
 	/*
 	 * The physical clock time in seconds at which this request times out
 	 */
+	// TODO : a better name ? like what?
 	time_t timeout;
 
 	/*
 	 * Unique identifier of this message
 	 */
-	MessageTime_t msg_id;
+	MessageID_t msg_id;
 
 	/*
 	 * Callback reference for this message
 	 */
-	CallbackReference callbackAndTypeMask;
+	CallbackReference callbackObjectReference;
 };
 
 
@@ -154,7 +179,7 @@ typedef std::vector<PendingRequest>& PendingRequests;
  * This class stores all pending messages and one object of it is
  * kept in TM
  */
-class PendingMessages {
+class PendingMessagesHandler {
 	// static final unsigned NUMBER_OF_BYTE_IN_PENDING_BITMASK = 128;
 	/*
   AtomicBitmask pendingRequests(NUMBER_OF_BYTE_IN_PENDING_BITMASK/sizeof(int));
@@ -173,21 +198,21 @@ private:
 
 public:
 	void setTransportManager(TransportManager * transportManager);
-	void addMessage(time_t, MessageTime_t, CallbackReference);
+	void addPendingMessage(time_t, MessageID_t, CallbackReference);
 	//void trigger_timeouts(time_t);
-	void resolve(Message*);
+	void resolveResponseMessage(Message*);
 	CallbackReference prepareCallback(void*, Callback*,
 			ShardingMessageType,bool = false,int = 1);
 };
 
-inline bool PendingRequest::triggered() {
-   if(time_t to = timeout) {
-      //find out if cb has been triggered before by this request
-      if(to == -1 || 
-            !__sync_bool_compare_and_swap(&to, to, (time_t) -1)) return true;
-   }
-   return false;
-}
+//inline bool PendingRequest::triggered() {
+//   if(time_t to = timeout) {
+//      //find out if cb has been triggered before by this request
+//      if(to == -1 ||
+//            !__sync_bool_compare_and_swap(&to, to, (time_t) -1)) return true;
+//   }
+//   return false;
+//}
 
 }}
 

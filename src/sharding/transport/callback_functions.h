@@ -127,13 +127,13 @@ bool recieveMessage(int fd, TransportCallback *cb) {
 		// sets the distributedTime of TM to the maximum time received by a message
 		// in a thread safe fashion
 		while(true) {
-			MessageTime_t time = tm->getDistributedTime();
+			MessageID_t time = tm->getDistributedTime();
 			//check if time needs to be incremented
-			if(msgHeader.getTime() <= time &&
-					/*zero break*/ time - msgHeader.getTime() < UINT_MAX/2 ) break;
+			if(msgHeader.getMessageId() <= time &&
+					/*zero break*/ time - msgHeader.getMessageId() < UINT_MAX/2 ) break;
 			//make sure time did not change
 			if(__sync_bool_compare_and_swap(
-					&tm->getDistributedTime(), time, msgHeader.getTime()+1)) break;
+					&tm->getDistributedTime(), time, msgHeader.getMessageId()+1)) break;
 		}
 
 		// we have some types of message like GetInfoCommandInfo that currently don't
@@ -165,7 +165,7 @@ bool recieveMessage(int fd, TransportCallback *cb) {
 	b.lock = false;
 
 	if(msg->isReply()) {
-		tm->getMsgs()->resolve(msg);
+		tm->getPendingMessagesHandler()->resolveResponseMessage(msg);
 		return true;
 	} else if(msg->isInternal()) { // receiving a message which
 
@@ -179,7 +179,7 @@ bool recieveMessage(int fd, TransportCallback *cb) {
 		}
 		Message* replyMessage = tm->getInternalTrampoline()->notifyWithReply(msg);
 		if(replyMessage != NULL) {
-			replyMessage->setInitialTime(msg->getTime());
+			replyMessage->setRequestMessageId(msg->getMessageId());
 			replyMessage->setReply()->setInternal();
 			tm->route(fd, replyMessage);
 			tm->getMessageAllocator()->deallocateByMessagePointer(msg);

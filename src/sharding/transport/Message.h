@@ -7,7 +7,7 @@
 namespace srch2 {
 namespace httpwrapper {
 
-typedef unsigned MessageTime_t;
+typedef unsigned MessageID_t;
 
 const char LOCAL_MASK = 0x2;
 const char REPLY_MASK = 0x1;
@@ -50,17 +50,17 @@ public:
    unsigned getBodySize(){
 	   return this->bodySize;
    }
-   void setTime(MessageTime_t time){
-	   this->time = time;
+   void setMessageId(MessageID_t id){
+	   this->id = id;
    }
-   MessageTime_t getTime(){
-	   return this->time;
+   MessageID_t getMessageId(){
+	   return this->id;
    }
-   void setInitialTime(MessageTime_t time){
-	   this->initialTime = time;
+   void setRequestMessageId(MessageID_t requestMessageId){
+	   this->requestMessageId = requestMessageId;
    }
-   MessageTime_t getInitialTime(){
-	   return this->initialTime;
+   MessageID_t getRequestMessageId(){
+	   return this->requestMessageId;
    }
    void setBodyAndBodySize(void * src, unsigned bodySize){
 	   setBodySize(bodySize);
@@ -99,8 +99,8 @@ private:
    char mask;
    ShardId destinationShard;
    unsigned bodySize; //size of buffer -> change name to bodySize?
-   MessageTime_t time;
-   MessageTime_t initialTime; //used by response type messages
+   MessageID_t id;
+   MessageID_t requestMessageId; //used by response type messages
    char body[0];
 };
 

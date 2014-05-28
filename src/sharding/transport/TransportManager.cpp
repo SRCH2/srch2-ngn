@@ -70,7 +70,7 @@ void* startListening(void* arg) {
 #include "callback_functions.h"
 
 TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
-	pendingMessages.setTransportManager(this);
+	pendingMessagesHandler.setTransportManager(this);
 	// for each node we have, if it's us just store out event base
 	// otherwise it stores the node as a destination
 	for(Nodes::iterator dest = nodes.begin(); dest!= nodes.end(); ++dest) {
@@ -113,19 +113,21 @@ TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
 
 #define USE_SAME_THREAD_FOR_CURRENT_NODE_PROCESS
 
-MessageTime_t TransportManager::route(NodeId node, Message *msg, 
+MessageID_t TransportManager::route(NodeId node, Message *msg, 
 		unsigned timeout, CallbackReference callback) {
-	msg->setTime( __sync_fetch_and_add(&distributedTime, 1));
+	// we use a clock for the IDs of Messages
+	msg->setMessageId( __sync_fetch_and_add(&distributedTime, 1));
 
+	// TODO VARIABLE IS NOT USED
 	time_t timeOfTimeout_time = timeout + time(NULL);
 	// only messages which expect reply will go to pending messages
 	if(! msg->isNoReply()){
-		pendingMessages.addMessage(timeout, msg->getTime(), callback);
+		pendingMessagesHandler.addPendingMessage(timeout, msg->getMessageId(), callback);
 	}
 
 #ifdef USE_SAME_THREAD_FOR_CURRENT_NODE_PROCESS
 	if(msg->isLocal()) {
-		MessageTime_t rtn = msg->getTime();
+		MessageID_t rtn = msg->getMessageId();
 		if(msg->isInternal()) {
 			if(msg->isNoReply()){
 				// this msg comes from a local broadcast or route with no call back
@@ -141,9 +143,9 @@ MessageTime_t TransportManager::route(NodeId node, Message *msg,
 			Message* reply = getInternalTrampoline()->notifyWithReply(msg);
 			ASSERT(reply != NULL);
 			if(reply != NULL) {
-				reply->setInitialTime(msg->getTime());
+				reply->setRequestMessageId(msg->getMessageId());
 				reply->setReply()->setInternal();
-				getMsgs()->resolve(reply);
+				getPendingMessagesHandler()->resolveResponseMessage(reply);
 			}
 			// what if resolve returns NULL for something?
 		} else {
@@ -171,11 +173,11 @@ MessageTime_t TransportManager::route(NodeId node, Message *msg,
 	if(msg->isNoReply()){
 		getMessageAllocator()->deallocateByMessagePointer(msg);
 	}
-	return msg->getTime();
+	return msg->getMessageId();
 }
 
-MessageTime_t TransportManager::route(int fd, Message *msg) {
-	msg->setTime( __sync_fetch_and_add(&distributedTime, 1));
+MessageID_t TransportManager::route(int fd, Message *msg) {
+	msg->setMessageId( __sync_fetch_and_add(&distributedTime, 1));
 
 #ifdef __MACH__
 	int flag = SO_NOSIGPIPE;
@@ -186,10 +188,10 @@ MessageTime_t TransportManager::route(int fd, Message *msg) {
 	send(fd, msg, msg->getBodySize() + sizeof(Message), flag);
 	//TODO: errors?
 
-	return msg->getTime();
+	return msg->getMessageId();
 }
 
-MessageTime_t& TransportManager::getDistributedTime() {
+MessageID_t& TransportManager::getDistributedTime() {
 	return distributedTime;
 }
 
@@ -205,8 +207,8 @@ MessageAllocator * TransportManager::getMessageAllocator() {
 	return &messageAllocator;
 }
 
-PendingMessages * TransportManager::getMsgs() {
-	return &pendingMessages;
+PendingMessagesHandler * TransportManager::getPendingMessagesHandler() {
+	return &pendingMessagesHandler;
 }
 
 RouteMap * TransportManager::getRouteMap() {

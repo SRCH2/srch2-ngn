@@ -24,25 +24,25 @@ void x::callback(Message *reply) {
 }
 
 int main() {
-  PendingMessages msg;
+  PendingMessagesHandler msg;
   MessageAllocator alloc;
 
   CallbackReference cbRef =
   msg.prepareCallback(NULL, new x, SearchCommandMessageType, 
     false, 4);
 
-  msg.addMessage(0, 3, cbRef);
+  msg.addPendingMessage(0, 3, cbRef);
 
   for(int i=0; i < 3; ++i) {
     Message *reply = alloc.allocateMessage(sizeof(REPLY_MESSAGE_DETAILS));
-    reply->initialTime = 3;
+    reply->requestMessageId = 3;
     memcpy(reply->body, REPLY_MESSAGE_DETAILS, 
       sizeof(REPLY_MESSAGE_DETAILS));
-    msg.resolve(reply);
+    msg.resolveResponseMessage(reply);
   }
 
   Message *reply = alloc.allocateMessage(sizeof(REPLY_MESSAGE_DETAILS));
-  reply->initialTime = 3;
+  reply->requestMessageId = 3;
   memcpy(reply->body, REPLY_MESSAGE_DETAILS, sizeof(REPLY_MESSAGE_DETAILS));
-  msg.resolve(reply);
+  msg.resolveResponseMessage(reply);
 }

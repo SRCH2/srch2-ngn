@@ -46,7 +46,6 @@ inline void RoutingManager::sendInternalMessage(Message * msg,
 		ShardId shardId, timeval timeoutValue, CallbackReference cb) {
 
 	unsigned nodeId = shardId.getNodeId(configurationManager);
-	cb.getRegisteredCallbackPtr()->incrementWaitOn();
 	transportManager.route(nodeId, msg, timeoutValue.tv_sec, cb);
 }
 
@@ -54,7 +53,6 @@ inline void RoutingManager::sendExternalMessage(Message * msg,
 		ShardId shardId, timeval timeoutValue, CallbackReference cb){
 
 	unsigned nodeId = shardId.getNodeId(configurationManager);
-	cb.getRegisteredCallbackPtr()->incrementWaitOn();
 	transportManager.route(nodeId, msg, timeoutValue.tv_sec, cb);
 
 }
@@ -152,6 +150,9 @@ void RoutingManager::broadcast_w_cb(RequestType * requestObj,
 			false,
 			broadcastResolver.size());
 
+	// Callback object is ready from the beginning for responses because this is not a wait for all case
+	cb.getRegisteredCallbackPtr()->setReadyForCallBack();
+
 	Message * internalMessage = NULL;
 	Message * externalMessage = NULL;
 
@@ -170,6 +171,8 @@ void RoutingManager::broadcast_w_cb(RequestType * requestObj,
 				cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(internalMessage);
 			}
 			internalMessage->setDestinationShardId(shardIdFromIteration);
+			// callback should wait for one more reply
+			cb.getRegisteredCallbackPtr()->incrementNumberOfRepliesToWaitFor();
 			sendInternalMessage(internalMessage, shardIdFromIteration, timeValue, cb);
 		}else{// this shard is in some other node
 			// so that we create the message only once
@@ -180,9 +183,12 @@ void RoutingManager::broadcast_w_cb(RequestType * requestObj,
 				cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(externalMessage);
 			}
 			externalMessage->setDestinationShardId(shardIdFromIteration);
+			// callback should wait for one more reply
+			cb.getRegisteredCallbackPtr()->incrementNumberOfRepliesToWaitFor();
 			sendExternalMessage(externalMessage, shardIdFromIteration, timeValue, cb);
 		}
 	}
+
 
 }
 
@@ -229,6 +235,8 @@ void RoutingManager::broadcast_wait_for_all_w_cb(RequestType * requestObj,
 				cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(internalMessage);
 			}
 			internalMessage->setDestinationShardId(shardIdFromIteration);
+			// callback should wait for one more reply
+			cb.getRegisteredCallbackPtr()->incrementNumberOfRepliesToWaitFor();
 			sendInternalMessage(internalMessage, shardIdFromIteration, timeValue, cb);
 		}else{// this shard is in some other node
 			// so that we create the message only once
@@ -239,9 +247,14 @@ void RoutingManager::broadcast_wait_for_all_w_cb(RequestType * requestObj,
 				cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(externalMessage);
 			}
 			externalMessage->setDestinationShardId(shardIdFromIteration);
+			// callback should wait for one more reply
+			cb.getRegisteredCallbackPtr()->incrementNumberOfRepliesToWaitFor();
 			sendExternalMessage(externalMessage, shardIdFromIteration, timeValue, cb);
 		}
 	}
+
+	// callback object is not ready for responses unless all requests are sent.
+	cb.getRegisteredCallbackPtr()->setReadyForCallBack();
 }
 
 
@@ -272,6 +285,9 @@ void RoutingManager::broadcast_w_cb_n_timeout(RequestType * requestObj,
 			false,
 			broadcastResolver.size());
 
+	// Callback object is ready from the beginning for responses because this is not a wait for all case
+	cb.getRegisteredCallbackPtr()->setReadyForCallBack();
+
 	Message * internalMessage = NULL;
 	Message * externalMessage = NULL;
 
@@ -288,6 +304,8 @@ void RoutingManager::broadcast_w_cb_n_timeout(RequestType * requestObj,
 				cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(internalMessage);
 			}
 			internalMessage->setDestinationShardId(shardIdFromIteration);
+			// callback should wait for one more reply
+			cb.getRegisteredCallbackPtr()->incrementNumberOfRepliesToWaitFor();
 			sendInternalMessage(internalMessage, shardIdFromIteration, timeoutValue, cb);
 		}else{// this shard is in some other node
 			// so that we create the message only once
@@ -298,6 +316,8 @@ void RoutingManager::broadcast_w_cb_n_timeout(RequestType * requestObj,
 				cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(externalMessage);
 			}
 			externalMessage->setDestinationShardId(shardIdFromIteration);
+			// callback should wait for one more reply
+			cb.getRegisteredCallbackPtr()->incrementNumberOfRepliesToWaitFor();
 			sendExternalMessage(externalMessage, shardIdFromIteration, timeoutValue, cb);
 		}
 	}
@@ -348,6 +368,8 @@ RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType * requestObj,
 				cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(internalMessage);
 			}
 			internalMessage->setDestinationShardId(shardIdFromIteration);
+			// callback should wait for one more reply
+			cb.getRegisteredCallbackPtr()->incrementNumberOfRepliesToWaitFor();
 			sendInternalMessage(internalMessage, shardIdFromIteration, timeoutValue, cb);
 		}else{// this shard is in some other node
 			// so that we create the message only once
@@ -358,9 +380,14 @@ RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType * requestObj,
 				cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(externalMessage);
 			}
 			externalMessage->setDestinationShardId(shardIdFromIteration);
+			// callback should wait for one more reply
+			cb.getRegisteredCallbackPtr()->incrementNumberOfRepliesToWaitFor();
 			sendExternalMessage(externalMessage, shardIdFromIteration, timeoutValue, cb);
 		}
 	}
+
+	// callback object is not ready for responses unless all requests are sent.
+	cb.getRegisteredCallbackPtr()->setReadyForCallBack();
 }
 
 
@@ -424,6 +451,8 @@ RoutingManager::route_w_cb(RequestType * requestObj,
 			new RMCallback<RequestType, ResponseType>(*aggregator),
 			RequestType::messageKind());
 
+	// callback object is always ready because there is only one request
+	cb.getRegisteredCallbackPtr()->setReadyForCallBack();
 
 	// if the destination is the current node, we don't serialize the request object
 	// instead, we serialize the pointer to the request object
@@ -435,6 +464,8 @@ RoutingManager::route_w_cb(RequestType * requestObj,
 		// request message is stored in cb object to be deleted when replies are ready
 		// and cb object is being destroyed.
 		cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(msg);
+		// callback should wait for one more reply
+		cb.getRegisteredCallbackPtr()->incrementNumberOfRepliesToWaitFor();
 		sendInternalMessage(msg, shardInfo,timeValue,cb);
 
 	}else{
@@ -442,6 +473,8 @@ RoutingManager::route_w_cb(RequestType * requestObj,
 		// request message is stored in cb object to be deleted when replies are ready
 		// and cb object is being destroyed.
 		cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(msg);
+		// callback should wait for one more reply
+		cb.getRegisteredCallbackPtr()->incrementNumberOfRepliesToWaitFor();
 		sendExternalMessage(msg,shardInfo,timeValue,cb);
 	}
 
@@ -469,6 +502,8 @@ RoutingManager::route_w_cb_n_timeout(RequestType * requestObj,
 			new RMCallback<RequestType, ResponseType>(*aggregator),
 			RequestType::messageKind());
 
+	// callback object is always ready because there is only one request
+	cb.getRegisteredCallbackPtr()->setReadyForCallBack();
 
 	// if the destination is the current node, we don't serialize the request object
 	// instead, we serialize the pointer to the request object
@@ -478,6 +513,8 @@ RoutingManager::route_w_cb_n_timeout(RequestType * requestObj,
 		// request message is stored in cb object to be deleted when replies are ready
 		// and cb object is being destroyed.
 		cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(msg);
+		// callback should wait for one more reply
+		cb.getRegisteredCallbackPtr()->incrementNumberOfRepliesToWaitFor();
 		sendInternalMessage(msg, shardInfo,timeoutValue,cb);
 
 	}else{
@@ -485,6 +522,8 @@ RoutingManager::route_w_cb_n_timeout(RequestType * requestObj,
 		// request message is stored in cb object to be deleted when replies are ready
 		// and cb object is being destroyed.
 		cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(msg);
+		// callback should wait for one more reply
+		cb.getRegisteredCallbackPtr()->incrementNumberOfRepliesToWaitFor();
 		sendExternalMessage(msg,shardInfo,timeoutValue,cb);
 	}
 

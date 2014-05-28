@@ -47,6 +47,7 @@ private:
 	ResultAggregatorAndPrint<RequestType, ResponseType>& aggregrate;
 	ResultsAggregatorAndPrintMetadata meta;
 	bool hasCalledPreProcess;
+	mutable boost::shared_mutex _access;
 };
 
 
@@ -63,9 +64,12 @@ void RMCallback<RequestType, ResponseType>::preProcessing() {
 
 template <typename RequestType, typename ResponseType> inline
 void RMCallback<RequestType, ResponseType>::timeout(void*) {
-	if(hasCalledPreProcess == false){
-		preProcessing();
-		hasCalledPreProcess = true;
+	{
+		boost::unique_lock< boost::shared_mutex > lock(_access);
+		if(hasCalledPreProcess == false){
+			preProcessing();
+			hasCalledPreProcess = true;
+		}
 	}
 	//TODO : timeout is not implemented yet.
 }
@@ -73,9 +77,12 @@ void RMCallback<RequestType, ResponseType>::timeout(void*) {
 
 template <typename RequestType, typename ResponseType> inline
 void RMCallback<RequestType, ResponseType>::callback(Message* responseMessage) {
-	if(hasCalledPreProcess == false){
-		preProcessing();
-		hasCalledPreProcess = true;
+	{
+		boost::unique_lock< boost::shared_mutex > lock(_access);
+		if(hasCalledPreProcess == false){
+			preProcessing();
+			hasCalledPreProcess = true;
+		}
 	}
 	// deserialize the message into the response type
 	// example : msg deserializes into SerializableSearchResults
@@ -100,9 +107,12 @@ void RMCallback<RequestType, ResponseType>::callbackAll(std::vector<Message*>& r
 	 */
 
 
-	if(hasCalledPreProcess == false){
-		preProcessing();
-		hasCalledPreProcess = true;
+	{
+		boost::unique_lock< boost::shared_mutex > lock(_access);
+		if(hasCalledPreProcess == false){
+			preProcessing();
+			hasCalledPreProcess = true;
+		}
 	}
 
 	std::vector<ResponseType*> responseObjects;
