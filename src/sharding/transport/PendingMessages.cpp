@@ -69,6 +69,7 @@ time_t PendingRequest::getTimeout() const {
 
 void PendingMessages::addMessage(time_t timeout, 
 		MessageTime_t id, CallbackReference cb) {
+	boost::unique_lock< boost::shared_mutex > lock(_access);
 	pendingRequests.push_back(PendingRequest(time(NULL) + timeout, id, cb));
 }
 
@@ -77,25 +78,23 @@ void PendingMessages::resolve(Message* message) {
 	if(!message->isReply()){
 		return;
 	}
+	boost::unique_lock< boost::shared_mutex > lock(_access);
 
-   PendingRequest resolution;
-   {
-	  boost::unique_lock< boost::shared_mutex > lock(_access);
-	  std::vector<PendingRequest>::iterator request =
-        std::find(pendingRequests.begin(),
-              pendingRequests.end(), message->getInitialTime());
-     if(request == pendingRequests.end()){
-        transportManager->getMessageAllocator()->deallocateByMessagePointer(
-              message);
-        return;
-     }
+	PendingRequest resolution;
+	std::vector<PendingRequest>::iterator request =
+			std::find(pendingRequests.begin(),
+					pendingRequests.end(), message->getInitialTime());
+	if(request == pendingRequests.end()){
+		transportManager->getMessageAllocator()->deallocateByMessagePointer(
+				message);
+		return;
+	}
 
-     resolution = *request;
-     pendingRequests.erase(request);
-   }
+	resolution = *request;
+	pendingRequests.erase(request);
 
-   RegisteredCallback* cb = 
-      resolution.getCallbackAndTypeMask().getRegisteredCallbackPtr();
+	RegisteredCallback* cb =
+			resolution.getCallbackAndTypeMask().getRegisteredCallbackPtr();
 
 
 	if(resolution.getCallbackAndTypeMask().isWaitForAll()) {
@@ -106,7 +105,7 @@ void PendingMessages::resolve(Message* message) {
 		if(num == 0) {
 			cb->getCallbackObject()->callbackAll(cb->getReplyMessages());
 			for(std::vector<Message*>::iterator msgItr = 
-               cb->getReplyMessages().begin();
+					cb->getReplyMessages().begin();
 					msgItr != cb->getReplyMessages().end(); ++msgItr) {
 				transportManager->getMessageAllocator()->deallocateByMessagePointer(*msgItr);
 			}

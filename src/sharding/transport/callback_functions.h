@@ -12,14 +12,14 @@ using namespace srch2::httpwrapper;
 namespace srch2 {
 namespace httpwrapper {
 struct TransportCallback {
-  TransportManager *const tm;
-  Connection *const conn;
-  struct event* ev;
-  const struct event_base *const base;
+	TransportManager *const tm;
+	Connection *const conn;
+	struct event* ev;
+	const struct event_base *const base;
 
-  TransportCallback(TransportManager *tm, Connection *c, event* e, 
-      event_base* b) : tm(tm), conn(c), ev(e), base(b) {}
-  TransportCallback() : tm(NULL), conn(NULL), ev(NULL), base(NULL) {}
+	TransportCallback(TransportManager *tm, Connection *c, event* e,
+			event_base* b) : tm(tm), conn(c), ev(e), base(b) {}
+	TransportCallback() : tm(NULL), conn(NULL), ev(NULL), base(NULL) {}
 };
 }}
 
@@ -27,29 +27,37 @@ struct TransportCallback {
  * This function reads the stream until it finds the next valid message
  * Each message starts with a special value called magic number
  */
-bool findNextMagicNumberAndReadMessageHeader(Message *const msg,  int fd) {
+int findNextMagicNumberAndReadMessageHeader(Message *const msg,  int fd) {
 	while(true) {
 		int readRtn = recv(fd, (void*) msg, sizeof(Message), MSG_DONTWAIT);
 
-		if(readRtn == -1 || readRtn == 0) {
-			if(errno == EAGAIN || errno == EWOULDBLOCK) return false;
+		if(readRtn == 0) {
+			return 1;
+		}
 
+		if(readRtn == -1){
+			if(errno == EAGAIN || errno == EWOULDBLOCK){
+				return -1;
+			}
+			if(errno == ECONNREFUSED || errno == EBADF){
+				return 1;
+			}
 			//v1: handle  error
 			return false;
-      }
+		}
 
 		if(readRtn < sizeof(Message)) {
 			//v1: broken message boundary == seriously bad
-			return false;
+			return -1;
 		}
 
 		//TODO:checkMagicNumbers
 
-		return true;
+		return 0;
 	}
 
 	//ASSERT(false);
-	return false;
+	return -1;
 }
 
 Message* readRestOfMessage(MessageAllocator& messageAllocator,
@@ -59,11 +67,11 @@ Message* readRestOfMessage(MessageAllocator& messageAllocator,
 
 	if(rv == -1) {
 		if(errno == EAGAIN || errno == EWOULDBLOCK) {
-         rv = 0;
-      } else {
-		  //v1: handle error
-		  return NULL;
-      }
+			rv = 0;
+		} else {
+			//v1: handle error
+			return NULL;
+		}
 	}
 
 	*readCount = rv;
@@ -92,10 +100,10 @@ bool readPartialMessage(int fd, MessageBuffer& buffer) {
 }
 
 
-void recieveMessage(int fd, TransportCallback *cb) {
+bool recieveMessage(int fd, TransportCallback *cb) {
 	if( fd != cb->conn->fd) {
 		//major error
-		return;
+		return false;
 	}
 
 	MessageBuffer& b = cb->conn->buffer;
@@ -105,11 +113,15 @@ void recieveMessage(int fd, TransportCallback *cb) {
 	if(b.msg == NULL) {
 		Message msgHeader;
 
-		if(!findNextMagicNumberAndReadMessageHeader(&msgHeader, fd)){
+		int resultOfFindingNextMagicNumber = findNextMagicNumberAndReadMessageHeader(&msgHeader, fd);
+		if(resultOfFindingNextMagicNumber != 0){
+			if(resultOfFindingNextMagicNumber == 1){
+				return false;
+			}
 			// there is some sort of error in the stream so we can't
 			// get the next message
 			b.lock = false;
-			return;
+			return true;
 		}
 
 		// sets the distributedTime of TM to the maximum time received by a message
@@ -129,22 +141,22 @@ void recieveMessage(int fd, TransportCallback *cb) {
 		if(msgHeader.getBodySize() != 0){
 			if(!(b.msg = readRestOfMessage(*(tm->getMessageAllocator()),
 					fd, &msgHeader, &b.readCount))) {
-            b.lock = false;
-            return;
-         }
+				b.lock = false;
+				return true;
+			}
 
 			if(b.readCount != b.msg->getBodySize()) {
 				b.lock = false;
-				return;
+				return true;
 			}
 		}else{
-		    b.msg= tm->getMessageAllocator()->allocateMessage(msgHeader.getBodySize());
-		    memcpy(b.msg, &msgHeader, sizeof(Message));
+			b.msg= tm->getMessageAllocator()->allocateMessage(msgHeader.getBodySize());
+			memcpy(b.msg, &msgHeader, sizeof(Message));
 		}
 	} else {
 		if(!readPartialMessage(fd, b)) {
 			b.lock = false;
-			return;
+			return true;
 		}
 	}
 
@@ -154,7 +166,7 @@ void recieveMessage(int fd, TransportCallback *cb) {
 
 	if(msg->isReply()) {
 		tm->getMsgs()->resolve(msg);
-		return;
+		return true;
 	} else if(msg->isInternal()) { // receiving a message which
 
 		if(msg->isNoReply()){
@@ -163,7 +175,7 @@ void recieveMessage(int fd, TransportCallback *cb) {
 			tm->getInternalTrampoline()->notifyNoReply(msg);
 			// and delete the msg
 			tm->getMessageAllocator()->deallocateByMessagePointer(msg);
-			return;
+			return true;
 		}
 		Message* replyMessage = tm->getInternalTrampoline()->notifyWithReply(msg);
 		if(replyMessage != NULL) {
@@ -172,7 +184,7 @@ void recieveMessage(int fd, TransportCallback *cb) {
 			tm->route(fd, replyMessage);
 			tm->getMessageAllocator()->deallocateByMessagePointer(msg);
 			tm->getMessageAllocator()->deallocateByMessagePointer(replyMessage);
-			return;
+			return true;
 		}
 	} else {
 		if (tm->getSmHandler())
@@ -180,6 +192,8 @@ void recieveMessage(int fd, TransportCallback *cb) {
 	}
 
 	tm->getMessageAllocator()->deallocateByMessagePointer(msg);
+
+	return true;
 }
 
 /*
@@ -187,8 +201,9 @@ void recieveMessage(int fd, TransportCallback *cb) {
  */
 void cb_recieveMessage(int fd, short eventType, void *arg) {
 	TransportCallback* cb = (TransportCallback*) arg;
-  recieveMessage(fd, cb);
-  event_add(cb->ev, NULL);
+	if(recieveMessage(fd, cb)){
+		event_add(cb->ev, NULL);
+	}
 }
 
 #endif /* __TRANSPORT_CALLBACK_FUNCTIONS_H__ */
