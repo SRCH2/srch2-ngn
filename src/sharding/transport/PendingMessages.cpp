@@ -87,10 +87,15 @@ void PendingMessagesHandler::addPendingMessage(time_t timeout,
 }
 
 void PendingMessagesHandler::resolveResponseMessage(Message* responseMessage) {
+	if(responseMessage == NULL){
+		return;
+	}
 	// only reply messages can enter this function
 	if(!responseMessage->isReply()){
 		return;
 	}
+
+	Logger::console("Resolving response message, msg type is %d", responseMessage->getType());
 
 	PendingRequest correspondingPendingRequest;
 
@@ -126,12 +131,15 @@ void PendingMessagesHandler::resolveResponseMessage(Message* responseMessage) {
 	if(correspondingPendingRequest.getCallbackObjectReference().isWaitForAll()) {
 		registeredCallBack->addReplyMessage(responseMessage);
 		int numberOfResponsesLeft = registeredCallBack->decrementNumberOfRepliesToWaitFor();
+		Logger::console("Request needs to wait for all responses. %d of %d expected are left.", numberOfResponsesLeft ,
+				registeredCallBack->getTotalNumberOfRepliesToExpect());
 
 		// if no response is left to wait for and callback object is open to responses,
 		// trigger callback object
 		// e.g. aggregation
 		if(numberOfResponsesLeft == 0 &&
 				registeredCallBack->getTotalNumberOfRepliesToExpect() == registeredCallBack->getNumberOfReceivedReplies()) {
+			Logger::console("Callback functions and finalize are called.");
 			registeredCallBack->getCallbackObject()->callbackAll(registeredCallBack->getReplyMessages());
 			// destructor also calls finalize on the callback
 			delete registeredCallBack;
@@ -140,10 +148,13 @@ void PendingMessagesHandler::resolveResponseMessage(Message* responseMessage) {
 		// if it's not supposed to wait for all, callback object must be ready to handle
 		// responses.
 		ASSERT(registeredCallBack->getTotalNumberOfRepliesToExpect() == registeredCallBack->getNumberOfReceivedReplies());
+		Logger::console("Request has single response. Callback is called.");
 		registeredCallBack->getCallbackObject()->callback(responseMessage);
 
 		int numberOfResponsesLeft = registeredCallBack->decrementNumberOfRepliesToWaitFor();
-		if(numberOfResponsesLeft == 0) {
+		if(numberOfResponsesLeft == 0 &&
+				registeredCallBack->getTotalNumberOfRepliesToExpect() == registeredCallBack->getNumberOfReceivedReplies()) {
+			Logger::console("Finalize is called.");
 			// calls finalize at the end
 			delete registeredCallBack;
 		}

@@ -193,7 +193,7 @@ bool recieveMessage(int fd, TransportCallback *cb) {
 		// If one node is up but another one has not registered SmHandler into tm yet,
 		// this check will avoid a crash.
 		if (tm->getSmHandler() != NULL){
-			Logger::console("SM Request message is received. Msg type is %d", msg->getType());
+			//Logger::console("SM Request message is received. Msg type is %d", msg->getType());
 			tm->getSmHandler()->notifyWithReply(msg);
 		}
 	}

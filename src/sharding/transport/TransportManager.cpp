@@ -115,6 +115,15 @@ TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
 
 MessageID_t TransportManager::route(NodeId node, Message *msg, 
 		unsigned timeout, CallbackReference callback) {
+
+	if(msg == NULL){
+		Logger::console("Trying to send NULL message in TM route(node,msg)");
+		return 0;
+	}
+	if(! msg->isSMRelated()){
+		Logger::console("Message is being sent through TM route(node,msg). Msg type is %d", msg->getType());
+	}
+
 	// we use a clock for the IDs of Messages
 	msg->setMessageId( __sync_fetch_and_add(&distributedTime, 1));
 
@@ -127,6 +136,7 @@ MessageID_t TransportManager::route(NodeId node, Message *msg,
 
 #ifdef USE_SAME_THREAD_FOR_CURRENT_NODE_PROCESS
 	if(msg->isLocal()) {
+		Logger::console("Message is local");
 		MessageID_t rtn = msg->getMessageId();
 		if(msg->isInternal()) {
 			if(msg->isNoReply()){
@@ -147,6 +157,9 @@ MessageID_t TransportManager::route(NodeId node, Message *msg,
 				reply->setReply()->setInternal();
 				getPendingMessagesHandler()->resolveResponseMessage(reply);
 			}
+			if(reply == NULL){
+				Logger::console("Reply is null");
+			}
 			// what if resolve returns NULL for something?
 		} else {
 			getSmHandler()->notifyWithReply(msg);
@@ -164,8 +177,15 @@ MessageID_t TransportManager::route(NodeId node, Message *msg,
 	int flag = MSG_NOSIGNAL;
 #endif
 
-	send(conn.fd, msg, msg->getBodySize() + sizeof(Message), flag);
+	unsigned returnStatus = send(conn.fd, msg, msg->getBodySize() + sizeof(Message), flag);
 	//TODO: errors?
+	if(returnStatus == -1){
+		perror("Message sending fails in route(node,msg)");
+	}else if(returnStatus !=  msg->getBodySize() + sizeof(Message)){
+		Logger::console("Message not sent completely through TM route(node,msg). Msg type is %d", msg->getType());
+	}else{
+		Logger::console("Success");
+	}
 
 	/*
 	 * If we don't wait for reply we should delete the msg here
@@ -177,6 +197,13 @@ MessageID_t TransportManager::route(NodeId node, Message *msg,
 }
 
 MessageID_t TransportManager::route(int fd, Message *msg) {
+	if(msg == NULL){
+		Logger::console("Trying to send NULL message in TM route(fd,msg)");
+		return 0;
+	}
+	if(! msg->isSMRelated()){
+		Logger::console("Message is being sent through TM route(fd,msg). Msg type is %d", msg->getType());
+	}
 	msg->setMessageId( __sync_fetch_and_add(&distributedTime, 1));
 
 #ifdef __MACH__
@@ -185,8 +212,16 @@ MessageID_t TransportManager::route(int fd, Message *msg) {
 	int flag = MSG_NOSIGNAL;
 #endif
 
-	send(fd, msg, msg->getBodySize() + sizeof(Message), flag);
+	ssize_t returnStatus = send(fd, msg, msg->getBodySize() + sizeof(Message), flag);
 	//TODO: errors?
+	if(returnStatus == -1){
+		perror("Message sending fails in route(fd,msg)");
+	}else if(returnStatus !=  msg->getBodySize() + sizeof(Message)){
+		Logger::console("Message not sent completely through TM route(fd,msg). Msg type is %d", msg->getType());
+	}else{
+		Logger::console("Success");
+	}
+
 
 	return msg->getMessageId();
 }

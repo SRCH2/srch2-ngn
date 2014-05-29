@@ -19,6 +19,11 @@ class Message {
 public:
 
    //helper Functions
+
+   bool isSMRelated(){
+	 return (mask == 0);
+   }
+
    bool isLocal(){
      return mask & LOCAL_MASK;
    }
