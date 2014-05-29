@@ -184,7 +184,9 @@ MessageID_t TransportManager::route(NodeId node, Message *msg,
 	}else if(returnStatus !=  msg->getBodySize() + sizeof(Message)){
 		Logger::console("Message not sent completely through TM route(node,msg). Msg type is %d", msg->getType());
 	}else{
-		Logger::console("Success");
+		if(! msg->isSMRelated()){
+			Logger::console("Success");
+		}
 	}
 
 	/*
