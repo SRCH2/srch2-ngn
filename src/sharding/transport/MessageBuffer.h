@@ -5,6 +5,7 @@
 
 namespace srch2 {
 namespace httpwrapper {
+// TODO : let's please move this class to RouteMap.h (where it is used) and remove this file
 
 class MessageBuffer {
   public:

@@ -11,6 +11,8 @@
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/thread/locks.hpp>
 
+// TODO : please change the name of this class and file to something more informative
+
 void* tryToConnect(void*);
 
 namespace srch2 {
@@ -19,6 +21,7 @@ namespace httpwrapper {
 const static char GREETING_MESSAGE[] = "GREETING FROM SRCH2";
 const static char FAILED_GREETING_MESSAGE[] = "YOU KNOCKED AGAIN? ";
 
+// TODO : let's do something about typedefs ...
 typedef unsigned NodeId;
 
 class Connection {
@@ -34,8 +37,9 @@ typedef std::pair<ConnectionInfo, bool> Route;
 
 using srch2::httpwrapper::Node;
 
-class Connections : public std::iterator<forward_iterator_tag,
-Route > {
+
+// TODO : Not used anywhere, let's get rid of it. We can use the iterator itself if we need it ...
+class Connections : public std::iterator<forward_iterator_tag, Route > {
 
 public:
 	typedef std::vector<Route > RoutePool;
@@ -68,6 +72,8 @@ class RouteMap {
 	// bool is whether it's been connection or not so initially it's false
 	std::vector<Route > destinations;
 	const Node* currentNode;
+
+	// destinations and nodeConnectionMap are changed by multiple threads
 	mutable boost::shared_mutex _access;
 	void addNodeConnection(NodeId, int);
    int listeningSocket;

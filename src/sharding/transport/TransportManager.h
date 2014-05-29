@@ -16,6 +16,17 @@ namespace httpwrapper {
 
 typedef std::vector<event_base*> EventBases;
 typedef std::vector<Node> Nodes;
+class TransportManager ;
+
+struct MessageAndTMPointers {
+
+	MessageAndTMPointers(	TransportManager * tm, Message * message){
+		this->tm = tm;
+		this->message = message;
+	}
+	TransportManager * tm;
+	Message * message;
+};
 
 class TransportManager {
 public:
@@ -82,6 +93,7 @@ private:
 	CallBackHandler *internalTrampoline;
 };
 
+// TODO : please move them to TM cpp
 inline void TransportManager::registerCallbackHandlerForSynchronizeManager(CallBackHandler
 		*callBackHandler) {
 	synchManagerHandler = callBackHandler;

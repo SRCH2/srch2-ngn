@@ -9,6 +9,9 @@
 
 using namespace srch2::httpwrapper;
 
+
+// TODO : get rid of this file and move its stuff to TransportManager
+
 namespace srch2 {
 namespace httpwrapper {
 struct TransportCallback {
@@ -164,6 +167,8 @@ bool recieveMessage(int fd, TransportCallback *cb) {
 	b.msg = NULL;
 	b.lock = false;
 
+
+	//TODO : break this function to two functions with related names ....
 	if(msg->isReply()) {
 		Logger::console("Reply message is received. Msg type is %d", msg->getType());
 		tm->getPendingMessagesHandler()->resolveResponseMessage(msg);

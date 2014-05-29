@@ -8,6 +8,7 @@
 using namespace srch2::instantsearch;
 using namespace srch2::httpwrapper;
 
+// TODO : move this code to RouteMap.cpp although it's temporary
 void* startListening(void* arg) {
 	RouteMap *const routeMap = (RouteMap*) arg;
 	const Node& currentNode =  routeMap->getCurrentNode();
@@ -111,7 +112,37 @@ TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
 	synchManagerHandler = 0;
 }
 
-#define USE_SAME_THREAD_FOR_CURRENT_NODE_PROCESS
+void * routeInternalMessage(void * tmAndMsg) {
+	MessageAndTMPointers * pointers = (MessageAndTMPointers *)tmAndMsg;
+	TransportManager * tm = pointers->tm;
+	Message * msg = pointers->message;
+
+	if(msg->isInternal()) {
+		if(msg->isNoReply()){
+			// this msg comes from a local broadcast or route with no call back
+			// so there is no reply for this msg.
+			// notifyNoReply should deallocate the obj in msg
+			// because msg just keeps a pointer to that object
+			// and that object itself needs to be deleted.
+			tm->getInternalTrampoline()->notifyNoReply(msg);
+			// and delete the msg
+			tm->getMessageAllocator()->deallocateByMessagePointer(msg);
+		}
+		Message* reply = tm->getInternalTrampoline()->notifyWithReply(msg);
+		ASSERT(reply != NULL);
+		if(reply != NULL) {
+			reply->setRequestMessageId(msg->getMessageId());
+			reply->setReply()->setInternal();
+			tm->getPendingMessagesHandler()->resolveResponseMessage(reply);
+		}
+		if(reply == NULL){
+			Logger::console("Reply is null");
+		}
+		// what if resolve returns NULL for something?
+	} else {
+		tm->getSmHandler()->notifyWithReply(msg);
+	}
+}
 
 MessageID_t TransportManager::route(NodeId node, Message *msg, 
 		unsigned timeout, CallbackReference callback) {
@@ -134,40 +165,20 @@ MessageID_t TransportManager::route(NodeId node, Message *msg,
 		pendingMessagesHandler.addPendingMessage(timeout, msg->getMessageId(), callback);
 	}
 
-#ifdef USE_SAME_THREAD_FOR_CURRENT_NODE_PROCESS
 	if(msg->isLocal()) {
-		Logger::console("Message is local");
-		MessageID_t rtn = msg->getMessageId();
-		if(msg->isInternal()) {
-			if(msg->isNoReply()){
-				// this msg comes from a local broadcast or route with no call back
-				// so there is no reply for this msg.
-				// notifyNoReply should deallocate the obj in msg
-				// because msg just keeps a pointer to that object
-				// and that object itself needs to be deleted.
-				getInternalTrampoline()->notifyNoReply(msg);
-				// and delete the msg
-				getMessageAllocator()->deallocateByMessagePointer(msg);
-				return rtn;
-			}
-			Message* reply = getInternalTrampoline()->notifyWithReply(msg);
-			ASSERT(reply != NULL);
-			if(reply != NULL) {
-				reply->setRequestMessageId(msg->getMessageId());
-				reply->setReply()->setInternal();
-				getPendingMessagesHandler()->resolveResponseMessage(reply);
-			}
-			if(reply == NULL){
-				Logger::console("Reply is null");
-			}
-			// what if resolve returns NULL for something?
-		} else {
-			getSmHandler()->notifyWithReply(msg);
-		}
-		return rtn;
-	}
-#endif
 
+
+		Logger::console("Message is local");
+		MessageAndTMPointers * pointers = new MessageAndTMPointers(this, msg);
+		pthread_t internalMessageRouteThread;
+
+		if (pthread_create(&internalMessageRouteThread, NULL, routeInternalMessage, pointers) != 0){
+			Logger::console("Cannot create thread for handling local message");
+			return 255;
+		}
+
+		return msg->getMessageId();
+	}
 
 	Connection conn = routeMap.getConnection(node);
 
