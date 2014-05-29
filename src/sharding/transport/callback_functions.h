@@ -165,11 +165,13 @@ bool recieveMessage(int fd, TransportCallback *cb) {
 	b.lock = false;
 
 	if(msg->isReply()) {
+		Logger::console("Reply message is received. Msg type is %d", msg->getType());
 		tm->getPendingMessagesHandler()->resolveResponseMessage(msg);
 		return true;
 	} else if(msg->isInternal()) { // receiving a message which
 
 		if(msg->isNoReply()){
+			Logger::console("Request message with no reply is received. Msg type is %d", msg->getType());
 			// This msg comes from another node and does not need a reply
 			// it comes from a broadcast or route with no callback
 			tm->getInternalTrampoline()->notifyNoReply(msg);
@@ -177,6 +179,7 @@ bool recieveMessage(int fd, TransportCallback *cb) {
 			tm->getMessageAllocator()->deallocateByMessagePointer(msg);
 			return true;
 		}
+		Logger::console("Request message is received. Msg type is %d", msg->getType());
 		Message* replyMessage = tm->getInternalTrampoline()->notifyWithReply(msg);
 		if(replyMessage != NULL) {
 			replyMessage->setRequestMessageId(msg->getMessageId());
@@ -187,8 +190,12 @@ bool recieveMessage(int fd, TransportCallback *cb) {
 			return true;
 		}
 	} else {
-		if (tm->getSmHandler())
+		// If one node is up but another one has not registered SmHandler into tm yet,
+		// this check will avoid a crash.
+		if (tm->getSmHandler() != NULL){
+			Logger::console("SM Request message is received. Msg type is %d", msg->getType());
 			tm->getSmHandler()->notifyWithReply(msg);
+		}
 	}
 
 	tm->getMessageAllocator()->deallocateByMessagePointer(msg);
@@ -203,6 +210,8 @@ void cb_recieveMessage(int fd, short eventType, void *arg) {
 	TransportCallback* cb = (TransportCallback*) arg;
 	if(recieveMessage(fd, cb)){
 		event_add(cb->ev, NULL);
+	}else{
+		Logger::console("TM could not read a complete message from socket.");
 	}
 }
 

@@ -83,6 +83,7 @@ TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
 	pthread_create(&listeningThread, NULL, startListening, &routeMap);
 
 	// initializes the connections to other nodes using tryToConnect
+	// TODO in V1, this routeMap moves to SM
 	routeMap.initRoutes();
 
 	while(!routeMap.isTotallyConnected()) {
@@ -99,10 +100,9 @@ TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
 	// that are bound to cb_recieveMessage. This way cb_recieveMessage receives all internal messages
 	for(RouteMap::iterator route = routeMap.begin(); route != routeMap.end(); ++route) {
 		for(EventBases::iterator base = bases.begin(); base != bases.end(); ++base) {
-      TransportCallback *cb_ptr = new TransportCallback();
-			struct event* ev = event_new(*base, route->second.fd, EV_READ, 
-          cb_recieveMessage, cb_ptr);
-      new (cb_ptr) TransportCallback(this, &route->second, ev, *base);
+			TransportCallback *cb_ptr = new TransportCallback();
+			struct event* ev = event_new(*base, route->second.fd, EV_READ, 	cb_recieveMessage, cb_ptr);
+			new (cb_ptr) TransportCallback(this, &route->second, ev, *base);
 			event_add(ev, NULL);
 		}
 	}

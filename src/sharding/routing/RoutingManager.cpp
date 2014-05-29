@@ -11,6 +11,8 @@ RoutingManager::RoutingManager(ConfigManager&  cm, TransportManager& transportMa
     						configurationManager(cm),  transportManager(transportManager), dpInternal(&cm),
     						internalMessageBroker(*this, dpInternal) {
 
+	// share the internal message broker from RM to TM
+	transportManager.setInternalMessageBroker(&internalMessageBroker);
 
 	// TODO : do we have one Srch2Server per core? now, yes.
 	// create a server (core) for each data source in config file
