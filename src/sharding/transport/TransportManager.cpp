@@ -108,6 +108,16 @@ TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
 		}
 	}
 
+	if (routeMap.begin()!= routeMap.end()) {
+		unsigned currNodeSocketReadBuffer;
+		unsigned size = sizeof(unsigned);
+		getsockopt(routeMap.begin()->second.fd, SOL_SOCKET, SO_RCVBUF, &socketReadBuffer,
+				&size);
+		getsockopt(routeMap.begin()->second.fd, SOL_SOCKET, SO_SNDBUF, &socketSendBuffer,
+						&size);
+		Logger::console("SO_RCVBUF = %d, SO_SNDBUF = %d", socketReadBuffer, socketSendBuffer);
+	}
+
 	distributedTime = 0;
 	synchManagerHandler = 0;
 }
@@ -142,6 +152,7 @@ void * routeInternalMessage(void * tmAndMsg) {
 	} else {
 		tm->getSmHandler()->notifyWithReply(msg);
 	}
+	delete pointers;
 }
 
 MessageID_t TransportManager::route(NodeId node, Message *msg, 
@@ -166,48 +177,29 @@ MessageID_t TransportManager::route(NodeId node, Message *msg,
 	}
 
 	if(msg->isLocal()) {
-
-
 		Logger::console("Message is local");
 		MessageAndTMPointers * pointers = new MessageAndTMPointers(this, msg);
 		pthread_t internalMessageRouteThread;
-
 		if (pthread_create(&internalMessageRouteThread, NULL, routeInternalMessage, pointers) != 0){
 			Logger::console("Cannot create thread for handling local message");
-			return 255;
+			return 255; // TODO: throw exception.
 		}
-
 		return msg->getMessageId();
 	}
 
 	Connection conn = routeMap.getConnection(node);
 
-#ifdef __MACH__
-	int flag = SO_NOSIGPIPE;
-#else
-	int flag = MSG_NOSIGNAL;
-#endif
-
-	unsigned returnStatus = send(conn.fd, msg, msg->getBodySize() + sizeof(Message), flag);
-	//TODO: errors?
-	if(returnStatus == -1){
-		perror("Message sending fails in route(node,msg)");
-	}else if(returnStatus !=  msg->getBodySize() + sizeof(Message)){
-		Logger::console("Message not sent completely through TM route(node,msg). Msg type is %d", msg->getType());
-	}else{
-		if(! msg->isSMRelated()){
-			Logger::console("Success");
-		}
-	}
-
-	/*
-	 * If we don't wait for reply we should delete the msg here
-	 */
-	if(msg->isNoReply()){
-		getMessageAllocator()->deallocateByMessagePointer(msg);
-	}
-	return msg->getMessageId();
+	while(!__sync_bool_compare_and_swap(&conn.sendLock, false, true));
+	MessageID_t returnValue = route(conn.fd, msg);
+	conn.sendLock = true;
+	return returnValue;
 }
+
+/*
+ *   This function is internal to Transport layer. All external modules should use
+ *   <code>route(NodeId node, Message *msg, unsigned timeout, CallbackReference callback)</code>
+ *   Note: The function is not thread safe. Caller should ensure thread safety.
+ */
 
 MessageID_t TransportManager::route(int fd, Message *msg) {
 	if(msg == NULL){
@@ -219,24 +211,63 @@ MessageID_t TransportManager::route(int fd, Message *msg) {
 	}
 	msg->setMessageId( __sync_fetch_and_add(&distributedTime, 1));
 
+	/*
+	 *  This flag makes sure that we do get SIGPIPE signal when other end
+	 *  of the socket is closed. Use return value of send function to
+	 *  handle the error.
+	 */
 #ifdef __MACH__
 	int flag = SO_NOSIGPIPE;
 #else
 	int flag = MSG_NOSIGNAL;
 #endif
 
-	ssize_t returnStatus = send(fd, msg, msg->getBodySize() + sizeof(Message), flag);
-	//TODO: errors?
-	if(returnStatus == -1){
-		perror("Message sending fails in route(fd,msg)");
-	}else if(returnStatus !=  msg->getBodySize() + sizeof(Message)){
-		Logger::console("Message not sent completely through TM route(fd,msg). Msg type is %d", msg->getType());
-	}else{
-		if(! msg->isSMRelated()){
-			Logger::console("Success");
+	unsigned totalMessageSize = msg->getBodySize() + sizeof(Message);
+	char * buffer = (char * ) msg;
+	unsigned retryCount = 5;  // TODO : retryCount
+	while(retryCount) {
+		ssize_t writeSize = send(fd, buffer, totalMessageSize, flag);
+		if(writeSize == -1){
+			perror("Message sending fails in route(fd,msg)");
+			break;  // TODO: V1 take more actions
+		}else if(writeSize !=  totalMessageSize){
+			totalMessageSize -= writeSize;
+			buffer += writeSize;
+			Logger::console("Message not sent completely through TM route(fd,msg). Msg type is %d and size is %d",
+								msg->getType(), msg->getBodySize());
+			/*
+			 *  Prepare data structure for select system call.
+			 *  http://man7.org/linux/man-pages/man2/select.2.html
+			 */
+			fd_set writeSet;
+			timeval waitTimeout;
+			waitTimeout.tv_sec = 1;
+			waitTimeout.tv_usec = 0;
+			FD_ZERO(&writeSet);
+			FD_SET(fd, &writeSet);
+			/*
+			 *   Wait until timeout= 1sec or Socket is ready for write. (whichever occurs first)
+			 */
+			int result = select(fd+1, NULL, &writeSet, NULL, &waitTimeout);
+			if (result == -1) {
+				perror("error while waiting for write to socket");
+			}
+			// TODO: temporary for debugging...remove later
+			if (result == 1) {
+				Logger::console("socket ready for write");
+			}
+		}else{
+			if(! msg->isSMRelated()){
+				Logger::console("Success");
+			}
+			break;
 		}
+		--retryCount;
 	}
 
+	if (retryCount == 0)
+		Logger::console("TM was unable to write complete message with max try. "
+				"Remaining size of the message is %d", totalMessageSize);
 
 	return msg->getMessageId();
 }

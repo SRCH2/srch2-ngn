@@ -36,8 +36,8 @@ public:
 
 	//third argument is a timeout in seconds
 	MessageID_t route(NodeId, Message*, unsigned=0, CallbackReference=CallbackReference());
-  //route message through a particular socket
-	MessageID_t route(int fd, Message*);
+    //route message through a particular socket
+    MessageID_t route(int fd, Message*);
 	CallbackReference prepareCallback(void*,Callback*,
 			ShardingMessageType,bool=false,int = 1);
 	void registerCallbackHandlerForSynchronizeManager(CallBackHandler*);
@@ -91,6 +91,15 @@ private:
 	 * Handles internal message broker callbacks
 	 */
 	CallBackHandler *internalTrampoline;
+
+	/*
+	 *  Stores the default socket read buffer size
+	 */
+	unsigned socketReadBuffer;
+	/*
+	 *  Stores the default socket write buffer size
+	 */
+	unsigned socketSendBuffer;
 };
 
 // TODO : please move them to TM cpp

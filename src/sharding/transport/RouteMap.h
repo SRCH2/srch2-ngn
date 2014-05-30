@@ -11,8 +11,6 @@
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/thread/locks.hpp>
 
-// TODO : please change the name of this class and file to something more informative
-
 void* tryToConnect(void*);
 
 namespace srch2 {
@@ -26,44 +24,20 @@ typedef unsigned NodeId;
 
 class Connection {
 public:
-  int fd;
-  MessageBuffer buffer;
-
-  Connection(int fd) : fd(fd) {}
-  Connection() {}
+	int fd;
+	MessageBuffer buffer;
+	bool sendLock;
+	Connection(int fd) : fd(fd),sendLock(false) {}
+	Connection():fd(-1),sendLock(false){}
 };
 typedef std::pair<sockaddr_in, NodeId> ConnectionInfo;
 typedef std::pair<ConnectionInfo, bool> Route;
 
 using srch2::httpwrapper::Node;
 
-
-// TODO : Not used anywhere, let's get rid of it. We can use the iterator itself if we need it ...
-class Connections : public std::iterator<forward_iterator_tag, Route > {
-
-public:
-	typedef std::vector<Route > RoutePool;
-
-	Connections(RoutePool&);
-	Connections(const Connections&);
-
-	Connections& operator++();
-	Connections operator++(int);
-
-	bool operator==(const Connections&);
-	bool operator!=(const Connections&);
-
-	Route& operator*();
-	Route* operator->();
-
-private:
-
-	RoutePool& routePool;
-	RoutePool::iterator place;
-};
-
-#include "ConnectionsInlines.h"
-
+// TODO : This code will change for V1.
+//  a) - Change RouteMap to Discovery
+//  b) - Move to SM
 class RouteMap {
 	// this map is from nodeID to Connection
 	// Connection right now is just the file descriptor
@@ -76,7 +50,7 @@ class RouteMap {
 	// destinations and nodeConnectionMap are changed by multiple threads
 	mutable boost::shared_mutex _access;
 	void addNodeConnection(NodeId, int);
-   int listeningSocket;
+	int listeningSocket;
 public:
 
 	void initRoutes();
@@ -89,18 +63,17 @@ public:
 	 */
 	Route& addDestination(const Node&);
 	bool isTotallyConnected() const;
-	Connections getNeededConnections();
 	void setCurrentNode(Node&);
 	const Node& getCurrentNode() const;
 	Connection getConnection(NodeId);
-   bool checkInMap(NodeId);
+	bool checkInMap(NodeId);
 
 
 	typedef std::map<NodeId, Connection>::iterator iterator;
 	iterator begin();
 	iterator end();
-   int getListeningSocket() const;
-   void setListeningSocket(int);
+	int getListeningSocket() const;
+	void setListeningSocket(int);
 
 	friend void* ::tryToConnect(void*);
 };

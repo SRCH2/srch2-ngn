@@ -1,6 +1,5 @@
 #include "RouteMap.h"
 #include <netdb.h>
-#include "ConnectionsInlines.h"
 #include <sys/unistd.h>
 #include <sys/socket.h>
 #include <sys/fcntl.h>
@@ -221,10 +220,6 @@ bool RouteMap::isTotallyConnected() const {
 	// if it's completely connected, nodeConnectionMap should have the same
 	// number of connections as destinations map
 	return nodeConnectionMap.size() == destinations.size();
-}
-
-Connections RouteMap::getNeededConnections() {
-	return Connections(destinations);
 }
 
 Connection RouteMap::getConnection(NodeId nodeId) {
