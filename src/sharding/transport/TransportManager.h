@@ -7,8 +7,6 @@
 #include "Message.h"
 #include "MessageAllocator.h"
 #include "PendingMessages.h"
-
-
 #include "CallbackHandler.h"
 #include <boost/thread.hpp>
 namespace srch2 {
@@ -18,15 +16,34 @@ typedef std::vector<event_base*> EventBases;
 typedef std::vector<Node> Nodes;
 class TransportManager ;
 
-struct MessageAndTMPointers {
+struct DisptchArguments{
 
-	MessageAndTMPointers(	TransportManager * tm, Message * message){
+	DisptchArguments(TransportManager * tm, Message * message, unsigned fd){
+		this->tm = tm;
+		this->message = message;
+		this->fd = fd;
+	}
+	DisptchArguments(TransportManager * tm, Message * message){
 		this->tm = tm;
 		this->message = message;
 	}
 	TransportManager * tm;
 	Message * message;
+	unsigned fd;
 };
+
+struct TransportCallback {
+	TransportManager *const tm;
+	Connection *const conn;
+	struct event* ev;
+	const struct event_base *const base;
+
+	TransportCallback(TransportManager *tm, Connection *c, event* e,
+			event_base* b) : tm(tm), conn(c), ev(e), base(b) {}
+	TransportCallback() : tm(NULL), conn(NULL), ev(NULL), base(NULL) {}
+};
+
+bool recieveMessage(int fd, TransportCallback *cb);
 
 class TransportManager {
 public:

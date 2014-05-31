@@ -104,6 +104,69 @@ bool RouteMap::checkInMap(NodeId nodeId) {
 }
 
 /*
+ * This function Listens to incoming request from other nodes in the cluster
+ */
+
+void* startListening(void* arg) {
+	RouteMap *const routeMap = (RouteMap*) arg;
+	const Node& currentNode =  routeMap->getCurrentNode();
+
+	hostent *routeHost = gethostbyname(currentNode.getIpAddress().c_str());
+	//  if(routeHost == -1) throw std::exception
+	struct sockaddr_in routeAddress;
+	int fd;
+
+	memset(&routeAddress, 0, sizeof(routeAddress));
+	routeAddress.sin_family = AF_INET;
+	memcpy(&routeAddress.sin_addr, routeHost->h_addr, routeHost->h_length);
+	routeAddress.sin_port = htons(currentNode.getPortNumber());
+
+	if((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+		perror("listening socket failed to init");
+		exit(255);
+	}
+   const int optVal = 1;
+   setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (void*) &optVal, sizeof(optVal));
+
+	if(bind(fd, (struct sockaddr*) &routeAddress, sizeof(routeAddress)) < 0) {
+      close(fd);
+		perror("listening socket failed to bind");
+		exit(255);
+	}
+
+	if(listen(fd, 20) == -1) {
+      close(fd);
+		perror("listening socket failed start");
+		exit(255);
+	}
+
+   routeMap->setListeningSocket(fd);
+
+   fd_set checkConnect;
+   timeval timeout;
+	while(!routeMap->isTotallyConnected()) {
+      //prevent infinite hanging in except so listening socket closes
+      FD_ZERO(&checkConnect);
+      FD_SET(fd, &checkConnect);
+      timeout.tv_sec = 1;
+      timeout.tv_usec = 0;
+      if(select(fd+1, &checkConnect, NULL, NULL, &timeout) !=1) continue;
+
+		struct sockaddr_in addr;
+		socklen_t addrlen = sizeof(sockaddr_in);
+		memset(&addr, 0,sizeof(sockaddr_in));
+		int newfd;
+		if((newfd = accept(fd, (sockaddr*) &addr, &addrlen)) != -1) {
+			routeMap->acceptRoute(newfd, *((sockaddr_in*) &addr));
+		}
+	}
+
+   shutdown(fd, SHUT_RDWR);
+   close(fd);
+   return NULL;
+}
+
+/*
  * This function uses the routeMap to connect to other nodes in the cluster
  */
 void* tryToConnect(void *arg) {

@@ -1,74 +1,240 @@
 #include "TransportManager.h"
-#include<map>
-#include<sys/socket.h>
-#include<sys/types.h>
+#include <map>
+#include <sys/socket.h>
+#include <sys/types.h>
 #include <core/util/Assert.h>
-
+#include <unistd.h>
+#include <errno.h>
+#include <event.h>
 
 using namespace srch2::instantsearch;
-using namespace srch2::httpwrapper;
+namespace srch2 {
+namespace httpwrapper {
 
-// TODO : move this code to RouteMap.cpp although it's temporary
-void* startListening(void* arg) {
-	RouteMap *const routeMap = (RouteMap*) arg;
-	const Node& currentNode =  routeMap->getCurrentNode();
+////
+////  LIBEVENT CALLBACKS
+////
 
-	hostent *routeHost = gethostbyname(currentNode.getIpAddress().c_str());
-	//  if(routeHost == -1) throw std::exception
-	struct sockaddr_in routeAddress;
-	int fd;
-
-	memset(&routeAddress, 0, sizeof(routeAddress));
-	routeAddress.sin_family = AF_INET;
-	memcpy(&routeAddress.sin_addr, routeHost->h_addr, routeHost->h_length);
-	routeAddress.sin_port = htons(currentNode.getPortNumber());
-
-	if((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		perror("listening socket failed to init");
-		exit(255);
+/*
+ *   Read Callback :  This function is called when there is data available to be read
+ *   from the socket.
+ */
+void cb_recieveMessage(int fd, short eventType, void *arg) {
+	TransportCallback* cb = (TransportCallback*) arg;
+	if(recieveMessage(fd, cb)){
+		event_add(cb->ev, NULL);
+	}else{
+		Logger::console("SEVERE: TM is not handling any event on socket %d anymore.",fd);
+		//TODO: fetch the nodeId for this socket and print that in error.
 	}
-   const int optVal = 1;
-   setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (void*) &optVal, sizeof(optVal));
+}
 
-	if(bind(fd, (struct sockaddr*) &routeAddress, sizeof(routeAddress)) < 0) {
-      close(fd);
-		perror("listening socket failed to bind");
-		exit(255);
+/*
+ *   Write Callback :  This function is called when the socket is available for writing/sending
+ *   data.
+ */
+
+void cb_sendMessage(int fd, short eventType, void *arg) {
+	Logger::console("send message callback called");
+}
+
+///
+
+
+/*
+ *   Each notification to upstream handlers are dispatched in a new thread.
+ */
+void * notifyUpstreamHandlers(void *arg) {
+	DisptchArguments * dispatchArgument = (DisptchArguments *)arg;
+	TransportManager * tm = dispatchArgument->tm;
+	Message * msg = dispatchArgument->message;
+
+	if(msg->isReply()) {
+		Logger::console("Reply message is received. Msg type is %d", msg->getType());
+		tm->getPendingMessagesHandler()->resolveResponseMessage(msg);
+		tm->getMessageAllocator()->deallocateByMessagePointer(msg);
+
+	} else if(msg->isInternal()) { // receiving a message which
+
+		if(msg->isNoReply()){
+			Logger::console("Request message with no reply is received. Msg type is %d", msg->getType());
+			// This msg comes from another node and does not need a reply
+			// it comes from a broadcast or route with no callback
+			tm->getInternalTrampoline()->notifyNoReply(msg);
+			// and delete the msg
+			tm->getMessageAllocator()->deallocateByMessagePointer(msg);
+		} else {
+			Logger::console("Request message is received. Msg type is %d", msg->getType());
+			Message* replyMessage = tm->getInternalTrampoline()->notifyWithReply(msg);
+			if(replyMessage != NULL) {
+				replyMessage->setRequestMessageId(msg->getMessageId());
+				replyMessage->setReply()->setInternal();
+				tm->route(dispatchArgument->fd, replyMessage);
+				tm->getMessageAllocator()->deallocateByMessagePointer(msg);
+				tm->getMessageAllocator()->deallocateByMessagePointer(replyMessage);
+			}
+		}
+	} else {
+		// If one node is up but another one has not registered SmHandler into tm yet,
+		// this check will avoid a crash.
+		if (tm->getSmHandler() != NULL){
+			//Logger::console("SM Request message is received. Msg type is %d", msg->getType());
+			tm->getSmHandler()->notifyWithReply(msg);
+		}
+		tm->getMessageAllocator()->deallocateByMessagePointer(msg);
+	}
+	return NULL;
+}
+
+/*
+ * This function reads a fixed size header from the socket stream. Each message start
+ * with message header and then followed by message body.
+ *
+ * --------------------------------
+ * | Message Header | Rest of Body |
+ * ---------------------------------
+ */
+int readMessageHeader(Message *const msg,  int fd) {
+	while(true) {
+		int readRtn = recv(fd, (void*) msg, sizeof(Message), MSG_DONTWAIT);
+
+		if(readRtn == 0) {
+			return 1;
+		}
+		if(readRtn == -1){
+			if(errno == EAGAIN || errno == EWOULDBLOCK){
+				return -1;
+			}
+			if(errno == ECONNREFUSED || errno == EBADF){
+				return 1;
+			}
+			return false;
+		}
+
+		if(readRtn < sizeof(Message)) {
+			//v1: broken message boundary == seriously bad
+			return -1;
+		}
+
+		return 0;
 	}
 
-	if(listen(fd, 20) == -1) {
-      close(fd);
-		perror("listening socket failed start");
-		exit(255);
-	}
+	//ASSERT(false);
+	return -1;
+}
 
-   routeMap->setListeningSocket(fd);
+Message* readRestOfMessage(MessageAllocator& messageAllocator,
+		int fd, Message *const msgHeader, int *readCount) {
+	Message *msg= messageAllocator.allocateMessage(msgHeader->getBodySize());
+	int rv = recv(fd, Message::getBodyPointerFromMessagePointer(msg), msgHeader->getBodySize(), MSG_DONTWAIT);
 
-   fd_set checkConnect;
-   timeval timeout;
-	while(!routeMap->isTotallyConnected()) {
-      //prevent infinite hanging in except so listening socket closes
-      FD_ZERO(&checkConnect);
-      FD_SET(fd, &checkConnect);
-      timeout.tv_sec = 1;
-      timeout.tv_usec = 0;
-      if(select(fd+1, &checkConnect, NULL, NULL, &timeout) !=1) continue;
-
-		struct sockaddr_in addr;
-		socklen_t addrlen = sizeof(sockaddr_in);
-		memset(&addr, 0,sizeof(sockaddr_in));
-		int newfd;
-		if((newfd = accept(fd, (sockaddr*) &addr, &addrlen)) != -1) {
-			routeMap->acceptRoute(newfd, *((sockaddr_in*) &addr));
+	if(rv == -1) {
+		if(errno == EAGAIN || errno == EWOULDBLOCK) {
+			rv = 0;
+		} else {
+			//v1: handle error
+			return NULL;
 		}
 	}
 
-   shutdown(fd, SHUT_RDWR);
-   close(fd);
-   return NULL;
+	*readCount = rv;
+	memcpy(msg, msgHeader, sizeof(Message));
+
+	return msg;
 }
 
-#include "callback_functions.h"
+bool readPartialMessage(int fd, MessageBuffer& buffer) {
+	int toRead = buffer.msg->getBodySize() - buffer.readCount;
+	if(toRead == 0) {
+		//strangely we don't need to read anything;)
+		return true;
+	}
+
+	int readReturnValue = recv(fd,
+			Message::getBodyPointerFromMessagePointer(buffer.msg) + buffer.readCount, toRead, MSG_DONTWAIT);
+	if(readReturnValue < 0) {
+		//TODO: handle errors
+		return false;
+	}
+
+	buffer.readCount += readReturnValue;
+
+	return (buffer.msg->getBodySize() == buffer.readCount);
+}
+
+
+bool recieveMessage(int fd, TransportCallback *cb) {
+	if( fd != cb->conn->fd) {
+		//major error
+		return false;
+	}
+
+	MessageBuffer& b = cb->conn->buffer;
+	TransportManager *tm = cb->tm;
+	while(!__sync_bool_compare_and_swap(&b.lock, false, true));
+
+	if(b.msg == NULL) {
+		Message msgHeader;
+
+		int resultOfFindingNextMagicNumber = readMessageHeader(&msgHeader, fd);
+		if(resultOfFindingNextMagicNumber != 0){
+			if(resultOfFindingNextMagicNumber == 1){
+				return false;
+			}
+			// there is some sort of error in the stream so we can't
+			// get the next message
+			b.lock = false;
+			return true;
+		}
+
+		// sets the distributedTime of TM to the maximum time received by a message
+		// in a thread safe fashion
+		while(true) {
+			MessageID_t time = tm->getDistributedTime();
+			//check if time needs to be incremented
+			if(msgHeader.getMessageId() <= time &&
+					/*zero break*/ time - msgHeader.getMessageId() < UINT_MAX/2 ) break;
+			//make sure time did not change
+			if(__sync_bool_compare_and_swap(
+					&tm->getDistributedTime(), time, msgHeader.getMessageId()+1)) break;
+		}
+
+		// we have some types of message like GetInfoCommandInfo that currently don't
+		// have any information in them and therefore their body size is zero
+		if(msgHeader.getBodySize() != 0){
+			if(!(b.msg = readRestOfMessage(*(tm->getMessageAllocator()),
+					fd, &msgHeader, &b.readCount))) {
+				b.lock = false;
+				return true;
+			}
+
+			if(b.readCount != b.msg->getBodySize()) {
+				b.lock = false;
+				return true;
+			}
+		}else{
+			b.msg= tm->getMessageAllocator()->allocateMessage(msgHeader.getBodySize());
+			memcpy(b.msg, &msgHeader, sizeof(Message));
+		}
+	} else {
+		if(!readPartialMessage(fd, b)) {
+			b.lock = false;
+			return true;
+		}
+	}
+
+	Message* msg = b.msg;
+	b.msg = NULL;
+	b.lock = false;
+
+	DisptchArguments * arguments = new DisptchArguments(tm, msg, fd);
+	pthread_t internalMessageRouteThread;
+	if (pthread_create(&internalMessageRouteThread, NULL, notifyUpstreamHandlers, arguments) != 0){
+		Logger::console("Cannot create thread for handling local message");
+		return 255; // TODO: throw exception.
+	}
+	return true;
+}
 
 TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
 	pendingMessagesHandler.setTransportManager(this);
@@ -119,11 +285,12 @@ TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
 	}
 
 	distributedTime = 0;
-	synchManagerHandler = 0;
+	synchManagerHandler = NULL;
+	internalTrampoline = NULL;
 }
 
 void * routeInternalMessage(void * tmAndMsg) {
-	MessageAndTMPointers * pointers = (MessageAndTMPointers *)tmAndMsg;
+	DisptchArguments * pointers = (DisptchArguments *)tmAndMsg;
 	TransportManager * tm = pointers->tm;
 	Message * msg = pointers->message;
 
@@ -135,24 +302,30 @@ void * routeInternalMessage(void * tmAndMsg) {
 			// because msg just keeps a pointer to that object
 			// and that object itself needs to be deleted.
 			tm->getInternalTrampoline()->notifyNoReply(msg);
-			// and delete the msg
-			tm->getMessageAllocator()->deallocateByMessagePointer(msg);
+		} else {
+			Message* reply = tm->getInternalTrampoline()->notifyWithReply(msg);
+			ASSERT(reply != NULL);
+			if(reply != NULL) {
+				reply->setRequestMessageId(msg->getMessageId());
+				reply->setReply()->setInternal();
+				tm->getPendingMessagesHandler()->resolveResponseMessage(reply);
+				//NOTE: Who will the reply message ??
+			}
+			if(reply == NULL){
+				Logger::console("Reply is null");
+			}
 		}
-		Message* reply = tm->getInternalTrampoline()->notifyWithReply(msg);
-		ASSERT(reply != NULL);
-		if(reply != NULL) {
-			reply->setRequestMessageId(msg->getMessageId());
-			reply->setReply()->setInternal();
-			tm->getPendingMessagesHandler()->resolveResponseMessage(reply);
-		}
-		if(reply == NULL){
-			Logger::console("Reply is null");
-		}
-		// what if resolve returns NULL for something?
 	} else {
-		tm->getSmHandler()->notifyWithReply(msg);
+		if (tm->getSmHandler() != NULL) {
+			tm->getSmHandler()->notifyWithReply(msg);
+		} else {
+			Logger::debug( "SM handler is not ready yet");
+		}
 	}
+	// and delete the msg
+	tm->getMessageAllocator()->deallocateByMessagePointer(msg);
 	delete pointers;
+	return NULL;
 }
 
 MessageID_t TransportManager::route(NodeId node, Message *msg, 
@@ -178,7 +351,7 @@ MessageID_t TransportManager::route(NodeId node, Message *msg,
 
 	if(msg->isLocal()) {
 		Logger::console("Message is local");
-		MessageAndTMPointers * pointers = new MessageAndTMPointers(this, msg);
+		DisptchArguments * pointers = new DisptchArguments(this, msg);
 		pthread_t internalMessageRouteThread;
 		if (pthread_create(&internalMessageRouteThread, NULL, routeInternalMessage, pointers) != 0){
 			Logger::console("Cannot create thread for handling local message");
@@ -308,3 +481,5 @@ TransportManager::~TransportManager() {
    }
    close(routeMap.getListeningSocket());
 }
+
+}}

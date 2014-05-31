@@ -6,12 +6,13 @@
 #include <vector>
 #include <iterator>
 #include <map>
-#include "MessageBuffer.h"
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/thread/locks.hpp>
+#include "Message.h"
 
 void* tryToConnect(void*);
+void* startListening(void*);
 
 namespace srch2 {
 namespace httpwrapper {
@@ -19,7 +20,14 @@ namespace httpwrapper {
 const static char GREETING_MESSAGE[] = "GREETING FROM SRCH2";
 const static char FAILED_GREETING_MESSAGE[] = "YOU KNOCKED AGAIN? ";
 
-// TODO : let's do something about typedefs ...
+class MessageBuffer {
+  public:
+    Message* msg;
+    bool lock;
+    int readCount;
+    MessageBuffer() : msg(NULL), lock(false), readCount(0) {}
+};
+
 typedef unsigned NodeId;
 
 class Connection {
