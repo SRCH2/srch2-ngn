@@ -17,18 +17,17 @@ class TransportManager ;
 
 struct DisptchArguments{
 
-	DisptchArguments(TransportManager * tm, Message * message, int fd){
+	DisptchArguments(TransportManager * tm, Message * message, int fd, NodeId id){
 		this->tm = tm;
 		this->message = message;
 		this->fd = fd;
+		this->nodeId = id;
 	}
-	DisptchArguments(TransportManager * tm, Message * message){
-		this->tm = tm;
-		this->message = message;
-	}
+
 	TransportManager * tm;
 	Message * message;
 	int fd;
+	NodeId nodeId;
 };
 
 struct TransportCallback {

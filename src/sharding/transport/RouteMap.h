@@ -37,7 +37,7 @@ public:
   bool sendLock;
   NodeId nodeId;
 
-  Connection(int fd, NodeId nodeId) : fd(fd), nodeId(nodeId), sendLock(false) {}
+  Connection(int fd, NodeId nodeId) : fd(fd), sendLock(false), nodeId(nodeId) {}
   Connection():fd(-1),sendLock(false) {}
 
 };

@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <event.h>
+#include "routing/RoutingManager.h"
 
 using namespace srch2::instantsearch;
 namespace srch2 {
@@ -48,28 +49,34 @@ void * notifyUpstreamHandlers(void *arg) {
 	DisptchArguments * dispatchArgument = (DisptchArguments *)arg;
 	TransportManager * tm = dispatchArgument->tm;
 	Message * msg = dispatchArgument->message;
+	NodeId  nodeId = dispatchArgument->nodeId;
 
 	if(msg->isReply()) {
 		Logger::console("Reply message is received. Msg type is %d", msg->getType());
-		tm->getPendingMessagesHandler()->resolveResponseMessage(msg);
-		//tm->getMessageAllocator()->deallocateByMessagePointer(msg);
-
-	} else if(msg->isInternal()) { // receiving a message which
+		if ( ! tm->getRoutingManager()->getPendingRequestsHandler()->resolveResponseMessage(msg,
+				nodeId)){
+			tm->getMessageAllocator()->deallocateByMessagePointer(msg);
+		}
+	} else if(msg->isInternal()) {
 
 		if(msg->isNoReply()){
 			Logger::console("Request message with no reply is received. Msg type is %d", msg->getType());
 			// This msg comes from another node and does not need a reply
 			// it comes from a broadcast or route with no callback
-			tm->getInternalTrampoline()->notifyNoReply(msg);
+			tm->getRmHandler()->notifyNoReply(msg);
 			// and delete the msg
 			tm->getMessageAllocator()->deallocateByMessagePointer(msg);
 		} else {
 			Logger::console("Request message is received. Msg type is %d", msg->getType());
-			Message* replyMessage = tm->getInternalTrampoline()->notifyWithReply(msg);
+			Message* replyMessage = tm->getRmHandler()->notifyWithReply(msg);
 			if(replyMessage != NULL) {
 				replyMessage->setRequestMessageId(msg->getMessageId());
 				replyMessage->setReply()->setInternal();
 				tm->_route(dispatchArgument->fd, replyMessage);
+				/*
+				 * Request and Reply messages must be deallocated at this time in this case because PendingMessage
+				 * structure which is responsible for this is in the source node of this request.
+				 */
 				tm->getMessageAllocator()->deallocateByMessagePointer(msg);
 				tm->getMessageAllocator()->deallocateByMessagePointer(replyMessage);
 			}
@@ -227,7 +234,7 @@ bool recieveMessage(int fd, TransportCallback *cb) {
 	b.msg = NULL;
 	b.lock = false;
 
-	DisptchArguments * arguments = new DisptchArguments(tm, msg, fd);
+	DisptchArguments * arguments = new DisptchArguments(tm, msg, fd, cb->conn->nodeId);
 	pthread_t internalMessageRouteThread;
 	if (pthread_create(&internalMessageRouteThread, NULL, notifyUpstreamHandlers, arguments) != 0){
 		Logger::console("Cannot create thread for handling local message");
@@ -285,7 +292,8 @@ TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
 
 	distributedTime = 0;
 	synchManagerHandler = NULL;
-	internalTrampoline = NULL;
+	routeManagerHandler = NULL;
+	routingManager = NULL;
 }
 
 

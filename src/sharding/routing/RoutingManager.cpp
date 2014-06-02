@@ -111,7 +111,8 @@ void * routeInternalMessage(void * arg) {
 		Logger::console("Reply is null");
 	}
 	// what if resolve returns NULL for something?
-	delete arg;
+	delete rmAndMsgPointers;
+	return NULL;
 }
 
 } }
