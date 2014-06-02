@@ -29,7 +29,9 @@ public:
   int fd;
   MessageBuffer buffer;
 
-  Connection(int fd) : fd(fd) {}
+  NodeId nodeId;
+
+  Connection(int fd, NodeId nodeId) : fd(fd), nodeId(nodeId) {}
   Connection() {}
 };
 typedef std::pair<sockaddr_in, NodeId> ConnectionInfo;

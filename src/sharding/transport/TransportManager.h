@@ -6,7 +6,6 @@
 #include<pthread.h>
 #include "Message.h"
 #include "MessageAllocator.h"
-#include "PendingMessages.h"
 
 
 #include "CallbackHandler.h"
@@ -17,15 +16,17 @@ namespace httpwrapper {
 typedef std::vector<event_base*> EventBases;
 typedef std::vector<Node> Nodes;
 class TransportManager ;
-
-struct MessageAndTMPointers {
-
-	MessageAndTMPointers(	TransportManager * tm, Message * message){
-		this->tm = tm;
-		this->message = message;
-	}
-	TransportManager * tm;
-	Message * message;
+class RoutingManager;
+/*
+ * This struct is for abstracting timeout and callback behaviour
+ * currently used for TM
+ */
+class Callback {
+public:
+	virtual void timeout(void*) = 0;
+	virtual void callback(Message*) {};
+	virtual void callbackAll(vector<Message*>&) {};
+	virtual ~Callback(){};
 };
 
 class TransportManager {
@@ -35,24 +36,21 @@ public:
 	TransportManager(EventBases&, Nodes&);
 
 	//third argument is a timeout in seconds
-	MessageID_t route(NodeId, Message*, unsigned=0, CallbackReference=CallbackReference());
+	MessageID_t route(NodeId,Message *, unsigned timeout=0);
   //route message through a particular socket
-	MessageID_t route(int fd, Message*);
-	CallbackReference prepareCallback(void*,Callback*,
-			ShardingMessageType,bool=false,int = 1);
+	MessageID_t route(int fd, Message *);
 	void registerCallbackHandlerForSynchronizeManager(CallBackHandler*);
 
-
-
-
 	MessageID_t& getDistributedTime();
-	CallBackHandler* getInternalTrampoline();
+	MessageID_t getUniqueMessageIdValue();
 	void setInternalMessageBroker(CallBackHandler*);
 	pthread_t getListeningThread() const;
 	MessageAllocator * getMessageAllocator();
-	PendingMessagesHandler * getPendingMessagesHandler();
+	RoutingManager * getRoutingManager();
+	void setRoutingManager(RoutingManager * rm);
 	RouteMap * getRouteMap();
 	CallBackHandler* getSmHandler();
+	CallBackHandler* getRmHandler();
    ~TransportManager();
 
 private:
@@ -78,11 +76,6 @@ private:
 	MessageAllocator messageAllocator;
 
 	/*
-	 * the data structure which stores all pending messages in this node
-	 */
-	PendingMessagesHandler pendingMessagesHandler;
-
-	/*
 	 * Handles SynchManager callbacks
 	 */
 	CallBackHandler *synchManagerHandler;
@@ -90,7 +83,12 @@ private:
 	/*
 	 * Handles internal message broker callbacks
 	 */
-	CallBackHandler *internalTrampoline;
+	CallBackHandler *routeManagerHandler;
+
+	/*
+	 * Routing Manager
+	 */
+	RoutingManager * routingManager;
 };
 
 // TODO : please move them to TM cpp
@@ -99,13 +97,8 @@ inline void TransportManager::registerCallbackHandlerForSynchronizeManager(CallB
 	synchManagerHandler = callBackHandler;
 }
 
-inline CallbackReference TransportManager::prepareCallback(void* requestObj,
-		Callback* cb, ShardingMessageType type,bool all,int shards) {
-	return pendingMessagesHandler.prepareCallback(requestObj, cb, type, all, shards);
-}
-
 inline void TransportManager::setInternalMessageBroker(CallBackHandler* cbh) {
-  internalTrampoline = cbh;
+  routeManagerHandler = cbh;
 }
 }}
 

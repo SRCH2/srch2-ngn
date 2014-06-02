@@ -36,8 +36,8 @@ public:
 	 * This function is called by RoutingManager if a timeout happens, The call to
 	 * this function must be between preProcessing(...) and callBack()
 	 */
-	void timeoutProcessing(ShardId * shardInfo,
-			SerializableSearchCommandInput * sentRequest,
+	void timeoutProcessing(PendingMessage<SerializableSearchCommandInput,
+			SerializableSearchResults> * message,
 			ResultsAggregatorAndPrintMetadata metadata){
 
 	}
@@ -48,7 +48,8 @@ public:
 	 * this function uses aggregateRecords and aggregateFacets for
 	 * aggregating result records and calculated records
 	 */
-	void callBack(vector<SerializableSearchResults *> responseObjects);
+	void callBack(vector<PendingMessage<SerializableSearchCommandInput,
+			SerializableSearchResults> * > messages);
 
 	/*
 	 * The last call back function called by RoutingManager in all cases.

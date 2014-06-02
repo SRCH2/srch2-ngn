@@ -6,6 +6,7 @@
 #include <event.h>
 #include "TransportManager.h"
 #include "MessageBuffer.h"
+#include "sharding/routing/RoutingManager.h"
 
 using namespace srch2::httpwrapper;
 
@@ -171,7 +172,9 @@ bool recieveMessage(int fd, TransportCallback *cb) {
 	//TODO : break this function to two functions with related names ....
 	if(msg->isReply()) {
 		Logger::console("Reply message is received. Msg type is %d", msg->getType());
-		tm->getPendingMessagesHandler()->resolveResponseMessage(msg);
+		if ( ! tm->getRoutingManager()->getPendingRequestsHandler()->resolveResponseMessage(msg, cb->conn->nodeId)){
+			tm->getMessageAllocator()->deallocateByMessagePointer(msg);
+		}
 		return true;
 	} else if(msg->isInternal()) { // receiving a message which
 
@@ -179,17 +182,21 @@ bool recieveMessage(int fd, TransportCallback *cb) {
 			Logger::console("Request message with no reply is received. Msg type is %d", msg->getType());
 			// This msg comes from another node and does not need a reply
 			// it comes from a broadcast or route with no callback
-			tm->getInternalTrampoline()->notifyNoReply(msg);
+			tm->getRmHandler()->notifyNoReply(msg);
 			// and delete the msg
 			tm->getMessageAllocator()->deallocateByMessagePointer(msg);
 			return true;
 		}
 		Logger::console("Request message is received. Msg type is %d", msg->getType());
-		Message* replyMessage = tm->getInternalTrampoline()->notifyWithReply(msg);
+		Message* replyMessage = tm->getRmHandler()->notifyWithReply(msg);
 		if(replyMessage != NULL) {
 			replyMessage->setRequestMessageId(msg->getMessageId());
 			replyMessage->setReply()->setInternal();
 			tm->route(fd, replyMessage);
+			/*
+			 * Request and Reply messages must be deallocated at this time in this case because PendingMessage
+			 * structure which is responsible for this is in the source node of this request.
+			 */
 			tm->getMessageAllocator()->deallocateByMessagePointer(msg);
 			tm->getMessageAllocator()->deallocateByMessagePointer(replyMessage);
 			return true;

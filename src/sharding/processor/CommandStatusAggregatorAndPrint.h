@@ -8,7 +8,7 @@
 #include "serializables/SerializableSerializeCommandInput.h"
 #include "serializables/SerializableResetLogCommandInput.h"
 #include "serializables/SerializableCommitCommandInput.h"
-
+#include "sharding/routing/PendingMessages.h"
 #include <string>
 #include <sstream>
 
@@ -25,7 +25,7 @@ class CommandStatusAggregatorAndPrint : public ResultAggregatorAndPrint<RequestW
 public:
 
 
-	CommandStatusAggregatorAndPrint(ConfigManager * configurationManager, evhttp_request *req, bool multiRouteMode = false){
+	CommandStatusAggregatorAndPrint(ConfigManager * configurationManager, evhttp_request *req, unsigned multiRouteMode = 0){
 		this->configurationManager = configurationManager;
 		this->req = req;
 		this->multiRouteMode = multiRouteMode; // this is the case where aggregator is shared with multiple callbacks
@@ -47,7 +47,7 @@ public:
 	 * This function is always called by RoutingManager as the first call back function
 	 */
 	void preProcessing(ResultsAggregatorAndPrintMetadata metadata){
-		if(multiRouteMode){
+		if(multiRouteMode > 0){
 			// we need to make sure preProcess is only called once
 			boost::unique_lock< boost::shared_mutex > lock(_access);
 			if(preProcessCalled == true){ // already called once
@@ -67,7 +67,10 @@ public:
 	 * This function is called by RoutingManager if a timeout happens, The call to
 	 * this function must be between preProcessing(...) and callBack()
 	 */
-	void timeoutProcessing(ShardId * shardInfo, RequestWithStatusResponse * sentRequest, ResultsAggregatorAndPrintMetadata metadata){
+	void timeoutProcessing(PendingMessage<RequestWithStatusResponse, SerializableCommandStatus> * message,
+			ResultsAggregatorAndPrintMetadata metadata){
+
+		RequestWithStatusResponse * sentRequest = message->getRequestObject();
 
 		if(((string)"SerializableInsertUpdateCommandInput").compare(typeid(sentRequest).name()) == 0){// timeout in insert and update
 
@@ -75,7 +78,7 @@ public:
 			SerializableInsertUpdateCommandInput * sentInsetUpdateRequest = (SerializableInsertUpdateCommandInput *)(sentRequest);
 			messages << "{\"rid\":\"" << sentInsetUpdateRequest->getRecord()->getPrimaryKey()
 								<< "\",\"" << (sentInsetUpdateRequest->getInsertOrUpdate()?"insert":"update") << "\":\"failed\",\"reason\":\"Corresponging shard ("<<
-								shardInfo->toString()<<") timedout.\"}";
+								message->getNodeId()<<") timedout.\"}";
 
 		}else if (((string)"SerializableDeleteCommandInput").compare(typeid(sentRequest).name()) == 0){
 
@@ -83,26 +86,26 @@ public:
 			SerializableDeleteCommandInput * sentDeleteRequest = (SerializableDeleteCommandInput *)(sentRequest);
 			messages << "{\"rid\":\"" << sentDeleteRequest->getPrimaryKey()
 					<< "\",\"delete\":\"failed\",\"reason\":\"Corresponging ("<<
-					shardInfo->toString() << ") shard timedout.\"}";
+					message->getNodeId() << ") shard timedout.\"}";
 
 		}else if(((string)"SerializableSerializeCommandInput").compare(typeid(sentRequest).name()) == 0){
 
 			boost::unique_lock< boost::shared_mutex > lock(_access);
 			SerializableSerializeCommandInput * serializeRequest = (SerializableSerializeCommandInput *)(sentRequest);
 			messages << "{\""<< (serializeRequest->getIndexOrRecord()?"save":"export") << "\":\"failed\",\"reason\":\"Corresponging (" <<
-					shardInfo->toString() << ") shard timedout.\"}";
+					message->getNodeId() << ") shard timedout.\"}";
 
 		}else if(((string)"SerializableResetLogCommandInput").compare(typeid(sentRequest).name()) == 0){
 
 			boost::unique_lock< boost::shared_mutex > lock(_access);
 			SerializableResetLogCommandInput * resetRequest = (SerializableResetLogCommandInput *)(sentRequest);
-			messages << "{\"reset_log\":\"failed\",\"reason\":\"Corresponging (" << shardInfo->toString()<<") shard timedout.\"}";
+			messages << "{\"reset_log\":\"failed\",\"reason\":\"Corresponging (" << message->getNodeId()<<") shard timedout.\"}";
 
 		}else if(((string)"SerializableCommitCommandInput").compare(typeid(sentRequest).name()) == 0){
 
 			boost::unique_lock< boost::shared_mutex > lock(_access);
 			SerializableCommitCommandInput * resetRequest = (SerializableCommitCommandInput *)(sentRequest);
-			messages << "{\"commit\":\"failed\",\"reason\":\"Corresponging (" << shardInfo->toString()<<") shard timedout.\"}";
+			messages << "{\"commit\":\"failed\",\"reason\":\"Corresponging (" << message->getNodeId()<<") shard timedout.\"}";
 
 		}else{
 			//TODO : what should we do here?
@@ -114,26 +117,27 @@ public:
 	/*
 	 * The main function responsible of aggregating status (success or failure) results
 	 */
-	void callBack(SerializableCommandStatus * responseObject){
+	void callBack(PendingMessage<RequestWithStatusResponse, SerializableCommandStatus> * message){
 
 		boost::unique_lock< boost::shared_mutex > lock(_access);
 		if(messages.str().compare("") != 0){ // string not empty
 			messages << ",";
 		}
-		messages << responseObject->getMessage();
+		messages << message->getResponseObject()->getMessage();
 
 	}
 
-	void callBack(vector<SerializableCommandStatus *> responseObjects){
+	void callBack(vector<PendingMessage<RequestWithStatusResponse, SerializableCommandStatus> * > messagesArg){
 
 		boost::unique_lock< boost::shared_mutex > lock(_access);
 		//TODO shard info can be better than just an index
 		unsigned shardIndex = 0;
-		for(vector<SerializableCommandStatus *>::iterator responseItr = responseObjects.begin(); responseItr != responseObjects.end(); ++responseItr){
+		for(typename vector<PendingMessage<RequestWithStatusResponse, SerializableCommandStatus> * >::iterator
+				messageItr	= messagesArg.begin(); messageItr != messagesArg.end(); ++messageItr){
 			if(messages.str().compare("") != 0){ // string not empty
 				messages << ",";
 			}
-			messages << "\"shard_" << shardIndex << "\":" << (*responseItr)->getMessage();
+			messages << "\"shard_" << shardIndex << "\":" << (*messageItr)->getResponseObject()->getMessage();
 			//
 			shardIndex ++;
 		}
@@ -148,14 +152,14 @@ public:
 	 */
 	void finalize(ResultsAggregatorAndPrintMetadata metadata){
 
-		if(multiRouteMode){
+		if(multiRouteMode > 0){
 			// we need to make sure finalize is only called once
 			boost::unique_lock< boost::shared_mutex > lock(_access);
 			numberOfFinalizeCallsSoFar ++;
-			if(ResultAggregatorAndPrint<RequestWithStatusResponse,SerializableCommandStatus>::getNumberOfRequests()
-					!= numberOfFinalizeCallsSoFar){
+			if(multiRouteMode != numberOfFinalizeCallsSoFar){
 				return;
-			} // ready to be finalized because all requests are finalized
+			}
+			// ready to be finalized because all requests are finalized
 		}
 		//... code here
 		boost::unique_lock< boost::shared_mutex > lock(_access);
@@ -174,7 +178,7 @@ private:
 	ConfigManager * configurationManager;
 	evhttp_request *req;
 	mutable boost::shared_mutex _access;
-	bool multiRouteMode;
+	unsigned multiRouteMode;
 	bool preProcessCalled;
 	unsigned numberOfFinalizeCallsSoFar;
 	std::stringstream messages;

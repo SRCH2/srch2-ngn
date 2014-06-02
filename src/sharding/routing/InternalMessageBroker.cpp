@@ -50,7 +50,8 @@ Message* InternalMessageBroker::processRequestMessage(Message *msg, Srch2Server*
 		replyMessage = this->routingManager.prepareExternalMessage<ResponseType>(ShardId(), outputSerializedObject );
 		// we delete this response object here because it's an external request and response
 		// will be wrapped in a Message from now on
-		delete outputSerializedObject,inputSerializedObject;
+//		delete outputSerializedObject,inputSerializedObject;
+		// TODO : deleting objects is commented out...
 	}
 
 	return replyMessage;
@@ -70,21 +71,23 @@ Message* InternalMessageBroker::processRequestInsertUpdateMessage(Message *msg,
 
 	// if msg is local this response object will be deleted in results aggregator.
 	// otherwise, TODO red line
-	SerializableCommandStatus * outputSerializedObject =
-			internalDP.internalInsertUpdateCommand(server,inputSerializedObject);
+	SerializableCommandStatus * outputSerializedObject  = internalDP.internalInsertUpdateCommand(server,inputSerializedObject);
 
 	// prepare the reply message
 	Message *replyMessage = NULL;
 	if(msg->isLocal()){
 		// the message will contain only the pointer to response object
-		replyMessage = this->routingManager.prepareInternalMessage<SerializableCommandStatus>(ShardId(), outputSerializedObject );
+		replyMessage = this->routingManager.
+				prepareInternalMessage<SerializableCommandStatus>(ShardId(), outputSerializedObject );
 		// this message object will be deleted in pendinMessages in TM
 	}else{
 		// the message will contain the serialized response object
-		replyMessage = this->routingManager.prepareExternalMessage<SerializableCommandStatus>(ShardId(), outputSerializedObject );
+		replyMessage = this->routingManager.
+				prepareExternalMessage<SerializableCommandStatus>(ShardId(), outputSerializedObject );
 		// we delete this response object here because it's an external request and response
 		// will be wrapped in a Message from now on
-		delete outputSerializedObject,inputSerializedObject;
+		//delete outputSerializedObject,inputSerializedObject;
+		// TODO : deleting objects is commented out...
 	}
 
 	return replyMessage;

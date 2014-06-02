@@ -1,5 +1,5 @@
 #include "GetInfoAggregatorAndPrint.h"
-
+#include "sharding/routing/PendingMessages.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace std;
@@ -30,27 +30,30 @@ void GetInfoAggregatorAndPrint::preProcessing(ResultsAggregatorAndPrintMetadata 
  * This function is called by RoutingManager if a timeout happens, The call to
  * this function must be between preProcessing(...) and callBack()
  */
-void GetInfoAggregatorAndPrint::timeoutProcessing(ShardId * shardInfo, SerializableGetInfoCommandInput * sentRequest,
+void GetInfoAggregatorAndPrint::timeoutProcessing(PendingMessage<SerializableGetInfoCommandInput,
+		SerializableGetInfoResults> * message,
 		ResultsAggregatorAndPrintMetadata metadata){
 	boost::unique_lock< boost::shared_mutex > lock(_access);
 	messages << "{\"shard getInfo\":\"failed\",\"reason\":\"Corresponging shard ("<<
-					shardInfo->toString()<<") timedout.\"}";
+					message->getNodeId()<<") timedout.\"}";
 }
 
 
 /*
  * The main function responsible of aggregating status (success or failure) results
  */
-void GetInfoAggregatorAndPrint::callBack(vector<SerializableGetInfoResults *> responseObjects){
+void GetInfoAggregatorAndPrint::callBack(vector<PendingMessage<SerializableGetInfoCommandInput,
+		SerializableGetInfoResults> * > messages){
 	boost::unique_lock< boost::shared_mutex > lock(_access);
-	for(vector<SerializableGetInfoResults *>::iterator responseItr = responseObjects.begin();
-			responseItr != responseObjects.end() ; ++responseItr){
-		this->readCount += (*responseItr)->getReadCount();
-		this->writeCount += (*responseItr)->getWriteCount();
-		this->numberOfDocumentsInIndex += (*responseItr)->getNumberOfDocumentsInIndex();
-		this->lastMergeTimeStrings.push_back((*responseItr)->getLastMergeTimeString());
-		this->docCount += (*responseItr)->getDocCount();
-		this->versionInfoStrings.push_back((*responseItr)->getVersionInfo());
+	for(vector<PendingMessage<SerializableGetInfoCommandInput,
+			SerializableGetInfoResults> * >::iterator messageItr = messages.begin();
+			messageItr != messages.end() ; ++messageItr){
+		this->readCount += (*messageItr)->getResponseObject()->getReadCount();
+		this->writeCount += (*messageItr)->getResponseObject()->getWriteCount();
+		this->numberOfDocumentsInIndex += (*messageItr)->getResponseObject()->getNumberOfDocumentsInIndex();
+		this->lastMergeTimeStrings.push_back((*messageItr)->getResponseObject()->getLastMergeTimeString());
+		this->docCount += (*messageItr)->getResponseObject()->getDocCount();
+		this->versionInfoStrings.push_back((*messageItr)->getResponseObject()->getVersionInfo());
 	}
 }
 

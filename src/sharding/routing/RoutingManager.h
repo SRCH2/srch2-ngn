@@ -7,13 +7,13 @@
 #include <sharding/configuration/ConfigManager.h>
 #include <sharding/transport/TransportManager.h>
 #include <sharding/processor/DistributedProcessorInternal.h>
-
+#include "sharding/routing/PendingMessages.h"
 #include <server/Srch2Server.h>
 #include <sharding/processor/ResultsAggregatorAndPrint.h>
 #include "Multiplexer.h"
-#include "RMCallback.h"
 #include "transport/MessageAllocator.h"
 #include "InternalMessageBroker.h"
+#include "sharding/configuration/ShardingConstants.h"
 
 using namespace std;
 
@@ -23,42 +23,6 @@ using namespace std;
 namespace srch2 {
 namespace httpwrapper {
 
-/*
- * TODO: this struct must be replaced with something consistent with ConfigurationManager global structures ...
- */
-
-/* All Objects sent and received from the RoutingManager must have the 
- * following functions calls:
- *
- *    //serializes the object to a byte array and places array into the region
- *    //allocated by given allocator
- *    void* serialize(std::allocator<char>);
- *
- *    //given a byte stream recreate the original object
- *    const Object& deserialize(void*);
- *
- *
- *    //Returns the type of message which uses this kind of object as transport
- *    MessageType messsageKind();
- */
-
-/* All Callback Object used for recieving Messages must have the appropriate
- * callback corresponding with their message Type:
- *
- *   All must have:
- *      onFail();
- *
- *   QueryType must have:
- *      void search(ResultType&); //for single call back
- *      void search(MessageIterator<ResultType&>); //for wait all call back
- *   Any other type:
- *      void receive(ResultType&); //for single call back
- *      void receive(MessageIterator<ResultType&>); //for wait all call back
- *
- *   if Callback has a timeout the following method must be implemented:
- *      timeout();
- */
-
 
 class RoutingManager {
 
@@ -66,14 +30,17 @@ public:
 
 	RoutingManager(ConfigManager&  configurationManager, TransportManager& tm);
 
+	~RoutingManager(){
+		delete pendingRequestsHandler;
+	};
 
 
 	/*
 	 *  Transmits a given message to all shards. The broadcast will not wait for
 	 *  confirmation from each receiving shard.
 	 */
-	template<typename RequestType> void broadcast(RequestType *,
-			CoreShardInfo &);
+	template<typename RequestType, typename ResponseType>
+	RoutingManagerAPIReturnType broadcast(RequestType *,CoreShardInfo &);
 
 
 	/*
@@ -81,7 +48,8 @@ public:
 	 *  confirmation from each shard is received. Returns false iff any
 	 *  receiving shard confirms with MESSAGE_FAILED message.
 	 */
-	template<typename RequestType> bool broadcast_wait_for_all_confirmation(RequestType * requestObject,
+	template<typename RequestType, typename ResponseType>
+	RoutingManagerAPIReturnType broadcast_wait_for_all_confirmation(RequestType * requestObject,
 			bool& timedout, timeval timeoutValue , CoreShardInfo & coreInfo);
 
 	/*
@@ -90,7 +58,9 @@ public:
 	 *  The callback will be called for each shard.
 	 */
 	template<typename RequestType , typename ReseponseType>
-	void broadcast_w_cb(RequestType * requestObj, ResultAggregatorAndPrint<RequestType , ReseponseType> * aggregator, CoreShardInfo & coreInfo);
+	RoutingManagerAPIReturnType broadcast_w_cb(RequestType * requestObj,
+			boost::shared_ptr<ResultAggregatorAndPrint<RequestType , ReseponseType> > aggregator,
+			CoreShardInfo & coreInfo);
 
 	/*
 	 *  Transmits a given message to all shards. The return messages for each
@@ -98,8 +68,9 @@ public:
 	 *  callback is triggers with an array of message results from each shard.
 	 */
 	template<typename RequestType , typename ReseponseType>
-	void broadcast_wait_for_all_w_cb(RequestType * requestObj,
-			ResultAggregatorAndPrint<RequestType , ReseponseType> * aggregator, CoreShardInfo & coreInfo);
+	RoutingManagerAPIReturnType broadcast_wait_for_all_w_cb(RequestType * requestObj,
+			boost::shared_ptr<ResultAggregatorAndPrint<RequestType , ReseponseType> > aggregator,
+			CoreShardInfo & coreInfo);
 
 
 	/*
@@ -110,24 +81,32 @@ public:
 	 *           from shard ***
 	 */
 	template<typename RequestType , typename ReseponseType>
-	void broadcast_w_cb_n_timeout(RequestType * requestObj,ResultAggregatorAndPrint<RequestType , ReseponseType> * aggregator
-			, timeval timeoutValue , CoreShardInfo & coreInfo );
+	RoutingManagerAPIReturnType broadcast_w_cb_n_timeout(RequestType * requestObj,
+			boost::shared_ptr<ResultAggregatorAndPrint<RequestType , ReseponseType> > aggregator,
+			timeval timeoutValue ,
+			CoreShardInfo & coreInfo );
+
+
 	template<typename RequestType , typename ReseponseType>
-	void broadcast_wait_for_all_w_cb_n_timeout(RequestType * requestObj,
-			ResultAggregatorAndPrint<RequestType , ReseponseType> * aggregator , timeval timeoutValue, CoreShardInfo & coreInfo);
+	RoutingManagerAPIReturnType broadcast_wait_for_all_w_cb_n_timeout(RequestType * requestObj,
+			boost::shared_ptr<ResultAggregatorAndPrint<RequestType , ReseponseType> > aggregator ,
+			timeval timeoutValue,
+			CoreShardInfo & coreInfo);
 
 
 	/*
 	 *  Transmits a given message to a particular shard in a non-blocking fashion
 	 */
-	template<typename RequestType> void route(RequestType * requestObj, ShardId & shardInfo);
+	template<typename RequestType, typename ResponseType>
+	RoutingManagerAPIReturnType route(RequestType * requestObj, ShardId & shardInfo);
 
 	/*
 	 *  Transmits a given message to a pariticular shards, and waits for
 	 *  confirmation. Returns false iff shard confirms with MESSAGE_FAILED
 	 *  message.
 	 */
-	template<typename RequestType> bool route_wait_for_confirmation(RequestType * requestObj, bool& timedout,
+	template<typename RequestType, typename ResponseType>
+	RoutingManagerAPIReturnType route_wait_for_confirmation(RequestType * requestObj, bool& timedout,
 			timeval timeoutValue , ShardId shardInfo);
 
 	/*
@@ -136,7 +115,9 @@ public:
 	 *  corresponding Message.
 	 */
 	template<typename RequestType , typename ReseponseType>
-	void route_w_cb(RequestType * requestObj, ResultAggregatorAndPrint<RequestType , ReseponseType> * aggregator , ShardId shardInfo);
+	RoutingManagerAPIReturnType route_w_cb(RequestType * requestObj,
+			boost::shared_ptr<ResultAggregatorAndPrint<RequestType , ReseponseType> > aggregator ,
+			ShardId shardInfo);
 
 	/*
 	 *  Timeout version of their corresponding function. So, after a period of
@@ -146,15 +127,18 @@ public:
 	 *           from shard ***
 	 */
 	template<typename RequestType , typename ReseponseType>
-	void route_w_cb_n_timeout(RequestType * requestObj,ResultAggregatorAndPrint<RequestType , ReseponseType> * aggregator
-			, timeval timeoutValue, ShardId shardInfo);
+	RoutingManagerAPIReturnType route_w_cb_n_timeout(RequestType * requestObj,
+			boost::shared_ptr<ResultAggregatorAndPrint<RequestType , ReseponseType> > aggregator,
+			timeval timeoutValue,
+			ShardId shardInfo);
 
 
 	MessageAllocator * getMessageAllocator() ;
 	ConfigManager* getConfigurationManager();
 	DPInternalRequestHandler* getDpInternal();
 	InternalMessageBroker * getInternalMessageBroker();
-
+	PendingRequestsHandler * getPendingRequestsHandler();
+	TransportManager& getTransportManager();
 	Srch2Server * getShardIndex(ShardId shardId){
 		// should we get Serch2Server based one core ID?
 		map<unsigned, Srch2Server *>::iterator shardServer = shardServers.find(shardId.coreId);
@@ -170,10 +154,10 @@ public:
 	 */
 	template<typename RequestType >
 	Message * prepareInternalMessage(ShardId shardId,
-			RequestType *requestObjPointer);
+			RequestType * requestObjPointer);
 	template<typename RequestType >
 	Message * prepareExternalMessage(ShardId shardId,
-			RequestType *requestObjPointer);
+			RequestType * requestObjPointer);
 //	template<typename RequestType >
 //	static RequestType * decodeInternalMessage(Message * message);
 //	template<typename RequestType >
@@ -182,10 +166,15 @@ public:
 
 private:
 
-	void sendInternalMessage(Message * msg,
-			ShardId shardId, timeval timeoutValue, CallbackReference cb);
-	void sendExternalMessage(Message * msg,
-			ShardId shardId, timeval timeoutValue, CallbackReference cb);
+	// When pendingRequest is NULL, no response is expected for request.
+	template<typename RequestType , typename ResponseType>
+	void sendInternalMessage(Message * msg, RequestType * requestObjPointer,
+			ShardId shardId, timeval timeoutValue, PendingRequest<RequestType, ResponseType> * pendingRequest = NULL);
+
+	// When pendingRequest is NULL, no response is expected for request.
+	template<typename RequestType , typename ResponseType>
+	void sendExternalMessage(Message * msg, RequestType * requestObjPointer,
+			ShardId shardId, timeval timeoutValue, PendingRequest<RequestType, ResponseType> * pendingRequest = NULL);
 
 	//std::map<ShardId, Srch2Server*> shardToIndex;
 	ConfigManager& configurationManager;
@@ -194,6 +183,13 @@ private:
 	InternalMessageBroker internalMessageBroker;
 	// a map from coreId to Srch2Server //TODO : should it be a map from ShardId to shardServer?
 	std::map<unsigned, Srch2Server *> shardServers;
+
+	/*
+	 * the data structure which stores all pending messages in this node
+	 * this object keeps all messages which are waiting for response
+	 * and resolves response messages.
+	 */
+	PendingRequestsHandler * pendingRequestsHandler;
 };
 
 }
