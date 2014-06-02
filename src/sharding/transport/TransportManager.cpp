@@ -52,7 +52,7 @@ void * notifyUpstreamHandlers(void *arg) {
 	if(msg->isReply()) {
 		Logger::console("Reply message is received. Msg type is %d", msg->getType());
 		tm->getPendingMessagesHandler()->resolveResponseMessage(msg);
-		tm->getMessageAllocator()->deallocateByMessagePointer(msg);
+		//tm->getMessageAllocator()->deallocateByMessagePointer(msg);
 
 	} else if(msg->isInternal()) { // receiving a message which
 
@@ -69,7 +69,7 @@ void * notifyUpstreamHandlers(void *arg) {
 			if(replyMessage != NULL) {
 				replyMessage->setRequestMessageId(msg->getMessageId());
 				replyMessage->setReply()->setInternal();
-				tm->route(dispatchArgument->fd, replyMessage);
+				tm->_route(dispatchArgument->fd, replyMessage);
 				tm->getMessageAllocator()->deallocateByMessagePointer(msg);
 				tm->getMessageAllocator()->deallocateByMessagePointer(replyMessage);
 			}
@@ -363,7 +363,7 @@ MessageID_t TransportManager::route(NodeId node, Message *msg,
 	Connection conn = routeMap.getConnection(node);
 
 	while(!__sync_bool_compare_and_swap(&conn.sendLock, false, true));
-	MessageID_t returnValue = route(conn.fd, msg);
+	MessageID_t returnValue = _route(conn.fd, msg);
 	conn.sendLock = true;
 	return returnValue;
 }
@@ -374,7 +374,7 @@ MessageID_t TransportManager::route(NodeId node, Message *msg,
  *   Note: The function is not thread safe. Caller should ensure thread safety.
  */
 
-MessageID_t TransportManager::route(int fd, Message *msg) {
+MessageID_t TransportManager::_route(int fd, Message *msg) {
 	if(msg == NULL){
 		Logger::console("Trying to send NULL message in TM route(fd,msg)");
 		return 0;

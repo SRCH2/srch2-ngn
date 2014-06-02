@@ -18,7 +18,7 @@ class TransportManager ;
 
 struct DisptchArguments{
 
-	DisptchArguments(TransportManager * tm, Message * message, unsigned fd){
+	DisptchArguments(TransportManager * tm, Message * message, int fd){
 		this->tm = tm;
 		this->message = message;
 		this->fd = fd;
@@ -29,7 +29,7 @@ struct DisptchArguments{
 	}
 	TransportManager * tm;
 	Message * message;
-	unsigned fd;
+	int fd;
 };
 
 struct TransportCallback {
@@ -54,7 +54,7 @@ public:
 	//third argument is a timeout in seconds
 	MessageID_t route(NodeId, Message*, unsigned=0, CallbackReference=CallbackReference());
     //route message through a particular socket
-    MessageID_t route(int fd, Message*);
+    MessageID_t _route(int fd, Message*);
 	CallbackReference prepareCallback(void*,Callback*,
 			ShardingMessageType,bool=false,int = 1);
 	void registerCallbackHandlerForSynchronizeManager(CallBackHandler*);
