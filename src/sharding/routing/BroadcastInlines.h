@@ -1,33 +1,39 @@
 #ifndef __BROADCAST_INLINES_H__
 #define __BROADCAST_INLINES_H__
 
-#include "transport/PendingMessages.h"
-#include "sharding/routing/RoutingManager.h"
-#include "RMCallback.h"
+/*
+ * Implementation of RoutingManager.h functions.
+ */
 
 
 namespace srch2 {
 namespace httpwrapper {
 
+
+/*
+ * The call back function used by thread to handle local requests.
+ */
+void * routeInternalMessage(void * arg) ;
+
 template<typename RequestType > inline
 Message * RoutingManager::prepareInternalMessage(ShardId shardId,
-		RequestType *requestObjPointer){
+		RequestType * requestObjPointer){
 	// prepare a message which is just as big as a pointer
 	// allocate the message
-	Message *msg = getMessageAllocator()->allocateMessage(sizeof(RequestType *));
+	Message * msg = getMessageAllocator()->allocateMessage(sizeof(RequestType *));
 	// initialize the message
 	// copy the address saved in requestObjPointer in msg->body
 	msg->setBodyAndBodySize(&requestObjPointer, sizeof(RequestType *));
 	msg->setDestinationShardId(shardId);
 	msg->setInternal()->setLocal();
 	msg->setType(RequestType::messageKind());
-
+	msg->setMessageId(transportManager.getUniqueMessageIdValue());
 	return msg;
 }
 
 template<typename RequestType > inline
 Message * RoutingManager::prepareExternalMessage(ShardId shardId,
-		RequestType *requestObjPointer){
+		RequestType * requestObjPointer){
 	// create the message from the request object
 	// 1. serialize the message and prepate the body
 	void * serializeRequestMessageBodyPointer = requestObjPointer->serialize(getMessageAllocator());
@@ -39,21 +45,70 @@ Message * RoutingManager::prepareExternalMessage(ShardId shardId,
 	msg->setDestinationShardId(shardId);
 	msg->setInternal();
 	msg->setType(RequestType::messageKind());
+	msg->setMessageId(transportManager.getUniqueMessageIdValue());
 	return msg;
 }
 
-inline void RoutingManager::sendInternalMessage(Message * msg,
-		ShardId shardId, timeval timeoutValue, CallbackReference cb) {
+template<typename RequestType , typename ResponseType> inline
+void RoutingManager::sendInternalMessage(Message * msg, RequestType * requestObjPointer,
+		ShardId shardId, timeval timeoutValue,  PendingRequest<RequestType, ResponseType> * pendingRequest) {
 
+	// find the node id of destination
 	unsigned nodeId = shardId.getNodeId(configurationManager);
-	transportManager.route(nodeId, msg, timeoutValue.tv_sec, cb);
+
+	// only messages which expect reply will go to pending messages
+	if(pendingRequest != NULL && ! msg->isNoReply()){
+		// register a pending message in this pending request
+		pendingRequest->registerPendingMessage(nodeId, timeoutValue.tv_sec, msg, requestObjPointer);
+	}else{
+		// this is the case of message with no reply so we don't have a pending request.
+		// we must send the request and delete the request object and message right here
+		// msg is in a shared pointer and it's not stored in a pendingMessage,
+		// therefor when it's handled it will delete by itself.
+		delete requestObjPointer;
+		// message will be deleted in routeInternalMessage
+	}
+
+
+	// if the message is a local message,
+	ASSERT(msg->isLocal());
+
+	Logger::console("Message is local");
+	pthread_t internalMessageRouteThread;
+
+	std::pair<RoutingManager * ,  std::pair< Message * , NodeId> > * rmAndMsgPointers =
+			new std::pair<RoutingManager * , std::pair<Message *, NodeId> >(this,
+					std::make_pair(msg, nodeId));
+
+	if (pthread_create(&internalMessageRouteThread, NULL, routeInternalMessage, rmAndMsgPointers) != 0){
+		Logger::console("Cannot create thread for handling local message");
+		return;
+	}
 }
 
-inline void RoutingManager::sendExternalMessage(Message * msg,
-		ShardId shardId, timeval timeoutValue, CallbackReference cb){
+template<typename RequestType , typename ResponseType> inline
+void RoutingManager::sendExternalMessage(Message * msg, RequestType * requestObjPointer,
+		ShardId shardId, timeval timeoutValue,  PendingRequest<RequestType, ResponseType> * pendingRequest){
 
+	// find the node id of destination
 	unsigned nodeId = shardId.getNodeId(configurationManager);
-	transportManager.route(nodeId, msg, timeoutValue.tv_sec, cb);
+
+	// only messages which expect reply will go to pending messages
+	if(pendingRequest != NULL && ! msg->isNoReply()){
+		// register a pending message in this pending request
+		PendingMessage<RequestType, ResponseType> * pendingMessage =
+				pendingRequest->registerPendingMessage(nodeId, timeoutValue.tv_sec, msg, requestObjPointer);
+	}else{
+		// no reply case, request object and message must be deleted after sending to network.
+		delete requestObjPointer;
+	}
+	// pass the ready message to TM to be sent to nodeId
+	transportManager.route(nodeId, msg, timeoutValue.tv_sec);
+
+	if(msg->isNoReply()){
+		// deallocate the message here because there is no reply and no pending request
+		transportManager.getMessageAllocator()->deallocateByMessagePointer(msg);
+	}
 
 }
 
@@ -62,16 +117,17 @@ inline void RoutingManager::sendExternalMessage(Message * msg,
  *  Transmits a given message to all shards. The broadcast will not wait for
  *  confirmation from each receiving shard.
  */
-template<typename RequestType> inline void
-RoutingManager::broadcast(RequestType * requestObj, CoreShardInfo &coreInfo) {
+template<typename RequestType, typename ResponseType> inline
+RoutingManagerAPIReturnType RoutingManager::broadcast(RequestType * requestObj, CoreShardInfo &coreInfo) {
 	/*
 	 * Multiplexer reads coreInfo object to understand which nodes we need to send this broadcast to
 	 */
 	Multiplexer broadcastResolver(configurationManager, coreInfo);
 
 
-	Message * internalMessage = NULL;
-	Message * externalMessage = NULL;
+
+	Message * internalMessage;
+	Message * externalMessage;
 
 	timeval timeValue;
 	timeValue.tv_sec = timeValue.tv_usec = 0;
@@ -95,7 +151,7 @@ RoutingManager::broadcast(RequestType * requestObj, CoreShardInfo &coreInfo) {
 				internalMessage->setNoReply();
 			}
 			internalMessage->setDestinationShardId(shardIdFromIteration);
-			sendInternalMessage(internalMessage, shardIdFromIteration, timeValue, CallbackReference());
+			sendInternalMessage(internalMessage, requestObj, shardIdFromIteration, timeValue);
 		}else{// this shard is in some other node
 			// so that we create the message only once
 			if(externalMessage == NULL){
@@ -106,7 +162,7 @@ RoutingManager::broadcast(RequestType * requestObj, CoreShardInfo &coreInfo) {
 				externalMessage->setNoReply();
 			}
 			externalMessage->setDestinationShardId(shardIdFromIteration);
-			sendExternalMessage(externalMessage, shardIdFromIteration, timeValue, CallbackReference());
+			sendExternalMessage(externalMessage, requestObj, shardIdFromIteration, timeValue);
 		}
 	}
 	// if internal message is created so it means a shard on the same node is
@@ -116,6 +172,8 @@ RoutingManager::broadcast(RequestType * requestObj, CoreShardInfo &coreInfo) {
 	if(internalMessage == NULL){
 		delete requestObj;
 	}
+
+	return RoutingManagerAPIReturnTypeSuccess;
 }
 
 
@@ -124,11 +182,11 @@ RoutingManager::broadcast(RequestType * requestObj, CoreShardInfo &coreInfo) {
  *  confirmation from each shard is received. Returns false iff any
  *  receiving shard confirms with MESSAGE_FAILED message.
  */
-template<typename RequestType> inline bool 
+template<typename RequestType, typename ResponseType> inline RoutingManagerAPIReturnType
 RoutingManager::broadcast_wait_for_all_confirmation(RequestType * requestObject,
 		bool& timedout, timeval timeoutValue , CoreShardInfo & coreInfo){
 	//TODO
-	return false;
+	return 	RoutingManagerAPIReturnTypeAllNodesDown;
 }
 /*
  *  Transmits a given message to all shards. Upon receipt of a response from
@@ -136,8 +194,8 @@ RoutingManager::broadcast_wait_for_all_confirmation(RequestType * requestObject,
  *  The callback will be called for each shard.
  */
 template<typename RequestType , typename ResponseType> inline
-void RoutingManager::broadcast_w_cb(RequestType * requestObj,
-		ResultAggregatorAndPrint<RequestType , ResponseType> * aggregator,
+RoutingManagerAPIReturnType RoutingManager::broadcast_w_cb(RequestType * requestObj,
+		boost::shared_ptr<ResultAggregatorAndPrint<RequestType , ResponseType> > aggregator,
 		CoreShardInfo & coreInfo){
 
 	/*
@@ -159,22 +217,16 @@ void RoutingManager::broadcast_w_cb(RequestType * requestObj,
 
 	if(totalNumberOfRepliesToExpect == 0){
 		delete requestObj;
-		return;
+		return RoutingManagerAPIReturnTypeAllNodesDown;
 	}
 
-	/*
-	 * We need to register callback functions to TM so that it calls them upon receiving a message
-	 * Here, we register a method around aggregator callback into TM.
-	 */
-	CallbackReference cb = transportManager.prepareCallback(requestObj,
-			new RMCallback<RequestType, ResponseType>(*aggregator),
-			ResponseType::messageKind(),
-			false,
-			broadcastResolver.size());
-	cb.getRegisteredCallbackPtr()->setTotalNumberOfRepliesToExpect(totalNumberOfRepliesToExpect);
+	// register a pending request in the handler
+	PendingRequest<RequestType, ResponseType> * pendingRequest =
+			this->pendingRequestsHandler->registerPendingRequest(false, aggregator, totalNumberOfRepliesToExpect);
 
-	Message * internalMessage = NULL;
-	Message * externalMessage = NULL;
+
+	Message * internalMessage;
+	Message * externalMessage;
 
 	timeval timeValue;
 	timeValue.tv_sec = timeValue.tv_usec = 0;
@@ -196,27 +248,24 @@ void RoutingManager::broadcast_w_cb(RequestType * requestObj,
 				internalMessage = prepareInternalMessage<RequestType>(shardIdFromIteration, requestObj);
 				// request message is stored in cb object to be deleted when replies are ready
 				// and cb object is being destroyed.
-				cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(internalMessage);
 			}
 			internalMessage->setDestinationShardId(shardIdFromIteration);
 			// callback should wait for one more reply
-			cb.getRegisteredCallbackPtr()->incrementNumberOfRepliesToWaitFor();
-			sendInternalMessage(internalMessage, shardIdFromIteration, timeValue, cb);
+			sendInternalMessage(internalMessage, requestObj, shardIdFromIteration, timeValue, pendingRequest);
 		}else{// this shard is in some other node
 			// so that we create the message only once
 			if(externalMessage == NULL){
 				externalMessage = prepareExternalMessage<RequestType>(shardIdFromIteration, requestObj);
 				// request message is stored in cb object to be deleted when replies are ready
 				// and cb object is being destroyed.
-				cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(externalMessage);
 			}
 			externalMessage->setDestinationShardId(shardIdFromIteration);
 			// callback should wait for one more reply
-			cb.getRegisteredCallbackPtr()->incrementNumberOfRepliesToWaitFor();
-			sendExternalMessage(externalMessage, shardIdFromIteration, timeValue, cb);
+			sendExternalMessage(externalMessage, requestObj, shardIdFromIteration, timeValue, pendingRequest);
 		}
 	}
 
+	return RoutingManagerAPIReturnTypeSuccess;
 
 }
 
@@ -226,8 +275,8 @@ void RoutingManager::broadcast_w_cb(RequestType * requestObj,
  *  callback is triggers with an array of message results from each shard.
  */
 template<typename RequestType , typename ResponseType> inline
-void RoutingManager::broadcast_wait_for_all_w_cb(RequestType * requestObj,
-		ResultAggregatorAndPrint<RequestType , ResponseType> *aggregator,
+RoutingManagerAPIReturnType RoutingManager::broadcast_wait_for_all_w_cb(RequestType * requestObj,
+		boost::shared_ptr<ResultAggregatorAndPrint<RequestType , ResponseType> >aggregator,
 		CoreShardInfo & coreInfo) {
 	/*
 	 * Multiplexer reads coreInfo object to understand which nodes we need to send this broadcast to
@@ -247,24 +296,16 @@ void RoutingManager::broadcast_wait_for_all_w_cb(RequestType * requestObj,
 
 	if(totalNumberOfRepliesToExpect == 0){
 		delete requestObj;
-		return;
+		return RoutingManagerAPIReturnTypeAllNodesDown;
 	}
 
-	/*
-	 * We need to register callback functions to TM so that it calls them upon receiving a message
-	 * Here, we register a method around aggregator callback into TM.
-	 */
-	CallbackReference cb = transportManager.prepareCallback(requestObj,
-			new RMCallback<RequestType, ResponseType>(*aggregator),
-			ResponseType::messageKind(),
-			true,
-			broadcastResolver.size());
-	cb.getRegisteredCallbackPtr()->setTotalNumberOfRepliesToExpect(totalNumberOfRepliesToExpect);
+	// register a pending request in the handler
+	PendingRequest<RequestType, ResponseType> * pendingRequest =
+			this->pendingRequestsHandler->registerPendingRequest(true, aggregator, totalNumberOfRepliesToExpect);
 
 
-	Message * internalMessage = NULL;
-	Message * externalMessage = NULL;
-
+	Message * internalMessage;
+	Message * externalMessage;
 	timeval timeValue;
 	timeValue.tv_sec = timeValue.tv_usec = 0;
 
@@ -284,27 +325,24 @@ void RoutingManager::broadcast_wait_for_all_w_cb(RequestType * requestObj,
 				internalMessage = prepareInternalMessage<RequestType>(shardIdFromIteration, requestObj);
 				// request message is stored in cb object to be deleted when replies are ready
 				// and cb object is being destroyed.
-				cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(internalMessage);
 			}
 			internalMessage->setDestinationShardId(shardIdFromIteration);
 			// callback should wait for one more reply
-			cb.getRegisteredCallbackPtr()->incrementNumberOfRepliesToWaitFor();
-			sendInternalMessage(internalMessage, shardIdFromIteration, timeValue, cb);
+			sendInternalMessage(internalMessage, requestObj, shardIdFromIteration, timeValue, pendingRequest);
 		}else{// this shard is in some other node
 			// so that we create the message only once
 			if(externalMessage == NULL){
 				externalMessage = prepareExternalMessage<RequestType>(shardIdFromIteration, requestObj);
 				// request message is stored in cb object to be deleted when replies are ready
 				// and cb object is being destroyed.
-				cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(externalMessage);
 			}
 			externalMessage->setDestinationShardId(shardIdFromIteration);
 			// callback should wait for one more reply
-			cb.getRegisteredCallbackPtr()->incrementNumberOfRepliesToWaitFor();
-			sendExternalMessage(externalMessage, shardIdFromIteration, timeValue, cb);
+			sendExternalMessage(externalMessage, requestObj, shardIdFromIteration, timeValue, pendingRequest);
 		}
 	}
 
+	return RoutingManagerAPIReturnTypeSuccess;
 }
 
 
@@ -316,8 +354,8 @@ void RoutingManager::broadcast_wait_for_all_w_cb(RequestType * requestObj,
  *           from shard ***
  */
 template<typename RequestType , typename ResponseType> inline
-void RoutingManager::broadcast_w_cb_n_timeout(RequestType * requestObj,
-		ResultAggregatorAndPrint<RequestType , ResponseType> * aggregator,
+RoutingManagerAPIReturnType RoutingManager::broadcast_w_cb_n_timeout(RequestType * requestObj,
+		boost::shared_ptr<ResultAggregatorAndPrint<RequestType , ResponseType> > aggregator,
 		timeval timeoutValue , CoreShardInfo & coreInfo ){
 	/*
 	 * Multiplexer reads coreInfo object to understand which nodes we need to send this broadcast to
@@ -338,22 +376,18 @@ void RoutingManager::broadcast_w_cb_n_timeout(RequestType * requestObj,
 
 	if(totalNumberOfRepliesToExpect == 0){
 		delete requestObj;
-		return;
+		return RoutingManagerAPIReturnTypeAllNodesDown;
 	}
 
-	/*
-	 * We need to register callback functions to TM so that it calls them upon receiving a message
-	 * Here, we register a method around aggregator callback into TM.
-	 */
-	CallbackReference cb = transportManager.prepareCallback(requestObj,
-			new RMCallback<RequestType, ResponseType>(*aggregator),
-			ResponseType::messageKind(),
-			false,
-			broadcastResolver.size());
-	cb.getRegisteredCallbackPtr()->setTotalNumberOfRepliesToExpect(totalNumberOfRepliesToExpect);
 
-	Message * internalMessage = NULL;
-	Message * externalMessage = NULL;
+
+	// register a pending request in the handler
+	PendingRequest<RequestType, ResponseType> * pendingRequest =
+			this->pendingRequestsHandler->registerPendingRequest(false, aggregator, totalNumberOfRepliesToExpect);
+
+
+	Message * internalMessage;
+	Message * externalMessage;
 
 
 	// iterate on all destinations and send the message
@@ -371,33 +405,31 @@ void RoutingManager::broadcast_w_cb_n_timeout(RequestType * requestObj,
 				internalMessage = prepareInternalMessage<RequestType>(shardIdFromIteration, requestObj);
 				// request message is stored in cb object to be deleted when replies are ready
 				// and cb object is being destroyed.
-				cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(internalMessage);
 			}
 			internalMessage->setDestinationShardId(shardIdFromIteration);
 			// callback should wait for one more reply
-			cb.getRegisteredCallbackPtr()->incrementNumberOfRepliesToWaitFor();
-			sendInternalMessage(internalMessage, shardIdFromIteration, timeoutValue, cb);
+			sendInternalMessage(internalMessage, requestObj, shardIdFromIteration, timeoutValue, pendingRequest);
 		}else{// this shard is in some other node
 			// so that we create the message only once
 			if(externalMessage == NULL){
 				externalMessage = prepareExternalMessage<RequestType>(shardIdFromIteration, requestObj);
 				// request message is stored in cb object to be deleted when replies are ready
 				// and cb object is being destroyed.
-				cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(externalMessage);
 			}
 			externalMessage->setDestinationShardId(shardIdFromIteration);
 			// callback should wait for one more reply
-			cb.getRegisteredCallbackPtr()->incrementNumberOfRepliesToWaitFor();
-			sendExternalMessage(externalMessage, shardIdFromIteration, timeoutValue, cb);
+			sendExternalMessage(externalMessage, requestObj, shardIdFromIteration, timeoutValue, pendingRequest);
 		}
 	}
+
+	return RoutingManagerAPIReturnTypeSuccess;
 
 }
 
 
-template<typename RequestType , typename ResponseType> inline void
+template<typename RequestType , typename ResponseType> inline RoutingManagerAPIReturnType
 RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType * requestObj,
-		ResultAggregatorAndPrint<RequestType , ResponseType> * aggregator,
+		boost::shared_ptr<ResultAggregatorAndPrint<RequestType , ResponseType> > aggregator,
 		timeval timeoutValue, CoreShardInfo & coreInfo){
 
 	/*
@@ -419,22 +451,16 @@ RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType * requestObj,
 
 	if(totalNumberOfRepliesToExpect == 0){
 		delete requestObj;
-		return;
+		// since aggregator is in a shared pointer, it gets deleted automatically.
+		return RoutingManagerAPIReturnTypeAllNodesDown;
 	}
 
-	/*
-	 * We need to register callback functions to TM so that it calls them upon receiving a message
-	 * Here, we register a method around aggregator callback into TM.
-	 */
-	CallbackReference cb = transportManager.prepareCallback(requestObj,
-			new RMCallback<RequestType, ResponseType>(*aggregator),
-			ResponseType::messageKind(),
-			true,
-			0);
-	cb.getRegisteredCallbackPtr()->setTotalNumberOfRepliesToExpect(totalNumberOfRepliesToExpect);
+	// register a pending request in the handler
+	PendingRequest<RequestType, ResponseType> * pendingRequest =
+			this->pendingRequestsHandler->registerPendingRequest(true, aggregator, totalNumberOfRepliesToExpect);
 
-	Message * internalMessage = NULL;
-	Message * externalMessage = NULL;
+	Message * internalMessage;
+	Message * externalMessage;
 
 
 	// iterate on all destinations and send the message
@@ -454,27 +480,25 @@ RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType * requestObj,
 				internalMessage = prepareInternalMessage<RequestType>(shardIdFromIteration, requestObj);
 				// request message is stored in cb object to be deleted when replies are ready
 				// and cb object is being destroyed.
-				cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(internalMessage);
 			}
 			internalMessage->setDestinationShardId(shardIdFromIteration);
 			// callback should wait for one more reply
-			cb.getRegisteredCallbackPtr()->incrementNumberOfRepliesToWaitFor();
-			sendInternalMessage(internalMessage, shardIdFromIteration, timeoutValue, cb);
+			sendInternalMessage(internalMessage, requestObj, shardIdFromIteration, timeoutValue, pendingRequest);
 		}else{// this shard is in some other node
 			// so that we create the message only once
 			if(externalMessage == NULL){
 				externalMessage = prepareExternalMessage<RequestType>(shardIdFromIteration, requestObj);
 				// request message is stored in cb object to be deleted when replies are ready
 				// and cb object is being destroyed.
-				cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(externalMessage);
 			}
 			externalMessage->setDestinationShardId(shardIdFromIteration);
 			// callback should wait for one more reply
-			cb.getRegisteredCallbackPtr()->incrementNumberOfRepliesToWaitFor();
-			sendExternalMessage(externalMessage, shardIdFromIteration, timeoutValue, cb);
+			sendExternalMessage(externalMessage, requestObj, shardIdFromIteration, timeoutValue, pendingRequest);
 		}
 	}
 
+
+	return RoutingManagerAPIReturnTypeSuccess;
 }
 
 
@@ -482,7 +506,7 @@ RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType * requestObj,
 /*
  *  Transmits a given message to a particular shard in a non-blocking fashion
  */
-template<typename RequestType> inline void 
+template<typename RequestType, typename ResponseType> inline RoutingManagerAPIReturnType
 RoutingManager::route(RequestType * requestObj, ShardId & shardInfo) {
 
 
@@ -490,28 +514,31 @@ RoutingManager::route(RequestType * requestObj, ShardId & shardInfo) {
 	unsigned nodeId = shardInfo.getNodeId(configurationManager);
 	if (!configurationManager.isValidNode(nodeId)){
 		delete requestObj;
-		return;
+		return RoutingManagerAPIReturnTypeAllNodesDown;
 	}
 
 	// if the destination is the current node, we don't serialize the request object
 	// instead, we serialize the pointer to the request object
-	Message * msg =  NULL;
+
+	Message * msg;
 	timeval timeValue;
 	timeValue.tv_sec = timeValue.tv_usec = 0;
 	if(shardInfo.isInCurrentNode(configurationManager)) {
 		msg = prepareInternalMessage<RequestType>(shardInfo, requestObj);
 		msg->setNoReply();
-		sendInternalMessage(msg, shardInfo,timeValue,CallbackReference());
+		sendInternalMessage(msg, requestObj, shardInfo,timeValue);
 		// local NO_REPLY messages and request objects get deleted in InternalMessageBroker
 	}else{
 		msg = prepareExternalMessage<RequestType>(shardInfo, requestObj);
 		msg->setNoReply();
-		sendExternalMessage(msg,shardInfo,timeValue,CallbackReference());
+		sendExternalMessage(msg, requestObj, shardInfo,timeValue);
 		// request object of NO_REPLAY non-local messages get deleted here because
 		// we don't need it anymore
 		delete requestObj;
 		// message will be deleted in transportManager.route
 	}
+
+	return RoutingManagerAPIReturnTypeSuccess;
 }
 
 /*
@@ -519,11 +546,11 @@ RoutingManager::route(RequestType * requestObj, ShardId & shardInfo) {
  *  confirmation. Returns false iff shard confirms with MESSAGE_FAILED
  *  message.
  */
-template<typename RequestType> inline bool
+template<typename RequestType, typename ResponseType> inline RoutingManagerAPIReturnType
 RoutingManager::route_wait_for_confirmation(RequestType * requestObj,
 		bool& timedout, timeval timeoutValue , ShardId shardInfo){
 	//TODO
-	return false;
+	return 	RoutingManagerAPIReturnTypeAllNodesDown;
 }
 
 /*
@@ -531,54 +558,36 @@ RoutingManager::route_wait_for_confirmation(RequestType * requestObj,
  *  response shard, the appropriate callback is trigger with the
  *  corresponding Message.
  */
-template<typename RequestType , typename ResponseType> inline void 
+template<typename RequestType , typename ResponseType> inline RoutingManagerAPIReturnType
 RoutingManager::route_w_cb(RequestType * requestObj,
-		ResultAggregatorAndPrint<RequestType , ResponseType> * aggregator,
+		boost::shared_ptr<ResultAggregatorAndPrint<RequestType , ResponseType> > aggregator,
 		ShardId shardInfo) {
 
 	// find out whether shard is still within reach
 	unsigned nodeId = shardInfo.getNodeId(configurationManager);
 	if (!configurationManager.isValidNode(nodeId)){
 		delete requestObj;
-		return;
+		return RoutingManagerAPIReturnTypeAllNodesDown;
 	}
-
-	/*
-	 * We need to register callback functions to TM so that it calls them upon receiving a message
-	 * Here, we register a method around aggregator callback into TM.
-	 * we only pass 3 arguments to registerCallback because we are not going to wait for all
-	 * (false although it doesn't matter) and the number of shards to wait for is 1 by default
-	 */
-	CallbackReference cb = transportManager.prepareCallback(requestObj,
-			new RMCallback<RequestType, ResponseType>(*aggregator),
-			RequestType::messageKind());
-
-	// callback object is always ready because there is only one request
-	cb.getRegisteredCallbackPtr()->setTotalNumberOfRepliesToExpect(1);
+	// register a pending request in the handler
+	PendingRequest<RequestType, ResponseType> * pendingRequest =
+			this->pendingRequestsHandler->registerPendingRequest(true, aggregator, 1);
 
 	// if the destination is the current node, we don't serialize the request object
 	// instead, we serialize the pointer to the request object
-	Message * msg =  NULL;
+	Message * msg;
 	timeval timeValue;
 	timeValue.tv_sec = timeValue.tv_usec = 0;
 	if(shardInfo.isInCurrentNode(configurationManager)) {
 		msg = prepareInternalMessage<RequestType>(shardInfo, requestObj);
-		// request message is stored in cb object to be deleted when replies are ready
-		// and cb object is being destroyed.
-		cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(msg);
-		// callback should wait for one more reply
-		cb.getRegisteredCallbackPtr()->incrementNumberOfRepliesToWaitFor();
-		sendInternalMessage(msg, shardInfo,timeValue,cb);
+		sendInternalMessage(msg, requestObj, shardInfo,timeValue,pendingRequest);
 
 	}else{
 		msg = prepareExternalMessage<RequestType>(shardInfo, requestObj);
-		// request message is stored in cb object to be deleted when replies are ready
-		// and cb object is being destroyed.
-		cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(msg);
-		// callback should wait for one more reply
-		cb.getRegisteredCallbackPtr()->incrementNumberOfRepliesToWaitFor();
-		sendExternalMessage(msg,shardInfo,timeValue,cb);
+		sendExternalMessage(msg, requestObj, shardInfo,timeValue,pendingRequest);
 	}
+
+	return RoutingManagerAPIReturnTypeSuccess;
 
 }
 
@@ -589,52 +598,35 @@ RoutingManager::route_w_cb(RequestType * requestObj,
  *       *** Potentially could alert sync layer to timed out message
  *           from shard ***
  */
-template<typename RequestType , typename ResponseType> inline void 
+template<typename RequestType , typename ResponseType> inline RoutingManagerAPIReturnType
 RoutingManager::route_w_cb_n_timeout(RequestType * requestObj,
-		ResultAggregatorAndPrint<RequestType , ResponseType> * aggregator,
+		boost::shared_ptr<ResultAggregatorAndPrint<RequestType , ResponseType> > aggregator,
 		timeval timeoutValue, ShardId shardInfo) {
 
 	// find out whether shard is still within reach
 	unsigned nodeId = shardInfo.getNodeId(configurationManager);
 	if (!configurationManager.isValidNode(nodeId)){
 		delete requestObj;
-		return;
+		return RoutingManagerAPIReturnTypeAllNodesDown;
 	}
 
-	/*
-	 * We need to register callback functions to TM so that it calls them upon receiving a message
-	 * Here, we register a method around aggregator callback into TM.
-	 * we only pass 3 arguments to registerCallback because we are not going to wait for all
-	 * (false although it doesn't matter) and the number of shards to wait for is 1 by default
-	 */
-	CallbackReference cb = transportManager.prepareCallback(requestObj,
-			new RMCallback<RequestType, ResponseType>(*aggregator),
-			RequestType::messageKind());
-
-	// callback object is always ready because there is only one request
-	cb.getRegisteredCallbackPtr()->setTotalNumberOfRepliesToExpect(1);
+	// register a pending request in the handler
+	PendingRequest<RequestType, ResponseType> * pendingRequest =
+			this->pendingRequestsHandler->registerPendingRequest(true, aggregator, 1);
 
 	// if the destination is the current node, we don't serialize the request object
 	// instead, we serialize the pointer to the request object
-	Message * msg =  NULL;
+	Message * msg;
 	if(shardInfo.isInCurrentNode(configurationManager)) {
 		msg = prepareInternalMessage<RequestType>(shardInfo, requestObj);
-		// request message is stored in cb object to be deleted when replies are ready
-		// and cb object is being destroyed.
-		cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(msg);
-		// callback should wait for one more reply
-		cb.getRegisteredCallbackPtr()->incrementNumberOfRepliesToWaitFor();
-		sendInternalMessage(msg, shardInfo,timeoutValue,cb);
+		sendInternalMessage(msg, requestObj, shardInfo,timeoutValue,pendingRequest);
 
 	}else{
 		msg = prepareExternalMessage<RequestType>(shardInfo, requestObj);
-		// request message is stored in cb object to be deleted when replies are ready
-		// and cb object is being destroyed.
-		cb.getRegisteredCallbackPtr()->getRequestMessages().push_back(msg);
-		// callback should wait for one more reply
-		cb.getRegisteredCallbackPtr()->incrementNumberOfRepliesToWaitFor();
-		sendExternalMessage(msg,shardInfo,timeoutValue,cb);
+		sendExternalMessage(msg, requestObj, shardInfo,timeoutValue,pendingRequest);
 	}
+
+	return RoutingManagerAPIReturnTypeSuccess;
 
 }
 

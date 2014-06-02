@@ -276,7 +276,7 @@ void RouteMap::acceptRoute(int fd, struct sockaddr_in addr) {
 void RouteMap::addNodeConnection(NodeId addr, int fd) {
 	//look into routeMap thread safety
 	boost::unique_lock< boost::shared_mutex > lock(_access);
-	nodeConnectionMap[addr] = Connection(fd);
+	nodeConnectionMap[addr] = Connection(fd, addr);
 }
 
 bool RouteMap::isTotallyConnected() const {

@@ -93,7 +93,8 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , CoreS
     // core that we want to search on, this object is accesses through configurationManager.
     const CoreInfo_t *indexDataContainerConf = configurationManager->getCoreInfo(coreShardInfo->coreName);
 
-    SearchResultAggregatorAndPrint * resultAggregator = new SearchResultAggregatorAndPrint(configurationManager, req, coreShardInfo);
+    boost::shared_ptr<SearchResultAggregatorAndPrint> resultAggregator(new SearchResultAggregatorAndPrint(configurationManager, req, coreShardInfo));
+
 
     clock_gettime(CLOCK_REALTIME, &(resultAggregator->getStartTimer()));
 
@@ -147,14 +148,22 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , CoreS
     SerializableSearchCommandInput * searchInput =
     		new SerializableSearchCommandInput(&resultAggregator->getLogicalPlan());
 
-    // add request object to results aggregator which is the callback object
-    resultAggregator->addRequestObject(searchInput);
 	// broadcasting search request to all shards , non-blocking, with timeout and callback to ResultAggregator
     timeval t;
     t.tv_sec = 2000;
-    routingManager->broadcast_wait_for_all_w_cb_n_timeout(searchInput, resultAggregator , t , *coreShardInfo);
-    // aggregateSearchResults in ResultAggregator will get the responses of all shards and aggregate them
+    RoutingManagerAPIReturnType routingStatus =
+    		routingManager->broadcast_wait_for_all_w_cb_n_timeout<SerializableSearchCommandInput, SerializableSearchResults>
+    (searchInput, resultAggregator , t , *coreShardInfo);
 
+    switch (routingStatus) {
+		case RoutingManagerAPIReturnTypeAllNodesDown:
+	        // if the query is not valid, print the error message to the response
+	        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
+	        		"All nodes are down.", headers);
+			break;
+		default:
+			break;
+	}
 
     evhttp_clear_headers(&headers);
 }
@@ -274,8 +283,8 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, CoreSh
     }
 
 
-    CommandStatusAggregatorAndPrint<SerializableInsertUpdateCommandInput> * resultsAggregator =
-    		new CommandStatusAggregatorAndPrint<SerializableInsertUpdateCommandInput>(configurationManager,req,true);
+    boost::shared_ptr<CommandStatusAggregatorAndPrint<SerializableInsertUpdateCommandInput> >
+    resultsAggregator(new CommandStatusAggregatorAndPrint<SerializableInsertUpdateCommandInput>(configurationManager,req,recordsToInsert.size()));
     resultsAggregator->setMessages(log_str);
 
 
@@ -288,13 +297,24 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, CoreSh
 		SerializableInsertUpdateCommandInput  * insertUpdateInput=
 				new SerializableInsertUpdateCommandInput(*recordItr,SerializableInsertUpdateCommandInput::INSERT);
 		// add request object to results aggregator which is the callback object
-		resultsAggregator->addRequestObject(insertUpdateInput);
 		inputs.push_back(insertUpdateInput);
     }
     for(unsigned recordIndex = 0; recordIndex < inputs.size(); ++recordIndex){
 		timeval t;
 		t.tv_sec = 2000;
-		routingManager->route_w_cb_n_timeout(inputs.at(recordIndex), resultsAggregator , t , shardInfos.at(recordIndex));
+	    RoutingManagerAPIReturnType routingStatus =
+	    		routingManager->route_w_cb_n_timeout<SerializableInsertUpdateCommandInput, SerializableCommandStatus>
+	    		(inputs.at(recordIndex), resultsAggregator , t , shardInfos.at(recordIndex));
+	    switch (routingStatus) {
+			case RoutingManagerAPIReturnTypeAllNodesDown:
+		        // if the query is not valid, print the error message to the response
+		        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
+		                "{\"message\":\"All nodes are down.\"}");
+				return;
+			default:
+				break;
+		}
+
     }
     // aggregated response will be prepared in CommandStatusAggregatorAndPrint::callBack and printed in
     // CommandStatusAggregatorAndPrint::finalize
@@ -422,8 +442,8 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, CoreSh
 
 
 
-    CommandStatusAggregatorAndPrint<SerializableInsertUpdateCommandInput> * resultsAggregator =
-    		new CommandStatusAggregatorAndPrint<SerializableInsertUpdateCommandInput>(configurationManager,req, true);
+    boost::shared_ptr<CommandStatusAggregatorAndPrint<SerializableInsertUpdateCommandInput> >
+    resultsAggregator(new CommandStatusAggregatorAndPrint<SerializableInsertUpdateCommandInput>(configurationManager,req, recordsToUpdate.size()));
     resultsAggregator->setMessages(log_str);
     vector<SerializableInsertUpdateCommandInput  *> inputs;
     vector<ShardId> shardInfos;
@@ -434,13 +454,25 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, CoreSh
 		SerializableInsertUpdateCommandInput  * insertUpdateInput=
 				new SerializableInsertUpdateCommandInput(*recordItr,SerializableInsertUpdateCommandInput::UPDATE);
 		// add request object to results aggregator which is the callback object
-		resultsAggregator->addRequestObject(insertUpdateInput);
 		inputs.push_back(insertUpdateInput);
     }
     for(unsigned recordIndex = 0; recordIndex < inputs.size(); ++recordIndex){
 		timeval t;
 		t.tv_sec = 2000;
-		routingManager->route_w_cb_n_timeout(inputs.at(recordIndex), resultsAggregator , t , shardInfos.at(recordIndex));
+		RoutingManagerAPIReturnType routingStatus =
+				routingManager->route_w_cb_n_timeout<SerializableInsertUpdateCommandInput, SerializableCommandStatus>
+				(inputs.at(recordIndex), resultsAggregator , t , shardInfos.at(recordIndex));
+
+	    switch (routingStatus) {
+			case RoutingManagerAPIReturnTypeAllNodesDown:
+		        // if the query is not valid, print the error message to the response
+				bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
+						"All nodes are down.");
+				return;
+			default:
+				break;
+		}
+
     }
     // aggregated response will be prepared in CommandStatusAggregatorAndPrint::callBack and printed in
     // CommandStatusAggregatorAndPrint::finalize
@@ -479,8 +511,8 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, CoreSh
 	const char *pKeyParamName = evhttp_find_header(&headers, primaryKeyName.c_str());
 	//TODO : we should parse more than primary key later
 	if (pKeyParamName){
-	    CommandStatusAggregatorAndPrint<SerializableDeleteCommandInput> * resultsAggregator =
-	    		new CommandStatusAggregatorAndPrint<SerializableDeleteCommandInput>(configurationManager,req);
+		boost::shared_ptr<CommandStatusAggregatorAndPrint<SerializableDeleteCommandInput> >
+		resultsAggregator(new CommandStatusAggregatorAndPrint<SerializableDeleteCommandInput>(configurationManager,req));
 
 		size_t sz;
 		char *pKeyParamName_cstar = evhttp_uridecode(pKeyParamName, 0, &sz);
@@ -495,10 +527,22 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, CoreSh
 		SerializableDeleteCommandInput * deleteInput =
 				new SerializableDeleteCommandInput(primaryKeyStringValue,coreShardInfo->coreId); // TODO : do we need coreId here ?
 		// add request object to results aggregator which is the callback object
-		resultsAggregator->addRequestObject(deleteInput);
 		timeval t;
 		t.tv_sec = 2000;
-		routingManager->route_w_cb_n_timeout(deleteInput, resultsAggregator , t , shardInfo);
+		RoutingManagerAPIReturnType routingStatus =
+				routingManager->route_w_cb_n_timeout<SerializableDeleteCommandInput, SerializableCommandStatus>
+				(deleteInput, resultsAggregator , t , shardInfo);
+
+	    switch (routingStatus) {
+			case RoutingManagerAPIReturnTypeAllNodesDown:
+		        // if the query is not valid, print the error message to the response
+				bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
+						"All nodes are down.");
+				return;
+			default:
+				break;
+	    }
+
 	}else{
 		std::stringstream log_str;
 		log_str << "{\"rid\":\"NULL\",\"delete\":\"failed\",\"reason\":\"wrong primary key\"}";
@@ -521,13 +565,24 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, CoreSh
  */
 void DPExternalRequestHandler::externalGetInfoCommand(evhttp_request *req, CoreShardInfo * coreShardInfo){
 
-    GetInfoAggregatorAndPrint * resultsAggregator =	new GetInfoAggregatorAndPrint(configurationManager,req);
+	boost::shared_ptr<GetInfoAggregatorAndPrint> resultsAggregator(new GetInfoAggregatorAndPrint(configurationManager,req));
     SerializableGetInfoCommandInput * getInfoInput = new SerializableGetInfoCommandInput();
 	// add request object to results aggregator which is the callback object
-	resultsAggregator->addRequestObject(getInfoInput);
     timeval t;
     t.tv_sec = 2000;
-    routingManager->broadcast_wait_for_all_w_cb_n_timeout(getInfoInput, resultsAggregator, t, *coreShardInfo);
+    RoutingManagerAPIReturnType routingStatus =
+    		routingManager->broadcast_wait_for_all_w_cb_n_timeout<SerializableGetInfoCommandInput, SerializableGetInfoResults>
+    		(getInfoInput, resultsAggregator, t, *coreShardInfo);
+
+    switch (routingStatus) {
+		case RoutingManagerAPIReturnTypeAllNodesDown:
+	        // if the query is not valid, print the error message to the response
+			bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
+					"All nodes are down.");
+			return;
+		default:
+			break;
+    }
 }
 
 /*
@@ -539,16 +594,27 @@ void DPExternalRequestHandler::externalSerializeIndexCommand(evhttp_request *req
     /* Yes, we are expecting a post request */
     switch (req->type) {
     case EVHTTP_REQ_PUT: {
-    	CommandStatusAggregatorAndPrint<SerializableSerializeCommandInput> * resultsAggregator =
-    			new CommandStatusAggregatorAndPrint<SerializableSerializeCommandInput>(configurationManager,req);
+    	boost::shared_ptr<CommandStatusAggregatorAndPrint<SerializableSerializeCommandInput> >
+    	resultsAggregator(new CommandStatusAggregatorAndPrint<SerializableSerializeCommandInput>(configurationManager,req));
 
     	SerializableSerializeCommandInput * serializeInput =
     			new SerializableSerializeCommandInput(SerializableSerializeCommandInput::SERIALIZE_INDEX);
     	// add request object to results aggregator which is the callback object
-    	resultsAggregator->addRequestObject(serializeInput);
     	timeval t;
     	t.tv_sec = 2000;
-        routingManager->broadcast_wait_for_all_w_cb_n_timeout(serializeInput, resultsAggregator, t, *coreShardInfo);
+    	RoutingManagerAPIReturnType routingStatus =
+    			routingManager->broadcast_wait_for_all_w_cb_n_timeout<SerializableSerializeCommandInput, SerializableCommandStatus>
+    			(serializeInput, resultsAggregator, t, *coreShardInfo);
+
+        switch (routingStatus) {
+    		case RoutingManagerAPIReturnTypeAllNodesDown:
+    	        // if the query is not valid, print the error message to the response
+    			bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
+    					"All nodes are down.");
+    			return;
+    		default:
+    			break;
+        }
         break;
     }
     default: {
@@ -578,16 +644,28 @@ void DPExternalRequestHandler::externalSerializeRecordsCommand(evhttp_request *r
             const char *exportedDataFileName = evhttp_find_header(&headers, URLParser::nameParamName);
             // TODO : should we free exportedDataFileName?
             if(exportedDataFileName){
-            	CommandStatusAggregatorAndPrint<SerializableSerializeCommandInput> * resultsAggregator =
-            			new CommandStatusAggregatorAndPrint<SerializableSerializeCommandInput>(configurationManager,req);
+            	boost::shared_ptr<CommandStatusAggregatorAndPrint<SerializableSerializeCommandInput> >
+            	resultsAggregator(new CommandStatusAggregatorAndPrint<SerializableSerializeCommandInput>(configurationManager,req));
 
             	SerializableSerializeCommandInput * serializeInput =
             			new SerializableSerializeCommandInput(SerializableSerializeCommandInput::SERIALIZE_RECORDS, string(exportedDataFileName));
             	// add request object to results aggregator which is the callback object
-            	resultsAggregator->addRequestObject(serializeInput);
             	timeval t;
             	t.tv_sec = 2000;
-                routingManager->broadcast_wait_for_all_w_cb_n_timeout(serializeInput, resultsAggregator, t, *coreShardInfo);
+            	RoutingManagerAPIReturnType routingStatus =
+            			routingManager->broadcast_wait_for_all_w_cb_n_timeout<SerializableSerializeCommandInput, SerializableCommandStatus>
+            			(serializeInput, resultsAggregator, t, *coreShardInfo);
+
+                switch (routingStatus) {
+            		case RoutingManagerAPIReturnTypeAllNodesDown:
+            	        // if the query is not valid, print the error message to the response
+            			bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
+            					"All nodes are down.");
+            			return;
+            		default:
+            			break;
+                }
+
             }else {
                 bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "INVALID REQUEST",
                         "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
@@ -620,14 +698,26 @@ void DPExternalRequestHandler::externalSerializeRecordsCommand(evhttp_request *r
 void DPExternalRequestHandler::externalResetLogCommand(evhttp_request *req, CoreShardInfo * coreShardInfo){
     switch(req->type) {
     case EVHTTP_REQ_PUT: {
-    	CommandStatusAggregatorAndPrint<SerializableResetLogCommandInput> * resultsAggregator =
-    			new CommandStatusAggregatorAndPrint<SerializableResetLogCommandInput>(configurationManager,req);
+    	boost::shared_ptr<CommandStatusAggregatorAndPrint<SerializableResetLogCommandInput> >
+    	resultsAggregator(new CommandStatusAggregatorAndPrint<SerializableResetLogCommandInput>(configurationManager,req));
     	SerializableResetLogCommandInput * resetInput = new SerializableResetLogCommandInput();
     	// add request object to results aggregator which is the callback object
-    	resultsAggregator->addRequestObject(resetInput);
     	timeval t;
     	t.tv_sec = 2000;
-        routingManager->broadcast_wait_for_all_w_cb_n_timeout(resetInput, resultsAggregator, t, *coreShardInfo);
+    	RoutingManagerAPIReturnType routingStatus =
+    			routingManager->broadcast_wait_for_all_w_cb_n_timeout<SerializableResetLogCommandInput, SerializableCommandStatus>
+    			(resetInput, resultsAggregator, t, *coreShardInfo);
+
+        switch (routingStatus) {
+    		case RoutingManagerAPIReturnTypeAllNodesDown:
+    	        // if the query is not valid, print the error message to the response
+    			bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
+    					"All nodes are down.");
+    			return;
+    		default:
+    			break;
+        }
+
         break;
     }
     default: {
@@ -645,15 +735,28 @@ void DPExternalRequestHandler::externalResetLogCommand(evhttp_request *req, Core
  * Receives a commit request and boardcasts it to other shards
  */
 void DPExternalRequestHandler::externalCommitCommand(evhttp_request *req, CoreShardInfo * coreShardInfo){
-	CommandStatusAggregatorAndPrint<SerializableCommitCommandInput> * resultsAggregator =
-			new CommandStatusAggregatorAndPrint<SerializableCommitCommandInput>(configurationManager, req);
+	boost::shared_ptr<CommandStatusAggregatorAndPrint<SerializableCommitCommandInput> >
+	resultsAggregator(new CommandStatusAggregatorAndPrint<SerializableCommitCommandInput>(configurationManager, req));
 
 	SerializableCommitCommandInput * commitInput = new SerializableCommitCommandInput();
 	// add request object to results aggregator which is the callback object
-	resultsAggregator->addRequestObject(commitInput);
 	timeval t;
 	t.tv_sec = 2000;
-	routingManager->broadcast_wait_for_all_w_cb_n_timeout(commitInput, resultsAggregator, t, *coreShardInfo);
+	RoutingManagerAPIReturnType routingStatus =
+			routingManager->broadcast_wait_for_all_w_cb_n_timeout<SerializableCommitCommandInput, SerializableCommandStatus>
+			(commitInput, resultsAggregator, t, *coreShardInfo);
+
+    switch (routingStatus) {
+		case RoutingManagerAPIReturnTypeAllNodesDown:
+	        // if the query is not valid, print the error message to the response
+			bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
+					"All nodes are down.");
+			return;
+		default:
+			break;
+    }
+
+
 }
 
 

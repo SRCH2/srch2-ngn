@@ -37,6 +37,11 @@ enum ShardingMessageType{
     LeaderElectionDenyMessageType
 };
 
+enum RoutingManagerAPIReturnType{
+	RoutingManagerAPIReturnTypeSuccess,
+	RoutingManagerAPIReturnTypeAllNodesDown
+};
+
 }
 }
 

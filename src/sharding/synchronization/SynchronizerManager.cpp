@@ -107,6 +107,7 @@ void Synchronizer::sendHeartBeatToAllNodesInCluster() {
 
 void Synchronizer::route(NodeId node, Message *msg) {
 	msg->setMask(0);
+	msg->setMessageId(transport.getUniqueMessageIdValue());
 	transport.route(node, msg);
 }
 unsigned Synchronizer::findNextEligibleMaster() {

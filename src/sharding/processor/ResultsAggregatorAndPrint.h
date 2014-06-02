@@ -23,6 +23,9 @@ using namespace srch2is;
 namespace srch2 {
 namespace httpwrapper {
 
+template <class Request, class Response>
+class PendingMessage;
+
 struct ResultsAggregatorAndPrintMetadata{
 
 };
@@ -40,14 +43,13 @@ public:
 	 * This function is called by RoutingManager if a timeout happens, The call to
 	 * this function must be between preProcessing(...) and callBack()
 	 */
-	virtual void timeoutProcessing(ShardId * shardInfo,
-			Request * sentRequest, ResultsAggregatorAndPrintMetadata metadata){};
+	virtual void timeoutProcessing(PendingMessage<Request, Response> * message,ResultsAggregatorAndPrintMetadata metadata){};
 
 	/*
 	 * The callBack function used by routing manager
 	 */
-	virtual void callBack(Response * responseObject){};
-	virtual void callBack(vector<Response *> responseObjects){};
+	virtual void callBack(PendingMessage<Request, Response> * message){};
+	virtual void callBack(vector<PendingMessage<Request, Response> * > messages){};
 
 	/*
 	 * The last call back function called by RoutingManager in all cases.
@@ -59,55 +61,9 @@ public:
 	 */
 	virtual void finalize(ResultsAggregatorAndPrintMetadata metadata){};
 
-	void addRequestObject(Request * req){
-		// request objects are added sequentially so we don't use lock
-		// in fact, all request objects are added in the beginning and by one single thread
-		ASSERT(req != NULL);
-		if(req != NULL){
-			this->requestObjects.push_back(req);
-		}
-	};
-	void addResponseObject(Response * responseObject){
-		boost::unique_lock< boost::shared_mutex > lock(_access);
-		ASSERT(responseObject != NULL);
-		if(responseObject != NULL){
-			responseObjects.push_back(responseObject);
-		}
-	};
-	void addResponseObjects(vector<Response *> responseObjects){
-		boost::unique_lock< boost::shared_mutex > lock(_access);
-		this->responseObjects.insert(this->responseObjects.end(), responseObjects.begin(), responseObjects.end());
-	};
 
-	unsigned getNumberOfRequests(){
-		boost::unique_lock< boost::shared_mutex > lock(_access);
-		return this->requestObjects.size();
-	}
+	virtual ~ResultAggregatorAndPrint(){};
 
-	virtual ~ResultAggregatorAndPrint(){
-		// delete request objects
-		for(typename vector<Request *>::iterator reqIter = requestObjects.begin();
-				reqIter != requestObjects.end(); ++reqIter){
-			ASSERT(*reqIter != NULL);
-			if(*reqIter != NULL){
-				delete *reqIter;
-			}
-		}
-		// delete response objects
-		for(typename vector<Response *>::iterator resIter = responseObjects.begin();
-				resIter != responseObjects.end(); ++resIter){
-			ASSERT(*resIter != NULL);
-			if(*resIter != NULL){
-				delete *resIter;
-			}
-		}
-	};
-
-private:
-	// we need lock because multiple threads can access responseObjects together
-	mutable boost::shared_mutex _access;
-	vector<Request *> requestObjects;
-	vector<Response *> responseObjects;
 };
 
 }

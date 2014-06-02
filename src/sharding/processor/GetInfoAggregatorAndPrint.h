@@ -27,14 +27,14 @@ public:
 	 * This function is called by RoutingManager if a timeout happens, The call to
 	 * this function must be between preProcessing(...) and callBack()
 	 */
-	void timeoutProcessing(ShardId * shardInfo, SerializableGetInfoCommandInput * sentRequest,
+	void timeoutProcessing(PendingMessage<SerializableGetInfoCommandInput, SerializableGetInfoResults> * message,
 			ResultsAggregatorAndPrintMetadata metadata);
 
 
 	/*
 	 * The main function responsible of aggregating status (success or failure) results
 	 */
-	void callBack(vector<SerializableGetInfoResults *> responseObjects);
+	void callBack(vector<PendingMessage<SerializableGetInfoCommandInput, SerializableGetInfoResults> * > messages);
 
 	/*
 	 * The last call back function called by RoutingManager in all cases.

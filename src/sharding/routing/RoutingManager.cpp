@@ -13,6 +13,9 @@ RoutingManager::RoutingManager(ConfigManager&  cm, TransportManager& transportMa
 
 	// share the internal message broker from RM to TM
 	transportManager.setInternalMessageBroker(&internalMessageBroker);
+	transportManager.setRoutingManager(this);
+
+	this->pendingRequestsHandler = new PendingRequestsHandler(transportManager.getMessageAllocator());
 
 	// TODO : do we have one Srch2Server per core? now, yes.
 	// create a server (core) for each data source in config file
@@ -63,8 +66,52 @@ InternalMessageBroker * RoutingManager::getInternalMessageBroker(){
 	return &this->internalMessageBroker;
 }
 
+PendingRequestsHandler * RoutingManager::getPendingRequestsHandler(){
+	return this->pendingRequestsHandler;
+}
+
+TransportManager& RoutingManager::getTransportManager(){
+	return transportManager;
+}
+
 MessageAllocator * RoutingManager::getMessageAllocator() {
 	return transportManager.getMessageAllocator();
+}
+
+void * routeInternalMessage(void * arg) {
+	std::pair<RoutingManager * , std::pair<Message *, NodeId> >  * rmAndMsgPointers =
+			(std::pair<RoutingManager * , std::pair<Message * , NodeId> >  *)arg;
+
+	RoutingManager * rm = rmAndMsgPointers->first;
+	Message * msg = rmAndMsgPointers->second.first;
+	NodeId nodeId = rmAndMsgPointers->second.second;
+
+	ASSERT(msg->isInternal());
+	if(msg->isNoReply()){
+		// this msg comes from a local broadcast or route with no call back
+		// so there is no reply for this msg.
+		// notifyNoReply should deallocate the obj in msg
+		// because msg just keeps a pointer to that object
+		// and that object itself needs to be deleted.
+		rm->getInternalMessageBroker()->notifyNoReply(msg);
+		rm->getTransportManager().getMessageAllocator()->deallocateByMessagePointer(msg);
+
+	}
+	Message* reply = rm->getInternalMessageBroker()->notifyWithReply(msg);
+	ASSERT(reply != NULL);
+	if(reply != NULL) {
+		reply->setRequestMessageId(msg->getMessageId());
+		reply->setReply()->setInternal();
+		if ( ! rm->getPendingRequestsHandler()->resolveResponseMessage(reply, nodeId)){
+			// TODO : reply could not be resolbved.
+			rm->getTransportManager().getMessageAllocator()->deallocateByMessagePointer(reply);
+		}
+	}
+	if(reply == NULL){
+		Logger::console("Reply is null");
+	}
+	// what if resolve returns NULL for something?
+	delete arg;
 }
 
 } }

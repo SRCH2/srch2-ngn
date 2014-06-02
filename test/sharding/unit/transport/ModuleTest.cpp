@@ -141,6 +141,7 @@ int main() {
       msg->mask |= INTERNAL_MASK;
       msg->bodySize = messageLength+1;
       msg->shardId.coreId = n->getId();
+      msg->setMessageId(tm->getUniqueMessageIdValue());
       memcpy(msg->body, MESSAGE_CONTENTS[m], messageLength);
 
       tm->route(node->getId(), msg);

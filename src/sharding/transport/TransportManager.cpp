@@ -237,7 +237,6 @@ bool recieveMessage(int fd, TransportCallback *cb) {
 }
 
 TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
-	pendingMessagesHandler.setTransportManager(this);
 	// for each node we have, if it's us just store out event base
 	// otherwise it stores the node as a destination
 	for(Nodes::iterator dest = nodes.begin(); dest!= nodes.end(); ++dest) {
@@ -289,47 +288,9 @@ TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
 	internalTrampoline = NULL;
 }
 
-void * routeInternalMessage(void * tmAndMsg) {
-	DisptchArguments * pointers = (DisptchArguments *)tmAndMsg;
-	TransportManager * tm = pointers->tm;
-	Message * msg = pointers->message;
 
-	if(msg->isInternal()) {
-		if(msg->isNoReply()){
-			// this msg comes from a local broadcast or route with no call back
-			// so there is no reply for this msg.
-			// notifyNoReply should deallocate the obj in msg
-			// because msg just keeps a pointer to that object
-			// and that object itself needs to be deleted.
-			tm->getInternalTrampoline()->notifyNoReply(msg);
-		} else {
-			Message* reply = tm->getInternalTrampoline()->notifyWithReply(msg);
-			ASSERT(reply != NULL);
-			if(reply != NULL) {
-				reply->setRequestMessageId(msg->getMessageId());
-				reply->setReply()->setInternal();
-				tm->getPendingMessagesHandler()->resolveResponseMessage(reply);
-				//NOTE: Who will the reply message ??
-			}
-			if(reply == NULL){
-				Logger::console("Reply is null");
-			}
-		}
-	} else {
-		if (tm->getSmHandler() != NULL) {
-			tm->getSmHandler()->notifyWithReply(msg);
-		} else {
-			Logger::debug( "SM handler is not ready yet");
-		}
-	}
-	// and delete the msg
-	tm->getMessageAllocator()->deallocateByMessagePointer(msg);
-	delete pointers;
-	return NULL;
-}
-
-MessageID_t TransportManager::route(NodeId node, Message *msg, 
-		unsigned timeout, CallbackReference callback) {
+MessageID_t TransportManager::route(NodeId node,Message * msg,
+		unsigned timeout) {
 
 	if(msg == NULL){
 		Logger::console("Trying to send NULL message in TM route(node,msg)");
@@ -337,27 +298,6 @@ MessageID_t TransportManager::route(NodeId node, Message *msg,
 	}
 	if(! msg->isSMRelated()){
 		Logger::console("Message is being sent through TM route(node,msg). Msg type is %d", msg->getType());
-	}
-
-	// we use a clock for the IDs of Messages
-	msg->setMessageId( __sync_fetch_and_add(&distributedTime, 1));
-
-	// TODO VARIABLE IS NOT USED
-	time_t timeOfTimeout_time = timeout + time(NULL);
-	// only messages which expect reply will go to pending messages
-	if(! msg->isNoReply()){
-		pendingMessagesHandler.addPendingMessage(timeout, msg->getMessageId(), callback);
-	}
-
-	if(msg->isLocal()) {
-		Logger::console("Message is local");
-		DisptchArguments * pointers = new DisptchArguments(this, msg);
-		pthread_t internalMessageRouteThread;
-		if (pthread_create(&internalMessageRouteThread, NULL, routeInternalMessage, pointers) != 0){
-			Logger::console("Cannot create thread for handling local message");
-			return 255; // TODO: throw exception.
-		}
-		return msg->getMessageId();
 	}
 
 	Connection conn = routeMap.getConnection(node);
@@ -375,6 +315,7 @@ MessageID_t TransportManager::route(NodeId node, Message *msg,
  */
 
 MessageID_t TransportManager::_route(int fd, Message *msg) {
+
 	if(msg == NULL){
 		Logger::console("Trying to send NULL message in TM route(fd,msg)");
 		return 0;
@@ -382,7 +323,6 @@ MessageID_t TransportManager::_route(int fd, Message *msg) {
 	if(! msg->isSMRelated()){
 		Logger::console("Message is being sent through TM route(fd,msg). Msg type is %d", msg->getType());
 	}
-	//msg->setMessageId( __sync_fetch_and_add(&distributedTime, 1));
 
 	/*
 	 *  This flag makes sure that we do get SIGPIPE signal when other end
@@ -449,8 +389,12 @@ MessageID_t& TransportManager::getDistributedTime() {
 	return distributedTime;
 }
 
-CallBackHandler* TransportManager::getInternalTrampoline() {
-	return internalTrampoline;
+MessageID_t TransportManager::getUniqueMessageIdValue(){
+	return __sync_fetch_and_add(&distributedTime, 1);
+}
+
+CallBackHandler* TransportManager::getRmHandler() {
+	return routeManagerHandler;
 }
 
 pthread_t TransportManager::getListeningThread() const {
@@ -461,8 +405,12 @@ MessageAllocator * TransportManager::getMessageAllocator() {
 	return &messageAllocator;
 }
 
-PendingMessagesHandler * TransportManager::getPendingMessagesHandler() {
-	return &pendingMessagesHandler;
+RoutingManager * TransportManager::getRoutingManager(){
+	return this->routingManager;
+}
+
+void TransportManager::setRoutingManager(RoutingManager * rm){
+	this->routingManager = rm;
 }
 
 RouteMap * TransportManager::getRouteMap() {

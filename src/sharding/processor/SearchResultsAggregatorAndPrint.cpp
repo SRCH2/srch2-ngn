@@ -1,6 +1,6 @@
 #include "SearchResultsAggregatorAndPrint.h"
 #include "core/util/RecordSerializerUtil.h"
-
+#include "sharding/routing/PendingMessages.h"
 namespace srch2is = srch2::instantsearch;
 using namespace std;
 
@@ -38,16 +38,17 @@ struct timespec & SearchResultAggregatorAndPrint::getStartTimer(){
  * this function uses aggregateRecords and aggregateFacets for
  * aggregating result records and calculated records
  */
-void SearchResultAggregatorAndPrint::callBack(vector<SerializableSearchResults *> responseObjects){
+void SearchResultAggregatorAndPrint::callBack(vector<PendingMessage<SerializableSearchCommandInput,
+		SerializableSearchResults> * > messages){
 
 
 	// move on all responses of all shards and use them
-	for(int responseIndex = 0 ; responseIndex < responseObjects.size() ; ++responseIndex ){
-		QueryResults * resultsOfThisShard = responseObjects.at(responseIndex)->getQueryResults();
+	for(int responseIndex = 0 ; responseIndex < messages.size() ; ++responseIndex ){
+		QueryResults * resultsOfThisShard = messages.at(responseIndex)->getResponseObject()->getQueryResults();
 		resultsOfAllShards.push_back(
-		        make_pair(resultsOfThisShard, responseObjects.at(responseIndex)->getInMemoryRecordStrings()));
-		if(results.aggregatedSearcherTime < responseObjects.at(responseIndex)->getSearcherTime()){
-			results.aggregatedSearcherTime = responseObjects.at(responseIndex)->getSearcherTime();
+		        make_pair(resultsOfThisShard, messages.at(responseIndex)->getResponseObject()->getInMemoryRecordStrings()));
+		if(results.aggregatedSearcherTime < messages.at(responseIndex)->getResponseObject()->getSearcherTime()){
+			results.aggregatedSearcherTime = messages.at(responseIndex)->getResponseObject()->getSearcherTime();
 		}
 	}
 	aggregateRecords();

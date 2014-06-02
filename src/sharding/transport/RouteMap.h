@@ -32,11 +32,14 @@ typedef unsigned NodeId;
 
 class Connection {
 public:
-	int fd;
-	MessageBuffer buffer;
-	bool sendLock;
-	Connection(int fd) : fd(fd),sendLock(false) {}
-	Connection():fd(-1),sendLock(false){}
+  int fd;
+  MessageBuffer buffer;
+  bool sendLock;
+  NodeId nodeId;
+
+  Connection(int fd, NodeId nodeId) : fd(fd), nodeId(nodeId), sendLock(false) {}
+  Connection():fd(-1),sendLock(false) {}
+
 };
 typedef std::pair<sockaddr_in, NodeId> ConnectionInfo;
 typedef std::pair<ConnectionInfo, bool> Route;
