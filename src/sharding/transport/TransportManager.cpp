@@ -382,7 +382,7 @@ MessageID_t TransportManager::_route(int fd, Message *msg) {
 	if(! msg->isSMRelated()){
 		Logger::console("Message is being sent through TM route(fd,msg). Msg type is %d", msg->getType());
 	}
-	msg->setMessageId( __sync_fetch_and_add(&distributedTime, 1));
+	//msg->setMessageId( __sync_fetch_and_add(&distributedTime, 1));
 
 	/*
 	 *  This flag makes sure that we do get SIGPIPE signal when other end
