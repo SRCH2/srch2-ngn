@@ -73,17 +73,40 @@ void RoutingManager::sendInternalMessage(Message * msg, RequestType * requestObj
 	// if the message is a local message,
 	ASSERT(msg->isLocal());
 
-	Logger::console("Message is local");
-	pthread_t internalMessageRouteThread;
+	if(msg->isNoReply()){
+		// this msg comes from a local broadcast or route with no call back
+		// so there is no reply for this msg.
+		// notifyNoReply should deallocate the obj in msg
+		// because msg just keeps a pointer to that object
+		// and that object itself needs to be deleted.
+		getInternalMessageBroker()->notifyNoReply(msg);
+		getTransportManager().getMessageAllocator()->deallocateByMessagePointer(msg);
 
-	std::pair<RoutingManager * ,  std::pair< Message * , NodeId> > * rmAndMsgPointers =
-			new std::pair<RoutingManager * , std::pair<Message *, NodeId> >(this,
-					std::make_pair(msg, nodeId));
-
-	if (pthread_create(&internalMessageRouteThread, NULL, routeInternalMessage, rmAndMsgPointers) != 0){
-		Logger::console("Cannot create thread for handling local message");
-		return;
 	}
+	Message* reply = getInternalMessageBroker()->notifyWithReply(msg);
+	ASSERT(reply != NULL);
+	if(reply != NULL) {
+		reply->setRequestMessageId(msg->getMessageId());
+		reply->setReply()->setInternal();
+		if ( ! getPendingRequestsHandler()->resolveResponseMessage(reply, nodeId)){
+			// TODO : reply could not be resolbved.
+			getTransportManager().getMessageAllocator()->deallocateByMessagePointer(reply);
+		}
+	}
+	if(reply == NULL){
+		Logger::console("Reply is null");
+	}
+//	Logger::console("Message is local");
+//	pthread_t internalMessageRouteThread;
+//
+//	std::pair<RoutingManager * ,  std::pair< Message * , NodeId> > * rmAndMsgPointers =
+//			new std::pair<RoutingManager * , std::pair<Message *, NodeId> >(this,
+//					std::make_pair(msg, nodeId));
+//
+//	if (pthread_create(&internalMessageRouteThread, NULL, routeInternalMessage, rmAndMsgPointers) != 0){
+//		Logger::console("Cannot create thread for handling local message");
+//		return;
+//	}
 }
 
 template<typename RequestType , typename ResponseType> inline
@@ -126,8 +149,8 @@ RoutingManagerAPIReturnType RoutingManager::broadcast(RequestType * requestObj, 
 
 
 
-	Message * internalMessage;
-	Message * externalMessage;
+	Message * internalMessage = NULL;
+	Message * externalMessage = NULL;
 
 	timeval timeValue;
 	timeValue.tv_sec = timeValue.tv_usec = 0;
@@ -225,8 +248,8 @@ RoutingManagerAPIReturnType RoutingManager::broadcast_w_cb(RequestType * request
 			this->pendingRequestsHandler->registerPendingRequest(false, aggregator, totalNumberOfRepliesToExpect);
 
 
-	Message * internalMessage;
-	Message * externalMessage;
+	Message * internalMessage = NULL;
+	Message * externalMessage = NULL;
 
 	timeval timeValue;
 	timeValue.tv_sec = timeValue.tv_usec = 0;
@@ -304,8 +327,8 @@ RoutingManagerAPIReturnType RoutingManager::broadcast_wait_for_all_w_cb(RequestT
 			this->pendingRequestsHandler->registerPendingRequest(true, aggregator, totalNumberOfRepliesToExpect);
 
 
-	Message * internalMessage;
-	Message * externalMessage;
+	Message * internalMessage = NULL;
+	Message * externalMessage = NULL;
 	timeval timeValue;
 	timeValue.tv_sec = timeValue.tv_usec = 0;
 
@@ -386,8 +409,8 @@ RoutingManagerAPIReturnType RoutingManager::broadcast_w_cb_n_timeout(RequestType
 			this->pendingRequestsHandler->registerPendingRequest(false, aggregator, totalNumberOfRepliesToExpect);
 
 
-	Message * internalMessage;
-	Message * externalMessage;
+	Message * internalMessage = NULL;
+	Message * externalMessage = NULL;
 
 
 	// iterate on all destinations and send the message
@@ -459,8 +482,8 @@ RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType * requestObj,
 	PendingRequest<RequestType, ResponseType> * pendingRequest =
 			this->pendingRequestsHandler->registerPendingRequest(true, aggregator, totalNumberOfRepliesToExpect);
 
-	Message * internalMessage;
-	Message * externalMessage;
+	Message * internalMessage = NULL;
+	Message * externalMessage = NULL;
 
 
 	// iterate on all destinations and send the message

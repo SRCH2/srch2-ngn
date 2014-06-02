@@ -27,9 +27,9 @@ Synchronizer::Synchronizer(ConfigManager& cm, TransportManager& tm, unsigned mas
 	//pingInterval = cm.getDiscoveryParams().pingInterval;  TODO
 	//pingTimeout = cm.getDiscoveryParams().pingTimeout;  TODO
 
-	pingInterval = 2;
-	pingTimeout = 6;
-	initialTimeout = 60;  // for V0
+	pingInterval = 2000;
+	pingTimeout = 6000;
+	initialTimeout = 60000;  // for V0
 
 	nodesInCluster = *(cluster->getNodes());
 	for (unsigned i = 0; i < nodesInCluster.size(); ++i) {

@@ -33,6 +33,9 @@ void GetInfoAggregatorAndPrint::preProcessing(ResultsAggregatorAndPrintMetadata 
 void GetInfoAggregatorAndPrint::timeoutProcessing(PendingMessage<SerializableGetInfoCommandInput,
 		SerializableGetInfoResults> * message,
 		ResultsAggregatorAndPrintMetadata metadata){
+	if(message == NULL){
+		return;
+	}
 	boost::unique_lock< boost::shared_mutex > lock(_access);
 	messages << "{\"shard getInfo\":\"failed\",\"reason\":\"Corresponging shard ("<<
 					message->getNodeId()<<") timedout.\"}";
@@ -48,6 +51,9 @@ void GetInfoAggregatorAndPrint::callBack(vector<PendingMessage<SerializableGetIn
 	for(vector<PendingMessage<SerializableGetInfoCommandInput,
 			SerializableGetInfoResults> * >::iterator messageItr = messages.begin();
 			messageItr != messages.end() ; ++messageItr){
+		if(*messageItr == NULL || (*messageItr)->getResponseObject() == NULL){
+			continue;
+		}
 		this->readCount += (*messageItr)->getResponseObject()->getReadCount();
 		this->writeCount += (*messageItr)->getResponseObject()->getWriteCount();
 		this->numberOfDocumentsInIndex += (*messageItr)->getResponseObject()->getNumberOfDocumentsInIndex();
