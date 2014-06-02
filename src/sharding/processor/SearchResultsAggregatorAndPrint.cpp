@@ -44,6 +44,9 @@ void SearchResultAggregatorAndPrint::callBack(vector<PendingMessage<Serializable
 
 	// move on all responses of all shards and use them
 	for(int responseIndex = 0 ; responseIndex < messages.size() ; ++responseIndex ){
+		if(messages.at(responseIndex) == NULL || messages.at(responseIndex)->getResponseObject() == NULL){
+			continue;
+		}
 		QueryResults * resultsOfThisShard = messages.at(responseIndex)->getResponseObject()->getQueryResults();
 		resultsOfAllShards.push_back(
 		        make_pair(resultsOfThisShard, messages.at(responseIndex)->getResponseObject()->getInMemoryRecordStrings()));

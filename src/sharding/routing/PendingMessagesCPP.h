@@ -75,12 +75,7 @@ PendingMessage<Request, Response>::~PendingMessage(){
 
 	// request object and message are protected by shared pointer.
 
-//	rm->getTransportManager().getMessageAllocator()->deallocateByMessagePointer(requestMessage); // TODO compile issue
-	messageAllocator->deallocateByMessagePointer(requestMessage);
-	delete requestObject;
-
 	if(responseMessage != NULL){
-//		rm->getTransportManager().getMessageAllocator()->deallocateByMessagePointer(responseMessage); // TODO compile issue
 		messageAllocator->deallocateByMessagePointer(responseMessage);
 		ASSERT(responseObject != NULL);
 		delete responseObject;
@@ -155,7 +150,6 @@ bool PendingRequest<Request, Response>::resolveResponseMessage(Message * respons
 		// this response message
 		// iterate on external pending messages and look for nodeId
 		for(unsigned pendingMessageIndex = 1 ; pendingMessageIndex < pendingMessages.size() ; pendingMessageIndex ++){
-			ASSERT(pendingMessages.at(pendingMessageIndex) != NULL);
 			if(pendingMessages.at(pendingMessageIndex) != NULL){
 				if(pendingMessages.at(pendingMessageIndex)->doesExpectFromThisShard(nodeIdOfResponse)){
 					// this pending request is responsible of this response
@@ -163,7 +157,7 @@ bool PendingRequest<Request, Response>::resolveResponseMessage(Message * respons
 					pendingMessageLocation = pendingMessageIndex;
 					break;
 				}
-			}// TODO : should not be null
+			}// when it is NULL it means the response of this PendingMessage has come earlier.
 		}
 	}
 	if(pendingMessage == NULL){ // no pending message is found for this response so it is timedout
@@ -187,7 +181,11 @@ bool PendingRequest<Request, Response>::resolveResponseMessage(Message * respons
 	pendingMessage->setResponseMessageAndObject(responseMessage , responseObject);
 
 	// 6. put the satisfied pending message in pendingMessagesWithResponse
-	pendingMessagesWithResponse.push_back(pendingMessage);
+	if(responseMessage->isLocal()){
+		pendingMessagesWithResponse.at(0) = pendingMessage;
+	}else{
+		pendingMessagesWithResponse.push_back(pendingMessage);
+	}
 
 	// if it's not a waitForAll case we call callback right here.
 	if(! shouldWaitForAll()){
@@ -211,11 +209,17 @@ bool PendingRequest<Request, Response>::isResponseMessageMine(Message * response
 
 
 // returns true if all pendingMessages have either timed out or received a response
+//
 template <class Request, class Response> inline
 bool PendingRequest<Request, Response>::shouldFinalize(){
 	// get a read lock on pendingMessages,
-	boost::shared_lock< boost::shared_mutex > lock(_access);
-	return (pendingMessagesWithResponse.size() == totalNumberOfPendingMessages);
+	// this function should only be called within a locked scope
+	unsigned numberOfPendingMessagesWithResponse = pendingMessagesWithResponse.size() ;
+	// because the first one the place holder for local pending message and it's always there
+	if(pendingMessagesWithResponse.at(0) == NULL){
+		numberOfPendingMessagesWithResponse--;
+	}
+	return (numberOfPendingMessagesWithResponse == totalNumberOfPendingMessages);
 }
 
 

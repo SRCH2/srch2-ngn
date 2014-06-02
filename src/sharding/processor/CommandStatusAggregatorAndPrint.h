@@ -70,6 +70,10 @@ public:
 	void timeoutProcessing(PendingMessage<RequestWithStatusResponse, SerializableCommandStatus> * message,
 			ResultsAggregatorAndPrintMetadata metadata){
 
+		if(message == NULL){
+			return;
+		}
+
 		RequestWithStatusResponse * sentRequest = message->getRequestObject();
 
 		if(((string)"SerializableInsertUpdateCommandInput").compare(typeid(sentRequest).name()) == 0){// timeout in insert and update
@@ -119,11 +123,18 @@ public:
 	 */
 	void callBack(PendingMessage<RequestWithStatusResponse, SerializableCommandStatus> * message){
 
+		if(message == NULL){
+			return;
+		}
 		boost::unique_lock< boost::shared_mutex > lock(_access);
 		if(messages.str().compare("") != 0){ // string not empty
 			messages << ",";
 		}
-		messages << message->getResponseObject()->getMessage();
+		if(message->getResponseObject() == NULL){
+			messages << "Node " << message->getNodeId() << " timed out.";
+		}else{
+			messages << message->getResponseObject()->getMessage();
+		}
 
 	}
 
@@ -134,10 +145,17 @@ public:
 		unsigned shardIndex = 0;
 		for(typename vector<PendingMessage<RequestWithStatusResponse, SerializableCommandStatus> * >::iterator
 				messageItr	= messagesArg.begin(); messageItr != messagesArg.end(); ++messageItr){
+			if(*messageItr == NULL){
+				continue;
+			}
 			if(messages.str().compare("") != 0){ // string not empty
 				messages << ",";
 			}
-			messages << "\"shard_" << shardIndex << "\":" << (*messageItr)->getResponseObject()->getMessage();
+			if((*messageItr)->getResponseObject() == NULL){
+				messages << "\"shard_" << shardIndex << "\": timed out.";
+			}else{
+				messages << "\"shard_" << shardIndex << "\":" << (*messageItr)->getResponseObject()->getMessage();
+			}
 			//
 			shardIndex ++;
 		}

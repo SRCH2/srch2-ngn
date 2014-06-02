@@ -130,8 +130,10 @@ private:
 		this->messageAllocator = messageAllocator;
 
 		this->aggregator = aggregator;
+		this->aggregator->preProcessing(ResultsAggregatorAndPrintMetadata() );
 		// index zero is for the local node.
 		pendingMessages.push_back(NULL);
+		pendingMessagesWithResponse.push_back(NULL);
 		// initialize these members to avoid garbage values
 		localRequestMessageId = 0;
 		externalRequestMessageId = 0;
@@ -139,15 +141,45 @@ private:
 	~PendingRequest(){
 		// aggregator is wrapped in a shared_ptr so it's deleted when all shared_ptr objects are deleted
 		// go over all pending messages and delete them.
+		if(shouldWaitForAll()){
+			// we should call callBackAll here
+			this->aggregator->callBack(pendingMessagesWithResponse);
+		}
+		this->aggregator->finalize(ResultsAggregatorAndPrintMetadata());
 		for(typename vector <PendingMessage<Request, Response> *>::iterator pendingMessageItr = pendingMessages.begin() ;
 				pendingMessageItr != pendingMessages.end() ; ++pendingMessageItr){
 			ASSERT(*pendingMessageItr == NULL);
 		}
 
+
+		// request message and object are shared so they must be deleted only once.
+		// delete local request message
+		if(pendingMessagesWithResponse.at(0) != NULL){ // for example for insert, local pending message can be NULL
+			messageAllocator->deallocateByMessagePointer(pendingMessagesWithResponse.at(0)->requestMessage);
+		}
+		// delete external request message
+		if(pendingMessagesWithResponse.size() > 1){
+			ASSERT(pendingMessagesWithResponse.at(1) != NULL);
+			messageAllocator->deallocateByMessagePointer(pendingMessagesWithResponse.at(1)->requestMessage);
+		}
+		// delete request object which is even shared between local and external messages
+		if(pendingMessagesWithResponse.at(0) != NULL){
+			delete pendingMessagesWithResponse.at(0)->requestObject;
+		}else{
+			if(pendingMessagesWithResponse.size() > 1){
+				ASSERT(pendingMessagesWithResponse.at(1) != NULL);
+				delete pendingMessagesWithResponse.at(1)->requestObject;
+			}
+		}
+
+
 		for(typename vector <PendingMessage<Request, Response> *>::iterator resolvedPendingMessageItr = pendingMessagesWithResponse.begin() ;
 				resolvedPendingMessageItr != pendingMessagesWithResponse.end() ; ++resolvedPendingMessageItr){
-			ASSERT(*resolvedPendingMessageItr);
-			delete *resolvedPendingMessageItr;
+			ASSERT(resolvedPendingMessageItr == pendingMessagesWithResponse.begin() ||
+					*resolvedPendingMessageItr != NULL);
+			if(*resolvedPendingMessageItr != NULL){
+				delete *resolvedPendingMessageItr;
+			}
 		}
 	}
 
