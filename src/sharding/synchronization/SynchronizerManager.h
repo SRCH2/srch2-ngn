@@ -36,7 +36,10 @@ public:
 	void run();
 private:
 	unsigned getTimeout() { return initialTimeout ; }      // temp for V0 replace with pingTimeout in V1
-	void resetTimeout() { initialTimeout = pingTimeout; }  // temp for V0
+	void resetTimeout() {
+		Logger::console("resetting timeout to %d", pingTimeout);
+		initialTimeout = pingTimeout;
+	}  // temp for V0
 	void refresh() {};
 	unsigned findNextEligibleMaster();
 	void sendHeartBeatToAllNodesInCluster();
