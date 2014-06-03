@@ -89,7 +89,7 @@ unsigned MongoDataSource::createNewIndexes(srch2is::Indexer* indexer, const Core
 }
 
 void MongoDataSource::spawnUpdateListener(Srch2Server * server){
-
+//##Create thread for listener
     int res = pthread_create(MongoDataSource::mongoListenerThread, NULL,
     		MongoDataSource::runUpdateListener, (void *)server);
     if (res != 0)
@@ -97,12 +97,14 @@ void MongoDataSource::spawnUpdateListener(Srch2Server * server){
 
 }
 
+
+//##For each thread,
 void* MongoDataSource::runUpdateListener(void *searchServer){
     Logger::console("MOGNOLISTENER: thread started ...");
     Srch2Server * server =(Srch2Server *)searchServer;
     const CoreInfo_t *config = server->indexDataConfig;
     string mongoNamespace= "local.oplog.rs";
-    string filterNamespace = "";
+    string filterNamespace = "";	//##"demo.movies"
     filterNamespace.append(config->getMongoDbName()).append(".").append(config->getMongoCollection());
     string host = config->getMongoServerHost();
     string port = config->getMongoServerPort();
@@ -113,9 +115,12 @@ void* MongoDataSource::runUpdateListener(void *searchServer){
     if (port.size()) {
         hostAndport.append(":").append(port);  // std::string is mutable unlike java
     }
+
+    //##Get mongodb connection
     mongo::ScopedDbConnection * mongoConnector = mongo::ScopedDbConnection::getScopedDbConnection(hostAndport);
     mongo::DBClientBase& oplogConnection = mongoConnector->conn();
 
+    //##The lastValue tracks the last accessed value
     mongo::BSONElement _lastValue = mongo::minKey.firstElement();
     bool printOnce = true;
     time_t opLogTime = 0;
@@ -227,6 +232,12 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
     }
 
     const CoreInfo_t *config = server->indexDataConfig;
+    if(config->getPrimaryKey().compare("_id")!=0)
+    {
+    	Logger::error("PerimaryKey error, expecting \"_id\" instead of %s, return.",config->getPrimaryKey().c_str());
+    	return;
+    }
+
     stringstream errorMsg;
 
     switch(operation[0])
@@ -263,6 +274,7 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
             break;
         }
         mongo::BSONElement pk = _oElement.Obj().getField(config->getPrimaryKey().c_str());
+        //mongo::BSONElement pk = _oElement.Obj().getField("_id");
         string primaryKeyStringValue;
         //mongo::BSONElement pk = bobj.getField(cmPtr->getPrimaryKey().c_str());
         if (pk.type() == mongo::jstOID && config->getPrimaryKey().compare("_id") == 0){
