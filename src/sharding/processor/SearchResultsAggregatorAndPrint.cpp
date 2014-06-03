@@ -219,7 +219,6 @@ void SearchResultAggregatorAndPrint::printResults(evhttp_request *req,
                 memcpy(inMemoryCharPtr, allResults.at(i).second.c_str(), allResults.at(i).second.size());
                 StoredRecordBuffer inMemoryData(inMemoryCharPtr, allResults.at(i).second.size());
             	if (inMemoryData.start.get() == NULL) {
-            		delete inMemoryCharPtr;
             		--resultFound;
             		continue;
             	}
@@ -242,7 +241,6 @@ void SearchResultAggregatorAndPrint::printResults(evhttp_request *req,
                 	root["results"][counter][internalRecordTags.first] = sbuffer;
                 }
                 ++counter;
-                delete inMemoryCharPtr;
             }
 
         } else // the query is including keywords:(1)only keywords (2)keywords+geo
@@ -253,7 +251,6 @@ void SearchResultAggregatorAndPrint::printResults(evhttp_request *req,
                 memcpy(inMemoryCharPtr, allResults.at(i).second.c_str(), allResults.at(i).second.size());
             	StoredRecordBuffer inMemoryData(inMemoryCharPtr, allResults.at(i).second.size());
             	if (inMemoryData.start.get() == NULL) {
-            		delete inMemoryCharPtr;
             		--resultFound;
             		continue;
             	}
@@ -302,7 +299,6 @@ void SearchResultAggregatorAndPrint::printResults(evhttp_request *req,
 //                //TODO genSnippetJSONString(i, start, recordSnippets, sbuffer, queryResults);
 //                root["results"][counter][internalSnippetTags.first] = sbuffer;
                 ++counter;
-                delete inMemoryCharPtr;
             }
 
             root["query_keywords"].resize(query->getQueryTerms()->size());
@@ -496,7 +492,6 @@ void SearchResultAggregatorAndPrint::printOneResultRetrievedById(evhttp_request 
         	root["results"][counter][internalRecordTags.first] = sbuffer;
         }
         ++counter;
-        delete inMemoryCharPtr;
     }
 
     clock_gettime(CLOCK_REALTIME, &tend);
