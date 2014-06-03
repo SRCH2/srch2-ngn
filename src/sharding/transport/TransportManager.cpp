@@ -93,6 +93,7 @@ void * notifyUpstreamHandlers(void *arg) {
 		}
 		tm->getMessageAllocator()->deallocateByMessagePointer(msg);
 	}
+	delete dispatchArgument;
 	return NULL;
 }
 
@@ -240,7 +241,7 @@ bool recieveMessage(int fd, TransportCallback *cb) {
 	DisptchArguments * arguments = new DisptchArguments(tm, msg, fd, cb->conn->nodeId);
 	pthread_t internalMessageRouteThread;
 	if (pthread_create(&internalMessageRouteThread, NULL, notifyUpstreamHandlers, arguments) != 0){
-		Logger::console("Cannot create thread for handling local message");
+		perror("Cannot create thread for handling local message");
 		return 255; // TODO: throw exception.
 	}
 	return true;
