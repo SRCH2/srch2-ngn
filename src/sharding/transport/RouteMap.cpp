@@ -232,6 +232,7 @@ void RouteMap::initRoute(Route& route) {
 	RouteMapAndRouteHandle *rNm = new RouteMapAndRouteHandle(*this, route);
 	// TODO : where should we deallocate this routemap ? never?
 	pthread_create(&rNm->connectingRouteThread, NULL, tryToConnect, rNm);
+	pthread_detach(rNm->connectingRouteThread);
 }
 
 void RouteMap::acceptRoute(int fd, struct sockaddr_in addr) {

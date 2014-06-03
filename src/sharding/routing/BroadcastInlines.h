@@ -81,6 +81,7 @@ void RoutingManager::sendInternalMessage(Message * msg, RequestType * requestObj
 		perror("Cannot create thread for handling local message");
 		return;
 	}
+	pthread_detach(internalMessageRouteThread);
 //	// for now, we use the same thread
 //	if(msg->isNoReply()){
 //		// this msg comes from a local broadcast or route with no call back

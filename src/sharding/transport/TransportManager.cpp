@@ -241,9 +241,10 @@ bool recieveMessage(int fd, TransportCallback *cb) {
 	DisptchArguments * arguments = new DisptchArguments(tm, msg, fd, cb->conn->nodeId);
 	pthread_t internalMessageRouteThread;
 	if (pthread_create(&internalMessageRouteThread, NULL, notifyUpstreamHandlers, arguments) != 0){
-		perror("Cannot create thread for handling local message");
+		perror("Cannot create thread for notifying handler");
 		return 255; // TODO: throw exception.
 	}
+	pthread_detach(internalMessageRouteThread);
 	return true;
 }
 
@@ -258,7 +259,7 @@ TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
 	}
 
 	pthread_create(&listeningThread, NULL, startListening, &routeMap);
-
+	pthread_detach(listeningThread);
 	// initializes the connections to other nodes using tryToConnect
 	// TODO in V1, this routeMap moves to SM
 	routeMap.initRoutes();
