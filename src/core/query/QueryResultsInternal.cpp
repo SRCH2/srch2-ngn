@@ -135,7 +135,7 @@ void * QueryResultsInternal::serializeForNetwork(void * buffer){
  * Serialization scheme :
  * | resultsApproximated | estimatedNumberOfResults | sortedFinalResults | facetResults |
  */
-void * QueryResultsInternal::deserializeForNetwork(void * buffer){
+void * QueryResultsInternal::deserializeForNetwork(void * buffer,QueryResultFactory * resultsFactory){
 
 	buffer = srch2::util::deserializeFixedTypes(buffer, resultsApproximated);
 	buffer = srch2::util::deserializeFixedTypes(buffer, estimatedNumberOfResults);
@@ -144,7 +144,7 @@ void * QueryResultsInternal::deserializeForNetwork(void * buffer){
 	buffer = srch2::util::deserializeFixedTypes(buffer, numberOfResults);
 	for(unsigned queryResultIndex = 0 ; queryResultIndex < numberOfResults ; ++queryResultIndex){
 		QueryResult * queryResult;
-		buffer = QueryResult::deserializeForNetwork(queryResult, buffer);
+		buffer = QueryResult::deserializeForNetwork(queryResult, buffer,resultsFactory);
 		sortedFinalResults.push_back(queryResult);
 	}
 
@@ -340,5 +340,74 @@ void QueryResultsInternal::finalizeResults(const ForwardIndex *forwardIndex) {
     ASSERT(this->nextKResultsHeap.size() == 0);
 }
 
+
+
+unsigned QueryResult::getNumberOfBytes(){
+	unsigned result = sizeof(QueryResult);
+	result += externalRecordId.capacity();
+	result += _score.getNumberOfBytes() - sizeof(TypedValue);
+	for(unsigned i=0 ; i< matchingKeywords.size(); ++i){
+		result += matchingKeywords[i].capacity();
+	}
+	result += attributeBitmaps.capacity() * sizeof(unsigned);
+	result += editDistances.capacity() * sizeof(unsigned);
+	result += termTypes.capacity() * sizeof(unsigned);
+	result += matchingKeywordTrieNodes.capacity() * sizeof(TrieNodePointer);
+	return result;
+}
+
+/*
+ * Serialization scheme :
+ * | internalRecordId | _score | externalRecordId | attributeBitmaps | \
+ *   editDistances | termTypes | matchingKeywords | physicalDistance |
+ */
+void * QueryResult::serializeForNetwork(void * buffer){
+	buffer = srch2::util::serializeFixedTypes(internalRecordId, buffer);
+	buffer = srch2::util::serializeFixedTypes(physicalDistance, buffer);
+	buffer = _score.serializeForNetwork(buffer);
+	buffer = srch2::util::serializeString(externalRecordId, buffer);
+	buffer = srch2::util::serializeVectorOfFixedTypes(attributeBitmaps, buffer);
+	buffer = srch2::util::serializeVectorOfFixedTypes(editDistances, buffer);
+	buffer = srch2::util::serializeVectorOfFixedTypes(termTypes, buffer);
+	buffer = srch2::util::serializeVectorOfString(matchingKeywords, buffer);
+
+	return buffer;
+}
+/*
+ * Serialization scheme :
+ * | physicalDistance | internalRecordId | _score | externalRecordId | attributeBitmaps | \
+ *   editDistances | termTypes | matchingKeywords |
+ */
+void * QueryResult::deserializeForNetwork(QueryResult * &queryResult, void * buffer,QueryResultFactory * resultsFactory){
+	queryResult = resultsFactory->impl->createQueryResult();
+	buffer = srch2::util::deserializeFixedTypes(buffer, queryResult->internalRecordId);
+	buffer = srch2::util::deserializeFixedTypes(buffer, queryResult->physicalDistance);
+	buffer = TypedValue::deserializeForNetwork(queryResult->_score, buffer);
+	buffer = srch2::util::deserializeString(buffer, queryResult->externalRecordId);
+	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, queryResult->attributeBitmaps);
+	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, queryResult->editDistances);
+	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, queryResult->termTypes);
+	buffer = srch2::util::deserializeVectorOfString(buffer, queryResult->matchingKeywords);
+
+	return buffer;
+}
+/*
+ * Serialization scheme :
+ * | internalRecordId | _score | externalRecordId | attributeBitmaps | \
+ *   editDistances | termTypes | matchingKeywords | physicalDistance |
+ */
+unsigned QueryResult::getNumberOfBytesForSerializationForNetwork(){
+	unsigned numberOfBytes = 0;
+	numberOfBytes += sizeof(internalRecordId);
+	numberOfBytes += sizeof(physicalDistance);
+	numberOfBytes += _score.getNumberOfBytesForSerializationForNetwork();
+	numberOfBytes += sizeof(unsigned) + externalRecordId.size();
+	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(attributeBitmaps);
+	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(editDistances);
+	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(termTypes);
+	numberOfBytes += srch2::util::getNumberOfBytesVectorOfString(matchingKeywords);
+
+	return numberOfBytes;
+}
 }
 }

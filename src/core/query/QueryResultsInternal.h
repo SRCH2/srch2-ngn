@@ -67,73 +67,26 @@ public:
     	return _score;
     }
 
-    unsigned getNumberOfBytes(){
-    	unsigned result = sizeof(QueryResult);
-    	result += externalRecordId.capacity();
-    	result += _score.getNumberOfBytes() - sizeof(TypedValue);
-    	for(unsigned i=0 ; i< matchingKeywords.size(); ++i){
-    		result += matchingKeywords[i].capacity();
-    	}
-    	result += attributeBitmaps.capacity() * sizeof(unsigned);
-    	result += editDistances.capacity() * sizeof(unsigned);
-    	result += termTypes.capacity() * sizeof(unsigned);
-    	result += matchingKeywordTrieNodes.capacity() * sizeof(TrieNodePointer);
-    	return result;
-    }
+    unsigned getNumberOfBytes();
 
     /*
      * Serialization scheme :
      * | internalRecordId | _score | externalRecordId | attributeBitmaps | \
      *   editDistances | termTypes | matchingKeywords | physicalDistance |
      */
-    void * serializeForNetwork(void * buffer){
-    	buffer = srch2::util::serializeFixedTypes(internalRecordId, buffer);
-    	buffer = srch2::util::serializeFixedTypes(physicalDistance, buffer);
-    	buffer = _score.serializeForNetwork(buffer);
-    	buffer = srch2::util::serializeString(externalRecordId, buffer);
-    	buffer = srch2::util::serializeVectorOfFixedTypes(attributeBitmaps, buffer);
-    	buffer = srch2::util::serializeVectorOfFixedTypes(editDistances, buffer);
-    	buffer = srch2::util::serializeVectorOfFixedTypes(termTypes, buffer);
-    	buffer = srch2::util::serializeVectorOfString(matchingKeywords, buffer);
-
-    	return buffer;
-    }
+    void * serializeForNetwork(void * buffer);
     /*
      * Serialization scheme :
      * | physicalDistance | internalRecordId | _score | externalRecordId | attributeBitmaps | \
      *   editDistances | termTypes | matchingKeywords |
      */
-    static void * deserializeForNetwork(QueryResult * &queryResult, void * buffer){
-    	queryResult = new QueryResult();
-    	buffer = srch2::util::deserializeFixedTypes(buffer, queryResult->internalRecordId);
-    	buffer = srch2::util::deserializeFixedTypes(buffer, queryResult->physicalDistance);
-    	buffer = TypedValue::deserializeForNetwork(queryResult->_score, buffer);
-    	buffer = srch2::util::deserializeString(buffer, queryResult->externalRecordId);
-    	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, queryResult->attributeBitmaps);
-    	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, queryResult->editDistances);
-    	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, queryResult->termTypes);
-    	buffer = srch2::util::deserializeVectorOfString(buffer, queryResult->matchingKeywords);
-
-    	return buffer;
-    }
+    static void * deserializeForNetwork(QueryResult * &queryResult, void * buffer,QueryResultFactory * resultsFactory);
     /*
      * Serialization scheme :
      * | internalRecordId | _score | externalRecordId | attributeBitmaps | \
      *   editDistances | termTypes | matchingKeywords | physicalDistance |
      */
-    unsigned getNumberOfBytesForSerializationForNetwork(){
-    	unsigned numberOfBytes = 0;
-    	numberOfBytes += sizeof(internalRecordId);
-    	numberOfBytes += sizeof(physicalDistance);
-    	numberOfBytes += _score.getNumberOfBytesForSerializationForNetwork();
-    	numberOfBytes += sizeof(unsigned) + externalRecordId.size();
-    	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(attributeBitmaps);
-    	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(editDistances);
-    	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(termTypes);
-    	numberOfBytes += srch2::util::getNumberOfBytesVectorOfString(matchingKeywords);
-
-    	return numberOfBytes;
-    }
+    unsigned getNumberOfBytesForSerializationForNetwork();
 
     friend class QueryResultFactoryInternal;
 private:
@@ -235,7 +188,7 @@ public:
      * | resultsApproximated | estimatedNumberOfResults | sortedFinalResults | facetResults |
      */
     void * serializeForNetwork(void * buffer);
-    void * deserializeForNetwork(void * buffer);
+    void * deserializeForNetwork(void * buffer,QueryResultFactory * resultsFactory);
     unsigned getNumberOfBytesForSerializationForNetwork();
 
 

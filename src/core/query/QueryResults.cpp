@@ -63,8 +63,8 @@ QueryResults::~QueryResults(){
 void * QueryResults::serializeForNetwork(void * buffer){
 	return impl->serializeForNetwork(buffer);
 }
-void * QueryResults::deserializeForNetwork(QueryResults &queryResults, void * buffer){
-	return queryResults.impl->deserializeForNetwork(buffer);
+void * QueryResults::deserializeForNetwork(QueryResults &queryResults, void * buffer,QueryResultFactory * resultsFactory){
+	return queryResults.impl->deserializeForNetwork(buffer,resultsFactory);
 }
 unsigned QueryResults::getNumberOfBytesForSerializationForNetwork(){
 	return impl->getNumberOfBytesForSerializationForNetwork();

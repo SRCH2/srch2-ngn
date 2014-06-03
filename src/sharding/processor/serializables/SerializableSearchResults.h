@@ -97,7 +97,7 @@ class SerializableSearchResults {
 		buffer = srch2::util::deserializeFixedTypes(buffer, isNotNull);
 		if(isNotNull){
 			SerializableSearchResults * searchResults = new SerializableSearchResults();
-			buffer = QueryResults::deserializeForNetwork(*(searchResults->queryResults),buffer);
+			buffer = QueryResults::deserializeForNetwork(*(searchResults->queryResults),buffer, searchResults->resultsFactory);
 			buffer = deserializeInMemoryRecordStrings(buffer,searchResults);
 			return searchResults;
 		}else{
