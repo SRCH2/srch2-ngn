@@ -37,7 +37,6 @@ public:
 private:
 	unsigned getTimeout() { return initialTimeout ; }      // temp for V0 replace with pingTimeout in V1
 	void resetTimeout() {
-		Logger::console("resetting timeout to %d", pingTimeout);
 		initialTimeout = pingTimeout;
 	}  // temp for V0
 	void refresh() {};

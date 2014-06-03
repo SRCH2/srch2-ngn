@@ -927,9 +927,9 @@ int main(int argc, char** argv) {
 	pthread_join(transportManager->getListeningThread(), NULL);
 	Logger::console("Thread = <%u> stopped", transportManager->getListeningThread());
 
-//	pthread_cancel(*synchronizerThread);
-//	pthread_join(*synchronizerThread, NULL);
-//	Logger::console("synch thread stopped.");
+	pthread_cancel(*synchronizerThread);
+	pthread_join(*synchronizerThread, NULL);
+	Logger::console("synch thread stopped.");
 
 	delete[] threadsToHandleExternalRequests;
 	delete[] threadsToHandleInternalRequests;
