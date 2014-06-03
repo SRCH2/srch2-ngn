@@ -68,7 +68,7 @@ public:
 	void notifyNoReply(Message * msg) {
 		notifyWithReply(msg);
 	}
-	Message*  notifyWithReply(Message *message) {
+	std::pair<Message*,void*>  notifyWithReply(Message *message) {
                   
 		switch(message->getType()){
 			case HeartBeatMessageType:
@@ -108,7 +108,7 @@ public:
 				}
 				break;
 		}
-		return NULL;
+		return std::make_pair<Message*,void*>(NULL,NULL);
 	}
 
 	SMCallBackHandler(bool isMaster) {

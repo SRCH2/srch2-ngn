@@ -23,7 +23,7 @@ public:
 	/*
 	 * Gets the internal message and routes it to one of the DPInternal functions
 	 */
-	Message* notifyWithReply(Message*);
+	std::pair<Message*,void*> notifyWithReply(Message*);
 
 	void notifyNoReply(Message * msg);
 
@@ -38,9 +38,9 @@ private:
 	DPInternalRequestHandler& internalDP;
 	RoutingManager&  routingManager;
 	template<typename RequestType, typename ResponseType>
-	Message* processRequestMessage(Message*, Srch2Server*,
+	std::pair<Message*,ResponseType*> processRequestMessage(Message*, Srch2Server*,
 			ResponseType * (DPInternalRequestHandler::*fn) (Srch2Server*, RequestType*));
-	Message*processRequestInsertUpdateMessage(Message *msg, Srch2Server* server, const Schema * schema);
+	std::pair<Message*,SerializableCommandStatus*> processRequestInsertUpdateMessage(Message *msg, Srch2Server* server, const Schema * schema);
 
 	template<typename RequestType>
 	void processRequestMessageNoReply(Message *msg);

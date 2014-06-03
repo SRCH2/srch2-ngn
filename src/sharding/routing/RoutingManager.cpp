@@ -97,12 +97,14 @@ void * routeInternalMessage(void * arg) {
 		rm->getTransportManager().getMessageAllocator()->deallocateByMessagePointer(msg);
 
 	}
-	Message* reply = rm->getInternalMessageBroker()->notifyWithReply(msg);
+	std::pair<Message*,void*> resultOfDPInternal = rm->getInternalMessageBroker()->notifyWithReply(msg);
+	Message* reply = resultOfDPInternal.first;
+	// and pass the response object to pending request
 	ASSERT(reply != NULL);
 	if(reply != NULL) {
 		reply->setRequestMessageId(msg->getMessageId());
 		reply->setReply()->setInternal();
-		if ( ! rm->getPendingRequestsHandler()->resolveResponseMessage(reply, nodeId)){
+		if ( ! rm->getPendingRequestsHandler()->resolveResponseMessage(reply, nodeId, resultOfDPInternal.second)){
 			// TODO : reply could not be resolbved.
 			rm->getTransportManager().getMessageAllocator()->deallocateByMessagePointer(reply);
 		}

@@ -68,7 +68,10 @@ void * notifyUpstreamHandlers(void *arg) {
 			tm->getMessageAllocator()->deallocateByMessagePointer(msg);
 		} else {
 			Logger::console("Request message is received. Msg type is %d", msg->getType());
-			Message* replyMessage = tm->getRmHandler()->notifyWithReply(msg);
+			std::pair<Message * , void *> resultOfDPInternal = tm->getRmHandler()->notifyWithReply(msg);
+			Message* replyMessage = resultOfDPInternal.first;
+			// responseObject must be deleted
+			ASSERT(resultOfDPInternal.second == NULL);
 			if(replyMessage != NULL) {
 				replyMessage->setRequestMessageId(msg->getMessageId());
 				replyMessage->setReply()->setInternal();

@@ -69,34 +69,7 @@ void RoutingManager::sendInternalMessage(Message * msg, RequestType * requestObj
 		// message will be deleted in routeInternalMessage
 	}
 
-
-	// if the message is a local message,
-	ASSERT(msg->isLocal());
-
-	if(msg->isNoReply()){
-		// this msg comes from a local broadcast or route with no call back
-		// so there is no reply for this msg.
-		// notifyNoReply should deallocate the obj in msg
-		// because msg just keeps a pointer to that object
-		// and that object itself needs to be deleted.
-		getInternalMessageBroker()->notifyNoReply(msg);
-		getTransportManager().getMessageAllocator()->deallocateByMessagePointer(msg);
-
-	}
-	Message* reply = getInternalMessageBroker()->notifyWithReply(msg);
-	ASSERT(reply != NULL);
-	if(reply != NULL) {
-		reply->setRequestMessageId(msg->getMessageId());
-		reply->setReply()->setInternal();
-		if ( ! getPendingRequestsHandler()->resolveResponseMessage(reply, nodeId)){
-			// TODO : reply could not be resolbved.
-			getTransportManager().getMessageAllocator()->deallocateByMessagePointer(reply);
-		}
-	}
-	if(reply == NULL){
-		Logger::console("Reply is null");
-	}
-//	Logger::console("Message is local");
+	Logger::console("Message is local");
 //	pthread_t internalMessageRouteThread;
 //
 //	std::pair<RoutingManager * ,  std::pair< Message * , NodeId> > * rmAndMsgPointers =
@@ -107,6 +80,32 @@ void RoutingManager::sendInternalMessage(Message * msg, RequestType * requestObj
 //		Logger::console("Cannot create thread for handling local message");
 //		return;
 //	}
+	// for now, we use the same thread
+	if(msg->isNoReply()){
+		// this msg comes from a local broadcast or route with no call back
+		// so there is no reply for this msg.
+		// notifyNoReply should deallocate the obj in msg
+		// because msg just keeps a pointer to that object
+		// and that object itself needs to be deleted.
+		getInternalMessageBroker()->notifyNoReply(msg);
+		getTransportManager().getMessageAllocator()->deallocateByMessagePointer(msg);
+
+	}
+	std::pair<Message*,void*> resultOfDPInternal = getInternalMessageBroker()->notifyWithReply(msg);
+	Message* reply = resultOfDPInternal.first;
+	// and pass the response object to pending request
+	ASSERT(reply != NULL);
+	if(reply != NULL) {
+		reply->setRequestMessageId(msg->getMessageId());
+		reply->setReply()->setInternal();
+		if ( ! getPendingRequestsHandler()->resolveResponseMessage(reply, nodeId, resultOfDPInternal.second)){
+			// TODO : reply could not be resolbved.
+			getTransportManager().getMessageAllocator()->deallocateByMessagePointer(reply);
+		}
+	}
+	if(reply == NULL){
+		Logger::console("Reply is null");
+	}
 }
 
 template<typename RequestType , typename ResponseType> inline

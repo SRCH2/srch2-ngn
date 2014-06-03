@@ -14,7 +14,7 @@ namespace httpwrapper {
 // sets the response message
 template <class Request, class Response> inline
 void PendingMessage<Request, Response>::setResponseMessageAndObject(Message* responseMessage, Response * responseObj){
-	ASSERT(responseMessage != NULL);
+	ASSERT(this->responseMessage == NULL);
 	this->responseMessage = responseMessage;
 	this->responseObject = responseObj;
 }
@@ -68,6 +68,8 @@ PendingMessage<Request, Response>::PendingMessage(MessageAllocator * messageAllo
 	this->timeout = timeout;
 	this->requestMessage = requestMessage;
 	this->requestObject = requestObject;
+	this->responseMessage = NULL;
+	this->responseObject = NULL;
 }
 
 template <class Request, class Response> inline
@@ -117,8 +119,9 @@ PendingMessage<Request, Response> * PendingRequest<Request, Response>::registerP
 
 // resolves the corresponding PendingMessage with this response
 template <class Request, class Response> inline
-bool PendingRequest<Request, Response>::resolveResponseMessage(Message * responseMessage, NodeId nodeIdOfResponse){
+bool PendingRequest<Request, Response>::resolveResponseMessage(Message * responseMessage, NodeId nodeIdOfResponse, void * responseObjectTypeVoid){
 
+	Response * responseObjectArg = (Response *)responseObjectTypeVoid;
 
 	if(responseMessage == NULL){
 		ASSERT(false);
@@ -171,10 +174,14 @@ bool PendingRequest<Request, Response>::resolveResponseMessage(Message * respons
 	// deserialize the message into the response type
 	// example : msg deserializes into SerializableSearchResults
 	Response * responseObject = NULL;
-	if(responseMessage->isLocal()){ // for local response we should just get the pointer
-		responseObject = decodeInternalMessage<Response>(responseMessage);
-	}else{ // for non-local response we should deserialize the message
-		responseObject = decodeExternalMessage<Response>(responseMessage);
+	if(responseObjectArg == NULL){
+		if(responseMessage->isLocal()){ // for local response we should just get the pointer
+			responseObject = decodeInternalMessage<Response>(responseMessage);
+		}else{ // for non-local response we should deserialize the message
+			responseObject = decodeExternalMessage<Response>(responseMessage);
+		}
+	}else{
+		responseObject = responseObjectArg;
 	}
 
 	// 5. set the response message and response object in the PendingMessage
@@ -244,7 +251,7 @@ PendingRequest<Request, Response> * PendingRequestsHandler::registerPendingReque
 /*
  * If this response is not related to any pending requests, returns false
  */
-inline bool PendingRequestsHandler::resolveResponseMessage(Message * response, NodeId nodeId){
+inline bool PendingRequestsHandler::resolveResponseMessage(Message * response, NodeId nodeId, void * responseObject){
 	// 1. get an X lock on the pendingRequest list
 	boost::unique_lock< boost::shared_mutex > lock(_access);
 	// 2. iterate on PendingRequests and check if any of them is corresponding to this response
@@ -252,7 +259,7 @@ inline bool PendingRequestsHandler::resolveResponseMessage(Message * response, N
 			pendingRequestItr != pendingRequests.end() ; ++pendingRequestItr){
 		if((*pendingRequestItr)->isResponseMessageMine(response)){
 			// ask this pending request to resolve this response
-			bool resolveResult = (*pendingRequestItr)->resolveResponseMessage(response, nodeId);
+			bool resolveResult = (*pendingRequestItr)->resolveResponseMessage(response, nodeId,responseObject);
 			// if returns true, we must delete this PendingRequest from the vector.
 			if(resolveResult){
 				pendingRequests.erase(pendingRequestItr);

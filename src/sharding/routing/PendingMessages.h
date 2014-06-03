@@ -78,7 +78,7 @@ class PendingRequestAbstract{
 public:
 	// resolves the corresponding PendingMessage with this response
 	// if returns true, this pendingRequest is ready to be deleted for finalizing.
-	virtual bool resolveResponseMessage(Message * responseMessage, NodeId nodeIdOfResponse) = 0;
+	virtual bool resolveResponseMessage(Message * responseMessage, NodeId nodeIdOfResponse, void * responseObject) = 0;
 	// returns true of it contains a PendingMessage corresponding to this responseMessage
 	virtual bool isResponseMessageMine(Message * responseMessage) = 0;
 	virtual ~PendingRequestAbstract(){};
@@ -110,7 +110,7 @@ public:
 
 	// resolves the corresponding PendingMessage with this response
 	// if returns true, this pendingRequest is ready to be deleted for finalizing.
-	bool resolveResponseMessage(Message * responseMessage, NodeId nodeIdOfResponse);
+	bool resolveResponseMessage(Message * responseMessage, NodeId nodeIdOfResponse, void * responseObject = NULL);
 
 	// returns true of it contains a PendingMessage corresponding to this responseMessage
 	bool isResponseMessageMine(Message * responseMessage);
@@ -239,7 +239,7 @@ public:
 	/*
 	 * If this response is not related to any pending requests, returns false
 	 */
-	bool resolveResponseMessage(Message * response, NodeId nodeId);
+	bool resolveResponseMessage(Message * response, NodeId nodeId, void * responseObject = NULL);
 
 	PendingRequestsHandler(MessageAllocator * messageAllocator){
 		this->messageAllocator = messageAllocator;
