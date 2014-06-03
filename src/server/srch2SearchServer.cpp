@@ -70,6 +70,7 @@ using std::string;
 pthread_t *threadsToHandleExternalRequests = NULL;
 pthread_t *threadsToHandleInternalRequests = NULL;
 unsigned int MAX_THREADS = 0;
+unsigned int MAX_INTERNAL_THREADS = 0;
 srch2http::TransportManager *transportManager;
 // These are global variables that store host and port information for srch2 engine
 unsigned short globalDefaultPort;
@@ -556,8 +557,9 @@ static void killServer(int signal) {
     Logger::console("Stopping server.");
     for (int i = 0; i < MAX_THREADS; i++) {
         pthread_cancel(threadsToHandleExternalRequests[i]);
-        pthread_cancel(threadsToHandleInternalRequests[i]); // TODO be careful if we want to use different number of threads for internal
-
+    }
+    for (int i = 0; i < MAX_INTERNAL_THREADS; i++) {
+    	pthread_cancel(threadsToHandleInternalRequests[i]);
     }
     for(srch2http::RouteMap::iterator conn = 
         transportManager->getRouteMap()->begin();
@@ -647,11 +649,12 @@ static int createHTTPServersAndAccompanyingThreads(int MAX_THREADS,
 /*
  * This function just creates pairs of event_base and threads.
  */
-static int createInternalReqEventBasesAndAccompanyingThreads(int MAX_THREADS, vector<struct event_base *> *evBases) {
+static int createInternalReqEventBasesAndAccompanyingThreads(int MAX_INTERNAL_THREADS,
+		vector<struct event_base *> *evBases) {
 	// for each thread, we bind an evbase and http_server object
 	// TODO : do we need to deallocate these objects anywhere ?
-	threadsToHandleInternalRequests = new pthread_t[MAX_THREADS];
-	for (int i = 0; i < MAX_THREADS; i++) {
+	threadsToHandleInternalRequests = new pthread_t[MAX_INTERNAL_THREADS];
+	for (int i = 0; i < MAX_INTERNAL_THREADS; i++) {
 		struct event_base *evbase = event_base_new();
 		if(!evbase) {
 			perror("event_base_new");
@@ -829,13 +832,14 @@ int main(int argc, char** argv) {
 	}
 
 	MAX_THREADS = serverConf->getNumberOfThreads();
+	MAX_INTERNAL_THREADS = 3; // Todo : read from config file.
 
 	// create threads for external requests
 	createHTTPServersAndAccompanyingThreads(MAX_THREADS, &evBasesForExternalRequests, &evServersForExternalRequests);
 
 	// create threads for internal requests
 	//TODO set the number of threads for internal messaging
-	createInternalReqEventBasesAndAccompanyingThreads(MAX_THREADS, &evBasesForInternalRequests);
+	createInternalReqEventBasesAndAccompanyingThreads(MAX_INTERNAL_THREADS, &evBasesForInternalRequests);
 
 	std::vector<srch2http::Node>& nodes = *serverConf->getCluster()->getNodes();
 
@@ -849,11 +853,11 @@ int main(int argc, char** argv) {
 		}
 	}
 //	// run SM
-//	unsigned masterNodeId =  serverConf->getCluster()->getNodes()->at(0).getId(); // TODO temporary for V0
-//	srch2http::Synchronizer  *syncManager = new srch2http::Synchronizer(*serverConf ,
-//			*transportManager, masterNodeId);
-//	pthread_t *synchronizerThread = new pthread_t;
-//	pthread_create(synchronizerThread, NULL, srch2http::bootSynchronizer, (void *)syncManager);
+	unsigned masterNodeId =  serverConf->getCluster()->getNodes()->at(0).getId(); // TODO temporary for V0
+	srch2http::Synchronizer  *syncManager = new srch2http::Synchronizer(*serverConf ,
+			*transportManager, masterNodeId);
+	pthread_t *synchronizerThread = new pthread_t;
+	pthread_create(synchronizerThread, NULL, srch2http::bootSynchronizer, (void *)syncManager);
 
 	// create Routing Module
 	srch2http::RoutingManager *routesManager =
@@ -915,7 +919,7 @@ int main(int argc, char** argv) {
 		Logger::console("Thread = <%u> stopped", threadsToHandleExternalRequests[i]);
 	}
 
-	for (int i = 0; i < MAX_THREADS; i++) {
+	for (int i = 0; i < MAX_INTERNAL_THREADS; i++) {
 		pthread_join(threadsToHandleInternalRequests[i], NULL);
 		Logger::console("Thread = <%u> stopped", threadsToHandleInternalRequests[i]);
 	}
@@ -932,7 +936,9 @@ int main(int argc, char** argv) {
 
 	for (unsigned int i = 0; i < MAX_THREADS; i++) {
 		event_base_free(evBasesForExternalRequests[i]);
-		event_base_free(evBasesForInternalRequests[i]); // TODO : be careful if we want to have different number of internal external ...
+	}
+	for (unsigned int i = 0; i < MAX_INTERNAL_THREADS; i++) {
+		event_base_free(evBasesForInternalRequests[i]);
 	}
 
 	// use global port map to close each file descriptor just once
