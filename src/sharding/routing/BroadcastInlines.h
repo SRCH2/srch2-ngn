@@ -77,7 +77,8 @@ void RoutingManager::sendInternalMessage(Message * msg, RequestType * requestObj
 					std::make_pair(msg, nodeId));
 
 	if (pthread_create(&internalMessageRouteThread, NULL, routeInternalMessage, rmAndMsgPointers) != 0){
-		Logger::console("Cannot create thread for handling local message");
+//		Logger::console("Cannot create thread for handling local message");
+		perror("Cannot create thread for handling local message");
 		return;
 	}
 //	// for now, we use the same thread
