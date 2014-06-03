@@ -37,6 +37,11 @@ class SerializableSearchResults {
 		this->resultsFactory = new QueryResultFactory();
 	}
 
+	~SerializableSearchResults(){
+		delete this->queryResults;
+		delete this->resultsFactory;
+	}
+
 	QueryResults * getQueryResults() const{
 		return queryResults;
 	}
