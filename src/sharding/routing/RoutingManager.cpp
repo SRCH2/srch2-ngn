@@ -105,8 +105,10 @@ void * routeInternalMessage(void * arg) {
 		reply->setRequestMessageId(msg->getMessageId());
 		reply->setReply()->setInternal();
 		if ( ! rm->getPendingRequestsHandler()->resolveResponseMessage(reply, nodeId, resultOfDPInternal.second)){
-			// TODO : reply could not be resolbved.
+			// reply could not be resolved. This means the request of this response is already timedout and gone.
+			// reply and response object must be deallocated here.
 			rm->getTransportManager().getMessageAllocator()->deallocateByMessagePointer(reply);
+			rm->getInternalMessageBroker()->deleteResponseObjectBasedOnType(reply, resultOfDPInternal.second);
 		}
 	}
 	if(reply == NULL){

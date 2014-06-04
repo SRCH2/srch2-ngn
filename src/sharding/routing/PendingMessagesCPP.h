@@ -48,7 +48,9 @@ bool PendingMessage<Request, Response>::doesExpectFromThisShard(NodeId nodeid){
 // returns true if the value of timeout is before the current time
 template <class Request, class Response> inline
 bool PendingMessage<Request, Response>::isTimedOut(){
-	//TODO
+	time_t currentTime;
+	time(&currentTime);
+	return (this->timeout > currentTime);
 }
 template <class Request, class Response> inline
 NodeId PendingMessage<Request, Response>::getNodeId(){
@@ -114,7 +116,7 @@ PendingMessage<Request, Response> * PendingRequest<Request, Response>::registerP
 		pendingMessages.push_back(pendingMessage);
 	}
 
-
+	return pendingMessage;
 }
 
 // resolves the corresponding PendingMessage with this response
@@ -141,10 +143,6 @@ bool PendingRequest<Request, Response>::resolveResponseMessage(Message * respons
 	// is it the local response or the external one?
 	if(responseMessage->isLocal()){
 		// response is for the local pending message
-		if(pendingMessages.at(0) == NULL){
-			// local pendingMessage has timedout and not resolvable anymore
-			//TODO
-		}
 		ASSERT(pendingMessages.at(0)->doesExpectFromThisShard(nodeIdOfResponse));
 		pendingMessage = pendingMessages.at(0);
 		pendingMessageLocation = 0;
@@ -164,7 +162,10 @@ bool PendingRequest<Request, Response>::resolveResponseMessage(Message * respons
 		}
 	}
 	if(pendingMessage == NULL){ // no pending message is found for this response so it is timedout
-		//TODO
+		// because of the locking scheme this cannot happen now
+		// if we change locking scheme then we should handle this case
+		ASSERT(false);
+		return false;
 	}
 
 	//3. Remove pendingMessage from pendingMessages vector
@@ -201,6 +202,46 @@ bool PendingRequest<Request, Response>::resolveResponseMessage(Message * respons
 	}
 
 	// now check if all pendingMessages are satisfied we are ready for finalizing.
+	return shouldFinalize();
+}
+
+
+template <class Request, class Response> inline
+bool PendingRequest<Request, Response>::resolveTimedoutMessages(){
+	// move on all pending messages and check if the are timed out or not
+	// 1. get an X lock on the pendingMessages vector
+	boost::unique_lock< boost::shared_mutex > lock(_access);
+	ASSERT(pendingMessages.size() >= 1); // local pointer is always NULL, even though if it's NULL
+	// 2. move on pendingMessages and check them for timeout
+	for(unsigned pendingMessageIndex = 0; pendingMessageIndex < pendingMessages.size(); ++pendingMessageIndex){
+		PendingMessage<Request, Response> * pendingMessage = pendingMessages.at(pendingMessageIndex);
+		if(pendingMessage == NULL){
+			// if pendingMessageItr is NULL, it's either the local one which has not come yet
+			// or it's arleady accepted the response
+			continue;
+		}
+		// the message is timeout, we should move it from pendingMessages to
+		// pendingMessagesWithResponse and leave response pointers empty
+		if(pendingMessage->isTimedOut()){
+			// set the response message and response object to NULL to indicate timeout
+			pendingMessage->setResponseMessageAndObject(NULL , NULL);
+
+			// move it to pendingMessagesWithResponse
+			if(pendingMessage->getRequestMessage()->isLocal()){
+				pendingMessagesWithResponse.at(0) = pendingMessage;
+			}else{
+				pendingMessagesWithResponse.push_back(pendingMessage);
+			}
+
+			// set it null in pendingMessages
+			pendingMessages.at(pendingMessageIndex) = NULL;
+
+			// call timeout of aggregator
+			aggregator->timeoutProcessing(pendingMessage, ResultsAggregatorAndPrintMetadata());
+		}
+	}
+
+	//  now check if all pendingMessages are satisfied we are ready for finalizing.
 	return shouldFinalize();
 }
 
@@ -270,6 +311,42 @@ inline bool PendingRequestsHandler::resolveResponseMessage(Message * response, N
 	}
 
 	return false;
+}
+
+inline void PendingRequestsHandler::resolveTimedoutMessages(){
+	// 1. get a X lock on the list if pending requests
+	boost::unique_lock< boost::shared_mutex > lock(_access);
+	// 2. move on all pending requests and check for timeout,
+	vector<PendingRequestAbstract *> newPendingRequests;
+	for(vector<PendingRequestAbstract *>::iterator pendingRequestItr = pendingRequests.begin();
+			pendingRequestItr != pendingRequests.end() ; ++pendingRequestItr){
+		bool resolveResult = (*pendingRequestItr)->resolveTimedoutMessages();
+		// if returns true, we must delete this PendingRequest from the vector.
+		// so otherwise we push it to the temporary newPendingRequests vector
+		if(resolveResult){
+			delete *pendingRequestItr;
+			*pendingRequestItr = NULL;
+		}else{
+			newPendingRequests.push_back(*pendingRequestItr);
+		}
+	}
+	pendingRequests.clear();
+	// copy back new pending messages into old vector
+	pendingRequests.insert(pendingRequests.begin(), newPendingRequests.begin(), newPendingRequests.end());
+}
+
+inline PendingRequestsHandler::PendingRequestsHandler(MessageAllocator * messageAllocator){
+
+	this->messageAllocator = messageAllocator;
+
+	if (pthread_create(&(this->timeoutThread), NULL, PendingRequestsHandler::timeoutHandler, this) != 0){
+		perror("Cannot create thread for timeout for pending messages.");
+		return;
+	}
+}
+
+inline PendingRequestsHandler::~PendingRequestsHandler(){
+	pthread_cancel(this->timeoutThread);
 }
 
 }

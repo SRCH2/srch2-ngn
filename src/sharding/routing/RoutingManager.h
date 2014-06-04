@@ -50,7 +50,7 @@ public:
 	 */
 	template<typename RequestType, typename ResponseType>
 	RoutingManagerAPIReturnType broadcast_wait_for_all_confirmation(RequestType * requestObject,
-			bool& timedout, timeval timeoutValue , CoreShardInfo & coreInfo);
+			bool& timedout, time_t timeoutValue , CoreShardInfo & coreInfo);
 
 	/*
 	 *  Transmits a given message to all shards. Upon receipt of a response from
@@ -83,14 +83,14 @@ public:
 	template<typename RequestType , typename ReseponseType>
 	RoutingManagerAPIReturnType broadcast_w_cb_n_timeout(RequestType * requestObj,
 			boost::shared_ptr<ResultAggregatorAndPrint<RequestType , ReseponseType> > aggregator,
-			timeval timeoutValue ,
+			time_t timeoutValue ,
 			CoreShardInfo & coreInfo );
 
 
 	template<typename RequestType , typename ReseponseType>
 	RoutingManagerAPIReturnType broadcast_wait_for_all_w_cb_n_timeout(RequestType * requestObj,
 			boost::shared_ptr<ResultAggregatorAndPrint<RequestType , ReseponseType> > aggregator ,
-			timeval timeoutValue,
+			time_t timeoutValue,
 			CoreShardInfo & coreInfo);
 
 
@@ -107,7 +107,7 @@ public:
 	 */
 	template<typename RequestType, typename ResponseType>
 	RoutingManagerAPIReturnType route_wait_for_confirmation(RequestType * requestObj, bool& timedout,
-			timeval timeoutValue , ShardId shardInfo);
+			time_t timeoutValue , ShardId shardInfo);
 
 	/*
 	 *  Transmits a given message to a particular shards. Upon receipt of a
@@ -129,7 +129,7 @@ public:
 	template<typename RequestType , typename ReseponseType>
 	RoutingManagerAPIReturnType route_w_cb_n_timeout(RequestType * requestObj,
 			boost::shared_ptr<ResultAggregatorAndPrint<RequestType , ReseponseType> > aggregator,
-			timeval timeoutValue,
+			time_t timeoutValue,
 			ShardId shardInfo);
 
 
@@ -169,12 +169,12 @@ private:
 	// When pendingRequest is NULL, no response is expected for request.
 	template<typename RequestType , typename ResponseType>
 	void sendInternalMessage(Message * msg, RequestType * requestObjPointer,
-			ShardId shardId, timeval timeoutValue, PendingRequest<RequestType, ResponseType> * pendingRequest = NULL);
+			ShardId shardId, time_t timeoutValue, PendingRequest<RequestType, ResponseType> * pendingRequest = NULL);
 
 	// When pendingRequest is NULL, no response is expected for request.
 	template<typename RequestType , typename ResponseType>
 	void sendExternalMessage(Message * msg, RequestType * requestObjPointer,
-			ShardId shardId, timeval timeoutValue, PendingRequest<RequestType, ResponseType> * pendingRequest = NULL);
+			ShardId shardId, time_t timeoutValue, PendingRequest<RequestType, ResponseType> * pendingRequest = NULL);
 
 	//std::map<ShardId, Srch2Server*> shardToIndex;
 	ConfigManager& configurationManager;

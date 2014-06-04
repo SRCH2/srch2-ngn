@@ -51,7 +51,7 @@ Message * RoutingManager::prepareExternalMessage(ShardId shardId,
 
 template<typename RequestType , typename ResponseType> inline
 void RoutingManager::sendInternalMessage(Message * msg, RequestType * requestObjPointer,
-		ShardId shardId, timeval timeoutValue,  PendingRequest<RequestType, ResponseType> * pendingRequest) {
+		ShardId shardId, time_t timeoutValue,  PendingRequest<RequestType, ResponseType> * pendingRequest) {
 
 	// find the node id of destination
 	unsigned nodeId = shardId.getNodeId(configurationManager);
@@ -59,7 +59,7 @@ void RoutingManager::sendInternalMessage(Message * msg, RequestType * requestObj
 	// only messages which expect reply will go to pending messages
 	if(pendingRequest != NULL && ! msg->isNoReply()){
 		// register a pending message in this pending request
-		pendingRequest->registerPendingMessage(nodeId, timeoutValue.tv_sec, msg, requestObjPointer);
+		pendingRequest->registerPendingMessage(nodeId, timeoutValue, msg, requestObjPointer);
 	}else{
 		// this is the case of message with no reply so we don't have a pending request.
 		// we must send the request and delete the request object and message right here
@@ -112,7 +112,7 @@ void RoutingManager::sendInternalMessage(Message * msg, RequestType * requestObj
 
 template<typename RequestType , typename ResponseType> inline
 void RoutingManager::sendExternalMessage(Message * msg, RequestType * requestObjPointer,
-		ShardId shardId, timeval timeoutValue,  PendingRequest<RequestType, ResponseType> * pendingRequest){
+		ShardId shardId, time_t timeoutValue,  PendingRequest<RequestType, ResponseType> * pendingRequest){
 
 	// find the node id of destination
 	unsigned nodeId = shardId.getNodeId(configurationManager);
@@ -121,13 +121,13 @@ void RoutingManager::sendExternalMessage(Message * msg, RequestType * requestObj
 	if(pendingRequest != NULL && ! msg->isNoReply()){
 		// register a pending message in this pending request
 		PendingMessage<RequestType, ResponseType> * pendingMessage =
-				pendingRequest->registerPendingMessage(nodeId, timeoutValue.tv_sec, msg, requestObjPointer);
+				pendingRequest->registerPendingMessage(nodeId, timeoutValue, msg, requestObjPointer);
 	}else{
 		// no reply case, request object and message must be deleted after sending to network.
 		delete requestObjPointer;
 	}
 	// pass the ready message to TM to be sent to nodeId
-	transportManager.route(nodeId, msg, timeoutValue.tv_sec);
+	transportManager.route(nodeId, msg, timeoutValue);
 
 	if(msg->isNoReply()){
 		// deallocate the message here because there is no reply and no pending request
@@ -153,8 +153,7 @@ RoutingManagerAPIReturnType RoutingManager::broadcast(RequestType * requestObj, 
 	Message * internalMessage = NULL;
 	Message * externalMessage = NULL;
 
-	timeval timeValue;
-	timeValue.tv_sec = timeValue.tv_usec = 0;
+	time_t timeValue; // there is no callback so timeout doesn't matter
 
 	// iterate on all destinations and send the message
 	for(broadcastResolver.initIteration(); broadcastResolver.hasMore(); broadcastResolver.nextIteration()) {
@@ -208,7 +207,7 @@ RoutingManagerAPIReturnType RoutingManager::broadcast(RequestType * requestObj, 
  */
 template<typename RequestType, typename ResponseType> inline RoutingManagerAPIReturnType
 RoutingManager::broadcast_wait_for_all_confirmation(RequestType * requestObject,
-		bool& timedout, timeval timeoutValue , CoreShardInfo & coreInfo){
+		bool& timedout, time_t timeoutValue , CoreShardInfo & coreInfo){
 	//TODO
 	return 	RoutingManagerAPIReturnTypeAllNodesDown;
 }
@@ -252,9 +251,9 @@ RoutingManagerAPIReturnType RoutingManager::broadcast_w_cb(RequestType * request
 	Message * internalMessage = NULL;
 	Message * externalMessage = NULL;
 
-	timeval timeValue;
-	timeValue.tv_sec = timeValue.tv_usec = 0;
-
+	time_t timeValue;
+	// set timeout to zero which indicates there is no timeout
+	timeValue = 0;
 
 
 	// iterate on all destinations and send the message
@@ -330,9 +329,10 @@ RoutingManagerAPIReturnType RoutingManager::broadcast_wait_for_all_w_cb(RequestT
 
 	Message * internalMessage = NULL;
 	Message * externalMessage = NULL;
-	timeval timeValue;
-	timeValue.tv_sec = timeValue.tv_usec = 0;
 
+	time_t timeValue;
+	// set timeout to zero which indicates there is no timeout
+	timeValue = 0;
 
 	// iterate on all destinations and send the message
 	for(broadcastResolver.initIteration(); broadcastResolver.hasMore(); broadcastResolver.nextIteration()) {
@@ -380,7 +380,7 @@ RoutingManagerAPIReturnType RoutingManager::broadcast_wait_for_all_w_cb(RequestT
 template<typename RequestType , typename ResponseType> inline
 RoutingManagerAPIReturnType RoutingManager::broadcast_w_cb_n_timeout(RequestType * requestObj,
 		boost::shared_ptr<ResultAggregatorAndPrint<RequestType , ResponseType> > aggregator,
-		timeval timeoutValue , CoreShardInfo & coreInfo ){
+		time_t timeoutValue , CoreShardInfo & coreInfo ){
 	/*
 	 * Multiplexer reads coreInfo object to understand which nodes we need to send this broadcast to
 	 */
@@ -454,7 +454,7 @@ RoutingManagerAPIReturnType RoutingManager::broadcast_w_cb_n_timeout(RequestType
 template<typename RequestType , typename ResponseType> inline RoutingManagerAPIReturnType
 RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType * requestObj,
 		boost::shared_ptr<ResultAggregatorAndPrint<RequestType , ResponseType> > aggregator,
-		timeval timeoutValue, CoreShardInfo & coreInfo){
+		time_t timeoutValue, CoreShardInfo & coreInfo){
 
 	/*
 	 * Multiplexer reads coreInfo object to understand which nodes we need to send this broadcast to
@@ -545,8 +545,10 @@ RoutingManager::route(RequestType * requestObj, ShardId & shardInfo) {
 	// instead, we serialize the pointer to the request object
 
 	Message * msg;
-	timeval timeValue;
-	timeValue.tv_sec = timeValue.tv_usec = 0;
+
+	time_t timeValue;
+	timeValue = 0; // 0 indicates there is no timeout
+
 	if(shardInfo.isInCurrentNode(configurationManager)) {
 		msg = prepareInternalMessage<RequestType>(shardInfo, requestObj);
 		msg->setNoReply();
@@ -572,7 +574,7 @@ RoutingManager::route(RequestType * requestObj, ShardId & shardInfo) {
  */
 template<typename RequestType, typename ResponseType> inline RoutingManagerAPIReturnType
 RoutingManager::route_wait_for_confirmation(RequestType * requestObj,
-		bool& timedout, timeval timeoutValue , ShardId shardInfo){
+		bool& timedout, time_t timeoutValue , ShardId shardInfo){
 	//TODO
 	return 	RoutingManagerAPIReturnTypeAllNodesDown;
 }
@@ -600,8 +602,10 @@ RoutingManager::route_w_cb(RequestType * requestObj,
 	// if the destination is the current node, we don't serialize the request object
 	// instead, we serialize the pointer to the request object
 	Message * msg;
-	timeval timeValue;
-	timeValue.tv_sec = timeValue.tv_usec = 0;
+
+	time_t timeValue;
+	timeValue = 0; // zero indicates there is no timeout
+
 	if(shardInfo.isInCurrentNode(configurationManager)) {
 		msg = prepareInternalMessage<RequestType>(shardInfo, requestObj);
 		sendInternalMessage(msg, requestObj, shardInfo,timeValue,pendingRequest);
@@ -625,7 +629,7 @@ RoutingManager::route_w_cb(RequestType * requestObj,
 template<typename RequestType , typename ResponseType> inline RoutingManagerAPIReturnType
 RoutingManager::route_w_cb_n_timeout(RequestType * requestObj,
 		boost::shared_ptr<ResultAggregatorAndPrint<RequestType , ResponseType> > aggregator,
-		timeval timeoutValue, ShardId shardInfo) {
+		time_t timeoutValue, ShardId shardInfo) {
 
 	// find out whether shard is still within reach
 	unsigned nodeId = shardInfo.getNodeId(configurationManager);

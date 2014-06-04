@@ -79,6 +79,9 @@ public:
 	// resolves the corresponding PendingMessage with this response
 	// if returns true, this pendingRequest is ready to be deleted for finalizing.
 	virtual bool resolveResponseMessage(Message * responseMessage, NodeId nodeIdOfResponse, void * responseObject) = 0;
+	// this function looks for all messages in this request that have timed out and must be deleted from pendingMessages
+	// returns true if it's time for this request to be deleted.
+	virtual bool resolveTimedoutMessages() = 0;
 	// returns true of it contains a PendingMessage corresponding to this responseMessage
 	virtual bool isResponseMessageMine(Message * responseMessage) = 0;
 	virtual ~PendingRequestAbstract(){};
@@ -111,6 +114,10 @@ public:
 	// resolves the corresponding PendingMessage with this response
 	// if returns true, this pendingRequest is ready to be deleted for finalizing.
 	bool resolveResponseMessage(Message * responseMessage, NodeId nodeIdOfResponse, void * responseObject = NULL);
+
+	// this function looks for all messages in this request that have timed out and must be deleted from pendingMessages
+	// returns true if it's time for this request to be deleted.
+	bool resolveTimedoutMessages();
 
 	// returns true of it contains a PendingMessage corresponding to this responseMessage
 	bool isResponseMessageMine(Message * responseMessage);
@@ -241,10 +248,21 @@ public:
 	 */
 	bool resolveResponseMessage(Message * response, NodeId nodeId, void * responseObject = NULL);
 
-	PendingRequestsHandler(MessageAllocator * messageAllocator){
-		this->messageAllocator = messageAllocator;
+	void resolveTimedoutMessages();
+
+	static void * timeoutHandler(void * arg){
+		PendingRequestsHandler * pendingRequestsHandler = (PendingRequestsHandler *) arg;
+		while(true){
+			// looks for timed out messages
+			pendingRequestsHandler->resolveTimedoutMessages();
+			// sleep for 2 seconds
+			sleep(2);
+		}
+		return NULL;
 	}
 
+	PendingRequestsHandler(MessageAllocator * messageAllocator);
+	~PendingRequestsHandler();
 private:
 
 	// Keeps the object thread safe
@@ -253,6 +271,8 @@ private:
 	MessageAllocator * messageAllocator;
 	// This vector contains all pending requests which are waiting for response(s)
 	vector<PendingRequestAbstract *> pendingRequests;
+
+	pthread_t timeoutThread;
 };
 
 }}
