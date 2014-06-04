@@ -45,11 +45,7 @@ void cb_sendMessage(int fd, short eventType, void *arg) {
 /*
  *   Each notification to upstream handlers are dispatched in a new thread.
  */
-void * notifyUpstreamHandlers(void *arg) {
-	DisptchArguments * dispatchArgument = (DisptchArguments *)arg;
-	TransportManager * tm = dispatchArgument->tm;
-	Message * msg = dispatchArgument->message;
-	NodeId  nodeId = dispatchArgument->nodeId;
+void * notifyUpstreamHandlers(TransportManager *tm, Message * msg,int fd, NodeId  nodeId) {
 
 	if(msg->isReply()) {
 		Logger::console("Reply message is received. Msg type is %d", msg->getType());
@@ -77,7 +73,7 @@ void * notifyUpstreamHandlers(void *arg) {
 				replyMessage->setReply()->setInternal();
 				Connection& conn = tm->getRouteMap()->getConnection(nodeId);
 				while(!__sync_bool_compare_and_swap(&conn.sendLock, false, true));
-				tm->_route(dispatchArgument->fd, replyMessage);
+				tm->_route(fd, replyMessage);
 				conn.sendLock = false;
 				/*
 				 * Request and Reply messages must be deallocated at this time in this case because PendingMessage
@@ -96,7 +92,6 @@ void * notifyUpstreamHandlers(void *arg) {
 		}
 		tm->getMessageAllocator()->deallocateByMessagePointer(msg);
 	}
-	delete dispatchArgument;
 	return NULL;
 }
 
@@ -241,13 +236,7 @@ bool recieveMessage(int fd, TransportCallback *cb) {
 	b.msg = NULL;
 	b.lock = false;
 
-	DisptchArguments * arguments = new DisptchArguments(tm, msg, fd, cb->conn->nodeId);
-	pthread_t internalMessageRouteThread;
-	if (pthread_create(&internalMessageRouteThread, NULL, notifyUpstreamHandlers, arguments) != 0){
-		perror("Cannot create thread for notifying handler");
-		return 255; // TODO: throw exception.
-	}
-	pthread_detach(internalMessageRouteThread);
+	notifyUpstreamHandlers(tm, msg, fd, cb->conn->nodeId);
 	return true;
 }
 
