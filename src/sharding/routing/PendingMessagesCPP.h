@@ -48,9 +48,13 @@ bool PendingMessage<Request, Response>::doesExpectFromThisShard(NodeId nodeid){
 // returns true if the value of timeout is before the current time
 template <class Request, class Response> inline
 bool PendingMessage<Request, Response>::isTimedOut(){
+	if(this->timeout == 0){ // zero indicates no timeout
+		return false;
+	}
 	time_t currentTime;
 	time(&currentTime);
-	return (this->timeout > currentTime);
+	Logger::console("------------------------ Time to check timeout : %d" , currentTime);
+	return (this->timeout < currentTime);
 }
 template <class Request, class Response> inline
 NodeId PendingMessage<Request, Response>::getNodeId(){

@@ -33,6 +33,20 @@ struct timespec & SearchResultAggregatorAndPrint::getStartTimer(){
 	return this->tstart;
 }
 
+
+/*
+ * This function is called by RoutingManager if a timeout happens, The call to
+ * this function must be between preProcessing(...) and callBack()
+ */
+void SearchResultAggregatorAndPrint::timeoutProcessing(PendingMessage<SerializableSearchCommandInput,
+		SerializableSearchResults> * message,
+		ResultsAggregatorAndPrintMetadata metadata){
+
+	boost::unique_lock< boost::shared_mutex > lock(_access);
+	messages << ", WARNING : Shard #"<< message->getNodeId()<<" timed out.";
+
+}
+
 /*
  * The main function responsible of aggregating search results
  * this function uses aggregateRecords and aggregateFacets for
@@ -41,6 +55,8 @@ struct timespec & SearchResultAggregatorAndPrint::getStartTimer(){
 void SearchResultAggregatorAndPrint::callBack(vector<PendingMessage<SerializableSearchCommandInput,
 		SerializableSearchResults> * > messages){
 
+	// to protect messages
+	boost::unique_lock< boost::shared_mutex > lock(_access);
 
 	// move on all responses of all shards and use them
 	for(int responseIndex = 0 ; responseIndex < messages.size() ; ++responseIndex ){
@@ -114,7 +130,7 @@ void SearchResultAggregatorAndPrint::printResults(){
 				logicalPlan.getOffset(),
 				results.allResults.size(),
 				results.allResults.size(),
-				paramContainer.getMessageString(), parseAndSearchTime , highlightInfo, hlTime,
+				paramContainer.getMessageString() + messages.str(), parseAndSearchTime , highlightInfo, hlTime,
 				paramContainer.onlyFacets);
 
 		break;
@@ -133,7 +149,7 @@ void SearchResultAggregatorAndPrint::printResults(){
 					logicalPlan.getExactQuery(),
 					logicalPlan.getOffset(), results.allResults.size(),
 					results.allResults.size(),
-					paramContainer.getMessageString(), parseAndSearchTime, highlightInfo, hlTime,
+					paramContainer.getMessageString()+ messages.str(), parseAndSearchTime, highlightInfo, hlTime,
 					paramContainer.onlyFacets);
 		} else { // Case where you have return 10,20, but we got only 0,25 results and so return 10,20
 			printResults(req, headers, logicalPlan,
@@ -142,7 +158,7 @@ void SearchResultAggregatorAndPrint::printResults(){
 					logicalPlan.getOffset(),
 					logicalPlan.getOffset() + logicalPlan.getNumberOfResultsToRetrieve(),
 					results.allResults.size(),
-					paramContainer.getMessageString(), parseAndSearchTime, highlightInfo, hlTime,
+					paramContainer.getMessageString()+ messages.str(), parseAndSearchTime, highlightInfo, hlTime,
 					paramContainer.onlyFacets);
 		}
 		break;
@@ -153,7 +169,7 @@ void SearchResultAggregatorAndPrint::printResults(){
 				logicalPlan ,
 				indexDataContainerConf,
 				results.allResults ,
-				paramContainer.getMessageString() ,
+				paramContainer.getMessageString()+ messages.str() ,
 				parseAndSearchTime);
 		break;
 	default:

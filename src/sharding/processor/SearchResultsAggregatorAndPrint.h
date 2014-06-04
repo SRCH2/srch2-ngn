@@ -38,9 +38,7 @@ public:
 	 */
 	void timeoutProcessing(PendingMessage<SerializableSearchCommandInput,
 			SerializableSearchResults> * message,
-			ResultsAggregatorAndPrintMetadata metadata){
-
-	}
+			ResultsAggregatorAndPrintMetadata metadata);
 
 
 	/*
@@ -60,6 +58,8 @@ public:
 	 * 4. finalize()
 	 */
 	void finalize(ResultsAggregatorAndPrintMetadata metadata){
+		// to protect messages
+		boost::unique_lock< boost::shared_mutex > lock(_access);
 		// print the results
 		printResults();
 	}
