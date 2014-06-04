@@ -75,7 +75,10 @@ void * notifyUpstreamHandlers(void *arg) {
 			if(replyMessage != NULL) {
 				replyMessage->setRequestMessageId(msg->getMessageId());
 				replyMessage->setReply()->setInternal();
+				Connection& conn = tm->getRouteMap()->getConnection(nodeId);
+				while(!__sync_bool_compare_and_swap(&conn.sendLock, false, true));
 				tm->_route(dispatchArgument->fd, replyMessage);
+				conn.sendLock = false;
 				/*
 				 * Request and Reply messages must be deallocated at this time in this case because PendingMessage
 				 * structure which is responsible for this is in the source node of this request.
@@ -313,11 +316,11 @@ MessageID_t TransportManager::route(NodeId node,Message * msg,
 		Logger::console("Message is being sent through TM route(node,msg). Msg type is %d", msg->getType());
 	}
 
-	Connection conn = routeMap.getConnection(node);
+	Connection& conn = routeMap.getConnection(node);
 
 	while(!__sync_bool_compare_and_swap(&conn.sendLock, false, true));
 	MessageID_t returnValue = _route(conn.fd, msg);
-	conn.sendLock = true;
+	conn.sendLock = false;
 	return returnValue;
 }
 

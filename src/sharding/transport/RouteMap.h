@@ -76,7 +76,7 @@ public:
 	bool isTotallyConnected() const;
 	void setCurrentNode(Node&);
 	const Node& getCurrentNode() const;
-	Connection getConnection(NodeId);
+	Connection& getConnection(NodeId);
 	bool checkInMap(NodeId);
 
 

@@ -286,7 +286,7 @@ bool RouteMap::isTotallyConnected() const {
 	return nodeConnectionMap.size() == destinations.size();
 }
 
-Connection RouteMap::getConnection(NodeId nodeId) {
+Connection& RouteMap::getConnection(NodeId nodeId) {
 	return nodeConnectionMap[nodeId];
 }
 
