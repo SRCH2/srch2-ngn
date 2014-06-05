@@ -203,6 +203,7 @@ void Srch2Server::createAndBootStrapIndexer()
 		    }
 		    break;
 		}
+#ifndef ANDROID
 	    case srch2http::DATA_SOURCE_MONGO_DB:
 	        {
 		    Logger::console("Creating indexes from a MongoDb instance...");
@@ -214,6 +215,7 @@ void Srch2Server::createAndBootStrapIndexer()
 		    }
 		    break;
 		}
+#endif
 	    default:
 	        {
 		    Logger::console("Creating new empty index");

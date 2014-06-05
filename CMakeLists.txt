@@ -33,9 +33,15 @@
 #    terminal> source ~/.bashrc
 #    terminal> mkdir -p build/android
 #    terminal> cd build/android
+#
+#    1. To build just a shared library 
 #    terminal> android-cmake ../../
-#    
-#    Then run make -j4 , the srch2 lib will show in the build/android/libs
+#    2. To build the while srch2-search-server
+#    terminal> android-cmake ../../ -DANDROID_SERVER=1
+#
+#    Then run make -j4 , the srch2 lib will show in the build/android/libs/<arch> 
+#    and the engine will show up in build/android/bin if ANDROID_SERVER is enabled.
+#    Note: when building the android server , srch2_core library is statically linked to the exe
 #    
 ########################################################################################################
 
@@ -58,16 +64,24 @@ SET(BUILD_JNI OFF CACHE BOOL
     "Build in hooks for Java to interact Srch2 Core. Defaults to OFF.")
 SET(BUILD_SERVER ON CACHE BOOL
     "Build the Srch2Server executable. Defaults to ON")
-IF(ANDROID)
-    SET(BUILD_STATIC OFF)
-    SET(BUILD_JNI ON)
-    SET(BUILD_SERVER OFF)
-ENDIF()
-
 SET(BUILD_RELEASE ON CACHE BOOL "Build Release. Default ON")
 SET(BUILD_TEST ON CACHE BOOL "Build tests. Default ON")
 SET(BUILD_UTILITY OFF CACHE BOOL "Build utilities. Default OFF")
 #SET(CMAKE_CXX_FLAGS_RELEASE "") 
+
+SET(ANDROID_SERVER OFF CACHE BOOL "Build srch2-server for android. Default OFF")
+
+IF(ANDROID)
+    SET(BUILD_STATIC OFF)
+    IF (ANDROID_SERVER)
+       SET(BUILD_SERVER ON)
+    ELSE()
+       SET(BUILD_JNI ON)
+    ENDIF()
+    SET(BUILD_TEST OFF)
+    SET(BUILD_UTILITY OFF)
+ENDIF()
+
 
 SET(MAC_OS OFF CACHE BOOL "")
 SET(LINUX_OS OFF CACHE BOOL "")
@@ -230,10 +244,17 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 	# Building the wrapper layer in static build mode.
 	# Setting up the Path to Srch2_InstantSearch_library
 	IF (BUILD_STATIC)
-		SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libsrch2_core.a)
+		    SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libsrch2_core.a)
 	ELSE ()
             IF(MAC_OS) 
       		    SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libsrch2_core.dylib)
+            ELSEIF (ANDROID)
+                if (ANDROID_SERVER)
+                    # we statically link the srch2 core with srch2-server ..see src/core/CMakeLists.txt
+                    SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/libs/armeabi-v7a/libsrch2_core.a)
+                else()
+                    SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/libs/armeabi-v7a/libsrch2_core.so)
+                endif()
             ELSE()
                 SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libsrch2_core.so)
             ENDIF()
