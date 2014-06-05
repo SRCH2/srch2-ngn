@@ -307,8 +307,8 @@ inline bool PendingRequestsHandler::resolveResponseMessage(Message * response, N
 			bool resolveResult = (*pendingRequestItr)->resolveResponseMessage(response, nodeId,responseObject);
 			// if returns true, we must delete this PendingRequest from the vector.
 			if(resolveResult){
-				pendingRequests.erase(pendingRequestItr);
 				delete *pendingRequestItr;
+				pendingRequests.erase(pendingRequestItr);
 			}
 			return true;
 		}
