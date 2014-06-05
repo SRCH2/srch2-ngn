@@ -101,7 +101,7 @@ void* MongoDataSource::runUpdateListener(void *searchServer){
     Srch2Server * server =(Srch2Server *)searchServer;
     const CoreInfo_t *config = server->indexDataConfig;
     string mongoNamespace= "local.oplog.rs";
-    string filterNamespace = "";	//##"demo.movies"
+    string filterNamespace = "";
     filterNamespace.append(config->getMongoDbName()).append(".").append(config->getMongoCollection());
     string host = config->getMongoServerHost();
     string port = config->getMongoServerPort();
@@ -227,12 +227,6 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
     }
 
     const CoreInfo_t *config = server->indexDataConfig;
-    if(config->getPrimaryKey().compare("_id")!=0)
-    {
-    	Logger::error("PerimaryKey error, expecting \"_id\" instead of %s, return.",config->getPrimaryKey().c_str());
-    	return;
-    }
-
     stringstream errorMsg;
 
     switch(operation[0])
