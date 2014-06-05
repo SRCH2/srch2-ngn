@@ -39,8 +39,8 @@ private:
 	void resetTimeout() {
 		initialTimeout = pingTimeout;
 	}  // temp for V0
-	void refresh() {};
-	unsigned findNextEligibleMaster();
+	//void refresh() {};
+	//unsigned findNextEligibleMaster();
 	void sendHeartBeatToAllNodesInCluster();
 	void registerForCallback();
 	void lookForCallbackMessages();
@@ -59,8 +59,6 @@ private:
 	friend class ClientMessageHandler;
 	friend class MasterMessageHandler;
 	ConfigManager& config;
-	// temporary for V0
-	// keep local copy for nodes in cluster ..for V1 we should fetch/update config store.
 	std::vector<Node> nodesInCluster;
 
 };
@@ -189,7 +187,7 @@ public:
 	}
 	void lookForCallbackMessages(SMCallBackHandler*);
 	void handleFailure(Message *message) {
-		// not implmented
+		// not implmented for V0
 		return;
 	}
 	virtual void handleTimeOut(Message *message) {
@@ -276,26 +274,26 @@ private:
 
 };
 
-class SerializerInterface {
-	virtual void serialize(void *object, char **byte, unsigned* size) = 0;
-	virtual void * Deserialize(char *byte, unsigned size) = 0;
-	virtual ~SerializerInterface() {}
-};
-
-class NodeSerializer : public SerializerInterface {
-	virtual void serialize(void *object, char **byte, unsigned* size){
-		Node * node = (Node *) object;
-
-	}
-};
-
-class ClusterSerializer : public SerializerInterface {
-
-};
-
-class ShardSerializer : public SerializerInterface {
-
-};
+//class SerializerInterface {
+//	virtual void serialize(void *object, char **byte, unsigned* size) = 0;
+//	virtual void * Deserialize(char *byte, unsigned size) = 0;
+//	virtual ~SerializerInterface() {}
+//};
+//
+//class NodeSerializer : public SerializerInterface {
+//	virtual void serialize(void *object, char **byte, unsigned* size){
+//		Node * node = (Node *) object;
+//
+//	}
+//};
+//
+//class ClusterSerializer : public SerializerInterface {
+//
+//};
+//
+//class ShardSerializer : public SerializerInterface {
+//
+//};
 
 
 

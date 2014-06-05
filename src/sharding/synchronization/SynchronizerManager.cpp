@@ -56,10 +56,26 @@ Synchronizer::~Synchronizer() {
 void * dispatchMasterMessageHandler(void *arg);
 void Synchronizer::run(){
 	Logger::console("running synchronizer");
+	/*
+	 *  1. Create a new callback handler for Transport layer and register it with Transport.
+	 */
 	callBackHandler = new SMCallBackHandler(isCurrentNodeMaster);
 	transport.registerCallbackHandlerForSynchronizeManager(callBackHandler);
+
+	/*
+	 *  2. Depending upon whether the current node is master or client , the SM will
+	 *     perform different duties.
+	 *
+	 *     Note: the node can change from master to client or vice-versa during cluster
+	 *     life cycle.
+	 */
 	while(1) {
 		if (isCurrentNodeMaster) {
+			/*
+			 *   2.1 Master :
+			 *   a) Create a new thread to handle incoming messages from client.
+			 *   b) Send heartbeat request to each node every pingInterval.
+			 */
 			pthread_t masterCbHandlerThread;
 			pthread_create(&masterCbHandlerThread,  NULL, dispatchMasterMessageHandler, messageHandler);
 			while(1) {
@@ -75,6 +91,10 @@ void Synchronizer::run(){
 			pthread_cancel(masterCbHandlerThread);
 			pthread_join(masterCbHandlerThread, NULL);
 		} else {
+			/*
+			 *   2.1 Client :
+			 *   a) Handle incoming messages at each ping interval.
+			 */
 			while(1) {
 				messageHandler->lookForCallbackMessages(callBackHandler);
 				sleep(pingInterval);
@@ -89,12 +109,15 @@ bool Synchronizer::hasMajority() {
 	return true; // TODO V1
 }
 
+/*
+ *   Send HeartBeat request to all the clients in the cluster.
+ */
 void Synchronizer::sendHeartBeatToAllNodesInCluster() {
 	MessageAllocator msgAllocator = MessageAllocator();
 	Message * heartBeatMessage = msgAllocator.allocateMessage(4);
 	heartBeatMessage->setType(HeartBeatMessageType);
 	heartBeatMessage->setBodyAndBodySize(&currentNodeId, 4);
-	//const std::vector<Node> &nodesInCluster = *(cluster->getNodes());
+
 	for (unsigned i = 0; i < nodesInCluster.size(); ++i) {
 		if (nodesInCluster[i].thisIsMe)
 			continue;
@@ -110,18 +133,25 @@ void Synchronizer::route(NodeId node, Message *msg) {
 	msg->setMessageId(transport.getUniqueMessageIdValue());
 	transport.route(node, msg);
 }
-unsigned Synchronizer::findNextEligibleMaster() {
-	 return masterNodeId + 1;  // Todo go over node list and find eligible master
-}
+//unsigned Synchronizer::findNextEligibleMaster() {
+//	 return masterNodeId + 1;  // Todo go over node list and find eligible master
+//}
 
 void ClientMessageHandler::lookForCallbackMessages(SMCallBackHandler* callBackHandler) {
 
 	switch(this->_state) {
-	case 0:
+	case 0:  // CLient State 0: Listening for heartbeat request from master
 	{
 		std::time_t timeNow = time(NULL);
+		/*
+		 *  Check the time elapsed since last heart beat request was received
+		 */
 		signed timeElapsed = timeNow - callBackHandler->getHeartBeatMessageTime();
+
 		if (timeElapsed > _syncMgrObj->getTimeout()) {
+			/*
+			 *  If the time elapsed is more than TimeOut then handle time out
+			 */
 			_state = 1;
 			Logger::console("SM-C%d: Timeout!!. No heart beat received from master",
 					_syncMgrObj->currentNodeId);
@@ -130,6 +160,9 @@ void ClientMessageHandler::lookForCallbackMessages(SMCallBackHandler* callBackHa
 			handleTimeOut(message);
 			cMessageAllocator.deallocateByMessagePointer(message);
 		} else {
+			/*
+			 *  Handle heartbeat request by acknowledging back to master.
+			 */
 			Message * message;
 			callBackHandler->getHeartBeatMessages(&message);
 			handleMessage(message);
@@ -137,7 +170,7 @@ void ClientMessageHandler::lookForCallbackMessages(SMCallBackHandler* callBackHa
 		}
 		break;
 	}
-	case 1:
+	case 1:  // CLient State 1: Initiating/Handling Master election
 	{
 		//Logger::console("waiting for master ...");
 		//TODO: V1 handle master election
@@ -149,71 +182,71 @@ void ClientMessageHandler::lookForCallbackMessages(SMCallBackHandler* callBackHa
 // Callback API for SM
 
 void ClientMessageHandler::handleElectionRequest(Message *message) {
-	if (message->getType() != LeaderElectionProposalMessageType) {
-		Logger::warn("Bad Request: expecting %d but got %d",
-				LeaderElectionProposalMessageType, message->getType());
-		return;
-	}
-
-	if (!itselfInitiatedMasterElection) {
-		if (message->getBodySize() > 4) {
-			MessageAllocator msgAllocator = MessageAllocator();
-			Message * rejectMessage = msgAllocator.allocateMessage(4);
-			rejectMessage->setBodyAndBodySize(&_syncMgrObj->currentNodeId, 4);
-			rejectMessage->setType(LeaderElectionDenyMessageType);
-			_syncMgrObj->route(FETCH_UNSIGNED(message->getMessageBody()), rejectMessage);
-			msgAllocator.deallocateByMessagePointer(rejectMessage);
-		}
-		return;
-	}
-
-	bool masterEligible = true;  // TODO - fetch from CM  ..as of now every one is eligible
-	bool isMaster = false;       // TODO -- fetch from CM
-	unsigned majority = (_syncMgrObj->cluster->getTotalNumberOfNodes() / 2) + 1;
-
-	if (masterEligible) {
-		if (message->getBodySize() > 4) {
-			char * buffer = message->getMessageBody();
-			unsigned nodeId = *((unsigned *)buffer);
-			voters.insert(nodeId);
-			// if got response from more than N/2 clients
-			// send thanks to all clients
-			// else wait for more votes.
-			if (voters.size() >= majority) {
-				// x-auto-lock
-				if (voters.size() == 0)
-					return;
-				MessageAllocator msgAllocator = MessageAllocator();
-				Message * thanksMessage = msgAllocator.allocateMessage(0);
-				thanksMessage->setBodySize(0);
-				thanksMessage->setType(LeaderElectionAckMessageType);
-				std::set<unsigned>::iterator iter = voters.begin();
-				while(iter != voters.end()) {
-					if (*iter == _syncMgrObj->currentNodeId)
-						continue;
-					_syncMgrObj->route(*iter, thanksMessage);
-					++iter;
-				}
-				msgAllocator.deallocateByMessagePointer(thanksMessage);
-				voters.clear();
-				// mark yourself master.
-				isMaster = true;         // todo: set in CM
-				masterEligible = false;  // todo: set in CM
-			}
-		}
-	} else if (isMaster){
-		if (message->getBodySize() > 4) {
-			// it appears that some node didn't get the master election notice..send them again
-			MessageAllocator msgAllocator = MessageAllocator();
-			Message * thanksMessage = msgAllocator.allocateMessage(0);
-			thanksMessage->setBodySize(0);
-			thanksMessage->setType(LeaderElectionAckMessageType);
-			_syncMgrObj->route(FETCH_UNSIGNED(message->getMessageBody()), thanksMessage);
-			msgAllocator.deallocateByMessagePointer(thanksMessage);
-		}
-	} else {
-			//not eligible for master ..should not get this request ..log it and do nothing
-	}
+//	if (message->getType() != LeaderElectionProposalMessageType) {
+//		Logger::warn("Bad Request: expecting %d but got %d",
+//				LeaderElectionProposalMessageType, message->getType());
+//		return;
+//	}
+//
+//	if (!itselfInitiatedMasterElection) {
+//		if (message->getBodySize() > 4) {
+//			MessageAllocator msgAllocator = MessageAllocator();
+//			Message * rejectMessage = msgAllocator.allocateMessage(4);
+//			rejectMessage->setBodyAndBodySize(&_syncMgrObj->currentNodeId, 4);
+//			rejectMessage->setType(LeaderElectionDenyMessageType);
+//			_syncMgrObj->route(FETCH_UNSIGNED(message->getMessageBody()), rejectMessage);
+//			msgAllocator.deallocateByMessagePointer(rejectMessage);
+//		}
+//		return;
+//	}
+//
+//	bool masterEligible = true;  // TODO - fetch from CM  ..as of now every one is eligible
+//	bool isMaster = false;       // TODO -- fetch from CM
+//	unsigned majority = (_syncMgrObj->cluster->getTotalNumberOfNodes() / 2) + 1;
+//
+//	if (masterEligible) {
+//		if (message->getBodySize() > 4) {
+//			char * buffer = message->getMessageBody();
+//			unsigned nodeId = *((unsigned *)buffer);
+//			voters.insert(nodeId);
+//			// if got response from more than N/2 clients
+//			// send thanks to all clients
+//			// else wait for more votes.
+//			if (voters.size() >= majority) {
+//				// x-auto-lock
+//				if (voters.size() == 0)
+//					return;
+//				MessageAllocator msgAllocator = MessageAllocator();
+//				Message * thanksMessage = msgAllocator.allocateMessage(0);
+//				thanksMessage->setBodySize(0);
+//				thanksMessage->setType(LeaderElectionAckMessageType);
+//				std::set<unsigned>::iterator iter = voters.begin();
+//				while(iter != voters.end()) {
+//					if (*iter == _syncMgrObj->currentNodeId)
+//						continue;
+//					_syncMgrObj->route(*iter, thanksMessage);
+//					++iter;
+//				}
+//				msgAllocator.deallocateByMessagePointer(thanksMessage);
+//				voters.clear();
+//				// mark yourself master.
+//				isMaster = true;         // todo: set in CM
+//				masterEligible = false;  // todo: set in CM
+//			}
+//		}
+//	} else if (isMaster){
+//		if (message->getBodySize() > 4) {
+//			// it appears that some node didn't get the master election notice..send them again
+//			MessageAllocator msgAllocator = MessageAllocator();
+//			Message * thanksMessage = msgAllocator.allocateMessage(0);
+//			thanksMessage->setBodySize(0);
+//			thanksMessage->setType(LeaderElectionAckMessageType);
+//			_syncMgrObj->route(FETCH_UNSIGNED(message->getMessageBody()), thanksMessage);
+//			msgAllocator.deallocateByMessagePointer(thanksMessage);
+//		}
+//	} else {
+//			//not eligible for master ..should not get this request ..log it and do nothing
+//	}
 }
 
 void ClientMessageHandler::startMasterElection() {
@@ -263,7 +296,7 @@ void ClientMessageHandler::updateClusterState(Message *message){
 		Logger::debug("cluster state is same since last heartbeat!");
 		return;
 	}
-	/* TODO
+	/* TODO V1
 	 * 1. deserialize cluster
 	 * 2. update and store it back in cluster.
 	 */
@@ -281,7 +314,7 @@ void MasterMessageHandler::updateNodeInCluster(Message *message) {
 				_syncMgrObj->currentNodeId, nodeId);
 		return;
 	}
-	/*  TODO
+	/*  TODO V1
 	 * 1. Deserialize node
 	 * 2. fetch node from cluster, update and store it back in cluster.
 	 */
@@ -314,13 +347,26 @@ void MasterMessageHandler::lookForCallbackMessages(SMCallBackHandler* /*not used
 	SMCallBackHandler* callBackHandler  = _syncMgrObj->callBackHandler;
 	while(1) {
 		std::vector<Node>& nodes = _syncMgrObj->nodesInCluster;
+		/*
+		 *   Loop over all the nodes in a cluster and check their message queues.
+		 */
 		for (unsigned i = 0 ;  i < nodes.size(); ++i) {
 			if (nodes[i].thisIsMe)
 				continue;
 
 			unsigned nodeId = nodes[i].getId();
-			unsigned idx = nodeId % 1024;
+			unsigned idx = nodeId % 1024;    // index into array of message Queues
+
+			/*
+			 *  Check whether there is any message on this node's queue.
+			 */
 			if (callBackHandler->messageQArray[idx].messageQueue.size() > 0) {  // lock before access ?
+
+				/*
+				 *  Fetch the first message and get its nodeId. Update time stamp entry in
+				 *  perNodeTimeStampEntry hashtable for this node.
+				 */
+
 				Message * msg = callBackHandler->messageQArray[idx].messageQueue.front();
 				if (msg->getBodySize() >= 4) {
 					unsigned msgNodeId = FETCH_UNSIGNED(msg->getMessageBody());
@@ -332,19 +378,25 @@ void MasterMessageHandler::lookForCallbackMessages(SMCallBackHandler* /*not used
 						(*iter).second = time(0);
 						handleMessage(msg);
 					} else {
-						// Message from inactive node. Synchronizer should add this node.
-						// Then only we can accept message from this node.
-						Logger::debug("SM-M%d-Message from non active node = %d",
-								_syncMgrObj->currentNodeId, msgNodeId);
-						//perNodeTimeStampEntry.insert(make_pair(msgNodeId, time(NULL)));
+						Logger::debug("SM-M%d-new node = %d found!!..start book keeping",
+													_syncMgrObj->currentNodeId, nodeId);
+						perNodeTimeStampEntry.insert(make_pair(msgNodeId, time(NULL)));
 					}
 				} else {
 					Logger::debug("SM-M%d-Invalid message of size %d", _syncMgrObj->currentNodeId,
 							msg->getBodySize());
 				}
+				/*
+				 *  remove the message from the queue.
+				 */
 				callBackHandler->removeFront(nodeId);
 
 			} else { // no message for this node
+				/*
+				 *  If there is no message for this node. Check whether we should timeout this
+				 *  node or check again later. Also, if there was no previous timestamp for this
+				 *  node, create one now.
+				 */
 				unsigned timeElapsed;
 				boost::unordered_map<unsigned, unsigned>::iterator iter =
 						perNodeTimeStampEntry.find(nodeId);
