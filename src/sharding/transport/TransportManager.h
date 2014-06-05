@@ -15,20 +15,9 @@ typedef std::vector<event_base*> EventBases;
 typedef std::vector<Node> Nodes;
 class TransportManager ;
 
-struct DisptchArguments{
-
-	DisptchArguments(TransportManager * tm, Message * message, int fd, NodeId id){
-		this->tm = tm;
-		this->message = message;
-		this->fd = fd;
-		this->nodeId = id;
-	}
-
-	TransportManager * tm;
-	Message * message;
-	int fd;
-	NodeId nodeId;
-};
+/*
+ *  placeholder for all the info required by the callbacks
+ */
 
 struct TransportCallback {
 	TransportManager *const tm;
@@ -42,19 +31,6 @@ struct TransportCallback {
 };
 
 class RoutingManager;
-/*
- * This struct is for abstracting timeout and callback behaviour
- * currently used for TM
- */
-class Callback {
-public:
-	virtual void timeout(void*) = 0;
-	virtual void callback(Message*) {};
-	virtual void callbackAll(vector<Message*>&) {};
-	virtual ~Callback(){};
-};
-
-bool recieveMessage(int fd, TransportCallback *cb);
 
 class TransportManager {
 public:
@@ -64,7 +40,7 @@ public:
 
 	//third argument is a timeout in seconds
 	MessageID_t route(NodeId,Message *, unsigned timeout=0);
-  //route message through a particular socket
+	//route message through a particular socket
 	MessageID_t _route(int fd, Message *);
 	void registerCallbackHandlerForSynchronizeManager(CallBackHandler*);
 
@@ -78,9 +54,23 @@ public:
 	RouteMap * getRouteMap();
 	CallBackHandler* getSmHandler();
 	CallBackHandler* getRmHandler();
-   ~TransportManager();
-
+	~TransportManager();
+	bool recieveMessage(int fd, TransportCallback *cb);
 private:
+
+   void * notifyUpstreamHandlers(Message *msg, int fd, NodeId  nodeId);
+   int readDataFromSocket(int fd, char *buffer, int byteToRead, int *byteReadCount);
+   int readMessageHeader(Message *const message,  int fd);
+   int readMessageBody(int fd, MessageBuffer &readBuffer);
+
+   int checkSocketIsReadyForRead(int fd) {
+	   return checkSocketIsReady(fd, true);
+   }
+   int checkSocketIsReadyForWrite(int fd) {
+	   return checkSocketIsReady(fd, false);
+   }
+   int checkSocketIsReady(int socket, bool checkForRead);
+
 	/*
 	 * This member maps nodes to their sockets
 	 */
@@ -126,16 +116,6 @@ private:
 	 */
 	RoutingManager * routingManager;
 };
-
-// TODO : please move them to TM cpp
-inline void TransportManager::registerCallbackHandlerForSynchronizeManager(CallBackHandler
-		*callBackHandler) {
-	synchManagerHandler = callBackHandler;
-}
-
-inline void TransportManager::setInternalMessageBroker(CallBackHandler* cbh) {
-  routeManagerHandler = cbh;
-}
 }}
 
 #endif /* __TRANSPORT_MANAGER_H__ */
