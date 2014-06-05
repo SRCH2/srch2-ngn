@@ -63,6 +63,8 @@ namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
 using namespace srch2::util;
 
+#define TIMEOUT_WAIT_TIME 2
+
 namespace srch2 {
 namespace httpwrapper {
 
@@ -149,11 +151,16 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , CoreS
     		new SerializableSearchCommandInput(&resultAggregator->getLogicalPlan());
 
 	// broadcasting search request to all shards , non-blocking, with timeout and callback to ResultAggregator
-    timeval t;
-    t.tv_sec = 2000;
+
+
+    time_t timeValue;
+    time(&timeValue);
+    timeValue = timeValue + TIMEOUT_WAIT_TIME;
+    Logger::console("------------------------- Time to save timeout : %d" , timeValue);
+
     RoutingManagerAPIReturnType routingStatus =
     		routingManager->broadcast_wait_for_all_w_cb_n_timeout<SerializableSearchCommandInput, SerializableSearchResults>
-    (searchInput, resultAggregator , t , *coreShardInfo);
+    (searchInput, resultAggregator , timeValue , *coreShardInfo);
 
     switch (routingStatus) {
 		case RoutingManagerAPIReturnTypeAllNodesDown:
@@ -300,11 +307,14 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, CoreSh
 		inputs.push_back(insertUpdateInput);
     }
     for(unsigned recordIndex = 0; recordIndex < inputs.size(); ++recordIndex){
-		timeval t;
-		t.tv_sec = 2000;
+
+        time_t timeValue;
+        time(&timeValue);
+        timeValue = timeValue + TIMEOUT_WAIT_TIME;
+
 	    RoutingManagerAPIReturnType routingStatus =
 	    		routingManager->route_w_cb_n_timeout<SerializableInsertUpdateCommandInput, SerializableCommandStatus>
-	    		(inputs.at(recordIndex), resultsAggregator , t , shardInfos.at(recordIndex));
+	    		(inputs.at(recordIndex), resultsAggregator , timeValue , shardInfos.at(recordIndex));
 	    switch (routingStatus) {
 			case RoutingManagerAPIReturnTypeAllNodesDown:
 		        // if the query is not valid, print the error message to the response
@@ -457,11 +467,12 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, CoreSh
 		inputs.push_back(insertUpdateInput);
     }
     for(unsigned recordIndex = 0; recordIndex < inputs.size(); ++recordIndex){
-		timeval t;
-		t.tv_sec = 2000;
+        time_t timeValue;
+        time(&timeValue);
+        timeValue = timeValue + TIMEOUT_WAIT_TIME;
 		RoutingManagerAPIReturnType routingStatus =
 				routingManager->route_w_cb_n_timeout<SerializableInsertUpdateCommandInput, SerializableCommandStatus>
-				(inputs.at(recordIndex), resultsAggregator , t , shardInfos.at(recordIndex));
+				(inputs.at(recordIndex), resultsAggregator , timeValue , shardInfos.at(recordIndex));
 
 	    switch (routingStatus) {
 			case RoutingManagerAPIReturnTypeAllNodesDown:
@@ -527,11 +538,12 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, CoreSh
 		SerializableDeleteCommandInput * deleteInput =
 				new SerializableDeleteCommandInput(primaryKeyStringValue,coreShardInfo->coreId); // TODO : do we need coreId here ?
 		// add request object to results aggregator which is the callback object
-		timeval t;
-		t.tv_sec = 2000;
+	    time_t timeValue;
+	    time(&timeValue);
+	    timeValue = timeValue + TIMEOUT_WAIT_TIME;
 		RoutingManagerAPIReturnType routingStatus =
 				routingManager->route_w_cb_n_timeout<SerializableDeleteCommandInput, SerializableCommandStatus>
-				(deleteInput, resultsAggregator , t , shardInfo);
+				(deleteInput, resultsAggregator , timeValue , shardInfo);
 
 	    switch (routingStatus) {
 			case RoutingManagerAPIReturnTypeAllNodesDown:
@@ -568,11 +580,12 @@ void DPExternalRequestHandler::externalGetInfoCommand(evhttp_request *req, CoreS
 	boost::shared_ptr<GetInfoAggregatorAndPrint> resultsAggregator(new GetInfoAggregatorAndPrint(configurationManager,req));
     SerializableGetInfoCommandInput * getInfoInput = new SerializableGetInfoCommandInput();
 	// add request object to results aggregator which is the callback object
-    timeval t;
-    t.tv_sec = 2000;
+    time_t timeValue;
+    time(&timeValue);
+    timeValue = timeValue + TIMEOUT_WAIT_TIME;
     RoutingManagerAPIReturnType routingStatus =
     		routingManager->broadcast_wait_for_all_w_cb_n_timeout<SerializableGetInfoCommandInput, SerializableGetInfoResults>
-    		(getInfoInput, resultsAggregator, t, *coreShardInfo);
+    		(getInfoInput, resultsAggregator, timeValue, *coreShardInfo);
 
     switch (routingStatus) {
 		case RoutingManagerAPIReturnTypeAllNodesDown:
@@ -600,11 +613,12 @@ void DPExternalRequestHandler::externalSerializeIndexCommand(evhttp_request *req
     	SerializableSerializeCommandInput * serializeInput =
     			new SerializableSerializeCommandInput(SerializableSerializeCommandInput::SERIALIZE_INDEX);
     	// add request object to results aggregator which is the callback object
-    	timeval t;
-    	t.tv_sec = 2000;
+        time_t timeValue;
+        time(&timeValue);
+        timeValue = timeValue + TIMEOUT_WAIT_TIME;
     	RoutingManagerAPIReturnType routingStatus =
     			routingManager->broadcast_wait_for_all_w_cb_n_timeout<SerializableSerializeCommandInput, SerializableCommandStatus>
-    			(serializeInput, resultsAggregator, t, *coreShardInfo);
+    			(serializeInput, resultsAggregator, timeValue, *coreShardInfo);
 
         switch (routingStatus) {
     		case RoutingManagerAPIReturnTypeAllNodesDown:
@@ -650,11 +664,12 @@ void DPExternalRequestHandler::externalSerializeRecordsCommand(evhttp_request *r
             	SerializableSerializeCommandInput * serializeInput =
             			new SerializableSerializeCommandInput(SerializableSerializeCommandInput::SERIALIZE_RECORDS, string(exportedDataFileName));
             	// add request object to results aggregator which is the callback object
-            	timeval t;
-            	t.tv_sec = 2000;
+                time_t timeValue;
+                time(&timeValue);
+                timeValue = timeValue + TIMEOUT_WAIT_TIME;
             	RoutingManagerAPIReturnType routingStatus =
             			routingManager->broadcast_wait_for_all_w_cb_n_timeout<SerializableSerializeCommandInput, SerializableCommandStatus>
-            			(serializeInput, resultsAggregator, t, *coreShardInfo);
+            			(serializeInput, resultsAggregator, timeValue, *coreShardInfo);
 
                 switch (routingStatus) {
             		case RoutingManagerAPIReturnTypeAllNodesDown:
@@ -702,11 +717,12 @@ void DPExternalRequestHandler::externalResetLogCommand(evhttp_request *req, Core
     	resultsAggregator(new CommandStatusAggregatorAndPrint<SerializableResetLogCommandInput>(configurationManager,req));
     	SerializableResetLogCommandInput * resetInput = new SerializableResetLogCommandInput();
     	// add request object to results aggregator which is the callback object
-    	timeval t;
-    	t.tv_sec = 2000;
+        time_t timeValue;
+        time(&timeValue);
+        timeValue = timeValue + TIMEOUT_WAIT_TIME;
     	RoutingManagerAPIReturnType routingStatus =
     			routingManager->broadcast_wait_for_all_w_cb_n_timeout<SerializableResetLogCommandInput, SerializableCommandStatus>
-    			(resetInput, resultsAggregator, t, *coreShardInfo);
+    			(resetInput, resultsAggregator, timeValue, *coreShardInfo);
 
         switch (routingStatus) {
     		case RoutingManagerAPIReturnTypeAllNodesDown:
@@ -740,11 +756,12 @@ void DPExternalRequestHandler::externalCommitCommand(evhttp_request *req, CoreSh
 
 	SerializableCommitCommandInput * commitInput = new SerializableCommitCommandInput();
 	// add request object to results aggregator which is the callback object
-	timeval t;
-	t.tv_sec = 2000;
+    time_t timeValue;
+    time(&timeValue);
+    timeValue = timeValue + TIMEOUT_WAIT_TIME;
 	RoutingManagerAPIReturnType routingStatus =
 			routingManager->broadcast_wait_for_all_w_cb_n_timeout<SerializableCommitCommandInput, SerializableCommandStatus>
-			(commitInput, resultsAggregator, t, *coreShardInfo);
+			(commitInput, resultsAggregator, timeValue, *coreShardInfo);
 
     switch (routingStatus) {
 		case RoutingManagerAPIReturnTypeAllNodesDown:

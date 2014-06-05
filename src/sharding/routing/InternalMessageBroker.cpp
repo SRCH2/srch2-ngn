@@ -224,6 +224,38 @@ void InternalMessageBroker::notifyNoReply(Message * msg){
 	return ;
 }
 
+void InternalMessageBroker::deleteResponseObjectBasedOnType(Message * reply, void * responseObject){
+	switch (reply->getType()) {
+	case SearchCommandMessageType: // -> for LogicalPlan object
+		delete (SerializableSearchResults*)responseObject;
+		return;
+	case InsertUpdateCommandMessageType: // -> for Record object (used for insert and update)
+		delete (SerializableCommandStatus*)responseObject;
+		return;
+	case DeleteCommandMessageType: // -> for DeleteCommandInput object (used for delete)
+		delete (SerializableCommandStatus*)responseObject;
+		return;
+	case SerializeCommandMessageType: // -> for SerializeCommandInput object
+		delete (SerializableCommandStatus*)responseObject;
+		return;
+	case GetInfoCommandMessageType: // -> for GetInfoCommandInput object (used for getInfo)
+		delete (SerializableGetInfoResults*)responseObject;
+		return;
+	case CommitCommandMessageType: // -> for CommitCommandInput object
+		delete (SerializableCommandStatus*)responseObject;
+		return;
+	case ResetLogCommandMessageType: // -> for ResetLogCommandInput (used for resetting log)
+		delete (SerializableCommandStatus*)responseObject;
+		return;
+	case SearchResultsMessageType: // -> for SerializedQueryResults object
+	case GetInfoResultsMessageType: // -> for GetInfoResults object
+	case StatusMessageType: // -> for CommandStatus object (object returned from insert, delete, update)
+	default:
+		ASSERT(false);
+		return;
+	}
+}
+
 Srch2Server * InternalMessageBroker::getShardIndex(ShardId & shardId){
 	return routingManager.getShardIndex(shardId);
 }

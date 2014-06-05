@@ -25,7 +25,6 @@ RequestType * decodeExternalMessage(Message * message){
 inline SerializableInsertUpdateCommandInput * decodeExternalInsertUpdateMessage(Message * message, const srch2::instantsearch::Schema * schema){
 	return SerializableInsertUpdateCommandInput::deserialize(Message::getBodyPointerFromMessagePointer(message),schema);
 }
-
 }
 }
 

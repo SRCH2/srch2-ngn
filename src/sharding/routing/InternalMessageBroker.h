@@ -27,6 +27,8 @@ public:
 
 	void notifyNoReply(Message * msg);
 
+	void deleteResponseObjectBasedOnType(Message * reply, void * responseObject);
+
 	/*
 	 * This function gets the index for a particular shard
 	 */
