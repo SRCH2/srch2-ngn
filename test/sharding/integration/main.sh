@@ -141,6 +141,8 @@ else
     echo "-- PASSED: $test_id" >> ${output}
 fi
 
+sleep 5s
+
 test_id="2n-insertA-deleteB"
 printTestBanner "$test_id"
 python ./2n-testCaseFramework/test-sharding.py $SRCH2_ENGINE ./2n-testCaseFramework/2n-insertA-deleteB.txt ./2n-testCaseFramework/list-of-2-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
@@ -152,6 +154,8 @@ if [ ${PIPESTATUS[0]} -gt 0 ]; then
 else
     echo "-- PASSED: $test_id" >> ${output}
 fi
+
+sleep 5s 
 
 test_id="2n-insertA-R1-B-R2-deleteA-R1-B-R2"
 printTestBanner "$test_id"
@@ -165,6 +169,8 @@ else
     echo "-- PASSED: $test_id" >> ${output}
 fi
 
+sleep 5s
+
 test_id="2n-insertA-R1-B-R2-deleteB-R1-A-R1"
 printTestBanner "$test_id"
 python ./2n-testCaseFramework/test-sharding.py $SRCH2_ENGINE ./2n-testCaseFramework/2n-insertA-R1-B-R2-deleteB-R1-A-R1.txt ./2n-testCaseFramework/list-of-2-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
@@ -176,6 +182,8 @@ if [ ${PIPESTATUS[0]} -gt 0 ]; then
 else
     echo "-- PASSED: $test_id" >> ${output}
 fi
+
+sleep 5s 
 
 test_id="2n-insertA-R1-B-R2-deleteB-R1-queryA-R1"
 printTestBanner "$test_id"
@@ -189,6 +197,8 @@ else
     echo "-- PASSED: $test_id" >> ${output}
 fi
 
+sleep 5s
+
 test_id="2n-insertAB-queryAB"
 printTestBanner "$test_id"
 python ./2n-testCaseFramework/test-sharding.py $SRCH2_ENGINE ./2n-testCaseFramework/2n-insertAB-queryAB.txt ./2n-testCaseFramework/list-of-2-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
@@ -200,6 +210,8 @@ if [ ${PIPESTATUS[0]} -gt 0 ]; then
 else
     echo "-- PASSED: $test_id" >> ${output}
 fi
+
+sleep 5s
 
 test_id="2n-insertAABB"
 printTestBanner "$test_id"
@@ -214,6 +226,8 @@ else
 fi
 
 
+sleep 5s
+
 test_id="3n-insertA-insertB-deleteC-queryC"
 printTestBanner "$test_id"
 python ./3n-testCaseFramework/test-sharding.py $SRCH2_ENGINE ./3n-testCaseFramework/3n-insertA-insertB-deleteC-queryC.txt ./3n-testCaseFramework/list-of-3-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
@@ -226,6 +240,8 @@ else
     echo "-- PASSED: $test_id" >> ${output}
 fi
 
+sleep 5s
+
 test_id="3n-insertABC-queryABC"
 printTestBanner "$test_id"
 python ./3n-testCaseFramework/test-sharding.py $SRCH2_ENGINE ./3n-testCaseFramework/3n-insertABC-queryABC.txt ./3n-testCaseFramework/list-of-3-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
@@ -237,6 +253,8 @@ if [ ${PIPESTATUS[0]} -gt 0 ]; then
 else
     echo "-- PASSED: $test_id" >> ${output}
 fi
+
+sleep 5s
 
 test_id="3n-insertABC-queryC"
 printTestBanner "$test_id"
@@ -250,6 +268,8 @@ else
     echo "-- PASSED: $test_id" >> ${output}
 fi
 
+sleep 5s
+
 test_id="3n-insertABC-queryABC"
 printTestBanner "$test_id"
 python ./3n-testCaseFramework/test-sharding.py $SRCH2_ENGINE ./3n-testCaseFramework/3n-insertABC-queryABC.txt ./3n-testCaseFramework/list-of-3-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
@@ -261,6 +281,8 @@ if [ ${PIPESTATUS[0]} -gt 0 ]; then
 else
     echo "-- PASSED: $test_id" >> ${output}
 fi
+
+sleep 5s
 
 test_id="3n-insertA-queryABC"
 printTestBanner "$test_id"
@@ -274,6 +296,8 @@ else
     echo "-- PASSED: $test_id" >> ${output}
 fi
 
+sleep 5s
+
 test_id="3n-insertAB-deleteCB-queryCA"
 printTestBanner "$test_id"
 python ./3n-testCaseFramework/test-sharding.py $SRCH2_ENGINE ./3n-testCaseFramework/3n-insertAB-deleteCB-queryCA.txt ./3n-testCaseFramework/list-of-3-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
@@ -286,6 +310,7 @@ else
     echo "-- PASSED: $test_id" >> ${output}
 fi
 
+sleep 5s
 
 test_id="testUpdateB"
 printTestBanner "$test_id"
@@ -298,6 +323,8 @@ if [ ${PIPESTATUS[0]} -gt 0 ]; then
 else
     echo "-- PASSED: $test_id" >> ${output}
 fi
+
+sleep 5s
 
 test_id="testUpdateC"
 printTestBanner "$test_id"
