@@ -72,42 +72,22 @@ void RoutingManager::sendInternalMessage(Message * msg, RequestType * requestObj
 	Logger::console("Message is local");
 	pthread_t internalMessageRouteThread;
 
-	std::pair<RoutingManager * ,  std::pair< Message * , NodeId> > * rmAndMsgPointers =
+	std::pair<RoutingManager * ,  std::pair< Message * , NodeId> > * routeInternalMessageArgs =
 			new std::pair<RoutingManager * , std::pair<Message *, NodeId> >(this,
 					std::make_pair(msg, nodeId));
 
-	if (pthread_create(&internalMessageRouteThread, NULL, routeInternalMessage, rmAndMsgPointers) != 0){
+	// run for the same shard in a separate thread
+	if (pthread_create(&internalMessageRouteThread, NULL, routeInternalMessage, routeInternalMessageArgs) != 0){
 //		Logger::console("Cannot create thread for handling local message");
 		perror("Cannot create thread for handling local message");
 		return;
 	}
 	pthread_detach(internalMessageRouteThread);
-//	// for now, we use the same thread
-//	if(msg->isNoReply()){
-//		// this msg comes from a local broadcast or route with no call back
-//		// so there is no reply for this msg.
-//		// notifyNoReply should deallocate the obj in msg
-//		// because msg just keeps a pointer to that object
-//		// and that object itself needs to be deleted.
-//		getInternalMessageBroker()->notifyNoReply(msg);
-//		getTransportManager().getMessageAllocator()->deallocateByMessagePointer(msg);
-//
-//	}
-//	std::pair<Message*,void*> resultOfDPInternal = getInternalMessageBroker()->notifyWithReply(msg);
-//	Message* reply = resultOfDPInternal.first;
-//	// and pass the response object to pending request
-//	ASSERT(reply != NULL);
-//	if(reply != NULL) {
-//		reply->setRequestMessageId(msg->getMessageId());
-//		reply->setReply()->setInternal();
-//		if ( ! getPendingRequestsHandler()->resolveResponseMessage(reply, nodeId, resultOfDPInternal.second)){
-//			// TODO : reply could not be resolbved.
-//			getTransportManager().getMessageAllocator()->deallocateByMessagePointer(reply);
-//		}
-//	}
-//	if(reply == NULL){
-//		Logger::console("Reply is null");
-//	}
+
+
+//	// run for local shard in the same thread
+//	routeInternalMessage(routeInternalMessageArgs);
+
 }
 
 template<typename RequestType , typename ResponseType> inline
@@ -520,7 +500,6 @@ RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType * requestObj,
 			sendExternalMessage(externalMessage, requestObj, shardIdFromIteration, timeoutValue, pendingRequest);
 		}
 	}
-
 
 	return RoutingManagerAPIReturnTypeSuccess;
 }
