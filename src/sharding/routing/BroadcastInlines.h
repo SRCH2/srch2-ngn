@@ -77,16 +77,16 @@ void RoutingManager::sendInternalMessage(Message * msg, RequestType * requestObj
 					std::make_pair(msg, nodeId));
 
 	// run for the same shard in a separate thread
-//	if (pthread_create(&internalMessageRouteThread, NULL, routeInternalMessage, routeInternalMessageArgs) != 0){
-////		Logger::console("Cannot create thread for handling local message");
-//		perror("Cannot create thread for handling local message");
-//		return;
-//	}
-//	pthread_detach(internalMessageRouteThread);
+	if (pthread_create(&internalMessageRouteThread, NULL, routeInternalMessage, routeInternalMessageArgs) != 0){
+//		Logger::console("Cannot create thread for handling local message");
+		perror("Cannot create thread for handling local message");
+		return;
+	}
+	pthread_detach(internalMessageRouteThread);
 
 
-	// run for local shard in the same thread
-	routeInternalMessage(routeInternalMessageArgs);
+//	// run for local shard in the same thread
+//	routeInternalMessage(routeInternalMessageArgs);
 
 }
 
@@ -468,8 +468,6 @@ RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType * requestObj,
 
 
 	// iterate on all destinations and send the message
-	bool shouldRunLocalShard = false;
-	ShardId shardIdForLocalRun ;
 	for(broadcastResolver.initIteration(); broadcastResolver.hasMore(); broadcastResolver.nextIteration()) {
 		ShardId shardIdFromIteration = broadcastResolver.getNextShardId();
 
@@ -481,8 +479,15 @@ RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType * requestObj,
 
 		// this shard is in the current node
 		if(nodeId == configurationManager.getCurrentNodeId()){
-			shouldRunLocalShard = true;
-			shardIdForLocalRun = shardIdFromIteration;
+			// so that we create the message only once
+			if(internalMessage == NULL){
+				internalMessage = prepareInternalMessage<RequestType>(shardIdFromIteration, requestObj);
+				// request message is stored in cb object to be deleted when replies are ready
+				// and cb object is being destroyed.
+			}
+			internalMessage->setDestinationShardId(shardIdFromIteration);
+			// callback should wait for one more reply
+			sendInternalMessage(internalMessage, requestObj, shardIdFromIteration, timeoutValue, pendingRequest);
 		}else{// this shard is in some other node
 			// so that we create the message only once
 			if(externalMessage == NULL){
@@ -494,19 +499,6 @@ RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType * requestObj,
 			// callback should wait for one more reply
 			sendExternalMessage(externalMessage, requestObj, shardIdFromIteration, timeoutValue, pendingRequest);
 		}
-	}
-
-	// because we want to run the local shard at last so that it doesn't block other shards
-	if(shouldRunLocalShard){
-		// so that we create the message only once
-		if(internalMessage == NULL){
-			internalMessage = prepareInternalMessage<RequestType>(shardIdForLocalRun, requestObj);
-			// request message is stored in cb object to be deleted when replies are ready
-			// and cb object is being destroyed.
-		}
-		internalMessage->setDestinationShardId(shardIdForLocalRun);
-		// callback should wait for one more reply
-		sendInternalMessage(internalMessage, requestObj, shardIdForLocalRun, timeoutValue, pendingRequest);
 	}
 
 	return RoutingManagerAPIReturnTypeSuccess;
