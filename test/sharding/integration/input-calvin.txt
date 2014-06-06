@@ -1,0 +1,2 @@
+A||calvin.calit2.uci.edu||10002||./2n-testCaseFramework/confA.xml
+B||calvin.calit2.uci.edu||10003||./2n-testCaseFramework/confB.xml
