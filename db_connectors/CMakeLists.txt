@@ -1,0 +1,34 @@
+#  How to use this cmake file. ( Note: later we will integrate it with the main CMakeLists)
+# > mdkir build
+# > cmake -DCMAKE_VERBOSE_MAKEFILE=1 ..
+# > cd build
+# > make
+
+cmake_minimum_required(VERSION 2.8)
+#
+#  1.  MongoDB connector 
+#
+FILE(GLOB_RECURSE MONGO_DB_CONNECTOR_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "mongo/*.cpp")
+					
+# add additional include directories depending on a connector requirement. 
+INCLUDE_DIRECTORIES(
+    ${CMAKE_SOURCE_DIR}/thirdparty/mongo-cxx-driver-v2.4/src
+)
+
+ADD_LIBRARY(mongodbConnector SHARED ${MONGO_DB_CONNECTOR_SRC} )
+SET_TARGET_PROPERTIES(mongodbConnector PROPERTIES COMPILE_FLAGS -fPIC)
+# Add all required libraries to be linked in the statement below
+TARGET_LINK_LIBRARIES(mongodbConnector )
+
+#
+#  2.  MySQL connector 
+#
+FILE(GLOB_RECURSE MYSQL_DB_CONNECTOR_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "mysql/*.cpp")
+# add additional include directories depending on a connector requirement. 
+INCLUDE_DIRECTORIES(
+    ${CMAKE_SOURCE_DIR}/thirdparty/mongo-cxx-driver-v2.4/src
+)
+ADD_LIBRARY(mysqlConnector SHARED ${MYSQL_DB_CONNECTOR_SRC} )
+SET_TARGET_PROPERTIES(mysqlConnector PROPERTIES COMPILE_FLAGS -fPIC)
+# Add all required libraries to be linked in the statement below
+TARGET_LINK_LIBRARIES(mysqlConnector )
