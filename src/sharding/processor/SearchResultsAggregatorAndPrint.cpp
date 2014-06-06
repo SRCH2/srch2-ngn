@@ -64,8 +64,10 @@ void SearchResultAggregatorAndPrint::callBack(vector<PendingMessage<Serializable
 			continue;
 		}
 		QueryResults * resultsOfThisShard = messages.at(responseIndex)->getResponseObject()->getQueryResults();
+		const map<string, string> & queryResultInMemoryRecordString =
+				messages.at(responseIndex)->getResponseObject()->getInMemoryRecordStrings();
 		resultsOfAllShards.push_back(
-		        make_pair(resultsOfThisShard, messages.at(responseIndex)->getResponseObject()->getInMemoryRecordStrings()));
+		        make_pair(resultsOfThisShard,  &queryResultInMemoryRecordString ));
 		if(results.aggregatedSearcherTime < messages.at(responseIndex)->getResponseObject()->getSearcherTime()){
 			results.aggregatedSearcherTime = messages.at(responseIndex)->getResponseObject()->getSearcherTime();
 		}
@@ -194,7 +196,7 @@ void SearchResultAggregatorAndPrint::printResults(){
 void SearchResultAggregatorAndPrint::printResults(evhttp_request *req,
         const evkeyvalq &headers, const LogicalPlan &queryPlan,
         const CoreInfo_t *indexDataConfig,
-        const vector<pair< QueryResult *, string> > allResults,
+        const vector<pair< QueryResult *, MapStringPtr> > allResults,
         const Query *query,
         const unsigned start, const unsigned end,
         const unsigned retrievedResults, const string & message,
@@ -231,9 +233,9 @@ void SearchResultAggregatorAndPrint::printResults(evhttp_request *req,
                 && query->getQueryTerms()->empty()) //check if the query type is range query without keywords
         {
             for (unsigned i = start; i < end; ++i) {
-                char * inMemoryCharPtr = new char[allResults.at(i).second.size()];
-                memcpy(inMemoryCharPtr, allResults.at(i).second.c_str(), allResults.at(i).second.size());
-                StoredRecordBuffer inMemoryData(inMemoryCharPtr, allResults.at(i).second.size());
+                char * inMemoryCharPtr = new char[allResults.at(i).second->size()];
+                memcpy(inMemoryCharPtr, allResults.at(i).second->c_str(), allResults.at(i).second->size());
+                StoredRecordBuffer inMemoryData(inMemoryCharPtr, allResults.at(i).second->size());
             	if (inMemoryData.start.get() == NULL) {
             		--resultFound;
             		continue;
@@ -263,9 +265,9 @@ void SearchResultAggregatorAndPrint::printResults(evhttp_request *req,
         {
 
             for (unsigned i = start; i < end; ++i) {
-                char * inMemoryCharPtr = new char[allResults.at(i).second.size()];
-                memcpy(inMemoryCharPtr, allResults.at(i).second.c_str(), allResults.at(i).second.size());
-            	StoredRecordBuffer inMemoryData(inMemoryCharPtr, allResults.at(i).second.size());
+                char * inMemoryCharPtr = new char[allResults.at(i).second->size()];
+                memcpy(inMemoryCharPtr, allResults.at(i).second->c_str(), allResults.at(i).second->size());
+            	StoredRecordBuffer inMemoryData(inMemoryCharPtr, allResults.at(i).second->size());
             	if (inMemoryData.start.get() == NULL) {
             		--resultFound;
             		continue;
@@ -452,7 +454,7 @@ void SearchResultAggregatorAndPrint::printResults(evhttp_request *req,
 void SearchResultAggregatorAndPrint::printOneResultRetrievedById(evhttp_request *req, const evkeyvalq &headers,
         const LogicalPlan &queryPlan,
         const CoreInfo_t *indexDataConfig,
-        const vector<pair< QueryResult *, string> > allResults,
+        const vector<pair< QueryResult *, MapStringPtr> > allResults,
         const string & message,
         const unsigned ts1){
 
@@ -483,9 +485,9 @@ void SearchResultAggregatorAndPrint::printOneResultRetrievedById(evhttp_request 
 
     unsigned resultFound = allResults.size();
     for (unsigned i = 0; i < allResults.size(); ++i) {
-        char * inMemoryCharPtr = new char[allResults.at(i).second.size()];
-        memcpy(inMemoryCharPtr, allResults.at(i).second.c_str(), allResults.at(i).second.size());
-        StoredRecordBuffer inMemoryData(inMemoryCharPtr, allResults.at(i).second.size());
+        char * inMemoryCharPtr = new char[allResults.at(i).second->size()];
+        memcpy(inMemoryCharPtr, allResults.at(i).second->c_str(), allResults.at(i).second->size());
+        StoredRecordBuffer inMemoryData(inMemoryCharPtr, allResults.at(i).second->size());
     	if (inMemoryData.start.get() == NULL) {
     		--resultFound;
     		continue;
@@ -550,13 +552,14 @@ void SearchResultAggregatorAndPrint::aggregateRecords(){
 	// aggregate results
 	for(unsigned resultSetIndex = 0 ; resultSetIndex < resultsOfAllShards.size() ; ++resultSetIndex){
 		QueryResults * queryResultsItr = resultsOfAllShards.at(resultSetIndex).first;
-		 map<string, string> & queryResultsRecordData = resultsOfAllShards.at(resultSetIndex).second;
+		const map<string, string> * queryResultsRecordData = resultsOfAllShards.at(resultSetIndex).second;
 		for(unsigned queryResultIndex = 0; queryResultIndex < queryResultsItr->impl->sortedFinalResults.size();
                 queryResultIndex ++){
 		    string resultKey = queryResultsItr->getRecordId(queryResultIndex);
+		    MapStringPtr recordDataStringPtr(queryResultsRecordData->find(resultKey));
 		    results.allResults.push_back(
 		            make_pair(queryResultsItr->impl->sortedFinalResults.at(queryResultIndex),
-		                    queryResultsRecordData[resultKey] ));
+		            		recordDataStringPtr ));
 		}
 	}
 
@@ -570,7 +573,7 @@ void SearchResultAggregatorAndPrint::aggregateRecords(){
  */
 void SearchResultAggregatorAndPrint::aggregateFacets(){
 
-	for(vector<pair< QueryResults *, map<string, string> > >::iterator resultsItr = resultsOfAllShards.begin() ;
+	for(vector<pair< QueryResults *, const map<string, string> * > >::iterator resultsItr = resultsOfAllShards.begin() ;
 	        resultsItr != resultsOfAllShards.end() ; ++resultsItr){
 	    QueryResults * queryResultsItr = resultsItr->first;
 		const std::map<std::string, std::pair< FacetType , std::vector<std::pair<std::string, float> > > > *
@@ -620,7 +623,7 @@ void SearchResultAggregatorAndPrint::mergeFacetVectors(std::vector<std::pair<std
 
 void SearchResultAggregatorAndPrint::aggregateEstimations(){
 	results.isResultsApproximated = false;
-	for(vector<pair< QueryResults *, map<string, string> > >::iterator resultsItr = resultsOfAllShards.begin() ;
+	for(vector<pair< QueryResults *, const map<string, string> * > >::iterator resultsItr = resultsOfAllShards.begin() ;
 	        resultsItr != resultsOfAllShards.end() ; ++resultsItr){
 	    QueryResults * queryResultsItr = resultsItr->first;
 		results.isResultsApproximated  = results.isResultsApproximated || queryResultsItr->impl->resultsApproximated;

@@ -19,6 +19,43 @@ class SearchResultAggregatorAndPrint : public ResultAggregatorAndPrint<Serializa
 
 public:
 
+	/*
+	 * This class is needed to safely point to a string in an entry of a map
+	 * We use this wrapper around pointer to avoid copy query result strings
+	 */
+	class MapStringPtr{
+	public:
+		MapStringPtr(const map<string,string>::const_iterator itr){
+			this->itr = itr;
+		}
+
+		const string * operator->() const{
+			return &(itr->second);
+		}
+		const string & operator*() const{
+			return itr->second;
+		}
+
+	private:
+		map<string,string>::const_iterator itr;
+	};
+
+	class AggregatedQueryResults{
+	public:
+		vector<pair< QueryResult *, MapStringPtr> > allResults;
+		std::map<std::string, std::pair< FacetType , std::vector<std::pair<std::string, float> > > > aggregatedFacetResults;
+		unsigned aggregatedEstimatedNumberOfResults;
+		bool isResultsApproximated;
+		unsigned aggregatedSearcherTime;
+
+		AggregatedQueryResults(){
+			aggregatedEstimatedNumberOfResults = 0;
+			isResultsApproximated = false;
+			aggregatedSearcherTime = 0;
+		}
+	};
+
+
 	SearchResultAggregatorAndPrint(ConfigManager * configurationManager, evhttp_request *req, CoreShardInfo * coreShardInfo);
 	LogicalPlan & getLogicalPlan();
 	ParsedParameterContainer * getParamContainer();
@@ -74,7 +111,7 @@ public:
 	void printResults(evhttp_request *req,
 	        const evkeyvalq &headers, const LogicalPlan &queryPlan,
 	        const CoreInfo_t *indexDataConfig,
-	        const vector<pair< QueryResult *, string> > allResults,
+	        const vector<pair< QueryResult *, MapStringPtr> > allResults,
 	        const Query *query,
 	        const unsigned start, const unsigned end,
 	        const unsigned retrievedResults, const string & message,
@@ -83,7 +120,7 @@ public:
 	void printOneResultRetrievedById(evhttp_request *req, const evkeyvalq &headers,
 	        const LogicalPlan &queryPlan,
 	        const CoreInfo_t *indexDataConfig,
-	        const vector<pair< QueryResult *, string> > allResults,
+	        const vector<pair< QueryResult *, MapStringPtr> > allResults,
 	        const string & message,
 	        const unsigned ts1);
 
@@ -94,24 +131,8 @@ public:
 
 	class QueryResultsComparatorOnlyScore{
 	public:
-		bool operator()(const pair< QueryResult *, string> & left, const pair< QueryResult *, string> &  right){
+		bool operator()(const pair< QueryResult *, MapStringPtr> & left, const pair< QueryResult *, MapStringPtr> &  right){
 			return (left.first->getResultScore() > right.first->getResultScore());
-		}
-	};
-
-
-	class AggregatedQueryResults{
-	public:
-		vector<pair< QueryResult *, string> > allResults;
-		std::map<std::string, std::pair< FacetType , std::vector<std::pair<std::string, float> > > > aggregatedFacetResults;
-		unsigned aggregatedEstimatedNumberOfResults;
-		bool isResultsApproximated;
-		unsigned aggregatedSearcherTime;
-
-		AggregatedQueryResults(){
-			aggregatedEstimatedNumberOfResults = 0;
-			isResultsApproximated = false;
-			aggregatedSearcherTime = 0;
 		}
 	};
 
@@ -149,7 +170,7 @@ private:
 	 * If some shards fail or don't return any results we ignore them
 	 * Search should not be blocking in failure case
 	 */
-	vector<pair< QueryResults *, map<string, string> > > resultsOfAllShards;
+	vector<pair< QueryResults *, const map<string, string> * > > resultsOfAllShards;
 
 	/*
 	 * This variable contains the final aggregated results
