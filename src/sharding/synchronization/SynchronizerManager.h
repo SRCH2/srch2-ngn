@@ -27,6 +27,7 @@ namespace httpwrapper {
 class SMCallBackHandler;
 class MessageHandler;
 
+
 /*
  *   Entry point for the synchronizer thread. void * => Synchronizer *
  */
@@ -192,6 +193,11 @@ protected:
 	SyncManager *_syncMgrObj;
 };
 
+enum ClientNodeState {
+	MASTER_AVAILABLE,
+	MASTER_UNAVAILABLE
+};
+
 /*
  *   This class implements the client node's message handling
  */
@@ -229,7 +235,7 @@ private:
 	}
 	void updateClusterState(Message *message);
 
-	unsigned _state;
+	ClientNodeState nodeState;
 	MessageAllocator cMessageAllocator;
 	bool itselfInitiatedMasterElection;
 	std::set<unsigned> voters;
