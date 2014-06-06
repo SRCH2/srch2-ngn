@@ -103,7 +103,7 @@ void * TransportManager::notifyUpstreamHandlers(Message *msg, int fd, NodeId  no
 	} else {
 		// Check whether this node has registered SMHandler into TM yet. If not skip the message.
 		if (getSmHandler() != NULL){
-			getSmHandler()->notifyWithReply(msg);
+			getSmHandler()->notifyNoReply(msg);
 		}
 		getMessageAllocator()->deallocateByMessagePointer(msg);
 	}
