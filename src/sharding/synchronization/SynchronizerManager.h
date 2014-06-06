@@ -5,8 +5,8 @@
  *      Author: srch2
  */
 
-#ifndef SYNCHRONIZERMANAGER_H_
-#define SYNCHRONIZERMANAGER_H_
+#ifndef __SHARDING_SYNCHRONIZERMANAGER_H__
+#define __SHARDING_SYNCHRONIZERMANAGER_H__
 
 #include "configuration/ConfigManager.h"
 #include "transport/TransportManager.h"
@@ -17,35 +17,80 @@
 #include <boost/unordered_map.hpp>
 #include <iostream>
 using namespace std;
-using namespace srch2::httpwrapper;
 
 namespace srch2 {
 namespace httpwrapper {
 
 #define FETCH_UNSIGNED(x) *((unsigned *)(x))
+#define MSG_QUEUE_ARRAY_SIZE 1024
 
 class SMCallBackHandler;
 class MessageHandler;
+
+
+/*
+ *   Entry point for the synchronizer thread. void * => Synchronizer *
+ */
 void *bootSynchronizer(void *arg) ;
 
-class Synchronizer {
+/*
+ *  This is a main class in SM module which provide synchronization facilities.
+ *
+ *  1- Node failure detection
+ *  2- Master election on master node failure
+ *  3- Keeping consistent cluster information among all nodes in cluster.
+ *
+ */
+class SyncManager {
+	friend class ClientMessageHandler;
+	friend class MasterMessageHandler;
 public:
-	Synchronizer(ConfigManager& cm, TransportManager& tm, unsigned masterNodeId);
-	virtual ~Synchronizer();
-	// should be called in new thread otherwise current thread will block
+	/*
+	 *  Initialize internal state.
+	 */
+	SyncManager(ConfigManager& cm, TransportManager& tm, unsigned masterNodeId);
+	/*
+	 *   Free resources.
+	 */
+	virtual ~SyncManager();
+	/*
+	 *  Main entry point for SyncManager. Starts Master/Client heartbeat logic.
+	 *  Note: should be called in new thread otherwise current thread will block
+	 */
 	void run();
 private:
+	///
+	///  Private member functions start here.
+	///
+	/*
+	 *   fetch timeout interval for SM messages.
+	 */
 	unsigned getTimeout() { return initialTimeout ; }      // temp for V0 replace with pingTimeout in V1
-	void resetTimeout() {
+	void resetTimeout() {// temp for V0
 		initialTimeout = pingTimeout;
-	}  // temp for V0
+	}
 	//void refresh() {};
 	//unsigned findNextEligibleMaster();
+	/*
+	 *   Send heartbeat request to all nodes in cluster
+	 */
 	void sendHeartBeatToAllNodesInCluster();
-	void registerForCallback();
-	void lookForCallbackMessages();
+
+	/*
+	 *   Wrapper around TM route function. Sets SM flag
+	 */
 	void route(NodeId node, Message *msg);
+
+	/*
+	 *   Check whether master node belongs to majority portion of the
+	 *   cluster.
+	 */
 	bool hasMajority();
+
+	///
+	///  Private member variables start here.
+	///
+
 	bool isCurrentNodeMaster;
 	unsigned currentNodeId;
 	unsigned pingInterval;
@@ -56,8 +101,6 @@ private:
 	TransportManager& transport;
 	SMCallBackHandler *callBackHandler;
 	MessageHandler *messageHandler;
-	friend class ClientMessageHandler;
-	friend class MasterMessageHandler;
 	ConfigManager& config;
 	std::vector<Node> nodesInCluster;
 
@@ -65,87 +108,43 @@ private:
 
 class SMCallBackHandler : public CallBackHandler{
 public:
-	void notifyNoReply(Message * msg) {
-		notifyWithReply(msg);
-	}
-	std::pair<Message*,void*>  notifyWithReply(Message *message) {
-                  
-		switch(message->getType()){
-			case HeartBeatMessageType:
-			{
-				//cout << "****delivered heart beat ***" << endl;
-				if (!isMaster) {
-					boost::mutex::scoped_lock lock(hbLock);
-					heartbeatMessageTimeEntry = time(NULL);
-					memcpy(heartbeatMessage, message, sizeof(Message) + 4);
-				} else {
-					//cout << "Master should not receive heat beat request" << endl;
-				}
-				break;
-			}
-			case ClientStatusMessageType:
-			case LeaderElectionAckMessageType:
-			case LeaderElectionProposalMessageType:
-			{
-				if (message->getBodySize() >= 4) {
-					unsigned nodeId = FETCH_UNSIGNED(message->getMessageBody());
-				//cout << "*** delivered message received from client " << nodeId << endl ;
-					unsigned idx = nodeId % 1024;
-					Message * msg = msgAllocator.allocateMessage(message->getBodySize());
-					memcpy(msg, message, sizeof(Message) + message->getBodySize());
-					boost::mutex::scoped_lock lock(messageQArray[idx].qGuard);
-					messageQArray[idx].messageQueue.push(msg);
-					//cout << "node" << idx << " :: " << messageQArray[idx].messageQueue.size();
-				} else {
-					Logger::warn("SM-CB: Incomplete message received!!");
-				}
-				break;
-			}
-			default:
-				if (message->getBodySize() >= 4) {
-					unsigned nodeId = FETCH_UNSIGNED(message->getMessageBody());
-					Logger::warn("SM-CB: Bad message type received from node = %d", nodeId) ;
-				}
-				break;
-		}
-		return std::make_pair<Message*,void*>(NULL,NULL);
+	/*
+	 *   The function gets Message form TM and process it based on the message type.
+	 *
+	 *   1. Master heart beat message is stored with it arrival timestamp.
+	 *   2. Client message is stored in a per message queue array.
+	 *
+	 */
+	void notifyNoReply(Message * msg);
+
+	/*
+	 *   Virtual function is not implemented
+	 */
+	std::pair<Message*,void*> notifyWithReply(Message *msg) {
+		ASSERT(false);
+		return std::pair<Message*,void*>(NULL, NULL);
 	}
 
-	SMCallBackHandler(bool isMaster) {
-		this->isMaster = isMaster;
-		heartbeatMessageTimeEntry = time(NULL);
-		msgAllocator = MessageAllocator();
-	    heartbeatMessage = msgAllocator.allocateMessage(4);
+	/*
+	 *  Constructor
+	 */
+	SMCallBackHandler(bool isMaster);
 
-	}
-	void removeFront(unsigned nodeId)
-	{
-		unsigned idx = nodeId % 1024;
-		Message *ptr = NULL;
-		std::queue<Message *> & ref = messageQArray[idx].messageQueue;
-		{
-			// x-auto-lock
-			boost::mutex::scoped_lock lock(messageQArray[idx].qGuard);
-			if (ref.size()) {
-				ptr = ref.front();
-				ref.pop();
-			}
-		}
-		if (ptr)
-			msgAllocator.deallocateByMessagePointer(ptr);
-	}
+	/*
+	 *  Remove message from node's queue.
+	 */
+	void removeMessageFromQueue(unsigned nodeId);
 
-	void getHeartBeatMessages(Message**msg) {
-		boost::mutex::scoped_lock lock(hbLock);
-		*msg = msgAllocator.allocateMessage(4);
-		memcpy(*msg, heartbeatMessage, sizeof(Message) + 4);
-	}
+	/*
+	 *  Remove message from node's queue.
+	 */
+	void getHeartBeatMessages(Message**msg);
 
-	std::time_t getHeartBeatMessageTime() {
-		boost::mutex::scoped_lock lock(hbLock);
-		std::time_t copy = heartbeatMessageTimeEntry;
-		return copy;
-	}
+	/*
+	 *  Get heartbeat message's timestamp.
+	 */
+	std::time_t getHeartBeatMessageTime();
+
 private:
 	bool isMaster;
 	// Last timestamp when heartbeat message was recieved from master
@@ -158,89 +157,85 @@ public:
 	struct MessageQ{
 		std::queue<Message *> messageQueue;
 		boost::mutex qGuard;
-	} messageQArray[1024];
+	} messageQArray[MSG_QUEUE_ARRAY_SIZE];
 
 	MessageAllocator msgAllocator;
 };
 
+/*
+ *   The abstract class which provides a general interface for handling
+ *   messages.
+ */
 class MessageHandler {
 public:
-	MessageHandler(Synchronizer* sm) { _syncMgrObj = sm; }
+	MessageHandler(SyncManager* sm) { _syncMgrObj = sm; }
+
+	/*
+	 *   Any kind of failure should be handled in this function.
+	 */
 	virtual void handleFailure(Message *message) = 0;
-
+	/*
+	 *   Timeout case should be handled in this function.
+	 */
 	virtual void handleTimeOut(Message *message)  = 0;
-
+	/*
+	 *   Success case should be handled in this function.
+	 */
 	virtual void handleMessage(Message *message)  = 0;
-
+	/*
+	 *   The function should handle main logic of processing
+	 *   messages delivered by TM.
+	 */
 	virtual void lookForCallbackMessages(SMCallBackHandler*) = 0;
 
 	virtual ~MessageHandler() {}
 protected:
-	Synchronizer *_syncMgrObj;
+	SyncManager *_syncMgrObj;
 };
 
+enum ClientNodeState {
+	MASTER_AVAILABLE,
+	MASTER_UNAVAILABLE
+};
+
+/*
+ *   This class implements the client node's message handling
+ */
 class ClientMessageHandler : public MessageHandler{
 public:
-	ClientMessageHandler(Synchronizer* sm): MessageHandler(sm) {
-		_state = 0; itselfInitiatedMasterElection = false;
-		cMessageAllocator = MessageAllocator();
-	}
+	ClientMessageHandler(SyncManager* sm);
+	/*
+	 *   The function handles the main logic of processing
+	 *   messages delivered by TM.
+	 */
 	void lookForCallbackMessages(SMCallBackHandler*);
+
 	void handleFailure(Message *message) {
-		// not implmented for V0
-		return;
-	}
-	virtual void handleTimeOut(Message *message) {
-		if (message->getBodySize() < 4 ) {
-			Logger::error("Timeout with no node information!!");
-			return;
-		}
-		unsigned nodeId = FETCH_UNSIGNED( message->getMessageBody());
-		switch(message->getType()) {
-		case LeaderElectionProposalMessageType:
-			// check whether current master is up if not then send the request again.
-			startMasterElection();  // resend election request
-			break;
-		case HeartBeatMessageType:
-			startMasterElection();
-			break;
-		default:
-			break;
-		}
+		ASSERT(false);
 	}
 
-	virtual void handleMessage(Message *message) {
-		switch(message->getType()) {
-		case HeartBeatMessageType:
-			processHeartBeat(message);
-			break;
-		case LeaderElectionProposalMessageType:
-			handleElectionRequest(message);
-			break;
-		case LeaderElectionDenyMessageType:
-			handleMasterProposalReject(message);
-			break;
-		case LeaderElectionAckMessageType:
-			updateClusterState(message);
-			_state = 0;
-			break;
-		default:
-			break;
-		}
-	}
+	virtual void handleTimeOut(Message *message);
+
+	virtual void handleMessage(Message *message) ;
+
 private:
 	void startMasterElection();
+
 	void processHeartBeat(Message *message);
+
 	void handleElectionRequest(Message *message);
+
 	void handleMasterProposalReject(Message *message) {
 		// Proposed master rejected the message. Possible reasons.
 		// 1. May be it was not eligible for master
 		// 2. It already has a master
 		// 3. Could not find enough vote in a given time to be elected as master.
 		// For V0 do nothing  TODO: v1
+		ASSERT(false);
 	}
 	void updateClusterState(Message *message);
-	unsigned _state;
+
+	ClientNodeState nodeState;
 	MessageAllocator cMessageAllocator;
 	bool itselfInitiatedMasterElection;
 	std::set<unsigned> voters;
@@ -248,23 +243,22 @@ private:
 
 class MasterMessageHandler : public MessageHandler{
 public:
-	MasterMessageHandler(Synchronizer *sm): MessageHandler(sm) { firstTime = true;}
+	MasterMessageHandler(SyncManager *sm): MessageHandler(sm) { firstTime = true;}
+	/*
+	 *   The function should handle main logic of processing
+	 *   messages delivered by TM.
+	 */
 	void lookForCallbackMessages(SMCallBackHandler*);
+
 	void handleFailure(Message *message) {
+		ASSERT(false);
 	}
 	virtual void handleTimeOut(Message *message) {
+		ASSERT(false);
 	}
 
-	virtual void handleMessage(Message *message) {
-		switch(message->getType()) {
-		case ClientStatusMessageType:
-			updateNodeInCluster(message);
-			break;
-		default:
-			Logger::debug("unknown message type");
-			ASSERT(true);
-		}
-	}
+	virtual void handleMessage(Message *message);
+
 private:
 	bool firstTime;  // temp for V0
 	void updateNodeInCluster(Message *message);

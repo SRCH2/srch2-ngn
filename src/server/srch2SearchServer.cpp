@@ -854,7 +854,7 @@ int main(int argc, char** argv) {
 	}
 //	// run SM
 	unsigned masterNodeId =  serverConf->getCluster()->getNodes()->at(0).getId(); // TODO temporary for V0
-	srch2http::Synchronizer  *syncManager = new srch2http::Synchronizer(*serverConf ,
+	srch2http::SyncManager  *syncManager = new srch2http::SyncManager(*serverConf ,
 			*transportManager, masterNodeId);
 	pthread_t *synchronizerThread = new pthread_t;
 	pthread_create(synchronizerThread, NULL, srch2http::bootSynchronizer, (void *)syncManager);

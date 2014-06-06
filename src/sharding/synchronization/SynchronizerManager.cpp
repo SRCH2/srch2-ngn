@@ -11,7 +11,7 @@ namespace srch2 {
 namespace httpwrapper {
 
 void * bootSynchronizer(void *arg) {
-	Synchronizer * obj = (Synchronizer *)arg;
+	SyncManager * obj = (SyncManager *)arg;
 	if (!obj) {
 		Logger::error("synchronizer cannot be started");
 		exit(-1);
@@ -20,7 +20,7 @@ void * bootSynchronizer(void *arg) {
 	return NULL;
 }
 
-Synchronizer::Synchronizer(ConfigManager& cm, TransportManager& tm, unsigned master) :
+SyncManager::SyncManager(ConfigManager& cm, TransportManager& tm, unsigned master) :
 		transport(tm), config(cm) {
 
 	cluster = cm.getCluster();
@@ -49,12 +49,12 @@ Synchronizer::Synchronizer(ConfigManager& cm, TransportManager& tm, unsigned mas
 	Logger::console("[%d, %d, %d]", nodesInCluster.size() , masterNodeId, currentNodeId);
 }
 
-Synchronizer::~Synchronizer() {
+SyncManager::~SyncManager() {
 
 }
 
 void * dispatchMasterMessageHandler(void *arg);
-void Synchronizer::run(){
+void SyncManager::run(){
 	Logger::console("running synchronizer");
 	/*
 	 *  1. Create a new callback handler for Transport layer and register it with Transport.
@@ -105,18 +105,18 @@ void Synchronizer::run(){
 	}
 }
 
-bool Synchronizer::hasMajority() {
+bool SyncManager::hasMajority() {
 	return true; // TODO V1
 }
 
 /*
  *   Send HeartBeat request to all the clients in the cluster.
  */
-void Synchronizer::sendHeartBeatToAllNodesInCluster() {
+void SyncManager::sendHeartBeatToAllNodesInCluster() {
 	MessageAllocator msgAllocator = MessageAllocator();
-	Message * heartBeatMessage = msgAllocator.allocateMessage(4);
+	Message * heartBeatMessage = msgAllocator.allocateMessage(sizeof(NodeId));
 	heartBeatMessage->setType(HeartBeatMessageType);
-	heartBeatMessage->setBodyAndBodySize(&currentNodeId, 4);
+	heartBeatMessage->setBodyAndBodySize(&currentNodeId, sizeof(NodeId));
 
 	for (unsigned i = 0; i < nodesInCluster.size(); ++i) {
 		if (nodesInCluster[i].thisIsMe)
@@ -128,7 +128,7 @@ void Synchronizer::sendHeartBeatToAllNodesInCluster() {
 	msgAllocator.deallocateByMessagePointer(heartBeatMessage);
 }
 
-void Synchronizer::route(NodeId node, Message *msg) {
+void SyncManager::route(NodeId node, Message *msg) {
 	msg->setMask(0);
 	msg->setMessageId(transport.getUniqueMessageIdValue());
 	transport.route(node, msg);
@@ -137,10 +137,130 @@ void Synchronizer::route(NodeId node, Message *msg) {
 //	 return masterNodeId + 1;  // Todo go over node list and find eligible master
 //}
 
+
+
+///
+///   SM Handler implementation start here.
+///
+
+/*
+ *  Constructor
+ */
+SMCallBackHandler::SMCallBackHandler(bool isMaster) {
+	this->isMaster = isMaster;
+	heartbeatMessageTimeEntry = time(NULL);
+	msgAllocator = MessageAllocator();
+    heartbeatMessage = msgAllocator.allocateMessage(sizeof(NodeId));
+
+}
+/*
+ *   The function gets Message form TM and process it based on the message type.
+ *
+ *   1. Master heart beat message is stored with it arrival timestamp.
+ *   2. Client message is stored in a per message queue array.
+ *
+ */
+void SMCallBackHandler::notifyNoReply(Message *message){
+	switch(message->getType()){
+	case HeartBeatMessageType:
+	{
+		//cout << "****delivered heart beat ***" << endl;
+		if (!isMaster) {
+			boost::mutex::scoped_lock lock(hbLock);
+			heartbeatMessageTimeEntry = time(NULL);
+			memcpy(heartbeatMessage, message, sizeof(Message) + sizeof(NodeId));
+		} else {
+			//cout << "Master should not receive heat beat request" << endl;
+			ASSERT(false);
+		}
+		break;
+	}
+	case ClientStatusMessageType:
+	case LeaderElectionAckMessageType:
+	case LeaderElectionProposalMessageType:
+	{
+		if (message->getBodySize() >= sizeof(NodeId)) {
+			unsigned nodeId = FETCH_UNSIGNED(message->getMessageBody());
+			/*
+			 *  We have an array of message queues. Each nodes is assigned its
+			 *  queue base on its nodeId ( nodeId % array_size). Once the node
+			 *  gets its queue, we append its message to the queue so that it
+			 *  can be processed by master's message handler.
+			 */
+			unsigned idx = nodeId % MSG_QUEUE_ARRAY_SIZE;
+			Message * msg = msgAllocator.allocateMessage(message->getBodySize());
+			memcpy(msg, message, sizeof(Message) + message->getBodySize());
+			boost::mutex::scoped_lock lock(messageQArray[idx].qGuard);
+			messageQArray[idx].messageQueue.push(msg);
+
+		} else {
+			Logger::warn("SM-CB: Incomplete message received!!");
+			ASSERT(false);
+		}
+		break;
+	}
+	default:
+		if (message->getBodySize() >= sizeof(NodeId)) {
+			unsigned nodeId = FETCH_UNSIGNED(message->getMessageBody());
+			Logger::warn("SM-CB: Bad message type received from node = %d", nodeId) ;
+		}
+		break;
+	}
+}
+
+/*
+ *  Fetch heartbeat message from SMcallback Handler.
+ */
+void SMCallBackHandler::getHeartBeatMessages(Message**msg) {
+	boost::mutex::scoped_lock lock(hbLock);
+	*msg = msgAllocator.allocateMessage(sizeof(NodeId));
+	memcpy(*msg, heartbeatMessage, sizeof(Message) + sizeof(NodeId));
+}
+
+/*
+ *  Fetch recent heartbeat message's timestamp.
+ */
+std::time_t  SMCallBackHandler::getHeartBeatMessageTime(){
+	boost::mutex::scoped_lock lock(hbLock);
+	std::time_t copy = heartbeatMessageTimeEntry;
+	return copy;
+}
+
+/*
+ *  Remove the processed message from Node's queue
+ */
+void SMCallBackHandler::removeMessageFromQueue(unsigned nodeId)
+{
+	unsigned idx = nodeId % MSG_QUEUE_ARRAY_SIZE;
+	Message *ptr = NULL;
+	std::queue<Message *> & ref = messageQArray[idx].messageQueue;
+	{
+		// x-auto-lock
+		boost::mutex::scoped_lock lock(messageQArray[idx].qGuard);
+		if (ref.size()) {
+			ptr = ref.front();
+			ref.pop();
+		}
+	}
+	if (ptr)
+		msgAllocator.deallocateByMessagePointer(ptr);
+}
+
+///
+///  ClientMessageHandler logic begins here.
+///
+
+ClientMessageHandler::ClientMessageHandler(SyncManager* sm): MessageHandler(sm) {
+	nodeState = MASTER_AVAILABLE;
+	itselfInitiatedMasterElection = false;
+	cMessageAllocator = MessageAllocator();
+}
+
 void ClientMessageHandler::lookForCallbackMessages(SMCallBackHandler* callBackHandler) {
 
-	switch(this->_state) {
-	case 0:  // CLient State 0: Listening for heartbeat request from master
+	switch(this->nodeState) {
+	// Listening for heartbeat requests from master
+	case MASTER_AVAILABLE:
 	{
 		std::time_t timeNow = time(NULL);
 		/*
@@ -152,7 +272,7 @@ void ClientMessageHandler::lookForCallbackMessages(SMCallBackHandler* callBackHa
 			/*
 			 *  If the time elapsed is more than TimeOut then handle time out
 			 */
-			_state = 1;
+			nodeState = MASTER_UNAVAILABLE;
 			Logger::console("SM-C%d: Timeout!!. No heart beat received from master",
 					_syncMgrObj->currentNodeId);
 			Message * message;
@@ -170,7 +290,9 @@ void ClientMessageHandler::lookForCallbackMessages(SMCallBackHandler* callBackHa
 		}
 		break;
 	}
-	case 1:  // CLient State 1: Initiating/Handling Master election
+	// On master timeout, the current node is without master. It should initiate master
+	// election.
+	case MASTER_UNAVAILABLE:
 	{
 		//Logger::console("waiting for master ...");
 		//TODO: V1 handle master election
@@ -270,7 +392,7 @@ void ClientMessageHandler::startMasterElection() {
 void ClientMessageHandler::processHeartBeat(Message *message) {
 	// TODO: Send node status as response for heartbeat message.
 	// TODO: send only when node status changes.
-	if (message->getBodySize() < 4) {
+	if (message->getBodySize() < sizeof(NodeId)) {
 		Logger::debug("SM-C%d: heart beat request does not have master id", _syncMgrObj->currentNodeId);
 		return;
 	}
@@ -284,7 +406,7 @@ void ClientMessageHandler::processHeartBeat(Message *message) {
 	MessageAllocator msgAllocator = MessageAllocator();
 	Message * heartBeatResponse = msgAllocator.allocateMessage(4);
 	heartBeatResponse->setType(ClientStatusMessageType);
-	heartBeatResponse->setBodyAndBodySize(&_syncMgrObj->currentNodeId, 4);
+	heartBeatResponse->setBodyAndBodySize(&_syncMgrObj->currentNodeId, sizeof(NodeId));
 	_syncMgrObj->route(masterId, heartBeatResponse);
 	msgAllocator.deallocateByMessagePointer(heartBeatResponse);
 	_syncMgrObj->resetTimeout();
@@ -303,12 +425,54 @@ void ClientMessageHandler::updateClusterState(Message *message){
 	Logger::debug("cluster state updated");
 }
 
+void ClientMessageHandler::handleTimeOut(Message *message) {
+	if (message->getBodySize() < sizeof(NodeId) ) {
+		Logger::error("Timeout with no node information!!");
+		return;
+	}
+	unsigned nodeId = FETCH_UNSIGNED( message->getMessageBody());
+	switch(message->getType()) {
+	case LeaderElectionProposalMessageType:
+		// check whether current master is up if not then send the request again.
+		startMasterElection();  // resend election request
+		break;
+	case HeartBeatMessageType:
+		startMasterElection();
+		break;
+	default:
+		break;
+	}
+}
+
+void ClientMessageHandler::handleMessage(Message *message) {
+	switch(message->getType()) {
+	case HeartBeatMessageType:
+		processHeartBeat(message);
+		break;
+	case LeaderElectionProposalMessageType:
+		handleElectionRequest(message);
+		break;
+	case LeaderElectionDenyMessageType:
+		handleMasterProposalReject(message);
+		break;
+	case LeaderElectionAckMessageType:
+		updateClusterState(message);
+		nodeState = MASTER_AVAILABLE;
+		break;
+	default:
+		break;
+	}
+}
+
+///
+///   MasterMessageHandler (Master Node's message handler) logic begins here.
+///
 void MasterMessageHandler::updateNodeInCluster(Message *message) {
-	if (message->getBodySize() < 4)
+	if (message->getBodySize() < sizeof(NodeId))
 		return;
 
 	unsigned nodeId = FETCH_UNSIGNED(message->getMessageBody());
-	if (message->getBodySize() == 4)
+	if (message->getBodySize() == sizeof(NodeId))
 	{
 		Logger::debug("SM-M%d-node %d state is same since last heartbeat!",
 				_syncMgrObj->currentNodeId, nodeId);
@@ -355,7 +519,7 @@ void MasterMessageHandler::lookForCallbackMessages(SMCallBackHandler* /*not used
 				continue;
 
 			unsigned nodeId = nodes[i].getId();
-			unsigned idx = nodeId % 1024;    // index into array of message Queues
+			unsigned idx = nodeId % MSG_QUEUE_ARRAY_SIZE;    // index into array of message Queues
 
 			/*
 			 *  Check whether there is any message on this node's queue.
@@ -368,7 +532,7 @@ void MasterMessageHandler::lookForCallbackMessages(SMCallBackHandler* /*not used
 				 */
 
 				Message * msg = callBackHandler->messageQArray[idx].messageQueue.front();
-				if (msg->getBodySize() >= 4) {
+				if (msg->getBodySize() >= sizeof(NodeId)) {
 					unsigned msgNodeId = FETCH_UNSIGNED(msg->getMessageBody());
 					boost::unordered_map<unsigned, unsigned>::iterator iter =
 							perNodeTimeStampEntry.find(msgNodeId);
@@ -389,7 +553,7 @@ void MasterMessageHandler::lookForCallbackMessages(SMCallBackHandler* /*not used
 				/*
 				 *  remove the message from the queue.
 				 */
-				callBackHandler->removeFront(nodeId);
+				callBackHandler->removeMessageFromQueue(nodeId);
 
 			} else { // no message for this node
 				/*
@@ -428,5 +592,14 @@ void MasterMessageHandler::lookForCallbackMessages(SMCallBackHandler* /*not used
 	}
 }
 
-} /* namespace instantsearch */
-} /* namespace srch2 */
+void MasterMessageHandler::handleMessage(Message *message) {
+	switch(message->getType()) {
+	case ClientStatusMessageType:
+		updateNodeInCluster(message);
+		break;
+	default:
+		Logger::debug("unknown message type");
+		ASSERT(false);
+	}
+}
+}} // srch2::httpwrapper
