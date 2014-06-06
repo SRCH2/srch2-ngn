@@ -22,21 +22,26 @@
 #
 #    terminal> cmake -DDO_DEBUG=0 -DDO_PROFILE=1 ..
 #
-# 3) Create srch2 lib for Android
-#    We need to setup the Android building environment first
+# 3) Create srch2 lib or server for Android
+#    a) We need to setup the Android building environment first
 #    terminal> cd ./android_prerequisite
 #    terminal> ./build_android.sh    # It will cost 10 minutes for the first time.
 #
 #    It will append all the requisite environment setting in $HOME/.bashrc
-#    Then we can build the android version by following step
+#    
+#    b) Load android settings from .bashrc and create android build folder. 
 #    
 #    terminal> source ~/.bashrc
 #    terminal> mkdir -p build/android
-#    terminal> cd build/android
 #
-#    1. To build just a shared library 
+#    c) Steps to build a shared library. ( skip to step 'd' if you want to build the complete server ) 
+#    terminal> cd build/android
 #    terminal> android-cmake ../../
-#    2. To build the while srch2-search-server
+#    
+#    d) Steps to build the srch2-search-server
+#    terminal> cd <third_party_folder_path>
+#    terminal> ./thirdparty-build-android.sh
+#    terminal> cd <android_build_folder>
 #    terminal> android-cmake ../../ -DANDROID_SERVER=1
 #
 #    Then run make -j4 , the srch2 lib will show in the build/android/libs/<arch> 
