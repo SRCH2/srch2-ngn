@@ -162,12 +162,12 @@ if __name__ == '__main__':
     try:
         exitCode=testInsertAndQuery(queriesAndResultsPath, binary_path)
         for i in range(len(serverHandles)):
-            test_lib.killServer(serverHandles[i])
+            subprocess.Popen(['kill','-9',str(serverHandles[i].pid)])
         print '==========test-sharding passed=========='
         os._exit(exitCode)
     except:
         print '==========test-sharding failed=========='
         exitCode=1
         for i in range(len(serverHandles)):
-            test_lib.killServer(serverHandles[i])
+            subprocess.Popen(['kill','-9',str(serverHandles[i].pid)])
         os._exit(exitCode)
