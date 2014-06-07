@@ -1,7 +1,7 @@
 #  How to use this cmake file. ( Note: later we will integrate it with the main CMakeLists)
 # > mdkir build
-# > cmake -DCMAKE_VERBOSE_MAKEFILE=1 ..
 # > cd build
+# > cmake -DCMAKE_VERBOSE_MAKEFILE=1 ..
 # > make
 
 cmake_minimum_required(VERSION 2.8)
