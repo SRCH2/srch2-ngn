@@ -4,12 +4,16 @@ cd ./json
 if [ ! -d "jsoncpp-src-0.5.0" ]; then
  tar -xf jsoncpp-src-0.5.0.tar.gz
 fi
+if [ ! -f "jsoncpp-src-0.5.0/CMakeLists.txt" ]; then
+ tar -xf jsoncpp-src-0.5.0.tar.gz -C /tmp/
+ cp /tmp/jsoncpp-src-0.5.0/CMakeLists.txt ./jsoncpp-src-0.5.0/CMakeLists.txt
+fi
 cd jsoncpp-src-0.5.0/
 if [ ! -d "android" ]; then
  mkdir android 
 fi
 cd android
-cmake ..
+cmake -DCMAKE_TOOLCHAIN_FILE=$ANDROID_CMAKE_HOME/toolchain/android.toolchain.cmake -DANDROID_STANDALONE_TOOLCHAIN=$ANDROID_STANDALONE_TOOLCHAIN -DLIBRARY_OUTPUT_PATH_ROOT=. ..
 make
 
 echo "BUILDING LIBEVENT..."
