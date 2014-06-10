@@ -41,7 +41,7 @@ public:
     		bool withCallback,
     		boost::shared_ptr<ResponseAggregator<RequestType , ResponseType> > aggregator,
             time_t timeoutValue,
-            CoreShardInfo & coreInfo);
+            vector<ShardId> & destination);
 
 
     template<typename RequestType , typename ReseponseType>

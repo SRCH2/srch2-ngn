@@ -127,72 +127,47 @@ RoutingManagerAPIReturnType RoutingManager::broadcast(RequestType * requestObj,
 		bool withCallback,
 		boost::shared_ptr<ResponseAggregator<RequestType , ResponseType> > aggregator,
         time_t timeoutValue,
-        CoreShardInfo & coreInfo){
+        vector<ShardId> & destination){
 
-    /*
-     * Multiplexer reads coreInfo object to understand which nodes we need to send this broadcast to
-     */
-    Multiplexer broadcastResolver(configurationManager, coreInfo);
-
-    // find out how many shards are still within reach
-    unsigned totalNumberOfRepliesToExpect = 0;
-    for(broadcastResolver.initIteration(); broadcastResolver.hasMore(); broadcastResolver.nextIteration()) {
-        ShardId shardIdFromIteration = broadcastResolver.getNextShardId();
-
-        unsigned nodeId = shardIdFromIteration.getNodeId(configurationManager);
-        if (configurationManager.isValidNode(nodeId)){
-            totalNumberOfRepliesToExpect ++;
-        }
-    }
-
-    if(totalNumberOfRepliesToExpect == 0){
-        delete requestObj;
-        // since aggregator is in a shared pointer, it gets deleted automatically.
-        return RoutingManagerAPIReturnTypeAllNodesDown;
-    }
 
 
     PendingRequest<RequestType, ResponseType> * pendingRequest = NULL;
     if(withCallback){
         // register a pending request in the handler
         pendingRequest =
-                this->pendingRequestsHandler->registerPendingRequest(waitForAll, aggregator, totalNumberOfRepliesToExpect);
+                this->pendingRequestsHandler->registerPendingRequest(waitForAll, aggregator, destination.size());
     }
 
     Message * internalMessage = NULL;
     Message * externalMessage = NULL;
 
     // iterate on all destinations and send the message
-    for(broadcastResolver.initIteration(); broadcastResolver.hasMore(); broadcastResolver.nextIteration()) {
-        ShardId shardIdFromIteration = broadcastResolver.getNextShardId();
+    for(vector<ShardId>::iterator shardIdItr = destination.begin(); shardIdItr != destination.end(); ++shardIdItr) {
 
-        unsigned nodeId = shardIdFromIteration.getNodeId(configurationManager);
-        if (!configurationManager.isValidNode(nodeId)){
-            continue;
-        }
+    	NodeId nodeId = shardIdItr->getNodeId(configurationManager);
         Logger::debug("sending request to node - %d", nodeId);
 
         // this shard is in the current node
         if(nodeId == configurationManager.getCurrentNodeId()){
             // so that we create the message only once
             if(internalMessage == NULL){
-                internalMessage = prepareInternalMessage<RequestType>(shardIdFromIteration, requestObj);
+                internalMessage = prepareInternalMessage<RequestType>(*shardIdItr, requestObj);
                 // request message is stored in cb object to be deleted when replies are ready
                 // and cb object is being destroyed.
             }
-            internalMessage->setDestinationShardId(shardIdFromIteration);
+            internalMessage->setDestinationShardId(*shardIdItr);
             // callback should wait for one more reply
-            sendInternalMessage(internalMessage, requestObj, shardIdFromIteration, timeoutValue, pendingRequest);
+            sendInternalMessage(internalMessage, requestObj, *shardIdItr, timeoutValue, pendingRequest);
         }else{// this shard is in some other node
             // so that we create the message only once
             if(externalMessage == NULL){
-                externalMessage = prepareExternalMessage<RequestType>(shardIdFromIteration, requestObj);
+                externalMessage = prepareExternalMessage<RequestType>(*shardIdItr, requestObj);
                 // request message is stored in cb object to be deleted when replies are ready
                 // and cb object is being destroyed.
             }
-            externalMessage->setDestinationShardId(shardIdFromIteration);
+            externalMessage->setDestinationShardId(*shardIdItr);
             // callback should wait for one more reply
-            sendExternalMessage(externalMessage, requestObj, shardIdFromIteration, timeoutValue, pendingRequest);
+            sendExternalMessage(externalMessage, requestObj, *shardIdItr, timeoutValue, pendingRequest);
         }
     }
 
@@ -208,13 +183,6 @@ RoutingManagerAPIReturnType RoutingManager::route(RequestType * requestObj,
         boost::shared_ptr<ResponseAggregator<RequestType , ResponseType> > aggregator,
         time_t timeoutValue,
         ShardId shardInfo){
-
-    // find out whether shard is still within reach
-    unsigned nodeId = shardInfo.getNodeId(configurationManager);
-    if (!configurationManager.isValidNode(nodeId)){
-        delete requestObj;
-        return RoutingManagerAPIReturnTypeAllNodesDown;
-    }
 
     // register a pending request in the handler
     PendingRequest<RequestType, ResponseType> * pendingRequest = NULL;

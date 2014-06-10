@@ -25,7 +25,7 @@ Partitioner::Partitioner(ConfigManager * configurationManager){
  * 3. Uses hash(...) to choose which shard should be responsible for this record
  * 4. Returns the information of corresponding Shard (which can be discovered from SM)
  */
-ShardId Partitioner::getShardIDForRecord(Record * record, string coreName){
+bool Partitioner::getShardIDForRecord(Record * record, string coreName, ShardId & destination){
 
     const CoreInfo_t *indexDataContainerConf = configurationManager->getCoreInfo(coreName);
 
@@ -33,10 +33,18 @@ ShardId Partitioner::getShardIDForRecord(Record * record, string coreName){
 
     unsigned totalNumberOfShards = indexDataContainerConf->getNumberOfPrimaryShards();
 
-    return convertUnsignedToCoreShardInfo(hash(valueToHash , totalNumberOfShards), indexDataContainerConf);
+    ShardId resultShardId = convertUnsignedToCoreShardInfo(hash(valueToHash , totalNumberOfShards), indexDataContainerConf);
+    // find out whether shard is still within reach
+    unsigned nodeId = resultShardId.getNodeId(*configurationManager);
+    if (!configurationManager->isValidNode(nodeId)){
+        return false;
+    }
+    destination = resultShardId;
+    return true;
+
 }
 
-ShardId Partitioner::getShardIDForRecord(string primaryKeyStringValue, string coreName){
+bool Partitioner::getShardIDForRecord(string primaryKeyStringValue, string coreName, ShardId & destination){
 
     const CoreInfo_t *indexDataContainerConf = configurationManager->getCoreInfo(coreName);
 
@@ -44,7 +52,29 @@ ShardId Partitioner::getShardIDForRecord(string primaryKeyStringValue, string co
 
     unsigned totalNumberOfShards = indexDataContainerConf->getNumberOfPrimaryShards();
 
-    return convertUnsignedToCoreShardInfo(hash(valueToHash , totalNumberOfShards), indexDataContainerConf);
+    ShardId resultShardId = convertUnsignedToCoreShardInfo(hash(valueToHash , totalNumberOfShards), indexDataContainerConf);
+    // find out whether shard is still within reach
+    unsigned nodeId = resultShardId.getNodeId(*configurationManager);
+    if (!configurationManager->isValidNode(nodeId)){
+        return false;
+    }
+    destination = resultShardId;
+    return true;
+}
+
+/*
+ *	Returns all valid shardIds for a broadcast
+ */
+void Partitioner::getShardIDsForBroadcast(string coreName, vector<ShardId> & broadcastShardIDs){
+	const CoreInfo_t *indexDataContainerConf = configurationManager->getCoreInfo(coreName);
+	vector<ShardId> allShardIds = indexDataContainerConf->getShardsVector();
+	for(vector<ShardId>::iterator shardIdItr = allShardIds.begin(); shardIdItr != allShardIds.end(); ++shardIdItr){
+        unsigned nodeId = shardIdItr->getNodeId(*configurationManager);
+        if (!configurationManager->isValidNode(nodeId)){
+            continue;
+        }
+        broadcastShardIDs.push_back(*shardIdItr);
+	}
 }
 
 

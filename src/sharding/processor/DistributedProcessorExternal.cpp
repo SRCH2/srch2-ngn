@@ -152,29 +152,33 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , CoreS
             new SearchCommand(&resultAggregator->getLogicalPlan());
 
     // broadcasting search request to all shards , non-blocking, with timeout and callback to ResultAggregator
-
-
-    time_t timeValue;
-    time(&timeValue);
-    timeValue = timeValue + TIMEOUT_WAIT_TIME;
-
-    RoutingManagerAPIReturnType routingStatus =
-            routingManager->broadcast<SearchCommand, SearchCommandResults>(searchInput,
-                    true,
-                    true,
-                    resultAggregator,
-                    timeValue,
-                    *coreShardInfo);
-
-    switch (routingStatus) {
-    case RoutingManagerAPIReturnTypeAllNodesDown:
-        // if the query is not valid, print the error message to the response
+    // 1. first find all destination shards.
+    vector<ShardId> destinations;
+    partitioner->getShardIDsForBroadcast(coreShardInfo->coreName , destinations);
+    if(destinations.size() == 0){
+    	delete searchInput;
         bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
                 "All nodes are down.", headers);
-        break;
-    default:
-        break;
+    }else{
+    	// 2. use destinations and do the broadcast by using RM
+		time_t timeValue;
+		time(&timeValue);
+		timeValue = timeValue + TIMEOUT_WAIT_TIME;
+
+		RoutingManagerAPIReturnType routingStatus =
+				routingManager->broadcast<SearchCommand, SearchCommandResults>(searchInput,
+						true,
+						true,
+						resultAggregator,
+						timeValue,
+						destinations);
+		if(routingStatus != RoutingManagerAPIReturnTypeSuccess){
+	        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure",
+	                "", headers);
+		}
     }
+
+
 
     evhttp_clear_headers(&headers);
 }
@@ -309,29 +313,32 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, CoreSh
     vector<ShardId> shardInfos;
     for(vector<Record *>::iterator recordItr = recordsToInsert.begin(); recordItr != recordsToInsert.end() ; ++recordItr){
 
-        InsertUpdateCommand  * insertUpdateInput=
-                new InsertUpdateCommand(*recordItr,InsertUpdateCommand::DP_INSERT);
 
         time_t timeValue;
         time(&timeValue);
         timeValue = timeValue + TIMEOUT_WAIT_TIME;
+
+        ShardId destination;
+        bool hostValidForRecord = partitioner->getShardIDForRecord(*recordItr,coreShardInfo->coreName, destination);
+
+        if(! hostValidForRecord){
+        	continue;
+        }
+
+        InsertUpdateCommand  * insertUpdateInput=
+                new InsertUpdateCommand(*recordItr,InsertUpdateCommand::DP_INSERT);
 
         RoutingManagerAPIReturnType routingStatus =
                 routingManager->route<InsertUpdateCommand, CommandStatus>(insertUpdateInput,
                         true,
                         resultsAggregator,
                         timeValue,
-                        partitioner->getShardIDForRecord(*recordItr,coreShardInfo->coreName));
+                        destination);
 
-        switch (routingStatus) {
-        case RoutingManagerAPIReturnTypeAllNodesDown:
-            // if the query is not valid, print the error message to the response
-            bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
-                    "{\"message\":\"Host node for this record is down.\"}");
-            return;
-        default:
-            break;
-        }
+		if(routingStatus != RoutingManagerAPIReturnTypeSuccess){
+			bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure",
+					"");
+		}
 
     }
     // aggregated response will be prepared in CommandStatusAggregatorAndPrint::callBack and printed in
@@ -466,29 +473,31 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, CoreSh
 
     for(vector<Record *>::iterator recordItr = recordsToUpdate.begin(); recordItr != recordsToUpdate.end() ; ++recordItr){
 
-        InsertUpdateCommand  * insertUpdateInput=
-                new InsertUpdateCommand(*recordItr,InsertUpdateCommand::DP_UPDATE);
 
         time_t timeValue;
         time(&timeValue);
         timeValue = timeValue + TIMEOUT_WAIT_TIME;
+
+        ShardId destination;
+        bool hostValidForRecord = partitioner->getShardIDForRecord(*recordItr,coreShardInfo->coreName, destination);
+
+        if(! hostValidForRecord){
+        	continue;
+        }
+        InsertUpdateCommand  * insertUpdateInput=
+                new InsertUpdateCommand(*recordItr,InsertUpdateCommand::DP_UPDATE);
 
         RoutingManagerAPIReturnType routingStatus =
                 routingManager->route<InsertUpdateCommand, CommandStatus>(insertUpdateInput,
                         true,
                         resultsAggregator ,
                         timeValue ,
-                        partitioner->getShardIDForRecord(*recordItr,coreShardInfo->coreName));
+                        destination);
 
-        switch (routingStatus) {
-        case RoutingManagerAPIReturnTypeAllNodesDown:
-            // if the query is not valid, print the error message to the response
-            bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
-                    "Host node for this record is down.");
-            return;
-        default:
-            break;
-        }
+		if(routingStatus != RoutingManagerAPIReturnTypeSuccess){
+			bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure",
+					"");
+		}
     }
     // aggregated response will be prepared in CommandStatusAggregatorAndPrint::callBack and printed in
     // CommandStatusAggregatorAndPrint::finalize
@@ -540,26 +549,26 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, CoreSh
         const std::string primaryKeyStringValue = string(pKeyParamName_cstar);
         free(pKeyParamName_cstar);
 
-        ShardId shardInfo = partitioner->getShardIDForRecord(primaryKeyStringValue,coreShardInfo->coreName);
+        ShardId destination ;
+        bool isRecordHostValid = partitioner->getShardIDForRecord(primaryKeyStringValue,coreShardInfo->coreName, destination);
 
-        DeleteCommand * deleteInput =
-                new DeleteCommand(primaryKeyStringValue,coreShardInfo->coreId);
-        // add request object to results aggregator which is the callback object
-        time_t timeValue;
-        time(&timeValue);
-        timeValue = timeValue + TIMEOUT_WAIT_TIME;
-        RoutingManagerAPIReturnType routingStatus =
-                routingManager->route<DeleteCommand, CommandStatus>(deleteInput,true, resultsAggregator , timeValue , shardInfo);
+        if(isRecordHostValid){
 
-        switch (routingStatus) {
-        case RoutingManagerAPIReturnTypeAllNodesDown:
-            // if the query is not valid, print the error message to the response
-            bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
-                    "All nodes are down.");
-            return;
-        default:
-            break;
+			DeleteCommand * deleteInput =
+					new DeleteCommand(primaryKeyStringValue,coreShardInfo->coreId);
+			// add request object to results aggregator which is the callback object
+			time_t timeValue;
+			time(&timeValue);
+			timeValue = timeValue + TIMEOUT_WAIT_TIME;
+			RoutingManagerAPIReturnType routingStatus =
+					routingManager->route<DeleteCommand, CommandStatus>(deleteInput,true, resultsAggregator , timeValue , destination);
+
+			if(routingStatus != RoutingManagerAPIReturnTypeSuccess){
+				bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure",
+						"");
+			}
         }
+
 
     }else{
         std::stringstream log_str;
@@ -587,27 +596,33 @@ void DPExternalRequestHandler::externalGetInfoCommand(evhttp_request *req, CoreS
 
     boost::shared_ptr<GetInfoResponseAggregator> resultsAggregator(new GetInfoResponseAggregator(configurationManager,req));
     GetInfoCommand * getInfoInput = new GetInfoCommand();
-    // add request object to results aggregator which is the callback object
-    time_t timeValue;
-    time(&timeValue);
-    timeValue = timeValue + TIMEOUT_WAIT_TIME;
-    RoutingManagerAPIReturnType routingStatus =
-            routingManager->broadcast<GetInfoCommand, GetInfoCommandResults>(getInfoInput,
-                    true,
-                    true,
-                    resultsAggregator,
-                    timeValue,
-                    *coreShardInfo);
 
-    switch (routingStatus) {
-    case RoutingManagerAPIReturnTypeAllNodesDown:
-        // if the query is not valid, print the error message to the response
+
+    // 1. first find all destination shards.
+    vector<ShardId> destinations;
+    partitioner->getShardIDsForBroadcast(coreShardInfo->coreName , destinations);
+    if(destinations.size() == 0){
+    	delete getInfoInput;
         bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
                 "All nodes are down.");
-        return;
-    default:
-        break;
+    }else{
+    	//2. and use destinations to send the broadcast using RM
+		time_t timeValue;
+		time(&timeValue);
+		timeValue = timeValue + TIMEOUT_WAIT_TIME;
+		RoutingManagerAPIReturnType routingStatus =
+				routingManager->broadcast<GetInfoCommand, GetInfoCommandResults>(getInfoInput,
+						true,
+						true,
+						resultsAggregator,
+						timeValue,
+						destinations);
+    	if(routingStatus != RoutingManagerAPIReturnTypeSuccess){
+			bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure",
+					"");
+    	}
     }
+
 }
 
 
@@ -627,27 +642,32 @@ void DPExternalRequestHandler::externalSerializeIndexCommand(evhttp_request *req
 
         SerializeCommand * serializeInput =
                 new SerializeCommand(SerializeCommand::SERIALIZE_INDEX);
-        // add request object to results aggregator which is the callback object
-        time_t timeValue;
-        time(&timeValue);
-        timeValue = timeValue + TIMEOUT_WAIT_TIME;
-        RoutingManagerAPIReturnType routingStatus =
-                routingManager->broadcast<SerializeCommand, CommandStatus>(serializeInput,
-                        true,
-                        true,
-                        resultsAggregator,
-                        timeValue,
-                        *coreShardInfo);
 
-        switch (routingStatus) {
-        case RoutingManagerAPIReturnTypeAllNodesDown:
-            // if the query is not valid, print the error message to the response
+        // 1. first find all destination shards.
+        vector<ShardId> destinations;
+        partitioner->getShardIDsForBroadcast(coreShardInfo->coreName , destinations);
+        if(destinations.size() == 0){
+        	delete serializeInput;
             bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
                     "All nodes are down.");
-            return;
-        default:
-            break;
+        }else{
+        	//2. and use destinations to send the broadcast using RM
+			time_t timeValue;
+			time(&timeValue);
+			timeValue = timeValue + TIMEOUT_WAIT_TIME;
+			RoutingManagerAPIReturnType routingStatus =
+					routingManager->broadcast<SerializeCommand, CommandStatus>(serializeInput,
+							true,
+							true,
+							resultsAggregator,
+							timeValue,
+							destinations);
+			if(routingStatus != RoutingManagerAPIReturnTypeSuccess){
+				bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure",
+						"");
+			}
         }
+
         break;
     }
     default: {
@@ -685,28 +705,31 @@ void DPExternalRequestHandler::externalSerializeRecordsCommand(evhttp_request *r
 
                 SerializeCommand * serializeInput =
                         new SerializeCommand(SerializeCommand::SERIALIZE_RECORDS, string(exportedDataFileName));
-                // add request object to results aggregator which is the callback object
-                time_t timeValue;
-                time(&timeValue);
-                timeValue = timeValue + TIMEOUT_WAIT_TIME;
-                RoutingManagerAPIReturnType routingStatus =
-                        routingManager->broadcast<SerializeCommand, CommandStatus>(serializeInput,
-                                true,
-                                true,
-                                resultsAggregator,
-                                timeValue,
-                                *coreShardInfo);
 
-                switch (routingStatus) {
-                case RoutingManagerAPIReturnTypeAllNodesDown:
-                    // if the query is not valid, print the error message to the response
+                // 1. first find all destination shards.
+                vector<ShardId> destinations;
+                partitioner->getShardIDsForBroadcast(coreShardInfo->coreName , destinations);
+                if(destinations.size() == 0){
+                	delete serializeInput;
                     bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
                             "All nodes are down.");
-                    return;
-                default:
-                    break;
+                }else{
+                	//2. and use destinations to send the broadcast using RM
+					time_t timeValue;
+					time(&timeValue);
+					timeValue = timeValue + TIMEOUT_WAIT_TIME;
+					RoutingManagerAPIReturnType routingStatus =
+							routingManager->broadcast<SerializeCommand, CommandStatus>(serializeInput,
+									true,
+									true,
+									resultsAggregator,
+									timeValue,
+									destinations);
+					if(routingStatus != RoutingManagerAPIReturnTypeSuccess){
+						bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure",
+								"");
+					}
                 }
-
             }else {
                 bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "INVALID REQUEST",
                         "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
@@ -745,26 +768,29 @@ void DPExternalRequestHandler::externalResetLogCommand(evhttp_request *req, Core
         boost::shared_ptr<StatusAggregator<ResetLogCommand> >
         resultsAggregator(new StatusAggregator<ResetLogCommand>(configurationManager,req));
         ResetLogCommand * resetInput = new ResetLogCommand();
-        // add request object to results aggregator which is the callback object
-        time_t timeValue;
-        time(&timeValue);
-        timeValue = timeValue + TIMEOUT_WAIT_TIME;
-        RoutingManagerAPIReturnType routingStatus =
-                routingManager->broadcast<ResetLogCommand, CommandStatus>(resetInput,
-                        true,
-                        true,
-                        resultsAggregator,
-                        timeValue,
-                        *coreShardInfo);
 
-        switch (routingStatus) {
-        case RoutingManagerAPIReturnTypeAllNodesDown:
-            // if the query is not valid, print the error message to the response
+        // 1. first find all destination shards.
+        vector<ShardId> destinations;
+        partitioner->getShardIDsForBroadcast(coreShardInfo->coreName , destinations);
+        if(destinations.size() == 0){
+        	delete resetInput;
             bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
                     "All nodes are down.");
-            return;
-        default:
-            break;
+        }else{
+        	//2. and use destinations to send the broadcast using RM
+			time_t timeValue;
+			time(&timeValue);
+			timeValue = timeValue + TIMEOUT_WAIT_TIME;
+			RoutingManagerAPIReturnType routingStatus =
+					routingManager->broadcast<ResetLogCommand, CommandStatus>(resetInput,
+							true,
+							true,
+							resultsAggregator,
+							timeValue,
+							destinations);
+			if(routingStatus != RoutingManagerAPIReturnTypeSuccess){
+				bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure","");
+			}
         }
 
         break;
@@ -788,28 +814,30 @@ void DPExternalRequestHandler::externalCommitCommand(evhttp_request *req, CoreSh
     resultsAggregator(new StatusAggregator<CommitCommand>(configurationManager, req));
 
     CommitCommand * commitInput = new CommitCommand();
-    // add request object to results aggregator which is the callback object
-    time_t timeValue;
-    time(&timeValue);
-    timeValue = timeValue + TIMEOUT_WAIT_TIME;
-    RoutingManagerAPIReturnType routingStatus =
-            routingManager->broadcast<CommitCommand, CommandStatus>(commitInput,
-                    true,
-                    true,
-                    resultsAggregator,
-                    timeValue,
-                    *coreShardInfo);
 
-    switch (routingStatus) {
-    case RoutingManagerAPIReturnTypeAllNodesDown:
-        // if the query is not valid, print the error message to the response
+    // 1. first find all destination shards.
+    vector<ShardId> destinations;
+    partitioner->getShardIDsForBroadcast(coreShardInfo->coreName , destinations);
+    if(destinations.size() == 0){
+    	delete commitInput;
         bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
                 "All nodes are down.");
-        return;
-    default:
-        break;
+    }else{
+    	//2. and use destinations to send the broadcast using RM
+		time_t timeValue;
+		time(&timeValue);
+		timeValue = timeValue + TIMEOUT_WAIT_TIME;
+	    RoutingManagerAPIReturnType routingStatus =
+	            routingManager->broadcast<CommitCommand, CommandStatus>(commitInput,
+	                    true,
+	                    true,
+	                    resultsAggregator,
+	                    timeValue,
+	                    destinations);
+		if(routingStatus != RoutingManagerAPIReturnTypeSuccess){
+			bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure","");
+		}
     }
-
 
 }
 

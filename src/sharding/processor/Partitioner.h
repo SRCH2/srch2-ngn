@@ -24,12 +24,16 @@ public:
      * 3. Uses hash(...) to choose which shard should be responsible for this record
      * 4. Returns the information of corresponding Shard (which can be discovered from SM)
      */
-    ShardId getShardIDForRecord(Record * record, string coreName);
+    bool getShardIDForRecord(Record * record, string coreName, ShardId & detination);
     // TODO : if the shard hash value of a record must be calculated by
     // evaluating an expression given in configuration file, primaryKeyStringValue is not enough
     // as the input of this method, this will change later ...
-    ShardId getShardIDForRecord(string primaryKeyStringValue, string coreName);
+    bool getShardIDForRecord(string primaryKeyStringValue, string coreName, ShardId & detination);
 
+    /*
+     *	Returns all valid shardIds for a broadcast
+     */
+    void getShardIDsForBroadcast(string coreName, vector<ShardId> & broadcastShardIDs);
 
 private:
     /*
