@@ -202,10 +202,10 @@ RoutingManagerAPIReturnType RoutingManager::broadcast(RequestType * requestObj,
 }
 
 
-template<typename RequestType , typename ReseponseType> inline
+template<typename RequestType , typename ResponseType> inline
 RoutingManagerAPIReturnType RoutingManager::route(RequestType * requestObj,
 		bool withCallback,
-        boost::shared_ptr<ResponseAggregator<RequestType , ReseponseType> > aggregator,
+        boost::shared_ptr<ResponseAggregator<RequestType , ResponseType> > aggregator,
         time_t timeoutValue,
         ShardId shardInfo){
 
