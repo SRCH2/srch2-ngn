@@ -13,31 +13,31 @@ namespace httpwrapper {
  */
 class Multiplexer {
 public:
-  Multiplexer(ConfigManager& cm, CoreShardInfo& info);
+    Multiplexer(ConfigManager& cm, CoreShardInfo& info);
 
-/*
- * Usage of this iterator is like this :
+    /*
+     * Usage of this iterator is like this :
 
   void Usage(){
 
-	  for(initIteration(); hasMore(); nextIteration()){
-		  ShardId shardId = getNextShardId();
-		  // ...
-	  }
+      for(initIteration(); hasMore(); nextIteration()){
+          ShardId shardId = getNextShardId();
+          // ...
+      }
   }
 
-*/
-  size_t size();
-  void initIteration();
-  bool hasMore();
-  void nextIteration();
-  ShardId getNextShardId();
+     */
+    size_t size();
+    void initIteration();
+    bool hasMore();
+    void nextIteration();
+    ShardId getNextShardId();
 private:
-  ConfigManager& configManager;
-  CoreShardInfo& coreShardInfo;
-  CoreInfo_t& coreInfo;
-  vector<ShardId> destinations;
-  unsigned destinationsIterator;
+    ConfigManager& configManager;
+    CoreShardInfo& coreShardInfo;
+    CoreInfo_t& coreInfo;
+    vector<ShardId> destinations;
+    unsigned destinationsIterator;
 };
 }}
 #endif /* __MULTIPLEXER_H__ */

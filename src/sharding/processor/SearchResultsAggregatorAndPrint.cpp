@@ -10,27 +10,27 @@ namespace srch2 {
 namespace httpwrapper {
 
 SearchResultAggregatorAndPrint::SearchResultAggregatorAndPrint(ConfigManager * configurationManager, evhttp_request *req, CoreShardInfo * coreShardInfo){
-	this->configurationManager = configurationManager;
-	this->req = req;
-	this->coreShardInfo = coreShardInfo;
+    this->configurationManager = configurationManager;
+    this->req = req;
+    this->coreShardInfo = coreShardInfo;
 }
 LogicalPlan & SearchResultAggregatorAndPrint::getLogicalPlan(){
-	return logicalPlan;
+    return logicalPlan;
 }
 ParsedParameterContainer * SearchResultAggregatorAndPrint::getParamContainer(){
-	return &paramContainer;
+    return &paramContainer;
 }
 
 void SearchResultAggregatorAndPrint::setParsingValidatingRewritingTime(unsigned time){
-	this->parsingValidatingRewritingTime = time;
+    this->parsingValidatingRewritingTime = time;
 }
 
 unsigned SearchResultAggregatorAndPrint::getParsingValidatingRewritingTime(){
-	return this->parsingValidatingRewritingTime;
+    return this->parsingValidatingRewritingTime;
 }
 
 struct timespec & SearchResultAggregatorAndPrint::getStartTimer(){
-	return this->tstart;
+    return this->tstart;
 }
 
 
@@ -39,11 +39,11 @@ struct timespec & SearchResultAggregatorAndPrint::getStartTimer(){
  * this function must be between preProcessing(...) and callBack()
  */
 void SearchResultAggregatorAndPrint::timeoutProcessing(PendingMessage<SerializableSearchCommandInput,
-		SerializableSearchResults> * message,
-		ResultsAggregatorAndPrintMetadata metadata){
+        SerializableSearchResults> * message,
+        ResultsAggregatorAndPrintMetadata metadata){
 
-	boost::unique_lock< boost::shared_mutex > lock(_access);
-	messages << ", WARNING : Shard #"<< message->getNodeId()<<" timed out.";
+    boost::unique_lock< boost::shared_mutex > lock(_access);
+    messages << ", WARNING : Shard #"<< message->getNodeId()<<" timed out.";
 
 }
 
@@ -53,27 +53,27 @@ void SearchResultAggregatorAndPrint::timeoutProcessing(PendingMessage<Serializab
  * aggregating result records and calculated records
  */
 void SearchResultAggregatorAndPrint::callBack(vector<PendingMessage<SerializableSearchCommandInput,
-		SerializableSearchResults> * > messages){
+        SerializableSearchResults> * > messages){
 
-	// to protect messages
-	boost::unique_lock< boost::shared_mutex > lock(_access);
+    // to protect messages
+    boost::unique_lock< boost::shared_mutex > lock(_access);
 
-	// move on all responses of all shards and use them
-	for(int responseIndex = 0 ; responseIndex < messages.size() ; ++responseIndex ){
-		if(messages.at(responseIndex) == NULL || messages.at(responseIndex)->getResponseObject() == NULL){
-			continue;
-		}
-		QueryResults * resultsOfThisShard = messages.at(responseIndex)->getResponseObject()->getQueryResults();
-		const map<string, string> & queryResultInMemoryRecordString =
-				messages.at(responseIndex)->getResponseObject()->getInMemoryRecordStrings();
-		resultsOfAllShards.push_back(
-		        make_pair(resultsOfThisShard,  &queryResultInMemoryRecordString ));
-		if(results.aggregatedSearcherTime < messages.at(responseIndex)->getResponseObject()->getSearcherTime()){
-			results.aggregatedSearcherTime = messages.at(responseIndex)->getResponseObject()->getSearcherTime();
-		}
-	}
-	aggregateRecords();
-	aggregateFacets();
+    // move on all responses of all shards and use them
+    for(int responseIndex = 0 ; responseIndex < messages.size() ; ++responseIndex ){
+        if(messages.at(responseIndex) == NULL || messages.at(responseIndex)->getResponseObject() == NULL){
+            continue;
+        }
+        QueryResults * resultsOfThisShard = messages.at(responseIndex)->getResponseObject()->getQueryResults();
+        const map<string, string> & queryResultInMemoryRecordString =
+                messages.at(responseIndex)->getResponseObject()->getInMemoryRecordStrings();
+        resultsOfAllShards.push_back(
+                make_pair(resultsOfThisShard,  &queryResultInMemoryRecordString ));
+        if(results.aggregatedSearcherTime < messages.at(responseIndex)->getResponseObject()->getSearcherTime()){
+            results.aggregatedSearcherTime = messages.at(responseIndex)->getResponseObject()->getSearcherTime();
+        }
+    }
+    aggregateRecords();
+    aggregateFacets();
 
 }
 
@@ -99,18 +99,18 @@ void SearchResultAggregatorAndPrint::printResults(){
     struct timespec hltstart;
     clock_gettime(CLOCK_REALTIME, &hltstart);
 
-//    if (server->indexDataConfig->getHighlightAttributeIdsVector().size() > 0 &&
-//    		!paramContainer.onlyFacets &&
-//    		paramContainer.isHighlightOn) {
-//
-//    	ServerHighLighter highlighter =  ServerHighLighter(finalResults, server, paramContainer,
-//    			logicalPlan.getOffset(), logicalPlan.getNumberOfResultsToRetrieve());
-//    	highlightInfo.reserve(logicalPlan.getNumberOfResultsToRetrieve());
-//    	highlighter.generateSnippets(highlightInfo);
-//    	if (highlightInfo.size() == 0 && finalResults->getNumberOfResults() > 0) {
-//    		Logger::warn("Highligting is on but snippets were not generated!!");
-//    	}
-//    }
+    //    if (server->indexDataConfig->getHighlightAttributeIdsVector().size() > 0 &&
+    //            !paramContainer.onlyFacets &&
+    //            paramContainer.isHighlightOn) {
+    //
+    //        ServerHighLighter highlighter =  ServerHighLighter(finalResults, server, paramContainer,
+    //                logicalPlan.getOffset(), logicalPlan.getNumberOfResultsToRetrieve());
+    //        highlightInfo.reserve(logicalPlan.getNumberOfResultsToRetrieve());
+    //        highlighter.generateSnippets(highlightInfo);
+    //        if (highlightInfo.size() == 0 && finalResults->getNumberOfResults() > 0) {
+    //            Logger::warn("Highligting is on but snippets were not generated!!");
+    //        }
+    //    }
 
     struct timespec hltend;
     clock_gettime(CLOCK_REALTIME, &hltend);
@@ -122,70 +122,70 @@ void SearchResultAggregatorAndPrint::printResults(){
     unsigned parseAndSearchTime = (tend.tv_sec - getStartTimer().tv_sec) * 1000
             + (tend.tv_nsec - getStartTimer().tv_nsec) / 1000000;
 
-	//5. call the print function to print out the results
-	switch (logicalPlan.getQueryType()) {
-	case srch2is::SearchTypeTopKQuery:
-		//	        finalResults->printStats();
-		printResults(req, headers, logicalPlan,
-				indexDataContainerConf, results.allResults,
-				logicalPlan.getExactQuery(),
-				logicalPlan.getOffset(),
-				results.allResults.size(),
-				results.allResults.size(),
-				paramContainer.getMessageString() + messages.str(), parseAndSearchTime , highlightInfo, hlTime,
-				paramContainer.onlyFacets);
+    //5. call the print function to print out the results
+    switch (logicalPlan.getQueryType()) {
+    case srch2is::SearchTypeTopKQuery:
+        //            finalResults->printStats();
+        printResults(req, headers, logicalPlan,
+                indexDataContainerConf, results.allResults,
+                logicalPlan.getExactQuery(),
+                logicalPlan.getOffset(),
+                results.allResults.size(),
+                results.allResults.size(),
+                paramContainer.getMessageString() + messages.str(), parseAndSearchTime , highlightInfo, hlTime,
+                paramContainer.onlyFacets);
 
-		break;
+        break;
 
-	case srch2is::SearchTypeGetAllResultsQuery:
-	case srch2is::SearchTypeMapQuery:
-//		finalResults->printStats();
-		if(results.aggregatedEstimatedNumberOfResults < results.allResults.size()){
-			results.aggregatedEstimatedNumberOfResults = results.allResults.size();
-		}
-		if (logicalPlan.getOffset() + logicalPlan.getNumberOfResultsToRetrieve()
-				> results.allResults.size()) {
-			// Case where you have return 10,20, but we got only 0,15 results.
-			printResults(req, headers, logicalPlan,
-					indexDataContainerConf, results.allResults,
-					logicalPlan.getExactQuery(),
-					logicalPlan.getOffset(), results.allResults.size(),
-					results.allResults.size(),
-					paramContainer.getMessageString()+ messages.str(), parseAndSearchTime, highlightInfo, hlTime,
-					paramContainer.onlyFacets);
-		} else { // Case where you have return 10,20, but we got only 0,25 results and so return 10,20
-			printResults(req, headers, logicalPlan,
-					indexDataContainerConf, results.allResults,
-					logicalPlan.getExactQuery(),
-					logicalPlan.getOffset(),
-					logicalPlan.getOffset() + logicalPlan.getNumberOfResultsToRetrieve(),
-					results.allResults.size(),
-					paramContainer.getMessageString()+ messages.str(), parseAndSearchTime, highlightInfo, hlTime,
-					paramContainer.onlyFacets);
-		}
-		break;
-	case srch2is::SearchTypeRetrieveById:
-//		finalResults->printStats();
-		printOneResultRetrievedById(req,
-				headers,
-				logicalPlan ,
-				indexDataContainerConf,
-				results.allResults ,
-				paramContainer.getMessageString()+ messages.str() ,
-				parseAndSearchTime);
-		break;
-	default:
-		break;
-	}
+    case srch2is::SearchTypeGetAllResultsQuery:
+    case srch2is::SearchTypeMapQuery:
+        //        finalResults->printStats();
+        if(results.aggregatedEstimatedNumberOfResults < results.allResults.size()){
+            results.aggregatedEstimatedNumberOfResults = results.allResults.size();
+        }
+        if (logicalPlan.getOffset() + logicalPlan.getNumberOfResultsToRetrieve()
+                > results.allResults.size()) {
+            // Case where you have return 10,20, but we got only 0,15 results.
+            printResults(req, headers, logicalPlan,
+                    indexDataContainerConf, results.allResults,
+                    logicalPlan.getExactQuery(),
+                    logicalPlan.getOffset(), results.allResults.size(),
+                    results.allResults.size(),
+                    paramContainer.getMessageString()+ messages.str(), parseAndSearchTime, highlightInfo, hlTime,
+                    paramContainer.onlyFacets);
+        } else { // Case where you have return 10,20, but we got only 0,25 results and so return 10,20
+            printResults(req, headers, logicalPlan,
+                    indexDataContainerConf, results.allResults,
+                    logicalPlan.getExactQuery(),
+                    logicalPlan.getOffset(),
+                    logicalPlan.getOffset() + logicalPlan.getNumberOfResultsToRetrieve(),
+                    results.allResults.size(),
+                    paramContainer.getMessageString()+ messages.str(), parseAndSearchTime, highlightInfo, hlTime,
+                    paramContainer.onlyFacets);
+        }
+        break;
+    case srch2is::SearchTypeRetrieveById:
+        //        finalResults->printStats();
+        printOneResultRetrievedById(req,
+                headers,
+                logicalPlan ,
+                indexDataContainerConf,
+                results.allResults ,
+                paramContainer.getMessageString()+ messages.str() ,
+                parseAndSearchTime);
+        break;
+    default:
+        break;
+    }
 
-	//    clock_gettime(CLOCK_REALTIME, &tend);
-	//    unsigned printTime = (tend.tv_sec - tstart2.tv_sec) * 1000
-	//            + (tend.tv_nsec - tstart2.tv_nsec) / 1000000;
-	//    printTime -= (validatorTime + rewriterTime + executionTime + parserTime);
-	//    cout << "Times : " << parserTime << "\t" << validatorTime << "\t" << rewriterTime << "\t" << executionTime << "\t" << printTime << endl;
-	// 6. delete allocated structures
-	// Free the objects
-	evhttp_clear_headers(&headers);
+    //    clock_gettime(CLOCK_REALTIME, &tend);
+    //    unsigned printTime = (tend.tv_sec - tstart2.tv_sec) * 1000
+    //            + (tend.tv_nsec - tstart2.tv_nsec) / 1000000;
+    //    printTime -= (validatorTime + rewriterTime + executionTime + parserTime);
+    //    cout << "Times : " << parserTime << "\t" << validatorTime << "\t" << rewriterTime << "\t" << executionTime << "\t" << printTime << endl;
+    // 6. delete allocated structures
+    // Free the objects
+    evhttp_clear_headers(&headers);
 }
 
 
@@ -236,10 +236,10 @@ void SearchResultAggregatorAndPrint::printResults(evhttp_request *req,
                 char * inMemoryCharPtr = new char[allResults.at(i).second->size()];
                 memcpy(inMemoryCharPtr, allResults.at(i).second->c_str(), allResults.at(i).second->size());
                 StoredRecordBuffer inMemoryData(inMemoryCharPtr, allResults.at(i).second->size());
-            	if (inMemoryData.start.get() == NULL) {
-            		--resultFound;
-            		continue;
-            	}
+                if (inMemoryData.start.get() == NULL) {
+                    --resultFound;
+                    continue;
+                }
                 root["results"][counter]["record_id"] = allResults.at(i).first->internalRecordId;
                 root["results"][counter]["score"] = (0
                         - allResults.at(i).first->_score.getFloatTypedValue()); //the actual distance between the point of record and the center point of the range
@@ -250,13 +250,13 @@ void SearchResultAggregatorAndPrint::printResults(evhttp_request *req,
                     // attach the data string to the JSON tree without parsing it.
                     root["results"][counter][internalRecordTags.first] = sbuffer;
                 } else if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SELECTED_ATTR){
-                	string sbuffer;
-                	const vector<string> *attrToReturn = indexDataConfig->getAttributesToReturn();
-                	genRecordJsonString(indexDataConfig->getSchema(), inMemoryData, allResults.at(i).first->externalRecordId,
-                			sbuffer, attrToReturn);
-                	// The class CustomizableJsonWriter allows us to
-                	// attach the data string to the JSON tree without parsing it.
-                	root["results"][counter][internalRecordTags.first] = sbuffer;
+                    string sbuffer;
+                    const vector<string> *attrToReturn = indexDataConfig->getAttributesToReturn();
+                    genRecordJsonString(indexDataConfig->getSchema(), inMemoryData, allResults.at(i).first->externalRecordId,
+                            sbuffer, attrToReturn);
+                    // The class CustomizableJsonWriter allows us to
+                    // attach the data string to the JSON tree without parsing it.
+                    root["results"][counter][internalRecordTags.first] = sbuffer;
                 }
                 ++counter;
             }
@@ -267,11 +267,11 @@ void SearchResultAggregatorAndPrint::printResults(evhttp_request *req,
             for (unsigned i = start; i < end; ++i) {
                 char * inMemoryCharPtr = new char[allResults.at(i).second->size()];
                 memcpy(inMemoryCharPtr, allResults.at(i).second->c_str(), allResults.at(i).second->size());
-            	StoredRecordBuffer inMemoryData(inMemoryCharPtr, allResults.at(i).second->size());
-            	if (inMemoryData.start.get() == NULL) {
-            		--resultFound;
-            		continue;
-            	}
+                StoredRecordBuffer inMemoryData(inMemoryCharPtr, allResults.at(i).second->size());
+                if (inMemoryData.start.get() == NULL) {
+                    --resultFound;
+                    continue;
+                }
                 root["results"][counter]["record_id"] = allResults.at(i).first->internalRecordId;
                 root["results"][counter]["score"] = allResults.at(i).first->_score.getFloatTypedValue();
 
@@ -302,20 +302,20 @@ void SearchResultAggregatorAndPrint::printResults(evhttp_request *req,
                     // attach the data string to the JSON tree without parsing it.
                     root["results"][counter][internalRecordTags.first] = sbuffer;
                 } else if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SELECTED_ATTR){
-                	unsigned internalRecordId = allResults.at(i).first->internalRecordId;
-                	string sbuffer;
-                	const vector<string> *attrToReturn = indexDataConfig->getAttributesToReturn();
-                	genRecordJsonString(indexDataConfig->getSchema(), inMemoryData, allResults.at(i).first->externalRecordId,
-                			sbuffer, attrToReturn);
-                	// The class CustomizableJsonWriter allows us to
-                	// attach the data string to the JSON tree without parsing it.
-                	root["results"][counter][internalRecordTags.first] = sbuffer;
+                    unsigned internalRecordId = allResults.at(i).first->internalRecordId;
+                    string sbuffer;
+                    const vector<string> *attrToReturn = indexDataConfig->getAttributesToReturn();
+                    genRecordJsonString(indexDataConfig->getSchema(), inMemoryData, allResults.at(i).first->externalRecordId,
+                            sbuffer, attrToReturn);
+                    // The class CustomizableJsonWriter allows us to
+                    // attach the data string to the JSON tree without parsing it.
+                    root["results"][counter][internalRecordTags.first] = sbuffer;
                 }
 
-//                string sbuffer = string();
-//                sbuffer.reserve(1024);  //<< TODO: set this to max allowed snippet len
-//                //TODO genSnippetJSONString(i, start, recordSnippets, sbuffer, queryResults);
-//                root["results"][counter][internalSnippetTags.first] = sbuffer;
+                //                string sbuffer = string();
+                //                sbuffer.reserve(1024);  //<< TODO: set this to max allowed snippet len
+                //                //TODO genSnippetJSONString(i, start, recordSnippets, sbuffer, queryResults);
+                //                root["results"][counter][internalSnippetTags.first] = sbuffer;
                 ++counter;
             }
 
@@ -337,9 +337,9 @@ void SearchResultAggregatorAndPrint::printResults(evhttp_request *req,
             root["fuzzy"] = (int) queryPlan.isFuzzy();
         }
     }else{ // facet only case: we only want query information
-    	if (queryPlan.getQueryType() != srch2is::SearchTypeMapQuery
-    			|| query->getQueryTerms()->empty() == false) //check if the query type is range query without keywords
-    	{
+        if (queryPlan.getQueryType() != srch2is::SearchTypeMapQuery
+                || query->getQueryTerms()->empty() == false) //check if the query type is range query without keywords
+        {
             root["query_keywords"].resize(query->getQueryTerms()->size());
             for (unsigned i = 0; i < query->getQueryTerms()->size(); i++) {
                 string &term = *(query->getQueryTerms()->at(i)->getKeyword());
@@ -354,7 +354,7 @@ void SearchResultAggregatorAndPrint::printResults(evhttp_request *req,
                 root["query_keywords_complete"][i] = isCompleteTermType;
             }
             root["fuzzy"] = (int) queryPlan.isFuzzy();
-    	}
+        }
     }
 
 
@@ -369,16 +369,16 @@ void SearchResultAggregatorAndPrint::printResults(evhttp_request *req,
     root["offset"] = start;
     root["limit"] = end - start;
 
-//    if (queryPlan.getSearchType() == GetAllResultsSearchType
-//            || queryPlan.getSearchType() == GeoSearchType) // facet output must be added here.
-//                    {
+    //    if (queryPlan.getSearchType() == GetAllResultsSearchType
+    //            || queryPlan.getSearchType() == GeoSearchType) // facet output must be added here.
+    //                    {
     root["results_found"] = resultFound;
 
     long int estimatedNumberOfResults = results.aggregatedEstimatedNumberOfResults;
     // Since estimation of number of results can return a wrong number, if this value is less
     // than the actual number of found results, we use the real number.
     if(estimatedNumberOfResults < (long int)resultFound){
-    	estimatedNumberOfResults = (long int)resultFound;
+        estimatedNumberOfResults = (long int)resultFound;
     }
     if(estimatedNumberOfResults != -1){
         // at this point we know for sure that estimatedNumberOfResults is positive, so we can cast
@@ -389,10 +389,10 @@ void SearchResultAggregatorAndPrint::printResults(evhttp_request *req,
         root["result_set_approximation"] = true;
     }
 
-//    }
+    //    }
 
     const std::map<std::string, std::pair< FacetType , std::vector<std::pair<std::string, float> > > > * facetResults =
-    		&this->results.aggregatedFacetResults;
+            &this->results.aggregatedFacetResults;
     // Example:
     // ["facet" : {"facet_field_name":"model" ,
     //             "facet_info":
@@ -427,11 +427,11 @@ void SearchResultAggregatorAndPrint::printResults(evhttp_request *req,
                 }else{
                     root["facets"][attributeCounter]["facet_info"][(category
                             - attr->second.second.begin())]["category_name"] =
-                            category->first;
+                                    category->first;
                 }
                 root["facets"][attributeCounter]["facet_info"][(category
                         - attr->second.second.begin())]["category_value"] =
-                        category->second;
+                                category->second;
             }
 
             //
@@ -458,8 +458,8 @@ void SearchResultAggregatorAndPrint::printOneResultRetrievedById(evhttp_request 
         const string & message,
         const unsigned ts1){
 
-	struct timespec tstart;
-	struct timespec tend;
+    struct timespec tstart;
+    struct timespec tend;
 
     Json::Value root;
     pair<string, string> internalRecordTags("srch2_internal_record_123456789", "record");
@@ -488,10 +488,10 @@ void SearchResultAggregatorAndPrint::printOneResultRetrievedById(evhttp_request 
         char * inMemoryCharPtr = new char[allResults.at(i).second->size()];
         memcpy(inMemoryCharPtr, allResults.at(i).second->c_str(), allResults.at(i).second->size());
         StoredRecordBuffer inMemoryData(inMemoryCharPtr, allResults.at(i).second->size());
-    	if (inMemoryData.start.get() == NULL) {
-    		--resultFound;
-    		continue;
-    	}
+        if (inMemoryData.start.get() == NULL) {
+            --resultFound;
+            continue;
+        }
         root["results"][counter]["record_id"] = allResults.at(i).first->internalRecordId;
 
         if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_STORED_ATTR) {
@@ -500,14 +500,14 @@ void SearchResultAggregatorAndPrint::printOneResultRetrievedById(evhttp_request 
             genRecordJsonString(indexDataConfig->getSchema(), inMemoryData, allResults.at(i).first->externalRecordId, sbuffer);
             root["results"][counter][internalRecordTags.first] = sbuffer;
         } else if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SELECTED_ATTR){
-        	unsigned internalRecordId = allResults.at(i).first->internalRecordId;
-        	string sbuffer;
-        	const vector<string> *attrToReturn = indexDataConfig->getAttributesToReturn();
-        	genRecordJsonString(indexDataConfig->getSchema(), inMemoryData, allResults.at(i).first->externalRecordId,
-        	        sbuffer, attrToReturn);
-        	// The class CustomizableJsonWriter allows us to
-        	// attach the data string to the JSON tree without parsing it.
-        	root["results"][counter][internalRecordTags.first] = sbuffer;
+            unsigned internalRecordId = allResults.at(i).first->internalRecordId;
+            string sbuffer;
+            const vector<string> *attrToReturn = indexDataConfig->getAttributesToReturn();
+            genRecordJsonString(indexDataConfig->getSchema(), inMemoryData, allResults.at(i).first->externalRecordId,
+                    sbuffer, attrToReturn);
+            // The class CustomizableJsonWriter allows us to
+            // attach the data string to the JSON tree without parsing it.
+            root["results"][counter][internalRecordTags.first] = sbuffer;
         }
         ++counter;
     }
@@ -534,7 +534,7 @@ void SearchResultAggregatorAndPrint::printOneResultRetrievedById(evhttp_request 
 void SearchResultAggregatorAndPrint::genRecordJsonString(const srch2::instantsearch::Schema * schema, StoredRecordBuffer buffer,
         const string& extrnalRecordId, string& sbuffer){
     genRecordJsonString(schema, buffer, extrnalRecordId,
-                                 sbuffer, NULL);
+            sbuffer, NULL);
 }
 void SearchResultAggregatorAndPrint::genRecordJsonString(const srch2::instantsearch::Schema * schema, StoredRecordBuffer buffer,
         const string& externalRecordId, string& sbuffer, const vector<string>* attrToReturn){
@@ -549,22 +549,22 @@ void SearchResultAggregatorAndPrint::genRecordJsonString(const srch2::instantsea
  * resorts them based on their scores
  */
 void SearchResultAggregatorAndPrint::aggregateRecords(){
-	// aggregate results
-	for(unsigned resultSetIndex = 0 ; resultSetIndex < resultsOfAllShards.size() ; ++resultSetIndex){
-		QueryResults * queryResultsItr = resultsOfAllShards.at(resultSetIndex).first;
-		const map<string, string> * queryResultsRecordData = resultsOfAllShards.at(resultSetIndex).second;
-		for(unsigned queryResultIndex = 0; queryResultIndex < queryResultsItr->impl->sortedFinalResults.size();
+    // aggregate results
+    for(unsigned resultSetIndex = 0 ; resultSetIndex < resultsOfAllShards.size() ; ++resultSetIndex){
+        QueryResults * queryResultsItr = resultsOfAllShards.at(resultSetIndex).first;
+        const map<string, string> * queryResultsRecordData = resultsOfAllShards.at(resultSetIndex).second;
+        for(unsigned queryResultIndex = 0; queryResultIndex < queryResultsItr->impl->sortedFinalResults.size();
                 queryResultIndex ++){
-		    string resultKey = queryResultsItr->getRecordId(queryResultIndex);
-		    MapStringPtr recordDataStringPtr(queryResultsRecordData->find(resultKey));
-		    results.allResults.push_back(
-		            make_pair(queryResultsItr->impl->sortedFinalResults.at(queryResultIndex),
-		            		recordDataStringPtr ));
-		}
-	}
+            string resultKey = queryResultsItr->getRecordId(queryResultIndex);
+            MapStringPtr recordDataStringPtr(queryResultsRecordData->find(resultKey));
+            results.allResults.push_back(
+                    make_pair(queryResultsItr->impl->sortedFinalResults.at(queryResultIndex),
+                            recordDataStringPtr ));
+        }
+    }
 
-	// sort final results
-	std::sort(results.allResults.begin(), results.allResults.end(), SearchResultAggregatorAndPrint::QueryResultsComparatorOnlyScore());
+    // sort final results
+    std::sort(results.allResults.begin(), results.allResults.end(), SearchResultAggregatorAndPrint::QueryResultsComparatorOnlyScore());
 }
 
 /*
@@ -573,26 +573,26 @@ void SearchResultAggregatorAndPrint::aggregateRecords(){
  */
 void SearchResultAggregatorAndPrint::aggregateFacets(){
 
-	for(vector<pair< QueryResults *, const map<string, string> * > >::iterator resultsItr = resultsOfAllShards.begin() ;
-	        resultsItr != resultsOfAllShards.end() ; ++resultsItr){
-	    QueryResults * queryResultsItr = resultsItr->first;
-		const std::map<std::string, std::pair< FacetType , std::vector<std::pair<std::string, float> > > > *
-		facetResults = queryResultsItr->getFacetResults();
-		for(std::map<std::string, std::pair< FacetType , std::vector<std::pair<std::string, float> > > >::const_iterator facetGroupItr = facetResults->begin();
-				facetGroupItr != facetResults->end() ; ++facetGroupItr){
+    for(vector<pair< QueryResults *, const map<string, string> * > >::iterator resultsItr = resultsOfAllShards.begin() ;
+            resultsItr != resultsOfAllShards.end() ; ++resultsItr){
+        QueryResults * queryResultsItr = resultsItr->first;
+        const std::map<std::string, std::pair< FacetType , std::vector<std::pair<std::string, float> > > > *
+        facetResults = queryResultsItr->getFacetResults();
+        for(std::map<std::string, std::pair< FacetType , std::vector<std::pair<std::string, float> > > >::const_iterator facetGroupItr = facetResults->begin();
+                facetGroupItr != facetResults->end() ; ++facetGroupItr){
 
-			// first check to see if this facet group exists
-			std::map<std::string, std::pair< FacetType , std::vector<std::pair<std::string, float> > > >::iterator existingFacetGroupItr =
-					results.aggregatedFacetResults.find(facetGroupItr->first);
+            // first check to see if this facet group exists
+            std::map<std::string, std::pair< FacetType , std::vector<std::pair<std::string, float> > > >::iterator existingFacetGroupItr =
+                    results.aggregatedFacetResults.find(facetGroupItr->first);
 
-			if( existingFacetGroupItr == results.aggregatedFacetResults.end()){ // group is new
-				results.aggregatedFacetResults[facetGroupItr->first] = facetGroupItr->second;
-			}else{ // new group must be merged with the existing group
-				ASSERT(existingFacetGroupItr->second.first == facetGroupItr->second.first);
-				mergeFacetVectors(existingFacetGroupItr->second.second, facetGroupItr->second.second);
-			}
-		}
-	}
+            if( existingFacetGroupItr == results.aggregatedFacetResults.end()){ // group is new
+                results.aggregatedFacetResults[facetGroupItr->first] = facetGroupItr->second;
+            }else{ // new group must be merged with the existing group
+                ASSERT(existingFacetGroupItr->second.first == facetGroupItr->second.first);
+                mergeFacetVectors(existingFacetGroupItr->second.second, facetGroupItr->second.second);
+            }
+        }
+    }
 }
 
 
@@ -601,36 +601,36 @@ void SearchResultAggregatorAndPrint::aggregateFacets(){
  * Merges destination with source and adds new items to source
  */
 void SearchResultAggregatorAndPrint::mergeFacetVectors(std::vector<std::pair<std::string, float> > & source,
-		const std::vector<std::pair<std::string, float> > & destination){
-	for(std::vector<std::pair<std::string, float> >::const_iterator destinationItr = destination.begin();
-			destinationItr != destination.end(); ++destinationItr){
-		//try to find this facet in the source
-		bool found = false;
-		for(std::vector<std::pair<std::string, float> >::iterator sourceItr = source.begin();
-				sourceItr != source.end(); ++sourceItr){
-			if(destinationItr->first.compare(sourceItr->first) == 0){ // the same facet category
-				sourceItr->second += destinationItr->second;
-				found = true;
-				break;
-			}
-		}
-		if(found == false){
-			source.push_back(*destinationItr);
-		}
-	}
+        const std::vector<std::pair<std::string, float> > & destination){
+    for(std::vector<std::pair<std::string, float> >::const_iterator destinationItr = destination.begin();
+            destinationItr != destination.end(); ++destinationItr){
+        //try to find this facet in the source
+        bool found = false;
+        for(std::vector<std::pair<std::string, float> >::iterator sourceItr = source.begin();
+                sourceItr != source.end(); ++sourceItr){
+            if(destinationItr->first.compare(sourceItr->first) == 0){ // the same facet category
+                sourceItr->second += destinationItr->second;
+                found = true;
+                break;
+            }
+        }
+        if(found == false){
+            source.push_back(*destinationItr);
+        }
+    }
 }
 
 
 void SearchResultAggregatorAndPrint::aggregateEstimations(){
-	results.isResultsApproximated = false;
-	for(vector<pair< QueryResults *, const map<string, string> * > >::iterator resultsItr = resultsOfAllShards.begin() ;
-	        resultsItr != resultsOfAllShards.end() ; ++resultsItr){
-	    QueryResults * queryResultsItr = resultsItr->first;
-		results.isResultsApproximated  = results.isResultsApproximated || queryResultsItr->impl->resultsApproximated;
-		if(queryResultsItr->impl->estimatedNumberOfResults != -1){
-			results.aggregatedEstimatedNumberOfResults += queryResultsItr->impl->estimatedNumberOfResults;
-		}
-	}
+    results.isResultsApproximated = false;
+    for(vector<pair< QueryResults *, const map<string, string> * > >::iterator resultsItr = resultsOfAllShards.begin() ;
+            resultsItr != resultsOfAllShards.end() ; ++resultsItr){
+        QueryResults * queryResultsItr = resultsItr->first;
+        results.isResultsApproximated  = results.isResultsApproximated || queryResultsItr->impl->resultsApproximated;
+        if(queryResultsItr->impl->estimatedNumberOfResults != -1){
+            results.aggregatedEstimatedNumberOfResults += queryResultsItr->impl->estimatedNumberOfResults;
+        }
+    }
 }
 
 

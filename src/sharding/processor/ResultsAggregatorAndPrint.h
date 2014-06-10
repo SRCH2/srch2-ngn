@@ -35,34 +35,34 @@ class ResultAggregatorAndPrint {
 public:
 
 
-	/*
-	 * This function is always called by RoutingManager as the first call back function
-	 */
-	virtual void preProcessing(ResultsAggregatorAndPrintMetadata metadata){};
-	/*
-	 * This function is called by RoutingManager if a timeout happens, The call to
-	 * this function must be between preProcessing(...) and callBack()
-	 */
-	virtual void timeoutProcessing(PendingMessage<Request, Response> * message,ResultsAggregatorAndPrintMetadata metadata){};
+    /*
+     * This function is always called by RoutingManager as the first call back function
+     */
+    virtual void preProcessing(ResultsAggregatorAndPrintMetadata metadata){};
+    /*
+     * This function is called by RoutingManager if a timeout happens, The call to
+     * this function must be between preProcessing(...) and callBack()
+     */
+    virtual void timeoutProcessing(PendingMessage<Request, Response> * message,ResultsAggregatorAndPrintMetadata metadata){};
 
-	/*
-	 * The callBack function used by routing manager
-	 */
-	virtual void callBack(PendingMessage<Request, Response> * message){};
-	virtual void callBack(vector<PendingMessage<Request, Response> * > messages){};
+    /*
+     * The callBack function used by routing manager
+     */
+    virtual void callBack(PendingMessage<Request, Response> * message){};
+    virtual void callBack(vector<PendingMessage<Request, Response> * > messages){};
 
-	/*
-	 * The last call back function called by RoutingManager in all cases.
-	 * Example of call back call order for search :
-	 * 1. preProcessing()
-	 * 2. timeoutProcessing() [only if some shard times out]
-	 * 3. aggregateSearchResults()
-	 * 4. finalize()
-	 */
-	virtual void finalize(ResultsAggregatorAndPrintMetadata metadata){};
+    /*
+     * The last call back function called by RoutingManager in all cases.
+     * Example of call back call order for search :
+     * 1. preProcessing()
+     * 2. timeoutProcessing() [only if some shard times out]
+     * 3. aggregateSearchResults()
+     * 4. finalize()
+     */
+    virtual void finalize(ResultsAggregatorAndPrintMetadata metadata){};
 
 
-	virtual ~ResultAggregatorAndPrint(){};
+    virtual ~ResultAggregatorAndPrint(){};
 
 };
 

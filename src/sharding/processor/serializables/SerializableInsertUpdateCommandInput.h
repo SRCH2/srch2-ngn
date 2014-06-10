@@ -15,61 +15,61 @@ namespace httpwrapper {
 
 class SerializableInsertUpdateCommandInput{
 public:
-	enum OperationCode{
-		INSERT,
-		UPDATE
-	};
+    enum OperationCode{
+        INSERT,
+        UPDATE
+    };
 
 
-	SerializableInsertUpdateCommandInput(Record * record, OperationCode insertOrUpdate){
-		this->record = record;
-		this->insertOrUpdate = insertOrUpdate;
-	}
-	~SerializableInsertUpdateCommandInput(){
-		delete record;
-	}
+    SerializableInsertUpdateCommandInput(Record * record, OperationCode insertOrUpdate){
+        this->record = record;
+        this->insertOrUpdate = insertOrUpdate;
+    }
+    ~SerializableInsertUpdateCommandInput(){
+        delete record;
+    }
 
-	OperationCode getInsertOrUpdate() const{
-		return insertOrUpdate;
-	}
-	srch2is::Record * getRecord() const{
-		return this->record;
-	}
+    OperationCode getInsertOrUpdate() const{
+        return insertOrUpdate;
+    }
+    srch2is::Record * getRecord() const{
+        return this->record;
+    }
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
     void* serialize(MessageAllocator * aloc){
-    	ASSERT(record != NULL);
-    	// calculate the size
-    	unsigned numberOfBytes = 0;
-    	numberOfBytes += sizeof(OperationCode);
-    	numberOfBytes += record->getNumberOfBytesSize();
-    	// allocate the space
-    	void * buffer = aloc->allocateMessageReturnBody(numberOfBytes);
-		void * bufferWritePointer = buffer;
-    	// and serialize things in calculate
-		bufferWritePointer = srch2::util::serializeFixedTypes(insertOrUpdate, bufferWritePointer);
-		bufferWritePointer = record->serializeForNetwork(bufferWritePointer);
+        ASSERT(record != NULL);
+        // calculate the size
+        unsigned numberOfBytes = 0;
+        numberOfBytes += sizeof(OperationCode);
+        numberOfBytes += record->getNumberOfBytesSize();
+        // allocate the space
+        void * buffer = aloc->allocateMessageReturnBody(numberOfBytes);
+        void * bufferWritePointer = buffer;
+        // and serialize things in calculate
+        bufferWritePointer = srch2::util::serializeFixedTypes(insertOrUpdate, bufferWritePointer);
+        bufferWritePointer = record->serializeForNetwork(bufferWritePointer);
 
-    	return buffer;
+        return buffer;
     }
 
     //given a byte stream recreate the original object
     static SerializableInsertUpdateCommandInput* deserialize(void* buffer, const Schema * schema){
-    	Record * record = new Record(schema);
-    	OperationCode insertOrUpdate ;
-    	buffer = srch2::util::deserializeFixedTypes(buffer, insertOrUpdate);
-    	buffer = Record::deserializeForNetwork(buffer, *record);
-    	return new SerializableInsertUpdateCommandInput(record, insertOrUpdate);
+        Record * record = new Record(schema);
+        OperationCode insertOrUpdate ;
+        buffer = srch2::util::deserializeFixedTypes(buffer, insertOrUpdate);
+        buffer = Record::deserializeForNetwork(buffer, *record);
+        return new SerializableInsertUpdateCommandInput(record, insertOrUpdate);
     }
 
     //Returns the type of message which uses this kind of object as transport
     static ShardingMessageType messageKind(){
-    	return InsertUpdateCommandMessageType;
+        return InsertUpdateCommandMessageType;
     }
 
 private:
     OperationCode insertOrUpdate; // true => insert, false=> update
-	Record * record;
+    Record * record;
 };
 
 

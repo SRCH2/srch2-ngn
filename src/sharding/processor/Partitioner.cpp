@@ -15,7 +15,7 @@ namespace httpwrapper {
 
 
 Partitioner::Partitioner(ConfigManager * configurationManager){
-	this->configurationManager = configurationManager;
+    this->configurationManager = configurationManager;
 }
 
 /*
@@ -29,22 +29,22 @@ ShardId Partitioner::getShardIDForRecord(Record * record, string coreName){
 
     const CoreInfo_t *indexDataContainerConf = configurationManager->getCoreInfo(coreName);
 
-	unsigned valueToHash = getRecordValueToHash(record);
+    unsigned valueToHash = getRecordValueToHash(record);
 
-	unsigned totalNumberOfShards = indexDataContainerConf->getNumberOfPrimaryShards();
+    unsigned totalNumberOfShards = indexDataContainerConf->getNumberOfPrimaryShards();
 
-	return convertUnsignedToCoreShardInfo(hash(valueToHash , totalNumberOfShards), indexDataContainerConf);
+    return convertUnsignedToCoreShardInfo(hash(valueToHash , totalNumberOfShards), indexDataContainerConf);
 }
 
 ShardId Partitioner::getShardIDForRecord(string primaryKeyStringValue, string coreName){
 
     const CoreInfo_t *indexDataContainerConf = configurationManager->getCoreInfo(coreName);
 
-	unsigned valueToHash = getRecordValueToHash(primaryKeyStringValue);
+    unsigned valueToHash = getRecordValueToHash(primaryKeyStringValue);
 
-	unsigned totalNumberOfShards = indexDataContainerConf->getNumberOfPrimaryShards();
+    unsigned totalNumberOfShards = indexDataContainerConf->getNumberOfPrimaryShards();
 
-	return convertUnsignedToCoreShardInfo(hash(valueToHash , totalNumberOfShards), indexDataContainerConf);
+    return convertUnsignedToCoreShardInfo(hash(valueToHash , totalNumberOfShards), indexDataContainerConf);
 }
 
 
@@ -56,15 +56,15 @@ ShardId Partitioner::getShardIDForRecord(string primaryKeyStringValue, string co
  */
 unsigned Partitioner::getRecordValueToHash(Record * record){
 
-	// When the record is being parsed, configuration is used to compute the hashable value of this
-	// record. It will be saved in record.
-	string primaryKey = record->getPrimaryKey();
-	return hashDJB2(primaryKey.c_str());
+    // When the record is being parsed, configuration is used to compute the hashable value of this
+    // record. It will be saved in record.
+    string primaryKey = record->getPrimaryKey();
+    return hashDJB2(primaryKey.c_str());
 }
 
 
 unsigned Partitioner::getRecordValueToHash(string primaryKeyStringValue){
-	return hashDJB2(primaryKeyStringValue.c_str());
+    return hashDJB2(primaryKeyStringValue.c_str());
 }
 
 /*
@@ -72,14 +72,14 @@ unsigned Partitioner::getRecordValueToHash(string primaryKeyStringValue){
  * and returns this value
  */
 unsigned Partitioner::hash(unsigned valueToHash, unsigned hashSpace){
-	// use a hash function
-	// now simply round robin
-	return valueToHash % hashSpace;
+    // use a hash function
+    // now simply round robin
+    return valueToHash % hashSpace;
 }
 
 
 ShardId Partitioner::convertUnsignedToCoreShardInfo(unsigned coreShardIndex, const CoreInfo_t *indexDataContainerConf){
-	 return indexDataContainerConf->getPrimaryShardId(coreShardIndex);
+    return indexDataContainerConf->getPrimaryShardId(coreShardIndex);
 }
 
 }

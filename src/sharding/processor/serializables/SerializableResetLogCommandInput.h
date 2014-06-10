@@ -14,22 +14,22 @@ namespace httpwrapper {
 
 class SerializableResetLogCommandInput{
 public:
-	// we don't need anything in this class for now
+    // we don't need anything in this class for now
 
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
     void* serialize(MessageAllocator * aloc){
-    	return aloc->allocateMessageReturnBody(0);
+        return aloc->allocateMessageReturnBody(0);
     }
 
     //given a byte stream recreate the original object
     static SerializableResetLogCommandInput* deserialize(void* buffer){
-       	return new SerializableResetLogCommandInput();
+        return new SerializableResetLogCommandInput();
     }
 
     //Returns the type of message which uses this kind of object as transport
     static ShardingMessageType messageKind(){
-    	return ResetLogCommandMessageType;
+        return ResetLogCommandMessageType;
     }
 };
 

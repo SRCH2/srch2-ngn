@@ -47,86 +47,86 @@ class DPExternalRequestHandler {
 
 public:
 
-	DPExternalRequestHandler(ConfigManager * configurationManager, RoutingManager * routingManager);
+    DPExternalRequestHandler(ConfigManager * configurationManager, RoutingManager * routingManager);
 
-	// Public API which can be used by other modules
+    // Public API which can be used by other modules
 
-	/*
-	 * 1. Receives a search request from a client (not from another shard)
-	 * 2. broadcasts this request to DPInternalRequestHandler objects of other shards
-	 * 3. Gives ResultAggregator functions as callback function to TransportationManager
-	 * 4. ResultAggregator callback functions will aggregate the results and print them on
-	 *    http channel
-	 */
-	void externalSearchCommand(evhttp_request *req , CoreShardInfo * coreShardInfo);
+    /*
+     * 1. Receives a search request from a client (not from another shard)
+     * 2. broadcasts this request to DPInternalRequestHandler objects of other shards
+     * 3. Gives ResultAggregator functions as callback function to TransportationManager
+     * 4. ResultAggregator callback functions will aggregate the results and print them on
+     *    http channel
+     */
+    void externalSearchCommand(evhttp_request *req , CoreShardInfo * coreShardInfo);
 
-	/*
-	 * 1. Receives an insert request from a client (not from another shard)
-	 * 2. Uses Partitioner to know which shard should handle this request
-	 * 3. sends this request to DPInternalRequestHandler objects of the chosen shard
-	 *    Since it's a blocking call, the results are retrieved at the same point and
-	 *    printed on the HTTP channel.
-	 */
-	void externalInsertCommand(evhttp_request *req, CoreShardInfo * coreShardInfo);
+    /*
+     * 1. Receives an insert request from a client (not from another shard)
+     * 2. Uses Partitioner to know which shard should handle this request
+     * 3. sends this request to DPInternalRequestHandler objects of the chosen shard
+     *    Since it's a blocking call, the results are retrieved at the same point and
+     *    printed on the HTTP channel.
+     */
+    void externalInsertCommand(evhttp_request *req, CoreShardInfo * coreShardInfo);
 
-	/*
-	 * 1. Receives an update request from a client (not from another shard)
-	 * 2. Uses Partitioner to know which shard should handle this request
-	 * 3. sends this request to DPInternalRequestHandler objects of the chosen shard
-	 *    Since it's a blocking call, the results are retrieved at the same point and
-	 *    printed on the HTTP channel.
-	 */
-	void externalUpdateCommand(evhttp_request *req, CoreShardInfo * coreShardInfo);
+    /*
+     * 1. Receives an update request from a client (not from another shard)
+     * 2. Uses Partitioner to know which shard should handle this request
+     * 3. sends this request to DPInternalRequestHandler objects of the chosen shard
+     *    Since it's a blocking call, the results are retrieved at the same point and
+     *    printed on the HTTP channel.
+     */
+    void externalUpdateCommand(evhttp_request *req, CoreShardInfo * coreShardInfo);
 
-	/*
-	 * 1. Receives an delete request from a client (not from another shard)
-	 * 2. Uses Partitioner to know which shard should handle this request
-	 * 3. sends this request to DPInternalRequestHandler objects of the chosen shard
-	 *    Since it's a blocking call, the results are retrieved at the same point and
-	 *    printed on the HTTP channel.
-	 */
-	void externalDeleteCommand(evhttp_request *req, CoreShardInfo * coreShardInfo);
+    /*
+     * 1. Receives an delete request from a client (not from another shard)
+     * 2. Uses Partitioner to know which shard should handle this request
+     * 3. sends this request to DPInternalRequestHandler objects of the chosen shard
+     *    Since it's a blocking call, the results are retrieved at the same point and
+     *    printed on the HTTP channel.
+     */
+    void externalDeleteCommand(evhttp_request *req, CoreShardInfo * coreShardInfo);
 
-	/*
-	 * 1. Receives a GetInfo request from a client (not from another shard)
-	 * 2. Broadcasts this command to all shards and blocks to get their response
-	 * 3. prints Success or Failure on HTTP channel
-	 */
-	void externalGetInfoCommand(evhttp_request *req, CoreShardInfo * coreShardInfo);
+    /*
+     * 1. Receives a GetInfo request from a client (not from another shard)
+     * 2. Broadcasts this command to all shards and blocks to get their response
+     * 3. prints Success or Failure on HTTP channel
+     */
+    void externalGetInfoCommand(evhttp_request *req, CoreShardInfo * coreShardInfo);
 
-	/*
-	 * 1. Receives a SerializeIndex request from a client (not from another shard)
-	 * 2. Broadcasts this command to all shards and blocks to get their response
-	 * 3. prints Success or Failure on HTTP channel
-	 */
-	void externalSerializeIndexCommand(evhttp_request *req, CoreShardInfo * coreShardInfo);
+    /*
+     * 1. Receives a SerializeIndex request from a client (not from another shard)
+     * 2. Broadcasts this command to all shards and blocks to get their response
+     * 3. prints Success or Failure on HTTP channel
+     */
+    void externalSerializeIndexCommand(evhttp_request *req, CoreShardInfo * coreShardInfo);
 
-	/*
-	 * 1. Receives a SerializeRecords request from a client (not from another shard)
-	 * 2. Broadcasts this command to all shards and blocks to get their response
-	 * 3. prints Success or Failure on HTTP channel
-	 */
-	void externalSerializeRecordsCommand(evhttp_request *req, CoreShardInfo * coreShardInfo);
+    /*
+     * 1. Receives a SerializeRecords request from a client (not from another shard)
+     * 2. Broadcasts this command to all shards and blocks to get their response
+     * 3. prints Success or Failure on HTTP channel
+     */
+    void externalSerializeRecordsCommand(evhttp_request *req, CoreShardInfo * coreShardInfo);
 
-	/*
-	 * 1. Receives a ResetLog request from a client (not from another shard)
-	 * 2. Broadcasts this command to all shards and blocks to get their response
-	 * 3. prints Success or Failure on HTTP channel
-	 */
-	void externalResetLogCommand(evhttp_request *req, CoreShardInfo * coreShardInfo);
+    /*
+     * 1. Receives a ResetLog request from a client (not from another shard)
+     * 2. Broadcasts this command to all shards and blocks to get their response
+     * 3. prints Success or Failure on HTTP channel
+     */
+    void externalResetLogCommand(evhttp_request *req, CoreShardInfo * coreShardInfo);
 
-	/*
-	 * Receives a commit request and boardcasts it to other shards
-	 */
-	void externalCommitCommand(evhttp_request *req, CoreShardInfo * coreShardInfo);
+    /*
+     * Receives a commit request and boardcasts it to other shards
+     */
+    void externalCommitCommand(evhttp_request *req, CoreShardInfo * coreShardInfo);
 
 
 private:
-	ConfigManager * configurationManager;
-	RoutingManager * routingManager;
+    ConfigManager * configurationManager;
+    RoutingManager * routingManager;
 
-	// now, use Partitioner to choose a shard for this record
-	Partitioner * partitioner;
+    // now, use Partitioner to choose a shard for this record
+    Partitioner * partitioner;
 
 };
 

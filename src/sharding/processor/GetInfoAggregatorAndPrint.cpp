@@ -11,13 +11,13 @@ namespace httpwrapper {
 
 
 GetInfoAggregatorAndPrint::GetInfoAggregatorAndPrint(ConfigManager * configurationManager, evhttp_request *req){
-	this->configurationManager = configurationManager;
-	this->req = req;
+    this->configurationManager = configurationManager;
+    this->req = req;
 
-	this->readCount = 0;
-	this->writeCount = 0;
-	this->numberOfDocumentsInIndex  = 0;
-	this->docCount = 0;
+    this->readCount = 0;
+    this->writeCount = 0;
+    this->numberOfDocumentsInIndex  = 0;
+    this->docCount = 0;
 }
 
 /*
@@ -31,14 +31,14 @@ void GetInfoAggregatorAndPrint::preProcessing(ResultsAggregatorAndPrintMetadata 
  * this function must be between preProcessing(...) and callBack()
  */
 void GetInfoAggregatorAndPrint::timeoutProcessing(PendingMessage<SerializableGetInfoCommandInput,
-		SerializableGetInfoResults> * message,
-		ResultsAggregatorAndPrintMetadata metadata){
-	if(message == NULL){
-		return;
-	}
-	boost::unique_lock< boost::shared_mutex > lock(_access);
-	messages << "{\"shard getInfo\":\"failed\",\"reason\":\"Corresponging shard ("<<
-					message->getNodeId()<<") timedout.\"}";
+        SerializableGetInfoResults> * message,
+        ResultsAggregatorAndPrintMetadata metadata){
+    if(message == NULL){
+        return;
+    }
+    boost::unique_lock< boost::shared_mutex > lock(_access);
+    messages << "{\"shard getInfo\":\"failed\",\"reason\":\"Corresponging shard ("<<
+                    message->getNodeId()<<") timedout.\"}";
 }
 
 
@@ -46,21 +46,21 @@ void GetInfoAggregatorAndPrint::timeoutProcessing(PendingMessage<SerializableGet
  * The main function responsible of aggregating status (success or failure) results
  */
 void GetInfoAggregatorAndPrint::callBack(vector<PendingMessage<SerializableGetInfoCommandInput,
-		SerializableGetInfoResults> * > messages){
-	boost::unique_lock< boost::shared_mutex > lock(_access);
-	for(vector<PendingMessage<SerializableGetInfoCommandInput,
-			SerializableGetInfoResults> * >::iterator messageItr = messages.begin();
-			messageItr != messages.end() ; ++messageItr){
-		if(*messageItr == NULL || (*messageItr)->getResponseObject() == NULL){
-			continue;
-		}
-		this->readCount += (*messageItr)->getResponseObject()->getReadCount();
-		this->writeCount += (*messageItr)->getResponseObject()->getWriteCount();
-		this->numberOfDocumentsInIndex += (*messageItr)->getResponseObject()->getNumberOfDocumentsInIndex();
-		this->lastMergeTimeStrings.push_back((*messageItr)->getResponseObject()->getLastMergeTimeString());
-		this->docCount += (*messageItr)->getResponseObject()->getDocCount();
-		this->versionInfoStrings.push_back((*messageItr)->getResponseObject()->getVersionInfo());
-	}
+        SerializableGetInfoResults> * > messages){
+    boost::unique_lock< boost::shared_mutex > lock(_access);
+    for(vector<PendingMessage<SerializableGetInfoCommandInput,
+            SerializableGetInfoResults> * >::iterator messageItr = messages.begin();
+            messageItr != messages.end() ; ++messageItr){
+        if(*messageItr == NULL || (*messageItr)->getResponseObject() == NULL){
+            continue;
+        }
+        this->readCount += (*messageItr)->getResponseObject()->getReadCount();
+        this->writeCount += (*messageItr)->getResponseObject()->getWriteCount();
+        this->numberOfDocumentsInIndex += (*messageItr)->getResponseObject()->getNumberOfDocumentsInIndex();
+        this->lastMergeTimeStrings.push_back((*messageItr)->getResponseObject()->getLastMergeTimeString());
+        this->docCount += (*messageItr)->getResponseObject()->getDocCount();
+        this->versionInfoStrings.push_back((*messageItr)->getResponseObject()->getVersionInfo());
+    }
 }
 
 /*
@@ -73,25 +73,25 @@ void GetInfoAggregatorAndPrint::callBack(vector<PendingMessage<SerializableGetIn
  */
 void GetInfoAggregatorAndPrint::finalize(ResultsAggregatorAndPrintMetadata metadata){
 
-	//TODO : this print should be checked to make sure it prints correct json format
-	std::stringstream str;
+    //TODO : this print should be checked to make sure it prints correct json format
+    std::stringstream str;
     str << "\"engine_status\":{";
     str << "\"search_requests\":\"" << this->readCount << "\", ";
     str << "\"write_requests\":\"" <<  this->writeCount << "\", ";
     str << "\"docs_in_index\":\"" << this->numberOfDocumentsInIndex << "\", ";
     str << "\"shard_status\":[";
     for(unsigned i=0; i < lastMergeTimeStrings.size() ; ++i){
-		str << "\"shard_status_" << i << "\":{"; //TODO : we should use better information at this place
-    	str << "\"last_merge\":\"" << this->lastMergeTimeStrings.at(i) << "\", ";
-    	str << "\"version\":\"" << this->versionInfoStrings.at(i) << "\"";
-		str << "}";
-		if(i < lastMergeTimeStrings.size()-1){
-			str << ", ";
-		}
+        str << "\"shard_status_" << i << "\":{"; //TODO : we should use better information at this place
+        str << "\"last_merge\":\"" << this->lastMergeTimeStrings.at(i) << "\", ";
+        str << "\"version\":\"" << this->versionInfoStrings.at(i) << "\"";
+        str << "}";
+        if(i < lastMergeTimeStrings.size()-1){
+            str << ", ";
+        }
     }
     str << "], \"doc_count\":\"" << this->docCount << "\"}";
     if(messages.str().compare("") != 0){ // there is actually a message to show
-		str << ",\"messages\":[" << messages.str() << "]";
+        str << ",\"messages\":[" << messages.str() << "]";
     }
     Logger::info("%s", messages.str().c_str());
 

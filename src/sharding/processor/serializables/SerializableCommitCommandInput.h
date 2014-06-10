@@ -17,18 +17,18 @@ public:
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
     void* serialize(MessageAllocator * aloc){
-    	return aloc->allocateMessageReturnBody(0);
+    return aloc->allocateMessageReturnBody(0);
     }
 
     //given a byte stream recreate the original object
     static SerializableCommitCommandInput * deserialize(void*){
-    	return new SerializableCommitCommandInput();
+    return new SerializableCommitCommandInput();
     }
 
 
     //Returns the type of message which uses this kind of object as transport
     static ShardingMessageType messageKind(){
-    	return CommitCommandMessageType;
+    return CommitCommandMessageType;
     }
 };
 
