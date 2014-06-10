@@ -131,13 +131,13 @@ private:
 
     // PendingRequest can only be created in PendingRequestHandler to make sure it's always registered there.
     PendingRequest(MessageAllocator * messageAllocator, bool waitForAll,
-            boost::shared_ptr<ResultAggregatorAndPrint<Request, Response> > aggregator,
+            boost::shared_ptr<ResponseAggregator<Request, Response> > aggregator,
             unsigned totalNumberOfPendingMessages) :
                 waitForAll(waitForAll), totalNumberOfPendingMessages(totalNumberOfPendingMessages){
         this->messageAllocator = messageAllocator;
 
         this->aggregator = aggregator;
-        this->aggregator->preProcessing(ResultsAggregatorAndPrintMetadata() );
+        this->aggregator->preProcessing(ResponseAggregatorMetadata() );
         // index zero is for the local node.
         pendingMessages.push_back(NULL);
         pendingMessagesWithResponse.push_back(NULL);
@@ -152,7 +152,7 @@ private:
             // we should call callBackAll here
             this->aggregator->callBack(pendingMessagesWithResponse);
         }
-        this->aggregator->finalize(ResultsAggregatorAndPrintMetadata());
+        this->aggregator->finalize(ResponseAggregatorMetadata());
         for(typename vector <PendingMessage<Request, Response> *>::iterator pendingMessageItr = pendingMessages.begin() ;
                 pendingMessageItr != pendingMessages.end() ; ++pendingMessageItr){
             ASSERT(*pendingMessageItr == NULL);
@@ -219,7 +219,7 @@ private:
     // for some cases like when we receive a batch of inserts, multiple PendingRequest objects
     // (one per each insert) need to have a single aggregator (batch aggregator), therefore, we
     // the aggregator to be deleted when the last PendingRequest object is deleted.
-    boost::shared_ptr<ResultAggregatorAndPrint<Request, Response> > aggregator;
+    boost::shared_ptr<ResponseAggregator<Request, Response> > aggregator;
 
     // This member gives us the total number of pending messages that will be registered in this
     // pending request. If waitForAll is true we call CallBackAll only if we have this many pendingMessages
@@ -239,7 +239,7 @@ public:
 
     template <class Request, class Response>
     PendingRequest<Request, Response> * registerPendingRequest(bool waitForAll,
-            boost::shared_ptr<ResultAggregatorAndPrint<Request, Response> > aggregator,
+            boost::shared_ptr<ResponseAggregator<Request, Response> > aggregator,
             unsigned totalNumberOfPendingMessages);
 
     // TODO : nodeId should be replaced with shardId

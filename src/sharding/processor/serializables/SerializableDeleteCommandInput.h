@@ -12,12 +12,12 @@ namespace srch2 {
 namespace httpwrapper {
 
 
-class SerializableDeleteCommandInput{
+class DeleteCommand{
 public:
 
     //TODO : primary key might not be enough in case we want to shard based on the value of
     // an expression given in config manager
-    SerializableDeleteCommandInput(string primaryKey, unsigned shardingKey){
+    DeleteCommand(string primaryKey, unsigned shardingKey){
         this->primaryKey = primaryKey;
         this->shardingKey = shardingKey;
     }
@@ -48,7 +48,7 @@ public:
     }
 
     //given a byte stream recreate the original object
-    static SerializableDeleteCommandInput * deserialize(void* buffer){
+    static DeleteCommand * deserialize(void* buffer){
 
         unsigned shardingKey;
         string primaryKey;
@@ -56,7 +56,7 @@ public:
         buffer = srch2::util::deserializeFixedTypes(buffer, shardingKey);
         buffer = srch2::util::deserializeString(buffer, primaryKey);
 
-        return new SerializableDeleteCommandInput(primaryKey, shardingKey);
+        return new DeleteCommand(primaryKey, shardingKey);
     }
 
     //Returns the type of message which uses this kind of object as transport

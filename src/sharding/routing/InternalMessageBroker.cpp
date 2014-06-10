@@ -57,39 +57,39 @@ std::pair<Message*,ResponseType*> InternalMessageBroker::processRequestMessage(M
     }
 }
 
-std::pair<Message*,SerializableCommandStatus*> InternalMessageBroker::processRequestInsertUpdateMessage(Message *msg,
+std::pair<Message*,CommandStatus*> InternalMessageBroker::processRequestInsertUpdateMessage(Message *msg,
         Srch2Server* server, const Schema * schema){
-    SerializableInsertUpdateCommandInput *inputSerializedObject = NULL;
+    InsertUpdateCommand *inputSerializedObject = NULL;
     if(msg->isLocal()){ // message comes from current node
         // ASSERT(currentNodeId = msg->shardId->nodeId);
         // This object (inputSerializedObject) will be deleted in aggregator because it's a local message
         // and this object was originally created in DPExternal
-        inputSerializedObject = decodeInternalMessage<SerializableInsertUpdateCommandInput>(msg);
+        inputSerializedObject = decodeInternalMessage<InsertUpdateCommand>(msg);
     }else{
         inputSerializedObject = decodeExternalInsertUpdateMessage(msg,schema);
     }
 
     // if msg is local this response object will be deleted in results aggregator.
     // otherwise, TODO red line
-    SerializableCommandStatus * outputSerializedObject  = internalDP.internalInsertUpdateCommand(server,inputSerializedObject);
+    CommandStatus * outputSerializedObject  = internalDP.internalInsertUpdateCommand(server,inputSerializedObject);
 
     // prepare the reply message
     Message *replyMessage = NULL;
     if(msg->isLocal()){
         // the message will contain only the pointer to response object
         replyMessage = this->routingManager.
-                prepareInternalMessage<SerializableCommandStatus>(ShardId(), outputSerializedObject );
+                prepareInternalMessage<CommandStatus>(ShardId(), outputSerializedObject );
         // this message object will be deleted in pendinMessages in TM
-        return std::make_pair<Message*,SerializableCommandStatus*>(replyMessage,outputSerializedObject);
+        return std::make_pair<Message*,CommandStatus*>(replyMessage,outputSerializedObject);
     }else{
         // the message will contain the serialized response object
         replyMessage = this->routingManager.
-                prepareExternalMessage<SerializableCommandStatus>(ShardId(), outputSerializedObject );
+                prepareExternalMessage<CommandStatus>(ShardId(), outputSerializedObject );
         // we delete this response object here because it's an external request and response
         // will be wrapped in a Message from now on
         delete inputSerializedObject;
         delete outputSerializedObject;
-        return std::make_pair<Message*,SerializableCommandStatus*>(replyMessage,NULL);
+        return std::make_pair<Message*,CommandStatus*>(replyMessage,NULL);
     }
 }
 
@@ -113,43 +113,43 @@ std::pair<Message*,void*> InternalMessageBroker::notifyWithReply(Message * messa
     switch (message->getType()) {
     case SearchCommandMessageType: // -> for LogicalPlan object
     {
-        std::pair<Message*,SerializableSearchResults*> result = processRequestMessage<SerializableSearchCommandInput,SerializableSearchResults>
+        std::pair<Message*,SearchCommandResults*> result = processRequestMessage<SearchCommand,SearchCommandResults>
         (message, server, &DPInternalRequestHandler::internalSearchCommand);
         return std::make_pair<Message * , void*>(result.first,result.second);
     }
     case InsertUpdateCommandMessageType: // -> for Record object (used for insert and update)
     {
-        std::pair<Message*,SerializableCommandStatus*> result = processRequestInsertUpdateMessage(message, server, server->indexDataConfig->getSchema());
+        std::pair<Message*,CommandStatus*> result = processRequestInsertUpdateMessage(message, server, server->indexDataConfig->getSchema());
         return std::make_pair<Message * , void*>(result.first,result.second);
     }
     case DeleteCommandMessageType: // -> for DeleteCommandInput object (used for delete)
     {
-        std::pair<Message*,SerializableCommandStatus*> result = processRequestMessage<SerializableDeleteCommandInput, SerializableCommandStatus>
+        std::pair<Message*,CommandStatus*> result = processRequestMessage<DeleteCommand, CommandStatus>
         (message, server,&DPInternalRequestHandler::internalDeleteCommand);
         return std::make_pair<Message * , void*>(result.first,result.second);
     }
     case SerializeCommandMessageType: // -> for SerializeCommandInput object
     {
         // (used for serializing index and records)
-        std::pair<Message*,SerializableCommandStatus*> result = processRequestMessage<SerializableSerializeCommandInput, SerializableCommandStatus>
+        std::pair<Message*,CommandStatus*> result = processRequestMessage<SerializeCommand, CommandStatus>
         (message, server,&DPInternalRequestHandler::internalSerializeCommand);
         return std::make_pair<Message * , void*>(result.first,result.second);
     }
     case GetInfoCommandMessageType: // -> for GetInfoCommandInput object (used for getInfo)
     {
-        std::pair<Message*,SerializableGetInfoResults*> result = processRequestMessage<SerializableGetInfoCommandInput, SerializableGetInfoResults>
+        std::pair<Message*,GetInfoCommandResults*> result = processRequestMessage<GetInfoCommand, GetInfoCommandResults>
         (message, server,&DPInternalRequestHandler::internalGetInfoCommand);
         return std::make_pair<Message * , void*>(result.first,result.second);
     }
     case CommitCommandMessageType: // -> for CommitCommandInput object
     {
-        std::pair<Message*,SerializableCommandStatus*> result = processRequestMessage<SerializableCommitCommandInput, SerializableCommandStatus>
+        std::pair<Message*,CommandStatus*> result = processRequestMessage<CommitCommand, CommandStatus>
         (message, server, &DPInternalRequestHandler::internalCommitCommand);
         return std::make_pair<Message * , void*>(result.first,result.second);
     }
     case ResetLogCommandMessageType: // -> for ResetLogCommandInput (used for resetting log)
     {
-        std::pair<Message*,SerializableCommandStatus*> result = processRequestMessage<SerializableResetLogCommandInput,SerializableCommandStatus>
+        std::pair<Message*,CommandStatus*> result = processRequestMessage<ResetLogCommand,CommandStatus>
         (message, server, &DPInternalRequestHandler::internalResetLogCommand);
         return std::make_pair<Message * , void*>(result.first,result.second);
     }
@@ -185,32 +185,32 @@ void InternalMessageBroker::notifyNoReply(Message * msg){
     //TODO
     switch (msg->getType()) {
     case SearchCommandMessageType: // -> for LogicalPlan object
-        processRequestMessageNoReply<SerializableSearchCommandInput>(msg);
+        processRequestMessageNoReply<SearchCommand>(msg);
         return;
 
     case InsertUpdateCommandMessageType: // -> for Record object (used for insert and update)
-        processRequestMessageNoReply<SerializableInsertUpdateCommandInput>(msg);
+        processRequestMessageNoReply<InsertUpdateCommand>(msg);
         return;
 
     case DeleteCommandMessageType: // -> for DeleteCommandInput object (used for delete)
-        processRequestMessageNoReply<SerializableDeleteCommandInput>(msg);
+        processRequestMessageNoReply<DeleteCommand>(msg);
         return;
 
     case SerializeCommandMessageType: // -> for SerializeCommandInput object
         // (used for serializing index and records)
-        processRequestMessageNoReply<SerializableSerializeCommandInput>(msg);
+        processRequestMessageNoReply<SerializeCommand>(msg);
         return;
 
     case GetInfoCommandMessageType: // -> for GetInfoCommandInput object (used for getInfo)
-        processRequestMessageNoReply<SerializableGetInfoCommandInput>(msg);
+        processRequestMessageNoReply<GetInfoCommand>(msg);
         return;
 
     case CommitCommandMessageType: // -> for CommitCommandInput object
-        processRequestMessageNoReply<SerializableCommitCommandInput>(msg);
+        processRequestMessageNoReply<CommitCommand>(msg);
         return;
 
     case ResetLogCommandMessageType: // -> for ResetLogCommandInput (used for resetting log)
-        processRequestMessageNoReply<SerializableResetLogCommandInput>(msg);
+        processRequestMessageNoReply<ResetLogCommand>(msg);
         return;
 
     case SearchResultsMessageType: // -> for SerializedQueryResults object
@@ -227,25 +227,25 @@ void InternalMessageBroker::notifyNoReply(Message * msg){
 void InternalMessageBroker::deleteResponseObjectBasedOnType(Message * reply, void * responseObject){
     switch (reply->getType()) {
     case SearchCommandMessageType: // -> for LogicalPlan object
-        delete (SerializableSearchResults*)responseObject;
+        delete (SearchCommandResults*)responseObject;
         return;
     case InsertUpdateCommandMessageType: // -> for Record object (used for insert and update)
-        delete (SerializableCommandStatus*)responseObject;
+        delete (CommandStatus*)responseObject;
         return;
     case DeleteCommandMessageType: // -> for DeleteCommandInput object (used for delete)
-        delete (SerializableCommandStatus*)responseObject;
+        delete (CommandStatus*)responseObject;
         return;
     case SerializeCommandMessageType: // -> for SerializeCommandInput object
-        delete (SerializableCommandStatus*)responseObject;
+        delete (CommandStatus*)responseObject;
         return;
     case GetInfoCommandMessageType: // -> for GetInfoCommandInput object (used for getInfo)
-        delete (SerializableGetInfoResults*)responseObject;
+        delete (GetInfoCommandResults*)responseObject;
         return;
     case CommitCommandMessageType: // -> for CommitCommandInput object
-        delete (SerializableCommandStatus*)responseObject;
+        delete (CommandStatus*)responseObject;
         return;
     case ResetLogCommandMessageType: // -> for ResetLogCommandInput (used for resetting log)
-        delete (SerializableCommandStatus*)responseObject;
+        delete (CommandStatus*)responseObject;
         return;
     case SearchResultsMessageType: // -> for SerializedQueryResults object
     case GetInfoResultsMessageType: // -> for GetInfoResults object

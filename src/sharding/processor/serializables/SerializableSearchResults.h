@@ -29,15 +29,15 @@ public:
     srch2::instantsearch::StoredRecordBuffer getInMemoryData() const;
 };
 
-class SerializableSearchResults {
+class SearchCommandResults {
 public:
 
-    SerializableSearchResults(){
+    SearchCommandResults(){
         this->queryResults = new QueryResults();
         this->resultsFactory = new QueryResultFactory();
     }
 
-    ~SerializableSearchResults(){
+    ~SearchCommandResults(){
         delete this->queryResults;
         delete this->resultsFactory;
     }
@@ -91,17 +91,17 @@ public:
     }
 
     //given a byte stream recreate the original object
-    static SerializableSearchResults * deserialize(void* buffer){
+    static SearchCommandResults * deserialize(void* buffer){
 
         bool isNotNull = false;
         buffer = srch2::util::deserializeFixedTypes(buffer, isNotNull);
         if(isNotNull){
-            SerializableSearchResults * searchResults = new SerializableSearchResults();
+            SearchCommandResults * searchResults = new SearchCommandResults();
             buffer = QueryResults::deserializeForNetwork(*(searchResults->queryResults),buffer, searchResults->resultsFactory);
             buffer = deserializeInMemoryRecordStrings(buffer,searchResults);
             return searchResults;
         }else{
-            SerializableSearchResults * searchResults = new SerializableSearchResults();
+            SearchCommandResults * searchResults = new SearchCommandResults();
             return searchResults;
         }
     }
@@ -126,7 +126,7 @@ public:
     /*
      * | size of map | id1 | string1 | id2 | string2 | ...
      */
-    static void * deserializeInMemoryRecordStrings(void * buffer,SerializableSearchResults * searchResults){
+    static void * deserializeInMemoryRecordStrings(void * buffer,SearchCommandResults * searchResults){
         // serialize size of map
         unsigned sizeOfMap = 0;
         buffer = srch2::util::deserializeFixedTypes(buffer, sizeOfMap);

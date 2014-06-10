@@ -59,7 +59,7 @@ public:
      */
     template<typename RequestType , typename ReseponseType>
     RoutingManagerAPIReturnType broadcast_w_cb(RequestType * requestObj,
-            boost::shared_ptr<ResultAggregatorAndPrint<RequestType , ReseponseType> > aggregator,
+            boost::shared_ptr<ResponseAggregator<RequestType , ReseponseType> > aggregator,
             CoreShardInfo & coreInfo);
 
     /*
@@ -69,7 +69,7 @@ public:
      */
     template<typename RequestType , typename ReseponseType>
     RoutingManagerAPIReturnType broadcast_wait_for_all_w_cb(RequestType * requestObj,
-            boost::shared_ptr<ResultAggregatorAndPrint<RequestType , ReseponseType> > aggregator,
+            boost::shared_ptr<ResponseAggregator<RequestType , ReseponseType> > aggregator,
             CoreShardInfo & coreInfo);
 
 
@@ -82,14 +82,14 @@ public:
      */
     template<typename RequestType , typename ReseponseType>
     RoutingManagerAPIReturnType broadcast_w_cb_n_timeout(RequestType * requestObj,
-            boost::shared_ptr<ResultAggregatorAndPrint<RequestType , ReseponseType> > aggregator,
+            boost::shared_ptr<ResponseAggregator<RequestType , ReseponseType> > aggregator,
             time_t timeoutValue ,
             CoreShardInfo & coreInfo );
 
 
     template<typename RequestType , typename ReseponseType>
     RoutingManagerAPIReturnType broadcast_wait_for_all_w_cb_n_timeout(RequestType * requestObj,
-            boost::shared_ptr<ResultAggregatorAndPrint<RequestType , ReseponseType> > aggregator ,
+            boost::shared_ptr<ResponseAggregator<RequestType , ReseponseType> > aggregator ,
             time_t timeoutValue,
             CoreShardInfo & coreInfo);
 
@@ -116,7 +116,7 @@ public:
      */
     template<typename RequestType , typename ReseponseType>
     RoutingManagerAPIReturnType route_w_cb(RequestType * requestObj,
-            boost::shared_ptr<ResultAggregatorAndPrint<RequestType , ReseponseType> > aggregator ,
+            boost::shared_ptr<ResponseAggregator<RequestType , ReseponseType> > aggregator ,
             ShardId shardInfo);
 
     /*
@@ -128,7 +128,7 @@ public:
      */
     template<typename RequestType , typename ReseponseType>
     RoutingManagerAPIReturnType route_w_cb_n_timeout(RequestType * requestObj,
-            boost::shared_ptr<ResultAggregatorAndPrint<RequestType , ReseponseType> > aggregator,
+            boost::shared_ptr<ResponseAggregator<RequestType , ReseponseType> > aggregator,
             time_t timeoutValue,
             ShardId shardInfo);
 

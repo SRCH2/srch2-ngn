@@ -38,17 +38,17 @@ DPInternalRequestHandler::DPInternalRequestHandler(ConfigManager * configuration
  * 2. Uses core to evaluate this search query
  * 3. Sends the results to the shard which initiated this search query
  */
-SerializableSearchResults * DPInternalRequestHandler::internalSearchCommand(Srch2Server * server, SerializableSearchCommandInput * searchData){
+SearchCommandResults * DPInternalRequestHandler::internalSearchCommand(Srch2Server * server, SearchCommand * searchData){
 
     if(searchData == NULL || server == NULL){
-        SerializableSearchResults * searchResults = new SerializableSearchResults();
+        SearchCommandResults * searchResults = new SearchCommandResults();
         return searchResults;
     }
     // first find the search URL
     LogicalPlan & logicalPlan = *(searchData->getLogicalPlan());
 
     // search results to be serialized and sent over the network
-    SerializableSearchResults * searchResults = new SerializableSearchResults();
+    SearchCommandResults * searchResults = new SearchCommandResults();
 
     struct timespec tstart;
     //    struct timespec tstart2;
@@ -76,14 +76,14 @@ SerializableSearchResults * DPInternalRequestHandler::internalSearchCommand(Srch
  * This call back is always called for insert and update, it will use
  * internalInsertCommand and internalUpdateCommand
  */
-SerializableCommandStatus * DPInternalRequestHandler::internalInsertUpdateCommand(Srch2Server * server,
-        SerializableInsertUpdateCommandInput * insertUpdateData){
+CommandStatus * DPInternalRequestHandler::internalInsertUpdateCommand(Srch2Server * server,
+        InsertUpdateCommand * insertUpdateData){
     if(insertUpdateData == NULL || server == NULL){
-        SerializableCommandStatus * status =
-                new SerializableCommandStatus(SerializableCommandStatus::INSERT_UPDATE, false, "");
+        CommandStatus * status =
+                new CommandStatus(CommandStatus::DP_INSERT_UPDATE, false, "");
         return status;
     }
-    if(insertUpdateData->getInsertOrUpdate() == SerializableInsertUpdateCommandInput::INSERT){ // insert case
+    if(insertUpdateData->getInsertOrUpdate() == InsertUpdateCommand::DP_INSERT){ // insert case
         return internalInsertCommand(server, insertUpdateData);
     }else{ // update case
         return internalUpdateCommand(server, insertUpdateData);
@@ -96,12 +96,12 @@ SerializableCommandStatus * DPInternalRequestHandler::internalInsertUpdateComman
  * 2. Uses core execute this insert query
  * 3. Sends the results to the shard which initiated this insert query (Failure or Success)
  */
-SerializableCommandStatus * DPInternalRequestHandler::internalInsertCommand(Srch2Server * server,
-        SerializableInsertUpdateCommandInput * insertUpdateData){
+CommandStatus * DPInternalRequestHandler::internalInsertCommand(Srch2Server * server,
+        InsertUpdateCommand * insertUpdateData){
 
     if(insertUpdateData == NULL || server == NULL){
-        SerializableCommandStatus * status =
-                new SerializableCommandStatus(SerializableCommandStatus::INSERT, false, "");
+        CommandStatus * status =
+                new CommandStatus(CommandStatus::DP_INSERT, false, "");
         return status;
     }
     //add the record to the index
@@ -119,16 +119,16 @@ SerializableCommandStatus * DPInternalRequestHandler::internalInsertCommand(Srch
         {
             log_str << "{\"rid\":\"" << insertUpdateData->getRecord()->getPrimaryKey() << "\",\"insert\":\"success\"}";
             Logger::info("%s", log_str.str().c_str());
-            SerializableCommandStatus * status=
-                    new SerializableCommandStatus(SerializableCommandStatus::INSERT, true, log_str.str());
+            CommandStatus * status=
+                    new CommandStatus(CommandStatus::DP_INSERT, true, log_str.str());
             return status;
         }
         case srch2::instantsearch::OP_FAIL:
         {
             log_str << "{\"rid\":\"" << insertUpdateData->getRecord()->getPrimaryKey() << "\",\"insert\":\"failed\",\"reason\":\"The record with same primary key already exists\"}";
             Logger::info("%s", log_str.str().c_str());
-            SerializableCommandStatus * status =
-                    new SerializableCommandStatus(SerializableCommandStatus::INSERT, false, log_str.str());
+            CommandStatus * status =
+                    new CommandStatus(CommandStatus::DP_INSERT, false, log_str.str());
             return status;
         }
         };
@@ -137,14 +137,14 @@ SerializableCommandStatus * DPInternalRequestHandler::internalInsertCommand(Srch
     {
         log_str << "{\"rid\":\"" << insertUpdateData->getRecord()->getPrimaryKey() << "\",\"insert\":\"failed\",\"reason\":\"document limit reached. Email support@srch2.com for account upgrade.\"}";
         Logger::info("%s", log_str.str().c_str());
-        SerializableCommandStatus * status =
-                new SerializableCommandStatus(SerializableCommandStatus::INSERT, false, log_str.str());
+        CommandStatus * status =
+                new CommandStatus(CommandStatus::DP_INSERT, false, log_str.str());
         return status;
     }
 
     ASSERT(false);
-    SerializableCommandStatus * status =
-            new SerializableCommandStatus(SerializableCommandStatus::INSERT, false, log_str.str());
+    CommandStatus * status =
+            new CommandStatus(CommandStatus::DP_INSERT, false, log_str.str());
     Logger::info("%s", log_str.str().c_str());
     return status;
 
@@ -159,12 +159,12 @@ SerializableCommandStatus * DPInternalRequestHandler::internalInsertCommand(Srch
  * 2. Uses core execute this update query
  * 3. Sends the results to the shard which initiated this update request (Failure or Success)
  */
-SerializableCommandStatus * DPInternalRequestHandler::internalUpdateCommand(Srch2Server * server,
-        SerializableInsertUpdateCommandInput * insertUpdateData){
+CommandStatus * DPInternalRequestHandler::internalUpdateCommand(Srch2Server * server,
+        InsertUpdateCommand * insertUpdateData){
 
     if(insertUpdateData == NULL || server == NULL){
-        SerializableCommandStatus * status =
-                new SerializableCommandStatus(SerializableCommandStatus::UPDATE, false, "");
+        CommandStatus * status =
+                new CommandStatus(CommandStatus::DP_UPDATE, false, "");
         return status;
     }
     std::stringstream log_str;
@@ -211,8 +211,8 @@ SerializableCommandStatus * DPInternalRequestHandler::internalUpdateCommand(Srch
                 log_str << "New record inserted successfully\"}";
 
             Logger::info("%s", log_str.str().c_str());
-            SerializableCommandStatus * status =
-                    new SerializableCommandStatus(SerializableCommandStatus::UPDATE, true, log_str.str());
+            CommandStatus * status =
+                    new CommandStatus(CommandStatus::DP_UPDATE, true, log_str.str());
             return status;
         }
         case srch2::instantsearch::OP_FAIL:
@@ -237,16 +237,16 @@ SerializableCommandStatus * DPInternalRequestHandler::internalUpdateCommand(Srch
     {
         log_str << "\"resume\":\"no record with given primary key\"}";
         Logger::info("%s", log_str.str().c_str());
-        SerializableCommandStatus * status =
-                new SerializableCommandStatus(SerializableCommandStatus::UPDATE, false, log_str.str());
+        CommandStatus * status =
+                new CommandStatus(CommandStatus::DP_UPDATE, false, log_str.str());
         return status;
     }
     default: // OP_SUCCESS.
     {
         log_str << "\"resume\":\"success\"}";
         Logger::info("%s", log_str.str().c_str());
-        SerializableCommandStatus * status =
-                new SerializableCommandStatus(SerializableCommandStatus::UPDATE, true, log_str.str());
+        CommandStatus * status =
+                new CommandStatus(CommandStatus::DP_UPDATE, true, log_str.str());
         return status;
     }
     };
@@ -254,8 +254,8 @@ SerializableCommandStatus * DPInternalRequestHandler::internalUpdateCommand(Srch
     // we should not reach here
     ASSERT(false);
     Logger::info("%s", log_str.str().c_str());
-    SerializableCommandStatus * status =
-            new SerializableCommandStatus(SerializableCommandStatus::UPDATE, false, log_str.str());
+    CommandStatus * status =
+            new CommandStatus(CommandStatus::DP_UPDATE, false, log_str.str());
     return status;
 
 }
@@ -266,11 +266,11 @@ SerializableCommandStatus * DPInternalRequestHandler::internalUpdateCommand(Srch
  * 2. Uses core execute this delete query
  * 3. Sends the results to the shard which initiated this delete request (Failure or Success)
  */
-SerializableCommandStatus * DPInternalRequestHandler::    internalDeleteCommand(Srch2Server * server, SerializableDeleteCommandInput * deleteData){
+CommandStatus * DPInternalRequestHandler::    internalDeleteCommand(Srch2Server * server, DeleteCommand * deleteData){
 
     if(deleteData == NULL || server == NULL){
-        SerializableCommandStatus * status =
-                new SerializableCommandStatus(SerializableCommandStatus::DELETE, false, "");
+        CommandStatus * status =
+                new CommandStatus(CommandStatus::DP_DELETE, false, "");
         return status;
     }
     std::stringstream log_str;
@@ -282,16 +282,16 @@ SerializableCommandStatus * DPInternalRequestHandler::    internalDeleteCommand(
     {
         log_str << "failed\",\"reason\":\"no record with given primary key\"}";
         Logger::info("%s", log_str.str().c_str());
-        SerializableCommandStatus * status =
-                new SerializableCommandStatus(SerializableCommandStatus::DELETE, false, log_str.str());
+        CommandStatus * status =
+                new CommandStatus(CommandStatus::DP_DELETE, false, log_str.str());
         return status;
     }
     default: // OP_SUCCESS.
     {
         log_str << "success\"}";
         Logger::info("%s", log_str.str().c_str());
-        SerializableCommandStatus * status =
-                new SerializableCommandStatus(SerializableCommandStatus::DELETE, true, log_str.str());
+        CommandStatus * status =
+                new CommandStatus(CommandStatus::DP_DELETE, true, log_str.str());
         return status;
     }
     };
@@ -303,10 +303,10 @@ SerializableCommandStatus * DPInternalRequestHandler::    internalDeleteCommand(
  * 2. Uses core to get info
  * 3. Sends the results to the shard which initiated this getInfo request (Failure or Success)
  */
-SerializableGetInfoResults * DPInternalRequestHandler::internalGetInfoCommand(Srch2Server * server, SerializableGetInfoCommandInput * getInfoData){
+GetInfoCommandResults * DPInternalRequestHandler::internalGetInfoCommand(Srch2Server * server, GetInfoCommand * getInfoData){
     if(getInfoData == NULL || server == NULL){
-        SerializableGetInfoResults * getInfoResult =
-                new SerializableGetInfoResults(0,0,0,"",0,"");
+        GetInfoCommandResults * getInfoResult =
+                new GetInfoCommandResults(0,0,0,"",0,"");
         return getInfoResult;
     }
     unsigned readCount;
@@ -316,8 +316,8 @@ SerializableGetInfoResults * DPInternalRequestHandler::internalGetInfoCommand(Sr
     unsigned docCount;
     server->indexer->getIndexHealthThoughArguments(readCount, writeCount, numberOfDocumentsInIndex, lastMergeTimeString ,docCount);
 
-    SerializableGetInfoResults * getInfoResult =
-            new SerializableGetInfoResults(readCount, writeCount, numberOfDocumentsInIndex, lastMergeTimeString, docCount, Version::getCurrentVersion());
+    GetInfoCommandResults * getInfoResult =
+            new GetInfoCommandResults(readCount, writeCount, numberOfDocumentsInIndex, lastMergeTimeString, docCount, Version::getCurrentVersion());
     return getInfoResult;
 }
 
@@ -326,13 +326,13 @@ SerializableGetInfoResults * DPInternalRequestHandler::internalGetInfoCommand(Sr
  * This call back function is called for serialization. It uses internalSerializeIndexCommand
  * and internalSerializeRecordsCommand for our two types of serialization.
  */
-SerializableCommandStatus * DPInternalRequestHandler::internalSerializeCommand(Srch2Server * server, SerializableSerializeCommandInput * serailizeData){
+CommandStatus * DPInternalRequestHandler::internalSerializeCommand(Srch2Server * server, SerializeCommand * serailizeData){
     if(serailizeData == NULL || server == NULL){
-        SerializableCommandStatus * status =
-                new SerializableCommandStatus(SerializableCommandStatus::SERIALIZE, false, "");
+        CommandStatus * status =
+                new CommandStatus(CommandStatus::DP_SERIALIZE, false, "");
         return status;
     }
-    if(serailizeData->getIndexOrRecord() == SerializableSerializeCommandInput::SERIALIZE_INDEX){ // serialize index
+    if(serailizeData->getIndexOrRecord() == SerializeCommand::SERIALIZE_INDEX){ // serialize index
         return this->internalSerializeIndexCommand(server, serailizeData);
     }else{ // serialize records
         return this->internalSerializeRecordsCommand(server, serailizeData);
@@ -345,16 +345,16 @@ SerializableCommandStatus * DPInternalRequestHandler::internalSerializeCommand(S
  * 2. Uses core to do the serialization
  * 3. Sends the results to the shard which initiated this serialization request(Failure or Success)
  */
-SerializableCommandStatus * DPInternalRequestHandler::internalSerializeIndexCommand(Srch2Server * server, SerializableSerializeCommandInput * serailizeData){
+CommandStatus * DPInternalRequestHandler::internalSerializeIndexCommand(Srch2Server * server, SerializeCommand * serailizeData){
     if(serailizeData == NULL || server == NULL){
-        SerializableCommandStatus * status =
-                new SerializableCommandStatus(SerializableCommandStatus::SERIALIZE_INDEX, false, "");
+        CommandStatus * status =
+                new CommandStatus(CommandStatus::DP_SERIALIZE_INDEX, false, "");
         return status;
     }
     server->indexer->save();
     Logger::info("%s", "{\"save\":\"success\"}");
-    SerializableCommandStatus * status =
-            new SerializableCommandStatus(SerializableCommandStatus::SERIALIZE_INDEX, true, "{\"save\":\"success\"}");
+    CommandStatus * status =
+            new CommandStatus(CommandStatus::DP_SERIALIZE_INDEX, true, "{\"save\":\"success\"}");
     return status;
 }
 
@@ -363,11 +363,11 @@ SerializableCommandStatus * DPInternalRequestHandler::internalSerializeIndexComm
  * 2. Uses core to do the serialization
  * 3. Sends the results to the shard which initiated this serialization request(Failure or Success)
  */
-SerializableCommandStatus * DPInternalRequestHandler::internalSerializeRecordsCommand(Srch2Server * server, SerializableSerializeCommandInput * serailizeData){
+CommandStatus * DPInternalRequestHandler::internalSerializeRecordsCommand(Srch2Server * server, SerializeCommand * serailizeData){
 
     if(serailizeData == NULL || server == NULL){
-        SerializableCommandStatus * status =
-                new SerializableCommandStatus(SerializableCommandStatus::SERIALIZE_RECORDS, false, "");
+        CommandStatus * status =
+                new CommandStatus(CommandStatus::DP_SERIALIZE_RECORDS, false, "");
         return status;
     }
     string exportedDataFileName = serailizeData->getDataFileName();
@@ -376,8 +376,8 @@ SerializableCommandStatus * DPInternalRequestHandler::internalSerializeRecordsCo
     }
     server->indexer->exportData(exportedDataFileName);
     Logger::info("%s", "{\"export\":\"success\"}");
-    SerializableCommandStatus * status =
-            new SerializableCommandStatus(SerializableCommandStatus::SERIALIZE_RECORDS, true, "{\"export\":\"success\"}");
+    CommandStatus * status =
+            new CommandStatus(CommandStatus::DP_SERIALIZE_RECORDS, true, "{\"export\":\"success\"}");
     return status;
 
 }
@@ -387,11 +387,11 @@ SerializableCommandStatus * DPInternalRequestHandler::internalSerializeRecordsCo
  * 2. Uses core to reset log
  * 3. Sends the results to the shard which initiated this reset-log request(Failure or Success)
  */
-SerializableCommandStatus * DPInternalRequestHandler::internalResetLogCommand(Srch2Server * server, SerializableResetLogCommandInput * resetData){
+CommandStatus * DPInternalRequestHandler::internalResetLogCommand(Srch2Server * server, ResetLogCommand * resetData){
 
     if(resetData == NULL || server == NULL){
-        SerializableCommandStatus * status =
-                new SerializableCommandStatus(SerializableCommandStatus::RESET_LOG, false, "");
+        CommandStatus * status =
+                new CommandStatus(CommandStatus::DP_RESET_LOG, false, "");
         return status;
     }
 
@@ -404,8 +404,8 @@ SerializableCommandStatus * DPInternalRequestHandler::internalResetLogCommand(Sr
                 server->indexDataConfig->getHTTPServerAccessLogFile().c_str());
         Logger::info("%s", string("{\"message\":\"The logger file repointing failed. Could not create new logger file\", \"log\":\""
                 + server->indexDataConfig->getHTTPServerAccessLogFile() + "\"}").c_str());
-        SerializableCommandStatus * status=
-                new SerializableCommandStatus(SerializableCommandStatus::RESET_LOG, false,
+        CommandStatus * status=
+                new CommandStatus(CommandStatus::DP_RESET_LOG, false,
                         "{\"message\":\"The logger file repointing failed. Could not create new logger file\", \"log\":\""
                         + server->indexDataConfig->getHTTPServerAccessLogFile() + "\"}");
         return status;
@@ -414,8 +414,8 @@ SerializableCommandStatus * DPInternalRequestHandler::internalResetLogCommand(Sr
         fclose(oldLogger);
         Logger::info("%s", string("{\"message\":\"The logger file repointing succeeded\", \"log\":\""
                 + server->indexDataConfig->getHTTPServerAccessLogFile() + "\"}").c_str());
-        SerializableCommandStatus * status=
-                new SerializableCommandStatus(SerializableCommandStatus::RESET_LOG, true,
+        CommandStatus * status=
+                new CommandStatus(CommandStatus::DP_RESET_LOG, true,
                         "{\"message\":\"The logger file repointing succeeded\", \"log\":\""
                         + server->indexDataConfig->getHTTPServerAccessLogFile() + "\"}");
         return status;
@@ -423,10 +423,10 @@ SerializableCommandStatus * DPInternalRequestHandler::internalResetLogCommand(Sr
 }
 
 
-SerializableCommandStatus * DPInternalRequestHandler::internalCommitCommand(Srch2Server * server, SerializableCommitCommandInput * resetData){
+CommandStatus * DPInternalRequestHandler::internalCommitCommand(Srch2Server * server, CommitCommand * resetData){
     if(resetData == NULL || server == NULL){
-        SerializableCommandStatus * status =
-                new SerializableCommandStatus(SerializableCommandStatus::COMMIT, false, "");
+        CommandStatus * status =
+                new CommandStatus(CommandStatus::DP_COMMIT, false, "");
         return status;
     }
 
@@ -434,15 +434,15 @@ SerializableCommandStatus * DPInternalRequestHandler::internalCommitCommand(Srch
     if ( server->indexer->commit() == srch2::instantsearch::OP_SUCCESS)
     {
         Logger::info("%s", "{\"commit\":\"success\"}");
-        SerializableCommandStatus * status =
-                new SerializableCommandStatus(SerializableCommandStatus::COMMIT, true, "{\"commit\":\"success\"}");
+        CommandStatus * status =
+                new CommandStatus(CommandStatus::DP_COMMIT, true, "{\"commit\":\"success\"}");
         return status;
     }
     else
     {
         Logger::info("%s", "{\"commit\":\"failed\"}");
-        SerializableCommandStatus * status =
-                new SerializableCommandStatus(SerializableCommandStatus::COMMIT, false, "{\"commit\":\"failed\"}");
+        CommandStatus * status =
+                new CommandStatus(CommandStatus::DP_COMMIT, false, "{\"commit\":\"failed\"}");
         return status;
     }
 }

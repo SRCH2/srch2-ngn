@@ -15,26 +15,26 @@ namespace srch2 {
 namespace httpwrapper {
 
 
-class GetInfoAggregatorAndPrint : public ResultAggregatorAndPrint<SerializableGetInfoCommandInput,SerializableGetInfoResults> {
+class GetInfoResponseAggregator : public ResponseAggregator<GetInfoCommand,GetInfoCommandResults> {
 public:
-    GetInfoAggregatorAndPrint(ConfigManager * configurationManager, evhttp_request *req);
+    GetInfoResponseAggregator(ConfigManager * configurationManager, evhttp_request *req);
 
     /*
      * This function is always called by RoutingManager as the first call back function
      */
-    void preProcessing(ResultsAggregatorAndPrintMetadata metadata);
+    void preProcessing(ResponseAggregatorMetadata metadata);
     /*
      * This function is called by RoutingManager if a timeout happens, The call to
      * this function must be between preProcessing(...) and callBack()
      */
-    void timeoutProcessing(PendingMessage<SerializableGetInfoCommandInput, SerializableGetInfoResults> * message,
-            ResultsAggregatorAndPrintMetadata metadata);
+    void timeoutProcessing(PendingMessage<GetInfoCommand, GetInfoCommandResults> * message,
+            ResponseAggregatorMetadata metadata);
 
 
     /*
      * The main function responsible of aggregating status (success or failure) results
      */
-    void callBack(vector<PendingMessage<SerializableGetInfoCommandInput, SerializableGetInfoResults> * > messages);
+    void callBack(vector<PendingMessage<GetInfoCommand, GetInfoCommandResults> * > messages);
 
     /*
      * The last call back function called by RoutingManager in all cases.
@@ -44,7 +44,7 @@ public:
      * 3. aggregateSearchResults()
      * 4. finalize()
      */
-    void finalize(ResultsAggregatorAndPrintMetadata metadata);
+    void finalize(ResponseAggregatorMetadata metadata);
 
 private:
     ConfigManager * configurationManager;

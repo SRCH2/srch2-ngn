@@ -10,7 +10,7 @@ namespace srch2 {
 namespace httpwrapper {
 
 
-GetInfoAggregatorAndPrint::GetInfoAggregatorAndPrint(ConfigManager * configurationManager, evhttp_request *req){
+GetInfoResponseAggregator::GetInfoResponseAggregator(ConfigManager * configurationManager, evhttp_request *req){
     this->configurationManager = configurationManager;
     this->req = req;
 
@@ -23,16 +23,16 @@ GetInfoAggregatorAndPrint::GetInfoAggregatorAndPrint(ConfigManager * configurati
 /*
  * This function is always called by RoutingManager as the first call back function
  */
-void GetInfoAggregatorAndPrint::preProcessing(ResultsAggregatorAndPrintMetadata metadata){
+void GetInfoResponseAggregator::preProcessing(ResponseAggregatorMetadata metadata){
 
 }
 /*
  * This function is called by RoutingManager if a timeout happens, The call to
  * this function must be between preProcessing(...) and callBack()
  */
-void GetInfoAggregatorAndPrint::timeoutProcessing(PendingMessage<SerializableGetInfoCommandInput,
-        SerializableGetInfoResults> * message,
-        ResultsAggregatorAndPrintMetadata metadata){
+void GetInfoResponseAggregator::timeoutProcessing(PendingMessage<GetInfoCommand,
+        GetInfoCommandResults> * message,
+        ResponseAggregatorMetadata metadata){
     if(message == NULL){
         return;
     }
@@ -45,11 +45,11 @@ void GetInfoAggregatorAndPrint::timeoutProcessing(PendingMessage<SerializableGet
 /*
  * The main function responsible of aggregating status (success or failure) results
  */
-void GetInfoAggregatorAndPrint::callBack(vector<PendingMessage<SerializableGetInfoCommandInput,
-        SerializableGetInfoResults> * > messages){
+void GetInfoResponseAggregator::callBack(vector<PendingMessage<GetInfoCommand,
+        GetInfoCommandResults> * > messages){
     boost::unique_lock< boost::shared_mutex > lock(_access);
-    for(vector<PendingMessage<SerializableGetInfoCommandInput,
-            SerializableGetInfoResults> * >::iterator messageItr = messages.begin();
+    for(vector<PendingMessage<GetInfoCommand,
+            GetInfoCommandResults> * >::iterator messageItr = messages.begin();
             messageItr != messages.end() ; ++messageItr){
         if(*messageItr == NULL || (*messageItr)->getResponseObject() == NULL){
             continue;
@@ -71,7 +71,7 @@ void GetInfoAggregatorAndPrint::callBack(vector<PendingMessage<SerializableGetIn
  * 3. aggregateSearchResults()
  * 4. finalize()
  */
-void GetInfoAggregatorAndPrint::finalize(ResultsAggregatorAndPrintMetadata metadata){
+void GetInfoResponseAggregator::finalize(ResponseAggregatorMetadata metadata){
 
     //TODO : this print should be checked to make sure it prints correct json format
     std::stringstream str;

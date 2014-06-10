@@ -11,7 +11,7 @@ using namespace std;
 namespace srch2 {
 namespace httpwrapper {
 
-class SerializableCommitCommandInput{
+class CommitCommand{
 public:
 
     //serializes the object to a byte array and places array into the region
@@ -21,8 +21,8 @@ public:
     }
 
     //given a byte stream recreate the original object
-    static SerializableCommitCommandInput * deserialize(void*){
-    return new SerializableCommitCommandInput();
+    static CommitCommand * deserialize(void*){
+    return new CommitCommand();
     }
 
 

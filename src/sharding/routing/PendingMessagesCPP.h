@@ -241,7 +241,7 @@ bool PendingRequest<Request, Response>::resolveTimedoutMessages(){
             pendingMessages.at(pendingMessageIndex) = NULL;
 
             // call timeout of aggregator
-            aggregator->timeoutProcessing(pendingMessage, ResultsAggregatorAndPrintMetadata());
+            aggregator->timeoutProcessing(pendingMessage, ResponseAggregatorMetadata());
         }
     }
 
@@ -278,7 +278,7 @@ bool PendingRequest<Request, Response>::shouldFinalize(){
 //////////////////////////////////
 template <class Request, class Response> inline
 PendingRequest<Request, Response> * PendingRequestsHandler::registerPendingRequest(bool waitForAll,
-        boost::shared_ptr<ResultAggregatorAndPrint<Request, Response> > aggregator,
+        boost::shared_ptr<ResponseAggregator<Request, Response> > aggregator,
         unsigned totalNumberOfPendingMessages){
 
     // create the pendingRequest

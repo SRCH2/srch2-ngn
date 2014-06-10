@@ -13,10 +13,10 @@ namespace srch2 {
 namespace httpwrapper {
 
 
-class SerializableSearchCommandInput{
+class SearchCommand{
 public:
 
-    SerializableSearchCommandInput(LogicalPlan * logicalPlan){
+    SearchCommand(LogicalPlan * logicalPlan){
         this->logicalPlan = logicalPlan;
     }
 
@@ -29,6 +29,7 @@ public:
     void* serialize(MessageAllocator * aloc){
 
         if(logicalPlan == NULL){
+        	ASSERT(false);
             void * buffer = aloc->allocateMessageReturnBody(sizeof(bool));
             void * bufferWritePointer = buffer;
             bufferWritePointer = srch2::util::serializeFixedTypes(false, bufferWritePointer); // NULL
@@ -48,8 +49,8 @@ public:
     }
 
     //given a byte stream recreate the original object
-    static SerializableSearchCommandInput * deserialize(void* buffer){
-        SerializableSearchCommandInput * searchInput = new SerializableSearchCommandInput(NULL);
+    static SearchCommand * deserialize(void* buffer){
+        SearchCommand * searchInput = new SearchCommand(NULL);
 
         bool isNotNull = false;
         buffer = srch2::util::deserializeFixedTypes(buffer, isNotNull);

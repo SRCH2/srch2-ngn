@@ -13,19 +13,19 @@ namespace srch2 {
 namespace httpwrapper {
 
 
-class SerializableInsertUpdateCommandInput{
+class InsertUpdateCommand{
 public:
     enum OperationCode{
-        INSERT,
-        UPDATE
+        DP_INSERT,
+        DP_UPDATE
     };
 
 
-    SerializableInsertUpdateCommandInput(Record * record, OperationCode insertOrUpdate){
+    InsertUpdateCommand(Record * record, OperationCode insertOrUpdate){
         this->record = record;
         this->insertOrUpdate = insertOrUpdate;
     }
-    ~SerializableInsertUpdateCommandInput(){
+    ~InsertUpdateCommand(){
         delete record;
     }
 
@@ -54,12 +54,12 @@ public:
     }
 
     //given a byte stream recreate the original object
-    static SerializableInsertUpdateCommandInput* deserialize(void* buffer, const Schema * schema){
+    static InsertUpdateCommand* deserialize(void* buffer, const Schema * schema){
         Record * record = new Record(schema);
         OperationCode insertOrUpdate ;
         buffer = srch2::util::deserializeFixedTypes(buffer, insertOrUpdate);
         buffer = Record::deserializeForNetwork(buffer, *record);
-        return new SerializableInsertUpdateCommandInput(record, insertOrUpdate);
+        return new InsertUpdateCommand(record, insertOrUpdate);
     }
 
     //Returns the type of message which uses this kind of object as transport
@@ -68,7 +68,7 @@ public:
     }
 
 private:
-    OperationCode insertOrUpdate; // true => insert, false=> update
+    OperationCode insertOrUpdate;
     Record * record;
 };
 

@@ -78,12 +78,13 @@ DPExternalRequestHandler::DPExternalRequestHandler(ConfigManager * configuration
     this->routingManager = routingManager;
     partitioner = new Partitioner(configurationManager);
 }
+
+
 /*
  * 1. Receives a search request from a client (not from another shard)
  * 2. broadcasts this request to DPInternalRequestHandler objects of other shards
- * 3. Gives ResultAggregator functions as callback function to TransportationManager
- * 4. ResultAggregator callback functions will aggregate the results and print them on
- *    http channel
+ * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
+ * 	  results. Results will be aggregator by another thread since it's not a blocking call.
  */
 void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , CoreShardInfo * coreShardInfo){
 
@@ -95,7 +96,7 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , CoreS
     // core that we want to search on, this object is accesses through configurationManager.
     const CoreInfo_t *indexDataContainerConf = configurationManager->getCoreInfo(coreShardInfo->coreName);
 
-    boost::shared_ptr<SearchResultAggregatorAndPrint> resultAggregator(new SearchResultAggregatorAndPrint(configurationManager, req, coreShardInfo));
+    boost::shared_ptr<SearchResultsAggregator> resultAggregator(new SearchResultsAggregator(configurationManager, req, coreShardInfo));
 
 
     clock_gettime(CLOCK_REALTIME, &(resultAggregator->getStartTimer()));
@@ -147,8 +148,8 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , CoreS
     resultAggregator->setParsingValidatingRewritingTime(ts1);
 
     // pass logical plan to broadcast through SerializableSearchCommandInput
-    SerializableSearchCommandInput * searchInput =
-            new SerializableSearchCommandInput(&resultAggregator->getLogicalPlan());
+    SearchCommand * searchInput =
+            new SearchCommand(&resultAggregator->getLogicalPlan());
 
     // broadcasting search request to all shards , non-blocking, with timeout and callback to ResultAggregator
 
@@ -156,10 +157,9 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , CoreS
     time_t timeValue;
     time(&timeValue);
     timeValue = timeValue + TIMEOUT_WAIT_TIME;
-    Logger::console("------------------------- Time to save timeout : %d" , timeValue);
 
     RoutingManagerAPIReturnType routingStatus =
-            routingManager->broadcast_wait_for_all_w_cb_n_timeout<SerializableSearchCommandInput, SerializableSearchResults>
+            routingManager->broadcast_wait_for_all_w_cb_n_timeout<SearchCommand, SearchCommandResults>
     (searchInput, resultAggregator , timeValue , *coreShardInfo);
 
     switch (routingStatus) {
@@ -175,12 +175,13 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , CoreS
     evhttp_clear_headers(&headers);
 }
 
+
 /*
  * 1. Receives an insert request from a client (not from another shard)
  * 2. Uses Partitioner to know which shard should handle this request
  * 3. sends this request to DPInternalRequestHandler objects of the chosen shard
- *    Since it's a blocking call, the results are retrieved at the same point and
- *    printed on the HTTP channel.
+ *    in a non-blocking manner. The status response is taken care of by aggregator in
+ *    another thread when these responses come.
  */
 void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, CoreShardInfo * coreShardInfo){
 
@@ -290,36 +291,36 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, CoreSh
     }
 
 
-    boost::shared_ptr<CommandStatusAggregatorAndPrint<SerializableInsertUpdateCommandInput> >
-    resultsAggregator(new CommandStatusAggregatorAndPrint<SerializableInsertUpdateCommandInput>(configurationManager,req,recordsToInsert.size()));
+    /*
+     * Result aggregator is responsible of aggregating all response messages from all shards.
+     * The reason that aggregator is wrapped in shared pointer is that we use a separate pending request for each
+     * insert in a batch insert, so we want the aggregator to be deleted after all of them are resolved.
+     */
+    boost::shared_ptr<StatusAggregator<InsertUpdateCommand> >
+    resultsAggregator(new StatusAggregator<InsertUpdateCommand>(configurationManager,req,recordsToInsert.size()));
     resultsAggregator->setMessages(log_str);
 
 
-    vector<SerializableInsertUpdateCommandInput  *> inputs;
+    vector<InsertUpdateCommand  *> inputs;
     vector<ShardId> shardInfos;
     for(vector<Record *>::iterator recordItr = recordsToInsert.begin(); recordItr != recordsToInsert.end() ; ++recordItr){
 
-        shardInfos.push_back(partitioner->getShardIDForRecord(*recordItr,coreShardInfo->coreName));
-
-        SerializableInsertUpdateCommandInput  * insertUpdateInput=
-                new SerializableInsertUpdateCommandInput(*recordItr,SerializableInsertUpdateCommandInput::INSERT);
-        // add request object to results aggregator which is the callback object
-        inputs.push_back(insertUpdateInput);
-    }
-    for(unsigned recordIndex = 0; recordIndex < inputs.size(); ++recordIndex){
+        InsertUpdateCommand  * insertUpdateInput=
+                new InsertUpdateCommand(*recordItr,InsertUpdateCommand::DP_INSERT);
 
         time_t timeValue;
         time(&timeValue);
         timeValue = timeValue + TIMEOUT_WAIT_TIME;
 
         RoutingManagerAPIReturnType routingStatus =
-                routingManager->route_w_cb_n_timeout<SerializableInsertUpdateCommandInput, SerializableCommandStatus>
-        (inputs.at(recordIndex), resultsAggregator , timeValue , shardInfos.at(recordIndex));
+                routingManager->route_w_cb_n_timeout<InsertUpdateCommand, CommandStatus>
+        (insertUpdateInput, resultsAggregator , timeValue , partitioner->getShardIDForRecord(*recordItr,coreShardInfo->coreName));
+
         switch (routingStatus) {
         case RoutingManagerAPIReturnTypeAllNodesDown:
             // if the query is not valid, print the error message to the response
             bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
-                    "{\"message\":\"All nodes are down.\"}");
+                    "{\"message\":\"Host node for this record is down.\"}");
             return;
         default:
             break;
@@ -330,12 +331,14 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, CoreSh
     // CommandStatusAggregatorAndPrint::finalize
 }
 
+
+
 /*
  * 1. Receives an update request from a client (not from another shard)
  * 2. Uses Partitioner to know which shard should handle this request
  * 3. sends this request to DPInternalRequestHandler objects of the chosen shard
- *    Since it's a blocking call, the results are retrieved at the same point and
- *    printed on the HTTP channel.
+ *    in a non-blocking manner. The status response is taken care of by aggregator in
+ *    another thread when these responses come.
  */
 void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, CoreShardInfo * coreShardInfo){
 
@@ -362,8 +365,6 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, CoreSh
     }
 
     const char *post_data = (char *) EVBUFFER_DATA(req->input_buffer);
-
-    //std::cout << "length:[" << length << "][" << string(post_data) << "]" << std::endl;
 
     std::stringstream log_str;
 
@@ -452,50 +453,46 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, CoreSh
 
 
 
-    boost::shared_ptr<CommandStatusAggregatorAndPrint<SerializableInsertUpdateCommandInput> >
-    resultsAggregator(new CommandStatusAggregatorAndPrint<SerializableInsertUpdateCommandInput>(configurationManager,req, recordsToUpdate.size()));
+    boost::shared_ptr<StatusAggregator<InsertUpdateCommand> >
+    resultsAggregator(new StatusAggregator<InsertUpdateCommand>(configurationManager,req, recordsToUpdate.size()));
     resultsAggregator->setMessages(log_str);
-    vector<SerializableInsertUpdateCommandInput  *> inputs;
-    vector<ShardId> shardInfos;
+
     for(vector<Record *>::iterator recordItr = recordsToUpdate.begin(); recordItr != recordsToUpdate.end() ; ++recordItr){
 
-        shardInfos.push_back(partitioner->getShardIDForRecord(*recordItr,coreShardInfo->coreName));
+        InsertUpdateCommand  * insertUpdateInput=
+                new InsertUpdateCommand(*recordItr,InsertUpdateCommand::DP_UPDATE);
 
-        SerializableInsertUpdateCommandInput  * insertUpdateInput=
-                new SerializableInsertUpdateCommandInput(*recordItr,SerializableInsertUpdateCommandInput::UPDATE);
-        // add request object to results aggregator which is the callback object
-        inputs.push_back(insertUpdateInput);
-    }
-    for(unsigned recordIndex = 0; recordIndex < inputs.size(); ++recordIndex){
         time_t timeValue;
         time(&timeValue);
         timeValue = timeValue + TIMEOUT_WAIT_TIME;
+
         RoutingManagerAPIReturnType routingStatus =
-                routingManager->route_w_cb_n_timeout<SerializableInsertUpdateCommandInput, SerializableCommandStatus>
-        (inputs.at(recordIndex), resultsAggregator , timeValue , shardInfos.at(recordIndex));
+                routingManager->route_w_cb_n_timeout<InsertUpdateCommand, CommandStatus>
+        (insertUpdateInput, resultsAggregator , timeValue , partitioner->getShardIDForRecord(*recordItr,coreShardInfo->coreName));
 
         switch (routingStatus) {
         case RoutingManagerAPIReturnTypeAllNodesDown:
             // if the query is not valid, print the error message to the response
             bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
-                    "All nodes are down.");
+                    "Host node for this record is down.");
             return;
         default:
             break;
         }
-
     }
     // aggregated response will be prepared in CommandStatusAggregatorAndPrint::callBack and printed in
     // CommandStatusAggregatorAndPrint::finalize
 
 }
 
+
+
 /*
  * 1. Receives an delete request from a client (not from another shard)
  * 2. Uses Partitioner to know which shard should handle this request
  * 3. sends this request to DPInternalRequestHandler objects of the chosen shard
- *    Since it's a blocking call, the results are retrieved at the same point and
- *    printed on the HTTP channel.
+ *    in a non-blocking manner. The status response is taken care of by aggregator in
+ *    another thread when these responses come.
  */
 void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, CoreShardInfo * coreShardInfo){
 
@@ -522,8 +519,8 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, CoreSh
     const char *pKeyParamName = evhttp_find_header(&headers, primaryKeyName.c_str());
     //TODO : we should parse more than primary key later
     if (pKeyParamName){
-        boost::shared_ptr<CommandStatusAggregatorAndPrint<SerializableDeleteCommandInput> >
-        resultsAggregator(new CommandStatusAggregatorAndPrint<SerializableDeleteCommandInput>(configurationManager,req));
+        boost::shared_ptr<StatusAggregator<DeleteCommand> >
+        resultsAggregator(new StatusAggregator<DeleteCommand>(configurationManager,req));
 
         size_t sz;
         char *pKeyParamName_cstar = evhttp_uridecode(pKeyParamName, 0, &sz);
@@ -535,14 +532,14 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, CoreSh
 
         ShardId shardInfo = partitioner->getShardIDForRecord(primaryKeyStringValue,coreShardInfo->coreName);
 
-        SerializableDeleteCommandInput * deleteInput =
-                new SerializableDeleteCommandInput(primaryKeyStringValue,coreShardInfo->coreId); // TODO : do we need coreId here ?
+        DeleteCommand * deleteInput =
+                new DeleteCommand(primaryKeyStringValue,coreShardInfo->coreId);
         // add request object to results aggregator which is the callback object
         time_t timeValue;
         time(&timeValue);
         timeValue = timeValue + TIMEOUT_WAIT_TIME;
         RoutingManagerAPIReturnType routingStatus =
-                routingManager->route_w_cb_n_timeout<SerializableDeleteCommandInput, SerializableCommandStatus>
+                routingManager->route_w_cb_n_timeout<DeleteCommand, CommandStatus>
         (deleteInput, resultsAggregator , timeValue , shardInfo);
 
         switch (routingStatus) {
@@ -570,21 +567,23 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, CoreSh
 
 }
 
+
 /*
- * 1. Receives a GetInfo request from a client (not from another shard)
- * 2. Broadcasts this command to all shards and blocks to get their response
- * 3. prints Success or Failure on HTTP channel
- */
+  * 1. Receives a getinfo request from a client (not from another shard)
+  * 2. broadcasts this request to DPInternalRequestHandler objects of other shards
+  * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
+  * 	  results. Results will be aggregator by another thread since it's not a blocking call.
+  */
 void DPExternalRequestHandler::externalGetInfoCommand(evhttp_request *req, CoreShardInfo * coreShardInfo){
 
-    boost::shared_ptr<GetInfoAggregatorAndPrint> resultsAggregator(new GetInfoAggregatorAndPrint(configurationManager,req));
-    SerializableGetInfoCommandInput * getInfoInput = new SerializableGetInfoCommandInput();
+    boost::shared_ptr<GetInfoResponseAggregator> resultsAggregator(new GetInfoResponseAggregator(configurationManager,req));
+    GetInfoCommand * getInfoInput = new GetInfoCommand();
     // add request object to results aggregator which is the callback object
     time_t timeValue;
     time(&timeValue);
     timeValue = timeValue + TIMEOUT_WAIT_TIME;
     RoutingManagerAPIReturnType routingStatus =
-            routingManager->broadcast_wait_for_all_w_cb_n_timeout<SerializableGetInfoCommandInput, SerializableGetInfoResults>
+            routingManager->broadcast_wait_for_all_w_cb_n_timeout<GetInfoCommand, GetInfoCommandResults>
     (getInfoInput, resultsAggregator, timeValue, *coreShardInfo);
 
     switch (routingStatus) {
@@ -598,26 +597,29 @@ void DPExternalRequestHandler::externalGetInfoCommand(evhttp_request *req, CoreS
     }
 }
 
+
+
 /*
- * 1. Receives a SerializeIndex request from a client (not from another shard)
- * 2. Broadcasts this command to all shards and blocks to get their response
- * 3. prints Success or Failure on HTTP channel
- */
+  * 1. Receives a save request from a client (not from another shard)
+  * 2. broadcasts this request to DPInternalRequestHandler objects of other shards
+  * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
+  * 	  results. Results will be aggregator by another thread since it's not a blocking call.
+  */
 void DPExternalRequestHandler::externalSerializeIndexCommand(evhttp_request *req, CoreShardInfo * coreShardInfo){
     /* Yes, we are expecting a post request */
     switch (req->type) {
     case EVHTTP_REQ_PUT: {
-        boost::shared_ptr<CommandStatusAggregatorAndPrint<SerializableSerializeCommandInput> >
-        resultsAggregator(new CommandStatusAggregatorAndPrint<SerializableSerializeCommandInput>(configurationManager,req));
+        boost::shared_ptr<StatusAggregator<SerializeCommand> >
+        resultsAggregator(new StatusAggregator<SerializeCommand>(configurationManager,req));
 
-        SerializableSerializeCommandInput * serializeInput =
-                new SerializableSerializeCommandInput(SerializableSerializeCommandInput::SERIALIZE_INDEX);
+        SerializeCommand * serializeInput =
+                new SerializeCommand(SerializeCommand::SERIALIZE_INDEX);
         // add request object to results aggregator which is the callback object
         time_t timeValue;
         time(&timeValue);
         timeValue = timeValue + TIMEOUT_WAIT_TIME;
         RoutingManagerAPIReturnType routingStatus =
-                routingManager->broadcast_wait_for_all_w_cb_n_timeout<SerializableSerializeCommandInput, SerializableCommandStatus>
+                routingManager->broadcast_wait_for_all_w_cb_n_timeout<SerializeCommand, CommandStatus>
         (serializeInput, resultsAggregator, timeValue, *coreShardInfo);
 
         switch (routingStatus) {
@@ -641,11 +643,14 @@ void DPExternalRequestHandler::externalSerializeIndexCommand(evhttp_request *req
     };
 }
 
+
+
 /*
- * 1. Receives a SerializeRecords request from a client (not from another shard)
- * 2. Broadcasts this command to all shards and blocks to get their response
- * 3. prints Success or Failure on HTTP channel
- */
+  * 1. Receives a export request from a client (not from another shard)
+  * 2. broadcasts this request to DPInternalRequestHandler objects of other shards
+  * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
+  * 	  results. Results will be aggregator by another thread since it's not a blocking call.
+  */
 void DPExternalRequestHandler::externalSerializeRecordsCommand(evhttp_request *req, CoreShardInfo * coreShardInfo){
     /* Yes, we are expecting a post request */
     switch (req->type) {
@@ -658,17 +663,17 @@ void DPExternalRequestHandler::externalSerializeRecordsCommand(evhttp_request *r
             const char *exportedDataFileName = evhttp_find_header(&headers, URLParser::nameParamName);
             // TODO : should we free exportedDataFileName?
             if(exportedDataFileName){
-                boost::shared_ptr<CommandStatusAggregatorAndPrint<SerializableSerializeCommandInput> >
-                resultsAggregator(new CommandStatusAggregatorAndPrint<SerializableSerializeCommandInput>(configurationManager,req));
+                boost::shared_ptr<StatusAggregator<SerializeCommand> >
+                resultsAggregator(new StatusAggregator<SerializeCommand>(configurationManager,req));
 
-                SerializableSerializeCommandInput * serializeInput =
-                        new SerializableSerializeCommandInput(SerializableSerializeCommandInput::SERIALIZE_RECORDS, string(exportedDataFileName));
+                SerializeCommand * serializeInput =
+                        new SerializeCommand(SerializeCommand::SERIALIZE_RECORDS, string(exportedDataFileName));
                 // add request object to results aggregator which is the callback object
                 time_t timeValue;
                 time(&timeValue);
                 timeValue = timeValue + TIMEOUT_WAIT_TIME;
                 RoutingManagerAPIReturnType routingStatus =
-                        routingManager->broadcast_wait_for_all_w_cb_n_timeout<SerializableSerializeCommandInput, SerializableCommandStatus>
+                        routingManager->broadcast_wait_for_all_w_cb_n_timeout<SerializeCommand, CommandStatus>
                 (serializeInput, resultsAggregator, timeValue, *coreShardInfo);
 
                 switch (routingStatus) {
@@ -705,23 +710,26 @@ void DPExternalRequestHandler::externalSerializeRecordsCommand(evhttp_request *r
 
 }
 
+
+
 /*
- * 1. Receives a ResetLog request from a client (not from another shard)
- * 2. Broadcasts this command to all shards and blocks to get their response
- * 3. prints Success or Failure on HTTP channel
- */
+  * 1. Receives a reset log request from a client (not from another shard)
+  * 2. broadcasts this request to DPInternalRequestHandler objects of other shards
+  * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
+  * 	  results. Results will be aggregator by another thread since it's not a blocking call.
+  */
 void DPExternalRequestHandler::externalResetLogCommand(evhttp_request *req, CoreShardInfo * coreShardInfo){
     switch(req->type) {
     case EVHTTP_REQ_PUT: {
-        boost::shared_ptr<CommandStatusAggregatorAndPrint<SerializableResetLogCommandInput> >
-        resultsAggregator(new CommandStatusAggregatorAndPrint<SerializableResetLogCommandInput>(configurationManager,req));
-        SerializableResetLogCommandInput * resetInput = new SerializableResetLogCommandInput();
+        boost::shared_ptr<StatusAggregator<ResetLogCommand> >
+        resultsAggregator(new StatusAggregator<ResetLogCommand>(configurationManager,req));
+        ResetLogCommand * resetInput = new ResetLogCommand();
         // add request object to results aggregator which is the callback object
         time_t timeValue;
         time(&timeValue);
         timeValue = timeValue + TIMEOUT_WAIT_TIME;
         RoutingManagerAPIReturnType routingStatus =
-                routingManager->broadcast_wait_for_all_w_cb_n_timeout<SerializableResetLogCommandInput, SerializableCommandStatus>
+                routingManager->broadcast_wait_for_all_w_cb_n_timeout<ResetLogCommand, CommandStatus>
         (resetInput, resultsAggregator, timeValue, *coreShardInfo);
 
         switch (routingStatus) {
@@ -751,16 +759,16 @@ void DPExternalRequestHandler::externalResetLogCommand(evhttp_request *req, Core
  * Receives a commit request and boardcasts it to other shards
  */
 void DPExternalRequestHandler::externalCommitCommand(evhttp_request *req, CoreShardInfo * coreShardInfo){
-    boost::shared_ptr<CommandStatusAggregatorAndPrint<SerializableCommitCommandInput> >
-    resultsAggregator(new CommandStatusAggregatorAndPrint<SerializableCommitCommandInput>(configurationManager, req));
+    boost::shared_ptr<StatusAggregator<CommitCommand> >
+    resultsAggregator(new StatusAggregator<CommitCommand>(configurationManager, req));
 
-    SerializableCommitCommandInput * commitInput = new SerializableCommitCommandInput();
+    CommitCommand * commitInput = new CommitCommand();
     // add request object to results aggregator which is the callback object
     time_t timeValue;
     time(&timeValue);
     timeValue = timeValue + TIMEOUT_WAIT_TIME;
     RoutingManagerAPIReturnType routingStatus =
-            routingManager->broadcast_wait_for_all_w_cb_n_timeout<SerializableCommitCommandInput, SerializableCommandStatus>
+            routingManager->broadcast_wait_for_all_w_cb_n_timeout<CommitCommand, CommandStatus>
     (commitInput, resultsAggregator, timeValue, *coreShardInfo);
 
     switch (routingStatus) {

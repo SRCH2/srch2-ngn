@@ -6,6 +6,9 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/thread/locks.hpp>
+#include "util/Assert.h"
+
+using namespace srch2::instantsearch;
 
 namespace srch2 {
 namespace httpwrapper {
@@ -58,6 +61,10 @@ void bmhelper_evhttp_send_reply2(evhttp_request *req, int code,
         const char *reason, const string &out_payload,
         const evkeyvalq &headers) {
     evbuffer *returnbuffer = create_buffer2(req);
+    if(returnbuffer == NULL){
+    	ASSERT(false);
+    	return;
+    }
     bmhelper_check_add_callback2(returnbuffer, headers, out_payload);
     bmhelper_add_content_length2(req, returnbuffer);
     evhttp_send_reply(req, code, reason, returnbuffer);
@@ -67,7 +74,10 @@ void bmhelper_evhttp_send_reply2(evhttp_request *req, int code,
 void bmhelper_evhttp_send_reply2(evhttp_request *req, int code,
         const char *reason, const string &out_payload) {
     evbuffer *returnbuffer = create_buffer2(req);
-
+    if(returnbuffer == NULL){
+    	ASSERT(false);
+    	return;
+    }
     evbuffer_add_printf(returnbuffer, "%s", out_payload.c_str());
     bmhelper_add_content_length2(req, returnbuffer);
 

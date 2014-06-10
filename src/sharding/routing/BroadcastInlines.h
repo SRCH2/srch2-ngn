@@ -198,7 +198,7 @@ RoutingManager::broadcast_wait_for_all_confirmation(RequestType * requestObject,
  */
 template<typename RequestType , typename ResponseType> inline
 RoutingManagerAPIReturnType RoutingManager::broadcast_w_cb(RequestType * requestObj,
-        boost::shared_ptr<ResultAggregatorAndPrint<RequestType , ResponseType> > aggregator,
+        boost::shared_ptr<ResponseAggregator<RequestType , ResponseType> > aggregator,
         CoreShardInfo & coreInfo){
 
     /*
@@ -279,7 +279,7 @@ RoutingManagerAPIReturnType RoutingManager::broadcast_w_cb(RequestType * request
  */
 template<typename RequestType , typename ResponseType> inline
 RoutingManagerAPIReturnType RoutingManager::broadcast_wait_for_all_w_cb(RequestType * requestObj,
-        boost::shared_ptr<ResultAggregatorAndPrint<RequestType , ResponseType> >aggregator,
+        boost::shared_ptr<ResponseAggregator<RequestType , ResponseType> >aggregator,
         CoreShardInfo & coreInfo) {
     /*
      * Multiplexer reads coreInfo object to understand which nodes we need to send this broadcast to
@@ -359,7 +359,7 @@ RoutingManagerAPIReturnType RoutingManager::broadcast_wait_for_all_w_cb(RequestT
  */
 template<typename RequestType , typename ResponseType> inline
 RoutingManagerAPIReturnType RoutingManager::broadcast_w_cb_n_timeout(RequestType * requestObj,
-        boost::shared_ptr<ResultAggregatorAndPrint<RequestType , ResponseType> > aggregator,
+        boost::shared_ptr<ResponseAggregator<RequestType , ResponseType> > aggregator,
         time_t timeoutValue , CoreShardInfo & coreInfo ){
     /*
      * Multiplexer reads coreInfo object to understand which nodes we need to send this broadcast to
@@ -433,7 +433,7 @@ RoutingManagerAPIReturnType RoutingManager::broadcast_w_cb_n_timeout(RequestType
 
 template<typename RequestType , typename ResponseType> inline RoutingManagerAPIReturnType
 RoutingManager::broadcast_wait_for_all_w_cb_n_timeout(RequestType * requestObj,
-        boost::shared_ptr<ResultAggregatorAndPrint<RequestType , ResponseType> > aggregator,
+        boost::shared_ptr<ResponseAggregator<RequestType , ResponseType> > aggregator,
         time_t timeoutValue, CoreShardInfo & coreInfo){
 
     /*
@@ -565,7 +565,7 @@ RoutingManager::route_wait_for_confirmation(RequestType * requestObj,
  */
 template<typename RequestType , typename ResponseType> inline RoutingManagerAPIReturnType
 RoutingManager::route_w_cb(RequestType * requestObj,
-        boost::shared_ptr<ResultAggregatorAndPrint<RequestType , ResponseType> > aggregator,
+        boost::shared_ptr<ResponseAggregator<RequestType , ResponseType> > aggregator,
         ShardId shardInfo) {
 
     // find out whether shard is still within reach
@@ -607,7 +607,7 @@ RoutingManager::route_w_cb(RequestType * requestObj,
  */
 template<typename RequestType , typename ResponseType> inline RoutingManagerAPIReturnType
 RoutingManager::route_w_cb_n_timeout(RequestType * requestObj,
-        boost::shared_ptr<ResultAggregatorAndPrint<RequestType , ResponseType> > aggregator,
+        boost::shared_ptr<ResponseAggregator<RequestType , ResponseType> > aggregator,
         time_t timeoutValue, ShardId shardInfo) {
 
     // find out whether shard is still within reach

@@ -9,27 +9,27 @@ using namespace srch2is;
 namespace srch2 {
 namespace httpwrapper {
 
-SearchResultAggregatorAndPrint::SearchResultAggregatorAndPrint(ConfigManager * configurationManager, evhttp_request *req, CoreShardInfo * coreShardInfo){
+SearchResultsAggregator::SearchResultsAggregator(ConfigManager * configurationManager, evhttp_request *req, CoreShardInfo * coreShardInfo){
     this->configurationManager = configurationManager;
     this->req = req;
     this->coreShardInfo = coreShardInfo;
 }
-LogicalPlan & SearchResultAggregatorAndPrint::getLogicalPlan(){
+LogicalPlan & SearchResultsAggregator::getLogicalPlan(){
     return logicalPlan;
 }
-ParsedParameterContainer * SearchResultAggregatorAndPrint::getParamContainer(){
+ParsedParameterContainer * SearchResultsAggregator::getParamContainer(){
     return &paramContainer;
 }
 
-void SearchResultAggregatorAndPrint::setParsingValidatingRewritingTime(unsigned time){
+void SearchResultsAggregator::setParsingValidatingRewritingTime(unsigned time){
     this->parsingValidatingRewritingTime = time;
 }
 
-unsigned SearchResultAggregatorAndPrint::getParsingValidatingRewritingTime(){
+unsigned SearchResultsAggregator::getParsingValidatingRewritingTime(){
     return this->parsingValidatingRewritingTime;
 }
 
-struct timespec & SearchResultAggregatorAndPrint::getStartTimer(){
+struct timespec & SearchResultsAggregator::getStartTimer(){
     return this->tstart;
 }
 
@@ -38,9 +38,9 @@ struct timespec & SearchResultAggregatorAndPrint::getStartTimer(){
  * This function is called by RoutingManager if a timeout happens, The call to
  * this function must be between preProcessing(...) and callBack()
  */
-void SearchResultAggregatorAndPrint::timeoutProcessing(PendingMessage<SerializableSearchCommandInput,
-        SerializableSearchResults> * message,
-        ResultsAggregatorAndPrintMetadata metadata){
+void SearchResultsAggregator::timeoutProcessing(PendingMessage<SearchCommand,
+        SearchCommandResults> * message,
+        ResponseAggregatorMetadata metadata){
 
     boost::unique_lock< boost::shared_mutex > lock(_access);
     messages << ", WARNING : Shard #"<< message->getNodeId()<<" timed out.";
@@ -52,8 +52,8 @@ void SearchResultAggregatorAndPrint::timeoutProcessing(PendingMessage<Serializab
  * this function uses aggregateRecords and aggregateFacets for
  * aggregating result records and calculated records
  */
-void SearchResultAggregatorAndPrint::callBack(vector<PendingMessage<SerializableSearchCommandInput,
-        SerializableSearchResults> * > messages){
+void SearchResultsAggregator::callBack(vector<PendingMessage<SearchCommand,
+        SearchCommandResults> * > messages){
 
     // to protect messages
     boost::unique_lock< boost::shared_mutex > lock(_access);
@@ -78,7 +78,7 @@ void SearchResultAggregatorAndPrint::callBack(vector<PendingMessage<Serializable
 }
 
 // print results on HTTP channel
-void SearchResultAggregatorAndPrint::printResults(){
+void SearchResultsAggregator::printResults(){
 
     // CoreInfo_t is a view of configurationManager which contains all information for the
     // core that we want to search on, this object is accesses through configurationManager.
@@ -193,7 +193,7 @@ void SearchResultAggregatorAndPrint::printResults(){
  * Iterate over the recordIDs in queryResults and get the record.
  * Add the record information to the request.out string.
  */
-void SearchResultAggregatorAndPrint::printResults(evhttp_request *req,
+void SearchResultsAggregator::printResults(evhttp_request *req,
         const evkeyvalq &headers, const LogicalPlan &queryPlan,
         const CoreInfo_t *indexDataConfig,
         const vector<pair< QueryResult *, MapStringPtr> > allResults,
@@ -451,7 +451,7 @@ void SearchResultAggregatorAndPrint::printResults(evhttp_request *req,
  * Iterate over the recordIDs in queryResults and get the record.
  * Add the record information to the request.out string.
  */
-void SearchResultAggregatorAndPrint::printOneResultRetrievedById(evhttp_request *req, const evkeyvalq &headers,
+void SearchResultsAggregator::printOneResultRetrievedById(evhttp_request *req, const evkeyvalq &headers,
         const LogicalPlan &queryPlan,
         const CoreInfo_t *indexDataConfig,
         const vector<pair< QueryResult *, MapStringPtr> > allResults,
@@ -531,12 +531,12 @@ void SearchResultAggregatorAndPrint::printOneResultRetrievedById(evhttp_request 
 
 
 
-void SearchResultAggregatorAndPrint::genRecordJsonString(const srch2::instantsearch::Schema * schema, StoredRecordBuffer buffer,
+void SearchResultsAggregator::genRecordJsonString(const srch2::instantsearch::Schema * schema, StoredRecordBuffer buffer,
         const string& extrnalRecordId, string& sbuffer){
     genRecordJsonString(schema, buffer, extrnalRecordId,
             sbuffer, NULL);
 }
-void SearchResultAggregatorAndPrint::genRecordJsonString(const srch2::instantsearch::Schema * schema, StoredRecordBuffer buffer,
+void SearchResultsAggregator::genRecordJsonString(const srch2::instantsearch::Schema * schema, StoredRecordBuffer buffer,
         const string& externalRecordId, string& sbuffer, const vector<string>* attrToReturn){
     Schema * storedSchema = Schema::create();
     srch2::util::RecordSerializerUtil::populateStoredSchema(storedSchema, schema);
@@ -548,7 +548,7 @@ void SearchResultAggregatorAndPrint::genRecordJsonString(const srch2::instantsea
  * Combines the results coming from all shards and
  * resorts them based on their scores
  */
-void SearchResultAggregatorAndPrint::aggregateRecords(){
+void SearchResultsAggregator::aggregateRecords(){
     // aggregate results
     for(unsigned resultSetIndex = 0 ; resultSetIndex < resultsOfAllShards.size() ; ++resultSetIndex){
         QueryResults * queryResultsItr = resultsOfAllShards.at(resultSetIndex).first;
@@ -564,14 +564,18 @@ void SearchResultAggregatorAndPrint::aggregateRecords(){
     }
 
     // sort final results
-    std::sort(results.allResults.begin(), results.allResults.end(), SearchResultAggregatorAndPrint::QueryResultsComparatorOnlyScore());
+    std::sort(results.allResults.begin(), results.allResults.end(), SearchResultsAggregator::QueryResultsComparatorOnlyScore());
+    // NOTE, TODO :
+    // this sort here does NOT guarantee that exact results are higher than fuzzy results. This problem must be addressed in future by
+    // adding a flag to the QueryResult class to indicate whether this results is exact or fuzzy. And here we should sort exact results
+    // together and fuzzy results together...
 }
 
 /*
  * Combines the facet results coming from all shards and
  * re-calculates facet values
  */
-void SearchResultAggregatorAndPrint::aggregateFacets(){
+void SearchResultsAggregator::aggregateFacets(){
 
     for(vector<pair< QueryResults *, const map<string, string> * > >::iterator resultsItr = resultsOfAllShards.begin() ;
             resultsItr != resultsOfAllShards.end() ; ++resultsItr){
@@ -600,7 +604,7 @@ void SearchResultAggregatorAndPrint::aggregateFacets(){
 /*
  * Merges destination with source and adds new items to source
  */
-void SearchResultAggregatorAndPrint::mergeFacetVectors(std::vector<std::pair<std::string, float> > & source,
+void SearchResultsAggregator::mergeFacetVectors(std::vector<std::pair<std::string, float> > & source,
         const std::vector<std::pair<std::string, float> > & destination){
     for(std::vector<std::pair<std::string, float> >::const_iterator destinationItr = destination.begin();
             destinationItr != destination.end(); ++destinationItr){
@@ -621,7 +625,7 @@ void SearchResultAggregatorAndPrint::mergeFacetVectors(std::vector<std::pair<std
 }
 
 
-void SearchResultAggregatorAndPrint::aggregateEstimations(){
+void SearchResultsAggregator::aggregateEstimations(){
     results.isResultsApproximated = false;
     for(vector<pair< QueryResults *, const map<string, string> * > >::iterator resultsItr = resultsOfAllShards.begin() ;
             resultsItr != resultsOfAllShards.end() ; ++resultsItr){

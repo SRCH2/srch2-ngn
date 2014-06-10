@@ -152,17 +152,17 @@ QueryResults * prepareQueryResults(){
 
 
 void testSerializableCommandStatus(){
-	SerializableCommandStatus commandInput1(SerializableCommandStatus::INSERT, true, "INSERT True");
+	CommandStatus commandInput1(CommandStatus::DP_INSERT, true, "INSERT True");
 	MessageAllocator * aloc = new MessageAllocator();
 	void * buffer = commandInput1.serialize(aloc);
-	const SerializableCommandStatus & deserializedCommandInput1 = SerializableCommandStatus::deserialize(buffer);
+	const CommandStatus & deserializedCommandInput1 = CommandStatus::deserialize(buffer);
 	ASSERT(commandInput1.getCommandCode() == deserializedCommandInput1.getCommandCode());
 	ASSERT(commandInput1.getStatus() == deserializedCommandInput1.getStatus());
 	ASSERT(commandInput1.getMessage().compare(deserializedCommandInput1.getMessage()) == 0);
 
-	SerializableCommandStatus commandInput2(SerializableCommandStatus::DELETE, false, "Delete false");
+	CommandStatus commandInput2(CommandStatus::DP_DELETE, false, "Delete false");
 	buffer = commandInput2.serialize(aloc);
-	const SerializableCommandStatus & deserializedCommandInput2 = SerializableCommandStatus::deserialize(buffer);
+	const CommandStatus & deserializedCommandInput2 = CommandStatus::deserialize(buffer);
 	ASSERT(commandInput2.getCommandCode() == deserializedCommandInput2.getCommandCode());
 	ASSERT(commandInput2.getStatus() == deserializedCommandInput2.getStatus());
 	ASSERT(commandInput2.getMessage().compare(deserializedCommandInput2.getMessage()) == 0);
@@ -174,16 +174,16 @@ void testSerializableCommitCommandInput(){
 }
 
 void testSerializableDeleteCommandInput(){
-	SerializableDeleteCommandInput commandInput1("primary key 1",1);
+	DeleteCommand commandInput1("primary key 1",1);
 	MessageAllocator * aloc = new MessageAllocator();
 	void * buffer = commandInput1.serialize(aloc);
-	const SerializableDeleteCommandInput & deserializedCommandInput1 = SerializableDeleteCommandInput::deserialize(buffer);
+	const DeleteCommand & deserializedCommandInput1 = DeleteCommand::deserialize(buffer);
 	ASSERT(commandInput1.getPrimaryKey() == deserializedCommandInput1.getPrimaryKey());
 	ASSERT(commandInput1.getShardingKey() == deserializedCommandInput1.getShardingKey());
 
-	SerializableDeleteCommandInput commandInput2("primary key 3",-1);
+	DeleteCommand commandInput2("primary key 3",-1);
 	buffer = commandInput2.serialize(aloc);
-	const SerializableDeleteCommandInput & deserializedCommandInput2 = SerializableDeleteCommandInput::deserialize(buffer);
+	const DeleteCommand & deserializedCommandInput2 = DeleteCommand::deserialize(buffer);
 	ASSERT(commandInput2.getPrimaryKey() == deserializedCommandInput2.getPrimaryKey());
 	ASSERT(commandInput2.getShardingKey() == deserializedCommandInput2.getShardingKey());
 }
@@ -193,10 +193,10 @@ void testSerializableGetInfoCommandInput(){
 }
 
 void testSerializableGetInfoResults(){
-	SerializableGetInfoResults commandInput1(10, 20, 30, "yesterday", 40, "version 3.4.1");
+	GetInfoCommandResults commandInput1(10, 20, 30, "yesterday", 40, "version 3.4.1");
 	MessageAllocator * aloc = new MessageAllocator();
 	void * buffer = commandInput1.serialize(aloc);
-	const SerializableGetInfoResults & deserializedCommandInput1 = SerializableGetInfoResults::deserialize(buffer);
+	const GetInfoCommandResults & deserializedCommandInput1 = GetInfoCommandResults::deserialize(buffer);
 	ASSERT(commandInput1.getReadCount() == deserializedCommandInput1.getReadCount());
 	ASSERT(commandInput1.getWriteCount() == deserializedCommandInput1.getWriteCount());
 	ASSERT(commandInput1.getDocCount() == deserializedCommandInput1.getDocCount());
@@ -205,9 +205,9 @@ void testSerializableGetInfoResults(){
 	ASSERT(commandInput1.getVersionInfo() == deserializedCommandInput1.getVersionInfo());
 
 
-	SerializableGetInfoResults commandInput2(11, 2, 300, "tomorrow", 4, "version 3.4.2");
+	GetInfoCommandResults commandInput2(11, 2, 300, "tomorrow", 4, "version 3.4.2");
 	buffer = commandInput2.serialize(aloc);
-	const SerializableGetInfoResults & deserializedCommandInput2 = SerializableGetInfoResults::deserialize(buffer);
+	const GetInfoCommandResults & deserializedCommandInput2 = GetInfoCommandResults::deserialize(buffer);
 	ASSERT(commandInput2.getReadCount() == deserializedCommandInput2.getReadCount());
 	ASSERT(commandInput2.getWriteCount() == deserializedCommandInput2.getWriteCount());
 	ASSERT(commandInput2.getDocCount() == deserializedCommandInput2.getDocCount());
@@ -226,10 +226,10 @@ void testSerializableInsertUpdateCommandInput(){
     record1->setPrimaryKey("primary key 1");
     record1->setSearchableAttributeValue(0, "the data for primary key 1");
 
-	SerializableInsertUpdateCommandInput commandInput1(record1, SerializableInsertUpdateCommandInput::INSERT);
+	InsertUpdateCommand commandInput1(record1, InsertUpdateCommand::DP_INSERT);
 	MessageAllocator * aloc = new MessageAllocator();
 	void * buffer = commandInput1.serialize(aloc);
-	const SerializableInsertUpdateCommandInput & deserializedCommandInput1 = SerializableInsertUpdateCommandInput::deserialize(buffer, schema);
+	const InsertUpdateCommand & deserializedCommandInput1 = InsertUpdateCommand::deserialize(buffer, schema);
 	ASSERT(commandInput1.getInsertOrUpdate() == deserializedCommandInput1.getInsertOrUpdate());
 	ASSERT(commandInput1.getRecord()->getPrimaryKey() == deserializedCommandInput1.getRecord()->getPrimaryKey());
 	string originalValue, deserializedValue;
@@ -249,10 +249,10 @@ void testSerializableInsertUpdateCommandInput(){
     record2->setSearchableAttributeValue(1, "the body for primary key 1");
 
 
-	SerializableInsertUpdateCommandInput commandInput2(record2, SerializableInsertUpdateCommandInput::UPDATE);
+	InsertUpdateCommand commandInput2(record2, InsertUpdateCommand::DP_UPDATE);
 	MessageAllocator * aloc2 = new MessageAllocator();
 	void * buffer2 = commandInput2.serialize(aloc2);
-	const SerializableInsertUpdateCommandInput & deserializedCommandInput2 = SerializableInsertUpdateCommandInput::deserialize(buffer2, schema2);
+	const InsertUpdateCommand & deserializedCommandInput2 = InsertUpdateCommand::deserialize(buffer2, schema2);
 	ASSERT(commandInput2.getInsertOrUpdate() == deserializedCommandInput2.getInsertOrUpdate());
 	ASSERT(commandInput2.getRecord()->getPrimaryKey() == deserializedCommandInput2.getRecord()->getPrimaryKey());
 	commandInput2.getRecord()->getSearchableAttributeValue(0,originalValue);
@@ -283,10 +283,10 @@ void testSerializableSearchCommandInput(){
 
 	LogicalPlan * logicalPlan = prepareLogicalPlanForUnitTests(query , NULL, 0, 10, false, srch2::instantsearch::SearchTypeTopKQuery);
 
-	SerializableSearchCommandInput commandInput1(logicalPlan);
+	SearchCommand commandInput1(logicalPlan);
 	MessageAllocator * aloc = new MessageAllocator();
 	void * buffer = commandInput1.serialize(aloc);
-	const SerializableSearchCommandInput & deserializedCommandInput1 = SerializableSearchCommandInput::deserialize(buffer);
+	const SearchCommand & deserializedCommandInput1 = SearchCommand::deserialize(buffer);
 	ASSERT(deserializedCommandInput1.getLogicalPlan()->getExactQuery()->getQueryTerms()->at(0)->getBoost() == term0->getBoost());
 	ASSERT(deserializedCommandInput1.getLogicalPlan()->getExactQuery()->getQueryTerms()->at(1)->getBoost() == term1->getBoost());
 	ASSERT(deserializedCommandInput1.getLogicalPlan()->getExactQuery()->getQueryTerms()->at(2)->getBoost() == term2->getBoost());
@@ -313,12 +313,12 @@ void testSerializableSearchCommandInput(){
 void testSerializableSearchResults(){
 
 	QueryResults * queryResults1 = prepareQueryResults();
-	SerializableSearchResults commandInput1;
+	SearchCommandResults commandInput1;
 	commandInput1.setQueryResults(queryResults1);
 	commandInput1.setSearcherTime(120);
 	MessageAllocator * aloc = new MessageAllocator();
 	void * buffer = commandInput1.serialize(aloc);
-	const SerializableSearchResults & deserializedCommandInput1 = SerializableSearchResults::deserialize(buffer);
+	const SearchCommandResults & deserializedCommandInput1 = SearchCommandResults::deserialize(buffer);
 	ASSERT(commandInput1.getQueryResults()->impl->sortedFinalResults.size() == deserializedCommandInput1.getQueryResults()->impl->sortedFinalResults.size());
 	for(unsigned resultIndex = 0 ; resultIndex < commandInput1.getQueryResults()->impl->sortedFinalResults.size() ; ++resultIndex){
 		checkQueryResultContent(commandInput1.getQueryResults()->impl->sortedFinalResults.at(resultIndex),
@@ -332,15 +332,15 @@ void testSerializableSearchResults(){
 
 
 void testSerializableSerializeCommandInput(){
-	SerializableSerializeCommandInput commandInput1(SerializableSerializeCommandInput::SERIALIZE_INDEX);
+	SerializeCommand commandInput1(SerializeCommand::SERIALIZE_INDEX);
 	MessageAllocator * aloc = new MessageAllocator();
 	void * buffer = commandInput1.serialize(aloc);
-	const SerializableSerializeCommandInput & deserializedCommandInput1 = SerializableSerializeCommandInput::deserialize(buffer);
+	const SerializeCommand & deserializedCommandInput1 = SerializeCommand::deserialize(buffer);
 	ASSERT(commandInput1.getIndexOrRecord() == deserializedCommandInput1.getIndexOrRecord());
 
-	SerializableSerializeCommandInput commandInput2(SerializableSerializeCommandInput::SERIALIZE_RECORDS , "path/serialization_file_name.txt");
+	SerializeCommand commandInput2(SerializeCommand::SERIALIZE_RECORDS , "path/serialization_file_name.txt");
 	buffer = commandInput2.serialize(aloc);
-	const SerializableSerializeCommandInput & deserializedCommandInput2 = SerializableSerializeCommandInput::deserialize(buffer);
+	const SerializeCommand & deserializedCommandInput2 = SerializeCommand::deserialize(buffer);
 	ASSERT(commandInput2.getIndexOrRecord() == deserializedCommandInput2.getIndexOrRecord());
 	ASSERT(commandInput2.getDataFileName() == deserializedCommandInput2.getDataFileName());
 }

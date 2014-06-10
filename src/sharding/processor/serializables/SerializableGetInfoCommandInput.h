@@ -13,7 +13,7 @@ namespace httpwrapper {
 
 
 
-class SerializableGetInfoCommandInput{
+class GetInfoCommand{
 public:
     // we don't need anything in this class for now
 
@@ -24,8 +24,8 @@ public:
     }
 
     //given a byte stream recreate the original object
-    static SerializableGetInfoCommandInput * deserialize(void* buffer){
-        return new SerializableGetInfoCommandInput();
+    static GetInfoCommand * deserialize(void* buffer){
+        return new GetInfoCommand();
     }
 
     //Returns the type of message which uses this kind of object as transport

@@ -42,7 +42,7 @@ private:
     template<typename RequestType, typename ResponseType>
     std::pair<Message*,ResponseType*> processRequestMessage(Message*, Srch2Server*,
             ResponseType * (DPInternalRequestHandler::*fn) (Srch2Server*, RequestType*));
-    std::pair<Message*,SerializableCommandStatus*> processRequestInsertUpdateMessage(Message *msg, Srch2Server* server, const Schema * schema);
+    std::pair<Message*,CommandStatus*> processRequestInsertUpdateMessage(Message *msg, Srch2Server* server, const Schema * schema);
 
     template<typename RequestType>
     void processRequestMessageNoReply(Message *msg);

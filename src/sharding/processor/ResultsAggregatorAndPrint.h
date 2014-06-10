@@ -26,24 +26,24 @@ namespace httpwrapper {
 template <class Request, class Response>
 class PendingMessage;
 
-struct ResultsAggregatorAndPrintMetadata{
+struct ResponseAggregatorMetadata{
 
 };
 
 template <class Request, class Response>
-class ResultAggregatorAndPrint {
+class ResponseAggregator {
 public:
 
 
     /*
      * This function is always called by RoutingManager as the first call back function
      */
-    virtual void preProcessing(ResultsAggregatorAndPrintMetadata metadata){};
+    virtual void preProcessing(ResponseAggregatorMetadata metadata){};
     /*
      * This function is called by RoutingManager if a timeout happens, The call to
      * this function must be between preProcessing(...) and callBack()
      */
-    virtual void timeoutProcessing(PendingMessage<Request, Response> * message,ResultsAggregatorAndPrintMetadata metadata){};
+    virtual void timeoutProcessing(PendingMessage<Request, Response> * message,ResponseAggregatorMetadata metadata){};
 
     /*
      * The callBack function used by routing manager
@@ -59,10 +59,10 @@ public:
      * 3. aggregateSearchResults()
      * 4. finalize()
      */
-    virtual void finalize(ResultsAggregatorAndPrintMetadata metadata){};
+    virtual void finalize(ResponseAggregatorMetadata metadata){};
 
 
-    virtual ~ResultAggregatorAndPrint(){};
+    virtual ~ResponseAggregator(){};
 
 };
 

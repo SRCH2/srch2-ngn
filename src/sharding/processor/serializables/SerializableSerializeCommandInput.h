@@ -12,18 +12,18 @@ namespace srch2 {
 namespace httpwrapper {
 
 
-class SerializableSerializeCommandInput{
+class SerializeCommand{
 public:
     enum OperationCode{
         SERIALIZE_INDEX,
         SERIALIZE_RECORDS
     };
-    SerializableSerializeCommandInput(OperationCode code){
+    SerializeCommand(OperationCode code){
         ASSERT(code == SERIALIZE_INDEX);
         this->indexOrRecord = code;
         this->dataFileName = "";
     }
-    SerializableSerializeCommandInput(OperationCode code, const string &dataFileName){
+    SerializeCommand(OperationCode code, const string &dataFileName){
         ASSERT(code == SERIALIZE_RECORDS);
         this->indexOrRecord = code;
         this->dataFileName = dataFileName;
@@ -51,15 +51,15 @@ public:
     }
 
     //given a byte stream recreate the original object
-    static SerializableSerializeCommandInput* deserialize(void* buffer){
+    static SerializeCommand* deserialize(void* buffer){
         OperationCode indexOrRecord;
         string dataFileName;
         buffer = srch2::util::deserializeFixedTypes(buffer, indexOrRecord);
         if(indexOrRecord == SERIALIZE_RECORDS){
             buffer = srch2::util::deserializeString(buffer, dataFileName);
-            return new SerializableSerializeCommandInput(indexOrRecord, dataFileName);
+            return new SerializeCommand(indexOrRecord, dataFileName);
         }
-        return new SerializableSerializeCommandInput(indexOrRecord);
+        return new SerializeCommand(indexOrRecord);
     }
 
     //Returns the type of message which uses this kind of object as transport

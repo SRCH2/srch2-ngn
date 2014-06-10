@@ -11,10 +11,10 @@ namespace srch2 {
 namespace httpwrapper {
 
 
-class SerializableGetInfoResults{
+class GetInfoCommandResults{
 public:
 
-    SerializableGetInfoResults(    unsigned readCount, unsigned writeCount,    unsigned numberOfDocumentsInIndex,
+    GetInfoCommandResults(    unsigned readCount, unsigned writeCount,    unsigned numberOfDocumentsInIndex,
             string lastMergeTimeString, unsigned docCount, string versionInfo){
         this->readCount = readCount;
         this->writeCount = writeCount;
@@ -51,7 +51,7 @@ public:
     }
 
     //given a byte stream recreate the original object
-    static SerializableGetInfoResults * deserialize(void* buffer){
+    static GetInfoCommandResults * deserialize(void* buffer){
         unsigned readCount;
         unsigned writeCount;
         unsigned numberOfDocumentsInIndex;
@@ -66,7 +66,7 @@ public:
         buffer = srch2::util::deserializeString(buffer, lastMergeTimeString);
         buffer = srch2::util::deserializeString(buffer, versionInfo);
         // create object and return it
-        return new SerializableGetInfoResults(readCount, writeCount, numberOfDocumentsInIndex, lastMergeTimeString, docCount, versionInfo);
+        return new GetInfoCommandResults(readCount, writeCount, numberOfDocumentsInIndex, lastMergeTimeString, docCount, versionInfo);
     }
 
     //Returns the type of message which uses this kind of object as transport

@@ -12,7 +12,7 @@ namespace srch2 {
 namespace httpwrapper {
 
 
-class SerializableResetLogCommandInput{
+class ResetLogCommand{
 public:
     // we don't need anything in this class for now
 
@@ -23,8 +23,8 @@ public:
     }
 
     //given a byte stream recreate the original object
-    static SerializableResetLogCommandInput* deserialize(void* buffer){
-        return new SerializableResetLogCommandInput();
+    static ResetLogCommand* deserialize(void* buffer){
+        return new ResetLogCommand();
     }
 
     //Returns the type of message which uses this kind of object as transport

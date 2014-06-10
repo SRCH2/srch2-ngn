@@ -41,6 +41,8 @@ class LogicalPlanNode{
 	friend class LogicalPlan;
 public:
 	LogicalPlanNodeType nodeType;
+	// this flag is used in case we want to force Query Optimizer to use a specific physical node.
+	// currently it's used for Suggestion
 	PhysicalPlanNodeType forcedPhysicalNode;
 	Term * exactTerm;
 	Term * fuzzyTerm;

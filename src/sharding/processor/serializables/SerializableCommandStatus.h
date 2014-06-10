@@ -12,22 +12,22 @@ namespace httpwrapper {
 
 
 
-class SerializableCommandStatus{
+class CommandStatus{
 public:
     enum CommandCode{
-        INSERT_UPDATE,
-        INSERT,
-        UPDATE,
-        DELETE,
-        GET_INFO,
-        SERIALIZE,
-        SERIALIZE_INDEX,
-        SERIALIZE_RECORDS,
-        RESET_LOG,
-        COMMIT
+        DP_INSERT_UPDATE,
+        DP_INSERT,
+        DP_UPDATE,
+        DP_DELETE,
+        DP_GET_INFO,
+        DP_SERIALIZE,
+        DP_SERIALIZE_INDEX,
+        DP_SERIALIZE_RECORDS,
+        DP_RESET_LOG,
+        DP_COMMIT
     };
 
-    SerializableCommandStatus(    CommandCode commandCode, bool status, string message){
+    CommandStatus(CommandCode commandCode, bool status, string message){
         this->commandCode = commandCode;
         this->status = status;
         this->message = message;
@@ -54,7 +54,13 @@ public:
     }
 
     //given a byte stream recreate the original object
-    static SerializableCommandStatus * deserialize(void* buffer){
+    static CommandStatus * deserialize(void* buffer){
+
+    	if(buffer == NULL){
+    		ASSERT(false);
+    		return NULL;
+    	}
+
         CommandCode commandCode;
         bool status;
         string message;
@@ -65,7 +71,7 @@ public:
 
         buffer = srch2::util::deserializeString(buffer, message);
         // allocate and construct the object
-        SerializableCommandStatus * commandStatus = new SerializableCommandStatus(commandCode,status, message);
+        CommandStatus * commandStatus = new CommandStatus(commandCode,status, message);
         return commandStatus;
     }
 
@@ -87,8 +93,21 @@ public:
     }
 
 private:
+    /*
+     * commandCode is the code for the request command corresponding to this CommandStatus
+     * like insert or update or ...
+     */
     CommandCode commandCode;
+
+    /*
+     * Success => True
+     * Failure => False
+     */
     bool status;
+
+    /*
+     * Contains the message coming from the shard ...
+     */
     string message ;
 };
 

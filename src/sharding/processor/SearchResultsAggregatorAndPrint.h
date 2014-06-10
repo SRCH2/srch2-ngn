@@ -1,5 +1,5 @@
-#ifndef __SHARDING_PROCESSOR_SEARCH_RESULTS_AGGREGATOR_AND_PRINT_H_
-#define __SHARDING_PROCESSOR_SEARCH_RESULTS_AGGREGATOR_AND_PRINT_H_
+#ifndef __SHARDING_PROCESSOR_SEARCH_RESULTS_AGGREGATOR_AND_PRINT_H__
+#define __SHARDING_PROCESSOR_SEARCH_RESULTS_AGGREGATOR_AND_PRINT_H__
 
 #include "ResultsAggregatorAndPrint.h"
 #include "serializables/SerializableSearchResults.h"
@@ -15,7 +15,7 @@ using namespace srch2is;
 namespace srch2 {
 namespace httpwrapper {
 
-class SearchResultAggregatorAndPrint : public ResultAggregatorAndPrint<SerializableSearchCommandInput , SerializableSearchResults> {
+class SearchResultsAggregator : public ResponseAggregator<SearchCommand , SearchCommandResults> {
 
 public:
 
@@ -56,7 +56,7 @@ public:
     };
 
 
-    SearchResultAggregatorAndPrint(ConfigManager * configurationManager, evhttp_request *req, CoreShardInfo * coreShardInfo);
+    SearchResultsAggregator(ConfigManager * configurationManager, evhttp_request *req, CoreShardInfo * coreShardInfo);
     LogicalPlan & getLogicalPlan();
     ParsedParameterContainer * getParamContainer();
 
@@ -68,14 +68,14 @@ public:
     /*
      * This function is always called by RoutingManager as the first call back function
      */
-    void preProcessing(ResultsAggregatorAndPrintMetadata metadata){};
+    void preProcessing(ResponseAggregatorMetadata metadata){};
     /*
      * This function is called by RoutingManager if a timeout happens, The call to
      * this function must be between preProcessing(...) and callBack()
      */
-    void timeoutProcessing(PendingMessage<SerializableSearchCommandInput,
-            SerializableSearchResults> * message,
-            ResultsAggregatorAndPrintMetadata metadata);
+    void timeoutProcessing(PendingMessage<SearchCommand,
+            SearchCommandResults> * message,
+            ResponseAggregatorMetadata metadata);
 
 
     /*
@@ -83,8 +83,8 @@ public:
      * this function uses aggregateRecords and aggregateFacets for
      * aggregating result records and calculated records
      */
-    void callBack(vector<PendingMessage<SerializableSearchCommandInput,
-            SerializableSearchResults> * > messages);
+    void callBack(vector<PendingMessage<SearchCommand,
+            SearchCommandResults> * > messages);
 
     /*
      * The last call back function called by RoutingManager in all cases.
@@ -94,7 +94,7 @@ public:
      * 3. aggregateSearchResults()
      * 4. finalize()
      */
-    void finalize(ResultsAggregatorAndPrintMetadata metadata){
+    void finalize(ResponseAggregatorMetadata metadata){
         // to protect messages
         boost::unique_lock< boost::shared_mutex > lock(_access);
         // print the results
@@ -175,7 +175,7 @@ private:
     /*
      * This variable contains the final aggregated results
      */
-    SearchResultAggregatorAndPrint::AggregatedQueryResults results;
+    SearchResultsAggregator::AggregatedQueryResults results;
     ConfigManager * configurationManager;
     evhttp_request *req;
     CoreShardInfo * coreShardInfo;

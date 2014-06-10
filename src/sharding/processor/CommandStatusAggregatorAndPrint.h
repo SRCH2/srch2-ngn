@@ -21,11 +21,11 @@ namespace srch2 {
 namespace httpwrapper {
 
 template <class RequestWithStatusResponse>
-class CommandStatusAggregatorAndPrint : public ResultAggregatorAndPrint<RequestWithStatusResponse,SerializableCommandStatus> {
+class StatusAggregator : public ResponseAggregator<RequestWithStatusResponse,CommandStatus> {
 public:
 
 
-    CommandStatusAggregatorAndPrint(ConfigManager * configurationManager, evhttp_request *req, unsigned multiRouteMode = 0){
+    StatusAggregator(ConfigManager * configurationManager, evhttp_request *req, unsigned multiRouteMode = 0){
         this->configurationManager = configurationManager;
         this->req = req;
         this->multiRouteMode = multiRouteMode; // this is the case where aggregator is shared with multiple callbacks
@@ -46,7 +46,7 @@ public:
     /*
      * This function is always called by RoutingManager as the first call back function
      */
-    void preProcessing(ResultsAggregatorAndPrintMetadata metadata){
+    void preProcessing(ResponseAggregatorMetadata metadata){
         if(multiRouteMode > 0){
             // we need to make sure preProcess is only called once
             boost::unique_lock< boost::shared_mutex > lock(_access);
@@ -56,7 +56,8 @@ public:
                 preProcessCalled = true;
             }
         }
-        //... code here
+        // any preprocess code must be written here :
+        // right now, nothing to do in preProcess.
     }
 
     /*
@@ -67,8 +68,8 @@ public:
      * This function is called by RoutingManager if a timeout happens, The call to
      * this function must be between preProcessing(...) and callBack()
      */
-    void timeoutProcessing(PendingMessage<RequestWithStatusResponse, SerializableCommandStatus> * message,
-            ResultsAggregatorAndPrintMetadata metadata){
+    void timeoutProcessing(PendingMessage<RequestWithStatusResponse, CommandStatus> * message,
+            ResponseAggregatorMetadata metadata){
 
         if(message == NULL){
             return;
@@ -79,7 +80,7 @@ public:
         if(((string)"SerializableInsertUpdateCommandInput").compare(typeid(sentRequest).name()) == 0){// timeout in insert and update
 
             boost::unique_lock< boost::shared_mutex > lock(_access);
-            SerializableInsertUpdateCommandInput * sentInsetUpdateRequest = (SerializableInsertUpdateCommandInput *)(sentRequest);
+            InsertUpdateCommand * sentInsetUpdateRequest = (InsertUpdateCommand *)(sentRequest);
             messages << "{\"rid\":\"" << sentInsetUpdateRequest->getRecord()->getPrimaryKey()
                                         << "\",\"" << (sentInsetUpdateRequest->getInsertOrUpdate()?"insert":"update") << "\":\"failed\",\"reason\":\"Corresponging shard ("<<
                                         message->getNodeId()<<") timedout.\"}";
@@ -87,7 +88,7 @@ public:
         }else if (((string)"SerializableDeleteCommandInput").compare(typeid(sentRequest).name()) == 0){
 
             boost::unique_lock< boost::shared_mutex > lock(_access);
-            SerializableDeleteCommandInput * sentDeleteRequest = (SerializableDeleteCommandInput *)(sentRequest);
+            DeleteCommand * sentDeleteRequest = (DeleteCommand *)(sentRequest);
             messages << "{\"rid\":\"" << sentDeleteRequest->getPrimaryKey()
                             << "\",\"delete\":\"failed\",\"reason\":\"Corresponging ("<<
                             message->getNodeId() << ") shard timedout.\"}";
@@ -95,20 +96,20 @@ public:
         }else if(((string)"SerializableSerializeCommandInput").compare(typeid(sentRequest).name()) == 0){
 
             boost::unique_lock< boost::shared_mutex > lock(_access);
-            SerializableSerializeCommandInput * serializeRequest = (SerializableSerializeCommandInput *)(sentRequest);
+            SerializeCommand * serializeRequest = (SerializeCommand *)(sentRequest);
             messages << "{\""<< (serializeRequest->getIndexOrRecord()?"save":"export") << "\":\"failed\",\"reason\":\"Corresponging (" <<
                     message->getNodeId() << ") shard timedout.\"}";
 
         }else if(((string)"SerializableResetLogCommandInput").compare(typeid(sentRequest).name()) == 0){
 
             boost::unique_lock< boost::shared_mutex > lock(_access);
-            SerializableResetLogCommandInput * resetRequest = (SerializableResetLogCommandInput *)(sentRequest);
+            ResetLogCommand * resetRequest = (ResetLogCommand *)(sentRequest);
             messages << "{\"reset_log\":\"failed\",\"reason\":\"Corresponging (" << message->getNodeId()<<") shard timedout.\"}";
 
         }else if(((string)"SerializableCommitCommandInput").compare(typeid(sentRequest).name()) == 0){
 
             boost::unique_lock< boost::shared_mutex > lock(_access);
-            SerializableCommitCommandInput * resetRequest = (SerializableCommitCommandInput *)(sentRequest);
+            CommitCommand * resetRequest = (CommitCommand *)(sentRequest);
             messages << "{\"commit\":\"failed\",\"reason\":\"Corresponging (" << message->getNodeId()<<") shard timedout.\"}";
 
         }else{
@@ -121,7 +122,7 @@ public:
     /*
      * The main function responsible of aggregating status (success or failure) results
      */
-    void callBack(PendingMessage<RequestWithStatusResponse, SerializableCommandStatus> * message){
+    void callBack(PendingMessage<RequestWithStatusResponse, CommandStatus> * message){
 
         if(message == NULL){
             return;
@@ -138,12 +139,12 @@ public:
 
     }
 
-    void callBack(vector<PendingMessage<RequestWithStatusResponse, SerializableCommandStatus> * > messagesArg){
+    void callBack(vector<PendingMessage<RequestWithStatusResponse, CommandStatus> * > messagesArg){
 
         boost::unique_lock< boost::shared_mutex > lock(_access);
         //TODO shard info can be better than just an index
         unsigned shardIndex = 0;
-        for(typename vector<PendingMessage<RequestWithStatusResponse, SerializableCommandStatus> * >::iterator
+        for(typename vector<PendingMessage<RequestWithStatusResponse, CommandStatus> * >::iterator
                 messageItr    = messagesArg.begin(); messageItr != messagesArg.end(); ++messageItr){
             if(*messageItr == NULL){
                 continue;
@@ -168,7 +169,7 @@ public:
      * 3. aggregateSearchResults()
      * 4. finalize()
      */
-    void finalize(ResultsAggregatorAndPrintMetadata metadata){
+    void finalize(ResponseAggregatorMetadata metadata){
 
         if(multiRouteMode > 0){
             // we need to make sure finalize is only called once
