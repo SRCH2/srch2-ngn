@@ -84,7 +84,7 @@ DPExternalRequestHandler::DPExternalRequestHandler(ConfigManager * configuration
  * 1. Receives a search request from a client (not from another shard)
  * 2. broadcasts this request to DPInternalRequestHandler objects of other shards
  * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
- * 	  results. Results will be aggregator by another thread since it's not a blocking call.
+ *       results. Results will be aggregator by another thread since it's not a blocking call.
  */
 void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , CoreShardInfo * coreShardInfo){
 
@@ -159,8 +159,12 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , CoreS
     timeValue = timeValue + TIMEOUT_WAIT_TIME;
 
     RoutingManagerAPIReturnType routingStatus =
-            routingManager->broadcast_wait_for_all_w_cb_n_timeout<SearchCommand, SearchCommandResults>
-    (searchInput, resultAggregator , timeValue , *coreShardInfo);
+            routingManager->broadcast<SearchCommand, SearchCommandResults>(searchInput,
+                    true,
+                    true,
+                    resultAggregator,
+                    timeValue,
+                    *coreShardInfo);
 
     switch (routingStatus) {
     case RoutingManagerAPIReturnTypeAllNodesDown:
@@ -313,8 +317,11 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, CoreSh
         timeValue = timeValue + TIMEOUT_WAIT_TIME;
 
         RoutingManagerAPIReturnType routingStatus =
-                routingManager->route_w_cb_n_timeout<InsertUpdateCommand, CommandStatus>
-        (insertUpdateInput, resultsAggregator , timeValue , partitioner->getShardIDForRecord(*recordItr,coreShardInfo->coreName));
+                routingManager->route<InsertUpdateCommand, CommandStatus>(insertUpdateInput,
+                        true,
+                        resultsAggregator,
+                        timeValue,
+                        partitioner->getShardIDForRecord(*recordItr,coreShardInfo->coreName));
 
         switch (routingStatus) {
         case RoutingManagerAPIReturnTypeAllNodesDown:
@@ -467,8 +474,11 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, CoreSh
         timeValue = timeValue + TIMEOUT_WAIT_TIME;
 
         RoutingManagerAPIReturnType routingStatus =
-                routingManager->route_w_cb_n_timeout<InsertUpdateCommand, CommandStatus>
-        (insertUpdateInput, resultsAggregator , timeValue , partitioner->getShardIDForRecord(*recordItr,coreShardInfo->coreName));
+                routingManager->route<InsertUpdateCommand, CommandStatus>(insertUpdateInput,
+                        true,
+                        resultsAggregator ,
+                        timeValue ,
+                        partitioner->getShardIDForRecord(*recordItr,coreShardInfo->coreName));
 
         switch (routingStatus) {
         case RoutingManagerAPIReturnTypeAllNodesDown:
@@ -539,8 +549,7 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, CoreSh
         time(&timeValue);
         timeValue = timeValue + TIMEOUT_WAIT_TIME;
         RoutingManagerAPIReturnType routingStatus =
-                routingManager->route_w_cb_n_timeout<DeleteCommand, CommandStatus>
-        (deleteInput, resultsAggregator , timeValue , shardInfo);
+                routingManager->route<DeleteCommand, CommandStatus>(deleteInput,true, resultsAggregator , timeValue , shardInfo);
 
         switch (routingStatus) {
         case RoutingManagerAPIReturnTypeAllNodesDown:
@@ -572,7 +581,7 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, CoreSh
   * 1. Receives a getinfo request from a client (not from another shard)
   * 2. broadcasts this request to DPInternalRequestHandler objects of other shards
   * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
-  * 	  results. Results will be aggregator by another thread since it's not a blocking call.
+  *       results. Results will be aggregator by another thread since it's not a blocking call.
   */
 void DPExternalRequestHandler::externalGetInfoCommand(evhttp_request *req, CoreShardInfo * coreShardInfo){
 
@@ -583,8 +592,12 @@ void DPExternalRequestHandler::externalGetInfoCommand(evhttp_request *req, CoreS
     time(&timeValue);
     timeValue = timeValue + TIMEOUT_WAIT_TIME;
     RoutingManagerAPIReturnType routingStatus =
-            routingManager->broadcast_wait_for_all_w_cb_n_timeout<GetInfoCommand, GetInfoCommandResults>
-    (getInfoInput, resultsAggregator, timeValue, *coreShardInfo);
+            routingManager->broadcast<GetInfoCommand, GetInfoCommandResults>(getInfoInput,
+                    true,
+                    true,
+                    resultsAggregator,
+                    timeValue,
+                    *coreShardInfo);
 
     switch (routingStatus) {
     case RoutingManagerAPIReturnTypeAllNodesDown:
@@ -603,7 +616,7 @@ void DPExternalRequestHandler::externalGetInfoCommand(evhttp_request *req, CoreS
   * 1. Receives a save request from a client (not from another shard)
   * 2. broadcasts this request to DPInternalRequestHandler objects of other shards
   * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
-  * 	  results. Results will be aggregator by another thread since it's not a blocking call.
+  *       results. Results will be aggregator by another thread since it's not a blocking call.
   */
 void DPExternalRequestHandler::externalSerializeIndexCommand(evhttp_request *req, CoreShardInfo * coreShardInfo){
     /* Yes, we are expecting a post request */
@@ -619,8 +632,12 @@ void DPExternalRequestHandler::externalSerializeIndexCommand(evhttp_request *req
         time(&timeValue);
         timeValue = timeValue + TIMEOUT_WAIT_TIME;
         RoutingManagerAPIReturnType routingStatus =
-                routingManager->broadcast_wait_for_all_w_cb_n_timeout<SerializeCommand, CommandStatus>
-        (serializeInput, resultsAggregator, timeValue, *coreShardInfo);
+                routingManager->broadcast<SerializeCommand, CommandStatus>(serializeInput,
+                        true,
+                        true,
+                        resultsAggregator,
+                        timeValue,
+                        *coreShardInfo);
 
         switch (routingStatus) {
         case RoutingManagerAPIReturnTypeAllNodesDown:
@@ -649,7 +666,7 @@ void DPExternalRequestHandler::externalSerializeIndexCommand(evhttp_request *req
   * 1. Receives a export request from a client (not from another shard)
   * 2. broadcasts this request to DPInternalRequestHandler objects of other shards
   * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
-  * 	  results. Results will be aggregator by another thread since it's not a blocking call.
+  *       results. Results will be aggregator by another thread since it's not a blocking call.
   */
 void DPExternalRequestHandler::externalSerializeRecordsCommand(evhttp_request *req, CoreShardInfo * coreShardInfo){
     /* Yes, we are expecting a post request */
@@ -673,8 +690,12 @@ void DPExternalRequestHandler::externalSerializeRecordsCommand(evhttp_request *r
                 time(&timeValue);
                 timeValue = timeValue + TIMEOUT_WAIT_TIME;
                 RoutingManagerAPIReturnType routingStatus =
-                        routingManager->broadcast_wait_for_all_w_cb_n_timeout<SerializeCommand, CommandStatus>
-                (serializeInput, resultsAggregator, timeValue, *coreShardInfo);
+                        routingManager->broadcast<SerializeCommand, CommandStatus>(serializeInput,
+                                true,
+                                true,
+                                resultsAggregator,
+                                timeValue,
+                                *coreShardInfo);
 
                 switch (routingStatus) {
                 case RoutingManagerAPIReturnTypeAllNodesDown:
@@ -716,7 +737,7 @@ void DPExternalRequestHandler::externalSerializeRecordsCommand(evhttp_request *r
   * 1. Receives a reset log request from a client (not from another shard)
   * 2. broadcasts this request to DPInternalRequestHandler objects of other shards
   * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
-  * 	  results. Results will be aggregator by another thread since it's not a blocking call.
+  *       results. Results will be aggregator by another thread since it's not a blocking call.
   */
 void DPExternalRequestHandler::externalResetLogCommand(evhttp_request *req, CoreShardInfo * coreShardInfo){
     switch(req->type) {
@@ -729,8 +750,12 @@ void DPExternalRequestHandler::externalResetLogCommand(evhttp_request *req, Core
         time(&timeValue);
         timeValue = timeValue + TIMEOUT_WAIT_TIME;
         RoutingManagerAPIReturnType routingStatus =
-                routingManager->broadcast_wait_for_all_w_cb_n_timeout<ResetLogCommand, CommandStatus>
-        (resetInput, resultsAggregator, timeValue, *coreShardInfo);
+                routingManager->broadcast<ResetLogCommand, CommandStatus>(resetInput,
+                        true,
+                        true,
+                        resultsAggregator,
+                        timeValue,
+                        *coreShardInfo);
 
         switch (routingStatus) {
         case RoutingManagerAPIReturnTypeAllNodesDown:
@@ -768,8 +793,12 @@ void DPExternalRequestHandler::externalCommitCommand(evhttp_request *req, CoreSh
     time(&timeValue);
     timeValue = timeValue + TIMEOUT_WAIT_TIME;
     RoutingManagerAPIReturnType routingStatus =
-            routingManager->broadcast_wait_for_all_w_cb_n_timeout<CommitCommand, CommandStatus>
-    (commitInput, resultsAggregator, timeValue, *coreShardInfo);
+            routingManager->broadcast<CommitCommand, CommandStatus>(commitInput,
+                    true,
+                    true,
+                    resultsAggregator,
+                    timeValue,
+                    *coreShardInfo);
 
     switch (routingStatus) {
     case RoutingManagerAPIReturnTypeAllNodesDown:

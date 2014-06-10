@@ -35,102 +35,22 @@ public:
     };
 
 
-    /*
-     *  Transmits a given message to all shards. The broadcast will not wait for
-     *  confirmation from each receiving shard.
-     */
     template<typename RequestType, typename ResponseType>
-    RoutingManagerAPIReturnType broadcast(RequestType *,CoreShardInfo &);
-
-
-    /*
-     *  Transmits a given message to all shards. The broadcast block until
-     *  confirmation from each shard is received. Returns false iff any
-     *  receiving shard confirms with MESSAGE_FAILED message.
-     */
-    template<typename RequestType, typename ResponseType>
-    RoutingManagerAPIReturnType broadcast_wait_for_all_confirmation(RequestType * requestObject,
-            bool& timedout, time_t timeoutValue , CoreShardInfo & coreInfo);
-
-    /*
-     *  Transmits a given message to all shards. Upon receipt of a response from
-     *  any shard, the callback is trigger with the corresponding Message.
-     *  The callback will be called for each shard.
-     */
-    template<typename RequestType , typename ReseponseType>
-    RoutingManagerAPIReturnType broadcast_w_cb(RequestType * requestObj,
-            boost::shared_ptr<ResponseAggregator<RequestType , ReseponseType> > aggregator,
-            CoreShardInfo & coreInfo);
-
-    /*
-     *  Transmits a given message to all shards. The return messages for each
-     *  shard are held until all shard’s return messages received. Then the
-     *  callback is triggers with an array of message results from each shard.
-     */
-    template<typename RequestType , typename ReseponseType>
-    RoutingManagerAPIReturnType broadcast_wait_for_all_w_cb(RequestType * requestObj,
-            boost::shared_ptr<ResponseAggregator<RequestType , ReseponseType> > aggregator,
-            CoreShardInfo & coreInfo);
-
-
-    /*
-     *  Timeout version of their corresponding function. So, after a period of
-     *  set milliseconds the timeout callback function is called
-     *
-     *       *** Potentially could alert sync layer to timed out message
-     *           from shard ***
-     */
-    template<typename RequestType , typename ReseponseType>
-    RoutingManagerAPIReturnType broadcast_w_cb_n_timeout(RequestType * requestObj,
-            boost::shared_ptr<ResponseAggregator<RequestType , ReseponseType> > aggregator,
-            time_t timeoutValue ,
-            CoreShardInfo & coreInfo );
-
-
-    template<typename RequestType , typename ReseponseType>
-    RoutingManagerAPIReturnType broadcast_wait_for_all_w_cb_n_timeout(RequestType * requestObj,
-            boost::shared_ptr<ResponseAggregator<RequestType , ReseponseType> > aggregator ,
+    RoutingManagerAPIReturnType broadcast(RequestType * requestObj,
+    		bool waitForAll,
+    		bool withCallback,
+    		boost::shared_ptr<ResponseAggregator<RequestType , ResponseType> > aggregator,
             time_t timeoutValue,
             CoreShardInfo & coreInfo);
 
 
-    /*
-     *  Transmits a given message to a particular shard in a non-blocking fashion
-     */
-    template<typename RequestType, typename ResponseType>
-    RoutingManagerAPIReturnType route(RequestType * requestObj, ShardId & shardInfo);
-
-    /*
-     *  Transmits a given message to a pariticular shards, and waits for
-     *  confirmation. Returns false iff shard confirms with MESSAGE_FAILED
-     *  message.
-     */
-    template<typename RequestType, typename ResponseType>
-    RoutingManagerAPIReturnType route_wait_for_confirmation(RequestType * requestObj, bool& timedout,
-            time_t timeoutValue , ShardId shardInfo);
-
-    /*
-     *  Transmits a given message to a particular shards. Upon receipt of a
-     *  response shard, the appropriate callback is trigger with the
-     *  corresponding Message.
-     */
     template<typename RequestType , typename ReseponseType>
-    RoutingManagerAPIReturnType route_w_cb(RequestType * requestObj,
-            boost::shared_ptr<ResponseAggregator<RequestType , ReseponseType> > aggregator ,
-            ShardId shardInfo);
-
-    /*
-     *  Timeout version of their corresponding function. So, after a period of
-     *  set milliseconds the timeout callback function is called
-     *
-     *       *** Potentially could alert sync layer to timed out message
-     *           from shard ***
-     */
-    template<typename RequestType , typename ReseponseType>
-    RoutingManagerAPIReturnType route_w_cb_n_timeout(RequestType * requestObj,
+    RoutingManagerAPIReturnType route(RequestType * requestObj,
+    		bool withCallback,
             boost::shared_ptr<ResponseAggregator<RequestType , ReseponseType> > aggregator,
             time_t timeoutValue,
             ShardId shardInfo);
+
 
 
     MessageAllocator * getMessageAllocator() ;
