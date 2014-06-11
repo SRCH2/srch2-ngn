@@ -96,7 +96,7 @@ public:
 
 
     template<typename RequestType , typename ResponseType>
-    RoutingManagerAPIReturnType route(RequestType * requestObj,
+    RoutingManagerAPIReturnType sendMessage(RequestType * requestObj,
     		bool withCallback,
             boost::shared_ptr<ResponseAggregator<RequestType , ResponseType> > aggregator,
             time_t timeoutValue,

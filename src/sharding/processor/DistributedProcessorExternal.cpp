@@ -329,7 +329,7 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, CoreSh
                 new InsertUpdateCommand(*recordItr,InsertUpdateCommand::DP_INSERT);
 
         RoutingManagerAPIReturnType routingStatus =
-                routingManager->route<InsertUpdateCommand, CommandStatus>(insertUpdateInput,
+                routingManager->sendMessage<InsertUpdateCommand, CommandStatus>(insertUpdateInput,
                         true,
                         resultsAggregator,
                         timeValue,
@@ -488,7 +488,7 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, CoreSh
                 new InsertUpdateCommand(*recordItr,InsertUpdateCommand::DP_UPDATE);
 
         RoutingManagerAPIReturnType routingStatus =
-                routingManager->route<InsertUpdateCommand, CommandStatus>(insertUpdateInput,
+                routingManager->sendMessage<InsertUpdateCommand, CommandStatus>(insertUpdateInput,
                         true,
                         resultsAggregator ,
                         timeValue ,
@@ -561,7 +561,7 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, CoreSh
 			time(&timeValue);
 			timeValue = timeValue + TIMEOUT_WAIT_TIME;
 			RoutingManagerAPIReturnType routingStatus =
-					routingManager->route<DeleteCommand, CommandStatus>(deleteInput,true, resultsAggregator , timeValue , destination);
+					routingManager->sendMessage<DeleteCommand, CommandStatus>(deleteInput,true, resultsAggregator , timeValue , destination);
 
 			if(routingStatus != RoutingManagerAPIReturnTypeSuccess){
 				bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure",
