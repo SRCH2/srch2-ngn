@@ -107,7 +107,7 @@ void RoutingManager::sendExternalMessage(Message * msg, RequestType * requestObj
 		delete requestObjPointer;
 	}
 	// pass the ready message to TM to be sent to nodeId
-	transportManager.route(nodeId, msg, timeoutValue);
+	transportManager.sendMessage(nodeId, msg, timeoutValue);
 
 	if(msg->isNoReply()){
 		// deallocate the message here because there is no reply and no pending request

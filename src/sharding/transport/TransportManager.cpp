@@ -20,12 +20,12 @@ namespace httpwrapper {
  *   Read Callback :  This function is called when there is data available to be read
  *   from the socket.
  */
-void cb_recieveMessage(int fd, short eventType, void *arg) {
+void cb_receiveMessage(int fd, short eventType, void *arg) {
 	TransportCallback* cb = (TransportCallback*) arg;
-	if(cb->tm->recieveMessage(fd, cb)){
-		event_add(cb->ev, NULL);
+	if(cb->tm->receiveMessage(fd, cb)){
+		event_add(cb->eventPtr, NULL);
 	}else{
-		// Node is either dead or their is some socket error. We will not wait for
+		// Node is either dead or there is some socket error. We will not wait for
 		// the data from this node anymore.
 		// TODO: V1
 		// 1. SM removes dead node from connection map.
@@ -45,7 +45,7 @@ void cb_recieveMessage(int fd, short eventType, void *arg) {
  */
 
 void cb_sendMessage(int fd, short eventType, void *arg) {
-	Logger::console("send message callback called");
+
 }
 
 
@@ -54,7 +54,7 @@ void cb_sendMessage(int fd, short eventType, void *arg) {
 ///
 
 /*
- *  The function dispatches message to upstream handlers.
+ *  The function dispatches messages to upstream handlers.
  */
 void * TransportManager::notifyUpstreamHandlers(Message *msg, int fd, NodeId  nodeId) {
 
@@ -90,7 +90,7 @@ void * TransportManager::notifyUpstreamHandlers(Message *msg, int fd, NodeId  no
 				replyMessage->setReply()->setInternal();
 				Connection& conn = getRouteMap()->getConnection(nodeId);
 				while(!__sync_bool_compare_and_swap(&conn.sendLock, false, true));
-				_route(fd, replyMessage);
+				_sendMessage(fd, replyMessage);
 				conn.sendLock = false;
 				/*
 				 * Request and Reply messages must be deallocated at this time in this case because PendingMessage
@@ -112,7 +112,7 @@ void * TransportManager::notifyUpstreamHandlers(Message *msg, int fd, NodeId  no
 
 /*
  *  This is a simple low level function which reads the data from the supplied socket descriptor
- *  and fill it into the buffer. It also returns the total number of bytes read.
+ *  and fills it into the buffer. It also returns the total number of bytes read.
  *
  *  Return status :
  *
@@ -121,7 +121,7 @@ void * TransportManager::notifyUpstreamHandlers(Message *msg, int fd, NodeId  no
  *  -1 : error
  */
 
-int TransportManager::readDataFromSocket(int fd, char *buffer, int byteToRead, int *byteReadCount) {
+int TransportManager::readDataFromSocket(int fd, char *buffer, const int byteToRead, int *byteReadCount) {
 
 	int readByte = recv(fd, buffer, byteToRead, MSG_DONTWAIT);
 
@@ -153,14 +153,14 @@ int TransportManager::readDataFromSocket(int fd, char *buffer, int byteToRead, i
 }
 
 /*
- * This function reads a fixed size header from the socket stream. Each message start
- * with message header and then followed by message body.
+ * This function reads a fixed size header from the socket stream. Each message starts
+ * with a message header and then followed by message body.
  *
  * --------------------------------
  * | Message Header | Rest of Body |
  * ---------------------------------
  */
-int TransportManager::readMessageHeader(Message *const message,  int fd) {
+int TransportManager::readMessageHeader(const Message * message,  int fd) {
 
 	char *buffer = (char *) message;
 	int byteToRead = sizeof(Message);
@@ -213,7 +213,7 @@ int TransportManager::readMessageBody(int fd, MessageBuffer &readBuffer) {
  *    false: There was some error and we should not listen to the event on this socket.
  */
 
-bool TransportManager::recieveMessage(int fd, TransportCallback *cb) {
+bool TransportManager::receiveMessage(int fd, TransportCallback *cb) {
 	if( fd != cb->conn->fd) {
 		//major error
 		Logger::warn("connection mismatch: received data on wrong socket!!");
@@ -221,6 +221,8 @@ bool TransportManager::recieveMessage(int fd, TransportCallback *cb) {
 	}
 
 	MessageBuffer& readBuffer = cb->conn->buffer;
+
+	// acquire lock to avoid interleaved message written to a current socket
 	while(!__sync_bool_compare_and_swap(&readBuffer.lock, false, true));
 
 	if(readBuffer.msg == NULL) {
@@ -242,18 +244,18 @@ bool TransportManager::recieveMessage(int fd, TransportCallback *cb) {
 		}
 
 		/*
-		 *  2. sets the distributedTime of TM to the maximum time received by a message
+		 *  2. sets the distributedMessageId of TM to the maximum messageId received by a message
 		 *  in a thread safe fashion
 		 */
 
 		while(true) {
-			MessageID_t time = getDistributedTime();
-			//check if time needs to be incremented
-			if(msgHeader.getMessageId() <= time &&
-					/*zero break*/ time - msgHeader.getMessageId() < UINT_MAX/2 ) break;
-			//make sure time did not change
+			MessageID_t messageID = getCurrentMessageId();
+			//check if message Id needs to be incremented
+			if(msgHeader.getMessageId() <= messageID &&
+					/*zero break*/ messageID - msgHeader.getMessageId() < UINT_MAX/2 ) break;
+			//make sure id did not change
 			if(__sync_bool_compare_and_swap(
-					&getDistributedTime(), time, msgHeader.getMessageId()+1)) break;
+					&getCurrentMessageId(), messageID, msgHeader.getMessageId()+1)) break;
 		}
 
 		/*
@@ -270,7 +272,7 @@ bool TransportManager::recieveMessage(int fd, TransportCallback *cb) {
 			int status = readMessageBody(fd, readBuffer);
 
 			if(status == 1) {
-				// we will come back again for the remaining data. See section 4.
+				// we will come back again for the remaining data. See else section below.
 				readBuffer.lock = false;
 				return true;
 			} else if (status == -1) {
@@ -283,7 +285,7 @@ bool TransportManager::recieveMessage(int fd, TransportCallback *cb) {
 	} else {
 		/*
 		 *   4. Try to read the remaining part of the incomplete message from
-		 *      the previous iteration.
+		 *      the previous libevent iteration.
 		 */
 
 		int byteToRead = readBuffer.msg->getBodySize() - readBuffer.readCount;
@@ -313,8 +315,8 @@ bool TransportManager::recieveMessage(int fd, TransportCallback *cb) {
 }
 
 TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
-	// for each node we have, if it's us just store out event base
-	// otherwise it stores the node as a destination
+	// For each node we have, if it is a current node then store it as current
+	// node otherwise store the nodes as a destination
 	for(Nodes::iterator dest = nodes.begin(); dest!= nodes.end(); ++dest) {
 		if(dest->thisIsMe)
 			routeMap.setCurrentNode(*dest);
@@ -339,11 +341,11 @@ TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
 	// RouteMap iterates over routes. Routes are std::map<NodeId, Connection>
 	// which is basically NodeId to file descriptor
 	// We bound the route file descriptors (connection to other nodes) to event bases
-	// that are bound to cb_recieveMessage. This way cb_recieveMessage receives all internal messages
+	// that are bound to cb_receiveMessage. This way cb_receiveMessage receives all internal messages
 	for(RouteMap::iterator route = routeMap.begin(); route != routeMap.end(); ++route) {
 		for(EventBases::iterator base = bases.begin(); base != bases.end(); ++base) {
 			TransportCallback *cb_ptr = new TransportCallback();
-			struct event* ev = event_new(*base, route->second.fd, EV_READ, 	cb_recieveMessage, cb_ptr);
+			struct event* ev = event_new(*base, route->second.fd, EV_READ, 	cb_receiveMessage, cb_ptr);
 			new (cb_ptr) TransportCallback(this, &route->second, ev, *base);
 			event_add(ev, NULL);
 		}
@@ -359,14 +361,14 @@ TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
 		Logger::console("SO_RCVBUF = %d, SO_SNDBUF = %d", socketReadBuffer, socketSendBuffer);
 	}
 
-	distributedTime = 0;
+	distributedUniqueId = 0;
 	synchManagerHandler = NULL;
 	routeManagerHandler = NULL;
 	routingManager = NULL;
 }
 
 
-MessageID_t TransportManager::route(NodeId node,Message * msg,
+MessageID_t TransportManager::sendMessage(NodeId node,Message * msg,
 		unsigned timeout) {
 
 	if(msg == NULL){
@@ -377,7 +379,7 @@ MessageID_t TransportManager::route(NodeId node,Message * msg,
 	Connection& conn = routeMap.getConnection(node);
 
 	while(!__sync_bool_compare_and_swap(&conn.sendLock, false, true));
-	MessageID_t returnValue = _route(conn.fd, msg);
+	MessageID_t returnValue = _sendMessage(conn.fd, msg);
 	conn.sendLock = false;
 	return returnValue;
 }
@@ -388,7 +390,7 @@ MessageID_t TransportManager::route(NodeId node,Message * msg,
  *   Note: The function is not thread safe. Caller should ensure thread safety.
  */
 
-MessageID_t TransportManager::_route(int fd, Message *message) {
+MessageID_t TransportManager::_sendMessage(int fd, Message *message) {
 
 	if(message == NULL){
 		Logger::debug("Trying to send NULL message in TM route(fd,msg)");
@@ -408,7 +410,7 @@ MessageID_t TransportManager::_route(int fd, Message *message) {
 
 	unsigned totalbufferSize = message->getBodySize() + sizeof(Message);
 	char * bufferToWrite = (char * ) message;
-	unsigned retryCount = 5;
+	unsigned retryCount = 5;  //TODO v1: change to accomodate large data transfer.
 
 	while(retryCount) {
 
@@ -492,12 +494,12 @@ int TransportManager::checkSocketIsReady(int socket, bool checkForRead) {
 	return result;
 }
 
-MessageID_t& TransportManager::getDistributedTime() {
-	return distributedTime;
+MessageID_t& TransportManager::getCurrentMessageId() {
+	return distributedUniqueId;
 }
 
 MessageID_t TransportManager::getUniqueMessageIdValue(){
-	return __sync_fetch_and_add(&distributedTime, 1);
+	return __sync_fetch_and_add(&distributedUniqueId, 1);
 }
 
 CallBackHandler* TransportManager::getRmHandler() {

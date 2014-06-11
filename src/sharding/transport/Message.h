@@ -9,13 +9,13 @@ namespace httpwrapper {
 
 typedef unsigned MessageID_t;
 
-const char LOCAL_MASK = 0x2;
-const char REPLY_MASK = 0x1;
-const char INTERNAL_MASK = 0x4;
-const char NOREPLY_MASK = 0x8;
+const char MSG_LOCAL_MASK = 0x2;
+const char MSG_REPLY_MASK = 0x1;
+const char MSG_INTERNAL_MASK = 0x4;
+const char MSG_NOREPLY_MASK = 0x8;
 
 class Message {
-  //TODO: magic number
+
 public:
 
    //helper Functions
@@ -25,31 +25,31 @@ public:
    }
 
    bool isLocal(){
-     return mask & LOCAL_MASK;
+     return mask & MSG_LOCAL_MASK;
    }
    bool isReply() {
-     return mask & REPLY_MASK;
+     return mask & MSG_REPLY_MASK;
    }
    bool isInternal() {
-     return mask & INTERNAL_MASK;
+     return mask & MSG_INTERNAL_MASK;
    }
    bool isNoReply() {
-	   return mask & NOREPLY_MASK;
+	   return mask & MSG_NOREPLY_MASK;
    }
    Message * setLocal(){
-	   mask |= LOCAL_MASK;
+	   mask |= MSG_LOCAL_MASK;
 	   return this;
    }
    Message * setReply(){
-	   mask |= REPLY_MASK;
+	   mask |= MSG_REPLY_MASK;
 	   return this;
    }
    Message * setInternal(){
-	   mask |= INTERNAL_MASK;
+	   mask |= MSG_INTERNAL_MASK;
 	   return this;
    }
    Message * setNoReply() {
-	   mask |= NOREPLY_MASK;
+	   mask |= MSG_NOREPLY_MASK;
 	   return this;
    }
    unsigned getBodySize(){
@@ -69,19 +69,19 @@ public:
    }
    void setBodyAndBodySize(void * src, unsigned bodySize){
 	   setBodySize(bodySize);
-	   memcpy(this->body, (char *)src, this->getBodySize());
+	   memcpy(this->body, src, this->getBodySize());
    }
    ShardingMessageType getType(){
-	   return this->type;
+	   return this->shardingMessageType;
    }
    void setType(ShardingMessageType type){
-	   this->type = type;
+	   this->shardingMessageType = type;
    }
    ShardId getDestinationShardId(){
-	   return destinationShard;
+	   return destinationShardId;
    }
-   void setDestinationShardId(ShardId destShardId){
-	   this->destinationShard = destShardId;
+   void setDestinationShardId(ShardId& destShardId){
+	   this->destinationShardId = destShardId;
    }
    void setBodySize(unsigned bodySize){
 	   this->bodySize = bodySize;
@@ -100,10 +100,10 @@ public:
 
 
 private:
-   ShardingMessageType type;
+   ShardingMessageType shardingMessageType;
    char mask;
-   ShardId destinationShard;
-   unsigned bodySize; //size of buffer -> change name to bodySize?
+   ShardId destinationShardId;
+   unsigned bodySize;
    MessageID_t id;
    MessageID_t requestMessageId; //used by response type messages
    char body[0];
@@ -112,4 +112,4 @@ private:
 }
 }
 
-#endif // __SHARDING_ROUTING_MESSAGE_H_
+#endif // __SHARDING_ROUTING_MESSAGE_H__
