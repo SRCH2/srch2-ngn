@@ -45,7 +45,7 @@
 #include "analyzer/AnalyzerContainers.cpp"
 #include "MongodbAdapter.h"
 #include "WrapperConstants.h"
-#include "DataConnector.h"
+//#include "DataConnector.h"
 
 namespace po = boost::program_options;
 namespace srch2is = srch2::instantsearch;
@@ -615,14 +615,14 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
 //                srch2http::MongoDataSource::spawnUpdateListener(iterator->second);
 
 //                //Adapter Solution
-				DataConnector *dc = DataConnectorFactory::getDataConnector("mongodb");
-				if(!dc){
-					std::cerr<<"Fail to open DataConnector"<<endl;
-					return 255;
-				}
-				dc->spawnUpdateListener();
-
-				delete dc;
+//				DataConnector *dc = DataConnectorFactory::getDataConnector("mongodb");
+//				if(!dc){
+//					std::cerr<<"Fail to open DataConnector"<<endl;
+//					return 255;
+//				}
+//				dc->spawnUpdateListener();
+//
+//				delete dc;
 
             }
 
