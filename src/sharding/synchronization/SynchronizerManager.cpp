@@ -131,7 +131,7 @@ void SyncManager::sendHeartBeatToAllNodesInCluster() {
 void SyncManager::route(NodeId node, Message *msg) {
 	msg->setMask(0);
 	msg->setMessageId(transport.getUniqueMessageIdValue());
-	transport.route(node, msg);
+	transport.sendMessage(node, msg);
 }
 //unsigned Synchronizer::findNextEligibleMaster() {
 //	 return masterNodeId + 1;  // Todo go over node list and find eligible master

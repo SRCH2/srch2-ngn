@@ -11,8 +11,8 @@ class MessageAllocator : public std::allocator<char> {
 public:
 
 	/*
-	 * This function allocates a message including the header and the body
-	 * the size of header is always sizeof(Message) and bodySize is the size of body
+	 * This function allocates a message including the header and the body.
+	 * The size of header is always sizeof(Message) and bodySize is the size of body
 	 * to be used.
 	 * This function returns the pointer to the beginning of body.
 	 */
@@ -20,7 +20,7 @@ public:
 		// allocate full message
 		Message *msg = (Message*) allocator<char>::allocate(bodySize + sizeof(Message));
 		// initalize all bits of message to zero
-		memset(msg, 0, bodySize + sizeof(Message));
+		memset(msg, 0, sizeof(Message) + bodySize);
 		// set the body size
 		msg->setBodySize(bodySize);
 		// return the pointer to the beginning of body

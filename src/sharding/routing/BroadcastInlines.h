@@ -53,21 +53,18 @@ template<typename RequestType , typename ResponseType> inline
 void RoutingManager::sendInternalMessage(Message * msg, RequestType * requestObjPointer,
         ShardId shardId, time_t timeoutValue,  PendingRequest<RequestType, ResponseType> * pendingRequest) {
 
-    // find the node id of destination
-    unsigned nodeId = shardId.getNodeId(configurationManager);
+	// find the node id of destination
+	unsigned nodeId = shardId.getNodeId(configurationManager);
 
-    // only messages which expect reply will go to pending messages
-    if(pendingRequest != NULL && ! msg->isNoReply()){
-        // register a pending message in this pending request
-        pendingRequest->registerPendingMessage(nodeId, timeoutValue, msg, requestObjPointer);
-    }else{
-        // this is the case of message with no reply so we don't have a pending request.
-        // we must send the request and delete the request object and message right here
-        // msg is in a shared pointer and it's not stored in a pendingMessage,
-        // therefor when it's handled it will delete by itself.
-        delete requestObjPointer;
-        // message will be deleted in routeInternalMessage
-    }
+	// only messages which expect reply will go to pending messages
+	if(pendingRequest != NULL && ! msg->isNoReply()){
+		// register a pending message in this pending request
+		PendingMessage<RequestType, ResponseType> * pendingMessage =
+				pendingRequest->registerPendingMessage(nodeId, timeoutValue, msg, requestObjPointer);
+	}else{
+		// no reply case, request object and message must be deleted after sending to network.
+		delete requestObjPointer;
+	}
 
     Logger::console("Message is local");
     pthread_t internalMessageRouteThread;
@@ -107,7 +104,7 @@ void RoutingManager::sendExternalMessage(Message * msg, RequestType * requestObj
         delete requestObjPointer;
     }
     // pass the ready message to TM to be sent to nodeId
-    transportManager.route(nodeId, msg, timeoutValue);
+    transportManager.sendMessage(nodeId, msg, timeoutValue);
 
     if(msg->isNoReply()){
         // deallocate the message here because there is no reply and no pending request

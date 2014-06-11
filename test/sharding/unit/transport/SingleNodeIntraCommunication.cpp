@@ -112,14 +112,14 @@ int main() {
   for(int m=0; m < 52; ++m) {
     int messageLength = strlen(MESSAGE_CONTENTS[m]);
     Message* msg = tm->getMessageAllocator()->allocateMessage(messageLength+1);
-    msg->type = StatusMessageType;
-    msg->mask |= INTERNAL_MASK;
+    msg->shardingMessageType = StatusMessageType;
+    msg->mask |= MSG_INTERNAL_MASK;
     msg->bodySize = messageLength+1;
     msg->shardId.coreId = n->getId();
     msg->setMessageId(tm->getUniqueMessageIdValue());
     memcpy(msg->body, MESSAGE_CONTENTS[m], messageLength);
 
-    tm->route(n->getId(), msg);
+    tm->sendMessage(n->getId(), msg);
     tm->getMessageAllocator()->deallocateByMessagePointer(msg);
   }
 }
