@@ -11,6 +11,21 @@
 #include <string>
 
 
+void * spawnConnector(void *arg) {
+      ThreadArguments * targ = (ThreadArguments*) arg;
+      DataConnectorFactory::bootStrapConnector(targ->dbType, targ->server);
+}
+
+const  std::string DataConnectorFactory::DB_CONNECTORS_PATH="db_connectors/";
+const  std::string DataConnectorFactory::DYNAMIC_LIBRARY_SUFFIX="Connector.so";
+const  std::string DataConnectorFactory::DYNAMIC_LIBRARY_PREFIX="lib";
+
+void DataConnectorFactory::bootStrapConnector(string dbType, ServerInterface *server) {
+	DataConnector *connector = getDataConnector(dbType);
+	connector->init(server);
+	connector->runListener();
+}
+
 DataConnector* DataConnectorFactory::getDataConnector(
 		std::string dbType) {
 	std::string libName = DB_CONNECTORS_PATH + DYNAMIC_LIBRARY_PREFIX + dbType

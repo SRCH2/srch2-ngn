@@ -10,14 +10,21 @@
 
 #include <string>
 #include "DataConnector.h"
+struct ThreadArguments {
+        string dbType;
+	ServerInterface *server;
+};
+
+void * spawnConnector(void *arg);
 
 class DataConnectorFactory{
 public:
-	DataConnector* getDataConnector(std::string dbType);
+	static void bootStrapConnector(string dbType, ServerInterface *server);
 private:
-	const  std::string DB_CONNECTORS_PATH="db_connectors/";
-	const  std::string DYNAMIC_LIBRARY_SUFFIX="Connector.so";
-	const  std::string DYNAMIC_LIBRARY_PREFIX="lib";
+	static DataConnector* getDataConnector(std::string dbType);
+	static const  std::string DB_CONNECTORS_PATH;
+	static const  std::string DYNAMIC_LIBRARY_SUFFIX;
+	static const  std::string DYNAMIC_LIBRARY_PREFIX;
 };
 
 

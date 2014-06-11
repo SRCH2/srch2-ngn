@@ -4,31 +4,28 @@
  *  Created on: Jun 9, 2014
  *      Author: liusrch2
  */
-#include "../../src/adapter/DataConnector.h"
 #include "mongodbconnector.h"
-//replace this code with actual code
 #include <iostream>
+using namespace std;
 
-void MongoDBConnector::init(std::string dbname, std::string username,
-		std::string password) {
-	std::cout << "init dbname: " << dbname << " username: " << username
-			<< " password: " << password;
+void MongoDBConnector::init(ServerInterface *serverHandle) {
+        this->serverHandle = serverHandle;
+	std::cout << "init " << std::endl;
 }
 
 // illustrative code..
-void* MongoDBConnector::runListener(void * engineCallBack) {
+void* MongoDBConnector::runListener(){
 	// connect to db
 	bool stop = false;
-	DataConnector* connector = (DataConnector*) engineCallBack;
 	std::string dbname = "mongodb";
 	std::string username = "dummy";
 	std::string password = "dummy";
 	//connector->init(dbname, username, password);
 	while (!stop) {
 		//get record and parse into json format
-		connector->insertRecord();
-		connector->deleteRecord();
-		connector->updateRecord();
+		this->serverHandle->insertRecord("");
+		this->serverHandle->deleteRecord("");
+		this->serverHandle->updateRecord("");
 	}
 	return NULL;
 }

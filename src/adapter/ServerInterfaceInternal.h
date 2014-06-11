@@ -5,13 +5,16 @@
  *      Author: liusrch2
  */
 
-#ifndef __DATACONNECTOR_H__
-#define __DATACONNECTOR_H__
-
+#ifndef __SERVERINTERFACEINTERNAL__
+#define __SERVERINTERFACEINTERNAL__ 
+#include "DataConnector.h"
 #include <string>
 using namespace std;
-class ServerInterface {
-public:
+class Srch2Server;
+
+class ServerInterfaceInternal : public ServerInterface {
+
+        ServerInterfaceInternal(Srch2Server *server, std::map<string, string> * connectorConfig);
 	int insertRecord(string jsonString);
 	int deleteRecord(string primaryKey);
 	int updateRecord(string jsonSrting);
@@ -20,15 +23,9 @@ public:
         //  e.g  "dbname" => "mysql"  (single value)
         //       "collections" => "collection1, collection2 " (multi value) 
         string configLookUp(string key);
+private:
+	Srch2Server *server;
+	std::map<string, string> * connectorConfig;        
 };
 
-class DataConnector {
-public:
-
-	virtual ~DataConnector() = 0;
-	virtual void init(ServerInterface *serverHandle) = 0;
-	virtual void* runListener() = 0;
-
-};
-
-#endif /* __DATACONNECTOR_H__ */
+#endif /* __SERVERINTERFACEINTERNAL__ */

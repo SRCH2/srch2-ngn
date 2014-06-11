@@ -13,6 +13,8 @@ FILE(GLOB_RECURSE MONGO_DB_CONNECTOR_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "m
 # add additional include directories depending on a connector requirement. 
 INCLUDE_DIRECTORIES(
     ${CMAKE_SOURCE_DIR}/thirdparty/mongo-cxx-driver-v2.4/src
+    ${CMAKE_SOURCE_DIR}/db_connectors
+    ${CMAKE_SOURCE_DIR}
 )
 
 ADD_LIBRARY(mongodbConnector SHARED ${MONGO_DB_CONNECTOR_SRC} )
