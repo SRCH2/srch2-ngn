@@ -77,7 +77,7 @@ public:
 
         RequestWithStatusResponse * sentRequest = message->getRequestObject();
 
-        if(((string)"SerializableInsertUpdateCommandInput").compare(typeid(sentRequest).name()) == 0){// timeout in insert and update
+        if(((string)"InsertUpdateCommand").compare(typeid(sentRequest).name()) == 0){// timeout in insert and update
 
             boost::unique_lock< boost::shared_mutex > lock(_access);
             InsertUpdateCommand * sentInsetUpdateRequest = (InsertUpdateCommand *)(sentRequest);
@@ -85,7 +85,7 @@ public:
                                         << "\",\"" << (sentInsetUpdateRequest->getInsertOrUpdate()?"insert":"update") << "\":\"failed\",\"reason\":\"Corresponging shard ("<<
                                         message->getNodeId()<<") timedout.\"}";
 
-        }else if (((string)"SerializableDeleteCommandInput").compare(typeid(sentRequest).name()) == 0){
+        }else if (((string)"DeleteCommand").compare(typeid(sentRequest).name()) == 0){
 
             boost::unique_lock< boost::shared_mutex > lock(_access);
             DeleteCommand * sentDeleteRequest = (DeleteCommand *)(sentRequest);
@@ -93,20 +93,20 @@ public:
                             << "\",\"delete\":\"failed\",\"reason\":\"Corresponging ("<<
                             message->getNodeId() << ") shard timedout.\"}";
 
-        }else if(((string)"SerializableSerializeCommandInput").compare(typeid(sentRequest).name()) == 0){
+        }else if(((string)"SerializeCommand").compare(typeid(sentRequest).name()) == 0){
 
             boost::unique_lock< boost::shared_mutex > lock(_access);
             SerializeCommand * serializeRequest = (SerializeCommand *)(sentRequest);
             messages << "{\""<< (serializeRequest->getIndexOrRecord()?"save":"export") << "\":\"failed\",\"reason\":\"Corresponging (" <<
                     message->getNodeId() << ") shard timedout.\"}";
 
-        }else if(((string)"SerializableResetLogCommandInput").compare(typeid(sentRequest).name()) == 0){
+        }else if(((string)"ResetLogCommand").compare(typeid(sentRequest).name()) == 0){
 
             boost::unique_lock< boost::shared_mutex > lock(_access);
             ResetLogCommand * resetRequest = (ResetLogCommand *)(sentRequest);
             messages << "{\"reset_log\":\"failed\",\"reason\":\"Corresponging (" << message->getNodeId()<<") shard timedout.\"}";
 
-        }else if(((string)"SerializableCommitCommandInput").compare(typeid(sentRequest).name()) == 0){
+        }else if(((string)"CommitCommand").compare(typeid(sentRequest).name()) == 0){
 
             boost::unique_lock< boost::shared_mutex > lock(_access);
             CommitCommand * resetRequest = (CommitCommand *)(sentRequest);
