@@ -9,6 +9,10 @@ namespace instantsearch {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////// merge when lists are sorted by ID Only top K////////////////////////////
 
+#ifdef ANDROID
+   double inline log2(double x) { return log(x) / log (2);  }
+#endif
+
 UnionLowestLevelSimpleScanOperator::UnionLowestLevelSimpleScanOperator() {
     queryEvaluator = NULL;
     parentIsCacheEnabled = false;
