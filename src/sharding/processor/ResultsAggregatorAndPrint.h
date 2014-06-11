@@ -38,12 +38,12 @@ public:
     /*
      * This function is always called by RoutingManager as the first call back function
      */
-    virtual void preProcessing(ResponseAggregatorMetadata metadata){};
+    virtual void preProcess(ResponseAggregatorMetadata metadata){};
     /*
      * This function is called by RoutingManager if a timeout happens, The call to
      * this function must be between preProcessing(...) and callBack()
      */
-    virtual void timeoutProcessing(PendingMessage<Request, Response> * message,ResponseAggregatorMetadata metadata){};
+    virtual void processTimeout(PendingMessage<Request, Response> * message,ResponseAggregatorMetadata metadata){};
 
     /*
      * The callBack function used by routing manager

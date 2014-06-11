@@ -38,7 +38,7 @@ struct timespec & SearchResultsAggregator::getStartTimer(){
  * This function is called by RoutingManager if a timeout happens, The call to
  * this function must be between preProcessing(...) and callBack()
  */
-void SearchResultsAggregator::timeoutProcessing(PendingMessage<SearchCommand,
+void SearchResultsAggregator::processTimeout(PendingMessage<SearchCommand,
         SearchCommandResults> * message,
         ResponseAggregatorMetadata metadata){
 

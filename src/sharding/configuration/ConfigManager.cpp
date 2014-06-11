@@ -2990,16 +2990,6 @@ void CoreInfo_t::setDataFilePath(const string& path) {
 bool ShardId::isPrimaryShard() {
 	return (replicaId == 0); // replica #0 is always the primary shard
 }
-bool ShardId::isInCurrentNode(ConfigManager& configurationManager){
-	// get destination node ID from config manager
-	unsigned nodeId =
-			configurationManager.getCluster()->shardMap[*this].getNodeId();
-
-	return (nodeId == configurationManager.getCurrentNodeId());
-}
-unsigned ShardId::getNodeId(ConfigManager& configurationManager){
-	return configurationManager.getCluster()->shardMap[*this].getNodeId();
-}
 std::string ShardId::toString() {
 	// A primary shard starts with a "P" followed by an integer id.
 	// E.g., a cluster with 4 shards of core 8 will have shards named "C8_P0", "C8_R0_1", "C8_R0_2", "C8_P3".

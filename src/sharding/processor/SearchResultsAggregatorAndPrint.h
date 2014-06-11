@@ -68,12 +68,12 @@ public:
     /*
      * This function is always called by RoutingManager as the first call back function
      */
-    void preProcessing(ResponseAggregatorMetadata metadata){};
+    void preProcess(ResponseAggregatorMetadata metadata){};
     /*
      * This function is called by RoutingManager if a timeout happens, The call to
      * this function must be between preProcessing(...) and callBack()
      */
-    void timeoutProcessing(PendingMessage<SearchCommand,
+    void processTimeout(PendingMessage<SearchCommand,
             SearchCommandResults> * message,
             ResponseAggregatorMetadata metadata);
 

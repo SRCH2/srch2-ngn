@@ -65,8 +65,6 @@ public:
 	unsigned replicaId;
 
 	bool isPrimaryShard() ;
-	bool isInCurrentNode(ConfigManager& configurationManager);
-	unsigned getNodeId(ConfigManager& configurationManager);
 	std::string toString() ;
 
 	ShardId() ;
@@ -515,6 +513,18 @@ public:
 	typedef std::map<const string, CoreInfo_t *> CoreInfoMap_t;
 	Cluster* getCluster(){  // not safe
 		return &(this->cluster);
+	}
+
+	bool isInCurrentNode(ShardId & shardId){
+		// get destination node ID from config manager
+		unsigned nodeId =
+				this->getCluster()->shardMap[shardId].getNodeId();
+
+		return (nodeId == this->getCurrentNodeId());
+	}
+
+	unsigned getNodeId(ShardId & shardId){
+		return this->getCluster()->shardMap[shardId].getNodeId();
 	}
 
 	void removeNodeFromCluster(unsigned nodeId) {

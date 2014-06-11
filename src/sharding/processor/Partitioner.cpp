@@ -35,7 +35,7 @@ bool Partitioner::getShardIDForRecord(Record * record, string coreName, ShardId 
 
     ShardId resultShardId = convertUnsignedToCoreShardInfo(hash(valueToHash , totalNumberOfShards), indexDataContainerConf);
     // find out whether shard is still within reach
-    unsigned nodeId = resultShardId.getNodeId(*configurationManager);
+    unsigned nodeId = configurationManager->getNodeId(resultShardId);
     if (!configurationManager->isValidNode(nodeId)){
         return false;
     }
@@ -54,7 +54,7 @@ bool Partitioner::getShardIDForRecord(string primaryKeyStringValue, string coreN
 
     ShardId resultShardId = convertUnsignedToCoreShardInfo(hash(valueToHash , totalNumberOfShards), indexDataContainerConf);
     // find out whether shard is still within reach
-    unsigned nodeId = resultShardId.getNodeId(*configurationManager);
+    unsigned nodeId = configurationManager->getNodeId(resultShardId);
     if (!configurationManager->isValidNode(nodeId)){
         return false;
     }
@@ -69,7 +69,7 @@ void Partitioner::getShardIDsForBroadcast(string coreName, vector<ShardId> & bro
 	const CoreInfo_t *indexDataContainerConf = configurationManager->getCoreInfo(coreName);
 	vector<ShardId> allShardIds = indexDataContainerConf->getShardsVector();
 	for(vector<ShardId>::iterator shardIdItr = allShardIds.begin(); shardIdItr != allShardIds.end(); ++shardIdItr){
-        unsigned nodeId = shardIdItr->getNodeId(*configurationManager);
+        unsigned nodeId = configurationManager->getNodeId(*shardIdItr);
         if (!configurationManager->isValidNode(nodeId)){
             continue;
         }

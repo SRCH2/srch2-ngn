@@ -23,14 +23,14 @@ GetInfoResponseAggregator::GetInfoResponseAggregator(ConfigManager * configurati
 /*
  * This function is always called by RoutingManager as the first call back function
  */
-void GetInfoResponseAggregator::preProcessing(ResponseAggregatorMetadata metadata){
+void GetInfoResponseAggregator::preProcess(ResponseAggregatorMetadata metadata){
 
 }
 /*
  * This function is called by RoutingManager if a timeout happens, The call to
  * this function must be between preProcessing(...) and callBack()
  */
-void GetInfoResponseAggregator::timeoutProcessing(PendingMessage<GetInfoCommand,
+void GetInfoResponseAggregator::processTimeout(PendingMessage<GetInfoCommand,
         GetInfoCommandResults> * message,
         ResponseAggregatorMetadata metadata){
     if(message == NULL){

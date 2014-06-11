@@ -46,7 +46,7 @@ public:
     /*
      * This function is always called by RoutingManager as the first call back function
      */
-    void preProcessing(ResponseAggregatorMetadata metadata){
+    void preProcess(ResponseAggregatorMetadata metadata){
         if(multiRouteMode > 0){
             // we need to make sure preProcess is only called once
             boost::unique_lock< boost::shared_mutex > lock(_access);
@@ -68,7 +68,7 @@ public:
      * This function is called by RoutingManager if a timeout happens, The call to
      * this function must be between preProcessing(...) and callBack()
      */
-    void timeoutProcessing(PendingMessage<RequestWithStatusResponse, CommandStatus> * message,
+    void processTimeout(PendingMessage<RequestWithStatusResponse, CommandStatus> * message,
             ResponseAggregatorMetadata metadata){
 
         if(message == NULL){
