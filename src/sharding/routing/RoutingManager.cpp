@@ -74,11 +74,20 @@ TransportManager& RoutingManager::getTransportManager(){
     return transportManager;
 }
 
+Srch2Server * RoutingManager::getShardIndex(ShardId shardId){
+    // should we get Serch2Server based one core ID?
+    map<unsigned, Srch2Server *>::iterator shardServer = shardServers.find(shardId.coreId);
+    if(shardServer == shardServers.end()){
+        return NULL;
+    }
+    return shardServer->second;
+}
+
 MessageAllocator * RoutingManager::getMessageAllocator() {
     return transportManager.getMessageAllocator();
 }
 
-void * routeInternalMessage(void * arg) {
+void * RoutingManager::routeInternalMessage(void * arg) {
     std::pair<RoutingManager * , std::pair<Message *, NodeId> >  * rmAndMsgPointers =
             (std::pair<RoutingManager * , std::pair<Message * , NodeId> >  *)arg;
 
