@@ -4,6 +4,8 @@
  *  Created on: Sep 3, 2013
  *      Author: sbisht
  */
+
+#ifndef ANDROID
 #include "MongodbAdapter.h"
 #include <cstdlib>
 #include <iostream>
@@ -371,4 +373,4 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
 
 }
 }
-
+#endif
