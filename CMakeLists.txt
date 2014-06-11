@@ -241,6 +241,7 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 
     IF (BUILD_SERVER)
         ADD_SUBDIRECTORY(src/wrapper)
+        ADD_SUBDIRECTORY(src/adapter)
         ADD_SUBDIRECTORY(src/server)
         ADD_SUBDIRECTORY(src/sharding)
     	IF (BUILD_TEST)

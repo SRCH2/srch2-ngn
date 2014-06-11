@@ -45,6 +45,8 @@
 #include "analyzer/AnalyzerContainers.cpp"
 #include "MongodbAdapter.h"
 #include "WrapperConstants.h"
+#include "DataConnector.h"
+
 namespace po = boost::program_options;
 namespace srch2is = srch2::instantsearch;
 namespace srch2http = srch2::httpwrapper;
@@ -609,8 +611,19 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
             if (coreInfo->getDataSourceType() == srch2::httpwrapper::DATA_SOURCE_MONGO_DB) {
                 // set current time as cut off time for further updates
                 // this is a temporary solution. TODO
-                srch2http::MongoDataSource::bulkLoadEndTime = time(NULL);
-                srch2http::MongoDataSource::spawnUpdateListener(iterator->second);
+//                srch2http::MongoDataSource::bulkLoadEndTime = time(NULL);
+//                srch2http::MongoDataSource::spawnUpdateListener(iterator->second);
+
+//                //Adapter Solution
+				DataConnector *dc = DataConnectorFactory::getDataConnector("mongodb");
+				if(!dc){
+					std::cerr<<"Fail to open DataConnector"<<endl;
+					return 255;
+				}
+				dc->spawnUpdateListener();
+
+				delete dc;
+
             }
 
             // bind once each port defined for use by this core
