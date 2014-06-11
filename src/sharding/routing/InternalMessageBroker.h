@@ -20,12 +20,8 @@ public:
 
     InternalMessageBroker(RoutingManager& rm, DPInternalRequestHandler& internalDP) : internalDP(internalDP), routingManager(rm) {};
 
-    /*
-     * Gets the internal message and routes it to one of the DPInternal functions
-     */
-    std::pair<Message*,void*> notifyWithReply(Message*);
 
-    void notifyNoReply(Message * msg);
+    void resolveMessage(Message * msg, NodeId node);
 
     void deleteResponseObjectBasedOnType(Message * reply, void * responseObject);
 
@@ -39,14 +35,17 @@ private:
 
     DPInternalRequestHandler& internalDP;
     RoutingManager&  routingManager;
+
     template<typename RequestType, typename ResponseType>
     std::pair<Message*,ResponseType*> processRequestMessage(Message*, Srch2Server*,
             ResponseType * (DPInternalRequestHandler::*fn) (Srch2Server*, RequestType*));
+
     std::pair<Message*,CommandStatus*> processRequestInsertUpdateMessage(Message *msg, Srch2Server* server, const Schema * schema);
 
-    template<typename RequestType>
-    void processRequestMessageNoReply(Message *msg);
-
+    /*
+     * Gets the internal message and routes it to one of the DPInternal functions
+     */
+    std::pair<Message*,void*> notifyReturnResponse(Message*);
 };
 
 }

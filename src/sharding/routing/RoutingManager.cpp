@@ -96,33 +96,7 @@ void * RoutingManager::routeInternalMessage(void * arg) {
     NodeId nodeId = rmAndMsgPointers->second.second;
 
     ASSERT(msg->isInternal());
-    if(msg->isNoReply()){
-        // this msg comes from a local broadcast or route with no call back
-        // so there is no reply for this msg.
-        // notifyNoReply should deallocate the obj in msg
-        // because msg just keeps a pointer to that object
-        // and that object itself needs to be deleted.
-        rm->getInternalMessageBroker()->notifyNoReply(msg);
-        rm->getTransportManager().getMessageAllocator()->deallocateByMessagePointer(msg);
-
-    }
-    std::pair<Message*,void*> resultOfDPInternal = rm->getInternalMessageBroker()->notifyWithReply(msg);
-    Message* reply = resultOfDPInternal.first;
-    // and pass the response object to pending request
-    ASSERT(reply != NULL);
-    if(reply != NULL) {
-        reply->setRequestMessageId(msg->getMessageId());
-        reply->setReply()->setInternal();
-        if ( ! rm->getPendingRequestsHandler()->resolveResponseMessage(reply, nodeId, resultOfDPInternal.second)){
-            // reply could not be resolved. This means the request of this response is already timedout and gone.
-            // reply and response object must be deallocated here.
-            rm->getTransportManager().getMessageAllocator()->deallocateByMessagePointer(reply);
-            rm->getInternalMessageBroker()->deleteResponseObjectBasedOnType(reply, resultOfDPInternal.second);
-        }
-    }
-    if(reply == NULL){
-        Logger::console("Reply is null");
-    }
+    rm->getInternalMessageBroker()->resolveMessage(msg, nodeId);
     // what if resolve returns NULL for something?
     delete rmAndMsgPointers;
     return NULL;

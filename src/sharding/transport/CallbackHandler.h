@@ -15,8 +15,7 @@ namespace httpwrapper {
  */
 class CallBackHandler {
 public:
-	virtual std::pair<Message*,void*> notifyWithReply(Message *msg) = 0;
-	virtual void notifyNoReply(Message * msg) = 0;
+	virtual void resolveMessage(Message * msg, NodeId node) = 0 ;
 	virtual ~CallBackHandler() {}
 };
 

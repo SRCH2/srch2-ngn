@@ -179,7 +179,7 @@ private:
     	unsigned nodeId = configurationManager.getNodeId(shardId);
 
     	// only messages which expect reply will go to pending messages
-    	if(pendingRequest != NULL && ! msg->isNoReply()){
+    	if(pendingRequest != NULL){
     		// register a pending message in this pending request
     		PendingMessage<RequestType, ResponseType> * pendingMessage =
     				pendingRequest->registerPendingMessage(nodeId, timeoutValue, msg, requestObject);
@@ -218,7 +218,7 @@ private:
         unsigned nodeId = configurationManager.getNodeId(shardId);
 
         // only messages which expect reply will go to pending messages
-        if(pendingRequest != NULL && ! msg->isNoReply()){
+        if(pendingRequest != NULL){
             // register a pending message in this pending request
             PendingMessage<RequestType, ResponseType> * pendingMessage =
                     pendingRequest->registerPendingMessage(nodeId, timeoutValue, msg, requestObject);
@@ -228,12 +228,6 @@ private:
         }
         // pass the ready message to TM to be sent to nodeId
         transportManager.sendMessage(nodeId, msg, timeoutValue);
-
-        if(msg->isNoReply()){
-            // deallocate the message here because there is no reply and no pending request
-            transportManager.getMessageAllocator()->deallocateByMessagePointer(msg);
-        }
-
     }
 
     ConfigManager& configurationManager;

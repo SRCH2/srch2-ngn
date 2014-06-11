@@ -18,8 +18,79 @@
 namespace srch2is = srch2::instantsearch;
 using namespace std;
 
-using namespace srch2::httpwrapper;
+namespace srch2 {
+namespace httpwrapper {
 
+void InternalMessageBroker::resolveMessage(Message * msg, NodeId node){
+	std::pair<Message * , void *> resultOfDPInternal = notifyReturnResponse(msg);
+
+	Message* replyMessage = resultOfDPInternal.first;
+
+	if(replyMessage == NULL){
+		Logger::console("Reply is null");
+		return;
+	}
+
+	if(msg->isLocal()){ // local message, resolve in pending messages
+        replyMessage->setRequestMessageId(msg->getMessageId());
+        replyMessage->setReply()->setInternal();
+        if ( ! routingManager.getPendingRequestsHandler()->resolveResponseMessage(replyMessage, node, resultOfDPInternal.second)){
+            // reply could not be resolved. This means the request of this response is already timedout and gone.
+            // reply and response object must be deallocated here.
+            routingManager.getTransportManager().getMessageAllocator()->deallocateByMessagePointer(replyMessage);
+            this->deleteResponseObjectBasedOnType(replyMessage, resultOfDPInternal.second);
+        }
+	}else{ // request message is coming from another shard, send the response back
+		ASSERT(resultOfDPInternal.second == NULL);
+		replyMessage->setRequestMessageId(msg->getMessageId());
+		replyMessage->setReply()->setInternal();
+		routingManager.getTransportManager().sendMessage(node, replyMessage, 0);
+		getMessageAllocator()->deallocateByMessagePointer(replyMessage);
+	}
+}
+
+
+void InternalMessageBroker::deleteResponseObjectBasedOnType(Message * replyMsg, void * responseObject){
+    switch (replyMsg->getType()) {
+    case SearchCommandMessageType: // -> for LogicalPlan object
+        delete (SearchCommandResults*)responseObject;
+        return;
+    case InsertUpdateCommandMessageType: // -> for Record object (used for insert and update)
+        delete (CommandStatus*)responseObject;
+        return;
+    case DeleteCommandMessageType: // -> for DeleteCommandInput object (used for delete)
+        delete (CommandStatus*)responseObject;
+        return;
+    case SerializeCommandMessageType: // -> for SerializeCommandInput object
+        delete (CommandStatus*)responseObject;
+        return;
+    case GetInfoCommandMessageType: // -> for GetInfoCommandInput object (used for getInfo)
+        delete (GetInfoCommandResults*)responseObject;
+        return;
+    case CommitCommandMessageType: // -> for CommitCommandInput object
+        delete (CommandStatus*)responseObject;
+        return;
+    case ResetLogCommandMessageType: // -> for ResetLogCommandInput (used for resetting log)
+        delete (CommandStatus*)responseObject;
+        return;
+    case SearchResultsMessageType: // -> for SerializedQueryResults object
+    case GetInfoResultsMessageType: // -> for GetInfoResults object
+    case StatusMessageType: // -> for CommandStatus object (object returned from insert, delete, update)
+    default:
+        ASSERT(false);
+        return;
+    }
+}
+
+
+Srch2Server * InternalMessageBroker::getShardIndex(ShardId & shardId){
+    return routingManager.getShardIndex(shardId);
+}
+
+MessageAllocator * InternalMessageBroker::getMessageAllocator() {
+    // return routingManager.transportManager.getMessageAllocator();
+    return routingManager.getMessageAllocator();
+}
 
 template<typename RequestType, typename ResponseType>
 std::pair<Message*,ResponseType*> InternalMessageBroker::processRequestMessage(Message *requestMessage, Srch2Server* server,
@@ -93,7 +164,7 @@ std::pair<Message*,CommandStatus*> InternalMessageBroker::processRequestInsertUp
     }
 }
 
-std::pair<Message*,void*> InternalMessageBroker::notifyWithReply(Message * requestMessage){
+std::pair<Message*,void*> InternalMessageBroker::notifyReturnResponse(Message * requestMessage){
     if(requestMessage == NULL){
         return std::make_pair<Message*,void*>(NULL,NULL);
     }
@@ -163,103 +234,6 @@ std::pair<Message*,void*> InternalMessageBroker::notifyWithReply(Message * reque
     }
 }
 
-
-template<typename RequestType> inline
-void InternalMessageBroker::processRequestMessageNoReply(Message *requestMsgNoReply){
-    RequestType *inputSerializedObject = NULL;
-    if(requestMsgNoReply->isLocal()){ // message comes from current node
-        // ASSERT(currentNodeId = msg->shardId->nodeId);
-        inputSerializedObject = decodeInternalMessage<RequestType>(requestMsgNoReply);
-        //
-        // CODE HELPER:  do something with the message
-        //
-        // this msg contains a pointer to an object which must be deleted here
-        delete inputSerializedObject;
-    }else{
-        // CODE HELPER:  do something with the message
-    }
+}
 }
 
-void InternalMessageBroker::notifyNoReply(Message * requestMsgWithReply){
-    // CODE HELPER : use DP internal or some other module to process this message without reply
-    switch (requestMsgWithReply->getType()) {
-    case SearchCommandMessageType: // -> for LogicalPlan object
-        processRequestMessageNoReply<SearchCommand>(requestMsgWithReply);
-        return;
-
-    case InsertUpdateCommandMessageType: // -> for Record object (used for insert and update)
-        processRequestMessageNoReply<InsertUpdateCommand>(requestMsgWithReply);
-        return;
-
-    case DeleteCommandMessageType: // -> for DeleteCommandInput object (used for delete)
-        processRequestMessageNoReply<DeleteCommand>(requestMsgWithReply);
-        return;
-
-    case SerializeCommandMessageType: // -> for SerializeCommandInput object
-        // (used for serializing index and records)
-        processRequestMessageNoReply<SerializeCommand>(requestMsgWithReply);
-        return;
-
-    case GetInfoCommandMessageType: // -> for GetInfoCommandInput object (used for getInfo)
-        processRequestMessageNoReply<GetInfoCommand>(requestMsgWithReply);
-        return;
-
-    case CommitCommandMessageType: // -> for CommitCommandInput object
-        processRequestMessageNoReply<CommitCommand>(requestMsgWithReply);
-        return;
-
-    case ResetLogCommandMessageType: // -> for ResetLogCommandInput (used for resetting log)
-        processRequestMessageNoReply<ResetLogCommand>(requestMsgWithReply);
-        return;
-
-    case SearchResultsMessageType: // -> for SerializedQueryResults object
-    case GetInfoResultsMessageType: // -> for GetInfoResults object
-    case StatusMessageType: // -> for CommandStatus object (object returned from insert, delete, update)
-    default:
-        // These message types are only used for reponses to other requests and code should
-        // never reach to this point
-        return ;
-    }
-    return ;
-}
-
-void InternalMessageBroker::deleteResponseObjectBasedOnType(Message * replyMsg, void * responseObject){
-    switch (replyMsg->getType()) {
-    case SearchCommandMessageType: // -> for LogicalPlan object
-        delete (SearchCommandResults*)responseObject;
-        return;
-    case InsertUpdateCommandMessageType: // -> for Record object (used for insert and update)
-        delete (CommandStatus*)responseObject;
-        return;
-    case DeleteCommandMessageType: // -> for DeleteCommandInput object (used for delete)
-        delete (CommandStatus*)responseObject;
-        return;
-    case SerializeCommandMessageType: // -> for SerializeCommandInput object
-        delete (CommandStatus*)responseObject;
-        return;
-    case GetInfoCommandMessageType: // -> for GetInfoCommandInput object (used for getInfo)
-        delete (GetInfoCommandResults*)responseObject;
-        return;
-    case CommitCommandMessageType: // -> for CommitCommandInput object
-        delete (CommandStatus*)responseObject;
-        return;
-    case ResetLogCommandMessageType: // -> for ResetLogCommandInput (used for resetting log)
-        delete (CommandStatus*)responseObject;
-        return;
-    case SearchResultsMessageType: // -> for SerializedQueryResults object
-    case GetInfoResultsMessageType: // -> for GetInfoResults object
-    case StatusMessageType: // -> for CommandStatus object (object returned from insert, delete, update)
-    default:
-        ASSERT(false);
-        return;
-    }
-}
-
-Srch2Server * InternalMessageBroker::getShardIndex(ShardId & shardId){
-    return routingManager.getShardIndex(shardId);
-}
-
-MessageAllocator * InternalMessageBroker::getMessageAllocator() {
-    // return routingManager.transportManager.getMessageAllocator();
-    return routingManager.getMessageAllocator();
-}

@@ -6,6 +6,7 @@ namespace httpwrapper {
 
 ///////////////////////////////////////// TEMPORARY ////////////////////////////////////////////
 typedef unsigned TimeoutValue;
+typedef unsigned NodeId;
 
 class SynchronizationManager{
 

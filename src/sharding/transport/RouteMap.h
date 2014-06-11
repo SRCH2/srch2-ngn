@@ -28,8 +28,6 @@ class MessageBuffer {
     MessageBuffer() : msg(NULL), lock(false), readCount(0) {}
 };
 
-typedef unsigned NodeId;
-
 class Connection {
 public:
   int fd;

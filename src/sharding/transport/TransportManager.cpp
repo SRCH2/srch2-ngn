@@ -65,45 +65,15 @@ void * TransportManager::notifyUpstreamHandlers(Message *msg, int fd, NodeId  no
 			getMessageAllocator()->deallocateByMessagePointer(msg);
 		}
 	} else if(msg->isInternal()) {
-
-		if(msg->isNoReply()){
-			Logger::debug("Request message with no reply is received from node %d", nodeId);
-			// This msg comes from another node and does not need a reply
-			// it comes from a broadcast or route with no callback
-			getRmHandler()->notifyNoReply(msg);
-			// and delete the msg
-			getMessageAllocator()->deallocateByMessagePointer(msg);
-		} else {
+		if(getRmHandler() != NULL){
 			Logger::debug("Request message is received with reply form node %d", nodeId);
-			std::pair<Message * , void *> resultOfDPInternal = getRmHandler()->notifyWithReply(msg);
-			/*
-			 *  Comment : TM should not handle the reply here. The RM should
-			 *  handle it in
-			 *  InternalMessageBroker::notifyWithReply(Message * message)
-			 *  and send reply to TM through route() function
-			 */
-			Message* replyMessage = resultOfDPInternal.first;
-			// responseObject must be deleted
-			ASSERT(resultOfDPInternal.second == NULL);
-			if(replyMessage != NULL) {
-				replyMessage->setRequestMessageId(msg->getMessageId());
-				replyMessage->setReply()->setInternal();
-				Connection& conn = getRouteMap()->getConnection(nodeId);
-				while(!__sync_bool_compare_and_swap(&conn.sendLock, false, true));
-				_sendMessage(fd, replyMessage);
-				conn.sendLock = false;
-				/*
-				 * Request and Reply messages must be deallocated at this time in this case because PendingMessage
-				 * structure which is responsible for this is in the source node of this request.
-				 */
-				getMessageAllocator()->deallocateByMessagePointer(msg);
-				getMessageAllocator()->deallocateByMessagePointer(replyMessage);
-			}
+			getRmHandler()->resolveMessage(msg, nodeId);
 		}
+		getMessageAllocator()->deallocateByMessagePointer(msg);
 	} else {
 		// Check whether this node has registered SMHandler into TM yet. If not skip the message.
 		if (getSmHandler() != NULL){
-			getSmHandler()->notifyNoReply(msg);
+			getSmHandler()->resolveMessage(msg, nodeId);
 		}
 		getMessageAllocator()->deallocateByMessagePointer(msg);
 	}

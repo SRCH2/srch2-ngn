@@ -115,15 +115,7 @@ public:
 	 *   2. Client message is stored in a per message queue array.
 	 *
 	 */
-	void notifyNoReply(Message * msg);
-
-	/*
-	 *   Virtual function is not implemented
-	 */
-	std::pair<Message*,void*> notifyWithReply(Message *msg) {
-		ASSERT(false);
-		return std::pair<Message*,void*>(NULL, NULL);
-	}
+	void resolveMessage(Message * msg, NodeId node);
 
 	/*
 	 *  Constructor

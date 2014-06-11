@@ -160,7 +160,7 @@ SMCallBackHandler::SMCallBackHandler(bool isMaster) {
  *   2. Client message is stored in a per message queue array.
  *
  */
-void SMCallBackHandler::notifyNoReply(Message *message){
+void SMCallBackHandler::resolveMessage(Message *message, NodeId node){
 	switch(message->getType()){
 	case HeartBeatMessageType:
 	{

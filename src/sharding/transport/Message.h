@@ -12,7 +12,6 @@ typedef unsigned MessageID_t;
 const char MSG_LOCAL_MASK = 0x2;
 const char MSG_REPLY_MASK = 0x1;
 const char MSG_INTERNAL_MASK = 0x4;
-const char MSG_NOREPLY_MASK = 0x8;
 
 class Message {
 
@@ -33,9 +32,6 @@ public:
    bool isInternal() {
      return mask & MSG_INTERNAL_MASK;
    }
-   bool isNoReply() {
-	   return mask & MSG_NOREPLY_MASK;
-   }
    Message * setLocal(){
 	   mask |= MSG_LOCAL_MASK;
 	   return this;
@@ -46,10 +42,6 @@ public:
    }
    Message * setInternal(){
 	   mask |= MSG_INTERNAL_MASK;
-	   return this;
-   }
-   Message * setNoReply() {
-	   mask |= MSG_NOREPLY_MASK;
 	   return this;
    }
    unsigned getBodySize(){
