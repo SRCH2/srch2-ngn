@@ -27,10 +27,65 @@ struct AttributeSnippet{
 	string FieldId;
 	// vector is for multiple snippets per field ..although we do not support it yet.
 	vector<string> snippet;
+
+	void * serializeForNetwork(void * buffer) {
+		buffer = srch2::util::serializeString(FieldId, buffer);
+		buffer = srch2::util::serializeVectorOfString(snippet, buffer);
+		return buffer;
+	}
+
+	unsigned getNumberOfBytesOfSnippets() {
+		unsigned numberOfBytes = 0;
+		numberOfBytes += sizeof(unsigned) +FieldId.size();
+		numberOfBytes += srch2::util::getNumberOfBytesVectorOfString(snippet);
+		return numberOfBytes;
+	}
+
+	static void * deserializeForNetwork(void * buffer, AttributeSnippet &attributeSnippet) {
+		buffer = srch2::util::deserializeString(buffer, attributeSnippet.FieldId);
+		buffer = srch2::util::deserializeVectorOfString(buffer, attributeSnippet.snippet);
+		return buffer;
+	}
 };
 struct RecordSnippet {
 	unsigned recordId;
 	vector<AttributeSnippet> fieldSnippets;
+	/*
+	 * Serializes RecordSnippet object into byte array
+	 */
+	void * serializeForNetwork(void * buffer) {
+		buffer = srch2::util::serializeFixedTypes(recordId, buffer);
+		buffer = srch2::util::serializeFixedTypes((unsigned)fieldSnippets.size(), buffer);
+		for (unsigned i = 0; i < fieldSnippets.size(); ++i) {
+			buffer = fieldSnippets[i].serializeForNetwork(buffer);
+		}
+		return buffer;
+	}
+
+	unsigned getNumberOfBytesOfSnippets() {
+		unsigned numberOfBytes = 0;
+		numberOfBytes += sizeof(unsigned);
+		numberOfBytes += sizeof(unsigned);
+		for (unsigned i = 0; i < fieldSnippets.size(); ++i) {
+			numberOfBytes += fieldSnippets[i].getNumberOfBytesOfSnippets();
+		}
+		return numberOfBytes;
+	}
+	/*
+	 * Deserializes byte array into RecordSnippet object
+	 */
+	static void * deserializeForNetwork(void * buffer, RecordSnippet &recordsnippet) {
+		buffer = srch2::util::deserializeFixedTypes(buffer, recordsnippet.recordId);
+		unsigned fieldSnippetsSize;
+		buffer =  srch2::util::deserializeFixedTypes(buffer, fieldSnippetsSize);
+		for (unsigned i = 0; i < fieldSnippetsSize; ++i) {
+			AttributeSnippet attrSnippet;
+			buffer = AttributeSnippet::deserializeForNetwork(buffer, attrSnippet);
+			recordsnippet.fieldSnippets.push_back(attrSnippet);
+		}
+		return buffer;
+	}
+
 };
 struct AttributeHighlights {
 	vector<char *> snippets;

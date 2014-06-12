@@ -64,7 +64,7 @@ void SearchResultsAggregator::callBack(vector<PendingMessage<SearchCommand,
             continue;
         }
         QueryResults * resultsOfThisShard = messages.at(responseIndex)->getResponseObject()->getQueryResults();
-        const map<string, string> & queryResultInMemoryRecordString =
+        const map<string, std::pair<string, RecordSnippet> > & queryResultInMemoryRecordString =
                 messages.at(responseIndex)->getResponseObject()->getInMemoryRecordStrings();
         resultsOfAllShards.push_back(
                 make_pair(resultsOfThisShard,  &queryResultInMemoryRecordString ));
@@ -320,10 +320,10 @@ void SearchResultsAggregator::printResults(evhttp_request *req,
                     root["results"][counter][internalRecordTags.first] = sbuffer;
                 }
 
-                //                string sbuffer = string();
-                //                sbuffer.reserve(1024);  //<< TODO: set this to max allowed snippet len
-                //                //TODO genSnippetJSONString(i, start, recordSnippets, sbuffer, queryResults);
-                //                root["results"][counter][internalSnippetTags.first] = sbuffer;
+                string sbuffer = string();
+                sbuffer.reserve(1024);
+                genSnippetJSONString(allResults.at(i).second.getRecordSnippet(), sbuffer);
+                root["results"][counter][internalSnippetTags.first] = sbuffer;
                 ++counter;
             }
 
@@ -552,6 +552,58 @@ void SearchResultsAggregator::genRecordJsonString(const srch2::instantsearch::Sc
     delete storedSchema;
 }
 
+void SearchResultsAggregator::cleanAndAppendToBuffer(const string& in, string& out) {
+	unsigned inLen = in.length();
+	unsigned inIdx = 0;
+	while (inIdx < inLen) {
+		// remove non printable characters
+		if (in[inIdx] < 32) {
+			++inIdx; continue;
+		}
+		switch(in[inIdx]) {
+		case '"':
+		{
+			// because we have reached here, there was no '\' before this '"'
+			out +='\\'; out +='"';
+			break;
+		}
+		case '\\':
+		{
+			if (inIdx != inLen - 1 and in[inIdx + 1] == '"') {  // looking for '\"'
+				out += in[inIdx++];      // push them in one go...
+				out += in[inIdx];
+			} else {
+				out +='\\'; out +='\\';  // escape the lonesome '\'
+			}
+			break;
+		}
+		default:
+			out += in[inIdx];
+		}
+		++inIdx;
+	}
+}
+
+void SearchResultsAggregator::genSnippetJSONString(const RecordSnippet& recordSnippet, string sbuffer) {
+	sbuffer.append("{");
+	for (unsigned j = 0 ; j <  recordSnippet.fieldSnippets.size(); ++j) {
+		sbuffer+='"'; sbuffer+=recordSnippet.fieldSnippets[j].FieldId; sbuffer+='"';
+		sbuffer+=":[";
+		for (unsigned k = 0 ; k <  recordSnippet.fieldSnippets[j].snippet.size(); ++k) {
+			sbuffer+='"';
+			cleanAndAppendToBuffer(recordSnippet.fieldSnippets[j].snippet[k], sbuffer);
+			sbuffer+='"';
+			sbuffer+=',';
+		}
+		if (recordSnippet.fieldSnippets[j].snippet.size())
+			sbuffer.erase(sbuffer.length()-1);
+		sbuffer+="],";
+	}
+	if (recordSnippet.fieldSnippets.size())
+		sbuffer.erase(sbuffer.length()-1);
+	sbuffer.append("}");
+}
+
 /*
  * Combines the results coming from all shards and
  * resorts them based on their scores
@@ -560,7 +612,8 @@ void SearchResultsAggregator::aggregateRecords(){
     // aggregate results
     for(unsigned resultSetIndex = 0 ; resultSetIndex < resultsOfAllShards.size() ; ++resultSetIndex){
         QueryResults * queryResultsItr = resultsOfAllShards.at(resultSetIndex).first;
-        const map<string, string> * queryResultsRecordData = resultsOfAllShards.at(resultSetIndex).second;
+        const map<string, std::pair<string, RecordSnippet> > * queryResultsRecordData =
+        		resultsOfAllShards.at(resultSetIndex).second;
         for(unsigned queryResultIndex = 0; queryResultIndex < queryResultsItr->impl->sortedFinalResults.size();
                 queryResultIndex ++){
             string resultKey = queryResultsItr->getRecordId(queryResultIndex);
@@ -585,7 +638,7 @@ void SearchResultsAggregator::aggregateRecords(){
  */
 void SearchResultsAggregator::aggregateFacets(){
 
-    for(vector<pair< QueryResults *, const map<string, string> * > >::iterator resultsItr = resultsOfAllShards.begin() ;
+    for(vector<pair< QueryResults *, const map<string, std::pair<string, RecordSnippet> > * > >::iterator resultsItr = resultsOfAllShards.begin() ;
             resultsItr != resultsOfAllShards.end() ; ++resultsItr){
         QueryResults * queryResultsItr = resultsItr->first;
         const std::map<std::string, std::pair< FacetType , std::vector<std::pair<std::string, float> > > > *
@@ -635,7 +688,7 @@ void SearchResultsAggregator::mergeFacetVectors(std::vector<std::pair<std::strin
 
 void SearchResultsAggregator::aggregateEstimations(){
     results.isResultsApproximated = false;
-    for(vector<pair< QueryResults *, const map<string, string> * > >::iterator resultsItr = resultsOfAllShards.begin() ;
+    for(vector<pair< QueryResults *, const map<string, std::pair<string, RecordSnippet> > * > >::iterator resultsItr = resultsOfAllShards.begin() ;
             resultsItr != resultsOfAllShards.end() ; ++resultsItr){
         QueryResults * queryResultsItr = resultsItr->first;
         results.isResultsApproximated  = results.isResultsApproximated || queryResultsItr->impl->resultsApproximated;
