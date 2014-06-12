@@ -125,18 +125,26 @@ void SearchResultsAggregator::printResults(){
     //5. call the print function to print out the results
     switch (logicalPlan.getQueryType()) {
     case srch2is::SearchTypeTopKQuery:
+    {
         //            finalResults->printStats();
+    	unsigned start = logicalPlan.getOffset();
+    	unsigned end ;
+    	if(results.allResults.size() < logicalPlan.getOffset() + logicalPlan.getNumberOfResultsToRetrieve()){
+    		end = results.allResults.size();
+    	}else{
+    		end = logicalPlan.getOffset() + logicalPlan.getNumberOfResultsToRetrieve();
+    	}
         printResults(req, headers, logicalPlan,
                 indexDataContainerConf, results.allResults,
                 logicalPlan.getExactQuery(),
-                logicalPlan.getOffset(),
-                results.allResults.size(),
+                start,
+                end,
                 results.allResults.size(),
                 paramContainer.getMessageString() + messages.str(), parseAndSearchTime , highlightInfo, hlTime,
                 paramContainer.onlyFacets);
 
         break;
-
+    }
     case srch2is::SearchTypeGetAllResultsQuery:
     case srch2is::SearchTypeMapQuery:
         //        finalResults->printStats();
@@ -222,7 +230,7 @@ void SearchResultsAggregator::printResults(evhttp_request *req,
 
     // For logging
     string logQueries;
-    unsigned resultFound = retrievedResults;
+    unsigned resultFound = end - start;
     root["searcher_time"] = ts1;
     clock_gettime(CLOCK_REALTIME, &tstart);
 
