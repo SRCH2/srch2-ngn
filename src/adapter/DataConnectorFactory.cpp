@@ -13,7 +13,6 @@
 
 void * spawnConnector(void *arg) {
       ThreadArguments * targ = (ThreadArguments*) arg;
-      std::cout<< "Test:: dbType " <<targ->dbType <<" server: "<<std::endl;;
       DataConnectorFactory::bootStrapConnector(targ->dbType, targ->server);
 }
 
@@ -31,19 +30,22 @@ DataConnector* DataConnectorFactory::getDataConnector(
 		std::string dbType) {
 	std::string libName = DB_CONNECTORS_PATH + DYNAMIC_LIBRARY_PREFIX + dbType
 			+ DYNAMIC_LIBRARY_SUFFIX;
-	void *pdlHandle = dlopen(libName.c_str(), RTLD_NOW);
+	void *pdlHandle = dlopen(libName.c_str(), RTLD_LAZY);
 	if (!pdlHandle) {
 		std::cout << "Fail to load " << libName << " due to " << dlerror()
 				<< std::endl;
 		return 0;
 	}
-	DataConnector* getNewInstance = (DataConnector*) dlsym(pdlHandle,
-			"getNewInstance");
-	if (!getNewInstance) {
-		std::cout << "There is no \"getNewInstance\" function in " << libName
-				<< std::endl;
+
+	create_t* create_dataConnector = (create_t*)dlsym(pdlHandle,"create");
+	const char* dlsym_error = dlerror();
+	if (dlsym_error) {
+		std::cout << "Cannot load symbol create: " << dlsym_error << '\n';
 		return 0;
 	}
-	return getNewInstance;
+	DataConnector *dc=create_dataConnector();
+
+
+	return dc;
 }
 

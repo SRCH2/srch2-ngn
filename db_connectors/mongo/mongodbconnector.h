@@ -3,14 +3,19 @@
 
 #include "DataConnector.h"
 
+
+
 class MongoDBConnector : public DataConnector {
 public:
-        virtual ~MongoDBConnector(); 
+		MongoDBConnector();
+        virtual ~MongoDBConnector();
         virtual void init(ServerInterface *serverHandle);
         virtual void* runListener();
 private:
 	ServerInterface *serverHandle;
 
 };
+
+
 
 #endif //__MONGODBCONNECTOR_H__

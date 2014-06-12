@@ -30,4 +30,8 @@ public:
 
 };
 
+// the types of the class factories
+typedef DataConnector* create_t();
+typedef void destroy_t(DataConnector*);
+
 #endif /* __DATACONNECTOR_H__ */
