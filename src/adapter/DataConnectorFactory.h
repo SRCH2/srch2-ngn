@@ -11,7 +11,7 @@
 #include <string>
 #include "DataConnector.h"
 struct ThreadArguments {
-        string dbType;
+	std::string dbType;
 	ServerInterface *server;
 };
 
@@ -19,7 +19,7 @@ void * spawnConnector(void *arg);
 
 class DataConnectorFactory{
 public:
-	static void bootStrapConnector(string dbType, ServerInterface *server);
+	static void bootStrapConnector(std::string dbType, ServerInterface *server);
 private:
 	static DataConnector* getDataConnector(std::string dbType);
 	static const  std::string DB_CONNECTORS_PATH;

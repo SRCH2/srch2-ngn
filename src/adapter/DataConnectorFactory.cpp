@@ -13,14 +13,15 @@
 
 void * spawnConnector(void *arg) {
       ThreadArguments * targ = (ThreadArguments*) arg;
+      std::cout<< "Test:: dbType " <<targ->dbType <<" server: "<<std::endl;;
       DataConnectorFactory::bootStrapConnector(targ->dbType, targ->server);
 }
 
-const  std::string DataConnectorFactory::DB_CONNECTORS_PATH="db_connectors/";
+const  std::string DataConnectorFactory::DB_CONNECTORS_PATH="/home/liusrch2/srch2-ngn/db_connectors/Build/";
 const  std::string DataConnectorFactory::DYNAMIC_LIBRARY_SUFFIX="Connector.so";
 const  std::string DataConnectorFactory::DYNAMIC_LIBRARY_PREFIX="lib";
 
-void DataConnectorFactory::bootStrapConnector(string dbType, ServerInterface *server) {
+void DataConnectorFactory::bootStrapConnector(std::string dbType, ServerInterface *server) {
 	DataConnector *connector = getDataConnector(dbType);
 	connector->init(server);
 	connector->runListener();
@@ -32,12 +33,7 @@ DataConnector* DataConnectorFactory::getDataConnector(
 			+ DYNAMIC_LIBRARY_SUFFIX;
 	void *pdlHandle = dlopen(libName.c_str(), RTLD_NOW);
 	if (!pdlHandle) {
-		std::cout << "Fail to load " << libName << std::endl;
-		return 0;
-	}
-	char *err = dlerror();
-	if (err) {
-		std::cout << "Fail to load " << libName << " due to " << err
+		std::cout << "Fail to load " << libName << " due to " << dlerror()
 				<< std::endl;
 		return 0;
 	}

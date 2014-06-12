@@ -9,17 +9,16 @@
 #define __DATACONNECTOR_H__
 
 #include <string>
-using namespace std;
 class ServerInterface {
 public:
-	int insertRecord(string jsonString);
-	int deleteRecord(string primaryKey);
-	int updateRecord(string jsonSrting);
+	int insertRecord(std::string jsonString);
+	int deleteRecord(std::string primaryKey);
+	int updateRecord(std::string jsonSrting);
         // this API will provide key based lookup
         // from engine's connector specific configuration store. 
         //  e.g  "dbname" => "mysql"  (single value)
         //       "collections" => "collection1, collection2 " (multi value) 
-        string configLookUp(string key);
+	std::string configLookUp(std::string key);
 };
 
 class DataConnector {

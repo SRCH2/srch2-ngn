@@ -12,21 +12,21 @@
 #include <map>
 #include "ServerInterfaceInternal.h"
 
-
-ServerInterfaceInternal::ServerInterfaceInternal(Srch2Server *server, std::map<string, string> *connectorConfig) {
-	this->server=server;
+namespace adapter{
+ServerInterfaceInternal::ServerInterfaceInternal(void *server, std::map<std::string, std::string> *connectorConfig) {
+	this->server=(Srch2Server*)server;
 	this->connectorConfig = connectorConfig;
 }
 
-int ServerInterfaceInternal::insertRecord(string jsonString) {
+int ServerInterfaceInternal::insertRecord(std::string jsonString) {
 	std::cout << "ServerInterfaceInternal::insertRecord()" << std::endl;
 }
 
-int ServerInterfaceInternal::deleteRecord(string primaryKey) {
+int ServerInterfaceInternal::deleteRecord(std::string primaryKey) {
 	std::cout << "ServerInterfaceInternal::deleteRecord()" << std::endl;
 }
 
-int ServerInterfaceInternal::updateRecord(string jsonString) {
+int ServerInterfaceInternal::updateRecord(std::string jsonString) {
 	std::cout << "ServerInterfaceInternal::updateRecord()" << std::endl;
 }
-
+}
