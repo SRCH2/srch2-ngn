@@ -584,7 +584,7 @@ void SearchResultsAggregator::cleanAndAppendToBuffer(const string& in, string& o
 	}
 }
 
-void SearchResultsAggregator::genSnippetJSONString(const RecordSnippet& recordSnippet, string sbuffer) {
+void SearchResultsAggregator::genSnippetJSONString(const RecordSnippet& recordSnippet, string& sbuffer) {
 	sbuffer.append("{");
 	for (unsigned j = 0 ; j <  recordSnippet.fieldSnippets.size(); ++j) {
 		sbuffer+='"'; sbuffer+=recordSnippet.fieldSnippets[j].FieldId; sbuffer+='"';

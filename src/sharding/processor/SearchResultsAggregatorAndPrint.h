@@ -134,7 +134,7 @@ public:
             const string& externalRecordId, string& sbuffer, const vector<string>* attrToReturn);
 
     void cleanAndAppendToBuffer(const string& in, string& out);
-    void genSnippetJSONString(const RecordSnippet& recordSnippet, string sbuffer);
+    void genSnippetJSONString(const RecordSnippet& recordSnippet, string& sbuffer);
 
     class QueryResultsComparatorOnlyScore{
     public:
