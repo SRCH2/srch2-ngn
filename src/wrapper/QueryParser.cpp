@@ -1,6 +1,6 @@
 #include "QueryParser.h"
 #include "ParsedParameterContainer.h"
-#include "ParserUtility.h"
+#include "util/ParserUtility.h"
 #include <evhttp.h>
 #include <string>
 #include "boost/regex.hpp"
@@ -69,6 +69,19 @@ const char* const QueryParser::highlightSwitch = "hl";
 
 //searchType
 const char* const QueryParser::searchType = "searchType";
+
+void custom_evhttp_find_headers(const struct evkeyvalq *headers,
+        const char *key, vector<string> &values) {
+    struct evkeyval *header;
+    int c = 0;
+    TAILQ_FOREACH(header, headers, next)
+    {
+        if (evutil_ascii_strcasecmp(header->key, key) == 0) {
+            ++c;
+            values.push_back(header->value);
+        }
+    }
+}
 
 void decodeString(const char *inputStr, string& outputStr) {
     size_t st;

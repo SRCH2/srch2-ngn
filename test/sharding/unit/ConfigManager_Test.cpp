@@ -123,7 +123,7 @@ void testCurrentNodeId(char* configFile){
 
 	ConfigManager *configManager = new ConfigManager(configFile);
 	configManager->loadConfigFile();
-	ASSERT(configManager->getCurrentNodeId() == 1);
+	ASSERT(configManager->getCurrentNodeId() == 0);
 }
 
 void testDiscovery(char* configFile){

@@ -12,7 +12,7 @@
 #include <instantsearch/QueryResults.h>
 #include <instantsearch/Indexer.h>
 #include <instantsearch/ResultsPostProcessor.h>
-#include <wrapper/SortFilterEvaluator.h>
+#include <postprocessing/SortFilterEvaluator.h>
 #include "../../core/unit/UnitTestHelper.h"
 //
 #include <iostream>

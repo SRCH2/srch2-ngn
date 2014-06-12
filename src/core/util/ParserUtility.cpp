@@ -84,18 +84,18 @@ string convertToStr(T value) {
     return o.str();
 }
 
-void custom_evhttp_find_headers(const struct evkeyvalq *headers,
-        const char *key, vector<string> &values) {
-    struct evkeyval *header;
-    int c = 0;
-    TAILQ_FOREACH(header, headers, next)
-    {
-        if (evutil_ascii_strcasecmp(header->key, key) == 0) {
-            ++c;
-            values.push_back(header->value);
-        }
-    }
-}
+//void custom_evhttp_find_headers(const struct evkeyvalq *headers,
+//        const char *key, vector<string> &values) {
+//    struct evkeyval *header;
+//    int c = 0;
+//    TAILQ_FOREACH(header, headers, next)
+//    {
+//        if (evutil_ascii_strcasecmp(header->key, key) == 0) {
+//            ++c;
+//            values.push_back(header->value);
+//        }
+//    }
+//}
 bool doParse(string &input, const boost::regex &re, string &output) {
     boost::smatch matches;
     boost::regex_search(input, matches, re);

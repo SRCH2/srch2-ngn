@@ -18,7 +18,6 @@
  */
 
 #include "QueryValidator.h"
-#include "ParserUtility.h"
 #include <algorithm>
 #include <string>
 #include <vector>

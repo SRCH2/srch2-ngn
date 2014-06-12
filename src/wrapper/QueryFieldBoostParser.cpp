@@ -17,7 +17,7 @@
  * Copyright 2013 SRCH2 Inc. All rights reserved
  */
 
-#include "ParserUtility.h"
+#include "util/ParserUtility.h"
 #include "RegexConstants.h"
 #include "QueryFieldBoostParser.h"
 

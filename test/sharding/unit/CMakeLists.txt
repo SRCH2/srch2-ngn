@@ -7,6 +7,8 @@ INCLUDE_DIRECTORIES(
     ${CMAKE_BINARY_DIR}/include/
     ${Boost_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/thirdparty/event/include
+    ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src-0.5.0/include
 )
 
 set(GPERFTOOL_LIBS "")

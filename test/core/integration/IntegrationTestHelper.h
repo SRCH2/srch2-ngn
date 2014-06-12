@@ -29,7 +29,7 @@
 #include <instantsearch/Record.h>
 #include <instantsearch/QueryResults.h>
 #include <instantsearch/ResultsPostProcessor.h>
-#include <../wrapper/SortFilterEvaluator.h>
+#include <postprocessing/SortFilterEvaluator.h>
 #include "util/Assert.h"
 #include "util/Logger.h"
 

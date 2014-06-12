@@ -25,7 +25,7 @@
 #include <vector>
 #include <sstream>
 #include <stdlib.h>
-#include "ParserUtility.h"
+#include "util/ParserUtility.h"
 #include <instantsearch/TypedValue.h>
 #include <instantsearch/ResultsPostProcessor.h>
 #include "instantsearch/Schema.h"
