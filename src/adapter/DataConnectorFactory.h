@@ -10,6 +10,10 @@
 
 #include <string>
 #include "DataConnector.h"
+
+#include "ServerInterface.h"
+
+
 struct ThreadArguments {
 	std::string dbType;
 	ServerInterface *server;

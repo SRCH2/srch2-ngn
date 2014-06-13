@@ -9,17 +9,18 @@
 #define __DATACONNECTOR_H__
 
 #include <string>
-using namespace std;
 class ServerInterface {
 public:
-	int insertRecord(string jsonString);
-	int deleteRecord(string primaryKey);
-	int updateRecord(string jsonSrting);
-        // this API will provide key based lookup
-        // from engine's connector specific configuration store. 
-        //  e.g  "dbname" => "mysql"  (single value)
-        //       "collections" => "collection1, collection2 " (multi value) 
-        string configLookUp(string key);
+	virtual ~ServerInterface() = 0;
+	virtual int insertRecord(std::string jsonString) = 0;
+	virtual int deleteRecord(std::string primaryKey) = 0;
+	virtual int updateRecord(std::string jsonSrting) = 0;
+	// this API will provide key based lookup
+	// from engine's connector specific configuration store.
+	//  e.g  "dbname" => "mysql"  (single value)
+	//       "collections" => "collection1, collection2 " (multi value)
+	virtual std::string configLookUp(std::string key) = 0;
+
 };
 
 class DataConnector {
@@ -30,5 +31,9 @@ public:
 	virtual void* runListener() = 0;
 
 };
+
+// the types of the class factories
+typedef DataConnector* create_t();
+typedef void destroy_t(DataConnector*);
 
 #endif /* __DATACONNECTOR_H__ */

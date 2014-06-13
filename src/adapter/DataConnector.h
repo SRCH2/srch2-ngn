@@ -8,18 +8,23 @@
 #ifndef __DATACONNECTOR_H__
 #define __DATACONNECTOR_H__
 
-#include <string>
-class ServerInterface {
-public:
-	int insertRecord(std::string jsonString);
-	int deleteRecord(std::string primaryKey);
-	int updateRecord(std::string jsonSrting);
-        // this API will provide key based lookup
-        // from engine's connector specific configuration store. 
-        //  e.g  "dbname" => "mysql"  (single value)
-        //       "collections" => "collection1, collection2 " (multi value) 
-	std::string configLookUp(std::string key);
-};
+//#include <string>
+//
+//class ServerInterface {
+//public:
+//	virtual ~ServerInterface() = 0;
+//	virtual int insertRecord(std::string jsonString) = 0;
+//	virtual int deleteRecord(std::string primaryKey) = 0;
+//	virtual int updateRecord(std::string jsonSrting) = 0;
+//	// this API will provide key based lookup
+//	// from engine's connector specific configuration store.
+//	//  e.g  "dbname" => "mysql"  (single value)
+//	//       "collections" => "collection1, collection2 " (multi value)
+//	virtual std::string configLookUp(std::string key) = 0;
+//
+//};
+
+#include "ServerInterface.h"
 
 class DataConnector {
 public:

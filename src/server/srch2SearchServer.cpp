@@ -620,7 +620,7 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
 
             	ThreadArguments * dbArg=new ThreadArguments();
             	dbArg->dbType="mongodb";
-            	adapter::ServerInterfaceInternal* server=new adapter::ServerInterfaceInternal((void*)iterator->second,NULL);
+            	ServerInterfaceInternal* server=new ServerInterfaceInternal((void*)iterator->second,NULL);
             	dbArg->server=server;
 
             	pthread_t * dbListenerThread = new pthread_t;

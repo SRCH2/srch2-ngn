@@ -10,24 +10,26 @@
 #include "DataConnector.h"
 #include <string>
 
-namespace adapter{
-class Srch2Server;
+//class Srch2Server;
 
-class ServerInterfaceInternal : public ServerInterface {
+class ServerInterfaceInternal: public ServerInterface {
 
 public:
-        ServerInterfaceInternal(void *server, std::map<std::string, std::string> * connectorConfig);
-	int insertRecord(std::string jsonString);
-	int deleteRecord(std::string primaryKey);
-	int updateRecord(std::string jsonSrting);
-        // this API will provide key based lookup
-        // from engine's connector specific configuration store. 
-        //  e.g  "dbname" => "mysql"  (single value)
-        //       "collections" => "collection1, collection2 " (multi value) 
-	std::string configLookUp(std::string key);
+	ServerInterfaceInternal(void *server,
+			std::map<std::string, std::string> * connectorConfig);
+	virtual ~ServerInterfaceInternal();
+	virtual int insertRecord(std::string jsonString);
+	virtual int deleteRecord(std::string primaryKey);
+	virtual int updateRecord(std::string jsonSrting);
+	// this API will provide key based lookup
+	// from engine's connector specific configuration store.
+	//  e.g  "dbname" => "mysql"  (single value)
+	//       "collections" => "collection1, collection2 " (multi value)
+	virtual std::string configLookUp(std::string key);
+
 private:
-	Srch2Server *server;
+//	Srch2Server *server;
+	void *server;
 	std::map<std::string, std::string> * connectorConfig;
 };
-}
 #endif /* __SERVERINTERFACEINTERNAL__ */

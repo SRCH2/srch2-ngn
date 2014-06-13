@@ -10,7 +10,6 @@
 #include <iostream>
 #include <string>
 
-
 void * spawnConnector(void *arg) {
       ThreadArguments * targ = (ThreadArguments*) arg;
       DataConnectorFactory::bootStrapConnector(targ->dbType, targ->server);
