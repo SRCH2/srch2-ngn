@@ -5,9 +5,6 @@
 #include <cstdlib>
 #include <iostream>
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <event.h>
-#include <evhttp.h>
-#include <event2/http.h>
 #include <sys/queue.h>
 #include "boost/regex.hpp"
 #include <boost/algorithm/string.hpp>
@@ -45,15 +42,15 @@ bool isFloat(const std::string & s);
 bool isTime(const std::string & s);
 
 
-void custom_evhttp_find_headers(const struct evkeyvalq *headers,
-        const char *key, vector<string> &values);
+//void custom_evhttp_find_headers(const struct evkeyvalq *headers,
+//        const char *key, vector<string> &values);
 /*
  * parses using the given regex
  */
 bool doParse(string &input, const boost::regex &re, string &output);
 
-void custom_evhttp_find_headers(const struct evkeyvalq *headers,
-        const char *key, vector<string> &values);
+//void custom_evhttp_find_headers(const struct evkeyvalq *headers,
+//        const char *key, vector<string> &values);
 
 bool validateValueWithType(srch2::instantsearch::FilterType type,
         string & value);

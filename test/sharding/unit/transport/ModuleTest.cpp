@@ -70,9 +70,9 @@ static pthread_t tmp[NUM_THREADS];
 
 struct TestHandler : public CallBackHandler {
   int messageRecieved;
-  Message* notify(Message *msg) {
+  void resolveMessage(Message *msg, unsigned nodeID) {
    // assert(!strcmp(msg->buffer, MESSAGE_CONTENTS[messageRecieved]));
-    printf("%d: \t %s\n", msg->shardId.coreId, msg->body);
+    printf("%d: \t %s\n", msg->getDestinationShardId().coreId, msg->getMessageBody());
     fflush(stdout);
     if(++messageRecieved == 52) {
       sleep(2);
@@ -80,7 +80,7 @@ struct TestHandler : public CallBackHandler {
         pthread_cancel(tmp[t]);
       }
     }
-    return NULL;
+
   }
   TestHandler() : messageRecieved(0) {}
 };
@@ -137,12 +137,14 @@ int main() {
 
       int messageLength = strlen(MESSAGE_CONTENTS[m]);
       Message* msg = tm->getMessageAllocator()->allocateMessage(messageLength+1);
-      msg->shardingMessageType = StatusMessageType;
-      msg->mask |= MSG_INTERNAL_MASK;
-      msg->bodySize = messageLength+1;
-      msg->shardId.coreId = n->getId();
+      msg->setType(StatusMessageType);
+      msg->setInternal();
+      msg->setBodySize(messageLength+1);
+      ShardId shardId;
+      shardId.coreId = n->getId();
+      msg->setDestinationShardId(shardId);
       msg->setMessageId(tm->getUniqueMessageIdValue());
-      memcpy(msg->body, MESSAGE_CONTENTS[m], messageLength);
+      memcpy(msg->getMessageBody(), MESSAGE_CONTENTS[m], messageLength);
 
       tm->sendMessage(node->getId(), msg);
       tm->getMessageAllocator()->deallocateByMessagePointer(msg);

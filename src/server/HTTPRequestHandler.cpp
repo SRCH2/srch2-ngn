@@ -22,7 +22,7 @@
 #include "QueryRewriter.h"
 #include "QueryPlan.h"
 #include "QueryExecutor.h"
-#include "ParserUtility.h"
+#include "util/ParserUtility.h"
 #include <event2/http.h>
 #include "util/FileOps.h"
 #include "ServerHighLighter.h"

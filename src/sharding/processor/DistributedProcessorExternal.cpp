@@ -33,7 +33,7 @@
 #include "QueryValidator.h"
 #include "QueryRewriter.h"
 #include "QueryPlan.h"
-#include "ParserUtility.h"
+#include "util/ParserUtility.h"
 #include "HTTPRequestHandler.h"
 #include "IndexWriteUtil.h"
 #include "ServerHighLighter.h"

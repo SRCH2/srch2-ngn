@@ -16,7 +16,7 @@
 #include "thirdparty/utf8/utf8.h"
 #include "thirdparty/snappy-1.0.4/snappy.h"
 #include "util/Logger.h"
-#include "ParserUtility.h"
+#include "util/ParserUtility.h"
 #include <instantsearch/Analyzer.h>
 #include "AnalyzerFactory.h"
 #include "util/DateAndTimeHandler.h"

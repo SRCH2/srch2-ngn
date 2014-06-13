@@ -10,6 +10,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <sys/types.h>
 #include <boost/program_options.hpp>
 #include <assert.h>
 #include "src/core/util/Logger.h"
@@ -17,7 +18,7 @@
 #include <sys/stat.h>
 
 #include "src/core/util/DateAndTimeHandler.h"
-#include "src/wrapper/ParserUtility.h"
+#include "src/core/util/ParserUtility.h"
 #include "src/core/util/Assert.h"
 #include "src/core/analyzer/CharSet.h"
 
