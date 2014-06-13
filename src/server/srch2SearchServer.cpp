@@ -560,7 +560,7 @@ static void killServer(int signal) {
 #ifndef ANDROID
     	// Android thread implementation does not have pthread_cancel()
     	// use pthread_kill instead.
-    	pthread_cancel(threads[i]);
+    	pthread_cancel(threadsToHandleExternalRequests[i]);
 #endif
     }
     for (int i = 0; i < MAX_INTERNAL_THREADS; i++) {
