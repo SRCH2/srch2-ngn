@@ -36,7 +36,7 @@ public:
 	ServerHighLighter(QueryResults * queryResults,Srch2Server *server,
 			ParsedParameterContainer& param, unsigned offset, unsigned count);
 	virtual ~ServerHighLighter();
-	void generateSnippets(vector<RecordSnippet>& highlightInfo);
+	void generateSnippets(map<string,std::pair<string, RecordSnippet> > & highlightInfo);
 private:
 	void genSnippetsForSingleRecord(const QueryResults *qr, unsigned idx, RecordSnippet& recordSnippets);
 	QueryResults * queryResults;
@@ -48,6 +48,8 @@ private:
 	unsigned HighlightRecCount;
 	std::string uncompressedInMemoryRecordString;
     std::map<string, vector<unsigned> *> prefixToCompleteStore;
+    //TODO: temp for V0 ..rempve in V1
+    std::map<string, PhraseInfo> PhraseKeyWordsInfoMap;
 };
 
 } /* namespace httpwrapper */

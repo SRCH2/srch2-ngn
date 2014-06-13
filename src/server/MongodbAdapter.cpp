@@ -4,6 +4,8 @@
  *  Created on: Sep 3, 2013
  *      Author: sbisht
  */
+
+#ifndef ANDROID
 #include "MongodbAdapter.h"
 #include <cstdlib>
 #include <iostream>
@@ -89,7 +91,6 @@ unsigned MongoDataSource::createNewIndexes(srch2is::Indexer* indexer, const Core
 }
 
 void MongoDataSource::spawnUpdateListener(Srch2Server * server){
-
     int res = pthread_create(MongoDataSource::mongoListenerThread, NULL,
     		MongoDataSource::runUpdateListener, (void *)server);
     if (res != 0)
@@ -113,6 +114,7 @@ void* MongoDataSource::runUpdateListener(void *searchServer){
     if (port.size()) {
         hostAndport.append(":").append(port);  // std::string is mutable unlike java
     }
+
     mongo::ScopedDbConnection * mongoConnector = mongo::ScopedDbConnection::getScopedDbConnection(hostAndport);
     mongo::DBClientBase& oplogConnection = mongoConnector->conn();
 
@@ -371,4 +373,4 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
 
 }
 }
-
+#endif

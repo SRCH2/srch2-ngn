@@ -25,19 +25,23 @@ public:
      */
     class MapStringPtr{
     public:
-        MapStringPtr(const map<string,string>::const_iterator itr){
+        MapStringPtr(const map<string, std::pair<string, RecordSnippet> >::const_iterator itr){
             this->itr = itr;
         }
 
         const string * operator->() const{
-            return &(itr->second);
+            return &(itr->second.first);
         }
         const string & operator*() const{
-            return itr->second;
+            return itr->second.first;
+        }
+
+        const RecordSnippet& getRecordSnippet() const{
+        	return (itr->second.second);
         }
 
     private:
-        map<string,string>::const_iterator itr;
+        map<string, std::pair<string, RecordSnippet> >::const_iterator itr;
     };
 
     class AggregatedQueryResults{
@@ -129,6 +133,9 @@ public:
     void genRecordJsonString(const srch2::instantsearch::Schema * schema, StoredRecordBuffer buffer,
             const string& externalRecordId, string& sbuffer, const vector<string>* attrToReturn);
 
+    void cleanAndAppendToBuffer(const string& in, string& out);
+    void genSnippetJSONString(const RecordSnippet& recordSnippet, string& sbuffer);
+
     class QueryResultsComparatorOnlyScore{
     public:
         bool operator()(const pair< QueryResult *, MapStringPtr> & left, const pair< QueryResult *, MapStringPtr> &  right){
@@ -170,7 +177,7 @@ private:
      * If some shards fail or don't return any results we ignore them
      * Search should not be blocking in failure case
      */
-    vector<pair< QueryResults *, const map<string, string> * > > resultsOfAllShards;
+    vector<pair< QueryResults *, const map<string, std::pair<string, RecordSnippet> > * > > resultsOfAllShards;
 
     /*
      * This variable contains the final aggregated results

@@ -25,6 +25,7 @@
 #include "instantsearch/LogicalPlan.h"
 #include "instantsearch/QueryResults.h"
 #include "Srch2Server.h"
+#include "highlighter/Highlighter.h"
 
 using srch2::instantsearch::QueryResults;
 using srch2::instantsearch::QueryResultFactory;
@@ -42,7 +43,8 @@ public:
 	QueryExecutor(LogicalPlan & queryPlan , QueryResultFactory * resultsFactory ,Srch2Server *server, const CoreInfo_t * configuration );
 
 	void execute(QueryResults * finalResults);
-	void executeForDPInternal(QueryResults * finalResults, map<string,string> & inMemoryRecordStrings) ;
+	void executeForDPInternal(QueryResults * finalResults,
+			map<string, std::pair<string, RecordSnippet> > & inMemoryRecordStrings) ;
 	void executeKeywordSearch(QueryResults * finalResults);
 	void executeGeo(QueryResults * finalResults);
 	void executeRetrieveById(QueryResults * finalResults);
@@ -57,7 +59,8 @@ private:
 	QueryEvaluator * queryEvaluator;
 	const CoreInfo_t * configuration;
 
-	void fillInMemoryRecordStrings(QueryResults * queryResults, map<string,string> & inMemoryRecordStrings);
+	void fillInMemoryRecordStrings(QueryResults * queryResults,
+			map<string, std::pair<string, RecordSnippet> > & inMemoryRecordStrings);
 };
 
 }

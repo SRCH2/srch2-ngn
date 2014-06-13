@@ -31,6 +31,10 @@ using namespace std;
 namespace srch2 {
 namespace instantsearch {
 
+#ifdef ANDROID
+   double inline log2(double x) { return log(x) / log (2);  }
+#endif
+
 class UnionLowestLevelTermVirtualListOperator;
 class UnionLowestLevelTermVirtualListOptimizationOperator;
 class UnionLowestLevelSimpleScanOperator;

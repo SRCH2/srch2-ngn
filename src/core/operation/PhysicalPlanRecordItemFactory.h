@@ -294,6 +294,7 @@ public:
 		recordItemObjects.clear();
 	}
 private:
+
 	/*
 	 * Each pool has 10000 tuples created in the beginning. If a reader
 	 * keeps asking for more tuples (more than INITIAL_NUMBER_OF_RECORD_ITEMS_IN_A_GROUP),

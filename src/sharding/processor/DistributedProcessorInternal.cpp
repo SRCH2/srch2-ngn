@@ -21,6 +21,8 @@
 #include <instantsearch/QueryResults.h>
 #include <core/query/QueryResultsInternal.h>
 #include <core/util/Version.h>
+#include "ServerHighLighter.h"
+#include "wrapper/ParsedParameterContainer.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -67,6 +69,18 @@ SearchCommandResults * DPInternalRequestHandler::internalSearchCommand(Srch2Serv
             + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
 
     searchResults->setSearcherTime(ts1);
+
+    if (server->indexDataConfig->getHighlightAttributeIdsVector().size() > 0 ) {
+    	    //TODO: V1 we need these two parameters in DP internal
+    		//!paramContainer.onlyFacets &&
+    		//paramContainer.isHighlightOn) {
+    	ParsedParameterContainer paramContainer; // temp for V0
+
+    	QueryResults *finalResults = searchResults->getQueryResults();
+    	ServerHighLighter highlighter =  ServerHighLighter(finalResults, server, paramContainer,
+    			logicalPlan.getOffset(), logicalPlan.getNumberOfResultsToRetrieve());
+    	highlighter.generateSnippets(searchResults->getInMemoryRecordStringsWrite());
+    }
 
     return searchResults;
 

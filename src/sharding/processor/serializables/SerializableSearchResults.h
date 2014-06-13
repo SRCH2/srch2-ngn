@@ -11,6 +11,7 @@ using namespace std;
 #include <boost/shared_ptr.hpp>
 #include "core/util/SerializationHelper.h"
 #include "sharding/transport/MessageAllocator.h"
+#include "highlighter/Highlighter.h"
 
 namespace srch2 {
 namespace httpwrapper {
@@ -35,6 +36,7 @@ public:
     SearchCommandResults(){
         this->queryResults = new QueryResults();
         this->resultsFactory = new QueryResultFactory();
+        searcherTime = 0;
     }
 
     ~SearchCommandResults(){
@@ -45,10 +47,10 @@ public:
     QueryResults * getQueryResults() const{
         return queryResults;
     }
-    const map<string, string> & getInMemoryRecordStrings() const {
+    const map<string, std::pair<string, RecordSnippet> > & getInMemoryRecordStrings() const {
         return inMemoryRecordStrings;
     }
-    map<string,string> & getInMemoryRecordStringsWrite() {
+    map<string,std::pair<string, RecordSnippet> > & getInMemoryRecordStringsWrite() {
         return inMemoryRecordStrings;
     }
     QueryResultFactory * getQueryResultsFactory() const{
@@ -113,12 +115,13 @@ public:
         // serialize size of map
         buffer = srch2::util::serializeFixedTypes(((unsigned)inMemoryRecordStrings.size()), buffer);
         // serialize map
-        for(map<string,string>::iterator recordDataItr = inMemoryRecordStrings.begin();
+        for(map<string, std::pair<string, RecordSnippet> >::iterator recordDataItr = inMemoryRecordStrings.begin();
                 recordDataItr != inMemoryRecordStrings.end() ; ++recordDataItr){
             // serialize key
             buffer = srch2::util::serializeString(recordDataItr->first, buffer);
             // serialize value
-            buffer = srch2::util::serializeString(recordDataItr->second, buffer);
+            buffer = srch2::util::serializeString(recordDataItr->second.first, buffer);
+            buffer = recordDataItr->second.second.serializeForNetwork(buffer);
         }
         return buffer;
     }
@@ -135,10 +138,13 @@ public:
             // deserialize key
             string key ;
             buffer = srch2::util::deserializeString(buffer, key);
-            // serialize value
+            // deserialize value
             string value;
+            RecordSnippet recSnippet;
             buffer = srch2::util::deserializeString(buffer, value);
-            searchResults->inMemoryRecordStrings[key] = value;
+            buffer =  RecordSnippet::deserializeForNetwork(buffer, recSnippet);
+            searchResults->inMemoryRecordStrings[key] = std::make_pair(value, recSnippet);
+
         }
         return buffer;
     }
@@ -151,12 +157,13 @@ public:
         // size of map
         numberOfBytes += sizeof(unsigned);
         // map
-        for(map<string,string>::iterator recordDataItr = inMemoryRecordStrings.begin();
+        for(map<string, std::pair<string, RecordSnippet> >::iterator recordDataItr = inMemoryRecordStrings.begin();
                 recordDataItr != inMemoryRecordStrings.end() ; ++recordDataItr){
             // key
             numberOfBytes += sizeof(unsigned) + recordDataItr->first.size();
             // value
-            numberOfBytes += sizeof(unsigned) + recordDataItr->second.size();
+            numberOfBytes += sizeof(unsigned) + recordDataItr->second.first.size();
+            numberOfBytes += recordDataItr->second.second.getNumberOfBytesOfSnippets();
         }
         return numberOfBytes;
     }
@@ -170,11 +177,10 @@ public:
 
 private:
     QueryResults * queryResults;
-    map<string,string> inMemoryRecordStrings;
+    map<string, std::pair<string, RecordSnippet> > inMemoryRecordStrings;
     QueryResultFactory * resultsFactory;
     // extra information to be added later
     unsigned searcherTime;
-
 };
 
 

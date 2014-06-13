@@ -993,7 +993,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     	ServerHighLighter highlighter =  ServerHighLighter(finalResults, server, paramContainer,
     			logicalPlan.getOffset(), logicalPlan.getNumberOfResultsToRetrieve());
     	highlightInfo.reserve(logicalPlan.getNumberOfResultsToRetrieve());
-    	highlighter.generateSnippets(highlightInfo);
+    	//highlighter.generateSnippets(highlightInfo);
     	if (highlightInfo.size() == 0 && finalResults->getNumberOfResults() > 0) {
     		Logger::warn("Highligting is on but snippets were not generated!!");
     	}
