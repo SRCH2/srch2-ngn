@@ -84,7 +84,8 @@ void QueryExecutor::execute(QueryResults * finalResults) {
     delete queryEvaluator; // Physical plan and physical operators and physicalRecordItems are freed here
 }
 
-void QueryExecutor::executeForDPInternal(QueryResults * finalResults, map<string,string> & inMemoryRecordStrings) {
+void QueryExecutor::executeForDPInternal(QueryResults * finalResults,
+		map<string, std::pair<string, RecordSnippet> > & inMemoryRecordStrings) {
 
 	///////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////
@@ -133,14 +134,15 @@ void QueryExecutor::executeForDPInternal(QueryResults * finalResults, map<string
     delete queryEvaluator; // Physical plan and physical operators and physicalRecordItems are freed here
 }
 
-void QueryExecutor::fillInMemoryRecordStrings(QueryResults * queryResults, map<string,string> & inMemoryRecordStrings){
+void QueryExecutor::fillInMemoryRecordStrings(QueryResults * queryResults,
+		map<string, std::pair<string, RecordSnippet> > & inMemoryRecordStrings){
 	if(queryResults == NULL){
 		return;
 	}
 	// iterate on query results and save the inMemoryStrings in the map
 	for(unsigned resultIndex = 0 ; resultIndex < queryResults->getNumberOfResults(); ++resultIndex){
 		inMemoryRecordStrings[queryResults->getRecordId(resultIndex)] =
-				queryResults->getInMemoryRecordString(resultIndex);
+				std::make_pair(queryResults->getInMemoryRecordString(resultIndex), RecordSnippet());
 	}
 }
 

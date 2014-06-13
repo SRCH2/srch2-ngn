@@ -23,18 +23,23 @@ namespace httpwrapper {
  *   The function loops over all the query results and calls genSnippetsForSingleRecord for
  *   each query result.
  */
-void ServerHighLighter::generateSnippets(vector<RecordSnippet>& highlightInfo){
+
+void ServerHighLighter::generateSnippets(map<string,std::pair<string, RecordSnippet> >& highlightInfo){
 
 	unsigned upperLimit = queryResults->getNumberOfResults();
 	if (upperLimit > HighlightRecOffset + HighlightRecCount)
 		upperLimit = HighlightRecOffset + HighlightRecCount;
 	unsigned lowerLimit = HighlightRecOffset;
 	for (unsigned i = lowerLimit; i < upperLimit; ++i) {
-		RecordSnippet recordSnippets;
+		string key = queryResults->getRecordId(i);
+		map<string,std::pair<string, RecordSnippet> >::iterator iter = highlightInfo.find(key);
+		if (iter == highlightInfo.end())
+			continue;
+		RecordSnippet& recordSnippets = iter->second.second;
 		unsigned recordId = queryResults->getInternalRecordId(i);
 		genSnippetsForSingleRecord(queryResults, i, recordSnippets);
 		recordSnippets.recordId =recordId;
-		highlightInfo.push_back(recordSnippets);
+		//highlightInfo.push_back(recordSnippets);
 	}
 }
 
@@ -122,7 +127,7 @@ ServerHighLighter::ServerHighLighter(QueryResults * queryResults,Srch2Server *se
 
 	if (!isEnabledWordPositionIndex(server->indexer->getSchema()->getPositionIndexType())){
 		// we do not need phrase information because position index is not enabled.
-		param.PhraseKeyWordsInfoMap.clear();
+		//param.PhraseKeyWordsInfoMap.clear();
 	}
 	/*
 	 *  We have two ways of generating snippets.
@@ -134,14 +139,26 @@ ServerHighLighter::ServerHighLighter(QueryResults * queryResults,Srch2Server *se
 	 *  in the forward index. In that case we use the term offset based logic.
 	 */
 	// Note: check for server schema not the configuration.
+
+	//  Below code is disabled for V0. Without this code phrase search highlighting will not work.
+//	if (isEnabledCharPositionIndex(server->indexer->getSchema()->getPositionIndexType())) {
+//		this->highlightAlgorithms  = new TermOffsetAlgorithm(server->indexer,
+//				 param.PhraseKeyWordsInfoMap, hconf);
+//	} else {
+//		Analyzer *currentAnalyzer = AnalyzerFactory::getCurrentThreadAnalyzer(server->indexDataConfig);
+//		this->highlightAlgorithms  = new AnalyzerBasedAlgorithm(currentAnalyzer,
+//				 param.PhraseKeyWordsInfoMap, hconf);
+//	}
+
 	if (isEnabledCharPositionIndex(server->indexer->getSchema()->getPositionIndexType())) {
 		this->highlightAlgorithms  = new TermOffsetAlgorithm(server->indexer,
-				 param.PhraseKeyWordsInfoMap, hconf);
+				PhraseKeyWordsInfoMap, hconf);
 	} else {
 		Analyzer *currentAnalyzer = AnalyzerFactory::getCurrentThreadAnalyzer(server->indexDataConfig);
 		this->highlightAlgorithms  = new AnalyzerBasedAlgorithm(currentAnalyzer,
-				 param.PhraseKeyWordsInfoMap, hconf);
+				PhraseKeyWordsInfoMap, hconf);
 	}
+
 	this->server = server;
 	storedAttrSchema = Schema::create();
 	RecordSerializerUtil::populateStoredSchema(storedAttrSchema, server->indexer->getSchema());
