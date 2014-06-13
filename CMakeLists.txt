@@ -240,9 +240,9 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 	ENDIF()
 
     IF (BUILD_SERVER)
-        ADD_SUBDIRECTORY(src/wrapper)
-        ADD_SUBDIRECTORY(src/adapter)
+        ADD_SUBDIRECTORY(src/wrapper)        
         ADD_SUBDIRECTORY(src/server)
+        ADD_SUBDIRECTORY(src/adapter)
         ADD_SUBDIRECTORY(src/sharding)
     	IF (BUILD_TEST)
             #remove assert_level=0 macro. We would like to enable asserts in test cases for both release and debug mode 

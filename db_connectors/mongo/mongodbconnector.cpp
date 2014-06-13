@@ -11,7 +11,6 @@
 #include "mongo/bson/bsonobj.h"
 #include "mongo/client/dbclientcursor.h"
 #include "mongo/client/dbclientinterface.h"
-#include "util/Logger.h"
 using namespace std;
 
 MongoDBConnector::MongoDBConnector(){
@@ -67,9 +66,9 @@ bool MongoDBConnector::getOplogConnector() {
 				mongo::ScopedDbConnection::getScopedDbConnection(hostAndport);
 		mongo::DBClientBase& oplogConnection = mongoConnector->conn();
 	} catch (const mongo::DBException &e) {
-		Logger::console("MongoDb Exception : %s", e.what());
+		printf("MongoDb Exception : %s", e.what());
 	} catch (const exception& ex) {
-		Logger::console("Unknown exception : %s", ex.what());
+		printf("Unknown exception : %s", ex.what());
 	}
 }
 

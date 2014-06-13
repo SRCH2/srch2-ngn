@@ -6,7 +6,6 @@
 #include "mongo/bson/bsonobj.h"
 #include "mongo/client/dbclientcursor.h"
 #include "mongo/client/dbclientinterface.h"
-#include "util/Logger.h"
 
 class MongoDBConnector : public DataConnector {
 public:

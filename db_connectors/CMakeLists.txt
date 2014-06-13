@@ -9,12 +9,14 @@ cmake_minimum_required(VERSION 2.8)
 #  1.  MongoDB connector 
 #
 FILE(GLOB_RECURSE MONGO_DB_CONNECTOR_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "mongo/*.cpp")
+
+MESSAGE(STATUS "This is SOURCE dir " ${CMAKE_SOURCE_DIR}/..)
 					
 # add additional include directories depending on a connector requirement. 
 INCLUDE_DIRECTORIES(
-    ${CMAKE_SOURCE_DIR}/thirdparty/mongo-cxx-driver-v2.4/src
-    ${CMAKE_SOURCE_DIR}/db_connectors
-    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver-v2.4/src
+    ${CMAKE_SOURCE_DIR}/../db_connectors
+    ${CMAKE_SOURCE_DIR}/..
 )
 
 ADD_LIBRARY(mongodbConnector SHARED ${MONGO_DB_CONNECTOR_SRC} )
@@ -25,12 +27,12 @@ TARGET_LINK_LIBRARIES(mongodbConnector )
 #
 #  2.  MySQL connector 
 #
-FILE(GLOB_RECURSE MYSQL_DB_CONNECTOR_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "mysql/*.cpp")
+#FILE(GLOB_RECURSE MYSQL_DB_CONNECTOR_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "mysql/*.cpp")
 # add additional include directories depending on a connector requirement. 
-INCLUDE_DIRECTORIES(
-    ${CMAKE_SOURCE_DIR}/thirdparty/mongo-cxx-driver-v2.4/src
-)
-ADD_LIBRARY(mysqlConnector SHARED ${MYSQL_DB_CONNECTOR_SRC} )
-SET_TARGET_PROPERTIES(mysqlConnector PROPERTIES COMPILE_FLAGS -fPIC)
+#INCLUDE_DIRECTORIES(
+#    ${CMAKE_SOURCE_DIR}/thirdparty/mongo-cxx-driver-v2.4/src
+#)
+#ADD_LIBRARY(mysqlConnector SHARED ${MYSQL_DB_CONNECTOR_SRC} )
+#SET_TARGET_PROPERTIES(mysqlConnector PROPERTIES COMPILE_FLAGS -fPIC)
 # Add all required libraries to be linked in the statement below
-TARGET_LINK_LIBRARIES(mysqlConnector )
+#TARGET_LINK_LIBRARIES(mysqlConnector )
