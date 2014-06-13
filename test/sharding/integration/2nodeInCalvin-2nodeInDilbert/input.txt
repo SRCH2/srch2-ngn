@@ -1,0 +1,4 @@
+A||128.195.185.107||10004||./2nodeInCalvin-2nodeInDilbert/confE.xml
+B||128.195.185.107||10005||./2nodeInCalvin-2nodeInDilbert/confF.xml
+C||128.195.185.134||10004||./2nodeInCalvin-2nodeInDilbert/confC.xml
+D||128.195.185.134||10005||./2nodeInCalvin-2nodeInDilbert/confD.xml

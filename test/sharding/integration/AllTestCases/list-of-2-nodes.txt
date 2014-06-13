@@ -1,2 +1,0 @@
-A||8087||./AllTestCases/confA.xml
-B||8088||./AllTestCases/confB.xml

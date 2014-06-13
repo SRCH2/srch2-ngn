@@ -49,11 +49,25 @@ void QueryResults::init(QueryResultFactory * resultsFactory, const QueryEvaluato
  * @param[in] query the reference to a Query object.
  */
 QueryResults::QueryResults(QueryResultFactory * resultsFactory, const  QueryEvaluator* queryEvaluator, Query* query){
-	impl = new QueryResultsInternal(resultsFactory,queryEvaluator->impl,query );
+	if(queryEvaluator == NULL){
+		impl = new QueryResultsInternal(resultsFactory,NULL,query ); // used in test cases that queryEvaluator is passed null
+	}else{
+		impl = new QueryResultsInternal(resultsFactory,queryEvaluator->impl,query ); // correct execution
+	}
 }
 
 QueryResults::~QueryResults(){
 	delete impl;
+}
+
+void * QueryResults::serializeForNetwork(void * buffer){
+	return impl->serializeForNetwork(buffer);
+}
+void * QueryResults::deserializeForNetwork(QueryResults &queryResults, void * buffer,QueryResultFactory * resultsFactory){
+	return queryResults.impl->deserializeForNetwork(buffer,resultsFactory);
+}
+unsigned QueryResults::getNumberOfBytesForSerializationForNetwork(){
+	return impl->getNumberOfBytesForSerializationForNetwork();
 }
 
 /**
@@ -96,10 +110,13 @@ unsigned QueryResults::getInternalRecordId(unsigned position) const {
  *   this function is called from unit test. Do not use it in wrapper layer.
  */
 std::string QueryResults::getInMemoryRecordString(unsigned position) const {
+	if(impl->queryEvaluatorInternal == NULL){
+		return "";// this can only happen in test cases
+	}
     unsigned internalRecordId = this->getInternalRecordId(position);
     StoredRecordBuffer buffer = impl->queryEvaluatorInternal->getInMemoryData(internalRecordId);
     string inMemoryString = "";
-    if (!buffer.start)
+    if (buffer.start.get() != NULL)
     	inMemoryString = string(buffer.start.get(), buffer.length);
     return inMemoryString;
 }

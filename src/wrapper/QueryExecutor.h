@@ -42,6 +42,7 @@ public:
 	QueryExecutor(LogicalPlan & queryPlan , QueryResultFactory * resultsFactory ,Srch2Server *server, const CoreInfo_t * configuration );
 
 	void execute(QueryResults * finalResults);
+	void executeForDPInternal(QueryResults * finalResults, map<string,string> & inMemoryRecordStrings) ;
 	void executeKeywordSearch(QueryResults * finalResults);
 	void executeGeo(QueryResults * finalResults);
 	void executeRetrieveById(QueryResults * finalResults);
@@ -55,6 +56,8 @@ private:
 	Srch2Server * server;
 	QueryEvaluator * queryEvaluator;
 	const CoreInfo_t * configuration;
+
+	void fillInMemoryRecordStrings(QueryResults * queryResults, map<string,string> & inMemoryRecordStrings);
 };
 
 }

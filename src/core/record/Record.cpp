@@ -31,6 +31,8 @@
 #include <iostream> //for testing
 #include <sstream>
 
+#include "util/SerializationHelper.h"
+
 using std::vector;
 using std::string;
 
@@ -57,6 +59,92 @@ struct Record::Impl
     		delete[] inMemoryStoredRecord;
     	}
     }
+
+    /*
+     * Returns the number of bytes used by this object for serialization
+     */
+    unsigned getNumberOfBytesSize(){
+    	unsigned numberOfBytes = 0;
+    	numberOfBytes += sizeof(unsigned) + primaryKey.size();
+    	numberOfBytes += sizeof(unsigned);
+    	for(std::vector<vector<string> >::iterator searchableAttributeItr = searchableAttributeValues.begin();
+    			searchableAttributeItr != searchableAttributeValues.end() ; ++searchableAttributeItr){
+       		numberOfBytes += srch2::util::getNumberOfBytesVectorOfString(*searchableAttributeItr);
+    	}
+   		numberOfBytes += srch2::util::getNumberOfBytesVectorOfString(refiningAttributeValues);
+    	numberOfBytes += sizeof(boost);
+    	// we don't serialize schema because it's accessible in all shards and all nodes
+    	numberOfBytes += sizeof(unsigned) + inMemoryRecordString.size();
+    	numberOfBytes += sizeof(inMemoryStoredRecordLen);
+    	numberOfBytes += inMemoryStoredRecordLen; // for inMemoryStoredRecord
+    	return numberOfBytes;
+    }
+
+    /*
+     * Serializes Record object into byte array
+     */
+    void * serialize(void * buffer){
+    	// primary key
+    	buffer = srch2::util::serializeString(primaryKey, buffer);
+    	// searchable attributes
+    	{
+			// 1. serialize size of vector
+			buffer = srch2::util::serializeFixedTypes((unsigned)searchableAttributeValues.size(), buffer);
+			// 2. serialize elements
+			for(unsigned attrIndex = 0; attrIndex < searchableAttributeValues.size() ; ++attrIndex){
+				buffer = srch2::util::serializeVectorOfString(searchableAttributeValues.at(attrIndex), buffer);
+			}
+    	}
+    	// refining attributes
+    	buffer = srch2::util::serializeVectorOfString(refiningAttributeValues, buffer);
+    	// boost
+    	buffer = srch2::util::serializeFixedTypes(boost, buffer);
+    	// inMemoryRecordString
+    	buffer = srch2::util::serializeString(inMemoryRecordString, buffer);
+    	// inMemoryStoredRecordLen
+    	buffer = srch2::util::serializeFixedTypes(inMemoryStoredRecordLen, buffer);
+    	// inMemoryStoredRecord
+    	{
+    		memcpy(buffer, inMemoryStoredRecord, inMemoryStoredRecordLen);
+    		buffer = (char *)buffer + inMemoryStoredRecordLen;
+    	}
+    	return buffer;
+    }
+
+    /*
+     * Deserializes byte array into Record obj
+     */
+    void * deserialize(void * buffer){
+    	// primary key
+    	buffer = srch2::util::deserializeString(buffer, primaryKey);
+    	// searchable attributes
+    	{
+			// 1. deserialize size of vector
+    		unsigned vectorSize = 0;
+			buffer = srch2::util::deserializeFixedTypes(buffer, vectorSize);
+			// 2. deserialize elements
+			for(unsigned attrIndex = 0; attrIndex < vectorSize ; ++attrIndex){
+				buffer = srch2::util::deserializeVectorOfString(buffer, searchableAttributeValues.at(attrIndex));
+			}
+    	}
+    	// refining attributes
+    	refiningAttributeValues.clear();
+    	buffer = srch2::util::deserializeVectorOfString(buffer, refiningAttributeValues);
+    	// boost
+    	buffer = srch2::util::deserializeFixedTypes(buffer, boost);
+    	// inMemoryRecordString
+    	buffer = srch2::util::deserializeString(buffer, inMemoryRecordString);
+    	// inMemoryStoredRecordLen
+    	buffer = srch2::util::deserializeFixedTypes(buffer, inMemoryStoredRecordLen);
+    	// inMemoryStoredRecord
+    	{
+    		inMemoryStoredRecord = new char[inMemoryStoredRecordLen];
+    		memcpy(inMemoryStoredRecord, buffer, inMemoryStoredRecordLen);
+    		buffer = (char *)buffer + inMemoryStoredRecordLen;
+    	}
+    	return buffer;
+    }
+
 };
 
 Record::Record(const Schema *schema):impl(new Impl)
@@ -236,6 +324,17 @@ const string& Record::getPrimaryKey() const
 }
 
 
+void Record::setShardingKey(unsigned shardingKey){
+    //TODO : we should probably keep shardingKey in a new class member
+}
+const unsigned Record::getShardingKey(){
+    std::stringstream pkey_string;
+    pkey_string << impl->primaryKey;
+    unsigned shardingKey = 0;
+    pkey_string >> shardingKey;
+    return shardingKey;
+}
+
 // set/get the boost of this record (0 - 100)
 float Record::getRecordBoost() const
 {
@@ -302,6 +401,27 @@ void Record::clear()
     	delete[] impl->inMemoryStoredRecord;
     	impl->inMemoryStoredRecord = NULL;
     }
+}
+
+/*
+ * Returns the number of bytes used by this object for serialization
+ */
+unsigned Record::getNumberOfBytesSize(){
+	return impl->getNumberOfBytesSize();
+}
+
+/*
+ * Serializes Record object into byte array
+ */
+void * Record::serializeForNetwork(void * buffer){
+	return impl->serialize(buffer);
+}
+
+/*
+ * Deserializes byte array into Record object
+ */
+void * Record::deserializeForNetwork(void * buffer, Record & record){
+	return record.impl->deserialize(buffer);
 }
 
 void Record::disownInMemoryData() {

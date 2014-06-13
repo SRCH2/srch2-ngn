@@ -155,6 +155,11 @@ public:
 
 
     string toString();
+
+    void * serializeForNetwork(void * buffer);
+    static void * deserializeForNetwork(Query & query, void * buffer);
+    unsigned getNumberOfBytesForSerializationForNetwork();
+
     /*
      * TODO Should change this function's name to
      * getSortOrder

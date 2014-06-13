@@ -300,12 +300,12 @@ private:
 	 * keeps asking for more tuples (more than INITIAL_NUMBER_OF_RECORD_ITEMS_IN_A_GROUP),
 	 * we start allocating new tuples and save them in extraObjects vector.
 	 */
+
 	/* This code is disabled for now to check the memory effect of record pools
 	PhysicalPlanRecordItem objects[INITIAL_NUMBER_OF_RECORD_ITEMS_IN_A_GROUP];
 	vector<PhysicalPlanRecordItem *> extraObjects;
 	unsigned size;
 	*/
-
 	vector<PhysicalPlanRecordItem *> recordItemObjects;
 };
 

@@ -29,6 +29,7 @@
 #include "instantsearch/Query.h"
 #include "instantsearch/Schema.h"
 #include "instantsearch/TypedValue.h"
+#include "util/SerializationHelper.h"
 
 
 namespace srch2
@@ -74,23 +75,32 @@ class FacetQueryContainer {
 public:
     // these vectors must be parallel and same size all the time
     std::vector<srch2::instantsearch::FacetType> types;
+    std::vector<int> numberOfTopGroupsToReturn;
     std::vector<std::string> fields;
     std::vector<std::string> rangeStarts;
     std::vector<std::string> rangeEnds;
     std::vector<std::string> rangeGaps;
-    std::vector<int> numberOfTopGroupsToReturn;
 
-    string toString(){
-    	stringstream ss;
-    	for(unsigned index = 0 ; index < types.size() ; ++index){
-    		ss << types[index] << fields[index].c_str() <<
-    				rangeStarts[index].c_str() << rangeGaps[index].c_str() <<  rangeEnds[index].c_str();
-    		if(index < numberOfTopGroupsToReturn.size()){
-    			ss << numberOfTopGroupsToReturn[index] ;
-    		}
-    	}
-    	return ss.str();
-    }
+    string toString();
+
+    /*
+     * Serialization scheme :
+     * | types | numberOfTopGroupsToReturn | fields | rangeStarts | rangeEnds | rangeGaps |
+     */
+	void * serializeForNetwork(void * buffer);
+
+    /*
+     * Serialization scheme :
+     * | types | numberOfTopGroupsToReturn | fields | rangeStarts | rangeEnds | rangeGaps |
+     */
+	static void * deserializeForNetwork(FacetQueryContainer & info, void * buffer);
+
+    /*
+     * Serialization scheme :
+     * | types | numberOfTopGroupsToReturn | fields | rangeStarts | rangeEnds | rangeGaps |
+     */
+	unsigned getNumberOfBytesForSerializationForNetwork();
+
 };
 
 class SortEvaluator
@@ -101,6 +111,8 @@ public:
 	virtual int compare(const std::map<std::string, TypedValue> & left , unsigned leftInternalRecordId,const std::map<std::string, TypedValue> & right, unsigned rightInternalRecordId) const = 0 ;
 	virtual const std::vector<std::string> * getParticipatingAttributes() const = 0;
 	virtual string toString() const = 0;
+	virtual void * serializeForNetwork(void * buffer) const = 0;
+	virtual unsigned getNumberOfBytesForSerializationForNetwork() const= 0;
 	virtual ~SortEvaluator(){};
 	SortOrder order;
 };
@@ -111,31 +123,35 @@ public:
 	virtual bool evaluate(std::map<std::string, TypedValue> & refiningAttributeValues) = 0 ;
 	virtual ~RefiningAttributeExpressionEvaluator(){};
 	virtual string toString() = 0;
+	virtual void * serializeForNetwork(void * buffer) const = 0;
+	virtual unsigned getNumberOfBytesForSerializationForNetwork() const= 0;
 };
 
 class PhraseInfo{
     public:
-        vector<string> phraseKeyWords;
-        vector<unsigned> keywordIds;
-        vector<unsigned> phraseKeywordPositionIndex;
         unsigned proximitySlop;
         unsigned attributeBitMap;
+        vector<unsigned> keywordIds;
+        vector<unsigned> phraseKeywordPositionIndex;
+        vector<string> phraseKeyWords;
 
-        string toString(){
-        	stringstream ss;
-        	for(unsigned i = 0 ; i < phraseKeyWords.size() ; ++i ){
-        		ss << phraseKeyWords[i].c_str();
-        	}
-        	for(unsigned i = 0 ; i < keywordIds.size() ; ++i ){
-        		ss << keywordIds[i];
-        	}
-        	for(unsigned i = 0 ; i < phraseKeywordPositionIndex.size() ; ++i ){
-        		ss << phraseKeywordPositionIndex[i];
-        	}
-        	ss << proximitySlop;
-        	ss << attributeBitMap;
-        	return ss.str();
-        }
+        string toString();
+
+        /*
+         * Serialization scheme :
+         * | proximitySlop | attributeBitMap | keywordIds  | phraseKeywordPositionIndex | phraseKeyWords |
+         */
+    	void * serializeForNetwork(void * buffer) const ;
+        /*
+         * Serialization scheme :
+         * | proximitySlop | attributeBitMap | keywordIds  | phraseKeywordPositionIndex | phraseKeyWords |
+         */
+    	void * deserializeForNetwork(void * buffer) ;
+        /*
+         * Serialization scheme :
+         * | proximitySlop | attributeBitMap | keywordIds  | phraseKeywordPositionIndex | phraseKeyWords |
+         */
+    	unsigned getNumberOfBytesForSerializationForNetwork() const;
 };
 
 
@@ -144,24 +160,28 @@ public:
 	void addPhrase(const vector<string>& phraseKeywords,
 			const vector<unsigned>& phraseKeywordsPositionIndex,
 			unsigned proximitySlop,
-			unsigned attributeBitMap){
-
-		PhraseInfo pi;
-		pi.phraseKeywordPositionIndex = phraseKeywordsPositionIndex;
-		pi.attributeBitMap = attributeBitMap;
-		pi.phraseKeyWords = phraseKeywords;
-		pi.proximitySlop = proximitySlop;
-		phraseInfoVector.push_back(pi);
-	}
+			unsigned attributeBitMap);
 	vector<PhraseInfo> phraseInfoVector;
 
-    string toString(){
-    	stringstream ss;
-    	for(unsigned i=0; i< phraseInfoVector.size() ; ++i){
-    		ss << phraseInfoVector[i].toString().c_str();
-    	}
-    	return ss.str();
-    }
+    string toString();
+
+    /*
+     * Serialization scheme :
+     * | phraseInfoVector |
+     */
+	void * serializeForNetwork(void * buffer) const ;
+
+    /*
+     * Serialization scheme :
+     * | phraseInfoVector |
+     */
+	static void * deserializeForNetwork(PhraseSearchInfoContainer & container, void * buffer);
+
+    /*
+     * Serialization scheme :
+     * | phraseInfoVector |
+     */
+	unsigned getNumberOfBytesForSerializationForNetwork() const;
 };
 
 class ResultsPostProcessingInfo{
@@ -181,6 +201,25 @@ public:
 
 
 	string toString();
+
+	/*
+	 * Serialization scheme :
+	 * | isNULL | isNULL | isNULL | isNULL | facetInfo | sortEvaluator | filterQueryEvaluator | phraseSearchInfoContainer |
+	 */
+	void * serializeForNetwork(void * buffer);
+
+	/*
+	 * Serialization scheme :
+	 * | isNULL | isNULL | isNULL | isNULL | facetInfo | sortEvaluator | filterQueryEvaluator | phraseSearchInfoContainer |
+	 */
+	static void * deserializeForNetwork(ResultsPostProcessingInfo & info, void * buffer);
+
+	/*
+	 * Serialization scheme :
+	 * | isNULL | isNULL | isNULL | isNULL | facetInfo | sortEvaluator | filterQueryEvaluator | phraseSearchInfoContainer |
+	 */
+	unsigned getNumberOfBytesForSerializationForNetwork();
+
 private:
 	FacetQueryContainer * facetInfo;
 	SortEvaluator * sortEvaluator;

@@ -70,6 +70,10 @@ class Rectangle;
 class Shape
 {
 public:
+	enum ShapeType{
+		TypeRectangle,
+		TypeCircle
+	};
     Shape() {};
     virtual ~Shape() {};
 
@@ -78,6 +82,27 @@ public:
     virtual double getMinDist2FromLatLong(double resultLat, double resultLng) const = 0;
     virtual double getSearchRadius2() const = 0;
     virtual void getValues(std::vector<double> &values) const = 0;
+    virtual ShapeType getShapeType() const = 0;
+    /*
+     * Serialization Scheme:
+     * | ShapeType | ... |
+     * | ShapeType == Rectangle | minX | minY | maxX | maxY |
+     * | ShapeType == Circle | centerX | centerY | radius |
+     */
+    void * serializeForNetwork(void * buffer);
+    static void * deserializeForNetwork(Shape * &shape, void * buffer);
+    unsigned getNumberOfBytesForSerializationForNetwork();
+//    virtual void * serializeToByteArray(void * buffer) const = 0;
+//    virtual unsigned getNumberOfBytes() = 0;
+//    static void * deserializeFromByteArray(Shape & shape, void * buffer){
+//    	if(string("Rectangle").compare(string(typeid(shape).name())) == 0){
+//
+//    	}else if(string("Circle").compare(string(typeid(shape).name())) == 0){
+//
+//    	}else{
+//    		return buffer;
+//    	}
+//    }
 };
 
 class Rectangle : public Shape
@@ -152,6 +177,10 @@ public:
         values.push_back(this->max.y);
     }
 
+    ShapeType getShapeType() const {
+    	return Shape::TypeRectangle;
+    }
+
 private:
     friend class boost::serialization::access;
 
@@ -169,6 +198,14 @@ private:
     Point center;
     double radius;
 public:
+
+    Point & getCenter(){
+    	return center;
+    }
+    double & getRadius(){
+    	return radius;
+    }
+
     Circle(Point c, double r) : center(c), radius(r) {}
 
     virtual ~Circle() {}
@@ -217,6 +254,10 @@ public:
         values.push_back(center.x);
         values.push_back(center.y);
         values.push_back(radius);
+    }
+
+    ShapeType getShapeType() const {
+    	return Shape::TypeCircle;
     }
 
 };

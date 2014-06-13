@@ -28,6 +28,7 @@
 #include <cmath>
 #include <algorithm>
 #include "util/DateAndTimeHandler.h"
+#include "util/SerializationHelper.h"
 
 namespace srch2
 {
@@ -792,9 +793,127 @@ namespace srch2
 				ss << "";
 				break;
 		}
+
     	return ss.str();
 	}
 
+	/*
+	 * Serialization scheme :
+	 * |valueType | ... |
+	 * | | intTypedValue |
+	 * | | floatTypedValue |
+	 * | | stringTypedValue |
+	 * | | timeTypedValue |
+	 * | | intTypedMultiValue |
+	 * | | floatTypedMultiValue |
+	 * | | stringTypedMultiValue |
+	 * | | timeTypedMultiValue |
+	 * NOTE : we don't serialize TimeDuration for now because we don't need it
+	 */
+    void * TypedValue::serializeForNetwork(void * buffer){
+    	buffer = srch2::util::serializeFixedTypes(valueType, buffer);
+    	switch (valueType) {
+    	case ATTRIBUTE_TYPE_UNSIGNED:
+        	buffer = srch2::util::serializeFixedTypes(intTypedValue, buffer);
+        	break;
+    	case ATTRIBUTE_TYPE_FLOAT:
+        	buffer = srch2::util::serializeFixedTypes(floatTypedValue, buffer);
+        	break;
+    	case ATTRIBUTE_TYPE_TEXT:
+        	buffer = srch2::util::serializeString(stringTypedValue, buffer);
+        	break;
+    	case ATTRIBUTE_TYPE_TIME:
+        	buffer = srch2::util::serializeFixedTypes(timeTypedValue, buffer);
+    		break;
+    	case ATTRIBUTE_TYPE_MULTI_UNSIGNED:
+        	buffer = srch2::util::serializeVectorOfFixedTypes(intTypedMultiValue, buffer);
+        	break;
+    	case ATTRIBUTE_TYPE_MULTI_FLOAT:
+        	buffer = srch2::util::serializeVectorOfFixedTypes(floatTypedMultiValue, buffer);
+        	break;
+    	case ATTRIBUTE_TYPE_MULTI_TEXT:
+        	buffer = srch2::util::serializeVectorOfString(stringTypedMultiValue, buffer);
+        	break;
+    	case ATTRIBUTE_TYPE_MULTI_TIME:
+        	buffer = srch2::util::serializeVectorOfFixedTypes(timeTypedMultiValue, buffer);
+        	break;
+    	case ATTRIBUTE_TYPE_DURATION:
+    		// we don't serialize TimeDuration
+			break;
+		}
+
+    	return buffer;
+    }
+    void * TypedValue::deserializeForNetwork(TypedValue &value, void * buffer){
+    	buffer = srch2::util::deserializeFixedTypes(buffer, value.valueType);
+    	switch (value.valueType) {
+    	case ATTRIBUTE_TYPE_UNSIGNED:
+        	buffer = srch2::util::deserializeFixedTypes(buffer, value.intTypedValue);
+        	break;
+    	case ATTRIBUTE_TYPE_FLOAT:
+        	buffer = srch2::util::deserializeFixedTypes(buffer, value.floatTypedValue);
+        	break;
+    	case ATTRIBUTE_TYPE_TEXT:
+        	buffer = srch2::util::deserializeString(buffer, value.stringTypedValue);
+        	break;
+    	case ATTRIBUTE_TYPE_TIME:
+        	buffer = srch2::util::deserializeFixedTypes(buffer, value.timeTypedValue);
+    		break;
+    	case ATTRIBUTE_TYPE_MULTI_UNSIGNED:
+        	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, value.intTypedMultiValue);
+        	break;
+    	case ATTRIBUTE_TYPE_MULTI_FLOAT:
+        	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, value.floatTypedMultiValue);
+        	break;
+    	case ATTRIBUTE_TYPE_MULTI_TEXT:
+        	buffer = srch2::util::deserializeVectorOfString(buffer, value.stringTypedMultiValue);
+        	break;
+    	case ATTRIBUTE_TYPE_MULTI_TIME:
+        	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, value.timeTypedMultiValue);
+        	break;
+    	case ATTRIBUTE_TYPE_DURATION:
+    		// we don't serialize TimeDuration
+			break;
+		}
+    	return buffer;
+    }
+    unsigned TypedValue::getNumberOfBytesForSerializationForNetwork(){
+    	unsigned numberOfBytes = 0;
+
+    	numberOfBytes += sizeof(valueType);
+
+    	switch (valueType) {
+    	case ATTRIBUTE_TYPE_UNSIGNED:
+        	numberOfBytes += sizeof(intTypedValue);
+        	break;
+    	case ATTRIBUTE_TYPE_FLOAT:
+        	numberOfBytes += sizeof(floatTypedValue);
+        	break;
+    	case ATTRIBUTE_TYPE_TEXT:
+        	numberOfBytes += sizeof(unsigned) + stringTypedValue.size();
+        	break;
+    	case ATTRIBUTE_TYPE_TIME:
+        	numberOfBytes += sizeof(timeTypedValue);
+    		break;
+    	case ATTRIBUTE_TYPE_MULTI_UNSIGNED:
+        	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(intTypedMultiValue);
+        	break;
+    	case ATTRIBUTE_TYPE_MULTI_FLOAT:
+        	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(floatTypedMultiValue);
+        	break;
+    	case ATTRIBUTE_TYPE_MULTI_TEXT:
+        	numberOfBytes += srch2::util::getNumberOfBytesVectorOfString(stringTypedMultiValue);
+        	break;
+    	case ATTRIBUTE_TYPE_MULTI_TIME:
+        	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(timeTypedMultiValue);
+        	break;
+    	case ATTRIBUTE_TYPE_DURATION:
+    		// we don't serialize TimeDuration
+			break;
+		}
+
+    	return numberOfBytes;
+    }
 
     }
 

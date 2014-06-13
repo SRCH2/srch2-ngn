@@ -1,0 +1,9 @@
+# Record R1 is inserted into node A and R2 into node B
+# A request is then sent to delete Record R2 from node A and R1 from node B
+
+A||insert||{"category": "kindergarten academic school Social Services Services Child Care", "name": "Garden Montessori", "relevance": 5.3888513463129604, "lat": 61.111776999999996, "lng": -149.86153999999999, "id": "110"}||{"rid":"110","insert":"success"}
+B||insert||{"category": "Insurance Services Insurance Agent", "name": "Prescription Service Of California", "relevance": 3.0147461915737148, "lat": 61.171669000000001, "lng": -149.881021, "id": "111"}||{"rid":"111","insert":"success"}
+C||delete||110||{"rid":"110","delete":"success"}
+D||delete||111||{"rid":"111","delete":"success"}
+
+

@@ -41,12 +41,14 @@ class LogicalPlanNode{
 	friend class LogicalPlan;
 public:
 	LogicalPlanNodeType nodeType;
-	vector<LogicalPlanNode *> children;
+	// this flag is used in case we want to force Query Optimizer to use a specific physical node.
+	// currently it's used for Suggestion
+	PhysicalPlanNodeType forcedPhysicalNode;
 	Term * exactTerm;
 	Term * fuzzyTerm;
+	vector<LogicalPlanNode *> children;
 	LogicalPlanNodeAnnotation * stats;
 
-	PhysicalPlanNodeType forcedPhysicalNode;
 
 	virtual ~LogicalPlanNode();
 
@@ -66,6 +68,15 @@ public:
 
     virtual string toString();
     string getSubtreeUniqueString();
+
+    /*
+     * Serialization scheme:
+     * | nodeType | forcedPhysicalNode | isNULL | isNULL | [exactTerm] | [fuzzyTerm] | children |
+     * NOTE : stats is NULL until logical plan reaches to the core so we don't serialize it...
+     */
+    void * serializeForNetwork(void * buffer);
+    static void * deserializeForNetwork(LogicalPlanNode * & node, void * buffer);
+    unsigned getNumberOfBytesForSerializationForNetwork();
     Term * getTerm(bool isFuzzy){
     	if(isFuzzy){
     		return this->fuzzyTerm;
@@ -77,6 +88,8 @@ public:
 protected:
 	LogicalPlanNode(Term * exactTerm, Term * fuzzyTerm);
 	LogicalPlanNode(LogicalPlanNodeType nodeType);
+private:
+	LogicalPlanNode();
 };
 
 class LogicalPlanPhraseNode : public LogicalPlanNode{
@@ -89,6 +102,13 @@ public:
 		phraseInfo->phraseKeyWords = phraseKeyWords;
 		phraseInfo->phraseKeywordPositionIndex = phraseKeywordsPosition;
 		phraseInfo->proximitySlop = slop;
+	}
+
+	/*
+	 * this constructor makes an empty object for deserialization
+	 */
+	LogicalPlanPhraseNode() : LogicalPlanNode(LogicalPlanNodeTypePhrase) {
+		phraseInfo = new PhraseInfo();
 	}
 	string toString() {
 		string key = LogicalPlanNode::toString();
@@ -134,17 +154,17 @@ public:
     ~LogicalPlan();
 
 
-	std::string docIdForRetrieveByIdSearchType;
-	ResultsPostProcessorPlan * postProcessingPlan;
-	ResultsPostProcessingInfo * postProcessingInfo;
-	/// Plan related information
-	srch2::instantsearch::QueryType queryType;
 	// the offset of requested results in the result set
 	int offset;
 	int numberOfResultsToRetrieve;
 	bool shouldRunFuzzyQuery;
+	srch2::instantsearch::QueryType queryType;
+	std::string docIdForRetrieveByIdSearchType;
 	Query *exactQuery;
 	Query *fuzzyQuery;
+	/// Plan related information
+	ResultsPostProcessorPlan * postProcessingPlan;
+	ResultsPostProcessingInfo * postProcessingInfo;
 
     // constructs a term logical plan node
     LogicalPlanNode * createTermLogicalPlanNode(const std::string &queryKeyword,
@@ -263,27 +283,17 @@ public:
 	 * the string of this subtree is something like:
 	 * FOO1_BAR_FOO2_OR_AND
 	 */
-	string getUniqueStringForCaching(){
-		stringstream ss;
-		if(tree != NULL){
-			ss << tree->getSubtreeUniqueString().c_str();
-		}
-		ss << docIdForRetrieveByIdSearchType;
-		if(postProcessingInfo != NULL){
-			ss << postProcessingInfo->toString().c_str();
-		}
-		ss << queryType;
-		ss << offset;
-		ss << numberOfResultsToRetrieve;
-		ss << shouldRunFuzzyQuery;
-		if(exactQuery != NULL){
-			ss << exactQuery->toString().c_str();
-		}
-		if(fuzzyQuery != NULL){
-			ss << fuzzyQuery->toString().c_str();
-		}
-		return ss.str();
-	}
+	string getUniqueStringForCaching();
+
+	/*
+	 * Serialization scheme :
+	 * | offset | numberOfResultsToRetrieve | shouldRunFuzzyQuery | queryType | \
+	 *  docIdForRetrieveByIdSearchType | isNULL | isNULL | isNULL | isNULL | \
+	 *   [exactQuery] | [fuzzyQuery] | [postProcessingInfo] | [tree] |
+	 */
+	void * serializeForNetwork(void * buffer);
+	static void * deserializeForNetwork(LogicalPlan & logicalPlan , void * buffer);
+	unsigned getNumberOfBytesForSerializationForNetwork();
 };
 
 }

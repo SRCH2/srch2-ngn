@@ -84,6 +84,12 @@ struct IndexHealthInfo
         returnString << ",\"doc_count\":\"" << doc_count << "\"";
         return returnString.str();
     }
+
+    const void getIndexHealthStringComponents(std::string & lastMergeTimeString, unsigned & docCount) const
+    {
+    	lastMergeTimeString = this->lastMergeTimeString;
+    	docCount = this->doc_count;
+    }
 };
 
 class IndexReaderWriter: public Indexer
@@ -180,6 +186,15 @@ public:
         return str.str();
     }
     
+    inline void getIndexHealthThoughArguments(unsigned & readCount, unsigned & writeCount, unsigned & numberOfIndexedDocuments
+    		, std::string & lastMergeTimeString, unsigned & docCount) const
+    {
+    	readCount = this->index->_getReadCount();
+    	writeCount = this->index->_getWriteCount();
+    	numberOfIndexedDocuments = this->index->_getNumberOfDocumentsInIndex();
+    	this->indexHealthInfo.getIndexHealthStringComponents(lastMergeTimeString, docCount);
+    }
+
     inline const bool isCommited() const { return this->index->isBulkLoadDone(); }
 
 

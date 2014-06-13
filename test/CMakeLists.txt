@@ -167,6 +167,7 @@ ADD_TEST(RandomAccessVerificationOr_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/R
 
 ADD_TEST(RandomAccessVerificationNot_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/RandomAccessVerificationNot_Test "--verbose")
 
+ADD_TEST(Serialization_Test ${CMAKE_CURRENT_BINARY_DIR}/sharding/unit/Serialization_Test "--verbose")
 
 #wrapper related tests should be added below this line
 

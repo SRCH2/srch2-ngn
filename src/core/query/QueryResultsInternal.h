@@ -29,6 +29,7 @@
 #include "index/ForwardIndex.h"
 #include "util/Assert.h"
 #include "util/Logger.h"
+#include "util/SerializationHelper.h"
 
 #include <vector>
 #include <queue>
@@ -51,36 +52,43 @@ class FacetedSearchFilter;
 
 class QueryResult {
 public:
-    string externalRecordId;
     unsigned internalRecordId;
+    // only the results of MapQuery have this
+    double physicalDistance; // TODO check if there is a better way to structure the "location result"
     TypedValue _score;
-    std::vector<std::string> matchingKeywords;
+    string externalRecordId;
     std::vector<unsigned> attributeBitmaps;
     std::vector<unsigned> editDistances;
     std::vector<TermType> termTypes;
     std::vector< TrieNodePointer > matchingKeywordTrieNodes;
-    // only the results of MapQuery have this
-    double physicalDistance; // TODO check if there is a better way to structure the "location result"
+    std::vector<std::string> matchingKeywords;
     TypedValue getResultScore() const
     {
     	return _score;
     }
 
-    unsigned getNumberOfBytes(){
-    	unsigned result = sizeof(QueryResult);
-    	result += externalRecordId.capacity();
-    	result += _score.getNumberOfBytes() - sizeof(TypedValue);
-    	for(unsigned i=0 ; i< matchingKeywords.size(); ++i){
-    		result += matchingKeywords[i].capacity();
-    	}
-    	result += attributeBitmaps.capacity() * sizeof(unsigned);
-    	result += editDistances.capacity() * sizeof(unsigned);
-    	result += termTypes.capacity() * sizeof(unsigned);
-    	result += matchingKeywordTrieNodes.capacity() * sizeof(TrieNodePointer);
-    	return result;
-    }
-    friend class QueryResultFactoryInternal;
+    unsigned getNumberOfBytes();
 
+    /*
+     * Serialization scheme :
+     * | internalRecordId | _score | externalRecordId | attributeBitmaps | \
+     *   editDistances | termTypes | matchingKeywords | physicalDistance |
+     */
+    void * serializeForNetwork(void * buffer);
+    /*
+     * Serialization scheme :
+     * | physicalDistance | internalRecordId | _score | externalRecordId | attributeBitmaps | \
+     *   editDistances | termTypes | matchingKeywords |
+     */
+    static void * deserializeForNetwork(QueryResult * &queryResult, void * buffer,QueryResultFactory * resultsFactory);
+    /*
+     * Serialization scheme :
+     * | internalRecordId | _score | externalRecordId | attributeBitmaps | \
+     *   editDistances | termTypes | matchingKeywords | physicalDistance |
+     */
+    unsigned getNumberOfBytesForSerializationForNetwork();
+
+    friend class QueryResultFactoryInternal;
 private:
     QueryResult(const QueryResult& copy_from_me){
     	externalRecordId = copy_from_me.externalRecordId;
@@ -175,6 +183,15 @@ public:
     bool checkCacheHit(QueryEvaluatorInternal *queryEvaluatorInternal, Query *query);
     
     
+    /*
+     * Serialization scheme :
+     * | resultsApproximated | estimatedNumberOfResults | sortedFinalResults | facetResults |
+     */
+    void * serializeForNetwork(void * buffer);
+    void * deserializeForNetwork(void * buffer,QueryResultFactory * resultsFactory);
+    unsigned getNumberOfBytesForSerializationForNetwork();
+
+
     std::vector<QueryResult *> sortedFinalResults;
     std::vector<TermVirtualList* > *virtualListVector;
     
@@ -182,7 +199,7 @@ public:
     bool resultsApproximated;
 
     // This member keeps the estimated number of results in case of top k, if all results are actually calculated, this value is -1
-    long int estimatedNumberOfResults;
+    int estimatedNumberOfResults;
 	// map of attribute name to : "aggregation results for categories"
 	// map<string, vector<Score>>
     /*

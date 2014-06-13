@@ -84,6 +84,67 @@ void QueryExecutor::execute(QueryResults * finalResults) {
     delete queryEvaluator; // Physical plan and physical operators and physicalRecordItems are freed here
 }
 
+void QueryExecutor::executeForDPInternal(QueryResults * finalResults, map<string,string> & inMemoryRecordStrings) {
+
+	///////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////
+	/*
+	 * changes:
+	 * 1. GetAll and topK must be merged. The difference must be pushed to the core.
+	 * 2. MapQuery and retrievById will remain unchanged (their search function must change because the names will change)
+	 * 3. LogicalPlan must be passed to QueryEvaluator (which is in core) to be evaluated.
+	 * 4. No exact/fuzzy policy must be applied here.
+	 * 5. Postprocessing framework must be prepared to be applied on the results (its code comes from QueryPlanGen)
+	 * 6. Post processing filters are applied on results list.
+	 */
+	///////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////
+
+    //urlParserHelper.print();
+    //evhttp_clear_headers(&headers);
+    // "IndexSearcherRuntimeParametersContainer" is the class which contains the parameters that we want to send to the core.
+    // Each time IndexSearcher is created, we container must be made and passed to it as an argument.
+    QueryEvaluatorRuntimeParametersContainer runTimeParameters(configuration->getKeywordPopularityThreshold(),
+    		configuration->getGetAllResultsNumberOfResultsThreshold() ,
+    		configuration->getGetAllResultsNumberOfResultsToFindInEstimationMode());
+    this->queryEvaluator = new srch2is::QueryEvaluator(server->indexer , &runTimeParameters );
+
+    //do the search
+    switch (queryPlan.getQueryType()) {
+    case srch2is::SearchTypeTopKQuery: //TopK
+    case srch2is::SearchTypeGetAllResultsQuery: //GetAllResults
+        executeKeywordSearch(finalResults);
+        break;
+    case srch2is::SearchTypeMapQuery: //MapQuery
+        executeGeo(finalResults);
+        break;
+    case srch2is::SearchTypeRetrieveById:
+    	executeRetrieveById(finalResults);
+    	break;
+    default:
+        ASSERT(false);
+        break;
+    };
+
+    // get the in memory data of records before we delete queryEvaluator
+    fillInMemoryRecordStrings(finalResults, inMemoryRecordStrings);
+
+    // Free objects
+    delete queryEvaluator; // Physical plan and physical operators and physicalRecordItems are freed here
+}
+
+void QueryExecutor::fillInMemoryRecordStrings(QueryResults * queryResults, map<string,string> & inMemoryRecordStrings){
+	if(queryResults == NULL){
+		return;
+	}
+	// iterate on query results and save the inMemoryStrings in the map
+	for(unsigned resultIndex = 0 ; resultIndex < queryResults->getNumberOfResults(); ++resultIndex){
+		inMemoryRecordStrings[queryResults->getRecordId(resultIndex)] =
+				queryResults->getInMemoryRecordString(resultIndex);
+	}
+}
+
+
 void QueryExecutor::executeKeywordSearch(QueryResults * finalResults) {
 
 

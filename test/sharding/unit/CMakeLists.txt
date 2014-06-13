@@ -1,5 +1,9 @@
 INCLUDE_DIRECTORIES(
     ${CMAKE_SOURCE_DIR}/src/core/
+    ${CMAKE_SOURCE_DIR}/src/sharding/
+    ${CMAKE_SOURCE_DIR}/src/server/
+    ${CMAKE_SOURCE_DIR}/src/wrapper/
+    ${CMAKE_SOURCE_DIR}/src/
     ${CMAKE_BINARY_DIR}/include/
     ${Boost_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}
@@ -15,13 +19,53 @@ SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src-0.5.0/libs/
 set(MONGO_CLIENT_LIBRARY ${CMAKE_SOURCE_DIR}/thirdparty/mongo-cxx-driver-v2.4/libmongoclient.a)
 
 ADD_EXECUTABLE(ConfigManager_Test ConfigManager_Test.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:SHARDING_OBJECTS> $<TARGET_OBJECTS:SERVER_OBJECTS>)
+ADD_EXECUTABLE(Serialization_Test Serialization_Test.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:SHARDING_OBJECTS> $<TARGET_OBJECTS:SERVER_OBJECTS>)
 TARGET_LINK_LIBRARIES(ConfigManager_Test
                         ${Srch2InstantSearch_LIBRARIES} 
                         ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
                         ${MONGO_CLIENT_LIBRARY} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
                     )
 LIST(APPEND SHARD_UNIT_TESTS ConfigManager_Test)
+TARGET_LINK_LIBRARIES(Serialization_Test
+                        ${Srch2InstantSearch_LIBRARIES} 
+                        ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
+                        ${MONGO_CLIENT_LIBRARY} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
+                    )
+LIST(APPEND SHARD_UNIT_TESTS Serialization_Test)
 
+
+
+ ADD_EXECUTABLE(TransportInitializationTest transport/TransportManagerInitializationTest.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:SHARDING_OBJECTS> $<TARGET_OBJECTS:SERVER_OBJECTS>)
+TARGET_LINK_LIBRARIES(TransportInitializationTest 
+                        ${Srch2InstantSearch_LIBRARIES} 
+                        ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
+                        ${MONGO_CLIENT_LIBRARY} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
+                    )
+LIST(APPEND SHARD_UNIT_TESTS TransportInitializationTest)
+
+ADD_EXECUTABLE(PendingMessagesTest transport/PendingMessagesTest.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:SHARDING_OBJECTS> $<TARGET_OBJECTS:SERVER_OBJECTS>)
+TARGET_LINK_LIBRARIES(PendingMessagesTest
+                        ${Srch2InstantSearch_LIBRARIES} 
+                        ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
+                        ${MONGO_CLIENT_LIBRARY} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
+                    )
+LIST(APPEND SHARD_UNIT_TESTS PendingMessagesTest)
+
+ ADD_EXECUTABLE(TMModuleTest transport/ModuleTest.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:SHARDING_OBJECTS> $<TARGET_OBJECTS:SERVER_OBJECTS>)
+TARGET_LINK_LIBRARIES(TMModuleTest
+                        ${Srch2InstantSearch_LIBRARIES} 
+                        ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
+                        ${MONGO_CLIENT_LIBRARY} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
+                    )
+LIST(APPEND SHARD_UNIT_TESTS TMModuleTest)
+
+ ADD_EXECUTABLE(SingleNodeIntraCommunicationTest transport/SingleNodeIntraCommunication.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:SHARDING_OBJECTS> $<TARGET_OBJECTS:SERVER_OBJECTS>)
+TARGET_LINK_LIBRARIES(SingleNodeIntraCommunicationTest 
+                        ${Srch2InstantSearch_LIBRARIES} 
+                        ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
+                        ${MONGO_CLIENT_LIBRARY} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
+                    )
+LIST(APPEND SHARD_UNIT_TESTS SingleNodeIntraCommunicationTest)
 
 
 ADD_CUSTOM_TARGET(build_shard_unit_test ALL DEPENDS ${SHARD_UNIT_TESTS} )

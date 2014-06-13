@@ -141,9 +141,11 @@ else
     echo "-- PASSED: $test_id" >> ${output}
 fi
 
+sleep 5s
+
 test_id="2n-insertA-deleteB"
 printTestBanner "$test_id"
-python ./AllTestCases/test-sharding.py $SRCH2_ENGINE ./AllTestCases/2n-insertA-deleteB.txt ./AllTestCases/list-of-2-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
+python ./2n-testCaseFramework/test-sharding.py $SRCH2_ENGINE ./2n-testCaseFramework/2n-insertA-deleteB.txt ./2n-testCaseFramework/list-of-2-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
 if [ ${PIPESTATUS[0]} -gt 0 ]; then
     echo "${html_fail_pre}-- FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
@@ -152,10 +154,12 @@ if [ ${PIPESTATUS[0]} -gt 0 ]; then
 else
     echo "-- PASSED: $test_id" >> ${output}
 fi
+
+sleep 5s 
 
 test_id="2n-insertA-R1-B-R2-deleteA-R1-B-R2"
 printTestBanner "$test_id"
-python ./AllTestCases/test-sharding.py $SRCH2_ENGINE ./AllTestCases/2n-insertA-R1-B-R2-deleteA-R1-B-R2.txt ./AllTestCases/list-of-2-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
+python ./2n-testCaseFramework/test-sharding.py $SRCH2_ENGINE ./2n-testCaseFramework/2n-insertA-R1-B-R2-deleteA-R1-B-R2.txt ./2n-testCaseFramework/list-of-2-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
 if [ ${PIPESTATUS[0]} -gt 0 ]; then
     echo "${html_fail_pre}-- FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
@@ -164,10 +168,12 @@ if [ ${PIPESTATUS[0]} -gt 0 ]; then
 else
     echo "-- PASSED: $test_id" >> ${output}
 fi
+
+sleep 5s
 
 test_id="2n-insertA-R1-B-R2-deleteB-R1-A-R1"
 printTestBanner "$test_id"
-python ./AllTestCases/test-sharding.py $SRCH2_ENGINE ./AllTestCases/2n-insertA-R1-B-R2-deleteB-R1-A-R1.txt ./AllTestCases/list-of-2-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
+python ./2n-testCaseFramework/test-sharding.py $SRCH2_ENGINE ./2n-testCaseFramework/2n-insertA-R1-B-R2-deleteB-R1-A-R1.txt ./2n-testCaseFramework/list-of-2-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
 if [ ${PIPESTATUS[0]} -gt 0 ]; then
     echo "${html_fail_pre}-- FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
@@ -176,10 +182,12 @@ if [ ${PIPESTATUS[0]} -gt 0 ]; then
 else
     echo "-- PASSED: $test_id" >> ${output}
 fi
+
+sleep 5s 
 
 test_id="2n-insertA-R1-B-R2-deleteB-R1-queryA-R1"
 printTestBanner "$test_id"
-python ./AllTestCases/test-sharding.py $SRCH2_ENGINE ./AllTestCases/2n-insertA-R1-B-R2-deleteB-R1-queryA-R1.txt ./AllTestCases/list-of-2-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
+python ./2n-testCaseFramework/test-sharding.py $SRCH2_ENGINE ./2n-testCaseFramework/2n-insertA-R1-B-R2-deleteB-R1-queryA-R1.txt ./2n-testCaseFramework/list-of-2-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
 if [ ${PIPESTATUS[0]} -gt 0 ]; then
     echo "${html_fail_pre}-- FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
@@ -189,9 +197,11 @@ else
     echo "-- PASSED: $test_id" >> ${output}
 fi
 
-test_id="./AllTestCases/2n-insertAB-queryAB"
+sleep 5s
+
+test_id="2n-insertAB-queryAB"
 printTestBanner "$test_id"
-python ./AllTestCases/test-sharding.py $SRCH2_ENGINE ./AllTestCases/2n-insertAB-queryAB.txt ./AllTestCases/list-of-2-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
+python ./2n-testCaseFramework/test-sharding.py $SRCH2_ENGINE ./2n-testCaseFramework/2n-insertAB-queryAB.txt ./2n-testCaseFramework/list-of-2-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
 if [ ${PIPESTATUS[0]} -gt 0 ]; then
     echo "${html_fail_pre}-- FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
@@ -201,9 +211,11 @@ else
     echo "-- PASSED: $test_id" >> ${output}
 fi
 
-test_id="./AllTestCases/2n-insertAABB"
+sleep 5s
+
+test_id="2n-insertAABB"
 printTestBanner "$test_id"
-python ./AllTestCases/test-sharding.py $SRCH2_ENGINE ./AllTestCases/2n-insertAABB.txt ./AllTestCases/list-of-2-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
+python ./2n-testCaseFramework/test-sharding.py $SRCH2_ENGINE ./2n-testCaseFramework/2n-insertAABB.txt ./2n-testCaseFramework/list-of-2-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
 if [ ${PIPESTATUS[0]} -gt 0 ]; then
     echo "${html_fail_pre}-- FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
@@ -213,9 +225,12 @@ else
     echo "-- PASSED: $test_id" >> ${output}
 fi
 
-test_id="./AllTestCases/3n-insertABC-queryABC"
+
+sleep 5s
+
+test_id="3n-insertA-insertB-deleteC-queryC"
 printTestBanner "$test_id"
-python ./AllTestCases/test-sharding.py $SRCH2_ENGINE ./AllTestCases/3n-insertABC-queryABC ./AllTestCases/list-of-3-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
+python ./3n-testCaseFramework/test-sharding.py $SRCH2_ENGINE ./3n-testCaseFramework/3n-insertA-insertB-deleteC-queryC.txt ./3n-testCaseFramework/list-of-3-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
 if [ ${PIPESTATUS[0]} -gt 0 ]; then
     echo "${html_fail_pre}-- FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
@@ -225,9 +240,11 @@ else
     echo "-- PASSED: $test_id" >> ${output}
 fi
 
-test_id="./AllTestCases/3n-insertABC-queryC"
+sleep 5s
+
+test_id="3n-insertABC-queryABC"
 printTestBanner "$test_id"
-python ./AllTestCases/test-sharding.py $SRCH2_ENGINE ./AllTestCases/3n-insertABC-queryC ./AllTestCases/list-of-3-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
+python ./3n-testCaseFramework/test-sharding.py $SRCH2_ENGINE ./3n-testCaseFramework/3n-insertABC-queryABC.txt ./3n-testCaseFramework/list-of-3-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
 if [ ${PIPESTATUS[0]} -gt 0 ]; then
     echo "${html_fail_pre}-- FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
@@ -237,9 +254,11 @@ else
     echo "-- PASSED: $test_id" >> ${output}
 fi
 
-test_id="./AllTestCases/3n-insertA-queryABC"
+sleep 5s
+
+test_id="3n-insertABC-queryC"
 printTestBanner "$test_id"
-python ./AllTestCases/test-sharding.py $SRCH2_ENGINE ./AllTestCases/3n-insertA-queryABC ./AllTestCases/list-of-3-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
+python ./3n-testCaseFramework/test-sharding.py $SRCH2_ENGINE ./3n-testCaseFramework/3n-insertABC-queryC.txt ./3n-testCaseFramework/list-of-3-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
 if [ ${PIPESTATUS[0]} -gt 0 ]; then
     echo "${html_fail_pre}-- FAILED: $test_id${html_fail_post}" >> ${output}
     if [ $force -eq 0 ]; then
@@ -248,4 +267,75 @@ if [ ${PIPESTATUS[0]} -gt 0 ]; then
 else
     echo "-- PASSED: $test_id" >> ${output}
 fi
+
+sleep 5s
+
+test_id="3n-insertABC-queryABC"
+printTestBanner "$test_id"
+python ./3n-testCaseFramework/test-sharding.py $SRCH2_ENGINE ./3n-testCaseFramework/3n-insertABC-queryABC.txt ./3n-testCaseFramework/list-of-3-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
+if [ ${PIPESTATUS[0]} -gt 0 ]; then
+    echo "${html_fail_pre}-- FAILED: $test_id${html_fail_post}" >> ${output}
+    if [ $force -eq 0 ]; then
+        exit 255
+    fi
+else
+    echo "-- PASSED: $test_id" >> ${output}
+fi
+
+sleep 5s
+
+test_id="3n-insertA-queryABC"
+printTestBanner "$test_id"
+python ./3n-testCaseFramework/test-sharding.py $SRCH2_ENGINE ./3n-testCaseFramework/3n-insertA-queryABC.txt ./3n-testCaseFramework/list-of-3-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
+if [ ${PIPESTATUS[0]} -gt 0 ]; then
+    echo "${html_fail_pre}-- FAILED: $test_id${html_fail_post}" >> ${output}
+    if [ $force -eq 0 ]; then
+        exit 255
+    fi
+else
+    echo "-- PASSED: $test_id" >> ${output}
+fi
+
+sleep 5s
+
+test_id="3n-insertAB-deleteCB-queryCA"
+printTestBanner "$test_id"
+python ./3n-testCaseFramework/test-sharding.py $SRCH2_ENGINE ./3n-testCaseFramework/3n-insertAB-deleteCB-queryCA.txt ./3n-testCaseFramework/list-of-3-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
+if [ ${PIPESTATUS[0]} -gt 0 ]; then
+    echo "${html_fail_pre}-- FAILED: $test_id${html_fail_post}" >> ${output}
+    if [ $force -eq 0 ]; then
+        exit 255
+    fi
+else
+    echo "-- PASSED: $test_id" >> ${output}
+fi
+
+sleep 5s
+
+test_id="testUpdateB"
+printTestBanner "$test_id"
+python ./3n-testCaseFramework/test-sharding.py $SRCH2_ENGINE ./3n-testCaseFramework/testUpdateB.txt ./3n-testCaseFramework/list-of-3-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
+if [ ${PIPESTATUS[0]} -gt 0 ]; then
+    echo "${html_fail_pre}-- FAILED: $test_id${html_fail_post}" >> ${output}
+    if [ $force -eq 0 ]; then
+        exit 255
+    fi
+else
+    echo "-- PASSED: $test_id" >> ${output}
+fi
+
+sleep 5s
+
+test_id="testUpdateC"
+printTestBanner "$test_id"
+python ./3n-testCaseFramework/test-sharding.py $SRCH2_ENGINE ./3n-testCaseFramework/testUpdateC.txt ./3n-testCaseFramework/list-of-3-nodes.txt | eval "${html_escape_command}" >> ./test-data/core1/logs/system_test.log 2>&1
+if [ ${PIPESTATUS[0]} -gt 0 ]; then
+    echo "${html_fail_pre}-- FAILED: $test_id${html_fail_post}" >> ${output}
+    if [ $force -eq 0 ]; then
+        exit 255
+    fi
+else
+    echo "-- PASSED: $test_id" >> ${output}
+fi
+
 

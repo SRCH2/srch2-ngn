@@ -26,6 +26,7 @@
 #include <stdint.h>
 #include "util/encoding.h"
 #include <sstream>
+#include "util/SerializationHelper.h"
 
 using std::string;
 using std::vector;
@@ -37,12 +38,12 @@ namespace instantsearch
 //TODO OPT pass string pointer in FuzzyTerm/ExactTerm constructor rather than copying. But copy terms into cache
 struct Term::Impl
 {
-    string keyword;
-    TermType type;
     float boost;
     float similarityBoost;
     uint8_t threshold;
     unsigned searchableAttributeIdToFilter;
+    TermType type;
+    string keyword;
 
     string toString(){
     	std::stringstream ss;
@@ -53,6 +54,42 @@ struct Term::Impl
     	ss << (threshold+1) << "";
     	ss << (searchableAttributeIdToFilter + 1);
     	return ss.str();
+    }
+
+    /*
+     * Serialization Scheme :
+     * | boost | similarityBoost | threshold | searchableAttributeIdToFilter | type | keyword |
+     */
+    void * serializeForNetwork(void * buffer){
+    	buffer = srch2::util::serializeFixedTypes(boost, buffer);
+    	buffer = srch2::util::serializeFixedTypes(similarityBoost, buffer);
+    	buffer = srch2::util::serializeFixedTypes(threshold, buffer);
+    	buffer = srch2::util::serializeFixedTypes(searchableAttributeIdToFilter, buffer);
+    	buffer = srch2::util::serializeFixedTypes(type, buffer);
+    	buffer = srch2::util::serializeString(keyword, buffer);
+
+    	return buffer;
+    }
+    void * deserializeForNetwork(void * buffer){
+    	buffer = srch2::util::deserializeFixedTypes(buffer, boost );
+    	buffer = srch2::util::deserializeFixedTypes(buffer,similarityBoost);
+    	buffer = srch2::util::deserializeFixedTypes(buffer,threshold);
+    	buffer = srch2::util::deserializeFixedTypes(buffer,searchableAttributeIdToFilter);
+    	buffer = srch2::util::deserializeFixedTypes(buffer,type);
+    	buffer = srch2::util::deserializeString(buffer,keyword);
+
+    	return buffer;
+    }
+    unsigned getNumberOfBytesForNetwork(){
+    	unsigned numberOfBytes = 0;
+    	numberOfBytes += sizeof(boost);
+    	numberOfBytes += sizeof(similarityBoost);
+    	numberOfBytes += sizeof(threshold);
+    	numberOfBytes += sizeof(searchableAttributeIdToFilter);
+    	numberOfBytes += sizeof(type);
+    	numberOfBytes += sizeof(unsigned) + keyword.size();
+
+    	return numberOfBytes;
     }
 };
 
@@ -154,6 +191,15 @@ string Term::toString(){
 	return this->impl->toString();
 }
 
+void * Term::serializeForNetwork(void * buffer){
+	return impl->serializeForNetwork(buffer);
+}
+void * Term::deserializeForNetwork(Term & term, void * buffer){
+	return term.impl->deserializeForNetwork(buffer);
+}
+unsigned Term::getNumberOfBytesForSerializationForNetwork(){
+	return impl->getNumberOfBytesForNetwork();
+}
 ////////////////////////
 
 Term* ExactTerm::create(const string &keyword, TermType type, const float boost, const float similarityBoost)
