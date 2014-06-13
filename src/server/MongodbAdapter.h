@@ -8,7 +8,7 @@
 
 #ifndef __WRAPPER_MONGODBADAPTER_H__
 #define __WRAPPER_MONGODBADAPTER_H__
-
+#ifndef ANDROID
 #include <instantsearch/Indexer.h>
 #include <instantsearch/Record.h>
 #include <instantsearch/Schema.h>
@@ -45,5 +45,5 @@ public:
 
 }
 }
-
+#endif // #ifndef ANDROID
 #endif /* __WRAPPER_MONGODBADAPTER_H__ */

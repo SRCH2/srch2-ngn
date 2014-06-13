@@ -22,7 +22,7 @@
 #include <sstream>
 #include <unistd.h>
 #include <fcntl.h>
-#ifdef __MACH__
+#if defined( __MACH__) || defined(ANDROID)
 // This header is used only in mac osx related code
 #include <arpa/inet.h>
 #endif
@@ -31,6 +31,7 @@
 #include "util/Logger.h"
 #include "util/Version.h"
 #include <event2/http.h>
+#include <event2/thread.h>
 #include <signal.h>
 
 #include <sys/types.h>
@@ -556,18 +557,31 @@ void makeHttpRequest(){
 static void killServer(int signal) {
     Logger::console("Stopping server.");
     for (int i = 0; i < MAX_THREADS; i++) {
-        pthread_cancel(threadsToHandleExternalRequests[i]);
+#ifndef ANDROID
+    	// Android thread implementation does not have pthread_cancel()
+    	// use pthread_kill instead.
+    	pthread_cancel(threads[i]);
+#endif
     }
     for (int i = 0; i < MAX_INTERNAL_THREADS; i++) {
+#ifndef ANDROID
     	pthread_cancel(threadsToHandleInternalRequests[i]);
+#endif
     }
     for(srch2http::RouteMap::iterator conn = 
         transportManager->getRouteMap()->begin();
         conn != transportManager->getRouteMap()->end(); ++conn) {
       close(conn->second.fd);
     }
+#ifndef ANDROID
     pthread_cancel(transportManager->getListeningThread());
+#endif
     close(transportManager->getRouteMap()->getListeningSocket());
+
+#ifdef ANDROID
+    exit(0);
+#endif
+
 #ifdef __MACH__
 	/*
 	 *  In MacOS, pthread_cancel could not cancel a thread when the thread is executing kevent syscall
@@ -626,6 +640,7 @@ static int createHTTPServersAndAccompanyingThreads(int MAX_THREADS,
 		vector<struct event_base *> *evBases, vector<struct evhttp *> *evServers) {
 	// for each thread, we bind an evbase and http_server object
 	// TODO : do we need to deallocate these objects anywhere ?
+
 	threadsToHandleExternalRequests = new pthread_t[MAX_THREADS];
 	for (int i = 0; i < MAX_THREADS; i++) {
 		struct event_base *evbase = event_base_new();
@@ -834,6 +849,7 @@ int main(int argc, char** argv) {
 	MAX_THREADS = serverConf->getNumberOfThreads();
 	MAX_INTERNAL_THREADS = 3; // Todo : read from config file.
 
+    evthread_use_pthreads();
 	// create threads for external requests
 	createHTTPServersAndAccompanyingThreads(MAX_THREADS, &evBasesForExternalRequests, &evServersForExternalRequests);
 

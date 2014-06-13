@@ -398,7 +398,9 @@ boost::shared_ptr<PrefixActiveNodeSet> QueryEvaluatorInternal::computeActiveNode
     // 1. Get the longest prefix that has active nodes
     unsigned cachedPrefixLength = 0;
     boost::shared_ptr<PrefixActiveNodeSet> initialPrefixActiveNodeSet ;
-    int cacheResponse = this->cacheManager->getActiveNodesCache()->findLongestPrefixActiveNodes(term, initialPrefixActiveNodeSet); //initialPrefixActiveNodeSet is Busy
+    //TODO: Active node cache is disabled for geo search for now. There is a bug related to Cache/Trie and Geo.
+    // We should fix this bug when we will be actively working on Geo.
+    int cacheResponse = 0 ; // this->cacheManager->getActiveNodesCache()->findLongestPrefixActiveNodes(term, initialPrefixActiveNodeSet); //initialPrefixActiveNodeSet is Busy
 
     if ( cacheResponse == 0) { // NO CacheHit,  response = 0
         //std::cout << "|NO Cache|" << std::endl;;

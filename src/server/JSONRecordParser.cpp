@@ -283,9 +283,8 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
         double recordLatitude;
         getJsonValueDouble(root, latitudeAttributeKeyName, recordLatitude, "attribute-latitude");
 
-        if(recordLatitude > 200.0 || recordLatitude < -200.0)
-        {
-            cout << "bad x: " << recordLatitude << ", set to 40.0 for testing purpose" << endl;
+        if(recordLatitude > 200.0 || recordLatitude < -200.0) {
+            Logger::warn("bad x: %f, set to 40.0 for testing purposes.\n", recordLatitude);
             recordLatitude = 40.0;
         }
         //double recordLongitude = root.get(longitudeAttributeKeyName, "NULL" ).asDouble();
@@ -294,7 +293,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
 
         if(recordLongitude > 200.0 || recordLongitude < -200.0)
         {
-            cout << "bad y: " << recordLongitude << ", set to -120.0 for testing purpose" << endl;
+            Logger::warn("bad y: %f, set to -120.0 for testing purposes.\n", recordLongitude);
             recordLongitude = -120.0;
         }
         record->setLocationAttributeValue(recordLatitude, recordLongitude);
@@ -315,8 +314,6 @@ bool JSONRecordParser::populateRecordFromJSON(const string &inputLine,
     // Parse example data
     Json::Value root;
     Json::Reader reader;
-
-    //std::cout << "[" << inputLine << "]" << std::endl;
 
     bool parseSuccess = reader.parse(inputLine, root, false);
 
@@ -479,13 +476,12 @@ unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, Sch
             record->clear();
             int reportFreq = 10000;
             ++lineCounter;
-            if (indexedRecordsCount % reportFreq == 0)
-            {
-                std::cout << "Indexing first " << indexedRecordsCount << " records" << "\r";
+            if (indexedRecordsCount % reportFreq == 0) {
+                Logger::console("Indexing first %d records.\r", indexedRecordsCount);
             }
         }
     }
-    std::cout<<"                                                     \r";
+    Logger::console("                                                     \r");
     Logger::console("Indexed %d / %d records.", indexedRecordsCount, lineCounter);
 
     in.close();
@@ -541,10 +537,10 @@ void JSONRecordParser::getJsonValueString(const Json::Value &jsonValue,
 		std::vector<std::string> &stringValues,
 		const string &configName)
 {
-    if(!jsonValue.isMember(key))
-    {
+    if(!jsonValue.isMember(key)) {
         stringValues.clear();
-        cout << "[Warning] Wrong value setting for " << configName << ". There is no such attribute <" << key << ">.\n Please set it to IGNORE in the configure file if you don't need it." << endl;
+        Logger::warn("[Warning] Wrong value setting for %s. There is no such attribute %s.\n", configName.c_str(), key.c_str());
+        Logger::warn("Please set it to IGNORE in the configure file if you don't need it.");
         return;
     }
     Json::Value value = jsonValue.get(key, "NULL");
@@ -561,7 +557,8 @@ void JSONRecordParser::getJsonValueDateAndTime(const Json::Value &jsonValue,
     if(!jsonValue.isMember(key)){
 
         stringValues.clear();
-        cout << "[Warning] Wrong value setting for " << configName << ". There is no such attribute <" << key << ">.\n Please set it to IGNORE in the configure file if you don't need it." << endl;
+        Logger::warn("[Warning] Wrong value setting for %s. There is no such attribute %s.\n", configName.c_str(), key.c_str());
+        Logger::warn("Please set it to IGNORE in the configure file if you don't need it.");
         return;
     }
     vector<string> temp;
@@ -605,7 +602,8 @@ void JSONRecordParser::getJsonValueDouble(const Json::Value &jsonValue,
     if(!jsonValue.isMember(key))
     {
         doubleValue = 0;
-        cout << "[Warning] value setting for " << configName << ". There is no such attribute <" << key << ">.\n Please set it to IGNORE in the configure file if you don't need it." << endl;
+        Logger::warn("value setting for %s. There is no such attribute %s.", configName.c_str(), key.c_str());
+        Logger::warn("Please set it to IGNORE in the configure file if you don't need it.\n");
         return;
     }
     Json::Value value = jsonValue.get(key, "NULL");
@@ -618,7 +616,8 @@ void JSONRecordParser::getJsonValueDouble(const Json::Value &jsonValue,
     else // if the type is not double not int, set it to 0
     {
         doubleValue = 0;
-        cout << "[Warning] The attribute <" << key << "> was set to be \"" << value.asString() << "\".  It should be a float or integer." << endl;
+        Logger::warn("The attribute %s was set to be %s.", key.c_str(), value.asString().c_str());
+        Logger::warn("It should be a float or integer.\n");
     }
 }
 
