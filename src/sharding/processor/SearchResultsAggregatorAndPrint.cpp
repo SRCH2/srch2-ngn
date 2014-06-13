@@ -552,6 +552,10 @@ void SearchResultsAggregator::genRecordJsonString(const srch2::instantsearch::Sc
     delete storedSchema;
 }
 
+/*
+ *   This functions removes new line and non-printable characters from the input string
+ *   and returns a clean string.
+ */
 void SearchResultsAggregator::cleanAndAppendToBuffer(const string& in, string& out) {
 	unsigned inLen = in.length();
 	unsigned inIdx = 0;
