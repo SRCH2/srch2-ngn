@@ -10,27 +10,36 @@
 
 #include <string>
 #include "DataConnector.h"
-
-#include "ServerInterface.h"
-
+#include "ServerInterfaceInternal.h"
 
 struct ThreadArguments {
-	std::string dbType;
-	ServerInterface *server;
+	srch2::httpwrapper::DataSourceType dbType;
+	ServerInterface* server;
 };
 
 void * spawnConnector(void *arg);
 
-class DataConnectorFactory{
+class DataConnectorFactory {
 public:
-	static void bootStrapConnector(std::string dbType, ServerInterface *server);
+	static void bootStrapConnector(ThreadArguments* args);
+	static ServerInterfaceInternal* getServerInterfaceInternal(
+			srch2::httpwrapper::DataSourceType dbType, void * server);
+
+	static const std::string DB_CONNECTORS_PATH;
+	static const std::string DYNAMIC_LIBRARY_SUFFIX;
+	static const std::string DYNAMIC_LIBRARY_PREFIX;
+	static const std::string PRIMARY_KEY;
+	static const std::string DATABASE_NAME;
+	static const std::string DATABASE_PORT;
+	static const std::string DATABASE_HOST;
+	static const std::string DATABASE_COLLECTION;
+	static const std::string DATABASE_TYPE_NAME;
 private:
-	static DataConnector* getDataConnector(std::string dbType);
-	static const  std::string DB_CONNECTORS_PATH;
-	static const  std::string DYNAMIC_LIBRARY_SUFFIX;
-	static const  std::string DYNAMIC_LIBRARY_PREFIX;
+	static DataConnector* getDataConnector(std::string dbname);
+
+	static std::map<std::string, std::string> * populateConnectorConfig(
+			srch2::httpwrapper::DataSourceType dbType, void * server);
+
 };
-
-
 
 #endif /* DATACONNECTORFACTORY_H_ */

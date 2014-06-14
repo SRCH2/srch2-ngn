@@ -20,9 +20,9 @@ MESSAGE(STATUS "Srch2InstantSearch_LIBRARIES="  ${Srch2InstantSearch_LIBRARIES} 
 INCLUDE_DIRECTORIES(
 	${CMAKE_BINARY_DIR}/include
 	${CMAKE_SOURCE_DIR}/src/wrapper/
-	${CMAKE_SOURCE_DIR}/src/adapter/
 	${CMAKE_SOURCE_DIR}/src/core/
 	${CMAKE_SOURCE_DIR}/src/server/
+	${CMAKE_SOURCE_DIR}/src/adapter/
     ${Boost_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/thirdparty/event/include

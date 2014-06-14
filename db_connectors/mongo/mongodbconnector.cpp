@@ -51,7 +51,7 @@ MongoDBConnector::~MongoDBConnector() {
 bool MongoDBConnector::getOplogConnector() {
 	string mongoNamespace = "local.oplog.rs";
 
-	string dbname = this->serverHandle->configLookUp("db");
+	string dbname = this->serverHandle->configLookUp("dbname");
 	string collection = this->serverHandle->configLookUp("collection");
 	string filterNamespace = dbname + "." + collection;
 	string host = this->serverHandle->configLookUp("host");
@@ -70,6 +70,8 @@ bool MongoDBConnector::getOplogConnector() {
 	} catch (const exception& ex) {
 		printf("Unknown exception : %s", ex.what());
 	}
+
+	return true;
 }
 
 // the class factories

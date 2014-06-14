@@ -616,16 +616,18 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
 //                srch2http::MongoDataSource::spawnUpdateListener(iterator->second);
 
 //                //Adapter Solution
-            	std::map<std::string,std::string> * connConf;
+				ServerInterfaceInternal* serverInterface =
+						DataConnectorFactory::getServerInterfaceInternal(
+								coreInfo->getDataSourceType(),
+								(void*) iterator->second);
 
-            	ThreadArguments * dbArg=new ThreadArguments();
-            	dbArg->dbType="mongodb";
-            	ServerInterfaceInternal* server=new ServerInterfaceInternal((void*)iterator->second,NULL);
-            	dbArg->server=server;
+				ThreadArguments * dbArg = new ThreadArguments();
+				dbArg->dbType = coreInfo->getDataSourceType();
+				dbArg->server = serverInterface;
 
-            	pthread_t * dbListenerThread = new pthread_t;
-            	 int res = pthread_create(dbListenerThread, NULL,
-            			 spawnConnector, (void *)dbArg);
+				pthread_t * dbListenerThread = new pthread_t;
+				int res = pthread_create(dbListenerThread, NULL, spawnConnector,
+						(void *) dbArg);
 
             }
 

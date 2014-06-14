@@ -8,9 +8,8 @@
 #ifndef __SERVERINTERFACEINTERNAL__
 #define __SERVERINTERFACEINTERNAL__ 
 #include "DataConnector.h"
+#include "Srch2Server.h"
 #include <string>
-
-//class Srch2Server;
 
 class ServerInterfaceInternal: public ServerInterface {
 
@@ -26,10 +25,10 @@ public:
 	//  e.g  "dbname" => "mysql"  (single value)
 	//       "collections" => "collection1, collection2 " (multi value)
 	virtual std::string configLookUp(std::string key);
-
 private:
-//	Srch2Server *server;
-	void *server;
+	srch2::httpwrapper::Srch2Server *server;
 	std::map<std::string, std::string> * connectorConfig;
+
+
 };
 #endif /* __SERVERINTERFACEINTERNAL__ */
