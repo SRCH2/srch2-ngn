@@ -34,6 +34,9 @@ public:
 	static const std::string DATABASE_HOST;
 	static const std::string DATABASE_COLLECTION;
 	static const std::string DATABASE_TYPE_NAME;
+	static const std::string DATABASE_LISTENER_WATI_TIME;
+	static const std::string DATABASE_MAX_RETRY_ON_FALIFURE;
+	static const std::string DATABASE_MAX_RETRY_COUNT;
 private:
 	static DataConnector* getDataConnector(std::string dbname);
 

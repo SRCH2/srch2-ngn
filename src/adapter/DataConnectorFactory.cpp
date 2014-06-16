@@ -19,12 +19,15 @@ const std::string DataConnectorFactory::DB_CONNECTORS_PATH =
 		"/home/liusrch2/srch2-ngn/db_connectors/build/";
 const std::string DataConnectorFactory::DYNAMIC_LIBRARY_SUFFIX = "Connector.so";
 const std::string DataConnectorFactory::DYNAMIC_LIBRARY_PREFIX = "lib";
-const std::string DataConnectorFactory::PRIMARY_KEY="primaryKey";
-const std::string DataConnectorFactory::DATABASE_NAME="dbname";
+const std::string DataConnectorFactory::PRIMARY_KEY="uniqueKey";
+const std::string DataConnectorFactory::DATABASE_NAME="db";
 const std::string DataConnectorFactory::DATABASE_PORT="port";
 const std::string DataConnectorFactory::DATABASE_HOST="host";
 const std::string DataConnectorFactory::DATABASE_COLLECTION="collection";
 const std::string DataConnectorFactory::DATABASE_TYPE_NAME="dbTypeName";
+const std::string DataConnectorFactory::DATABASE_LISTENER_WATI_TIME="listenerWaitTime";
+const std::string DataConnectorFactory::DATABASE_MAX_RETRY_ON_FALIFURE="maxRetryOnFailure";
+const std::string DataConnectorFactory::DATABASE_MAX_RETRY_COUNT="maxRetryCount";
 
 void DataConnectorFactory::bootStrapConnector(ThreadArguments * targ) {
 	DataConnector *connector = getDataConnector(targ->server->configLookUp(DataConnectorFactory::DATABASE_TYPE_NAME));
@@ -72,6 +75,8 @@ std::map<std::string, std::string> * DataConnectorFactory::populateConnectorConf
 	srch2::httpwrapper::Srch2Server *srch2Server =
 			(srch2::httpwrapper::Srch2Server *) server;
 
+	(*config)[PRIMARY_KEY]=srch2Server->indexDataConfig->getPrimaryKey();
+
 	switch (dbType) {
 	case srch2::httpwrapper::DATA_SOURCE_NOT_SPECIFIED:
 		break;
@@ -83,8 +88,9 @@ std::map<std::string, std::string> * DataConnectorFactory::populateConnectorConf
 		(*config)[DATABASE_HOST]=srch2Server->indexDataConfig->getMongoServerHost();
 		(*config)[DATABASE_PORT]=srch2Server->indexDataConfig->getMongoServerPort();
 		(*config)[DATABASE_COLLECTION]=srch2Server->indexDataConfig->getMongoCollection();
-
-
+		(*config)[DATABASE_LISTENER_WATI_TIME]=srch2Server->indexDataConfig->getMongoListenerWaitTime();
+		(*config)[DATABASE_MAX_RETRY_ON_FALIFURE]=srch2Server->indexDataConfig->getMongoListenerMaxRetryOnFailure();
+		(*config)[DATABASE_MAX_RETRY_COUNT]=srch2Server->indexDataConfig->getMongoListenerMaxRetryCount();
 		break;
 	default:
 		break;
