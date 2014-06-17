@@ -176,7 +176,8 @@
             Defaults to 1
         -->
         <defaultQueryTermBoost>1</defaultQueryTermBoost>
-         
+                <enablePositionIndex>1</enablePositionIndex>
+        <enableCharOffsetIndex>1</enableCharOffsetIndex> 
     </indexConfig>
   
   
@@ -413,8 +414,8 @@
 		    here and indexed="false" it will be also used for sort,filtering and facet.
 		    - 
 	   -->
-	   <field name="category" type="text" indexed="true" />
-	   <field name="name" type="text" indexed="true" />
+	   <field name="category" type="text" indexed="true" highlight="true" />
+	   <field name="name" type="text" indexed="true" highlight="true" />
 	 </fields>
 	 
 	 <!--

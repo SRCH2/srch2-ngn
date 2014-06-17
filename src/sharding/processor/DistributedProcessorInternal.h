@@ -1,7 +1,14 @@
 #ifndef __SHARDING_PROCESSOR_DISTRIBUTED_PROCESSR_INTERNAL_H_
 #define __SHARDING_PROCESSOR_DISTRIBUTED_PROCESSR_INTERNAL_H_
 
+
+#include "sharding/configuration/ConfigManager.h"
+#include "sharding/configuration/ShardingConstants.h"
 #include <string>
+#include <boost/shared_ptr.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/shared_mutex.hpp>
+#include <boost/thread/locks.hpp>
 
 using namespace std;
 
@@ -20,11 +27,63 @@ class ResetLogCommand;
 class CommitCommand;
 class GetInfoCommand;
 class GetInfoCommandResults;
+
+
+/*
+ * The level of availability of a shard.
+ * The order of these enums must be from lowest available to highest available
+ */
+enum Srch2ServerAccessAvailabilty{
+	DPInternal_NonAvailable,
+	DPInternal_ReadAvailable,
+	DPInternal_ReadWriteAvailable
+};
+
+enum DPInternalAPIStatus{
+	DPInternal_Srch2ServerNotFound,
+	DPInternal_Success
+};
+
+class DPInternalRequestHandler;
+class Srch2ServerAccess{
+	friend class DPInternalRequestHandler;
+public:
+
+	Srch2ServerAccess(const ShardId correspondingShardId, const string & coreName );
+	~Srch2ServerAccess(){};
+
+	boost::shared_ptr<Srch2Server> getSrch2Server(Srch2ServerAccessAvailabilty requestedAvailability, bool & available);
+
+private:
+
+	void setAvailability(Srch2ServerAccessAvailabilty availability);
+
+	// TODO : just a placeholder for future for now
+	ShardId correspondingShardId;
+	// Srch2Server needs to be shared pointer so that we can easily delete a shard and it gets
+	// deallocated when all search requests are gone.
+	boost::shared_ptr<Srch2Server> srch2Server;
+	mutable boost::shared_mutex availabilityLock;
+	// This flag tells us for which operations this pointer is available,
+	// for example, when the index is loading, this pointer is not available
+	// for any operations. getSrch2Server always
+	// checks the request access level less than this flag before returning the pointer.
+	Srch2ServerAccessAvailabilty availability;
+};
+
+
 class DPInternalRequestHandler {
 
 public:
     // Public API which can be used by other modules
     DPInternalRequestHandler(ConfigManager * configurationManager);
+
+
+    /*
+     * The following methods serve the operations requested by application layers such as
+     * InternalMessageBroker in RM.
+     *
+     */
 
     /*
      * 1. Receives a search request from a shard
@@ -107,8 +166,32 @@ public:
     CommandStatus * internalCommitCommand(Srch2Server * server, CommitCommand * resetData);
 
 
+    /*
+     * The following methods provide an API to register/allocate/delete/load/create and other operations on
+     * indices.
+     * NOTE: As of June 16th, since our core codebase is wrapped and accessed from sharding layers through Srch2Server
+     * objects, indices and processing are combined in the Srch2Server objects, so DP Internal shouldn't be viewed as
+     * an Index Manager. Index Managers tend to be a container for indices while this module is more of a wrapper on the API
+     * provided by the core codebase.
+     */
+    Srch2ServerHandle registerSrch2Server(const ShardId correspondingShardId, const string & coreName);
+
+
+    DPInternalAPIStatus bootstrapSrch2Server(Srch2ServerHandle handle);
+
+
+    DPInternalAPIStatus deleteSrch2Server(Srch2ServerHandle handle);
+
+
 private:
     ConfigManager * configurationManager;
+
+    // this lock is used to protect srch2Server maps and other multi-shard-related structures
+    boost::shared_mutex globalIndexLock;
+    // this map contains the 1-to-1 mapping between Srch2ServerHandles and Srch2ServerAccess objects
+    // (actual pointers to the core). This map is updated mostly by Migration Manager and Used by
+    // Routing Manager
+    map< Srch2ServerHandle , Srch2ServerAccess * > srch2Servers;
 };
 
 

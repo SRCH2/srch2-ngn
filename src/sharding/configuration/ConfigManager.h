@@ -33,7 +33,12 @@ enum ShardState {
 	SHARDSTATE_ALLOCATED,  // must have a valid node
 	SHARDSTATE_UNALLOCATED,
 	SHARDSTATE_MIGRATING,
-	SHARDSTATE_INDEXING
+	SHARDSTATE_INDEXING,
+	// these are the constants that DPEx, DPInt, RM and MM use
+	SHARDSTATE_REGISTERED,
+	SHARDSTATE_NOT_COMMITTED,
+	SHARDSTATE_COMMITTED
+
 };
 
 
@@ -114,6 +119,7 @@ public:
 		this->shardId.coreId = 0;
 		this->shardId.partitionId = 0;
 		this->shardId.replicaId = 0;
+//		this->srch2ServerHandle = -1;
 	}
 
 	Shard(unsigned nodeId, unsigned coreId, unsigned partitionId = 0,
@@ -123,6 +129,7 @@ public:
 		this->shardId.coreId = coreId;
 		this->shardId.partitionId = partitionId;
 		this->shardId.replicaId = replicaId;
+//		this->srch2ServerHandle = -1; // same meaning as this->shardState = SHARDSTATE_UNALLOCATED
 	}
 
 	//Can be used in Migration
@@ -155,10 +162,19 @@ public:
 		return this->nodeId;
 	}
 
+//	void setSrch2ServerHandle(Srch2ServerHandle handle){
+//		this->srch2ServerHandle = handle;
+//	}
+//
+//	Srch2ServerHandle getSrch2ServerHandle(){
+//		return this->srch2ServerHandle;
+//	}
+
 private:
 	ShardId shardId;
 	ShardState shardState;
 	unsigned nodeId;
+//	Srch2ServerHandle srch2ServerHandle;
 };
 
 
@@ -335,6 +351,11 @@ public:
 			}
 		}
 		return NULL; // should not happen
+	}
+
+	//TODO : we need to add lock to this function
+	std::map<ShardId, Shard, ShardIdComparator> getShardMap(){
+		return shardMap;
 	}
 
 	std::map<ShardId, Shard, ShardIdComparator> shardMap;

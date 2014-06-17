@@ -7,6 +7,10 @@ namespace httpwrapper {
 ///////////////////////////////////////// TEMPORARY ////////////////////////////////////////////
 typedef unsigned TimeoutValue;
 typedef unsigned NodeId;
+// zero and negative numbers are reserved for error.
+// positive numbers are used for handles
+// -1 : uninitialized
+typedef int Srch2ServerHandle;
 
 class SynchronizationManager{
 

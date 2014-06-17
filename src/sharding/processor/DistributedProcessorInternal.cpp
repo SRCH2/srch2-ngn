@@ -31,6 +31,32 @@ namespace srch2 {
 namespace httpwrapper {
 
 
+boost::shared_ptr<Srch2Server> Srch2ServerAccess::getSrch2Server(Srch2ServerAccessAvailabilty requestedAvailability, bool & available){
+    boost::shared_lock< boost::shared_mutex > lock(availabilityLock);
+    // if the requested access level is less than availale level, we can return the pointer
+    // this mechanism helps us stop some requests when needed.
+    if((unsigned) requestedAvailability <= (unsigned) this->availability){
+    	available = true;
+		return srch2Server;
+    }else{
+    	available = false;
+    	return boost::shared_ptr<Srch2Server>();
+    }
+}
+
+Srch2ServerAccess::Srch2ServerAccess(const ShardId correspondingShardId, const string & coreName ):correspondingShardId(correspondingShardId){
+	srch2Server.reset(new Srch2Server());
+	// set the corename in srch2Server so that it can access correct information in config manager
+	srch2Server->setCoreName(coreName);
+	setAvailability(DPInternal_NonAvailable);
+}
+void Srch2ServerAccess::setAvailability(Srch2ServerAccessAvailabilty availability){
+    boost::unique_lock< boost::shared_mutex > lock(availabilityLock);
+    this->availability = availability;
+}
+
+
+// DPInternalRequestHandler
 
 DPInternalRequestHandler::DPInternalRequestHandler(ConfigManager * configurationManager){
     this->configurationManager = configurationManager;
@@ -459,6 +485,80 @@ CommandStatus * DPInternalRequestHandler::internalCommitCommand(Srch2Server * se
                 new CommandStatus(CommandStatus::DP_COMMIT, false, "{\"commit\":\"failed\"}");
         return status;
     }
+}
+
+
+/*
+ * The following methods provide an API to register/allocate/delete/load/create and other operations on
+ * indices.
+ * NOTE: As of June 16th, since our core codebase is wrapped and accessed from sharding layers through Srch2Server
+ * objects, indices and processing are combined in the Srch2Server objects, so DP Internal shouldn't be viewed as
+ * an Index Manager. Index Managers tend to be a container for indices while this module is more of a wrapper on the API
+ * provided by the core codebase.
+ */
+Srch2ServerHandle DPInternalRequestHandler::registerSrch2Server(const ShardId correspondingShardId, const string & coreName){
+	// add a Srch2ServerAccess to the map and return the handle.
+    boost::unique_lock< boost::shared_mutex > lock(globalIndexLock);
+    // number of already registered srch2Server access objects
+    unsigned numberOfCurrentSrch2Servers = srch2Servers.size();
+    srch2Servers.insert(std::make_pair(numberOfCurrentSrch2Servers + 1 , new Srch2ServerAccess(correspondingShardId, coreName)));
+    return numberOfCurrentSrch2Servers + 1;
+}
+
+DPInternalAPIStatus DPInternalRequestHandler::bootstrapSrch2Server(Srch2ServerHandle handle){
+	ASSERT(handle > 0);
+	// first find the handle in the map and get the Srch2ServerAccess object
+	Srch2ServerAccess * srch2ServerAccess;
+	{
+        boost::shared_lock< boost::shared_mutex > lock(globalIndexLock);
+        map< Srch2ServerHandle , Srch2ServerAccess * >::iterator srch2ServerItr =
+        		srch2Servers.find(handle);
+        if(srch2ServerItr == srch2Servers.end()){
+        	return DPInternal_Srch2ServerNotFound;
+        }
+        srch2ServerAccess = srch2ServerItr->second;
+	}
+	// When bootstrap is called, srch2Server must be non-available
+	ASSERT(srch2ServerAccess->availability == DPInternal_NonAvailable);
+
+	// bootstrap the server
+	bool availabe;
+	boost::shared_ptr<Srch2Server> srch2Server = srch2ServerAccess->getSrch2Server(DPInternal_NonAvailable, availabe);
+	ASSERT(availabe == true);
+	srch2Server->init(configurationManager);
+
+	// set the availability of the access object to available for read and write
+	// first look in the map again to find the Srch2ServerAccess
+	// if it's gone in the time of load/create, ignore
+	// otherwise, green the flag
+	{
+        boost::shared_lock< boost::shared_mutex > lock(globalIndexLock);
+        map< Srch2ServerHandle , Srch2ServerAccess * >::iterator srch2ServerItr =
+        		srch2Servers.find(handle);
+        if(srch2ServerItr == srch2Servers.end()){
+        	return DPInternal_Srch2ServerNotFound;
+        }
+        srch2ServerItr->second->setAvailability(DPInternal_ReadWriteAvailable);
+	}
+
+	return DPInternal_Success;
+}
+
+DPInternalAPIStatus DPInternalRequestHandler::deleteSrch2Server(Srch2ServerHandle handle){
+	ASSERT(handle > 0);
+	// first find the handle in the map and get the Srch2ServerAccess object
+	boost::shared_lock< boost::shared_mutex > lock(globalIndexLock);
+	map< Srch2ServerHandle , Srch2ServerAccess * >::iterator srch2ServerItr =
+			srch2Servers.find(handle);
+	if(srch2ServerItr == srch2Servers.end()){
+		return DPInternal_Srch2ServerNotFound;
+	}
+	// erase it from map, Srch2ServerAccess will be destroyed and
+	// Srch2Server shared pointer inside that will be deleted when all
+	// dp internal readers are gone.
+	delete srch2ServerItr->second;
+	srch2Servers.erase(srch2ServerItr);
+	return DPInternal_Success;
 }
 
 }
