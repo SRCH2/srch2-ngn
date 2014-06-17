@@ -323,7 +323,7 @@ TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
 
 	if (routeMap.begin()!= routeMap.end()) {
 		unsigned currNodeSocketReadBuffer;
-		unsigned size = sizeof(unsigned);
+		socklen_t size = sizeof(unsigned);
 		getsockopt(routeMap.begin()->second.fd, SOL_SOCKET, SO_RCVBUF, &socketReadBuffer,
 				&size);
 		getsockopt(routeMap.begin()->second.fd, SOL_SOCKET, SO_SNDBUF, &socketSendBuffer,

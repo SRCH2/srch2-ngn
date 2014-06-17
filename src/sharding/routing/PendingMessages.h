@@ -523,7 +523,9 @@ public:
         }
     }
     ~PendingRequestsHandler(){
+#ifndef ANDROID    
         pthread_cancel(this->timeoutThread);
+#endif
     }
 private:
 

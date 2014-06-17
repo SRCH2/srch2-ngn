@@ -21,6 +21,16 @@ inline void * deserializeFixedTypes(void * buffer, FixedType & obj){
 	return (char *)buffer + sizeof(obj);
 }
 
+#ifdef ANDROID
+// This is template specialization of double. On android devices, dereferencing double pointer
+// generates "bus error" ( similar to segmentation fault).
+template<>
+inline void * deserializeFixedTypes<double>(void * buffer, double & obj){
+	memcpy((char *)(&obj), buffer, sizeof(double));
+	return (char *)buffer + sizeof(double);
+}
+#endif
+
 inline void * serializeString(const string & msg, void * buffer){
 	// first serialize size
 	unsigned msgSize = msg.size();
