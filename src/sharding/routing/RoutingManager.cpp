@@ -7,8 +7,10 @@ namespace srch2 {
 namespace httpwrapper {
 
 
-RoutingManager::RoutingManager(ConfigManager&  cm, TransportManager& transportManager)  : 
-                                    configurationManager(cm),  transportManager(transportManager), dpInternal(&cm),
+RoutingManager::RoutingManager(ConfigManager&  cm, DPInternalRequestHandler& dpInternal, TransportManager& transportManager)  :
+                                    configurationManager(cm),
+                                    dpInternal(dpInternal),
+                                    transportManager(transportManager),
                                     internalMessageBroker(*this, dpInternal) {
 
     // share the internal message broker from RM to TM
@@ -16,41 +18,6 @@ RoutingManager::RoutingManager(ConfigManager&  cm, TransportManager& transportMa
     transportManager.setRoutingManager(this);
 
     this->pendingRequestsHandler = new PendingRequestsHandler(transportManager.getMessageAllocator());
-
-    // TODO : do we have one Srch2Server per core? now, yes.
-    // create a server (core) for each data source in config file
-    for(ConfigManager::CoreInfoMap_t::const_iterator coreInfoMapItr =
-            cm.coreInfoIterateBegin(); coreInfoMapItr != cm.coreInfoIterateEnd();
-            coreInfoMapItr++) {
-        shardServers.insert(std::pair<unsigned, Srch2Server *>(coreInfoMapItr->second->getCoreId(), new Srch2Server()));
-        Srch2Server *srch2Server = shardServers[coreInfoMapItr->second->getCoreId()];
-        srch2Server->setCoreName(coreInfoMapItr->second->getName());
-
-        if(coreInfoMapItr->second->getDataSourceType() ==
-                srch2::httpwrapper::DATA_SOURCE_MONGO_DB) {
-            // set current time as cut off time for further updates
-            // this is a temporary solution. TODO
-            MongoDataSource::bulkLoadEndTime = time(NULL);
-            //require srch2Server
-            MongoDataSource::spawnUpdateListener(srch2Server);
-        }
-
-        //load the index from the data source
-        try{
-            srch2Server->init(&cm);
-        } catch(exception& ex) {
-            /*
-             *  We got some fatal error during server initialization. Print the error
-             *  message and exit the process.
-             *
-             *  Note: Other internal modules should make sure that no recoverable
-             *        exception reaches this point. All exceptions that reach here are
-             *        considered fatal and the server will stop.
-             */
-            Logger::error(ex.what());
-            exit(-1);
-        }
-    }
 }
 
 ConfigManager* RoutingManager::getConfigurationManager() {
@@ -74,13 +41,29 @@ TransportManager& RoutingManager::getTransportManager(){
     return transportManager;
 }
 
-Srch2Server * RoutingManager::getShardIndex(ShardId shardId){
-    // should we get Serch2Server based one core ID?
-    map<unsigned, Srch2Server *>::iterator shardServer = shardServers.find(shardId.coreId);
-    if(shardServer == shardServers.end()){
-        return NULL;
-    }
-    return shardServer->second;
+Srch2ServerHandle RoutingManager::getSrch2ServerIndex(ShardId shardId){
+	// access config manager cluster and get the shardHandle for this shardId
+	//1. get cluster from config manager
+	Cluster * cluster = configurationManager.getCluster();
+	//2. TODO get S lock on the shardMap
+	//....
+	//3. read the shardMap
+	std::map<ShardId, Shard, ShardIdComparator> * shardMap = NULL; // TODO
+	//4. find the entry which is corresponding to this shardId
+	std::map<ShardId, Shard, ShardIdComparator>::iterator shardEntryItr =
+			shardMap->find(shardId);
+	if(shardEntryItr == shardMap->end()){
+		// shard not found in the map, return error
+		return 0; // not found
+	}
+	if(shardEntryItr->second.getShardState() != SHARDSTATE_ALLOCATED){
+		// error, shard not in operational state
+		return -2;
+	}
+	ShardState state = shardEntryItr->second.getShardState();
+	//5. TODO release the S lock
+	// ....
+	return state;
 }
 
 MessageAllocator * RoutingManager::getMessageAllocator() {

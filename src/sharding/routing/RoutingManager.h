@@ -28,7 +28,7 @@ class RoutingManager {
 
 public:
 
-    RoutingManager(ConfigManager&  configurationManager, TransportManager& tm);
+    RoutingManager(ConfigManager&  configurationManager, DPInternalRequestHandler& dpInternal , TransportManager& tm);
 
     ~RoutingManager(){
         delete pendingRequestsHandler;
@@ -40,7 +40,7 @@ public:
     InternalMessageBroker * getInternalMessageBroker();
     PendingRequestsHandler * getPendingRequestsHandler();
     TransportManager& getTransportManager();
-    Srch2Server * getShardIndex(ShardId shardId);
+    Srch2ServerHandle getSrch2ServerIndex(ShardId shardId);
 
     template<typename RequestType, typename ResponseType>
     RoutingManagerAPIReturnType broadcast(RequestType * requestObj,
@@ -232,7 +232,7 @@ private:
 
     ConfigManager& configurationManager;
     TransportManager& transportManager;
-    DPInternalRequestHandler dpInternal;
+    DPInternalRequestHandler& dpInternal;
     InternalMessageBroker internalMessageBroker;
     // a map from coreId to Srch2Server //TODO : V1 : should it be a map from ShardId to shardServer?
     std::map<unsigned, Srch2Server *> shardServers;

@@ -49,6 +49,7 @@
 #include "processor/DistributedProcessorExternal.h"
 #include "configuration/ConfigManager.h"
 #include "synchronization/SynchronizerManager.h"
+#include "sharding/migration/MigrationManager.h"
 
 
 namespace po = boost::program_options;
@@ -875,9 +876,18 @@ int main(int argc, char** argv) {
 	pthread_t *synchronizerThread = new pthread_t;
 	pthread_create(synchronizerThread, NULL, srch2http::bootSynchronizer, (void *)syncManager);
 
+
+	// create DP Internal
+	srch2http::DPInternalRequestHandler * dpInternal =
+			new srch2http::DPInternalRequestHandler(serverConf);
+
 	// create Routing Module
 	srch2http::RoutingManager *routesManager =
-			new srch2http::RoutingManager(*serverConf, *transportManager);
+			new srch2http::RoutingManager(*serverConf, *dpInternal, *transportManager);
+
+	// create migration manager
+	srch2http::MigrationManager * migrationManager =
+			new srch2http::MigrationManager(serverConf, dpInternal);
 
 	// create DP external
 	srch2http::DPExternalRequestHandler *dpExternal =
@@ -899,6 +909,7 @@ int main(int argc, char** argv) {
 	// temporary call, just creates core/shard objects and puts them in
 	// config file. TODO
 	generateShards(*serverConf);
+	migrationManager->initializeLocalShards();
 
 	// bound http_server and evbase and core objects together
 	for(int j=0; j < evServersForExternalRequests.size(); ++j) {

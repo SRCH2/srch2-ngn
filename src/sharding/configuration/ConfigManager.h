@@ -9,6 +9,7 @@
 #include <instantsearch/Schema.h>
 #include <instantsearch/Constants.h>
 #include "src/wrapper/WrapperConstants.h"
+#include "ShardingConstants.h"
 #include <string>
 #include <vector>
 #include <sstream>
@@ -119,7 +120,7 @@ public:
 		this->shardId.coreId = 0;
 		this->shardId.partitionId = 0;
 		this->shardId.replicaId = 0;
-//		this->srch2ServerHandle = -1;
+		this->srch2ServerHandle = -1;
 	}
 
 	Shard(unsigned nodeId, unsigned coreId, unsigned partitionId = 0,
@@ -129,7 +130,7 @@ public:
 		this->shardId.coreId = coreId;
 		this->shardId.partitionId = partitionId;
 		this->shardId.replicaId = replicaId;
-//		this->srch2ServerHandle = -1; // same meaning as this->shardState = SHARDSTATE_UNALLOCATED
+		this->srch2ServerHandle = -1; // same meaning as this->shardState = SHARDSTATE_UNALLOCATED
 	}
 
 	//Can be used in Migration
@@ -162,19 +163,19 @@ public:
 		return this->nodeId;
 	}
 
-//	void setSrch2ServerHandle(Srch2ServerHandle handle){
-//		this->srch2ServerHandle = handle;
-//	}
-//
-//	Srch2ServerHandle getSrch2ServerHandle(){
-//		return this->srch2ServerHandle;
-//	}
+	void setSrch2ServerHandle(Srch2ServerHandle handle){
+		this->srch2ServerHandle = handle;
+	}
+
+	Srch2ServerHandle getSrch2ServerHandle(){
+		return this->srch2ServerHandle;
+	}
 
 private:
 	ShardId shardId;
 	ShardState shardState;
 	unsigned nodeId;
-//	Srch2ServerHandle srch2ServerHandle;
+	Srch2ServerHandle srch2ServerHandle;
 };
 
 

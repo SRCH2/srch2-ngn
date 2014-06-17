@@ -9,7 +9,9 @@ typedef unsigned TimeoutValue;
 typedef unsigned NodeId;
 // zero and negative numbers are reserved for error.
 // positive numbers are used for handles
+// 0 : not found
 // -1 : uninitialized
+// -2 : not ready (shard not in Allocated state)
 typedef int Srch2ServerHandle;
 
 class SynchronizationManager{

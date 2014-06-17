@@ -49,10 +49,12 @@ class Srch2ServerAccess{
 	friend class DPInternalRequestHandler;
 public:
 
-	Srch2ServerAccess(const ShardId correspondingShardId, const string & coreName );
+	Srch2ServerAccess(const ShardId correspondingShardId, CoreInfo_t * coreInfo );
 	~Srch2ServerAccess(){};
 
 	boost::shared_ptr<Srch2Server> getSrch2Server(Srch2ServerAccessAvailabilty requestedAvailability, bool & available);
+
+	CoreInfo_t * getCoreInfo();
 
 private:
 
@@ -60,6 +62,7 @@ private:
 
 	// TODO : just a placeholder for future for now
 	ShardId correspondingShardId;
+	CoreInfo_t * coreInfo;
 	// Srch2Server needs to be shared pointer so that we can easily delete a shard and it gets
 	// deallocated when all search requests are gone.
 	boost::shared_ptr<Srch2Server> srch2Server;
@@ -90,14 +93,14 @@ public:
      * 2. Uses core to evaluate this search query
      * 3. Sends the results to the shard which initiated this search query
      */
-    SearchCommandResults * internalSearchCommand(Srch2Server * server, SearchCommand * searchData);
+    SearchCommandResults * internalSearchCommand(Srch2ServerHandle serverHandle, SearchCommand * searchData);
 
 
     /*
      * This call back is always called for insert and update, it will use
      * internalInsertCommand and internalUpdateCommand
      */
-    CommandStatus * internalInsertUpdateCommand(Srch2Server * server, InsertUpdateCommand * insertUpdateData);
+    CommandStatus * internalInsertUpdateCommand(Srch2ServerHandle serverHandle, InsertUpdateCommand * insertUpdateData);
 
     /*
      * 1. Receives an insert request from a shard and makes sure this
@@ -105,14 +108,14 @@ public:
      * 2. Uses core execute this insert query
      * 3. Sends the results to the shard which initiated this insert query (Failure or Success)
      */
-    CommandStatus * internalInsertCommand(Srch2Server * server, InsertUpdateCommand * insertUpdateData);
+    CommandStatus * internalInsertCommand(Srch2ServerHandle serverHandle, InsertUpdateCommand * insertUpdateData);
     /*
      * 1. Receives a update request from a shard and makes sure this
      *    shard is the correct reponsible of this record using Partitioner
      * 2. Uses core execute this update query
      * 3. Sends the results to the shard which initiated this update request (Failure or Success)
      */
-    CommandStatus * internalUpdateCommand(Srch2Server * server, InsertUpdateCommand * insertUpdateData);
+    CommandStatus * internalUpdateCommand(Srch2ServerHandle serverHandle, InsertUpdateCommand * insertUpdateData);
 
     /*
      * 1. Receives a delete request from a shard and makes sure this
@@ -120,7 +123,7 @@ public:
      * 2. Uses core execute this delete query
      * 3. Sends the results to the shard which initiated this delete request (Failure or Success)
      */
-    CommandStatus *  internalDeleteCommand(Srch2Server * server, DeleteCommand * deleteData);
+    CommandStatus *  internalDeleteCommand(Srch2ServerHandle serverHandle, DeleteCommand * deleteData);
 
 
 
@@ -129,41 +132,41 @@ public:
      * 2. Uses core to get info
      * 3. Sends the results to the shard which initiated this getInfo request (Failure or Success)
      */
-    GetInfoCommandResults * internalGetInfoCommand(Srch2Server * server, GetInfoCommand * getInfoData);
+    GetInfoCommandResults * internalGetInfoCommand(Srch2ServerHandle serverHandle, GetInfoCommand * getInfoData);
 
 
     /*
      * This call back function is called for serialization. It uses internalSerializeIndexCommand
      * and internalSerializeRecordsCommand for our two types of serialization.
      */
-    CommandStatus * internalSerializeCommand(Srch2Server * server, SerializeCommand * seralizeData);
+    CommandStatus * internalSerializeCommand(Srch2ServerHandle serverHandle, SerializeCommand * seralizeData);
 
     /*
      * 1. Receives a SerializeIndex request from a shard
      * 2. Uses core to do the serialization
      * 3. Sends the results to the shard which initiated this serialization request(Failure or Success)
      */
-    CommandStatus * internalSerializeIndexCommand(Srch2Server * server, SerializeCommand * seralizeData);
+    CommandStatus * internalSerializeIndexCommand(Srch2ServerHandle serverHandle, SerializeCommand * seralizeData);
 
     /*
      * 1. Receives a SerializeRecords request from a shard
      * 2. Uses core to do the serialization
      * 3. Sends the results to the shard which initiated this serialization request(Failure or Success)
      */
-    CommandStatus * internalSerializeRecordsCommand(Srch2Server * server, SerializeCommand * seralizeData);
+    CommandStatus * internalSerializeRecordsCommand(Srch2ServerHandle serverHandle, SerializeCommand * seralizeData);
 
     /*
      * 1. Receives a ResetLog request from a shard
      * 2. Uses core to reset log
      * 3. Sends the results to the shard which initiated this reset-log request(Failure or Success)
      */
-    CommandStatus * internalResetLogCommand(Srch2Server * server, ResetLogCommand * resetData);
+    CommandStatus * internalResetLogCommand(Srch2ServerHandle serverHandle, ResetLogCommand * resetData);
 
 
     /*
      * Receives a commit command and commits the index
      */
-    CommandStatus * internalCommitCommand(Srch2Server * server, CommitCommand * resetData);
+    CommandStatus * internalCommitCommand(Srch2ServerHandle serverHandle, CommitCommand * resetData);
 
 
     /*
@@ -174,7 +177,7 @@ public:
      * an Index Manager. Index Managers tend to be a container for indices while this module is more of a wrapper on the API
      * provided by the core codebase.
      */
-    Srch2ServerHandle registerSrch2Server(const ShardId correspondingShardId, const string & coreName);
+    Srch2ServerHandle registerSrch2Server(const ShardId correspondingShardId, CoreInfo_t * coreInfo);
 
 
     DPInternalAPIStatus bootstrapSrch2Server(Srch2ServerHandle handle);
