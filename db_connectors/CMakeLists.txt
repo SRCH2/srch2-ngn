@@ -14,15 +14,19 @@ MESSAGE(STATUS "This is SOURCE dir " ${CMAKE_SOURCE_DIR}/..)
 					
 # add additional include directories depending on a connector requirement. 
 INCLUDE_DIRECTORIES(
-    ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver-v2.4/src
+    #${CMAKE_SOURCE_DIR}/../third qparty/mongo-cxx-driver-v2.4/src
+    ${CMAKE_SOURCE_DIR}/../../tmp/mongo-cxx-driver/build/linux2/use-system-boost/chen/include/mongo/
     ${CMAKE_SOURCE_DIR}/../db_connectors
     ${CMAKE_SOURCE_DIR}/..
 )
 
 ADD_LIBRARY(mongodbConnector SHARED ${MONGO_DB_CONNECTOR_SRC} )
+
 SET_TARGET_PROPERTIES(mongodbConnector PROPERTIES COMPILE_FLAGS -fPIC)
+#SET(MONGO_CLIENT_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver-v2.4/libmongoclient.so )
+SET(MONGO_CLIENT_LIBRARY ${CMAKE_SOURCE_DIR}/../../tmp/mongo-cxx-driver/build/linux2/use-system-boost/chen/lib/libmongoclient.so)
 # Add all required libraries to be linked in the statement below
-TARGET_LINK_LIBRARIES(mongodbConnector )
+TARGET_LINK_LIBRARIES(mongodbConnector ${MONGO_CLIENT_LIBRARY})
 
 #
 #  2.  MySQL connector 

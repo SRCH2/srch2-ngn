@@ -45,4 +45,4 @@ tar -xf mongodb-linux-x86_64-v2.4-latest.tgz
 cd mongo-cxx-driver-v2.4
 CURRENTDIR=$(pwd)
 echo "Building mongo driver in $CURRENTDIR"
-python ../json/jsoncpp-src-0.5.0/scons.py 
+python ../json/jsoncpp-src-0.5.0/scons.py
