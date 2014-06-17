@@ -12,7 +12,7 @@
 //#include "mongo/client/dbclientinterface.h"
 #include "../../tmp/mongo-cxx-driver/build/linux2/use-system-boost/chen/include/mongo/client/dbclient.h"
 
-#include "../../tmp/mongo-cxx-driver/build/linux2/use-system-boost/chen/include/mongo/bson/bsonobj.h"
+#include "mongo/bson/bsonobj.h"
 #include "../../tmp/mongo-cxx-driver/build/linux2/use-system-boost/chen/include/mongo/client/dbclientcursor.h"
 #include "../../tmp/mongo-cxx-driver/build/linux2/use-system-boost/chen/include/mongo/client/dbclientinterface.h"
 
