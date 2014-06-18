@@ -208,7 +208,7 @@ void testDirectoryStructure(char * configFile){
 	ConfigManager *configManager = new ConfigManager(configFile);
 	configManager->loadConfigFile();
 
-	//creating directories
+	//Creating directories
 	ASSERT(configManager->createSRCH2Home() == "./multicore//");
 	ASSERT(configManager->createClusterDir("SRCH2Cluster") == "./multicore//SRCH2Cluster");
 	ASSERT(configManager->createClusterDir("ESCluster") == "./multicore//ESCluster");
@@ -237,6 +237,11 @@ void testDirectoryStructure(char * configFile){
 	ASSERT(configManager->getNodeDir("ESCluster","terminator") == "Directory does not exist!");
 	ASSERT(configManager->getCoreDir("SOLRCluster","frozen", "Music") == "Directory does not exist!");
 	ASSERT(configManager->getShardDir("SRCH2Cluster","frozen", "Music", s2->getShardId()) == "Directory does not exist!");
+
+	//Removing directories
+	ASSERT(configManager->removeDir(configManager->getShardDir("SRCH2Cluster","frozen", "Music", s1->getShardId())) == 1);
+	ASSERT(configManager->removeDir(configManager->getShardDir("SRCH2Cluster","frozen", "Geo", s1->getShardId())) == 0);
+	ASSERT(configManager->removeDir(configManager->getNodeDir("ESCluster","infinity")) == 1);
 
 }
 

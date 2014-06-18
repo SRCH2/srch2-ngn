@@ -3006,6 +3006,12 @@ string ConfigManager::getShardDir(string clusterName, string nodeName, string co
 		return "Directory does not exist!";
 }
 
+uint ConfigManager::removeDir(string path)
+{
+	uint numberOfFilesDeleted = boost::filesystem::remove_all(path);
+	return numberOfFilesDeleted;
+}
+
 unsigned short CoreInfo_t::getPort(PortType_t portType) const
 {
     if (static_cast<unsigned int> (portType) >= ports.size()) {

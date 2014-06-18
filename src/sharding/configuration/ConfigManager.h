@@ -518,6 +518,7 @@ public:
 	string getCoreDir(string clusterName, string nodeName, string coreName);
 	string getShardDir(string clusterName, string nodeName, string coreName, ShardId shardId);
 
+	uint removeDir(string path);
 
 	DiscoveryParams& getDiscovery(){
 		return this->discovery;
