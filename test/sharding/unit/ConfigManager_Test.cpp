@@ -203,6 +203,43 @@ void testDefaultCoreId(char * configFile){
 	ASSERT(c4->getCoreId() == 3);
 }
 
+void testDirectoryStructure(char * configFile){
+
+	ConfigManager *configManager = new ConfigManager(configFile);
+	configManager->loadConfigFile();
+
+	//creating directories
+	ASSERT(configManager->createSRCH2Home() == "./multicore//");
+	ASSERT(configManager->createClusterDir("SRCH2Cluster") == "./multicore//SRCH2Cluster");
+	ASSERT(configManager->createClusterDir("ESCluster") == "./multicore//ESCluster");
+	ASSERT(configManager->createNodeDir("SRCH2Cluster","frozen") == "./multicore//SRCH2Cluster/frozen");
+	ASSERT(configManager->createNodeDir("SRCH2Cluster","queen") == "./multicore//SRCH2Cluster/queen");
+	ASSERT(configManager->createNodeDir("SRCH2Cluster","terminator") == "./multicore//SRCH2Cluster/terminator");
+	ASSERT(configManager->createNodeDir("ESCluster","liquid") == "./multicore//ESCluster/liquid");
+	ASSERT(configManager->createNodeDir("ESCluster","king") == "./multicore//ESCluster/king");
+	ASSERT(configManager->createNodeDir("ESCluster","infinity") == "./multicore//ESCluster/infinity");
+	ASSERT(configManager->createCoreDir("SRCH2Cluster","frozen", "Music") == "./multicore//SRCH2Cluster/frozen/Music");
+	ASSERT(configManager->createCoreDir("ESCluster","liquid", "Geo") == "./multicore//ESCluster/liquid/Geo");
+	Shard* s1 = new Shard(1,1,1,1);
+	Shard* s2 = new Shard(2,1,2,1);
+	ASSERT(configManager->createShardDir("SRCH2Cluster","frozen", "Music", s1->getShardId()) == "./multicore//SRCH2Cluster/frozen/Music/C1_R1_1");
+	ASSERT(configManager->createShardDir("ESCluster","liquid", "Geo", s2->getShardId()) == "./multicore//ESCluster/liquid/Geo/C1_R2_1");
+
+	//Positive Test cases for getters
+	ASSERT(configManager->getSRCH2HomeDir() == "./multicore//");
+	ASSERT(configManager->getClusterDir("SRCH2Cluster") == "./multicore//SRCH2Cluster");
+	ASSERT(configManager->getNodeDir("ESCluster","liquid") == "./multicore//ESCluster/liquid");
+	ASSERT(configManager->getCoreDir("SRCH2Cluster","frozen", "Music") == "./multicore//SRCH2Cluster/frozen/Music");
+	ASSERT(configManager->getShardDir("SRCH2Cluster","frozen", "Music", s1->getShardId()) == "./multicore//SRCH2Cluster/frozen/Music/C1_R1_1");
+
+	//Negative Test cases for getters
+	ASSERT(configManager->getClusterDir("SOLRCluster") == "Directory does not exist!");
+	ASSERT(configManager->getNodeDir("ESCluster","terminator") == "Directory does not exist!");
+	ASSERT(configManager->getCoreDir("SOLRCluster","frozen", "Music") == "Directory does not exist!");
+	ASSERT(configManager->getShardDir("SRCH2Cluster","frozen", "Music", s2->getShardId()) == "Directory does not exist!");
+
+}
+
 int main() {
 	testShard();
 	Logger::setLogLevel(Logger::SRCH2_LOG_DEBUG);
@@ -225,6 +262,7 @@ int main() {
 
 	testCoreID(getenv("ConfigManagerFilePath1"));
 	testDefaultCoreId(getenv("ConfigManagerFilePath2"));
+	testDirectoryStructure(getenv("ConfigManagerFilePath1"));
 
 }
 

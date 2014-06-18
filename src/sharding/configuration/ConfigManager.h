@@ -506,6 +506,19 @@ public:
 class ConfigManager {
 public:
 
+	string createSRCH2Home();
+	string createClusterDir(string clusterName);
+	string createNodeDir(string clusterName, string nodeName);
+	string createCoreDir(string clusterName, string nodeName, string coreName);
+	string createShardDir(string clusterName, string nodeName, string coreName, ShardId shardId);
+
+	string getSRCH2HomeDir();
+	string getClusterDir(string clusterName);
+	string getNodeDir(string clusterName, string nodeName);
+	string getCoreDir(string clusterName, string nodeName, string coreName);
+	string getShardDir(string clusterName, string nodeName, string coreName, ShardId shardId);
+
+
 	DiscoveryParams& getDiscovery(){
 		return this->discovery;
 	}
