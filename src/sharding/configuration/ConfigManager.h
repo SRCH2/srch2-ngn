@@ -64,8 +64,8 @@ public:
 	// ID for a specific primary/replica for a partition; assume #0 is always the primary shard.  For V0, replicaId is always 0
 	unsigned replicaId;
 
-	bool isPrimaryShard() ;
-	std::string toString() ;
+	bool isPrimaryShard() const;
+	std::string toString() const;
 
 	ShardId() ;
 	ShardId(unsigned coreId, unsigned partitionId, unsigned replicaId=0) ;
@@ -507,18 +507,19 @@ class ConfigManager {
 public:
 
 	string createSRCH2Home();
-	string createClusterDir(string clusterName);
-	string createNodeDir(string clusterName, string nodeName);
-	string createCoreDir(string clusterName, string nodeName, string coreName);
-	string createShardDir(string clusterName, string nodeName, string coreName, ShardId shardId);
+	string createClusterDir(const string& clusterName);
+	string createNodeDir(const string& clusterName, const string& nodeName);
+	string createCoreDir(const string& clusterName, const string& nodeName, const string& coreName);
+	string createShardDir(const string& clusterName, const string& nodeName, const string& coreName, const ShardId& shardId);
 
 	string getSRCH2HomeDir();
-	string getClusterDir(string clusterName);
-	string getNodeDir(string clusterName, string nodeName);
-	string getCoreDir(string clusterName, string nodeName, string coreName);
-	string getShardDir(string clusterName, string nodeName, string coreName, ShardId shardId);
+	string getClusterDir(const string& clusterName);
+	string getNodeDir(const string& clusterName, const string& nodeName);
+	string getCoreDir(const string& clusterName, const string& nodeName, const string& coreName);
+	string getShardDir(const string& clusterName, const string& nodeName, const string& coreName, const ShardId& shardId);
 
-	uint removeDir(string path);
+	//It returns the number of files/directory deleted, if the returned value is 0, that means nothing got deleted.
+	uint removeDir(const string& path);
 
 	DiscoveryParams& getDiscovery(){
 		return this->discovery;

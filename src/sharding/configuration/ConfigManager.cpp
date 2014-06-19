@@ -2927,7 +2927,7 @@ string ConfigManager::createSRCH2Home()
 	return this->getSrch2Home();
 }
 
-string ConfigManager::createClusterDir(string clusterName)
+string ConfigManager::createClusterDir(const string& clusterName)
 {
 	string path = this->getSrch2Home() +clusterName;
 	createSRCH2Home();
@@ -2935,7 +2935,7 @@ string ConfigManager::createClusterDir(string clusterName)
 	return path;
 }
 
-string ConfigManager::createNodeDir(string clusterName, string nodeName)
+string ConfigManager::createNodeDir(const string& clusterName, const string& nodeName)
 {
 	string path = this->getSrch2Home() + clusterName + "/" + nodeName;
 	createClusterDir(clusterName);
@@ -2943,7 +2943,7 @@ string ConfigManager::createNodeDir(string clusterName, string nodeName)
 	return path;
 }
 
-string ConfigManager::createCoreDir(string clusterName, string nodeName, string coreName)
+string ConfigManager::createCoreDir(const string& clusterName, const string& nodeName, const string& coreName)
 {
 	string path = this->getSrch2Home() + clusterName + "/" + nodeName + "/" + coreName;
 	createNodeDir(clusterName, nodeName);
@@ -2951,7 +2951,7 @@ string ConfigManager::createCoreDir(string clusterName, string nodeName, string 
 	return path;
 }
 
-string ConfigManager::createShardDir(string clusterName, string nodeName, string coreName, ShardId shardId)
+string ConfigManager::createShardDir(const string& clusterName, const string& nodeName, const string& coreName, const ShardId &shardId)
 {
 	string path = this->getSrch2Home() + clusterName + "/" + nodeName + "/" + coreName + "/" + shardId.toString();
 	createCoreDir(clusterName, nodeName, coreName);
@@ -2968,7 +2968,7 @@ string ConfigManager::getSRCH2HomeDir()
 		return "Directory does not exist!";
 }
 
-string ConfigManager::getClusterDir(string clusterName)
+string ConfigManager::getClusterDir(const string& clusterName)
 {
 	string path = this->getSRCH2HomeDir() + clusterName;
 	if(boost::filesystem::is_directory(path))
@@ -2978,7 +2978,7 @@ string ConfigManager::getClusterDir(string clusterName)
 
 }
 
-string ConfigManager::getNodeDir(string clusterName, string nodeName)
+string ConfigManager::getNodeDir(const string& clusterName,const string& nodeName)
 {
 	string path = getClusterDir(clusterName) + "/" + nodeName;
 	if(boost::filesystem::is_directory(path))
@@ -2988,7 +2988,7 @@ string ConfigManager::getNodeDir(string clusterName, string nodeName)
 
 }
 
-string ConfigManager::getCoreDir(string clusterName, string nodeName, string coreName)
+string ConfigManager::getCoreDir(const string& clusterName, const string& nodeName, const string& coreName)
 {
 	string path = getNodeDir(clusterName, nodeName) + "/" + coreName;
 	if(boost::filesystem::is_directory(path))
@@ -2997,7 +2997,7 @@ string ConfigManager::getCoreDir(string clusterName, string nodeName, string cor
 		return "Directory does not exist!";
 }
 
-string ConfigManager::getShardDir(string clusterName, string nodeName, string coreName, ShardId shardId)
+string ConfigManager::getShardDir(const string& clusterName, const string& nodeName, const string& coreName, const ShardId& shardId)
 {
 	string path = getCoreDir(clusterName, nodeName, coreName) + "/" + shardId.toString();
 	if(boost::filesystem::is_directory(path))
@@ -3006,7 +3006,7 @@ string ConfigManager::getShardDir(string clusterName, string nodeName, string co
 		return "Directory does not exist!";
 }
 
-uint ConfigManager::removeDir(string path)
+uint ConfigManager::removeDir(const string& path)
 {
 	uint numberOfFilesDeleted = boost::filesystem::remove_all(path);
 	return numberOfFilesDeleted;
@@ -3088,10 +3088,10 @@ void CoreInfo_t::setDataFilePath(const string& path) {
 }
 
 
-bool ShardId::isPrimaryShard() {
+bool ShardId::isPrimaryShard() const{
 	return (replicaId == 0); // replica #0 is always the primary shard
 }
-std::string ShardId::toString() {
+std::string ShardId::toString() const{
 	// A primary shard starts with a "P" followed by an integer id.
 	// E.g., a cluster with 4 shards of core 8 will have shards named "C8_P0", "C8_R0_1", "C8_R0_2", "C8_P3".
 	//
