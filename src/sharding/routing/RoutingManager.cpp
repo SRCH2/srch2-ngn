@@ -25,7 +25,7 @@ RoutingManager::RoutingManager(ConfigManager&  cm, TransportManager& transportMa
         shardServers.insert(std::pair<unsigned, Srch2Server *>(coreInfoMapItr->second->getCoreId(), new Srch2Server()));
         Srch2Server *srch2Server = shardServers[coreInfoMapItr->second->getCoreId()];
         srch2Server->setCoreName(coreInfoMapItr->second->getName());
-
+#ifndef ANDROID
         if(coreInfoMapItr->second->getDataSourceType() ==
                 srch2::httpwrapper::DATA_SOURCE_MONGO_DB) {
             // set current time as cut off time for further updates
@@ -34,7 +34,7 @@ RoutingManager::RoutingManager(ConfigManager&  cm, TransportManager& transportMa
             //require srch2Server
             MongoDataSource::spawnUpdateListener(srch2Server);
         }
-
+#endif
         //load the index from the data source
         try{
             srch2Server->init(&cm);

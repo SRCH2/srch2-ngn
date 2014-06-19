@@ -1,8 +1,8 @@
 #include "RouteMap.h"
 #include <netdb.h>
-#include <sys/unistd.h>
+#include <unistd.h>
 #include <sys/socket.h>
-#include <sys/fcntl.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <stdlib.h>
 

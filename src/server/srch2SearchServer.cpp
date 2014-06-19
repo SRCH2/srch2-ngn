@@ -942,8 +942,11 @@ int main(int argc, char** argv) {
 
 	pthread_join(transportManager->getListeningThread(), NULL);
 	Logger::console("Thread = <%u> stopped", transportManager->getListeningThread());
-
+#ifndef ANDROID
 	pthread_cancel(*synchronizerThread);
+#else
+	pthread_kill(*synchronizerThread, SIGKILL);
+#endif
 	pthread_join(*synchronizerThread, NULL);
 	Logger::console("synch thread stopped.");
 
