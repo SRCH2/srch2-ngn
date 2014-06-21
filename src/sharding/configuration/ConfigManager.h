@@ -10,15 +10,24 @@
 #include <instantsearch/Constants.h>
 #include "src/wrapper/WrapperConstants.h"
 #include "ShardingConstants.h"
+#include "src/core/util/Assert.h"
+#include "src/core/util/Logger.h"
+#include "src/core/util/mypthread.h"
+
+#include "Cluster.h"
+
+
 #include <string>
 #include <vector>
 #include <sstream>
 #include <stdint.h>
-
 #include <boost/unordered_map.hpp>
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
-#include "src/core/util/Logger.h"
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/shared_mutex.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/serialization/shared_ptr.hpp>
 
 using namespace std;
 using namespace srch2::util;
@@ -29,29 +38,6 @@ using namespace pugi;
 namespace srch2 {
 namespace httpwrapper {
 
-//Adding portions of new header file, beginning from here
-enum ShardState {
-	SHARDSTATE_ALLOCATED,  // must have a valid node
-	SHARDSTATE_UNALLOCATED,
-	SHARDSTATE_MIGRATING,
-	SHARDSTATE_INDEXING,
-	// these are the constants that DPEx, DPInt, RM and MM use
-	SHARDSTATE_REGISTERED,
-	SHARDSTATE_NOT_COMMITTED,
-	SHARDSTATE_COMMITTED
-
-};
-
-
-class CoreShardInfo{
-public:
-	unsigned coreId;
-	string coreName; // because currently you can get coreInfo_t from config only by passing the name ....
-	CoreShardInfo(const unsigned id, const string& name)
-	: coreId(id), coreName(name) {}
-	CoreShardInfo();
-};
-
 
 // A shard id consists of a core id, a partition id, and replica id
 // E.g.: a core with 7 partitions, each of which has a primary and 4 replicas
@@ -61,137 +47,6 @@ public:
 //   ...
 //   P6  R6_1 R6_2 R6_3 R6_4
 //
-class ConfigManager;
-class ShardId {
-public:
-	unsigned coreId;
-	unsigned partitionId; // ID for a partition, numbered 0, 1, 2, ...
-
-	// ID for a specific primary/replica for a partition; assume #0 is always the primary shard.  For V0, replicaId is always 0
-	unsigned replicaId;
-
-	bool isPrimaryShard() ;
-	std::string toString() ;
-
-	ShardId() ;
-	ShardId(unsigned coreId, unsigned partitionId, unsigned replicaId=0) ;
-
-	bool operator==(const ShardId& rhs) const ;
-	bool operator!=(const ShardId& rhs) const ;
-	bool operator>(const ShardId& rhs) const ;
-	bool operator<(const ShardId& rhs) const ;
-	bool operator>=(const ShardId& rhs) const ;
-	bool operator<=(const ShardId& rhs) const ;
-
-};
-
-class ShardIdComparator {
-public:
-	// returns s1 > s2
-	bool operator() (const ShardId s1, const ShardId s2) {
-		if (s1.coreId > s2.coreId)
-			return true;
-
-		if (s1.coreId < s2.coreId)
-			return false;
-
-		// they have equal coreId; we look at their partitionId
-		if (s1.partitionId > s2.partitionId)
-			return true;
-
-		if (s1.partitionId < s2.partitionId)
-			return false;
-
-		// they have equal partitionId; we look at their replicaId
-		if (s1.replicaId > s2.replicaId)
-			return true;
-
-		return false;
-	}
-};
-
-
-class Shard {
-public:
-
-	Shard(){
-		this->nodeId = 0;
-		this->shardState = SHARDSTATE_UNALLOCATED;
-		this->shardId.coreId = 0;
-		this->shardId.partitionId = 0;
-		this->shardId.replicaId = 0;
-		this->srch2ServerHandle = -1;
-	}
-
-	Shard(unsigned nodeId, unsigned coreId, unsigned partitionId = 0,
-			unsigned replicaId = 0) {
-		this->nodeId = nodeId;
-		this->shardState = SHARDSTATE_UNALLOCATED;
-		this->shardId.coreId = coreId;
-		this->shardId.partitionId = partitionId;
-		this->shardId.replicaId = replicaId;
-		this->srch2ServerHandle = -1; // same meaning as this->shardState = SHARDSTATE_UNALLOCATED
-	}
-
-	//Can be used in Migration
-	void setPartitionId(int partitionId) {
-		this->shardId.partitionId = partitionId;
-	}
-
-	//Can be used in Migration
-	void setReplicaId(int replicaId) {
-		this->shardId.replicaId = replicaId;
-	}
-
-	ShardId getShardId(){
-		return this->shardId;
-	}
-
-	void setShardState(ShardState newState){
-		this->shardState = newState;
-	}
-
-	void setNodeId(unsigned id){
-		this->nodeId = id;
-	}
-
-	ShardState getShardState(){
-		return this->shardState;
-	}
-
-	unsigned getNodeId(){
-		return this->nodeId;
-	}
-
-	void setSrch2ServerHandle(Srch2ServerHandle handle){
-		this->srch2ServerHandle = handle;
-	}
-
-	Srch2ServerHandle getSrch2ServerHandle(){
-		return this->srch2ServerHandle;
-	}
-
-private:
-	ShardId shardId;
-	ShardState shardState;
-	unsigned nodeId;
-	Srch2ServerHandle srch2ServerHandle;
-};
-
-
-
-// enum to allow loop iteration over listening ports
-enum PortType_t {
-	SearchPort,
-	SuggestPort,
-	InfoPort,
-	DocsPort,
-	UpdatePort,
-	SavePort,
-	ExportPort,
-	ResetLoggerPort,
-	EndOfPortType // stop value - not valid (also used to indicate all/default ports)
-};
 
 inline  enum PortType_t incrementPortType(PortType_t &oldValue)
 {
@@ -199,278 +54,6 @@ inline  enum PortType_t incrementPortType(PortType_t &oldValue)
 	newValue++;
 	return static_cast<PortType_t> (newValue);
 }
-
-
-class Node {
-public:
-
-	Node()
-	{
-		this->nodeId = 0;
-		this->nodeName = "";
-		this->ipAddress = "";
-		this->portNumber = 0;
-		this->nodeMaster = true;
-		this->nodeData = true;
-		this->dataDir = "";
-		this->homeDir = "";
-		this->numberOfThreads = 1;
-		this->thisIsMe = false;
-		//coreToShardsMap has to be initialized
-
-	}
-
-	Node(const std::string& nodeName, const std::string& ipAddress,
-			unsigned portNumber, bool thisIsMe){
-		this->nodeId = 0;
-		this->nodeName = nodeName;
-		this->ipAddress = ipAddress;
-		this->portNumber = portNumber;
-		this->thisIsMe = thisIsMe;
-		this->nodeMaster = true;
-		this->nodeData = true;
-		this->dataDir = "";
-		this->homeDir = "";
-		this->numberOfThreads = 1;
-	}
-
-	Node(std::string& nodeName, std::string& ipAddress, unsigned portNumber,bool thisIsMe, bool nodeMaster, bool nodeData,std::string& dataDir, std::string& homeDir) {
-		this->nodeId = 0;
-		this->nodeName = nodeName;
-		this->ipAddress = ipAddress;
-		this->portNumber = portNumber;
-		this->thisIsMe = thisIsMe;
-		this->nodeMaster = nodeMaster;
-		this->nodeData = nodeData;
-		this->dataDir = dataDir;
-		this->homeDir = homeDir;
-		this->numberOfThreads = 1; // default value is 1
-
-	}
-
-	std::string getHomeDir() const {
-		return this->homeDir;
-	}
-	std::string getDataDir() const {
-		return this->dataDir;
-	}
-
-	bool isMaster() const {
-		return nodeMaster;
-	}
-
-	bool isData() const {
-		return nodeData;
-	}
-
-	std::string getName() const {
-		return this->nodeName;
-	}
-
-	std::string getIpAddress() const {
-		return this->ipAddress;
-	}
-
-	unsigned int getId() const {
-		return this->nodeId;
-	}
-
-	void setId(unsigned nodeId){
-		this->nodeId = nodeId;
-	}
-
-	unsigned int getPortNumber() const{
-		return this->portNumber;
-	}
-
-
-	Shard getShardById(const ShardId& shardId);
-	void addShard(const ShardId& shardId);
-	void removeShard(const ShardId& shardId);
-
-	unsigned getTotalPrimaryShards(); // for all the cores on this node
-	unsigned getTotalReplicaShards(); // for all the cores on this node
-
-	bool thisIsMe; // temporary for V0
-
-	unsigned short getPort(PortType_t portType) const;
-	void setPort(PortType_t portType, unsigned short portNumber);
-
-	// TODO (for Surendra): refine this iterator
-	// const Node& operator = (const Node& node);
-
-	// an iterator to go through the shards in this node
-	//class ShardIterator {
-	//public:
-	//unsigned first; // TODO: Ask Surendra
-	//Shard second;
-	//bool operator == (NodeIterator* rhs);
-	//};
-
-	//typedef NodeIterator * Iterator;
-	//Iterator begin();
-	//Iterator next();
-	//Iterator end();
-
-private:
-	unsigned nodeId;
-	std::string ipAddress;
-	unsigned portNumber;
-	std::string nodeName;
-	vector<unsigned short> ports;
-
-	// Allow this node to be eligible as a master node (enabled by default).
-	bool nodeMaster;
-
-	// Allow this node to store data (enabled by default). If enabled, the node is eligible to store data shards.
-	bool nodeData;
-
-	// Home directory for all the index files of shards on this node.
-	string homeDir;
-
-	string dataDir;
-	unsigned int numberOfThreads;
-	// other node-related info
-};
-
-enum CLUSTERSTATE {
-	CLUSTERSTATE_GREEN,  // all nodes are green
-	CLUSTERSTATE_RED,    // all nodes are red ..possible ?
-	CLUSTERSTATE_YELLOW  // not all nodes are green.
-};
-
-class CoreInfo_t;
-
-class Cluster {
-public:
-
-	const Node* getCurrentNode(){
-		vector<Node>& nodes =  (this->nodes);
-		for(int i = 0; i < nodes.size(); i++){
-			if(nodes[i].thisIsMe == true){
-				return &nodes[i];
-			}
-		}
-		return NULL; // should not happen
-	}
-
-	//TODO : we need to add lock to this function
-	std::map<ShardId, Shard, ShardIdComparator> getShardMap(){
-		return shardMap;
-	}
-
-	std::map<ShardId, Shard, ShardIdComparator> shardMap;
-
-	std::vector<Node>* getNodes(){
-		return &nodes;
-	}
-
-	string getClusterName() {
-		return this->clusterName;
-	}
-
-	CLUSTERSTATE getClusterState();
-
-	unsigned     getMasterNodeId();
-	bool         isMasterNode(unsigned nodeId);
-
-	void         getNodeById(unsigned id, Node& node);
-	unsigned     getTotalNumberOfNodes() { return nodes.size(); };
-
-	void setClusterName(const std::string& clusterName)
-	{
-		this->clusterName = clusterName;
-	}
-
-	// get the node ID and coreId for a given shard Id
-	void getNodeIdAndCoreId(const ShardId& shardId, unsigned& nodeId, unsigned& coreId);
-
-private:
-	string       clusterName;
-	CLUSTERSTATE clusterState;
-
-	std::vector<Node> nodes;  // nodes in the cluster
-	unsigned          masterNodeId;
-
-	std::vector<CoreInfo_t> cores;  // cores in the cluster
-
-	// "primary to replicas" map: from a primary shard id to ids of replica shards
-	// e.g., primary shard "P0" has replicas "R1_0" and "R2_0"
-	boost::unordered_map<std::string, std::vector<std::string> > primaryToReplicaMap;
-
-	// friend class SynchronizationManager;
-};
-
-// This class is used to collect information from the config file and pass them other modules
-// in the system.
-class SearchableAttributeInfoContainer {
-public:
-	SearchableAttributeInfoContainer(){
-		attributeName = "";
-		required = false;
-		defaultValue = "";
-		offset = 0;
-		boost = 1;
-		isMultiValued = false;
-		highlight = false;
-	}
-	SearchableAttributeInfoContainer(const string & name,
-			const bool required,
-			const string & defaultValue ,
-			const unsigned offset,
-			const unsigned boost,
-			const bool isMultiValued,
-			bool highlight = false){
-		this->attributeName = name;
-		this->required = required;
-		this->defaultValue = defaultValue;
-		this->offset = offset;
-		this->boost = boost;
-		this->isMultiValued = isMultiValued;
-		this->highlight = highlight;
-	}
-	// NO GETTER OR SETTERS ARE IMPLEMENTED FOR THESE MEMBERS
-	// BECAUSE THIS CLASS IS MEANT TO BE A VERY SIMPLE CONTAINER WHICH ONLY CONTAINS THE
-	// VALUES AND HAS NO BEHAVIOUR
-	string attributeName;
-	bool required;
-	string defaultValue;
-	unsigned offset;
-	unsigned boost;
-	bool isMultiValued;
-	bool highlight;
-};
-
-class RefiningAttributeInfoContainer {
-public:
-	RefiningAttributeInfoContainer(){
-		attributeName = "";
-		// JUST BECAUSE IT MUST HAVE A DEFAULT VALUE, TEXT has no meaning or value here
-		attributeType = srch2::instantsearch::ATTRIBUTE_TYPE_TEXT;
-		defaultValue = "";
-		required = false;
-		isMultiValued = false;
-	}
-	RefiningAttributeInfoContainer(const string & name,
-			srch2::instantsearch::FilterType type,
-			const string & defaultValue,
-			const bool required,
-			const bool isMultiValued){
-		this->attributeName = name;
-		this->attributeType = type;
-		this->defaultValue = defaultValue;
-		this->required = required;
-		this->isMultiValued = isMultiValued;
-	}
-	// NO GETTER OR SETTERS ARE IMPLEMENTED FOR THESE MEMBERS
-	// BECAUSE THIS CLASS IS MEANT TO BE A VERY SIMPLE CONTAINER WHICH ONLY CONTAINS THE
-	// VALUES AND HAS NO BEHAVIOUR
-	string attributeName;
-	srch2::instantsearch::FilterType attributeType;
-	string defaultValue;
-	bool required;
-	bool isMultiValued;
-};
 
 
 // helper state between different sections of the config file
@@ -533,74 +116,37 @@ public:
 	}
 
 	typedef std::map<const string, CoreInfo_t *> CoreInfoMap_t;
-	Cluster* getCluster(){  // not safe
-		return &(this->cluster);
+
+	void getClusterReadView(boost::shared_ptr<const Cluster> & clusterReadview) const{
+        // We need the lock it to prevent the following two operations from happening at the same time.
+        // One reader is doing reader = readview, which is reading the readview.
+        // At the same time, we can call merge(), in which we can have "readview=writeview", which is modifying the read view.
+        pthread_spin_lock(&m_spinlock);
+        clusterReadview = metadata_readView;
+        pthread_spin_unlock(&m_spinlock);
 	}
 
-	bool isInCurrentNode(ShardId & shardId){
-		// get destination node ID from config manager
-		unsigned nodeId =
-				this->getCluster()->shardMap[shardId].getNodeId();
-
-		return (nodeId == this->getCurrentNodeId());
+	Cluster * getClusterWriteView(){
+		return metadata_writeView;
 	}
 
-	unsigned getNodeId(ShardId & shardId){
-		return this->getCluster()->shardMap[shardId].getNodeId();
+	void commitClusterMetadata(){
+		//NOTE: This implementation assumes there is only one writer to the cluster metadata
+		// (which is the MigrationManager )
+        // make a copy from writeview
+        Cluster * newReadview = new Cluster(*metadata_writeView);
+        pthread_spin_lock(&m_spinlock);
+        // set readview pointer to the new copy of writeview
+        metadata_readView.reset(newReadview);
+        pthread_spin_unlock(&m_spinlock);
 	}
 
-	void removeNodeFromCluster(unsigned nodeId) {
-		//spin to acquire lock
-		while (!__sync_bool_compare_and_swap (&isLocked, false, true)) ;
-
-		vector<Node>* nodes = this->cluster.getNodes();
-		unsigned index = 0;
-		for(; index < nodes->size(); ++index){
-			if((*nodes)[index].getId() == nodeId){
-				break;
-			}
-		}
-		if (index < nodes->size())
-			nodes->erase(nodes->begin() + index);
-
-		isLocked = false;
-	}
-
-	bool isValidNode(unsigned nodeId) {
-		//spin to acquire lock
-		while (!__sync_bool_compare_and_swap (&isLocked, false, true)) ;
-
-		vector<Node>* nodes = this->cluster.getNodes();
-		unsigned index = 0;
-		unsigned totalNodes = nodes->size();
-		for(; index < totalNodes; ++index){
-			if((*nodes)[index].getId() == nodeId){
-				break;
-			}
-		}
-		isLocked = false;
-		if (index < totalNodes)
-			return true;
-		else
-			return false;
-	}
-	unsigned getCurrentNodeId(){
-		//spin to acquire lock
-		while (!__sync_bool_compare_and_swap (&isLocked, false, true)) ;
-
-		vector<Node>* nodes = this->cluster.getNodes();
-		for(int i = 0; i < nodes->size(); i++){
-			if(nodes->at(i).thisIsMe == true){
-				isLocked = false;
-				return nodes->at(i).getId();
-			}
-		}
-		isLocked = false;
-		return 0;
-	}
 private:
+    boost::shared_ptr< const Cluster > metadata_readView;
+    Cluster * metadata_writeView;
+    mutable pthread_spinlock_t m_spinlock;
+
 	volatile bool isLocked; //both read / write use this lock.
-	Cluster cluster;
 	DiscoveryParams discovery;
 	// <config>
 	string licenseKeyFile;
@@ -675,8 +221,6 @@ private:
 	bool isNumber(const string &s);
 
 protected:
-	CoreInfoMap_t coreInfoMap;
-
 	// <config><cores>
 	string defaultCoreName;
 	bool defaultCoreSetFlag; // false unless <cores defaultCoreName="..."> has been parsed
@@ -705,17 +249,11 @@ protected:
 public:
 	ConfigManager(const string& configfile);
 	virtual ~ConfigManager();
-	bool verifyConsistency();
-	void setNodeId();
+//	bool verifyConsistency(); // TODO : not used, to be deleted
 	bool isLocal(ShardId& shardId);
 
 	//Declaring function to parse node tags
-	void parseNode(std::vector<Node>* nodes, xml_node& childNode, std::stringstream &parseWarnings, std::stringstream &parseError, bool configSuccess);
-
-	const CoreInfoMap_t& getCoreInfoMap() const;
-	CoreInfoMap_t::iterator coreInfoIterateBegin() { return coreInfoMap.begin(); }
-	CoreInfoMap_t::iterator coreInfoIterateEnd() { return coreInfoMap.end(); }
-	CoreInfo_t *getCoreInfo(const string &coreName) const { return ((CoreInfoMap_t) coreInfoMap)[coreName]; }
+	void parseNode(std::vector<Node *>* nodes, xml_node& childNode, std::stringstream &parseWarnings, std::stringstream &parseError, bool configSuccess);
 
 	void _setDefaultSearchableAttributeBoosts(const string &coreName, const vector<string> &searchableAttributesVector);
 
@@ -811,7 +349,8 @@ public:
 		return defaultCoreSetFlag;
 	}
 
-	CoreInfo_t *getDefaultCoreInfo() const;
+	CoreInfo_t *getDefaultCoreInfo_Writeview();
+	const CoreInfo_t * getDefaultCoreInfo() const;
 
 private:
 
@@ -952,341 +491,6 @@ private:
 	static const char* const defaultExactPreTag;
 	static const char* const defaultExactPostTag;
 
-};
-
-// definitions for data source(s) (srch2Server objects within one HTTP server)
-class CoreInfo_t {
-
-public:
-
-	vector<ShardId> getShardsVector() const{
-		return shards;
-	}
-
-
-	unsigned getCoreId() const{
-		return coreId;
-	}
-	void setCoreId(unsigned coreId){
-		this->coreId = coreId;
-	}
-
-	unsigned getNumberOfPrimaryShards() const{
-		return this->numberOfPrimaryShards;
-	}
-
-	unsigned getNumberOfReplicas() const{
-		return this->numberOfReplicas;
-	}
-
-	ShardId getPrimaryShardId(unsigned partitionId) const{
-		ShardId rtn ;
-		rtn.coreId = this->coreId;
-		rtn.partitionId = partitionId;
-		rtn.replicaId = 0;
-		return rtn;
-	}
-
-	void getPartitionAllShardIds(unsigned partitionId, vector<ShardId> & shardIds) const{ // fills shardIds vector by ShardId objects of primary and replica partitions corresponding to partitionId
-		for(int i = 0; i < this->shards.size(); i++){
-			if(this->shards[i].partitionId == partitionId){
-				shardIds.push_back(this->shards[i]);
-			}
-		}
-	}
-
-	CoreInfo_t(class ConfigManager *manager) : configManager(manager) {
-		schema = NULL;
-	};
-	~CoreInfo_t() {
-		if(schema != NULL){
-			delete schema;
-		}
-	};
-	friend class ConfigManager;
-
-	// **** accessors for settings in every core ****
-	const string &getName() const { return name; }
-
-	const string &getDataDir() const { return dataDir; }
-	const string &getIndexPath() const { return indexPath; }
-	DataSourceType getDataSourceType() const { return dataSourceType; }
-	const string &getDataFile() const { return dataFile; }
-	const string &getDataFilePath() const { return dataFilePath; }
-
-	// THIS FUNCTION IS JUST FOR WRAPPER TEST
-	void setDataFilePath(const string& path);
-
-	const string &getMongoServerHost() const { return mongoHost; }
-	const string &getMongoServerPort() const { return mongoPort; }
-	const string &getMongoDbName() const { return mongoDbName; }
-	const string &getMongoCollection() const { return mongoCollection; }
-	unsigned getMongoListenerWaitTime() const { return mongoListenerWaitTime; }
-	unsigned getMongoListenerMaxRetryOnFailure() const { return mongoListenerMaxRetryOnFailure; }
-	unsigned getMongoListenerMaxRetryCount() const { return mongoListenerMaxRetryOnFailure; }
-
-	int getIndexType() const { return indexType; }
-	int getSearchType() const { return searchType; }
-	int getSearchType(const string &coreName) const { return configManager->getSearchType(coreName); }
-	const string &getPrimaryKey() const { return primaryKey; }
-	int getIsPrimSearchable() const { return isPrimSearchable; }
-
-	const std::string& getScoringExpressionString() const;
-	float getFuzzyMatchPenalty() const;
-	float getQueryTermSimilarityThreshold() const ;
-	float getQueryTermLengthBoost() const;
-	float getPrefixMatchPenalty() const;
-	int getAttributeToSort() const;
-	const vector<string> *getAttributesToReturn() const
-        		{ return &attributesToReturn; }
-	void setAttributesToReturn(vector<string> attributesToReturn)
-	{ this->attributesToReturn = attributesToReturn; }
-	unsigned getDefaultNumberOfSuggestionsToReturn() const
-	{ return defaultNumberOfSuggestions; }
-
-	srch2::instantsearch::ResponseType getSearchResponseFormat() const;
-	int getSearchResponseJSONFormat() const;
-
-	uint32_t getCacheSizeInBytes() const;
-	int getDefaultResultsToRetrieve() const;
-
-	bool isPositionIndexWordEnabled() const { return enableWordPositionIndex; }
-	bool isPositionIndexCharEnabled() const { return enableCharOffsetIndex; }
-
-	bool getSupportSwapInEditDistance() const
-	{ return supportSwapInEditDistance; }
-	bool getSupportAttributeBasedSearch() const { return supportAttributeBasedSearch; }
-	unsigned getQueryTermBoost() const { return queryTermBoost; }
-	int getOrdering() const { return configManager->getOrdering(); }
-
-	const map<string, SearchableAttributeInfoContainer > *getSearchableAttributes() const
-        		{ return &searchableAttributesInfo; }
-	const map<string, RefiningAttributeInfoContainer > *getRefiningAttributes() const
-    		  { return &refiningAttributesInfo; }
-	bool isRecordBoostAttributeSet() const { return recordBoostFieldFlag; }
-	const std::string& getAttributeRecordBoostName() const { return recordBoostField; }
-
-	bool isFacetEnabled() const { return facetEnabled; }
-	const vector<string> *getFacetAttributes() const { return &facetAttributes; }
-	const vector<string> *getFacetStarts() const { return &facetStarts; }
-	const vector<string> *getFacetEnds() const { return &facetEnds; }
-	const vector<string> *getFacetGaps() const { return &facetGaps; }
-	const vector<int> *getFacetTypes() const { return &facetTypes; }
-
-	string getAttributeLatitude() const { return fieldLatitude; }
-	string getAttributeLongitude() const { return fieldLongitude; }
-
-	bool getStemmerFlag() const { return stemmerFlag; }
-	bool getSynonymKeepOrigFlag() const { return synonymKeepOrigFlag; }
-	const string &getStemmerFile() const { return stemmerFile; }
-	const string &getSynonymFilePath() const { return synonymFilterFilePath; }
-	const string &getStopFilePath() const { return stopFilterFilePath; }
-	const string &getProtectedWordsFilePath() const { return protectedWordsFilePath; }
-	const string& getRecordAllowedSpecialCharacters() const
-	{ return allowedRecordTokenizerCharacters; }
-
-	uint32_t getDocumentLimit() const;
-	uint64_t getMemoryLimit() const;
-
-	uint32_t getMergeEveryNSeconds() const;
-	uint32_t getMergeEveryMWrites() const;
-
-	uint32_t getUpdateHistogramEveryPMerges() const;
-	uint32_t getUpdateHistogramEveryQWrites() const;
-
-	// **** accessors for settings in ConfigManager (global to all cores) ****
-			const string &getSrch2Home() const { return configManager->getSrch2Home(); }
-	const string& getLicenseKeyFileName() const { return configManager->getLicenseKeyFileName(); }
-	const string& getHTTPServerListeningHostname() const
-	{ return configManager->getHTTPServerListeningHostname(); }
-	const string& getHTTPServerListeningPort() const { return configManager->getHTTPServerListeningPort(); }
-	const string& getHTTPServerAccessLogFile() const { return configManager->getHTTPServerAccessLogFile(); }
-	const Logger::LogLevel& getHTTPServerLogLevel() const
-	{ return configManager->getHTTPServerLogLevel(); }
-
-	bool getIsFuzzyTermsQuery() const;
-
-	float getDefaultSpatialQueryBoundingBox() const
-	{ return configManager->getDefaultSpatialQueryBoundingBox(); }
-
-	unsigned int getKeywordPopularityThreshold() const
-	{ return configManager->getKeywordPopularityThreshold(); }
-	bool getQueryTermPrefixType() const;
-
-	const unsigned getGetAllResultsNumberOfResultsThreshold() const
-	{ return configManager->getGetAllResultsNumberOfResultsThreshold(); }
-	const unsigned getGetAllResultsNumberOfResultsToFindInEstimationMode() const
-	{ return configManager->getGetAllResultsNumberOfResultsToFindInEstimationMode(); }
-
-	unsigned int getNumberOfThreads() const { return configManager->getNumberOfThreads(); }
-
-
-	const vector<std::pair<unsigned, string> >& getHighlightAttributeIdsVector() const { return highlightAttributes; }
-	void setHighlightAttributeIdsVector(vector<std::pair<unsigned, string> >& in) { highlightAttributes = in; }
-
-	void getExactHighLightMarkerPre(string& markerStr) const{
-		markerStr = exactHighlightMarkerPre;
-	}
-
-	void getExactHighLightMarkerPost(string& markerStr) const{
-		markerStr = exactHighlightMarkerPost;
-	}
-	void getFuzzyHighLightMarkerPre(string& markerStr) const{
-		markerStr = fuzzyHighlightMarkerPre;
-	}
-
-	void getFuzzyHighLightMarkerPost(string& markerStr) const{
-		markerStr = fuzzyHighlightMarkerPost;
-	}
-	void getHighLightSnippetSize(unsigned& snippetSize) const{
-		snippetSize = highlightSnippetLen;
-	}
-
-	unsigned short getPort(PortType_t portType) const;
-	void setPort(PortType_t portType, unsigned short portNumber);
-
-	void setSchema(srch2is::Schema* schema) {
-		this->schema = schema;
-	};
-	srch2is::Schema* getSchema() const {
-		return this->schema;
-	};
-
-	vector<ShardId> shards;
-protected:
-
-	string name; // of core
-
-	unsigned coreId; // starting from 0, auto increment
-	// In V0, the "number_of_shards" is a one-time setting for a
-	// core. In the future (possibly after V1), we can support dynamic
-	// migration by allowing this number to change.
-	unsigned numberOfPrimaryShards;
-	// Number of replicas (additional copies) of an index (1 by
-	// default). The "number_of_replicas" can be increased or
-	// decreased anytime, by using the Index Update Settings API. We
-	// can do it in V0 or after V1. SRCH2 will take care about load
-	// balancing, relocating, gathering the results from nodes, etc.
-	// ES: core.number_of_replicas: 1 // index.number_of_replicas: 1
-	unsigned numberOfReplicas; // always 0 for V0
-
-	ConfigManager *configManager;
-
-	// <config>
-	string dataDir;
-	string indexPath; // srch2Home + dataDir
-	DataSourceType dataSourceType;
-	string dataFile;
-	string dataFilePath;
-
-	// mongo db related settings
-	string mongoHost;
-	string mongoPort;
-	string mongoDbName;
-	string mongoCollection;
-	unsigned mongoListenerWaitTime;
-
-	// stores the value of maximum allowed retries when MongoDB listener encounters some problem.
-	unsigned mongoListenerMaxRetryOnFailure;
-
-	int isPrimSearchable;
-
-	// <schema>
-	string primaryKey;
-
-	// <schema><fields>
-	string fieldLatitude;
-	string fieldLongitude;
-
-	int indexType;
-
-	map<string , SearchableAttributeInfoContainer> searchableAttributesInfo;
-	map<string , RefiningAttributeInfoContainer > refiningAttributesInfo;
-
-	// <IndexConfig>
-	bool supportSwapInEditDistance;
-
-	bool enableWordPositionIndex;
-	bool enableCharOffsetIndex;
-
-	bool recordBoostFieldFlag;
-	string recordBoostField;
-	string getrecordBoostField() const { return recordBoostField; }
-	unsigned queryTermBoost;
-	IndexCreateOrLoad indexCreateOrLoad;
-	IndexCreateOrLoad getindexCreateOrLoad() const { return indexCreateOrLoad; }
-
-	// <config><query>
-	int searchType;
-
-	// <config><query><rankingAlgorithm>
-	string scoringExpressionString;
-
-	// <config><query>
-	float fuzzyMatchPenalty;
-	float queryTermSimilarityThreshold;
-	float queryTermLengthBoost;
-	float prefixMatchPenalty;
-	vector<string> sortableAttributes;
-	vector<srch2::instantsearch::FilterType> sortableAttributesType; // Float or unsigned
-	vector<string> sortableAttributesDefaultValue;
-	int attributeToSort;
-	unsigned cacheSizeInBytes;
-	int resultsToRetrieve;
-	bool exactFuzzy;
-	bool queryTermPrefixType;
-
-	unsigned defaultNumberOfSuggestions;
-
-	// <config><query><queryResponseWriter>
-	srch2::instantsearch::ResponseType searchResponseContent;
-	int searchResponseJsonFormat;
-	vector<string> attributesToReturn;
-
-	// <config><query>
-	bool supportAttributeBasedSearch;
-
-	// facet
-	bool facetEnabled;
-	vector<int> facetTypes; // 0 : simple , 1 : range
-	vector<string> facetAttributes;
-	vector<string> facetStarts;
-	vector<string> facetEnds;
-	vector<string> facetGaps;
-
-	// <schema><types><fieldType><analyzer><filter>
-	bool stemmerFlag;
-	std::string stemmerFile;
-	std::string synonymFilterFilePath;
-	bool synonymKeepOrigFlag;
-	std::string stopFilterFilePath;
-	std::string protectedWordsFilePath;
-
-	// characters to specially treat as part of words, and not as a delimiter
-	std::string allowedRecordTokenizerCharacters;
-
-	// <core><updatehandler>
-	uint64_t memoryLimit;
-	uint32_t documentLimit;
-
-	// <config><updatehandler><mergePolicy>
-	unsigned mergeEveryNSeconds;
-	unsigned mergeEveryMWrites;
-
-	// no config option for this yet
-	unsigned updateHistogramEveryPMerges;
-	unsigned updateHistogramEveryQWrites;
-	vector<std::pair<unsigned, string> > highlightAttributes;
-	string exactHighlightMarkerPre;
-	string exactHighlightMarkerPost;
-	string fuzzyHighlightMarkerPre;
-	string fuzzyHighlightMarkerPost;
-	unsigned highlightSnippetLen;
-
-	// array of local HTTP ports (if any) index by port type enum
-	vector<unsigned short> ports;
-
-	srch2is::Schema *schema;
 };
 
 

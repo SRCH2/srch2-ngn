@@ -58,6 +58,25 @@ public:
 	 *  Note: should be called in new thread otherwise current thread will block
 	 */
 	void run();
+
+
+	// Moved from ConfigManager to here by Jamshid, will move to MM
+	// this code removes node from the cluster
+	void removeNodeFromCluster(unsigned nodeId) {
+		Cluster * cluster = config.getClusterWriteView();
+		std::map<Node *, std::vector<CoreShardContainer * > > * shardInformation =
+				cluster->getShardInformation();
+		for(std::map<Node *, std::vector<CoreShardContainer * > >::iterator shardInfoItr = shardInformation->begin();
+				shardInfoItr != shardInformation->end(); ++shardInfoItr){
+			if(shardInfoItr->first->getId() == nodeId){
+				shardInformation->erase(shardInfoItr);
+				// commit provides the changes writeview to readers
+				config.commitClusterMetadata();
+				return;
+			}
+		}
+		ASSERT(false);
+	}
 private:
 	///
 	///  Private member functions start here.
@@ -97,7 +116,8 @@ private:
 	unsigned pingTimeout;
 	unsigned masterNodeId;
 	unsigned initialTimeout;
-	Cluster *cluster;
+//	Cluster *cluster; // commented out by Jamshid and replaced with next line
+	boost::shared_ptr<const Cluster> cluster;
 	TransportManager& transport;
 	SMCallBackHandler *callBackHandler;
 	MessageHandler *messageHandler;

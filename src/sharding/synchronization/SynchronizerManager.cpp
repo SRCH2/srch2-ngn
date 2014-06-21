@@ -23,13 +23,25 @@ void * bootSynchronizer(void *arg) {
 SyncManager::SyncManager(ConfigManager& cm, TransportManager& tm, unsigned master) :
 		transport(tm), config(cm) {
 
-	cluster = cm.getCluster();
+	// cluster = cm.getCluster(); // commented out by Jamshid and replaced with next block
+	/**Added by Jamshid */
+	boost::shared_ptr<const Cluster> clusterReadview;
+	// as long as this read view is not destroyed reading from cluster is safe
+	// Jamshid : I changed "Cluster * cluster" to "boost::shared_ptr<const Cluster> cluster"
+	// just to keep your class member but if you keep readview as a member it never gets updated
+	// and readview is never destried. (You might want to ask me)
+	cm.getClusterReadView(clusterReadview);
+	/**********************/
+
 	//pingInterval = cm.getDiscoveryParams().pingInterval;  TODO
 	//pingTimeout = cm.getDiscoveryParams().pingTimeout;  TODO
 
 	pingInterval = 2;
 	pingTimeout = 6;
 	initialTimeout = 30;  // for V0
+
+	/* Commented out by Jamshid and replaced with the following block.
+	 *
 
 	nodesInCluster = *(cluster->getNodes());
 	for (unsigned i = 0; i < nodesInCluster.size(); ++i) {
@@ -39,6 +51,19 @@ SyncManager::SyncManager(ConfigManager& cm, TransportManager& tm, unsigned maste
 	this->masterNodeId = master;
 	this->isCurrentNodeMaster = (this->currentNodeId == this->masterNodeId);
 
+	*
+	*/
+	/* This block is added by Jamshid to replace the above commented code*/
+
+	std::vector<const Node *> clusterNodes;
+	clusterReadview->getAllNodes(clusterNodes);
+	for(std::vector<const Node *>::iterator nodeItr = clusterNodes.begin(); nodeItr != clusterNodes.end(); ++nodeItr){
+		this->nodesInCluster.push_back(Node(**nodeItr));
+	}
+	this->currentNodeId = clusterReadview->getCurrentNode()->getId();
+	this->isCurrentNodeMaster = clusterReadview->isMasterNode(this->currentNodeId);
+
+	/*********************************************************************/
 	if (isCurrentNodeMaster) {
 		messageHandler = new MasterMessageHandler(this);
 	} else {
@@ -494,10 +519,21 @@ void MasterMessageHandler::handleNodeFailure(unsigned nodeIdIndex) {
 	// If this node comes back then it is discovery manager's job to handle it.
 	// For V0 update only local sate.
 	_syncMgrObj->nodesInCluster.erase(_syncMgrObj->nodesInCluster.begin() + nodeIdIndex);
-	_syncMgrObj->config.removeNodeFromCluster(nodeId);
+	_syncMgrObj->removeNodeFromCluster(nodeId);
 	//_syncMgrObj->refresh();
+	/** Commented out by Jamshid and replaced with next statement
+	 *
 	Logger::console("[%d, %d, %d]", _syncMgrObj->config.getCluster()->getTotalNumberOfNodes(),
 			_syncMgrObj->masterNodeId, _syncMgrObj->currentNodeId);
+	*
+	**/
+	/* Added by Jamshid ***/
+	boost::shared_ptr<const Cluster> clusterReadview;
+	_syncMgrObj->config.getClusterReadView(clusterReadview);
+	Logger::console("[%d, %d, %d]", clusterReadview->getTotalNumberOfNodes(),
+			_syncMgrObj->masterNodeId, _syncMgrObj->currentNodeId);
+	/************************************/
+
 }
 /*
  *  Should be called in a separate thread.

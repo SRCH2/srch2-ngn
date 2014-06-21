@@ -288,10 +288,10 @@ TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
 	// For each node we have, if it is a current node then store it as current
 	// node otherwise store the nodes as a destination
 	for(Nodes::iterator dest = nodes.begin(); dest!= nodes.end(); ++dest) {
-		if(dest->thisIsMe)
+		if((*dest)->thisIsMe)
 			routeMap.setCurrentNode(*dest);
 		else
-			routeMap.addDestination(*dest);
+			routeMap.addDestination(**dest);
 	}
 
 	pthread_create(&listeningThread, NULL, startListening, &routeMap);

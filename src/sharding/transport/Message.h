@@ -72,7 +72,7 @@ public:
    ShardId getDestinationShardId(){
 	   return destinationShardId;
    }
-   void setDestinationShardId(ShardId& destShardId){
+   void setDestinationShardId(const ShardId& destShardId){
 	   this->destinationShardId = destShardId;
    }
    void setBodySize(unsigned bodySize){

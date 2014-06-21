@@ -83,10 +83,10 @@ void ServerHighLighter::genSnippetsForSingleRecord(const QueryResults *qr, unsig
 		vector<keywordHighlightInfo> keywordStrToHighlight;
 		buildKeywordHighlightInfo(qr, recIdx, keywordStrToHighlight);
 
-        StoredRecordBuffer buffer =  server->indexer->getInMemoryData(recordId);
+        StoredRecordBuffer buffer =  server->getIndexer()->getInMemoryData(recordId);
         if (buffer.start.get() == NULL)
         	return;
-        const vector<std::pair<unsigned, string> >&highlightAttributes = server->indexDataConfig->getHighlightAttributeIdsVector();
+        const vector<std::pair<unsigned, string> >&highlightAttributes = server->getCoreInfo()->getHighlightAttributeIdsVector();
         for (unsigned i = 0 ; i < highlightAttributes.size(); ++i) {
     		AttributeSnippet attrSnippet;
         	unsigned id = highlightAttributes[i].first;
@@ -117,15 +117,15 @@ ServerHighLighter::ServerHighLighter(QueryResults * queryResults,Srch2Server *se
 
 	HighlightConfig hconf;
 	string pre, post;
-	server->indexDataConfig->getExactHighLightMarkerPre(pre);
-	server->indexDataConfig->getExactHighLightMarkerPost(post);
+	server->getCoreInfo()->getExactHighLightMarkerPre(pre);
+	server->getCoreInfo()->getExactHighLightMarkerPost(post);
 	hconf.highlightMarkers.push_back(make_pair(pre, post));
-	server->indexDataConfig->getFuzzyHighLightMarkerPre(pre);
-	server->indexDataConfig->getFuzzyHighLightMarkerPost(post);
+	server->getCoreInfo()->getFuzzyHighLightMarkerPre(pre);
+	server->getCoreInfo()->getFuzzyHighLightMarkerPost(post);
 	hconf.highlightMarkers.push_back(make_pair(pre, post));
-	server->indexDataConfig->getHighLightSnippetSize(hconf.snippetSize);
+	server->getCoreInfo()->getHighLightSnippetSize(hconf.snippetSize);
 
-	if (!isEnabledWordPositionIndex(server->indexer->getSchema()->getPositionIndexType())){
+	if (!isEnabledWordPositionIndex(server->getIndexer()->getSchema()->getPositionIndexType())){
 		// we do not need phrase information because position index is not enabled.
 		//param.PhraseKeyWordsInfoMap.clear();
 	}
@@ -150,18 +150,18 @@ ServerHighLighter::ServerHighLighter(QueryResults * queryResults,Srch2Server *se
 //				 param.PhraseKeyWordsInfoMap, hconf);
 //	}
 
-	if (isEnabledCharPositionIndex(server->indexer->getSchema()->getPositionIndexType())) {
-		this->highlightAlgorithms  = new TermOffsetAlgorithm(server->indexer,
+	if (isEnabledCharPositionIndex(server->getIndexer()->getSchema()->getPositionIndexType())) {
+		this->highlightAlgorithms  = new TermOffsetAlgorithm(server->getIndexer(),
 				PhraseKeyWordsInfoMap, hconf);
 	} else {
-		Analyzer *currentAnalyzer = AnalyzerFactory::getCurrentThreadAnalyzer(server->indexDataConfig);
+		Analyzer *currentAnalyzer = AnalyzerFactory::getCurrentThreadAnalyzer(server->getCoreInfo());
 		this->highlightAlgorithms  = new AnalyzerBasedAlgorithm(currentAnalyzer,
 				PhraseKeyWordsInfoMap, hconf);
 	}
 
 	this->server = server;
 	storedAttrSchema = Schema::create();
-	RecordSerializerUtil::populateStoredSchema(storedAttrSchema, server->indexer->getSchema());
+	RecordSerializerUtil::populateStoredSchema(storedAttrSchema, server->getIndexer()->getSchema());
 	compactRecDeserializer = new RecordSerializer(*storedAttrSchema);
 	this->HighlightRecOffset = offset;
 	this->HighlightRecCount = count;

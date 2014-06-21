@@ -21,6 +21,7 @@
 #include "src/core/util/ParserUtility.h"
 #include "src/core/util/Assert.h"
 #include "src/core/analyzer/CharSet.h"
+#include "src/server/JSONRecordParser.h"
 
 #include "boost/algorithm/string_regex.hpp"
 #include "boost/filesystem/path.hpp"
@@ -171,48 +172,42 @@ const char* const ConfigManager::defaultFuzzyPostTag = "</b>";
 const char* const ConfigManager::defaultExactPreTag = "<b>";
 const char* const ConfigManager::defaultExactPostTag = "</b>";
 
-//In later version, this should be handled by SM
-void ConfigManager::setNodeId(){
-    vector<Node>* nodes = this->cluster.getNodes();
-    for(int i = 0; i < nodes->size(); i++){
-        (*nodes)[i].setId(i);
-    }
-}
-
-bool ConfigManager::isLocal(ShardId& shardId){
-	Shard s = this->cluster.shardMap[shardId];
-	return this->getCurrentNodeId() == s.getNodeId();
-}
-//Function Definition for verifyConsistency; it checks if the port number of core is different
-//from the port number being used by the node for communication with other nodes
-bool ConfigManager::verifyConsistency()
-{
-    Cluster* currentCluster = this->getCluster();
-    vector<Node>* nodes = currentCluster->getNodes();
-    Node currentNode;
-
-    //The for loop below gets the current node
-    for(int i = 0; i < nodes->size(); i++){
-        if(nodes->at(i).thisIsMe == true)
-    	    currentNode = nodes->at(i);
-    }
-
-    //The for loop below compares the current node's port number with the port number of cores
-    for(CoreInfoMap_t::iterator it = this->coreInfoIterateBegin(); it != this->coreInfoIterateEnd(); it++){
-        int num = (uint)atol(it->second->getHTTPServerListeningPort().c_str());
-        if(num == currentNode.getPortNumber()){
-    	    return false;
-        }
-    }
-    return true;
-}
+//TODO : not used, to be deleted
+////Function Definition for verifyConsistency; it checks if the port number of core is different
+////from the port number being used by the node for communication with other nodes
+//bool ConfigManager::verifyConsistency()
+//{
+//    Cluster* currentCluster = this->getCluster();
+//    vector<Node>* nodes = currentCluster->getNodes();
+//    Node currentNode;
+//
+//    //The for loop below gets the current node
+//    for(int i = 0; i < nodes->size(); i++){
+//        if(nodes->at(i).thisIsMe == true)
+//    	    currentNode = nodes->at(i);
+//    }
+//
+//    //The for loop below compares the current node's port number with the port number of cores
+//    for(CoreInfoMap_t::iterator it = this->coreInfoIterateBegin(); it != this->coreInfoIterateEnd(); it++){
+//        int num = (uint)atol(it->second->getHTTPServerListeningPort().c_str());
+//        if(num == currentNode.getPortNumber()){
+//    	    return false;
+//        }
+//    }
+//    return true;
+//}
 
 ConfigManager::ConfigManager(const string& configFile)
 {
     this->configFile = configFile;
     defaultCoreName = "__DEFAULTCORE__";
     defaultCoreSetFlag = false;
-    isLocked = false;
+
+    // initialize Cluster readview and writeview
+    // initialize writeview
+    pthread_spin_init(&m_spinlock, 0);
+    metadata_writeView = new Cluster();
+    metadata_readView.reset(new Cluster(*metadata_writeView));
 }
 
 void ConfigManager::loadConfigFile()
@@ -237,11 +232,27 @@ void ConfigManager::loadConfigFile()
     // parse the config file and set the variables.
     this->parse(configDoc, configSuccess, parseError, parseWarnings);
 
-    //The below function sets node Id for all the nodes, in later version this should be done by synchronization manager
-    this->setNodeId();
-
     Logger::debug("WARNINGS while reading the configuration file:");
     Logger::debug("%s\n", parseWarnings.str().c_str());
+
+    /*** Generate shards, temporary*****/
+	std::map<Node *, std::vector<CoreShardContainer * > > * shardingInformation =
+			this->getClusterWriteView()->getShardInformation();
+	std::vector<CoreInfo_t *> * cores = this->getClusterWriteView()->getCores();
+
+	for(std::map<Node *, std::vector<CoreShardContainer * > >::iterator nodeEntryItr = shardingInformation->begin();
+			nodeEntryItr != shardingInformation->end(); ++nodeEntryItr){
+
+		for(std::vector<CoreInfo_t *>::iterator coreItr = cores->begin(); coreItr != cores->end(); ++coreItr){
+			CoreShardContainer * coreShardContainer = new CoreShardContainer(*coreItr);
+			coreShardContainer->getPrimaryShards()->push_back(new Shard(nodeEntryItr->first->getId(), (*coreItr)->getCoreId(), nodeEntryItr->first->getId()));
+			nodeEntryItr->second.push_back(coreShardContainer);
+		}
+
+	}
+	// commit enables other modules to read the cluster metadata
+	this->commitClusterMetadata();
+    /***************************************/
 
     if (!configSuccess) {
         Logger::error("ERRORS while reading the configuration file");
@@ -315,11 +326,6 @@ void ConfigManager::trimSpacesFromValue(string &fieldValue, const char *fieldNam
     if (append != NULL) {
         fieldValue += append;
     }
-}
-
-const ConfigManager::CoreInfoMap_t& ConfigManager::getCoreInfoMap() const
-{
-  return coreInfoMap;
 }
 
 void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode, CoreInfo_t *coreInfo, map<string, unsigned> &boostsMap, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
@@ -798,8 +804,10 @@ void ConfigManager::parseMultipleCores(const xml_node &coresNode, bool &configSu
         for (xml_node coreNode = coresNode.first_child(); coreNode; coreNode = coreNode.next_sibling()) {
             CoreInfo_t *newCore = new CoreInfo_t(this);
             parseSingleCore(coreNode, newCore, configSuccess, parseError, parseWarnings);
+    	    srch2is::Schema *schema = JSONRecordParser::createAndPopulateSchema(newCore);
+    	    newCore->setSchema(schema);
             if (configSuccess) {
-                coreInfoMap[newCore->name] = newCore;
+                getClusterWriteView()->getCores()->push_back(newCore);
             } else {
                 delete newCore;
                 return;
@@ -1086,11 +1094,10 @@ void ConfigManager::parseDataConfiguration(const xml_node &configNode,
 
         // create a default core for coreInfo outside of <cores>
         bool created = false;
-        if (coreInfoMap.find(getDefaultCoreName()) == coreInfoMap.end()) {
+        coreInfo = getClusterWriteView()->getCoreByName_Writeview(getDefaultCoreName());
+        if (coreInfo == NULL) {
             coreInfo = new CoreInfo_t(this);
             created= true;
-        } else {
-            coreInfo = coreInfoMap[getDefaultCoreName()];
         }
 
         parseDataFieldSettings(configNode, coreInfo, configSuccess, parseError, parseWarnings);
@@ -1105,7 +1112,7 @@ void ConfigManager::parseDataConfiguration(const xml_node &configNode,
     // if no errors, add coreInfo to map
     if (coreInfo != NULL) {
         coreInfo->name = getDefaultCoreName();
-        coreInfoMap[coreInfo->name] = coreInfo;
+        getClusterWriteView()->getCores()->push_back(coreInfo);
     }
 
     // maxSearchThreads is an optional field
@@ -1815,24 +1822,37 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
     if (clusterName && clusterName.text()) {
     	tempUse = string(clusterName.text().get());
     	trimSpacesFromValue(tempUse, clusterNameTag, parseWarnings);
-    	cluster.setClusterName(tempUse);
+    	getClusterWriteView()->setClusterName(tempUse);
     }else{
-    	cluster.setClusterName(string(DefaultClusterName));
-    	parseWarnings << "Cluster name is not specified. Engine will use the default value " << cluster.getClusterName() << "\n";
+    	getClusterWriteView()->setClusterName(string(DefaultClusterName));
+    	parseWarnings << "Cluster name is not specified. Engine will use the default value " << getClusterWriteView()->getClusterName() << "\n";
     }
 
     xml_node clusterNameSibling = clusterName.next_sibling(clusterNameTag);
     if (clusterNameSibling && clusterNameSibling.text()){
-          parseWarnings << "Duplicate definition of \"" << clusterNameTag << "\".  The engine will use the first value: " << cluster.getClusterName() << "\n";    }
+          parseWarnings << "Duplicate definition of \"" << clusterNameTag << "\".  The engine will use the first value: " << getClusterWriteView()->getClusterName() << "\n";    }
 
     tempUse = "";
 
 
-    std::vector<Node>* nodes = cluster.getNodes();
+    std::vector<Node *> nodes ;
 
     xml_node nodeTag = configNode.child("node");
     if (nodeTag)
-      ConfigManager::parseNode(nodes, nodeTag, parseWarnings, parseError, configSuccess);
+      parseNode(&nodes, nodeTag, parseWarnings, parseError, configSuccess);
+
+    // TODO Temporary : This must eventually be done by SM
+    for(unsigned i = 0 ; i < nodes.size() ; ++i){
+    	nodes.at(i)->setId(i);
+    }
+
+    // and insert nodes into the cluster
+    std::map<Node *, std::vector<CoreShardContainer * > > * shardingInformation =
+    		getClusterWriteView()->getShardInformation();
+    for(unsigned i = 0 ; i < nodes.size() ; ++i){
+    	shardingInformation->insert(std::make_pair(nodes.at(i),vector<CoreShardContainer *>()));
+    }
+
 
     // srch2Home is a required field
     xml_node childNode = configNode.child(srch2HomeString);
@@ -1850,12 +1870,11 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
     xml_node topDataFileNode = childNode.child(dataFileString);
     if (topDataFileNode) {
         // create a default core for settings outside of <cores>
-        if (coreInfoMap.find(getDefaultCoreName()) == coreInfoMap.end()) {
+    	defaultCoreInfo = getClusterWriteView()->getCoreByName_Writeview(getDefaultCoreName());
+        if (defaultCoreInfo == NULL) {
             defaultCoreInfo = new CoreInfo_t(this);
             defaultCoreInfo->name = getDefaultCoreName();
-            coreInfoMap[defaultCoreInfo->name] = defaultCoreInfo;
-        } else {
-            defaultCoreInfo = coreInfoMap[getDefaultCoreName()];
+            getClusterWriteView()->getCores()->push_back(defaultCoreInfo);
         }
     }
 
@@ -1866,7 +1885,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
         return;
     }
 
-    defaultCoreInfo = coreInfoMap[getDefaultCoreName()];
+    defaultCoreInfo = getClusterWriteView()->getCoreByName_Writeview(getDefaultCoreName());
     if (defaultCoreInfo == NULL) {
         parseError << "Default core " << getDefaultCoreName() << " not found\n";
         configSuccess = false;
@@ -1973,7 +1992,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
 
 
 //TODO: Pass by referencem, space after =
-void ConfigManager::parseNode(std::vector<Node>* nodes, xml_node& nodeTag, std::stringstream &parseWarnings, std::stringstream &parseError, bool configSuccess) {
+void ConfigManager::parseNode(std::vector<Node *>* nodes, xml_node& nodeTag, std::stringstream &parseWarnings, std::stringstream &parseError, bool configSuccess) {
 
 	// map of port type enums to strings to simplify code
 	struct portNameMap_t {
@@ -2140,7 +2159,7 @@ void ConfigManager::parseNode(std::vector<Node>* nodes, xml_node& nodeTag, std::
 		}
 
 		if (thisIsMe == true) {
-			nodes->push_back(Node(nodeName, ipAddress, portNumber, thisIsMe, nodeMaster, nodeData, dataDir, nodeHome));
+			nodes->push_back(new Node(nodeName, ipAddress, portNumber, thisIsMe, nodeMaster, nodeData, dataDir, nodeHome));
 			xml_node childNode;
 
 			for (unsigned int i = 0; portNameMap[i].portName != NULL; i++) {
@@ -2152,11 +2171,11 @@ void ConfigManager::parseNode(std::vector<Node>* nodes, xml_node& nodeTag, std::
 						configSuccess = false;
 						return;
 					}
-					nodes->back().setPort(portNameMap[i].portType, portValue);
+					nodes->back()->setPort(portNameMap[i].portType, portValue);
 				}
 			}
 		} else if (thisIsMe == false) {
-			nodes->push_back(Node(nodeName, ipAddress, portNumber, thisIsMe));
+			nodes->push_back(new Node(nodeName, ipAddress, portNumber, thisIsMe));
 		}
 	}
 }
@@ -2165,9 +2184,9 @@ void ConfigManager::_setDefaultSearchableAttributeBoosts(const string &coreName,
 {
     CoreInfo_t *coreInfo = NULL;
     if (coreName.compare("") != 0) {
-        coreInfo = ((CoreInfoMap_t) coreInfoMap)[coreName];
+        coreInfo = getClusterWriteView()->getCoreByName_Writeview(coreName);
     } else {
-        coreInfo = getDefaultCoreInfo();
+        coreInfo = getDefaultCoreInfo_Writeview();
     }
 
     for (unsigned iter = 0; iter < searchableAttributesVector.size(); iter++) {
@@ -2178,34 +2197,9 @@ void ConfigManager::_setDefaultSearchableAttributeBoosts(const string &coreName,
 
 ConfigManager::~ConfigManager()
 {
-    for (CoreInfoMap_t::iterator iterator = coreInfoMap.begin(); iterator != coreInfoMap.end(); iterator++) {
-        delete iterator->second;
+    if(metadata_writeView != NULL){
+    	delete metadata_writeView;
     }
-    coreInfoMap.clear();
-}
-
-uint32_t CoreInfo_t::getDocumentLimit() const {
-    return documentLimit;
-}
-
-uint64_t CoreInfo_t::getMemoryLimit() const {
-    return memoryLimit;
-}
-
-uint32_t CoreInfo_t::getMergeEveryNSeconds() const {
-    return mergeEveryNSeconds;
-}
-
-uint32_t CoreInfo_t::getMergeEveryMWrites() const {
-    return mergeEveryMWrites;
-}
-
-uint32_t CoreInfo_t::getUpdateHistogramEveryPMerges() const {
-    return updateHistogramEveryPMerges;
-}
-
-uint32_t CoreInfo_t::getUpdateHistogramEveryQWrites() const {
-    return updateHistogramEveryQWrites;
 }
 
 unsigned ConfigManager::getKeywordPopularityThreshold() const {
@@ -2215,33 +2209,42 @@ unsigned ConfigManager::getKeywordPopularityThreshold() const {
 int ConfigManager::getIndexType(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->indexType;
+        return getDefaultCoreInfo()->getIndexType();
     }
-    return ((CoreInfoMap_t) coreInfoMap)[coreName]->indexType;
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(coreName)->getIndexType();
+
 }
 
 bool ConfigManager::getSupportSwapInEditDistance(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->supportSwapInEditDistance;
+        return getDefaultCoreInfo()->getSupportSwapInEditDistance();
     }
-    return ((CoreInfoMap_t) coreInfoMap)[coreName]->supportSwapInEditDistance;
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(coreName)->getSupportSwapInEditDistance();
 }
 
 const string& ConfigManager::getAttributeLatitude(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->fieldLatitude;
+        return getDefaultCoreInfo()->getFieldLatitude();
     }
-    return ((CoreInfoMap_t) coreInfoMap)[coreName]->fieldLatitude;
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(coreName)->getFieldLatitude();
 }
 
 const string& ConfigManager::getAttributeLongitude(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->fieldLongitude;
+        return getDefaultCoreInfo()->getFieldLongitude();
     }
-    return ((CoreInfoMap_t) coreInfoMap)[coreName]->fieldLongitude;
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(coreName)->getFieldLongitude();
 }
 
 float ConfigManager::getDefaultSpatialQueryBoundingBox() const {
@@ -2255,81 +2258,101 @@ unsigned int ConfigManager::getNumberOfThreads() const
 
 const string& ConfigManager::getIndexPath(const string &coreName) const {
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->indexPath;
+        return getDefaultCoreInfo()->getIndexPath();
     }
-    return ((CoreInfoMap_t) coreInfoMap)[coreName]->indexPath;
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(coreName)->getIndexPath();
 }
 
 const string& ConfigManager::getPrimaryKey(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->primaryKey;
+        return getDefaultCoreInfo()->getPrimaryKey();
     }
-    return ((CoreInfoMap_t) coreInfoMap)[coreName]->primaryKey;
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(coreName)->getPrimaryKey();
 }
 
 const map<string, SearchableAttributeInfoContainer > * ConfigManager::getSearchableAttributes(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return &getDefaultCoreInfo()->searchableAttributesInfo;
+        return getDefaultCoreInfo()->getSearchableAttributes();
     }
-    return &((CoreInfoMap_t) coreInfoMap)[coreName]->searchableAttributesInfo;
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(coreName)->getSearchableAttributes();
 }
 
 const map<string, RefiningAttributeInfoContainer > * ConfigManager::getRefiningAttributes(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return &getDefaultCoreInfo()->refiningAttributesInfo;
+        return getDefaultCoreInfo()->getRefiningAttributes();
     }
-    return &((CoreInfoMap_t) coreInfoMap)[coreName]->refiningAttributesInfo;
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(coreName)->getRefiningAttributes();
 }
 
 bool ConfigManager::isFacetEnabled(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->facetEnabled;
+        return getDefaultCoreInfo()->isFacetEnabled();
     }
-    return ((CoreInfoMap_t) coreInfoMap)[coreName]->facetEnabled;
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(coreName)->isFacetEnabled();
 }
 
 const vector<string> * ConfigManager::getFacetAttributes(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return &getDefaultCoreInfo()->facetAttributes;
+        return getDefaultCoreInfo()->getFacetAttributes();
     }
-    return &((CoreInfoMap_t) coreInfoMap)[coreName]->facetAttributes;
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(coreName)->getFacetAttributes();
 }
 
 const vector<int> * ConfigManager::getFacetTypes(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return &getDefaultCoreInfo()->facetTypes;
+        return getDefaultCoreInfo()->getFacetTypes();
     }
-    return &((CoreInfoMap_t) coreInfoMap)[coreName]->facetTypes;
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(coreName)->getFacetTypes();
 }
 
 const vector<string> * ConfigManager::getFacetStarts(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return &getDefaultCoreInfo()->facetStarts;
+        return getDefaultCoreInfo()->getFacetStarts();
     }
-    return &((CoreInfoMap_t) coreInfoMap)[coreName]->facetStarts;
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(coreName)->getFacetStarts();
 }
 
 const vector<string> * ConfigManager::getFacetEnds(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return &getDefaultCoreInfo()->facetEnds;
+        return getDefaultCoreInfo()->getFacetEnds();
     }
-    return &((CoreInfoMap_t) coreInfoMap)[coreName]->facetEnds;
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(coreName)->getFacetEnds();
 }
 
 const vector<string> * ConfigManager::getFacetGaps(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return &getDefaultCoreInfo()->facetGaps;
+        return getDefaultCoreInfo()->getFacetGaps();
     }
-    return &((CoreInfoMap_t) coreInfoMap)[coreName]->facetGaps;
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(coreName)->getFacetGaps();
 }
 
 
@@ -2340,146 +2363,122 @@ const string &ConfigManager::getSrch2Home() const {
 bool ConfigManager::getStemmerFlag(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->stemmerFlag;
+        return getDefaultCoreInfo()->getStemmerFlag();
     }
-    return ((CoreInfoMap_t) coreInfoMap)[coreName]->stemmerFlag;
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(coreName)->getStemmerFlag();
 }
 
 const string &ConfigManager::getStemmerFile(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->stemmerFile;
+        return getDefaultCoreInfo()->getStemmerFile();
     }
-    return ((CoreInfoMap_t) coreInfoMap)[coreName]->stemmerFile;
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(coreName)->getStemmerFile();
 }
 
 const string &ConfigManager::getSynonymFilePath(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->synonymFilterFilePath;
+        return getDefaultCoreInfo()->getSynonymFilePath();
     }
-    return ((CoreInfoMap_t) coreInfoMap)[coreName]->synonymFilterFilePath;
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(coreName)->getSynonymFilePath();
 }
 
 const string &ConfigManager::getProtectedWordsFilePath(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->protectedWordsFilePath;
+        return getDefaultCoreInfo()->getProtectedWordsFilePath();
     }
-    return ((CoreInfoMap_t) coreInfoMap)[coreName]->protectedWordsFilePath;
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(coreName)->getProtectedWordsFilePath();
 }
 
 bool ConfigManager::getSynonymKeepOrigFlag(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->synonymKeepOrigFlag;
+        return getDefaultCoreInfo()->getSynonymKeepOrigFlag();
     }
-    return ((CoreInfoMap_t) coreInfoMap)[coreName]->synonymKeepOrigFlag;
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(coreName)->getSynonymKeepOrigFlag();
 }
 
 const string &ConfigManager::getStopFilePath(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->stopFilterFilePath;
+        return getDefaultCoreInfo()->getStopFilePath();
     }
-    return ((CoreInfoMap_t) coreInfoMap)[coreName]->stopFilterFilePath;
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(coreName)->getStopFilePath();
 }
 
 const string& ConfigManager::getAttributeRecordBoostName(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->recordBoostField;
+        return getDefaultCoreInfo()->getrecordBoostField();
     }
-    return ((CoreInfoMap_t) coreInfoMap)[coreName]->recordBoostField;
-}
-
-/*string getDefaultAttributeRecordBoost() const
-  {
-  return defaultAttributeRecordBoost;
-  }*/
-
-const std::string& CoreInfo_t::getScoringExpressionString() const
-{
-    return scoringExpressionString;
-}
-
-int CoreInfo_t::getSearchResponseJSONFormat() const {
-    return searchResponseJsonFormat;
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(coreName)->getrecordBoostField();
 }
 
 const string& ConfigManager::getRecordAllowedSpecialCharacters(const string &coreName) const {
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->allowedRecordTokenizerCharacters;
+        return getDefaultCoreInfo()->getRecordAllowedSpecialCharacters();
     }
-    return ((CoreInfoMap_t) coreInfoMap)[coreName]->allowedRecordTokenizerCharacters;
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(coreName)->getRecordAllowedSpecialCharacters();
 }
 
 int ConfigManager::getSearchType(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->searchType;
+        return getDefaultCoreInfo()->getSearchType();
     }
-    return ((CoreInfoMap_t) coreInfoMap)[coreName]->searchType;
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(coreName)->getSearchType();
 }
 
 int ConfigManager::getIsPrimSearchable(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->isPrimSearchable;
+        return getDefaultCoreInfo()->getIsPrimSearchable();
     }
-    return ((CoreInfoMap_t) coreInfoMap)[coreName]->isPrimSearchable;
-}
-
-bool CoreInfo_t::getIsFuzzyTermsQuery() const
-{
-    return exactFuzzy;
-}
-
-bool CoreInfo_t::getQueryTermPrefixType() const
-{
-    return queryTermPrefixType;
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(coreName)->getIsPrimSearchable();
 }
 
 unsigned ConfigManager::getQueryTermBoost(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->queryTermBoost;
+        return getDefaultCoreInfo()->getQueryTermBoost();
     }
-    return ((CoreInfoMap_t) coreInfoMap)[coreName]->queryTermBoost;
-}
-
-float CoreInfo_t::getFuzzyMatchPenalty() const
-{
-    return fuzzyMatchPenalty;
-}
-
-float CoreInfo_t::getQueryTermSimilarityThreshold() const
-{
-    return queryTermSimilarityThreshold;
-}
-
-float CoreInfo_t::getQueryTermLengthBoost() const
-{
-    return queryTermLengthBoost;
-}
-
-float CoreInfo_t::getPrefixMatchPenalty() const
-{
-    return prefixMatchPenalty;
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(coreName)->getQueryTermBoost();
 }
 
 bool ConfigManager::getSupportAttributeBasedSearch(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->supportAttributeBasedSearch;
+        return getDefaultCoreInfo()->getSupportAttributeBasedSearch();
     }
-    return ((CoreInfoMap_t) coreInfoMap)[coreName]->supportAttributeBasedSearch;
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(coreName)->getSupportAttributeBasedSearch();
 }
 
-ResponseType CoreInfo_t::getSearchResponseFormat() const
-{
-    return searchResponseContent;
-}
 
 const string& ConfigManager::getLicenseKeyFileName() const {
     return licenseKeyFile;
@@ -2493,16 +2492,6 @@ const string& ConfigManager::getHTTPServerListeningPort() const {
     return httpServerListeningPort;
 }
 
-int CoreInfo_t::getDefaultResultsToRetrieve() const
-{
-    return resultsToRetrieve;
-}
-
-int CoreInfo_t::getAttributeToSort() const
-{
-    return attributeToSort;
-}
-
 int ConfigManager::getOrdering() const {
     return ordering;
 }
@@ -2510,9 +2499,11 @@ int ConfigManager::getOrdering() const {
 bool ConfigManager::isRecordBoostAttributeSet(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->recordBoostFieldFlag;
+        return getDefaultCoreInfo()->getRecordBoostFieldFlag();
     }
-    return ((CoreInfoMap_t) coreInfoMap)[coreName]->recordBoostFieldFlag;
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(coreName)->getRecordBoostFieldFlag();
 }
 
 const string& ConfigManager::getHTTPServerAccessLogFile() const {
@@ -2856,210 +2847,85 @@ int ConfigManager::parseFacetType(string& facetType){
 bool ConfigManager::isPositionIndexEnabled(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return (getDefaultCoreInfo()->enableWordPositionIndex ||
-        		getDefaultCoreInfo()->enableCharOffsetIndex);
+        return (getDefaultCoreInfo()->isPositionIndexWordEnabled() ||
+        		getDefaultCoreInfo()->isPositionIndexCharEnabled());
     }
-    return (((CoreInfoMap_t) coreInfoMap)[coreName]->enableWordPositionIndex
-    		|| ((CoreInfoMap_t) coreInfoMap)[coreName]->enableCharOffsetIndex);
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(coreName)->isPositionIndexWordEnabled() ||
+    		clusterReadview->getCoreByName(coreName)->isPositionIndexCharEnabled();
 }
 
 const string& ConfigManager::getMongoServerHost(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->mongoHost;
+        return getDefaultCoreInfo()->getMongoServerHost();
     }
-    return ((CoreInfoMap_t) coreInfoMap)[coreName]->mongoHost;
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(coreName)->getMongoServerHost();
 }
 
 const string& ConfigManager::getMongoServerPort(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->mongoPort;
+        return getDefaultCoreInfo()->getMongoServerPort();
     }
-    return ((CoreInfoMap_t) coreInfoMap)[coreName]->mongoPort;
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(coreName)->getMongoServerPort();
 }
 
 const string& ConfigManager::getMongoDbName(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->mongoDbName;
+        return getDefaultCoreInfo()->getMongoDbName();
     }
-    return ((CoreInfoMap_t) coreInfoMap)[coreName]->mongoDbName;
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(coreName)->getMongoDbName();
 }
 
 const string& ConfigManager::getMongoCollection (const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->mongoCollection;
+        return getDefaultCoreInfo()->getMongoCollection();
     }
-    return ((CoreInfoMap_t) coreInfoMap)[coreName]->mongoCollection;
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(coreName)->getMongoCollection();
 }
 
 const unsigned ConfigManager::getMongoListenerWaitTime (const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->mongoListenerWaitTime;
+        return getDefaultCoreInfo()->getMongoListenerWaitTime();
     }
-    return ((CoreInfoMap_t) coreInfoMap)[coreName]->mongoListenerWaitTime;
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(coreName)->getMongoListenerWaitTime();
 }
 
 const unsigned ConfigManager::getMongoListenerMaxRetryCount(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->mongoListenerMaxRetryOnFailure;
+        return getDefaultCoreInfo()->getMongoListenerMaxRetryOnFailure();
     }
-    return ((CoreInfoMap_t) coreInfoMap)[coreName]->mongoListenerMaxRetryOnFailure;
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(coreName)->getMongoListenerMaxRetryOnFailure();
 }
 
-CoreInfo_t *ConfigManager::getDefaultCoreInfo() const
+CoreInfo_t *ConfigManager::getDefaultCoreInfo_Writeview()
 {
     string n = getDefaultCoreName();
-    CoreInfo_t *coreInfo = ((CoreInfoMap_t) coreInfoMap)[n];
-    return coreInfo;
-    //        return coreInfoMap[getDefaultCoreName()];
+    return getClusterWriteView()->getCoreByName_Writeview(n);
 }
 
-unsigned short CoreInfo_t::getPort(PortType_t portType) const
-{
-    if (static_cast<unsigned int> (portType) >= ports.size()) {
-        return 0;
-    }
-
-    unsigned short portNumber = ports[portType];
-    return portNumber;
-}
-
-void CoreInfo_t::setPort(PortType_t portType, unsigned short portNumber)
-{
-    if (static_cast<unsigned int> (portType) >= ports.size()) {
-        ports.resize(static_cast<unsigned int> (EndOfPortType), 0);
-    }
-
-    switch (portType) {
-    case SearchPort:
-    case SuggestPort:
-    case InfoPort:
-    case DocsPort:
-    case UpdatePort:
-    case SavePort:
-    case ExportPort:
-    case ResetLoggerPort:
-        ports[portType] = portNumber;
-        break;
-
-    default:
-        Logger::error("Unrecognized HTTP listening port type: %d", static_cast<int> (portType));
-        break;
-    }
-}
-
-unsigned short Node::getPort(PortType_t portType) const
-{
-      if (static_cast<unsigned int> (portType) >= ports.size()) {
-          return 0;
-      }
-
-      unsigned short portNumber = ports[portType];
-      return portNumber;
-}
-
-void Node::setPort(PortType_t portType, unsigned short portNumber)
-{
-      if (static_cast<unsigned int> (portType) >= ports.size()) {
-          ports.resize(static_cast<unsigned int> (EndOfPortType), 0);
-      }
-
-      switch (portType) {
-      case SearchPort:
-      case SuggestPort:
-      case InfoPort:
-      case DocsPort:
-      case UpdatePort:
-      case SavePort:
-      case ExportPort:
-      case ResetLoggerPort:
-          ports[portType] = portNumber;
-          break;
-
-      default:
-          Logger::error("Unrecognized HTTP listening port type: %d", static_cast<int> (portType));
-          break;
-      }
-}
-
-
-
-// JUST FOR Wrapper TEST
-void CoreInfo_t::setDataFilePath(const string& path) {
-    dataFilePath = path;
-}
-
-
-bool ShardId::isPrimaryShard() {
-	return (replicaId == 0); // replica #0 is always the primary shard
-}
-std::string ShardId::toString() {
-	// A primary shard starts with a "P" followed by an integer id.
-	// E.g., a cluster with 4 shards of core 8 will have shards named "C8_P0", "C8_R0_1", "C8_R0_2", "C8_P3".
-	//
-	// A replica shard starts with an "R" followed by a replica count and then its primary's id.
-	// E.g., for the above cluster, replicas of "P0" will be named "8_R1_0" and "8_R2_0".
-	// Similarly, replicas of "P3" will be named "8_R3_1" and "8_R3_2".
-	if(coreId != unsigned(-1) || partitionId != unsigned(-1) || replicaId != unsigned(-1)){
-		std::stringstream sstm;
-		sstm << "C" << coreId << "_";
-		if (isPrimaryShard()){
-			sstm << "P" << partitionId;
-		}
-		else{
-			sstm << "R" << partitionId << "_" << replicaId;
-		}
-		return sstm.str();
-	}
-	else{
-		return "";
-	}
-}
-
-ShardId::ShardId() {
-	coreId = unsigned(-1);
-	partitionId = unsigned(-1);
-	replicaId = unsigned(-1);
-}
-ShardId::ShardId(unsigned coreId, unsigned partitionId, unsigned replicaId) :
-	coreId(coreId), partitionId(partitionId), replicaId(replicaId) {}
-
-bool ShardId::operator==(const ShardId& rhs) const {
-	return coreId == rhs.coreId && partitionId == rhs.partitionId
-			&& replicaId == replicaId;
-}
-bool ShardId::operator!=(const ShardId& rhs) const {
-	return coreId != rhs.coreId || partitionId != rhs.partitionId
-			|| replicaId != replicaId;
-}
-bool ShardId::operator>(const ShardId& rhs) const {
-	return  coreId > rhs.coreId ||
-			(coreId == rhs.coreId &&
-					(partitionId > rhs.partitionId ||
-							(partitionId == rhs.partitionId && replicaId > replicaId)));
-}
-bool ShardId::operator<(const ShardId& rhs) const {
-	return  coreId < rhs.coreId ||
-			(coreId == rhs.coreId &&
-					(partitionId < rhs.partitionId ||
-							(partitionId == rhs.partitionId && replicaId < replicaId)));
-}
-bool ShardId::operator>=(const ShardId& rhs) const {
-	return  coreId > rhs.coreId ||
-			(coreId == rhs.coreId &&
-					(partitionId > rhs.partitionId ||
-							(partitionId == rhs.partitionId && replicaId >= replicaId)));
-}
-bool ShardId::operator<=(const ShardId& rhs) const {
-	return  coreId < rhs.coreId ||
-			(coreId == rhs.coreId &&
-					(partitionId < rhs.partitionId ||
-							(partitionId == rhs.partitionId && replicaId <= replicaId)));
+const CoreInfo_t * ConfigManager::getDefaultCoreInfo() const{
+    boost::shared_ptr<const Cluster> clusterReadview;
+    getClusterReadView(clusterReadview);
+    return clusterReadview->getCoreByName(getDefaultCoreName());
 }
 
 

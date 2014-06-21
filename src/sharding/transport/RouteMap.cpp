@@ -291,7 +291,7 @@ Connection& RouteMap::getConnection(NodeId nodeId) {
 }
 
 
-void RouteMap::setCurrentNode(Node& currentNode) { this->currentNode = &currentNode; }
+void RouteMap::setCurrentNode(const Node * currentNode) { this->currentNode = currentNode; }
 const Node& RouteMap::getCurrentNode() const { return *currentNode; }
 
 RouteMap::iterator RouteMap::begin() { return nodeConnectionMap.begin(); }

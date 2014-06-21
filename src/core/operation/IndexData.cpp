@@ -56,7 +56,7 @@ namespace instantsearch {
 
 IndexData::IndexData(const string &directoryName,
         Analyzer *analyzer,
-        Schema *schema,
+        const Schema *schema,
         const StemmerNormalizerFlagType &stemmerFlag)
 {
 
@@ -68,7 +68,7 @@ IndexData::IndexData(const string &directoryName,
         }
     }
 
-    this->schemaInternal = new SchemaInternal( *(dynamic_cast<SchemaInternal *>(schema)) );
+    this->schemaInternal = new SchemaInternal( *(dynamic_cast<const SchemaInternal *>(schema)) );
 
     this->rankerExpression = new RankerExpression(this->schemaInternal->getScoringExpression());
 

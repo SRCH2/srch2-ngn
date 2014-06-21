@@ -25,10 +25,6 @@ public:
 
     void deleteResponseObjectBasedOnType(Message * reply, void * responseObject);
 
-    /*
-     * This function gets the index for a particular shard
-     */
-    Srch2ServerHandle getSrch2ServerHandle(ShardId&);
     MessageAllocator * getMessageAllocator();
 
 private:
@@ -37,10 +33,10 @@ private:
     RoutingManager&  routingManager;
 
     template<typename RequestType, typename ResponseType>
-    std::pair<Message*,ResponseType*> processRequestMessage(Message*, Srch2ServerHandle,
-            ResponseType * (DPInternalRequestHandler::*fn) (Srch2ServerHandle, RequestType*));
+    std::pair<Message*,ResponseType*> processRequestMessage(Message*, boost::shared_ptr<Srch2Server> srch2Server ,
+            ResponseType * (DPInternalRequestHandler::*fn) (boost::shared_ptr<Srch2Server> srch2Server , RequestType*));
 
-    std::pair<Message*,CommandStatus*> processRequestInsertUpdateMessage(Message *msg, Srch2ServerHandle server, const Schema * schema);
+    std::pair<Message*,CommandStatus*> processRequestInsertUpdateMessage(Message *msg, boost::shared_ptr<Srch2Server> srch2Server , const Schema * schema);
 
     /*
      * Gets the internal message and routes it to one of the DPInternal functions

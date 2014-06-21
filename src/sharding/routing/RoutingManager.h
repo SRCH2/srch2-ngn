@@ -11,7 +11,6 @@
 #include "sharding/routing/PendingMessages.h"
 #include <server/Srch2Server.h>
 #include <sharding/processor/ResultsAggregatorAndPrint.h>
-#include "Multiplexer.h"
 #include "transport/MessageAllocator.h"
 #include "InternalMessageBroker.h"
 #include "sharding/configuration/ShardingConstants.h"
@@ -40,7 +39,6 @@ public:
     InternalMessageBroker * getInternalMessageBroker();
     PendingRequestsHandler * getPendingRequestsHandler();
     TransportManager& getTransportManager();
-    Srch2ServerHandle getSrch2ServerIndex(ShardId shardId);
 
     template<typename RequestType, typename ResponseType>
     RoutingManagerAPIReturnType broadcast(RequestType * requestObj,
@@ -48,7 +46,7 @@ public:
     		bool withCallback,
     		boost::shared_ptr<ResponseAggregator<RequestType , ResponseType> > aggregator,
             time_t timeoutValue,
-            vector<ShardId> & destination){
+            vector<const Shard *> & destination){
 
         PendingRequest<RequestType, ResponseType> * pendingRequest = NULL;
         if(withCallback){
@@ -61,20 +59,20 @@ public:
         Message * externalMessage = NULL;
 
         // iterate on all destinations and send the message
-        for(vector<ShardId>::iterator shardIdItr = destination.begin(); shardIdItr != destination.end(); ++shardIdItr) {
+        for(vector<const Shard *>::iterator shardIdItr = destination.begin(); shardIdItr != destination.end(); ++shardIdItr) {
 
-        	NodeId nodeId = configurationManager.getNodeId(*shardIdItr);
+        	NodeId nodeId = (*shardIdItr)->getNodeId();
             Logger::debug("sending request to node - %d", nodeId);
 
             // this shard is in the current node
-            if(nodeId == configurationManager.getCurrentNodeId()){
+            if(aggregator->getClusterReadview()->getCurrentNode()->getId() == nodeId){
                 // so that we create the message only once
                 if(internalMessage == NULL){
                     internalMessage = prepareInternalMessage<RequestType>(*shardIdItr, requestObj);
                     // request message is stored in cb object to be deleted when replies are ready
                     // and cb object is being destroyed.
                 }
-                internalMessage->setDestinationShardId(*shardIdItr);
+                internalMessage->setDestinationShardId((*shardIdItr)->getShardId());
                 // callback should wait for one more reply
                 sendInternalMessage(internalMessage, requestObj, *shardIdItr, timeoutValue, pendingRequest);
             }else{// this shard is in some other node
@@ -84,7 +82,7 @@ public:
                     // request message is stored in cb object to be deleted when replies are ready
                     // and cb object is being destroyed.
                 }
-                externalMessage->setDestinationShardId(*shardIdItr);
+                externalMessage->setDestinationShardId((*shardIdItr)->getShardId());
                 // callback should wait for one more reply
                 sendExternalMessage(externalMessage, requestObj, *shardIdItr, timeoutValue, pendingRequest);
             }
@@ -100,7 +98,7 @@ public:
     		bool withCallback,
             boost::shared_ptr<ResponseAggregator<RequestType , ResponseType> > aggregator,
             time_t timeoutValue,
-            ShardId shardInfo){
+            const Shard * shardInfo){
         // register a pending request in the handler
         PendingRequest<RequestType, ResponseType> * pendingRequest = NULL;
 
@@ -111,7 +109,7 @@ public:
         // if the destination is the current node, we don't serialize the request object
         // instead, we serialize the pointer to the request object
         Message * msg;
-        if(configurationManager.isInCurrentNode(shardInfo)) {
+        if(aggregator->getClusterReadview()->getCurrentNode()->getId() == shardInfo->getNodeId()) {
             msg = prepareInternalMessage<RequestType>(shardInfo, requestObj);
             sendInternalMessage(msg, requestObj, shardInfo,timeoutValue,pendingRequest);
 
@@ -129,7 +127,7 @@ public:
      * in the same node.
      */
     template<typename RequestType >
-    Message * prepareInternalMessage(ShardId shardId,
+    Message * prepareInternalMessage(const Shard * shard,
             RequestType * requestObjPointer){
         // prepare a message that just includes a memory address (pointer)
         // allocate the message
@@ -137,7 +135,11 @@ public:
         // initialize the message
         // copy the address saved in requestObjPointer in msg->body
         msg->setBodyAndBodySize(&requestObjPointer, sizeof(RequestType *));
-        msg->setDestinationShardId(shardId);
+        if(shard == NULL){
+			msg->setDestinationShardId(ShardId());
+        }else{
+			msg->setDestinationShardId(shard->getShardId());
+        }
         msg->setInternal()->setLocal();
         msg->setType(RequestType::messageType());
         msg->setMessageId(transportManager.getUniqueMessageIdValue());
@@ -146,8 +148,11 @@ public:
 
 
     template<typename RequestType >
-    Message * prepareExternalMessage(ShardId shardId,
+    Message * prepareExternalMessage(const Shard * shard,
             RequestType * requestObjPointer){
+    	if(shard == NULL){
+    		return NULL;
+    	}
         // create the message from the request object
         // 1. serialize the message and prepare the body
         void * serializeRequestMessageBodyPointer = requestObjPointer->serialize(getMessageAllocator());
@@ -156,7 +161,7 @@ public:
 
 
         // initialize the message
-        msg->setDestinationShardId(shardId);
+        msg->setDestinationShardId(shard->getShardId());
         msg->setInternal();
         msg->setType(RequestType::messageType());
         msg->setMessageId(transportManager.getUniqueMessageIdValue());
@@ -173,10 +178,10 @@ private:
     // When pendingRequest is NULL, no response is expected for request.
     template<typename RequestType , typename ResponseType>
     void sendInternalMessage(Message * msg, RequestType * requestObject,
-            ShardId & shardId, time_t timeoutValue, PendingRequest<RequestType, ResponseType> * pendingRequest = NULL){
+            const Shard * shardInfo, time_t timeoutValue, PendingRequest<RequestType, ResponseType> * pendingRequest = NULL){
 
     	// find the node id of destination
-    	unsigned nodeId = configurationManager.getNodeId(shardId);
+    	unsigned nodeId = shardInfo->getNodeId();
 
     	// only messages which expect reply will go to pending messages
     	if(pendingRequest != NULL){
@@ -212,10 +217,10 @@ private:
     // When pendingRequest is NULL, no response is expected for request.
     template<typename RequestType , typename ResponseType>
     void sendExternalMessage(Message * msg, RequestType * requestObject,
-            ShardId & shardId, time_t timeoutValue, PendingRequest<RequestType, ResponseType> * pendingRequest = NULL){
+            const Shard * shardInfo, time_t timeoutValue, PendingRequest<RequestType, ResponseType> * pendingRequest = NULL){
 
         // find the node id of destination
-        unsigned nodeId = configurationManager.getNodeId(shardId);
+        unsigned nodeId = shardInfo->getNodeId();
 
         // only messages which expect reply will go to pending messages
         if(pendingRequest != NULL){

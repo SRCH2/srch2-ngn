@@ -202,7 +202,7 @@ class IndexData
 private:
 
     ///Added for stemmer integration
-    IndexData(const string& directoryName, Analyzer *analyzer, Schema *schema,
+    IndexData(const string& directoryName, Analyzer *analyzer, const Schema *schema,
             const StemmerNormalizerFlagType &stemmerFlag);
             
     IndexData(const string& directoryName);
@@ -228,7 +228,7 @@ public:
     
     inline static IndexData* create(const string& directoryName,
     			Analyzer *analyzer,
-                Schema *schema,
+                const Schema *schema,
                 const StemmerNormalizerFlagType &stemmerFlag = srch2::instantsearch::DISABLE_STEMMER_NORMALIZER)
     { 
         return new IndexData(directoryName, analyzer,schema, stemmerFlag );

@@ -101,7 +101,7 @@ void MongoDataSource::spawnUpdateListener(Srch2Server * server){
 void* MongoDataSource::runUpdateListener(void *searchServer){
     Logger::console("MOGNOLISTENER: thread started ...");
     Srch2Server * server =(Srch2Server *)searchServer;
-    const CoreInfo_t *config = server->indexDataConfig;
+    const CoreInfo_t *config = server->getCoreInfo();
     string mongoNamespace= "local.oplog.rs";
     string filterNamespace = "";
     filterNamespace.append(config->getMongoDbName()).append(".").append(config->getMongoCollection());
@@ -228,7 +228,7 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
         operation = "x"; // undefined operation
     }
 
-    const CoreInfo_t *config = server->indexDataConfig;
+    const CoreInfo_t *config = server->getCoreInfo();
     stringstream errorMsg;
 
     switch(operation[0])
@@ -247,8 +247,8 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
         if (parseSuccess == false) {
             Logger::error("BSON object parse error %s", jsonRecord.c_str());
         } else {
-            srch2is::Record *record = new srch2is::Record(server->indexer->getSchema());
-            IndexWriteUtil::_insertCommand(server->indexer,
+            srch2is::Record *record = new srch2is::Record(server->getIndexer()->getSchema());
+            IndexWriteUtil::_insertCommand(server->getIndexer(),
                     config, root, record, errorMsg);
             record->clear();
             delete record;
@@ -278,7 +278,7 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
         if (primaryKeyStringValue.size()) {
             errorMsg << "{\"rid\":\"" << primaryKeyStringValue << "\",\"delete\":\"";
             //delete the record from the index
-            switch(server->indexer->deleteRecord(primaryKeyStringValue))
+            switch(server->getIndexer()->deleteRecord(primaryKeyStringValue))
             {
             case srch2is::OP_FAIL:
             {
@@ -328,7 +328,7 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
         unsigned deletedInternalRecordId;
         if (primaryKeyStringValue.size()) {
             srch2is::INDEXWRITE_RETVAL ret =
-            		server->indexer->deleteRecordGetInternalId(primaryKeyStringValue, deletedInternalRecordId);
+            		server->getIndexer()->deleteRecordGetInternalId(primaryKeyStringValue, deletedInternalRecordId);
             if (ret == srch2is::OP_FAIL)
             {
                 errorMsg << "failed\",\"reason\":\"no record with given primary key\"}";
@@ -337,7 +337,7 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
             else
                 Logger::debug("MONGO_LISTENER:UPDATE: deleted record ");
 
-            if ( server->indexer->getNumberOfDocumentsInIndex() < config->getDocumentLimit() )
+            if ( server->getIndexer()->getNumberOfDocumentsInIndex() < config->getDocumentLimit() )
             {
                 Json::Value root;
                 Json::Reader reader;
@@ -346,8 +346,8 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
                 if (parseSuccess == false) {
                     Logger::error("UPDATE : BSON object parse error %s", jsonRecord.c_str());
                 } else {
-                    srch2is::Record *record = new srch2is::Record(server->indexer->getSchema());
-                    IndexWriteUtil::_insertCommand(server->indexer,
+                    srch2is::Record *record = new srch2is::Record(server->getIndexer()->getSchema());
+                    IndexWriteUtil::_insertCommand(server->getIndexer(),
                             config, root, record, errorMsg);
                     record->clear();
                     delete record;
@@ -359,7 +359,7 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
                 errorMsg << "failed\",\"reason\":\"insert: Document limit reached." << endl;
                 /// reaching here means the insert failed, need to resume the deleted old record
                 srch2::instantsearch::INDEXWRITE_RETVAL ret =
-                		server->indexer->recoverRecord(primaryKeyStringValue, deletedInternalRecordId);
+                		server->getIndexer()->recoverRecord(primaryKeyStringValue, deletedInternalRecordId);
             }
         }
         break;

@@ -99,7 +99,7 @@ public:
     //TODO put it as private
     pthread_mutex_t lockForWriters;
 
-    IndexReaderWriter(IndexMetaData* indexMetaData, Analyzer *analyzer, Schema *schema);
+    IndexReaderWriter(IndexMetaData* indexMetaData, Analyzer *analyzer, const Schema *schema);
 
     IndexReaderWriter(IndexMetaData* indexMetaData);
 

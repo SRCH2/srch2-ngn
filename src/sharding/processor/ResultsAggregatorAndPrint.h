@@ -13,6 +13,8 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/thread/locks.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/serialization/shared_ptr.hpp>
 #include "sharding/processor/ProcessorUtil.h"
 
 namespace srch2is = srch2::instantsearch;
@@ -35,6 +37,19 @@ class ResponseAggregator {
 public:
 
 
+	ResponseAggregator(boost::shared_ptr<const Cluster> clusterReadview, unsigned coreId){
+		this->clusterReadview = clusterReadview;
+		this->coreId = coreId;
+	}
+
+
+	boost::shared_ptr<const Cluster> getClusterReadview(){
+		return this->clusterReadview;
+	}
+
+	unsigned getCoreId(){
+		return this->coreId;
+	}
     /*
      * This function is always called by RoutingManager as the first call back function
      */
@@ -64,6 +79,10 @@ public:
 
     virtual ~ResponseAggregator(){};
 
+
+private:
+    boost::shared_ptr<const Cluster> clusterReadview;
+    unsigned coreId;
 };
 
 }

@@ -14,28 +14,30 @@ void testConfigurationParser1(char* configFile)
 {
 	ConfigManager *configManager = new ConfigManager(configFile);
 	configManager->loadConfigFile();
-	Cluster* c = configManager->getCluster();
+	boost::shared_ptr<const Cluster> clusterReadview;
+	configManager->getClusterReadView(clusterReadview);
 	ASSERT(c->getClusterName() == "SRCH2 Cluster");
-	vector<Node>* nodesFromCluster = c->getNodes();
+	vector<const Node *> nodesFromCluster;
+	clusterReadview->getAllNodes(nodesFromCluster);
 	ASSERT(nodesFromCluster->size() == 2);
 
-	for(int i = 0; i < nodesFromCluster->size(); i++){
+	for(int i = 0; i < nodesFromCluster.size(); i++){
 		if(i == 0){
-			ASSERT(nodesFromCluster->at(i).getIpAddress() == "192.168.1.54");
-			ASSERT(nodesFromCluster->at(i).getPortNumber() == 8089);
-			ASSERT(nodesFromCluster->at(i).thisIsMe == true);
-			ASSERT(nodesFromCluster->at(i).getName() == "queen");
-			ASSERT(nodesFromCluster->at(i).isMaster() == true);
-			ASSERT(nodesFromCluster->at(i).isData() == true);
-			ASSERT(nodesFromCluster->at(i).getHomeDir() == "myHome");
-			ASSERT(nodesFromCluster->at(i).getDataDir() == "Default");
+			ASSERT(nodesFromCluster.at(i)->getIpAddress() == "192.168.1.54");
+			ASSERT(nodesFromCluster.at(i)->getPortNumber() == 8089);
+			ASSERT(nodesFromCluster.at(i)->thisIsMe == true);
+			ASSERT(nodesFromCluster.at(i)->getName() == "queen");
+			ASSERT(nodesFromCluster.at(i)->isMaster() == true);
+			ASSERT(nodesFromCluster.at(i)->isData() == true);
+			ASSERT(nodesFromCluster.at(i)->getHomeDir() == "myHome");
+			ASSERT(nodesFromCluster.at(i)->getDataDir() == "Default");
 		}
 
 		if(i == 1){
-			ASSERT(nodesFromCluster->at(i).thisIsMe == false);
-			ASSERT(nodesFromCluster->at(i).getIpAddress() == "192.168.1.55");
-			ASSERT(nodesFromCluster->at(i).getName() == "frozen");
-			ASSERT(nodesFromCluster->at(i).getPortNumber() == 8088);
+			ASSERT(nodesFromCluster.at(i)->thisIsMe == false);
+			ASSERT(nodesFromCluster.at(i)->getIpAddress() == "192.168.1.55");
+			ASSERT(nodesFromCluster.at(i)->getName() == "frozen");
+			ASSERT(nodesFromCluster.at(i)->getPortNumber() == 8088);
 		}
 	}
 	ASSERT(configManager->getSrch2Home() == "./multicore//");
@@ -45,28 +47,30 @@ void testConfigurationParser2(char* configFile)
 {
 	ConfigManager *configManager = new ConfigManager(configFile);
 	configManager->loadConfigFile();
-	Cluster* c = configManager->getCluster();
+	boost::shared_ptr<const Cluster> clusterReadview;
+	configManager->getClusterReadView(clusterReadview);
 	ASSERT(c->getClusterName() == "MyCluster");
-	vector<Node>* nodesFromCluster = c->getNodes();
+	vector<const Node *> nodesFromCluster;
+	clusterReadview->getAllNodes(nodesFromCluster);
 	ASSERT(nodesFromCluster->size() == 2);
 
-	for(int i = 0; i < nodesFromCluster->size(); i++){
+	for(int i = 0; i < nodesFromCluster.size(); i++){
 		if(i == 0){
-			ASSERT(nodesFromCluster->at(i).getIpAddress() == "192.168.1.54");
-			ASSERT(nodesFromCluster->at(i).getPortNumber() == 8087);
-			ASSERT(nodesFromCluster->at(i).getName() == "avatar");
-			ASSERT(nodesFromCluster->at(i).getHomeDir() == "myHome");
-			ASSERT(nodesFromCluster->at(i).getDataDir() == "Default");
-			ASSERT(nodesFromCluster->at(i).isMaster() == true);
-			ASSERT(nodesFromCluster->at(i).isData() == true);
-			ASSERT(nodesFromCluster->at(i).thisIsMe == true);
+			ASSERT(nodesFromCluster.at(i)->getIpAddress() == "192.168.1.54");
+			ASSERT(nodesFromCluster.at(i)->getPortNumber() == 8087);
+			ASSERT(nodesFromCluster.at(i)->getName() == "avatar");
+			ASSERT(nodesFromCluster.at(i)->getHomeDir() == "myHome");
+			ASSERT(nodesFromCluster.at(i)->getDataDir() == "Default");
+			ASSERT(nodesFromCluster.at(i)->isMaster() == true);
+			ASSERT(nodesFromCluster.at(i)->isData() == true);
+			ASSERT(nodesFromCluster.at(i)->thisIsMe == true);
 		}
 
 		if(i == 1){
-			ASSERT(nodesFromCluster->at(i).getIpAddress() == "192.168.1.55");
-			ASSERT(nodesFromCluster->at(i).getName() == "frozen");
-			ASSERT(nodesFromCluster->at(i).getPortNumber() == 8088);
-			ASSERT(nodesFromCluster->at(i).thisIsMe == false);
+			ASSERT(nodesFromCluster.at(i)->getIpAddress() == "192.168.1.55");
+			ASSERT(nodesFromCluster.at(i)->getName() == "frozen");
+			ASSERT(nodesFromCluster.at(i)->getPortNumber() == 8088);
+			ASSERT(nodesFromCluster.at(i)->thisIsMe == false);
 		}
 	}
 	ASSERT(configManager->getSrch2Home() == "./multicore//");
@@ -88,9 +92,11 @@ void testCore(char* configFile){
 
 	ConfigManager *configManager = new ConfigManager(configFile);
 	configManager->loadConfigFile();
-	CoreInfo_t* c1 = configManager->getCoreInfo("core1");
-	CoreInfo_t* c2 = configManager->getCoreInfo("core2");
-	CoreInfo_t* c3 = configManager->getCoreInfo("core3");
+	boost::shared_ptr<const Cluster> clusterReadview;
+	configManager->getClusterReadView(clusterReadview);
+	const CoreInfo_t* c1 = clusterReadview->getCoreByName("core1");
+	const CoreInfo_t* c2 = clusterReadview->getCoreByName("core2");
+	const CoreInfo_t* c3 = clusterReadview->getCoreByName("core3");
 
 	ASSERT(c1->getNumberOfPrimaryShards() == 5);
 	ASSERT(c1->getNumberOfReplicas() == 1);
@@ -151,8 +157,9 @@ void testCurrentNode(char* configFile){
 
 	ConfigManager *configManager = new ConfigManager(configFile);
 	configManager->loadConfigFile();
-	Cluster *c = configManager->getCluster();
-	const Node * currentNode = c->getCurrentNode();
+	boost::shared_ptr<const Cluster> clusterReadview;
+	configManager->getClusterReadView(clusterReadview);
+	const Node * currentNode = clusterReadview->getCurrentNode();
 	ASSERT(currentNode->thisIsMe == true);
 
 }
@@ -161,8 +168,9 @@ void testPortsOfNode(char * configFile){
 
 	ConfigManager *configManager = new ConfigManager(configFile);
 	configManager->loadConfigFile();
-	Cluster *c = configManager->getCluster();
-	const Node * currentNode = c->getCurrentNode();
+	boost::shared_ptr<const Cluster> clusterReadview;
+	configManager->getClusterReadView(clusterReadview);
+	const Node * currentNode = clusterReadview->getCurrentNode();
 	ASSERT(currentNode->getPort(SearchPort) == 8087);
 	ASSERT(currentNode->getPort(SavePort) == 9084);
 	ASSERT(currentNode->getPort(UpdatePort) == 9088);
@@ -177,10 +185,12 @@ void testCoreID(char * configFile){
 
 	ConfigManager *configManager = new ConfigManager(configFile);
 	configManager->loadConfigFile();
-	CoreInfo_t* c1 = configManager->getCoreInfo("core1");
-	CoreInfo_t* c2 = configManager->getCoreInfo("core2");
-	CoreInfo_t* c3 = configManager->getCoreInfo("core3");
-	CoreInfo_t* c4 = configManager->getCoreInfo("core4");
+	boost::shared_ptr<const Cluster> clusterReadview;
+	configManager->getClusterReadView(clusterReadview);
+	CoreInfo_t* c1 = clusterReadview->getCoreByName("core1");
+	CoreInfo_t* c2 = clusterReadview->getCoreByName("core2");
+	CoreInfo_t* c3 = clusterReadview->getCoreByName("core3");
+	CoreInfo_t* c4 = clusterReadview->getCoreByName("core4");
 
 	ASSERT(c1->getCoreId() == 20);
 	ASSERT(c2->getCoreId() == 30);
@@ -192,10 +202,12 @@ void testDefaultCoreId(char * configFile){
 
 	ConfigManager *configManager = new ConfigManager(configFile);
 	configManager->loadConfigFile();
-	CoreInfo_t* c1 = configManager->getCoreInfo("core1");
-	CoreInfo_t* c2 = configManager->getCoreInfo("core2");
-	CoreInfo_t* c3 = configManager->getCoreInfo("core3");
-	CoreInfo_t* c4 = configManager->getCoreInfo("core4");
+	boost::shared_ptr<const Cluster> clusterReadview;
+	configManager->getClusterReadView(clusterReadview);
+	CoreInfo_t* c1 = clusterReadview->getCoreByName("core1");
+	CoreInfo_t* c2 = clusterReadview->getCoreByName("core2");
+	CoreInfo_t* c3 = clusterReadview->getCoreByName("core3");
+	CoreInfo_t* c4 = clusterReadview->getCoreByName("core4");
 
 	ASSERT(c1->getCoreId() == 0);
 	ASSERT(c2->getCoreId() == 1);

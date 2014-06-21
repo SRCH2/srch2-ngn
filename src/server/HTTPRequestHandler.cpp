@@ -581,7 +581,7 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
         if (parseSuccess == false) {
             log_str << "JSON object parse error";
         } else {
-            Record *record = new Record(server->indexer->getSchema());
+            Record *record = new Record(server->getIndexer()->getSchema());
 
             if(root.type() == Json::arrayValue) { // The input is an array of JSON objects.
                 // Iterates over the sequence elements.
@@ -590,8 +590,8 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
                     const Json::Value doc = root.get(index,
                                                 defaultValueToReturn);
 
-                    IndexWriteUtil::_insertCommand(server->indexer,
-                            server->indexDataConfig, doc, record, log_str);
+                    IndexWriteUtil::_insertCommand(server->getIndexer(),
+                            server->getCoreInfo(), doc, record, log_str);
                     record->clear();
 
                     if (index < root.size() - 1)
@@ -599,8 +599,8 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
                 }
             } else {  // only one json object needs to be inserted
                 const Json::Value doc = root;
-                IndexWriteUtil::_insertCommand(server->indexer,
-                        server->indexDataConfig, doc, record, log_str);
+                IndexWriteUtil::_insertCommand(server->getIndexer(),
+                        server->getCoreInfo(), doc, record, log_str);
                 record->clear();
             }
             delete record;
@@ -619,8 +619,8 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
         evkeyvalq headers;
         evhttp_parse_query(req->uri, &headers);
 
-        IndexWriteUtil::_deleteCommand_QueryURI(server->indexer,
-                server->indexDataConfig, headers, log_str);
+        IndexWriteUtil::_deleteCommand_QueryURI(server->getIndexer(),
+                server->getCoreInfo(), headers, log_str);
 
         Logger::info("%s", log_str.str().c_str());
         bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
@@ -670,7 +670,7 @@ void HTTPRequestHandler::updateCommand(evhttp_request *req,
         } else {
             evkeyvalq headers;
             evhttp_parse_query(req->uri, &headers);
-            Record *record = new Record(server->indexer->getSchema());
+            Record *record = new Record(server->getIndexer()->getSchema());
 
             if (root.type() == Json::arrayValue) {
                 //the record parameter is an array of json objects
@@ -679,8 +679,8 @@ void HTTPRequestHandler::updateCommand(evhttp_request *req,
                     const Json::Value doc = root.get(index,
                                                 defaultValueToReturn);
 
-                    IndexWriteUtil::_updateCommand(server->indexer,
-                            server->indexDataConfig, headers, doc, record,
+                    IndexWriteUtil::_updateCommand(server->getIndexer(),
+                            server->getCoreInfo(), headers, doc, record,
                             log_str);
 
                     record->clear();
@@ -692,8 +692,8 @@ void HTTPRequestHandler::updateCommand(evhttp_request *req,
                 // the record parameter is a single json object
                 const Json::Value doc = root;
 
-                IndexWriteUtil::_updateCommand(server->indexer,
-                        server->indexDataConfig, headers, doc, record,
+                IndexWriteUtil::_updateCommand(server->getIndexer(),
+                        server->getCoreInfo(), headers, doc, record,
                         log_str);
 
                 record->clear();
@@ -725,7 +725,7 @@ void HTTPRequestHandler::saveCommand(evhttp_request *req, Srch2Server *server) {
     switch (req->type) {
     case EVHTTP_REQ_PUT: {
         std::stringstream log_str;
-        IndexWriteUtil::_saveCommand(server->indexer, log_str);
+        IndexWriteUtil::_saveCommand(server->getIndexer(), log_str);
 
         bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
                 "{\"message\":\"The indexes have been saved to disk successfully\", \"log\":["
@@ -752,21 +752,21 @@ void HTTPRequestHandler::resetLoggerCommand(evhttp_request *req, Srch2Server *se
     switch(req->type) {
     case EVHTTP_REQ_PUT: {
         // create a FILE* pointer to point to the new logger file "logger.txt"
-        FILE *logFile = fopen(server->indexDataConfig->getHTTPServerAccessLogFile().c_str(),
+        FILE *logFile = fopen(server->getCoreInfo()->getHTTPServerAccessLogFile().c_str(),
                     "a");
 
         if (logFile == NULL) {
             Logger::error("Reopen Log file %s failed.",
-                    server->indexDataConfig->getHTTPServerAccessLogFile().c_str());
+                    server->getCoreInfo()->getHTTPServerAccessLogFile().c_str());
             bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "REQUEST FAILED",
                 "{\"message\":\"The logger file repointing failed. Could not create new logger file\", \"log\":\""
-                         + server->indexDataConfig->getHTTPServerAccessLogFile() + "\"}\n");
+                         + server->getCoreInfo()->getHTTPServerAccessLogFile() + "\"}\n");
         } else {
             FILE * oldLogger = Logger::swapLoggerFile(logFile);
             fclose(oldLogger);
             bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
                 "{\"message\":\"The logger file repointing succeeded\", \"log\":\""
-                         + server->indexDataConfig->getHTTPServerAccessLogFile() + "\"}\n");
+                         + server->getCoreInfo()->getHTTPServerAccessLogFile() + "\"}\n");
         }
         break;
     }
@@ -786,7 +786,7 @@ void HTTPRequestHandler::exportCommand(evhttp_request *req, Srch2Server *server)
     switch (req->type) {
     case EVHTTP_REQ_PUT: {
         // if search-response-format is 0 or 2
-        if (server->indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_STORED_ATTR) {
+        if (server->getCoreInfo()->getSearchResponseFormat() == RESPONSE_WITH_STORED_ATTR) {
             std::stringstream log_str;
             evkeyvalq headers;
             evhttp_parse_query(req->uri, &headers);
@@ -795,7 +795,7 @@ void HTTPRequestHandler::exportCommand(evhttp_request *req, Srch2Server *server)
                 if(checkDirExistence(exportedDataFileName)){
                     exportedDataFileName = "export_data.json";
                 }
-                IndexWriteUtil::_exportCommand(server->indexer, exportedDataFileName, log_str);
+                IndexWriteUtil::_exportCommand(server->getIndexer(), exportedDataFileName, log_str);
 
                 bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
                         "{\"message\":\"The indexed data has been exported to the file "+ string(exportedDataFileName) +" successfully.\", \"log\":["
@@ -827,7 +827,7 @@ void HTTPRequestHandler::infoCommand(evhttp_request *req, Srch2Server *server,
     evkeyvalq headers;
     evhttp_parse_query(req->uri, &headers);
 
-    string combinedInfo = "{" + server->indexer->getIndexHealth() + ", "
+    string combinedInfo = "{" + server->getIndexer()->getIndexHealth() + ", "
         + "\"version\":\"" + versioninfo + "\"}";
 
     bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", combinedInfo, headers);
@@ -839,7 +839,7 @@ void HTTPRequestHandler::lookupCommand(evhttp_request *req,
     evkeyvalq headers;
     evhttp_parse_query(req->uri, &headers);
 
-    const CoreInfo_t *indexDataContainerConf = server->indexDataConfig;
+    const CoreInfo_t *indexDataContainerConf = server->getCoreInfo();
     string primaryKeyName = indexDataContainerConf->getPrimaryKey();
     const char *pKeyParamName = evhttp_find_header(&headers,
             primaryKeyName.c_str());
@@ -857,7 +857,7 @@ void HTTPRequestHandler::lookupCommand(evhttp_request *req,
                 << "\",\"lookup\":\"";
 
         //lookup the record on the index
-        switch (server->indexer->lookupRecord(primaryKeyStringValue)) {
+        switch (server->getIndexer()->lookupRecord(primaryKeyStringValue)) {
         case srch2is::LU_ABSENT_OR_TO_BE_DELETED: {
             response_msg << "absent or to be deleted\"}";
             break;
@@ -905,7 +905,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     clock_gettime(CLOCK_REALTIME, &tstart);
 //    clock_gettime(CLOCK_REALTIME, &tstart2);
 
-    const CoreInfo_t *indexDataContainerConf = server->indexDataConfig;
+    const CoreInfo_t *indexDataContainerConf = server->getCoreInfo();
 
     ParsedParameterContainer paramContainer;
 
@@ -931,8 +931,8 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
 //            + (tend.tv_nsec - tstart2.tv_nsec) / 1000000;
 
     //2. validate the query
-    QueryValidator qv(*(server->indexer->getSchema()),
-            *(server->indexDataConfig), &paramContainer);
+    QueryValidator qv(*(server->getIndexer()->getSchema()),
+            *(server->getCoreInfo()), &paramContainer);
 
     bool valid = qv.validate();
 
@@ -944,8 +944,8 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
         return;
     }
     //3. rewrite the query and apply analyzer and other stuff ...
-    QueryRewriter qr(server->indexDataConfig,
-            *(server->indexer->getSchema()),
+    QueryRewriter qr(server->getCoreInfo(),
+            *(server->getIndexer()->getSchema()),
             *(AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf)),
             &paramContainer);
     LogicalPlan logicalPlan;
@@ -986,7 +986,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     struct timespec hltstart;
     clock_gettime(CLOCK_REALTIME, &hltstart);
 
-    if (server->indexDataConfig->getHighlightAttributeIdsVector().size() > 0 &&
+    if (server->getCoreInfo()->getHighlightAttributeIdsVector().size() > 0 &&
     		!paramContainer.onlyFacets &&
     		paramContainer.isHighlightOn) {
 
@@ -1010,7 +1010,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
         finalResults->printStats();
         HTTPRequestHandler::printResults(req, headers, logicalPlan,
                 indexDataContainerConf, finalResults, logicalPlan.getExactQuery(),
-                server->indexer, logicalPlan.getOffset(),
+                server->getIndexer(), logicalPlan.getOffset(),
                 finalResults->getNumberOfResults(),
                 finalResults->getNumberOfResults(),
                 paramContainer.getMessageString(), ts1, tstart, tend, highlightInfo, hlTime,
@@ -1029,7 +1029,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
             // Case where you have return 10,20, but we got only 0,15 results.
             HTTPRequestHandler::printResults(req, headers, logicalPlan,
                     indexDataContainerConf, finalResults,
-                    logicalPlan.getExactQuery(), server->indexer,
+                    logicalPlan.getExactQuery(), server->getIndexer(),
                     logicalPlan.getOffset(), finalResults->getNumberOfResults(),
                     finalResults->getNumberOfResults(),
                     paramContainer.getMessageString(), ts1, tstart, tend , highlightInfo, hlTime,
@@ -1037,7 +1037,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
         } else { // Case where you have return 10,20, but we got only 0,25 results and so return 10,20
             HTTPRequestHandler::printResults(req, headers, logicalPlan,
                     indexDataContainerConf, finalResults,
-                    logicalPlan.getExactQuery(), server->indexer,
+                    logicalPlan.getExactQuery(), server->getIndexer(),
                     logicalPlan.getOffset(),
                     logicalPlan.getOffset() + logicalPlan.getNumberOfResultsToRetrieve(),
                     finalResults->getNumberOfResults(),
@@ -1052,7 +1052,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
                 logicalPlan ,
                 indexDataContainerConf,
                 finalResults ,
-                server->indexer ,
+                server->getIndexer() ,
                 paramContainer.getMessageString() ,
                 ts1, tstart , tend);
         break;
@@ -1078,7 +1078,7 @@ void HTTPRequestHandler::suggestCommand(evhttp_request *req, Srch2Server *server
     clock_gettime(CLOCK_REALTIME, &tstart);
 
 
-    const CoreInfo_t *indexDataContainerConf = server->indexDataConfig;
+    const CoreInfo_t *indexDataContainerConf = server->getCoreInfo();
 
     // 1. first parse the headers
     evkeyvalq headers;
@@ -1130,7 +1130,7 @@ void HTTPRequestHandler::suggestCommand(evhttp_request *req, Srch2Server *server
     // "IndexSearcherRuntimeParametersContainer" is the class which contains the parameters that we want to send to the core.
     // Each time IndexSearcher is created, we container must be made and passed to it as an argument.
     QueryEvaluatorRuntimeParametersContainer runTimeParameters(indexDataContainerConf->getKeywordPopularityThreshold());
-    QueryEvaluator * queryEvaluator = new QueryEvaluator(server->indexer , &runTimeParameters);
+    QueryEvaluator * queryEvaluator = new QueryEvaluator(server->getIndexer() , &runTimeParameters);
     vector<string> suggestions ;
     int numberOfSuggestionsFound = queryEvaluator->suggest(keyword , fuzzyMatchPenalty , numberOfSuggestionsToReturn , suggestions);
     delete queryEvaluator;
@@ -1142,7 +1142,7 @@ void HTTPRequestHandler::suggestCommand(evhttp_request *req, Srch2Server *server
             + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
 
     // 4. Print the results
-    printSuggestions(req , headers , suggestions , server->indexer , messagesString , ts1 , tstart , tend);
+    printSuggestions(req , headers , suggestions , server->getIndexer() , messagesString , ts1 , tstart , tend);
 
 }
 

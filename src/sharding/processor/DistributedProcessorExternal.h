@@ -57,7 +57,7 @@ public:
      * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
      * 	  results. Results will be aggregator by another thread since it's not a blocking call.
      */
-    void externalSearchCommand(evhttp_request *req , CoreShardInfo * coreShardInfo);
+    void externalSearchCommand(evhttp_request *req , unsigned coreId);
 
     /*
      * 1. Receives an insert request from a client (not from another shard)
@@ -66,7 +66,7 @@ public:
      *    in a non-blocking manner. The status response is taken care of by aggregator in
      *    another thread when these responses come.
      */
-    void externalInsertCommand(evhttp_request *req, CoreShardInfo * coreShardInfo);
+    void externalInsertCommand(evhttp_request *req, unsigned coreId);
 
     /*
      * 1. Receives an update request from a client (not from another shard)
@@ -75,7 +75,7 @@ public:
      *    in a non-blocking manner. The status response is taken care of by aggregator in
      *    another thread when these responses come.
      */
-    void externalUpdateCommand(evhttp_request *req, CoreShardInfo * coreShardInfo);
+    void externalUpdateCommand(evhttp_request *req, unsigned coreId);
 
     /*
      * 1. Receives an delete request from a client (not from another shard)
@@ -84,7 +84,7 @@ public:
      *    in a non-blocking manner. The status response is taken care of by aggregator in
      *    another thread when these responses come.
      */
-    void externalDeleteCommand(evhttp_request *req, CoreShardInfo * coreShardInfo);
+    void externalDeleteCommand(evhttp_request *req, unsigned coreId);
 
     /*
       * 1. Receives a getinfo request from a client (not from another shard)
@@ -92,7 +92,7 @@ public:
       * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
       * 	  results. Results will be aggregator by another thread since it's not a blocking call.
       */
-    void externalGetInfoCommand(evhttp_request *req, CoreShardInfo * coreShardInfo);
+    void externalGetInfoCommand(evhttp_request *req, unsigned coreId);
 
     /*
       * 1. Receives a save request from a client (not from another shard)
@@ -100,14 +100,14 @@ public:
       * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
       * 	  results. Results will be aggregator by another thread since it's not a blocking call.
       */
-    void externalSerializeIndexCommand(evhttp_request *req, CoreShardInfo * coreShardInfo);
+    void externalSerializeIndexCommand(evhttp_request *req, unsigned coreId);
     /*
       * 1. Receives a export request from a client (not from another shard)
       * 2. broadcasts this request to DPInternalRequestHandler objects of other shards
       * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
       * 	  results. Results will be aggregator by another thread since it's not a blocking call.
       */
-    void externalSerializeRecordsCommand(evhttp_request *req, CoreShardInfo * coreShardInfo);
+    void externalSerializeRecordsCommand(evhttp_request *req, unsigned coreId);
 
     /*
       * 1. Receives a reset log request from a client (not from another shard)
@@ -115,12 +115,12 @@ public:
       * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
       * 	  results. Results will be aggregator by another thread since it's not a blocking call.
       */
-    void externalResetLogCommand(evhttp_request *req, CoreShardInfo * coreShardInfo);
+    void externalResetLogCommand(evhttp_request *req, unsigned coreId);
 
     /*
      * Receives a commit request and boardcasts it to other shards
      */
-    void externalCommitCommand(evhttp_request *req, CoreShardInfo * coreShardInfo);
+    void externalCommitCommand(evhttp_request *req, unsigned coreId);
 
 
 private:

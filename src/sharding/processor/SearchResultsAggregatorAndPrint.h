@@ -60,7 +60,7 @@ public:
     };
 
 
-    SearchResultsAggregator(ConfigManager * configurationManager, evhttp_request *req, CoreShardInfo * coreShardInfo);
+    SearchResultsAggregator(ConfigManager * configurationManager, evhttp_request *req, boost::shared_ptr<const Cluster> clusterReadview, unsigned coreId);
     LogicalPlan & getLogicalPlan();
     ParsedParameterContainer * getParamContainer();
 
@@ -185,7 +185,6 @@ private:
     SearchResultsAggregator::AggregatedQueryResults results;
     ConfigManager * configurationManager;
     evhttp_request *req;
-    CoreShardInfo * coreShardInfo;
 
     LogicalPlan logicalPlan;
     unsigned parsingValidatingRewritingTime;

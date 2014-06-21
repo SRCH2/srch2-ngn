@@ -14,7 +14,7 @@ namespace srch2 {
 namespace httpwrapper {
 
 typedef std::vector<event_base*> EventBases;
-typedef std::vector<Node> Nodes;
+typedef std::vector<Node *> Nodes;
 class TransportManager ;
 
 /*

@@ -31,75 +31,22 @@ namespace srch2 {
 namespace httpwrapper {
 
 
-boost::shared_ptr<Srch2Server> Srch2ServerAccess::getSrch2Server(Srch2ServerAccessAvailabilty requestedAvailability, bool & available){
-    boost::shared_lock< boost::shared_mutex > lock(availabilityLock);
-    // if the requested access level is less than availale level, we can return the pointer
-    // this mechanism helps us stop some requests when needed.
-    if((unsigned) requestedAvailability <= (unsigned) this->availability){
-    	available = true;
-		return srch2Server;
-    }else{
-    	available = false;
-    	return boost::shared_ptr<Srch2Server>();
-    }
-}
-
-CoreInfo_t * Srch2ServerAccess::getCoreInfo(){
-	return this->coreInfo;
-}
-
-Srch2ServerAccess::Srch2ServerAccess(const ShardId correspondingShardId, CoreInfo_t * coreInfo )
-				:correspondingShardId(correspondingShardId){
-	srch2Server.reset(new Srch2Server());
-	if(coreInfo == NULL){
-		ASSERT(false);
-		return;
-	}
-	// set the corename in srch2Server so that it can access correct information in config manager
-	srch2Server->setCoreName(coreInfo->getName());
-	setAvailability(DPInternal_NonAvailable);
-	this->coreInfo = coreInfo;
-}
-void Srch2ServerAccess::setAvailability(Srch2ServerAccessAvailabilty availability){
-    boost::unique_lock< boost::shared_mutex > lock(availabilityLock);
-    this->availability = availability;
-}
-
 
 // DPInternalRequestHandler
 
 DPInternalRequestHandler::DPInternalRequestHandler(ConfigManager * configurationManager){
     this->configurationManager = configurationManager;
+    this->maxServerId = 0;
 }
 /*
  * 1. Receives a search request from a shard
  * 2. Uses core to evaluate this search query
  * 3. Sends the results to the shard which initiated this search query
  */
-SearchCommandResults * DPInternalRequestHandler::internalSearchCommand(Srch2ServerHandle serverHandle, SearchCommand * searchData){
+SearchCommandResults * DPInternalRequestHandler::internalSearchCommand(boost::shared_ptr<Srch2Server> serverSharedPtr, SearchCommand * searchData){
 
 	// first get the Srch2Server pointer from the map
-	Srch2Server * server;
-	boost::shared_ptr<Srch2Server> serverSharedPtr;
-	{
-        boost::shared_lock< boost::shared_mutex > lock(globalIndexLock);
-        map< Srch2ServerHandle , Srch2ServerAccess * >::iterator srch2ServerItr =
-        		srch2Servers.find(serverHandle);
-        if(srch2ServerItr == srch2Servers.end()){
-        	// TODO : assert false?
-        	return NULL;
-        }
-        bool status ;
-
-        // we use DPInternal_ReadAvailable because search is a read operation
-        serverSharedPtr =
-        		srch2ServerItr->second->getSrch2Server(DPInternal_ReadAvailable, status);
-        if(! status){
-        	// TODO : assert false?
-        	return NULL;
-        }
-        server = serverSharedPtr.get();
-	}
+	Srch2Server * server = serverSharedPtr.get();
 
 
     if(searchData == NULL || server == NULL){
@@ -119,7 +66,7 @@ SearchCommandResults * DPInternalRequestHandler::internalSearchCommand(Srch2Serv
 
     // search in core
     // TODO : is it possible to make executor and planGen singleton ?
-    const CoreInfo_t *indexDataContainerConf = server->indexDataConfig;
+    const CoreInfo_t *indexDataContainerConf = server->getCoreInfo();
     QueryExecutor qe(logicalPlan, searchResults->getQueryResultsFactory(), server , indexDataContainerConf);
     // in here just allocate an empty QueryResults object, it will be initialized in execute.
     qe.executeForDPInternal(searchResults->getQueryResults(), searchResults->getInMemoryRecordStringsWrite());
@@ -130,7 +77,7 @@ SearchCommandResults * DPInternalRequestHandler::internalSearchCommand(Srch2Serv
 
     searchResults->setSearcherTime(ts1);
 
-    if (server->indexDataConfig->getHighlightAttributeIdsVector().size() > 0 ) {
+    if (server->getCoreInfo()->getHighlightAttributeIdsVector().size() > 0 ) {
     	    //TODO: V1 we need these two parameters in DP internal
     		//!paramContainer.onlyFacets &&
     		//paramContainer.isHighlightOn) {
@@ -150,18 +97,18 @@ SearchCommandResults * DPInternalRequestHandler::internalSearchCommand(Srch2Serv
  * This call back is always called for insert and update, it will use
  * internalInsertCommand and internalUpdateCommand
  */
-CommandStatus * DPInternalRequestHandler::internalInsertUpdateCommand(Srch2ServerHandle serverHandle,
+CommandStatus * DPInternalRequestHandler::internalInsertUpdateCommand(boost::shared_ptr<Srch2Server> serverSharedPtr,
         InsertUpdateCommand * insertUpdateData){
 
-    if(insertUpdateData == NULL || serverHandle <= 0){
+    if(insertUpdateData == NULL){
         CommandStatus * status =
                 new CommandStatus(CommandStatus::DP_INSERT_UPDATE, false, "");
         return status;
     }
     if(insertUpdateData->getInsertOrUpdate() == InsertUpdateCommand::DP_INSERT){ // insert case
-        return internalInsertCommand(serverHandle, insertUpdateData);
+        return internalInsertCommand(serverSharedPtr, insertUpdateData);
     }else{ // update case
-        return internalUpdateCommand(serverHandle, insertUpdateData);
+        return internalUpdateCommand(serverSharedPtr, insertUpdateData);
     }
 }
 
@@ -171,32 +118,11 @@ CommandStatus * DPInternalRequestHandler::internalInsertUpdateCommand(Srch2Serve
  * 2. Uses core execute this insert query
  * 3. Sends the results to the shard which initiated this insert query (Failure or Success)
  */
-CommandStatus * DPInternalRequestHandler::internalInsertCommand(Srch2ServerHandle serverHandle,
+CommandStatus * DPInternalRequestHandler::internalInsertCommand(boost::shared_ptr<Srch2Server> serverSharedPtr,
         InsertUpdateCommand * insertUpdateData){
 
 	// first get the Srch2Server pointer from the map
-	Srch2Server * server;
-	boost::shared_ptr<Srch2Server> serverSharedPtr;
-	{
-        boost::shared_lock< boost::shared_mutex > lock(globalIndexLock);
-        map< Srch2ServerHandle , Srch2ServerAccess * >::iterator srch2ServerItr =
-        		srch2Servers.find(serverHandle);
-        if(srch2ServerItr == srch2Servers.end()){
-        	// TODO : assert false?
-        	return NULL;
-        }
-        bool status ;
-
-        // we use DPInternal_ReadWriteAvailable because insert and update are write operations
-        serverSharedPtr =
-        		srch2ServerItr->second->getSrch2Server(DPInternal_ReadWriteAvailable, status);
-        if(! status){
-        	// TODO : assert false?
-        	return NULL;
-        }
-        server = serverSharedPtr.get();
-	}
-
+	Srch2Server * server = serverSharedPtr.get();
 
     if(insertUpdateData == NULL || server == NULL){
         CommandStatus * status =
@@ -205,12 +131,12 @@ CommandStatus * DPInternalRequestHandler::internalInsertCommand(Srch2ServerHandl
     }
     //add the record to the index
     std::stringstream log_str;
-    if ( server->indexer->getNumberOfDocumentsInIndex() < server->indexDataConfig->getDocumentLimit() )
+    if ( server->getIndexer()->getNumberOfDocumentsInIndex() < server->getCoreInfo()->getDocumentLimit() )
     {
         // Do NOT delete analyzer because it is thread specific. It will be reused for
         // search/update/delete operations.
-        srch2::instantsearch::Analyzer * analyzer = AnalyzerFactory::getCurrentThreadAnalyzer(server->indexDataConfig);
-        srch2::instantsearch::INDEXWRITE_RETVAL ret = server->indexer->addRecord(insertUpdateData->getRecord(), analyzer);
+        srch2::instantsearch::Analyzer * analyzer = AnalyzerFactory::getCurrentThreadAnalyzer(server->getCoreInfo());
+        srch2::instantsearch::INDEXWRITE_RETVAL ret = server->getIndexer()->addRecord(insertUpdateData->getRecord(), analyzer);
 
         switch( ret )
         {
@@ -258,31 +184,11 @@ CommandStatus * DPInternalRequestHandler::internalInsertCommand(Srch2ServerHandl
  * 2. Uses core execute this update query
  * 3. Sends the results to the shard which initiated this update request (Failure or Success)
  */
-CommandStatus * DPInternalRequestHandler::internalUpdateCommand(Srch2ServerHandle serverHandle,
+CommandStatus * DPInternalRequestHandler::internalUpdateCommand(boost::shared_ptr<Srch2Server> serverSharedPtr,
         InsertUpdateCommand * insertUpdateData){
 
 	// first get the Srch2Server pointer from the map
-	Srch2Server * server;
-	boost::shared_ptr<Srch2Server> serverSharedPtr;
-	{
-        boost::shared_lock< boost::shared_mutex > lock(globalIndexLock);
-        map< Srch2ServerHandle , Srch2ServerAccess * >::iterator srch2ServerItr =
-        		srch2Servers.find(serverHandle);
-        if(srch2ServerItr == srch2Servers.end()){
-        	// TODO : assert false?
-        	return NULL;
-        }
-        bool status ;
-
-        // we use DPInternal_ReadWriteAvailable because insert and update are write operations
-        serverSharedPtr =
-        		srch2ServerItr->second->getSrch2Server(DPInternal_ReadWriteAvailable, status);
-        if(! status){
-        	// TODO : assert false?
-        	return NULL;
-        }
-        server = serverSharedPtr.get();
-	}
+	Srch2Server * server= serverSharedPtr.get();
 
 
     if(insertUpdateData == NULL || server == NULL){
@@ -299,7 +205,7 @@ CommandStatus * DPInternalRequestHandler::internalUpdateCommand(Srch2ServerHandl
 
     //delete the record from the index
     bool recordExisted = false;
-    switch(server->indexer->deleteRecordGetInternalId(primaryKeyStringValue, deletedInternalRecordId))
+    switch(server->getIndexer()->deleteRecordGetInternalId(primaryKeyStringValue, deletedInternalRecordId))
     {
     case srch2::instantsearch::OP_FAIL:
     {
@@ -318,12 +224,12 @@ CommandStatus * DPInternalRequestHandler::internalUpdateCommand(Srch2ServerHandl
 
     //add the record to the index
 
-    if ( server->indexer->getNumberOfDocumentsInIndex() < server->indexDataConfig->getDocumentLimit() )
+    if ( server->getIndexer()->getNumberOfDocumentsInIndex() < server->getCoreInfo()->getDocumentLimit() )
     {
         // Do NOT delete analyzer because it is thread specific. It will be reused for
         // search/update/delete operations.
-        Analyzer* analyzer = AnalyzerFactory::getCurrentThreadAnalyzer(server->indexDataConfig);
-        srch2::instantsearch::INDEXWRITE_RETVAL ret = server->indexer->addRecord(insertUpdateData->getRecord(), analyzer);
+        Analyzer* analyzer = AnalyzerFactory::getCurrentThreadAnalyzer(server->getCoreInfo());
+        srch2::instantsearch::INDEXWRITE_RETVAL ret = server->getIndexer()->addRecord(insertUpdateData->getRecord(), analyzer);
         switch( ret )
         {
         case srch2::instantsearch::OP_SUCCESS:
@@ -352,7 +258,7 @@ CommandStatus * DPInternalRequestHandler::internalUpdateCommand(Srch2ServerHandl
 
     /// reaching here means the insert failed, need to resume the deleted old record
 
-    srch2::instantsearch::INDEXWRITE_RETVAL ret = server->indexer->recoverRecord(primaryKeyStringValue, deletedInternalRecordId);
+    srch2::instantsearch::INDEXWRITE_RETVAL ret = server->getIndexer()->recoverRecord(primaryKeyStringValue, deletedInternalRecordId);
 
     switch ( ret )
     {
@@ -389,31 +295,11 @@ CommandStatus * DPInternalRequestHandler::internalUpdateCommand(Srch2ServerHandl
  * 2. Uses core execute this delete query
  * 3. Sends the results to the shard which initiated this delete request (Failure or Success)
  */
-CommandStatus * DPInternalRequestHandler::internalDeleteCommand(Srch2ServerHandle serverHandle, DeleteCommand * deleteData){
+CommandStatus * DPInternalRequestHandler::internalDeleteCommand(boost::shared_ptr<Srch2Server> serverSharedPtr, DeleteCommand * deleteData){
 
 
 	// first get the Srch2Server pointer from the map
-	Srch2Server * server;
-	boost::shared_ptr<Srch2Server> serverSharedPtr;
-	{
-        boost::shared_lock< boost::shared_mutex > lock(globalIndexLock);
-        map< Srch2ServerHandle , Srch2ServerAccess * >::iterator srch2ServerItr =
-        		srch2Servers.find(serverHandle);
-        if(srch2ServerItr == srch2Servers.end()){
-        	// TODO : assert false?
-        	return NULL;
-        }
-        bool status ;
-
-        // we use DPInternal_ReadWriteAvailable because delete is write operations
-        serverSharedPtr =
-        		srch2ServerItr->second->getSrch2Server(DPInternal_ReadWriteAvailable, status);
-        if(! status){
-        	// TODO : assert false?
-        	return NULL;
-        }
-        server = serverSharedPtr.get();
-	}
+	Srch2Server * server = serverSharedPtr.get();
 
     if(deleteData == NULL || server == NULL){
         CommandStatus * status =
@@ -424,7 +310,7 @@ CommandStatus * DPInternalRequestHandler::internalDeleteCommand(Srch2ServerHandl
     log_str << "{\"rid\":\"" << deleteData->getPrimaryKey() << "\",\"delete\":\"";
 
     //delete the record from the index
-    switch(server->indexer->deleteRecord(deleteData->getPrimaryKey())){
+    switch(server->getIndexer()->deleteRecord(deleteData->getPrimaryKey())){
     case OP_FAIL:
     {
         log_str << "failed\",\"reason\":\"no record with given primary key\"}";
@@ -450,30 +336,11 @@ CommandStatus * DPInternalRequestHandler::internalDeleteCommand(Srch2ServerHandl
  * 2. Uses core to get info
  * 3. Sends the results to the shard which initiated this getInfo request (Failure or Success)
  */
-GetInfoCommandResults * DPInternalRequestHandler::internalGetInfoCommand(Srch2ServerHandle serverHandle, GetInfoCommand * getInfoData){
+GetInfoCommandResults * DPInternalRequestHandler::internalGetInfoCommand(boost::shared_ptr<Srch2Server> serverSharedPtr,
+		GetInfoCommand * getInfoData){
 
 	// first get the Srch2Server pointer from the map
-	Srch2Server * server;
-	boost::shared_ptr<Srch2Server> serverSharedPtr;
-	{
-        boost::shared_lock< boost::shared_mutex > lock(globalIndexLock);
-        map< Srch2ServerHandle , Srch2ServerAccess * >::iterator srch2ServerItr =
-        		srch2Servers.find(serverHandle);
-        if(srch2ServerItr == srch2Servers.end()){
-        	// TODO : assert false?
-        	return NULL;
-        }
-        bool status ;
-
-        // we use DPInternal_ReadAvailable because getInfo is a read operation
-        serverSharedPtr =
-        		srch2ServerItr->second->getSrch2Server(DPInternal_ReadAvailable, status);
-        if(! status){
-        	// TODO : assert false?
-        	return NULL;
-        }
-        server = serverSharedPtr.get();
-	}
+	Srch2Server * server = serverSharedPtr.get();
 
 	if(getInfoData == NULL || server == NULL){
         GetInfoCommandResults * getInfoResult =
@@ -485,7 +352,7 @@ GetInfoCommandResults * DPInternalRequestHandler::internalGetInfoCommand(Srch2Se
     unsigned numberOfDocumentsInIndex;
     string lastMergeTimeString;
     unsigned docCount;
-    server->indexer->getIndexHealthThoughArguments(readCount, writeCount, numberOfDocumentsInIndex, lastMergeTimeString ,docCount);
+    server->getIndexer()->getIndexHealthThoughArguments(readCount, writeCount, numberOfDocumentsInIndex, lastMergeTimeString ,docCount);
 
     GetInfoCommandResults * getInfoResult =
             new GetInfoCommandResults(readCount, writeCount, numberOfDocumentsInIndex, lastMergeTimeString, docCount, Version::getCurrentVersion());
@@ -497,17 +364,17 @@ GetInfoCommandResults * DPInternalRequestHandler::internalGetInfoCommand(Srch2Se
  * This call back function is called for serialization. It uses internalSerializeIndexCommand
  * and internalSerializeRecordsCommand for our two types of serialization.
  */
-CommandStatus * DPInternalRequestHandler::internalSerializeCommand(Srch2ServerHandle serverHandle, SerializeCommand * serailizeData){
+CommandStatus * DPInternalRequestHandler::internalSerializeCommand(boost::shared_ptr<Srch2Server> serverSharedPtr, SerializeCommand * serailizeData){
 
-	if(serailizeData == NULL || serverHandle <= 0){
+	if(serailizeData == NULL){
         CommandStatus * status =
                 new CommandStatus(CommandStatus::DP_SERIALIZE, false, "");
         return status;
     }
     if(serailizeData->getIndexOrRecord() == SerializeCommand::SERIALIZE_INDEX){ // serialize index
-        return this->internalSerializeIndexCommand(serverHandle, serailizeData);
+        return this->internalSerializeIndexCommand(serverSharedPtr, serailizeData);
     }else{ // serialize records
-        return this->internalSerializeRecordsCommand(serverHandle, serailizeData);
+        return this->internalSerializeRecordsCommand(serverSharedPtr, serailizeData);
     }
 }
 
@@ -517,37 +384,17 @@ CommandStatus * DPInternalRequestHandler::internalSerializeCommand(Srch2ServerHa
  * 2. Uses core to do the serialization
  * 3. Sends the results to the shard which initiated this serialization request(Failure or Success)
  */
-CommandStatus * DPInternalRequestHandler::internalSerializeIndexCommand(Srch2ServerHandle serverHandle, SerializeCommand * serailizeData){
+CommandStatus * DPInternalRequestHandler::internalSerializeIndexCommand(boost::shared_ptr<Srch2Server> serverSharedPtr, SerializeCommand * serailizeData){
 
 	// first get the Srch2Server pointer from the map
-	Srch2Server * server;
-	boost::shared_ptr<Srch2Server> serverSharedPtr;
-	{
-        boost::shared_lock< boost::shared_mutex > lock(globalIndexLock);
-        map< Srch2ServerHandle , Srch2ServerAccess * >::iterator srch2ServerItr =
-        		srch2Servers.find(serverHandle);
-        if(srch2ServerItr == srch2Servers.end()){
-        	// TODO : assert false?
-        	return NULL;
-        }
-        bool status ;
-
-        // we use DPInternal_ReadAvailable because save is a read operation
-        serverSharedPtr =
-        		srch2ServerItr->second->getSrch2Server(DPInternal_ReadAvailable, status);
-        if(! status){
-        	// TODO : assert false?
-        	return NULL;
-        }
-        server = serverSharedPtr.get();
-	}
+	Srch2Server * server = serverSharedPtr.get();
 
 	if(serailizeData == NULL || server == NULL){
         CommandStatus * status =
                 new CommandStatus(CommandStatus::DP_SERIALIZE_INDEX, false, "");
         return status;
     }
-    server->indexer->save();
+    server->getIndexer()->save();
     Logger::info("%s", "{\"save\":\"success\"}");
     CommandStatus * status =
             new CommandStatus(CommandStatus::DP_SERIALIZE_INDEX, true, "{\"save\":\"success\"}");
@@ -559,30 +406,10 @@ CommandStatus * DPInternalRequestHandler::internalSerializeIndexCommand(Srch2Ser
  * 2. Uses core to do the serialization
  * 3. Sends the results to the shard which initiated this serialization request(Failure or Success)
  */
-CommandStatus * DPInternalRequestHandler::internalSerializeRecordsCommand(Srch2ServerHandle serverHandle, SerializeCommand * serailizeData){
+CommandStatus * DPInternalRequestHandler::internalSerializeRecordsCommand(boost::shared_ptr<Srch2Server> serverSharedPtr, SerializeCommand * serailizeData){
 
 	// first get the Srch2Server pointer from the map
-	Srch2Server * server;
-	boost::shared_ptr<Srch2Server> serverSharedPtr;
-	{
-        boost::shared_lock< boost::shared_mutex > lock(globalIndexLock);
-        map< Srch2ServerHandle , Srch2ServerAccess * >::iterator srch2ServerItr =
-        		srch2Servers.find(serverHandle);
-        if(srch2ServerItr == srch2Servers.end()){
-        	// TODO : assert false?
-        	return NULL;
-        }
-        bool status ;
-
-        // we use DPInternal_ReadAvailable because export is a read operation
-        serverSharedPtr =
-        		srch2ServerItr->second->getSrch2Server(DPInternal_ReadAvailable, status);
-        if(! status){
-        	// TODO : assert false?
-        	return NULL;
-        }
-        server = serverSharedPtr.get();
-	}
+	Srch2Server * server = serverSharedPtr.get();
 
     if(serailizeData == NULL || server == NULL){
         CommandStatus * status =
@@ -593,7 +420,7 @@ CommandStatus * DPInternalRequestHandler::internalSerializeRecordsCommand(Srch2S
     if(srch2::util::checkDirExistence(exportedDataFileName.c_str())){
         exportedDataFileName = "export_data.json";
     }
-    server->indexer->exportData(exportedDataFileName);
+    server->getIndexer()->exportData(exportedDataFileName);
     Logger::info("%s", "{\"export\":\"success\"}");
     CommandStatus * status =
             new CommandStatus(CommandStatus::DP_SERIALIZE_RECORDS, true, "{\"export\":\"success\"}");
@@ -606,30 +433,10 @@ CommandStatus * DPInternalRequestHandler::internalSerializeRecordsCommand(Srch2S
  * 2. Uses core to reset log
  * 3. Sends the results to the shard which initiated this reset-log request(Failure or Success)
  */
-CommandStatus * DPInternalRequestHandler::internalResetLogCommand(Srch2ServerHandle serverHandle, ResetLogCommand * resetData){
+CommandStatus * DPInternalRequestHandler::internalResetLogCommand(boost::shared_ptr<Srch2Server> serverSharedPtr, ResetLogCommand * resetData){
 
 	// first get the Srch2Server pointer from the map
-	Srch2Server * server;
-	boost::shared_ptr<Srch2Server> serverSharedPtr;
-	{
-        boost::shared_lock< boost::shared_mutex > lock(globalIndexLock);
-        map< Srch2ServerHandle , Srch2ServerAccess * >::iterator srch2ServerItr =
-        		srch2Servers.find(serverHandle);
-        if(srch2ServerItr == srch2Servers.end()){
-        	// TODO : assert false?
-        	return NULL;
-        }
-        bool status ;
-
-        // we use DPInternal_ReadAvailable because resetLog is a write operation TODO : correct?
-        serverSharedPtr =
-        		srch2ServerItr->second->getSrch2Server(DPInternal_ReadWriteAvailable, status);
-        if(! status){
-        	// TODO : assert false?
-        	return NULL;
-        }
-        server = serverSharedPtr.get();
-	}
+	Srch2Server * server = serverSharedPtr.get();
 
     if(resetData == NULL || server == NULL){
         CommandStatus * status =
@@ -638,59 +445,39 @@ CommandStatus * DPInternalRequestHandler::internalResetLogCommand(Srch2ServerHan
     }
 
     // create a FILE* pointer to point to the new logger file "logger.txt"
-    FILE *logFile = fopen(server->indexDataConfig->getHTTPServerAccessLogFile().c_str(),
+    FILE *logFile = fopen(server->getCoreInfo()->getHTTPServerAccessLogFile().c_str(),
             "a");
 
     if (logFile == NULL) {
         srch2::util::Logger::error("Reopen Log file %s failed.",
-                server->indexDataConfig->getHTTPServerAccessLogFile().c_str());
+                server->getCoreInfo()->getHTTPServerAccessLogFile().c_str());
         Logger::info("%s", string("{\"message\":\"The logger file repointing failed. Could not create new logger file\", \"log\":\""
-                + server->indexDataConfig->getHTTPServerAccessLogFile() + "\"}").c_str());
+                + server->getCoreInfo()->getHTTPServerAccessLogFile() + "\"}").c_str());
         CommandStatus * status=
                 new CommandStatus(CommandStatus::DP_RESET_LOG, false,
                         "{\"message\":\"The logger file repointing failed. Could not create new logger file\", \"log\":\""
-                        + server->indexDataConfig->getHTTPServerAccessLogFile() + "\"}");
+                        + server->getCoreInfo()->getHTTPServerAccessLogFile() + "\"}");
         return status;
     } else {
         FILE * oldLogger = srch2::util::Logger::swapLoggerFile(logFile);
         fclose(oldLogger);
         Logger::info("%s", string("{\"message\":\"The logger file repointing succeeded\", \"log\":\""
-                + server->indexDataConfig->getHTTPServerAccessLogFile() + "\"}").c_str());
+                + server->getCoreInfo()->getHTTPServerAccessLogFile() + "\"}").c_str());
         CommandStatus * status=
                 new CommandStatus(CommandStatus::DP_RESET_LOG, true,
                         "{\"message\":\"The logger file repointing succeeded\", \"log\":\""
-                        + server->indexDataConfig->getHTTPServerAccessLogFile() + "\"}");
+                        + server->getCoreInfo()->getHTTPServerAccessLogFile() + "\"}");
         return status;
     }
 }
 
 
-CommandStatus * DPInternalRequestHandler::internalCommitCommand(Srch2ServerHandle serverHandle, CommitCommand * resetData){
+CommandStatus * DPInternalRequestHandler::internalCommitCommand(boost::shared_ptr<Srch2Server> serverSharedPtr, CommitCommand * resetData){
 
 
 
 	// first get the Srch2Server pointer from the map
-	Srch2Server * server;
-	boost::shared_ptr<Srch2Server> serverSharedPtr;
-	{
-        boost::shared_lock< boost::shared_mutex > lock(globalIndexLock);
-        map< Srch2ServerHandle , Srch2ServerAccess * >::iterator srch2ServerItr =
-        		srch2Servers.find(serverHandle);
-        if(srch2ServerItr == srch2Servers.end()){
-        	// TODO : assert false?
-        	return NULL;
-        }
-        bool status ;
-
-        // we use DPInternal_ReadWriteAvailable because commit is write operation
-        serverSharedPtr =
-        		srch2ServerItr->second->getSrch2Server(DPInternal_ReadWriteAvailable, status);
-        if(! status){
-        	// TODO : assert false?
-        	return NULL;
-        }
-        server = serverSharedPtr.get();
-	}
+	Srch2Server * server = serverSharedPtr.get();
 
 	if(resetData == NULL || server == NULL){
         CommandStatus * status =
@@ -699,7 +486,7 @@ CommandStatus * DPInternalRequestHandler::internalCommitCommand(Srch2ServerHandl
     }
 
     //commit the index.
-    if ( server->indexer->commit() == srch2::instantsearch::OP_SUCCESS)
+    if ( server->getIndexer()->commit() == srch2::instantsearch::OP_SUCCESS)
     {
         Logger::info("%s", "{\"commit\":\"success\"}");
         CommandStatus * status =
@@ -724,38 +511,24 @@ CommandStatus * DPInternalRequestHandler::internalCommitCommand(Srch2ServerHandl
  * an Index Manager. Index Managers tend to be a container for indices while this module is more of a wrapper on the API
  * provided by the core codebase.
  */
-Srch2ServerHandle DPInternalRequestHandler::registerSrch2Server(const ShardId correspondingShardId, CoreInfo_t * coreInfo){
-	// add a Srch2ServerAccess to the map and return the handle.
-    boost::unique_lock< boost::shared_mutex > lock(globalIndexLock);
-    // number of already registered srch2Server access objects
-    unsigned numberOfCurrentSrch2Servers = srch2Servers.size();
-    srch2Servers.insert(std::make_pair(numberOfCurrentSrch2Servers + 1 ,
-    		new Srch2ServerAccess(correspondingShardId, coreInfo)));
-    return numberOfCurrentSrch2Servers + 1;
+boost::shared_ptr<Srch2Server> DPInternalRequestHandler::registerAndInitializeSrch2Server(const ShardId correspondingShardId,
+		const CoreInfo_t * coreInfo){
+	isWritableMapLock.lock();
+	boost::shared_ptr<Srch2Server> srch2Server;
+	srch2Server.reset(new Srch2Server(coreInfo, correspondingShardId, maxServerId));
+	srch2ServersIsWritable.insert(std::make_pair(maxServerId, true));
+	maxServerId++;
+	isWritableMapLock.unlock();
+
+	bootstrapSrch2Server(srch2Server);
+
+	return srch2Server;
 }
 
-DPInternalAPIStatus DPInternalRequestHandler::bootstrapSrch2Server(Srch2ServerHandle handle){
-	ASSERT(handle > 0);
-	// first find the handle in the map and get the Srch2ServerAccess object
-	Srch2ServerAccess * srch2ServerAccess;
-	{
-        boost::shared_lock< boost::shared_mutex > lock(globalIndexLock);
-        map< Srch2ServerHandle , Srch2ServerAccess * >::iterator srch2ServerItr =
-        		srch2Servers.find(handle);
-        if(srch2ServerItr == srch2Servers.end()){
-        	return DPInternal_Srch2ServerNotFound;
-        }
-        srch2ServerAccess = srch2ServerItr->second;
-	}
-	// When bootstrap is called, srch2Server must be non-available
-	ASSERT(srch2ServerAccess->availability == DPInternal_NonAvailable);
+DPInternalAPIStatus DPInternalRequestHandler::bootstrapSrch2Server(boost::shared_ptr<Srch2Server> srch2Server){
 
-	// bootstrap the server
-	bool availabe;
-	boost::shared_ptr<Srch2Server> srch2Server = srch2ServerAccess->getSrch2Server(DPInternal_NonAvailable, availabe);
-	ASSERT(availabe == true);
 
-    if(srch2ServerAccess->getCoreInfo()->getDataSourceType() ==
+    if(srch2Server->getCoreInfo()->getDataSourceType() ==
             srch2::httpwrapper::DATA_SOURCE_MONGO_DB) {
         // set current time as cut off time for further updates
         // this is a temporary solution. TODO
@@ -765,7 +538,7 @@ DPInternalAPIStatus DPInternalRequestHandler::bootstrapSrch2Server(Srch2ServerHa
     }
 	//load the index from the data source
     try{
-        srch2Server->init(configurationManager);
+        srch2Server->init();
     } catch(exception& ex) {
         /*
          *  We got some fatal error during server initialization. Print the error
@@ -779,37 +552,18 @@ DPInternalAPIStatus DPInternalRequestHandler::bootstrapSrch2Server(Srch2ServerHa
         exit(-1);
     }
 
-	// set the availability of the access object to available for read and write
-	// first look in the map again to find the Srch2ServerAccess
-	// if it's gone in the time of load/create, ignore
-	// otherwise, green the flag
-	{
-        boost::shared_lock< boost::shared_mutex > lock(globalIndexLock);
-        map< Srch2ServerHandle , Srch2ServerAccess * >::iterator srch2ServerItr =
-        		srch2Servers.find(handle);
-        if(srch2ServerItr == srch2Servers.end()){
-        	return DPInternal_Srch2ServerNotFound;
-        }
-        srch2ServerItr->second->setAvailability(DPInternal_ReadWriteAvailable);
-	}
 
 	return DPInternal_Success;
 }
 
-DPInternalAPIStatus DPInternalRequestHandler::deleteSrch2Server(Srch2ServerHandle handle){
-	ASSERT(handle > 0);
-	// first find the handle in the map and get the Srch2ServerAccess object
-	boost::unique_lock< boost::shared_mutex > lock(globalIndexLock);
-	map< Srch2ServerHandle , Srch2ServerAccess * >::iterator srch2ServerItr =
-			srch2Servers.find(handle);
-	if(srch2ServerItr == srch2Servers.end()){
+DPInternalAPIStatus DPInternalRequestHandler::untrackSrch2Server(boost::shared_ptr<Srch2Server> srch2Server){
+	isWritableMapLock.lock();
+	map< unsigned , bool >::iterator serverEntryItr = srch2ServersIsWritable.find(srch2Server->getServerId());
+	if(serverEntryItr == srch2ServersIsWritable.end()){
 		return DPInternal_Srch2ServerNotFound;
 	}
-	// erase it from map, Srch2ServerAccess will be destroyed and
-	// Srch2Server shared pointer inside that will be deleted when all
-	// dp internal readers are gone.
-	delete srch2ServerItr->second;
-	srch2Servers.erase(srch2ServerItr);
+	srch2ServersIsWritable.erase(serverEntryItr);
+	isWritableMapLock.unlock();
 	return DPInternal_Success;
 }
 

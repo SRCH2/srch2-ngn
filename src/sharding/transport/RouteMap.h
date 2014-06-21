@@ -72,7 +72,7 @@ public:
 	 */
 	Route& addDestination(const Node&);
 	bool isTotallyConnected() const;
-	void setCurrentNode(Node&);
+	void setCurrentNode(const Node *);
 	const Node& getCurrentNode() const;
 	Connection& getConnection(NodeId);
 	bool checkInMap(NodeId);

@@ -98,9 +98,9 @@ const char *HTTPServerEndpoints::ajax_delete_fail_500 =
 		"Content-Type: application/x-javascript\r\n"
 		"\r\n";
 
-bool Srch2Server::checkIndexExistence(const CoreInfo_t *indexDataConfig)
+bool Srch2Server::checkIndexExistence()
 {
-    const string &directoryName = indexDataConfig->getIndexPath();
+    const string &directoryName = getDirectory();
     if(!checkDirExistence((directoryName + "/" + IndexConfig::analyzerFileName).c_str()))
         return false;
     if(!checkDirExistence((directoryName + "/" + IndexConfig::trieFileName).c_str()))
@@ -109,7 +109,7 @@ bool Srch2Server::checkIndexExistence(const CoreInfo_t *indexDataConfig)
         return false;
     if(!checkDirExistence((directoryName + "/" + IndexConfig::schemaFileName).c_str()))
         return false;
-    if (indexDataConfig->getIndexType() == srch2::instantsearch::DefaultIndex){
+    if (getCoreInfo()->getIndexType() == srch2::instantsearch::DefaultIndex){
         // Check existence of the inverted index file for basic keyword search ("A1")
         if(!checkDirExistence((directoryName + "/" + IndexConfig::invertedIndexFileName).c_str()))
 	    return false;
@@ -121,25 +121,25 @@ bool Srch2Server::checkIndexExistence(const CoreInfo_t *indexDataConfig)
     return true;
 }
 
-IndexMetaData *Srch2Server::createIndexMetaData(const CoreInfo_t *indexDataConfig)
+IndexMetaData *Srch2Server::createIndexMetaData()
 {
     //Create a cache
-    srch2is::GlobalCache *cache = srch2is::GlobalCache::create(indexDataConfig->getCacheSizeInBytes(), 200000);
+    srch2is::GlobalCache *cache = srch2is::GlobalCache::create(getCoreInfo()->getCacheSizeInBytes(), 200000);
 
     // Create an IndexMetaData
     srch2is::IndexMetaData *indexMetaData =
         new srch2is::IndexMetaData( cache,
-                                    indexDataConfig->getMergeEveryNSeconds(),
-                                    indexDataConfig->getMergeEveryMWrites(),
-                                    indexDataConfig->getUpdateHistogramEveryPMerges(),
-                                    indexDataConfig->getUpdateHistogramEveryQWrites(),
-                                    indexDataConfig->getIndexPath());
+        		getCoreInfo()->getMergeEveryNSeconds(),
+        		getCoreInfo()->getMergeEveryMWrites(),
+        		getCoreInfo()->getUpdateHistogramEveryPMerges(),
+        		getCoreInfo()->getUpdateHistogramEveryQWrites(),
+        		getDirectory());
 
     return indexMetaData;
 }
 void Srch2Server::createHighlightAttributesVector(const srch2is::Schema * schema) {
 
-	CoreInfo_t *indexConfig = const_cast<CoreInfo_t *> (this->indexDataConfig);
+	CoreInfo_t *indexConfig = const_cast<CoreInfo_t *> (this->getCoreInfo());
 	vector<std::pair<unsigned, string> > highlightAttributes;
 
 	const map<string, SearchableAttributeInfoContainer > * searchableAttrsFromConfig
@@ -165,9 +165,9 @@ void Srch2Server::createHighlightAttributesVector(const srch2is::Schema * schema
 void Srch2Server::createAndBootStrapIndexer()
 {
     // create IndexMetaData
-    IndexMetaData *indexMetaData = createIndexMetaData(this->indexDataConfig);
+    IndexMetaData *indexMetaData = createIndexMetaData();
     IndexCreateOrLoad indexCreateOrLoad;
-    if(checkIndexExistence(indexDataConfig))
+    if(checkIndexExistence())
         indexCreateOrLoad = srch2http::INDEXLOAD;
     else
         indexCreateOrLoad = srch2http::INDEXCREATE;
@@ -176,29 +176,28 @@ void Srch2Server::createAndBootStrapIndexer()
     {
     case srch2http::INDEXCREATE:
 	{
-	    AnalyzerHelper::initializeAnalyzerResource(this->indexDataConfig);
-	    srch2is::Schema *schema = JSONRecordParser::createAndPopulateSchema(indexDataConfig);
-	    indexDataConfig->setSchema(schema);
+	    AnalyzerHelper::initializeAnalyzerResource(this->getCoreInfo());
+	    const srch2is::Schema *schema = this->getCoreInfo()->getSchema();
 
-	    Analyzer *analyzer = AnalyzerFactory::createAnalyzer(this->indexDataConfig);
+	    Analyzer *analyzer = AnalyzerFactory::createAnalyzer(this->getCoreInfo());
 	    indexer = Indexer::create(indexMetaData, analyzer, schema);
 	    delete analyzer;
-	    switch(indexDataConfig->getDataSourceType())
+	    switch(getCoreInfo()->getDataSourceType())
 	    {
 	    case srch2http::DATA_SOURCE_JSON_FILE:
 	        {
 		    // Create from JSON and save to index-dir
 		    Logger::console("Creating indexes from JSON file...");
-		    RecordSerializerUtil::populateStoredSchema(storedAttrSchema, indexer->getSchema());
-		    unsigned indexedCounter = DaemonDataSource::createNewIndexFromFile(indexer,
-		    		storedAttrSchema, indexDataConfig);
+		    RecordSerializerUtil::populateStoredSchema(storedAttrSchema, getIndexer()->getSchema());
+		    unsigned indexedCounter = DaemonDataSource::createNewIndexFromFile(getIndexer(),
+		    		storedAttrSchema, this->getCoreInfo(),getDataFilePath());
 		    /*
 		     *  commit the indexes once bulk load is done and then save it to the disk only
 		     *  if number of indexed record is > 0.
 		     */
-		    indexer->commit();
+		    getIndexer()->commit();
 		    if (indexedCounter > 0) {
-		        indexer->save();
+		    	getIndexer()->save();
 			Logger::console("Indexes saved.");
 		    }
 		    break;
@@ -207,10 +206,10 @@ void Srch2Server::createAndBootStrapIndexer()
 	    case srch2http::DATA_SOURCE_MONGO_DB:
 	        {
 		    Logger::console("Creating indexes from a MongoDb instance...");
-		    unsigned indexedCounter = MongoDataSource::createNewIndexes(indexer, indexDataConfig);
-		    indexer->commit();
+		    unsigned indexedCounter = MongoDataSource::createNewIndexes(getIndexer(), this->getCoreInfo());
+		    getIndexer()->commit();
 		    if (indexedCounter > 0) {
-		        indexer->save();
+		    	getIndexer()->save();
 			Logger::console("Indexes saved.");
 		    }
 		    break;
@@ -221,45 +220,48 @@ void Srch2Server::createAndBootStrapIndexer()
 		    Logger::console("Creating new empty index");
 		}
 	    };
-	    AnalyzerHelper::saveAnalyzerResource(this->indexDataConfig);
+	    AnalyzerHelper::saveAnalyzerResource(this->getCoreInfo());
 	    break;
 	}
     case srch2http::INDEXLOAD:
         {
 	    // Load from index-dir directly, skip creating an index initially.
-	    indexer = Indexer::load(indexMetaData);
-	    indexDataConfig->setSchema(indexer->getSchema());
+        indexer = Indexer::load(indexMetaData);
 
 	    // Load Analyzer data from disk
-	    AnalyzerHelper::loadAnalyzerResource(this->indexDataConfig);
-	    indexer->getSchema()->setSupportSwapInEditDistance(indexDataConfig->getSupportSwapInEditDistance());
+	    AnalyzerHelper::loadAnalyzerResource(this->getCoreInfo());
+	    getIndexer()->getSchema()->setSupportSwapInEditDistance(getCoreInfo()->getSupportSwapInEditDistance());
 	    bool isAttributeBasedSearch = false;
-	    if (isEnabledAttributeBasedSearch(indexer->getSchema()->getPositionIndexType())) {
+	    if (isEnabledAttributeBasedSearch(getIndexer()->getSchema()->getPositionIndexType())) {
 	        isAttributeBasedSearch =true;
 	    }
-	    if(isAttributeBasedSearch != indexDataConfig->getSupportAttributeBasedSearch())
+	    if(isAttributeBasedSearch != getCoreInfo()->getSupportAttributeBasedSearch())
 	    {
 	    	Logger::warn("support-attribute-based-search has changed in the config file"
 	    		        		" remove all index files and run it again!");
 	    }
-	    RecordSerializerUtil::populateStoredSchema(storedAttrSchema, indexer->getSchema());
+	    RecordSerializerUtil::populateStoredSchema(storedAttrSchema, getIndexer()->getSchema());
 	    break;
 	}
     }
     createHighlightAttributesVector(storedAttrSchema);
     delete storedAttrSchema;
     // start merger thread
-    indexer->createAndStartMergeThreadLoop();
+    getIndexer()->createAndStartMergeThreadLoop();
 }
 
-void Srch2Server::setCoreName(const string &name)
-{
-    coreName = name;
+Indexer * Srch2Server::getIndexer(){
+	return indexer;
+}
+const CoreInfo_t * Srch2Server::getCoreInfo(){
+	return indexDataConfig;
+}
+ShardId Srch2Server::getShardId(){
+	return correspondingShardId;
 }
 
-const string &Srch2Server::getCoreName()
-{
-    return coreName;
+unsigned Srch2Server::getServerId(){
+	return serverId;
 }
 
 }

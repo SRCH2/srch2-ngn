@@ -61,7 +61,7 @@ void QueryExecutor::execute(QueryResults * finalResults) {
     QueryEvaluatorRuntimeParametersContainer runTimeParameters(configuration->getKeywordPopularityThreshold(),
     		configuration->getGetAllResultsNumberOfResultsThreshold() ,
     		configuration->getGetAllResultsNumberOfResultsToFindInEstimationMode());
-    this->queryEvaluator = new srch2is::QueryEvaluator(server->indexer , &runTimeParameters );
+    this->queryEvaluator = new srch2is::QueryEvaluator(server->getIndexer() , &runTimeParameters );
 
     //do the search
     switch (queryPlan.getQueryType()) {
@@ -108,7 +108,7 @@ void QueryExecutor::executeForDPInternal(QueryResults * finalResults,
     QueryEvaluatorRuntimeParametersContainer runTimeParameters(configuration->getKeywordPopularityThreshold(),
     		configuration->getGetAllResultsNumberOfResultsThreshold() ,
     		configuration->getGetAllResultsNumberOfResultsToFindInEstimationMode());
-    this->queryEvaluator = new srch2is::QueryEvaluator(server->indexer , &runTimeParameters );
+    this->queryEvaluator = new srch2is::QueryEvaluator(server->getIndexer() , &runTimeParameters );
 
     //do the search
     switch (queryPlan.getQueryType()) {

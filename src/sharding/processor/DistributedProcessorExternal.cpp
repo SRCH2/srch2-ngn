@@ -86,7 +86,7 @@ DPExternalRequestHandler::DPExternalRequestHandler(ConfigManager * configuration
  * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
  *       results. Results will be aggregator by another thread since it's not a blocking call.
  */
-void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , CoreShardInfo * coreShardInfo){
+void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , unsigned coreId){
 
 
     struct timespec tstart;
@@ -94,9 +94,12 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , CoreS
     clock_gettime(CLOCK_REALTIME, &tstart);
     // CoreInfo_t is a view of configurationManager which contains all information for the
     // core that we want to search on, this object is accesses through configurationManager.
-    const CoreInfo_t *indexDataContainerConf = configurationManager->getCoreInfo(coreShardInfo->coreName);
+    boost::shared_ptr<const Cluster> clusterReadview;
+    configurationManager->getClusterReadView(clusterReadview);
 
-    boost::shared_ptr<SearchResultsAggregator> resultAggregator(new SearchResultsAggregator(configurationManager, req, coreShardInfo));
+    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCoreById(coreId);
+
+    boost::shared_ptr<SearchResultsAggregator> resultAggregator(new SearchResultsAggregator(configurationManager, req, clusterReadview, coreId));
 
 
     clock_gettime(CLOCK_REALTIME, &(resultAggregator->getStartTimer()));
@@ -153,8 +156,8 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , CoreS
 
     // broadcasting search request to all shards , non-blocking, with timeout and callback to ResultAggregator
     // 1. first find all destination shards.
-    vector<ShardId> destinations;
-    partitioner->getShardIDsForBroadcast(coreShardInfo->coreName , destinations);
+    vector<const Shard *> destinations;
+    partitioner->getShardIDsForBroadcast(coreId, clusterReadview, destinations);
     if(destinations.size() == 0){
     	delete searchInput;
         bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
@@ -191,10 +194,13 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , CoreS
  *    in a non-blocking manner. The status response is taken care of by aggregator in
  *    another thread when these responses come.
  */
-void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, CoreShardInfo * coreShardInfo){
+void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, unsigned coreId){
 
 
-    const CoreInfo_t *indexDataContainerConf = configurationManager->getCoreInfo(coreShardInfo->coreName);
+    boost::shared_ptr<const Cluster> clusterReadview;
+    configurationManager->getClusterReadView(clusterReadview);
+
+    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCoreById(coreId);
     // it must be an insert query
     ASSERT(req->type == EVHTTP_REQ_PUT);
     if(req->type != EVHTTP_REQ_PUT){
@@ -247,7 +253,7 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, CoreSh
 
                 Json::FastWriter writer;
                 if(JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(doc), doc,
-                        configurationManager->getCoreInfo(coreShardInfo->coreName), log_str, recSerializer) == false){
+                        indexDataContainerConf, log_str, recSerializer) == false){
                     log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"failed\"}";
                     if (index < root.size() - 1){
                         log_str << ",";
@@ -269,7 +275,7 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, CoreSh
             const Json::Value doc = root;
             Json::FastWriter writer;
             if(JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root,
-                    configurationManager->getCoreInfo(coreShardInfo->coreName), log_str, recSerializer) == false){
+                    indexDataContainerConf, log_str, recSerializer) == false){
 
                 log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"failed\"}";
 
@@ -305,7 +311,7 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, CoreSh
      * insert in a batch insert, so we want the aggregator to be deleted after all of them are resolved.
      */
     boost::shared_ptr<StatusAggregator<InsertUpdateCommand> >
-    resultsAggregator(new StatusAggregator<InsertUpdateCommand>(configurationManager,req,recordsToInsert.size()));
+    resultsAggregator(new StatusAggregator<InsertUpdateCommand>(configurationManager,req, clusterReadview, coreId,recordsToInsert.size()));
     resultsAggregator->setMessages(log_str);
 
 
@@ -318,12 +324,7 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, CoreSh
         time(&timeValue);
         timeValue = timeValue + TIMEOUT_WAIT_TIME;
 
-        ShardId destination;
-        bool hostValidForRecord = partitioner->getShardIDForRecord(*recordItr,coreShardInfo->coreName, destination);
-
-        if(! hostValidForRecord){
-        	continue;
-        }
+        const Shard * destination = partitioner->getShardIDForRecord(*recordItr,coreId, clusterReadview);
 
         InsertUpdateCommand  * insertUpdateInput=
                 new InsertUpdateCommand(*recordItr,InsertUpdateCommand::DP_INSERT);
@@ -354,10 +355,12 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, CoreSh
  *    in a non-blocking manner. The status response is taken care of by aggregator in
  *    another thread when these responses come.
  */
-void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, CoreShardInfo * coreShardInfo){
+void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, unsigned coreId){
 
+    boost::shared_ptr<const Cluster> clusterReadview;
+    configurationManager->getClusterReadView(clusterReadview);
 
-    const CoreInfo_t *indexDataContainerConf = configurationManager->getCoreInfo(coreShardInfo->coreName);
+    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCoreById(coreId);
     // it must be an update query
     ASSERT(req->type == EVHTTP_REQ_PUT);
     if(req->type != EVHTTP_REQ_PUT){
@@ -411,7 +414,7 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, CoreSh
 
                 Json::FastWriter writer;
                 bool parseJson = JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(doc), doc,
-                        configurationManager->getCoreInfo(coreShardInfo->coreName), log_str, recSerializer);
+                        indexDataContainerConf, log_str, recSerializer);
                 if(parseJson == false) {
                     log_str << "failed\",\"reason\":\"parse: The record is not in a correct json format\",";
                     if (index < root.size() - 1){
@@ -433,7 +436,7 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, CoreSh
 
             Json::FastWriter writer;
             bool parseJson = JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root,
-                    configurationManager->getCoreInfo(coreShardInfo->coreName), log_str, recSerializer);
+                    indexDataContainerConf, log_str, recSerializer);
             if(parseJson == false) {
                 log_str << "failed\",\"reason\":\"parse: The record is not in a correct json format\",";
                 Logger::info("%s", log_str.str().c_str());
@@ -468,7 +471,7 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, CoreSh
 
 
     boost::shared_ptr<StatusAggregator<InsertUpdateCommand> >
-    resultsAggregator(new StatusAggregator<InsertUpdateCommand>(configurationManager,req, recordsToUpdate.size()));
+    resultsAggregator(new StatusAggregator<InsertUpdateCommand>(configurationManager,req, clusterReadview, coreId, recordsToUpdate.size()));
     resultsAggregator->setMessages(log_str);
 
     for(vector<Record *>::iterator recordItr = recordsToUpdate.begin(); recordItr != recordsToUpdate.end() ; ++recordItr){
@@ -478,12 +481,8 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, CoreSh
         time(&timeValue);
         timeValue = timeValue + TIMEOUT_WAIT_TIME;
 
-        ShardId destination;
-        bool hostValidForRecord = partitioner->getShardIDForRecord(*recordItr,coreShardInfo->coreName, destination);
+        const Shard * destination = partitioner->getShardIDForRecord(*recordItr,coreId, clusterReadview);
 
-        if(! hostValidForRecord){
-        	continue;
-        }
         InsertUpdateCommand  * insertUpdateInput=
                 new InsertUpdateCommand(*recordItr,InsertUpdateCommand::DP_UPDATE);
 
@@ -513,7 +512,7 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, CoreSh
  *    in a non-blocking manner. The status response is taken care of by aggregator in
  *    another thread when these responses come.
  */
-void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, CoreShardInfo * coreShardInfo){
+void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, unsigned coreId){
 
 
     // it must be an update query
@@ -526,8 +525,10 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, CoreSh
         return;
     }
 
+    boost::shared_ptr<const Cluster> clusterReadview;
+    configurationManager->getClusterReadView(clusterReadview);
 
-    const CoreInfo_t * indexDataContainerConf = configurationManager->getCoreInfo(coreShardInfo->coreName);
+    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCoreById(coreId);
 
     evkeyvalq headers;
     evhttp_parse_query(req->uri, &headers);
@@ -539,7 +540,7 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, CoreSh
     //TODO : we should parse more than primary key later
     if (pKeyParamName){
         boost::shared_ptr<StatusAggregator<DeleteCommand> >
-        resultsAggregator(new StatusAggregator<DeleteCommand>(configurationManager,req));
+        resultsAggregator(new StatusAggregator<DeleteCommand>(configurationManager,req, clusterReadview, coreId));
 
         size_t sz;
         char *pKeyParamName_cstar = evhttp_uridecode(pKeyParamName, 0, &sz);
@@ -549,25 +550,22 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, CoreSh
         const std::string primaryKeyStringValue = string(pKeyParamName_cstar);
         free(pKeyParamName_cstar);
 
-        ShardId destination ;
-        bool isRecordHostValid = partitioner->getShardIDForRecord(primaryKeyStringValue,coreShardInfo->coreName, destination);
+        const Shard * destination = partitioner->getShardIDForRecord(primaryKeyStringValue,coreId, clusterReadview);
 
-        if(isRecordHostValid){
 
-			DeleteCommand * deleteInput =
-					new DeleteCommand(primaryKeyStringValue,coreShardInfo->coreId);
-			// add request object to results aggregator which is the callback object
-			time_t timeValue;
-			time(&timeValue);
-			timeValue = timeValue + TIMEOUT_WAIT_TIME;
-			RoutingManagerAPIReturnType routingStatus =
-					routingManager->sendMessage<DeleteCommand, CommandStatus>(deleteInput,true, resultsAggregator , timeValue , destination);
+		DeleteCommand * deleteInput =
+				new DeleteCommand(primaryKeyStringValue,coreId);
+		// add request object to results aggregator which is the callback object
+		time_t timeValue;
+		time(&timeValue);
+		timeValue = timeValue + TIMEOUT_WAIT_TIME;
+		RoutingManagerAPIReturnType routingStatus =
+				routingManager->sendMessage<DeleteCommand, CommandStatus>(deleteInput,true, resultsAggregator , timeValue , destination);
 
-			if(routingStatus != RoutingManagerAPIReturnTypeSuccess){
-				bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure",
-						"");
-			}
-        }
+		if(routingStatus != RoutingManagerAPIReturnTypeSuccess){
+			bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure",
+					"");
+		}
 
 
     }else{
@@ -592,15 +590,20 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, CoreSh
   * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
   *       results. Results will be aggregator by another thread since it's not a blocking call.
   */
-void DPExternalRequestHandler::externalGetInfoCommand(evhttp_request *req, CoreShardInfo * coreShardInfo){
+void DPExternalRequestHandler::externalGetInfoCommand(evhttp_request *req, unsigned coreId){
 
-    boost::shared_ptr<GetInfoResponseAggregator> resultsAggregator(new GetInfoResponseAggregator(configurationManager,req));
+    boost::shared_ptr<const Cluster> clusterReadview;
+    configurationManager->getClusterReadView(clusterReadview);
+
+    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCoreById(coreId);
+
+    boost::shared_ptr<GetInfoResponseAggregator> resultsAggregator(new GetInfoResponseAggregator(configurationManager,req, clusterReadview, coreId));
     GetInfoCommand * getInfoInput = new GetInfoCommand();
 
 
     // 1. first find all destination shards.
-    vector<ShardId> destinations;
-    partitioner->getShardIDsForBroadcast(coreShardInfo->coreName , destinations);
+    vector<const Shard *> destinations;
+    partitioner->getShardIDsForBroadcast(coreId, clusterReadview , destinations);
     if(destinations.size() == 0){
     	delete getInfoInput;
         bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
@@ -633,19 +636,23 @@ void DPExternalRequestHandler::externalGetInfoCommand(evhttp_request *req, CoreS
   * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
   *       results. Results will be aggregator by another thread since it's not a blocking call.
   */
-void DPExternalRequestHandler::externalSerializeIndexCommand(evhttp_request *req, CoreShardInfo * coreShardInfo){
+void DPExternalRequestHandler::externalSerializeIndexCommand(evhttp_request *req, unsigned coreId){
     /* Yes, we are expecting a post request */
+    boost::shared_ptr<const Cluster> clusterReadview;
+    configurationManager->getClusterReadView(clusterReadview);
+
+    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCoreById(coreId);
     switch (req->type) {
     case EVHTTP_REQ_PUT: {
         boost::shared_ptr<StatusAggregator<SerializeCommand> >
-        resultsAggregator(new StatusAggregator<SerializeCommand>(configurationManager,req));
+        resultsAggregator(new StatusAggregator<SerializeCommand>(configurationManager,req, clusterReadview, coreId));
 
         SerializeCommand * serializeInput =
                 new SerializeCommand(SerializeCommand::SERIALIZE_INDEX);
 
         // 1. first find all destination shards.
-        vector<ShardId> destinations;
-        partitioner->getShardIDsForBroadcast(coreShardInfo->coreName , destinations);
+        vector<const Shard *> destinations;
+        partitioner->getShardIDsForBroadcast(coreId, clusterReadview , destinations);
         if(destinations.size() == 0){
         	delete serializeInput;
             bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
@@ -688,12 +695,18 @@ void DPExternalRequestHandler::externalSerializeIndexCommand(evhttp_request *req
   * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
   *       results. Results will be aggregator by another thread since it's not a blocking call.
   */
-void DPExternalRequestHandler::externalSerializeRecordsCommand(evhttp_request *req, CoreShardInfo * coreShardInfo){
+void DPExternalRequestHandler::externalSerializeRecordsCommand(evhttp_request *req, unsigned coreId){
     /* Yes, we are expecting a post request */
+
+    boost::shared_ptr<const Cluster> clusterReadview;
+    configurationManager->getClusterReadView(clusterReadview);
+
+    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCoreById(coreId);
+
     switch (req->type) {
     case EVHTTP_REQ_PUT: {
         // if search-response-format is 0 or 2
-        if (configurationManager->getCoreInfo(coreShardInfo->coreName)->getSearchResponseFormat() == RESPONSE_WITH_STORED_ATTR) {
+        if (indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_STORED_ATTR) {
             std::stringstream log_str;
             evkeyvalq headers;
             evhttp_parse_query(req->uri, &headers);
@@ -701,14 +714,14 @@ void DPExternalRequestHandler::externalSerializeRecordsCommand(evhttp_request *r
             // TODO : should we free exportedDataFileName?
             if(exportedDataFileName){
                 boost::shared_ptr<StatusAggregator<SerializeCommand> >
-                resultsAggregator(new StatusAggregator<SerializeCommand>(configurationManager,req));
+                resultsAggregator(new StatusAggregator<SerializeCommand>(configurationManager,req, clusterReadview, coreId));
 
                 SerializeCommand * serializeInput =
                         new SerializeCommand(SerializeCommand::SERIALIZE_RECORDS, string(exportedDataFileName));
 
                 // 1. first find all destination shards.
-                vector<ShardId> destinations;
-                partitioner->getShardIDsForBroadcast(coreShardInfo->coreName , destinations);
+                vector<const Shard *> destinations;
+                partitioner->getShardIDsForBroadcast(coreId, clusterReadview , destinations);
                 if(destinations.size() == 0){
                 	delete serializeInput;
                     bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
@@ -762,16 +775,22 @@ void DPExternalRequestHandler::externalSerializeRecordsCommand(evhttp_request *r
   * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
   *       results. Results will be aggregator by another thread since it's not a blocking call.
   */
-void DPExternalRequestHandler::externalResetLogCommand(evhttp_request *req, CoreShardInfo * coreShardInfo){
+void DPExternalRequestHandler::externalResetLogCommand(evhttp_request *req, unsigned coreId){
+
+    boost::shared_ptr<const Cluster> clusterReadview;
+    configurationManager->getClusterReadView(clusterReadview);
+
+    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCoreById(coreId);
+
     switch(req->type) {
     case EVHTTP_REQ_PUT: {
         boost::shared_ptr<StatusAggregator<ResetLogCommand> >
-        resultsAggregator(new StatusAggregator<ResetLogCommand>(configurationManager,req));
+        resultsAggregator(new StatusAggregator<ResetLogCommand>(configurationManager,req, clusterReadview, coreId));
         ResetLogCommand * resetInput = new ResetLogCommand();
 
         // 1. first find all destination shards.
-        vector<ShardId> destinations;
-        partitioner->getShardIDsForBroadcast(coreShardInfo->coreName , destinations);
+        vector<const Shard *> destinations;
+        partitioner->getShardIDsForBroadcast(coreId, clusterReadview , destinations);
         if(destinations.size() == 0){
         	delete resetInput;
             bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
@@ -809,15 +828,21 @@ void DPExternalRequestHandler::externalResetLogCommand(evhttp_request *req, Core
 /*
  * Receives a commit request and boardcasts it to other shards
  */
-void DPExternalRequestHandler::externalCommitCommand(evhttp_request *req, CoreShardInfo * coreShardInfo){
+void DPExternalRequestHandler::externalCommitCommand(evhttp_request *req, unsigned coreId){
+
+    boost::shared_ptr<const Cluster> clusterReadview;
+    configurationManager->getClusterReadView(clusterReadview);
+
+    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCoreById(coreId);
+
     boost::shared_ptr<StatusAggregator<CommitCommand> >
-    resultsAggregator(new StatusAggregator<CommitCommand>(configurationManager, req));
+    resultsAggregator(new StatusAggregator<CommitCommand>(configurationManager, req, clusterReadview, coreId));
 
     CommitCommand * commitInput = new CommitCommand();
 
     // 1. first find all destination shards.
-    vector<ShardId> destinations;
-    partitioner->getShardIDsForBroadcast(coreShardInfo->coreName , destinations);
+    vector<const Shard *> destinations;
+    partitioner->getShardIDsForBroadcast(coreId, clusterReadview , destinations);
     if(destinations.size() == 0){
     	delete commitInput;
         bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",

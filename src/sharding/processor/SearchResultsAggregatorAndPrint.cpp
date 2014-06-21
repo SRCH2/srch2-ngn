@@ -9,10 +9,11 @@ using namespace srch2is;
 namespace srch2 {
 namespace httpwrapper {
 
-SearchResultsAggregator::SearchResultsAggregator(ConfigManager * configurationManager, evhttp_request *req, CoreShardInfo * coreShardInfo){
+SearchResultsAggregator::SearchResultsAggregator(ConfigManager * configurationManager, evhttp_request *req,
+		boost::shared_ptr<const Cluster> clusterReadview, unsigned coreId) :
+		ResponseAggregator<SearchCommand , SearchCommandResults>(clusterReadview, coreId){
     this->configurationManager = configurationManager;
     this->req = req;
-    this->coreShardInfo = coreShardInfo;
 }
 LogicalPlan & SearchResultsAggregator::getLogicalPlan(){
     return logicalPlan;
@@ -82,7 +83,7 @@ void SearchResultsAggregator::printResults(){
 
     // CoreInfo_t is a view of configurationManager which contains all information for the
     // core that we want to search on, this object is accesses through configurationManager.
-    const CoreInfo_t *indexDataContainerConf = configurationManager->getCoreInfo(coreShardInfo->coreName);
+    const CoreInfo_t *indexDataContainerConf = getClusterReadview()->getCoreById(getCoreId());
 
 
     evkeyvalq headers;

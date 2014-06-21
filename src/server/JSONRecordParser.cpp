@@ -412,9 +412,8 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema(const CoreInfo_t *ind
  *  Create indexes using records from json file and return the total indexed records.
  */
 unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, Schema * storedAttrSchema,
-		const CoreInfo_t *indexDataContainerConf)
+		const CoreInfo_t *indexDataContainerConf, const string & filePath)
 {
-    string filePath = indexDataContainerConf->getDataFilePath();
     ifstream in(filePath.c_str());
     if (in.fail())
     {

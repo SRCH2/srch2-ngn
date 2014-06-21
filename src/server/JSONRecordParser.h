@@ -39,7 +39,7 @@ class DaemonDataSource
 {
 	public:
 		static unsigned createNewIndexFromFile(srch2is::Indexer *indexer, Schema * storedAttrSchema,
-				const CoreInfo_t *indexDataContainerConf);
+				const CoreInfo_t *indexDataContainerConf, const string & dataFilePath);
 };
 
 

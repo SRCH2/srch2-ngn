@@ -25,7 +25,9 @@ class StatusAggregator : public ResponseAggregator<RequestWithStatusResponse,Com
 public:
 
 
-    StatusAggregator(ConfigManager * configurationManager, evhttp_request *req, unsigned multiRouteMode = 0){
+    StatusAggregator(ConfigManager * configurationManager, evhttp_request *req,
+    		boost::shared_ptr<const Cluster> clusterReadview, unsigned coreId, unsigned multiRouteMode = 0):
+    			ResponseAggregator<RequestWithStatusResponse,CommandStatus>(clusterReadview, coreId){
         this->configurationManager = configurationManager;
         this->req = req;
         this->multiRouteMode = multiRouteMode; // this is the case where aggregator is shared with multiple callbacks
@@ -77,7 +79,7 @@ public:
 
         RequestWithStatusResponse * sentRequest = message->getRequestObject();
 
-        if(((string)"InsertUpdateCommand").compare(typeid(sentRequest).name()) == 0){// timeout in insert and update
+        if(typeid(InsertUpdateCommand *) == typeid(sentRequest)){// timeout in insert and update
 
             boost::unique_lock< boost::shared_mutex > lock(_access);
             InsertUpdateCommand * sentInsetUpdateRequest = (InsertUpdateCommand *)(sentRequest);
@@ -85,7 +87,7 @@ public:
                                         << "\",\"" << (sentInsetUpdateRequest->getInsertOrUpdate()?"insert":"update") << "\":\"failed\",\"reason\":\"Corresponging shard ("<<
                                         message->getNodeId()<<") timedout.\"}";
 
-        }else if (((string)"DeleteCommand").compare(typeid(sentRequest).name()) == 0){
+        }else if (typeid(DeleteCommand *) == typeid(sentRequest)){
 
             boost::unique_lock< boost::shared_mutex > lock(_access);
             DeleteCommand * sentDeleteRequest = (DeleteCommand *)(sentRequest);
@@ -93,20 +95,20 @@ public:
                             << "\",\"delete\":\"failed\",\"reason\":\"Corresponging ("<<
                             message->getNodeId() << ") shard timedout.\"}";
 
-        }else if(((string)"SerializeCommand").compare(typeid(sentRequest).name()) == 0){
+        }else if(typeid(SerializeCommand *) == typeid(sentRequest)){
 
             boost::unique_lock< boost::shared_mutex > lock(_access);
             SerializeCommand * serializeRequest = (SerializeCommand *)(sentRequest);
             messages << "{\""<< (serializeRequest->getIndexOrRecord()?"save":"export") << "\":\"failed\",\"reason\":\"Corresponging (" <<
                     message->getNodeId() << ") shard timedout.\"}";
 
-        }else if(((string)"ResetLogCommand").compare(typeid(sentRequest).name()) == 0){
+        }else if(typeid(ResetLogCommand *) == typeid(sentRequest)){
 
             boost::unique_lock< boost::shared_mutex > lock(_access);
             ResetLogCommand * resetRequest = (ResetLogCommand *)(sentRequest);
             messages << "{\"reset_log\":\"failed\",\"reason\":\"Corresponging (" << message->getNodeId()<<") shard timedout.\"}";
 
-        }else if(((string)"CommitCommand").compare(typeid(sentRequest).name()) == 0){
+        }else if(typeid(CommitCommand *) == typeid(sentRequest)){
 
             boost::unique_lock< boost::shared_mutex > lock(_access);
             CommitCommand * resetRequest = (CommitCommand *)(sentRequest);
@@ -145,7 +147,7 @@ public:
         //TODO shard info can be better than just an index
         unsigned shardIndex = 0;
         for(typename vector<PendingMessage<RequestWithStatusResponse, CommandStatus> * >::iterator
-                messageItr    = messagesArg.begin(); messageItr != messagesArg.end(); ++messageItr){
+                messageItr = messagesArg.begin(); messageItr != messagesArg.end(); ++messageItr){
             if(*messageItr == NULL){
                 continue;
             }

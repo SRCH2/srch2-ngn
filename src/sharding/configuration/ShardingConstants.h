@@ -12,8 +12,6 @@ typedef unsigned NodeId;
 // 0 : not found
 // -1 : uninitialized
 // -2 : not ready (shard not in Allocated state)
-typedef int Srch2ServerHandle;
-
 class SynchronizationManager{
 
 };
@@ -47,6 +45,38 @@ enum ShardingMessageType{
 enum RoutingManagerAPIReturnType{
 	RoutingManagerAPIReturnTypeSuccess,
 	RoutingManagerAPIReturnTypeAllNodesDown
+};
+
+//Adding portions of new header file, beginning from here
+enum ShardState {
+	SHARDSTATE_ALLOCATED,  // must have a valid node
+	SHARDSTATE_UNALLOCATED,
+	SHARDSTATE_MIGRATING,
+	SHARDSTATE_INDEXING,
+	// these are the constants that DPEx, DPInt, RM and MM use
+	SHARDSTATE_REGISTERED,
+	SHARDSTATE_NOT_COMMITTED,
+	SHARDSTATE_COMMITTED
+
+};
+
+// enum to allow loop iteration over listening ports
+enum PortType_t {
+	SearchPort,
+	SuggestPort,
+	InfoPort,
+	DocsPort,
+	UpdatePort,
+	SavePort,
+	ExportPort,
+	ResetLoggerPort,
+	EndOfPortType // stop value - not valid (also used to indicate all/default ports)
+};
+
+enum CLUSTERSTATE {
+	CLUSTERSTATE_GREEN,  // all nodes are green
+	CLUSTERSTATE_RED,    // all nodes are red ..possible ?
+	CLUSTERSTATE_YELLOW  // not all nodes are green.
 };
 
 }

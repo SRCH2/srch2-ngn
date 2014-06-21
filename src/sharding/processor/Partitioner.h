@@ -24,16 +24,16 @@ public:
      * 3. Uses hash(...) to choose which shard should be responsible for this record
      * 4. Returns the information of corresponding Shard (which can be discovered from SM)
      */
-    bool getShardIDForRecord(Record * record, string coreName, ShardId & detination);
+    const Shard * getShardIDForRecord(Record * record, unsigned coreId, boost::shared_ptr<const Cluster> clusterReadview);
     // TODO : if the shard hash value of a record must be calculated by
     // evaluating an expression given in configuration file, primaryKeyStringValue is not enough
     // as the input of this method, this will change later ...
-    bool getShardIDForRecord(string primaryKeyStringValue, string coreName, ShardId & detination);
+    const Shard * getShardIDForRecord(string primaryKeyStringValue, unsigned coreId, boost::shared_ptr<const Cluster> clusterReadview);
 
     /*
      *	Returns all valid shardIds for a broadcast
      */
-    void getShardIDsForBroadcast(string coreName, vector<ShardId> & broadcastShardIDs);
+    void getShardIDsForBroadcast(unsigned coreId, boost::shared_ptr<const Cluster> clusterReadview, vector<const Shard *> & broadcastShardIDs);
 
 private:
     /*
@@ -50,7 +50,7 @@ private:
      */
     unsigned hash(unsigned valueToHash, unsigned hashSpace);
 
-    ShardId convertUnsignedToCoreShardInfo(unsigned coreShardIndex, const CoreInfo_t *indexDataContainerConf);
+    const Shard * convertUnsignedToCoreShardInfo(unsigned coreShardIndex, unsigned coreId, boost::shared_ptr<const Cluster> clusterReadview);
 
     // computes the hash value of a string
     unsigned hashDJB2(const char *str) const

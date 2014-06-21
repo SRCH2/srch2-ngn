@@ -220,7 +220,7 @@ void * dispatchMergeThread(void *indexer) {
 	pthread_exit(0);
 }
 
-IndexReaderWriter::IndexReaderWriter(IndexMetaData* indexMetaData, Analyzer *analyzer, Schema *schema)
+IndexReaderWriter::IndexReaderWriter(IndexMetaData* indexMetaData, Analyzer *analyzer, const Schema *schema)
 {
      // CREATE NEW Index
      this->index =  IndexData::create(indexMetaData->directoryName,

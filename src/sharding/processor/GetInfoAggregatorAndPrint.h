@@ -17,7 +17,7 @@ namespace httpwrapper {
 
 class GetInfoResponseAggregator : public ResponseAggregator<GetInfoCommand,GetInfoCommandResults> {
 public:
-    GetInfoResponseAggregator(ConfigManager * configurationManager, evhttp_request *req);
+    GetInfoResponseAggregator(ConfigManager * configurationManager, evhttp_request *req, boost::shared_ptr<const Cluster> clusterReadview, unsigned coreId);
 
     /*
      * This function is always called by RoutingManager as the first call back function

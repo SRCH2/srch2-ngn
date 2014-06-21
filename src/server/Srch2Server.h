@@ -40,8 +40,6 @@ namespace httpwrapper
 class Srch2Server
 {
 public:
-    Indexer *indexer;
-    CoreInfo_t *indexDataConfig;
     /* Fields used only for stats */
     time_t stat_starttime;          /* Server start time */
     long long stat_numcommands;     /* Number of processed commands */
@@ -54,32 +52,46 @@ public:
     long long stat_fork_time;       /* Time needed to perform latets fork() */
     long long stat_rejected_conn;   /* Clients rejected because of maxclients */
 
-    Srch2Server()
+    Srch2Server(const CoreInfo_t * indexDataConfig,  const ShardId correspondingShardId, unsigned serverId):
+		correspondingShardId(correspondingShardId)
     {
         this->indexer = NULL;
-        this->indexDataConfig = NULL;
+        this->indexDataConfig = indexDataConfig;
+        this->serverId = serverId;
     }
 
-    void init(const ConfigManager *config)
+    void init()
     {
-        indexDataConfig = config->getCoreInfo(getCoreName());
         createAndBootStrapIndexer();
     }
 
     // Check if index files already exist.
-    bool checkIndexExistence(const CoreInfo_t *indexDataConfig);
+    bool checkIndexExistence();
 
-    IndexMetaData *createIndexMetaData(const CoreInfo_t *indexDataConfig);
+    IndexMetaData *createIndexMetaData();
     void createAndBootStrapIndexer();
     void createHighlightAttributesVector(const srch2is::Schema * schema);
 
-    void setCoreName(const string &name);
-    const string &getCoreName();
+    Indexer * getIndexer();
+    const CoreInfo_t * getCoreInfo();
+    ShardId getShardId();
+    unsigned getServerId();
 
+    string getDirectory(){
+        return getCoreInfo()->getIndexPath() + "/" +
+        		"nodename" + "/" + getCoreInfo()->getName() + "/" + correspondingShardId.toString();
+    }
+
+    string getDataFilePath(){
+        return getCoreInfo()->getDataFilePath();
+    }
     virtual ~Srch2Server(){}
 
- protected:
-    string coreName;
+ private:
+    Indexer *indexer;
+    const CoreInfo_t * indexDataConfig;
+    const ShardId correspondingShardId;
+    unsigned serverId;
 };
 
 class HTTPServerEndpoints
