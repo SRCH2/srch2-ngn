@@ -130,21 +130,46 @@ void testDiscovery(char* configFile){
 
 	ConfigManager *configManager = new ConfigManager(configFile);
 	configManager->loadConfigFile();
-	DiscoveryParams discovery = configManager->getDiscovery();
+	Ping ping = configManager->getPing();
 
-	ASSERT(discovery.getPingInterval() == 2);
-	ASSERT(discovery.getPingTimeout() == 8);
-	ASSERT(discovery.getRetryCount() == 10);
+	ASSERT(ping.getPingInterval() == 2);
+	ASSERT(ping.getPingTimeout() == 8);
+	ASSERT(ping.getRetryCount() == 10);
 }
+
+void testMulticastDiscovery(char* configFile){
+
+	ConfigManager *configManager = new ConfigManager(configFile);
+	configManager->loadConfigFile();
+	MulticastDiscovery mDiscovery = configManager->getMulticastDiscovery();
+
+	ASSERT(mDiscovery.getGroupAddress() == "192.168.1.1");
+	ASSERT(mDiscovery.getIpAddress() == "127.1.1.1");
+	ASSERT(mDiscovery.getPort() == 92612);
+	ASSERT(mDiscovery.getTtl() == 5);
+
+}
+
+void testTransport(char* configFile){
+
+	ConfigManager *configManager = new ConfigManager(configFile);
+	configManager->loadConfigFile();
+	Transport transport = configManager->getTransport();
+
+	ASSERT(transport.getIpAddress() == "127.0.0.1");
+	ASSERT(transport.getPort() == 92617);
+}
+
+
 void testDiscoveryInvalid(char* configFile){
 
 	ConfigManager *configManager = new ConfigManager(configFile);
 	configManager->loadConfigFile();
-	DiscoveryParams discovery = configManager->getDiscovery();
+	Ping ping = configManager->getPing();
 
-	ASSERT(discovery.getPingInterval() == 1);
-	ASSERT(discovery.getPingTimeout() == 1);
-	ASSERT(discovery.getRetryCount() == 1);
+	ASSERT(ping.getPingInterval() == 1);
+	ASSERT(ping.getPingTimeout() == 1);
+	ASSERT(ping.getRetryCount() == 1);
 }
 
 void testCurrentNode(char* configFile){
@@ -268,6 +293,9 @@ int main() {
 	testCoreID(getenv("ConfigManagerFilePath1"));
 	testDefaultCoreId(getenv("ConfigManagerFilePath2"));
 	testDirectoryStructure(getenv("ConfigManagerFilePath1"));
+
+	testMulticastDiscovery(getenv("ConfigManagerFilePath1"));
+	testTransport(getenv("ConfigManagerFilePath1"));
 
 }
 

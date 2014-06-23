@@ -21,13 +21,26 @@
         <!-- Make sure to specify the home of your SRCH2 installation.  Example: 
           <srch2Home>/home/joe/srch2</srch2Home>
         -->
+        	
+    <transport>
+   		<port>92617</port>
+   		<ipaddress>127.0.0.1</ipaddress>
+	</transport> 
+    
         
-    <discovery>
+    <Ping>
         <ping-interval>2</ping-interval>
         <ping-timeout>8</ping-timeout>
         <retry-count>10</retry-count>
-    </discovery>    
+    </Ping>  
     
+    <multicastDiscovery>
+   		<group-address>192.168.1.1</group-address>
+   		<port>92612</port>
+   		<ttl>5</ttl>
+   		<ipaddress> 127.1.1.1</ipaddress>
+	</multicastDiscovery>
+
     <node>
         <listeningHostname> 192.168.1.54 </listeningHostname>
         <internalCommunicationPort> 8089 </internalCommunicationPort>
