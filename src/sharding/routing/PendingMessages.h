@@ -165,13 +165,11 @@ public:
         // add it to pendingMessages
         if(requestMessage->isLocal()){
             this->localRequestMessageId = requestMessage->getMessageId();
-            ASSERT(pendingMessages.size() >= 1 && pendingMessages.at(0) == NULL);
-            pendingMessages.at(0) = pendingMessage;
+            localPendingMessages.push_back(pendingMessage);
             // We assume the local message is always stored at the 0th slot.
         }else{
             this->externalRequestMessageId = requestMessage->getMessageId();
-            ASSERT(pendingMessages.size() >= 1);
-            pendingMessages.push_back(pendingMessage);
+            externalPendingMessages.push_back(pendingMessage);
         }
 
         return pendingMessage;
@@ -189,7 +187,6 @@ public:
 
         // 1. get a write lock on pendingMessages, remove the corresponding message
         boost::unique_lock< boost::shared_mutex > lock(_access);
-        ASSERT(pendingMessages.size() >= 1); // local pointer is always NULL, even though if it's NULL
         // this must be the pending request of this message
         ASSERT(responseMessage->getRequestMessageId() == this->localRequestMessageId ||
                 responseMessage->getRequestMessageId() == this->externalRequestMessageId);
@@ -200,24 +197,25 @@ public:
         // is it the local response or the external one?
         if(responseMessage->isLocal()){
             // response is for the local pending message
-        	if(pendingMessages.at(0) != NULL){
-				ASSERT(pendingMessages.at(0)->doesExpectFromThisShard(nodeIdOfResponse));
-				pendingMessage = pendingMessages.at(0);
-				pendingMessageLocation = 0;
-        	} // it it's NULL it means this request has timedout before (this case shouldn't happen normally, just for safety)
+            for(unsigned pendingMessageIndex = 0; pendingMessageIndex < localPendingMessages.size(); ++pendingMessageIndex){
+                PendingMessage<Request, Response> * localPendingMessage = localPendingMessages.at(pendingMessageIndex);
+                if(localPendingMessage != NULL && localPendingMessage->doesExpectFromThisShard(nodeIdOfResponse)){
+                	pendingMessage = localPendingMessage;
+                	pendingMessageLocation = pendingMessageIndex;
+                	break;
+                }
+            }
         }else{
-            // if it's not local, it must be external, this fucntion only is called if this pending message is for
+            // if it's not local, it must be external, this function only is called if this pending message is for
             // this response message
             // iterate on external pending messages and look for nodeId
-            for(unsigned pendingMessageIndex = 1 ; pendingMessageIndex < pendingMessages.size() ; pendingMessageIndex ++){
-                if(pendingMessages.at(pendingMessageIndex) != NULL){
-                    if(pendingMessages.at(pendingMessageIndex)->doesExpectFromThisShard(nodeIdOfResponse)){
-                        // this pending request is responsible of this response
-                        pendingMessage = pendingMessages.at(pendingMessageIndex);
-                        pendingMessageLocation = pendingMessageIndex;
-                        break;
-                    }
-                }// when it is NULL it means the response of this PendingMessage has come earlier.
+            for(unsigned pendingMessageIndex = 0; pendingMessageIndex < externalPendingMessages.size(); ++pendingMessageIndex){
+                PendingMessage<Request, Response> * externalPendingMessage = externalPendingMessages.at(pendingMessageIndex);
+                if(externalPendingMessage != NULL && externalPendingMessage->doesExpectFromThisShard(nodeIdOfResponse)){
+                	pendingMessage = externalPendingMessage;
+                	pendingMessageLocation = pendingMessageIndex;
+                	break;
+                }
             }
         }
         if(pendingMessage == NULL){ // no pending message is found for this response so it is timedout
@@ -228,9 +226,13 @@ public:
         }
 
         //3. Remove pendingMessage from pendingMessages vector
-        // NOTE: this object is not lost, it'll move to the other vector and freed in
+        // NOTE: this object is not lost, it'll moved to the other vector and freed in
         // destrution.
-        pendingMessages.at(pendingMessageLocation) = NULL;
+        if(responseMessage->isLocal()){
+        	localPendingMessages.at(pendingMessageLocation) = NULL;
+        }else{
+        	externalPendingMessages.at(pendingMessageLocation);
+        }
 
         //4. deserialize response message to response object
         // deserialize the message into the response type
@@ -251,9 +253,9 @@ public:
 
         // 6. put the satisfied pending message in pendingMessagesWithResponse
         if(responseMessage->isLocal()){
-            pendingMessagesWithResponse.at(0) = pendingMessage;
+            localPendingMessagesWithResponse.push_back(pendingMessage);
         }else{
-            pendingMessagesWithResponse.push_back(pendingMessage);
+            externalPendingMessagesWithResponse.push_back(pendingMessage);
         }
 
         // if it's not a waitForAll case we call callback right here.
@@ -274,13 +276,11 @@ public:
         // move on all pending messages and check if the are timed out or not
         // 1. get an X lock on the pendingMessages vector
         boost::unique_lock< boost::shared_mutex > lock(_access);
-        ASSERT(pendingMessages.size() >= 1); // local pointer is always NULL, even though if it's NULL
         // 2. move on pendingMessages and check them for timeout
-        for(unsigned pendingMessageIndex = 0; pendingMessageIndex < pendingMessages.size(); ++pendingMessageIndex){
-            PendingMessage<Request, Response> * pendingMessage = pendingMessages.at(pendingMessageIndex);
+        for(unsigned pendingMessageIndex = 0; pendingMessageIndex < localPendingMessages.size(); ++pendingMessageIndex){
+            PendingMessage<Request, Response> * pendingMessage = localPendingMessages.at(pendingMessageIndex);
             if(pendingMessage == NULL){
-                // if pendingMessageItr is NULL, it's either the local one which has not come yet
-                // or it's already accepted the response
+                // if pendingMessageItr is NULL, it's already accepted the response
                 continue;
             }
             // the message is timeout, we should move it from pendingMessages to
@@ -288,17 +288,29 @@ public:
             if(pendingMessage->isTimedOut()){
                 // set the response message and response object to NULL to indicate timeout
                 pendingMessage->setResponseMessageAndObject(NULL , NULL);
-
                 // move it to pendingMessagesWithResponse
-                if(pendingMessage->getRequestMessage()->isLocal()){
-                    pendingMessagesWithResponse.at(0) = pendingMessage;
-                }else{
-                    pendingMessagesWithResponse.push_back(pendingMessage);
-                }
-
+                localPendingMessagesWithResponse.push_back(pendingMessage);
                 // set it null in pendingMessages
-                pendingMessages.at(pendingMessageIndex) = NULL;
-
+                localPendingMessages.at(pendingMessageIndex) = NULL;
+                // call timeout of aggregator
+                aggregator->processTimeout(pendingMessage, ResponseAggregatorMetadata());
+            }
+        }
+        for(unsigned pendingMessageIndex = 0; pendingMessageIndex < externalPendingMessages.size(); ++pendingMessageIndex){
+            PendingMessage<Request, Response> * pendingMessage = externalPendingMessages.at(pendingMessageIndex);
+            if(pendingMessage == NULL){
+                // if pendingMessageItr is NULL, it's already accepted the response
+                continue;
+            }
+            // the message is timeout, we should move it from pendingMessages to
+            // pendingMessagesWithResponse and leave response pointers empty
+            if(pendingMessage->isTimedOut()){
+                // set the response message and response object to NULL to indicate timeout
+                pendingMessage->setResponseMessageAndObject(NULL , NULL);
+                // move it to pendingMessagesWithResponse
+                externalPendingMessagesWithResponse.push_back(pendingMessage);
+                // set it null in pendingMessages
+                externalPendingMessages.at(pendingMessageIndex) = NULL;
                 // call timeout of aggregator
                 aggregator->processTimeout(pendingMessage, ResponseAggregatorMetadata());
             }
@@ -320,11 +332,7 @@ public:
     bool checkAllMsgProcessed(){
         // get a read lock on pendingMessages,
         // this function should only be called within a locked scope
-        unsigned numberOfPendingMessagesWithResponse = pendingMessagesWithResponse.size() ;
-        // because the first one the place holder for local pending message and it's always there
-        if(pendingMessagesWithResponse.at(0) == NULL){
-            numberOfPendingMessagesWithResponse--;
-        }
+        unsigned numberOfPendingMessagesWithResponse = localPendingMessagesWithResponse.size() + externalPendingMessagesWithResponse.size() ;
         return (numberOfPendingMessagesWithResponse == totalNumberOfPendingMessages);
     }
 
@@ -341,9 +349,6 @@ private:
 
         this->aggregator = aggregator;
         this->aggregator->preProcess(ResponseAggregatorMetadata() );
-        // index zero is for the local node.
-        pendingMessages.push_back(NULL);
-        pendingMessagesWithResponse.push_back(NULL);
         // initialize these members to avoid garbage values
         localRequestMessageId = 0;
         externalRequestMessageId = 0;
@@ -351,46 +356,62 @@ private:
     ~PendingRequest(){
         // aggregator is wrapped in a shared_ptr so it's deleted when all shared_ptr objects are deleted
         // go over all pending messages and delete them.
-        if(shouldWaitForAll()){
+    	vector <PendingMessage<Request, Response> *> pendingMessagesWithResponse;
+    	for(typename vector <PendingMessage<Request, Response> *>::iterator pendingMessageItr = localPendingMessagesWithResponse.begin() ;
+                pendingMessageItr != localPendingMessagesWithResponse.end() ; ++pendingMessageItr){
+    		pendingMessagesWithResponse.push_back(*pendingMessageItr);
+    	}
+    	for(typename vector <PendingMessage<Request, Response> *>::iterator pendingMessageItr = externalPendingMessagesWithResponse.begin() ;
+                pendingMessageItr != externalPendingMessagesWithResponse.end() ; ++pendingMessageItr){
+    		pendingMessagesWithResponse.push_back(*pendingMessageItr);
+    	}
+    	if(shouldWaitForAll()){
             // we should call callBackAll here
             this->aggregator->callBack(pendingMessagesWithResponse);
         }
         this->aggregator->finalize(ResponseAggregatorMetadata());
-        for(typename vector <PendingMessage<Request, Response> *>::iterator pendingMessageItr = pendingMessages.begin() ;
-                pendingMessageItr != pendingMessages.end() ; ++pendingMessageItr){
+    	for(typename vector <PendingMessage<Request, Response> *>::iterator pendingMessageItr = localPendingMessages.begin() ;
+                pendingMessageItr != localPendingMessages.end() ; ++pendingMessageItr){
             ASSERT(*pendingMessageItr == NULL);
-        }
+    	}
+    	for(typename vector <PendingMessage<Request, Response> *>::iterator pendingMessageItr = externalPendingMessages.begin() ;
+                pendingMessageItr != externalPendingMessages.end() ; ++pendingMessageItr){
+            ASSERT(*pendingMessageItr == NULL);
+    	}
 
 
         // request message and object are shared so they must be deleted only once.
         // delete local request message
-        if(pendingMessagesWithResponse.at(0) != NULL){ // for example for insert, local pending message can be NULL
-            messageAllocator->deallocateByMessagePointer(pendingMessagesWithResponse.at(0)->requestMessage);
-        }
-        // delete external request message
-        if(pendingMessagesWithResponse.size() > 1){
-            ASSERT(pendingMessagesWithResponse.at(1) != NULL);
-            messageAllocator->deallocateByMessagePointer(pendingMessagesWithResponse.at(1)->requestMessage);
-        }
+    	for(typename vector <PendingMessage<Request, Response> *>::iterator pendingMessageItr = localPendingMessagesWithResponse.begin() ;
+                pendingMessageItr != localPendingMessagesWithResponse.end() ; ++pendingMessageItr){
+    		if(*pendingMessageItr != NULL){
+                messageAllocator->deallocateByMessagePointer((*pendingMessageItr)->requestMessage);
+                break;
+    		}
+    	}
+    	// delete external request message
+    	for(typename vector <PendingMessage<Request, Response> *>::iterator pendingMessageItr = externalPendingMessagesWithResponse.begin() ;
+                pendingMessageItr != externalPendingMessagesWithResponse.end() ; ++pendingMessageItr){
+    		if(*pendingMessageItr != NULL){
+                messageAllocator->deallocateByMessagePointer((*pendingMessageItr)->requestMessage);
+                break;
+    		}
+    	}
         // delete request object which is even shared between local and external messages
-        if(pendingMessagesWithResponse.at(0) != NULL){
-            delete pendingMessagesWithResponse.at(0)->requestObject;
-        }else{
-            if(pendingMessagesWithResponse.size() > 1){
-                ASSERT(pendingMessagesWithResponse.at(1) != NULL);
-                delete pendingMessagesWithResponse.at(1)->requestObject;
-            }
-        }
+    	for(typename vector <PendingMessage<Request, Response> *>::iterator pendingMessageItr = pendingMessagesWithResponse.begin() ;
+                pendingMessageItr != pendingMessagesWithResponse.end() ; ++pendingMessageItr){
+    		if(*pendingMessageItr != NULL){
+                delete (*pendingMessageItr)->requestObject;
+                break;
+    		}
+    	}
 
-
-        for(typename vector <PendingMessage<Request, Response> *>::iterator resolvedPendingMessageItr = pendingMessagesWithResponse.begin() ;
-                resolvedPendingMessageItr != pendingMessagesWithResponse.end() ; ++resolvedPendingMessageItr){
-            ASSERT(resolvedPendingMessageItr == pendingMessagesWithResponse.begin() ||
-                    *resolvedPendingMessageItr != NULL);
-            if(*resolvedPendingMessageItr != NULL){
-                delete *resolvedPendingMessageItr;
-            }
-        }
+    	for(typename vector <PendingMessage<Request, Response> *>::iterator pendingMessageItr = pendingMessagesWithResponse.begin() ;
+                pendingMessageItr != pendingMessagesWithResponse.end() ; ++pendingMessageItr){
+    		if(*pendingMessageItr != NULL){
+    			delete *pendingMessageItr;
+    		}
+    	}
     }
 
     MessageAllocator * messageAllocator;
@@ -403,15 +424,15 @@ private:
     MessageID_t externalRequestMessageId;
 
     // This vector contains the pointer to all pending messages which have not received any responses
-    // NOTE: index 0 of this vector points to the pending message corresponding to the local
-    // message sent for this request. from index 1 we keep pending messages of external shards.
-    vector<PendingMessage<Request, Response> *> pendingMessages;
+    vector<PendingMessage<Request, Response> *> localPendingMessages;
+    vector<PendingMessage<Request, Response> *> externalPendingMessages;
 
     // When a response comes, it's passed to the corresponding pendingMessage by
     // iterating over pendingMessages. This pendingMessage then stores the response message and
     // object and if it's a waitForAll we store that in this vector. Otherwise, it's directly passed to aggregator
     // functions.
-    vector <PendingMessage<Request, Response> *> pendingMessagesWithResponse;
+    vector <PendingMessage<Request, Response> *> externalPendingMessagesWithResponse;
+    vector <PendingMessage<Request, Response> *> localPendingMessagesWithResponse;
 
     // indicates whether PendingMessage needs to wait for all PendingMessages to resolve to call
     // aggregators callback or it can call the callback upon receiving of each one.
