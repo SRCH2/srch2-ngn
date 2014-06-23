@@ -76,8 +76,14 @@ void InternalMessageBroker::deleteResponseObjectBasedOnType(Message * replyMsg, 
         delete (CommandStatus*)responseObject;
         return;
     case SearchResultsMessageType: // -> for SerializedQueryResults object
+    	delete (SearchCommandResults*)responseObject;
+    	return;
     case GetInfoResultsMessageType: // -> for GetInfoResults object
+    	delete (GetInfoCommand*)responseObject;
+    	return;
     case StatusMessageType: // -> for CommandStatus object (object returned from insert, delete, update)
+    	delete (CommandStatus*)responseObject;
+    	return;
     default:
         ASSERT(false);
         return;

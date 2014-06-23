@@ -38,6 +38,9 @@ public:
 				ASSERT(primaryShards->at(sid)->getShardState() == SHARDSTATE_UNALLOCATED);
 
 				primaryShards->at(sid)->setShardState(SHARDSTATE_INDEXING);
+				configManager->createShardDir(cluster->getClusterName(),
+										cluster->getCurrentNode()->getName(),
+										currentNodeShardInfo->at(cid)->getCore()->getName(), primaryShards->at(sid)->getShardId());
 				string directoryPath = configManager->getShardDir(cluster->getClusterName(),
 						cluster->getCurrentNode()->getName(),
 						currentNodeShardInfo->at(cid)->getCore()->getName(), primaryShards->at(sid)->getShardId());

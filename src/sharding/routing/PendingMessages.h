@@ -200,9 +200,11 @@ public:
         // is it the local response or the external one?
         if(responseMessage->isLocal()){
             // response is for the local pending message
-            ASSERT(pendingMessages.at(0)->doesExpectFromThisShard(nodeIdOfResponse));
-            pendingMessage = pendingMessages.at(0);
-            pendingMessageLocation = 0;
+        	if(pendingMessages.at(0) != NULL){
+				ASSERT(pendingMessages.at(0)->doesExpectFromThisShard(nodeIdOfResponse));
+				pendingMessage = pendingMessages.at(0);
+				pendingMessageLocation = 0;
+        	} // it it's NULL it means this request has timedout before (this case shouldn't happen normally, just for safety)
         }else{
             // if it's not local, it must be external, this fucntion only is called if this pending message is for
             // this response message
