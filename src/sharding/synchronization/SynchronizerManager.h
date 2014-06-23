@@ -48,7 +48,7 @@ public:
 	/*
 	 *  Initialize internal state.
 	 */
-	SyncManager(ConfigManager& cm, TransportManager& tm, unsigned masterNodeId);
+	SyncManager(ConfigManager& cm, TransportManager& tm);
 	/*
 	 *   Free resources.
 	 */

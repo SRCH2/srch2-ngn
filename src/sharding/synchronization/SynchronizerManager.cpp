@@ -20,7 +20,7 @@ void * bootSynchronizer(void *arg) {
 	return NULL;
 }
 
-SyncManager::SyncManager(ConfigManager& cm, TransportManager& tm, unsigned master) :
+SyncManager::SyncManager(ConfigManager& cm, TransportManager& tm) :
 		transport(tm), config(cm) {
 
 	// cluster = cm.getCluster(); // commented out by Jamshid and replaced with next block
@@ -62,6 +62,7 @@ SyncManager::SyncManager(ConfigManager& cm, TransportManager& tm, unsigned maste
 	}
 	this->currentNodeId = clusterReadview->getCurrentNode()->getId();
 	this->isCurrentNodeMaster = clusterReadview->isMasterNode(this->currentNodeId);
+	this->masterNodeId = clusterReadview->getMasterNodeId();
 
 	/*********************************************************************/
 	if (isCurrentNodeMaster) {
