@@ -35,7 +35,11 @@ enum ShardingMessageType{
     ClusterStatusMessageType,
     LeaderElectionProposalMessageType,
     LeaderElectionAckMessageType,
-    LeaderElectionDenyMessageType
+    LeaderElectionDenyMessageType,
+    NewNodeNotificationMessageType,
+    ClusterInfoRequestMessageType,
+    ClusterInfoReplyMessageType,
+    ClusterUpdateMessageType
 };
 
 enum RoutingManagerAPIReturnType{

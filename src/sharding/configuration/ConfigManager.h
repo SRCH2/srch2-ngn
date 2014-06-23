@@ -191,8 +191,8 @@ public:
 	{
 		this->nodeId = 0;
 		this->nodeName = "";
-		this->ipAddress = "";
-		this->portNumber = 0;
+		this->ipAddress = "0.0.0.0";
+		this->portNumber = 8087;
 		this->nodeMaster = true;
 		this->nodeData = true;
 		this->dataDir = "";
@@ -266,6 +266,10 @@ public:
 		return this->portNumber;
 	}
 
+	void setPortNumber(unsigned portNumber) {
+		this->portNumber = portNumber;
+	}
+
 
 	Shard getShardById(const ShardId& shardId);
 	void addShard(const ShardId& shardId);
@@ -279,21 +283,50 @@ public:
 	unsigned short getPort(PortType_t portType) const;
 	void setPort(PortType_t portType, unsigned short portNumber);
 
-	// TODO (for Surendra): refine this iterator
-	// const Node& operator = (const Node& node);
+	string serialize() {
+		stringstream ss;
+		ss.write((const char *)&nodeId, sizeof(nodeId));
+		unsigned size = nodeName.size();
+		ss.write((const char *)&size, sizeof(unsigned));
+		ss.write(nodeName.c_str(), nodeName.size());
+		size = ipAddress.size();
+		ss.write((const char *)&size, sizeof(unsigned));
+		ss.write(ipAddress.c_str(), ipAddress.size());
+		ss.write((const char *)&portNumber, sizeof(portNumber));
+		ss.write((const char *)&thisIsMe, sizeof(thisIsMe));
+		ss.write((const char *)&nodeData, sizeof(nodeData));
+		ss.write((const char *)&nodeMaster, sizeof(nodeMaster));
+		return ss.str();
+	}
 
-	// an iterator to go through the shards in this node
-	//class ShardIterator {
-	//public:
-	//unsigned first; // TODO: Ask Surendra
-	//Shard second;
-	//bool operator == (NodeIterator* rhs);
-	//};
+	void deserialize(char *serlializedNode) {
 
-	//typedef NodeIterator * Iterator;
-	//Iterator begin();
-	//Iterator next();
-	//Iterator end();
+		char *buffer = serlializedNode;
+		nodeId = *(unsigned *)buffer;
+		buffer += sizeof(nodeId);
+
+		unsigned size = *(unsigned *)buffer;
+		buffer += sizeof(size);
+		nodeName.assign(buffer, buffer + size);
+		buffer += size;
+
+		size = *(unsigned *)buffer;
+		buffer += sizeof(size);
+		ipAddress.assign(buffer, buffer + size);
+		buffer += size;
+
+		portNumber = *(unsigned *)buffer;
+		buffer += sizeof(portNumber);
+
+		thisIsMe = *(bool *)buffer;
+		buffer += sizeof(thisIsMe);
+
+		nodeData = *(bool *)buffer;
+		buffer += sizeof(nodeData);
+
+		nodeMaster = *(bool *)buffer;
+		buffer += sizeof(nodeMaster);
+	}
 
 private:
 	unsigned nodeId;
@@ -542,6 +575,42 @@ public:
 			nodes->erase(nodes->begin() + index);
 
 		isLocked = false;
+	}
+
+	void addNewNode(const Node& node) {
+		//spin to acquire lock
+		while (!__sync_bool_compare_and_swap (&isLocked, false, true)) ;
+
+		// first check whether node is already present or not.
+		vector<Node>* nodes = this->cluster.getNodes();
+		unsigned index = 0;
+		unsigned totalNodes = nodes->size();
+		for(; index < totalNodes; ++index){
+			if((*nodes)[index].getId() == node.getId()){
+				break;
+			}
+		}
+		if (index == totalNodes) {
+			nodes->push_back(node);
+		}
+		isLocked = false;
+		return;
+	}
+
+	string serializeClusterNodes() {
+		while (!__sync_bool_compare_and_swap (&isLocked, false, true)) ;
+		stringstream ss;
+		vector<Node>* nodes = this->cluster.getNodes();
+		unsigned size = nodes->size();
+		ss.write((const char *)&size, sizeof(size));
+		for(unsigned i = 0; i < nodes->size(); ++i){
+			string serializedNode = nodes->operator[](i).serialize();
+			size = serializedNode.size();
+			ss.write((const char *)&size, sizeof(size));
+			ss.write(serializedNode.c_str(), size);
+		}
+		isLocked = false;
+		return ss.str();
 	}
 
 	bool isValidNode(unsigned nodeId) {

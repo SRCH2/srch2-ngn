@@ -3,7 +3,6 @@
 
 #include "sharding/configuration/ShardingConstants.h"
 #include "sharding/transport/Message.h"
-#include "sharding/transport/RouteMap.h"
 #include "sharding/processor/ResultsAggregatorAndPrint.h"
 #include "core/util/Assert.h"
 #include <boost/thread/mutex.hpp>

@@ -32,6 +32,7 @@
 #include "util/Version.h"
 #include <event2/http.h>
 #include <event2/thread.h>
+#include "event2/event.h"
 #include <signal.h>
 
 #include <sys/types.h>
@@ -49,6 +50,7 @@
 #include "processor/DistributedProcessorExternal.h"
 #include "configuration/ConfigManager.h"
 #include "synchronization/SynchronizerManager.h"
+#include "discovery/DiscoveryManager.h"
 
 
 namespace po = boost::program_options;
@@ -487,6 +489,14 @@ void* dispatch(void *arg) {
 	return NULL;
 }
 
+void* dispatchInternalEvent(void *arg) {
+	while(true) {
+		event_base_dispatch((struct event_base*) arg);
+		sleep(1);
+	}
+	return NULL;
+}
+
 void parseProgramArguments(int argc, char** argv,
 		po::options_description& description,
 		po::variables_map& vm_command_line_args) {
@@ -568,15 +578,14 @@ static void killServer(int signal) {
     	pthread_cancel(threadsToHandleInternalRequests[i]);
 #endif
     }
-    for(srch2http::RouteMap::iterator conn = 
-        transportManager->getRouteMap()->begin();
-        conn != transportManager->getRouteMap()->end(); ++conn) {
+    for(srch2http::ConnectionMap::iterator conn =
+        transportManager->getConnectionMap().begin();
+        conn != transportManager->getConnectionMap().end(); ++conn) {
       close(conn->second.fd);
     }
 #ifndef ANDROID
     pthread_cancel(transportManager->getListeningThread());
 #endif
-    close(transportManager->getRouteMap()->getListeningSocket());
 
 #ifdef ANDROID
     exit(0);
@@ -860,18 +869,27 @@ int main(int argc, char** argv) {
 	std::vector<srch2http::Node>& nodes = *serverConf->getCluster()->getNodes();
 
 	// create Transport Module
-	transportManager = new srch2http::TransportManager(evBasesForInternalRequests, nodes);
+	transportManager = new srch2http::TransportManager(evBasesForInternalRequests);
 
-	// start threads for internal messages
+	// start threads for internal messages.
+	// Note: eventbases are not assigned any event yet.
 	for(int j=0; j < evBasesForInternalRequests.size(); ++j){
-		if (pthread_create(&threadsToHandleInternalRequests[j], NULL, dispatch, evBasesForInternalRequests[j]) != 0){
+		if (pthread_create(&threadsToHandleInternalRequests[j], NULL, dispatchInternalEvent, evBasesForInternalRequests[j]) != 0){
 			return 255;
 		}
 	}
-//	// run SM
-	unsigned masterNodeId =  serverConf->getCluster()->getNodes()->at(0).getId(); // TODO temporary for V0
+	/*
+	 *  Start Synchronization manager thread. It performs following operation.
+	 *  1. Start discovery thread to find existing cluster and join it. If there is no cluster
+	 *     then this node becomes master.
+	 *  2. Once the node joins the cluster, SM will use TM to setup a connection with master, so
+	 *     that the connection can be used for inter-node communications.
+	 *  3. SM get cluster info from master and setup connection with all the node in master.
+	 */
+
 	srch2http::SyncManager  *syncManager = new srch2http::SyncManager(*serverConf ,
-			*transportManager, masterNodeId);
+			*transportManager);
+	syncManager->startDiscovery();
 	pthread_t *synchronizerThread = new pthread_t;
 	pthread_create(synchronizerThread, NULL, srch2http::bootSynchronizer, (void *)syncManager);
 

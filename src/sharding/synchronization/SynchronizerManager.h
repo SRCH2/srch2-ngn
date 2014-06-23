@@ -16,6 +16,8 @@
 #include <boost/thread.hpp>
 #include <boost/unordered_map.hpp>
 #include <iostream>
+#include "discovery/DiscoveryManager.h"
+
 using namespace std;
 
 namespace srch2 {
@@ -24,9 +26,12 @@ namespace httpwrapper {
 #define FETCH_UNSIGNED(x) *((unsigned *)(x))
 #define MSG_QUEUE_ARRAY_SIZE 1024
 
+
+static const char OPS_DELETE_NODE = 1;
+
 class SMCallBackHandler;
 class MessageHandler;
-
+class DiscoveryCallBack;
 
 /*
  *   Entry point for the synchronizer thread. void * => Synchronizer *
@@ -44,11 +49,12 @@ void *bootSynchronizer(void *arg) ;
 class SyncManager {
 	friend class ClientMessageHandler;
 	friend class MasterMessageHandler;
+	friend class DiscoveryCallBack;
 public:
 	/*
 	 *  Initialize internal state.
 	 */
-	SyncManager(ConfigManager& cm, TransportManager& tm, unsigned masterNodeId);
+	SyncManager(ConfigManager& cm, TransportManager& tm);
 	/*
 	 *   Free resources.
 	 */
@@ -58,6 +64,12 @@ public:
 	 *  Note: should be called in new thread otherwise current thread will block
 	 */
 	void run();
+	/*
+	 *  This function implements initial discovery logic of the node. This should be called
+	 *  in the main thread. Once this function returns the node is ready for handling external
+	 *  request.
+	 */
+	void startDiscovery();
 private:
 	///
 	///  Private member functions start here.
@@ -102,8 +114,11 @@ private:
 	SMCallBackHandler *callBackHandler;
 	MessageHandler *messageHandler;
 	ConfigManager& config;
-	std::vector<Node> nodesInCluster;
-
+	std::vector<Node> *nodesInCluster;
+	MulticastDiscovery* discoveryMgr;
+	DiscoveryCallBack  *discoveryCallBack;
+	unsigned nodeIds;
+	bool configUpdatesDone;
 };
 
 class SMCallBackHandler : public CallBackHandler{
@@ -136,6 +151,11 @@ public:
 	 *  Get heartbeat message's timestamp.
 	 */
 	std::time_t getHeartBeatMessageTime();
+
+	/*
+	 *   Get queued message from a given node's queue
+	 */
+	void getQueuedMessages(Message**inputMessage, unsigned nodeId);
 
 private:
 	bool isMaster;
