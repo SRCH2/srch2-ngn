@@ -212,6 +212,20 @@ CoreShardContainer::CoreShardContainer(const CoreShardContainer & coreShardConta
 		this->replicaShards.push_back(new Shard(**shardItr));
 	}
 }
+CoreShardContainer::~CoreShardContainer(){
+	// TODO : we don't delete core objects here, because
+	// since currently we don't change cores, the pointer to CoreInfo_t is
+	// always passed ....
+	// delete shards
+	for(vector<Shard *>::iterator shardItr = primaryShards.begin(); shardItr != primaryShards.end(); ++ shardItr){
+		delete *shardItr;
+	}
+	// delete shards
+	for(vector<Shard *>::iterator shardItr = replicaShards.begin(); shardItr != replicaShards.end(); ++ shardItr){
+		delete *shardItr;
+	}
+}
+
 CoreInfo_t * CoreShardContainer::getCore(){
 	return core;
 }

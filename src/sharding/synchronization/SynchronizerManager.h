@@ -69,6 +69,11 @@ public:
 		for(std::map<Node *, std::vector<CoreShardContainer * > >::iterator shardInfoItr = shardInformation->begin();
 				shardInfoItr != shardInformation->end(); ++shardInfoItr){
 			if(shardInfoItr->first->getId() == nodeId){
+				// delete node
+				delete shardInfoItr->first;
+				for(unsigned cid = 0 ; cid < shardInfoItr->second.size(); ++cid){
+					delete shardInfoItr->second.at(cid);
+				}
 				shardInformation->erase(shardInfoItr);
 				// commit provides the changes writeview to readers
 				config.commitClusterMetadata();

@@ -86,6 +86,7 @@ class CoreShardContainer{
 public:
 	CoreShardContainer(CoreInfo_t * core);
 	CoreShardContainer(const CoreShardContainer & coreShardContainer);
+	~CoreShardContainer();
 	CoreInfo_t * getCore();
 	const CoreInfo_t * getCore() const;
 	void setCore(CoreInfo_t * core);
