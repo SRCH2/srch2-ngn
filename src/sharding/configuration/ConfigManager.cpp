@@ -43,6 +43,7 @@ namespace httpwrapper {
 const char* const ConfigManager::nodeListeningHostNameTag = "listeninghostname";
 const char* const ConfigManager::nodeListeningPortTag = "internalcommunicationport";
 const char* const ConfigManager::nodeCurrentTag = "this-is-me";
+const char* const ConfigManager::nodeNumberOfShardsTag = "number-of-shards";
 const char* const ConfigManager::nodeNameTag = "node-name";
 const char* const ConfigManager::nodeMasterTag = "node-master";
 const char* const ConfigManager::nodeDataTag = "node-data";
@@ -241,12 +242,19 @@ void ConfigManager::loadConfigFile()
 			this->getClusterWriteView()->getShardInformation();
 	std::vector<CoreInfo_t *> * cores = this->getClusterWriteView()->getCores();
 
+	unsigned partitionIdCouter = 0;
 	for(std::map<Node *, std::vector<CoreShardContainer * > >::iterator nodeEntryItr = shardingInformation->begin();
 			nodeEntryItr != shardingInformation->end(); ++nodeEntryItr){
 
 		for(std::vector<CoreInfo_t *>::iterator coreItr = cores->begin(); coreItr != cores->end(); ++coreItr){
 			CoreShardContainer * coreShardContainer = new CoreShardContainer(*coreItr);
-			coreShardContainer->getPrimaryShards()->push_back(new Shard(nodeEntryItr->first->getId(), (*coreItr)->getCoreId(), nodeEntryItr->first->getId()));
+			// since this core is temporary anyways, we use the number of p shards from each node for every code
+			// insert as many shards as specified in config file
+			for(unsigned sid = 0 ; sid < nodeEntryItr->first->getDefaultNumberOfPrimaryShards(); sid++){
+				coreShardContainer->getPrimaryShards()->push_back(new Shard(nodeEntryItr->first->getId(),
+						(*coreItr)->getCoreId(), partitionIdCouter));
+				partitionIdCouter ++;
+			}
 			nodeEntryItr->second.push_back(coreShardContainer);
 		}
 
@@ -2016,11 +2024,12 @@ void ConfigManager::parseNode(std::vector<Node *>* nodes, xml_node& nodeTag, std
     for (xml_node nodeTemp = nodeTag; nodeTemp; nodeTemp = nodeTemp.next_sibling("node")) {
 
     	bool nameDefined = false, portDefined = false, ipAddressDefined = false;
-    	bool thisIsMeDefined = false, masterDefined = false, nodeDataDefined = false;
+    	bool thisIsMeDefined = false, masterDefined = false, nodeDataDefined = false, nodeNumberOfShardsDefined = false;
     	bool dataDirDefined = false, homeDefined = false;
         std::string ipAddress = "", dataDir = "", nodeName = "", nodeHome = "";
 		unsigned nodeId = 0, portNumber = 0, numOfThreads = 0;
 		bool nodeMaster, nodeData, thisIsMe;
+		unsigned nodeNumberOfShards;
 
 		for (xml_node childNode = nodeTemp.first_child(); childNode; childNode = childNode.next_sibling()) {
 
@@ -2086,6 +2095,20 @@ void ConfigManager::parseNode(std::vector<Node *>* nodes, xml_node& nodeTag, std
 					}
 
 				}
+
+				if (name.compare(nodeNumberOfShardsTag) == 0) {
+					if(nodeNumberOfShardsDefined == false){
+						string temp = (childNode.text().get());
+						trimSpacesFromValue(temp, nodeNumberOfShardsTag, parseWarnings);
+						nodeNumberOfShards = (uint)atol(temp.c_str());
+						nodeNumberOfShardsDefined = true;
+					}else{
+					    parseWarnings << "Duplicate definition of \"" << nodeNumberOfShardsTag <<
+					    		"\".  The engine will use the first value: " << nodeNumberOfShards;
+					}
+
+				}
+
 				if (name.compare(nodeMasterTag) == 0) {
 					if(masterDefined == false){
 						string temp = (childNode.text().get());
@@ -2160,7 +2183,7 @@ void ConfigManager::parseNode(std::vector<Node *>* nodes, xml_node& nodeTag, std
 		}
 
 		if (thisIsMe == true) {
-			nodes->push_back(new Node(nodeName, ipAddress, portNumber, thisIsMe, nodeMaster, nodeData, dataDir, nodeHome));
+			nodes->push_back(new Node(nodeName, ipAddress, portNumber, thisIsMe, nodeMaster, nodeData, dataDir, nodeHome, nodeNumberOfShards));
 			xml_node childNode;
 
 			for (unsigned int i = 0; portNameMap[i].portName != NULL; i++) {
@@ -2176,7 +2199,7 @@ void ConfigManager::parseNode(std::vector<Node *>* nodes, xml_node& nodeTag, std
 				}
 			}
 		} else if (thisIsMe == false) {
-			nodes->push_back(new Node(nodeName, ipAddress, portNumber, thisIsMe));
+			nodes->push_back(new Node(nodeName, ipAddress, portNumber, thisIsMe, nodeNumberOfShards));
 		}
 	}
 }

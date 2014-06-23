@@ -36,6 +36,7 @@
         <listeningHostname> 127.0.0.1 </listeningHostname>
         <internalCommunicationPort> 3095 </internalCommunicationPort>
         <this-is-me> true </this-is-me>
+        <number-of-shards>2</number-of-shards>
         <node-name> queen </node-name>
         <node-master> true </node-master>
         <node-data> true </node-data>
@@ -53,6 +54,7 @@
 
     <node>
         <this-is-me> false </this-is-me>
+        <number-of-shards>2</number-of-shards>
         <listeningHostname> 127.0.0.1 </listeningHostname>
         <node-name> frozen </node-name>
         <internalCommunicationPort> 3096 </internalCommunicationPort>
@@ -63,6 +65,7 @@
         <listeningHostname> 127.0.0.1 </listeningHostname>
         <internalCommunicationPort> 3097 </internalCommunicationPort>
         <this-is-me> false </this-is-me>
+        <number-of-shards>2</number-of-shards>
         <node-name> rio </node-name>
     </node>
 
@@ -70,6 +73,7 @@
         <listeningHostname> 127.0.0.1 </listeningHostname>
         <internalCommunicationPort> 3098 </internalCommunicationPort>
         <this-is-me> false </this-is-me>
+        <number-of-shards>2</number-of-shards>
         <node-name> lion </node-name>
     </node>
 

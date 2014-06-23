@@ -378,6 +378,7 @@ private:
 	static const char* const nodeListeningHostNameTag;
 	static const char* const nodeListeningPortTag;
 	static const char* const nodeCurrentTag;
+	static const char* const nodeNumberOfShardsTag ;
 	static const char* const nodeNameTag;
 	static const char* const nodeMasterTag;
 	static const char* const nodeDataTag;

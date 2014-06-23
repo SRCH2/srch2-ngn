@@ -23,10 +23,12 @@ Node::Node()
 	this->thisIsMe = false;
 	//coreToShardsMap has to be initialized
 
+	this->numberOfPrimaryShards = 1;
+
 }
 
 Node::Node(const std::string& nodeName, const std::string& ipAddress,
-		unsigned portNumber, bool thisIsMe){
+		unsigned portNumber, bool thisIsMe, unsigned numberOfPShards){
 	this->nodeId = 0;
 	this->nodeName = nodeName;
 	this->ipAddress = ipAddress;
@@ -37,9 +39,12 @@ Node::Node(const std::string& nodeName, const std::string& ipAddress,
 	this->dataDir = "";
 	this->homeDir = "";
 	this->numberOfThreads = 1;
+	this->numberOfPrimaryShards = 0; // this constructor is used for other nodes
 }
 
-Node::Node(std::string& nodeName, std::string& ipAddress, unsigned portNumber,bool thisIsMe, bool nodeMaster, bool nodeData,std::string& dataDir, std::string& homeDir) {
+Node::Node(std::string& nodeName, std::string& ipAddress,
+		unsigned portNumber,bool thisIsMe, bool nodeMaster,
+		bool nodeData,std::string& dataDir, std::string& homeDir, unsigned numberOfPShards) {
 	this->nodeId = 0;
 	this->nodeName = nodeName;
 	this->ipAddress = ipAddress;
@@ -50,7 +55,7 @@ Node::Node(std::string& nodeName, std::string& ipAddress, unsigned portNumber,bo
 	this->dataDir = dataDir;
 	this->homeDir = homeDir;
 	this->numberOfThreads = 1; // default value is 1
-
+	this->numberOfPrimaryShards = numberOfPShards;
 }
 
 std::string Node::getHomeDir() const {
@@ -86,6 +91,10 @@ void Node::setId(unsigned nodeId){
 
 unsigned int Node::getPortNumber() const{
 	return this->portNumber;
+}
+
+unsigned Node::getDefaultNumberOfPrimaryShards() const{
+	return this->numberOfPrimaryShards;
 }
 
 unsigned short Node::getPort(PortType_t portType) const

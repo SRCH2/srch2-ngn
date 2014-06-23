@@ -23,9 +23,9 @@ public:
 	Node();
 
 	Node(const std::string& nodeName, const std::string& ipAddress,
-			unsigned portNumber, bool thisIsMe);
+			unsigned portNumber, bool thisIsMe, unsigned numberOfPShards = 1);
 	Node(std::string& nodeName, std::string& ipAddress, unsigned portNumber,
-			bool thisIsMe, bool nodeMaster, bool nodeData,std::string& dataDir, std::string& homeDir);
+			bool thisIsMe, bool nodeMaster, bool nodeData,std::string& dataDir, std::string& homeDir, unsigned numberOfPShards);
 
 	Node(const Node & node){
 		this->nodeId = node.nodeId;
@@ -39,6 +39,7 @@ public:
 		this->dataDir = node.dataDir;
 		this->numberOfThreads = node.numberOfThreads;
 		this->thisIsMe = node.thisIsMe;
+		this->numberOfPrimaryShards = node.numberOfPrimaryShards;
 	}
 
 	std::string getHomeDir() const;
@@ -50,6 +51,8 @@ public:
 	unsigned int getId() const;
 	void setId(unsigned nodeId);
 	unsigned int getPortNumber() const;
+
+	unsigned getDefaultNumberOfPrimaryShards() const;
 
 
 	bool thisIsMe; // temporary for V0
@@ -92,6 +95,9 @@ private:
 	string dataDir;
 	unsigned int numberOfThreads;
 	// other node-related info
+
+	// temporary for phase 1 of V1
+	unsigned numberOfPrimaryShards;
 };
 
 }
