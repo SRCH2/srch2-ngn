@@ -111,6 +111,21 @@ public:
 class ConfigManager {
 public:
 
+	string createSRCH2Home();
+	string createClusterDir(const string& clusterName);
+	string createNodeDir(const string& clusterName, const string& nodeName);
+	string createCoreDir(const string& clusterName, const string& nodeName, const string& coreName);
+	string createShardDir(const string& clusterName, const string& nodeName, const string& coreName, const ShardId& shardId);
+
+	string getSRCH2HomeDir();
+	string getClusterDir(const string& clusterName);
+	string getNodeDir(const string& clusterName, const string& nodeName);
+	string getCoreDir(const string& clusterName, const string& nodeName, const string& coreName);
+	string getShardDir(const string& clusterName, const string& nodeName, const string& coreName, const ShardId& shardId);
+
+	//It returns the number of files/directory deleted, if the returned value is 0, that means nothing got deleted.
+	uint removeDir(const string& path);
+
 	DiscoveryParams& getDiscovery(){
 		return this->discovery;
 	}

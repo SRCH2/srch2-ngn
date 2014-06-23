@@ -25,6 +25,7 @@
 
 #include "boost/algorithm/string_regex.hpp"
 #include "boost/filesystem/path.hpp"
+#include <boost/filesystem.hpp>
 
 using namespace std;
 namespace srch2is = srch2::instantsearch;
@@ -2920,6 +2921,98 @@ CoreInfo_t *ConfigManager::getDefaultCoreInfo_Writeview()
 {
     string n = getDefaultCoreName();
     return getClusterWriteView()->getCoreByName_Writeview(n);
+}
+
+string ConfigManager::createSRCH2Home()
+{
+	boost::filesystem::path dir = this->getSrch2Home();
+	boost::filesystem::create_directory(dir);
+	return this->getSrch2Home();
+}
+
+string ConfigManager::createClusterDir(const string& clusterName)
+{
+	string path = this->getSrch2Home() +clusterName;
+	createSRCH2Home();
+	boost::filesystem::create_directory(path);
+	return path;
+}
+
+string ConfigManager::createNodeDir(const string& clusterName, const string& nodeName)
+{
+	string path = this->getSrch2Home() + clusterName + "/" + nodeName;
+	createClusterDir(clusterName);
+	boost::filesystem::create_directory(path);
+	return path;
+}
+
+string ConfigManager::createCoreDir(const string& clusterName, const string& nodeName, const string& coreName)
+{
+	string path = this->getSrch2Home() + clusterName + "/" + nodeName + "/" + coreName;
+	createNodeDir(clusterName, nodeName);
+	boost::filesystem::create_directory(path);
+	return path;
+}
+
+string ConfigManager::createShardDir(const string& clusterName, const string& nodeName, const string& coreName, const ShardId &shardId)
+{
+	string path = this->getSrch2Home() + clusterName + "/" + nodeName + "/" + coreName + "/" + shardId.toString();
+	createCoreDir(clusterName, nodeName, coreName);
+	boost::filesystem::create_directory(path);
+	return path;
+}
+
+string ConfigManager::getSRCH2HomeDir()
+{
+	string path = this->getSrch2Home();
+	if(boost::filesystem::is_directory(path))
+		return path;
+	else
+		return "Directory does not exist!";
+}
+
+string ConfigManager::getClusterDir(const string& clusterName)
+{
+	string path = this->getSRCH2HomeDir() + clusterName;
+	if(boost::filesystem::is_directory(path))
+		return path;
+	else
+		return "Directory does not exist!";
+
+}
+
+string ConfigManager::getNodeDir(const string& clusterName,const string& nodeName)
+{
+	string path = getClusterDir(clusterName) + "/" + nodeName;
+	if(boost::filesystem::is_directory(path))
+		return path;
+	else
+		return "Directory does not exist!";
+
+}
+
+string ConfigManager::getCoreDir(const string& clusterName, const string& nodeName, const string& coreName)
+{
+	string path = getNodeDir(clusterName, nodeName) + "/" + coreName;
+	if(boost::filesystem::is_directory(path))
+		return path;
+	else
+		return "Directory does not exist!";
+}
+
+string ConfigManager::getShardDir(const string& clusterName, const string& nodeName, const string& coreName, const ShardId& shardId)
+{
+	string path = getCoreDir(clusterName, nodeName, coreName) + "/" + shardId.toString();
+	if(boost::filesystem::is_directory(path))
+		return path;
+	else
+		return "Directory does not exist!";
+}
+
+uint ConfigManager::removeDir(const string& path)
+{
+	uint numberOfFilesDeleted = boost::filesystem::remove_all(path);
+	return numberOfFilesDeleted;
 }
 
 const CoreInfo_t * ConfigManager::getDefaultCoreInfo() const{
