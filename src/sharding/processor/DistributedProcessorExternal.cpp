@@ -96,10 +96,11 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , unsig
     // core that we want to search on, this object is accesses through configurationManager.
     boost::shared_ptr<const Cluster> clusterReadview;
     configurationManager->getClusterReadView(clusterReadview);
-    Logger::console("Cluster readview used for search: ");
-    Logger::console("====================================");
-    clusterReadview->print();
-    Logger::console("====================================");
+
+//    Logger::console("Cluster readview used for search: ");
+//    Logger::console("====================================");
+//    clusterReadview->print();
+//    Logger::console("====================================");
 
     const CoreInfo_t *indexDataContainerConf = clusterReadview->getCoreById(coreId);
 
@@ -204,10 +205,10 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, unsign
     boost::shared_ptr<const Cluster> clusterReadview;
     configurationManager->getClusterReadView(clusterReadview);
 
-    Logger::console("Cluster readview used for insert: ");
-    Logger::console("====================================");
-    clusterReadview->print();
-    Logger::console("====================================");
+//    Logger::console("Cluster readview used for insert: ");
+//    Logger::console("====================================");
+//    clusterReadview->print();
+//    Logger::console("====================================");
 
     const CoreInfo_t *indexDataContainerConf = clusterReadview->getCoreById(coreId);
     // it must be an insert query
@@ -335,7 +336,7 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, unsign
 
         const Shard * destination = partitioner->getShardIDForRecord(*recordItr,coreId, clusterReadview);
 
-        Logger::console("Shard destination for insert : %s", destination->toString().c_str());
+//        Logger::console("Shard destination for insert : %s", destination->toString().c_str());
 
         InsertUpdateCommand  * insertUpdateInput=
                 new InsertUpdateCommand(*recordItr,InsertUpdateCommand::DP_INSERT);
@@ -546,7 +547,6 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, unsign
 
     //set the primary key of the record we want to delete
     std::string primaryKeyName = indexDataContainerConf->getPrimaryKey();
-
     const char *pKeyParamName = evhttp_find_header(&headers, primaryKeyName.c_str());
     //TODO : we should parse more than primary key later
     if (pKeyParamName){
@@ -564,8 +564,7 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, unsign
         const Shard * destination = partitioner->getShardIDForRecord(primaryKeyStringValue,coreId, clusterReadview);
 
 
-		DeleteCommand * deleteInput =
-				new DeleteCommand(primaryKeyStringValue,coreId);
+		DeleteCommand * deleteInput = new DeleteCommand(primaryKeyStringValue,coreId);
 		// add request object to results aggregator which is the callback object
 		time_t timeValue;
 		time(&timeValue);
@@ -574,8 +573,7 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, unsign
 				routingManager->sendMessage<DeleteCommand, CommandStatus>(deleteInput,true, resultsAggregator , timeValue , destination);
 
 		if(routingStatus != RoutingManagerAPIReturnTypeSuccess){
-			bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure",
-					"");
+			bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure","");
 		}
 
 

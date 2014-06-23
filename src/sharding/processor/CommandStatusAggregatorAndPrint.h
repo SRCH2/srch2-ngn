@@ -172,7 +172,6 @@ public:
      * 4. finalize()
      */
     void finalize(ResponseAggregatorMetadata metadata){
-
         if(multiRouteMode > 0){
             // we need to make sure finalize is only called once
             boost::unique_lock< boost::shared_mutex > lock(_access);

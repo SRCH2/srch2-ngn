@@ -318,6 +318,7 @@ static void cb_write(evhttp_request *req, void *arg) {
 	    if(req->type == EVHTTP_REQ_PUT){
             dpExternalAndCoreId->dpExternal->externalInsertCommand(req, dpExternalAndCoreId->coreId);
 	    }else if(req->type == EVHTTP_REQ_DELETE){
+	    	Logger::console("Delete request came ...");
 	    	dpExternalAndCoreId->dpExternal->externalDeleteCommand(req, dpExternalAndCoreId->coreId);
 	    }
 	} catch (exception& e) {

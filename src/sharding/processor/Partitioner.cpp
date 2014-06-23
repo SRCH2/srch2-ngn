@@ -32,7 +32,7 @@ const Shard * Partitioner::getShardIDForRecord(Record * record, unsigned coreId,
     unsigned valueToHash = getRecordValueToHash(record);
 
     unsigned totalNumberOfShards = clusterReadview->getCoreTotalNumberOfPrimaryShards(coreId);
-    Logger::console("Total number of shards to be used in partitioned : %d", totalNumberOfShards);
+//    Logger::console("Total number of shards to be used in partitioned : %d", totalNumberOfShards);
 
     return convertUnsignedToCoreShardInfo(hash(valueToHash , totalNumberOfShards), coreId, clusterReadview);
 
@@ -44,7 +44,8 @@ const Shard * Partitioner::getShardIDForRecord(string primaryKeyStringValue, uns
 
     unsigned valueToHash = getRecordValueToHash(primaryKeyStringValue);
 
-    unsigned totalNumberOfShards = indexDataContainerConf->getNumberOfPrimaryShards();
+    unsigned totalNumberOfShards = clusterReadview->getCoreTotalNumberOfPrimaryShards(coreId);
+//    Logger::console("Total number of shards to be used in partitioned : %d", totalNumberOfShards);
 
     return convertUnsignedToCoreShardInfo(hash(valueToHash , totalNumberOfShards), coreId, clusterReadview);
 }

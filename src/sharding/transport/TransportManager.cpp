@@ -66,7 +66,6 @@ void * TransportManager::notifyUpstreamHandlers(Message *msg, int fd, NodeId  no
 		}
 	} else if(msg->isInternal()) {
 		if(getRmHandler() != NULL){
-			Logger::debug("Request message is received with reply form node %d", nodeId);
 			getRmHandler()->resolveMessage(msg, nodeId);
 		}
 		getMessageAllocator()->deallocateByMessagePointer(msg);
