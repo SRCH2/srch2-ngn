@@ -203,10 +203,12 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, unsign
 
     boost::shared_ptr<const Cluster> clusterReadview;
     configurationManager->getClusterReadView(clusterReadview);
+
     Logger::console("Cluster readview used for insert: ");
     Logger::console("====================================");
     clusterReadview->print();
     Logger::console("====================================");
+
     const CoreInfo_t *indexDataContainerConf = clusterReadview->getCoreById(coreId);
     // it must be an insert query
     ASSERT(req->type == EVHTTP_REQ_PUT);

@@ -93,7 +93,10 @@ unsigned Partitioner::hash(unsigned valueToHash, unsigned hashSpace){
 const Shard * Partitioner::convertUnsignedToCoreShardInfo(unsigned coreShardIndex, unsigned coreId, boost::shared_ptr<const Cluster> clusterReadview){
 	vector<const Shard *> corePrimaryShards;
 	clusterReadview->addCorePrimaryShards(coreId, corePrimaryShards);
-	ASSERT(coreShardIndex < corePrimaryShards.size());
+	if(coreShardIndex >= corePrimaryShards.size()){
+		Logger::console("%d out of %d", coreShardIndex, corePrimaryShards.size());
+		ASSERT(coreShardIndex < corePrimaryShards.size());
+	}
     return corePrimaryShards.at(coreShardIndex);
 }
 
