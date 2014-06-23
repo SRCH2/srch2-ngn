@@ -498,14 +498,14 @@ struct CoreConfigParseState_t {
 	CoreConfigParseState_t() : hasLatitude(false), hasLongitude(false) {};
 };
 
-class DiscoveryParams {
+class Ping {
 private:
 	unsigned pingInterval;
 	unsigned pingTimeout;
 	unsigned retryCount;
 
 public:
-	DiscoveryParams(){
+	Ping(){
 		pingInterval = 1;
 		pingTimeout = 1;
 		retryCount = 1;
@@ -536,6 +536,49 @@ public:
 	}
 };
 
+class Transport{
+	private:
+	unsigned port;
+	string ipAddress;
+
+	public:
+	Transport(){
+		port = 8088;
+		ipAddress = "0.0.0.0";
+	}
+	void setPort(unsigned port);
+	void setIpAddress(const string& ipAddress);
+	unsigned getPort();
+	string getIpAddress();
+};
+
+class MulticastDiscovery {
+private:
+	std::string groupAddress;
+	unsigned port;   // Default value = 92612
+	unsigned ttl;
+	string ipAddress;
+
+public:
+	string getIpAddress();
+	string getGroupAddress();
+	unsigned getPort();
+	unsigned getTtl();
+
+	void setIpAddress(string& ipAddress);
+	void setGroupAddress(string& groupAddress);
+	void setPort(unsigned port);
+	void setTtl(unsigned ttl);
+
+	MulticastDiscovery(){
+		port = 8088;
+		ttl = 5;
+		groupAddress = "1.1.1.1";
+		ipAddress = "0.0.0.0";
+	}
+
+};
+
 class ConfigManager {
 public:
 
@@ -554,8 +597,16 @@ public:
 	//It returns the number of files/directory deleted, if the returned value is 0, that means nothing got deleted.
 	uint removeDir(const string& path);
 
-	DiscoveryParams& getDiscovery(){
-		return this->discovery;
+	Ping& getPing(){
+		return this->ping;
+	}
+
+	MulticastDiscovery& getMulticastDiscovery(){
+		return this->mDiscovery;
+	}
+
+	Transport& getTransport(){
+		return this->transport;
 	}
 
 	typedef std::map<const string, CoreInfo_t *> CoreInfoMap_t;
@@ -663,7 +714,9 @@ public:
 private:
 	volatile bool isLocked; //both read / write use this lock.
 	Cluster cluster;
-	DiscoveryParams discovery;
+	Ping ping;
+	MulticastDiscovery mDiscovery;
+	Transport transport;
 	// <config>
 	string licenseKeyFile;
 	string httpServerListeningHostname;
@@ -879,6 +932,16 @@ private:
 
 	// configuration file tag and attribute names for ConfigManager
 
+	static const char* const multicastDiscovery;
+	static const char* const multicastGroupAddress;
+	static const char* const multicastIpAddress;
+	static const char* const multicastPort;
+	static const char* const multicastTtl;
+
+	static const char* const transportNodeTag;
+	static const char* const transportIpAddress;
+	static const char* const transportPort;
+
 	static const char* const nodeListeningHostNameTag;
 	static const char* const nodeListeningPortTag;
 	static const char* const nodeCurrentTag;
@@ -893,7 +956,7 @@ private:
 	static const int DefaultNumberOfPrimaryShards;
 	static const int DefaultNumberOfReplicas;
 	static const char* const DefaultClusterName;
-	static const char* const discoveryNodeTag;
+	static const char* const pingNodeTag;
 	static const char* const pingIntervalTag;
 	static const char* const pingTimeoutTag;
 	static const char* const retryCountTag;
@@ -1352,12 +1415,7 @@ protected:
 };
 
 
-// If we are supporting multicast
-class Multicast {
-public:
-	std::string multicastAddress;  // Default value = 224.2.2.7
-	unsigned port;   // Default value = 92612
-};
+
 }
 }
 

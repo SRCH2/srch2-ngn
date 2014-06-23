@@ -23,11 +23,11 @@
           <srch2Home>/home/joe/srch2</srch2Home>
         -->
         
-     <discovery>
+     <Ping>
         <ping-interval> 2 </ping-interval>
         <ping-timeout> 8 </ping-timeout>
         <retry-count> 10 </retry-count>
-    </discovery>    
+    </Ping>    
        
     <node>
         <listeningHostname> 192.168.1.54 </listeningHostname>
