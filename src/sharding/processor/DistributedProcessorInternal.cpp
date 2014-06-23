@@ -512,7 +512,7 @@ CommandStatus * DPInternalRequestHandler::internalCommitCommand(boost::shared_pt
  * provided by the core codebase.
  */
 boost::shared_ptr<Srch2Server> DPInternalRequestHandler::registerAndInitializeSrch2Server(const ShardId correspondingShardId,
-		const CoreInfo_t * coreInfo){
+		const CoreInfo_t * coreInfo,  const string & directoryPath){
 	isWritableMapLock.lock();
 	boost::shared_ptr<Srch2Server> srch2Server;
 	srch2Server.reset(new Srch2Server(coreInfo, correspondingShardId, maxServerId));
@@ -520,12 +520,12 @@ boost::shared_ptr<Srch2Server> DPInternalRequestHandler::registerAndInitializeSr
 	maxServerId++;
 	isWritableMapLock.unlock();
 
-	bootstrapSrch2Server(srch2Server);
+	bootstrapSrch2Server(srch2Server, directoryPath);
 
 	return srch2Server;
 }
 
-DPInternalAPIStatus DPInternalRequestHandler::bootstrapSrch2Server(boost::shared_ptr<Srch2Server> srch2Server){
+DPInternalAPIStatus DPInternalRequestHandler::bootstrapSrch2Server(boost::shared_ptr<Srch2Server> srch2Server, const string & directoryPath){
 
 
     if(srch2Server->getCoreInfo()->getDataSourceType() ==
@@ -538,7 +538,7 @@ DPInternalAPIStatus DPInternalRequestHandler::bootstrapSrch2Server(boost::shared
     }
 	//load the index from the data source
     try{
-        srch2Server->init();
+        srch2Server->init(directoryPath);
     } catch(exception& ex) {
         /*
          *  We got some fatal error during server initialization. Print the error

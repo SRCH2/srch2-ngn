@@ -60,27 +60,22 @@ public:
         this->serverId = serverId;
     }
 
-    void init()
+    void init(const string & directoryPath)
     {
-        createAndBootStrapIndexer();
+        createAndBootStrapIndexer(directoryPath);
     }
 
     // Check if index files already exist.
-    bool checkIndexExistence();
+    bool checkIndexExistence(const string & directoryPath);
 
-    IndexMetaData *createIndexMetaData();
-    void createAndBootStrapIndexer();
+    IndexMetaData *createIndexMetaData(const string & directoryPath);
+    void createAndBootStrapIndexer(const string & directoryPath);
     void createHighlightAttributesVector(const srch2is::Schema * schema);
 
     Indexer * getIndexer();
     const CoreInfo_t * getCoreInfo();
     ShardId getShardId();
     unsigned getServerId();
-
-    string getDirectory(){
-        return getCoreInfo()->getIndexPath() + "/" +
-        		"nodename" + "/" + getCoreInfo()->getName() + "/" + correspondingShardId.toString();
-    }
 
     string getDataFilePath(){
         return getCoreInfo()->getDataFilePath();

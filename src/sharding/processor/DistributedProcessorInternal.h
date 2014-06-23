@@ -138,7 +138,7 @@ public:
      * provided by the core codebase.
      */
     boost::shared_ptr<Srch2Server> registerAndInitializeSrch2Server(const ShardId correspondingShardId,
-    		const CoreInfo_t * coreInfo);
+    		const CoreInfo_t * coreInfo,  const string & directoryPath);
 
 
 
@@ -148,7 +148,7 @@ public:
 
 
 private:
-    DPInternalAPIStatus bootstrapSrch2Server(boost::shared_ptr<Srch2Server> srch2Server);
+    DPInternalAPIStatus bootstrapSrch2Server(boost::shared_ptr<Srch2Server> srch2Server, const string & directoryPath);
 
 
 

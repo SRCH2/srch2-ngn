@@ -98,9 +98,9 @@ const char *HTTPServerEndpoints::ajax_delete_fail_500 =
 		"Content-Type: application/x-javascript\r\n"
 		"\r\n";
 
-bool Srch2Server::checkIndexExistence()
+bool Srch2Server::checkIndexExistence(const string & directoryPath)
 {
-    const string &directoryName = getDirectory();
+    const string &directoryName = directoryPath;
     if(!checkDirExistence((directoryName + "/" + IndexConfig::analyzerFileName).c_str()))
         return false;
     if(!checkDirExistence((directoryName + "/" + IndexConfig::trieFileName).c_str()))
@@ -121,7 +121,7 @@ bool Srch2Server::checkIndexExistence()
     return true;
 }
 
-IndexMetaData *Srch2Server::createIndexMetaData()
+IndexMetaData *Srch2Server::createIndexMetaData(const string & directoryPath)
 {
     //Create a cache
     srch2is::GlobalCache *cache = srch2is::GlobalCache::create(getCoreInfo()->getCacheSizeInBytes(), 200000);
@@ -133,7 +133,7 @@ IndexMetaData *Srch2Server::createIndexMetaData()
         		getCoreInfo()->getMergeEveryMWrites(),
         		getCoreInfo()->getUpdateHistogramEveryPMerges(),
         		getCoreInfo()->getUpdateHistogramEveryQWrites(),
-        		getDirectory());
+        		directoryPath);
 
     return indexMetaData;
 }
@@ -162,12 +162,12 @@ void Srch2Server::createHighlightAttributesVector(const srch2is::Schema * schema
 	}
 	indexConfig->setHighlightAttributeIdsVector(highlightAttributes);
 }
-void Srch2Server::createAndBootStrapIndexer()
+void Srch2Server::createAndBootStrapIndexer(const string & directoryPath)
 {
     // create IndexMetaData
-    IndexMetaData *indexMetaData = createIndexMetaData();
+    IndexMetaData *indexMetaData = createIndexMetaData(directoryPath);
     IndexCreateOrLoad indexCreateOrLoad;
-    if(checkIndexExistence())
+    if(checkIndexExistence(directoryPath))
         indexCreateOrLoad = srch2http::INDEXLOAD;
     else
         indexCreateOrLoad = srch2http::INDEXCREATE;
@@ -190,7 +190,7 @@ void Srch2Server::createAndBootStrapIndexer()
 		    Logger::console("Creating indexes from JSON file...");
 		    RecordSerializerUtil::populateStoredSchema(storedAttrSchema, getIndexer()->getSchema());
 		    unsigned indexedCounter = DaemonDataSource::createNewIndexFromFile(getIndexer(),
-		    		storedAttrSchema, this->getCoreInfo(),getDataFilePath());
+		    		storedAttrSchema, this->getCoreInfo(),getDataFilePath()); // TODO : must see what we want to use for data file path
 		    /*
 		     *  commit the indexes once bulk load is done and then save it to the disk only
 		     *  if number of indexed record is > 0.

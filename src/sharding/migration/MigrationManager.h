@@ -38,9 +38,12 @@ public:
 				ASSERT(primaryShards->at(sid)->getShardState() == SHARDSTATE_UNALLOCATED);
 
 				primaryShards->at(sid)->setShardState(SHARDSTATE_INDEXING);
+				string directoryPath = configManager->getShardDir(cluster->getClusterName(),
+						cluster->getCurrentNode()->getName(),
+						currentNodeShardInfo->at(cid)->getCore()->getName(), primaryShards->at(sid)->getShardId());
 				boost::shared_ptr<Srch2Server> srch2Server =
 						this->dpInternal->registerAndInitializeSrch2Server(primaryShards->at(sid)->getShardId(),
-								currentNodeShardInfo->at(cid)->getCore());
+								currentNodeShardInfo->at(cid)->getCore(), directoryPath);
 
 				primaryShards->at(sid)->setShardState(SHARDSTATE_ALLOCATED);
 
