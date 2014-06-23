@@ -24,7 +24,7 @@
     -->
     <!-- <srch2Home>./</srch2Home> -->
     <cluster-name>SRCH2 Cluster</cluster-name>
-    <srch2Home>/home/jamshid/workspace-srch2-v4/srch2-ngn/test/sharding/integration</srch2Home>
+    <srch2Home>/home/jamshid/workspace-srch2-2/srch2-ngn/test/sharding/integration</srch2Home>
  
     <discovery>
         <ping-interval>2</ping-interval>
@@ -35,6 +35,7 @@
 
     <node>
         <this-is-me> false </this-is-me>
+        <number-of-shards>2</number-of-shards>
         <listeningHostname> 127.0.0.1 </listeningHostname>
         <node-name> queen </node-name>
         <internalCommunicationPort> 3095 </internalCommunicationPort>
@@ -44,6 +45,7 @@
         <listeningHostname> 127.0.0.1 </listeningHostname>
         <internalCommunicationPort> 3096 </internalCommunicationPort>
         <this-is-me> false </this-is-me>
+        <number-of-shards>2</number-of-shards>
         <node-name> frozen </node-name>
     </node>
 
@@ -51,6 +53,7 @@
         <listeningHostname> 127.0.0.1 </listeningHostname>
         <internalCommunicationPort> 3097 </internalCommunicationPort>
         <this-is-me> true </this-is-me>
+        <number-of-shards>2</number-of-shards>
         <node-name> rio </node-name>
         <!--<node-master> true </node-master>-->
         <node-data> true </node-data>
@@ -70,6 +73,7 @@
         <listeningHostname> 127.0.0.1 </listeningHostname>
         <internalCommunicationPort> 3098 </internalCommunicationPort>
         <this-is-me> false </this-is-me>
+        <number-of-shards>2</number-of-shards>
         <node-name> lion </node-name>
     </node>
 
@@ -177,7 +181,9 @@
             Defaults to 1
         -->
         <defaultQueryTermBoost>1</defaultQueryTermBoost>
-         
+        <enablePositionIndex>1</enablePositionIndex>
+        <enableCharOffsetIndex>1</enableCharOffsetIndex>
+
     </indexConfig>
   
   
@@ -414,9 +420,10 @@
 		    here and indexed="false" it will be also used for sort,filtering and facet.
 		    - 
 	   -->
-	   <field name="category" type="text" indexed="true" />
-	   <field name="name" type="text" indexed="true" />
-	 </fields>
+           <field name="category" type="text" indexed="true" highlight="true" />
+           <field name="name" type="text" indexed="true" highlight="true" />
+	 
+       </fields>
 	 
 	 <!--
 		Primary Key
