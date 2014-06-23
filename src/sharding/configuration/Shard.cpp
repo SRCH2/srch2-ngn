@@ -164,6 +164,39 @@ boost::shared_ptr<Srch2Server> Shard::getSrch2Server() const{
 	return this->srch2Server;
 }
 
+std::string Shard::toString() const{
+	std::stringstream sstm;
+	sstm << "ShardId : " << shardId.toString();
+	sstm << ", ShardState";
+	switch (shardState) {
+	case SHARDSTATE_ALLOCATED: // must have a valid node
+		sstm << "SHARDSTATE_ALLOCATED" ;
+		break;
+	case SHARDSTATE_UNALLOCATED:
+		sstm << "SHARDSTATE_UNALLOCATED" ;
+		break;
+	case SHARDSTATE_MIGRATING:
+		sstm << "SHARDSTATE_MIGRATING" ;
+		break;
+	case SHARDSTATE_INDEXING:
+		sstm << "SHARDSTATE_INDEXING" ;
+		break;
+	// these are the constants that DPEx, DPInt, RM and MM use
+	case SHARDSTATE_REGISTERED:
+		sstm << "SHARDSTATE_REGISTERED" ;
+		break;
+	case SHARDSTATE_NOT_COMMITTED:
+		sstm << "SHARDSTATE_NOT_COMMITTED" ;
+		break;
+	case SHARDSTATE_COMMITTED:
+		sstm << "SHARDSTATE_COMMITTED" ;
+		break;
+	}
+	sstm << ", nodeId" << nodeId;
+
+	return sstm.str();
+
+}
 
 /////////////////////////////// CoreShardContainer
 

@@ -78,6 +78,8 @@ public:
 	bool isShardLocal(const ShardId& shardId) const;
 	const Shard * getShard(const ShardId & shardId) const;
 
+	void print() const;
+
 private:
 	// The constructor of this class is private because it's singleton and
 	// there is only one object which is created by the static functions

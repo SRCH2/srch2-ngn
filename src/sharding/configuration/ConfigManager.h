@@ -139,6 +139,10 @@ public:
         // set readview pointer to the new copy of writeview
         metadata_readView.reset(newReadview);
         pthread_spin_unlock(&m_spinlock);
+        Logger::console("====================================");
+        Logger::console("Cluster meta data committed, cluster state is as follows : ");
+        metadata_readView->print();
+        Logger::console("====================================");
 	}
 
 private:

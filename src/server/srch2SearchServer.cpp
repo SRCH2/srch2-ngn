@@ -831,6 +831,11 @@ int main(int argc, char** argv) {
 	boost::shared_ptr<const srch2::httpwrapper::Cluster> clusterReadview;
 	serverConf->getClusterReadView(clusterReadview);
 
+	Logger::console("Readview used in main : ");
+	Logger::console("====================================");
+	clusterReadview->print();
+	Logger::console("====================================");
+
 
 	LicenseVerifier::testFile(serverConf->getLicenseKeyFileName());
 	string logDir = getFilePath(serverConf->getHTTPServerAccessLogFile());

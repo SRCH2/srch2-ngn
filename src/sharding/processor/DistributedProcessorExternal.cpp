@@ -96,6 +96,10 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , unsig
     // core that we want to search on, this object is accesses through configurationManager.
     boost::shared_ptr<const Cluster> clusterReadview;
     configurationManager->getClusterReadView(clusterReadview);
+    Logger::console("Cluster readview used for search: ");
+    Logger::console("====================================");
+    clusterReadview->print();
+    Logger::console("====================================");
 
     const CoreInfo_t *indexDataContainerConf = clusterReadview->getCoreById(coreId);
 
@@ -199,7 +203,10 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, unsign
 
     boost::shared_ptr<const Cluster> clusterReadview;
     configurationManager->getClusterReadView(clusterReadview);
-
+    Logger::console("Cluster readview used for insert: ");
+    Logger::console("====================================");
+    clusterReadview->print();
+    Logger::console("====================================");
     const CoreInfo_t *indexDataContainerConf = clusterReadview->getCoreById(coreId);
     // it must be an insert query
     ASSERT(req->type == EVHTTP_REQ_PUT);
@@ -325,6 +332,8 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, unsign
         timeValue = timeValue + TIMEOUT_WAIT_TIME;
 
         const Shard * destination = partitioner->getShardIDForRecord(*recordItr,coreId, clusterReadview);
+
+        Logger::console("Shard destination for insert : %s", destination->toString().c_str());
 
         InsertUpdateCommand  * insertUpdateInput=
                 new InsertUpdateCommand(*recordItr,InsertUpdateCommand::DP_INSERT);

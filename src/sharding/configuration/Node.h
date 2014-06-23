@@ -38,6 +38,7 @@ public:
 		this->homeDir = node.homeDir;
 		this->dataDir = node.dataDir;
 		this->numberOfThreads = node.numberOfThreads;
+		this->thisIsMe = node.thisIsMe;
 	}
 
 	std::string getHomeDir() const;

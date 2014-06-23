@@ -69,6 +69,8 @@ public:
 	unsigned getNodeId() const;
 	void setSrch2Server(boost::shared_ptr<Srch2Server> srch2Server);
 	boost::shared_ptr<Srch2Server> getSrch2Server() const;
+	std::string toString() const;
+
 
 private:
 	ShardId shardId;

@@ -246,6 +246,29 @@ const Shard * Cluster::getShard(const ShardId & shardId) const{
 	return NULL;
 }
 
+
+void Cluster::print() const{
+	Logger::console("Cluster name : %s", clusterName.c_str());
+	Logger::console("Cluster master node id : %d", masterNodeId);
+	Logger::console("Number of nodes : %d", shardInformation.size() );
+	for(std::map<Node *, std::vector<CoreShardContainer * > >::const_iterator shardInfoItr =
+			shardInformation.begin(); shardInfoItr != shardInformation.end(); ++shardInfoItr){
+		Logger::console("Node %d, isMaster: %d", shardInfoItr->first->getId(), shardInfoItr->first->thisIsMe);
+		Logger::console("There are %d cores in this node.", shardInfoItr->second.size());
+		for(std::vector<CoreShardContainer * >::const_iterator coreShardItr = shardInfoItr->second.begin();
+				coreShardItr != shardInfoItr->second.end(); ++coreShardItr){
+			Logger::console("Core %s", (*coreShardItr)->getCore()->getName().c_str());
+			Logger::console("Primary shards : %d", (*coreShardItr)->getTotalNumberOfPrimaryShards());
+			vector<const Shard *> primaryShards;
+			(*coreShardItr)->addPrimaryShards(primaryShards);
+			for(unsigned i=0; i<primaryShards.size(); ++i){
+				Logger::console("Shard : ");
+				Logger::console("%s", primaryShards.at(i)->toString().c_str());
+			}
+		}
+	}
+}
+
 std::map<Node *, std::vector<CoreShardContainer * > >::const_iterator Cluster::getNodeShardInformationEntry(unsigned nodeId) const{
 	for(std::map<Node *, std::vector<CoreShardContainer * > >::const_iterator nodeEntryItr = this->shardInformation.begin();
 			nodeEntryItr != this->shardInformation.end(); ++nodeEntryItr){
