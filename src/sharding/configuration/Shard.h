@@ -90,9 +90,9 @@ public:
 
 	vector<Shard *> * getPrimaryShards();
 	vector<Shard *> * getReplicaShards();
-	void getPrimaryShards(vector<const Shard *> & primaryShards) const;
-	void getReplicaShards(vector<const Shard *> & replicaShards) const;
-	void getPrimaryShardReplicas(const ShardId & primaryShardId, vector<const Shard *> & replicaShards) const;
+	void addPrimaryShards(vector<const Shard *> & primaryShards) const;
+	void addReplicaShards(vector<const Shard *> & replicaShards) const;
+	void addPrimaryShardReplicas(const ShardId & primaryShardId, vector<const Shard *> & replicaShards) const;
 	unsigned getTotalNumberOfPrimaryShards() const;
 	const Shard * getShard(const ShardId & shardId) const;
 

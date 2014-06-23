@@ -51,14 +51,11 @@ const Shard * Partitioner::getShardIDForRecord(string primaryKeyStringValue, uns
 /*
  *	Returns all valid shardIds for a broadcast
  */
-void Partitioner::getShardIDsForBroadcast(unsigned coreId, boost::shared_ptr<const Cluster> clusterReadview, vector<const Shard *> & broadcastShardIDs){
-    vector<const Shard *> primaryShards;
-    clusterReadview->getCorePrimaryShards(coreId, primaryShards);
-	const CoreInfo_t *indexDataContainerConf = clusterReadview->getCoreById(coreId);
-	for(vector<const Shard *>::iterator shardItr = primaryShards.begin(); shardItr != primaryShards.end(); ++shardItr){
-        unsigned nodeId = (*shardItr)->getNodeId();
-        broadcastShardIDs.push_back(*shardItr);
-	}
+void Partitioner::getShardIDsForBroadcast(unsigned coreId,
+		boost::shared_ptr<const Cluster> clusterReadview,
+		vector<const Shard *> & broadcastShards){
+
+    clusterReadview->addCorePrimaryShards(coreId, broadcastShards);
 }
 
 
@@ -94,7 +91,7 @@ unsigned Partitioner::hash(unsigned valueToHash, unsigned hashSpace){
 
 const Shard * Partitioner::convertUnsignedToCoreShardInfo(unsigned coreShardIndex, unsigned coreId, boost::shared_ptr<const Cluster> clusterReadview){
 	vector<const Shard *> corePrimaryShards;
-	clusterReadview->getCorePrimaryShards(coreId, corePrimaryShards);
+	clusterReadview->addCorePrimaryShards(coreId, corePrimaryShards);
 	ASSERT(coreShardIndex < corePrimaryShards.size());
     return corePrimaryShards.at(coreShardIndex);
 }

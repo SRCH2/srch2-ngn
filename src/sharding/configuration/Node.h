@@ -27,6 +27,19 @@ public:
 	Node(std::string& nodeName, std::string& ipAddress, unsigned portNumber,
 			bool thisIsMe, bool nodeMaster, bool nodeData,std::string& dataDir, std::string& homeDir);
 
+	Node(const Node & node){
+		this->nodeId = node.nodeId;
+		this->ipAddress = node.ipAddress;
+		this->portNumber = node.portNumber;
+		this->nodeName = node.nodeName;
+		this->ports = node.ports;
+		this->nodeMaster = node.nodeMaster;
+		this->nodeData = node.nodeData;
+		this->homeDir = node.homeDir;
+		this->dataDir = node.dataDir;
+		this->numberOfThreads = node.numberOfThreads;
+	}
+
 	std::string getHomeDir() const;
 	std::string getDataDir() const;
 	bool isMaster() const;

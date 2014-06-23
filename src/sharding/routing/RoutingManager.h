@@ -59,32 +59,32 @@ public:
         Message * externalMessage = NULL;
 
         // iterate on all destinations and send the message
-        for(vector<const Shard *>::iterator shardIdItr = destination.begin(); shardIdItr != destination.end(); ++shardIdItr) {
+        for(vector<const Shard *>::iterator shardItr = destination.begin(); shardItr != destination.end(); ++shardItr) {
 
-        	NodeId nodeId = (*shardIdItr)->getNodeId();
+        	NodeId nodeId = (*shardItr)->getNodeId();
             Logger::debug("sending request to node - %d", nodeId);
 
             // this shard is in the current node
             if(aggregator->getClusterReadview()->getCurrentNode()->getId() == nodeId){
                 // so that we create the message only once
                 if(internalMessage == NULL){
-                    internalMessage = prepareInternalMessage<RequestType>(*shardIdItr, requestObj);
+                    internalMessage = prepareInternalMessage<RequestType>(*shardItr, requestObj);
                     // request message is stored in cb object to be deleted when replies are ready
                     // and cb object is being destroyed.
                 }
-                internalMessage->setDestinationShardId((*shardIdItr)->getShardId());
+                internalMessage->setDestinationShardId((*shardItr)->getShardId());
                 // callback should wait for one more reply
-                sendInternalMessage(internalMessage, requestObj, *shardIdItr, timeoutValue, pendingRequest);
+                sendInternalMessage(internalMessage, requestObj, *shardItr, timeoutValue, pendingRequest);
             }else{// this shard is in some other node
                 // so that we create the message only once
                 if(externalMessage == NULL){
-                    externalMessage = prepareExternalMessage<RequestType>(*shardIdItr, requestObj);
+                    externalMessage = prepareExternalMessage<RequestType>(*shardItr, requestObj);
                     // request message is stored in cb object to be deleted when replies are ready
                     // and cb object is being destroyed.
                 }
-                externalMessage->setDestinationShardId((*shardIdItr)->getShardId());
+                externalMessage->setDestinationShardId((*shardItr)->getShardId());
                 // callback should wait for one more reply
-                sendExternalMessage(externalMessage, requestObj, *shardIdItr, timeoutValue, pendingRequest);
+                sendExternalMessage(externalMessage, requestObj, *shardItr, timeoutValue, pendingRequest);
             }
         }
 

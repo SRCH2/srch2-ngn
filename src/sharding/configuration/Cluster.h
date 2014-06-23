@@ -60,7 +60,7 @@ public:
 	void getAllShardInformation(std::map<const Node *, std::vector< const CoreShardContainer * > > & shardInformation) const;
 	void getNodeShardInformation(unsigned nodeId, std::vector< const CoreShardContainer * > & coreShardContainers) const;
 	const CoreShardContainer * getNodeCoreShardInformation(unsigned nodeId, unsigned coreId) const;
-	void getCorePrimaryShards(unsigned coreId, vector<const Shard *> & primaryShards) const;
+	void addCorePrimaryShards(unsigned coreId, vector<const Shard *> & primaryShards) const;
 	unsigned getCoreTotalNumberOfPrimaryShards(unsigned coreId) const;
 	void getCorePrimaryShardReplicas(unsigned coreId, const ShardId & primaryShardId, vector<const Shard *> & replicas) const;
 	// core access methods
@@ -82,7 +82,10 @@ private:
 	// The constructor of this class is private because it's singleton and
 	// there is only one object which is created by the static functions
 	// holdClusterForRead and holdClusterForReadWrite
-	Cluster(){};
+	Cluster(){
+		// NOTE: it's not used now
+		clusterState = CLUSTERSTATE_GREEN;
+	};
 	Cluster(const Cluster & cluster);
 
 	// helper functions

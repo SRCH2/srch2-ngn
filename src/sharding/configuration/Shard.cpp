@@ -195,17 +195,17 @@ vector<Shard *> * CoreShardContainer::getPrimaryShards(){
 vector<Shard *> * CoreShardContainer::getReplicaShards(){
 	return &(this->replicaShards);
 }
-void CoreShardContainer::getPrimaryShards(vector<const Shard *> & primaryShards) const{
+void CoreShardContainer::addPrimaryShards(vector<const Shard *> & primaryShards) const{
 	for(vector<Shard *>::const_iterator shardItr = this->primaryShards.begin(); shardItr != this->primaryShards.end(); ++shardItr){
 		primaryShards.push_back(*shardItr);
 	}
 }
-void CoreShardContainer::getReplicaShards(vector<const Shard *> & replicaShards) const{
+void CoreShardContainer::addReplicaShards(vector<const Shard *> & replicaShards) const{
 	for(vector<Shard *>::const_iterator shardItr = this->replicaShards.begin(); shardItr != this->replicaShards.end(); ++shardItr){
 		replicaShards.push_back(*shardItr);
 	}
 }
-void CoreShardContainer::getPrimaryShardReplicas(const ShardId & primaryShardId, vector<const Shard *> & replicaShards) const{
+void CoreShardContainer::addPrimaryShardReplicas(const ShardId & primaryShardId, vector<const Shard *> & replicaShards) const{
 	for(vector<Shard *>::const_iterator shardItr = this->replicaShards.begin(); shardItr != this->replicaShards.end(); ++shardItr){
 		ASSERT((*shardItr)->getShardId().coreId == primaryShardId.coreId);
 		ASSERT((*shardItr)->getShardId().coreId == this->getCore()->getCoreId());

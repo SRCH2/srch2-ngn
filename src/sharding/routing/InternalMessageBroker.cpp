@@ -22,6 +22,8 @@ namespace srch2 {
 namespace httpwrapper {
 
 void InternalMessageBroker::resolveMessage(Message * msg, NodeId node){
+	// use the core to prepare the response message
+	// and object for this request message
 	std::pair<Message * , void *> resultOfDPInternal = notifyReturnResponse(msg);
 
 	Message* replyMessage = resultOfDPInternal.first;
@@ -169,7 +171,16 @@ std::pair<Message*,void*> InternalMessageBroker::notifyReturnResponse(Message * 
     this->routingManager.getConfigurationManager()->getClusterReadView(clusterReadview);
     unsigned nodeId = clusterReadview->getCurrentNode()->getId();
     const CoreShardContainer * coreShardContainer = clusterReadview->getNodeCoreShardInformation(nodeId, shardId.coreId);
+    if(coreShardContainer == NULL){
+    	ASSERT(false);
+    	return std::make_pair<Message*,void*>(NULL,NULL);
+    }
     const Shard * shard = coreShardContainer->getShard(shardId);
+    if(shard == NULL){
+    	// NOTE: request message is too late, this shard is not there anymore ...
+    	Logger::console("Shard not there anymore : %s", shardId.toString().c_str());
+    	return std::make_pair<Message*,void*>(NULL,NULL);
+    }
     boost::shared_ptr<Srch2Server> srch2Server = shard->getSrch2Server();
     const CoreInfo_t * coreInfo = coreShardContainer->getCore();
 

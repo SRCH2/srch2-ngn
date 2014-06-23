@@ -124,13 +124,13 @@ const CoreShardContainer * Cluster::getNodeCoreShardInformation(unsigned nodeId,
 	return NULL;
 }
 
-void Cluster::getCorePrimaryShards(unsigned coreId, vector<const Shard *> & primaryShards) const{
+void Cluster::addCorePrimaryShards(unsigned coreId, vector<const Shard *> & primaryShards) const{
 	for(std::map<Node *, std::vector<CoreShardContainer * > >::const_iterator shardInfoItr = shardInformation.begin();
 			shardInfoItr != shardInformation.end(); ++shardInfoItr){
 		for(std::vector<CoreShardContainer * >::const_iterator coreShardContainerItr = shardInfoItr->second.begin();
 				coreShardContainerItr != shardInfoItr->second.end(); ++coreShardContainerItr){
 			if((*coreShardContainerItr)->getCore()->getCoreId() == coreId){
-				(*coreShardContainerItr)->getPrimaryShards(primaryShards);
+				(*coreShardContainerItr)->addPrimaryShards(primaryShards);
 			}
 		}
 	}
@@ -154,7 +154,7 @@ void Cluster::getCorePrimaryShardReplicas(unsigned coreId, const ShardId & prima
 		for(std::vector<CoreShardContainer * >::const_iterator coreShardContainerItr = shardInfoItr->second.begin();
 				coreShardContainerItr != shardInfoItr->second.end(); ++coreShardContainerItr){
 			if((*coreShardContainerItr)->getCore()->getCoreId() == coreId){
-				(*coreShardContainerItr)->getPrimaryShardReplicas(primaryShardId, replicas);
+				(*coreShardContainerItr)->addPrimaryShardReplicas(primaryShardId, replicas);
 			}
 		}
 	}
