@@ -150,9 +150,6 @@ public:
     template<typename RequestType >
     Message * prepareExternalMessage(const Shard * shard,
             RequestType * requestObjPointer){
-    	if(shard == NULL){
-    		return NULL;
-    	}
         // create the message from the request object
         // 1. serialize the message and prepare the body
         void * serializeRequestMessageBodyPointer = requestObjPointer->serialize(getMessageAllocator());
@@ -161,7 +158,11 @@ public:
 
 
         // initialize the message
-        msg->setDestinationShardId(shard->getShardId());
+        if(shard == NULL){
+			msg->setDestinationShardId(ShardId());
+        }else{
+			msg->setDestinationShardId(shard->getShardId());
+        }
         msg->setInternal();
         msg->setType(RequestType::messageType());
         msg->setMessageId(transportManager.getUniqueMessageIdValue());
