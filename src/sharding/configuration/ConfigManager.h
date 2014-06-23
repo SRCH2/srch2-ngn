@@ -13,7 +13,7 @@
 #include <vector>
 #include <sstream>
 #include <stdint.h>
-
+#include <sys/types.h>
 #include <boost/unordered_map.hpp>
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
@@ -543,7 +543,7 @@ class Transport{
 
 	public:
 	Transport(){
-		port = 8088;
+		port = 8087;
 		ipAddress = "0.0.0.0";
 	}
 	void setPort(unsigned port);
@@ -571,9 +571,9 @@ public:
 	void setTtl(unsigned ttl);
 
 	MulticastDiscovery(){
-		port = 8088;
-		ttl = 5;
-		groupAddress = "1.1.1.1";
+		port = 6087;
+		ttl = 1;
+		groupAddress = "224.1.1.2";
 		ipAddress = "0.0.0.0";
 	}
 

@@ -27,32 +27,23 @@ SyncManager::SyncManager(ConfigManager& cm, TransportManager& tm) :
 
 	cluster = cm.getCluster();
 	nodesInCluster = cluster->getNodes();
-
-	///// this is temp
-	unsigned internalCommPort = 0;
-	for(int i = 0; i < nodesInCluster->size(); i++){
-		if(nodesInCluster->operator[](i).thisIsMe == true){
-			internalCommPort = nodesInCluster->operator[](i).getPortNumber();
-			break;
-		}
-	}
-	ASSERT(internalCommPort != 0);
-	//////
 	nodesInCluster->clear();
-	srch2http::MulticastConfig discoverConfiguration;
-	discoverConfiguration.interfaceAddress = "0.0.0.0";
-	discoverConfiguration.multicastPort = 6087;
-	discoverConfiguration.enableLoop = 1;
-	discoverConfiguration.multiCastAddress = "224.1.1.2";
-	discoverConfiguration.ttl = 1;
-	discoverConfiguration.internalCommunicationPort = internalCommPort;
-	discoveryMgr = new  MulticastDiscovery(discoverConfiguration);
-	//pingInterval = cm.getDiscoveryParams().pingInterval;  TODO
-	//pingTimeout = cm.getDiscoveryParams().pingTimeout;  TODO
 
-	pingInterval = 2;
-	pingTimeout = 6;
-	initialTimeout = 6;
+	srch2http::MulticastConfig discoverConfiguration;
+	discoverConfiguration.interfaceAddress = config.getTransport().getIpAddress();
+	discoverConfiguration.internalCommunicationPort = config.getTransport().getPort();
+
+	discoverConfiguration.multicastPort = config.getMulticastDiscovery().getPort();
+	discoverConfiguration.enableLoop = 1;
+	discoverConfiguration.multiCastAddress = config.getMulticastDiscovery().getGroupAddress();
+	discoverConfiguration.ttl = config.getMulticastDiscovery().getTtl();
+
+	//discoverConfiguration.print();
+
+	discoveryMgr = new  MulticastDiscoveryManager(discoverConfiguration);
+
+	pingInterval = config.getPing().getPingInterval();
+	pingTimeout = config.getPing().getPingTimeout();
 
 	this->masterNodeId = 0;
 	this->isCurrentNodeMaster = false;
@@ -543,7 +534,6 @@ void ClientMessageHandler::processHeartBeat(Message *message) {
 	heartBeatResponse->setBodyAndBodySize(&_syncMgrObj->currentNodeId, sizeof(NodeId));
 	_syncMgrObj->route(masterId, heartBeatResponse);
 	msgAllocator.deallocateByMessagePointer(heartBeatResponse);
-	_syncMgrObj->resetTimeout();
 }
 
 void ClientMessageHandler::updateClusterState(Message *message){
@@ -740,11 +730,6 @@ void MasterMessageHandler::lookForCallbackMessages(SMCallBackHandler* /*not used
 					handleNodeFailure(i);
 				}
 			}
-		}
-
-		if (firstTime && perNodeTimeStampEntry.size() == nodes.size()) {
-			_syncMgrObj->resetTimeout();
-			firstTime = false;
 		}
 
 		sleep(_syncMgrObj->pingInterval);

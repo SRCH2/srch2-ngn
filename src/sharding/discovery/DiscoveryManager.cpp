@@ -18,7 +18,7 @@ using namespace srch2::util;
 namespace srch2 {
 namespace httpwrapper {
 
-MulticastDiscovery::MulticastDiscovery(MulticastConfig config): discoveryConfig(config) {
+MulticastDiscoveryManager::MulticastDiscoveryManager(MulticastConfig config): discoveryConfig(config) {
 	// throws exception if validation failed.
 	validateConfigSettings(discoveryConfig);
 	listenSocket = -1;
@@ -31,7 +31,7 @@ MulticastDiscovery::MulticastDiscovery(MulticastConfig config): discoveryConfig(
 	uniqueNodeId = 0;
 }
 
-void MulticastDiscovery::validateConfigSettings(MulticastConfig discoveryConfig) {
+void MulticastDiscoveryManager::validateConfigSettings(MulticastConfig discoveryConfig) {
 
 	struct in_addr ipAddress;
 	/*
@@ -43,6 +43,10 @@ void MulticastDiscovery::validateConfigSettings(MulticastConfig discoveryConfig)
 		throw std::runtime_error(ss.str());
 	}
 	this->interfaceNumericAddr = ipAddress.s_addr;
+
+//	if (this->interfaceNumericAddr == INADDR_ANY) {  // 0.0.0.0
+//		this->publishInterfaceAddr =
+//	}
 
 	memset(&ipAddress, sizeof(ipAddress), 0);
 	if (inet_aton(discoveryConfig.multiCastAddress.c_str(), &ipAddress) == 0) {
@@ -80,7 +84,7 @@ void MulticastDiscovery::validateConfigSettings(MulticastConfig discoveryConfig)
  *
  */
 
-int MulticastDiscovery::openListeningChannel(){
+int MulticastDiscoveryManager::openListeningChannel(){
 
 	/*
 	 *  Prepare socket data structures.
@@ -191,7 +195,7 @@ tryNextPort:
 	return udpSocket;
 }
 
-int MulticastDiscovery::openSendingChannel(){
+int MulticastDiscoveryManager::openSendingChannel(){
 
 	/*
 	 *  Prepare socket data structures.
@@ -281,7 +285,7 @@ int sendUDPPacketToDestination(int sendSocket, char *buffer, unsigned bufferSize
 int checkSocketIsReady(int socket, bool checkForRead);
 void * multicastListener(void * arg) {
 
-	MulticastDiscovery * discovery = (MulticastDiscovery *) arg;
+	MulticastDiscoveryManager * discovery = (MulticastDiscoveryManager *) arg;
 	int listenSocket = discovery->listenSocket;
 
 	DiscoveryMessage message;
@@ -476,7 +480,7 @@ void * multicastListener(void * arg) {
 	return NULL;
 }
 
-void MulticastDiscovery::init() {
+void MulticastDiscoveryManager::init() {
 
 	listenSocket = openListeningChannel();
 	sendSocket = openSendingChannel();
@@ -493,7 +497,7 @@ void MulticastDiscovery::init() {
 	}
 }
 
-void MulticastDiscovery::sendJoinRequest() {
+void MulticastDiscoveryManager::sendJoinRequest() {
 	DiscoveryMessage message;
 	memset(&message, 0, sizeof(message));
 	message.flag = DISCOVERY_JOIN_CLUSTER_REQ;
@@ -520,7 +524,7 @@ void MulticastDiscovery::sendJoinRequest() {
 		}
 	}
 }
-bool MulticastDiscovery::shouldYield(unsigned senderIp, unsigned senderPort) {
+bool MulticastDiscoveryManager::shouldYield(unsigned senderIp, unsigned senderPort) {
 	//Logger::console("[%d, %d] [%d, %d]", senderIp, senderPort, interfaceNumericAddr, getCommunicationPort());
 	if (senderIp > interfaceNumericAddr) {
 		return true;
@@ -530,7 +534,7 @@ bool MulticastDiscovery::shouldYield(unsigned senderIp, unsigned senderPort) {
 	return false;
 }
 
-bool MulticastDiscovery::isLoopbackMessage(DiscoveryMessage &msg){
+bool MulticastDiscoveryManager::isLoopbackMessage(DiscoveryMessage &msg){
 	return (msg.interfaceNumericAddress == this->interfaceNumericAddr &&
 			msg.internalCommunicationPort == this->getCommunicationPort());
 }
@@ -566,7 +570,7 @@ int checkSocketIsReady(int socket, bool checkForRead) {
 	return result;
 }
 
-unsigned MulticastDiscovery::getNextNodeId() {
+unsigned MulticastDiscoveryManager::getNextNodeId() {
 	if (currentNodeMaster)
 		return __sync_fetch_and_add(&uniqueNodeId, 1);
 	else {

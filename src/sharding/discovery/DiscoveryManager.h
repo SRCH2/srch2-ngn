@@ -45,12 +45,19 @@ struct MulticastConfig{
 	unsigned internalCommunicationPort;
 	int ttl;                       // Time To Live
 	u_char enableLoop;             // enabled loopback. 0 or 1
+
+	// only for debug
+	void print() {
+		std::cout << "transport: [" << interfaceAddress << " : " << internalCommunicationPort << "]" << std::endl;
+		std::cout << "discovery: [" << multiCastAddress << " : " << multicastPort
+				 << " : " << ttl << " : " << (enableLoop == 1 ? "loop enabled" : "loop disabled") << "]" << std::endl;
+	}
 };
 void * multicastListener(void * arg);
-class MulticastDiscovery{
+class MulticastDiscoveryManager{
 	friend void * multicastListener(void * arg);
 public:
-	MulticastDiscovery(MulticastConfig config);
+	MulticastDiscoveryManager(MulticastConfig config);
 	std::string getMultiCastAddressStr() {
 		return discoveryConfig.multiCastAddress;
 	}

@@ -77,10 +77,8 @@ private:
 	/*
 	 *   fetch timeout interval for SM messages.
 	 */
-	unsigned getTimeout() { return initialTimeout ; }      // temp for V0 replace with pingTimeout in V1
-	void resetTimeout() {// temp for V0
-		initialTimeout = pingTimeout;
-	}
+	unsigned getTimeout() { return pingTimeout; }
+
 	//void refresh() {};
 	//unsigned findNextEligibleMaster();
 	/*
@@ -108,14 +106,13 @@ private:
 	unsigned pingInterval;
 	unsigned pingTimeout;
 	unsigned masterNodeId;
-	unsigned initialTimeout;
 	Cluster *cluster;
 	TransportManager& transport;
 	SMCallBackHandler *callBackHandler;
 	MessageHandler *messageHandler;
 	ConfigManager& config;
 	std::vector<Node> *nodesInCluster;
-	MulticastDiscovery* discoveryMgr;
+	MulticastDiscoveryManager* discoveryMgr;
 	DiscoveryCallBack  *discoveryCallBack;
 	unsigned nodeIds;
 	bool configUpdatesDone;
@@ -255,7 +252,7 @@ private:
 
 class MasterMessageHandler : public MessageHandler{
 public:
-	MasterMessageHandler(SyncManager *sm): MessageHandler(sm) { firstTime = true;}
+	MasterMessageHandler(SyncManager *sm): MessageHandler(sm) { }
 	/*
 	 *   The function should handle main logic of processing
 	 *   messages delivered by TM.
@@ -272,7 +269,7 @@ public:
 	virtual void handleMessage(Message *message);
 
 private:
-	bool firstTime;  // temp for V0
+
 	void updateNodeInCluster(Message *message);
 	void handleNodeFailure(unsigned nodeId);
 	// key = Node id , Value = Latest time when message was received from this node.
