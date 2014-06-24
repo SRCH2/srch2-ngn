@@ -223,7 +223,7 @@ int MulticastDiscoveryManager::openSendingChannel(){
 int readUDPPacketWithSenderInfo(int listenSocket, char *buffer, unsigned bufferSize, int flag,
 		 struct sockaddr_in& senderAddress) {
 
-	unsigned int senderAddressLen;
+	unsigned int senderAddressLen = sizeof(senderAddress);
 	while(1) {
 		int status = recvfrom(listenSocket, buffer, bufferSize, flag,
 				(struct sockaddr *)&senderAddress, &senderAddressLen);
