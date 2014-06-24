@@ -48,7 +48,7 @@ void MulticastDiscoveryManager::validateConfigSettings(MulticastConfig discovery
 //		this->publishInterfaceAddr =
 //	}
 
-	memset(&ipAddress, sizeof(ipAddress), 0);
+	memset(&ipAddress, 0, sizeof(ipAddress));
 	if (inet_aton(discoveryConfig.multiCastAddress.c_str(), &ipAddress) == 0) {
 		std::stringstream ss;
 		ss << " Invalid Muticast Address = " << discoveryConfig.multiCastAddress;
@@ -107,8 +107,9 @@ int MulticastDiscoveryManager::openListeningChannel(){
 	 */
 	int optionVal = 1;  // 1 is used to enable the setting.
 	setsockopt(udpSocket, SOL_SOCKET, SO_REUSEADDR, (void*) &optionVal, sizeof(optionVal));
-
+#ifdef SO_REUSEPORT
 	setsockopt(udpSocket, SOL_SOCKET, SO_REUSEPORT, (void*) &optionVal, sizeof(optionVal));
+#endif
 
 	/*
 	 *   Set TTL ( Time To Live ). Purpose of TTL in multicast packet is to
