@@ -31,12 +31,13 @@ IF(ENABLE_PROFILER)
 ENDIF()
 
 set(MONGO_CLIENT_LIBRARY ${CMAKE_SOURCE_DIR}/thirdparty/mongo-cxx-driver-v2.4/libmongoclient.a)
-
+#set(MONGO_CLIENT_LIBRARY ${CMAKE_SOURCE_DIR}/thirdparty/mongo-cxx-driver-v2.4/libmongoclient.so)
 ADD_EXECUTABLE(${SRCH2_SERVER_NAME} srch2SearchServer.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:SERVER_OBJECTS> $<TARGET_OBJECTS:ADAPTER_OBJECTS>)
 TARGET_LINK_LIBRARIES(${SRCH2_SERVER_NAME} 
+						dl
                         ${Srch2InstantSearch_LIBRARIES} 
                         ${jsoncpp_LIBRARY}      ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent_pthreads.a
-                        ${MONGO_CLIENT_LIBRARY} ${CMAKE_REQUIRED_LIBRARIES} ${Boost_LIBRARIES} -lpthread ${GPERFTOOL_LIBS}
+                        ${MONGO_CLIENT_LIBRARY} ${CMAKE_REQUIRED_LIBRARIES} ${Boost_LIBRARIES} -lpthread ${GPERFTOOL_LIBS}                        
                 )
 
 ADD_DEPENDENCIES(${SRCH2_SERVER_NAME} srch2_core)

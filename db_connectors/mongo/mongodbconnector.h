@@ -6,27 +6,31 @@
 #include <iostream>
 #include <string>
 #include "../../src/adapter/DataConnector.h"
-//#include "mongo/client/dbclient.h"
+#include "mongo/client/dbclient.h"
 //#include "mongo/bson/bsonobj.h"
 //#include "mongo/client/dbclientcursor.h"
 //#include "mongo/client/dbclientinterface.h"
-#include "../../tmp/mongo-cxx-driver/build/linux2/use-system-boost/chen/include/mongo/client/dbclient.h"
+//#include "../../tmp/mongo-cxx-driver/build/linux2/use-system-boost/chen/include/mongo/client/dbclient.h"
 
-#include "mongo/bson/bsonobj.h"
-#include "../../tmp/mongo-cxx-driver/build/linux2/use-system-boost/chen/include/mongo/client/dbclientcursor.h"
-#include "../../tmp/mongo-cxx-driver/build/linux2/use-system-boost/chen/include/mongo/client/dbclientinterface.h"
+//#include "mongo/bson/bsonobj.h"
+//#include "../../tmp/mongo-cxx-driver/build/linux2/use-system-boost/chen/include/mongo/client/dbclientcursor.h"
+//#include "../../tmp/mongo-cxx-driver/build/linux2/use-system-boost/chen/include/mongo/client/dbclientinterface.h"
 
 class MongoDBConnector: public DataConnector {
 public:
 	MongoDBConnector();
 	virtual ~MongoDBConnector();
-	virtual void init(ServerInterface *serverHandle);
+	virtual bool init(ServerInterface *serverHandle);
 	virtual void* runListener();
 	void parseOpLogObject(mongo::BSONObj& bobj, std::string currentNS,
 			mongo::DBClientBase& oplogConnection);
+	static time_t bulkLoadEndTime;
+	void createNewIndexes();
 private:
 	ServerInterface *serverHandle;
+	mongo::DBClientBase* oplogConnection;
 
+	bool conn();
 }
 ;
 

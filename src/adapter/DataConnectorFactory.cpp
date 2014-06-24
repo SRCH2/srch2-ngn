@@ -9,6 +9,8 @@
 #include "DataConnectorFactory.h"
 #include <iostream>
 #include <string>
+#include <stdlib.h>
+#include "DataConnector.h"
 
 void * spawnConnector(void *arg) {
 	DataConnectorFactory::bootStrapConnector((ThreadArguments *)arg);
@@ -16,6 +18,7 @@ void * spawnConnector(void *arg) {
 }
 
 const std::string DataConnectorFactory::DB_CONNECTORS_PATH =
+//		"/home/liusrch2/srch2-ngn/db_connectors/mysql/mysql-replication-listener/build/lib/";
 		"/home/liusrch2/srch2-ngn/db_connectors/build/";
 const std::string DataConnectorFactory::DYNAMIC_LIBRARY_SUFFIX = "Connector.so";
 const std::string DataConnectorFactory::DYNAMIC_LIBRARY_PREFIX = "lib";
@@ -32,12 +35,13 @@ const std::string DataConnectorFactory::DATABASE_MAX_RETRY_COUNT="maxRetryCount"
 void DataConnectorFactory::bootStrapConnector(ThreadArguments * targ) {
 	DataConnector *connector = getDataConnector(targ->server->configLookUp(DataConnectorFactory::DATABASE_TYPE_NAME));
 
-	connector->init(targ->server);
-	connector->runListener();
+	if(connector->init(targ->server)){
+		connector->runListener();
+	}
 }
 
 DataConnector* DataConnectorFactory::getDataConnector(std::string dbname) {
-	std::string libName = DB_CONNECTORS_PATH + DYNAMIC_LIBRARY_PREFIX + dbname
+	std::string libName = DB_CONNECTORS_PATH + DYNAMIC_LIBRARY_PREFIX + "mongodb"
 			+ DYNAMIC_LIBRARY_SUFFIX;
 	void *pdlHandle = dlopen(libName.c_str(), RTLD_LAZY);
 	if (!pdlHandle) {
@@ -52,6 +56,7 @@ DataConnector* DataConnectorFactory::getDataConnector(std::string dbname) {
 		std::cout << "Cannot load symbol create: " << dlsym_error << '\n';
 		return 0;
 	}
+
 	DataConnector *dc = create_dataConnector();
 
 	return dc;

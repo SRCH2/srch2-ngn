@@ -41,8 +41,10 @@ LDFLAGS=-L$CURRENTDIR/../../libunwind/lib/ ./configure --prefix=$CURRENTDIR/../
 make && make install
 
 cd ../..
-tar -xf mongodb-linux-x86_64-v2.4-latest.tgz
+tar -xf mongo-cxx-driver-legacy-0.0-26compat-2.6.2.tar.gz
+mv mongo-cxx-driver-legacy-0.0-26compat-2.6.2 mongo-cxx-driver-v2.4
 cd mongo-cxx-driver-v2.4
 CURRENTDIR=$(pwd)
 echo "Building mongo driver in $CURRENTDIR"
-python ../json/jsoncpp-src-0.5.0/scons.py
+python ../json/jsoncpp-src-0.5.0/scons.py --sharedclient --use-system-boost
+

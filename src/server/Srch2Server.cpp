@@ -206,12 +206,12 @@ void Srch2Server::createAndBootStrapIndexer()
 	    case srch2http::DATA_SOURCE_MONGO_DB:
 	        {
 		    Logger::console("Creating indexes from a MongoDb instance...");
-		    unsigned indexedCounter = MongoDataSource::createNewIndexes(indexer, indexDataConfig);
+//		    unsigned indexedCounter = MongoDataSource::createNewIndexes(indexer, indexDataConfig);
 		    indexer->commit();
-		    if (indexedCounter > 0) {
+//		    if (indexedCounter > 0) {
 		        indexer->save();
 			Logger::console("Indexes saved.");
-		    }
+//		    }
 		    break;
 		}
 	    default:

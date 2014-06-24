@@ -47,7 +47,6 @@
 #include "WrapperConstants.h"
 #include "../adapter/ServerInterfaceInternal.h"
 #include "../adapter/DataConnectorFactory.h"
-
 namespace po = boost::program_options;
 namespace srch2is = srch2::instantsearch;
 namespace srch2http = srch2::httpwrapper;
@@ -738,7 +737,7 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
 }
 
 int main(int argc, char** argv) {
-    if (argc > 1) {
+	if (argc > 1) {
         if (strcmp(argv[1], "--version") == 0) {
             printVersion();
             return 0;

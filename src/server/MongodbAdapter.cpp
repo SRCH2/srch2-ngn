@@ -42,6 +42,7 @@ unsigned MongoDataSource::createNewIndexes(srch2is::Indexer* indexer, const Core
             hostAndport.append(":").append(port);  // std::string is mutable unlike java
         mongo::ScopedDbConnection * mongoConnector =
         		mongo::ScopedDbConnection::getScopedDbConnection(hostAndport);
+//        mongo::ScopedDbConnection * mongoConnector ;//= new mongo::ScopedDbConnection(hostAndport);
         Logger::console("connected to Mongo Db Instance %s-%s", host.c_str(), port.c_str());
 
         unsigned collectionCount = mongoConnector->conn().count(dbNameWithCollection);
@@ -114,8 +115,8 @@ void* MongoDataSource::runUpdateListener(void *searchServer){
         hostAndport.append(":").append(port);  // std::string is mutable unlike java
     }
     mongo::ScopedDbConnection * mongoConnector = mongo::ScopedDbConnection::getScopedDbConnection(hostAndport);
+//    mongo::ScopedDbConnection * mongoConnector ;//= new mongo::ScopedDbConnection(hostAndport);
     mongo::DBClientBase& oplogConnection = mongoConnector->conn();
-
     mongo::BSONElement _lastValue = mongo::minKey.firstElement();
     bool printOnce = true;
     time_t opLogTime = 0;
@@ -130,6 +131,8 @@ void* MongoDataSource::runUpdateListener(void *searchServer){
     	Logger::error("MOGNOLISTENER: exiting ... ");
     	return NULL;
     }
+
+   std::cout<< _lastValue.toString()<<std::endl;
     while(1) {
         // open the tail cursor on the capped collection oplog.rs
         // the cursor will wait for more data when it reaches at
@@ -142,12 +145,15 @@ void* MongoDataSource::runUpdateListener(void *searchServer){
         while (1) {
             if (tailCursor->more()){
                 mongo::BSONObj obj = tailCursor->next();
+//                std::cout <<"more : "<< obj.toString() << endl;
                 string recNS = obj.getStringField("ns");
                 if (recNS.compare(filterNamespace) == 0) {
                     mongo::BSONElement timestampElement = obj.getField("ts");
                     opLogTime = timestampElement.timestampTime().toTimeT();
                     //time_t curRecTime = obj.getField("ts");
+                    std::cout <<"opLogTime: "<< opLogTime <<" CutOffTime: "<<threadSpecificCutOffTime << endl;
                     if ( opLogTime > threadSpecificCutOffTime) {
+                    	std::cout <<"parse: "<< obj.toString() << endl;
                         parseOpLogObject(obj, filterNamespace, server, oplogConnection);
                     }
                 }

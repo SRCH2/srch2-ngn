@@ -19,12 +19,13 @@ public:
 	virtual ~ServerInterfaceInternal();
 	virtual int insertRecord(std::string jsonString);
 	virtual int deleteRecord(std::string primaryKey);
-	virtual int updateRecord(std::string jsonSrting);
+	virtual int updateRecord(std::string pk,std::string jsonSrting);
 	// this API will provide key based lookup
 	// from engine's connector specific configuration store.
 	//  e.g  "dbname" => "mysql"  (single value)
 	//       "collections" => "collection1, collection2 " (multi value)
 	virtual std::string configLookUp(std::string key);
+	virtual int saveRecord();
 private:
 	srch2::httpwrapper::Srch2Server *server;
 	std::map<std::string, std::string> * connectorConfig;

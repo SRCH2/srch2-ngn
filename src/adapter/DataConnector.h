@@ -15,12 +15,13 @@ public:
 	virtual ~ServerInterface(){};
 	virtual int insertRecord(std::string jsonString) = 0;
 	virtual int deleteRecord(std::string primaryKey) = 0;
-	virtual int updateRecord(std::string jsonSrting) = 0;
+	virtual int updateRecord(std::string pk,std::string jsonSrting) = 0;
 	// this API will provide key based lookup
 	// from engine's connector specific configuration store.
 	//  e.g  "dbname" => "mysql"  (single value)
 	//       "collections" => "collection1, collection2 " (multi value)
 	virtual std::string configLookUp(std::string key) = 0;
+	virtual int saveRecord()=0;
 
 };
 
@@ -28,7 +29,7 @@ class DataConnector {
 public:
 
 	virtual ~DataConnector(){};
-	virtual void init(ServerInterface *serverHandle) = 0;
+	virtual bool init(ServerInterface *serverHandle) = 0;
 	virtual void* runListener() = 0;
 
 };

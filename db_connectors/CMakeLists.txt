@@ -14,8 +14,7 @@ MESSAGE(STATUS "This is SOURCE dir " ${CMAKE_SOURCE_DIR}/..)
 					
 # add additional include directories depending on a connector requirement. 
 INCLUDE_DIRECTORIES(
-    #${CMAKE_SOURCE_DIR}/../third qparty/mongo-cxx-driver-v2.4/src
-    ${CMAKE_SOURCE_DIR}/../../tmp/mongo-cxx-driver/build/linux2/use-system-boost/chen/include/mongo/
+    /usr/include/mongo/
     ${CMAKE_SOURCE_DIR}/../db_connectors
     ${CMAKE_SOURCE_DIR}/..
 )
@@ -23,20 +22,8 @@ INCLUDE_DIRECTORIES(
 ADD_LIBRARY(mongodbConnector SHARED ${MONGO_DB_CONNECTOR_SRC} )
 
 SET_TARGET_PROPERTIES(mongodbConnector PROPERTIES COMPILE_FLAGS -fPIC)
-#SET(MONGO_CLIENT_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver-v2.4/libmongoclient.so )
-SET(MONGO_CLIENT_LIBRARY ${CMAKE_SOURCE_DIR}/../../tmp/mongo-cxx-driver/build/linux2/use-system-boost/chen/lib/libmongoclient.so)
 # Add all required libraries to be linked in the statement below
-TARGET_LINK_LIBRARIES(mongodbConnector ${MONGO_CLIENT_LIBRARY})
+TARGET_LINK_LIBRARIES(mongodbConnector -lmongoclient -lboost_system -pthread -lboost_filesystem -lboost_program_options)
 
-#
-#  2.  MySQL connector 
-#
-#FILE(GLOB_RECURSE MYSQL_DB_CONNECTOR_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "mysql/*.cpp")
-# add additional include directories depending on a connector requirement. 
-#INCLUDE_DIRECTORIES(
-#    ${CMAKE_SOURCE_DIR}/thirdparty/mongo-cxx-driver-v2.4/src
-#)
-#ADD_LIBRARY(mysqlConnector SHARED ${MYSQL_DB_CONNECTOR_SRC} )
-#SET_TARGET_PROPERTIES(mysqlConnector PROPERTIES COMPILE_FLAGS -fPIC)
-# Add all required libraries to be linked in the statement below
-#TARGET_LINK_LIBRARIES(mysqlConnector )
+add_executable(mongoTest mongo/main.cpp mongo/mongodbconnector.cpp)
+target_link_libraries(mongoTest -lmongoclient -lboost_system -pthread -lboost_filesystem -lboost_program_options)

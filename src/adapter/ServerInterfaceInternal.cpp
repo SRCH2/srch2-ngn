@@ -88,7 +88,7 @@ int ServerInterfaceInternal::deleteRecord(std::string primaryKey) {
 	return 0;
 }
 
-int ServerInterfaceInternal::updateRecord(std::string jsonString) {
+int ServerInterfaceInternal::updateRecord(std::string pk,std::string jsonString) {
 	std::cout << "3.ServerInterfaceInternal::updateRecord()" << std::endl;
 
 	stringstream errorMsg;
@@ -103,8 +103,7 @@ int ServerInterfaceInternal::updateRecord(std::string jsonString) {
 				jsonString.c_str());
 	}
 
-	string primaryKeyStringValue=root.get((*this->connectorConfig)[DataConnectorFactory::PRIMARY_KEY],"error").asString();
-
+	string primaryKeyStringValue=pk;
 	unsigned deletedInternalRecordId;
 	if (primaryKeyStringValue.size()) {
 		srch2is::INDEXWRITE_RETVAL ret =
@@ -141,6 +140,10 @@ int ServerInterfaceInternal::updateRecord(std::string jsonString) {
 
 std::string ServerInterfaceInternal::configLookUp(std::string key){
 	return (*this->connectorConfig)[key];
+}
+
+int ServerInterfaceInternal::saveRecord(){
+
 }
 
 ServerInterfaceInternal::~ServerInterfaceInternal(){

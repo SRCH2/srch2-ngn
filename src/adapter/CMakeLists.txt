@@ -1,21 +1,4 @@
-#FILE(GLOB SRCH2_ADAPTER_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.cpp")
-
-#INCLUDE_DIRECTORIES(
-#    ${CMAKE_BINARY_DIR}/include
-#    ${CMAKE_SOURCE_DIR}/src/wrapper/
-#    ${CMAKE_SOURCE_DIR}/src/core/
-#    ${CMAKE_SOURCE_DIR}/src/server/
-#)
-
-#add_library(ADAPTER_OBJECTS OBJECT ${SRCH2_ADAPTER_SRC})
-
-SET(LINK_SEARCH_START_STATIC ON)
-SET(LINK_SEARCH_END_STATIC ON)
-
 FILE(GLOB SRCH2_ADAPTER_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.cpp")
-					
-MESSAGE(STATUS "CMAKE_REQUIRED_LIBRARIES="  ${CMAKE_REQUIRED_LIBRARIES})
-MESSAGE(STATUS "Srch2InstantSearch_LIBRARIES="  ${Srch2InstantSearch_LIBRARIES} )
 
 INCLUDE_DIRECTORIES(
 	${CMAKE_BINARY_DIR}/include
@@ -27,10 +10,8 @@ INCLUDE_DIRECTORIES(
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/thirdparty/event/include
     ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src-0.5.0/include
-    ${CMAKE_SOURCE_DIR}/thirdparty/mongo-cxx-driver-v2.4/src
 )
 
 MESSAGE(STATUS "Srch2 source dir="  ${CMAKE_SOURCE_DIR} )
-SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-conversion -Wno-sign-compare")		
-
+SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-conversion -Wno-sign-compare")
 add_library(ADAPTER_OBJECTS OBJECT ${SRCH2_ADAPTER_SRC})

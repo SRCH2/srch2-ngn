@@ -7,85 +7,159 @@
 #include "mongodbconnector.h"
 #include <iostream>
 #include <unistd.h>
-//#include "mongo/client/dbclient.h"
-//#include "mongo/bson/bsonobj.h"
-//#include "mongo/client/dbclientcursor.h"
-//#include "mongo/client/dbclientinterface.h"
+#include "mongo/client/dbclient.h"
+
 using namespace std;
 
+time_t MongoDBConnector::bulkLoadEndTime = 0;
 
 MongoDBConnector::MongoDBConnector() {
-	cout << "constructor " << endl;
-	std::cout << "constructor " << std::endl;
+	serverHandle=NULL;
+	oplogConnection=NULL;
 }
 
-void MongoDBConnector::init(ServerInterface *serverHandle) {
+bool MongoDBConnector::init(ServerInterface *serverHandle) {
 	this->serverHandle = serverHandle;
-	serverHandle->insertRecord("");
+	bulkLoadEndTime=time(NULL);
+	return conn();
+}
 
-	std::cout << "init " << std::endl;
+bool MongoDBConnector::conn() {
+	string mongoNamespace = "local.oplog.rs";
+
+	string host = this->serverHandle->configLookUp("host");
+	string port = this->serverHandle->configLookUp("port");
+
+	int listenerWaitTime = atoi(
+			this->serverHandle->configLookUp("listenerWaitTime").c_str());
+	int maxRetryOnFailure = atoi(
+			this->serverHandle->configLookUp("maxRetryOnFailure").c_str());
+
+	for (unsigned retryCount = -1; retryCount != maxRetryOnFailure;
+			retryCount++) {
+
+		try {
+			string hostAndport = host;
+			if (port.size()) {
+				hostAndport.append(":").append(port); // std::string is mutable unlike java
+			}
+			mongo::ScopedDbConnection * mongoConnector =
+					new mongo::ScopedDbConnection(hostAndport);
+			oplogConnection = &mongoConnector->conn();
+
+			// first check whether the replication is enabled and the host is primary of the
+			// replica set
+			if (!oplogConnection->exists(mongoNamespace)) {
+				printf("MOGNOLISTENER: oplog does not exist on host = %s \n",
+						host.c_str());
+				printf(
+						"MOGNOLISTENER: either replication is not enabled on the host instance "
+								"or the host is not a primary member of replica set \n");
+				printf("MOGNOLISTENER: exiting ... \n");
+				return false;
+			}
+
+			return true;
+		} catch (const mongo::DBException &e) {
+			printf("MongoDb Exception : %s \n", e.what());
+		} catch (const exception& ex) {
+			printf("Unknown exception : %s \n", ex.what());
+		}
+		sleep(listenerWaitTime);
+		printf("MONGOLISTENER: trying again ...");
+	}
+	// if all retries failed then exit the thread
+	printf("MONGOLISTENER: exiting...\n");
+	return false;
+}
+
+void MongoDBConnector::createNewIndexes(){
+	string mongoNamespace = "local.oplog.rs";
+	string dbname = this->serverHandle->configLookUp("db");
+	string collection = this->serverHandle->configLookUp("collection");
+	string filterNamespace = dbname + "." + collection;
+	std::cout<<"create"<<std::endl;
+	try {
+		unsigned collectionCount = oplogConnection->count(filterNamespace);
+		// We fetch data from mongo db only if there are some records to be processed
+		unsigned indexedRecordsCount = 0;
+		std::cout<<collectionCount<<std::endl;
+		if (collectionCount > 0) {
+			// query the mongo database for all the objects in collection. mongo::BSONObj() means get
+			// all records from mongo db
+			auto_ptr<mongo::DBClientCursor> cursor = oplogConnection->query(
+					filterNamespace, mongo::BSONObj());
+			// get data from cursor
+			while (cursor->more()) {
+				mongo::BSONObj obj = cursor->next();
+				// parse BSON object returned by cursor and fill in record object
+				string recNS = obj.getStringField("ns");
+				std::cout<<obj<<std::endl;
+
+				string jsonRecord = obj.jsonString();
+				this->serverHandle->insertRecord(jsonRecord);
+
+				++indexedRecordsCount;
+				if (indexedRecordsCount && (indexedRecordsCount % 1000) == 0)
+					printf("Indexed %d records so far ...",
+							indexedRecordsCount);
+			}
+			printf("Total indexed %d / %d records.", indexedRecordsCount,
+					collectionCount);
+
+		} else {
+			printf("No data found in the collection %s",
+					filterNamespace.c_str());
+		}
+	} catch (const mongo::DBException &e) {
+		printf("MongoDb Exception : %s", e.what());
+		exit(-1);
+	} catch (const exception& ex) {
+		printf("Unknown exception : %s", ex.what());
+		exit(-1);
+	}
 }
 
 // illustrative code..
 void* MongoDBConnector::runListener() {
-	// connect to db
-	bool stop = false;
+	std::cout<<"linstern"<<std::endl;
+	createNewIndexes();
+	bool printOnce = true;
+	time_t opLogTime = 0;
+	time_t threadSpecificCutOffTime = bulkLoadEndTime;
 
-	printf("MOGNOLISTENER: thread started ... \n");
 	string mongoNamespace = "local.oplog.rs";
-
 	string dbname = this->serverHandle->configLookUp("db");
 	string collection = this->serverHandle->configLookUp("collection");
 	string filterNamespace = dbname + "." + collection;
-	string host = this->serverHandle->configLookUp("host");
-	string port = this->serverHandle->configLookUp("port");
-	unsigned retryCount = 0;
 
 	retry: try {
-		string hostAndport = host;
-		if (port.size()) {
-			hostAndport.append(":").append(port); // std::string is mutable unlike java
-		}
-		mongo::ScopedDbConnection * mongoConnector;
-//		mongo::ScopedDbConnection * mongoConnector =
-//				mongo::ScopedDbConnection::getScopedDbConnection(hostAndport);
-		mongo::DBClientBase& oplogConnection = mongoConnector->conn();
+		mongo::BSONElement _lastValue = mongo::BSONObj().firstElement();
 
-		mongo::BSONElement _lastValue = mongo::minKey.firstElement();
-		bool printOnce = true;
-		time_t opLogTime = 0;
-		time_t threadSpecificCutOffTime = 0;
-
-		// first check whether the replication is enabled and the host is primary of the
-		// replica set
-		if (!oplogConnection.exists(mongoNamespace)) {
-			printf("MOGNOLISTENER: oplog does not exist on host = %s \n",
-					host.c_str());
-			printf(
-					"MOGNOLISTENER: either replication is not enabled on the host instance "
-							"or the host is not a primary member of replica set \n");
-			printf("MOGNOLISTENER: exiting ... \n");
-			return NULL;
-		}
+		mongo::Query query = mongo::Query().hint(BSON("$natural" << 1));
 		while (1) {
 			// open the tail cursor on the capped collection oplog.rs
 			// the cursor will wait for more data when it reaches at
 			// the end of the collection. For more info please see
 			// following link.
 			// http://docs.mongodb.org/manual/tutorial/create-tailable-cursor/
-			mongo::Query query = QUERY("_id" << mongo::GT << _lastValue).hint( BSON( "$natural" << 1 ) );
-			auto_ptr<mongo::DBClientCursor> tailCursor = oplogConnection.query(mongoNamespace, query, 0, 0, 0,
-					mongo::QueryOption_CursorTailable | mongo::QueryOption_AwaitData );
+			auto_ptr<mongo::DBClientCursor> tailCursor = oplogConnection->query(
+					mongoNamespace, query, 0, 0, 0,
+					mongo::QueryOption_CursorTailable
+					| mongo::QueryOption_AwaitData);
 			while (1) {
 				if (tailCursor->more()) {
 					mongo::BSONObj obj = tailCursor->next();
+					cout<<"more : "<<obj.toString()<<endl;
 					string recNS = obj.getStringField("ns");
 					if (recNS.compare(filterNamespace) == 0) {
-						mongo::BSONElement timestampElement = obj.getField("ts");
+						mongo::BSONElement timestampElement = obj.getField(
+								"ts");
 						opLogTime = timestampElement.timestampTime().toTimeT();
-						//time_t curRecTime = obj.getField("ts");
-						if ( opLogTime > threadSpecificCutOffTime) {
-							parseOpLogObject(obj, filterNamespace, oplogConnection);
+						if (opLogTime > threadSpecificCutOffTime) {
+							cout<<"parse: "<<obj.toString()<<endl;
+							parseOpLogObject(obj, filterNamespace,
+									*oplogConnection);
 						}
 					}
 					_lastValue = obj["_id"];
@@ -97,16 +171,16 @@ void* MongoDBConnector::runListener() {
 					// records processed earlier. Alternative is to store current time.
 					threadSpecificCutOffTime = opLogTime;
 					if (tailCursor->isDead())
-					break;
+						break;
 					if (printOnce) {
 						printf("MOGNOLISTENER: waiting for updates ... \n");
 						printOnce = false;
 					}
-					retryCount = 0; // reset retryCount
 
-					sleep(atoi(this->serverHandle->configLookUp("listenerWaitTime").c_str()));// sleep...do not hog the CPU
+					sleep(1); // sleep...do not hog the CPU
 				}
 			}
+			query = QUERY("_id" << mongo::GT << _lastValue).hint( BSON( "$natural" << 1 ) );
 		}
 	} catch( const mongo::DBException &e ) {
 		printf("MongoDb Exception : %s \n", e.what());
@@ -114,14 +188,9 @@ void* MongoDBConnector::runListener() {
 		printf("Unknown exception : %s \n", ex.what());
 	}
 	sleep(atoi(this->serverHandle->configLookUp("listenerWaitTime").c_str()));
-	if (retryCount++
-			< atoi(
-					this->serverHandle->configLookUp("maxRetryOnFailure").c_str())) {
-		printf("MONGOLISTENER: trying again ...");
+	if (conn()) {
 		goto retry;
 	}
-	// if all retries failed then exit the thread
-	printf("MONGOLISTENER: exiting...\n");
 
 	return NULL;
 }
@@ -191,8 +260,20 @@ void MongoDBConnector::parseOpLogObject(mongo::BSONObj& bobj, string currentNS,
 			break;
 		}
 
+		mongo::BSONElement pk = _o2Element.Obj().getField(
+				this->serverHandle->configLookUp("uniqueKey").c_str());
+		string primaryKeyStringValue;
+		if (pk.type() == mongo::jstOID
+				&& this->serverHandle->configLookUp("uniqueKey").compare("_id")
+						== 0) {
+			mongo::OID oid = pk.OID();
+			primaryKeyStringValue = oid.str();
+		} else {
+			primaryKeyStringValue = pk.valuestrsafe();
+		}
+
 		string jsonRecord = updateRecord.jsonString();
-		this->serverHandle->updateRecord(jsonRecord);
+		this->serverHandle->updateRecord(primaryKeyStringValue,jsonRecord);
 
 		break;
 	}
