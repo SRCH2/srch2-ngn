@@ -3,7 +3,7 @@
 #ifndef __TRANSPORT_MANAGER_H__
 #define  __TRANSPORT_MANAGER_H__
 
-#include "RouteMap.h"
+#include "ConnectionMap.h"
 #include <event.h>
 #include <pthread.h>
 #include "Message.h"
@@ -40,13 +40,15 @@ class RoutingManager;
 
 class TransportManager {
 public:
-	TransportManager(EventBases&, Nodes&);
+	TransportManager(vector<struct event_base *>&);
 	//third argument is a timeout in seconds
-	MessageID_t sendMessage(NodeId, Message *, unsigned timeout=0);
+	MessageID_t sendMessage(NodeId, Message *, unsigned timeout = 0);
 	//route message through a particular socket
 	MessageID_t _sendMessage(int fd, Message *);
 	// this API enables SM to register its callback with TM
 	void registerCallbackHandlerForSynchronizeManager(CallBackHandler*);
+	// this API enables SM to register discovery callback with TM
+	void registerCallbackHandlerForDiscovery(CallBackHandler*);
 	// get the value of maximum message Id for this node.
 	MessageID_t& getCurrentMessageId();
 	// generate a unique ID for current message
@@ -61,15 +63,26 @@ public:
 	RoutingManager * getRoutingManager();
 	// this API enables RM to register its pointer with TM
 	void setRoutingManager(RoutingManager * rm);
-	// returns a data structure which holds all node-node socket informations.
-	RouteMap * getRouteMap();
 	// get SM callback handler
 	CallBackHandler* getSmHandler();
+	// get Discovery callback handler
+	CallBackHandler* getDiscoveryHandler();
 	// get RM callback handler
 	CallBackHandler* getRmHandler();
 	~TransportManager();
 	// API for the libevent callback to call into TM
 	bool receiveMessage(int fd, TransportCallback *cb);
+
+	ConnectionMap& getConnectionMap() { return routeMap; }
+
+	void registerEventListenerForSocket(int fd, Connection* conn);
+
+	bool isShuttingDown() { return this->shutDown; }
+
+	void setListeningThread(pthread_t listeningThread) {
+		this->listeningThread = listeningThread;
+	}
+
 private:
 	/*
 	 *  The function dispatches messages to upstream handlers.
@@ -114,10 +127,11 @@ private:
     */
    int checkSocketIsReady(int socket, bool checkForRead);
 
+   vector<struct event_base *>& evbases;
 	/*
 	 * This member maps nodes to their sockets
 	 */
-	RouteMap routeMap;
+	ConnectionMap routeMap;
 
 	/*
 	 * The thread that the current node is listening for the incoming request from new nodes
@@ -139,6 +153,10 @@ private:
 	 * Handles SynchManager callbacks
 	 */
 	CallBackHandler *synchManagerHandler;
+	/*
+	 * Handles SynchManager callbacks
+	 */
+	CallBackHandler *discoveryHandler;
 
 	/*
 	 * Handles internal message broker callbacks
@@ -148,16 +166,20 @@ private:
 	/*
 	 *  Stores the default socket read buffer size
 	 */
-	unsigned socketReadBuffer;
+	//unsigned socketReadBuffer;
 	/*
 	 *  Stores the default socket write buffer size
 	 */
-	unsigned socketSendBuffer;
+	//unsigned socketSendBuffer;
 
 	/*
 	 * Routing Manager
 	 */
 	RoutingManager * routingManager;
+	/*
+	 *  Notify that transport manager is shutting down. To be set to true in call
+	 */
+	bool shutDown;
 };
 }}
 

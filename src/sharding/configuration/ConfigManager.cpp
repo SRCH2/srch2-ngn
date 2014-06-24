@@ -40,6 +40,16 @@ namespace httpwrapper {
 // configuration file tag and attribute names for ConfigManager
 // *MUST* be lowercase
 
+const char* const ConfigManager::multicastDiscovery = "multicastdiscovery";
+const char* const ConfigManager::multicastGroupAddress = "group-address";
+const char* const ConfigManager::multicastIpAddress = "ipaddress";
+const char* const ConfigManager::multicastPort = "port";
+const char* const ConfigManager::multicastTtl = "ttl";
+
+const char* const ConfigManager::transportNodeTag = "transport";
+const char* const ConfigManager::transportIpAddress = "ipaddress";
+const char* const ConfigManager::transportPort = "port";
+
 const char* const ConfigManager::nodeListeningHostNameTag = "listeninghostname";
 const char* const ConfigManager::nodeListeningPortTag = "internalcommunicationport";
 const char* const ConfigManager::nodeCurrentTag = "this-is-me";
@@ -55,7 +65,7 @@ const char* const ConfigManager::clusterNameTag = "cluster-name";
 const int ConfigManager::DefaultNumberOfPrimaryShards = 5;
 const int ConfigManager::DefaultNumberOfReplicas = 1;
 const char* const ConfigManager::DefaultClusterName = "SRCH2Cluster";
-const char* const ConfigManager::discoveryNodeTag = "discovery";
+const char* const ConfigManager::pingNodeTag = "ping";
 const char* const ConfigManager::pingIntervalTag = "ping-interval";
 const char* const ConfigManager:: pingTimeoutTag= "ping-timeout";
 const char* const ConfigManager::retryCountTag = "retry-count";
@@ -1791,36 +1801,97 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
 
     xml_node configNode = configDoc.child(configString);
 
-    xml_node discoveryNode = configNode.child(discoveryNodeTag);
-    if(discoveryNode){
-        xml_node pingInterval = discoveryNode.child(pingIntervalTag);
+
+    xml_node transportNode = configNode.child(transportNodeTag);
+    if(transportNode){
+    	xml_node transportIpAddressNode = transportNode.child(transportIpAddress);
+    	if(transportIpAddressNode && transportIpAddressNode.text()){
+    		tempUse = string(transportIpAddressNode.text().get());
+    		trimSpacesFromValue(tempUse, "transport-IpAddress", parseWarnings);
+    		transport.setIpAddress(tempUse);
+    	}
+
+    	 xml_node transportPortNode = transportNode.child(transportPort);
+    	 if(transportPortNode && transportPortNode.text()){
+    	   	tempUse = string(transportPortNode.text().get());
+    	   	trimSpacesFromValue(tempUse, "transport-port", parseWarnings);
+    	   	if(isNumber(tempUse))
+    	   		transport.setPort((uint)atol(tempUse.c_str()));
+    	   	else
+    	   		parseWarnings << "port number specified within transport is not valid, engine will use the default value 8088";
+    	 }
+
+    }
+
+    xml_node multicastDiscoveryNode = configNode.child(multicastDiscovery);
+    if(multicastDiscoveryNode){
+    	xml_node groupAddressNode = multicastDiscoveryNode.child(multicastGroupAddress);
+    	if(groupAddressNode && groupAddressNode.text()){
+    		tempUse = string(groupAddressNode.text().get());
+    		trimSpacesFromValue(tempUse, "group-address", parseWarnings);
+    		mDiscovery.setGroupAddress(tempUse);
+    	}
+
+        xml_node multicastIpAddressNode = multicastDiscoveryNode.child(multicastIpAddress);
+        if(multicastIpAddressNode && multicastIpAddressNode.text()){
+        	tempUse = string(multicastIpAddressNode.text().get());
+       		trimSpacesFromValue(tempUse, "multicast-IpAddress", parseWarnings);
+       		mDiscovery.setIpAddress(tempUse);
+       	}
+
+        xml_node multicastPortNode = multicastDiscoveryNode.child(multicastPort);
+        if(multicastPortNode && multicastPortNode.text()){
+        	tempUse = string(multicastPortNode.text().get());
+        	trimSpacesFromValue(tempUse, "multicast-port", parseWarnings);
+        	if(isNumber(tempUse))
+        		mDiscovery.setPort((uint)atol(tempUse.c_str()));
+        	else
+        		parseWarnings << "port number specified within multicast is not valid, engine will use the default value 8088";
+        }
+
+        xml_node multicastTtlNode = multicastDiscoveryNode.child(multicastTtl);
+        if(multicastTtlNode && multicastTtlNode.text()){
+        	tempUse = string(multicastTtlNode.text().get());
+        	trimSpacesFromValue(tempUse, "multicast-ttl", parseWarnings);
+        	if(isNumber(tempUse))
+        		mDiscovery.setTtl((uint)atol(tempUse.c_str()));
+        	else
+        		parseWarnings << "ttl specified within multicast is not valid, engine will use the default value of 5";
+        }
+    }
+
+
+
+    xml_node pingNode = configNode.child(pingNodeTag);
+    if(pingNode){
+        xml_node pingInterval = pingNode.child(pingIntervalTag);
         if(pingInterval && pingInterval.text()){
            tempUse = string(pingInterval.text().get());
            trimSpacesFromValue(tempUse, "pingInterval", parseWarnings);
            if(isNumber(tempUse))
-               discovery.setPingInterval((uint)atol(tempUse.c_str()));
+               ping.setPingInterval((uint)atol(tempUse.c_str()));
            else{
         	   parseWarnings<<"Ping interval specified is not valid, engine will use the default value 1";
            }
         }
 
-        xml_node pingTimeout = discoveryNode.child(pingTimeoutTag);
+        xml_node pingTimeout = pingNode.child(pingTimeoutTag);
         if(pingTimeout && pingTimeout.text()){
             tempUse = string(pingTimeout.text().get());
             trimSpacesFromValue(tempUse, "pingTimeout", parseWarnings);
             if(isNumber(tempUse))
-                discovery.setPingTimeout((uint)atol(tempUse.c_str()));
+                ping.setPingTimeout((uint)atol(tempUse.c_str()));
             else{
          	   parseWarnings<<"Ping timeout specified is not valid, engine will use the default value 1";
             }
         }
 
-        xml_node retryCount = discoveryNode.child(retryCountTag);
+        xml_node retryCount = pingNode.child(retryCountTag);
         if(retryCount && retryCount.text()){
             tempUse = string(retryCount.text().get());
             trimSpacesFromValue(tempUse, "retryCount", parseWarnings);
             if(isNumber(tempUse))
-                discovery.setRetryCount((uint)atol(tempUse.c_str()));
+                ping.setRetryCount((uint)atol(tempUse.c_str()));
             else{
                 parseWarnings<<"Retry count specified is not valid, engine will use the default value 1";
             }
@@ -3044,6 +3115,53 @@ const CoreInfo_t * ConfigManager::getDefaultCoreInfo() const{
     return clusterReadview->getCoreByName(getDefaultCoreName());
 }
 
+string Transport::getIpAddress(){
+	return this->ipAddress;
+}
+
+unsigned Transport::getPort(){
+	return this->port;
+}
+
+void Transport::setIpAddress(const string& ipAddress){
+	this->ipAddress = ipAddress;
+}
+
+void Transport::setPort(unsigned port){
+	this->port = port;
+}
+
+void MulticastDiscovery::setIpAddress(string& ipAddress){
+	this->ipAddress = ipAddress;
+}
+
+void MulticastDiscovery::setGroupAddress(string& groupAddress){
+	this->groupAddress = groupAddress;
+}
+
+void MulticastDiscovery::setPort(unsigned port){
+	this->port = port;
+}
+
+void MulticastDiscovery::setTtl(unsigned ttl){
+	this->ttl = ttl;
+}
+
+string MulticastDiscovery::getIpAddress(){
+	return this->ipAddress;
+}
+
+string MulticastDiscovery::getGroupAddress(){
+	return this->groupAddress;
+}
+
+unsigned MulticastDiscovery::getPort(){
+	return this->port;
+}
+
+unsigned MulticastDiscovery::getTtl(){
+	return this->ttl;
+}
 
 // end of namespaces
 }

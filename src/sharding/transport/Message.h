@@ -9,9 +9,10 @@ namespace httpwrapper {
 
 typedef unsigned MessageID_t;
 
-const char MSG_LOCAL_MASK = 0x2;
-const char MSG_REPLY_MASK = 0x1;
-const char MSG_INTERNAL_MASK = 0x4;
+const char MSG_LOCAL_MASK = 0x2;      // 00000010
+const char MSG_REPLY_MASK = 0x1;      // 00000001
+const char MSG_INTERNAL_MASK = 0x4;   // 00000100
+const char MSG_DISCOVERY_MASK = 0x8;  // 00001000
 
 class Message {
 
@@ -32,6 +33,11 @@ public:
    bool isInternal() {
      return mask & MSG_INTERNAL_MASK;
    }
+
+   bool isDiscovery() {
+     return mask & MSG_DISCOVERY_MASK;
+   }
+
    Message * setLocal(){
 	   mask |= MSG_LOCAL_MASK;
 	   return this;
@@ -42,6 +48,10 @@ public:
    }
    Message * setInternal(){
 	   mask |= MSG_INTERNAL_MASK;
+	   return this;
+   }
+   Message * setDiscoveryMask(){
+	   mask |= MSG_DISCOVERY_MASK;
 	   return this;
    }
    unsigned getBodySize(){

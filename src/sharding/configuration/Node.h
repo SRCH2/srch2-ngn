@@ -75,7 +75,9 @@ public:
 	//Iterator begin();
 	//Iterator next();
 	//Iterator end();
+	string serialize();
 
+	void deserialize(char *serlializedNode) ;
 private:
 	unsigned nodeId;
 	std::string ipAddress;

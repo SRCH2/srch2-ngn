@@ -69,7 +69,14 @@ void * TransportManager::notifyUpstreamHandlers(Message *msg, int fd, NodeId  no
 			getRmHandler()->resolveMessage(msg, nodeId);
 		}
 		getMessageAllocator()->deallocateByMessagePointer(msg);
-	} else {
+
+	} else if(msg->isDiscovery()) {
+
+		if (getDiscoveryHandler()) {
+			getDiscoveryHandler()->resolveMessage(msg, nodeId);
+		}
+		getMessageAllocator()->deallocateByMessagePointer(msg);
+	}else {
 		// Check whether this node has registered SMHandler into TM yet. If not skip the message.
 		if (getSmHandler() != NULL){
 			getSmHandler()->resolveMessage(msg, nodeId);
@@ -283,67 +290,26 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb) {
 	return true;
 }
 
-TransportManager::TransportManager(EventBases& bases, Nodes& nodes) {
-	// For each node we have, if it is a current node then store it as current
-	// node otherwise store the nodes as a destination
-	for(Nodes::iterator dest = nodes.begin(); dest!= nodes.end(); ++dest) {
-		if((*dest)->thisIsMe)
-			routeMap.setCurrentNode(*dest);
-		else
-			routeMap.addDestination(**dest);
-	}
-
-	pthread_create(&listeningThread, NULL, startListening, &routeMap);
-	pthread_detach(listeningThread);
-	// initializes the connections to other nodes using tryToConnect
-	// TODO in V1, this routeMap moves to SM
-	routeMap.initRoutes();
-
-	while(!routeMap.isTotallyConnected()) {
-		sleep(3);
-	}
-
-	//close(routeMap.getListeningSocket());
-	Logger::console("Connected");
-
-
-	// RouteMap iterates over routes. Routes are std::map<NodeId, Connection>
-	// which is basically NodeId to file descriptor
-	// We bound the route file descriptors (connection to other nodes) to event bases
-	// that are bound to cb_receiveMessage. This way cb_receiveMessage receives all internal messages
-	for(RouteMap::iterator route = routeMap.begin(); route != routeMap.end(); ++route) {
-		for(EventBases::iterator base = bases.begin(); base != bases.end(); ++base) {
-			TransportCallback *cb_ptr = new TransportCallback();
-			struct event* ev = event_new(*base, route->second.fd, EV_READ, 	cb_receiveMessage, cb_ptr);
-			new (cb_ptr) TransportCallback(this, &route->second, ev, *base);
-			event_add(ev, NULL);
-		}
-	}
-
-	if (routeMap.begin()!= routeMap.end()) {
-		unsigned currNodeSocketReadBuffer;
-		unsigned size = sizeof(unsigned);
-		getsockopt(routeMap.begin()->second.fd, SOL_SOCKET, SO_RCVBUF, &socketReadBuffer,
-				&size);
-		getsockopt(routeMap.begin()->second.fd, SOL_SOCKET, SO_SNDBUF, &socketSendBuffer,
-						&size);
-		Logger::console("SO_RCVBUF = %d, SO_SNDBUF = %d", socketReadBuffer, socketSendBuffer);
-	}
+TransportManager::TransportManager(vector<struct event_base *>& bases): evbases(bases) {
 
 	distributedUniqueId = 0;
 	synchManagerHandler = NULL;
 	routeManagerHandler = NULL;
 	routingManager = NULL;
+	shutDown = false;
+	discoveryHandler = NULL;
 }
 
 
-MessageID_t TransportManager::sendMessage(NodeId node,Message * msg,
-		unsigned timeout) {
+MessageID_t TransportManager::sendMessage(NodeId node, Message * msg, unsigned timeout) {
 
 	if(msg == NULL){
 		Logger::debug("Trying to send NULL message in TM route(node,msg)");
 		return 0;
 	}
+
+	if (!routeMap.isConnectionExist(node))
+		return -1;
 
 	Connection& conn = routeMap.getConnection(node);
 
@@ -463,6 +429,15 @@ int TransportManager::checkSocketIsReady(int socket, bool checkForRead) {
 	return result;
 }
 
+void TransportManager::registerEventListenerForSocket(int fd, Connection *conn) {
+	for(EventBases::iterator base = evbases.begin(); base != evbases.end(); ++base) {
+		TransportCallback *cb_ptr = new TransportCallback();
+		struct event* ev = event_new(*base, fd, EV_READ, cb_receiveMessage, cb_ptr);
+		new (cb_ptr) TransportCallback(this, conn, ev, *base);
+		event_add(ev, NULL);
+	}
+}
+
 MessageID_t& TransportManager::getCurrentMessageId() {
 	return distributedUniqueId;
 }
@@ -491,12 +466,12 @@ void TransportManager::setRoutingManager(RoutingManager * rm){
 	this->routingManager = rm;
 }
 
-RouteMap * TransportManager::getRouteMap() {
-	return &routeMap;
-}
-
 CallBackHandler* TransportManager::getSmHandler() {
 	return synchManagerHandler;
+}
+
+CallBackHandler* TransportManager::getDiscoveryHandler() {
+	return discoveryHandler;
 }
 
 void TransportManager::registerCallbackHandlerForSynchronizeManager(CallBackHandler
@@ -504,16 +479,21 @@ void TransportManager::registerCallbackHandlerForSynchronizeManager(CallBackHand
 	synchManagerHandler = callBackHandler;
 }
 
+void TransportManager::registerCallbackHandlerForDiscovery(CallBackHandler
+		*callBackHandler) {
+	discoveryHandler = callBackHandler;
+}
+
 void TransportManager::setInternalMessageBroker(CallBackHandler* cbh) {
   routeManagerHandler = cbh;
 }
 
 TransportManager::~TransportManager() {
-
-   for(RouteMap::iterator i = routeMap.begin(); i != routeMap.end(); ++i) {
-      close(i->second.fd);
-   }
-   close(routeMap.getListeningSocket());
+	shutDown = true;
+	pthread_join(listeningThread, NULL);
+	for(ConnectionMap::iterator i = routeMap.begin(); i != routeMap.end(); ++i) {
+		close(i->second.fd);
+	}
 }
 
 }}

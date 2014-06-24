@@ -16,6 +16,8 @@
 #include <boost/thread.hpp>
 #include <boost/unordered_map.hpp>
 #include <iostream>
+#include "discovery/DiscoveryManager.h"
+
 using namespace std;
 
 namespace srch2 {
@@ -24,9 +26,12 @@ namespace httpwrapper {
 #define FETCH_UNSIGNED(x) *((unsigned *)(x))
 #define MSG_QUEUE_ARRAY_SIZE 1024
 
+
+static const char OPS_DELETE_NODE = 1;
+
 class SMCallBackHandler;
 class MessageHandler;
-
+class DiscoveryCallBack;
 
 /*
  *   Entry point for the synchronizer thread. void * => Synchronizer *
@@ -44,6 +49,7 @@ void *bootSynchronizer(void *arg) ;
 class SyncManager {
 	friend class ClientMessageHandler;
 	friend class MasterMessageHandler;
+	friend class DiscoveryCallBack;
 public:
 	/*
 	 *  Initialize internal state.
@@ -58,7 +64,6 @@ public:
 	 *  Note: should be called in new thread otherwise current thread will block
 	 */
 	void run();
-
 
 	// Moved from ConfigManager to here by Jamshid, will move to MM
 	// this code removes node from the cluster
@@ -82,6 +87,48 @@ public:
 		}
 		ASSERT(false);
 	}
+	void addNewNode(const Node& node) { //TODO : Jamshid : should rewrite this function after merge
+//		//spin to acquire lock
+//		while (!__sync_bool_compare_and_swap (&isLocked, false, true)) ;
+//
+//		// first check whether node is already present or not.
+//		vector<Node>* nodes = this->cluster.getNodes();
+//		unsigned index = 0;
+//		unsigned totalNodes = nodes->size();
+//		for(; index < totalNodes; ++index){
+//			if((*nodes)[index].getId() == node.getId()){
+//				break;
+//			}
+//		}
+//		if (index == totalNodes) {
+//			nodes->push_back(node);
+//		}
+//		isLocked = false;
+//		return;
+	}
+
+	string serializeClusterNodes() { //TODO : Jamshid : should rewrite this function after merge
+//		while (!__sync_bool_compare_and_swap (&isLocked, false, true)) ;
+//		stringstream ss;
+//		vector<Node>* nodes = this->cluster.getNodes();
+//		unsigned size = nodes->size();
+//		ss.write((const char *)&size, sizeof(size));
+//		for(unsigned i = 0; i < nodes->size(); ++i){
+//			string serializedNode = nodes->operator[](i).serialize();
+//			size = serializedNode.size();
+//			ss.write((const char *)&size, sizeof(size));
+//			ss.write(serializedNode.c_str(), size);
+//		}
+//		isLocked = false;
+//		return ss.str();
+	}
+
+	/*
+	 *  This function implements initial discovery logic of the node. This should be called
+	 *  in the main thread. Once this function returns the node is ready for handling external
+	 *  request.
+	 */
+	void startDiscovery();
 private:
 	///
 	///  Private member functions start here.
@@ -89,10 +136,8 @@ private:
 	/*
 	 *   fetch timeout interval for SM messages.
 	 */
-	unsigned getTimeout() { return initialTimeout ; }      // temp for V0 replace with pingTimeout in V1
-	void resetTimeout() {// temp for V0
-		initialTimeout = pingTimeout;
-	}
+	unsigned getTimeout() { return pingTimeout; }
+
 	//void refresh() {};
 	//unsigned findNextEligibleMaster();
 	/*
@@ -120,15 +165,17 @@ private:
 	unsigned pingInterval;
 	unsigned pingTimeout;
 	unsigned masterNodeId;
-	unsigned initialTimeout;
 //	Cluster *cluster; // commented out by Jamshid and replaced with next line
 	boost::shared_ptr<const Cluster> cluster;
 	TransportManager& transport;
 	SMCallBackHandler *callBackHandler;
 	MessageHandler *messageHandler;
 	ConfigManager& config;
-	std::vector<Node> nodesInCluster;
-
+	std::vector<Node> *nodesInCluster;
+	MulticastDiscoveryManager* discoveryMgr;
+	DiscoveryCallBack  *discoveryCallBack;
+	unsigned nodeIds;
+	bool configUpdatesDone;
 };
 
 class SMCallBackHandler : public CallBackHandler{
@@ -161,6 +208,11 @@ public:
 	 *  Get heartbeat message's timestamp.
 	 */
 	std::time_t getHeartBeatMessageTime();
+
+	/*
+	 *   Get queued message from a given node's queue
+	 */
+	void getQueuedMessages(Message**inputMessage, unsigned nodeId);
 
 private:
 	bool isMaster;
@@ -260,7 +312,7 @@ private:
 
 class MasterMessageHandler : public MessageHandler{
 public:
-	MasterMessageHandler(SyncManager *sm): MessageHandler(sm) { firstTime = true;}
+	MasterMessageHandler(SyncManager *sm): MessageHandler(sm) { }
 	/*
 	 *   The function should handle main logic of processing
 	 *   messages delivered by TM.
@@ -277,7 +329,7 @@ public:
 	virtual void handleMessage(Message *message);
 
 private:
-	bool firstTime;  // temp for V0
+
 	void updateNodeInCluster(Message *message);
 	void handleNodeFailure(unsigned nodeId);
 	// key = Node id , Value = Latest time when message was received from this node.

@@ -6,6 +6,8 @@
  */
 
 #include "SynchronizerManager.h"
+#include "transport/TransportHelper.h"
+#include "discovery/DiscoveryCallBack.h"
 
 namespace srch2 {
 namespace httpwrapper {
@@ -35,11 +37,6 @@ SyncManager::SyncManager(ConfigManager& cm, TransportManager& tm) :
 
 	//pingInterval = cm.getDiscoveryParams().pingInterval;  TODO
 	//pingTimeout = cm.getDiscoveryParams().pingTimeout;  TODO
-
-	pingInterval = 2;
-	pingTimeout = 6;
-	initialTimeout = 30;  // for V0
-
 	/* Commented out by Jamshid and replaced with the following block.
 	 *
 
@@ -58,7 +55,7 @@ SyncManager::SyncManager(ConfigManager& cm, TransportManager& tm) :
 	std::vector<const Node *> clusterNodes;
 	clusterReadview->getAllNodes(clusterNodes);
 	for(std::vector<const Node *>::iterator nodeItr = clusterNodes.begin(); nodeItr != clusterNodes.end(); ++nodeItr){
-		this->nodesInCluster.push_back(Node(**nodeItr));
+//		this->nodesInCluster.push_back(Node(**nodeItr)); // TODO : Changed by Jamshid in merge
 	}
 	this->currentNodeId = clusterReadview->getCurrentNode()->getId();
 	this->isCurrentNodeMaster = clusterReadview->isMasterNode(this->currentNodeId);
@@ -68,11 +65,35 @@ SyncManager::SyncManager(ConfigManager& cm, TransportManager& tm) :
 	if (isCurrentNodeMaster) {
 		messageHandler = new MasterMessageHandler(this);
 	} else {
-
-		messageHandler = new ClientMessageHandler(this);
+		// TODO : Jamshid : lost in merge
 	}
-	callBackHandler = NULL; // initialize later on run
-	Logger::console("[%d, %d, %d]", nodesInCluster.size() , masterNodeId, currentNodeId);
+//=======
+//	cluster = cm.getCluster();
+//	nodesInCluster = cluster->getNodes();
+//	nodesInCluster->clear();
+//>>>>>>> sb-dynamic-discovery
+
+	srch2http::MulticastConfig discoverConfiguration;
+	discoverConfiguration.interfaceAddress = config.getTransport().getIpAddress();
+	discoverConfiguration.internalCommunicationPort = config.getTransport().getPort();
+	discoverConfiguration.multicastPort = config.getMulticastDiscovery().getPort();
+	discoverConfiguration.enableLoop = 1;
+	discoverConfiguration.multiCastAddress = config.getMulticastDiscovery().getGroupAddress();
+	discoverConfiguration.ttl = config.getMulticastDiscovery().getTtl();
+
+	discoveryMgr = new  MulticastDiscoveryManager(discoverConfiguration);
+
+	pingInterval = config.getPing().getPingInterval();
+	pingTimeout = config.getPing().getPingTimeout();
+
+	this->masterNodeId = 0;
+	this->isCurrentNodeMaster = false;
+	this->currentNodeId = -1;
+	this->messageHandler = NULL;
+	this->callBackHandler = NULL;
+	this->discoveryCallBack = NULL;
+	this->nodeIds = 0;
+	this->configUpdatesDone = false;
 }
 
 SyncManager::~SyncManager() {
@@ -80,8 +101,100 @@ SyncManager::~SyncManager() {
 }
 
 void * dispatchMasterMessageHandler(void *arg);
+
+void SyncManager::startDiscovery() {
+	Logger::console("running discovery");
+
+	/*
+	 *  start Listening/Accepting to new connection from other nodes. This has to be done
+	 *  first so that we reserve the port. This port needs to be communicated to other nodes
+	 *  during discovery so that can send connection request.
+	 */
+
+	discoveryMgr->init();
+
+	this->isCurrentNodeMaster = discoveryMgr->isCurrentNodeMaster();
+	this->currentNodeId = discoveryMgr->getCurrentNodeId();
+	this->masterNodeId =discoveryMgr->getMasterNodeId();
+
+	char nodename[1024];
+	sprintf(nodename, "%d", this->currentNodeId);
+	Node node(nodename, "0.0.0.0", discoveryMgr->getCommunicationPort(), true);
+	node.thisIsMe = true;
+	node.setId(this->currentNodeId);
+
+	// Pass this node to transport manager's connection map object.
+	transport.getConnectionMap().setCurrentNode(node);
+
+	discoveryCallBack =  new DiscoveryCallBack(*this);
+    transport.registerCallbackHandlerForDiscovery(discoveryCallBack);
+
+	pthread_t listenThread;
+	pthread_create(&listenThread, NULL, listenForIncomingConnection, &transport);
+	// give thread id to transport manger so that it can reap it later.
+	transport.setListeningThread(listenThread);
+
+	// Add new node in CM
+	addNewNode(node); // TODO : Changed by Jamshid in merge
+
+	if (isCurrentNodeMaster) {
+		messageHandler = new MasterMessageHandler(this);
+	}
+	else{
+		/*
+		 * if this node is not master then
+		 * 1. Connect to master and fetch all cluster information.
+		 * 2. Connect with other nodes in the cluster.
+		 */
+		sockaddr_in destinationAddress;
+		bool status = discoveryMgr->getDestinatioAddressByNodeId(masterNodeId, destinationAddress);
+		if (status == false) {
+			Logger::console("Master node %d destination address is not found", masterNodeId);
+			exit(-1);
+		}
+		if (sendConnectionRequest(&transport, masterNodeId, node, destinationAddress)) {
+			char nodename[1024];
+			sprintf(nodename, "%d", this->masterNodeId);
+			Node node(nodename, "0.0.0.0", ntohs(destinationAddress.sin_port), false);
+			node.setId(this->masterNodeId);
+			addNewNode(node); // TODO : Changed by Jamshid in merge
+		}
+		// use transport to fetch cluster state
+		Message *msg = MessageAllocator().allocateMessage(sizeof(NodeId));
+		msg->setType(ClusterInfoRequestMessageType);
+		msg->setDiscoveryMask();
+		char * body = msg->getMessageBody();
+		*(unsigned *)body = currentNodeId;
+		transport.sendMessage(masterNodeId, msg);
+		MessageAllocator().deallocateByMessagePointer(msg);
+
+		while(!__sync_val_compare_and_swap(&configUpdatesDone, true, true));
+
+		std::vector<Node> localCopy = *nodesInCluster;
+		for (unsigned i = 0 ; i < localCopy.size(); ++i) {
+			unsigned destinationNodeId = localCopy[i].getId();
+			if ( destinationNodeId == currentNodeId || destinationNodeId == masterNodeId) {
+				continue;
+			}
+			//Logger::console("Connecting to node %d, %s, %d", destinationNodeId, localCopy[i].getIpAddress().c_str(),
+			//		localCopy[i].getPortNumber());
+			inet_aton(localCopy[i].getIpAddress().c_str(), &destinationAddress.sin_addr);
+			//destinationAddress.sin_addr.s_addr = localCopy[i].getIpAddress();
+			destinationAddress.sin_port = htons(localCopy[i].getPortNumber());
+			if (!sendConnectionRequest(&transport, destinationNodeId, node, destinationAddress)) {
+				Logger::console( "Could not connect to the node %d", destinationNodeId);
+			}
+		}
+
+		messageHandler = new ClientMessageHandler(this);
+	}
+}
+
 void SyncManager::run(){
 	Logger::console("running synchronizer");
+
+	Logger::console("[%d, %d, %d]", nodesInCluster->size() , masterNodeId, currentNodeId);
+
 	/*
 	 *  1. Create a new callback handler for Transport layer and register it with Transport.
 	 */
@@ -144,12 +257,12 @@ void SyncManager::sendHeartBeatToAllNodesInCluster() {
 	heartBeatMessage->setType(HeartBeatMessageType);
 	heartBeatMessage->setBodyAndBodySize(&currentNodeId, sizeof(NodeId));
 
-	for (unsigned i = 0; i < nodesInCluster.size(); ++i) {
-		if (nodesInCluster[i].thisIsMe)
+	for (unsigned i = 0; i < nodesInCluster->size(); ++i) {
+		if ((*nodesInCluster)[i].thisIsMe)
 			continue;
 		Logger::debug("SM-M%d-sending heart-beat request to node %d",
-				currentNodeId, nodesInCluster[i].getId());
-		route(nodesInCluster[i].getId(), heartBeatMessage);
+				currentNodeId, (*nodesInCluster)[i].getId());
+		route((*nodesInCluster)[i].getId(), heartBeatMessage);
 	}
 	msgAllocator.deallocateByMessagePointer(heartBeatMessage);
 }
@@ -159,11 +272,6 @@ void SyncManager::route(NodeId node, Message *msg) {
 	msg->setMessageId(transport.getUniqueMessageIdValue());
 	transport.sendMessage(node, msg);
 }
-//unsigned Synchronizer::findNextEligibleMaster() {
-//	 return masterNodeId + 1;  // Todo go over node list and find eligible master
-//}
-
-
 
 ///
 ///   SM Handler implementation start here.
@@ -190,7 +298,6 @@ void SMCallBackHandler::resolveMessage(Message *message, NodeId node){
 	switch(message->getType()){
 	case HeartBeatMessageType:
 	{
-		//cout << "****delivered heart beat ***" << endl;
 		if (!isMaster) {
 			boost::mutex::scoped_lock lock(hbLock);
 			heartbeatMessageTimeEntry = time(NULL);
@@ -201,6 +308,7 @@ void SMCallBackHandler::resolveMessage(Message *message, NodeId node){
 		}
 		break;
 	}
+	case ClusterUpdateMessageType:
 	case ClientStatusMessageType:
 	case LeaderElectionAckMessageType:
 	case LeaderElectionProposalMessageType:
@@ -250,6 +358,18 @@ std::time_t  SMCallBackHandler::getHeartBeatMessageTime(){
 	boost::mutex::scoped_lock lock(hbLock);
 	std::time_t copy = heartbeatMessageTimeEntry;
 	return copy;
+}
+
+void SMCallBackHandler::getQueuedMessages(Message**inputMessage, unsigned masterNodeId){
+
+	*inputMessage = NULL;
+	unsigned index = masterNodeId % MSG_QUEUE_ARRAY_SIZE;
+	if (this->messageQArray[index].messageQueue.size() > 0) {
+		Message * queuedMessage = this->messageQArray[index].messageQueue.front();
+		*inputMessage = msgAllocator.allocateMessage(queuedMessage->getBodySize());
+		memcpy(*inputMessage, queuedMessage, sizeof(Message) + queuedMessage->getBodySize());
+		removeMessageFromQueue(masterNodeId);
+	}
 }
 
 /*
@@ -313,6 +433,26 @@ void ClientMessageHandler::lookForCallbackMessages(SMCallBackHandler* callBackHa
 			callBackHandler->getHeartBeatMessages(&message);
 			handleMessage(message);
 			cMessageAllocator.deallocateByMessagePointer(message);
+
+			// check for any cluster updates from master
+			callBackHandler->getQueuedMessages(&message, _syncMgrObj->masterNodeId);
+			if (message != NULL) {
+				unsigned messageSize = message->getBodySize();
+				char * messageBody =  message->getMessageBody();
+				messageBody += sizeof(unsigned); // skip sender's node Id.
+				char operation = *messageBody;
+				messageBody += sizeof(char);
+				if (operation == OPS_DELETE_NODE) {
+					unsigned nodeId = *(unsigned *)messageBody;
+					_syncMgrObj->removeNodeFromCluster(nodeId); // TODO : Changed by Jamshid in merge
+//					Logger::console("[%d, %d, %d]", _syncMgrObj->config.getCluster()->getTotalNumberOfNodes(),
+//								_syncMgrObj->masterNodeId, _syncMgrObj->currentNodeId); // TODO : Changed by Jamshid in merge
+
+				} else {
+					ASSERT(false);  // other operations not supported yet.
+				}
+				cMessageAllocator.deallocateByMessagePointer(message);
+			}
 		}
 		break;
 	}
@@ -435,7 +575,6 @@ void ClientMessageHandler::processHeartBeat(Message *message) {
 	heartBeatResponse->setBodyAndBodySize(&_syncMgrObj->currentNodeId, sizeof(NodeId));
 	_syncMgrObj->route(masterId, heartBeatResponse);
 	msgAllocator.deallocateByMessagePointer(heartBeatResponse);
-	_syncMgrObj->resetTimeout();
 }
 
 void ClientMessageHandler::updateClusterState(Message *message){
@@ -513,15 +652,48 @@ void MasterMessageHandler::updateNodeInCluster(Message *message) {
 
 void MasterMessageHandler::handleNodeFailure(unsigned nodeIdIndex) {
 
-	unsigned nodeId = _syncMgrObj->nodesInCluster[nodeIdIndex].getId();
+	unsigned nodeId = _syncMgrObj->nodesInCluster->operator[](nodeIdIndex).getId();
 	Logger::console("SM-M%d-cluster node %d failed", _syncMgrObj->currentNodeId,
 			nodeId);
 	// update configuration manager ..so that we do not ping this node again.
 	// If this node comes back then it is discovery manager's job to handle it.
+
+	// TODO : Jamshid : needs to be reviewed after merge
 	// For V0 update only local sate.
-	_syncMgrObj->nodesInCluster.erase(_syncMgrObj->nodesInCluster.begin() + nodeIdIndex);
+//	_syncMgrObj->nodesInCluster.erase(_syncMgrObj->nodesInCluster.begin() + nodeIdIndex); // TODO : commented out by Jamshid in merge
 	_syncMgrObj->removeNodeFromCluster(nodeId);
 	//_syncMgrObj->refresh();
+
+
+	/**Jamshid TODO : added after merge, needs to be reviewed*/
+	// Go over existing nodes and send them a command to delete the node from their respective cluster.
+
+	Message * removeNodeMessage = MessageAllocator().allocateMessage(
+			sizeof(NodeId) + sizeof(OPS_DELETE_NODE) + sizeof(NodeId));
+	removeNodeMessage->setType(ClusterUpdateMessageType);
+	char * messageBody = removeNodeMessage->getMessageBody();
+
+	*(unsigned *)messageBody = _syncMgrObj->currentNodeId;
+	messageBody += sizeof(unsigned);
+
+	*messageBody = OPS_DELETE_NODE;     // operation to be performed.
+	messageBody += sizeof(OPS_DELETE_NODE);
+
+	*(unsigned *)messageBody = nodeId;  // node to be deleted
+	messageBody += sizeof(unsigned);
+
+	// TODO : commented out by Jamshid in merge
+//	const std::vector<Node>& nodes = *(_syncMgrObj->config.getCluster()->getNodes());
+//	for (unsigned i = 0; i < nodes.size(); ++i) {
+//		if (nodes[i].getId() != _syncMgrObj->currentNodeId) {
+//			_syncMgrObj->route( nodes[i].getId(), removeNodeMessage);
+//		}
+//	}
+
+	MessageAllocator().deallocateByMessagePointer(removeNodeMessage);
+	/*******************************************************************/
+
+
 	/** Commented out by Jamshid and replaced with next statement
 	 *
 	Logger::console("[%d, %d, %d]", _syncMgrObj->config.getCluster()->getTotalNumberOfNodes(),
@@ -547,7 +719,7 @@ void * dispatchMasterMessageHandler(void *arg) {
 void MasterMessageHandler::lookForCallbackMessages(SMCallBackHandler* /*not used*/) {
 	SMCallBackHandler* callBackHandler  = _syncMgrObj->callBackHandler;
 	while(1) {
-		std::vector<Node>& nodes = _syncMgrObj->nodesInCluster;
+		std::vector<Node>& nodes = *(_syncMgrObj->nodesInCluster);
 		/*
 		 *   Loop over all the nodes in a cluster and check their message queues.
 		 */
@@ -618,11 +790,6 @@ void MasterMessageHandler::lookForCallbackMessages(SMCallBackHandler* /*not used
 					handleNodeFailure(i);
 				}
 			}
-		}
-
-		if (firstTime && perNodeTimeStampEntry.size() == nodes.size()) {
-			_syncMgrObj->resetTimeout();
-			firstTime = false;
 		}
 
 		sleep(_syncMgrObj->pingInterval);
