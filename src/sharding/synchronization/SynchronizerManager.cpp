@@ -29,13 +29,14 @@ SyncManager::SyncManager(ConfigManager& cm, TransportManager& tm) :
 	nodesInCluster = cluster->getNodes();
 	nodesInCluster->clear();
 
-	srch2http::MulticastConfig discoverConfiguration;
+	srch2http::MulticastDiscoveryConfig discoverConfiguration;
 	discoverConfiguration.interfaceAddress = config.getTransport().getIpAddress();
 	discoverConfiguration.internalCommunicationPort = config.getTransport().getPort();
 
 	discoverConfiguration.multicastPort = config.getMulticastDiscovery().getPort();
 	discoverConfiguration.enableLoop = 1;
 	discoverConfiguration.multiCastAddress = config.getMulticastDiscovery().getGroupAddress();
+	discoverConfiguration.multicastInterface = config.getMulticastDiscovery().getIpAddress();
 	discoverConfiguration.ttl = config.getMulticastDiscovery().getTtl();
 
 	//discoverConfiguration.print();
@@ -78,7 +79,7 @@ void SyncManager::startDiscovery() {
 
 	char nodename[1024];
 	sprintf(nodename, "%d", this->currentNodeId);
-	Node node(nodename, "0.0.0.0", discoveryMgr->getCommunicationPort(), true);
+	Node node(nodename, discoveryMgr->getInterfaceAddress(), discoveryMgr->getCommunicationPort(), true);
 	node.thisIsMe = true;
 	node.setId(this->currentNodeId);
 
@@ -114,7 +115,8 @@ void SyncManager::startDiscovery() {
 		if (sendConnectionRequest(&transport, masterNodeId, node, destinationAddress)) {
 			char nodename[1024];
 			sprintf(nodename, "%d", this->masterNodeId);
-			Node node(nodename, "0.0.0.0", ntohs(destinationAddress.sin_port), false);
+			std::string masterIp(inet_ntoa(destinationAddress.sin_addr));
+			Node node(nodename, masterIp, ntohs(destinationAddress.sin_port), false);
 			node.setId(this->masterNodeId);
 			config.addNewNode(node);
 		}

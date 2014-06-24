@@ -13,13 +13,15 @@
 #include <sys/fcntl.h>
 #include "transport/Message.h"
 #include <ifaddrs.h>
+#include <netdb.h>
+#include <net/if.h>
 
 using namespace srch2::util;
 
 namespace srch2 {
 namespace httpwrapper {
 
-MulticastDiscoveryManager::MulticastDiscoveryManager(MulticastConfig config): discoveryConfig(config) {
+MulticastDiscoveryManager::MulticastDiscoveryManager(MulticastDiscoveryConfig config): discoveryConfig(config) {
 	// throws exception if validation failed.
 	validateConfigSettings(discoveryConfig);
 	listenSocket = -1;
@@ -32,7 +34,7 @@ MulticastDiscoveryManager::MulticastDiscoveryManager(MulticastConfig config): di
 	uniqueNodeId = 0;
 }
 
-void MulticastDiscoveryManager::validateConfigSettings(MulticastConfig discoveryConfig) {
+void MulticastDiscoveryManager::validateConfigSettings(MulticastDiscoveryConfig& discoveryConfig) {
 
 	struct in_addr ipAddress;
 	/*
@@ -45,9 +47,60 @@ void MulticastDiscoveryManager::validateConfigSettings(MulticastConfig discovery
 	}
 	this->interfaceNumericAddr = ipAddress.s_addr;
 
-//	if (this->interfaceNumericAddr == INADDR_ANY) {  // 0.0.0.0
-//		this->publishInterfaceAddr =
-//	}
+	if (this->interfaceNumericAddr == INADDR_ANY) {  // 0.0.0.0
+		/*
+		 *  If the user has provided only a generic address ( 0.0.0.0) in the config file then
+		 *  we should pick an interface address which should be published to other nodes for
+		 *  internal communication.
+		 *  Note: Binding a port to 0.0.0.0 means bind the port to all the interfaces on a
+		 *  local device. Hence, picking one of the interfaces as a published address should
+		 *  be fine.
+		 */
+		struct ifaddrs * interfaceAddresses;
+		if (getifaddrs(&interfaceAddresses) == -1) {
+			perror("Unable to detect interface information on this local machine : ");
+		} else {
+			struct ifaddrs *interfaceAddress;
+			vector<string> ipAddresses;
+			// traverse linked list
+			for (interfaceAddress = interfaceAddresses; interfaceAddress != NULL;
+					interfaceAddress = interfaceAddress->ifa_next) {
+
+				int family = interfaceAddress->ifa_addr->sa_family;
+				if (family == AF_INET) { // IPv4
+					char host[NI_MAXHOST];
+					int status = getnameinfo(interfaceAddress->ifa_addr, sizeof(struct sockaddr_in),
+									host, NI_MAXHOST,
+									NULL, 0, NI_NUMERICHOST);
+
+					if (status == -1)
+						continue;
+
+					unsigned int flags = interfaceAddress->ifa_flags;
+					if ((flags & IFF_UP) && !(flags & IFF_LOOPBACK)) {
+						ipAddresses.push_back(host);
+					}
+				}
+			}
+			freeifaddrs(interfaceAddresses);
+			if (ipAddresses.size() > 0) {
+				// pick the first interface which is up for internal communication
+				this->discoveryConfig.publisedInterfaceAddress = ipAddresses[0];
+			}
+		}
+		memset(&ipAddress, 0, sizeof(ipAddress));
+		if (inet_aton(this->discoveryConfig.publisedInterfaceAddress.c_str(), &ipAddress) == 0) {
+			std::stringstream ss;
+			ss << "Unable to find valid interface address for this node."
+					<< " Please specify non-generic IP address in <transport> tag.\n";
+			Logger::console(ss.str().c_str());
+			throw std::runtime_error(ss.str());
+		}
+		this->publishedInterfaceNumericAddr = ipAddress.s_addr;
+
+	} else {
+		this->publishedInterfaceNumericAddr = this->interfaceNumericAddr;
+	}
 
 	memset(&ipAddress, 0, sizeof(ipAddress));
 	if (inet_aton(discoveryConfig.multiCastAddress.c_str(), &ipAddress) == 0) {
@@ -75,6 +128,21 @@ void MulticastDiscoveryManager::validateConfigSettings(MulticastConfig discovery
 		ss << " Reserved Muticast Address = " << discoveryConfig.multiCastAddress << " cannot be used";
 		throw std::runtime_error(ss.str());
 	}
+
+	/*
+	 *   Verify that interfaces are mutlicast enabled.
+	 */
+	// ToDO: defensive check ..not critical at this stage of project.
+	// verifyMulticastEnabled(this->discoveryConfig.multicastInterface);
+
+	memset(&ipAddress, 0, sizeof(ipAddress));
+	if (inet_aton(discoveryConfig.multicastInterface.c_str(), &ipAddress) == 0) {
+		std::stringstream ss;
+		ss << " Invalid Muticast Interface Address = " << discoveryConfig.multicastInterface;
+		throw std::runtime_error(ss.str());
+	}
+
+	this->multiCastInterfaceNumericAddr = ipAddress.s_addr;
 }
 
 /*
@@ -127,7 +195,7 @@ int MulticastDiscoveryManager::openListeningChannel(){
 	struct ip_mreq routeAddress;
 	memset(&routeAddress, 0, sizeof(routeAddress));
 	routeAddress.imr_multiaddr.s_addr = this->multiCastNumericAddr;
-	routeAddress.imr_interface.s_addr = this->interfaceNumericAddr;
+	routeAddress.imr_interface.s_addr = this->multiCastInterfaceNumericAddr;
 
 	status = setsockopt (udpSocket, IPPROTO_IP, IP_ADD_MEMBERSHIP, &routeAddress, sizeof(routeAddress));
 	if (status < 0) {
@@ -217,9 +285,9 @@ int MulticastDiscoveryManager::openSendingChannel(){
 	 *
 	 *  Note: this is useful for the hosts which have multiple ip addresses.
 	 */
-	if (this->interfaceNumericAddr) {  // 0.0.0.0
+	if (!this->multiCastInterfaceNumericAddr) {  // 0.0.0.0
 		struct in_addr interfaceAddr;
-		interfaceAddr.s_addr = this->interfaceNumericAddr;
+		interfaceAddr.s_addr = this->multiCastInterfaceNumericAddr;
 
 		int status = setsockopt (udpSocket, IPPROTO_IP, IP_MULTICAST_IF, &interfaceAddr,
 				sizeof(interfaceAddr));
@@ -455,7 +523,7 @@ void * multicastListener(void * arg) {
 					//Logger::console("Got cluster joining request!!");
 					DiscoveryMessage ackMessage;
 					ackMessage.flag = DISCOVERY_JOIN_CLUSTER_ACK;
-					ackMessage.interfaceNumericAddress = discovery->interfaceNumericAddr;
+					ackMessage.interfaceNumericAddress = discovery->publishedInterfaceNumericAddr;
 					ackMessage.internalCommunicationPort = discovery->getCommunicationPort();
 					ackMessage.masterNodeId = discovery->getCurrentNodeId();
 					ackMessage.nodeId = discovery->getNextNodeId();
@@ -517,7 +585,7 @@ void MulticastDiscoveryManager::sendJoinRequest() {
 	DiscoveryMessage message;
 	memset(&message, 0, sizeof(message));
 	message.flag = DISCOVERY_JOIN_CLUSTER_REQ;
-	message.interfaceNumericAddress = interfaceNumericAddr;
+	message.interfaceNumericAddress = publishedInterfaceNumericAddr;
 	message.internalCommunicationPort = getCommunicationPort();
 
 	struct sockaddr_in destinationAddress;
@@ -542,16 +610,16 @@ void MulticastDiscoveryManager::sendJoinRequest() {
 }
 bool MulticastDiscoveryManager::shouldYield(unsigned senderIp, unsigned senderPort) {
 	//Logger::console("[%d, %d] [%d, %d]", senderIp, senderPort, interfaceNumericAddr, getCommunicationPort());
-	if (senderIp > interfaceNumericAddr) {
+	if (senderIp > publishedInterfaceNumericAddr) {
 		return true;
-	} else if ( (senderIp == interfaceNumericAddr ) && (senderPort > getCommunicationPort())) {
+	} else if ( (senderIp == publishedInterfaceNumericAddr ) && (senderPort > getCommunicationPort())) {
 		return true;
 	}
 	return false;
 }
 
 bool MulticastDiscoveryManager::isLoopbackMessage(DiscoveryMessage &msg){
-	return (msg.interfaceNumericAddress == this->interfaceNumericAddr &&
+	return (msg.interfaceNumericAddress == this->publishedInterfaceNumericAddr &&
 			msg.internalCommunicationPort == this->getCommunicationPort());
 }
 

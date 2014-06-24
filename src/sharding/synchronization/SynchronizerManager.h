@@ -277,31 +277,6 @@ private:
 
 };
 
-//class SerializerInterface {
-//	virtual void serialize(void *object, char **byte, unsigned* size) = 0;
-//	virtual void * Deserialize(char *byte, unsigned size) = 0;
-//	virtual ~SerializerInterface() {}
-//};
-//
-//class NodeSerializer : public SerializerInterface {
-//	virtual void serialize(void *object, char **byte, unsigned* size){
-//		Node * node = (Node *) object;
-//
-//	}
-//};
-//
-//class ClusterSerializer : public SerializerInterface {
-//
-//};
-//
-//class ShardSerializer : public SerializerInterface {
-//
-//};
-
-
-
-
-
 } /* namespace instantsearch */
 } /* namespace srch2 */
 #endif /* SYNCHRONIZERMANAGER_H_ */

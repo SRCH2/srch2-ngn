@@ -38,13 +38,27 @@ struct HostAndPort {
 	unsigned port;
 };
 
-struct MulticastConfig{
-	std::string multiCastAddress;  // IP address of Multicast Group
-	std::string interfaceAddress;  // IP address of NIC
-	unsigned multicastPort;        // multicast listening port
+struct MulticastDiscoveryConfig{
+
+	// IP address of Multicast Group. e.g 224.1.1.2
+	std::string multiCastAddress;
+	// multicast listening port
+	unsigned multicastPort;
+	// IP address of interface used for sending and receiving multicast packets.
+	// Note: this can be same as interfaceAddress used for internal node communication.
+	std::string multicastInterface;
+
+
+	// IP address of NIC for port binding. Could be 0.0.0.0
+	std::string interfaceAddress;
+	// IP address of NIC to be used for internal communication. Cannot be 0.0.0.0
+	std::string publisedInterfaceAddress;
 	unsigned internalCommunicationPort;
-	int ttl;                       // Time To Live
-	u_char enableLoop;             // enabled loopback. 0 or 1
+
+	// Time To Live for multicast packet
+	int ttl;
+	// enabled loopback. 0 = enabled or 1 = false
+	u_char enableLoop;
 
 	// only for debug
 	void print() {
@@ -57,7 +71,7 @@ void * multicastListener(void * arg);
 class MulticastDiscoveryManager{
 	friend void * multicastListener(void * arg);
 public:
-	MulticastDiscoveryManager(MulticastConfig config);
+	MulticastDiscoveryManager(MulticastDiscoveryConfig config);
 	std::string getMultiCastAddressStr() {
 		return discoveryConfig.multiCastAddress;
 	}
@@ -67,6 +81,11 @@ public:
 	unsigned getCommunicationPort() {
 		return discoveryConfig.internalCommunicationPort;
 	}
+
+	std::string getInterfaceAddress() {
+		return discoveryConfig.interfaceAddress;
+	}
+
 	int openListeningChannel();
 	int openSendingChannel();
 	void init();
@@ -102,6 +121,8 @@ public:
 
 	in_addr_t getInterfaceNumericAddress() { return interfaceNumericAddr; }
 
+	in_addr_t getPublishedInterfaceNumericAddress() { return publishedInterfaceNumericAddr; }
+
 	bool getDestinatioAddressByNodeId(NodeId id, struct sockaddr_in& addr) {
 		if (nodeToAddressMap.count(id) > 0) {
 			addr = nodeToAddressMap[id];
@@ -116,11 +137,16 @@ private:
 
 	bool shouldYield(unsigned senderIp, unsigned senderPort);
 
-	void validateConfigSettings(MulticastConfig config);
+	void validateConfigSettings(MulticastDiscoveryConfig& config);
 
-	MulticastConfig discoveryConfig;
+	MulticastDiscoveryConfig discoveryConfig;
+
 	in_addr_t interfaceNumericAddr;
+	in_addr_t publishedInterfaceNumericAddr;
+
 	in_addr_t multiCastNumericAddr;
+	in_addr_t multiCastInterfaceNumericAddr;
+
 	int listenSocket;
 	int sendSocket;
 	bool _discoveryDone;
