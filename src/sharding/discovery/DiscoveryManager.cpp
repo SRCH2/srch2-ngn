@@ -12,6 +12,7 @@
 #include <util/Assert.h>
 #include <sys/fcntl.h>
 #include "transport/Message.h"
+#include <ifaddrs.h>
 
 using namespace srch2::util;
 
@@ -106,55 +107,18 @@ int MulticastDiscoveryManager::openListeningChannel(){
 	 *  to multicast packets.
 	 */
 	int optionVal = 1;  // 1 is used to enable the setting.
-	setsockopt(udpSocket, SOL_SOCKET, SO_REUSEADDR, (void*) &optionVal, sizeof(optionVal));
-#ifdef SO_REUSEPORT
-	setsockopt(udpSocket, SOL_SOCKET, SO_REUSEPORT, (void*) &optionVal, sizeof(optionVal));
-#endif
-
-	/*
-	 *   Set TTL ( Time To Live ). Purpose of TTL in multicast packet is to
-	 *   limit the scope of the packet to avoid flooding connected networks.
-	 *
-	 *   TTL     Scope
-	 *  ----------------------------------------------------------------------
-	 *  0     Restricted to the same host. Won't be output by any interface.
-	 *  1     Restricted to the same subnet. Won't be forwarded by a router.
-	 *  <32   Restricted to the same site, organization or department. (Our Default)
-	 *  <64   Restricted to the same region.
-	 *  <128  Restricted to the same continent.
-	 *  <255  Unrestricted in scope. Global.
-	 *
-	 */
-
-	optionVal = discoveryConfig.ttl;
-	setsockopt(udpSocket, IPPROTO_IP, IP_MULTICAST_TTL, (void*) &optionVal, sizeof(optionVal));
-
-	/*
-	 *  Enable loopback. This enables multiple instances on the same host to receive multicast
-	 *  packets. Enabled by default. If disabled, kernel does not send multicast packet to current
-	 *  host.
-	 */
-	u_char loop = discoveryConfig.enableLoop;
-	setsockopt(udpSocket, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop));
-
-	/*
-	 *  Select Interface. By default we use system provided default interface. In such case
-	 *  interfaceNumericAddress will be 0. If interfaceNumericAddress is a non zero value
-	 *  specified by a user then it is used as a multicast interface.
-	 *
-	 *  Note: this is useful for the hosts which have multiple ip addresses.
-	 */
-	if (this->interfaceNumericAddr) {  // 0.0.0.0
-
-		struct in_addr interfaceAddr;
-		interfaceAddr.s_addr = this->interfaceNumericAddr;
-
-		int status = setsockopt (udpSocket, IPPROTO_IP, IP_MULTICAST_IF, &interfaceAddr,
-				sizeof(interfaceAddr));
-		if (status == -1) {
-			Logger::console("Invalid interface specified. Using system default.");
-		}
+	int status = setsockopt(udpSocket, SOL_SOCKET, SO_REUSEADDR, (void*) &optionVal, sizeof(optionVal));
+	if (status < 0) {
+		perror("address reuse failed : ");
+		exit(-1);
 	}
+#ifdef SO_REUSEPORT
+	status = setsockopt(udpSocket, SOL_SOCKET, SO_REUSEPORT, (void*) &optionVal, sizeof(optionVal));
+	if (status < 0) {
+		perror("port reuse failed : ");
+		exit(-1);
+	}
+#endif
 
 	/*
 	 *  Join multcast group. Both interface address and multicast address are required
@@ -165,11 +129,15 @@ int MulticastDiscoveryManager::openListeningChannel(){
 	routeAddress.imr_multiaddr.s_addr = this->multiCastNumericAddr;
 	routeAddress.imr_interface.s_addr = this->interfaceNumericAddr;
 
-	setsockopt (udpSocket, IPPROTO_IP, IP_ADD_MEMBERSHIP, &routeAddress, sizeof(routeAddress));
+	status = setsockopt (udpSocket, IPPROTO_IP, IP_ADD_MEMBERSHIP, &routeAddress, sizeof(routeAddress));
+	if (status < 0) {
+		perror("join group failed : ");
+		exit(-1);
+	}
 
 	struct sockaddr_in addr;
 	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = this->interfaceNumericAddr;
+	addr.sin_addr.s_addr = this->multiCastNumericAddr;
 	unsigned portToBind = discoveryConfig.multicastPort;
 	addr.sin_port = htons(portToBind);
 
@@ -199,7 +167,10 @@ tryNextPort:
 int MulticastDiscoveryManager::openSendingChannel(){
 
 	/*
-	 *  Prepare socket data structures.
+	 *  Prepare send socket's data structures.
+	 *  Note: We are using different socket for sending multicast because standard
+	 *  (RFC 1122 [Braden 1989]) forbids the use of same socket for sending/receiving
+	 *  IP datagram packets - Richard Steven's UNP book.
 	 */
 	int udpSocket;
 	if((udpSocket = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
@@ -212,6 +183,50 @@ int MulticastDiscoveryManager::openSendingChannel(){
 	 */
 
 	fcntl(udpSocket, F_SETFL, O_NONBLOCK);
+
+	/*
+	 *   Set TTL ( Time To Live ). Purpose of TTL in multicast packet is to
+	 *   limit the scope of the packet to avoid flooding connected networks.
+	 *
+	 *   TTL     Scope
+	 *  ----------------------------------------------------------------------
+	 *  0     Restricted to the same host. Won't be output by any interface.
+	 *  1     Restricted to the same subnet. Won't be forwarded by a router.
+	 *  <32   Restricted to the same site, organization or department. (Our Default)
+	 *  <64   Restricted to the same region.
+	 *  <128  Restricted to the same continent.
+	 *  <255  Unrestricted in scope. Global.
+	 *
+	 */
+
+	unsigned optionVal = discoveryConfig.ttl;
+	setsockopt(udpSocket, IPPROTO_IP, IP_MULTICAST_TTL, (void*) &optionVal, sizeof(optionVal));
+
+	/*
+	 *  Enable loopback. This enables multiple instances on the same host to receive multicast
+	 *  packets. Enabled by default. If disabled, kernel does not send multicast packet to current
+	 *  host.
+	 */
+	u_char loop = discoveryConfig.enableLoop;
+	setsockopt(udpSocket, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop));
+
+	/*
+	 *  Select Interface. By default we use system provided default interface. In such case
+	 *  interfaceNumericAddress will be 0. If interfaceNumericAddress is a non zero value
+	 *  specified by a user then it is used as a multicast interface.
+	 *
+	 *  Note: this is useful for the hosts which have multiple ip addresses.
+	 */
+	if (this->interfaceNumericAddr) {  // 0.0.0.0
+		struct in_addr interfaceAddr;
+		interfaceAddr.s_addr = this->interfaceNumericAddr;
+
+		int status = setsockopt (udpSocket, IPPROTO_IP, IP_MULTICAST_IF, &interfaceAddr,
+				sizeof(interfaceAddr));
+		if (status == -1) {
+			Logger::console("Invalid interface specified. Using system default.");
+		}
+	}
 
 	//Logger::console("Discovery UDP sending socket init done.");
 
