@@ -249,15 +249,16 @@ const Shard * Cluster::getShard(const ShardId & shardId) const{
 void Cluster::addNewNode(const Node& newNode) {
 
 	// first check whether node is already present or not.
-	unsigned index = 0;
+	unsigned scanned = 0;
 	unsigned totalNodes = getTotalNumberOfNodes();
 	for(std::map<Node *, std::vector<CoreShardContainer * > >::const_iterator nodeInfoItr = this->shardInformation.begin();
 						nodeInfoItr != this->shardInformation.end(); ++nodeInfoItr){
 		if(nodeInfoItr->first->getId() == newNode.getId()){
 			break;
 		}
+		++scanned;
 	}
-	if (index == totalNodes) {
+	if (scanned == totalNodes) {
 		Node * node = new Node(newNode);
 		this->shardInformation[node] = std::vector<CoreShardContainer * >();
 		for(std::vector<CoreInfo_t *>::iterator coreItr = cores.begin(); coreItr != cores.end(); ++coreItr){

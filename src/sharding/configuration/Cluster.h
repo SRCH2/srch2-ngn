@@ -106,6 +106,7 @@ private:
 	unsigned masterNodeId;
 	// map which contains all shard information of all nodes
 	// node -> vector<CoreShardContainer * >
+	// TODO: Change this map from NodeId to pair<Node *, std::vector<CoreShardContainer *> >
 	std::map<Node *, std::vector<CoreShardContainer * > > shardInformation;
 	// cores in the cluster
 	std::vector<CoreInfo_t *> cores;
