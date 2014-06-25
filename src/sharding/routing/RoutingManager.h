@@ -10,7 +10,7 @@
 #include <sharding/processor/DistributedProcessorInternal.h>
 #include "sharding/routing/PendingMessages.h"
 #include <server/Srch2Server.h>
-#include <sharding/processor/ResultsAggregatorAndPrint.h>
+#include <sharding/routing/ResponseAggregator.h>
 #include "transport/MessageAllocator.h"
 #include "InternalMessageBroker.h"
 #include "sharding/configuration/ShardingConstants.h"
@@ -44,7 +44,7 @@ public:
     RoutingManagerAPIReturnType broadcast(RequestType * requestObj,
     		bool waitForAll,
     		bool withCallback,
-    		boost::shared_ptr<ResponseAggregator<RequestType , ResponseType> > aggregator,
+    		boost::shared_ptr<ResponseAggregatorInterface<RequestType , ResponseType> > aggregator,
             time_t timeoutValue,
             vector<const Shard *> & destination){
 
@@ -96,7 +96,7 @@ public:
     template<typename RequestType , typename ResponseType>
     RoutingManagerAPIReturnType sendMessage(RequestType * requestObj,
     		bool withCallback,
-            boost::shared_ptr<ResponseAggregator<RequestType , ResponseType> > aggregator,
+            boost::shared_ptr<ResponseAggregatorInterface<RequestType , ResponseType> > aggregator,
             time_t timeoutValue,
             const Shard * shardInfo){
         // register a pending request in the handler

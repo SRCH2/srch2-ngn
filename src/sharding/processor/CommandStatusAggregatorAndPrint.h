@@ -1,7 +1,7 @@
 #ifndef __SHARDING_PROCESSOR_COMMAND_STATUS_AGGREGATOR_AND_PRINT_H_
 #define __SHARDING_PROCESSOR_COMMAND_STATUS_AGGREGATOR_AND_PRINT_H_
 
-#include "ResultsAggregatorAndPrint.h"
+#include "sharding/processor/DistributedProcessorAggregator.h"
 #include "serializables/SerializableCommandStatus.h"
 #include "serializables/SerializableInsertUpdateCommandInput.h"
 #include "serializables/SerializableDeleteCommandInput.h"
@@ -21,13 +21,13 @@ namespace srch2 {
 namespace httpwrapper {
 
 template <class RequestWithStatusResponse>
-class StatusAggregator : public ResponseAggregator<RequestWithStatusResponse,CommandStatus> {
+class StatusAggregator : public DistributedProcessorAggregator<RequestWithStatusResponse,CommandStatus> {
 public:
 
 
     StatusAggregator(ConfigManager * configurationManager, evhttp_request *req,
     		boost::shared_ptr<const Cluster> clusterReadview, unsigned coreId, unsigned multiRouteMode = 0):
-    			ResponseAggregator<RequestWithStatusResponse,CommandStatus>(clusterReadview, coreId){
+    			DistributedProcessorAggregator<RequestWithStatusResponse,CommandStatus>(clusterReadview, coreId){
         this->configurationManager = configurationManager;
         this->req = req;
         this->multiRouteMode = multiRouteMode; // this is the case where aggregator is shared with multiple callbacks

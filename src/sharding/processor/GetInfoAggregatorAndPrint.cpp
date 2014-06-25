@@ -12,7 +12,7 @@ namespace httpwrapper {
 
 GetInfoResponseAggregator::GetInfoResponseAggregator(ConfigManager * configurationManager, evhttp_request *req,
 		boost::shared_ptr<const Cluster> clusterReadview, unsigned coreId):
-		ResponseAggregator<GetInfoCommand,GetInfoCommandResults>(clusterReadview, coreId){
+		DistributedProcessorAggregator<GetInfoCommand,GetInfoCommandResults>(clusterReadview, coreId){
     this->configurationManager = configurationManager;
     this->req = req;
 

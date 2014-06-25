@@ -3,7 +3,7 @@
 
 #include "sharding/configuration/ShardingConstants.h"
 #include "sharding/transport/Message.h"
-#include "sharding/processor/ResultsAggregatorAndPrint.h"
+#include "sharding/routing/ResponseAggregator.h"
 #include "core/util/Assert.h"
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/shared_mutex.hpp>
@@ -341,7 +341,7 @@ private:
 
     // PendingRequest can only be created in PendingRequestHandler to make sure it's always registered there.
     PendingRequest(MessageAllocator * messageAllocator, bool waitForAll,
-            boost::shared_ptr<ResponseAggregator<Request, Response> > aggregator,
+            boost::shared_ptr<ResponseAggregatorInterface<Request, Response> > aggregator,
             unsigned totalNumberOfPendingMessages) :
                 waitForAll(waitForAll), totalNumberOfPendingMessages(totalNumberOfPendingMessages){
         this->messageAllocator = messageAllocator;
@@ -442,7 +442,7 @@ private:
     // for some cases like when we receive a batch of inserts, multiple PendingRequest objects
     // (one per each insert) need to have a single aggregator (batch aggregator), therefore, we
     // the aggregator to be deleted when the last PendingRequest object is deleted.
-    boost::shared_ptr<ResponseAggregator<Request, Response> > aggregator;
+    boost::shared_ptr<ResponseAggregatorInterface<Request, Response> > aggregator;
 
     // This member gives us the total number of pending messages that will be registered in this
     // pending request. If waitForAll is true we call CallBackAll only if we have this many pendingMessages
@@ -462,7 +462,7 @@ public:
 
     template <class Request, class Response>
     PendingRequest<Request, Response> * registerPendingRequest(bool waitForAll,
-            boost::shared_ptr<ResponseAggregator<Request, Response> > aggregator,
+            boost::shared_ptr<ResponseAggregatorInterface<Request, Response> > aggregator,
             unsigned totalNumberOfPendingMessages){
         // create the pendingRequest
         PendingRequest<Request, Response> * pendingRequest = new PendingRequest<Request, Response>(messageAllocator, waitForAll, aggregator, totalNumberOfPendingMessages);

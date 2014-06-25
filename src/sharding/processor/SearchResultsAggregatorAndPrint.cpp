@@ -11,7 +11,7 @@ namespace httpwrapper {
 
 SearchResultsAggregator::SearchResultsAggregator(ConfigManager * configurationManager, evhttp_request *req,
 		boost::shared_ptr<const Cluster> clusterReadview, unsigned coreId) :
-		ResponseAggregator<SearchCommand , SearchCommandResults>(clusterReadview, coreId){
+		DistributedProcessorAggregator<SearchCommand , SearchCommandResults>(clusterReadview, coreId){
     this->configurationManager = configurationManager;
     this->req = req;
 }
