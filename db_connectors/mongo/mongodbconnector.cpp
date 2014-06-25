@@ -8,6 +8,9 @@
 #include <iostream>
 #include <unistd.h>
 #include "mongo/client/dbclient.h"
+#include <iomanip>
+#include <fstream>
+#include <boost/filesystem.hpp>
 
 using namespace std;
 
@@ -120,12 +123,36 @@ void MongoDBConnector::createNewIndexes(){
 	}
 }
 
+time_t MongoDBConnector::getLastExecutedLogTime(){
+	std::string path=this->serverHandle->configLookUp("srch2Home")+"mongodb_data/"+"data.bin";
+	if(access(path.c_str(), F_OK) == 0){
+		ifstream a_file(path.c_str(),ios::in|ios::binary);
+		time_t t;
+		a_file >> t;
+		a_file.close();
+		bulkLoadEndTime=t;
+	}
+	return bulkLoadEndTime;
+}
+
+void MongoDBConnector::saveLastExecutedLogTime(time_t t) {
+	std::string path=this->serverHandle->configLookUp("srch2Home")+"mongodb_data/";
+	if (access(path.c_str(), F_OK) != 0) {
+		boost::filesystem::create_directories(path);
+	}
+	std::string pt=path+"data.bin";
+	ofstream a_file(pt.c_str(), ios::trunc | ios::binary);
+	a_file << t;
+	a_file.flush();
+	a_file.close();
+}
+
 // illustrative code..
 void* MongoDBConnector::runListener() {
 	std::cout<<"Calling Run Listener"<<std::endl;
 	bool printOnce = true;
 	time_t opLogTime = 0;
-	time_t threadSpecificCutOffTime = bulkLoadEndTime;
+	time_t threadSpecificCutOffTime = getLastExecutedLogTime();
 
 	string mongoNamespace = "local.oplog.rs";
 	string dbname = this->serverHandle->configLookUp("db");
@@ -166,6 +193,9 @@ void* MongoDBConnector::runListener() {
 					// store the timestamp of the last record processed, so that
 					// when the cursor fetches more data we can filter out any
 					// records processed earlier. Alternative is to store current time.
+					if(threadSpecificCutOffTime!=opLogTime){
+						saveLastExecutedLogTime(opLogTime);
+					}
 					threadSpecificCutOffTime = opLogTime;
 					if (tailCursor->isDead())
 						break;

@@ -26,9 +26,27 @@
 using namespace std;
 
 
-ServerInterfaceInternal::ServerInterfaceInternal(void *server, std::map<std::string, std::string> *connectorConfig) {
+const std::string ServerInterfaceInternal::DB_CONNECTORS_PATH =
+//		"/home/liusrch2/srch2-ngn/db_connectors/mysql/mysql-replication-listener/build/lib/";
+		"/home/liusrch2/srch2-ngn/db_connectors/build/";
+const std::string ServerInterfaceInternal::DYNAMIC_LIBRARY_SUFFIX = "Connector.so";
+const std::string ServerInterfaceInternal::DYNAMIC_LIBRARY_PREFIX = "lib";
+const std::string ServerInterfaceInternal::PRIMARY_KEY="uniqueKey";
+const std::string ServerInterfaceInternal::DATABASE_NAME="db";
+const std::string ServerInterfaceInternal::DATABASE_PORT="port";
+const std::string ServerInterfaceInternal::DATABASE_HOST="host";
+const std::string ServerInterfaceInternal::DATABASE_COLLECTION="collection";
+const std::string ServerInterfaceInternal::DATABASE_TYPE_NAME="dbTypeName";
+const std::string ServerInterfaceInternal::DATABASE_LISTENER_WATI_TIME="listenerWaitTime";
+const std::string ServerInterfaceInternal::DATABASE_MAX_RETRY_ON_FALIFURE="maxRetryOnFailure";
+const std::string ServerInterfaceInternal::DATABASE_MAX_RETRY_COUNT="maxRetryCount";
+const std::string ServerInterfaceInternal::SRCH2HOME="srch2Home";
+const std::string ServerInterfaceInternal::INDEXTYPE="indexType";
+
+ServerInterfaceInternal::ServerInterfaceInternal(void *server) {
 	this->server=(srch2::httpwrapper::Srch2Server*)server;
-	this->connectorConfig = connectorConfig;
+	this->connectorConfig = new std::map<std::string, std::string>();
+	populateConnectorConfig();
 }
 
 
@@ -135,6 +153,42 @@ std::string ServerInterfaceInternal::configLookUp(std::string key){
 	return (*this->connectorConfig)[key];
 }
 
-ServerInterfaceInternal::~ServerInterfaceInternal(){
 
+void ServerInterfaceInternal::populateConnectorConfig() {
+
+	srch2::httpwrapper::Srch2Server *srch2Server =
+			(srch2::httpwrapper::Srch2Server *) server;
+
+	srch2::httpwrapper::DataSourceType dbType=srch2Server->indexDataConfig->getDataSourceType();
+
+	(*connectorConfig)[PRIMARY_KEY]=srch2Server->indexDataConfig->getPrimaryKey();
+
+	switch (dbType) {
+	case srch2::httpwrapper::DATA_SOURCE_NOT_SPECIFIED:
+		break;
+	case srch2::httpwrapper::DATA_SOURCE_JSON_FILE:
+		break;
+	case srch2::httpwrapper::DATA_SOURCE_MONGO_DB:{
+		(*connectorConfig)[DATABASE_TYPE_NAME]="mongodb";
+		(*connectorConfig)[DATABASE_NAME]=srch2Server->indexDataConfig->getMongoDbName();
+		(*connectorConfig)[DATABASE_HOST]=srch2Server->indexDataConfig->getMongoServerHost();
+		(*connectorConfig)[DATABASE_PORT]=srch2Server->indexDataConfig->getMongoServerPort();
+		(*connectorConfig)[DATABASE_COLLECTION]=srch2Server->indexDataConfig->getMongoCollection();
+		(*connectorConfig)[DATABASE_LISTENER_WATI_TIME]=srch2Server->indexDataConfig->getMongoListenerWaitTime();
+		(*connectorConfig)[DATABASE_MAX_RETRY_ON_FALIFURE]=srch2Server->indexDataConfig->getMongoListenerMaxRetryOnFailure();
+		(*connectorConfig)[DATABASE_MAX_RETRY_COUNT]=srch2Server->indexDataConfig->getMongoListenerMaxRetryCount();
+		(*connectorConfig)[SRCH2HOME]=srch2Server->indexDataConfig->getIndexPath();
+
+		srch2::instantsearch::IndexType it  = (srch2::instantsearch::IndexType)srch2Server->indexDataConfig->getIndexType();
+		std::stringstream ss;ss << it;std::string itStr;   ss >> itStr;
+		(*connectorConfig)[INDEXTYPE]=itStr;
+	}
+		break;
+	default:
+		break;
+	}
+}
+
+ServerInterfaceInternal::~ServerInterfaceInternal(){
+	delete connectorConfig;
 }

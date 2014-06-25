@@ -7,14 +7,6 @@
 #include <string>
 #include "../../src/adapter/DataConnector.h"
 #include "mongo/client/dbclient.h"
-//#include "mongo/bson/bsonobj.h"
-//#include "mongo/client/dbclientcursor.h"
-//#include "mongo/client/dbclientinterface.h"
-//#include "../../tmp/mongo-cxx-driver/build/linux2/use-system-boost/chen/include/mongo/client/dbclient.h"
-
-//#include "mongo/bson/bsonobj.h"
-//#include "../../tmp/mongo-cxx-driver/build/linux2/use-system-boost/chen/include/mongo/client/dbclientcursor.h"
-//#include "../../tmp/mongo-cxx-driver/build/linux2/use-system-boost/chen/include/mongo/client/dbclientinterface.h"
 
 class MongoDBConnector: public DataConnector {
 public:
@@ -31,6 +23,8 @@ private:
 	mongo::DBClientBase* oplogConnection;
 	mongo::ScopedDbConnection * mongoConnector;
 	bool conn();
+	time_t getLastExecutedLogTime();
+	void saveLastExecutedLogTime(time_t t);
 }
 ;
 

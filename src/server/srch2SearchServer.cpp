@@ -615,11 +615,8 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
 //                srch2http::MongoDataSource::spawnUpdateListener(iterator->second);
 
                 //Adapter Solution
-            	DataConnectorThread * dcf=new DataConnectorThread(coreInfo->getDataSourceType(),
+            	DataConnectorThread::getDataConnectorThread(coreInfo->getDataSourceType(),
 						(void*) iterator->second);
-
-            	dcf->create();
-
             }
 
             // bind once each port defined for use by this core
