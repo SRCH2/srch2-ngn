@@ -11,7 +11,7 @@
 #include <iostream>
 #include <map>
 #include "ServerInterfaceInternal.h"
-#include "DataConnectorFactory.h"
+#include "DataConnectorThread.h"
 #include "util/Logger.h"
 #include "json/json.h"
 #include "AnalyzerFactory.h"
@@ -27,15 +27,12 @@ using namespace std;
 
 
 ServerInterfaceInternal::ServerInterfaceInternal(void *server, std::map<std::string, std::string> *connectorConfig) {
-	std::cout << "ServerInterfaceInternal::ServerInterfaceInternal()" << std::endl;
 	this->server=(srch2::httpwrapper::Srch2Server*)server;
 	this->connectorConfig = connectorConfig;
 }
 
 
 int ServerInterfaceInternal::insertRecord(std::string jsonString) {
-	std::cout << "1.ServerInterfaceInternal::insertRecord()" << std::endl;
-
 	stringstream errorMsg;
 	errorMsg << "INSERT : ";
 
@@ -60,8 +57,6 @@ int ServerInterfaceInternal::insertRecord(std::string jsonString) {
 }
 
 int ServerInterfaceInternal::deleteRecord(std::string primaryKey) {
-	std::cout << "2.ServerInterfaceInternal::deleteRecord()" << std::endl;
-
 	stringstream errorMsg;
 	errorMsg << "DELETE : ";
 
@@ -89,8 +84,6 @@ int ServerInterfaceInternal::deleteRecord(std::string primaryKey) {
 }
 
 int ServerInterfaceInternal::updateRecord(std::string pk,std::string jsonString) {
-	std::cout << "3.ServerInterfaceInternal::updateRecord()" << std::endl;
-
 	stringstream errorMsg;
 	errorMsg << "UPDATE : ";
 
@@ -140,10 +133,6 @@ int ServerInterfaceInternal::updateRecord(std::string pk,std::string jsonString)
 
 std::string ServerInterfaceInternal::configLookUp(std::string key){
 	return (*this->connectorConfig)[key];
-}
-
-int ServerInterfaceInternal::saveRecord(){
-
 }
 
 ServerInterfaceInternal::~ServerInterfaceInternal(){

@@ -25,7 +25,6 @@ public:
 	//  e.g  "dbname" => "mysql"  (single value)
 	//       "collections" => "collection1, collection2 " (multi value)
 	virtual std::string configLookUp(std::string key);
-	virtual int saveRecord();
 private:
 	srch2::httpwrapper::Srch2Server *server;
 	std::map<std::string, std::string> * connectorConfig;

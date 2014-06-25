@@ -100,7 +100,7 @@ const char *HTTPServerEndpoints::ajax_delete_fail_500 =
 
 bool Srch2Server::checkIndexExistence(const CoreInfo_t *indexDataConfig)
 {
-    const string &directoryName = indexDataConfig->getIndexPath();
+	const string &directoryName = indexDataConfig->getIndexPath();
     if(!checkDirExistence((directoryName + "/" + IndexConfig::analyzerFileName).c_str()))
         return false;
     if(!checkDirExistence((directoryName + "/" + IndexConfig::trieFileName).c_str()))

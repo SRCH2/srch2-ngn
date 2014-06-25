@@ -25,11 +25,11 @@ public:
 	void parseOpLogObject(mongo::BSONObj& bobj, std::string currentNS,
 			mongo::DBClientBase& oplogConnection);
 	static time_t bulkLoadEndTime;
-	void createNewIndexes();
+	virtual void createNewIndexes();
 private:
 	ServerInterface *serverHandle;
 	mongo::DBClientBase* oplogConnection;
-
+	mongo::ScopedDbConnection * mongoConnector;
 	bool conn();
 }
 ;

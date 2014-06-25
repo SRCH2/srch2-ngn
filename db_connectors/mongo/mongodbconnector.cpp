@@ -21,7 +21,10 @@ MongoDBConnector::MongoDBConnector() {
 bool MongoDBConnector::init(ServerInterface *serverHandle) {
 	this->serverHandle = serverHandle;
 	bulkLoadEndTime=time(NULL);
-	return conn();
+	if(!conn()){
+		return false;
+	}
+	return true;
 }
 
 bool MongoDBConnector::conn() {
@@ -43,8 +46,7 @@ bool MongoDBConnector::conn() {
 			if (port.size()) {
 				hostAndport.append(":").append(port); // std::string is mutable unlike java
 			}
-			mongo::ScopedDbConnection * mongoConnector =
-					new mongo::ScopedDbConnection(hostAndport);
+			mongoConnector = new mongo::ScopedDbConnection(hostAndport);
 			oplogConnection = &mongoConnector->conn();
 
 			// first check whether the replication is enabled and the host is primary of the
@@ -74,16 +76,15 @@ bool MongoDBConnector::conn() {
 }
 
 void MongoDBConnector::createNewIndexes(){
+	std::cout<<"Calling Create New Indexes"<<std::endl;
 	string mongoNamespace = "local.oplog.rs";
 	string dbname = this->serverHandle->configLookUp("db");
 	string collection = this->serverHandle->configLookUp("collection");
 	string filterNamespace = dbname + "." + collection;
-	std::cout<<"create"<<std::endl;
 	try {
 		unsigned collectionCount = oplogConnection->count(filterNamespace);
 		// We fetch data from mongo db only if there are some records to be processed
 		unsigned indexedRecordsCount = 0;
-		std::cout<<collectionCount<<std::endl;
 		if (collectionCount > 0) {
 			// query the mongo database for all the objects in collection. mongo::BSONObj() means get
 			// all records from mongo db
@@ -94,7 +95,6 @@ void MongoDBConnector::createNewIndexes(){
 				mongo::BSONObj obj = cursor->next();
 				// parse BSON object returned by cursor and fill in record object
 				string recNS = obj.getStringField("ns");
-				std::cout<<obj<<std::endl;
 
 				string jsonRecord = obj.jsonString();
 				this->serverHandle->insertRecord(jsonRecord);
@@ -122,8 +122,7 @@ void MongoDBConnector::createNewIndexes(){
 
 // illustrative code..
 void* MongoDBConnector::runListener() {
-	std::cout<<"linstern"<<std::endl;
-	createNewIndexes();
+	std::cout<<"Calling Run Listener"<<std::endl;
 	bool printOnce = true;
 	time_t opLogTime = 0;
 	time_t threadSpecificCutOffTime = bulkLoadEndTime;
@@ -150,14 +149,12 @@ void* MongoDBConnector::runListener() {
 			while (1) {
 				if (tailCursor->more()) {
 					mongo::BSONObj obj = tailCursor->next();
-					cout<<"more : "<<obj.toString()<<endl;
 					string recNS = obj.getStringField("ns");
 					if (recNS.compare(filterNamespace) == 0) {
 						mongo::BSONElement timestampElement = obj.getField(
 								"ts");
 						opLogTime = timestampElement.timestampTime().toTimeT();
 						if (opLogTime > threadSpecificCutOffTime) {
-							cout<<"parse: "<<obj.toString()<<endl;
 							parseOpLogObject(obj, filterNamespace,
 									*oplogConnection);
 						}
@@ -286,7 +283,7 @@ void MongoDBConnector::parseOpLogObject(mongo::BSONObj& bobj, string currentNS,
 }
 
 MongoDBConnector::~MongoDBConnector() {
-
+	mongoConnector->done();
 }
 
 // the class factories

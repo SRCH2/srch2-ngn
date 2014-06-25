@@ -46,7 +46,7 @@
 #include "MongodbAdapter.h"
 #include "WrapperConstants.h"
 #include "../adapter/ServerInterfaceInternal.h"
-#include "../adapter/DataConnectorFactory.h"
+#include "../adapter/DataConnectorThread.h"
 namespace po = boost::program_options;
 namespace srch2is = srch2::instantsearch;
 namespace srch2http = srch2::httpwrapper;
@@ -614,19 +614,11 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
 //                srch2http::MongoDataSource::bulkLoadEndTime = time(NULL);
 //                srch2http::MongoDataSource::spawnUpdateListener(iterator->second);
 
-//                //Adapter Solution
-				ServerInterfaceInternal* serverInterface =
-						DataConnectorFactory::getServerInterfaceInternal(
-								coreInfo->getDataSourceType(),
-								(void*) iterator->second);
+                //Adapter Solution
+            	DataConnectorThread * dcf=new DataConnectorThread(coreInfo->getDataSourceType(),
+						(void*) iterator->second);
 
-				ThreadArguments * dbArg = new ThreadArguments();
-				dbArg->dbType = coreInfo->getDataSourceType();
-				dbArg->server = serverInterface;
-
-				pthread_t * dbListenerThread = new pthread_t;
-				int res = pthread_create(dbListenerThread, NULL, spawnConnector,
-						(void *) dbArg);
+            	dcf->create();
 
             }
 
