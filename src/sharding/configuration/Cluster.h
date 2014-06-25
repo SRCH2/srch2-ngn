@@ -75,6 +75,7 @@ public:
 	const Node* getCurrentNode() const;
 	unsigned getTotalNumberOfNodes() const;
 	bool isMasterNode(unsigned nodeId) const;
+	bool isMasterEligibleNode(unsigned nodeId) const;
 	bool isShardLocal(const ShardId& shardId) const;
 	const Shard * getShard(const ShardId & shardId) const;
 	void addNewNode(const Node& newNode);

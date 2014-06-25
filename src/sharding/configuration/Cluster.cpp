@@ -217,7 +217,11 @@ unsigned Cluster::getTotalNumberOfNodes() const{
 	return this->shardInformation.size();
 }
 bool Cluster::isMasterNode(unsigned nodeId) const{
-	return getNodeById(nodeId)->isMaster();
+	return masterNodeId == nodeId;
+}
+
+bool Cluster::isMasterEligibleNode(unsigned nodeId) const{
+	return getNodeById(nodeId)->isMasterEligible();
 }
 
 bool Cluster::isShardLocal(const ShardId& shardId) const{
@@ -292,7 +296,7 @@ void Cluster::print() const{
 	Logger::console("Number of nodes : %d", shardInformation.size() );
 	for(std::map<Node *, std::vector<CoreShardContainer * > >::const_iterator shardInfoItr =
 			shardInformation.begin(); shardInfoItr != shardInformation.end(); ++shardInfoItr){
-		Logger::console("Node %d, isMaster: %d", shardInfoItr->first->getId(), shardInfoItr->first->thisIsMe);
+		Logger::console("Node %d, isMaster: %d", shardInfoItr->first->getId(), shardInfoItr->first->isMaster());
 		Logger::console("There are %d cores in this node.", shardInfoItr->second.size());
 		for(std::vector<CoreShardContainer * >::const_iterator coreShardItr = shardInfoItr->second.begin();
 				coreShardItr != shardInfoItr->second.end(); ++coreShardItr){

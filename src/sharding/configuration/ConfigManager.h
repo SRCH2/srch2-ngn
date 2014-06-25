@@ -212,6 +212,10 @@ public:
         Logger::console("====================================");
 	}
 
+	const NodeConfig* getCurrentNodeConfig() {
+		return &this->nodeConfig;
+	}
+
 private:
     boost::shared_ptr< const Cluster > metadata_readView;
     Cluster * metadata_writeView;
@@ -223,6 +227,7 @@ private:
 	Ping ping;
 	MulticastDiscovery mDiscovery;
 	Transport transport;
+	NodeConfig nodeConfig;
 	// <config>
 	string licenseKeyFile;
 	string httpServerListeningHostname;

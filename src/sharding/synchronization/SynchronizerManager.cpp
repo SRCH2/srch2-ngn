@@ -75,11 +75,13 @@ void SyncManager::startDiscovery() {
 	this->currentNodeId = discoveryMgr->getCurrentNodeId();
 	this->masterNodeId =discoveryMgr->getMasterNodeId();
 
+	clusterWriteView->setMasterNodeId(this->masterNodeId);
+
 	char nodename[1024];
 	sprintf(nodename, "%d", this->currentNodeId);
 	Node node(nodename, "0.0.0.0", discoveryMgr->getCommunicationPort(), true);
-	node.thisIsMe = true;
 	node.setId(this->currentNodeId);
+	node.setMaster(this->currentNodeId == this->masterNodeId);
 
 	// Pass this node to transport manager's connection map object.
 	transport.getConnectionMap().setCurrentNode(node);
@@ -115,6 +117,7 @@ void SyncManager::startDiscovery() {
 			sprintf(nodename, "%d", this->masterNodeId);
 			Node node(nodename, "0.0.0.0", ntohs(destinationAddress.sin_port), false);
 			node.setId(this->masterNodeId);
+			node.setMaster(true);
 			clusterWriteView->addNewNode(node);
 		}
 		// use transport to fetch cluster state

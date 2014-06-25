@@ -612,11 +612,10 @@ static int getHttpServerMetadata(ConfigManager *config,
 	}
 
 	// loop over operations and extract all port numbers of current node to use
-	const srch2::httpwrapper::Node * currentNode = clusterReadview->getCurrentNode();
 	unsigned short port;
 	for (srch2http::PortType_t portType = (srch2http::PortType_t) 0;
 			portType < srch2http::EndOfPortType; portType = srch2http::incrementPortType(portType)) {
-		port = currentNode->getPort(portType);
+		port = config->getCurrentNodeConfig()->getPort(portType);
 		if(port > 0){
 			ports.insert(port);
 		}
@@ -712,7 +711,6 @@ int setCallBacksonHTTPServer(ConfigManager *const config,
 		boost::shared_ptr<const srch2::httpwrapper::Cluster> & clusterReadview,
 		srch2::httpwrapper::DPExternalRequestHandler * dpExternal) {
 
-	const srch2::httpwrapper::Node * currentNode = clusterReadview->getCurrentNode();
 	// setup default core callbacks for queries without a core name
 	// only if default core is available.
 	if(config->getDefaultCoreSetFlag() == true) {
@@ -730,7 +728,7 @@ int setCallBacksonHTTPServer(ConfigManager *const config,
 					userRequestAttributesList[j].callback, defaultArgs);
 
 			// just for print
-			unsigned short port = currentNode->getPort(userRequestAttributesList[j].portType);
+			unsigned short port = config->getCurrentNodeConfig()->getPort(userRequestAttributesList[j].portType);
 			if (port < 1) port = globalDefaultPort;
 			Logger::debug("Routing port %d route %s to default core %s",
 					port, userRequestAttributesList[j].path, config->getDefaultCoreName().c_str());
@@ -760,7 +758,7 @@ int setCallBacksonHTTPServer(ConfigManager *const config,
 					userRequestAttributesList[j].callback, args);
 
 			// just for print
-			unsigned short port = currentNode->getPort(userRequestAttributesList[j].portType);
+			unsigned short port = config->getCurrentNodeConfig()->getPort(userRequestAttributesList[j].portType);
 			if(port < 1){
 				port = globalDefaultPort;
 			}
@@ -777,7 +775,7 @@ int startListeningToRequest(evhttp *const http_server,
 	/* 4). accept bound socket */
 	for(PortSocketMap_t::iterator iterator = globalPortSocketMap.begin();
 			iterator != globalPortSocketMap.end(); iterator++) {
-		cout << "Port " << iterator->first << " added to HTTP listener for external requests." << endl;
+		Logger::console("Port %d added to HTTP listener for external requests.", iterator->first);
 		if(evhttp_accept_socket(http_server, iterator->second) != 0) {
 			perror("evhttp_accept_socket");
 			return 255;

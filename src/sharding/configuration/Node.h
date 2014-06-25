@@ -17,35 +17,46 @@ using namespace srch2::instantsearch;
 namespace srch2 {
 namespace httpwrapper {
 
+// static Node information read from config file.
+class NodeConfig {
+public:
+	NodeConfig() {
+		isNodeMasterEligible = true;
+	}
+	unsigned short getPort(PortType_t portType) const;
+	void setPort(PortType_t portType, unsigned short portNumber);
+	void setMasterEligible(bool masterEligible) { isNodeMasterEligible = masterEligible; }
+	bool isMasterEligible() { return isNodeMasterEligible; }
+	void setName(string nodeName) { this->nodeName = nodeName; }
+	string getName() { return nodeName; }
+private:
+	vector<unsigned short> ports;
+	string nodeName;
+	bool isNodeMasterEligible;
+};
+
+// Dynamic Node metadata
 class Node {
 public:
 
 	Node();
 
 	Node(const std::string& nodeName, const std::string& ipAddress,
-			unsigned portNumber, bool thisIsMe, unsigned numberOfPShards = 1);
-	Node(std::string& nodeName, std::string& ipAddress, unsigned portNumber,
-			bool thisIsMe, bool nodeMaster, bool nodeData,std::string& dataDir, std::string& homeDir, unsigned numberOfPShards);
+			unsigned portNumber, bool thisIsMe, unsigned numberOfPShards = 1, bool nodeMasterEligible = true);
 
 	Node(const Node & node){
 		this->nodeId = node.nodeId;
 		this->ipAddress = node.ipAddress;
 		this->portNumber = node.portNumber;
 		this->nodeName = node.nodeName;
-		this->ports = node.ports;
 		this->nodeMaster = node.nodeMaster;
-		this->nodeData = node.nodeData;
-		this->homeDir = node.homeDir;
-		this->dataDir = node.dataDir;
-		this->numberOfThreads = node.numberOfThreads;
+		this->nodeMasterEligible = node.nodeMasterEligible;
 		this->thisIsMe = node.thisIsMe;
 		this->numberOfPrimaryShards = node.numberOfPrimaryShards;
 	}
 
-	std::string getHomeDir() const;
-	std::string getDataDir() const;
+	bool isMasterEligible() const;
 	bool isMaster() const;
-	bool isData() const;
 	std::string getName() const;
 	std::string getIpAddress() const;
 	unsigned int getId() const;
@@ -53,12 +64,8 @@ public:
 	unsigned int getPortNumber() const;
 
 	unsigned getDefaultNumberOfPrimaryShards() const;
-
-
-	bool thisIsMe; // temporary for V0
-
-	unsigned short getPort(PortType_t portType) const;
-	void setPort(PortType_t portType, unsigned short portNumber);
+	void setMaster(bool isMaster);
+	bool thisIsMe;
 
 	string serialize();
 
@@ -68,21 +75,10 @@ private:
 	std::string ipAddress;
 	unsigned portNumber;
 	std::string nodeName;
-	vector<unsigned short> ports;
-
-	// Allow this node to be eligible as a master node (enabled by default).
+	// flag to tell whether current node is master or not.
 	bool nodeMaster;
-
-	// Allow this node to store data (enabled by default). If enabled, the node is eligible to store data shards.
-	bool nodeData;
-
-	// Home directory for all the index files of shards on this node.
-	string homeDir;
-
-	string dataDir;
-	unsigned int numberOfThreads;
-	// other node-related info
-
+	// Allow this node to be eligible as a master node (enabled by default).
+	bool nodeMasterEligible;
 	// temporary for phase 1 of V1
 	unsigned numberOfPrimaryShards;
 };
