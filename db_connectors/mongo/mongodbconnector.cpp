@@ -14,23 +14,23 @@
 
 using namespace std;
 
-time_t MongoDBConnector::bulkLoadEndTime = 0;
-
 MongoDBConnector::MongoDBConnector() {
-	serverHandle=NULL;
-	oplogConnection=NULL;
+	serverHandle = NULL;
+	oplogConnection = NULL;
+	mongoConnector = NULL;
 }
 
+//Init the connector, call connect
 bool MongoDBConnector::init(ServerInterface *serverHandle) {
 	this->serverHandle = serverHandle;
-	bulkLoadEndTime=time(NULL);
-	if(!conn()){
+	if (!connectToDB()) {
 		return false;
 	}
 	return true;
 }
 
-bool MongoDBConnector::conn() {
+//Connect to the mongodb
+bool MongoDBConnector::connectToDB() {
 	string mongoNamespace = "local.oplog.rs";
 
 	string host = this->serverHandle->configLookUp("host");
@@ -47,7 +47,7 @@ bool MongoDBConnector::conn() {
 		try {
 			string hostAndport = host;
 			if (port.size()) {
-				hostAndport.append(":").append(port); // std::string is mutable unlike java
+				hostAndport.append(":").append(port);
 			}
 			mongoConnector = new mongo::ScopedDbConnection(hostAndport);
 			oplogConnection = &mongoConnector->conn();
@@ -78,8 +78,8 @@ bool MongoDBConnector::conn() {
 	return false;
 }
 
-void MongoDBConnector::createNewIndexes(){
-	std::cout<<"Calling Create New Indexes"<<std::endl;
+//Load the table records and insert into the engine
+void MongoDBConnector::createNewIndexes() {
 	string mongoNamespace = "local.oplog.rs";
 	string dbname = this->serverHandle->configLookUp("db");
 	string collection = this->serverHandle->configLookUp("collection");
@@ -107,7 +107,7 @@ void MongoDBConnector::createNewIndexes(){
 					printf("Indexed %d records so far ...",
 							indexedRecordsCount);
 			}
-			printf("Total indexed %d / %d records.", indexedRecordsCount,
+			printf("Total indexed %d / %d records. \n", indexedRecordsCount,
 					collectionCount);
 
 		} else {
@@ -123,33 +123,39 @@ void MongoDBConnector::createNewIndexes(){
 	}
 }
 
-time_t MongoDBConnector::getLastExecutedLogTime(){
-	std::string path=this->serverHandle->configLookUp("srch2Home")+"mongodb_data/"+"data.bin";
-	if(access(path.c_str(), F_OK) == 0){
-		ifstream a_file(path.c_str(),ios::in|ios::binary);
+//Load the last time last oplog record executed
+time_t MongoDBConnector::getLastExecutedLogTime() {
+	time_t lastExecutedLogTime = time(NULL);	//Keep the time stamp start running the listener
+
+	std::string path = this->serverHandle->configLookUp("srch2Home")
+			+ "mongodb_data/" + "data.bin";
+	if (access(path.c_str(), F_OK) == 0) {
+		ifstream a_file(path.c_str(), ios::in | ios::binary);
 		time_t t;
 		a_file >> t;
 		a_file.close();
-		bulkLoadEndTime=t;
+		lastExecutedLogTime = t;
 	}
-	return bulkLoadEndTime;
+	return lastExecutedLogTime;
 }
 
+
+//Save the time last oplog record executed
 void MongoDBConnector::saveLastExecutedLogTime(time_t t) {
-	std::string path=this->serverHandle->configLookUp("srch2Home")+"mongodb_data/";
+	std::string path = this->serverHandle->configLookUp("srch2Home")
+			+ "mongodb_data/";
 	if (access(path.c_str(), F_OK) != 0) {
 		boost::filesystem::create_directories(path);
 	}
-	std::string pt=path+"data.bin";
+	std::string pt = path + "data.bin";
 	ofstream a_file(pt.c_str(), ios::trunc | ios::binary);
 	a_file << t;
 	a_file.flush();
 	a_file.close();
 }
 
-// illustrative code..
+//Listener the oplog and do modification to the engine
 void* MongoDBConnector::runListener() {
-	std::cout<<"Calling Run Listener"<<std::endl;
 	bool printOnce = true;
 	time_t opLogTime = 0;
 	time_t threadSpecificCutOffTime = getLastExecutedLogTime();
@@ -159,69 +165,74 @@ void* MongoDBConnector::runListener() {
 	string collection = this->serverHandle->configLookUp("collection");
 	string filterNamespace = dbname + "." + collection;
 
-	retry: try {
-		mongo::BSONElement _lastValue = mongo::BSONObj().firstElement();
+	do {
+		try {
+			mongo::BSONElement _lastValue = mongo::BSONObj().firstElement();
 
-		mongo::Query query = mongo::Query().hint(BSON("$natural" << 1));
-		while (1) {
-			// open the tail cursor on the capped collection oplog.rs
-			// the cursor will wait for more data when it reaches at
-			// the end of the collection. For more info please see
-			// following link.
-			// http://docs.mongodb.org/manual/tutorial/create-tailable-cursor/
-			auto_ptr<mongo::DBClientCursor> tailCursor = oplogConnection->query(
-					mongoNamespace, query, 0, 0, 0,
-					mongo::QueryOption_CursorTailable
-					| mongo::QueryOption_AwaitData);
+			mongo::Query query = mongo::Query().hint(BSON("$natural" << 1));
 			while (1) {
-				if (tailCursor->more()) {
-					mongo::BSONObj obj = tailCursor->next();
-					string recNS = obj.getStringField("ns");
-					if (recNS.compare(filterNamespace) == 0) {
-						mongo::BSONElement timestampElement = obj.getField(
-								"ts");
-						opLogTime = timestampElement.timestampTime().toTimeT();
-						if (opLogTime > threadSpecificCutOffTime) {
-							parseOpLogObject(obj, filterNamespace,
-									*oplogConnection);
+				// open the tail cursor on the capped collection oplog.rs
+				// the cursor will wait for more data when it reaches at
+				// the end of the collection. For more info please see
+				// following link.
+				// http://docs.mongodb.org/manual/tutorial/create-tailable-cursor/
+				auto_ptr<mongo::DBClientCursor> tailCursor =
+						oplogConnection->query(mongoNamespace, query, 0, 0, 0,
+								mongo::QueryOption_CursorTailable
+										| mongo::QueryOption_AwaitData);
+				while (1) {
+					if (tailCursor->more()) {
+						mongo::BSONObj obj = tailCursor->next();
+						string recNS = obj.getStringField("ns");
+						if (recNS.compare(filterNamespace) == 0) {
+							mongo::BSONElement timestampElement = obj.getField(
+									"ts");
+							opLogTime =
+									timestampElement.timestampTime().toTimeT();
+							if (opLogTime > threadSpecificCutOffTime) {
+								parseOpLogObject(obj, filterNamespace,
+										*oplogConnection);
+							}
 						}
-					}
-					_lastValue = obj["_id"];
-					printOnce = true;
-				} else {
-					// cursor is either dead or does not have more records
-					// store the timestamp of the last record processed, so that
-					// when the cursor fetches more data we can filter out any
-					// records processed earlier. Alternative is to store current time.
-					if(threadSpecificCutOffTime!=opLogTime){
-						saveLastExecutedLogTime(opLogTime);
-					}
-					threadSpecificCutOffTime = opLogTime;
-					if (tailCursor->isDead())
-						break;
-					if (printOnce) {
-						printf("MOGNOLISTENER: waiting for updates ... \n");
-						printOnce = false;
-					}
+						_lastValue = obj["_id"];
+						printOnce = true;
+					} else {
+						// cursor is either dead or does not have more records
+						// store the timestamp of the last record processed, so that
+						// when the cursor fetches more data we can filter out any
+						// records processed earlier. Alternative is to store current time.
+						if (threadSpecificCutOffTime != opLogTime) {
+							saveLastExecutedLogTime(opLogTime);
+							this->serverHandle->saveChanges();
+						}
+						threadSpecificCutOffTime = opLogTime;
+						if (tailCursor->isDead())
+							break;
+						if (printOnce) {
+							printf("MOGNOLISTENER: waiting for updates ... \n");
+							printOnce = false;
+						}
 
-					sleep(1); // sleep...do not hog the CPU
+						sleep(
+								atoi(
+										this->serverHandle->configLookUp(
+												"listenerWaitTime").c_str())); // sleep...do not hog the CPU
+					}
 				}
+				query = QUERY("_id" << mongo::GT << _lastValue).hint( BSON( "$natural" << 1 ) );
 			}
-			query = QUERY("_id" << mongo::GT << _lastValue).hint( BSON( "$natural" << 1 ) );
+		} catch( const mongo::DBException &e ) {
+			printf("MongoDb Exception : %s \n", e.what());
+		} catch (const exception& ex) {
+			printf("Unknown exception : %s \n", ex.what());
 		}
-	} catch( const mongo::DBException &e ) {
-		printf("MongoDb Exception : %s \n", e.what());
-	} catch (const exception& ex) {
-		printf("Unknown exception : %s \n", ex.what());
-	}
-	sleep(atoi(this->serverHandle->configLookUp("listenerWaitTime").c_str()));
-	if (conn()) {
-		goto retry;
-	}
+		sleep(atoi(this->serverHandle->configLookUp("listenerWaitTime").c_str()));
+	}while(connectToDB());	//Retry connecting to the mongodb
 
 	return NULL;
 }
 
+//Parse the record into json format and do the corresponding operation
 void MongoDBConnector::parseOpLogObject(mongo::BSONObj& bobj, string currentNS,
 		mongo::DBClientBase& oplogConnection) {
 	printf("MONGO LISTENER PROCESSING : %s \n", bobj.jsonString().c_str());
@@ -235,7 +246,7 @@ void MongoDBConnector::parseOpLogObject(mongo::BSONObj& bobj, string currentNS,
 	switch (operation[0]) {
 	case 'i':
 	case 'I': {
-		// Parse example data
+		// Parse example data and insert
 		mongo::BSONObj bsonData = bobj.getObjectField("o");
 		string jsonRecord = bsonData.jsonString();
 		this->serverHandle->insertRecord(jsonRecord);
@@ -243,6 +254,7 @@ void MongoDBConnector::parseOpLogObject(mongo::BSONObj& bobj, string currentNS,
 	}
 	case 'd':
 	case 'D': {
+		// Parse example data , find the pk and delete
 		mongo::BSONElement _oElement = bobj.getField("o");
 		if (_oElement.type() != mongo::Object) {
 			printf(
@@ -270,6 +282,7 @@ void MongoDBConnector::parseOpLogObject(mongo::BSONObj& bobj, string currentNS,
 	}
 	case 'u':
 	case 'U': {
+		// Parse example data , find the pk and update
 		mongo::BSONElement _o2Element = bobj.getField("o2");
 		if (_o2Element.type() != mongo::Object) {
 			printf(
@@ -300,7 +313,7 @@ void MongoDBConnector::parseOpLogObject(mongo::BSONObj& bobj, string currentNS,
 		}
 
 		string jsonRecord = updateRecord.jsonString();
-		this->serverHandle->updateRecord(primaryKeyStringValue,jsonRecord);
+		this->serverHandle->updateRecord(primaryKeyStringValue, jsonRecord);
 
 		break;
 	}

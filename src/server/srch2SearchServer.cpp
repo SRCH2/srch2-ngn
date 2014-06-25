@@ -43,10 +43,9 @@
 #include <boost/filesystem.hpp>
 #include "util/FileOps.h"
 #include "analyzer/AnalyzerContainers.cpp"
-#include "MongodbAdapter.h"
 #include "WrapperConstants.h"
-#include "../adapter/ServerInterfaceInternal.h"
-#include "../adapter/DataConnectorThread.h"
+#include "ServerInterfaceInternal.h"
+#include "DataConnectorThread.h"
 namespace po = boost::program_options;
 namespace srch2is = srch2::instantsearch;
 namespace srch2http = srch2::httpwrapper;
@@ -602,22 +601,14 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
     	Logger::error(ex.what());
     	return 255;
     }
-    //cout << "srch2 server started." << endl;
 
     // loop over cores setting up mongodb and binding all ports to use
     for (CoreNameServerMap_t::const_iterator iterator = coreNameServerMap->begin(); iterator != coreNameServerMap->end(); iterator++) {
         const srch2http::CoreInfo_t *coreInfo = config->getCoreInfo(iterator->second->getCoreName());
         if (coreInfo != NULL) {
-            if (coreInfo->getDataSourceType() == srch2::httpwrapper::DATA_SOURCE_MONGO_DB) {
-                // set current time as cut off time for further updates
-                // this is a temporary solution. TODO
-//                srch2http::MongoDataSource::bulkLoadEndTime = time(NULL);
-//                srch2http::MongoDataSource::spawnUpdateListener(iterator->second);
-
-                //Adapter Solution
-            	DataConnectorThread::getDataConnectorThread(coreInfo->getDataSourceType(),
-						(void*) iterator->second);
-            }
+			//Create adapter thread for database connectors. Ignore unknown config file (Like JSON file).
+			DataConnectorThread::getDataConnectorThread(
+					coreInfo->getDataSourceType(), (void*) iterator->second);
 
             // bind once each port defined for use by this core
             for (enum srch2http::PortType_t portType = static_cast<srch2http::PortType_t> (0); portType < srch2http::EndOfPortType; portType = srch2http::incrementPortType(portType)) {

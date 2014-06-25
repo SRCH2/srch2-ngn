@@ -1,5 +1,5 @@
 /*
- * DataConnector.h
+ * ServerInterfaceInternal.h
  *
  *  Created on: Jun 9, 2014
  *      Author: liusrch2
@@ -16,15 +16,19 @@ class ServerInterfaceInternal: public ServerInterface {
 public:
 	ServerInterfaceInternal(void *server);
 	virtual ~ServerInterfaceInternal();
+
 	virtual int insertRecord(std::string jsonString);
 	virtual int deleteRecord(std::string primaryKey);
-	virtual int updateRecord(std::string pk,std::string jsonSrting);
+	virtual int updateRecord(std::string pk, std::string jsonSrting);
+	virtual void saveChanges();
+
 	// this API will provide key based lookup
 	// from engine's connector specific configuration store.
 	//  e.g  "dbname" => "mysql"  (single value)
 	//       "collections" => "collection1, collection2 " (multi value)
 	virtual std::string configLookUp(std::string key);
 
+	//Constant keys used in config map
 	static const std::string DB_CONNECTORS_PATH;
 	static const std::string DYNAMIC_LIBRARY_SUFFIX;
 	static const std::string DYNAMIC_LIBRARY_PREFIX;
@@ -39,11 +43,13 @@ public:
 	static const std::string DATABASE_MAX_RETRY_COUNT;
 	static const std::string SRCH2HOME;
 	static const std::string INDEXTYPE;
+
+	bool isBuildSuccess();
 private:
 	void populateConnectorConfig();
 	srch2::httpwrapper::Srch2Server *server;
 	std::map<std::string, std::string> * connectorConfig;
-
+	bool buildSuccess;
 
 };
 #endif /* __SERVERINTERFACEINTERNAL__ */

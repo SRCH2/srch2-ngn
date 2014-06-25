@@ -20,7 +20,6 @@ INCLUDE_DIRECTORIES(
     ${CMAKE_SOURCE_DIR}/thirdparty/event/include
     ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src-0.5.0/include
     ${CMAKE_SOURCE_DIR}/thirdparty/gperftools/include
-    ${CMAKE_SOURCE_DIR}/thirdparty/mongo-cxx-driver-v2.4/src/
 )
 
 add_library(SERVER_OBJECTS OBJECT ${SRCH2_SERVER_SRC})
@@ -30,14 +29,12 @@ IF(ENABLE_PROFILER)
     set(GPERFTOOL_LIBS ${CMAKE_SOURCE_DIR}/thirdparty/gperftools/lib/libprofiler.a ${CMAKE_SOURCE_DIR}/thirdparty/libunwind/lib/libunwind.a)
 ENDIF()
 
-set(MONGO_CLIENT_LIBRARY ${CMAKE_SOURCE_DIR}/thirdparty/mongo-cxx-driver-v2.4/libmongoclient.a)
-#set(MONGO_CLIENT_LIBRARY ${CMAKE_SOURCE_DIR}/thirdparty/mongo-cxx-driver-v2.4/libmongoclient.so)
 ADD_EXECUTABLE(${SRCH2_SERVER_NAME} srch2SearchServer.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:SERVER_OBJECTS> $<TARGET_OBJECTS:ADAPTER_OBJECTS>)
 TARGET_LINK_LIBRARIES(${SRCH2_SERVER_NAME} 
 						dl
                         ${Srch2InstantSearch_LIBRARIES} 
                         ${jsoncpp_LIBRARY}      ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent_pthreads.a
-                        ${MONGO_CLIENT_LIBRARY} ${CMAKE_REQUIRED_LIBRARIES} ${Boost_LIBRARIES} -lpthread ${GPERFTOOL_LIBS}                        
+                        ${CMAKE_REQUIRED_LIBRARIES} ${Boost_LIBRARIES} -lpthread ${GPERFTOOL_LIBS}                        
                 )
 
 ADD_DEPENDENCIES(${SRCH2_SERVER_NAME} srch2_core)

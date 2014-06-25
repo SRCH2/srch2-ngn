@@ -16,6 +16,7 @@ public:
 	virtual int insertRecord(std::string jsonString) = 0;
 	virtual int deleteRecord(std::string primaryKey) = 0;
 	virtual int updateRecord(std::string pk, std::string jsonSrting) = 0;
+	virtual void saveChanges() = 0;	//Save changes to the disk
 	// this API will provide key based lookup
 	// from engine's connector specific configuration store.
 	//  e.g  "dbname" => "mysql"  (single value)
@@ -25,14 +26,10 @@ public:
 
 class DataConnector {
 public:
-
-	virtual ~DataConnector() {
-	}
-	;
+	virtual ~DataConnector() {};
 	virtual bool init(ServerInterface *serverHandle) = 0;
-	virtual void* runListener() = 0;
-	virtual void createNewIndexes() = 0;
-
+	virtual void* runListener() = 0;		//Periodically fetch the data form log
+	virtual void createNewIndexes() = 0;	//Create New Indexes from the table.
 };
 
 // the types of the class factories
