@@ -900,6 +900,13 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_
     childNode = parentNode.child(schemaString).child(uniqueKeyString);
     if (childNode && childNode.text()) {
         coreInfo->primaryKey = string(childNode.text().get());
+        // For MongoDB, the primary key should always be "_id".
+        if(coreInfo->dataSourceType == DATA_SOURCE_MONGO_DB && coreInfo->primaryKey.compare("_id") != 0) {
+        	parseError << "The PrimaryKey in the config file for the MongoDB adapter should always be \"_id\", not "
+        				<< coreInfo->primaryKey << ".";
+        	configSuccess = false;
+        	return;
+        }
     } else {
         parseError << (coreInfo->name.compare("") != 0 ? coreInfo->name : "default") <<
             " core uniqueKey (primary key) is not set.\n";

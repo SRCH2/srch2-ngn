@@ -22,7 +22,7 @@
 #include <sstream>
 #include <unistd.h>
 #include <fcntl.h>
-#ifdef __MACH__
+#if defined( __MACH__) || defined(ANDROID)
 // This header is used only in mac osx related code
 #include <arpa/inet.h>
 #endif
@@ -532,8 +532,18 @@ void makeHttpRequest(){
 static void killServer(int signal) {
     Logger::console("Stopping server.");
     for (int i = 0; i < MAX_THREADS; i++) {
+#ifdef ANDROID
+    	// Android thread implementation does not have pthread_cancel()
+    	// use pthread_kill instead.
+    	pthread_kill(threads[i], signal);
+#else
         pthread_cancel(threads[i]);
+#endif
     }
+#ifdef ANDROID
+    exit(0);
+#endif
+
 #ifdef __MACH__
     /*
      *  In MacOS, pthread_cancel could not cancel a thread when the thread is executing kevent syscall
@@ -606,10 +616,21 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
     for (CoreNameServerMap_t::const_iterator iterator = coreNameServerMap->begin(); iterator != coreNameServerMap->end(); iterator++) {
         const srch2http::CoreInfo_t *coreInfo = config->getCoreInfo(iterator->second->getCoreName());
         if (coreInfo != NULL) {
+<<<<<<< HEAD
 			//Create adapter thread for database connectors. Ignore unknown config file (Like JSON file).
 			DataConnectorThread::getDataConnectorThread(
 					coreInfo->getDataSourceType(), (void*) iterator->second);
 
+=======
+#ifndef ANDROID
+            if (coreInfo->getDataSourceType() == srch2::httpwrapper::DATA_SOURCE_MONGO_DB) {
+                // set current time as cut off time for further updates
+                // this is a temporary solution. TODO
+                srch2http::MongoDataSource::bulkLoadEndTime = time(NULL);
+                srch2http::MongoDataSource::spawnUpdateListener(iterator->second);
+            }
+#endif
+>>>>>>> master
             // bind once each port defined for use by this core
             for (enum srch2http::PortType_t portType = static_cast<srch2http::PortType_t> (0); portType < srch2http::EndOfPortType; portType = srch2http::incrementPortType(portType)) {
                 // IETF RFC 6335 specifies port number range is 0 - 65535: http://tools.ietf.org/html/rfc6335#page-11
