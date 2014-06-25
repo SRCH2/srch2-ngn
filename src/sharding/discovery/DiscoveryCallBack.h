@@ -14,21 +14,10 @@ public:
 			//unsigned size = msg->getBodySize();
 			Node node;
 			node.deserialize(msg->getMessageBody());
-			syncManger.addNewNode(node); // TODO : Changed by Jamshid in merge
-
-			// TODO : commented out by Jamshid
-//			for(ConfigManager::CoreInfoMap_t::iterator coreInfoMap = syncManger.config.coreInfoIterateBegin();
-//						coreInfoMap != syncManger.config.coreInfoIterateEnd(); ++coreInfoMap)  {
-//				CoreInfo_t * coreInfoPtr = coreInfoMap->second;
-//				string coreName = coreInfoMap->first;
-//				syncManger.config.getCluster()->shardMap[ShardId(coreInfoPtr->getCoreId(), node.getId())] =
-//						Shard(node.getId(), coreInfoPtr->getCoreId(), node.getId());
-//
-//				coreInfoPtr->shards.push_back(ShardId(coreInfoPtr->getCoreId(), node.getId()));
-//			}
-//
-//			Logger::console("[%d, %d, %d]", syncManger.config.getCluster()->getTotalNumberOfNodes()
-//					,syncManger.masterNodeId, syncManger.currentNodeId);
+			syncManger.config.getClusterWriteView()->addNewNode(node);
+			syncManger.config.commitClusterMetadata();
+			Logger::console("[%d, %d, %d]", syncManger.config.getClusterWriteView()->getTotalNumberOfNodes()
+					,syncManger.masterNodeId, syncManger.currentNodeId);
 			break;
 
 		}
@@ -37,7 +26,7 @@ public:
 			char * messageBody = msg->getMessageBody();
 			unsigned replyNodeId = *(unsigned *) messageBody;
 
-			string serializedCluster = syncManger.serializeClusterNodes(); // TODO : Changed by Jamshid in merge
+			string serializedCluster = syncManger.config.getClusterWriteView()->serializeClusterNodes();
 			Message * replyMessage = MessageAllocator().allocateMessage(serializedCluster.size());
 			replyMessage->setType(ClusterInfoReplyMessageType);
 			replyMessage->setDiscoveryMask();
@@ -59,7 +48,7 @@ public:
 				unsigned nodeSerializedSize = *(unsigned *)body;
 				body += sizeof(unsigned);
 				node.deserialize(body);
-				syncManger.addNewNode(node); // TODO : Changed by Jamshid in merge
+				syncManger.config.getClusterWriteView()->addNewNode(node);
 				body += nodeSerializedSize;
 			}
 			__sync_val_compare_and_swap(&syncManger.configUpdatesDone, false, true);

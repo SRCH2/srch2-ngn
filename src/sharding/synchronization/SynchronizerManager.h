@@ -87,41 +87,6 @@ public:
 		}
 		ASSERT(false);
 	}
-	void addNewNode(const Node& node) { //TODO : Jamshid : should rewrite this function after merge
-//		//spin to acquire lock
-//		while (!__sync_bool_compare_and_swap (&isLocked, false, true)) ;
-//
-//		// first check whether node is already present or not.
-//		vector<Node>* nodes = this->cluster.getNodes();
-//		unsigned index = 0;
-//		unsigned totalNodes = nodes->size();
-//		for(; index < totalNodes; ++index){
-//			if((*nodes)[index].getId() == node.getId()){
-//				break;
-//			}
-//		}
-//		if (index == totalNodes) {
-//			nodes->push_back(node);
-//		}
-//		isLocked = false;
-//		return;
-	}
-
-	string serializeClusterNodes() { //TODO : Jamshid : should rewrite this function after merge
-//		while (!__sync_bool_compare_and_swap (&isLocked, false, true)) ;
-//		stringstream ss;
-//		vector<Node>* nodes = this->cluster.getNodes();
-//		unsigned size = nodes->size();
-//		ss.write((const char *)&size, sizeof(size));
-//		for(unsigned i = 0; i < nodes->size(); ++i){
-//			string serializedNode = nodes->operator[](i).serialize();
-//			size = serializedNode.size();
-//			ss.write((const char *)&size, sizeof(size));
-//			ss.write(serializedNode.c_str(), size);
-//		}
-//		isLocked = false;
-//		return ss.str();
-	}
 
 	/*
 	 *  This function implements initial discovery logic of the node. This should be called
@@ -165,13 +130,10 @@ private:
 	unsigned pingInterval;
 	unsigned pingTimeout;
 	unsigned masterNodeId;
-//	Cluster *cluster; // commented out by Jamshid and replaced with next line
-	boost::shared_ptr<const Cluster> cluster;
 	TransportManager& transport;
 	SMCallBackHandler *callBackHandler;
 	MessageHandler *messageHandler;
 	ConfigManager& config;
-	std::vector<Node> *nodesInCluster;
 	MulticastDiscoveryManager* discoveryMgr;
 	DiscoveryCallBack  *discoveryCallBack;
 	unsigned nodeIds;

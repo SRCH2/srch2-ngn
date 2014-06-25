@@ -835,7 +835,7 @@ int main(int argc, char** argv) {
 			new srch2http::MigrationManager(serverConf, dpInternal);
 
 	// TODO : uses clusterreadview to initialize shards in this node
-	migrationManager->initializeLocalShards();
+	//migrationManager->initializeLocalShards();
 
 	// get read view to use for system startup
 	boost::shared_ptr<const srch2::httpwrapper::Cluster> clusterReadview;
@@ -890,16 +890,6 @@ int main(int argc, char** argv) {
 	// create threads for internal requests
 	//TODO set the number of threads for internal messaging
 	createInternalReqEventBasesAndAccompanyingThreads(MAX_INTERNAL_THREADS, &evBasesForInternalRequests);
-
-	/**** Temporary code *****************************/
-	std::vector<const srch2http::Node *> clusterNodes;
-	clusterReadview->getAllNodes(clusterNodes);
-	std::vector<srch2http::Node *> nodes ;
-	//TODO : we copy nodes and pass it to TM to make the initial cluster,
-	// this code must be removed when that logic is deleted from TM
-	for(unsigned i = 0 ; i < clusterNodes.size(); ++i){
-		nodes.push_back(new srch2http::Node(*clusterNodes.at(i)));
-	}
 
 	// create Transport Module
 	transportManager = new srch2http::TransportManager(evBasesForInternalRequests);

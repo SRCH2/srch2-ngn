@@ -246,6 +246,44 @@ const Shard * Cluster::getShard(const ShardId & shardId) const{
 	return NULL;
 }
 
+void Cluster::addNewNode(const Node& newNode) {
+
+	// first check whether node is already present or not.
+	unsigned index = 0;
+	unsigned totalNodes = getTotalNumberOfNodes();
+	for(std::map<Node *, std::vector<CoreShardContainer * > >::const_iterator nodeInfoItr = this->shardInformation.begin();
+						nodeInfoItr != this->shardInformation.end(); ++nodeInfoItr){
+		if(nodeInfoItr->first->getId() == newNode.getId()){
+			break;
+		}
+	}
+	if (index == totalNodes) {
+		Node * node = new Node(newNode);
+		this->shardInformation[node] = std::vector<CoreShardContainer * >();
+		for(std::vector<CoreInfo_t *>::iterator coreItr = cores.begin(); coreItr != cores.end(); ++coreItr){
+			CoreShardContainer * coreShardContainer = new CoreShardContainer(*coreItr);
+			this->shardInformation[node].push_back(coreShardContainer);
+		}
+	}
+	return;
+}
+
+string Cluster::serializeClusterNodes() {
+	stringstream ss;
+
+	unsigned int size = getTotalNumberOfNodes();
+	ss.write((const char *)&size, sizeof(size));
+	for(std::map<Node *, std::vector<CoreShardContainer * > >::const_iterator nodeInfoItr = this->shardInformation.begin();
+					nodeInfoItr != this->shardInformation.end(); ++nodeInfoItr){
+		Node *node = nodeInfoItr->first;
+		string serializedNode = node->serialize();
+		size = serializedNode.size();
+		ss.write((const char *)&size, sizeof(size));
+		ss.write(serializedNode.c_str(), size);
+	}
+	return ss.str();
+}
+
 
 void Cluster::print() const{
 	Logger::console("Cluster name : %s", clusterName.c_str());

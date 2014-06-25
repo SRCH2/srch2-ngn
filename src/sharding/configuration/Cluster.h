@@ -77,7 +77,9 @@ public:
 	bool isMasterNode(unsigned nodeId) const;
 	bool isShardLocal(const ShardId& shardId) const;
 	const Shard * getShard(const ShardId & shardId) const;
-
+	void addNewNode(const Node& newNode);
+	string serializeClusterNodes();
+	void clear() { shardInformation.clear() ; }
 	void print() const;
 
 private:

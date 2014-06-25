@@ -247,28 +247,28 @@ void ConfigManager::loadConfigFile()
     Logger::debug("WARNINGS while reading the configuration file:");
     Logger::debug("%s\n", parseWarnings.str().c_str());
 
-    /*** Generate shards, temporary*****/
-	std::map<Node *, std::vector<CoreShardContainer * > > * shardingInformation =
-			this->getClusterWriteView()->getShardInformation();
-	std::vector<CoreInfo_t *> * cores = this->getClusterWriteView()->getCores();
-
-	unsigned partitionIdCouter = 0;
-	for(std::map<Node *, std::vector<CoreShardContainer * > >::iterator nodeEntryItr = shardingInformation->begin();
-			nodeEntryItr != shardingInformation->end(); ++nodeEntryItr){
-
-		for(std::vector<CoreInfo_t *>::iterator coreItr = cores->begin(); coreItr != cores->end(); ++coreItr){
-			CoreShardContainer * coreShardContainer = new CoreShardContainer(*coreItr);
-			// since this core is temporary anyways, we use the number of p shards from each node for every code
-			// insert as many shards as specified in config file
-			for(unsigned sid = 0 ; sid < nodeEntryItr->first->getDefaultNumberOfPrimaryShards(); sid++){
-				coreShardContainer->getPrimaryShards()->push_back(new Shard(nodeEntryItr->first->getId(),
-						(*coreItr)->getCoreId(), partitionIdCouter));
-				partitionIdCouter ++;
-			}
-			nodeEntryItr->second.push_back(coreShardContainer);
-		}
-
-	}
+//    /*** Generate shards, temporary*****/
+//	std::map<Node *, std::vector<CoreShardContainer * > > * shardingInformation =
+//			this->getClusterWriteView()->getShardInformation();
+//	std::vector<CoreInfo_t *> * cores = this->getClusterWriteView()->getCores();
+//
+//	unsigned partitionIdCouter = 0;
+//	for(std::map<Node *, std::vector<CoreShardContainer * > >::iterator nodeEntryItr = shardingInformation->begin();
+//			nodeEntryItr != shardingInformation->end(); ++nodeEntryItr){
+//
+//		for(std::vector<CoreInfo_t *>::iterator coreItr = cores->begin(); coreItr != cores->end(); ++coreItr){
+//			CoreShardContainer * coreShardContainer = new CoreShardContainer(*coreItr);
+//			// since this core is temporary anyways, we use the number of p shards from each node for every code
+//			// insert as many shards as specified in config file
+//			for(unsigned sid = 0 ; sid < nodeEntryItr->first->getDefaultNumberOfPrimaryShards(); sid++){
+//				coreShardContainer->getPrimaryShards()->push_back(new Shard(nodeEntryItr->first->getId(),
+//						(*coreItr)->getCoreId(), partitionIdCouter));
+//				partitionIdCouter ++;
+//			}
+//			nodeEntryItr->second.push_back(coreShardContainer);
+//		}
+//
+//	}
 	// commit enables other modules to read the cluster metadata
 	this->commitClusterMetadata();
     /***************************************/
@@ -1915,23 +1915,23 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
     tempUse = "";
 
 
-    std::vector<Node *> nodes ;
+		std::vector<Node *> nodes ;
 
-    xml_node nodeTag = configNode.child("node");
-    if (nodeTag)
-      parseNode(&nodes, nodeTag, parseWarnings, parseError, configSuccess);
+		xml_node nodeTag = configNode.child("node");
+		if (nodeTag)
+		  parseNode(&nodes, nodeTag, parseWarnings, parseError, configSuccess);
 
-    // TODO Temporary : This must eventually be done by SM
-    for(unsigned i = 0 ; i < nodes.size() ; ++i){
-    	nodes.at(i)->setId(i);
-    }
+		// TODO Temporary : This must eventually be done by SM
+		for(unsigned i = 0 ; i < nodes.size() ; ++i){
+			nodes.at(i)->setId(i);
+		}
 
-    // and insert nodes into the cluster
-    std::map<Node *, std::vector<CoreShardContainer * > > * shardingInformation =
-    		getClusterWriteView()->getShardInformation();
-    for(unsigned i = 0 ; i < nodes.size() ; ++i){
-    	shardingInformation->insert(std::make_pair(nodes.at(i),vector<CoreShardContainer *>()));
-    }
+		// and insert nodes into the cluster
+		std::map<Node *, std::vector<CoreShardContainer * > > * shardingInformation =
+				getClusterWriteView()->getShardInformation();
+		for(unsigned i = 0 ; i < nodes.size() ; ++i){
+			shardingInformation->insert(std::make_pair(nodes.at(i),vector<CoreShardContainer *>()));
+		}
 
 
     // srch2Home is a required field
