@@ -375,7 +375,7 @@ void * multicastListener(void * arg) {
 	DiscoveryMessage message;
 	memset(&message, 0, sizeof(message));
 
-	int retryCount = 10;
+	int retryCount = 5;
 	struct sockaddr_in senderAddress;
 
 	char * buffer = (char *)&message;
@@ -396,6 +396,7 @@ void * multicastListener(void * arg) {
 			// ignore looped back messages.
 			if (discovery->isLoopbackMessage(message)) {
 				///Logger::console("loopback message ...continuing");
+				checkSocketIsReady(listenSocket, true);
 				continue;
 			} else {
 				switch(message.flag)
@@ -520,7 +521,7 @@ void * multicastListener(void * arg) {
 
 					// TODO: check whether same node sends JOIN request again. This logic will
 					// assign new id to it. Should we reuse new id or use the new id.
-					//Logger::console("Got cluster joining request!!");
+					Logger::console("Got cluster joining request!!");
 					DiscoveryMessage ackMessage;
 					ackMessage.flag = DISCOVERY_JOIN_CLUSTER_ACK;
 					ackMessage.interfaceNumericAddress = discovery->publishedInterfaceNumericAddr;
