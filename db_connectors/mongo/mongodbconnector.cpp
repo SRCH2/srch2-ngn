@@ -125,7 +125,7 @@ void MongoDBConnector::createNewIndexes() {
 
 //Load the last time last oplog record executed
 time_t MongoDBConnector::getLastExecutedLogTime() {
-	time_t lastExecutedLogTime = time(NULL);	//Keep the time stamp start running the listener
+	time_t lastExecutedLogTime = time(NULL);//Keep the time stamp start running the listener
 
 	std::string path = this->serverHandle->configLookUp("srch2Home")
 			+ "mongodb_data/" + "data.bin";
@@ -138,7 +138,6 @@ time_t MongoDBConnector::getLastExecutedLogTime() {
 	}
 	return lastExecutedLogTime;
 }
-
 
 //Save the time last oplog record executed
 void MongoDBConnector::saveLastExecutedLogTime(time_t t) {
@@ -187,8 +186,10 @@ void* MongoDBConnector::runListener() {
 						if (recNS.compare(filterNamespace) == 0) {
 							mongo::BSONElement timestampElement = obj.getField(
 									"ts");
-							opLogTime =
-									timestampElement.timestampTime().toTimeT();
+							std::stringstream ss;	//Can not find timestampElement.timestampTime().toTimeT(); in current library
+							ss <<timestampElement.timestampTime();	//A walk around way
+							ss >> opLogTime;
+							opLogTime = opLogTime/1000;
 							if (opLogTime > threadSpecificCutOffTime) {
 								parseOpLogObject(obj, filterNamespace,
 										*oplogConnection);

@@ -40,3 +40,10 @@ echo "INSTALLING google perftools in $CURRENTDIR/../"
 LDFLAGS=-L$CURRENTDIR/../../libunwind/lib/ ./configure --prefix=$CURRENTDIR/../
 make && make install
 
+cd ../../mongo-cxx-driver
+tar -xvf mongo-cxx-driver-legacy-0.0-26compat-2.6.2.tar.gz
+mv mongo-cxx-driver-legacy-0.0-26compat-2.6.2 mongo-cxx-driver
+cd mongo-cxx-driver
+CURRENTDIR=$(pwd)
+echo "Building mongo driver in $CURRENTDIR"
+python ../../json/jsoncpp-src-0.5.0/scons.py --prefix=srch2 --use-system-boost --sharedclient --full install-mongoclient

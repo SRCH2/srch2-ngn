@@ -7,7 +7,7 @@ INCLUDE_DIRECTORIES(
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/thirdparty/event/include
     ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src-0.5.0/include
-    ${CMAKE_SOURCE_DIR}/thirdparty/mongo-cxx-driver-v2.4/src/
+    ${CMAKE_SOURCE_DIR}/thirdparty/mongo-cxx-driver/mongo-cxx-driver/src/
 )
 
 set(GPERFTOOL_LIBS "")
@@ -20,7 +20,7 @@ EXEC_PROGRAM( ${CMAKE_CXX_COMPILER}
                   OUTPUT_VARIABLE gcc_compiler_version)
 SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src-0.5.0/libs/linux-gcc-${gcc_compiler_version}/libjson_linux-gcc-${gcc_compiler_version}_libmt.a)
 
-set(MONGO_CLIENT_LIBRARY ${CMAKE_SOURCE_DIR}/thirdparty/mongo-cxx-driver-v2.4/libmongoclient.a)
+set(MONGO_CLIENT_LIBRARY ${CMAKE_SOURCE_DIR}/thirdparty/mongo-cxx-driver/mongo-cxx-driver/build/linux2/use-system-boost/libmongoclient.a)
 
 ADD_EXECUTABLE(PostProcessingFilter_Test PostProcessingFilters_Test.cpp)
 TARGET_LINK_LIBRARIES(PostProcessingFilter_Test 
