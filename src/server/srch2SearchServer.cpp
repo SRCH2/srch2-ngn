@@ -616,21 +616,10 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
     for (CoreNameServerMap_t::const_iterator iterator = coreNameServerMap->begin(); iterator != coreNameServerMap->end(); iterator++) {
         const srch2http::CoreInfo_t *coreInfo = config->getCoreInfo(iterator->second->getCoreName());
         if (coreInfo != NULL) {
-<<<<<<< HEAD
 			//Create adapter thread for database connectors. Ignore unknown config file (Like JSON file).
 			DataConnectorThread::getDataConnectorThread(
 					coreInfo->getDataSourceType(), (void*) iterator->second);
 
-=======
-#ifndef ANDROID
-            if (coreInfo->getDataSourceType() == srch2::httpwrapper::DATA_SOURCE_MONGO_DB) {
-                // set current time as cut off time for further updates
-                // this is a temporary solution. TODO
-                srch2http::MongoDataSource::bulkLoadEndTime = time(NULL);
-                srch2http::MongoDataSource::spawnUpdateListener(iterator->second);
-            }
-#endif
->>>>>>> master
             // bind once each port defined for use by this core
             for (enum srch2http::PortType_t portType = static_cast<srch2http::PortType_t> (0); portType < srch2http::EndOfPortType; portType = srch2http::incrementPortType(portType)) {
                 // IETF RFC 6335 specifies port number range is 0 - 65535: http://tools.ietf.org/html/rfc6335#page-11

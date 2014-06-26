@@ -203,7 +203,6 @@ void Srch2Server::createAndBootStrapIndexer()
 		    }
 		    break;
 		}
-<<<<<<< HEAD
 		case srch2http::DATA_SOURCE_MONGO_DB: {
 			Logger::console("Creating indexes from a MongoDb instance...");
 			indexer->commit();	//For mongodb, it will be created by adapter. Only do the first time commit();
@@ -211,24 +210,6 @@ void Srch2Server::createAndBootStrapIndexer()
 		}
 		default: {
 			Logger::console("Creating new empty index");
-=======
-#ifndef ANDROID
-	    case srch2http::DATA_SOURCE_MONGO_DB:
-	        {
-		    Logger::console("Creating indexes from a MongoDb instance...");
-		    unsigned indexedCounter = MongoDataSource::createNewIndexes(indexer, indexDataConfig);
-		    indexer->commit();
-		    if (indexedCounter > 0) {
-		        indexer->save();
-			Logger::console("Indexes saved.");
-		    }
-		    break;
-		}
-#endif
-	    default:
-	        {
-		    Logger::console("Creating new empty index");
->>>>>>> master
 		}
 		};
 		AnalyzerHelper::saveAnalyzerResource(this->indexDataConfig);

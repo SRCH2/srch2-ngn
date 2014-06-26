@@ -68,32 +68,6 @@ thirdparty/gperftools/lib/
 thirdparty/gperftools/share/
 thirdparty/libunwind/libunwind-0.99-beta/
 
-db_connectors/mongo/main.cpp
-db_connectors/mysql/
-src/server/MongodbAdapter.cpp
-src/server/MongodbAdapter.h
-test/wrapper/system_tests/core2-exported.json
-test/wrapper/system_tests/curl
-test/wrapper/system_tests/exact_a1/conf2.xml
-test/wrapper/system_tests/highlight/expectedResultsAnalyzer.pyc
-test/wrapper/system_tests/highlight/expectedResultsCharOffset.pyc
-test/wrapper/system_tests/highlight/expectedResultsTags.pyc
-test/wrapper/system_tests/logs/
-test/wrapper/system_tests/mongo_adapter/
-test/wrapper/system_tests/multicore/core4/
-test/wrapper/system_tests/multiport/core2/srch2-log.txt
-test/wrapper/system_tests/srch2lib/test_lib.pyc
-thirdparty/event/libevent-2.0.21-stable/
-thirdparty/libunwind/include/
-thirdparty/libunwind/lib/
-thirdparty/libunwind/share/
-thirdparty/mongo-cxx-driver-legacy-0.0-26compat-2.6.2.tar.gz
-thirdparty/mongo-cxx-driver-legacy.zip
-thirdparty/mysql-replication-listener.tar.gz
-thirdparty/thirdparty-build-android.sh
-
-
-
 # .cmake related
 *.cmake
 *CMakeFiles
