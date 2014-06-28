@@ -33,9 +33,16 @@ struct DiscoveryMessage {
 	unsigned masterNodeId;
 };
 
-struct HostAndPort {
-	std::string ipAddress;
-	unsigned port;
+class DiscoveryService{
+public:
+	virtual void init() = 0;
+	virtual bool isCurrentNodeMaster() = 0;
+	virtual unsigned getCurrentNodeId() = 0;
+	virtual unsigned getMasterNodeId() = 0;
+	virtual std::string getInterfaceAddress() = 0;
+	virtual bool getDestinatioAddressByNodeId(NodeId id, struct sockaddr_in& addr) = 0;
+	virtual unsigned getCommunicationPort() = 0;
+	virtual ~DiscoveryService() {}
 };
 
 struct MulticastDiscoveryConfig{
@@ -158,8 +165,123 @@ private:
 	std::map<NodeId, struct sockaddr_in>  nodeToAddressMap;
 };
 
-class UnicastDiscovery {
-	std::vector<HostAndPort> clusterNodes;
+struct HostAndPort {
+	HostAndPort(std::string ip, unsigned port) {
+		this->ipAddress = ip;
+		this->port = port;
+	}
+	std::string ipAddress;
+	unsigned port;
+};
+struct UnicastDiscoveryConfig {
+	std::vector<HostAndPort> knownHosts;
+
+	// User provided IP address of NIC for port binding. Could be 0.0.0.0
+	std::string interfaceAddress;
+
+	// Derived IP address of NIC to be used for internal communication. Cannot be 0.0.0.0
+	std::string publisedInterfaceAddress;
+
+	// User provided port for internal communication.
+	unsigned internalCommunicationPort;
+
+	// only for debug
+	void print() {
+		std::cout << "transport: [" << interfaceAddress << " : " << internalCommunicationPort << "]" << std::endl;
+		std::cout << "discovery: [" << std::endl;
+		for (unsigned i = 0; i < knownHosts.size(); ++i) {
+			 std::cout << knownHosts[i].ipAddress.c_str() << " : " << knownHosts[i].port << std::endl;
+		}
+		std::cout << "]" << std::endl;
+	}
+};
+
+static const int DISCOVERY_RETRY_COUNT = 5;
+static const int DISCOVERY_YIELD_WAIT_SECONDS = 3;
+
+void * unicastListener(void * arg);
+class UnicastDiscoveryService : public DiscoveryService{
+
+	friend void * unicastListener(void * arg);
+public:
+	UnicastDiscoveryService(UnicastDiscoveryConfig& config);
+
+	int openListeningChannel();
+
+	int openSendingChannel();
+
+	void init();
+
+	void sendJoinRequest(const std::string& knownHost, unsigned port);
+
+	bool shouldYield(unsigned senderIp, unsigned senderPort);
+
+	void validateConfigSettings(UnicastDiscoveryConfig& config);
+
+	unsigned getCommunicationPort() {
+		return discoveryConfig.internalCommunicationPort;
+	}
+
+	std::string getInterfaceAddress() {
+		return discoveryConfig.interfaceAddress;
+	}
+
+	bool isLoopbackMessage(DiscoveryMessage &msg);
+
+	void stopDiscovery() {
+		shutdown = true;
+	}
+	bool isCurrentNodeMaster() {
+		return currentNodeMaster;
+	}
+	void isCurrentNodeMaster(bool isMaster) {
+		currentNodeMaster = isMaster;
+	}
+	unsigned getCurrentNodeId() {
+		return this->currentNodeId;
+	}
+	void setCurrentNodeId(unsigned currentNodeId) {
+		this->currentNodeId = currentNodeId;
+	}
+
+	unsigned getMasterNodeId() {
+		return this->masterNodeId;
+	}
+	void setMasterNodeId(unsigned masterNodeId) {
+		this->masterNodeId = masterNodeId;
+	}
+
+	unsigned getNextNodeId();
+
+	in_addr_t getPublishedInterfaceNumericAddress() { return publishedInterfaceNumericAddr; }
+
+	bool getDestinatioAddressByNodeId(NodeId id, struct sockaddr_in& addr) {
+		if (nodeToAddressMap.count(id) > 0) {
+			addr = nodeToAddressMap[id];
+			return true;
+		}
+		return false;
+	}
+private:
+
+	UnicastDiscoveryConfig discoveryConfig;
+
+	unsigned int publishedInterfaceNumericAddr;
+
+	std::string matchedKnownHostIp;
+	unsigned matchedKnownHostPort;
+	bool isWellKnownHost;
+
+	int listenSocket;
+	int sendSocket;
+
+	bool _discoveryDone;
+	bool currentNodeMaster;
+	bool shutdown;
+	unsigned uniqueNodeId;  // Continuously increasing number
+	unsigned currentNodeId;
+	unsigned masterNodeId;
+	std::map<NodeId, struct sockaddr_in>  nodeToAddressMap;
 };
 
 

@@ -112,7 +112,7 @@ private:
 	MessageHandler *messageHandler;
 	ConfigManager& config;
 	std::vector<Node> *nodesInCluster;
-	MulticastDiscoveryManager* discoveryMgr;
+	DiscoveryService* discoveryMgr;
 	DiscoveryCallBack  *discoveryCallBack;
 	unsigned nodeIds;
 	bool configUpdatesDone;

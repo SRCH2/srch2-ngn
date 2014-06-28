@@ -537,7 +537,7 @@ void * multicastListener(void * arg) {
 					destinationAddress.sin_port = htons(discovery->getMulticastPort());
 
 					int sendStatus = sendUDPPacketToDestination(discovery->sendSocket, (char *)&ackMessage,
-							sizeof(ackMessage), destinationAddress);
+							sizeof(ackMessage), senderAddress);
 					if (sendStatus == -1) {
 						exit(-1);
 					}

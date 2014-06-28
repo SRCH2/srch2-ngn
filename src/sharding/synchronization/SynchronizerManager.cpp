@@ -29,19 +29,24 @@ SyncManager::SyncManager(ConfigManager& cm, TransportManager& tm) :
 	nodesInCluster = cluster->getNodes();
 	nodesInCluster->clear();
 
-	srch2http::MulticastDiscoveryConfig discoverConfiguration;
+	//srch2http::MulticastDiscoveryConfig discoverConfiguration;
+	srch2http::UnicastDiscoveryConfig discoverConfiguration;
 	discoverConfiguration.interfaceAddress = config.getTransport().getIpAddress();
 	discoverConfiguration.internalCommunicationPort = config.getTransport().getPort();
+	vector<HostAndPort> knownHost;
+	knownHost.push_back(HostAndPort("10.0.0.5", 54000));
+	discoverConfiguration.knownHosts = knownHost;
 
-	discoverConfiguration.multicastPort = config.getMulticastDiscovery().getPort();
-	discoverConfiguration.enableLoop = 1;
-	discoverConfiguration.multiCastAddress = config.getMulticastDiscovery().getGroupAddress();
-	discoverConfiguration.multicastInterface = config.getMulticastDiscovery().getIpAddress();
-	discoverConfiguration.ttl = config.getMulticastDiscovery().getTtl();
+//	discoverConfiguration.multicastPort = config.getMulticastDiscovery().getPort();
+//	discoverConfiguration.enableLoop = 1;
+//	discoverConfiguration.multiCastAddress = config.getMulticastDiscovery().getGroupAddress();
+//	discoverConfiguration.multicastInterface = config.getMulticastDiscovery().getIpAddress();
+//	discoverConfiguration.ttl = config.getMulticastDiscovery().getTtl();
 
 	//discoverConfiguration.print();
 
-	discoveryMgr = new  MulticastDiscoveryManager(discoverConfiguration);
+	//discoveryMgr = new  MulticastDiscoveryManager(discoverConfiguration);
+	discoveryMgr = new  UnicastDiscoveryService(discoverConfiguration);
 
 	pingInterval = config.getPing().getPingInterval();
 	pingTimeout = config.getPing().getPingTimeout();
