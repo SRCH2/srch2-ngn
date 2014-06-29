@@ -49,6 +49,8 @@ const char* const ConfigManager::transportNodeTag = "transport";
 const char* const ConfigManager::transportIpAddress = "ipaddress";
 const char* const ConfigManager::transportPort = "port";
 
+const char* const ConfigManager::wellKnownHosts = "wellknownhosts";
+
 const char* const ConfigManager::nodeListeningHostNameTag = "listeninghostname";
 const char* const ConfigManager::nodeListeningPortTag = "internalcommunicationport";
 const char* const ConfigManager::nodeCurrentTag = "this-is-me";
@@ -1780,12 +1782,30 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
                           std::stringstream &parseWarnings)
 {
     string tempUse = ""; // This is just for temporary use.
+    vector<string> ipAddressOfKnownHost;
 
     int flag_cluster = 0;
     CoreInfo_t *defaultCoreInfo = NULL;
 
     xml_node configNode = configDoc.child(configString);
 
+    xml_node wellKnownHost = configNode.child(wellKnownHosts);
+    if(wellKnownHost && wellKnownHost.text()){
+
+    	tempUse = string(wellKnownHost.text().get());
+		trimSpacesFromValue(tempUse, "WellKnownHosts", parseWarnings);
+    	string delimiterComma = ",";
+    	this->splitString(tempUse,delimiterComma,ipAddressOfKnownHost);
+
+
+    	vector<std::pair<string, unsigned > > ipAddress = this->getWellKnownHosts();
+    	for (int i = 0; i < ipAddressOfKnownHost.size(); i++){
+    	    vector<string> temp;
+    		trimSpacesFromValue(ipAddressOfKnownHost[i], "WellKnownHosts", parseWarnings);
+    		this->splitString(ipAddressOfKnownHost[i], ":", temp);
+    		this->setWellKnownHost(pair<string, unsigned>(temp[0],(uint)atol(temp[1].c_str())));
+    	}
+    }
 
     xml_node transportNode = configNode.child(transportNodeTag);
     if(transportNode){

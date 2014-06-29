@@ -270,6 +270,26 @@ void testDirectoryStructure(char * configFile){
 
 }
 
+void testUnicastDiscovery(char * configFile){
+
+	ConfigManager *configManager = new ConfigManager(configFile);
+	configManager->loadConfigFile();
+    //for(vector<string>::iterator it = configManager->tempIP.begin(); it!=configManager->tempIP.end(); it++){
+    //	cout << *it << "\n" << flush;
+    //}
+
+    vector<pair<string, unsigned> > ipAddress = configManager->getWellKnownHosts();
+    for(int i = 0; i < ipAddress.size(); i++){
+    	cout << ipAddress[i].first << " " << ipAddress[i].second << "\n";
+    }
+
+    ASSERT(ipAddress[0].first == "192.168.1.1");
+    ASSERT(ipAddress[0].second == 8088);
+    ASSERT(ipAddress[1].first == "192.168.1.2");
+    ASSERT(ipAddress[1].second == 8080);
+
+}
+
 int main() {
 	testShard();
 	Logger::setLogLevel(Logger::SRCH2_LOG_DEBUG);
@@ -296,6 +316,8 @@ int main() {
 
 	testMulticastDiscovery(getenv("ConfigManagerFilePath1"));
 	testTransport(getenv("ConfigManagerFilePath1"));
+
+	testUnicastDiscovery(getenv("ConfigManagerFilePath1"));
 
 }
 
