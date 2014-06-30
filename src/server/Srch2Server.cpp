@@ -216,7 +216,7 @@ void Srch2Server::createAndBootStrapIndexer()
 		}
 	    default:
 	        {
-			indexer->commit();
+		    indexer->commit();
 		    Logger::console("Creating new empty index");
 		}
 	    };
