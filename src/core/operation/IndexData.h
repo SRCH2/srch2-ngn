@@ -266,6 +266,7 @@ public:
 
     // add a record
     INDEXWRITE_RETVAL _addRecord(const Record *record, Analyzer *analyzer);
+    INDEXWRITE_RETVAL _addRecordWithoutLock(const Record *record, Analyzer *analyzer);
     
     inline uint64_t _getReadCount() const { return this->readCounter->getCount(); }
     inline uint32_t _getWriteCount() const { return this->writeCounter->getCount(); }
