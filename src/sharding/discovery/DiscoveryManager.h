@@ -29,6 +29,7 @@ namespace httpwrapper {
  */
 static const short DISCOVERY_JOIN_CLUSTER_REQ = 0x0;
 static const short DISCOVERY_JOIN_CLUSTER_ACK = 0x1;
+static const short DISCOVERY_JOIN_CLUSTER_YIELD =  0x2;
 
 /*
  *  Read/Write APIs for UDP sockets
@@ -73,7 +74,6 @@ public:
 	bool isLoopbackMessage(DiscoveryMessage &msg);
 	void isCurrentNodeMaster(bool flag) { syncManager->setNodeIsMaster(flag); }
 	void stopDiscovery() { shutdown = true; }
-	bool shouldYield(unsigned senderIp, unsigned senderPort);
 	SyncManager *getSyncManager() { return  syncManager; }
 	TransportManager *getTransport() { return  syncManager->getTransport(); }
 	virtual ~DiscoveryService() {}
@@ -136,6 +136,8 @@ private:
 
 	void validateConfigSettings(MulticastDiscoveryConfig& config);
 
+	bool shouldYield(unsigned senderIp, unsigned senderPort);
+
 	MulticastDiscoveryConfig discoveryConfig;
 
 	in_addr_t multiCastNumericAddr;
@@ -184,6 +186,8 @@ private:
 	void sendJoinRequest(const std::string& knownHost, unsigned port);
 
 	void validateConfigSettings(UnicastDiscoveryConfig& config);
+
+	bool shouldYield(unsigned senderIp, unsigned senderPort);
 
 	UnicastDiscoveryConfig discoveryConfig;
 

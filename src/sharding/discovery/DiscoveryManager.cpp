@@ -32,7 +32,7 @@ int readUDPPacketWithSenderInfo(int listenSocket, char *buffer, unsigned bufferS
 
 		if (status == -1) {
 			if(errno == EAGAIN || errno == EWOULDBLOCK) {
-				//perror("Recv");
+				perror("Recv");
 				return 1;
 			} else {
 				perror("Discovery : Error while reading data from UDP socket : ");
@@ -66,7 +66,7 @@ int sendUDPPacketToDestination(int sendSocket, char *buffer, unsigned bufferSize
 
 		if (status == -1) {
 			if(errno == EAGAIN || errno == EWOULDBLOCK) {
-				//perror("Send");
+				perror("Send");
 				return 1;
 			} else {
 				perror("Discovery : Error while sending data from UDP socket : ");
@@ -81,7 +81,7 @@ int sendUDPPacketToDestination(int sendSocket, char *buffer, unsigned bufferSize
 			bufferSize -= status;
 			continue;
 		}
-		//Logger::console("UDP multicast data send");
+		Logger::console("UDP multicast data send");
 		break;
 	}
 	return 0;
@@ -116,16 +116,6 @@ int checkSocketIsReady(int socket, bool checkForRead) {
 		perror("error while waiting for a socket to become available for read/write!");
 	}
 	return result;
-}
-
-bool DiscoveryService::shouldYield(unsigned senderIp, unsigned senderPort) {
-	if (senderIp > getTransport()->getPublishedInterfaceNumericAddr()) {
-		return true;
-	} else if ( (senderIp == getTransport()->getPublishedInterfaceNumericAddr() )
-			&& (senderPort > getTransport()->getCommunicationPort())) {
-		return true;
-	}
-	return false;
 }
 
 bool DiscoveryService::isLoopbackMessage(DiscoveryMessage &msg){

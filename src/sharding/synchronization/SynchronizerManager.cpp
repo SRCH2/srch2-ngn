@@ -50,8 +50,10 @@ SyncManager::SyncManager(ConfigManager& cm, TransportManager& tm) :
 	MulticastDiscoveryConfig multicastdiscoverConf;
 	UnicastDiscoveryConfig unicastdiscoverConf;
 
-	vector<HostAndPort> knownHost;
-	unicastdiscoverConf.knownHosts = knownHost;
+	const vector<std::pair<string, unsigned > >& wellknownHosts = config.getWellKnownHosts();
+	for (unsigned i = 0; i < wellknownHosts.size(); ++i) {
+		unicastdiscoverConf.knownHosts.push_back(HostAndPort(wellknownHosts[i].first,wellknownHosts[i].second));
+	}
 
 	multicastdiscoverConf.multicastPort = config.getMulticastDiscovery().getPort();
 	multicastdiscoverConf.multiCastAddress = config.getMulticastDiscovery().getGroupAddress();

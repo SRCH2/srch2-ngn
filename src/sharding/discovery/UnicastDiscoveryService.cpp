@@ -54,7 +54,7 @@ void UnicastDiscoveryService::validateConfigSettings(UnicastDiscoveryConfig& con
 		const string& ipAddress = this->discoveryConfig.knownHosts[i].ipAddress;
 		if (matchedKnownHostIp == "" &&
 		    (std::find(allIpAddresses.begin(), allIpAddresses.end(), ipAddress) != allIpAddresses.end())) {
-			Logger::console("current host is one of the known host");
+			//Logger::console("current host is one of the known host");
 			isWellKnownHost = true;
 			matchedKnownHostIp = this->discoveryConfig.knownHosts[i].ipAddress;
 			matchedKnownHostPort = this->discoveryConfig.knownHosts[i].port;
@@ -168,8 +168,7 @@ void * unicastListener(void * arg) {
 	char * buffer = (char *)&message;
 	unsigned bufferLen = sizeof(message);
 
-	// This node can be master only if is one of the well known host specified in config file.
-	bool shouldElectItselfAsMaster = discovery->isWellKnownHost;
+	bool shouldElectItselfAsMaster = true;//discovery->isWellKnownHost;
 	bool masterDetected = false;
 
 	const vector<HostAndPort>& knownHosts = discovery->discoveryConfig.knownHosts;
@@ -178,6 +177,7 @@ InitialDiscovery:
 		if (knownHosts[i].ipAddress.compare(discovery->matchedKnownHostIp) == 0 &&
 			knownHosts[i].port == discovery->matchedKnownHostPort)
 			continue;
+		Logger::console("sending joing request");
 		discovery->sendJoinRequest(knownHosts[i].ipAddress, knownHosts[i].port);
 	}
 	// initial discovery loop
@@ -192,7 +192,8 @@ InitialDiscovery:
 			// ignore looped back messages.
 			if (discovery->isLoopbackMessage(message)) {
 				ASSERT(false);
-				Logger::console("loopback message ...continuing");
+				//checkSocketIsReady(listenSocket, true);
+				//Logger::console("loopback message ...continuing");
 				continue;
 			} else {
 				switch(message.flag)
@@ -202,8 +203,10 @@ InitialDiscovery:
 					/*
 					 *   Master node is detected. Stop discovery.
 					 */
-					shouldElectItselfAsMaster = false;
-					masterDetected = true;
+					if (message.ackMessageIdentifier == discovery->getTransport()->getCommunicationPort()) {
+						shouldElectItselfAsMaster = false;
+						masterDetected = true;
+					}
 					break;
 				}
 				case DISCOVERY_JOIN_CLUSTER_REQ:
@@ -232,8 +235,40 @@ InitialDiscovery:
 								discovery->sendJoinRequest(knownHosts[i].ipAddress, knownHosts[i].port);
 							}
 							continue;
+						} else {
+							// if not yielding then ask others to yield.
+							Logger::console("Send Yield message");
+							DiscoveryMessage yeildMessage;
+							yeildMessage.flag = DISCOVERY_JOIN_CLUSTER_YIELD;
+							yeildMessage.interfaceNumericAddress = discovery->getTransport()->getPublishedInterfaceNumericAddr();
+							yeildMessage.internalCommunicationPort = discovery->getTransport()->getCommunicationPort();
+							yeildMessage.masterNodeId = -1;
+							yeildMessage.nodeId = -1;
+							tryYieldMsgAgain:
+							int sendStatus = sendUDPPacketToDestination(discovery->sendSocket, (char *)&yeildMessage,
+									sizeof(yeildMessage), senderAddress);
+							if (sendStatus == -1) {
+								exit(-1);
+							}
+							if (sendStatus == 1) {
+								goto tryYieldMsgAgain;
+							}
 						}
 
+					}
+					break;
+				}
+				case DISCOVERY_JOIN_CLUSTER_YIELD:
+				{
+					Logger::console("Yielding to other node");
+					shouldElectItselfAsMaster = false;
+					retryCount = DISCOVERY_RETRY_COUNT;
+					sleep(DISCOVERY_YIELD_WAIT_SECONDS);
+					for (unsigned i = 0 ; i < knownHosts.size(); ++i) {
+						if (knownHosts[i].ipAddress.compare(discovery->matchedKnownHostIp) == 0 &&
+								knownHosts[i].port == discovery->matchedKnownHostPort)
+							continue;
+						discovery->sendJoinRequest(knownHosts[i].ipAddress, knownHosts[i].port);
 					}
 					break;
 				}
@@ -247,14 +282,6 @@ InitialDiscovery:
 			}
 		}
 		--retryCount;
-	}
-
-	if (!masterDetected && !discovery->isWellKnownHost) {
-		Logger::console("Master node is not up in any of the given well Known hosts list !!. Please see <WellKnownHosts> in the config file.");
-		Logger::console("Current node is not a well known host.");
-		Logger::console("Will retry again in 25 secs....");
-		sleep(25);
-		goto InitialDiscovery;
 	}
 
 	if (masterDetected) {
@@ -329,6 +356,7 @@ InitialDiscovery:
 					ackMessage.internalCommunicationPort = discovery->getTransport()->getCommunicationPort();
 					ackMessage.masterNodeId = discovery->getSyncManager()->getCurrentNodeId();
 					ackMessage.nodeId = discovery->getSyncManager()->getNextNodeId();
+					ackMessage.ackMessageIdentifier = message.internalCommunicationPort;
 					tryAckAgain:
 					// send multicast acknowledgment
 					struct sockaddr_in destinationAddress;
@@ -363,6 +391,17 @@ InitialDiscovery:
 		}
 	}
 	return NULL;
+}
+
+bool UnicastDiscoveryService::shouldYield(unsigned senderIp, unsigned senderPort) {
+	if (senderIp > getTransport()->getPublishedInterfaceNumericAddr()) {
+		return true;
+	}
+//	else if ( (senderIp == getTransport()->getPublishedInterfaceNumericAddr() )
+//			&& (senderPort > getTransport()->getCommunicationPort())) {
+//		return true;
+//	}
+	return false;
 }
 
 }}
