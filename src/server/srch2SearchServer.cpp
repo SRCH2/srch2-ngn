@@ -869,7 +869,11 @@ int main(int argc, char** argv) {
 	std::vector<srch2http::Node>& nodes = *serverConf->getCluster()->getNodes();
 
 	// create Transport Module
-	transportManager = new srch2http::TransportManager(evBasesForInternalRequests);
+	srch2http::TransportConfig transportConfig;
+	transportConfig.interfaceAddress = serverConf->getTransport().getIpAddress();
+	transportConfig.internalCommunicationPort = serverConf->getTransport().getPort();
+
+	transportManager = new srch2http::TransportManager(evBasesForInternalRequests, transportConfig);
 
 	// start threads for internal messages.
 	// Note: eventbases are not assigned any event yet.

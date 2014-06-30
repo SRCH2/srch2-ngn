@@ -21,124 +21,39 @@ using namespace std;
 namespace srch2 {
 namespace httpwrapper {
 
-int readUDPPacketWithSenderInfo(int listenSocket, char *buffer, unsigned bufferSize, int flag,
-		 struct sockaddr_in& senderAddress);
-int readUDPPacketWithSenderInfo(int listenSocket, char *buffer, unsigned bufferSize,
-		 struct sockaddr_in& senderAddress) ;
-int sendUDPPacketToDestination(int sendSocket, char *buffer, unsigned bufferSize,
-		struct sockaddr_in& destinationAddress);
-int checkSocketIsReady(int socket, bool checkForRead);
-
-
-UnicastDiscoveryService::UnicastDiscoveryService(UnicastDiscoveryConfig& config): discoveryConfig(config) {
+UnicastDiscoveryService::UnicastDiscoveryService(UnicastDiscoveryConfig& config,
+		SyncManager *syncManager): DiscoveryService(syncManager), discoveryConfig(config) {
 	listenSocket = -1;
 	sendSocket = -1;
 	_discoveryDone = false;
-	shutdown = false;
-	currentNodeId = -1;
-	masterNodeId = -1;
-	uniqueNodeId = 0;
 	matchedKnownHostIp = "";
-	currentNodeMaster =false;
 	// throws exception if validation failed.
 	validateConfigSettings(discoveryConfig);
 }
 
 void UnicastDiscoveryService::validateConfigSettings(UnicastDiscoveryConfig& config) {
 
-	struct in_addr ipAddress;
-	/*
-	 * convert to numerical form in network byte order (big endian).
-	 */
-	Logger::console("validating interface address %s", discoveryConfig.interfaceAddress.c_str());
-	if (inet_aton(discoveryConfig.interfaceAddress.c_str(), &ipAddress) == 0) {
-		std::stringstream ss;
-		ss << " Invalid Interface Address = " << discoveryConfig.interfaceAddress;
-		throw std::runtime_error(ss.str());
-	}
-	unsigned int numericInterfaceAddress = ipAddress.s_addr;
-	vector<in_addr_t> allIpAddresses;
-	if (numericInterfaceAddress == htonl(INADDR_ANY)) {  // 0.0.0.0
-		/*
-		 *  If the user has provided only a generic address ( 0.0.0.0) in the config file then
-		 *  we should pick an interface address which should be published to other nodes for
-		 *  internal communication.
-		 *  Note: Binding a port to 0.0.0.0 means bind the port to all the interfaces on a
-		 *  local device. Hence, picking one of the interfaces as a published address should
-		 *  be fine.
-		 */
-		struct ifaddrs * interfaceAddresses;
-		if (getifaddrs(&interfaceAddresses) == -1) {
-			perror("Unable to detect interface information on this local machine : ");
-		} else {
-			struct ifaddrs *interfaceAddress;
-			bool firstInterface = true;
-			// traverse linked list
-			for (interfaceAddress = interfaceAddresses; interfaceAddress != NULL;
-					interfaceAddress = interfaceAddress->ifa_next) {
-
-				int family = interfaceAddress->ifa_addr->sa_family;
-				if (family == AF_INET) { // IPv4
-					char host[NI_MAXHOST];
-					int status = getnameinfo(interfaceAddress->ifa_addr, sizeof(struct sockaddr_in),
-									host, NI_MAXHOST,
-									NULL, 0, NI_NUMERICHOST);
-
-					if (status == -1)
-						continue;
-
-					unsigned int flags = interfaceAddress->ifa_flags;
-					if ((flags & IFF_UP) && !(flags & IFF_LOOPBACK)) {
-
-						memset(&ipAddress, 0, sizeof(ipAddress));
-						if (inet_aton(host, &ipAddress) == 0) {
-							continue;
-						}
-						if (firstInterface) {
-							this->discoveryConfig.publisedInterfaceAddress = host;
-							this->publishedInterfaceNumericAddr = ipAddress.s_addr;
-							firstInterface = false;
-						}
-						allIpAddresses.push_back(ipAddress.s_addr);
-					}
-				}
-			}
-			freeifaddrs(interfaceAddresses);
-		}
-		if (allIpAddresses.size() == 0) {
-			std::stringstream ss;
-			ss << "Unable to find valid interface address for this node."
-					<< " Please specify non-generic IP address in <transport> tag.\n";
-			Logger::console(ss.str().c_str());
-			throw std::runtime_error(ss.str());
-		}
-	} else {
-		allIpAddresses.push_back(numericInterfaceAddress);
-		this->publishedInterfaceNumericAddr = numericInterfaceAddress;
-		this->discoveryConfig.publisedInterfaceAddress = this->discoveryConfig.interfaceAddress;
-	}
-
 	// validate IPs of known Hosts
-
+	struct in_addr networkIpAddress;
 	std::vector<HostAndPort> knownHostsValidatedAddresses;
+	const vector<string>& allIpAddresses = getTransport()->getAllInterfacesIpAddress();
 	for (unsigned i = 0; i < discoveryConfig.knownHosts.size(); ++i) {
-		memset(&ipAddress, 0, sizeof(ipAddress));
-		if (inet_aton(this->discoveryConfig.knownHosts[i].ipAddress.c_str(), &ipAddress) == 0) {
+		memset(&networkIpAddress, 0, sizeof(networkIpAddress));
+		if (inet_aton(this->discoveryConfig.knownHosts[i].ipAddress.c_str(), &networkIpAddress) == 0) {
 			std::stringstream ss;
 			ss << " Invalid Known Host Address = " << this->discoveryConfig.knownHosts[0].ipAddress;
 			Logger::console(ss.str().c_str());
 			throw std::runtime_error(ss.str());
 		}
-		if (ipAddress.s_addr == INADDR_ANY) {
+		if (networkIpAddress.s_addr == INADDR_ANY) {
 			Logger::console("Address 0.0.0.0 is not allowed as a known host");
 			continue;
 		}
 
 		knownHostsValidatedAddresses.push_back(this->discoveryConfig.knownHosts[i]);
-
+		const string& ipAddress = this->discoveryConfig.knownHosts[i].ipAddress;
 		if (matchedKnownHostIp == "" &&
-		    (std::find(allIpAddresses.begin(), allIpAddresses.end(), ipAddress.s_addr)
-		    != allIpAddresses.end())) {
+		    (std::find(allIpAddresses.begin(), allIpAddresses.end(), ipAddress) != allIpAddresses.end())) {
 			Logger::console("current host is one of the known host");
 			isWellKnownHost = true;
 			matchedKnownHostIp = this->discoveryConfig.knownHosts[i].ipAddress;
@@ -151,8 +66,8 @@ void UnicastDiscoveryService::sendJoinRequest(const string& knownHost, unsigned 
 	DiscoveryMessage message;
 	memset(&message, 0, sizeof(message));
 	message.flag = DISCOVERY_JOIN_CLUSTER_REQ;
-	message.interfaceNumericAddress = this->publishedInterfaceNumericAddr;
-	message.internalCommunicationPort = getCommunicationPort();
+	message.interfaceNumericAddress = getTransport()->getPublishedInterfaceNumericAddr();
+	message.internalCommunicationPort = getTransport()->getCommunicationPort();
 
 	struct sockaddr_in destinationAddress;
 	memset(&destinationAddress, 0, sizeof(destinationAddress));
@@ -182,14 +97,6 @@ int UnicastDiscoveryService::openListeningChannel(){
 		perror("listening socket failed to init");
 		exit(255);
 	}
-#ifdef __MACH__
-	int optionVal = 1;  // 1 is used to enable the setting.
-	int status = setsockopt(udpSocket, SOL_SOCKET, SO_REUSEADDR, (void*) &optionVal, sizeof(optionVal));
-	if (status < 0) {
-		perror("address reuse failed : ");
-		exit(-1);
-	}
-#endif
 	/*
 	 *   Make socket non blocking
 	 */
@@ -197,6 +104,7 @@ int UnicastDiscoveryService::openListeningChannel(){
 	fcntl(udpSocket, F_SETFL, O_NONBLOCK);
 
 	struct sockaddr_in addr;
+	memset(&addr, 0, sizeof(sockaddr_in));
 	addr.sin_family = AF_INET;
 	inet_aton(this->matchedKnownHostIp.c_str(), &addr.sin_addr);
 	unsigned portToBind = this->matchedKnownHostPort;
@@ -226,32 +134,13 @@ tryNextPort:
 	return udpSocket;
 }
 
-int UnicastDiscoveryService::openSendingChannel(){
-	/*
-	 *  Prepare socket data structures.
-	 */
-	int udpSocket;
-	if((udpSocket = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-		perror("listening socket failed to init");
-		exit(255);
-	}
-
-	/*
-	 *   Make socket non blocking
-	 */
-
-	fcntl(udpSocket, F_SETFL, O_NONBLOCK);
-
-	return udpSocket;
-}
-
 void UnicastDiscoveryService::init() {
 
 	if (this->matchedKnownHostIp == "") {
-		matchedKnownHostIp = discoveryConfig.publisedInterfaceAddress;
-		matchedKnownHostPort = discoveryConfig.internalCommunicationPort;
-		Logger::console("setting discovery ip:port = %s:%d", discoveryConfig.publisedInterfaceAddress.c_str(),
-				discoveryConfig.internalCommunicationPort);
+		matchedKnownHostIp = getTransport()->getPublisedInterfaceAddress();
+		matchedKnownHostPort = getTransport()->getCommunicationPort();
+		Logger::console("setting discovery ip:port = %s:%d", getTransport()->getPublisedInterfaceAddress().c_str(),
+				getTransport()->getCommunicationPort());
 	}
 	listenSocket = openListeningChannel();
 	sendSocket = listenSocket;  // we use same socket for sending/receiving.
@@ -378,10 +267,10 @@ InitialDiscovery:
 		// remember master's address for further communication.
 		senderAddress.sin_addr.s_addr = message.interfaceNumericAddress;
 		senderAddress.sin_port = htons(message.internalCommunicationPort);
-		discovery->nodeToAddressMap[message.masterNodeId] = senderAddress;
+		discovery->getSyncManager()->addNodeToAddressMappping(message.masterNodeId, senderAddress);
 
-		discovery->setCurrentNodeId(message.nodeId);
-		discovery->setMasterNodeId(message.masterNodeId);
+		discovery->getSyncManager()->setCurrentNodeId(message.nodeId);
+		discovery->getSyncManager()->setMasterNodeId(message.masterNodeId);
 		discovery->_discoveryDone = true;
 		return NULL;
 	}
@@ -393,9 +282,9 @@ InitialDiscovery:
 		Logger::console("Cluster may have other masters!.");
 	}
 
-	unsigned masterNodeID = discovery->getNextNodeId();
-	discovery->setCurrentNodeId(masterNodeID);
-	discovery->setMasterNodeId(masterNodeID);
+	unsigned masterNodeID = discovery->getSyncManager()->getNextNodeId();
+	discovery->getSyncManager()->setCurrentNodeId(masterNodeID);
+	discovery->getSyncManager()->setMasterNodeId(masterNodeID);
 	discovery->_discoveryDone = true;
 
 	// Make the listening socket blocking now.
@@ -436,10 +325,10 @@ InitialDiscovery:
 					Logger::console("Got cluster joining request!!");
 					DiscoveryMessage ackMessage;
 					ackMessage.flag = DISCOVERY_JOIN_CLUSTER_ACK;
-					ackMessage.interfaceNumericAddress = discovery->publishedInterfaceNumericAddr;
-					ackMessage.internalCommunicationPort = discovery->getCommunicationPort();
-					ackMessage.masterNodeId = discovery->getCurrentNodeId();
-					ackMessage.nodeId = discovery->getNextNodeId();
+					ackMessage.interfaceNumericAddress = discovery->getTransport()->getPublishedInterfaceNumericAddr();
+					ackMessage.internalCommunicationPort = discovery->getTransport()->getCommunicationPort();
+					ackMessage.masterNodeId = discovery->getSyncManager()->getCurrentNodeId();
+					ackMessage.nodeId = discovery->getSyncManager()->getNextNodeId();
 					tryAckAgain:
 					// send multicast acknowledgment
 					struct sockaddr_in destinationAddress;
@@ -457,7 +346,7 @@ InitialDiscovery:
 						goto tryAckAgain;
 					}
 
-					discovery->nodeToAddressMap[ackMessage.nodeId] = destinationAddress;
+					discovery->getSyncManager()->addNodeToAddressMappping(ackMessage.nodeId, destinationAddress);
 					break;
 				}
 				default:
@@ -474,31 +363,6 @@ InitialDiscovery:
 		}
 	}
 	return NULL;
-}
-
-
-bool UnicastDiscoveryService::shouldYield(unsigned senderIp, unsigned senderPort) {
-	//Logger::console("[%d, %d] [%d, %d]", senderIp, senderPort, interfaceNumericAddr, getCommunicationPort());
-	if (senderIp > publishedInterfaceNumericAddr) {
-		return true;
-	} else if ( (senderIp == publishedInterfaceNumericAddr ) && (senderPort > getCommunicationPort())) {
-		return true;
-	}
-	return false;
-}
-
-bool UnicastDiscoveryService::isLoopbackMessage(DiscoveryMessage &msg){
-	return (msg.interfaceNumericAddress == this->publishedInterfaceNumericAddr &&
-			msg.internalCommunicationPort == this->getCommunicationPort());
-}
-
-unsigned UnicastDiscoveryService::getNextNodeId() {
-	if (currentNodeMaster)
-		return __sync_fetch_and_add(&uniqueNodeId, 1);
-	else {
-		ASSERT(false);
-		return uniqueNodeId;
-	}
 }
 
 }}

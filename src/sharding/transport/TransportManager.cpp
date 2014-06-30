@@ -7,6 +7,10 @@
 #include <errno.h>
 #include <event.h>
 #include "routing/RoutingManager.h"
+#include <ifaddrs.h>
+#include <netdb.h>
+#include <net/if.h>
+#include <arpa/inet.h>
 
 using namespace srch2::instantsearch;
 namespace srch2 {
@@ -291,7 +295,7 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb) {
 	return true;
 }
 
-TransportManager::TransportManager(vector<struct event_base *>& bases): evbases(bases) {
+TransportManager::TransportManager(vector<struct event_base *>& bases, TransportConfig& config): evbases(bases) {
 
 	distributedUniqueId = 0;
 	synchManagerHandler = NULL;
@@ -299,8 +303,87 @@ TransportManager::TransportManager(vector<struct event_base *>& bases): evbases(
 	routingManager = NULL;
 	shutDown = false;
 	discoveryHandler = NULL;
+	validateTransportConfig(config);
+	transportConfig = config;
+	transportConfig.print();
+
 }
 
+void TransportManager::validateTransportConfig(TransportConfig& config) {
+
+	struct in_addr ipAddress;
+	/*
+	 * convert to numerical form in network byte order (big endian).
+	 */
+	if (inet_aton(config.interfaceAddress.c_str(), &ipAddress) == 0) {
+		std::stringstream ss;
+		ss << " Invalid Interface Address = " << config.interfaceAddress;
+		throw std::runtime_error(ss.str());
+	}
+	in_addr_t interfaceNumericAddr = ipAddress.s_addr;
+
+	fetchAllInterfacesIpAddress(allInterfaceIpAddresses);
+
+	if (interfaceNumericAddr == INADDR_ANY) {  // 0.0.0.0
+		/*
+		 *  If the user has provided only a generic address ( 0.0.0.0) in the config file then
+		 *  we should pick an interface address which should be published to other nodes for
+		 *  internal communication.
+		 *  Note: Binding a port to 0.0.0.0 means bind the port to all the interfaces on a
+		 *  local device. Hence, picking one of the interfaces as a published address should
+		 *  be fine.
+		 */
+
+		if (allInterfaceIpAddresses.size() > 0) {
+			// pick the first interface which is up for internal communication
+			this->publisedInterfaceAddress = allInterfaceIpAddresses[0];
+		}
+		memset(&ipAddress, 0, sizeof(ipAddress));
+		if (inet_aton(this->publisedInterfaceAddress.c_str(), &ipAddress) == 0) {
+			std::stringstream ss;
+			ss << "Unable to find valid interface address for this node."
+					<< " Please specify non-generic IP address in <transport> tag.\n";
+			Logger::console(ss.str().c_str());
+			throw std::runtime_error(ss.str());
+		}
+		this->publishedInterfaceNumericAddr = ipAddress.s_addr;
+
+	} else {
+		this->publisedInterfaceAddress = this->transportConfig.interfaceAddress;
+		this->publishedInterfaceNumericAddr = interfaceNumericAddr;
+	}
+}
+
+void TransportManager::fetchAllInterfacesIpAddress(vector<string>& ipAddresses) {
+	ipAddresses.clear();
+	struct ifaddrs * interfaceAddresses;
+	if (getifaddrs(&interfaceAddresses) == -1) {
+		perror("Unable to detect interface information on this local machine : ");
+	} else {
+		struct ifaddrs *interfaceAddress;
+		// traverse linked list
+		for (interfaceAddress = interfaceAddresses; interfaceAddress != NULL;
+				interfaceAddress = interfaceAddress->ifa_next) {
+
+			int family = interfaceAddress->ifa_addr->sa_family;
+			if (family == AF_INET) { // IPv4
+				char host[NI_MAXHOST];
+				int status = getnameinfo(interfaceAddress->ifa_addr, sizeof(struct sockaddr_in),
+								host, NI_MAXHOST,
+								NULL, 0, NI_NUMERICHOST);
+
+				if (status == -1)
+					continue;
+
+				unsigned int flags = interfaceAddress->ifa_flags;
+				if ((flags & IFF_UP) && !(flags & IFF_LOOPBACK)) {
+					ipAddresses.push_back(host);
+				}
+			}
+		}
+		freeifaddrs(interfaceAddresses);
+	}
+}
 
 MessageID_t TransportManager::sendMessage(NodeId node, Message * msg, unsigned timeout) {
 

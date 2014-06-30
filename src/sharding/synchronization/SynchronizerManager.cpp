@@ -5,10 +5,15 @@
  *      Author: srch2
  */
 
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+
 #include "SynchronizerManager.h"
 #include "transport/TransportHelper.h"
 #include "discovery/DiscoveryCallBack.h"
-
+#include "discovery/DiscoveryManager.h"
 namespace srch2 {
 namespace httpwrapper {
 
@@ -29,25 +34,6 @@ SyncManager::SyncManager(ConfigManager& cm, TransportManager& tm) :
 	nodesInCluster = cluster->getNodes();
 	nodesInCluster->clear();
 
-	//srch2http::MulticastDiscoveryConfig discoverConfiguration;
-	srch2http::UnicastDiscoveryConfig discoverConfiguration;
-	discoverConfiguration.interfaceAddress = config.getTransport().getIpAddress();
-	discoverConfiguration.internalCommunicationPort = config.getTransport().getPort();
-	vector<HostAndPort> knownHost;
-	knownHost.push_back(HostAndPort("10.0.0.5", 54000));
-	discoverConfiguration.knownHosts = knownHost;
-
-//	discoverConfiguration.multicastPort = config.getMulticastDiscovery().getPort();
-//	discoverConfiguration.enableLoop = 1;
-//	discoverConfiguration.multiCastAddress = config.getMulticastDiscovery().getGroupAddress();
-//	discoverConfiguration.multicastInterface = config.getMulticastDiscovery().getIpAddress();
-//	discoverConfiguration.ttl = config.getMulticastDiscovery().getTtl();
-
-	//discoverConfiguration.print();
-
-	//discoveryMgr = new  MulticastDiscoveryManager(discoverConfiguration);
-	discoveryMgr = new  UnicastDiscoveryService(discoverConfiguration);
-
 	pingInterval = config.getPing().getPingInterval();
 	pingTimeout = config.getPing().getPingTimeout();
 
@@ -59,6 +45,31 @@ SyncManager::SyncManager(ConfigManager& cm, TransportManager& tm) :
 	this->discoveryCallBack = NULL;
 	this->nodeIds = 0;
 	this->configUpdatesDone = false;
+	this->uniqueNodeId = 0;
+
+	MulticastDiscoveryConfig multicastdiscoverConf;
+	UnicastDiscoveryConfig unicastdiscoverConf;
+
+	vector<HostAndPort> knownHost;
+	unicastdiscoverConf.knownHosts = knownHost;
+
+	multicastdiscoverConf.multicastPort = config.getMulticastDiscovery().getPort();
+	multicastdiscoverConf.multiCastAddress = config.getMulticastDiscovery().getGroupAddress();
+	multicastdiscoverConf.multicastInterface = config.getMulticastDiscovery().getIpAddress();
+	multicastdiscoverConf.ttl = config.getMulticastDiscovery().getTtl();
+	multicastdiscoverConf.enableLoop = 1;
+
+	// For phase 2 : Unicast is preferred over Multicast.
+	// TODO: Later phase: both services should be used
+	if (unicastdiscoverConf.knownHosts.size() > 0) {
+		Logger::console("Unicast Discovery");
+		unicastdiscoverConf.print();
+		discoveryMgr = new  UnicastDiscoveryService(unicastdiscoverConf, this);
+	} else {
+		Logger::console("Multicast Discovery");
+		multicastdiscoverConf.print();
+		discoveryMgr = new  MulticastDiscoveryService(multicastdiscoverConf, this);
+	}
 }
 
 SyncManager::~SyncManager() {
@@ -78,13 +89,11 @@ void SyncManager::startDiscovery() {
 
 	discoveryMgr->init();
 
-	this->isCurrentNodeMaster = discoveryMgr->isCurrentNodeMaster();
-	this->currentNodeId = discoveryMgr->getCurrentNodeId();
-	this->masterNodeId =discoveryMgr->getMasterNodeId();
+	isCurrentNodeMaster = (masterNodeId == currentNodeId);
 
 	char nodename[1024];
 	sprintf(nodename, "%d", this->currentNodeId);
-	Node node(nodename, discoveryMgr->getInterfaceAddress(), discoveryMgr->getCommunicationPort(), true);
+	Node node(nodename, transport.getInterfaceAddress(), transport.getCommunicationPort(), true);
 	node.thisIsMe = true;
 	node.setId(this->currentNodeId);
 
@@ -112,7 +121,7 @@ void SyncManager::startDiscovery() {
 		 * 2. Connect with other nodes in the cluster.
 		 */
 		sockaddr_in destinationAddress;
-		bool status = discoveryMgr->getDestinatioAddressByNodeId(masterNodeId, destinationAddress);
+		bool status = getDestinatioAddressByNodeId(masterNodeId, destinationAddress);
 		if (status == false) {
 			Logger::console("Master node %d destination address is not found", masterNodeId);
 			exit(-1);
@@ -212,6 +221,27 @@ void SyncManager::run(){
 
 bool SyncManager::hasMajority() {
 	return true; // TODO V1
+}
+
+unsigned SyncManager::getNextNodeId() {
+	if (isCurrentNodeMaster)
+		return __sync_fetch_and_add(&uniqueNodeId, 1);
+	else {
+		ASSERT(false);
+		return uniqueNodeId;
+	}
+}
+
+void SyncManager::addNodeToAddressMappping(unsigned id, struct sockaddr_in address) {
+	nodeToAddressMap[id] = address;
+}
+
+bool SyncManager::getDestinatioAddressByNodeId(unsigned id, struct sockaddr_in& address) {
+	if (nodeToAddressMap.count(id) > 0) {
+		address = nodeToAddressMap[id];
+		return true;
+	}
+	return false;
 }
 
 /*

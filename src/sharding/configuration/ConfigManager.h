@@ -571,9 +571,9 @@ public:
 	void setTtl(unsigned ttl);
 
 	MulticastDiscovery(){
-		port = 6087;
-		ttl = 1;
-		groupAddress = "224.1.1.2";
+		port = 54000;
+		ttl = 2;
+		groupAddress = "224.2.2.10";
 		ipAddress = "0.0.0.0";
 	}
 
