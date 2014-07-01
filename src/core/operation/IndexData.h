@@ -224,6 +224,8 @@ private:
     void loadCounts(const std::string &indeDataPathFileName);
     void saveCounts(const std::string &indeDataPathFileName) const;
 
+    // This function is called when a necessary lock is already acquired (in M1) or no lock is acquired (in A1).
+    INDEXWRITE_RETVAL _addRecordWithoutLock(const Record *record, Analyzer *analyzer);
 public:
     
     inline static IndexData* create(const string& directoryName,
@@ -266,7 +268,6 @@ public:
 
     // add a record
     INDEXWRITE_RETVAL _addRecord(const Record *record, Analyzer *analyzer);
-    INDEXWRITE_RETVAL _addRecordWithoutLock(const Record *record, Analyzer *analyzer);
     
     inline uint64_t _getReadCount() const { return this->readCounter->getCount(); }
     inline uint32_t _getWriteCount() const { return this->writeCounter->getCount(); }
