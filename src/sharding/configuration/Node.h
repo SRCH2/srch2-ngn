@@ -75,6 +75,16 @@ public:
 	//Iterator begin();
 	//Iterator next();
 	//Iterator end();
+
+    //serializes the object to a byte array and places array into the region
+    //allocated by given allocator
+    void* serializeForNetwork(void * buffer);
+
+    //given a byte stream recreate the original object
+    static Node * deserializeForNetwork(void* buffer);
+
+    unsigned getNumberOfBytesForNetwork();
+
 	string serialize();
 
 	void deserialize(char *serlializedNode) ;

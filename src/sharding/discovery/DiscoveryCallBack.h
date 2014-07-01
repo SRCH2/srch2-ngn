@@ -7,7 +7,7 @@ namespace httpwrapper {
 
 class DiscoveryCallBack  : public CallBackHandler {
 public:
-	void resolveMessage(Message * msg, NodeId node) {
+	bool resolveMessage(Message * msg, NodeId node) {
 		switch(msg->getType()) {
 		case NewNodeNotificationMessageType:
 		{

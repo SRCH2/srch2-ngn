@@ -54,7 +54,9 @@ public:
 	// generate a unique ID for current message
 	MessageID_t getUniqueMessageIdValue();
 	// this API enables RM to register message Broker with TM
-	void setInternalMessageBroker(CallBackHandler*);
+	void registerCallbackForInternalMessageHandler(CallBackHandler*);
+
+	void registerCallbackForReplyMessageHandler(CallBackHandler*);
 	// getter function for current listening thread. Temp for V0
 	pthread_t getListeningThread() const;
 	// getter function for message Allocator object.
@@ -68,7 +70,9 @@ public:
 	// get Discovery callback handler
 	CallBackHandler* getDiscoveryHandler();
 	// get RM callback handler
-	CallBackHandler* getRmHandler();
+	CallBackHandler* getInternalMessageHandler();
+
+	CallBackHandler* getReplyMessageHandler();
 	~TransportManager();
 	// API for the libevent callback to call into TM
 	bool receiveMessage(int fd, TransportCallback *cb);
@@ -159,9 +163,14 @@ private:
 	CallBackHandler *discoveryHandler;
 
 	/*
-	 * Handles internal message broker callbacks
+	 * Handles internal messages for DP and ShM callbacks
 	 */
-	CallBackHandler *routeManagerHandler;
+	CallBackHandler *internalMessageHandler;
+
+	/*
+	 * Handles reply messages through the Pending Request Framework for DP and ShM
+	 */
+	CallBackHandler * replyMessageHandler;
 
 	/*
 	 *  Stores the default socket read buffer size

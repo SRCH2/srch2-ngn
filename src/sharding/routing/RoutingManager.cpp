@@ -11,13 +11,13 @@ RoutingManager::RoutingManager(ConfigManager&  cm, DPInternalRequestHandler& dpI
                                     configurationManager(cm),
                                     dpInternal(dpInternal),
                                     transportManager(transportManager),
-                                    internalMessageBroker(*this, dpInternal) {
+                                    internalMessageHandler(*this, dpInternal),
+                                    replyMessageHandler(transportManager.getMessageAllocator()){
 
     // share the internal message broker from RM to TM
-    transportManager.setInternalMessageBroker(&internalMessageBroker);
+    transportManager.registerCallbackForInternalMessageHandler(&internalMessageHandler);
+    transportManager.registerCallbackForReplyMessageHandler(&replyMessageHandler);
     transportManager.setRoutingManager(this);
-
-    this->pendingRequestsHandler = new PendingRequestsHandler(transportManager.getMessageAllocator());
 }
 
 ConfigManager* RoutingManager::getConfigurationManager() {
@@ -29,12 +29,12 @@ DPInternalRequestHandler* RoutingManager::getDpInternal() {
     return &this->dpInternal;
 }
 
-InternalMessageBroker * RoutingManager::getInternalMessageBroker(){
-    return &this->internalMessageBroker;
+InternalMessageHandler * RoutingManager::getInternalMessageHandler(){
+    return &this->internalMessageHandler;
 }
 
-PendingRequestsHandler * RoutingManager::getPendingRequestsHandler(){
-    return this->pendingRequestsHandler;
+ReplyMessageHandler * RoutingManager::getReplyMessageHandler(){
+    return &(this->replyMessageHandler);
 }
 
 TransportManager& RoutingManager::getTransportManager(){
@@ -54,7 +54,7 @@ void * RoutingManager::routeInternalMessage(void * arg) {
     NodeId nodeId = rmAndMsgPointers->second.second;
 
     ASSERT(msg->isInternal());
-    rm->getInternalMessageBroker()->resolveMessage(msg, nodeId);
+    rm->getInternalMessageHandler()->resolveMessage(msg, nodeId);
     // what if resolve returns NULL for something?
     delete rmAndMsgPointers;
     return NULL;

@@ -2,6 +2,7 @@
 
 
 #include "core/util/Assert.h"
+#include "core/util/SerializationHelper.h"
 
 using namespace std;
 namespace srch2is = srch2::instantsearch;
@@ -68,7 +69,155 @@ std::map<Node *, std::vector<CoreShardContainer * > > * Cluster::getShardInforma
 std::vector<CoreShardContainer * > * Cluster::getNodeShardInformation_Writeview(unsigned nodeId){
 	std::map<Node *, std::vector<CoreShardContainer * > >::iterator currentNodeInfoItr =
 			getNodeShardInformationEntry_Writeview(nodeId);
+	if(this->shardInformation.end() == currentNodeInfoItr){
+		return NULL;
+	}
 	return &(currentNodeInfoItr->second);
+}
+
+
+// this method to be called only from clients to merge master cluster writeview with current writeview
+// NOTE: make sure to also move Srch2Server shared_ptr s
+// TODO : currently this functions just puts srch2Server pointers in master copy and this copy will be used
+// from now on as local writeview
+bool Cluster::mergeLocalIntoMaster(Cluster * localWriteview, Cluster * masterWriteview){
+	//TODO
+	// This implementation assumes master copy is consistent with local copy
+	// 1. move over the data of this node and copy shard pointers to Srch2Servers to the master copy
+	NodeId currentNodeId = localWriteview->getCurrentNode()->getId();
+	std::vector<CoreShardContainer * > * currentNodeInfo = localWriteview->getNodeShardInformation_Writeview(currentNodeId);
+	std::vector<CoreShardContainer * > * currentNodeInfoFromMaster = masterWriteview->getNodeShardInformation_Writeview(currentNodeId);
+	// iterate over cores and for each core, find the corresponding core
+	ASSERT(currentNodeInfo->size() == currentNodeInfoFromMaster->size());
+	for(unsigned localCoreIndex = 0; localCoreIndex < currentNodeInfo->size(); ++localCoreIndex){
+		CoreShardContainer * localCoreContainer = currentNodeInfo->at(localCoreIndex);
+		for(unsigned masterCoreIndex = 0; masterCoreIndex < currentNodeInfoFromMaster->size(); ++masterCoreIndex){
+			CoreShardContainer * masterCoreContainer = currentNodeInfoFromMaster->at(masterCoreIndex);
+			if(masterCoreContainer->getCoreName() == localCoreContainer->getCoreName()){
+				// now set srch2Server pointers in master copy
+				masterCoreContainer->setCore(localCoreContainer->getCore());
+				masterCoreContainer->setSrch2ServerPointers(localCoreContainer);
+			}
+		}
+	}
+	return true;
+}
+bool Cluster::bootstrapMergeWithClientsInfo(std::map<NodeId, Cluster * > & clusterInfos){
+	//TODO
+	// This implementation does not take care of any inconsistency,
+	// it assumes are meta data from all clients are consistent
+	// iterate over input and for each node, update the cluster writeview
+	for(std::map<NodeId, Cluster * >::iterator nodeEntryItr = clusterInfos.begin();
+			nodeEntryItr != clusterInfos.end(); ++nodeEntryItr){
+		NodeId nodeId = nodeEntryItr->first;
+		Cluster * nodeClusterInfo = nodeEntryItr->second;
+		// TODO : use the cluster information of this node to update writeview
+		std::vector<CoreShardContainer * > * nodeShardInformation =
+				nodeClusterInfo->getNodeShardInformation_Writeview(nodeId);
+		std::vector<CoreShardContainer * > * masterNodeShardInfo = this->getNodeShardInformation_Writeview(nodeId);
+		ASSERT(masterNodeShardInfo != NULL);
+		ASSERT(nodeShardInformation != NULL);
+		ASSERT(masterNodeShardInfo->size() == nodeShardInformation->size());
+		for(unsigned clientCIndex = 0 ; clientCIndex < nodeShardInformation->size(); ++clientCIndex){ // iterate over client core containers
+			for(unsigned masterCIndex = 0 ; masterCIndex < masterNodeShardInfo->size(); ++masterCIndex){ // iterate over master core containers and find the one with similar coreName
+				if(nodeShardInformation->at(clientCIndex)->getCoreName() !=
+						masterNodeShardInfo->at(masterCIndex)->getCoreName()){
+					continue;
+				}
+				// same core
+				// insert primary shards and replica shards of client into master
+				vector<Shard *> * masterPrimShards = masterNodeShardInfo->at(masterCIndex)->getPrimaryShards();
+				ASSERT(masterPrimShards->size() == 0);
+				masterNodeShardInfo->at(masterCIndex)->setPrimaryShards(*(nodeShardInformation->at(clientCIndex)->getPrimaryShards()));
+				vector<Shard *> * masterReplicaShards = masterNodeShardInfo->at(masterCIndex)->getReplicaShards();
+				ASSERT(masterReplicaShards->size() == 0);
+				masterNodeShardInfo->at(masterCIndex)->setReplicaShards(*(nodeShardInformation->at(clientCIndex)->getReplicaShards()));
+			}
+		}
+	}
+	return true;
+}
+
+/*
+	unsigned masterNodeId;
+	// map which contains all shard information of all nodes
+	// node -> vector<CoreShardContainer * >
+	std::map<Node *, std::vector<CoreShardContainer * > > shardInformation;
+	// cores in the cluster
+	std::vector<CoreInfo_t *> cores;
+ */
+
+//serializes the object to a byte array and places array into the region
+//allocated by given allocator
+void* Cluster::serialize(void * buffer){
+
+    buffer = srch2::util::serializeString(clusterName, buffer);
+    buffer = srch2::util::serializeFixedTypes(clusterState, buffer);
+    buffer = srch2::util::serializeFixedTypes(masterNodeId, buffer);
+    buffer = srch2::util::serializeFixedTypes((unsigned)(shardInformation.size()), buffer);
+	for(std::map<Node *, std::vector<CoreShardContainer * > >::iterator nodeEntryItr =
+			shardInformation.begin(); nodeEntryItr != shardInformation.end(); ++nodeEntryItr){
+		// serialize node
+		buffer = nodeEntryItr->first->serializeForNetwork(buffer);
+		// serialize the size of vector
+	    buffer = srch2::util::serializeFixedTypes((unsigned)(nodeEntryItr->second.size()), buffer);
+		for(std::vector<CoreShardContainer * >::iterator coreShardConItr =
+				nodeEntryItr->second.begin(); coreShardConItr != nodeEntryItr->second.end(); ++coreShardConItr){
+			buffer = (*coreShardConItr)->serializeForNetwork(buffer);
+		}
+	}
+	return buffer;
+}
+
+//given a byte stream recreate the original object
+Cluster * Cluster::deserialize(void* buffer){
+	Cluster * newObj = new Cluster();
+    buffer = srch2::util::deserializeString(buffer, newObj->clusterName);
+    buffer = srch2::util::deserializeFixedTypes(buffer, newObj->clusterState);
+    buffer = srch2::util::deserializeFixedTypes(buffer, newObj->masterNodeId);
+    unsigned shardInfoSize = 0;
+    buffer = srch2::util::deserializeFixedTypes(buffer, shardInfoSize);
+	for(unsigned infoIndex = 0 ; infoIndex < shardInfoSize; ++infoIndex){
+		// serialize node
+		Node * newNode = Node::deserializeForNetwork(buffer);
+		buffer += newNode->getNumberOfBytesForNetwork();
+		// serialize the size of vector
+		unsigned vectorSize = 0;
+	    buffer = srch2::util::deserializeFixedTypes(buffer, vectorSize);
+	    vector<CoreShardContainer *> cores;
+		for(unsigned coreIndex = 0; coreIndex < vectorSize ; ++coreIndex){
+			CoreShardContainer * newContainer = CoreShardContainer::deserializeForNetwork(buffer);
+			buffer += newContainer->getNumberOfBytesForNetwork();
+			cores.push_back(newContainer);
+		}
+		newObj->shardInformation.insert(std::make_pair(newNode, cores));
+	}
+	return newObj;
+}
+
+unsigned Cluster::getNumberOfBytesForNetwork(){
+	// calculate number of bytes
+	unsigned numberOfBytes = 0;
+	// number of bytes for name
+	numberOfBytes += sizeof(unsigned) + clusterName.size();
+	// number of bytes ford cluster state
+	numberOfBytes += sizeof(CLUSTERSTATE);
+	// number of bytes for master node id
+	numberOfBytes += sizeof(unsigned);
+	// number of bytes for shardInformation
+	// 1. number of entries in the map
+	numberOfBytes += sizeof(unsigned);
+	// 2. iterate on all entries and add their needed number of bytes
+	for(std::map<Node *, std::vector<CoreShardContainer * > >::iterator nodeEntryItr =
+			shardInformation.begin(); nodeEntryItr != shardInformation.end(); ++nodeEntryItr){
+		numberOfBytes += nodeEntryItr->first->getNumberOfBytesForNetwork(); // size of node
+		numberOfBytes += sizeof(unsigned); // size of coreContainer vector
+		for(std::vector<CoreShardContainer * >::iterator coreShardConItr =
+				nodeEntryItr->second.begin(); coreShardConItr != nodeEntryItr->second.end(); ++coreShardConItr){
+			numberOfBytes += (*coreShardConItr)->getNumberOfBytesForNetwork();
+		}
+	}
+	return numberOfBytes;
 }
 
 std::vector<CoreInfo_t *> * Cluster::getCores(){

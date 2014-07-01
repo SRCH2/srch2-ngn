@@ -15,7 +15,7 @@ namespace httpwrapper {
  */
 class CallBackHandler {
 public:
-	virtual void resolveMessage(Message * msg, NodeId node) = 0 ;
+	virtual bool resolveMessage(Message * msg, NodeId node) = 0 ;
 	virtual ~CallBackHandler() {}
 };
 

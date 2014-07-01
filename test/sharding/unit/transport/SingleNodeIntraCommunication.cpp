@@ -101,7 +101,7 @@ int main() {
     eventbases.push_back(event_base_new());
 
   TransportManager *tm =  new TransportManager(eventbases, *nodes);
-  tm->setInternalMessageBroker(new TestHandler());
+  tm->registerCallbackForInternalMessageHandler(new TestHandler());
 
   pthread_t tmp[NUM_THREADS];
   for(int t=0;  t < NUM_THREADS; ++t) {
@@ -112,7 +112,7 @@ int main() {
     int messageLength = strlen(MESSAGE_CONTENTS[m]);
     Message* msg = tm->getMessageAllocator()->allocateMessage(messageLength+1);
     msg->setType(StatusMessageType);
-    msg->setInternal();
+    msg->setDPInternal();
     msg->setBodySize(messageLength+1);
     ShardId shardId;
     shardId.coreId = n->getId();

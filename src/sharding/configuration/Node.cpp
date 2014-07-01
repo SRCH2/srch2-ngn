@@ -1,6 +1,6 @@
 
 #include "Node.h"
-
+#include "src/core/util/SerializationHelper.h"
 #include <sstream>
 
 using namespace std;
@@ -131,6 +131,81 @@ void Node::setPort(PortType_t portType, unsigned short portNumber)
           Logger::error("Unrecognized HTTP listening port type: %d", static_cast<int> (portType));
           break;
       }
+}
+
+
+/*
+ * 	unsigned nodeId;
+	std::string ipAddress;
+	unsigned portNumber;
+	std::string nodeName;
+	vector<unsigned short> ports;
+
+	// Allow this node to be eligible as a master node (enabled by default).
+	bool nodeMaster;
+
+	// Allow this node to store data (enabled by default). If enabled, the node is eligible to store data shards.
+	bool nodeData;
+
+	// Home directory for all the index files of shards on this node.
+	string homeDir;
+
+	string dataDir;
+	unsigned int numberOfThreads;
+	// other node-related info
+
+	// temporary for phase 1 of V1
+	unsigned numberOfPrimaryShards;
+ */
+//serializes the object to a byte array and places array into the region
+//allocated by given allocator
+void* Node::serializeForNetwork(void * buffer){
+	buffer = srch2::util::serializeFixedTypes(nodeId, buffer);
+	buffer = srch2::util::serializeString(ipAddress, buffer);
+	buffer = srch2::util::serializeFixedTypes(portNumber, buffer);
+	buffer = srch2::util::serializeString(nodeName, buffer);
+	buffer = srch2::util::serializeVectorOfFixedTypes(ports, buffer);
+	buffer = srch2::util::serializeFixedTypes(nodeMaster, buffer);
+	buffer = srch2::util::serializeFixedTypes(nodeData, buffer);
+	buffer = srch2::util::serializeString(homeDir, buffer);
+	buffer = srch2::util::serializeString(dataDir, buffer);
+	buffer = srch2::util::serializeFixedTypes(numberOfThreads, buffer);
+	buffer = srch2::util::serializeFixedTypes(numberOfPrimaryShards, buffer);
+	return buffer;
+}
+
+//given a byte stream recreate the original object
+Node * Node::deserializeForNetwork(void* buffer){
+	Node * newNode = new Node();
+	buffer = srch2::util::deserializeFixedTypes(buffer, newNode->nodeId);
+	buffer = srch2::util::deserializeString(buffer, newNode->ipAddress);
+	buffer = srch2::util::deserializeFixedTypes(buffer, newNode->portNumber);
+	buffer = srch2::util::deserializeString(buffer, newNode->nodeName);
+	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, newNode->ports);
+	buffer = srch2::util::deserializeFixedTypes(buffer, newNode->nodeMaster);
+	buffer = srch2::util::deserializeFixedTypes(buffer, newNode->nodeData);
+	buffer = srch2::util::deserializeString(buffer, newNode->homeDir);
+	buffer = srch2::util::deserializeString(buffer, newNode->dataDir);
+	buffer = srch2::util::deserializeFixedTypes(buffer, newNode->numberOfThreads);
+	buffer = srch2::util::deserializeFixedTypes(buffer, newNode->numberOfPrimaryShards);
+	return newNode;
+}
+
+unsigned Node::getNumberOfBytesForNetwork(){
+	unsigned numberOfBytes = 0;
+	numberOfBytes += sizeof(unsigned);
+	numberOfBytes += sizeof(unsigned) + ipAddress.size();
+	numberOfBytes += sizeof(unsigned);
+	numberOfBytes += sizeof(unsigned) + nodeName.size();
+	numberOfBytes += sizeof(unsigned);// size of vector
+	numberOfBytes += ports.size() * sizeof(unsigned short);
+	numberOfBytes += sizeof(bool);
+	numberOfBytes += sizeof(bool);
+	numberOfBytes += sizeof(unsigned) + homeDir.size();
+	numberOfBytes += sizeof(unsigned) + dataDir.size();
+	numberOfBytes += sizeof(unsigned int);
+	numberOfBytes += sizeof(unsigned);
+	return numberOfBytes;
 }
 
 string Node::serialize() { // TODO : should be reviewed for merge

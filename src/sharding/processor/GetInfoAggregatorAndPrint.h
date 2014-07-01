@@ -31,6 +31,8 @@ public:
             ResponseAggregatorMetadata metadata);
 
 
+    void callBack(PendingMessage<GetInfoCommand, GetInfoCommandResults> * message){};
+
     /*
      * The main function responsible of aggregating status (success or failure) results
      */

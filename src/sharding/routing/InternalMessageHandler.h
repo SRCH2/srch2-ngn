@@ -13,24 +13,34 @@ using namespace std;
 namespace srch2 {
 namespace httpwrapper {
 
+
+class ShardManager;
 class RoutingManager;
 
-class InternalMessageBroker : public CallBackHandler {
+class InternalMessageHandler : public CallBackHandler {
 public:
 
-    InternalMessageBroker(RoutingManager& rm, DPInternalRequestHandler& internalDP) : internalDP(internalDP), routingManager(rm) {};
+    InternalMessageHandler(RoutingManager& rm, DPInternalRequestHandler& internalDP)
+    : internalDP(internalDP), routingManager(rm){
+    	shardManager = NULL;
+    };
 
 
-    void resolveMessage(Message * msg, NodeId node);
+    bool resolveMessage(Message * msg, NodeId node);
 
     void deleteResponseObjectBasedOnType(Message * reply, void * responseObject);
 
     MessageAllocator * getMessageAllocator();
 
+    void setShardManager(ShardManager * shardManager){
+    	this->shardManager = shardManager;
+    }
+
 private:
 
     DPInternalRequestHandler& internalDP;
     RoutingManager&  routingManager;
+    ShardManager * shardManager;
 
     template<typename RequestType, typename ResponseType>
     std::pair<Message*,ResponseType*> processRequestMessage(Message*, boost::shared_ptr<Srch2Server> srch2Server ,
@@ -41,7 +51,9 @@ private:
     /*
      * Gets the internal message and routes it to one of the DPInternal functions
      */
-    std::pair<Message*,void*> notifyReturnResponse(Message*);
+    std::pair<Message*,void*> notifyDPInternalReturnResponse(Message*);
+
+    Message* notifyShardManagerReturnResponse(Message*, NodeId node);
 };
 
 }

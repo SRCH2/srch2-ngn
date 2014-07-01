@@ -90,6 +90,8 @@ public:
     void callBack(vector<PendingMessage<SearchCommand,
             SearchCommandResults> * > messages);
 
+    void callBack(PendingMessage<SearchCommand, SearchCommandResults> * message){};
+
     /*
      * The last call back function called by RoutingManager in all cases.
      * Example of call back call order for search :

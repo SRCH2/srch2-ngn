@@ -1,6 +1,7 @@
 
 #include "Shard.h"
 
+#include "src/core/util/SerializationHelper.h"
 #include <sstream>
 
 using namespace std;
@@ -75,6 +76,28 @@ bool ShardId::operator<=(const ShardId& rhs) const {
 			(coreId == rhs.coreId &&
 					(partitionId < rhs.partitionId ||
 							(partitionId == rhs.partitionId && replicaId <= replicaId)));
+}
+
+
+//serializes the object to a byte array and places array into the region
+//allocated by given allocator
+void* ShardId::serializeForNetwork(void * buffer){
+	buffer = srch2::util::serializeFixedTypes(partitionId, buffer);
+	buffer = srch2::util::serializeFixedTypes(replicaId, buffer);
+	buffer = srch2::util::serializeFixedTypes(coreId, buffer);
+	return buffer;
+}
+
+//given a byte stream recreate the original object
+void * ShardId::deserializeForNetwork(void* buffer){
+	buffer = srch2::util::deserializeFixedTypes(buffer, partitionId);
+	buffer = srch2::util::deserializeFixedTypes(buffer, replicaId);
+	buffer = srch2::util::deserializeFixedTypes(buffer, coreId);
+	return buffer;
+}
+
+unsigned ShardId::getNumberOfBytesForNetwork(){
+	return 3 * sizeof(unsigned);
 }
 
 /////////////////////////////// ShardIdComparator
@@ -198,6 +221,35 @@ std::string Shard::toString() const{
 
 }
 
+
+
+//serializes the object to a byte array and places array into the region
+//allocated by given allocator
+void* Shard::serializeForNetwork(void * buffer){
+	buffer = shardId.serializeForNetwork(buffer);
+	buffer = srch2::util::serializeFixedTypes(shardState, buffer);
+	buffer = srch2::util::serializeFixedTypes(nodeId, buffer );
+	return buffer;
+}
+
+//given a byte stream recreate the original object
+Shard * Shard::deserializeForNetwork(void* buffer){
+	Shard * newShard = new Shard();
+	buffer = newShard->shardId.deserializeForNetwork(buffer);
+	buffer = srch2::util::deserializeFixedTypes(buffer, newShard->shardState);
+	buffer = srch2::util::deserializeFixedTypes(buffer, newShard->nodeId);
+	return newShard;
+}
+
+unsigned Shard::getNumberOfBytesForNetwork(){
+	unsigned numberOfBytes = 0 ;
+	numberOfBytes += shardId.getNumberOfBytesForNetwork();
+	numberOfBytes += sizeof(ShardState);
+	numberOfBytes += sizeof(unsigned);
+	return numberOfBytes;
+}
+
+
 /////////////////////////////// CoreShardContainer
 
 CoreShardContainer::CoreShardContainer(CoreInfo_t * core){
@@ -232,8 +284,15 @@ CoreInfo_t * CoreShardContainer::getCore(){
 const CoreInfo_t * CoreShardContainer::getCore() const{
 	return core;
 }
+
+string CoreShardContainer::getCoreName() const{
+	return this->coreName;
+}
+
 void CoreShardContainer::setCore(CoreInfo_t * core){
 	this->core = core;
+	ASSERT(core != NULL);
+	this->coreName = core->getName();
 }
 
 vector<Shard *> * CoreShardContainer::getPrimaryShards(){
@@ -242,6 +301,52 @@ vector<Shard *> * CoreShardContainer::getPrimaryShards(){
 vector<Shard *> * CoreShardContainer::getReplicaShards(){
 	return &(this->replicaShards);
 }
+
+void CoreShardContainer::setPrimaryShards(vector<Shard *> & srcPrimaryShards){
+	for(unsigned pIndex = 0 ; pIndex < srcPrimaryShards.size(); ++pIndex){
+		this->primaryShards.push_back(new Shard(*(srcPrimaryShards.at(pIndex))));
+	}
+}
+void CoreShardContainer::setReplicaShards(vector<Shard *> & srcReplicaShards){
+	for(unsigned rIndex = 0 ; rIndex < srcReplicaShards.size(); ++rIndex){
+		this->replicaShards.push_back(new Shard(*(srcReplicaShards.at(rIndex))));
+	}
+}
+
+void CoreShardContainer::setSrch2ServerPointers(CoreShardContainer * src){
+	// TODO : for now, src and local primary and replica shards must be the same
+	ASSERT(primaryShards.size() == src->getPrimaryShards()->size());
+	ASSERT(replicaShards.size() == src->getReplicaShards()->size());
+
+	// first create a map from ShardIds to Shard * of src
+	std::map<ShardId, Shard * > shardIdToShardMap;
+	// go over primary and replica shards and fill the map
+	for(unsigned p = 0 ; p < src->getPrimaryShards()->size() ; ++p){
+		// nothing must be repeated
+		ASSERT(shardIdToShardMap.find(src->getPrimaryShards()->at(p)->getShardId()) == shardIdToShardMap.end());
+		shardIdToShardMap.insert(std::make_pair(src->getPrimaryShards()->at(p)->getShardId(), src->getPrimaryShards()->at(p)));
+	}
+	for(unsigned r = 0 ; r < src->getReplicaShards()->size() ; ++r){
+		// nothing must be repeated
+		ASSERT(shardIdToShardMap.find(src->getReplicaShards()->at(r)->getShardId()) == shardIdToShardMap.end());
+		shardIdToShardMap.insert(std::make_pair(src->getReplicaShards()->at(r)->getShardId(), src->getReplicaShards()->at(r)));
+	}
+	// go over local primary shards and replica shards and set the srch2server shared pointer
+	for(unsigned p = 0 ; p < primaryShards.size() ; ++p){
+		// nothing must be missing // TODO : for now , this assumption is true
+		ASSERT(shardIdToShardMap.find(primaryShards.at(p)->getShardId()) != shardIdToShardMap.end());
+		Shard * srcShard = shardIdToShardMap.find(primaryShards.at(p)->getShardId())->second;
+		primaryShards.at(p)->setSrch2Server(srcShard->getSrch2Server());
+	}
+	for(unsigned r = 0 ; r < replicaShards.size() ; ++r){
+		ASSERT(shardIdToShardMap.find(replicaShards.at(r)->getShardId()) != shardIdToShardMap.end());
+		Shard * srcShard = shardIdToShardMap.find(replicaShards.at(r)->getShardId())->second;
+		replicaShards.at(r)->setSrch2Server(srcShard->getSrch2Server());
+	}
+
+
+}
+
 void CoreShardContainer::addPrimaryShards(vector<const Shard *> & primaryShards) const{
 	for(vector<Shard *>::const_iterator shardItr = this->primaryShards.begin(); shardItr != this->primaryShards.end(); ++shardItr){
 		primaryShards.push_back(*shardItr);
@@ -277,6 +382,58 @@ const Shard * CoreShardContainer::getShard(const ShardId & shardId) const{
 		}
 	}
 	return NULL;
+}
+
+
+//serializes the object to a byte array and places array into the region
+//allocated by given allocator
+void* CoreShardContainer::serializeForNetwork(void * buffer){
+	buffer = srch2::util::serializeString(coreName, buffer);
+
+	buffer = srch2::util::serializeFixedTypes((unsigned)(primaryShards.size()), buffer);
+	for(unsigned p = 0 ; p < primaryShards.size(); ++p){
+		buffer = primaryShards.at(p)->serializeForNetwork(buffer);
+	}
+	buffer = srch2::util::serializeFixedTypes((unsigned)(replicaShards.size()), buffer);
+	for(unsigned p = 0 ; p < replicaShards.size(); ++p){
+		buffer = replicaShards.at(p)->serializeForNetwork(buffer);
+	}
+	return buffer;
+}
+
+//given a byte stream recreate the original object
+CoreShardContainer * CoreShardContainer::deserializeForNetwork(void* buffer){
+	CoreShardContainer * newObj = new CoreShardContainer(NULL);
+	buffer = srch2::util::deserializeString(buffer, newObj->coreName);
+
+	unsigned size = 0;
+	buffer = srch2::util::deserializeFixedTypes(buffer, size);
+	for(unsigned p = 0 ; p < size; ++p){
+		Shard * newShard = Shard::deserializeForNetwork(buffer);
+		newObj->primaryShards.push_back(newShard);
+		buffer += newShard->getNumberOfBytesForNetwork();
+	}
+	buffer = srch2::util::deserializeFixedTypes(buffer, size);
+	for(unsigned p = 0 ; p < size; ++p){
+		Shard * newShard = Shard::deserializeForNetwork(buffer);
+		newObj->replicaShards.push_back(newShard);
+		buffer += newShard->getNumberOfBytesForNetwork();
+	}
+	return newObj;
+}
+
+unsigned CoreShardContainer::getNumberOfBytesForNetwork(){
+	unsigned numberOfBytes = 0;
+	numberOfBytes += sizeof(unsigned) + coreName.size();
+	numberOfBytes += sizeof(unsigned); // number of primary shards
+	for(unsigned p = 0 ; p < primaryShards.size(); ++p){
+		numberOfBytes += primaryShards.at(p)->getNumberOfBytesForNetwork();
+	}
+	numberOfBytes += sizeof(unsigned); // number of replica shards
+	for(unsigned p = 0 ; p < replicaShards.size(); ++p){
+		numberOfBytes += replicaShards.at(p)->getNumberOfBytesForNetwork();
+	}
+	return numberOfBytes;
 }
 
 }
