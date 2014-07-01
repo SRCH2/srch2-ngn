@@ -144,9 +144,9 @@ public:
 	void setTtl(unsigned ttl);
 
 	MulticastDiscovery(){
-		port = 6087;
-		ttl = 1;
-		groupAddress = "224.1.1.2";
+		port = 54000;
+		ttl = 2;
+		groupAddress = "224.2.2.10";
 		ipAddress = "0.0.0.0";
 	}
 
@@ -154,6 +154,14 @@ public:
 
 class ConfigManager {
 public:
+
+	vector<std::pair<string, unsigned > > getWellKnownHosts(){
+		return this->wellKnownHost;
+	}
+
+	void setWellKnownHost(pair<string, unsigned> p){
+		wellKnownHost.push_back(p);
+	}
 
 	string createSRCH2Home();
 	string createClusterDir(const string& clusterName);
@@ -234,6 +242,9 @@ private:
 	string httpServerListeningPort;
 	string srch2Home;
 	unsigned int numberOfThreads;
+
+
+	vector<std::pair<string, unsigned > > wellKnownHost;
 
 	// <config><keywordPopularitythreshold>
 	unsigned keywordPopularityThreshold;
@@ -445,6 +456,8 @@ private:
 	static const char* const transportNodeTag;
 	static const char* const transportIpAddress;
 	static const char* const transportPort;
+
+	static const char* const wellKnownHosts;
 
 	static const char* const nodeListeningHostNameTag;
 	static const char* const nodeListeningPortTag;

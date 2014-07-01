@@ -16,7 +16,6 @@
 #include <boost/thread.hpp>
 #include <boost/unordered_map.hpp>
 #include <iostream>
-#include "discovery/DiscoveryManager.h"
 
 using namespace std;
 
@@ -32,6 +31,7 @@ static const char OPS_DELETE_NODE = 1;
 class SMCallBackHandler;
 class MessageHandler;
 class DiscoveryCallBack;
+class DiscoveryService;
 
 /*
  *   Entry point for the synchronizer thread. void * => Synchronizer *
@@ -94,6 +94,28 @@ public:
 	 *  request.
 	 */
 	void startDiscovery();
+
+	/*
+	 *  Return nodeId for the new node in cluster.
+	 */
+	unsigned getNextNodeId();
+
+	void setCurrentNodeId(unsigned id) { currentNodeId = id; }
+
+	unsigned getCurrentNodeId() { return currentNodeId; }
+
+	void setMasterNodeId(unsigned id) { masterNodeId = id;	}
+
+	void addNodeToAddressMappping(unsigned id, struct sockaddr_in addr);
+
+	bool getDestinatioAddressByNodeId(unsigned id, struct sockaddr_in& destinationAddress);
+
+	bool isThisNodeMaster() { return isCurrentNodeMaster; }
+
+	TransportManager* getTransport() { return &transport; }
+
+	void setNodeIsMaster(bool flag) { isCurrentNodeMaster = flag; }
+
 private:
 	///
 	///  Private member functions start here.
@@ -134,10 +156,13 @@ private:
 	SMCallBackHandler *callBackHandler;
 	MessageHandler *messageHandler;
 	ConfigManager& config;
-	MulticastDiscoveryManager* discoveryMgr;
+	DiscoveryService *discoveryMgr;
 	DiscoveryCallBack  *discoveryCallBack;
 	unsigned nodeIds;
 	bool configUpdatesDone;
+	// Node identifier sequence.
+	unsigned uniqueNodeId;
+	std::map<NodeId, struct sockaddr_in>  nodeToAddressMap;
 };
 
 class SMCallBackHandler : public CallBackHandler{
@@ -298,31 +323,6 @@ private:
 	boost::unordered_map<unsigned, unsigned>  perNodeTimeStampEntry;
 
 };
-
-//class SerializerInterface {
-//	virtual void serialize(void *object, char **byte, unsigned* size) = 0;
-//	virtual void * Deserialize(char *byte, unsigned size) = 0;
-//	virtual ~SerializerInterface() {}
-//};
-//
-//class NodeSerializer : public SerializerInterface {
-//	virtual void serialize(void *object, char **byte, unsigned* size){
-//		Node * node = (Node *) object;
-//
-//	}
-//};
-//
-//class ClusterSerializer : public SerializerInterface {
-//
-//};
-//
-//class ShardSerializer : public SerializerInterface {
-//
-//};
-
-
-
-
 
 } /* namespace instantsearch */
 } /* namespace srch2 */

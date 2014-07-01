@@ -890,7 +890,11 @@ int main(int argc, char** argv) {
 	createInternalReqEventBasesAndAccompanyingThreads(MAX_INTERNAL_THREADS, &evBasesForInternalRequests);
 
 	// create Transport Module
-	transportManager = new srch2http::TransportManager(evBasesForInternalRequests);
+	srch2http::TransportConfig transportConfig;
+	transportConfig.interfaceAddress = serverConf->getTransport().getIpAddress();
+	transportConfig.internalCommunicationPort = serverConf->getTransport().getPort();
+
+	transportManager = new srch2http::TransportManager(evBasesForInternalRequests, transportConfig);
 
 	// start threads for internal messages.
 	// Note: eventbases are not assigned any event yet.
