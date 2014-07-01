@@ -29,7 +29,7 @@ void DataConnectorThread::bootStrapConnector(
 		srch2::httpwrapper::DataSourceType dbType, ServerInterface* server) {
 	void * pdlHandle;
 	DataConnector *connector = getDataConnector(pdlHandle,	//Get the pointer of the specific library
-			server->configLookUp(ServerInterfaceInternal::DATABASE_TYPE_NAME));
+			server->configLookUp(ServerInterfaceInternal::DATABASE_TYPE_NAME),server->configLookUp(ServerInterfaceInternal::SRCH2HOME));
 
 	if (connector == NULL)
 		return;
@@ -69,8 +69,9 @@ void DataConnectorThread::getDataConnectorThread(
 
 //Get the pointer and handle to the specific connector in shared library.
 DataConnector * DataConnectorThread::getDataConnector(void * pdlHandle,
-		std::string dbname) {
-	std::string libName = ServerInterfaceInternal::DB_CONNECTORS_PATH
+		std::string dbname, std::string srch2homePath) {
+		std::string libName = srch2homePath + "/"
+			+ ServerInterfaceInternal::DB_CONNECTORS_PATH + "/"
 			+ ServerInterfaceInternal::DYNAMIC_LIBRARY_PREFIX + dbname
 			+ ServerInterfaceInternal::DYNAMIC_LIBRARY_SUFFIX;
 	pdlHandle = dlopen(libName.c_str(), RTLD_LAZY);	//Open the shared library.
@@ -96,7 +97,7 @@ bool DataConnectorThread::checkIndexExistence(void * server) {
 	ServerInterfaceInternal* serverInterface = (ServerInterfaceInternal*) server;
 
 	string directoryName = serverInterface->configLookUp(
-			ServerInterfaceInternal::SRCH2HOME);
+			ServerInterfaceInternal::INDEXPATH);
 	srch2::instantsearch::IndexType it =
 			(srch2::instantsearch::IndexType) (atoi(
 					serverInterface->configLookUp(

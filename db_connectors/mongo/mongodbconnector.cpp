@@ -109,6 +109,7 @@ void MongoDBConnector::createNewIndexes() {
 			}
 			printf("Total indexed %d / %d records. \n", indexedRecordsCount,
 					collectionCount);
+			this->serverHandle->saveChanges();
 
 		} else {
 			printf("No data found in the collection %s",
@@ -127,7 +128,7 @@ void MongoDBConnector::createNewIndexes() {
 time_t MongoDBConnector::getLastExecutedLogTime() {
 	time_t lastExecutedLogTime = time(NULL);//Keep the time stamp start running the listener
 
-	std::string path = this->serverHandle->configLookUp("srch2Home")
+	std::string path = this->serverHandle->configLookUp("dataDir")
 			+ "mongodb_data/" + "data.bin";
 	if (access(path.c_str(), F_OK) == 0) {
 		ifstream a_file(path.c_str(), ios::in | ios::binary);
@@ -141,7 +142,7 @@ time_t MongoDBConnector::getLastExecutedLogTime() {
 
 //Save the time last oplog record executed
 void MongoDBConnector::saveLastExecutedLogTime(time_t t) {
-	std::string path = this->serverHandle->configLookUp("srch2Home")
+	std::string path = this->serverHandle->configLookUp("dataDir")
 			+ "mongodb_data/";
 	if (access(path.c_str(), F_OK) != 0) {
 		boost::filesystem::create_directories(path);
@@ -158,7 +159,6 @@ void* MongoDBConnector::runListener() {
 	bool printOnce = true;
 	time_t opLogTime = 0;
 	time_t threadSpecificCutOffTime = getLastExecutedLogTime();
-
 	string mongoNamespace = "local.oplog.rs";
 	string dbname = this->serverHandle->configLookUp("db");
 	string collection = this->serverHandle->configLookUp("collection");
@@ -224,8 +224,10 @@ void* MongoDBConnector::runListener() {
 			}
 		} catch( const mongo::DBException &e ) {
 			printf("MongoDb Exception : %s \n", e.what());
+			saveLastExecutedLogTime(opLogTime);	//Need to save the time stamp when the mongodb crashed
 		} catch (const exception& ex) {
 			printf("Unknown exception : %s \n", ex.what());
+			saveLastExecutedLogTime(opLogTime);
 		}
 		sleep(atoi(this->serverHandle->configLookUp("listenerWaitTime").c_str()));
 	}while(connectToDB());	//Retry connecting to the mongodb

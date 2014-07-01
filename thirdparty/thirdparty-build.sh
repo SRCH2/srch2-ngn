@@ -45,5 +45,11 @@ tar -xvf mongo-cxx-driver-legacy-0.0-26compat-2.6.2.tar.gz
 mv mongo-cxx-driver-legacy-0.0-26compat-2.6.2 mongo-cxx-driver
 cd mongo-cxx-driver
 CURRENTDIR=$(pwd)
-echo "Building mongo driver in $CURRENTDIR"
+echo "Building mongodb driver in $CURRENTDIR"
 python ../../json/jsoncpp-src-0.5.0/scons.py --prefix=srch2 --use-system-boost --sharedclient --full install-mongoclient
+
+cd ../../pymongo
+tar -xvf pymongo.tar.gz
+cd pymongo
+CURRENTDIR=$(pwd)
+echo "Building python mongodb driver in $CURRENTDIR"

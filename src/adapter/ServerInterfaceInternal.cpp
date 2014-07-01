@@ -25,8 +25,9 @@
 using namespace std;
 
 //Constant keys used in config map
+//TODO
 const std::string ServerInterfaceInternal::DB_CONNECTORS_PATH =
-		"db_connectors/build/";
+		"db_connector";
 const std::string ServerInterfaceInternal::DYNAMIC_LIBRARY_SUFFIX =
 		"Connector.so";
 const std::string ServerInterfaceInternal::DYNAMIC_LIBRARY_PREFIX = "lib";
@@ -44,6 +45,7 @@ const std::string ServerInterfaceInternal::DATABASE_MAX_RETRY_COUNT =
 		"maxRetryCount";
 const std::string ServerInterfaceInternal::SRCH2HOME = "srch2Home";
 const std::string ServerInterfaceInternal::INDEXTYPE = "indexType";
+const std::string ServerInterfaceInternal::INDEXPATH = "dataDir";
 
 ServerInterfaceInternal::ServerInterfaceInternal(void *server) {
 	this->server = (srch2::httpwrapper::Srch2Server*) server;
@@ -206,6 +208,8 @@ void ServerInterfaceInternal::populateConnectorConfig() {
 		(*connectorConfig)[DATABASE_MAX_RETRY_COUNT] =
 				srch2Server->indexDataConfig->getMongoListenerMaxRetryCount();
 		(*connectorConfig)[SRCH2HOME] =
+				srch2Server->indexDataConfig->getSrch2Home();
+		(*connectorConfig)[INDEXPATH] =
 				srch2Server->indexDataConfig->getIndexPath();
 
 		srch2::instantsearch::IndexType it =	//Index Type is an integer

@@ -43,6 +43,7 @@ public:
 	static const std::string DATABASE_MAX_RETRY_COUNT;
 	static const std::string SRCH2HOME;
 	static const std::string INDEXTYPE;
+	static const std::string INDEXPATH;
 
 	bool isBuildSuccess();
 private:

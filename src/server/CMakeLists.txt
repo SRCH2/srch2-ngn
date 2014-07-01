@@ -35,7 +35,15 @@ IF(ENABLE_PROFILER)
     set(GPERFTOOL_LIBS ${CMAKE_SOURCE_DIR}/thirdparty/gperftools/lib/libprofiler.a ${CMAKE_SOURCE_DIR}/thirdparty/libunwind/lib/libunwind.a)
 ENDIF()
 
-IF (ANDROID)
+IF(ANDROID)
+	ADD_EXECUTABLE(${SRCH2_SERVER_NAME} srch2SearchServer.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:SERVER_OBJECTS>)
+	TARGET_LINK_LIBRARIES(${SRCH2_SERVER_NAME} 
+                        ${Srch2InstantSearch_LIBRARIES} 
+                        ${jsoncpp_LIBRARY}      ${CMAKE_SOURCE_DIR}/thirdparty/event/android/lib/libevent.a ${CMAKE_SOURCE_DIR}/thirdparty/event/android/lib/libevent_pthreads.a
+                        ${CMAKE_REQUIRED_LIBRARIES} ${Boost_LIBRARIES} 
+                )
+ELSE()
+
 ADD_EXECUTABLE(${SRCH2_SERVER_NAME} srch2SearchServer.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:SERVER_OBJECTS> $<TARGET_OBJECTS:ADAPTER_OBJECTS>)              
 TARGET_LINK_LIBRARIES(${SRCH2_SERVER_NAME} 
 						dl
@@ -44,14 +52,6 @@ TARGET_LINK_LIBRARIES(${SRCH2_SERVER_NAME}
                         ${CMAKE_REQUIRED_LIBRARIES} ${Boost_LIBRARIES} -lpthread ${GPERFTOOL_LIBS}                        
                 )
                 
-ELSE()
-ADD_EXECUTABLE(${SRCH2_SERVER_NAME} srch2SearchServer.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:SERVER_OBJECTS>)
-TARGET_LINK_LIBRARIES(${SRCH2_SERVER_NAME} 
-                        ${Srch2InstantSearch_LIBRARIES} 
-                        ${jsoncpp_LIBRARY}      ${CMAKE_SOURCE_DIR}/thirdparty/event/android/lib/libevent.a ${CMAKE_SOURCE_DIR}/thirdparty/event/android/lib/libevent_pthreads.a
-                        ${CMAKE_REQUIRED_LIBRARIES} ${Boost_LIBRARIES} 
-                )
-
 ENDIF()
 
 ADD_DEPENDENCIES(${SRCH2_SERVER_NAME} srch2_core)
