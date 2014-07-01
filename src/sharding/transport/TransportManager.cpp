@@ -349,7 +349,7 @@ void TransportManager::validateTransportConfig(TransportConfig& config) {
 		this->publishedInterfaceNumericAddr = ipAddress.s_addr;
 
 	} else {
-		this->publisedInterfaceAddress = this->transportConfig.interfaceAddress;
+		this->publisedInterfaceAddress = config.interfaceAddress;
 		this->publishedInterfaceNumericAddr = interfaceNumericAddr;
 	}
 }

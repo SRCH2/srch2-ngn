@@ -95,7 +95,7 @@ void SyncManager::startDiscovery() {
 
 	char nodename[1024];
 	sprintf(nodename, "%d", this->currentNodeId);
-	Node node(nodename, transport.getInterfaceAddress(), transport.getCommunicationPort(), true);
+	Node node(nodename, transport.getPublisedInterfaceAddress(), transport.getCommunicationPort(), true);
 	node.thisIsMe = true;
 	node.setId(this->currentNodeId);
 
