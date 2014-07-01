@@ -76,7 +76,7 @@ DataConnector * DataConnectorThread::getDataConnector(void * pdlHandle,
 			+ ServerInterfaceInternal::DYNAMIC_LIBRARY_SUFFIX;
 	pdlHandle = dlopen(libName.c_str(), RTLD_LAZY);	//Open the shared library.
 	if (!pdlHandle) {
-		Logger::error("Fail to load %c due to %c", libName.c_str(), dlerror());
+		Logger::error("Fail to load shared library %c due to %c", libName.c_str(), dlerror());
 		return NULL;
 	}
 
@@ -84,7 +84,7 @@ DataConnector * DataConnectorThread::getDataConnector(void * pdlHandle,
 
 	const char* dlsym_error = dlerror();
 	if (dlsym_error) {
-		Logger::error("Cannot load symbol create: %c", dlsym_error);
+		Logger::error("Cannot load symbol \"create\" in shared library due to: %c", dlsym_error);
 		return NULL;
 	}
 
