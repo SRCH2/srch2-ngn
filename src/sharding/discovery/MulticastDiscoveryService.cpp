@@ -27,6 +27,17 @@ MulticastDiscoveryService::MulticastDiscoveryService(MulticastDiscoveryConfig co
 	listenSocket = -1;
 	sendSocket = -1;
 	_discoveryDone = false;
+
+	if (this->multiCastInterfaceNumericAddr == 0) {
+		Logger::console("setting up MC interface as Published Interface.");
+		this->multiCastInterfaceNumericAddr = getTransport()->getPublishedInterfaceNumericAddr();
+	}
+
+	memset(&multicastGroupAddress, 0, sizeof(multicastGroupAddress));
+	inet_aton(discoveryConfig.multiCastAddress.c_str(), &multicastGroupAddress.sin_addr);
+	//multicastGroupAddress.sin_addr.s_addr = multiCastNumericAddr;
+	multicastGroupAddress.sin_family = AF_INET;
+	multicastGroupAddress.sin_port = htons(discoveryConfig.multicastPort);
 }
 
 void MulticastDiscoveryService::validateConfigSettings(MulticastDiscoveryConfig& discoveryConfig) {
@@ -135,7 +146,7 @@ int MulticastDiscoveryService::openListeningChannel(){
 
 	struct sockaddr_in addr;
 	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = this->multiCastNumericAddr;
+	addr.sin_addr.s_addr = htonl(INADDR_ANY);  // this->multiCastNumericAddr;
 	unsigned portToBind = discoveryConfig.multicastPort;
 	addr.sin_port = htons(portToBind);
 
@@ -215,17 +226,18 @@ int MulticastDiscoveryService::openSendingChannel(){
 	 *
 	 *  Note: this is useful for the hosts which have multiple ip addresses.
 	 */
-	if (this->multiCastInterfaceNumericAddr) {  // 0.0.0.0
-		struct in_addr interfaceAddr;
-		interfaceAddr.s_addr = this->multiCastInterfaceNumericAddr;
+//	if (this->multiCastInterfaceNumericAddr == 0) {  // 0.0.0.0
+//		this->multiCastInterfaceNumericAddr = getTransport()->getPublishedInterfaceNumericAddr();
+//	}
 
-		int status = setsockopt (udpSocket, IPPROTO_IP, IP_MULTICAST_IF, &interfaceAddr,
-				sizeof(interfaceAddr));
-		if (status == -1) {
-			Logger::console("Invalid interface specified. Using system default.");
-		}
+	struct in_addr interfaceAddr;
+	interfaceAddr.s_addr = this->multiCastInterfaceNumericAddr;
+
+	int status = setsockopt (udpSocket, IPPROTO_IP, IP_MULTICAST_IF, &interfaceAddr,
+			sizeof(interfaceAddr));
+	if (status == -1) {
+		Logger::console("Invalid interface specified. Using system default.");
 	}
-
 	//Logger::console("Discovery UDP sending socket init done.");
 
 	return udpSocket;
@@ -261,13 +273,14 @@ void * multicastListener(void * arg) {
 		if (status == 0) {
 			// ignore looped back messages.
 			if (discovery->isLoopbackMessage(message)) {
-				//Logger::console("loopback message ...continuing");
+				Logger::console("loopback message ...continuing");
 				continue;
 			} else {
 				switch(message.flag)
 				{
 				case DISCOVERY_JOIN_CLUSTER_ACK:
 				{
+					Logger::console("Ack received !");
 					/*
 					 *   Master node is detected. Stop listening to discovery.
 					 *   Start SM messaging with master to get nodeIds and other cluster related info.
@@ -360,7 +373,7 @@ void * multicastListener(void * arg) {
 		if (status == 0) {
 			// ignore looped back messages.
 			if (discovery->isLoopbackMessage(message)) {
-				//Logger::console("loopback message ...continuing");
+				Logger::console("loopback message ...continuing");
 				continue;
 			} else {
 				switch(message.flag)
@@ -378,7 +391,7 @@ void * multicastListener(void * arg) {
 				{
 
 					// TODO: check whether same node sends JOIN request again.
-					//Logger::console("Got cluster joining request!!");
+					Logger::console("Got cluster joining request!!");
 					DiscoveryMessage ackMessage;
 					ackMessage.flag = DISCOVERY_JOIN_CLUSTER_ACK;
 					ackMessage.interfaceNumericAddress = discovery->getTransport()->getPublishedInterfaceNumericAddr();
@@ -388,14 +401,8 @@ void * multicastListener(void * arg) {
 					ackMessage.ackMessageIdentifier = message.internalCommunicationPort;
 					tryAckAgain:
 					// send multicast acknowledgment
-					struct sockaddr_in destinationAddress;
-					memset(&destinationAddress, 0, sizeof(destinationAddress));
-					inet_aton(discovery->discoveryConfig.multiCastAddress.c_str(), &destinationAddress.sin_addr);
-					destinationAddress.sin_family = AF_INET;
-					destinationAddress.sin_port = htons(discovery->getMulticastPort());
-
 					int sendStatus = sendUDPPacketToDestination(discovery->sendSocket, (char *)&ackMessage,
-							sizeof(ackMessage), destinationAddress);
+							sizeof(ackMessage), discovery->multicastGroupAddress);
 					if (sendStatus == -1) {
 						exit(-1);
 					}
@@ -447,18 +454,12 @@ void MulticastDiscoveryService::sendJoinRequest() {
 	message.interfaceNumericAddress =  getTransport()->getPublishedInterfaceNumericAddr();
 	message.internalCommunicationPort = getTransport()->getCommunicationPort();
 
-	struct sockaddr_in destinationAddress;
-	memset(&destinationAddress, 0, sizeof(destinationAddress));
-	inet_aton(discoveryConfig.multiCastAddress.c_str(), &destinationAddress.sin_addr);
-	//destinationAddress.sin_addr.s_addr = multiCastNumericAddr;
-	destinationAddress.sin_family = AF_INET;
-	destinationAddress.sin_port = htons(getMulticastPort());
 	int retry = 3;
 	//Logger::console("sending MC UDP to %s , %d",discoveryConfig.multiCastAddress.c_str(),  getMulticastPort());
 	while(retry) {
 
 		int status = sendUDPPacketToDestination(sendSocket, (char *)&message,
-				sizeof(message), destinationAddress);
+				sizeof(message), multicastGroupAddress);
 		if (status == 1) {
 			--retry;
 			continue;
