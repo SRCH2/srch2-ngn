@@ -17,6 +17,23 @@ typedef std::vector<event_base*> EventBases;
 typedef std::vector<Node *> Nodes;
 class TransportManager ;
 
+struct TransportConfig{
+
+	// IP address of NIC for port binding. Could be 0.0.0.0
+	std::string interfaceAddress;
+
+	// IP address of NIC to be used for internal communication. Cannot be 0.0.0.0
+	std::string publisedInterfaceAddress;
+
+	// Port for node-to-node communication.
+	unsigned internalCommunicationPort;
+
+	//only for debugging
+	void print() {
+		Logger::console("transport: [%s : %d]", interfaceAddress.c_str(), internalCommunicationPort);
+	}
+};
+
 /*
  *  This structure holds the required information by the libevent callbacks
  *  1. TM poninter
@@ -40,7 +57,9 @@ class RoutingManager;
 
 class TransportManager {
 public:
-	TransportManager(vector<struct event_base *>&);
+	TransportManager(vector<struct event_base *>&, TransportConfig& config);
+	// validate Transport configuration.
+	void validateTransportConfig(TransportConfig& config);
 	//third argument is a timeout in seconds
 	MessageID_t sendMessage(NodeId, Message *, unsigned timeout = 0);
 	//route message through a particular socket
@@ -87,6 +106,16 @@ public:
 		this->listeningThread = listeningThread;
 	}
 
+	string getPublisedInterfaceAddress() { return this->publisedInterfaceAddress; }
+
+	unsigned getPublishedInterfaceNumericAddr() { return this->publishedInterfaceNumericAddr; }
+
+	unsigned getCommunicationPort() { return this->transportConfig.internalCommunicationPort; }
+
+	string getInterfaceAddress() { return this->transportConfig.interfaceAddress;}
+
+	const vector<string>& getAllInterfacesIpAddress() { return allInterfaceIpAddresses; };
+
 private:
 	/*
 	 *  The function dispatches messages to upstream handlers.
@@ -130,6 +159,11 @@ private:
     *  checkForRead = true -> check whether socket is ready for read
     */
    int checkSocketIsReady(int socket, bool checkForRead);
+
+   /*
+    *   fetches IPv4 addresses of all NIC interfaces on the local host.
+    */
+   void fetchAllInterfacesIpAddress(vector<string>& ipAddresses);
 
    vector<struct event_base *>& evbases;
 	/*
@@ -189,6 +223,18 @@ private:
 	 *  Notify that transport manager is shutting down. To be set to true in call
 	 */
 	bool shutDown;
+	/*
+	 *   Stores transport related configuration.
+	 */
+	TransportConfig transportConfig;
+	/*
+	 * Stores IPv4 addresses of all NIC interface on the host machine.
+	 */
+	vector<string> allInterfaceIpAddresses;
+
+	string publisedInterfaceAddress;
+
+	in_addr_t publishedInterfaceNumericAddr;
 };
 }}
 

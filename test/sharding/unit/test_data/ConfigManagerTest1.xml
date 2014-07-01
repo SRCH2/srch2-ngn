@@ -21,6 +21,8 @@
         <!-- Make sure to specify the home of your SRCH2 installation.  Example: 
           <srch2Home>/home/joe/srch2</srch2Home>
         -->
+        
+    <WellKnownHosts>192.168.1.1:8088, 192.168.1.2:8080</WellKnownHosts>    
         	
     <transport>
    		<port>92617</port>

@@ -50,6 +50,8 @@ const char* const ConfigManager::transportNodeTag = "transport";
 const char* const ConfigManager::transportIpAddress = "ipaddress";
 const char* const ConfigManager::transportPort = "port";
 
+const char* const ConfigManager::wellKnownHosts = "wellknownhosts";
+
 const char* const ConfigManager::nodeListeningHostNameTag = "listeninghostname";
 const char* const ConfigManager::nodeListeningPortTag = "internalcommunicationport";
 const char* const ConfigManager::nodeCurrentTag = "this-is-me";
@@ -247,31 +249,7 @@ void ConfigManager::loadConfigFile()
     Logger::debug("WARNINGS while reading the configuration file:");
     Logger::debug("%s\n", parseWarnings.str().c_str());
 
-    /*** Generate shards, temporary*****/
-	std::map<Node *, std::vector<CoreShardContainer * > > * shardingInformation =
-			this->getClusterWriteView()->getShardInformation();
-	std::vector<CoreInfo_t *> * cores = this->getClusterWriteView()->getCores();
-
-	unsigned partitionIdCouter = 0;
-	for(std::map<Node *, std::vector<CoreShardContainer * > >::iterator nodeEntryItr = shardingInformation->begin();
-			nodeEntryItr != shardingInformation->end(); ++nodeEntryItr){
-
-		for(std::vector<CoreInfo_t *>::iterator coreItr = cores->begin(); coreItr != cores->end(); ++coreItr){
-			CoreShardContainer * coreShardContainer = new CoreShardContainer(*coreItr);
-			// since this core is temporary anyways, we use the number of p shards from each node for every code
-			// insert as many shards as specified in config file
-			for(unsigned sid = 0 ; sid < nodeEntryItr->first->getDefaultNumberOfPrimaryShards(); sid++){
-				coreShardContainer->getPrimaryShards()->push_back(new Shard(nodeEntryItr->first->getId(),
-						(*coreItr)->getCoreId(), partitionIdCouter));
-				partitionIdCouter ++;
-			}
-			nodeEntryItr->second.push_back(coreShardContainer);
-		}
-
-	}
-	// commit enables other modules to read the cluster metadata
 	this->commitClusterMetadata();
-    /***************************************/
 
     if (!configSuccess) {
         Logger::error("ERRORS while reading the configuration file");
@@ -1795,12 +1773,30 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
                           std::stringstream &parseWarnings)
 {
     string tempUse = ""; // This is just for temporary use.
+    vector<string> ipAddressOfKnownHost;
 
     int flag_cluster = 0;
     CoreInfo_t *defaultCoreInfo = NULL;
 
     xml_node configNode = configDoc.child(configString);
 
+    xml_node wellKnownHost = configNode.child(wellKnownHosts);
+    if(wellKnownHost && wellKnownHost.text()){
+
+    	tempUse = string(wellKnownHost.text().get());
+		trimSpacesFromValue(tempUse, "WellKnownHosts", parseWarnings);
+    	string delimiterComma = ",";
+    	this->splitString(tempUse,delimiterComma,ipAddressOfKnownHost);
+
+
+    	vector<std::pair<string, unsigned > > ipAddress = this->getWellKnownHosts();
+    	for (int i = 0; i < ipAddressOfKnownHost.size(); i++){
+    	    vector<string> temp;
+    		trimSpacesFromValue(ipAddressOfKnownHost[i], "WellKnownHosts", parseWarnings);
+    		this->splitString(ipAddressOfKnownHost[i], ":", temp);
+    		this->setWellKnownHost(pair<string, unsigned>(temp[0],(uint)atol(temp[1].c_str())));
+    	}
+    }
 
     xml_node transportNode = configNode.child(transportNodeTag);
     if(transportNode){
@@ -1914,25 +1910,36 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
 
     tempUse = "";
 
-
-    std::vector<Node *> nodes ;
-
-    xml_node nodeTag = configNode.child("node");
-    if (nodeTag)
-      parseNode(&nodes, nodeTag, parseWarnings, parseError, configSuccess);
-
-    // TODO Temporary : This must eventually be done by SM
-    for(unsigned i = 0 ; i < nodes.size() ; ++i){
-    	nodes.at(i)->setId(i);
+    std::string nodeName = "";
+    //  node-name -- optional
+    xml_node xmlnodeNameTag = configNode.child(nodeNameTag);
+    if (xmlnodeNameTag && xmlnodeNameTag.text()) { // checks if the config/srch2Home has any text in it or not
+        tempUse = string(xmlnodeNameTag.text().get());
+        trimSpacesFromValue(tempUse, nodeNameTag, parseWarnings);
+        nodeName = tempUse;
     }
+    nodeConfig.setName(nodeName);
 
-    // and insert nodes into the cluster
-    std::map<Node *, std::vector<CoreShardContainer * > > * shardingInformation =
-    		getClusterWriteView()->getShardInformation();
-    for(unsigned i = 0 ; i < nodes.size() ; ++i){
-    	shardingInformation->insert(std::make_pair(nodes.at(i),vector<CoreShardContainer *>()));
+    bool nodeMasterEligible = true;
+    //  node-master -- optional -- default = true
+    xml_node xmlnodeMasterTag = configNode.child(nodeMasterTag);
+    if (xmlnodeMasterTag && xmlnodeMasterTag.text()) { // checks if the config/srch2Home has any text in it or not
+        tempUse = string(xmlnodeMasterTag.text().get());
+        trimSpacesFromValue(tempUse, nodeMasterTag, parseWarnings);
+        if(tempUse.compare("true") == 0){
+        	nodeMasterEligible = true;
+        }
+        else if(tempUse.compare("false") == 0){
+        	nodeMasterEligible = false;
+        }
+        else{
+        	nodeMasterEligible = true;
+        	parseWarnings << "Invalid value for " << nodeMasterTag << "; Using the default value true \n";
+        }
     }
+    nodeConfig.setMasterEligible(nodeMasterEligible);
 
+    //  ports -- operation specific ports -- optional --- default listening port.
 
     // srch2Home is a required field
     xml_node childNode = configNode.child(srch2HomeString);
@@ -2071,209 +2078,6 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
 }
 
 
-//TODO: Pass by referencem, space after =
-void ConfigManager::parseNode(std::vector<Node *>* nodes, xml_node& nodeTag, std::stringstream &parseWarnings, std::stringstream &parseError, bool configSuccess) {
-
-	// map of port type enums to strings to simplify code
-	struct portNameMap_t {
-		enum PortType_t portType;
-		const char *portName;
-	};
-	static portNameMap_t portNameMap[] = {
-		{ SearchPort, searchPortString },
-		{ SuggestPort, suggestPortString },
-		{ InfoPort, infoPortString },
-		{ DocsPort, docsPortString },
-		{ UpdatePort, updatePortString },
-		{ SavePort, savePortString },
-		{ ExportPort, exportPortString },
-		{ ResetLoggerPort, resetLoggerPortString },
-		{ EndOfPortType, NULL }
-	};
-
-
-    for (xml_node nodeTemp = nodeTag; nodeTemp; nodeTemp = nodeTemp.next_sibling("node")) {
-
-    	bool nameDefined = false, portDefined = false, ipAddressDefined = false;
-    	bool thisIsMeDefined = false, masterDefined = false, nodeDataDefined = false, nodeNumberOfShardsDefined = false;
-    	bool dataDirDefined = false, homeDefined = false;
-        std::string ipAddress = "", dataDir = "", nodeName = "", nodeHome = "";
-		unsigned nodeId = 0, portNumber = 0, numOfThreads = 0;
-		bool nodeMaster, nodeData, thisIsMe;
-		unsigned nodeNumberOfShards;
-
-		for (xml_node childNode = nodeTemp.first_child(); childNode; childNode = childNode.next_sibling()) {
-
-			if (childNode && childNode.text()) {
-				std::string name = (string) childNode.name();
-
-				if (name.compare(nodeNameTag) == 0) {
-					if(nameDefined == false){
-						nodeName = string(childNode.text().get());
-						trimSpacesFromValue(nodeName, nodeNameTag, parseWarnings);
-						nameDefined = true;
-					}
-					else{
-				        parseWarnings << "Duplicate definition of \"" << nodeNameTag << "\".  The engine will use the first value: " << nodeName << "\n";
-					}
-				}
-				if (name.compare(nodeListeningHostNameTag) == 0) {
-					if(ipAddressDefined == false){
-						ipAddress = string(childNode.text().get());
-						trimSpacesFromValue(ipAddress, nodeListeningHostNameTag, parseWarnings);
-						ipAddressDefined = true;
-					}
-					else{
-				        parseWarnings << "Duplicate definition of \"" << nodeListeningHostNameTag << "\".  The engine will use the first value: " << ipAddress << "\n";
-					}
-
-				}
-				if (name.compare(nodeListeningPortTag) == 0) {
-					if(portDefined == false){
-						string portNo;
-						portNo = string(childNode.text().get());
-						trimSpacesFromValue(portNo, nodeListeningPortTag, parseWarnings);
-						portNumber = (uint)atol(portNo.c_str());
-						portDefined = true;
-					}
-					else{
-				        parseWarnings << "Duplicate definition of \"" << nodeListeningPortTag << "\".  The engine will use the first value: " << portNumber << "\n";
-					}
-				}
-				if (name.compare(nodeCurrentTag) == 0) {
-					if(thisIsMeDefined == false){
-						string temp = (childNode.text().get());
-						trimSpacesFromValue(temp, nodeCurrentTag, parseWarnings);
-						if(temp.compare("true") == 0){
-							thisIsMe = true;
-						}
-						else if(temp.compare("false") == 0){
-							thisIsMe = false;
-						}
-						else{
-							thisIsMe = true;
-							parseWarnings << "Invalid value for " << nodeCurrentTag << "; Using the default value true \n";
-						}
-						thisIsMeDefined = true;
-					}
-
-					else{
-					    parseWarnings << "Duplicate definition of \"" << nodeCurrentTag << "\".  The engine will use the first value: ";
-						if(thisIsMe)
-							parseWarnings << "true "<< "\n";
-						else
-							parseWarnings << "false "<< "\n";
-					}
-
-				}
-
-				if (name.compare(nodeNumberOfShardsTag) == 0) {
-					if(nodeNumberOfShardsDefined == false){
-						string temp = (childNode.text().get());
-						trimSpacesFromValue(temp, nodeNumberOfShardsTag, parseWarnings);
-						nodeNumberOfShards = (uint)atol(temp.c_str());
-						nodeNumberOfShardsDefined = true;
-					}else{
-					    parseWarnings << "Duplicate definition of \"" << nodeNumberOfShardsTag <<
-					    		"\".  The engine will use the first value: " << nodeNumberOfShards;
-					}
-
-				}
-
-				if (name.compare(nodeMasterTag) == 0) {
-					if(masterDefined == false){
-						string temp = (childNode.text().get());
-						trimSpacesFromValue(temp, nodeMasterTag, parseWarnings);
-						if(temp.compare("true") == 0){
-							nodeMaster = true;
-						}
-						else if(temp.compare("false") == 0){
-							nodeMaster = false;
-						}
-						else{
-							nodeMaster = true;
-							parseWarnings << "Invalid value for " << nodeMasterTag << "; Using the default value true \n";
-						}
-						masterDefined = true;
-					}
-					else{
-						parseWarnings << "Duplicate definition of \"" << nodeMasterTag << "\".  The engine will use the first value: ";
-						if(nodeMaster)
-							parseWarnings << "true "<< "\n";
-						else
-							parseWarnings << "false "<< "\n";
-						}
-					}
-
-				if (name.compare(nodeDataTag) == 0) {
-					if(nodeDataDefined == false){
-						string temp = (childNode.text().get());
-						trimSpacesFromValue(temp, nodeDataTag, parseWarnings);
-						if(temp.compare("true") == 0){
-							nodeData = true;
-						}
-						else if(temp.compare("false") == 0){
-							nodeData = false;
-						}
-						else{
-							nodeData = true;
-							parseWarnings << "Invalid value for " << nodeDataTag << "; Using the default value true \n";
-						}
-						nodeDataDefined = true;
-						}
-						else{
-							parseWarnings << "Duplicate definition of \"" << nodeDataTag << "\".  The engine will use the first value: ";
-							if(nodeData)
-								parseWarnings << "true "<< "\n";
-							else
-								parseWarnings << "false "<< "\n";
-							}
-				}
-
-				if (name.compare(nodeDataDirTag) == 0) {
-					if(dataDirDefined == false){
-						dataDir = string(childNode.text().get());
-						trimSpacesFromValue(dataDir, nodeDataDirTag, parseWarnings);
-						dataDirDefined = true;
-					}
-					else{
-						parseWarnings << "Duplicate definition of \"" << nodeDataDirTag << "\".  The engine will use the first value: " << dataDir << "\n";
-					}
-				}
-				if(name.compare(nodeHomeTag) == 0){
-					if(homeDefined == false){
-						nodeHome = string(childNode.text().get());
-						trimSpacesFromValue(nodeHome, nodeHomeTag, parseWarnings);
-						homeDefined = true;
-					}
-					else{
-						parseWarnings << "Duplicate definition of \"" << nodeHomeTag << "\".  The engine will use the first value: " << nodeHome << "\n";
-					}
-				}
-			}
-		}
-
-		if (thisIsMe == true) {
-			nodes->push_back(new Node(nodeName, ipAddress, portNumber, thisIsMe, nodeMaster, nodeData, dataDir, nodeHome, nodeNumberOfShards));
-			xml_node childNode;
-
-			for (unsigned int i = 0; portNameMap[i].portName != NULL; i++) {
-				childNode = nodeTemp.child(portNameMap[i].portName);
-				if (childNode && childNode.text()) { // checks if the config/port has any text in it or not
-					int portValue = childNode.text().as_int();
-					if (portValue <= 0 || portValue > USHRT_MAX) {
-						parseError << portNameMap[i].portName << " must be between 1 and " << USHRT_MAX;
-						configSuccess = false;
-						return;
-					}
-					nodes->back()->setPort(portNameMap[i].portType, portValue);
-				}
-			}
-		} else if (thisIsMe == false) {
-			nodes->push_back(new Node(nodeName, ipAddress, portNumber, thisIsMe, nodeNumberOfShards));
-		}
-	}
-}
 
 void ConfigManager::_setDefaultSearchableAttributeBoosts(const string &coreName, const vector<string> &searchableAttributesVector)
 {

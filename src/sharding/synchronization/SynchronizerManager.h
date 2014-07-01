@@ -16,7 +16,6 @@
 #include <boost/thread.hpp>
 #include <boost/unordered_map.hpp>
 #include <iostream>
-#include "discovery/DiscoveryManager.h"
 
 using namespace std;
 
@@ -32,6 +31,7 @@ static const char OPS_DELETE_NODE = 1;
 class SMCallBackHandler;
 class MessageHandler;
 class DiscoveryCallBack;
+class DiscoveryService;
 
 /*
  *   Entry point for the synchronizer thread. void * => Synchronizer *
@@ -87,41 +87,6 @@ public:
 		}
 		ASSERT(false);
 	}
-	void addNewNode(const Node& node) { //TODO : Jamshid : should rewrite this function after merge
-//		//spin to acquire lock
-//		while (!__sync_bool_compare_and_swap (&isLocked, false, true)) ;
-//
-//		// first check whether node is already present or not.
-//		vector<Node>* nodes = this->cluster.getNodes();
-//		unsigned index = 0;
-//		unsigned totalNodes = nodes->size();
-//		for(; index < totalNodes; ++index){
-//			if((*nodes)[index].getId() == node.getId()){
-//				break;
-//			}
-//		}
-//		if (index == totalNodes) {
-//			nodes->push_back(node);
-//		}
-//		isLocked = false;
-//		return;
-	}
-
-	string serializeClusterNodes() { //TODO : Jamshid : should rewrite this function after merge
-//		while (!__sync_bool_compare_and_swap (&isLocked, false, true)) ;
-//		stringstream ss;
-//		vector<Node>* nodes = this->cluster.getNodes();
-//		unsigned size = nodes->size();
-//		ss.write((const char *)&size, sizeof(size));
-//		for(unsigned i = 0; i < nodes->size(); ++i){
-//			string serializedNode = nodes->operator[](i).serialize();
-//			size = serializedNode.size();
-//			ss.write((const char *)&size, sizeof(size));
-//			ss.write(serializedNode.c_str(), size);
-//		}
-//		isLocked = false;
-//		return ss.str();
-	}
 
 	/*
 	 *  This function implements initial discovery logic of the node. This should be called
@@ -129,6 +94,28 @@ public:
 	 *  request.
 	 */
 	void startDiscovery();
+
+	/*
+	 *  Return nodeId for the new node in cluster.
+	 */
+	unsigned getNextNodeId();
+
+	void setCurrentNodeId(unsigned id) { currentNodeId = id; }
+
+	unsigned getCurrentNodeId() { return currentNodeId; }
+
+	void setMasterNodeId(unsigned id) { masterNodeId = id;	}
+
+	void addNodeToAddressMappping(unsigned id, struct sockaddr_in addr);
+
+	bool getDestinatioAddressByNodeId(unsigned id, struct sockaddr_in& destinationAddress);
+
+	bool isThisNodeMaster() { return isCurrentNodeMaster; }
+
+	TransportManager* getTransport() { return &transport; }
+
+	void setNodeIsMaster(bool flag) { isCurrentNodeMaster = flag; }
+
 private:
 	///
 	///  Private member functions start here.
@@ -165,17 +152,17 @@ private:
 	unsigned pingInterval;
 	unsigned pingTimeout;
 	unsigned masterNodeId;
-//	Cluster *cluster; // commented out by Jamshid and replaced with next line
-	boost::shared_ptr<const Cluster> cluster;
 	TransportManager& transport;
 	SMCallBackHandler *callBackHandler;
 	MessageHandler *messageHandler;
 	ConfigManager& config;
-	std::vector<Node> *nodesInCluster;
-	MulticastDiscoveryManager* discoveryMgr;
+	DiscoveryService *discoveryMgr;
 	DiscoveryCallBack  *discoveryCallBack;
 	unsigned nodeIds;
 	bool configUpdatesDone;
+	// Node identifier sequence.
+	unsigned uniqueNodeId;
+	std::map<NodeId, struct sockaddr_in>  nodeToAddressMap;
 };
 
 class SMCallBackHandler : public CallBackHandler{
@@ -336,31 +323,6 @@ private:
 	boost::unordered_map<unsigned, unsigned>  perNodeTimeStampEntry;
 
 };
-
-//class SerializerInterface {
-//	virtual void serialize(void *object, char **byte, unsigned* size) = 0;
-//	virtual void * Deserialize(char *byte, unsigned size) = 0;
-//	virtual ~SerializerInterface() {}
-//};
-//
-//class NodeSerializer : public SerializerInterface {
-//	virtual void serialize(void *object, char **byte, unsigned* size){
-//		Node * node = (Node *) object;
-//
-//	}
-//};
-//
-//class ClusterSerializer : public SerializerInterface {
-//
-//};
-//
-//class ShardSerializer : public SerializerInterface {
-//
-//};
-
-
-
-
 
 } /* namespace instantsearch */
 } /* namespace srch2 */
