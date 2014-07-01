@@ -210,9 +210,10 @@ void Srch2Server::createAndBootStrapIndexer()
 			break;
 		}
 #endif
-		default: {
-			indexer->commit();
-			Logger::console("Creating new empty index");
+	    default:
+	        {
+		    indexer->commit();
+		    Logger::console("Creating new empty index");
 		}
 		};
 		AnalyzerHelper::saveAnalyzerResource(this->indexDataConfig);
