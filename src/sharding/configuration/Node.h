@@ -65,8 +65,35 @@ public:
 
 	unsigned getDefaultNumberOfPrimaryShards() const;
 	void setMaster(bool isMaster);
-	bool thisIsMe;
+	bool thisIsMe; // temporary for V0
 
+	unsigned short getPort(PortType_t portType) const;
+	void setPort(PortType_t portType, unsigned short portNumber);
+
+	// TODO (for Surendra): refine this iterator
+	// const Node& operator = (const Node& node);
+
+	// an iterator to go through the shards in this node
+	//class ShardIterator {
+	//public:
+	//unsigned first; // TODO: Ask Surendra
+	//Shard second;
+	//bool operator == (NodeIterator* rhs);
+	//};
+
+	//typedef NodeIterator * Iterator;
+	//Iterator begin();
+	//Iterator next();
+	//Iterator end();
+
+    //serializes the object to a byte array and places array into the region
+    //allocated by given allocator
+    void* serializeForNetwork(void * buffer);
+
+    //given a byte stream recreate the original object
+    static Node * deserializeForNetwork(void* buffer);
+
+    unsigned getNumberOfBytesForNetwork();
 	string serialize();
 
 	void deserialize(char *serlializedNode) ;

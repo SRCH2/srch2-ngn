@@ -64,19 +64,19 @@ void * TransportManager::notifyUpstreamHandlers(Message *msg, int fd, NodeId  no
 
 	if(msg->isReply()) {
 		Logger::debug("Reply message is received. Msg type is %d", msg->getType());
-		if ( ! getRoutingManager()->getPendingRequestsHandler()->resolveResponseMessage(msg,
+		if ( ! getReplyMessageHandler()->resolveMessage(msg,
 				nodeId)){
 			getMessageAllocator()->deallocateByMessagePointer(msg);
 		}
 	} else if(msg->isInternal()) {
-		if(getRmHandler() != NULL){
-			getRmHandler()->resolveMessage(msg, nodeId);
+		if(getInternalMessageHandler() != NULL){
+			getInternalMessageHandler()->resolveMessage(msg, nodeId);
 		}
 		getMessageAllocator()->deallocateByMessagePointer(msg);
 
 	} else if(msg->isDiscovery()) {
 
-		if (getDiscoveryHandler()) {
+		if (getDiscoveryHandler() != NULL) {
 			getDiscoveryHandler()->resolveMessage(msg, nodeId);
 		}
 		getMessageAllocator()->deallocateByMessagePointer(msg);
@@ -298,7 +298,7 @@ TransportManager::TransportManager(vector<struct event_base *>& bases, Transport
 
 	distributedUniqueId = 0;
 	synchManagerHandler = NULL;
-	routeManagerHandler = NULL;
+	internalMessageHandler = NULL;
 	routingManager = NULL;
 	shutDown = false;
 	discoveryHandler = NULL;
@@ -529,8 +529,12 @@ MessageID_t TransportManager::getUniqueMessageIdValue(){
 	return __sync_fetch_and_add(&distributedUniqueId, 1);
 }
 
-CallBackHandler* TransportManager::getRmHandler() {
-	return routeManagerHandler;
+CallBackHandler* TransportManager::getInternalMessageHandler() {
+	return internalMessageHandler;
+}
+
+CallBackHandler* TransportManager::getReplyMessageHandler(){
+	return replyMessageHandler;
 }
 
 pthread_t TransportManager::getListeningThread() const {
@@ -567,8 +571,12 @@ void TransportManager::registerCallbackHandlerForDiscovery(CallBackHandler
 	discoveryHandler = callBackHandler;
 }
 
-void TransportManager::setInternalMessageBroker(CallBackHandler* cbh) {
-  routeManagerHandler = cbh;
+void TransportManager::registerCallbackForInternalMessageHandler(CallBackHandler* cbh) {
+    internalMessageHandler = cbh;
+}
+
+void TransportManager::registerCallbackForReplyMessageHandler(CallBackHandler* cbh){
+	replyMessageHandler = cbh;
 }
 
 TransportManager::~TransportManager() {

@@ -1,6 +1,6 @@
 
 #include "Node.h"
-
+#include "src/core/util/SerializationHelper.h"
 #include <sstream>
 
 using namespace std;
@@ -102,6 +102,47 @@ void NodeConfig::setPort(PortType_t portType, unsigned short portNumber)
           Logger::error("Unrecognized HTTP listening port type: %d", static_cast<int> (portType));
           break;
       }
+}
+
+//serializes the object to a byte array and places array into the region
+//allocated by given allocator
+void* Node::serializeForNetwork(void * buffer){
+	buffer = srch2::util::serializeFixedTypes(nodeId, buffer);
+	buffer = srch2::util::serializeString(ipAddress, buffer);
+	buffer = srch2::util::serializeFixedTypes(portNumber, buffer);
+	buffer = srch2::util::serializeString(nodeName, buffer);
+	buffer = srch2::util::serializeFixedTypes(nodeMaster, buffer);
+	buffer = srch2::util::serializeFixedTypes(nodeMasterEligible, buffer);
+	buffer = srch2::util::serializeFixedTypes(numberOfPrimaryShards, buffer);
+	buffer = srch2::util::serializeFixedTypes(thisIsMe, buffer);
+	return buffer;
+}
+
+//given a byte stream recreate the original object
+Node * Node::deserializeForNetwork(void* buffer){
+	Node * newNode = new Node();
+	buffer = srch2::util::deserializeFixedTypes(buffer, newNode->nodeId);
+	buffer = srch2::util::deserializeString(buffer, newNode->ipAddress);
+	buffer = srch2::util::deserializeFixedTypes(buffer, newNode->portNumber);
+	buffer = srch2::util::deserializeString(buffer, newNode->nodeName);
+	buffer = srch2::util::deserializeFixedTypes(buffer, newNode->nodeMaster);
+	buffer = srch2::util::deserializeFixedTypes(buffer, newNode->nodeMasterEligible);
+	buffer = srch2::util::deserializeFixedTypes(buffer, newNode->numberOfPrimaryShards);
+	buffer = srch2::util::deserializeFixedTypes(buffer, newNode->thisIsMe);
+	return newNode;
+}
+
+unsigned Node::getNumberOfBytesForNetwork(){
+	unsigned numberOfBytes = 0;
+	numberOfBytes += sizeof(unsigned);
+	numberOfBytes += sizeof(unsigned) + ipAddress.size();
+	numberOfBytes += sizeof(unsigned);
+	numberOfBytes += sizeof(unsigned) + nodeName.size();
+	numberOfBytes += sizeof(bool);
+	numberOfBytes += sizeof(bool);
+	numberOfBytes += sizeof(unsigned);
+	numberOfBytes += sizeof(bool); // this is master
+	return numberOfBytes;
 }
 
 string Node::serialize() { // TODO : should be reviewed for merge

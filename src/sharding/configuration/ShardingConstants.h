@@ -33,6 +33,9 @@ enum ShardingMessageType{
     ResetLogCommandMessageType, // -> for ResetLogCommandInput (used for resetting log)
     StatusMessageType, // -> for CommandStatus object (object returned from insert, delete, update)
 
+    // For SHM
+    ShardManagerRequestReportMessageType,
+
     // For SM
     HeartBeatMessageType,
     ClientStatusMessageType,
@@ -81,6 +84,15 @@ enum CLUSTERSTATE {
 	CLUSTERSTATE_GREEN,  // all nodes are green
 	CLUSTERSTATE_RED,    // all nodes are red ..possible ?
 	CLUSTERSTATE_YELLOW  // not all nodes are green.
+};
+
+
+enum TransactionStatus{
+	ShardManager_Transaction_OnGoing,
+	ShardManager_Transaction_Aborted,
+	ShardManager_Transaction_Committed,
+	// and if no status is found in the map for a transaction it's completed for this node.
+	ShardManager_Transaction_Completed
 };
 
 }

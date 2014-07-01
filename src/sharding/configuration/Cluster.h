@@ -33,6 +33,7 @@ namespace httpwrapper {
  * there will be one lock per Shard.
  */
 class ConfigManager;
+class MessageAllocator;
 class Cluster {
 	friend class ConfigManager;
 public:
@@ -54,6 +55,22 @@ public:
 	std::vector<CoreInfo_t *> * getCores();
 	CoreInfo_t * getCoreByName_Writeview(const string & coreName);
 	std::vector<CoreShardContainer * > * getNodeShardInformation_Writeview(unsigned nodeId);
+	// this method to be called only from clients to merge master cluster writeview with current writeview
+	// NOTE: make sure to also move Srch2Server shared_ptr s
+	// TODO : currently this functions just puts srch2Server pointers in master copy and this copy will be used
+	// from now on as local writeview
+	static bool mergeLocalIntoMaster(Cluster * localWriteview, Cluster * masterWriteview);
+	bool bootstrapMergeWithClientsInfo(std::map<NodeId, Cluster * > & clusterInfos);
+
+
+    //serializes the object to a byte array and places array into the region
+    //allocated by given allocator
+    void* serialize(void * buffer);
+
+    //given a byte stream recreate the original object
+    static Cluster * deserialize(void* buffer);
+
+    unsigned getNumberOfBytesForNetwork();
 
 	// can be accessed from writeview and readview
 	// shard access methods

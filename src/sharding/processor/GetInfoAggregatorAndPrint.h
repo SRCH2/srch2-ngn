@@ -1,7 +1,7 @@
 #ifndef __SHARDING_PROCESSOR_GET_INFO_AGGREGATOR_AND_PRINT_H_
 #define __SHARDING_PROCESSOR_GET_INFO_AGGREGATOR_AND_PRINT_H_
 
-#include "ResultsAggregatorAndPrint.h"
+#include "sharding/processor/DistributedProcessorAggregator.h"
 
 #include "serializables/SerializableGetInfoCommandInput.h"
 #include "serializables/SerializableGetInfoResults.h"
@@ -15,7 +15,7 @@ namespace srch2 {
 namespace httpwrapper {
 
 
-class GetInfoResponseAggregator : public ResponseAggregator<GetInfoCommand,GetInfoCommandResults> {
+class GetInfoResponseAggregator : public DistributedProcessorAggregator<GetInfoCommand,GetInfoCommandResults> {
 public:
     GetInfoResponseAggregator(ConfigManager * configurationManager, evhttp_request *req, boost::shared_ptr<const Cluster> clusterReadview, unsigned coreId);
 
@@ -30,6 +30,8 @@ public:
     void processTimeout(PendingMessage<GetInfoCommand, GetInfoCommandResults> * message,
             ResponseAggregatorMetadata metadata);
 
+
+    void callBack(PendingMessage<GetInfoCommand, GetInfoCommandResults> * message){};
 
     /*
      * The main function responsible of aggregating status (success or failure) results

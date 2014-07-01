@@ -205,6 +205,13 @@ public:
 		return metadata_writeView;
 	}
 
+	void setClusterWriteViewAndDeleteTheOldOne(Cluster * newWriteview){
+		if(metadata_writeView != NULL){
+			delete metadata_writeView;
+		}
+		this->metadata_writeView = newWriteview;
+	}
+
 	void commitClusterMetadata(){
 		//NOTE: This implementation assumes there is only one writer to the cluster metadata
 		// (which is the MigrationManager )

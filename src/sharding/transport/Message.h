@@ -1,18 +1,20 @@
 #ifndef __SHARDING_TRANSPORT_MESSAGE_H__
 #define __SHARDING_TRANSPORT_MESSAGE_H__
 
-#include "configuration/ShardingConstants.h"
-#include "configuration/ConfigManager.h"
+#include "src/sharding/configuration/ShardingConstants.h"
+#include "src/sharding/configuration/ConfigManager.h"
 
 namespace srch2 {
 namespace httpwrapper {
 
 typedef unsigned MessageID_t;
 
-const char MSG_LOCAL_MASK = 0x2;      // 00000010
-const char MSG_REPLY_MASK = 0x1;      // 00000001
-const char MSG_INTERNAL_MASK = 0x4;   // 00000100
-const char MSG_DISCOVERY_MASK = 0x8;  // 00001000
+const char MSG_LOCAL_MASK = 0x1;        // 00000001
+const char MSG_DISCOVERY_MASK = 0x2;    // 00000010
+const char MSG_DP_INTERNAL_MASK = 0x4;  // 00000100
+const char MSG_SHM_INTERNAL_MASK = 0x4; // 00001000
+const char MSG_DP_REPLY_MASK = 0x10;// 00010000
+const char MSG_SHM_REPLY_MASK = 0x20;   // 00100000
 
 class Message {
 
@@ -28,12 +30,25 @@ public:
      return mask & MSG_LOCAL_MASK;
    }
    bool isReply() {
-     return mask & MSG_REPLY_MASK;
-   }
-   bool isInternal() {
-     return mask & MSG_INTERNAL_MASK;
+     return isDPReply() || isSHMReply();
    }
 
+   bool isDPReply() {
+     return mask & MSG_DP_REPLY_MASK;
+   }
+
+   bool isSHMReply() {
+     return mask & MSG_SHM_REPLY_MASK;
+   }
+   bool isInternal() {
+     return isDPInternal() || isSHMInternal();
+   }
+   bool isDPInternal() {
+     return mask & MSG_DP_INTERNAL_MASK;
+   }
+   bool isSHMInternal() {
+     return mask & MSG_SHM_INTERNAL_MASK;
+   }
    bool isDiscovery() {
      return mask & MSG_DISCOVERY_MASK;
    }
@@ -42,12 +57,20 @@ public:
 	   mask |= MSG_LOCAL_MASK;
 	   return this;
    }
-   Message * setReply(){
-	   mask |= MSG_REPLY_MASK;
+   Message * setDPReply(){
+	   mask |= MSG_DP_REPLY_MASK;
 	   return this;
    }
-   Message * setInternal(){
-	   mask |= MSG_INTERNAL_MASK;
+   Message * setSHMReply(){
+	   mask |= MSG_SHM_REPLY_MASK;
+	   return this;
+   }
+   Message * setDPInternal(){
+	   mask |= MSG_DP_INTERNAL_MASK;
+	   return this;
+   }
+   Message * setSHMInternal(){
+	   mask |= MSG_SHM_INTERNAL_MASK;
 	   return this;
    }
    Message * setDiscoveryMask(){

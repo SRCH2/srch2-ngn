@@ -1,16 +1,7 @@
 #ifndef __SHARDING_ROUTING_PENDING_MESSAGES_H__
 #define __SHARDING_ROUTING_PENDING_MESSAGES_H__
 
-#include "sharding/configuration/ShardingConstants.h"
-#include "sharding/transport/Message.h"
-#include "sharding/processor/ResultsAggregatorAndPrint.h"
-#include "core/util/Assert.h"
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/shared_mutex.hpp>
-#include <boost/thread/locks.hpp>
-#include "RoutingUtil.h"
-#include <vector>
-#include "sharding/transport/MessageAllocator.h"
+#include "sharding/routing/MessageResolverInterface.h"
 
 namespace srch2 {
 namespace httpwrapper {
@@ -115,32 +106,14 @@ private:
 
 
 /*
- * We need this class to be father of PendingRequest because
- * PendingRequestHandler needs polymorphism to store all PendingRequest objects.
- */
-class PendingRequestAbstract{
-public:
-    // resolves the corresponding PendingMessage with this response
-    // if returns true, this pendingRequest is ready to be deleted for finalizing.
-    virtual bool resolveResponseMessage(Message * responseMessage, NodeId nodeIdOfResponse, void * responseObject) = 0;
-    // this function looks for all messages in this request that have timed out and must be deleted from pendingMessages
-    // returns true if it's time for this request to be deleted.
-    virtual bool resolveTimedoutMessages() = 0;
-    // returns true of it contains a PendingMessage corresponding to this responseMessage
-    virtual bool isResponseMessageMine(Message * responseMessage) = 0;
-    virtual ~PendingRequestAbstract(){};
-};
-
-
-/*
  * Pending request is the object which keeps the information of a request pending for responses.
  * Some requests like search produce multiple messages sent to other shards. For this reason a single object
  * PendingRequest is made and multiple instances of PendingMessage point to this single object. Therefore,
  * PendingRequest object is accessed by multiple threads and must be a thread safe object.
  */
 template <class Request, class Response>
-class PendingRequest : public PendingRequestAbstract{
-    friend class PendingRequestsHandler;
+class PendingRequest : public MessageResolverInterface{
+    friend class ReplyMessageHandler;
 public:
 
 
@@ -176,7 +149,7 @@ public:
 
     // resolves the corresponding PendingMessage with this response
     // if returns true, this pendingRequest is ready to be deleted for finalizing.
-    bool resolveResponseMessage(Message * responseMessage, NodeId nodeIdOfResponse, void * responseObjectTypeVoid = NULL){
+    bool resolveMessage(Message * responseMessage, NodeId nodeIdOfResponse, void * responseObjectTypeVoid = NULL){
         Response * responseObjectArg = (Response *)responseObjectTypeVoid;
 
         if(responseMessage == NULL){
@@ -320,7 +293,7 @@ public:
     }
 
     // returns true of it contains a PendingMessage corresponding to this responseMessage
-    bool isResponseMessageMine(Message * responseMessage){
+    bool isMessageMine(Message * responseMessage){
         // get a read lock on pendingMessages,
         boost::shared_lock< boost::shared_mutex > lock(_access);
         return (this->localRequestMessageId == responseMessage->getRequestMessageId() ||
@@ -341,7 +314,7 @@ private:
 
     // PendingRequest can only be created in PendingRequestHandler to make sure it's always registered there.
     PendingRequest(MessageAllocator * messageAllocator, bool waitForAll,
-            boost::shared_ptr<ResponseAggregator<Request, Response> > aggregator,
+            boost::shared_ptr<ResponseAggregatorInterface<Request, Response> > aggregator,
             unsigned totalNumberOfPendingMessages) :
                 waitForAll(waitForAll), totalNumberOfPendingMessages(totalNumberOfPendingMessages){
         this->messageAllocator = messageAllocator;
@@ -442,7 +415,7 @@ private:
     // for some cases like when we receive a batch of inserts, multiple PendingRequest objects
     // (one per each insert) need to have a single aggregator (batch aggregator), therefore, we
     // the aggregator to be deleted when the last PendingRequest object is deleted.
-    boost::shared_ptr<ResponseAggregator<Request, Response> > aggregator;
+    boost::shared_ptr<ResponseAggregatorInterface<Request, Response> > aggregator;
 
     // This member gives us the total number of pending messages that will be registered in this
     // pending request. If waitForAll is true we call CallBackAll only if we have this many pendingMessages
@@ -451,113 +424,6 @@ private:
 
 };
 
-
-/*
- * this class maintains all pending requests and resolves them upon receiving a response
- * or timeout.
- * This object must be thread safe because it's accessed by multiple threads
- */
-class PendingRequestsHandler{
-public:
-
-    template <class Request, class Response>
-    PendingRequest<Request, Response> * registerPendingRequest(bool waitForAll,
-            boost::shared_ptr<ResponseAggregator<Request, Response> > aggregator,
-            unsigned totalNumberOfPendingMessages){
-        // create the pendingRequest
-        PendingRequest<Request, Response> * pendingRequest = new PendingRequest<Request, Response>(messageAllocator, waitForAll, aggregator, totalNumberOfPendingMessages);
-
-        // register
-        // get a write lock on pendingRequests and push this new request to it.
-        boost::unique_lock< boost::shared_mutex > lock(_access);
-        this->pendingRequests.push_back(pendingRequest);
-
-        // return
-        return pendingRequest;
-    }
-
-    // TODO : nodeId should be replaced with shardId
-    /*
-     * If this response is not related to any pending requests, returns false
-     */
-    bool resolveResponseMessage(Message * response, NodeId nodeId, void * responseObject = NULL){
-    	// TODO : linear scan of pendingRequests vector can be a performance concern in high query rates
-        // 1. get an X lock on the pendingRequest list
-        boost::unique_lock< boost::shared_mutex > lock(_access);
-        // 2. iterate on PendingRequests and check if any of them is corresponding to this response
-        for(vector<PendingRequestAbstract *>::iterator pendingRequestItr = pendingRequests.begin();
-                pendingRequestItr != pendingRequests.end() ; ++pendingRequestItr){
-            if((*pendingRequestItr)->isResponseMessageMine(response)){
-                // ask this pending request to resolve this response
-                bool resolveResult = (*pendingRequestItr)->resolveResponseMessage(response, nodeId,responseObject);
-                // if returns true, we must delete this PendingRequest from the vector.
-                if(resolveResult){
-                    delete *pendingRequestItr;
-                    pendingRequests.erase(pendingRequestItr);
-                }
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    void resolveTimedoutMessages(){
-        // 1. get a X lock on the list if pending requests
-        boost::unique_lock< boost::shared_mutex > lock(_access);
-        // 2. move on all pending requests and check for timeout,
-        vector<PendingRequestAbstract *> newPendingRequests;
-        for(vector<PendingRequestAbstract *>::iterator pendingRequestItr = pendingRequests.begin();
-                pendingRequestItr != pendingRequests.end() ; ++pendingRequestItr){
-            bool resolveResult = (*pendingRequestItr)->resolveTimedoutMessages();
-            // if returns true, we must delete this PendingRequest from the vector.
-            // so otherwise we push it to the temporary newPendingRequests vector
-            if(resolveResult){
-                delete *pendingRequestItr;
-                *pendingRequestItr = NULL;
-            }else{
-                newPendingRequests.push_back(*pendingRequestItr);
-            }
-        }
-        pendingRequests.clear();
-        // copy back new pending messages into old vector
-        pendingRequests.insert(pendingRequests.begin(), newPendingRequests.begin(), newPendingRequests.end());
-    }
-
-    static void * timeoutHandler(void * arg){
-        PendingRequestsHandler * pendingRequestsHandler = (PendingRequestsHandler *) arg;
-        while(true){
-            // looks for timed out messages
-            pendingRequestsHandler->resolveTimedoutMessages();
-            // sleep for 2 seconds
-            sleep(2);
-        }
-        return NULL;
-    }
-
-    PendingRequestsHandler(MessageAllocator * messageAllocator){
-
-        this->messageAllocator = messageAllocator;
-
-        if (pthread_create(&(this->timeoutThread), NULL, PendingRequestsHandler::timeoutHandler, this) != 0){
-            perror("Cannot create thread for timeout for pending messages.");
-            return;
-        }
-    }
-    ~PendingRequestsHandler(){
-        pthread_cancel(this->timeoutThread);
-    }
-private:
-
-    // Keeps the object thread safe
-    mutable boost::shared_mutex _access;
-
-    MessageAllocator * messageAllocator;
-    // This vector contains all pending requests which are waiting for response(s)
-    vector<PendingRequestAbstract *> pendingRequests;
-
-    pthread_t timeoutThread;
-};
 
 }}
 

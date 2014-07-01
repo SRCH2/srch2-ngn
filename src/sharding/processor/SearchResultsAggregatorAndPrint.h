@@ -1,7 +1,7 @@
 #ifndef __SHARDING_PROCESSOR_SEARCH_RESULTS_AGGREGATOR_AND_PRINT_H__
 #define __SHARDING_PROCESSOR_SEARCH_RESULTS_AGGREGATOR_AND_PRINT_H__
 
-#include "ResultsAggregatorAndPrint.h"
+#include "sharding/processor/DistributedProcessorAggregator.h"
 #include "serializables/SerializableSearchResults.h"
 #include "serializables/SerializableSearchCommandInput.h"
 #include <event2/http.h>
@@ -15,7 +15,7 @@ using namespace srch2is;
 namespace srch2 {
 namespace httpwrapper {
 
-class SearchResultsAggregator : public ResponseAggregator<SearchCommand , SearchCommandResults> {
+class SearchResultsAggregator : public DistributedProcessorAggregator<SearchCommand , SearchCommandResults> {
 
 public:
 
@@ -89,6 +89,8 @@ public:
      */
     void callBack(vector<PendingMessage<SearchCommand,
             SearchCommandResults> * > messages);
+
+    void callBack(PendingMessage<SearchCommand, SearchCommandResults> * message){};
 
     /*
      * The last call back function called by RoutingManager in all cases.

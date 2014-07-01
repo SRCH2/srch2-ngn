@@ -1,4 +1,4 @@
-#include "InternalMessageBroker.h"
+#include "InternalMessageHandler.h"
 #include "processor/serializables/SerializableSearchCommandInput.h"
 #include "processor/serializables/SerializableSearchCommandInput.h"
 #include "processor/serializables/SerializableSearchResults.h"
@@ -13,6 +13,7 @@
 #include "transport/Message.h"
 #include "util/Version.h"
 #include "RoutingManager.h"
+#include "sharding/migration/ShardManager.h"
 #include "RoutingUtil.h"
 
 namespace srch2is = srch2::instantsearch;
@@ -21,38 +22,64 @@ using namespace std;
 namespace srch2 {
 namespace httpwrapper {
 
-void InternalMessageBroker::resolveMessage(Message * msg, NodeId node){
-	// use the core to prepare the response message
-	// and object for this request message
-	std::pair<Message * , void *> resultOfDPInternal = notifyReturnResponse(msg);
+bool InternalMessageHandler::resolveMessage(Message * msg, NodeId node){
 
-	Message* replyMessage = resultOfDPInternal.first;
 
-	if(replyMessage == NULL){
-		Logger::console("Reply is null");
-		return;
+	if(msg == NULL){
+		ASSERT(false);
+		return false;
 	}
 
-	if(msg->isLocal()){ // local message, resolve in pending messages
-        replyMessage->setRequestMessageId(msg->getMessageId());
-        replyMessage->setReply()->setInternal();
-        if ( ! routingManager.getPendingRequestsHandler()->resolveResponseMessage(replyMessage, node, resultOfDPInternal.second)){
-            // reply could not be resolved. This means the request of this response is already timedout and gone.
-            // reply and response object must be deallocated here.
-            routingManager.getTransportManager().getMessageAllocator()->deallocateByMessagePointer(replyMessage);
-            this->deleteResponseObjectBasedOnType(replyMessage, resultOfDPInternal.second);
-        }
-	}else{ // request message is coming from another shard, send the response back
-		ASSERT(resultOfDPInternal.second == NULL);
+	if(msg->isDPInternal()){
+		// use the core to prepare the response message
+		// and object for this request message
+		std::pair<Message * , void *> resultOfDPInternal = notifyDPInternalReturnResponse(msg);
+
+		Message* replyMessage = resultOfDPInternal.first;
+
+		if(replyMessage == NULL){
+			Logger::console("Reply is null");
+			return false;
+		}
+
+		if(msg->isLocal()){ // local message, resolve in pending messages
+	        replyMessage->setRequestMessageId(msg->getMessageId());
+	        replyMessage->setDPReply()->setDPInternal();
+	        if ( ! routingManager.getReplyMessageHandler()->resolveMessage(replyMessage, node, resultOfDPInternal.second)){
+	            // reply could not be resolved. This means the request of this response is already timedout and gone.
+	            // reply and response object must be deallocated here.
+	            routingManager.getTransportManager().getMessageAllocator()->deallocateByMessagePointer(replyMessage);
+	            this->deleteResponseObjectBasedOnType(replyMessage, resultOfDPInternal.second);
+	        }
+		}else{ // request message is coming from another shard, send the response back
+			ASSERT(resultOfDPInternal.second == NULL);
+			replyMessage->setRequestMessageId(msg->getMessageId());
+			replyMessage->setDPReply()->setDPInternal();
+			routingManager.getTransportManager().sendMessage(node, replyMessage, 0);
+			getMessageAllocator()->deallocateByMessagePointer(replyMessage);
+		}
+
+	}else if(msg->isSHMInternal()){
+
+		Message * replyMessage = notifyShardManagerReturnResponse(msg,node);
+		if(replyMessage == NULL){
+			Logger::console("Reply is null");
+			return false;
+		}
 		replyMessage->setRequestMessageId(msg->getMessageId());
-		replyMessage->setReply()->setInternal();
+		replyMessage->setSHMReply()->setSHMInternal();
 		routingManager.getTransportManager().sendMessage(node, replyMessage, 0);
 		getMessageAllocator()->deallocateByMessagePointer(replyMessage);
+
+	}else{
+		ASSERT(false);
 	}
+
+	return true;
 }
 
 
-void InternalMessageBroker::deleteResponseObjectBasedOnType(Message * replyMsg, void * responseObject){
+void InternalMessageHandler::deleteResponseObjectBasedOnType(Message * replyMsg, void * responseObject){
     switch (replyMsg->getType()) {
     case SearchCommandMessageType: // -> for LogicalPlan object
         delete (SearchCommandResults*)responseObject;
@@ -90,13 +117,13 @@ void InternalMessageBroker::deleteResponseObjectBasedOnType(Message * replyMsg, 
     }
 }
 
-MessageAllocator * InternalMessageBroker::getMessageAllocator() {
+MessageAllocator * InternalMessageHandler::getMessageAllocator() {
     // return routingManager.transportManager.getMessageAllocator();
     return routingManager.getMessageAllocator();
 }
 
 template<typename RequestType, typename ResponseType>
-std::pair<Message*,ResponseType*> InternalMessageBroker::processRequestMessage(Message *requestMessage, boost::shared_ptr<Srch2Server> srch2Server ,
+std::pair<Message*,ResponseType*> InternalMessageHandler::processRequestMessage(Message *requestMessage, boost::shared_ptr<Srch2Server> srch2Server ,
         ResponseType * (DPInternalRequestHandler::*internalDPRequestHandlerFunction) (boost::shared_ptr<Srch2Server> srch2Server , RequestType*)) {
 
     RequestType *inputSerializedObject = NULL;
@@ -131,7 +158,7 @@ std::pair<Message*,ResponseType*> InternalMessageBroker::processRequestMessage(M
     }
 }
 
-std::pair<Message*,CommandStatus*> InternalMessageBroker::processRequestInsertUpdateMessage(Message *reqInsertUpdateMsg,
+std::pair<Message*,CommandStatus*> InternalMessageHandler::processRequestInsertUpdateMessage(Message *reqInsertUpdateMsg,
 		boost::shared_ptr<Srch2Server> srch2Server , const Schema * schema){
     InsertUpdateCommand *inputSerializedObject = NULL;
     if(reqInsertUpdateMsg->isLocal()){ // message comes from current node
@@ -167,7 +194,7 @@ std::pair<Message*,CommandStatus*> InternalMessageBroker::processRequestInsertUp
     }
 }
 
-std::pair<Message*,void*> InternalMessageBroker::notifyReturnResponse(Message * requestMessage){
+std::pair<Message*,void*> InternalMessageHandler::notifyDPInternalReturnResponse(Message * requestMessage){
     if(requestMessage == NULL){
         return std::make_pair<Message*,void*>(NULL,NULL);
     }
@@ -251,6 +278,49 @@ std::pair<Message*,void*> InternalMessageBroker::notifyReturnResponse(Message * 
         return std::make_pair<Message*,void*>(NULL,NULL);
     }
 }
+
+// use ShardManager message handler to get the reply object of this message and
+// prepare the reply message
+// NOTE : if this function returns NULL, replyObject and requestObject are not deleted and they must
+// be freed later on in ShardManager
+Message* InternalMessageHandler::notifyShardManagerReturnResponse(Message* requestMessage, NodeId node){
+
+	ASSERT(requestMessage != NULL);
+	if(requestMessage == NULL){
+		return NULL;
+	}
+	ASSERT(! requestMessage->isLocal());
+
+	if(shardManager == NULL){
+		return NULL;
+	}
+
+	Message * replyMessage = NULL;
+	// 1. Deserialize the request message
+	switch (requestMessage->getType()) {
+	case ShardManagerRequestReportMessageType:
+	{
+		SHMRequestReport * requestObject =  decodeExternalMessage<SHMRequestReport>(requestMessage);
+		SHMRequestReport * replyObject  = shardManager->resolveMessage(requestMessage, requestObject,node);
+		if(replyObject != NULL){
+			replyMessage = routingManager.prepareExternalMessage(NULL, replyObject, false);
+			delete requestObject;
+			delete replyObject;
+		}
+		break;
+	}
+	default:
+		ASSERT(false);
+		return NULL;
+	}
+
+
+	// delete the request message, it's not needed from here
+	getMessageAllocator()->deallocateByMessagePointer(requestMessage);
+
+	return replyMessage;
+}
+
 
 }
 }

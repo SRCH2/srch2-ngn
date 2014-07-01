@@ -174,7 +174,7 @@ public:
 	 *   2. Client message is stored in a per message queue array.
 	 *
 	 */
-	void resolveMessage(Message * msg, NodeId node);
+	bool resolveMessage(Message * msg, NodeId node);
 
 	/*
 	 *  Constructor

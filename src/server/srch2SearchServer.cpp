@@ -50,7 +50,7 @@
 #include "processor/DistributedProcessorExternal.h"
 #include "configuration/ConfigManager.h"
 #include "synchronization/SynchronizerManager.h"
-#include "sharding/migration/MigrationManager.h"
+#include "sharding/migration/ShardManager.h"
 #include "discovery/DiscoveryManager.h"
 
 
@@ -828,13 +828,6 @@ int main(int argc, char** argv) {
 	srch2http::DPInternalRequestHandler * dpInternal =
 			new srch2http::DPInternalRequestHandler(serverConf);
 
-	// create migration manager
-	srch2http::MigrationManager * migrationManager =
-			new srch2http::MigrationManager(serverConf, dpInternal);
-
-	// TODO : uses clusterreadview to initialize shards in this node
-	//migrationManager->initializeLocalShards();
-
 	// get read view to use for system startup
 	boost::shared_ptr<const srch2::httpwrapper::Cluster> clusterReadview;
 	serverConf->getClusterReadView(clusterReadview);
@@ -922,6 +915,10 @@ int main(int argc, char** argv) {
 	// create Routing Module
 	srch2http::RoutingManager *routesManager =
 			new srch2http::RoutingManager(*serverConf, *dpInternal, *transportManager);
+
+	// create migration manager
+	srch2http::ShardManager * shardManager =
+			new srch2http::ShardManager(serverConf, dpInternal, routesManager);
 
 	// create DP external
 	srch2http::DPExternalRequestHandler *dpExternal =

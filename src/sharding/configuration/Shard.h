@@ -42,6 +42,15 @@ public:
 	bool operator>=(const ShardId& rhs) const ;
 	bool operator<=(const ShardId& rhs) const ;
 
+    //serializes the object to a byte array and places array into the region
+    //allocated by given allocator
+    void* serializeForNetwork(void * buffer);
+
+    //given a byte stream recreate the original object
+    void * deserializeForNetwork(void* buffer);
+
+    unsigned getNumberOfBytesForNetwork();
+
 };
 
 class ShardIdComparator {
@@ -71,6 +80,14 @@ public:
 	boost::shared_ptr<Srch2Server> getSrch2Server() const;
 	std::string toString() const;
 
+    //serializes the object to a byte array and places array into the region
+    //allocated by given allocator
+    void* serializeForNetwork(void * buffer);
+
+    //given a byte stream recreate the original object
+    static Shard * deserializeForNetwork(void* buffer);
+
+    unsigned getNumberOfBytesForNetwork();
 
 private:
 	ShardId shardId;
@@ -89,18 +106,33 @@ public:
 	~CoreShardContainer();
 	CoreInfo_t * getCore();
 	const CoreInfo_t * getCore() const;
+	string getCoreName() const;
 	void setCore(CoreInfo_t * core);
 
 	vector<Shard *> * getPrimaryShards();
 	vector<Shard *> * getReplicaShards();
+	void setPrimaryShards(vector<Shard *> & srcPrimaryShards);
+	void setReplicaShards(vector<Shard *> & srcReplicaShards);
+	void setSrch2ServerPointers(CoreShardContainer * src);
+
 	void addPrimaryShards(vector<const Shard *> & primaryShards) const;
 	void addReplicaShards(vector<const Shard *> & replicaShards) const;
 	void addPrimaryShardReplicas(const ShardId & primaryShardId, vector<const Shard *> & replicaShards) const;
 	unsigned getTotalNumberOfPrimaryShards() const;
 	const Shard * getShard(const ShardId & shardId) const;
 
+    //serializes the object to a byte array and places array into the region
+    //allocated by given allocator
+    void* serializeForNetwork(void * buffer);
+
+    //given a byte stream recreate the original object
+    static CoreShardContainer * deserializeForNetwork(void* buffer);
+
+    unsigned getNumberOfBytesForNetwork();
+
 private:
 	CoreInfo_t * core;
+	string coreName;
 
 	// note: all primary and replica shards in these two sets
 	// share the same coreId and nodeId
