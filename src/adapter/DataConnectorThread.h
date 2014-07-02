@@ -29,7 +29,7 @@ public:
 private:
 	static bool checkIndexExistence(void * server);
 	static DataConnector * getDataConnector(void * pdlHandle,	//Get the pointer and handle to the specific connector in shared library.
-			std::string dbname,std::string srch2homePath);
+			std::string sharedLibraryPath);
 };
 
 #endif /* DATACONNECTORTHREAD_H_ */

@@ -328,6 +328,7 @@ public:
     const string& getMongoCollection (const string &coreName) const;
     const unsigned getMongoListenerWaitTime (const string &coreName) const;
     const unsigned getMongoListenerMaxRetryCount(const string &coreName) const;
+    const string& getMongoSharedLibraryPath(const string &coreName) const;
 
     const unsigned getGetAllResultsNumberOfResultsThreshold() const {
     	return this->getAllResultsNumberOfResultsThreshold;
@@ -404,6 +405,7 @@ private:
     static const char* const mergeEveryNSecondsString;
     static const char* const mergePolicyString;
     static const char* const mongoDbString;
+    static const char* const sharedLibraryPath;
     static const char* const nameString;
     static const char* const portString;
     static const char* const porterStemFilterString;
@@ -501,6 +503,7 @@ public:
     unsigned getMongoListenerWaitTime() const { return mongoListenerWaitTime; }
     unsigned getMongoListenerMaxRetryOnFailure() const { return mongoListenerMaxRetryOnFailure; }
     unsigned getMongoListenerMaxRetryCount() const { return mongoListenerMaxRetryOnFailure; }
+    const string &getMongoSharedLibraryPath() const { return mongoSharedLibraryPath; }
 
     int getIndexType() const { return indexType; }
     int getSearchType() const { return searchType; }
@@ -644,6 +647,9 @@ protected:
 
     // stores the value of maximum allowed retries when MongoDB listener encounters some problem.
     unsigned mongoListenerMaxRetryOnFailure;
+
+    // sotre the path of shared library
+    string mongoSharedLibraryPath;
 
     int isPrimSearchable;
 

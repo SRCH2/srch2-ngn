@@ -29,9 +29,7 @@ public:
 	virtual std::string configLookUp(std::string key);
 
 	//Constant keys used in config map
-	static const std::string DB_CONNECTORS_PATH;
-	static const std::string DYNAMIC_LIBRARY_SUFFIX;
-	static const std::string DYNAMIC_LIBRARY_PREFIX;
+	static const std::string DATABASE_SHARED_LIBRARY_PATH;
 	static const std::string PRIMARY_KEY;
 	static const std::string DATABASE_NAME;
 	static const std::string DATABASE_PORT;

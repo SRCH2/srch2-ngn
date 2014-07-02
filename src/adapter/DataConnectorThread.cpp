@@ -27,9 +27,9 @@ void * spawnConnector(void *arg) {
 //The main function run by the thread, get connector and start listener.
 void DataConnectorThread::bootStrapConnector(
 		srch2::httpwrapper::DataSourceType dbType, ServerInterface* server) {
-	void * pdlHandle;
+	void * pdlHandle = NULL;
 	DataConnector *connector = getDataConnector(pdlHandle,	//Get the pointer of the specific library
-			server->configLookUp(ServerInterfaceInternal::DATABASE_TYPE_NAME),server->configLookUp(ServerInterfaceInternal::SRCH2HOME));
+			server->configLookUp(ServerInterfaceInternal::DATABASE_SHARED_LIBRARY_PATH));
 
 	if (connector == NULL)
 		return;
@@ -43,6 +43,11 @@ void DataConnectorThread::bootStrapConnector(
 	}
 
 	//After the listener;
+
+//Supressing specific warnings on gcc/g++. http://www.mr-edd.co.uk/blog/supressing_gcc_warnings
+#ifdef __GNUC__
+__extension__
+#endif
 	destroy_t* destory_dataConnector = (destroy_t*) dlsym(pdlHandle, "destroy");
 	destory_dataConnector(connector);
 	dlclose(pdlHandle);
@@ -69,17 +74,18 @@ void DataConnectorThread::getDataConnectorThread(
 
 //Get the pointer and handle to the specific connector in shared library.
 DataConnector * DataConnectorThread::getDataConnector(void * pdlHandle,
-		std::string dbname, std::string srch2homePath) {
-		std::string libName = srch2homePath + "/"
-			+ ServerInterfaceInternal::DB_CONNECTORS_PATH + "/"
-			+ ServerInterfaceInternal::DYNAMIC_LIBRARY_PREFIX + dbname
-			+ ServerInterfaceInternal::DYNAMIC_LIBRARY_SUFFIX;
+		std::string sharedLibraryPath) {
+	std::string libName = sharedLibraryPath;
 	pdlHandle = dlopen(libName.c_str(), RTLD_LAZY);	//Open the shared library.
 	if (!pdlHandle) {
 		Logger::error("Fail to load shared library %c due to %c", libName.c_str(), dlerror());
 		return NULL;
 	}
 
+//Supressing specific warnings on gcc/g++. http://www.mr-edd.co.uk/blog/supressing_gcc_warnings
+#ifdef __GNUC__
+__extension__
+#endif
 	create_t* create_dataConnector = (create_t*) dlsym(pdlHandle, "create");	//Get the function "create" in the shared library.
 
 	const char* dlsym_error = dlerror();

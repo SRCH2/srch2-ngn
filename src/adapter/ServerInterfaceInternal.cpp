@@ -26,11 +26,6 @@ using namespace std;
 
 //Constant keys used in config map
 //TODO
-const std::string ServerInterfaceInternal::DB_CONNECTORS_PATH =
-		"db_connector";
-const std::string ServerInterfaceInternal::DYNAMIC_LIBRARY_SUFFIX =
-		"Connector.so";
-const std::string ServerInterfaceInternal::DYNAMIC_LIBRARY_PREFIX = "lib";
 const std::string ServerInterfaceInternal::PRIMARY_KEY = "uniqueKey";
 const std::string ServerInterfaceInternal::DATABASE_NAME = "db";
 const std::string ServerInterfaceInternal::DATABASE_PORT = "port";
@@ -46,6 +41,7 @@ const std::string ServerInterfaceInternal::DATABASE_MAX_RETRY_COUNT =
 const std::string ServerInterfaceInternal::SRCH2HOME = "srch2Home";
 const std::string ServerInterfaceInternal::INDEXTYPE = "indexType";
 const std::string ServerInterfaceInternal::INDEXPATH = "dataDir";
+const std::string ServerInterfaceInternal::DATABASE_SHARED_LIBRARY_PATH = "sharedLibraryPath";
 
 ServerInterfaceInternal::ServerInterfaceInternal(void *server) {
 	this->server = (srch2::httpwrapper::Srch2Server*) server;
@@ -211,6 +207,8 @@ void ServerInterfaceInternal::populateConnectorConfig() {
 				srch2Server->indexDataConfig->getSrch2Home();
 		(*connectorConfig)[INDEXPATH] =
 				srch2Server->indexDataConfig->getIndexPath();
+		(*connectorConfig)[DATABASE_SHARED_LIBRARY_PATH] =
+				srch2Server->indexDataConfig->getMongoSharedLibraryPath();
 
 		srch2::instantsearch::IndexType it =	//Index Type is an integer
 				(srch2::instantsearch::IndexType) srch2Server->indexDataConfig->getIndexType();

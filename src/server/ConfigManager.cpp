@@ -79,6 +79,7 @@ const char* const ConfigManager::logLevelString = "loglevel";
 const char* const ConfigManager::maxDocsString = "maxdocs";
 const char* const ConfigManager::maxMemoryString = "maxmemory";
 const char* const ConfigManager::maxRetryOnFailureString = "maxretryonfailure";
+const char* const ConfigManager::sharedLibraryPath = "sharedlibrarypath";
 const char* const ConfigManager::maxSearchThreadsString = "maxsearchthreads";
 const char* const ConfigManager::mergeEveryMWritesString = "mergeeverymwrites";
 const char* const ConfigManager::mergeEveryNSecondsString = "mergeeverynseconds";
@@ -280,6 +281,7 @@ CoreInfo_t::CoreInfo_t(const CoreInfo_t &src)
     mongoCollection = src.mongoCollection;
     mongoListenerWaitTime = src.mongoListenerWaitTime;
     mongoListenerMaxRetryOnFailure = src.mongoListenerMaxRetryOnFailure;
+    mongoSharedLibraryPath = src.mongoSharedLibraryPath;
 
     isPrimSearchable = src.isPrimSearchable;
 
@@ -474,6 +476,15 @@ void ConfigManager::parseMongoDb(const xml_node &mongoDbNode, CoreInfo_t *coreIn
         coreInfo->mongoListenerMaxRetryOnFailure = childNode.text().as_uint(3);
     } else {
         coreInfo->mongoListenerMaxRetryOnFailure = 3;
+    }
+
+    childNode = mongoDbNode.child(sharedLibraryPath);
+    if(childNode && childNode.text()){
+    	coreInfo->mongoSharedLibraryPath = childNode.text().get();
+    } else {
+    	parseError << "mongo shared library path is not set. \n";
+    	configSuccess = false;
+    	return;
     }
 
     // For MongoDB as a data source , primary key must be "_id" which is a unique key generated
@@ -2607,6 +2618,14 @@ const unsigned ConfigManager::getMongoListenerMaxRetryCount(const string &coreNa
         return getDefaultCoreInfo()->mongoListenerMaxRetryOnFailure;
     }
     return ((CoreInfoMap_t) coreInfoMap)[coreName]->mongoListenerMaxRetryOnFailure;
+}
+
+const string& ConfigManager::getMongoSharedLibraryPath(const string &coreName) const
+{
+	if(coreName.compare("") == 0) {
+		return getDefaultCoreInfo()->mongoSharedLibraryPath;
+	}
+	  return ((CoreInfoMap_t) coreInfoMap)[coreName]->mongoSharedLibraryPath;
 }
 
 CoreInfo_t *ConfigManager::getDefaultCoreInfo() const
