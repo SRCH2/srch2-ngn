@@ -165,8 +165,6 @@ private:
     QueryEvaluatorRuntimeParametersContainer parameters;
     CacheManager *cacheManager;
     PhysicalOperatorFactory * physicalOperatorFactory;
-    //PhysicalPlanRecordItemFactory * physicalPlanRecordItemFactory;
-    //unsigned physicalPlanRecordItemPoolHandle;
     PhysicalPlanRecordItemPool * physicalPlanRecordItemPool;
 
     shared_ptr<vectorview<ForwardListPtr> > forwardIndexDirectoryReadView;

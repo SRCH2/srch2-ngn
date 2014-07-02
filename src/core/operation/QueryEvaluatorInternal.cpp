@@ -68,7 +68,6 @@ QueryEvaluatorInternal::QueryEvaluatorInternal(IndexReaderWriter *indexer , Quer
     this->cacheManager = dynamic_cast<CacheManager*>(indexer->getCache());
     this->indexer = indexer;
     setPhysicalOperatorFactory(new PhysicalOperatorFactory());
-    //setPhysicalPlanRecordItemFactory(this->cacheManager->getPhysicalPlanRecordItemFactory());
     this->physicalPlanRecordItemPool = new PhysicalPlanRecordItemPool();
     setForwardIndex_ReadView();
 }
