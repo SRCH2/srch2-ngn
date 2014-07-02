@@ -167,7 +167,7 @@ void RecordSerializerUtil::cleanAndAppendToBuffer(const string& in, string& out)
 	unsigned inIdx = 0;
 	while (inIdx < inLen) {
 		// remove non printable characters
-		if (in[inIdx] < 32) {
+		if ( static_cast<unsigned> (in[inIdx]) < 32) {
 			++inIdx; continue;
 		}
 		switch(in[inIdx]) {
