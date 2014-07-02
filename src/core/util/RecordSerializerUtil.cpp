@@ -167,7 +167,9 @@ void RecordSerializerUtil::cleanAndAppendToBuffer(const string& in, string& out)
 	unsigned inIdx = 0;
 	while (inIdx < inLen) {
 		// remove non printable characters
-		// All the non-ASCII code is >= 128, which is negative number if we didn't cast it
+		// A byte of a non-ASCII character can be >= 128. 
+		// For example, the utf8 byte array of "李" is e6-9d-8e. 
+		// Thus "in[inIdx]" will be negative, and we have to treat it as an unsigned value.
 		if ( static_cast<unsigned char> (in[inIdx]) < 32) {
 			++inIdx; continue;
 		}
