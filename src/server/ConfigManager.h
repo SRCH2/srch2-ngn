@@ -405,7 +405,7 @@ private:
     static const char* const mergeEveryNSecondsString;
     static const char* const mergePolicyString;
     static const char* const mongoDbString;
-    static const char* const sharedLibraryPath;
+    static const char* const mongoDbSharedLibraryPath;
     static const char* const nameString;
     static const char* const portString;
     static const char* const porterStemFilterString;

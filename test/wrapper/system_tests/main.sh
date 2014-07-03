@@ -719,8 +719,15 @@ rm -rf data/ multiport/core?/*.idx
 test_id="adapter_mongo"
 printTestBanner "$test_id"
 python ./adapter_mongo/MongoTest.py $SRCH2_ENGINE ./adapter_mongo/queries.txt  | eval "${html_escape_command}" >> system_test.log 2>&1
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
+
+fun_ret=${PIPESTATUS[0]}
+if [ $fun_ret -gt 0 ]; then
+    if [ $fun_ret -eq 10 ]; then
+        echo "-- WARNING: Can not connect to the MongoDB " >> ${output}
+    else
+        echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
+    fi
+
     if [ $force -eq 0 ]; then
 	exit 255
     fi
@@ -729,6 +736,7 @@ else
 fi
 rm -rf data/*.idx
 rm -rf data/mongodb_data
+
 
 # clear the output directory. First make sure that we are in correct directory
 if [ "$(pwd)" = "$SYSTEM_TEST_DIR" ]; then

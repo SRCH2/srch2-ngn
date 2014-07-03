@@ -31,8 +31,12 @@ void DataConnectorThread::bootStrapConnector(
 	DataConnector *connector = getDataConnector(pdlHandle,	//Get the pointer of the specific library
 			server->configLookUp(ServerInterfaceInternal::DATABASE_SHARED_LIBRARY_PATH));
 
-	if (connector == NULL)
-		return;
+	if (connector == NULL) {
+		Logger::error(
+				"Can not open the shared library. Either the shared library is not found or the engine is built in static mode, exit.");
+		exit(1);	//Exit if can not open the shared library
+	}
+
 
 	if (connector->init(server)) {
 		if (!checkIndexExistence((void*) server)) {
@@ -45,6 +49,7 @@ void DataConnectorThread::bootStrapConnector(
 	//After the listener;
 
 //Supressing specific warnings on gcc/g++. http://www.mr-edd.co.uk/blog/supressing_gcc_warnings
+//The warnings g++ spat out is to do with an invalid cast from a pointer-to-object to a pointer-to-function before gcc 4.
 #ifdef __GNUC__
 __extension__
 #endif
@@ -75,14 +80,18 @@ void DataConnectorThread::getDataConnectorThread(
 //Get the pointer and handle to the specific connector in shared library.
 DataConnector * DataConnectorThread::getDataConnector(void * pdlHandle,
 		std::string sharedLibraryPath) {
+#ifndef BUILD_STATIC
 	std::string libName = sharedLibraryPath;
+
 	pdlHandle = dlopen(libName.c_str(), RTLD_LAZY);	//Open the shared library.
+
 	if (!pdlHandle) {
 		Logger::error("Fail to load shared library %c due to %c", libName.c_str(), dlerror());
 		return NULL;
 	}
 
 //Supressing specific warnings on gcc/g++. http://www.mr-edd.co.uk/blog/supressing_gcc_warnings
+//The warnings g++ spat out is to do with an invalid cast from a pointer-to-object to a pointer-to-function before gcc 4.
 #ifdef __GNUC__
 __extension__
 #endif
@@ -97,6 +106,8 @@ __extension__
 	DataConnector * connector = create_dataConnector();	//Call the "create" func in the shared library.
 
 	return connector;
+#endif
+	return NULL;
 }
 
 bool DataConnectorThread::checkIndexExistence(void * server) {

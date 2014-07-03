@@ -79,12 +79,12 @@ const char* const ConfigManager::logLevelString = "loglevel";
 const char* const ConfigManager::maxDocsString = "maxdocs";
 const char* const ConfigManager::maxMemoryString = "maxmemory";
 const char* const ConfigManager::maxRetryOnFailureString = "maxretryonfailure";
-const char* const ConfigManager::sharedLibraryPath = "sharedlibrarypath";
 const char* const ConfigManager::maxSearchThreadsString = "maxsearchthreads";
 const char* const ConfigManager::mergeEveryMWritesString = "mergeeverymwrites";
 const char* const ConfigManager::mergeEveryNSecondsString = "mergeeverynseconds";
 const char* const ConfigManager::mergePolicyString = "mergepolicy";
 const char* const ConfigManager::mongoDbString = "mongodb";
+const char* const ConfigManager::mongoDbSharedLibraryPath = "mongodbsharedlibrarypath";
 const char* const ConfigManager::nameString = "name";
 const char* const ConfigManager::portString = "port";
 const char* const ConfigManager::porterStemFilterString = "PorterStemFilter";
@@ -478,7 +478,7 @@ void ConfigManager::parseMongoDb(const xml_node &mongoDbNode, CoreInfo_t *coreIn
         coreInfo->mongoListenerMaxRetryOnFailure = 3;
     }
 
-    childNode = mongoDbNode.child(sharedLibraryPath);
+    childNode = mongoDbNode.child(mongoDbSharedLibraryPath);
     if(childNode && childNode.text()){
     	coreInfo->mongoSharedLibraryPath = childNode.text().get();
     } else {

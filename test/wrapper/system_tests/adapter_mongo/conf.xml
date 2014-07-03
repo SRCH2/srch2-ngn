@@ -128,7 +128,7 @@
         <db>srch2Test</db>
         <collection>movies</collection>
         <listenerWaitTime>3</listenerWaitTime>
-	<sharedLibraryPath>../../../db_connectors/build/libmongodbConnector.so</sharedLibraryPath>
+	<mongoDbSharedLibraryPath>../../../db_connectors/build/libmongodbConnector.so</mongoDbSharedLibraryPath>
     </mongodb>
          
 </config>
