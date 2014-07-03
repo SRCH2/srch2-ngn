@@ -1,3 +1,9 @@
+IF (ANDROID) 
+   SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src-0.5.0/android/libs/armeabi-v7a/libjsoncpp.a)
+ELSE()
+   SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src-0.5.0/libs/linux-gcc-${gcc_compiler_version}/libjson_linux-gcc-${gcc_compiler_version}_libmt.a)
+ENDIF()
+
 FILE(GLOB SRCH2_ADAPTER_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.cpp")
 
 INCLUDE_DIRECTORIES(
