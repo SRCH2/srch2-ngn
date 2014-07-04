@@ -459,6 +459,7 @@ void parseProgramArguments(int argc, char** argv,
         po::options_description& description,
         po::variables_map& vm_command_line_args) {
     description.add_options()("config-file",po::value<string>(), "Path to the config file")
+    		("OAuth", po::value<string>(), "Path to authorization key file")
             ("help", "Prints help message")
             ("version", "Prints version number of the engine");
     try {
@@ -763,7 +764,27 @@ int main(int argc, char** argv) {
         exit(-1);
     } 
 
+    std::string pathToKey = "";
+    std::string tempKeyValue = "";
+    if(vm_command_line_args.count("OAuth")){
+    	pathToKey = vm_command_line_args["OAuth"].as<string>();
+    	int status = ::access(pathToKey.c_str(), F_OK);
+    	if (status != 0) {
+    		std::cout << "OAuth key file = '" << pathToKey
+    	            << "' not found or could not be read" << std::endl;
+    	    return -1;
+    	}else{
+    		ifstream keyFile(pathToKey.c_str());
+    		if(keyFile.is_open()){
+    			getline(keyFile, tempKeyValue);
+    		}
+    		keyFile.close();
+    	}
+    }
+
     ConfigManager *serverConf = new ConfigManager(srch2_config_file);
+    ConfigManager::setAuthorizationKey(tempKeyValue);
+    cout << "Checking OAuth function " << ConfigManager::getAuthorizationKey() << "\n";
 
     serverConf->loadConfigFile();
 

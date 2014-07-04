@@ -38,6 +38,8 @@ const char* const QueryParser::filterQueryParamName = "fq"; //solr
 const char* const QueryParser::queryFieldBoostParamName = "qf"; //solr
 const char* const QueryParser::isFuzzyParamName = "fuzzy"; //srch2
 const char* const QueryParser::docIdParamName = "docid"; //srch2
+const char* const QueryParser::keyParamName = "OAuth"; //srch2
+
 // local parameter params
 const char* const QueryParser::lpKeyValDelimiter = "="; //solr
 const char* const QueryParser::lpQueryBooleanOperatorParamName =
@@ -200,6 +202,12 @@ bool QueryParser::parse() {
      */
 
     // do some parsing
+
+        if(ConfigManager::getAuthorizationKey() != ""){
+            if(!this->parseKey()){
+                return false;
+            }
+        }
     try {
         if(this->docIdParser()){
             return true;
@@ -240,6 +248,25 @@ bool QueryParser::parse() {
                         "Ooops! Something went wrong while parsing the query. If you face this again, please contact srch2."));
     }
     return !this->isParsedError; // return true for success, false for parse error
+}
+
+bool QueryParser::parseKey(){
+    Logger::debug("checking for key parameter");
+    const char * authorizationKey = evhttp_find_header(&headers,
+                QueryParser::keyParamName);
+    if(authorizationKey){
+    	if(authorizationKey == ConfigManager::getAuthorizationKey()){
+    		return true;
+    	}else{
+    		Logger::console("Wrong authorization key");
+    		return false;
+    	}
+
+    }
+    else{
+    	Logger::console("Authorization key not preset");
+    	return false;
+    }
 }
 
 bool QueryParser::docIdParser(){

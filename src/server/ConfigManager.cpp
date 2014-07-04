@@ -33,6 +33,7 @@ using namespace srch2::instantsearch;
 namespace srch2 {
 namespace httpwrapper { 
 
+string ConfigManager::authorizationKey = "";
 // configuration file tag and attribute names for ConfigManager
 // *MUST* be lowercase
 const char* const ConfigManager::accessLogFileString = "accesslogfile";
@@ -2616,6 +2617,15 @@ CoreInfo_t *ConfigManager::getDefaultCoreInfo() const
     return coreInfo;
     //        return coreInfoMap[getDefaultCoreName()];
 }
+
+ string ConfigManager::getAuthorizationKey(){
+	return ConfigManager::authorizationKey;
+}
+
+ void ConfigManager::setAuthorizationKey(string key){
+	ConfigManager::authorizationKey = key;
+}
+
 
 unsigned short CoreInfo_t::getPort(PortType_t portType) const
 {
