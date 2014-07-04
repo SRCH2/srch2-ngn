@@ -137,7 +137,6 @@ private:
     static const char* const queryFieldBoostParamName;//solr
     static const char* const isFuzzyParamName; //srch2
     static const char* const docIdParamName;
-    static const char* const keyParamName;
 
     // local parameter params
     static const char* const lpKeyValDelimiter; //solr
@@ -173,12 +172,6 @@ private:
     }
     //searchType
     static const char* const searchType;
-
-    /*
-     * example: key=encryptionKey
-     * if the encryptionKey matches the key written in the file, only then request will be served
-     */
-    bool parseKey();
 
     /*
      * example: docid=123

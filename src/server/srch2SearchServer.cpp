@@ -159,8 +159,44 @@ static unsigned short int getLibeventHttpRequestPort(struct evhttp_request *req)
     return port;
 }
 
+
+/*
+ * example: OAuth=Hey
+ * if the authorization key matches with the key written in the file, only then request will be served
+ */
+static bool parseKey(evhttp_request *req){
+    Logger::debug("checking for key parameter");
+    evkeyvalq headers;
+    evhttp_parse_query(req->uri, &headers);
+
+    const char * authorizationKey = evhttp_find_header(&headers,
+                ConfigManager::OAuthParam);
+    if(authorizationKey){
+    	if(authorizationKey == ConfigManager::getAuthorizationKey()){
+    		return true;
+    	}else{
+    		Logger::console("Wrong authorization key");
+    		return false;
+    	}
+
+    }
+    else{
+    	Logger::console("Authorization key not preset");
+    	return false;
+    }
+}
+
+
+
 static bool checkOperationPermission(evhttp_request *req, Srch2Server *srch2Server, srch2http::PortType_t portType)
 {
+	 if(ConfigManager::getAuthorizationKey() != ""){
+	     if(!parseKey(req)){
+	         cb_notfound(req, static_cast<void *> (srch2Server));
+	         return false;
+	     }
+	 }
+
     struct portMap_t {
         srch2http::PortType_t portType;
         const char *operationName;
@@ -784,7 +820,6 @@ int main(int argc, char** argv) {
 
     ConfigManager *serverConf = new ConfigManager(srch2_config_file);
     ConfigManager::setAuthorizationKey(tempKeyValue);
-    cout << "Checking OAuth function " << ConfigManager::getAuthorizationKey() << "\n";
 
     serverConf->loadConfigFile();
 

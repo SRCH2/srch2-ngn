@@ -33,6 +33,7 @@ using namespace srch2::instantsearch;
 namespace srch2 {
 namespace httpwrapper { 
 
+const char* const ConfigManager::OAuthParam = "OAuth"; //srch2
 string ConfigManager::authorizationKey = "";
 // configuration file tag and attribute names for ConfigManager
 // *MUST* be lowercase

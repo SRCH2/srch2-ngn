@@ -134,6 +134,7 @@ inline  enum PortType_t incrementPortType(PortType_t &oldValue)
 class ConfigManager {
 public:
     typedef std::map<const string, CoreInfo_t *> CoreInfoMap_t;
+    static const char* const OAuthParam;
 
 private:
     static string authorizationKey;
