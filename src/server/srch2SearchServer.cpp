@@ -113,6 +113,25 @@ static void cb_notfound(evhttp_request *req, void *arg)
     }
 }
 
+/**
+ * Wrong authorization key event handler.
+ * @param req evhttp request object
+ * @param arg optional argument
+ */
+static void cb_wrongauthorizationkey(evhttp_request *req, void *arg)
+{
+    evhttp_add_header(req->output_headers, "Content-Type",
+            "application/json; charset=UTF-8");
+    try {
+        evhttp_send_reply(req, HTTP_BADREQUEST, "Wrong authorization key", NULL);
+    } catch (exception& e) {
+        // exception caught
+        Logger::error(e.what());
+        srch2http::HTTPRequestHandler::handleException(req);
+    }
+}
+
+
 /*
  * Helper function to parse HTTP port from it's input headers.  Assumes a little knowledge of http_request
  * internals in libevent.
@@ -164,38 +183,38 @@ static unsigned short int getLibeventHttpRequestPort(struct evhttp_request *req)
  * example: OAuth=Hey
  * if the authorization key matches with the key written in the file, only then request will be served
  */
-static bool parseKey(evhttp_request *req){
-    Logger::debug("checking for key parameter");
+static bool checkAuthorizationKey(evhttp_request *req){
+
+    if(ConfigManager::getAuthorizationKey() == ""){
+        return true;
+    }
+
     evkeyvalq headers;
     evhttp_parse_query(req->uri, &headers);
 
-    const char * authorizationKey = evhttp_find_header(&headers,
-                ConfigManager::OAuthParam);
-    if(authorizationKey){
-    	if(authorizationKey == ConfigManager::getAuthorizationKey()){
-    		return true;
-    	}else{
-    		Logger::console("Wrong authorization key");
-    		return false;
-    	}
+    const char * authorizationKey = evhttp_find_header(&headers, ConfigManager::OAuthParam);
 
+    if(!authorizationKey){
+         Logger::console("Authorization key not present in the URL");
+         return false;
     }
-    else{
-    	Logger::console("Authorization key not preset");
-    	return false;
-    }
+
+    if(authorizationKey == ConfigManager::getAuthorizationKey())
+         return true;
+
+    Logger::console("Wrong authorization key");
+        return false;
 }
 
 
 
 static bool checkOperationPermission(evhttp_request *req, Srch2Server *srch2Server, srch2http::PortType_t portType)
 {
-	 if(ConfigManager::getAuthorizationKey() != ""){
-	     if(!parseKey(req)){
-	         cb_notfound(req, static_cast<void *> (srch2Server));
-	         return false;
-	     }
+	 if (checkAuthorizationKey(req) == false) {
+	        cb_wrongauthorizationkey(req, static_cast<void *> (srch2Server));
+	        return false;
 	 }
+
 
     struct portMap_t {
         srch2http::PortType_t portType;

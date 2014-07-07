@@ -1719,6 +1719,16 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode, CoreIn
     }
 }
 
+bool checkValidity(string &parameter){
+
+	for(int i = 0; i< parameter.length(); i++){
+		if(!std::isalnum(parameter[i])){
+			return false;
+		}
+	}
+	return true;
+}
+
 void ConfigManager::parse(const pugi::xml_document& configDoc,
                           bool &configSuccess,
                           std::stringstream &parseError,
@@ -1748,10 +1758,11 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
     if(authorizationNode && authorizationNode.text()){
     	authKey = string(authorizationNode.text().get());
     	trimSpacesFromValue(authKey,authorizationKeyTag, parseWarnings);
-    	if(authKey != ""){
+    	if(checkValidity(authKey)){
     	   	ConfigManager::setAuthorizationKey(authKey);
     	}else{
-    		parseWarnings << "Authorization Key is empty string, so it will not be used by the engine! ";
+    		parseWarnings << "Authorization Key is invalid string, so it will not be used by the engine! ";
+    		Logger::console("Authorization Key is invalid string, so it will not be used by the engine! ");
     	}
     }
     // check if data source exists at the top level
@@ -2643,7 +2654,7 @@ CoreInfo_t *ConfigManager::getDefaultCoreInfo() const
 	return ConfigManager::authorizationKey;
 }
 
- void ConfigManager::setAuthorizationKey(string key){
+ void ConfigManager::setAuthorizationKey(string &key){
 	ConfigManager::authorizationKey = key;
 }
 

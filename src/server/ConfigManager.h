@@ -356,7 +356,7 @@ public:
 
     static string getAuthorizationKey();
 
-    static void setAuthorizationKey(string key);
+    static void setAuthorizationKey(string &key);
 
 private:
 
