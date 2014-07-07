@@ -802,7 +802,7 @@ int main(int argc, char** argv) {
     ConfigManager *serverConf = new ConfigManager(srch2_config_file);
     serverConf->loadConfigFile();
 
-    LicenseVerifier::testFile(serverConf->getLicenseKeyFileName());
+    //LicenseVerifier::testFile(serverConf->getLicenseKeyFileName());
     string logDir = getFilePath(serverConf->getHTTPServerAccessLogFile());
     // If the path does't exist, try to create it.
     if (!logDir.empty() && !checkDirExistence(logDir.c_str())) {
