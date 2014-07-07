@@ -983,7 +983,7 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_
                                                  coreParseState.searchableAttributesRequiredFlagVector[i] ,
                                                  coreParseState.searchableAttributesDefaultVector[i] ,
                                                  0 , 1 , coreParseState.searchableAttributesIsMultiValued[i],
-                                                 coreParseState.highlight[i]);
+                                                 coreParseState.searchableAttributesHighlight[i]);
         } else {
             coreInfo->searchableAttributesInfo[coreParseState.searchableFieldsVector[i]] =
                 SearchableAttributeInfoContainer(coreParseState.searchableFieldsVector[i] ,
@@ -991,7 +991,7 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_
                                                  coreParseState.searchableAttributesDefaultVector[i] ,
                                                  0 , boostsMap[coreParseState.searchableFieldsVector[i]] ,
                                                  coreParseState.searchableAttributesIsMultiValued[i],
-                                                 coreParseState.highlight[i]);
+                                                 coreParseState.searchableAttributesHighlight[i]);
         }
     }
 
@@ -1139,15 +1139,7 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
                  *       else => attribute is not used for post processing
                  * }
                  */
-                coreParseState->highlight.push_back(false);
-                if(string(field.attribute(highLightString).value()).compare("") != 0){
-                	tempUse = string(field.attribute(highLightString).value());
-                	if (isValidBool(tempUse)){
-                		if(field.attribute(indexedString).as_bool()){
-                			coreParseState->highlight[coreParseState->highlight.size() - 1] = true;
-                		}
-                	}
-                }
+
 
                 bool isSearchable = false;
                 bool isRefining = false;
@@ -1225,6 +1217,16 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
                     }
                 }
 
+                bool isHighlightEnabled = false;
+                if(string(field.attribute(highLightString).value()).compare("") != 0){
+                	tempUse = string(field.attribute(highLightString).value());
+                	if (isValidBool(tempUse)){
+                		if(field.attribute(indexedString).as_bool()){
+                			isHighlightEnabled = true;
+                		}
+                	}
+                }
+
                 // If this field is the primary key, we only care about searchable and/or refining options.
                 // We want to set primaryKey as a searchable and/or refining field
                 // We assume the primary key is text, we don't get any type from user.
@@ -1237,6 +1239,7 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
                         coreParseState->searchableAttributesDefaultVector.push_back("");
                         // primary key is always required.
                         coreParseState->searchableAttributesRequiredFlagVector.push_back(true);
+                        coreParseState->searchableAttributesHighlight.push_back(isHighlightEnabled);
                     }
 
                     if(isRefining){
@@ -1252,6 +1255,7 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
                     && string(field.attribute(typeString).value()).compare("") != 0) {
                     if(isSearchable){ // it is a searchable field
                         coreParseState->searchableFieldsVector.push_back(string(field.attribute(nameString).value()));
+                        coreParseState->searchableAttributesHighlight.push_back(isHighlightEnabled);
                         // Checking the validity of field type
                         tempUse = string(field.attribute(typeString).value());
                         if (isValidFieldType(tempUse , true)) {
