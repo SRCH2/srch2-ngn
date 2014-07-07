@@ -182,6 +182,7 @@ static unsigned short int getLibeventHttpRequestPort(struct evhttp_request *req)
 /*
  * example: OAuth=Hey
  * if the authorization key matches with the key written in the file, only then request will be served
+ * If the config file doesn't have a key, then this check always passes.
  */
 static bool checkAuthorizationKey(evhttp_request *req){
 
@@ -194,14 +195,17 @@ static bool checkAuthorizationKey(evhttp_request *req){
 
     const char * authorizationKey = evhttp_find_header(&headers, ConfigManager::OAuthParam);
 
+    //If the URL doesn't have a key, the test fails.
     if(!authorizationKey){
          Logger::console("Authorization key not present in the URL");
          return false;
     }
 
+    // If the key in the URL matches the key in the config file, the test passes.
     if(authorizationKey == ConfigManager::getAuthorizationKey())
          return true;
 
+    // If the key in the URL doesn't match the key in the config file, the test fails.
     Logger::console("Wrong authorization key");
         return false;
 }

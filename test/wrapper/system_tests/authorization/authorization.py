@@ -1,5 +1,5 @@
-#this test is used for exact A1
-#using: python exact_A1.py queriesAndResults.txt
+#This test is used to check authorization feature of the engine
+#OAuth parameter is sent in the http request
 
 import sys, urllib2, json, time, subprocess, os, commands, signal
 
@@ -23,8 +23,6 @@ def confirmPortAvailable(port, OAuth) :
         return False # unexpected error response - nonetheless port must be in use
     return False # no error - port already in use
 
-
-
 def pingServer(port, OAuth):
     query = 'q=march'
     timeout = 15
@@ -38,7 +36,6 @@ def pingServer(port, OAuth):
         print "WARNING: Timed out waiting for the server to start!"
         return -1
     return 0
-
 
 #Function of checking the results
 def checkResult(query, responseJson,resultValue):
@@ -75,7 +72,6 @@ def checkResult(query, responseJson,resultValue):
         return 0
     return 1
 
-
 #prepare the query based on the valid syntax
 def prepareQuery(queryKeywords):
     query = ''
@@ -107,9 +103,7 @@ def testExactA1(queriesAndResultsPath, binary_path, authKey):
 
     print 'starting engine: ' + args[0] + ' ' + args[1]
     serverHandle = test_lib.startServer(args)
-
     pingServer( port, authKey)
-
     #construct the query
     failCount = 0
     f_in = open(queriesAndResultsPath, 'r')
@@ -126,31 +120,8 @@ def testExactA1(queriesAndResultsPath, binary_path, authKey):
     response = urllib2.urlopen(query).read()
     response_json = json.loads(response)
     #check the result
-    print response
     failCount += checkResult(query, response_json['results'], resultValue )
-    if(failCount > 0):
-        return failCount
-    
-    line = f_in.readline()
-    #get the query keyword and results
-    value=line.split('||')
-    queryValue=value[0].split()
-    resultValue=(value[1]).split()
-    #construct the query
-    query='http://localhost:' + port + '/search?OAuth=' + wrongAuthKey + '&'
-    query = query + prepareQuery(queryValue)    
-    #print query
-    #do the query
-    response = urllib2.urlopen(query).read()
-    print response
-    #check the result
-    failCount += checkResult(query, response_json['results'], resultValue )
-
-    if(failCount > 0):
-        return failCount
-   
     test_lib.killServer(serverHandle)
-    print '=============================='
     return failCount
 
 def testWithNoAuthKey(queriesAndResultsPath, binary_path):
@@ -181,14 +152,12 @@ def testWithNoAuthKey(queriesAndResultsPath, binary_path):
         #do the query
         response = urllib2.urlopen(query).read()
         response_json = json.loads(response)
-
         #check the result
         failCount += checkResult(query, response_json['results'], resultValue )
 
     test_lib.killServer(serverHandle)
     print '=============================='
     return failCount
-
 
 if __name__ == '__main__':      
     #Path of the query file
