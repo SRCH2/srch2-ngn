@@ -35,7 +35,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
 ##1. Overview###{id="overview"}
 
-This tutorial shows how to use SRCH2 to do powerful text search on [MongoDB](http://www.mongodb.org/). We assume that you have already downloaded and installed MongoDB, and its "bin" directory is already included in your PATH environment variable so that you can run those MongoDB commands easily. We also assume that you have downloaded a SRCH2 engine with a valid license key.  If not, follow the instructions in this [page](install.html) first.
+This tutorial shows how to use SRCH2 to do powerful text search on [MongoDB](http://www.mongodb.org/). We assume that you have already downloaded and installed MongoDB, and its "bin" directory is already included in your PATH environment variable so that you can run those MongoDB commands easily. 
 
 Notice that the SRCH2 engine works with a MongoDB server running with the replication mode enabled. Follow these [instructions](http://docs.mongodb.org/manual/tutorial/convert-standalone-to-replica-set/) to enable this mode.  The MongoDB host specified in the configuration file should be the primary of the replica set.  The SRCH2 engine collects incremental inserts/deletes/updates on MongoDB from its oplog.
 
