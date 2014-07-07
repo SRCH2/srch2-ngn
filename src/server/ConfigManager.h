@@ -106,7 +106,7 @@ struct CoreConfigParseState_t {
     vector<bool> searchableAttributesRequiredFlagVector;
     vector<string> searchableAttributesDefaultVector;
     vector<bool> searchableAttributesIsMultiValued;
-    vector<bool> highlight;
+    vector<bool> searchableAttributesHighlight;
 
     CoreConfigParseState_t() : hasLatitude(false), hasLongitude(false) {};
 };
