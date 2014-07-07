@@ -33,6 +33,10 @@ using namespace srch2::instantsearch;
 namespace srch2 {
 namespace httpwrapper { 
 
+const char* const ConfigManager::OAuthParam = "OAuth";
+const char* const ConfigManager::authorizationKeyTag = "authorization-key";
+
+string ConfigManager::authorizationKey = "";
 // configuration file tag and attribute names for ConfigManager
 // *MUST* be lowercase
 const char* const ConfigManager::accessLogFileString = "accesslogfile";
@@ -1715,6 +1719,16 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode, CoreIn
     }
 }
 
+bool checkValidity(string &parameter){
+
+	for(int i = 0; i< parameter.length(); i++){
+		if(!std::isalnum(parameter[i])){
+			return false;
+		}
+	}
+	return true;
+}
+
 void ConfigManager::parse(const pugi::xml_document& configDoc,
                           bool &configSuccess,
                           std::stringstream &parseError,
@@ -1738,6 +1752,19 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
         return;
     }
 
+    string authKey = "";
+    //Check for authorization key
+    xml_node authorizationNode = configNode.child(authorizationKeyTag);
+    if(authorizationNode && authorizationNode.text()){
+    	authKey = string(authorizationNode.text().get());
+    	trimSpacesFromValue(authKey,authorizationKeyTag, parseWarnings);
+    	if(checkValidity(authKey)){
+    	   	ConfigManager::setAuthorizationKey(authKey);
+    	}else{
+    		parseWarnings << "Authorization Key is invalid string, so it will not be used by the engine! ";
+    		Logger::console("Authorization Key is invalid string, so it will not be used by the engine! ");
+    	}
+    }
     // check if data source exists at the top level
     xml_node topDataFileNode = childNode.child(dataFileString);
     if (topDataFileNode) {
@@ -2622,6 +2649,15 @@ CoreInfo_t *ConfigManager::getDefaultCoreInfo() const
     return coreInfo;
     //        return coreInfoMap[getDefaultCoreName()];
 }
+
+ string ConfigManager::getAuthorizationKey(){
+	return ConfigManager::authorizationKey;
+}
+
+ void ConfigManager::setAuthorizationKey(string &key){
+	ConfigManager::authorizationKey = key;
+}
+
 
 unsigned short CoreInfo_t::getPort(PortType_t portType) const
 {

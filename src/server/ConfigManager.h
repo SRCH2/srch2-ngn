@@ -134,8 +134,10 @@ inline  enum PortType_t incrementPortType(PortType_t &oldValue)
 class ConfigManager {
 public:
     typedef std::map<const string, CoreInfo_t *> CoreInfoMap_t;
+    static const char* const OAuthParam;
 
 private:
+    static string authorizationKey;
 
     // <config>
     string licenseKeyFile;
@@ -352,9 +354,14 @@ public:
 
     CoreInfo_t *getDefaultCoreInfo() const;
 
+    static string getAuthorizationKey();
+
+    static void setAuthorizationKey(string &key);
+
 private:
 
 // configuration file tag and attribute names for ConfigManager
+    static const char* const authorizationKeyTag;
     static const char* const accessLogFileString;
     static const char* const analyzerString;
     static const char* const cacheSizeString;
@@ -470,6 +477,7 @@ private:
     static const char* const defaultFuzzyPostTag;
     static const char* const defaultExactPreTag;
     static const char* const defaultExactPostTag;
+
 
 };
 
