@@ -23,7 +23,7 @@
             In this config file it should be as "data/sample-data.json"
     -->
     <srch2Home>./</srch2Home>
- 
+    <authentication-key>Hey</authentication-key> 
     <!--
         License Key File
         Required

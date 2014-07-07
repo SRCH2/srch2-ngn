@@ -98,7 +98,7 @@ def prepareQuery(queryKeywords):
     
 def testExactA1(queriesAndResultsPath, binary_path, authKey):
     #Start the engine server
-    args = [ binary_path, '--config-file=./authentication/conf.xml', '--OAuth=file.txt']
+    args = [ binary_path, '--config-file=./authentication/conf-auth.xml']
 
     if confirmPortAvailable(port, authKey) == False:
         print 'Port ' + str(port) + ' already in use - aborting'

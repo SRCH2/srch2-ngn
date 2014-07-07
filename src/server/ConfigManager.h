@@ -361,6 +361,7 @@ public:
 private:
 
 // configuration file tag and attribute names for ConfigManager
+    static const char* const authorizationKeyTag;
     static const char* const accessLogFileString;
     static const char* const analyzerString;
     static const char* const cacheSizeString;

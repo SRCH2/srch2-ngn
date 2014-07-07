@@ -33,7 +33,9 @@ using namespace srch2::instantsearch;
 namespace srch2 {
 namespace httpwrapper { 
 
-const char* const ConfigManager::OAuthParam = "OAuth"; //srch2
+const char* const ConfigManager::OAuthParam = "OAuth";
+const char* const ConfigManager::authorizationKeyTag = "authorization-key";
+
 string ConfigManager::authorizationKey = "";
 // configuration file tag and attribute names for ConfigManager
 // *MUST* be lowercase
@@ -1736,6 +1738,18 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
         return;
     }
 
+    string authKey = "";
+    //Check for authorization key
+    xml_node authorizationNode = configNode.child(authorizationKeyTag);
+    if(authorizationNode && authorizationNode.text()){
+    	authKey = string(authorizationNode.text().get());
+    	trimSpacesFromValue(authKey,authorizationKeyTag, parseWarnings);
+    	if(authKey != ""){
+    	   	ConfigManager::setAuthorizationKey(authKey);
+    	}else{
+    		parseWarnings << "Authorization Key is empty string, so it will not be used by the engine! ";
+    	}
+    }
     // check if data source exists at the top level
     xml_node topDataFileNode = childNode.child(dataFileString);
     if (topDataFileNode) {
