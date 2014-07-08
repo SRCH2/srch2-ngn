@@ -22,10 +22,11 @@ public:
 	virtual int updateRecord(std::string pk, std::string jsonSrting);
 	virtual void saveChanges();
 
-	// this API will provide key based lookup
-	// from engine's connector specific configuration store.
-	//  e.g  "dbname" => "mysql"  (single value)
-	//       "collections" => "collection1, collection2 " (multi value)
+	/*
+	 * "configLookUp" will provide key based lookup from engine's connector
+	 *  specific configuration store. e.g  "dbname" => "mysql"  (single value)
+	 *  "collections" => "collection1, collection2 " (multi value)
+	 */
 	virtual std::string configLookUp(std::string key);
 
 	//Constant keys used in config map
@@ -36,19 +37,20 @@ public:
 	static const std::string DATABASE_HOST;
 	static const std::string DATABASE_COLLECTION;
 	static const std::string DATABASE_TYPE_NAME;
-	static const std::string DATABASE_LISTENER_WATI_TIME;
-	static const std::string DATABASE_MAX_RETRY_ON_FALIFURE;
+	static const std::string DATABASE_LISTENER_WAIT_TIME;
+	static const std::string DATABASE_MAX_RETRY_ON_FAILURE;
 	static const std::string DATABASE_MAX_RETRY_COUNT;
 	static const std::string SRCH2HOME;
 	static const std::string INDEXTYPE;
 	static const std::string INDEXPATH;
 
-	bool isBuildSuccess();
+	//return false if the source is not database
+	bool isDatabase();
 private:
 	void populateConnectorConfig();
 	srch2::httpwrapper::Srch2Server *server;
 	std::map<std::string, std::string> * connectorConfig;
-	bool buildSuccess;
+	bool isDb;
 
 };
 #endif /* __SERVERINTERFACEINTERNAL__ */

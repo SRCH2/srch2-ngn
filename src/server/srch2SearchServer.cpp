@@ -612,7 +612,7 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
     	return 255;
     }
 
-    // loop over cores setting up mongodb and binding all ports to use
+    // loop over cores setting up database connector and binding all ports to use
     for (CoreNameServerMap_t::const_iterator iterator = coreNameServerMap->begin(); iterator != coreNameServerMap->end(); iterator++) {
         const srch2http::CoreInfo_t *coreInfo = config->getCoreInfo(iterator->second->getCoreName());
         if (coreInfo != NULL) {

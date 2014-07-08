@@ -1,7 +1,7 @@
-#  How to use this cmake file. ( Note: later we will integrate it with the main CMakeLists)
+#  How to use this cmake file.
 # > mdkir build
 # > cd build
-# > cmake -DCMAKE_VERBOSE_MAKEFILE=1 ..
+# > cmake ..
 # > make
 
 cmake_minimum_required(VERSION 2.8)
@@ -21,6 +21,6 @@ ADD_LIBRARY(mongodbConnector SHARED ${MONGO_DB_CONNECTOR_SRC} )
 
 SET_TARGET_PROPERTIES(mongodbConnector PROPERTIES COMPILE_FLAGS -fPIC)
 
-set(MONGO_CLIENT_LIBRARY  ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver/mongo-cxx-driver/build/use-system-boost/libmongoclient.so)
+SET(MONGO_CLIENT_LIBRARY  ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver/mongo-cxx-driver/build/use-system-boost/libmongoclient.so)
 
 TARGET_LINK_LIBRARIES(mongodbConnector ${MONGO_CLIENT_LIBRARY} -lboost_system -pthread -lboost_filesystem -lboost_program_options)

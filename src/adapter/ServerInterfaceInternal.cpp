@@ -25,32 +25,32 @@
 using namespace std;
 
 //Constant keys used in config map
-//TODO
 const std::string ServerInterfaceInternal::PRIMARY_KEY = "uniqueKey";
 const std::string ServerInterfaceInternal::DATABASE_NAME = "db";
 const std::string ServerInterfaceInternal::DATABASE_PORT = "port";
 const std::string ServerInterfaceInternal::DATABASE_HOST = "host";
 const std::string ServerInterfaceInternal::DATABASE_COLLECTION = "collection";
 const std::string ServerInterfaceInternal::DATABASE_TYPE_NAME = "dbTypeName";
-const std::string ServerInterfaceInternal::DATABASE_LISTENER_WATI_TIME =
+const std::string ServerInterfaceInternal::DATABASE_LISTENER_WAIT_TIME =
 		"listenerWaitTime";
-const std::string ServerInterfaceInternal::DATABASE_MAX_RETRY_ON_FALIFURE =
+const std::string ServerInterfaceInternal::DATABASE_MAX_RETRY_ON_FAILURE =
 		"maxRetryOnFailure";
 const std::string ServerInterfaceInternal::DATABASE_MAX_RETRY_COUNT =
 		"maxRetryCount";
 const std::string ServerInterfaceInternal::SRCH2HOME = "srch2Home";
 const std::string ServerInterfaceInternal::INDEXTYPE = "indexType";
 const std::string ServerInterfaceInternal::INDEXPATH = "dataDir";
-const std::string ServerInterfaceInternal::DATABASE_SHARED_LIBRARY_PATH = "sharedLibraryPath";
+const std::string ServerInterfaceInternal::DATABASE_SHARED_LIBRARY_PATH =
+        "sharedLibraryPath";
 
 ServerInterfaceInternal::ServerInterfaceInternal(void *server) {
 	this->server = (srch2::httpwrapper::Srch2Server*) server;
 	this->connectorConfig = new std::map<std::string, std::string>();
-	this->buildSuccess = false;
+	this->isDb = false;
 	populateConnectorConfig();	//Get the info needed by the connector
 }
 
-//Called by the connector, accept json format record and insert into the index
+//Called by the connector, accepts json format record and insert into the index
 int ServerInterfaceInternal::insertRecord(std::string jsonString) {
 	stringstream errorMsg;
 	errorMsg << "INSERT : ";
@@ -82,31 +82,34 @@ int ServerInterfaceInternal::deleteRecord(std::string primaryKey) {
 	stringstream errorMsg;
 	errorMsg << "DELETE : ";
 
-	if (primaryKey.size()) {
-		errorMsg << "{\"rid\":\"" << primaryKey << "\",\"delete\":\"";
-		//delete the record from the index
-		switch (server->indexer->deleteRecord(primaryKey)) {
-		case srch2is::OP_FAIL: {
-			errorMsg
-					<< "failed\",\"reason\":\"no record with given primary key\"}";
-			break;
-		}
-		default: // OP_SUCCESS.
-		{
-			errorMsg << "success\"}";
-		}
-		};
-	} else {
-		errorMsg
-				<< "{\"rid\":\"NULL\",\"delete\":\"failed\",\"reason\":\"no record with given primary key\"}";
-	}
+    if (primaryKey.size()) {
+        errorMsg << "{\"rid\":\"" << primaryKey << "\",\"delete\":\"";
+        //delete the record from the index
+        switch (server->indexer->deleteRecord(primaryKey)) {
+        case srch2is::OP_FAIL: {
+            errorMsg << "failed\",\"reason\":\"no record with given"
+                    " primary key\"}";
+            break;
+        }
+        default: // OP_SUCCESS.
+        {
+            errorMsg << "success\"}";
+        }
+        };
+    } else {
+        errorMsg << "{\"rid\":\"NULL\",\"delete\":\"failed\",\"reason\":\""
+                "no record with given primary key\"}";
+    }
 
-	Logger::debug(errorMsg.str().c_str());
-	return 0;
+    Logger::debug(errorMsg.str().c_str());
+    return 0;
 }
 
-//Called by the connector, accept record pkey and json format record and delete the old one create a new one.
-//Primary key is a must because in mongodb, the pk in jsonString is an object.
+/*
+ * Called by the connector, accept record pkey and json format
+ * record and delete the old one create a new one.
+ * Primary key is a must because in mongodb, the pk in jsonString is an object.
+ */
 int ServerInterfaceInternal::updateRecord(std::string pk,
 		std::string jsonString) {
 	stringstream errorMsg;
@@ -126,13 +129,13 @@ int ServerInterfaceInternal::updateRecord(std::string pk,
 	unsigned deletedInternalRecordId;
 	if (primaryKeyStringValue.size()) {
 		srch2is::INDEXWRITE_RETVAL ret =
-				server->indexer->deleteRecordGetInternalId(
-						primaryKeyStringValue, deletedInternalRecordId);
-		if (ret == srch2is::OP_FAIL) {
-			errorMsg
-					<< "failed\",\"reason\":\"no record with given primary key\"}";
-		} else
-			Logger::debug("DATABASE_LISTENER:UPDATE: deleted record ");
+                server->indexer->deleteRecordGetInternalId(
+                        primaryKeyStringValue, deletedInternalRecordId);
+        if (ret == srch2is::OP_FAIL) {
+            errorMsg << "failed\",\"reason\":\"no record "
+                    "with given primary key\"}";
+        } else
+            Logger::debug("DATABASE_LISTENER:UPDATE: deleted record ");
 
 		if (server->indexer->getNumberOfDocumentsInIndex()
 				< this->server->indexDataConfig->getDocumentLimit()) {
@@ -147,7 +150,8 @@ int ServerInterfaceInternal::updateRecord(std::string pk,
 		} else {
 			errorMsg << "failed\",\"reason\":\"insert: Document limit reached."
 					<< endl;
-			/// reaching here means the insert failed, need to resume the deleted old record
+			/// reaching here means the insert failed,
+			//  need to resume the deleted old record
 			srch2::instantsearch::INDEXWRITE_RETVAL ret =
 					server->indexer->recoverRecord(primaryKeyStringValue,
 							deletedInternalRecordId);
@@ -185,7 +189,7 @@ void ServerInterfaceInternal::populateConnectorConfig() {
 	case srch2::httpwrapper::DATA_SOURCE_NOT_SPECIFIED:
 		break;
 	case srch2::httpwrapper::DATA_SOURCE_JSON_FILE:
-		buildSuccess = false;
+	    isDb = false;
 		break;
 	case srch2::httpwrapper::DATA_SOURCE_MONGO_DB: {
 		(*connectorConfig)[DATABASE_TYPE_NAME] = "mongodb";
@@ -197,27 +201,29 @@ void ServerInterfaceInternal::populateConnectorConfig() {
 				srch2Server->indexDataConfig->getMongoServerPort();
 		(*connectorConfig)[DATABASE_COLLECTION] =
 				srch2Server->indexDataConfig->getMongoCollection();
-		(*connectorConfig)[DATABASE_LISTENER_WATI_TIME] =
+		(*connectorConfig)[DATABASE_LISTENER_WAIT_TIME] =
 				srch2Server->indexDataConfig->getMongoListenerWaitTime();
-		(*connectorConfig)[DATABASE_MAX_RETRY_ON_FALIFURE] =
-				srch2Server->indexDataConfig->getMongoListenerMaxRetryOnFailure();
+		(*connectorConfig)[DATABASE_MAX_RETRY_ON_FAILURE] =
+				srch2Server->
+				indexDataConfig->getMongoListenerMaxRetryOnFailure();
 		(*connectorConfig)[DATABASE_MAX_RETRY_COUNT] =
 				srch2Server->indexDataConfig->getMongoListenerMaxRetryCount();
 		(*connectorConfig)[SRCH2HOME] =
 				srch2Server->indexDataConfig->getSrch2Home();
 		(*connectorConfig)[INDEXPATH] =
-				srch2Server->indexDataConfig->getIndexPath();
-		(*connectorConfig)[DATABASE_SHARED_LIBRARY_PATH] =
-				srch2Server->indexDataConfig->getMongoSharedLibraryPath();
+                srch2Server->indexDataConfig->getIndexPath();
+        (*connectorConfig)[DATABASE_SHARED_LIBRARY_PATH] =
+                srch2Server->indexDataConfig->getMongoSharedLibraryPath();
 
-		srch2::instantsearch::IndexType it =	//Index Type is an integer
-				(srch2::instantsearch::IndexType) srch2Server->indexDataConfig->getIndexType();
-		std::stringstream ss;
-		ss << it;
-		std::string itStr;
+        srch2::instantsearch::IndexType it =	//Index Type is an integer
+                (srch2::instantsearch::IndexType)
+                srch2Server->indexDataConfig->getIndexType();
+        std::stringstream ss;
+        ss << it;
+        std::string itStr;
 		ss >> itStr;
 		(*connectorConfig)[INDEXTYPE] = itStr;
-		buildSuccess = true;
+		isDb = true;
 	}
 		break;
 	default:
@@ -225,9 +231,9 @@ void ServerInterfaceInternal::populateConnectorConfig() {
 	}
 }
 
-//Return true if create this object successfully
-bool ServerInterfaceInternal::isBuildSuccess() {
-	return buildSuccess;
+//return false if the source is not database
+bool ServerInterfaceInternal::isDatabase() {
+	return isDb;
 }
 
 ServerInterfaceInternal::~ServerInterfaceInternal() {

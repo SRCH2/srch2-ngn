@@ -723,7 +723,7 @@ python ./adapter_mongo/MongoTest.py $SRCH2_ENGINE ./adapter_mongo/queries.txt  |
 fun_ret=${PIPESTATUS[0]}
 if [ $fun_ret -gt 0 ]; then
     if [ $fun_ret -eq 10 ]; then
-        echo "-- WARNING: Can not connect to the MongoDB " >> ${output}
+        echo "-- Test case skipped: Cannot connect to the MongoDB. Check instructions at https://srch2inc.atlassian.net/browse/SRCN-457 and http://docs.mongodb.org/manual/tutorial/convert-standalone-to-replica-set/ " >> ${output}
     else
         echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
     fi

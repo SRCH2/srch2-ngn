@@ -1,3 +1,10 @@
+/*
+ * mongodbconnector.h
+ *
+ *  Created on: Jun 9, 2014
+ *      Author: liusrch2
+ */
+
 #ifndef __MONGODBCONNECTOR_H__
 #define __MONGODBCONNECTOR_H__
 
@@ -12,19 +19,32 @@ class MongoDBConnector: public DataConnector {
 public:
 	MongoDBConnector();
 	virtual ~MongoDBConnector();
-	virtual bool init(ServerInterface *serverHandle);	//Init the connector, call connect
-	virtual void* runListener();	//Listener the oplog and do modification to the engine
-	virtual void createNewIndexes();	//Load the table records and insert into the engine
+
+	//Init the connector, call connect
+	virtual bool init(ServerInterface *serverHandle);
+
+	//Listen to the oplog and do modification to the engine
+	virtual void* runListener();
+
+	//Load the table records and insert into the engine
+	virtual void createNewIndexes();
 private:
 	ServerInterface *serverHandle;
 	mongo::DBClientBase* oplogConnection;
 	mongo::ScopedDbConnection * mongoConnector;
 
-	bool connectToDB();	//Connect to the mongodb
-	time_t getLastExecutedLogTime();	//Load the last time last oplog record executed
-	void saveLastExecutedLogTime(time_t t);	//Save the time last oplog record executed
-	void parseOpLogObject(mongo::BSONObj& bobj, std::string currentNS,
-			mongo::DBClientBase& oplogConnection);	//Parse the record into json format and do the corresponding operation
+	//Connect to the mongodb
+	bool connectToDB();
+
+	//Load the last time last oplog record accessed
+	time_t getLastAccessedLogRecordTime();
+
+	//Save the time last oplog record accessed
+	void setLastAccessedLogRecordTime(time_t t);
+
+	//Parse the record into json format and do the corresponding operation
+	void parseOpLogObject(mongo::BSONObj& bobj, std::string filterNamespace,
+			mongo::DBClientBase& oplogConnection);
 }
 ;
 

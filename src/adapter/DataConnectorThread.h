@@ -5,31 +5,35 @@
  *      Author: liusrch2
  */
 
-#ifndef DATACONNECTORTHREAD_H_
-#define DATACONNECTORTHREAD_H_
+#ifndef __DATACONNECTORTHREAD_H__
+#define __DATACONNECTORTHREAD_H__
 
 #include <string>
 #include "DataConnector.h"
 #include "ServerInterfaceInternal.h"
 
 //Arguments passed to the thread
-struct ThreadArguments {
+struct ConnectorThreadArguments {
 	srch2::httpwrapper::DataSourceType dbType;
 	ServerInterface* server;
 };
 
-void * spawnConnector(void *arg);	//Called by the pthread_create, create the database connector
+//Called by the pthread_create, create the database connector
+void * spawnConnector(void *arg);
 
 class DataConnectorThread {
 public:
-	static void getDataConnectorThread(		//Create thread if interface built successfully.
+    //Create thread if interface built successfully.
+	static void getDataConnectorThread(
 			srch2::httpwrapper::DataSourceType dbType, void * server);
-	static void bootStrapConnector(srch2::httpwrapper::DataSourceType dbType,	//The main function run by the thread, get connector and start listener.
+	//The main function run by the thread, get connector and start listener.
+	static void bootStrapConnector(srch2::httpwrapper::DataSourceType dbType,
 			ServerInterface* server);
 private:
 	static bool checkIndexExistence(void * server);
-	static DataConnector * getDataConnector(void * pdlHandle,	//Get the pointer and handle to the specific connector in shared library.
+	//Get the pointer and handle to the specific connector in shared library.
+	static DataConnector * getDataConnector(void * pdlHandle,
 			std::string sharedLibraryPath);
 };
 
-#endif /* DATACONNECTORTHREAD_H_ */
+#endif /* __DATACONNECTORTHREAD_H__ */
