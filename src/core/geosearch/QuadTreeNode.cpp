@@ -1,11 +1,11 @@
 /*
- * QTreeNode.cpp
+ * QuadTreeNode.cpp
  *
  *  Created on: Jul 1, 2014
  *      Author: mahdi
  */
 
-#include <geosearch/QTreeNode.h>
+#include <geosearch/QuadTreeNode.h>
 #include "util/Logger.h"
 #include "util/Assert.h"
 
@@ -15,26 +15,26 @@ using srch2::util::Logger;
 namespace srch2{
 namespace instantsearch{
 
-/*********PosElement********************************************************/
+/*********GeoElement********************************************************/
 
-PosElement::PosElement(const Record* record, unsigned int recordInternalId)
+GeoElement::GeoElement(const Record* record, unsigned int recordInternalId)
 {
 	this->point.x = record->getLocationAttributeValue().first;
 	this->point.y = record->getLocationAttributeValue().second;
 	this->forwardListID = recordInternalId;
 }
 
-PosElement::PosElement(double x, double y, unsigned int recordInternalId){
+GeoElement::GeoElement(double x, double y, unsigned int recordInternalId){
 	this->point.x = x;
 	this->point.y = y;
 	this->forwardListID = recordInternalId;
 }
 
-double PosElement::getDistance(const Shape & range){
+double GeoElement::getDistance(const Shape & range){
 	return sqrt(range.getMinDist2FromLatLong(this->point.x, this->point.y));
 }
 
-double PosElement::getScore(const SpatialRanker *ranker, const Shape & range){
+double GeoElement::getScore(const SpatialRanker *ranker, const Shape & range){
 	 // calculate the score
 	double minDist2UpperBound = max( range.getSearchRadius2() , MIN_SEARCH_RANGE_SQUARE);
 	double resultMinDist2 = range.getMinDist2FromLatLong(this->point.x, this->point.y);
@@ -42,22 +42,22 @@ double PosElement::getScore(const SpatialRanker *ranker, const Shape & range){
 	return max( distanceRatio * distanceRatio, MIN_DISTANCE_SCORE );
 }
 
-/*********QTreeNode******************************************************/
+/*********QuadTreeNode******************************************************/
 
-QTreeNode::QTreeNode(Rectangle rectangle){
+QuadTreeNode::QuadTreeNode(Rectangle rectangle){
 	this->rectangle = rectangle;
 	this->isLeaf = true;
 	this->numOfElementsInSubtree = 0;
 }
 
-QTreeNode::QTreeNode(Rectangle rectangle, PosElement* elements){
+QuadTreeNode::QuadTreeNode(Rectangle rectangle, GeoElement* elements){
 	this->rectangle = rectangle;
 	this->isLeaf = true;
 	this->numOfElementsInSubtree = 1;
 	this->elements.push_back(elements);
 }
 
-QTreeNode::~QTreeNode(){
+QuadTreeNode::~QuadTreeNode(){
 	if(!isLeaf){
 		for(unsigned i = 0; i < children.size(); i++)
 		{
@@ -68,7 +68,7 @@ QTreeNode::~QTreeNode(){
 	children.clear();
 }
 
-bool QTreeNode::insertPosElement(PosElement* element){
+bool QuadTreeNode::insertGeoElement(GeoElement* element){
 	// A leaf node //
 	if(this->isLeaf){
 		// Split the leaf if it is full
@@ -88,14 +88,14 @@ bool QTreeNode::insertPosElement(PosElement* element){
 	unsigned child = findChildContainingPoint(element->point);
 	if(this->children[child] != NULL){ // This child is already created
 		// recursively call this function at the corresponding child
-		return this->children[child]->insertPosElement(element);
+		return this->children[child]->insertGeoElement(element);
 	}
 
 	// The node doesn't have this child. We need to create a new child.
 	// First create a new rectangle to assign to this child
 	Rectangle newRectangle;
 	createNewRectangle(newRectangle, this->rectangle, child);
-	QTreeNode* newNode = new QTreeNode(newRectangle, element);
+	QuadTreeNode* newNode = new QuadTreeNode(newRectangle, element);
 
 	// Put this new node in children
 	this->children[child] = newNode;
@@ -103,7 +103,7 @@ bool QTreeNode::insertPosElement(PosElement* element){
 	return true;
 }
 
-bool QTreeNode::removePosElement(PosElement* element){
+bool QuadTreeNode::removeGeoElement(GeoElement* element){
 
 	if(this->isLeaf){ // A leaf node
 		// Search the elements to find this element to remove it
@@ -119,7 +119,7 @@ bool QTreeNode::removePosElement(PosElement* element){
 		// Find the child base on location information and recursively call this function at the corresponding child
 		unsigned child = findChildContainingPoint(element->point);
 		if(this->children[child] != NULL){
-			if( this->children[child]->removePosElement(element) ){
+			if( this->children[child]->removeGeoElement(element) ){
 				this->numOfElementsInSubtree--;
 				// if the number of elements in the subtree of this node is less than  MAX_NUM_OF_ELEMENTS we should merge this node.
 				if(this->numOfElementsInSubtree < MAX_NUM_OF_ELEMENTS)
@@ -132,7 +132,7 @@ bool QTreeNode::removePosElement(PosElement* element){
 	return false;
 }
 
-void QTreeNode::getElements(vector <vector<PosElement*>*> & results){
+void QuadTreeNode::getElements(vector <vector<GeoElement*>*> & results){
 	if(this->isLeaf){ // leaf node - just add the pointer of its elements to the results
 		results.push_back(&this->elements);
 	}else{ // internal node - needs to get the elements of all its children recursively
@@ -144,7 +144,7 @@ void QTreeNode::getElements(vector <vector<PosElement*>*> & results){
 	}
 }
 
-void QTreeNode::getElements(vector<PosElement*> & results){
+void QuadTreeNode::getElements(vector<GeoElement*> & results){
 	if(this->isLeaf){ // leaf node - just add all of its elements to the results
 		for(unsigned i = 0 ; i < this->elements.size() ; i++){
 			results.push_back(this->elements[i]);
@@ -157,7 +157,7 @@ void QTreeNode::getElements(vector<PosElement*> & results){
 	}
 }
 
-void QTreeNode::rangeQuery(vector<vector<PosElement*>*> & results, const Shape &range){
+void QuadTreeNode::rangeQuery(vector<vector<GeoElement*>*> & results, const Shape &range){
 	if(this->isLeaf){ // leaf node - just add the pointer of its elements to the results
 		results.push_back(&this->elements);
 	}else{ // internal node - needs to check range of its children with query range for pruning
@@ -171,7 +171,7 @@ void QTreeNode::rangeQuery(vector<vector<PosElement*>*> & results, const Shape &
 	}
 }
 
-void QTreeNode::split(){
+void QuadTreeNode::split(){
 	ASSERT(this->isLeaf == true);
 	this->isLeaf = false; // after split, the node will no longer be a leaf
 	this->numOfElementsInSubtree = 0;
@@ -182,13 +182,13 @@ void QTreeNode::split(){
 
 	// Reinsert all the elements in this node
 	for(unsigned i = 0; i < this->elements.size(); i++)
-		insertPosElement(this->elements[i]);
+		insertGeoElement(this->elements[i]);
 
 	// Now this node is an internal node. So we can clear its elements.
 	this->elements.clear();
 }
 
-void QTreeNode::mergeChildren(){
+void QuadTreeNode::mergeChildren(){
 	// This node should be an internal node for merge.
 	ASSERT(this->numOfElementsInSubtree < MAX_NUM_OF_ELEMENTS );
 	ASSERT(this->elements.size() == 0);
@@ -210,7 +210,7 @@ void QTreeNode::mergeChildren(){
 //      ----------------
 //      |  0   |   1   |
 //      ----------------
-unsigned QTreeNode::findChildContainingPoint(Point& point){
+unsigned QuadTreeNode::findChildContainingPoint(Point& point){
 	double xRatio = (point.x - this->rectangle.min.x) / (this->rectangle.max.x - this->rectangle.min.x);
 	double yRatio = (point.y - this->rectangle.min.y) / (this->rectangle.max.y - this->rectangle.min.y);
 
@@ -226,7 +226,7 @@ unsigned QTreeNode::findChildContainingPoint(Point& point){
 	return x + y * CHILD_NUM_SQRT;
 }
 
-void QTreeNode::createNewRectangle(Rectangle &newRectangle, const Rectangle &rectangle, const unsigned child){
+void QuadTreeNode::createNewRectangle(Rectangle &newRectangle, const Rectangle &rectangle, const unsigned child){
 	unsigned x = (unsigned)(child % CHILD_NUM_SQRT);
 	unsigned y = (unsigned)(child / CHILD_NUM_SQRT);
 

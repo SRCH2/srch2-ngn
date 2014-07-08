@@ -1,12 +1,12 @@
 /*
- * QTreeNode.h
+ * QuadTreeNode.h
  *
  *  Created on: Jul 1, 2014
  *      Author: mahdi
  */
 
-#ifndef __QTREENODE_H__
-#define __QTREENODE_H__
+#ifndef __QUADTREENODE_H__
+#define __QUADTREENODE_H__
 
 #include <stdlib.h>
 #include <vector>
@@ -20,30 +20,30 @@ using namespace std;
 namespace srch2{
 namespace instantsearch{
 
-const unsigned MAX_NUM_OF_ELEMENTS = 6;    // The maximum number of PosElements each leaf node can have
+const unsigned MAX_NUM_OF_ELEMENTS = 6;    // The maximum number of GeoElements each leaf node can have
 const double MIN_SEARCH_RANGE_SQUARE = (0.24 * 0.24);    // The largest range we should search for, in degree (used in calculating the score)
 const double MIN_DISTANCE_SCORE = 0.05;
 const double MBR_LIMIT = (0.0005 * 0.0005); //0.005 The min size of a single rectangle
 const unsigned CHILD_NUM_SQRT = 2;    // Square root of the maximum number of children each intermediate node can have
 const unsigned CHILD_NUM = (CHILD_NUM_SQRT * CHILD_NUM_SQRT);
 
-class PosElement
+class GeoElement
 {
 public:
 
 	Point point;            // The location point of the record
 	unsigned forwardListID; // Offset of this record in the forwardlist
 
-	PosElement(){};
+	GeoElement(){};
 
-	PosElement(const Record *record, unsigned recordInternalId);
+	GeoElement(const Record *record, unsigned recordInternalId);
 
-	PosElement(double x, double y, unsigned int recordInternalId);
+	GeoElement(double x, double y, unsigned int recordInternalId);
 
-	virtual ~PosElement(){};
+	virtual ~GeoElement(){};
 
 	// Two Elements are equal if they have same recordID
-	bool operator==(const PosElement &e) const
+	bool operator==(const GeoElement &e) const
 	{
 		return forwardListID == e.forwardListID;
 	};
@@ -56,33 +56,33 @@ public:
 
 };
 
-class QTreeNode
+class QuadTreeNode
 {
 public:
-	QTreeNode(){};
+	QuadTreeNode(){};
 
-	QTreeNode(Rectangle rectangle);
+	QuadTreeNode(Rectangle rectangle);
 
-	QTreeNode(Rectangle rectangle, PosElement* elements);
+	QuadTreeNode(Rectangle rectangle, GeoElement* elements);
 
-	virtual ~QTreeNode();
+	virtual ~QuadTreeNode();
 
 	// Insert new geo element to elements for the leaf nodes or insert
 	// the new geo elements in the subtree of this node for the internal nodes.
-	bool insertPosElement(PosElement* element);
+	bool insertGeoElement(GeoElement* element);
 
 	// Remove a geo element from the elements for the leaf nodes or remove
 	// the geo element from the subtree of this node for the internal nodes.
-	bool removePosElement(PosElement* element);
+	bool removeGeoElement(GeoElement* element);
 
 	// return all the elements of the node for leaf nodes or return all the elements
 	// in the subtree of this node for internal nodes.
 	// it doesn't append elements of different leaf nodes with each other
 	// it just return a vector of pointer to these vector of elements
-	void getElements(vector <vector<PosElement*>*> & results);
+	void getElements(vector <vector<GeoElement*>*> & results);
 
 	// return all the geo elements in the query range
-	void rangeQuery(vector<vector<PosElement*>*> & results, const Shape &range);
+	void rangeQuery(vector<vector<GeoElement*>*> & results, const Shape &range);
 
 	Rectangle getRectangle(){
 		return this->rectangle;
@@ -91,9 +91,9 @@ public:
 private:
 	Rectangle rectangle;            // Rectangle boundary of the node
 	bool isLeaf;                    // true->Leaf (children is null), false->internal (elements is null)
-	vector<QTreeNode*> children;    // Pointers to the children if this node is an internal node
+	vector<QuadTreeNode*> children;    // Pointers to the children if this node is an internal node
 	int numOfElementsInSubtree;     // Number of geo elements in the subtree of this node
-	vector<PosElement*> elements;   // Store geo elements if this node is a leaf node
+	vector<GeoElement*> elements;   // Store geo elements if this node is a leaf node
 
 	// Split the leaf node and make it an internal node if the number
 	// of elements is greater than MAX_NUM_OF_ELEMENTS
@@ -110,7 +110,7 @@ private:
 	void createNewRectangle(Rectangle &newrectangle, const Rectangle &rectangle, const unsigned child);
 
 	// Return all the elements of the subtree of this node
-	void getElements(vector<PosElement*> & results);
+	void getElements(vector<GeoElement*> & results);
 };
 
 
@@ -118,4 +118,4 @@ private:
 }
 
 
-#endif /* __QTREENODE_H__ */
+#endif /* __QUADTREENODE_H__ */
