@@ -716,6 +716,7 @@ else
 fi
 rm -rf data/ multiport/core?/*.idx
 
+
 test_id="adapter_mongo"
 printTestBanner "$test_id"
 python ./adapter_mongo/MongoTest.py $SRCH2_ENGINE ./adapter_mongo/queries.txt  | eval "${html_escape_command}" >> system_test.log 2>&1
@@ -736,6 +737,22 @@ else
 fi
 rm -rf data/*.idx
 rm -rf data/mongodb_data
+
+test_id="authentication"
+printTestBanner "$test_id"
+python ./authorization/authorization.py $SRCH2_ENGINE ./authorization/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
+
+if [ ${PIPESTATUS[0]} -gt 0 ]; then
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
+    if [ $force -eq 0 ]; then
+        exit 255
+    fi
+else
+    echo "-- PASSED: $test_id" >> ${output}
+fi
+rm -rf data/ *.idx
+
+
 
 
 # clear the output directory. First make sure that we are in correct directory
