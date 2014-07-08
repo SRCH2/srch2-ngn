@@ -127,8 +127,7 @@ DataConnector * DataConnectorThread::getDataConnector(void * pdlHandle,
 }
 
 bool DataConnectorThread::checkIndexExistence(void * server) {
-    ServerInterfaceInternal* serverInterface =
-            (ServerInterfaceInternal*) server;
+    ServerInterfaceInternal* serverInterface = (ServerInterfaceInternal*) server;
 
     string directoryName = serverInterface->configLookUp(
             ServerInterfaceInternal::INDEXPATH);
@@ -153,8 +152,7 @@ bool DataConnectorThread::checkIndexExistence(void * server) {
         // Check existence of the inverted index file
         // for basic keyword search ("A1")
         if (!checkDirExistence(
-                (directoryName + "/" +
-                        IndexConfig::invertedIndexFileName).c_str()))
+                (directoryName + "/" + IndexConfig::invertedIndexFileName).c_str()))
             return false;
     } else {
         // Check existence of the quadtree index file

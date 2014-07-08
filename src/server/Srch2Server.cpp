@@ -185,32 +185,31 @@ void Srch2Server::createAndBootStrapIndexer()
 	    delete schema;
 	    switch(indexDataConfig->getDataSourceType())
 	    {
-	    case srch2http::DATA_SOURCE_JSON_FILE:
-	        {
-		    // Create from JSON and save to index-dir
-		    Logger::console("Creating indexes from JSON file...");
-		    RecordSerializerUtil::populateStoredSchema(storedAttrSchema, indexer->getSchema());
-		    unsigned indexedCounter = DaemonDataSource::createNewIndexFromFile(indexer,
-		    		storedAttrSchema, indexDataConfig);
-		    /*
-		     *  commit the indexes once bulk load is done and then save it to the disk only
-		     *  if number of indexed record is > 0.
-		     */
-		    indexer->commit();
-		    if (indexedCounter > 0) {
-		        indexer->save();
-			Logger::console("Indexes saved.");
-		    }
-			break;
-		}
-	    default:
-	        {
-		    indexer->commit();
-		    Logger::console("Creating new empty index");
-		}
-		};
-		AnalyzerHelper::saveAnalyzerResource(this->indexDataConfig);
-		break;
+        case srch2http::DATA_SOURCE_JSON_FILE: {
+            // Create from JSON and save to index-dir
+            Logger::console("Creating indexes from JSON file...");
+            RecordSerializerUtil::populateStoredSchema(storedAttrSchema,
+                    indexer->getSchema());
+            unsigned indexedCounter = DaemonDataSource::createNewIndexFromFile(
+                    indexer, storedAttrSchema, indexDataConfig);
+            /*
+             *  commit the indexes once bulk load is done and then save it to the disk only
+             *  if number of indexed record is > 0.
+             */
+            indexer->commit();
+            if (indexedCounter > 0) {
+                indexer->save();
+                Logger::console("Indexes saved.");
+            }
+            break;
+        }
+        default: {
+            indexer->commit();
+            Logger::console("Creating new empty index");
+        }
+        };
+        AnalyzerHelper::saveAnalyzerResource(this->indexDataConfig);
+        break;
 	}
     case srch2http::INDEXLOAD:
         {

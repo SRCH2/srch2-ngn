@@ -616,9 +616,9 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
     for (CoreNameServerMap_t::const_iterator iterator = coreNameServerMap->begin(); iterator != coreNameServerMap->end(); iterator++) {
         const srch2http::CoreInfo_t *coreInfo = config->getCoreInfo(iterator->second->getCoreName());
         if (coreInfo != NULL) {
-		//Create adapter thread for database connectors. Ignore unknown config file (Like JSON file).
-					DataConnectorThread::getDataConnectorThread(
-							coreInfo->getDataSourceType(), (void*) iterator->second);
+            //Create adapter thread for database connectors. Ignore unknown config file (Like JSON file).
+            DataConnectorThread::getDataConnectorThread(
+                    coreInfo->getDataSourceType(), (void*) iterator->second);
             // bind once each port defined for use by this core
             for (enum srch2http::PortType_t portType = static_cast<srch2http::PortType_t> (0); portType < srch2http::EndOfPortType; portType = srch2http::incrementPortType(portType)) {
                 // IETF RFC 6335 specifies port number range is 0 - 65535: http://tools.ietf.org/html/rfc6335#page-11
@@ -726,7 +726,7 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
 }
 
 int main(int argc, char** argv) {
-	if (argc > 1) {
+    if (argc > 1) {
         if (strcmp(argv[1], "--version") == 0) {
             printVersion();
             return 0;

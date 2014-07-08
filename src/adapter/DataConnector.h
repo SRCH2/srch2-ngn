@@ -12,7 +12,9 @@
 
 class ServerInterface {
 public:
-    virtual ~ServerInterface() {};
+    virtual ~ServerInterface() {
+    }
+    ;
     virtual int insertRecord(std::string jsonString) = 0;
     virtual int deleteRecord(std::string primaryKey) = 0;
     virtual int updateRecord(std::string pk, std::string jsonString) = 0;
@@ -28,7 +30,9 @@ public:
 
 class DataConnector {
 public:
-    virtual ~DataConnector() {};
+    virtual ~DataConnector() {
+    }
+    ;
     virtual bool init(ServerInterface *serverHandle) = 0;
     virtual void* runListener() = 0;	//Periodically fetch the data form log
     virtual void createNewIndexes() = 0;	//Create New Indexes from the table.

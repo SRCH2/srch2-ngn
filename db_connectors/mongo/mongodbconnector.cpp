@@ -229,13 +229,15 @@ void* MongoDBConnector::runListener() {
                         }
 
                         // sleep...do not hog the CPU
-                        sleep(atoi(this->serverHandle->configLookUp(
+                        sleep(
+                                atoi(
+                                        this->serverHandle->configLookUp(
                                                 "listenerWaitTime").c_str()));
                     }
                 }
                 query = QUERY(
                         "_id" << mongo::GT << _lastValue).hint(
-                                BSON( "$natural" << 1 ) );
+                        BSON( "$natural" << 1 ) );
             }
         } catch( const mongo::DBException &e ) {
             printf("MongoDb Exception : %s \n", e.what());
@@ -246,7 +248,7 @@ void* MongoDBConnector::runListener() {
             setLastAccessedLogRecordTime(opLogTime);
         }
         sleep(atoi(this->serverHandle->configLookUp(
-                "listenerWaitTime").c_str()));
+                                "listenerWaitTime").c_str()));
     }while(connectToDB());	//Retry connecting to the mongodb
 
     return NULL;
