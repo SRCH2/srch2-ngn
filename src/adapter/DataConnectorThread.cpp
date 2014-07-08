@@ -51,7 +51,7 @@ void DataConnectorThread::bootStrapConnector(
     //After the listener;
 
     /*
-     * Supressing specific warnings on gcc/g++.
+     * Suppress specific warnings on gcc/g++.
      * See: http://www.mr-edd.co.uk/blog/supressing_gcc_warnings
      * The warnings g++ spat out is to do with an invalid cast from
      * a pointer-to-object to a pointer-to-function before gcc 4.
@@ -99,7 +99,7 @@ DataConnector * DataConnectorThread::getDataConnector(void * pdlHandle,
     }
 
     /*
-     * Supressing specific warnings on gcc/g++.
+     * Suppress specific warnings on gcc/g++.
      * See: http://www.mr-edd.co.uk/blog/supressing_gcc_warnings
      * The warnings g++ spat out is to do with an invalid cast from
      * a pointer-to-object to a pointer-to-function before gcc 4.
@@ -118,7 +118,7 @@ DataConnector * DataConnectorThread::getDataConnector(void * pdlHandle,
         return NULL;
     }
 
-    //Call the "create" func in the shared library.
+    //Call the "create" function in the shared library.
     DataConnector * connector = create_dataConnector();
 
     return connector;

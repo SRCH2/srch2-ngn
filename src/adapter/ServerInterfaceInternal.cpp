@@ -77,7 +77,7 @@ int ServerInterfaceInternal::insertRecord(std::string jsonString) {
 	return 0;
 }
 
-//Called by the connector, accept record pkey and delete from the index
+//Called by the connector, accepts record pkey and delete from the index
 int ServerInterfaceInternal::deleteRecord(std::string primaryKey) {
 	stringstream errorMsg;
 	errorMsg << "DELETE : ";
@@ -106,7 +106,7 @@ int ServerInterfaceInternal::deleteRecord(std::string primaryKey) {
 }
 
 /*
- * Called by the connector, accept record pkey and json format
+ * Called by the connector, accepts record pkey and json format
  * record and delete the old one create a new one.
  * Primary key is a must because in mongodb, the pk in jsonString is an object.
  */
