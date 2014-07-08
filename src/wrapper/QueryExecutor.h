@@ -43,7 +43,6 @@ public:
 
 	void execute(QueryResults * finalResults);
 	void executeKeywordSearch(QueryResults * finalResults);
-	void executeGeo(QueryResults * finalResults);
 	void executeRetrieveById(QueryResults * finalResults);
 
 	void executePostProcessingPlan(Query * query,QueryResults * input, QueryResults *  output);

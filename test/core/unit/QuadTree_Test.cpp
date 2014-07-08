@@ -1,3 +1,18 @@
+// TODO: Add the following lines to test/core/unit/CMakeLists.txt before using this test case.
+
+/*
+ADD_EXECUTABLE(QuadTree_Test QuadTree_Test.cpp)
+TARGET_LINK_LIBRARIES(QuadTree_Test ${UNIT_TEST_LIBS})
+LIST(APPEND UNIT_TESTS QuadTree_Test)
+ */
+
+//TODO: Add the following lines to test/CMakeLists.txt before using this test case.
+
+/*
+ADD_TEST(QuadTree_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/QuadTree_Test "--verbose")
+SET_TESTS_PROPERTIES(QuadTree_Test PROPERTIES ENVIRONMENT "directoryName=${CMAKE_SOURCE_DIR}/test/core/unit/test_data")
+ */
+
 //$Id: QuadTree_Test.cpp 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
 #include <string>
 #include <fstream>

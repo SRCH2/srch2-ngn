@@ -1,3 +1,18 @@
+// TODO: Add the following lines to test/core/unit/CMakeLists.txt before using this testcase.
+
+/*
+ADD_EXECUTABLE(GeoIndexUpdate_Test GeoIndexUpdate_Test.cpp)
+TARGET_LINK_LIBRARIES(GeoIndexUpdate_Test ${UNIT_TEST_LIBS})
+LIST(APPEND UNIT_TESTS GeoIndexUpdate_Test)
+*/
+
+//TODO: Add the following lines to test/CMakeLists.txt before using this testcase.
+
+/*
+ADD_TEST(GeoIndexUpdate_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/GeoIndexUpdate_Test "--verbose")
+SET_TESTS_PROPERTIES(GeoIndexUpdate_Test PROPERTIES ENVIRONMENT "directoryName=${CMAKE_SOURCE_DIR}/test/core/unit/test_data")
+*/
+
 //$Id: GeoIndexUpdate_Test.cpp 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
 #include <sstream>
 #include <iostream> 

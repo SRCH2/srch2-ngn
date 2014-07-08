@@ -26,7 +26,6 @@
 #include "index/ForwardIndex.h"
 #include "util/Assert.h"
 #include "util/Logger.h"
-#include "geo/QuadTree.h"
 #include <instantsearch/Record.h>
 #include <instantsearch/Analyzer.h>
 #include "util/FileOps.h"
@@ -75,13 +74,9 @@ IndexData::IndexData(const string &directoryName,
     this->trie = new Trie_Internal();
 
     this->forwardIndex = new ForwardIndex(this->schemaInternal);
-    if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex) {
-        this->invertedIndex =new InvertedIndex(this->forwardIndex);
-        this->quadTree = NULL;
-    } else {
-        this->quadTree = new QuadTree(this->forwardIndex, this->trie);
-        this->invertedIndex = NULL;
-    }
+
+    this->invertedIndex =new InvertedIndex(this->forwardIndex);
+
 
     this->readCounter = new ReadCounter();
     this->writeCounter = new WriteCounter();
@@ -107,10 +102,8 @@ IndexData::IndexData(const string& directoryName)
     	this->trie = new Trie_Internal();
     	this->forwardIndex = new ForwardIndex(this->schemaInternal);
     	serializer.load(*(this->trie),directoryName + "/" + IndexConfig::trieFileName);
-    	if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
-            this->invertedIndex = new InvertedIndex(this->forwardIndex);
-        else
-            this->invertedIndex = NULL;
+
+    	this->invertedIndex = new InvertedIndex(this->forwardIndex);
 
     	// set if it's a attributeBasedSearch
     	PositionIndexType positionIndexType = this->schemaInternal->getPositionIndexType();
@@ -120,17 +113,8 @@ IndexData::IndexData(const string& directoryName)
     	serializer.load(*(this->forwardIndex), directoryName + "/" + IndexConfig::forwardIndexFileName);
     	this->forwardIndex->setSchema(this->schemaInternal);
 
-    	if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex){
-    		serializer.load(*(this->invertedIndex), directoryName + "/" +  IndexConfig::invertedIndexFileName);
-    		this->invertedIndex->setForwardIndex(this->forwardIndex);
-                quadTree = NULL;
-    	} else {
-    		this->quadTree = new QuadTree();
-    		serializer.load(*(this->quadTree), directoryName + "/" +  IndexConfig::quadTreeFileName);
-    		this->quadTree->setForwardIndex(this->forwardIndex);
-    		this->quadTree->setTrie(this->trie);
-    		//Logger::debug("QuadTree loaded");
-    	}
+    	serializer.load(*(this->invertedIndex), directoryName + "/" +  IndexConfig::invertedIndexFileName);
+    	this->invertedIndex->setForwardIndex(this->forwardIndex);
 
     	this->loadCounts(directoryName + "/" + IndexConfig::indexCountsFileName);
     	this->flagBulkLoadDone = true;
@@ -164,15 +148,17 @@ bool isSortedAlphabetically(const KeywordIdKeywordStringInvertedListIdTriple& ke
 /// Add a record
 INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer)
 {
-
-    boost::unique_lock< boost::shared_mutex > lock(globalRwMutexForReadersWriters);
+	// Mahdi: This part is related to the old geo design. So we don't need to lock here anymore
+	/***** TODO: remove this code *************************/
+    /*boost::unique_lock< boost::shared_mutex > lock(globalRwMutexForReadersWriters);
     //For M1, since we don't use shared pointers for quad trees, readers
     //and writers need to share the global rwMutex
     // For A1 , we do not need lock , so unlock the lock.
     if(this->schemaInternal->getIndexType() 
             != srch2::instantsearch::LocationIndex) {
         lock.unlock();   // Double unlock is fine. First is here and second will be in destructor of lock
-    }
+    }*/
+	/*******************************************************/
     INDEXWRITE_RETVAL returnValue = OP_FAIL; // not added
 
     /// Get the internalRecordId
@@ -219,19 +205,12 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer
             //        If we insert a new record with keyword "can"-1, then Trie nodes 'c', 'a' and 'n' will become [1,4], while 'c', 'e' and 'r' will stay the same.
             //        So if we find [4, 4] on c-filter, we should NOT change it to [2, 4]. Instead, we should keep [4, 4] and add [2, 4]
             bool hadExactlyOneChild = false;
-            unsigned breakLeftOrRight = 0;
-            vector<Prefix> *oldParentOrSelfAndAncs = NULL;
 
             if (this->flagBulkLoadDone == false) // not committed yet
             	//transform string to vector<CharType>
                 keywordId = this->trie->addKeyword(getCharTypeVector(mapIterator->first), invertedIndexOffset);
             else
             {
-                if (this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex)
-                {
-                    oldParentOrSelfAndAncs = new vector<Prefix> ();  // CHEN: store the ancestors (possibly itself) whose interval will change after this insertion
-                    breakLeftOrRight = this->trie->ifBreakOldParentPrefix(getCharTypeVector(mapIterator->first), oldParentOrSelfAndAncs, hadExactlyOneChild);
-                }  // CHEN: 0 means no break; 1 means break from left; and 2 means break from right
                 //transform string to vector<CharType>
                 keywordId = this->trie->addKeyword_ThreadSafe(getCharTypeVector(mapIterator->first), invertedIndexOffset, isNewTrieNode, isNewInternalTerminalNode);
             }
@@ -241,26 +220,7 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer
             // should also be valid.
             keywordIdList.push_back( make_pair(keywordId, make_pair(mapIterator->first, invertedIndexOffset) ) );
 
-            if ( this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex ) // A1
-            {
-                this->invertedIndex->incrementHitCount(invertedIndexOffset);
-            }
-            else // geo index (M1). Add the flag to the map only if the indexes have been committed
-                if (this->flagBulkLoadDone == true)
-            {
-                unsigned keywordStatus = 0;
-                if (isNewTrieNode) // is a new trie leaf node
-                    keywordStatus = 1;
-                else if (isNewInternalTerminalNode) // an existing trie internal node turned into terminal node
-                    keywordStatus = 2;
-
-                keywordIdVector->push_back(keywordId);
-
-                if (keywordStatus > 0 && breakLeftOrRight > 0) // CHEN: is a terminal node, and it breaks the current interval
-                    this->quadTree->updateInfoToFixBroadenPrefixesOnFilters(breakLeftOrRight, oldParentOrSelfAndAncs, keywordId, hadExactlyOneChild);
-                else
-                    delete oldParentOrSelfAndAncs;
-            }
+            this->invertedIndex->incrementHitCount(invertedIndexOffset);
         }
 
         // Commented out the sort statement below. We do not need to sort the keyword List again
@@ -282,40 +242,12 @@ INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer
         this->forwardIndex->appendExternalRecordIdToIdMap(record->getPrimaryKey(), internalRecordId);
         this->forwardIndex->addRecord(record, internalRecordId, keywordIdList, tokenAttributeHitsMap);
 
-        if ( this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex )
+        if ( this->flagBulkLoadDone == true )
         {
-            if ( this->flagBulkLoadDone == true )
-            {
-                const unsigned totalNumberofDocuments = this->forwardIndex->getTotalNumberOfForwardLists_WriteView();
-                ForwardList *forwardList = this->forwardIndex->getForwardList_ForCommit(internalRecordId);
-                this->invertedIndex->addRecord(forwardList , this->trie, this->rankerExpression,
-                        internalRecordId, this->schemaInternal, record, totalNumberofDocuments, keywordIdList);
-            }
-        }
-        else if (this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex ) // geo index
-        {
-            // for geo index, we don't have inverted index, so we compute TermRecordStaticScores here
-            ForwardList *fl = this->forwardIndex->getForwardList_ForCommit(internalRecordId);
-            for (unsigned counter = 0; counter < fl->getNumberOfKeywords(); counter++)
-            {
-                float recordBoost = fl->getRecordBoost();
-                float sumOfFieldBoost = fl->getKeywordRecordStaticScore(counter);
-                float recordLength = fl->getNumberOfKeywords();
-                float idf = 1.0;
-                unsigned tf = 1;
-                float textRelevance = Ranker::computeRecordTfIdfScore(tf, idf, sumOfFieldBoost);
-                float score = rankerExpression->applyExpression(recordLength, recordBoost, textRelevance);
-                fl->setKeywordRecordStaticScore(counter, score);
-            }
-
-            if ( this->flagBulkLoadDone == false ) // batch load
-            {
-                this->quadTree->addRecordBeforeCommit(record, internalRecordId);
-            }
-            else // after commit
-            {
-                this->quadTree->addRecordAfterCommit(record, internalRecordId, keywordIdVector);
-            }
+        	const unsigned totalNumberofDocuments = this->forwardIndex->getTotalNumberOfForwardLists_WriteView();
+        	ForwardList *forwardList = this->forwardIndex->getForwardList_ForCommit(internalRecordId);
+        	this->invertedIndex->addRecord(forwardList , this->trie, this->rankerExpression,
+        			internalRecordId, this->schemaInternal, record, totalNumberofDocuments, keywordIdList);
         }
     }
     else
@@ -387,9 +319,6 @@ INDEXLOOKUP_RETVAL IndexData::_lookupRecord(const std::string &externalRecordId)
  */
 INDEXWRITE_RETVAL IndexData::finishBulkLoad()
 {
-    bool isLocational = false;
-    if(this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex)
-        isLocational = true;
 
     if (this->flagBulkLoadDone == false){
         /*
@@ -417,30 +346,22 @@ INDEXWRITE_RETVAL IndexData::finishBulkLoad()
         for (unsigned i = 0; i < oldIdToNewIdMapVector->size(); i++)
           oldIdToNewIdMapper[i] = oldIdToNewIdMapVector->at(i);
 
-        if(!isLocational)
-            this->invertedIndex->initialiseInvertedIndexCommit();
+        this->invertedIndex->initialiseInvertedIndexCommit();
 
         for (unsigned forwardIndexIter = 0; forwardIndexIter < totalNumberofDocuments; ++forwardIndexIter){
             ForwardList *forwardList = this->forwardIndex->getForwardList_ForCommit(forwardIndexIter);
             vector<NewKeywordIdKeywordOffsetTriple> newKeywordIdKeywordOffsetTriple;
             //this->forwardIndex->commit(forwardList, oldIdToNewIdMapVector, newKeywordIdKeywordOffsetTriple);
             this->forwardIndex->commit(forwardList, oldIdToNewIdMapper, newKeywordIdKeywordOffsetTriple);
-            if(!isLocational)
-                this->invertedIndex->commit(forwardList, this->rankerExpression,
-                        forwardIndexIter, totalNumberofDocuments, this->schemaInternal, newKeywordIdKeywordOffsetTriple);
+
+            this->invertedIndex->commit(forwardList, this->rankerExpression,
+            		forwardIndexIter, totalNumberofDocuments, this->schemaInternal, newKeywordIdKeywordOffsetTriple);
         }
         this->forwardIndex->finalCommit();
 //        this->forwardIndex->print_size();
-        if (isLocational){
-            //time_t begin,end;
-            //time(&begin);
-            this->quadTree->createFilters();
-            //time(&end);
-            //std::cout << "CFilters and OFilters creating time elapsed: " << difftime(end, begin) << " seconds"<< std::endl;
-        }else{
-            this->invertedIndex->setForwardIndex(this->forwardIndex);
-            this->invertedIndex->finalCommit();
-        }
+
+        this->invertedIndex->setForwardIndex(this->forwardIndex);
+        this->invertedIndex->finalCommit();
 
         // delete the keyword mapper (from the old ids to the new ids) inside the trie
         this->trie->deleteOldIdToNewIdMapVector();
@@ -451,13 +372,11 @@ INDEXWRITE_RETVAL IndexData::finishBulkLoad()
          * NULL will make the component to compute simple frequency
          * (vs. integration of frequency and recordStaticScores) for nodeSubTrieValue of trie nodes.
          */
-        if (isLocational){
-			this->trie->finalCommit_finalizeHistogramInformation(NULL , NULL, 0);
-        }else{
-			this->trie->finalCommit_finalizeHistogramInformation(this->invertedIndex ,
-					this->forwardIndex,
-					this->forwardIndex->getTotalNumberOfForwardLists_ReadView());
-        }
+
+        this->trie->finalCommit_finalizeHistogramInformation(this->invertedIndex ,
+        		this->forwardIndex,
+        		this->forwardIndex->getTotalNumberOfForwardLists_ReadView());
+
         this->flagBulkLoadDone = true;
         return OP_SUCCESS;
     }else{
@@ -487,8 +406,7 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
       this->forwardIndex->freeSpaceOfDeletedRecords();
     }
 
-    if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
-        this->invertedIndex->merge();
+    this->invertedIndex->merge();
     
     // Since trie is the entry point of every search, trie merge should be done after all other merges.
     // If forwardIndex or invertedIndex is merged before trie, then users can see an inconsistent state of
@@ -496,19 +414,22 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
     // if it is the case of M1 (geo), invertedIndex is passed as a NULL, so that histogram information is calculated only
     // using frequencies. Otherwise, the invertedIndex will be used to integrate its information with frequencies.
     const InvertedIndex * invertedIndex = NULL;
-    if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex){
-    	invertedIndex = this->invertedIndex;
-    }
 
-    //Need to block reader for both trie reassignment and quadtree merge in
+    invertedIndex = this->invertedIndex;
+
+    // Mahdi: This part is related to the old geo design. So we don't need to lock here anymore
+    // Also I removed the haveGlobalLockForM1 from rest of the code!!
+    /***** TODO: remove this code *************************/
+    /*//Need to block reader for both trie reassignment and quadtree merge in
     //M1
-    bool haveGlobalLockForM1 = true;
+   	bool haveGlobalLockForM1 = true;
     boost::unique_lock< boost::shared_mutex > lock(globalRwMutexForReadersWriters);
     if (this->schemaInternal->getIndexType() !=
         srch2::instantsearch::LocationIndex) {
       lock.unlock();
       haveGlobalLockForM1 = false;
-    }
+    }*/
+    /*****************************************************/
 
     // check if we need to reassign some keyword ids
     if (this->trie->needToReassignKeywordIds()) {
@@ -520,11 +441,12 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
     	// reassign id is not thread safe so we need to grab an exclusive lock
     	// NOTE : all index structure commits are happened before reassign id phase. Only QuadTree is left
     	//        because we need new ids in quadTree commit phase.
-        if(!haveGlobalLockForM1) // need locking to block other readers
-        	lock.lock();
+
+    	boost::unique_lock< boost::shared_mutex > lock(globalRwMutexForReadersWriters);
+
         this->reassignKeywordIds();
-        if(!haveGlobalLockForM1) 
-        	lock.unlock();
+
+        lock.unlock();
       
         // struct timespec tend;
         // clock_gettime(CLOCK_REALTIME, &tend);
@@ -536,10 +458,6 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
     this->trie->merge(invertedIndex , this->forwardIndex,
     		this->forwardIndex->getTotalNumberOfForwardLists_ReadView() , updateHistogram);
     
-    if (this->schemaInternal->getIndexType() == 
-        srch2::instantsearch::LocationIndex) {
-      this->quadTree->merge();
-    }
 
     this->mergeRequired = false;
 
@@ -575,18 +493,10 @@ void IndexData::reassignKeywordIds()
     //std::unordered_set<unsigned> processedRecordIds; // keep track of records that have been converted
     map<unsigned, unsigned> processedRecordIds; // keep track of records that have been converted
 
-    if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex) // if it's A1 index
-    {
-        // Now we have the ID mapper.  We want to go through the trie nodes one by one.
-        // For each of them, access its inverted list.  For each record,
-        // use the id mapper to change the integers on the forward list.
-        changeKeywordIdsOnForwardLists(trieNodeIdMapper, keywordIdMapper, processedRecordIds);
-    }
-    else // if it's M1 index
-    {
-        changeKeywordIdsOnForwardListsAndOCFilters(keywordIdMapper, processedRecordIds);
-        this->quadTree->fixReassignedIds(keywordIdMapper);
-    }
+    // Now we have the ID mapper.  We want to go through the trie nodes one by one.
+    // For each of them, access its inverted list.  For each record,
+    // use the id mapper to change the integers on the forward list.
+    changeKeywordIdsOnForwardLists(trieNodeIdMapper, keywordIdMapper, processedRecordIds);
 
 }
 
@@ -638,23 +548,6 @@ void IndexData::changeKeywordIdsOnForwardLists(const map<TrieNode *, unsigned> &
     }
 
 }
-/*
- * Jamshid : uses the IDMapper to change old temperory ids in quadTree to new correct ids
- *
- */
-void IndexData::changeKeywordIdsOnForwardListsAndOCFilters(map<unsigned, unsigned> &keywordIdMapper,
-                                                           map<unsigned, unsigned> &recordIdsToProcess)
-{
-    this->quadTree->gatherForwardListsAndAdjustOCFilters(keywordIdMapper, recordIdsToProcess);
-
-	shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
-    this->forwardIndex->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
-
-    for (map<unsigned, unsigned>::const_iterator citer = recordIdsToProcess.begin();
-            citer != recordIdsToProcess.end(); ++ citer)
-        this->forwardIndex->reassignKeywordIds(forwardListDirectoryReadView, citer->first, keywordIdMapper);
-
-}
 
 void IndexData::_exportData(const string &exportedDataFileName) const
 {
@@ -696,21 +589,12 @@ void IndexData::_save(const string &directoryName) const
         Logger::error("Error writing schema index file: %s/%s", directoryName.c_str(), IndexConfig::schemaFileName);
     }
 
-    if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex) {
-    	 if(this->invertedIndex->mergeRequired())
-    		 this->invertedIndex->merge();
-	 try {
-	     serializer.save(*this->invertedIndex, directoryName + "/" +  IndexConfig::invertedIndexFileName);
-	 } catch (exception &ex) {
-	     Logger::error("Error writing inverted index file: %s/%s", directoryName.c_str(), IndexConfig::invertedIndexFileName);
-	 }
-    }
-    else {
-        try {
-	    serializer.save(*this->quadTree, directoryName + "/" + IndexConfig::quadTreeFileName);
-	} catch (exception &ex) {
-	    Logger::error("Error writing quad tree index file: %s/%s", directoryName.c_str(), IndexConfig::quadTreeFileName);
-	}
+    if(this->invertedIndex->mergeRequired())
+    	this->invertedIndex->merge();
+    try {
+    	serializer.save(*this->invertedIndex, directoryName + "/" +  IndexConfig::invertedIndexFileName);
+    } catch (exception &ex) {
+    	Logger::error("Error writing inverted index file: %s/%s", directoryName.c_str(), IndexConfig::invertedIndexFileName);
     }
 
     try {
@@ -725,9 +609,7 @@ void IndexData::printNumberOfBytes() const
     Logger::debug("Number Of Bytes:");
     Logger::debug("Trie:\t\t %d bytes\t %.5f MB", this->trie->getNumberOfBytes(), (float)this->trie->getNumberOfBytes()/1048576);
     Logger::debug("ForwardIndex:\t %d bytes\t %.5f MB", this->forwardIndex->getNumberOfBytes(), (float)this->forwardIndex->getNumberOfBytes()/1048576);
-    if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex){
-        Logger::debug("InvertedIndex:\t %d bytes\t %.5f MB", this->invertedIndex->getNumberOfBytes(), (float)this->invertedIndex->getNumberOfBytes()/1048576);
-    }
+    Logger::debug("InvertedIndex:\t %d bytes\t %.5f MB", this->invertedIndex->getNumberOfBytes(), (float)this->invertedIndex->getNumberOfBytes()/1048576);
 }
 
 const Schema* IndexData::getSchema() const
@@ -774,12 +656,7 @@ IndexData::~IndexData()
     delete this->trie;
     delete this->forwardIndex;
 
-    if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
-    {
-        delete this->invertedIndex;
-    }
-    else
-        delete this->quadTree;
+    delete this->invertedIndex;
 
     delete this->schemaInternal;
     delete this->readCounter;

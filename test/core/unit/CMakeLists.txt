@@ -88,10 +88,6 @@ ADD_EXECUTABLE(ForwardIndex_Performance_Test ForwardIndex_Performance_Test.cpp)
 TARGET_LINK_LIBRARIES(ForwardIndex_Performance_Test ${UNIT_TEST_LIBS} )
 LIST(APPEND UNIT_TESTS ForwardIndex_Performance_Test)
 
-ADD_EXECUTABLE(QuadTree_Test QuadTree_Test.cpp)
-TARGET_LINK_LIBRARIES(QuadTree_Test ${UNIT_TEST_LIBS})	
-LIST(APPEND UNIT_TESTS QuadTree_Test)
-
 ADD_EXECUTABLE(NewQuadTree_Test NewQuadTree_Test.cpp)
 TARGET_LINK_LIBRARIES(NewQuadTree_Test ${UNIT_TEST_LIBS})	
 LIST(APPEND UNIT_TESTS NewQuadTree_Test)
@@ -147,10 +143,6 @@ LIST(APPEND UNIT_TESTS RandomAccessVerificationOr_Test)
 ADD_EXECUTABLE(RandomAccessVerificationNot_Test physical_plan/RandomAccessVerificationNot_Test.cpp)
 TARGET_LINK_LIBRARIES(RandomAccessVerificationNot_Test ${UNIT_TEST_LIBS})  
 LIST(APPEND UNIT_TESTS RandomAccessVerificationNot_Test)
-
-ADD_EXECUTABLE(GeoIndexUpdate_Test GeoIndexUpdate_Test.cpp)
-TARGET_LINK_LIBRARIES(GeoIndexUpdate_Test ${UNIT_TEST_LIBS})	
-LIST(APPEND UNIT_TESTS GeoIndexUpdate_Test)
 
 ADD_CUSTOM_TARGET(build_unit_test ALL DEPENDS ${UNIT_TESTS} )
 ADD_DEPENDENCIES(build_unit_test srch2_core)

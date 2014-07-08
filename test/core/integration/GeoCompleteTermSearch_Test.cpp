@@ -1,4 +1,15 @@
+//TODO: Add the following lines to test/core/integration/CMakeLists.txt before using this test case.
+/*
+ADD_EXECUTABLE(GeoCompleteTermSearch_Test GeoCompleteTermSearch_Test.cpp ${IndexIntegration_Source})
+TARGET_LINK_LIBRARIES(GeoCompleteTermSearch_Test ${INTEGRATION_TEST_LIBS} ${THREADING_TEST_LIBS})
+LIST(APPEND INTEGRATION_TESTS GeoCompleteTermSearch_Test)
+ */
 
+//TODO: Add the following lines to test/CMakeLists.txt before using this test case.
+/*
+ADD_TEST(GeoCompleteTermSearch_Test ${CMAKE_CURRENT_BINARY_DIR}/core/integration/GeoCompleteTermSearch_Test "--verbose")
+SET_TESTS_PROPERTIES(GeoCompleteTermSearch_Test PROPERTIES ENVIRONMENT "index_dir=${INTEGRATION_TEST_INDEX_DIR}geo-complete/")
+ */
 #include <instantsearch/Analyzer.h>
 #include <instantsearch/Indexer.h>
 #include <instantsearch/QueryEvaluator.h>

@@ -203,7 +203,11 @@ public:
         this->merge(false);
     }
 
-    inline QuadTree *getQuadTree() const { return this->index->quadTree; }
+    //TODO Mahdi: change this from old quadtree to new one.
+    /*inline QuadTree *getQuadTree() const {
+    	//return this->index->quadTree;
+    }*/
+
     inline ForwardIndex * getForwardIndex() const { return this->index->forwardIndex; }
 
     pthread_t createAndStartMergeThreadLoop();

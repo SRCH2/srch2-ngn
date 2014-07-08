@@ -69,7 +69,6 @@
 #include "index/Trie.h"
 //#include "index/InvertedIndex.h"
 #include "index/ForwardIndex.h"
-//#include "geo/QuadTree.h"
 //#include "record/AnalyzerInternal.h"
 //#include "record/SchemaInternal.h"
 //#include "license/LicenseVerifier.h"
@@ -92,7 +91,6 @@ namespace instantsearch
  *  It would be nice to move them to a separate forward declaration header file
  */
 class InvertedIndex;
-class QuadTree;
 //class ForwardIndex;
 class Analyzer;
 class SchemaInternal;
@@ -241,7 +239,9 @@ public:
 
     Trie_Internal *trie;
     InvertedIndex *invertedIndex;
-    QuadTree *quadTree;
+
+    //TODO  Mahdi: change it with new quadtree
+    //QuadTree *quadTree;
 
     ForwardIndex *forwardIndex;
     SchemaInternal *schemaInternal;
