@@ -137,6 +137,7 @@ private:
     static const char* const queryFieldBoostParamName;//solr
     static const char* const isFuzzyParamName; //srch2
     static const char* const docIdParamName;
+
     // local parameter params
     static const char* const lpKeyValDelimiter; //solr
     static const char* const lpQueryBooleanOperatorParamName; //srch2

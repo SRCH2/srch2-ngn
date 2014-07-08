@@ -33,6 +33,10 @@ using namespace srch2::instantsearch;
 namespace srch2 {
 namespace httpwrapper { 
 
+const char* const ConfigManager::OAuthParam = "OAuth";
+const char* const ConfigManager::authorizationKeyTag = "authorization-key";
+
+string ConfigManager::authorizationKey = "";
 // configuration file tag and attribute names for ConfigManager
 // *MUST* be lowercase
 const char* const ConfigManager::accessLogFileString = "accesslogfile";
@@ -69,7 +73,7 @@ const char* const ConfigManager::indexConfigString = "indexconfig";
 const char* const ConfigManager::indexedString = "indexed";
 const char* const ConfigManager::multiValuedString = "multivalued";
 const char* const ConfigManager::indexTypeString = "indextype";
-const char* const ConfigManager::licenseFileString = "licensefile";
+//const char* const ConfigManager::licenseFileString = "licensefile";
 const char* const ConfigManager::listenerWaitTimeString = "listenerwaittime";
 const char* const ConfigManager::listeningHostStringString = "listeninghostname";
 const char* const ConfigManager::listeningPortString = "listeningport";
@@ -983,7 +987,7 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_
                                                  coreParseState.searchableAttributesRequiredFlagVector[i] ,
                                                  coreParseState.searchableAttributesDefaultVector[i] ,
                                                  0 , 1 , coreParseState.searchableAttributesIsMultiValued[i],
-                                                 coreParseState.highlight[i]);
+                                                 coreParseState.searchableAttributesHighlight[i]);
         } else {
             coreInfo->searchableAttributesInfo[coreParseState.searchableFieldsVector[i]] =
                 SearchableAttributeInfoContainer(coreParseState.searchableFieldsVector[i] ,
@@ -991,7 +995,7 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_
                                                  coreParseState.searchableAttributesDefaultVector[i] ,
                                                  0 , boostsMap[coreParseState.searchableFieldsVector[i]] ,
                                                  coreParseState.searchableAttributesIsMultiValued[i],
-                                                 coreParseState.highlight[i]);
+                                                 coreParseState.searchableAttributesHighlight[i]);
         }
     }
 
@@ -1139,15 +1143,7 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
                  *       else => attribute is not used for post processing
                  * }
                  */
-                coreParseState->highlight.push_back(false);
-                if(string(field.attribute(highLightString).value()).compare("") != 0){
-                	tempUse = string(field.attribute(highLightString).value());
-                	if (isValidBool(tempUse)){
-                		if(field.attribute(indexedString).as_bool()){
-                			coreParseState->highlight[coreParseState->highlight.size() - 1] = true;
-                		}
-                	}
-                }
+
 
                 bool isSearchable = false;
                 bool isRefining = false;
@@ -1225,6 +1221,16 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
                     }
                 }
 
+                bool isHighlightEnabled = false;
+                if(string(field.attribute(highLightString).value()).compare("") != 0){
+                	tempUse = string(field.attribute(highLightString).value());
+                	if (isValidBool(tempUse)){
+                		if(field.attribute(indexedString).as_bool()){
+                			isHighlightEnabled = true;
+                		}
+                	}
+                }
+
                 // If this field is the primary key, we only care about searchable and/or refining options.
                 // We want to set primaryKey as a searchable and/or refining field
                 // We assume the primary key is text, we don't get any type from user.
@@ -1237,6 +1243,7 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
                         coreParseState->searchableAttributesDefaultVector.push_back("");
                         // primary key is always required.
                         coreParseState->searchableAttributesRequiredFlagVector.push_back(true);
+                        coreParseState->searchableAttributesHighlight.push_back(isHighlightEnabled);
                     }
 
                     if(isRefining){
@@ -1252,6 +1259,7 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
                     && string(field.attribute(typeString).value()).compare("") != 0) {
                     if(isSearchable){ // it is a searchable field
                         coreParseState->searchableFieldsVector.push_back(string(field.attribute(nameString).value()));
+                        coreParseState->searchableAttributesHighlight.push_back(isHighlightEnabled);
                         // Checking the validity of field type
                         tempUse = string(field.attribute(typeString).value());
                         if (isValidFieldType(tempUse , true)) {
@@ -1711,6 +1719,16 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode, CoreIn
     }
 }
 
+bool checkValidity(string &parameter){
+
+	for(int i = 0; i< parameter.length(); i++){
+		if(!std::isalnum(parameter[i])){
+			return false;
+		}
+	}
+	return true;
+}
+
 void ConfigManager::parse(const pugi::xml_document& configDoc,
                           bool &configSuccess,
                           std::stringstream &parseError,
@@ -1734,6 +1752,19 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
         return;
     }
 
+    string authKey = "";
+    //Check for authorization key
+    xml_node authorizationNode = configNode.child(authorizationKeyTag);
+    if(authorizationNode && authorizationNode.text()){
+    	authKey = string(authorizationNode.text().get());
+    	trimSpacesFromValue(authKey,authorizationKeyTag, parseWarnings);
+    	if(checkValidity(authKey)){
+    	   	ConfigManager::setAuthorizationKey(authKey);
+    	}else{
+    		parseWarnings << "Authorization Key is invalid string, so it will not be used by the engine! ";
+    		Logger::console("Authorization Key is invalid string, so it will not be used by the engine! ");
+    	}
+    }
     // check if data source exists at the top level
     xml_node topDataFileNode = childNode.child(dataFileString);
     if (topDataFileNode) {
@@ -1765,16 +1796,18 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
      * <Config> in config.xml file
      */
     // licenseFile is a required field
-    childNode = configNode.child(licenseFileString);
-    if (childNode && childNode.text()) { // checks if config/licenseFile exists and have any text value or not
-        tempUse = string(childNode.text().get());
-        trimSpacesFromValue(tempUse, licenseFileString, parseWarnings);
-        this->licenseKeyFile = this->srch2Home + tempUse;
-    } else {
-        parseError << "License key is not set.\n";
-        configSuccess = false;
-        return;
-    }
+    // Note: Due to freemium project, we are disabling license key check.
+    //
+    //    childNode = configNode.child(licenseFileString);
+    //    if (childNode && childNode.text()) { // checks if config/licenseFile exists and have any text value or not
+    //        tempUse = string(childNode.text().get());
+    //        trimSpacesFromValue(tempUse, licenseFileString, parseWarnings);
+    //        this->licenseKeyFile = this->srch2Home + tempUse;
+    //    } else {
+    //        parseError << "License key is not set.\n";
+    //        configSuccess = false;
+    //        return;
+    //    }
 
     // listeningHostname is a required field
     childNode = configNode.child(listeningHostStringString);
@@ -2616,6 +2649,15 @@ CoreInfo_t *ConfigManager::getDefaultCoreInfo() const
     return coreInfo;
     //        return coreInfoMap[getDefaultCoreName()];
 }
+
+ string ConfigManager::getAuthorizationKey(){
+	return ConfigManager::authorizationKey;
+}
+
+ void ConfigManager::setAuthorizationKey(string &key){
+	ConfigManager::authorizationKey = key;
+}
+
 
 unsigned short CoreInfo_t::getPort(PortType_t portType) const
 {

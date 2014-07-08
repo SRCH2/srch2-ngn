@@ -148,114 +148,110 @@ bool isSortedAlphabetically(const KeywordIdKeywordStringInvertedListIdTriple& ke
 /// Add a record
 INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer)
 {
-	// Mahdi: This part is related to the old geo design. So we don't need to lock here anymore
-	/***** TODO: remove this code *************************/
-    /*boost::unique_lock< boost::shared_mutex > lock(globalRwMutexForReadersWriters);
-    //For M1, since we don't use shared pointers for quad trees, readers
-    //and writers need to share the global rwMutex
-    // For A1 , we do not need lock , so unlock the lock.
-    if(this->schemaInternal->getIndexType() 
-            != srch2::instantsearch::LocationIndex) {
-        lock.unlock();   // Double unlock is fine. First is here and second will be in destructor of lock
-    }*/
-	/*******************************************************/
-    INDEXWRITE_RETVAL returnValue = OP_FAIL; // not added
+    return _addRecordWithoutLock(record, analyzer);
+}
 
+INDEXWRITE_RETVAL IndexData::_addRecordWithoutLock(const Record *record, Analyzer *analyzer)
+{
     /// Get the internalRecordId
-    unsigned internalRecordId;
+    unsigned internalRecordIdTemp;
     //Check for duplicate record
-    bool recordPrimaryKeyFound = this->forwardIndex->getInternalRecordIdFromExternalRecordId(record->getPrimaryKey(), internalRecordId);
+    bool recordPrimaryKeyFound = this->forwardIndex->getInternalRecordIdFromExternalRecordId(record->getPrimaryKey(), internalRecordIdTemp);
 
     // InternalRecordId == ForwardListId
-    if (recordPrimaryKeyFound == false)
+    if (recordPrimaryKeyFound )
     {
-        this->writeCounter->incWritesCounter();
-        this->writeCounter->incDocsCounter();
-        returnValue = OP_SUCCESS;
+        return OP_FAIL;
+    }
 
-        this->mergeRequired = true;
-        /// analyze the record (tokenize it, remove stop words)
-        map<string, TokenAttributeHits > tokenAttributeHitsMap;
-        analyzer->tokenizeRecord(record, tokenAttributeHitsMap);
+    this->writeCounter->incWritesCounter();
+    this->writeCounter->incDocsCounter();
 
-        KeywordIdKeywordStringInvertedListIdTriple keywordIdList;
+    this->mergeRequired = true;
+    /// analyze the record (tokenize it, remove stop words)
+    map<string, TokenAttributeHits > tokenAttributeHitsMap;
+    analyzer->tokenizeRecord(record, tokenAttributeHitsMap);
 
-        // only used for committed geo index
-        vector<unsigned> *keywordIdVector = NULL;
-        if(this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex
-                && this->flagBulkLoadDone == true)
+    KeywordIdKeywordStringInvertedListIdTriple keywordIdList;
+
+    // only used for committed geo index
+    vector<unsigned> *keywordIdVector = NULL;
+    if(this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex
+            && this->flagBulkLoadDone == true)
+    {
+        keywordIdVector = new vector<unsigned> ();
+    }
+
+    for(map<string, TokenAttributeHits>::iterator mapIterator = tokenAttributeHitsMap.begin();
+            mapIterator != tokenAttributeHitsMap.end();
+            ++mapIterator)
+    {
+        /// add words to trie
+
+        unsigned invertedIndexOffset = 0;
+        unsigned keywordId = 0;
+
+        // two flags that only M1 update needs
+        bool isNewTrieNode = false;
+        bool isNewInternalTerminalNode = false;
+        // the reason we need @var hasExactlyOneChild is that for this kind of prefix on c-filter, we shouldn't change it in-place. Instead, we should add the new prefix when the old one is found on c-filter
+        // e.g. Initially on Trie we have "cancer"-4 'c'->'a'->'n'->'c'->'e'->'r'. Each Trie node have the same prefix interval [4, 4]
+        //        If we insert a new record with keyword "can"-1, then Trie nodes 'c', 'a' and 'n' will become [1,4], while 'c', 'e' and 'r' will stay the same.
+        //        So if we find [4, 4] on c-filter, we should NOT change it to [2, 4]. Instead, we should keep [4, 4] and add [2, 4]
+        bool hadExactlyOneChild = false;
+        unsigned breakLeftOrRight = 0;
+        vector<Prefix> *oldParentOrSelfAndAncs = NULL;
+
+        if (!this->flagBulkLoadDone ) // not committed yet
+            //transform string to vector<CharType>
+            keywordId = this->trie->addKeyword(getCharTypeVector(mapIterator->first), invertedIndexOffset);
+        else
         {
-            keywordIdVector = new vector<unsigned> ();
-        }
-
-        for(map<string, TokenAttributeHits>::iterator mapIterator = tokenAttributeHitsMap.begin();
-                mapIterator != tokenAttributeHitsMap.end();
-                ++mapIterator)
-        {
-            /// add words to trie
-
-            unsigned invertedIndexOffset = 0;
-            unsigned keywordId = 0;
-
-            // two flags that only M1 update needs
-            bool isNewTrieNode = false;
-            bool isNewInternalTerminalNode = false;
-            // the reason we need @var hasExactlyOneChild is that for this kind of prefix on c-filter, we shouldn't change it in-place. Instead, we should add the new prefix when the old one is found on c-filter
-            // e.g. Initially on Trie we have "cancer"-4 'c'->'a'->'n'->'c'->'e'->'r'. Each Trie node have the same prefix interval [4, 4]
-            //        If we insert a new record with keyword "can"-1, then Trie nodes 'c', 'a' and 'n' will become [1,4], while 'c', 'e' and 'r' will stay the same.
-            //        So if we find [4, 4] on c-filter, we should NOT change it to [2, 4]. Instead, we should keep [4, 4] and add [2, 4]
-            bool hadExactlyOneChild = false;
-
-            if (this->flagBulkLoadDone == false) // not committed yet
-            	//transform string to vector<CharType>
-                keywordId = this->trie->addKeyword(getCharTypeVector(mapIterator->first), invertedIndexOffset);
-            else
+            if (this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex)
             {
-                //transform string to vector<CharType>
-                keywordId = this->trie->addKeyword_ThreadSafe(getCharTypeVector(mapIterator->first), invertedIndexOffset, isNewTrieNode, isNewInternalTerminalNode);
-            }
-
-            // For the case where the keyword is new, and we do not have the "space" to assign a new id
-            // for it, we assign a positive integer to this keyword.  So the returned value
-            // should also be valid.
-            keywordIdList.push_back( make_pair(keywordId, make_pair(mapIterator->first, invertedIndexOffset) ) );
-
-            this->invertedIndex->incrementHitCount(invertedIndexOffset);
+                oldParentOrSelfAndAncs = new vector<Prefix> ();  // CHEN: store the ancestors (possibly itself) whose interval will change after this insertion
+                breakLeftOrRight = this->trie->ifBreakOldParentPrefix(getCharTypeVector(mapIterator->first), oldParentOrSelfAndAncs, hadExactlyOneChild);
+            }  // CHEN: 0 means no break; 1 means break from left; and 2 means break from right
+            //transform string to vector<CharType>
+            keywordId = this->trie->addKeyword_ThreadSafe(getCharTypeVector(mapIterator->first), invertedIndexOffset, isNewTrieNode, isNewInternalTerminalNode);
         }
 
-        // Commented out the sort statement below. We do not need to sort the keyword List again
-        // because keywords are stored in a map which keeps them alphabetically sorted.
-        // If this _addRecord() is called BEFORE commit(), these keyword IDs within this list are
-        // sorted using the alphabetical order of the keywords, even though they are not sorted
-        // based on the integer order. During the commit() phase, we will map these IDs to their
-        // final IDs from the trie, and the order of the IDs becomes the integer order automatically.
-        // If this _addRecord() is called AFTER commit(), the keyword IDs are sorted using the
-        // alphabetical order, which is already consistent with the integer order.
-        //
-        // std::sort( keywordIdList.begin(), keywordIdList.end());
+        // For the case where the keyword is new, and we do not have the "space" to assign a new id
+        // for it, we assign a positive integer to this keyword.  So the returned value
+        // should also be valid.
+        keywordIdList.push_back( make_pair(keywordId, make_pair(mapIterator->first, invertedIndexOffset) ) );
 
-        // Adding this assert to ensure that keywordIdList is alphabetically sorted. see isSorted()
-        // function above.
-        ASSERT(isSortedAlphabetically(keywordIdList));
-
-        unsigned internalRecordId;
-        this->forwardIndex->appendExternalRecordIdToIdMap(record->getPrimaryKey(), internalRecordId);
-        this->forwardIndex->addRecord(record, internalRecordId, keywordIdList, tokenAttributeHitsMap);
-
-        if ( this->flagBulkLoadDone == true )
-        {
-        	const unsigned totalNumberofDocuments = this->forwardIndex->getTotalNumberOfForwardLists_WriteView();
-        	ForwardList *forwardList = this->forwardIndex->getForwardList_ForCommit(internalRecordId);
-        	this->invertedIndex->addRecord(forwardList , this->trie, this->rankerExpression,
-        			internalRecordId, this->schemaInternal, record, totalNumberofDocuments, keywordIdList);
-        }
+        this->invertedIndex->incrementHitCount(invertedIndexOffset);
     }
-    else
+
+    // Commented out the sort statement below. We do not need to sort the keyword List again
+    // because keywords are stored in a map which keeps them alphabetically sorted.
+    // If this _addRecord() is called BEFORE commit(), these keyword IDs within this list are
+    // sorted using the alphabetical order of the keywords, even though they are not sorted
+    // based on the integer order. During the commit() phase, we will map these IDs to their
+    // final IDs from the trie, and the order of the IDs becomes the integer order automatically.
+    // If this _addRecord() is called AFTER commit(), the keyword IDs are sorted using the
+    // alphabetical order, which is already consistent with the integer order.
+    //
+    // std::sort( keywordIdList.begin(), keywordIdList.end());
+
+    // Adding this assert to ensure that keywordIdList is alphabetically sorted. see isSorted()
+    // function above.
+    ASSERT(isSortedAlphabetically(keywordIdList));
+
+    unsigned internalRecordId;
+    this->forwardIndex->appendExternalRecordIdToIdMap(record->getPrimaryKey(), internalRecordId);
+    this->forwardIndex->addRecord(record, internalRecordId, keywordIdList, tokenAttributeHitsMap);
+
+    if ( this->flagBulkLoadDone )
     {
-        returnValue = OP_FAIL;
+    	const unsigned totalNumberofDocuments = this->forwardIndex->getTotalNumberOfForwardLists_WriteView();
+    	ForwardList *forwardList = this->forwardIndex->getForwardList_ForCommit(internalRecordId);
+    	this->invertedIndex->addRecord(forwardList , this->trie, this->rankerExpression,
+    			internalRecordId, this->schemaInternal, record, totalNumberofDocuments, keywordIdList);
     }
-    
-    return returnValue;
+   
+    return OP_SUCCESS;
 }
 
 // delete a record with a specific id //TODO Give the correct return message for delete pass/fail

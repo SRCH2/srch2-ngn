@@ -38,6 +38,7 @@ const char* const QueryParser::filterQueryParamName = "fq"; //solr
 const char* const QueryParser::queryFieldBoostParamName = "qf"; //solr
 const char* const QueryParser::isFuzzyParamName = "fuzzy"; //srch2
 const char* const QueryParser::docIdParamName = "docid"; //srch2
+
 // local parameter params
 const char* const QueryParser::lpKeyValDelimiter = "="; //solr
 const char* const QueryParser::lpQueryBooleanOperatorParamName =
@@ -200,6 +201,7 @@ bool QueryParser::parse() {
      */
 
     // do some parsing
+
     try {
         if(this->docIdParser()){
             return true;

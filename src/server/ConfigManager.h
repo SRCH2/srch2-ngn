@@ -106,7 +106,7 @@ struct CoreConfigParseState_t {
     vector<bool> searchableAttributesRequiredFlagVector;
     vector<string> searchableAttributesDefaultVector;
     vector<bool> searchableAttributesIsMultiValued;
-    vector<bool> highlight;
+    vector<bool> searchableAttributesHighlight;
 
     CoreConfigParseState_t() : hasLatitude(false), hasLongitude(false) {};
 };
@@ -134,8 +134,10 @@ inline  enum PortType_t incrementPortType(PortType_t &oldValue)
 class ConfigManager {
 public:
     typedef std::map<const string, CoreInfo_t *> CoreInfoMap_t;
+    static const char* const OAuthParam;
 
 private:
+    static string authorizationKey;
 
     // <config>
     string licenseKeyFile;
@@ -352,9 +354,14 @@ public:
 
     CoreInfo_t *getDefaultCoreInfo() const;
 
+    static string getAuthorizationKey();
+
+    static void setAuthorizationKey(string &key);
+
 private:
 
 // configuration file tag and attribute names for ConfigManager
+    static const char* const authorizationKeyTag;
     static const char* const accessLogFileString;
     static const char* const analyzerString;
     static const char* const cacheSizeString;
@@ -389,7 +396,7 @@ private:
     static const char* const indexedString;
     static const char* const multiValuedString;
     static const char* const indexTypeString;
-    static const char* const licenseFileString;
+    //static const char* const licenseFileString;
     static const char* const listenerWaitTimeString;
     static const char* const listeningHostStringString;
     static const char* const listeningPortString;
@@ -470,6 +477,7 @@ private:
     static const char* const defaultFuzzyPostTag;
     static const char* const defaultExactPreTag;
     static const char* const defaultExactPostTag;
+
 
 };
 
