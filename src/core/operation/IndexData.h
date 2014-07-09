@@ -69,6 +69,7 @@
 #include "index/Trie.h"
 //#include "index/InvertedIndex.h"
 #include "index/ForwardIndex.h"
+#include "geo/QuadTree.h"
 //#include "record/AnalyzerInternal.h"
 //#include "record/SchemaInternal.h"
 //#include "license/LicenseVerifier.h"
@@ -242,8 +243,7 @@ public:
     Trie_Internal *trie;
     InvertedIndex *invertedIndex;
 
-    //TODO  Mahdi: change it with new quadtree
-    //QuadTree *quadTree;
+    QuadTree *quadTree;
 
     ForwardIndex *forwardIndex;
     SchemaInternal *schemaInternal;

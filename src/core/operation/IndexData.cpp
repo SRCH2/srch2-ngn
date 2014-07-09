@@ -77,6 +77,8 @@ IndexData::IndexData(const string &directoryName,
 
     this->invertedIndex =new InvertedIndex(this->forwardIndex);
 
+    this->quadTree = new QuadTree();
+
 
     this->readCounter = new ReadCounter();
     this->writeCounter = new WriteCounter();
@@ -105,6 +107,8 @@ IndexData::IndexData(const string& directoryName)
 
     	this->invertedIndex = new InvertedIndex(this->forwardIndex);
 
+    	this->quadTree = new QuadTree();
+
     	// set if it's a attributeBasedSearch
     	PositionIndexType positionIndexType = this->schemaInternal->getPositionIndexType();
     	if(isEnabledAttributeBasedSearch(positionIndexType))
@@ -115,6 +119,8 @@ IndexData::IndexData(const string& directoryName)
 
     	serializer.load(*(this->invertedIndex), directoryName + "/" +  IndexConfig::invertedIndexFileName);
     	this->invertedIndex->setForwardIndex(this->forwardIndex);
+
+    	serializer.load(*(this->quadTree), directoryName + "/" + IndexConfig::quadTreeFileName);
 
     	this->loadCounts(directoryName + "/" + IndexConfig::indexCountsFileName);
     	this->flagBulkLoadDone = true;
@@ -174,14 +180,6 @@ INDEXWRITE_RETVAL IndexData::_addRecordWithoutLock(const Record *record, Analyze
 
     KeywordIdKeywordStringInvertedListIdTriple keywordIdList;
 
-    // only used for committed geo index
-    vector<unsigned> *keywordIdVector = NULL;
-    if(this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex
-            && this->flagBulkLoadDone == true)
-    {
-        keywordIdVector = new vector<unsigned> ();
-    }
-
     for(map<string, TokenAttributeHits>::iterator mapIterator = tokenAttributeHitsMap.begin();
             mapIterator != tokenAttributeHitsMap.end();
             ++mapIterator)
@@ -207,11 +205,6 @@ INDEXWRITE_RETVAL IndexData::_addRecordWithoutLock(const Record *record, Analyze
             keywordId = this->trie->addKeyword(getCharTypeVector(mapIterator->first), invertedIndexOffset);
         else
         {
-            if (this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex)
-            {
-                oldParentOrSelfAndAncs = new vector<Prefix> ();  // CHEN: store the ancestors (possibly itself) whose interval will change after this insertion
-                breakLeftOrRight = this->trie->ifBreakOldParentPrefix(getCharTypeVector(mapIterator->first), oldParentOrSelfAndAncs, hadExactlyOneChild);
-            }  // CHEN: 0 means no break; 1 means break from left; and 2 means break from right
             //transform string to vector<CharType>
             keywordId = this->trie->addKeyword_ThreadSafe(getCharTypeVector(mapIterator->first), invertedIndexOffset, isNewTrieNode, isNewInternalTerminalNode);
         }
@@ -249,6 +242,11 @@ INDEXWRITE_RETVAL IndexData::_addRecordWithoutLock(const Record *record, Analyze
     	ForwardList *forwardList = this->forwardIndex->getForwardList_ForCommit(internalRecordId);
     	this->invertedIndex->addRecord(forwardList , this->trie, this->rankerExpression,
     			internalRecordId, this->schemaInternal, record, totalNumberofDocuments, keywordIdList);
+    }
+
+    // Geo Index: need to add this record to the quadtree.
+    if(this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex){
+    	this->quadTree->insert(record, internalRecordId);
     }
    
     return OP_SUCCESS;
@@ -591,6 +589,12 @@ void IndexData::_save(const string &directoryName) const
     	serializer.save(*this->invertedIndex, directoryName + "/" +  IndexConfig::invertedIndexFileName);
     } catch (exception &ex) {
     	Logger::error("Error writing inverted index file: %s/%s", directoryName.c_str(), IndexConfig::invertedIndexFileName);
+    }
+
+    try{
+    	serializer.save(*this->quadTree, directoryName + "/" + IndexConfig::quadTreeFileName);
+    } catch (exception &ex){
+    	Logger::error("Error writing quadtree file: %s/%s", directoryName.c_str(), IndexConfig::quadTreeFileName);
     }
 
     try {

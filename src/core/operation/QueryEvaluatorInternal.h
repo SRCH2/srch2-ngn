@@ -141,6 +141,11 @@ public:
     	return this->cacheManager;
     }
 
+    //TODO: Mahdi: Remove this function (I just add it for testing quadtree before implementing search)
+    const IndexData* getIndexData(){
+    	return this->indexData;
+    }
+
 public:
     IndexReadStateSharedPtr_Token indexReadToken;
     void findKMostPopularSuggestionsSorted(Term *term ,

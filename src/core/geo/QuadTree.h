@@ -10,23 +10,20 @@
 
 #include <vector>
 
-#include "geosearch/QuadTreeNode.h"
+#include "geo/QuadTreeNode.h"
 
 using namespace std;
 
 namespace srch2{
 namespace instantsearch{
 
-const double TOP_RIGHT_X = 200.0;    // The top right point of the maximum rectangle range of the whole quadtree
-const double TOP_RIGHT_Y = 200.0;
-const double BOTTOM_LEFT_X = -200.0;    // The bottom left point of the maximum rectangle range of the whole quadtree
-const double BOTTOM_LEFT_Y = -200.0;
+const double GEO_TOP_RIGHT_X = 200.0;    // The top right point of the maximum rectangle range of the whole quadtree
+const double GEO_TOP_RIGHT_Y = 200.0;
+const double GEO_BOTTOM_LEFT_X = -200.0;    // The bottom left point of the maximum rectangle range of the whole quadtree
+const double GEO_BOTTOM_LEFT_Y = -200.0;
 
 class QuadTree
 {
-private:
-	QuadTreeNode* root;    // Pointer to the root of the Quadtree.
-
 public:
 	QuadTree();
 
@@ -53,9 +50,21 @@ public:
 	// Find all the geo elements in the range
 	void rangeQuery(vector<vector<GeoElement*>*> & results, const Shape &range) const;
 
+	bool equalTo(QuadTree quadtree);
+
 	QuadTreeNode* getRoot(){
 		return this->root;
 	};
+
+private:
+	QuadTreeNode* root;    // Pointer to the root of the Quadtree.
+
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive & ar, const unsigned int version)
+    {
+        ar & this->root;
+    }
 
 };
 

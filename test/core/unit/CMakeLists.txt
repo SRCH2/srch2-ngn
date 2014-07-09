@@ -88,6 +88,10 @@ ADD_EXECUTABLE(ForwardIndex_Performance_Test ForwardIndex_Performance_Test.cpp)
 TARGET_LINK_LIBRARIES(ForwardIndex_Performance_Test ${UNIT_TEST_LIBS} )
 LIST(APPEND UNIT_TESTS ForwardIndex_Performance_Test)
 
+ADD_EXECUTABLE(QuadTree_Test QuadTree_Test.cpp)
+TARGET_LINK_LIBRARIES(QuadTree_Test ${UNIT_TEST_LIBS})
+LIST(APPEND UNIT_TESTS QuadTree_Test)
+
 ADD_EXECUTABLE(NewQuadTree_Test NewQuadTree_Test.cpp)
 TARGET_LINK_LIBRARIES(NewQuadTree_Test ${UNIT_TEST_LIBS})	
 LIST(APPEND UNIT_TESTS NewQuadTree_Test)

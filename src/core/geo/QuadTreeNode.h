@@ -20,12 +20,12 @@ using namespace std;
 namespace srch2{
 namespace instantsearch{
 
-const unsigned MAX_NUM_OF_ELEMENTS = 6;    // The maximum number of GeoElements each leaf node can have
-const double MIN_SEARCH_RANGE_SQUARE = (0.24 * 0.24);    // The largest range we should search for, in degree (used in calculating the score)
-const double MIN_DISTANCE_SCORE = 0.05;
-const double MBR_LIMIT = (0.0005 * 0.0005); //0.005 The min size of a single rectangle
-const unsigned CHILD_NUM_SQRT = 2;    // Square root of the maximum number of children each intermediate node can have
-const unsigned CHILD_NUM = (CHILD_NUM_SQRT * CHILD_NUM_SQRT);
+const unsigned GEO_MAX_NUM_OF_ELEMENTS = 6;    // The maximum number of GeoElements each leaf node can have
+const double GEO_MIN_SEARCH_RANGE_SQUARE = (0.24 * 0.24);    // The largest range we should search for, in degree (used in calculating the score)
+const double GEO_MIN_DISTANCE_SCORE = 0.05;
+const double GEO_MBR_LIMIT = (0.0005 * 0.0005); //0.005 The min size of a single rectangle
+const unsigned GEO_CHILD_NUM_SQRT = 2;    // Square root of the maximum number of children each intermediate node can have
+const unsigned GEO_CHILD_NUM = (GEO_CHILD_NUM_SQRT * GEO_CHILD_NUM_SQRT);
 
 class GeoElement
 {
@@ -54,6 +54,15 @@ public:
 	// Return geo score of this record for a specific range
 	double getScore(const SpatialRanker *ranker, const Shape &range);
 
+private:
+
+	friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive & ar, const unsigned int version)
+    {
+        ar & this->forwardListID;
+        ar & this->point;
+    }
 };
 
 class QuadTreeNode
@@ -61,9 +70,9 @@ class QuadTreeNode
 public:
 	QuadTreeNode(){};
 
-	QuadTreeNode(Rectangle rectangle);
+	QuadTreeNode(Rectangle &rectangle);
 
-	QuadTreeNode(Rectangle rectangle, GeoElement* elements);
+	QuadTreeNode(Rectangle &rectangle, GeoElement* elements);
 
 	virtual ~QuadTreeNode();
 
@@ -86,6 +95,10 @@ public:
 
 	Rectangle getRectangle(){
 		return this->rectangle;
+	}
+
+	int getNumOfElementsInSubtree(){
+		return this->numOfElementsInSubtree;
 	}
 
 private:
@@ -111,6 +124,17 @@ private:
 
 	// Return all the elements of the subtree of this node
 	void getElements(vector<GeoElement*> & results);
+
+	friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive & ar, const unsigned int version)
+    {
+        ar & this->rectangle;
+        ar & this->isLeaf;
+        ar & this->children;
+        ar & this->numOfElementsInSubtree;
+        ar & this->elements;
+    }
 };
 
 

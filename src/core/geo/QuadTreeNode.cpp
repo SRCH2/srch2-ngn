@@ -5,7 +5,7 @@
  *      Author: mahdi
  */
 
-#include <geosearch/QuadTreeNode.h>
+#include <geo/QuadTreeNode.h>
 #include "util/Logger.h"
 #include "util/Assert.h"
 
@@ -36,21 +36,21 @@ double GeoElement::getDistance(const Shape & range){
 
 double GeoElement::getScore(const SpatialRanker *ranker, const Shape & range){
 	 // calculate the score
-	double minDist2UpperBound = max( range.getSearchRadius2() , MIN_SEARCH_RANGE_SQUARE);
+	double minDist2UpperBound = max( range.getSearchRadius2() , GEO_MIN_SEARCH_RANGE_SQUARE);
 	double resultMinDist2 = range.getMinDist2FromLatLong(this->point.x, this->point.y);
 	double distanceRatio = ranker->getDistanceRatio(minDist2UpperBound, resultMinDist2);
-	return max( distanceRatio * distanceRatio, MIN_DISTANCE_SCORE );
+	return max( distanceRatio * distanceRatio, GEO_MIN_DISTANCE_SCORE );
 }
 
 /*********QuadTreeNode******************************************************/
 
-QuadTreeNode::QuadTreeNode(Rectangle rectangle){
+QuadTreeNode::QuadTreeNode(Rectangle &rectangle){
 	this->rectangle = rectangle;
 	this->isLeaf = true;
 	this->numOfElementsInSubtree = 0;
 }
 
-QuadTreeNode::QuadTreeNode(Rectangle rectangle, GeoElement* elements){
+QuadTreeNode::QuadTreeNode(Rectangle &rectangle, GeoElement* elements){
 	this->rectangle = rectangle;
 	this->isLeaf = true;
 	this->numOfElementsInSubtree = 1;
@@ -59,8 +59,7 @@ QuadTreeNode::QuadTreeNode(Rectangle rectangle, GeoElement* elements){
 
 QuadTreeNode::~QuadTreeNode(){
 	if(!isLeaf){
-		for(unsigned i = 0; i < children.size(); i++)
-		{
+		for(unsigned i = 0; i < children.size(); i++){
 			if(children[i] != NULL)
 				delete children[i];
 		}
@@ -72,9 +71,9 @@ bool QuadTreeNode::insertGeoElement(GeoElement* element){
 	// A leaf node //
 	if(this->isLeaf){
 		// Split the leaf if it is full
-		if(this->numOfElementsInSubtree >= MAX_NUM_OF_ELEMENTS
+		if(this->numOfElementsInSubtree >= GEO_MAX_NUM_OF_ELEMENTS
 				// For avoiding too small regions in the quadtree
-				&& ((this->rectangle.max.x - this->rectangle.min.x) * (this->rectangle.max.y - this->rectangle.min.y)) > MBR_LIMIT){
+				&& ((this->rectangle.max.x - this->rectangle.min.x) * (this->rectangle.max.y - this->rectangle.min.y)) > GEO_MBR_LIMIT){
 			this->split();
 		}else{
 			this->elements.push_back(element);
@@ -122,7 +121,7 @@ bool QuadTreeNode::removeGeoElement(GeoElement* element){
 			if( this->children[child]->removeGeoElement(element) ){
 				this->numOfElementsInSubtree--;
 				// if the number of elements in the subtree of this node is less than  MAX_NUM_OF_ELEMENTS we should merge this node.
-				if(this->numOfElementsInSubtree < MAX_NUM_OF_ELEMENTS)
+				if(this->numOfElementsInSubtree < GEO_MAX_NUM_OF_ELEMENTS)
 					mergeChildren();
 				return true;
 			}
@@ -161,7 +160,7 @@ void QuadTreeNode::rangeQuery(vector<vector<GeoElement*>*> & results, const Shap
 	if(this->isLeaf){ // leaf node - just add the pointer of its elements to the results
 		results.push_back(&this->elements);
 	}else{ // internal node - needs to check range of its children with query range for pruning
-		for(unsigned i = 0 ; i < CHILD_NUM ; i++){
+		for(unsigned i = 0 ; i < GEO_CHILD_NUM ; i++){
 			if(this->children[i] != NULL){
 				if(range.intersects(this->children[i]->rectangle)){
 					this->children[i]->rangeQuery(results, range);
@@ -176,7 +175,7 @@ void QuadTreeNode::split(){
 	this->isLeaf = false; // after split, the node will no longer be a leaf
 	this->numOfElementsInSubtree = 0;
 	// set child points to NULL.
-	for(unsigned i = 0; i < CHILD_NUM; i++)
+	for(unsigned i = 0; i < GEO_CHILD_NUM; i++)
 	        this->children.push_back(NULL);
 
 
@@ -190,14 +189,14 @@ void QuadTreeNode::split(){
 
 void QuadTreeNode::mergeChildren(){
 	// This node should be an internal node for merge.
-	ASSERT(this->numOfElementsInSubtree < MAX_NUM_OF_ELEMENTS );
+	ASSERT(this->numOfElementsInSubtree < GEO_MAX_NUM_OF_ELEMENTS );
 	ASSERT(this->elements.size() == 0);
 	ASSERT(this->isLeaf == false);
 
 
 	getElements(this->elements); // Move all the elements in its subtree to node
 	this->isLeaf = true; // this node become a leaf after merge
-	for(unsigned i = 0 ; i < CHILD_NUM ; i++){
+	for(unsigned i = 0 ; i < GEO_CHILD_NUM ; i++){
 		delete this->children[i];
 	}
 	this->children.clear();
@@ -214,23 +213,23 @@ unsigned QuadTreeNode::findChildContainingPoint(Point& point){
 	double xRatio = (point.x - this->rectangle.min.x) / (this->rectangle.max.x - this->rectangle.min.x);
 	double yRatio = (point.y - this->rectangle.min.y) / (this->rectangle.max.y - this->rectangle.min.y);
 
-	unsigned x = (unsigned)(xRatio * CHILD_NUM_SQRT);
-	unsigned y = (unsigned)(yRatio * CHILD_NUM_SQRT);
+	unsigned x = (unsigned)(xRatio * GEO_CHILD_NUM_SQRT);
+	unsigned y = (unsigned)(yRatio * GEO_CHILD_NUM_SQRT);
 
-	if((x + y * CHILD_NUM_SQRT)>=CHILD_NUM){
+	if((x + y * GEO_CHILD_NUM_SQRT) >= GEO_CHILD_NUM){
 		Logger::debug("The point is not in the range!! ");
 		Logger::debug("%.10f,%d,%.10f,%.10f", yRatio, y, this->rectangle.min.y,  this->rectangle.max.y);
 		Logger::debug("%.10f,%.10f", point.x, point.y);
 	}
 
-	return x + y * CHILD_NUM_SQRT;
+	return x + y * GEO_CHILD_NUM_SQRT;
 }
 
 void QuadTreeNode::createNewRectangle(Rectangle &newRectangle, const Rectangle &rectangle, const unsigned child){
-	unsigned x = (unsigned)(child % CHILD_NUM_SQRT);
-	unsigned y = (unsigned)(child / CHILD_NUM_SQRT);
+	unsigned x = (unsigned)(child % GEO_CHILD_NUM_SQRT);
+	unsigned y = (unsigned)(child / GEO_CHILD_NUM_SQRT);
 
-	double single = (rectangle.max.x - rectangle.min.x) / CHILD_NUM_SQRT;
+	double single = (rectangle.max.x - rectangle.min.x) / GEO_CHILD_NUM_SQRT;
 
 	newRectangle.min.x = rectangle.min.x + x * single;
 	newRectangle.min.y = rectangle.min.y + y * single;

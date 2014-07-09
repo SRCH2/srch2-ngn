@@ -1,7 +1,7 @@
 # define the sources for lib-srch2. 
 #Inside the source directory, to make a header file invisible to build environment, name it in "_${name}.h" format. For example, this applies to test headers like _TrieTest.h
 
-FILE(GLOB SRCH2_LIB_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.cpp" "index/*.cpp" "ranking/*.cpp" "operation/*.cpp" "operation/physical_plan/*.cpp" "postprocessing/*.cpp" "record/*.cpp" "util/*.cpp" "analyzer/*.cpp" "query/*.cpp" "license/*.cpp" "geosearch/*.cpp" "../../thirdparty/snappy-1.0.4/*.cc" "serialization/*.cpp" "highlighter/*.cpp")
+FILE(GLOB SRCH2_LIB_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.cpp" "index/*.cpp" "ranking/*.cpp" "operation/*.cpp" "operation/physical_plan/*.cpp" "postprocessing/*.cpp" "record/*.cpp" "util/*.cpp" "analyzer/*.cpp" "query/*.cpp" "license/*.cpp" "geo/*.cpp" "../../thirdparty/snappy-1.0.4/*.cc" "serialization/*.cpp" "highlighter/*.cpp")
 
 IF(BUILD_JNI)
     find_package(JNI)

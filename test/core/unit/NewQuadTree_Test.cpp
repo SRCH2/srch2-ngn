@@ -7,7 +7,7 @@
 
 
 // For using this test case make sure that to set the value of all
-// these parameters in src/core/geosearch/QuadTreeNode.h
+// these parameters in src/core/geo/QuadTreeNode.h
 // these variable should have exactly these values:
 //const unsigned MAX_NUM_OF_ELEMENTS = 6;
 //const double MIN_SEARCH_RANGE_SQUARE = (0.24 * 0.24);
@@ -17,8 +17,8 @@
 //const unsigned CHILD_NUM = (CHILD_NUM_SQRT * CHILD_NUM_SQRT);
 
 #include <iostream>
-#include "src/core/geosearch/QuadTree.h"
-#include "src/core/geosearch/QuadTreeNode.h"
+#include "src/core/geo/QuadTree.h"
+#include "src/core/geo/QuadTreeNode.h"
 #include "record/LocationRecordUtil.h"
 #include <list>
 using namespace std;

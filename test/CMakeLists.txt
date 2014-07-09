@@ -134,6 +134,9 @@ SET_TESTS_PROPERTIES(GetAllResultsQuery_Test PROPERTIES ENVIRONMENT "index_dir=$
 ADD_TEST(Lookup_Test ${CMAKE_CURRENT_BINARY_DIR}/core/integration/Lookup_Test "--verbose")
 SET_TESTS_PROPERTIES(Lookup_Test PROPERTIES ENVIRONMENT "index_dir=${INTEGRATION_TEST_INDEX_DIR}ranking-newly-inserted/")
 
+ADD_TEST(QuadTree_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/QuadTree_Test "--verbose")
+SET_TESTS_PROPERTIES(QuadTree_Test PROPERTIES ENVIRONMENT "directoryName=${CMAKE_SOURCE_DIR}/test/core/unit/test_data")
+
 ADD_TEST(NewQuadTree_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/NewQuadTree_Test "--verbose")
 	  
 ADD_TEST(ULEB128_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/ULEB128_Test "--verbose")
