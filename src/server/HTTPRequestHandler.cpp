@@ -44,19 +44,10 @@ namespace srch2 {
 namespace httpwrapper {
 
 namespace {
-    pair<string, string> internalRecordTags("srch2_internal_record_123456789", "record");
-    pair<string, string> internalSnippetTags("srch2_internal_snippet_123456789", "snippet");
-
-    boost::shared_ptr<CustomizableJsonWriter> createCustomizableJsonWriter(){
-        // In each pair, the first one is the internal json label for the unparsed text, and
-        // the second one is the final json label used in the print() function
-        vector<pair<string, string> > tags;
-        tags.push_back(internalRecordTags);tags.push_back(internalSnippetTags);
-        // We use CustomizableJsonWriter with the internal record tag so that we don't need to
-        // parse the internalRecordTag string to add it to the JSON object.
-
-        return boost::make_shared<CustomizableJsonWriter>( CustomizableJsonWriter(&tags));   
-    }
+    static const pair<string, string> global_internal_record("srch2_internal_record_123456789", "record");
+    static const pair<string, string> global_internal_snippet("srch2_internal_snippet_123456789", "snippet");
+    static const pair<string, string> internal_data[] = { global_internal_record, global_internal_snippet};
+    static const vector<pair<string, string> > global_internal_skip_tags(internal_data, internal_data+2);    
 }
 
 /**
@@ -197,7 +188,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
                     genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i), sbuffer);
                     // The class CustomizableJsonWriter allows us to
                     // attach the data string to the JSON tree without parsing it.
-                    root["results"][counter][internalRecordTags.first] = sbuffer;
+                    root["results"][counter][global_internal_record.first] = sbuffer;
                 } else if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SELECTED_ATTR){
                 	string sbuffer;
                 	const vector<string> *attrToReturn = indexDataConfig->getAttributesToReturn();
@@ -205,7 +196,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
                 			sbuffer, attrToReturn);
                 	// The class CustomizableJsonWriter allows us to
                 	// attach the data string to the JSON tree without parsing it.
-                	root["results"][counter][internalRecordTags.first] = sbuffer;
+                	root["results"][counter][global_internal_record.first] = sbuffer;
                 }
                 ++counter;
             }
@@ -250,7 +241,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
                     		 sbuffer);
                     // The class CustomizableJsonWriter allows us to
                     // attach the data string to the JSON tree without parsing it.
-                    root["results"][counter][internalRecordTags.first] = sbuffer;
+                    root["results"][counter][global_internal_record.first] = sbuffer;
                 } else if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SELECTED_ATTR){
                 	unsigned internalRecordId = queryResults->getInternalRecordId(i);
                 	string sbuffer;
@@ -259,13 +250,13 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
                 			sbuffer, attrToReturn);
                 	// The class CustomizableJsonWriter allows us to
                 	// attach the data string to the JSON tree without parsing it.
-                	root["results"][counter][internalRecordTags.first] = sbuffer;
+                	root["results"][counter][global_internal_record.first] = sbuffer;
                 }
 
                 string sbuffer = string();
                 sbuffer.reserve(1024);  //<< TODO: set this to max allowed snippet len
                 genSnippetJSONString(i, start, recordSnippets, sbuffer, queryResults);
-                root["results"][counter][internalSnippetTags.first] = sbuffer;
+                root["results"][counter][global_internal_snippet.first] = sbuffer;
                 ++counter;
             }
 
@@ -434,7 +425,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printOneResultRetrievedById(e
             unsigned internalRecordId = queryResults->getInternalRecordId(i);
             string sbuffer;
             genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i), sbuffer);
-            root["results"][counter][internalRecordTags.first] = sbuffer;
+            root["results"][counter][global_internal_record.first] = sbuffer;
         } else if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SELECTED_ATTR){
         	unsigned internalRecordId = queryResults->getInternalRecordId(i);
         	string sbuffer;
@@ -443,7 +434,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printOneResultRetrievedById(e
         			sbuffer, attrToReturn);
         	// The class CustomizableJsonWriter allows us to
         	// attach the data string to the JSON tree without parsing it.
-        	root["results"][counter][internalRecordTags.first] = sbuffer;
+        	root["results"][counter][global_internal_record.first] = sbuffer;
         }
         ++counter;
     }
@@ -949,8 +940,8 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     boost::shared_ptr<Json::Value> root = doSearchOneCore( req, server, &headers, &paramContainer);
 
     if (root ){
-        boost::shared_ptr<CustomizableJsonWriter> writer = createCustomizableJsonWriter();
-        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", writer->write(*root), headers);
+        CustomizableJsonWriter writer (&global_internal_skip_tags);
+        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", writer.write(*root), headers);
     }
     evhttp_clear_headers(&headers);
 }
@@ -1144,8 +1135,8 @@ void HTTPRequestHandler::searchAllCommand(evhttp_request *req, CoreNameServerMap
         }
     }
 
-    boost::shared_ptr<CustomizableJsonWriter> writer = createCustomizableJsonWriter();
-    bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", writer->write(root), headers);
+    CustomizableJsonWriter writer (&global_internal_skip_tags);
+    bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", writer.write(root), headers);
     evhttp_clear_headers(&headers);
 }
 

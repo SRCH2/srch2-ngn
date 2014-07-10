@@ -91,6 +91,7 @@ class HTTPRequestHandler
 		static void genSnippetJSONString(unsigned recIdx, unsigned start,
 				const vector<RecordSnippet>& recordSnippets, string& sbuffer,
 				const QueryResults *queryResults);
+
 };
 
 }
