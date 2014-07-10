@@ -852,7 +852,7 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
 
         for(int j = 0; global_PortList[j].path != NULL; j++){
             string path = string(global_PortList[j].path);
-            evhttp_set_cb(http_server, path.c_str(), portList[j].callback, coreNameServerMap);
+            evhttp_set_cb(http_server, path.c_str(), global_PortList[j].callback, coreNameServerMap);
         }
 
         /* 4). accept bound socket */
@@ -926,6 +926,7 @@ int main(int argc, char** argv) {
         Logger::setOutputFile(logFile);
     }
     Logger::setLogLevel(serverConf->getHTTPServerLogLevel());
+    Logger::setLogLevel(Logger::SRCH2_LOG_DEBUG );
 
     vector<struct event_base *> evBases; // all libevent base objects (one per thread)
     vector<struct evhttp *> evServers;

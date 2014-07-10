@@ -733,16 +733,16 @@ void HTTPRequestHandler::shutdownCommand(evhttp_request *req, CoreNameServerMap_
     /* Yes, we are expecting a post request */
     switch (req->type) {
     case EVHTTP_REQ_PUT: {
-        std::stringstream log_str;
-        for (CoreNameServerMap_t::iterator it = coreNameServerMap->begin(); 
-                it != coreNameServerMap->end(); ++it){
-            IndexWriteUtil::_saveCommand(it->second->indexer, log_str);
+        //std::stringstream log_str;
+        //for (CoreNameServerMap_t::iterator it = coreNameServerMap->begin(); 
+        //        it != coreNameServerMap->end(); ++it){
+        //    IndexWriteUtil::_saveCommand(it->second->indexer, log_str);
 
-            bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
-                    "{\"message\":\"The indexes have been saved to disk successfully\", \"log\":["
-                            + log_str.str() + "]}\n");
-            Logger::info("%s", log_str.str().c_str());
-        }
+        //    bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
+        //            "{\"message\":\"The indexes have been saved to disk successfully\", \"log\":["
+        //                    + log_str.str() + "]}\n");
+        //    Logger::info("%s", log_str.str().c_str());
+        //}
         // graceful shutdown
         // since the main process is catching the kill signal, we can simply send the kill to itself
         kill(getpid(),SIGTERM);
