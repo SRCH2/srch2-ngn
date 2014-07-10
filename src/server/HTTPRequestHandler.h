@@ -28,16 +28,21 @@ namespace srch2
 {
 namespace httpwrapper
 {
+// named access to multiple "cores" (ala Solr)
+typedef std::map<const std::string, srch2http::Srch2Server *> CoreNameServerMap_t;
 
 class HTTPRequestHandler
 {
     public:
+
         static void searchCommand(evhttp_request *req, Srch2Server *server);
+        static void searchAllCommand(evhttp_request *req, CoreNameServerMap_t * coreNameServerMap);
         static void suggestCommand(evhttp_request *req, Srch2Server *server);
         static void infoCommand(evhttp_request *req, Srch2Server *server, const string &versioninfo);
         static void writeCommand(evhttp_request *req, Srch2Server *server);
         static void updateCommand(evhttp_request *req, Srch2Server *server);
         static void saveCommand(evhttp_request *req, Srch2Server *server);
+        static void shutdownCommand(evhttp_request *req, CoreNameServerMap_t * coreNameServerMap);
         static void exportCommand(evhttp_request *req, Srch2Server *server);
         static void resetLoggerCommand(evhttp_request *req, Srch2Server *server);
         static void lookupCommand(evhttp_request *req, Srch2Server *server);
@@ -45,7 +50,9 @@ class HTTPRequestHandler
 
 	private:
 
-		static void printResults(evhttp_request *req, const evkeyvalq &headers,
+        static boost::shared_ptr<Json::Value> doSearchOneCore(evhttp_request *req,
+            Srch2Server *server, evkeyvalq * headers,ParsedParameterContainer *paramContainer ) ;
+		static boost::shared_ptr<Json::Value> printResults(evhttp_request *req, const evkeyvalq &headers,
 				const LogicalPlan &queryPlan,
 				const CoreInfo_t *indexDataConfig,
 				const QueryResults *queryResults,
@@ -61,7 +68,7 @@ class HTTPRequestHandler
 				bool onlyFacets = false
 				);
 
-		static void printOneResultRetrievedById(evhttp_request *req, const evkeyvalq &headers,
+		static boost::shared_ptr<Json::Value> printOneResultRetrievedById(evhttp_request *req, const evkeyvalq &headers,
 				const LogicalPlan &queryPlan,
 				const CoreInfo_t *indexDataConfig,
 				const QueryResults *queryResults,

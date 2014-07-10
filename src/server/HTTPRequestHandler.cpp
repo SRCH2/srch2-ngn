@@ -2,6 +2,7 @@
 
 #include <sys/time.h>
 #include <boost/algorithm/string.hpp>
+#include <boost/make_shared.hpp>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -42,6 +43,21 @@ using namespace std;
 namespace srch2 {
 namespace httpwrapper {
 
+namespace {
+    pair<string, string> internalRecordTags("srch2_internal_record_123456789", "record");
+    pair<string, string> internalSnippetTags("srch2_internal_snippet_123456789", "snippet");
+
+    boost::shared_ptr<CustomizableJsonWriter> createCustomizableJsonWriter(){
+        // In each pair, the first one is the internal json label for the unparsed text, and
+        // the second one is the final json label used in the print() function
+        vector<pair<string, string> > tags;
+        tags.push_back(internalRecordTags);tags.push_back(internalSnippetTags);
+        // We use CustomizableJsonWriter with the internal record tag so that we don't need to
+        // parse the internalRecordTag string to add it to the JSON object.
+
+        return boost::make_shared<CustomizableJsonWriter>( CustomizableJsonWriter(&tags));   
+    }
+}
 
 /**
  * Create evbuffer. If failed, send 503 response.
@@ -137,11 +153,13 @@ void HTTPRequestHandler::cleanAndAppendToBuffer(const string& in, string& out) {
 		++inIdx;
 	}
 }
+
+
 /**
  * Iterate over the recordIDs in queryResults and get the record.
  * Add the record information to the request.out string.
  */
-void HTTPRequestHandler::printResults(evhttp_request *req,
+boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *req,
         const evkeyvalq &headers, const LogicalPlan &queryPlan,
         const CoreInfo_t *indexDataConfig,
         const QueryResults *queryResults, const Query *query,
@@ -151,17 +169,6 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
         const vector<RecordSnippet>& recordSnippets, unsigned hlTime, bool onlyFacets) {
 
     Json::Value root;
-    static pair<string, string> internalRecordTags("srch2_internal_record_123456789", "record");
-    static pair<string, string> internalSnippetTags("srch2_internal_snippet_123456789", "snippet");
-
-    // In each pair, the first one is the internal json label for the unparsed text, and
-    // the second one is the final json label used in the print() function
-    vector<pair<string, string> > tags;
-    tags.push_back(internalRecordTags);tags.push_back(internalSnippetTags);
-    // We use CustomizableJsonWriter with the internal record tag so that we don't need to
-    // parse the internalRecordTag string to add it to the JSON object.
-    CustomizableJsonWriter writer(&tags);
-
     // For logging
     string logQueries;
     unsigned resultFound = retrievedResults;
@@ -386,7 +393,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
     Logger::info(
             "ip: %s, port: %d GET query: %s, searcher_time: %d ms, highlighter_time: %d ms, payload_access_time: %d ms",
             req->remote_host, req->remote_port, req->uri + 1, ts1, hlTime, ts2);
-    bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", writer.write(root), headers);
+    return boost::make_shared<Json::Value> (root);
 }
 
 
@@ -394,7 +401,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
  * Iterate over the recordIDs in queryResults and get the record.
  * Add the record information to the request.out string.
  */
-void HTTPRequestHandler::printOneResultRetrievedById(evhttp_request *req, const evkeyvalq &headers,
+boost::shared_ptr<Json::Value> HTTPRequestHandler::printOneResultRetrievedById(evhttp_request *req, const evkeyvalq &headers,
         const LogicalPlan &queryPlan,
         const CoreInfo_t *indexDataConfig,
         const QueryResults *queryResults,
@@ -404,18 +411,6 @@ void HTTPRequestHandler::printOneResultRetrievedById(evhttp_request *req, const 
         struct timespec &tstart, struct timespec &tend){
 
     Json::Value root;
-    pair<string, string> internalRecordTags("srch2_internal_record_123456789", "record");
-    pair<string, string> internalSnippetTags("srch2_internal_snippet_123456789", "snippet");
-
-    // In each pair, the first one is the internal json label for the unparsed text, and
-    // the second one is the final json label used in the print() function
-    vector<pair<string, string> > tags;
-    tags.push_back(internalRecordTags);tags.push_back(internalSnippetTags);
-    // We use CustomizableJsonWriter with the internal record tag so that we don't need to
-    // parse the internalRecordTag string to add it to the JSON object.
-    CustomizableJsonWriter writer(&tags);
-
-
     // For logging
     string logQueries;
 
@@ -467,7 +462,7 @@ void HTTPRequestHandler::printOneResultRetrievedById(evhttp_request *req, const 
     Logger::info(
             "ip: %s, port: %d GET query: %s, searcher_time: %d ms, payload_access_time: %d ms",
             req->remote_host, req->remote_port, req->uri + 1, ts1, ts2);
-    bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", writer.write(root), headers);
+    return boost::make_shared<Json::Value>(root);
 }
 
 void HTTPRequestHandler::genRecordJsonString(const srch2is::Indexer *indexer, StoredRecordBuffer buffer,
@@ -743,6 +738,34 @@ void HTTPRequestHandler::saveCommand(evhttp_request *req, Srch2Server *server) {
     };
 }
 
+void HTTPRequestHandler::shutdownCommand(evhttp_request *req, CoreNameServerMap_t *coreNameServerMap){
+    /* Yes, we are expecting a post request */
+    switch (req->type) {
+    case EVHTTP_REQ_PUT: {
+        std::stringstream log_str;
+        for (CoreNameServerMap_t::iterator it = coreNameServerMap->begin(); 
+                it != coreNameServerMap->end(); ++it){
+            IndexWriteUtil::_saveCommand(it->second->indexer, log_str);
+
+            bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
+                    "{\"message\":\"The indexes have been saved to disk successfully\", \"log\":["
+                            + log_str.str() + "]}\n");
+            Logger::info("%s", log_str.str().c_str());
+        }
+        // graceful shutdown
+        // since the main process is catching the kill signal, we can simply send the kill to itself
+        kill(getpid(),SIGTERM);
+        break;
+    }
+    default: {
+        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
+                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
+        Logger::error(
+                "The request has an invalid or missing argument. See Srch2 API documentation for details");
+    }
+    };
+}
+
 // The purpose of this function is to help rotate logger files by repointing logger file.
 // When rotating log file, "logrotate(a 3rd-party program)" will rename the old "logger.txt" file to "logger.txt.1"
 // and create a new file called "logger.txt"
@@ -899,14 +922,6 @@ void decodeAmpersand(const char *uri, unsigned len, string& decodeUri) {
 void HTTPRequestHandler::searchCommand(evhttp_request *req,
         Srch2Server *server) {
 
-    // start the timer for search
-    struct timespec tstart;
-//    struct timespec tstart2;
-    struct timespec tend;
-    clock_gettime(CLOCK_REALTIME, &tstart);
-//    clock_gettime(CLOCK_REALTIME, &tstart2);
-
-    const CoreInfo_t *indexDataContainerConf = server->indexDataConfig;
 
     ParsedParameterContainer paramContainer;
 
@@ -931,31 +946,52 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
 //    unsigned parserTime = (tend.tv_sec - tstart2.tv_sec) * 1000
 //            + (tend.tv_nsec - tstart2.tv_nsec) / 1000000;
 
+    boost::shared_ptr<Json::Value> root = doSearchOneCore( req, server, &headers, &paramContainer);
+
+    if (root ){
+        boost::shared_ptr<CustomizableJsonWriter> writer = createCustomizableJsonWriter();
+        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", writer->write(*root), headers);
+    }
+    evhttp_clear_headers(&headers);
+}
+
+boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_request *req,
+        Srch2Server *server, evkeyvalq * headers,ParsedParameterContainer *paramContainer ) {
+    
+    // start the timer for search
+    struct timespec tstart;
+//    struct timespec tstart2;
+    struct timespec tend;
+    clock_gettime(CLOCK_REALTIME, &tstart);
+//    clock_gettime(CLOCK_REALTIME, &tstart2);
+
+    const CoreInfo_t *indexDataContainerConf = server->indexDataConfig;
+    boost::shared_ptr<Json::Value> root;
     //2. validate the query
     QueryValidator qv(*(server->indexer->getSchema()),
-            *(server->indexDataConfig), &paramContainer);
+            *(server->indexDataConfig), paramContainer);
 
     bool valid = qv.validate();
 
     if (!valid) {
         // if the query is not valid, print the error message to the response
         bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request",
-                paramContainer.getMessageString(), headers);
-        evhttp_clear_headers(&headers);
-        return;
+                paramContainer->getMessageString(), *headers);
+        evhttp_clear_headers(headers);
+        return root;
     }
     //3. rewrite the query and apply analyzer and other stuff ...
     QueryRewriter qr(server->indexDataConfig,
             *(server->indexer->getSchema()),
             *(AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf)),
-            &paramContainer);
+            paramContainer);
     LogicalPlan logicalPlan;
     if(qr.rewrite(logicalPlan) == false){
         // if the query is not valid, print the error message to the response
         bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request",
-                paramContainer.getMessageString(), headers);
-        evhttp_clear_headers(&headers);
-        return;
+                paramContainer->getMessageString(), *headers);
+        evhttp_clear_headers(headers);
+        return root;
     }
 
 //    clock_gettime(CLOCK_REALTIME, &tend);
@@ -988,10 +1024,10 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     clock_gettime(CLOCK_REALTIME, &hltstart);
 
     if (server->indexDataConfig->getHighlightAttributeIdsVector().size() > 0 &&
-    		!paramContainer.onlyFacets &&
-    		paramContainer.isHighlightOn) {
+    		!paramContainer->onlyFacets &&
+    		paramContainer->isHighlightOn) {
 
-    	ServerHighLighter highlighter =  ServerHighLighter(finalResults, server, paramContainer,
+    	ServerHighLighter highlighter =  ServerHighLighter(finalResults, server, *paramContainer,
     			logicalPlan.getOffset(), logicalPlan.getNumberOfResultsToRetrieve());
     	highlightInfo.reserve(logicalPlan.getNumberOfResultsToRetrieve());
     	highlighter.generateSnippets(highlightInfo);
@@ -1009,13 +1045,13 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
     switch (logicalPlan.getQueryType()) {
     case srch2is::SearchTypeTopKQuery:
         finalResults->printStats();
-        HTTPRequestHandler::printResults(req, headers, logicalPlan,
+        root = HTTPRequestHandler::printResults(req, *headers, logicalPlan,
                 indexDataContainerConf, finalResults, logicalPlan.getExactQuery(),
                 server->indexer, logicalPlan.getOffset(),
                 finalResults->getNumberOfResults(),
                 finalResults->getNumberOfResults(),
-                paramContainer.getMessageString(), ts1, tstart, tend, highlightInfo, hlTime,
-                paramContainer.onlyFacets);
+                paramContainer->getMessageString(), ts1, tstart, tend, highlightInfo, hlTime,
+                paramContainer->onlyFacets);
 
         break;
 
@@ -1028,33 +1064,33 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
         if (logicalPlan.getOffset() + logicalPlan.getNumberOfResultsToRetrieve()
                 > finalResults->getNumberOfResults()) {
             // Case where you have return 10,20, but we got only 0,15 results.
-            HTTPRequestHandler::printResults(req, headers, logicalPlan,
+            root = HTTPRequestHandler::printResults(req, *headers, logicalPlan,
                     indexDataContainerConf, finalResults,
                     logicalPlan.getExactQuery(), server->indexer,
                     logicalPlan.getOffset(), finalResults->getNumberOfResults(),
                     finalResults->getNumberOfResults(),
-                    paramContainer.getMessageString(), ts1, tstart, tend , highlightInfo, hlTime,
-                    paramContainer.onlyFacets);
+                    paramContainer->getMessageString(), ts1, tstart, tend , highlightInfo, hlTime,
+                    paramContainer->onlyFacets);
         } else { // Case where you have return 10,20, but we got only 0,25 results and so return 10,20
-            HTTPRequestHandler::printResults(req, headers, logicalPlan,
+            root = HTTPRequestHandler::printResults(req, *headers, logicalPlan,
                     indexDataContainerConf, finalResults,
                     logicalPlan.getExactQuery(), server->indexer,
                     logicalPlan.getOffset(),
                     logicalPlan.getOffset() + logicalPlan.getNumberOfResultsToRetrieve(),
                     finalResults->getNumberOfResults(),
-                    paramContainer.getMessageString(), ts1, tstart, tend, highlightInfo, hlTime,
-                    paramContainer.onlyFacets);
+                    paramContainer->getMessageString(), ts1, tstart, tend, highlightInfo, hlTime,
+                    paramContainer->onlyFacets);
         }
         break;
     case srch2is::SearchTypeRetrieveById:
         finalResults->printStats();
-        HTTPRequestHandler::printOneResultRetrievedById(req,
-                headers,
+        root = HTTPRequestHandler::printOneResultRetrievedById(req,
+                *headers,
                 logicalPlan ,
                 indexDataContainerConf,
                 finalResults ,
                 server->indexer ,
-                paramContainer.getMessageString() ,
+                paramContainer->getMessageString() ,
                 ts1, tstart , tend);
         break;
     default:
@@ -1068,10 +1104,51 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
 //    cout << "Times : " << parserTime << "\t" << validatorTime << "\t" << rewriterTime << "\t" << executionTime << "\t" << printTime << endl;
     // 6. delete allocated structures
     // Free the objects
-    evhttp_clear_headers(&headers);
     delete finalResults;
     delete resultsFactory;
+    return root;
 }
+
+void HTTPRequestHandler::searchAllCommand(evhttp_request *req, CoreNameServerMap_t * coreNameServerMap){
+
+    ParsedParameterContainer paramContainer;
+
+//    string decodedUri;
+//    decodeAmpersand(req->uri, strlen(req->uri), decodedUri);
+    evkeyvalq headers;
+    evhttp_parse_query(req->uri, &headers);
+    //cout << "Query: " << req->uri << endl;
+    // simple example for query is : q={boost=2}name:foo~0.5 AND bar^3*&fq=name:"John"
+    //1. first create query parser to parse the url
+    QueryParser qp(headers, &paramContainer);
+    bool isSyntaxValid = qp.parse();
+    if (!isSyntaxValid) {
+        // if the query is not valid print the error message to the response
+        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request",
+                paramContainer.getMessageString(), headers);
+        evhttp_clear_headers(&headers);
+        return;
+    }
+
+//    clock_gettime(CLOCK_REALTIME, &tend);
+//    unsigned parserTime = (tend.tv_sec - tstart2.tv_sec) * 1000
+//            + (tend.tv_nsec - tstart2.tv_nsec) / 1000000;
+
+    Json::Value root;
+    for( CoreNameServerMap_t::iterator it = coreNameServerMap->begin(); 
+            it != coreNameServerMap->end(); ++it){
+        boost::shared_ptr<Json::Value> subRoot = doSearchOneCore( req, it->second, &headers, &paramContainer);
+
+        if (subRoot ){
+            root[it->first] = *subRoot;
+        }
+    }
+
+    boost::shared_ptr<CustomizableJsonWriter> writer = createCustomizableJsonWriter();
+    bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", writer->write(root), headers);
+    evhttp_clear_headers(&headers);
+}
+
 
 void HTTPRequestHandler::suggestCommand(evhttp_request *req, Srch2Server *server){
     // start the timer for search
