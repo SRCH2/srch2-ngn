@@ -24,34 +24,12 @@
 #include <instantsearch/Schema.h>
 using namespace std;
 
-//Constant keys used in config map
-const std::string ServerInterfaceInternal::PRIMARY_KEY = "uniqueKey";
-const std::string ServerInterfaceInternal::DATABASE_NAME = "db";
-const std::string ServerInterfaceInternal::DATABASE_PORT = "port";
-const std::string ServerInterfaceInternal::DATABASE_HOST = "host";
-const std::string ServerInterfaceInternal::DATABASE_COLLECTION = "collection";
-const std::string ServerInterfaceInternal::DATABASE_TYPE_NAME = "dbTypeName";
-const std::string ServerInterfaceInternal::DATABASE_LISTENER_WAIT_TIME =
-        "listenerWaitTime";
-const std::string ServerInterfaceInternal::DATABASE_MAX_RETRY_ON_FAILURE =
-        "maxRetryOnFailure";
-const std::string ServerInterfaceInternal::DATABASE_MAX_RETRY_COUNT =
-        "maxRetryCount";
-const std::string ServerInterfaceInternal::SRCH2HOME = "srch2Home";
-const std::string ServerInterfaceInternal::INDEXTYPE = "indexType";
-const std::string ServerInterfaceInternal::INDEXPATH = "dataDir";
-const std::string ServerInterfaceInternal::DATABASE_SHARED_LIBRARY_PATH =
-        "sharedLibraryPath";
-
 ServerInterfaceInternal::ServerInterfaceInternal(void *server) {
     this->server = (srch2::httpwrapper::Srch2Server*) server;
-    this->connectorConfig = new std::map<std::string, std::string>();
-    this->isDb = false;
-    populateConnectorConfig();	//Get the info needed by the connector
 }
 
 //Called by the connector, accepts json format record and insert into the index
-int ServerInterfaceInternal::insertRecord(std::string jsonString) {
+int ServerInterfaceInternal::insertRecord(const std::string& jsonString) {
     stringstream errorMsg;
     errorMsg << "INSERT : ";
 
@@ -78,7 +56,7 @@ int ServerInterfaceInternal::insertRecord(std::string jsonString) {
 }
 
 //Called by the connector, accepts record pkey and delete from the index
-int ServerInterfaceInternal::deleteRecord(std::string primaryKey) {
+int ServerInterfaceInternal::deleteRecord(const std::string& primaryKey) {
     stringstream errorMsg;
     errorMsg << "DELETE : ";
 
@@ -110,8 +88,8 @@ int ServerInterfaceInternal::deleteRecord(std::string primaryKey) {
  * record and delete the old one create a new one.
  * Primary key is a must because in mongodb, the pk in jsonString is an object.
  */
-int ServerInterfaceInternal::updateRecord(std::string pk,
-        std::string jsonString) {
+int ServerInterfaceInternal::updateRecord(const std::string& pk,
+        const std::string& jsonString) {
     stringstream errorMsg;
     errorMsg << "UPDATE : ";
 
@@ -125,12 +103,11 @@ int ServerInterfaceInternal::updateRecord(std::string pk,
         return -1;
     }
 
-    string primaryKeyStringValue = pk;
     unsigned deletedInternalRecordId;
-    if (primaryKeyStringValue.size()) {
+    if (pk.size()) {
         srch2is::INDEXWRITE_RETVAL ret =
                 server->indexer->deleteRecordGetInternalId(
-                        primaryKeyStringValue, deletedInternalRecordId);
+                        pk, deletedInternalRecordId);
         if (ret == srch2is::OP_FAIL) {
             errorMsg << "failed\",\"reason\":\"no record "
                     "with given primary key\"}";
@@ -153,7 +130,7 @@ int ServerInterfaceInternal::updateRecord(std::string pk,
             /// reaching here means the insert failed,
             //  need to resume the deleted old record
             srch2::instantsearch::INDEXWRITE_RETVAL ret =
-                    server->indexer->recoverRecord(primaryKeyStringValue,
+                    server->indexer->recoverRecord(pk,
                             deletedInternalRecordId);
         }
     }
@@ -167,72 +144,31 @@ void ServerInterfaceInternal::saveChanges() {
     Logger::debug("ServerInterface calls saveChanges");
 }
 
-//Find the config file value. the key is the same name in the config file.
-std::string ServerInterfaceInternal::configLookUp(std::string key) {
-    return (*this->connectorConfig)[key];
-}
+/*
+ * Find the config file value. the key is the same name in the config file.
+ * Also, change the input string to lower case to match the key.
+ */
+bool ServerInterfaceInternal::configLookUp(const std::string& key,std::string & value) {
+    std::string newKey = key;
+    std::transform(newKey.begin(), newKey.end(), newKey.begin(), ::tolower);
 
-//Populate the config map base on the database type
-void ServerInterfaceInternal::populateConnectorConfig() {
-
-    srch2::httpwrapper::Srch2Server *srch2Server =
-            (srch2::httpwrapper::Srch2Server *) server;
-
-    srch2::httpwrapper::DataSourceType dbType =
-            srch2Server->indexDataConfig->getDataSourceType();
-
-    (*connectorConfig)[PRIMARY_KEY] =
-            srch2Server->indexDataConfig->getPrimaryKey();
-
-    switch (dbType) {
-    case srch2::httpwrapper::DATA_SOURCE_NOT_SPECIFIED:
-        break;
-    case srch2::httpwrapper::DATA_SOURCE_JSON_FILE:
-        isDb = false;
-        break;
-    case srch2::httpwrapper::DATA_SOURCE_MONGO_DB: {
-        (*connectorConfig)[DATABASE_TYPE_NAME] = "mongodb";
-        (*connectorConfig)[DATABASE_NAME] =
-                srch2Server->indexDataConfig->getMongoDbName();
-        (*connectorConfig)[DATABASE_HOST] =
-                srch2Server->indexDataConfig->getMongoServerHost();
-        (*connectorConfig)[DATABASE_PORT] =
-                srch2Server->indexDataConfig->getMongoServerPort();
-        (*connectorConfig)[DATABASE_COLLECTION] =
-                srch2Server->indexDataConfig->getMongoCollection();
-        (*connectorConfig)[DATABASE_LISTENER_WAIT_TIME] =
-                srch2Server->indexDataConfig->getMongoListenerWaitTime();
-        (*connectorConfig)[DATABASE_MAX_RETRY_ON_FAILURE] =
-                srch2Server->indexDataConfig->getMongoListenerMaxRetryOnFailure();
-        (*connectorConfig)[DATABASE_MAX_RETRY_COUNT] =
-                srch2Server->indexDataConfig->getMongoListenerMaxRetryCount();
-        (*connectorConfig)[SRCH2HOME] =
-                srch2Server->indexDataConfig->getSrch2Home();
-        (*connectorConfig)[INDEXPATH] =
-                srch2Server->indexDataConfig->getIndexPath();
-        (*connectorConfig)[DATABASE_SHARED_LIBRARY_PATH] =
-                srch2Server->indexDataConfig->getMongoSharedLibraryPath();
-
-        srch2::instantsearch::IndexType it =	//Index Type is an integer
-                (srch2::instantsearch::IndexType) srch2Server->indexDataConfig->getIndexType();
-        std::stringstream ss;
-        ss << it;
-        std::string itStr;
-        ss >> itStr;
-        (*connectorConfig)[INDEXTYPE] = itStr;
-        isDb = true;
-    }
-        break;
-    default:
-        break;
+    std::map<std::string, std::string>::const_iterator it;
+    const std::map<std::string,std::string> & map = *this->server->indexDataConfig->getDatabaseConfig();
+    it = map.find(newKey);
+    if(it!=map.end()){
+        value = it->second;
+        return true;
+    }else{
+        value = "";
+        return false;
     }
 }
 
 //return false if the source is not database
 bool ServerInterfaceInternal::isDatabase() {
-    return isDb;
+    return server->indexDataConfig->getDataSourceType()
+            == srch2::httpwrapper::DATA_SOURCE_DATABASE;
 }
 
 ServerInterfaceInternal::~ServerInterfaceInternal() {
-    delete connectorConfig;
 }

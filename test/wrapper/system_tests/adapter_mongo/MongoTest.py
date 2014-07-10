@@ -29,6 +29,7 @@ def createConnection():
 	conn = dbconn.getConn()
 
 	#Link the handler	
+	mongoDBDropTable()	#Drop table if exist
 	mongoDBCreateTable()
 
 

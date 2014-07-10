@@ -15,9 +15,9 @@ public:
     virtual ~ServerInterface() {
     }
     ;
-    virtual int insertRecord(std::string jsonString) = 0;
-    virtual int deleteRecord(std::string primaryKey) = 0;
-    virtual int updateRecord(std::string pk, std::string jsonString) = 0;
+    virtual int insertRecord(const std::string& jsonString) = 0;
+    virtual int deleteRecord(const std::string& primaryKey) = 0;
+    virtual int updateRecord(const std::string& pk, const std::string& jsonString) = 0;
     virtual void saveChanges() = 0;	//Save changes to the disk
 
     /*
@@ -25,7 +25,7 @@ public:
      *  specific configuration store. e.g  "dbname" => "mysql"  (single value)
      *  "collections" => "collection1, collection2 " (multi value)
      */
-    virtual std::string configLookUp(std::string key) = 0;
+    virtual bool configLookUp(const std::string& key,std::string & value) = 0;
 };
 
 class DataConnector {

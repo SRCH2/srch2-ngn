@@ -115,20 +115,18 @@
     </updatehandler>
 
     <!-- 
-        Mongo DB settings
+        Database settings
         Required if dataSourceType = 2
-	MySQL DB setting s 
-	Required if dataSourceType = 3
     -->
     
     <dataSourceType>2</dataSourceType>
-    <mongodb>
+    <database>
         <host>127.0.0.1</host>
         <port>27017</port>
         <db>srch2Test</db>
         <collection>movies</collection>
         <listenerWaitTime>3</listenerWaitTime>
-	<mongoDbSharedLibraryPath>../../../db_connectors/build/libmongodbConnector.so</mongoDbSharedLibraryPath>
-    </mongodb>
+	<dbSharedLibraryPath>../../../db_connectors/build/libmongodbConnector.so</dbSharedLibraryPath>
+    </database>
          
 </config>

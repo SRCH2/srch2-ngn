@@ -16,7 +16,7 @@
 //Called by the pthread_create, create the database connector
 void * spawnConnector(void *arg) {
     ConnectorThreadArguments * targ = (ConnectorThreadArguments *) arg;
-    DataConnectorThread::bootStrapConnector(targ->dbType, targ->server);
+    DataConnectorThread::bootStrapConnector(targ);
 
     delete targ->server;
     delete targ;
@@ -24,14 +24,16 @@ void * spawnConnector(void *arg) {
     return NULL;
 }
 
+const std::string DataConnectorThread::DATABASE_SHARED_LIBRARY_PATH =
+        "dbsharedlibrarypath";
+
 //The main function run by the thread, get connector and start listener.
-void DataConnectorThread::bootStrapConnector(
-        srch2::httpwrapper::DataSourceType dbType, ServerInterface* server) {
+void DataConnectorThread::bootStrapConnector(ConnectorThreadArguments * targ) {
     void * pdlHandle = NULL;
-    DataConnector *connector = getDataConnector(
-            pdlHandle,	//Get the pointer of the specific library
-            server->configLookUp(
-                    ServerInterfaceInternal::DATABASE_SHARED_LIBRARY_PATH));
+    //Get the pointer of the shared library
+    std::string sharedLibraryPath;
+    targ->server->configLookUp(DATABASE_SHARED_LIBRARY_PATH,sharedLibraryPath);
+    DataConnector *connector = getDataConnector(pdlHandle,sharedLibraryPath);
 
     if (connector == NULL) {
         Logger::error("Can not open the shared library. "
@@ -40,8 +42,8 @@ void DataConnectorThread::bootStrapConnector(
         exit(1);	//Exit if can not open the shared library
     }
 
-    if (connector->init(server)) {
-        if (!checkIndexExistence((void*) server)) {
+    if (connector->init(targ->server)) {
+        if (!targ->ifCreateNewIndex) {
             Logger::debug("Create Indices from empty");
             connector->createNewIndexes();
         }
@@ -66,8 +68,7 @@ void DataConnectorThread::bootStrapConnector(
 }
 
 //Create thread if interface built successfully.
-void DataConnectorThread::getDataConnectorThread(
-        srch2::httpwrapper::DataSourceType dbType, void * server) {
+void DataConnectorThread::getDataConnectorThread(void * server) {
     pthread_t tid;
     ConnectorThreadArguments * dbArg = new ConnectorThreadArguments();
     ServerInterfaceInternal * internal = new ServerInterfaceInternal(server);
@@ -77,8 +78,8 @@ void DataConnectorThread::getDataConnectorThread(
         delete dbArg;
         delete internal;
     } else {
-        dbArg->dbType = dbType;
         dbArg->server = internal;
+        dbArg->ifCreateNewIndex = checkIndexExistence(server);
 
         int res = pthread_create(&tid, NULL, spawnConnector, (void *) dbArg);
     }
@@ -86,14 +87,14 @@ void DataConnectorThread::getDataConnectorThread(
 
 //Get the pointer and handle to the specific connector in shared library.
 DataConnector * DataConnectorThread::getDataConnector(void * pdlHandle,
-        std::string sharedLibraryPath) {
+        const std::string& sharedLibraryPath) {
 #ifndef BUILD_STATIC
     std::string libName = sharedLibraryPath;
 
     pdlHandle = dlopen(libName.c_str(), RTLD_LAZY);	//Open the shared library.
 
     if (!pdlHandle) {
-        Logger::error("Fail to load shared library %c due to %c",
+        Logger::error("Fail to load shared library %s due to %s",
                 libName.c_str(), dlerror());
         return NULL;
     }
@@ -127,15 +128,10 @@ DataConnector * DataConnectorThread::getDataConnector(void * pdlHandle,
 }
 
 bool DataConnectorThread::checkIndexExistence(void * server) {
-    ServerInterfaceInternal* serverInterface = (ServerInterfaceInternal*) server;
+    srch2::httpwrapper::Srch2Server * srch2Server =
+            (srch2::httpwrapper::Srch2Server*) server;
 
-    string directoryName = serverInterface->configLookUp(
-            ServerInterfaceInternal::INDEXPATH);
-    srch2::instantsearch::IndexType it =
-            (srch2::instantsearch::IndexType) (atoi(
-                    serverInterface->configLookUp(
-                            ServerInterfaceInternal::INDEXTYPE).c_str()));
-
+    const string &directoryName = srch2Server->indexDataConfig->getIndexPath();
     if (!checkDirExistence(
             (directoryName + "/" + IndexConfig::analyzerFileName).c_str()))
         return false;
@@ -148,15 +144,14 @@ bool DataConnectorThread::checkIndexExistence(void * server) {
     if (!checkDirExistence(
             (directoryName + "/" + IndexConfig::schemaFileName).c_str()))
         return false;
-    if (it == srch2::instantsearch::DefaultIndex) {
-        // Check existence of the inverted index file
-        // for basic keyword search ("A1")
+    if (srch2Server->indexDataConfig->getIndexType()
+            == srch2::instantsearch::DefaultIndex) {
+        // Check existence of the inverted index file for basic keyword search ("A1")
         if (!checkDirExistence(
                 (directoryName + "/" + IndexConfig::invertedIndexFileName).c_str()))
             return false;
     } else {
-        // Check existence of the quadtree index file
-        // for geo keyword search ("M1")
+        // Check existence of the quadtree index file for geo keyword search ("M1")
         if (!checkDirExistence(
                 (directoryName + "/" + IndexConfig::quadTreeFileName).c_str()))
             return false;

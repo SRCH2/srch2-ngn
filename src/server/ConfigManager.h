@@ -229,7 +229,7 @@ protected:
     // parsing helper functions for modularity
     void parseIndexConfig(const xml_node &indexConfigNode, CoreInfo_t *coreInfo, map<string, unsigned> &boostsMap, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
-    void parseMongoDb(const xml_node &mongoDbNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+    void parseDbConfig(const xml_node &dbNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
     void parseQuery(const xml_node &queryNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
@@ -321,14 +321,8 @@ public:
 
     void loadConfigFile() ;
 
-    // Mongo related getter/setter
-    const string& getMongoServerHost(const string &coreName) const;
-    const string& getMongoServerPort(const string &coreName) const;
-    const string& getMongoDbName(const string &coreName) const;
-    const string& getMongoCollection (const string &coreName) const;
-    const unsigned getMongoListenerWaitTime (const string &coreName) const;
-    const unsigned getMongoListenerMaxRetryCount(const string &coreName) const;
-    const string& getMongoSharedLibraryPath(const string &coreName) const;
+    // Database related getter/setter
+    const map<string,string> * getDatabaseConfig(const string &coreName) const;
 
     const unsigned getGetAllResultsNumberOfResultsThreshold() const {
     	return this->getAllResultsNumberOfResultsThreshold;
@@ -361,9 +355,11 @@ private:
     static const char* const cacheSizeString;
     static const char* const collectionString;
     static const char* const configString;
+    static const char* const databaseString;
     static const char* const dataDirString;
     static const char* const dataFileString;
     static const char* const dataSourceTypeString;
+    static const char* const dbSharedLibraryPathString;
     static const char* const dbString;
     static const char* const defaultString;
     static const char* const defaultQueryTermBoostString;
@@ -404,8 +400,6 @@ private:
     static const char* const mergeEveryMWritesString;
     static const char* const mergeEveryNSecondsString;
     static const char* const mergePolicyString;
-    static const char* const mongoDbString;
-    static const char* const mongoDbSharedLibraryPath;
     static const char* const nameString;
     static const char* const portString;
     static const char* const porterStemFilterString;
@@ -496,14 +490,7 @@ public:
     // THIS FUNCTION IS JUST FOR WRAPPER TEST
     void setDataFilePath(const string& path);
 
-    const string &getMongoServerHost() const { return mongoHost; }
-    const string &getMongoServerPort() const { return mongoPort; }
-    const string &getMongoDbName() const { return mongoDbName; }
-    const string &getMongoCollection() const { return mongoCollection; }
-    unsigned getMongoListenerWaitTime() const { return mongoListenerWaitTime; }
-    unsigned getMongoListenerMaxRetryOnFailure() const { return mongoListenerMaxRetryOnFailure; }
-    unsigned getMongoListenerMaxRetryCount() const { return mongoListenerMaxRetryOnFailure; }
-    const string &getMongoSharedLibraryPath() const { return mongoSharedLibraryPath; }
+    const map<string,string> * getDatabaseConfig() const { return &databaseConfig; }
 
     int getIndexType() const { return indexType; }
     int getSearchType() const { return searchType; }
@@ -638,18 +625,8 @@ protected:
     string dataFile;
     string dataFilePath;
 
-    // mongo db related settings
-    string mongoHost;
-    string mongoPort;
-    string mongoDbName;
-    string mongoCollection;
-    unsigned mongoListenerWaitTime;
-
-    // stores the value of maximum allowed retries when MongoDB listener encounters some problem.
-    unsigned mongoListenerMaxRetryOnFailure;
-
-    // sotre the path of shared library
-    string mongoSharedLibraryPath;
+    // database related settings
+    map<string, string>  databaseConfig;
 
     int isPrimSearchable;
 

@@ -36,14 +36,17 @@ private:
     bool connectToDB();
 
     //Load the last time last oplog record accessed
-    time_t getLastAccessedLogRecordTime();
+    const time_t getLastAccessedLogRecordTime();
 
     //Save the time last oplog record accessed
-    void setLastAccessedLogRecordTime(time_t t);
+    void setLastAccessedLogRecordTime(const time_t t);
 
     //Parse the record into json format and do the corresponding operation
-    void parseOpLogObject(mongo::BSONObj& bobj, std::string filterNamespace,
+    void parseOpLogObject(mongo::BSONObj& bobj,std::string filterNamespace,
             mongo::DBClientBase& oplogConnection);
+
+    //Check config validity. e.g. if contains port, dbname, etc.
+    bool checkConfigValidity();
 }
 ;
 
