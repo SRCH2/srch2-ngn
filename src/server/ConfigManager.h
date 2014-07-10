@@ -323,6 +323,7 @@ public:
 
     // Database related getter/setter
     const map<string,string> * getDatabaseConfig(const string &coreName) const;
+    const string& getDatabaseSharedLibraryPath(const string &coreName) const;
 
     const unsigned getGetAllResultsNumberOfResultsThreshold() const {
     	return this->getAllResultsNumberOfResultsThreshold;
@@ -490,7 +491,12 @@ public:
     // THIS FUNCTION IS JUST FOR WRAPPER TEST
     void setDataFilePath(const string& path);
 
-    const map<string,string> * getDatabaseConfig() const { return &databaseConfig; }
+    const map<string, string> * getDatabaseConfig() const {
+        return &databaseConfig;
+    }
+    const string& getDatabaseSharedLibraryPath() const {
+        return dbSharedLibraryPath;
+    }
 
     int getIndexType() const { return indexType; }
     int getSearchType() const { return searchType; }
@@ -627,6 +633,7 @@ protected:
 
     // database related settings
     map<string, string>  databaseConfig;
+    string dbSharedLibraryPath;
 
     int isPrimSearchable;
 

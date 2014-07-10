@@ -24,16 +24,11 @@ void * spawnConnector(void *arg) {
     return NULL;
 }
 
-const std::string DataConnectorThread::DATABASE_SHARED_LIBRARY_PATH =
-        "dbsharedlibrarypath";
-
 //The main function run by the thread, get connector and start listener.
 void DataConnectorThread::bootStrapConnector(ConnectorThreadArguments * targ) {
     void * pdlHandle = NULL;
     //Get the pointer of the shared library
-    std::string sharedLibraryPath;
-    targ->server->configLookUp(DATABASE_SHARED_LIBRARY_PATH,sharedLibraryPath);
-    DataConnector *connector = getDataConnector(pdlHandle,sharedLibraryPath);
+    DataConnector *connector = getDataConnector(pdlHandle,targ->sharedLibraryPath);
 
     if (connector == NULL) {
         Logger::error("Can not open the shared library. "
@@ -80,6 +75,9 @@ void DataConnectorThread::getDataConnectorThread(void * server) {
     } else {
         dbArg->server = internal;
         dbArg->ifCreateNewIndex = checkIndexExistence(server);
+
+        srch2::httpwrapper::Srch2Server* srch2Server = (srch2::httpwrapper::Srch2Server*) server;
+        dbArg->sharedLibraryPath = srch2Server->indexDataConfig->getDatabaseSharedLibraryPath();
 
         int res = pthread_create(&tid, NULL, spawnConnector, (void *) dbArg);
     }

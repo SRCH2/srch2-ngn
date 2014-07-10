@@ -276,6 +276,7 @@ CoreInfo_t::CoreInfo_t(const CoreInfo_t &src)
     dataFilePath = src.dataFilePath;
 
     databaseConfig = src.databaseConfig;
+    dbSharedLibraryPath = src.dbSharedLibraryPath;
 
     isPrimSearchable = src.isPrimSearchable;
 
@@ -466,8 +467,7 @@ void ConfigManager::parseDbConfig(const xml_node &dbNode, CoreInfo_t *coreInfo, 
 
     childNode = dbNode.child(dbSharedLibraryPathString);
     if (childNode && childNode.text()) {
-        coreInfo->databaseConfig[dbSharedLibraryPathString] =
-                childNode.text().get();
+        coreInfo->dbSharedLibraryPath=childNode.text().get();
     } else {
         parseError << "database shared library path is not set. \n";
         configSuccess = false;
@@ -2560,6 +2560,14 @@ const map<string,string> * ConfigManager::getDatabaseConfig(const string &coreNa
         return &getDefaultCoreInfo()->databaseConfig;
     }
     return &((CoreInfoMap_t) coreInfoMap)[coreName]->databaseConfig;
+}
+
+const string& ConfigManager::getDatabaseSharedLibraryPath(const string &coreName) const
+{
+    if (coreName.compare("") == 0) {
+        return getDefaultCoreInfo()->dbSharedLibraryPath;
+    }
+    return ((CoreInfoMap_t) coreInfoMap)[coreName]->dbSharedLibraryPath;
 }
 
 CoreInfo_t *ConfigManager::getDefaultCoreInfo() const

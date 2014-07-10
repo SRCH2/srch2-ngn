@@ -16,6 +16,7 @@
 struct ConnectorThreadArguments {
     ServerInterface* server;
     bool ifCreateNewIndex;
+    std::string sharedLibraryPath;
 };
 
 //Called by the pthread_create, create the database connector
@@ -32,7 +33,6 @@ private:
     //Get the pointer and handle to the specific connector in shared library.
     static DataConnector * getDataConnector(void * pdlHandle,
             const std::string& sharedLibraryPath);
-    static const std::string DATABASE_SHARED_LIBRARY_PATH;
 };
 
 #endif /* __DATACONNECTORTHREAD_H__ */
