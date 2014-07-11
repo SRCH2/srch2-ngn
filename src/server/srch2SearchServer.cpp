@@ -926,7 +926,6 @@ int main(int argc, char** argv) {
         Logger::setOutputFile(logFile);
     }
     Logger::setLogLevel(serverConf->getHTTPServerLogLevel());
-    Logger::setLogLevel(Logger::SRCH2_LOG_DEBUG );
 
     vector<struct event_base *> evBases; // all libevent base objects (one per thread)
     vector<struct evhttp *> evServers;
