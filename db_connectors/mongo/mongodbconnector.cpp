@@ -309,6 +309,7 @@ void* MongoDBConnector::runListener() {
         sleep(listenerWaitTime);
     } while (connectToDB());	//Retry connecting to the mongodb
 
+    mongoConnector->done();
     return NULL;
 }
 
@@ -401,7 +402,6 @@ void MongoDBConnector::parseOpLogObject(mongo::BSONObj& bobj,
 }
 
 MongoDBConnector::~MongoDBConnector() {
-    mongoConnector->done();
 }
 
 /*

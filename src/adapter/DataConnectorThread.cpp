@@ -27,26 +27,17 @@ void * spawnConnector(void *arg) {
 //The main function run by the thread, get connector and start listener.
 void DataConnectorThread::bootStrapConnector(ConnectorThreadArguments * connThreadArg) {
     void * pdlHandle = NULL;
+
     //Get the pointer of the shared library
-    DataConnector *connector = getDataConnector(pdlHandle,
-            connThreadArg->sharedLibraryFullPath);
+    std::string libName =  connThreadArg->sharedLibraryFullPath;
 
-    if (connector == NULL) {
-        Logger::error("Can not open the shared library. "
-                "Either the shared library is not found "
-                "or the engine is built in static mode, exit.");
-        exit(1);	//Exit if can not open the shared library
+    pdlHandle = dlopen(libName.c_str(), RTLD_LAZY); //Open the shared library.
+
+    if (!pdlHandle) {
+        Logger::error("Fail to load shared library %s due to %s",
+                libName.c_str(), dlerror());
+        exit(1);   //Exit if can not open the shared library
     }
-
-    if (connector->init(connThreadArg->server)) {
-        if (!connThreadArg->createNewIndexFlag) {
-            Logger::debug("Create Indices from empty");
-            connector->createNewIndexes();
-        }
-        connector->runListener();
-    }
-
-    //After the listener;
 
     /*
      * Suppress specific warnings on gcc/g++.
@@ -57,10 +48,50 @@ void DataConnectorThread::bootStrapConnector(ConnectorThreadArguments * connThre
 #ifdef __GNUC__
     __extension__
 #endif
-    destroy_t* destory_dataConnector = (destroy_t*) dlsym(pdlHandle, "destroy");
-    destory_dataConnector(connector);
-    dlclose(pdlHandle);
+    //Get the function "create" in the shared library.
+    create_t* create_dataConnector = (create_t*) dlsym(pdlHandle, "create");
 
+    const char* dlsym_error = dlerror();
+    if (dlsym_error) {
+        Logger::error(
+                "Cannot load symbol \"create\" in shared library due to: %s",
+                dlsym_error);
+        exit(1);   //Exit if can not open the shared library
+    }
+
+    /*
+     * Suppress specific warnings on gcc/g++.
+     * See: http://www.mr-edd.co.uk/blog/supressing_gcc_warnings
+     * The warnings g++ spat out is to do with an invalid cast from
+     * a pointer-to-object to a pointer-to-function before gcc 4.
+     */
+#ifdef __GNUC__
+    __extension__
+#endif
+    destroy_t* destroy_dataConnector = (destroy_t*) dlsym(pdlHandle, "destroy");
+
+    dlsym_error = dlerror();
+    if (dlsym_error) {
+        Logger::error(
+                "Cannot load symbol \"destroy\" in shared library due to: %s",
+                dlsym_error);
+        exit(1);   //Exit if can not open the shared library
+    }
+
+    //Call the "create" function in the shared library.
+    DataConnector * connector = create_dataConnector();
+
+    if (connector->init(connThreadArg->server)) {
+        if (!connThreadArg->createNewIndexFlag) {
+            Logger::debug("Create Indices from empty");
+            connector->createNewIndexes();
+        }
+        connector->runListener();
+    }
+
+    //After the listener;
+    destroy_dataConnector(connector);
+    dlclose(pdlHandle);
 }
 
 //Create thread if interface built successfully.
@@ -89,47 +120,6 @@ void DataConnectorThread::getDataConnectorThread(void * server) {
     }
 }
 
-//Get the pointer and handle to the specific connector in shared library.
-DataConnector * DataConnectorThread::getDataConnector(void * pdlHandle,
-        const std::string& sharedLibraryPath) {
-#ifndef BUILD_STATIC
-    std::string libName = sharedLibraryPath;
-
-    pdlHandle = dlopen(libName.c_str(), RTLD_LAZY);	//Open the shared library.
-
-    if (!pdlHandle) {
-        Logger::error("Fail to load shared library %s due to %s",
-                libName.c_str(), dlerror());
-        return NULL;
-    }
-
-    /*
-     * Suppress specific warnings on gcc/g++.
-     * See: http://www.mr-edd.co.uk/blog/supressing_gcc_warnings
-     * The warnings g++ spat out is to do with an invalid cast from
-     * a pointer-to-object to a pointer-to-function before gcc 4.
-     */
-#ifdef __GNUC__
-    __extension__
-#endif
-    //Get the function "create" in the shared library.
-    create_t* create_dataConnector = (create_t*) dlsym(pdlHandle, "create");
-
-    const char* dlsym_error = dlerror();
-    if (dlsym_error) {
-        Logger::error(
-                "Cannot load symbol \"create\" in shared library due to: %c",
-                dlsym_error);
-        return NULL;
-    }
-
-    //Call the "create" function in the shared library.
-    DataConnector * connector = create_dataConnector();
-
-    return connector;
-#endif
-    return NULL;
-}
 
 bool DataConnectorThread::checkIndexExistence(void * server) {
     srch2::httpwrapper::Srch2Server * srch2Server =

@@ -30,9 +30,6 @@ public:
     static void bootStrapConnector(ConnectorThreadArguments * connThreadArg);
 private:
     static bool checkIndexExistence(void * server);
-    //Get the pointer and handle to the specific connector in shared library.
-    static DataConnector * getDataConnector(void * pdlHandle,
-            const std::string& sharedLibraryPath);
 };
 
 #endif /* __DATACONNECTORTHREAD_H__ */

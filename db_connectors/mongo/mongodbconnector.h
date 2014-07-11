@@ -17,7 +17,7 @@
 class MongoDBConnector: public DataConnector {
 public:
     MongoDBConnector();
-    virtual ~MongoDBConnector();
+    ~MongoDBConnector();
 
     //Init the connector, call connect
     virtual bool init(ServerInterface *serverHandle);
