@@ -449,7 +449,7 @@ void ConfigManager::parseDbParameters(const xml_node &dbNode, CoreInfo_t *coreIn
 
     childNode = dbNode.child(dbKeyValuesString);
     if (childNode) {
-        string dbKey,dbValue;
+        string dbKey, dbValue;
         for (xml_node keyValue = childNode.first_child(); keyValue; keyValue =
                 keyValue.next_sibling()) {
             if (string(keyValue.name()).compare(dbKeyValueString) == 0) {
