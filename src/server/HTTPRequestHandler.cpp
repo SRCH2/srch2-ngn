@@ -729,7 +729,7 @@ void HTTPRequestHandler::saveCommand(evhttp_request *req, Srch2Server *server) {
     };
 }
 
-void HTTPRequestHandler::shutdownCommand(evhttp_request *req, CoreNameServerMap_t *coreNameServerMap){
+void HTTPRequestHandler::shutdownCommand(evhttp_request *req, const CoreNameServerMap_t *coreNameServerMap){
     /* Yes, we are expecting a post request */
     switch (req->type) {
     case EVHTTP_REQ_PUT: {
@@ -902,32 +902,8 @@ void decodeAmpersand(const char *uri, unsigned len, string& decodeUri) {
 
 void HTTPRequestHandler::searchCommand(evhttp_request *req,
         Srch2Server *server) {
-
-
-    ParsedParameterContainer paramContainer;
-
-//    string decodedUri;
-//    decodeAmpersand(req->uri, strlen(req->uri), decodedUri);
     evkeyvalq headers;
-    evhttp_parse_query(req->uri, &headers);
-    //cout << "Query: " << req->uri << endl;
-    // simple example for query is : q={boost=2}name:foo~0.5 AND bar^3*&fq=name:"John"
-    //1. first create query parser to parse the url
-    QueryParser qp(headers, &paramContainer);
-    bool isSyntaxValid = qp.parse();
-    if (!isSyntaxValid) {
-        // if the query is not valid print the error message to the response
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request",
-                paramContainer.getMessageString(), headers);
-        evhttp_clear_headers(&headers);
-        return;
-    }
-
-//    clock_gettime(CLOCK_REALTIME, &tend);
-//    unsigned parserTime = (tend.tv_sec - tstart2.tv_sec) * 1000
-//            + (tend.tv_nsec - tstart2.tv_nsec) / 1000000;
-
-    boost::shared_ptr<Json::Value> root = doSearchOneCore( req, server, &headers, &paramContainer);
+    boost::shared_ptr<Json::Value> root = doSearchOneCore( req, server, &headers );
 
     if (root ){
         CustomizableJsonWriter writer (&global_internal_skip_tags);
@@ -937,8 +913,32 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
 }
 
 boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_request *req,
-        Srch2Server *server, evkeyvalq * headers,ParsedParameterContainer *paramContainer ) {
-    
+        Srch2Server *server, evkeyvalq* headers) {
+
+    boost::shared_ptr<Json::Value> root;
+    ParsedParameterContainer paramContainer;
+
+//    string decodedUri;
+//    decodeAmpersand(req->uri, strlen(req->uri), decodedUri);
+    evhttp_parse_query(req->uri, headers);
+    //cout << "Query: " << req->uri << endl;
+    // simple example for query is : q={boost=2}name:foo~0.5 AND bar^3*&fq=name:"John"
+    //1. first create query parser to parse the url
+    QueryParser qp(*headers, &paramContainer);
+    bool isSyntaxValid = qp.parse();
+    if (!isSyntaxValid) {
+        // if the query is not valid print the error message to the response
+        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request",
+                paramContainer.getMessageString(), *headers);
+        evhttp_clear_headers(headers);
+        return root;
+    }
+
+//    clock_gettime(CLOCK_REALTIME, &tend);
+//    unsigned parserTime = (tend.tv_sec - tstart2.tv_sec) * 1000
+//            + (tend.tv_nsec - tstart2.tv_nsec) / 1000000;
+
+
     // start the timer for search
     struct timespec tstart;
 //    struct timespec tstart2;
@@ -947,17 +947,16 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
 //    clock_gettime(CLOCK_REALTIME, &tstart2);
 
     const CoreInfo_t *indexDataContainerConf = server->indexDataConfig;
-    boost::shared_ptr<Json::Value> root;
     //2. validate the query
     QueryValidator qv(*(server->indexer->getSchema()),
-            *(server->indexDataConfig), paramContainer);
+            *(server->indexDataConfig), &paramContainer);
 
     bool valid = qv.validate();
 
     if (!valid) {
         // if the query is not valid, print the error message to the response
         bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request",
-                paramContainer->getMessageString(), *headers);
+                paramContainer.getMessageString(), *headers);
         evhttp_clear_headers(headers);
         return root;
     }
@@ -965,12 +964,12 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
     QueryRewriter qr(server->indexDataConfig,
             *(server->indexer->getSchema()),
             *(AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf)),
-            paramContainer);
+            &paramContainer);
     LogicalPlan logicalPlan;
     if(qr.rewrite(logicalPlan) == false){
         // if the query is not valid, print the error message to the response
         bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request",
-                paramContainer->getMessageString(), *headers);
+                paramContainer.getMessageString(), *headers);
         evhttp_clear_headers(headers);
         return root;
     }
@@ -1005,10 +1004,10 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
     clock_gettime(CLOCK_REALTIME, &hltstart);
 
     if (server->indexDataConfig->getHighlightAttributeIdsVector().size() > 0 &&
-    		!paramContainer->onlyFacets &&
-    		paramContainer->isHighlightOn) {
+    		!paramContainer.onlyFacets &&
+    		paramContainer.isHighlightOn) {
 
-    	ServerHighLighter highlighter =  ServerHighLighter(finalResults, server, *paramContainer,
+    	ServerHighLighter highlighter =  ServerHighLighter(finalResults, server, paramContainer,
     			logicalPlan.getOffset(), logicalPlan.getNumberOfResultsToRetrieve());
     	highlightInfo.reserve(logicalPlan.getNumberOfResultsToRetrieve());
     	highlighter.generateSnippets(highlightInfo);
@@ -1031,8 +1030,8 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
                 server->indexer, logicalPlan.getOffset(),
                 finalResults->getNumberOfResults(),
                 finalResults->getNumberOfResults(),
-                paramContainer->getMessageString(), ts1, tstart, tend, highlightInfo, hlTime,
-                paramContainer->onlyFacets);
+                paramContainer.getMessageString(), ts1, tstart, tend, highlightInfo, hlTime,
+                paramContainer.onlyFacets);
 
         break;
 
@@ -1050,8 +1049,8 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
                     logicalPlan.getExactQuery(), server->indexer,
                     logicalPlan.getOffset(), finalResults->getNumberOfResults(),
                     finalResults->getNumberOfResults(),
-                    paramContainer->getMessageString(), ts1, tstart, tend , highlightInfo, hlTime,
-                    paramContainer->onlyFacets);
+                    paramContainer.getMessageString(), ts1, tstart, tend , highlightInfo, hlTime,
+                    paramContainer.onlyFacets);
         } else { // Case where you have return 10,20, but we got only 0,25 results and so return 10,20
             root = HTTPRequestHandler::printResults(req, *headers, logicalPlan,
                     indexDataContainerConf, finalResults,
@@ -1059,8 +1058,8 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
                     logicalPlan.getOffset(),
                     logicalPlan.getOffset() + logicalPlan.getNumberOfResultsToRetrieve(),
                     finalResults->getNumberOfResults(),
-                    paramContainer->getMessageString(), ts1, tstart, tend, highlightInfo, hlTime,
-                    paramContainer->onlyFacets);
+                    paramContainer.getMessageString(), ts1, tstart, tend, highlightInfo, hlTime,
+                    paramContainer.onlyFacets);
         }
         break;
     case srch2is::SearchTypeRetrieveById:
@@ -1071,7 +1070,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
                 indexDataContainerConf,
                 finalResults ,
                 server->indexer ,
-                paramContainer->getMessageString() ,
+                paramContainer.getMessageString() ,
                 ts1, tstart , tend);
         break;
     default:
@@ -1090,35 +1089,13 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
     return root;
 }
 
-void HTTPRequestHandler::searchAllCommand(evhttp_request *req, CoreNameServerMap_t * coreNameServerMap){
+void HTTPRequestHandler::searchAllCommand(evhttp_request *req, const CoreNameServerMap_t * coreNameServerMap){
 
-    ParsedParameterContainer paramContainer;
-
-//    string decodedUri;
-//    decodeAmpersand(req->uri, strlen(req->uri), decodedUri);
     evkeyvalq headers;
-    evhttp_parse_query(req->uri, &headers);
-    //cout << "Query: " << req->uri << endl;
-    // simple example for query is : q={boost=2}name:foo~0.5 AND bar^3*&fq=name:"John"
-    //1. first create query parser to parse the url
-    QueryParser qp(headers, &paramContainer);
-    bool isSyntaxValid = qp.parse();
-    if (!isSyntaxValid) {
-        // if the query is not valid print the error message to the response
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request",
-                paramContainer.getMessageString(), headers);
-        evhttp_clear_headers(&headers);
-        return;
-    }
-
-//    clock_gettime(CLOCK_REALTIME, &tend);
-//    unsigned parserTime = (tend.tv_sec - tstart2.tv_sec) * 1000
-//            + (tend.tv_nsec - tstart2.tv_nsec) / 1000000;
-
     Json::Value root;
-    for( CoreNameServerMap_t::iterator it = coreNameServerMap->begin(); 
+    for( CoreNameServerMap_t::const_iterator it = coreNameServerMap->begin(); 
             it != coreNameServerMap->end(); ++it){
-        boost::shared_ptr<Json::Value> subRoot = doSearchOneCore( req, it->second, &headers, &paramContainer);
+        boost::shared_ptr<Json::Value> subRoot = doSearchOneCore( req, it->second, &headers );
 
         if (subRoot ){
             root[it->first] = *subRoot;

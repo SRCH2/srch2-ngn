@@ -193,7 +193,7 @@ def testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path
             index +=1
 
         
-    #test_lib.killServer(serverHandle)
+    test_lib.killServer(serverHandle)
 
     print '=============================='
     return failCount
