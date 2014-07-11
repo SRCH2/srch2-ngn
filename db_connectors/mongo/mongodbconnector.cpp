@@ -26,7 +26,7 @@ bool MongoDBConnector::init(ServerInterface *serverHandle) {
 
     // For MongoDB, the primary key should always be "_id".
     std::string uniqueKey;
-    this->serverHandle->configLookUp("uniqueKey",uniqueKey);
+    this->serverHandle->configLookUp("uniqueKey", uniqueKey);
     if (uniqueKey.compare("_id") != 0) {
         printf("The PrimaryKey in the config file for the "
                 "MongoDB adapter should always be \"_id\", not %s",
@@ -34,14 +34,14 @@ bool MongoDBConnector::init(ServerInterface *serverHandle) {
         return false;
     }
 
-    if (!checkConfigValidity()||!connectToDB()) {
+    if (!checkConfigValidity() || !connectToDB()) {
         return false;
     }
     return true;
 }
 
 //Check config validity. e.g. if contains port, dbname, etc.
-bool MongoDBConnector::checkConfigValidity(){
+bool MongoDBConnector::checkConfigValidity() {
     std::string host, port, db, uniqueKey, collection;
     this->serverHandle->configLookUp("host", host);
     this->serverHandle->configLookUp("port", port);
@@ -51,7 +51,7 @@ bool MongoDBConnector::checkConfigValidity(){
 
     bool ret = (host.size() != 0) && (port.size() != 0) && (db.size() != 0)
             && (uniqueKey.size() != 0) && (collection.size() != 0);
-    if(!ret){
+    if (!ret) {
         printf("database host, port, db, collection, uniquekey must be set.\n");
         return false;
     }
@@ -69,14 +69,21 @@ bool MongoDBConnector::checkConfigValidity(){
 bool MongoDBConnector::connectToDB() {
     string mongoNamespace = "local.oplog.rs";
 
-    string host,port,listenerWaitTimeStr,maxRetryOnFailureStr;
-    this->serverHandle->configLookUp("host",host);
-    this->serverHandle->configLookUp("port",port);
-    this->serverHandle->configLookUp("listenerWaitTime",listenerWaitTimeStr);
-    this->serverHandle->configLookUp("maxRetryOnFailure",maxRetryOnFailureStr);
+    string host, port, listenerWaitTimeStr, maxRetryOnFailureStr;
+    this->serverHandle->configLookUp("host", host);
+    this->serverHandle->configLookUp("port", port);
+    this->serverHandle->configLookUp("listenerWaitTime", listenerWaitTimeStr);
+    this->serverHandle->configLookUp("maxRetryOnFailure", maxRetryOnFailureStr);
 
-    int listenerWaitTime = atoi(listenerWaitTimeStr.c_str());
-    int maxRetryOnFailure = atoi(maxRetryOnFailureStr.c_str());
+    int listenerWaitTime = 1;
+    if (listenerWaitTimeStr.size() != 0) {
+        listenerWaitTime = atoi(listenerWaitTimeStr.c_str());
+    }
+
+    int maxRetryOnFailure = 3;
+    if (maxRetryOnFailureStr.size() != 0) {
+        maxRetryOnFailure = atoi(maxRetryOnFailureStr.c_str());
+    }
 
     for (unsigned retryCount = -1; retryCount != maxRetryOnFailure;
             retryCount++) {
@@ -119,9 +126,9 @@ bool MongoDBConnector::connectToDB() {
 //Load the table records and insert into the engine
 void MongoDBConnector::createNewIndexes() {
     string mongoNamespace = "local.oplog.rs";
-    string dbname,collection;
-    this->serverHandle->configLookUp("db",dbname);
-    this->serverHandle->configLookUp("collection",collection);
+    string dbname, collection;
+    this->serverHandle->configLookUp("db", dbname);
+    this->serverHandle->configLookUp("collection", collection);
     string filterNamespace = dbname + "." + collection;
     try {
         unsigned collectionCount = oplogConnection->count(filterNamespace);
@@ -194,7 +201,7 @@ void MongoDBConnector::setLastAccessedLogRecordTime(const time_t t) {
     std::string dataDir;
     this->serverHandle->configLookUp("srch2Home", srch2Home);
     this->serverHandle->configLookUp("dataDir", dataDir);
-    std::string path = srch2Home + "/" + dataDir +"mongodb_data/";
+    std::string path = srch2Home + "/" + dataDir + "mongodb_data/";
 
     if (access(path.c_str(), F_OK) != 0) {
         boost::filesystem::create_directories(path);
@@ -209,12 +216,16 @@ void MongoDBConnector::setLastAccessedLogRecordTime(const time_t t) {
 //Listen to the oplog and do modification to the engine
 void* MongoDBConnector::runListener() {
     string mongoNamespace = "local.oplog.rs";
-    string dbname, collection,listenerWaitTimeStr;
+    string dbname, collection, listenerWaitTimeStr;
     this->serverHandle->configLookUp("db", dbname);
     this->serverHandle->configLookUp("collection", collection);
     this->serverHandle->configLookUp("listenerWaitTime", listenerWaitTimeStr);
-    int listenerWaitTime = atoi(listenerWaitTimeStr.c_str());
     string filterNamespace = dbname + "." + collection;
+
+    int listenerWaitTime = 1;
+    if (listenerWaitTimeStr.size() != 0) {
+        listenerWaitTime = atoi(listenerWaitTimeStr.c_str());
+    }
 
     do {
         bool printOnce = true;
@@ -296,15 +307,14 @@ void* MongoDBConnector::runListener() {
             setLastAccessedLogRecordTime(opLogTime);
         }
         sleep(listenerWaitTime);
-    }while(connectToDB());	//Retry connecting to the mongodb
+    } while (connectToDB());	//Retry connecting to the mongodb
 
     return NULL;
 }
 
 //Parse the record into json format and do the corresponding operation
 void MongoDBConnector::parseOpLogObject(mongo::BSONObj& bobj,
-        string filterNamespace,
-        mongo::DBClientBase& oplogConnection) {
+        string filterNamespace, mongo::DBClientBase& oplogConnection) {
     printf("MONGO LISTENER PROCESSING : %s \n", bobj.jsonString().c_str());
     string operation = bobj.getField("op").valuestrsafe();
     if (operation.size() == 0) {

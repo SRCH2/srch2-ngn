@@ -106,8 +106,8 @@ int ServerInterfaceInternal::updateRecord(const std::string& pk,
     unsigned deletedInternalRecordId;
     if (pk.size()) {
         srch2is::INDEXWRITE_RETVAL ret =
-                server->indexer->deleteRecordGetInternalId(
-                        pk, deletedInternalRecordId);
+                server->indexer->deleteRecordGetInternalId(pk,
+                        deletedInternalRecordId);
         if (ret == srch2is::OP_FAIL) {
             errorMsg << "failed\",\"reason\":\"no record "
                     "with given primary key\"}";
@@ -130,8 +130,7 @@ int ServerInterfaceInternal::updateRecord(const std::string& pk,
             /// reaching here means the insert failed,
             //  need to resume the deleted old record
             srch2::instantsearch::INDEXWRITE_RETVAL ret =
-                    server->indexer->recoverRecord(pk,
-                            deletedInternalRecordId);
+                    server->indexer->recoverRecord(pk, deletedInternalRecordId);
         }
     }
     Logger::debug(errorMsg.str().c_str());
@@ -148,17 +147,19 @@ void ServerInterfaceInternal::saveChanges() {
  * Find the config file value. the key is the same name in the config file.
  * Also, change the input string to lower case to match the key.
  */
-bool ServerInterfaceInternal::configLookUp(const std::string& key,std::string & value) {
+bool ServerInterfaceInternal::configLookUp(const std::string& key,
+        std::string & value) {
     std::string newKey = key;
     std::transform(newKey.begin(), newKey.end(), newKey.begin(), ::tolower);
 
     std::map<std::string, std::string>::const_iterator it;
-    const std::map<std::string,std::string> & map = *this->server->indexDataConfig->getDatabaseConfig();
-    it = map.find(newKey);
-    if(it!=map.end()){
+    const std::map<std::string, std::string> & dbParameters =
+            *this->server->indexDataConfig->getDbParameters();
+    it = dbParameters.find(newKey);
+    if (it != dbParameters.end()) {
         value = it->second;
         return true;
-    }else{
+    } else {
         value = "";
         return false;
     }

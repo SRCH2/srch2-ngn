@@ -19,7 +19,8 @@ public:
 
     virtual int insertRecord(const std::string& jsonString);
     virtual int deleteRecord(const std::string& primaryKey);
-    virtual int updateRecord(const std::string& pk, const std::string& jsonSrting);
+    virtual int updateRecord(const std::string& pk,
+            const std::string& jsonSrting);
     virtual void saveChanges();
 
     /*
@@ -27,7 +28,7 @@ public:
      *  specific configuration store. e.g  "dbname" => "mysql"  (single value)
      *  "collections" => "collection1, collection2 " (multi value)
      */
-    virtual bool configLookUp(const std::string& key,std::string & value);
+    virtual bool configLookUp(const std::string& key, std::string & value);
 
     //return false if the source is not database
     bool isDatabase();

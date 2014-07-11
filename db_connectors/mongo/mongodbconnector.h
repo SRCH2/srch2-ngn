@@ -42,7 +42,7 @@ private:
     void setLastAccessedLogRecordTime(const time_t t);
 
     //Parse the record into json format and do the corresponding operation
-    void parseOpLogObject(mongo::BSONObj& bobj,std::string filterNamespace,
+    void parseOpLogObject(mongo::BSONObj& bobj, std::string filterNamespace,
             mongo::DBClientBase& oplogConnection);
 
     //Check config validity. e.g. if contains port, dbname, etc.

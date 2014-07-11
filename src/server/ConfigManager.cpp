@@ -38,14 +38,17 @@ namespace httpwrapper {
 const char* const ConfigManager::accessLogFileString = "accesslogfile";
 const char* const ConfigManager::analyzerString = "analyzer";
 const char* const ConfigManager::cacheSizeString = "cachesize";
-const char* const ConfigManager::collectionString = "collection";
 const char* const ConfigManager::configString = "config";
-const char* const ConfigManager::databaseString = "database";
 const char* const ConfigManager::dataDirString = "datadir";
 const char* const ConfigManager::dataFileString = "datafile";
 const char* const ConfigManager::dataSourceTypeString = "datasourcetype";
+const char* const ConfigManager::dbKeyString = "key";
+const char* const ConfigManager::dbValueString = "value";
+const char* const ConfigManager::dbKeyValuesString = "dbkeyvalues";
+const char* const ConfigManager::dbKeyValueString = "dbkeyvalue";
+const char* const ConfigManager::dbParametersString = "dbparameters";
 const char* const ConfigManager::dbSharedLibraryPathString = "dbsharedlibrarypath";
-const char* const ConfigManager::dbString = "db";
+const char* const ConfigManager::dbSharedLibraryNameString = "dbsharedlibraryname";
 const char* const ConfigManager::defaultString = "default";
 const char* const ConfigManager::defaultQueryTermBoostString = "defaultquerytermboost";
 const char* const ConfigManager::dictionaryString = "dictionary";
@@ -66,13 +69,11 @@ const char* const ConfigManager::fieldsString = "fields";
 const char* const ConfigManager::fieldTypeString = "fieldtype";
 const char* const ConfigManager::filterString = "filter";
 const char* const ConfigManager::fuzzyMatchPenaltyString = "fuzzymatchpenalty";
-const char* const ConfigManager::hostString = "host";
 const char* const ConfigManager::indexConfigString = "indexconfig";
 const char* const ConfigManager::indexedString = "indexed";
 const char* const ConfigManager::multiValuedString = "multivalued";
 const char* const ConfigManager::indexTypeString = "indextype";
 const char* const ConfigManager::licenseFileString = "licensefile";
-const char* const ConfigManager::listenerWaitTimeString = "listenerwaittime";
 const char* const ConfigManager::listeningHostStringString = "listeninghostname";
 const char* const ConfigManager::listeningPortString = "listeningport";
 const char* const ConfigManager::locationLatitudeString = "location_latitude";
@@ -80,13 +81,11 @@ const char* const ConfigManager::locationLongitudeString = "location_longitude";
 const char* const ConfigManager::logLevelString = "loglevel";
 const char* const ConfigManager::maxDocsString = "maxdocs";
 const char* const ConfigManager::maxMemoryString = "maxmemory";
-const char* const ConfigManager::maxRetryOnFailureString = "maxretryonfailure";
 const char* const ConfigManager::maxSearchThreadsString = "maxsearchthreads";
 const char* const ConfigManager::mergeEveryMWritesString = "mergeeverymwrites";
 const char* const ConfigManager::mergeEveryNSecondsString = "mergeeverynseconds";
 const char* const ConfigManager::mergePolicyString = "mergepolicy";
 const char* const ConfigManager::nameString = "name";
-const char* const ConfigManager::portString = "port";
 const char* const ConfigManager::porterStemFilterString = "PorterStemFilter";
 const char* const ConfigManager::prefixMatchPenaltyString = "prefixmatchpenalty";
 const char* const ConfigManager::queryString = "query";
@@ -275,7 +274,8 @@ CoreInfo_t::CoreInfo_t(const CoreInfo_t &src)
     dataFile = src.dataFile;
     dataFilePath = src.dataFilePath;
 
-    databaseConfig = src.databaseConfig;
+    dbParameters = src.dbParameters;
+    dbSharedLibraryName = src.dbSharedLibraryName;
     dbSharedLibraryPath = src.dbSharedLibraryPath;
 
     isPrimSearchable = src.isPrimSearchable;
@@ -418,61 +418,71 @@ void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode, CoreInfo_t
 }
 
 /*
- * Add all database related config value into <key,value> pairs. Validity
- * should be checked in different connector. Because different databases have
+ * Add all database related config values into <key,value> pairs. Validity
+ * should be checked in different connectors, since different databases have
  * different requirement.
- * Also set dirPath,primary key and srch2home into the database config map this function.
+ * Also add "dirPath", "primary key" and "srch2home" into the database config map.
  */
-void ConfigManager::parseDbConfig(const xml_node &dbNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
+void ConfigManager::parseDbParameters(const xml_node &dbNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
 {
-    coreInfo->databaseConfig[dataDirString] = coreInfo->dataDir;
-    coreInfo->databaseConfig[srch2HomeString] = srch2Home;
-    coreInfo->databaseConfig[uniqueKeyString] = coreInfo->primaryKey;
+    coreInfo->dbParameters[dataDirString] = coreInfo->dataDir;
+    coreInfo->dbParameters[srch2HomeString] = srch2Home;
+    coreInfo->dbParameters[uniqueKeyString] = coreInfo->primaryKey;
 
-    xml_node childNode = dbNode.child(hostString);
+    xml_node childNode = dbNode.child(dbSharedLibraryPathString);
     if (childNode && childNode.text()) {
-        coreInfo->databaseConfig[hostString] = string(childNode.text().get());
-    }
-
-    childNode = dbNode.child(portString);
-    if (childNode && childNode.text()) {
-        coreInfo->databaseConfig[portString] = string(childNode.text().get());
-    }
-
-    childNode = dbNode.child(dbString);
-    if (childNode && childNode.text()) {
-        coreInfo->databaseConfig[dbString] = string(childNode.text().get());
-    }
-
-    childNode = dbNode.child(collectionString);
-    if (childNode && childNode.text()) {
-        coreInfo->databaseConfig[collectionString] = string(
-                childNode.text().get());
-    }
-
-    childNode = dbNode.child(listenerWaitTimeString);
-    if (childNode && childNode.text()) {
-        coreInfo->databaseConfig[listenerWaitTimeString] = childNode.text().get();
-    } else {
-        coreInfo->databaseConfig[listenerWaitTimeString] = "1";
-    }
-
-    childNode = dbNode.child(maxRetryOnFailureString);
-    if (childNode && childNode.text()) {
-        coreInfo->databaseConfig[maxRetryOnFailureString] =
-                childNode.text().get();
-    } else {
-        coreInfo->databaseConfig[maxRetryOnFailureString] = "3";
-    }
-
-    childNode = dbNode.child(dbSharedLibraryPathString);
-    if (childNode && childNode.text()) {
-        coreInfo->dbSharedLibraryPath=childNode.text().get();
+        coreInfo->dbSharedLibraryPath = childNode.text().get();
     } else {
         parseError << "database shared library path is not set. \n";
         configSuccess = false;
         return;
     }
+
+    childNode = dbNode.child(dbSharedLibraryNameString);
+    if (childNode && childNode.text()) {
+        coreInfo->dbSharedLibraryName = childNode.text().get();
+    } else {
+        parseError << "database shared library name is not set. \n";
+        configSuccess = false;
+        return;
+    }
+
+    childNode = dbNode.child(dbKeyValuesString);
+    if (childNode) {
+        string dbKey,dbValue;
+        for (xml_node keyValue = childNode.first_child(); keyValue; keyValue =
+                keyValue.next_sibling()) {
+            if (string(keyValue.name()).compare(dbKeyValueString) == 0) {
+                dbKey = keyValue.attribute(dbKeyString).value();
+                dbValue = keyValue.attribute(dbValueString).value();
+                if (dbKey.size() != 0 && dbValue.size() != 0) {
+
+                    /*
+                     * Check if the key value pairs contain the predefined key
+                     * "dataDir" , "srch2Home" , "uniqueKey". If the key value
+                     * pairs contain the above keys, log a warning for each one.
+                     */
+                    if (dbKey.compare(dataDirString) == 0) {
+                        Logger::warn("Replacing value of key %s from %s to %s.",
+                                dataDirString, coreInfo->dataDir.c_str(),
+                                dbValue.c_str());
+                    }
+                    if (dbKey.compare(srch2HomeString) == 0) {
+                        Logger::warn("Replacing value of key %s from %s to %s.",
+                                srch2HomeString, srch2Home.c_str(),
+                                dbValue.c_str());
+                    }
+                    if (dbKey.compare(uniqueKeyString) == 0) {
+                        Logger::warn("Replacing value of key %s from %s to %s.",
+                                uniqueKeyString, coreInfo->primaryKey.c_str(),
+                                dbValue.c_str());
+                    }
+                    coreInfo->dbParameters[dbKey] = dbValue;
+                }
+            }
+        }
+    }
+
 }
 
 void ConfigManager::parseQuery(const xml_node &queryNode,
@@ -884,7 +894,7 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_
     /*
      * uniqueKey is required
      * populate uniqueKey before DATA_SOURCE_DATABASE, so that we can add
-     * the uniqueKey into database config map.
+     * the uniqueKey into the database config map.
      */
     childNode = parentNode.child(schemaString).child(uniqueKeyString);
     if (childNode && childNode.text()) {
@@ -898,8 +908,8 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_
     }
 
     if (coreInfo->dataSourceType == DATA_SOURCE_DATABASE) {
-        childNode = parentNode.child(databaseString);
-        parseDbConfig(childNode, coreInfo, configSuccess, parseError, parseWarnings);
+        childNode = parentNode.child(dbParametersString);
+        parseDbParameters(childNode, coreInfo, configSuccess, parseError, parseWarnings);
         if (configSuccess == false) {
             return;
         }
@@ -2554,12 +2564,20 @@ bool ConfigManager::isPositionIndexEnabled(const string &coreName) const
     		|| ((CoreInfoMap_t) coreInfoMap)[coreName]->enableCharOffsetIndex);
 }
 
-const map<string,string> * ConfigManager::getDatabaseConfig(const string &coreName) const
+const map<string,string> * ConfigManager::getDbParameters(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return &getDefaultCoreInfo()->databaseConfig;
+        return &getDefaultCoreInfo()->dbParameters;
     }
-    return &((CoreInfoMap_t) coreInfoMap)[coreName]->databaseConfig;
+    return &((CoreInfoMap_t) coreInfoMap)[coreName]->dbParameters;
+}
+
+const string& ConfigManager::getDatabaseSharedLibraryName(const string &coreName) const
+{
+    if (coreName.compare("") == 0) {
+        return getDefaultCoreInfo()->dbSharedLibraryName;
+    }
+    return ((CoreInfoMap_t) coreInfoMap)[coreName]->dbSharedLibraryName;
 }
 
 const string& ConfigManager::getDatabaseSharedLibraryPath(const string &coreName) const

@@ -15,20 +15,21 @@
 
 //Called by the pthread_create, create the database connector
 void * spawnConnector(void *arg) {
-    ConnectorThreadArguments * targ = (ConnectorThreadArguments *) arg;
-    DataConnectorThread::bootStrapConnector(targ);
+    ConnectorThreadArguments * connThreadArg = (ConnectorThreadArguments *) arg;
+    DataConnectorThread::bootStrapConnector(connThreadArg);
 
-    delete targ->server;
-    delete targ;
+    delete connThreadArg->server;
+    delete connThreadArg;
 
     return NULL;
 }
 
 //The main function run by the thread, get connector and start listener.
-void DataConnectorThread::bootStrapConnector(ConnectorThreadArguments * targ) {
+void DataConnectorThread::bootStrapConnector(ConnectorThreadArguments * connThreadArg) {
     void * pdlHandle = NULL;
     //Get the pointer of the shared library
-    DataConnector *connector = getDataConnector(pdlHandle,targ->sharedLibraryPath);
+    DataConnector *connector = getDataConnector(pdlHandle,
+            connThreadArg->sharedLibraryFullPath);
 
     if (connector == NULL) {
         Logger::error("Can not open the shared library. "
@@ -37,8 +38,8 @@ void DataConnectorThread::bootStrapConnector(ConnectorThreadArguments * targ) {
         exit(1);	//Exit if can not open the shared library
     }
 
-    if (connector->init(targ->server)) {
-        if (!targ->ifCreateNewIndex) {
+    if (connector->init(connThreadArg->server)) {
+        if (!connThreadArg->createNewIndexFlag) {
             Logger::debug("Create Indices from empty");
             connector->createNewIndexes();
         }
@@ -74,10 +75,15 @@ void DataConnectorThread::getDataConnectorThread(void * server) {
         delete internal;
     } else {
         dbArg->server = internal;
-        dbArg->ifCreateNewIndex = checkIndexExistence(server);
+        dbArg->createNewIndexFlag = checkIndexExistence(server);
 
-        srch2::httpwrapper::Srch2Server* srch2Server = (srch2::httpwrapper::Srch2Server*) server;
-        dbArg->sharedLibraryPath = srch2Server->indexDataConfig->getDatabaseSharedLibraryPath();
+        srch2::httpwrapper::Srch2Server* srch2Server =
+                (srch2::httpwrapper::Srch2Server*) server;
+        dbArg->sharedLibraryFullPath =
+                srch2Server->indexDataConfig->getDatabaseSharedLibraryPath()
+                        + "/"
+                        + srch2Server->indexDataConfig->getDatabaseSharedLibraryName()
+                        + ".so";
 
         int res = pthread_create(&tid, NULL, spawnConnector, (void *) dbArg);
     }

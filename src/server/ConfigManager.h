@@ -229,7 +229,7 @@ protected:
     // parsing helper functions for modularity
     void parseIndexConfig(const xml_node &indexConfigNode, CoreInfo_t *coreInfo, map<string, unsigned> &boostsMap, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
-    void parseDbConfig(const xml_node &dbNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+    void parseDbParameters(const xml_node &dbNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
     void parseQuery(const xml_node &queryNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
@@ -322,7 +322,8 @@ public:
     void loadConfigFile() ;
 
     // Database related getter/setter
-    const map<string,string> * getDatabaseConfig(const string &coreName) const;
+    const map<string,string> * getDbParameters(const string &coreName) const;
+    const string& getDatabaseSharedLibraryName(const string &coreName) const;
     const string& getDatabaseSharedLibraryPath(const string &coreName) const;
 
     const unsigned getGetAllResultsNumberOfResultsThreshold() const {
@@ -354,14 +355,17 @@ private:
     static const char* const accessLogFileString;
     static const char* const analyzerString;
     static const char* const cacheSizeString;
-    static const char* const collectionString;
     static const char* const configString;
-    static const char* const databaseString;
     static const char* const dataDirString;
     static const char* const dataFileString;
     static const char* const dataSourceTypeString;
+    static const char* const dbKeyString;
+    static const char* const dbKeyValuesString;
+    static const char* const dbKeyValueString;
+    static const char* const dbParametersString;
     static const char* const dbSharedLibraryPathString;
-    static const char* const dbString;
+    static const char* const dbSharedLibraryNameString;
+    static const char* const dbValueString;
     static const char* const defaultString;
     static const char* const defaultQueryTermBoostString;
     static const char* const dictionaryString;
@@ -382,13 +386,11 @@ private:
     static const char* const fieldTypeString;
     static const char* const filterString;
     static const char* const fuzzyMatchPenaltyString;
-    static const char* const hostString;
     static const char* const indexConfigString;
     static const char* const indexedString;
     static const char* const multiValuedString;
     static const char* const indexTypeString;
     static const char* const licenseFileString;
-    static const char* const listenerWaitTimeString;
     static const char* const listeningHostStringString;
     static const char* const listeningPortString;
     static const char* const locationLatitudeString;
@@ -396,13 +398,11 @@ private:
     static const char* const logLevelString;
     static const char* const maxDocsString;
     static const char* const maxMemoryString;
-    static const char* const maxRetryOnFailureString;
     static const char* const maxSearchThreadsString;
     static const char* const mergeEveryMWritesString;
     static const char* const mergeEveryNSecondsString;
     static const char* const mergePolicyString;
     static const char* const nameString;
-    static const char* const portString;
     static const char* const porterStemFilterString;
     static const char* const prefixMatchPenaltyString;
     static const char* const queryString;
@@ -491,11 +491,14 @@ public:
     // THIS FUNCTION IS JUST FOR WRAPPER TEST
     void setDataFilePath(const string& path);
 
-    const map<string, string> * getDatabaseConfig() const {
-        return &databaseConfig;
+    const map<string, string> * getDbParameters() const {
+        return &dbParameters;
     }
     const string& getDatabaseSharedLibraryPath() const {
         return dbSharedLibraryPath;
+    }
+    const string& getDatabaseSharedLibraryName() const {
+        return dbSharedLibraryName;
     }
 
     int getIndexType() const { return indexType; }
@@ -632,7 +635,8 @@ protected:
     string dataFilePath;
 
     // database related settings
-    map<string, string>  databaseConfig;
+    map<string, string>  dbParameters;
+    string dbSharedLibraryName;
     string dbSharedLibraryPath;
 
     int isPrimSearchable;

@@ -15,8 +15,8 @@
 //Arguments passed to the thread
 struct ConnectorThreadArguments {
     ServerInterface* server;
-    bool ifCreateNewIndex;
-    std::string sharedLibraryPath;
+    bool createNewIndexFlag;
+    std::string sharedLibraryFullPath;
 };
 
 //Called by the pthread_create, create the database connector
@@ -27,7 +27,7 @@ public:
     //Create thread if interface built successfully.
     static void getDataConnectorThread(void * server);
     //The main function run by the thread, get connector and start listener.
-    static void bootStrapConnector(ConnectorThreadArguments * targ);
+    static void bootStrapConnector(ConnectorThreadArguments * connThreadArg);
 private:
     static bool checkIndexExistence(void * server);
     //Get the pointer and handle to the specific connector in shared library.
