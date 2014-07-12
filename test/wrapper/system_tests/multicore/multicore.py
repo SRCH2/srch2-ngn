@@ -13,7 +13,7 @@ import sys, urllib2, json, time, subprocess, os, commands, signal, re
 sys.path.insert(0, 'srch2lib')
 import test_lib
 
-port = '8087'
+port = '8887'
 
 #Function of checking the results
 def checkResult(query, responseJson,resultValue):

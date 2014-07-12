@@ -2,7 +2,6 @@
 
 #include <sys/time.h>
 #include <boost/algorithm/string.hpp>
-#include <boost/make_shared.hpp>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -159,15 +158,15 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
         const unsigned ts1, struct timespec &tstart, struct timespec &tend ,
         const vector<RecordSnippet>& recordSnippets, unsigned hlTime, bool onlyFacets) {
 
-    Json::Value root;
+    boost::shared_ptr<Json::Value> root (new Json::Value());
     // For logging
     string logQueries;
     unsigned resultFound = retrievedResults;
-    root["searcher_time"] = ts1;
+    (*root)["searcher_time"] = ts1;
     clock_gettime(CLOCK_REALTIME, &tstart);
 
     if(onlyFacets == false){ // We send the matching records only if "facet != only".
-        root["results"].resize(end - start);
+        (*root)["results"].resize(end - start);
         unsigned counter = 0;
         if (queryPlan.getQueryType() == srch2is::SearchTypeMapQuery
                 && query->getQueryTerms()->empty()) //check if the query type is range query without keywords
@@ -179,16 +178,16 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
             		--resultFound;
             		continue;
             	}
-                root["results"][counter]["record_id"] = queryResults->getRecordId(
+                (*root)["results"][counter]["record_id"] = queryResults->getRecordId(
                         i);
-                root["results"][counter]["score"] = (0
+                (*root)["results"][counter]["score"] = (0
                         - queryResults->getResultScore(i).getFloatTypedValue()); //the actual distance between the point of record and the center point of the range
                 if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_STORED_ATTR){
                     string sbuffer;
                     genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i), sbuffer);
                     // The class CustomizableJsonWriter allows us to
                     // attach the data string to the JSON tree without parsing it.
-                    root["results"][counter][global_internal_record.first] = sbuffer;
+                    (*root)["results"][counter][global_internal_record.first] = sbuffer;
                 } else if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SELECTED_ATTR){
                 	string sbuffer;
                 	const vector<string> *attrToReturn = indexDataConfig->getAttributesToReturn();
@@ -196,7 +195,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
                 			sbuffer, attrToReturn);
                 	// The class CustomizableJsonWriter allows us to
                 	// attach the data string to the JSON tree without parsing it.
-                	root["results"][counter][global_internal_record.first] = sbuffer;
+                	(*root)["results"][counter][global_internal_record.first] = sbuffer;
                 }
                 ++counter;
             }
@@ -211,27 +210,27 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
             		--resultFound;
             		continue;
             	}
-                root["results"][counter]["record_id"] = queryResults->getRecordId(i);
-                root["results"][counter]["score"] = queryResults->getResultScore(i)
+                (*root)["results"][counter]["record_id"] = queryResults->getRecordId(i);
+                (*root)["results"][counter]["score"] = queryResults->getResultScore(i)
                         .getFloatTypedValue();
 
                 // print edit distance vector
                 vector<unsigned> editDistances;
                 queryResults->getEditDistances(i, editDistances);
 
-                root["results"][counter]["edit_dist"].resize(editDistances.size());
+                (*root)["results"][counter]["edit_dist"].resize(editDistances.size());
                 for (unsigned int j = 0; j < editDistances.size(); ++j) {
-                    root["results"][counter]["edit_dist"][j] = editDistances[j];
+                    (*root)["results"][counter]["edit_dist"][j] = editDistances[j];
                 }
 
                 // print matching keywords vector
                 vector<std::string> matchingKeywords;
                 queryResults->getMatchingKeywords(i, matchingKeywords);
 
-                root["results"][counter]["matching_prefix"].resize(
+                (*root)["results"][counter]["matching_prefix"].resize(
                         matchingKeywords.size());
                 for (unsigned int j = 0; j < matchingKeywords.size(); ++j) {
-                    root["results"][counter]["matching_prefix"][j] =
+                    (*root)["results"][counter]["matching_prefix"][j] =
                             matchingKeywords[j];
                 }
                 if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_STORED_ATTR) {
@@ -241,7 +240,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
                     		 sbuffer);
                     // The class CustomizableJsonWriter allows us to
                     // attach the data string to the JSON tree without parsing it.
-                    root["results"][counter][global_internal_record.first] = sbuffer;
+                    (*root)["results"][counter][global_internal_record.first] = sbuffer;
                 } else if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SELECTED_ATTR){
                 	unsigned internalRecordId = queryResults->getInternalRecordId(i);
                 	string sbuffer;
@@ -250,51 +249,51 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
                 			sbuffer, attrToReturn);
                 	// The class CustomizableJsonWriter allows us to
                 	// attach the data string to the JSON tree without parsing it.
-                	root["results"][counter][global_internal_record.first] = sbuffer;
+                	(*root)["results"][counter][global_internal_record.first] = sbuffer;
                 }
 
                 string sbuffer = string();
                 sbuffer.reserve(1024);  //<< TODO: set this to max allowed snippet len
                 genSnippetJSONString(i, start, recordSnippets, sbuffer, queryResults);
-                root["results"][counter][global_internal_snippet.first] = sbuffer;
+                (*root)["results"][counter][global_internal_snippet.first] = sbuffer;
                 ++counter;
             }
 
-            root["query_keywords"].resize(query->getQueryTerms()->size());
+            (*root)["query_keywords"].resize(query->getQueryTerms()->size());
             for (unsigned i = 0; i < query->getQueryTerms()->size(); i++) {
                 string &term = *(query->getQueryTerms()->at(i)->getKeyword());
-                root["query_keywords"][i] = term;
+                (*root)["query_keywords"][i] = term;
                 if (i)
                     logQueries += "";
                 logQueries += term;
             }
-            root["query_keywords_complete"].resize(query->getQueryTerms()->size());
+            (*root)["query_keywords_complete"].resize(query->getQueryTerms()->size());
             for (unsigned i = 0; i < query->getQueryTerms()->size(); i++) {
                 bool isCompleteTermType = (query->getQueryTerms()->at(i)->getTermType() == srch2is::TERM_TYPE_COMPLETE );
-                root["query_keywords_complete"][i] = isCompleteTermType;
+                (*root)["query_keywords_complete"][i] = isCompleteTermType;
             }
 
 
-            root["fuzzy"] = (int) queryPlan.isFuzzy();
+            (*root)["fuzzy"] = (int) queryPlan.isFuzzy();
         }
     }else{ // facet only case: we only want query information
     	if (queryPlan.getQueryType() != srch2is::SearchTypeMapQuery
     			|| query->getQueryTerms()->empty() == false) //check if the query type is range query without keywords
     	{
-            root["query_keywords"].resize(query->getQueryTerms()->size());
+            (*root)["query_keywords"].resize(query->getQueryTerms()->size());
             for (unsigned i = 0; i < query->getQueryTerms()->size(); i++) {
                 string &term = *(query->getQueryTerms()->at(i)->getKeyword());
-                root["query_keywords"][i] = term;
+                (*root)["query_keywords"][i] = term;
                 if (i)
                     logQueries += "";
                 logQueries += term;
             }
-            root["query_keywords_complete"].resize(query->getQueryTerms()->size());
+            (*root)["query_keywords_complete"].resize(query->getQueryTerms()->size());
             for (unsigned i = 0; i < query->getQueryTerms()->size(); i++) {
                 bool isCompleteTermType = (query->getQueryTerms()->at(i)->getTermType() == srch2is::TERM_TYPE_COMPLETE );
-                root["query_keywords_complete"][i] = isCompleteTermType;
+                (*root)["query_keywords_complete"][i] = isCompleteTermType;
             }
-            root["fuzzy"] = (int) queryPlan.isFuzzy();
+            (*root)["fuzzy"] = (int) queryPlan.isFuzzy();
     	}
     }
 
@@ -302,18 +301,18 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
     clock_gettime(CLOCK_REALTIME, &tend);
     unsigned ts2 = (tend.tv_sec - tstart.tv_sec) * 1000
             + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-    root["payload_access_time"] = ts2;
+    (*root)["payload_access_time"] = ts2;
 
     // return some meta data
 
-    root["type"] = queryPlan.getQueryType();
-    root["offset"] = start;
-    root["limit"] = end - start;
+    (*root)["type"] = queryPlan.getQueryType();
+    (*root)["offset"] = start;
+    (*root)["limit"] = end - start;
 
 //    if (queryPlan.getSearchType() == GetAllResultsSearchType
 //            || queryPlan.getSearchType() == GeoSearchType) // facet output must be added here.
 //                    {
-    root["results_found"] = resultFound;
+    (*root)["results_found"] = resultFound;
 
     long int estimatedNumberOfResults = queryResults->getEstimatedNumberOfResults();
     // Since estimation of number of results can return a wrong number, if this value is less
@@ -324,10 +323,10 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
     if(estimatedNumberOfResults != -1){
         // at this point we know for sure that estimatedNumberOfResults is positive, so we can cast
         // it to unsigned (because the thirdparty library we use here does not accept long integers.)
-        root["estimated_number_of_results"] = (unsigned)estimatedNumberOfResults;
+        (*root)["estimated_number_of_results"] = (unsigned)estimatedNumberOfResults;
     }
     if(queryResults->isResultsApproximated() == true){
-        root["result_set_approximation"] = true;
+        (*root)["result_set_approximation"] = true;
     }
 
 //    }
@@ -350,27 +349,27 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
     //                         }
     //]
     if (!facetResults->empty()) { // we have facet results to print
-        root["facets"].resize(facetResults->size());
+        (*root)["facets"].resize(facetResults->size());
 
         unsigned attributeCounter = 0;
         for (std::map<std::string, std::pair< FacetType , std::vector<std::pair<std::string, float> > > >::const_iterator attr =
                 facetResults->begin(); attr != facetResults->end(); ++attr) {
-            root["facets"][attributeCounter]["facet_field_name"] = attr->first;
-            root["facets"][attributeCounter]["facet_info"].resize(
+            (*root)["facets"][attributeCounter]["facet_field_name"] = attr->first;
+            (*root)["facets"][attributeCounter]["facet_info"].resize(
                     attr->second.second.size());
             for (std::vector<std::pair<std::string, float> >::const_iterator category =
                     attr->second.second.begin(); category != attr->second.second.end();
                     ++category) {
 
                 if(category == attr->second.second.begin() && attr->second.first == srch2is::FacetTypeRange){
-                    root["facets"][attributeCounter]["facet_info"][(category
+                    (*root)["facets"][attributeCounter]["facet_info"][(category
                             - attr->second.second.begin())]["category_name"] = "lessThanStart";
                 }else{
-                    root["facets"][attributeCounter]["facet_info"][(category
+                    (*root)["facets"][attributeCounter]["facet_info"][(category
                             - attr->second.second.begin())]["category_name"] =
                             category->first;
                 }
-                root["facets"][attributeCounter]["facet_info"][(category
+                (*root)["facets"][attributeCounter]["facet_info"][(category
                         - attr->second.second.begin())]["category_value"] =
                         category->second;
             }
@@ -380,11 +379,11 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
         }
     }
 
-    root["message"] = message;
+    (*root)["message"] = message;
     Logger::info(
             "ip: %s, port: %d GET query: %s, searcher_time: %d ms, highlighter_time: %d ms, payload_access_time: %d ms",
             req->remote_host, req->remote_port, req->uri + 1, ts1, hlTime, ts2);
-    return boost::make_shared<Json::Value> (root);
+    return root;
 }
 
 
@@ -401,12 +400,12 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printOneResultRetrievedById(e
         const unsigned ts1,
         struct timespec &tstart, struct timespec &tend){
 
-    Json::Value root;
+    boost::shared_ptr<Json::Value> root(new Json::Value());
     // For logging
     string logQueries;
 
-    root["searcher_time"] = ts1;
-    root["results"].resize(queryResults->getNumberOfResults());
+    (*root)["searcher_time"] = ts1;
+    (*root)["results"].resize(queryResults->getNumberOfResults());
 
     clock_gettime(CLOCK_REALTIME, &tstart);
     unsigned counter = 0;
@@ -419,13 +418,13 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printOneResultRetrievedById(e
     		--resultFound;
     		continue;
     	}
-        root["results"][counter]["record_id"] = queryResults->getRecordId(i);
+        (*root)["results"][counter]["record_id"] = queryResults->getRecordId(i);
 
         if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_STORED_ATTR) {
             unsigned internalRecordId = queryResults->getInternalRecordId(i);
             string sbuffer;
             genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i), sbuffer);
-            root["results"][counter][global_internal_record.first] = sbuffer;
+            (*root)["results"][counter][global_internal_record.first] = sbuffer;
         } else if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SELECTED_ATTR){
         	unsigned internalRecordId = queryResults->getInternalRecordId(i);
         	string sbuffer;
@@ -434,7 +433,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printOneResultRetrievedById(e
         			sbuffer, attrToReturn);
         	// The class CustomizableJsonWriter allows us to
         	// attach the data string to the JSON tree without parsing it.
-        	root["results"][counter][global_internal_record.first] = sbuffer;
+        	(*root)["results"][counter][global_internal_record.first] = sbuffer;
         }
         ++counter;
     }
@@ -442,18 +441,18 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printOneResultRetrievedById(e
     clock_gettime(CLOCK_REALTIME, &tend);
     unsigned ts2 = (tend.tv_sec - tstart.tv_sec) * 1000
             + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-    root["payload_access_time"] = ts2;
+    (*root)["payload_access_time"] = ts2;
 
     // return some meta data
 
-    root["type"] = queryPlan.getQueryType();
-    root["results_found"] = resultFound;
+    (*root)["type"] = queryPlan.getQueryType();
+    (*root)["results_found"] = resultFound;
 
-    root["message"] = message;
+    (*root)["message"] = message;
     Logger::info(
             "ip: %s, port: %d GET query: %s, searcher_time: %d ms, payload_access_time: %d ms",
             req->remote_host, req->remote_port, req->uri + 1, ts1, ts2);
-    return boost::make_shared<Json::Value>(root);
+    return root;
 }
 
 void HTTPRequestHandler::genRecordJsonString(const srch2is::Indexer *indexer, StoredRecordBuffer buffer,
