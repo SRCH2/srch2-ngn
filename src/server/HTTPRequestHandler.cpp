@@ -734,6 +734,9 @@ void HTTPRequestHandler::shutdownCommand(evhttp_request *req, const CoreNameServ
     case EVHTTP_REQ_PUT: {
         // graceful shutdown
         // since the main process is catching the kill signal, we can simply send the kill to itself
+        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
+                "{\"message\":\"Bye\"}\n");
+        Logger::info("Server is shuting down");
         kill(getpid(),SIGTERM);
         break;
     }
