@@ -470,7 +470,7 @@ http://localhost:8081/example-core/search?q=term
 retrieves answers for the keyword "term" from the core called "example-core".  In the case when no core is specified in a query, 
 the server will use the default core specified by the "defaultCoreName" tag.
 
-If a user wants to get results from all the cores, the query should add a prefix `/_all/search` to the request. For instance, the following query:
+If a user wants to get results from all the cores, the query should add a prefix "/_all/search" to the request. For instance, the following query:
 ```
 http://localhost:8081/_all/search?q=martn~
 ```

@@ -684,7 +684,7 @@ http://localhost:8081/example-core/search/q=term
 requests that the core called "example-core" process a search request for "term".  In the case when no core is
 specified in a query to a multi-core server, the server will use the sore specified by the "defaultCoreName" tag.
 
-A sample multi-core configuration is provided in example-demo/srch2-config-advanced.xml .
+A sample multi-core configuration is provided in [example-demo/srch2-config-advanced.xml](example-demo/srch2-config-advanced.xml).
 
 ###12.1 Core, Optional{id="Core"}
 

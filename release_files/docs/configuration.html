@@ -637,17 +637,17 @@ separate words.</p>
 <p>Note that whitespace characters will also be considered word delimiters and are not permitted in this field.</p>
 <p>The advanced example in example-demo/srch2-config-advanced.xml provides an example of allowing Twitter hashtag like terms to be queried.</p>
 <h2 id="Cores">12. Cores, Optional</h2>
-<p>The "Cores" tag can be used to support the creation of multiple search engines (called cores) within the same server.  Typically, each engine
-has a different data source.  All cores run within the same server process.  A query can only
+<p>The "Cores" tag can be used to support the creation of multiple data sources (called cores) within the same server.<br>
+An engine can have multiple sources.  All cores run within the same server process.  A query can 
 name a single core.</p>
-<p>The "Cores" tag supports one attribute: "defaultCoreName".  When instantiated with multiple cores, queries
+<p>When instantiated with multiple cores, queries
 specify the core by name that is to process the query.  For instance, the following query:</p>
 <pre><code>http://localhost:8081/example-core/search/q=term
 </code></pre>
 
-<p>requests that "example-core" process a search request for "term".  In the case when no core is
-specified in a query to a multi-core server, the server will use the sore specified by "defaultCoreName".</p>
-<p>A working multicore configuration is provided in example-demo/srch2-config-advanced.xml .</p>
+<p>requests that the core called "example-core" process a search request for "term".  In the case when no core is
+specified in a query to a multi-core server, the server will use the sore specified by the "defaultCoreName" tag.</p>
+<p>A sample multi-core configuration is provided in <a href="example-demo/srch2-config-advanced.xml">example-demo/srch2-config-advanced.xml</a>.</p>
 <h3 id="Core">12.1 Core, Optional</h3>
 <p>Each "Core" tag under "Cores" specifies a server core to be created.  Each core requires a name
 attribute.  This name is used in query URI paths, as well as the aforementioned

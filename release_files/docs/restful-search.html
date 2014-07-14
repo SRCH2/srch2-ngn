@@ -425,19 +425,80 @@ q=pulp AND fiction AND (Tarenti~0.6* OR Travolta OR Jackson) AND NOT &quot;Jesse
 
 <p>which returns the record with "929" (text) as its primary key value. Note that the primary key is defined by the tag "uniqueKey" under the "schema" tag.</p>
 <h2 id="multicore">14. Multi-core search</h2>
-<p>The "Cores" tag set in the <a href="configuration.html#Cores">configuration file</a> enable the user to search on the different "cores" within the same server. 
-Typically, each engine has a different data source. A query can be specified to certain core by insert the core name into the parh. 
-For instance, the following query:</p>
+<p>The "Cores" tag set in the <a href="configuration.html#Cores">configuration file</a> allows the user to search on multiple "cores" within the same server. 
+A query can specify a particular core.  For instance, the following query:</p>
 <pre><code>http://localhost:8081/example-core/search?q=term
 </code></pre>
 
-<p>requests that "example-core" process a search request for "term". 
-In the case when no core is specified in a query to a multi-core server, the server will use the sore specified by "defaultCoreName".</p>
-<p>If user want to search one query on all cores, the query should add the <code>/_all/search</code> into the path. For instance, the following query:</p>
-<pre><code>http://localhost:8081/_all/search?q=term
+<p>retrieves answers for the keyword "term" from the core called "example-core".  In the case when no core is specified in a query, 
+the server will use the default core specified by the "defaultCoreName" tag.</p>
+<p>If a user wants to get results from all the cores, the query should add a prefix "/_all/search" to the request. For instance, the following query:</p>
+<pre><code>http://localhost:8081/_all/search?q=martn~
 </code></pre>
 
-<p>requests that all cores process the "term" query. The "search-all" response wraps each of the single core response and uses the core name as the key to differenciate the results.</p>
+<p>requests that all cores process the "term" query. The "search-all" response encapsulates the results from each source with a tag of the core name.
+For example, the following is a sample response from two cores:</p>
+<pre><code>{
+    &quot;core1&quot;:{
+        &quot;estimated_number_of_results&quot;:3,
+        ...
+        &quot;results&quot;:[
+            {
+                &quot;edit_dist&quot;:[
+                    1
+                ],
+                &quot;matching_prefix&quot;:[  
+                    &quot;martin&quot;
+                ],
+                &quot;record_id&quot;:&quot;156001&quot;,
+                &quot;score&quot;:4.598437309265137,
+                &quot;record&quot;:{  
+                   &quot;id&quot;:&quot;156001&quot;,
+                   &quot;director&quot;:&quot;Martin Scorsese&quot;,
+                   &quot;genre&quot;:&quot;Drama&quot;,
+                   &quot;id&quot;:&quot;156001&quot;,
+                   &quot;title&quot;:&quot;Aviator&quot;,
+                   &quot;year&quot;:&quot;2004&quot;
+                }
+            },
+            { # 2nd result
+                ...
+            },
+            { # 3rd result
+                ...
+            }
+        ],
+        &quot;results_found&quot;:3,
+        &quot;searcher_time&quot;:0,
+        &quot;type&quot;:0
+    },
+    &quot;core2&quot;:{  
+        &quot;estimated_number_of_results&quot;:1,
+        ...
+        &quot;results&quot;:[  
+             {  
+                &quot;edit_dist&quot;:[  
+                    1
+                ],
+                &quot;matching_prefix&quot;:[  
+                    &quot;martin&quot;
+                ],
+                &quot;record_id&quot;:&quot;6385931&quot;,
+                &quot;score&quot;:0.5666015744209290,
+                &quot;record&quot;:{  
+                    &quot;id&quot;:&quot;6385931&quot;,
+                    &quot;author_name&quot;:&quot;Martin&quot;,
+                    &quot;creation_date&quot;:&quot;06/17/2011&quot;,
+                    &quot;title&quot;:&quot;Silverlight 4 - downloading data into tooltip w/ Bing Maps&quot;,
+                },
+            }
+        ],
+        &quot;results_found&quot;:1,
+        &quot;searcher_time&quot;:0,
+        &quot;type&quot;:0
+    }
+
+</code></pre>
 
 </table>
 <hr>
