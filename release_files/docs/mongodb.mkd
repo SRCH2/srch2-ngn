@@ -62,13 +62,18 @@ Download a sample <a href="example-demo/srch2-config.xml">configuration file</a>
  
 ```
     <dataSourceType>2</dataSourceType>
-    <mongodb>
-        <host>localhost</host>
-        <port>27017</port>
-        <db>demo</db>
-        <collection>movies</collection>
-        <listenerWaitTime>3</listenerWaitTime>
-    </mongodb>
+    <dbParameters>
+        <dbSharedLibraryPath>db_connectors/</dbSharedLibraryPath>
+        <dbSharedLibraryName>libmongodbConnector.so</dbSharedLibraryName>
+        <dbKeyValues>
+            <dbKeyValue key="host" value="127.0.0.1" />
+            <dbKeyValue key="port" value="27017" />
+            <dbKeyValue key="db" value="demo" />
+            <dbKeyValue key="collection" value="movies" />
+            <dbKeyValue key="listenerWaitTime" value="3" />
+            <dbKeyValue key="maxRetryOnFailure" value="3" />
+        </dbKeyValues>
+    </dbParameters>
 ```
 
 Change the parameters if needed.  Make sure that you have also set the "srch2Home" variable in the SRCH2 configuration file. All other paths mentioned in the configuration file are relative to the "srch2Home" folder.

@@ -99,13 +99,18 @@ mongodb&gt; db.movies.find().count()
 <h2 id="configureSrch2">3. Configure SRCH2</h2>
 <p>Download a sample <a href="example-demo/srch2-config.xml">configuration file</a> for the SRCH2 engine.  Find the following lines inside the <i>config</i> element to specify information about this MongoDB data source:</p>
 <pre><code>    &lt;dataSourceType&gt;2&lt;/dataSourceType&gt;
-    &lt;mongodb&gt;
-        &lt;host&gt;localhost&lt;/host&gt;
-        &lt;port&gt;27017&lt;/port&gt;
-        &lt;db&gt;demo&lt;/db&gt;
-        &lt;collection&gt;movies&lt;/collection&gt;
-        &lt;listenerWaitTime&gt;3&lt;/listenerWaitTime&gt;
-    &lt;/mongodb&gt;
+    &lt;dbParameters&gt;
+        &lt;dbSharedLibraryPath&gt;db_connectors/&lt;/dbSharedLibraryPath&gt;
+        &lt;dbSharedLibraryName&gt;libmongodbConnector.so&lt;/dbSharedLibraryName&gt;
+        &lt;dbKeyValues&gt;
+            &lt;dbKeyValue key=&quot;host&quot; value=&quot;127.0.0.1&quot; /&gt;
+            &lt;dbKeyValue key=&quot;port&quot; value=&quot;27017&quot; /&gt;
+            &lt;dbKeyValue key=&quot;db&quot; value=&quot;demo&quot; /&gt;
+            &lt;dbKeyValue key=&quot;collection&quot; value=&quot;movies&quot; /&gt;
+            &lt;dbKeyValue key=&quot;listenerWaitTime&quot; value=&quot;3&quot; /&gt;
+            &lt;dbKeyValue key=&quot;maxRetryOnFailure&quot; value=&quot;3&quot; /&gt;
+        &lt;/dbKeyValues&gt;
+    &lt;/dbParameters&gt;
 </code></pre>
 
 <p>Change the parameters if needed.  Make sure that you have also set the "srch2Home" variable in the SRCH2 configuration file. All other paths mentioned in the configuration file are relative to the "srch2Home" folder.</p>

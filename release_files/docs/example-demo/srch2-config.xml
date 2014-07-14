@@ -119,17 +119,22 @@
     </updatehandler>
 
     <!-- 
-        Mongo DB settings
-        Required if dataSourceType = 2
+        DB settings Required if dataSourceType = 2
+        Specify the shared library and shared library name base on the "srch2Home" path.
     -->
     <!--
     <dataSourceType>2</dataSourceType>
-    <mongodb>
-        <host>localhost</host>
-        <port>27017</port>
-        <db>demo</db>
-        <collection>movies</collection>
-        <listenerWaitTime>3</listenerWaitTime>
-    </mongodb>
+    <dbParameters>
+        <dbSharedLibraryPath>db_connectors/</dbSharedLibraryPath>
+        <dbSharedLibraryName>libmongodbConnector.so</dbSharedLibraryName>
+        <dbKeyValues>
+            <dbKeyValue key="host" value="127.0.0.1" />
+            <dbKeyValue key="port" value="27017" />
+            <dbKeyValue key="db" value="demo" />
+            <dbKeyValue key="collection" value="movies" />
+            <dbKeyValue key="listenerWaitTime" value="3" />
+            <dbKeyValue key="maxRetryOnFailure" value="3" />
+        </dbKeyValues>
+    </dbParameters>
     -->     
 </config>

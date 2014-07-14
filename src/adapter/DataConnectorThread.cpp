@@ -36,7 +36,7 @@ void DataConnectorThread::bootStrapConnector(ConnectorThreadArguments * connThre
     if (!pdlHandle) {
         Logger::error("Fail to load shared library %s due to %s",
                 libName.c_str(), dlerror());
-        exit(1);   //Exit if can not open the shared library
+        return;   //Exit from the current thread if can not open the shared library
     }
 
     /*
@@ -56,7 +56,8 @@ void DataConnectorThread::bootStrapConnector(ConnectorThreadArguments * connThre
         Logger::error(
                 "Cannot load symbol \"create\" in shared library due to: %s",
                 dlsym_error);
-        exit(1);   //Exit if can not open the shared library
+        dlclose(pdlHandle);
+        return;   //Exit from the current thread if can not open the shared library
     }
 
     /*
@@ -75,7 +76,8 @@ void DataConnectorThread::bootStrapConnector(ConnectorThreadArguments * connThre
         Logger::error(
                 "Cannot load symbol \"destroy\" in shared library due to: %s",
                 dlsym_error);
-        exit(1);   //Exit if can not open the shared library
+        dlclose(pdlHandle);
+        return;   //Exit from the current thread if can not open the shared library
     }
 
     //Call the "create" function in the shared library.
@@ -111,10 +113,16 @@ void DataConnectorThread::getDataConnectorThread(void * server) {
         srch2::httpwrapper::Srch2Server* srch2Server =
                 (srch2::httpwrapper::Srch2Server*) server;
         dbArg->sharedLibraryFullPath =
-                srch2Server->indexDataConfig->getDatabaseSharedLibraryPath()
+                srch2Server->indexDataConfig->getSrch2Home() + "/"
+                        + srch2Server->indexDataConfig->getDatabaseSharedLibraryPath()
                         + "/"
-                        + srch2Server->indexDataConfig->getDatabaseSharedLibraryName()
-                        + ".so";
+                        + srch2Server->indexDataConfig->getDatabaseSharedLibraryName();
+
+#ifdef MAC_OS
+        dbArg->sharedLibraryFullPath.append(".dylib");
+#else
+        dbArg->sharedLibraryFullPath.append(".so");
+#endif
 
         int res = pthread_create(&tid, NULL, spawnConnector, (void *) dbArg);
     }

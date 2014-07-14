@@ -182,7 +182,7 @@ const time_t MongoDBConnector::getLastAccessedLogRecordTime() {
 
     this->serverHandle->configLookUp("srch2Home", srch2Home);
     this->serverHandle->configLookUp("dataDir", dataDir);
-    std::string path = srch2Home + "/" + dataDir + "mongodb_data/" + "data.bin";
+    std::string path = srch2Home + "/" + dataDir + "/mongodb_data/" + "data.bin";
 
     if (access(path.c_str(), F_OK) == 0) {
         ifstream a_file(path.c_str(), ios::in | ios::binary);
@@ -201,7 +201,7 @@ void MongoDBConnector::setLastAccessedLogRecordTime(const time_t t) {
     std::string dataDir;
     this->serverHandle->configLookUp("srch2Home", srch2Home);
     this->serverHandle->configLookUp("dataDir", dataDir);
-    std::string path = srch2Home + "/" + dataDir + "mongodb_data/";
+    std::string path = srch2Home + "/" + dataDir + "/mongodb_data/";
 
     if (access(path.c_str(), F_OK) != 0) {
         boost::filesystem::create_directories(path);

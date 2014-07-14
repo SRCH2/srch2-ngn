@@ -455,8 +455,9 @@ void ConfigManager::parseDbParameters(const xml_node &dbNode, CoreInfo_t *coreIn
             if (string(keyValue.name()).compare(dbKeyValueString) == 0) {
                 dbKey = keyValue.attribute(dbKeyString).value();
                 dbValue = keyValue.attribute(dbValueString).value();
+                //Transform dbKey to lower case. dbKey should be case insensitive.
+                std::transform(dbKey.begin(), dbKey.end(), dbKey.begin(), ::tolower);
                 if (dbKey.size() != 0 && dbValue.size() != 0) {
-
                     /*
                      * Check if the key value pairs contain the predefined key
                      * "dataDir" , "srch2Home" , "uniqueKey". If the key value
