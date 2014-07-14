@@ -672,19 +672,19 @@ The advanced example in example-demo/srch2-config-advanced.xml provides an examp
 
 ##12. Cores, Optional{id="Cores"}
 
-The "Cores" tag can be used to support the creation of multiple search engines (called cores) within the same server.  Typically, each engine
-has a different data source.  All cores run within the same server process.  A query can only
+The "Cores" tag can be used to support the creation of multiple data sources (called cores) within the same server.  
+An engine can have multiple sources.  All cores run within the same server process.  A query can 
 name a single core.
 
-The "Cores" tag supports one attribute: "defaultCoreName".  When instantiated with multiple cores, queries
+When instantiated with multiple cores, queries
 specify the core by name that is to process the query.  For instance, the following query:
 ```
 http://localhost:8081/example-core/search/q=term
 ```
-requests that "example-core" process a search request for "term".  In the case when no core is
-specified in a query to a multi-core server, the server will use the sore specified by "defaultCoreName".
+requests that the core called "example-core" process a search request for "term".  In the case when no core is
+specified in a query to a multi-core server, the server will use the sore specified by the "defaultCoreName" tag.
 
-A working multicore configuration is provided in example-demo/srch2-config-advanced.xml .
+A sample multi-core configuration is provided in example-demo/srch2-config-advanced.xml .
 
 ###12.1 Core, Optional{id="Core"}
 
