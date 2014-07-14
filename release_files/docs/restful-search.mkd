@@ -33,6 +33,7 @@
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#start">11. Start</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rows">12. Rows</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fetchById">13. Fetch a Record by ID</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#multicore">14. Multi-core search</a></br><br>
 
 </td></tr></tbody></table>
 
@@ -458,3 +459,20 @@ curl -i "http://localhost:8081/search?docid=929"
 ```
 
 which returns the record with "929" (text) as its primary key value. Note that the primary key is defined by the tag "uniqueKey" under the "schema" tag.
+
+## 14. Multi-core search {id="multicore"}
+
+The "Cores" tag set in the [configuration file](configuration.html#Cores) enable the user to search on the different "cores" within the same server. 
+Typically, each engine has a different data source. A query can be specified to certain core by insert the core name into the parh. 
+For instance, the following query:
+```
+http://localhost:8081/example-core/search?q=term
+```
+requests that "example-core" process a search request for "term". 
+In the case when no core is specified in a query to a multi-core server, the server will use the sore specified by "defaultCoreName".
+
+If user want to search one query on all cores, the query should add the `/_all/search` into the path. For instance, the following query:
+```
+http://localhost:8081/_all/search?q=term
+```
+requests that all cores process the "term" query. The "search-all" response wraps each of the single core response and uses the core name as the key to differenciate the results.
