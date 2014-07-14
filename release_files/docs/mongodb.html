@@ -97,11 +97,11 @@ mongodb&gt; db.movies.find().count()
 
 <p>There should be 243 movies in the "movies" collection.</p>
 <h2 id="configureSrch2">3. Configure SRCH2</h2>
-<p>Download a sample <a href="example-demo/srch2-config.xml">configuration file</a> for the SRCH2 engine.  Find the following lines inside the <i>config</i> element to specify information about this MongoDB data source:</p>
+<p>Download a sample <a href="example-demo/srch2-config-mongo.xml">configuration file</a> for the SRCH2 engine.  Find the following lines inside the <i>config</i> element to specify information about this MongoDB data source:</p>
 <pre><code>    &lt;dataSourceType&gt;2&lt;/dataSourceType&gt;
     &lt;dbParameters&gt;
         &lt;dbSharedLibraryPath&gt;db_connectors/&lt;/dbSharedLibraryPath&gt;
-        &lt;dbSharedLibraryName&gt;libmongodbConnector.so&lt;/dbSharedLibraryName&gt;
+        &lt;dbSharedLibraryName&gt;libmongodbConnector&lt;/dbSharedLibraryName&gt;
         &lt;dbKeyValues&gt;
             &lt;dbKeyValue key=&quot;host&quot; value=&quot;127.0.0.1&quot; /&gt;
             &lt;dbKeyValue key=&quot;port&quot; value=&quot;27017&quot; /&gt;
@@ -116,7 +116,7 @@ mongodb&gt; db.movies.find().count()
 <p>Change the parameters if needed.  Make sure that you have also set the "srch2Home" variable in the SRCH2 configuration file. All other paths mentioned in the configuration file are relative to the "srch2Home" folder.</p>
 <h2 id="startSrch2">4. Start SRCH2 Engine</h2>
 <p>Go to the install folder of SRCH2 and run the following:</p>
-<pre><code class="python">shell&gt; ./bin/srch2-engine --config-file=./example-demo/srch2-config.xml
+<pre><code class="python">shell&gt; ./bin/srch2-search-server --config-file=./example-demo/srch2-config.xml
 </code></pre>
 
 <p>The engine should read the data from the MongoDB instance, build indexes, and wait for queries. It also starts a thread that periodically pulls latest changes from MongoDB (as specified by the "listenerWaitTime" parameter) and add these changes to its search indexes.</p>

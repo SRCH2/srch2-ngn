@@ -117,11 +117,19 @@ void DataConnectorThread::getDataConnectorThread(void * server) {
                         + srch2Server->indexDataConfig->getDatabaseSharedLibraryPath()
                         + "/"
                         + srch2Server->indexDataConfig->getDatabaseSharedLibraryName();
-
+/*
+ * Currently only support MAC_OS, LINUX_OS, ANDROID.
+ * The engine will load the shared library with corresponding suffix
+ *  based on the platform.
+ */
 #ifdef MAC_OS
+    if(dbArg->sharedLibraryFullPath.find(".dylib")==std::string::npos){
         dbArg->sharedLibraryFullPath.append(".dylib");
+    }
 #else
+    if(dbArg->sharedLibraryFullPath.find(".so")==std::string::npos){
         dbArg->sharedLibraryFullPath.append(".so");
+    }
 #endif
 
         int res = pthread_create(&tid, NULL, spawnConnector, (void *) dbArg);

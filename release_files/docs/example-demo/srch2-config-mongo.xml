@@ -18,10 +18,6 @@
     <listeningPort>8081</listeningPort>
  
     <dataDir>./indexes</dataDir>
-     
-    <dataSourceType>1</dataSourceType>
-    
-    <dataFile>movie-data.json</dataFile>
 
     <maxSearchThreads>2</maxSearchThreads>
     
@@ -36,7 +32,7 @@
           <field name="id" type="text" refining="true" indexed="false"/>
        </fields>
        
-       <uniqueKey>id</uniqueKey>
+       <uniqueKey>_id</uniqueKey>
            
        <facetEnabled>true</facetEnabled>
         <facetFields>
@@ -115,4 +111,22 @@
         </updateLog>
      
     </updatehandler>
+
+    <!-- 
+        DB settings Required if dataSourceType = 2
+        Specify the path and name of the shared library relative to the "srch2Home" path.
+    -->
+    <dataSourceType>2</dataSourceType>
+    <dbParameters>
+        <dbSharedLibraryPath>db_connectors/</dbSharedLibraryPath>
+        <dbSharedLibraryName>libmongodbConnector</dbSharedLibraryName>
+        <dbKeyValues>
+            <dbKeyValue key="host" value="127.0.0.1" />
+            <dbKeyValue key="port" value="27017" />
+            <dbKeyValue key="db" value="demo" />
+            <dbKeyValue key="collection" value="movies" />
+            <dbKeyValue key="listenerWaitTime" value="3" />
+            <dbKeyValue key="maxRetryOnFailure" value="3" />
+        </dbKeyValues>
+    </dbParameters>
 </config>
