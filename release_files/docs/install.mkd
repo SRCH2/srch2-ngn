@@ -60,12 +60,10 @@ This documentation gives step-by-step instructions on how to use the SRCH2 engin
  
 The "example-demo" folder contains files for a demo, in which we use the engine to build a search service on sample movie information. The folder includes a JSON file, a sample configuration XML file for the engine, and files for two front-end UIs (one basic and one advanced).
 
-<b>Step 2</b>: Obtain a free 30-day trial key by filling in the [form](http://www.srch2.com/download). Store the key file locally as "srch2_license_key.txt" into the install directory.
-
-<b>Step 3</b>: Open the file [example-demo/srch2-config.xml](example-demo/srch2-config.xml), and change the variable "srch2Home" to the install folder of the
+<b>Step 2</b>: Open the file [example-demo/srch2-config.xml](example-demo/srch2-config.xml), and change the variable "srch2Home" to the install folder of the
 SRCH2 package, e.g., "/home/joe/srch2".
 
-<b>Step 4</b>: Go to the install folder and run the following:
+<b>Step 3</b>: Go to the install folder and run the following:
 
 ```python
 shell> ./bin/srch2-engine --config-file=./example-demo/srch2-config.xml
@@ -81,7 +79,7 @@ The server will read the configuration file, load the data in the corresponding 
 
 Note:
 
- - All the paths in the configuration file are relative to the "srch2Home" variable, so make sure the license file path is relative to "srch2Home", not an absolute path.  
+ - All the paths in the configuration file are relative to the "srch2Home" variable.
  - It is recommended to use an absolute path value for the "srch2Home" variable.
  - Once the engine starts, it stores the indexes in the folder specified by the  "dataDir" parameter in the configuration file (with a default folder called "indexes"). The next time we start the engine, it will check if the folder has index files. If so, the engine will load the index files instead of reading the records from the data source. If we want to force the engine to read the records, make sure to delete the files in the "indexes" folder.
 

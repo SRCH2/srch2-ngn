@@ -58,7 +58,7 @@ gitAdd
 thirdparty/event/bin/
 thirdparty/event/include/
 thirdparty/event/lib/
-thirdparty/event/libevent-2.0.18-stable/
+thirdparty/event/libevent-*-stable/
 thirdparty/json/jsoncpp-src-0.5.0/
 thirdparty/gperftools/bin/
 thirdparty/gperftools/gperftools-2.0/
@@ -66,6 +66,10 @@ thirdparty/gperftools/include/
 thirdparty/gperftools/lib/
 thirdparty/gperftools/share/
 thirdparty/libunwind/libunwind-0.99-beta/
+thirdparty/libunwind/include/
+thirdparty/libunwind/lib/
+thirdparty/libunwind/share/
+#
 # .cmake related
 *.cmake
 *CMakeFiles
