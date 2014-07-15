@@ -1,5 +1,9 @@
-#this test is used for exact A1
-#using: python exact_A1.py queriesAndResults.txt
+#This test is used for checking the case where there is only 1 searchable attribute or only 1 refining attribute in the schema, set as primary key field.
+#Two config files are used here, conf.xml uses only 1 refining field which is set to the primary key
+# conf1.xml uses only 1 searchable field set to the primary key
+
+#To run individual test case
+#python ./refining_field_primary_key/testPrimaryKey.py $SRCH2_ENGINE ./refining_field_primary_key/queriesAndResults.txt
 
 import sys, urllib2, json, time, subprocess, os, commands, signal
 
