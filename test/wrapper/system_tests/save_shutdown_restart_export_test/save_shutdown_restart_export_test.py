@@ -32,7 +32,7 @@ def testSaveShutdownRestart(binary_path):
         print "Save operation failed: " + response
         exit(-1)
     
-    #shutdown
+    #shutdown use system kill 
     subprocess.call(["kill", "-2", "%d" % proc.pid])
     proc.wait()
 
@@ -70,7 +70,29 @@ def testSaveShutdownRestart(binary_path):
         exit(-1)
 
     #get pid of srch2-search-server and kill the process
-    proc.send_signal(signal.SIGUSR1)
+
+    #shutdown use restful API
+    killQuery = 'http://localhost:' + port + '/_all/shutdown'
+    opener = urllib2.build_opener(urllib2.HTTPHandler)
+    request = urllib2.Request(killQuery, '')
+    request.get_method = lambda: 'PUT'
+    response = opener.open(request)
+    print response.read()
+    import time
+    time.sleep(2)
+
+    #search a query for checking if the server is shutdown
+    try:
+        query='http://localhost:' + port + '/search?q=good'
+        response = urllib2.urlopen(query).read()
+        print response
+    except:
+        print 'server has been shutdown'
+    else:
+        print 'server is not shutdown'
+        exit(-1)
+ 
+    #proc.send_signal(signal.SIGUSR1)
     print 'test pass'
     print '=============================='
     return 0

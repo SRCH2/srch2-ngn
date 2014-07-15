@@ -51,6 +51,7 @@ Version: 4.3.3, Date: July 07, 2014&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#serialize-indexes">2. Serializing Indexes to Disk</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#serialize-records">3. Serializing Records to Disk</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#reset-log">4. Resetting Log File</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#shutdown">5. Shutdown</a><br><br>
 
 </td></tr></tbody></table>
 
@@ -140,6 +141,11 @@ Now "logrotate" sends the following message:</p>
     prerotate
     endscript
 }
+</code></pre>
+
+<h2 id="shutdown">5. Shutdown the server</h2>
+<p>The client can send a shutdown message to let the server stop gracefully. The request should be sent to the "/_all/shutdown" path by a "PUT" method.  Here is an example query: </p>
+<pre><code>$ curl -i &quot;http://localhost:8081/_all/shutdown&quot; -X PUT
 </code></pre>
 
 </table>
