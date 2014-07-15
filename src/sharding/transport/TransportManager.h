@@ -68,6 +68,8 @@ public:
 	void registerCallbackHandlerForSynchronizeManager(CallBackHandler*);
 	// this API enables SM to register discovery callback with TM
 	void registerCallbackHandlerForDiscovery(CallBackHandler*);
+	// this API enables MM to register discovery callback with TM
+	void registerCallbackHandlerForMM(CallBackHandler*);
 	// get the value of maximum message Id for this node.
 	MessageID_t& getCurrentMessageId();
 	// generate a unique ID for current message
@@ -86,6 +88,8 @@ public:
 	void setRoutingManager(RoutingManager * rm);
 	// get SM callback handler
 	CallBackHandler* getSmHandler();
+	// get MM callback handler
+	CallBackHandler* getMMHandler();
 	// get Discovery callback handler
 	CallBackHandler* getDiscoveryHandler();
 	// get RM callback handler
@@ -193,6 +197,10 @@ private:
 	CallBackHandler *synchManagerHandler;
 	/*
 	 * Handles SynchManager callbacks
+	 */
+	CallBackHandler *migrationManagerHandler;
+	/*
+	 * Handles discovery callbacks
 	 */
 	CallBackHandler *discoveryHandler;
 

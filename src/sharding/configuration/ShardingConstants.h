@@ -46,7 +46,14 @@ enum ShardingMessageType{
     NewNodeNotificationMessageType,
     ClusterInfoRequestMessageType,
     ClusterInfoReplyMessageType,
-    ClusterUpdateMessageType
+    ClusterUpdateMessageType,
+
+    // for MM
+    MigrationInitMessage,
+    MigrationTermMessage,
+    MigrationInitAckMessage,
+    MigrationTermAckMessage,
+    MigrationInitNackMessage
 };
 
 enum RoutingManagerAPIReturnType{

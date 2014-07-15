@@ -176,6 +176,20 @@ void IndexReaderWriter::save()
     pthread_mutex_unlock(&lockForWriters);
 }
 
+void IndexReaderWriter::deSerialize(std::istream& inputStream) {
+	pthread_mutex_lock(&lockForWriters);
+	this->index->_deSerialize(inputStream);
+	pthread_mutex_unlock(&lockForWriters);
+}
+void IndexReaderWriter::serialize(std::ostream& outputStream){
+	pthread_mutex_lock(&lockForWriters);
+	// we don't have to update histogram information when we want to export.
+	this->merge(false);
+	writesCounterForMerge = 0;
+	this->index->_serialize(outputStream);
+	pthread_mutex_unlock(&lockForWriters);
+}
+
 void IndexReaderWriter::save(const std::string& directoryName)
 {
     pthread_mutex_lock(&lockForWriters);
@@ -238,6 +252,14 @@ IndexReaderWriter::IndexReaderWriter(IndexMetaData* indexMetaData)
     this->index = IndexData::load(indexMetaData->directoryName);
     this->initIndexReaderWriter(indexMetaData);
     //this->startMergerThreads();
+}
+
+IndexReaderWriter::IndexReaderWriter(std::istream& inputByteStream, IndexMetaData* indexMetaData)
+{
+    // LOAD Index from ByteSteeam
+    this->index = IndexData::load(inputByteStream, indexMetaData->directoryName);
+    this->initIndexReaderWriter(indexMetaData);
+    this->needToSaveIndexes = true;
 }
 
 void IndexReaderWriter::initIndexReaderWriter(IndexMetaData* indexMetaData)

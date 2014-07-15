@@ -411,13 +411,13 @@ CoreShardContainer * CoreShardContainer::deserializeForNetwork(void* buffer){
 	for(unsigned p = 0 ; p < size; ++p){
 		Shard * newShard = Shard::deserializeForNetwork(buffer);
 		newObj->primaryShards.push_back(newShard);
-		buffer += newShard->getNumberOfBytesForNetwork();
+		buffer = (char *)buffer + newShard->getNumberOfBytesForNetwork();
 	}
 	buffer = srch2::util::deserializeFixedTypes(buffer, size);
 	for(unsigned p = 0 ; p < size; ++p){
 		Shard * newShard = Shard::deserializeForNetwork(buffer);
 		newObj->replicaShards.push_back(newShard);
-		buffer += newShard->getNumberOfBytesForNetwork();
+		buffer = (char *)buffer + newShard->getNumberOfBytesForNetwork();
 	}
 	return newObj;
 }

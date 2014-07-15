@@ -22,7 +22,7 @@
 #include <sstream>
 #include <unistd.h>
 #include <fcntl.h>
-#if defined( __MACH__) || defined(ANDROID)
+#ifdef __MACH__
 // This header is used only in mac osx related code
 #include <arpa/inet.h>
 #endif
@@ -31,8 +31,6 @@
 #include "util/Logger.h"
 #include "util/Version.h"
 #include <event2/http.h>
-#include <event2/thread.h>
-#include "event2/event.h"
 #include <signal.h>
 
 #include <sys/types.h>
@@ -50,14 +48,6 @@
 #include "processor/DistributedProcessorExternal.h"
 #include "configuration/ConfigManager.h"
 #include "synchronization/SynchronizerManager.h"
-#include "sharding/migration/ShardManager.h"
-#include "discovery/DiscoveryManager.h"
-#include "migration/MigrationManager.h"
-#include "Srch2Server.h"
-
-#include <boost/iostreams/stream_buffer.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <boost/iostreams/device/back_inserter.hpp>
 
 
 namespace po = boost::program_options;
@@ -195,13 +185,25 @@ static const struct portMap_t {
 		{ srch2http::EndOfPortType, NULL },
 };
 
-struct ExternalOperationArguments{
-	srch2::httpwrapper::DPExternalRequestHandler * dpExternal;
-	unsigned coreId;
+struct DPExternalCoreHandle {
+	srch2http::DPExternalRequestHandler& dpHandler;
+	srch2http::CoreInfo_t& core;
+	srch2http::CoreShardInfo info;
+
+	DPExternalCoreHandle(srch2http::DPExternalRequestHandler &dp,
+			srch2http::CoreInfo_t& core) : dpHandler(dp), core(core),
+			info(core.getCoreId(), core.getName()) {}
+
+	DPExternalCoreHandle(const DPExternalCoreHandle& toCpy) : dpHandler(toCpy.dpHandler),
+			core(toCpy.core), info(toCpy.info) {}
+	DPExternalCoreHandle& operator=(const DPExternalCoreHandle& toCpy) {
+		new (this) DPExternalCoreHandle(toCpy);
+		return *this;
+	}
 };
 
 static bool checkOperationPermission(evhttp_request *req, 
-		unsigned coreId, srch2http::PortType_t portType) {
+		DPExternalCoreHandle *coreShardInfo, srch2http::PortType_t portType) {
 /*	if (portType >= srch2http::EndOfPortType) {
 		Logger::error("Illegal port type: %d", static_cast<int> (portType));
 		cb_notfound(req, NULL);
@@ -245,16 +247,16 @@ static bool checkOperationPermission(evhttp_request *req,
  * @param arg optional argument
  */
 static void cb_search(evhttp_request *req, void *arg) {
-	ExternalOperationArguments * dpExternalAndCoreId = (ExternalOperationArguments * )arg;
+	DPExternalCoreHandle *const core = (DPExternalCoreHandle*) arg;
 
 	evhttp_add_header(req->output_headers, "Content-Type",
 			"application/json; charset=UTF-8");
 
-	if(!checkOperationPermission(req, dpExternalAndCoreId->coreId, srch2http::SearchPort))
+	if(!checkOperationPermission(req, core, srch2http::SearchPort))
 		return;
 
 	try {
-		dpExternalAndCoreId->dpExternal->externalSearchCommand(req, dpExternalAndCoreId->coreId);
+		core->dpHandler.externalSearchCommand(req, &core->info);
 	} catch (exception& e) {
 		// exception caught
 		Logger::error(e.what());
@@ -268,16 +270,16 @@ static void cb_search(evhttp_request *req, void *arg) {
  * @param arg optional argument
  */
 static void cb_suggest(evhttp_request *req, void *arg) {
-	ExternalOperationArguments * dpExternalAndCoreId = (ExternalOperationArguments * )arg;
+	DPExternalCoreHandle *const core = (DPExternalCoreHandle*) arg;
 
 	evhttp_add_header(req->output_headers, "Content-Type",
 			"application/json; charset=UTF-8");
 
-	if(!checkOperationPermission(req, dpExternalAndCoreId->coreId, srch2http::SuggestPort))
+	if(!checkOperationPermission(req, core, srch2http::SuggestPort))
 		return;
 
 	try {
-//		dpExternalAndCoreId->dpExternal->externalSuggestCommand(req, dpExternalAndCoreId->coreId);
+		//core->dpHandler.externalSuggestCommand(req, &core->info);
 	} catch (exception& e) {
 		// exception caught
 		Logger::error(e.what());
@@ -291,16 +293,15 @@ static void cb_suggest(evhttp_request *req, void *arg) {
  * @param arg optional argument
  */
 static void cb_info(evhttp_request *req, void *arg) {
-	ExternalOperationArguments * dpExternalAndCoreId = (ExternalOperationArguments * )arg;
-
+	DPExternalCoreHandle *const core = (DPExternalCoreHandle*) arg;
 	evhttp_add_header(req->output_headers, "Content-Type",
 			"application/json; charset=UTF-8");
 
-	if(!checkOperationPermission(req, dpExternalAndCoreId->coreId, srch2http::InfoPort))
+	if(!checkOperationPermission(req, core, srch2http::InfoPort))
 		return;
 
 	try {
-		dpExternalAndCoreId->dpExternal->externalGetInfoCommand(req, dpExternalAndCoreId->coreId);
+		core->dpHandler.externalGetInfoCommand(req, &core->info);
 	} catch (exception& e) {
 		// exception caught
 		Logger::error(e.what());
@@ -314,20 +315,18 @@ static void cb_info(evhttp_request *req, void *arg) {
  * @param arg optional argument
  */
 static void cb_write(evhttp_request *req, void *arg) {
-	ExternalOperationArguments * dpExternalAndCoreId = (ExternalOperationArguments * )arg;
-
+	DPExternalCoreHandle *const core = (DPExternalCoreHandle*) arg;
 	evhttp_add_header(req->output_headers, "Content-Type",
 			"application/json; charset=UTF-8");
 
-	if(!checkOperationPermission(req, dpExternalAndCoreId->coreId, srch2http::DocsPort))
+	if(!checkOperationPermission(req, core, srch2http::DocsPort))
 		return;
 
 	try {
 	    if(req->type == EVHTTP_REQ_PUT){
-            dpExternalAndCoreId->dpExternal->externalInsertCommand(req, dpExternalAndCoreId->coreId);
+            core->dpHandler.externalInsertCommand(req, &core->info);
 	    }else if(req->type == EVHTTP_REQ_DELETE){
-	    	Logger::console("Delete request came ...");
-	    	dpExternalAndCoreId->dpExternal->externalDeleteCommand(req, dpExternalAndCoreId->coreId);
+	        core->dpHandler.externalDeleteCommand(req, &core->info);
 	    }
 	} catch (exception& e) {
 		// exception caught
@@ -337,15 +336,15 @@ static void cb_write(evhttp_request *req, void *arg) {
 }
 
 static void cb_update(evhttp_request *req, void *arg) {
-	ExternalOperationArguments * dpExternalAndCoreId = (ExternalOperationArguments * )arg;
+	DPExternalCoreHandle *const core = (DPExternalCoreHandle*) arg;
 	evhttp_add_header(req->output_headers, "Content-Type",
 			"application/json; charset=UTF-8");
 
-	if(!checkOperationPermission(req, dpExternalAndCoreId->coreId, srch2http::UpdatePort))
+	if(!checkOperationPermission(req, core, srch2http::UpdatePort))
 		return;
 
 	try {
-		dpExternalAndCoreId->dpExternal->externalUpdateCommand(req, dpExternalAndCoreId->coreId);
+		core->dpHandler.externalUpdateCommand(req, &core->info);
 	} catch (exception& e) {
 		// exception caught
 		Logger::error(e.what());
@@ -355,15 +354,15 @@ static void cb_update(evhttp_request *req, void *arg) {
 }
 
 static void cb_save(evhttp_request *req, void *arg) {
-	ExternalOperationArguments * dpExternalAndCoreId = (ExternalOperationArguments * )arg;
+	DPExternalCoreHandle *const core = (DPExternalCoreHandle*) arg;
 	evhttp_add_header(req->output_headers, "Content-Type",
 			"application/json; charset=UTF-8");
 
-	if(!checkOperationPermission(req, dpExternalAndCoreId->coreId, srch2http::SavePort))
+	if(!checkOperationPermission(req, core, srch2http::SavePort))
 		return;
 
 	try {
-		dpExternalAndCoreId->dpExternal->externalSerializeIndexCommand(req, dpExternalAndCoreId->coreId);
+		core->dpHandler.externalSerializeIndexCommand(req, &core->info);
 	} catch (exception& e) {
 		// exception caught
 		Logger::error(e.what());
@@ -372,16 +371,15 @@ static void cb_save(evhttp_request *req, void *arg) {
 }
 
 static void cb_export(evhttp_request *req, void *arg) {
-	ExternalOperationArguments * dpExternalAndCoreId = (ExternalOperationArguments * )arg;
-
+	DPExternalCoreHandle *const core = (DPExternalCoreHandle*) arg;
 	evhttp_add_header(req->output_headers, "Content-Type",
 			"application/json; charset=UTF-8");
 
-	if(!checkOperationPermission(req, dpExternalAndCoreId->coreId, srch2http::ExportPort))
+	if(!checkOperationPermission(req, core, srch2http::ExportPort))
 		return;
 
 	try{
-         dpExternalAndCoreId->dpExternal->externalSerializeRecordsCommand(req, dpExternalAndCoreId->coreId);
+         core->dpHandler.externalSerializeRecordsCommand(req, &core->info);
 	} catch(exception& e){
         // exception caught
         Logger::error(e.what());
@@ -395,16 +393,15 @@ static void cb_export(evhttp_request *req, void *arg) {
  *  @param arg optional argument
  */
 static void cb_resetLogger(evhttp_request *req, void *arg) {
-	ExternalOperationArguments * dpExternalAndCoreId = (ExternalOperationArguments * )arg;
-
+	DPExternalCoreHandle *const core = (DPExternalCoreHandle*) arg;
 	evhttp_add_header(req->output_headers, "Content-Type",
 			"application/json; charset=UTF-8");
 
-	if(!checkOperationPermission(req, dpExternalAndCoreId->coreId, srch2http::ResetLoggerPort))
+	if(!checkOperationPermission(req, core, srch2http::ResetLoggerPort))
 		return;
 
 	try {
-		dpExternalAndCoreId->dpExternal->externalResetLogCommand(req, dpExternalAndCoreId->coreId);
+		core->dpHandler.externalResetLogCommand(req, &core->info);
 	} catch (exception& e) {
 		// exception caught
 		Logger::error(e.what());
@@ -489,14 +486,6 @@ void* dispatch(void *arg) {
 	return NULL;
 }
 
-void* dispatchInternalEvent(void *arg) {
-	while(true) {
-		event_base_dispatch((struct event_base*) arg);
-		sleep(1);
-	}
-	return NULL;
-}
-
 void parseProgramArguments(int argc, char** argv,
 		po::options_description& description,
 		po::variables_map& vm_command_line_args) {
@@ -567,30 +556,18 @@ void makeHttpRequest(){
 static void killServer(int signal) {
     Logger::console("Stopping server.");
     for (int i = 0; i < MAX_THREADS; i++) {
-#ifndef ANDROID
-    	// Android thread implementation does not have pthread_cancel()
-    	// use pthread_kill instead.
-    	pthread_cancel(threadsToHandleExternalRequests[i]);
-#endif
+        pthread_cancel(threadsToHandleExternalRequests[i]);
     }
     for (int i = 0; i < MAX_INTERNAL_THREADS; i++) {
-#ifndef ANDROID
     	pthread_cancel(threadsToHandleInternalRequests[i]);
-#endif
     }
-    for(srch2http::ConnectionMap::iterator conn =
-        transportManager->getConnectionMap().begin();
-        conn != transportManager->getConnectionMap().end(); ++conn) {
+    for(srch2http::RouteMap::iterator conn = 
+        transportManager->getRouteMap()->begin();
+        conn != transportManager->getRouteMap()->end(); ++conn) {
       close(conn->second.fd);
     }
-#ifndef ANDROID
     pthread_cancel(transportManager->getListeningThread());
-#endif
-
-#ifdef ANDROID
-    exit(0);
-#endif
-
+    close(transportManager->getRouteMap()->getListeningSocket());
 #ifdef __MACH__
 	/*
 	 *  In MacOS, pthread_cancel could not cancel a thread when the thread is executing kevent syscall
@@ -603,7 +580,7 @@ static void killServer(int signal) {
 }
 
 static int getHttpServerMetadata(ConfigManager *config, 
-		PortSocketMap_t *globalPortSocketMap, boost::shared_ptr<const srch2::httpwrapper::Cluster> & clusterReadview) {
+		PortSocketMap_t *globalPortSocketMap) {
 	// TODO : we should use default port if no port is provided. or just get rid of default port and move it to node
 	// as a <defaultPort>
 	std::set<short> ports;
@@ -618,10 +595,11 @@ static int getHttpServerMetadata(ConfigManager *config,
 	}
 
 	// loop over operations and extract all port numbers of current node to use
+	const srch2::httpwrapper::Node * currentNode = config->getCluster()->getCurrentNode();
 	unsigned short port;
 	for (srch2http::PortType_t portType = (srch2http::PortType_t) 0;
 			portType < srch2http::EndOfPortType; portType = srch2http::incrementPortType(portType)) {
-		port = config->getCurrentNodeConfig()->getPort(portType);
+		port = currentNode->getPort(portType);
 		if(port > 0){
 			ports.insert(port);
 		}
@@ -648,7 +626,6 @@ static int createHTTPServersAndAccompanyingThreads(int MAX_THREADS,
 		vector<struct event_base *> *evBases, vector<struct evhttp *> *evServers) {
 	// for each thread, we bind an evbase and http_server object
 	// TODO : do we need to deallocate these objects anywhere ?
-
 	threadsToHandleExternalRequests = new pthread_t[MAX_THREADS];
 	for (int i = 0; i < MAX_THREADS; i++) {
 		struct event_base *evbase = event_base_new();
@@ -714,57 +691,48 @@ typedef unsigned CoreId;//TODO is it needed ? if not let's delete it.
  */
 int setCallBacksonHTTPServer(ConfigManager *const config,
 		evhttp *const http_server,
-		boost::shared_ptr<const srch2::httpwrapper::Cluster> & clusterReadview,
-		srch2::httpwrapper::DPExternalRequestHandler * dpExternal) {
+		std::map<unsigned, DPExternalCoreHandle> & dpExternalCoreHandles) {
 
+	const srch2::httpwrapper::Node * currentNode = config->getCluster()->getCurrentNode();
 	// setup default core callbacks for queries without a core name
 	// only if default core is available.
 	if(config->getDefaultCoreSetFlag() == true) {
-		// prepare arguments to pass to external commands for default core
-		ExternalOperationArguments * defaultArgs = new ExternalOperationArguments();
-		defaultArgs->dpExternal = dpExternal;
-		defaultArgs->coreId = clusterReadview->getCoreByName(config->getDefaultCoreName())->getCoreId();
 		// iterate on all operations and map the path (w/o core info)
 		// to a callback function.
 		// we pass DPExternalCoreHandle as the argument of callbacks
 		for (int j = 0; userRequestAttributesList[j].path != NULL; j++) {
 
+			srch2http::CoreInfo_t* defaultCore = config->getDefaultCoreInfo();
 
 			evhttp_set_cb(http_server, userRequestAttributesList[j].path,
-					userRequestAttributesList[j].callback, defaultArgs);
+					userRequestAttributesList[j].callback, &(dpExternalCoreHandles.at(defaultCore->getCoreId())));
 
 			// just for print
-			unsigned short port = config->getCurrentNodeConfig()->getPort(userRequestAttributesList[j].portType);
+			unsigned short port = currentNode->getPort(userRequestAttributesList[j].portType);
 			if (port < 1) port = globalDefaultPort;
 			Logger::debug("Routing port %d route %s to default core %s",
-					port, userRequestAttributesList[j].path, config->getDefaultCoreName().c_str());
+					port, userRequestAttributesList[j].path, defaultCore->getName().c_str());
 		}
 	}
-
 
 
 	evhttp_set_gencb(http_server, cb_notfound, NULL);
 
 	// for every core, for every OTHER port that core uses, do accept
 	// NOTE : CoreInfoMap is a typedef of std::map<const string, CoreInfo_t *>
-	std::vector<const srch2http::CoreInfo_t * > allCores;
-	clusterReadview->getCores(allCores);
-	for(unsigned i = 0 ; i < allCores.size(); ++i) {
-		string coreName = allCores.at(i)->getName();
-		unsigned coreId = allCores.at(i)->getCoreId();
-
-		// prepare external command argument
-		ExternalOperationArguments * args = new ExternalOperationArguments();
-		args->dpExternal = dpExternal;
-		args->coreId = coreId;
+	for(srch2http::ConfigManager::CoreInfoMap_t::iterator coreInfoMap =
+			config->coreInfoIterateBegin();
+			coreInfoMap != config->coreInfoIterateEnd(); ++coreInfoMap) {
+		string coreName = coreInfoMap->first;
+		unsigned coreId = coreInfoMap->second->getCoreId();
 
 		for(unsigned int j = 0; userRequestAttributesList[j].path != NULL; j++) {
 			string path = string("/") + coreName + string(userRequestAttributesList[j].path);
 			evhttp_set_cb(http_server, path.c_str(),
-					userRequestAttributesList[j].callback, args);
+					userRequestAttributesList[j].callback, &(dpExternalCoreHandles.at(coreId)));
 
 			// just for print
-			unsigned short port = config->getCurrentNodeConfig()->getPort(userRequestAttributesList[j].portType);
+			unsigned short port = currentNode->getPort(userRequestAttributesList[j].portType);
 			if(port < 1){
 				port = globalDefaultPort;
 			}
@@ -781,7 +749,7 @@ int startListeningToRequest(evhttp *const http_server,
 	/* 4). accept bound socket */
 	for(PortSocketMap_t::iterator iterator = globalPortSocketMap.begin();
 			iterator != globalPortSocketMap.end(); iterator++) {
-		Logger::console("Port %d added to HTTP listener for external requests.", iterator->first);
+		cout << "Port " << iterator->first << " added to HTTP listener for external requests." << endl;
 		if(evhttp_accept_socket(http_server, iterator->second) != 0) {
 			perror("evhttp_accept_socket");
 			return 255;
@@ -790,6 +758,8 @@ int startListeningToRequest(evhttp *const http_server,
 	}
 	return 0;
 }
+
+void generateShards(srch2http::ConfigManager&);
 
 int main(int argc, char** argv) {
 	if (argc > 1) {
@@ -826,23 +796,7 @@ int main(int argc, char** argv) {
 
 	ConfigManager *serverConf = new ConfigManager(srch2_config_file);
 
-	// cluster metadata is populated and commited in this function for the first time,
-	// from now, MM is responsible for doing this.
 	serverConf->loadConfigFile();
-
-	// create DP Internal
-	srch2http::DPInternalRequestHandler * dpInternal =
-			new srch2http::DPInternalRequestHandler(serverConf);
-
-	// get read view to use for system startup
-	boost::shared_ptr<const srch2::httpwrapper::Cluster> clusterReadview;
-	serverConf->getClusterReadView(clusterReadview);
-
-	Logger::console("Readview used in main : ");
-	Logger::console("====================================");
-	clusterReadview->print();
-	Logger::console("====================================");
-
 
 	LicenseVerifier::testFile(serverConf->getLicenseKeyFileName());
 	string logDir = getFilePath(serverConf->getHTTPServerAccessLogFile());
@@ -870,7 +824,7 @@ int main(int argc, char** argv) {
 	// map of all ports across all cores to shared socket file descriptors
 	PortSocketMap_t globalPortSocketMap;
 
-	int start = getHttpServerMetadata(serverConf, &globalPortSocketMap, clusterReadview);
+	int start = getHttpServerMetadata(serverConf, &globalPortSocketMap);
 
 	if (start != 0) {
 		Logger::close();
@@ -880,145 +834,59 @@ int main(int argc, char** argv) {
 	MAX_THREADS = serverConf->getNumberOfThreads();
 	MAX_INTERNAL_THREADS = 3; // Todo : read from config file.
 
-    evthread_use_pthreads();
 	// create threads for external requests
 	createHTTPServersAndAccompanyingThreads(MAX_THREADS, &evBasesForExternalRequests, &evServersForExternalRequests);
 
 	// create threads for internal requests
 	//TODO set the number of threads for internal messaging
-	createInternalReqEventBasesAndAccompanyingThreads(MAX_INTERNAL_THREADS, &evBasesForInternalRequests);
+	createInternalReqEventBasesAndAccompanyingThreads(MAX_THREADS, &evBasesForInternalRequests);
+
+	std::vector<srch2http::Node>& nodes = *serverConf->getCluster()->getNodes();
 
 	// create Transport Module
-	srch2http::TransportConfig transportConfig;
-	transportConfig.interfaceAddress = serverConf->getTransport().getIpAddress();
-	transportConfig.internalCommunicationPort = serverConf->getTransport().getPort();
+	transportManager = new srch2http::TransportManager(evBasesForInternalRequests, nodes);
 
-	transportManager = new srch2http::TransportManager(evBasesForInternalRequests, transportConfig);
-
-	// start threads for internal messages.
-	// Note: eventbases are not assigned any event yet.
+	// start threads for internal messages
 	for(int j=0; j < evBasesForInternalRequests.size(); ++j){
-		if (pthread_create(&threadsToHandleInternalRequests[j], NULL, dispatchInternalEvent, evBasesForInternalRequests[j]) != 0){
+		if (pthread_create(&threadsToHandleInternalRequests[j], NULL, dispatch, evBasesForInternalRequests[j]) != 0){
 			return 255;
 		}
 	}
-	/*
-	 *  Start Synchronization manager thread. It performs following operation.
-	 *  1. Start discovery thread to find existing cluster and join it. If there is no cluster
-	 *     then this node becomes master.
-	 *  2. Once the node joins the cluster, SM will use TM to setup a connection with master, so
-	 *     that the connection can be used for inter-node communications.
-	 *  3. SM get cluster info from master and setup connection with all the node in master.
-	 */
-
-	srch2http::SyncManager  *syncManager = new srch2http::SyncManager(*serverConf ,
-			*transportManager);
-	syncManager->startDiscovery();
+//	// run SM
+	unsigned masterNodeId =  serverConf->getCluster()->getNodes()->at(0).getId(); // TODO temporary for V0
+	srch2http::Synchronizer  *syncManager = new srch2http::Synchronizer(*serverConf ,
+			*transportManager, masterNodeId);
 	pthread_t *synchronizerThread = new pthread_t;
 	pthread_create(synchronizerThread, NULL, srch2http::bootSynchronizer, (void *)syncManager);
 
-
 	// create Routing Module
 	srch2http::RoutingManager *routesManager =
-			new srch2http::RoutingManager(*serverConf, *dpInternal, *transportManager);
-
-	// create migration manager
-	srch2http::ShardManager * shardManager =
-			new srch2http::ShardManager(serverConf, dpInternal, routesManager);
-
-	/// migration manager should be initialized on its own or SHM should initialize
-	/// it. ?
-	srch2http::MigrationManager *migrationManager = new srch2http::MigrationManager(0,
-			transportManager, serverConf);
-
-	// TEST CODE FOR MIGRATION MANAGER
-	serverConf->getClusterReadView(clusterReadview);
-	if (clusterReadview->getCurrentNode()->isMaster()) {
-		while(1) {
-			//boost::shared_ptr<const srch2::httpwrapper::Cluster> clusterReadview;
-			serverConf->getClusterReadView(clusterReadview);
-			if (clusterReadview->getTotalNumberOfNodes() == 2) {
-				cout << "new Node found ..start migration ..." << endl;
-				std::vector<const srch2http::Node *> nodes;
-				clusterReadview->getAllNodes(nodes);
-
-				unsigned currNodeId = clusterReadview->getCurrentNode()->getId();
-				std::vector< const srch2http::CoreShardContainer * >  coreShardContainers;
-				clusterReadview->getNodeShardInformation(currNodeId, coreShardContainers);
-
-				if (coreShardContainers.size() > 0) {
-					vector<srch2http::Shard *> * shardPtr = ((srch2http::CoreShardContainer *)coreShardContainers[0])->getPrimaryShards();
-					if (shardPtr != NULL) {
-						if (shardPtr->size() > 0) {
-							unsigned destinationNodeId =  nodes[1]->getId();
-							if (currNodeId == destinationNodeId) {
-								destinationNodeId =  nodes[0]->getId();
-							}
-
-							//std::ostringstream outputBuffer(std::ios::out|std::ios::binary);
-//							namespace boostio = boost::iostreams;
-//							typedef std::vector<char> buffer_type;
-//							buffer_type buffer;
-//							boostio::stream<boostio::back_insert_device<buffer_type> > output_stream(buffer);
-//
-//							cout << "trying to serialize the shard ...." << endl;
-//
-//
-//
-//							shardPtr->at(0)->getSrch2Server()->serialize(output_stream);
-//
-//							//outputBuffer.flush();
-//							output_stream.seekp(0, ios::end);
-//							unsigned shardSize = output_stream.tellp();
-//							cout << "ostream size = " << shardSize << endl;
-//							output_stream.seekp(0, ios::beg);
-//
-//							//std::istringstream inputStream(std::ios::in | std::ios::binary);
-//							//inputStream.rdbuf()->pubsetbuf((char *)outputBuffer.str().c_str() , shardSize);
-//							//inputStream.str(outputBuffer.str());
-//
-//							srch2http::Srch2Server * tempSS = new srch2http::Srch2Server(
-//									shardPtr->at(0)->getSrch2Server()->getCoreInfo() , shardPtr->at(0)->getShardId(), 1);
-//
-//							string directoryPath = serverConf->createShardDir(serverConf->getClusterWriteView()->getClusterName(),
-//									serverConf->getClusterWriteView()->getCurrentNode()->getName(),
-//									shardPtr->at(0)->getSrch2Server()->getCoreInfo()->getName() + "_1", shardPtr->at(0)->getShardId());
-//
-//							cout << "Saving shard to : "  << directoryPath << endl;
-//
-//							cout << "buffer size " << buffer.size() << endl;
-//							boostio::basic_array_source<char> source(&buffer[0],buffer.size());
-//							boostio::stream<boostio::basic_array_source <char> > input_stream(source);
-//
-//							tempSS->bootStrapIndexerFromByteStream(input_stream, directoryPath);
-//							cout << "DONE!! " << endl;
-
-							boost::shared_ptr<srch2http::Srch2Server> shard = shardPtr->at(0)->getSrch2Server();
-							migrationManager->migrateShard(shardPtr->at(0)->getShardId(), shard
-									, destinationNodeId);
-
-						}
-					} else {
-						exit(-1);
-					}
-				} else {
-					exit(-1);
-				}
-				break;
-			}
-			cout << "waiting for new node " << endl;
-			sleep(2);
-		}
-	}
-	/// TEMP CODE END
+			new srch2http::RoutingManager(*serverConf, *transportManager);
 
 	// create DP external
 	srch2http::DPExternalRequestHandler *dpExternal =
 			new srch2http::DPExternalRequestHandler(serverConf, routesManager);
 
+	// create DPExternal,core pairs
+	// map from coreId to DPExternalCoreHandle which is a container of
+	// 1. DPExternal, 2. coreInfo and 3. CoreShardInfo
+	map<unsigned, DPExternalCoreHandle> dpExternalCoreHandles;
+	for(srch2http::ConfigManager::CoreInfoMap_t::iterator coreInfoMap =
+			serverConf->coreInfoIterateBegin();
+			coreInfoMap != serverConf->coreInfoIterateEnd(); ++coreInfoMap)  {
+		string coreName = coreInfoMap->first;
+		srch2http::CoreInfo_t * coreInfoPtr = coreInfoMap->second;
+
+		dpExternalCoreHandles.insert(std::pair<unsigned, DPExternalCoreHandle>(coreInfoPtr->getCoreId(),DPExternalCoreHandle(*dpExternal, *coreInfoPtr) ));
+	}
+
+	// temporary call, just creates core/shard objects and puts them in
+	// config file. TODO
+	generateShards(*serverConf);
+
 	// bound http_server and evbase and core objects together
 	for(int j=0; j < evServersForExternalRequests.size(); ++j) {
-		setCallBacksonHTTPServer(serverConf, evServersForExternalRequests[j], clusterReadview, dpExternal);
+		setCallBacksonHTTPServer(serverConf, evServersForExternalRequests[j], dpExternalCoreHandles);
 		startListeningToRequest(evServersForExternalRequests[j], globalPortSocketMap);
 
 		if (pthread_create(&threadsToHandleExternalRequests[j], NULL, dispatch, evBasesForExternalRequests[j]) != 0){
@@ -1051,7 +919,7 @@ int main(int argc, char** argv) {
 		Logger::console("Thread = <%u> stopped", threadsToHandleExternalRequests[i]);
 	}
 
-	for (int i = 0; i < MAX_INTERNAL_THREADS; i++) {
+	for (int i = 0; i < MAX_THREADS; i++) {
 		pthread_join(threadsToHandleInternalRequests[i], NULL);
 		Logger::console("Thread = <%u> stopped", threadsToHandleInternalRequests[i]);
 	}
@@ -1059,18 +927,16 @@ int main(int argc, char** argv) {
 	pthread_join(transportManager->getListeningThread(), NULL);
 	Logger::console("Thread = <%u> stopped", transportManager->getListeningThread());
 
-	pthread_cancel(*synchronizerThread);
-	pthread_join(*synchronizerThread, NULL);
-	Logger::console("synch thread stopped.");
+//	pthread_cancel(*synchronizerThread);
+//	pthread_join(*synchronizerThread, NULL);
+//	Logger::console("synch thread stopped.");
 
 	delete[] threadsToHandleExternalRequests;
 	delete[] threadsToHandleInternalRequests;
 
 	for (unsigned int i = 0; i < MAX_THREADS; i++) {
 		event_base_free(evBasesForExternalRequests[i]);
-	}
-	for (unsigned int i = 0; i < MAX_INTERNAL_THREADS; i++) {
-		event_base_free(evBasesForInternalRequests[i]);
+		event_base_free(evBasesForInternalRequests[i]); // TODO : be careful if we want to have different number of internal external ...
 	}
 
 	// use global port map to close each file descriptor just once

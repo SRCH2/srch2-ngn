@@ -103,6 +103,8 @@ public:
 
     IndexReaderWriter(IndexMetaData* indexMetaData);
 
+    IndexReaderWriter(std::istream& inputByteStream, IndexMetaData* indexMetaData);
+
     void initIndexReaderWriter(IndexMetaData* indexMetaData);
     virtual ~IndexReaderWriter()
     {
@@ -169,6 +171,10 @@ public:
     void save();
 
     void save(const std::string& directoryName);
+
+    void serialize(std::ostream& outputStream);
+
+    void deSerialize(std::istream& inputStream);
 
     inline GlobalCache *getCache()
     {

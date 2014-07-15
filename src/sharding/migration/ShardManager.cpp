@@ -28,19 +28,19 @@ ShardManager::ShardManager(ConfigManager * config, DPInternalRequestHandler * dp
 	// starts the cluster and makes sure cluster metadata is consistent on all nodes
 	bootstrapCluster();
 
-    pthread_t periodicExecuteThread;
-    shouldExecute = true;
-    // run for the same shard in a separate thread
-    // the reason is that even the request message for some external threads are not sent
-    // so if we use the same thread those external shards won't start the job until this shard
-    // is finished which makes it sequential and wrong.
-    if (pthread_create(&periodicExecuteThread, NULL, periodicExecute, this) != 0){
-        //        Logger::console("Cannot create thread for handling local message");
-        perror("Cannot create thread for handling local message");
-        return;
-    }
-    // since we don't join this thread it must be detached so that its resource gets deallocated.
-    pthread_detach(periodicExecuteThread);
+//    pthread_t periodicExecuteThread;
+//    shouldExecute = true;
+//    // run for the same shard in a separate thread
+//    // the reason is that even the request message for some external threads are not sent
+//    // so if we use the same thread those external shards won't start the job until this shard
+//    // is finished which makes it sequential and wrong.
+//    if (pthread_create(&periodicExecuteThread, NULL, periodicExecute, this) != 0){
+//        //        Logger::console("Cannot create thread for handling local message");
+//        perror("Cannot create thread for handling local message");
+//        return;
+//    }
+//    // since we don't join this thread it must be detached so that its resource gets deallocated.
+//    pthread_detach(periodicExecuteThread);
 }
 
 
@@ -147,11 +147,11 @@ void ShardManager::bootstrapCluster(){
 
 	// synchronizes the shard information in cluster writeview
 	// and commits the writeview. After this point readview is available to readers
-	if(isMasterNode()){
-		bootstrapSynchronizeMaster();
-	}else{
-		bootstrapSynchronizeClient();
-	}
+//	if(isMasterNode()){
+//		bootstrapSynchronizeMaster();
+//	}else{
+//		bootstrapSynchronizeClient();
+//	}
 
 }
 

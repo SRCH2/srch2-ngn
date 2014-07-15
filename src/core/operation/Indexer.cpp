@@ -40,4 +40,9 @@ Indexer *Indexer::load(IndexMetaData* indexMetaData)
     return new IndexReaderWriter(indexMetaData);
 }
 
+Indexer *Indexer::load(std::istream& input, IndexMetaData* indexMetaData)
+{
+    return new IndexReaderWriter(input, indexMetaData);
+}
+
 }}

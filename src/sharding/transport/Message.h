@@ -16,6 +16,7 @@ const char MSG_SHM_INTERNAL_MASK = 0x4; // 00001000
 const char MSG_DP_REPLY_MASK = 0x10;// 00010000
 const char MSG_SHM_REPLY_MASK = 0x20;   // 00100000
 
+const char MSG_MIGRATION_MASK = 0x40;  //01000000
 class Message {
 
 public:
@@ -53,6 +54,10 @@ public:
      return mask & MSG_DISCOVERY_MASK;
    }
 
+   bool isMigration() {
+	   return mask & MSG_MIGRATION_MASK;
+   }
+
    Message * setLocal(){
 	   mask |= MSG_LOCAL_MASK;
 	   return this;
@@ -77,6 +82,12 @@ public:
 	   mask |= MSG_DISCOVERY_MASK;
 	   return this;
    }
+
+   Message * setMigrationMask(){
+	   mask |= MSG_MIGRATION_MASK;
+	   return this;
+   }
+
    unsigned getBodySize(){
 	   return this->bodySize;
    }

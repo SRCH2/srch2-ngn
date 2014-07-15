@@ -355,6 +355,7 @@ bool SMCallBackHandler::resolveMessage(Message *message, NodeId node){
 		}
 		break;
 	}
+	return true;
 }
 
 /*

@@ -207,6 +207,8 @@ private:
             
     IndexData(const string& directoryName);
 
+    IndexData(std::istream& inputByteStream, const string& saveDirName);
+
     //To save the directory name to save the trieIndex
     string directoryName;
     bool flagBulkLoadDone;
@@ -237,6 +239,11 @@ public:
     inline static IndexData* load(const string& directoryName)
     {
         return new IndexData(directoryName);
+    }
+
+    inline static IndexData* load(std::istream& inputByteStream, const string& directoryName)
+    {
+    	return new IndexData(inputByteStream, directoryName);
     }
 
     Trie_Internal *trie;
@@ -296,6 +303,10 @@ public:
 
     void _save(const std::string &directoryName) const;
     
+    void _deSerialize(std::istream& inputStream);
+
+    void _serialize(std::ostream& outputStream) const;
+
     const Schema* getSchema() const;
 
     Schema* getSchema();

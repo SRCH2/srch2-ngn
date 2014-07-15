@@ -180,14 +180,14 @@ Cluster * Cluster::deserialize(void* buffer){
 	for(unsigned infoIndex = 0 ; infoIndex < shardInfoSize; ++infoIndex){
 		// serialize node
 		Node * newNode = Node::deserializeForNetwork(buffer);
-		buffer += newNode->getNumberOfBytesForNetwork();
+		buffer = (char *)buffer + newNode->getNumberOfBytesForNetwork();
 		// serialize the size of vector
 		unsigned vectorSize = 0;
 	    buffer = srch2::util::deserializeFixedTypes(buffer, vectorSize);
 	    vector<CoreShardContainer *> cores;
 		for(unsigned coreIndex = 0; coreIndex < vectorSize ; ++coreIndex){
 			CoreShardContainer * newContainer = CoreShardContainer::deserializeForNetwork(buffer);
-			buffer += newContainer->getNumberOfBytesForNetwork();
+			buffer = (char *)buffer + newContainer->getNumberOfBytesForNetwork();
 			cores.push_back(newContainer);
 		}
 		newObj->shardInformation.insert(std::make_pair(newNode, cores));

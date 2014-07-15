@@ -107,7 +107,7 @@ SHMRequestReport * SHMRequestReport::deserialize(void* buffer){
     buffer = srch2::util::deserializeFixedTypes(buffer, isClusterAvailable);
     if(isClusterAvailable){
     	Cluster * newCluster = Cluster::deserialize(buffer);
-    	buffer += newCluster->getNumberOfBytesForNetwork();
+    	buffer = (char *)buffer + newCluster->getNumberOfBytesForNetwork();
     }
     bool isMetadataAvailable = false;
     buffer = srch2::util::deserializeFixedTypes(buffer, isMetadataAvailable);

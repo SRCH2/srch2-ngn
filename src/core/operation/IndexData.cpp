@@ -143,6 +143,22 @@ IndexData::IndexData(const string& directoryName)
     this->mergeRequired = true;
 }
 
+IndexData::IndexData(std::istream& inputByteStream, const string& saveDirName) {
+    this->directoryName = saveDirName;
+
+    if(!checkDirExistence(directoryName.c_str())){
+        Logger::error("Given index path %s does not exist", directoryName.c_str());
+        throw std::runtime_error("Index load exception ");
+    }
+    try {
+    	this->_deSerialize(inputByteStream);
+    }catch (boost::archive::archive_exception& ex) {
+    	cout << ex.what() << endl;
+    	throw;
+    }
+	this->mergeRequired = true;
+}
+
 // check whether the keyword id list is sorted. This is called from ASSERT statement below to
 // verify the correctness of the assumption that keywordIdList is alphabetaically sorted
 bool isSortedAlphabetically(const KeywordIdKeywordStringInvertedListIdTriple& keywordIdList){
@@ -660,6 +676,103 @@ void IndexData::changeKeywordIdsOnForwardListsAndOCFilters(map<unsigned, unsigne
 void IndexData::_exportData(const string &exportedDataFileName) const
 {
     ForwardIndex::exportData(*this->forwardIndex, exportedDataFileName);
+}
+
+void IndexData::_deSerialize(std::istream& inputStream) {
+	boost::archive::binary_iarchive ia(inputStream);
+	IndexVersion storedIndexVersion;
+	ia >> storedIndexVersion;
+	if (storedIndexVersion != IndexVersion::currentVersion){
+		// throw invalid index file exception
+		Logger::error("Invalid serialized shard. Either shard was built with a previous version"
+				"of engine or migrated from a different machine/architecture.");
+		throw exception();
+	}
+
+	this->trie = new Trie_Internal();
+	ia >> *(this->trie);
+
+	this->schemaInternal = new SchemaInternal();
+	ia >> *(this->schemaInternal);
+
+	this->rankerExpression = new RankerExpression(this->schemaInternal->getScoringExpression());
+
+	this->forwardIndex = new ForwardIndex(this->schemaInternal);
+	ia >> *(this->forwardIndex);
+
+	this->forwardIndex->setSchema(this->schemaInternal);
+
+	PositionIndexType positionIndexType = this->schemaInternal->getPositionIndexType();
+	if(isEnabledAttributeBasedSearch(positionIndexType))
+		this->forwardIndex->isAttributeBasedSearch = true;
+
+	if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex){
+		this->invertedIndex = new InvertedIndex(this->forwardIndex);
+		ia >> *(this->invertedIndex);
+		this->invertedIndex->setForwardIndex(this->forwardIndex);
+		quadTree = NULL;
+	} else {
+		this->quadTree = new QuadTree();
+		ia >> *(this->quadTree);
+		this->quadTree->setForwardIndex(this->forwardIndex);
+		this->quadTree->setTrie(this->trie);
+		this->invertedIndex = NULL;
+	}
+
+    uint64_t readCount_tmp;
+    uint32_t writeCount_tmp, numDocs_tmp;
+    ia >> readCount_tmp;
+    ia >> writeCount_tmp;
+    ia >> numDocs_tmp;
+    this->readCounter = new ReadCounter(readCount_tmp);
+    this->writeCounter = new WriteCounter(writeCount_tmp, numDocs_tmp);
+
+	this->flagBulkLoadDone = true;
+}
+
+void IndexData::_serialize(std::ostream& outputStream) const{
+	boost::archive::binary_oarchive oa(outputStream);
+	//1. Index Version
+	oa << IndexVersion::currentVersion;
+
+	if (this->trie->isMergeRequired())
+		this->trie->merge(NULL , NULL,  0 , false);
+
+	//2. Trie
+	oa << *this->trie;
+
+
+	//3. Schema Internal
+	oa << *this->schemaInternal;
+
+	if(this->forwardIndex->isMergeRequired()) {
+		this->forwardIndex->merge();
+		if (this->forwardIndex->hasDeletedRecords()) {
+			// free the space for deleted records.
+			// need the global lock to block other readers
+			boost::unique_lock< boost::shared_mutex > lock(globalRwMutexForReadersWriters);
+			this->forwardIndex->freeSpaceOfDeletedRecords();
+		}
+	}
+	//4. Forward Index
+	oa << *this->forwardIndex;
+
+	//5. Inverted Index or Quad Tree
+	if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex) {
+		if(this->invertedIndex->mergeRequired())
+			this->invertedIndex->merge();
+		oa << *this->invertedIndex;
+
+	}else {
+		oa << *this->quadTree;
+	}
+
+	uint64_t readCount_tmp = this->readCounter->getCount();
+	uint32_t writeCount_tmp = this->writeCounter->getCount();
+	uint32_t numDocs_tmp = this->writeCounter->getNumberOfDocuments();
+	oa << readCount_tmp;
+	oa << writeCount_tmp;
+	oa << numDocs_tmp;
 }
 
 void IndexData::_save(const string &directoryName) const

@@ -29,6 +29,8 @@
 
 #include <string>
 #include <stdint.h>
+#include <ostream>
+#include <istream>
 
 namespace srch2
 {
@@ -101,6 +103,7 @@ class Indexer
 public:
     static Indexer* create(IndexMetaData* index, Analyzer *analyzer, const Schema *schema);
     static Indexer* load(IndexMetaData* index);
+    static Indexer* load(std::istream&, IndexMetaData* index);
 
     virtual ~Indexer() {};
 
@@ -160,6 +163,10 @@ public:
 
     virtual void save(const std::string& directoryName) = 0;
     virtual void save() = 0;
+
+    virtual void serialize(std::ostream& outputStream) = 0;
+
+    virtual void deSerialize(std::istream& inputStream) = 0;
 
     virtual void exportData(const string &exportedDataFileName) = 0;
 

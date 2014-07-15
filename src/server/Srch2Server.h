@@ -65,11 +65,17 @@ public:
         createAndBootStrapIndexer(directoryPath);
     }
 
+    void serialize(std::ostream&  outputStream) {
+    	this->indexer->serialize(outputStream);
+    }
+
     // Check if index files already exist.
     bool checkIndexExistence(const string & directoryPath);
 
     IndexMetaData *createIndexMetaData(const string & directoryPath);
     void createAndBootStrapIndexer(const string & directoryPath);
+    void bootStrapIndexerFromByteStream(std::istream& input, const string & saveDirPath);
+    void postBootStrap();
     void createHighlightAttributesVector(const srch2is::Schema * schema);
 
     Indexer * getIndexer();

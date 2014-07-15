@@ -250,6 +250,37 @@ void Srch2Server::createAndBootStrapIndexer(const string & directoryPath)
     getIndexer()->createAndStartMergeThreadLoop();
 }
 
+/*
+ *   Load Shard indexes from byte Stream
+ */
+void Srch2Server::bootStrapIndexerFromByteStream(std::istream& input, const string & saveDirPath) {
+	IndexMetaData *indexMetaData = createIndexMetaData(saveDirPath);
+	indexer = Indexer::load(input, indexMetaData);
+	indexer->save();
+}
+
+/*
+ *   Any inconsistency between loaded indexes and current configuration should be handled in this
+ *   function.
+ */
+void Srch2Server::postBootStrap() {
+	Schema * storedAttrSchema = Schema::create();
+	indexer->getSchema()->setSupportSwapInEditDistance(getCoreInfo()->getSupportSwapInEditDistance());
+	bool isAttributeBasedSearch = false;
+	if (isEnabledAttributeBasedSearch(getIndexer()->getSchema()->getPositionIndexType())) {
+		isAttributeBasedSearch =true;
+	}
+	if(isAttributeBasedSearch != getCoreInfo()->getSupportAttributeBasedSearch())
+	{
+		Logger::warn("support-attribute-based-search has changed in the config file"
+				" remove all index files and run it again!");
+	}
+	RecordSerializerUtil::populateStoredSchema(storedAttrSchema, getIndexer()->getSchema());
+    createHighlightAttributesVector(storedAttrSchema);
+	delete storedAttrSchema;
+	getIndexer()->createAndStartMergeThreadLoop();
+}
+
 Indexer * Srch2Server::getIndexer(){
 	return indexer;
 }
