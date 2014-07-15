@@ -78,6 +78,8 @@ public:
     virtual double getMinDist2FromLatLong(double resultLat, double resultLng) const = 0;
     virtual double getSearchRadius2() const = 0;
     virtual void getValues(std::vector<double> &values) const = 0;
+    virtual double getMinDistFromBoundary(double lat, double lng) const = 0;
+    virtual void getCenter(Point &point) = 0;
 };
 
 class Rectangle : public Shape
@@ -137,6 +139,25 @@ public:
         double rangeMidLat = (this->max.x + this->min.x) / 2.0;
         double rangeMidLng = (this->max.y + this->min.y) / 2.0;
         return pow((resultLat - rangeMidLat), 2) + pow((resultLng - rangeMidLng), 2);
+    }
+
+    // this function will return the distance of closest point on the boundary of the shape to the input point
+    virtual double getMinDistFromBoundary(double lat, double lng) const
+    {
+    	Point point;
+    	point.x = lat;
+    	point.y = lng;
+    	if(this->contains(point))
+    		return 0;
+    	double xDist =  std::min(abs(max.x - lat), abs(min.x - lat));
+    	double yDist =  std::min(abs(max.y - lng), abs(min.y - lng));
+    	return sqrt(xDist * xDist + yDist * yDist);
+    }
+
+    // this function will return the center of the shape
+    virtual void getCenter(Point &point){
+    	point.x = (this->max.x + this->min.x) / 2.0;
+    	point.y = (this->max.y + this->min.y) / 2.0;
     }
 
     virtual double getSearchRadius2() const
@@ -205,6 +226,23 @@ public:
     virtual double getMinDist2FromLatLong(double resultLat, double resultLng) const
     {
         return pow((resultLat - center.x), 2) + pow((resultLng - center.y), 2);
+    }
+
+    // this function will return the distance of closest point on the boundary of the shape to the input point
+    virtual double getMinDistFromBoundary(double lat, double lng) const
+    {
+    	Point point;
+    	point.x = lat;
+    	point.y = lng;
+    	if(this->contains(point))
+    		return 0;
+    	return sqrt(this->getMinDist2FromLatLong(lat,lng)) - this->radius;
+    }
+
+    // this function will return the center of the shape
+    virtual void getCenter(Point &point){
+    	point.x = this->center.x;
+    	point.y = this->center.y;
     }
 
     virtual double getSearchRadius2() const

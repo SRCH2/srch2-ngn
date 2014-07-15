@@ -73,6 +73,7 @@ void QuadTree::rangeQuery(vector<vector<GeoElement*>*> & results, const Shape &r
 }
 
 
+
 }
 }
 

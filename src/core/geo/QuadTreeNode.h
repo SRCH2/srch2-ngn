@@ -101,6 +101,18 @@ public:
 		return this->numOfElementsInSubtree;
 	}
 
+	bool getIsLeaf(){
+		return this->isLeaf;
+	}
+
+	vector<QuadTreeNode*>* getChildren(){
+		return &children;
+	}
+
+	vector<GeoElement*>* getElements(){
+		return &elements;
+	}
+
 private:
 	Rectangle rectangle;            // Rectangle boundary of the node
 	bool isLeaf;                    // true->Leaf (children is null), false->internal (elements is null)

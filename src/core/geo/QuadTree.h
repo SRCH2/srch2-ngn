@@ -50,8 +50,6 @@ public:
 	// Find all the geo elements in the range
 	void rangeQuery(vector<vector<GeoElement*>*> & results, const Shape &range) const;
 
-	bool equalTo(QuadTree quadtree);
-
 	QuadTreeNode* getRoot(){
 		return this->root;
 	};

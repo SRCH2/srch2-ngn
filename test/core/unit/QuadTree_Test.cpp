@@ -254,7 +254,8 @@ void testSingleNodeQuadTree(string directoryName)
     rectangle.max.y=20;
     rectangle.min.x=10;
     rectangle.min.y=10;
-    queryEvaluator->impl->getIndexData()->quadTree->rangeQuery(results,rectangle);
+    QuadTree *qt = dynamic_cast<IndexReaderWriter *>(indexer)->getQuadTree();
+    qt->rangeQuery(results,rectangle);
     vector<unsigned> res;
 
     res.push_back(getExternalId(queryEvaluator,0));
@@ -323,7 +324,8 @@ void testCircleRange(string directoryName)
     Point point;
     point.x = 100; point.y = 100;
     Circle circle(point,30);
-    queryEvaluator->impl->getIndexData()->quadTree->rangeQuery(results,circle);
+    QuadTree *qt = dynamic_cast<IndexReaderWriter *>(indexer)->getQuadTree();
+    qt->rangeQuery(results,circle);
     vector<unsigned> res;
 
     res.push_back(getExternalId(queryEvaluator,0));
@@ -413,7 +415,6 @@ void testSerialization(string directoryName)
 
 	QuadTree *qt1 = dynamic_cast<IndexReaderWriter *>(indexer)->getQuadTree();
 
-	cout << qt1->getRoot()->getNumOfElementsInSubtree() << endl;
 	// serialize the index
 	indexer->commit();
 	indexer->save(directoryName);
@@ -445,29 +446,30 @@ void testDeserialization(string directoryName)
     Indexer *indexer1 = Indexer::load(indexMetaData);
 	QuadTree *qt1 = dynamic_cast<IndexReaderWriter *>(indexer1)->getQuadTree();
 
-	cout << qt1->getRoot()->getNumOfElementsInSubtree() << endl;
-
 	// rebuild the old quadtree
-/*	Indexer *indexer2 = Indexer::create(indexMetaData, analyzer, schema);
+	Indexer *indexer2 = Indexer::create(indexMetaData, analyzer, schema);
 	readRecordsFromFile(indexer2, schema, analyzer, directoryName+"/quadtree/1K");
 	indexer2->commit();
 	QuadTree *qt2 = dynamic_cast<IndexReaderWriter *>(indexer2)->getQuadTree();
 
+	ASSERT(qt1->getRoot()->getNumOfElementsInSubtree() == qt2->getRoot()->getNumOfElementsInSubtree());
+
 	// test if the loaded quadtree is exactly the same as the old one
-	bool isEqual = false;
+	/*bool isEqual = false;
 	if(qt1->equalTo(qt2) && qt2->equalTo(qt1))
 		isEqual = true;
-	ASSERT( isEqual == true );
+	ASSERT( isEqual == true );*/
 
 	// test if the loaded quadtree works
 	//readAndExcuteTestCasesFromFile(indexer1, directoryName+"/quadtree/fuzzy", true);
 
-	delete indexer2;*/
+	delete indexer2;
 	delete indexer1;
 	delete indexMetaData;
 	delete analyzer;
 	delete schema;
 }
+
 
 int main(int argc, char *argv[])
 {
@@ -481,8 +483,6 @@ int main(int argc, char *argv[])
 
 	const string directoryName = getenv("directoryName");
 	//string directoryName = "../test/unit/test_data";
-
-	//--- Complete Keyword ---//
 
 	// Test the case where we only have one node(root) with a few records in the tree
 	testSingleNodeQuadTree(directoryName);

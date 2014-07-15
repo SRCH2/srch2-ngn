@@ -220,6 +220,32 @@ public:
 	bool validateChildren();
 };
 
+class RandomAccessVerificationGeoOperator : public PhysicalPlanNode {
+	friend class PhysicalOperatorFactory;
+public:
+	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
+	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
+	bool close(PhysicalPlanExecutionParameters & params);
+	string toString();
+	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
+	~RandomAccessVerificationGeoOperator();
+private:
+	RandomAccessVerificationGeoOperator();
+};
+
+class RandomAccessVerificationGeoOptimizationOperator : public PhysicalPlanOptimizationNode {
+	friend class PhysicalOperatorFactory;
+public:
+	PhysicalPlanCost getCostOfOpen(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfGetNext(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfClose(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params);
+	void getOutputProperties(IteratorProperties & prop);
+	void getRequiredInputProperties(IteratorProperties & prop);
+	PhysicalPlanNodeType getType() ;
+	bool validateChildren();
+};
+
 
 /*
  * This operator sorts the input based on ID. Calling open results in fetching all the results from

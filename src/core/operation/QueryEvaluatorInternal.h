@@ -103,6 +103,10 @@ public:
         return this->indexData->forwardIndex;
     }
 
+    QuadTree * getQuadTree(){
+    	return this->indexData->quadTree;
+    }
+
     void getForwardIndex_ReadView(shared_ptr<vectorview<ForwardListPtr> > & readView){
     	readView = this->forwardIndexDirectoryReadView;
     }
@@ -139,11 +143,6 @@ public:
 
     CacheManager * getCacheManager(){
     	return this->cacheManager;
-    }
-
-    //TODO: Mahdi: Remove this function (I just add it for testing quadtree before implementing search)
-    const IndexData* getIndexData(){
-    	return this->indexData;
     }
 
 public:
