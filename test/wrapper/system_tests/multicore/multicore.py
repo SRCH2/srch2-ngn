@@ -158,7 +158,7 @@ def testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path
         queryValue=value[0].split()
         allResults=value[1].split('@')
 
-        coreNum=[ 1, 4 ] # coreNum are the literal core numbers to use in path this time
+        coreNum= [1,4]  # coreNum are the literal core numbers to use in path this time
         index = 0 # and index iterates coreNum
         for coreResult in allResults:
             resultValue=coreResult.split()
@@ -167,7 +167,6 @@ def testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path
             query = query + prepareQuery(queryValue, False)
 
             #do the query
-            print query
             response = urllib2.urlopen(query).read()
 
             # TODO - Replace srch2 bad JSON (spurious comma).  Ticket SRCN-335 already filed.
@@ -180,6 +179,18 @@ def testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path
             failCount += checkResult(query, response_json['results'], resultValue)
 
             index += 1
+
+        # Test search_all functionality
+        query='http://localhost:' + port + '/_all/search?' + prepareQuery(queryValue, False)
+        response = urllib2.urlopen(query).read()
+        response_json = json.loads(response)
+        # Check the search_all result 
+        index = 0
+        for coreResult in allResults:
+            resultValue = coreResult.split()
+            coreName = 'core' + str(coreNum[index])
+            failCount += checkResult(query, response_json[coreName]['results'], resultValue)
+            index +=1
 
         
     test_lib.killServer(serverHandle)
