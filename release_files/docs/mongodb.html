@@ -116,7 +116,7 @@ mongodb&gt; db.movies.find().count()
 <p>Change the parameters if needed.  Make sure that you have also set the "srch2Home" variable in the SRCH2 configuration file. All other paths mentioned in the configuration file are relative to the "srch2Home" folder.</p>
 <h2 id="startSrch2">4. Start SRCH2 Engine</h2>
 <p>Go to the install folder of SRCH2 and run the following:</p>
-<pre><code class="python">shell&gt; ./bin/srch2-search-server --config-file=./example-demo/srch2-config.xml
+<pre><code class="python">shell&gt; ./bin/srch2-search-server --config-file=./example-demo/srch2-config-mongo.xml
 </code></pre>
 
 <p>The engine should read the data from the MongoDB instance, build indexes, and wait for queries. It also starts a thread that periodically pulls latest changes from MongoDB (as specified by the "listenerWaitTime" parameter) and add these changes to its search indexes.</p>
