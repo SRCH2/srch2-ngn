@@ -44,11 +44,34 @@ INCLUDE_DIRECTORIES(
     ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src-0.5.0/include
 )
 
-#ADD_EXECUTABLE(sqliteTest ${SQLITE_CONNECTOR_SRC})
-
 SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src-0.5.0/libs/linux-gcc-${gcc_compiler_version}/libjson_linux-gcc-${gcc_compiler_version}_libmt.so)
 ADD_LIBRARY(sqliteConnector SHARED ${SQLITE_CONNECTOR_SRC} )
 
 SET_TARGET_PROPERTIES(sqliteConnector PROPERTIES COMPILE_FLAGS -fPIC)
 
 TARGET_LINK_LIBRARIES(sqliteConnector ${jsoncpp_LIBRARY} sqlite3)
+
+
+#
+#  3.  SQLite Test 
+#
+
+EXEC_PROGRAM( ${CMAKE_CXX_COMPILER}
+                      ARGS  -dumpversion
+                  OUTPUT_VARIABLE gcc_compiler_version)
+
+
+FILE(GLOB_RECURSE SQLITE_CONNECTOR_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "sqlite/main.cpp")
+
+MESSAGE(STATUS "This is SOURCE dir " ${CMAKE_SOURCE_DIR})
+					
+INCLUDE_DIRECTORIES(
+    ${CMAKE_SOURCE_DIR}/../src/adapter/
+    ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src-0.5.0/include
+)
+
+SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src-0.5.0/libs/linux-gcc-${gcc_compiler_version}/libjson_linux-gcc-${gcc_compiler_version}_libmt.so)
+
+
+ADD_EXECUTABLE(sqliteTest ${SQLITE_CONNECTOR_SRC})
+TARGET_LINK_LIBRARIES(sqliteTest ${jsoncpp_LIBRARY} sqlite3)
