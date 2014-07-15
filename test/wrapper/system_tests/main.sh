@@ -732,7 +732,7 @@ rm -rf data/ *.idx
 
 test_id="primary key - refining field"
 printTestBanner "$test_id"
-python ./refining_field_primary_key/exact_A1.py $SRCH2_ENGINE ./refining_field_primary_key/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
+python ./refining_field_primary_key/testPrimaryKey.py $SRCH2_ENGINE ./refining_field_primary_key/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ ${PIPESTATUS[0]} -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}

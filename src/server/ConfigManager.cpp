@@ -1236,6 +1236,11 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
                 // We assume the primary key is text, we don't get any type from user.
                 // And no default value is accepted from user.
                 if(string(field.attribute(nameString).value()).compare(coreInfo->primaryKey) == 0){
+                	if(isMultiValued){
+                		configSuccess = false;
+                		parseError << "Config File Error: Primary Key cannot be multivalued";
+                		return;
+                	}
                     if(isSearchable){
                         coreInfo->isPrimSearchable = 1;
                         coreParseState->searchableFieldsVector.push_back(string(field.attribute(nameString).value()));
@@ -1244,6 +1249,7 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
                         // primary key is always required.
                         coreParseState->searchableAttributesRequiredFlagVector.push_back(true);
                         coreParseState->searchableAttributesHighlight.push_back(isHighlightEnabled);
+                        coreParseState->searchableAttributesIsMultiValued.push_back(isMultiValued);
                     }
 
                     if(isRefining){

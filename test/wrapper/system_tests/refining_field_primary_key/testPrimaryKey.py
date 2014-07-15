@@ -67,7 +67,7 @@ def prepareQuery(queryKeywords):
     
 
 
-def testExactA1(queriesAndResultsPath, binary_path):
+def testRefiningPrimaryKey(queriesAndResultsPath, binary_path):
     #Start the engine server
     args = [ binary_path, '--config-file=./refining_field_primary_key/conf.xml' ]
 
@@ -103,10 +103,52 @@ def testExactA1(queriesAndResultsPath, binary_path):
     print '=============================='
     return failCount
 
+
+def testSearchablePrimaryKey(queriesAndResultsPath, binary_path):
+    #Start the engine server
+    args = [ binary_path, '--config-file=./refining_field_primary_key/conf1.xml' ]
+
+    if test_lib.confirmPortAvailable(port) == False:
+        print 'Port ' + str(port) + ' already in use - aborting'
+        return -1
+
+    print 'starting engine: ' + args[0] + ' ' + args[1]
+    serverHandle = test_lib.startServer(args)
+
+    test_lib.pingServer(port)
+
+    #construct the query
+    failCount = 0
+    f_in = open(queriesAndResultsPath, 'r')
+    for line in f_in:
+        #get the query keyword and results
+        value=line.split('||')
+        queryValue=value[0].split()
+        resultValue=(value[1]).split()
+        #construct the query
+        query='http://localhost:' + port + '/search?'
+        query = query + prepareQuery(queryValue)
+        #print query
+        #do the query
+        response = urllib2.urlopen(query).read()
+        response_json = json.loads(response)
+
+        #check the result
+        failCount += checkResult(query, response_json['results'], resultValue )
+
+    test_lib.killServer(serverHandle)
+    print '=============================='
+    return failCount
+
+
+
 if __name__ == '__main__':      
     #Path of the query file
     #each line like "trust||01c90b4effb2353742080000" ---- query||record_ids(results)
     binary_path = sys.argv[1]
     queriesAndResultsPath = sys.argv[2]
-    exitCode = testExactA1(queriesAndResultsPath, binary_path)
+    exitCode = testRefiningPrimaryKey(queriesAndResultsPath, binary_path)
+    import time
+    time.sleep(2)
+    exitCode = testSearchablePrimaryKey(queriesAndResultsPath, binary_path)
     os._exit(exitCode)
