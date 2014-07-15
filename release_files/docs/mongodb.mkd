@@ -83,7 +83,7 @@ Change the parameters if needed.  Make sure that you have also set the "srch2Hom
 Go to the install folder of SRCH2 and run the following:
 
 ```python
-shell> ./bin/srch2-search-server --config-file=./example-demo/srch2-config.xml
+shell> ./bin/srch2-search-server --config-file=./example-demo/srch2-config-mongo.xml
 ```
 
 The engine should read the data from the MongoDB instance, build indexes, and wait for queries. It also starts a thread that periodically pulls latest changes from MongoDB (as specified by the "listenerWaitTime" parameter) and add these changes to its search indexes.

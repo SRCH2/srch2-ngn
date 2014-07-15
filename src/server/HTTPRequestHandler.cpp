@@ -6,6 +6,7 @@
 #include <sstream>
 #include <string>
 #include <set>
+#include <sys/signal.h>
 
 #include "thirdparty/snappy-1.0.4/snappy.h"
 #include "util/Logger.h"
