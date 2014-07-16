@@ -405,9 +405,22 @@ MongoDBConnector::~MongoDBConnector() {
 }
 
 /*
- * Used by the shared library mechanism to get the connector by the engine.
- * The engine will call create() to get the specific connector and call
- * destroy to delete it.
+ * "create_t()" and "destroy_t(DataConnector*)" is called to create/delete
+ * the instance of the connector. A simple example of implementing these
+ * two function is here.
+ *
+ * extern "C" DataConnector* create() {
+ *     return new YourDBConnector;
+ * }
+ *
+ * extern "C" void destroy(DataConnector* p) {
+ *     delete p;
+ * }
+ *
+ * These two C APIs are used by the srch2-engine to create/delete the instance
+ * in the shared library.
+ * The engine will call "create()" to get the connector and call
+ * "destroy" to delete it.
  */
 extern "C" DataConnector* create() {
     return new MongoDBConnector;
