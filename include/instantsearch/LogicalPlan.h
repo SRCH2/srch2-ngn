@@ -44,6 +44,7 @@ public:
 	vector<LogicalPlanNode *> children;
 	Term * exactTerm;
 	Term * fuzzyTerm;
+	Shape* regionShape;
 	LogicalPlanNodeAnnotation * stats;
 
 	PhysicalPlanNodeType forcedPhysicalNode;
@@ -77,6 +78,7 @@ public:
 protected:
 	LogicalPlanNode(Term * exactTerm, Term * fuzzyTerm);
 	LogicalPlanNode(LogicalPlanNodeType nodeType);
+	LogicalPlanNode(Shape* regionShape);
 };
 
 class LogicalPlanPhraseNode : public LogicalPlanNode{
@@ -158,6 +160,8 @@ public:
     LogicalPlanNode * createPhraseLogicalPlanNode(const vector<string>& phraseKeyWords,
     		const vector<unsigned>& phraseKeywordsPosition,
     		short slop, unsigned fieldFilter) ;
+    // constructs a geo logical plan node
+    LogicalPlanNode * createGeoLogicalPlanNode(Shape *regionShape);
 
 	ResultsPostProcessorPlan* getPostProcessingPlan() const {
 		return postProcessingPlan;

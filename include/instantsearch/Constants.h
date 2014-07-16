@@ -235,7 +235,8 @@ typedef enum {
 	LogicalPlanNodeTypeOr,
 	LogicalPlanNodeTypeTerm,
 	LogicalPlanNodeTypeNot,
-	LogicalPlanNodeTypePhrase
+	LogicalPlanNodeTypePhrase,
+	LogicalPlanNodeTypeGeo
 } LogicalPlanNodeType;
 
 typedef enum {

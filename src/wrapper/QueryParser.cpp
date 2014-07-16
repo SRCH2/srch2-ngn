@@ -190,14 +190,13 @@ bool QueryParser::parse() {
      * 10. call the query field boost parser : queryFieldBoostParser();
      * 11. this->lengthBoostParser();
      * 12. this->prefixMatchPenaltyParser();
-     * 13. based on the value of search type (if it's defined in local parameters we take it
+     * 13. call the geo parser: geoParser();
+     * 14. based on the value of search type (if it's defined in local parameters we take it
      *    otherwise we get it from conf file) leave the rest of parsing to one of the parsers
-     * 13.1: search type : Top-K
+     * 14.1: search type : Top-K
      *      call topKParameterParser();
-     * 13.2: search type : All results
+     * 14.2: search type : All results
      *      call getAllResultsParser();
-     * 13.3: search type : GEO
-     *      call geoParser();
      */
 
     // do some parsing
@@ -219,11 +218,10 @@ bool QueryParser::parse() {
         this->queryFieldBoostParser();
         this->lengthBoostParser();
         this->prefixMatchPenaltyParser();
+        this->geoParser();
         this->extractSearchType();
         this->highlightParser();
-        if (this->container->hasParameterInQuery(GeoSearchType)) {
-            this->geoParser();
-        } else if (this->container->hasParameterInQuery(
+        if (this->container->hasParameterInQuery(
                 GetAllResultsSearchType)) {
             this->getAllResultsParser();
         } else {
@@ -1508,32 +1506,64 @@ void QueryParser::getAllResultsParser() {
 }
 
 void QueryParser::geoParser() {
+	/*
+	 * extractSearchType function parsers the parameters related to geo search like latitude and longitude .
+	 *      if lat/long query params are specified its a geo
+     *      parses the geo parameters like leftBottomLatitude,leftBottomLongitude,rightTopLatitude,rightTopLongitude
+     *      centerLatitude,centerLongitude,radius
+     *      Based on what group of geo parameters are present it sets geoType to CIRCULAR or RECTANGULAR
+	 */
+	Logger::debug("inside gepParser function");
 
-    /*
-     * extractSearchType function parsers the parameters related to geo search like latitude and longitude .
-     * 1. also calls the facet parser. : facetParser();
-     * 2. also calls the sort parser: sortParser();
-     *
-     */
-    this->facetParser();
-    this->sortParser();
+	Logger::debug("inside geoParser, checking for geo parameter");
+	const char * leftBottomLatTemp = evhttp_find_header(&headers,
+			QueryParser::leftBottomLatParamName);
+	const char * leftBottomLongTemp = evhttp_find_header(&headers,
+			QueryParser::leftBottomLongParamName);
+	const char * rightTopLatTemp = evhttp_find_header(&headers,
+			QueryParser::rightTopLatParamName);
+	const char * rightTopLongTemp = evhttp_find_header(&headers,
+			QueryParser::rightTopLongParamName);
+	if (leftBottomLatTemp && leftBottomLongTemp && rightTopLatTemp
+			&& rightTopLongTemp) {
+		// we have geo input and it's a reactangular geo search
+		this->container->parametersInQuery.push_back(GeoSearchFlag);
+		this->container->geoParameterContainer = new GeoParameterContainer();
+		this->container->geoParameterContainer->parametersInQuery.push_back(
+				GeoTypeRectangular);
+		//set GeoParameterContainer properties.
+		this->setGeoContainerProperties(leftBottomLatTemp, leftBottomLongTemp,
+				rightTopLatTemp, rightTopLongTemp);
+	} else {
+		const char * centerLatTemp = evhttp_find_header(&headers,
+				QueryParser::centerLatParamName);
+		const char * centerLongTemp = evhttp_find_header(&headers,
+				QueryParser::centerLongParamName);
+		const char * radiusParamTemp = evhttp_find_header(&headers,
+				QueryParser::radiusParamName);
+		if (centerLatTemp && centerLongTemp && radiusParamTemp) {
+			// we have geo input and its a circular geo search
+			this->container->parametersInQuery.push_back(GeoSearchFlag);
+			this->container->geoParameterContainer =
+					new GeoParameterContainer();
+			this->container->geoParameterContainer->parametersInQuery.push_back(
+					GeoTypeCircular);
+			//set GeoParameterContainer properties.
+			this->setGeoContainerProperties(centerLatTemp, centerLongTemp,
+					radiusParamTemp);
+		}
+	}
+	Logger::debug("returning from geoParser");
 }
 void QueryParser::extractSearchType() {
     /*
      *  figures out what is the searchtype of the query. No need of passing the searchType parameter anymore in lp.
-     *  if lat/long query params are specified its a geo
-     *      parses the geo parameters like leftBottomLatitude,leftBottomLongitude,rightTopLatitude,rightTopLongitude
-     *      centerLatitude,centerLongitude,radius
-     *      Based on what group of geo parameters are present it sets geoType to CIRCULAR or RECTANGULAR
-     *  else:
-     *      if sort|facet are specified, its a getAllResult
+     *  if sort|facet are specified, its a getAllResult
      *  else:
      *  it's a Top-K
      *  set the parametersInQuery.
-     *
      */
 // if serachType mentioned in queryParameter use that.
-    const string geoType = "geo";
     const string getAllType = "getAll";
     const string topKType = "topK";
     Logger::debug("inside extractSearchType function");
@@ -1545,99 +1575,29 @@ void QueryParser::extractSearchType() {
         this->isSearchTypeSet = true;
         decodeString(searchTypeTmp, searchType);
     }
-// else extrct it. if no search type is given and cannot decide between topk and getAll, use topK, raise a warning
-    Logger::debug("inside extractSearchType, checking for geo parameter");
-    const char * leftBottomLatTemp = evhttp_find_header(&headers,
-            QueryParser::leftBottomLatParamName);
-    const char * leftBottomLongTemp = evhttp_find_header(&headers,
-            QueryParser::leftBottomLongParamName);
-    const char * rightTopLatTemp = evhttp_find_header(&headers,
-            QueryParser::rightTopLatParamName);
-    const char * rightTopLongTemp = evhttp_find_header(&headers,
-            QueryParser::rightTopLongParamName);
-    if (leftBottomLatTemp && leftBottomLongTemp && rightTopLatTemp
-            && rightTopLongTemp) { // we have geo input so search type must be Geo
-        // it's a reactangular geo search
-        if (this->isSearchTypeSet && !boost::iequals(geoType, searchType)) {
-            // raise warning
-            this->container->messages.push_back(
-                    make_pair(MessageWarning,
-                            "searchType parameter for this query should be set to geo, found "
-                                    + searchType
-                                    + " .Using geo as searchType"));
-        }
-        this->container->parametersInQuery.push_back(GeoSearchType);
-        this->container->geoParameterContainer = new GeoParameterContainer();
-        this->container->geoParameterContainer->parametersInQuery.push_back(
-                GeoTypeRectangular);
-        //set GeoParameterContainer properties.
-        this->setGeoContainerProperties(leftBottomLatTemp, leftBottomLongTemp,
-                rightTopLatTemp, rightTopLongTemp);
-    } else {
-        const char * centerLatTemp = evhttp_find_header(&headers,
-                QueryParser::centerLatParamName);
-        const char * centerLongTemp = evhttp_find_header(&headers,
-                QueryParser::centerLongParamName);
-        const char * radiusParamTemp = evhttp_find_header(&headers,
-                QueryParser::radiusParamName);
-        if (centerLatTemp && centerLongTemp && radiusParamTemp) { // we have geo input so search type must be Geo
-            // its a circular geo search
-            if (this->isSearchTypeSet && !boost::iequals(geoType, searchType)) {
-                // raise warning
-                this->container->messages.push_back(
-                        make_pair(MessageWarning,
-                                "searchType parameter for this query should be set to geo, found "
-                                        + searchType
-                                        + " .Using geo as searchType"));
-            }
-            this->container->parametersInQuery.push_back(GeoSearchType);
-            this->container->geoParameterContainer =
-                    new GeoParameterContainer();
-            this->container->geoParameterContainer->parametersInQuery.push_back(
-                    GeoTypeCircular);
-            //set GeoParameterContainer properties.
-            this->setGeoContainerProperties(centerLatTemp, centerLongTemp,
-                    radiusParamTemp);
-        } else { // we don't have geo input. so search type doesn't have to be geo
-
-            //
-            if (this->isSearchTypeSet) {
-                if (boost::iequals(getAllType, searchType)) { // search type is given and it's getAll
-                    // it's a getAll
-                    this->container->parametersInQuery.push_back(
-                            GetAllResultsSearchType);
-                } else if (boost::iequals(topKType, searchType)) { // search type is given and it's topK
-                    // it's a Top-K search
-                    this->container->parametersInQuery.push_back(
-                            TopKSearchType);
-                } else if (boost::iequals(geoType, searchType)) {
-                    Logger::info(
-                            "searchType provided in queryParamter is geo. Not all required geo paramters are provided. Evaluating falback options");
-                    if (!this->rawQueryKeywords.empty()) {
-                        // keywords are provided, we can fall back to topK
-                        this->container->messages.push_back(
-                                make_pair(MessageWarning,
-                                        "not enough circular or rectangular geo parameters were found, falling back to topK search"));
-                        this->container->parametersInQuery.push_back(
-                                TopKSearchType);
-                    }
-
-                } else {
-                    // searchType provided is not known, fall back to top-k
-                    this->container->messages.push_back(
-                            make_pair(MessageWarning,
-                                    "Unknown searchType " + searchType
-                                            + " provided, falling back to topK"));
-                    this->container->parametersInQuery.push_back(
-                            TopKSearchType);
-                }
-            } else { // search type is not given by the user, and there is no post processing task either
-                // no searchType provided use topK
-                this->container->messages.push_back(make_pair(MessageNotice, "topK query"));
-                this->container->parametersInQuery.push_back(TopKSearchType);
-            }
-
-        }
+    // else extrct it. if no search type is given and cannot decide between topk and getAll, use topK, raise a warning
+    if (this->isSearchTypeSet) {
+    	if (boost::iequals(getAllType, searchType)) { // search type is given and it's getAll
+    		// it's a getAll
+    		this->container->parametersInQuery.push_back(
+    				GetAllResultsSearchType);
+    	} else if (boost::iequals(topKType, searchType)) { // search type is given and it's topK
+    		// it's a Top-K search
+    		this->container->parametersInQuery.push_back(
+    				TopKSearchType);
+    	} else {
+    		// searchType provided is not known, fall back to top-k
+    		this->container->messages.push_back(
+    				make_pair(MessageWarning,
+    						"Unknown searchType " + searchType
+    						+ " provided, falling back to topK"));
+    		this->container->parametersInQuery.push_back(
+    				TopKSearchType);
+    	}
+    } else { // search type is not given by the user, and there is no post processing task either
+    	// no searchType provided use topK
+    	this->container->messages.push_back(make_pair(MessageNotice, "topK query"));
+    	this->container->parametersInQuery.push_back(TopKSearchType);
     }
     Logger::debug("returning from extractSearchType");
 }

@@ -24,6 +24,8 @@
 #include <boost/archive/binary_iarchive.hpp>
 #include <cmath>
 #include <vector>
+#include <string>
+#include <sstream>
 
 namespace srch2
 {
@@ -80,6 +82,7 @@ public:
     virtual void getValues(std::vector<double> &values) const = 0;
     virtual double getMinDistFromBoundary(double lat, double lng) const = 0;
     virtual void getCenter(Point &point) = 0;
+    virtual std::string toString() = 0;
 };
 
 class Rectangle : public Shape
@@ -173,6 +176,14 @@ public:
         values.push_back(this->max.y);
     }
 
+    virtual std::string toString(){
+    	std::ostringstream ss;
+    	ss << "Rectangle";
+    	ss << "-" << this->min.x << "-" << this->min.y;
+    	ss << "-" << this->max.x << "-" << this->max.y;
+    	return ss.str();
+    }
+
 private:
     friend class boost::serialization::access;
 
@@ -255,6 +266,15 @@ public:
         values.push_back(center.x);
         values.push_back(center.y);
         values.push_back(radius);
+    }
+
+    virtual std::string toString(){
+    	std::ostringstream ss;
+    	ss << "Circle";
+    	ss << "-" << this->center.x;
+    	ss << "-" << this->center.y;
+    	ss << "-" << this->radius;
+    	return ss.str();
     }
 
 };

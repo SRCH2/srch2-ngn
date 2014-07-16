@@ -332,8 +332,6 @@ private:
 
     /*
      * this function parsers the parameters related to geo search like latitude and longitude .
-     * 1. also calls the facet parser. : facetParser();
-     * 2. also calls the sort parser: sortParser();
      *
      */
     void geoParser();
