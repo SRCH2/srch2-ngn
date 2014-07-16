@@ -2,7 +2,7 @@
  * DataConnector.h
  *
  *  Created on: Jun 9, 2014
- *      Author: liusrch2
+ *      Author: chenliu@srch2
  */
 
 #ifndef __DATACONNECTOR_H__
@@ -69,8 +69,8 @@ public:
 
     /*
      * "init" is called once when the connector is loaded by the engine.
-     * All the initialization is recommended to be implemented here. e.g.
-     * "check the config file", "connect to the database".
+     * All the initialization is recommended to be implemented here.
+     * e.g., check the config file and connect to the database.
      *
      * The serverHandle is provided by the engine which is an instance of 
      * ServerInterface class. The serverHandle must be used to call 
@@ -80,7 +80,7 @@ public:
 
     /*
      * "runListener" should be implemented as a pull based listener.
-     * It should periodically fetch the data changes form the database.
+     * It should periodically fetch the data changes from the database.
      */
     virtual void* runListener() = 0;
 
@@ -93,9 +93,8 @@ public:
 };
 
 /*
- * "create_t()" and "destroy_t(DataConnector*)" is called to create/delete
- * the instance of the connector. A simple example of implementing these
- * two function is here.
+ * "create_t()" and "destroy_t(DataConnector*)" are called to create/delete
+ *  the instance of the connector, respectively.
  *
  * extern "C" DataConnector* create() {
  *     return new YourDBConnector;
