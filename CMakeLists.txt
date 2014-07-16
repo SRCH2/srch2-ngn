@@ -150,7 +150,11 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
         SET(LIBRARY_OUTPUT_PATH_ROOT ${CMAKE_BINARY_DIR} CACHE PATH "root for library output, set this to change where android libs are installed to" )
         SET(CMAKE_REQUIRED_LIBRARIES stdc++ crypto ${CMAKE_REQUIRED_LIBRARIES})
     ELSE()
-        SET(CMAKE_REQUIRED_LIBRARIES pthread stdc++ crypto ${CMAKE_REQUIRED_LIBRARIES})
+        IF (LINUX_OS)
+       		SET(CMAKE_REQUIRED_LIBRARIES crypto dl pthread stdc++ rt z ${CMAKE_REQUIRED_LIBRARIES})
+        ELSE()
+       		SET(CMAKE_REQUIRED_LIBRARIES crypto pthread stdc++ ${CMAKE_REQUIRED_LIBRARIES})
+        ENDIF()
     ENDIF()
     
     IF(DO_COVERAGE)
@@ -231,11 +235,7 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 	        MESSAGE(STATUS "Buildling for 32 bit platform")
 	        LINK_DIRECTORIES("/usr/lib/")
         ENDIF ()
-        IF (LINUX_OS)
-	        SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${OPENSSL_LIBRARIES} ${rt_LIBRARY} ${dl_LIBRARY} ${z_LIBRARY})
-        ELSEIF (MAC_OS)
-            SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${OPENSSL_LIBRARIES})
-        ENDIF()
+	SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${OPENSSL_LIBRARIES} )
     ENDIF ()   
     # For MacOS-X, add compatibility flag to support version 10.5 and above. 
     # MacOS-X 10.5 and above have intel processors and our mac build machine is also intel
@@ -314,6 +314,7 @@ INSTALL(DIRECTORY ${INSTALL_AUXILLARY_FILES_DIR}/docs/example-demo/ DESTINATION 
 #INSTALL(FILES ${INSTALL_AUXILLARY_FILES_DIR}/srch2_config.xml DESTINATION conf PERMISSIONS OWNER_READ OWNER_WRITE)
 INSTALL(FILES ${INSTALL_AUXILLARY_FILES_DIR}/release_notes/RELEASE_${VERSION} DESTINATION . RENAME "RELEASE_NOTES" PERMISSIONS OWNER_READ OWNER_WRITE)
 INSTALL(DIRECTORY ${INSTALL_AUXILLARY_FILES_DIR}/srch2_data/ DESTINATION srch2_data USE_SOURCE_PERMISSIONS)
+INSTALL(DIRECTORY ${CMAKE_SOURCE_DIR}/db_connectors/build/  DESTINATION db_connectors/ FILES_MATCHING PATTERN "*.so" PATTERN "*.dylib" PATTERN "CMakeFiles" EXCLUDE  PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ GROUP_WRITE) 
 
 #Packaging
 SET(CPACK_IGNORE_FILES "CMakeCache.txt;install_manifest.txt;/Testing/;/Makefile$;\\\\.cmake$;\\\\.tar.gz$;\\\\.so[.0-9]*$;/build/;/_CPack_Packages/;/CMakeFiles/;/CVS/;/\\\\.svn/;/\\\\.git/;\\\\.swp$;\\\\.#;/#")
