@@ -142,11 +142,8 @@ int createIndex_callback(void *dbConnector, int argc, char **argv,
 }
 
 void * SQLiteConnector::runListener() {
-    std::string collection;
+    std::string collection,listenerWaitTimeStr, maxRetryOnFailureStr;
     this->serverHandle->configLookUp("collection", collection);
-    loadLastAccessedLogRecordTime();
-
-    std::string listenerWaitTimeStr, maxRetryOnFailureStr;
     this->serverHandle->configLookUp("listenerWaitTime", listenerWaitTimeStr);
     this->serverHandle->configLookUp("maxRetryOnFailure", maxRetryOnFailureStr);
     int listenerWaitTime = atoi(listenerWaitTimeStr.c_str());
@@ -157,9 +154,11 @@ void * SQLiteConnector::runListener() {
     if (maxRetryOnFailureStr.size() == 0) {
         maxRetryOnFailure = 3;
     }
+    loadLastAccessedLogRecordTime();
+
     std::stringstream sql;
+    printf("SQLITECONNECTOR: waiting for updates ...\n");
     for (int retryCount = 0; retryCount <= maxRetryOnFailure; retryCount++) {
-        printf("SQLITECONNECTOR: waiting for updates ...\n");
         while (1) {
             logRecordTimeChangedFlag = false;
             /* Create SQL statement */
@@ -194,6 +193,7 @@ void * SQLiteConnector::runListener() {
 
         }
     }
+    printf("SQLITECONNECTOR: exiting...\n");
     sqlite3_close(db);
     return NULL;
 }
@@ -407,10 +407,6 @@ void SQLiteConnector::createTriggerIfNotExistence() {
 
 //Load the last time last oplog record accessed
 void SQLiteConnector::loadLastAccessedLogRecordTime() {
-    //Keep the time stamp start running the listener
-    std::stringstream currentTime;
-    currentTime << time(NULL);
-
     std::string path, srch2Home;
     this->serverHandle->configLookUp("srch2Home", srch2Home);
     this->serverHandle->configLookUp("dataDir", path);
@@ -420,7 +416,7 @@ void SQLiteConnector::loadLastAccessedLogRecordTime() {
         a_file >> lastAccessedLogRecordTime;
         a_file.close();
     } else {
-        lastAccessedLogRecordTime = currentTime.str();
+        lastAccessedLogRecordTime = "0";
     }
 }
 
