@@ -2,7 +2,7 @@
  * DataConnector.h
  *
  *  Created on: Jun 9, 2014
- *      Author: liusrch2
+ *      Author: chenliu@srch2
  */
 
 #ifndef __DATACONNECTOR_H__
@@ -10,46 +10,57 @@
 
 #include <string>
 
+/*
+ *  The abstract class ServerInterface provides the interface of the engine to
+ *  an external database connector. The concrete implementation is within the 
+ *  engine.
+ */
+
 class ServerInterface {
 public:
     virtual ~ServerInterface() {
     }
     ;
     /*
-     * "insertRecord" takes the Record in JSON string format
-     *  and passes it into the srch2-engine.
+     * "insertRecord" takes a record as an input in a JSON string format.
      *
-     *  Note that only JSON Object string is accepted.
-     *  Does not accept JSON Array string.
+     *  Note: The API only accepts single JSON Object as a string.
+     *        It does not accept JSON Array as a string.
      */
     virtual int insertRecord(const std::string& jsonString) = 0;
 
     /*
-     * "deleteRecord" takes the primary key in string format and
-     *  delete the record in the srch2-engine.
+     * "deleteRecord" takes the primary key of a record as an input and deletes
+     *  it from engine.
      */
     virtual int deleteRecord(const std::string& primaryKey) = 0;
 
     /*
-     * "updateRecord" takes the old primary key of the Record and the new
-     * Record in JSON string format.
+     * "updateRecord" takes the old primary key of a record as an input and
+     * updates it with the new record passed in as a JSON string.
      */
     virtual int updateRecord(const std::string& oldPk,
             const std::string& jsonString) = 0;
 
     /*
-     * "saveChanges" saves the index into the disk.
+     * "saveChanges" saves the indexes into the disk.
      */
     virtual void saveChanges() = 0;
 
     /*
-     * "configLookUp" will provide key based lookup from engine's connector
-     *  specific configuration store. e.g.  "dbname" => "mysql"  (single value)
-     *  "collections" => "collection1, collection2 " (multi value)
+     * "configLookUp" provides key based lookup for the connector specific
+     *  configuration. The return value can be a single value or multiple values
+     *  separated by comma. 
+     *  e.g.  "dbname" => "mysql"  (single value)
+     *        "collections" => "collection1, collection2 " (multiple values)
      */
     virtual bool configLookUp(const std::string& key, std::string & value) = 0;
 };
 
+/*
+ *  A database connector for the engine should implement the interface provided
+ *  in the DataConnector abstract class by extending it.
+ */
 class DataConnector {
 public:
     virtual ~DataConnector() {
@@ -57,18 +68,19 @@ public:
     ;
 
     /*
-     * "init" is called when the connector starts running.
-     * All the initialization is recommended to be implemented here. e.g.
-     * "check the config file", "connect to the database".
+     * "init" is called once when the connector is loaded by the engine.
+     * All the initialization is recommended to be implemented here.
+     * e.g., check the config file and connect to the database.
      *
-     * The serverHandle is provided by the srch2-engine, providing the
-     * functions in the class "ServerInterface".
+     * The serverHandle is provided by the engine which is an instance of 
+     * ServerInterface class. The serverHandle must be used to call 
+     * ServerInterface class APIs. 
      */
     virtual bool init(ServerInterface *serverHandle) = 0;
 
     /*
      * "runListener" should be implemented as a pull based listener.
-     * It should periodically fetch the data changes form the database.
+     * It should periodically fetch the data changes from the database.
      */
     virtual void* runListener() = 0;
 
@@ -81,9 +93,8 @@ public:
 };
 
 /*
- * "create_t()" and "destroy_t(DataConnector*)" is called to create/delete
- * the instance of the connector. A simple example of implementing these
- * two function is here.
+ * "create_t()" and "destroy_t(DataConnector*)" are called to create/delete
+ *  the instance of the connector, respectively.
  *
  * extern "C" DataConnector* create() {
  *     return new YourDBConnector;
