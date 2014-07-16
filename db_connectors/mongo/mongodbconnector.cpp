@@ -157,6 +157,8 @@ void MongoDBConnector::createNewIndexes() {
             }
             printf("Total indexed %d / %d records. \n", indexedRecordsCount,
                     collectionCount);
+            //Save the time right after create new indexes.
+            setLastAccessedLogRecordTime(time(NULL));
             this->serverHandle->saveChanges();
 
         } else {
@@ -173,26 +175,24 @@ void MongoDBConnector::createNewIndexes() {
 }
 
 //Load the last time last oplog record accessed
-const time_t MongoDBConnector::getLastAccessedLogRecordTime() {
-    //Keep the time stamp start running the listener
-    time_t lastAccessedLogRecordTime = time(NULL);
-
-    std::string srch2Home;
-    std::string dataDir;
+bool MongoDBConnector::getLastAccessedLogRecordTime(time_t& t) {
+    std::string dataDir, srch2Home;
 
     this->serverHandle->configLookUp("srch2Home", srch2Home);
     this->serverHandle->configLookUp("dataDir", dataDir);
-    std::string path = srch2Home + "/" + dataDir + "/mongodb_data/" + "data.bin";
+    std::string path = srch2Home + "/" + dataDir + "/mongodb_data/"
+            + "data.bin";
 
     if (access(path.c_str(), F_OK) == 0) {
         ifstream a_file(path.c_str(), ios::in | ios::binary);
-        time_t t;
         a_file >> t;
         a_file.close();
-        lastAccessedLogRecordTime = t;
+        return true;
+    } else {
+        printf("MONGOLISTENER: Can not find %s. Listener starts failed.\n",
+                path.c_str());
+        return false;
     }
-
-    return lastAccessedLogRecordTime;
 }
 
 //Save the time last oplog record accessed
@@ -230,7 +230,12 @@ void* MongoDBConnector::runListener() {
     do {
         bool printOnce = true;
         time_t opLogTime = 0;
-        time_t threadSpecificCutOffTime = getLastAccessedLogRecordTime();
+        time_t threadSpecificCutOffTime = 0;
+        if(!getLastAccessedLogRecordTime(threadSpecificCutOffTime)){
+            printf("MONGOLISTENER: exiting...\n");
+            mongoConnector->done();
+            return NULL;
+        }
         try {
             mongo::BSONElement _lastValue = mongo::BSONObj().firstElement();
 

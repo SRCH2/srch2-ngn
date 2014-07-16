@@ -36,7 +36,7 @@ private:
     bool connectToDB();
 
     //Load the last time last oplog record accessed
-    const time_t getLastAccessedLogRecordTime();
+    bool getLastAccessedLogRecordTime(time_t& t);
 
     //Save the time last oplog record accessed
     void setLastAccessedLogRecordTime(const time_t t);
