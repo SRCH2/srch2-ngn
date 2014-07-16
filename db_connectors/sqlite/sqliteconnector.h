@@ -47,6 +47,8 @@ private:
     std::string LOG_TABLE_NAME_ID;
     std::string PRIMARY_KEY_TYPE;
     std::string PRIMARY_KEY_NAME;
+    int maxRetryOnFailure;
+    int listenerWaitTime;
 
     sqlite3 *db;
     bool connectToDB();

@@ -18,6 +18,8 @@ SQLiteConnector::SQLiteConnector() {
     serverHandle = NULL;
     db = NULL;
     logRecordTimeChangedFlag = false;
+    maxRetryOnFailure = 0;
+    listenerWaitTime = 0;
 }
 
 bool SQLiteConnector::init(ServerInterface * serverHandle) {
@@ -38,8 +40,21 @@ bool SQLiteConnector::init(ServerInterface * serverHandle) {
     TRIGGER_UPDATE_NAME = "SRCH2_UPDATE_LOG_TRIGGER_";
     TRIGGER_UPDATE_NAME.append(db_collection.c_str());
 
+    std::string listenerWaitTimeStr, maxRetryOnFailureStr;
+    this->serverHandle->configLookUp("listenerWaitTime", listenerWaitTimeStr);
+    this->serverHandle->configLookUp("maxRetryOnFailure", maxRetryOnFailureStr);
+    listenerWaitTime = atoi(listenerWaitTimeStr.c_str());
+    if (listenerWaitTimeStr.size() == 0 || listenerWaitTime == 0) {
+        listenerWaitTime = 1;
+    }
+    maxRetryOnFailure = atoi(maxRetryOnFailureStr.c_str());
+    if (maxRetryOnFailureStr.size() == 0) {
+        maxRetryOnFailure = 3;
+    }
+
     if (!checkConfigValidity() || !connectToDB()
             || !checkCollectionExistence()) {
+        printf("SQLITECONNECTOR: exiting...\n");
         return false;
     }
     populateTableSchema();
@@ -58,13 +73,18 @@ bool SQLiteConnector::connectToDB() {
     char *zErrMsg = 0;
     int rc;
 
-    rc = sqlite3_open((srch2Home + "/" + db_path + "/" + db_name).c_str(), &db);
-    if (rc) {
-        fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
-        sqlite3_close(db);
-        return false;
+    for (int i = 0; i != maxRetryOnFailure; ++i) {
+        rc = sqlite3_open((srch2Home + "/" + db_path + "/" + db_name).c_str(),
+                &db);
+        if (rc) {
+            fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
+            sqlite3_free(zErrMsg);
+            sleep(listenerWaitTime);
+        } else {
+            return true;
+        }
     }
-    return true;
+    return false;
 }
 
 bool SQLiteConnector::checkConfigValidity() {
@@ -77,7 +97,7 @@ bool SQLiteConnector::checkConfigValidity() {
     bool ret = (dbPath.size() != 0) && (db.size() != 0)
             && (uniqueKey.size() != 0) && (collection.size() != 0);
     if (!ret) {
-        printf("database path, db, collection, uniquekey must be set.\n");
+        printf("SQLITECONNECTOR: database path, db, collection, uniquekey must be set.\n");
         return false;
     }
 
@@ -92,17 +112,20 @@ bool SQLiteConnector::checkCollectionExistence() {
     char *zErrMsg = 0;
     std::stringstream sql;
     sql << "SELECT count(*) from " << collection << ";";
-    int rc = sqlite3_exec(db, sql.str().c_str(), NULL, NULL, &zErrMsg);
 
-    if (rc != SQLITE_OK) {
-        fprintf(stderr,
-                "SQLITELISTENER ERROR %d : %s\nSQLITELISTENER: exiting ... \n",
-                rc, zErrMsg);
-        sqlite3_free(zErrMsg);
-        sqlite3_close(db);
-        return false;
+    for (int i = 0; i != maxRetryOnFailure; ++i) {
+        int rc = sqlite3_exec(db, sql.str().c_str(), NULL, NULL, &zErrMsg);
+
+        if (rc != SQLITE_OK) {
+            fprintf(stderr, "SQL error %d : %s\n", rc, zErrMsg);
+            sqlite3_free(zErrMsg);
+            sleep(listenerWaitTime);
+        } else {
+            return true;
+        }
     }
-    return true;
+    sqlite3_close(db);
+    return false;
 }
 
 void SQLiteConnector::createNewIndexes() {
@@ -113,16 +136,20 @@ void SQLiteConnector::createNewIndexes() {
     char *zErrMsg = 0;
     std::stringstream sql;
     sql << "SELECT * from " << collection << ";";
-    int rc = sqlite3_exec(db, sql.str().c_str(), createIndex_callback,
-            (void *) this, &zErrMsg);
 
-    if (rc != SQLITE_OK) {
-        fprintf(stderr, "SQL error %d : %s\n", rc, zErrMsg);
-        sqlite3_free(zErrMsg);
+    for (int i = 0; i != maxRetryOnFailure; ++i) {
+        int rc = sqlite3_exec(db, sql.str().c_str(), createIndex_callback,
+                (void *) this, &zErrMsg);
+
+        if (rc != SQLITE_OK) {
+            fprintf(stderr, "SQL error %d : %s\n", rc, zErrMsg);
+            sqlite3_free(zErrMsg);
+            sleep(listenerWaitTime);
+        } else {
+            this->serverHandle->saveChanges();
+            break;
+        }
     }
-
-    this->serverHandle->saveChanges();
-
 }
 
 int createIndex_callback(void *dbConnector, int argc, char **argv,
@@ -142,18 +169,8 @@ int createIndex_callback(void *dbConnector, int argc, char **argv,
 }
 
 void * SQLiteConnector::runListener() {
-    std::string collection,listenerWaitTimeStr, maxRetryOnFailureStr;
+    std::string collection;
     this->serverHandle->configLookUp("collection", collection);
-    this->serverHandle->configLookUp("listenerWaitTime", listenerWaitTimeStr);
-    this->serverHandle->configLookUp("maxRetryOnFailure", maxRetryOnFailureStr);
-    int listenerWaitTime = atoi(listenerWaitTimeStr.c_str());
-    if (listenerWaitTimeStr.size() == 0 || listenerWaitTime == 0) {
-        listenerWaitTime = 1;
-    }
-    int maxRetryOnFailure = atoi(maxRetryOnFailureStr.c_str());
-    if (maxRetryOnFailureStr.size() == 0) {
-        maxRetryOnFailure = 3;
-    }
     loadLastAccessedLogRecordTime();
 
     std::stringstream sql;
@@ -255,11 +272,17 @@ void SQLiteConnector::createLogTableIfNotExistence() {
     }
     sql << ");";
 
-    int rc = sqlite3_exec(db, sql.str().c_str(), NULL, 0, &zErrMsg);
-    if ((rc != SQLITE_OK)
-            && (std::string(zErrMsg).find("already exists") == std::string::npos)) {
-        fprintf(stderr, "SQL error %d : %s\n", rc, zErrMsg);
-        sqlite3_free(zErrMsg);
+    for (int i = 0; i != maxRetryOnFailure; ++i) {
+        int rc = sqlite3_exec(db, sql.str().c_str(), NULL, 0, &zErrMsg);
+        if ((rc != SQLITE_OK)
+                && (std::string(zErrMsg).find("already exists")
+                        == std::string::npos)) {
+            fprintf(stderr, "SQL error %d : %s\n", rc, zErrMsg);
+            sqlite3_free(zErrMsg);
+            sleep(listenerWaitTime);
+        } else {
+            break;
+        }
     }
 }
 
@@ -282,12 +305,18 @@ void SQLiteConnector::populateTableSchema() {
     char *zErrMsg = 0;
     std::stringstream sql;
     sql << "PRAGMA table_info(" << collection << ");";
-    int rc = sqlite3_exec(db, sql.str().c_str(), populateTableSchema_callback,
-            (void *) this, &zErrMsg);
 
-    if (rc != SQLITE_OK) {
-        fprintf(stderr, "SQL error %d : %s\n", rc, zErrMsg);
-        sqlite3_free(zErrMsg);
+    for (int i = 0; i != maxRetryOnFailure; ++i) {
+        int rc = sqlite3_exec(db, sql.str().c_str(),
+                populateTableSchema_callback, (void *) this, &zErrMsg);
+
+        if (rc != SQLITE_OK) {
+            fprintf(stderr, "SQL error %d : %s\n", rc, zErrMsg);
+            sqlite3_free(zErrMsg);
+            sleep(listenerWaitTime);
+        }else{
+            break;
+        }
     }
 }
 
@@ -343,11 +372,17 @@ void SQLiteConnector::createTriggerIfNotExistence() {
     }
     sql << ");END;";
 
-    rc = sqlite3_exec(db, sql.str().c_str(), NULL, 0, &zErrMsgInsert);
-    if ((rc != SQLITE_OK)
-                && (std::string(zErrMsgInsert).find("already exists") == std::string::npos)) {
-        fprintf(stderr, "SQL error %d : %s\n", rc, zErrMsgInsert);
-        sqlite3_free(zErrMsgInsert);
+    for (int i = 0; i != maxRetryOnFailure; ++i) {
+        rc = sqlite3_exec(db, sql.str().c_str(), NULL, 0, &zErrMsgInsert);
+        if ((rc != SQLITE_OK)
+                && (std::string(zErrMsgInsert).find("already exists")
+                        == std::string::npos)) {
+            fprintf(stderr, "SQL error %d : %s\n", rc, zErrMsgInsert);
+            sqlite3_free(zErrMsgInsert);
+            sleep(listenerWaitTime);
+        } else {
+            break;
+        }
     }
 
     /* Delete Trigger Create SQL statement */
@@ -370,11 +405,17 @@ void SQLiteConnector::createTriggerIfNotExistence() {
     }
     sql << ");END;";
 
-    rc = sqlite3_exec(db, sql.str().c_str(), NULL, 0, &zErrMsgDelete);
-    if ((rc != SQLITE_OK)
-                && (std::string(zErrMsgDelete).find("already exists") == std::string::npos)) {
-        fprintf(stderr, "SQL error %d : %s\n", rc, zErrMsgDelete);
-        sqlite3_free(zErrMsgDelete);
+    for (int i = 0; i != maxRetryOnFailure; ++i) {
+        rc = sqlite3_exec(db, sql.str().c_str(), NULL, 0, &zErrMsgDelete);
+        if ((rc != SQLITE_OK)
+                && (std::string(zErrMsgDelete).find("already exists")
+                        == std::string::npos)) {
+            fprintf(stderr, "SQL error %d : %s\n", rc, zErrMsgDelete);
+            sqlite3_free(zErrMsgDelete);
+            sleep(listenerWaitTime);
+        } else {
+            break;
+        }
     }
 
     /* Update Trigger Create SQL statement */
@@ -397,11 +438,17 @@ void SQLiteConnector::createTriggerIfNotExistence() {
     }
     sql << ");END;";
 
-    rc = sqlite3_exec(db, sql.str().c_str(), NULL, 0, &zErrMsgUpdate);
-    if ((rc != SQLITE_OK)
-                && (std::string(zErrMsgUpdate).find("already exists") == std::string::npos)) {
-        fprintf(stderr, "SQL error %d : %s\n", rc, zErrMsgUpdate);
-        sqlite3_free(zErrMsgUpdate);
+    for (int i = 0; i != maxRetryOnFailure; ++i) {
+        rc = sqlite3_exec(db, sql.str().c_str(), NULL, 0, &zErrMsgUpdate);
+        if ((rc != SQLITE_OK)
+                && (std::string(zErrMsgUpdate).find("already exists")
+                        == std::string::npos)) {
+            fprintf(stderr, "SQL error %d : %s\n", rc, zErrMsgUpdate);
+            sqlite3_free(zErrMsgUpdate);
+            sleep(listenerWaitTime);
+        } else {
+            break;
+        }
     }
 }
 
@@ -450,12 +497,16 @@ void SQLiteConnector::deleteExpiredLog() {
     sql << "DELETE FROM " << LOG_TABLE_NAME << " WHERE " << LOG_TABLE_NAME
             << "_DATE <= " << lastAccessedLogRecordTime << ";";
 
-    printf("\n%s\n", sql.str().c_str());
-    int rc = sqlite3_exec(db, sql.str().c_str(), NULL, NULL, &zErrMsg);
+    for (int i = 0; i != maxRetryOnFailure; ++i) {
+        int rc = sqlite3_exec(db, sql.str().c_str(), NULL, NULL, &zErrMsg);
 
-    if (rc != SQLITE_OK) {
-        fprintf(stderr, "SQL error %d : %s\n", rc, zErrMsg);
-        sqlite3_free(zErrMsg);
+        if (rc != SQLITE_OK) {
+            fprintf(stderr, "SQL error %d : %s\n", rc, zErrMsg);
+            sqlite3_free(zErrMsg);
+            sleep(listenerWaitTime);
+        } else {
+            break;
+        }
     }
 }
 
