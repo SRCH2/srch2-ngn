@@ -17,7 +17,7 @@ int createIndex_callback(void * dbConnector, int argc, char ** argv,
         char **azColName);
 int runListener_callback(void * dbConnector, int argc, char ** argv,
         char **azColName);
-int getTableSchema_callback(void * dbConnector, int argc, char ** argv,
+int populateTableSchema_callback(void * dbConnector, int argc, char ** argv,
         char **azColName);
 
 class SQLiteConnector: public DataConnector {
@@ -33,7 +33,9 @@ public:
     //Save the time last oplog record accessed
     const char * getLogTableDateAttr();
     const char * getLogTableOpAttr();
-    const char * getLogTablePkAttr();
+    const char * getLogTableIdAttr();
+    void setPrimaryKeyType(const std::string& pkType);
+    void setPrimaryKeyName(const std::string& pkName);
     void setLastAccessedLogRecordTime(const char* t);
 private:
     std::string LOG_TABLE_NAME;
@@ -42,11 +44,14 @@ private:
     std::string TRIGGER_UPDATE_NAME;
     std::string LOG_TABLE_NAME_DATE;
     std::string LOG_TABLE_NAME_OP;
-
+    std::string LOG_TABLE_NAME_ID;
+    std::string PRIMARY_KEY_TYPE;
+    std::string PRIMARY_KEY_NAME;
 
     sqlite3 *db;
     bool connectToDB();
-
+    bool checkConfigValidity();
+    bool checkCollectionExistence();
     void populateTableSchema();
 
 	void createTriggerIfNotExistence();
@@ -59,7 +64,7 @@ private:
     void loadLastAccessedLogRecordTime();
     void saveLastAccessedLogRecordTime();
 
-
+    void deleteExpiredLog();
 };
 
 
