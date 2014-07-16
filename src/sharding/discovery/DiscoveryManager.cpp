@@ -32,7 +32,7 @@ int readUDPPacketWithSenderInfo(int listenSocket, char *buffer, unsigned bufferS
 
 		if (status == -1) {
 			if(errno == EAGAIN || errno == EWOULDBLOCK) {
-				perror("Recv");
+				//perror("Recv");
 				return 1;
 			} else {
 				perror("Discovery : Error while reading data from UDP socket : ");
@@ -66,7 +66,7 @@ int sendUDPPacketToDestination(int sendSocket, char *buffer, unsigned bufferSize
 
 		if (status == -1) {
 			if(errno == EAGAIN || errno == EWOULDBLOCK) {
-				perror("Send");
+				//perror("Send");
 				return 1;
 			} else {
 				perror("Discovery : Error while sending data from UDP socket : ");

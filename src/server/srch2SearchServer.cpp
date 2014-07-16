@@ -934,6 +934,7 @@ int main(int argc, char** argv) {
 	// TEST CODE FOR MIGRATION MANAGER
 	serverConf->getClusterReadView(clusterReadview);
 	if (clusterReadview->getCurrentNode()->isMaster()) {
+		cout << "waiting for new node " << endl;
 		while(1) {
 			//boost::shared_ptr<const srch2::httpwrapper::Cluster> clusterReadview;
 			serverConf->getClusterReadView(clusterReadview);
@@ -1006,7 +1007,6 @@ int main(int argc, char** argv) {
 				}
 				break;
 			}
-			cout << "waiting for new node " << endl;
 			sleep(2);
 		}
 	}

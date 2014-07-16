@@ -167,6 +167,9 @@ void MigrationManager::sendMessage(unsigned destinationNodeId, Message *message)
 void MigrationService::receiveShard(ShardId shardId) {
 	int receiveSocket;
 	short receivePort;
+
+	migrationMgr->migrationSession[shardId].beginTimeStamp = time(NULL);
+
 	migrationMgr->openReceiveChannel(receiveSocket, receivePort);
 
 	migrationMgr->migrationSession[shardId].listeningPort = receivePort;
@@ -238,6 +241,7 @@ receiveShard:
 			++retryCount;
 		} else if (status == -1) {
 			//close socket
+			Logger::console("Migration: Network error while migrating shard %s", shardId.toString().c_str());
 			migrationMgr->migrationSession.erase(shardId);
 			delete buffer;
 			delete internalBuffer;
@@ -255,7 +259,7 @@ receiveShard:
 
 	if (dataReceived < shardSize) {
 		if (expectedSeqNumber == 0) {
-			Logger::console("Shard Reception error !!");
+			Logger::console("Migration: Reception error for shard %s.", shardId.toString().c_str());
 			delete buffer;
 			delete internalBuffer;
 			close(receiveSocket);
@@ -293,6 +297,10 @@ receiveShard:
 	} else {
 
 		// send term Ack
+		migrationMgr->migrationSession[shardId].endTimeStamp = time(NULL);
+		Logger::console("Received shard %s in %d secs", shardId.toString().c_str(),
+					migrationMgr->migrationSession[shardId].endTimeStamp -
+					migrationMgr->migrationSession[shardId].beginTimeStamp);
 
 		Message *termAckMessage = MessageAllocator().allocateMessage(sizeof(MigrationTermAckMsgBody));
 		termAckMessage->setType(MigrationTermAckMessage);
@@ -303,7 +311,7 @@ receiveShard:
 		migrationMgr->sendMessage(migrationMgr->migrationSession[shardId].remoteNode, termAckMessage);
 		MessageAllocator().deallocateByMessagePointer(termAckMessage);
 
-		Logger::console("Received shard : %s", shardId.toString().c_str());
+		//Logger::console("Received shard : %s", shardId.toString().c_str());
 		std::istringstream inputStream(ios::binary);
 		inputStream.rdbuf()->pubsetbuf(internalBuffer , shardSize);
 		inputStream.seekg(0, ios::beg);
@@ -325,18 +333,20 @@ receiveShard:
 
 	delete buffer;
 	delete internalBuffer;
-	cout << "Migration Done" << endl;
 
 }
 
 void MigrationManager::migrateShard(ShardId shardId, boost::shared_ptr<Srch2Server> shard, unsigned destinationNodeId) {
-	cout << "MIGRATE SHARD To " << destinationNodeId << "...." << endl;
+
+	Logger::console("Migrating shard %s to node %d", shardId.toString().c_str(), destinationNodeId);
 
 	/*
 	 *  Initialize the migration session info
 	 */
 
 	this->initMigrationSession(destinationNodeId, 0, shardId);
+
+	migrationSession[shardId].beginTimeStamp = time(NULL);
 
 	/*
 	 *  Serialize indexes and calculate size of serialized indexes.
@@ -411,7 +421,7 @@ void MigrationManager::migrateShard(ShardId shardId, boost::shared_ptr<Srch2Serv
 		if (status == 1) {
 			cout <<  "packet not sent " << sequenceNumber << endl;
 		} else if (status == 0){
-			cout <<  "packet sent " << sequenceNumber << endl;
+			//cout <<  "packet sent " << sequenceNumber << endl;
 			dataSent += dataSize;
 			++sequenceNumber;
 		} else {
@@ -475,9 +485,11 @@ void MigrationManager::migrateShard(ShardId shardId, boost::shared_ptr<Srch2Serv
 		}
 
 	} else {
+		migrationSession[shardId].endTimeStamp = time(NULL);
 		migrationSession.erase(shardId);
 		// callback SHM with success message.
-		Logger::console("Migrated shard %s", shardId.toString().c_str());
+		Logger::console("Migrated shard %s in %d secs", shardId.toString().c_str(),
+				migrationSession[shardId].endTimeStamp - migrationSession[shardId].beginTimeStamp);
 	}
 }
 
