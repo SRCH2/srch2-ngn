@@ -156,11 +156,11 @@ This setting specifies the number of threads that serve search requests. Its def
 ```
 <dataSourceType>1</dataSourceType>
 ```
-This value specifies the type of data source to be searched.
+This value specifies the type of data source to be searched.  Notice that if there are previous indexes already created on the disk, the engine will always load them and ignore the flag.  The following flags are used only when there are no previous indexes.
 
--  0: No data file given.
--  1: json data file. (Default)
--  2: MongoDB.
+-	0: Create empty indexes, and ignore the data file specified by the "dataFile" tag).
+-	1: Create indexes for records from the JSON file specified by the "dataFile" tag. "1" is the default value for this "dataSourceType" tag.
+-	2: Create indexes for records from MongoDB specified by the parameters under the "mongodb" tag.
 
 ###6.2. Data File, Required if "dataSourceType" is 1 {id="dataFile"}
 
