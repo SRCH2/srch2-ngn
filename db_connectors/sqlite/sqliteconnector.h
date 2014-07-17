@@ -15,8 +15,6 @@
 
 int createIndex_callback(void * dbConnector, int argc, char ** argv,
         char **azColName);
-int runListener_callback(void * dbConnector, int argc, char ** argv,
-        char **azColName);
 int populateTableSchema_callback(void * dbConnector, int argc, char ** argv,
         char **azColName);
 
@@ -25,8 +23,8 @@ public:
     SQLiteConnector();
     virtual ~SQLiteConnector();
     virtual bool init(ServerInterface *serverHandle);
-    virtual void * runListener();
-    virtual void createNewIndexes();
+    virtual bool runListener();
+    virtual bool createNewIndexes();
 
     ServerInterface *serverHandle;
     std::map<std::string,std::string> tableSchema;
@@ -54,10 +52,13 @@ private:
     bool connectToDB();
     bool checkConfigValidity();
     bool checkCollectionExistence();
-    void populateTableSchema();
+    bool populateTableSchema();
 
-	void createTriggerIfNotExistence();
-	void createLogTableIfNotExistence();
+    sqlite3_stmt *selectStmt;
+    sqlite3_stmt *deleteLogStmt;
+    bool createPreparedStatement();
+	bool createTriggerIfNotExistence();
+	bool createLogTableIfNotExistence();
 	bool registerTrigger();
 
     //Load the last time last oplog record accessed
@@ -66,7 +67,7 @@ private:
     void loadLastAccessedLogRecordTime();
     void saveLastAccessedLogRecordTime();
 
-    void deleteExpiredLog();
+    bool deleteExpiredLog();
 };
 
 
