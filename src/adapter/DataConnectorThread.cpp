@@ -83,10 +83,10 @@ void DataConnectorThread::bootStrapConnector(ConnectorThreadArguments * connThre
     //Call the "create" function in the shared library.
     DataConnector * connector = create_dataConnector();
 
-    if (connector->init(connThreadArg->server)) {
+    if (connector->init(connThreadArg->server) == 0) {
         if (!connThreadArg->createNewIndexFlag) {
             Logger::debug("Create Indices from empty");
-            if (!connector->createNewIndexes()) {
+            if (connector->createNewIndexes() != 0) {
                 //Exit the database connector if create new indexes failed.
                 Logger::error("Create Indices Failed.");
                 destroy_dataConnector(connector);

@@ -138,16 +138,17 @@ int ServerInterfaceInternal::updateRecord(const std::string& pk,
 }
 
 //Call save index to the disk manually.
-void ServerInterfaceInternal::saveChanges() {
+int ServerInterfaceInternal::saveChanges() {
     server->indexer->save();
     Logger::debug("ServerInterface calls saveChanges");
+    return 0;
 }
 
 /*
  * Find the config file value. the key is the same name in the config file.
  * Also, change the input string to lower case to match the key.
  */
-bool ServerInterfaceInternal::configLookUp(const std::string& key,
+int ServerInterfaceInternal::configLookUp(const std::string& key,
         std::string & value) {
     std::string newKey = key;
     std::transform(newKey.begin(), newKey.end(), newKey.begin(), ::tolower);
@@ -158,10 +159,10 @@ bool ServerInterfaceInternal::configLookUp(const std::string& key,
     it = dbParameters.find(newKey);
     if (it != dbParameters.end()) {
         value = it->second;
-        return true;
+        return 0;
     } else {
         value = "";
-        return false;
+        return -1;
     }
 }
 

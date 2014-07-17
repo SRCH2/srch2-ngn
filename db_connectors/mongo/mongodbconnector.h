@@ -20,13 +20,13 @@ public:
     ~MongoDBConnector();
 
     //Init the connector, call connect
-    virtual bool init(ServerInterface *serverHandle);
+    virtual int init(ServerInterface *serverHandle);
 
     //Listen to the oplog and do modification to the engine
-    virtual bool runListener();
+    virtual int runListener();
 
     //Load the table records and insert into the engine
-    virtual bool createNewIndexes();
+    virtual int createNewIndexes();
 private:
     ServerInterface *serverHandle;
     mongo::DBClientBase* oplogConnection;

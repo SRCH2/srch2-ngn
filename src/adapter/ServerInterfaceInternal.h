@@ -21,14 +21,14 @@ public:
     virtual int deleteRecord(const std::string& primaryKey);
     virtual int updateRecord(const std::string& pk,
             const std::string& jsonSrting);
-    virtual void saveChanges();
+    virtual int saveChanges();
 
     /*
      * "configLookUp" will provide key based lookup from engine's connector
      *  specific configuration store. e.g  "dbname" => "mysql"  (single value)
      *  "collections" => "collection1, collection2 " (multi value)
      */
-    virtual bool configLookUp(const std::string& key, std::string & value);
+    virtual int configLookUp(const std::string& key, std::string & value);
 
     //return false if the source is not database
     bool isDatabase();
