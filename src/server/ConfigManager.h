@@ -249,6 +249,19 @@ protected:
 
     void parseUpdateHandler(const xml_node &updateHandlerNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
     
+    void parseSchemaRefactored(const xml_node &schemaNode, CoreConfigParseState_t *coreParseState, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+
+    void setDefaultFlags(bool &isMultivalued, bool &isSearchable, bool &isRefining, bool &isHighlightEnabled);
+
+    bool setSearchableRefiningFromIndexedAttribute(xml_node field, bool &isSearchable, bool &isRefining, std::stringstream &parseError, bool &configSuccess);
+
+    bool setSearchableAndRefining(xml_node field, bool &isSearchable, bool &isRefining, std::stringstream &parseError, bool &configSuccess);
+
+    bool setFlagsFromFile(xml_node field, bool &isMultiValued, bool &isSearchable, bool &isRefining, bool &isHighlightEnabled, std::stringstream &parseError, bool &configSuccess);
+
+   // void ConfigManager::CoreParseState(CoreConfigParseState_t *coreParseState, CoreInfo_t *coreInfo);
+
+
 public:
     ConfigManager(const string& configfile);
     virtual ~ConfigManager();
