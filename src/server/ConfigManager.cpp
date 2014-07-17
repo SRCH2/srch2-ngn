@@ -1090,8 +1090,9 @@ void ConfigManager::parseDataConfiguration(const xml_node &configNode,
         }
     }
 }
-/*
-void ConfigManager::setStateVectors(bool isSearchable, bool isRefining, bool isMultiValued, CoreConfigParseState_t *coreParseState, CoreInfo_t *coreInfo){
+
+bool ConfigManager::setStateVectors(xml_node field, bool isSearchable, bool isRefining, bool isMultiValued, bool isHighlightEnabled, CoreConfigParseState_t *coreParseState, CoreInfo_t *coreInfo, std::stringstream &parseError){
+	string tempUse = "";
 	if(isSearchable){ // it is a searchable field
 		coreParseState->searchableFieldsVector.push_back(string(field.attribute(nameString).value()));
 		coreParseState->searchableAttributesHighlight.push_back(isHighlightEnabled);
@@ -1102,8 +1103,7 @@ void ConfigManager::setStateVectors(bool isSearchable, bool isRefining, bool isM
 		} else {
 			parseError << "Config File Error: " << tempUse << " is not a valid field type for searchable fields.\n";
 			parseError << " Note: searchable fields only accept 'text' type. Setting 'searchable' or 'indexed' to true makes a field searchable.\n";
-			configSuccess = false;
-			return;
+			return false;
 		}
 
 		if (string(field.attribute(defaultString).value()).compare("") != 0){
@@ -1120,9 +1120,13 @@ void ConfigManager::setStateVectors(bool isSearchable, bool isRefining, bool isM
 		}
 		coreParseState->searchableAttributesIsMultiValued.push_back(isMultiValued);
 	}
+	return true;
 
 }
-*/
+
+bool ConfigManager::setRefiningStateVectors(vector<string> RefiningFieldsVector, vector<srch2::instantsearch::FilterType> RefiningFieldTypesVector, vector<bool> RefiningAttributesRequiredFlagVector, vector<string> RefiningAttributesDefaultVector, vector<bool> RefiningAttributesIsMultiValued){
+
+}
 
 void ConfigManager::parseSchemaRefactored(const xml_node &schemaNode, CoreConfigParseState_t *coreParseState, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
 {
@@ -1193,36 +1197,13 @@ void ConfigManager::parseSchemaRefactored(const xml_node &schemaNode, CoreConfig
 	                if (string(field.attribute(nameString).value()).compare("") != 0
 	                                   && string(field.attribute(typeString).value()).compare("") != 0) {
 
-	                //	setStateVectors(isSearchable, isRefining, isMultiValued, coreParseState, RefiningFieldsVector)
+	                	if(!setStateVectors( field,  isSearchable,  isRefining,  isMultiValued,  isHighlightEnabled,  coreParseState,  coreInfo,  parseError)){
+	                		configSuccess = false;
+	                		return;
+	                	}
 
-	                    if(isSearchable){ // it is a searchable field
-	                        coreParseState->searchableFieldsVector.push_back(string(field.attribute(nameString).value()));
-	                        coreParseState->searchableAttributesHighlight.push_back(isHighlightEnabled);
-	                        // Checking the validity of field type
-	                        tempUse = string(field.attribute(typeString).value());
-	                        if (isValidFieldType(tempUse , true)) {
-	                            coreParseState->searchableFieldTypesVector.push_back(tempUse);
-	                        } else {
-	                            parseError << "Config File Error: " << tempUse << " is not a valid field type for searchable fields.\n";
-	                            parseError << " Note: searchable fields only accept 'text' type. Setting 'searchable' or 'indexed' to true makes a field searchable.\n";
-	                            configSuccess = false;
-	                            return;
-	                        }
+	                	setRefiningStateVectors(RefiningFieldsVector, RefiningFieldTypesVector, RefiningAttributesRequiredFlagVector, RefiningAttributesDefaultVector, RefiningAttributesIsMultiValued);
 
-	                        if (string(field.attribute(defaultString).value()).compare("") != 0){
-	                            coreParseState->searchableAttributesDefaultVector.push_back(string(field.attribute(defaultString).value()));
-	                        }else{
-	                            coreParseState->searchableAttributesDefaultVector.push_back("");
-	                        }
-
-	                        tempUse = string(field.attribute(requiredString).value());
-	                        if (string(field.attribute(requiredString).value()).compare("") != 0 && isValidBool(tempUse)){
-	                            coreParseState->searchableAttributesRequiredFlagVector.push_back(field.attribute(requiredString).as_bool());
-	                        }else{
-	                            coreParseState->searchableAttributesRequiredFlagVector.push_back(false);
-	                        }
-	                        coreParseState->searchableAttributesIsMultiValued.push_back(isMultiValued);
-	                    }
 
 	                    if(isRefining){ // it is a refining field
 	                        RefiningFieldsVector.push_back(string(field.attribute(nameString).value()));

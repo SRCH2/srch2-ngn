@@ -259,8 +259,9 @@ protected:
 
     bool setFlagsFromFile(xml_node field, bool &isMultiValued, bool &isSearchable, bool &isRefining, bool &isHighlightEnabled, std::stringstream &parseError, bool &configSuccess);
 
-   // void ConfigManager::CoreParseState(CoreConfigParseState_t *coreParseState, CoreInfo_t *coreInfo);
+    bool setStateVectors(xml_node field, bool isSearchable, bool isRefining, bool isMultiValued, bool isHighlightEnabled, CoreConfigParseState_t *coreParseState, CoreInfo_t *coreInfo, std::stringstream &parseError);
 
+    bool ConfigManager::setRefiningStateVectors(vector<string> RefiningFieldsVector, vector<srch2::instantsearch::FilterType> RefiningFieldTypesVector, vector<bool> RefiningAttributesRequiredFlagVector, vector<string> RefiningAttributesDefaultVector, vector<bool> RefiningAttributesIsMultiValued);
 
 public:
     ConfigManager(const string& configfile);
