@@ -22,9 +22,9 @@ class SQLiteConnector: public DataConnector {
 public:
     SQLiteConnector();
     virtual ~SQLiteConnector();
-    virtual bool init(ServerInterface *serverHandle);
-    virtual bool runListener();
-    virtual bool createNewIndexes();
+    virtual int init(ServerInterface *serverHandle);
+    virtual int runListener();
+    virtual int createNewIndexes();
 
     ServerInterface *serverHandle;
     std::map<std::string,std::string> tableSchema;

@@ -24,7 +24,7 @@ SQLiteConnector::SQLiteConnector() {
     deleteLogStmt = NULL;
 }
 
-bool SQLiteConnector::init(ServerInterface * serverHandle) {
+int SQLiteConnector::init(ServerInterface * serverHandle) {
     this->serverHandle = serverHandle;
 
     std::string db_collection;
@@ -57,16 +57,16 @@ bool SQLiteConnector::init(ServerInterface * serverHandle) {
     if (!checkConfigValidity() || !connectToDB()
             || !checkCollectionExistence()) {
         printf("SQLITECONNECTOR: exiting...\n");
-        return false;
+        return -1;
     }
 
     if (!populateTableSchema() || !createLogTableIfNotExistence()
             || !createTriggerIfNotExistence()||!createPreparedStatement()) {
         printf("SQLITECONNECTOR: exiting...\n");
-        return false;
+        return -1;
     }
 
-    return true;
+    return 0;
 }
 
 bool SQLiteConnector::connectToDB() {
@@ -133,7 +133,7 @@ bool SQLiteConnector::checkCollectionExistence() {
     return false;
 }
 
-bool SQLiteConnector::createNewIndexes() {
+int SQLiteConnector::createNewIndexes() {
     std::string collection;
     this->serverHandle->configLookUp("collection", collection);
 
@@ -152,10 +152,10 @@ bool SQLiteConnector::createNewIndexes() {
             sleep(listenerWaitTime);
         } else {
             this->serverHandle->saveChanges();
-            return true;
+            return 0;
         }
     }
-    return false;
+    return -1;
 }
 
 int createIndex_callback(void *dbConnector, int argc, char **argv,
@@ -174,7 +174,7 @@ int createIndex_callback(void *dbConnector, int argc, char **argv,
     return 0;
 }
 
-bool SQLiteConnector::runListener() {
+int SQLiteConnector::runListener() {
     std::string collection;
     this->serverHandle->configLookUp("collection", collection);
     loadLastAccessedLogRecordTime();
@@ -263,7 +263,7 @@ bool SQLiteConnector::runListener() {
     sqlite3_finalize(selectStmt);
     sqlite3_finalize(deleteLogStmt);
     sqlite3_close(db);
-    return false;
+    return -1;
 }
 
 bool SQLiteConnector::createLogTableIfNotExistence() {
