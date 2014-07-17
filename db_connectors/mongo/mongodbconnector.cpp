@@ -21,7 +21,7 @@ MongoDBConnector::MongoDBConnector() {
 }
 
 //Init the connector, call connect
-bool MongoDBConnector::init(ServerInterface *serverHandle) {
+int MongoDBConnector::init(ServerInterface *serverHandle) {
     this->serverHandle = serverHandle;
 
     // For MongoDB, the primary key should always be "_id".
@@ -31,13 +31,13 @@ bool MongoDBConnector::init(ServerInterface *serverHandle) {
         printf("MOGNOLISTENER: The PrimaryKey in the config file for the "
                 "MongoDB adapter should always be \"_id\", not %s",
                 uniqueKey.c_str());
-        return false;
+        return -1;
     }
 
     if (!checkConfigValidity() || !connectToDB()) {
-        return false;
+        return -1;
     }
-    return true;
+    return 0;
 }
 
 //Check config validity. e.g. if contains port, dbname, etc.
@@ -124,7 +124,7 @@ bool MongoDBConnector::connectToDB() {
 }
 
 //Load the table records and insert into the engine
-bool MongoDBConnector::createNewIndexes() {
+int MongoDBConnector::createNewIndexes() {
     string mongoNamespace = "local.oplog.rs";
     string dbname, collection;
     this->serverHandle->configLookUp("db", dbname);
@@ -167,13 +167,13 @@ bool MongoDBConnector::createNewIndexes() {
         }
     } catch (const mongo::DBException &e) {
         printf("MOGNOLISTENER: MongoDb Exception %s", e.what());
-        return false;
+        return -1;
     } catch (const exception& ex) {
         printf("MOGNOLISTENER: Unknown exception %s", ex.what());
-        return false;
+        return -1;
     }
 
-    return true;
+    return 0;
 }
 
 //Load the last time last oplog record accessed
@@ -216,7 +216,7 @@ void MongoDBConnector::setLastAccessedLogRecordTime(const time_t t) {
 }
 
 //Listen to the oplog and do modification to the engine
-bool MongoDBConnector::runListener() {
+int MongoDBConnector::runListener() {
     string mongoNamespace = "local.oplog.rs";
     string dbname, collection, listenerWaitTimeStr;
     this->serverHandle->configLookUp("db", dbname);
@@ -236,7 +236,7 @@ bool MongoDBConnector::runListener() {
         if(!getLastAccessedLogRecordTime(threadSpecificCutOffTime)){
             printf("MONGOLISTENER: exiting...\n");
             mongoConnector->done();
-            return false;
+            return -1;
         }
         try {
             mongo::BSONElement _lastValue = mongo::BSONObj().firstElement();
@@ -317,7 +317,7 @@ bool MongoDBConnector::runListener() {
     } while (connectToDB());	//Retry connecting to the mongodb
 
     mongoConnector->done();
-    return false;
+    return -1;
 }
 
 //Parse the record into json format and do the corresponding operation

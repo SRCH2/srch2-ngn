@@ -45,7 +45,7 @@ public:
     /*
      * "saveChanges" saves the indexes into the disk.
      */
-    virtual void saveChanges() = 0;
+    virtual int saveChanges() = 0;
 
     /*
      * "configLookUp" provides key based lookup for the connector specific
@@ -54,7 +54,7 @@ public:
      *  e.g.  "dbname" => "mysql"  (single value)
      *        "collections" => "collection1, collection2 " (multiple values)
      */
-    virtual bool configLookUp(const std::string& key, std::string & value) = 0;
+    virtual int configLookUp(const std::string& key, std::string & value) = 0;
 };
 
 /*
@@ -76,20 +76,20 @@ public:
      * ServerInterface class. The serverHandle must be used to call 
      * ServerInterface class APIs. 
      */
-    virtual bool init(ServerInterface *serverHandle) = 0;
+    virtual int init(ServerInterface *serverHandle) = 0;
 
     /*
      * "runListener" should be implemented as a pull based listener.
      * It should periodically fetch the data changes from the database.
      */
-    virtual bool runListener() = 0;
+    virtual int runListener() = 0;
 
     /*
      * "createNewIndexes" is called when there is no index found
      * in the folder <dataDir>. It should fetch all the data from the
      * collection and insert them into the srch2-engine.
      */
-    virtual bool createNewIndexes() = 0;
+    virtual int createNewIndexes() = 0;
 };
 
 /*
