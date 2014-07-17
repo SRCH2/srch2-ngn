@@ -23,10 +23,10 @@ public:
     virtual bool init(ServerInterface *serverHandle);
 
     //Listen to the oplog and do modification to the engine
-    virtual void* runListener();
+    virtual bool runListener();
 
     //Load the table records and insert into the engine
-    virtual void createNewIndexes();
+    virtual bool createNewIndexes();
 private:
     ServerInterface *serverHandle;
     mongo::DBClientBase* oplogConnection;

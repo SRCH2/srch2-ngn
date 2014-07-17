@@ -28,7 +28,7 @@ bool MongoDBConnector::init(ServerInterface *serverHandle) {
     std::string uniqueKey;
     this->serverHandle->configLookUp("uniqueKey", uniqueKey);
     if (uniqueKey.compare("_id") != 0) {
-        printf("The PrimaryKey in the config file for the "
+        printf("MOGNOLISTENER: The PrimaryKey in the config file for the "
                 "MongoDB adapter should always be \"_id\", not %s",
                 uniqueKey.c_str());
         return false;
@@ -52,13 +52,13 @@ bool MongoDBConnector::checkConfigValidity() {
     bool ret = (host.size() != 0) && (port.size() != 0) && (db.size() != 0)
             && (uniqueKey.size() != 0) && (collection.size() != 0);
     if (!ret) {
-        printf("database host, port, db, collection, uniquekey must be set.\n");
+        printf("MOGNOLISTENER: database host, port, db, collection, uniquekey must be set.\n");
         return false;
     }
 
     int value = atoi(port.c_str());
     if (value <= 0 || value > USHRT_MAX) {
-        printf("database port must be between 1 and %d", USHRT_MAX);
+        printf("MOGNOLISTENER: database port must be between 1 and %d", USHRT_MAX);
         return false;
     }
 
@@ -110,9 +110,9 @@ bool MongoDBConnector::connectToDB() {
 
             return true;
         } catch (const mongo::DBException &e) {
-            printf("MongoDb Exception : %s \n", e.what());
+            printf("MOGNOLISTENER: MongoDb Exception %s \n", e.what());
         } catch (const exception& ex) {
-            printf("Unknown exception : %s \n", ex.what());
+            printf("MOGNOLISTENER: Unknown exception %s \n", ex.what());
         }
         // sleep...do not hog the CPU
         sleep(listenerWaitTime);
@@ -124,7 +124,7 @@ bool MongoDBConnector::connectToDB() {
 }
 
 //Load the table records and insert into the engine
-void MongoDBConnector::createNewIndexes() {
+bool MongoDBConnector::createNewIndexes() {
     string mongoNamespace = "local.oplog.rs";
     string dbname, collection;
     this->serverHandle->configLookUp("db", dbname);
@@ -152,26 +152,28 @@ void MongoDBConnector::createNewIndexes() {
 
                 ++indexedRecordsCount;
                 if (indexedRecordsCount && (indexedRecordsCount % 1000) == 0)
-                    printf("Indexed %d records so far ...",
+                    printf("MOGNOLISTENER: Indexed %d records so far ...",
                             indexedRecordsCount);
             }
-            printf("Total indexed %d / %d records. \n", indexedRecordsCount,
+            printf("MOGNOLISTENER: Total indexed %d / %d records. \n", indexedRecordsCount,
                     collectionCount);
             //Save the time right after create new indexes.
             setLastAccessedLogRecordTime(time(NULL));
             this->serverHandle->saveChanges();
 
         } else {
-            printf("No data found in the collection %s",
+            printf("MOGNOLISTENER: No data found in the collection %s",
                     filterNamespace.c_str());
         }
     } catch (const mongo::DBException &e) {
-        printf("MongoDb Exception : %s", e.what());
-        exit(-1);
+        printf("MOGNOLISTENER: MongoDb Exception %s", e.what());
+        return false;
     } catch (const exception& ex) {
-        printf("Unknown exception : %s", ex.what());
-        exit(-1);
+        printf("MOGNOLISTENER: Unknown exception %s", ex.what());
+        return false;
     }
+
+    return true;
 }
 
 //Load the last time last oplog record accessed
@@ -214,7 +216,7 @@ void MongoDBConnector::setLastAccessedLogRecordTime(const time_t t) {
 }
 
 //Listen to the oplog and do modification to the engine
-void* MongoDBConnector::runListener() {
+bool MongoDBConnector::runListener() {
     string mongoNamespace = "local.oplog.rs";
     string dbname, collection, listenerWaitTimeStr;
     this->serverHandle->configLookUp("db", dbname);
@@ -234,7 +236,7 @@ void* MongoDBConnector::runListener() {
         if(!getLastAccessedLogRecordTime(threadSpecificCutOffTime)){
             printf("MONGOLISTENER: exiting...\n");
             mongoConnector->done();
-            return NULL;
+            return false;
         }
         try {
             mongo::BSONElement _lastValue = mongo::BSONObj().firstElement();
@@ -304,27 +306,27 @@ void* MongoDBConnector::runListener() {
                         BSON( "$natural" << 1 ) );
             }
         } catch( const mongo::DBException &e ) {
-            printf("MongoDb Exception : %s \n", e.what());
+            printf("MOGNOLISTENER: MongoDb Exception %s \n", e.what());
             //Need to save the time stamp when the mongodb crashed
             setLastAccessedLogRecordTime(opLogTime);
         } catch (const exception& ex) {
-            printf("Unknown exception : %s \n", ex.what());
+            printf("MOGNOLISTENER: Unknown exception %s \n", ex.what());
             setLastAccessedLogRecordTime(opLogTime);
         }
         sleep(listenerWaitTime);
     } while (connectToDB());	//Retry connecting to the mongodb
 
     mongoConnector->done();
-    return NULL;
+    return false;
 }
 
 //Parse the record into json format and do the corresponding operation
 void MongoDBConnector::parseOpLogObject(mongo::BSONObj& bobj,
         string filterNamespace, mongo::DBClientBase& oplogConnection) {
-    printf("MONGO LISTENER PROCESSING : %s \n", bobj.jsonString().c_str());
+    printf("MOGNOLISTENER: Processing %s \n", bobj.jsonString().c_str());
     string operation = bobj.getField("op").valuestrsafe();
     if (operation.size() == 0) {
-        printf("MONGO: oplog entry does not have op "
+        printf("MOGNOLISTENER: oplog entry does not have op "
                 "field or the value is not set \n");
         operation = "x"; // undefined operation
     }
@@ -346,8 +348,8 @@ void MongoDBConnector::parseOpLogObject(mongo::BSONObj& bobj,
         // Parse example data , find the pk and delete
         mongo::BSONElement _oElement = bobj.getField("o");
         if (_oElement.type() != mongo::Object) {
-            printf("MONGO_LISTENER:DELETE: \"o\" element is "
-                    "not an Object type!! ..Cannot update engine \n");
+            printf("MONGOLISTENER: \"o\" element is "
+                    "not an Object type in the delete operation!! ..Cannot update engine \n");
             break;
         }
         mongo::BSONElement pk = _oElement.Obj().getField(uniqueKey.c_str());
@@ -359,7 +361,7 @@ void MongoDBConnector::parseOpLogObject(mongo::BSONObj& bobj,
             primaryKeyStringValue = pk.valuestrsafe();
         }
 
-        printf("Delete: pk = %s  val =  %s \n", uniqueKey.c_str(),
+        printf("MOGNOLISTENER: Delete pk = %s  val =  %s \n", uniqueKey.c_str(),
                 primaryKeyStringValue.c_str());
         this->serverHandle->deleteRecord(primaryKeyStringValue);
 
@@ -370,8 +372,8 @@ void MongoDBConnector::parseOpLogObject(mongo::BSONObj& bobj,
         // Parse example data , find the pk and update
         mongo::BSONElement _o2Element = bobj.getField("o2");
         if (_o2Element.type() != mongo::Object) {
-            printf("MONGO_LISTENER:UPDATE: o2 element is not an"
-                    " ObjectId type!! ..Cannot update engine\n");
+            printf("MONGOLISTENER: o2 element is not an"
+                    " ObjectId type in the update operation!! ..Cannot update engine\n");
             break;
         }
         mongo::BSONObj _internalMongoId = bobj.getField("o2").Obj();
@@ -380,8 +382,8 @@ void MongoDBConnector::parseOpLogObject(mongo::BSONObj& bobj,
         mongo::BSONObj updateRecord = cursor->next();  // should return only one
 
         if (string(updateRecord.firstElementFieldName()).compare("$err") == 0) {
-            printf("MONGO_LISTENER:UPDATE: updated record could"
-                    " not be found in db!! ..Cannot update engine \n");
+            printf("MONGOLISTENER: updated record could"
+                    " not be found in db in the update operation!! ..Cannot update engine \n");
             break;
         }
 
@@ -401,7 +403,7 @@ void MongoDBConnector::parseOpLogObject(mongo::BSONObj& bobj,
     }
     default:
         break;
-        printf("The mongodb operation (ops='%c') is not"
+        printf("MOGNOLISTENER: The mongodb operation (ops='%c') is not"
                 " supported by the engine \n", operation[0]);
     }
 }
