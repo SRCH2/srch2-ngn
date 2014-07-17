@@ -261,7 +261,7 @@ protected:
 
     bool setStateVectors(xml_node field, bool isSearchable, bool isRefining, bool isMultiValued, bool isHighlightEnabled, CoreConfigParseState_t *coreParseState, CoreInfo_t *coreInfo, std::stringstream &parseError);
 
-    bool ConfigManager::setRefiningStateVectors(vector<string> RefiningFieldsVector, vector<srch2::instantsearch::FilterType> RefiningFieldTypesVector, vector<bool> RefiningAttributesRequiredFlagVector, vector<string> RefiningAttributesDefaultVector, vector<bool> RefiningAttributesIsMultiValued);
+    bool setRefiningStateVectors(xml_node field, bool isMultiValued, bool isRefining, vector<string> &RefiningFieldsVector, vector<srch2::instantsearch::FilterType> &RefiningFieldTypesVector, vector<bool> &RefiningAttributesRequiredFlagVector, vector<string> &RefiningAttributesDefaultVector, vector<bool> &RefiningAttributesIsMultiValued, std::stringstream &parseError);
 
 public:
     ConfigManager(const string& configfile);

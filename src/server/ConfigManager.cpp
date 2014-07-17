@@ -1124,8 +1124,70 @@ bool ConfigManager::setStateVectors(xml_node field, bool isSearchable, bool isRe
 
 }
 
-bool ConfigManager::setRefiningStateVectors(vector<string> RefiningFieldsVector, vector<srch2::instantsearch::FilterType> RefiningFieldTypesVector, vector<bool> RefiningAttributesRequiredFlagVector, vector<string> RefiningAttributesDefaultVector, vector<bool> RefiningAttributesIsMultiValued){
+bool ConfigManager::setRefiningStateVectors(xml_node field, bool isMultiValued, bool isRefining, vector<string> &RefiningFieldsVector, vector<srch2::instantsearch::FilterType> &RefiningFieldTypesVector, vector<bool> &RefiningAttributesRequiredFlagVector, vector<string> &RefiningAttributesDefaultVector, vector<bool> &RefiningAttributesIsMultiValued, std::stringstream &parseError){
 
+	string tempUse = "";
+	if(isRefining){ // it is a refining field
+		RefiningFieldsVector.push_back(string(field.attribute(nameString).value()));
+		// Checking the validity of field type
+		tempUse = string(field.attribute(typeString).value());
+		if (this->isValidFieldType(tempUse , false)) {
+			RefiningFieldTypesVector.push_back(parseFieldType(tempUse));
+		} else {
+			parseError << "Config File Error: " << tempUse << " is not a valid field type for refining fields.\n";
+			parseError << " Note: refining fields only accept 'text', 'integer', 'float' and 'time'. Setting 'refining' or 'indexed' to true makes a field refining.\n";
+			return false;
+		}
+
+		// Check the validity of field default value based on it's type
+		if (string(field.attribute(defaultString).value()).compare("") != 0){
+			tempUse = string(field.attribute("default").value());
+			if(isValidFieldDefaultValue(tempUse , RefiningFieldTypesVector.at(RefiningFieldTypesVector.size()-1) , isMultiValued)){
+
+				if(RefiningFieldTypesVector.at(RefiningFieldTypesVector.size()-1) == srch2::instantsearch::ATTRIBUTE_TYPE_TIME){
+					if(isMultiValued == false){
+						long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(tempUse);
+						std::stringstream buffer;
+						buffer << timeValue;
+						tempUse = buffer.str();
+					}else{ // in the case of multivalued date and time we need to convert all values and reconstruct the list
+						// For example: ["01/01/1980","01/01/1980","01/01/1990","01/01/1982"]
+						                 string convertedDefaultValues = "";
+						                 vector<string> defaultValueTokens;
+						                 splitString(tempUse , "," , defaultValueTokens);
+						                 for(vector<string>::iterator defaultValueToken = defaultValueTokens.begin() ;
+						                		 defaultValueToken != defaultValueTokens.end() ; ++defaultValueToken){
+						                	 long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*defaultValueToken);
+						                	 std::stringstream buffer;
+						                	 buffer << timeValue;
+						                	 if(defaultValueToken == defaultValueTokens.begin()){
+						                		 convertedDefaultValues = buffer.str();
+						                	 }else{
+						                		 convertedDefaultValues = ","+buffer.str();
+						                	 }
+						                 }
+					}
+				}
+			}else{
+				parseError << "Config File Error: " << tempUse << " is not compatible with the type used for this field.\n";
+				tempUse = "";
+			}
+			RefiningAttributesDefaultVector.push_back(tempUse);
+		}else{
+			RefiningAttributesDefaultVector.push_back("");
+		}
+
+		tempUse = string(field.attribute(requiredString).value());
+		if (string(field.attribute(requiredString).value()).compare("") != 0 && isValidBool(tempUse)){
+			RefiningAttributesRequiredFlagVector.push_back(field.attribute("required").as_bool());
+		}else{
+			RefiningAttributesRequiredFlagVector.push_back(false);
+		}
+
+		RefiningAttributesIsMultiValued.push_back(isMultiValued);
+	}
+
+	return true;
 }
 
 void ConfigManager::parseSchemaRefactored(const xml_node &schemaNode, CoreConfigParseState_t *coreParseState, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
@@ -1202,70 +1264,10 @@ void ConfigManager::parseSchemaRefactored(const xml_node &schemaNode, CoreConfig
 	                		return;
 	                	}
 
-	                	setRefiningStateVectors(RefiningFieldsVector, RefiningFieldTypesVector, RefiningAttributesRequiredFlagVector, RefiningAttributesDefaultVector, RefiningAttributesIsMultiValued);
-
-
-	                    if(isRefining){ // it is a refining field
-	                        RefiningFieldsVector.push_back(string(field.attribute(nameString).value()));
-	                        // Checking the validity of field type
-	                        tempUse = string(field.attribute(typeString).value());
-	                        if (this->isValidFieldType(tempUse , false)) {
-	                            RefiningFieldTypesVector.push_back(parseFieldType(tempUse));
-	                        } else {
-	                            parseError << "Config File Error: " << tempUse << " is not a valid field type for refining fields.\n";
-	                            parseError << " Note: refining fields only accept 'text', 'integer', 'float' and 'time'. Setting 'refining' or 'indexed' to true makes a field refining.\n";
-	                            configSuccess = false;
-	                            return;
-	                        }
-
-
-	                        // Check the validity of field default value based on it's type
-	                        if (string(field.attribute(defaultString).value()).compare("") != 0){
-	                            tempUse = string(field.attribute("default").value());
-	                            if(isValidFieldDefaultValue(tempUse , RefiningFieldTypesVector.at(RefiningFieldTypesVector.size()-1) , isMultiValued)){
-
-	                                if(RefiningFieldTypesVector.at(RefiningFieldTypesVector.size()-1) == srch2::instantsearch::ATTRIBUTE_TYPE_TIME){
-	                                    if(isMultiValued == false){
-	                                        long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(tempUse);
-	                                        std::stringstream buffer;
-	                                        buffer << timeValue;
-	                                        tempUse = buffer.str();
-	                                    }else{ // in the case of multivalued date and time we need to convert all values and reconstruct the list
-	                                        // For example: ["01/01/1980","01/01/1980","01/01/1990","01/01/1982"]
-	                                        string convertedDefaultValues = "";
-	                                        vector<string> defaultValueTokens;
-	                                        splitString(tempUse , "," , defaultValueTokens);
-	                                        for(vector<string>::iterator defaultValueToken = defaultValueTokens.begin() ;
-	                                            defaultValueToken != defaultValueTokens.end() ; ++defaultValueToken){
-	                                            long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*defaultValueToken);
-	                                            std::stringstream buffer;
-	                                            buffer << timeValue;
-	                                            if(defaultValueToken == defaultValueTokens.begin()){
-	                                                convertedDefaultValues = buffer.str();
-	                                            }else{
-	                                                convertedDefaultValues = ","+buffer.str();
-	                                            }
-	                                        }
-	                                    }
-	                                }
-	                            }else{
-	                                parseError << "Config File Error: " << tempUse << " is not compatible with the type used for this field.\n";
-	                                tempUse = "";
-	                            }
-	                            RefiningAttributesDefaultVector.push_back(tempUse);
-	                        }else{
-	                            RefiningAttributesDefaultVector.push_back("");
-	                        }
-
-	                        tempUse = string(field.attribute(requiredString).value());
-	                        if (string(field.attribute(requiredString).value()).compare("") != 0 && isValidBool(tempUse)){
-	                            RefiningAttributesRequiredFlagVector.push_back(field.attribute("required").as_bool());
-	                        }else{
-	                            RefiningAttributesRequiredFlagVector.push_back(false);
-	                        }
-
-	                        RefiningAttributesIsMultiValued.push_back(isMultiValued);
-	                    }
+	                	if(!setRefiningStateVectors(field, isMultiValued, isRefining, RefiningFieldsVector, RefiningFieldTypesVector, RefiningAttributesRequiredFlagVector, RefiningAttributesDefaultVector, RefiningAttributesIsMultiValued, parseError)){
+	                		configSuccess = false;
+	                		return;
+	                	}
 
 	                    // Checks for geo types. location_latitude and location_longitude are geo types
 	                    if (string(field.attribute(typeString).value()).compare(locationLatitudeString) == 0) {
