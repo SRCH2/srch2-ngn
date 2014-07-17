@@ -158,8 +158,9 @@ This setting specifies the number of threads that serve search requests. Its def
 ```
 This value specifies the type of data source to be searched.
 
->  1: json data file. (Default)
->  2: MongoDB.
+-  0: No data file given.
+-  1: json data file. (Default)
+-  2: MongoDB.
 
 ###6.2. Data File, Required if "dataSourceType" is 1 {id="dataFile"}
 
