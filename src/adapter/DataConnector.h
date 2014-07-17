@@ -82,14 +82,14 @@ public:
      * "runListener" should be implemented as a pull based listener.
      * It should periodically fetch the data changes from the database.
      */
-    virtual void* runListener() = 0;
+    virtual bool runListener() = 0;
 
     /*
      * "createNewIndexes" is called when there is no index found
      * in the folder <dataDir>. It should fetch all the data from the
      * collection and insert them into the srch2-engine.
      */
-    virtual void createNewIndexes() = 0;
+    virtual bool createNewIndexes() = 0;
 };
 
 /*

@@ -86,7 +86,13 @@ void DataConnectorThread::bootStrapConnector(ConnectorThreadArguments * connThre
     if (connector->init(connThreadArg->server)) {
         if (!connThreadArg->createNewIndexFlag) {
             Logger::debug("Create Indices from empty");
-            connector->createNewIndexes();
+            if (!connector->createNewIndexes()) {
+                //Exit the database connector if create new indexes failed.
+                Logger::error("Create Indices Failed.");
+                destroy_dataConnector(connector);
+                dlclose(pdlHandle);
+                return;
+            }
         }
         connector->runListener();
     }
