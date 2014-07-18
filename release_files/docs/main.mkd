@@ -21,7 +21,36 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 #<center>SRCH2 Manual</center>#{id="doc" style="color:#ee2e24" }
 
 
-The SRCH2 engine has the following powerful features:
+The SRCH2 engine is a search engine written in C++ based on years of R&D.  By utilizing advanced indexing structures and algorithms,
+it can deliver superior features with high performance.  It can run on servers as well as mobile devices.  It has the following features:
+
+- Full-text search
+Instant search (prefix predicates)
+Error correction (fuzzy search)
+Boolean expressions
+Faceted search
+Stemming and stop words
+Phrase search (e.g., "new york")
+Rich data types (e.g., text, int, float, and date)
+Attribute-based search predicates
+Sorting (e.g., "price < 20")
+Geo search
+Server-side highlighting
+Query logging
+Configurable ranking (including prefix and fuzzy predicates)
+Real-time updates
+Multi-threaded
+Multi languages
+Multi data sources
+RESTful API
+Support of control messages (e.g., system status and index serialization)
+Port-level network security
+Key-based authorization
+Platforms: Linux, MacOS, Android
+MongoDB connector, with connectors for MySQL, Sqlite, and other
+sources coming soon
+
+has the following powerful features:
 
  - <p style="display: inline">Instant Search-As-You-Type<span id="InstantTypeForward_main" style="display: inline; cursor: pointer; color:#3366FF;">
 
