@@ -3,6 +3,8 @@
 #include <syslog.h>
 #include "Srch2Server.h"
 #include "util/RecordSerializerUtil.h"
+#include <sys/stat.h>
+
 namespace srch2
 {
 namespace httpwrapper
@@ -180,7 +182,7 @@ void Srch2Server::createAndBootStrapIndexer(const string & directoryPath)
 	    const srch2is::Schema *schema = this->getCoreInfo()->getSchema();
 
 	    Analyzer *analyzer = AnalyzerFactory::createAnalyzer(this->getCoreInfo());
-	    indexer = Indexer::create(indexMetaData, analyzer, schema);
+	    indexer = Indexer::create(indexMetaData, schema);
 	    delete analyzer;
 	    switch(getCoreInfo()->getDataSourceType())
 	    {
@@ -224,9 +226,10 @@ void Srch2Server::createAndBootStrapIndexer(const string & directoryPath)
 	    break;
 	}
     case srch2http::INDEXLOAD:
-        {
+    {
 	    // Load from index-dir directly, skip creating an index initially.
-        indexer = Indexer::load(indexMetaData);
+        indexer = Indexer::create(indexMetaData);
+        indexer->bootStrapFromDisk();
 
 	    // Load Analyzer data from disk
 	    AnalyzerHelper::loadAnalyzerResource(this->getCoreInfo());
@@ -253,10 +256,54 @@ void Srch2Server::createAndBootStrapIndexer(const string & directoryPath)
 /*
  *   Load Shard indexes from byte Stream
  */
-void Srch2Server::bootStrapIndexerFromByteStream(std::istream& input, const string & saveDirPath) {
-	IndexMetaData *indexMetaData = createIndexMetaData(saveDirPath);
-	indexer = Indexer::load(input, indexMetaData);
-	indexer->save();
+void Srch2Server::bootStrapShardComponentFromByteStream(std::istream& input, const string & component) {
+
+	if (indexer == NULL) {
+		// this is first call on this shard.
+		IndexMetaData *indexMetaData = createIndexMetaData(this->persistentStoragePath);
+		indexer = Indexer::create(indexMetaData);
+	}
+	indexer->bootStrapComponentFromByteSteam(input, component);
+}
+
+int Srch2Server::getSerializedShardSize(vector<std::pair<string, long> > &indexFiles) {
+	string directoryName = this->indexer->getStoredIndexDirectory();
+	if (directoryName[directoryName.size() - 1] != '/') {
+		directoryName.append("/");
+	}
+
+	indexFiles.push_back(make_pair(IndexConfig::trieFileName, 0));
+	indexFiles.push_back(make_pair(IndexConfig::invertedIndexFileName, 0));
+	if (indexer->getSchema()->getIndexType() == LocationIndex) {
+		indexFiles.push_back(make_pair(IndexConfig::quadTreeFileName, 0));
+	} else {
+		indexFiles.push_back(make_pair(IndexConfig::forwardIndexFileName, 0));
+	}
+	indexFiles.push_back(make_pair(IndexConfig::schemaFileName, 0));
+	indexFiles.push_back(make_pair(IndexConfig::indexCountsFileName, 0));
+	//indexFiles.push_back(make_pair(IndexConfig::analyzerFileName, 0));
+
+	for (unsigned i = 0; i < indexFiles.size(); ++i) {
+		long size = getSerializedIndexSizeInBytes(directoryName + indexFiles[i].first);
+		if (size == -1) {
+			// there was some error and we cannot determine the correct shard size.
+			indexFiles.clear();
+			return -1;
+		}
+		indexFiles[i].second = size;
+	}
+	return 0;
+}
+
+long Srch2Server::getSerializedIndexSizeInBytes(const string &indexFileFullPath) {
+	struct stat fileInfo;
+	int returnStatus = ::stat(indexFileFullPath.c_str(), &fileInfo);
+	if (returnStatus == -1) {
+		perror("");
+		return -1;
+	} else {
+		return fileInfo.st_size;
+	}
 }
 
 /*
@@ -264,6 +311,11 @@ void Srch2Server::bootStrapIndexerFromByteStream(std::istream& input, const stri
  *   function.
  */
 void Srch2Server::postBootStrap() {
+
+	if (indexer == NULL) {
+		return;  // call bootStrap functions first.
+	}
+
 	Schema * storedAttrSchema = Schema::create();
 	indexer->getSchema()->setSupportSwapInEditDistance(getCoreInfo()->getSupportSwapInEditDistance());
 	bool isAttributeBasedSearch = false;

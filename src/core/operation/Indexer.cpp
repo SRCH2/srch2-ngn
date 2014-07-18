@@ -30,19 +30,14 @@ namespace srch2
 namespace instantsearch
 {
 
-Indexer *Indexer::create(IndexMetaData* indexMetaData,Analyzer* analyzer, const Schema *schema)
+Indexer *Indexer::create(IndexMetaData* indexMetaData, const Schema *schema)
 {
-    return new IndexReaderWriter(indexMetaData, analyzer, schema);
+    return new IndexReaderWriter(indexMetaData, schema);
 }
 
-Indexer *Indexer::load(IndexMetaData* indexMetaData)
+Indexer *Indexer::create(IndexMetaData* indexMetaData)
 {
     return new IndexReaderWriter(indexMetaData);
-}
-
-Indexer *Indexer::load(std::istream& input, IndexMetaData* indexMetaData)
-{
-    return new IndexReaderWriter(input, indexMetaData);
 }
 
 }}

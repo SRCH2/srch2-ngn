@@ -50,10 +50,11 @@ enum ShardingMessageType{
 
     // for MM
     MigrationInitMessage,
-    MigrationTermMessage,
     MigrationInitAckMessage,
-    MigrationTermAckMessage,
-    MigrationInitNackMessage
+    MigrationComponentBeginMessage,
+    MigrationComponentBeginAckMessage,
+    MigrationComponentEndAckMessage,
+    MigrationCompleteAckMessage
 };
 
 enum RoutingManagerAPIReturnType{

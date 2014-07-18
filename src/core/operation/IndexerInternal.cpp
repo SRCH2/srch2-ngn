@@ -176,9 +176,15 @@ void IndexReaderWriter::save()
     pthread_mutex_unlock(&lockForWriters);
 }
 
-void IndexReaderWriter::deSerialize(std::istream& inputStream) {
+void IndexReaderWriter::bootStrapFromDisk() {
 	pthread_mutex_lock(&lockForWriters);
-	this->index->_deSerialize(inputStream);
+	this->index->_bootStrapFromDisk();
+	pthread_mutex_unlock(&lockForWriters);
+}
+
+void IndexReaderWriter::bootStrapComponentFromByteSteam(std::istream& inputStream,const string& componentName) {
+	pthread_mutex_lock(&lockForWriters);
+	this->index->_bootStrapComponentFromByteSteam(inputStream, componentName);
 	pthread_mutex_unlock(&lockForWriters);
 }
 void IndexReaderWriter::serialize(std::ostream& outputStream){
@@ -234,14 +240,10 @@ void * dispatchMergeThread(void *indexer) {
 	pthread_exit(0);
 }
 
-IndexReaderWriter::IndexReaderWriter(IndexMetaData* indexMetaData, Analyzer *analyzer, const Schema *schema)
+IndexReaderWriter::IndexReaderWriter(IndexMetaData* indexMetaData, const Schema *schema)
 {
      // CREATE NEW Index
-     this->index =  IndexData::create(indexMetaData->directoryName,
-     		                          analyzer,
-                                      schema,
-                                      srch2::instantsearch::DISABLE_STEMMER_NORMALIZER
-                                      );
+     this->index =  IndexData::create(indexMetaData->directoryName, schema);
      this->initIndexReaderWriter(indexMetaData);
      // start merge threads after commit
  }
@@ -249,18 +251,11 @@ IndexReaderWriter::IndexReaderWriter(IndexMetaData* indexMetaData, Analyzer *ana
 IndexReaderWriter::IndexReaderWriter(IndexMetaData* indexMetaData)
 {
     // LOAD Index
-    this->index = IndexData::load(indexMetaData->directoryName);
+    this->index = IndexData::create(indexMetaData->directoryName, NULL);
     this->initIndexReaderWriter(indexMetaData);
     //this->startMergerThreads();
 }
 
-IndexReaderWriter::IndexReaderWriter(std::istream& inputByteStream, IndexMetaData* indexMetaData)
-{
-    // LOAD Index from ByteSteeam
-    this->index = IndexData::load(inputByteStream, indexMetaData->directoryName);
-    this->initIndexReaderWriter(indexMetaData);
-    this->needToSaveIndexes = true;
-}
 
 void IndexReaderWriter::initIndexReaderWriter(IndexMetaData* indexMetaData)
  {

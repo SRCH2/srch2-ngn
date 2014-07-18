@@ -202,13 +202,8 @@ class IndexData
 private:
 
     ///Added for stemmer integration
-    IndexData(const string& directoryName, Analyzer *analyzer, const Schema *schema,
-            const StemmerNormalizerFlagType &stemmerFlag);
+    IndexData(const string& directoryName, const Schema *schema);
             
-    IndexData(const string& directoryName);
-
-    IndexData(std::istream& inputByteStream, const string& saveDirName);
-
     //To save the directory name to save the trieIndex
     string directoryName;
     bool flagBulkLoadDone;
@@ -217,7 +212,8 @@ private:
 
     
     ReadCounter *readCounter;
-    WriteCounter *writeCounter;    
+    WriteCounter *writeCounter;
+    bool hasSchema;
 
     
     /**
@@ -229,21 +225,23 @@ private:
 public:
     
     inline static IndexData* create(const string& directoryName,
-    			Analyzer *analyzer,
-                const Schema *schema,
-                const StemmerNormalizerFlagType &stemmerFlag = srch2::instantsearch::DISABLE_STEMMER_NORMALIZER)
+                const Schema *schema)
     { 
-        return new IndexData(directoryName, analyzer,schema, stemmerFlag );
+        return new IndexData(directoryName, schema);
     }
     
-    inline static IndexData* load(const string& directoryName)
+    inline static IndexData* create(const string& directoryName)
     {
-        return new IndexData(directoryName);
+        return new IndexData(directoryName, NULL);
     }
 
-    inline static IndexData* load(std::istream& inputByteStream, const string& directoryName)
-    {
-    	return new IndexData(inputByteStream, directoryName);
+//    inline static IndexData* load(std::istream& inputByteStream, const string& directoryName)
+//    {
+//    	return new IndexData(inputByteStream, directoryName);
+//    }
+
+    string getStoredIndexDirectory() {
+    	return directoryName;
     }
 
     Trie_Internal *trie;
@@ -303,7 +301,14 @@ public:
 
     void _save(const std::string &directoryName) const;
     
-    void _deSerialize(std::istream& inputStream);
+    void _bootStrapFromDisk();
+    void _bootStrapComponentFromByteSteam(std::istream& inputStream, const string& componentName);
+    void _deSerializeSchema(std::istream& inputStream);
+    void _deSerializeTrie(std::istream& inputStream);
+    void _deSerializeForwardIndex(std::istream& inputStream);
+    void _deSerializeInvertedIndex(std::istream& inputStream);
+    void _deSerializeLocationIndex(std::istream& inputStream);
+    void _deSerializeIndexCounts(std::istream& inputStream);
 
     void _serialize(std::ostream& outputStream) const;
 

@@ -43,24 +43,18 @@ struct ShardIdHasher{
 };
 
 enum MIGRATION_STATUS{
-	MM_STATUS_MIGRATION_BEGIN,
 
-	MM_STATUS_WAITING_FOR_INIT_ACK,
-	MM_STATUS_INIT_ACK_RECEIVED,
-	MM_STATUS_INIT_NACK_RECEIVED,
-	MM_STATUS_SENDING_DATA,
-	MM_STATUS_WAITING_FOR_TERM_ACK,
-	MM_STATUS_TERM_ACK_RECEIVED,
+	MM_STATE_MIGRATION_BEGIN,
 
-	MM_STATUS_WAITING_FOR_INIT_REQ,
-	MM_STATUS_INIT_REQ_RECEIVED,
-	MM_STATUS_FETCHING_DATA,
-	MM_STATUS_TERM_REQ_RECEIVED,
+	//sender's state
+	MM_STATE_INIT_ACK_WAIT,  MM_STATE_INIT_ACK_RCVD,
+	MM_STATE_INFO_ACK_WAIT,  MM_STATE_INFO_ACK_RCVD,
+	MM_STATE_COMPONENT_TRANSFERRED_ACK_RCVD, MM_STATE_SHARD_TRANSFERRED_ACK_RCVD,
 
-	MM_STATUS_MIGRATION_SUCCESS,
-	MM_STATUS_SERIALIZATION_FAILURE,
-	MM_STATUS_NETWORK_FAILURE,
-	MM_STATUS_MIGRATION_ABORTED
+	//Receiver's state
+	MM_STATE_INIT_RCVD,  MM_STATE_INFO_WAIT,
+	MM_STATE_INFO_RCVD,  MM_STATE_COMPONENT_RECEIVING,
+	MM_STATE_SHARD_RCVD,
 };
 
 // migration status data structure
@@ -96,7 +90,9 @@ const short MM_MIGRATION_PORT_START = 53000;
 class MigrationSessionInfo {
 public:
 	boost::shared_ptr<Srch2Server> shard;
-	unsigned shardSize;
+	unsigned shardCompCount;
+	unsigned shardCompSize;
+	string shardCompName;
 
 	MIGRATION_STATUS status;
 
@@ -107,7 +103,6 @@ public:
 
 	unsigned remoteNode;
 	unsigned remoteAddr;
-	signed listeningSocket;
 	short listeningPort;
 };
 
@@ -152,7 +147,7 @@ public:
 	 * 2. ShardManager must expose method "void Notify(ShardDistributionStatus &)"
 	 * 3. partitioner is used for deciding shardId/NodeId
 	 */
-	void reDistributeShard(ShardId shardId, boost::shared_ptr<Srch2Server> shard, Partitioner *partitioner);
+	void reDistributeShard(ShardId shardId, boost::shared_ptr<Srch2Server> shard, Partitioner *partitioner, unsigned destination);
 
 	/*
 	 * 1. ShardManager on client node provides shardId of the shard that is expected to arrive.
@@ -195,12 +190,29 @@ public:
 
 private:
 	// MM private functions
+	int openTCPSendChannel(unsigned addr, short port);
 	int openSendChannel();
+	void openTCPReceiveChannel(int& , short&);
 	void openReceiveChannel(int& , short&);
+	void sendComponentInfoAndWaitForAck(ShardId shardId,const string& componentName, unsigned componentSize,
+			unsigned destinationNodeId);
+	void sendComponentDoneMsg(ShardId shardId, const string& componentName);
+	void sendInitMessageAck(ShardId shardId, short receivePort);
+	void sendInfoAckMessage(ShardId shardId);
+	int acceptTCPConnection(int tcpSocket , short receivePort);
+	void doInitialHandShake(ShardId shardId, unsigned componentCount, unsigned destinationNodeId);
 	void initMigrationSession(unsigned, unsigned, ShardId);
 	bool hasActiveSession(const ShardId& shardId);
 	void sendMessage(unsigned destinationNodeId, Message *message);
 	const CoreInfo_t *getIndexConfig(ShardId shardId);
+
+	Message * allocateMessage(unsigned size) {
+		return MessageAllocator().allocateMessage(size);
+	}
+
+	void deAllocateMessage(Message *p) {
+		MessageAllocator().deallocateByMessagePointer(p);
+	}
 
 	// MM private members
 	int sendSocket;

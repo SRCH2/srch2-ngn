@@ -41,7 +41,7 @@ int readUDPPacketWithSenderInfo(int listenSocket, char *buffer, unsigned bufferS
 		}
 		if (status < bufferSize) {
 			// incomplete read
-			Logger::console("incomplete read ...continuing");
+			//Logger::console("incomplete read ...continuing");
 			buffer += status;
 			bufferSize -= status;
 			continue;
@@ -76,12 +76,12 @@ int sendUDPPacketToDestination(int sendSocket, char *buffer, unsigned bufferSize
 
 		if (status < bufferSize) {
 			// incomplete read
-			Logger::console("incomplete send ...continuing");
+			//Logger::console("incomplete send ...continuing");
 			buffer += status;
 			bufferSize -= status;
 			continue;
 		}
-		Logger::console("UDP multicast data send");
+		//Logger::console("UDP multicast data send");
 		break;
 	}
 	return 0;

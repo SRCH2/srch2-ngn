@@ -55,32 +55,36 @@ namespace srch2 {
 namespace instantsearch {
 
 IndexData::IndexData(const string &directoryName,
-        Analyzer *analyzer,
-        const Schema *schema,
-        const StemmerNormalizerFlagType &stemmerFlag)
+        const Schema *schema)
 {
 
     this->directoryName = directoryName;
 
-    if(!checkDirExistence(directoryName.c_str())){
-        if (createDir(directoryName.c_str()) == -1){
-            throw std::runtime_error("Index Directory can not be created");
-        }
+    if (schema != NULL) {
+    	this->hasSchema = true;
+    	this->schemaInternal = new SchemaInternal( *(dynamic_cast<const SchemaInternal *>(schema)) );
+    	this->rankerExpression = new RankerExpression(this->schemaInternal->getScoringExpression());
+    } else {
+    	this->hasSchema = false;
+    	this->schemaInternal = new SchemaInternal();
+    	this->rankerExpression = new RankerExpression("");
     }
-
-    this->schemaInternal = new SchemaInternal( *(dynamic_cast<const SchemaInternal *>(schema)) );
-
-    this->rankerExpression = new RankerExpression(this->schemaInternal->getScoringExpression());
 
     this->trie = new Trie_Internal();
 
     this->forwardIndex = new ForwardIndex(this->schemaInternal);
-    if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex) {
-        this->invertedIndex =new InvertedIndex(this->forwardIndex);
-        this->quadTree = NULL;
+    if (this->hasSchema) {
+    	if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex) {
+    		this->invertedIndex =new InvertedIndex(this->forwardIndex);
+    		this->quadTree = NULL;
+    	} else {
+    		this->quadTree = new QuadTree(this->forwardIndex, this->trie);
+    		this->invertedIndex = NULL;
+    	}
     } else {
-        this->quadTree = new QuadTree(this->forwardIndex, this->trie);
-        this->invertedIndex = NULL;
+    	// cannot determine whether we load inverted index or quad tree without schema.
+    	this->invertedIndex = NULL;
+    	this->quadTree = NULL;
     }
 
     this->readCounter = new ReadCounter();
@@ -90,28 +94,20 @@ IndexData::IndexData(const string &directoryName,
     this->mergeRequired = true;
 }
 
-IndexData::IndexData(const string& directoryName)
+void IndexData::_bootStrapFromDisk()
 {
-    this->directoryName = directoryName;
-
-    if(!checkDirExistence(directoryName.c_str())){
+    if(!checkDirExistence(this->directoryName.c_str())){
         Logger::error("Given index path %s does not exist", directoryName.c_str());
         throw std::runtime_error("Index load exception ");
     }
     Serializer serializer;
     try{
-    	this->schemaInternal = new SchemaInternal();
     	serializer.load(*(this->schemaInternal), this->directoryName + "/" + IndexConfig::schemaFileName);
+    	this->hasSchema = true;
 
-    	this->rankerExpression = new RankerExpression(this->schemaInternal->getScoringExpression());
+    	this->rankerExpression->setRankingExpression(this->schemaInternal->getScoringExpression());
 
-    	this->trie = new Trie_Internal();
-    	this->forwardIndex = new ForwardIndex(this->schemaInternal);
     	serializer.load(*(this->trie),directoryName + "/" + IndexConfig::trieFileName);
-    	if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex)
-            this->invertedIndex = new InvertedIndex(this->forwardIndex);
-        else
-            this->invertedIndex = NULL;
 
     	// set if it's a attributeBasedSearch
     	PositionIndexType positionIndexType = this->schemaInternal->getPositionIndexType();
@@ -121,18 +117,18 @@ IndexData::IndexData(const string& directoryName)
     	serializer.load(*(this->forwardIndex), directoryName + "/" + IndexConfig::forwardIndexFileName);
     	this->forwardIndex->setSchema(this->schemaInternal);
 
+
     	if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex){
+    		this->invertedIndex =new InvertedIndex(this->forwardIndex);
     		serializer.load(*(this->invertedIndex), directoryName + "/" +  IndexConfig::invertedIndexFileName);
     		this->invertedIndex->setForwardIndex(this->forwardIndex);
-                quadTree = NULL;
     	} else {
-    		this->quadTree = new QuadTree();
+    		this->quadTree = new QuadTree(this->forwardIndex, this->trie);
     		serializer.load(*(this->quadTree), directoryName + "/" +  IndexConfig::quadTreeFileName);
     		this->quadTree->setForwardIndex(this->forwardIndex);
     		this->quadTree->setTrie(this->trie);
     		//Logger::debug("QuadTree loaded");
     	}
-
     	this->loadCounts(directoryName + "/" + IndexConfig::indexCountsFileName);
     	this->flagBulkLoadDone = true;
     }catch(exception& ex){
@@ -143,15 +139,32 @@ IndexData::IndexData(const string& directoryName)
     this->mergeRequired = true;
 }
 
-IndexData::IndexData(std::istream& inputByteStream, const string& saveDirName) {
-    this->directoryName = saveDirName;
+void IndexData::_bootStrapComponentFromByteSteam(std::istream& inputByteStream, const string& component) {
 
-    if(!checkDirExistence(directoryName.c_str())){
-        Logger::error("Given index path %s does not exist", directoryName.c_str());
-        throw std::runtime_error("Index load exception ");
-    }
-    try {
-    	this->_deSerialize(inputByteStream);
+	string componentName = component;
+	std::transform(componentName.begin(), componentName.end(), componentName.begin(), ::toupper);
+	try{
+		if (componentName == "CL1.IDX") {
+			this->_deSerializeTrie(inputByteStream);
+		}
+		else if (componentName == "CL2.IDX") {
+			this->_deSerializeInvertedIndex(inputByteStream);
+		}
+		else if (componentName == "CL3.IDX") {
+			this->_deSerializeForwardIndex(inputByteStream);
+		}
+		else if (componentName == "CL4.IDX") {
+			this->_deSerializeLocationIndex(inputByteStream);
+		}
+		else if (componentName == "SCHEMA.IDX") {
+			this->_deSerializeSchema(inputByteStream);
+		}
+		else if (componentName == "ANALYZER.IDX") {
+			//this->_deSerializeAnalyzer(inputByteStream);
+		}
+		else if (componentName == "COUNTS.IDX") {
+			this->_deSerializeIndexCounts(inputByteStream);
+		}
     }catch (boost::archive::archive_exception& ex) {
     	cout << ex.what() << endl;
     	throw;
@@ -678,7 +691,7 @@ void IndexData::_exportData(const string &exportedDataFileName) const
     ForwardIndex::exportData(*this->forwardIndex, exportedDataFileName);
 }
 
-void IndexData::_deSerialize(std::istream& inputStream) {
+void IndexData::_deSerializeTrie(std::istream& inputStream) {
 	boost::archive::binary_iarchive ia(inputStream);
 	IndexVersion storedIndexVersion;
 	ia >> storedIndexVersion;
@@ -691,12 +704,35 @@ void IndexData::_deSerialize(std::istream& inputStream) {
 
 	this->trie = new Trie_Internal();
 	ia >> *(this->trie);
+}
 
+void IndexData::_deSerializeSchema(std::istream& inputStream) {
+	boost::archive::binary_iarchive ia(inputStream);
+	IndexVersion storedIndexVersion;
+	ia >> storedIndexVersion;
+	if (storedIndexVersion != IndexVersion::currentVersion){
+		// throw invalid index file exception
+		Logger::error("Invalid serialized shard. Either shard was built with a previous version"
+				"of engine or migrated from a different machine/architecture.");
+		throw exception();
+	}
 	this->schemaInternal = new SchemaInternal();
 	ia >> *(this->schemaInternal);
 
 	this->rankerExpression = new RankerExpression(this->schemaInternal->getScoringExpression());
 
+}
+
+void IndexData::_deSerializeForwardIndex(std::istream& inputStream) {
+	boost::archive::binary_iarchive ia(inputStream);
+	IndexVersion storedIndexVersion;
+	ia >> storedIndexVersion;
+	if (storedIndexVersion != IndexVersion::currentVersion){
+		// throw invalid index file exception
+		Logger::error("Invalid serialized shard. Either shard was built with a previous version"
+				"of engine or migrated from a different machine/architecture.");
+		throw exception();
+	}
 	this->forwardIndex = new ForwardIndex(this->schemaInternal);
 	ia >> *(this->forwardIndex);
 
@@ -705,29 +741,62 @@ void IndexData::_deSerialize(std::istream& inputStream) {
 	PositionIndexType positionIndexType = this->schemaInternal->getPositionIndexType();
 	if(isEnabledAttributeBasedSearch(positionIndexType))
 		this->forwardIndex->isAttributeBasedSearch = true;
+}
+
+void IndexData::_deSerializeInvertedIndex(std::istream& inputStream) {
+	boost::archive::binary_iarchive ia(inputStream);
+	IndexVersion storedIndexVersion;
+	ia >> storedIndexVersion;
+	if (storedIndexVersion != IndexVersion::currentVersion){
+		// throw invalid index file exception
+		Logger::error("Invalid serialized shard. Either shard was built with a previous version"
+				"of engine or migrated from a different machine/architecture.");
+		throw exception();
+	}
 
 	if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex){
 		this->invertedIndex = new InvertedIndex(this->forwardIndex);
 		ia >> *(this->invertedIndex);
 		this->invertedIndex->setForwardIndex(this->forwardIndex);
 		quadTree = NULL;
-	} else {
+	}
+
+}
+
+void IndexData::_deSerializeLocationIndex(std::istream& inputStream) {
+
+	boost::archive::binary_iarchive ia(inputStream);
+	IndexVersion storedIndexVersion;
+	ia >> storedIndexVersion;
+	if (storedIndexVersion != IndexVersion::currentVersion){
+		// throw invalid index file exception
+		Logger::error("Invalid serialized shard. Either shard was built with a previous version"
+				"of engine or migrated from a different machine/architecture.");
+		throw exception();
+	}
+	if (this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex){
 		this->quadTree = new QuadTree();
 		ia >> *(this->quadTree);
 		this->quadTree->setForwardIndex(this->forwardIndex);
 		this->quadTree->setTrie(this->trie);
 		this->invertedIndex = NULL;
 	}
+}
 
+void IndexData::_deSerializeIndexCounts(std::istream& inputStream) {
+
+	boost::archive::binary_iarchive ia(inputStream);
     uint64_t readCount_tmp;
     uint32_t writeCount_tmp, numDocs_tmp;
     ia >> readCount_tmp;
     ia >> writeCount_tmp;
     ia >> numDocs_tmp;
+    delete this->readCounter;
     this->readCounter = new ReadCounter(readCount_tmp);
+    delete this->writeCounter;
     this->writeCounter = new WriteCounter(writeCount_tmp, numDocs_tmp);
 
-	this->flagBulkLoadDone = true;
+	//this->flagBulkLoadDone = true;
 }
 
 void IndexData::_serialize(std::ostream& outputStream) const{
@@ -864,7 +933,9 @@ void IndexData::loadCounts(const std::string &indeDataPathFileName)
     ia >> readCount_tmp;
     ia >> writeCount_tmp;
     ia >> numDocs_tmp;
+    delete this->readCounter;
     this->readCounter = new ReadCounter(readCount_tmp);
+    delete this->writeCounter;
     this->writeCounter = new WriteCounter(writeCount_tmp, numDocs_tmp);
     ifs.close();
 }

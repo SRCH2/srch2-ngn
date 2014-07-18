@@ -41,16 +41,16 @@ class Srch2Server
 {
 public:
     /* Fields used only for stats */
-    time_t stat_starttime;          /* Server start time */
-    long long stat_numcommands;     /* Number of processed commands */
-    long long stat_numconnections;  /* Number of connections received */
-    long long stat_expiredkeys;     /* Number of expired keys */
-    long long stat_evictedkeys;     /* Number of evicted keys (maxmemory) */
-    long long stat_keyspace_hits;   /* Number of successful lookups of keys */
-    long long stat_keyspace_misses; /* Number of failed lookups of keys */
-    size_t stat_peak_memory;        /* Max used memory record */
-    long long stat_fork_time;       /* Time needed to perform latets fork() */
-    long long stat_rejected_conn;   /* Clients rejected because of maxclients */
+//    time_t stat_starttime;          /* Server start time */
+//    long long stat_numcommands;     /* Number of processed commands */
+//    long long stat_numconnections;  /* Number of connections received */
+//    long long stat_expiredkeys;     /* Number of expired keys */
+//    long long stat_evictedkeys;     /* Number of evicted keys (maxmemory) */
+//    long long stat_keyspace_hits;   /* Number of successful lookups of keys */
+//    long long stat_keyspace_misses; /* Number of failed lookups of keys */
+//    size_t stat_peak_memory;        /* Max used memory record */
+//    long long stat_fork_time;       /* Time needed to perform latets fork() */
+//    long long stat_rejected_conn;   /* Clients rejected because of maxclients */
 
     Srch2Server(const CoreInfo_t * indexDataConfig,  const ShardId correspondingShardId, unsigned serverId):
 		correspondingShardId(correspondingShardId)
@@ -58,6 +58,19 @@ public:
         this->indexer = NULL;
         this->indexDataConfig = indexDataConfig;
         this->serverId = serverId;
+    }
+
+    Srch2Server(const CoreInfo_t * indexDataConfig,  const ShardId correspondingShardId, string& directoryName):
+    	correspondingShardId(correspondingShardId)
+    {
+    	this->indexer = NULL;
+    	this->indexDataConfig = indexDataConfig;
+    	this->serverId = 0;
+    	this->persistentStoragePath = directoryName;
+    }
+
+    void save() {
+    	indexer->save(this->persistentStoragePath);
     }
 
     void init(const string & directoryPath)
@@ -69,13 +82,24 @@ public:
     	this->indexer->serialize(outputStream);
     }
 
+
     // Check if index files already exist.
     bool checkIndexExistence(const string & directoryPath);
 
     IndexMetaData *createIndexMetaData(const string & directoryPath);
+
     void createAndBootStrapIndexer(const string & directoryPath);
-    void bootStrapIndexerFromByteStream(std::istream& input, const string & saveDirPath);
+
+    //void bootStrapShardFromDisk();
+
+    void bootStrapShardComponentFromByteStream(std::istream& input, const string & componentName);
+
     void postBootStrap();
+
+    int getSerializedShardSize(vector<std::pair<string, long> > &indexFiles);
+
+    long getSerializedIndexSizeInBytes(const string &indexFileFullPath);
+
     void createHighlightAttributesVector(const srch2is::Schema * schema);
 
     Indexer * getIndexer();
@@ -93,6 +117,7 @@ public:
     const CoreInfo_t * indexDataConfig;
     const ShardId correspondingShardId;
     unsigned serverId;
+    string persistentStoragePath;
 };
 
 class HTTPServerEndpoints
