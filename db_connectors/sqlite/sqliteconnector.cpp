@@ -36,6 +36,7 @@ int SQLiteConnector::init(ServerInterface * serverHandle) {
     LOG_TABLE_NAME.append(db_collection.c_str());
     LOG_TABLE_NAME_DATE = LOG_TABLE_NAME + "_DATE";
     LOG_TABLE_NAME_OP = LOG_TABLE_NAME + "_OP";
+    //This column will store the old primary id if the record primary id changed
     LOG_TABLE_NAME_ID = LOG_TABLE_NAME + "_ID";
     TRIGGER_INSERT_NAME = "SRCH2_INSERT_LOG_TRIGGER_";
     TRIGGER_INSERT_NAME.append(db_collection.c_str());
@@ -126,6 +127,7 @@ bool SQLiteConnector::checkConfigValidity() {
 }
 
 //Check if database contains the table.
+//Query: SELECT COUNT(*) FROM table;
 bool SQLiteConnector::checkCollectionExistence() {
     std::string collection;
     this->serverHandle->configLookUp("collection", collection);
@@ -151,6 +153,7 @@ bool SQLiteConnector::checkCollectionExistence() {
 }
 
 //Load the table records and insert into the engine
+//Query: SELECT * FROM table;
 int SQLiteConnector::createNewIndexes() {
     std::string collection;
     this->serverHandle->configLookUp("collection", collection);
@@ -191,7 +194,7 @@ int createIndex_callback(void *dbConnector, int argc, char **argv,
         record[azColName[i]] = argv[i] ? argv[i] : "NULL";
     }
     std::string jsonString = writer.write(record);
-    printf("SQLITECONNECTOR INSERTING : %s \n", jsonString.c_str());
+//    printf("SQLITECONNECTOR INSERTING : %s \n", jsonString.c_str());
     sqliteConnector->serverHandle->insertRecord(jsonString);
     return 0;
 }
@@ -253,6 +256,8 @@ int SQLiteConnector::runListener() {
                      * The column count of the log table should be equal to
                      * the original table column count + 3 (LOG_TABLE_NAME_ID,
                      * LOG_TABLE_NAME_DATE,LOG_TABLE_NAME_OP)
+                     * This error may happen if Log table/original
+                     * table schema changed
                      */
                     if (it != tableSchema.end() || i != ctotal) {
                         printf("SQLITECONNECTOR : Fatal Error. Table %s and"
@@ -266,16 +271,16 @@ int SQLiteConnector::runListener() {
                     std::string jsonString = writer.write(record);
 
                     if (strcmp(op, "i") == 0) {
-                        printf("SQLITECONNECTOR PROCESSING : Inserting %s \n",
-                                jsonString.c_str());
+//                        printf("SQLITECONNECTOR PROCESSING : Inserting %s \n",
+//                                jsonString.c_str());
                         serverHandle->insertRecord(jsonString);
                     } else if (strcmp(op, "d") == 0) {
-                        printf("SQLITECONNECTOR PROCESSING : Deleting %s \n",
-                                jsonString.c_str());
+//                        printf("SQLITECONNECTOR PROCESSING : Deleting %s \n",
+//                                jsonString.c_str());
                         serverHandle->deleteRecord(oldId);
                     } else if (strcmp(op, "u") == 0) {
-                        printf("SQLITECONNECTOR PROCESSING : Updating %s \n",
-                                jsonString.c_str());
+//                        printf("SQLITECONNECTOR PROCESSING : Updating %s \n",
+//                                jsonString.c_str());
                         serverHandle->updateRecord(oldId, jsonString);
                     }
                 } else if (res == SQLITE_BUSY) {
@@ -331,7 +336,13 @@ int SQLiteConnector::runListener() {
     return -1;
 }
 
-//Create the log table
+/*
+ * Create the log table
+ * Query: CREATE TABLE SRCH2_LOG_COMPANY(SRCH2_LOG_COMPANY_ID INT NOT NULL,
+ *  SRCH2_LOG_COMPANY_DATE TIMESTAMP NOT NULL,
+ *  SRCH2_LOG_COMPANY_OP CHAR(1) NOT NULL,
+ *  ADDRESS CHAR(50) , AGE INT , ID INT , NAME TEXT , SALARY REAL );
+ */
 bool SQLiteConnector::createLogTableIfNotExistence() {
     /* Create SQL statement */
     char *zErrMsg = 0;
@@ -360,7 +371,7 @@ bool SQLiteConnector::createLogTableIfNotExistence() {
             sqlite3_free(zErrMsg);
             sleep(listenerWaitTime);
         } else {
-            return true;;
+            return true;
         }
     }
     printf("SQLITECONNECTOR: Create log table %s failed.\n", LOG_TABLE_NAME.c_str());
@@ -383,7 +394,7 @@ const char* SQLiteConnector::getLogTableIdAttr() {
 }
 
 //Fetch the table schema and store into tableSchema
-//SQL query: PRAGMA table_info(table_name);
+//Query: PRAGMA table_info(table_name);
 bool SQLiteConnector::populateTableSchema() {
     std::string collection;
     this->serverHandle->configLookUp("collection", collection);
@@ -438,7 +449,13 @@ void SQLiteConnector::setPrimaryKeyName(const std::string& pkName) {
     this->PRIMARY_KEY_NAME = pkName;
 }
 
-//Create prepared statements for the listener.
+/*
+ * Create prepared statements for the listener.
+ * Select Query: SELECT * FROM log_table WHERE log_table_date > ?
+ * ORDER BY log_table_date ASC;
+ *
+ * Delete Query: DELETE * FROM log_table WHERE log_table_date <= ?;
+ */
 bool SQLiteConnector::createPreparedStatement(){
     std::stringstream sql;
 
@@ -486,7 +503,24 @@ bool SQLiteConnector::createPreparedStatement(){
     return true;
 }
 
-//Create triggers for the log table
+/*
+ * Create triggers for the log table
+ *
+ * Insert trigger query: CREATE TRIGGER SRCH2_INSERT_LOG_TRIGGER_COMPANY
+ * AFTER INSERT ON COMPANY BEGIN INSERT INTO SRCH2_LOG_COMPANY
+ * VALUES (new.ID , strftime('%s', 'now'),'i', new.ADDRESS , new.AGE ,
+ *  new.ID , new.NAME , new.SALARY );END;
+ *
+ * Delete trigger query: CREATE TRIGGER SRCH2_DELETE_LOG_TRIGGER_COMPANY
+ * AFTER DELETE ON COMPANY BEGIN INSERT INTO SRCH2_LOG_COMPANY
+ * VALUES (old.ID , strftime('%s', 'now'),'d', old.ADDRESS , old.AGE ,
+ *  old.ID , old.NAME , old.SALARY );END;
+ *
+ *  Update trigger query: CREATE TRIGGER SRCH2_UPDATE_LOG_TRIGGER_COMPANY
+ *  AFTER UPDATE ON COMPANY BEGIN INSERT INTO SRCH2_LOG_COMPANY
+ *  VALUES (old.ID , strftime('%s', 'now'),'u', new.ADDRESS , new.AGE ,
+ *  new.ID , new.NAME , new.SALARY );END;
+ */
 bool SQLiteConnector::createTriggerIfNotExistence() {
     std::string collection;
     this->serverHandle->configLookUp("collection", collection);
