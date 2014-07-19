@@ -7,7 +7,11 @@
 #        then start the engine to test if the engine can fetch the modifications.
 
 import sys, urllib2, json, time, subprocess, os, commands, signal
-import sqlite3
+
+try:
+	import sqlite3
+except ImportError:
+	os._exit(-1)
 
 sys.path.insert(0,'srch2lib')
 import test_lib
