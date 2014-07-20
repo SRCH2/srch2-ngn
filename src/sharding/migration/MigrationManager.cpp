@@ -23,6 +23,7 @@
 #ifndef __MACH__
 #include <sys/sendfile.h>
 #endif
+#include <sys/mman.h>
 
 namespace srch2 {
 namespace httpwrapper {
@@ -77,6 +78,31 @@ bool IndexSizeComparator(std::pair<string, long> l,  std::pair<string, long> r) 
 		return false;
 }
 
+int checkSocketIsReadyForRead(int socket) {
+	/*
+	 *  Prepare data structure for select system call.
+	 *  http://man7.org/linux/man-pages/man2/select.2.html
+	 */
+	fd_set selectSet;
+	timeval waitTimeout;
+	waitTimeout.tv_sec = 1;
+	waitTimeout.tv_usec = 0;
+	FD_ZERO(&selectSet);
+	FD_SET(socket, &selectSet);
+
+
+	/*
+	 *   Wait until timeout = 1sec or until socket is ready for read/write. (whichever occurs first)
+	 *   see select man page : http://linux.die.net/man/2/select
+	 */
+	int result = 0;
+	// pass select set to read argument
+	result = select(socket + 1, &selectSet, NULL, NULL, &waitTimeout);
+	if (result == -1) {
+		perror("error while waiting for a socket to become available for read/write!");
+	}
+	return result;
+}
 
 int readDataFromSocketWithRetry(int fd, char *buffer, int byteToRead, int retryCount) {
 
@@ -91,7 +117,7 @@ int readDataFromSocketWithRetry(int fd, char *buffer, int byteToRead, int retryC
 			if(errno == EAGAIN || errno == EWOULDBLOCK) {
 				// socket is not ready for read. try again.
 				if (retryCount) {
-					sleep(1);
+					checkSocketIsReadyForRead(fd);
 					--retryCount;
 					continue;
 				} else {
@@ -116,6 +142,7 @@ int readDataFromSocketWithRetry(int fd, char *buffer, int byteToRead, int retryC
 	}
 	return 0;
 }
+
 
 
 // various Redistribution message's body types
@@ -292,15 +319,28 @@ void MigrationService::receiveShard(ShardId shardId) {
 			migrationMgr->getIndexConfig(shardId)->getName(), shardId);
 	Srch2Server *migratedShard = new Srch2Server(migrationMgr->getIndexConfig(shardId), shardId, directoryPath);
 
-	unsigned internalBufferSize = 0;
-	char * internalBuffer = NULL;
+	unsigned mmapBufferSize = 0;
+	void * mmapBuffer = NULL;
+	unsigned maxMappedSize = 0;
 
 	for (unsigned i =0; i < componentCount; ++i) {
 
 		Logger::console("waiting for component begin message...");
 		//TODO: add timeout
 		while(migrationMgr->migrationSession[shardId].status !=  MM_STATE_INFO_RCVD) {
-			sleep(1);
+			//sleep(1);
+		}
+		string filePath = directoryPath + "/" + migrationMgr->migrationSession[shardId].shardCompName;
+		int writeFd = open(filePath.c_str(), O_RDWR|O_CREAT|O_TRUNC, 0000644);
+		if (writeFd == -1) {
+			//close socket
+			perror("");   // TODO: replace perror in SM/TM/MM with strerror_r
+			Logger::console("Migration:I/O error for shard %s", shardId.toString().c_str());
+			migrationMgr->migrationSession.erase(shardId);
+			close(commSocket);
+			close(receiveSocket);
+			//TODO: Notify SHM
+			return;
 		}
 
 		migrationMgr->sendInfoAckMessage(shardId);
@@ -308,14 +348,39 @@ void MigrationService::receiveShard(ShardId shardId) {
 		unsigned componentSize = migrationMgr->migrationSession[shardId].shardCompSize;
 		unsigned sequenceNumber = 0;
 
-		off_t mileStone = componentSize;
-		if (componentSize > 104857600)
-			mileStone = .25 * componentSize;
+		int ftruncStatus = ftruncate(writeFd, componentSize);
+		if (ftruncStatus == -1) {
+			//close socket
+			perror("");   // TODO: replace perror in SM/TM/MM with strerror_r
+			Logger::console("Migration:I/O error for shard %s", shardId.toString().c_str());
+			migrationMgr->migrationSession.erase(shardId);
+			close(commSocket);
+			close(receiveSocket);
+			//TODO: Notify SHM
+			return;
+		}
 
-		if (internalBufferSize < componentSize || internalBuffer) {
-			internalBuffer = new char[componentSize];
-		} else {
-			// memset(internalBuffer, 0, componentSize);
+//		if (internalBufferSize < componentSize || internalBuffer) {
+//			delete internalBuffer;
+//			internalBuffer = new char[componentSize];
+//		} else {
+//			// memset(internalBuffer, 0, componentSize);
+//		}
+		//if (mmapBufferSize < componentSize || mmapBuffer) {
+#ifdef __MACH__
+		mmapBuffer = mmap(NULL, componentSize, PROT_WRITE|PROT_READ, MAP_PRIVATE, writeFd, 0);
+#else
+		mmapBuffer = mmap64(NULL, componentSize, PROT_WRITE|PROT_READ, MAP_PRIVATE, writeFd, 0);
+#endif
+
+		if (mmapBuffer == MAP_FAILED) {
+			perror("");   // TODO: replace perror in SM/TM/MM with strerror_r
+			Logger::console("Migration error for shard %s", shardId.toString().c_str());
+			migrationMgr->migrationSession.erase(shardId);
+			close(receiveSocket);
+			close(commSocket);
+			//TODO: Notify SHM
+			return;
 		}
 
 		long offset = 0;
@@ -330,12 +395,13 @@ void MigrationService::receiveShard(ShardId shardId) {
 				packetSize = componentSize - sequenceNumber * BLOCK_SIZE;
 			}
 
-			int status = readDataFromSocketWithRetry(commSocket, internalBuffer + offset, packetSize, retryCount);
+			int status = readDataFromSocketWithRetry(commSocket, (char *)mmapBuffer + offset, packetSize, retryCount);
 			if (status == -1) {
 				//close socket
 				Logger::console("Migration: Network error while migrating shard %s", shardId.toString().c_str());
 				migrationMgr->migrationSession.erase(shardId);
-				delete internalBuffer;
+				//delete internalBuffer;
+				munmap(mmapBuffer, componentSize);
 				close(receiveSocket);
 				close(commSocket);
 				//TODO: Notify SHM
@@ -344,18 +410,18 @@ void MigrationService::receiveShard(ShardId shardId) {
 
 			offset += packetSize;
 			++sequenceNumber;
-			if (offset%mileStone == 0)
-				Logger::console("%d/%d Received", offset, componentSize);
 		}
-		Logger::console("%d/%d Received", offset, componentSize);
+		Logger::console("%u/%u Received", offset, componentSize);
 
 		std::istringstream inputStream(ios::binary);
-		inputStream.rdbuf()->pubsetbuf(internalBuffer , componentSize);
+		inputStream.rdbuf()->pubsetbuf((char *)mmapBuffer , componentSize);
 		inputStream.seekg(0, ios::beg);
 
 		migratedShard->bootStrapShardComponentFromByteStream(inputStream,
 				migrationMgr->migrationSession[shardId].shardCompName);
 
+		close(writeFd);
+		munmap(mmapBuffer, componentSize);
 		//Send ACK
 		migrationMgr->sendComponentDoneMsg(shardId, migrationMgr->migrationSession[shardId].shardCompName);
 	}
@@ -366,7 +432,7 @@ void MigrationService::receiveShard(ShardId shardId) {
 	migrationMgr->migrationSession[shardId].shard.reset(migratedShard);
 
 	Logger::console("Saving shard to : %s", directoryPath.c_str());
-	migrationMgr->migrationSession[shardId].shard->save();
+	//migrationMgr->migrationSession[shardId].shard->save();
 
 	migrationMgr->migrationSession[shardId].endTimeStamp = time(NULL);
 	Logger::console("Received shard %s in %d secs", shardId.toString().c_str(),
@@ -374,6 +440,9 @@ void MigrationService::receiveShard(ShardId shardId) {
 			migrationMgr->migrationSession[shardId].beginTimeStamp);
 
 
+	//munmap(mmapBuffer, maxMappedSize);
+	close(receiveSocket);
+	close(commSocket);
 	//migrationMgr->migrationSession.erase(shardId);
 }
 
@@ -463,10 +532,6 @@ void MigrationManager::migrateShard(ShardId shardId, boost::shared_ptr<Srch2Serv
 		Logger::console("Sending data for shard component %s", componentName.c_str());
 		off_t offset = 0;
 
-		off_t mileStone = componentSize;
-		if (componentSize > 104857600)
-			mileStone = .25 * componentSize;
-
 		while(1) {
 			off_t byteToSend = BLOCK_SIZE;
 #ifdef __MACH__
@@ -492,14 +557,12 @@ void MigrationManager::migrateShard(ShardId shardId, boost::shared_ptr<Srch2Serv
 				break;
 #endif
 
-			if (offset % mileStone == 0)
-				Logger::console("%d/%d sent", offset, componentSize);
 		}
-		Logger::console("%d/%d sent", offset, componentSize);
+		Logger::console("%u/%u sent", offset, componentSize);
 
 		while (migrationSession[shardId].status != MM_STATE_COMPONENT_TRANSFERRED_ACK_RCVD &&
 				migrationSession[shardId].status != MM_STATE_SHARD_TRANSFERRED_ACK_RCVD) {
-			sleep(1);
+			//sleep(1);
 		}
 		Logger::console("Data received by remote node...continuing");
 //		Logger::console("Unable to migrate shard ..destination node did not respond to end ");
@@ -576,10 +639,10 @@ void MigrationManager::sendComponentInfoAndWaitForAck(ShardId shardId, const str
 	migrationSession[shardId].status = MM_STATE_INFO_ACK_WAIT;
 	sendMessage(destinationNodeId, compInfoMessage);
 	deAllocateMessage(compInfoMessage);
-	int tryCount = 5;
-	while(migrationSession[shardId].status != MM_STATE_INFO_ACK_RCVD && tryCount) {
-		sleep(2);
-		--tryCount;
+	//int tryCount = 5000000;
+	while(migrationSession[shardId].status != MM_STATE_INFO_ACK_RCVD) {
+		//sleep(1);
+		//--tryCount;
 	}
 }
 
