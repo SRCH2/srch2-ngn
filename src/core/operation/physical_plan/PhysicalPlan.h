@@ -80,9 +80,6 @@ struct PhysicalPlanExecutionParameters {
 			case srch2is::SearchTypeGetAllResultsQuery:
 				this->ranker = new GetAllResultsRanker();
 				break;
-			case srch2is::SearchTypeMapQuery:
-				this->ranker = new SpatialRanker();
-				break;
 			case srch2is::SearchTypeRetrieveById:
 				this->ranker = new DefaultTopKRanker();
 				break;
@@ -113,12 +110,18 @@ struct PhysicalPlanRandomAccessVerificationParameters {
 				forwardListDirectoryReadView(forwardListDirectoryReadView)
 	{
 		this->ranker = ranker;
+		this->isGeo = false;
 	}
 
 	// if a term is verified, some infomation like staticscore or matching prefix
 	// is calculated at that time and will be saved in these variables.
-    float runTimeTermRecordScore;
+
+	// this flag shows that this object is create for a term or a geo element
+	// for geo element only geoScore is valid.
+    bool isGeo;
+	float runTimeTermRecordScore;
     float staticTermRecordScore;
+    float GeoScore;
     std::vector<TrieNodePointer> termRecordMatchingPrefixes;
     std::vector<unsigned> attributeBitmaps;
     std::vector<unsigned> prefixEditDistances;

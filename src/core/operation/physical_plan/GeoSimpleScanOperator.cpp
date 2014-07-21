@@ -6,6 +6,8 @@
  */
 
 #include "GeoSimpleScanOperator.h"
+#include "src/core/util/RecordSerializerUtil.h"
+#include "src/core/util/RecordSerializer.h"
 
 using namespace std;
 
@@ -26,14 +28,18 @@ bool GeoSimpleScanOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 	this->queryEvaluator = queryEvaluator;
 	//TODO: after adding concurrency this line should be like: this->queryEvaluator->getQuadTree()->getQuadTree_ReadView(quadtree);
 	this->quadtree = this->queryEvaluator->getQuadTree();
+	// get the forward list read view
+	this->queryEvaluator->getForwardIndex()->getForwardListDirectory_ReadView(this->forwardListDirectoryReadView);
+	// get the query shape
+	this->queryShape = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->regionShape;
+	// get quadTreeNodeSet which contains all the subtrees in quadtree which have the answers
+	vector<QuadTreeNode*>* quadTreeNodeSet = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->stats->quadTreeNodeSet;
 
-	//TODO: After adding the new logical node code get the shape of the query region from it. Then remove this code.
-	Point point; // TODO remove this line
-	point.x = 0; // TODO remove this line
-	point.y = 0; // TODO remove this line
-	this->queryShape = new Circle(point,10); // TODO get the shape from the LogicalPlanNode
-
-	this->quadtree->rangeQuery(this->geoElements,*this->queryShape);
+	// put the vector of element in each node in geoElements
+	// rangeQuery will be called recursively to find all the leaf nodes.
+	for( unsigned i = 0 ; i < quadTreeNodeSet->size() ; i++){
+		quadTreeNodeSet->at(i)->rangeQuery(this->geoElements,*this->queryShape);
+	}
 	// set the offsets to use them in getNext
 	this->vectorOffset = 0;
 	this->cursorOnVectorOfGeoElements = 0;
@@ -56,7 +62,12 @@ PhysicalPlanRecordItem* GeoSimpleScanOperator::getNext(const PhysicalPlanExecuti
 		leafElements = this->geoElements[this->vectorOffset];
 		element = (*leafElements)[this->cursorOnVectorOfGeoElements];
 		// check the record and return it if it's valid.
-		if(this->queryShape->contains(element->point)){
+		bool valid = false;
+		const ForwardList* forwardList = this->queryEvaluator->getForwardIndex()->getForwardList(
+				 this->forwardListDirectoryReadView,
+				 element->forwardListID,
+				 valid);
+		if(valid && this->queryShape->contains(element->point)){
 			foundValidHit = true;
 			break;
 		}
@@ -74,12 +85,11 @@ PhysicalPlanRecordItem* GeoSimpleScanOperator::getNext(const PhysicalPlanExecuti
 
 	// Create the item to return.
 	PhysicalPlanRecordItem* newItem = this->queryEvaluator->getPhysicalPlanRecordItemPool()->createRecordItem();
+	newItem->setIsGeo(true); // this Item is for a geo element
 	// record id
 	newItem->setRecordId(element->forwardListID);
 	// runtime score
-	//TODO check if the type of the params.ranker is set to spatialRanker for this operation or not
-	// ASSERT(typeof(*params.ranker) == typeof(SpatialRanker));
-	newItem->setRecordRuntimeScore(element->getScore((SpatialRanker*)params.ranker,*this->queryShape));
+	newItem->setRecordRuntimeScore(element->getScore(*this->queryShape));
 
 	// increase the offsets for next use of getNext
 	this->cursorOnVectorOfGeoElements++;
@@ -89,7 +99,6 @@ PhysicalPlanRecordItem* GeoSimpleScanOperator::getNext(const PhysicalPlanExecuti
 	}
 
 	return newItem;
-
 }
 
 bool GeoSimpleScanOperator::close(PhysicalPlanExecutionParameters & params){
@@ -110,17 +119,89 @@ string GeoSimpleScanOperator::toString(){
 }
 
 bool GeoSimpleScanOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters){
-	// First get the forwardlist to get the location of the record from it
+	// 1- get the forwardlist to get the location of the record from it
 	bool valid = false;
 	const ForwardList* forwardList = this->queryEvaluator->getForwardIndex()->getForwardList(
 			parameters.forwardListDirectoryReadView,
 			parameters.recordToVerify->getRecordId(),
 			valid);
-	//TODO Here for now I assume that I can get the location information of the record from the forwardlist
-	Point point; // = forwardList->getLocation();
+	if(!valid){ // this record is invalid
+		return false;
+	}
+	// 2- find the latitude and longitude of this record
+	StoredRecordBuffer buffer = forwardList->getInMemoryData();
+	Schema * storedSchema = Schema::create();
+	srch2::util::RecordSerializerUtil::populateStoredSchema(storedSchema, queryEvaluator->getSchema());
+	srch2::util::RecordSerializer compactRecDeserializer = srch2::util::RecordSerializer(*storedSchema);
+
+	// TODO: Mahdi: find the name of the attributes
+	string nameOfLatitudeAttribute = this->queryEvaluator->getQueryEvaluatorRuntimeParametersContainer()->nameOfLatitudeAttribute;
+	string nameOfLongitudeAttribute = this->queryEvaluator->getQueryEvaluatorRuntimeParametersContainer()->nameOfLongitudeAttribute;
+	Point point;
+
+	unsigned idLat = storedSchema->getRefiningAttributeId(nameOfLatitudeAttribute);
+	unsigned lenOffsetLat = compactRecDeserializer.getRefiningOffset(idLat);
+	point.x = *((double *)buffer.start.get()+lenOffsetLat);
+
+	unsigned idLong = storedSchema->getRefiningAttributeId(nameOfLongitudeAttribute);
+	unsigned lenOffsetLong = compactRecDeserializer.getRefiningOffset(idLong);
+	point.y = *((double *)buffer.start.get()+lenOffsetLong);
 
 	// verify the record. The query region should contains this record
-	return this->queryShape->contains(point);
+	if(this->queryShape->contains(point)){
+		parameters.isGeo = true;
+		parameters.GeoScore = parameters.ranker->computeScoreforGeo(point,*(this->queryShape));
+		return true;
+	}
+	return false;
+}
+// The cost of open of a child is considered only once in the cost computation
+// of parent open function.
+PhysicalPlanCost GeoSimpleScanOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
+	// cost of going over leaf nodes to return their vector of elements
+	PhysicalPlanCost resultCost;
+	resultCost.cost = this->getLogicalPlanNode()->stats->estimatedNumberOfLeafNodes;
+	return resultCost;
+}
+// The cost of getNext of a child is multiplied by the estimated number of calls to this function
+// when the cost of parent is being calculated.
+PhysicalPlanCost GeoSimpleScanOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params){
+	PhysicalPlanCost resultCost;
+	resultCost.cost = 1;
+	return resultCost;
+}
+// the cost of close of a child is only considered once since each node's close function is only called once.
+PhysicalPlanCost GeoSimpleScanOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params){
+	PhysicalPlanCost resultCost;
+	resultCost.cost = 1;
+	return resultCost;
+}
+
+PhysicalPlanCost GeoSimpleScanOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
+	// we only need to check if the query region contains the record's point or not
+	PhysicalPlanCost resultCost;
+	resultCost.cost = 1;
+	return resultCost;
+}
+
+void GeoSimpleScanOptimizationOperator::getOutputProperties(IteratorProperties & prop){
+	// no output property
+}
+
+void GeoSimpleScanOptimizationOperator::getRequiredInputProperties(IteratorProperties & prop){
+	prop.addProperty(PhysicalPlanIteratorProperty_LowestLevel);
+}
+
+PhysicalPlanNodeType GeoSimpleScanOptimizationOperator::getType(){
+	return PhysicalPlanNode_GeoSimpleScan;
+}
+
+bool GeoSimpleScanOptimizationOperator::validateChildren(){
+	// this operator cannot have any children
+	if(getChildrenCount() > 0){
+		return false;
+	}
+	return true;
 }
 
 }

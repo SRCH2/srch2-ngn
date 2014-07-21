@@ -45,6 +45,7 @@ private:
 	unsigned vectorOffset; // keep the offset of the current reading vector in geoElements
 	unsigned cursorOnVectorOfGeoElements; // keep the offset of the current reading geoElement
 	Shape* queryShape;  // keep the shape of the query region
+	shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
 };
 
 class GeoSimpleScanOptimizationOperator : public PhysicalPlanOptimizationNode{

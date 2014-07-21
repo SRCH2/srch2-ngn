@@ -25,6 +25,8 @@
 #include "index/InvertedIndex.h"
 #include "operation/HistogramManager.h"
 #include "PhysicalPlan.h"
+#include "operation/physical_plan/GeoNearestNeighborOperator.h"
+#include "operation/physical_plan/GeoSimpleScanOperator.h"
 
 using namespace std;
 
@@ -231,6 +233,11 @@ public:
 	~RandomAccessVerificationGeoOperator();
 private:
 	RandomAccessVerificationGeoOperator();
+
+	QuadTree* quadtree;
+	QueryEvaluatorInternal* queryEvaluator;
+	Shape* queryShape;  // keep the shape of the query region
+	shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
 };
 
 class RandomAccessVerificationGeoOptimizationOperator : public PhysicalPlanOptimizationNode {
@@ -596,6 +603,8 @@ public:
 	RandomAccessVerificationOrOptimizationOperator * createRandomAccessVerificationOrOptimizationOperator();
 	RandomAccessVerificationNotOperator * createRandomAccessVerificationNotOperator();
 	RandomAccessVerificationNotOptimizationOperator * createRandomAccessVerificationNotOptimizationOperator();
+	RandomAccessVerificationGeoOperator * createRandomAccessVerificationGeoOperator();
+	RandomAccessVerificationGeoOptimizationOperator * createRandomAccessVerificationGeoOptimizationOperator();
 	SortByIdOperator * createSortByIdOperator();
 	SortByIdOptimizationOperator * createSortByIdOptimizationOperator();
 	SortByScoreOperator* createSortByScoreOperator();
@@ -618,6 +627,11 @@ public:
 	FilterQueryOptimizationOperator * createFilterQueryOptimizationOperator();
 	PhraseSearchOperator * createPhraseSearchOperator(PhraseInfo * phraseSearchInfo);
 	PhraseSearchOptimizationOperator * createPhraseSearchOptimzationOperator();
+	GeoNearestNeighborOperator * createGeoNearestNeighborOperator();
+	GeoNearestNeighborOptimizationOperator * createGeoNearestNeighborOptimizationOperator();
+	GeoSimpleScanOperator * createGeoSimpleScanOperator();
+	GeoSimpleScanOptimizationOperator * createGeoSimpleScanOptimizationOperator();
+
 
 private:
 	vector<PhysicalPlanNode *> executionNodes;

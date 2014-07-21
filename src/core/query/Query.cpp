@@ -182,9 +182,6 @@ Query::Query(QueryType type):impl(new Impl)
         case srch2::instantsearch::SearchTypeGetAllResultsQuery:
             impl->ranker = new GetAllResultsRanker();
             break;
-        case srch2::instantsearch::SearchTypeMapQuery:
-            impl->ranker = new SpatialRanker();
-            break;
         default:
             impl->ranker = new DefaultTopKRanker();
     };

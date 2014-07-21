@@ -171,8 +171,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
     if(onlyFacets == false){ // We send the matching records only if "facet != only".
         root["results"].resize(end - start);
         unsigned counter = 0;
-        if (queryPlan.getQueryType() == srch2is::SearchTypeMapQuery
-                && query->getQueryTerms()->empty()) //check if the query type is range query without keywords
+        if (/*queryPlan.getQueryType() == srch2is::SearchTypeMapQuery && */ query->getQueryTerms()->empty()) //check if the query type is range query without keywords
         {
             for (unsigned i = start; i < end; ++i) {
             	unsigned internalRecordId = queryResults->getInternalRecordId(i);
@@ -280,8 +279,7 @@ void HTTPRequestHandler::printResults(evhttp_request *req,
             root["fuzzy"] = (int) queryPlan.isFuzzy();
         }
     }else{ // facet only case: we only want query information
-    	if (queryPlan.getQueryType() != srch2is::SearchTypeMapQuery
-    			|| query->getQueryTerms()->empty() == false) //check if the query type is range query without keywords
+    	if ( query->getQueryTerms()->empty() == false) //check if the query type is range query without keywords
     	{
             root["query_keywords"].resize(query->getQueryTerms()->size());
             for (unsigned i = 0; i < query->getQueryTerms()->size(); i++) {
@@ -956,6 +954,7 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
                 paramContainer.getMessageString(), headers);
         evhttp_clear_headers(&headers);
         return;
+
     }
 
 //    clock_gettime(CLOCK_REALTIME, &tend);
@@ -1020,7 +1019,6 @@ void HTTPRequestHandler::searchCommand(evhttp_request *req,
         break;
 
     case srch2is::SearchTypeGetAllResultsQuery:
-    case srch2is::SearchTypeMapQuery:
         finalResults->printStats();
         if(finalResults->impl->estimatedNumberOfResults < finalResults->impl->sortedFinalResults.size()){
 			finalResults->impl->estimatedNumberOfResults = finalResults->impl->sortedFinalResults.size();

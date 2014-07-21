@@ -61,6 +61,8 @@ bool QueryValidator::validate() {
     }
 
     // validation case: if search type is TopK or GetAllResults, query keywords should not be empty
+    // TODO : Jamshid : we should not error here ....
+    // TODO : Jamshid : another case of validation : lat,long values must make sense ....
     if (paramContainer->hasParameterInQuery(TopKSearchType)
             || paramContainer->hasParameterInQuery(GetAllResultsSearchType)) { // search type is either TopK or GetAllResults
 		ParseTreeLeafNodeIterator termIterator(paramContainer->parseTreeRoot);

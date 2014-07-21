@@ -1564,6 +1564,7 @@ void QueryParser::extractSearchType() {
      *  set the parametersInQuery.
      */
 // if serachType mentioned in queryParameter use that.
+	// TODO : Jamshid : make these constants....
     const string getAllType = "getAll";
     const string topKType = "topK";
     Logger::debug("inside extractSearchType function");

@@ -52,7 +52,7 @@ public:
 	double getDistance(const Shape &range);
 
 	// Return geo score of this record for a specific range
-	double getScore(const SpatialRanker *ranker, const Shape &range);
+	double getScore(const Shape &range);
 
 private:
 
@@ -93,11 +93,15 @@ public:
 	// return all the geo elements in the query range
 	void rangeQuery(vector<vector<GeoElement*>*> & results, const Shape &range);
 
+	// Find all the quadtree nodes inside the query range.
+	// If the query's rectangle contains the rectangles of all the nodes in a subtree, it only returns the root of that subtree.
+	void rangeQuery(vector<QuadTreeNode*> & results, const Shape &range);
+
 	Rectangle getRectangle(){
 		return this->rectangle;
 	}
 
-	int getNumOfElementsInSubtree(){
+	unsigned getNumOfElementsInSubtree(){
 		return this->numOfElementsInSubtree;
 	}
 
@@ -113,16 +117,26 @@ public:
 		return &elements;
 	}
 
+	double aggregateValueByJointProbabilityDouble(double p1, double p2){
+		return p1+p2;
+	}
+
+	unsigned getNumOfLeafNodesInSubtree(){
+		return this->numOfLeafNodesInSubtree;
+	}
+
 private:
-	Rectangle rectangle;            // Rectangle boundary of the node
-	bool isLeaf;                    // true->Leaf (children is null), false->internal (elements is null)
+	Rectangle rectangle;               // Rectangle boundary of the node
+	bool isLeaf;                       // true->Leaf (children is null), false->internal (elements is null)
 	vector<QuadTreeNode*> children;    // Pointers to the children if this node is an internal node
-	int numOfElementsInSubtree;     // Number of geo elements in the subtree of this node
-	vector<GeoElement*> elements;   // Store geo elements if this node is a leaf node
+	unsigned numOfElementsInSubtree;   // Number of geo elements in the subtree of this node
+	unsigned numOfLeafNodesInSubtree;  // Number of Leaf nodes in the subtree of this node.(if this node is a leaf then numOfLeafNodesInSubtree=1)
+	vector<GeoElement*> elements;      // Store geo elements if this node is a leaf node
 
 	// Split the leaf node and make it an internal node if the number
 	// of elements is greater than MAX_NUM_OF_ELEMENTS
-	void split();
+	// And returns the number of new leaf nodes
+	unsigned split();
 
 	// Merge all the children of this node if the total number of geo elements in
 	// them is less than or equal to MAX_NUM_OF_ELEMENTS
@@ -145,6 +159,7 @@ private:
         ar & this->isLeaf;
         ar & this->children;
         ar & this->numOfElementsInSubtree;
+        ar & this->numOfLeafNodesInSubtree;
         ar & this->elements;
     }
 };

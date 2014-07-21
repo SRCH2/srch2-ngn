@@ -34,11 +34,11 @@ double GeoElement::getDistance(const Shape & range){
 	return sqrt(range.getMinDist2FromLatLong(this->point.x, this->point.y));
 }
 
-double GeoElement::getScore(const SpatialRanker *ranker, const Shape & range){
+double GeoElement::getScore(const Shape & range){
 	 // calculate the score
 	double minDist2UpperBound = max( range.getSearchRadius2() , GEO_MIN_SEARCH_RANGE_SQUARE);
 	double resultMinDist2 = range.getMinDist2FromLatLong(this->point.x, this->point.y);
-	double distanceRatio = ranker->getDistanceRatio(minDist2UpperBound, resultMinDist2);
+	double distanceRatio = ((double)sqrt(minDist2UpperBound) - (double)sqrt(resultMinDist2)) / (double)sqrt(minDist2UpperBound);
 	return max( distanceRatio * distanceRatio, GEO_MIN_DISTANCE_SCORE );
 }
 
@@ -48,12 +48,14 @@ QuadTreeNode::QuadTreeNode(Rectangle &rectangle){
 	this->rectangle = rectangle;
 	this->isLeaf = true;
 	this->numOfElementsInSubtree = 0;
+	this->numOfLeafNodesInSubtree = 1;
 }
 
 QuadTreeNode::QuadTreeNode(Rectangle &rectangle, GeoElement* elements){
 	this->rectangle = rectangle;
 	this->isLeaf = true;
 	this->numOfElementsInSubtree = 1;
+	this->numOfLeafNodesInSubtree = 1;
 	this->elements.push_back(elements);
 }
 
@@ -74,7 +76,7 @@ bool QuadTreeNode::insertGeoElement(GeoElement* element){
 		if(this->numOfElementsInSubtree >= GEO_MAX_NUM_OF_ELEMENTS
 				// For avoiding too small regions in the quadtree
 				&& ((this->rectangle.max.x - this->rectangle.min.x) * (this->rectangle.max.y - this->rectangle.min.y)) > GEO_MBR_LIMIT){
-			this->split();
+			this->numOfLeafNodesInSubtree = this->split();
 		}else{
 			this->elements.push_back(element);
 			this->numOfElementsInSubtree++;
@@ -87,7 +89,10 @@ bool QuadTreeNode::insertGeoElement(GeoElement* element){
 	unsigned child = findChildContainingPoint(element->point);
 	if(this->children[child] != NULL){ // This child is already created
 		// recursively call this function at the corresponding child
-		return this->children[child]->insertGeoElement(element);
+		unsigned numOfLeafNodeInChild = this->children[child]->getNumOfLeafNodesInSubtree();
+		bool flag = this->children[child]->insertGeoElement(element);
+		this->numOfLeafNodesInSubtree += (this->children[child]->getNumOfLeafNodesInSubtree() - numOfLeafNodeInChild);
+		return flag;
 	}
 
 	// The node doesn't have this child. We need to create a new child.
@@ -98,6 +103,7 @@ bool QuadTreeNode::insertGeoElement(GeoElement* element){
 
 	// Put this new node in children
 	this->children[child] = newNode;
+	this->numOfLeafNodesInSubtree += newNode->getNumOfLeafNodesInSubtree();
 
 	return true;
 }
@@ -118,8 +124,10 @@ bool QuadTreeNode::removeGeoElement(GeoElement* element){
 		// Find the child base on location information and recursively call this function at the corresponding child
 		unsigned child = findChildContainingPoint(element->point);
 		if(this->children[child] != NULL){
+			unsigned numOfLeafNodeInChild = this->children[child]->getNumOfLeafNodesInSubtree();
 			if( this->children[child]->removeGeoElement(element) ){
 				this->numOfElementsInSubtree--;
+				this->numOfLeafNodesInSubtree += (this->children[child]->getNumOfLeafNodesInSubtree() - numOfLeafNodeInChild);
 				// if the number of elements in the subtree of this node is less than  MAX_NUM_OF_ELEMENTS we should merge this node.
 				if(this->numOfElementsInSubtree < GEO_MAX_NUM_OF_ELEMENTS)
 					mergeChildren();
@@ -170,10 +178,24 @@ void QuadTreeNode::rangeQuery(vector<vector<GeoElement*>*> & results, const Shap
 	}
 }
 
-void QuadTreeNode::split(){
+void QuadTreeNode::rangeQuery(vector<QuadTreeNode*> & results, const Shape &range){
+	if(range.contains(this->rectangle)){ // query range contains this node's rectangle.
+		results.push_back(this);
+	}else{ // call the rangeQuery for children of this node.
+		for(unsigned i = 0 ; i < GEO_CHILD_NUM ; i++){
+			if(this->children[i] != NULL){
+				if(range.intersects(this->children[i]->rectangle)){
+					this->children[i]->rangeQuery(results,range);
+				}
+			}
+		}
+	}
+}
+
+unsigned QuadTreeNode::split(){
 	ASSERT(this->isLeaf == true);
 	this->isLeaf = false; // after split, the node will no longer be a leaf
-	this->numOfElementsInSubtree = 0;
+	this->numOfLeafNodesInSubtree = 0;
 	// set child points to NULL.
 	for(unsigned i = 0; i < GEO_CHILD_NUM; i++)
 	        this->children.push_back(NULL);
@@ -196,6 +218,7 @@ void QuadTreeNode::mergeChildren(){
 
 	getElements(this->elements); // Move all the elements in its subtree to node
 	this->isLeaf = true; // this node become a leaf after merge
+	this->numOfLeafNodesInSubtree = 1;
 	for(unsigned i = 0 ; i < GEO_CHILD_NUM ; i++){
 		delete this->children[i];
 	}

@@ -66,9 +66,17 @@ bool QuadTree::update(GeoElement* element){
 
 void QuadTree::rangeQuery(vector<vector<GeoElement*>*> & results, const Shape &range) const{
 	ASSERT(this->root != NULL);
-	// First check the intersection of query range with boundary of root
+	// First check the intersection of query range with the boundary of the root
 	if(range.intersects(this->root->getRectangle())){
 		this->root->rangeQuery(results, range);
+	}
+}
+
+void QuadTree::rangeQuery(vector<QuadTreeNode*> & results, const Shape &range) const{
+	ASSERT(this->root != NULL);
+	// First check the intersection of query range with the boundary of the root
+	if(range.intersects(this->root->getRectangle())){
+		this->root->rangeQuery(results,range);
 	}
 }
 

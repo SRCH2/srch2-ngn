@@ -50,6 +50,14 @@ public:
 	// Find all the geo elements in the range
 	void rangeQuery(vector<vector<GeoElement*>*> & results, const Shape &range) const;
 
+	// Find all the quadtree nodes inside the query range.
+	// If the query's rectangle contains the rectangles of all the nodes in a subtree, it only returns the root of that subtree.
+	void rangeQuery(vector<QuadTreeNode*> & results, const Shape &range) const;
+
+	unsigned getTotalNumberOfGeoElements(){
+		return this->root->getNumOfElementsInSubtree();
+	}
+
 	QuadTreeNode* getRoot(){
 		return this->root;
 	};

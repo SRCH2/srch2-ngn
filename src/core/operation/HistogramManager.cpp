@@ -27,6 +27,7 @@ void HistogramManager::annotate(LogicalPlan * logicalPlan){
 
 	allocateLogicalPlanNodeAnnotations(logicalPlan->getTree());
 
+	// TODO : Jamshid change the name of it ...
 	annotateWithActiveNodeSets(logicalPlan->getTree(), logicalPlan->isFuzzy());
 
 	annotateWithEstimatedProbabilitiesAndNumberOfResults(logicalPlan->getTree(), logicalPlan->isFuzzy());
@@ -47,8 +48,10 @@ void HistogramManager::markTermToForceSuggestionPhysicalOperator(LogicalPlanNode
 		case LogicalPlanNodeTypeOr:
 		case LogicalPlanNodeTypeNot:
 		{
-			ASSERT(node->children.size() == 1);
-			markTermToForceSuggestionPhysicalOperator(node->children.at(0) , isFuzzy);
+			ASSERT(node->children.size() <= 2);
+			for( unsigned i = 0 ; i < node->children.size() ; i++){
+				markTermToForceSuggestionPhysicalOperator(node->children.at(i) , isFuzzy);
+			}
 			return;
 		}
 		case LogicalPlanNodeTypePhrase:
@@ -59,6 +62,10 @@ void HistogramManager::markTermToForceSuggestionPhysicalOperator(LogicalPlanNode
 		case LogicalPlanNodeTypeTerm:
 		{
 			node->forcedPhysicalNode = PhysicalPlanNode_UnionLowestLevelSuggestion;
+			return;
+		}
+		case LogicalPlanNodeTypeGeo:
+		{
 			return;
 		}
     }
@@ -93,7 +100,11 @@ void HistogramManager::annotateWithActiveNodeSets(LogicalPlanNode * node , bool 
 				node->stats->activeNodeSetFuzzy = computeActiveNodeSet(node->fuzzyTerm);
 			}
 			break;
+		case LogicalPlanNodeTypeGeo:
+				node->stats->quadTreeNodeSet = computeQuadTreeNodeSet(node->regionShape);
+			break;
 		default:
+			ASSERT(false);
 			break;
 	}
 	// and now activenodes for children
@@ -208,6 +219,33 @@ void HistogramManager::annotateWithEstimatedProbabilitiesAndNumberOfResults(Logi
 			}
 			break;
 		}
+		case LogicalPlanNodeTypeGeo:
+		{
+			double geoElementsProbability = 0;
+			double quadTreeNodeProbability;
+			unsigned geoNumOfLeafNodes = 0;
+			QuadTreeNode *geoNode;
+			vector<QuadTreeNode*>* quadTreeNodeSet = node->stats->getQuadTreeNodeSetForEstimation();
+			for( unsigned i = 0 ; i < quadTreeNodeSet->size() ; i++){
+				geoNode = quadTreeNodeSet->at(i);
+				quadTreeNodeProbability = ( double(geoNode->getNumOfElementsInSubtree()) /
+												this->queryEvaluator->getQuadTree()->getTotalNumberOfGeoElements());
+				geoElementsProbability = geoNode->aggregateValueByJointProbabilityDouble(geoElementsProbability, quadTreeNodeProbability);
+				geoNumOfLeafNodes += geoNode->getNumOfLeafNodesInSubtree();
+			}
+			node->stats->setEstimatedProbability(geoElementsProbability);
+			node->stats->setEstimatedNumberOfResults(computerEstimatedNumberOfResultsForGeo(geoElementsProbability));
+			node->stats->setEstimatedNumberOfLeafNodes(geoNumOfLeafNodes);
+			/*
+			 * if probability is not zero but estimated number of results is zero, it means probability has
+			 * become very small. But since this zero will be multiplied to many other parts of costing
+			 * it shouldn't be zero or it disables them ...
+			 */
+			if(geoElementsProbability != 0 && node->stats->getEstimatedNumberOfResults() == 0){
+				node->stats->setEstimatedNumberOfResults(1);
+			}
+			break;
+		}
 	}
 
 
@@ -232,6 +270,10 @@ unsigned HistogramManager::countNumberOfKeywords(LogicalPlanNode * node , bool i
 		case LogicalPlanNodeTypePhrase:
 		{
 			return countNumberOfKeywords(node->children.at(0), isFuzzy);
+		}
+		case LogicalPlanNodeTypeGeo:
+		{
+			return 0;
 		}
 		default:
 			ASSERT(false);
@@ -284,6 +326,12 @@ boost::shared_ptr<PrefixActiveNodeSet> HistogramManager::computeActiveNodeSet(Te
     // Possible memory leak due to last prefixActiveNodeSet not being cached. This is checked for
     // and deleted by the caller "QueryResultsInternal()"
     return prefixActiveNodeSet;
+}
+
+vector<QuadTreeNode*>* HistogramManager::computeQuadTreeNodeSet(Shape *range){
+	vector<QuadTreeNode*> results;
+	this->queryEvaluator->getQuadTree()->rangeQuery(results,*range);
+	return &results;
 }
 
 void HistogramManager::computeEstimatedProbabilityOfPrefixAndNumberOfLeafNodes(TermType termType, PrefixActiveNodeSet * activeNodes ,
@@ -429,6 +477,11 @@ void HistogramManager::depthAggregateProbabilityAndNumberOfLeafNodes(const TrieN
 unsigned HistogramManager::computeEstimatedNumberOfResults(double probability){
 	return (unsigned)(probability * this->queryEvaluator->indexData->forwardIndex->getTotalNumberOfForwardLists_ReadView());
 }
+
+unsigned HistogramManager::computerEstimatedNumberOfResultsForGeo(double probability){
+	return (unsigned)(probability * this->queryEvaluator->getQuadTree()->getTotalNumberOfGeoElements());
+}
+
 
 }
 }

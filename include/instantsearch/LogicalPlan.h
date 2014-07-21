@@ -23,6 +23,7 @@
 #include "instantsearch/Term.h"
 #include "instantsearch/ResultsPostProcessor.h"
 #include "util/Assert.h"
+#include "record/LocationRecordUtil.h"
 #include <vector>
 #include <string>
 #include <sstream>

@@ -93,7 +93,6 @@ typedef enum
 {
     SearchTypeTopKQuery ,
     SearchTypeGetAllResultsQuery ,
-    SearchTypeMapQuery,
     SearchTypeRetrieveById
 } QueryType;
 
@@ -254,6 +253,9 @@ typedef enum {
 	PhysicalPlanNode_RandomAccessAnd,
 	PhysicalPlanNode_RandomAccessOr,
 	PhysicalPlanNode_RandomAccessNot,
+	PhysicalPlanNode_RandomAccessGeo,
+	PhysicalPlanNode_GeoSimpleScan,
+	PhysicalPlanNode_GeoNearestNeighbor,
 	PhysicalPlanNode_Facet,
 	PhysicalPlanNode_SortByRefiningAttribute,
 	PhysicalPlanNode_FilterQuery,

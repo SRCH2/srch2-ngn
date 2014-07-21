@@ -84,6 +84,7 @@ private:
 	vector< GeoNearestNeighborOperatorHeapItem* >  heapItems;
 	QueryEvaluatorInternal* queryEvaluator;
 	Shape* queryShape;  // keep the shape of the query region
+	shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
 };
 
 class GeoNearestNeighborOptimizationOperator : public PhysicalPlanOptimizationNode{

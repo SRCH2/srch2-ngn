@@ -45,7 +45,7 @@ void QueryExecutor::execute(QueryResults * finalResults) {
 	/*
 	 * changes:
 	 * 1. GetAll and topK must be merged. The difference must be pushed to the core.
-	 * 2. MapQuery and retrievById will remain unchanged (their search function must change because the names will change)
+	 * 2. retrievById will remain unchanged (their search function must change because the names will change)
 	 * 3. LogicalPlan must be passed to QueryEvaluator (which is in core) to be evaluated.
 	 * 4. No exact/fuzzy policy must be applied here.
 	 * 5. Postprocessing framework must be prepared to be applied on the results (its code comes from QueryPlanGen)
@@ -60,7 +60,8 @@ void QueryExecutor::execute(QueryResults * finalResults) {
     // Each time IndexSearcher is created, we container must be made and passed to it as an argument.
     QueryEvaluatorRuntimeParametersContainer runTimeParameters(configuration->getKeywordPopularityThreshold(),
     		configuration->getGetAllResultsNumberOfResultsThreshold() ,
-    		configuration->getGetAllResultsNumberOfResultsToFindInEstimationMode());
+    		configuration->getGetAllResultsNumberOfResultsToFindInEstimationMode(),
+    		this->configuration->getAttributeLatitude(), this->configuration->getAttributeLongitude());
     this->queryEvaluator = new srch2is::QueryEvaluator(server->indexer , &runTimeParameters );
 
     //do the search
@@ -68,11 +69,6 @@ void QueryExecutor::execute(QueryResults * finalResults) {
     case srch2is::SearchTypeTopKQuery: //TopK
     case srch2is::SearchTypeGetAllResultsQuery: //GetAllResults
         executeKeywordSearch(finalResults);
-        break;
-    // TODO Mahdi: remove this part
-    case srch2is::SearchTypeMapQuery: //MapQuery
-    	// Mahdi: This function has been removed. It was for old geo search design.
-        //executeGeo(finalResults);
         break;
     case srch2is::SearchTypeRetrieveById:
     	executeRetrieveById(finalResults);

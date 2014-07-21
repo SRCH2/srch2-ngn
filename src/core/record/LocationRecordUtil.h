@@ -76,6 +76,7 @@ public:
     virtual ~Shape() {};
 
     virtual bool contains(const Point &point) const = 0;
+    virtual bool contains(const Rectangle &rectangle) const = 0;
     virtual bool intersects(const Rectangle &) const = 0;
     virtual double getMinDist2FromLatLong(double resultLat, double resultLng) const = 0;
     virtual double getSearchRadius2() const = 0;
@@ -123,6 +124,12 @@ public:
     {
         return min.x <= point.x && max.x >= point.x
             && min.y <= point.y && max.y >= point.y;
+    };
+
+    // check whether the rectangle contains the rectangle
+    virtual bool contains(const Rectangle &rectangle) const
+    {
+    	return this->contains(rectangle.min) && this->contains(rectangle.max);
     };
 
     // check whether this rectangle is contained by another
@@ -208,6 +215,18 @@ public:
     virtual bool contains(const Point &point) const
     {
         return center.distSquare(point) <= radius*radius;
+    }
+
+    // check whether the Circle contains the rectangle
+    virtual bool contains(const Rectangle &rectangle) const
+    {
+    	Point point1;
+    	point1.x = rectangle.max.x;
+    	point1.y = rectangle.min.y;
+    	Point point2;
+    	point2.x = rectangle.min.x;
+    	point2.y = rectangle.max.y;
+    	return this->contains(point1) && this->contains(point2) && this->contains(rectangle.max) && this->contains(rectangle.min);
     }
 
     // how to detect the intersection between a circle and a rectangle
