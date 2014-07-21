@@ -64,9 +64,11 @@ void * TransportManager::notifyUpstreamHandlers(Message *msg, int fd, NodeId  no
 
 	if(msg->isReply()) {
 		Logger::debug("Reply message is received. Msg type is %d", msg->getType());
-		if ( ! getReplyMessageHandler()->resolveMessage(msg,
-				nodeId)){
-			getMessageAllocator()->deallocateByMessagePointer(msg);
+		if (getReplyMessageHandler()) {
+			if ( ! getReplyMessageHandler()->resolveMessage(msg,
+					nodeId)){
+				getMessageAllocator()->deallocateByMessagePointer(msg);
+			}
 		}
 	} else if(msg->isInternal()) {
 		if(getInternalMessageHandler() != NULL){
@@ -309,6 +311,7 @@ TransportManager::TransportManager(vector<struct event_base *>& bases, Transport
 	routingManager = NULL;
 	shutDown = false;
 	discoveryHandler = NULL;
+	migrationManagerHandler = NULL;
 	validateTransportConfig(config);
 	transportConfig = config;
 	transportConfig.print();

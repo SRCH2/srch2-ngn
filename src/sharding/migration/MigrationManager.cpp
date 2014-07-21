@@ -360,17 +360,10 @@ void MigrationService::receiveShard(ShardId shardId) {
 			return;
 		}
 
-//		if (internalBufferSize < componentSize || internalBuffer) {
-//			delete internalBuffer;
-//			internalBuffer = new char[componentSize];
-//		} else {
-//			// memset(internalBuffer, 0, componentSize);
-//		}
-		//if (mmapBufferSize < componentSize || mmapBuffer) {
 #ifdef __MACH__
 		mmapBuffer = mmap(NULL, componentSize, PROT_WRITE|PROT_READ, MAP_PRIVATE, writeFd, 0);
 #else
-		mmapBuffer = mmap64(NULL, componentSize, PROT_WRITE|PROT_READ, MAP_PRIVATE, writeFd, 0);
+		mmapBuffer = mmap64(NULL, componentSize, PROT_WRITE|PROT_READ, MAP_SHARED, writeFd, 0);
 #endif
 
 		if (mmapBuffer == MAP_FAILED) {
@@ -398,6 +391,7 @@ void MigrationService::receiveShard(ShardId shardId) {
 			int status = readDataFromSocketWithRetry(commSocket, (char *)mmapBuffer + offset, packetSize, retryCount);
 			if (status == -1) {
 				//close socket
+				perror("");
 				Logger::console("Migration: Network error while migrating shard %s", shardId.toString().c_str());
 				migrationMgr->migrationSession.erase(shardId);
 				//delete internalBuffer;
@@ -420,8 +414,8 @@ void MigrationService::receiveShard(ShardId shardId) {
 		migratedShard->bootStrapShardComponentFromByteStream(inputStream,
 				migrationMgr->migrationSession[shardId].shardCompName);
 
-		close(writeFd);
 		munmap(mmapBuffer, componentSize);
+		close(writeFd);
 		//Send ACK
 		migrationMgr->sendComponentDoneMsg(shardId, migrationMgr->migrationSession[shardId].shardCompName);
 	}
@@ -527,6 +521,7 @@ void MigrationManager::migrateShard(ShardId shardId, boost::shared_ptr<Srch2Serv
 			perror("");
 			migrationSession.erase(shardId);
 			// callback SHM with failure.
+			migrationSession.erase(shardId);
 			return;
 		}
 		Logger::console("Sending data for shard component %s", componentName.c_str());
@@ -540,6 +535,8 @@ void MigrationManager::migrateShard(ShardId shardId, boost::shared_ptr<Srch2Serv
 				perror("");
 				Logger::console("Network error while sending the shard");
 				//CallBack SHM
+				migrationSession.erase(shardId);
+				return;
 			}
 
 			if (status == 0 && byteToSend == 0)
@@ -552,6 +549,8 @@ void MigrationManager::migrateShard(ShardId shardId, boost::shared_ptr<Srch2Serv
 				perror("");
 				Logger::console("Network error while sending the shard");
 				//CallBack SHM
+				migrationSession.erase(shardId);
+				return;
 			}
 			if (offset >= componentSize)
 				break;
@@ -735,7 +734,7 @@ int MigrationManager::acceptTCPConnection(int tcpSocket , short receivePort) {
 	 *   Make socket non blocking
 	 */
 
-	fcntl(tcpReceiveSocket, F_SETFL, O_NONBLOCK);
+	//fcntl(tcpReceiveSocket, F_SETFL, O_NONBLOCK);
 	return tcpReceiveSocket;
 
 }
