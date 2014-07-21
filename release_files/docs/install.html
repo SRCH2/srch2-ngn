@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="generator" content="ReText Webpages generator 4.0.1">
+<meta name="generator" content="ReText Webpages generator 4.0.0">
 <link rel="stylesheet" type="text/css" href="style.css">
 <title>SRCH2: Installation</title>
 </head>
@@ -16,7 +16,7 @@
 <a href="http://www.srch2.com" target="_blankt"><img style="height:24px" src="images/logo.png" align="left"></a>&nbsp;
 </td>
 <td style="align:right; white-space: nowrap; padding: 0px; font-size: 12px">
-Version: 4.3.3, Date: July 07, 2014&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Version: 4.3.0, Date: March 24, 2014&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </td>
 </tr>
 </table>
@@ -102,9 +102,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <li>example-demo/.</li>
 </ul>
 <p>The "example-demo" folder contains files for a demo, in which we use the engine to build a search service on sample movie information. The folder includes a JSON file, a sample configuration XML file for the engine, and files for two front-end UIs (one basic and one advanced).</p>
-<p><b>Step 2</b>: Open the file <a href="example-demo/srch2-config.xml">example-demo/srch2-config.xml</a>, and change the variable "srch2Home" to the install folder of the
+<p><b>Step 2</b>: Obtain a free 30-day trial key by filling in the <a href="http://www.srch2.com/download">form</a>. Store the key file locally as "srch2_license_key.txt" into the install directory.</p>
+<p><b>Step 3</b>: Open the file <a href="example-demo/srch2-config.xml">example-demo/srch2-config.xml</a>, and change the variable "srch2Home" to the install folder of the
 SRCH2 package, e.g., "/home/joe/srch2".</p>
-<p><b>Step 3</b>: Go to the install folder and run the following:</p>
+<p><b>Step 4</b>: Go to the install folder and run the following:</p>
 <pre><code class="python">shell&gt; ./bin/srch2-engine --config-file=./example-demo/srch2-config.xml
 </code></pre>
 
@@ -114,7 +115,7 @@ SRCH2 package, e.g., "/home/joe/srch2".</p>
 <p></center></p>
 <p>Note:</p>
 <ul>
-<li>All the paths in the configuration file are relative to the "srch2Home" variable.</li>
+<li>All the paths in the configuration file are relative to the "srch2Home" variable, so make sure the license file path is relative to "srch2Home", not an absolute path.  </li>
 <li>It is recommended to use an absolute path value for the "srch2Home" variable.</li>
 <li>Once the engine starts, it stores the indexes in the folder specified by the  "dataDir" parameter in the configuration file (with a default folder called "indexes"). The next time we start the engine, it will check if the folder has index files. If so, the engine will load the index files instead of reading the records from the data source. If we want to force the engine to read the records, make sure to delete the files in the "indexes" folder.</li>
 </ul>
