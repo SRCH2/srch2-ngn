@@ -2,7 +2,7 @@
  * sqliteconnector.cpp
  *
  *  Created on: Jul 3, 2014
- *      Author: liusrch2
+ *      Author: Chen Liu at SRCH2
  */
 
 #include "sqliteconnector.h"
@@ -24,7 +24,7 @@ SQLiteConnector::SQLiteConnector() {
     deleteLogStmt = NULL;
 }
 
-//Init the connector, call connect
+//Initialize the connector. Establish a connection to the Sqlite.
 int SQLiteConnector::init(ServerInterface * serverHandle) {
     this->serverHandle = serverHandle;
 
@@ -63,7 +63,7 @@ int SQLiteConnector::init(ServerInterface * serverHandle) {
      * if database contains the table, init failed if one of them failed.
      */
     if (!checkConfigValidity() || !connectToDB()
-            || !checkCollectionExistence()) {
+            || !checkTableExistence()) {
         printf("SQLITECONNECTOR: exiting...\n");
         return -1;
     }
@@ -74,7 +74,7 @@ int SQLiteConnector::init(ServerInterface * serverHandle) {
      * for the listener.
      */
     if (!populateTableSchema() || !createLogTableIfNotExistence()
-            || !createTriggerIfNotExistence()||!createPreparedStatement()) {
+            || !createTriggerIfNotExistence() || !createPreparedStatement()) {
         printf("SQLITECONNECTOR: exiting...\n");
         return -1;
     }
@@ -119,7 +119,8 @@ bool SQLiteConnector::checkConfigValidity() {
     bool ret = (dbPath.size() != 0) && (db.size() != 0)
             && (uniqueKey.size() != 0) && (collection.size() != 0);
     if (!ret) {
-        printf("SQLITECONNECTOR: database path, db, collection, uniquekey must be set.\n");
+        printf(
+                "SQLITECONNECTOR: database path, db, collection, uniquekey must be set.\n");
         return false;
     }
 
@@ -128,7 +129,7 @@ bool SQLiteConnector::checkConfigValidity() {
 
 //Check if database contains the table.
 //Query: SELECT COUNT(*) FROM table;
-bool SQLiteConnector::checkCollectionExistence() {
+bool SQLiteConnector::checkTableExistence() {
     std::string collection;
     this->serverHandle->configLookUp("collection", collection);
 
@@ -152,7 +153,7 @@ bool SQLiteConnector::checkCollectionExistence() {
     return false;
 }
 
-//Load the table records and insert into the engine
+//Retrieve records from the table records and insert them into the SRCH2 engine.
 //Query: SELECT * FROM table;
 int SQLiteConnector::createNewIndexes() {
     std::string collection;
@@ -199,7 +200,10 @@ int createIndex_callback(void *dbConnector, int argc, char **argv,
     return 0;
 }
 
-//Listen to the log table and do modification to the engine
+/*
+ * Periodically check updates in the Sqlite log table, and send
+ * corresponding requests to the SRCH2 engine
+ */
 int SQLiteConnector::runListener() {
     std::string collection;
     this->serverHandle->configLookUp("collection", collection);
@@ -219,7 +223,8 @@ int SQLiteConnector::runListener() {
         while (1) {
             logRecordTimeChangedFlag = false;
 
-            int rc = sqlite3_bind_text(selectStmt, 1, lastAccessedLogRecordTime.c_str(),
+            int rc = sqlite3_bind_text(selectStmt, 1,
+                    lastAccessedLogRecordTime.c_str(),
                     lastAccessedLogRecordTime.size(), SQLITE_STATIC);
             if (rc != SQLITE_OK) {
                 fprintf(stderr, "SQL error %d : %s\n", rc, sqlite3_errmsg(db));
@@ -237,9 +242,11 @@ int SQLiteConnector::runListener() {
                 res = sqlite3_step(selectStmt);
                 if (res == SQLITE_ROW) {
                     //Get old id, operation and time stamp of the log record.
-                    std::string oldId = (char*) sqlite3_column_text(selectStmt, 0);
-                    setLastAccessedLogRecordTime(
-                            (char*) sqlite3_column_text(selectStmt, 1));
+                    std::string oldId = (char*) sqlite3_column_text(selectStmt,
+                            0);
+                    lastAccessedLogRecordTime = (char*) sqlite3_column_text(
+                            selectStmt, 1);
+                    logRecordTimeChangedFlag = true;
                     char* op = (char*) sqlite3_column_text(selectStmt, 2);
 
                     //Populate the Json record.
@@ -292,14 +299,15 @@ int SQLiteConnector::runListener() {
             }
 
             //If fatal error happens, exit the listener immediately.
-            if(fatal_error){
+            if (fatal_error) {
                 break;
             }
 
             //Retry the connection if the sql error happens.
             if (sqlite3_errcode(db) != SQLITE_DONE
                     && sqlite3_errcode(db) != SQLITE_OK) {
-                fprintf(stderr, "Error code SQL error %d : %s\n", rc, sqlite3_errmsg(db));
+                fprintf(stderr, "Error code SQL error %d : %s\n", rc,
+                        sqlite3_errmsg(db));
                 sqlite3_reset(selectStmt);
                 sleep(listenerWaitTime);
                 break;
@@ -318,13 +326,13 @@ int SQLiteConnector::runListener() {
              */
             if (logRecordTimeChangedFlag) {
                 this->serverHandle->saveChanges();
-                deleteExpiredLog();
+                deleteProcessedLog();
                 saveLastAccessedLogRecordTime();
                 printf("SQLITECONNECTOR: waiting for updates ...\n");
             }
             sleep(listenerWaitTime);
         }
-        if(fatal_error){
+        if (fatal_error) {
             break;
         }
     }
@@ -374,7 +382,8 @@ bool SQLiteConnector::createLogTableIfNotExistence() {
             return true;
         }
     }
-    printf("SQLITECONNECTOR: Create log table %s failed.\n", LOG_TABLE_NAME.c_str());
+    printf("SQLITECONNECTOR: Create log table %s failed.\n",
+            LOG_TABLE_NAME.c_str());
     return false;
 }
 
@@ -411,11 +420,12 @@ bool SQLiteConnector::populateTableSchema() {
             fprintf(stderr, "SQL error %d : %s\n", rc, zErrMsg);
             sqlite3_free(zErrMsg);
             sleep(listenerWaitTime);
-        }else{
+        } else {
             return true;
         }
     }
-    printf("SQLITECONNECTOR: Populate schema of table %s failed.\n", collection.c_str());
+    printf("SQLITECONNECTOR: Populate schema of table %s failed.\n",
+            collection.c_str());
     return false;
 }
 
@@ -439,12 +449,10 @@ int populateTableSchema_callback(void * dbConnector, int argc, char ** argv,
     return 0;
 }
 
-//Set PRIMARY_KEY_TYPE
 void SQLiteConnector::setPrimaryKeyType(const std::string& pkType) {
     this->PRIMARY_KEY_TYPE = pkType;
 }
 
-//Set PRIMARY_KEY_NAME
 void SQLiteConnector::setPrimaryKeyName(const std::string& pkName) {
     this->PRIMARY_KEY_NAME = pkName;
 }
@@ -456,7 +464,7 @@ void SQLiteConnector::setPrimaryKeyName(const std::string& pkName) {
  *
  * Delete Query: DELETE * FROM log_table WHERE log_table_date <= ?;
  */
-bool SQLiteConnector::createPreparedStatement(){
+bool SQLiteConnector::createPreparedStatement() {
     std::stringstream sql;
 
     //Create select prepared statement
@@ -475,7 +483,8 @@ bool SQLiteConnector::createPreparedStatement(){
     }
 
     if (retryCount == maxRetryOnFailure) {
-        printf("SQLITECONNECTOR: Create listener select prepared statement failed.\n");
+        printf(
+                "SQLITECONNECTOR: Create listener select prepared statement failed.\n");
         return false;
     }
 
@@ -496,7 +505,8 @@ bool SQLiteConnector::createPreparedStatement(){
     }
 
     if (retryCount == maxRetryOnFailure) {
-        printf("SQLITECONNECTOR: Create delete expired log prepared statement failed.\n");
+        printf(
+                "SQLITECONNECTOR: Create delete expired log prepared statement failed.\n");
         return false;
     }
 
@@ -545,7 +555,7 @@ bool SQLiteConnector::createTriggerIfNotExistence() {
     }
     sql << ");END;";
 
-    int i=0;
+    int i = 0;
     for (i = -1; i != maxRetryOnFailure; ++i) {
         rc = sqlite3_exec(db, sql.str().c_str(), NULL, 0, &zErrMsgInsert);
         if ((rc != SQLITE_OK)
@@ -658,12 +668,6 @@ void SQLiteConnector::loadLastAccessedLogRecordTime() {
     }
 }
 
-//Save the time last oplog record accessed to the variable lastAccessedLogRecordTime
-void SQLiteConnector::setLastAccessedLogRecordTime(const char* t) {
-    lastAccessedLogRecordTime = t;
-    logRecordTimeChangedFlag = true;
-}
-
 //Save the time last oplog record accessed to the disk
 void SQLiteConnector::saveLastAccessedLogRecordTime() {
     std::string path, srch2Home;
@@ -680,8 +684,8 @@ void SQLiteConnector::saveLastAccessedLogRecordTime() {
     a_file.close();
 }
 
-//Delete the expired log, keep the log table small.
-bool SQLiteConnector::deleteExpiredLog() {
+//Delete the processed log from the table so that we can keep it small.
+bool SQLiteConnector::deleteProcessedLog() {
 
     //Bind the lastAccessedLogRecordTime
     int rc = sqlite3_bind_text(deleteLogStmt, 1,

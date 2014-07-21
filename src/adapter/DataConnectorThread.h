@@ -2,7 +2,7 @@
  * DataConnectorThread.h
  *
  *  Created on: Jun 24, 2014
- *      Author: liusrch2
+ *      Author: Chen Liu at SRCH2
  */
 
 #ifndef __DATACONNECTORTHREAD_H__

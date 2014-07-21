@@ -11,7 +11,7 @@ cd ~/tmp/sqlite
 wget http://www.sqlite.org/2014/sqlite-autoconf-3080500.tar.gz 
 tar xvfz sqlite-autoconf-*.tar.gz
 cd sqlite-autoconf-*
-./configure --prefix=/usr/local
+./configure
 make
 sudo make install
 

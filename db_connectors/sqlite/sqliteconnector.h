@@ -2,7 +2,7 @@
  * sqliteconnector.h
  *
  *  Created on: Jul 3, 2014
- *      Author: liusrch2
+ *      Author: Chen Liu at SRCH2
  */
 
 #ifndef __SQLITECONNECTOR_H__
@@ -25,12 +25,13 @@ public:
     SQLiteConnector();
     virtual ~SQLiteConnector();
 
-    //Init the connector, call connect
+    //Initialize the connector. Establish a connection to the Sqlite.
     virtual int init(ServerInterface *serverHandle);
-    //Listen to the log table and do modification to the engine
-    virtual int runListener();
-    //Load the table records and insert into the engine
+    //Retrieve records from the table records and insert them into the SRCH2 engine.
     virtual int createNewIndexes();
+    //Periodically check updates in the Sqlite log table,
+    //and send corresponding requests to the SRCH2 engine.
+    virtual int runListener();
 
     //Return LOG_TABLE_NAME_DATE
     const char * getLogTableDateAttr();
@@ -39,13 +40,11 @@ public:
     //Return LOG_TABLE_NAME_ID
     const char * getLogTableIdAttr();
 
-    //Set PRIMARY_KEY_TYPE
     void setPrimaryKeyType(const std::string& pkType);
-    //Set PRIMARY_KEY_NAME
     void setPrimaryKeyName(const std::string& pkName);
 
     //Store the table schema. Key is schema name and value is schema type
-    std::map<std::string,std::string> tableSchema;
+    std::map<std::string, std::string> tableSchema;
     ServerInterface *serverHandle;
 private:
     //Config parameters
@@ -61,41 +60,40 @@ private:
     int maxRetryOnFailure;
     int listenerWaitTime;
 
-    //Sqlite pointers
+    //Parameters for Sqlite
     sqlite3 *db;
     sqlite3_stmt *selectStmt;
     sqlite3_stmt *deleteLogStmt;
 
-    //Timestamp and flag
+    //A timestamp that indicates the last time the SRCH2 engine
+    //accessed the log table to retrieve the change history
     std::string lastAccessedLogRecordTime;
+    //The flag is true if there are new records in the log table.
     bool logRecordTimeChangedFlag;
 
     //Connect to the sqlite database
     bool connectToDB();
-    //Check the config validity. e.g. if contains dbname, collection etc.
+    //Check the config validity. e.g. if contains dbname, tables etc.
     bool checkConfigValidity();
     //Check if database contains the table.
-    bool checkCollectionExistence();
+    bool checkTableExistence();
     //Fetch the table schema and store into tableSchema
     bool populateTableSchema();
 
     //Create prepared statements for the listener.
     bool createPreparedStatement();
     //Create triggers for the log table
-	bool createTriggerIfNotExistence();
-	//Create the log table
-	bool createLogTableIfNotExistence();
+    bool createTriggerIfNotExistence();
+    //Create the log table
+    bool createLogTableIfNotExistence();
 
-	//Set the last time last log record accessed
-	void setLastAccessedLogRecordTime(const char* t);
-	//Load the last time last log record accessed from disk
-    void loadLastAccessedLogRecordTime();
-    //Save the last time last log record accessed from disk
+    //Save the lastAccessedLogRecordTime from the disk
     void saveLastAccessedLogRecordTime();
+    //Load the lastAccessedLogRecordTime from the disk
+    void loadLastAccessedLogRecordTime();
 
-    //Delete the expired log, keep the log table small.
-    bool deleteExpiredLog();
+    //Delete the processed log from the table so that we can keep it small
+    bool deleteProcessedLog();
 };
-
 
 #endif /* __SQLITECONNECTOR_H__ */
