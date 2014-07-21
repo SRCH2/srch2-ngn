@@ -47,8 +47,8 @@ ELSE()
 ADD_EXECUTABLE(${SRCH2_SERVER_NAME} srch2SearchServer.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:SERVER_OBJECTS> $<TARGET_OBJECTS:ADAPTER_OBJECTS>)              
 TARGET_LINK_LIBRARIES(${SRCH2_SERVER_NAME}  
                         ${Srch2InstantSearch_LIBRARIES} 
-                        ${jsoncpp_LIBRARY}      ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent_pthreads.a
-                        ${Boost_LIBRARIES} ${GPERFTOOL_LIBS} -Wl,-Bdynamic ${CMAKE_REQUIRED_LIBRARIES}                      
+                        ${jsoncpp_LIBRARY} ${crypto_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent_pthreads.a
+                        ${Boost_LIBRARIES} ${GPERFTOOL_LIBS} ${CMAKE_REQUIRED_LIBRARIES}                      
                 )
                 
 ENDIF()

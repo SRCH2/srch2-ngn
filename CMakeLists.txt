@@ -64,7 +64,7 @@ ENDIF(COMMAND cmake_policy)
 ##SET this option to "on", if you want detailed makefile execution
 SET(VERBOSE OFF CACHE BOOL "Build verbose makefiles and output. Default ON")
 SET(CMAKE_VERBOSE_MAKEFILE ${VERBOSE})
-SET(BUILD_STATIC ON CACHE BOOL "Build Srch2 static library and binary. Default ON")
+SET(BUILD_STATIC OFF CACHE BOOL "Build Srch2 static library and binary. Default OFF")
 SET(BUILD_JNI OFF CACHE BOOL
     "Build in hooks for Java to interact Srch2 Core. Defaults to OFF.")
 SET(BUILD_SERVER ON CACHE BOOL
@@ -124,13 +124,6 @@ ELSE(BUILD_RELEASE)
     SET (DO_ASSERT ON)
 ENDIF(BUILD_RELEASE)
 
-# http://stackoverflow.com/questions/6578484/telling-gcc-directly-to-link-a-library-statically
-SET(CMAKE_EXE_LINK_DYNAMIC_C_FLAGS)       # remove -Wl,-Bdynamic
-SET(CMAKE_EXE_LINK_DYNAMIC_CXX_FLAGS)
-SET(CMAKE_SHARED_LIBRARY_C_FLAGS)         # remove -fPIC
-SET(CMAKE_SHARED_LIBRARY_CXX_FLAGS)
-SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS)    # remove -rdynamic
-SET(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS)
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 
 # Platform SpecIFic Compiler Flags
@@ -151,37 +144,26 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
         SET(CMAKE_REQUIRED_LIBRARIES stdc++ crypto ${CMAKE_REQUIRED_LIBRARIES})
     ELSE()
         IF (LINUX_OS)
-       		SET(CMAKE_REQUIRED_LIBRARIES crypto dl pthread stdc++ rt z ${CMAKE_REQUIRED_LIBRARIES})
+       		SET(CMAKE_REQUIRED_LIBRARIES dl pthread stdc++ rt z ${CMAKE_REQUIRED_LIBRARIES})
         ELSE()
-       		SET(CMAKE_REQUIRED_LIBRARIES crypto pthread stdc++ ${CMAKE_REQUIRED_LIBRARIES})
+       		SET(CMAKE_REQUIRED_LIBRARIES pthread stdc++ ${CMAKE_REQUIRED_LIBRARIES})
         ENDIF()
     ENDIF()
     
-    IF(DO_COVERAGE)
-    	MESSAGE(STATUS "COVERAGE tags Turned ON")
-        SET(COVERAGE_FLAGS "-fprofile-arcs -ftest-coverage")
-        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COVERAGE_FLAGS}" )
-        SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${COVERAGE_FLAGS}" )
+    IF (DO_ASSERT)
+        MESSAGE(STATUS "ASSERT Turned ON")
     ELSE()
-        MESSAGE(STATUS "COVERAGE tags Turned OFF")    
-    ENDIF()
- 
-	IF (DO_ASSERT)
-		MESSAGE(STATUS "ASSERT Turned ON")
-	ELSE()
 		# add assert_level=0 macro 
-		add_definitions(-DASSERT_LEVEL=0)
-		MESSAGE(STATUS "ASSERT Turned OFF")
-	ENDIF()
+        add_definitions(-DASSERT_LEVEL=0)
+        MESSAGE(STATUS "ASSERT Turned OFF")
+    ENDIF()
     
     SET( CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
     
     SET( Boost_ADDITIONAL_VERSIONS "1.34" "1.40.0" "1.40" "1.41")
 
-    ## CHENLI
-    IF (BUILD_STATIC)
-        SET(Boost_USE_STATIC_LIBS ON)
-    ENDIF ()
+    #always link boost statically. 
+    SET(Boost_USE_STATIC_LIBS ON)
 	
     IF (BUILD_RELEASE)
 	SET(Boost_DEBUG OFF)
@@ -218,7 +200,10 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 	    MESSAGE(STATUS "libdl = ${dl_LIBRARY}")
 	    MESSAGE(STATUS "libz = ${z_LIBRARY}")	
     ENDIF ()
-	
+
+    FIND_LIBRARY(crypto_LIBRARY NAMES libcrypto.a PATHS ${sys_LIBRARY_DIRS})
+    MESSAGE(STATUS "libcrypto = ${crypto_LIBRARY}")
+
     IF(ENABLE_PURIFY)
        message(STATUS "*****Purify is enabled******")
        set(CMAKE_CXX_LINK_EXECUTABLE "purify ${CMAKE_CXX_LINK_EXECUTABLE}")
@@ -242,32 +227,28 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
     IF (MAC_OS)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=10.5 ")
     ENDIF()
-	#Add subdirectories to look for other CMakeList.txt
-	ADD_SUBDIRECTORY(include/instantsearch)
-	ADD_SUBDIRECTORY(src/core)
 
-  IF(BUILD_JNI) 
-    ADD_SUBDIRECTORY(src/java)
-  ENDIF()
+    #Add subdirectories to look for other CMakeList.txt
+    ADD_SUBDIRECTORY(include/instantsearch)
+    ADD_SUBDIRECTORY(src/core)
 
-	# Building the wrapper layer in static build mode.
-	# Setting up the Path to Srch2_InstantSearch_library
-	IF (BUILD_STATIC)
-		    SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libsrch2_core.a)
-	ELSE ()
-            IF(MAC_OS) 
-      		    SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libsrch2_core.dylib)
-            ELSEIF (ANDROID)
-                if (ANDROID_SERVER)
-                    # we statically link the srch2 core with srch2-server ..see src/core/CMakeLists.txt
-                    SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/libs/armeabi-v7a/libsrch2_core.a)
-                else()
-                    SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/libs/armeabi-v7a/libsrch2_core.so)
-                endif()
-            ELSE()
-                SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libsrch2_core.so)
-            ENDIF()
-	ENDIF()
+    IF(BUILD_JNI) 
+        ADD_SUBDIRECTORY(src/java)
+    ENDIF()
+
+    # Building the wrapper layer in static build mode.
+    # Setting up the Path to Srch2_InstantSearch_library
+    IF (BUILD_STATIC OR BUILD_SERVER OR ANDRIOD_SERVER)
+        SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libsrch2_core.a)
+    ELSE ()
+        IF(MAC_OS) 
+	    SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libsrch2_core.dylib)
+        ELSEIF (ANDROID)
+	    SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/libs/armeabi-v7a/libsrch2_core.so)
+        ELSE()
+	    SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libsrch2_core.so)
+        ENDIF()
+    ENDIF()
 
     IF (BUILD_SERVER)
         ADD_SUBDIRECTORY(src/wrapper)        
@@ -288,19 +269,6 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
         ENDIF()
 	
     ENDIF()
-    #ADD_SUBDIRECTORY(src/wrapper)
-    #ADD_SUBDIRECTORY(src/server)
-	
-	#ADD_SUBDIRECTORY(examples)
-	#ADD_DEPENDENCIES(examples_c++ srch2_lib)
-	#ADD_DEPENDENCIES(examples_python srch2_lib)
-	#ADD_SUBDIRECTORY(docs)
-	#ADD_SUBDIRECTORY(swig)
-	#ADD_DEPENDENCIES(build_swig srch2_lib)
-	
-#ENDIF()
-
-
 
 ####################################################################################################
 #CPack tarballing code!
@@ -314,7 +282,7 @@ INSTALL(DIRECTORY ${INSTALL_AUXILLARY_FILES_DIR}/docs/example-demo/ DESTINATION 
 #INSTALL(FILES ${INSTALL_AUXILLARY_FILES_DIR}/srch2_config.xml DESTINATION conf PERMISSIONS OWNER_READ OWNER_WRITE)
 INSTALL(FILES ${INSTALL_AUXILLARY_FILES_DIR}/release_notes/RELEASE_${VERSION} DESTINATION . RENAME "RELEASE_NOTES" PERMISSIONS OWNER_READ OWNER_WRITE)
 INSTALL(DIRECTORY ${INSTALL_AUXILLARY_FILES_DIR}/srch2_data/ DESTINATION srch2_data USE_SOURCE_PERMISSIONS)
-INSTALL(DIRECTORY ${CMAKE_SOURCE_DIR}/db_connectors/build/  DESTINATION db_connectors/ FILES_MATCHING PATTERN "*.so" PATTERN "*.dylib" PATTERN "CMakeFiles" EXCLUDE  PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ GROUP_WRITE) 
+INSTALL(DIRECTORY ${CMAKE_SOURCE_DIR}/db_connectors/build/  DESTINATION db_connectors/ FILES_MATCHING PATTERN "*.so*" PATTERN "*.dylib*" PATTERN "CMakeFiles" EXCLUDE  PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ GROUP_WRITE) 
 
 #Packaging
 SET(CPACK_IGNORE_FILES "CMakeCache.txt;install_manifest.txt;/Testing/;/Makefile$;\\\\.cmake$;\\\\.tar.gz$;\\\\.so[.0-9]*$;/build/;/_CPack_Packages/;/CMakeFiles/;/CVS/;/\\\\.svn/;/\\\\.git/;\\\\.swp$;\\\\.#;/#")
