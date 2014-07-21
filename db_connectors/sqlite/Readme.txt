@@ -19,14 +19,14 @@ sudo make install
 cd srch2-ngn/thirdparty/
 ./thirdparty-build.sh
 
-3. Compile the engine as non static version. 
+3. Compile the engine.
 cd srch2-ngn
 mkdir build
 cd build
 cmake -DBUILD_RELEASE=OFF ..
 make -j 4
 
-4.Compile the mongodb connector. 
+4.Compile the sqlite connector. 
 cd srch2-ngn/db_connectors
 mkdir build
 cd build
