@@ -906,7 +906,9 @@ int main(int argc, char** argv) {
     } 
 
     ConfigManager *serverConf = new ConfigManager(srch2_config_file);
-    serverConf->loadConfigFile();
+    if(!serverConf->loadConfigFile()){
+    	exit(-1);
+    }
 
     //LicenseVerifier::testFile(serverConf->getLicenseKeyFileName());
     string logDir = getFilePath(serverConf->getHTTPServerAccessLogFile());
