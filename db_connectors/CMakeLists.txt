@@ -61,5 +61,5 @@ ADD_LIBRARY(sqliteConnector SHARED ${SQLITE_CONNECTOR_SRC} )
 
 SET_TARGET_PROPERTIES(sqliteConnector PROPERTIES COMPILE_FLAGS -fPIC)
 
-TARGET_LINK_LIBRARIES(sqliteConnector ${jsoncpp_LIBRARY} sqlite3 ${Boost_LIBRARIES} -pthread )
+TARGET_LINK_LIBRARIES(sqliteConnector ${jsoncpp_LIBRARY} sqlite3 ${Boost_LIBRARIES})
 
