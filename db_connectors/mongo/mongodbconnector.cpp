@@ -85,8 +85,8 @@ bool MongoDBConnector::connectToDB() {
         maxRetryOnFailure = atoi(maxRetryOnFailureStr.c_str());
     }
 
-    for (unsigned retryCount = -1; retryCount != maxRetryOnFailure;
-            retryCount++) {
+    for (unsigned retryCount = maxRetryOnFailure; retryCount >=0;
+            --retryCount) {
 
         try {
             string hostAndport = host;

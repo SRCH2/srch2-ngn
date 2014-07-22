@@ -14,7 +14,7 @@
 #include <sqlite3.h>
 
 //The callback function of createIndex.
-int createIndex_callback(void * dbConnector, int argc, char ** argv,
+int addRecord_callback(void * dbConnector, int argc, char ** argv,
         char **azColName);
 //The callback function of populateTableSchema.
 int populateTableSchema_callback(void * dbConnector, int argc, char ** argv,

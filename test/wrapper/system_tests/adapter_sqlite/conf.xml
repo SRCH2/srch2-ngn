@@ -108,7 +108,7 @@
 				<dbKeyValues>
 					<dbKeyValue key="db" value="srch2Test.db" />
 					<dbKeyValue key="dbPath" value="./adapter_sqlite/" />
-					<dbKeyValue key="collection" value="COMPANY" />
+					<dbKeyValue key="tableName" value="COMPANY" />
 					<dbKeyValue key="listenerWaitTime" value="3" />
 					<dbKeyValue key="maxRetryOnFailure" value="2" />
 				</dbKeyValues>
