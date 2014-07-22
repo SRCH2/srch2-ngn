@@ -13,17 +13,29 @@ FILE(GLOB_RECURSE MONGO_DB_CONNECTOR_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "m
 MESSAGE(STATUS "This is SOURCE dir " ${CMAKE_SOURCE_DIR})
 					
 INCLUDE_DIRECTORIES(
-    ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver/mongo-cxx-driver/build/use-system-boost/srch2/include
+    ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver/mongo-cxx-driver/build/use-system-boost/srch2/include/
     ${CMAKE_SOURCE_DIR}/../src/adapter/
 )
 
 ADD_LIBRARY(mongodbConnector SHARED ${MONGO_DB_CONNECTOR_SRC} )
 
+set(MONGO_VERSION_MAJOR 1)
+set(MONGO_VERSION_MINOR 0)
+set(MONGO_VERSION_PATCH 0)
+set(MONGO_VERSION_STRING ${MONGO_VERSION_MAJOR}.${MONGO_VERSION_MINOR}.${MONGO_VERSION_PATCH})
+
+set_target_properties(mongodbConnector PROPERTIES VERSION ${MONGO_VERSION_STRING}
+                                          SOVERSION ${MONGO_VERSION_MAJOR})
+
 SET_TARGET_PROPERTIES(mongodbConnector PROPERTIES COMPILE_FLAGS -fPIC)
 
-set(MONGO_CLIENT_LIBRARY  ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver/mongo-cxx-driver/build/use-system-boost/libmongoclient.so)
+set(MONGO_CLIENT_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver/mongo-cxx-driver/build/use-system-boost/libmongoclient.a)
 
-TARGET_LINK_LIBRARIES(mongodbConnector ${MONGO_CLIENT_LIBRARY} -lboost_system -pthread -lboost_filesystem -lboost_program_options)
+SET(Boost_USE_STATIC_LIBS ON)
+SET(Boost_USE_MULTITHREAD ON)
+FIND_PACKAGE( Boost COMPONENTS program_options system filesystem thread REQUIRED )
+
+TARGET_LINK_LIBRARIES(mongodbConnector ${Boost_LIBRARIES}  ${MONGO_CLIENT_LIBRARY} -pthread )
 
 
 #
@@ -49,4 +61,5 @@ ADD_LIBRARY(sqliteConnector SHARED ${SQLITE_CONNECTOR_SRC} )
 
 SET_TARGET_PROPERTIES(sqliteConnector PROPERTIES COMPILE_FLAGS -fPIC)
 
-TARGET_LINK_LIBRARIES(sqliteConnector ${jsoncpp_LIBRARY} sqlite3 -lboost_system -pthread -lboost_filesystem -lboost_program_options)
+TARGET_LINK_LIBRARIES(sqliteConnector ${jsoncpp_LIBRARY} sqlite3 ${Boost_LIBRARIES} -pthread )
+
