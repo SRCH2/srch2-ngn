@@ -2,7 +2,7 @@
  * mongodbconnector.h
  *
  *  Created on: Jun 9, 2014
- *      Author: liusrch2
+ *      Author: Chen Liu at SRCH2
  */
 
 #ifndef __MONGODBCONNECTOR_H__
