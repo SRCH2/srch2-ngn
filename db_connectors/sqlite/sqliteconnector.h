@@ -65,9 +65,6 @@ private:
     sqlite3_stmt *selectStmt;
     sqlite3_stmt *deleteLogStmt;
 
-    //A timestamp that indicates the last time the SRCH2 engine
-    //accessed the log table to retrieve the change history
-    std::string lastAccessedLogRecordTime;
     //The flag is true if there are new records in the log table.
     bool logRecordTimeChangedFlag;
 
@@ -88,12 +85,12 @@ private:
     bool createLogTableIfNotExistence();
 
     //Save the lastAccessedLogRecordTime from the disk
-    void saveLastAccessedLogRecordTime();
+    void saveLastAccessedLogRecordTime(const std::string & lastAccessedLogRecordTime);
     //Load the lastAccessedLogRecordTime from the disk
-    void loadLastAccessedLogRecordTime();
+    void loadLastAccessedLogRecordTime(std::string & lastAccessedLogRecordTime);
 
     //Delete the processed log from the table so that we can keep it small
-    bool deleteProcessedLog();
+    bool deleteProcessedLog(const std::string & lastAccessedLogRecordTime);
 };
 
 #endif /* __SQLITECONNECTOR_H__ */

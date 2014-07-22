@@ -1,10 +1,10 @@
 #These tests are used for the adapter_sqlite
 #Require sqlite3 installed.
-#Test 1: test loading records from the sqlite table to create a index.
-#Test 2: test listener, during the server running, update the record in the sqlite,
-#        the listener will fetch the results.
-#Test 3: test the offline modification, first shut down the engine and delete the records in the sqlite,
-#        then start the engine to test if the engine can fetch the modifications.
+#Test 1: test loading records from the sqlite table to create an index.
+#Test 2: When the server is running, update the record in sqlite,
+#        then the listener should fetch the results.
+#Test 3: Shut down the engine, and delete the records in sqlite.
+#        Then start the engine to test if the engine can fetch the changes.
 
 import sys, urllib2, json, time, subprocess, os, commands, signal
 
@@ -21,7 +21,7 @@ serverHandle = None
 totalFailCount = 0
 binary_path = None
 
-#Start the srch2 engine, pass the handle to serverHandle
+#Start the SRCH2 engine with sqlite config file.
 def startSrch2Engine():
 	global serverHandle
 	#Start the engine server
@@ -41,7 +41,7 @@ def shutdownSrch2Engine():
 	#Shutdown the engine server
 	test_lib.killServer(serverHandle)
 
-#Compare the results with the expecting outputs.
+#Compare the results with the expected outputs.
 def compareResults(testQueriesPath):
 	f_test = open(testQueriesPath,'r')
 	failCount = 0
@@ -135,8 +135,8 @@ def testCreateIndexes(conn,sqlQueriesPath,testQueriesPath):
 	compareResults(testQueriesPath)
 	print '=============================='
 
-#Test 2: test listener, during the server running, update the record in the sqlite,
-#        the listener will fetch the results.
+#Test 2: When the server is running, update the record in sqlite, 
+#then the listener should fetch the results.
 def testRunListener(conn,sqlQueriesPath,testQueriesPath):
 	#Modify the table while the srch2 engine is running.
 	f_sql = open(sqlQueriesPath,'r')
@@ -152,8 +152,8 @@ def testRunListener(conn,sqlQueriesPath,testQueriesPath):
 	compareResults(testQueriesPath)
 	print '=============================='
 
-#Test 3: test the offline modification, first shut down the engine and delete the records in the sqlite,
-#        then start the engine to test if the engine can fetch the modifications.
+#Test 3: Shut down the engine, and delete the records in sqlite.
+#Then start the engine to test if the engine can fetch the changes
 def testOfflineLog(conn,sqlQueriesPath,testQueriesPath):
 	#Shutdown the engine
 	shutdownSrch2Engine()

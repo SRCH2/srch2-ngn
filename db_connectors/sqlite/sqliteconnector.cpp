@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <sstream>
 #include "json/json.h"
-
+#include <cstring>
 #include <iostream>
 #include <fstream>
 #include <boost/filesystem.hpp>
@@ -216,9 +216,12 @@ int addRecord_callback(void *dbConnector, int argc, char **argv,
  * corresponding requests to the SRCH2 engine
  */
 int SQLiteConnector::runListener() {
-    std::string tableName;
+    std::string tableName,lastAccessedLogRecordTime;
     this->serverHandle->configLookUp("tableName", tableName);
-    loadLastAccessedLogRecordTime();
+
+    //A timestamp that indicates the last time the SRCH2 engine
+    //accessed the log table to retrieve the change history
+    loadLastAccessedLogRecordTime(lastAccessedLogRecordTime);
 
     Json::Value record;
     Json::FastWriter writer;
@@ -346,8 +349,8 @@ int SQLiteConnector::runListener() {
              */
             if (logRecordTimeChangedFlag) {
                 this->serverHandle->saveChanges();
-                deleteProcessedLog();
-                saveLastAccessedLogRecordTime();
+                deleteProcessedLog(lastAccessedLogRecordTime);
+                saveLastAccessedLogRecordTime(lastAccessedLogRecordTime);
                 printf("SQLITECONNECTOR: waiting for updates ...\n");
             }
             sleep(listenerWaitTime);
@@ -680,7 +683,7 @@ bool SQLiteConnector::createTriggerIfNotExistence() {
 }
 
 //Load the lastAccessedLogRecordTime from disk
-void SQLiteConnector::loadLastAccessedLogRecordTime() {
+void SQLiteConnector::loadLastAccessedLogRecordTime(std::string & lastAccessedLogRecordTime) {
     std::string path, srch2Home;
     this->serverHandle->configLookUp("srch2Home", srch2Home);
     this->serverHandle->configLookUp("dataDir", path);
@@ -695,7 +698,7 @@ void SQLiteConnector::loadLastAccessedLogRecordTime() {
 }
 
 //Save lastAccessedLogRecordTime to disk
-void SQLiteConnector::saveLastAccessedLogRecordTime() {
+void SQLiteConnector::saveLastAccessedLogRecordTime(const std::string & lastAccessedLogRecordTime) {
     std::string path, srch2Home;
     this->serverHandle->configLookUp("srch2Home", srch2Home);
     this->serverHandle->configLookUp("dataDir", path);
@@ -711,7 +714,7 @@ void SQLiteConnector::saveLastAccessedLogRecordTime() {
 }
 
 //Delete the processed log from the table so that we can keep it small.
-bool SQLiteConnector::deleteProcessedLog() {
+bool SQLiteConnector::deleteProcessedLog(const std::string & lastAccessedLogRecordTime) {
 
     //Bind the lastAccessedLogRecordTime
     int rc = sqlite3_bind_text(deleteLogStmt, 1,
