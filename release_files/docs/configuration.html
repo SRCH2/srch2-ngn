@@ -2,39 +2,28 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="generator" content="ReText Webpages generator 4.0.0">
+<meta name="generator" content="ReText Webpages generator 4.0.1">
 <link rel="stylesheet" type="text/css" href="style.css">
 <title>SRCH2: Configuration</title>
 </head>
 
 <body>
 
-<!-- menubar -->
-<table id="menubar">
-<tr style="background-color: #f5f5f5">
-<td style="width:100%; padding: 0px">
-<a href="http://www.srch2.com" target="_blankt"><img style="height:24px" src="images/logo.png" align="left"></a>&nbsp;
-</td>
-<td style="align:right; white-space: nowrap; padding: 0px; font-size: 12px">
-Version: 4.3.0, Date: March 24, 2014&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</td>
-</tr>
-</table>
-<!-- end of menubar -->
-
 <table style="width:100%;table-layout:fixed" >
 
 <tr>
-<td id="sideBarTd" style="width:25%">
+<td id="sideBarTd" style="width:15%">
 <div id="sidebar"> <!-- Sidebar -->
 <div id="linkpool" > <!-- Links to main pages, id=linkpool-->
 <table><tbody><tr><td>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./main.html">Main page</a><br><br>
+<a href="http://www.srch2.com" target="_blankt"><img style="height:24px" src="images/logo.png" align="center"></a><br><br>
+<div style="align:center; font-size: 12px">Verion 4.3.4, 07/21/2014</div><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./main.html">Overview</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./install.html">Install</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./configuration.html">Configuration</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">RESTful API: Search</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">RESTful API: Insert/Update/Delete</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API: Control</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-search.html">Search</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-insert-update-delete.html">Insert/Update/Delete</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">Control Messages</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">Geo Search</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a><br><br>
@@ -49,53 +38,54 @@ Version: 4.3.0, Date: March 24, 2014&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <div><h3><a style="text-decoration: none;color:#ee2e24" href="#doc">Content</a></h3></div>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#overview">1. Overview</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#srch2Home">2. SRCH2HOME</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#licenseFile">3. License File</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#listeningHostname">4. Hostname & Port</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dataDir">5. Data Directory</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#maxSearchThreads">6. Number of Search Threads</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#data">7. Data Source Information</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dataSource">7.1. Data Source Type</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dataFile">7.2. Data File</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#mongodb">7.3. MongoDB</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#indexConfig">8. Index Config</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#indexType">8.1. Index Type</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fieldBoost">8.2. Field Boosts</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#recordBoostField">8.3. Record Boost Field</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#defaultQueryTermBoost">8.4. Default Query Term Boost</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#enablePositionIndex">8.5. Enable Positional Index</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#enableCharOffsetIndex">8.5. Enable Character Offset Index</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryConfig">9. Query Parameters</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rankingAlgorithm">9.1. Ranking</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fuzzyMatchPenalty">9.2. Fuzzy Match Penalty</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermSimilarityThreshold">9.3. Term Similarity Threshold</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#supportSwapInEditDistance">9.4. Support Swap in Edit Distance</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#prefixMatchPenalty">9.5. Prefix Match Penalty</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#cacheSize">9.6. Cache Size</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rows">9.7. Rows to be returned</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fieldBasedSearch">9.8. Enabling Field Based Search</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#searcherType">9.9. Search Type</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermFuzzyType">9.10. Term Fuzzy Type</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermPrefixType">9.11. Term Prefix Type</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#highlighter">9.12. Highlighter</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryResponseWriter">10. Response Writer</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#ResponseContent">10.1. Response Content</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#updateHandler">11. Update Handler</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#maxDocs">11.1. Max Documents</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#mergePolicy">11.2. Merge Policy</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#updateLog">11.3. Logging</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#logLevel">11.3.1. Log Level</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#accessLogFile">11.3.2. Log File</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#schemaTag">12. Data Schema</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#uniqueKey">12.1. Primary Key</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fields">12.2. Field Declaration</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetEnabled">12.3. Enable Facets</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetFields">12.4. Facet Field Declaration</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#analyzer">12.5. Analyzer</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#PorterStemFilter">12.5.1 Stemmer</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#StopFilter">12.5.2 Stop Words</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#ProtectedKeywordsFilter">12.5.3 Protected Keywords</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#Cores">13 Cores</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#Core">13.1 Core</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#listeningHostname">3. Hostname & Port</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dataDir">4. Data Directory</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#maxSearchThreads">5. Number of Search Threads</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#data">6. Data Source Information</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dataSource">6.1. Data Source Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dataFile">6.2. Data File</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#mongodb">6.3. MongoDB</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#indexConfig">7. Index Config</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#indexType">7.1. Index Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fieldBoost">7.2. Field Boosts</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#recordBoostField">7.3. Record Boost Field</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#defaultQueryTermBoost">7.4. Default Query Term Boost</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#enablePositionIndex">7.5. Enable Positional Index</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#enableCharOffsetIndex">7.6. Enable Character Offset Index</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryConfig">8. Query Parameters</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rankingAlgorithm">8.1. Ranking</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fuzzyMatchPenalty">8.2. Fuzzy Match Penalty</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermSimilarityThreshold">8.3. Term Similarity Threshold</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#supportSwapInEditDistance">8.4. Support Swap in Edit Distance</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#prefixMatchPenalty">8.5. Prefix Match Penalty</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#cacheSize">8.6. Cache Size</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#rows">8.7. Rows to be returned</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fieldBasedSearch">8.8. Enabling Field Based Search</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#searcherType">8.9. Search Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermFuzzyType">8.10. Term Fuzzy Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryTermPrefixType">8.11. Term Prefix Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#highlighter">8.12. Highlighter</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryResponseWriter">9. Response Writer</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#ResponseContent">9.1. Response Content</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#updateHandler">10. Update Handler</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#maxDocs">10.1. Max Documents</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#mergePolicy">10.2. Merge Policy</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#updateLog">10.3. Logging</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#logLevel">10.3.1. Log Level</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#accessLogFile">10.3.2. Log File</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#schemaTag">11. Data Schema</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#uniqueKey">11.1. Primary Key</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fields">11.2. Field Declaration</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetEnabled">11.3. Enable Facets</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#facetFields">11.4. Facet Field Declaration</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#analyzer">11.5. Analyzer</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#PorterStemFilter">11.5.1 Stemmer</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#StopFilter">11.5.2 Stop Words</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#ProtectedKeywordsFilter">11.5.3 Protected Keywords</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#AllowedSpecialCharacters">11.5.4 Allowed Special Characters</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#Cores">12. Cores</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#Core">12.1 Core</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#authorizationKey">13. Authorization Key</a></br><br>
 </td></tr></tbody></table>
 
 </div>
@@ -136,19 +126,14 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
 <p>This parameter specifies the installation folder of the SRCH2 engine,
 which includes the binary, a folder "example-demo" with a movie
-example, a license file, and other files needed by the engine. Other
+example, and other files needed by the engine. Other
 file paths used in the configuration should be relative to this home
 path. For example, if we give the engine a data file at
-"/usr/joe/srch2/example-data/sample-data.json", and the SRCH2 home
+"/usr/joe/srch2/example-data/movie-data.json", and the SRCH2 home
 directory is set to "/usr/joe/srch2", then the configuration file
 should reference the data file's location as
-"example-data/sample-data.json".</p>
-<h2 id="licenseFile">3. License Key File, Required</h2>
-<pre><code>&lt;licenseFile&gt;/path/to/srch2_license_key.txt&lt;/licenseFile&gt;
-</code></pre>
-
-<p>This setting specifies a license key file required by the engine. Enter your email <a href="http://www.srch2.com/download">here</a> to get a free trial key. <br></p>
-<h2 id="listeningHostname">4. Hostname and Port, Required</h2>
+"example-data/movie-data.json".</p>
+<h2 id="listeningHostname">3. Hostname and Port, Required</h2>
 <pre><code>&lt;listeningHostname&gt;127.0.0.1&lt;/listeningHostname&gt;
 &lt;listeningPort&gt;8081&lt;/listeningPort&gt;
 </code></pre>
@@ -158,35 +143,36 @@ NOTE: If you want the server to accept all incoming packets, use "<b>0.0.0.0</b>
 <p>The following parameters allow moving certain operations to a different port.  This feature allows network based security
 to be implemented using standard firewall functionality.  Typically, the search and info operations remain on a port
 accessible from any IP address, and suggest, docs, update, save, export, and resetLogger are placed on a port to
-which access is restricted by a firewall to internal IP addresses.</p>
-<h3 id="searchPort">4.1 SearchPort, Optional</h3>
+which access is restricted by a firewall to internal IP addresses.  An example of relocating ports is provided in
+the advanced example configuration file in example-demo/srch2-config-advanced.xml .</p>
+<h3 id="searchPort">3.1 SearchPort, Optional</h3>
 <p>This setting overrides listeningPort for search requests.  Search requests must be sent to this port instead.</p>
-<h3 id="SuggestPort&quot;">4.2 SuggestPort, Optional</h3>
+<h3 id="SuggestPort&quot;">3.2 SuggestPort, Optional</h3>
 <p>This setting overrides listeningPort for suggest requests.  Suggest requests must be sent to this port instead.</p>
-<h3 id="InfoPort">4.3 InfoPort, Optional</h3>
+<h3 id="InfoPort">3.3 InfoPort, Optional</h3>
 <p>This setting overrides listeningPort for info requests.  Info requests must be sent to this port instead.</p>
-<h3 id="DocsPort">4.4 DocsPort, Optional</h3>
+<h3 id="DocsPort">3.4 DocsPort, Optional</h3>
 <p>This setting overrides listeningPort for docs requests.  Docs requests must be sent to this port instead.</p>
-<h3 id="UpdatePort">4.5 UpdatePort, Optional</h3>
+<h3 id="UpdatePort">3.5 UpdatePort, Optional</h3>
 <p>This setting overrides listeningPort for update requests.  Update requests must be sent to this port instead.</p>
-<h3 id="SavePort">4.6 SavePort, Optional</h3>
+<h3 id="SavePort">3.6 SavePort, Optional</h3>
 <p>This setting overrides listeningPort for save requests.  Save requests must be sent to this port instead.</p>
-<h3 id="ExportPort">4.7 ExportPort, Optional</h3>
+<h3 id="ExportPort">3.7 ExportPort, Optional</h3>
 <p>This setting overrides listeningPort for export requests.  Export requests must be sent to this port instead.</p>
-<h3 id="ResetLoggerPort">4.8 ResetLoggerPort, Optional</h3>
+<h3 id="ResetLoggerPort">3.8 ResetLoggerPort, Optional</h3>
 <p>This setting overrides listeningPort for resetlogger requests.  ResetLogger requests must be sent to this port instead.</p>
-<h2 id="dataDir">5. Data Directory, Required</h2>
+<h2 id="dataDir">4. Data Directory, Required</h2>
 <pre><code>&lt;dataDir&gt;/path/to/data/directory/&lt;/dataDir&gt;
 </code></pre>
 
 <p>This value specifies the path of a folder where the engine stores serialized index files. <br></p>
-<h2 id="maxSearchThreads">6. Number of Search Threads, Optional</h2>
+<h2 id="maxSearchThreads">5. Number of Search Threads, Optional</h2>
 <pre><code>&lt;maxSearchThreads&gt;2&lt;/maxSearchThreads&gt;
 </code></pre>
 
 <p>This setting specifies the number of threads that serve search requests. Its default value is 1. <br></p>
-<h2 id="data">7. Data</h2>
-<h3 id="dataSource">7.1. Data Source, Optional</h3>
+<h2 id="data">6. Data</h2>
+<h3 id="dataSource">6.1. Data Source, Optional</h3>
 <pre><code>&lt;dataSourceType&gt;1&lt;/dataSourceType&gt;
 </code></pre>
 
@@ -195,12 +181,12 @@ which access is restricted by a firewall to internal IP addresses.</p>
 <p>1: json data file. (Default)
  2: MongoDB.</p>
 </blockquote>
-<h3 id="dataFile">7.2. Data File, Required if "dataSourceType" is 1</h3>
-<pre><code>&lt;dataFile&gt;./example-demo/data.json&lt;/dataFile&gt;
+<h3 id="dataFile">6.2. Data File, Required if "dataSourceType" is 1</h3>
+<pre><code>&lt;dataFile&gt;./example-demo/movie-data.json&lt;/dataFile&gt;
 </code></pre>
 
 <p>This value specifies a JSON data file to be loaded by the engine. Notice that it is a path relative to <a href="#srch2Home">srch2Home</a>.<br></p>
-<h3 id="mongodb">7.3. MongoDB, Required if "dataSourceType" is 2</h3>
+<h3 id="mongodb">6.3. MongoDB, Required if "dataSourceType" is 2</h3>
 <pre><code>&lt;mongodb&gt;
     &lt;host&gt;www.my-company.com&lt;/host&gt;
     &lt;port&gt;1234&lt;/port&gt;
@@ -211,14 +197,14 @@ which access is restricted by a firewall to internal IP addresses.</p>
 </code></pre>
 
 <p>This section specifies MongoDB instance information. Note: "listenerWaitTime" specifies how frequently (in seconds) the SRCH2 engine pulls changes from the MongoDB instance (e.g., every 3 seconds). </p>
-<h2 id="indexConfig">8. Index Config:</h2>
+<h2 id="indexConfig">7. Index Config:</h2>
 <p>This tag groups parameters related to customizing the search engine's indices.</p>
 <pre><code>&lt;indexConfig&gt;
 ...
 &lt;/indexConfig&gt;
 </code></pre>
 
-<h3 id="indexType">8.1. Index Type, Required</h3>
+<h3 id="indexType">7.1. Index Type, Required</h3>
 <p>IndexType specifies if the search engine should build text or location indices.</p>
 <pre><code>&lt;indexType&gt;0&lt;/indexType&gt;
 </code></pre>
@@ -227,7 +213,7 @@ which access is restricted by a firewall to internal IP addresses.</p>
 <p>0: Text Indexes; <br>
 1: Text + Geo Indexes, which support location-based search. <br></p>
 </blockquote>
-<h3 id="fieldBoost">8.2. Field Boosts, Optional</h3>
+<h3 id="fieldBoost">7.2. Field Boosts, Optional</h3>
 <pre><code>&lt;fieldBoost&gt;&lt;/fieldBoost&gt;
 </code></pre>
 
@@ -246,38 +232,38 @@ compute query-specific scores. </p>
 value is not provided for a field, the engine uses a default value of
 1. In the example above, the filed "title" will have a boost value of
 1.<br></p>
-<h3 id="recordBoostField">8.3. Record Boost Field, Optional</h3>
+<h3 id="recordBoostField">7.3. Record Boost Field, Optional</h3>
 <pre><code>&lt;recordBoostField&gt;relevance&lt;/recordBoostField&gt;
 </code></pre>
 
 <p>This setting specifies an attribute whose value is used as the score (boost value) of a record. The attribute's type should be "float".</p>
-<h3 id="defaultQueryTermBoost">8.4. Default Query Term Boost, Optional</h3>
+<h3 id="defaultQueryTermBoost">7.4. Default Query Term Boost, Optional</h3>
 <pre><code>&lt;defaultQueryTermBoost&gt;1&lt;/defaultQueryTermBoost&gt;
 </code></pre>
 
 <p>The value of this field specifies default ranking value for terms which do not have the field specified in "recordBoostField". If the parameter is not given, the engine uses 1 as the default value.<br></p>
-<h3 id="enablePositionIndex">8.5. Enable Positional Index, Optional</h3>
+<h3 id="enablePositionIndex">7.5. Enable Positional Index, Optional</h3>
 <p>A positional index supports queries with conditions related to keyword positions in a record, such as <a href="restful-search.html#proximitySearch">proximity search</a>. The "enablePositionIndex" tag can be used to enable or disable positional indexing.  For instance, the following
 example shows how to enable this indexing:</p>
 <pre><code>&lt;enablePositionIndex&gt;1&lt;/enablePositionIndex&gt;
 </code></pre>
 
 <p>Note that the positional index takes more memory resources. By default it is disabled.<br></p>
-<h3 id="enableCharOffsetIndex">8.6. Enable Character Offset Index, Optional</h3>
+<h3 id="enableCharOffsetIndex">7.6. Enable Character Offset Index, Optional</h3>
 <p>A character offset index supports fast keyword <a href="#highlighter">highlighting</a> during the snippet generation. The "enableCharOffsetIndex" tag can be used to enable or disable character offset indexing.  For instance, the following
 example shows how to enable this indexing:</p>
 <pre><code>&lt;enableCharOffsetIndex&gt;1&lt;/enableCharOffsetIndex&gt;
 </code></pre>
 
 <p>Note that the character offset index takes more memory resources. By default it is disabled.<br></p>
-<h2 id="queryConfig">9. Query Parameters:</h2>
+<h2 id="queryConfig">8. Query Parameters:</h2>
 <p>The following tag includes parameters related to queries.</p>
 <pre><code>&lt;query&gt;
 ...
 &lt;/query&gt;
 </code></pre>
 
-<h3 id="rankingAlgorithm">9.1. Ranking:</h3>
+<h3 id="rankingAlgorithm">8.1. Ranking:</h3>
 <p>The following tags and parameters are related to ranking. </p>
 <pre><code>&lt;rankingAlgorithm&gt;
      &lt;recordScoreExpression&gt;idf_score*doc_boost&lt;/recordScoreExpression&gt;
@@ -290,15 +276,15 @@ example shows how to enable this indexing:</p>
 <li><b>doc_boost</b>: the boost value of the record as specified in an attribute;</li>
 <li><b>doc_length</b>: number of unique keywords in the record.</li>
 </ul>
-<p>The expression allows operators such as +, -, /, *, (, ), 0-9, etc.  Check the <a href="ranking.html">Ranking Section</a> to see how this static score is used in ranking.</p>
-<h3 id="fuzzyMatchPenalty">9.2. Fuzzy Match Penalty, Optional</h3>
+<p>The expression allows operators such as +, -, /, *, (, ), 0-9, etc.  Check the <a href="ranking.html">Ranking Section</a> to see how this static score is used in ranking.  An example of the power and complexity of this expression is provided in the advanced example in example-demo/srch2-config-advanced.xml .</p>
+<h3 id="fuzzyMatchPenalty">8.2. Fuzzy Match Penalty, Optional</h3>
 <pre><code>&lt;fuzzyMatchPenalty&gt;0.9&lt;/fuzzyMatchPenalty&gt;
 </code></pre>
 
 <p>"FuzzyMatchPenalty" is used to decide how much penalty we want to give to records that fuzzy
 match the search term compared to terms that match exactly. See the <a href="ranking.html">Ranking Section</a>
 section about how this parameter is used. The default value is 0.5.</p>
-<h3 id="queryTermSimilarityThreshold">9.3. Term Similarity Threshold, Optional</h3>
+<h3 id="queryTermSimilarityThreshold">8.3. Term Similarity Threshold, Optional</h3>
 <pre><code>&lt;queryTermSimilarityThreshold&gt;0.75&lt;/queryTermSimilarityThreshold&gt;
 </code></pre>
 
@@ -320,7 +306,7 @@ threshold for this term:</p>
 threshold of edit distance for this term is: floor((1-0.8)*16) = 3.
 Records containing no terms with an edit distance of 3 or less will
 be excluded from the result set.</p>
-<h3 id="supportSwapInEditDistance">9.4. Support Swap as an Edit Distance Operation, Optional</h3>
+<h3 id="supportSwapInEditDistance">8.4. Support Swap as an Edit Distance Operation, Optional</h3>
 <pre><code>&lt;supportSwapInEditDistance&gt;true&lt;/supportSwapInEditDistance&gt;
 </code></pre>
 
@@ -331,24 +317,24 @@ characters is counted as a single operation when calculating the edit
 distance.  Otherwise, the entire sum of character deletion and insertion
 operations necessary to achieve the same result yields a much larger edit
 distance calculation.  By default "supportSwapInEditDistance" is true.</p>
-<h3 id="prefixMatchPenalty">9.5. Prefix Match Penalty, Optional</h3>
+<h3 id="prefixMatchPenalty">8.5. Prefix Match Penalty, Optional</h3>
 <pre><code>&lt;prefixMatchPenalty&gt;0.95&lt;/prefixMatchPenalty&gt;
 </code></pre>
 
 <p>This setting specifies how heavily to penalize a record when the search term matches only the beginning of a term in a record, instead of matching the entire word.  Its value should be in the range of 0 to 1, with a default value of 0.95. See the <a href="ranking.html">ranking section</a> for more information.<br></p>
-<h3 id="cacheSize">9.6. Cache Size, Optional</h3>
+<h3 id="cacheSize">8.6. Cache Size, Optional</h3>
 <pre><code>&lt;cacheSize&gt;65536000&lt;/cacheSize&gt;
 </code></pre>
 
 <p>This parameter specifies the number of bytes used in caching. The number should be in the range [52428800,524288000] ([50MB, 500MB]). Its default value is 52428800 (50MB). <br></p>
-<h3 id="rows">9.7. Default value for number of returned results, Optional</h3>
+<h3 id="rows">8.7. Default value for number of returned results, Optional</h3>
 <pre><code>&lt;rows&gt;10&lt;/rows&gt;
 </code></pre>
 
 <p>"Rows" specifies the maximum number of results retrieved and returned in a single query response.
 If there are more results that "Rows", another query with a different "start" value must be sent
 to retrieve the next "page" of results. The default value of "Rows" is 10.<br></p>
-<h3 id="fieldBasedSearch">9.8. Field-Based Search, Optional</h3>
+<h3 id="fieldBasedSearch">8.8. Field-Based Search, Optional</h3>
 <pre><code>&lt;fieldBasedSearch&gt;0&lt;/fieldBasedSearch&gt;
 </code></pre>
 
@@ -358,7 +344,7 @@ to retrieve the next "page" of results. The default value of "Rows" is 10.<br></
 1: Enabled <br></p>
 </blockquote>
 <p>Note that if field-based search is enabled, the number of searchable attributes as specified in <a href='#fields'>fields</a> is limited to 31.</p>
-<h3 id="searcherType">9.9. Search Type, Optional</h3>
+<h3 id="searcherType">8.9. Search Type, Optional</h3>
 <pre><code>&lt;searcherType&gt;0&lt;/searcherType&gt;
 </code></pre>
 
@@ -368,7 +354,7 @@ to retrieve the next "page" of results. The default value of "Rows" is 10.<br></
 1: find all matching results. <br></p>
 </blockquote>
 <p>The default value is 0.<br></p>
-<h3 id="queryTermFuzzyType">9.10. Query Term Fuzzy Type, Optional</h3>
+<h3 id="queryTermFuzzyType">8.10. Query Term Fuzzy Type, Optional</h3>
 <pre><code>&lt;queryTermFuzzyType&gt;1&lt;/queryTermFuzzyType&gt;
 </code></pre>
 
@@ -378,7 +364,7 @@ to retrieve the next "page" of results. The default value of "Rows" is 10.<br></
 1: fuzzy match.<br></p>
 </blockquote>
 <p>Its default value is 0.</p>
-<h3 id="queryTermPrefixType">9.11. Query Term Prefix Type, Optional</h3>
+<h3 id="queryTermPrefixType">8.11. Query Term Prefix Type, Optional</h3>
 <pre><code>&lt;queryTermPrefixType&gt;1&lt;/queryTermPrefixType&gt;
 </code></pre>
 
@@ -388,8 +374,8 @@ to retrieve the next "page" of results. The default value of "Rows" is 10.<br></
 1: complete match (the entire word must match the search term).<br></p>
 </blockquote>
 <p>Its default value is 0.</p>
-<h3 id="highlighter">9.12. Highlighter, Optional</h3>
-<p>The engine supports the feature to generate brief extract (snippet) of the searchable field's text. Each matching keyword is tagged to highlight its position in the snippet. A snippet with keywords highlighting allows user to fetch more meaningful information from field's text. It also reduces the network bandwidth usage by reducing a payload size. </p>
+<h3 id="highlighter">8.12. Highlighter, Optional</h3>
+<p>The engine supports a feature to generate a brief extract (snippet) of the searchable field's text. Each matching keyword is tagged to highlight its position in the snippet. A snippet with keywords highlighting allows users to fetch more meaningful information from the field's text. It also reduces the network bandwidth usage by reducing the payload size. </p>
 <pre><code>&lt;highlighter&gt;
     &lt;snippetSize&gt;250&lt;/snippetSize&gt;
     &lt;fuzzyTagPre value = '&lt;span class=&quot;fuzzy&quot;&gt;'&gt;&lt;/fuzzyTagPre&gt;
@@ -407,15 +393,16 @@ to retrieve the next "page" of results. The default value of "Rows" is 10.<br></
 <b>exactTagPre</b>: specifies the tag value to be prefixed to a exact keyword match.<br>
 <b>exactTagPost</b>: specifies the tag value to be suffixed to a exact keyword match.<br></p>
 </blockquote>
+<p>Snippets will be returned for, and highlighting will be applied to, record fields which have the highlight attribute enabled in the schema configuration section described below.  There is also an example of highlighting in example-demo/srch2-config-advance.xml .</p>
 <p>Note: To improve the query search time when the highlighting is enabled, consider enabling the <a href="#enableCharOffsetIndex">character offset index</a>. </p>
-<h2 id="queryResponseWriter">10. Response Writer:</h2>
+<h2 id="queryResponseWriter">9. Response Writer:</h2>
 <p>This tag has parameters related to configuring the response of a query.</p>
 <pre><code>&lt;queryResponseWriter&gt;
 ...
 &lt;/queryResponseWriter&gt;
 </code></pre>
 
-<h3 id="ResponseContent">10.1. Response Content, Optional</h3>
+<h3 id="ResponseContent">9.1. Response Content, Optional</h3>
 <p>ResponseContent specifies the search engine and record fields to be returned for each JSON record in the response. You should set the "type" attribute of "ResponseContent" to one of the following options: <br></p>
 <blockquote>
 <p>0: format "rid,edit_dist,matching_prefix,in_memory_record"; <br>
@@ -430,26 +417,26 @@ to retrieve the next "page" of results. The default value of "Rows" is 10.<br></
 <pre><code>&lt;responseContent type=&quot;2&quot;&gt;lat,lng&lt;/responseContent&gt;
 </code></pre>
 
-<h3 id="ResponseFormat">10.2 JSON Response Format, Optional</h3>
+<h3 id="ResponseFormat">9.2 JSON Response Format, Optional</h3>
 <p>ResponseFormat specifies if the response should be JSON or JSONP formatted.  Possible values are:<br></p>
 <blockquote>
 <p>0: JSON
 1: JSONP           </p>
 </blockquote>
 <p>The default value is 0.</p>
-<h2 id="updateHandler">11. Update Handler</h2>
+<h2 id="updateHandler">10. Update Handler</h2>
 <p>This tag includes tags related to configuring the engine to handle update requests.</p>
 <pre><code>&lt;updatehandler&gt;
 ...
 &lt;/updatehandler&gt;
 </code></pre>
 
-<h3 id="maxDocs">11.1. Maximum Number of Documents, Required</h3>
+<h3 id="maxDocs">10.1. Maximum Number of Documents, Required</h3>
 <pre><code>&lt;maxDocs&gt;15000000&lt;/maxDocs&gt;
 </code></pre>
 
 <p>This is the maximum number of records that can be indexed by the engine. Inserting more records than what is specified here will cause the insertions to fail.</p>
-<h3 id="mergePolicy">11.2. Merge Policy, Required</h3>
+<h3 id="mergePolicy">10.2. Merge Policy, Required</h3>
 <pre><code>&lt;mergePolicy&gt;
     &lt;mergeEveryNSeconds&gt;10&lt;/mergeEveryNSeconds&gt;
     &lt;mergeEveryMWrites&gt;100&lt;/mergeEveryMWrites&gt;
@@ -464,14 +451,14 @@ to retrieve the next "page" of results. The default value of "Rows" is 10.<br></
 <p><b>mergeEveryMWrites</b>: Another event that can trigger the background thread to do the merge is the number of data changes (inserts, deletes, and updates). This parameter specifies the number of record changes after which the thread will awaken to do the merge.  This number should be at least 1. <br></p>
 </li>
 </ul>
-<h3 id="updateLog">11.3. Logging:</h3>
+<h3 id="updateLog">10.3. Logging:</h3>
 <p>The following tag includes parameters related to logging by the SRCH2 server.</p>
 <pre><code>&lt;updateLog&gt;
 ...
 &lt;/updateLog&gt;
 </code></pre>
 
-<h4 id="logLevel">11.3.1. Log Level, Optional</h4>
+<h4 id="logLevel">10.3.1. Log Level, Optional</h4>
 <pre><code>&lt;logLevel&gt;3&lt;/logLevel&gt;
 </code></pre>
 
@@ -483,7 +470,7 @@ to retrieve the next "page" of results. The default value of "Rows" is 10.<br></
 3: INFO : Errors, warnings, and informative messages will be logged<br></p>
 </blockquote>
 <p>Its default value is 3.</p>
-<h4 id="accessLogFile">11.3.2. Log File, Required</h4>
+<h4 id="accessLogFile">10.3.2. Log File, Required</h4>
 <pre><code>&lt;accessLogFile&gt;./indexes/log.txt&lt;/accessLogFile&gt;
 </code></pre>
 
@@ -493,7 +480,7 @@ Third-party tools such as
 manage the log messages.  Check <a href="restful-control.html#reset-log">this
 page</a> for more information about how
 to manage this log file using third-party tools such as "logrotate".<br></p>
-<h2 id="schemaTag">12. Data Schema:</h2>
+<h2 id="schemaTag">11. Data Schema:</h2>
 <p>This section of the configuration concerns the data source to be searched.  The following sections explain each sub-tag under the <i>schema</i>
 component.</p>
 <pre><code>&lt;schema name=&quot;SRCH2&quot; version=&quot;3&quot;&gt;
@@ -501,7 +488,7 @@ component.</p>
 &lt;/schema&gt;
 </code></pre>
 
-<h3 id="uniqueKey">12.1. Primary Key, Required</h3>
+<h3 id="uniqueKey">11.1. Primary Key, Required</h3>
 <pre><code>&lt;uniqueKey&gt;id&lt;/uniqueKey&gt;
 </code></pre>
 
@@ -509,7 +496,7 @@ component.</p>
 thus the value of the specified field must be unique across all records. If a new record has a
 primary key conflicting with an existing record, the new record will be rejected by the engine.
 The attribute must be of type text.<br></p>
-<h3 id="fields">12.2. Fields, Required</h3>
+<h3 id="fields">11.2. Fields, Required</h3>
 <p>"Fields" contains the specification of the each "field" in the records, i.e. the data schema.</p>
 <pre><code>&lt;fields&gt;
 ...
@@ -560,13 +547,13 @@ The attribute must be of type text.<br></p>
 <li>The primary key may optionally be included here. It can also be searchable and/or refining.<br></li>
 <li>There must be at least one searchable field.</li>
 </ul>
-<h3 id="facetEnabled">12.3. Enable Facet, Optional</h3>
+<h3 id="facetEnabled">11.3. Enable Facet, Optional</h3>
 <p>This setting toggles the faceted search feature.<br></p>
 <pre><code>&lt;facetEnabled&gt;true&lt;/facetEnabled&gt;
 </code></pre>
 
 <p>Its value is either false (facet search disabled) or true (enabled). Its default value is false.<br></p>
-<h3 id="facetFields">12.4. Facet Fields:</h3>
+<h3 id="facetFields">11.4. Facet Fields:</h3>
 <p>This tag contains all facet-related tags.</p>
 <pre><code>&lt;facetFields&gt;
 ...
@@ -597,7 +584,7 @@ will be ignored for categorical facets. <br> </li>
 value, not the "facetEnd" value. Therefore, the last interval may not
 span the entire facetGap. Also all facet fields must be declared in a
 <a href=#fields>fields tag</a> as well (with refining="true") <br> </p>
-<h3 id="analyzer">12.5. Analyzer:</h3>
+<h3 id="analyzer">11.5. Analyzer:</h3>
 <p>This setting contained in this tag configure the analyzer to be used by the engine.<br></p>
 <pre><code>&lt;types&gt;
   &lt;fieldType name=&quot;text_en&quot;&gt;
@@ -608,39 +595,74 @@ span the entire facetGap. Also all facet fields must be declared in a
 &lt;/types&gt;
 </code></pre>
 
-<h3 id="PorterStemFilter">12.5.1 Stemmer, Optional</h3>
+<h3 id="PorterStemFilter">11.5.1 Stemmer, Optional</h3>
 <p>The engine supports <a href="http://tartarus.org/martin/PorterStemmer/">Porter Stemming</a>. Inflected or derived words are reduced to their base or root form for matching against search terms.  The engine uses a dictionary file with keywords that should be ignored by the stemmer. Keywords not in the dictionary will go through a sequence of stemming rules.  If no file if provided, the stemmer is disabled.</p>
 <pre><code>&lt;filter name=&quot;PorterStemFilter&quot; dictionary=&quot;srch2_stemmer_dictionary.txt&quot; /&gt;
 </code></pre>
 
-<h3 id="StopFilter">12.5.2 Stop Words, Optional</h3>
-<p>This tag specifies a file of stop words that will be ignored by the engine. Stop words will not be indexed, and will not match any search term.  This will consume fewer system resources.  Providing an empty string ("") for the "words" parameter disables this filter.</p>
+<h3 id="StopFilter">11.5.2 Stop Words, Optional</h3>
+<p>This tag specifies a file of stop words that will be ignored by the engine. Stop words will not be indexed, and will not match any search term.  This will consume fewer system resources. In English grammar, particle words have no meaning by themselves, and could be considered for inclusion as stop words.  Providing an empty string ("") for the "words" parameter disables this filter.</p>
 <pre><code>&lt;filter name=&quot;StopFilter&quot; words=&quot;srch2_stop_words.txt&quot; /&gt;
 </code></pre>
 
-<h3 id="ProtectedKeywordsFilter">12.5.3 Protected Keywords Filter, Optional</h3>
+<p>The advanced example in example-demo/srch2-config-advanced.xml provides a working example of stop words.</p>
+<h3 id="ProtectedKeywordsFilter">11.5.3 Protected Keywords Filter, Optional</h3>
 <p>It specifies a file of special protected keywords that should be preserved by the analyzer, such as "C++", "C#", ".NET", and "AT&amp;T". Providing an empty string ("") for the "words" parameter disables this filter.</p>
 <pre><code>&lt;filter name=&quot;protectedKeyWordsFilter&quot; words=&quot;srch2_protected_words.txt&quot; /&gt;
 </code></pre>
 
-<h2 id="Cores">13. Cores, Optional</h2>
-<p>The "Cores" tag can be used to support the creation of multiple search engines (called cores) within the same server.  Typically, each engine
-has a different data source.  All cores run within the same server process.  A query can only
+<p>The advanced example in example-demo/srch2-config-advanced.xml provides a working example of protected keywords.</p>
+<h3 id="AllowedSpecialCharacters">11.5.4 Allowed Special Characters, Optional</h3>
+<p>The engine has a number of rules regarding with what characters words can be composed, and what characters
+are punctuation or delimiters separating words.  To provide additional flexibility, the engine can be
+configured to add characters that should not be considered delimiters between words.  Those sequences of
+characters that include those characters will be treated as a single term and will not be broken into
+separate words.</p>
+<p>Here is an example for this setting to allow apostrophes, dashes, underscores, and at signs to occur within single words:</p>
+<pre><code>&lt;allowedRecordSpecialCharacters&gt;`-_@&lt;/allowedRecordSpecialCharacters&gt;
+</code></pre>
+
+<p>This example will allow a search on "L'Absinthe" to match and return a record with the phrase "Edgar Degas' painting L'Absinthe hangs in the Musée d'Orsay in Paris." in an indexed attribute.</p>
+<p>Note that whitespace characters will also be considered word delimiters and are not permitted in this field.</p>
+<p>The advanced example in example-demo/srch2-config-advanced.xml provides an example of allowing Twitter hashtag like terms to be queried.</p>
+<h2 id="Cores">12. Cores, Optional</h2>
+<p>The "Cores" tag can be used to support the creation of multiple data sources (called cores) within the same server.<br>
+An engine can have multiple sources.  All cores run within the same server process.  A query can 
 name a single core.</p>
-<p>The "Cores" tag supports one attribute: "defaultCoreName".  When instantiated with multiple cores, queries
+<p>When instantiated with multiple cores, queries
 specify the core by name that is to process the query.  For instance, the following query:</p>
 <pre><code>http://localhost:8081/example-core/search/q=term
 </code></pre>
 
-<p>requests that "example-core" process a search request for "term".  In the case when no core is
-specified in a query to a multi-core server, the server will use the sore specified by "defaultCoreName".</p>
-<h3 id="Core">13.1 Core, Optional</h3>
+<p>requests that the core called "example-core" process a search request for "term".  In the case when no core is
+specified in a query to a multi-core server, the server will use the sore specified by the "defaultCoreName" tag.</p>
+<p>A sample multi-core configuration is provided in <a href="example-demo/srch2-config-advanced.xml">example-demo/srch2-config-advanced.xml</a>.</p>
+<h3 id="Core">12.1 Core, Optional</h3>
 <p>Each "Core" tag under "Cores" specifies a server core to be created.  Each core requires a name
 attribute.  This name is used in query URI paths, as well as the aforementioned
 "defaultCoreName" attribute of "Cores".  Nearly all server configuration settings documented above can
-also appear under a "Core" tag.  The exceptions are "licenseFile", "listeningHostName", "listeningPort",
+also appear under a "Core" tag.  The exceptions are "listeningHostName", "listeningPort",
 "maxSearchThreads", which are global for all the cores.  Each Core must define all its own data source
 and behavioral rules, so for example, "dataDir" and "schema" are typically defined under each core.</p>
+<h2 id="authorizationKey">13. Authorization Key, Optional</h2>
+<pre><code>&lt;authorization-key&gt;foobar&lt;/authorization-key&gt;
+</code></pre>
+
+<p>This parameter specifies an authorization key that is required in each HTTP request
+to the engine.  If this key is specified, each valid HTTP request needs to 
+provide the following key-value pair in order to get the authorization. </p>
+<pre><code>OAuth=foobar
+</code></pre>
+
+<p>Here's an example search query:</p>
+<pre><code>curl -i &quot;http://localhost:8081/search?q=terminator&amp;OAuth=foobar&quot;
+</code></pre>
+
+<p>Notice that we use "foobar" as an example to indicate that the key in the HTTP request should 
+match the key in the config file.</p>
+<p>A valid authorization key should include alphanumeric characters only, and the 
+authorization is case sensitive.  If no authorization key is provided in the 
+config file, then an HTTP request doesn't need to provide a key.</p>
 
 </table>
 <hr>
