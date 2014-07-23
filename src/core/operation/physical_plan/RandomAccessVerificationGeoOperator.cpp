@@ -56,18 +56,19 @@ bool RandomAccessVerificationGeoOperator::verifyByRandomAccess(PhysicalPlanRando
 	srch2::util::RecordSerializerUtil::populateStoredSchema(storedSchema, queryEvaluator->getSchema());
 	srch2::util::RecordSerializer compactRecDeserializer = srch2::util::RecordSerializer(*storedSchema);
 
-	// TODO: Mahdi: find the name of the attributes
+	// get the name of the attributes
 	string nameOfLatitudeAttribute = this->queryEvaluator->getQueryEvaluatorRuntimeParametersContainer()->nameOfLatitudeAttribute;
 	string nameOfLongitudeAttribute = this->queryEvaluator->getQueryEvaluatorRuntimeParametersContainer()->nameOfLongitudeAttribute;
 	Point point;
 
 	unsigned idLat = storedSchema->getRefiningAttributeId(nameOfLatitudeAttribute);
 	unsigned lenOffsetLat = compactRecDeserializer.getRefiningOffset(idLat);
-	point.x = *((double *)buffer.start.get()+lenOffsetLat);
+
+	point.x = *((float *)(buffer.start.get()+lenOffsetLat));
 
 	unsigned idLong = storedSchema->getRefiningAttributeId(nameOfLongitudeAttribute);
 	unsigned lenOffsetLong = compactRecDeserializer.getRefiningOffset(idLong);
-	point.y = *((double *)buffer.start.get()+lenOffsetLong);
+	point.y = *((float *)(buffer.start.get()+lenOffsetLong));
 
 	// verify the record. The query region should contains this record
 	if(this->queryShape->contains(point)){
@@ -89,18 +90,18 @@ RandomAccessVerificationGeoOperator::RandomAccessVerificationGeoOperator(){
 
 
 PhysicalPlanCost RandomAccessVerificationGeoOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
-	ASSERT(false);
-	return NULL;
+	PhysicalPlanCost resultCost;
+	return resultCost;
 }
 
 PhysicalPlanCost RandomAccessVerificationGeoOptimizationOperator::getCostOfGetNext(const PhysicalPlanExecutionParameters & params){
-	ASSERT(false);
-	return NULL;
+	PhysicalPlanCost resultCost;
+	return resultCost;
 }
 
 PhysicalPlanCost RandomAccessVerificationGeoOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params){
-	ASSERT(false);
-	return NULL;
+	PhysicalPlanCost resultCost;
+	return resultCost;
 }
 
 PhysicalPlanCost RandomAccessVerificationGeoOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){

@@ -135,8 +135,7 @@ private:
 
 	// Split the leaf node and make it an internal node if the number
 	// of elements is greater than MAX_NUM_OF_ELEMENTS
-	// And returns the number of new leaf nodes
-	unsigned split();
+	void split();
 
 	// Merge all the children of this node if the total number of geo elements in
 	// them is less than or equal to MAX_NUM_OF_ELEMENTS

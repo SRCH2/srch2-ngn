@@ -33,7 +33,7 @@ bool GeoSimpleScanOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 	// get the query shape
 	this->queryShape = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->regionShape;
 	// get quadTreeNodeSet which contains all the subtrees in quadtree which have the answers
-	vector<QuadTreeNode*>* quadTreeNodeSet = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->stats->quadTreeNodeSet;
+	vector<QuadTreeNode*>* quadTreeNodeSet = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->stats->getQuadTreeNodeSetForEstimation();
 
 	// put the vector of element in each node in geoElements
 	// rangeQuery will be called recursively to find all the leaf nodes.
@@ -134,7 +134,7 @@ bool GeoSimpleScanOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerific
 	srch2::util::RecordSerializerUtil::populateStoredSchema(storedSchema, queryEvaluator->getSchema());
 	srch2::util::RecordSerializer compactRecDeserializer = srch2::util::RecordSerializer(*storedSchema);
 
-	// TODO: Mahdi: find the name of the attributes
+	// get the name of the attributes
 	string nameOfLatitudeAttribute = this->queryEvaluator->getQueryEvaluatorRuntimeParametersContainer()->nameOfLatitudeAttribute;
 	string nameOfLongitudeAttribute = this->queryEvaluator->getQueryEvaluatorRuntimeParametersContainer()->nameOfLongitudeAttribute;
 	Point point;

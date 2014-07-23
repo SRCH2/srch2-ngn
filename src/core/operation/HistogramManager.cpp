@@ -101,7 +101,7 @@ void HistogramManager::annotateWithActiveNodeSets(LogicalPlanNode * node , bool 
 			}
 			break;
 		case LogicalPlanNodeTypeGeo:
-				node->stats->quadTreeNodeSet = computeQuadTreeNodeSet(node->regionShape);
+				 computeQuadTreeNodeSet(node->stats->quadTreeNodeSet, node->regionShape);
 			break;
 		default:
 			ASSERT(false);
@@ -328,10 +328,8 @@ boost::shared_ptr<PrefixActiveNodeSet> HistogramManager::computeActiveNodeSet(Te
     return prefixActiveNodeSet;
 }
 
-vector<QuadTreeNode*>* HistogramManager::computeQuadTreeNodeSet(Shape *range){
-	vector<QuadTreeNode*> results;
+void HistogramManager::computeQuadTreeNodeSet(vector<QuadTreeNode*> &results, Shape *range){
 	this->queryEvaluator->getQuadTree()->rangeQuery(results,*range);
-	return &results;
 }
 
 void HistogramManager::computeEstimatedProbabilityOfPrefixAndNumberOfLeafNodes(TermType termType, PrefixActiveNodeSet * activeNodes ,

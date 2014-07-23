@@ -472,8 +472,10 @@ bool MergeByShortestListOptimizationOperator::validateChildren(){
 			case PhysicalPlanNode_RandomAccessAnd:
 			case PhysicalPlanNode_RandomAccessOr:
 			case PhysicalPlanNode_RandomAccessNot:
+			case PhysicalPlanNode_RandomAccessGeo:
 				break;
 			case PhysicalPlanNode_UnionLowestLevelTermVirtualList:
+			case PhysicalPlanNode_GeoNearestNeighbor:
 				// this operator cannot have TVL as a child, TVL overhead is not needed for this operator
 				return false;
 			default:{ // we count the number of non-verification operators.
@@ -502,6 +504,7 @@ unsigned MergeByShortestListOptimizationOperator::getShortestListOffsetInChildre
 			case PhysicalPlanNode_RandomAccessAnd:
 			case PhysicalPlanNode_RandomAccessOr:
 			case PhysicalPlanNode_RandomAccessNot:
+			case PhysicalPlanNode_RandomAccessGeo:
 				break;
 			default:{
 				return i;

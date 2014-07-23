@@ -848,7 +848,9 @@ bool MergeTopKOptimizationOperator::validateChildren(){
 			case PhysicalPlanNode_RandomAccessAnd:
 			case PhysicalPlanNode_RandomAccessOr:
 			case PhysicalPlanNode_RandomAccessNot:
+			case PhysicalPlanNode_RandomAccessGeo:
 			case PhysicalPlanNode_UnionLowestLevelSimpleScanOperator:
+			case PhysicalPlanNode_GeoSimpleScan:
 				// TopK should connect to InvertedIndex only by TVL
 				return false;
 			default:{

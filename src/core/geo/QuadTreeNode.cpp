@@ -76,7 +76,7 @@ bool QuadTreeNode::insertGeoElement(GeoElement* element){
 		if(this->numOfElementsInSubtree >= GEO_MAX_NUM_OF_ELEMENTS
 				// For avoiding too small regions in the quadtree
 				&& ((this->rectangle.max.x - this->rectangle.min.x) * (this->rectangle.max.y - this->rectangle.min.y)) > GEO_MBR_LIMIT){
-			this->numOfLeafNodesInSubtree = this->split();
+			this->split();
 		}else{
 			this->elements.push_back(element);
 			this->numOfElementsInSubtree++;
@@ -179,20 +179,26 @@ void QuadTreeNode::rangeQuery(vector<vector<GeoElement*>*> & results, const Shap
 }
 
 void QuadTreeNode::rangeQuery(vector<QuadTreeNode*> & results, const Shape &range){
-	if(range.contains(this->rectangle)){ // query range contains this node's rectangle.
-		results.push_back(this);
-	}else{ // call the rangeQuery for children of this node.
-		for(unsigned i = 0 ; i < GEO_CHILD_NUM ; i++){
-			if(this->children[i] != NULL){
-				if(range.intersects(this->children[i]->rectangle)){
-					this->children[i]->rangeQuery(results,range);
+	if(this->isLeaf){
+		if(range.intersects(this->rectangle)){
+			results.push_back(this);
+		}
+	}else{
+		if(range.contains(this->rectangle)){ // query range contains this node's rectangle.
+			results.push_back(this);
+		}else{ // call the rangeQuery for children of this node.
+			for(unsigned i = 0 ; i < GEO_CHILD_NUM ; i++){
+				if(this->children[i] != NULL){
+					if(range.intersects(this->children[i]->rectangle)){
+						this->children[i]->rangeQuery(results,range);
+					}
 				}
 			}
 		}
 	}
 }
 
-unsigned QuadTreeNode::split(){
+void QuadTreeNode::split(){
 	ASSERT(this->isLeaf == true);
 	this->isLeaf = false; // after split, the node will no longer be a leaf
 	this->numOfLeafNodesInSubtree = 0;
@@ -202,6 +208,7 @@ unsigned QuadTreeNode::split(){
 
 
 	// Reinsert all the elements in this node
+	this->numOfElementsInSubtree = 0;
 	for(unsigned i = 0; i < this->elements.size(); i++)
 		insertGeoElement(this->elements[i]);
 

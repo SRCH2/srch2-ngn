@@ -93,6 +93,18 @@ void PhysicalPlanOptimizationNode::printSubTree(unsigned indent){
 			Logger::info("[SCAN]");
 //			cout << "[SCAN]" << endl;
 			break;
+		case PhysicalPlanNode_GeoNearestNeighbor:
+			Logger::info("[GEO NearestNeighbor]");
+//			cout << "[GEO NearestNeighbor]" << endl;
+			break;
+		case PhysicalPlanNode_GeoSimpleScan:
+			Logger::info("[GEO SimpleScan");
+//			cout << "[GEO SimpleScan]" << endl;
+			break;
+		case PhysicalPlanNode_RandomAccessGeo:
+			Logger::info("[R.A.GEO]");
+//			cout << "[R.A.GEO]" << endl;
+			break;
 		case PhysicalPlanNode_RandomAccessTerm:
 			Logger::info("[TERM]" );
 //			cout << "[TERM]" << endl;

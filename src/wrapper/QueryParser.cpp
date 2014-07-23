@@ -1553,6 +1553,7 @@ void QueryParser::geoParser() {
 					radiusParamTemp);
 		}
 	}
+	// TODO : Jamshid : if only a subset of values are provided errosr ....
 	Logger::debug("returning from geoParser");
 }
 void QueryParser::extractSearchType() {

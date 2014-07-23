@@ -466,15 +466,12 @@ void QueryRewriter::prepareLogicalPlan(LogicalPlan & plan){
 	 */
 	if(paramContainer->hasParameterInQuery(GeoSearchFlag)){
 		addGeoToParseTree();
-		paramContainer->parseTreeRoot->print(1); // TODO: remove this line
 	}
 
 	/*
 	 * 1. rewrite the parseTree
 	 */
 	rewriteParseTree();
-
-	paramContainer->parseTreeRoot->print(1); // TODO: remove this line
 
 	/*
 	 * 2. Build the logicalPlan tree from the parse tree

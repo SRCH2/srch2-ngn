@@ -24,7 +24,6 @@ GeoNearestNeighborOperator::~GeoNearestNeighborOperator(){
 }
 
 bool GeoNearestNeighborOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
-
 	this->queryEvaluator = queryEvaluator;
 	this->quadtree = queryEvaluator->getQuadTree();
 	// get the forward list read view
@@ -32,8 +31,9 @@ bool GeoNearestNeighborOperator::open(QueryEvaluatorInternal * queryEvaluator, P
 	// finding the query region
 	this->queryShape = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->regionShape;
 	// get quadTreeNodeSet which contains all the subtrees in quadtree which have the answers
-	vector<QuadTreeNode*>* quadTreeNodeSet = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->stats->quadTreeNodeSet;
+	vector<QuadTreeNode*>* quadTreeNodeSet = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->stats->getQuadTreeNodeSetForEstimation();
 	// put all the QuadTree nodes from quadTreeNodeSet into the heap vector
+
 	for( unsigned i = 0 ; i < quadTreeNodeSet->size() ; i++ ){
 		this->heapItems.push_back(new GeoNearestNeighborOperatorHeapItem(quadTreeNodeSet->at(i),this->queryShape));
 	}
@@ -124,7 +124,7 @@ bool GeoNearestNeighborOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVe
 		srch2::util::RecordSerializerUtil::populateStoredSchema(storedSchema, queryEvaluator->getSchema());
 		srch2::util::RecordSerializer compactRecDeserializer = srch2::util::RecordSerializer(*storedSchema);
 
-		// TODO: Mahdi: find the name of the attributes
+		// get the name of the attributes
 		string nameOfLatitudeAttribute = this->queryEvaluator->getQueryEvaluatorRuntimeParametersContainer()->nameOfLatitudeAttribute;
 		string nameOfLongitudeAttribute = this->queryEvaluator->getQueryEvaluatorRuntimeParametersContainer()->nameOfLongitudeAttribute;
 		Point point;
@@ -157,7 +157,7 @@ string GeoNearestNeighborOperator::toString(){
 // of parent open function.
 PhysicalPlanCost GeoNearestNeighborOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
 	PhysicalPlanCost resultCost;
-	resultCost.cost = this->getLogicalPlanNode()->stats->quadTreeNodeSet->size();
+	resultCost.cost = this->getLogicalPlanNode()->stats->quadTreeNodeSet.size();
 	return resultCost;
 }
 // The cost of getNext of a child is multiplied by the estimated number of calls to this function

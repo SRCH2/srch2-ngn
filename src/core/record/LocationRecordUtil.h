@@ -186,8 +186,8 @@ public:
     virtual std::string toString(){
     	std::ostringstream ss;
     	ss << "Rectangle";
-    	ss << "-" << this->min.x << "-" << this->min.y;
-    	ss << "-" << this->max.x << "-" << this->max.y;
+    	ss << "/" << this->min.x << "/" << this->min.y;
+    	ss << "/" << this->max.x << "/" << this->max.y;
     	return ss.str();
     }
 
@@ -290,9 +290,9 @@ public:
     virtual std::string toString(){
     	std::ostringstream ss;
     	ss << "Circle";
-    	ss << "-" << this->center.x;
-    	ss << "-" << this->center.y;
-    	ss << "-" << this->radius;
+    	ss << "/" << this->center.x;
+    	ss << "/" << this->center.y;
+    	ss << "/" << this->radius;
     	return ss.str();
     }
 
