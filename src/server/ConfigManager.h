@@ -255,7 +255,7 @@ protected:
 
     bool setFieldFlagsFromFile(const xml_node &field, bool &isMultiValued, bool &isSearchable, bool &isRefining, bool &isHighlightEnabled, std::stringstream &parseError, bool &configSuccess);
 
-    bool setCoreParseStateVector(const xml_node &field, bool isSearchable, bool isRefining, bool isMultiValued, bool isHighlightEnabled, CoreConfigParseState_t *coreParseState, CoreInfo_t *coreInfo, std::stringstream &parseError);
+    bool setCoreParseStateVector(bool isSearchable, bool isRefining, bool isMultiValued, bool isHighlightEnabled, CoreConfigParseState_t *coreParseState, CoreInfo_t *coreInfo, std::stringstream &parseError, const xml_node &field);
 
     bool setRefiningStateVectors(const xml_node &field, bool isMultiValued, bool isRefining, vector<string> &RefiningFieldsVector, vector<srch2::instantsearch::FilterType> &RefiningFieldTypesVector, vector<bool> &RefiningAttributesRequiredFlagVector, vector<string> &RefiningAttributesDefaultVector, vector<bool> &RefiningAttributesIsMultiValued, std::stringstream &parseError);
 
@@ -336,6 +336,7 @@ public:
     const vector<string> * getFacetEnds(const string &coreName) const ;
     const vector<string> * getFacetGaps(const string &coreName) const ;
 
+    //loadConfigFile should not exit the engine, hence bool is returned to indicate if engine should exit or not. Also it is helpful in ctest cases.
     bool loadConfigFile() ;
 
     // Mongo related getter/setter

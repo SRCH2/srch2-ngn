@@ -907,6 +907,7 @@ int main(int argc, char** argv) {
 
     ConfigManager *serverConf = new ConfigManager(srch2_config_file);
     if(!serverConf->loadConfigFile()){
+    	Logger::error("Error in loading the config file, therefore exiting.");
     	exit(-1);
     }
 

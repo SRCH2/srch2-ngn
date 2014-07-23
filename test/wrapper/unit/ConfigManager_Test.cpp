@@ -1,18 +1,12 @@
 /*
  * ConfigManager_Test.cpp
  *
- *  Created on: Jul 18, 2014
+ *  Created on: Jul 17, 2014
  *      Author: prateek
  */
 
-
-
-
-/*
- * ConfigManager_Test.cpp
- *
- *  Created on: Jul 17, 2014
- *      Author: prateek
+/**
+ * This test case tests schema section of the config file. Checks if it works for various combination and number of searchable, refining, and indexed fields.
  */
 
 #include "server/util/xmlParser/pugixml.hpp"
@@ -42,14 +36,14 @@ using srch2http::RefiningAttributeInfoContainer;
 
 int main(int argc, char* argv[])
 {
-	string configFile1(string(getenv("srch2_config_file")) + "/conf-multicore-1.xml");
-	string configFile2(string(getenv("srch2_config_file")) + "/conf-multicore-2.xml");
-	string configFile3(string(getenv("srch2_config_file")) + "/conf-multicore-3.xml");
-	string configFile4(string(getenv("srch2_config_file")) + "/conf-multicore-4.xml");
-	string configFile5(string(getenv("srch2_config_file")) + "/conf-multicore-5.xml");
-	string configFile6(string(getenv("srch2_config_file")) + "/conf-multicore-6.xml");
-	string configFile7(string(getenv("srch2_config_file")) + "/conf-multicore-7.xml");
-	string configFile8(string(getenv("srch2_config_file")) + "/conf-multicore-8.xml");
+	string configFile1(string(getenv("srch2_config_file")) + "/conf-SRI-I.xml");
+	string configFile2(string(getenv("srch2_config_file")) + "/conf-SI-RI.xml");
+	string configFile3(string(getenv("srch2_config_file")) + "/conf-invalid-IR.xml");
+	string configFile4(string(getenv("srch2_config_file")) + "/conf-SRI-false.xml");
+	string configFile5(string(getenv("srch2_config_file")) + "/conf-SI-present-R-missing.xml");
+	string configFile6(string(getenv("srch2_config_file")) + "/conf-inconsistent-attribute.xml");
+	string configFile7(string(getenv("srch2_config_file")) + "/conf-unique-searchable.xml");
+	string configFile8(string(getenv("srch2_config_file")) + "/conf-unique-refining.xml");
 
 	ConfigManager *serverConf1 = new ConfigManager(configFile1);
 	ConfigManager *serverConf2 = new ConfigManager(configFile2);
@@ -60,21 +54,15 @@ int main(int argc, char* argv[])
 	ConfigManager *serverConf7 = new ConfigManager(configFile7);
 	ConfigManager *serverConf8 = new ConfigManager(configFile8);
 
-	cout << serverConf1->loadConfigFile() << "\n";
-	cout << serverConf2->loadConfigFile() << "\n";
-	cout << serverConf3->loadConfigFile() << "\n";
-	cout << serverConf6->loadConfigFile() << "\n";
-	cout << serverConf5->loadConfigFile() << "\n";
-	cout << serverConf7->loadConfigFile() << "\n";
-	cout << serverConf8->loadConfigFile() << "\n";
+	ASSERT(serverConf1->loadConfigFile() == true);
+	ASSERT(serverConf2->loadConfigFile() == true);
+	ASSERT(serverConf3->loadConfigFile() == true);
+	ASSERT(serverConf6->loadConfigFile() == true);
+	ASSERT(serverConf5->loadConfigFile() == true);
+	ASSERT(serverConf7->loadConfigFile() == true);
+	ASSERT(serverConf8->loadConfigFile() == false);
 
 	ConfigManager::CoreInfoMap_t::iterator it;
-
-	for(it = serverConf8->coreInfoIterateBegin(); it != serverConf8->coreInfoIterateEnd(); it++) {
-
-		map<string, RefiningAttributeInfoContainer> ::const_iterator it2 = it->second->getRefiningAttributes()->begin();
-		ASSERT(it2->first == "uniqueRefiningField");
-	}
 
 	for(it = serverConf7->coreInfoIterateBegin(); it != serverConf7->coreInfoIterateEnd(); it++) {
 
