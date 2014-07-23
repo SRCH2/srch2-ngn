@@ -755,7 +755,7 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
  */
 void ConfigManager::parseSingleCore(const xml_node &parentNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
 {
-    string tempUse = "";
+    string temporaryString = "";
 
     // <core name="core0"
     if (parentNode.attribute(nameString) && string(parentNode.attribute(nameString).value()).compare("") != 0) {
@@ -813,7 +813,7 @@ void ConfigManager::parseMultipleCores(const xml_node &coresNode, bool &configSu
  */
 void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
 {
-    string tempUse = "";
+    string temporaryString = "";
     CoreConfigParseState_t coreParseState;
 
     // <config><dataDir>core0/data OR <core><dataDir>
@@ -852,9 +852,9 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_
         // dataFile is a required field only if JSON file is specified as data source.
         childNode = parentNode.child(dataFileString);
         if (childNode && childNode.text()) { // checks if the config/dataFile has any text in it or not
-            tempUse = string(childNode.text().get());
-            trimSpacesFromValue(tempUse, dataFileString, parseWarnings);
-            coreInfo->dataFilePath = srch2Home + string("") + coreInfo->getName() + string("/") + tempUse;
+            temporaryString = string(childNode.text().get());
+            trimSpacesFromValue(temporaryString, dataFileString, parseWarnings);
+            coreInfo->dataFilePath = srch2Home + string("") + coreInfo->getName() + string("/") + temporaryString;
         } else {
             parseError << (coreInfo->name.compare("") != 0 ? coreInfo->name : "default") <<
                 " core path to the data file is not set. "
@@ -1194,7 +1194,7 @@ bool ConfigManager::setRefiningStateVectors(const xml_node &field, bool isMultiV
 void ConfigManager::parseFacetFields(const xml_node &schemaNode, CoreInfo_t *coreInfo, std::stringstream &parseError){
 
 	xml_node childNode;
-	string tempUse;
+	string temporaryString;
 	if(coreInfo->facetEnabled){
 		childNode = schemaNode.child(facetFieldsString);
 		if (childNode) {
@@ -1206,8 +1206,8 @@ void ConfigManager::parseFacetFields(const xml_node &schemaNode, CoreInfo_t *cor
 						// insert the name of the facet
 						coreInfo->facetAttributes.push_back(string(field.attribute(nameString).value()));
 						// insert the type of the facet
-						tempUse = string(field.attribute(facetTypeString).value());
-						int facetType = parseFacetType(tempUse);
+						temporaryString = string(field.attribute(facetTypeString).value());
+						int facetType = parseFacetType(temporaryString);
 						if(facetType == 0){ // categorical
 							coreInfo->facetTypes.push_back(facetType);
 							// insert place holders for start,end and gap
@@ -1307,7 +1307,7 @@ void ConfigManager::parseFacetFields(const xml_node &schemaNode, CoreInfo_t *cor
 
 void ConfigManager::parseSchemaType(const xml_node &childNode, CoreInfo_t *coreInfo, std::stringstream &parseWarnings){
 
-	string tempUse = "";
+	string temporaryString = "";
 	if (childNode) {        // Checks if <schema><types> exists or not
 		for (xml_node fieldType = childNode.first_child(); fieldType; fieldType = fieldType.next_sibling()) { // Going on the children
 			if ((string(fieldType.name()).compare(fieldTypeString) == 0)) { // Finds the fieldTypes
@@ -1319,26 +1319,26 @@ void ConfigManager::parseSchemaType(const xml_node &childNode, CoreInfo_t *coreI
 							if (string(field.attribute(nameString).value()).compare(porterStemFilterString) == 0) { // STEMMER FILTER
 								if (string(field.attribute(dictionaryString).value()).compare("") != 0) { // the dictionary for porter stemmer is set.
 									coreInfo->stemmerFlag = true;
-									tempUse = string(field.attribute(dictionaryString).value());
-									trimSpacesFromValue(tempUse, porterStemFilterString, parseWarnings);
-									coreInfo->stemmerFile = boost::filesystem::path(this->srch2Home + tempUse).normalize().string();
+									temporaryString = string(field.attribute(dictionaryString).value());
+									trimSpacesFromValue(temporaryString, porterStemFilterString, parseWarnings);
+									coreInfo->stemmerFile = boost::filesystem::path(this->srch2Home + temporaryString).normalize().string();
 								}else{
 									Logger::warn("Dictionary file is not set for PorterStemFilter, so stemming is disabled");
 								}
 							} else if (string(field.attribute(nameString).value()).compare(stopFilterString) == 0) { // STOP FILTER
 								if (string(field.attribute(wordsString).value()).compare("") != 0) { // the words file for stop filter is set.
-									tempUse = string(field.attribute(wordsString).value());
-									trimSpacesFromValue(tempUse, stopFilterString, parseWarnings);
-									coreInfo->stopFilterFilePath = boost::filesystem::path(srch2Home + tempUse).normalize().string();
+									temporaryString = string(field.attribute(wordsString).value());
+									trimSpacesFromValue(temporaryString, stopFilterString, parseWarnings);
+									coreInfo->stopFilterFilePath = boost::filesystem::path(srch2Home + temporaryString).normalize().string();
 								}else{
 									Logger::warn("word parameter in StopFilter is empty, so stop word filter is disabled");
 								}
 							}
 							else if (string(field.attribute(nameString).value()).compare(protectedWordFilterString) == 0) {
 								if (string(field.attribute(wordsString).value()).compare("") != 0) { // the file for protected words filter is set.
-									tempUse = string(field.attribute(wordsString).value());
-									trimSpacesFromValue(tempUse, protectedWordFilterString, parseWarnings);
-									coreInfo->protectedWordsFilePath = boost::filesystem::path(srch2Home + tempUse).normalize().string();
+									temporaryString = string(field.attribute(wordsString).value());
+									trimSpacesFromValue(temporaryString, protectedWordFilterString, parseWarnings);
+									coreInfo->protectedWordsFilePath = boost::filesystem::path(srch2Home + temporaryString).normalize().string();
 								}else{
 									Logger::warn("words parameter for protected keywords is empty, so protected words filter is disabled");
 								}
@@ -1386,8 +1386,7 @@ void ConfigManager::parseSchemaType(const xml_node &childNode, CoreInfo_t *coreI
 
 void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState_t *coreParseState, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
 {
-	string tempUse = "";
-
+	    string temporaryString = "";
 	    vector<string> RefiningFieldsVector;
 	    vector<srch2::instantsearch::FilterType> RefiningFieldTypesVector;
 	    vector<bool> RefiningAttributesRequiredFlagVector;
@@ -1591,10 +1590,10 @@ return true;
 
 bool ConfigManager::setSearchableAndRefining(const xml_node &field, bool &isSearchable, bool &isRefining, std::stringstream &parseError, bool &configSuccess){
 
-	string tempUse = "";
+	string temporaryString = "";
 	if(string(field.attribute(searchableString).value()).compare("") != 0){
-		tempUse = string(field.attribute(searchableString).value());
-		if(isValidBool(tempUse)){
+		temporaryString = string(field.attribute(searchableString).value());
+		if(isValidBool(temporaryString)){
 			if(field.attribute(searchableString).as_bool()){
 				isSearchable = true;
 			}else{
@@ -1608,8 +1607,8 @@ bool ConfigManager::setSearchableAndRefining(const xml_node &field, bool &isSear
 	}
 
 	if(string(field.attribute(refiningString).value()).compare("") != 0){
-		tempUse = string(field.attribute(refiningString).value());
-		if(isValidBool(tempUse)){
+		temporaryString = string(field.attribute(refiningString).value());
+		if(isValidBool(temporaryString)){
 			if(field.attribute(refiningString).as_bool()){
 				isRefining = true;
 			}else{
@@ -1627,10 +1626,10 @@ bool ConfigManager::setSearchableAndRefining(const xml_node &field, bool &isSear
 //bool ConfigManager::setCoreParseState()
 
 bool ConfigManager::setFieldFlagsFromFile(const xml_node &field, bool &isMultiValued, bool &isSearchable, bool &isRefining, bool &isHighlightEnabled, std::stringstream &parseError, bool &configSuccess){
-	string tempUse = "";
+	string temporaryString = "";
 	if(string(field.attribute(multiValuedString).value()).compare("") != 0){
-		tempUse = string(field.attribute(multiValuedString).value());
-	    if(isValidBool(tempUse)){
+		temporaryString = string(field.attribute(multiValuedString).value());
+	    if(isValidBool(temporaryString)){
 	    	isMultiValued = field.attribute(multiValuedString).as_bool();
 	    }else{
             parseError << "Config File Error: Unknown value for property '"<< multiValuedString <<"'.\n";
@@ -1652,8 +1651,8 @@ bool ConfigManager::setFieldFlagsFromFile(const xml_node &field, bool &isMultiVa
 
         //set highlight flags
         if(string(field.attribute(highLightString).value()).compare("") != 0){
-        	tempUse = string(field.attribute(highLightString).value());
-        	if (isValidBool(tempUse)){
+        	temporaryString = string(field.attribute(highLightString).value());
+        	if (isValidBool(temporaryString)){
         		if(field.attribute(indexedString).as_bool()){
         			isHighlightEnabled = true;
         		}
@@ -1665,7 +1664,7 @@ bool ConfigManager::setFieldFlagsFromFile(const xml_node &field, bool &isMultiVa
 
 void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
 {
-    string tempUse = "";
+    string temporaryString = "";
 
     xml_node childNode = updateHandlerNode.child(maxDocsString);
     bool mdflag = false;
@@ -1761,9 +1760,9 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode, CoreIn
     // accessLogFile is required
     childNode = updateHandlerNode.child(updateLogString).child(accessLogFileString);
     if (childNode && childNode.text()) {
-        tempUse = string(childNode.text().get());
-        trimSpacesFromValue(tempUse, updateLogString, parseWarnings);
-        this->httpServerAccessLogFile = this->srch2Home + "/" + coreInfo->getName() + "/" + tempUse;
+        temporaryString = string(childNode.text().get());
+        trimSpacesFromValue(temporaryString, updateLogString, parseWarnings);
+        this->httpServerAccessLogFile = this->srch2Home + "/" + coreInfo->getName() + "/" + temporaryString;
     } else {
         parseError << "httpServerAccessLogFile is not set.\n";
         configSuccess = false;
@@ -1786,7 +1785,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
                           std::stringstream &parseError,
                           std::stringstream &parseWarnings)
 {
-    string tempUse = ""; // This is just for temporary use.
+    string temporaryString = ""; // This is just for temporary use.
 
     CoreInfo_t *defaultCoreInfo = NULL;
 
@@ -1795,9 +1794,9 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
     // srch2Home is a required field
     xml_node childNode = configNode.child(srch2HomeString);
     if (childNode && childNode.text()) { // checks if the config/srch2Home has any text in it or not
-        tempUse = string(childNode.text().get());
-        trimSpacesFromValue(tempUse, srch2HomeString, parseWarnings, "/");
-        srch2Home = tempUse;
+        temporaryString = string(childNode.text().get());
+        trimSpacesFromValue(temporaryString, srch2HomeString, parseWarnings, "/");
+        srch2Home = temporaryString;
     } else {
         parseError << "srch2Home is not set.\n";
         configSuccess = false;
