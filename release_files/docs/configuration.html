@@ -16,7 +16,7 @@
 <a href="http://www.srch2.com" target="_blankt"><img style="height:24px" src="images/logo.png" align="left"></a>&nbsp;
 </td>
 <td style="align:right; white-space: nowrap; padding: 0px; font-size: 12px">
-Version: 4.3.3, Date: July 07, 2014&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Version: 4.3.4, Date: July 17, 2014&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </td>
 </tr>
 </table>
@@ -187,11 +187,12 @@ the advanced example configuration file in example-demo/srch2-config-advanced.xm
 <pre><code>&lt;dataSourceType&gt;1&lt;/dataSourceType&gt;
 </code></pre>
 
-<p>This value specifies the type of data source to be searched.</p>
-<blockquote>
-<p>1: json data file. (Default)
- 2: MongoDB.</p>
-</blockquote>
+<p>This value specifies the type of data source to be searched.  Notice that if there are previous indexes already created on the disk, the engine will always load them and ignore the flag.  The following flags are used only when there are no previous indexes.</p>
+<ul>
+<li>0: Create empty indexes, and ignore the data file specified by the "dataFile" tag).</li>
+<li>1: Create indexes for records from the JSON file specified by the "dataFile" tag. "1" is the default value for this "dataSourceType" tag.</li>
+<li>2: Create indexes for records from MongoDB specified by the parameters under the "mongodb" tag.</li>
+</ul>
 <h3 id="dataFile">6.2. Data File, Required if "dataSourceType" is 1</h3>
 <pre><code>&lt;dataFile&gt;./example-demo/movie-data.json&lt;/dataFile&gt;
 </code></pre>
