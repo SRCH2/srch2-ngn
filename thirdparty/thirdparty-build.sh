@@ -10,6 +10,13 @@ cd jsoncpp-src-0.5.0
 tar -xvf scons-local-2.1.0.tar.gz
 python scons.py platform=linux-gcc
 
+if [ ! -d "build" ]; then
+    mkdir build
+fi
+cd build
+cmake ..
+make
+
 echo "BUILDING LIBEVENT..."
 
 cd ../../event

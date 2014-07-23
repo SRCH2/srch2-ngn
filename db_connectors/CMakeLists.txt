@@ -48,18 +48,26 @@ EXEC_PROGRAM( ${CMAKE_CXX_COMPILER}
 
 
 FILE(GLOB_RECURSE SQLITE_CONNECTOR_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "sqlite/*.cpp")
-
-MESSAGE(STATUS "This is SOURCE dir " ${CMAKE_SOURCE_DIR})
 					
 INCLUDE_DIRECTORIES(
     ${CMAKE_SOURCE_DIR}/../src/adapter/
     ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src-0.5.0/include
 )
 
-SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src-0.5.0/libs/linux-gcc-${gcc_compiler_version}/libjson_linux-gcc-${gcc_compiler_version}_libmt.so)
+SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src-0.5.0/build/libjsoncpp.a)
 ADD_LIBRARY(sqliteConnector SHARED ${SQLITE_CONNECTOR_SRC} )
+
+set(SQLITE_VERSION_MAJOR 1)
+set(SQLITE_VERSION_MINOR 0)
+set(SQLITE_VERSION_PATCH 0)
+set(SQLITE_VERSION_STRING ${SQLITE_VERSION_MAJOR}.${SQLITE_VERSION_MINOR}.${SQLITE_VERSION_PATCH})
+
+set_target_properties(sqliteConnector PROPERTIES VERSION ${SQLITE_VERSION_STRING}
+                                          SOVERSION ${SQLITE_VERSION_MAJOR})
 
 SET_TARGET_PROPERTIES(sqliteConnector PROPERTIES COMPILE_FLAGS -fPIC)
 
-TARGET_LINK_LIBRARIES(sqliteConnector ${jsoncpp_LIBRARY} sqlite3 ${Boost_LIBRARIES})
+FIND_PACKAGE( Boost COMPONENTS filesystem REQUIRED )
+
+TARGET_LINK_LIBRARIES(sqliteConnector ${jsoncpp_LIBRARY} ${Boost_LIBRARIES} sqlite3)
 
