@@ -2,7 +2,7 @@
  * mongodbconnector.cpp
  *
  *  Created on: Jun 9, 2014
- *      Author: liusrch2
+ *      Author: Chen Liu at SRCH2
  */
 #include "mongodbconnector.h"
 #include <iostream>
@@ -85,8 +85,8 @@ bool MongoDBConnector::connectToDB() {
         maxRetryOnFailure = atoi(maxRetryOnFailureStr.c_str());
     }
 
-    for (unsigned retryCount = -1; retryCount != maxRetryOnFailure;
-            retryCount++) {
+    for (int retryCount = maxRetryOnFailure; retryCount >=0;
+            --retryCount) {
 
         try {
             string hostAndport = host;

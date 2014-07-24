@@ -2,7 +2,7 @@
  * ServerInterfaceInternal.h
  *
  *  Created on: Jun 9, 2014
- *      Author: liusrch2
+ *      Author: Chen Liu at SRCH2
  */
 
 #ifndef __SERVERINTERFACEINTERNAL__

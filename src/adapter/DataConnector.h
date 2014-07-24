@@ -2,7 +2,7 @@
  * DataConnector.h
  *
  *  Created on: Jun 9, 2014
- *      Author: chenliu@srch2
+ *      Author: Chen Liu at SRCH2
  */
 
 #ifndef __DATACONNECTOR_H__

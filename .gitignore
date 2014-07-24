@@ -70,6 +70,7 @@ thirdparty/libunwind/libunwind-0.99-beta/
 thirdparty/libunwind/include/
 thirdparty/libunwind/lib/
 thirdparty/libunwind/share/
+thirdparty/pymongo/pymongo/
 #
 # .cmake related
 *.cmake

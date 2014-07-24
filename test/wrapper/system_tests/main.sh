@@ -751,6 +751,29 @@ fi
 rm -rf data/*.idx
 rm -rf data/mongodb_data
 
+test_id="adapter_sqlite"
+printTestBanner "$test_id"
+
+python ./adapter_sqlite/adapter_sqlite.py $SRCH2_ENGINE ./adapter_sqlite/testCreateIndexes_sql.txt ./adapter_sqlite/testCreateIndexes.txt ./adapter_sqlite/testRunListener_sql.txt ./adapter_sqlite/testRunListener.txt ./adapter_sqlite/testOfflineLog_sql.txt ./adapter_sqlite/testOfflineLog.txt | eval "${html_escape_command}" >> system_test.log 2>&1
+
+fun_ret=${PIPESTATUS[0]}
+if [ $fun_ret -gt 0 ]; then
+    if [ $fun_ret -eq 255 ]; then
+        echo "-- SKIPPED: Cannot connect to the Sqlite. Check if sqlite3 is installed." >> ${output}
+    else
+        echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
+    fi
+
+    if [ $force -eq 0 ]; then
+        exit 255
+    fi
+else
+    echo "-- PASSED: $test_id" >> ${output}
+fi
+rm -rf data/ *.idx
+rm -rf data/sqlite_data
+rm -rf ./adapter_sqlite/srch2Test.db
+
 test_id="primary key - refining field"
 printTestBanner "$test_id"
 python ./refining_field_primary_key/testPrimaryKey.py $SRCH2_ENGINE ./refining_field_primary_key/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1

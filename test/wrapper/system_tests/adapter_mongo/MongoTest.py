@@ -1,9 +1,9 @@
-#This test is used for the adapter_mongdb
+#These tests are used for the adapter_mongdb
 #Require pymongo and MongoDB running as replication mode
-#Test 1: test loading index from the MongoDB table to create a index.
+#Test 1: test loading records from the MongoDB table to create a index.
 #Test 2: test listener, during the server running, update the record in the mongodb, 
-#        the listener will fetch the result.
-#Test 3: test offline modification, first shut down the engine and delete the record in the mongodb,
+#        the listener will fetch the results.
+#Test 3: test the offline modification, first shut down the engine and delete the records in the mongodb,
 #        then start the engine to test if the engine can fetch the deletion.
 
 import sys, urllib2, json, time, subprocess, os, commands, signal
