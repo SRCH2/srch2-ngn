@@ -19,7 +19,7 @@ make
 
 echo "BUILDING LIBEVENT..."
 
-cd ../../event
+cd ../../../event
 tar -xvf libevent-2.0.21-stable.tar.gz
 cd libevent-2.0.21-stable
 
