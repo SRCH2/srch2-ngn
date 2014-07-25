@@ -34,7 +34,7 @@ shell> make -j 4
 shell> cd srch2-ngn/db_connectors
 shell> mkdir build
 shell> cd build
-shell> cmake ..
+shell> cmake -DRELEASE_BUILD=0 ..
 shell> make -j4
 
 5. Run the system test case for the Sqlite connector:

@@ -1,10 +1,11 @@
 #  How to use this cmake file.
 # > mdkir build
 # > cd build
-# > cmake ..
+# > cmake -DRELEASE_BUILD=0 ..
 # > make
 
 cmake_minimum_required(VERSION 2.8)
+SET(RELEASE_BUILD ON CACHE BOOL "")
 #
 #  1.  MongoDB connector 
 #
@@ -30,8 +31,9 @@ set_target_properties(mongodbConnector PROPERTIES VERSION ${MONGO_VERSION_STRING
 SET_TARGET_PROPERTIES(mongodbConnector PROPERTIES COMPILE_FLAGS -fPIC)
 
 set(MONGO_CLIENT_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver/mongo-cxx-driver/build/use-system-boost/libmongoclient.a)
-
-# SET(Boost_USE_STATIC_LIBS ON)
+if (RELEASE_BUILD)
+    SET(Boost_USE_STATIC_LIBS ON)
+endif()
 SET(Boost_USE_MULTITHREAD ON)
 FIND_PACKAGE( Boost COMPONENTS program_options system filesystem thread REQUIRED )
 

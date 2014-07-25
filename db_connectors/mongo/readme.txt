@@ -20,7 +20,7 @@ Author: Chen Liu and Chen Li
     shell> cd srch2-ngn/db_connectors
     shell> mkdir build
     shell> cd build
-    shell> cmake ..
+    shell> cmake -DRELEASE_BUILD=0 ..
     shell> make
 
 4. Install mongodb by following instructions on http://docs.mongodb.org/manual/installation/
