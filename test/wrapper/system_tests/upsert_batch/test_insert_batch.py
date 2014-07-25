@@ -119,11 +119,11 @@ if __name__ == '__main__':
 
     print '=====================Batch Insert Test Passed!=========================='
 
-    #Chen Liu At SRCH2 add this line. 
+    #Chen Liu At SRCH2 adds this line. 
     #Because the test "batch insert" may take time to close the SRCH2 engine. 
     #If the engine is still running, start another engine on the same port could cause an error.
     #So we sleep several seconds to wait for it to finish saving indexes.
-    time.sleep(2)
+    time.sleep(3)
 
     os._exit(0)
 
