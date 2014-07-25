@@ -32,6 +32,10 @@ MESSAGE(STATUS  "BUILDING TEST: ${CMAKE_CURRENT_BINARY_DIR}")
 
 SET(UNIT_TEST_INDEX_DIR ${CMAKE_SOURCE_DIR}/test/core/unit/test_data/)
 
+ADD_TEST(ConfigManager_Test ${CMAKE_CURRENT_BINARY_DIR}/wrapper/unit/ConfigManager_Test "--verbose")
+SET_TESTS_PROPERTIES(ConfigManager_Test PROPERTIES ENVIRONMENT "srch2_config_file=${CMAKE_SOURCE_DIR}/test/wrapper/unit")
+
+
 ADD_TEST(Logger_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Logger_Test "--verbose")
 
 ADD_TEST(Trie_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Trie_Test "--verbose")
