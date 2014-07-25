@@ -201,13 +201,6 @@ def testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path
 if __name__ == '__main__':      
     #Path of the query file
     #each line like "trust||01c90b4effb2353742080000" ---- query||record_ids(results)
-
-    #Chen Liu At SRCH2 add this line. 
-    #Because the previous test "batch insert" may take time to close the SRCH2 engine. 
-    #If the engine is still running, start another engine on same port could cause error.
-    #So we sleep several seconds to wait for it.
-    time.sleep(2)
-
     binary_path = sys.argv[1]
     queriesAndResultsPath = sys.argv[2]
     queriesAndResultsPath2 = sys.argv[3]
