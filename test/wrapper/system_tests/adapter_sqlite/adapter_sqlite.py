@@ -6,7 +6,7 @@
 #Test 3: Shut down the engine, and delete the records in sqlite.
 #        Then start the engine to test if the engine can fetch the changes.
 
-import sys, urllib2, json, time, subprocess, os, commands, signal
+import sys, urllib2, json, time, subprocess, os, commands, signal,shutil
 
 try:
 	import sqlite3
@@ -178,6 +178,10 @@ def testOfflineLog(conn,sqlQueriesPath,testQueriesPath):
 	print '=============================='
 
 if __name__ == '__main__':
+	if(os.path.exists("data")):
+		shutil.rmtree("data")
+	if(os.path.exists("./adapter_sqlite/srch2Test.db")):
+		os.remove("./adapter_sqlite/srch2Test.db")
 	conn = sqlite3.connect('./adapter_sqlite/srch2Test.db')
 	#Start the test cases
 	binary_path = sys.argv[1]
@@ -189,4 +193,9 @@ if __name__ == '__main__':
 	print '=============================='
 	shutdownSrch2Engine()
 	conn.close()
+
+	if(os.path.exists("data")):
+		shutil.rmtree("data")
+	if(os.path.exists("./adapter_sqlite/srch2Test.db")):
+		os.remove("./adapter_sqlite/srch2Test.db")
 	os._exit(totalFailCount)
