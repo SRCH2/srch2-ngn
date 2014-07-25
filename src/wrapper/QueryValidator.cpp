@@ -63,20 +63,22 @@ bool QueryValidator::validate() {
     // validation case: if search type is TopK or GetAllResults, query keywords should not be empty
     // TODO : Jamshid : we should not error here ....
     // TODO : Jamshid : another case of validation : lat,long values must make sense ....
-    if (paramContainer->hasParameterInQuery(TopKSearchType)
-            || paramContainer->hasParameterInQuery(GetAllResultsSearchType)) { // search type is either TopK or GetAllResults
-		ParseTreeLeafNodeIterator termIterator(paramContainer->parseTreeRoot);
-		unsigned numberOfTerms = 0;
-		while(termIterator.hasMore()){
-			termIterator.getNext();
-			numberOfTerms ++;
+    if(paramContainer->hasParameterInQuery(GeoSearchFlag) == false){
+		if (paramContainer->hasParameterInQuery(TopKSearchType)
+				|| paramContainer->hasParameterInQuery(GetAllResultsSearchType)) { // search type is either TopK or GetAllResults
+			ParseTreeLeafNodeIterator termIterator(paramContainer->parseTreeRoot);
+			unsigned numberOfTerms = 0;
+			while(termIterator.hasMore()){
+				termIterator.getNext();
+				numberOfTerms ++;
+			}
+			if (numberOfTerms == 0) {
+				paramContainer->messages.push_back(
+						std::make_pair(MessageError,
+								"No keywords provided for search."));
+				return false;
+			}
 		}
-        if (numberOfTerms == 0) {
-            paramContainer->messages.push_back(
-                    std::make_pair(MessageError,
-                            "No keywords provided for search."));
-            return false;
-        }
     }
 
     // TODO: in case of removing the geo index type from config file we should remove this part

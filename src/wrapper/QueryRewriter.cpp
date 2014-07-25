@@ -205,7 +205,7 @@ bool QueryRewriter::applyAnalyzer() {
 		numberOfKeywords ++;
 	}
 
-    if(numberOfKeywords == 0){
+    if(paramContainer->hasParameterInQuery(GeoSearchFlag) == false && numberOfKeywords == 0){
         if(paramContainer->hasParameterInQuery(TopKSearchType) || paramContainer->hasParameterInQuery(GetAllResultsSearchType)){
             paramContainer->messages.push_back(
                     std::make_pair(MessageWarning,
@@ -487,13 +487,19 @@ void QueryRewriter::rewriteParseTree(){
 }
 
 void QueryRewriter::addGeoToParseTree(){
-	ParseTreeNode* newAndNode = new ParseTreeNode(LogicalPlanNodeTypeAnd, NULL);
-	newAndNode->children.push_back(paramContainer->parseTreeRoot);
-	paramContainer->parseTreeRoot->parent = newAndNode;
-	paramContainer->parseTreeRoot = newAndNode;
-	ParseTreeNode* newGeoNode = new ParseTreeNode(LogicalPlanNodeTypeGeo, newAndNode);
-	newAndNode->children.push_back(newGeoNode);
-	//newGeoNode->geoIntermediateStructure
+	ParseTreeNode* newGeoNode;
+	if(paramContainer->parseTreeRoot != NULL){
+		ParseTreeNode* newAndNode = new ParseTreeNode(LogicalPlanNodeTypeAnd, NULL);
+		newAndNode->children.push_back(paramContainer->parseTreeRoot);
+		paramContainer->parseTreeRoot->parent = newAndNode;
+		paramContainer->parseTreeRoot = newAndNode;
+		newGeoNode = new ParseTreeNode(LogicalPlanNodeTypeGeo, newAndNode);
+		newAndNode->children.push_back(newGeoNode);
+		//newGeoNode->geoIntermediateStructure
+	}else{
+		newGeoNode = new ParseTreeNode(LogicalPlanNodeTypeGeo, NULL);
+		paramContainer->parseTreeRoot = newGeoNode;
+	}
 	if(paramContainer->geoParameterContainer->hasParameterInQuery(GeoTypeRectangular)){
 		newGeoNode->geoIntermediateStructure = new GeoIntermediateStructure(
 				paramContainer->geoParameterContainer->leftBottomLatitude,

@@ -30,6 +30,7 @@
 #include "SortFilterEvaluator.h"
 #include "instantsearch/LogicalPlan.h"
 #include "instantsearch/ResultsPostProcessor.h"
+#include "ParsedParameterContainer.h"
 
 
 namespace srch2 {

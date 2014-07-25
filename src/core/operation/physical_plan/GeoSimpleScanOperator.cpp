@@ -135,17 +135,19 @@ bool GeoSimpleScanOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerific
 	srch2::util::RecordSerializer compactRecDeserializer = srch2::util::RecordSerializer(*storedSchema);
 
 	// get the name of the attributes
-	string nameOfLatitudeAttribute = this->queryEvaluator->getQueryEvaluatorRuntimeParametersContainer()->nameOfLatitudeAttribute;
-	string nameOfLongitudeAttribute = this->queryEvaluator->getQueryEvaluatorRuntimeParametersContainer()->nameOfLongitudeAttribute;
+	//string nameOfLatitudeAttribute = this->queryEvaluator->getQueryEvaluatorRuntimeParametersContainer()->nameOfLatitudeAttribute;
+	//string nameOfLongitudeAttribute = this->queryEvaluator->getQueryEvaluatorRuntimeParametersContainer()->nameOfLongitudeAttribute;
+	const string* nameOfLatitudeAttribute = this->queryEvaluator->getSchema()->getNameOfLatituteAttribute();
+	const string* nameOfLongitudeAttribute = this->queryEvaluator->getSchema()->getNameOfLongitudeAttribute();
 	Point point;
 
-	unsigned idLat = storedSchema->getRefiningAttributeId(nameOfLatitudeAttribute);
+	unsigned idLat = storedSchema->getRefiningAttributeId(*nameOfLatitudeAttribute);
 	unsigned lenOffsetLat = compactRecDeserializer.getRefiningOffset(idLat);
-	point.x = *((double *)buffer.start.get()+lenOffsetLat);
+	point.x = *((float *)(buffer.start.get()+lenOffsetLat));
 
-	unsigned idLong = storedSchema->getRefiningAttributeId(nameOfLongitudeAttribute);
+	unsigned idLong = storedSchema->getRefiningAttributeId(*nameOfLongitudeAttribute);
 	unsigned lenOffsetLong = compactRecDeserializer.getRefiningOffset(idLong);
-	point.y = *((double *)buffer.start.get()+lenOffsetLong);
+	point.y = *((float *)(buffer.start.get()+lenOffsetLong));
 
 	// verify the record. The query region should contains this record
 	if(this->queryShape->contains(point)){

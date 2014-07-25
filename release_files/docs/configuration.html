@@ -16,7 +16,7 @@
 <a href="http://www.srch2.com" target="_blankt"><img style="height:24px" src="images/logo.png" align="left"></a>&nbsp;
 </td>
 <td style="align:right; white-space: nowrap; padding: 0px; font-size: 12px">
-Version: 4.3.2, Date: May 20, 2014&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Version: 4.3.4, Date: July 17, 2014&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </td>
 </tr>
 </table>
@@ -187,11 +187,12 @@ the advanced example configuration file in example-demo/srch2-config-advanced.xm
 <pre><code>&lt;dataSourceType&gt;1&lt;/dataSourceType&gt;
 </code></pre>
 
-<p>This value specifies the type of data source to be searched.</p>
-<blockquote>
-<p>1: json data file. (Default)
- 2: MongoDB.</p>
-</blockquote>
+<p>This value specifies the type of data source to be searched.  Notice that if there are previous indexes already created on the disk, the engine will always load them and ignore the flag.  The following flags are used only when there are no previous indexes.</p>
+<ul>
+<li>0: Create empty indexes, and ignore the data file specified by the "dataFile" tag).</li>
+<li>1: Create indexes for records from the JSON file specified by the "dataFile" tag. "1" is the default value for this "dataSourceType" tag.</li>
+<li>2: Create indexes for records from MongoDB specified by the parameters under the "mongodb" tag.</li>
+</ul>
 <h3 id="dataFile">6.2. Data File, Required if "dataSourceType" is 1</h3>
 <pre><code>&lt;dataFile&gt;./example-demo/movie-data.json&lt;/dataFile&gt;
 </code></pre>
@@ -637,17 +638,17 @@ separate words.</p>
 <p>Note that whitespace characters will also be considered word delimiters and are not permitted in this field.</p>
 <p>The advanced example in example-demo/srch2-config-advanced.xml provides an example of allowing Twitter hashtag like terms to be queried.</p>
 <h2 id="Cores">12. Cores, Optional</h2>
-<p>The "Cores" tag can be used to support the creation of multiple search engines (called cores) within the same server.  Typically, each engine
-has a different data source.  All cores run within the same server process.  A query can only
+<p>The "Cores" tag can be used to support the creation of multiple data sources (called cores) within the same server.<br>
+An engine can have multiple sources.  All cores run within the same server process.  A query can 
 name a single core.</p>
-<p>The "Cores" tag supports one attribute: "defaultCoreName".  When instantiated with multiple cores, queries
+<p>When instantiated with multiple cores, queries
 specify the core by name that is to process the query.  For instance, the following query:</p>
 <pre><code>http://localhost:8081/example-core/search/q=term
 </code></pre>
 
-<p>requests that "example-core" process a search request for "term".  In the case when no core is
-specified in a query to a multi-core server, the server will use the sore specified by "defaultCoreName".</p>
-<p>A working multicore configuration is provided in example-demo/srch2-config-advanced.xml .</p>
+<p>requests that the core called "example-core" process a search request for "term".  In the case when no core is
+specified in a query to a multi-core server, the server will use the sore specified by the "defaultCoreName" tag.</p>
+<p>A sample multi-core configuration is provided in <a href="example-demo/srch2-config-advanced.xml">example-demo/srch2-config-advanced.xml</a>.</p>
 <h3 id="Core">12.1 Core, Optional</h3>
 <p>Each "Core" tag under "Cores" specifies a server core to be created.  Each core requires a name
 attribute.  This name is used in query URI paths, as well as the aforementioned

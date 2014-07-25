@@ -405,6 +405,9 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema(const CoreInfo_t *ind
     schema->setScoringExpression(scoringExpressionString);
     schema->setSupportSwapInEditDistance(indexDataContainerConf->getSupportSwapInEditDistance());
 
+    schema->setNameOfLatitudeAttribute(indexDataContainerConf->getAttributeLatitude());
+    schema->setNameOfLongitudeAttribute(indexDataContainerConf->getAttributeLongitude());
+
     return schema;
 }
 

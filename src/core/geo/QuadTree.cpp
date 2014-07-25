@@ -80,6 +80,17 @@ void QuadTree::rangeQuery(vector<QuadTreeNode*> & results, const Shape &range) c
 	}
 }
 
+bool QuadTree::equalTo(QuadTree* quadtree){
+	if(this->root == NULL){
+		if(quadtree->root == NULL)
+			return true;
+		else
+			return false;
+	}else{
+		return this->root->equalTo(quadtree->root);
+	}
+}
+
 
 
 }

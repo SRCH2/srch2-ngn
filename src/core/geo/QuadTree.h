@@ -62,6 +62,8 @@ public:
 		return this->root;
 	};
 
+	bool equalTo(QuadTree* quadtree);
+
 private:
 	QuadTreeNode* root;    // Pointer to the root of the Quadtree.
 

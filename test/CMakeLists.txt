@@ -32,6 +32,10 @@ MESSAGE(STATUS  "BUILDING TEST: ${CMAKE_CURRENT_BINARY_DIR}")
 
 SET(UNIT_TEST_INDEX_DIR ${CMAKE_SOURCE_DIR}/test/core/unit/test_data/)
 
+ADD_TEST(ConfigManager_Test ${CMAKE_CURRENT_BINARY_DIR}/wrapper/unit/ConfigManager_Test "--verbose")
+SET_TESTS_PROPERTIES(ConfigManager_Test PROPERTIES ENVIRONMENT "srch2_config_file=${CMAKE_SOURCE_DIR}/test/wrapper/unit")
+
+
 ADD_TEST(Logger_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Logger_Test "--verbose")
 
 ADD_TEST(Trie_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Trie_Test "--verbose")
@@ -134,10 +138,10 @@ SET_TESTS_PROPERTIES(GetAllResultsQuery_Test PROPERTIES ENVIRONMENT "index_dir=$
 ADD_TEST(Lookup_Test ${CMAKE_CURRENT_BINARY_DIR}/core/integration/Lookup_Test "--verbose")
 SET_TESTS_PROPERTIES(Lookup_Test PROPERTIES ENVIRONMENT "index_dir=${INTEGRATION_TEST_INDEX_DIR}ranking-newly-inserted/")
 
-ADD_TEST(QuadTree_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/QuadTree_Test "--verbose")
-SET_TESTS_PROPERTIES(QuadTree_Test PROPERTIES ENVIRONMENT "directoryName=${CMAKE_SOURCE_DIR}/test/core/unit/test_data")
+ADD_TEST(Geo_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Geo_Test "--verbose")
+SET_TESTS_PROPERTIES(Geo_Test PROPERTIES ENVIRONMENT "directoryName=${CMAKE_SOURCE_DIR}/test/core/unit/test_data")
 
-ADD_TEST(NewQuadTree_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/NewQuadTree_Test "--verbose")
+ADD_TEST(QuadTree_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/QuadTree_Test "--verbose")
 	  
 ADD_TEST(ULEB128_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/ULEB128_Test "--verbose")
 

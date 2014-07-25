@@ -267,6 +267,38 @@ void QuadTreeNode::createNewRectangle(Rectangle &newRectangle, const Rectangle &
 	newRectangle.max.y = rectangle.min.y + (y + 1) * single;
 }
 
+bool QuadTreeNode::equalTo(QuadTreeNode* node){
+	if(node == NULL)
+		return false;
+	if(this->isLeaf){
+		if(node->getIsLeaf()){
+			if(this->elements.size() != node->getElements()->size())
+				return false;
+		}else{
+			return false;
+		}
+	}else{
+		if(node->getIsLeaf())
+			return false;
+		if(this->numOfElementsInSubtree != node->getNumOfElementsInSubtree()
+				|| this->numOfLeafNodesInSubtree != node->getNumOfLeafNodesInSubtree()
+				|| this->children.size() != node->getChildren()->size())
+			return false;
+		for(unsigned i = 0 ; i < GEO_CHILD_NUM ; i++){
+			if(this->children[i] == NULL){
+				if(node->getChildren()->at(i) != NULL)
+					return false;
+			}else{
+				if(node->getChildren()->at(i) == NULL)
+					return false;
+				if(!this->children[i]->equalTo(node->getChildren()->at(i)))
+					return false;
+			}
+		}
+	}
+	return true;
+}
+
 }
 }
 

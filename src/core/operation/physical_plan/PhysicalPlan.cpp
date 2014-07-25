@@ -98,7 +98,7 @@ void PhysicalPlanOptimizationNode::printSubTree(unsigned indent){
 //			cout << "[GEO NearestNeighbor]" << endl;
 			break;
 		case PhysicalPlanNode_GeoSimpleScan:
-			Logger::info("[GEO SimpleScan");
+			Logger::info("[GEO SimpleScan]");
 //			cout << "[GEO SimpleScan]" << endl;
 			break;
 		case PhysicalPlanNode_RandomAccessGeo:

@@ -104,7 +104,6 @@ void HistogramManager::annotateWithActiveNodeSets(LogicalPlanNode * node , bool 
 				 computeQuadTreeNodeSet(node->stats->quadTreeNodeSet, node->regionShape);
 			break;
 		default:
-			ASSERT(false);
 			break;
 	}
 	// and now activenodes for children

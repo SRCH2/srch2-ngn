@@ -55,13 +55,10 @@ public:
 		this->getAllTopKReplacementK = 500;
 	}
 
-	QueryEvaluatorRuntimeParametersContainer(unsigned keywordPopularityThreshold, unsigned getAllMaximumNumberOfResults, unsigned getAllTopKReplacementK,
-											string nameOfLatitudeAttribute, string nameOfLongitudeAttribute){
+	QueryEvaluatorRuntimeParametersContainer(unsigned keywordPopularityThreshold, unsigned getAllMaximumNumberOfResults, unsigned getAllTopKReplacementK){
 		this->keywordPopularityThreshold = keywordPopularityThreshold;
 		this->getAllMaximumNumberOfResults = getAllMaximumNumberOfResults;
 		this->getAllTopKReplacementK = getAllTopKReplacementK;
-		this->nameOfLatitudeAttribute = nameOfLatitudeAttribute;
-		this->nameOfLongitudeAttribute = nameOfLongitudeAttribute;
 	}
 
 	QueryEvaluatorRuntimeParametersContainer(const QueryEvaluatorRuntimeParametersContainer & copy){

@@ -97,6 +97,12 @@ public:
      */
     void setPrimaryKey(const std::string &primaryKey);
 
+    // sets the name of the latitude attribute
+    void setNameOfLatitudeAttribute(const std::string &nameOfLatitudeAttribute);
+
+    // sets the name of the longitude attribute
+    void setNameOfLongitudeAttribute(const std::string &nameOfLatitudeAttribute);
+
     /**
      * \ingroup RankingFunctions Sets the boost value of an attribute.
      *  @param attributeName  Name of the attribute.
@@ -115,6 +121,12 @@ public:
      * Returns the AttributeName of the primaryKey
      */
     const std::string* getPrimaryKey() const;
+
+    // Returns the AttributeName of the latitude
+    const std::string* getNameOfLatituteAttribute() const;
+
+    //Returns the AttributeName of the longitude
+    const std::string* getNameOfLongitudeAttribute() const;
 
     /**
      * Gets the boost value of the attribute with
@@ -201,6 +213,9 @@ private:
     srch2::instantsearch::IndexType indexType;
     srch2::instantsearch::PositionIndexType positionIndexType;
 
+    std::string nameOfLatitudeAttribute;
+    std::string nameOfLongitudeAttribute;
+
     std::string scoringExpressionString;
     bool supportSwapInEditDistance;
 
@@ -222,6 +237,8 @@ private:
         ar & searchableAttributeHighlightEnabled;
         ar & indexType;
         ar & positionIndexType;
+        ar & nameOfLatitudeAttribute;
+        ar & nameOfLongitudeAttribute;
         ar & supportSwapInEditDistance;
     }
 };

@@ -60,8 +60,7 @@ void QueryExecutor::execute(QueryResults * finalResults) {
     // Each time IndexSearcher is created, we container must be made and passed to it as an argument.
     QueryEvaluatorRuntimeParametersContainer runTimeParameters(configuration->getKeywordPopularityThreshold(),
     		configuration->getGetAllResultsNumberOfResultsThreshold() ,
-    		configuration->getGetAllResultsNumberOfResultsToFindInEstimationMode(),
-    		this->configuration->getAttributeLatitude(), this->configuration->getAttributeLongitude());
+    		configuration->getGetAllResultsNumberOfResultsToFindInEstimationMode());
     this->queryEvaluator = new srch2is::QueryEvaluator(server->indexer , &runTimeParameters );
 
     //do the search

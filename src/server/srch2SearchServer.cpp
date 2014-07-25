@@ -55,6 +55,7 @@ using srch2http::ConfigManager;
 using namespace srch2::util;
 
 using std::string;
+using srch2http::CoreNameServerMap_t;
 
 #define MAX_USER_LEN  20
 #define MAX_MESSAGE_LEN  100
@@ -66,8 +67,13 @@ using std::string;
 // IETF RFC 6335 specifies port number range is 0 - 65535: http://tools.ietf.org/html/rfc6335#page-11
 typedef std::map<unsigned short /*portNumber*/, int /*fd*/> PortSocketMap_t;
 
-// named access to multiple "cores" (ala Solr)
-typedef std::map<const std::string, srch2http::Srch2Server *> CoreNameServerMap_t;
+pthread_t *threads = NULL;
+unsigned int MAX_THREADS = 0;
+
+// These are global variables that store host and port information for srch2 engine
+unsigned short globalDefaultPort;
+const char *globalHostName;
+
 
 /* Convert an amount of bytes into a human readable string in the form
  * of 100B, 2G, 100M, 4K, and so forth.
@@ -211,6 +217,30 @@ static bool checkAuthorizationKey(evhttp_request *req){
 }
 
 
+static bool checkGlobalOperationPermission(evhttp_request *req, CoreNameServerMap_t *coreNameServerMap, const char* action)  
+{
+    if (checkAuthorizationKey(req) == false) {
+        cb_wrongauthorizationkey(req, static_cast<void *> (coreNameServerMap));
+        return false;
+    }
+
+    unsigned short arrivalPort = getLibeventHttpRequestPort(req);
+
+    if (arrivalPort == 0) {
+        Logger::warn("Unable to ascertain arrival port from request headers.");
+        return false;
+    }
+
+    // compare arrival port to globalDefaultPort
+    if (globalDefaultPort!= arrivalPort) {
+        Logger::warn("/%s request for global operation arriving on port %d denied (port %d will permit)", action,  arrivalPort, globalDefaultPort);
+        cb_notfound(req, static_cast<void *> (coreNameServerMap));
+        return false;
+    }
+
+    return true;
+
+}
 
 static bool checkOperationPermission(evhttp_request *req, Srch2Server *srch2Server, srch2http::PortType_t portType)
 {
@@ -407,6 +437,54 @@ static void cb_save(evhttp_request *req, void *arg)
 
 }
 
+static void cb_shutdown(evhttp_request *req, void *arg)
+{
+    CoreNameServerMap_t *coreNameServerMap = reinterpret_cast<CoreNameServerMap_t*>(arg);
+    evhttp_add_header(req->output_headers, "Content-Type",
+            "application/json; charset=UTF-8");
+    
+    // The call should only send from the default port
+    if (checkGlobalOperationPermission(req, coreNameServerMap, "shutdown") == false ) {
+        return ;
+    }
+	
+    try {
+        HTTPRequestHandler::shutdownCommand(req, coreNameServerMap);
+    } catch (exception& e) {
+        // exception caught
+        Logger::error(e.what());
+        srch2http::HTTPRequestHandler::handleException(req);
+    }
+
+}
+
+/*
+ * 'search_all' callback function. It will search each of the core and wrapup the result
+ * in a json format
+ */
+static void cb_search_all (evhttp_request *req, void * arg)
+{
+    CoreNameServerMap_t *coreNameServerMap = reinterpret_cast<CoreNameServerMap_t*>(arg);
+    evhttp_add_header(req->output_headers, "Content-Type",
+            "application/json; charset=UTF-8");
+    
+    // The call should only send from the default port
+    if (checkGlobalOperationPermission(req, coreNameServerMap, "search_all") == false ) {
+        return ;
+    }
+	
+    try {
+        srch2http::HTTPRequestHandler::searchAllCommand(req, coreNameServerMap);
+    } catch (exception& e) {
+        // exception caught
+        Logger::error(e.what());
+        srch2http::HTTPRequestHandler::handleException(req);
+    }
+   
+}
+
+
+
 static void cb_export(evhttp_request *req, void *arg)
 {
     Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
@@ -532,13 +610,6 @@ void parseProgramArguments(int argc, char** argv,
         exit(-1);
     }
 }
-
-pthread_t *threads = NULL;
-unsigned int MAX_THREADS = 0;
-
-// These are global variables that store host and port information for srch2 engine
-unsigned short globalDefaultPort;
-const char *globalHostName;
 
 #ifdef __MACH__
 /*
@@ -772,6 +843,18 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
             }
         }
 
+        // set the global callbacks for all the indexes
+        PortList_t global_PortList[] = {
+            { "/_all/search", srch2http::EndOfPortType, cb_search_all },
+            { "/_all/shutdown", srch2http::EndOfPortType, cb_shutdown },
+            { NULL , srch2http::EndOfPortType, NULL }
+        };
+
+        for(int j = 0; global_PortList[j].path != NULL; j++){
+            string path = string(global_PortList[j].path);
+            evhttp_set_cb(http_server, path.c_str(), global_PortList[j].callback, coreNameServerMap);
+        }
+
         /* 4). accept bound socket */
         for (PortSocketMap_t::iterator iterator = globalPortSocketMap->begin(); iterator != globalPortSocketMap->end(); iterator++) {
             if (evhttp_accept_socket(http_server, iterator->second) != 0) {
@@ -823,7 +906,10 @@ int main(int argc, char** argv) {
     } 
 
     ConfigManager *serverConf = new ConfigManager(srch2_config_file);
-    serverConf->loadConfigFile();
+    if(!serverConf->loadConfigFile()){
+    	Logger::error("Error in loading the config file, therefore exiting.");
+    	exit(-1);
+    }
 
     //LicenseVerifier::testFile(serverConf->getLicenseKeyFileName());
     string logDir = getFilePath(serverConf->getHTTPServerAccessLogFile());

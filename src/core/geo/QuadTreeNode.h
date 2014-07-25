@@ -125,6 +125,8 @@ public:
 		return this->numOfLeafNodesInSubtree;
 	}
 
+	bool equalTo(QuadTreeNode* node);
+
 private:
 	Rectangle rectangle;               // Rectangle boundary of the node
 	bool isLeaf;                       // true->Leaf (children is null), false->internal (elements is null)
