@@ -754,6 +754,10 @@ rm -rf data/mongodb_data
 test_id="adapter_sqlite"
 printTestBanner "$test_id"
 
+rm -rf data/ *.idx
+rm -rf data/sqlite_data
+rm -rf ./adapter_sqlite/srch2Test.db
+
 python ./adapter_sqlite/adapter_sqlite.py $SRCH2_ENGINE ./adapter_sqlite/testCreateIndexes_sql.txt ./adapter_sqlite/testCreateIndexes.txt ./adapter_sqlite/testRunListener_sql.txt ./adapter_sqlite/testRunListener.txt ./adapter_sqlite/testOfflineLog_sql.txt ./adapter_sqlite/testOfflineLog.txt | eval "${html_escape_command}" >> system_test.log 2>&1
 
 fun_ret=${PIPESTATUS[0]}
