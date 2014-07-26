@@ -22,7 +22,9 @@
             "/usr/share/srch2/data/sample-data.json"
             In this config file it should be as "data/sample-data.json"
     -->
+
     <srch2Home>./</srch2Home>
+
  
     <!--
         License Key File

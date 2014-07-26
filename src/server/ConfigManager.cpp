@@ -1444,6 +1444,7 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
 	                if (string(field.attribute(nameString).value()).compare("") != 0
 	                                   && string(field.attribute(typeString).value()).compare("") != 0) {
 
+
 	                    // Checks for geo types. location_latitude and location_longitude are geo types
 	                    if (string(field.attribute(typeString).value()).compare(locationLatitudeString) == 0) {
 	                        coreParseState->hasLatitude = true;
@@ -1465,7 +1466,6 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
 	                		configSuccess = false;
 	                		return;
 	                	}
-
 
 	                }else { // if one of the values of name, type or indexed is empty
 	                    parseError << "For the searchable fields, "
