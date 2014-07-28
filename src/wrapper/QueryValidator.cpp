@@ -60,9 +60,7 @@ bool QueryValidator::validate() {
         return false;
     }
 
-    // validation case: if search type is TopK or GetAllResults, query keywords should not be empty
-    // TODO : Jamshid : we should not error here ....
-    // TODO : Jamshid : another case of validation : lat,long values must make sense ....
+    // validation case: if search type is TopK or GetAllResults, query keywords should not be empty.
     if(paramContainer->hasParameterInQuery(GeoSearchFlag) == false){
 		if (paramContainer->hasParameterInQuery(TopKSearchType)
 				|| paramContainer->hasParameterInQuery(GetAllResultsSearchType)) { // search type is either TopK or GetAllResults

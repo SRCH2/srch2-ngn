@@ -46,6 +46,8 @@ bool verifyByRandomAccessAndHelper(PhysicalPlanOptimizationNode * node, Physical
 
 bool verifyByRandomAccessOrHelper(PhysicalPlanOptimizationNode * node, PhysicalPlanRandomAccessVerificationParameters & parameters);
 
+bool verifyByRandomAccessGeoHelper(PhysicalPlanRandomAccessVerificationParameters & parameters, QueryEvaluatorInternal * queryEvaluator, Shape* queryShape);
+
 }
 }
 #endif // __PHYSICALPLAN_PHYSICALOPERATORSHELPER_H__

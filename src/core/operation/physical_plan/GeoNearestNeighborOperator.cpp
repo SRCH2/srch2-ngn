@@ -5,8 +5,7 @@
  *      Author: mahdi
  */
 #include "GeoNearestNeighborOperator.h"
-#include "src/core/util/RecordSerializerUtil.h"
-#include "src/core/util/RecordSerializer.h"
+#include "PhysicalOperatorsHelper.h"
 
 namespace srch2 {
 namespace instantsearch {
@@ -58,7 +57,7 @@ PhysicalPlanRecordItem* GeoNearestNeighborOperator::getNext(const PhysicalPlanEx
 				for( unsigned i = 0 ; i < elements->size() ; i++ ){
 					if(queryShape->contains(elements->at(i)->point)){
 						heapItems.push_back(new GeoNearestNeighborOperatorHeapItem(elements->at(i), queryShape));
-						// correct the heap
+						// push the new item into the heap
 						push_heap(heapItems.begin(),
 								  heapItems.end(),
 								  GeoNearestNeighborOperator::GeoNearestNeighborOperatorHeapItemCmp());
@@ -69,7 +68,7 @@ PhysicalPlanRecordItem* GeoNearestNeighborOperator::getNext(const PhysicalPlanEx
 				for( unsigned i = 0 ; i < children->size() ; i++ ){
 					if(children->at(i) != NULL){
 						heapItems.push_back(new GeoNearestNeighborOperatorHeapItem(children->at(i), queryShape));
-						// correct the heap
+						// push the new item into the heap
 						push_heap(heapItems.begin(),
 								  heapItems.end(),
 								  GeoNearestNeighborOperator::GeoNearestNeighborOperatorHeapItemCmp());
@@ -83,7 +82,7 @@ PhysicalPlanRecordItem* GeoNearestNeighborOperator::getNext(const PhysicalPlanEx
 					 this->forwardListDirectoryReadView,
 					 heapItem->geoElement->forwardListID,
 					 valid);
-			if(valid & this->queryShape->contains(heapItem->geoElement->point)){
+			if(valid && this->queryShape->contains(heapItem->geoElement->point)){
 				PhysicalPlanRecordItem* newItem = this->queryEvaluator->getPhysicalPlanRecordItemPool()->createRecordItem();
 				newItem->setIsGeo(true); // this Item is for a geo element
 				// record id
@@ -110,43 +109,7 @@ bool GeoNearestNeighborOperator::close(PhysicalPlanExecutionParameters & params)
 }
 
 bool GeoNearestNeighborOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters){
-	// 1- get the forwardlist to get the location of the record from it
-		bool valid = false;
-		const ForwardList* forwardList = this->queryEvaluator->getForwardIndex()->getForwardList(
-				parameters.forwardListDirectoryReadView,
-				parameters.recordToVerify->getRecordId(),
-				valid);
-		if(!valid){ // this record is invalid
-			return false;
-		}
-		// 2- find the latitude and longitude of this record
-		StoredRecordBuffer buffer = forwardList->getInMemoryData();
-		Schema * storedSchema = Schema::create();
-		srch2::util::RecordSerializerUtil::populateStoredSchema(storedSchema, queryEvaluator->getSchema());
-		srch2::util::RecordSerializer compactRecDeserializer = srch2::util::RecordSerializer(*storedSchema);
-
-		// get the name of the attributes
-		//string nameOfLatitudeAttribute = this->queryEvaluator->getQueryEvaluatorRuntimeParametersContainer()->nameOfLatitudeAttribute;
-		//string nameOfLongitudeAttribute = this->queryEvaluator->getQueryEvaluatorRuntimeParametersContainer()->nameOfLongitudeAttribute;
-		const string* nameOfLatitudeAttribute = this->queryEvaluator->getSchema()->getNameOfLatituteAttribute();
-		const string* nameOfLongitudeAttribute = this->queryEvaluator->getSchema()->getNameOfLongitudeAttribute();
-		Point point;
-
-		unsigned idLat = storedSchema->getRefiningAttributeId(*nameOfLatitudeAttribute);
-		unsigned lenOffsetLat = compactRecDeserializer.getRefiningOffset(idLat);
-		point.x = *((float *)(buffer.start.get()+lenOffsetLat));
-
-		unsigned idLong = storedSchema->getRefiningAttributeId(*nameOfLongitudeAttribute);
-		unsigned lenOffsetLong = compactRecDeserializer.getRefiningOffset(idLong);
-		point.y = *((float *)(buffer.start.get()+lenOffsetLong));
-
-		// verify the record. The query region should contains this record
-		if(this->queryShape->contains(point)){
-			parameters.isGeo = true;
-			parameters.GeoScore = parameters.ranker->computeScoreforGeo(point,*(this->queryShape));
-			return true;
-		}
-		return false;
+	return verifyByRandomAccessGeoHelper(parameters, this->queryEvaluator, this->queryShape);
 }
 
 string GeoNearestNeighborOperator::toString(){

@@ -204,8 +204,8 @@ bool QueryRewriter::applyAnalyzer() {
 		termIterator.getNext();
 		numberOfKeywords ++;
 	}
-
-    if(paramContainer->hasParameterInQuery(GeoSearchFlag) == false && numberOfKeywords == 0){
+	// If query has geo parameters then it can be without any terms. but if it doesn't have geo parameters it should have at least one term for search.
+	if(paramContainer->hasParameterInQuery(GeoSearchFlag) == false && numberOfKeywords == 0){
         if(paramContainer->hasParameterInQuery(TopKSearchType) || paramContainer->hasParameterInQuery(GetAllResultsSearchType)){
             paramContainer->messages.push_back(
                     std::make_pair(MessageWarning,
@@ -486,6 +486,12 @@ void QueryRewriter::rewriteParseTree(){
 	paramContainer->parseTreeRoot = TreeOperations::mergeSameOperatorLevels(paramContainer->parseTreeRoot);
 }
 
+// This function add the a new node to the parse tree for geo search
+// so it add a new and node and make it the root and the previous root of the parse tree and the new geo node become its chilren
+//
+//                  |---- The previous root of parse tree
+//    NewAndNode ---|
+//                  |---- New Geo Node
 void QueryRewriter::addGeoToParseTree(){
 	ParseTreeNode* newGeoNode;
 	if(paramContainer->parseTreeRoot != NULL){
@@ -496,10 +502,11 @@ void QueryRewriter::addGeoToParseTree(){
 		newGeoNode = new ParseTreeNode(LogicalPlanNodeTypeGeo, newAndNode);
 		newAndNode->children.push_back(newGeoNode);
 		//newGeoNode->geoIntermediateStructure
-	}else{
+	}else{ // if the root of parse tree is null, the new geo node become the new root
 		newGeoNode = new ParseTreeNode(LogicalPlanNodeTypeGeo, NULL);
 		paramContainer->parseTreeRoot = newGeoNode;
 	}
+	// now we should fill the value of new geo node's variables
 	if(paramContainer->geoParameterContainer->hasParameterInQuery(GeoTypeRectangular)){
 		newGeoNode->geoIntermediateStructure = new GeoIntermediateStructure(
 				paramContainer->geoParameterContainer->leftBottomLatitude,
@@ -866,8 +873,7 @@ void QueryRewriter::createExactAndFuzzyQueriesForTopK(LogicalPlan & plan){
     	plan.setFuzzyQuery(new Query(srch2is::SearchTypeTopKQuery));
     }
 }
-void QueryRewriter::createExactAndFuzzyQueriesForGetAllTResults(
-        LogicalPlan & plan) {
+void QueryRewriter::createExactAndFuzzyQueriesForGetAllTResults(LogicalPlan & plan) {
     plan.setExactQuery(new Query(srch2is::SearchTypeGetAllResultsQuery));
     srch2is::SortOrder order =
             (indexDataConfig->getOrdering() == 0) ?

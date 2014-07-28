@@ -168,7 +168,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
     if(onlyFacets == false){ // We send the matching records only if "facet != only".
         (*root)["results"].resize(end - start);
         unsigned counter = 0;
-        if (/*queryPlan.getQueryType() == srch2is::SearchTypeMapQuery && */ query->getQueryTerms()->empty()) //check if the query type is range query without keywords
+        if (query->getQueryTerms()->empty()) //check if the query type is range query without keywords
         {
             for (unsigned i = start; i < end; ++i) {
             	unsigned internalRecordId = queryResults->getInternalRecordId(i);

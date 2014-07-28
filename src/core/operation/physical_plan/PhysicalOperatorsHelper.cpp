@@ -3,6 +3,8 @@
 #include "instantsearch/Term.h"
 #include "operation/ActiveNode.h"
 #include "operation/QueryEvaluatorInternal.h"
+#include "src/core/util/RecordSerializerUtil.h"
+#include "src/core/util/RecordSerializer.h"
 
 using namespace std;
 
@@ -136,6 +138,45 @@ bool verifyByRandomAccessOrHelper(PhysicalPlanOptimizationNode * node, PhysicalP
 		parameters.runTimeTermRecordScore = parameters.ranker->computeAggregatedRuntimeScoreForOr(runtimeScore);
 	}
 	return verified;
+}
+
+// this function used in verifyByrandomAccess functions of GeoNearestNeighborOperator, GeoSimpleScanOperator and RandomAccessVerificationGeoOperator
+bool verifyByRandomAccessGeoHelper(PhysicalPlanRandomAccessVerificationParameters & parameters, QueryEvaluatorInternal * queryEvaluator, Shape* queryShape){
+	// 1- get the forwardlist to get the location of the record from it
+	bool valid = false;
+	const ForwardList* forwardList = queryEvaluator->getForwardIndex()->getForwardList(
+			parameters.forwardListDirectoryReadView,
+			parameters.recordToVerify->getRecordId(),
+			valid);
+	if(!valid){ // this record is invalid
+		return false;
+	}
+	// 2- find the latitude and longitude of this record
+	StoredRecordBuffer buffer = forwardList->getInMemoryData();
+	Schema * storedSchema = Schema::create();
+	srch2::util::RecordSerializerUtil::populateStoredSchema(storedSchema, queryEvaluator->getSchema());
+	srch2::util::RecordSerializer compactRecDeserializer = srch2::util::RecordSerializer(*storedSchema);
+
+	// get the name of the attributes
+	const string* nameOfLatitudeAttribute = queryEvaluator->getSchema()->getNameOfLatituteAttribute();
+	const string* nameOfLongitudeAttribute = queryEvaluator->getSchema()->getNameOfLongitudeAttribute();
+	Point point;
+
+	unsigned idLat = storedSchema->getRefiningAttributeId(*nameOfLatitudeAttribute);
+	unsigned lenOffsetLat = compactRecDeserializer.getRefiningOffset(idLat);
+	point.x = *((float *)(buffer.start.get() + lenOffsetLat));
+
+	unsigned idLong = storedSchema->getRefiningAttributeId(*nameOfLongitudeAttribute);
+	unsigned lenOffsetLong = compactRecDeserializer.getRefiningOffset(idLong);
+	point.y = *((float *)(buffer.start.get() + lenOffsetLong));
+
+	// verify the record. The query region should contains this record
+	if(queryShape->contains(point)){
+		parameters.isGeo = true;
+		parameters.GeoScore = parameters.ranker->computeScoreforGeo(point,*(queryShape));
+		return true;
+	}
+	return false;
 }
 
 }
