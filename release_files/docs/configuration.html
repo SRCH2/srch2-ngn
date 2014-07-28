@@ -37,7 +37,7 @@ Version: 4.3.4, Date: July 17, 2014&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./restful-control.html">RESTful API: Control</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./ranking.html">Ranking</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./geo.html">Geo Search</a><br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./mongodb.html">MongoDB Search</a><br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="./database.html">Database Search</a><br><br>
 </td></tr></tbody></table>
 
 </div> <!-- Links to main pages, id=linkpool-->
@@ -55,7 +55,7 @@ Version: 4.3.4, Date: July 17, 2014&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#data">6. Data Source Information</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dataSource">6.1. Data Source Type</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dataFile">6.2. Data File</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#mongodb">6.3. MongoDB</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#database">6.3. Database</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#indexConfig">7. Index Config</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#indexType">7.1. Index Type</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fieldBoost">7.2. Field Boosts</a></br><br>
@@ -191,24 +191,46 @@ the advanced example configuration file in example-demo/srch2-config-advanced.xm
 <ul>
 <li>0: Create empty indexes, and ignore the data file specified by the "dataFile" tag).</li>
 <li>1: Create indexes for records from the JSON file specified by the "dataFile" tag. "1" is the default value for this "dataSourceType" tag.</li>
-<li>2: Create indexes for records from MongoDB specified by the parameters under the "mongodb" tag.</li>
+<li>2: Create indexes for records from Database specified by the parameters under the "dbParameters" tag.</li>
 </ul>
 <h3 id="dataFile">6.2. Data File, Required if "dataSourceType" is 1</h3>
 <pre><code>&lt;dataFile&gt;./example-demo/movie-data.json&lt;/dataFile&gt;
 </code></pre>
 
 <p>This value specifies a JSON data file to be loaded by the engine. Notice that it is a path relative to <a href="#srch2Home">srch2Home</a>.<br></p>
-<h3 id="mongodb">6.3. MongoDB, Required if "dataSourceType" is 2</h3>
-<pre><code>&lt;mongodb&gt;
-    &lt;host&gt;www.my-company.com&lt;/host&gt;
-    &lt;port&gt;1234&lt;/port&gt;
-    &lt;db&gt;database-name&lt;/db&gt;
-    &lt;collection&gt;collection-name&lt;/collection&gt;
-    &lt;listenerWaitTime&gt;3&lt;/listenerWaitTime&gt;
-&lt;/mongodb&gt; 
+<h3 id="database">6.3. Database, Required if "dataSourceType" is 2</h3>
+<p>For MongoDB:</p>
+<pre><code>    &lt;dataSourceType&gt;2&lt;/dataSourceType&gt;
+    &lt;dbParameters&gt;
+        &lt;dbSharedLibraryPath&gt;db_connectors/&lt;/dbSharedLibraryPath&gt;
+        &lt;dbSharedLibraryName&gt;libmongodbConnector&lt;/dbSharedLibraryName&gt;
+        &lt;dbKeyValues&gt;
+            &lt;dbKeyValue key=&quot;host&quot; value=&quot;127.0.0.1&quot; /&gt;
+            &lt;dbKeyValue key=&quot;port&quot; value=&quot;27017&quot; /&gt;
+            &lt;dbKeyValue key=&quot;db&quot; value=&quot;demo&quot; /&gt;
+            &lt;dbKeyValue key=&quot;collection&quot; value=&quot;movies&quot; /&gt;
+            &lt;dbKeyValue key=&quot;listenerWaitTime&quot; value=&quot;3&quot; /&gt;
+            &lt;dbKeyValue key=&quot;maxRetryOnFailure&quot; value=&quot;3&quot; /&gt;
+        &lt;/dbKeyValues&gt;
+    &lt;/dbParameters&gt;
 </code></pre>
 
-<p>This section specifies MongoDB instance information. Note: "listenerWaitTime" specifies how frequently (in seconds) the SRCH2 engine pulls changes from the MongoDB instance (e.g., every 3 seconds). </p>
+<p>For SQLite:</p>
+<pre><code>   &lt;dataSourceType&gt;2&lt;/dataSourceType&gt;
+    &lt;dbParameters&gt;
+        &lt;dbSharedLibraryPath&gt;db_connectors/&lt;/dbSharedLibraryPath&gt;
+        &lt;dbSharedLibraryName&gt;libsqliteConnector&lt;/dbSharedLibraryName&gt;
+        &lt;dbKeyValues&gt;
+            &lt;dbKeyValue key=&quot;db&quot; value=&quot;demo.db&quot; /&gt;
+            &lt;dbKeyValue key=&quot;dbPath&quot; value=&quot;.&quot; /&gt;
+            &lt;dbKeyValue key=&quot;tableName&quot; value=&quot;COMPANY&quot; /&gt;
+            &lt;dbKeyValue key=&quot;listenerWaitTime&quot; value=&quot;3&quot; /&gt;
+            &lt;dbKeyValue key=&quot;maxRetryOnFailure&quot; value=&quot;2&quot; /&gt;
+        &lt;/dbKeyValues&gt;
+    &lt;/dbParameters&gt;
+</code></pre>
+
+<p>This section specifies Database instance information. Note: "listenerWaitTime" specifies how frequently (in seconds) the SRCH2 engine pulls changes from the Database instance (e.g., every 3 seconds). </p>
 <h2 id="indexConfig">7. Index Config:</h2>
 <p>This tag groups parameters related to customizing the search engine's indices.</p>
 <pre><code>&lt;indexConfig&gt;

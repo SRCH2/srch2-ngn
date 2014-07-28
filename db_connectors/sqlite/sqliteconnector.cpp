@@ -95,6 +95,12 @@ bool SQLiteConnector::connectToDB() {
     this->serverHandle->configLookUp("dbPath", db_path);
     this->serverHandle->configLookUp("srch2Home", srch2Home);
 
+    //Check if the user defined database name contains the suffix ".db".
+    //If not, append the ".db" to make sure the connector could find the database.
+    if (db_name.find(".db") == std::string::npos) {
+        db_name.append(".db");
+    }
+
     //Try to connect to the database.
     int rc;
     for (int i = maxRetryOnFailure; i >= 0; --i) {

@@ -31,4 +31,4 @@ if [ -f html/restful-insert-update-delete.html ]; then sed -e 's#<title>.*</titl
 if [ -f html/restful-control.html ]; then sed -e 's#<title>.*</title>#<title>SRCH2: Control API</title>#g' html/restful-control.html > restful-control.html  ; fi
 if [ -f html/ranking.html ]; then sed -e 's#<title>.*</title>#<title>SRCH2: Ranking</title>#g' html/ranking.html > ranking.html  ; fi
 if [ -f html/geo.html ]; then sed -e 's#<title>.*</title>#<title>SRCH2: Geo Search</title>#g' html/geo.html > geo.html  ; fi
-if [ -f html/mongodb.html ]; then sed -e 's#<title>.*</title>#<title>SRCH2: MongoDB Search</title>#g' html/mongodb.html > mongodb.html  ; fi
+if [ -f html/database.html ]; then sed -e 's#<title>.*</title>#<title>SRCH2: Database Search</title>#g' html/database.html > database.html  ; fi

@@ -9,7 +9,7 @@
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#data">6. Data Source Information</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dataSource">6.1. Data Source Type</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dataFile">6.2. Data File</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#mongodb">6.3. MongoDB</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#database">6.3. Database</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#indexConfig">7. Index Config</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#indexType">7.1. Index Type</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fieldBoost">7.2. Field Boosts</a></br><br>
@@ -160,7 +160,7 @@ This value specifies the type of data source to be searched.  Notice that if the
 
 -	0: Create empty indexes, and ignore the data file specified by the "dataFile" tag).
 -	1: Create indexes for records from the JSON file specified by the "dataFile" tag. "1" is the default value for this "dataSourceType" tag.
--	2: Create indexes for records from MongoDB specified by the parameters under the "mongodb" tag.
+-	2: Create indexes for records from Database specified by the parameters under the "dbParameters" tag.
 
 ###6.2. Data File, Required if "dataSourceType" is 1 {id="dataFile"}
 
@@ -169,17 +169,40 @@ This value specifies the type of data source to be searched.  Notice that if the
 ```
 This value specifies a JSON data file to be loaded by the engine. Notice that it is a path relative to [srch2Home](#srch2Home).<br>
 
-###6.3. MongoDB, Required if "dataSourceType" is 2 {id="mongodb"}
+###6.3. Database, Required if "dataSourceType" is 2 {id="database"}
+For MongoDB:
 ```
-<mongodb>
-    <host>www.my-company.com</host>
-    <port>1234</port>
-    <db>database-name</db>
-    <collection>collection-name</collection>
-    <listenerWaitTime>3</listenerWaitTime>
-</mongodb> 
+    <dataSourceType>2</dataSourceType>
+    <dbParameters>
+        <dbSharedLibraryPath>db_connectors/</dbSharedLibraryPath>
+        <dbSharedLibraryName>libmongodbConnector</dbSharedLibraryName>
+        <dbKeyValues>
+            <dbKeyValue key="host" value="127.0.0.1" />
+            <dbKeyValue key="port" value="27017" />
+            <dbKeyValue key="db" value="demo" />
+            <dbKeyValue key="collection" value="movies" />
+            <dbKeyValue key="listenerWaitTime" value="3" />
+            <dbKeyValue key="maxRetryOnFailure" value="3" />
+        </dbKeyValues>
+    </dbParameters>
 ```
-This section specifies MongoDB instance information. Note: "listenerWaitTime" specifies how frequently (in seconds) the SRCH2 engine pulls changes from the MongoDB instance (e.g., every 3 seconds). 
+
+For SQLite:
+```
+   <dataSourceType>2</dataSourceType>
+    <dbParameters>
+        <dbSharedLibraryPath>db_connectors/</dbSharedLibraryPath>
+        <dbSharedLibraryName>libsqliteConnector</dbSharedLibraryName>
+        <dbKeyValues>
+            <dbKeyValue key="db" value="demo.db" />
+            <dbKeyValue key="dbPath" value="." />
+            <dbKeyValue key="tableName" value="COMPANY" />
+            <dbKeyValue key="listenerWaitTime" value="3" />
+            <dbKeyValue key="maxRetryOnFailure" value="2" />
+        </dbKeyValues>
+    </dbParameters>
+```
+This section specifies Database instance information. Note: "listenerWaitTime" specifies how frequently (in seconds) the SRCH2 engine pulls changes from the Database instance (e.g., every 3 seconds). 
 
 ##7. Index Config:##{id="indexConfig"}
 
