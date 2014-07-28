@@ -160,7 +160,7 @@ This value specifies the type of data source to be searched.  Notice that if the
 
 -	0: Create empty indexes, and ignore the data file specified by the "dataFile" tag).
 -	1: Create indexes for records from the JSON file specified by the "dataFile" tag. "1" is the default value for this "dataSourceType" tag.
--	2: Create indexes for records from Database specified by the parameters under the "dbParameters" tag.
+-	2: Create indexes for records from database specified by the parameters under the "dbParameters" tag.
 
 ###6.2. Data File, Required if "dataSourceType" is 1 {id="dataFile"}
 
@@ -202,7 +202,7 @@ For SQLite:
         </dbKeyValues>
     </dbParameters>
 ```
-This section specifies Database instance information. Note: "listenerWaitTime" specifies how frequently (in seconds) the SRCH2 engine pulls changes from the Database instance (e.g., every 3 seconds). 
+This section specifies database instance information. Note: "listenerWaitTime" specifies how frequently (in seconds) the SRCH2 engine pulls changes from the database instance (e.g., every 3 seconds). 
 
 ##7. Index Config:##{id="indexConfig"}
 

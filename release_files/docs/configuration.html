@@ -191,7 +191,7 @@ the advanced example configuration file in example-demo/srch2-config-advanced.xm
 <ul>
 <li>0: Create empty indexes, and ignore the data file specified by the "dataFile" tag).</li>
 <li>1: Create indexes for records from the JSON file specified by the "dataFile" tag. "1" is the default value for this "dataSourceType" tag.</li>
-<li>2: Create indexes for records from Database specified by the parameters under the "dbParameters" tag.</li>
+<li>2: Create indexes for records from database specified by the parameters under the "dbParameters" tag.</li>
 </ul>
 <h3 id="dataFile">6.2. Data File, Required if "dataSourceType" is 1</h3>
 <pre><code>&lt;dataFile&gt;./example-demo/movie-data.json&lt;/dataFile&gt;
@@ -230,7 +230,7 @@ the advanced example configuration file in example-demo/srch2-config-advanced.xm
     &lt;/dbParameters&gt;
 </code></pre>
 
-<p>This section specifies Database instance information. Note: "listenerWaitTime" specifies how frequently (in seconds) the SRCH2 engine pulls changes from the Database instance (e.g., every 3 seconds). </p>
+<p>This section specifies database instance information. Note: "listenerWaitTime" specifies how frequently (in seconds) the SRCH2 engine pulls changes from the database instance (e.g., every 3 seconds). </p>
 <h2 id="indexConfig">7. Index Config:</h2>
 <p>This tag groups parameters related to customizing the search engine's indices.</p>
 <pre><code>&lt;indexConfig&gt;

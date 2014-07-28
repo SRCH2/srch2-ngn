@@ -55,7 +55,8 @@ This section shows how to use SRCH2 to do text search on [MongoDB](http://www.mo
 ###2.1. Install MongoDB{id="mongoInstallMongoDB"}
 If you have already downloaded and installed MongoDB, and its "bin" directory is already included in your PATH environment variable, you can skip the following commands in this section.
 
-Install mongodb by following instructions on [Install MongoDB](http://docs.mongodb.org/manual/installation/).
+
+To Install mongodb on your machine, please follow the instructions on [Install MongoDB](http://docs.mongodb.org/manual/installation/).
 
 Notice that the SRCH2 engine works with a MongoDB server running with the replication mode enabled. Follow these [instructions](http://docs.mongodb.org/manual/tutorial/convert-standalone-to-replica-set/) to enable this mode.  The MongoDB host specified in the configuration file should be the primary of the replica set.  The SRCH2 engine collects incremental inserts/deletes/updates on MongoDB from its oplog.
 
@@ -70,6 +71,7 @@ shell> mkdir -p ~/tmp/mongodb/db0
 shell> mongod --port 27017 --dbpath ~/tmp/mongodb/db0 --replSet rs0
 ```
 Use the other terminal to do the following commands to initialize mongodb (needed only once):
+
 These commands will start the mongodb engine with the replication mode enabled. 
 ```
 shell> mongo
@@ -274,7 +276,6 @@ Now if we want to update Kim's address from South-Hall to Texas, run the followi
 ```
 sqlite> UPDATE COMPANY SET ADDRESS = 'Texas' WHERE ID = 6;
 ```
-l
 Wait for about 3-4 seconds for the SRCH2 server to pull the change, then do the search query:
 ```
 shell> curl "http://localhost:8081/search?q=Kim"

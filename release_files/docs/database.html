@@ -101,7 +101,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&amp;l='+l:'';j.async=true;j.src=
 <p>This section shows how to use SRCH2 to do text search on <a href="http://www.mongodb.org/">MongoDB</a>. </p>
 <h3 id="mongoInstallMongoDB">2.1. Install MongoDB</h3>
 <p>If you have already downloaded and installed MongoDB, and its "bin" directory is already included in your PATH environment variable, you can skip the following commands in this section.</p>
-<p>Install mongodb by following instructions on <a href="http://docs.mongodb.org/manual/installation/">Install MongoDB</a>.</p>
+<p>To Install mongodb on your machine, please follow the instructions on <a href="http://docs.mongodb.org/manual/installation/">Install MongoDB</a>.</p>
 <p>Notice that the SRCH2 engine works with a MongoDB server running with the replication mode enabled. Follow these <a href="http://docs.mongodb.org/manual/tutorial/convert-standalone-to-replica-set/">instructions</a> to enable this mode.  The MongoDB host specified in the configuration file should be the primary of the replica set.  The SRCH2 engine collects incremental inserts/deletes/updates on MongoDB from its oplog.</p>
 <p>For Ubuntu, you can do the following command:</p>
 <pre><code>shell&gt; sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10
@@ -113,8 +113,8 @@ shell&gt; mkdir -p ~/tmp/mongodb/db0
 shell&gt; mongod --port 27017 --dbpath ~/tmp/mongodb/db0 --replSet rs0
 </code></pre>
 
-<p>Use the other terminal to do the following commands to initialize mongodb (needed only once):
-These commands will start the mongodb engine with the replication mode enabled. </p>
+<p>Use the other terminal to do the following commands to initialize mongodb (needed only once):</p>
+<p>These commands will start the mongodb engine with the replication mode enabled. </p>
 <pre><code>shell&gt; mongo
 mongo&gt; rs.initiate()
 </code></pre>
@@ -269,8 +269,7 @@ sqlite&gt; INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (7, 'Joe', 20
 <pre><code>sqlite&gt; UPDATE COMPANY SET ADDRESS = 'Texas' WHERE ID = 6;
 </code></pre>
 
-<p>l
-Wait for about 3-4 seconds for the SRCH2 server to pull the change, then do the search query:</p>
+<p>Wait for about 3-4 seconds for the SRCH2 server to pull the change, then do the search query:</p>
 <pre><code>shell&gt; curl &quot;http://localhost:8081/search?q=Kim&quot;
 </code></pre>
 
