@@ -66,10 +66,52 @@ int SQLiteConnector::init(ServerInterface * serverHandle) {
      *
      * If one of these checks failed, the init() fails and does not continue.
      */
-    if (!checkConfigValidity() || !connectToDB() || !checkTableExistence()) {
-        printf("SQLITECONNECTOR: exiting...\n");
+//    if (!checkConfigValidity() || !connectToDB() || !checkTableExistence()) {
+//        printf("SQLITECONNECTOR: exiting...\n");
+//        return -1;
+//    }
+
+
+    //For android test: see if we can connect to the database
+    if (!checkConfigValidity()){
+        printf("Test not start because checkCOnfigValidity() in sqliteConnector failed");
         return -1;
     }
+
+    if(!connectToDB()){
+        printf("Connect to the database failed.");
+        return -1;
+    }
+
+
+        /* Create SQL statement */
+    char *zErrMsg = 0;
+    std::stringstream sql;
+    sql << "CREATE TABLE company(_id INT PRIMARY KEY     NOT NULL,"
+            << "name           TEXT    NOT NULL,"
+            << "age            INT     NOT NULL," << "address        CHAR(50),"
+            << "salary         REAL);";
+
+    int rc = sqlite3_exec(db, sql.str().c_str(), NULL, 0, &zErrMsg);
+    if ((rc != SQLITE_OK)
+            && (std::string(zErrMsg).find("already exists") == std::string::npos)) {
+        fprintf(stderr, "SQL error %d : %s\n", rc, zErrMsg);
+        sqlite3_free(zErrMsg);
+        return -1;
+    }
+    printf("SQLITECONNECTOR: Create log table company succeed.\n");
+
+
+    sql.str("");
+    sql<<"INSERT INTO company VALUES (1, 'Paul', 32, 'California', 20000.00 );";
+    rc = sqlite3_exec(db, sql.str().c_str(), NULL, 0, &zErrMsg);
+    if ((rc != SQLITE_OK)) {
+        fprintf(stderr, "SQL error %d : %s\n", rc, zErrMsg);
+        sqlite3_free(zErrMsg);
+        return -1;
+    }
+    printf("SQLITECONNECTOR: Insert record succeed.\n");
+    return -1;
 
     /*
      * 1. Get the table's schema and save them into a map<schema_name, schema_type>
@@ -79,13 +121,13 @@ int SQLiteConnector::init(ServerInterface * serverHandle) {
      *
      * If one of these checks failed , the init() fails and does not continue.
      */
-    if (!populateTableSchema() || !createLogTableIfNotExistence()
-            || !createTriggerIfNotExistence() || !createPreparedStatement()) {
-        printf("SQLITECONNECTOR: exiting...\n");
-        return -1;
-    }
-
-    return 0;
+//    if (!populateTableSchema() || !createLogTableIfNotExistence()
+//            || !createTriggerIfNotExistence() || !createPreparedStatement()) {
+//        printf("SQLITECONNECTOR: exiting...\n");
+//        return -1;
+//    }
+//
+//    return 0;
 }
 
 //Connect to the sqlite database
