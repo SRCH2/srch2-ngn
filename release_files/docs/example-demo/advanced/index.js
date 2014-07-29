@@ -117,7 +117,6 @@ client = {
             var results = responseText.results;
             output += "<table width='450px'>";
             output += "<tr>";
-            output += "<td style='border-bottom:thick;font-weight:bold;'>  </td>";
             output += "<td style='border-bottom:thick;font-weight:bold;'>" + 'Title' + "</td>";
             output += "<td style='border-bottom:thick;font-weight:bold;'>" + 'Genre' + "</td>";
             output += "<td style='border-bottom:thick;font-weight:bold;'>" + 'Director' + "</td>";
@@ -128,7 +127,6 @@ client = {
                 output += "<tr class='result_row'>";
                 var record = results[i].record;
                 var prefix = results[i].matching_prefix;
-                output += "<td style='border-bottom:thin dotted;width:9%'>" + "<img style='width:100%; height:auto' src='" + record.banner_url + "'></td>";
                 output += "<td style='border-bottom:thin dotted'>" + _client_this.addHighliting(prefix, record.title) + "</td>";
                 output += "<td style='border-bottom:thin dotted '>" + _client_this.addHighliting(prefix, record.genre) + "</td>";
                 output += "<td style='border-bottom:thin dotted '>" + _client_this.addHighliting(prefix, record.director) + "</td>";
