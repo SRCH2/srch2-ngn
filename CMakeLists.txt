@@ -238,8 +238,13 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 
     # Building the wrapper layer in static build mode.
     # Setting up the Path to Srch2_InstantSearch_library
-    IF (BUILD_STATIC OR BUILD_SERVER OR ANDRIOD_SERVER)
-        SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libsrch2_core.a)
+    IF (BUILD_STATIC OR BUILD_SERVER)
+        if (ANDROID_SERVER)
+            # we statically link the srch2 core with srch2-server ..see src/core/CMakeLists.txt
+            SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/libs/armeabi-v7a/libsrch2_core.a)
+        else()
+            SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libsrch2_core.a)
+        endif()
     ELSE ()
         IF(MAC_OS) 
 	    SET(Srch2InstantSearch_LIBRARIES ${CMAKE_BINARY_DIR}/src/core/libsrch2_core.dylib)

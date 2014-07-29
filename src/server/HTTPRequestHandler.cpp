@@ -6,7 +6,7 @@
 #include <sstream>
 #include <string>
 #include <set>
-#include <sys/signal.h>
+//#include <sys/signal.h>
 #include <signal.h>
 
 #include "thirdparty/snappy-1.0.4/snappy.h"
