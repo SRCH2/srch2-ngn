@@ -3,6 +3,10 @@
 # > cd build
 # > cmake -DRELEASE_BUILD=0 ..
 # > make
+# 
+# To build on android, please use
+# > cmake -DANDROID=1 ..
+
 
 cmake_minimum_required(VERSION 2.8)
 SET(RELEASE_BUILD ON CACHE BOOL "")
