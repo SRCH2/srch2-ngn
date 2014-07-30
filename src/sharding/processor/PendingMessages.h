@@ -17,33 +17,20 @@ class PendingMessage{
     friend class PendingRequest<Request, Response>;
 public:
     // sets the response message
-    void setResponseMessageAndObject(Message* responseMessage, Response * responseObj){
-        ASSERT(this->responseMessage == NULL);
-        this->responseMessage = responseMessage;
+    void setResponseObject(Response * responseObj){
+        ASSERT(this->responseObj == NULL);
         this->responseObject = responseObj;
     }
-    // used to access the response message
-    Message * getResponseMessage(){
-        return this->responseMessage;
-    }
-    Response * getResponseObject(){
+    Response * getResponseObject() const{
         return this->responseObject;
     }
-
-    Message * getRequestMessage(){
-        return this->requestMessage;
-    }
-
-    Request * getRequestObject(){
-        return this->requestObject;
-    }
     // returns true if the nodeId that we expect the response from is equal to this nodeId
-    bool doesExpectFromThisShard(NodeId nodeid){
-        return (this->nodeId == nodeid);
+    bool doesExpectThisReply(NodeId nodeid, unsigned requestMessageId) const{
+        return (this->nodeId == nodeid) && (this->requestMessageId == requestMessageId);
     }
 
     // returns true if the value of timeout is before the current time
-    bool isTimedOut(){
+    bool isTimedOut() const{
         if(this->timeout == 0){ // zero indicates no timeout
             return false;
         }
@@ -53,57 +40,64 @@ public:
         return (this->timeout < currentTime);
     }
 
+    unsigned getRequestMessageId() const{
+    	return requestMessageId;
+    }
+
+    const Request * getRequestObject(){
+    	return requestObject;
+    }
+
     // returns the destination node id of this pendingMessage
-    NodeId getNodeId(){
+    NodeId getNodeId() const{
         return this->nodeId;
     }
 
 private:
     // the constructor is private because PendingMessage object should only
     // be allocated through PendingRequest so that it also gets stored in that object
-    PendingMessage(MessageAllocator * messageAllocator, NodeId nodeId, time_t timeout,
-            Message * requestMessage,
-            Request * requestObject){
+    PendingMessage(const Request * requestObj, MessageAllocator * messageAllocator, NodeId nodeId,
+    		time_t timeout, unsigned requestMessageId):requestObject(requestObj){
         ASSERT(requestMessage != NULL);
         ASSERT(requestObject != NULL);
         this->messageAllocator = messageAllocator;
         this->nodeId = nodeId;
         this->timeout = timeout;
-        this->requestMessage = requestMessage;
-        this->requestObject = requestObject;
-        this->responseMessage = NULL;
+        this->requestMessageId = requestMessageId;
         this->responseObject = NULL;
     }
 
     ~PendingMessage(){
 
-        // request object and message are protected by shared pointer.
-
-        if(responseMessage != NULL){
-            messageAllocator->deallocateByMessagePointer(responseMessage);
-            ASSERT(responseObject != NULL);
+        if(responseObject != NULL){
             delete responseObject;
         } // if they are null it means this request had timed out
     }
 
 
     MessageAllocator * messageAllocator;
-
+    const Request * requestObject;
     // the absolute time on which this message times out
     time_t timeout;
-    // the request message
-    Message * requestMessage;
-    // the request object
-    Request * requestObject;
+    // the messageId of request
+    unsigned requestMessageId;
     // Node id of the shard which we are waiting for response from
     NodeId nodeId; // TODO : node ID should change to shard Id in V1 because we can have multiple shards in a node
     // the reply message, this member is NULL in the beginning and gets filled only
     // if a response comes for this request message
-    Message* responseMessage; // NULL in the beginning
     // The reply object which is produced after deserialization.
     Response * responseObject; // NULL in the beginning.
 };
 
+
+
+class ReplyHandlerInterface{
+public:
+	virtual bool isMessageMine(NodeId srcNodeId, unsigned requestMessageId) const = 0;
+	virtual bool resolveReply(void * replyObject, NodeId srcNodeId , unsigned requestMessageId) = 0;
+	virtual bool resolveTimedoutRequests() = 0;
+	virtual ~ReplyHandlerInterface(){};
+};
 
 /*
  * Pending request is the object which keeps the information of a request pending for responses.
@@ -112,66 +106,61 @@ private:
  * PendingRequest object is accessed by multiple threads and must be a thread safe object.
  */
 template <class Request, class Response>
-class PendingRequest : public MessageResolverInterface{
+class PendingRequest : public ReplyHandlerInterface{
     friend class ReplyMessageHandler;
 public:
 
 
     // returns whether this PendingRequest waits for all replies to call callBackAll or
     // calls callBack functions separately.
-    bool shouldWaitForAll(){return waitForAll;};
+    bool shouldWaitForAll() const{
+    	return waitForAll;
+    }
 
     // this function allocates and returns a PendingMessage. PendingMessage objects
     // are always allocated and deleted in this class.
     // this function also adds this PendingMessage to the map.
-    PendingMessage<Request, Response> * registerPendingMessage(NodeId nodeId, time_t timeout,
-            Message* requestMessage,
-            Request* requestObject){
+    PendingMessage<Request, Response> * registerPendingMessage(const Request * requestObj, NodeId nodeId, time_t timeout,
+            unsigned requestMessageId, bool isLocal){
         // create the pending message object
         PendingMessage<Request, Response> * pendingMessage =
-                new PendingMessage<Request, Response>(messageAllocator ,nodeId, timeout, requestMessage, requestObject);
+                new PendingMessage<Request, Response>(requestObj, messageAllocator ,nodeId, timeout, requestMessageId);
 
         // get a write lock on pendingMessages and add this new pendingMessage
         boost::unique_lock< boost::shared_mutex > lock(_access);
 
         // add it to pendingMessages
-        if(requestMessage->isLocal()){
-            this->localRequestMessageId = requestMessage->getMessageId();
+        if(isLocal){
             localPendingMessages.push_back(pendingMessage);
             // We assume the local message is always stored at the 0th slot.
         }else{
-            this->externalRequestMessageId = requestMessage->getMessageId();
             externalPendingMessages.push_back(pendingMessage);
         }
 
         return pendingMessage;
     }
 
-    // resolves the corresponding PendingMessage with this response
-    // if returns true, this pendingRequest is ready to be deleted for finalizing.
-    bool resolveMessage(Message * responseMessage, NodeId nodeIdOfResponse, void * responseObjectTypeVoid = NULL){
-        Response * responseObjectArg = (Response *)responseObjectTypeVoid;
 
-        if(responseMessage == NULL){
+    bool resolveReply(void * responseVoidPointer, NodeId srcNodeId , unsigned requestMessageId){
+    	Response * replyObject = (Response *) responseVoidPointer;
+    	const bool isLocal = (aggregator->getClusterReadview()->getCurrentNodeId() == srcNodeId);
+    	if(replyObject == NULL){
             ASSERT(false);
             return false;
-        }
-
+    	}
         // 1. get a write lock on pendingMessages, remove the corresponding message
         boost::unique_lock< boost::shared_mutex > lock(_access);
-        // this must be the pending request of this message
-        ASSERT(responseMessage->getRequestMessageId() == this->localRequestMessageId ||
-                responseMessage->getRequestMessageId() == this->externalRequestMessageId);
+        ASSERT(isMessageMine(srcNodeId, requestMessageId));
 
         // 2. find which PendingMessage is responsible
         PendingMessage<Request , Response> * pendingMessage = NULL;
         unsigned pendingMessageLocation = 0;
         // is it the local response or the external one?
-        if(responseMessage->isLocal()){
+        if(isLocal){
             // response is for the local pending message
             for(unsigned pendingMessageIndex = 0; pendingMessageIndex < localPendingMessages.size(); ++pendingMessageIndex){
                 PendingMessage<Request, Response> * localPendingMessage = localPendingMessages.at(pendingMessageIndex);
-                if(localPendingMessage != NULL && localPendingMessage->doesExpectFromThisShard(nodeIdOfResponse)){
+                if(localPendingMessage != NULL && localPendingMessage->doesExpectThisReply(srcNodeId, requestMessageId)){
                 	pendingMessage = localPendingMessage;
                 	pendingMessageLocation = pendingMessageIndex;
                 	break;
@@ -183,48 +172,28 @@ public:
             // iterate on external pending messages and look for nodeId
             for(unsigned pendingMessageIndex = 0; pendingMessageIndex < externalPendingMessages.size(); ++pendingMessageIndex){
                 PendingMessage<Request, Response> * externalPendingMessage = externalPendingMessages.at(pendingMessageIndex);
-                if(externalPendingMessage != NULL && externalPendingMessage->doesExpectFromThisShard(nodeIdOfResponse)){
+                if(externalPendingMessage != NULL && externalPendingMessage->doesExpectThisReply(srcNodeId, requestMessageId)){
                 	pendingMessage = externalPendingMessage;
                 	pendingMessageLocation = pendingMessageIndex;
                 	break;
                 }
             }
         }
-        if(pendingMessage == NULL){ // no pending message is found for this response so it is timedout
-            // because of the locking scheme this cannot happen now
-            // if we change locking scheme then we should handle this case
-            ASSERT(false);
-            return false;
-        }
 
         //3. Remove pendingMessage from pendingMessages vector
         // NOTE: this object is not lost, it'll moved to the other vector and freed in
         // destrution.
-        if(responseMessage->isLocal()){
+        if(isLocal){
         	localPendingMessages.at(pendingMessageLocation) = NULL;
         }else{
-        	externalPendingMessages.at(pendingMessageLocation);
+        	externalPendingMessages.at(pendingMessageLocation) = NULL;
         }
 
-        //4. deserialize response message to response object
-        // deserialize the message into the response type
-        // example : msg deserializes into SerializableSearchResults
-        Response * responseObject = NULL;
-        if(responseObjectArg == NULL){
-            if(responseMessage->isLocal()){ // for local response we should just get the pointer
-                responseObject = decodeInternalMessage<Response>(responseMessage);
-            }else{ // for non-local response we should deserialize the message
-                responseObject = decodeExternalMessage<Response>(responseMessage);
-            }
-        }else{
-            responseObject = responseObjectArg;
-        }
+        // 4. set the response message and response object in the PendingMessage
+        pendingMessage->setResponseMessageAndObject(replyObject);
 
-        // 5. set the response message and response object in the PendingMessage
-        pendingMessage->setResponseMessageAndObject(responseMessage , responseObject);
-
-        // 6. put the satisfied pending message in pendingMessagesWithResponse
-        if(responseMessage->isLocal()){
+        // 5. put the satisfied pending message in pendingMessagesWithResponse
+        if(isLocal){
             localPendingMessagesWithResponse.push_back(pendingMessage);
         }else{
             externalPendingMessagesWithResponse.push_back(pendingMessage);
@@ -238,13 +207,14 @@ public:
 
         // now check if all pendingMessages are satisfied we are ready for finalizing.
         return checkAllMsgProcessed();
+
     }
 
     // this function looks for all messages in this request that have timed out and must be deleted from pendingMessages
     // returns true if it's time for this request to be deleted.
     //  the "timeout" is based on predefined intervals,
     // which does not restart after a new message is added. So the real timeout period could be as large as the parameter * 2.
-    bool resolveTimedoutMessages(){
+    bool resolveTimedoutRequests(){
         // move on all pending messages and check if the are timed out or not
         // 1. get an X lock on the pendingMessages vector
         boost::unique_lock< boost::shared_mutex > lock(_access);
@@ -259,7 +229,7 @@ public:
             // pendingMessagesWithResponse and leave response pointers empty
             if(pendingMessage->isTimedOut()){
                 // set the response message and response object to NULL to indicate timeout
-                pendingMessage->setResponseMessageAndObject(NULL , NULL);
+                pendingMessage->setResponseObject(NULL);
                 // move it to pendingMessagesWithResponse
                 localPendingMessagesWithResponse.push_back(pendingMessage);
                 // set it null in pendingMessages
@@ -278,7 +248,7 @@ public:
             // pendingMessagesWithResponse and leave response pointers empty
             if(pendingMessage->isTimedOut()){
                 // set the response message and response object to NULL to indicate timeout
-                pendingMessage->setResponseMessageAndObject(NULL , NULL);
+                pendingMessage->setResponseObject(NULL);
                 // move it to pendingMessagesWithResponse
                 externalPendingMessagesWithResponse.push_back(pendingMessage);
                 // set it null in pendingMessages
@@ -293,18 +263,36 @@ public:
     }
 
     // returns true of it contains a PendingMessage corresponding to this responseMessage
-    bool isMessageMine(Message * responseMessage){
+    bool isMessageMine(NodeId srcNodeId, unsigned requestMessageId) const{
         // get a read lock on pendingMessages,
         boost::shared_lock< boost::shared_mutex > lock(_access);
-        return (this->localRequestMessageId == responseMessage->getRequestMessageId() ||
-                this->externalRequestMessageId == responseMessage->getRequestMessageId());
+
+        for(unsigned pMIdx = 0 ; pMIdx < localPendingMessages.size(); ++pMIdx){
+        	if(localPendingMessages.at(pMIdx) == NULL){
+        		continue;
+        	}
+        	if(localPendingMessages.at(pMIdx)->doesExpectThisReply(srcNodeId, requestMessageId)){
+        		return true;
+        	}
+        }
+        for(unsigned pMIdx = 0 ; pMIdx < externalPendingMessages.size(); ++pMIdx){
+        	if(externalPendingMessages.at(pMIdx) == NULL){
+        		continue;
+        	}
+        	if(externalPendingMessages.at(pMIdx)->doesExpectThisReply(srcNodeId, requestMessageId)){
+        		return true;
+        	}
+        }
+        return false;
     }
 
     // returns true if all pendingMessages have either timed out or received a response
     bool checkAllMsgProcessed(){
         // get a read lock on pendingMessages,
         // this function should only be called within a locked scope
-        unsigned numberOfPendingMessagesWithResponse = localPendingMessagesWithResponse.size() + externalPendingMessagesWithResponse.size() ;
+        unsigned numberOfPendingMessagesWithResponse =
+        		localPendingMessagesWithResponse.size() +
+        		externalPendingMessagesWithResponse.size() ;
         return (numberOfPendingMessagesWithResponse == totalNumberOfPendingMessages);
     }
 
@@ -321,19 +309,18 @@ private:
 
         this->aggregator = aggregator;
         this->aggregator->preProcess(ResponseAggregatorMetadata() );
-        // initialize these members to avoid garbage values
-        localRequestMessageId = 0;
-        externalRequestMessageId = 0;
     }
     ~PendingRequest(){
         // aggregator is wrapped in a shared_ptr so it's deleted when all shared_ptr objects are deleted
         // go over all pending messages and delete them.
     	vector <PendingMessage<Request, Response> *> pendingMessagesWithResponse;
-    	for(typename vector <PendingMessage<Request, Response> *>::iterator pendingMessageItr = localPendingMessagesWithResponse.begin() ;
+    	for(typename vector <PendingMessage<Request, Response> *>::iterator pendingMessageItr =
+    			localPendingMessagesWithResponse.begin() ;
                 pendingMessageItr != localPendingMessagesWithResponse.end() ; ++pendingMessageItr){
     		pendingMessagesWithResponse.push_back(*pendingMessageItr);
     	}
-    	for(typename vector <PendingMessage<Request, Response> *>::iterator pendingMessageItr = externalPendingMessagesWithResponse.begin() ;
+    	for(typename vector <PendingMessage<Request, Response> *>::iterator pendingMessageItr =
+    			externalPendingMessagesWithResponse.begin() ;
                 pendingMessageItr != externalPendingMessagesWithResponse.end() ; ++pendingMessageItr){
     		pendingMessagesWithResponse.push_back(*pendingMessageItr);
     	}
@@ -342,40 +329,14 @@ private:
             this->aggregator->callBack(pendingMessagesWithResponse);
         }
         this->aggregator->finalize(ResponseAggregatorMetadata());
-    	for(typename vector <PendingMessage<Request, Response> *>::iterator pendingMessageItr = localPendingMessages.begin() ;
+    	for(typename vector <PendingMessage<Request, Response> *>::iterator pendingMessageItr =
+    			localPendingMessages.begin() ;
                 pendingMessageItr != localPendingMessages.end() ; ++pendingMessageItr){
             ASSERT(*pendingMessageItr == NULL);
     	}
     	for(typename vector <PendingMessage<Request, Response> *>::iterator pendingMessageItr = externalPendingMessages.begin() ;
                 pendingMessageItr != externalPendingMessages.end() ; ++pendingMessageItr){
             ASSERT(*pendingMessageItr == NULL);
-    	}
-
-
-        // request message and object are shared so they must be deleted only once.
-        // delete local request message
-    	for(typename vector <PendingMessage<Request, Response> *>::iterator pendingMessageItr = localPendingMessagesWithResponse.begin() ;
-                pendingMessageItr != localPendingMessagesWithResponse.end() ; ++pendingMessageItr){
-    		if(*pendingMessageItr != NULL){
-                messageAllocator->deallocateByMessagePointer((*pendingMessageItr)->requestMessage);
-                break;
-    		}
-    	}
-    	// delete external request message
-    	for(typename vector <PendingMessage<Request, Response> *>::iterator pendingMessageItr = externalPendingMessagesWithResponse.begin() ;
-                pendingMessageItr != externalPendingMessagesWithResponse.end() ; ++pendingMessageItr){
-    		if(*pendingMessageItr != NULL){
-                messageAllocator->deallocateByMessagePointer((*pendingMessageItr)->requestMessage);
-                break;
-    		}
-    	}
-        // delete request object which is even shared between local and external messages
-    	for(typename vector <PendingMessage<Request, Response> *>::iterator pendingMessageItr = pendingMessagesWithResponse.begin() ;
-                pendingMessageItr != pendingMessagesWithResponse.end() ; ++pendingMessageItr){
-    		if(*pendingMessageItr != NULL){
-                delete (*pendingMessageItr)->requestObject;
-                break;
-    		}
     	}
 
     	for(typename vector <PendingMessage<Request, Response> *>::iterator pendingMessageItr = pendingMessagesWithResponse.begin() ;
@@ -391,10 +352,6 @@ private:
     // this lock is used to make PendingRequest thread safe
     mutable boost::shared_mutex _access;
 
-    // local and external message ids corresponding to this request.
-    MessageID_t localRequestMessageId;
-    MessageID_t externalRequestMessageId;
-
     // This vector contains the pointer to all pending messages which have not received any responses
     vector<PendingMessage<Request, Response> *> localPendingMessages;
     vector<PendingMessage<Request, Response> *> externalPendingMessages;
@@ -403,18 +360,13 @@ private:
     // iterating over pendingMessages. This pendingMessage then stores the response message and
     // object and if it's a waitForAll we store that in this vector. Otherwise, it's directly passed to aggregator
     // functions.
-    vector <PendingMessage<Request, Response> *> externalPendingMessagesWithResponse;
     vector <PendingMessage<Request, Response> *> localPendingMessagesWithResponse;
+    vector <PendingMessage<Request, Response> *> externalPendingMessagesWithResponse;
 
     // indicates whether PendingMessage needs to wait for all PendingMessages to resolve to call
     // aggregators callback or it can call the callback upon receiving of each one.
     const bool waitForAll;
 
-    // the aggregator object
-    // the reason we use a shared pointer instead of a real pointer is this :
-    // for some cases like when we receive a batch of inserts, multiple PendingRequest objects
-    // (one per each insert) need to have a single aggregator (batch aggregator), therefore, we
-    // the aggregator to be deleted when the last PendingRequest object is deleted.
     boost::shared_ptr<ResponseAggregatorInterface<Request, Response> > aggregator;
 
     // This member gives us the total number of pending messages that will be registered in this

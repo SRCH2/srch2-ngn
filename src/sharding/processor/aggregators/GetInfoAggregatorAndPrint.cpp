@@ -1,5 +1,5 @@
 #include "GetInfoAggregatorAndPrint.h"
-#include "sharding/routing/PendingMessages.h"
+#include "sharding/processor/PendingMessages.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace std;
@@ -56,12 +56,17 @@ void GetInfoResponseAggregator::callBack(vector<PendingMessage<GetInfoCommand,
         if(*messageItr == NULL || (*messageItr)->getResponseObject() == NULL){
             continue;
         }
-        this->readCount += (*messageItr)->getResponseObject()->getReadCount();
-        this->writeCount += (*messageItr)->getResponseObject()->getWriteCount();
-        this->numberOfDocumentsInIndex += (*messageItr)->getResponseObject()->getNumberOfDocumentsInIndex();
-        this->lastMergeTimeStrings.push_back((*messageItr)->getResponseObject()->getLastMergeTimeString());
-        this->docCount += (*messageItr)->getResponseObject()->getDocCount();
-        this->versionInfoStrings.push_back((*messageItr)->getResponseObject()->getVersionInfo());
+        PendingMessage<GetInfoCommand,GetInfoCommandResults> * message = *messageItr;
+        vector<GetInfoCommandResults::ShardResults *> shardResults = message->getResponseObject()->getShardResults();
+        for(unsigned shardIdx = 0 ; shardIdx < shardResults.size(); ++shardIdx){
+        	GetInfoCommandResults::ShardResults * shardResult = shardResults.at(shardIdx);
+			this->readCount += shardResult->readCount;
+			this->writeCount += shardResult->writeCount;
+			this->numberOfDocumentsInIndex += shardResult->numberOfDocumentsInIndex;
+			this->lastMergeTimeStrings.push_back(shardResult->lastMergeTimeString);
+			this->docCount += shardResult->docCount;
+			this->versionInfoStrings.push_back(shardResult->versionInfo);
+        }
     }
 }
 

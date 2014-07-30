@@ -34,7 +34,7 @@ public:
     MessageAllocator * getMessageAllocator() ;
     ConfigManager* getConfigurationManager();
     DPInternalRequestHandler* getDpInternal();
-    InternalMessageHandler * getInternalMessageHandler();
+    RequestMessageHandler * getInternalMessageHandler();
     ReplyMessageHandler * getReplyMessageHandler();
     TransportManager& getTransportManager();
 
@@ -97,65 +97,12 @@ public:
     }
 
 
-    template<typename RequestType, typename ResponseType>
-    RoutingManagerAPIReturnType broadcast(RequestType * requestObj,
-    		bool waitForAll,
-    		bool withCallback,
-    		boost::shared_ptr<ResponseAggregatorInterface<RequestType , ResponseType> > aggregator,
-            time_t timeoutValue,
-            vector<const Shard *> & destination){
-
-        PendingRequest<RequestType, ResponseType> * pendingRequest = NULL;
-        if(withCallback){
-            // register a pending request in the handler
-            pendingRequest =
-                    this->replyMessageHandler.registerPendingRequest(waitForAll, aggregator, destination.size());
-        }
-
-        Message * internalMessage = NULL;
-        Message * externalMessage = NULL;
-
-        // iterate on all destinations and send the message
-        for(vector<const Shard *>::iterator shardItr = destination.begin(); shardItr != destination.end(); ++shardItr) {
-
-        	NodeId nodeId = (*shardItr)->getNodeId();
-            Logger::debug("sending request to node - %d", nodeId);
-
-            // this shard is in the current node
-            if(aggregator->getClusterReadview()->getCurrentNode()->getId() == nodeId){
-                // so that we create the message only once
-                if(internalMessage == NULL){
-                    internalMessage = prepareInternalMessage<RequestType>(*shardItr, requestObj);
-                    // request message is stored in cb object to be deleted when replies are ready
-                    // and cb object is being destroyed.
-                }
-                internalMessage->setDestinationShardId((*shardItr)->getShardId());
-                // callback should wait for one more reply
-                sendInternalMessage(internalMessage, requestObj, (*shardItr)->getNodeId(), timeoutValue, pendingRequest);
-            }else{// this shard is in some other node
-                // so that we create the message only once
-                if(externalMessage == NULL){
-                    externalMessage = prepareExternalMessage<RequestType>(*shardItr, requestObj);
-                    // request message is stored in cb object to be deleted when replies are ready
-                    // and cb object is being destroyed.
-                }
-                externalMessage->setDestinationShardId((*shardItr)->getShardId());
-                // callback should wait for one more reply
-                sendExternalMessage(externalMessage, requestObj, (*shardItr)->getNodeId(), timeoutValue, pendingRequest);
-            }
-        }
-
-        return RoutingManagerAPIReturnTypeSuccess;
-
-    }
-
-
     template<typename RequestType , typename ResponseType>
-    RoutingManagerAPIReturnType sendMessage(RequestType * requestObj,
+    RoutingManagerAPIReturnType sendMessageToNode(RequestType * requestObj,
     		bool withCallback,
             boost::shared_ptr<ResponseAggregatorInterface<RequestType , ResponseType> > aggregator,
             time_t timeoutValue,
-            const Shard * shardInfo){
+            NodeId nodeId, NodeId currentNodeId){
         // register a pending request in the handler
         PendingRequest<RequestType, ResponseType> * pendingRequest = NULL;
 
@@ -166,141 +113,27 @@ public:
         // if the destination is the current node, we don't serialize the request object
         // instead, we serialize the pointer to the request object
         Message * msg;
-        if(aggregator->getClusterReadview()->getCurrentNode()->getId() == shardInfo->getNodeId()) {
-            msg = prepareInternalMessage<RequestType>(shardInfo, requestObj);
-            sendInternalMessage(msg, requestObj, shardInfo->getNodeId(),timeoutValue,pendingRequest);
+        if(currentNodeId == nodeId) {
+            msg = prepareInternalMessage<RequestType>(NULL, requestObj, false);
+            sendInternalMessage(msg, requestObj, nodeId,timeoutValue,pendingRequest);
 
         }else{
-            msg = prepareExternalMessage<RequestType>(shardInfo, requestObj);
-            sendExternalMessage(msg, requestObj, shardInfo->getNodeId(),timeoutValue,pendingRequest);
+            msg = prepareExternalMessage<RequestType>(NULL, requestObj, false);
+            sendExternalMessage(msg, requestObj, nodeId,timeoutValue,pendingRequest);
         }
 
         return RoutingManagerAPIReturnTypeSuccess;
 
     }
 
-    /*
-     * This function sends the request object to a shard which resides
-     * in the same node.
-     */
-    template<typename RequestType >
-    Message * prepareInternalMessage(const Shard * shard,
-            RequestType * requestObjPointer, bool dpOrShm = true){
-        // prepare a message that just includes a memory address (pointer)
-        // allocate the message
-        Message * msg = getMessageAllocator()->allocateMessage(sizeof(RequestType *));
-        // initialize the message
-        // copy the address saved in requestObjPointer in msg->body
-        msg->setBodyAndBodySize(&requestObjPointer, sizeof(RequestType *));
-        if(shard == NULL){
-			msg->setDestinationShardId(ShardId());
-        }else{
-			msg->setDestinationShardId(shard->getShardId());
-        }
-        if(dpOrShm){
-        	msg->setDPInternal();
-        }else{
-        	msg->setSHMInternal();
-        }
-        msg->setLocal();
-        msg->setType(RequestType::messageType());
-        msg->setMessageId(transportManager.getUniqueMessageIdValue());
-        return msg;
-    }
-
-
-    template<typename RequestType >
-    Message * prepareExternalMessage(const Shard * shard,
-            RequestType * requestObjPointer, bool dpOrShm = true){
-        // create the message from the request object
-        // 1. serialize the message and prepare the body
-        void * serializeRequestMessageBodyPointer = requestObjPointer->serialize(getMessageAllocator());
-        // 2. get the pointer to the Message
-        Message * msg = Message::getMessagePointerFromBodyPointer(serializeRequestMessageBodyPointer);
-
-
-        // initialize the message
-        if(shard == NULL){
-			msg->setDestinationShardId(ShardId());
-        }else{
-			msg->setDestinationShardId(shard->getShardId());
-        }
-        if(dpOrShm == true){ // DP Internal message
-			msg->setDPInternal();
-        }else{
-        	msg->setSHMInternal();
-        }
-        msg->setType(RequestType::messageType());
-        msg->setMessageId(transportManager.getUniqueMessageIdValue());
-        return msg;
-    }
-
 private:
 
-    /*
-     * The call back function used by thread to handle local requests.
-     */
-    static void * routeInternalMessage(void * arg) ;
-
-    // When pendingRequest is NULL, no response is expected for request.
-    template<typename RequestType , typename ResponseType>
-    void sendInternalMessage(Message * msg, RequestType * requestObject,
-            NodeId nodeId, time_t timeoutValue, PendingRequest<RequestType, ResponseType> * pendingRequest = NULL){
-
-    	// only messages which expect reply will go to pending messages
-    	if(pendingRequest != NULL){
-    		// register a pending message in this pending request
-    		PendingMessage<RequestType, ResponseType> * pendingMessage =
-    				pendingRequest->registerPendingMessage(nodeId, timeoutValue, msg, requestObject);
-    	}else{
-    		// no reply case, request object and message must be deleted after sending to network.
-    		delete requestObject;
-    	}
-
-        Logger::debug("Message is local");
-        pthread_t internalMessageRouteThread;
-
-        std::pair<RoutingManager * ,  std::pair< Message * , NodeId> > * routeInternalMessageArgs =
-                new std::pair<RoutingManager * , std::pair<Message *, NodeId> >(this,
-                        std::make_pair(msg, nodeId));
-
-        // run for the same shard in a separate thread
-        // the reason is that even the request message for some external threads are not sent
-        // so if we use the same thread those external shards won't start the job until this shard
-        // is finished which makes it sequential and wrong.
-        if (pthread_create(&internalMessageRouteThread, NULL, routeInternalMessage, routeInternalMessageArgs) != 0){
-            //        Logger::console("Cannot create thread for handling local message");
-            perror("Cannot create thread for handling local message");
-            return;
-        }
-        // since we don't join this thread it must be detached so that its resource gets deallocated.
-        pthread_detach(internalMessageRouteThread);
-
-    }
-
-    // When pendingRequest is NULL, no response is expected for request.
-    template<typename RequestType , typename ResponseType>
-    void sendExternalMessage(Message * msg, RequestType * requestObject,
-            NodeId nodeId, time_t timeoutValue, PendingRequest<RequestType, ResponseType> * pendingRequest = NULL){
-
-        // only messages which expect reply will go to pending messages
-        if(pendingRequest != NULL){
-            // register a pending message in this pending request
-            PendingMessage<RequestType, ResponseType> * pendingMessage =
-                    pendingRequest->registerPendingMessage(nodeId, timeoutValue, msg, requestObject);
-        }else{
-            // no reply case, request object and message must be deleted after sending to network.
-            delete requestObject;
-        }
-        // pass the ready message to TM to be sent to nodeId
-        transportManager.sendMessage(nodeId, msg, timeoutValue);
-    }
 
 
     ConfigManager& configurationManager;
     TransportManager& transportManager;
     DPInternalRequestHandler& dpInternal;
-    InternalMessageHandler internalMessageHandler;
+    RequestMessageHandler internalMessageHandler;
     // a map from coreId to Srch2Server //TODO : V1 : should it be a map from ShardId to shardServer?
     std::map<unsigned, Srch2Server *> shardServers;
 

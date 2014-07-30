@@ -220,8 +220,6 @@ ConfigManager::ConfigManager(const string& configFile)
     // initialize Cluster readview and writeview
     // initialize writeview
     pthread_spin_init(&m_spinlock, 0);
-    metadata_writeView = new Cluster();
-    metadata_readView.reset(new Cluster(*metadata_writeView));
 }
 
 void ConfigManager::loadConfigFile()
@@ -249,7 +247,8 @@ void ConfigManager::loadConfigFile()
     Logger::debug("WARNINGS while reading the configuration file:");
     Logger::debug("%s\n", parseWarnings.str().c_str());
 
-	this->commitClusterMetadata();
+	ClusterResourceMetadata_Readview * firstReadview = new ClusterResourceMetadata_Readview(clusterNameStr, clusterCores);
+	this->commitClusterMetadata(firstReadview);
 
     if (!configSuccess) {
         Logger::error("ERRORS while reading the configuration file");
@@ -777,7 +776,7 @@ void ConfigManager::parseSingleCore(const xml_node &parentNode, CoreInfo_t *core
         coreInfo->indexPath = srch2Home + coreInfo->dataDir;
     }
 
-    parseDataFieldSettings(parentNode, coreInfo, configSuccess, parseError, parseWarnings);
+    parseCoreInformationTags(parentNode, coreInfo, configSuccess, parseError, parseWarnings);
     if (configSuccess == false) {
         return;
     }
@@ -804,7 +803,7 @@ void ConfigManager::parseMultipleCores(const xml_node &coresNode, bool &configSu
     	    srch2is::Schema *schema = JSONRecordParser::createAndPopulateSchema(newCore);
     	    newCore->setSchema(schema);
             if (configSuccess) {
-                getClusterWriteView()->getCores()->push_back(newCore);
+                clusterCores.push_back(newCore);
             } else {
                 delete newCore;
                 return;
@@ -818,7 +817,7 @@ void ConfigManager::parseMultipleCores(const xml_node &coresNode, bool &configSu
  * from either <config> or <core>, but only those settings that are common to both.
  * parseDataConfiguration() calls this with <config> and parseSingleCore() calls it with <core>.
  */
-void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
+void ConfigManager::parseCoreInformationTags(const xml_node &parentNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
 {
     string tempUse = "";
     CoreConfigParseState_t coreParseState;
@@ -1078,56 +1077,32 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_
     }
 }
 
-void ConfigManager::parseDataConfiguration(const xml_node &configNode,
+void ConfigManager::parseAllCoreTags(const xml_node &configNode,
                                            bool &configSuccess,
                                            std::stringstream &parseError,
                                            std::stringstream &parseWarnings)
 {
-    CoreInfo_t *coreInfo = NULL;
 
+	// first try to populate the default core object
     // check for data source coreInfo outside of <cores>
-    if (configNode.child(dataDirString) || configNode.child(dataSourceTypeString) ||
-        configNode.child(dataFileString)) {
+    if (configNode.child(dataFileString) || configNode.child(dataDirString) || configNode.child(dataSourceTypeString)) {
 
         // create a default core for coreInfo outside of <cores>
-        bool created = false;
-        coreInfo = getClusterWriteView()->getCoreByName_Writeview(getDefaultCoreName());
-        if (coreInfo == NULL) {
-            coreInfo = new CoreInfo_t(this);
-            created= true;
-        }
-
-        parseDataFieldSettings(configNode, coreInfo, configSuccess, parseError, parseWarnings);
+		CoreInfo_t * defaultCoreInfo = new CoreInfo_t(this);
+		defaultCoreInfo->name = getDefaultCoreName();
+		clusterCores.push_back(defaultCoreInfo);
+        parseCoreInformationTags(configNode, defaultCoreInfo, configSuccess, parseError, parseWarnings);
+	    srch2is::Schema *schema = JSONRecordParser::createAndPopulateSchema(defaultCoreInfo);
+	    defaultCoreInfo->setSchema(schema);
         if (configSuccess == false) {
-            if (created) {
-                delete coreInfo;
-            }
+			delete defaultCoreInfo;
             return;
         }
     }
 
-    // if no errors, add coreInfo to map
-    if (coreInfo != NULL) {
-        coreInfo->name = getDefaultCoreName();
-        getClusterWriteView()->getCores()->push_back(coreInfo);
-    }
-
-    // maxSearchThreads is an optional field
-    numberOfThreads = 1; // by default it is 1
-    xml_node childNode = configNode.child(maxSearchThreadsString);
-    if (childNode && childNode.text()) {
-        string mst = childNode.text().get();
-        if (isValidMaxSearchThreads(mst)) {
-            numberOfThreads = childNode.text().as_int();
-        } else {
-            parseError << "maxSearchThreads is not set correctly.\n";
-            configSuccess = false;
-            return;
-        }
-    }
-
+    // if there is cores tag, we must add more core objects ....
     // <cores>
-    childNode = configNode.child(multipleCoresString);
+    xml_node childNode = configNode.child(multipleCoresString);
     if (childNode) {
         parseMultipleCores(childNode, configSuccess, parseError, parseWarnings);
         if (configSuccess == false) {
@@ -1776,7 +1751,6 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
     vector<string> ipAddressOfKnownHost;
 
     int flag_cluster = 0;
-    CoreInfo_t *defaultCoreInfo = NULL;
 
     xml_node configNode = configDoc.child(configString);
 
@@ -1898,15 +1872,15 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
     if (clusterName && clusterName.text()) {
     	tempUse = string(clusterName.text().get());
     	trimSpacesFromValue(tempUse, clusterNameTag, parseWarnings);
-    	getClusterWriteView()->setClusterName(tempUse);
+    	this->clusterNameStr = tempUse;
     }else{
-    	getClusterWriteView()->setClusterName(string(DefaultClusterName));
-    	parseWarnings << "Cluster name is not specified. Engine will use the default value " << getClusterWriteView()->getClusterName() << "\n";
+    	this->clusterNameStr = string(DefaultClusterName);
+    	parseWarnings << "Cluster name is not specified. Engine will use the default value " << this->clusterNameStr << "\n";
     }
 
     xml_node clusterNameSibling = clusterName.next_sibling(clusterNameTag);
     if (clusterNameSibling && clusterNameSibling.text()){
-          parseWarnings << "Duplicate definition of \"" << clusterNameTag << "\".  The engine will use the first value: " << getClusterWriteView()->getClusterName() << "\n";    }
+          parseWarnings << "Duplicate definition of \"" << clusterNameTag << "\".  The engine will use the first value: " << this->clusterNameStr << "\n";    }
 
     tempUse = "";
 
@@ -1953,26 +1927,28 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
         return;
     }
 
-    // check if data source exists at the top level
-    xml_node topDataFileNode = childNode.child(dataFileString);
-    if (topDataFileNode) {
-        // create a default core for settings outside of <cores>
-    	defaultCoreInfo = getClusterWriteView()->getCoreByName_Writeview(getDefaultCoreName());
-        if (defaultCoreInfo == NULL) {
-            defaultCoreInfo = new CoreInfo_t(this);
-            defaultCoreInfo->name = getDefaultCoreName();
-            getClusterWriteView()->getCores()->push_back(defaultCoreInfo);
+    // maxSearchThreads is an optional field
+    numberOfThreads = 1; // by default it is 1
+    xml_node childNode = configNode.child(maxSearchThreadsString);
+    if (childNode && childNode.text()) {
+        string mst = childNode.text().get();
+        if (isValidMaxSearchThreads(mst)) {
+            numberOfThreads = childNode.text().as_int();
+        } else {
+            parseError << "maxSearchThreads is not set correctly.\n";
+            configSuccess = false;
+            return;
         }
     }
 
     // parse all data source settings - no core (default core) and multiples core handled
     // requires indexType to have been loaded by parseIndexConfig()
-    parseDataConfiguration(configNode, configSuccess, parseError, parseWarnings);
+    parseAllCoreTags(configNode, configSuccess, parseError, parseWarnings);
     if (configSuccess == false) {
         return;
     }
 
-    defaultCoreInfo = getClusterWriteView()->getCoreByName_Writeview(getDefaultCoreName());
+    CoreInfo_t * defaultCoreInfo = this->getCoreByName(getDefaultCoreName());
     if (defaultCoreInfo == NULL) {
         parseError << "Default core " << getDefaultCoreName() << " not found\n";
         configSuccess = false;
@@ -2083,9 +2059,9 @@ void ConfigManager::_setDefaultSearchableAttributeBoosts(const string &coreName,
 {
     CoreInfo_t *coreInfo = NULL;
     if (coreName.compare("") != 0) {
-        coreInfo = getClusterWriteView()->getCoreByName_Writeview(coreName);
+        coreInfo = this->getCoreByName(coreName);
     } else {
-        coreInfo = getDefaultCoreInfo_Writeview();
+        coreInfo = this->getCoreByName(this->getDefaultCoreName());
     }
 
     for (unsigned iter = 0; iter < searchableAttributesVector.size(); iter++) {
@@ -2096,8 +2072,10 @@ void ConfigManager::_setDefaultSearchableAttributeBoosts(const string &coreName,
 
 ConfigManager::~ConfigManager()
 {
-    if(metadata_writeView != NULL){
-    	delete metadata_writeView;
+    for(unsigned coreIdx = 0 ; coreIdx < clusterCores.size() ; ++coreIdx){
+    	if(clusterCores.at(coreIdx) != NULL){
+    		delete clusterCores.at(coreIdx);
+    	}
     }
 }
 
@@ -2107,43 +2085,47 @@ unsigned ConfigManager::getKeywordPopularityThreshold() const {
 
 int ConfigManager::getIndexType(const string &coreName) const
 {
-    if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->getIndexType();
+	string coreNameTmp = coreName;
+    if (coreNameTmp.compare("") == 0) {
+        coreNameTmp = getDefaultCoreName();
     }
-    boost::shared_ptr<const Cluster> clusterReadview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     getClusterReadView(clusterReadview);
-    return clusterReadview->getCoreByName(coreName)->getIndexType();
+    return clusterReadview->getCoreByName(coreNameTmp)->getIndexType();
 
 }
 
 bool ConfigManager::getSupportSwapInEditDistance(const string &coreName) const
 {
-    if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->getSupportSwapInEditDistance();
+	string coreNameTmp = coreName;
+    if (coreNameTmp.compare("") == 0) {
+        coreNameTmp = getDefaultCoreName();
     }
-    boost::shared_ptr<const Cluster> clusterReadview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     getClusterReadView(clusterReadview);
-    return clusterReadview->getCoreByName(coreName)->getSupportSwapInEditDistance();
+    return clusterReadview->getCoreByName(coreNameTmp)->getSupportSwapInEditDistance();
 }
 
 const string& ConfigManager::getAttributeLatitude(const string &coreName) const
 {
-    if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->getFieldLatitude();
+	string coreNameTmp = coreName;
+    if (coreNameTmp.compare("") == 0) {
+        coreNameTmp = getDefaultCoreName();
     }
-    boost::shared_ptr<const Cluster> clusterReadview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     getClusterReadView(clusterReadview);
-    return clusterReadview->getCoreByName(coreName)->getFieldLatitude();
+    return clusterReadview->getCoreByName(coreNameTmp)->getFieldLatitude();
 }
 
 const string& ConfigManager::getAttributeLongitude(const string &coreName) const
 {
-    if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->getFieldLongitude();
+	string coreNameTmp = coreName;
+    if (coreNameTmp.compare("") == 0) {
+        coreNameTmp = getDefaultCoreName();
     }
-    boost::shared_ptr<const Cluster> clusterReadview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     getClusterReadView(clusterReadview);
-    return clusterReadview->getCoreByName(coreName)->getFieldLongitude();
+    return clusterReadview->getCoreByName(coreNameTmp)->getFieldLongitude();
 }
 
 float ConfigManager::getDefaultSpatialQueryBoundingBox() const {
@@ -2156,102 +2138,112 @@ unsigned int ConfigManager::getNumberOfThreads() const
 }
 
 const string& ConfigManager::getIndexPath(const string &coreName) const {
-    if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->getIndexPath();
+	string coreNameTmp = coreName;
+    if (coreNameTmp.compare("") == 0) {
+        coreNameTmp = getDefaultCoreName();
     }
-    boost::shared_ptr<const Cluster> clusterReadview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     getClusterReadView(clusterReadview);
-    return clusterReadview->getCoreByName(coreName)->getIndexPath();
+    return clusterReadview->getCoreByName(coreNameTmp)->getIndexPath();
 }
 
 const string& ConfigManager::getPrimaryKey(const string &coreName) const
 {
-    if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->getPrimaryKey();
+	string coreNameTmp = coreName;
+    if (coreNameTmp.compare("") == 0) {
+        coreNameTmp = getDefaultCoreName();
     }
-    boost::shared_ptr<const Cluster> clusterReadview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     getClusterReadView(clusterReadview);
-    return clusterReadview->getCoreByName(coreName)->getPrimaryKey();
+    return clusterReadview->getCoreByName(coreNameTmp)->getPrimaryKey();
 }
 
 const map<string, SearchableAttributeInfoContainer > * ConfigManager::getSearchableAttributes(const string &coreName) const
 {
-    if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->getSearchableAttributes();
+	string coreNameTmp = coreName;
+    if (coreNameTmp.compare("") == 0) {
+        coreNameTmp = getDefaultCoreName();
     }
-    boost::shared_ptr<const Cluster> clusterReadview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     getClusterReadView(clusterReadview);
-    return clusterReadview->getCoreByName(coreName)->getSearchableAttributes();
+    return clusterReadview->getCoreByName(coreNameTmp)->getSearchableAttributes();
 }
 
 const map<string, RefiningAttributeInfoContainer > * ConfigManager::getRefiningAttributes(const string &coreName) const
 {
-    if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->getRefiningAttributes();
+	string coreNameTmp = coreName;
+    if (coreNameTmp.compare("") == 0) {
+        coreNameTmp = getDefaultCoreName();
     }
-    boost::shared_ptr<const Cluster> clusterReadview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     getClusterReadView(clusterReadview);
-    return clusterReadview->getCoreByName(coreName)->getRefiningAttributes();
+    return clusterReadview->getCoreByName(coreNameTmp)->getRefiningAttributes();
 }
 
 bool ConfigManager::isFacetEnabled(const string &coreName) const
 {
-    if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->isFacetEnabled();
+	string coreNameTmp = coreName;
+    if (coreNameTmp.compare("") == 0) {
+        coreNameTmp = getDefaultCoreName();
     }
-    boost::shared_ptr<const Cluster> clusterReadview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     getClusterReadView(clusterReadview);
-    return clusterReadview->getCoreByName(coreName)->isFacetEnabled();
+    return clusterReadview->getCoreByName(coreNameTmp)->isFacetEnabled();
 }
 
 const vector<string> * ConfigManager::getFacetAttributes(const string &coreName) const
 {
-    if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->getFacetAttributes();
+	string coreNameTmp = coreName;
+    if (coreNameTmp.compare("") == 0) {
+        coreNameTmp = getDefaultCoreName();
     }
-    boost::shared_ptr<const Cluster> clusterReadview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     getClusterReadView(clusterReadview);
-    return clusterReadview->getCoreByName(coreName)->getFacetAttributes();
+    return clusterReadview->getCoreByName(coreNameTmp)->getFacetAttributes();
 }
 
 const vector<int> * ConfigManager::getFacetTypes(const string &coreName) const
 {
-    if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->getFacetTypes();
+	string coreNameTmp = coreName;
+    if (coreNameTmp.compare("") == 0) {
+        coreNameTmp = getDefaultCoreName();
     }
-    boost::shared_ptr<const Cluster> clusterReadview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     getClusterReadView(clusterReadview);
-    return clusterReadview->getCoreByName(coreName)->getFacetTypes();
+    return clusterReadview->getCoreByName(coreNameTmp)->getFacetTypes();
 }
 
 const vector<string> * ConfigManager::getFacetStarts(const string &coreName) const
 {
-    if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->getFacetStarts();
+	string coreNameTmp = coreName;
+    if (coreNameTmp.compare("") == 0) {
+        coreNameTmp = getDefaultCoreName();
     }
-    boost::shared_ptr<const Cluster> clusterReadview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     getClusterReadView(clusterReadview);
-    return clusterReadview->getCoreByName(coreName)->getFacetStarts();
+    return clusterReadview->getCoreByName(coreNameTmp)->getFacetStarts();
 }
 
 const vector<string> * ConfigManager::getFacetEnds(const string &coreName) const
 {
-    if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->getFacetEnds();
+	string coreNameTmp = coreName;
+    if (coreNameTmp.compare("") == 0) {
+        coreNameTmp = getDefaultCoreName();
     }
-    boost::shared_ptr<const Cluster> clusterReadview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     getClusterReadView(clusterReadview);
-    return clusterReadview->getCoreByName(coreName)->getFacetEnds();
+    return clusterReadview->getCoreByName(coreNameTmp)->getFacetEnds();
 }
 
 const vector<string> * ConfigManager::getFacetGaps(const string &coreName) const
 {
-    if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->getFacetGaps();
+	string coreNameTmp = coreName;
+    if (coreNameTmp.compare("") == 0) {
+        coreNameTmp = getDefaultCoreName();
     }
-    boost::shared_ptr<const Cluster> clusterReadview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     getClusterReadView(clusterReadview);
-    return clusterReadview->getCoreByName(coreName)->getFacetGaps();
+    return clusterReadview->getCoreByName(coreNameTmp)->getFacetGaps();
 }
 
 
@@ -2261,121 +2253,133 @@ const string &ConfigManager::getSrch2Home() const {
 
 bool ConfigManager::getStemmerFlag(const string &coreName) const
 {
-    if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->getStemmerFlag();
+	string coreNameTmp = coreName;
+    if (coreNameTmp.compare("") == 0) {
+        coreNameTmp = getDefaultCoreName();
     }
-    boost::shared_ptr<const Cluster> clusterReadview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     getClusterReadView(clusterReadview);
-    return clusterReadview->getCoreByName(coreName)->getStemmerFlag();
+    return clusterReadview->getCoreByName(coreNameTmp)->getStemmerFlag();
 }
 
 const string &ConfigManager::getStemmerFile(const string &coreName) const
 {
-    if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->getStemmerFile();
+	string coreNameTmp = coreName;
+    if (coreNameTmp.compare("") == 0) {
+        coreNameTmp = getDefaultCoreName();
     }
-    boost::shared_ptr<const Cluster> clusterReadview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     getClusterReadView(clusterReadview);
-    return clusterReadview->getCoreByName(coreName)->getStemmerFile();
+    return clusterReadview->getCoreByName(coreNameTmp)->getStemmerFile();
 }
 
 const string &ConfigManager::getSynonymFilePath(const string &coreName) const
 {
-    if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->getSynonymFilePath();
+	string coreNameTmp = coreName;
+    if (coreNameTmp.compare("") == 0) {
+        coreNameTmp = getDefaultCoreName();
     }
-    boost::shared_ptr<const Cluster> clusterReadview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     getClusterReadView(clusterReadview);
-    return clusterReadview->getCoreByName(coreName)->getSynonymFilePath();
+    return clusterReadview->getCoreByName(coreNameTmp)->getSynonymFilePath();
 }
 
 const string &ConfigManager::getProtectedWordsFilePath(const string &coreName) const
 {
-    if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->getProtectedWordsFilePath();
+	string coreNameTmp = coreName;
+    if (coreNameTmp.compare("") == 0) {
+        coreNameTmp = getDefaultCoreName();
     }
-    boost::shared_ptr<const Cluster> clusterReadview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     getClusterReadView(clusterReadview);
-    return clusterReadview->getCoreByName(coreName)->getProtectedWordsFilePath();
+    return clusterReadview->getCoreByName(coreNameTmp)->getProtectedWordsFilePath();
 }
 
 bool ConfigManager::getSynonymKeepOrigFlag(const string &coreName) const
 {
-    if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->getSynonymKeepOrigFlag();
+	string coreNameTmp = coreName;
+    if (coreNameTmp.compare("") == 0) {
+        coreNameTmp = getDefaultCoreName();
     }
-    boost::shared_ptr<const Cluster> clusterReadview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     getClusterReadView(clusterReadview);
-    return clusterReadview->getCoreByName(coreName)->getSynonymKeepOrigFlag();
+    return clusterReadview->getCoreByName(coreNameTmp)->getSynonymKeepOrigFlag();
 }
 
 const string &ConfigManager::getStopFilePath(const string &coreName) const
 {
-    if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->getStopFilePath();
+	string coreNameTmp = coreName;
+    if (coreNameTmp.compare("") == 0) {
+        coreNameTmp = getDefaultCoreName();
     }
-    boost::shared_ptr<const Cluster> clusterReadview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     getClusterReadView(clusterReadview);
-    return clusterReadview->getCoreByName(coreName)->getStopFilePath();
+    return clusterReadview->getCoreByName(coreNameTmp)->getStopFilePath();
 }
 
 const string& ConfigManager::getAttributeRecordBoostName(const string &coreName) const
 {
-    if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->getrecordBoostField();
+	string coreNameTmp = coreName;
+    if (coreNameTmp.compare("") == 0) {
+        coreNameTmp = getDefaultCoreName();
     }
-    boost::shared_ptr<const Cluster> clusterReadview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     getClusterReadView(clusterReadview);
-    return clusterReadview->getCoreByName(coreName)->getrecordBoostField();
+    return clusterReadview->getCoreByName(coreNameTmp)->getrecordBoostField();
 }
 
 const string& ConfigManager::getRecordAllowedSpecialCharacters(const string &coreName) const {
-    if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->getRecordAllowedSpecialCharacters();
+	string coreNameTmp = coreName;
+    if (coreNameTmp.compare("") == 0) {
+        coreNameTmp = getDefaultCoreName();
     }
-    boost::shared_ptr<const Cluster> clusterReadview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     getClusterReadView(clusterReadview);
-    return clusterReadview->getCoreByName(coreName)->getRecordAllowedSpecialCharacters();
+    return clusterReadview->getCoreByName(coreNameTmp)->getRecordAllowedSpecialCharacters();
 }
 
 int ConfigManager::getSearchType(const string &coreName) const
 {
-    if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->getSearchType();
+	string coreNameTmp = coreName;
+    if (coreNameTmp.compare("") == 0) {
+        coreNameTmp = getDefaultCoreName();
     }
-    boost::shared_ptr<const Cluster> clusterReadview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     getClusterReadView(clusterReadview);
-    return clusterReadview->getCoreByName(coreName)->getSearchType();
+    return clusterReadview->getCoreByName(coreNameTmp)->getSearchType();
 }
 
 int ConfigManager::getIsPrimSearchable(const string &coreName) const
 {
-    if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->getIsPrimSearchable();
+	string coreNameTmp = coreName;
+    if (coreNameTmp.compare("") == 0) {
+        coreNameTmp = getDefaultCoreName();
     }
-    boost::shared_ptr<const Cluster> clusterReadview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     getClusterReadView(clusterReadview);
-    return clusterReadview->getCoreByName(coreName)->getIsPrimSearchable();
+    return clusterReadview->getCoreByName(coreNameTmp)->getIsPrimSearchable();
 }
 
 unsigned ConfigManager::getQueryTermBoost(const string &coreName) const
 {
-    if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->getQueryTermBoost();
+	string coreNameTmp = coreName;
+    if (coreNameTmp.compare("") == 0) {
+        coreNameTmp = getDefaultCoreName();
     }
-    boost::shared_ptr<const Cluster> clusterReadview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     getClusterReadView(clusterReadview);
-    return clusterReadview->getCoreByName(coreName)->getQueryTermBoost();
+    return clusterReadview->getCoreByName(coreNameTmp)->getQueryTermBoost();
 }
 
 bool ConfigManager::getSupportAttributeBasedSearch(const string &coreName) const
 {
-    if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->getSupportAttributeBasedSearch();
+	string coreNameTmp = coreName;
+    if (coreNameTmp.compare("") == 0) {
+        coreNameTmp = getDefaultCoreName();
     }
-    boost::shared_ptr<const Cluster> clusterReadview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     getClusterReadView(clusterReadview);
-    return clusterReadview->getCoreByName(coreName)->getSupportAttributeBasedSearch();
+    return clusterReadview->getCoreByName(coreNameTmp)->getSupportAttributeBasedSearch();
 }
 
 
@@ -2397,12 +2401,13 @@ int ConfigManager::getOrdering() const {
 
 bool ConfigManager::isRecordBoostAttributeSet(const string &coreName) const
 {
-    if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->getRecordBoostFieldFlag();
+	string coreName2 = coreName;
+    if (coreName2.compare("") == 0) {
+    	coreName2 = getDefaultCoreName();
     }
-    boost::shared_ptr<const Cluster> clusterReadview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     getClusterReadView(clusterReadview);
-    return clusterReadview->getCoreByName(coreName)->getRecordBoostFieldFlag();
+    return clusterReadview->getCoreByName(coreName2)->getRecordBoostFieldFlag();
 }
 
 const string& ConfigManager::getHTTPServerAccessLogFile() const {
@@ -2749,7 +2754,7 @@ bool ConfigManager::isPositionIndexEnabled(const string &coreName) const
         return (getDefaultCoreInfo()->isPositionIndexWordEnabled() ||
         		getDefaultCoreInfo()->isPositionIndexCharEnabled());
     }
-    boost::shared_ptr<const Cluster> clusterReadview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     getClusterReadView(clusterReadview);
     return clusterReadview->getCoreByName(coreName)->isPositionIndexWordEnabled() ||
     		clusterReadview->getCoreByName(coreName)->isPositionIndexCharEnabled();
@@ -2760,7 +2765,7 @@ const string& ConfigManager::getMongoServerHost(const string &coreName) const
     if (coreName.compare("") == 0) {
         return getDefaultCoreInfo()->getMongoServerHost();
     }
-    boost::shared_ptr<const Cluster> clusterReadview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     getClusterReadView(clusterReadview);
     return clusterReadview->getCoreByName(coreName)->getMongoServerHost();
 }
@@ -2770,7 +2775,7 @@ const string& ConfigManager::getMongoServerPort(const string &coreName) const
     if (coreName.compare("") == 0) {
         return getDefaultCoreInfo()->getMongoServerPort();
     }
-    boost::shared_ptr<const Cluster> clusterReadview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     getClusterReadView(clusterReadview);
     return clusterReadview->getCoreByName(coreName)->getMongoServerPort();
 }
@@ -2780,7 +2785,7 @@ const string& ConfigManager::getMongoDbName(const string &coreName) const
     if (coreName.compare("") == 0) {
         return getDefaultCoreInfo()->getMongoDbName();
     }
-    boost::shared_ptr<const Cluster> clusterReadview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     getClusterReadView(clusterReadview);
     return clusterReadview->getCoreByName(coreName)->getMongoDbName();
 }
@@ -2790,7 +2795,7 @@ const string& ConfigManager::getMongoCollection (const string &coreName) const
     if (coreName.compare("") == 0) {
         return getDefaultCoreInfo()->getMongoCollection();
     }
-    boost::shared_ptr<const Cluster> clusterReadview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     getClusterReadView(clusterReadview);
     return clusterReadview->getCoreByName(coreName)->getMongoCollection();
 }
@@ -2800,7 +2805,7 @@ const unsigned ConfigManager::getMongoListenerWaitTime (const string &coreName) 
     if (coreName.compare("") == 0) {
         return getDefaultCoreInfo()->getMongoListenerWaitTime();
     }
-    boost::shared_ptr<const Cluster> clusterReadview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     getClusterReadView(clusterReadview);
     return clusterReadview->getCoreByName(coreName)->getMongoListenerWaitTime();
 }
@@ -2810,15 +2815,9 @@ const unsigned ConfigManager::getMongoListenerMaxRetryCount(const string &coreNa
     if (coreName.compare("") == 0) {
         return getDefaultCoreInfo()->getMongoListenerMaxRetryOnFailure();
     }
-    boost::shared_ptr<const Cluster> clusterReadview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     getClusterReadView(clusterReadview);
     return clusterReadview->getCoreByName(coreName)->getMongoListenerMaxRetryOnFailure();
-}
-
-CoreInfo_t *ConfigManager::getDefaultCoreInfo_Writeview()
-{
-    string n = getDefaultCoreName();
-    return getClusterWriteView()->getCoreByName_Writeview(n);
 }
 
 string ConfigManager::createSRCH2Home()
@@ -2866,7 +2865,7 @@ string ConfigManager::getSRCH2HomeDir()
 	if(boost::filesystem::is_directory(path))
 		return path;
 	else
-		return "Directory does not exist!";
+		return "";
 }
 
 string ConfigManager::getClusterDir(const string& clusterName)
@@ -2875,7 +2874,7 @@ string ConfigManager::getClusterDir(const string& clusterName)
 	if(boost::filesystem::is_directory(path))
 		return path;
 	else
-		return "Directory does not exist!";
+		return "";
 
 }
 
@@ -2885,7 +2884,7 @@ string ConfigManager::getNodeDir(const string& clusterName,const string& nodeNam
 	if(boost::filesystem::is_directory(path))
 		return path;
 	else
-		return "Directory does not exist!";
+		return "";
 
 }
 
@@ -2895,7 +2894,7 @@ string ConfigManager::getCoreDir(const string& clusterName, const string& nodeNa
 	if(boost::filesystem::is_directory(path))
 		return path;
 	else
-		return "Directory does not exist!";
+		return "";
 }
 
 string ConfigManager::getShardDir(const string& clusterName, const string& nodeName, const string& coreName, const ShardId& shardId)
@@ -2904,19 +2903,19 @@ string ConfigManager::getShardDir(const string& clusterName, const string& nodeN
 	if(boost::filesystem::is_directory(path))
 		return path;
 	else
-		return "Directory does not exist!";
+		return "";
+}
+
+void ConfigManager::renameDir(const string & src, const string & target){
+	boost::filesystem::path dirSrc = src;
+	boost::filesystem::path dirTrg = target;
+	boost::filesystem::rename(dirSrc, dirTrg);
 }
 
 uint ConfigManager::removeDir(const string& path)
 {
 	uint numberOfFilesDeleted = boost::filesystem::remove_all(path);
 	return numberOfFilesDeleted;
-}
-
-const CoreInfo_t * ConfigManager::getDefaultCoreInfo() const{
-    boost::shared_ptr<const Cluster> clusterReadview;
-    getClusterReadView(clusterReadview);
-    return clusterReadview->getCoreByName(getDefaultCoreName());
 }
 
 string Transport::getIpAddress(){

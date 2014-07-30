@@ -174,7 +174,7 @@ void * QueryResultsInternal::deserializeForNetwork(void * buffer,QueryResultFact
  * Serialization scheme :
  * | resultsApproximated | estimatedNumberOfResults | sortedFinalResults | facetResults |
  */
-unsigned QueryResultsInternal::getNumberOfBytesForSerializationForNetwork(){
+unsigned QueryResultsInternal::getNumberOfBytesForSerializationForNetwork() const{
 
 	unsigned numberOfBytes = 0;
 	numberOfBytes += sizeof(resultsApproximated);

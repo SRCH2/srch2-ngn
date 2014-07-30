@@ -1,6 +1,6 @@
 #include "SearchResultsAggregatorAndPrint.h"
 #include "core/util/RecordSerializerUtil.h"
-#include "sharding/routing/PendingMessages.h"
+#include "sharding/processor/PendingMessages.h"
 namespace srch2is = srch2::instantsearch;
 using namespace std;
 
@@ -64,14 +64,18 @@ void SearchResultsAggregator::callBack(vector<PendingMessage<SearchCommand,
         if(messages.at(responseIndex) == NULL || messages.at(responseIndex)->getResponseObject() == NULL){
             continue;
         }
-        QueryResults * resultsOfThisShard = messages.at(responseIndex)->getResponseObject()->getQueryResults();
-        const map<string, std::pair<string, RecordSnippet> > & queryResultInMemoryRecordString =
-                messages.at(responseIndex)->getResponseObject()->getInMemoryRecordStrings();
-        resultsOfAllShards.push_back(
-                make_pair(resultsOfThisShard,  &queryResultInMemoryRecordString ));
-        if(results.aggregatedSearcherTime < messages.at(responseIndex)->getResponseObject()->getSearcherTime()){
-            results.aggregatedSearcherTime = messages.at(responseIndex)->getResponseObject()->getSearcherTime();
+        vector<SearchCommandResults::ShardResults *> & shardResults = messages.at(responseIndex)->getResponseObject()->getShardResults();
+        for(unsigned shardIdx = 0 ; shardIdx < shardResults.size() ; ++shardIdx){
+            QueryResults * resultsOfThisShard = &(shardResults.at(shardIdx)->queryResults);
+			const map<string, std::pair<string, RecordSnippet> > & queryResultInMemoryRecordString =
+					shardResults.at(shardIdx)->inMemoryRecordStrings;
+			unsigned searcherTimeOfShard = shardResults.at(shardIdx)->searcherTime;
+			resultsOfAllShards.push_back(make_pair(resultsOfThisShard,  &queryResultInMemoryRecordString ));
+			if(results.aggregatedSearcherTime < searcherTimeOfShard){
+				results.aggregatedSearcherTime = searcherTimeOfShard;
+			}
         }
+
     }
     aggregateRecords();
     aggregateFacets();
@@ -83,7 +87,7 @@ void SearchResultsAggregator::printResults(){
 
     // CoreInfo_t is a view of configurationManager which contains all information for the
     // core that we want to search on, this object is accesses through configurationManager.
-    const CoreInfo_t *indexDataContainerConf = getClusterReadview()->getCoreById(getCoreId());
+    const CoreInfo_t *indexDataContainerConf = getClusterReadview()->getCore(getCoreId());
 
 
     evkeyvalq headers;

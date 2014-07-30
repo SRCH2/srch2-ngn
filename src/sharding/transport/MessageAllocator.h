@@ -35,6 +35,10 @@ public:
 		allocator<char>::deallocate((char *)(Message::getMessagePointerFromBodyPointer(bodyPointer)), bodySize + sizeof(Message));
 	}
 
+	void deallocateBody(pointer bodyPointer, size_type bodySize){
+		allocator<char>::deallocate((char *)(bodyPointer), bodySize);
+	}
+
 	/*
 	 * This function allocates a message with bodySize bytes for body.
 	 */

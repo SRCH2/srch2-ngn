@@ -17,108 +17,141 @@ using namespace srch2is;
 namespace srch2 {
 namespace httpwrapper {
 
-class ShardManagerCommandMetadata{
-public:
-	enum TransactionType{
-		// TODO : for future, when we start a transaction, master must tell
-		//                    clients what type of transaction it is ....
-	};
-	TransactionType transactionType;
-
-	unsigned getNumberOfBytes();
-	void * serialize(void * buffer);
-	void * deserialize(void * buffer);
-
+enum ShardManagerCommandCode{
+	ShardManager_NewNode_WELCOME, // class to use : ShardManagerCommand
+	ShardManager_NewNode_RequestForShards, // class to use : RequestForShards
+	ShardManager_NewNode_NodeArrivalOffer, // class to use : NodeArrivalOffer
+	ShardManager_NewNode_DONE, // class to use : ShardManagerCommand
+	ShardManager_NewNode_PREPARE, // class to use : ClusterMetadataCommand
+	ShardManager_NewNode_READY, // class to use : ShardManagerCommand
+	ShardManager_NewNode_ABORT, // class to use : ShardManagerCommand
+	ShardManager_NewNode_COMMIT, // class to use : ShardManagerCommand
 };
 
-class SHMRequestReport {
+enum ShardManagerTransactionType{
+	SHM_TRANS_TYPE_NewNode
+};
+
+class ShardMigrationDiscriptor{
+	// TODO : describes what shards should move from what nodes to what nodes.
+};
+
+class RedistributionDiscriptor{
+	// TODO : describes what shards should move from what nodes to what nodes.
+};
+
+/*
+ * The base class of all ShardManager command classes.
+ * The transactionId and commandCode are handled in this class.
+ * If user wants to put more information in a command he must extend this class and
+ * override virtual functions.
+ */
+class ShardManagerCommand{
 public:
+	ShardManagerCommand(unsigned transactionId, ShardManagerCommandCode commandCode);
+	virtual ~ShardManagerCommand(){};
 
-	enum CommandCode{
-		SHM_TRANS_START, // always from master, with the new TID
-		SHM_TRANS_START_CONFIRM, // Always from clients, contains no data.
-		SHM_TRANS_START_ERROR_ONGOING, // also contains the old transaction id in transactionId of command object
-		SHM_TRANS_START_ERROR_ABORTED, // also contains the old transaction id in transactionId of command object
-		SHM_TRANS_START_ERROR_SUCCEED, // also contains the old transaction id in transactionId of command object
-
-		SHM_TRANS_COMMIT,
-		SHM_TRANS_COMMIT_FAILED, // also contains an image of the source node's cluster writeview so that master can find the problem
-		SHM_TRANS_COMMIT_CONFIRM,
-		SHM_TRANS_COMMIT_COMPLETE,
-
-		SHM_BUSY,
-		SHM_BOOTSTRAP_STATUS,   // no cluster metadata with this code
-		SHM_BOOTSTRAP_DONE,     // partial cluster metadata with this code
-	};
-
-	SHMRequestReport(unsigned transactionId, CommandCode code, Cluster * clusterWriteview);
-	SHMRequestReport(unsigned transactionId, CommandCode code);
-	SHMRequestReport(unsigned transactionId, CommandCode code, ShardManagerCommandMetadata * metadata );
+	unsigned getTransactionId() const;
+	ShardManagerCommandCode getCommandCode() const;
 	// serialize command into byte stream
-    void* serialize(MessageAllocator * allocatorObj);
-
-
+    virtual void* serialize(MessageAllocator * allocatorObj);
+	// serialize command into byte stream
+    // which is allocated and passed by buffer
+    // returns the pointer to the end of byte stream
+    virtual void* serialize(void * buffer);
     // deserialize command from a byte stream
-    static SHMRequestReport * deserialize(void* buffer);
-
+    virtual static ShardManagerCommand * deserialize(void* buffer);
+    virtual static void * deserialize(void * buffer, ShardManagerCommand * command);
+    virtual unsigned getNumberOfBytes() const;
     //Returns the type of message which uses this kind of object as transport
     static ShardingMessageType messageType();
 
-    CommandCode getCommandCode();
-
-    Cluster * getClusterWriteview();
-
-    void setClusterWriteview();
-
-    unsigned getTransactionId();
-
     unsigned getPriority();
 
-    ShardManagerCommandMetadata * getMetadata();
     string getCommandCodeString() const;
 
 private:
-
-    SHMRequestReport(){}; // only used for deserialization
-    SHMRequestReport(const SHMRequestReport & command);
-
-    CommandCode code;
-    unsigned transactionId;
-    // should not be deleted in this class,
-    // it's always allocated/deleted in ShardManager
-    Cluster * clusterWriteview;
-
-    ShardManagerCommandMetadata * metadata;
-
+    ShardManagerCommand(){}; // for deserialization
+	unsigned transactionId;
+	ShardManagerCommandCode commandCode;
 };
 
 
-// Command buffer
-// This buffer stores the command messages coming to this node
-// so that internal threads can be freed as soon as possible
-struct CommandHandle{
-	CommandHandle(SHMRequestReport * command,unsigned messageId){
-		this->command = command;
-		this->messageId = messageId;
-	}
-	SHMRequestReport * command;
-	unsigned messageId;
-};
-class CommandBuffer{
+/*
+ * Command used for requesting for shards, in response of WELCOME
+ */
+class RequestForShards : public ShardManagerCommand{
 public:
-	// adds the command to the buffer
-	void saveCommand(NodeId nodeId, SHMRequestReport * command,unsigned messageId);
 
-	// pop the oldest command of this node and return true
-	// returns false if there is no command in the mailbox of this nodeId
-	bool getNextNodeCommand(NodeId nodeId, SHMRequestReport *& command, unsigned & messageId);
-
-	// pop the oldest command of any node that has a command in it's mailbox along with its NodeId
-	bool getNextCommand(NodeId & nodeId, SHMRequestReport *& command, unsigned & messageId);
+	RequestForShards(unsigned transactionId,
+			ShardManagerCommandCode commandCode,
+			ShardManagerTransactionType transactionType);
+	virtual ~RequestForShards(){};
+	// serialize command into byte stream
+    virtual void* serialize(MessageAllocator * allocatorObj);
+	// serialize command into byte stream
+    // which is allocated and passed by buffer
+    // returns the pointer to the end of byte stream
+    virtual void* serialize(void * buffer);
+    // deserialize command from a byte stream
+    virtual static RequestForShards * deserialize(void* buffer);
+    virtual static void * deserialize(void * buffer, RequestForShards * command);
+    virtual unsigned getNumberOfBytes() const;
 
 private:
-	boost::mutex commandBufferLock;
-	std::map<NodeId, std::queue<CommandHandle> > commands;
+    RequestForShards():ShardManagerCommand(){};
+};
+
+
+/*
+ * Command used for giving shards to a new node
+ */
+class NodeArrivalOffer : public ShardManagerCommand{
+public:
+
+	NodeArrivalOffer(unsigned transactionId,
+			ShardManagerCommandCode commandCode,
+			ShardManagerTransactionType transactionType);
+	virtual ~NodeArrivalOffer(){};
+	// serialize command into byte stream
+    virtual void* serialize(MessageAllocator * allocatorObj);
+	// serialize command into byte stream
+    // which is allocated and passed by buffer
+    // returns the pointer to the end of byte stream
+    virtual void* serialize(void * buffer);
+    // deserialize command from a byte stream
+    virtual static NodeArrivalOffer * deserialize(void* buffer);
+    virtual static void * deserialize(void * buffer, NodeArrivalOffer * command);
+    virtual unsigned getNumberOfBytes() const;
+
+private:
+    NodeArrivalOffer():ShardManagerCommand(){};
+};
+
+
+/*
+ * Command used for transferring the new state of cluster writeview
+ */
+class ClusterMetadataCommand : public ShardManagerCommand{
+public:
+
+	ClusterMetadataCommand(unsigned transactionId,
+			ShardManagerCommandCode commandCode,
+			ShardManagerTransactionType transactionType);
+	virtual ~ClusterMetadataCommand(){};
+	// serialize command into byte stream
+    virtual void* serialize(MessageAllocator * allocatorObj);
+	// serialize command into byte stream
+    // which is allocated and passed by buffer
+    // returns the pointer to the end of byte stream
+    virtual void* serialize(void * buffer);
+    // deserialize command from a byte stream
+    virtual static ClusterMetadataCommand * deserialize(void* buffer);
+    virtual static void * deserialize(void * buffer, ClusterMetadataCommand * command);
+    virtual unsigned getNumberOfBytes() const;
+
+private:
+    ClusterMetadataCommand():ShardManagerCommand(){};
 };
 
 

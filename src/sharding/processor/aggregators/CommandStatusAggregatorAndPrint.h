@@ -1,14 +1,14 @@
 #ifndef __SHARDING_PROCESSOR_COMMAND_STATUS_AGGREGATOR_AND_PRINT_H_
 #define __SHARDING_PROCESSOR_COMMAND_STATUS_AGGREGATOR_AND_PRINT_H_
 
-#include "sharding/processor/DistributedProcessorAggregator.h"
+#include "sharding/processor/aggregators/DistributedProcessorAggregator.h"
 #include "serializables/SerializableCommandStatus.h"
 #include "serializables/SerializableInsertUpdateCommandInput.h"
 #include "serializables/SerializableDeleteCommandInput.h"
 #include "serializables/SerializableSerializeCommandInput.h"
 #include "serializables/SerializableResetLogCommandInput.h"
 #include "serializables/SerializableCommitCommandInput.h"
-#include "sharding/routing/PendingMessages.h"
+#include "PendingMessages.h"
 #include <string>
 #include <sstream>
 
@@ -26,7 +26,7 @@ public:
 
 
     StatusAggregator(ConfigManager * configurationManager, evhttp_request *req,
-    		boost::shared_ptr<const Cluster> clusterReadview, unsigned coreId, unsigned multiRouteMode = 0):
+    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, unsigned coreId, unsigned multiRouteMode = 0):
     			DistributedProcessorAggregator<RequestWithStatusResponse,CommandStatus>(clusterReadview, coreId){
         this->configurationManager = configurationManager;
         this->req = req;
@@ -84,35 +84,36 @@ public:
             boost::unique_lock< boost::shared_mutex > lock(_access);
             InsertUpdateCommand * sentInsetUpdateRequest = (InsertUpdateCommand *)(sentRequest);
             messages << "{\"rid\":\"" << sentInsetUpdateRequest->getRecord()->getPrimaryKey()
-                                        << "\",\"" << (sentInsetUpdateRequest->getInsertOrUpdate()?"insert":"update") << "\":\"failed\",\"reason\":\"Corresponging shard ("<<
-                                        message->getNodeId()<<") timedout.\"}";
+                                        << "\",\"" << (sentInsetUpdateRequest->getInsertOrUpdate()?"insert":"update") <<
+                                        "\":\"failed\",\"reason\":\"Node #"<<
+                                        message->getNodeId()<<" timedout.\"}";
 
         }else if (typeid(DeleteCommand *) == typeid(sentRequest)){
 
             boost::unique_lock< boost::shared_mutex > lock(_access);
             DeleteCommand * sentDeleteRequest = (DeleteCommand *)(sentRequest);
             messages << "{\"rid\":\"" << sentDeleteRequest->getPrimaryKey()
-                            << "\",\"delete\":\"failed\",\"reason\":\"Corresponging ("<<
-                            message->getNodeId() << ") shard timedout.\"}";
+                            << "\",\"delete\":\"failed\",\"reason\":\"Node #"<<
+                            message->getNodeId() << " timedout.\"}";
 
         }else if(typeid(SerializeCommand *) == typeid(sentRequest)){
 
             boost::unique_lock< boost::shared_mutex > lock(_access);
             SerializeCommand * serializeRequest = (SerializeCommand *)(sentRequest);
-            messages << "{\""<< (serializeRequest->getIndexOrRecord()?"save":"export") << "\":\"failed\",\"reason\":\"Corresponging (" <<
-                    message->getNodeId() << ") shard timedout.\"}";
+            messages << "{\""<< (serializeRequest->getIndexOrRecord()?"save":"export") << "\":\"failed\",\"reason\":\"Node #" <<
+                    message->getNodeId() << " timedout.\"}";
 
         }else if(typeid(ResetLogCommand *) == typeid(sentRequest)){
 
             boost::unique_lock< boost::shared_mutex > lock(_access);
             ResetLogCommand * resetRequest = (ResetLogCommand *)(sentRequest);
-            messages << "{\"reset_log\":\"failed\",\"reason\":\"Corresponging (" << message->getNodeId()<<") shard timedout.\"}";
+            messages << "{\"reset_log\":\"failed\",\"reason\":\"Node #" << message->getNodeId()<<" timedout.\"}";
 
         }else if(typeid(CommitCommand *) == typeid(sentRequest)){
 
             boost::unique_lock< boost::shared_mutex > lock(_access);
             CommitCommand * resetRequest = (CommitCommand *)(sentRequest);
-            messages << "{\"commit\":\"failed\",\"reason\":\"Corresponging (" << message->getNodeId()<<") shard timedout.\"}";
+            messages << "{\"commit\":\"failed\",\"reason\":\"Node #" << message->getNodeId()<<" timedout.\"}";
 
         }else{
             //TODO : what should we do here?
@@ -133,10 +134,16 @@ public:
         if(messages.str().compare("") != 0){ // string not empty
             messages << ",";
         }
+        messages << "\"node-report\":";
         if(message->getResponseObject() == NULL){
-            messages << "Node " << message->getNodeId() << " timed out.";
+            messages << "\"Node #" << message->getNodeId() << " timed out.\"";
         }else{
-            messages << message->getResponseObject()->getMessage();
+            messages << "{ \"Node-id\":\"" << message->getNodeId() << "\",";
+            vector<CommandStatus::ShardResults *> & shardResults = messag->getResponseObject()->getShardResults();
+            for(unsigned shardIdx = 0 ; shardIdx < shardResults.size() ; ++shardIdx){
+				message << "\"shard" << shardResults.at(shardIdx)->shardIdentifier << "\":\"" << shardResults.at(shardIdx)->message << "\"";
+            }
+			messages << "}";
         }
 
     }
@@ -145,22 +152,26 @@ public:
 
         boost::unique_lock< boost::shared_mutex > lock(_access);
         //TODO shard info can be better than just an index
-        unsigned shardIndex = 0;
         for(typename vector<PendingMessage<RequestWithStatusResponse, CommandStatus> * >::iterator
                 messageItr = messagesArg.begin(); messageItr != messagesArg.end(); ++messageItr){
             if(*messageItr == NULL){
                 continue;
             }
+            PendingMessage<RequestWithStatusResponse, CommandStatus> * message = *messageItr;
             if(messages.str().compare("") != 0){ // string not empty
                 messages << ",";
             }
-            if((*messageItr)->getResponseObject() == NULL){
-                messages << "\"shard_" << shardIndex << "\": timed out.";
+            messages << "\"node-report\":";
+            if(message->getResponseObject() == NULL){
+                messages << "\"Node #" << message->getNodeId() << " timed out.\"";
             }else{
-                messages << "\"shard_" << shardIndex << "\":" << (*messageItr)->getResponseObject()->getMessage();
+                messages << "{ \"Node-id\":\"" << message->getNodeId() << "\",";
+                vector<CommandStatus::ShardResults *> & shardResults = messag->getResponseObject()->getShardResults();
+                for(unsigned shardIdx = 0 ; shardIdx < shardResults.size() ; ++shardIdx){
+    				message << "\"shard" << shardResults.at(shardIdx)->shardIdentifier << "\":\"" << shardResults.at(shardIdx)->message << "\"";
+                }
+    			messages << "}";
             }
-            //
-            shardIndex ++;
         }
     }
     /*

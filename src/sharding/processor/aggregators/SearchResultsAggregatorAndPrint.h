@@ -1,7 +1,7 @@
 #ifndef __SHARDING_PROCESSOR_SEARCH_RESULTS_AGGREGATOR_AND_PRINT_H__
 #define __SHARDING_PROCESSOR_SEARCH_RESULTS_AGGREGATOR_AND_PRINT_H__
 
-#include "sharding/processor/DistributedProcessorAggregator.h"
+#include "sharding/processor/aggregators/DistributedProcessorAggregator.h"
 #include "serializables/SerializableSearchResults.h"
 #include "serializables/SerializableSearchCommandInput.h"
 #include <event2/http.h>

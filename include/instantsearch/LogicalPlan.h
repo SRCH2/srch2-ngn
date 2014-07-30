@@ -40,6 +40,35 @@ class LogicalPlanNode{
 	// Since constructor is private, only LogicalPlan can allocate space for LogicalPlanNodes.
 	friend class LogicalPlan;
 public:
+	LogicalPlanNode(const LogicalPlanNode & node){
+		this->nodeType = node.nodeType;
+		this->forcedPhysicalNode = node.forcedPhysicalNode;
+		if(node.exactTerm != NULL){
+			this->exactTerm = new Term(*(node.exactTerm));
+		}else{
+			this->exactTerm = NULL;
+		}
+		if(node.fuzzyTerm != NULL){
+			this->fuzzyTerm = new Term(*(node.fuzzyTerm));
+		}else{
+			this->fuzzyTerm = NULL;
+		}
+		for(unsigned childIdx = 0 ; childIdx < node.children.size(); ++childIdx){
+			if(node.children.at(childIdx)->nodeType == LogicalPlanNodeTypePhrase){
+				this->children.push_back(
+						new LogicalPlanPhraseNode(*((LogicalPlanPhraseNode *)(node.children.at(childIdx)))));
+			}else{
+				this->children.push_back(
+						new LogicalPlanNode(*(node.children.at(childIdx))));
+			}
+		}
+		//if(node.stats == NULL){
+			this->stats == NULL; // stats will always be created new
+		//}else{
+		//	this->stats = new LogicalPlanNodeAnnotation(*(node.stats)); // TODO
+		//}
+	}
+
 	LogicalPlanNodeType nodeType;
 	// this flag is used in case we want to force Query Optimizer to use a specific physical node.
 	// currently it's used for Suggestion
@@ -104,6 +133,12 @@ public:
 		phraseInfo->proximitySlop = slop;
 	}
 
+
+	LogicalPlanPhraseNode(const LogicalPlanPhraseNode & node):
+	LogicalPlanNode(node){
+		this->phraseInfo = new PhraseInfo(*(node.phraseInfo));
+	}
+
 	/*
 	 * this constructor makes an empty object for deserialization
 	 */
@@ -151,6 +186,8 @@ private:
 
 public:
     LogicalPlan();
+    LogicalPlan(const LogicalPlan & logicalPlan);
+
     ~LogicalPlan();
 
 

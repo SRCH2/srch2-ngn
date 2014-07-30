@@ -33,9 +33,7 @@ public:
     //allocated by given allocator
     void* serialize(MessageAllocator * aloc){
         // calculate the needed size
-        unsigned numberOfBytes = 0 ;
-        numberOfBytes += sizeof(shardingKey);
-        numberOfBytes += sizeof(unsigned) + primaryKey.size();
+        unsigned numberOfBytes = getNumberOfBytes();
         // allocate memory
         void * buffer = aloc->allocateMessageReturnBody(numberOfBytes);
         // copy data
@@ -46,6 +44,14 @@ public:
 
         return buffer;
     }
+
+    unsigned getNumberOfBytes() const{
+        unsigned numberOfBytes = 0 ;
+        numberOfBytes += sizeof(shardingKey);
+        numberOfBytes += sizeof(unsigned) + primaryKey.size();
+        return numberOfBytes;
+    }
+
 
     //given a byte stream recreate the original object
     static DeleteCommand * deserialize(void* buffer){

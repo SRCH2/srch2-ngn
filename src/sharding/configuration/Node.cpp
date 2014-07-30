@@ -20,8 +20,6 @@ Node::Node()
 	this->nodeMaster = false;
 	this->nodeMasterEligible = true;
 	this->thisIsMe = false;
-	//coreToShardsMap has to be initialized
-	this->numberOfPrimaryShards = 1;
 }
 
 Node::Node(const std::string& nodeName, const std::string& ipAddress,
@@ -33,7 +31,6 @@ Node::Node(const std::string& nodeName, const std::string& ipAddress,
 	this->thisIsMe = thisIsMe;
 	this->nodeMaster = false;
 	this->nodeMasterEligible = nodeMasterEligible;
-	this->numberOfPrimaryShards = 0; // this constructor is used for other nodes
 }
 
 bool Node::isMasterEligible() const {
@@ -64,10 +61,6 @@ void Node::setId(unsigned nodeId){
 
 unsigned int Node::getPortNumber() const{
 	return this->portNumber;
-}
-
-unsigned Node::getDefaultNumberOfPrimaryShards() const{
-	return this->numberOfPrimaryShards;
 }
 
 unsigned short NodeConfig::getPort(PortType_t portType) const
@@ -113,7 +106,6 @@ void* Node::serializeForNetwork(void * buffer){
 	buffer = srch2::util::serializeString(nodeName, buffer);
 	buffer = srch2::util::serializeFixedTypes(nodeMaster, buffer);
 	buffer = srch2::util::serializeFixedTypes(nodeMasterEligible, buffer);
-	buffer = srch2::util::serializeFixedTypes(numberOfPrimaryShards, buffer);
 	buffer = srch2::util::serializeFixedTypes(thisIsMe, buffer);
 	return buffer;
 }
@@ -127,7 +119,6 @@ Node * Node::deserializeForNetwork(void* buffer){
 	buffer = srch2::util::deserializeString(buffer, newNode->nodeName);
 	buffer = srch2::util::deserializeFixedTypes(buffer, newNode->nodeMaster);
 	buffer = srch2::util::deserializeFixedTypes(buffer, newNode->nodeMasterEligible);
-	buffer = srch2::util::deserializeFixedTypes(buffer, newNode->numberOfPrimaryShards);
 	buffer = srch2::util::deserializeFixedTypes(buffer, newNode->thisIsMe);
 	return newNode;
 }

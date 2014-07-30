@@ -21,12 +21,17 @@ public:
             boost::shared_ptr<ResponseAggregatorInterface<Request, Response> > aggregator,
             unsigned totalNumberOfPendingMessages){
         // create the pendingRequest
-        PendingRequest<Request, Response> * pendingRequest = new PendingRequest<Request, Response>(messageAllocator, waitForAll, aggregator, totalNumberOfPendingMessages);
+        PendingRequest<Request, Response> * pendingRequest =
+        		new PendingRequest<Request, Response>(messageAllocator,
+        				waitForAll,
+        				aggregator,
+        				totalNumberOfPendingMessages);
+
 
         // register
         // get a write lock on pendingRequests and push this new request to it.
         boost::unique_lock< boost::shared_mutex > lock(_access);
-        this->messageResolvers.push_back(pendingRequest);
+        this->pendingRequests.push_back(pendingRequest);
 
         // return
         return pendingRequest;
@@ -38,39 +43,55 @@ public:
      */
     bool resolveMessage(Message * reply, NodeId nodeId){
 
-    	return resolveMessage(reply, nodeId, NULL);
+    	if(reply == NULL){
+    		return NULL;
+    	}
+    	ASSERT(reply->isDPReply());
+    	switch (reply->getType()) {
+			case SearchResultsMessageType:
+				SearchCommandResults * searchResults =
+						SearchCommandResults::deserialize(Message::getBodyPointerFromMessagePointer(reply));
+				return resolveReply(searchResults, nodeId , reply->getRequestMessageId());
+			case StatusMessageType:
+				CommandStatus * statusResult =
+						CommandStatus::deserialize(Message::getBodyPointerFromMessagePointer(reply));
+				return resolveReply(statusResult, nodeId , reply->getRequestMessageId());
+			case GetInfoResultsMessageType:
+				GetInfoCommandResults * getInfoResult =
+						GetInfoCommandResults::deserialize(Message::getBodyPointerFromMessagePointer(reply));
+				return resolveReply(getInfoResult, nodeId , reply->getRequestMessageId());
+				break;
+			default:
+				ASSERT(false);
+				return false;
+				break;
+		}
+    	return false;
     }
     /*
      * If this response is not related to any pending requests, returns false
      * and if it returns false it's callers responsibility to deallocate the reply message
      */
-    bool resolveMessage(Message * reply, NodeId nodeId, void * responseObject){
-
-    	if(reply->isDPReply() || reply->isSHMReply()){
-			// TODO : linear scan of pendingRequests vector can be a performance concern in high query rates
-			// 1. get an X lock on the pendingRequest list
-			boost::unique_lock< boost::shared_mutex > lock(_access);
-			// 2. iterate on PendingRequests and check if any of them is corresponding to this response
-			for(vector<MessageResolverInterface *>::iterator messageResolverItr = messageResolvers.begin();
-					messageResolverItr != messageResolvers.end() ; ++messageResolverItr){
-				if((*messageResolverItr)->isMessageMine(reply)){
-					// ask this pending request to resolve this response
-					bool resolveResult = (*messageResolverItr)->resolveMessage(reply, nodeId,responseObject);
-					// if returns true, we must delete this PendingRequest from the vector.
-					if(resolveResult){
-						delete *messageResolverItr;
-						messageResolvers.erase(messageResolverItr);
-					}
-					return true;
+    bool resolveReply(void * responseObject, NodeId srcNodeId, unsigned requestMessageId){
+		// TODO : linear scan of pendingRequests vector can be a performance concern in high query rates
+		// 1. get an X lock on the pendingRequest list
+		boost::unique_lock< boost::shared_mutex > lock(_access);
+		// 2. iterate on PendingRequests and check if any of them is corresponding to this response
+		for(vector<ReplyHandlerInterface *>::iterator messageResolverItr = pendingRequests.begin();
+				messageResolverItr != pendingRequests.end() ; ++messageResolverItr){
+			if((*messageResolverItr)->isMessageMine(srcNodeId, requestMessageId)){
+				// ask this pending request to resolve this response
+				bool resolveResult = (*messageResolverItr)->resolveReply(responseObject, srcNodeId, requestMessageId);
+				// if returns true, we must delete this PendingRequest from the vector.
+				if(resolveResult){
+					delete *messageResolverItr;
+					pendingRequests.erase(messageResolverItr);
 				}
+				return true;
 			}
+		}
 
-			return false;
-    	}else{
-    		ASSERT(false);
-    		return false;
-    	}
-
+		return false;
     }
 
     ReplyMessageHandler(MessageAllocator * messageAllocator){
@@ -102,10 +123,10 @@ private:
         // 1. get a X lock on the list if pending requests
         boost::unique_lock< boost::shared_mutex > lock(_access);
         // 2. move on all pending requests and check for timeout,
-        vector<MessageResolverInterface *> newPendingRequests;
-        for(vector<MessageResolverInterface *>::iterator pendingRequestItr = messageResolvers.begin();
-                pendingRequestItr != messageResolvers.end() ; ++pendingRequestItr){
-            bool resolveResult = (*pendingRequestItr)->resolveTimedoutMessages();
+        vector<ReplyHandlerInterface *> newPendingRequests;
+        for(vector<ReplyHandlerInterface *>::iterator pendingRequestItr = pendingRequests.begin();
+                pendingRequestItr != pendingRequests.end() ; ++pendingRequestItr){
+            bool resolveResult = (*pendingRequestItr)->resolveTimedoutRequests();
             // if returns true, we must delete this PendingRequest from the vector.
             // so otherwise we push it to the temporary newPendingRequests vector
             if(resolveResult){
@@ -115,9 +136,9 @@ private:
                 newPendingRequests.push_back(*pendingRequestItr);
             }
         }
-        messageResolvers.clear();
+        pendingRequests.clear();
         // copy back new pending messages into old vector
-        messageResolvers.insert(messageResolvers.begin(), newPendingRequests.begin(), newPendingRequests.end());
+        pendingRequests.insert(pendingRequests.begin(), newPendingRequests.begin(), newPendingRequests.end());
     }
 
     // Keeps the object thread safe
@@ -125,7 +146,7 @@ private:
 
     MessageAllocator * messageAllocator;
     // This vector contains all pending requests which are waiting for response(s)
-    vector<MessageResolverInterface *> messageResolvers;
+    vector<ReplyHandlerInterface *> pendingRequests;
 
     pthread_t timeoutThread;
 };

@@ -2,7 +2,7 @@
 #define __SHARDING_PROCESSOR_DISTRIBUTED_PROCESSOR_AGGREGATOR_H_
 
 
-#include "sharding/routing/ResponseAggregator.h"
+#include "sharding/processor/aggregators/ResponseAggregator.h"
 
 
 #include "sharding/configuration/ConfigManager.h"
@@ -41,11 +41,24 @@ public:
 		return this->coreId;
 	}
 
-    virtual ~DistributedProcessorAggregator(){};
+    virtual ~DistributedProcessorAggregator(){
+    	for(unsigned i = 0 ; i < requestObjs.size() ; ++i){
+    		if(requestObjs.at(i) != NULL){
+    			delete requestObjs;
+    		}
+    	}
+    };
 
+    void addRequestObj(Request * requestObj){
+    	this->requestObjs.push_back(requestObj);
+    }
+    vector<Request *> getRequestObjs(){
+    	return this->requestObjs;
+    }
 
 private:
     unsigned coreId;
+    vector<Request *> requestObjs;
 };
 
 }

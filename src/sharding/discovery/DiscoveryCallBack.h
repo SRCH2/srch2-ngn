@@ -14,7 +14,7 @@ public:
 			//unsigned size = msg->getBodySize();
 			Node node;
 			node.deserialize(msg->getMessageBody());
-			syncManger.config.getClusterWriteView()->addNewNode(node);
+			syncManger.config.getClusterWriteView()->addNewNode_Writeview(node);
 			syncManger.config.commitClusterMetadata();
 			Logger::console("[%d, %d, %d]", syncManger.config.getClusterWriteView()->getTotalNumberOfNodes()
 					,syncManger.masterNodeId, syncManger.currentNodeId);
@@ -48,7 +48,7 @@ public:
 				unsigned nodeSerializedSize = *(unsigned *)body;
 				body += sizeof(unsigned);
 				node.deserialize(body);
-				syncManger.config.getClusterWriteView()->addNewNode(node);
+				syncManger.config.getClusterWriteView()->addNewNode_Writeview(node);
 				body += nodeSerializedSize;
 			}
 			__sync_val_compare_and_swap(&syncManger.configUpdatesDone, false, true);

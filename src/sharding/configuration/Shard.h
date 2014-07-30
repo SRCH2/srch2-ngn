@@ -44,12 +44,12 @@ public:
 
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
-    void* serializeForNetwork(void * buffer);
+    void* serialize(void * buffer) const;
 
     //given a byte stream recreate the original object
-    void * deserializeForNetwork(void* buffer);
+    void * deserialize(void* buffer) const;
 
-    unsigned getNumberOfBytesForNetwork();
+    unsigned getNumberOfBytes() const;
 
 };
 
@@ -60,27 +60,8 @@ public:
 };
 
 
-
-class Shard {
-public:
-	Shard();
-	Shard(const Shard & shard);
-	Shard(unsigned nodeId, unsigned coreId, unsigned partitionId = 0,
-			unsigned replicaId = 0);
-	//Can be used in Migration
-	void setPartitionId(int partitionId);
-	//Can be used in Migration
-	void setReplicaId(int replicaId);
-	ShardId getShardId() const;
-	void setShardState(ShardState newState);
-	void setNodeId(unsigned id);
-	ShardState getShardState() const;
-	unsigned getNodeId() const;
-	void setSrch2Server(boost::shared_ptr<Srch2Server> srch2Server);
-	boost::shared_ptr<Srch2Server> getSrch2Server() const;
-	std::string toString() const;
-
-    //serializes the object to a byte array and places array into the region
+/*
+ *     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
     void* serializeForNetwork(void * buffer);
 
@@ -88,56 +69,128 @@ public:
     static Shard * deserializeForNetwork(void* buffer);
 
     unsigned getNumberOfBytesForNetwork();
+ */
 
+class Shard{
+public:
+	Shard(boost::shared_ptr<Srch2Server> srch2Server, double load = 0);
+	double getLoad() const;
+	boost::shared_ptr<Srch2Server> getSrch2Server() const;
+	virtual string getShardIdentifier() const = 0;
+	virtual ~Shard(){};
 private:
-	ShardId shardId;
-	ShardState shardState;
-	unsigned nodeId;
 	boost::shared_ptr<Srch2Server> srch2Server;
+	double load;
 };
 
-/*
- * A simple container which contains all shards of a core
- */
-class CoreShardContainer{
+
+class ClusterShard : public Shard{
 public:
-	CoreShardContainer(CoreInfo_t * core);
-	CoreShardContainer(const CoreShardContainer & coreShardContainer);
-	~CoreShardContainer();
-	CoreInfo_t * getCore();
-	const CoreInfo_t * getCore() const;
-	string getCoreName() const;
-	void setCore(CoreInfo_t * core);
+	ClusterShard(const ShardId shardId, const NodeId nodeId,
+			boost::shared_ptr<Srch2Server> srch2Server, double load = 0);
+	const NodeId getNodeId() const ;
+	const ShardId getShardId() const ;
+	string getShardIdentifier() const {
+		return shardId.toString();
+	}
 
-	vector<Shard *> * getPrimaryShards();
-	vector<Shard *> * getReplicaShards();
-	void setPrimaryShards(vector<Shard *> & srcPrimaryShards);
-	void setReplicaShards(vector<Shard *> & srcReplicaShards);
-	void setSrch2ServerPointers(CoreShardContainer * src);
+	bool operator==(const ClusterShard & right) const{
+		return (this->shardId == right.shardId)&&(this->nodeId == right.nodeId);
+	}
 
-	void addPrimaryShards(vector<const Shard *> & primaryShards) const;
-	void addReplicaShards(vector<const Shard *> & replicaShards) const;
-	void addPrimaryShardReplicas(const ShardId & primaryShardId, vector<const Shard *> & replicaShards) const;
-	unsigned getTotalNumberOfPrimaryShards() const;
-	const Shard * getShard(const ShardId & shardId) const;
+private:
+	const ShardId shardId;
+	const NodeId nodeId; // this must always be equal to currentNodeId
+};
+
+class NodeShard : public Shard{
+public:
+	NodeShard(const unsigned coreId, const unsigned internalPartitionId,
+			const NodeId nodeId, boost::shared_ptr<Srch2Server> srch2Server,double load = 0);
+	const unsigned getCoreId() const;
+	const unsigned getInternalPartitionId() const ;
+	const NodeId getNodeId() const ;
+	string getShardIdentifier() const {
+		ShardId tmpShardId(coreId, internalPartitionId, 0);
+		return "NodeShard-" + tmpShardId.toString();
+	}
+private:
+	const unsigned coreId;
+	const unsigned internalPartitionId;
+	const NodeId nodeId;
+};
+
+class NodeTargetShardInfo{
+public:
+	NodeTargetShardInfo(const NodeId nodeId, const unsigned coreId);
+
+	void addClusterShard(ShardId shardId);
+	void addNodeShard(unsigned internalPartitionId);
+
+	const unsigned getCoreId() const;
+	const NodeId getNodeId() const;
+	vector<ShardId> getTargetClusterShards() const;
+	vector<unsigned> getTargetNodeInternalPartitions() const;
 
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
-    void* serializeForNetwork(void * buffer);
+    void* serialize(void * buffer);
+
+    unsigned getNumberOfBytes() const;
 
     //given a byte stream recreate the original object
-    static CoreShardContainer * deserializeForNetwork(void* buffer);
-
-    unsigned getNumberOfBytesForNetwork();
+    void * deserialize(void* buffer);
 
 private:
-	CoreInfo_t * core;
-	string coreName;
+	NodeId nodeId;
+	unsigned coreId;
+	vector<ShardId> targetClusterShards;
+	vector<unsigned> targetNodeInternalPartitions;
 
-	// note: all primary and replica shards in these two sets
-	// share the same coreId and nodeId
-	vector<Shard *> primaryShards;
-	vector<Shard *> replicaShards;
+};
+
+class LocalShardContainer{
+public:
+
+	LocalShardContainer(const unsigned coreId, const NodeId nodeId);
+
+	const unsigned getCoreId() const	;
+	const NodeId getNodeId() const;
+	void getShards(const NodeTargetShardInfo & targets, vector<const Shard *> & shards) const;
+
+	void addClusterShard(const ShardId shardId, const NodeId nodeId,
+			boost::shared_ptr<Srch2Server> srch2Server, double load){
+		if(localClusterShards.find(shardId.partitionId) == localClusterShards.end()){
+			localClusterShards[shardId.partitionId] = vector<ClusterShard *>();
+		}
+		ClusterShard * newClusterShard = new ClusterShard(shardId, nodeId, srch2Server, load);
+		for(unsigned sid = 0 ; sid < localClusterShards[shardId.partitionId].size(); ++sid){
+			if(*(localClusterShards[shardId.partitionId].at(sid)) == *newClusterShard ){
+				ASSERT(false);
+				return;
+			}
+		}
+		localClusterShards[shardId.partitionId].push_back(newClusterShard);
+	}
+
+
+	void addNodeShard(const unsigned coreId, const unsigned internalPartitionId,
+			const NodeId nodeId, boost::shared_ptr<Srch2Server> srch2Server,double load){
+		if(localNodeShards.find(internalPartitionId) == localNodeShards.end()){
+			localNodeShards[internalPartitionId] = new NodeShard(coreId, internalPartitionId, nodeId, srch2Server, load);
+			return;
+		}
+		ASSERT(false);
+		return;
+	}
+
+private:
+	const unsigned coreId;
+	const NodeId nodeId; // always equal to current node Id
+	// partitionId => list of shards on this node
+	map<unsigned, vector<ClusterShard *> > localClusterShards;
+	// node internal partitionid => nodeshard
+	map<unsigned, NodeShard * > localNodeShards;
 };
 
 }

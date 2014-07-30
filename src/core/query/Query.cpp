@@ -51,9 +51,6 @@ struct Query::Impl
     Ranker *ranker;
     ResultsPostProcessorPlan *  plan;
 
-
-
-
     /*
      * Serialization Scheme :
      * | sortableAttributeId | lengthBoost | prefixMatchPenalty | type | order | refiningAttributeName |  \
@@ -206,6 +203,51 @@ struct Query::Impl
         plan = NULL;
     }
 
+    Impl(const Query::Impl & impl){
+        this->sortableAttributeId = impl.sortableAttributeId;
+        this->lengthBoost = impl.lengthBoost;
+        this->prefixMatchPenalty = impl.prefixMatchPenalty;
+        this->type = impl.type;
+        this->order = impl.order;
+        this->refiningAttributeName = impl.refiningAttributeName;
+        this->refiningAttributeValue = impl.refiningAttributeValue;
+        if(impl.terms == NULL){
+        	this->terms = NULL;
+        }else{
+        	this->terms = new vector<Term *>();
+        	for(unsigned termIdx = 0 ; termIdx < impl.terms->size(); ++termIdx){
+        		this->terms->push_back(new Term(*(impl.terms->at(termIdx))));
+        	}
+        }
+        if(impl.range == NULL){
+        	this->range = NULL;
+        }else{
+        	switch (this->range->getShapeType()) {
+				case Shape::TypeRectangle:
+					this->range = new Rectangle(*((Rectangle *)impl.range));
+					break;
+				case Shape::TypeCircle:
+					this->range = new Circle(*((Circle *)impl.range));
+					break;
+				default:
+					ASSERT(false);
+					break;
+			}
+        }
+        if(impl.ranker == NULL){
+        	this->ranker = NULL;
+        }else{
+        	this->ranker = new Ranker();
+        	// TODO : always one type of ranker ?
+        }
+        if(impl.plan == NULL){
+        	this->plan = NULL;
+        }else{
+        	this->plan = new ResultsPostProcessorPlan(*(impl.plan));
+        }
+
+    }
+
     virtual ~Impl()
     {
         if (this->terms != NULL)
@@ -322,6 +364,10 @@ Query::Query(QueryType type, const Ranker *ranker)
     impl->type = type;
     impl->terms = new vector<Term* >();
     //impl->ranker = new Ranker(ranker);
+}
+
+Query::Query(const Query & query){
+	impl = new Impl(*(query.impl));
 }
 
 Query::~Query()

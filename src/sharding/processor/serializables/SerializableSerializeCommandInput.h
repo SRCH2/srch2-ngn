@@ -33,11 +33,7 @@ public:
     //allocated by given allocator
     void* serialize(MessageAllocator * aloc){
         // calculate number of needed bytes
-        unsigned numberOfBytes = 0;
-        numberOfBytes += sizeof(indexOrRecord);
-        if(indexOrRecord == SERIALIZE_RECORDS){
-            numberOfBytes += sizeof(unsigned) + dataFileName.size();
-        }
+        unsigned numberOfBytes = getNumberOfBytes();
         // allocate space
         void * buffer = aloc->allocateMessageReturnBody(numberOfBytes);
         // serialize data now
@@ -48,6 +44,15 @@ public:
         }
 
         return buffer;
+    }
+
+    unsigned getNumberOfBytes() const{
+        unsigned numberOfBytes = 0;
+        numberOfBytes += sizeof(indexOrRecord);
+        if(indexOrRecord == SERIALIZE_RECORDS){
+            numberOfBytes += sizeof(unsigned) + dataFileName.size();
+        }
+        return numberOfBytes;
     }
 
     //given a byte stream recreate the original object
@@ -68,7 +73,6 @@ public:
     }
 
     string getDataFileName() const {
-        ASSERT(indexOrRecord == SERIALIZE_RECORDS);
         return dataFileName;
     }
 

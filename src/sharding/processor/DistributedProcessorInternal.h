@@ -53,29 +53,16 @@ public:
      * 2. Uses core to evaluate this search query
      * 3. Sends the results to the shard which initiated this search query
      */
-    SearchCommandResults * internalSearchCommand(boost::shared_ptr<Srch2Server> serverSharedPtr, SearchCommand * searchData);
+    SearchCommandResults * internalSearchCommand(const NodeTargetShardInfo & target,
+    		boost::shared_ptr<const Cluster> clusterReadview, SearchCommand * searchData);
 
 
     /*
      * This call back is always called for insert and update, it will use
      * internalInsertCommand and internalUpdateCommand
      */
-    CommandStatus * internalInsertUpdateCommand(boost::shared_ptr<Srch2Server> serverSharedPtr, InsertUpdateCommand * insertUpdateData);
-
-    /*
-     * 1. Receives an insert request from a shard and makes sure this
-     *    shard is the correct reponsible of this record using Partitioner
-     * 2. Uses core execute this insert query
-     * 3. Sends the results to the shard which initiated this insert query (Failure or Success)
-     */
-    CommandStatus * internalInsertCommand(boost::shared_ptr<Srch2Server> serverSharedPtr, InsertUpdateCommand * insertUpdateData);
-    /*
-     * 1. Receives a update request from a shard and makes sure this
-     *    shard is the correct reponsible of this record using Partitioner
-     * 2. Uses core execute this update query
-     * 3. Sends the results to the shard which initiated this update request (Failure or Success)
-     */
-    CommandStatus * internalUpdateCommand(boost::shared_ptr<Srch2Server> serverSharedPtr, InsertUpdateCommand * insertUpdateData);
+    CommandStatus * internalInsertUpdateCommand(const NodeTargetShardInfo & target,
+    		boost::shared_ptr<const Cluster> clusterReadview, InsertUpdateCommand * insertUpdateData);
 
     /*
      * 1. Receives a delete request from a shard and makes sure this
@@ -83,7 +70,8 @@ public:
      * 2. Uses core execute this delete query
      * 3. Sends the results to the shard which initiated this delete request (Failure or Success)
      */
-    CommandStatus *  internalDeleteCommand(boost::shared_ptr<Srch2Server> serverSharedPtr, DeleteCommand * deleteData);
+    CommandStatus *  internalDeleteCommand(const NodeTargetShardInfo & target,
+    		boost::shared_ptr<const Cluster> clusterReadview, DeleteCommand * deleteData);
 
 
 
@@ -92,74 +80,127 @@ public:
      * 2. Uses core to get info
      * 3. Sends the results to the shard which initiated this getInfo request (Failure or Success)
      */
-    GetInfoCommandResults * internalGetInfoCommand(boost::shared_ptr<Srch2Server> serverSharedPtr, GetInfoCommand * getInfoData);
+    GetInfoCommandResults * internalGetInfoCommand(const NodeTargetShardInfo & target,
+    		boost::shared_ptr<const Cluster> clusterReadview, GetInfoCommand * getInfoData);
 
 
     /*
      * This call back function is called for serialization. It uses internalSerializeIndexCommand
      * and internalSerializeRecordsCommand for our two types of serialization.
      */
-    CommandStatus * internalSerializeCommand(boost::shared_ptr<Srch2Server> serverSharedPtr, SerializeCommand * seralizeData);
-
-    /*
-     * 1. Receives a SerializeIndex request from a shard
-     * 2. Uses core to do the serialization
-     * 3. Sends the results to the shard which initiated this serialization request(Failure or Success)
-     */
-    CommandStatus * internalSerializeIndexCommand(boost::shared_ptr<Srch2Server> serverSharedPtr, SerializeCommand * seralizeData);
-
-    /*
-     * 1. Receives a SerializeRecords request from a shard
-     * 2. Uses core to do the serialization
-     * 3. Sends the results to the shard which initiated this serialization request(Failure or Success)
-     */
-    CommandStatus * internalSerializeRecordsCommand(boost::shared_ptr<Srch2Server> serverSharedPtr, SerializeCommand * seralizeData);
+    CommandStatus * internalSerializeCommand(const NodeTargetShardInfo & target,
+    		boost::shared_ptr<const Cluster> clusterReadview, SerializeCommand * seralizeData);
 
     /*
      * 1. Receives a ResetLog request from a shard
      * 2. Uses core to reset log
      * 3. Sends the results to the shard which initiated this reset-log request(Failure or Success)
      */
-    CommandStatus * internalResetLogCommand(boost::shared_ptr<Srch2Server> serverSharedPtr, ResetLogCommand * resetData);
+    CommandStatus * internalResetLogCommand(const NodeTargetShardInfo & target,
+    		boost::shared_ptr<const Cluster> clusterReadview, ResetLogCommand * resetData);
 
 
     /*
      * Receives a commit command and commits the index
      */
-    CommandStatus * internalCommitCommand(boost::shared_ptr<Srch2Server> serverSharedPtr, CommitCommand * resetData);
+    CommandStatus * internalCommitCommand(const NodeTargetShardInfo & target,
+    		boost::shared_ptr<const Cluster> clusterReadview, CommitCommand * resetData);
 
+    CommandStatus * internalMergeCommand(const NodeTargetShardInfo & target,
+    		boost::shared_ptr<const Cluster> clusterReadview, MergeCommand * mergeData);
 
-    /*
-     * The following methods provide an API to register/allocate/delete/load/create and other operations on
-     * indices.
-     * NOTE: As of June 16th, since our core codebase is wrapped and accessed from sharding layers through Srch2Server
-     * objects, indices and processing are combined in the Srch2Server objects, so DP Internal shouldn't be viewed as
-     * an Index Manager. Index Managers tend to be a container for indices while this module is more of a wrapper on the API
-     * provided by the core codebase.
-     */
-    boost::shared_ptr<Srch2Server> registerAndInitializeSrch2Server(const ShardId correspondingShardId,
-    		const CoreInfo_t * coreInfo,  const string & directoryPath);
-
-
-
-
-
-    DPInternalAPIStatus untrackSrch2Server(boost::shared_ptr<Srch2Server> srch2Server);
-
-
-private:
     DPInternalAPIStatus bootstrapSrch2Server(boost::shared_ptr<Srch2Server> srch2Server, const string & directoryPath);
-
-
+private:
 
     ConfigManager * configurationManager;
-    // this lock is used to protect srch2Server maps and other multi-shard-related structures
-    boost::shared_mutex isWritableMapLock;
-    // map to know if a server should accept insert/delete/update operations or not
-    // srch2Server id => is writable, true by defualt which means it accepts all requests
-    map< unsigned , bool > srch2ServersIsWritable;
 
-    unsigned maxServerId;
+    struct ShardSearchArgs{
+    	ShardSearchArgs(LogicalPlan * logicalPlan, Srch2Server * server, const string & shardIdentifier){
+    		this->logicalPlan = logicalPlan;
+    		this->server = server;
+    		this->shardResults = new SearchCommandResults::ShardResults(shardIdentifier);
+    	}
+    	LogicalPlan * logicalPlan;
+    	Srch2Server * server;
+    	SearchCommandResults::ShardResults * shardResults;
+    };
+
+    static void * searchInShardThreadWork(void *);
+
+
+    struct ShardInsertUpdateArgs{
+    	ShardInsertUpdateArgs(const Record * record, Srch2Server * server, string shardIdentifier):record(record){
+    		this->server = server;
+    		this->shardResults = new CommandStatus::ShardResults(shardIdentifier);
+    	}
+    	const Record * record;
+    	Srch2Server * server;
+    	CommandStatus::ShardResults * shardResults;
+    };
+
+    struct ShardDeleteArgs{
+    	ShardDeleteArgs(const string primaryKey, unsigned shardingKey, Srch2Server * server, string shardIdentifier):primaryKey(primaryKey){
+    		this->shardingKey = shardingKey;
+    		this->server = server;
+    		this->shardResults = new CommandStatus::ShardResults(shardIdentifier);
+    	}
+    	const string primaryKey;
+    	unsigned shardingKey;
+    	Srch2Server * server;
+    	CommandStatus::ShardResults * shardResults;
+    };
+
+    static void insertInShard(const Record * record, Srch2Server * server, string & msg, bool & statusValue);
+    static void * insertInShardThreadWork(void *);
+    static void updateInShard(const Record * record, Srch2Server * server, string & msg, bool & statusValue);
+    static void * updateInShardThreadWork(void * args);
+
+    static void deleteInShard(const string primaryKey, unsigned shardingKey,
+    		Srch2Server * server, string & msg, bool & statusValue);
+    static void * deleteInShardThreadWork(void * args);
+
+//    GetInfoShardResult
+    struct ShardGetInfoArgs{
+    	ShardGetInfoArgs(Srch2Server * server,  string shardIdentifier){
+    		this->server = server;
+    		shardResult = new GetInfoCommandResults::ShardResults(shardIdentifier);
+    	}
+    	Srch2Server * server;
+    	GetInfoCommandResults::ShardResults * shardResult ;
+    };
+    static void getInfoInShard(Srch2Server * server,unsigned & readCount,
+    		unsigned & writeCount, unsigned & numberOfIndexedDocuments,
+    		std::string & lastMergeTimeString, unsigned & docCount);
+    static void * getInfoInShardThreadWork(void * args);
+
+
+    struct ShardSerializeArgs{
+    	ShardSerializeArgs(const string dataFileName, Srch2Server * server, string shardIdentifier):dataFileName(dataFileName){
+    		this->server = server;
+    		this->shardResults = new CommandStatus::ShardResults(shardIdentifier);
+    	}
+    	const string dataFileName;
+    	Srch2Server * server;
+    	CommandStatus::ShardResults * shardResults;
+    };
+
+    static void * serializeIndexInShardThreadWork(void * args);
+    static void * serializeRecordsInShardThreadWork(void * args);
+
+    struct ShardStatusOnlyArgs{
+    	ShardStatusOnlyArgs(Srch2Server * server, string shardIdentifier){
+    		this->server = server;
+    		this->shardResults = new CommandStatus::ShardResults(shardIdentifier);
+    	}
+    	Srch2Server * server;
+    	CommandStatus::ShardResults * shardResults;
+    };
+
+    void handleStatusOnlyCommands();
+
+    static void * resetLogInShardThreadWork(void * args);
+    static void * commitInShardThreadWork(void * args);
+    static void * mergeInShardThreadWork(void * args);
 };
 
 

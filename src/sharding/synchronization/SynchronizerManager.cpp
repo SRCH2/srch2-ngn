@@ -117,7 +117,7 @@ void SyncManager::startDiscovery() {
 	transport.setListeningThread(listenThread);
 
 	// Add new node in CM
-	clusterWriteView->addNewNode(node);
+	clusterWriteView->addNewNode_Writeview(node);
 
 	if (isCurrentNodeMaster) {
 		messageHandler = new MasterMessageHandler(this);
@@ -141,7 +141,7 @@ void SyncManager::startDiscovery() {
 			Node node(nodename, masterIp, ntohs(destinationAddress.sin_port), false);
 			node.setId(this->masterNodeId);
 			node.setMaster(true);
-			clusterWriteView->addNewNode(node);
+			clusterWriteView->addNewNode_Writeview(node);
 		}
 		// use transport to fetch cluster state
 		Message *msg = MessageAllocator().allocateMessage(sizeof(NodeId));

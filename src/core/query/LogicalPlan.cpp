@@ -224,6 +224,19 @@ LogicalPlan::LogicalPlan(){
 	postProcessingPlan = NULL;
 }
 
+LogicalPlan::LogicalPlan(const LogicalPlan & logicalPlan){
+    this->tree = new LogicalPlanNode(*(logicalPlan.tree));
+	this->offset = logicalPlan.offset;
+	this->numberOfResultsToRetrieve = logicalPlan.numberOfResultsToRetrieve;
+	this->shouldRunFuzzyQuery = logicalPlan.shouldRunFuzzyQuery;
+	this->queryType = logicalPlan.queryType;
+	this->docIdForRetrieveByIdSearchType = logicalPlan.docIdForRetrieveByIdSearchType;
+	this->exactQuery = new Query(*(logicalPlan.exactQuery));
+	this->fuzzyQuery = new Query(*(logicalPlan.fuzzyQuery));
+	this->postProcessingPlan = new ResultsPostProcessorPlan(*(logicalPlan.postProcessingPlan));
+	this->postProcessingInfo = new ResultsPostProcessingInfo(*(logicalPlan.postProcessingInfo));
+}
+
 LogicalPlan::~LogicalPlan(){
 	if(tree != NULL) delete tree;
 	if(postProcessingInfo != NULL){

@@ -36,99 +36,154 @@ namespace httpwrapper {
 
 DPInternalRequestHandler::DPInternalRequestHandler(ConfigManager * configurationManager){
     this->configurationManager = configurationManager;
-    this->maxServerId = 0;
 }
 /*
  * 1. Receives a search request from a shard
  * 2. Uses core to evaluate this search query
  * 3. Sends the results to the shard which initiated this search query
  */
-SearchCommandResults * DPInternalRequestHandler::internalSearchCommand(boost::shared_ptr<Srch2Server> serverSharedPtr, SearchCommand * searchData){
+SearchCommandResults * DPInternalRequestHandler::internalSearchCommand(const NodeTargetShardInfo & target,
+		boost::shared_ptr<const Cluster> clusterReadview, SearchCommand * searchData){
 
-	// first get the Srch2Server pointer from the map
-	Srch2Server * server = serverSharedPtr.get();
+	// 0. use target and readview to get Srch2Server pointers
+	vector<const Shard *> shards;
+	clusterReadview->getLocalShardContainer(target.getCoreId())->getShards(target,shards);
+	// 1. create multiple threads to take care of each shard in target.
+	vector<ShardSearchArgs *> allShardsSearchArguments;
+    pthread_t * shardSearchThreads = new pthread_t[shards.size()];
+	struct timespec * tstarts = new timespec[shards.size()];
+	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
+		const Shard * shard = shards.at(shardIdx);
+		ShardSearchArgs * shardSearchArgs = new ShardSearchArgs(new LogicalPlan(*(searchData->getLogicalPlan())),
+				shard->getSrch2Server().get(), shard->getShardIdentifier());
+		allShardsSearchArguments.push_back(shardSearchArgs);
+		clock_gettime(CLOCK_REALTIME, &tstarts[shardIdx]);
+		// 1. give these structures to server along with a copy of logical plan so that
+		// it finds the results and gives us the query results in these structures
+	    if (pthread_create(&shardSearchThreads[shardIdx], NULL, searchInShardThreadWork , shardSearchArgs) != 0){
+	        perror("Cannot create thread for handling local message");
+	        return NULL;
+	    }
+	}
+	delete tstarts;
+	delete shardSearchThreads;
 
-
-    if(searchData == NULL || server == NULL){
-        SearchCommandResults * searchResults = new SearchCommandResults();
-        return searchResults;
-    }
-    // first find the search URL
-    LogicalPlan & logicalPlan = *(searchData->getLogicalPlan());
-
+	//2. When all threads are done, aggregate QueryResult objects and in-memory strings
+	//        and put them in a new SearchCommand object;
+	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
+		pthread_join(shardSearchThreads[shardIdx], NULL);
+		struct timespec tend;
+		clock_gettime(CLOCK_REALTIME, &tend);
+	    unsigned ts1 = (tend.tv_sec - tstarts[shardIdx].tv_sec) * 1000
+	            + (tend.tv_nsec - tstarts[shardIdx].tv_nsec) / 1000000;
+	    allShardsSearchArguments.at(shardIdx)->shardResults->searcherTimes = ts1;
+	}
+	// at this point all shard searches are done.
+	// aggregate query results and etc ...
     // search results to be serialized and sent over the network
     SearchCommandResults * searchResults = new SearchCommandResults();
+	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
+		ShardSearchArgs * shardResultsArgs = allShardsSearchArguments.at(shardIdx);
+		searchResults->addShardResults(shardResultsArgs->shardResults);
+		delete shardResultsArgs;
+	}
 
-    struct timespec tstart;
-    //    struct timespec tstart2;
-    struct timespec tend;
-    clock_gettime(CLOCK_REALTIME, &tstart);
+    return searchResults;
+
+}
+
+void * DPInternalRequestHandler::searchInShardThreadWork(void * args){
+	ShardSearchArgs * shardSearchArgs = (ShardSearchArgs *) args;
 
     // search in core
     // TODO : is it possible to make executor and planGen singleton ?
-    const CoreInfo_t *indexDataContainerConf = server->getCoreInfo();
-    QueryExecutor qe(logicalPlan, searchResults->getQueryResultsFactory(), server , indexDataContainerConf);
+    const CoreInfo_t *indexDataContainerConf = shardSearchArgs->server->getCoreInfo();
+    QueryExecutor qe(*(shardSearchArgs->logicalPlan), &(shardSearchArgs->shardResults->resultsFactory), shardSearchArgs->server , indexDataContainerConf);
     // in here just allocate an empty QueryResults object, it will be initialized in execute.
-    qe.executeForDPInternal(searchResults->getQueryResults(), searchResults->getInMemoryRecordStringsWrite());
-    // compute elapsed time in ms , end the timer
-    clock_gettime(CLOCK_REALTIME, &tend);
-    unsigned ts1 = (tend.tv_sec - tstart.tv_sec) * 1000
-            + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+    qe.executeForDPInternal(&(shardSearchArgs->shardResults->queryResults), shardSearchArgs->shardResults->inMemoryRecordStrings);
 
-    searchResults->setSearcherTime(ts1);
-
-    if (server->getCoreInfo()->getHighlightAttributeIdsVector().size() > 0 ) {
+    if (shardSearchArgs->server->getCoreInfo()->getHighlightAttributeIdsVector().size() > 0 ) {
     	    //TODO: V1 we need these two parameters in DP internal
     		//!paramContainer.onlyFacets &&
     		//paramContainer.isHighlightOn) {
     	ParsedParameterContainer paramContainer; // temp for V0
 
-    	QueryResults *finalResults = searchResults->getQueryResults();
-    	ServerHighLighter highlighter =  ServerHighLighter(finalResults, server, paramContainer,
-    			logicalPlan.getOffset(), logicalPlan.getNumberOfResultsToRetrieve());
-    	highlighter.generateSnippets(searchResults->getInMemoryRecordStringsWrite());
+    	QueryResults *finalResults = &(shardSearchArgs->shardResults->queryResults);
+    	ServerHighLighter highlighter =  ServerHighLighter(finalResults, shardSearchArgs->server, paramContainer,
+    			shardSearchArgs->logicalPlan->getOffset(), shardSearchArgs->logicalPlan->getNumberOfResultsToRetrieve());
+    	highlighter.generateSnippets(shardSearchArgs->shardResults->inMemoryRecordStrings);
     }
-
-    return searchResults;
-
+	//
+	return NULL;
 }
 
 /*
  * This call back is always called for insert and update, it will use
  * internalInsertCommand and internalUpdateCommand
  */
-CommandStatus * DPInternalRequestHandler::internalInsertUpdateCommand(boost::shared_ptr<Srch2Server> serverSharedPtr,
-        InsertUpdateCommand * insertUpdateData){
+CommandStatus * DPInternalRequestHandler::internalInsertUpdateCommand(const NodeTargetShardInfo & target,
+		boost::shared_ptr<const Cluster> clusterReadview, InsertUpdateCommand * insertUpdateData){
 
     if(insertUpdateData == NULL){
-        CommandStatus * status =
-                new CommandStatus(CommandStatus::DP_INSERT_UPDATE, false, "");
+        CommandStatus * status = NULL;
+    	if(insertUpdateData->getInsertOrUpdate() == InsertUpdateCommand::DP_INSERT){ // insert case
+    		status = new CommandStatus(CommandStatus::DP_INSERT);
+    	}else{
+    		status = new CommandStatus(CommandStatus::DP_UPDATE);
+    	}
         return status;
     }
-    if(insertUpdateData->getInsertOrUpdate() == InsertUpdateCommand::DP_INSERT){ // insert case
-        return internalInsertCommand(serverSharedPtr, insertUpdateData);
-    }else{ // update case
-        return internalUpdateCommand(serverSharedPtr, insertUpdateData);
-    }
+
+	// 0. use target and readview to get Srch2Server pointers
+	vector<const Shard *> shards;
+	clusterReadview->getLocalShardContainer(target.getCoreId())->getShards(target,shards);
+
+	vector<ShardInsertUpdateArgs *> allShardsInsertArguments;
+    pthread_t * shardInsertUpdateThreads = new pthread_t[shards.size()];
+	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
+		const Shard * shard = shards.at(shardIdx);
+		ShardInsertUpdateArgs * shardInsertUpdateArgs = new ShardInsertUpdateArgs(insertUpdateData->getRecord(),
+				shards.at(shardIdx)->getSrch2Server().get(), shard->getShardIdentifier());
+		allShardsInsertArguments.push_back(shardInsertUpdateArgs);
+		if(insertUpdateData->getInsertOrUpdate() == InsertUpdateCommand::DP_INSERT){ // insert case
+			if (pthread_create(&shardInsertUpdateThreads[shardIdx], NULL, insertInShardThreadWork , shardInsertUpdateArgs) != 0){
+				perror("Cannot create thread for handling local message");
+				return NULL;
+			}
+		}else{
+			if (pthread_create(&shardInsertUpdateThreads[shardIdx], NULL, updateInShardThreadWork , shardInsertUpdateArgs) != 0){
+				perror("Cannot create thread for handling local message");
+				return NULL;
+			}
+		}
+	}
+	delete shardInsertUpdateThreads;
+
+    CommandStatus * status = NULL;
+	if(insertUpdateData->getInsertOrUpdate() == InsertUpdateCommand::DP_INSERT){ // insert case
+		status = new CommandStatus(CommandStatus::DP_INSERT);
+	}else{
+		status = new CommandStatus(CommandStatus::DP_UPDATE);
+	}
+
+	std::stringstream log_str;
+	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
+		pthread_join(shardInsertUpdateThreads[shardIdx], NULL);
+		ShardInsertUpdateArgs * insertResults = allShardsInsertArguments.at(shardIdx);
+		status->addShardResult(insertResults->shardResults);
+		log_str << insertResults->shardResults->message ;
+		delete insertResults;
+	}
+
+    Logger::info("%s", log_str.str().c_str());
+    return status;
+
+
 }
 
-/*
- * 1. Receives an insert request from a shard and makes sure this
- *    shard is the correct reponsible of this record using Partitioner
- * 2. Uses core execute this insert query
- * 3. Sends the results to the shard which initiated this insert query (Failure or Success)
- */
-CommandStatus * DPInternalRequestHandler::internalInsertCommand(boost::shared_ptr<Srch2Server> serverSharedPtr,
-        InsertUpdateCommand * insertUpdateData){
 
-	// first get the Srch2Server pointer from the map
-	Srch2Server * server = serverSharedPtr.get();
-
-    if(insertUpdateData == NULL || server == NULL){
-        CommandStatus * status =
-                new CommandStatus(CommandStatus::DP_INSERT, false, "");
-        return status;
-    }
+void DPInternalRequestHandler::insertInShard(const Record * record,
+		Srch2Server * server, string & msg, bool & statusValue){
     //add the record to the index
     std::stringstream log_str;
     if ( server->getIndexer()->getNumberOfDocumentsInIndex() < server->getCoreInfo()->getDocumentLimit() )
@@ -136,158 +191,142 @@ CommandStatus * DPInternalRequestHandler::internalInsertCommand(boost::shared_pt
         // Do NOT delete analyzer because it is thread specific. It will be reused for
         // search/update/delete operations.
         srch2::instantsearch::Analyzer * analyzer = AnalyzerFactory::getCurrentThreadAnalyzer(server->getCoreInfo());
-        srch2::instantsearch::INDEXWRITE_RETVAL ret = server->getIndexer()->addRecord(insertUpdateData->getRecord(), analyzer);
+        srch2::instantsearch::INDEXWRITE_RETVAL ret = server->getIndexer()->addRecord(record, analyzer);
 
         switch( ret )
         {
         case srch2::instantsearch::OP_SUCCESS:
         {
-            log_str << "{\"rid\":\"" << insertUpdateData->getRecord()->getPrimaryKey() << "\",\"insert\":\"success\"}";
+            log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"success\"}";
             Logger::info("%s", log_str.str().c_str());
-            CommandStatus * status=
-                    new CommandStatus(CommandStatus::DP_INSERT, true, log_str.str());
-            return status;
+            statusValue = true;
+            msg = log_str.str();
+            return;
         }
         case srch2::instantsearch::OP_FAIL:
         {
-            log_str << "{\"rid\":\"" << insertUpdateData->getRecord()->getPrimaryKey() << "\",\"insert\":\"failed\",\"reason\":\"The record with same primary key already exists\"}";
+            log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"failed\",\"reason\":\"The record with same primary key already exists\"}";
             Logger::info("%s", log_str.str().c_str());
-            CommandStatus * status =
-                    new CommandStatus(CommandStatus::DP_INSERT, false, log_str.str());
-            return status;
+            statusValue = false;
+            msg = log_str.str();
+            return;
         }
         };
     }
     else
     {
-        log_str << "{\"rid\":\"" << insertUpdateData->getRecord()->getPrimaryKey() << "\",\"insert\":\"failed\",\"reason\":\"document limit reached. Email support@srch2.com for account upgrade.\"}";
+        log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"failed\",\"reason\":\"document limit reached. Email support@srch2.com for account upgrade.\"}";
         Logger::info("%s", log_str.str().c_str());
-        CommandStatus * status =
-                new CommandStatus(CommandStatus::DP_INSERT, false, log_str.str());
-        return status;
+        statusValue = false;
+        msg = log_str.str();
+        return;
     }
-
-    ASSERT(false);
-    CommandStatus * status =
-            new CommandStatus(CommandStatus::DP_INSERT, false, log_str.str());
-    Logger::info("%s", log_str.str().c_str());
-    return status;
-
-
 }
 
+void * DPInternalRequestHandler::insertInShardThreadWork(void * args){
+	ShardInsertUpdateArgs * shardArgs = (ShardInsertUpdateArgs *) args;
+	insertInShard(shardArgs->record, shardArgs->server, shardArgs->shardResults->message, shardArgs->shardResults->statusValue);
 
+	//
+	return NULL;
+}
 
-/*
- * 1. Receives a update request from a shard and makes sure this
- *    shard is the correct reponsible of this record using Partitioner
- * 2. Uses core execute this update query
- * 3. Sends the results to the shard which initiated this update request (Failure or Success)
- */
-CommandStatus * DPInternalRequestHandler::internalUpdateCommand(boost::shared_ptr<Srch2Server> serverSharedPtr,
-        InsertUpdateCommand * insertUpdateData){
-
-	// first get the Srch2Server pointer from the map
-	Srch2Server * server= serverSharedPtr.get();
-
-
-    if(insertUpdateData == NULL || server == NULL){
-        CommandStatus * status =
-                new CommandStatus(CommandStatus::DP_UPDATE, false, "");
-        return status;
-    }
+void DPInternalRequestHandler::updateInShard(const Record * record,
+		Srch2Server * server, string & msg, bool & statusValue){
     std::stringstream log_str;
+	unsigned deletedInternalRecordId;
+	std::string primaryKeyStringValue;
+	primaryKeyStringValue = record->getPrimaryKey();
+	log_str << "{\"rid\":\"" << primaryKeyStringValue << "\",\"update\":\"";
 
-    unsigned deletedInternalRecordId;
-    std::string primaryKeyStringValue;
-    primaryKeyStringValue = insertUpdateData->getRecord()->getPrimaryKey();
-    log_str << "{\"rid\":\"" << primaryKeyStringValue << "\",\"update\":\"";
-
-    //delete the record from the index
-    bool recordExisted = false;
-    switch(server->getIndexer()->deleteRecordGetInternalId(primaryKeyStringValue, deletedInternalRecordId))
-    {
-    case srch2::instantsearch::OP_FAIL:
-    {
-        // record to update doesn't exit, will insert it
-        break;
-    }
-    default: // OP_SUCCESS.
-    {
-        recordExisted = true;
-        break;
-    }
-    };
+	//delete the record from the index
+	bool recordExisted = false;
+	switch(server->getIndexer()->deleteRecordGetInternalId(primaryKeyStringValue, deletedInternalRecordId))
+	{
+	case srch2::instantsearch::OP_FAIL:
+	{
+		// record to update doesn't exit, will insert it
+		break;
+	}
+	default: // OP_SUCCESS.
+	{
+		recordExisted = true;
+		break;
+	}
+	};
 
 
-    /// step 2, insert new record
+	/// step 2, insert new record
 
-    //add the record to the index
+	//add the record to the index
 
-    if ( server->getIndexer()->getNumberOfDocumentsInIndex() < server->getCoreInfo()->getDocumentLimit() )
-    {
-        // Do NOT delete analyzer because it is thread specific. It will be reused for
-        // search/update/delete operations.
-        Analyzer* analyzer = AnalyzerFactory::getCurrentThreadAnalyzer(server->getCoreInfo());
-        srch2::instantsearch::INDEXWRITE_RETVAL ret = server->getIndexer()->addRecord(insertUpdateData->getRecord(), analyzer);
-        switch( ret )
-        {
-        case srch2::instantsearch::OP_SUCCESS:
-        {
-            if (recordExisted)
-                log_str << "Existing record updated successfully\"}";
-            else
-                log_str << "New record inserted successfully\"}";
+	if ( server->getIndexer()->getNumberOfDocumentsInIndex() < server->getCoreInfo()->getDocumentLimit() )
+	{
+		// Do NOT delete analyzer because it is thread specific. It will be reused for
+		// search/update/delete operations.
+		Analyzer* analyzer = AnalyzerFactory::getCurrentThreadAnalyzer(server->getCoreInfo());
+		srch2::instantsearch::INDEXWRITE_RETVAL ret = server->getIndexer()->addRecord(record, analyzer);
+		switch( ret )
+		{
+		case srch2::instantsearch::OP_SUCCESS:
+		{
+			if (recordExisted)
+				log_str << "Existing record updated successfully\"}";
+			else
+				log_str << "New record inserted successfully\"}";
 
-            Logger::info("%s", log_str.str().c_str());
-            CommandStatus * status =
-                    new CommandStatus(CommandStatus::DP_UPDATE, true, log_str.str());
-            return status;
-        }
-        case srch2::instantsearch::OP_FAIL:
-        {
-            log_str << "failed\",\"reason\":\"insert: The record with same primary key already exists\",";
-            break;
-        }
-        };
-    }
-    else
-    {
-        log_str << "failed\",\"reason\":\"insert: Document limit reached. Email support@srch2.com for account upgrade.\",";
-    }
+			Logger::info("%s", log_str.str().c_str());
+			statusValue = true;
+			msg = log_str.str();
+			return;
+		}
+		case srch2::instantsearch::OP_FAIL:
+		{
+			log_str << "failed\",\"reason\":\"insert: The record with same primary key already exists\",";
+			break;
+		}
+		};
+	}
+	else
+	{
+		log_str << "failed\",\"reason\":\"insert: Document limit reached. Email support@srch2.com for account upgrade.\",";
+	}
 
-    /// reaching here means the insert failed, need to resume the deleted old record
+	/// reaching here means the insert failed, need to resume the deleted old record
 
-    srch2::instantsearch::INDEXWRITE_RETVAL ret = server->getIndexer()->recoverRecord(primaryKeyStringValue, deletedInternalRecordId);
+	srch2::instantsearch::INDEXWRITE_RETVAL ret = server->getIndexer()->recoverRecord(primaryKeyStringValue, deletedInternalRecordId);
 
-    switch ( ret )
-    {
-    case srch2::instantsearch::OP_FAIL:
-    {
-        log_str << "\"resume\":\"no record with given primary key\"}";
-        Logger::info("%s", log_str.str().c_str());
-        CommandStatus * status =
-                new CommandStatus(CommandStatus::DP_UPDATE, false, log_str.str());
-        return status;
-    }
-    default: // OP_SUCCESS.
-    {
-        log_str << "\"resume\":\"success\"}";
-        Logger::info("%s", log_str.str().c_str());
-        CommandStatus * status =
-                new CommandStatus(CommandStatus::DP_UPDATE, true, log_str.str());
-        return status;
-    }
-    };
-
-    // we should not reach here
-    ASSERT(false);
-    Logger::info("%s", log_str.str().c_str());
-    CommandStatus * status =
-            new CommandStatus(CommandStatus::DP_UPDATE, false, log_str.str());
-    return status;
+	switch ( ret )
+	{
+	case srch2::instantsearch::OP_FAIL:
+	{
+		log_str << "\"resume\":\"no record with given primary key\"}";
+		Logger::info("%s", log_str.str().c_str());
+		statusValue = false;
+		msg = log_str.str();
+		return;
+	}
+	default: // OP_SUCCESS.
+	{
+		log_str << "\"resume\":\"success\"}";
+		Logger::info("%s", log_str.str().c_str());
+		statusValue = true;
+		msg = log_str.str();
+		return;
+	}
+	};
 
 }
+
+void * DPInternalRequestHandler::updateInShardThreadWork(void * args){
+	ShardInsertUpdateArgs * updateArgs = (ShardInsertUpdateArgs  *) args;
+
+	updateInShard(updateArgs->record, updateArgs->server, updateArgs->shardResults->message, updateArgs->shardResults->statusValue);
+
+	//
+	return NULL;
+}
+
 
 /*
  * 1. Receives a delete request from a shard and makes sure this
@@ -295,137 +334,226 @@ CommandStatus * DPInternalRequestHandler::internalUpdateCommand(boost::shared_pt
  * 2. Uses core execute this delete query
  * 3. Sends the results to the shard which initiated this delete request (Failure or Success)
  */
-CommandStatus * DPInternalRequestHandler::internalDeleteCommand(boost::shared_ptr<Srch2Server> serverSharedPtr, DeleteCommand * deleteData){
+CommandStatus * DPInternalRequestHandler::internalDeleteCommand(const NodeTargetShardInfo & target,
+		boost::shared_ptr<const Cluster> clusterReadview, DeleteCommand * deleteData){
 
-
-	// first get the Srch2Server pointer from the map
-	Srch2Server * server = serverSharedPtr.get();
-
-    if(deleteData == NULL || server == NULL){
+    if(deleteData == NULL){
         CommandStatus * status =
-                new CommandStatus(CommandStatus::DP_DELETE, false, "");
+                new CommandStatus(CommandStatus::DP_DELETE);
         return status;
     }
+
+	// 0. use target and readview to get Srch2Server pointers
+	vector<const Shard *> shards;
+	clusterReadview->getLocalShardContainer(target.getCoreId())->getShards(target,shards);
+
+	vector<ShardDeleteArgs *> allShardsDeleteArguments;
+    pthread_t * shardDeleteThreads = new pthread_t[shards.size()];
+	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
+		const Shard * shard = shards.at(shardIdx);
+		ShardDeleteArgs * shardDeleteArgs = new ShardDeleteArgs(deleteData->getPrimaryKey(),
+				deleteData->getShardingKey(),
+				shards.at(shardIdx)->getSrch2Server().get(), shard->getShardIdentifier());
+		allShardsDeleteArguments.push_back(shardDeleteArgs);
+		if (pthread_create(&shardDeleteThreads[shardIdx], NULL, deleteInShardThreadWork , shardDeleteArgs) != 0){
+			perror("Cannot create thread for handling local message");
+			return NULL;
+		}
+	}
+	delete shardDeleteThreads;
+
+    CommandStatus * status = new CommandStatus(CommandStatus::DP_DELETE);
+
+	std::stringstream log_str;
+	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
+		pthread_join(shardDeleteThreads[shardIdx], NULL);
+		ShardDeleteArgs * deleteResults = allShardsDeleteArguments.at(shardIdx);
+		status->addShardResult(deleteResults->shardResults);
+		log_str << deleteResults->shardResults->message;
+		delete deleteResults;
+	}
+
+    Logger::info("%s", log_str.str().c_str());
+    return status;
+
+
+}
+
+
+void DPInternalRequestHandler::deleteInShard(const string primaryKey, unsigned shardingKey,
+		Srch2Server * server, string & msg, bool & statusValue){
     std::stringstream log_str;
-    log_str << "{\"rid\":\"" << deleteData->getPrimaryKey() << "\",\"delete\":\"";
+    log_str << "{\"rid\":\"" << primaryKey << "\",\"delete\":\"";
 
     //delete the record from the index
-    switch(server->getIndexer()->deleteRecord(deleteData->getPrimaryKey())){
+    switch(server->getIndexer()->deleteRecord(primaryKey)){
     case OP_FAIL:
     {
         log_str << "failed\",\"reason\":\"no record with given primary key\"}";
         Logger::info("%s", log_str.str().c_str());
-        CommandStatus * status =
-                new CommandStatus(CommandStatus::DP_DELETE, false, log_str.str());
-        return status;
+        msg = log_str.str();
+        statusValue = false;
+        return;
     }
     default: // OP_SUCCESS.
     {
         log_str << "success\"}";
         Logger::info("%s", log_str.str().c_str());
-        CommandStatus * status =
-                new CommandStatus(CommandStatus::DP_DELETE, true, log_str.str());
-        return status;
+        msg = log_str.str();
+        statusValue = true;
+        return;
     }
     };
 }
 
+void * DPInternalRequestHandler::deleteInShardThreadWork(void * args){
+	ShardDeleteArgs * deleteArgs = (ShardDeleteArgs  *) args;
+
+	deleteInShard(deleteArgs->primaryKey,deleteArgs->shardingKey, deleteArgs->server, deleteArgs->shardResults->message, deleteArgs->shardResults->statusValue);
+
+	//
+	return NULL;
+}
 
 /*
  * 1. Receives a GetInfo request from a shard
  * 2. Uses core to get info
  * 3. Sends the results to the shard which initiated this getInfo request (Failure or Success)
  */
-GetInfoCommandResults * DPInternalRequestHandler::internalGetInfoCommand(boost::shared_ptr<Srch2Server> serverSharedPtr,
-		GetInfoCommand * getInfoData){
+GetInfoCommandResults * DPInternalRequestHandler::internalGetInfoCommand(const NodeTargetShardInfo & target,
+		boost::shared_ptr<const Cluster> clusterReadview, GetInfoCommand * getInfoData){
 
-	// first get the Srch2Server pointer from the map
-	Srch2Server * server = serverSharedPtr.get();
 
-	if(getInfoData == NULL || server == NULL){
+	if(getInfoData == NULL){
         GetInfoCommandResults * getInfoResult =
-                new GetInfoCommandResults(0,0,0,"",0,"");
+                new GetInfoCommandResults();
         return getInfoResult;
     }
-    unsigned readCount;
-    unsigned writeCount;
-    unsigned numberOfDocumentsInIndex;
-    string lastMergeTimeString;
-    unsigned docCount;
-    server->getIndexer()->getIndexHealthThoughArguments(readCount, writeCount, numberOfDocumentsInIndex, lastMergeTimeString ,docCount);
 
-    GetInfoCommandResults * getInfoResult =
-            new GetInfoCommandResults(readCount, writeCount, numberOfDocumentsInIndex, lastMergeTimeString, docCount, Version::getCurrentVersion());
+	// 0. use target and readview to get Srch2Server pointers
+	vector<const Shard *> shards;
+	clusterReadview->getLocalShardContainer(target.getCoreId())->getShards(target,shards);
+
+	vector<ShardGetInfoArgs *> allShardsGetInfoArguments;
+    pthread_t * shardGetInfoThreads = new pthread_t[shards.size()];
+	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
+		const Shard * shard = shards.at(shardIdx);
+		ShardGetInfoArgs * shardGetInfoArgs = new ShardGetInfoArgs(shards.at(shardIdx)->getSrch2Server().get(), shard->getShardIdentifier());
+		allShardsGetInfoArguments.push_back(shardGetInfoArgs);
+		if (pthread_create(&shardGetInfoThreads[shardIdx], NULL, getInfoInShardThreadWork , shardGetInfoArgs) != 0){
+			perror("Cannot create thread for handling local message");
+			return NULL;
+		}
+	}
+	delete shardGetInfoThreads;
+
+	GetInfoCommandResults * getInfoResult = new GetInfoCommandResults();
+
+	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
+		pthread_join(shardGetInfoThreads[shardIdx], NULL);
+		ShardGetInfoArgs * getInfoResults = allShardsGetInfoArguments.at(shardIdx);
+		getInfoResults->shardResult->versionInfo = Version::getCurrentVersion();
+		getInfoResult->addShardResults(getInfoResults->shardResult);
+		delete getInfoResults;
+	}
+
     return getInfoResult;
 }
 
+
+void DPInternalRequestHandler::getInfoInShard(Srch2Server * server,unsigned & readCount,
+		unsigned & writeCount, unsigned & numberOfIndexedDocuments,
+		std::string & lastMergeTimeString, unsigned & docCount){
+    server->getIndexer()->getIndexHealthThoughArguments(readCount, writeCount,
+    		numberOfIndexedDocuments, lastMergeTimeString ,docCount);
+}
+void * DPInternalRequestHandler::getInfoInShardThreadWork(void * args){
+	ShardGetInfoArgs * infoArgs = (ShardGetInfoArgs *)args;
+	getInfoInShard(infoArgs->server, infoArgs->shardResult->readCount, infoArgs->shardResult->writeCount,
+			infoArgs->shardResult->numberOfDocumentsInIndex,
+			infoArgs->shardResult->lastMergeTimeString, infoArgs->shardResult->docCount);
+
+	//
+	return NULL;
+}
 
 /*
  * This call back function is called for serialization. It uses internalSerializeIndexCommand
  * and internalSerializeRecordsCommand for our two types of serialization.
  */
-CommandStatus * DPInternalRequestHandler::internalSerializeCommand(boost::shared_ptr<Srch2Server> serverSharedPtr, SerializeCommand * serailizeData){
-
+CommandStatus * DPInternalRequestHandler::internalSerializeCommand(const NodeTargetShardInfo & target,
+		boost::shared_ptr<const Cluster> clusterReadview, SerializeCommand * serailizeData){
 	if(serailizeData == NULL){
-        CommandStatus * status =
-                new CommandStatus(CommandStatus::DP_SERIALIZE, false, "");
+        CommandStatus * status = NULL;
+        if(serailizeData->getIndexOrRecord() == SerializeCommand::SERIALIZE_INDEX){ // serialize index
+        	status = new CommandStatus(CommandStatus::DP_SERIALIZE_INDEX);
+        }else{ // serialize records
+        	status = new CommandStatus(CommandStatus::DP_SERIALIZE_RECORDS);
+        }
         return status;
     }
-    if(serailizeData->getIndexOrRecord() == SerializeCommand::SERIALIZE_INDEX){ // serialize index
-        return this->internalSerializeIndexCommand(serverSharedPtr, serailizeData);
-    }else{ // serialize records
-        return this->internalSerializeRecordsCommand(serverSharedPtr, serailizeData);
-    }
-}
 
+	// 0. use target and readview to get Srch2Server pointers
+	vector<const Shard *> shards;
+	clusterReadview->getLocalShardContainer(target.getCoreId())->getShards(target,shards);
 
-/*
- * 1. Receives a SerializeIndex request from a shard
- * 2. Uses core to do the serialization
- * 3. Sends the results to the shard which initiated this serialization request(Failure or Success)
- */
-CommandStatus * DPInternalRequestHandler::internalSerializeIndexCommand(boost::shared_ptr<Srch2Server> serverSharedPtr, SerializeCommand * serailizeData){
+	vector<ShardSerializeArgs *> allShardsSerializeArguments;
+    pthread_t * shardSerializeThreads = new pthread_t[shards.size()];
+	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
+		const Shard * shard = shards.at(shardIdx);
+		ShardSerializeArgs * shardSerializeArgs =
+				new ShardSerializeArgs(serailizeData->getDataFileName(),
+						shards.at(shardIdx)->getSrch2Server().get(), shard->getShardIdentifier());
+		allShardsSerializeArguments.push_back(shardSerializeArgs);
 
-	// first get the Srch2Server pointer from the map
-	Srch2Server * server = serverSharedPtr.get();
+		if(serailizeData->getIndexOrRecord() == SerializeCommand::SERIALIZE_INDEX){ // insert case
+			if (pthread_create(&shardSerializeThreads[shardIdx], NULL, serializeIndexInShardThreadWork , shardSerializeArgs) != 0){
+				perror("Cannot create thread for handling local message");
+				return NULL;
+			}
+		}else{
+			if (pthread_create(&shardSerializeThreads[shardIdx], NULL, serializeRecordsInShardThreadWork , shardSerializeArgs) != 0){
+				perror("Cannot create thread for handling local message");
+				return NULL;
+			}
+		}
+	}
+	delete shardSerializeThreads;
+    CommandStatus * status = NULL;
+	if(serailizeData->getIndexOrRecord() == SerializeCommand::SERIALIZE_INDEX){ // insert case
+		status = new CommandStatus(CommandStatus::DP_SERIALIZE_INDEX);
+		Logger::info("%s", "{\"save\":\"success\"}");
+	}else{
+		status = new CommandStatus(CommandStatus::DP_SERIALIZE_RECORDS);
+		Logger::info("%s", "{\"export\":\"success\"}");
+	}
 
-	if(serailizeData == NULL || server == NULL){
-        CommandStatus * status =
-                new CommandStatus(CommandStatus::DP_SERIALIZE_INDEX, false, "");
-        return status;
-    }
-    server->getIndexer()->save();
-    Logger::info("%s", "{\"save\":\"success\"}");
-    CommandStatus * status =
-            new CommandStatus(CommandStatus::DP_SERIALIZE_INDEX, true, "{\"save\":\"success\"}");
+	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
+		pthread_join(shardSerializeThreads[shardIdx], NULL);
+		ShardSerializeArgs * serializeResults = allShardsSerializeArguments.at(shardIdx);
+		status->addShardResult(serializeResults->shardResults);
+		delete serializeResults;
+	}
     return status;
 }
 
-/*
- * 1. Receives a SerializeRecords request from a shard
- * 2. Uses core to do the serialization
- * 3. Sends the results to the shard which initiated this serialization request(Failure or Success)
- */
-CommandStatus * DPInternalRequestHandler::internalSerializeRecordsCommand(boost::shared_ptr<Srch2Server> serverSharedPtr, SerializeCommand * serailizeData){
 
-	// first get the Srch2Server pointer from the map
-	Srch2Server * server = serverSharedPtr.get();
+void * DPInternalRequestHandler::serializeIndexInShardThreadWork(void * args){
+	ShardSerializeArgs * serializeRecordsArgs = (ShardSerializeArgs *) args;
+	serializeRecordsArgs->server->getIndexer()->save();
+    //
+    return NULL;
+}
 
-    if(serailizeData == NULL || server == NULL){
-        CommandStatus * status =
-                new CommandStatus(CommandStatus::DP_SERIALIZE_RECORDS, false, "");
-        return status;
-    }
-    string exportedDataFileName = serailizeData->getDataFileName();
+void * DPInternalRequestHandler::serializeRecordsInShardThreadWork(void * args){
+	ShardSerializeArgs * serializeRecordsArgs = (ShardSerializeArgs *) args;
+    string exportedDataFileName = serializeRecordsArgs->dataFileName;
     if(srch2::util::checkDirExistence(exportedDataFileName.c_str())){
         exportedDataFileName = "export_data.json";
     }
-    server->getIndexer()->exportData(exportedDataFileName);
-    Logger::info("%s", "{\"export\":\"success\"}");
-    CommandStatus * status =
-            new CommandStatus(CommandStatus::DP_SERIALIZE_RECORDS, true, "{\"export\":\"success\"}");
-    return status;
-
+    serializeRecordsArgs->server->getIndexer()->exportData(exportedDataFileName);
+    //
+    return NULL;
 }
 
 /*
@@ -433,96 +561,205 @@ CommandStatus * DPInternalRequestHandler::internalSerializeRecordsCommand(boost:
  * 2. Uses core to reset log
  * 3. Sends the results to the shard which initiated this reset-log request(Failure or Success)
  */
-CommandStatus * DPInternalRequestHandler::internalResetLogCommand(boost::shared_ptr<Srch2Server> serverSharedPtr, ResetLogCommand * resetData){
+CommandStatus * DPInternalRequestHandler::internalResetLogCommand(const NodeTargetShardInfo & target,
+		boost::shared_ptr<const Cluster> clusterReadview, ResetLogCommand * resetData){
 
-	// first get the Srch2Server pointer from the map
-	Srch2Server * server = serverSharedPtr.get();
-
-    if(resetData == NULL || server == NULL){
+    if(resetData == NULL ){
         CommandStatus * status =
-                new CommandStatus(CommandStatus::DP_RESET_LOG, false, "");
+                new CommandStatus(CommandStatus::DP_RESET_LOG);
         return status;
     }
 
+	// 0. use target and readview to get Srch2Server pointers
+	vector<const Shard *> shards;
+	clusterReadview->getLocalShardContainer(target.getCoreId())->getShards(target,shards);
+
+	vector<ShardStatusOnlyArgs *> allShardsResetLogsArguments;
+    pthread_t * shardResetLogsThreads = new pthread_t[shards.size()];
+	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
+		const Shard * shard = shards.at(shardIdx);
+		ShardStatusOnlyArgs * shardResetLogsArgs =
+				new ShardStatusOnlyArgs(shards.at(shardIdx)->getSrch2Server().get(), shard->getShardIdentifier());
+		allShardsResetLogsArguments.push_back(shardResetLogsArgs);
+
+		if (pthread_create(&shardResetLogsThreads[shardIdx], NULL, resetLogInShardThreadWork, shardResetLogsArgs) != 0){
+			perror("Cannot create thread for handling local message");
+			return NULL;
+		}
+	}
+	delete shardResetLogsThreads;
+
+    CommandStatus * status = new CommandStatus(CommandStatus::DP_RESET_LOG);
+
+    for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
+		pthread_join(shardResetLogsThreads[shardIdx], NULL);
+		ShardStatusOnlyArgs * resetResults = allShardsResetLogsArguments.at(shardIdx);
+		status->addShardResult(resetResults->shardResults);
+		delete resetResults;
+	}
+
+    return status;
+
+
+}
+
+
+CommandStatus * DPInternalRequestHandler::internalCommitCommand(const NodeTargetShardInfo & target,
+		boost::shared_ptr<const Cluster> clusterReadview, CommitCommand * commitData){
+
+	if(commitData == NULL ){
+        CommandStatus * status =
+                new CommandStatus(CommandStatus::DP_COMMIT);
+        return status;
+    }
+
+	// 0. use target and readview to get Srch2Server pointers
+	vector<const Shard *> shards;
+	clusterReadview->getLocalShardContainer(target.getCoreId())->getShards(target,shards);
+
+	vector<ShardStatusOnlyArgs *> allShardsCommitArguments;
+    pthread_t * shardCommitThreads = new pthread_t[shards.size()];
+	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
+		const Shard * shard = shards.at(shardIdx);
+		ShardStatusOnlyArgs * shardCommitArgs =
+				new ShardStatusOnlyArgs(shards.at(shardIdx)->getSrch2Server().get(), shard->getShardIdentifier());
+		allShardsCommitArguments.push_back(shardCommitArgs);
+
+		if (pthread_create(&shardCommitThreads[shardIdx], NULL, commitInShardThreadWork, shardCommitArgs) != 0){
+			perror("Cannot create thread for handling local message");
+			return NULL;
+		}
+	}
+	delete shardCommitThreads;
+
+    CommandStatus * status = new CommandStatus(CommandStatus::DP_COMMIT);
+
+    for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
+		pthread_join(shardCommitThreads[shardIdx], NULL);
+		ShardStatusOnlyArgs * commitResults = allShardsCommitArguments.at(shardIdx);
+		status->addShardResult(commitResults->shardResults);
+		delete commitResults;
+	}
+
+    return status;
+
+
+}
+
+
+CommandStatus * DPInternalRequestHandler::internalMergeCommand(const NodeTargetShardInfo & target,
+		boost::shared_ptr<const Cluster> clusterReadview, MergeCommand * mergeData){
+
+	if(mergeData == NULL ){
+        CommandStatus * status =
+                new CommandStatus(CommandStatus::DP_MERGE);
+        return status;
+    }
+
+	// 0. use target and readview to get Srch2Server pointers
+	vector<const Shard *> shards;
+	clusterReadview->getLocalShardContainer(target.getCoreId())->getShards(target,shards);
+
+	vector<ShardStatusOnlyArgs *> allShardsMergeArguments;
+    pthread_t * shardMergeThreads = new pthread_t[shards.size()];
+	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
+		const Shard * shard = shards.at(shardIdx);
+		ShardStatusOnlyArgs * shardMergeArgs =
+				new ShardStatusOnlyArgs(shards.at(shardIdx)->getSrch2Server().get(), shard->getShardIdentifier());
+		allShardsMergeArguments.push_back(shardMergeArgs);
+
+		if (pthread_create(&shardMergeThreads[shardIdx], NULL, mergeInShardThreadWork, shardMergeArgs) != 0){
+			perror("Cannot create thread for handling local message");
+			return NULL;
+		}
+	}
+	delete shardMergeThreads;
+
+    CommandStatus * status = new CommandStatus(CommandStatus::DP_MERGE);
+
+    for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
+		pthread_join(shardMergeThreads[shardIdx], NULL);
+		ShardStatusOnlyArgs * mergeResults = allShardsMergeArguments.at(shardIdx);
+		status->addShardResult(mergeResults->shardResults);
+		delete mergeResults;
+	}
+
+    return status;
+
+
+}
+
+
+void * DPInternalRequestHandler::resetLogInShardThreadWork(void * args){
+	ShardStatusOnlyArgs * shardArgs = (ShardStatusOnlyArgs * )args;
+
     // create a FILE* pointer to point to the new logger file "logger.txt"
-    FILE *logFile = fopen(server->getCoreInfo()->getHTTPServerAccessLogFile().c_str(),
-            "a");
+    FILE *logFile = fopen(shardArgs->server->getCoreInfo()->getHTTPServerAccessLogFile().c_str(),"a");
 
     if (logFile == NULL) {
         srch2::util::Logger::error("Reopen Log file %s failed.",
-                server->getCoreInfo()->getHTTPServerAccessLogFile().c_str());
+        		shardArgs->server->getCoreInfo()->getHTTPServerAccessLogFile().c_str());
         Logger::info("%s", string("{\"message\":\"The logger file repointing failed. Could not create new logger file\", \"log\":\""
-                + server->getCoreInfo()->getHTTPServerAccessLogFile() + "\"}").c_str());
-        CommandStatus * status=
-                new CommandStatus(CommandStatus::DP_RESET_LOG, false,
-                        "{\"message\":\"The logger file repointing failed. Could not create new logger file\", \"log\":\""
-                        + server->getCoreInfo()->getHTTPServerAccessLogFile() + "\"}");
-        return status;
+                + shardArgs->server->getCoreInfo()->getHTTPServerAccessLogFile() + "\"}").c_str());
+        shardArgs->shardResults->message = "{\"message\":\"The logger file repointing failed. Could not create new logger file\", \"log\":\""
+                + shardArgs->server->getCoreInfo()->getHTTPServerAccessLogFile() + "\"}";
+        shardArgs->shardResults->statusValue = false;
     } else {
         FILE * oldLogger = srch2::util::Logger::swapLoggerFile(logFile);
         fclose(oldLogger);
         Logger::info("%s", string("{\"message\":\"The logger file repointing succeeded\", \"log\":\""
-                + server->getCoreInfo()->getHTTPServerAccessLogFile() + "\"}").c_str());
-        CommandStatus * status=
-                new CommandStatus(CommandStatus::DP_RESET_LOG, true,
-                        "{\"message\":\"The logger file repointing succeeded\", \"log\":\""
-                        + server->getCoreInfo()->getHTTPServerAccessLogFile() + "\"}");
-        return status;
+                + shardArgs->server->getCoreInfo()->getHTTPServerAccessLogFile() + "\"}").c_str());
+        shardArgs->shardResults->message = "{\"message\":\"The logger file repointing succeeded\", \"log\":\""
+                + shardArgs->server->getCoreInfo()->getHTTPServerAccessLogFile() + "\"}";
+        shardArgs->shardResults->statusValue = true;
     }
+
+	//
+	return NULL;
+
 }
-
-
-CommandStatus * DPInternalRequestHandler::internalCommitCommand(boost::shared_ptr<Srch2Server> serverSharedPtr, CommitCommand * resetData){
-
-
-
-	// first get the Srch2Server pointer from the map
-	Srch2Server * server = serverSharedPtr.get();
-
-	if(resetData == NULL || server == NULL){
-        CommandStatus * status =
-                new CommandStatus(CommandStatus::DP_COMMIT, false, "");
-        return status;
-    }
+void * DPInternalRequestHandler::commitInShardThreadWork(void * args){
+	ShardStatusOnlyArgs * shardArgs = (ShardStatusOnlyArgs * )args;
 
     //commit the index.
-    if ( server->getIndexer()->commit() == srch2::instantsearch::OP_SUCCESS)
+    if ( shardArgs->server->getIndexer()->commit() == srch2::instantsearch::OP_SUCCESS)
     {
         Logger::info("%s", "{\"commit\":\"success\"}");
-        CommandStatus * status =
-                new CommandStatus(CommandStatus::DP_COMMIT, true, "{\"commit\":\"success\"}");
-        return status;
+        shardArgs->shardResults->message = "{\"commit\":\"success\"}";
+        shardArgs->shardResults->statusValue = true;
     }
     else
     {
         Logger::info("%s", "{\"commit\":\"failed\"}");
-        CommandStatus * status =
-                new CommandStatus(CommandStatus::DP_COMMIT, false, "{\"commit\":\"failed\"}");
-        return status;
+        shardArgs->shardResults->message = "{\"commit\":\"failed\"}";
+         shardArgs->shardResults->statusValue = false;
     }
+
+	//
+	return NULL;
 }
 
 
-/*
- * The following methods provide an API to register/allocate/delete/load/create and other operations on
- * indices.
- * NOTE: As of June 16th, since our core codebase is wrapped and accessed from sharding layers through Srch2Server
- * objects, indices and processing are combined in the Srch2Server objects, so DP Internal shouldn't be viewed as
- * an Index Manager. Index Managers tend to be a container for indices while this module is more of a wrapper on the API
- * provided by the core codebase.
- */
-boost::shared_ptr<Srch2Server> DPInternalRequestHandler::registerAndInitializeSrch2Server(const ShardId correspondingShardId,
-		const CoreInfo_t * coreInfo,  const string & directoryPath){
-	isWritableMapLock.lock();
-	boost::shared_ptr<Srch2Server> srch2Server;
-	srch2Server.reset(new Srch2Server(coreInfo, correspondingShardId, maxServerId));
-	srch2ServersIsWritable.insert(std::make_pair(maxServerId, true));
-	maxServerId++;
-	isWritableMapLock.unlock();
+void * DPInternalRequestHandler::mergeInShardThreadWork(void * args){
+	ShardStatusOnlyArgs * shardArgs = (ShardStatusOnlyArgs * )args;
 
-	bootstrapSrch2Server(srch2Server, directoryPath);
+    //merge the index.
+	// TODO : how should we merge?
+    if ( shardArgs->server->getIndexer()->merge_ForTesting() == srch2::instantsearch::OP_SUCCESS)
+    {
+        Logger::info("%s", "{\"merge\":\"success\"}");
+        shardArgs->shardResults->message = "{\"merge\":\"success\"}";
+        shardArgs->shardResults->statusValue = true;
+    }
+    else
+    {
+        Logger::info("%s", "{\"merge\":\"failed\"}");
+        shardArgs->shardResults->message = "{\"merge\":\"failed\"}";
+         shardArgs->shardResults->statusValue = false;
+    }
 
-	return srch2Server;
+	//
+	return NULL;
 }
 
 DPInternalAPIStatus DPInternalRequestHandler::bootstrapSrch2Server(boost::shared_ptr<Srch2Server> srch2Server, const string & directoryPath){
@@ -553,17 +790,6 @@ DPInternalAPIStatus DPInternalRequestHandler::bootstrapSrch2Server(boost::shared
     }
 
 
-	return DPInternal_Success;
-}
-
-DPInternalAPIStatus DPInternalRequestHandler::untrackSrch2Server(boost::shared_ptr<Srch2Server> srch2Server){
-	isWritableMapLock.lock();
-	map< unsigned , bool >::iterator serverEntryItr = srch2ServersIsWritable.find(srch2Server->getServerId());
-	if(serverEntryItr == srch2ServersIsWritable.end()){
-		return DPInternal_Srch2ServerNotFound;
-	}
-	srch2ServersIsWritable.erase(serverEntryItr);
-	isWritableMapLock.unlock();
 	return DPInternal_Success;
 }
 

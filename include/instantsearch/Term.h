@@ -113,6 +113,8 @@ public:
     Term(const std::string &keyword, TermType type,
             const float boost = 1.0, const float fuzzyMatchPenalty = 0.5, const uint8_t threshold = 0);
 
+    Term(const Term & term);
+
     /**
      * \ingroup RankingFunctions
      * Each Term is associated with a boost value, which defines the

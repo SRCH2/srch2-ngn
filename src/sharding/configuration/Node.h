@@ -52,7 +52,6 @@ public:
 		this->nodeMaster = node.nodeMaster;
 		this->nodeMasterEligible = node.nodeMasterEligible;
 		this->thisIsMe = node.thisIsMe;
-		this->numberOfPrimaryShards = node.numberOfPrimaryShards;
 	}
 
 	bool isMasterEligible() const;
@@ -63,28 +62,11 @@ public:
 	void setId(unsigned nodeId);
 	unsigned int getPortNumber() const;
 
-	unsigned getDefaultNumberOfPrimaryShards() const;
 	void setMaster(bool isMaster);
 	bool thisIsMe; // temporary for V0
 
 	unsigned short getPort(PortType_t portType) const;
 	void setPort(PortType_t portType, unsigned short portNumber);
-
-	// TODO (for Surendra): refine this iterator
-	// const Node& operator = (const Node& node);
-
-	// an iterator to go through the shards in this node
-	//class ShardIterator {
-	//public:
-	//unsigned first; // TODO: Ask Surendra
-	//Shard second;
-	//bool operator == (NodeIterator* rhs);
-	//};
-
-	//typedef NodeIterator * Iterator;
-	//Iterator begin();
-	//Iterator next();
-	//Iterator end();
 
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
@@ -106,8 +88,6 @@ private:
 	bool nodeMaster;
 	// Allow this node to be eligible as a master node (enabled by default).
 	bool nodeMasterEligible;
-	// temporary for phase 1 of V1
-	unsigned numberOfPrimaryShards;
 };
 
 }

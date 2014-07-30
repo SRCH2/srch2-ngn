@@ -1,7 +1,7 @@
 #ifndef __SHARDING_PROCESSOR_GET_INFO_AGGREGATOR_AND_PRINT_H_
 #define __SHARDING_PROCESSOR_GET_INFO_AGGREGATOR_AND_PRINT_H_
 
-#include "sharding/processor/DistributedProcessorAggregator.h"
+#include "sharding/processor/aggregators/DistributedProcessorAggregator.h"
 
 #include "serializables/SerializableGetInfoCommandInput.h"
 #include "serializables/SerializableGetInfoResults.h"

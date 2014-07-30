@@ -174,6 +174,7 @@ public:
 	string getNodeDir(const string& clusterName, const string& nodeName);
 	string getCoreDir(const string& clusterName, const string& nodeName, const string& coreName);
 	string getShardDir(const string& clusterName, const string& nodeName, const string& coreName, const ShardId& shardId);
+	void renameDir(const string & src, const string & target);
 
 	//It returns the number of files/directory deleted, if the returned value is 0, that means nothing got deleted.
 	uint removeDir(const string& path);
@@ -192,7 +193,7 @@ public:
 
 	typedef std::map<const string, CoreInfo_t *> CoreInfoMap_t;
 
-	void getClusterReadView(boost::shared_ptr<const Cluster> & clusterReadview) const{
+	void getClusterReadView(boost::shared_ptr<const ClusterResourceMetadata_Readview> & clusterReadview) const{
         // We need the lock it to prevent the following two operations from happening at the same time.
         // One reader is doing reader = readview, which is reading the readview.
         // At the same time, we can call merge(), in which we can have "readview=writeview", which is modifying the read view.
@@ -201,22 +202,7 @@ public:
         pthread_spin_unlock(&m_spinlock);
 	}
 
-	Cluster * getClusterWriteView(){
-		return metadata_writeView;
-	}
-
-	void setClusterWriteViewAndDeleteTheOldOne(Cluster * newWriteview){
-		if(metadata_writeView != NULL){
-			delete metadata_writeView;
-		}
-		this->metadata_writeView = newWriteview;
-	}
-
-	void commitClusterMetadata(){
-		//NOTE: This implementation assumes there is only one writer to the cluster metadata
-		// (which is the MigrationManager )
-        // make a copy from writeview
-        Cluster * newReadview = new Cluster(*metadata_writeView);
+	void commitClusterMetadata(ClusterResourceMetadata_Readview * newReadview){
         pthread_spin_lock(&m_spinlock);
         // set readview pointer to the new copy of writeview
         metadata_readView.reset(newReadview);
@@ -232,13 +218,24 @@ public:
 	}
 
 private:
-    boost::shared_ptr< const Cluster > metadata_readView;
-    Cluster * metadata_writeView;
+    boost::shared_ptr< const ClusterResourceMetadata_Readview > metadata_readView;
     mutable pthread_spinlock_t m_spinlock;
+
+    // help in parsing and making the first Cluster readview
+    string clusterNameStr ;
+    vector<CoreInfo_t *> clusterCores;
+    CoreInfo_t * getCoreByName(const string &coreName) const{
+    	for(unsigned coreIdx = 0 ; coreIdx < clusterCores.size(); ++coreIdx){
+    		if(clusterCores.at(coreIdx)->getName().compare(coreName) == 0){
+    			return clusterCores.at(coreIdx);
+    		}
+    	}
+    	return NULL;
+    }
+
 
 	volatile bool isLocked; //both read / write use this lock.
 //	DiscoveryParams discovery; // TODO : should we keep this member ?
-	Cluster cluster;
 	Ping ping;
 	MulticastDiscovery mDiscovery;
 	Transport transport;
@@ -335,10 +332,10 @@ protected:
 	void parseMultipleCores(const xml_node &coresNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
 	// parse all data source settings (can handle multiple cores or default/no core)
-	void parseDataConfiguration(const xml_node &configNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+	void parseAllCoreTags(const xml_node &configNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
 	// parse all settings for a single data source, either under <config> or within a <core>
-	void parseDataFieldSettings(const xml_node &parentNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+	void parseCoreInformationTags(const xml_node &parentNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
 	void parseSchema(const xml_node &schemaNode, CoreConfigParseState_t *coreParseState, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
@@ -446,9 +443,6 @@ public:
 	{
 		return defaultCoreSetFlag;
 	}
-
-	CoreInfo_t *getDefaultCoreInfo_Writeview();
-	const CoreInfo_t * getDefaultCoreInfo() const;
 
 private:
 

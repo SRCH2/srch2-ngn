@@ -29,7 +29,7 @@ DPInternalRequestHandler* RoutingManager::getDpInternal() {
     return &this->dpInternal;
 }
 
-InternalMessageHandler * RoutingManager::getInternalMessageHandler(){
+RequestMessageHandler * RoutingManager::getInternalMessageHandler(){
     return &this->internalMessageHandler;
 }
 
@@ -43,21 +43,6 @@ TransportManager& RoutingManager::getTransportManager(){
 
 MessageAllocator * RoutingManager::getMessageAllocator() {
     return transportManager.getMessageAllocator();
-}
-
-void * RoutingManager::routeInternalMessage(void * arg) {
-    std::pair<RoutingManager * , std::pair<Message *, NodeId> >  * rmAndMsgPointers =
-            (std::pair<RoutingManager * , std::pair<Message * , NodeId> >  *)arg;
-
-    RoutingManager * rm = rmAndMsgPointers->first;
-    Message * msg = rmAndMsgPointers->second.first;
-    NodeId nodeId = rmAndMsgPointers->second.second;
-
-    ASSERT(msg->isInternal());
-    rm->getInternalMessageHandler()->resolveMessage(msg, nodeId);
-    // what if resolve returns NULL for something?
-    delete rmAndMsgPointers;
-    return NULL;
 }
 
 } }

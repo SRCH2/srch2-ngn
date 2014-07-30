@@ -20,7 +20,11 @@ public:
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
     void* serialize(MessageAllocator * aloc){
-        return aloc->allocateMessageReturnBody(0);
+        return aloc->allocateMessageReturnBody(getNumberOfBytes());
+    }
+
+    unsigned getNumberOfBytes() const{
+        return 0;
     }
 
     //given a byte stream recreate the original object
