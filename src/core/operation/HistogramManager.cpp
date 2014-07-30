@@ -48,6 +48,7 @@ void HistogramManager::markTermToForceSuggestionPhysicalOperator(LogicalPlanNode
 		case LogicalPlanNodeTypeOr:
 		case LogicalPlanNodeTypeNot:
 		{
+			// In this case each node can have at most 2 children. (Because of geo node)
 			ASSERT(node->children.size() <= 2);
 			for( unsigned i = 0 ; i < node->children.size() ; i++){
 				markTermToForceSuggestionPhysicalOperator(node->children.at(i) , isFuzzy);
@@ -114,35 +115,35 @@ void HistogramManager::annotateWithActiveNodeSets(LogicalPlanNode * node , bool 
 }
 
 
-void HistogramManager::annotateWithEstimatedProbabilitiesAndNumberOfResults(LogicalPlanNode * node , bool isFuzzy){
-	if(node == NULL){
+void HistogramManager::annotateWithEstimatedProbabilitiesAndNumberOfResults(LogicalPlanNode * logicalPlanNode , bool isFuzzy){
+	if(logicalPlanNode == NULL){
 		return;
 	}
 	// first estimate probability and number of results for the children, then based on this operator aggregate the probabilities
 	// and compute the number of results.
-	for(vector<LogicalPlanNode * >::iterator child = node->children.begin(); child != node->children.end() ; ++child){
+	for(vector<LogicalPlanNode * >::iterator child = logicalPlanNode->children.begin(); child != logicalPlanNode->children.end() ; ++child){
 		annotateWithEstimatedProbabilitiesAndNumberOfResults(*child , isFuzzy);
 	}
 
-	switch (node->nodeType) {
+	switch (logicalPlanNode->nodeType) {
 		case LogicalPlanNodeTypeAnd:
 		{
 			/*
 			 * P(A AND B AND C) = P(A) * P(B) * P(C)
 			 */
 			double conjunctionAggregatedProbability = 1;
-			for(vector<LogicalPlanNode * >::iterator child = node->children.begin(); child != node->children.end() ; ++child){
+			for(vector<LogicalPlanNode * >::iterator child = logicalPlanNode->children.begin(); child != logicalPlanNode->children.end() ; ++child){
 				conjunctionAggregatedProbability = conjunctionAggregatedProbability * (*child)->stats->getEstimatedProbability();
 			}
-			node->stats->setEstimatedProbability(conjunctionAggregatedProbability);
-			node->stats->setEstimatedNumberOfResults(computeEstimatedNumberOfResults(node->stats->getEstimatedProbability()));
+			logicalPlanNode->stats->setEstimatedProbability(conjunctionAggregatedProbability);
+			logicalPlanNode->stats->setEstimatedNumberOfResults(computeEstimatedNumberOfResults(logicalPlanNode->stats->getEstimatedProbability()));
 			/*
 			 * if probability is not zero but estimated number of results is zero, it means probability has
 			 * become very small. But since this zero will be multiplied to many other parts of costing
 			 * it shouldn't be zero or it disables them ...
 			 */
-			if(conjunctionAggregatedProbability != 0 && node->stats->getEstimatedNumberOfResults() == 0){
-				node->stats->setEstimatedNumberOfResults(1);
+			if(conjunctionAggregatedProbability != 0 && logicalPlanNode->stats->getEstimatedNumberOfResults() == 0){
+				logicalPlanNode->stats->setEstimatedNumberOfResults(1);
 			}
 			break;
 		}
@@ -153,20 +154,20 @@ void HistogramManager::annotateWithEstimatedProbabilitiesAndNumberOfResults(Logi
 			 * P(X OR Y) = P(X) + P(Y) - P(X) * P(Y)
 			 */
 			double disjunctionAggregatedProbability = 0;
-			for(vector<LogicalPlanNode * >::iterator child = node->children.begin(); child != node->children.end() ; ++child){
+			for(vector<LogicalPlanNode * >::iterator child = logicalPlanNode->children.begin(); child != logicalPlanNode->children.end() ; ++child){
 				disjunctionAggregatedProbability =
 						disjunctionAggregatedProbability + (*child)->stats->getEstimatedProbability()
 						- (disjunctionAggregatedProbability * (*child)->stats->getEstimatedProbability());
 			}
-			node->stats->setEstimatedProbability(disjunctionAggregatedProbability);
-			node->stats->setEstimatedNumberOfResults(computeEstimatedNumberOfResults(node->stats->getEstimatedProbability()));
+			logicalPlanNode->stats->setEstimatedProbability(disjunctionAggregatedProbability);
+			logicalPlanNode->stats->setEstimatedNumberOfResults(computeEstimatedNumberOfResults(logicalPlanNode->stats->getEstimatedProbability()));
 			/*
 			 * if probability is not zero but estimated number of results is zero, it means probability has
 			 * become very small. But since this zero will be multiplied to many other parts of costing
 			 * it shouldn't be zero or it disables them ...
 			 */
-			if(disjunctionAggregatedProbability != 0 && node->stats->getEstimatedNumberOfResults() == 0){
-				node->stats->setEstimatedNumberOfResults(1);
+			if(disjunctionAggregatedProbability != 0 && logicalPlanNode->stats->getEstimatedNumberOfResults() == 0){
+				logicalPlanNode->stats->setEstimatedNumberOfResults(1);
 			}
 			break;
 		}
@@ -175,46 +176,46 @@ void HistogramManager::annotateWithEstimatedProbabilitiesAndNumberOfResults(Logi
 			/*
 			 * P(NOT A) = 1 - P(A)
 			 */
-			ASSERT(node->children.size() == 1); // NOT should have exactly one child
-			double childProbability = node->children.at(0)->stats->getEstimatedProbability();
+			ASSERT(logicalPlanNode->children.size() == 1); // NOT should have exactly one child
+			double childProbability = logicalPlanNode->children.at(0)->stats->getEstimatedProbability();
 			double negationProbability = 1 - childProbability;
-			node->stats->setEstimatedProbability(negationProbability);
-			node->stats->setEstimatedNumberOfResults(computeEstimatedNumberOfResults(node->stats->getEstimatedProbability()));
+			logicalPlanNode->stats->setEstimatedProbability(negationProbability);
+			logicalPlanNode->stats->setEstimatedNumberOfResults(computeEstimatedNumberOfResults(logicalPlanNode->stats->getEstimatedProbability()));
 			/*
 			 * if probability is not zero but estimated number of results is zero, it means probability has
 			 * become very small. But since this zero will be multiplied to many other parts of costing
 			 * it shouldn't be zero or it disables them ...
 			 */
-			if(negationProbability != 0 && node->stats->getEstimatedNumberOfResults() == 0){
-				node->stats->setEstimatedNumberOfResults(1);
+			if(negationProbability != 0 && logicalPlanNode->stats->getEstimatedNumberOfResults() == 0){
+				logicalPlanNode->stats->setEstimatedNumberOfResults(1);
 			}
 			break;
 		}
 		case LogicalPlanNodeTypePhrase:
 		{
-			double childProbability = node->children.at(0)->stats->getEstimatedProbability();
-			node->stats->setEstimatedProbability(childProbability);
-			node->stats->setEstimatedNumberOfResults(computeEstimatedNumberOfResults(node->stats->getEstimatedProbability()));
+			double childProbability = logicalPlanNode->children.at(0)->stats->getEstimatedProbability();
+			logicalPlanNode->stats->setEstimatedProbability(childProbability);
+			logicalPlanNode->stats->setEstimatedNumberOfResults(computeEstimatedNumberOfResults(logicalPlanNode->stats->getEstimatedProbability()));
 			break;
 		}
 		case LogicalPlanNodeTypeTerm:
 		{
-			unsigned thresholdForEstimation = isFuzzy ? node->fuzzyTerm->getThreshold() : node->exactTerm->getThreshold();
-			TermType termType = isFuzzy ? node->fuzzyTerm->getTermType() : node->exactTerm->getTermType();
-			boost::shared_ptr<PrefixActiveNodeSet> activeNodeSetForEstimation =  node->stats->getActiveNodeSetForEstimation(isFuzzy);
+			unsigned thresholdForEstimation = isFuzzy ? logicalPlanNode->fuzzyTerm->getThreshold() : logicalPlanNode->exactTerm->getThreshold();
+			TermType termType = isFuzzy ? logicalPlanNode->fuzzyTerm->getTermType() : logicalPlanNode->exactTerm->getTermType();
+			boost::shared_ptr<PrefixActiveNodeSet> activeNodeSetForEstimation =  logicalPlanNode->stats->getActiveNodeSetForEstimation(isFuzzy);
 			double termProbability;
 			unsigned numberOfLeafNodes;
 			computeEstimatedProbabilityOfPrefixAndNumberOfLeafNodes(termType, activeNodeSetForEstimation.get(), thresholdForEstimation, termProbability, numberOfLeafNodes);
-			node->stats->setEstimatedProbability(termProbability);
-			node->stats->setEstimatedNumberOfResults(computeEstimatedNumberOfResults(node->stats->getEstimatedProbability()));
-			node->stats->setEstimatedNumberOfLeafNodes(numberOfLeafNodes);
+			logicalPlanNode->stats->setEstimatedProbability(termProbability);
+			logicalPlanNode->stats->setEstimatedNumberOfResults(computeEstimatedNumberOfResults(logicalPlanNode->stats->getEstimatedProbability()));
+			logicalPlanNode->stats->setEstimatedNumberOfLeafNodes(numberOfLeafNodes);
 			/*
 			 * if probability is not zero but estimated number of results is zero, it means probability has
 			 * become very small. But since this zero will be multiplied to many other parts of costing
 			 * it shouldn't be zero or it disables them ...
 			 */
-			if(termProbability != 0 && node->stats->getEstimatedNumberOfResults() == 0){
-				node->stats->setEstimatedNumberOfResults(1);
+			if(termProbability != 0 && logicalPlanNode->stats->getEstimatedNumberOfResults() == 0){
+				logicalPlanNode->stats->setEstimatedNumberOfResults(1);
 			}
 			break;
 		}
@@ -224,7 +225,7 @@ void HistogramManager::annotateWithEstimatedProbabilitiesAndNumberOfResults(Logi
 			double quadTreeNodeProbability;
 			unsigned geoNumOfLeafNodes = 0;
 			QuadTreeNode *geoNode;
-			vector<QuadTreeNode*>* quadTreeNodeSet = node->stats->getQuadTreeNodeSetForEstimation();
+			vector<QuadTreeNode*>* quadTreeNodeSet = logicalPlanNode->stats->getQuadTreeNodeSetForEstimation();
 			for( unsigned i = 0 ; i < quadTreeNodeSet->size() ; i++){
 				geoNode = quadTreeNodeSet->at(i);
 				quadTreeNodeProbability = ( double(geoNode->getNumOfElementsInSubtree()) /
@@ -232,16 +233,16 @@ void HistogramManager::annotateWithEstimatedProbabilitiesAndNumberOfResults(Logi
 				geoElementsProbability = geoNode->aggregateValueByJointProbabilityDouble(geoElementsProbability, quadTreeNodeProbability);
 				geoNumOfLeafNodes += geoNode->getNumOfLeafNodesInSubtree();
 			}
-			node->stats->setEstimatedProbability(geoElementsProbability);
-			node->stats->setEstimatedNumberOfResults(computerEstimatedNumberOfResultsForGeo(geoElementsProbability));
-			node->stats->setEstimatedNumberOfLeafNodes(geoNumOfLeafNodes);
+			logicalPlanNode->stats->setEstimatedProbability(geoElementsProbability);
+			logicalPlanNode->stats->setEstimatedNumberOfResults(computerEstimatedNumberOfResultsForGeo(geoElementsProbability));
+			logicalPlanNode->stats->setEstimatedNumberOfLeafNodes(geoNumOfLeafNodes);
 			/*
 			 * if probability is not zero but estimated number of results is zero, it means probability has
 			 * become very small. But since this zero will be multiplied to many other parts of costing
 			 * it shouldn't be zero or it disables them ...
 			 */
-			if(geoElementsProbability != 0 && node->stats->getEstimatedNumberOfResults() == 0){
-				node->stats->setEstimatedNumberOfResults(1);
+			if(geoElementsProbability != 0 && logicalPlanNode->stats->getEstimatedNumberOfResults() == 0){
+				logicalPlanNode->stats->setEstimatedNumberOfResults(1);
 			}
 			break;
 		}
@@ -272,7 +273,7 @@ unsigned HistogramManager::countNumberOfKeywords(LogicalPlanNode * node , bool i
 		}
 		case LogicalPlanNodeTypeGeo:
 		{
-			return 0;
+			return 0; // we don't have any keyword in the Geo Node
 		}
 		default:
 			ASSERT(false);

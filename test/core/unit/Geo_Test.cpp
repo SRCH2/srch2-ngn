@@ -393,7 +393,7 @@ void readRecordsFromFile(Indexer *indexer, Schema *schema, Analyzer* analyzer, c
 	}
 }
 
-void testSerialization(string directoryName)
+void Serialize(string directoryName)
 {
 	// Create a schema
 	Schema *schema = Schema::create(LocationIndex);
@@ -432,6 +432,7 @@ void testSerialization(string directoryName)
 
 void testDeserialization(string directoryName)
 {
+	Serialize(directoryName);
 	Schema *schema = Schema::create(LocationIndex);
 	schema->setPrimaryKey("list_id"); // integer, by default not searchable
 	schema->setSearchableAttribute("title", 2); // searchable text
@@ -497,10 +498,8 @@ int main(int argc, char *argv[])
 
 	//--- Serialization ---//
 
-	testSerialization(directoryName);
-    cout << "3/4 testSerialization passes." << endl;
-
     testDeserialization(directoryName);
+    cout << "3/4 testSerialization passes" << endl;
     cout << "4/4 testDeserialization passes." << endl;
 
 

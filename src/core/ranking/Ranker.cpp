@@ -141,10 +141,10 @@ namespace srch2
     	return 1 - score;
     }
 
-    double DefaultTopKRanker::computeScoreforGeo(Point &recordPosition, Shape &query){
+    double DefaultTopKRanker::computeScoreforGeo(Point &recordPosition, Shape &queryShape){
     	// calculate the score
-    	double minDist2UpperBound = max( query.getSearchRadius2() , GEO_MIN_SEARCH_RANGE_SQUARE);
-    	double resultMinDist2 = query.getMinDist2FromLatLong(recordPosition.x, recordPosition.y);
+    	double minDist2UpperBound = max( queryShape.getSearchRadius2() , GEO_MIN_SEARCH_RANGE_SQUARE);
+    	double resultMinDist2 = queryShape.getMinDist2FromLatLong(recordPosition.x, recordPosition.y);
     	double distanceRatio = ((double)sqrt(minDist2UpperBound) - (double)sqrt(resultMinDist2)) / (double)sqrt(minDist2UpperBound);
     	return max( distanceRatio * distanceRatio, GEO_MIN_DISTANCE_SCORE );
     }

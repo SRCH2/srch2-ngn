@@ -14,10 +14,10 @@ namespace instantsearch{
 
 QuadTree::QuadTree(){
 	Rectangle newRectangle;
-    newRectangle.min.x = GEO_BOTTOM_LEFT_X;
-    newRectangle.min.y = GEO_BOTTOM_LEFT_Y;
-    newRectangle.max.x = GEO_TOP_RIGHT_X;
-    newRectangle.max.y = GEO_TOP_RIGHT_Y;
+	newRectangle.min.x = GEO_BOTTOM_LEFT_X;
+	newRectangle.min.y = GEO_BOTTOM_LEFT_Y;
+	newRectangle.max.x = GEO_TOP_RIGHT_X;
+	newRectangle.max.y = GEO_TOP_RIGHT_Y;
 	this->root = new QuadTreeNode(newRectangle);
 }
 

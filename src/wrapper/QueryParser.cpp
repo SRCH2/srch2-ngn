@@ -1512,6 +1512,8 @@ void QueryParser::geoParser() {
      *      parses the geo parameters like leftBottomLatitude,leftBottomLongitude,rightTopLatitude,rightTopLongitude
      *      centerLatitude,centerLongitude,radius
      *      Based on what group of geo parameters are present it sets geoType to CIRCULAR or RECTANGULAR
+     *
+     *      example query:   http://localhost:8087/search?q=hospital&lblat=135.34&lblong=135.34&rtlat=180&rtlong=180
 	 */
 	Logger::debug("inside gepParser function");
 

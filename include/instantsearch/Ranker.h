@@ -41,7 +41,7 @@ namespace srch2 {
                                unsigned editDistance, unsigned termLength, 
                                bool isPrefixMatch, float prefixMatchPenalty, float termSimilarityBoost);
 
-        static double computeScoreforGeo(Point &recordPosition, Shape &query);
+        static double computeScoreforGeo(Point &recordPosition, Shape &queryShape);
 
         virtual float aggregateBoostedTermRuntimeScore(float oldRecordScore, 
                                float termBoost,

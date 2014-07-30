@@ -110,7 +110,7 @@ struct PhysicalPlanRandomAccessVerificationParameters {
 				forwardListDirectoryReadView(forwardListDirectoryReadView)
 	{
 		this->ranker = ranker;
-		this->isGeo = false;
+		this->geoFlag = false;
 	}
 
 	// if a term is verified, some infomation like staticscore or matching prefix
@@ -118,10 +118,10 @@ struct PhysicalPlanRandomAccessVerificationParameters {
 
 	// this flag shows that this object is create for a term or a geo element
 	// for geo element only geoScore is valid.
-    bool isGeo;
+    bool geoFlag;
 	float runTimeTermRecordScore;
     float staticTermRecordScore;
-    float GeoScore;
+    float geoScore;
     std::vector<TrieNodePointer> termRecordMatchingPrefixes;
     std::vector<unsigned> attributeBitmaps;
     std::vector<unsigned> prefixEditDistances;

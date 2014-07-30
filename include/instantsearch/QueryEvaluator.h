@@ -41,8 +41,6 @@ public:
 	unsigned keywordPopularityThreshold;
 	unsigned getAllMaximumNumberOfResults;
 	unsigned getAllTopKReplacementK;
-	string nameOfLatitudeAttribute;
-	string nameOfLongitudeAttribute;
 
 	QueryEvaluatorRuntimeParametersContainer(){
 		keywordPopularityThreshold = 50000;

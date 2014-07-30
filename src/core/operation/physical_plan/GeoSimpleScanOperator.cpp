@@ -66,7 +66,7 @@ PhysicalPlanRecordItem* GeoSimpleScanOperator::getNext(const PhysicalPlanExecuti
 				 this->forwardListDirectoryReadView,
 				 element->forwardListID,
 				 valid);
-		if(valid && this->queryShape->contains(element->point)){
+		if(valid && this->queryShape->contain(element->point)){
 			foundValidHit = true;
 			break;
 		}

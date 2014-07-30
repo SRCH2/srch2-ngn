@@ -184,7 +184,7 @@ void QuadTreeNode::rangeQuery(vector<QuadTreeNode*> & results, const Shape &rang
 			results.push_back(this);
 		}
 	}else{
-		if(range.contains(this->rectangle)){ // query range contains this node's rectangle.
+		if(range.contain(this->rectangle)){ // query range contains this node's rectangle.
 			results.push_back(this);
 		}else{ // call the rangeQuery for children of this node.
 			for(unsigned i = 0 ; i < GEO_CHILD_NUM ; i++){

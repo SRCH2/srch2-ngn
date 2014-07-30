@@ -331,7 +331,7 @@ private:
     void getAllResultsParser();
 
     /*
-     * this function parsers the parameters related to geo search like latitude and longitude .
+     * this function parses the parameters related to geo search like latitude and longitude .
      *
      */
     void geoParser();

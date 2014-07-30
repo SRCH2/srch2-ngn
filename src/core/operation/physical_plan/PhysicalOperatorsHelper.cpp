@@ -171,9 +171,9 @@ bool verifyByRandomAccessGeoHelper(PhysicalPlanRandomAccessVerificationParameter
 	point.y = *((float *)(buffer.start.get() + lenOffsetLong));
 
 	// verify the record. The query region should contains this record
-	if(queryShape->contains(point)){
-		parameters.isGeo = true;
-		parameters.GeoScore = parameters.ranker->computeScoreforGeo(point,*(queryShape));
+	if(queryShape->contain(point)){
+		parameters.geoFlag = true;
+		parameters.geoScore = parameters.ranker->computeScoreforGeo(point,*(queryShape));
 		return true;
 	}
 	return false;

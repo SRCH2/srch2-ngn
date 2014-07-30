@@ -75,8 +75,8 @@ public:
     Shape() {};
     virtual ~Shape() {};
 
-    virtual bool contains(const Point &point) const = 0;
-    virtual bool contains(const Rectangle &rectangle) const = 0;
+    virtual bool contain(const Point &point) const = 0;
+    virtual bool contain(const Rectangle &rectangle) const = 0;
     virtual bool intersects(const Rectangle &) const = 0;
     virtual double getMinDist2FromLatLong(double resultLat, double resultLng) const = 0;
     virtual double getSearchRadius2() const = 0;
@@ -120,16 +120,16 @@ public:
     };
 
     // check whether the rectangle contains the point
-    virtual bool contains(const Point &point) const
+    virtual bool contain(const Point &point) const
     {
         return min.x <= point.x && max.x >= point.x
             && min.y <= point.y && max.y >= point.y;
     };
 
     // check whether the rectangle contains the rectangle
-    virtual bool contains(const Rectangle &rectangle) const
+    virtual bool contain(const Rectangle &rectangle) const
     {
-    	return this->contains(rectangle.min) && this->contains(rectangle.max);
+    	return this->contain(rectangle.min) && this->contain(rectangle.max);
     };
 
     // check whether this rectangle is contained by another
@@ -157,7 +157,7 @@ public:
     	Point point;
     	point.x = lat;
     	point.y = lng;
-    	if(this->contains(point))
+    	if(this->contain(point))
     		return 0;
     	double xDist =  std::min(abs(max.x - lat), abs(min.x - lat));
     	double yDist =  std::min(abs(max.y - lng), abs(min.y - lng));
@@ -212,13 +212,13 @@ public:
 
     virtual ~Circle() {}
 
-    virtual bool contains(const Point &point) const
+    virtual bool contain(const Point &point) const
     {
         return center.distSquare(point) <= radius*radius;
     }
 
     // check whether the Circle contains the rectangle
-    virtual bool contains(const Rectangle &rectangle) const
+    virtual bool contain(const Rectangle &rectangle) const
     {
     	Point point1;
     	point1.x = rectangle.max.x;
@@ -226,7 +226,7 @@ public:
     	Point point2;
     	point2.x = rectangle.min.x;
     	point2.y = rectangle.max.y;
-    	return this->contains(point1) && this->contains(point2) && this->contains(rectangle.max) && this->contains(rectangle.min);
+    	return this->contain(point1) && this->contain(point2) && this->contain(rectangle.max) && this->contain(rectangle.min);
     }
 
     // how to detect the intersection between a circle and a rectangle
@@ -264,7 +264,7 @@ public:
     	Point point;
     	point.x = lat;
     	point.y = lng;
-    	if(this->contains(point))
+    	if(this->contain(point))
     		return 0;
     	return sqrt(this->getMinDist2FromLatLong(lat,lng)) - this->radius;
     }

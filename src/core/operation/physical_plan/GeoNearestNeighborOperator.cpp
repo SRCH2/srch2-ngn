@@ -55,7 +55,7 @@ PhysicalPlanRecordItem* GeoNearestNeighborOperator::getNext(const PhysicalPlanEx
 			if(heapItem->quadtreeNode->getIsLeaf()){ // this node is leaf. So we should insert all its elements to the heap.
 				vector<GeoElement*>* elements = heapItem->quadtreeNode->getElements();
 				for( unsigned i = 0 ; i < elements->size() ; i++ ){
-					if(queryShape->contains(elements->at(i)->point)){
+					if(queryShape->contain(elements->at(i)->point)){
 						heapItems.push_back(new GeoNearestNeighborOperatorHeapItem(elements->at(i), queryShape));
 						// push the new item into the heap
 						push_heap(heapItems.begin(),
@@ -82,7 +82,7 @@ PhysicalPlanRecordItem* GeoNearestNeighborOperator::getNext(const PhysicalPlanEx
 					 this->forwardListDirectoryReadView,
 					 heapItem->geoElement->forwardListID,
 					 valid);
-			if(valid && this->queryShape->contains(heapItem->geoElement->point)){
+			if(valid && this->queryShape->contain(heapItem->geoElement->point)){
 				PhysicalPlanRecordItem* newItem = this->queryEvaluator->getPhysicalPlanRecordItemPool()->createRecordItem();
 				newItem->setIsGeo(true); // this Item is for a geo element
 				// record id

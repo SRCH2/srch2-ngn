@@ -657,7 +657,7 @@ IndexData::~IndexData()
     delete this->forwardIndex;
 
     delete this->invertedIndex;
-
+    delete this->quadTree;
     delete this->schemaInternal;
     delete this->readCounter;
     delete this->writeCounter;

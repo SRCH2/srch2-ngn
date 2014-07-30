@@ -78,7 +78,7 @@ public:
 		rTermTypes.insert(rTermTypes.end(),this->termTypes.begin(),this->termTypes.end());
 	}
 	inline bool getIsGeo(){
-		return this->isGeo;
+		return this->geoFlag;
 	}
 	vector<TermType> & getTermTypesRef(){
 		return termTypes;
@@ -110,7 +110,7 @@ public:
 		this->termTypes = rTermType;
 	}
 	inline void setIsGeo(bool isGeoFlag){
-		this->isGeo = isGeoFlag;
+		this->geoFlag = isGeoFlag;
 	}
 	inline void addTermType(const TermType & rTermType){
 		this->termTypes.push_back(rTermType);
@@ -159,14 +159,14 @@ public:
     }
 
     PhysicalPlanRecordItem(){
-    	this->isGeo = false;
+    	this->geoFlag = false;
     };
 
 	~PhysicalPlanRecordItem(){};
 
     std::map<std::string,TypedValue> valuesOfParticipatingRefiningAttributes;
 private:
-    bool isGeo; // this flag shows that this Item is for a term or a geo element
+    bool geoFlag; // this flag shows that this Item is for a term or a geo element
 	unsigned recordId;
 	float recordStaticScore;
 	float recordRuntimeScore;
