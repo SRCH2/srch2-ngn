@@ -93,13 +93,9 @@ $ curl &quot;http://localhost:8081/docs&quot; -i -X PUT -d '[{&quot;id&quot; : &
 </code></pre>
 
 <h2 id="delete">2. Delete</h2>
-<p>This request deletes a record from the indexes. It needs to provide the "id" of the record to be deleted. For clients that do not support body in DELETE requests, the "id" can be sent in the query string one time per record.</p>
+<p>This request deletes a record from the indexes. It needs to provide the primary key of the record to be deleted. The primary key can be sent in the query string one time per record.</p>
 <p>Here is an example: </p>
-<pre><code class="python">$ curl &quot;http://localhost:8081/docs?id=1234&quot; -i -X DELETE
-</code></pre>
-
-<p>The following single 'curl' command can delete multiple records since it issues multiple requests to the server:</p>
-<pre><code class="python">$ curl &quot;http://localhost:8081/docs?id={1234,5678}&quot; -i -X DELETE
+<pre><code class="python">$ curl &quot;http://localhost:8081/docs?name_of_your_primaryKey=1234&quot; -i -X DELETE
 </code></pre>
 
 <h2 id="update">3. Update</h2>
