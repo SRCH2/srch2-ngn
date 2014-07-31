@@ -6,7 +6,11 @@
 #include <sstream>
 #include <string>
 #include <set>
-//#include <sys/signal.h>
+
+#ifndef ANDROID
+#include <sys/signal.h>
+#endif
+
 #include <signal.h>
 
 #include "thirdparty/snappy-1.0.4/snappy.h"
