@@ -43,7 +43,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
 </td></tr></tbody></table></div>
 
-#<center>SRCH2: Engine Installation</center>#{id="doc" style="color:#ee2e24" }
+#<center>SRCH2 Engine Installation</center>#{id="doc" style="color:#ee2e24" }
 
 
 This documentation gives step-by-step instructions on how to use the SRCH2 engine to setup a simple search service on movie information. The provided package includes a sample data file with movie records, with information such as title, year, director, and genre. A live demo is available at [here](http://demo.srch2.com/movies/).

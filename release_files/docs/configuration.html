@@ -38,12 +38,12 @@
 <div><h3><a style="text-decoration: none;color:#ee2e24" href="#doc">Content</a></h3></div>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#overview">1. Overview</a><br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#srch2Home">2. SRCH2HOME</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#listeningHostname">3. Hostname & Port</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#listeningHostname">3. Hostname & Ports</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dataDir">4. Data Directory</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#maxSearchThreads">5. Number of Search Threads</a></br><br>
-&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#data">6. Data Source Information</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dataSource">6.1. Data Source Type</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dataFile">6.2. Data File</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#maxSearchThreads">5. Thread Number</a></br><br>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#data">6. Data Source</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dataSource">6.1. Type</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#dataFile">6.2. File</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#mongodb">6.3. MongoDB</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#indexConfig">7. Index Config</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#indexType">7.1. Index Type</a></br><br>
@@ -116,10 +116,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 </td>
 
 <p></tr></tbody></table></div></p>
-<h1 id="doc" style="color:#ee2e24"><center>SRCH2 Manual: Engine Configuration</center></h1>
+<h1 id="doc" style="color:#ee2e24"><center>SRCH2: Engine Configuration</center></h1>
 <h2 id="overview">1. Overview</h2>
-<p>The SRCH2 engine can be customized using a configuration file in XML. This documentation describes the details of how to do this configuration.  The package includes a sample <a href="example-demo/srch2-config.xml">configuration file</a>.  Each parameter in the file can have one of the following two labels: "Required" means this tag must be present in the configuration file, and "Optional" means this tag does not need to be present.</p>
-<p>Tag names and tag attribute names (but not values) are case insensitive.</p>
+<p>The SRCH2 engine can be customized using a configuration file in XML. This documentation describes the details of how to do this configuration.  The package includes a sample <a href="example-demo/srch2-config.xml">configuration file</a>.  Each parameter in the file can have one of the following two labels: "Required" means this tag must be present in the configuration file, and "Optional" means this tag does not need to be present.  Tag names and tag attribute names (but not values) are case insensitive.</p>
 <h2 id="srch2Home">2. SRCH2 Home Directory, Required</h2>
 <pre><code>&lt;srch2Home&gt;/path/to/srch2/home/directory&lt;/srch2Home&gt;
 </code></pre>
@@ -133,34 +132,33 @@ path. For example, if we give the engine a data file at
 directory is set to "/usr/joe/srch2", then the configuration file
 should reference the data file's location as
 "example-data/movie-data.json".</p>
-<h2 id="listeningHostname">3. Hostname and Port, Required</h2>
+<h2 id="listeningHostname">3. Hostname and Ports, Required</h2>
 <pre><code>&lt;listeningHostname&gt;127.0.0.1&lt;/listeningHostname&gt;
 &lt;listeningPort&gt;8081&lt;/listeningPort&gt;
 </code></pre>
 
 <p>This parameter is the network identification (i.e., IP address or host name) of the server on which the SRCH2 engine is listening.
-NOTE: If you want the server to accept all incoming packets, use "<b>0.0.0.0</b>" (without the quotes).</p>
-<p>The following parameters allow moving certain operations to a different port.  This feature allows network based security
-to be implemented using standard firewall functionality.  Typically, the search and info operations remain on a port
-accessible from any IP address, and suggest, docs, update, save, export, and resetLogger are placed on a port to
-which access is restricted by a firewall to internal IP addresses.  An example of relocating ports is provided in
-the advanced example configuration file in example-demo/srch2-config-advanced.xml .</p>
+NOTE: If you want the server to accept all incoming packets, please use <b>0.0.0.0</b>.</p>
+<p>The following parameters allow certain operations on different ports.  This feature allows network-based security
+to be implemented using standard firewall functionality.  Typically, the "search" and "info" operations remain on a port
+accessible from any IP address.  Operations such as "suggest", "docs", "update", "save", "export", and "resetLogger" are placed on a port to which access is restricted by a firewall to internal IP addresses.  An example of relocating ports is provided in
+the advanced example configuration file in <a href="example-demo/srch2-config-advanced.xml">example-demo/srch2-config-advanced.xml</a>.</p>
 <h3 id="searchPort">3.1 SearchPort, Optional</h3>
-<p>This setting overrides listeningPort for search requests.  Search requests must be sent to this port instead.</p>
+<p>This parameter overrides "listeningPort" for "search" requests.  "Search" requests must be sent to this port instead.</p>
 <h3 id="SuggestPort&quot;">3.2 SuggestPort, Optional</h3>
-<p>This setting overrides listeningPort for suggest requests.  Suggest requests must be sent to this port instead.</p>
+<p>This parameter overrides "listeningPort" for "suggest" requests.  "Suggest" requests must be sent to this port instead.</p>
 <h3 id="InfoPort">3.3 InfoPort, Optional</h3>
-<p>This setting overrides listeningPort for info requests.  Info requests must be sent to this port instead.</p>
+<p>This parameter overrides "listeningPort" for "info" requests.  "Info" requests must be sent to this port instead.</p>
 <h3 id="DocsPort">3.4 DocsPort, Optional</h3>
-<p>This setting overrides listeningPort for docs requests.  Docs requests must be sent to this port instead.</p>
+<p>This parameter overrides "listeningPort" for "docs" requests.  "Docs" requests must be sent to this port instead.</p>
 <h3 id="UpdatePort">3.5 UpdatePort, Optional</h3>
-<p>This setting overrides listeningPort for update requests.  Update requests must be sent to this port instead.</p>
+<p>This parameter overrides "listeningPort" for "update" requests.  "Update" requests must be sent to this port instead.</p>
 <h3 id="SavePort">3.6 SavePort, Optional</h3>
-<p>This setting overrides listeningPort for save requests.  Save requests must be sent to this port instead.</p>
+<p>This parameter overrides "listeningPort" for "save" requests.  "Save" requests must be sent to this port instead.</p>
 <h3 id="ExportPort">3.7 ExportPort, Optional</h3>
-<p>This setting overrides listeningPort for export requests.  Export requests must be sent to this port instead.</p>
+<p>This parameter overrides "listeningPort" for "export" requests.  "Export" requests must be sent to this port instead.</p>
 <h3 id="ResetLoggerPort">3.8 ResetLoggerPort, Optional</h3>
-<p>This setting overrides listeningPort for resetlogger requests.  ResetLogger requests must be sent to this port instead.</p>
+<p>This parameter overrides "listeningPort" for "resetlogger" requests.  "ResetLogger" requests must be sent to this port instead.</p>
 <h2 id="dataDir">4. Data Directory, Required</h2>
 <pre><code>&lt;dataDir&gt;/path/to/data/directory/&lt;/dataDir&gt;
 </code></pre>
@@ -176,17 +174,17 @@ the advanced example configuration file in example-demo/srch2-config-advanced.xm
 <pre><code>&lt;dataSourceType&gt;1&lt;/dataSourceType&gt;
 </code></pre>
 
-<p>This value specifies the type of data source to be searched.  Notice that if there are previous indexes already created on the disk, the engine will always load them and ignore the flag.  The following flags are used only when there are no previous indexes.</p>
+<p>This value specifies the type of data source indexed by the engine.  Notice that if there are previous indexes already created  and serialized on disk, the engine will always load them and ignore the flag.  The following flags are used only when there are no previous indexes on disk.</p>
 <ul>
-<li>0: Create empty indexes, and ignore the data file specified by the "dataFile" tag).</li>
+<li>0: Create empty indexes, and ignore the data file specified by the "dataFile" tag (see below).</li>
 <li>1: Create indexes for records from the JSON file specified by the "dataFile" tag. "1" is the default value for this "dataSourceType" tag.</li>
-<li>2: Create indexes for records from MongoDB specified by the parameters under the "mongodb" tag.</li>
+<li>2: Create indexes for records from an external database such as MongoDB or SQLite, as specified by the parameters under the corresponding tag such as the "mongodb" tag.</li>
 </ul>
 <h3 id="dataFile">6.2. Data File, Required if "dataSourceType" is 1</h3>
 <pre><code>&lt;dataFile&gt;./example-demo/movie-data.json&lt;/dataFile&gt;
 </code></pre>
 
-<p>This value specifies a JSON data file to be loaded by the engine. Notice that it is a path relative to <a href="#srch2Home">srch2Home</a>.<br></p>
+<p>This value specifies a JSON data file to be loaded by the engine. Notice that it is a path relative to <a href="#srch2Home">srch2Home</a>.</p>
 <h3 id="mongodb">6.3. MongoDB, Required if "dataSourceType" is 2</h3>
 <pre><code>&lt;mongodb&gt;
     &lt;host&gt;www.my-company.com&lt;/host&gt;
@@ -199,14 +197,14 @@ the advanced example configuration file in example-demo/srch2-config-advanced.xm
 
 <p>This section specifies MongoDB instance information. Note: "listenerWaitTime" specifies how frequently (in seconds) the SRCH2 engine pulls changes from the MongoDB instance (e.g., every 3 seconds). </p>
 <h2 id="indexConfig">7. Index Config:</h2>
-<p>This tag groups parameters related to customizing the search engine's indices.</p>
+<p>This tag has parameters to customize the search engine's indexes.</p>
 <pre><code>&lt;indexConfig&gt;
 ...
 &lt;/indexConfig&gt;
 </code></pre>
 
 <h3 id="indexType">7.1. Index Type, Required</h3>
-<p>IndexType specifies if the search engine should build text or location indices.</p>
+<p>IndexType specifies if the search engine should build text or location indexes.</p>
 <pre><code>&lt;indexType&gt;0&lt;/indexType&gt;
 </code></pre>
 
@@ -218,21 +216,21 @@ the advanced example configuration file in example-demo/srch2-config-advanced.xm
 <pre><code>&lt;fieldBoost&gt;&lt;/fieldBoost&gt;
 </code></pre>
 
-<p>This setting is used to increase or decrease the weight of fields when calculating the ranking of search results.  It specifies boost values for the <a href="#indexConfig">searchable attributes</a> and has a range of [1,100]. If the value is outside the range, it will be set to 1. For example, the boost values for two searchable attributes can be specified as: <br></p>
+<p>This parameter is used to increase or decrease the weight of fields when calculating the ranking of search results.  It specifies boost values for the <a href="#indexConfig">searchable attributes</a> and has a range of [1,100]. If the value is outside the range, it will be set to 1. For example, the boost values for two searchable attributes can be specified as: <br></p>
 <pre><code>&lt;fieldBoost&gt;title^2 director^1&lt;/fieldBoost&gt;
 </code></pre>
 
 <p>This parameter, together with the following parameters, is used in the
 <a href="ranking.html">ranking function</a> of the engine.  They are grouped
 under the "indexConfig" tag because they are used to compute static
-scores during the constructions of the indexes, which happens only once
+scores during the construction of the indexes, which happens only once
 when the search engine is started.  There are also
 parameters under the "<a href="#queryConfig">query</a>" tag that are used to
 compute query-specific scores. </p>
-<p>Notice that the fields are separated by a single white space. If a
+<p>In the example above, the field "title" has a boost value of 1.
+Notice that the fields are separated by a single white space. If a
 value is not provided for a field, the engine uses a default value of
-1. In the example above, the filed "title" will have a boost value of
-1.<br></p>
+1. <br></p>
 <h3 id="recordBoostField">7.3. Record Boost Field, Optional</h3>
 <pre><code>&lt;recordBoostField&gt;relevance&lt;/recordBoostField&gt;
 </code></pre>
@@ -242,10 +240,9 @@ value is not provided for a field, the engine uses a default value of
 <pre><code>&lt;defaultQueryTermBoost&gt;1&lt;/defaultQueryTermBoost&gt;
 </code></pre>
 
-<p>The value of this field specifies default ranking value for terms which do not have the field specified in "recordBoostField". If the parameter is not given, the engine uses 1 as the default value.<br></p>
+<p>The value of this field specifies default ranking value for terms that do not have the field specified in "recordBoostField". If the parameter is not given, the engine uses 1 as the default value.<br></p>
 <h3 id="enablePositionIndex">7.5. Enable Positional Index, Optional</h3>
-<p>A positional index supports queries with conditions related to keyword positions in a record, such as <a href="restful-search.html#proximitySearch">proximity search</a>. The "enablePositionIndex" tag can be used to enable or disable positional indexing.  For instance, the following
-example shows how to enable this indexing:</p>
+<p>A positional index supports queries with conditions related to keyword positions in a record, such as <a href="restful-search.html#proximitySearch">proximity search</a>. The "enablePositionIndex" tag is used to enable or disable positional indexing.  For instance, the following example shows how to enable this indexing:</p>
 <pre><code>&lt;enablePositionIndex&gt;1&lt;/enablePositionIndex&gt;
 </code></pre>
 
@@ -277,62 +274,56 @@ example shows how to enable this indexing:</p>
 <li><b>doc_boost</b>: the boost value of the record as specified in an attribute;</li>
 <li><b>doc_length</b>: number of unique keywords in the record.</li>
 </ul>
-<p>The expression allows operators such as +, -, /, *, (, ), 0-9, etc.  Check the <a href="ranking.html">Ranking Section</a> to see how this static score is used in ranking.  An example of the power and complexity of this expression is provided in the advanced example in example-demo/srch2-config-advanced.xml .</p>
+<p>The expression allows operators such as +, -, /, *, (, ), 0-9, etc.  Check the <a href="ranking.html">Ranking Section</a> to see how this static score is used in ranking.  An example of the power and complexity of this expression is provided in <a href="example-demo/srch2-config-advanced.xml">example-demo/srch2-config-advanced.xml</a>.</p>
 <h3 id="fuzzyMatchPenalty">8.2. Fuzzy Match Penalty, Optional</h3>
 <pre><code>&lt;fuzzyMatchPenalty&gt;0.9&lt;/fuzzyMatchPenalty&gt;
 </code></pre>
 
-<p>"FuzzyMatchPenalty" is used to decide how much penalty we want to give to records that fuzzy
-match the search term compared to terms that match exactly. See the <a href="ranking.html">Ranking Section</a>
+<p>"FuzzyMatchPenalty" is used to decide how much penalty we want to give to records with a fuzzy
+match to a search term compared to terms with an exact match. See the <a href="ranking.html">Ranking Section</a>
 section about how this parameter is used. The default value is 0.5.</p>
 <h3 id="queryTermSimilarityThreshold">8.3. Term Similarity Threshold, Optional</h3>
 <pre><code>&lt;queryTermSimilarityThreshold&gt;0.75&lt;/queryTermSimilarityThreshold&gt;
 </code></pre>
 
 <p>This value is used in the computation of the maximum edit distance we allow in fuzzy search
-for a search term. Edit distance is the minimum number of single character changes required
-transform a search term into a term in a record.  Conceptually, edit distance represents the
+for a search term. <a href="http://en.wikipedia.org/wiki/Edit_distance">Edit distance</a> is the minimum number of single-character changes required transform a search term into a term in a record.  Conceptually, edit distance represents the
 difference between the search term and a word in a record.</p>
 <p>The value of queryTermSimilarityThreshold must lie in [0,1], with 1 representing exact
 match, and 0 being the largest possible error tolerance. The default
 value is 0.5.</p>
 <p>This threshold is normalized by the length of the query term. The
-engine uses the following formula the compute the edit distance
-threshold for this term:</p>
+engine uses the following formula to compute the edit-distance threshold for this term:</p>
 <blockquote>
 <p>floor((1-queryTermSimilarityThreshold) * length(query term)).</p>
 </blockquote>
 <p>For instance, suppose the query term is
 "schwarazenneggar", and queryTermSimilarityThreshold is 0.8.  Then the
-threshold of edit distance for this term is: floor((1-0.8)*16) = 3.
-Records containing no terms with an edit distance of 3 or less will
-be excluded from the result set.</p>
+threshold of edit distance for this term is: floor((1-0.8)*16) = 3.</p>
 <h3 id="supportSwapInEditDistance">8.4. Support Swap as an Edit Distance Operation, Optional</h3>
 <pre><code>&lt;supportSwapInEditDistance&gt;true&lt;/supportSwapInEditDistance&gt;
 </code></pre>
 
 <p>This setting allows character swap operations (e.g., "iphone" versus
 "ipohne") in the edit distance function, in addition to insertion,
-deletion, and substitution operations. When true, switching to existing
-characters is counted as a single operation when calculating the edit
-distance.  Otherwise, the entire sum of character deletion and insertion
-operations necessary to achieve the same result yields a much larger edit
-distance calculation.  By default "supportSwapInEditDistance" is true.</p>
+deletion, and substitution operations. When true, swapping two adjacent characters
+is counted as a single operation when calculating the edit
+distance.  By default "supportSwapInEditDistance" is true.</p>
 <h3 id="prefixMatchPenalty">8.5. Prefix Match Penalty, Optional</h3>
 <pre><code>&lt;prefixMatchPenalty&gt;0.95&lt;/prefixMatchPenalty&gt;
 </code></pre>
 
-<p>This setting specifies how heavily to penalize a record when the search term matches only the beginning of a term in a record, instead of matching the entire word.  Its value should be in the range of 0 to 1, with a default value of 0.95. See the <a href="ranking.html">ranking section</a> for more information.<br></p>
+<p>This setting specifies how much penalty we want to give to a record where the search term matches only the beginning of a term in the record (e.g., "can" versus "candy").  Its value should be in the range of 0 to 1, with a default value of 0.95. See the <a href="ranking.html">ranking section</a> for more information.<br></p>
 <h3 id="cacheSize">8.6. Cache Size, Optional</h3>
 <pre><code>&lt;cacheSize&gt;65536000&lt;/cacheSize&gt;
 </code></pre>
 
-<p>This parameter specifies the number of bytes used in caching. The number should be in the range [52428800,524288000] ([50MB, 500MB]). Its default value is 52428800 (50MB). <br></p>
+<p>This parameter specifies the number of bytes used in caching. The number should be in the range [52428800,524288000] (i.e., [50MB, 500MB]). Its default value is 52428800 (50MB). <br></p>
 <h3 id="rows">8.7. Default value for number of returned results, Optional</h3>
 <pre><code>&lt;rows&gt;10&lt;/rows&gt;
 </code></pre>
 
-<p>"Rows" specifies the maximum number of results retrieved and returned in a single query response.
+<p>"Rows" specifies the number of results retrieved and returned in a single query response.
 If there are more results that "Rows", another query with a different "start" value must be sent
 to retrieve the next "page" of results. The default value of "Rows" is 10.<br></p>
 <h3 id="fieldBasedSearch">8.8. Field-Based Search, Optional</h3>
@@ -349,12 +340,12 @@ to retrieve the next "page" of results. The default value of "Rows" is 10.<br></
 <pre><code>&lt;searcherType&gt;0&lt;/searcherType&gt;
 </code></pre>
 
-<p>This sets the default search type of a query to the engine. <br></p>
+<p>This parameter sets the default search type of a query to the engine. <br></p>
 <blockquote>
-<p>0: find the top relevant results; <br>
+<p>0: find the top relevant results (with a number specified by the "rows" parameter); <br>
 1: find all matching results. <br></p>
 </blockquote>
-<p>The default value is 0.<br></p>
+<p>The default value is 0, i.e., the engine returns top results.<br></p>
 <h3 id="queryTermFuzzyType">8.10. Query Term Fuzzy Type, Optional</h3>
 <pre><code>&lt;queryTermFuzzyType&gt;1&lt;/queryTermFuzzyType&gt;
 </code></pre>
@@ -371,12 +362,14 @@ to retrieve the next "page" of results. The default value of "Rows" is 10.<br></
 
 <p>This value specifies how to treat a term by default with respect to match completeness.</p>
 <blockquote>
-<p>0: prefix match (the query term can match just the beginner of a word);<br>
+<p>0: prefix match (the query term matches the beginning of a word);<br>
 1: complete match (the entire word must match the search term).<br></p>
 </blockquote>
 <p>Its default value is 0.</p>
 <h3 id="highlighter">8.12. Highlighter, Optional</h3>
-<p>The engine supports a feature to generate a brief extract (snippet) of the searchable field's text. Each matching keyword is tagged to highlight its position in the snippet. A snippet with keywords highlighting allows users to fetch more meaningful information from the field's text. It also reduces the network bandwidth usage by reducing the payload size. </p>
+<p>The engine can generate a brief snippet of matching text in a searchable field. Each matching keyword is highlighted
+in the snippet.  A snippet with highlighted keywords allows users to see more meaningful information from the field's text.  The
+following is an example setting in the configuration file:</p>
 <pre><code>&lt;highlighter&gt;
     &lt;snippetSize&gt;250&lt;/snippetSize&gt;
     &lt;fuzzyTagPre value = '&lt;span class=&quot;fuzzy&quot;&gt;'&gt;&lt;/fuzzyTagPre&gt;
@@ -387,15 +380,16 @@ to retrieve the next "page" of results. The default value of "Rows" is 10.<br></
 </code></pre>
 
 <p>This composite parameter allows a user to specify snippet size and tags to enclose the matched keywords. </p>
-<blockquote>
-<p><b>snippetSize</b>: specifies the characters size of snippet to be generated for an attribute.<br>
-<b>fuzzyTagPre</b>: specifies the tag value to be prefixed to a fuzzy keyword match.<br>
-<b>fuzzyTagPost</b>: specifies the tag value to be suffixed to a fuzzy keyword match.<br>
-<b>exactTagPre</b>: specifies the tag value to be prefixed to a exact keyword match.<br>
-<b>exactTagPost</b>: specifies the tag value to be suffixed to a exact keyword match.<br></p>
-</blockquote>
-<p>Snippets will be returned for, and highlighting will be applied to, record fields which have the highlight attribute enabled in the schema configuration section described below.  There is also an example of highlighting in example-demo/srch2-config-advance.xml .</p>
-<p>Note: To improve the query search time when the highlighting is enabled, consider enabling the <a href="#enableCharOffsetIndex">character offset index</a>. </p>
+<ul>
+<li><b>snippetSize</b>: It specifies the character size of snippet to be generated for an attribute.<br></li>
+<li><b>fuzzyTagPre</b>: It specifies the tag value to be prefixed to a fuzzy keyword match.<br></li>
+<li><b>fuzzyTagPost</b>: It specifies the tag value to be suffixed to a fuzzy keyword match.<br></li>
+<li><b>exactTagPre</b>: It specifies the tag value to be prefixed to an exact keyword match.<br></li>
+<li><b>exactTagPost</b>: It specifies the tag value to be suffixed to an exact keyword match.<br></li>
+</ul>
+<p>In order for an attribute to be highlighted, its highlight attribute in the schema configuration section should be enabled.
+There is a highlighting example in <a href="example-demo/srch2-config-advance.xml">example-demo/srch2-config-advance.xml</a>.
+Notice that to improve the query search time when the highlighting is enabled, consider enabling the <a href="#enableCharOffsetIndex">character offset index</a>. </p>
 <h2 id="queryResponseWriter">9. Response Writer:</h2>
 <p>This tag has parameters related to configuring the response of a query.</p>
 <pre><code>&lt;queryResponseWriter&gt;
@@ -404,12 +398,13 @@ to retrieve the next "page" of results. The default value of "Rows" is 10.<br></
 </code></pre>
 
 <h3 id="ResponseContent">9.1. Response Content, Optional</h3>
-<p>ResponseContent specifies the search engine and record fields to be returned for each JSON record in the response. You should set the "type" attribute of "ResponseContent" to one of the following options: <br></p>
-<blockquote>
-<p>0: format "rid,edit_dist,matching_prefix,in_memory_record"; <br>
-1: format "rid,edit_dist,matching_prefix". <br>
-2: format "rid,edit_dist,matching_prefix,fields_to_return". <br></p>
-</blockquote>
+<p>ResponseContent specifies the search engine and record fields to be returned for each JSON record in the response. We
+should set the "type" attribute of "ResponseContent" to one of the following options: <br></p>
+<ul>
+<li>0: format "rid,edit_dist,matching_prefix,in_memory_record"; <br></li>
+<li>1: format "rid,edit_dist,matching_prefix". <br></li>
+<li>2: format "rid,edit_dist,matching_prefix,fields_to_return". <br></li>
+</ul>
 <p>The default value is 0. If "type" is 2, ResponseContent should also contain a comma-separated list of fields to be returned for each record in the query response. The following are two examples:</p>
 <pre><code>&lt;responseContent type=&quot;0&quot;&gt;&lt;/responseContent&gt;
 </code></pre>
@@ -420,10 +415,10 @@ to retrieve the next "page" of results. The default value of "Rows" is 10.<br></
 
 <h3 id="ResponseFormat">9.2 JSON Response Format, Optional</h3>
 <p>ResponseFormat specifies if the response should be JSON or JSONP formatted.  Possible values are:<br></p>
-<blockquote>
-<p>0: JSON
-1: JSONP           </p>
-</blockquote>
+<ul>
+<li>0: JSON</li>
+<li>1: JSONP           </li>
+</ul>
 <p>The default value is 0.</p>
 <h2 id="updateHandler">10. Update Handler</h2>
 <p>This tag includes tags related to configuring the engine to handle update requests.</p>
@@ -449,11 +444,11 @@ to retrieve the next "page" of results. The default value of "Rows" is 10.<br></
 <p><b>mergeEveryNSeconds</b>: The engine uses a background thread to periodically merge the data changes to the indexes. This parameter sets the number of seconds this background thread sleeps before it wakes up and does the merge. Note that decreasing this number may increase latency in the engine's search response time.  This number should be at least 1 (second).</p>
 </li>
 <li>
-<p><b>mergeEveryMWrites</b>: Another event that can trigger the background thread to do the merge is the number of data changes (inserts, deletes, and updates). This parameter specifies the number of record changes after which the thread will awaken to do the merge.  This number should be at least 1. <br></p>
+<p><b>mergeEveryMWrites</b>: Another event that can trigger the background thread to do the merge is the number of data changes (inserts, deletes, and updates). This parameter specifies the number of record changes after which the thread will wake up to do the merge.  This number should be at least 1 (second). <br></p>
 </li>
 </ul>
 <h3 id="updateLog">10.3. Logging:</h3>
-<p>The following tag includes parameters related to logging by the SRCH2 server.</p>
+<p>The following tag includes parameters related to logging by the SRCH2 engine.</p>
 <pre><code>&lt;updateLog&gt;
 ...
 &lt;/updateLog&gt;
@@ -464,12 +459,12 @@ to retrieve the next "page" of results. The default value of "Rows" is 10.<br></
 </code></pre>
 
 <p>The parameter controls the amount of feedback information the engine will report in its log. <br></p>
-<blockquote>
-<p>0: SILENT : Most logging will be suppressed<br>
-1: ERROR : Only explicit error conditions will be logged<br>
-2: WARNING : Error conditions and warnings will be logged<br>
-3: INFO : Errors, warnings, and informative messages will be logged<br></p>
-</blockquote>
+<ul>
+<li>0: SILENT: Most logging will be suppressed.<br></li>
+<li>1: ERROR: Only explicit error conditions will be logged.<br></li>
+<li>2: WARNING: Error conditions and warnings will be logged.<br></li>
+<li>3: INFO: Errors, warnings, and informative messages will be logged.<br></li>
+</ul>
 <p>Its default value is 3.</p>
 <h4 id="accessLogFile">10.3.2. Log File, Required</h4>
 <pre><code>&lt;accessLogFile&gt;./indexes/log.txt&lt;/accessLogFile&gt;
@@ -496,9 +491,9 @@ component.</p>
 <p>This value specifies the attribute used as the primary key to reference each record in the data, and
 thus the value of the specified field must be unique across all records. If a new record has a
 primary key conflicting with an existing record, the new record will be rejected by the engine.
-The attribute must be of type text.<br></p>
+The attribute must be a "text" type.<br></p>
 <h3 id="fields">11.2. Fields, Required</h3>
-<p>"Fields" contains the specification of the each "field" in the records, i.e. the data schema.</p>
+<p>"Fields" contains the specification of the each "field" in the records.</p>
 <pre><code>&lt;fields&gt;
 ...
 &lt;/fields&gt;
@@ -515,8 +510,8 @@ The attribute must be of type text.<br></p>
 
 <p>These parameters give information about each field, including its name, type, and certain properties. <br></p>
 <ul>
-<li>"name": the name of the field<br></li>
-<li>"type": the type of the field. The following are supported types: text, integer, float, time, location_longitude (for geo search), and location_latitude (for geo search).</li>
+<li>"name": the name of the field;<br></li>
+<li>"type": the type of the field, including text, integer, float, time, location_longitude (for geo search), and location_latitude (for geo search).</li>
 </ul>
 <p>The engine supports the following formats of time and date: <br></p>
 <ul>
@@ -528,20 +523,20 @@ The attribute must be of type text.<br></p>
 <li>YYYYMMDDHHMM<br></li>
 <li>YYYYMMDD<br></li>
 </ul>
-<p>The engine supports time durations of the format "{An integer}{A date/time constant}", in which date and time constants are: SECOND, SECONDS, MINUTE, MINUTES, HOUR, HOURS, DAY, DAYS, WEEK, WEEKS, MONTH, MONTHS, YEAR, YEARS.  Examples are: "DAY" (meaning 1 day) or "34WEEKS" (meaning 34 weeks).<br></p>
+<p>The engine supports time durations of the format "{integer}{date/time}", in which date and time can be SECOND, SECONDS, MINUTE, MINUTES, HOUR, HOURS, DAY, DAYS, WEEK, WEEKS, MONTH, MONTHS, YEAR, and YEARS.  Examples are: "DAY" (meaning 1 day) or "34WEEKS" (meaning 34 weeks).<br></p>
 <p>Each field has certain properties:</p>
 <ul>
-<li><b>required</b>: This flag indicates whether a field can be empty or not. It is false by default.<br></li>
-<li><b>default</b>: This attribute  gives the default value of this field if the field is missing from the record.<br></li>
-<li><b>searchable</b>: If true, then the engine will include its values in the indices to support keyword search within the field.<br></li>
-<li><b>refining</b>: If true, then the engine will include its values in the indices to support post-processing operations on query results, such as additional filtering predicates (e.g., "price &lt; 20"), sort, and facet.<br></li>
-<li><b>indexed</b>: If this flag is true, then the engine will treat the field as both a searchable and a refining attribute. <br></li>
-<li><b>multivalued</b>: If this flag is true, then the field is considered a multi-valued attribute. If so, then the corresponding JSON value in the data file must be a valid array in JSON (e.g. [1245332,3435645,53465,6456745]). Also please note that if the attribute is multi-valued, the value of the 'default' property must be a comma-separated list of values.<br></li>
-<li><b>highlight</b>: If this flag is true, then the engine will generate a snippet for this attribute with matching keyword highlighted. <br></li>
+<li><b>Required</b>: This flag indicates whether a field can be empty or not. It is false by default.<br></li>
+<li><b>Default</b>: This attribute  gives the default value of this field if the field is missing from the record.<br></li>
+<li><b>Searchable</b>: If true, then the engine will include its values in the indexes to support keyword search within the field.<br></li>
+<li><b>Refining</b>: If true, then the engine will include its values in the indexes to support post-processing operations on query results, such as additional filtering predicates (e.g., "price &lt; 20"), sort, and facet.<br></li>
+<li><b>Indexed</b>: If this flag is true, then the engine will treat the field as both a searchable and a refining attribute. <br></li>
+<li><b>Multivalued</b>: If this flag is true, then the field is considered a multi-valued attribute. If so, then the corresponding JSON value in the data file must be a valid array in JSON (e.g. [1245332,3435645,53465,6456745]). Also please note that if the attribute is multi-valued, the value of the 'default' property must be a comma-separated list of values.<br></li>
+<li><b>Highlight</b>: If this flag is true, then the engine will generate a snippet for this attribute with matching keyword highlighted. <br></li>
 </ul>
 <p>In the example above, we can do keyword search on the attributes
 "category" and "name".  We can do post-processing on attributes
-"name", "model", "price", "likes" and "seller_id". The engine will generate snippet for the attribute "name".</p>
+"name", "model", "price", "likes", and "seller_id". The engine will generate a snippet for the attribute "name".</p>
 <p>Note:</p>
 <ul>
 <li>For geo search, two fields are required with the types location_latitude and location_longitude, respectively. The values of these geo fields should be a float type in the data file.<br></li>
@@ -555,38 +550,35 @@ The attribute must be of type text.<br></p>
 
 <p>Its value is either false (facet search disabled) or true (enabled). Its default value is false.<br></p>
 <h3 id="facetFields">11.4. Facet Fields:</h3>
-<p>This tag contains all facet-related tags.</p>
+<p>This tag contains facet-related tags, and it is required if facet is enabled.<br></p>
 <pre><code>&lt;facetFields&gt;
 ...
 &lt;/facetFields&gt;
 </code></pre>
 
-<p>Facet fields: Required if facet is enabled <br></p>
+<p>Here is an example.</p>
 <pre><code>          &lt;facetField name=&quot;genre&quot; facetType=&quot;categorical&quot;/&gt;
           &lt;facetField name=&quot;year&quot;  facetType=&quot;range&quot; facetStart=&quot;1990&quot; facetEnd=&quot;2050&quot; facetGap=&quot;10&quot;/&gt;
 </code></pre>
 
-<blockquote>
 <ul>
-<li>name: The name of the field used for this facet. It must
-correspond to a refining field specified in the <a href=#fields>field
-tag</a>. <br> </li>
-<li>facetType: Categorical or range. <br></li>
-<li>facetStart: The start point of making a range facet. It is
-required if "facetType" is type range. The value will be ignored for categorical
+<li><b>name</b>: The name of the field used for this facet. It must
+correspond to a refining field specified in the <a href=#fields>field tag</a>. <br> </li>
+<li><b>facetType</b>: It indicates whether this attribute is categorical or range. <br></li>
+<li><b>facetStart</b>: The start point of making a range facet. It is
+required if "facetType" is of "range" type. The value will be ignored for categorical
 facets. <br> </li>
-<li>facetEnd: The end point of a range facet. It is required for a
+<li><b>facetEnd</b>: The end point of a range facet. It is required for a
 range facet. The value will be ignored for categorical facets. <br> </li>
-<li>facetGap: The increment amount used for a range facet. The value
+<li><b>facetGap</b>: The increment amount used for a range facet. The value
 will be ignored for categorical facets. <br> </li>
 </ul>
-</blockquote>
-<p>Note: facet ranges are created in correspondence with the "facetStart"
+<p>Note that facet ranges are created in correspondence with the "facetStart"
 value, not the "facetEnd" value. Therefore, the last interval may not
 span the entire facetGap. Also all facet fields must be declared in a
-<a href=#fields>fields tag</a> as well (with refining="true") <br> </p>
+<a href=#fields>fields tag</a> as well (with refining="true"). <br> </p>
 <h3 id="analyzer">11.5. Analyzer:</h3>
-<p>This setting contained in this tag configure the analyzer to be used by the engine.<br></p>
+<p>The parameters contained in this tag configure the analyzer to be used by the engine.<br></p>
 <pre><code>&lt;types&gt;
   &lt;fieldType name=&quot;text_en&quot;&gt;
     &lt;analyzer&gt;
@@ -606,36 +598,34 @@ span the entire facetGap. Also all facet fields must be declared in a
 <pre><code>&lt;filter name=&quot;StopFilter&quot; words=&quot;srch2_stop_words.txt&quot; /&gt;
 </code></pre>
 
-<p>The advanced example in example-demo/srch2-config-advanced.xml provides a working example of stop words.</p>
+<p>The <a href="example-demo/srch2-config-advanced.xml">advanced example</a> provides a working example of stop words.</p>
 <h3 id="ProtectedKeywordsFilter">11.5.3 Protected Keywords Filter, Optional</h3>
 <p>It specifies a file of special protected keywords that should be preserved by the analyzer, such as "C++", "C#", ".NET", and "AT&amp;T". Providing an empty string ("") for the "words" parameter disables this filter.</p>
 <pre><code>&lt;filter name=&quot;protectedKeyWordsFilter&quot; words=&quot;srch2_protected_words.txt&quot; /&gt;
 </code></pre>
 
-<p>The advanced example in example-demo/srch2-config-advanced.xml provides a working example of protected keywords.</p>
+<p>The <a href="example-demo/srch2-config-advanced.xml">advanced example</a> provides a working example of protected keywords.</p>
 <h3 id="AllowedSpecialCharacters">11.5.4 Allowed Special Characters, Optional</h3>
-<p>The engine has a number of rules regarding with what characters words can be composed, and what characters
+<p>The engine has a number of rules on what characters can be used to decompose words, and what characters
 are punctuation or delimiters separating words.  To provide additional flexibility, the engine can be
-configured to add characters that should not be considered delimiters between words.  Those sequences of
+configured to add characters that should not be considered as delimiters between words.  Those sequences of
 characters that include those characters will be treated as a single term and will not be broken into
-separate words.</p>
-<p>Here is an example for this setting to allow apostrophes, dashes, underscores, and at signs to occur within single words:</p>
+separate words.  Here is an example for this setting to allow apostrophes, dashes, underscores, and at signs to occur within single words:</p>
 <pre><code>&lt;allowedRecordSpecialCharacters&gt;`-_@&lt;/allowedRecordSpecialCharacters&gt;
 </code></pre>
 
-<p>This example will allow a search on "L'Absinthe" to match and return a record with the phrase "Edgar Degas' painting L'Absinthe hangs in the Musée d'Orsay in Paris." in an indexed attribute.</p>
-<p>Note that whitespace characters will also be considered word delimiters and are not permitted in this field.</p>
-<p>The advanced example in example-demo/srch2-config-advanced.xml provides an example of allowing Twitter hashtag like terms to be queried.</p>
+<p>This example will allow a search on "L'Absinthe" to match and return a record with the phrase "Edgar Degas' painting L'Absinthe hangs in the Musée d'Orsay in Paris" in an indexed attribute.
+Note that whitespace characters will also be considered word delimiters and are not permitted in this field.</p>
+<p>The <a href="example-demo/srch2-config-advanced.xml">advanced example</a> provides an example of allowing Twitter-hashtag-like terms to be queried.</p>
 <h2 id="Cores">12. Cores, Optional</h2>
-<p>The "Cores" tag can be used to support the creation of multiple data sources (called cores) within the same server.<br>
-An engine can have multiple sources.  All cores run within the same server process.  A query can 
-name a single core.</p>
-<p>When instantiated with multiple cores, queries
-specify the core by name that is to process the query.  For instance, the following query:</p>
-<pre><code>http://localhost:8081/example-core/search/q=term
+<p>The "Cores" tag can be used to support the creation of multiple data sources (called "cores") within the same SRCH2 server.<br>
+An engine can have multiple sources, and all cores run within the same server process.  A query can 
+specify a single core.</p>
+<p>When instantiated with multiple cores, queries specify a core by name to process the query.  For instance, the following query:</p>
+<pre><code>http://localhost:8081/example-core/search/q=termina
 </code></pre>
 
-<p>requests that the core called "example-core" process a search request for "term".  In the case when no core is
+<p>requests that the core called "example-core" process a search request for "termina".  In the case when no core is
 specified in a query to a multi-core server, the server will use the sore specified by the "defaultCoreName" tag.</p>
 <p>A sample multi-core configuration is provided in <a href="example-demo/srch2-config-advanced.xml">example-demo/srch2-config-advanced.xml</a>.</p>
 <h3 id="Core">12.1 Core, Optional</h3>
@@ -643,7 +633,7 @@ specified in a query to a multi-core server, the server will use the sore specif
 attribute.  This name is used in query URI paths, as well as the aforementioned
 "defaultCoreName" attribute of "Cores".  Nearly all server configuration settings documented above can
 also appear under a "Core" tag.  The exceptions are "listeningHostName", "listeningPort",
-"maxSearchThreads", which are global for all the cores.  Each Core must define all its own data source
+and "maxSearchThreads", which are global for all the cores.  Each Core must define all its own data source
 and behavioral rules, so for example, "dataDir" and "schema" are typically defined under each core.</p>
 <h2 id="authorizationKey">13. Authorization Key, Optional</h2>
 <pre><code>&lt;authorization-key&gt;foobar&lt;/authorization-key&gt;
@@ -660,8 +650,7 @@ provide the following key-value pair in order to get the authorization. </p>
 </code></pre>
 
 <p>Notice that we use "foobar" as an example to indicate that the key in the HTTP request should 
-match the key in the config file.</p>
-<p>A valid authorization key should include alphanumeric characters only, and the 
+match the key in the config file.  A valid authorization key should include alphanumeric characters only, and the 
 authorization is case sensitive.  If no authorization key is provided in the 
 config file, then an HTTP request doesn't need to provide a key.</p>
 
