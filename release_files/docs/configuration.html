@@ -48,8 +48,8 @@
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#indexConfig">7. Index Config</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#indexType">7.1. Index Type</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#fieldBoost">7.2. Field Boosts</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#recordBoostField">7.3. Record Boost Field</a></br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#defaultQueryTermBoost">7.4. Default Query Term Boost</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#recordBoostField">7.3. Record Boost</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#defaultQueryTermBoost">7.4. Default Term Boost</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#enablePositionIndex">7.5. Enable Positional Index</a></br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#enableCharOffsetIndex">7.6. Enable Character Offset Index</a></br><br>
 &nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#queryConfig">8. Query Parameters</a></br><br>
@@ -116,7 +116,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 </td>
 
 <p></tr></tbody></table></div></p>
-<h1 id="doc" style="color:#ee2e24"><center>SRCH2: Engine Configuration</center></h1>
+<h1 id="doc" style="color:#ee2e24"><center>SRCH2 Engine Configuration</center></h1>
 <h2 id="overview">1. Overview</h2>
 <p>The SRCH2 engine can be customized using a configuration file in XML. This documentation describes the details of how to do this configuration.  The package includes a sample <a href="example-demo/srch2-config.xml">configuration file</a>.  Each parameter in the file can have one of the following two labels: "Required" means this tag must be present in the configuration file, and "Optional" means this tag does not need to be present.  Tag names and tag attribute names (but not values) are case insensitive.</p>
 <h2 id="srch2Home">2. SRCH2 Home Directory, Required</h2>
@@ -231,12 +231,12 @@ compute query-specific scores. </p>
 Notice that the fields are separated by a single white space. If a
 value is not provided for a field, the engine uses a default value of
 1. <br></p>
-<h3 id="recordBoostField">7.3. Record Boost Field, Optional</h3>
+<h3 id="recordBoostField">7.3. Record Boost, Optional</h3>
 <pre><code>&lt;recordBoostField&gt;relevance&lt;/recordBoostField&gt;
 </code></pre>
 
 <p>This setting specifies an attribute whose value is used as the score (boost value) of a record. The attribute's type should be "float".</p>
-<h3 id="defaultQueryTermBoost">7.4. Default Query Term Boost, Optional</h3>
+<h3 id="defaultQueryTermBoost">7.4. Default Term Boost, Optional</h3>
 <pre><code>&lt;defaultQueryTermBoost&gt;1&lt;/defaultQueryTermBoost&gt;
 </code></pre>
 
