@@ -131,7 +131,7 @@ bool QueryParser::parseForSuggestions(string & keyword, float & fuzzyMatchPenalt
                     if(normalizerString.length() == 1){ // fuzzy modifier is only '~' w/o any values
                         fuzzyMatchPenalty = -1; // -1 indicates that used did not enter any values for this one, example: k=can
                     }else{
-                        fuzzyMatchPenalty = atof(normalizerString.c_str() + 1);
+                        fuzzyMatchPenalty = strtof(normalizerString.c_str() + 1,NULL);
                     }
                 }
             }
@@ -155,7 +155,7 @@ bool QueryParser::parseForSuggestions(string & keyword, float & fuzzyMatchPenalt
             decodeString(rowsTemp, rowsStr);
             // convert the rowsStr to integer. e.g. rowsStr will contain string 20
             if (isUnsigned(rowsStr)) {
-                numberOfSuggestionsToReturn = atoi(rowsStr.c_str()); // convert the string to char* and pass it to atoi
+                numberOfSuggestionsToReturn = static_cast<int>(strtol(rowsStr.c_str(),NULL,10));
             } else {
                 numberOfSuggestionsToReturn = -1; // -1 indicates that this parameter is not given by the user
                 // raise error
@@ -448,8 +448,10 @@ void QueryParser::populateFacetFieldsSimple(FacetQueryContainer &fqc) {
             if(isUnsigned(facetNumberOfGroupsStr)){
                 Logger::debug(
                         "facetNumberOfGroups parameter found, pushing it to numberOfTopGroupsToReturn to fqc");
-                fqc.numberOfTopGroupsToReturn.push_back(atoi(facetNumberOfGroupsStr.c_str()));
-            }else{
+                fqc.numberOfTopGroupsToReturn.push_back(
+                        static_cast<int>(strtol(facetNumberOfGroupsStr.c_str(),
+                                NULL, 10)));
+            } else {
                 this->container->messages.push_back(
                         make_pair(MessageWarning,
                                 numberOfGroupsKeyString+" should get a valid unsigned number. Ignored."));
@@ -544,7 +546,7 @@ void QueryParser::lengthBoostParser() {
         string lengthBoost;
         decodeString(lengthBoostTmp,lengthBoost);
         if (isFloat(lengthBoost)) {
-            const float lboost = atof(lengthBoost.c_str());
+            const float lboost = strtof(lengthBoost.c_str(),NULL);
             if (lboost <= 1 && lboost >= 0) {
                 this->container->parametersInQuery.push_back(
                         srch2::httpwrapper::LengthBoostFlag);
@@ -581,7 +583,7 @@ void QueryParser::prefixMatchPenaltyParser() {
         string prefixMatchPenalty;
         decodeString(prefixMatchPenaltyTmp, prefixMatchPenalty);
         if (isFloat(prefixMatchPenalty)) {
-            const float ppm = atof(prefixMatchPenalty.c_str());
+            const float ppm = strtof(prefixMatchPenalty.c_str(),NULL);
             if (ppm <= 1 && ppm >= 0) {
                 this->container->parametersInQuery.push_back(
                         srch2::httpwrapper::PrefixMatchPenaltyFlag);
@@ -711,7 +713,9 @@ void QueryParser::startOffsetParameterParser() {
         decodeString(startTemp, startStr);
 // convert the startStr to integer.
         if (isUnsigned(startStr)) {
-            this->container->resultsStartOffset = atoi(startStr.c_str()); // convert the string to char* and pass it to atoi
+            this->container->resultsStartOffset =
+                    static_cast<unsigned int>(strtoul(startStr.c_str(), NULL,
+                            10));
             // populate the parametersInQuery
             this->container->parametersInQuery.push_back(ResultsStartOffset);
         } else {
@@ -742,7 +746,8 @@ void QueryParser::numberOfResultsParser() {
         decodeString(rowsTemp, rowsStr);
 // convert the rowsStr to integer. e.g. rowsStr will contain string 20
         if (isUnsigned(rowsStr)) {
-            this->container->numberOfResults = atoi(rowsStr.c_str()); // convert the string to char* and pass it to atoi
+            this->container->numberOfResults =
+                    static_cast<unsigned int>(strtoul(rowsStr.c_str(), NULL, 10));
             // populate the parametersInQuery
             this->container->parametersInQuery.push_back(NumberOfResults);
         } else {
@@ -773,7 +778,8 @@ void QueryParser::timeAllowedParameterParser() {
         decodeString(timeAllowedTemp, timeAllowedStr);
 // convert the Str to integer.
         if (isUnsigned(timeAllowedStr)) {
-            this->container->maxTimeAllowed = atoi(timeAllowedStr.c_str()); // convert the string to char* and pass it to atoi
+            this->container->maxTimeAllowed = static_cast<unsigned int>(strtoul(
+                    timeAllowedStr.c_str(), NULL, 10));
             // populate the parametersInQuery
             this->container->parametersInQuery.push_back(MaxTimeAllowed);
         } else {
@@ -1114,7 +1120,7 @@ void QueryParser::setLpKeyValinContainer(const string &lpKey,
         this->isLpFieldFilterBooleanOperatorAssigned = true;
     } else if (0 == lpKey.compare(lpKeywordSimilarityThresholdParamName)) {
         if (isFloat(lpVal)) {
-            float f = atof(lpVal.c_str()); //TODO: add the validation
+            float f = strtof(lpVal.c_str(),NULL); //TODO: add the validation
             this->lpKeywordSimilarityThreshold = f;
         } else {
             //warning
@@ -1125,7 +1131,7 @@ void QueryParser::setLpKeyValinContainer(const string &lpKey,
         }
     } else if (0 == lpKey.compare(lpKeywordBoostLevelParamName)) {
         if (isUnsigned(lpVal)) {
-            int boostLevel = atof(lpVal.c_str());
+            int boostLevel = static_cast<int>(strtol(lpVal.c_str(),NULL,10));
             this->lpKeywordBoostLevel = boostLevel;
         } else {
             //warning
@@ -1659,8 +1665,8 @@ void QueryParser::setGeoContainerProperties(const char* leftBottomLat,
     decodeString(rightTopLong, rightTopLongStr);
 // convert the rowsStr to integer.
     if (isFloat(leftBottomLatStr)) {
-        this->container->geoParameterContainer->leftBottomLatitude = atof(
-                leftBottomLatStr.c_str()); // convert the string to char* and pass it to atof
+        this->container->geoParameterContainer->leftBottomLatitude = strtof(
+                leftBottomLatStr.c_str(),NULL); // convert the string to char* and pass it to strtof
     } else {
         this->container->messages.push_back(
                 make_pair(MessageError,
@@ -1668,8 +1674,8 @@ void QueryParser::setGeoContainerProperties(const char* leftBottomLat,
         this->isParsedError = true;
     }
     if (isFloat(leftBottomLatStr)) {
-        this->container->geoParameterContainer->leftBottomLongitude = atof(
-                leftBottomLongStr.c_str()); // convert the string to char* and pass it to atof
+        this->container->geoParameterContainer->leftBottomLongitude = strtof(
+                leftBottomLongStr.c_str(),NULL); // convert the string to char* and pass it to strtof
     } else {
         this->container->messages.push_back(
                 make_pair(MessageError,
@@ -1677,8 +1683,8 @@ void QueryParser::setGeoContainerProperties(const char* leftBottomLat,
         this->isParsedError = true;
     }
     if (isFloat(leftBottomLatStr)) {
-        this->container->geoParameterContainer->rightTopLatitude = atof(
-                rightTopLatStr.c_str()); // convert the string to char* and pass it to atof
+        this->container->geoParameterContainer->rightTopLatitude = strtof(
+                rightTopLatStr.c_str(),NULL); // convert the string to char* and pass it to strtof
     } else {
         this->container->messages.push_back(
                 make_pair(MessageError,
@@ -1686,8 +1692,8 @@ void QueryParser::setGeoContainerProperties(const char* leftBottomLat,
         this->isParsedError = true;
     }
     if (isFloat(leftBottomLatStr)) {
-        this->container->geoParameterContainer->rightTopLongitude = atof(
-                rightTopLongStr.c_str()); // convert the string to char* and pass it to atof
+        this->container->geoParameterContainer->rightTopLongitude = strtof(
+                rightTopLongStr.c_str(),NULL); // convert the string to char* and pass it to strtof
     } else {
         this->container->messages.push_back(
                 make_pair(MessageError,
@@ -1713,16 +1719,16 @@ void QueryParser::setGeoContainerProperties(const char* centerLat,
     decodeString(radiusParam, radiusParamStr);
 // convert the rowsStr to integer.
     if (isFloat(centerLatStr)) {
-        this->container->geoParameterContainer->centerLatitude = atof(
-                centerLatStr.c_str()); // convert the string to char* and pass it to atof
+        this->container->geoParameterContainer->centerLatitude = strtof(
+                centerLatStr.c_str(),NULL); // convert the string to char* and pass it to strtof
     } else {
         this->container->messages.push_back(
                 make_pair(MessageError, "clat should be a valid float number"));
         this->isParsedError = true;
     }
     if (isFloat(centerLongStr)) {
-        this->container->geoParameterContainer->centerLongitude = atof(
-                centerLongStr.c_str()); // convert the string to char* and pass it to atof
+        this->container->geoParameterContainer->centerLongitude = strtof(
+                centerLongStr.c_str(),NULL); // convert the string to char* and pass it to strtof
     } else {
         this->container->messages.push_back(
                 make_pair(MessageError,
@@ -1730,8 +1736,8 @@ void QueryParser::setGeoContainerProperties(const char* centerLat,
         this->isParsedError = true;
     }
     if (isFloat(radiusParamStr)) {
-        this->container->geoParameterContainer->radius = atof(
-                radiusParamStr.c_str()); // convert the string to char* and pass it to atof
+        this->container->geoParameterContainer->radius = strtof(
+                radiusParamStr.c_str(),NULL); // convert the string to char* and pass it to strtof
     } else {
         this->container->messages.push_back(
                 make_pair(MessageError,
@@ -1832,7 +1838,8 @@ void QueryParser::populateBoostInfo(bool isParsed, string &input) {
             Logger::debug("boost value is specified, extracting it.");
             boost::smatch numMatches;
             this->extractNumbers(matches[0].str(), numMatches);
-            unsigned boostNum = atoi(numMatches[0].str().c_str()); // convert to integer
+            unsigned boostNum = static_cast<unsigned int>(strtoul(
+                    numMatches[0].str().c_str(), NULL, 10));
             Logger::debug("boost value is %d", boostNum);
             this->keywordBoostLevel.push_back(boostNum); // push to the container.
         } else {
@@ -1864,7 +1871,7 @@ void QueryParser::populateFuzzyInfo(bool isParsed, string &input) {
             // get the fuzzy value;
             Logger::debug("fuzzy value is specified extracting it");
             /* The String is in form ~.d+, so ignore ~ and move forward */
-            float fuzzyNum = atof(input.c_str() + 1); // convert to float
+            float fuzzyNum = strtof(input.c_str() + 1,NULL); // convert to float
             Logger::debug("fuzzy value is %f", fuzzyNum);
             this->setSimilarityThresholdInContainer(fuzzyNum);
         } else {
@@ -1887,7 +1894,8 @@ void QueryParser::populateProximityInfo(bool isParsed, string &input) {
         Logger::debug("fuzzy value is specified extracting it");
         boost::smatch numMatches;
         this->extractNumbers(input, numMatches);
-        unsigned proximityNum = atoi(numMatches[0].str().c_str()); // convert to float
+        unsigned proximityNum = static_cast<unsigned int>(strtoul(
+                numMatches[0].str().c_str(), NULL, 10)); // convert to unsigned int
         Logger::debug("proximity value is %d", proximityNum);
         this->PhraseSlops.push_back(proximityNum);
     } else {

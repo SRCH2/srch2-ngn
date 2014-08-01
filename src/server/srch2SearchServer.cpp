@@ -284,7 +284,10 @@ static bool checkOperationPermission(evhttp_request *req, Srch2Server *srch2Serv
 
     if (configuredPort == 0) {
         // this operation not set to a specific port so only accepted on the default port
-        configuredPort = atoi(srch2Server->indexDataConfig->getHTTPServerListeningPort().c_str());
+        configuredPort =
+                static_cast<unsigned short>(strtoul(
+                        srch2Server->indexDataConfig->getHTTPServerListeningPort().c_str(),
+                        NULL, 10));
     }
 
     // compare arrival port to configuration file port
@@ -692,7 +695,8 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
     // Step 1: Waiting server
     // http://code.google.com/p/imhttpd/source/browse/trunk/MHttpd.c
     /* 1). event initialization */
-    globalDefaultPort = atoi(config->getHTTPServerListeningPort().c_str());
+    globalDefaultPort = static_cast<unsigned short>(strtoul(
+            config->getHTTPServerListeningPort().c_str(), NULL, 10));
     globalHostName = config->getHTTPServerListeningHostname().c_str(); //"127.0.0.1";
 
     // bind the default port

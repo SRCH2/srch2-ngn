@@ -374,13 +374,13 @@ void RecordSerializerUtil::convertByteArrayToTypedValue(const string& name,
 		switch (type) {
 		case ATTRIBUTE_TYPE_UNSIGNED:
 			for(int i=0;i<multiValues.size(); i++){
-				intValues.push_back(atol(multiValues[i].c_str()));
+				intValues.push_back(strtol(multiValues[i].c_str(),NULL,10));
 			}
 			result->setTypedValue(intValues);
 			break;
 		case ATTRIBUTE_TYPE_FLOAT:
 			for(int i=0;i<multiValues.size(); i++){
-				floatValues.push_back(atof(multiValues[i].c_str()));
+				floatValues.push_back(strtof(multiValues[i].c_str(),NULL));
 			}
 			result->setTypedValue(floatValues);
 			break;

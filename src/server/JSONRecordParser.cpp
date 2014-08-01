@@ -25,6 +25,8 @@
 #include "boost/algorithm/string/classification.hpp"
 #include "util/RecordSerializerUtil.h"
 
+#include <stdlib.h>     /* strtol */
+
 using namespace snappy;
 
 using namespace std;
@@ -109,19 +111,26 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
     		iter != storageSchema.getRefiningAttributes()->end(); ++iter) {
     	vector<string> attributeStringValues;
     	getJsonValueString(root, iter->first, attributeStringValues, "refining-attributes");
+
+    	//attributeStringValues[0] will be 0x0 if the size of
+        //attributeStringValues is 0
+        if (attributeStringValues.empty()) {
+            continue;
+        }
+
     	srch2is::FilterType type = storageSchema.getTypeOfRefiningAttribute(iter->second);
 		switch (type) {
 		case srch2is::ATTRIBUTE_TYPE_UNSIGNED:
 		{
 			string& singleString = attributeStringValues[0];
-			unsigned val = atoi(singleString.c_str());
+			unsigned val = static_cast<unsigned int>(strtoul(singleString.c_str(),NULL,10));
 			compactRecSerializer.addRefiningAttribute(iter->first, val);
 			break;
 		}
 		case srch2is::ATTRIBUTE_TYPE_FLOAT:
 		{
 			string& singleString = attributeStringValues[0];
-			float val = atof(singleString.c_str());
+			float val = strtof(singleString.c_str(),NULL);
 			compactRecSerializer.addRefiningAttribute(iter->first, val);
 			break;
 		}

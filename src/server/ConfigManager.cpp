@@ -440,7 +440,8 @@ void ConfigManager::parseMongoDb(const xml_node &mongoDbNode, CoreInfo_t *coreIn
     childNode = mongoDbNode.child(portString);
     if (childNode && childNode.text()) {
         coreInfo->mongoPort = string(childNode.text().get());
-        int value = atoi(coreInfo->mongoPort.c_str());
+        int value = static_cast<int>(strtol(coreInfo->mongoPort.c_str(), NULL,
+                10));
         if (value <= 0 || value > USHRT_MAX) {
             parseError << "mongoPort must be between 1 and " << USHRT_MAX;
             configSuccess = false;
@@ -1874,7 +1875,8 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
     childNode = configNode.child(listeningPortString);
     if (childNode && childNode.text()) { // checks if the config/listeningPort has any text in it or not
         this->httpServerListeningPort = string(childNode.text().get());
-        int value = atoi(httpServerListeningPort.c_str());
+        int value = static_cast<int>(strtol(httpServerListeningPort.c_str(),
+                NULL, 10));
         if (value <= 0 || value > USHRT_MAX) {
             parseError << listeningPortString << " must be between 1 and " << USHRT_MAX;
             configSuccess = false;
@@ -2333,9 +2335,10 @@ void ConfigManager::splitBoostFieldValues(string boostString, map<string, unsign
         if (pos != string::npos) {
             string field = boostTokens[i].substr(0, pos);
             string boost = boostTokens[i].substr(pos + 1, boostTokens[i].length());
-            boosts[field] = (unsigned) atoi(boost.c_str());
-            if(boosts[field] < 1 || boosts[field] > 100){
-            	boosts[field] = 1;
+            boosts[field] = static_cast<unsigned int>(strtoul(boost.c_str(),
+                    NULL, 10));
+            if (boosts[field] < 1 || boosts[field] > 100) {
+                boosts[field] = 1;
             }
         } else {
             boosts[boostTokens[i]] = 1;
@@ -2458,7 +2461,7 @@ bool ConfigManager::isValidQueryTermSimilarityThreshold(string & qTermSimilarity
 
 bool ConfigManager::isValidQueryTermLengthBoost(string& queryTermLengthBoost) {
     if (this->isFloat(queryTermLengthBoost)) {
-        float val = ::atof(queryTermLengthBoost.c_str());
+        float val = strtof(queryTermLengthBoost.c_str(),NULL);
         if (val >= 0 && val <= 1) {
             return true;
         }
@@ -2470,7 +2473,7 @@ bool ConfigManager::isValidQueryTermLengthBoost(string& queryTermLengthBoost) {
 
 bool ConfigManager::isValidPrefixMatch(string& prefixmatch) {
     if (this->isFloat(prefixmatch)) {
-        float val = ::atof(prefixmatch.c_str());
+        float val = strtof(prefixmatch.c_str(),NULL);
         if (val >= 0 && val <= 1) {
             return true;
         }
@@ -2482,7 +2485,7 @@ bool ConfigManager::isValidCacheSize(string& cacheSize) {
     unsigned minCacheSize = 50 * 1048576;     // 50MB
     unsigned maxCacheSize = 500 * 1048576;    // 500MB
     if (this->isOnlyDigits(cacheSize)) {
-        int cs = atoi(cacheSize.c_str());
+        int cs = static_cast<int>(strtol(cacheSize.c_str(),NULL,10));
         if (cs >= minCacheSize && cs <= maxCacheSize) {
             return true;
         }
@@ -2491,11 +2494,11 @@ bool ConfigManager::isValidCacheSize(string& cacheSize) {
 }
 
 bool ConfigManager::isValidRows(string& rows) {
-    return (this->isOnlyDigits(rows) && (atoi(rows.c_str()) > 0)); // should be number and greater that 1
+    return (this->isOnlyDigits(rows) && (strtol(rows.c_str(),NULL,10) > 0)); // should be number and greater that 1
 }
 
 bool ConfigManager::isValidMaxSearchThreads(string& maxSearchThreads) {
-    return (this->isOnlyDigits(maxSearchThreads) && (atoi(maxSearchThreads.c_str()) > 0)); // should be number and greater that 1
+    return (this->isOnlyDigits(maxSearchThreads) && (strtol(maxSearchThreads.c_str(),NULL,10) > 0)); // should be number and greater that 1
 }
 
 bool ConfigManager::isValidBooleanValue(string& fieldValue) {
@@ -2544,7 +2547,7 @@ bool ConfigManager::isValidMaxMemory(string& maxMemory) {
 
 bool ConfigManager::isValidMergeEveryNSeconds(string& mergeEveryNSeconds) {
     if (this->isOnlyDigits(mergeEveryNSeconds)) {
-        if (atoi(mergeEveryNSeconds.c_str()) >= 1) {
+        if (strtol(mergeEveryNSeconds.c_str(),NULL,10) >= 1) {
             return true;
         }
     }
@@ -2553,7 +2556,7 @@ bool ConfigManager::isValidMergeEveryNSeconds(string& mergeEveryNSeconds) {
 
 bool ConfigManager::isValidMergeEveryMWrites(string& mergeEveryMWrites) {
     if (this->isOnlyDigits(mergeEveryMWrites)) {
-        if (atoi(mergeEveryMWrites.c_str()) >= 1) {
+        if (strtol(mergeEveryMWrites.c_str(),NULL,10) >= 1) {
             return true;
         }
     }
@@ -2562,7 +2565,7 @@ bool ConfigManager::isValidMergeEveryMWrites(string& mergeEveryMWrites) {
 
 bool ConfigManager::isValidKeywordPopularityThreshold(string kpt){
     if (this->isOnlyDigits(kpt)) {
-        if (atoi(kpt.c_str()) >= 1) {
+        if (strtol(kpt.c_str(),NULL,10) >= 1) {
             return true;
         }
     }
@@ -2571,7 +2574,7 @@ bool ConfigManager::isValidKeywordPopularityThreshold(string kpt){
 
 bool ConfigManager::isValidGetAllResultsMaxResultsThreshold(string kpt){
     if (this->isOnlyDigits(kpt)) {
-        if (atoi(kpt.c_str()) >= 1) {
+        if (strtol(kpt.c_str(),NULL,10) >= 1) {
             return true;
         }
     }
@@ -2580,7 +2583,7 @@ bool ConfigManager::isValidGetAllResultsMaxResultsThreshold(string kpt){
 
 bool ConfigManager::isValidGetAllResultsKAlternative(string kpt){
     if (this->isOnlyDigits(kpt)) {
-        if (atoi(kpt.c_str()) >= 1) {
+        if (strtol(kpt.c_str(),NULL,10) >= 1) {
             return true;
         }
     }
