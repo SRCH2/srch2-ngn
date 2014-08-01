@@ -78,11 +78,12 @@ to manage the engine.  Each RESTful request needs to use a proper <a href="http:
 <h2 id="system-status">1. Retrieving System Status</h2>
 <p>This request returns the information about the system status. The response body will contain a JSON map with these fields:</p>
 <ul>
-<li><b>search_requests</b>: the number of queries received by the server;</li>
-<li><b>write_requests</b>: number of insert/delete/update requests received by the server;</li>
-<li><b>docs_in_index</b>: number of documents in the indexes;</li>
-<li><b>last_merge</b>: last time (UTC time) the inserted/deleted/updated documents are merged into the indexes;</li>
-<li><b>last_merge_time</b>: the time spent to merge the inserted/deleted documents into the indexes;</li>
+<li><b>search_requests</b>: the number of queries received by the server.</li>
+<li><b>write_requests</b>: number of insert/delete/update requests received by the server.</li>
+<li><b>docs_in_index</b>: number of documents in the indexes that are searchable.</li>
+<li><b>last_merge</b>: last time (UTC time) the inserted/deleted/updated documents are merged into the indexes.</li>
+<li><b>last_merge_time</b>: the amount of time spent to merge the inserted/deleted documents into the indexes in the last merge.</li>
+<li><b>doc_count</b>: number of documents, including those that have been added but not merged in the indexes.  Notice that the other value "docs_in_index" is for those documents that are merged into the indexes thus are searchable.</li>
 <li><b>version</b>: version of this engine.</li>
 </ul>
 <p>Here is an example query: </p>

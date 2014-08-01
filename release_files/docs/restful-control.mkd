@@ -41,11 +41,12 @@ to manage the engine.  Each RESTful request needs to use a proper [URL encoder](
 
 This request returns the information about the system status. The response body will contain a JSON map with these fields:
 
-- <b>search_requests</b>: the number of queries received by the server;
-- <b>write_requests</b>: number of insert/delete/update requests received by the server;
-- <b>docs_in_index</b>: number of documents in the indexes;
-- <b>last_merge</b>: last time (UTC time) the inserted/deleted/updated documents are merged into the indexes;
-- <b>last_merge_time</b>: the time spent to merge the inserted/deleted documents into the indexes;
+- <b>search_requests</b>: the number of queries received by the server.
+- <b>write_requests</b>: number of insert/delete/update requests received by the server.
+- <b>docs_in_index</b>: number of documents in the indexes that are searchable.
+- <b>last_merge</b>: last time (UTC time) the inserted/deleted/updated documents are merged into the indexes.
+- <b>last_merge_time</b>: the amount of time spent to merge the inserted/deleted documents into the indexes in the last merge.
+- <b>doc_count</b>: number of documents, including those that have been added but not merged in the indexes.  Notice that the other value "docs_in_index" is for those documents that are merged into the indexes thus are searchable.
 - <b>version</b>: version of this engine.
 
 Here is an example query: 
