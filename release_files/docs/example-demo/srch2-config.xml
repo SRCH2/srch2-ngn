@@ -10,8 +10,8 @@
  
 <config>
     <srch2Home>.</srch2Home>
-        <!-- Make sure to specify the home of your SRCH2 installation.  Example: 
-	  <srch2Home>/home/joe/srch2</srch2Home>
+        <!-- Make sure to specify the home of your SRCH2 demo.  Example: 
+	  <srch2Home>/home/joe/srch2/example-demo</srch2Home>
         -->
  
     <listeningHostname>0.0.0.0</listeningHostname>
@@ -21,7 +21,7 @@
      
     <dataSourceType>1</dataSourceType>
     
-    <dataFile>movie-data.json</dataFile>
+    <dataFile>./movie-data.json</dataFile>
 
     <maxSearchThreads>2</maxSearchThreads>
     

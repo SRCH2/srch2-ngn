@@ -11,8 +11,8 @@
  
 <config>
     <srch2Home>.</srch2Home>
-        <!-- Make sure to specify the home of your SRCH2 installation.  Example: 
-	  <srch2Home>/home/joe/srch2</srch2Home>
+        <!-- Make sure to specify the home of your SRCH2 demo.  Example: 
+	  <srch2Home>/home/joe/srch2/example-demo</srch2Home>
         -->
  
     <listeningHostname>0.0.0.0</listeningHostname>
@@ -32,11 +32,11 @@
     -->
     <cores defaultCoreName="movies">
         <core name="movies">
-            <!-- The configuration settings that are specific to the data source occur inside each "core" tag
-            -->
-            <dataFile>../movie-data.json</dataFile>
-            <dataDir>movies</dataDir>
+            <!-- The configuration settings that are specific to the data source occur inside each "core" tag -->
             <dataSourceType>1</dataSourceType>
+            <dataDir>movies</dataDir>
+            <!-- The "dataFile" is with respective to the folder of the core. Thus we need to use ".." here. -->
+            <dataFile>../movie-data.json</dataFile>
 
             <!-- Operations can also be assigned to special ports.  This supports network based security
                  used by all modern firewall.  Below, we move http://hostname/update operations to a
@@ -147,8 +147,9 @@
              for more information.
         -->
         <core name="stack">
-            <dataDir>stack</dataDir>
             <dataSourceType>1</dataSourceType>
+            <dataDir>stack</dataDir>
+            <!-- The "dataFile" is with respective to the folder of the core. Thus we need to use ".." here. -->
             <dataFile>../stackoverflow-data.json</dataFile>
 
 	    <!-- Here we move all control and write operations to a dedicated port.  This could be a

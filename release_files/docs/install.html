@@ -91,10 +91,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <li>example-demo.</li>
 </ul>
 <p>The "example-demo" folder contains files for a demo, in which we use the engine to build a search service on sample movie information. The folder includes a JSON file, sample configuration XML files for the engine, and files for two front-end UIs, one basic interface and one advanced interface.</p>
-<p><b>Step 2</b>: Open the file <a href="example-demo/srch2-config.xml">example-demo/srch2-config.xml</a>, and change the variable "srch2Home" to the install folder of the
-SRCH2 package, e.g., "/home/joe/srch2".</p>
+<p><b>Step 2</b>: Open the file <a href="example-demo/srch2-config.xml">example-demo/srch2-config.xml</a>, and change the variable "srch2Home" to the "example-demo" folder, e.g., "/home/joe/srch2/example-demo".</p>
 <p><b>Step 3</b>: Go to the install folder and run the following:</p>
-<pre><code class="python">shell&gt; ./bin/srch2-engine --config-file=./example-demo/srch2-config.xml
+<pre><code class="python">/home/joe/srch2/example-demo&gt; ../bin/srch2-engine --config-file=./srch2-config.xml
 </code></pre>
 
 <p>The server will read the configuration file, load the data in the corresponding data file, build indexes, and start a RESTful server. You should see a page similar to the following:</p>
@@ -108,7 +107,7 @@ SRCH2 package, e.g., "/home/joe/srch2".</p>
 <li>Once the engine starts, it stores the indexes in the folder specified by the "dataDir" parameter in the configuration file (with a default folder called "indexes"). The next time we start the engine, it will check if the folder has index files. If so, the engine will load the index files instead of reading the records from the data source. If we want to force the engine to read the records, make sure to delete the files in the "indexes" folder.</li>
 </ul>
 <p><b>Step 5</b>: To test the engine, open a new terminal and type the following command:</p>
-<pre><code class="python">shell&gt; curl -i  http://localhost:8081/search?q=terminator
+<pre><code class="python">/home/joe/srch2/example-demo&gt; curl -i  http://localhost:8081/search?q=terminator
 </code></pre>
 
 <p>You should see the following results:</p>
@@ -122,7 +121,7 @@ SRCH2 package, e.g., "/home/joe/srch2".</p>
 <img alt="Demo Web page Image" src="./images/Srch2-BasicDemoFront.png" width="750px">
 </center></p>
 <h2 id="advanced-ui">3. Advanced UI</h2>
-<p>Use the browser to open the file "example-demo/advanced-ui/index.html". Do a search, and you should see a page similar to the following:</p>
+<p>Use the browser to open the file <a href="example-demo/advanced/index.html">example-demo/advanced/index.html</a>. Do a search, and you should see a page similar to the following:</p>
 <p><center>
 <img alt="Demo Web-page Image" src="./images/Srch2-FullDemoFront.png" width="750px">
 </center></p>

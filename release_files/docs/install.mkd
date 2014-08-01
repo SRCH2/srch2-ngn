@@ -60,13 +60,12 @@ This documentation gives step-by-step instructions on how to use the SRCH2 engin
  
 The "example-demo" folder contains files for a demo, in which we use the engine to build a search service on sample movie information. The folder includes a JSON file, sample configuration XML files for the engine, and files for two front-end UIs, one basic interface and one advanced interface.
 
-<b>Step 2</b>: Open the file [example-demo/srch2-config.xml](example-demo/srch2-config.xml), and change the variable "srch2Home" to the install folder of the
-SRCH2 package, e.g., "/home/joe/srch2".
+<b>Step 2</b>: Open the file [example-demo/srch2-config.xml](example-demo/srch2-config.xml), and change the variable "srch2Home" to the "example-demo" folder, e.g., "/home/joe/srch2/example-demo".
 
 <b>Step 3</b>: Go to the install folder and run the following:
 
 ```python
-shell> ./bin/srch2-engine --config-file=./example-demo/srch2-config.xml
+/home/joe/srch2/example-demo> ../bin/srch2-engine --config-file=./srch2-config.xml
 ```
 
 The server will read the configuration file, load the data in the corresponding data file, build indexes, and start a RESTful server. You should see a page similar to the following:
@@ -86,7 +85,7 @@ Note:
 <b>Step 5</b>: To test the engine, open a new terminal and type the following command:
 
 ```python
-shell> curl -i  http://localhost:8081/search?q=terminator
+/home/joe/srch2/example-demo> curl -i  http://localhost:8081/search?q=terminator
 ```
 
 You should see the following results:
@@ -108,7 +107,7 @@ Use a browser to open the file [example-demo/basic/index.html](example-demo/basi
 
 ##3. Advanced UI##{id="advanced-ui"}
 
-Use the browser to open the file "example-demo/advanced-ui/index.html". Do a search, and you should see a page similar to the following:
+Use the browser to open the file [example-demo/advanced/index.html](example-demo/advanced/index.html). Do a search, and you should see a page similar to the following:
 
 <center>
 ![Demo Web-page Image](./images/Srch2-FullDemoFront.png){width=750px}
