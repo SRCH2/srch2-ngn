@@ -17,10 +17,8 @@
     <listeningHostname>0.0.0.0</listeningHostname>
     <listeningPort>8081</listeningPort>
  
-    <dataDir>./indexes</dataDir>
-     
     <dataSourceType>1</dataSourceType>
-    
+    <dataDir>./indexes</dataDir>
     <dataFile>./movie-data.json</dataFile>
 
     <maxSearchThreads>2</maxSearchThreads>
