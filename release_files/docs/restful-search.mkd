@@ -59,7 +59,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <div><h3><a style="text-decoration: none;color:#ee2e24" href="#doc"></a></h3></div>
 
 </td></tr></tbody></table></div>
-#<center>SRCH2 Manual: RESTful API - Search</center>#{id="doc" style="color:#ee2e24" }
+#<center>SRCH2 RESTful API - Search</center>#{id="doc" style="color:#ee2e24" }
 
 ##1. Overview##{id="overview"}
 
@@ -71,9 +71,11 @@ Note that each RESTful request needs to use a proper [URL encoder](http://www.w3
 
 ##2. Sample queries##{id="sampleQueries"}
 
-Let us start with sample queries to give an idea of the query syntax.  For clarity, we provide both the easy to read query URL and when necessary, a curl command with the URL encoding necessary to actually send the query.  The curl command examples follow the example and is parenthesized.  URL encoding is also necessary if you choose to use a web browser.  In our example commands, we assume you have installed the srch2 server locally on port 8081.
+Let us start with sample queries to give an idea of the query syntax.  For clarity, we provide both the easy-to-read query URL and when necessary, a curl command with the URL encoding necessary to send the query (in parentheses).  
+URL encoding is also necessary if you choose to use a web browser.  In our example commands, we assume you have installed the 
+SRCH2 server locally on port 8081.
 
-Query f1 searches for all records containing the word "terminator". The result set will contain all records with the word "terminator" in a [searchable field](configuration.html#fields), as specified in the configuration file.
+The following query f1 searches for all records containing the word "terminator". The result set will contain all records with the word "terminator" in a [searchable field](configuration.html#fields), as specified in the configuration file.
 
 ```
 f1) curl -i "http://localhost:8081/search?q=terminator"
@@ -108,7 +110,7 @@ f5) http://localhost:8081/search?q=title:terminator AND director:cameron&fq=bool
 (curl -i "http://localhost:8081/search?q=title:terminator%20AND%20director:cameron&fq=boolexp$%20year%3E1982%20$")
 ```
 
-Query f6 sorts the results based on the year attribute in the ascending order.
+Query f6 sorts the results based on the <i>year</i> attribute in the ascending order.
 ```
 f6) curl -i "http://localhost:8081/search?q=cameron&sort=year&orderby=asc"
 ```
@@ -124,7 +126,7 @@ Note: The response of a RESTful request is in the
 the response data in JSONP, append a parameter field "callback" to the
 query URL. For example:
 ```
-curl -i "http://localhost:8081/search?q=terminator&callback=myfunc
+curl -i "http://localhost:8081/search?q=terminator&callback=myfunc"
 ```
 
 ##3. Basic Concepts{id="basicConcepts"}
@@ -133,7 +135,7 @@ Before going into queries and their components, let us first understand the basi
 
 ### 3.1. Fields {id="fields"}
 
-When performing a search, we can either specify a field or use a default value. A field that is labeled as "[searchable](configuration.html#fields)" or "[indexed](configuration.html#fields)" can be searched with the syntax field name followed by a colon ":" and the search term. For example, suppose the data contains two fields, <i>title</i> and <i>year</i>. To find the records with "star" and "wars" in "title" field, we can use the following query:
+When performing a search, we can either specify a field or use a default value. A field that is labeled as "[searchable](configuration.html#fields)" or "[indexed](configuration.html#fields)" can be searched with the syntax field name followed by a colon ":" and the search term. For example, suppose the data contains two fields, <i>title</i> and <i>year</i>. To find the records with "star" and "wars" in the "title" field, we can use the following query:
 ```
 title:star AND wars
 (title:star%20AND%20wars)
@@ -155,11 +157,11 @@ q=term*
 
 ### 3.3.2. Fuzzy Search{id="fuzzySearch"}
 
-The engine supports fuzzy searches based on <a href="http://en.wikipedia.org/wiki/Levenshtein_distance">Levenshtein distance</a>. The engine does a fuzzy search when the tilde symbol (<i>~</i>) is added to the end of a single term. The engine uses a customizable threshold (normalized based on the term length) to determine the edit distance used in finding the set of matching keywords. We can also specify the edit-distance threshold by explicitly giving a normalized similarity threshold (a float number between 0 and 1) for a term. Let "s" be the similarity threshold for a term given in the query. The engine will use the formula 
+The engine supports fuzzy search based on <a href="http://en.wikipedia.org/wiki/Levenshtein_distance">Levenshtein distance (edit distance)</a>. The engine does a fuzzy search when the tilde symbol (<i>~</i>) is added to the end of a single term. The engine uses a customizable threshold (normalized based on the term length) to determine the edit distance used in finding the set of matching keywords. We can also specify the edit-distance threshold by explicitly giving a normalized similarity threshold (a float number between 0 and 1) for a term. Let "s" be the similarity threshold for a term given in the query. The engine will use the formula 
 ```
     floor((1-s) * length(keyword))
 ```
-as the edit-distance threshold to do the search. If "s" is 1, we do an exact search. As example, consider the following query:
+to compute the edit-distance threshold to do the search. If "s" is 1, we do an exact search. As example, consider the following query:
 ```
 q=spielburrg~0.8
 ```
@@ -202,7 +204,7 @@ Invalid query 3) q=star~.6*
 ```
 ### 3.3.4. Proximity Search{id="proximitySearch"}
 
-The engine supports finding words that are within a specified proximity. To use this feature, we need to set the [enablePositionIndex](configuration.html#enablePositionIndex) flag in the configuration file to true.
+The engine supports finding words that are within a specified proximity. To use this feature, we need to set the [enablePositionIndex](configuration.html#enablePositionIndex) flag to true in the configuration file.
 
 To do a proximity search, we use the tilde symbol ("~") at the end of a phrase. For example, the following query searches for records with the keywords "saving" and "ryan" within 1 word (that is, either zero or one word separates them) of each other in a document:
 ```
@@ -214,7 +216,7 @@ Notice that a proximity search does not support edit-distance-based fuzzy match,
 
 ### 3.4. Boolean Operators {id="booleanOperators"}
 
-The SRCH2 engine supports three boolean operators: AND, OR, and NOT. For example:
+The engine supports three boolean operators: AND, OR, and NOT. For example:
 ```
 q=(star^4 AND wars) OR "George Lucas"
 ```
@@ -230,21 +232,20 @@ q=pulp AND fiction AND (Tarenti~0.6* OR Travolta OR Jackson) AND NOT "Jesse Jack
 
 ##4. Understanding different query components{id="queryComponents"}
 
-The components and sub-components of a query are shown in Figure 1. The "Local Parameters" have query-related meta data specification, and the "Query Parameters" include specifications for the main query, post-processing filters, sorting, and facets.
+The components and sub-components of a query are shown in Figure 1. The "Local Parameters" component has query-related meta data specification, and the "Query Parameters" component includes specifications for the main query, post-processing filters, sorting, and facets.
 <br>
-<span ><center><img style="width:75%" src="images/Srch2-querysyntax.png" /></center></span>
+<span ><center><img style="width:65%" src="images/Srch2-querysyntax.png" /></center></span>
 <center>Figure 1: Query Components</center>
 
 ##5. Local Parameters (LocalParams) {id="localParams"}
 
-<i>LocalParams</i> stands for "local parameters." It provides a way to "localize" query behavior by specifying modifiers for the engine. In other words, LocalParams provides a way to add meta-data to certain argument types such as query strings.
-
+<i>LocalParams</i> stands for "local parameters." It defines the default way to deal with those terms in the query.
 To indicate a LocalParam, we prefix the target argument with curly braces containing a series of <i>key=value</i> pairs separated by a white space. So if the original query keyword is "hunt", applying LocalParams would look something like <i>{k1=v1 k2=v2 k3=v3}hunt</i>. For example, we can specify a default field in local parameters as follows:
 ```
 q={defaultSearchFields=title}hunt
 (q=%7BdefaultSearchFields=title%7Dhunt)
 ```
-The above query searches for records with the word "hunt" in the field <i>title</i>.  <i>title</i> is searched by default unless specified elsewhere in the query (see below). We can specify more than one defaultSearch field. We can also specify what logical operator to use between these fields. For example:
+The above query searches for records with the word "hunt" in the field <i>title</i>.  The field <i>title</i> is searched by default unless specified elsewhere in the query (see below). We can specify more than one defaultSearch field. We can also specify what logical operator to use between these fields. For example:
 ```
 q={defaultFieldOperator=AND defaultSearchFields=director,title}hunt
 (q=%7BdefaultFieldOperator=AND%20defaultSearchFields=director,title%7Dhunt)
@@ -262,11 +263,11 @@ The following are valid localParams:
 
  - [defaultBoostLevel](configuration.html#fieldBoost): a non-negative integer, e.g., 2.
 
- - [defaultPrefixComplete](configuration.html#queryTermType): 'PREFIX' or 'COMPLETE' (without quotes, case sensitive), indicating whether the term is treated as a prefix or a complete term.
+ - [defaultPrefixComplete](configuration.html#queryTermPrefixType): "PREFIX" or "COMPLETE" (without quotes, case sensitive), indicating whether the term is treated as a prefix or a complete term.
 
- - defaultSearchFields: default fields to search in, e.g., <i>title</i>. We can specify more than one field by using comma (',') to separate them, e.g., 'defaultSearchFields=title,director,year' (without quotes).
+ - [defaultSearchFields](configuration.html#fieldBasedSearch): default fields to search in, e.g., <i>title</i>. We can specify more than one field by using comma (',') to separate them, e.g., 'defaultSearchFields=title,director,year' (without quotes).
 
- - defaultFieldOperator : 'AND' or 'OR' (without quotes). It's a boolean operator to be applied between the default search fields specified by comma-separated fields.
+ - defaultFieldOperator: "AND" or "OR" (without quotes). It's a boolean operator to be applied between the default search fields specified by comma-separated fields.
 
 ##6. Query Parameters {id="queryParams"}
 
@@ -276,7 +277,7 @@ A search over a searchable field is denoted by its name and the search term sepa
 ```
 q=title:wind
 ```
-This searches for the keyword "wind" in the field <i>title</i> of a record. If no field is provided, but local parameter defaultSearchFields described above is provided, the fields specified by that parameter will be searched.  If neither parameter was provided, the engine will search on the ['indexed' field(s)](configuration.html#fields) as specified in the [configuration file](example-demo/srch2-config.xml). For example,
+This searches for the keyword "wind" in the field <i>title</i>. If no field is provided, but local parameter defaultSearchFields described above is provided, the fields specified by that parameter will be searched.  If neither parameter was provided, the engine will search on the [indexed field(s)](configuration.html#fields) as specified in the [configuration file](example-demo/srch2-config.xml). For example,
 ```
 q=wind
 ```
@@ -296,7 +297,7 @@ year:[2010 TO 2012]
 (year:%5B2010%20TO%202012%5D)
 ```
 
-The above query finds records whose <i>year</i> of release field has a value between 2010 and 2012 (both inclusive). <br>
+The above query finds records whose <i>year</i> of release has a value between 2010 and 2012 (both inclusive). <br>
 
 Please note: range queries are not just for numerical fields. We could also use range queries on non-numerical fields. Example:
 ```
@@ -312,7 +313,7 @@ This will find all records whose <i>genre</i> value is alphabetically between "c
 2) fq=id:[1000 TO *] OR genre:drama OR year:[* TO 1975]
    (fq=id:%5B1000%20TO%20*%5D%20OR%20genre:drama%20OR%20year:%5B*%20TO%201975%5D)
 ```
-The first query returns the records with an <i>id</i> greater than or equal to 1000, a <i>genre</i> of drama, and <i>year</i> greater than or equal to 1975.
+The first query returns the records with an <i>id</i> greater than or equal to 1000, a <i>genre</i> of drama, and <i>year</i> less than or equal to 1975.
 
 The engine supports specifying boolean expressions only as filters. These expressions must be surrounded by "boolexp$" and "$".
 ```
@@ -328,7 +329,10 @@ fq=-year:[1975 TO *]
 ```
 The above filter query will find records for movies released before 1975.
 
-Please note: the attributes used in "fq" must have the "refining" property set to true in the configuration file. The SRCH2 movie demo does not normally configure refining for all fields used as examples in this document. Also, only the attributes of type INT and FLOAT can be used in the "boolexp$$" block.
+Please note: the attributes used in "fq" must have the "refining" property set to true in the configuration file. 
+Also, only the attributes of type INT and FLOAT can be used in the "boolexp$$" block.
+In the movie demo, some of the attributes are not refining. 
+
 
 ## 7. Facet Query Params {id="facetParams"}
 

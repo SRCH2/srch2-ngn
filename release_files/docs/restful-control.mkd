@@ -32,22 +32,22 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <div><h3><a style="text-decoration: none;color:#ee2e24" href="#doc"></a></h3></div>
 
 </td></tr></tbody></table></div>
-#<center>SRCH2 Manual: RESTful API - Control</center>#{id="doc" style="color:#ee2e24" }
+#<center>SRCH2 RESTful API - Control Messages</center>#{id="doc" style="color:#ee2e24" }
 
-The SRCH2 engine supports certain control messages through its RESTful API.
-
-Note that each RESTful request needs to use a proper [URL encoder](http://www.w3schools.com/tags/ref_urlencode.asp) to be converted to characters in a format that can be transmitted properly.
+The SRCH2 engine supports certain control messages through its RESTful API.  Here we explain how to use the maessages
+to manage the engine.  Each RESTful request needs to use a proper [URL encoder](http://www.w3schools.com/tags/ref_urlencode.asp) to be converted to characters in a format that can be transmitted properly.
 
 ##1. Retrieving System Status## {id="system-status"}
 
-This API returns the information about the system status. The response body will contain a JSON map with these fields:
+This request returns the information about the system status. The response body will contain a JSON map with these fields:
 
-   -   "search_requests": the number of queries received by the server so far;
-   -   "write_requests": number of insert/delete/update requests received by the server so far;
-   -   "docs_in_index": number of documents in the indexes;
-   -   "last_merge": last time (UTC time) the inserted/deleted/updated documents are merged into the indexes;
-   -   "last_merge_time": the time spent to merge the inserted/deleted documents into the indexes;
-   -   "version": version of this engine.
+- <b>search_requests</b>: the number of queries received by the server.
+- <b>write_requests</b>: number of insert/delete/update requests received by the server.
+- <b>docs_in_index</b>: number of documents in the indexes that are searchable.
+- <b>last_merge</b>: last time (UTC time) the inserted/deleted/updated documents are merged into the indexes.
+- <b>last_merge_time</b>: the amount of time spent to merge the inserted/deleted documents into the indexes in the last merge.
+- <b>doc_count</b>: number of documents, including those that have been added but not merged in the indexes.  Notice that the other value "docs_in_index" is for those documents that are merged into the indexes thus are searchable.
+- <b>version</b>: version of this engine.
 
 Here is an example query: 
 ```
@@ -67,14 +67,14 @@ Date: Thu, 19 Sep 2013 18:52:52 GMT
 
 ##2. Serializing Indexes to Disk##{id="serialize-indexes"}
 
-This API serializes the indexes, with all the changes made so far, to files in the path specified by the parameter "dataDir" in the [configuration file](example-demo/srch2-config.xml). Here is an example: 
+This request tells the engine to serialize the indexes, with all the changes made so far, to files in the path specified by the parameter "dataDir" in the [configuration file](example-demo/srch2-config.xml). Here is an example: 
 ```python
 $ curl -i "http://localhost:8081/save" -X PUT
 ```
 
 ##3. Serializing Records to Disk##{id="serialize-records"}
 
-This API serializes the records, with all the changes made so far, to a file in the path specified by the parameter "dataDir" in the configuration file. Deleted records will be ignored. The request can specify the file name as well, using a variable called "exported_data_file". Here is an example: 
+This request tells the engine to serialize the records, with all the changes made so far, to a file in the path specified by the parameter "dataDir" in the configuration file. Deleted records will be ignored. The request can specify the file name as well, using a variable called "exported_data_file". Here is an example: 
 
 ```
 $ curl -i "http://localhost:8081/export?exported_data_file=mydata.json" -X PUT
@@ -83,8 +83,6 @@ $ curl -i "http://localhost:8081/export?exported_data_file=mydata.json" -X PUT
 The engine will store the records in the file "mydata.json" in the folder specified by the parameter "dataDir".
 
 ##4. Reseting Log File##{id="reset-log"}
-
-
 
 This API is used by a third-party tool such as
 [logrotate](http://linuxcommand.org/man_pages/logrotate8.html) to manage the log file. Suppose the "logrotate" tool has renamed the log file "srch2-log.txt" to another file "srch2-log.txt.1".
