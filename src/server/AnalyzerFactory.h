@@ -18,7 +18,7 @@ namespace srch2 {
 
         class AnalyzerFactory {
         public:
-            static srch2is::Analyzer* createAnalyzer(const CoreInfo_t* config);
+            static srch2is::Analyzer* createAnalyzer(const CoreInfo_t* config, bool isSearcherThread = false);
             static srch2is::Analyzer* getCurrentThreadAnalyzer(const CoreInfo_t* config);
         private:
             AnalyzerFactory();

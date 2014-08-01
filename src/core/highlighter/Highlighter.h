@@ -175,6 +175,8 @@ public:
 		}
 	}
 private:
+	signed getOriginalTermCharLen(vector<unsigned> charLens, vector<uint8_t> bitmap,
+			unsigned pos);
 	void findMatchingKeywordsFromPrefixNode(const TrieNode* prefixNode, unsigned indx,
 			vector<CandidateKeywordInfo>& completeKeywordsId,
 			const unsigned *keywordIdsPtr, unsigned keywordsInRec);

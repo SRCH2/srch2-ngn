@@ -17,6 +17,7 @@
 #include "TokenStream.h"
 #include "TokenFilter.h"
 #include "instantsearch/Analyzer.h"
+#include "analyzer/AnalyzerContainers.h"
 
 /*
  * If we have folllwing synonym rules
@@ -61,6 +62,8 @@ public:
 
 	virtual ~SynonymFilter();
 
+	void clearState();
+
 private:
 
 	/*
@@ -71,12 +74,12 @@ private:
 	/*
 	 * this a temporary buffer to keep the words that are waiting to get emit.
 	 */
-	vector<string> emitBuffer;
+	vector<AnalyzedTermInfo> emitBuffer;
 
 	/*
 	 * It is a buffer for tokens to check if we have multi-word synonyms
 	 */
-	std::vector<string> tokenBuffer;
+	std::vector<AnalyzedTermInfo> tokenBuffer;
 
 	/*
 	 * put the synonyms of existing tokens into the buffer of to-be-emitted tokens
@@ -87,7 +90,7 @@ private:
 	 * returns the row of the map which has input as its key
 	 * returns NULL if there is no such a key
 	 */
-	pair<SynonymTokenType, std::string> getValuePairOf(const std::string &key) const;
+	bool getSynonymValuesOf(const std::string &key,  SynonymVector& synonyms) const;
 
 
 	/*
@@ -98,6 +101,8 @@ private:
 	 *
 	 */
 	void emitCurrentToken();
+
+	bool isPrefixToken(const string& str) const;
 
 	const SynonymContainer *synonymContainer;
 };
