@@ -73,7 +73,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
     std::vector<string> stringValues;
     getJsonValueString(root, primaryKeyName, stringValues, "primary-key");
 
-    if (stringValues.empty() ||
+    if (!stringValues.empty() &&
         (stringValues.at(0).compare("NULL") != 0 && stringValues.at(0).compare("") != 0 ))
     {
         string primaryKeyStringValue = stringValues.at(0);
