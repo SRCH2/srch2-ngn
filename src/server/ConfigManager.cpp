@@ -1343,12 +1343,20 @@ void ConfigManager::parseSchemaType(const xml_node &childNode, CoreInfo_t *coreI
 									Logger::warn("words parameter for protected keywords is empty, so protected words filter is disabled");
 								}
 							} else if (string(field.attribute(nameString).value()).compare(synonymFilterString) == 0) {
-								if (string(field.attribute(synonymsString).value()).compare("") != 0) { // the file for protected words filter is set.
+								if (string(field.attribute(synonymsString).value()).compare("") != 0) { // the file for synonyms filter is set.
 									temporaryString = string(field.attribute(synonymsString).value());
 									trimSpacesFromValue(temporaryString, synonymsString, parseWarnings);
 									coreInfo->synonymFilterFilePath = boost::filesystem::path(srch2Home + temporaryString).normalize().string();
 								}else{
 									Logger::warn("Synonym filter is disabled because synonym parameter is empty, ");
+								}
+								if (string(field.attribute(expandString).value()).compare("") != 0) {
+									temporaryString = string(field.attribute(expandString).value());
+									if (isValidBool(temporaryString)) {
+										coreInfo->synonymKeepOrigFlag = field.attribute(expandString).as_bool(true);
+									}
+								}else{
+									Logger::warn("Synonym filter's expand attribute is missing. Using default = true");
 								}
 							}
 

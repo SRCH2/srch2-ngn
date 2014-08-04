@@ -105,7 +105,7 @@ int main() {
 	callSnippetGen(algo, records[2].c_str(), snippets, keywordStrToHighlight, expectedResults);
 
 	delete algo;
-
+	analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 	keywordStrToHighlight.clear();
 	inf.flag = HIGHLIGHT_KEYWORD_IS_COMPLETE; utf8StringToCharTypeVector("disk", inf.key); keywordStrToHighlight.push_back(inf);
 	inf.flag = HIGHLIGHT_KEYWORD_IS_COMPLETE; utf8StringToCharTypeVector("journaling", inf.key); keywordStrToHighlight.push_back(inf);
@@ -123,7 +123,7 @@ int main() {
 	callSnippetGen(algo, records[1].c_str(), snippets, keywordStrToHighlight, expectedResults);
 
 	delete algo;
-
+	analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 	keywordStrToHighlight.clear();
 	inf.flag = HIGHLIGHT_KEYWORD_IS_COMPLETE; utf8StringToCharTypeVector("shard", inf.key); keywordStrToHighlight.push_back(inf);
 	inf.flag = HIGHLIGHT_KEYWORD_IS_COMPLETE; utf8StringToCharTypeVector("command", inf.key); keywordStrToHighlight.push_back(inf);
@@ -135,7 +135,7 @@ int main() {
 	callSnippetGen(algo, records[1].c_str(), snippets, keywordStrToHighlight, expectedResults);
 
 	delete algo;
-
+	analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 	keywordStrToHighlight.clear();
 	inf.flag = HIGHLIGHT_KEYWORD_IS_COMPLETE; utf8StringToCharTypeVector("mongodb", inf.key); keywordStrToHighlight.push_back(inf);
 
@@ -146,6 +146,7 @@ int main() {
 	callSnippetGen(algo, records[1].c_str(), snippets, keywordStrToHighlight, expectedResults);
 
 	delete algo;
+	analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 	//------------------------------------------------------------------------
 	// Now let us test phrases ...
     // exact phrase
@@ -166,6 +167,7 @@ int main() {
 	expectedResults.push_back("... obvious right storage engine to use. It provides low latency, <exact>solid</exact> <exact>predictability</exact>, is robust in the face of crashes, and is friendly from a ...");
 	callSnippetGen(algo, records[3].c_str(), snippets, keywordStrToHighlight, expectedResults);
 	delete algo;
+	analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 	//------------------------------------------------------------------------
 	// proximity "shard hashed"~1
 	phrasesInfoList.clear();
@@ -187,6 +189,7 @@ int main() {
 	callSnippetGen(algo, records[1].c_str(), snippets, keywordStrToHighlight, expectedResults);
 
 	delete algo;
+	analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 	//------------------------------------------------------------------------
 	phrasesInfoList.clear();
 	keywordStrToHighlight.clear();
@@ -209,6 +212,7 @@ int main() {
 	callSnippetGen(algo, records[1].c_str(), snippets, keywordStrToHighlight, expectedResults);
 
 	delete algo;
+	analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 	//------------------------------------------------------------------------
 	phrasesInfoList.clear();
 	keywordStrToHighlight.clear();
@@ -231,6 +235,7 @@ int main() {
 	callSnippetGen(algo, records[3].c_str(), snippets, keywordStrToHighlight, expectedResults);
 
 	delete algo;
+	analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
 	//------------------------------------------------------------------------
 	// multiple phrases
 	//--------------------
@@ -267,7 +272,6 @@ int main() {
 	callSnippetGen(algo, records[2].c_str(), snippets, keywordStrToHighlight, expectedResults);
 
 	delete algo;
-	delete analyzer;
 }
 
 

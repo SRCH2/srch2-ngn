@@ -340,7 +340,7 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     			// previous attribute id. then continue to push the position
     			// in position list vector
     			if (j == 0 || prevAttributeId == attributeId) {
-    				if (isEnabledWordPositionIndex(positionIndexType) && type == ANALYZED_ORIGINAL_TOKEN)
+    				if (isEnabledWordPositionIndex(positionIndexType))
     					positionListVector.push_back(position);
     				if (isEnabledCharPositionIndex(positionIndexType)){
     					offsetVector.push_back(offset);
@@ -372,7 +372,7 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     				bitMapVector.clear();
     				bitMapCursor = 0;
 
-    				if (isEnabledWordPositionIndex(positionIndexType) && type == ANALYZED_ORIGINAL_TOKEN)
+    				if (isEnabledWordPositionIndex(positionIndexType))
     					positionListVector.push_back(position);
     				if (isEnabledCharPositionIndex(positionIndexType)) {
     					offsetVector.push_back(offset);

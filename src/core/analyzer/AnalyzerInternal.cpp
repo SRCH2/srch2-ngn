@@ -188,10 +188,27 @@ void AnalyzerInternal::tokenizeRecord(const Record *record,
 					AnalyzedTokenType tokenType =  tokenStream->getProcessedTokentype();
 					unsigned charLen = tokenStream->getProcessedTokenLen();
 					charTypeVectorToUtf8String(charVector, currentToken);
-					// Bumps are added to the positions after tokenizer gives us the values.
-					AnalyzedTermInfo pterm = {currentToken, termPosition + valueOffset * MULTI_VALUED_ATTRIBUTE_POSITION_BUMP,
-							prevAttrCombinedLen+ charOffset, charLen, tokenType};
-					tokens.push_back(pterm);
+					if (tokenType == ANALYZED_SYNONYM_TOKEN) {
+						vector<string> currentTokens;
+						unsigned synonymCharOffset = prevAttrCombinedLen + charOffset;
+						boost::algorithm::split(currentTokens, currentToken, boost::is_any_of(" "));
+						for (unsigned i = 0; i < currentTokens.size(); ++i) {
+							if (i != 0) {
+								// For multi word synonym we do not store char offset for non-first token.
+								// e.g. nyc => new york , and "new york" begin the generated synonym,
+								// "new" offset is same as "nyc" and "york" offset is 0.
+								synonymCharOffset = 0;
+							}
+							AnalyzedTermInfo pterm = {currentTokens[i], termPosition + i + valueOffset * MULTI_VALUED_ATTRIBUTE_POSITION_BUMP,
+									synonymCharOffset , charLen, tokenType};
+							tokens.push_back(pterm);
+						}
+					} else {
+						// Bumps are added to the positions after tokenizer gives us the values.
+						AnalyzedTermInfo pterm = {currentToken, termPosition + valueOffset * MULTI_VALUED_ATTRIBUTE_POSITION_BUMP,
+								prevAttrCombinedLen+ charOffset, charLen, tokenType};
+						tokens.push_back(pterm);
+					}
 				}
 				prevAttrCombinedLen += attributeValue.length() + MULTI_VAL_ATTR_DELIMITER_LEN /*multivalue separator " $$ "*/;
         	}

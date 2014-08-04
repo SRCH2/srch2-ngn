@@ -145,6 +145,7 @@ public:
 			vector<PhraseInfoForHighLight>& phrasesInfoList, const HighlightConfig& hconf);
 	void getSnippet(const QueryResults *qr,unsigned recIdx, unsigned attributeId, const string& dataIn, vector<string>& snippets,
 			bool isMultiValued, vector<keywordHighlightInfo>& keywordStrToHighlight);
+	~AnalyzerBasedAlgorithm();
 private:
 	Analyzer *analyzer;
 };

@@ -134,6 +134,14 @@ unsigned Analyzer::getProcessedTokenPosition() {
 	return this->analyzerInternal->getTokenStream()->getProcessedTokenPosition();
 }
 
+unsigned Analyzer::getProcessedTokenLen() {
+	return this->analyzerInternal->getTokenStream()->getProcessedTokenLen();
+}
+
+AnalyzedTokenType Analyzer::getProcessedTokenType() {
+	return this->analyzerInternal->getTokenStream()->getProcessedTokentype();
+}
+
 void Analyzer::save(boost::archive::binary_oarchive &oa) {
     this->analyzerInternal->save(oa);
 }

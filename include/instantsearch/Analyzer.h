@@ -125,6 +125,8 @@ public:
 	std::vector<CharType> & getProcessedToken();
 	unsigned getProcessedTokenCharOffset();
 	unsigned getProcessedTokenPosition();
+	unsigned getProcessedTokenLen();
+	AnalyzedTokenType getProcessedTokenType();
 	/**
 	 * Destructor to free persistent resources used by the Analyzer.
 	 */

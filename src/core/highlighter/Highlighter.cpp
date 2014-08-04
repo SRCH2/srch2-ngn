@@ -160,6 +160,9 @@ AnalyzerBasedAlgorithm::AnalyzerBasedAlgorithm(Analyzer *analyzer,
 		HighlightAlgorithm(phrasesInfoList, hconf){
 	this->analyzer = analyzer;
 }
+AnalyzerBasedAlgorithm::~AnalyzerBasedAlgorithm() {
+	delete analyzer;
+}
 
 void AnalyzerBasedAlgorithm::getSnippet(const QueryResults* /*not used*/, unsigned /* not used*/,
 		unsigned attributeId, const string& dataIn,
@@ -194,8 +197,17 @@ void AnalyzerBasedAlgorithm::getSnippet(const QueryResults* /*not used*/, unsign
 		vector<CharType>& charVector = this->analyzer->getProcessedToken();
 		unsigned charOffset = this->analyzer->getProcessedTokenCharOffset();
 		unsigned position = this->analyzer->getProcessedTokenPosition();
+		unsigned originalTokenCharLen = this->analyzer->getProcessedTokenLen();
+		AnalyzedTokenType tokenType = this->analyzer->getProcessedTokenType();
 		bool matchFound = false;
-
+		if (tokenType == ANALYZED_SYNONYM_TOKEN) {
+			vector<unsigned>::iterator iter = find(charVector.begin(), charVector.end(), 32);
+			if (iter != charVector.end()) {
+				// we only care about first token of the generated synonym
+				// e.g if "new york" is synonym token , then only use new for matching
+				charVector.erase(iter, charVector.end());
+			}
+		}
 		if (mask == 0 && phrasesInfoList.size() == 0)  // for phrase we cannot assume much.
 			break;
 
@@ -229,8 +241,12 @@ void AnalyzerBasedAlgorithm::getSnippet(const QueryResults* /*not used*/, unsign
 				assert(true);
 			}
 			if (matchFound) {
+				signed termLen = keywordStrToHighlight[i].key.size();
+				if (tokenType == ANALYZED_SYNONYM_TOKEN)  {
+					termLen = originalTokenCharLen;
+				}
 				matchedTermInfo info = {keywordStrToHighlight[i].flag, i, charOffset,
-						keywordStrToHighlight[i].key.size(), 0};
+						termLen, 0};
 				if (keywordStrToHighlight[i].editDistance > 0)
 					info.tagIndex = 1;
 			 	highlightPositions.push_back(info);
@@ -850,8 +866,8 @@ void TermOffsetAlgorithm::getSnippet(const QueryResults* qr, unsigned recidx, un
 				}
 
 				KeywordHighlightInfoFlag flag = keywordStrToHighlight[info.prefixKeyIdx].flag;
-				if (termLen == -1) {
-					Logger::debug("invalid term length. Ignore this term");
+				if (termLen == -1 || offsetPosition[_idx] == 0) {
+					Logger::debug("invalid term length or offset. Ignore this term");
 					flag = HIGHLIGHT_KEYWORD_INVALID;
 				}
 				matchedTermInfo mti = {flag, info.prefixKeyIdx, offsetPosition[_idx],
