@@ -41,18 +41,18 @@ private:
             const string& configName);
     static bool setRecordPrimaryKey(srch2is::Record *record,
             const Json::Value &root, const CoreInfo_t *indexDataContainerConf);
-    static void setRecordSearchableAttr(const Json::Value &root,
+    static bool setRecordSearchableAttr(const Json::Value &root,
             RecordSerializer& compactRecSerializer);
-    static void setRecordRefiningAttr(const Json::Value &root,
+    static bool setRecordRefiningAttr(const Json::Value &root,
             RecordSerializer& compactRecSerializer);
     static bool setRecordSearchableValue(srch2is::Record *record,
             const Json::Value &root, const CoreInfo_t *indexDataContainerConf);
     static bool setRecordRefiningValue(srch2is::Record *record,
             const Json::Value &root, const CoreInfo_t *indexDataContainerConf,
-            std::stringstream &error);
-    static void setRecordLocationValue(srch2is::Record *record,
+            int& errorCode);
+    static bool setRecordLocationValue(srch2is::Record *record,
             const Json::Value &root, const CoreInfo_t *indexDataContainerConf);
-    static void setRecordBoostValue(srch2is::Record *record,
+    static bool setRecordBoostValue(srch2is::Record *record,
             const Json::Value &root, const CoreInfo_t *indexDataContainerConf);
 };
 

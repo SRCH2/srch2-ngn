@@ -82,7 +82,7 @@ bool JSONRecordParser::setRecordPrimaryKey(
     return true;
 }
 
-void JSONRecordParser::setRecordSearchableAttr(
+bool JSONRecordParser::setRecordSearchableAttr(
         const Json::Value &root, RecordSerializer& compactRecSerializer) {
 
     string compressedInputLine;
@@ -101,9 +101,11 @@ void JSONRecordParser::setRecordSearchableAttr(
         compactRecSerializer.addSearchableAttribute(iter->first,
                 compressedInputLine);
     }
+
+    return true;
 }
 
-void JSONRecordParser::setRecordRefiningAttr(const Json::Value &root,
+bool JSONRecordParser::setRecordRefiningAttr(const Json::Value &root,
         RecordSerializer& compactRecSerializer) {
 
     const Schema& storageSchema = compactRecSerializer.getStorageSchema();
@@ -139,10 +141,14 @@ void JSONRecordParser::setRecordRefiningAttr(const Json::Value &root,
         }
         default: {
             // not possible
+            Logger::error("Refining attribute type should be UNSIGNED OR FLOAT,"
+                    " no others are accepted.");
             break;
         }
         }
     }
+
+    return true;
 }
 
 bool JSONRecordParser::setRecordSearchableValue(srch2is::Record *record,const Json::Value &root,
@@ -198,7 +204,7 @@ bool JSONRecordParser::setRecordSearchableValue(srch2is::Record *record,const Js
 
 bool JSONRecordParser::setRecordRefiningValue(srch2is::Record *record,
         const Json::Value &root, const CoreInfo_t *indexDataContainerConf,
-        std::stringstream &error) {
+        int& errorCode) {
     for (map<string, RefiningAttributeInfoContainer>::const_iterator attributeIter =
             indexDataContainerConf->getRefiningAttributes()->begin();
             attributeIter
@@ -215,7 +221,7 @@ bool JSONRecordParser::setRecordRefiningValue(srch2is::Record *record,
                     attributeStringValues, "refining-attributes");
             if (attributeStringValues.empty()) {
                 // ERROR
-                error << "\nDATE/TIME field has non recognizable format.";
+                errorCode = 1;
                 return false;                    // Raise Error
             } else {
                 if (std::find(attributeStringValues.begin(),
@@ -223,7 +229,7 @@ bool JSONRecordParser::setRecordRefiningValue(srch2is::Record *record,
                         != attributeStringValues.end()
                         && attributeIter->second.required) {
                     // ERROR
-                    error << "\nRequired refining attribute is null.";
+                    errorCode = 2;
                     return false;                    // Raise Error
                 }
                 if (std::find(attributeStringValues.begin(),
@@ -281,7 +287,7 @@ bool JSONRecordParser::setRecordRefiningValue(srch2is::Record *record,
             } else {
                 if (attributeIter->second.required) {
                     // ERROR
-                    error << "\nRequired refining attribute is null.";
+                    errorCode = 2;
                     return false;                    // Raise Error
                 } else {
                     if (attributeStringValues.empty()) {
@@ -319,7 +325,7 @@ bool JSONRecordParser::setRecordRefiningValue(srch2is::Record *record,
     return true;
 }
 
-void JSONRecordParser::setRecordLocationValue(srch2is::Record *record,
+bool JSONRecordParser::setRecordLocationValue(srch2is::Record *record,
         const Json::Value &root, const CoreInfo_t *indexDataContainerConf) {
     if (indexDataContainerConf->getIndexType() == 1) {
         string latitudeAttributeKeyName =
@@ -348,9 +354,10 @@ void JSONRecordParser::setRecordLocationValue(srch2is::Record *record,
         }
         record->setLocationAttributeValue(recordLatitude, recordLongitude);
     }
+    return true;
 }
 
-void JSONRecordParser::setRecordBoostValue(srch2is::Record *record,
+bool JSONRecordParser::setRecordBoostValue(srch2is::Record *record,
         const Json::Value &root, const CoreInfo_t *indexDataContainerConf) {
     record->setRecordBoost(1); // default record boost: 1
     if (indexDataContainerConf->isRecordBoostAttributeSet() == true) {
@@ -365,8 +372,10 @@ void JSONRecordParser::setRecordBoostValue(srch2is::Record *record,
         if (recordBoost > 0.0)
             record->setRecordBoost(recordBoost);
     }
+    return true;
 }
 
+//The "Json::Value root" has to be parsed successfully before calling this function.
 bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record,
         const std::string &inputLine, const Json::Value &root,
         const CoreInfo_t *indexDataContainerConf, std::stringstream &error,
@@ -403,8 +412,19 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record,
     }
 
     // Get the refining value from the JSON object and store them into the Record
-    if (!setRecordRefiningValue(record, root, indexDataContainerConf, error)) {
+    int errorCode = 0;
+    if (!setRecordRefiningValue(record, root, indexDataContainerConf, errorCode)) {
         //Error prints in the function
+        switch(errorCode){
+        case 1:
+            error << "\nDATE/TIME field has non recognizable format.";
+            break;
+        case 2:
+            error << "\nRequired refining attribute is null.";
+            break;
+        default:
+            error << "Undefined error.";
+        }
         return false;
     }
 
