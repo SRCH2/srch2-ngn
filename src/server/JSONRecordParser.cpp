@@ -53,260 +53,366 @@ std::string WStringToString(const std::wstring& s)
     return temp;
 }
 
-bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const std::string &inputLine,
-                        const Json::Value &root, 
-                        const CoreInfo_t *indexDataContainerConf,
-                        std::stringstream &error,
-                        RecordSerializer& compactRecSerializer)
-{
-    if (not (root.type() == Json::objectValue))
-    {
-        error << "\nFailed to parse JSON - No primary key found.";
-        return false;// Raise Error
-    }
-
-    //string primaryKeyName = StringToWString(indexDataContainerConf->getPrimaryKey());
+bool JSONRecordParser::setRecordPrimaryKey(
+        srch2is::Record *record, const Json::Value &root,
+        const CoreInfo_t *indexDataContainerConf) {
 
     string primaryKeyName = indexDataContainerConf->getPrimaryKey();
 
-    //string primaryKeyStringValue = root.get(primaryKeyName, "NULL").asString(); // CHENLI
-    std::vector<string> stringValues;
+    std::vector < string > stringValues;
     getJsonValueString(root, primaryKeyName, stringValues, "primary-key");
 
-    if (!stringValues.empty() &&
-        (stringValues.at(0).compare("NULL") != 0 && stringValues.at(0).compare("") != 0 ))
-    {
+    if (!stringValues.empty()
+            && (stringValues.at(0).compare("NULL") != 0
+                    && stringValues.at(0).compare("") != 0)) {
         string primaryKeyStringValue = stringValues.at(0);
-    	// trim to avoid any mismatch due to leading and trailing white space
-    	boost::algorithm::trim(primaryKeyStringValue);
+        // trim to avoid any mismatch due to leading and trailing white space
+        boost::algorithm::trim(primaryKeyStringValue);
         const std::string primaryKey = primaryKeyStringValue.c_str();
         record->setPrimaryKey(primaryKey);
-        if (indexDataContainerConf->getIsPrimSearchable())
-        {
-            record->setSearchableAttributeValue(indexDataContainerConf->getPrimaryKey(),primaryKeyStringValue);
+        if (indexDataContainerConf->getIsPrimSearchable()) {
+            record->setSearchableAttributeValue(
+                    indexDataContainerConf->getPrimaryKey(),
+                    primaryKeyStringValue);
         }
-    }
-    else
-    {
-        error << "\nFailed to parse JSON - No primary key found.";
-        return false;// Raise Error
+    } else {
+        return false; // Raise Error
     }
 
-    // storing searchable attributes code begin.
+    return true;
+}
+
+void JSONRecordParser::setRecordSearchableAttr(
+        const Json::Value &root, RecordSerializer& compactRecSerializer) {
+
     string compressedInputLine;
-    typedef map<string , unsigned>::const_iterator SearchableAttrIter;
+    typedef map<string, unsigned>::const_iterator SearchableAttrIter;
     const Schema& storageSchema = compactRecSerializer.getStorageSchema();
-    for (SearchableAttrIter iter = storageSchema.getSearchableAttribute().begin();
-    		iter != storageSchema.getSearchableAttribute().end(); ++iter)
-    {
-    	vector<string> attributeStringValues;
-    	getJsonValueString(root, iter->first, attributeStringValues, "attributes-search");
-    	string singleString = boost::algorithm::join(attributeStringValues, " $$ ");
-    	snappy::Compress(singleString.c_str(), singleString.length(), &compressedInputLine);
-    	compactRecSerializer.addSearchableAttribute(iter->first, compressedInputLine);
+    for (SearchableAttrIter iter =
+            storageSchema.getSearchableAttribute().begin();
+            iter != storageSchema.getSearchableAttribute().end(); ++iter) {
+        vector<string> attributeStringValues;
+        getJsonValueString(root, iter->first, attributeStringValues,
+                "attributes-search");
+        string singleString = boost::algorithm::join(attributeStringValues,
+                " $$ ");
+        snappy::Compress(singleString.c_str(), singleString.length(),
+                &compressedInputLine);
+        compactRecSerializer.addSearchableAttribute(iter->first,
+                compressedInputLine);
     }
-    // Now we need to store the refining attributes
-    typedef map<string , unsigned>::const_iterator  RefineAttrIter;
-    for (RefineAttrIter iter = storageSchema.getRefiningAttributes()->begin();
-    		iter != storageSchema.getRefiningAttributes()->end(); ++iter) {
-    	vector<string> attributeStringValues;
-    	getJsonValueString(root, iter->first, attributeStringValues, "refining-attributes");
+}
 
-    	//attributeStringValues[0] will be 0x0 if the size of
+void JSONRecordParser::setRecordRefiningAttr(const Json::Value &root,
+        RecordSerializer& compactRecSerializer) {
+
+    const Schema& storageSchema = compactRecSerializer.getStorageSchema();
+
+    typedef map<string, unsigned>::const_iterator RefineAttrIter;
+    for (RefineAttrIter iter = storageSchema.getRefiningAttributes()->begin();
+            iter != storageSchema.getRefiningAttributes()->end(); ++iter) {
+        vector<string> attributeStringValues;
+        getJsonValueString(root, iter->first, attributeStringValues,
+                "refining-attributes");
+
+        //attributeStringValues[0] will be 0x0 if the size of
         //attributeStringValues is 0
         if (attributeStringValues.empty()) {
             continue;
         }
 
-    	srch2is::FilterType type = storageSchema.getTypeOfRefiningAttribute(iter->second);
-		switch (type) {
-		case srch2is::ATTRIBUTE_TYPE_UNSIGNED:
-		{
-			string& singleString = attributeStringValues[0];
-			unsigned val = static_cast<unsigned int>(strtoul(singleString.c_str(),NULL,10));
-			compactRecSerializer.addRefiningAttribute(iter->first, val);
-			break;
-		}
-		case srch2is::ATTRIBUTE_TYPE_FLOAT:
-		{
-			string& singleString = attributeStringValues[0];
-			float val = strtof(singleString.c_str(),NULL);
-			compactRecSerializer.addRefiningAttribute(iter->first, val);
-			break;
-		}
-		default:
-		{
-			// not possible
-			break;
-		}
-		}
+        srch2is::FilterType type = storageSchema.getTypeOfRefiningAttribute(
+                iter->second);
+        switch (type) {
+        case srch2is::ATTRIBUTE_TYPE_UNSIGNED: {
+            string& singleString = attributeStringValues[0];
+            unsigned val = static_cast<unsigned int>(strtoul(
+                    singleString.c_str(), NULL, 10));
+            compactRecSerializer.addRefiningAttribute(iter->first, val);
+            break;
+        }
+        case srch2is::ATTRIBUTE_TYPE_FLOAT: {
+            string& singleString = attributeStringValues[0];
+            float val = strtof(singleString.c_str(), NULL);
+            compactRecSerializer.addRefiningAttribute(iter->first, val);
+            break;
+        }
+        default: {
+            // not possible
+            break;
+        }
+        }
     }
-    RecordSerializerBuffer compactBuffer = compactRecSerializer.serialize();
-    record->setInMemoryData(compactBuffer.start, compactBuffer.length);
-    compactRecSerializer.nextRecord();
-    //delete[] (char *)compactBuffer.start;
+}
 
+bool JSONRecordParser::setRecordSearchableValue(srch2is::Record *record,const Json::Value &root,
+        const CoreInfo_t *indexDataContainerConf) {
 
-
-    for (map<string , SearchableAttributeInfoContainer>::const_iterator attributeIter
-    		= indexDataContainerConf->getSearchableAttributes()->begin();
-    		attributeIter != indexDataContainerConf->getSearchableAttributes()->end();++attributeIter)
-    {
-    	string attributeKeyName = attributeIter->first;
+    for (map<string, SearchableAttributeInfoContainer>::const_iterator attributeIter =
+            indexDataContainerConf->getSearchableAttributes()->begin();
+            attributeIter
+                    != indexDataContainerConf->getSearchableAttributes()->end();
+            ++attributeIter) {
+        string attributeKeyName = attributeIter->first;
 
         vector<string> attributeStringValues;
-        getJsonValueString(root, attributeKeyName, attributeStringValues, "attributes-search");
+        getJsonValueString(root, attributeKeyName, attributeStringValues,
+                "attributes-search");
 
-        if (!attributeStringValues.empty() &&
-            std::find(attributeStringValues.begin() , attributeStringValues.end() , "NULL") == attributeStringValues.end())
-        {
+        if (!attributeStringValues.empty()
+                && std::find(attributeStringValues.begin(),
+                        attributeStringValues.end(), "NULL")
+                        == attributeStringValues.end()) {
             if (attributeIter->second.isMultiValued) {
-                record->setSearchableAttributeValues(attributeKeyName,attributeStringValues);
+                record->setSearchableAttributeValues(attributeKeyName,
+                        attributeStringValues);
             } else {
-                record->setSearchableAttributeValue(attributeKeyName,attributeStringValues[0]);
+                record->setSearchableAttributeValue(attributeKeyName,
+                        attributeStringValues[0]);
             }
-        }else{ // error if required or set to default
-            if(attributeIter->second.required){ // true means required
-                // ERROR
-                error << "\nRequired field has a null value.";
-                return false;// Raise Error
-            }else{
+        } else { // error if required or set to default
+            if (attributeIter->second.required) { // true means required
+                return false;                    // Raise Error
+            } else {
                 // passing the default value from config file
-                if(attributeStringValues.empty()){
-                    attributeStringValues.push_back(attributeIter->second.defaultValue);
-                }else{
-                    std::replace(attributeStringValues.begin() , attributeStringValues.end() , (string)"NULL" , attributeIter->second.defaultValue);
+                if (attributeStringValues.empty()) {
+                    attributeStringValues.push_back(
+                            attributeIter->second.defaultValue);
+                } else {
+                    std::replace(attributeStringValues.begin(),
+                            attributeStringValues.end(), (string) "NULL",
+                            attributeIter->second.defaultValue);
                 }
                 if (attributeIter->second.isMultiValued) {
-                    record->setSearchableAttributeValues(attributeKeyName,attributeStringValues);
+                    record->setSearchableAttributeValues(attributeKeyName,
+                            attributeStringValues);
                 } else {
-                    record->setSearchableAttributeValue(attributeKeyName,attributeStringValues[0]);
+                    record->setSearchableAttributeValue(attributeKeyName,
+                            attributeStringValues[0]);
                 }
             }
         }
     }
+    return true;
+}
 
-
-    for (map<string, RefiningAttributeInfoContainer >::const_iterator attributeIter =
-    		indexDataContainerConf->getRefiningAttributes()->begin();
-            attributeIter != indexDataContainerConf->getRefiningAttributes()->end();
-            ++attributeIter)
-    {
+bool JSONRecordParser::setRecordRefiningValue(srch2is::Record *record,
+        const Json::Value &root, const CoreInfo_t *indexDataContainerConf,
+        std::stringstream &error) {
+    for (map<string, RefiningAttributeInfoContainer>::const_iterator attributeIter =
+            indexDataContainerConf->getRefiningAttributes()->begin();
+            attributeIter
+                    != indexDataContainerConf->getRefiningAttributes()->end();
+            ++attributeIter) {
 
         string attributeKeyName = attributeIter->first;
 
         // if type is date/time, check the syntax
-        if( attributeIter->second.attributeType == srch2is::ATTRIBUTE_TYPE_TIME){
+        if (attributeIter->second.attributeType
+                == srch2is::ATTRIBUTE_TYPE_TIME) {
             vector<string> attributeStringValues;
-            getJsonValueDateAndTime(root, attributeKeyName, attributeStringValues,"refining-attributes" );
-            if(attributeStringValues.empty()){
+            getJsonValueDateAndTime(root, attributeKeyName,
+                    attributeStringValues, "refining-attributes");
+            if (attributeStringValues.empty()) {
                 // ERROR
                 error << "\nDATE/TIME field has non recognizable format.";
-                return false;// Raise Error
-            }else{
-                if (std::find(attributeStringValues.begin() , attributeStringValues.end() , "NULL") != attributeStringValues.end() &&
-                    attributeIter->second.required ){
+                return false;                    // Raise Error
+            } else {
+                if (std::find(attributeStringValues.begin(),
+                        attributeStringValues.end(), "NULL")
+                        != attributeStringValues.end()
+                        && attributeIter->second.required) {
                     // ERROR
                     error << "\nRequired refining attribute is null.";
-                    return false;// Raise Error
+                    return false;                    // Raise Error
                 }
-                if (std::find(attributeStringValues.begin() , attributeStringValues.end() , "NULL") != attributeStringValues.end()){
-                    std::replace(attributeStringValues.begin() , attributeStringValues.end() , (string)"NULL" , attributeIter->second.defaultValue);
+                if (std::find(attributeStringValues.begin(),
+                        attributeStringValues.end(), "NULL")
+                        != attributeStringValues.end()) {
+                    std::replace(attributeStringValues.begin(),
+                            attributeStringValues.end(), (string) "NULL",
+                            attributeIter->second.defaultValue);
                 }
                 string attributeStringValue = "";
-                for(vector<string>::iterator stringValueIter = attributeStringValues.begin() ; stringValueIter != attributeStringValues.end() ; ++stringValueIter){
-                    if(stringValueIter != attributeStringValues.begin()){
-                        attributeStringValue += MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER;
+                for (vector<string>::iterator stringValueIter =
+                        attributeStringValues.begin();
+                        stringValueIter != attributeStringValues.end();
+                        ++stringValueIter) {
+                    if (stringValueIter != attributeStringValues.begin()) {
+                        attributeStringValue +=
+                                MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER;
                     }
                     attributeStringValue += *stringValueIter;
                 }
                 // set the default value
-                record->setRefiningAttributeValue(attributeKeyName, attributeStringValue);
+                record->setRefiningAttributeValue(attributeKeyName,
+                        attributeStringValue);
             }
-        }else{
+        } else {
 
             vector<string> attributeStringValues;
-            getJsonValueString(root, attributeKeyName, attributeStringValues, "refining-attributes");
+            getJsonValueString(root, attributeKeyName, attributeStringValues,
+                    "refining-attributes");
 
-            if (!attributeStringValues.empty() &&
-                std::find(attributeStringValues.begin() , attributeStringValues.end() , "NULL") == attributeStringValues.end()
-                && std::find(attributeStringValues.begin() , attributeStringValues.end() , "") == attributeStringValues.end())
-            {
+            if (!attributeStringValues.empty()
+                    && std::find(attributeStringValues.begin(),
+                            attributeStringValues.end(), "NULL")
+                            == attributeStringValues.end()
+                    && std::find(attributeStringValues.begin(),
+                            attributeStringValues.end(), "")
+                            == attributeStringValues.end()) {
                 string attributeStringValue = "";
-                for(vector<string>::iterator stringValueIter = attributeStringValues.begin() ; stringValueIter != attributeStringValues.end() ; ++stringValueIter){
-                    if(stringValueIter != attributeStringValues.begin()){
-                        attributeStringValue += MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER;
+                for (vector<string>::iterator stringValueIter =
+                        attributeStringValues.begin();
+                        stringValueIter != attributeStringValues.end();
+                        ++stringValueIter) {
+                    if (stringValueIter != attributeStringValues.begin()) {
+                        attributeStringValue +=
+                                MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER;
                     }
                     attributeStringValue += *stringValueIter;
                 }
                 std::string attributeStringValueLowercase = attributeStringValue;
-                std::transform(attributeStringValueLowercase.begin(), attributeStringValueLowercase.end(), attributeStringValueLowercase.begin(), ::tolower);
-                record->setRefiningAttributeValue(attributeKeyName, attributeStringValueLowercase);
-            }else{
-                if(attributeIter->second.required){
+                std::transform(attributeStringValueLowercase.begin(),
+                        attributeStringValueLowercase.end(),
+                        attributeStringValueLowercase.begin(), ::tolower);
+                record->setRefiningAttributeValue(attributeKeyName,
+                        attributeStringValueLowercase);
+            } else {
+                if (attributeIter->second.required) {
                     // ERROR
                     error << "\nRequired refining attribute is null.";
-                    return false;// Raise Error
-                }else{
-                    if(attributeStringValues.empty()){
+                    return false;                    // Raise Error
+                } else {
+                    if (attributeStringValues.empty()) {
                         attributeStringValues.push_back("");
                     }
-                    std::replace(attributeStringValues.begin() , attributeStringValues.end() , (string)"NULL" , attributeIter->second.defaultValue);
-                    std::replace(attributeStringValues.begin() , attributeStringValues.end() , (string)"" , attributeIter->second.defaultValue);
+                    std::replace(attributeStringValues.begin(),
+                            attributeStringValues.end(), (string) "NULL",
+                            attributeIter->second.defaultValue);
+                    std::replace(attributeStringValues.begin(),
+                            attributeStringValues.end(), (string) "",
+                            attributeIter->second.defaultValue);
                     // set the default value
                     string attributeStringValue = "";
-                    for(vector<string>::iterator stringValueIter = attributeStringValues.begin() ; stringValueIter != attributeStringValues.end() ; ++stringValueIter){
-                        if(stringValueIter != attributeStringValues.begin()){
-                            attributeStringValue += MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER;
+                    for (vector<string>::iterator stringValueIter =
+                            attributeStringValues.begin();
+                            stringValueIter != attributeStringValues.end();
+                            ++stringValueIter) {
+                        if (stringValueIter != attributeStringValues.begin()) {
+                            attributeStringValue +=
+                                    MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER;
                         }
                         attributeStringValue += *stringValueIter;
                     }
-                    std::string attributeStringValueLowercase = attributeStringValue;
-                    std::transform(attributeStringValueLowercase.begin(), attributeStringValueLowercase.end(), attributeStringValueLowercase.begin(), ::tolower);
-                    record->setRefiningAttributeValue(attributeKeyName,attributeStringValueLowercase);
+                    std::string attributeStringValueLowercase =
+                            attributeStringValue;
+                    std::transform(attributeStringValueLowercase.begin(),
+                            attributeStringValueLowercase.end(),
+                            attributeStringValueLowercase.begin(), ::tolower);
+                    record->setRefiningAttributeValue(attributeKeyName,
+                            attributeStringValueLowercase);
                 }
             }
         }
-
     }
+    return true;
+}
 
-    // Add recordBoost, setSortableAttribute and setScoreAttribute
+void JSONRecordParser::setRecordLocationValue(srch2is::Record *record,
+        const Json::Value &root, const CoreInfo_t *indexDataContainerConf) {
+    if (indexDataContainerConf->getIndexType() == 1) {
+        string latitudeAttributeKeyName =
+                indexDataContainerConf->getAttributeLatitude();
+        string longitudeAttributeKeyName =
+                indexDataContainerConf->getAttributeLongitude();
+
+        double recordLatitude;
+        getJsonValueDouble(root, latitudeAttributeKeyName, recordLatitude,
+                "attribute-latitude");
+
+        if (recordLatitude > 200.0 || recordLatitude < -200.0) {
+            Logger::warn("bad x: %f, set to 40.0 for testing purposes.\n",
+                    recordLatitude);
+            recordLatitude = 40.0;
+        }
+
+        double recordLongitude;
+        getJsonValueDouble(root, longitudeAttributeKeyName, recordLongitude,
+                "attribute-longitude");
+
+        if (recordLongitude > 200.0 || recordLongitude < -200.0) {
+            Logger::warn("bad y: %f, set to -120.0 for testing purposes.\n",
+                    recordLongitude);
+            recordLongitude = -120.0;
+        }
+        record->setLocationAttributeValue(recordLatitude, recordLongitude);
+    }
+}
+
+void JSONRecordParser::setRecordBoostValue(srch2is::Record *record,
+        const Json::Value &root, const CoreInfo_t *indexDataContainerConf) {
     record->setRecordBoost(1); // default record boost: 1
-    if (indexDataContainerConf->isRecordBoostAttributeSet() == true)
-    {
+    if (indexDataContainerConf->isRecordBoostAttributeSet() == true) {
         // use "score" as boost
-        string attributeKeyName = indexDataContainerConf->getAttributeRecordBoostName();
+        string attributeKeyName =
+                indexDataContainerConf->getAttributeRecordBoostName();
         double recordBoost;
-        getJsonValueDouble(root, attributeKeyName, recordBoost, "attribute-record-boost");
+        getJsonValueDouble(root, attributeKeyName, recordBoost,
+                "attribute-record-boost");
 
         // Change an invalid (negative) boost value to the default value 1.
         if (recordBoost > 0.0)
             record->setRecordBoost(recordBoost);
     }
+}
 
-    if (indexDataContainerConf->getIndexType() == 1)
-    {
-        string latitudeAttributeKeyName = indexDataContainerConf->getAttributeLatitude();
-        string longitudeAttributeKeyName = indexDataContainerConf->getAttributeLongitude();
-        //double recordLatitude = root.get(latitudeAttributeKeyName, "NULL" ).asDouble();
-        double recordLatitude;
-        getJsonValueDouble(root, latitudeAttributeKeyName, recordLatitude, "attribute-latitude");
+bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record,
+        const std::string &inputLine, const Json::Value &root,
+        const CoreInfo_t *indexDataContainerConf, std::stringstream &error,
+        RecordSerializer& compactRecSerializer) {
 
-        if(recordLatitude > 200.0 || recordLatitude < -200.0) {
-            Logger::warn("bad x: %f, set to 40.0 for testing purposes.\n", recordLatitude);
-            recordLatitude = 40.0;
-        }
-        //double recordLongitude = root.get(longitudeAttributeKeyName, "NULL" ).asDouble();
-        double recordLongitude;
-        getJsonValueDouble(root, longitudeAttributeKeyName, recordLongitude, "attribute-longitude");
-
-        if(recordLongitude > 200.0 || recordLongitude < -200.0)
-        {
-            Logger::warn("bad y: %f, set to -120.0 for testing purposes.\n", recordLongitude);
-            recordLongitude = -120.0;
-        }
-        record->setLocationAttributeValue(recordLatitude, recordLongitude);
+    if (root.type() != Json::objectValue) {
+        error << "\nFailed to parse JSON - No primary key found.";
+        return false; // Raise Error
     }
+
+    //Get primary key's value from the JSON object
+    if (!setRecordPrimaryKey(record, root, indexDataContainerConf)) {
+        error << "\nFailed to parse JSON - No primary key found.";
+        return false;
+    }
+
+    // Get the searchable attributes' name from the JSON object and store them
+    // into RecordSerializer.
+    setRecordSearchableAttr(root, compactRecSerializer);
+
+    // Get the refining attributes' name from the JSON object and store them
+    // into RecordSerializer.
+    setRecordRefiningAttr(root, compactRecSerializer);
+
+    // Serialize the Record attributes
+    RecordSerializerBuffer compactBuffer = compactRecSerializer.serialize();
+    record->setInMemoryData(compactBuffer.start, compactBuffer.length);
+    compactRecSerializer.nextRecord();
+
+    // Get the searchable value from the JSON object and store them into the Record
+    if (!setRecordSearchableValue(record, root, indexDataContainerConf)) {
+        error << "\nRequired field has a null value.";
+        return false;
+    }
+
+    // Get the refining value from the JSON object and store them into the Record
+    if (!setRecordRefiningValue(record, root, indexDataContainerConf, error)) {
+        //Error prints in the function
+        return false;
+    }
+
+    // Set the boost value, use default value "1" if not defined by user.
+    setRecordBoostValue(record, root, indexDataContainerConf);
+
+    // Set the location value if the index type is "1"
+    setRecordLocationValue(record, root, indexDataContainerConf);
     return true;
 }
 
