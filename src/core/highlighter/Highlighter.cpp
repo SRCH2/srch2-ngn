@@ -175,9 +175,6 @@ void AnalyzerBasedAlgorithm::getSnippet(const QueryResults* /*not used*/, unsign
 
 	positionToOffsetMap.clear();
 
-	// check whether there are any duplicates in keywordStrToHighlight
-
-
 	// One of the constructors of this class allows to pass phraseInfoList directly (used in ctest).
 	// If the phraseInfoList is already present then do not re-calculate.
 	if(phrasesInfoList.size() == 0)
