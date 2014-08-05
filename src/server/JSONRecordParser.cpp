@@ -53,9 +53,21 @@ std::string WStringToString(const std::wstring& s)
     return temp;
 }
 
+bool JSONRecordParser::stringToUnsigned(const char* str, unsigned & output){
+    char *pEnd;
+    output = static_cast<unsigned>(strtoul(str, &pEnd, 10));
+    if (*pEnd != '\0') {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+
+
 bool JSONRecordParser::setRecordPrimaryKey(
         srch2is::Record *record, const Json::Value &root,
-        const CoreInfo_t *indexDataContainerConf) {
+        const CoreInfo_t *indexDataContainerConf,std::stringstream &error) {
 
     string primaryKeyName = indexDataContainerConf->getPrimaryKey();
 
@@ -76,6 +88,7 @@ bool JSONRecordParser::setRecordPrimaryKey(
                     primaryKeyStringValue);
         }
     } else {
+        error << "\nFailed to parse JSON - No primary key found.";
         return false; // Raise Error
     }
 
@@ -128,8 +141,12 @@ bool JSONRecordParser::setRecordRefiningAttr(const Json::Value &root,
         switch (type) {
         case srch2is::ATTRIBUTE_TYPE_UNSIGNED: {
             string& singleString = attributeStringValues[0];
-            unsigned val = static_cast<unsigned int>(strtoul(
-                    singleString.c_str(), NULL, 10));
+
+            unsigned val = 0;
+            if(!stringToUnsigned(singleString.c_str(),val)){
+
+            }
+
             compactRecSerializer.addRefiningAttribute(iter->first, val);
             break;
         }
@@ -151,8 +168,9 @@ bool JSONRecordParser::setRecordRefiningAttr(const Json::Value &root,
     return true;
 }
 
-bool JSONRecordParser::setRecordSearchableValue(srch2is::Record *record,const Json::Value &root,
-        const CoreInfo_t *indexDataContainerConf) {
+bool JSONRecordParser::setRecordSearchableValue(srch2is::Record *record,
+        const Json::Value &root, const CoreInfo_t *indexDataContainerConf,
+        std::stringstream &error) {
 
     for (map<string, SearchableAttributeInfoContainer>::const_iterator attributeIter =
             indexDataContainerConf->getSearchableAttributes()->begin();
@@ -178,6 +196,7 @@ bool JSONRecordParser::setRecordSearchableValue(srch2is::Record *record,const Js
             }
         } else { // error if required or set to default
             if (attributeIter->second.required) { // true means required
+                error << "\nRequired field has a null value.";
                 return false;                    // Raise Error
             } else {
                 // passing the default value from config file
@@ -204,7 +223,7 @@ bool JSONRecordParser::setRecordSearchableValue(srch2is::Record *record,const Js
 
 bool JSONRecordParser::setRecordRefiningValue(srch2is::Record *record,
         const Json::Value &root, const CoreInfo_t *indexDataContainerConf,
-        int& errorCode) {
+        std::stringstream &error) {
     for (map<string, RefiningAttributeInfoContainer>::const_iterator attributeIter =
             indexDataContainerConf->getRefiningAttributes()->begin();
             attributeIter
@@ -221,7 +240,7 @@ bool JSONRecordParser::setRecordRefiningValue(srch2is::Record *record,
                     attributeStringValues, "refining-attributes");
             if (attributeStringValues.empty()) {
                 // ERROR
-                errorCode = 1;
+                error << "\nDATE/TIME field has non recognizable format.";
                 return false;                    // Raise Error
             } else {
                 if (std::find(attributeStringValues.begin(),
@@ -229,7 +248,7 @@ bool JSONRecordParser::setRecordRefiningValue(srch2is::Record *record,
                         != attributeStringValues.end()
                         && attributeIter->second.required) {
                     // ERROR
-                    errorCode = 2;
+                    error << "\nRequired refining attribute is null.";
                     return false;                    // Raise Error
                 }
                 if (std::find(attributeStringValues.begin(),
@@ -287,7 +306,7 @@ bool JSONRecordParser::setRecordRefiningValue(srch2is::Record *record,
             } else {
                 if (attributeIter->second.required) {
                     // ERROR
-                    errorCode = 2;
+                    error << "\nRequired refining attribute is null.";
                     return false;                    // Raise Error
                 } else {
                     if (attributeStringValues.empty()) {
@@ -387,8 +406,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record,
     }
 
     //Get primary key's value from the JSON object
-    if (!setRecordPrimaryKey(record, root, indexDataContainerConf)) {
-        error << "\nFailed to parse JSON - No primary key found.";
+    if (!setRecordPrimaryKey(record, root, indexDataContainerConf,error)) {
         return false;
     }
 
@@ -406,25 +424,12 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record,
     compactRecSerializer.nextRecord();
 
     // Get the searchable value from the JSON object and store them into the Record
-    if (!setRecordSearchableValue(record, root, indexDataContainerConf)) {
-        error << "\nRequired field has a null value.";
+    if (!setRecordSearchableValue(record, root, indexDataContainerConf,error)) {
         return false;
     }
 
     // Get the refining value from the JSON object and store them into the Record
-    int errorCode = 0;
-    if (!setRecordRefiningValue(record, root, indexDataContainerConf, errorCode)) {
-        //Error prints in the function
-        switch(errorCode){
-        case 1:
-            error << "\nDATE/TIME field has non recognizable format.";
-            break;
-        case 2:
-            error << "\nRequired refining attribute is null.";
-            break;
-        default:
-            error << "Undefined error.";
-        }
+    if (!setRecordRefiningValue(record, root, indexDataContainerConf, error)) {
         return false;
     }
 
