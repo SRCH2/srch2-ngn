@@ -261,6 +261,10 @@ void Srch2Server::createAndBootStrapIndexer()
     indexer->createAndStartMergeThreadLoop();
 }
 
+/*
+ * This function will check the consistency of the schema that loaded from the
+ * disk and the schema that loaded from the config file.
+ */
 bool Srch2Server::checkSchemaConsistency(srch2is::Schema *confSchema,srch2is::Schema *loadedSchema){
     if(confSchema->getNumberOfRefiningAttributes()!=loadedSchema->getNumberOfRefiningAttributes()){
         return false;

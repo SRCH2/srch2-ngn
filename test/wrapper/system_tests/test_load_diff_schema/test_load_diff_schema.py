@@ -1,3 +1,9 @@
+#This function is doing the following things:
+#Start the engine with conf1.xml. The engine will load the data and build the indexes
+#Shutdown the engine.
+#Start the engine with another config file conf2.xml. In conf2.xml, the schema has been changed (name  => nameChanged)
+#The engine should raise a warning to tell the user that 'The schema in the config file has changed, remove all the index files and run it again'
+
 import sys, urllib2, time, subprocess, os, commands, signal,shutil
 
 sys.path.insert(0,'srch2lib')
