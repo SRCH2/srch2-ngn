@@ -20,6 +20,7 @@ package com.srch2.android.http.service;
  */
 abstract class RestfulResponse {
 
+
     /**
      * The value <code>httpResponseCode</code> will be set to when the http
      * connection, responsible for generating the specific

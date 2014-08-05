@@ -51,10 +51,24 @@ public final class GetRecordResponse extends RestfulResponse {
      */
     public String toHumanReadableString() {
         if (httpResponseCode == -1) {
-            return "GetRecordResponse: error: unable to connect.";
+            return "GetRecordResponse: error! unable to connect.";
         }
         return "GetRecordResponse: isRecordRetrieved [ "
                 + isRecordRetrieved + " ] record.toString [ "
                 + record.toString() + " ]";
+    }
+
+    /**
+     * Users of <code>DeleteResponse</code> may call this to get a concise,
+     * human readable description of this object that will fit in a toast
+     * such that each field member is on its own line.
+     *
+     * @return a human readable description of this object that nicely fits
+     * into a toast
+     */
+    public String toToastString() {
+        return "GetRecordResponse:\nhttpResponseCode[ " + httpResponseCode
+                + " ]\nrestfulResponseLiteral[ " + restfulResponseLiteral
+                + " ]";
     }
 }

@@ -14,8 +14,11 @@ public final class UpdateResponse extends RestfulResponse {
     private final static String JSON_VALUE_FAIL = "failed";
     private final static String JSON_KEY_FAILURE_REASON = "reason";
 
-    public final int recordUpdateSuccessCount;
-    public final int recordUpdateFailureCount;
+
+    public int getSuccessCount() { return recordUpdateSuccessCount; }
+    private final int recordUpdateSuccessCount;
+    public int getFailureCount() { return recordUpdateFailureCount; }
+    private final int recordUpdateFailureCount;
 
     UpdateResponse(int theHttpResponseCode, String theRestfulResponseLiteral) {
         super(theHttpResponseCode, theRestfulResponseLiteral);

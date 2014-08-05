@@ -157,7 +157,7 @@ public class MySingleLaunchActivityTest extends SingleLaunchActivityTestCase<MyS
         index.delete(id);
         DeleteResponse response = mActivity.getDeleteResponse();
         Log.d(TAG, response.toString());
-        assertTrue(response.success);
+        assertTrue(response.getSuccessCount() == 1);
     }
 
     private void clearAndInsertAndAssertSuccess(Indexable index, JSONObject record) {
@@ -437,7 +437,7 @@ public class MySingleLaunchActivityTest extends SingleLaunchActivityTestCase<MyS
         mActivity.mMovieIndex.update(record11);
         UpdateResponse response = mActivity.getUpdateResponse();
         Log.d(TAG, "update response:" + response.toString());
-        assertTrue(response.recordUpdateSuccessCount == 1);
+        assertTrue(response.getSuccessCount() == 1);
 
         // upsert
         mActivity.mControlListener.updateResponse = null;
@@ -450,7 +450,7 @@ public class MySingleLaunchActivityTest extends SingleLaunchActivityTestCase<MyS
         mActivity.mMovieIndex.update(recordNew);
         response = mActivity.getUpdateResponse();
         Log.d(TAG, "upsert response:" + response.toString());
-        assertTrue(response.recordUpdateSuccessCount == 1);
+        assertTrue(response.getSuccessCount() == 1);
 
         mActivity.mControlListener.infoResponse = null;
         mActivity.mMovieIndex.info();

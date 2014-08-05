@@ -14,7 +14,9 @@ public final class DeleteResponse extends RestfulResponse {
     private final static String JSON_VALUE_SUCCESS = "success";
     private final static String JSON_KEY_FAILURE_REASON = "reason";
 
-    public final boolean success;
+    public int getSuccessCount() { return success ? 1 : 0; }
+    public int getFailureCount() { return success ? 0 : 1;  }
+    private final boolean success;
 
     DeleteResponse(int theHttpResponseCode, String theRestfulResponseLiteral) {
         super(theHttpResponseCode, theRestfulResponseLiteral);
