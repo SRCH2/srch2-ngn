@@ -69,6 +69,11 @@ public:
     // Check if index files already exist.
     bool checkIndexExistence(const CoreInfo_t *indexDataConfig);
 
+    // Check if the schema loaded from the disk is
+    // same with the one loaded from the config file
+    bool checkSchemaConsistency(srch2is::Schema *confSchema,
+            srch2is::Schema *loadedSchema);
+
     IndexMetaData *createIndexMetaData(const CoreInfo_t *indexDataConfig);
     void createAndBootStrapIndexer();
     void createHighlightAttributesVector(const srch2is::Schema * schema);

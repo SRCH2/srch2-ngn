@@ -172,17 +172,20 @@ void Srch2Server::createAndBootStrapIndexer()
     else
         indexCreateOrLoad = srch2http::INDEXCREATE;
     Schema * storedAttrSchema = Schema::create();
+
+    // Create a schema to the data source definition in the Srch2ServerConf
+    srch2is::Schema *schema = JSONRecordParser::createAndPopulateSchema(
+            indexDataConfig);
+
     switch (indexCreateOrLoad)
     {
     case srch2http::INDEXCREATE:
 	{
 	    AnalyzerHelper::initializeAnalyzerResource(this->indexDataConfig);
-	    // Create a schema to the data source definition in the Srch2ServerConf
-	    srch2is::Schema *schema = JSONRecordParser::createAndPopulateSchema(indexDataConfig);
+
 	    Analyzer *analyzer = AnalyzerFactory::createAnalyzer(this->indexDataConfig);
 	    indexer = Indexer::create(indexMetaData, analyzer, schema);
 	    delete analyzer;
-	    delete schema;
 	    switch(indexDataConfig->getDataSourceType())
 	    {
 	    case srch2http::DATA_SOURCE_JSON_FILE:
@@ -229,6 +232,12 @@ void Srch2Server::createAndBootStrapIndexer()
         {
 	    // Load from index-dir directly, skip creating an index initially.
 	    indexer = Indexer::load(indexMetaData);
+
+        if (!checkSchemaConsistency(schema, indexer->getSchema())) {
+            Logger::warn("The schema in the config file has changed,"
+                    " remove all the index files and run it again");
+        }
+
 	    // Load Analayzer data from disk
 	    AnalyzerHelper::loadAnalyzerResource(this->indexDataConfig);
 	    indexer->getSchema()->setSupportSwapInEditDistance(indexDataConfig->getSupportSwapInEditDistance());
@@ -247,8 +256,45 @@ void Srch2Server::createAndBootStrapIndexer()
     }
     createHighlightAttributesVector(storedAttrSchema);
     delete storedAttrSchema;
+    delete schema;
     // start merger thread
     indexer->createAndStartMergeThreadLoop();
+}
+
+bool Srch2Server::checkSchemaConsistency(srch2is::Schema *confSchema,srch2is::Schema *loadedSchema){
+    if(confSchema->getNumberOfRefiningAttributes()!=loadedSchema->getNumberOfRefiningAttributes()){
+        return false;
+    }
+
+    if(confSchema->getNumberOfSearchableAttributes()!=loadedSchema->getNumberOfSearchableAttributes()){
+        return false;
+    }
+
+    //TODO Currently, this function only compares the schema's name field
+    //If the type of the schema changed, the function can not detect it.
+    for (std::map<std::string, unsigned>::const_iterator confIt =
+            confSchema->getRefiningAttributes()->begin(), loadedIt =
+            loadedSchema->getRefiningAttributes()->begin();
+            confIt != confSchema->getRefiningAttributes()->end()
+                    && loadedIt != loadedSchema->getRefiningAttributes()->end();
+            confIt++, loadedIt++) {
+        //printf("First: %s, Second: %s \n",confIt->first.c_str(),loadedIt->first.c_str());
+        if(confIt->first.compare(loadedIt->first)!=0){
+            return false;
+        }
+    }
+    for (std::map<std::string, unsigned>::const_iterator confIt =
+            confSchema->getSearchableAttribute().begin(), loadedIt =
+            loadedSchema->getSearchableAttribute().begin();
+            confIt != confSchema->getSearchableAttribute().end()
+                    && loadedIt != loadedSchema->getSearchableAttribute().end();
+            confIt++, loadedIt++) {
+        //printf("First: %s, Second: %s \n",confIt->first.c_str(),loadedIt->first.c_str());
+        if (confIt->first.compare(loadedIt->first) != 0) {
+            return false;
+        }
+    }
+    return true;
 }
 
 void Srch2Server::setCoreName(const string &name)
