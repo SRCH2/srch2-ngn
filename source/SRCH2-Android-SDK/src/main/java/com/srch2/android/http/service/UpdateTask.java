@@ -11,8 +11,6 @@ import java.net.URL;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import android.util.Log;
-
 import com.srch2.android.http.service.HttpTask.ControlHttpTask;
 
 class UpdateTask extends ControlHttpTask {
@@ -24,12 +22,12 @@ class UpdateTask extends ControlHttpTask {
     private boolean isSingleInsertion = false;
 
 
-    public UpdateTask(URL theTargetUrl, String theTargetCoreName, ControlResponseListener theControlResponseListener, JSONArray recordsToBeUpdated) {
+    public UpdateTask(URL theTargetUrl, String theTargetCoreName, StateResponseListener theControlResponseListener, JSONArray recordsToBeUpdated) {
         super(theTargetUrl, theTargetCoreName, theControlResponseListener);
         recordsToUpdate = recordsToBeUpdated;
     }
 
-    public UpdateTask(URL theTargetUrl, String theTargetCoreName, ControlResponseListener theControlResponseListener, JSONObject recordToBeUpdated) {
+    public UpdateTask(URL theTargetUrl, String theTargetCoreName, StateResponseListener theControlResponseListener, JSONObject recordToBeUpdated) {
         super(theTargetUrl, theTargetCoreName, theControlResponseListener);
         isSingleInsertion = true;
         recordToUpdate = recordToBeUpdated;

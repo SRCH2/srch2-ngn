@@ -36,7 +36,7 @@ class InfoTask extends ControlHttpTask {
      *                                            /info on
      * @param theControlResponseListener          the control response listener implemented by the user
      */
-    InfoTask(URL theTargetUrl, String theTargetCoreName, ControlResponseListener theControlResponseListener) {
+    InfoTask(URL theTargetUrl, String theTargetCoreName, StateResponseListener theControlResponseListener) {
         super(theTargetUrl, theTargetCoreName, theControlResponseListener);
         connectionTimeOutInMilliseconds = DEFAULT_CONNECTION_TIMEOUT_MS;
     }
@@ -55,7 +55,7 @@ class InfoTask extends ControlHttpTask {
      * @param theControlResponseListener the control response listener implemented by the user
      * @param theConnectionTimeOutInMilliseconds  the time in milliseconds to time out in
      */
-    InfoTask(URL theTargetUrl, String theTargetCoreName, ControlResponseListener theControlResponseListener, int theConnectionTimeOutInMilliseconds) {
+    InfoTask(URL theTargetUrl, String theTargetCoreName, StateResponseListener theControlResponseListener, int theConnectionTimeOutInMilliseconds) {
         super(theTargetUrl, theTargetCoreName, theControlResponseListener);
         connectionTimeOutInMilliseconds = (theConnectionTimeOutInMilliseconds < 1) ? DEFAULT_CONNECTION_TIMEOUT_MS
                 : theConnectionTimeOutInMilliseconds;

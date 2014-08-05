@@ -6,7 +6,7 @@ class GetRecordTask extends SearchTask {
 
 
     GetRecordTask(URL url, String nameOfTheSingleCoreToQuery,
-                  ControlResponseListener controlResultsListener) {
+                  StateResponseListener controlResultsListener) {
         super(url, nameOfTheSingleCoreToQuery, null);
         super.controlResponseObserver = controlResultsListener;
     }

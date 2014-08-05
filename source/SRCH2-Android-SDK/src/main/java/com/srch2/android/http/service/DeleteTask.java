@@ -11,7 +11,7 @@ import com.srch2.android.http.service.HttpTask.ControlHttpTask;
 class DeleteTask extends ControlHttpTask {
     private static final String TAG = "DeleteTask";
 
-    DeleteTask(URL insertUrl, String theTargetCoreName, ControlResponseListener theControlResponseListener) {
+    DeleteTask(URL insertUrl, String theTargetCoreName, StateResponseListener theControlResponseListener) {
         super(insertUrl, theTargetCoreName, theControlResponseListener);
     }
 

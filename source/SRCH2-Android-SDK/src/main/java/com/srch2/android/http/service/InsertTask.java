@@ -27,12 +27,12 @@ class InsertTask extends ControlHttpTask {
     private JSONObject recordToInsert;
     private boolean isSingleInsertion = false;
 
-    public InsertTask(URL theTargetUrl, String theTargetCoreName, ControlResponseListener theControlResponseListener, JSONArray recordsToBeInserted) {
+    public InsertTask(URL theTargetUrl, String theTargetCoreName, StateResponseListener theControlResponseListener, JSONArray recordsToBeInserted) {
         super(theTargetUrl, theTargetCoreName, theControlResponseListener);
         recordsToInsert = recordsToBeInserted;
     }
 
-    public InsertTask(URL theTargetUrl, String theTargetCoreName, ControlResponseListener theControlResponseListener, JSONObject recordToBeInserted) {
+    public InsertTask(URL theTargetUrl, String theTargetCoreName, StateResponseListener theControlResponseListener, JSONObject recordToBeInserted) {
         super(theTargetUrl, theTargetCoreName, theControlResponseListener);
         isSingleInsertion = true;
         recordToInsert = recordToBeInserted;

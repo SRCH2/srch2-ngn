@@ -32,7 +32,7 @@ final public class SRCH2Engine {
     static boolean isDebugAndTestingMode = false;
     static SRCH2EngineBroadcastReciever incomingIntentReciever;
     static SearchResultsListener searchResultsListener = null;
-    static ControlResponseListener controlResultsListener = null;
+    static StateResponseListener controlResultsListener = null;
     static boolean isStarted = false;
     static SRCH2Configuration conf = null;
     static SearchTask allIndexSearchTask = null;
@@ -136,7 +136,7 @@ final public class SRCH2Engine {
         searchResultsListener = indexSearchResultListener;
     }
 
-    static ControlResponseListener getControlResponseListener() {
+    static StateResponseListener getControlResponseListener() {
         return controlResultsListener;
     }
 
@@ -147,7 +147,7 @@ final public class SRCH2Engine {
      * @param listener
      */
     public static void setControlResponseListener(
-            ControlResponseListener listener) {
+            StateResponseListener listener) {
         controlResultsListener = listener;
     }
 

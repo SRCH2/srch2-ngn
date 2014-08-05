@@ -14,7 +14,7 @@ import android.util.Log;
 
 abstract class HttpTask implements Runnable {
 
-    protected ControlResponseListener controlResponseObserver;
+    protected StateResponseListener controlResponseObserver;
     protected SearchResultsListener searchResultsListener;
 
     static private boolean isExecuting = false;
@@ -95,7 +95,7 @@ abstract class HttpTask implements Runnable {
     static abstract class ControlHttpTask extends SingleCoreHttpTask {
         protected final URL targetUrl;
 
-        public ControlHttpTask(final URL theTargetUrl, final String theTargetCoreName, final ControlResponseListener theControlResponseListener) {
+        public ControlHttpTask(final URL theTargetUrl, final String theTargetCoreName, final StateResponseListener theControlResponseListener) {
             super(theTargetCoreName);
             targetUrl = theTargetUrl;
             controlResponseObserver = theControlResponseListener;

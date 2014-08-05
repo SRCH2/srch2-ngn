@@ -23,55 +23,59 @@ import java.util.HashMap;
  * although is unnecessary to do so if users are not interested in receiving
  * control response call-backs for their <code>IndexInternal</code> object.
  */
-public interface ControlResponseListener {
+public interface StateResponseListener {
 
     /**
      * Will be called when an /info request is completed on an index.
      *
+     * @param indexName the target index
      * @param response an object wrapping the info response literal
      */
-    void onInfoRequestComplete(String targetIndexName,
-                               InfoResponse response);
+    void onInfoRequestComplete(final String indexName,
+                               final InfoResponse response);
 
     /**
      * Will be called when an insert record(s) request is completed on an index.
      *
+     * @param indexName the target index
      * @param response an object wrapping the insert response literal
      */
-    void onInsertRequestComplete(String targetIndexName,
-                                 InsertResponse response);
+    void onInsertRequestComplete(final String indexName,
+                                 final InsertResponse response);
 
     /**
      * Will be called when an update record(s) request is completed on an index.
      *
+     * @param indexName the target index
      * @param response an object wrapping the update response literal
      */
-    void onUpdateRequestComplete(String targetIndexName,
-                                 UpdateResponse response);
+    void onUpdateRequestComplete(final String indexName,
+                                 final UpdateResponse response);
 
     /**
      * Will be called when a delete record(s) request is completed on an index.
      *
+     * @param indexesToInfoResponseMap a mapping of indexes to their valid <code>InfoResponse</code>s
      */
-    void onSRCH2ServiceReady(HashMap<String, InfoResponse> indexesToInfoResponseMap);
+    void onSRCH2ServiceReady(final HashMap<String, InfoResponse> indexesToInfoResponseMap);
 
     /**
      * Will be called when an delete record(s) request is completed on an index.
      *
-     * @param targetIndexName
+     * @param indexName the target index
      * @param response an object wrapping the record literal
      */
-    void onDeleteRequestComplete(String targetIndexName,
-                                 DeleteResponse response);
+    void onDeleteRequestComplete(final String indexName,
+                                 final DeleteResponse response);
 
     /**
      * Will be called when a get one record by id request is completed on an
      * index.
      *
-     * @param targetIndexName
+     * @param indexName the target index
      * @param response an object wrapping the record literal
      */
-    void onGetRecordByIDComplete(String targetIndexName,
-                                 GetRecordResponse response);
+    void onGetRecordByIDComplete(final String indexName,
+                                 final GetRecordResponse response);
 
 }

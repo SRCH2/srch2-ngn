@@ -219,7 +219,7 @@ public class MyActivity extends Activity {
 
     }
 
-    public class SRCH2ControlListener implements ControlResponseListener {
+    public class SRCH2ControlListener implements StateResponseListener {
 
         public InfoResponse infoResponse;
         public InsertResponse insertResponse;

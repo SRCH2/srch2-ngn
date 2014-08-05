@@ -22,7 +22,7 @@ final class CheckCoresLoadedTask extends HttpTask {
     private boolean noNetworkConnection = false;
 
     CheckCoresLoadedTask(HashMap<String, URL> theTargetCoreUrls,
-                         ControlResponseListener theControlResponseListener) {
+                         StateResponseListener theControlResponseListener) {
         targetCoreUrlsMap = theTargetCoreUrls;
         controlResponseObserver = theControlResponseListener;
     }
