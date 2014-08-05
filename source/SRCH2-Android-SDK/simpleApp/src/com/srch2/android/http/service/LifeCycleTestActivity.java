@@ -69,7 +69,7 @@ public class LifeCycleTestActivity extends Activity {
         Log.d(TAG, "initializeSRCH2Engine");
         SRCH2Engine.initialize(testIndex);
         SRCH2Engine.setTestAndDebugMode(debugModeEnabled);
-        SRCH2Engine.setControlResponseListener(control);
+        SRCH2Engine.setStateResponseListener(control);
         SRCH2Engine.setSearchResultsListener(search);
     }
 

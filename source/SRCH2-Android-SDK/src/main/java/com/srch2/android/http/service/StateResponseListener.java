@@ -19,7 +19,7 @@ import java.util.HashMap;
  * <p/>
  * Users of this class <b>should</b> register their implementation of this
  * interface to the appropriate <code>IndexInternal</code> object by calling
- * <code>setControlResponseListener(ControlResponseListener observer)</code>,
+ * <code>setStateResponseListener(ControlResponseListener observer)</code>,
  * although is unnecessary to do so if users are not interested in receiving
  * control response call-backs for their <code>IndexInternal</code> object.
  */

@@ -44,7 +44,7 @@ public class SRCH2EngineTest {
 //        SRCH2Engine.onStart(null);
 //        SRCH2Engine.powerSearchAllIndexes(null);
 //        SRCH2Engine.searchAllIndexes(null);
-//        SRCH2Engine.setControlResponseListener(null);
+//        SRCH2Engine.setStateResponseListener(null);
 //        SRCH2Engine.setSearchResultsListener(null);
     }
 

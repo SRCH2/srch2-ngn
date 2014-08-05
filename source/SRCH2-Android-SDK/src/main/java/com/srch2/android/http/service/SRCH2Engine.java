@@ -32,7 +32,7 @@ final public class SRCH2Engine {
     static boolean isDebugAndTestingMode = false;
     static SRCH2EngineBroadcastReciever incomingIntentReciever;
     static SearchResultsListener searchResultsListener = null;
-    static StateResponseListener controlResultsListener = null;
+    static StateResponseListener stateResponseListener = null;
     static boolean isStarted = false;
     static SRCH2Configuration conf = null;
     static SearchTask allIndexSearchTask = null;
@@ -65,7 +65,7 @@ final public class SRCH2Engine {
     /**
      * To start the SRCH2 Engine. Client's APP must call this function to start
      * the service. When the Engine is ready, the
-     * <code>controlResultsListener</code> will be called. User can check the
+     * <code>stateResponseListener</code> will be called. User can check the
      * <code>onSRCH2ServiceReady</code> to get all the engine information.
      *
      * @param context The Android Context
@@ -110,7 +110,7 @@ final public class SRCH2Engine {
 
         resetState();
         CheckCoresLoadedTask task = new CheckCoresLoadedTask(indexUrlMap,
-                controlResultsListener);
+                stateResponseListener);
         HttpTask.executeTask(task);
     }
 
@@ -137,18 +137,18 @@ final public class SRCH2Engine {
     }
 
     static StateResponseListener getControlResponseListener() {
-        return controlResultsListener;
+        return stateResponseListener;
     }
 
     /**
-     * Set the controlResultsListener. This listener will receive the
+     * Set the stateResponseListener. This listener will receive the
      * insert/update/delete/info response from the engine
      *
      * @param listener
      */
-    public static void setControlResponseListener(
+    public static void setStateResponseListener(
             StateResponseListener listener) {
-        controlResultsListener = listener;
+        stateResponseListener = listener;
     }
 
     static void searchAllRawString(String rawQueryString) {
