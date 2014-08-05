@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Hello SRCH2 Search Demo</string>
+    <string name="instant_search_edit_text_hint">What are you searching for?</string>
+</resources>

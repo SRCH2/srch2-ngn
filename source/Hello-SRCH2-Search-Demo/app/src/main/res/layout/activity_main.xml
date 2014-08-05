@@ -1,0 +1,33 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/rl_row_root"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity" >
+
+    <Button
+        android:text="Button!"
+        android:onClick="doButtonClick"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <com.srch2.android.demo.hellosrch2.InstantSearchEditText
+        android:id="@+id/et_instant_search_input"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:paddingLeft="4dp"
+        android:paddingRight="4dp"
+        android:gravity="center_vertical"
+        android:hint="@string/instant_search_edit_text_hint"
+        android:imeOptions="flagNoFullscreen"
+        android:inputType="textPersonName" />
+
+    <ListView
+        android:id="@+id/lv_search_results"
+        android:layout_below="@id/et_instant_search_input"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+</LinearLayout>

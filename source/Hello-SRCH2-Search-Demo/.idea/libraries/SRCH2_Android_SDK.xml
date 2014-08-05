@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="SRCH2-Android-SDK">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/app/build/intermediates/exploded-aar/HelloSRCH2SearchDemo/SRCH2-Android-SDK/unspecified/classes.jar!/" />
+      <root url="jar://$PROJECT_DIR$/app/build/intermediates/exploded-aar/HelloSRCH2SearchDemo/SRCH2-Android-SDK/unspecified/libs/android-support-v4.jar!/" />
+      <root url="file://$PROJECT_DIR$/app/build/intermediates/exploded-aar/HelloSRCH2SearchDemo/SRCH2-Android-SDK/unspecified/res" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
