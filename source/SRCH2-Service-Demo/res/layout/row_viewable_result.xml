@@ -1,0 +1,111 @@
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/rl_row_root"
+    android:layout_width="match_parent"
+    android:layout_height="40dp"
+    tools:context=".MainActivity" >
+    
+	<RelativeLayout
+	    android:layout_width="match_parent"
+	    android:layout_height="40dp"
+	    android:id="@+id/rl_row_hint_container">
+
+		<ImageView 
+		    android:id="@+id/iv_row_left_hint"
+		    android:src="@drawable/transparent_square_pixel"
+		    android:layout_alignParentLeft="true"
+		   	android:scaleType="centerInside"
+		    android:gravity="center_vertical"
+		    android:layout_height="match_parent"
+		    android:layout_width="wrap_content" />	    
+	    
+		<ImageView 
+		    android:id="@+id/iv_row_right_hint"
+		    android:layout_alignParentRight="true"
+		    android:scaleType="centerInside"
+			android:src="@drawable/transparent_square_pixel" 
+		    android:gravity="center_vertical"
+		    android:layout_height="match_parent"
+		    android:layout_width="wrap_content" />   
+		    
+
+	</RelativeLayout>
+	
+	<LinearLayout 
+	    android:id="@+id/ll_row_content_container"
+	    android:layout_width="match_parent"
+	    android:layout_height="40dp"
+	    android:background="#EFEFEF"
+	    android:orientation="horizontal"
+	    tools:context=".MainActivity" >
+
+		    <View
+		        android:id="@+id/v_row_colorCodeIndicator"
+		        android:background="#000000"
+		        android:layout_width="7dp"
+		        android:layout_height="match_parent" />
+		    
+		    <ImageView
+		        android:id="@+id/iv_row_icon"
+		    	android:layout_width="40dp"
+		    	android:layout_height="40dp"
+		    	android:contentDescription="Result Icon"
+		    	android:src="@drawable/srch2_logo"
+		    	android:scaleType="fitCenter"
+		    	android:adjustViewBounds="true" />
+		    
+		    <TextView 
+		        android:id="@+id/tv_row_title"
+		        android:layout_marginLeft="7dp"
+		        style="@android:style/TextAppearance.Medium"
+		        android:layout_gravity="center_vertical"
+		        android:gravity="center_vertical"
+		        android:layout_height="match_parent"
+		        android:layout_width="0dp"
+		        android:layout_weight="1"
+		        android:ellipsize="marquee"
+		        android:maxLines="1"
+		        android:text="SRCH2 Forward" />
+	 
+			<ImageView
+		        android:visibility="gone"
+		        android:id="@+id/iv_row_special_button_1"
+		    	android:scaleType="centerInside"
+				android:src="@drawable/action_call_icon" 
+		    	android:layout_width="wrap_content"
+				android:layout_height="40dp"
+				android:layout_gravity="center_vertical" />	  
+				
+
+		    <ImageView
+		        android:visibility="gone"
+		        android:id="@+id/iv_row_special_button_2"
+		    	android:scaleType="centerInside"
+				android:src="@drawable/action_sms_icon"
+		    	android:layout_width="wrap_content"
+				android:layout_height="40dp"
+				android:layout_gravity="center_vertical" />	  
+   
+		        
+		    <ImageView
+		        android:visibility="gone"
+		        android:id="@+id/iv_row_special_button_3"
+		    	android:scaleType="centerInside"
+				android:src="@drawable/action_mail_icon"
+		    	android:layout_width="wrap_content"
+				android:layout_height="40dp"
+				android:layout_gravity="center_vertical" />	  
+				
+		    <View
+		        android:layout_height="match_parent"
+		        android:layout_width="1dp" />	    	
+	</LinearLayout>
+
+	<View
+	    android:layout_alignParentBottom="true"
+	    android:layout_height="1dp"
+	    android:layout_width="match_parent"
+	    android:background="?android:attr/listDivider" />
+	
+</RelativeLayout>

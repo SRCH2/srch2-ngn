@@ -1,0 +1,82 @@
+Hello. Welcome to the SRCH2 Android SDk Hello World Tutorial.
+ 
+INTRODUCTION
+ 
+This tutorial will show you how to:
+ 1) Incorporate the SRCH2 Android SDK into your Android Studio project
+ 2) Create indexes and insert records
+ 3) Enable powerful search in your app and publish the search results to the UI or main thread
+ 
+To get started, this tutorial assumes you are familiar with Android Studio and can create, or have already created, Android Studio projects. For instructions how to set up the SRCH2 Android SDK on eclipse, see ‘Advanced Topics’. 
+ 
+CONTEXT 
+ 
+Before we get started, here's a brief overview of what the SRCH2 Android SDK is:
+ 
+The SRCH2 Android SDK is powered by the SRCH2 Search engine. This search engine runs as a http server that is hosted internally by the SDK in an Android remote service. Once running, you can manually do restful CRUD operations by forming the proper URLs (see the 'Advanced Topics' for more information), but the SDK comes with an API that enables you to do these same operations and interact with the running SRCH2 restful server through Java method calls. The SRCH2 Android SDK contains indexable objects, representing the indexes you will create and query, on which you can call methods such as insert, update, query, delete and info. In your code, you can use these objects by extending the com.srch2.android.http.server.Indexable class.
+ 
+In addition, to receive output from the SRCH2 server, there are two asynchronous callbacks you should implement: the one you will certainly want to implement is com.srch2.android.http.server.SearchResultsListener. On completion of a query, this interface will pass you a map of search results to their originating index as well as the raw json response as sent from the SRCH2 http server. The other callback provides a set of state information callbacks, such as the result of an /info command performed on an index providing information about that index, or upon completion of an insert command notifying the success of having inserted records.
+ 
+Finally, also included is set of classes giving you the power to unlock all the potential of the SRCH2 search engine (see the 'Advanced Topics' section for usage and examples): instant search, fuzzy matching, categorical faceting, boolean operators, per record and per record data fields ranking, local parametrization and filtering of the specific record data fields, and much much more. In fact--be sure to check out how to perform GeoSearches where you can include the longitude and latitude of the device so they are combined with the keywords a user might enter, to form the search query. But first to set up the SRCH2 Android SDK...
+ 
+INSTALLING THE SDK
+ 
+The first step is to obtain the SRCH2 Android SDK .aar file. An .aar file extension is an expansion of the JAR file format to include Android native resources, which the SRCH2 Android SDK requires to get the SRCH2 search engine running. For more information on the .aar file format, you can refer to http://tools.android.com/tech-docs/new-build-system/aar-format.
+ 
+You can download the SRCH2 Android SDK .aar file from <insert-link>.
+ 
+Quick Steps:
+1) Once you've downloaded the SRCH2-Search-Service.aar file, open up your Android Studio project.
+2) Goto File->New Module and select 'Import JAR / AAR file' from the list of options.
+3) Select the SRCH2-Search-Service.aar file from its download location.
+4) Click 'Finish'.
+5) Under ProjectName->app, open build.gradle and add compile project(':SRCH2-Service-Jar') to the dependencies node.
+ 
+Interactive Steps: (screen shots go here in sequence)
+For illustration purposes, you are encouraged to check out the source code <link> from which the following example is drawn.
+1) Once you've downloaded the SRCH2-Search-Service.aar file, open up Android Studio.
+2) Create a new project called HelloSRCH2SearchDemo, with the usual minimum (at least 8), build and target api versions, declared with the package name 'com.srch2.android.demo.helloworld' in this example.
+3) Create at least one activity, by default set as the launcher activity, named MyActivity in this example.
+4) You should now have a new project open in Android Studio.
+5) To incorporate the SRCH2 Android SDK, you will need to add the SRCH2-Search-Service.aar file to the project as a new module and edit the build.grandle file to enable gradle to build it when compiling your project.
+6) Go to File->New Module and select 'Import .JAR or .AAR Package' from the list of options.
+7) Select the SRCH2-Search-Service.aar file from its download location.
+8) Click 'Finish'
+9) You should see a new folder named 'SRCH2-Search-Service' under your top level project folder, HelloSRCH2SearchDemo. To enable it to be added to your compiled project, now edit the build.gradle file in the 'app' subfolder. This file (HelloSRCH2SearchDemo/app/build.grade or ./app/build.gradle) should look something like:
+ 
+apply plugin: 'android'
+ 
+android {
+    compileSdkVersion 19
+    buildToolsVersion '20.0.0'
+    defaultConfig {
+        applicationId 'com.package.name.your'
+        minSdkVersion 14
+        targetSdkVersion 20
+    }
+    buildTypes {
+        release {
+            runProguard false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+        }
+    }
+    productFlavors {
+    }
+}
+ 
+dependencies {
+        compile fileTree(dir: 'libs', include: ['*.jar'])
+}
+(eof)
+9.5) If the file is missing the dependencies { ... } node, include the declaration for it at the same level as the android { } node and add
+10) To the dependencies node, add compile project(':SRCH2-Service-Jar') so that it reads:
+ 
+dependencies {
+        compile fileTree(dir: 'libs', include: ['*.jar'])
+        project(':SRCH2-Service-Jar') // check!
+}
+ 
+11) Now you are ready to start accessing the API.
+ 
+CALLING ON THE API
+ 

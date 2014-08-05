@@ -1,0 +1,16 @@
+<resources>
+	<color name="row_indicator_contacts">#0ebb1a</color> <!-- from spec -->
+	<color name="row_indicator_sms">#e1172f</color> <!-- from spec -->
+	<color name="row_indicator_calendar">#ba1ecc</color> <!-- from spec -->
+	
+	<color name="row_indicator_images">#097776</color> <!-- from spec / replacing wiki since wiki is web -->
+	<color name="row_indicator_music">#1a9cf7</color> <!-- from spec -->
+	<color name="row_indicator_video">#F7AF0D</color> <!-- not from spec (video did not exist in spec design) -->
+	
+	<color name="row_indicator_installed_apps">#ec6b14</color> <!-- from spec -->						
+	<color name="row_indicator_system_settings">#063D79</color> <!-- not from spec (settings did not exist in spec design) -->		
+		
+	<color name="row_indicator_web">#F0E704</color> <!-- not from spec (settings did not exist in spec design) -->	
+	
+	<color name="row_indicator_default">#000000</color> <!-- not from spec (settings did not exist in spec design) -->		
+</resources>

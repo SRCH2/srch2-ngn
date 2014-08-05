@@ -1,0 +1,12 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.srch2.android.http.app.demo.MainActivity" >
+    
+    <item android:id="@+id/action_insert"
+          android:text="INSERT"
+          android:showAsAction="always"/>
+
+    
+    
+</menu>

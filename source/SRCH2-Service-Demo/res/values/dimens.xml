@@ -1,0 +1,13 @@
+<resources>
+
+    <!-- Default screen margins, per the Android Design guidelines. -->
+    <dimen name="activity_horizontal_margin">16dp</dimen>
+    <dimen name="activity_vertical_margin">16dp</dimen>
+
+    
+    <dimen name="draggableGridView_maximumCellSize">80dp</dimen>
+    <dimen name="draggableGridView_minimumCellSize">50dp</dimen>
+    
+    <dimen name="tutorial_title_size">27sp</dimen>
+    <dimen name="tutorial_subtitle_size">19sp</dimen>
+</resources>

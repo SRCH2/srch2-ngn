@@ -1,0 +1,6 @@
+<resources>
+	<item type="id" name="tag_viewable_result" />
+	<item type="id" name="tag_row_content" />
+	<item type="id" name="tag_viewholder" />
+	<item type="id" name="tag_async_icon" />
+</resources>
