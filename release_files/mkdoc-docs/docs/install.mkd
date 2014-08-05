@@ -1,0 +1,88 @@
+
+#SRCH2 Engine Installation
+
+
+This documentation gives step-by-step instructions on how to use the SRCH2 engine to setup a simple search service on movie information. The provided package includes a sample data file with movie records, with information such as title, year, director, and genre. A live demo is available at [here](http://demo.srch2.com/movies/).
+
+
+##1. Download Server
+
+
+<b>Step 1</b>: Download the latest SRCH2 engine by filling the form at [here](http://www.srch2.com/download). Unzip it to a folder, e.g., "/home/joe/srch2". The tar ball includes the following files and a folder:
+
+ - bin/srch2-engine (the engine binary);
+ - readme.txt;
+ - example-demo.
+ 
+The "example-demo" folder contains files for a demo, in which we use the engine to build a search service on sample movie information. The folder includes a JSON file, sample configuration XML files for the engine, and files for two front-end UIs, one basic interface and one advanced interface.
+
+<b>Step 2</b>: Open the file [example-demo/srch2-config.xml](../example-demo/srch2-config.xml), and change the variable "srch2Home" to the "example-demo" folder, e.g., "/home/joe/srch2/example-demo".
+
+<b>Step 3</b>: Go to the install folder and run the following:
+
+```python
+/home/joe/srch2/example-demo> ../bin/srch2-engine --config-file=./srch2-config.xml
+```
+
+The server will read the configuration file, load the data in the corresponding data file, build indexes, and start a RESTful server. You should see a page similar to the following:
+
+<center>
+
+![Engine is running](../images/engine_running.png)
+
+</center>
+
+Note:
+
+ - All the paths in the configuration file are relative to the "srch2Home" path.
+ - It is recommended to use an absolute path value for the "srch2Home" variable.  Do not use "~".
+ - Once the engine starts, it stores the indexes in the folder specified by the "dataDir" parameter in the configuration file (with a default folder called "indexes"). The next time we start the engine, it will check if the folder has index files. If so, the engine will load the index files instead of reading the records from the data source. If we want to force the engine to read the records, make sure to delete the files in the "indexes" folder.
+
+<b>Step 5</b>: To test the engine, open a new terminal and type the following command:
+
+```python
+/home/joe/srch2/example-demo> curl -i  http://localhost:8081/search?q=terminator
+```
+
+You should see the following results:
+
+<center>
+![Engine is running](../images/results.png)
+</center>
+
+</br>
+
+
+##2. Simple UI
+
+Use a browser to open the file [example-demo/basic/index.html](../example-demo/basic/index.html). Type into the search box.  After typing a few characters you should see results similar to the following:
+
+<center>
+![Demo Web page Image](../images/Srch2-BasicDemoFront.png){width=750px}
+</center>
+
+##3. Advanced UI
+
+Use the browser to open the file [example-demo/advanced/index.html](../example-demo/advanced/index.html). Do a search, and you should see a page similar to the following:
+
+<center>
+![Demo Web-page Image](../images/Srch2-FullDemoFront.png){width=750px}
+</center>
+
+The screen has the following regions:
+
+1. It is the main search box.
+
+2. It shows the search results.
+
+3. It allows the user to specify the order in which the results are sorted using the "year" field.
+
+4. It allows the user to specify filters to post-process results, e.g., "year in the interval [2001, 2004]".
+
+5. It allows the user to specify a facet on the year field by providing a start year, an end year, and a year gap;
+
+6. It shows the facet results.
+
+<b>Note</b>: Each time we make changes to some conditions, make sure to move the focus to the search box and move the cursor to reissue the search query to the server in order to see the new results.
+
+This interface shows the powerful features of the engine.  Next we will explain what's happening under the hood.

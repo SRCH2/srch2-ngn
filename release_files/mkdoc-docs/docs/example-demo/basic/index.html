@@ -1,0 +1,59 @@
+<!--DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"-->
+<html>
+    <head>
+        <title>SRCH2</title>
+        <script type="text/javascript" src="jquery-1.7.1.min.js"></script>
+        <link href="srch2.css" rel="stylesheet" type="text/css" media="screen" />
+    </head>
+    <body onload="document.getElementById('input').focus();">
+        <div align="center">
+            <div>
+                <h1>SRCH2 Engine</h1>
+            </div>
+            <div>
+                <table>
+                    <tr>
+                        <td colspan=3>
+                        <input type='text' style="height:40px; width:800px; font-size:25px;" class='inputTextfield' autocomplete='off' id='input'><br/><br/>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <div id='results'>
+            &nbsp;
+        </div>
+        <hr>
+        <div align="center">
+            Powered by SRCH2
+        </div>
+        <style type="text/css">
+            span.fuzzy {
+                color: #ff00ff;
+                font-weight: bold;
+            }
+            span.exact {
+                color: red;
+                font-weight: bold;
+            }
+        </style>
+        <script type="text/javascript" src="srch2service.js"></script>
+        <script type="text/javascript">
+            var config = {
+                enableLog : true, // true / false
+                logType : "console", // console or alert. Note: console.log might not work on IE.
+                jsonPsrc : "http://127.0.0.1:8081/search?", 
+                inputElementId : "input",
+                // getQueryString : _srch2_this.getQueryString, // should be a function, not string
+                debug : true, // true /false
+                evenNameToBindInputElement : "keyup",
+                searchType : "topK",
+                isFuzzy : true,
+                resultContainer : 'results',
+                responseHandler : 'srch2service.responseHandlerDefault', // should a string
+                //cleanup : _srch2_this.cleanup, // should be a function, not string
+            };
+            srch2service.init(config);
+        </script>
+    </body>
+</html>

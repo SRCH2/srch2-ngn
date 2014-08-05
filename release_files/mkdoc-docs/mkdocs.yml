@@ -1,0 +1,16 @@
+site_name: SRCH2 Documentation
+
+pages:
+    - [index.mkd, Home ]
+    - [install.mkd, Installation]
+    - [configuration.mkd, Configuration]
+    - [restful-insert-update-delete.mkd, 'RESTful API', Update]
+    - [restful-search.mkd, 'RESTful API', Search]
+    - [restful-control.mkd,'RESTful API', Control]
+    - [ranking.mkd, Ranking]
+    - [geo.mkd, Geo]
+    - [mongodb.mkd, Mongodb]
+
+theme: bootstrap
+
+copyright: Copyright &copy; 2014, <a href="https://srch2.com/">SRCH2.COM</a>.

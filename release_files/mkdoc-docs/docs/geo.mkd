@@ -1,0 +1,65 @@
+#Geo Search
+
+
+This documentation discusses how to use the SRCH2 engine to do powerful geo search (location-based search). The engine can index records with location information specified as a latitude and a longitude, and do search based on both keywords and locations. For example, we can use the engine to find stores called "ghirardelli" within two miles to a location in San Francisco.  The engine provides all the features such as instant search and fuzzy search, making it easy to develop an application to provide great user experiences.
+
+##1. Geo Engine Configuration
+
+The engine has two indexing options:
+
+* Option 1: Keyword Search;
+
+* Option 2: Keyword + Geo Search, which can do location-based search.
+
+We need to choose one option before starting the engine, since the engine will index the data differently depending on the option.
+
+To enable geo indexing, use the following parameter in the configuration file:
+
+```
+<indexType>1</indexType>
+```
+
+The value "1" means that the indexing type is for geo. Correspondingly, we need to have two fields with the type "location_latitude" and "location_longitude", respectively. For example:
+
+```
+<field name="lat" default="0" required="true" type="location_latitude"/>
+<field name="lng" default="0" required="true" type="location_longitude"/>
+```
+Each record should have two corresponding values for these two types, and they should be float numbers.  For example:
+```
+{"id" : "1234", "name" : "ghirardelli", "category" : "chocolate", "lat" : 43.22, "lng": -80.22}
+```
+
+
+##2. Geo Query Syntax
+
+If geo indexing is used, a geo query should use one of the following two ways to define a geo region to search on:
+
+ - Specify a bounding box:
+
+>  * "lblat": the latitude of the left-bottom point of the bounding box;
+
+>  * "lblong": the longitude of the left-bottom point of the bounding box;
+
+>  * "rtlat": the latitude of the top-right point of the bounding box;
+
+>  * "rtlong": the longitude of the top-right point of the bounding box.
+
+ - Specify a center point and a radius:
+
+> * "clat": the latitude of the center point;
+
+> * "clong": the longitude of the center point;
+
+> * "radius": the radius of the circle in degree.
+
+
+The following is an example geo query:
+```
+$ curl -i "http://localhost:8081/search?q=girardelli&start=0&rows=20&lblat=61.20&lblong=-149.90&rtlat=61.22&rtlong=-149.70"
+```
+
+###3. Geo Query Ranking
+
+The engine ranks each result using a score that combines its textual similarity with the query keywords and its geo distance to the location specified in the query.
+
