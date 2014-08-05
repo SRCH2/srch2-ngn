@@ -137,7 +137,9 @@ void HighlightAlgorithm::removeInvalidPositionInPlace(vector<matchedTermInfo>& h
 	while (currIdx < highlightPositions.size()) {
 		if (highlightPositions[currIdx].flag != HIGHLIGHT_KEYWORD_IS_PHRASE &&
 			highlightPositions[currIdx].flag != HIGHLIGHT_KEYWORD_INVALID &&
-			(writeIdx == 0 || highlightPositions[currIdx].offset != highlightPositions[writeIdx-1].offset)) {
+			(writeIdx == 0 || (highlightPositions[currIdx].offset != highlightPositions[writeIdx-1].offset &&
+			highlightPositions[writeIdx - 1].offset + highlightPositions[writeIdx - 1].len <
+			highlightPositions[currIdx].offset))) {
 			if (currIdx - writeIdx > 0) {
 				highlightPositions[writeIdx] = highlightPositions[currIdx];
 			}
@@ -885,7 +887,9 @@ void TermOffsetAlgorithm::getSnippet(const QueryResults* qr, unsigned recidx, un
 					}
 				}
 				for (unsigned _idx = 0; _idx < wordPosition.size(); ++_idx){
-					positionToOffsetMap.insert(make_pair(wordPosition[_idx], highlightPositions.size() - offsetPosition.size() + _idx));
+					unsigned phraseOffsetPos = highlightPositions.size() - offsetPosition.size() + _idx;
+					if (highlightPositions.at(phraseOffsetPos).flag != HIGHLIGHT_KEYWORD_INVALID)
+						positionToOffsetMap.insert(make_pair(wordPosition[_idx], phraseOffsetPos));
 				}
 			}
 		}
