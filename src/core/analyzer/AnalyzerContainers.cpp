@@ -116,9 +116,9 @@ void SynonymContainer::init() {
 		 *
 		 * 2. Equivalent synonyms :  A, B, C
 		 *
-		 * if Keep Original is ON then keep A, B and C
-		 * if Keep Original is OFF then it is treated as B, C => A
-		 *
+		 * if Keep Original is ON, then treat it as:
+		 * A => B, C B => A, C C => A, B
+		 * Otherwise if Keep Original is OFF then it is treated as B, C => A
 		 */
 		std::size_t index = line.find(this->synonymDelimiter);
 		//leftHandSide is empty, we should go to next line.
@@ -157,6 +157,12 @@ void SynonymContainer::init() {
 			boost::algorithm::split(leftHandSideTokens, leftHandSide, boost::is_any_of(","));
 			boost::algorithm::split(rightHandSideTokens, rightHandSide, boost::is_any_of(","));
 		}
+
+		/*
+		 * Iterate through the synonym mapping of "A, B, C => A, B, C".
+		 * For the outer loop, we are dealing with A first. For the inner loop,
+		 * we are dealing with "B, C".
+		 */
 
 		for (unsigned i = 0; i < leftHandSideTokens.size(); ++i) {
 			leftHandSide = leftHandSideTokens[i];
@@ -198,6 +204,10 @@ void SynonymContainer::init() {
 				 * For example, if the lefthandside is "new york city", the whole std::string is
 				 * already inserted into the map. Now we should take care of "new york" and "new"
 				 * In the while() loop, first "new york" will be added and then "new"
+				 * The reason that we need to keep the prefix map is to keep track of multi-word
+				 * synonyms which arrive from upstream filters as a individual token. So when we
+				 * see "new" token then using prefix map we know that we might get a possible synonym
+				 * in next iteration.
 				 */
 				std::size_t found ;
 				string prefixToken = leftHandSide;

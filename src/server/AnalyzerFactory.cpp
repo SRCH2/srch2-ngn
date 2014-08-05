@@ -21,6 +21,8 @@ using namespace srch2is;
 namespace srch2 {
 namespace httpwrapper {
 
+// isSearcherThread = true indicates that the analyzer is begin created for search. In such case
+// we do not use synonym filter.
 Analyzer* AnalyzerFactory::createAnalyzer(const CoreInfo_t* config, bool isSearcherThread) {
 
 	// This flag shows if we need to stem or not. (StemmerNormalizerType is an enum)

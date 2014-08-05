@@ -326,8 +326,8 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     		unsigned prevAttributeId = 0;
     		vector<unsigned> positionListVector;
     		vector<unsigned> offsetVector;
-    		vector<unsigned> charLenVector;
-    		vector<uint8_t> bitMapVector;
+    		vector<unsigned> synonymOriginalTokenLenArray;
+    		vector<uint8_t> synonymBitFlagArray;
     		unsigned bitMapCursor = 0;
 
     		for (unsigned j = 0; j < iterator->second.attributeList.size(); ++j) {
@@ -335,7 +335,7 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     			unsigned position =  (iterator->second.attributeList[j] & 0xFFFFFF);  // Non Zero
     			unsigned offset =  (iterator->second.charOffsetOfTermInAttribute[j]);  // Non Zero
     			AnalyzedTokenType type =  (iterator->second.typesOfTermInAttribute[j]);
-    			unsigned charLen =  (iterator->second.charLenOfTermInAttribute[j]);
+    			unsigned charLen =  (iterator->second.charLensOfTermInAttribute[j]);
     			// if it is a first element or current attribute is same as
     			// previous attribute id. then continue to push the position
     			// in position list vector
@@ -344,16 +344,19 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     					positionListVector.push_back(position);
     				if (isEnabledCharPositionIndex(positionIndexType)){
     					offsetVector.push_back(offset);
-
-    					if (bitMapCursor / 8 >= bitMapVector.size()) {
-    						bitMapVector.push_back(0);
+    					//add a new byte to bitMap vector
+    					if (bitMapCursor / 8 >= synonymBitFlagArray.size()) {
+    						synonymBitFlagArray.push_back(0);
     					}
     					if (type == ANALYZED_SYNONYM_TOKEN){
+    						// For synonym token set its bit flag to 1
+    						// and also push the original token character len in
+    						// synonymOriginalTokenLenArray
     						unsigned byte = bitMapCursor / 8;
     						uint8_t mask = 1;
     						mask = mask << (bitMapCursor % 8);
-    						bitMapVector[byte] = bitMapVector[byte] | mask;
-    						charLenVector.push_back(charLen);
+    						synonymBitFlagArray[byte] = synonymBitFlagArray[byte] | mask;
+    						synonymOriginalTokenLenArray.push_back(charLen);
     					}
     					++bitMapCursor;
     				}
@@ -363,28 +366,28 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     				// array and APPPEND to grand buffer.
     				convertToVarLengthArray(positionListVector, tempPositionIndexBuffer);
     				convertToVarLengthArray(offsetVector, tempOffsetBuffer);
-    	    		convertToVarLengthArray(charLenVector, tempcharLenBuffer);
-    	    		convertToVarLengthBitMap(bitMapVector, tempSynonymBitMapBuffer);
+    				convertToVarLengthArray(synonymOriginalTokenLenArray, tempcharLenBuffer);
+    				convertToVarLengthBitMap(synonymBitFlagArray, tempSynonymBitMapBuffer);
 
     				positionListVector.clear();
     				offsetVector.clear();
-    				charLenVector.clear();
-    				bitMapVector.clear();
+    				synonymOriginalTokenLenArray.clear();
+    				synonymBitFlagArray.clear();
     				bitMapCursor = 0;
 
     				if (isEnabledWordPositionIndex(positionIndexType))
     					positionListVector.push_back(position);
     				if (isEnabledCharPositionIndex(positionIndexType)) {
     					offsetVector.push_back(offset);
-    					if (bitMapCursor / 8 >= bitMapVector.size()) {
-    						bitMapVector.push_back(0);
+    					if (bitMapCursor / 8 >= synonymBitFlagArray.size()) {
+    						synonymBitFlagArray.push_back(0);
     					}
     					if (type == ANALYZED_SYNONYM_TOKEN){
     						unsigned byte = bitMapCursor / 8;
     						uint8_t mask = 1;
     						mask = mask << (bitMapCursor % 8);
-    						bitMapVector[byte] = bitMapVector[byte] | mask;
-    						charLenVector.push_back(charLen);
+    						synonymBitFlagArray[byte] = synonymBitFlagArray[byte] | mask;
+    						synonymOriginalTokenLenArray.push_back(charLen);
     					}
     					++bitMapCursor;
     				}
@@ -396,12 +399,12 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     		// length byte array
     		convertToVarLengthArray(positionListVector, tempPositionIndexBuffer);
     		convertToVarLengthArray(offsetVector, tempOffsetBuffer);
-    		convertToVarLengthArray(charLenVector, tempcharLenBuffer);
-    		convertToVarLengthBitMap(bitMapVector, tempSynonymBitMapBuffer);
+    		convertToVarLengthArray(synonymOriginalTokenLenArray, tempcharLenBuffer);
+    		convertToVarLengthBitMap(synonymBitFlagArray, tempSynonymBitMapBuffer);
     		positionListVector.clear();
     		offsetVector.clear();
-    		charLenVector.clear();
-    		bitMapVector.clear();
+    		synonymOriginalTokenLenArray.clear();
+    		synonymBitFlagArray.clear();
     	}
     }
 

@@ -219,10 +219,10 @@ void AnalyzerInternal::tokenizeRecord(const Record *record,
 									tokens[i].position));
 					tokenAttributeHitsMap[tokens[i].term].charOffsetOfTermInAttribute.push_back(
 							tokens[i].charOffset);
-					tokenAttributeHitsMap[tokens[i].term].charLenOfTermInAttribute.push_back(
+					tokenAttributeHitsMap[tokens[i].term].charLensOfTermInAttribute.push_back(
 							tokens[i].charLength);
 					tokenAttributeHitsMap[tokens[i].term].typesOfTermInAttribute.push_back(
-							tokens[i].type);
+							tokens[i].analyzedTokenType);
 				}
 			}
 

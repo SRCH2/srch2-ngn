@@ -96,7 +96,7 @@ void SynonymFilter::pushSynonymsOfExistingTokensInEmitBuffer() {
 					termInfo.charOffset = tokenBuffer[0].charOffset;
 					termInfo.charLength = tokenBuffer.back().charOffset + tokenBuffer.back().charLength
 							- tokenBuffer[0].charOffset;
-					termInfo.type = ANALYZED_SYNONYM_TOKEN;
+					termInfo.analyzedTokenType = ANALYZED_SYNONYM_TOKEN;
 					this->emitBuffer.push_back(termInfo);
 				}
 				for (int k = i; k >= 0; k--) {
@@ -122,7 +122,7 @@ void SynonymFilter::emitCurrentToken() {
 		utf8StringToCharTypeVector(this->emitBuffer[0].term, tokenStreamContainer->currentToken);
 		tokenStreamContainer->currentTokenPosition = this->emitBuffer[0].position;
 		tokenStreamContainer->currentTokenOffset = this->emitBuffer[0].charOffset;
-		tokenStreamContainer->type  = this->emitBuffer[0].type;
+		tokenStreamContainer->type  = this->emitBuffer[0].analyzedTokenType;
 		tokenStreamContainer->currentTokenLen  = this->emitBuffer[0].charLength;
 		// removing the first element
 		this->emitBuffer.erase(this->emitBuffer.begin() + 0);
@@ -158,7 +158,7 @@ bool SynonymFilter::processToken() {
 		currTermInfo.position = tokenStreamContainer->currentTokenPosition;
 		currTermInfo.charOffset = tokenStreamContainer->currentTokenOffset;
 		tokenStreamContainer->type = ANALYZED_ORIGINAL_TOKEN;
-		currTermInfo.type = tokenStreamContainer->type;
+		currTermInfo.analyzedTokenType = tokenStreamContainer->type;
 		currTermInfo.charLength = currTermInfo.term.size();
 
 		// gives the number of prefixes found in the key set the map for the current token
@@ -194,7 +194,7 @@ bool SynonymFilter::processToken() {
 					termInfo.position = tokenStreamContainer->currentTokenPosition;
 					termInfo.charOffset = tokenStreamContainer->currentTokenOffset;
 					termInfo.charLength = currTermInfo.charLength;
-					termInfo.type = ANALYZED_SYNONYM_TOKEN;
+					termInfo.analyzedTokenType = ANALYZED_SYNONYM_TOKEN;
 					this->emitBuffer.push_back(termInfo);
 				}
 				this->emitCurrentToken();
@@ -243,7 +243,7 @@ bool SynonymFilter::processToken() {
 					termInfo.charOffset = tokenBuffer[0].charOffset;
 					termInfo.charLength = currTermInfo.charOffset + currTermInfo.charLength
 							- tokenBuffer[0].charOffset;
-					termInfo.type = ANALYZED_SYNONYM_TOKEN;
+					termInfo.analyzedTokenType = ANALYZED_SYNONYM_TOKEN;
 					this->emitBuffer.push_back(termInfo);
 				}
 				this->emitCurrentToken();

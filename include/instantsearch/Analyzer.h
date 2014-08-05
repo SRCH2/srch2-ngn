@@ -43,7 +43,7 @@ struct AnalyzedTermInfo {
 	unsigned position;
 	unsigned charOffset;
 	unsigned charLength;
-	AnalyzedTokenType type;
+	AnalyzedTokenType analyzedTokenType;
 };
 
 struct TokenAttributeHits {
@@ -65,7 +65,7 @@ struct TokenAttributeHits {
      */
     vector<unsigned> attributeList;
     vector<unsigned> charOffsetOfTermInAttribute;
-    vector<unsigned> charLenOfTermInAttribute;
+    vector<unsigned> charLensOfTermInAttribute;
     vector<AnalyzedTokenType> typesOfTermInAttribute;
 };
 

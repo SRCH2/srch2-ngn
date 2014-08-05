@@ -80,7 +80,10 @@ struct NewKeywordIdKeywordOffsetPairGreaterThan {
         return lhs.first > rhs.first;
     }
 };
+
+// get the count of set bits in he number
 unsigned getBitSet(unsigned number);
+// get the count of bit set before the bit position of attributeId
 unsigned getBitSetPositionOfAttr(unsigned bitmap, unsigned attribute);
 class ForwardList {
 public:
@@ -154,7 +157,7 @@ public:
     	data = new Byte[dataSize +
     	                          this->getKeywordAttributeBitmapsSizeInBytes() +
     	                          this->getPositionIndexSize() + this->offsetIndexSize
-    	                          + this->synonymBitMapSize + + this->charLenIndexSize];
+    	                          + this->synonymBitMapSize +  this->charLenIndexSize];
 
     	// third block is attributeBitmap
     	/////
@@ -455,18 +458,18 @@ private:
     inline uint8_t * getSynonymBitMapPointer() const{
     	/*
     	 * The format of data in this array is :
-    	 * ---------------------------------------------------------------------------------------------------------------------
-    	 * | keywordIDs | keywordRecordStaticScores | keywordAttributeBitMap | positionIndex |  offsetIndex | bitMap | charLen |
-    	 * ---------------------------------------------------------------------------------------------------------------------
+    	 * ------------------------------------------------------------------------------------------------------------------------------------------------------
+    	 * | keywordIDs | keywordRecordStaticScores | keywordAttributeBitMap | positionIndex |  offsetIndex | SynonymBitFlagArray | SynonymOriginalTokenLenArray |
+    	 * ------------------------------------------------------------------------------------------------------------------------------------------------------
     	 */
     	return getOffsetIndexPointer() + offsetIndexSize;
     }
     inline uint8_t * getCharLenIndexPointer() const{
     	/*
     	 * The format of data in this array is :
-    	 * ---------------------------------------------------------------------------------------------------------------------
-    	 * | keywordIDs | keywordRecordStaticScores | keywordAttributeBitMap | positionIndex |  offsetIndex | bitMap | charLen |
-    	 * ---------------------------------------------------------------------------------------------------------------------
+    	 * -------------------------------------------------------------------------------------------------------------------------------------------------------
+    	 * | keywordIDs | keywordRecordStaticScores | keywordAttributeBitMap | positionIndex |  offsetIndex | SynonymBitFlagArray | SynonymOriginalTokenLenArray |
+    	 * -------------------------------------------------------------------------------------------------------------------------------------------------------
     	 */
     	return getSynonymBitMapPointer() + synonymBitMapSize;
     }
