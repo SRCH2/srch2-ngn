@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        
+        <link rel="shortcut icon" href="../img/favicon.ico">
+
+        <title>Tutorial - SRCH2 Android SDK</title>
+
+        <link href="../css/bootstrap-3.0.3.min.css" rel="stylesheet">
+        <link href="../css/font-awesome-4.0.3.css" rel="stylesheet">
+        <link href="../css/prettify-1.0.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+
+        <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+        <![endif]-->
+
+        
+    </head>
+
+    <body>
+
+        <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container">
+
+        <!-- Collapsed navigation -->
+        <div class="navbar-header">
+            <!-- Expander button -->
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+
+            <!-- Main title -->
+            <a class="navbar-brand" href="../main/">SRCH2 Android SDK</a>
+        </div>
+
+        <!-- Expanded navigation -->
+        <div class="navbar-collapse collapse">
+            <!-- Main navigation -->
+            <ul class="nav navbar-nav">
+            
+            
+                <li >
+                    <a href="../main/">Main</a>
+                </li>
+            
+            
+            
+                <li class="active">
+                    <a href="./">Tutorial</a>
+                </li>
+            
+            
+            
+                <li >
+                    <a href="../advanced-topics/">Advanced Topics</a>
+                </li>
+            
+            
+            
+                <li >
+                    <a href="../faq/">FAQ</a>
+                </li>
+            
+            
+            
+                <li >
+                    <a href="../download/">Download</a>
+                </li>
+            
+            
+            </ul>
+
+            <!-- Search, Navigation and Repo links -->
+            <ul class="nav navbar-nav navbar-right">
+                
+                <li >
+                    <a rel="next" href="../main/">
+                        <i class="fa fa-arrow-left"></i> Previous
+                    </a>
+                </li>
+                <li >
+                    <a rel="prev" href="../advanced-topics/">
+                        Next <i class="fa fa-arrow-right"></i>
+                    </a>
+                </li>
+                
+            </ul>
+        </div>
+    </div>
+</div>
+
+        <div class="container">
+            <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
+    <ul class="nav bs-sidenav">
+    
+        <li class="main active"><a href="#introduction">Introduction</a></li>
+        
+    
+        <li class="main "><a href="#context">Context</a></li>
+        
+    
+        <li class="main "><a href="#installing-the-sdk">Installing the SDK</a></li>
+        
+    
+        <li class="main "><a href="#overview-of-the-api">Overview of the API</a></li>
+        
+    
+        <li class="main "><a href="#creating-an-index">Creating an Index</a></li>
+        
+    
+        <li class="main "><a href="#getting-search-results">Getting Search Results</a></li>
+        
+    
+        <li class="main "><a href="#getting-index-and-engine-information">Getting Index and Engine Information</a></li>
+        
+    
+        <li class="main "><a href="#putting-it-all-together">Putting it All Together</a></li>
+        
+    
+        <li class="main "><a href="#conclusion">Conclusion</a></li>
+        
+    
+    </ul>
+</div></div>
+            <div class="col-md-9" role="main">
+
+<p>﻿Hello. Welcome to the SRCH2 Android SDK Hello World Tutorial.</p>
+<h3 id="introduction">Introduction</h3>
+<p>This tutorial will show you how to:</p>
+<ol>
+<li>Incorporate the SRCH2 Android SDK into your Android Studio project</li>
+<li>Create indexes and insert records</li>
+<li>Enable powerful search in your app and publish the search results to the UI or main thread</li>
+</ol>
+<p>To get started, this tutorial assumes you are familiar with Android Studio and can create, or have already created, Android Studio projects. For instructions how to set up the SRCH2 Android SDK on eclipse, see <a href="./tutorial.html">Advanced Topics</a>. </p>
+<h3 id="context">Context</h3>
+<p>Before we get started, here's a brief overview of what the SRCH2 Android SDK is:</p>
+<p>The SRCH2 Android SDK is powered by the SRCH2 Search engine. This search engine runs as a http server that is hosted internally by the SDK in an Android remote service (don't worry, you don't have to bind to it). Once running, you can manually do RESTful CRUD operations by forming the proper URLs (see the <a href="./tutorial.html">Advanced Topics</a> for more information), but the SDK comes with an API that enables you to do these same operations and interact with the running SRCH2 RESTful server through Java method calls. The SRCH2 Android SDK contains indexable objects, representing the indexes you will create and query, on which you can call methods such as insert, update, query, delete and info. In your code, you can use these objects by extending the <code>com.srch2.android.http.service.Indexable</code> class; besides defining the indexes themselves, most of these operations can be done by calling on the appropriate method of <code>com.srch2.android.http.service.SRCH2Engine</code>.</p>
+<p>In addition, to receive output from the SRCH2 server, there are two asynchronous callbacks you should implement: the one you will certainly want to implement is <code>com.srch2.android.http.service.SearchResultsListener</code>. On completion of a query, this interface will pass you a map of search results to their originating index as well as the raw JSON response as sent from the SRCH2 http server. The other callback provides a set of state information callbacks, such as the result of an /info command performed on an index providing information about that index, or upon completion of an insert command notifying the success of having inserted records.</p>
+<p>Finally, also included is set of classes giving you the power to unlock all the potential of the SRCH2 search engine (see the 'Advanced Topics' section for usage and examples): instant search, fuzzy matching, categorical faceting, boolean operators, per record and per record data fields ranking, local parametrization and filtering of the specific record data fields, and much much more. In fact--be sure to check out how to perform GeoSearches where you can include the longitude and latitude of the device so they are combined with the keywords a user might enter, to form the search query. But first to set up the SRCH2 Android SDK...</p>
+<h3 id="installing-the-sdk">Installing the SDK</h3>
+<p>The first step is to obtain the SRCH2 Android SDK <code>.aar</code> file. An <code>.aar</code> file extension is an expansion of the JAR file format to include Android native resources, which the SRCH2 Android SDK requires to get the SRCH2 search engine running. For more information on the <code>.aar</code> file format, you can refer to <a href="http://tools.android.com/tech-docs/new-build-system/aar-format">AAR Format</a> at the Android Tools Project Site.</p>
+<p>You can download the <code>SRCH2-Android-SDK.aar</code> file from <a href="./tutorial.html">here</a>.</p>
+<p><em>Quick Steps</em>:</p>
+<ol>
+<li>Once you've downloaded the <code>SRCH2-Android-SDK.aar</code> file, open up your Android Studio project.</li>
+<li>Goto File-&gt;New Module and select 'Import JAR / AAR file' from the list of options.</li>
+<li>Select the <code>SRCH2-Android-SDK.aar</code> file from its download location.</li>
+<li>Click 'Finish'.</li>
+<li>Under ProjectName-&gt;app, open build.gradle and add <code>compile project(':SRCH2-Android-SDK')</code> to the dependencies node.</li>
+</ol>
+<p><em>Interactive Steps</em>:</p>
+<ol>
+<li>Once you've downloaded the <code>SRCH2-Android-SDK.aar</code> file, open up Android Studio.</li>
+<li>Create a new project called <code>HelloSRCH2SearchDemo</code>, with the usual minimum (at least 8), build and target API versions, declared with the package name <code>com.srch2.android.demo.hellosrch2</code> in this example.</li>
+<li>Create at least one activity, by default set as the launcher activity, named <code>MyActivity</code> in this example.</li>
+<li>You should now have a new project open in Android Studio.</li>
+<li>To incorporate the SRCH2 Android SDK, you will need to add the <code>SRCH2-Android-SDK.aar</code> file to the project as a new module and edit the build.grandle file to enable gradle to build it when compiling your project.</li>
+<li>To do this, open up your project's 'Module Settings' by either right clicking on your project and selecting 'Open Module Settings', or after clicking into your project panel pressing F4 (the default keyboard short-cut).</li>
+<li>Move the cursor to the upper-left hand of the dialogue box, and click the green addition symbol. This will add a new module to your project. This will look something like:<br><img alt="Module Settings - How to add a new module" src="./android-sdk/img/001-tutorial.png" title="Module Settings - How to add a new module" /></li>
+<li>From the list of options, select 'Import .JAR or .AAR Package' and click Next.<br><img alt="Module Settings - Creating a new module from an .AAR file" src="./android-sdk/img/002-tutorial.png" title="Module Settings - Creating a new module from an .AAR file" /></li>
+<li>Select <code>SRCH2-Android-SDK.aar</code> from its download location, you can leave value of the field 'Subproject Name' the same, and click Finish.<br><img alt="Module Settings - Importing the SRCH2-Android-SDK.aar file as the new module" src="./android-sdk/img/003-tutorial.png" title="Module Settings - Importing the SRCH2-Android-SDK.aar file as the new module" /></li>
+<li>Now that you've added the <code>SRCH2-Android-SDK.aar</code> as a new module in your project, it's time to add it as a dependency to your app.</li>
+<li>From the 'Module Settings' dialog, click on your app from the 'Modules' column (on the left-hand side, SRCH2-Android-SDK.aar should also be in the list). </li>
+<li>Select the 'Dependencies' tab, move the cursor to the right side of the dialog. Click the green addition symbol, and from the drop down list select 'Module dependency'. This should look something like this:<br><img alt="Module Settings - Adding the SRCH2-Android-SDK module as a dependency" src="./android-sdk/img/004-tutorial.png" title="Module Settings - Adding the SRCH2-Android-SDK module as a dependency" /></li>
+<li>Select <code>SRCH2-Android-SDK</code> from the list of modules. Click OK.<br><img alt="Module Settings - Selecting the SRCH2-Android-SDK module" src="./android-sdk/img/005-tutorial.png" title="Module Settings - Selecting the SRCH2-Android-SDK module" /></li>
+<li>Now can click Apply and OK, or just OK to finish this process and close 'Module Settings'.<br><img alt="Module Settings - Verifying SRCH2-Android-SDK module as been added as a compiled dependency" src="./android-sdk/img/006-tutorial.png" title="Module Settings - Verifying SRCH2-Android-SDK module as been added as a compiled dependency" /></li>
+<li>For those curious, this process added the <code>SRCH2-Android-SDK.aar</code> as a new module, then altered the build.gradle file in your app's subdirectory to include the <code>SRCH2-Android-SDK</code> module to be compiled as a dependency; which you can verify by navigating to this file, and it will look something like:</li>
+<li>Now you are ready to start accessing the API.</li>
+</ol>
+<h3 id="overview-of-the-api">Overview of the API</h3>
+<p>Before we dive into the code, here's a brief outline of the classes and methods you'll be using:</p>
+<pre class="prettyprint well"><code>SRCH2Engine 
+    initialize(SRCH2Configuration configuration, StateResponseListener StateResponseListener, SearchResultsListener searchResultsListener);
+    onStart(Context context);
+    onStop(Context context);
+    searchAllIndexes(String searchInput);
+    insertIntoIndex(String indexName, JSONObject recordToUpdate / JSONArray recordsToUpdate); (also, update/delete/retrieveSpecificRecord)
+    ...
+Indexable
+    getIndexDescription();
+    search(String searchInput);
+    insert(JSONObject recordToUpdate / JSONArray recordsToUpdate); 
+    ...
+SearchResultsListener
+    onNewSearchResults(int httpResponseCode, String jsonResultsLiteral, HashMap&lt;String, ArrayList&lt;JSONObject&gt;&gt; resultRecordMap);
+StateResponseListener
+    onSRCH2ServiceReady(final HashMap&lt;String, InfoResponse&gt; indexesToInfoResponseMap);
+    onInsertRequestComplete(final String targetIndexName, final InsertResponse response); 
+    ...
+</code></pre>
+
+<p><insert architecture diagram here></p>
+<h3 id="creating-an-index">Creating an Index</h3>
+<p>The first step to searching an index is creating an index. In this tutorial, we'll create an index to search on the title and genre of some movies. </p>
+<p>Create the index for movies by creating a new class that extends <code>com.srch2.android.http.service.Indexable</code>. In this example this class will be named <code>MovieIndex</code>. An index is defined by a schema, which describes the fields in the index such as their type and default value; the fields of the schema are comparable to the columns of an SQLITE table. To define the schema for the <code>MovieIndex</code>, override the <code>Indexable</code> abstract method <code>public IndexDescription getIndexDescription()</code> if you are not prompted to do so. Since we'll use the name of the index and the names of the fields to prepare the results of a search, declare and define the following constant field members for this class:</p>
+<pre class="prettyprint well"><code>public static final String INDEX_NAME = &quot;movies&quot;;
+public static final String INDEX_FIELD_PRIMARY_KEY = &quot;id&quot;;
+public static final String INDEX_FIELD_TITLE = &quot;title&quot;;
+public static final String INDEX_FIELD_YEAR = &quot;year&quot;;
+public static final String INDEX_FIELD_GENRE = &quot;genre&quot;;
+</code></pre>
+
+<p>And then the method <code>public IndexDescription getIndexDescription()</code> can be implemented as follows:</p>
+<pre class="prettyprint well"><code>@Override
+public IndexDescription getIndexDescription() {
+    Field primaryKey = Field.getRefiningField(INDEX_FIELD_PRIMARY_KEY, Field.Type.INTEGER);
+    Field title = Field.getSearchableField(INDEX_FIELD_TITLE, 3);
+    Field year = Field.getRefiningField(INDEX_FIELD_YEAR, Type.INTEGER);
+    Field genre = Field.getSearchableField(INDEX_FIELD_GENRE);
+    return new IndexDescription(INDEX_NAME, primaryKey, title, year, genre);
+}
+</code></pre>
+
+<p>Fields can be obtained by calling the static factory methods of the class <code>com.srch2.android.http.service.Field</code>. A searchable field has textual data that will be searched during a query; a refining field is for storing data values that can be used for query filtering and post-processing. Both refining and searchable field data can be retrieved from the raw search results returned by the SRCH2 server. When invoking these factory methods for a searchable field, a third parameter can be passed which will set the field's relative ranking (or relevance) to other searchable fields--the default value is one. Here, the relevance of the <code>title Field</code> is set to be three times more important than the <code>genre Field</code>. </p>
+<p>An index <em>always</em> requires one field to be defined as the primary key: each record should have a unique value for its primary key. It can be searchable, and/or refining. The primary key is the handle by which you can verify records were inserted correctly, deleted and/or retrieved by later.</p>
+<p>When returning the <code>new IndexDescription(...)</code> the first parameter is <em>always</em> the name of index, the second parameter <em>should always</em> be the primary key, and each subsequent parameter are the rest of the fields you define, in no particular order. </p>
+<p>The <code>SRCH2Engine</code> will use this <code>IndexDescription</code> to automatically create the configuration for this index. While we're in this class, let's create a method for inserting some records we can search on. Add a method <code>public static JSONArray getAFewRecordsToInsert()</code> implemented as follows:</p>
+<pre class="prettyprint well"><code>public static JSONArray getAFewRecordsToInsert() {
+    JSONArray jsonRecordsToInsert = new JSONArray();
+    try {
+        JSONObject record = new JSONObject();
+        record.put(INDEX_FIELD_PRIMARY_KEY, &quot;1&quot;);
+        record.put(INDEX_FIELD_TITLE, &quot;The Good, the Bad And the Ugly&quot;);
+        record.put(INDEX_FIELD_YEAR, 1966);
+        record.put(INDEX_FIELD_GENRE, &quot;Western Adventure&quot;);
+        jsonRecordsToInsert.put(record);
+
+        record = new JSONObject();
+        record.put(INDEX_FIELD_PRIMARY_KEY, &quot;2&quot;);
+        record.put(INDEX_FIELD_TITLE, &quot;Citizen Kane&quot;);
+        record.put(INDEX_FIELD_YEAR, 1941);
+        record.put(INDEX_FIELD_GENRE, &quot;Mystery Drama&quot;);
+        jsonRecordsToInsert.put(record);
+
+        record = new JSONObject();
+        record.put(INDEX_FIELD_PRIMARY_KEY, &quot;3&quot;);
+        record.put(INDEX_FIELD_TITLE, &quot;大红灯笼高高挂 (Raise the Red Lantern)&quot;);
+        record.put(INDEX_FIELD_YEAR, 1991);
+        record.put(INDEX_FIELD_GENRE, &quot;Drama&quot;);
+        jsonRecordsToInsert.put(record);
+    } catch (JSONException oops) {
+        // We know there are no errors 
+    }
+    return jsonRecordsToInsert;
+}
+</code></pre>
+
+<p>The <code>SRCH2Engine</code> accepts a <code>JSONObject</code> or a <code>JSONArray</code> of <code>JSONObject</code>s when inserting or updating records. Insertions (and updates) are invoked by calling <code>insert(...)</code> on your <code>Indexable</code> implementation, or by specifying the index name and calling <code>SRCH2Engine.insertIntoIndex(String indexName, ...)</code>. However, before actually calling this method it is time to set up the two asynchronous call-backs so that you can get index information and search results from the SRCH2 server.</p>
+<h3 id="getting-search-results">Getting Search Results</h3>
+<p>The SRCH2 server passes information back to the <code>SRCH2Engine</code> through two asynchronous callbacks: <code>com.srch2.android.http.service.SearchResultsListener</code> and <code>com.srch2.android.http.service.StateResponseListener</code>. The first passes back search results from queries performed while the second passes back information relating to the indexes such as whether records were inserted correctly, if a specific record is requested by id, or if an information request on a specific index is performed. These two interfaces <em>should be</em> implemented by you--in particular, the <code>SearchResultsListener</code> is the way in which you will receive search results. </p>
+<p>For the demonstration of this tutorial it is assumed you are familiar with how a <code>android.widget.BaseAdapter' works to populate a</code>ListView<code>. Familiarity with how to communicate with the UI thread via a</code>Handler` is also helpful, but you can read more about this on the Android developer website--(Communicating with the UI Thread)[https://developer.android.com/training/multiple-threads/communicate-ui.html]. </p>
+<p>These two callbacks will trigger off the main or UI thread, so in order to update the UI of your application, the search results must be passed to the UI thread. In this tutorial we will use subclass of the <code>android.os.Handler</code> class to implement the <code>SearchResultsListener</code> interface; however, other means of propagating the search results to the UI thread can be implemented, such as <code>runOnUiThread()</code> can be used. </p>
+<p>In the source code of this tutorial there is the class <code>SearchResultsAdapter</code> which extends <code>BaseAdapter</code>; here we will cover how to connect this adapter to a handler implementing <code>SearchResultsListener</code>. Create the class <code>SearchResultsAdapter</code> and copy and paste the <code>BaseAdapter</code>'s implementation, skipping the nested <code>Handler</code> class. At the end of this class declare the following nested subclass of <code>Handler</code>:</p>
+<pre class="prettyprint well"><code>    private static class SearchResultsUiHandler extends Handler implements SearchResultsListener {
+    }
+</code></pre>
+
+<p>In this class, declare a <code>WeakReference&lt;T&gt;</code> of type <code>SearchResultsAdapter</code> and two constant <code>int</code> fields that will be used as the message keys for this handler:</p>
+<pre class="prettyprint well"><code>    private static class SearchResultsUiHandler extends Handler implements SearchResultsListener {
+
+        private static final int MESSAGE_WHAT_PUBLISH_NEW_RESULTS = 001;
+        private static final int MESSAGE_WHAT_PUBLISH_NO_NEW_RESULTS = 002;
+
+        private final WeakReference&lt;SearchResultsAdapter&gt; mSearchResultsAdapterWeakReference;
+    }
+</code></pre>
+
+<p>The <code>WeakReference&lt;SearchResultsAdapter&gt;</code> is necessary to prevent leaking the context (you can read more about why this is necessary <a href="http://www.androiddesignpatterns.com/2013/01/inner-class-handler-memory-leak.html">here</a>) and can be defined in the constructor such as:</p>
+<pre class="prettyprint well"><code>    private static class SearchResultsUiHandler extends Handler implements SearchResultsListener {
+
+        ... 
+
+        public SearchResultsUiHandler(SearchResultsAdapter searchResultsAdapter) {
+            mSearchResultsAdapterWeakReference = new WeakReference&lt;SearchResultsAdapter&gt;(searchResultsAdapter);
+        }
+    }
+</code></pre>
+
+<p>Since this handler implements <code>SearchResultsListener</code> override the interface method `public void onNewSearchResults(int httpResponseCode, String jsonResponse, HashMap<String, ArrayList<JSONObject>&gt;)' in the following way:</p>
+<pre class="prettyprint well"><code>    private static class SearchResultsUiHandler extends Handler implements SearchResultsListener {
+
+        ... 
+
+        @Override
+        public void onNewSearchResults(int httpResponseCode, String jsonResponse, HashMap&lt;String, ArrayList&lt;JSONObject&gt;&gt; resultRecordMap) {
+            if (httpResponseCode == HttpURLConnection.HTTP_OK) {
+                ArrayList&lt;MovieSearchResult&gt; newResults = new ArrayList&lt;MovieSearchResult&gt;();
+
+                ArrayList&lt;JSONObject&gt; movieResults = resultRecordMap.get(MovieIndex.INDEX_NAME);
+                if (movieResults != null &amp;&amp; movieResults.size() &gt; 0) {
+                    for (JSONObject jsonObject : movieResults) {
+                        SearchResult searchResult = null;
+                        try {
+                            searchResult = new MovieSearchResult(jsonObject.getString(MovieIndex.INDEX_FIELD_TITLE), jsonObject.getString(MovieIndex.INDEX_FIELD_GENRE), jsonObject.getInt(MovieIndex.INDEX_FIELD_YEAR));
+                        } catch (JSONException oops) {
+                            continue;
+                        }
+
+                        if (searchResult != null) {
+                            newResults.add(searchResult);
+                        }
+                    }
+                }
+                sendMessage(Message.obtain(this, newResults.size() &gt; 0 ? MESSAGE_WHAT_PUBLISH_NEW_RESULTS : MESSAGE_WHAT_PUBLISH_NO_NEW_RESULTS, newResults));  
+            }
+        }
+    }
+</code></pre>
+
+<p>Any time one of the query methods of the API is called (such as <code>SRCH2Engine.searchIndex(String indexName, String searchInput)</code> or <code>MovieIndex.search(String searchInput)</code> this method will be triggered upon results returned from the SRCH2 server. Its parameters are:</p>
+<ol>
+<li>`int httpResponseCode' which indicates how the restful action was handled</li>
+<li><code>String jsonResponse</code> which is the raw JSON literal as returned by the SRCH2 server containing the full set of search result data</li>
+<li><code>HashMap&lt;String, ArrayList&lt;JSONObject&gt;&gt; resultRecordMap</code> which is a mapping of index names to their corresponding results parsed from the <code>jsonResponse</code> literal represented by how you defined them in the <code>Indexable</code> method <code>getIndexDescription</code></li>
+</ol>
+<p>The <code>resultRecordMap</code> will never be null: if there were no results for any of the indexes you've defined, the corresponding values for <code>ArrayList&lt;JSONObject&gt;</code> will be of size zero. </p>
+<p>Here we verify that <code>httpResponseCode</code> returned the status code OK, then iterate over the <code>ArrayList</code> of <code>JSONObject</code>s corresponding to our <code>MovieIndex</code>. If present, these are added to the <code>newResults ArrayList</code> which will be passed to the handler via a <code>Message</code> object. <code>Message.obtain(...)</code> is used to obtain a message from our handler, and an overloaded signature of this method is used to set the <code>msg.what</code> (to indicate no new results or zero new results depending on the size of the <code>newResults ArrayList</code>) and the <code>msg.obj</code> as the <code>newResults ArrayList</code>. If you wanted to do further post-processing, since this callback is triggered off the UI-thread, you can do any other background operations before pushing the search results to the UI thread via the handler.</p>
+<p>Finally, by overriding the handler's <code>public void handleMessage(Message msg)</code> superclass method we can push the results to the UI thread, since this handler is created when the <code>SearchResultsAdapter</code> is initialized in the <code>protected void onCreate(Bundle savedInstanceState)</code> method of <code>MyActivity</code>. Overriding this method to do this looks like:</p>
+<pre class="prettyprint well"><code>    private static class SearchResultsUiHandler extends Handler implements SearchResultsListener {
+
+        ... 
+
+        @Override
+        public void handleMessage(Message msg) {
+            SearchResultsAdapter searchResultAdapter = mSearchResultsAdapterWeakReference.get();
+
+            if (searchResultAdapter != null) {
+                switch (msg.what){
+                    case MESSAGE_WHAT_PUBLISH_NEW_RESULTS:
+                        ArrayList&lt;SearchResult&gt; newResults = null;
+                        try {
+                            newResults = (ArrayList&lt;SearchResult&gt;) msg.obj;
+                        } catch (ClassCastException oops) {
+                            // We know what we're doing
+                        }
+
+                        if (newResults != null) {
+                            searchResultAdapter.updateDisplayedSearchResults(newResults);
+                        }
+                        return;
+                    case MESSAGE_WHAT_PUBLISH_NO_NEW_RESULTS:
+                        searchResultAdapter.clearDisplayedSearchResults();
+                        return;
+                }
+            }
+        }
+    }
+</code></pre>
+
+<p>The two methods called on the <code>searchResultAdapter</code> (<code>updateDisplayedSearchResults(...)</code> and 'clearDisplayedSearchResults()') should be self-explanatory, but you can view how they are implemented in the source code.</p>
+<h3 id="getting-index-and-engine-information">Getting Index and Engine Information</h3>
+<p>The other asynchronous callback that can be implemented is the <code>StateResponseListener</code>. For this tutorial, a new nested class is defined inside of <code>MyActivity</code> declared as <code>private static class SRCH2ControlListener implements StateResponseListener</code>. By overriding its methods you can get status results of operations performed on indexes, specific records when requested by their primary key, and know when the SRCH2Engine is ready to start searching. For this class, we'll keep a reference to our <code>MyActivity</code> to display toasts for each of the method callbacks. As long as the method <code>SRCH2Engine.stop(...)</code> is called in the <code>protected void onPause()</code> method of <code>MyActivity</code>, it is safe to keep a reference to <code>MyActivity</code> in this class: however, you could chose to keep a <code>WeakReference&lt;MyActivity&gt;</code> (such as with the <code>SearchResultListener</code>) if you chose not (or forget) to call <code>SRCH2Engine.stop(...)</code> from <code>onPause()</code> or you could also incorporate an event bus system like <a href="http://square.github.io/otto/">Otto</a> or <a href="https://github.com/greenrobot/EventBus">EventBus</a> if you have more complicated application architecture. For the purposes of this tutorial, we'll keep it simple. </p>
+<pre class="prettyprint well"><code>private static class SRCH2StateResponseListener implements StateResponseListener {
+
+    private MyActivity mActivity;
+
+    public SRCH2StateResponseListener(MyActivity myActivity) {
+        mActivity = myActivity;
+    }
+}
+</code></pre>
+
+<p>In detail, here are the methods:</p>
+<pre class="prettyprint well"><code>private static class SRCH2StateResponseListener implements StateResponseListener {
+
+    ...
+
+    @Override
+    public void onInsertRequestComplete(final String indexName, final InsertResponse response) {
+        Log.d(TAG, &quot;Insert for index: &quot; + indexName + &quot; complete. Printing info:\n&quot; + response.toString());
+        if (mActivity != null) {
+            mActivity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(mActivity, response.toToastString(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        }
+    }
+
+    @Override
+    public void onDeleteRequestComplete(final String indexName, final DeleteResponse response) {
+        Log.d(TAG, &quot;Delete for index: &quot; + indexName + &quot; complete. Printing info:\n&quot; + response.toString());
+        if (mActivity != null) {
+            mActivity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(mActivity, response.toToastString(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        }
+    }
+
+    @Override
+    public void onUpdateRequestComplete(final String indexName, final UpdateResponse response) {
+        Log.d(TAG, &quot;Update for index: &quot; + indexName + &quot; complete. Printing info:\n&quot; + response.toString());
+        if (mActivity != null) {
+            mActivity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(mActivity, response.toToastString(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        }
+    }
+}
+</code></pre>
+
+<p>These three methods will be triggered whenever its corresponding action is complete: not that like the <code>SearchResultsListener</code> these callbacks occur off the of the UI thread so in order to display the toasts, the method <code>runOnUiThread(...)</code> is used to push the returned information to the UI thread.</p>
+<p>For these callbacks, the first parameter indicates which <code>Indexable</code> the following parameter is referring too, and the second parameter is a <code>response</code> which is a subclass of <code>RestfulResponse</code>. These classes wrap the raw JSON response as returned by the SRCH2 server for each control-type task so that the data contained can be accessed from Java without parsing. These three <code>response</code>s contain the raw RESTful JSON response, as well as the success and failure counts of the insert, update or delete task performed. For example, after the <code>MovieIndex</code>'s method <code>insert(getAFewRecordsToInsert())</code> is called and the SRCH2 server finishes inserting the three records, the <code>SRCH2Engine</code> will parse the restful JSON response and trigger this callback which will contain a <code>successCount</code> of three. It is useful to note that each subclass of <code>RestfulResponse' has its</code>toString()<code>method overridden, as well as the convenience method</code>toToastString()` which contains line breaks for each field.  </p>
+<p>Moving on, the method:</p>
+<pre class="prettyprint well"><code>private static class SRCH2StateResponseListener implements StateResponseListener {
+
+    ...
+
+    @Override
+    public void onGetRecordByIDComplete(final String indexName, final GetRecordResponse response) {
+        Log.d(TAG, &quot;Got record for index: &quot; + indexName + &quot;. Printing info:\n&quot; + response.toString());
+        if (mActivity != null) {
+            mActivity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(mActivity, response.toToastString(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        }
+    }
+}
+</code></pre>
+
+<p>will pass the <code>response GetRecordResponse</code> which will contain the record requested, as the original <code>JSONObject</code> as it was defined when it was inserted. </p>
+<p>There is also a callback for obtaining information on the indexes themselves, which occurs when either the <code>info()</code> of an <code>Indexable</code> or <code>SRCH2Engine.getIndexInfo(String indexName)</code> is called which will trigger the method:</p>
+<pre class="prettyprint well"><code>private static class SRCH2StateResponseListener implements StateResponseListener {
+
+    ...
+
+    @Override
+    void onInfoRequestComplete(final String targetIndexName, final InfoResponse response) {
+        Log.d(TAG, &quot;Got info for index: &quot; + indexName + &quot;. Printing info:\n&quot; + response.toString());
+        if (mActivity != null) {
+            mActivity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(mActivity, response.toToastString(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        }
+    }
+}
+</code></pre>
+
+<p>to be called. The <code>InfoResponse</code> object contains the fields that describe the state of an index:</p>
+<pre class="prettyprint well"><code>public boolean isValidInfoResponse();
+public int getNumberOfSearchRequests();
+public int getNumberOfWriteRequests();
+public int getNumberOfDocumentsInTheIndex();
+public String getLastMergeTime();
+</code></pre>
+
+<p>The method <code>boolean isValidInfoResponse()</code> will be return <em>true</em> if the JSON response from the SRCH2 server was able to be parsed: if it is <em>false</em> it means the index is not available. The method <code>int getNumberOfDocumentsInTheIndex()</code> can be used to determine whether records need to be inserted and can generally be used for a first pass referential integrity check. </p>
+<p><code>InfoResponse</code> objects are also passed back in what is perhaps the most useful of these control callback methods: </p>
+<pre class="prettyprint well"><code>private static class SRCH2StateResponseListener implements StateResponseListener {
+
+    ...
+
+    @Override
+    public void onSRCH2ServiceReady(final HashMap&lt;String, InfoResponse&gt; indexesToInfoResponseMap)  {
+        Log.d(TAG, &quot;SRCH2 Search Service is ready for action!&quot;);
+        if (mActivity != null) {
+            mActivity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(mActivity, &quot;SRCH2 Search Service is ready for action!&quot;, Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        }
+    }
+}
+</code></pre>
+
+<p>which is triggered as soon as the SRCH2 server is up and running. In the next section we'll see the call to initialize, start and stop the SRCH2 server, but before that let's use this callback to determine if the <code>MovieIndex</code> needs to be created--that is, whether the initial set of records should be inserted. Since the <code>InfoResponse</code> object value of the key 'movies' in the map <code>indexesToInfoResponse</code> will contain the method <code>getNumberOfDocumentsInTheIndex()</code> we can implement the following logic in this callback:</p>
+<pre class="prettyprint well"><code>private static class SRCH2StateResponseListener implements StateResponseListener {
+
+    ...
+
+    @Override
+    public void onSRCH2ServiceReady(HashMap&lt;String, InfoResponse&gt; indexesToInfoResponseMap)  {
+
+        ...
+
+        InfoResponse movieIndexInfoResponse = indexesToInfoResponseMap.get(MovieIndex.INDEX_NAME);
+        if (movieIndexInfoResponse != null &amp;&amp; movieIndexInfoResponse.isValidInfoResponse()) {
+            if (movieIndexInfoResponse.getNumberOfDocumentsInTheIndex() == 0) {
+                SRCH2Engine.insertIntoIndex(MovieIndex.INDEX_NAME, MovieIndex.getAFewRecordsToInsert());
+            }
+        }
+    }
+}
+</code></pre>
+
+<p>Now when the SRCH2 server starts, it'll trigger the <code>SRCH2Engine</code> to callback this method. The first time this happens, there will be an index created for the <code>MovieIndex</code> that will have no records. The <code>InfoResponse</code> <code>getNumberOfDocumentsInTheIndex()</code> will reflect this, returning a value of zero, which in turn will tell the <code>SRCH2Engine</code> to insert the few records from the <code>MovieIndex</code>. Very shortly thereafter, the method <code>public void onInsertRequestComplete(String indexName, InsertResponse response)</code> will be triggered, containing an <code>InsertResponse</code> for the <code>movies</code> index: calling <code>getSuccessCount()</code> on this <code>InsertResponse</code> will return the value of three, since that is how many records we inserted. You could also call <code>MovieIndex.info()</code> and calling <code>getNumberOfDocumentsInTheIndex()</code> would, instead of returning zero, return three. If the application was quit from, and then started again, the method <code>public void onSRCH2ServiceReady(...)</code> would not enter the inner if statement, since <code>movieIndexInfoResponse.getNumberOfDocumentsInTheIndex()</code> would return three. This might be the time to do a referential integrity check, and update or insert more records... </p>
+<h3 id="putting-it-all-together">Putting it All Together</h3>
+<p>To recap, so far we have created a <code>MovieIndex</code> as our implementation of <code>Indexable</code> representing a index with data about movies, defining its schema and creating a couple of records to insert; we have implemented the asynchronous callback for getting search results, <code>SearchResultsListener</code>, and integrated it with a <code>BaseAdapter</code> and <code>Handler</code> to update a list-view on the UI thread showing the results of a search performed in the background; we have also implemented the asynchronous callback for index and engine-server state information, the <code>StateResponseListener</code>, and integrated it in our <code>MyActivity</code> to log and display a <code>Toast</code> showing the results of each of its method callbacks, which in turn are called when the corresponding action is performed by the <code>SRCH2Engine</code>. If you've used imported the tutorial project or copy and pasted the code, <code>MyActivity</code> should implement the <code>InstantSearchEditText.SearchInputEnteredObserver</code> which is a subclass of <code>EditText</code> to capture character-by-character input: feel free to reuse this code in your own projects.</p>
+<p>We are now ready to initialize the <code>SRCH2Engine</code> in our <code>MyActivity</code> class. Initializing the <code>SRCH2Engine</code> is simple:</p>
+<ol>
+<li>From <code>onCreate(...)</code> or wherever a new instance of your application is created, call <code>SRCH2Engine.initialize(...)</code> passing in each <code>Indexable</code></li>
+<li>Register the <code>SearchResultsListener</code> and <code>StateResponseListener</code>, you may reset it for instance if you are inserting from a <code>Service</code>, but in this example we'll also make these calls from <code>MyActivity</code>'s <code>onCreate(...)</code></li>
+<li>Start and stop the <code>SRCH2Engine</code> by calling <code>SRCH2Engine.start(Context context)</code> and <code>SRCH2Engine.stop(Context context)</code> where needed. For an activity requiring search, the ideal and <em>recommended</em> place is to call these from <code>onResume()' and</code>onPause()` respectively</li>
+</ol>
+<p>Passing in each <code>Indexable</code> in <code>SRCH2Engine.initialize(...)</code> causes the <code>SRCH2Engine</code> to create and pass the necessary configuration file to the SRCH2 server. Registering the callbacks should be self-explanatory. Finally, the two calls <code>start(Context context)</code> and <code>stop(Context context)</code> cause the <code>SRCH2Engine</code> to start and stop the SRCH2 server: since this server is hosted by a remote service, the context is needed; a reference to this context is not held. It is <em>imperative</em> that for every call to <code>start(...)</code> the complementary call to <code>stop(...)</code> is called in order to let the SRCH2 server come to a stop and not take up the device's resources. </p>
+<p><code>MyActivity</code> should now look something like this: </p>
+<pre class="prettyprint well"><code>public class MyActivity extends Activity implements InstantSearchEditText.SearchInputEnteredObserver {
+
+    private static final String TAG = MyActivity.class.getSimpleName();
+
+    private MovieIndex mMovieIndex;
+
+    private ListView mSearchResultsListView;
+    private SearchResultsAdapter mSearchResultsAdapter;
+    private SRCH2StateResponseListener mSRCH2StateResponseListener;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        setContentView(R.layout.activity_main);
+        mSearchResultsListView = (ListView) findViewById(R.id.lv_search_results);
+        mSearchResultsAdapter = new SearchResultsAdapter(this);
+        mSearchResultsListView.setAdapter(mSearchResultsAdapter);
+
+        setupSRCH2Engine();
+    }
+
+    private void setupSRCH2Engine() {
+        SRCH2Engine.setSearchResultsListener(mSearchResultsAdapter.getSearchResultsListener());
+
+        mSRCH2StateResponseListener = new SRCH2StateResponseListener(this);
+        SRCH2Engine.setStateResponseListener(mSRCH2StateResponseListener);
+
+        mMovieIndex = new MovieIndex();
+        SRCH2Engine.initialize(mMovieIndex);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        SRCH2Engine.onStart(this);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        SRCH2Engine.onStop(this);
+    }
+
+    private static class SRCH2StateResponseListener implements StateResponseListener {
+
+        private MyActivity mActivity;
+
+        public SRCH2StateResponseListener(MyActivity myActivity) {
+            mActivity = myActivity;
+        }
+
+        @Override
+        public void onInfoRequestComplete(final String indexName, final InfoResponse response) {
+            Log.d(TAG, &quot;Info for index: &quot; + indexName + &quot;. Printing info:\n&quot; + response.toString());
+            if (mActivity != null) {
+                mActivity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(mActivity, response.toToastString(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        }
+
+        @Override
+        public void onInsertRequestComplete(final String indexName, final InsertResponse response) {
+            Log.d(TAG, &quot;Insert for index: &quot; + indexName + &quot; complete. Printing info:\n&quot; + response.toString());
+            if (mActivity != null) {
+                mActivity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(mActivity, response.toToastString(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        }
+
+        @Override
+        public void onUpdateRequestComplete(final String indexName, final UpdateResponse response) {
+            Log.d(TAG, &quot;Update for index: &quot; + indexName + &quot; complete. Printing info:\n&quot; + response.toString());
+            if (mActivity != null) {
+                mActivity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(mActivity, response.toToastString(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        }
+
+        @Override
+        public void onSRCH2ServiceReady(final HashMap&lt;String, InfoResponse&gt; indexesToInfoResponseMap) {
+            Log.d(TAG, &quot;SRCH2 Search Service is ready for action!&quot;);
+            if (mActivity != null) {
+                mActivity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(mActivity, &quot;SRCH2 Search Service is ready for action!&quot;, Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+            InfoResponse movieIndexInfoResponse = indexesToInfoResponseMap.get(MovieIndex.INDEX_NAME);
+            if (movieIndexInfoResponse != null &amp;&amp; movieIndexInfoResponse.isValidInfoResponse()) {
+                if (movieIndexInfoResponse.getNumberOfDocumentsInTheIndex() == 0) {
+                    SRCH2Engine.insertIntoIndex(MovieIndex.INDEX_NAME, MovieIndex.getAFewRecordsToInsert());
+                }
+            }
+        }
+
+        @Override
+        public void onDeleteRequestComplete(final String indexName, final DeleteResponse response) {
+            Log.d(TAG, &quot;Delete for index: &quot; + indexName + &quot; complete. Printing info:\n&quot; + response.toString());
+            if (mActivity != null) {
+                mActivity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(mActivity, response.toToastString(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        }
+
+        @Override
+        public void onGetRecordByIDComplete(final String indexName, final GetRecordResponse response) {
+            Log.d(TAG, &quot;Got record for index: &quot; + indexName + &quot; complete. Printing info:\n&quot; + response.toString());
+            if (mActivity != null) {
+                mActivity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(mActivity, response.toToastString(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        }
+    }
+}
+</code></pre>
+
+<p>The last step is to connect the <code>InstantSearchEditText</code> and its interface <code>SearchInputEnteredObserver</code> to the <code>SRCH2Engine</code> through <code>MyActivity</code>. </p>
+<pre class="prettyprint well"><code>public class MyActivity extends Activity implements InstantSearchEditText.SearchInputEnteredObserver {
+
+    ...
+
+    @Override
+    public void onNewSearchInput(String newSearchText) {
+        SRCH2Engine.searchAllIndexes(newSearchText); 
+    }
+
+    @Override
+    public void onNewSearchInputIsBlank() {
+        mSearchResultsAdapter.clearDisplayedSearchResults();
+    }
+
+    ...
+}
+</code></pre>
+
+<p>There are three ways to pass search input to the <code>SRCH2Engine</code>:</p>
+<ol>
+<li>Through the non-static <code>Indexable</code> instance itself such as <code>mMovieIndex.search(newSearchInput)</code></li>
+<li>Through the static <code>SRCH2Engine</code> method targeting a specific index <code>SRCH2Engine.searchIndex(MovieIndex.INDEX_NAME, newSearchInput)</code></li>
+<li>Through the static <code>SRCH2Engine</code> method targeting all indexes <code>SRCH2Engine.searchAllIndexes(newSearchInput)</code></li>
+</ol>
+<p>Here we use the last method in case you'd like to add some more indexes, such as for music, contacts or anything you can think of. </p>
+<p>You are now ready to search! Try entering "c" into the <code>EditText</code> at the top of your device's screen and see the speed with which the results are returned. Had we inserted thousands of records, the search results would still take less than milliseconds to reach the <code>SearchResultsAdapter</code>: because of this it is also recommended that, while developing with the SRCH2-Android-SDK, you employ all of the optimizations for displaying data in a <code>ListView</code> as quickly as possible (such as the ViewHolder pattern, lazy loading of bitmaps if you incorporate icons, et cetera). </p>
+<h3 id="conclusion">Conclusion</h3>
+<p>This concludes the Hello SRCH2 Tutorial for learning how to get set up with the SRCH2-Android-SDK. Play around with the project: try updating a record, deleting a record, adding more records with searchable data that is similar in its sequence of letters to appreciate the power of SRCH2's fuzzy search capability-- and this is only the beginning! If you read on in 'Advanced Topics' you'll learn how to form powerful queries (such as filtering the search results for the <code>MovieIndex</code> by interval of year), perform lightning fast geo-searches using the device's location, or how to set up the SRCH2-Android-SDK for Proguard, or how to manually interact with the running SRCH2 server. Read and search on!</p>
+</div>
+        </div>
+
+        
+
+        <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+        <script src="../js/bootstrap-3.0.3.min.js"></script>
+        <script src="../js/prettify-1.0.min.js"></script>
+        <script src="../js/base.js"></script>
+    </body>
+</html>

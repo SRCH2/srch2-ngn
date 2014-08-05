@@ -1,0 +1,3 @@
+﻿Check back tomorrow! In the meantime...
+
+![truth be told](http://i.imgur.com/jacoj.jpg)

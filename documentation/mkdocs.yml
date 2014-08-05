@@ -1,0 +1,10 @@
+site_name: SRCH2 Android SDK
+
+pages:
+  - [index.md, Main] 
+  - [tutorial.md, Tutorial]
+  - [advanced-topics.md, Advanced Topics]
+  - [faq.md, FAQ]
+  - [download.md, Download]
+  
+theme: bootstrap
