@@ -140,7 +140,6 @@ public:
      * and setKeywordAttributeBitmap(...) API calls.
      */
     void allocateSpaceAndSetNSAValuesAndPosIndex(const Schema * schema,
-    		const vector<vector<string> > & nonSearchableAttributeValues,
     		bool shouldAttributeBitMapBeAllocated,
     		vector<uint8_t>& positionIndexDataVector,
     		vector<uint8_t>& offsetIndexDataVector,
