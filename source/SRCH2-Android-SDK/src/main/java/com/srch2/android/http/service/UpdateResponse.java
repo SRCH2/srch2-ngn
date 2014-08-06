@@ -10,14 +10,39 @@ public final class UpdateResponse extends RestfulResponse {
     private final static String JSON_KEY_MESSAGE = "message";
     private final static String JSON_KEY_PRIMARY_KEY_INDICATOR_TAG = "rid";
     private final static String JSON_KEY_LOG = "log";
-    private final static String JSON_KEY_INSERT_TAG = "update";
+    private final static String JSON_KEY_UPDATE_TAG = "update";
     private final static String JSON_VALUE_FAIL = "failed";
     private final static String JSON_KEY_FAILURE_REASON = "reason";
+    private final static String JSON_VALUE_UPDATED_EXISTS = "Existing record updated successfully";
+    private final static String JSON_VALUE_INSERTED = "New record inserted successfully";
 
+    /**
+     * Get the successfully updated count, which include the updated existing records + the newly inserted records
+     * if they are not existed before update.
+     * @return The total number of records that get updated
+     */
+    public int getSuccessCount() { return existRecordUpdatedSuccessCount + newRecordInsertedSuccessCount; }
 
-    public int getSuccessCount() { return recordUpdateSuccessCount; }
-    private final int recordUpdateSuccessCount;
+    /**
+     * Get the number existed records that get updated successfully.
+     * @return The number of records
+     */
+    public int getExistRecordUpdatedSuccessCount(){return existRecordUpdatedSuccessCount;}
+
+    /**
+     * Get the number of the newly inserted records.
+     * @return The number of records
+     */
+    public int getNewRecordInsertedSuccessCount(){return newRecordInsertedSuccessCount;}
+
+    /**
+     * Get the number of records that are failed to updated.
+     * @return The number of records
+     */
     public int getFailureCount() { return recordUpdateFailureCount; }
+
+    private final int existRecordUpdatedSuccessCount;
+    private final int newRecordInsertedSuccessCount;
     private final int recordUpdateFailureCount;
 
     UpdateResponse(int theHttpResponseCode, String theRestfulResponseLiteral) {
@@ -25,7 +50,8 @@ public final class UpdateResponse extends RestfulResponse {
 
         Log.d("srch2:: UpdateResponse", "response\n" + theRestfulResponseLiteral + "\nend of response");
 
-        int successCount = 0;
+        int successUpdate = 0;
+        int successInsert = 0;
         int failureCount = 0;
 
         try {
@@ -36,20 +62,28 @@ public final class UpdateResponse extends RestfulResponse {
             for (int i = 0; i < length; ++i) {
                 JSONObject recordStamp = (JSONObject) logNode.get(i);
                 if (recordStamp.has(JSON_KEY_PRIMARY_KEY_INDICATOR_TAG)) {
-                    boolean updateFail = recordStamp.getString(JSON_KEY_INSERT_TAG).equals(JSON_VALUE_FAIL);
+                    boolean updateFail = recordStamp.getString(JSON_KEY_UPDATE_TAG).equals(JSON_VALUE_FAIL);
                     if (updateFail) {
                         ++failureCount;
                     } else {
-                        ++successCount;
+                        if (recordStamp.getString(JSON_KEY_UPDATE_TAG).equals(JSON_VALUE_UPDATED_EXISTS)){
+                            ++successUpdate;
+                        } else if (recordStamp.getString(JSON_KEY_UPDATE_TAG).equals(JSON_VALUE_INSERTED)){
+                            ++successInsert;
+                        }else {
+                            ++failureCount;
+                        }
                     }
                 }
             }
         } catch (JSONException oops) {
-            successCount = -1;
+            successInsert = -1;
+            successUpdate = -1;
             failureCount = -1;
         }
 
-        recordUpdateSuccessCount = successCount;
+        existRecordUpdatedSuccessCount = successUpdate;
+        newRecordInsertedSuccessCount = successInsert;
         recordUpdateFailureCount = failureCount;
     }
 

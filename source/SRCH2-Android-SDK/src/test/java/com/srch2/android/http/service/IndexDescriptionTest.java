@@ -17,36 +17,36 @@ public class IndexDescriptionTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testNoSearchableField(){
-        IndexDescription index = new IndexDescription("coreName", Field.getRefiningField("id", Field.Type.TEXT));
+        IndexDescription index = new IndexDescription("coreName", Field.createRefiningField("id", Field.Type.TEXT));
     }
 
     @Test
     public void testNoRestField(){
 
-        IndexDescription index = new IndexDescription("coreName", Field.getSearchableField("id"));
+        IndexDescription index = new IndexDescription("coreName", Field.createSearchableField("id"));
         Assert.assertTrue(index.name.equals("coreName"));
         Assert.assertTrue(index.schema.fields.size() == 1);
-        Assert.assertTrue(index.schema.fields.contains(Field.getSearchableField("id")));
+        Assert.assertTrue(index.schema.fields.contains(Field.createSearchableField("id")));
     }
 
     @Test
     public void testConstructor(){
-        IndexDescription index = new IndexDescription("core1", Field.getRefiningField("id", Field.Type.TEXT), Field.getSearchableField("text"));
+        IndexDescription index = new IndexDescription("core1", Field.createRefiningField("id", Field.Type.TEXT), Field.createSearchableField("text"));
         Assert.assertTrue(index.name.equals("core1"));
         Assert.assertTrue(index.schema.fields.size() == 2);
-        Assert.assertTrue(index.schema.fields.contains(Field.getRefiningField("id", Field.Type.TEXT)));
-        Assert.assertTrue(index.schema.fields.contains(Field.getSearchableField("text")));
+        Assert.assertTrue(index.schema.fields.contains(Field.createRefiningField("id", Field.Type.TEXT)));
+        Assert.assertTrue(index.schema.fields.contains(Field.createSearchableField("text")));
 
         String lat = "lat";
         String lon = "lon";
 
-        IndexDescription indexGeo = new IndexDescription("core2", Field.getRefiningField("id", Field.Type.FLOAT), lat, lon, Field.getSearchableField("title"));
+        IndexDescription indexGeo = new IndexDescription("core2", Field.createRefiningField("id", Field.Type.FLOAT), lat, lon, Field.createSearchableField("title"));
         Assert.assertTrue(indexGeo.name.equals("core2"));
         Assert.assertTrue(indexGeo.schema.fields.size() == 4);
-        Assert.assertTrue(indexGeo.schema.fields.contains(Field.getRefiningField("id", Field.Type.FLOAT)));
-        Assert.assertTrue(indexGeo.schema.fields.contains(Field.getRefiningField(lat, Field.Type.FLOAT)));
-        Assert.assertTrue(indexGeo.schema.fields.contains(Field.getRefiningField(lon, Field.Type.FLOAT)));
-        Assert.assertTrue(indexGeo.schema.fields.contains(Field.getSearchableField("title")));
+        Assert.assertTrue(indexGeo.schema.fields.contains(Field.createRefiningField("id", Field.Type.FLOAT)));
+        Assert.assertTrue(indexGeo.schema.fields.contains(Field.createRefiningField(lat, Field.Type.FLOAT)));
+        Assert.assertTrue(indexGeo.schema.fields.contains(Field.createRefiningField(lon, Field.Type.FLOAT)));
+        Assert.assertTrue(indexGeo.schema.fields.contains(Field.createSearchableField("title")));
 
 
 
@@ -56,7 +56,7 @@ public class IndexDescriptionTest {
 
     @Test
     public void miscTest(){
-        IndexDescription index = new IndexDescription("core1", Field.getRefiningField("id", Field.Type.TEXT), Field.getSearchableField("text"));
+        IndexDescription index = new IndexDescription("core1", Field.createRefiningField("id", Field.Type.TEXT), Field.createSearchableField("text"));
         Assert.assertTrue(index.getIndexName().equals("core1"));
 
         index.setQueryTermSimilarityThreshold(0.5f);
@@ -69,7 +69,7 @@ public class IndexDescriptionTest {
 
     @Test (expected = IllegalArgumentException.class)
     public void invalidSimilarityTest() {
-        IndexDescription index = new IndexDescription("core1", Field.getRefiningField("id", Field.Type.TEXT), Field.getSearchableField("text"));
+        IndexDescription index = new IndexDescription("core1", Field.createRefiningField("id", Field.Type.TEXT), Field.createSearchableField("text"));
         Assert.assertTrue(index.getIndexName().equals("core1"));
 
         index.setQueryTermSimilarityThreshold(-0.5f);
@@ -77,7 +77,7 @@ public class IndexDescriptionTest {
 
     @Test (expected = IllegalArgumentException.class)
     public void invalidTopK() {
-        IndexDescription index = new IndexDescription("core1", Field.getRefiningField("id", Field.Type.TEXT), Field.getSearchableField("text"));
+        IndexDescription index = new IndexDescription("core1", Field.createRefiningField("id", Field.Type.TEXT), Field.createSearchableField("text"));
         Assert.assertTrue(index.getIndexName().equals("core1"));
 
         index.setTopK(-105);

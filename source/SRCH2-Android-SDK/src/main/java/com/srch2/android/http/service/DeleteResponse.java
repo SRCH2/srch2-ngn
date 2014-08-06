@@ -5,6 +5,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+/**
+ * This class is the response after the deletion request finished.
+ */
 public final class DeleteResponse extends RestfulResponse {
 
     private final static String JSON_KEY_MESSAGE = "message";

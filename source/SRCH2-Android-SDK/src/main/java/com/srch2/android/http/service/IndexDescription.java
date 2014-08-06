@@ -57,10 +57,10 @@ final public class IndexDescription {
     private static final String DEFAULT_VALUE_accessLogFile = "srch2-log.txt";
     String name;
     Schema schema;
-    private Properties queryProperties = new Properties();
-    private Properties miscProperties = new Properties();
-    private Properties indexProperties = new Properties();
-    private Properties updateProperties = new Properties();
+    private final Properties queryProperties = new Properties();
+    private final Properties miscProperties = new Properties();
+    private final Properties indexProperties = new Properties();
+    private final Properties updateProperties = new Properties();
 
     IndexDescription(String name, Schema schema) {
         if (name == null) {
@@ -149,7 +149,7 @@ final public class IndexDescription {
      * Set the default fuzziness similarity threshold. The Query string will take this fuzziness setting.
      * User can use {@link com.srch2.android.http.service.Query} to enable the query specific similarity setting.
      *
-     * @param threshold
+     * @param threshold the similarity threshold
      */
     public void setQueryTermSimilarityThreshold(float threshold) {
         if (threshold < 0 || threshold > 1) {
@@ -164,8 +164,8 @@ final public class IndexDescription {
     }
 
     /**
-     * It sets number of results that has to be returned by a query.
-     *
+     * It sets the default number of results that has to be returned by a query.
+     * User can override this setting by {@link com.srch2.android.http.service.Query#pagingRows} for each Query.
      * @param rows specifies number of results on querying.
      */
     public void setTopK(int rows) {
@@ -227,7 +227,7 @@ final public class IndexDescription {
                 String.valueOf(mergeEveryMWrites));
     }
 
-    protected String getBoostStatementString() {
+    String getBoostStatementString() {
         Iterator<Field> iter = this.schema.fields.iterator();
         String boostValue = "";
         while (iter.hasNext()) {
@@ -238,7 +238,7 @@ final public class IndexDescription {
         return boostValue;
     }
 
-    protected String indexStructureToXML() {
+    String indexStructureToXML() {
 
         StringBuilder core = new StringBuilder("");
 

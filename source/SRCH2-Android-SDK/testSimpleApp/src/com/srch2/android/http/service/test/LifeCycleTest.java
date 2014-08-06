@@ -3,9 +3,8 @@ package com.srch2.android.http.service.test;
 import android.os.SystemClock;
 import android.test.SingleLaunchActivityTestCase;
 import android.util.Log;
-import com.srch2.android.http.service.*;
-
-import java.util.PriorityQueue;
+import com.srch2.android.http.service.LifeCycleTestActivity;
+import com.srch2.android.http.service.SRCH2Engine;
 
 /**
  * Created by ashton on 7/29/2014.
@@ -175,7 +174,7 @@ public class LifeCycleTest extends SingleLaunchActivityTestCase<LifeCycleTestAct
         long waitUntilTime = SystemClock.uptimeMillis() + SRCH2_SERVICE_SHUTDOWN_TIMEOUT_MS + 1000;
         boolean isReady = true;
         while (isReady) {
-            isReady = activity.getSRCH2EngineIsReady();
+            //isReady = activity.getSRCH2EngineIsReady();
             try {
                 Thread.currentThread().sleep(250);
             } catch (InterruptedException ignore) {

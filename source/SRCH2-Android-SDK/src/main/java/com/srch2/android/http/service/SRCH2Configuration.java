@@ -7,21 +7,16 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.HashMap;
 
-@SuppressWarnings("StringEquality")
 final class SRCH2Configuration {
 
-    static final String LISTENING_PORT = "listeningPort";
-    static final String LISTENING_HOSTNAME = "listeningHostname";
-    static final String MAX_SEARCH_THREADS = "maxSearchThreads";
-    static final String DEFAULT_CORE_NAME = "defaultCoreName";
+
     static final String SRCH2_HOME_FOLDER_DEFAULT_NAME = "srch2/";
     static final String HOSTNAME = "127.0.0.1";
-    static final String AUTHORIZATION_KEY = "authorization-key";
     final HashMap<String, IndexInternal> indexesMap = new HashMap<String, IndexInternal>();
     private String fullPathOfSRCH2home = "srch2";
     private int maxSearchThreads = 2;
     private int port = 8081;
-    private String authorizationKey = "";
+    private String authorizationKey ;
 
     /**
      * The constructor to build a SRCH2Configuration. User can give multiple indexes to one configuration
@@ -47,7 +42,7 @@ final class SRCH2Configuration {
      * @return It returns an XML string for the corresponding Configuration
      * object
      */
-    protected static String toXML(SRCH2Configuration conf) {
+    static String toXML(SRCH2Configuration conf) {
 
         if (conf.indexesMap.size() == 0) {
             throw new IllegalStateException("No index provided");
@@ -119,7 +114,7 @@ final class SRCH2Configuration {
      *
      * @return
      */
-    protected String getSRCH2Home() {
+    String getSRCH2Home() {
         return fullPathOfSRCH2home;
     }
 
@@ -127,7 +122,7 @@ final class SRCH2Configuration {
      * This value specifies the path of a folder where the engine stores.
      * serialized index files.
      */
-    protected void setSRCH2Home(String fullPath) {
+    void setSRCH2Home(String fullPath) {
         fullPathOfSRCH2home = fullPath;
     }
 
@@ -145,24 +140,18 @@ final class SRCH2Configuration {
      *
      * @param port
      */
-    protected void setPort(int port) {
+    void setPort(int port) {
         this.port = port;
     }
 
     private String formAuthorizationKey() {
         StringBuilder auth = new StringBuilder("");
-        if (this.authorizationKey == "") {
+        if (this.authorizationKey == null) {
             this.authorizationKey = generateAuthorizationKey();
-            auth = auth.append("	<authorization-key>").append(this.authorizationKey).append("</authorization-key>\n");
-            return auth.toString();
-        } else {
-            auth = auth.append("	<authorization-key>").append(this.authorizationKey).append("</authorization-key>\n");
         }
+        auth = auth.append("	<authorization-key>").append(this.authorizationKey).append("</authorization-key>\n");
         return auth.toString();
-    }
 
-    protected String toXML() {
-        return SRCH2Configuration.toXML(this);
     }
 
     private String generateAuthorizationKey() {
@@ -170,7 +159,7 @@ final class SRCH2Configuration {
         return new BigInteger(130, random).toString(32);
     }
 
-    protected String getAuthorizationKey() {
+    String getAuthorizationKey() {
         return this.authorizationKey;
     }
 
@@ -189,26 +178,24 @@ final class SRCH2Configuration {
         this.authorizationKey = authorizationKey;
     }
 
-    boolean checkIfIndexNameValidAndAreadyExistedThrowIfNot(String indexName) {
+    void checkIfIndexNameValidAndAreadyExistedThrowIfNot(String indexName) {
         if (indexName == null) {
             throw new NullPointerException("Cannot pass null indexName.");
-        } else if (indexName != null && indexName.length() < 1) {
+        } else if (indexName.length() < 1) {
             throw new IllegalArgumentException("Cannot pass empty string as indexName.");
         } else if (indexesMap.containsKey(indexName)) {
             throw new IllegalArgumentException("The string indexName already existed.");
         }
-        return true;
     }
 
-    boolean checkIfIndexNameValidAndThrowIfNot(String indexName) {
+    void checkIfIndexNameValidAndThrowIfNot(String indexName) {
         if (indexName == null) {
             throw new NullPointerException("Cannot pass null indexName.");
-        } else if (indexName != null && indexName.length() < 1) {
+        } else if (indexName.length() < 1) {
             throw new IllegalArgumentException("Cannot pass empty string as indexName.");
         } else if (!indexesMap.containsKey(indexName)) {
             throw new IllegalArgumentException("The string indexName must correspond to the name of Indexable passed into SRCH2Configuration upon SRCH2Engine.initialization(...).");
         }
-        return true;
     }
 
     IndexInternal getIndexAndThrowIfNotThere(String name) {

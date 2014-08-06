@@ -1,5 +1,6 @@
 package com.srch2.android.http.service;
 
+import com.srch2.android.http.service.SearchResultsListener;
 import org.json.JSONObject;
 
 import java.util.ArrayList;

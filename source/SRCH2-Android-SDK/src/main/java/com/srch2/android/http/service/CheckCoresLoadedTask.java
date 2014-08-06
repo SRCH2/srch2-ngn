@@ -1,13 +1,14 @@
 package com.srch2.android.http.service;
 
+import android.util.Log;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-
-import android.util.Log;
+import java.util.Map;
 
 
 final class CheckCoresLoadedTask extends HttpTask {
@@ -17,7 +18,7 @@ final class CheckCoresLoadedTask extends HttpTask {
 
     private static final int PING_RECONNECTION_TIME_MS = 250;
 
-    private HashMap<String, URL> targetCoreUrlsMap;
+    private final HashMap<String, URL> targetCoreUrlsMap;
 
     private boolean noNetworkConnection = false;
 

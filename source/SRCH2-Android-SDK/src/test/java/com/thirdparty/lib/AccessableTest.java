@@ -1,10 +1,9 @@
 package com.thirdparty.lib;
 
-import org.junit.Test;
-
 import com.srch2.android.http.service.Query;
 import com.srch2.android.http.service.SearchableTerm;
 import com.srch2.android.http.service.SearchableTerm.CompositeTerm;
+import org.junit.Test;
 
 import java.io.UnsupportedEncodingException;
 

@@ -3,12 +3,14 @@ package com.srch2.android.http.service;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.UnsupportedEncodingException;
-
 public abstract class Indexable {
 
     IndexInternal indexInternal;
 
+    /**
+     * User need to implement this method to define what inside this Index.
+     * @return the Description of this Index
+     */
     abstract public IndexDescription getIndexDescription();
 
     /**
@@ -25,7 +27,7 @@ public abstract class Indexable {
     /**
      * Insert a list of records into the IndexInternal in a batch way
      *
-     * @param records
+     * @param records A array of JSON records tobe inserted.
      */
     public void insert(JSONArray records) {
         if (indexInternal != null) {
@@ -36,7 +38,7 @@ public abstract class Indexable {
     /**
      * Update the record in the engine.
      *
-     * @param record
+     * @param record JSON recordto be inserted.
      */
     public void update(JSONObject record) {
         if (indexInternal != null) {
@@ -48,7 +50,7 @@ public abstract class Indexable {
     /**
      * Update a list of records in the engine.
      *
-     * @param records
+     * @param records A array of JSON records tobe inserted.
      */
     public void update(JSONArray records) {
         if (indexInternal != null) {
@@ -59,7 +61,7 @@ public abstract class Indexable {
     /**
      * Delete the record using the record id, or a list of ids.
      *
-     * @param id
+     * @param id the primary key of the record
      */
     public void delete(String id) {
         if (indexInternal != null) {
@@ -68,7 +70,7 @@ public abstract class Indexable {
     }
 
     /**
-     * Get the information from the indexInternal
+     * Get the information from the Index
      */
     public void info() {
         if (indexInternal != null) {
@@ -83,8 +85,7 @@ public abstract class Indexable {
      * be treated as fuzzy and prefix matching. For the more specific setting on
      * the terms, please use {@link #advancedSearch(Query)} } method.
      *
-     * @param searchInput
-     * @throws UnsupportedEncodingException the searchInput is supposed to be UTF-8 encoded. Otherwise it will throw execption.
+     * @param searchInput the string input
      */
     public void search(String searchInput) {
         if (indexInternal != null) {
@@ -104,7 +105,7 @@ public abstract class Indexable {
     }
 
     /**
-     * Get the record by giving its primary key The record will be sent to the
+     * Get the record by giving its primary key. The record will be sent to the
      * <code>searchResultsListener</code>
      *
      * @param id the primary key

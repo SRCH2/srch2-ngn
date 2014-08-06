@@ -1,7 +1,7 @@
 package com.srch2.android.http.service;
 
-import org.junit.Test;
 import org.junit.Assert;
+import org.junit.Test;
 
 import java.io.UnsupportedEncodingException;
 

@@ -4,15 +4,13 @@ import com.srch2.android.http.service.SRCH2Engine.IndexQueryPair;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URL;
-import java.net.URLEncoder;
 
 final class IndexInternal {
     private final IndexDescription indexDescription;
     private SearchTask currentSearchTask = null;
 
-    protected IndexInternal(IndexDescription description) {
+    IndexInternal(IndexDescription description) {
         this.indexDescription = description;
     }
 
@@ -41,11 +39,11 @@ final class IndexInternal {
      *
      * @return
      */
-    static String formatDefaultGeoCircle() {
+    private static String formatDefaultGeoCircle() {
         return "&clat=33&clong=-117&radius=180";
     }
 
-    protected IndexDescription getConf() {
+    IndexDescription getConf() {
         return indexDescription;
     }
 
@@ -213,6 +211,5 @@ final class IndexInternal {
                     .getControlResponseListener()));
         }
     }
-
 
 }

@@ -101,7 +101,6 @@ public class LifeCycleTestActivity extends Activity {
         for (int i = 1; i < 11; ++i) {
             testIndex.delete(String.valueOf(i));
         }
-
     }
 
 

@@ -21,7 +21,7 @@ import java.util.HashMap;
  * interface to the appropriate <code>IndexInternal</code> object by calling
  * <code>setStateResponseListener(ControlResponseListener observer)</code>,
  * although is unnecessary to do so if users are not interested in receiving
- * control response call-backs for their <code>IndexInternal</code> object.
+ * control response call-backs for their <code>Indexable</code> object.
  */
 public interface StateResponseListener {
 

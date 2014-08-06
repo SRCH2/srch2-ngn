@@ -1,13 +1,20 @@
 package com.srch2.android.http.service;
 
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.json.JSONObject;
 
 public final class GetRecordResponse extends RestfulResponse {
 
+    /**
+     * To see if the record is retrieved correctly.
+     */
     public final boolean isRecordRetrieved;
+    /**
+     * The fetched JSON object. It will be an empty JSONObejct when <code>isRecordRetrieved</code> is false
+     */
     public final JSONObject record;
 
     /**

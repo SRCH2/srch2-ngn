@@ -24,12 +24,12 @@ final public class SearchableTerm extends Term {
     /**
      * could be multiple words "George Lucas"
      */
-    final String keywords;
+    private final String keywords;
 
-    Boolean isPrefixMatching = null;
-    Integer boostValue = null;
-    Float fuzzySimilarity = null;
-    String filterField = null;
+    private Boolean isPrefixMatching = null;
+    private Integer boostValue = null;
+    private Float fuzzySimilarity = null;
+    private String filterField = null;
 
     /**
      * Creates the term into keyword. The string passed into this function is
@@ -51,13 +51,13 @@ final public class SearchableTerm extends Term {
         }
     }
 
-    static void checkString(String str, String msg) {
+    private static void checkString(String str, String msg) {
         if (str == null || str.length() < 0) {
             throw new IllegalArgumentException(msg);
         }
     }
 
-    static void checkSimilarity(float similarity) {
+    private static void checkSimilarity(float similarity) {
         if (similarity < 0 || similarity > 1) {
             throw new IllegalArgumentException(
                     "similarity should be in the [0,1] range");
@@ -102,7 +102,7 @@ final public class SearchableTerm extends Term {
      * positive integer, and its default value is 1.
      *
      * @param boostValue the importance of the current term, it should
-     * @return
+     * @return this
      */
     public SearchableTerm setBoostValue(int boostValue) {
         if (boostValue < 0) {
@@ -118,7 +118,7 @@ final public class SearchableTerm extends Term {
      * searchable fields.
      *
      * @param fieldName name of the searchable field
-     * @return
+     * @return this
      */
     public SearchableTerm searchSpecificField(String fieldName) {
         checkString(fieldName, "The fieldName is invalid");
@@ -127,19 +127,30 @@ final public class SearchableTerm extends Term {
     }
 
     /**
-     * Create a composite term by two
+     * Create a composite term by <code>AND</code> operator
      *
      * @param rightTerm
-     * @return
+     * @return a new CompositeTerm as a result of <code>this AND rightTerm</code>
      */
     public CompositeTerm AND(Term rightTerm) {
         return new CompositeTerm(BooleanOperator.AND, this, rightTerm);
     }
 
+    /**
+     * Create a composite term by <code>OR</code> operator
+     *
+     * @param rightTerm
+     * @return a new CompositeTerm as a result of <code>this OR rightTerm</code>
+     */
     public CompositeTerm OR(Term rightTerm) {
         return new CompositeTerm(BooleanOperator.OR, this, rightTerm);
     }
 
+    /**
+     * Create a composite term by <code>NOT</code> operator
+     *
+     * @return a new CompositeTerm as a result of <code>NOT this</code>
+     */
     public CompositeTerm NOT() {
         return new CompositeTerm(BooleanOperator.NOT, this, null);
     }
@@ -224,16 +235,33 @@ final public class SearchableTerm extends Term {
             return sb.toString();
         }
 
+        /**
+         * Create a composite term by <code>AND</code> operator
+         *
+         * @param rightTerm
+         * @return a new CompositeTerm as a result of <code>this AND rightTerm</code>
+         */
         @Override
         public Term AND(Term rightTerm) {
             return new CompositeTerm(BooleanOperator.AND, this, rightTerm);
         }
 
+        /**
+         * Create a composite term by <code>OR</code> operator
+         *
+         * @param rightTerm
+         * @return a new CompositeTerm as a result of <code>this OR rightTerm</code>
+         */
         @Override
         public Term OR(Term rightTerm) {
             return new CompositeTerm(BooleanOperator.OR, this, rightTerm);
         }
 
+        /**
+         * Create a composite term by <code>NOT</code> operator
+         *
+         * @return a new CompositeTerm as a result of <code>NOT this</code>
+         */
         @Override
         public Term NOT() {
             return new CompositeTerm(BooleanOperator.NOT, this, null);

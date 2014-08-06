@@ -2,12 +2,19 @@ package com.srch2.android.http.service;
 
 import java.util.Locale;
 
+/**
+ * This is the data field object to describe the searchable attribute.
+ * User can use the static method to get the <code>Field</code>
+ */
 final public class Field {
 
-    protected enum FacetType {
+    enum FacetType {
         CATEGORICAL, RANGE
     }
 
+    /**
+     * The data type
+     */
     public enum Type {
         TEXT, INTEGER, FLOAT, TIME
     }
@@ -70,7 +77,7 @@ final public class Field {
      * @param fieldName Name of the field
      * @return It returns a searchable field
      */
-    public static Field getSearchableField(String fieldName, int boost) {
+    public static Field createSearchableField(String fieldName, int boost) {
         if (boost < 1 || boost > 100) {
             throw new IllegalArgumentException(
                     "Boost value cannot be less than 1 or greater than 100.");
@@ -86,8 +93,8 @@ final public class Field {
      * @param fieldName Name of the field
      * @return It returns a searchable field
      */
-    public static Field getSearchableField(String fieldName) {
-        return getSearchableField(fieldName, DEFAULT_BOOST_VALUE);
+    public static Field createSearchableField(String fieldName) {
+        return createSearchableField(fieldName, DEFAULT_BOOST_VALUE);
     }
 
     /**
@@ -103,7 +110,7 @@ final public class Field {
      *                  Field.FieldType.LOCATION_LATITUDE
      * @return It returns a refining field
      */
-    public static Field getRefiningField(String fieldName, Type fieldType) {
+    public static Field createRefiningField(String fieldName, Type fieldType) {
         checkIfFieldTypeIsValid(fieldType);
         return new Field(fieldName, InternalType.values[fieldType.ordinal()],
                 false, true, DEFAULT_BOOST_VALUE);
@@ -122,8 +129,8 @@ final public class Field {
      *                  Field.FieldType.LOCATION_LATITUDE
      * @return It returns a field that is both searchable and refining
      */
-    public static Field getSearchableAndRefiningField(String fieldName,
-                                                      Type fieldType) {
+    public static Field createSearchableAndRefiningField(String fieldName,
+                                                         Type fieldType) {
         checkIfFieldTypeIsValid(fieldType);
         return new Field(fieldName, InternalType.values[fieldType.ordinal()],
                 true, true, DEFAULT_BOOST_VALUE);
@@ -142,8 +149,8 @@ final public class Field {
      *                  Field.FieldType.LOCATION_LATITUDE
      * @return It returns a field that is both searchable and refining
      */
-    public static Field getSearchableAndRefiningField(String fieldName,
-                                                      Type fieldType, int boost) {
+    public static Field createSearchableAndRefiningField(String fieldName,
+                                                         Type fieldType, int boost) {
         if (boost < 1 || boost > 100) {
             throw new IllegalArgumentException(
                     "Boost value cannot be less than 1 or greater than 100.");

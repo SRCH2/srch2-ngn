@@ -7,7 +7,7 @@ public class FieldTest {
 
     @Test
     public void testDefaultValue() {
-        Field f = Field.getSearchableField("f1");
+        Field f = Field.createSearchableField("f1");
         Assert.assertTrue(f != null);
 
         Assert.assertTrue(f.boost == Field.DEFAULT_BOOST_VALUE);
@@ -21,12 +21,12 @@ public class FieldTest {
         Assert.assertFalse(f.highlight);
         Assert.assertTrue(f.facetType == null);
 
-        f = Field.getRefiningField("f2", Field.Type.INTEGER);
+        f = Field.createRefiningField("f2", Field.Type.INTEGER);
         Assert.assertTrue(f != null);
 
         Assert.assertTrue(f.boost == Field.DEFAULT_BOOST_VALUE);
-        Assert.assertTrue(f.facetEnabled == false);
-        Assert.assertTrue(f.name == "f2");
+        Assert.assertTrue(!f.facetEnabled);
+        Assert.assertTrue(f.name.equals("f2"));
         Assert.assertTrue(f.type == Field.InternalType.INTEGER);
 
         Assert.assertTrue(f.refining);
@@ -35,12 +35,12 @@ public class FieldTest {
         Assert.assertFalse(f.highlight);
         Assert.assertTrue(f.facetType == null);
 
-        f = Field.getRefiningField("f2", Field.Type.TEXT);
+        f = Field.createRefiningField("f2", Field.Type.TEXT);
         Assert.assertTrue(f != null);
 
         Assert.assertTrue(f.boost == Field.DEFAULT_BOOST_VALUE);
-        Assert.assertTrue(f.facetEnabled == false);
-        Assert.assertTrue(f.name == "f2");
+        Assert.assertTrue(!f.facetEnabled);
+        Assert.assertTrue(f.name.equals("f2"));
         Assert.assertTrue(f.type == Field.InternalType.TEXT);
 
         Assert.assertTrue(f.refining);
@@ -49,10 +49,10 @@ public class FieldTest {
         Assert.assertFalse(f.highlight);
         Assert.assertTrue(f.facetType == null);
 
-        f = Field.getRefiningField("f2", Field.Type.FLOAT);
+        f = Field.createRefiningField("f2", Field.Type.FLOAT);
         Assert.assertTrue(f.type == Field.InternalType.FLOAT);
 
-        f = Field.getRefiningField("f2", Field.Type.TIME);
+        f = Field.createRefiningField("f2", Field.Type.TIME);
         Assert.assertTrue(f.type == Field.InternalType.TIME);
 
     }
@@ -60,11 +60,11 @@ public class FieldTest {
     @Test
     public void testBoostedFields() {
 
-        Field boostedField = Field.getSearchableField("f", 4);
+        Field boostedField = Field.createSearchableField("f", 4);
         Assert.assertTrue(boostedField.boost == 4);
-        Assert.assertTrue(boostedField.name == "f");
+        Assert.assertTrue(boostedField.name.equals("f"));
         Assert.assertTrue(boostedField.type == Field.InternalType.TEXT);
-        Assert.assertTrue(boostedField.facetEnabled == false);
+        Assert.assertTrue(!boostedField.facetEnabled);
 
         Assert.assertTrue(boostedField.searchable);
         Assert.assertFalse(boostedField.refining);
@@ -77,11 +77,11 @@ public class FieldTest {
     @Test
     public void testSearchableAndRefiningField() {
 
-        Field srField = Field.getSearchableAndRefiningField("srField", Field.Type.TEXT);
+        Field srField = Field.createSearchableAndRefiningField("srField", Field.Type.TEXT);
         Assert.assertTrue(srField.boost == Field.DEFAULT_BOOST_VALUE);
-        Assert.assertTrue(srField.name == "srField");
+        Assert.assertTrue(srField.name.equals("srField"));
         Assert.assertTrue(srField.type == Field.InternalType.TEXT);
-        Assert.assertTrue(srField.facetEnabled == false);
+        Assert.assertTrue(!srField.facetEnabled);
 
         Assert.assertTrue(srField.searchable);
         Assert.assertTrue(srField.refining);
@@ -89,13 +89,13 @@ public class FieldTest {
         Assert.assertFalse(srField.highlight);
         Assert.assertTrue(srField.facetType == null);
 
-        srField = Field.getSearchableAndRefiningField("srField", Field.Type.INTEGER);
+        srField = Field.createSearchableAndRefiningField("srField", Field.Type.INTEGER);
         Assert.assertTrue(srField.type == Field.InternalType.INTEGER);
 
-        srField = Field.getSearchableAndRefiningField("srField", Field.Type.TIME);
+        srField = Field.createSearchableAndRefiningField("srField", Field.Type.TIME);
         Assert.assertTrue(srField.type == Field.InternalType.TIME);
 
-        srField = Field.getSearchableAndRefiningField("srField", Field.Type.FLOAT);
+        srField = Field.createSearchableAndRefiningField("srField", Field.Type.FLOAT);
         Assert.assertTrue(srField.type == Field.InternalType.FLOAT);
 
     }
@@ -103,11 +103,11 @@ public class FieldTest {
     @Test
     public void testBoostedSearchableAndRefiningField() {
 
-        Field srField = Field.getSearchableAndRefiningField("srField", Field.Type.TEXT, 4);
+        Field srField = Field.createSearchableAndRefiningField("srField", Field.Type.TEXT, 4);
         Assert.assertTrue(srField.boost == 4);
-        Assert.assertTrue(srField.name == "srField");
+        Assert.assertTrue(srField.name.equals("srField"));
         Assert.assertTrue(srField.type == Field.InternalType.TEXT);
-        Assert.assertTrue(srField.facetEnabled == false);
+        Assert.assertTrue(!srField.facetEnabled);
 
         Assert.assertTrue(srField.searchable);
         Assert.assertTrue(srField.refining);
@@ -115,15 +115,15 @@ public class FieldTest {
         Assert.assertFalse(srField.highlight);
         Assert.assertTrue(srField.facetType == null);
 
-        srField = Field.getSearchableAndRefiningField("srField", Field.Type.INTEGER, 4);
+        srField = Field.createSearchableAndRefiningField("srField", Field.Type.INTEGER, 4);
         Assert.assertTrue(srField.boost == 4);
         Assert.assertTrue(srField.type == Field.InternalType.INTEGER);
 
-        srField = Field.getSearchableAndRefiningField("srField", Field.Type.TIME, 4);
+        srField = Field.createSearchableAndRefiningField("srField", Field.Type.TIME, 4);
         Assert.assertTrue(srField.boost == 4);
         Assert.assertTrue(srField.type == Field.InternalType.TIME);
 
-        srField = Field.getSearchableAndRefiningField("srField", Field.Type.FLOAT, 4);
+        srField = Field.createSearchableAndRefiningField("srField", Field.Type.FLOAT, 4);
         Assert.assertTrue(srField.boost == 4);
         Assert.assertTrue(srField.type == Field.InternalType.FLOAT);
 
@@ -131,92 +131,92 @@ public class FieldTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testExceptionInSearchableField() {
-        Field f = Field.getSearchableField(null);
+        Field f = Field.createSearchableField(null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testExceptionInSearchableField2() {
-        Field f = Field.getSearchableField(null, 1);
+        Field f = Field.createSearchableField(null, 1);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testExceptionInSearchableField3() {
-        Field f = Field.getSearchableField("f", 0);
+        Field f = Field.createSearchableField("f", 0);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testExceptionInSearchableField4() {
-        Field f = Field.getSearchableField("f", 101);
+        Field f = Field.createSearchableField("f", 101);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testExceptionInSearchableField5() {
-        Field f = Field.getSearchableField(null, 101);
+        Field f = Field.createSearchableField(null, 101);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testExceptionInSearchableField6() {
-        Field f = Field.getSearchableField("");
+        Field f = Field.createSearchableField("");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testExceptionInRefiningField() {
-        Field f = Field.getRefiningField(null, Field.Type.FLOAT);
+        Field f = Field.createRefiningField(null, Field.Type.FLOAT);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testExceptionInRefiningField2() {
-        Field f = Field.getRefiningField("f1", null);
+        Field f = Field.createRefiningField("f1", null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testExceptionInRefiningField3() {
-        Field f = Field.getRefiningField(null, null);
+        Field f = Field.createRefiningField(null, null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testExceptionInRefiningField4() {
-        Field f = Field.getRefiningField("", Field.Type.FLOAT);
+        Field f = Field.createRefiningField("", Field.Type.FLOAT);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testExceptionInSearchableAndRefiningField() {
-        Field srField = Field.getSearchableAndRefiningField(null, Field.Type.FLOAT);
+        Field srField = Field.createSearchableAndRefiningField(null, Field.Type.FLOAT);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testExceptionInSearchableAndRefiningField2() {
-        Field srField = Field.getSearchableAndRefiningField("srField", null);
+        Field srField = Field.createSearchableAndRefiningField("srField", null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testExceptionInSearchableAndRefiningField3() {
-        Field srField = Field.getSearchableAndRefiningField(null, null);
+        Field srField = Field.createSearchableAndRefiningField(null, null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testExceptionInSearchableAndRefiningField4() {
-        Field srField = Field.getSearchableAndRefiningField("srField", null);
+        Field srField = Field.createSearchableAndRefiningField("srField", null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testExceptionInSearchableAndRefiningField5() {
-        Field srField = Field.getSearchableAndRefiningField("srField", Field.Type.INTEGER, 101);
+        Field srField = Field.createSearchableAndRefiningField("srField", Field.Type.INTEGER, 101);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testExceptionInSearchableAndRefiningField6() {
-        Field srField = Field.getSearchableAndRefiningField("srField", null, 1);
+        Field srField = Field.createSearchableAndRefiningField("srField", null, 1);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testExceptionInSearchableAndRefiningField7() {
-        Field srField = Field.getSearchableAndRefiningField(null, Field.Type.INTEGER, 1);
+        Field srField = Field.createSearchableAndRefiningField(null, Field.Type.INTEGER, 1);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testExceptionInSearchableAndRefiningField8() {
-        Field srField = Field.getSearchableAndRefiningField("", Field.Type.INTEGER, 1);
+        Field srField = Field.createSearchableAndRefiningField("", Field.Type.INTEGER, 1);
     }
 
 }

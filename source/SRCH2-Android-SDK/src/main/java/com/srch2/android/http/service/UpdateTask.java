@@ -1,21 +1,15 @@
 package com.srch2.android.http.service;
 
-import java.io.BufferedOutputStream;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.net.HttpURLConnection;
-import java.net.URL;
-
+import com.srch2.android.http.service.HttpTask.ControlHttpTask;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.srch2.android.http.service.HttpTask.ControlHttpTask;
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 class UpdateTask extends ControlHttpTask {
     private static final String TAG = "UpdateTask";
-
 
     private JSONArray recordsToUpdate;
     private JSONObject recordToUpdate;

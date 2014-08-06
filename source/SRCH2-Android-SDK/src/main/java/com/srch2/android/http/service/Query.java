@@ -6,8 +6,8 @@ import java.util.ArrayList;
 
 public class Query {
 
-    static final String[] BOX_TAG = {"lblat=", "lblong=", "rtlat=", "rtlong="};
-    static final String[] CIRCLE_TAG = {"clat=", "clong=", "radius="};
+    private static final String[] BOX_TAG = {"lblat=", "lblong=", "rtlat=", "rtlong="};
+    private static final String[] CIRCLE_TAG = {"clat=", "clong=", "radius="};
     /**
      * this field will disable all the advanced settings
      */
@@ -28,7 +28,8 @@ public class Query {
      * Creates a query from a {@link SearchableTerm} or
      * {@link SearchableTerm.CompositeTerm};
      *
-     * @param term
+     * @param term {@link SearchableTerm} or
+     * {@link SearchableTerm.CompositeTerm}
      */
     public Query(Term term) {
         checkIsNotNull(term, "Input term should not be null");
@@ -65,13 +66,13 @@ public class Query {
         this.term = null;
     }
 
-    static void checkIsNotNull(Object term, String errMsg) {
+    private static void checkIsNotNull(Object term, String errMsg) {
         if (term == null) {
             throw new IllegalArgumentException(errMsg);
         }
     }
 
-    static void checkNoEmptyString(String str, String errMsg) {
+    private static void checkNoEmptyString(String str, String errMsg) {
         if (str == null || str.trim().length() == 0) {
             throw new IllegalArgumentException(errMsg);
         }
@@ -190,7 +191,7 @@ public class Query {
      * topK result is returned.
      *
      * @param searchType {@link SearchType}
-     * @return
+     * @return this
      */
     Query setSearchType(SearchType searchType) {
         checkIsNotNull(searchType, "SearchType can not be null");
@@ -206,8 +207,8 @@ public class Query {
      * Note the <code>SearchType</code> will be automatically set to
      * <code>getAll</code> method
      *
-     * @param field1
-     * @param restFields
+     * @param field1 the first field
+     * @param restFields the rest of the fields
      * @return this
      */
     public Query sortOnFields(String field1, String... restFields) {
@@ -252,11 +253,11 @@ public class Query {
      * It is the offset in the complete result set of the query, where the set
      * of returned records should begin. The default value is 0
      *
-     * @param skipNumberOfRecords
+     * @param startOffset specify the start offset of the result
      * @return this
      */
-    public Query pagingStartFrom(int skipNumberOfRecords) {
-        this.pagingStart = skipNumberOfRecords;
+    public Query pagingStartFrom(int startOffset) {
+        this.pagingStart = startOffset;
         return this;
     }
 
@@ -264,8 +265,8 @@ public class Query {
      * It indicates the number of records to return from the complete result
      * set.
      *
-     * @param sizePerPage
-     * @return
+     * @param sizePerPage specify how many result within one search response
+     * @return this
      */
     public Query pagingSize(int sizePerPage) {
         this.pagingRows = sizePerPage;
@@ -274,14 +275,6 @@ public class Query {
 
     /**
      * Get the GeoLocation search by specify a bounding box. <br>
-     * To enable geo indexing, use the following parameter in the configuration
-     * file
-     * <p/>
-     * <pre>
-     * {@code
-     * <indexType>1</indexType>
-     * }
-     * </pre>
      *
      * @param leftBottomLatitude
      * @param leftBottomLongitude
@@ -303,14 +296,7 @@ public class Query {
 
     /**
      * Get the GeoLocation search by specify a center point and a radius. <br>
-     * To enable geo indexing, use the following parameter in the configuration
-     * file
-     * <p/>
-     * <pre>
-     * {@code
-     * <indexType>1</indexType>
-     * }
-     * </pre>
+
      *
      * @param centerLatitude
      * @param centerLongitude
@@ -390,7 +376,7 @@ public class Query {
      * configuration file by setting the "facetEnabled" tag to true. FacetField function is protected as of now.
      *
      * @param fieldName
-     * @return
+     * @return this
      */
     protected Query facetOn(String fieldName) {
         facetFields.add(FacetField.getFacetFieldOnCategory(fieldName));
@@ -402,7 +388,7 @@ public class Query {
      *
      * @param fieldName
      * @param rows
-     * @return
+     * @return this
      */
     protected Query facetOn(String fieldName, int rows) {
         facetFields.add(FacetField.getFacetFieldOnCategory(fieldName, rows));
@@ -415,7 +401,7 @@ public class Query {
      * file.
      *
      * @param fieldName
-     * @return
+     * @return this
      */
     protected Query facetOnRange(String fieldName, String start, String end,
                                  String gap) {

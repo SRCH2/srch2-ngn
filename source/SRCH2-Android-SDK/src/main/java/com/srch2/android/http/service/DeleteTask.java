@@ -1,12 +1,11 @@
 package com.srch2.android.http.service;
 
+import android.util.Log;
+import com.srch2.android.http.service.HttpTask.ControlHttpTask;
+
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
-
-import android.util.Log;
-
-import com.srch2.android.http.service.HttpTask.ControlHttpTask;
 
 class DeleteTask extends ControlHttpTask {
     private static final String TAG = "DeleteTask";
@@ -54,6 +53,7 @@ class DeleteTask extends ControlHttpTask {
 
     @Override
     protected void onTaskComplete(int returnedResponseCode, String returnedResponseLiteral) {
+
         if (controlResponseObserver != null) {
             DeleteResponse deleteResponse;
             if (returnedResponseLiteral == null || returnedResponseLiteral.equals(RestfulResponse.IRRECOVERABLE_NETWORK_ERROR_MESSAGE)) {

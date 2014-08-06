@@ -7,7 +7,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
@@ -99,7 +98,6 @@ class SearchTask extends SearchHttpTask {
 
     private void doSearch() {
         HttpURLConnection connection = null;
-        InputStream is = null;
         String jsonResponse = null;
         int responseCode = -1;
         Log.d("SEARCHTASK", "about to start searching up results");
@@ -145,7 +143,7 @@ class SearchTask extends SearchHttpTask {
     protected void onTaskComplete(int returnedResponseCode,
                                   String returnedResponseLiteral) {
         if (searchResultsListener != null) {
-            HashMap<String, ArrayList<JSONObject>> resultMap = null;
+            HashMap<String, ArrayList<JSONObject>> resultMap;
 
             if (returnedResponseCode / 100 == 2) {
                 resultMap = parseResponseForRecordResults(

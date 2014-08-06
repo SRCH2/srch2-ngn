@@ -1,15 +1,16 @@
 package com.srch2.android.http.service;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
+import android.annotation.TargetApi;
+import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.os.Build;
+import android.os.IBinder;
+import android.util.Log;
+
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -18,17 +19,9 @@ import java.util.TimerTask;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import android.app.Service;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.SharedPreferences;
-import android.os.IBinder;
-import android.util.Log;
-
 final public class SRCH2Service extends Service {
 
-    static final String TAG = "Exe-Service";
+    private static final String TAG = "Exe-Service";
 
     private class ExecutableServiceBroadcastReciever extends BroadcastReceiver {
         @Override
@@ -59,11 +52,11 @@ final public class SRCH2Service extends Service {
     private Semaphore shutdownMutex;
 
 
-    private String PREFERENCES_NAME_SERVER_STARTED_LOG = "srch2-server-started-log";
-    private String PREFERENCES_KEY_SERVER_LOG_SHUTDOWN_URLS = "srch2-server-log-shutdown-urls";
-    private String PREFERENCES_KEY_SERVER_LOG_USED_PORT_NUMBER = "srch2-server-log-port-number";
-    private String PREFERENCES_KEY_SERVER_LOG_PREVIOUS_O_AUTH_CODE = "srch2-server-o-auth";
-    private String PREFERENCES_KEY_SERVER_LOG_EXECUTABLE_PATH = "exe-path";
+    private final String PREFERENCES_NAME_SERVER_STARTED_LOG = "srch2-server-started-log";
+    private final String PREFERENCES_KEY_SERVER_LOG_SHUTDOWN_URLS = "srch2-server-log-shutdown-urls";
+    private final String PREFERENCES_KEY_SERVER_LOG_USED_PORT_NUMBER = "srch2-server-log-port-number";
+    private final String PREFERENCES_KEY_SERVER_LOG_PREVIOUS_O_AUTH_CODE = "srch2-server-o-auth";
+    private final String PREFERENCES_KEY_SERVER_LOG_EXECUTABLE_PATH = "exe-path";
 
 
     private final static String PREFERENCES_DEFAULT_NO_VALUE = "no-value";
@@ -93,6 +86,7 @@ final public class SRCH2Service extends Service {
         super.onDestroy();
     }
 
+    @TargetApi(Build.VERSION_CODES.ECLAIR)
     @Override
     public int onStartCommand(final Intent intent, int flags, int startId) {
         Log.d("srch2:: " + TAG, "onStartCommand");
@@ -382,7 +376,7 @@ final public class SRCH2Service extends Service {
                         Log.d("srch2:: " + TAG, "NO ERROR STREAM from process");
                     }
 
-                    p.destroy();;
+                    p.destroy();
 
                 } catch (IOException e) {
                     Log.d("srch2:: " + TAG, "IOEXCEPTION starting executable!");
@@ -394,6 +388,7 @@ final public class SRCH2Service extends Service {
         t.start();
     }
 
+    @TargetApi(Build.VERSION_CODES.DONUT)
     private void autoInstallCoreFilesAndOverwriteXMLConfigurationFile(String xmlConfigurationFileLiteral) { //verify chmod bitmask to use
         Log.d("srch2:: " + TAG, "autoInstallCoreFilesAndOverwriteXMLConfigurationFile");
         final Context c = getApplicationContext();
@@ -477,7 +472,7 @@ final public class SRCH2Service extends Service {
         new ProcessBuilder(cmdline).start();
     }
 
-    static String readInputStream(InputStream source) throws IOException {
+    private static String readInputStream(InputStream source) throws IOException {
         if (source == null) {
             return "NULL SOURCE INPUT STREAM";
         }

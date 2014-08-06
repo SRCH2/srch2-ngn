@@ -9,7 +9,6 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
 import java.net.URL;
 import java.util.HashMap;
@@ -18,16 +17,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 final public class SRCH2Engine {
 
-    static final String TAG = "SRCH2Engine";
+    private static final String TAG = "SRCH2Engine";
     static final AtomicReference<IndexQueryPair> lastQuery = new AtomicReference<IndexQueryPair>();
     static final AtomicBoolean isChanged = new AtomicBoolean(false);
     static final AtomicBoolean isReady = new AtomicBoolean(false);
-    /**
-     * Automatic re-request the lastQuerySting whenever any index is
-     * updated. If the Index is null, that means the lastQuery is from the
-     * SearchAll
-     */
-//    static final ArrayList<IndexInternal> indexes = new ArrayList<IndexInternal>();
 
     static boolean isDebugAndTestingMode = false;
     static SRCH2EngineBroadcastReciever incomingIntentReciever;
@@ -35,7 +28,7 @@ final public class SRCH2Engine {
     static StateResponseListener stateResponseListener = null;
     static boolean isStarted = false;
     static SRCH2Configuration conf = null;
-    static SearchTask allIndexSearchTask = null;
+    private static SearchTask allIndexSearchTask = null;
 
     public static void initialize(Indexable index1, Indexable... restIndexes) {
         Log.d("srch2:: " + TAG, "initialize");
@@ -100,7 +93,7 @@ final public class SRCH2Engine {
         isStarted = true;
     }
 
-    static void startCheckCoresLoadedTask() {
+    private static void startCheckCoresLoadedTask() {
         Log.d("srch2:: " + TAG, "startCheckCoresLoadedTask");
         HashMap<String, URL> indexUrlMap = new HashMap<String, URL>();
         for (IndexInternal index : conf.indexesMap.values()) {
@@ -123,6 +116,10 @@ final public class SRCH2Engine {
 
     static SearchResultsListener getSearchResultsListener() {
         return searchResultsListener;
+    }
+
+    static IndexInternal getIndexByNameReturnNullIfNotExists(String name){
+        return conf.indexesMap.get(name);
     }
 
     /**
@@ -151,7 +148,7 @@ final public class SRCH2Engine {
         stateResponseListener = listener;
     }
 
-    static void searchAllRawString(String rawQueryString) {
+    private static void searchAllRawString(String rawQueryString) {
         lastQuery.set(new IndexQueryPair(null, rawQueryString));
         if (isReady()) {
             if (allIndexSearchTask != null) {
@@ -173,16 +170,24 @@ final public class SRCH2Engine {
     public static void searchAllIndexes(String searchInput) {
         Log.d("srch2:: " + TAG, "searchAllIndexes");
         checkConfIsNullThrowIfIs();
-        String rawString = null;
-        rawString = IndexInternal.formatDefaultQueryURL(searchInput);
+        String rawString= IndexInternal.formatDefaultQueryURL(searchInput);
         searchAllRawString(rawString);
     }
 
-    public static void searchIndex(String indexName, String searchInput) throws UnsupportedEncodingException {
+    /**
+     * Static way to search one specific index by specify its name.
+     * @param indexName
+     * @param searchInput
+     */
+    public static void searchIndex(String indexName, String searchInput) {
         checkConfIsNullThrowIfIs();
         conf.getIndexAndThrowIfNotThere(indexName).search(searchInput);
     }
 
+    /**
+     * Static way to search all the index by {@link com.srch2.android.http.service.Query}.
+     * @param query
+     */
     public static void advancedSearchOnAllIndexes(Query query) {
         Log.d("srch2:: " + TAG, "searchAllIndexes");
         checkConfIsNullThrowIfIs();
@@ -190,41 +195,80 @@ final public class SRCH2Engine {
         searchAllRawString(rawString);
     }
 
+    /**
+     * Static way to search one specific index by specify its name.
+     * @param indexName
+     * @param query
+     */
     public static void advancedSearchIndex(String indexName, Query query) {
         checkConfIsNullThrowIfIs();
         conf.getIndexAndThrowIfNotThere(indexName).advancedSearch(query);
     }
 
+    /**
+     * Static way to insert into one specific index by specify its name.
+     * @param indexName
+     * @param recordToUpdate
+     */
     public static void insertIntoIndex(String indexName, JSONObject recordToUpdate) {
         checkConfIsNullThrowIfIs();
         conf.getIndexAndThrowIfNotThere(indexName).insert(recordToUpdate);
     }
 
+    /**
+     * Static way to insert into one specific index by specify its name.
+     * @param indexName
+     * @param recordsToUpdate
+     */
     public static void insertIntoIndex(String indexName, JSONArray recordsToUpdate) {
         checkConfIsNullThrowIfIs();
         conf.getIndexAndThrowIfNotThere(indexName).insert(recordsToUpdate);
     }
 
+    /**
+     * Static way to update one record of one specific index by specify its name.
+     * @param indexName
+     * @param recordToUpdate
+     */
     public static void updateIndex(String indexName, JSONObject recordToUpdate) {
         checkConfIsNullThrowIfIs();
         conf.getIndexAndThrowIfNotThere(indexName).update(recordToUpdate);
     }
 
+    /**
+     * Static way to update records of one specific index by specify its name.
+     * @param indexName
+     * @param recordsToUpdate
+     */
     public static void updateIndex(String indexName, JSONArray recordsToUpdate) {
         checkConfIsNullThrowIfIs();
         conf.getIndexAndThrowIfNotThere(indexName).update(recordsToUpdate);
     }
 
+    /**
+     * Static way to update records of one specific index by specify its name.
+     * @param indexName
+     * @param firstIdToDelete
+     */
     public static void deleteFromIndex(String indexName, String firstIdToDelete) {
         checkConfIsNullThrowIfIs();
         conf.getIndexAndThrowIfNotThere(indexName).delete(firstIdToDelete);
     }
 
+    /**
+     * Static way to get one record by its id of one specific index by specify its name.
+     * @param indexName
+     * @param idOfRecordToRetrieve
+     */
     public static void getRecordByIdFromIndex(String indexName, String idOfRecordToRetrieve) {
         checkConfIsNullThrowIfIs();
         conf.getIndexAndThrowIfNotThere(indexName).getRecordbyID(idOfRecordToRetrieve);
     }
 
+    /**
+     * Static way to get the information of one index .
+     * @param indexName
+     */
     public static void getIndexInfo(String indexName) {
         checkConfIsNullThrowIfIs();
         conf.getIndexAndThrowIfNotThere(indexName).info();
@@ -254,7 +298,7 @@ final public class SRCH2Engine {
      * the engine keeps updating the last query and will automatically request
      * the
      *
-     * @return
+     * @return if the SRCH2 engine is ready or not.
      */
     public static boolean isReady() {
         return isReady.get();
@@ -326,7 +370,7 @@ final public class SRCH2Engine {
         return port;
     }
 
-    static void checkConfIsNullThrowIfIs() {
+    private static void checkConfIsNullThrowIfIs() {
         if (conf == null) {
             throw new NullPointerException(
                     "Cannot start SRCH2Engine without configuration being set.");

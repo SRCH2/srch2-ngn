@@ -5,8 +5,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-
 public final class InsertResponse extends RestfulResponse {
 
     private final static String JSON_KEY_MESSAGE = "message";
