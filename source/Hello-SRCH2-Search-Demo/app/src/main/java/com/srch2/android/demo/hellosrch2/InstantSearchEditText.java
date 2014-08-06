@@ -17,7 +17,8 @@ public class InstantSearchEditText extends EditText implements TextWatcher {
     private static final String TAG = "InstantSearchInputField";
 
     /**
-     * Interface for observing for when this text field receives new input from user.
+     * Interface for observing for when this text field receives new input from
+     * user.
      */
     public interface SearchInputEnteredObserver {
         public void onNewSearchInput(String newSearchText);
@@ -36,11 +37,13 @@ public class InstantSearchEditText extends EditText implements TextWatcher {
     private StringBuilder mInputBuffer = new StringBuilder();
 
     /**
-     * Taken from the standard set of Android icons: originally something named ~ ic_menu_clear_action.
+     * Taken from the standard set of Android icons: originally something named
+     * ~ ic_menu_clear_action.
      */
     private Drawable mClearButton = null;
 
-    public InstantSearchEditText(Context context, AttributeSet attrs, int defStyle) {
+    public InstantSearchEditText(Context context, AttributeSet attrs,
+                                 int defStyle) {
         super(context, attrs, defStyle);
         setupConstructors(context);
     }
@@ -56,14 +59,18 @@ public class InstantSearchEditText extends EditText implements TextWatcher {
     }
 
     /**
-     * Setups this object for each SDK called constructor: note, currently the activity hosting this text field must implement <code>SearchInputEnteredObserver</code>.
+     * Setups this object for each SDK called constructor: note, currently the
+     * activity hosting this text field must implement
+     * <code>SearchInputEnteredObserver</code>.
      */
     private void setupConstructors(Context context) {
         mSearchInputObserver = (SearchInputEnteredObserver) context;
 
         mInputBuffer.setLength(0);
-        mClearButton = context.getResources().getDrawable(R.drawable.clear_input_icon);
-        mClearButton.setBounds(0, 0, mClearButton.getIntrinsicWidth(), mClearButton.getIntrinsicHeight());
+        mClearButton = context.getResources().getDrawable(
+                R.drawable.clear_input_icon);
+        mClearButton.setBounds(0, 0, mClearButton.getIntrinsicWidth(),
+                mClearButton.getIntrinsicHeight());
 
         setOnTouchListener(new OnTouchListener() {
             @Override
@@ -87,7 +94,8 @@ public class InstantSearchEditText extends EditText implements TextWatcher {
     }
 
     @Override
-    public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+    public void beforeTextChanged(CharSequence s, int start, int count,
+                                  int after) {
         mInputBuffer.setLength(0);
         mInputBuffer.append(s);
     }
@@ -119,16 +127,19 @@ public class InstantSearchEditText extends EditText implements TextWatcher {
     /**
      * Utility method for checking the state of the current text.
      *
-     * @return <b>true</b> if calling getText() wil not return an empty string; <b>false</b> otherwise
+     * @return <b>true</b> if calling getText() wil not return an empty string;
+     *         <b>false</b> otherwise
      */
     public boolean hasRealInput() {
         return getText().toString().trim().length() > 0;
     }
 
     /**
-     * Makes it so that every UI widget that is not InstantSearchEditText will cause the soft keyboard to close when touched by the user.
+     * Makes it so that every UI widget that is not InstantSearchEditText will
+     * cause the soft keyboard to close when touched by the user.
      *
-     * @param view the root view of the layout
+     * @param view
+     *            the root view of the layout
      */
     public static void setOnHideSoftInputListenerForAllUIViews(View view) {
         if (!(view instanceof InstantSearchEditText)) {
@@ -149,17 +160,20 @@ public class InstantSearchEditText extends EditText implements TextWatcher {
     }
 
     /**
-     * Utility method for opening soft keyboard depending on if the search input text field is empty: call, for instance, in an activity's onResume.
+     * Utility method for opening soft keyboard depending on if the search input
+     * text field is empty: call, for instance, in an activity's onResume.
      */
-    public static boolean checkIfSearchInputShouldOpenSoftKeyboard(final Context context, final InstantSearchEditText searchInputTextField) {
+    public static boolean checkIfSearchInputShouldOpenSoftKeyboard(
+            final Context context,
+            final InstantSearchEditText searchInputTextField) {
         if (!searchInputTextField.hasRealInput()) {
             searchInputTextField.requestFocus();
             searchInputTextField.postDelayed(new Runnable() {
                 @Override
                 public void run() {
                     try {
-                        InputMethodManager keyboard = (InputMethodManager)
-                                context.getSystemService(Context.INPUT_METHOD_SERVICE);
+                        InputMethodManager keyboard = (InputMethodManager) context
+                                .getSystemService(Context.INPUT_METHOD_SERVICE);
                         keyboard.showSoftInput(searchInputTextField, 0);
                     } catch (NullPointerException npe) {
                         npe.printStackTrace();
@@ -179,7 +193,9 @@ public class InstantSearchEditText extends EditText implements TextWatcher {
             @Override
             public void run() {
                 try {
-                    InputMethodManager keyboard = (InputMethodManager) editText.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+                    InputMethodManager keyboard = (InputMethodManager) editText
+                            .getContext().getSystemService(
+                                    Context.INPUT_METHOD_SERVICE);
                     keyboard.showSoftInput(editText, 0);
                 } catch (NullPointerException npe) {
                     npe.printStackTrace();
@@ -189,15 +205,19 @@ public class InstantSearchEditText extends EditText implements TextWatcher {
     }
 
     /**
-     * Utility method to hide the soft keyboard if visible: caller must supply a valid view.
+     * Utility method to hide the soft keyboard if visible: caller must supply a
+     * valid view.
      */
     public static void hideSoftKeyboard(final View view) {
         view.postDelayed(new Runnable() {
             @Override
             public void run() {
                 try {
-                    InputMethodManager inputMethodManager = (InputMethodManager) view.getContext().getSystemService(Activity.INPUT_METHOD_SERVICE);
-                    inputMethodManager.hideSoftInputFromWindow(view.getWindowToken(), 0);
+                    InputMethodManager inputMethodManager = (InputMethodManager) view
+                            .getContext().getSystemService(
+                                    Activity.INPUT_METHOD_SERVICE);
+                    inputMethodManager.hideSoftInputFromWindow(
+                            view.getWindowToken(), 0);
                 } catch (NullPointerException npe) {
                     npe.printStackTrace();
                 }

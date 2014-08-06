@@ -1,6 +1,7 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:background="#FFFFFF"
     android:id="@+id/rl_row_root"
     android:orientation="vertical"
     android:layout_width="match_parent"

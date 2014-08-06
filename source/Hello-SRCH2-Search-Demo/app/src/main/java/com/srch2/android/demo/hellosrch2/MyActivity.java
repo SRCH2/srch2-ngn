@@ -8,8 +8,6 @@ import android.widget.Toast;
 
 import com.srch2.android.http.service.DeleteResponse;
 import com.srch2.android.http.service.GetRecordResponse;
-import com.srch2.android.http.service.IndexDescription;
-import com.srch2.android.http.service.Indexable;
 import com.srch2.android.http.service.InfoResponse;
 import com.srch2.android.http.service.InsertResponse;
 import com.srch2.android.http.service.SRCH2Engine;
@@ -18,7 +16,8 @@ import com.srch2.android.http.service.UpdateResponse;
 
 import java.util.HashMap;
 
-public class MyActivity extends Activity implements InstantSearchEditText.SearchInputEnteredObserver {
+public class MyActivity extends Activity implements
+        InstantSearchEditText.SearchInputEnteredObserver {
 
     private static final String TAG = MyActivity.class.getSimpleName();
 
@@ -41,7 +40,8 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
     }
 
     private void setupSRCH2Engine() {
-        SRCH2Engine.setSearchResultsListener(mSearchResultsAdapter.getSearchResultsListener());
+        SRCH2Engine.setSearchResultsListener(mSearchResultsAdapter
+                .getSearchResultsListener());
 
         mSRCH2StateResponseListener = new SRCH2StateResponseListener(this);
         SRCH2Engine.setStateResponseListener(mSRCH2StateResponseListener);
@@ -72,7 +72,8 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
         mSearchResultsAdapter.clearDisplayedSearchResults();
     }
 
-    private static class SRCH2StateResponseListener implements StateResponseListener {
+    private static class SRCH2StateResponseListener implements
+            StateResponseListener {
 
         private MyActivity mActivity;
 
@@ -81,84 +82,105 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
         }
 
         @Override
-        public void onInfoRequestComplete(final String indexName, final InfoResponse response) {
-            Log.d(TAG, "Info for index: " + indexName + ". Printing info:\n" + response.toString());
+        public void onInfoRequestComplete(final String indexName,
+                                          final InfoResponse response) {
+            Log.d(TAG, "Info for index: " + indexName + ". Printing info:\n"
+                    + response.toString());
             if (mActivity != null) {
                 mActivity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        Toast.makeText(mActivity, response.toToastString(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(mActivity, response.toToastString(),
+                                Toast.LENGTH_SHORT).show();
                     }
                 });
             }
         }
 
         @Override
-        public void onInsertRequestComplete(final String indexName, final InsertResponse response) {
-            Log.d(TAG, "Insert for index: " + indexName + " complete. Printing info:\n" + response.toString());
+        public void onInsertRequestComplete(final String indexName,
+                                            final InsertResponse response) {
+            Log.d(TAG, "Insert for index: " + indexName
+                    + " complete. Printing info:\n" + response.toString());
             if (mActivity != null) {
                 mActivity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        Toast.makeText(mActivity, response.toToastString(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(mActivity, response.toToastString(),
+                                Toast.LENGTH_SHORT).show();
                     }
                 });
             }
         }
 
         @Override
-        public void onUpdateRequestComplete(final String indexName, final UpdateResponse response) {
-            Log.d(TAG, "Update for index: " + indexName + " complete. Printing info:\n" + response.toString());
+        public void onUpdateRequestComplete(final String indexName,
+                                            final UpdateResponse response) {
+            Log.d(TAG, "Update for index: " + indexName
+                    + " complete. Printing info:\n" + response.toString());
             if (mActivity != null) {
                 mActivity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        Toast.makeText(mActivity, response.toToastString(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(mActivity, response.toToastString(),
+                                Toast.LENGTH_SHORT).show();
                     }
                 });
             }
         }
 
         @Override
-        public void onSRCH2ServiceReady(final HashMap<String, InfoResponse> indexesToInfoResponseMap) {
+        public void onSRCH2ServiceReady(
+                final HashMap<String, InfoResponse> indexesToInfoResponseMap) {
             Log.d(TAG, "SRCH2 Search Service is ready for action!");
             if (mActivity != null) {
                 mActivity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        Toast.makeText(mActivity, "SRCH2 Search Service is ready for action!", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(mActivity,
+                                "SRCH2 Search Service is ready for action!",
+                                Toast.LENGTH_SHORT).show();
                     }
                 });
             }
-            InfoResponse movieIndexInfoResponse = indexesToInfoResponseMap.get(MovieIndex.INDEX_NAME);
-            if (movieIndexInfoResponse != null && movieIndexInfoResponse.isValidInfoResponse()) {
+            InfoResponse movieIndexInfoResponse = indexesToInfoResponseMap
+                    .get(MovieIndex.INDEX_NAME);
+            if (movieIndexInfoResponse != null
+                    && movieIndexInfoResponse.isValidInfoResponse()) {
                 if (movieIndexInfoResponse.getNumberOfDocumentsInTheIndex() == 0) {
-                    SRCH2Engine.insertIntoIndex(MovieIndex.INDEX_NAME, MovieIndex.getAFewRecordsToInsert());
+                    SRCH2Engine.insertIntoIndex(MovieIndex.INDEX_NAME,
+                            MovieIndex.getAFewRecordsToInsert());
                 }
             }
         }
 
         @Override
-        public void onDeleteRequestComplete(final String indexName, final DeleteResponse response) {
-            Log.d(TAG, "Delete for index: " + indexName + " complete. Printing info:\n" + response.toString());
+        public void onDeleteRequestComplete(final String indexName,
+                                            final DeleteResponse response) {
+            Log.d(TAG, "Delete for index: " + indexName
+                    + " complete. Printing info:\n" + response.toString());
             if (mActivity != null) {
                 mActivity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        Toast.makeText(mActivity, response.toToastString(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(mActivity, response.toToastString(),
+                                Toast.LENGTH_SHORT).show();
                     }
                 });
             }
         }
 
         @Override
-        public void onGetRecordByIDComplete(final String indexName, final GetRecordResponse response) {
-            Log.d(TAG, "Got record for index: " + indexName + " complete. Printing info:\n" + response.toString());
+        public void onGetRecordByIDComplete(final String indexName,
+                                            final GetRecordResponse response) {
+            Log.d(TAG, "Got record for index: " + indexName
+                    + " complete. Printing info:\n" + response.toString());
             if (mActivity != null) {
                 mActivity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        Toast.makeText(mActivity, response.toToastString(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(mActivity, response.toToastString(),
+                                Toast.LENGTH_SHORT).show();
                     }
                 });
             }
