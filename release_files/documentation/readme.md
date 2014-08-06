@@ -27,4 +27,6 @@ mkdocs build
 
 It will build the all static site pages under the `site` folder.
 
-
+# To change the theme
+We are using the customized theme `srch2-theme`. We can change the corresponding *.html to add the contents.
+We can also edit the `srch-theme/css/srch2.css` to customize the appearance of the existing elements.
