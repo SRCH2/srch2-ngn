@@ -35,7 +35,7 @@ the advanced example configuration file in [example-demo/srch2-config-advanced.x
 ###3.1 SearchPort (Optional)
 This parameter overrides "listeningPort" for "search" requests.  "Search" requests must be sent to this port instead.
 
-###3.2 Suggest Port (Optional)
+###3.2 SuggestPort (Optional)
 This parameter overrides "listeningPort" for "suggest" requests.  "Suggest" requests must be sent to this port instead.
 
 ###3.3 InfoPort (Optional)
