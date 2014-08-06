@@ -2,36 +2,25 @@ package com.srch2.android.demo.hellosrch2;
 
 public class MovieSearchResult {
 
-    private String title;
-    private String genre;
-    private int year;
+    private String mTitle;
+    private String mGenre;
+    private int mYear;
 
     public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
+        return mTitle;
     }
 
     public String getGenre() {
-        return genre;
-    }
-
-    public void setGenre(String genre) {
-        this.genre = genre;
+        return mGenre;
     }
 
     public int getYear() {
-        return year;
-    }
-
-    public void setYear(int year) {
-        this.year = year;
+        return mYear;
     }
 
     public MovieSearchResult(String title, String genre, int year) {
-
+        mTitle = title;
+        mGenre = genre;
+        mYear = year;
     }
-
 }

@@ -8,6 +8,8 @@ import android.widget.Toast;
 
 import com.srch2.android.http.service.DeleteResponse;
 import com.srch2.android.http.service.GetRecordResponse;
+import com.srch2.android.http.service.IndexDescription;
+import com.srch2.android.http.service.Indexable;
 import com.srch2.android.http.service.InfoResponse;
 import com.srch2.android.http.service.InsertResponse;
 import com.srch2.android.http.service.SRCH2Engine;
@@ -30,7 +32,7 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.my_activity);
         mSearchResultsListView = (ListView) findViewById(R.id.lv_search_results);
         mSearchResultsAdapter = new SearchResultsAdapter(this);
         mSearchResultsListView.setAdapter(mSearchResultsAdapter);
@@ -163,7 +165,3 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
         }
     }
 }
-
-
-
-

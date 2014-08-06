@@ -3,7 +3,7 @@
   <component name="FacetManager">
     <facet type="android-gradle" name="Android-Gradle">
       <configuration>
-        <option name="GRADLE_PROJECT_PATH" value=":SRCH2-Android-SDK" />
+        <option name="GRADLE_PROJECT_PATH" value=":SRCH2-Android-SDK-javadoc" />
       </configuration>
     </facet>
     <facet type="java-gradle" name="Java-Gradle">

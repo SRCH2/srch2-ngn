@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="SRCH2-Android-SDK-javadoc">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/SRCH2-Android-SDK-javadoc/SRCH2-Android-SDK-javadoc.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

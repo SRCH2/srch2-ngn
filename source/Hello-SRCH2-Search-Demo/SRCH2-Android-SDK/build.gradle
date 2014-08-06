@@ -1,2 +1,4 @@
 configurations.create("default")
 artifacts.add("default", file('SRCH2-Android-SDK.aar'))
+dependencies {
+}

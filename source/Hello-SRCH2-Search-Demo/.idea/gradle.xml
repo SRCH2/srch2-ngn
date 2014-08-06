@@ -9,6 +9,7 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/SRCH2-Android-SDK" />
+            <option value="$PROJECT_DIR$/SRCH2-Android-SDK-javadoc" />
             <option value="$PROJECT_DIR$/app" />
           </set>
         </option>

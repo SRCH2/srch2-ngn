@@ -5,13 +5,7 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity" >
-
-    <Button
-        android:text="Button!"
-        android:onClick="doButtonClick"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+    tools:context=".MyActivity" >
 
     <com.srch2.android.demo.hellosrch2.InstantSearchEditText
         android:id="@+id/et_instant_search_input"
