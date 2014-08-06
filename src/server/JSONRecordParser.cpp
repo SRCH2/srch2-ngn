@@ -90,55 +90,6 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
         return false;// Raise Error
     }
 
-    // storing searchable attributes code begin.
-    string compressedInputLine;
-    typedef map<string , unsigned>::const_iterator SearchableAttrIter;
-    const Schema& storageSchema = compactRecSerializer.getStorageSchema();
-    for (SearchableAttrIter iter = storageSchema.getSearchableAttribute().begin();
-    		iter != storageSchema.getSearchableAttribute().end(); ++iter)
-    {
-    	vector<string> attributeStringValues;
-    	getJsonValueString(root, iter->first, attributeStringValues, "attributes-search");
-    	string singleString = boost::algorithm::join(attributeStringValues, " $$ ");
-    	snappy::Compress(singleString.c_str(), singleString.length(), &compressedInputLine);
-    	compactRecSerializer.addSearchableAttribute(iter->first, compressedInputLine);
-    }
-    // Now we need to store the refining attributes
-    typedef map<string , unsigned>::const_iterator  RefineAttrIter;
-    for (RefineAttrIter iter = storageSchema.getRefiningAttributes()->begin();
-    		iter != storageSchema.getRefiningAttributes()->end(); ++iter) {
-    	vector<string> attributeStringValues;
-    	getJsonValueString(root, iter->first, attributeStringValues, "refining-attributes");
-    	srch2is::FilterType type = storageSchema.getTypeOfRefiningAttribute(iter->second);
-		switch (type) {
-		case srch2is::ATTRIBUTE_TYPE_UNSIGNED:
-		{
-			string& singleString = attributeStringValues[0];
-			unsigned val = atoi(singleString.c_str());
-			compactRecSerializer.addRefiningAttribute(iter->first, val);
-			break;
-		}
-		case srch2is::ATTRIBUTE_TYPE_FLOAT:
-		{
-			string& singleString = attributeStringValues[0];
-			float val = atof(singleString.c_str());
-			compactRecSerializer.addRefiningAttribute(iter->first, val);
-			break;
-		}
-		default:
-		{
-			// not possible
-			break;
-		}
-		}
-    }
-    RecordSerializerBuffer compactBuffer = compactRecSerializer.serialize();
-    record->setInMemoryData(compactBuffer.start, compactBuffer.length);
-    compactRecSerializer.nextRecord();
-    //delete[] (char *)compactBuffer.start;
-
-
-
     for (map<string , SearchableAttributeInfoContainer>::const_iterator attributeIter
     		= indexDataContainerConf->getSearchableAttributes()->begin();
     		attributeIter != indexDataContainerConf->getSearchableAttributes()->end();++attributeIter)
@@ -207,7 +158,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
                 string attributeStringValue = "";
                 for(vector<string>::iterator stringValueIter = attributeStringValues.begin() ; stringValueIter != attributeStringValues.end() ; ++stringValueIter){
                     if(stringValueIter != attributeStringValues.begin()){
-                        attributeStringValue += MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER;
+                        attributeStringValue += MULTI_VAL_ATTR_DELIMITER;
                     }
                     attributeStringValue += *stringValueIter;
                 }
@@ -226,7 +177,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
                 string attributeStringValue = "";
                 for(vector<string>::iterator stringValueIter = attributeStringValues.begin() ; stringValueIter != attributeStringValues.end() ; ++stringValueIter){
                     if(stringValueIter != attributeStringValues.begin()){
-                        attributeStringValue += MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER;
+                        attributeStringValue += MULTI_VAL_ATTR_DELIMITER;
                     }
                     attributeStringValue += *stringValueIter;
                 }
@@ -248,7 +199,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
                     string attributeStringValue = "";
                     for(vector<string>::iterator stringValueIter = attributeStringValues.begin() ; stringValueIter != attributeStringValues.end() ; ++stringValueIter){
                         if(stringValueIter != attributeStringValues.begin()){
-                            attributeStringValue += MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER;
+                            attributeStringValue += MULTI_VAL_ATTR_DELIMITER;
                         }
                         attributeStringValue += *stringValueIter;
                     }
@@ -260,6 +211,56 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
         }
 
     }
+
+    // storing searchable attributes code begin.
+    string compressedInputLine;
+    typedef map<string , unsigned>::const_iterator SearchableAttrIter;
+    const Schema& storageSchema = compactRecSerializer.getStorageSchema();
+    for (SearchableAttrIter iter = storageSchema.getSearchableAttribute().begin();
+    		iter != storageSchema.getSearchableAttribute().end(); ++iter)
+    {
+    	vector<string> attributeStringValues;
+    	record->getSearchableAttributeValues(iter->first, attributeStringValues);
+    	string singleString;
+    	if (attributeStringValues.size() > 0) {
+    		singleString = boost::algorithm::join(attributeStringValues, " $$ ");
+    	} else {
+    		record->getRefiningAttributeValue(iter->first, singleString);
+    	}
+    	snappy::Compress(singleString.c_str(), singleString.length(), &compressedInputLine);
+    	compactRecSerializer.addSearchableAttribute(iter->first, compressedInputLine);
+    }
+    // Now we need to store the refining attributes
+    typedef map<string , unsigned>::const_iterator  RefineAttrIter;
+    for (RefineAttrIter iter = storageSchema.getRefiningAttributes()->begin();
+    		iter != storageSchema.getRefiningAttributes()->end(); ++iter) {
+    	string attributeStringValue;
+    	record->getRefiningAttributeValue(iter->first, attributeStringValue);
+    	srch2is::FilterType type = storageSchema.getTypeOfRefiningAttribute(iter->second);
+		switch (type) {
+		case srch2is::ATTRIBUTE_TYPE_UNSIGNED:
+		{
+			unsigned val = atoi(attributeStringValue.c_str());
+			compactRecSerializer.addRefiningAttribute(iter->first, val);
+			break;
+		}
+		case srch2is::ATTRIBUTE_TYPE_FLOAT:
+		{
+			float val = atof(attributeStringValue.c_str());
+			compactRecSerializer.addRefiningAttribute(iter->first, val);
+			break;
+		}
+		default:
+		{
+			// not possible
+			break;
+		}
+		}
+    }
+    RecordSerializerBuffer compactBuffer = compactRecSerializer.serialize();
+    record->setInMemoryData(compactBuffer.start, compactBuffer.length);
+    compactRecSerializer.nextRecord();
+
 
     // Add recordBoost, setSortableAttribute and setScoreAttribute
     record->setRecordBoost(1); // default record boost: 1
