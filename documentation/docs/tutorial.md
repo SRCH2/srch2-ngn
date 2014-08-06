@@ -629,9 +629,9 @@ This concludes the Hello SRCH2 Tutorial for learning how to get set up with the 
 
 
 
-[tutorial-001]: ./android-sdk/img/001-tutorial.png "Module Settings - How to add a new module"
-[tutorial-002]: ./android-sdk/img/002-tutorial.png "Module Settings - Creating a new module from an .AAR file"
-[tutorial-003]: ./android-sdk/img/003-tutorial.png "Module Settings - Importing the SRCH2-Android-SDK.aar file as the new module"
-[tutorial-004]: ./android-sdk/img/004-tutorial.png "Module Settings - Adding the SRCH2-Android-SDK module as a dependency"
-[tutorial-005]: ./android-sdk/img/005-tutorial.png "Module Settings - Selecting the SRCH2-Android-SDK module"
-[tutorial-006]: ./android-sdk/img/006-tutorial.png "Module Settings - Verifying SRCH2-Android-SDK module as been added as a compiled dependency"
+[tutorial-001]: ../img/001-tutorial.png "Module Settings - How to add a new module"
+[tutorial-002]: ../img/002-tutorial.png "Module Settings - Creating a new module from an .AAR file"
+[tutorial-003]: ../img/003-tutorial.png "Module Settings - Importing the SRCH2-Android-SDK.aar file as the new module"
+[tutorial-004]: ../img/004-tutorial.png "Module Settings - Adding the SRCH2-Android-SDK module as a dependency"
+[tutorial-005]: ../img/005-tutorial.png "Module Settings - Selecting the SRCH2-Android-SDK module"
+[tutorial-006]: ../img/006-tutorial.png "Module Settings - Verifying SRCH2-Android-SDK module as been added as a compiled dependency"
