@@ -1,0 +1,281 @@
+<!--
+    An advanced configuration file for SRCH2 search server.  This file demonstrates how to configure
+    some of the search engine's more advanced features.
+
+    For more information about how to use this configuration file, please
+    visit http://srch2.com/download/ and select the correct
+    documentation version.
+
+    Please email contact@srch2.com if you have questions.
+-->
+ 
+<config>
+    <srch2Home>.</srch2Home>
+        <!-- Make sure to specify the home of your SRCH2 demo.  Example: 
+	  <srch2Home>/home/joe/srch2/example-demo</srch2Home>
+        -->
+ 
+    <listeningHostname>0.0.0.0</listeningHostname>
+    <listeningPort>8081</listeningPort>
+ 
+    <!-- Use more threads to increase total overall throughput of the search engine.  On a dedicated
+         machine, our recommendation is that you can add as many threads as you have CPU cores.
+    -->
+    <maxSearchThreads>4</maxSearchThreads>
+
+    <!-- Operate multiple data sources, each on their own SRCH2 "core".  This feature requires less
+         system administration overhead than running separate search engines.  The search query
+         can specify the target "core" explicitly in the URL:
+	     http://hostname/corename/search/q=term
+         where "corename" matches the name="corename" as used below.  If the URL does not specify a
+         "corename", the "core" specified below in "defaultCoreName" will handle the request.
+    -->
+    <cores defaultCoreName="movies">
+        <core name="movies">
+            <!-- The configuration settings that are specific to the data source occur inside each "core" tag -->
+            <dataSourceType>1</dataSourceType>
+            <dataDir>movies</dataDir>
+            <!-- The "dataFile" is with respective to the folder of the core. Thus we need to use ".." here. -->
+            <dataFile>../movie-data.json</dataFile>
+
+            <!-- Operations can also be assigned to special ports.  This supports network based security
+                 used by all modern firewall.  Below, we move http://hostname/update operations to a
+                 different port.
+            -->
+	    <updatePort>8088</updatePort>
+
+            <schema>
+                <fields>
+		    <!-- highlight="true" must be enabled per field to turn on markup around matches -->
+                    <field name="title" type="text" indexed="true" highlight="true"/>
+                    <field name="director" type="text" indexed="true" highlight="true"/>
+                    <field name="genre" type="text" indexed="true"
+                           default="HORROR" required="false"/>
+                    <field name="year" type="integer" indexed="false" refining="true"
+                           default="2000" required="false"/>
+                    <field name="id" type="text" refining="true" indexed="false"/>
+                </fields>
+              
+                <uniqueKey>id</uniqueKey>
+              
+                <facetEnabled>true</facetEnabled>
+                <facetFields>
+                    <facetField name="genre" facetType="categorical"/>
+                    <facetField name="year"  facetType="range" facetStart="1990" facetEnd="2050"
+                                facetGap="10"/>
+                </facetFields>
+              
+                <types>
+                    <fieldType name="text_en">
+                        <analyzer>
+                            <filter name="PorterStemFilter" dictionary="" />
+                            <filter name="StopFilter" words="stop-words.txt" />
+                        </analyzer>
+                    </fieldType>
+                </types>
+            </schema>
+
+            <indexConfig>
+                <indexType>0</indexType>
+                <supportSwapInEditDistance>true</supportSwapInEditDistance>
+                <fieldBoost>title^2 director^1</fieldBoost>
+                <defaultQueryTermBoost>1</defaultQueryTermBoost>
+                <enablePositionIndex>1</enablePositionIndex> 
+            </indexConfig>
+
+	    <query>
+	        <rankingAlgorithm>
+		    <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
+	        </rankingAlgorithm>
+		<fuzzyMatchPenalty>0.9</fuzzyMatchPenalty>
+		<queryTermSimilarityThreshold>0.75</queryTermSimilarityThreshold>
+		<prefixMatchPenalty>0.95</prefixMatchPenalty>
+		<cacheSize>65536000</cacheSize>
+		<rows>10</rows>
+		<fieldBasedSearch>1</fieldBasedSearch>
+		<searcherType>0</searcherType>
+
+		<!-- 0: exact match; 1: fuzzy match.-->
+		<queryTermFuzzyType>0</queryTermFuzzyType>
+
+		<!-- 0: prefix match; 1: complete match -->
+		<queryTermPrefixType>1</queryTermPrefixType>
+
+		<queryResponseWriter>
+		    <responseFormat>1</responseFormat>
+		</queryResponseWriter>
+
+		<!-- Client user interface features for displaying matching records -->
+		<highlighter>
+		    <!-- Length of text snippet surrounding matches -->
+		    <snippetSize>250</snippetSize>
+
+		    <!-- Markup (or any other kind of text) in which to surround matching terms, fuzzy or otherwise.
+			 This feature allows matching terms in returned results to be tagged with CSS styles, raw HTML, ...
+			 Note the need for highlight="true" in schema <field> nodes below.  Markup is returned in a
+			 snippet JSON structure similar to and at the same level of the XML tree, as record.
+		    -->
+		    <snippetSize>250</snippetSize>
+		    <fuzzyTagPre value = '<span class="fuzzy">'></fuzzyTagPre>
+		    <fuzzyTagPost value = '</span>'></fuzzyTagPost>
+		    <exactTagPre value = '<span class="exact">' ></exactTagPre>
+		    <exactTagPost value = '</span>'></exactTagPost>
+		</highlighter>
+
+	    </query>
+
+	    <updatehandler>
+	        <maxDocs>15000000</maxDocs>
+		<maxMemory>10000000</maxMemory>
+		<mergePolicy>
+		    <mergeEveryNSeconds>10</mergeEveryNSeconds>
+		    <mergeEveryMWrites>10</mergeEveryMWrites>
+		</mergePolicy>
+		<updateLog>
+		    <logLevel>4</logLevel>
+		    <accessLogFile>srch2-log.txt</accessLogFile>
+		</updateLog>
+	    </updatehandler>
+        </core>
+
+	<!-- A second "core" loaded with posts from Stackoverflow.  A search request on this data
+             would take the form: http://hostname/stack/search?q=...
+
+             Intellectual property: Stackoverflow data is available under the Create Commons
+             license and cc-wiki license.  Please see the Stack Overflow Created Commons Data
+             Dump page: http://blog.stackoverflow.com/2009/06/stack-overflow-creative-commons-data-dump/
+             for more information.
+        -->
+        <core name="stack">
+            <dataSourceType>1</dataSourceType>
+            <dataDir>stack</dataDir>
+            <!-- The "dataFile" is with respective to the folder of the core. Thus we need to use ".." here. -->
+            <dataFile>../stackoverflow-data.json</dataFile>
+
+	    <!-- Here we move all control and write operations to a dedicated port.  This could be a
+	         typical configuration for those wishing to limit most users to just search requests
+                 by using functionality typically available in a firewall.  To complete this setup,
+                 a network administrator would configure rules in the firewall to only allow access to
+                 port 9081 from certain VLANs or IP addresses.
+	    -->
+	    <savePort>9081</savePort>
+	    <exportPort>9081</exportPort>
+	    <resetLoggerPort>9081</resetLoggerPort>
+	    <docsPort>9081</docsPort>
+	    <updatePort>9081</updatePort>
+
+            <schema>
+                <fields>
+                    <field name="title"          type="text"    indexed="true"/>
+                    <field name="body"           type="text"    indexed="true"/>
+                    <field name="author_name"    type="text"    indexed="true"/>
+                    <field name="tags"           type="text"    indexed="true"    refining="true"
+                           required="false" multivalued="true"/>
+                    <field name="creation_date"  type="time"    indexed="false"   refining="true" default="01/01/2000"  required="false"/>
+                    <field name="view_count"     type="integer" indexed="false"   refining="true"
+                           default="0"           required="false"/>
+                    <field name="answer_count"   type="integer" indexed="false"   refining="true"
+                           default="0"           required="false"/>
+                    <field name="votes_count"    type="integer" indexed="false"   refining="true"
+                           default="0"           required="false"/>
+                </fields>
+              
+                <uniqueKey>id</uniqueKey>
+                <facetEnabled>true</facetEnabled>
+                <facetFields>
+                    <facetField name="tags" facetType="categorical"/>
+                </facetFields>
+              
+                <types>
+                    <fieldType name="text_en">
+                      <analyzer>
+                        <filter name="PorterStemFilter" dictionary="" />
+                        <filter name="StopFilter" words="stop-words.txt" />
+
+			<!-- Specify certain words are complete, searchable terms, despite punctuation
+			     in them.  This allows searches on terms such as C++ or .NET .
+			 -->
+                        <filter name="protectedKeyWordsFilter" words="protected_words.txt" />
+
+			<!-- Match Twitter hash tags and user names -->
+			<allowedRecordSpecialCharacters>#@</allowedRecordSpecialCharacters>
+                      </analyzer>
+                    </fieldType>
+                </types>
+            </schema>
+
+            <indexConfig>
+                <indexType>0</indexType>
+                <supportSwapInEditDistance>true</supportSwapInEditDistance>
+
+                <!--  <fieldBoost>title^12 tags^16</fieldBoost> -->
+                <fieldBoost>title^30 tags^20</fieldBoost>
+                <recordBoostField>votes_count</recordBoostField>
+                <defaultQueryTermBoost>1</defaultQueryTermBoost>
+                <enablePositionIndex>1</enablePositionIndex> 
+            </indexConfig>
+            
+	    <query>
+	        <rankingalgorithm>
+		    <!-- Ranking formula can be a complex expression -->
+		    <recordScoreExpression>(idf_score*(log(doc_boost+1)^1.5))/(idf_score+log(doc_boost+1))</recordScoreExpression>
+		</rankingalgorithm>
+		<fuzzyMatchPenalty>0.75</fuzzyMatchPenalty>
+
+		<!-- queryTermSimilarityThreshold basically determines in how many letters one error will
+		     be tolerated and the term will still match
+		-->
+		<queryTermSimilarityThreshold>0.8</queryTermSimilarityThreshold>
+
+		<prefixMatchPenalty>0.85</prefixMatchPenalty>
+		<cacheSize>65536000</cacheSize>
+		<rows>10</rows>
+		<fieldBasedSearch>0</fieldBasedSearch>
+		<searcherType>0</searcherType>
+
+		<!-- 0: exact match; 1: fuzzy match.-->
+		<queryTermFuzzyType>1</queryTermFuzzyType>
+
+		<!-- 0: prefix match; 1: complete match -->
+		<queryTermPrefixType>1</queryTermPrefixType>
+
+		<queryResponseWriter>
+		    <responseFormat>1</responseFormat>
+		</queryResponseWriter>
+	    </query>
+
+            <KeywordPopularityThreshold>10000</KeywordPopularityThreshold>
+            <getAllResultsMaxResultsThreshold>2000</getAllResultsMaxResultsThreshold>
+            <getAllResultsKAlternative>500</getAllResultsKAlternative>
+
+	    <updatehandler>
+	        <maxDocs>15000000</maxDocs>
+		<maxMemory>10000000</maxMemory>
+		<mergePolicy>
+		    <mergeEveryNSeconds>10</mergeEveryNSeconds>
+		    <mergeEveryMWrites>10</mergeEveryMWrites>
+		</mergePolicy>
+		<updateLog>
+		    <logLevel>4</logLevel>
+		    <accessLogFile>srch2-log.txt</accessLogFile>
+		</updateLog>
+	    </updatehandler>
+        </core>
+
+    </cores>
+
+    <!-- 
+        Mongo DB settings
+        Required if dataSourceType = 2
+    -->
+    <!--
+    <dataSourceType>2</dataSourceType>
+    <mongodb>
+        <host>localhost</host>
+        <port>27017</port>
+        <db>demo</db>
+        <collection>movies</collection>
+        <listenerWaitTime>3</listenerWaitTime>
+    </mongodb>
+    -->     
+</config>
