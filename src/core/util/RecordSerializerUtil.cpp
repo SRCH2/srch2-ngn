@@ -83,6 +83,10 @@ void RecordSerializerUtil::convertCompactToJSONString(Schema * storedAttrSchema,
 			    std::find(attrToReturn->begin(), attrToReturn->end(), iter->first) == attrToReturn->end()) {
 				continue;
 			}
+			// check if it is also a primary key, skip if true because PK is emitted already.
+			if (*(storedAttrSchema->getPrimaryKey()) == iter->first) {
+				continue;
+			}
 			unsigned id = storedAttrSchema->getSearchableAttributeId(iter->first);
 			unsigned lenOffset = compactRecDeserializer.getSearchableOffset(id);
 			const char *attrdata = buffer.start.get() + *((unsigned *)(buffer.start.get() + lenOffset));
@@ -126,6 +130,10 @@ void RecordSerializerUtil::convertCompactToJSONString(Schema * storedAttrSchema,
 		{
 			if (attrToReturn &&
 					std::find(attrToReturn->begin(), attrToReturn->end(), iter->first) == attrToReturn->end()) {
+				continue;
+			}
+			// check if it is also a primary key, skip if true because PK is emitted already.
+			if (*(storedAttrSchema->getPrimaryKey()) == iter->first) {
 				continue;
 			}
 			unsigned id = storedAttrSchema->getRefiningAttributeId(iter->first);
