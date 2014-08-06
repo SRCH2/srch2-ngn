@@ -2461,7 +2461,7 @@ bool ConfigManager::isValidQueryTermSimilarityThreshold(string & qTermSimilarity
 
 bool ConfigManager::isValidQueryTermLengthBoost(string& queryTermLengthBoost) {
     if (this->isFloat(queryTermLengthBoost)) {
-        float val = strtof(queryTermLengthBoost.c_str(),NULL);
+        float val = static_cast<float>(strtod(queryTermLengthBoost.c_str(),NULL));
         if (val >= 0 && val <= 1) {
             return true;
         }
@@ -2473,7 +2473,7 @@ bool ConfigManager::isValidQueryTermLengthBoost(string& queryTermLengthBoost) {
 
 bool ConfigManager::isValidPrefixMatch(string& prefixmatch) {
     if (this->isFloat(prefixmatch)) {
-        float val = strtof(prefixmatch.c_str(),NULL);
+        float val = static_cast<float>(strtod(prefixmatch.c_str(),NULL));
         if (val >= 0 && val <= 1) {
             return true;
         }

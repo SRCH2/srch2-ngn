@@ -388,7 +388,7 @@ void RecordSerializerUtil::convertByteArrayToTypedValue(const string& name,
 			break;
 		case ATTRIBUTE_TYPE_FLOAT:
 			for(int i=0;i<multiValues.size(); i++){
-				floatValues.push_back(strtof(multiValues[i].c_str(),NULL));
+				floatValues.push_back(static_cast<float>(strtod(multiValues[i].c_str(),NULL)));
 			}
 			result->setTypedValue(floatValues);
 			break;

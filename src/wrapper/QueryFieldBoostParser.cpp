@@ -67,7 +67,7 @@ bool srch2::httpwrapper::QueryFieldBoostParser::parseAndAddCriterion(
           "boost integer value expected after %s attribute", qfField.c_str());
       return false;
     }
-    attributeBoost.boost= strtof(qfBoost.c_str(),NULL);
+    attributeBoost.boost= static_cast<float>(strtod(qfBoost.c_str(),NULL));
     ASSERT(attributeBoost.boost);
     qfcontainer.boosts.push_back(attributeBoost);
   } while(*currentParameterString.begin() == '+');

@@ -99,11 +99,12 @@ void testOnlyId(const CoreInfo_t *indexDataConfig,
             testRecord(jsonRecord, expectResult, indexDataConfig, recSerializer, record));
 }
 
-//Test the JSON record only contains required fields, the result should be true.
+//Test the JSON record only contains required fields, the result should be false.
+//All other fields are missing (incomplete JSON record)
 void testOnlyIdTitle(const CoreInfo_t *indexDataConfig,
         RecordSerializer & recSerializer, Record *record) {
     string jsonRecord = "{\"id\":1,\"title\":\"test\"}";
-    bool expectResult = true;
+    bool expectResult = false;
     ASSERT(
             testRecord(jsonRecord, expectResult, indexDataConfig, recSerializer, record));
 }

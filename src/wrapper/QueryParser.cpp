@@ -131,7 +131,7 @@ bool QueryParser::parseForSuggestions(string & keyword, float & fuzzyMatchPenalt
                     if(normalizerString.length() == 1){ // fuzzy modifier is only '~' w/o any values
                         fuzzyMatchPenalty = -1; // -1 indicates that used did not enter any values for this one, example: k=can
                     }else{
-                        fuzzyMatchPenalty = strtof(normalizerString.c_str() + 1,NULL);
+                        fuzzyMatchPenalty = static_cast<float>(strtod(normalizerString.c_str() + 1,NULL));
                     }
                 }
             }
@@ -546,7 +546,7 @@ void QueryParser::lengthBoostParser() {
         string lengthBoost;
         decodeString(lengthBoostTmp,lengthBoost);
         if (isFloat(lengthBoost)) {
-            const float lboost = strtof(lengthBoost.c_str(),NULL);
+            const float lboost = static_cast<float>(strtod(lengthBoost.c_str(),NULL));
             if (lboost <= 1 && lboost >= 0) {
                 this->container->parametersInQuery.push_back(
                         srch2::httpwrapper::LengthBoostFlag);
@@ -583,7 +583,7 @@ void QueryParser::prefixMatchPenaltyParser() {
         string prefixMatchPenalty;
         decodeString(prefixMatchPenaltyTmp, prefixMatchPenalty);
         if (isFloat(prefixMatchPenalty)) {
-            const float ppm = strtof(prefixMatchPenalty.c_str(),NULL);
+            const float ppm = static_cast<float>(strtod(prefixMatchPenalty.c_str(),NULL));
             if (ppm <= 1 && ppm >= 0) {
                 this->container->parametersInQuery.push_back(
                         srch2::httpwrapper::PrefixMatchPenaltyFlag);
@@ -1120,7 +1120,7 @@ void QueryParser::setLpKeyValinContainer(const string &lpKey,
         this->isLpFieldFilterBooleanOperatorAssigned = true;
     } else if (0 == lpKey.compare(lpKeywordSimilarityThresholdParamName)) {
         if (isFloat(lpVal)) {
-            float f = strtof(lpVal.c_str(),NULL); //TODO: add the validation
+            float f = static_cast<float>(strtod(lpVal.c_str(),NULL)); //TODO: add the validation
             this->lpKeywordSimilarityThreshold = f;
         } else {
             //warning
@@ -1665,8 +1665,8 @@ void QueryParser::setGeoContainerProperties(const char* leftBottomLat,
     decodeString(rightTopLong, rightTopLongStr);
 // convert the rowsStr to integer.
     if (isFloat(leftBottomLatStr)) {
-        this->container->geoParameterContainer->leftBottomLatitude = strtof(
-                leftBottomLatStr.c_str(),NULL); // convert the string to char* and pass it to strtof
+        this->container->geoParameterContainer->leftBottomLatitude = static_cast<float>(strtod(
+                leftBottomLatStr.c_str(),NULL)); // convert the string to char* and pass it to strtod
     } else {
         this->container->messages.push_back(
                 make_pair(MessageError,
@@ -1674,8 +1674,8 @@ void QueryParser::setGeoContainerProperties(const char* leftBottomLat,
         this->isParsedError = true;
     }
     if (isFloat(leftBottomLatStr)) {
-        this->container->geoParameterContainer->leftBottomLongitude = strtof(
-                leftBottomLongStr.c_str(),NULL); // convert the string to char* and pass it to strtof
+        this->container->geoParameterContainer->leftBottomLongitude = static_cast<float>(strtod(
+                leftBottomLongStr.c_str(),NULL)); // convert the string to char* and pass it to strtod
     } else {
         this->container->messages.push_back(
                 make_pair(MessageError,
@@ -1683,8 +1683,8 @@ void QueryParser::setGeoContainerProperties(const char* leftBottomLat,
         this->isParsedError = true;
     }
     if (isFloat(leftBottomLatStr)) {
-        this->container->geoParameterContainer->rightTopLatitude = strtof(
-                rightTopLatStr.c_str(),NULL); // convert the string to char* and pass it to strtof
+        this->container->geoParameterContainer->rightTopLatitude = static_cast<float>(strtod(
+                rightTopLatStr.c_str(),NULL)); // convert the string to char* and pass it to strtod
     } else {
         this->container->messages.push_back(
                 make_pair(MessageError,
@@ -1692,8 +1692,8 @@ void QueryParser::setGeoContainerProperties(const char* leftBottomLat,
         this->isParsedError = true;
     }
     if (isFloat(leftBottomLatStr)) {
-        this->container->geoParameterContainer->rightTopLongitude = strtof(
-                rightTopLongStr.c_str(),NULL); // convert the string to char* and pass it to strtof
+        this->container->geoParameterContainer->rightTopLongitude = static_cast<float>(strtod(
+                rightTopLongStr.c_str(),NULL)); // convert the string to char* and pass it to strtod
     } else {
         this->container->messages.push_back(
                 make_pair(MessageError,
@@ -1719,16 +1719,16 @@ void QueryParser::setGeoContainerProperties(const char* centerLat,
     decodeString(radiusParam, radiusParamStr);
 // convert the rowsStr to integer.
     if (isFloat(centerLatStr)) {
-        this->container->geoParameterContainer->centerLatitude = strtof(
-                centerLatStr.c_str(),NULL); // convert the string to char* and pass it to strtof
+        this->container->geoParameterContainer->centerLatitude = static_cast<float>(strtod(
+                centerLatStr.c_str(),NULL)); // convert the string to char* and pass it to strtod
     } else {
         this->container->messages.push_back(
                 make_pair(MessageError, "clat should be a valid float number"));
         this->isParsedError = true;
     }
     if (isFloat(centerLongStr)) {
-        this->container->geoParameterContainer->centerLongitude = strtof(
-                centerLongStr.c_str(),NULL); // convert the string to char* and pass it to strtof
+        this->container->geoParameterContainer->centerLongitude = static_cast<float>(strtod(
+                centerLongStr.c_str(),NULL)); // convert the string to char* and pass it to strtod
     } else {
         this->container->messages.push_back(
                 make_pair(MessageError,
@@ -1736,8 +1736,8 @@ void QueryParser::setGeoContainerProperties(const char* centerLat,
         this->isParsedError = true;
     }
     if (isFloat(radiusParamStr)) {
-        this->container->geoParameterContainer->radius = strtof(
-                radiusParamStr.c_str(),NULL); // convert the string to char* and pass it to strtof
+        this->container->geoParameterContainer->radius = static_cast<float>(strtod(
+                radiusParamStr.c_str(),NULL)); // convert the string to char* and pass it to strtod
     } else {
         this->container->messages.push_back(
                 make_pair(MessageError,
@@ -1871,7 +1871,7 @@ void QueryParser::populateFuzzyInfo(bool isParsed, string &input) {
             // get the fuzzy value;
             Logger::debug("fuzzy value is specified extracting it");
             /* The String is in form ~.d+, so ignore ~ and move forward */
-            float fuzzyNum = strtof(input.c_str() + 1,NULL); // convert to float
+            float fuzzyNum = static_cast<float>(strtod(input.c_str() + 1,NULL)); // convert to float
             Logger::debug("fuzzy value is %f", fuzzyNum);
             this->setSimilarityThresholdInContainer(fuzzyNum);
         } else {

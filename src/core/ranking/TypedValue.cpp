@@ -500,7 +500,7 @@ namespace srch2
 				this->setTypedValue(static_cast<unsigned int>(strtoul(value.c_str(),NULL,10)));
 				break;
 			case ATTRIBUTE_TYPE_FLOAT:
-				this->setTypedValue(strtof(value.c_str(),NULL));
+				this->setTypedValue(static_cast<float>(strtod(value.c_str(),NULL)));
 				break;
 			case ATTRIBUTE_TYPE_TEXT:
 				this->setTypedValue(value);

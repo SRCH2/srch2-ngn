@@ -6431,7 +6431,7 @@ PUGI__NS_BEGIN
 	#ifdef PUGIXML_WCHAR_MODE
 		return wcstod(string, 0);
 	#else
-		return strtof(string,NULL);
+		return static_cast<float>(strtod(string,NULL));
 	#endif
 	}
 
