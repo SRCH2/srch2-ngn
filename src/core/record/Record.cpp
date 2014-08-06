@@ -214,7 +214,7 @@ std::string *Record::getRefiningAttributeValue(const unsigned attributeId) const
 void Record::getRefiningAttributeValue(const string& attributeName, string& attributeValue) const
 {
 	int attributeId = impl->schema->getRefiningAttributeId(attributeName);
-    if (attributeId >= impl->schema->getNumberOfRefiningAttributes())
+    if (attributeId < 0 || attributeId >= impl->schema->getNumberOfRefiningAttributes())
     {
         return;
     }

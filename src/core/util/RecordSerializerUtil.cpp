@@ -83,7 +83,7 @@ void RecordSerializerUtil::convertCompactToJSONString(Schema * storedAttrSchema,
 			    std::find(attrToReturn->begin(), attrToReturn->end(), iter->first) == attrToReturn->end()) {
 				continue;
 			}
-
+			// check if it is also a primary key, skip if true because PK is emitted already.
 			if (*(storedAttrSchema->getPrimaryKey()) == iter->first) {
 				continue;
 			}
@@ -132,6 +132,7 @@ void RecordSerializerUtil::convertCompactToJSONString(Schema * storedAttrSchema,
 					std::find(attrToReturn->begin(), attrToReturn->end(), iter->first) == attrToReturn->end()) {
 				continue;
 			}
+			// check if it is also a primary key, skip if true because PK is emitted already.
 			if (*(storedAttrSchema->getPrimaryKey()) == iter->first) {
 				continue;
 			}

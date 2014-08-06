@@ -221,9 +221,15 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
 
     }
 
-    // storing searchable attributes code begin.
+    // Creating in-memory compact representation below by using the Record object. Sanity check of input
+    // data is done before creating the record object.
+    // 1. storing variable length attributes
     string compressedInputLine;
     typedef map<string , unsigned>::const_iterator SearchableAttrIter;
+    // Note: storageSchema is a schema for in-memory data and it differs from actual schema populated
+    // from config file and kept in the index.
+    // In storage schema: Var Length Attributes (including MultiValAtr) => Searchable Attributes
+    //                    fixed Length Attrbutes (only float and int) => refining Attributes.
     const Schema& storageSchema = compactRecSerializer.getStorageSchema();
     for (SearchableAttrIter iter = storageSchema.getSearchableAttribute().begin();
     		iter != storageSchema.getSearchableAttribute().end(); ++iter)
@@ -239,7 +245,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
     	snappy::Compress(singleString.c_str(), singleString.length(), &compressedInputLine);
     	compactRecSerializer.addSearchableAttribute(iter->first, compressedInputLine);
     }
-    // Now we need to store the refining attributes
+    // 2. Now we need to store the Fixed attributes (int and float)
     typedef map<string , unsigned>::const_iterator  RefineAttrIter;
     for (RefineAttrIter iter = storageSchema.getRefiningAttributes()->begin();
     		iter != storageSchema.getRefiningAttributes()->end(); ++iter) {
