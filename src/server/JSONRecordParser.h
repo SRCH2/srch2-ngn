@@ -30,9 +30,9 @@ class JSONRecordParser
   static srch2is::Schema* createAndPopulateSchema( const CoreInfo_t *indexDataContainerConf);
 
  private:
-  static void getJsonValueString(const Json::Value &jsonValue, const std::string &key, std::vector< std::string>  &stringValue, const string &configName);
-  static void getJsonValueDateAndTime(const Json::Value &jsonValue, const std::string &key, std::vector< std::string>  &stringValue, const string &configName);
-  static void getJsonValueDouble(const Json::Value &jsonValue, const std::string &key, double &doubleValue, const string& configName);
+  static bool getJsonValueString(const Json::Value &jsonValue, const std::string &key, std::vector< std::string>  &stringValue, const string &configName);
+  static bool getJsonValueDateAndTime(const Json::Value &jsonValue, const std::string &key, std::vector< std::string>  &stringValue, const string &configName);
+  static bool getJsonValueDouble(const Json::Value &jsonValue, const std::string &key, double &doubleValue, const string& configName);
 };
 
 class DaemonDataSource
