@@ -33,6 +33,8 @@ const unsigned BLOCK_SIZE =  1400;  // MTU size
 // various migration message's body types
 struct MigrationInitMsgBody{
 	ShardId shardId;
+	unsigned srcOperationId;
+	unsigned dstOperationId;
 	unsigned shardComponentCount;
 };
 
@@ -144,10 +146,6 @@ int readDataFromSocketWithRetry(int fd, char *buffer, int byteToRead, int retryC
 }
 
 
-
-// various Redistribution message's body types
-//TODO:
-
 struct MigrationThreadArguments {
 	MigrationManager *mm;
 	ShardId shardId;
@@ -186,7 +184,8 @@ bool MMCallBackForTM::resolveMessage(Message * incomingMessage, NodeId remoteNod
 		//ACQUIRE LOCK
 		if (!migrationMgr->hasActiveSession(initMsgBody->shardId, remoteNode)) {
 
-			string sessionkey = migrationMgr->initMigrationSession(initMsgBody->shardId, remoteNode,
+			string sessionkey = migrationMgr->initMigrationSession(initMsgBody->shardId,
+					initMsgBody->srcOperationId, initMsgBody->dstOperationId, remoteNode,
 					initMsgBody->shardComponentCount);
 
 			migrationMgr->migrationSession[sessionkey].status = MM_STATE_INIT_RCVD;
@@ -293,8 +292,7 @@ void MigrationService::receiveShard(ShardId shardId, unsigned remoteNode) {
 	if (receiveSocket == -1) {
 		//close socket
 		Logger::console("Migration: Network error while migrating shard %s", shardId.toString().c_str());
-		migrationMgr->migrationSession.erase(sessionKey);
-		//TODO: Notify SHM
+		migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
 		return;
 	}
 
@@ -308,9 +306,8 @@ void MigrationService::receiveShard(ShardId shardId, unsigned remoteNode) {
 	if (commSocket == -1) {
 		//close socket
 		Logger::console("Migration: Network error while migrating shard %s", shardId.toString().c_str());
-		migrationMgr->migrationSession.erase(sessionKey);
 		close(receiveSocket);
-		//TODO: Notify SHM
+		migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
 		return;
 	}
 
@@ -342,10 +339,9 @@ void MigrationService::receiveShard(ShardId shardId, unsigned remoteNode) {
 			//close socket
 			perror("");   // TODO: replace perror in SM/TM/MM with strerror_r
 			Logger::console("Migration:I/O error for shard %s", shardId.toString().c_str());
-			migrationMgr->migrationSession.erase(sessionKey);
 			close(commSocket);
 			close(receiveSocket);
-			//TODO: Notify SHM
+			migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
 			return;
 		}
 
@@ -359,10 +355,9 @@ void MigrationService::receiveShard(ShardId shardId, unsigned remoteNode) {
 			//close socket
 			perror("");   // TODO: replace perror in SM/TM/MM with strerror_r
 			Logger::console("Migration:I/O error for shard %s", shardId.toString().c_str());
-			migrationMgr->migrationSession.erase(sessionKey);
 			close(commSocket);
 			close(receiveSocket);
-			//TODO: Notify SHM
+			migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
 			return;
 		}
 
@@ -375,10 +370,9 @@ void MigrationService::receiveShard(ShardId shardId, unsigned remoteNode) {
 		if (mmapBuffer == MAP_FAILED) {
 			perror("");   // TODO: replace perror in SM/TM/MM with strerror_r
 			Logger::console("Migration error for shard %s", shardId.toString().c_str());
-			migrationMgr->migrationSession.erase(sessionKey);
 			close(receiveSocket);
 			close(commSocket);
-			//TODO: Notify SHM
+			migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
 			return;
 		}
 
@@ -404,7 +398,7 @@ void MigrationService::receiveShard(ShardId shardId, unsigned remoteNode) {
 				munmap(mmapBuffer, componentSize);
 				close(receiveSocket);
 				close(commSocket);
-				//TODO: Notify SHM
+				migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
 				return;
 			}
 
@@ -438,26 +432,51 @@ void MigrationService::receiveShard(ShardId shardId, unsigned remoteNode) {
 			migrationMgr->migrationSession[sessionKey].endTimeStamp -
 			migrationMgr->migrationSession[sessionKey].beginTimeStamp);
 
+	migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_SUCCESS);
 
-	//munmap(mmapBuffer, maxMappedSize);
 	close(receiveSocket);
 	close(commSocket);
-	//migrationMgr->migrationSession.erase(shardId);
 }
 
-void MigrationManager::migrateShard(ShardId shardId, boost::shared_ptr<Srch2Server> shard, unsigned destinationNodeId) {
-	Logger::console("Migrating shard %s to node %d", shardId.toString().c_str(), destinationNodeId);
+void MigrationManager::populateStatus(ShardMigrationStatus& status, unsigned srcOperationId,
+		unsigned dstOperationId, unsigned destinationNodeId, boost::shared_ptr<Srch2Server> shard,
+		MIGRATION_STATUS migrationResult){
+
+	status.srcOperationId = srcOperationId;
+	status.dstOperationId = dstOperationId;
+	status.destinationNodeId = destinationNodeId;
+	status.shard = shard;
+	status.status = migrationResult;
+}
+
+void MigrationManager::notifySHMAndCleanup(string sessionKey, MIGRATION_STATUS migrationResult) {
+	ShardMigrationStatus migrationStatus;
+	populateStatus(migrationStatus, migrationSession[sessionKey].srcOperationId,
+			migrationSession[sessionKey].dstOperationId, migrationSession[sessionKey].remoteNode,
+			migrationSession[sessionKey].shard,
+			migrationResult);
+	//shardManager->resolveMMNotification(status);
+	migrationSession.erase(sessionKey);
+}
+void MigrationManager::migrateShard(unsigned uri, boost::shared_ptr<Srch2Server> shard, NodeId destinationNodeId,
+			unsigned srcOperationId , unsigned dstOperationId) {
+	ShardId shardId = shard->getShardId();
+	Logger::console("Migrating shard %s to node %d", shard->getShardId().toString().c_str(), destinationNodeId);
 
 	/*
 	 *  Initialize the migration session info
 	 */
 
 	if (hasActiveSession(shardId, destinationNodeId)) {
-		//Notify SHM
+		ShardMigrationStatus status;
+		populateStatus(status, srcOperationId, dstOperationId, destinationNodeId, shard,
+				MM_STATUS_BUSY);
+		//shardManager->resolveMMNotification(status);
 		return;
 	}
 
-	string sessionKey = this->initMigrationSession(shardId, destinationNodeId, 0);
+	string sessionKey = this->initMigrationSession(shardId, srcOperationId,
+			dstOperationId, destinationNodeId, 0);
 
 	migrationSession[sessionKey].status = MM_STATE_INIT_RCVD;
 	migrationSession[sessionKey].shard = shard;
@@ -492,7 +511,7 @@ void MigrationService::sendShard(ShardId shardId, unsigned destinationNodeId) {
 	if (status == -1) {
 		// cannot determine indexes size
 		Logger::console("Unable to access shard on disk");
-		// TODO: notify SHM
+		migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
 		return;
 	}
 
@@ -506,8 +525,7 @@ void MigrationService::sendShard(ShardId shardId, unsigned destinationNodeId) {
 
 	if (migrationMgr->migrationSession[sessionKey].status != MM_STATE_INIT_ACK_RCVD ) {
 		Logger::console("Unable to migrate shard ..destination node did not respond");
-		migrationMgr->migrationSession.erase(sessionKey);
-		// callback SHM with failure.
+		migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
 		return;
 	}
 
@@ -518,8 +536,7 @@ void MigrationService::sendShard(ShardId shardId, unsigned destinationNodeId) {
 	int sendSocket = migrationMgr->openTCPSendChannel(migrationMgr->migrationSession[sessionKey].remoteAddr,
 			migrationMgr->migrationSession[sessionKey].listeningPort);
 	if (sendSocket == -1) {
-		migrationMgr->migrationSession.erase(sessionKey);
-		// callback SHM with failure.
+		migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
 		return;
 	}
 
@@ -531,8 +548,7 @@ void MigrationService::sendShard(ShardId shardId, unsigned destinationNodeId) {
 
 		if (migrationMgr->migrationSession[sessionKey].status != MM_STATE_INFO_ACK_RCVD) {
 			Logger::console("Unable to migrate shard ..destination node did not respond to begin");
-			migrationMgr->migrationSession.erase(sessionKey);
-			// callback SHM with failure.
+			migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
 			return;
 		}
 
@@ -543,8 +559,7 @@ void MigrationService::sendShard(ShardId shardId, unsigned destinationNodeId) {
 		if (inputFd == -1) {
 			Logger::console("Shard could not be read from storage device");
 			perror("");
-			migrationMgr->migrationSession.erase(sessionKey);
-			// callback SHM with failure.
+			migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
 			return;
 		}
 		Logger::console("Sending data for shard component %s", componentName.c_str());
@@ -557,8 +572,7 @@ void MigrationService::sendShard(ShardId shardId, unsigned destinationNodeId) {
 			if (status == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
 				perror("");
 				Logger::console("Network error while sending the shard");
-				//CallBack SHM
-				migrationMgr->migrationSession.erase(sessionKey);
+				migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
 				return;
 			}
 
@@ -571,8 +585,7 @@ void MigrationService::sendShard(ShardId shardId, unsigned destinationNodeId) {
 			if (status == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
 				perror("");
 				Logger::console("Network error while sending the shard");
-				//CallBack SHM
-				migrationSession.erase(shardId);
+				migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
 				return;
 			}
 			if (offset >= componentSize)
@@ -594,6 +607,8 @@ void MigrationService::sendShard(ShardId shardId, unsigned destinationNodeId) {
 	Logger::console("Send shard %s in %d secs", shardId.toString().c_str(),
 			migrationMgr->migrationSession[sessionKey].endTimeStamp -
 			migrationMgr->migrationSession[sessionKey].beginTimeStamp);
+
+	migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_SUCCESS);
 
 }
 
@@ -766,8 +781,6 @@ void MigrationManager::openReceiveChannel(int& udpSocket , short& receivePort) {
 
 	fcntl(udpSocket, F_SETFL, O_NONBLOCK);
 
-	// Todo: Try changing socket buffer size. Ideal buffer size ?
-
 	struct sockaddr_in addr;
 	memset(&addr, 0, sizeof(sockaddr_in));
 	addr.sin_family = AF_INET;
@@ -799,8 +812,6 @@ int MigrationManager::openTCPSendChannel(unsigned remoteAddr, short remotePort) 
 		perror("sending socket failed to init");
 		return -1;
 	}
-
-	// Todo: Try changing socket buffer size. Ideal buffer size ?
 
 	struct sockaddr_in destinationAddress;
 	memset(&destinationAddress, 0, sizeof(destinationAddress));
@@ -837,8 +848,6 @@ int MigrationManager::openSendChannel() {
 	 */
 	//fcntl(udpSocket, F_SETFL, O_NONBLOCK);
 
-	// Todo: Try changing socket buffer size. Ideal buffer size ?
-
 	return udpSocket;
 
 }
@@ -862,11 +871,14 @@ bool MigrationManager::hasActiveSession(const ShardId& shardId, unsigned remoteN
 	}
 }
 
-string MigrationManager::initMigrationSession(ShardId shardId, unsigned remoteNode, unsigned shardCompCount) {
+string MigrationManager::initMigrationSession(ShardId shardId, unsigned srcOperationId,
+		unsigned dstOperationId, unsigned remoteNode, unsigned shardCompCount) {
 
 	string key = getSessionKey(shardId, remoteNode);
 	MigrationSessionInfo * info = new MigrationSessionInfo();
 	info->shardId = shardId;
+	info->srcOperationId = srcOperationId;
+	info->dstOperationId = dstOperationId;
 	info->beginTimeStamp = 0;
 	info->endTimeStamp = 0;
 	info->listeningPort = -1;

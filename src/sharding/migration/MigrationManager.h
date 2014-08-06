@@ -19,49 +19,38 @@
 namespace srch2 {
 namespace httpwrapper {
 
-/*
- *   new API for Srch2Server Object
-class Srch2Server {
-	void loadIndexFromByteStream(const std::istream& binaryStream);
-	void loadIndexFromFile(const std::string& filename); // existing code... need refactor
-	void createIndexFromFile();                          // existing code ..need refactor
-	void createEmptyIndex();
-
-	bool addRecord(string json);
-	bool deleteRecord(string pk);
-	bool updateRecord(string pk, string jsonRec);
-};
-
-*/
 
 enum MIGRATION_STATUS {
 	MM_STATUS_SUCCESS,
 	MM_STATUS_FAILURE,  //e.g network failure or serialization failure
-	MM_STATUS_ABORTED   // aborted by SHM
+	MM_STATUS_ABORTED,  // aborted by SHM
+	MM_STATUS_BUSY      // MM is busy. Try again later.
 };
 
 
 // migration status data structure
 struct ShardMigrationStatus{
-	ShardId shardId;
-	unsigned sourceNodeId;
-	unsigned destinationNodeId;
+	unsigned srcOperationId;
+    unsigned dstOperationId;
+	NodeId sourceNodeId;
+	NodeId destinationNodeId;
+	boost::shared_ptr<Srch2Server> shard;
 	MIGRATION_STATUS status;
 };
 
 // redistribution data structure
-struct Stats{
-	ShardId shardId;
-	unsigned nodeId;
-	unsigned recCount;
-};
-
-struct ShardDistributionStatus{
-	MIGRATION_STATUS status;
-	unsigned statsCount;
-	// for source this is destination stats and for the destination this is source stats
-	Stats statsArray[0];
-};
+//struct Stats{
+//	ShardId shardId;
+//	unsigned nodeId;
+//	unsigned recCount;
+//};
+//
+//struct ShardDistributionStatus{
+//	MIGRATION_STATUS status;
+//	unsigned statsCount;
+//	// for source this is destination stats and for the destination this is source stats
+//	Stats statsArray[0];
+//};
 
 enum MIGRATION_STATE{
 
@@ -90,6 +79,8 @@ class MigrationSessionInfo {
 public:
 	ShardId shardId;
 	boost::shared_ptr<Srch2Server> shard;
+	unsigned srcOperationId;
+	unsigned dstOperationId;
 	unsigned shardCompCount;
 	unsigned shardCompSize;
 	string shardCompName;
@@ -131,7 +122,8 @@ public:
 	 * 1. Nonblocking API for migrating shard. Notifies ShardManager when migration is done.
 	 * 2. ShardManager must expose method "void Notify(ShardMigrationStatus &)"
 	 */
-	void migrateShard(ShardId shardId, boost::shared_ptr<Srch2Server> shard, unsigned destinationNodeId);
+	void migrateShard(unsigned uri, boost::shared_ptr<Srch2Server> shard, NodeId destinationNodeId,
+			unsigned srcOperationId , unsigned dstOperationId);
 
 	/*  NOT IMPLEMENTED
 	 * 1. Non Blocking API. Notifies ShardManager when distribution is done.
@@ -183,12 +175,16 @@ private:
 	void sendInfoAckMessage(const string& sessionKey);
 	int acceptTCPConnection(int tcpSocket , short receivePort);
 	void doInitialHandShake(const string& sessionKey);
-	string initMigrationSession(ShardId shardId, unsigned remoteNode, unsigned shardCompCount);
+	string initMigrationSession(ShardId shardId,unsigned srcOperationId,
+			unsigned dstOperationId, unsigned remoteNode, unsigned shardCompCount);
 	bool hasActiveSession(const ShardId& shardId, unsigned node);
 	bool hasActiveSession(const ShardId& shardId, unsigned node, string& sessionKey);
 	void sendMessage(unsigned destinationNodeId, Message *message);
 	const CoreInfo_t *getIndexConfig(ShardId shardId);
-
+	void populateStatus(ShardMigrationStatus& status, unsigned srcOperationId,
+			unsigned dstOperationId, unsigned destinationNodeId, boost::shared_ptr<Srch2Server> shard,
+			MIGRATION_STATUS migrationResult);
+	void notifySHMAndCleanup(string sessionKey, MIGRATION_STATUS migrationResult);
 	// Hash function for key of type ShardId to be used by boost::unordered_map
 	string getSessionKey( const ShardId& shardId, unsigned node) const
 	{
