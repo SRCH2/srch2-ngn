@@ -8,7 +8,7 @@ The following figure illustrates how to use the engine in an application.  We pr
 file that specifies parameters for the engine, such as socket a port number, a data source (a JSON file,
 MongoDB, or SQLite) and ranking-related values.
 
-<span ><center><img style="width:45%" src="../images/SRCH2-Overview.jpg" /></center></span>
+<span ><center><img style="width:45%" src="images/SRCH2-Overview.jpg" /></center></span>
 
 SRCH2 provides a RESTful API, using which a client can insert/delete/update records, 
 submit search queries, and send control messages such as getting status information, 

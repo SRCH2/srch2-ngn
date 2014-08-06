@@ -27,7 +27,7 @@ The value "1" means that the indexing type is for geo. Correspondingly, we need 
 ```
 Each record should have two corresponding values for these two types, and they should be float numbers.  For example:
 ```
-{"id" : "1234", "name" : "ghirardelli", "category" : "chocolate", "lat" : 43.22, "lng": -80.22}
+ {"id" : "1234", "name" : "ghirardelli", "category" : "chocolate", "lat" : 43.22, "lng": -80.22}
 ```
 
 
@@ -56,7 +56,7 @@ If geo indexing is used, a geo query should use one of the following two ways to
 
 The following is an example geo query:
 ```
-$ curl -i "http://localhost:8081/search?q=girardelli&start=0&rows=20&lblat=61.20&lblong=-149.90&rtlat=61.22&rtlong=-149.70"
+ curl -i "http://localhost:8081/search?q=girardelli&start=0&rows=20&lblat=61.20&lblong=-149.90&rtlat=61.22&rtlong=-149.70"
 ```
 
 ###3. Geo Query Ranking

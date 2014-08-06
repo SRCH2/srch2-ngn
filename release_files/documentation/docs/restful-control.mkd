@@ -1,6 +1,6 @@
 #RESTful API - Control Messages
 
-The SRCH2 engine supports certain control messages through its RESTful API.  Here we explain how to use the maessages
+The SRCH2 engine supports certain control messages through its RESTful API.  Here we explain how to use the messages
 to manage the engine.  Each RESTful request needs to use a proper [URL encoder](http://www.w3schools.com/tags/ref_urlencode.asp) to be converted to characters in a format that can be transmitted properly.
 
 ##1. Retrieving System Status
@@ -17,25 +17,25 @@ This request returns the information about the system status. The response body 
 
 Here is an example query: 
 ```
-$ curl -i "http://localhost:8081/info"
+ curl -i "http://localhost:8081/info"
 ```
 
 Here is an example response:
 
 ```
-HTTP/1.1 200 OK
-Content-Type: application/json; charset=UTF-8
-Content-Length: 138
-Date: Thu, 19 Sep 2013 18:52:52 GMT
-
-{"engine_status":{"search_requests":"0","write_requests":"100","docs_in_index":"100","last_merge":"02/10/14 23:11:21","last_merge_time":"0","doc_count":"100"}, "version":"4.2.0"}
+ HTTP/1.1 200 OK
+ Content-Type: application/json; charset=UTF-8
+ Content-Length: 138
+ Date: Thu, 19 Sep 2013 18:52:52 GMT
+ 
+ {"engine_status":{"search_requests":"0","write_requests":"100","docs_in_index":"100","last_merge":"02/10/14 23:11:21","last_merge_time":"0","doc_count":"100"}, "version":"4.2.0"}
 ```
 
 ##2. Serializing Indexes to Disk
 
 This request tells the engine to serialize the indexes, with all the changes made so far, to files in the path specified by the parameter "dataDir" in the [configuration file](../example-demo/srch2-config.xml). Here is an example: 
-```python
-$ curl -i "http://localhost:8081/save" -X PUT
+```
+ curl -i "http://localhost:8081/save" -X PUT
 ```
 
 ##3. Serializing Records to Disk
@@ -43,7 +43,7 @@ $ curl -i "http://localhost:8081/save" -X PUT
 This request tells the engine to serialize the records, with all the changes made so far, to a file in the path specified by the parameter "dataDir" in the configuration file. Deleted records will be ignored. The request can specify the file name as well, using a variable called "exported_data_file". Here is an example: 
 
 ```
-$ curl -i "http://localhost:8081/export?exported_data_file=mydata.json" -X PUT
+ curl -i "http://localhost:8081/export?exported_data_file=mydata.json" -X PUT
 ```
 
 The engine will store the records in the file "mydata.json" in the folder specified by the parameter "dataDir".
@@ -56,13 +56,13 @@ The tool also has re-created a file with the original name "srch2-log.txt".  The
 Now "logrotate" sends the following message:
 
 ```
-$ curl -i "http://localhost:8081/resetLogger" -X PUT
+ curl -i "http://localhost:8081/resetLogger" -X PUT
 ```
 
-It tells the SRCH2 engine to reset its log-file handle to continue using the original file name  "srch2-log.txt". In this way, the old log messages have been moved to the file ""srch2-log.txt.1", which can be managed by the "logrotate" tool. Here is an example configuration file for "lograte":
+It tells the SRCH2 engine to reset its log-file handle to continue using the original file name  "srch2-log.txt". In this way, the old log messages have been moved to the file ""srch2-log.txt.1", which can be managed by the "logrotate" tool. Here is an example configuration file for "logrotate":
 
 ```
-"/home/joe/srch2/logs/srch2-log.txt" {
+ "/home/joe/srch2/logs/srch2-log.txt" {
     weekly
     missingok
     rotate 52
@@ -80,7 +80,7 @@ It tells the SRCH2 engine to reset its log-file handle to continue using the ori
 
 The client can send a shutdown message to let the server stop gracefully. The request should be sent to the "/_all/shutdown" path by a "PUT" method.  Here is an example query: 
 ```
-$ curl -i "http://localhost:8081/_all/shutdown" -X PUT
+ curl -i "http://localhost:8081/_all/shutdown" -X PUT
 ```
 
 

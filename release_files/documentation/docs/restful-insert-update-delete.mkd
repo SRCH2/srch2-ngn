@@ -13,16 +13,16 @@ This request adds a record or a list of records to the indexes. The request body
 
 Here are two examples:
 
-```bash
-$ curl "http://localhost:8081/docs" -i -X PUT -d '{"id" : "1234", "name" : "Toy Story", "category" : "shop"}'
-$ curl "http://localhost:8081/docs" -i -X PUT -d '[{"id" : "1234", "name" : "Toy Story", "category" : "shop"},{"id" : "5678", "name" : "Toy Story II", "category" : "shop"}]'
+```bsh
+ curl "http://localhost:8081/docs" -i -X PUT -d '{"id" : "1234", "name" : "Toy Story", "category" : "shop"}'
+ curl "http://localhost:8081/docs" -i -X PUT -d '[{"id" : "1234", "name" : "Toy Story", "category" : "shop"},{"id" : "5678", "name" : "Toy Story II", "category" : "shop"}]'
 ```
 
 ##2. Delete
 
 This request deletes a record from the indexes. It needs to provide the primary key of the record to be deleted. The primary key can be sent in the query string one time per record.  Here is an example: 
-```bash
-$ curl "http://localhost:8081/docs?name_of_your_primaryKey=1234" -i -X DELETE
+```bsh
+ curl "http://localhost:8081/docs?name_of_your_primaryKey=1234" -i -X DELETE
 ```
 
 ##3. Update
@@ -40,8 +40,8 @@ The request body should contain a JSON object or an array of JSON objects, which
 Here are two examples: 
 
 ```bash
-$ curl "http://localhost:8081/update" -i -X PUT -d '{"id":"123","name":"Brave", "category":"shop"}'
-$ curl "http://localhost:8081/update" -i -X PUT -d '[{"id":"123","name":"Brave", "category":"shop"},{"id":"456","name":"Tom", "category":"shop"}]'
+ curl "http://localhost:8081/update" -i -X PUT -d '{"id":"123","name":"Brave", "category":"shop"}'
+ curl "http://localhost:8081/update" -i -X PUT -d '[{"id":"123","name":"Brave", "category":"shop"},{"id":"456","name":"Tom", "category":"shop"}]'
 ```
 
 Internally the engine implements the update of a record by first deleting the old record, then inserting the new record.
