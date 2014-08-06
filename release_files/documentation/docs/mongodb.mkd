@@ -11,14 +11,14 @@ Notice that the SRCH2 engine works with a MongoDB server running with the replic
 Download a <a href=../example-demo/movie-data.json>sample data file</a> with movie information to a local folder. Run the following MongoDB command to insert those records into a collection called "movies" in a database called "demo".
 
 ```
-shell> mongoimport --db demo --collection movies --type json --file movie-data.json 
+ mongoimport --db demo --collection movies --type json --file movie-data.json 
 ```
 To check if the data has been loaded, run following commands:
 
 ```
-shell> mongo
-mongodb> use demo
-mongodb> db.movies.find().count()
+ shell> mongo
+ mongodb> use demo
+ mongodb> db.movies.find().count()
 ```
 
 There should be 243 movies in the "movies" collection.
@@ -44,8 +44,8 @@ Change the parameters if needed.  Make sure that you have also set the "srch2Hom
 
 Go to the install folder of SRCH2 and run the following:
 
-```python
-shell> ./bin/srch2-engine --config-file=./example-demo/srch2-config.xml
+```
+ ./bin/srch2-engine --config-file=./example-demo/srch2-config.xml
 ```
 
 The engine should read the data from the MongoDB instance, build indexes, and wait for queries. It also starts a thread that periodically pulls latest changes from MongoDB (as specified by the "listenerWaitTime" parameter) and add these changes to its search indexes.
@@ -55,7 +55,7 @@ The engine should read the data from the MongoDB instance, build indexes, and wa
 In a shell, run the following command:
 
 ```
-shell> curl "http://localhost:8081/search?q=terminator"
+ curl "http://localhost:8081/search?q=terminator"
 ```
 You should see the records with the keyword "terminator".
 
@@ -63,16 +63,16 @@ You should see the records with the keyword "terminator".
 
 In the MongoDB client, run the following command to insert a new record.
 ```
-mongodb> db.movies.insert(
-{
-"trailer_url" : "http://www.youtube.com/watch?v=QHhZK-g7wHo",
-"title" : "Terminator 3: Rise of the Machines",
-"director" : "James Cameron",
-"year" : NumberLong(2003),
-"banner_url" : "http://ia.media-imdb.com/images/M/MV5BMTk5NzM1ODgyN15BMl5BanBnXkFtZTcwMzA5MjAzMw@@._V1_SY317_CR0,0,214,317_.jpg",
-"id" : NumberLong(765006),
-"genre" : "drama"
-});
+ mongodb> db.movies.insert(
+ {
+ "trailer_url" : "http://www.youtube.com/watch?v=QHhZK-g7wHo",
+ "title" : "Terminator 3: Rise of the Machines",
+ "director" : "James Cameron",
+ "year" : NumberLong(2003),
+ "banner_url" : "http://ia.media-imdb.com/images/M/MV5BMTk5NzM1ODgyN15BMl5BanBnXkFtZTcwMzA5MjAzMw@@._V1_SY317_CR0,0,214,317_.jpg",
+ "id" : NumberLong(765006),
+ "genre" : "drama"
+ });
 
 ```
 
@@ -82,10 +82,10 @@ This command inserts a new record into MongoDB.  Wait for about 3-4 seconds for 
 
 The record we inserted has a wrong director "James Cameron." The correct director is Jonathan Mostow. To fix the error, run the following command in the MongoDB shell to update the record:
 ```
-mongodb> db.movies.update( { id: 765006 },
-{
-$set: { director: "Jonathan Mostow" },
-});
+ mongodb> db.movies.update( { id: 765006 },
+ {
+  $set: { director: "Jonathan Mostow" },
+ });
 
 ```
 
@@ -95,7 +95,7 @@ Wait for about 3-4 seconds for the SRCH2 server to pull the change, then do the 
 
 Run the following command in the MongoDB shell to delete the updated record:
 ```
-mongodb> db.movies.remove({"id" : 765006 });
+ mongodb> db.movies.remove({"id" : 765006 });
 ```
 
 Again, wait for about 3-4 seconds for the SRCH2 server to pull the change, then do the above search query again. The SRCH2 engine should not return the record that we just deleted.

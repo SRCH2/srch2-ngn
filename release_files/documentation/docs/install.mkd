@@ -20,20 +20,20 @@ The "example-demo" folder contains files for a demo, in which we use the engine 
 
 <b>Step 3</b>: Go to the install folder and run the following:
 
-```
-/home/joe/srch2/example-demo> ../bin/srch2-engine --config-file=./srch2-config.xml
+```bsh
+ /home/joe/srch2/example-demo> ../bin/srch2-engine --config-file=./srch2-config.xml
 ```
 
 The server will read the configuration file, load the data in the corresponding data file, build indexes, and start a RESTful server. You should see a page similar to the following:
 
-```
-/home/joe/srch2/example-demo> ../bin/srch2-engine --config-file=./srch2-config.xml
-2014-08-05 15:31:39 INFO  Creating indexes from JSON file...
-2014-08-05 15:31:39 INFO	                                                     
-2014-08-05 15:31:39 INFO  Indexed 243 / 243 records.
-2014-08-05 15:31:39 INFO  Saving Indexes ...
-2014-08-05 15:31:39 INFO  Indexes saved.
-2014-08-05 15:31:39 INFO  Starting Srch2 server with 2 serving threads at 0.0.0.0:8081
+```bsh
+ /home/joe/srch2/example-demo> ../bin/srch2-engine --config-file=./srch2-config.xml
+ 2014-08-05 15:31:39 INFO  Creating indexes from JSON file...
+ 2014-08-05 15:31:39 INFO	                                                     
+ 2014-08-05 15:31:39 INFO  Indexed 243 / 243 records.
+ 2014-08-05 15:31:39 INFO  Saving Indexes ...
+ 2014-08-05 15:31:39 INFO  Indexes saved.
+ 2014-08-05 15:31:39 INFO  Starting Srch2 server with 2 serving threads at 0.0.0.0:8081
 ```
 
 Note:
@@ -43,14 +43,13 @@ Note:
  - Once the engine starts, it stores the indexes in the folder specified by the "dataDir" parameter in the configuration file (with a default folder called "indexes"). The next time we start the engine, it will check if the folder has index files. If so, the engine will load the index files instead of reading the records from the data source. If we want to force the engine to read the records, make sure to delete the files in the "indexes" folder.
 
 <b>Step 5</b>: To test the engine, open a new terminal and type the following command:
-
-```
-/home/joe/srch2/example-demo> curl -i  http://localhost:8081/search?q=terminator
+```bsh
+ /home/joe/srch2/example-demo> curl -i  http://localhost:8081/search?q=terminator
 ```
 
 You should see the following results:
 
-```json
+```js
 {
   "estimated_number_of_results": 2,
   "fuzzy": 1,
@@ -118,7 +117,7 @@ You should see the following results:
 
 ##2. Simple UI
 
-Use a browser to open the file [example-demo/basic/index.html](../example-demo/basic/index.html). Type into the search box.  After typing a few characters you should see results similar to the following:
+Use a browser to open the file [example-demo/basic/index.html.template](../example-demo/basic/index.html.template). Type into the search box.  After typing a few characters you should see results similar to the following:
 
 <center>
 ![Demo Web page Image](../images/Srch2-BasicDemoFront.png)
@@ -126,7 +125,7 @@ Use a browser to open the file [example-demo/basic/index.html](../example-demo/b
 
 ##3. Advanced UI
 
-Use the browser to open the file [example-demo/advanced/index.html](../example-demo/advanced/index.html). Do a search, and you should see a page similar to the following:
+Use the browser to open the file [example-demo/advanced/index.html.template](../example-demo/advanced/index.html.template). Do a search, and you should see a page similar to the following:
 
 <center>
 ![Demo Web-page Image](../images/Srch2-FullDemoFront.png)

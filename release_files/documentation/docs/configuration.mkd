@@ -7,7 +7,7 @@ The SRCH2 engine can be customized using a configuration file in XML. This docum
 ##2. Home Directory (Required)
 
 ```
-<srch2Home>/path/to/srch2/home/directory</srch2Home>
+ <srch2Home>/path/to/srch2/home/directory</srch2Home>
 ```
 This parameter specifies the installation folder of the SRCH2 engine,
 which includes the binary, a folder "example-demo" with a movie
@@ -21,8 +21,8 @@ should reference the data file's location as
 
 ##3. Hostname/Ports (Required)
 ```
-<listeningHostname>127.0.0.1</listeningHostname>
-<listeningPort>8081</listeningPort>
+ <listeningHostname>127.0.0.1</listeningHostname>
+ <listeningPort>8081</listeningPort>
 ```
 This parameter is the network identification (i.e., IP address or host name) of the server on which the SRCH2 engine is listening.
 NOTE: If you want the server to accept all incoming packets, please use <b>0.0.0.0</b>.
@@ -35,7 +35,7 @@ the advanced example configuration file in [example-demo/srch2-config-advanced.x
 ###3.1 SearchPort (Optional)
 This parameter overrides "listeningPort" for "search" requests.  "Search" requests must be sent to this port instead.
 
-###3.2 SuggestPort (Optional)
+###3.2 Suggest Port (Optional)
 This parameter overrides "listeningPort" for "suggest" requests.  "Suggest" requests must be sent to this port instead.
 
 ###3.3 InfoPort (Optional)
@@ -58,13 +58,13 @@ This parameter overrides "listeningPort" for "resetlogger" requests.  "ResetLogg
 
 ##4. Data Directory (Required)
 ```
-<dataDir>/path/to/data/directory/</dataDir>
+ <dataDir>/path/to/data/directory/</dataDir>
 ```
 This value specifies the path of a folder where the engine stores serialized index files. <br>
 
 ##5. Thread Number (Optional)
 ```
-<maxSearchThreads>2</maxSearchThreads>
+ <maxSearchThreads>2</maxSearchThreads>
 ```
 This setting specifies the number of threads that serve search requests. Its default value is 1. <br>
 
@@ -73,7 +73,7 @@ This setting specifies the number of threads that serve search requests. Its def
 ###6.1. Data Source (Optional)
 
 ```
-<dataSourceType>1</dataSourceType>
+ <dataSourceType>1</dataSourceType>
 ```
 This value specifies the type of data source indexed by the engine.  Notice that if there are previous indexes already created  and serialized on disk, the engine will always load them and ignore the flag.  The following flags are used only when there are no previous indexes on disk.
 
@@ -84,19 +84,19 @@ This value specifies the type of data source indexed by the engine.  Notice that
 ###6.2. Data File (Required if "dataSourceType" is 1)
 
 ```
-<dataFile>./example-demo/movie-data.json</dataFile>
+ <dataFile>./example-demo/movie-data.json</dataFile>
 ```
 This value specifies a JSON data file to be loaded by the engine. Notice that it is a path relative to the [home directory](#2-home-directory-required).
 
 ###6.3. MongoDB (Required if "dataSourceType" is 2)
 ```
-<mongodb>
+ <mongodb>
     <host>www.my-company.com</host>
     <port>1234</port>
     <db>database-name</db>
     <collection>collection-name</collection>
     <listenerWaitTime>3</listenerWaitTime>
-</mongodb> 
+ </mongodb> 
 ```
 This section specifies MongoDB instance information. Note: "listenerWaitTime" specifies how frequently (in seconds) the SRCH2 engine pulls changes from the MongoDB instance (e.g., every 3 seconds). 
 
@@ -104,15 +104,15 @@ This section specifies MongoDB instance information. Note: "listenerWaitTime" sp
 
 This tag has parameters to customize the search engine's indexes.
 ```
-<indexConfig>
-...
-</indexConfig>
+ <indexConfig>
+ ...
+ </indexConfig>
 ```
 
 ###7.1. Index Type (Required)
 IndexType specifies if the search engine should build text or location indexes.
 ```
-<indexType>0</indexType>
+ <indexType>0</indexType>
 ```
 > 0: Text Indexes; <br>
 > 1: Text + Geo Indexes, which support location-based search. <br>
@@ -120,11 +120,11 @@ IndexType specifies if the search engine should build text or location indexes.
 
 ###7.2. Field Boosts (Optional)
 ```
-<fieldBoost></fieldBoost>
+ <fieldBoost></fieldBoost>
 ```
 This parameter is used to increase or decrease the weight of fields when calculating the ranking of search results.  It specifies boost values for the [searchable attributes](#112-fields-required) and has a range of [1,100]. If the value is outside the range, it will be set to 1. For example, the boost values for two searchable attributes can be specified as: <br>
 ```
-<fieldBoost>title^2 director^1</fieldBoost>
+ <fieldBoost>title^2 director^1</fieldBoost>
 ```
 This parameter, together with the following parameters, is used in the
 [ranking function](ranking.mkd) of the engine.  They are grouped
@@ -141,13 +141,13 @@ value is not provided for a field, the engine uses a default value of
 
 ###7.3. Record Boost (Optional)
 ```
-<recordBoostField>relevance</recordBoostField>
+ <recordBoostField>relevance</recordBoostField>
 ```
 This setting specifies an attribute whose value is used as the score (boost value) of a record. The attribute's type should be "float".
 
 ###7.4. Default Term Boost (Optional)
 ```
-<defaultQueryTermBoost>1</defaultQueryTermBoost>
+ <defaultQueryTermBoost>1</defaultQueryTermBoost>
 ```
 The value of this field specifies default ranking value for terms that do not have the field specified in "recordBoostField". If the parameter is not given, the engine uses 1 as the default value.<br>
 
@@ -157,7 +157,7 @@ A positional index supports queries with conditions related to keyword positions
 [proximity search](restful-search.mkd#334-proximity-search). The "enablePositionIndex" tag is used to enable or disable positional indexing.  For instance, the following example shows how to enable this indexing:
 
 ```
-<enablePositionIndex>1</enablePositionIndex>
+ <enablePositionIndex>1</enablePositionIndex>
 ```  
 Note that the positional index takes more memory resources. By default it is disabled.<br>
 
@@ -167,7 +167,7 @@ A character offset index supports fast keyword [highlighting](#812-highlighter-o
 example shows how to enable this indexing:
 
 ```
-<enableCharOffsetIndex>1</enableCharOffsetIndex>
+ <enableCharOffsetIndex>1</enableCharOffsetIndex>
 ```  
 Note that the character offset index takes more memory resources. By default it is disabled.<br>
 
@@ -176,18 +176,18 @@ Note that the character offset index takes more memory resources. By default it 
 
 The following tag includes parameters related to queries.
 ```
-<query>
-...
-</query>
+ <query>
+ ...
+ </query>
 ```
 ###8.1. Ranking
 
 The following tags and parameters are related to ranking. 
 
 ```
-<rankingAlgorithm>
+ <rankingAlgorithm>
      <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
-</rankingAlgorithm>
+ </rankingAlgorithm>
 ```
 This expression is used to compute the static score of a record with respect to a term.  It is computed during index construction and stored in the indexes statically.  It can use the following parameters:
 
@@ -200,7 +200,7 @@ The expression allows operators such as +, -, /, *, (, ), 0-9, etc.  Check the [
 ###8.2. Fuzzy Match Penalty (Optional)
 
 ```
-<fuzzyMatchPenalty>0.9</fuzzyMatchPenalty>
+ <fuzzyMatchPenalty>0.9</fuzzyMatchPenalty>
 ```
 "FuzzyMatchPenalty" is used to decide how much penalty we want to give to records with a fuzzy
 match to a search term compared to terms with an exact match. See the [ranking](ranking.mkd) page
@@ -208,7 +208,7 @@ about how this parameter is used. The default value is 0.5.
 
 ###8.3. Term Similarity Threshold (Optional)
 ```
-<queryTermSimilarityThreshold>0.75</queryTermSimilarityThreshold>
+ <queryTermSimilarityThreshold>0.75</queryTermSimilarityThreshold>
 ```
 This value is used in the computation of the maximum edit distance we allow in fuzzy search
 for a search term. [Edit distance](http://en.wikipedia.org/wiki/Edit_distance) is the minimum number of single-character changes required transform a search term into a term in a record.  Conceptually, edit distance represents the
@@ -229,7 +229,7 @@ threshold of edit distance for this term is: floor((1-0.8)*16) = 3.
 
 ###8.4. Support Swap as an Edit Distance Operation (Optional)
 ```
-<supportSwapInEditDistance>true</supportSwapInEditDistance>
+ <supportSwapInEditDistance>true</supportSwapInEditDistance>
 ```
 This setting allows character swap operations (e.g., "iphone" versus
 "ipohne") in the edit distance function, in addition to insertion,
@@ -240,7 +240,7 @@ distance.  By default "supportSwapInEditDistance" is true.
 ###8.5. Prefix Match Penalty (Optional)
 
 ```
-<prefixMatchPenalty>0.95</prefixMatchPenalty>
+ <prefixMatchPenalty>0.95</prefixMatchPenalty>
 ```
 This setting specifies how much penalty we want to give to a record where the search term matches only the beginning of a term in the record (e.g., "can" versus "candy").  Its value should be in the range of 0 to 1, with a default value of 0.95. See the [ranking](ranking.mkd) page for more information.<br>
 
@@ -248,13 +248,13 @@ This setting specifies how much penalty we want to give to a record where the se
 ###8.6. Cache Size (Optional)
 
 ```
-<cacheSize>65536000</cacheSize>
+ <cacheSize>65536000</cacheSize>
 ```
 This parameter specifies the number of bytes used in caching. The number should be in the range [52428800,524288000] (i.e., [50MB, 500MB]). Its default value is 52428800 (50MB). <br>
 
 ###8.7. Default value for number of returned results (Optional)
 ```
-<rows>10</rows>
+ <rows>10</rows>
 ```
 "Rows" specifies the number of results retrieved and returned in a single query response.
 If there are more results that "Rows", another query with a different "start" value must be sent
@@ -262,7 +262,7 @@ to retrieve the next "page" of results. The default value of "Rows" is 10.<br>
 
 ###8.8. Field-Based Search (Optional)
 ```
-<fieldBasedSearch>0</fieldBasedSearch>
+ <fieldBasedSearch>0</fieldBasedSearch>
 ```
 This is a flag to toggle attribute-based search. An attribute-based search applies conditions that determine in which attributes a keyword should appear.<br>
 > 0: Disabled <br>
@@ -272,7 +272,7 @@ Note that if field-based search is enabled, the number of searchable attributes 
 
 ###8.9. Search Type (Optional)
 ```
-<searcherType>0</searcherType>
+ <searcherType>0</searcherType>
 ```
 This parameter sets the default search type of a query to the engine. <br>
 > 0: find the top relevant results (with a number specified by the "rows" parameter); <br>
@@ -282,7 +282,7 @@ The default value is 0, i.e., the engine returns top results.<br>
 
 ###8.10. Query Term Fuzzy Type (Optional)
 ```
-<queryTermFuzzyType>1</queryTermFuzzyType>
+ <queryTermFuzzyType>1</queryTermFuzzyType>
 ```
 This parameter specifies how to treat a term by default with respect to match fuzziness.
 > 0: exact match;<br>
@@ -292,7 +292,7 @@ Its default value is 0.
 
 ###8.11. Query Term Prefix Type (Optional)
 ```
-<queryTermPrefixType>1</queryTermPrefixType>
+ <queryTermPrefixType>1</queryTermPrefixType>
 ```
 This value specifies how to treat a term by default with respect to match completeness.
 > 0: prefix match (the query term matches the beginning of a word);<br>
@@ -307,13 +307,13 @@ in the snippet.  A snippet with highlighted keywords allows users to see more me
 following is an example setting in the configuration file:
 
 ```
-<highlighter>
+ <highlighter>
     <snippetSize>250</snippetSize>
     <fuzzyTagPre value = '<span class="fuzzy">'></fuzzyTagPre>
     <fuzzyTagPost value = '</span>'></fuzzyTagPost>
     <exactTagPre value = '<span class="exact">' ></exactTagPre>
     <exactTagPost value = '</span>'></exactTagPost>
-</highlighter>
+ </highlighter>
 ```
 This composite parameter allows a user to specify snippet size and tags to enclose the matched keywords. 
 
@@ -331,9 +331,9 @@ Notice that to improve the query search time when the highlighting is enabled, c
 
 This tag has parameters related to configuring the response of a query.
 ```
-<queryResponseWriter>
-...
-</queryResponseWriter>
+    <queryResponseWriter>
+    ...
+    </queryResponseWriter>
 ```
 
 ###9.1. Response Content (Optional)
@@ -348,12 +348,12 @@ should set the "type" attribute of "ResponseContent" to one of the following opt
 The default value is 0. If "type" is 2, ResponseContent should also contain a comma-separated list of fields to be returned for each record in the query response. The following are two examples:
 
 ```
-<responseContent type="0"></responseContent>
+ <responseContent type="0"></responseContent>
 ```
 or
 
 ```
-<responseContent type="2">lat,lng</responseContent>
+ <responseContent type="2">lat,lng</responseContent>
 ```
 
 ###9.2 JSON Response Format (Optional)
@@ -597,7 +597,7 @@ specify a single core.
 
 When instantiated with multiple cores, queries specify a core by name to process the query.  For instance, the following query:
 ```
-http://localhost:8081/example-core/search/q=termina
+ http://localhost:8081/example-core/search/q=termina
 ```
 requests that the core called "example-core" process a search request for "termina".  In the case when no core is
 specified in a query to a multi-core server, the server will use the sore specified by the "defaultCoreName" tag.
@@ -622,13 +622,13 @@ to the engine.  If this key is specified, each valid HTTP request needs to
 provide the following key-value pair in order to get the authorization. 
 
 ```
-OAuth=foobar
+ OAuth=foobar
 ```
 
 Here's an example search query:
 
 ```
-curl -i "http://localhost:8081/search?q=terminator&OAuth=foobar"
+ curl -i "http://localhost:8081/search?q=terminator&OAuth=foobar"
 ```
 
 Notice that we use "foobar" as an example to indicate that the key in the HTTP request should 
