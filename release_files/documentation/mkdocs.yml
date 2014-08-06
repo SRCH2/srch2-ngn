@@ -1,16 +1,15 @@
-site_name: Documentation
+site_name: Documentation (4.3.4)
 
 pages:
-    - [index.mkd, Home ]
+    - [index.mkd, Home]
     - [install.mkd, Installation]
     - [configuration.mkd, Configuration]
-    - [restful-insert-update-delete.mkd, 'RESTful API', Update]
-    - [restful-search.mkd, 'RESTful API', Search]
-    - [restful-control.mkd,'RESTful API', Control]
+    - [restful-search.mkd, 'API', Search]
+    - [restful-insert-update-delete.mkd, 'API', Update]
+    - [restful-control.mkd,'API', Control]
     - [ranking.mkd, Ranking]
     - [geo.mkd, Geo]
     - [mongodb.mkd, Mongodb]
-
 
 theme_dir : './srch2-theme'
 
