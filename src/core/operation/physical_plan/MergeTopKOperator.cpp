@@ -816,7 +816,6 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfClose(const PhysicalPla
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
 		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfClose(params);
 	}
-
 	return resultCost;
 }
 PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
@@ -826,7 +825,6 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfVerifyByRandomAccess(co
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
 		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfVerifyByRandomAccess(params);
 	}
-
 	return resultCost;
 }
 void MergeTopKOptimizationOperator::getOutputProperties(IteratorProperties & prop){

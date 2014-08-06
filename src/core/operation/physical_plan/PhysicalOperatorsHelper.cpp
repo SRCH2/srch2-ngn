@@ -141,7 +141,7 @@ bool verifyByRandomAccessOrHelper(PhysicalPlanOptimizationNode * node, PhysicalP
 }
 
 // this function used in verifyByrandomAccess functions of GeoNearestNeighborOperator, GeoSimpleScanOperator and RandomAccessVerificationGeoOperator
-bool verifyByRandomAccessGeoHelper(PhysicalPlanRandomAccessVerificationParameters & parameters, QueryEvaluatorInternal * queryEvaluator, Shape* queryShape){
+bool verifyByRandomAccessGeoHelper(PhysicalPlanRandomAccessVerificationParameters & parameters, QueryEvaluatorInternal * queryEvaluator, Shape* queryShape, unsigned &latOffset, unsigned &longOffset){
 	// 1- get the forwardlist to get the location of the record from it
 	bool valid = false;
 	const ForwardList* forwardList = queryEvaluator->getForwardIndex()->getForwardList(
@@ -151,24 +151,12 @@ bool verifyByRandomAccessGeoHelper(PhysicalPlanRandomAccessVerificationParameter
 	if(!valid){ // this record is invalid
 		return false;
 	}
+
 	// 2- find the latitude and longitude of this record
 	StoredRecordBuffer buffer = forwardList->getInMemoryData();
-	Schema * storedSchema = Schema::create();
-	srch2::util::RecordSerializerUtil::populateStoredSchema(storedSchema, queryEvaluator->getSchema());
-	srch2::util::RecordSerializer compactRecDeserializer = srch2::util::RecordSerializer(*storedSchema);
-
-	// get the name of the attributes
-	const string* nameOfLatitudeAttribute = queryEvaluator->getSchema()->getNameOfLatituteAttribute();
-	const string* nameOfLongitudeAttribute = queryEvaluator->getSchema()->getNameOfLongitudeAttribute();
 	Point point;
-
-	unsigned idLat = storedSchema->getRefiningAttributeId(*nameOfLatitudeAttribute);
-	unsigned lenOffsetLat = compactRecDeserializer.getRefiningOffset(idLat);
-	point.x = *((float *)(buffer.start.get() + lenOffsetLat));
-
-	unsigned idLong = storedSchema->getRefiningAttributeId(*nameOfLongitudeAttribute);
-	unsigned lenOffsetLong = compactRecDeserializer.getRefiningOffset(idLong);
-	point.y = *((float *)(buffer.start.get() + lenOffsetLong));
+	point.x = *((float *)(buffer.start.get() + latOffset));
+	point.y = *((float *)(buffer.start.get() + longOffset));
 
 	// verify the record. The query region should contains this record
 	if(queryShape->contain(point)){

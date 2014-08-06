@@ -33,9 +33,18 @@ void HistogramManager::annotate(LogicalPlan * logicalPlan){
 	annotateWithEstimatedProbabilitiesAndNumberOfResults(logicalPlan->getTree(), logicalPlan->isFuzzy());
 
 	if(countNumberOfKeywords(logicalPlan->getTree() , logicalPlan->isFuzzy()) == 1){
-		if(logicalPlan->getTree()->stats->getEstimatedNumberOfResults() >
+		if(logicalPlan->getTree()->children.size() == 1){
+			if(logicalPlan->getTree()->stats->getEstimatedNumberOfResults() >
 			queryEvaluator->getQueryEvaluatorRuntimeParametersContainer()->keywordPopularityThreshold){
-			markTermToForceSuggestionPhysicalOperator(logicalPlan->getTree(), logicalPlan->isFuzzy());
+				markTermToForceSuggestionPhysicalOperator(logicalPlan->getTree(), logicalPlan->isFuzzy());
+			}
+		}else{
+			if(logicalPlan->getTree()->children[0]->stats->getEstimatedNumberOfResults() >
+						queryEvaluator->getQueryEvaluatorRuntimeParametersContainer()->keywordPopularityThreshold
+			   && logicalPlan->getTree()->children[1]->stats->getEstimatedNumberOfResults() >
+						queryEvaluator->getQueryEvaluatorRuntimeParametersContainer()->keywordPopularityThreshold){
+				markTermToForceSuggestionPhysicalOperator(logicalPlan->getTree(), logicalPlan->isFuzzy());
+			}
 		}
 	}
 
@@ -67,6 +76,7 @@ void HistogramManager::markTermToForceSuggestionPhysicalOperator(LogicalPlanNode
 		}
 		case LogicalPlanNodeTypeGeo:
 		{
+			node->forcedPhysicalNode = PhysicalPlanNode_RandomAccessGeo;
 			return;
 		}
     }

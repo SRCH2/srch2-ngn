@@ -238,6 +238,8 @@ private:
 	QueryEvaluatorInternal* queryEvaluator;
 	Shape* queryShape;  // keep the shape of the query region
 	shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
+	unsigned latOffset;       // offset of the latitude attribute in the refining attribute memory
+	unsigned longOffset;      // offset of the longitude attribute in the refining attribute memory
 };
 
 class RandomAccessVerificationGeoOptimizationOperator : public PhysicalPlanOptimizationNode {

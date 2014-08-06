@@ -20,7 +20,7 @@ using namespace std;
 namespace srch2{
 namespace instantsearch{
 
-const unsigned GEO_MAX_NUM_OF_ELEMENTS = 6;    // The maximum number of GeoElements each leaf node can have
+const unsigned GEO_MAX_NUM_OF_ELEMENTS = 32;    // The maximum number of GeoElements each leaf node can have
 const double GEO_MIN_SEARCH_RANGE_SQUARE = (0.24 * 0.24);    // The largest range we should search for, in degree (used in calculating the score)
 const double GEO_MIN_DISTANCE_SCORE = 0.05;
 const double GEO_MBR_LIMIT = (0.0005 * 0.0005); //0.005 The min size of a single rectangle

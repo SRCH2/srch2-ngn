@@ -7,8 +7,12 @@
 
 #include "GeoSimpleScanOperator.h"
 #include "PhysicalOperatorsHelper.h"
+#include "src/core/util/Logger.h"
+#include "src/core/util/RecordSerializerUtil.h"
+#include "src/core/util/RecordSerializer.h"
 
 using namespace std;
+using srch2::util::Logger;
 
 namespace srch2{
 namespace instantsearch{
@@ -39,9 +43,35 @@ bool GeoSimpleScanOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 	for( unsigned i = 0 ; i < quadTreeNodeSet->size() ; i++){
 		quadTreeNodeSet->at(i)->rangeQuery(this->geoElements, *this->queryShape);
 	}
+
+	int count = 0;
+	for ( int i = 0 ; i < this->geoElements.size() ; i++){
+		vector<GeoElement*> tmp = *(this->geoElements[i]);
+		for ( int j = 0; j < tmp.size() ; j++){
+			if(this->queryShape->contain(tmp[j]->point)){
+				count++;
+				break;
+			}
+		}
+	}
 	// set the offsets to use them in getNext
 	this->vectorOffset = 0;
 	this->cursorOnVectorOfGeoElements = 0;
+
+	// finding the offset of the latitude and longitude attribute in the refining attributes' memory
+	Schema * storedSchema = Schema::create();
+	srch2::util::RecordSerializerUtil::populateStoredSchema(storedSchema, queryEvaluator->getSchema());
+	srch2::util::RecordSerializer compactRecDeserializer = srch2::util::RecordSerializer(*storedSchema);
+
+	// get the name of the attributes
+	const string* nameOfLatitudeAttribute = queryEvaluator->getSchema()->getNameOfLatituteAttribute();
+	const string* nameOfLongitudeAttribute = queryEvaluator->getSchema()->getNameOfLongitudeAttribute();
+
+	unsigned idLat = storedSchema->getRefiningAttributeId(*nameOfLatitudeAttribute);
+	this->latOffset = compactRecDeserializer.getRefiningOffset(idLat);
+
+	unsigned idLong = storedSchema->getRefiningAttributeId(*nameOfLongitudeAttribute);
+	this->longOffset = compactRecDeserializer.getRefiningOffset(idLong);
 
 	return true;
 }
@@ -118,7 +148,7 @@ string GeoSimpleScanOperator::toString(){
 }
 
 bool GeoSimpleScanOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters){
-	return verifyByRandomAccessGeoHelper(parameters, this->queryEvaluator, this->queryShape);
+	return verifyByRandomAccessGeoHelper(parameters, this->queryEvaluator, this->queryShape, this->latOffset, this->longOffset);
 }
 // The cost of open of a child is considered only once in the cost computation
 // of parent open function.

@@ -35,6 +35,8 @@ void QueryOptimizer::buildAndOptimizePhysicalPlan(PhysicalPlan & physicalPlan,Lo
     // apply optimization rules
     applyOptimizationRulesOnThePlan(physicalPlan);
 
+    physicalPlan.getPlanTree()->getPhysicalPlanOptimizationNode()->printSubTree();
+
 }
 
 
@@ -267,16 +269,22 @@ void QueryOptimizer::buildIncompleteSubTreeOptionsTerm(LogicalPlanNode * root, v
 }
 
 void QueryOptimizer::buildIncompleteSubTreeOptionsGeo(LogicalPlanNode * root, vector<PhysicalPlanOptimizationNode *> & treeOptions){
-	PhysicalPlanOptimizationNode *op = (PhysicalPlanOptimizationNode *)
-			this->queryEvaluator->getPhysicalOperatorFactory()->createGeoNearestNeighborOptimizationOperator();
-	op->setLogicalPlanNode(root);
-	treeOptions.push_back(op);
-	op = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createRandomAccessVerificationGeoOptimizationOperator();
-	op->setLogicalPlanNode(root);
-	treeOptions.push_back(op);
-	op = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createGeoSimpleScanOptimizationOperator();
-	op->setLogicalPlanNode(root);
-	treeOptions.push_back(op);
+	if(root->forcedPhysicalNode == PhysicalPlanNode_NOT_SPECIFIED){
+		PhysicalPlanOptimizationNode *op = (PhysicalPlanOptimizationNode *)
+					this->queryEvaluator->getPhysicalOperatorFactory()->createGeoNearestNeighborOptimizationOperator();
+		op->setLogicalPlanNode(root);
+		treeOptions.push_back(op);
+		op = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createRandomAccessVerificationGeoOptimizationOperator();
+		op->setLogicalPlanNode(root);
+		treeOptions.push_back(op);
+		op = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createGeoSimpleScanOptimizationOperator();
+		op->setLogicalPlanNode(root);
+		treeOptions.push_back(op);
+	}else if(root->forcedPhysicalNode == PhysicalPlanNode_RandomAccessGeo){
+		PhysicalPlanOptimizationNode *op = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createRandomAccessVerificationGeoOptimizationOperator();
+		op->setLogicalPlanNode(root);
+		treeOptions.push_back(op);
+	}
 }
 
 void QueryOptimizer::injectRequiredSortOperators(vector<PhysicalPlanOptimizationNode *> & treeOptions){
@@ -393,11 +401,14 @@ PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<Phy
             numberOfGetNextCalls = treeOption->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
         }
 
+
         cost = cost + treeOption->getCostOfOpen(*(physicalPlan.getExecutionParameters()));
         cost = cost +
                 treeOption->getCostOfGetNext(*(physicalPlan.getExecutionParameters())).cost *
                 numberOfGetNextCalls;
         cost = cost + treeOption->getCostOfClose(*(physicalPlan.getExecutionParameters()));
+
+        treeOption->printSubTree();
 
 //        if(planOffset >= treeOptions.size()-1){
 //            cout << "C("  << treeOptionIndex << ","<< cost.cost << ")$" ;

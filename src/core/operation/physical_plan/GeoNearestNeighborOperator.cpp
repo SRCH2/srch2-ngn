@@ -6,6 +6,11 @@
  */
 #include "GeoNearestNeighborOperator.h"
 #include "PhysicalOperatorsHelper.h"
+#include "src/core/util/Logger.h"
+#include "src/core/util/RecordSerializerUtil.h"
+#include "src/core/util/RecordSerializer.h"
+
+using srch2::util::Logger;
 
 namespace srch2 {
 namespace instantsearch {
@@ -38,6 +43,21 @@ bool GeoNearestNeighborOperator::open(QueryEvaluatorInternal * queryEvaluator, P
 	}
 	// make the heap
 	make_heap(this->heapItems.begin(),this->heapItems.end(),GeoNearestNeighborOperator::GeoNearestNeighborOperatorHeapItemCmp());
+
+	// finding the offset of the latitude and longitude attribute in the refining attributes' memory
+	Schema * storedSchema = Schema::create();
+	srch2::util::RecordSerializerUtil::populateStoredSchema(storedSchema, queryEvaluator->getSchema());
+	srch2::util::RecordSerializer compactRecDeserializer = srch2::util::RecordSerializer(*storedSchema);
+
+	// get the name of the attributes
+	const string* nameOfLatitudeAttribute = queryEvaluator->getSchema()->getNameOfLatituteAttribute();
+	const string* nameOfLongitudeAttribute = queryEvaluator->getSchema()->getNameOfLongitudeAttribute();
+
+	unsigned idLat = storedSchema->getRefiningAttributeId(*nameOfLatitudeAttribute);
+	this->latOffset = compactRecDeserializer.getRefiningOffset(idLat);
+
+	unsigned idLong = storedSchema->getRefiningAttributeId(*nameOfLongitudeAttribute);
+	this->longOffset = compactRecDeserializer.getRefiningOffset(idLong);
 
 	return true;
 }
@@ -109,7 +129,7 @@ bool GeoNearestNeighborOperator::close(PhysicalPlanExecutionParameters & params)
 }
 
 bool GeoNearestNeighborOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters){
-	return verifyByRandomAccessGeoHelper(parameters, this->queryEvaluator, this->queryShape);
+	return verifyByRandomAccessGeoHelper(parameters, this->queryEvaluator, this->queryShape, this->latOffset, this->longOffset);
 }
 
 string GeoNearestNeighborOperator::toString(){
@@ -133,14 +153,15 @@ PhysicalPlanCost GeoNearestNeighborOptimizationOperator::getCostOfGetNext(const 
 	unsigned estimatedNumberOfleafNodes = this->getLogicalPlanNode()->stats->estimatedNumberOfLeafNodes;
 	// cost of removing the item from the heap
 	// TODO: consider the number of all geoelements in the heap
-	resultCost.cost = log2((double)estimatedNumberOfleafNodes + GEO_MAX_NUM_OF_ELEMENTS + 1);
+	double cost = 0;
+	resultCost.cost = log2(((double)(this->getLogicalPlanNode()->stats->quadTreeNodeSet.size() + GEO_MAX_NUM_OF_ELEMENTS + 1)));
 	return resultCost;
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.
 PhysicalPlanCost GeoNearestNeighborOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
 	PhysicalPlanCost resultCost;
 	unsigned estimatedNumberOfleafNodes = this->getLogicalPlanNode()->stats->estimatedNumberOfLeafNodes;
-	resultCost.cost = estimatedNumberOfleafNodes + GEO_MAX_NUM_OF_ELEMENTS;
+	resultCost.cost =  this->getLogicalPlanNode()->stats->quadTreeNodeSet.size() + GEO_MAX_NUM_OF_ELEMENTS;
 	return resultCost;
 }
 
