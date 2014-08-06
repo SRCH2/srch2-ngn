@@ -1,4 +1,4 @@
-site_name: SRCH2 Documentation (4.3.4)
+site_name: Documentation (4.3.4)
 
 pages:
     - [index.mkd, Home]
@@ -11,8 +11,6 @@ pages:
     - [geo.mkd, Geo]
     - [mongodb.mkd, Mongodb]
 
-theme: bootstrap
-
-site_favicon: ../images/logo.png
+theme_dir : './srch2-theme'
 
 copyright: Copyright &copy; 2014, <a href="https://srch2.com/">SRCH2.COM</a>.
