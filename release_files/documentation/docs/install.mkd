@@ -20,13 +20,13 @@ The "example-demo" folder contains files for a demo, in which we use the engine 
 
 <b>Step 3</b>: Go to the install folder and run the following:
 
-```bsh
+```bash
  /home/joe/srch2/example-demo> ../bin/srch2-engine --config-file=./srch2-config.xml
 ```
 
 The server will read the configuration file, load the data in the corresponding data file, build indexes, and start a RESTful server. You should see a page similar to the following:
 
-```bsh
+```bash
  /home/joe/srch2/example-demo> ../bin/srch2-engine --config-file=./srch2-config.xml
  2014-08-05 15:31:39 INFO  Creating indexes from JSON file...
  2014-08-05 15:31:39 INFO	                                                     
