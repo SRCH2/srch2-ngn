@@ -140,7 +140,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
         // if type is date/time, check the syntax
         if( attributeIter->second.attributeType == srch2is::ATTRIBUTE_TYPE_TIME){
             vector<string> attributeStringValues;
-            getJsonValueDateAndTime(root, attributeKeyName, attributeStringValues,"refining-attributes" );
+            getJsonValueDateAndTime(root, attributeKeyName, attributeStringValues,"refining-attributes");
             if(attributeStringValues.empty()){
                 // ERROR
                 error << "\nDATE/TIME field has non recognizable format.";
@@ -149,11 +149,20 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
                 if (std::find(attributeStringValues.begin() , attributeStringValues.end() , "NULL") != attributeStringValues.end() &&
                     attributeIter->second.required ){
                     // ERROR
-                    error << "\nRequired refining attribute is null.";
+                    error << "\nDATE/TIME field " << attributeKeyName << " is marked as required field but does not have any value in input JSON record";
                     return false;// Raise Error
                 }
                 if (std::find(attributeStringValues.begin() , attributeStringValues.end() , "NULL") != attributeStringValues.end()){
-                    std::replace(attributeStringValues.begin() , attributeStringValues.end() , (string)"NULL" , attributeIter->second.defaultValue);
+                	//first verify whether default value itself is valid or not
+                	const string& defaultValue = attributeIter->second.defaultValue;
+                	if(srch2is::DateAndTimeHandler::verifyDateTimeString(defaultValue , srch2is::DateTimeTypePointOfTime)
+                	  || srch2is::DateAndTimeHandler::verifyDateTimeString(defaultValue , srch2is::DateTimeTypeDurationOfTime)) {
+                		std::replace(attributeStringValues.begin() , attributeStringValues.end() , (string)"NULL" , defaultValue);
+                	} else {
+                		// ERROR
+                		error << "\nDATE/TIME field " << attributeKeyName << " has empty value and the default specified in the config file is not a valid value.";
+                		return false;// Raise Error
+                	}
                 }
                 string attributeStringValue = "";
                 for(vector<string>::iterator stringValueIter = attributeStringValues.begin() ; stringValueIter != attributeStringValues.end() ; ++stringValueIter){
@@ -567,24 +576,20 @@ void JSONRecordParser::getJsonValueDateAndTime(const Json::Value &jsonValue,
     convertValueToString(value, temp);
 
     // now check to see if it has proper date/time format
-    // if the value of the array was ["12:34:45","12:34:24","12:02:45"], it's now changed to
-    // vector : <12:34:45,12:34:24,12:02:45>.
-    // Now we should
-    // 1. iterate on vector
-    // 2. convert it to unix time
-    // 3. prepare the string again to become something like "1234245,3654665,56456687"
 
     string stringValue = "";
     for(vector<string>::iterator valueToken = temp.begin() ; valueToken != temp.end() ; ++valueToken){
         boost::algorithm::trim(*valueToken);
         if(srch2is::DateAndTimeHandler::verifyDateTimeString(*valueToken , srch2is::DateTimeTypePointOfTime)
            || srch2is::DateAndTimeHandler::verifyDateTimeString(*valueToken , srch2is::DateTimeTypeDurationOfTime) ){
-            stringstream buffer;
-            buffer << srch2::instantsearch::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*valueToken);
-            stringValues.push_back(buffer.str());
+            stringValues.push_back(*valueToken);
         }else{
-            stringValues.clear();
-            return;
+        	if (*valueToken == "") {
+        		stringValues.push_back("NULL");
+        	} else {
+        		stringValues.clear();
+        		return;
+        	}
         }
     }
     return;
