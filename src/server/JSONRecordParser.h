@@ -42,21 +42,20 @@ private:
     static bool setRecordPrimaryKey(srch2is::Record *record,
             const Json::Value &root, const CoreInfo_t *indexDataContainerConf,
             std::stringstream &error);
-    static bool setRecordSearchableAttr(const Json::Value &root,
-            RecordSerializer& compactRecSerializer);
-    static bool setRecordRefiningAttr(const Json::Value &root,
-            RecordSerializer& compactRecSerializer);
     static bool setRecordSearchableValue(srch2is::Record *record,
             const Json::Value &root, const CoreInfo_t *indexDataContainerConf,
             std::stringstream &error);
     static bool setRecordRefiningValue(srch2is::Record *record,
             const Json::Value &root, const CoreInfo_t *indexDataContainerConf,
             std::stringstream &error);
+    static bool setCompactRecordSearchableValue(const srch2is::Record *record,
+            RecordSerializer& compactRecSerializer,std::stringstream &error);
+    static bool setCompactRecordRefiningValue(const srch2is::Record *record,
+            RecordSerializer& compactRecSerializer,std::stringstream &error);
     static bool setRecordLocationValue(srch2is::Record *record,
             const Json::Value &root, const CoreInfo_t *indexDataContainerConf);
     static bool setRecordBoostValue(srch2is::Record *record,
             const Json::Value &root, const CoreInfo_t *indexDataContainerConf);
-    static bool stringToUnsigned(const char* str, unsigned & output);
 };
 
 class DaemonDataSource {
