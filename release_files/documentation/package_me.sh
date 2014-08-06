@@ -21,5 +21,5 @@ set -o nounset                              # Treat unset variables as an error
 \rm -rf site
 mkdocs build
 cp -r docs/example-demo/* site/example-demo/
-echo "successufly build the online docs into 'site' folder"
+echo "Successufly built the online docs into the 'site' folder"
 

@@ -1,6 +1,6 @@
 #RESTful API - Control Messages
 
-The SRCH2 engine supports certain control messages through its RESTful API.  Here we explain how to use the maessages
+The SRCH2 engine supports certain control messages through its RESTful API.  Here we explain how to use the messages
 to manage the engine.  Each RESTful request needs to use a proper [URL encoder](http://www.w3schools.com/tags/ref_urlencode.asp) to be converted to characters in a format that can be transmitted properly.
 
 ##1. Retrieving System Status
@@ -59,7 +59,7 @@ Now "logrotate" sends the following message:
  curl -i "http://localhost:8081/resetLogger" -X PUT
 ```
 
-It tells the SRCH2 engine to reset its log-file handle to continue using the original file name  "srch2-log.txt". In this way, the old log messages have been moved to the file ""srch2-log.txt.1", which can be managed by the "logrotate" tool. Here is an example configuration file for "lograte":
+It tells the SRCH2 engine to reset its log-file handle to continue using the original file name  "srch2-log.txt". In this way, the old log messages have been moved to the file ""srch2-log.txt.1", which can be managed by the "logrotate" tool. Here is an example configuration file for "logrotate":
 
 ```
  "/home/joe/srch2/logs/srch2-log.txt" {
