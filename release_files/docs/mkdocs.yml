@@ -1,4 +1,4 @@
-site_name: SRCH2 Documentation
+site_name: Documentation
 
 pages:
     - [index.mkd, Home ]
@@ -11,8 +11,7 @@ pages:
     - [geo.mkd, Geo]
     - [mongodb.mkd, Mongodb]
 
-theme: bootstrap
 
-site_favicon: /home/jianfeng/workspace/srch2-ngn/release_files/docs/images/logo.png
+theme_dir : './srch2-theme'
 
 copyright: Copyright &copy; 2014, <a href="https://srch2.com/">SRCH2.COM</a>.
