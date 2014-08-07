@@ -584,7 +584,7 @@ The <code>synonyms</code> attribute specifies the path to a synonym file relativ
 The format of the synonym file is shown below. All comments start with '#' at the begining of a line.
 
 ```
-#1. explicit synonym rule : Tokens on LHS will be replaced with tokens on RHS (The "expand" flag is ignored)
+#1. explicit synonym rule : Tokens on LHS will be replaced with tokens on RHS (the "expand" flag is ignored)
 nyc=>new york city, new york
 jvm=> java virtual machine
 centOS, federo => linux
@@ -597,7 +597,7 @@ Example:
 
 Consider a record <code>"The CentOS Project is a community-driven free software effort"</code>
 
-If the synonym rule is <code>"centOS=>linux"</code>, then the query keyword "centOS" will not return any result because the keyword "CentOS" has been replaced by "linux".The query "linux" will return the record as a search result.
+If the synonym rule is <code>"centOS=>linux"</code>, then the query keyword "centOS" will not return any result because the keyword "CentOS" has been replaced by "linux". The query "linux" will return the record as a search result.
 
 If the synonym rule is <code>"centOS, linux"</code> (equivalent synonyms) and the <code>expand</code> attribute is set to <code>true</code>, then the both keyword queries "centOS" and "linux" will return the record as a search result.
   
