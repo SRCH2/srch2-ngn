@@ -10,13 +10,15 @@ This tutorial will show you how to:
  
 To get started, this tutorial assumes you are familiar with Android Studio and can create, or have already created, Android Studio projects. For instructions how to set up the SRCH2 Android SDK on eclipse, see [Advanced Topics](advanced-topics.md). 
 
-Download and review the source code of the Hello SRCH2 Search Demo by clicking [here](../downloads/). In particular, if you are going to start the project from scratch, be sure to copy the classes `com.srch2.android.demo.hellosrch2.SearchResultsAdapter` (just the implementation of the `BaseAdapter`), `com.srch2.android.demo.hellosrch2.MovieSearchResult`, and `com.srch2.android.demo.hellosrch2.InstantSearchEditText` into your project; you will also need to copy the layout resource files `activity_my.xml` and `listview_search_result_row.xml` as well as the drawable `clear_input_icon.png` into your new project.
+Download and review the source code of the Hello SRCH2 Search Demo by clicking [here](../download/latest-releases/hello-srch2-search-demo-project.zip).
+
+In particular, if you are going to start the project from scratch, be sure to copy the classes `com.srch2.android.demo.hellosrch2.SearchResultsAdapter` (just the implementation of the `BaseAdapter`), `com.srch2.android.demo.hellosrch2.MovieSearchResult`, and `com.srch2.android.demo.hellosrch2.InstantSearchEditText` into your project; you will also need to copy the layout resource files `activity_my.xml` and `listview_search_result_row.xml` as well as the drawable `clear_input_icon.png` into your new project.
  
 ###Installing the SDK
  
 The first step is to obtain the SRCH2 Android SDK ``.aar`` file. An `.aar` file extension is an expansion of the JAR file format to include Android native resources, which the SRCH2 Android SDK requires to get the SRCH2 search engine running. For more information on the `.aar` file format, you can refer to [AAR Format](http://tools.android.com/tech-docs/new-build-system/aar-format) at the Android Tools Project Site.
 
-You can download the `SRCH2-Android-SDK.aar` file from [here](./tutorial.html).
+You can download the `SRCH2-Android-SDK.aar` file by clicking [here](../download/latest-releases/SRCH2-Android-SDK.aar).
  
 *Quick Steps*:
 
