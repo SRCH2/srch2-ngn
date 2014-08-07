@@ -10,10 +10,8 @@ This tutorial will show you how to:
  
 To get started, this tutorial assumes you are familiar with Android Studio and can create, or have already created, Android Studio projects. For instructions how to set up the SRCH2 Android SDK on eclipse, see [Advanced Topics](advanced-topics.md). 
 
-Download and review the source code of the Hello SRCH2 Search Demo by clicking [here](../download/latest-releases/hello-srch2-search-demo-project.zip).
+You can download the [Hello SRCH2 Search Demo project](../download/hello-srch2-search-demo-files/hello-srch2-search-demo-project.zip) and import it into Android Studio and read the tutorial to understand the code. Or, if you want to follow along with this tutorial, create a project from scratch and refer to the source code by browsing the project at our [GitHub repository](http://www.endoftheinternet.com/). 
 
-In particular, if you are going to start the project from scratch, be sure to copy the classes `com.srch2.android.demo.hellosrch2.SearchResultsAdapter` (just the implementation of the `BaseAdapter`), `com.srch2.android.demo.hellosrch2.MovieSearchResult`, and `com.srch2.android.demo.hellosrch2.InstantSearchEditText` into your project; you will also need to copy the layout resource files `activity_my.xml` and `listview_search_result_row.xml` as well as the drawable `clear_input_icon.png` into your new project.
- 
 ###Installing the SDK
  
 The first step is to obtain the SRCH2 Android SDK ``.aar`` file. An `.aar` file extension is an expansion of the JAR file format to include Android native resources, which the SRCH2 Android SDK requires to get the SRCH2 search engine running. For more information on the `.aar` file format, you can refer to [AAR Format](http://tools.android.com/tech-docs/new-build-system/aar-format) at the Android Tools Project Site.
@@ -43,6 +41,21 @@ You can download the `SRCH2-Android-SDK.aar` file by clicking [here](../download
 11. Now can click Apply and OK, or just OK to finish this process and close 'Module Settings'.<br>![Module Settings - Verifying SRCH2-Android-SDK module as been added as a compiled dependency][tutorial-006]
 12. For those curious, this process added the `SRCH2-Android-SDK.aar` as a new module, then altered the build.gradle file in your app's subdirectory to include the `SRCH2-Android-SDK` module to be compiled as a dependency; which you can verify by navigating to this file, and it will look something like:![Installation Complete - Confirming gradle has included the SRCH2 Android SDK as a dependency in your project][tutorial-007]
 13. Now you are ready to start accessing the API
+
+###Including Default Project Files
+
+This tutorial covers how the set-up and use the SRCH2 Android SDK in an example project you have just created. Certain class files will not be explained in this tutorial as they are beyond the scope of this tutorial. Before starting to add the code relating to the SRCH2 Android SDK, you need to copy the following classes and files into your project. Refer to [Hello SRCH2 Search Demo GitHub repository](http://www.endoftheinternet.com/) for the source code and resource files you will need to copy. 
+
+1. Copy the set of [resource drawable files `instant_search_edit_text_clear_input_action.png`](../download/hello-srch2-search-demo-files/instant_search_edit_text_clear_input_action_icon.zip) into each of the corresponding container folders (`res-drawable\hpdi`; `res-drawable\mdpi`; `res-drawable\xhdpi`; `res-drawable\xxhdpi`).
+2. Create a class called `InstantSearchEditText` in the same package as your `MyActivity` class. Copy the contents of its [source code](../download/hello-srch2-search-demo-files/InstantSearchEditText.txt) implementation. This is a subclass of the standard `EditText` with the interface observer `InstantSearchEditText.SearchInputEnteredObserver`. By implementing this interface, any time a user enters a new character the callback `public void onNewSearchInput(String newSearchText)` will be triggered; or, if the user clears the input by pressing the clear input icon or deleting all of the characters, the callback `public void onNewSearchInputIsBlank()` will be triggered. 
+3. Create and copy the [resource layout file `activity_my.xml`](../download/hello-srch2-search-demo-files/activity_my.txt) into your project's `res/layout` folder. Make sure the package name matches your package name in the fully qualified name declaration of the `InstantSearchEditText`. For example in this demo it is declared as:
+>`<com.srch2.android.demo.hellosrch2.InstantSearchEditText ... />`
+4. Create the `MovieSearchResult` class and copy its [source code](../download/hello-srch2-search-demo-files/MovieSearchResult.txt). This class will be used as the model for the search results as they are displayed in a `ListView` and used the the adapter backing this list view. 
+5. Create and copy the [resource layout file `listview_search_result_row.xml`](../download/hello-srch2-search-demo-files/listview_search_result_row.txt). This layout file will be how each row view is inflated for the list view.
+6. The last class to add is the the `SearchResultsAdapter` class. Create a class with this name and copy from its [source code](../download/hello-srch2-search-demo-files/SearchResultsAdapter.txt) *everything but* the nested `SearchResultsUiHandler` class because implementing this handler will be explained later in this tutorial.  
+
+Your project's file hierarchy should now look something like:<br>![Default Project Files - Project hierarchy after adding all the files][tutorial-009]
+ 
 
 ###Creating an Index
 
@@ -801,3 +814,4 @@ This concludes the Hello SRCH2 Tutorial for learning how to get set up with the 
 [tutorial-006]: ../img/006-tutorial.png "Module Settings - Verifying SRCH2-Android-SDK module as been added as a compiled dependency"
 [tutorial-007]: ../img/007-tutorial.png "Installation Complete - Confirming gradle has included the SRCH2 Android SDK as a dependency in your project"
 [tutorial-008]: ../img/008-tutorial.png "Tutorial Finished - Seeing the SRCH2 Android SDK in action"
+[tutorial-009]: ../img/009-tutorial.png "Default Project Files - Project hierarchy after adding all the files"
