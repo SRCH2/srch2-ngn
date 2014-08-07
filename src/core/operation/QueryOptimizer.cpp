@@ -35,7 +35,7 @@ void QueryOptimizer::buildAndOptimizePhysicalPlan(PhysicalPlan & physicalPlan,Lo
     // apply optimization rules
     applyOptimizationRulesOnThePlan(physicalPlan);
 
-    physicalPlan.getPlanTree()->getPhysicalPlanOptimizationNode()->printSubTree();
+    //physicalPlan.getPlanTree()->getPhysicalPlanOptimizationNode()->printSubTree();
 
 }
 
@@ -407,8 +407,6 @@ PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<Phy
                 treeOption->getCostOfGetNext(*(physicalPlan.getExecutionParameters())).cost *
                 numberOfGetNextCalls;
         cost = cost + treeOption->getCostOfClose(*(physicalPlan.getExecutionParameters()));
-
-        treeOption->printSubTree();
 
 //        if(planOffset >= treeOptions.size()-1){
 //            cout << "C("  << treeOptionIndex << ","<< cost.cost << ")$" ;

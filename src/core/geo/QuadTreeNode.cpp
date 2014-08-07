@@ -49,6 +49,7 @@ QuadTreeNode::QuadTreeNode(Rectangle &rectangle){
 	this->isLeaf = true;
 	this->numOfElementsInSubtree = 0;
 	this->numOfLeafNodesInSubtree = 1;
+	this->isCopy = false;
 }
 
 QuadTreeNode::QuadTreeNode(Rectangle &rectangle, GeoElement* elements){
@@ -57,15 +58,20 @@ QuadTreeNode::QuadTreeNode(Rectangle &rectangle, GeoElement* elements){
 	this->numOfElementsInSubtree = 1;
 	this->numOfLeafNodesInSubtree = 1;
 	this->elements.push_back(elements);
+	this->isCopy = false;
+}
+
+QuadTreeNode::QuadTreeNode(const QuadTreeNode* src){
+	this->rectangle = src->rectangle;
+	this->isLeaf = src->isLeaf;
+	this->children = src->children;
+	this->numOfElementsInSubtree = src->numOfElementsInSubtree;
+	this->numOfLeafNodesInSubtree = src->numOfLeafNodesInSubtree;
+	this->elements = src->elements;
+	this->isCopy = true;
 }
 
 QuadTreeNode::~QuadTreeNode(){
-	if(!isLeaf){
-		for(unsigned i = 0; i < children.size(); i++){
-			if(children[i] != NULL)
-				delete children[i];
-		}
-	}
 	children.clear();
 }
 
@@ -108,13 +114,61 @@ bool QuadTreeNode::insertGeoElement(GeoElement* element){
 	return true;
 }
 
-bool QuadTreeNode::removeGeoElement(GeoElement* element){
+bool QuadTreeNode::insertGeoElement_ThreadSafe(GeoElement* element, boost::shared_ptr<QuadTreeRootNodeAndFreeLists> quadTreeRootNode_ReadView){
+	ASSERT(this->isCopy == true); // because it is a threadSafe insertion, this node should be a copy
+	// A leaf node //
+	if(this->isLeaf){
+		// Split the leaf if it is full
+		if(this->numOfElementsInSubtree >= GEO_MAX_NUM_OF_ELEMENTS
+				// For avoiding too small regions in the quadtree
+				&& ((this->rectangle.max.x - this->rectangle.min.x) * (this->rectangle.max.y - this->rectangle.min.y)) > GEO_MBR_LIMIT){
+			this->split();
+		}else{
+			this->elements.push_back(element);
+			this->numOfElementsInSubtree++;
+			return true;
+		}
+	}
+	// An internal node //
+	this->numOfElementsInSubtree++;
+	// Find the child based on geo information
+	unsigned child = findChildContainingPoint(element->point);
+	if(this->children[child] != NULL){ // This child is already created
+		// 1- for the concurrency control, first we need to make a copy of this child and insert the new element in it.
+		QuadTreeNode* copiedNode = new QuadTreeNode(this->children[child]);
+		// 2- now we should add this child to the free list
+		quadTreeRootNode_ReadView->quadtreeNodes_free_list.push_back(this->children[child]);
+		// 3- now we should change this child with its copy
+		this->children[child] = copiedNode;
+		// 4- recursively call this function for the corresponding child
+		unsigned numOfLeafNodeInChild = this->children[child]->getNumOfLeafNodesInSubtree();
+		bool flag = this->children[child]->insertGeoElement(element);
+		this->numOfLeafNodesInSubtree += (this->children[child]->getNumOfLeafNodesInSubtree() - numOfLeafNodeInChild);
+		return flag;
+	}
 
+	// The node doesn't have this child. We need to create a new child.
+	// First create a new rectangle to assign to this child
+	Rectangle newRectangle;
+	createNewRectangle(newRectangle, this->rectangle, child);
+	QuadTreeNode* newNode = new QuadTreeNode(newRectangle, element);
+	newNode->isCopy = true;
+
+	// Put this new node in children
+	this->children[child] = newNode;
+	this->numOfLeafNodesInSubtree += newNode->getNumOfLeafNodesInSubtree();
+
+	return true;
+}
+
+bool QuadTreeNode::removeGeoElement_ThreadSafe(GeoElement* element, boost::shared_ptr<QuadTreeRootNodeAndFreeLists> quadTreeRootNode_ReadView){
+	ASSERT(this->isCopy == true);
 	if(this->isLeaf){ // A leaf node
 		// Search the elements to find this element to remove it
 		for(unsigned i = 0; i < this->elements.size(); i++){
 			if(*this->elements[i] == *element){
-				delete this->elements[i];
+				// we should not delete this element's object, because other readviews using it, we should just add it to the free list
+				quadTreeRootNode_ReadView->geoElements_free_list.push_back(this->elements[i]);
 				this->elements.erase (this->elements.begin()+i);
 				this->numOfElementsInSubtree--;
 				return true;
@@ -124,13 +178,19 @@ bool QuadTreeNode::removeGeoElement(GeoElement* element){
 		// Find the child base on location information and recursively call this function at the corresponding child
 		unsigned child = findChildContainingPoint(element->point);
 		if(this->children[child] != NULL){
+			// 1- for the concurrency control, first we need to make a copy of this child and delete the element from it.
+			QuadTreeNode* copiedNode = new QuadTreeNode(this->children[child]);
+			// 2- now we should add this child to the free list
+			quadTreeRootNode_ReadView->quadtreeNodes_free_list.push_back(this->children[child]);
+			// 3- now we should change this child with its copy
+			this->children[child] = copiedNode;
 			unsigned numOfLeafNodeInChild = this->children[child]->getNumOfLeafNodesInSubtree();
-			if( this->children[child]->removeGeoElement(element) ){
+			if( this->children[child]->removeGeoElement_ThreadSafe(element, quadTreeRootNode_ReadView) ){
 				this->numOfElementsInSubtree--;
 				this->numOfLeafNodesInSubtree += (this->children[child]->getNumOfLeafNodesInSubtree() - numOfLeafNodeInChild);
 				// if the number of elements in the subtree of this node is less than  MAX_NUM_OF_ELEMENTS we should merge this node.
 				if(this->numOfElementsInSubtree < GEO_MAX_NUM_OF_ELEMENTS)
-					mergeChildren();
+					mergeChildren(quadTreeRootNode_ReadView);
 				return true;
 			}
 		}
@@ -216,18 +276,18 @@ void QuadTreeNode::split(){
 	this->elements.clear();
 }
 
-void QuadTreeNode::mergeChildren(){
+void QuadTreeNode::mergeChildren(boost::shared_ptr<QuadTreeRootNodeAndFreeLists> quadTreeRootNode_ReadView){
 	// This node should be an internal node for merge.
 	ASSERT(this->numOfElementsInSubtree < GEO_MAX_NUM_OF_ELEMENTS );
 	ASSERT(this->elements.size() == 0);
 	ASSERT(this->isLeaf == false);
 
-
 	getElements(this->elements); // Move all the elements in its subtree to node
 	this->isLeaf = true; // this node become a leaf after merge
 	this->numOfLeafNodesInSubtree = 1;
 	for(unsigned i = 0 ; i < GEO_CHILD_NUM ; i++){
-		delete this->children[i];
+		// we should not delete this child because other readviews using this node. we just need to add it to the free list.
+		quadTreeRootNode_ReadView->quadtreeNodes_free_list.push_back(this->children[i]);
 	}
 	this->children.clear();
 }
@@ -265,6 +325,15 @@ void QuadTreeNode::createNewRectangle(Rectangle &newRectangle, const Rectangle &
 	newRectangle.min.y = rectangle.min.y + y * single;
 	newRectangle.max.x = rectangle.min.x + (x + 1) * single;
 	newRectangle.max.y = rectangle.min.y + (y + 1) * single;
+}
+
+void QuadTreeNode::resetCopyFlag(){
+	this->isCopy = false;
+	for(unsigned i = 0; i < this->children.size(); i++){
+		if(this->children[i] != NULL && this->children[i]->isCopy == true){
+			this->children[i]->resetCopyFlag();
+		}
+	}
 }
 
 bool QuadTreeNode::equalTo(QuadTreeNode* node){

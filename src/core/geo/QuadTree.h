@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "geo/QuadTreeNode.h"
+#include <queue>
 
 using namespace std;
 
@@ -22,56 +23,118 @@ const double GEO_TOP_RIGHT_Y = 200.0;
 const double GEO_BOTTOM_LEFT_X = -200.0;    // The bottom left point of the maximum rectangle range of the whole quadtree
 const double GEO_BOTTOM_LEFT_Y = -200.0;
 
+class QuadTreeRootNodeAndFreeLists{
+public:
+	vector<const QuadTreeNode*> quadtreeNodes_free_list;
+	vector<const GeoElement*>   geoElements_free_list;
+	QuadTreeNode* root;
+
+	QuadTreeRootNodeAndFreeLists();
+	QuadTreeRootNodeAndFreeLists(const QuadTreeNode* src);
+	~QuadTreeRootNodeAndFreeLists();
+
+private:
+	friend class boost::serialization::access;
+
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version){
+		ar & root;
+	}
+};
+
 class QuadTree
 {
 public:
+	typedef boost::shared_ptr<QuadTreeRootNodeAndFreeLists> QuadTreeRootNodeSharedPtr;
+
 	QuadTree();
 
 	virtual ~QuadTree();
 
+	void deleteQuadTreeNode(QuadTreeNode* quadTreeNode);
+
+	void getQuadTreeRootNode_ReadView(QuadTreeRootNodeSharedPtr &quadTreeRootNode_ReadView) const;
+
+	QuadTreeNode* getQuadTreeRootNode_WriteView() const;
+
 	// Insert a new record to the quadtree
+	// Do not use after calling commit
 	bool insert(const Record *record, unsigned recordInternalId);
 
 	// Insert a new geo element to the quadtree
+	// Do not use after calling commit
 	bool insert(GeoElement* element);
 
+	bool insert_ThreadSafe(const Record *record, unsigned recordInternalId);
+
+	bool insert_ThreadSafe(GeoElement* element);
+
 	// Remove the record from the quadtree
-	bool remove(const Record *record, unsigned recordInternalId);
+	bool remove_ThreadSafe(const Record *record, unsigned recordInternalId);
 
 	// Remove the geo element from the quadtree
-	bool remove(GeoElement* element);
+	bool remove_ThreadSafe(GeoElement* element);
 
 	// Update a record in the quadtree
-	bool update(const Record *record, unsigned recordInternalId);
+	bool update_ThreadSafe(const Record *record, unsigned recordInternalId);
 
 	// Update a geo element in the quadtree
-	bool update(GeoElement* element);
+	bool update_ThreadSafe(GeoElement* element);
 
 	// Find all the geo elements in the range
-	void rangeQuery(vector<vector<GeoElement*>*> & results, const Shape &range) const;
+	void rangeQuery(vector<vector<GeoElement*>*> & results, const Shape &range, QuadTreeNode* root) const;
 
 	// Find all the quadtree nodes inside the query range.
 	// If the query's rectangle contains the rectangles of all the nodes in a subtree, it only returns the root of that subtree.
-	void rangeQuery(vector<QuadTreeNode*> & results, const Shape &range) const;
+	void rangeQuery(vector<QuadTreeNode*> & results, const Shape &range, QuadTreeNode* root) const;
 
-	unsigned getTotalNumberOfGeoElements(){
-		return this->root->getNumOfElementsInSubtree();
+	unsigned getTotalNumberOfGeoElements();
+
+	void commit();
+
+	void merge();
+
+	bool isMergeRequired(){
+		return mergeRequired;
 	}
 
-	QuadTreeNode* getRoot(){
-		return this->root;
-	};
 
-	bool equalTo(QuadTree* quadtree);
 
 private:
-	QuadTreeNode* root;    // Pointer to the root of the Quadtree.
+	boost::shared_ptr<QuadTreeRootNodeAndFreeLists> root_readview;
+	QuadTreeNode* root_writeview;       // normal pointer to the root of the Quadtree for writeview
+	mutable pthread_spinlock_t m_spinlock;
+
+	// We keep the old read views in a queue. The goal is to make sure trie nodes in these views
+	// can be freed in the order the read views were added into the queue.
+	queue< boost::shared_ptr<QuadTreeRootNodeAndFreeLists> > oldReadViewQueue;
+
+	bool commited;
+	bool mergeRequired;
 
     friend class boost::serialization::access;
+
     template<class Archive>
-    void serialize(Archive & ar, const unsigned int version)
+    void save(Archive & ar, const unsigned int version){
+    	// We do NOT need to serialize the "committed" flag since the quadtree should have committed.
+    	ar << root_readview;
+    }
+
+    template<class Archive>
+    void load(Archive & ar, const unsigned int version){
+    	// We do NOT need to read the "committed" flag from the disk since the quadtree should have committed and the flag should true.
+    	this->commited = true;
+    	ar >> this->root_readview;
+    	// free any old memory pointed by this->root_writeview to avoid memory leaks.
+    	if(this->root_writeview)
+    		delete this->root_writeview;
+    	this->root_writeview = new QuadTreeNode(this->root_readview.get()->root);
+    }
+
+    template<class Archive>
+    void serialize(Archive & ar, const unsigned int file_version)
     {
-        ar & this->root;
+        boost::serialization::split_member(ar, *this, file_version);
     }
 
 };

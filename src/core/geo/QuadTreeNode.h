@@ -68,11 +68,15 @@ private:
 class QuadTreeNode
 {
 public:
-	QuadTreeNode(){};
+	QuadTreeNode(){
+		this->isCopy = false;
+	};
 
 	QuadTreeNode(Rectangle &rectangle);
 
 	QuadTreeNode(Rectangle &rectangle, GeoElement* elements);
+
+	QuadTreeNode(const QuadTreeNode* src);
 
 	virtual ~QuadTreeNode();
 
@@ -80,9 +84,11 @@ public:
 	// the new geo elements in the subtree of this node for the internal nodes.
 	bool insertGeoElement(GeoElement* element);
 
+	bool insertGeoElement_ThreadSafe(GeoElement* element, boost::shared_ptr<QuadTreeRootNodeAndFreeLists> quadTreeRootNode_ReadView);
+
 	// Remove a geo element from the elements for the leaf nodes or remove
 	// the geo element from the subtree of this node for the internal nodes.
-	bool removeGeoElement(GeoElement* element);
+	bool removeGeoElement_ThreadSafe(GeoElement* element, boost::shared_ptr<QuadTreeRootNodeAndFreeLists> quadTreeRootNode_ReadView);
 
 	// return all the elements of the node for leaf nodes or return all the elements
 	// in the subtree of this node for internal nodes.
@@ -113,6 +119,7 @@ public:
 		return &children;
 	}
 
+	// returns the elements of this node
 	vector<GeoElement*>* getElements(){
 		return &elements;
 	}
@@ -125,6 +132,8 @@ public:
 		return this->numOfLeafNodesInSubtree;
 	}
 
+	void resetCopyFlag();
+
 	bool equalTo(QuadTreeNode* node);
 
 private:
@@ -135,13 +144,19 @@ private:
 	unsigned numOfLeafNodesInSubtree;  // Number of Leaf nodes in the subtree of this node.(if this node is a leaf then numOfLeafNodesInSubtree=1)
 	vector<GeoElement*> elements;      // Store geo elements if this node is a leaf node
 
+	// we use this flag for concurrency control. so when we made a copy of this node for
+	// insertion we don't need to copy it again for next insertions. and in the merge we change
+	// this flag to false;
+	bool isCopy;
+
+
 	// Split the leaf node and make it an internal node if the number
 	// of elements is greater than MAX_NUM_OF_ELEMENTS
 	void split();
 
 	// Merge all the children of this node if the total number of geo elements in
 	// them is less than or equal to MAX_NUM_OF_ELEMENTS
-	void mergeChildren();
+	void mergeChildren(boost::shared_ptr<QuadTreeRootNodeAndFreeLists> quadTreeRootNode_ReadView);
 
 	// Find offset of the child which rectangle contains this point
 	unsigned findChildContainingPoint(Point& point);
@@ -162,6 +177,7 @@ private:
         ar & this->numOfElementsInSubtree;
         ar & this->numOfLeafNodesInSubtree;
         ar & this->elements;
+        ar & this->isCopy;
     }
 };
 
