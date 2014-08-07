@@ -574,17 +574,33 @@ The [advanced example](../example-demo/srch2-config-advanced.xml) provides a wor
 
 ###11.5.4 Synonym Filter (Optional)
 
-The synonym filter allows synonyms while analyzing the record. The configuration setting is shown below.
+The synonym filter allows synonyms while analyzing the record for indexing. The configuration setting is shown below.
 
 ```
 <filter name="synonymFilter" synonyms="relative/path/to/synonyms/file" expand="true"/>
 ```
+The <code>synonyms</code> attribute specifies the path to a synonyms file relative to <code>srch2Home</code>. The boolean attribute <code>expand</code> indicates whether all the synonyms should be kept in index or replaced by a single synonym.
 
-The <code>synonyms</code> attribute specifies the path to synonyms file relative to <code>srch2_home</code>. The boolean attribute <code>expand</code> indicates whether all the synonyms should be kept in index or replaced by a single synonym.
+The format of synonym file is shown below. All comments start with '#' at the begining of a line.
 
-The [format](../example-demo/synonyms.txt) of synonym file is compatible with solr. 
+```
+#1. explicit synonym rule : Tokens on LHS will be replaced with tokens on RHS ( "expand" flag is ignored)
+nyc=>new york city, new york
+jvm=> java virtual machine
+centOS, federo => linux
+#2. equivalent synonym rule 
+ipad, i-pad, tablet
+#   if expand == true, then the rule is treated as "ipad, i-pad, tablet" => "ipad, i-pad, tablet"
+#   if expand == false, then the rule is treated as "i-pad, tablet" => "ipad"
+```
+Example: 
 
+For a record : <code>"The CentOS Project is a community-driven free software effort"</code>
 
+If the synonym rule is <code>"centOS=>linux"</code>, then the query keyword "centOS" will not return any results whereas "linux" will return the record as a search result.
+
+If the synonym rule is <code>"centOS, linux"</code> (equivalent synonyms) and <code>expand</code> attribute is set to <code>true</code>, then the both query keywords "centOS" and "linux" will return the record as a search result.
+  
 ###11.5.5 Allowed Special Characters (Optional)
 
 The engine has a number of rules on what characters can be used to decompose words, and what characters
