@@ -1,13 +1,20 @@
-bill=>william
-new york city=>nyc
-wal mart=>walmart
-new york=>ny
-bring your own beverage=>byob
-your own beverage=>yob
-a b c d e f g=>x
-a b c=>y
-d e f=>z
-آسان=>راحت
-ایمان برجسته=>مشتی
-美=>丽
-美丽=>漂亮
+# test various equivalent synonyms
+william, bill
+nyc, new york city
+walmart, wal mart 
+ny, new york
+byob, bring your own beverage
+yob, your own beverage 
+x, a b c d e f g
+y, a b c
+z, d e f
+راحت, آسان
+مشتی, ایمان برجسته
+丽, 美
+漂亮, 美丽
+los angeles,la
+club los angeles lakers,showtime
+# test duplicate elimination
+los angeles,la
+# test replacement only synonyms
+cs=>computer science

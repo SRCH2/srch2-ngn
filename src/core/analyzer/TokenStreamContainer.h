@@ -10,7 +10,7 @@
 #include <vector>
 #include "util/encoding.h"
 #include "CharSet.h"
-
+#include <instantsearch/Analyzer.h>
 namespace srch2
 {
 namespace instantsearch
@@ -18,13 +18,14 @@ namespace instantsearch
 
 class TokenStreamContainer {
 public:
-	TokenStreamContainer():offset(0), currentTokenPosition(0), currentTokenOffset(0){}
+	TokenStreamContainer():offset(0), currentTokenPosition(0), currentTokenOffset(0), type(ANALYZED_ORIGINAL_TOKEN){}
     void fillInCharacters(const std::vector<CharType> &charVector, bool isPrefix=false){
         currentToken.clear();
         completeCharVector = charVector;
         currentTokenOffset = 0;
         currentTokenPosition = 0;
         offset = 0;
+        type = ANALYZED_ORIGINAL_TOKEN;
         this->isPrefix = isPrefix;
     }
 	/*
@@ -43,6 +44,8 @@ public:
 	int offset;									//the offset of current position to process
 	unsigned currentTokenPosition;
 	unsigned currentTokenOffset;        // offset of current token from the beginning of the buffer.
+	AnalyzedTokenType type;
+	unsigned currentTokenLen;
 	bool isPrefix;
 };
 }}

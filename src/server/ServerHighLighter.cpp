@@ -138,7 +138,7 @@ ServerHighLighter::ServerHighLighter(QueryResults * queryResults,Srch2Server *se
 		this->highlightAlgorithms  = new TermOffsetAlgorithm(server->indexer,
 				 param.PhraseKeyWordsInfoMap, hconf);
 	} else {
-		Analyzer *currentAnalyzer = AnalyzerFactory::getCurrentThreadAnalyzer(server->indexDataConfig);
+		Analyzer *currentAnalyzer = AnalyzerFactory::getCurrentThreadAnalyzerWithSynonyms(server->indexDataConfig);
 		this->highlightAlgorithms  = new AnalyzerBasedAlgorithm(currentAnalyzer,
 				 param.PhraseKeyWordsInfoMap, hconf);
 	}
