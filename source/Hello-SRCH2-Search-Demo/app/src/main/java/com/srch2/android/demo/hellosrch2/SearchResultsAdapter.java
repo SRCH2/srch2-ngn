@@ -56,6 +56,9 @@ public class SearchResultsAdapter extends BaseAdapter {
 
     public void updateDisplayedSearchResults(
             ArrayList<MovieSearchResult> newSearchResults) {
+        // Swap out the data set of this adapter with the new set of search results
+        // and invalidate the list view this adapter is backing with these new
+        // search results.
         mSearchResults.clear();
         mSearchResults.addAll(newSearchResults);
         notifyDataSetChanged();
@@ -109,6 +112,11 @@ public class SearchResultsAdapter extends BaseAdapter {
 
     private static class SearchResultsUiHandler extends Handler implements
             SearchResultsListener {
+
+        // Since the SearchResultsListener callback method onNewSearchResults(...)
+        // is executed off the Ui thread, it is implemented in a handler that will
+        // pass the search results of this callback to the Ui thread: specifically,
+        // to the SearchResultsAdapter so they can be displayed to the user.
 
         private static final int MESSAGE_WHAT_PUBLISH_NEW_RESULTS = 001;
         private static final int MESSAGE_WHAT_PUBLISH_NO_NEW_RESULTS = 002;

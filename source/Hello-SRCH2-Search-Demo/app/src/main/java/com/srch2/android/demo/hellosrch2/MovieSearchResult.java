@@ -2,6 +2,9 @@ package com.srch2.android.demo.hellosrch2;
 
 public class MovieSearchResult {
 
+    // This class is a model for the SearchResultsAdapter data set.
+    // Its field represents the visible data of a MovieIndex record.
+
     private String mTitle;
     private String mGenre;
     private int mYear;
