@@ -38,8 +38,8 @@ public class TestGeoIndex extends TestableIndex {
                 recordObject.put(INDEX_FIELD_NAME_PRIMARY_KEY, String.valueOf(i));
                 recordObject.put(INDEX_FIELD_NAME_TITLE, "Title ");
                 recordObject.put(INDEX_FIELD_NAME_SCORE, i);
-                recordObject.put(INDEX_FIELD_NAME_LATITUDE, TestCaseUtil.generateRandomGeo());
-                recordObject.put(INDEX_FIELD_NAME_LONGITUDE, TestCaseUtil.generateRandomGeo());
+//                recordObject.put(INDEX_FIELD_NAME_LATITUDE, TestCaseUtil.generateRandomGeo());
+//                recordObject.put(INDEX_FIELD_NAME_LONGITUDE, TestCaseUtil.generateRandomGeo());
             } catch (JSONException ignore) { }
             recordsArray.put(recordObject);
         }

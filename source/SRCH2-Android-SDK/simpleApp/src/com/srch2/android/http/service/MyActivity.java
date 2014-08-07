@@ -3,6 +3,7 @@ package com.srch2.android.http.service;
 import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
+import junit.framework.Assert;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -131,9 +132,19 @@ public class MyActivity extends Activity {
         Util.waitSRCH2EngineIsReady();
     }
 
+    public void testAll(){
+        testStartEngine(mIndex1, mIndex2);
+        try {
+            for(TestableIndex index : new TestableIndex[] {mIndex1, mIndex2} ) {
+                testOneRecordCRUD(index);
+                testBatchRecordCRUD(index);
+            }
+        } catch (JSONException e) {
+            Assert.fail();
+        }
+    }
 
     public void testStartEngine(TestableIndex ... indexes){
-        mControlListener.reset();
         waitForEngineReady();
         assertTrue(mControlListener.indexesInfoResponseMap.size() == indexes.length);
         for(TestableIndex index : indexes){

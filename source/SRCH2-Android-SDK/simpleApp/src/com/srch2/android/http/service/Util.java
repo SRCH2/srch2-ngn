@@ -1,14 +1,10 @@
 package com.srch2.android.http.service;
 
-import org.json.JSONObject;
-
-import java.util.Map;
-
 import static junit.framework.Assert.assertTrue;
 
 public class Util {
 
-    static final int TOLERANCE = 60000;
+    static final int TOLERANCE = 30000;
     static final int SLEEP_PER_ROUOND = 100;
 
     public static void waitForResponse(TestControlResponseListener controlResponseListener, Class clazz) {
