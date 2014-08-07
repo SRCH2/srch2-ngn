@@ -572,7 +572,20 @@ It specifies a file of special protected keywords that should be preserved by th
 
 The [advanced example](../example-demo/srch2-config-advanced.xml) provides a working example of protected keywords.
 
-###11.5.4 Allowed Special Characters (Optional)
+###11.5.4 Synonym Filter (Optional)
+
+The synonym filter allows synonyms while analyzing the record. The configuration setting is shown below.
+
+```
+<filter name="synonymFilter" synonyms="relative/path/to/synonyms/file" expand="true"/>
+```
+
+The <code>synonyms</code> attribute specifies the path to synonyms file relative to <code>srch2_home</code>. The boolean attribute <code>expand</code> indicates whether all the synonyms should be kept in index or replaced by a single synonym.
+
+The [format](../example-demo/synonyms.txt) of synonym file is compatible with solr. 
+
+
+###11.5.5 Allowed Special Characters (Optional)
 
 The engine has a number of rules on what characters can be used to decompose words, and what characters
 are punctuation or delimiters separating words.  To provide additional flexibility, the engine can be
