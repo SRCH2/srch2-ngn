@@ -136,7 +136,10 @@ void HighlightAlgorithm::removeInvalidPositionInPlace(vector<matchedTermInfo>& h
 	unsigned currIdx = 0;
 	while (currIdx < highlightPositions.size()) {
 		if (highlightPositions[currIdx].flag != HIGHLIGHT_KEYWORD_IS_PHRASE &&
-			(writeIdx == 0 || highlightPositions[currIdx].offset != highlightPositions[writeIdx-1].offset)) {
+			highlightPositions[currIdx].flag != HIGHLIGHT_KEYWORD_INVALID &&
+			(writeIdx == 0 || (highlightPositions[currIdx].offset != highlightPositions[writeIdx-1].offset &&
+			highlightPositions[writeIdx - 1].offset + highlightPositions[writeIdx - 1].len <
+			highlightPositions[currIdx].offset))) {
 			if (currIdx - writeIdx > 0) {
 				highlightPositions[writeIdx] = highlightPositions[currIdx];
 			}
@@ -158,6 +161,8 @@ AnalyzerBasedAlgorithm::AnalyzerBasedAlgorithm(Analyzer *analyzer,
 		const HighlightConfig& hconf):
 		HighlightAlgorithm(phrasesInfoList, hconf){
 	this->analyzer = analyzer;
+}
+AnalyzerBasedAlgorithm::~AnalyzerBasedAlgorithm() {
 }
 
 void AnalyzerBasedAlgorithm::getSnippet(const QueryResults* /*not used*/, unsigned /* not used*/,
@@ -193,8 +198,17 @@ void AnalyzerBasedAlgorithm::getSnippet(const QueryResults* /*not used*/, unsign
 		vector<CharType>& charVector = this->analyzer->getProcessedToken();
 		unsigned charOffset = this->analyzer->getProcessedTokenCharOffset();
 		unsigned position = this->analyzer->getProcessedTokenPosition();
+		unsigned originalTokenCharLen = this->analyzer->getProcessedTokenLen();
+		AnalyzedTokenType tokenType = this->analyzer->getProcessedTokenType();
 		bool matchFound = false;
-
+		if (tokenType == ANALYZED_SYNONYM_TOKEN) {
+			vector<unsigned>::iterator iter = find(charVector.begin(), charVector.end(), 32);
+			if (iter != charVector.end()) {
+				// we only care about first token of the generated synonym
+				// e.g if "new york" is synonym token , then only use new for matching
+				charVector.erase(iter, charVector.end());
+			}
+		}
 		if (mask == 0 && phrasesInfoList.size() == 0)  // for phrase we cannot assume much.
 			break;
 
@@ -228,8 +242,12 @@ void AnalyzerBasedAlgorithm::getSnippet(const QueryResults* /*not used*/, unsign
 				assert(true);
 			}
 			if (matchFound) {
+				signed termLen = keywordStrToHighlight[i].key.size();
+				if (tokenType == ANALYZED_SYNONYM_TOKEN)  {
+					termLen = originalTokenCharLen;
+				}
 				matchedTermInfo info = {keywordStrToHighlight[i].flag, i, charOffset,
-						keywordStrToHighlight[i].key.size(), 0};
+						termLen, 0};
 				if (keywordStrToHighlight[i].editDistance > 0)
 					info.tagIndex = 1;
 			 	highlightPositions.push_back(info);
@@ -246,7 +264,6 @@ void AnalyzerBasedAlgorithm::getSnippet(const QueryResults* /*not used*/, unsign
 			 	}
 			 	actualHighlightedSet.insert(i);
 			 	mask &= ~(1 << i);   // helps in early termination if all keywords are found
-			 	break;
 			}
 		}
 	}
@@ -318,8 +335,11 @@ void HighlightAlgorithm::validatePhrasePositions(vector<matchedTermInfo>& highli
 			for (unsigned k = 0; k < currPhraseMatchedPosition.size(); ++k) {
 				boost::unordered_map<unsigned, unsigned>::iterator iter =
 						positionToOffsetMap.find(currPhraseMatchedPosition[k]);
-				if (iter != positionToOffsetMap.end())
-					highlightPositions[iter->second].flag = HIGHLIGHT_KEYWORD_IS_VERIFIED_PHRASE;
+				if (iter != positionToOffsetMap.end()) {
+					if (highlightPositions.at(iter->second).flag != HIGHLIGHT_KEYWORD_INVALID) {
+						highlightPositions[iter->second].flag = HIGHLIGHT_KEYWORD_IS_VERIFIED_PHRASE;
+					}
+				}
 			}
 		}
 	}
@@ -825,11 +845,33 @@ void TermOffsetAlgorithm::getSnippet(const QueryResults* qr, unsigned recidx, un
 			vector<unsigned> offsetPosition;
 			vector<unsigned> wordPosition;
 			fwdList->getKeyWordOffsetInRecordField(info.keywordOffset, attributeId, attributeBitMap, offsetPosition);
+			vector<uint8_t> synonymBitMap;
+			fwdList->getSynonymBitMapInRecordField(info.keywordOffset, attributeId,  synonymBitMap);
+			ASSERT((offsetPosition.size() /  8 + 1) == synonymBitMap.size());
 			visitedKeyword.insert(info.prefixKeyIdx);
+			vector<unsigned> synonymsCharLenInfo;
 			for (unsigned _idx = 0; _idx < offsetPosition.size(); ++_idx){
-				matchedTermInfo mti = {keywordStrToHighlight[info.prefixKeyIdx].flag,
-						info.prefixKeyIdx, offsetPosition[_idx],
-						keywordStrToHighlight[info.prefixKeyIdx].key.size(), 0};
+				bool isSynonym = false;
+				unsigned byteIdx = _idx / 8;
+				if (byteIdx < synonymBitMap.size()) {
+					isSynonym = synonymBitMap[byteIdx] & (1 << (_idx % 8));
+				}
+				signed termLen = keywordStrToHighlight[info.prefixKeyIdx].key.size();
+				if (isSynonym) {
+					if (synonymsCharLenInfo.size() == 0) {
+						// first time fetch it.
+						fwdList->getSynonymCharLenInRecordField(info.keywordOffset, attributeId, synonymsCharLenInfo);
+					}
+					termLen = getOriginalTermCharLen(synonymsCharLenInfo, synonymBitMap, _idx);
+				}
+
+				KeywordHighlightInfoFlag flag = keywordStrToHighlight[info.prefixKeyIdx].flag;
+				if (termLen == -1 || offsetPosition[_idx] == 0) {
+					Logger::debug("invalid term length or offset. Ignore this term");
+					flag = HIGHLIGHT_KEYWORD_INVALID;
+				}
+				matchedTermInfo mti = {flag, info.prefixKeyIdx, offsetPosition[_idx],
+						termLen, 0};
 				if (keywordStrToHighlight[info.prefixKeyIdx].editDistance > 0)
 					mti.tagIndex = 1;
 				highlightPositions.push_back(mti);
@@ -843,7 +885,9 @@ void TermOffsetAlgorithm::getSnippet(const QueryResults* qr, unsigned recidx, un
 					}
 				}
 				for (unsigned _idx = 0; _idx < wordPosition.size(); ++_idx){
-					positionToOffsetMap.insert(make_pair(wordPosition[_idx], highlightPositions.size() - offsetPosition.size() + _idx));
+					unsigned phraseOffsetPos = highlightPositions.size() - offsetPosition.size() + _idx;
+					if (highlightPositions.at(phraseOffsetPos).flag != HIGHLIGHT_KEYWORD_INVALID)
+						positionToOffsetMap.insert(make_pair(wordPosition[_idx], phraseOffsetPos));
 				}
 			}
 		}
@@ -865,6 +909,21 @@ void TermOffsetAlgorithm::getSnippet(const QueryResults* qr, unsigned recidx, un
 	buildSnippetUsingHighlightPositions(dataIn, highlightPositions, visitedKeyword,
 				ctsnippet, snippets, isMultiValued);
 
+}
+
+signed TermOffsetAlgorithm::getOriginalTermCharLen(vector<unsigned> charLens, vector<uint8_t> bitmap,
+		unsigned offsetVectIndx) {
+	unsigned byteIdx = offsetVectIndx / 8;
+	unsigned charLenIndex = 0;
+	for (unsigned i = 0; i < byteIdx; ++i) {
+		charLenIndex += getBitSet(bitmap[i]);
+	}
+	charLenIndex += getBitSetPositionOfAttr(bitmap[byteIdx], offsetVectIndx % 8);
+	if (charLenIndex < charLens.size()) {
+		return charLens[charLenIndex];
+	} else {
+		return -1;
+	}
 }
 
 } /* namespace instanstsearch */

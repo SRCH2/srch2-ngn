@@ -81,6 +81,10 @@ struct NewKeywordIdKeywordOffsetPairGreaterThan {
     }
 };
 
+// get the count of set bits in the number
+unsigned getBitSet(unsigned number);
+// get the count of bit set before the bit position of attributeId
+unsigned getBitSetPositionOfAttr(unsigned bitmap, unsigned attribute);
 class ForwardList {
 public:
 
@@ -138,16 +142,21 @@ public:
     void allocateSpaceAndSetNSAValuesAndPosIndex(const Schema * schema,
     		bool shouldAttributeBitMapBeAllocated,
     		vector<uint8_t>& positionIndexDataVector,
-    		vector<uint8_t>& offsetIndexDataVector){
+    		vector<uint8_t>& offsetIndexDataVector,
+    		vector<uint8_t>& charLenDataVector,
+    		vector<uint8_t>& synonymBitMapVector){
 
     	this->positionIndexSize = positionIndexDataVector.size();
     	this->offsetIndexSize = offsetIndexDataVector.size();
+    	this->charLenIndexSize = charLenDataVector.size();
+    	this->synonymBitMapSize = synonymBitMapVector.size();
         //
     	// first two blocks are for keywordIDs and keywordRecordStaticScores.
     	dataSize = getKeywordIdsSizeInBytes() + getKeywordRecordStaticScoresSizeInBytes();
     	data = new Byte[dataSize +
     	                          this->getKeywordAttributeBitmapsSizeInBytes() +
-    	                          this->getPositionIndexSize() + this->offsetIndexSize];
+    	                          this->getPositionIndexSize() + this->offsetIndexSize
+    	                          + this->synonymBitMapSize +  this->charLenIndexSize];
 
     	// third block is attributeBitmap
     	/////
@@ -161,6 +170,12 @@ public:
 
     	copy(offsetIndexDataVector.begin() , offsetIndexDataVector.end(), data + this->dataSize);
     	dataSize = dataSize + this->offsetIndexSize;
+
+    	copy(synonymBitMapVector.begin() , synonymBitMapVector.end(), data + this->dataSize);
+    	dataSize = dataSize + this->synonymBitMapSize;
+
+    	copy(charLenDataVector.begin() , charLenDataVector.end(), data + this->dataSize);
+    	dataSize = dataSize + this->charLenIndexSize;
 
     }
 
@@ -217,6 +232,8 @@ public:
         nonSearchableAttributeValuesDataSize = 0;
         positionIndexSize = 0;
         offsetIndexSize = 0;
+        charLenIndexSize = 0;
+        synonymBitMapSize = 0;
     }
 
     virtual ~ForwardList() {
@@ -291,6 +308,10 @@ public:
     		const uint8_t * piPtr, unsigned piOffset) const;
     void getKeyWordOffsetInRecordField(unsigned keyOffset, unsigned attributeId,
     		unsigned currKeyattributeBitMap, vector<unsigned>& pl) const;
+    void getSynonymCharLenInRecordField(unsigned keyOffset, unsigned attributeId,
+    		vector<unsigned>& pl) const;
+    void getSynonymBitMapInRecordField(unsigned keyOffset, unsigned attributeId,
+    		vector<uint8_t>& synonymBitMap) const;
 
 private:
     friend class boost::serialization::access;
@@ -303,6 +324,8 @@ private:
         ar & this->nonSearchableAttributeValuesDataSize;
         ar & this->positionIndexSize;
         ar & this->offsetIndexSize;
+        ar & this->synonymBitMapSize;
+        ar & this->charLenIndexSize;
         ar & this->dataSize;
         if (this->inMemoryData.get() == NULL)
         	this->inMemoryDataLen = 0;
@@ -349,6 +372,8 @@ private:
     unsigned positionIndexSize;
     unsigned dataSize;
     unsigned offsetIndexSize;
+    unsigned charLenIndexSize;
+    unsigned synonymBitMapSize;
 
 
     ///////////////////     Keyword IDs Helper Functions //////////////////////////////////////
@@ -424,10 +449,28 @@ private:
     	/*
     	 * The format of data in this array is :
     	 * --------------------------------------------------------------------------------------------------
-    	 * | keywordIDs | keywordRecordStaticScores | keywordAttributeBitMap | positionIndex |  offsetIndex |
+    	 * | keywordIDs | keywordRecordStaticScores | keywordAttributeBitMap | positionIndex |  charOffsetIndex |
     	 * --------------------------------------------------------------------------------------------------
     	 */
     	return getPositionIndexPointer() + positionIndexSize;
+    }
+    inline uint8_t * getSynonymBitMapPointer() const{
+    	/*
+    	 * The format of data in this array is :
+    	 * ------------------------------------------------------------------------------------------------------------------------------------------------------
+    	 * | keywordIDs | keywordRecordStaticScores | keywordAttributeBitMap | positionIndex |  charOffsetIndex | SynonymBitFlagArray | SynonymOriginalTokenLenArray |
+    	 * ------------------------------------------------------------------------------------------------------------------------------------------------------
+    	 */
+    	return getOffsetIndexPointer() + offsetIndexSize;
+    }
+    inline uint8_t * getCharLenIndexPointer() const{
+    	/*
+    	 * The format of data in this array is :
+    	 * -------------------------------------------------------------------------------------------------------------------------------------------------------
+    	 * | keywordIDs | keywordRecordStaticScores | keywordAttributeBitMap | positionIndex |  charOffsetIndex | SynonymBitFlagArray | SynonymOriginalTokenLenArray |
+    	 * -------------------------------------------------------------------------------------------------------------------------------------------------------
+    	 */
+    	return getSynonymBitMapPointer() + synonymBitMapSize;
     }
     inline unsigned getPositionIndexSize(){
     	return positionIndexSize;
@@ -475,12 +518,6 @@ private:
         ar & externalToInternalRecordIdMap;
         ar & commited_WriteView;
     }
-
-    //helper functions
-    void _getPositionListFromTokenAttributesMap(
-            KeywordIdKeywordStringInvertedListIdTriple &keywordIdList,
-            map<string, TokenAttributeHits> &tokenAttributeHitsMap,
-            vector<unsigned>& positionList);
 
 public:
 
@@ -694,7 +731,8 @@ public:
 
     void convertToVarLengthArray(const vector<unsigned>& positionListVector,
     							 vector<uint8_t>& grandBuffer);
-
+    void convertToVarLengthBitMap(const vector<uint8_t>& bitMapVector,
+    		vector<uint8_t>& grandBuffer);
 };
 
 }

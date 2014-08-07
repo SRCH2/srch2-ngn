@@ -113,7 +113,7 @@ const char* const ConfigManager::srch2HomeString = "srch2home";
 const char* const ConfigManager::stopFilterString = "StopFilter";
 const char* const ConfigManager::protectedWordFilterString = "protectedKeyWordsFilter";
 const char* const ConfigManager::supportSwapInEditDistanceString = "supportswapineditdistance";
-const char* const ConfigManager::synonymFilterString = "SynonymFilter";
+const char* const ConfigManager::synonymFilterString = "synonymFilter";
 const char* const ConfigManager::synonymsString = "synonyms";
 const char* const ConfigManager::textEnString = "text_en";
 const char* const ConfigManager::typeString = "type";
@@ -1343,7 +1343,24 @@ void ConfigManager::parseSchemaType(const xml_node &childNode, CoreInfo_t *coreI
 								}else{
 									Logger::warn("words parameter for protected keywords is empty, so protected words filter is disabled");
 								}
+							} else if (string(field.attribute(nameString).value()).compare(synonymFilterString) == 0) {
+								if (string(field.attribute(synonymsString).value()).compare("") != 0) { // the file for synonyms filter is set.
+									temporaryString = string(field.attribute(synonymsString).value());
+									trimSpacesFromValue(temporaryString, synonymsString, parseWarnings);
+									coreInfo->synonymFilterFilePath = boost::filesystem::path(srch2Home + temporaryString).normalize().string();
+								}else{
+									Logger::warn("Synonym filter is disabled because synonym parameter is empty, ");
+								}
+								if (string(field.attribute(expandString).value()).compare("") != 0) {
+									temporaryString = string(field.attribute(expandString).value());
+									if (isValidBool(temporaryString)) {
+										coreInfo->synonymKeepOrigFlag = field.attribute(expandString).as_bool(true);
+									}
+								}else{
+									Logger::warn("Synonym filter's expand attribute is missing. Using default = true");
+								}
 							}
+
 						} else if (string(field.name()).compare(allowedRecordSpecialCharactersString) == 0) {
 							CharSet charTyper;
 							string in = field.text().get(), out; // TODO: Using type string NOT multi-lingual?
@@ -1529,7 +1546,7 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
 	        coreInfo->stopFilterFilePath = "";
 	        coreInfo->synonymFilterFilePath = "";
 	        coreInfo->protectedWordsFilePath = "";
-	        coreInfo->synonymKeepOrigFlag = false;
+	        coreInfo->synonymKeepOrigFlag = true;
 
 	        childNode = schemaNode.child(typesString);
 

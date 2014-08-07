@@ -34,11 +34,16 @@ namespace srch2 {
 namespace instantsearch {
 
 class AnalyzerInternal;
-
-struct PositionalTerm {
+enum AnalyzedTokenType {
+	ANALYZED_ORIGINAL_TOKEN,
+	ANALYZED_SYNONYM_TOKEN
+};
+struct AnalyzedTermInfo {
 	string term;
 	unsigned position;
 	unsigned charOffset;
+	unsigned charLength;
+	AnalyzedTokenType analyzedTokenType;
 };
 
 struct TokenAttributeHits {
@@ -60,6 +65,8 @@ struct TokenAttributeHits {
      */
     vector<unsigned> attributeList;
     vector<unsigned> charOffsetOfTermInAttribute;
+    vector<unsigned> charLensOfTermInAttribute;
+    vector<AnalyzedTokenType> typesOfTermInAttribute;
 };
 
 
@@ -102,7 +109,7 @@ public:
 	void clearFilterStates();
 
 	void tokenizeQuery(const std::string &queryString,
-			std::vector<PositionalTerm> &queryKeywords) const;
+			std::vector<AnalyzedTermInfo> &queryKeywords, bool isPrefix = false) const;
 
 	void tokenizeRecord(const Record *record,
 	        std::map<string, TokenAttributeHits> &tokenAttributeHitsMap) const;
@@ -113,21 +120,13 @@ public:
 
     void save(boost::archive::binary_oarchive &oa);
 
-	// TODO: Refactor the function and its arguments. Possibly move to wrapper
-	void tokenizeQueryWithFilter(const std::string &queryString,
-			std::vector<PositionalTerm> &queryKeywords,
-			const char &splitterCharacter,
-			const char &filterSplitterCharacter,
-			const char &fieldsAndCharacter,
-			const char &fieldsOrCharacter,
-			const std::map<std::string, unsigned> &searchableAttributesNameToId,
-			std::vector<unsigned> &filter) const ;
-
 	void fillInCharacters(const char * data);
 	bool processToken();
 	std::vector<CharType> & getProcessedToken();
 	unsigned getProcessedTokenCharOffset();
 	unsigned getProcessedTokenPosition();
+	unsigned getProcessedTokenLen();
+	AnalyzedTokenType getProcessedTokenType();
 	/**
 	 * Destructor to free persistent resources used by the Analyzer.
 	 */
