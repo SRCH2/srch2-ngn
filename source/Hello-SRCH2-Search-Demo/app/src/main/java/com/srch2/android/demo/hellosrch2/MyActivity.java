@@ -31,7 +31,7 @@ public class MyActivity extends Activity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.my_activity);
+        setContentView(R.layout.activity_my);
         mSearchResultsListView = (ListView) findViewById(R.id.lv_search_results);
         mSearchResultsAdapter = new SearchResultsAdapter(this);
         mSearchResultsListView.setAdapter(mSearchResultsAdapter);
@@ -40,14 +40,14 @@ public class MyActivity extends Activity implements
     }
 
     private void setupSRCH2Engine() {
+        mMovieIndex = new MovieIndex();
+        SRCH2Engine.initialize(mMovieIndex);
+
         SRCH2Engine.setSearchResultsListener(mSearchResultsAdapter
                 .getSearchResultsListener());
 
         mSRCH2StateResponseListener = new SRCH2StateResponseListener(this);
         SRCH2Engine.setStateResponseListener(mSRCH2StateResponseListener);
-
-        mMovieIndex = new MovieIndex();
-        SRCH2Engine.initialize(mMovieIndex);
     }
 
     @Override
@@ -79,22 +79,6 @@ public class MyActivity extends Activity implements
 
         public SRCH2StateResponseListener(MyActivity myActivity) {
             mActivity = myActivity;
-        }
-
-        @Override
-        public void onInfoRequestComplete(final String indexName,
-                                          final InfoResponse response) {
-            Log.d(TAG, "Info for index: " + indexName + ". Printing info:\n"
-                    + response.toString());
-            if (mActivity != null) {
-                mActivity.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(mActivity, response.toToastString(),
-                                Toast.LENGTH_SHORT).show();
-                    }
-                });
-            }
         }
 
         @Override
@@ -130,31 +114,6 @@ public class MyActivity extends Activity implements
         }
 
         @Override
-        public void onSRCH2ServiceReady(
-                final HashMap<String, InfoResponse> indexesToInfoResponseMap) {
-            Log.d(TAG, "SRCH2 Search Service is ready for action!");
-            if (mActivity != null) {
-                mActivity.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(mActivity,
-                                "SRCH2 Search Service is ready for action!",
-                                Toast.LENGTH_SHORT).show();
-                    }
-                });
-            }
-            InfoResponse movieIndexInfoResponse = indexesToInfoResponseMap
-                    .get(MovieIndex.INDEX_NAME);
-            if (movieIndexInfoResponse != null
-                    && movieIndexInfoResponse.isValidInfoResponse()) {
-                if (movieIndexInfoResponse.getNumberOfDocumentsInTheIndex() == 0) {
-                    SRCH2Engine.insertIntoIndex(MovieIndex.INDEX_NAME,
-                            MovieIndex.getAFewRecordsToInsert());
-                }
-            }
-        }
-
-        @Override
         public void onDeleteRequestComplete(final String indexName,
                                             final DeleteResponse response) {
             Log.d(TAG, "Delete for index: " + indexName
@@ -183,6 +142,47 @@ public class MyActivity extends Activity implements
                                 Toast.LENGTH_SHORT).show();
                     }
                 });
+            }
+        }
+
+        @Override
+        public void onInfoRequestComplete(final String indexName,
+                                          final InfoResponse response) {
+            Log.d(TAG, "Info for index: " + indexName + ". Printing info:\n"
+                    + response.toString());
+            if (mActivity != null) {
+                mActivity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(mActivity, response.toToastString(),
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        }
+
+        @Override
+        public void onSRCH2ServiceReady(
+                final HashMap<String, InfoResponse> indexesToInfoResponseMap) {
+            Log.d(TAG, "SRCH2 Search Service is ready for action!");
+            if (mActivity != null) {
+                mActivity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(mActivity,
+                                "SRCH2 Search Service is ready for action!",
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+            InfoResponse movieIndexInfoResponse = indexesToInfoResponseMap
+                    .get(MovieIndex.INDEX_NAME);
+            if (movieIndexInfoResponse != null
+                    && movieIndexInfoResponse.isValidInfoResponse()) {
+                if (movieIndexInfoResponse.getNumberOfDocumentsInTheIndex() == 0) {
+                    SRCH2Engine.insertIntoIndex(MovieIndex.INDEX_NAME,
+                            MovieIndex.getAFewRecordsToInsert());
+                }
             }
         }
     }

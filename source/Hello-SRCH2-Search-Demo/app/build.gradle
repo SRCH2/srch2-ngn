@@ -22,5 +22,4 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile project(':SRCH2-Android-SDK')
-    compile project(':SRCH2-Android-SDK-javadoc')
 }

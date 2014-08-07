@@ -3,12 +3,13 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/rl_list_view_search_result_row_root"
     android:layout_width="match_parent"
-    android:layout_height="54dp"
+    android:layout_height="60dp"
+    android:background="#FFFFFF"
     android:gravity="center_vertical"
-    android:paddingLeft="12dp"
+    android:paddingLeft="32dp"
     android:paddingRight="12dp"
-    android:paddingTop="3dp"
-    android:paddingBottom="3dp"
+    android:paddingTop="6dp"
+    android:paddingBottom="6dp"
     tools:context=".MyActivity" >
 
     <TextView
@@ -16,7 +17,7 @@
         android:gravity="center_vertical"
         android:textSize="18sp"
         android:text="Title"
-        android:paddingBottom="4dp"
+        android:paddingBottom="3dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
 
@@ -27,6 +28,7 @@
         android:text="Year"
         android:layout_alignParentRight="true"
         android:layout_alignParentTop="true"
+        android:layout_marginRight="4dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
 

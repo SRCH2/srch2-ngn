@@ -42,19 +42,9 @@ public class InstantSearchEditText extends EditText implements TextWatcher {
      */
     private Drawable mClearButton = null;
 
-    public InstantSearchEditText(Context context, AttributeSet attrs,
-                                 int defStyle) {
-        super(context, attrs, defStyle);
-        setupConstructors(context);
-    }
 
     public InstantSearchEditText(Context context, AttributeSet attrs) {
         super(context, attrs);
-        setupConstructors(context);
-    }
-
-    public InstantSearchEditText(Context context) {
-        super(context);
         setupConstructors(context);
     }
 

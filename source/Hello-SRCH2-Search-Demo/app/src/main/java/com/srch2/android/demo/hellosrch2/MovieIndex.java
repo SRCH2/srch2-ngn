@@ -22,7 +22,7 @@ public class MovieIndex extends Indexable {
         Field primaryKey = Field.getRefiningField(INDEX_FIELD_PRIMARY_KEY,
                 Field.Type.INTEGER);
         Field title = Field.getSearchableField(INDEX_FIELD_TITLE, 3);
-        Field year = Field.getRefiningField(INDEX_FIELD_YEAR,
+        Field year = Field.getSearchableAndRefiningField(INDEX_FIELD_YEAR,
                 Field.Type.INTEGER);
         Field genre = Field.getSearchableField(INDEX_FIELD_GENRE);
         return new IndexDescription(INDEX_NAME, primaryKey, title, year, genre);
