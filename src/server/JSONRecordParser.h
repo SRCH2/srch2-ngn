@@ -53,7 +53,8 @@ private:
     static bool setCompactRecordRefiningValue(const srch2is::Record *record,
             RecordSerializer& compactRecSerializer,std::stringstream &error);
     static bool setRecordLocationValue(srch2is::Record *record,
-            const Json::Value &root, const CoreInfo_t *indexDataContainerConf);
+            const Json::Value &root, const CoreInfo_t *indexDataContainerConf,
+            std::stringstream &error);
     static bool setRecordBoostValue(srch2is::Record *record,
             const Json::Value &root, const CoreInfo_t *indexDataContainerConf);
 };

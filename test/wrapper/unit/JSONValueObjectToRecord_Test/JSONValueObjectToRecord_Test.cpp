@@ -47,8 +47,8 @@ bool testRecord(const string& jsonRecord, const bool expectedResult,
     /*
      * When parsing a string to a JSON object, if the value field doesn't have
      * quote and is not correct integer, the JSON reader.parse() will fail.
-     * However, the root can still generate part of the JSON object which base
-     * on the JSON string that before the failed position.
+     * However, the root can still generate part of the JSON object based on
+     * the JSON string that is before the failed position.
      * e.g.
      *
      * {"id":2abc,"title":"test","genre":"male","year":"1000"}
@@ -100,12 +100,12 @@ void testOnlyId(const CoreInfo_t *indexDataConfig,
             testRecord(jsonRecord, expectedResult, indexDataConfig, recSerializer, record));
 }
 
-//Test the JSON record only contains required fields, the result should be false.
+//Test the JSON record only contains required fields, the result should be true.
 //All other fields are missing (incomplete JSON record)
 void testOnlyIdTitle(const CoreInfo_t *indexDataConfig,
         RecordSerializer & recSerializer, Record *record) {
     string jsonRecord = "{\"id\":1,\"title\":\"test\"}";
-    bool expectedResult = false;
+    bool expectedResult = true;
     ASSERT(
             testRecord(jsonRecord, expectedResult, indexDataConfig, recSerializer, record));
 }
@@ -184,11 +184,11 @@ void testTextEmptyYear(const CoreInfo_t *indexDataConfig,
             testRecord(jsonRecord, expectedResult, indexDataConfig, recSerializer, record));
 }
 
-//Test the JSON record with no year field, the result should be false.
+//Test the JSON record with no year field(not required), the result should be true.
 void testNoYear(const CoreInfo_t *indexDataConfig,
         RecordSerializer & recSerializer, Record *record) {
     string jsonRecord = "{\"id\":1,\"title\":\"test\",\"genre\":\"male\"}";
-    bool expectedResult = false;
+    bool expectedResult = true;
     ASSERT(
             testRecord(jsonRecord, expectedResult, indexDataConfig, recSerializer, record));
 }
@@ -332,11 +332,11 @@ void testEmptyGenre2(const CoreInfo_t *indexDataConfig,
                 testRecord(jsonRecord, expectedResult, indexDataConfig, recSerializer, record));
 }
 
-//Test the JSON record with no genre(not required) field, the result should be false.
+//Test the JSON record with no genre(not required) field, the result should be true.
 void testNoGenre(const CoreInfo_t *indexDataConfig,
         RecordSerializer & recSerializer, Record *record) {
     string jsonRecord = "{\"id\":1,\"title\":\"test\",\"year\":\"1000\"}";
-        bool expectedResult = false;
+        bool expectedResult = true;
         ASSERT(
                 testRecord(jsonRecord, expectedResult, indexDataConfig, recSerializer, record));
 }

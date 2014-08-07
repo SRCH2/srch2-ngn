@@ -59,12 +59,7 @@ bool JSONRecordParser::setRecordPrimaryKey(srch2is::Record *record,
 
     std::vector<string> stringValues;
 
-    if (!getJsonValueString(root, primaryKeyName, stringValues,
-            "primary-key")) {
-        Logger::warn("Record Ignored: This JSON record is missing key \"%s\"",
-                primaryKeyName.c_str());
-        return false;
-    }
+    getJsonValueString(root, primaryKeyName, stringValues, "primary-key");
 
     if (!stringValues.empty() && stringValues.at(0).compare("") != 0) {
         string primaryKeyStringValue = stringValues.at(0);
@@ -97,12 +92,8 @@ bool JSONRecordParser::setRecordSearchableValue(srch2is::Record *record,
 
         vector<string> attributeStringValues;
 
-        if (!getJsonValueString(root, attributeKeyName, attributeStringValues,
-                "attributes-search")) {
-            Logger::warn("Record Ignored: This JSON record is missing key \"%s\"",
-                    attributeKeyName.c_str());
-            return false;
-        }
+        getJsonValueString(root, attributeKeyName, attributeStringValues,
+                "attributes-search");
 
         if (!attributeStringValues.empty()
                 && std::find(attributeStringValues.begin(),
@@ -159,13 +150,8 @@ bool JSONRecordParser::setRecordRefiningValue(srch2is::Record *record,
                 == srch2is::ATTRIBUTE_TYPE_TIME) {
             vector<string> attributeStringValues;
 
-            if (!getJsonValueDateAndTime(root, attributeKeyName,
-                    attributeStringValues, "refining-attributes")) {
-                Logger::warn(
-                        "Record Ignored: This JSON record is missing key \"%s\"",
-                        attributeKeyName.c_str());
-                return false;
-            }
+            getJsonValueDateAndTime(root, attributeKeyName,
+                    attributeStringValues, "refining-attributes");
 
             if (attributeStringValues.empty()) {
                 // ERROR
@@ -218,13 +204,8 @@ bool JSONRecordParser::setRecordRefiningValue(srch2is::Record *record,
 
             vector<string> attributeStringValues;
 
-            if (!getJsonValueString(root, attributeKeyName,
-                    attributeStringValues, "refining-attributes")) {
-                Logger::warn(
-                        "Record Ignored: This JSON record is missing key \"%s\"",
-                        attributeKeyName.c_str());
-                return false;
-            }
+            getJsonValueString(root, attributeKeyName, attributeStringValues,
+                    "refining-attributes");
 
             if (!attributeStringValues.empty()
                     && std::find(attributeStringValues.begin(),
@@ -336,8 +317,8 @@ bool JSONRecordParser::setCompactRecordRefiningValue(
             unsigned val = static_cast<unsigned int>(strtoul(
                     attributeStringValue.c_str(), &pEnd, 10));
             if (*pEnd != '\0') {
-                error
-                        << ("\nInvalid value %s of type unsigned.", attributeStringValue.c_str());
+                error << ("\nInvalid value %s of type unsigned.",
+                        attributeStringValue.c_str());
                 return false;
             }
             compactRecSerializer.addRefiningAttribute(iter->first, val);
@@ -347,15 +328,16 @@ bool JSONRecordParser::setCompactRecordRefiningValue(
             float val = static_cast<float>(strtod(attributeStringValue.c_str(),
                     &pEnd));
             if (*pEnd != '\0') {
-                error
-                        << ("\nInvalid value %s of type float.", attributeStringValue.c_str());
+                error << ("\nInvalid value %s of type float.",
+                        attributeStringValue.c_str());
                 return false;
             }
             compactRecSerializer.addRefiningAttribute(iter->first, val);
             break;
         }
         default: {
-            error<<("\nRefining attribute type should be UNSIGNED OR FLOAT,"
+            error << ("\nRefining attribute that need to be compacted "
+                    "in memory should be UNSIGNED | FLOAT,"
                     " no others are accepted.");
             return false;
             break;
@@ -366,7 +348,7 @@ bool JSONRecordParser::setCompactRecordRefiningValue(
 }
 
 bool JSONRecordParser::setRecordLocationValue(srch2is::Record *record,
-        const Json::Value &root, const CoreInfo_t *indexDataContainerConf) {
+        const Json::Value &root, const CoreInfo_t *indexDataContainerConf,std::stringstream &error) {
     if (indexDataContainerConf->getIndexType() == 1) {
         string latitudeAttributeKeyName =
                 indexDataContainerConf->getAttributeLatitude();
@@ -374,13 +356,8 @@ bool JSONRecordParser::setRecordLocationValue(srch2is::Record *record,
                 indexDataContainerConf->getAttributeLongitude();
         double recordLatitude;
 
-        if (!getJsonValueDouble(root, latitudeAttributeKeyName, recordLatitude,
-                "attribute-latitude")) {
-            Logger::warn(
-                    "Record Ignored: This JSON record is missing key \"%s\"",
-                    latitudeAttributeKeyName.c_str());
-            return false;
-        }
+        getJsonValueDouble(root, latitudeAttributeKeyName, recordLatitude,
+                "attribute-latitude");
 
         if (recordLatitude > 200.0 || recordLatitude < -200.0) {
             Logger::warn("bad x: %f, set to 40.0 for testing purposes.\n",
@@ -389,13 +366,8 @@ bool JSONRecordParser::setRecordLocationValue(srch2is::Record *record,
         }
         double recordLongitude;
 
-        if (!getJsonValueDouble(root, longitudeAttributeKeyName,
-                recordLongitude, "attribute-longitude")) {
-            Logger::warn(
-                    "Record Ignored: This JSON record is missing key \"%s\"",
-                    longitudeAttributeKeyName.c_str());
-            return false;
-        }
+        getJsonValueDouble(root, longitudeAttributeKeyName, recordLongitude,
+                "attribute-longitude");
 
         if (recordLongitude > 200.0 || recordLongitude < -200.0) {
             Logger::warn("bad y: %f, set to -120.0 for testing purposes.\n",
@@ -473,7 +445,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
         return false;
     }
     // Set the location value if the index type is "1"
-    if (!setRecordLocationValue(record, root, indexDataContainerConf)) {
+    if (!setRecordLocationValue(record, root, indexDataContainerConf,error)) {
         return false;
     }
     return true;
@@ -681,36 +653,36 @@ string convertToStr(T value) {
 // convert a Json value to string
 //If the value is null or empty, the vector<string> will only contain "".
 void convertValueToString(Json::Value value, vector<string> &stringValues) {
-    std::string lowerString, oriString;
+    std::string lowercaseString, originalString;
     if (value.isString()) {
-        oriString = value.asString();
-        lowerString = oriString;
-        std::transform(lowerString.begin(), lowerString.end(),
-                lowerString.begin(), ::tolower);
-        if (lowerString.compare("null") == 0 || lowerString.compare("") == 0) {
+        originalString = value.asString();
+        lowercaseString = originalString;
+        std::transform(lowercaseString.begin(), lowercaseString.end(),
+                lowercaseString.begin(), ::tolower);
+        if (lowercaseString.compare("null") == 0 ) {
             stringValues.push_back("");
         } else {
-            stringValues.push_back(oriString);
+            stringValues.push_back(originalString);
         }
     } else if (value.isDouble()) {
-        oriString = convertToStr<double>(value.asDouble());
-        lowerString = oriString;
-        std::transform(lowerString.begin(), lowerString.end(),
-                lowerString.begin(), ::tolower);
-        if (lowerString.compare("null") == 0 || lowerString.compare("") == 0) {
+        originalString = convertToStr<double>(value.asDouble());
+        lowercaseString = originalString;
+        std::transform(lowercaseString.begin(), lowercaseString.end(),
+                lowercaseString.begin(), ::tolower);
+        if (lowercaseString.compare("null") == 0) {
             stringValues.push_back("");
         } else {
-            stringValues.push_back(oriString);
+            stringValues.push_back(originalString);
         }
     } else if (value.isInt()) {
-        oriString = convertToStr<int>(value.asInt());
-        lowerString = oriString;
-        std::transform(lowerString.begin(), lowerString.end(),
-                lowerString.begin(), ::tolower);
-        if (lowerString.compare("null") == 0 || lowerString.compare("") == 0) {
+        originalString = convertToStr<int>(value.asInt());
+        lowercaseString = originalString;
+        std::transform(lowercaseString.begin(), lowercaseString.end(),
+                lowercaseString.begin(), ::tolower);
+        if (lowercaseString.compare("null") == 0) {
             stringValues.push_back("");
         } else {
-            stringValues.push_back(oriString);
+            stringValues.push_back(originalString);
         }
     } else if (value.isArray()) {
         for (Json::Value::iterator iter = value.begin(); iter != value.end();
