@@ -234,7 +234,8 @@ void Srch2Server::createAndBootStrapIndexer()
 
         if (!checkSchemaConsistency(schema, indexer->getSchema())) {
             Logger::warn("The schema in the config file is different from the"
-                    " serialized schema on the disk. Please make sure they "
+                    " serialized schema on the disk. The engine will ignore "
+                    "the schema from the config file. Please make sure they "
                     "are consistent. One possible solution is to remove all "
                     "the index files and run the engine again.");
         }
@@ -282,17 +283,19 @@ bool Srch2Server::checkSchemaConsistency(srch2is::Schema *confSchema,
         return false;
     }
 
-    //TODO Currently, this function only compares the schema's name field
-    //If the type of the schema changed, the function can not detect it.
     for (std::map<std::string, unsigned>::const_iterator confIt =
             confSchema->getRefiningAttributes()->begin(), loadedIt =
             loadedSchema->getRefiningAttributes()->begin();
             confIt != confSchema->getRefiningAttributes()->end()
                     && loadedIt != loadedSchema->getRefiningAttributes()->end();
             confIt++, loadedIt++) {
-        //printf("First: %s, Second: %s \n",confIt->first.c_str(),loadedIt->first.c_str());
         //Compare the refining attribute's name to see if they are same.
         if (confIt->first.compare(loadedIt->first) != 0) {
+            return false;
+        }
+
+        if (confSchema->getTypeOfRefiningAttribute(confIt->second)
+                != loadedSchema->getTypeOfRefiningAttribute(loadedIt->second)) {
             return false;
         }
     }
@@ -302,11 +305,16 @@ bool Srch2Server::checkSchemaConsistency(srch2is::Schema *confSchema,
             confIt != confSchema->getSearchableAttribute().end()
                     && loadedIt != loadedSchema->getSearchableAttribute().end();
             confIt++, loadedIt++) {
-        //printf("First: %s, Second: %s \n",confIt->first.c_str(),loadedIt->first.c_str());
         //Compare the searchable attribute's name to see if they are same.
         if (confIt->first.compare(loadedIt->first) != 0) {
             return false;
         }
+
+        /*
+         * For searchable attribute, we do not need to compare the type because
+         * we only accept text | location_latitude | location_longitude as a
+         * searchable attribute type.
+         */
     }
     return true;
 }
