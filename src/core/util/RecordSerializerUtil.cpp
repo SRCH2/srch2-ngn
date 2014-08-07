@@ -382,7 +382,7 @@ void RecordSerializerUtil::convertByteArrayToTypedValue(const string& name,
 		switch (type) {
 		case ATTRIBUTE_TYPE_UNSIGNED:
 			for(int i=0;i<multiValues.size(); i++){
-				intValues.push_back(strtol(multiValues[i].c_str(),NULL,10));
+				intValues.push_back(static_cast<unsigned int>(strtoul(multiValues[i].c_str(),NULL,10)));
 			}
 			result->setTypedValue(intValues);
 			break;
