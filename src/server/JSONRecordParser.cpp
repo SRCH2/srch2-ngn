@@ -390,7 +390,8 @@ bool JSONRecordParser::setRecordBoostValue(srch2is::Record *record,
         getJsonValueDouble(root, attributeKeyName, recordBoost,
                 "attribute-record-boost");
 
-        // Change an invalid (negative) boost value to the default value 1.
+        //Set the valid boost value. If the boost value is invalid (<=0), use
+        //the default boost "1" set above.
         if (recordBoost > 0.0)
             record->setRecordBoost(recordBoost);
     }
