@@ -59,6 +59,7 @@ gitAdd
 thirdparty/event/bin/
 thirdparty/event/include/
 thirdparty/event/lib/
+thirdparty/event/android/
 thirdparty/event/libevent-*-stable/
 thirdparty/json/jsoncpp-src-0.5.0/
 thirdparty/gperftools/bin/
