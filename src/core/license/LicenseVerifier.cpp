@@ -23,6 +23,11 @@ namespace srch2
 namespace instantsearch
 {
 
+static const std::string base64_chars =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "abcdefghijklmnopqrstuvwxyz"
+        "0123456789+/";
+
 class Base64Decoder {
 public:
 	static std::string decode(const std::string& encoded_string)
@@ -64,15 +69,12 @@ static RSA *getRSAPublicKey()
 /// Example: 2012-04-27
 bool isLicenseDateValid(std::string expiryDate)
 {
-	int year = static_cast<int>(strtol(expiryDate.substr(0, 4).c_str(),NULL,10));
-	int month = static_cast<int>(strtol(expiryDate.substr(5, 2).c_str(),NULL,10));
+	int year = static_cast<int>(strtol(expiryDate.substr(0, 4).c_str(), NULL, 10));
+	int month = static_cast<int>(strtol(expiryDate.substr(5, 2).c_str(), NULL, 10));
 
-	// fixed by CHENLI. Day is in 2 digits
-	int day = static_cast<int>(strtol(expiryDate.substr(8, 2).c_str(),NULL,10));
+	int day = static_cast<int>(strtol(expiryDate.substr(8, 2).c_str(), NULL, 10));
 
-	// fixed by CHENLI. Need to "-1" for month
-	//struct std::tm endDate = {0, 0, 0, day, month, year - 1900};
-	struct std::tm endDate = {0, 0, 0, day, month - 1, year - 1900}; // CHENLI
+	struct std::tm endDate = {0, 0, 0, day, month - 1, year - 1900};
 
 	time_t timer = time(NULL);
 	struct std::tm* currentDate = gmtime(&timer);

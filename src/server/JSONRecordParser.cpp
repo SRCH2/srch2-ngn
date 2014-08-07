@@ -66,10 +66,7 @@ bool JSONRecordParser::setRecordPrimaryKey(srch2is::Record *record,
         return false;
     }
 
-    if (!stringValues.empty()
-            && (stringValues.at(0).compare("NULL") != 0
-                    && stringValues.at(0).compare("null") != 0
-                    && stringValues.at(0).compare("") != 0)) {
+    if (!stringValues.empty() && stringValues.at(0).compare("") != 0) {
         string primaryKeyStringValue = stringValues.at(0);
         // trim to avoid any mismatch due to leading and trailing white space
         boost::algorithm::trim(primaryKeyStringValue);
@@ -109,12 +106,6 @@ bool JSONRecordParser::setRecordSearchableValue(srch2is::Record *record,
 
         if (!attributeStringValues.empty()
                 && std::find(attributeStringValues.begin(),
-                        attributeStringValues.end(), "NULL")
-                        == attributeStringValues.end()
-                && std::find(attributeStringValues.begin(),
-                        attributeStringValues.end(), "null")
-                        == attributeStringValues.end()
-                && std::find(attributeStringValues.begin(),
                         attributeStringValues.end(), "")
                         == attributeStringValues.end()) {
             if (attributeIter->second.isMultiValued) {
@@ -135,12 +126,6 @@ bool JSONRecordParser::setRecordSearchableValue(srch2is::Record *record,
                     attributeStringValues.push_back(
                             attributeIter->second.defaultValue);
                 } else {
-                    std::replace(attributeStringValues.begin(),
-                            attributeStringValues.end(), (string) "NULL",
-                            attributeIter->second.defaultValue);
-                    std::replace(attributeStringValues.begin(),
-                            attributeStringValues.end(), (string) "null",
-                            attributeIter->second.defaultValue);
                     std::replace(attributeStringValues.begin(),
                             attributeStringValues.end(), (string) "",
                             attributeIter->second.defaultValue);
@@ -188,14 +173,8 @@ bool JSONRecordParser::setRecordRefiningValue(srch2is::Record *record,
                 return false;                    // Raise Error
             } else {
                 if (std::find(attributeStringValues.begin(),
-                        attributeStringValues.end(), "NULL")
-                        != attributeStringValues.end()
-                        || std::find(attributeStringValues.begin(),
-                                attributeStringValues.end(), "null")
-                                != attributeStringValues.end()
-                        || std::find(attributeStringValues.begin(),
-                                attributeStringValues.end(), "")
-                                != attributeStringValues.end()) {
+                        attributeStringValues.end(), "")
+                        != attributeStringValues.end()) {
                     if (attributeIter->second.required) {
                         // ERROR
                         error << "\nDATE/TIME field " << attributeKeyName
@@ -211,12 +190,6 @@ bool JSONRecordParser::setRecordRefiningValue(srch2is::Record *record,
                             || srch2is::DateAndTimeHandler::verifyDateTimeString(
                                     defaultValue,
                                     srch2is::DateTimeTypeDurationOfTime)) {
-                        std::replace(attributeStringValues.begin(),
-                                attributeStringValues.end(), (string) "NULL",
-                                defaultValue);
-                        std::replace(attributeStringValues.begin(),
-                                attributeStringValues.end(), (string) "null",
-                                defaultValue);
                         std::replace(attributeStringValues.begin(),
                                 attributeStringValues.end(), (string) "",
                                 defaultValue);
@@ -255,12 +228,6 @@ bool JSONRecordParser::setRecordRefiningValue(srch2is::Record *record,
 
             if (!attributeStringValues.empty()
                     && std::find(attributeStringValues.begin(),
-                            attributeStringValues.end(), "NULL")
-                            == attributeStringValues.end()
-                    && std::find(attributeStringValues.begin(),
-                            attributeStringValues.end(), "null")
-                            == attributeStringValues.end()
-                    && std::find(attributeStringValues.begin(),
                             attributeStringValues.end(), "")
                             == attributeStringValues.end()) {
                 string attributeStringValue = "";
@@ -288,12 +255,6 @@ bool JSONRecordParser::setRecordRefiningValue(srch2is::Record *record,
                     if (attributeStringValues.empty()) {
                         attributeStringValues.push_back("");
                     }
-                    std::replace(attributeStringValues.begin(),
-                            attributeStringValues.end(), (string) "NULL",
-                            attributeIter->second.defaultValue);
-                    std::replace(attributeStringValues.begin(),
-                            attributeStringValues.end(), (string) "null",
-                            attributeIter->second.defaultValue);
                     std::replace(attributeStringValues.begin(),
                             attributeStringValues.end(), (string) "",
                             attributeIter->second.defaultValue);
@@ -718,49 +679,78 @@ string convertToStr(T value) {
 }
 
 // convert a Json value to string
-void convertValueToString(Json::Value value, vector< string > &stringValues){
-    if (value.isString())
-        stringValues.push_back(value.asString()) ;
-    else if(value.isDouble())
-        stringValues.push_back(convertToStr<double>(value.asDouble()));
-    else if(value.isInt())
-        stringValues.push_back(convertToStr<int>(value.asInt()));
-    else if(value.isArray())
-    {
-        for(Json::Value::iterator iter = value.begin(); iter != value.end(); iter++)
-        {
+//If the value is null or empty, the vector<string> will only contain "".
+void convertValueToString(Json::Value value, vector<string> &stringValues) {
+    std::string lowerString, oriString;
+    if (value.isString()) {
+        oriString = value.asString();
+        lowerString = oriString;
+        std::transform(lowerString.begin(), lowerString.end(),
+                lowerString.begin(), ::tolower);
+        if (lowerString.compare("null") == 0 || lowerString.compare("") == 0) {
+            stringValues.push_back("");
+        } else {
+            stringValues.push_back(oriString);
+        }
+    } else if (value.isDouble()) {
+        oriString = convertToStr<double>(value.asDouble());
+        lowerString = oriString;
+        std::transform(lowerString.begin(), lowerString.end(),
+                lowerString.begin(), ::tolower);
+        if (lowerString.compare("null") == 0 || lowerString.compare("") == 0) {
+            stringValues.push_back("");
+        } else {
+            stringValues.push_back(oriString);
+        }
+    } else if (value.isInt()) {
+        oriString = convertToStr<int>(value.asInt());
+        lowerString = oriString;
+        std::transform(lowerString.begin(), lowerString.end(),
+                lowerString.begin(), ::tolower);
+        if (lowerString.compare("null") == 0 || lowerString.compare("") == 0) {
+            stringValues.push_back("");
+        } else {
+            stringValues.push_back(oriString);
+        }
+    } else if (value.isArray()) {
+        for (Json::Value::iterator iter = value.begin(); iter != value.end();
+                iter++) {
             convertValueToString(*iter, stringValues);
         }
-    }else if (value.isObject()){
+    } else if (value.isObject()) {
         // for certain data sources such as mongo db, the field value may be
         // JSON object ( e.g mongo db primary key "_id")
         // For JSON object, recursively concatenate all keys' value
         vector<string> keys = value.getMemberNames();
-        for (int i= 0; i < keys.size(); ++i) {
-            convertValueToString(value.get(keys[i], "NULL"), stringValues);
+        for (int i = 0; i < keys.size(); ++i) {
+            convertValueToString(value.get(keys[i], ""), stringValues);
         }
-    }
-    else // if the type is not string, set it to the empty string
+    } else { // if the type is not string, set it to the empty string
         stringValues.clear();
+        stringValues.push_back("");
+    }
 }
 
-  // get the string from a json value based on a key value.  Check the type first before
-  // calling "asString()" to deal with the case where the input data was not formatted
-  // properly.
-  // if the type is int or double we convert it to string
-  // parameter configName is used to be included in error/warning messages to make them meaningful ...
+// get the string from a json value based on a key value.  Check the type first before
+// calling "asString()" to deal with the case where the input data was not formatted
+// properly.
+// if the type is int or double we convert it to string
+// parameter configName is used to be included in error/warning messages to make them meaningful ...
 bool JSONRecordParser::getJsonValueString(const Json::Value &jsonValue,
-        const std::string &key,
-        std::vector<std::string> &stringValues,
-        const string &configName)
-{
-    if(!jsonValue.isMember(key)) {
+        const std::string &key, std::vector<std::string> &stringValues,
+        const string &configName) {
+    if (!jsonValue.isMember(key)) {
+        //If the key does not exist in the JSON object, parse should be failed.
+        //And the Record will not be inserted into the engine.
         stringValues.clear();
-        Logger::warn("[Warning] Wrong value setting for %s. There is no such attribute %s.\n", configName.c_str(), key.c_str());
-        Logger::warn("Please set it to IGNORE in the configure file if you don't need it.");
+        Logger::warn(
+                "[Warning] Wrong value setting for %s. There is no such attribute %s.\n",
+                configName.c_str(), key.c_str());
+        Logger::warn(
+                "Please set it to IGNORE in the configure file if you don't need it.");
         return false;
     }
-    Json::Value value = jsonValue.get(key, "NULL");
+    Json::Value value = jsonValue.get(key, "");
     convertValueToString(value, stringValues);
     return true;
 }
@@ -769,31 +759,37 @@ bool JSONRecordParser::getJsonValueString(const Json::Value &jsonValue,
 // get the string from a json value based on a key value.
 // check to see if it is proper date/time format.
 bool JSONRecordParser::getJsonValueDateAndTime(const Json::Value &jsonValue,
-        const std::string &key,
-        vector< std::string> &stringValues,
-        const string &configName){
-    if(!jsonValue.isMember(key)){
-
+        const std::string &key, vector<std::string> &stringValues,
+        const string &configName) {
+    if (!jsonValue.isMember(key)) {
+        //If the key does not exist in the JSON object, parse should be failed.
+        //And the Record will not be inserted into the engine.
         stringValues.clear();
-        Logger::warn("[Warning] Wrong value setting for %s. There is no such attribute %s.\n", configName.c_str(), key.c_str());
-        Logger::warn("Please set it to IGNORE in the configure file if you don't need it.");
+        Logger::warn(
+                "[Warning] Wrong value setting for %s. There is no such attribute %s.\n",
+                configName.c_str(), key.c_str());
+        Logger::warn(
+                "Please set it to IGNORE in the configure file if you don't need it.");
         return false;
     }
     vector<string> temp;
-    Json::Value value = jsonValue.get(key, "NULL");
+    Json::Value value = jsonValue.get(key, "");
     convertValueToString(value, temp);
 
     // now check to see if it has proper date/time format
 
     string stringValue = "";
-    for(vector<string>::iterator valueToken = temp.begin() ; valueToken != temp.end() ; ++valueToken){
+    for (vector<string>::iterator valueToken = temp.begin();
+            valueToken != temp.end(); ++valueToken) {
         boost::algorithm::trim(*valueToken);
-        if(srch2is::DateAndTimeHandler::verifyDateTimeString(*valueToken , srch2is::DateTimeTypePointOfTime)
-           || srch2is::DateAndTimeHandler::verifyDateTimeString(*valueToken , srch2is::DateTimeTypeDurationOfTime) ){
+        if (srch2is::DateAndTimeHandler::verifyDateTimeString(*valueToken,
+                srch2is::DateTimeTypePointOfTime)
+                || srch2is::DateAndTimeHandler::verifyDateTimeString(
+                        *valueToken, srch2is::DateTimeTypeDurationOfTime)) {
             stringValues.push_back(*valueToken);
-        }else{
+        } else {
             if (*valueToken == "") {
-                stringValues.push_back("NULL");
+                stringValues.push_back("");
             } else {
                 stringValues.clear();
                 return false;
@@ -809,18 +805,18 @@ bool JSONRecordParser::getJsonValueDateAndTime(const Json::Value &jsonValue,
 // properly.
 // Written by CHENLI
 bool JSONRecordParser::getJsonValueDouble(const Json::Value &jsonValue,
-                                          const std::string &key,
-                                          double &doubleValue,
-                                          const string& configName)
-{
-    if(!jsonValue.isMember(key))
-    {
+        const std::string &key, double &doubleValue, const string& configName) {
+    if (!jsonValue.isMember(key)) {
+        //If the key does not exist in the JSON object, parse should be failed.
+        //And the Record will not be inserted into the engine.
         doubleValue = 0;
-        Logger::warn("value setting for %s. There is no such attribute %s.", configName.c_str(), key.c_str());
-        Logger::warn("Please set it to IGNORE in the configure file if you don't need it.\n");
+        Logger::warn("value setting for %s. There is no such attribute %s.",
+                configName.c_str(), key.c_str());
+        Logger::warn(
+                "Please set it to IGNORE in the configure file if you don't need it.\n");
         return false;
     }
-    Json::Value value = jsonValue.get(key, "NULL");
+    Json::Value value = jsonValue.get(key, "");
     if (value.isDouble())
         doubleValue = value.asDouble();
     else if (value.isInt())
@@ -830,7 +826,8 @@ bool JSONRecordParser::getJsonValueDouble(const Json::Value &jsonValue,
     else // if the type is not double not int, set it to 0
     {
         doubleValue = 0;
-        Logger::warn("The attribute %s was set to be %s.", key.c_str(), value.asString().c_str());
+        Logger::warn("The attribute %s was set to be %s.", key.c_str(),
+                value.asString().c_str());
         Logger::warn("It should be a float or integer.\n");
     }
     return true;

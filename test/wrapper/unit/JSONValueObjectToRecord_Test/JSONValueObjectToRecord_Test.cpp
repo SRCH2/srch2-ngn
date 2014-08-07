@@ -33,7 +33,7 @@ void afterTest(ConfigManager *conf, Record *record, Schema *schema,
     delete storedSchema;
 }
 
-bool testRecord(const string& jsonRecord, const bool expectResult,
+bool testRecord(const string& jsonRecord, const bool expectedResult,
         const CoreInfo_t *indexDataConfig, RecordSerializer & recSerializer,
         Record *record) {
     //Parse JSON string to JSON object
@@ -45,9 +45,10 @@ bool testRecord(const string& jsonRecord, const bool expectResult,
     bool parseSuccess = reader.parse(jsonRecord, root, false);
 
     /*
-     * When parsing str to a JSON object, if the value field doesn't have
-     * quote and is not correct integer, JSON  reader.parse() will be failed.
-     * However, the root can still obtain the part that before the failed position.
+     * When parsing a string to a JSON object, if the value field doesn't have
+     * quote and is not correct integer, the JSON reader.parse() will fail.
+     * However, the root can still generate part of the JSON object which base
+     * on the JSON string that before the failed position.
      * e.g.
      *
      * {"id":2abc,"title":"test","genre":"male","year":"1000"}
@@ -73,11 +74,11 @@ bool testRecord(const string& jsonRecord, const bool expectResult,
      * }
      */
     if (parseSuccess == false) {
-        return false == expectResult;
+        return false == expectedResult;
     }
     return JSONRecordParser::_JSONValueObjectToRecord(record,
             writer.write(root), root, indexDataConfig, log_str, recSerializer)
-            == expectResult;
+            == expectedResult;
 }
 
 //Test the correct JSON record, the result should be true.
@@ -85,18 +86,18 @@ void testCorrectRecord(const CoreInfo_t *indexDataConfig,
         RecordSerializer & recSerializer, Record *record) {
     string jsonRecord =
     "{\"id\":1,\"title\":\"test\",\"genre\":\"male\",\"year\":\"1000\"}";
-    bool expectResult = true;
+    bool expectedResult = true;
     ASSERT(
-            testRecord(jsonRecord, expectResult, indexDataConfig, recSerializer, record));
+            testRecord(jsonRecord, expectedResult, indexDataConfig, recSerializer, record));
 }
 
 //Test the JSON record only contains ID, the result should be false since title is required.
 void testOnlyId(const CoreInfo_t *indexDataConfig,
         RecordSerializer & recSerializer, Record *record) {
     string jsonRecord = "{\"id\":1}";
-    bool expectResult = false;
+    bool expectedResult = false;
     ASSERT(
-            testRecord(jsonRecord, expectResult, indexDataConfig, recSerializer, record));
+            testRecord(jsonRecord, expectedResult, indexDataConfig, recSerializer, record));
 }
 
 //Test the JSON record only contains required fields, the result should be false.
@@ -104,9 +105,9 @@ void testOnlyId(const CoreInfo_t *indexDataConfig,
 void testOnlyIdTitle(const CoreInfo_t *indexDataConfig,
         RecordSerializer & recSerializer, Record *record) {
     string jsonRecord = "{\"id\":1,\"title\":\"test\"}";
-    bool expectResult = false;
+    bool expectedResult = false;
     ASSERT(
-            testRecord(jsonRecord, expectResult, indexDataConfig, recSerializer, record));
+            testRecord(jsonRecord, expectedResult, indexDataConfig, recSerializer, record));
 }
 
 //Test the JSON record when the year field is integer, the result should be true.
@@ -114,9 +115,9 @@ void testIntYear(const CoreInfo_t *indexDataConfig,
         RecordSerializer & recSerializer, Record *record) {
     string jsonRecord =
             "{\"id\":1,\"title\":\"test\",\"genre\":\"male\",\"year\":1000}";
-    bool expectResult = true;
+    bool expectedResult = true;
     ASSERT(
-            testRecord(jsonRecord, expectResult, indexDataConfig, recSerializer, record));
+            testRecord(jsonRecord, expectedResult, indexDataConfig, recSerializer, record));
 }
 
 //Test the JSON record when the id field is text, the result should be true.
@@ -125,9 +126,9 @@ void testIdText(const CoreInfo_t *indexDataConfig,
     string jsonRecord =
 
     "{\"id\":\"1\",\"title\":\"test\",\"genre\":\"male\",\"year\":1000}";
-    bool expectResult = true;
+    bool expectedResult = true;
     ASSERT(
-            testRecord(jsonRecord, expectResult, indexDataConfig, recSerializer, record));
+            testRecord(jsonRecord, expectedResult, indexDataConfig, recSerializer, record));
 }
 
 //Test the JSON record with bad year field (1000dafs), the result should be false.
@@ -136,9 +137,9 @@ void testIntBadYear(const CoreInfo_t *indexDataConfig,
         RecordSerializer & recSerializer, Record *record) {
     string jsonRecord =
             "{\"id\":1,\"title\":\"test\",\"genre\":\"male\",\"year\":1000dafs}";
-    bool expectResult = false;
+    bool expectedResult = false;
     ASSERT(
-            testRecord(jsonRecord, expectResult, indexDataConfig, recSerializer, record));
+            testRecord(jsonRecord, expectedResult, indexDataConfig, recSerializer, record));
 }
 
 //Test the JSON record with bad year field (empty), the result should be false.
@@ -147,9 +148,9 @@ void testEmptyYear(const CoreInfo_t *indexDataConfig,
         RecordSerializer & recSerializer, Record *record) {
     string jsonRecord =
             "{\"id\":1,\"title\":\"test\",\"genre\":\"male\",\"year\":}";
-    bool expectResult = false;
+    bool expectedResult = false;
     ASSERT(
-            testRecord(jsonRecord, expectResult, indexDataConfig, recSerializer, record));
+            testRecord(jsonRecord, expectedResult, indexDataConfig, recSerializer, record));
 }
 
 //Test the JSON record with bad year field ("1000dafs"), the result should be false.
@@ -157,9 +158,9 @@ void testTextBadYear(const CoreInfo_t *indexDataConfig,
         RecordSerializer & recSerializer, Record *record) {
     string jsonRecord =
             "{\"id\":1,\"title\":\"test\",\"genre\":\"male\",\"year\":\"1000dafs\"}";
-    bool expectResult = false;
+    bool expectedResult = false;
     ASSERT(
-            testRecord(jsonRecord, expectResult, indexDataConfig, recSerializer, record));
+            testRecord(jsonRecord, expectedResult, indexDataConfig, recSerializer, record));
 }
 
 //Test the JSON record with bad year field ("adsf"), the result should be false.
@@ -167,9 +168,9 @@ void testTextBadYear2(const CoreInfo_t *indexDataConfig,
         RecordSerializer & recSerializer, Record *record) {
     string jsonRecord =
             "{\"id\":1,\"title\":\"test\",\"genre\":\"male\",\"year\":\"adsf\"}";
-    bool expectResult = false;
+    bool expectedResult = false;
     ASSERT(
-            testRecord(jsonRecord, expectResult, indexDataConfig, recSerializer, record));
+            testRecord(jsonRecord, expectedResult, indexDataConfig, recSerializer, record));
 }
 
 //Test the JSON record with bad year field (""), the result should be true.
@@ -178,18 +179,18 @@ void testTextEmptyYear(const CoreInfo_t *indexDataConfig,
         RecordSerializer & recSerializer, Record *record) {
     string jsonRecord =
             "{\"id\":1,\"title\":\"test\",\"genre\":\"male\",\"year\":\"\"}";
-    bool expectResult = true;
+    bool expectedResult = true;
     ASSERT(
-            testRecord(jsonRecord, expectResult, indexDataConfig, recSerializer, record));
+            testRecord(jsonRecord, expectedResult, indexDataConfig, recSerializer, record));
 }
 
 //Test the JSON record with no year field, the result should be false.
 void testNoYear(const CoreInfo_t *indexDataConfig,
         RecordSerializer & recSerializer, Record *record) {
     string jsonRecord = "{\"id\":1,\"title\":\"test\",\"genre\":\"male\"}";
-    bool expectResult = false;
+    bool expectedResult = false;
     ASSERT(
-            testRecord(jsonRecord, expectResult, indexDataConfig, recSerializer, record));
+            testRecord(jsonRecord, expectedResult, indexDataConfig, recSerializer, record));
 }
 
 //Test the JSON record with bad id field (1dafd), the result should be false.
@@ -198,9 +199,9 @@ void testIntBadId(const CoreInfo_t *indexDataConfig,
         RecordSerializer & recSerializer, Record *record) {
     string jsonRecord =
             "{\"id\":2abc,\"title\":\"test\",\"genre\":\"male\",\"year\":\"1000\"}";
-    bool expectResult = false;
+    bool expectedResult = false;
     ASSERT(
-            testRecord(jsonRecord, expectResult, indexDataConfig, recSerializer, record));
+            testRecord(jsonRecord, expectedResult, indexDataConfig, recSerializer, record));
 }
 
 //Test the JSON record with bad id field (dafd), the result should be false.
@@ -208,9 +209,9 @@ void testIntBadId2(const CoreInfo_t *indexDataConfig,
         RecordSerializer & recSerializer, Record *record) {
     string jsonRecord =
             "{\"id\":dafd,\"title\":\"test\",\"genre\":\"male\",\"year\":\"1000\"}";
-    bool expectResult = false;
+    bool expectedResult = false;
     ASSERT(
-            testRecord(jsonRecord, expectResult, indexDataConfig, recSerializer, record));
+            testRecord(jsonRecord, expectedResult, indexDataConfig, recSerializer, record));
 }
 
 //Test the JSON record with bad id field (empty), the result should be false.
@@ -218,9 +219,9 @@ void testIntEmptyId(const CoreInfo_t *indexDataConfig,
         RecordSerializer & recSerializer, Record *record) {
     string jsonRecord =
             "{\"id\":,\"title\":\"test\",\"genre\":\"male\",\"year\":\"1000\"}";
-    bool expectResult = false;
+    bool expectedResult = false;
     ASSERT(
-            testRecord(jsonRecord, expectResult, indexDataConfig, recSerializer, record));
+            testRecord(jsonRecord, expectedResult, indexDataConfig, recSerializer, record));
 }
 
 //Test the JSON record with bad id field (""), the result should be false.
@@ -229,9 +230,9 @@ void testTextEmptyId(const CoreInfo_t *indexDataConfig,
         RecordSerializer & recSerializer, Record *record) {
     string jsonRecord =
             "{\"id\":\"\",\"title\":\"test\",\"genre\":\"male\",\"year\":\"1000\"}";
-    bool expectResult = false;
+    bool expectedResult = false;
     ASSERT(
-            testRecord(jsonRecord, expectResult, indexDataConfig, recSerializer, record));
+            testRecord(jsonRecord, expectedResult, indexDataConfig, recSerializer, record));
 }
 
 //Test the JSON record with bad id field ("1123dsaf"), the result should be true.
@@ -241,9 +242,9 @@ void testTextBadId(const CoreInfo_t *indexDataConfig,
         RecordSerializer & recSerializer, Record *record) {
     string jsonRecord =
             "{\"id\":\"1123dsaf\",\"title\":\"test\",\"genre\":\"male\",\"year\":\"1000\"}";
-    bool expectResult = true;
+    bool expectedResult = true;
     ASSERT(
-            testRecord(jsonRecord, expectResult, indexDataConfig, recSerializer, record));
+            testRecord(jsonRecord, expectedResult, indexDataConfig, recSerializer, record));
 }
 
 //Test the JSON record with bad id field ("dasf"), the result should be true.
@@ -253,9 +254,9 @@ void testTextBadId2(const CoreInfo_t *indexDataConfig,
         RecordSerializer & recSerializer, Record *record) {
     string jsonRecord =
             "{\"id\":\"dasf\",\"title\":\"test\",\"genre\":\"male\",\"year\":\"1000\"}";
-    bool expectResult = true;
+    bool expectedResult = true;
     ASSERT(
-            testRecord(jsonRecord, expectResult, indexDataConfig, recSerializer, record));
+            testRecord(jsonRecord, expectedResult, indexDataConfig, recSerializer, record));
 }
 
 //Test the JSON record with no id field, the result should be false.
@@ -263,99 +264,99 @@ void testNoId(const CoreInfo_t *indexDataConfig,
         RecordSerializer & recSerializer, Record *record) {
     string jsonRecord =
             "{\"title\":\"test\",\"genre\":\"male\",\"year\":\"1000\"}";
-    bool expectResult = false;
+    bool expectedResult = false;
     ASSERT(
-            testRecord(jsonRecord, expectResult, indexDataConfig, recSerializer, record));
+            testRecord(jsonRecord, expectedResult, indexDataConfig, recSerializer, record));
 }
 
 //Test the JSON record with no title(required=true) field, the result should be false.
 void testNoTitle(const CoreInfo_t *indexDataConfig,
         RecordSerializer & recSerializer, Record *record) {
     string jsonRecord = "{\"id\":1,\"genre\":\"male\",\"year\":\"1000\"}";
-    bool expectResult = false;
+    bool expectedResult = false;
     ASSERT(
-            testRecord(jsonRecord, expectResult, indexDataConfig, recSerializer, record));
+            testRecord(jsonRecord, expectedResult, indexDataConfig, recSerializer, record));
 }
 
 //Test the JSON record with empty title(required) field, the result should be false.
 void testEmptyTitle1(const CoreInfo_t *indexDataConfig,
         RecordSerializer & recSerializer, Record *record) {
     string jsonRecord = "{\"id\":1,\"title\":,\"genre\":\"male\",\"year\":\"1000\"}";
-        bool expectResult = false;
+        bool expectedResult = false;
         ASSERT(
-                testRecord(jsonRecord, expectResult, indexDataConfig, recSerializer, record));
+                testRecord(jsonRecord, expectedResult, indexDataConfig, recSerializer, record));
 }
 
 //Test the JSON record with "" title(required) field, the result should be false.
 void testEmptyTitle2(const CoreInfo_t *indexDataConfig,
         RecordSerializer & recSerializer, Record *record) {
     string jsonRecord = "{\"id\":1,\"title\":\"\",\"genre\":\"male\",\"year\":\"1000\"}";
-        bool expectResult = false;
+        bool expectedResult = false;
         ASSERT(
-                testRecord(jsonRecord, expectResult, indexDataConfig, recSerializer, record));
+                testRecord(jsonRecord, expectedResult, indexDataConfig, recSerializer, record));
 }
 
 //Test the JSON record with "NULL" title(required) field, the result should be false.
 void testNULLTitle(const CoreInfo_t *indexDataConfig,
         RecordSerializer & recSerializer, Record *record) {
     string jsonRecord = "{\"id\":1,\"title\":\"NULL\",\"genre\":\"male\",\"year\":\"1000\"}";
-        bool expectResult = false;
+        bool expectedResult = false;
         ASSERT(
-                testRecord(jsonRecord, expectResult, indexDataConfig, recSerializer, record));
+                testRecord(jsonRecord, expectedResult, indexDataConfig, recSerializer, record));
 }
 
 //Test the JSON record with "null" title(required) field, the result should be false.
 void testnullTitle(const CoreInfo_t *indexDataConfig,
         RecordSerializer & recSerializer, Record *record) {
     string jsonRecord = "{\"id\":1,\"title\":\"null\",\"genre\":\"male\",\"year\":\"1000\"}";
-        bool expectResult = false;
+        bool expectedResult = false;
         ASSERT(
-                testRecord(jsonRecord, expectResult, indexDataConfig, recSerializer, record));
+                testRecord(jsonRecord, expectedResult, indexDataConfig, recSerializer, record));
 }
 
 //Test the JSON record with empty genre(not required) field, the result should be false.
 void testEmptyGenre1(const CoreInfo_t *indexDataConfig,
         RecordSerializer & recSerializer, Record *record) {
     string jsonRecord = "{\"id\":1,\"title\":\"test\",\"genre\":,\"year\":\"1000\"}";
-        bool expectResult = false;
+        bool expectedResult = false;
         ASSERT(
-                testRecord(jsonRecord, expectResult, indexDataConfig, recSerializer, record));
+                testRecord(jsonRecord, expectedResult, indexDataConfig, recSerializer, record));
 }
 
 //Test the JSON record with "" genre(not required) field, the result should be true.
 void testEmptyGenre2(const CoreInfo_t *indexDataConfig,
         RecordSerializer & recSerializer, Record *record) {
     string jsonRecord = "{\"id\":1,\"title\":\"test\",\"genre\":\"\",\"year\":\"1000\"}";
-        bool expectResult = true;
+        bool expectedResult = true;
         ASSERT(
-                testRecord(jsonRecord, expectResult, indexDataConfig, recSerializer, record));
+                testRecord(jsonRecord, expectedResult, indexDataConfig, recSerializer, record));
 }
 
 //Test the JSON record with no genre(not required) field, the result should be false.
 void testNoGenre(const CoreInfo_t *indexDataConfig,
         RecordSerializer & recSerializer, Record *record) {
     string jsonRecord = "{\"id\":1,\"title\":\"test\",\"year\":\"1000\"}";
-        bool expectResult = false;
+        bool expectedResult = false;
         ASSERT(
-                testRecord(jsonRecord, expectResult, indexDataConfig, recSerializer, record));
+                testRecord(jsonRecord, expectedResult, indexDataConfig, recSerializer, record));
 }
 
 //Test the JSON record with NULL genre(not required) field, the result should be true.
 void testNULLGenre(const CoreInfo_t *indexDataConfig,
         RecordSerializer & recSerializer, Record *record) {
     string jsonRecord = "{\"id\":1,\"title\":\"test\",\"genre\":\"NULL\",\"year\":\"1000\"}";
-        bool expectResult = true;
+        bool expectedResult = true;
         ASSERT(
-                testRecord(jsonRecord, expectResult, indexDataConfig, recSerializer, record));
+                testRecord(jsonRecord, expectedResult, indexDataConfig, recSerializer, record));
 }
 
 //Test the JSON record with null genre(not required) field, the result should be true.
 void testnullGenre(const CoreInfo_t *indexDataConfig,
         RecordSerializer & recSerializer, Record *record) {
     string jsonRecord = "{\"id\":1,\"title\":\"test\",\"genre\":\"null\",\"year\":\"1000\"}";
-        bool expectResult = true;
+        bool expectedResult = true;
         ASSERT(
-                testRecord(jsonRecord, expectResult, indexDataConfig, recSerializer, record));
+                testRecord(jsonRecord, expectedResult, indexDataConfig, recSerializer, record));
 }
 
 
