@@ -124,6 +124,26 @@ Analyzer* AnalyzerFactory::getCurrentThreadAnalyzer(const CoreInfo_t* config) {
 	return analyzer;
 }
 
+Analyzer* AnalyzerFactory::getCurrentThreadAnalyzerWithSynonyms(const CoreInfo_t* config) {
+
+	static boost::thread_specific_ptr<Analyzer> _tsAnalyzerObjectWithSynonyms;
+	if (_tsAnalyzerObjectWithSynonyms.get() == NULL)
+	{
+		Logger::debug("Create Analyzer object for thread = %d ",  pthread_self());
+		_tsAnalyzerObjectWithSynonyms.reset(AnalyzerFactory::createAnalyzer(config, false));
+	}
+
+	Analyzer* analyzer = _tsAnalyzerObjectWithSynonyms.get();
+
+	// clear the initial states of the filters in the analyzer, e.g.,
+	// for those filters that have an internal buffer to keep tokens.
+	// Such an internal buffer can have leftover tokens from
+	// the previous query (possibly an invalid query)
+	analyzer->clearFilterStates();
+
+	return analyzer;
+}
+
 void AnalyzerHelper::initializeAnalyzerResource (const CoreInfo_t* conf)
 {
     // TODO - Move init() to getInstance() when we refactor this code

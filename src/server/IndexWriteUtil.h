@@ -37,7 +37,7 @@ struct IndexWriteUtil
     	{
     		// Do NOT delete analyzer because it is thread specific. It will be reused for
     		// search/update/delete operations.
-            srch2::instantsearch::Analyzer * analyzer = AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf);
+            srch2::instantsearch::Analyzer * analyzer = AnalyzerFactory::getCurrentThreadAnalyzerWithSynonyms(indexDataContainerConf);
     		srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->addRecord(record, analyzer);
 
     		switch( ret )

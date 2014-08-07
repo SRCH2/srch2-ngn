@@ -163,7 +163,6 @@ AnalyzerBasedAlgorithm::AnalyzerBasedAlgorithm(Analyzer *analyzer,
 	this->analyzer = analyzer;
 }
 AnalyzerBasedAlgorithm::~AnalyzerBasedAlgorithm() {
-	delete analyzer;
 }
 
 void AnalyzerBasedAlgorithm::getSnippet(const QueryResults* /*not used*/, unsigned /* not used*/,
