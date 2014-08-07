@@ -70,7 +70,7 @@ public:
     bool checkIndexExistence(const CoreInfo_t *indexDataConfig);
 
     // Check if the schema loaded from the disk is
-    // same with the one loaded from the config file
+    // same as the one loaded from the config file.
     bool checkSchemaConsistency(srch2is::Schema *confSchema,
             srch2is::Schema *loadedSchema);
 

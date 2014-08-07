@@ -228,31 +228,36 @@ void Srch2Server::createAndBootStrapIndexer()
 	    AnalyzerHelper::saveAnalyzerResource(this->indexDataConfig);
 	    break;
 	}
-    case srch2http::INDEXLOAD:
-        {
-	    // Load from index-dir directly, skip creating an index initially.
-	    indexer = Indexer::load(indexMetaData);
+    case srch2http::INDEXLOAD: {
+        // Load from index-dir directly, skip creating an index initially.
+        indexer = Indexer::load(indexMetaData);
 
         if (!checkSchemaConsistency(schema, indexer->getSchema())) {
-            Logger::warn("The schema in the config file has changed,"
-                    " remove all the index files and run it again");
+            Logger::warn("The schema in the config file is different from the"
+                    " serialized schema on the disk. Please make sure they "
+                    "are consistent. One possible solution is to remove all "
+                    "the index files and run the engine again.");
         }
 
-	    // Load Analayzer data from disk
-	    AnalyzerHelper::loadAnalyzerResource(this->indexDataConfig);
-	    indexer->getSchema()->setSupportSwapInEditDistance(indexDataConfig->getSupportSwapInEditDistance());
-	    bool isAttributeBasedSearch = false;
-	    if (isEnabledAttributeBasedSearch(indexer->getSchema()->getPositionIndexType())) {
-	        isAttributeBasedSearch =true;
-	    }
-	    if(isAttributeBasedSearch != indexDataConfig->getSupportAttributeBasedSearch())
-	    {
-	    	Logger::warn("support-attribute-based-search has changed in the config file"
-	    		        		" remove all index files and run it again!");
-	    }
-	    RecordSerializerUtil::populateStoredSchema(storedAttrSchema, indexer->getSchema());
-	    break;
-	}
+        // Load Analayzer data from disk
+        AnalyzerHelper::loadAnalyzerResource(this->indexDataConfig);
+        indexer->getSchema()->setSupportSwapInEditDistance(
+                indexDataConfig->getSupportSwapInEditDistance());
+        bool isAttributeBasedSearch = false;
+        if (isEnabledAttributeBasedSearch(
+                indexer->getSchema()->getPositionIndexType())) {
+            isAttributeBasedSearch = true;
+        }
+        if (isAttributeBasedSearch
+                != indexDataConfig->getSupportAttributeBasedSearch()) {
+            Logger::warn(
+                    "support-attribute-based-search has changed in the config file"
+                            " remove all index files and run it again!");
+        }
+        RecordSerializerUtil::populateStoredSchema(storedAttrSchema,
+                indexer->getSchema());
+        break;
+    }
     }
     createHighlightAttributesVector(storedAttrSchema);
     delete storedAttrSchema;
@@ -262,15 +267,18 @@ void Srch2Server::createAndBootStrapIndexer()
 }
 
 /*
- * This function will check the consistency of the schema that loaded from the
- * disk and the schema that loaded from the config file.
+ * This function will check the consistency of the schema that is loaded from the
+ * disk and the schema that is loaded from the config file.
  */
-bool Srch2Server::checkSchemaConsistency(srch2is::Schema *confSchema,srch2is::Schema *loadedSchema){
-    if(confSchema->getNumberOfRefiningAttributes()!=loadedSchema->getNumberOfRefiningAttributes()){
+bool Srch2Server::checkSchemaConsistency(srch2is::Schema *confSchema,
+        srch2is::Schema *loadedSchema) {
+    if (confSchema->getNumberOfRefiningAttributes()
+            != loadedSchema->getNumberOfRefiningAttributes()) {
         return false;
     }
 
-    if(confSchema->getNumberOfSearchableAttributes()!=loadedSchema->getNumberOfSearchableAttributes()){
+    if (confSchema->getNumberOfSearchableAttributes()
+            != loadedSchema->getNumberOfSearchableAttributes()) {
         return false;
     }
 
@@ -283,7 +291,8 @@ bool Srch2Server::checkSchemaConsistency(srch2is::Schema *confSchema,srch2is::Sc
                     && loadedIt != loadedSchema->getRefiningAttributes()->end();
             confIt++, loadedIt++) {
         //printf("First: %s, Second: %s \n",confIt->first.c_str(),loadedIt->first.c_str());
-        if(confIt->first.compare(loadedIt->first)!=0){
+        //Compare the refining attribute's name to see if they are same.
+        if (confIt->first.compare(loadedIt->first) != 0) {
             return false;
         }
     }
@@ -294,6 +303,7 @@ bool Srch2Server::checkSchemaConsistency(srch2is::Schema *confSchema,srch2is::Sc
                     && loadedIt != loadedSchema->getSearchableAttribute().end();
             confIt++, loadedIt++) {
         //printf("First: %s, Second: %s \n",confIt->first.c_str(),loadedIt->first.c_str());
+        //Compare the searchable attribute's name to see if they are same.
         if (confIt->first.compare(loadedIt->first) != 0) {
             return false;
         }
