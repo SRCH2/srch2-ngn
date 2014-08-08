@@ -17,7 +17,7 @@
     <listeningHostname>0.0.0.0</listeningHostname>
     <listeningPort>8081</listeningPort>
  
-    <dataDir>./indexes</dataDir>
+    <dataDir>./sqlite/indexes</dataDir>
 
     <maxSearchThreads>2</maxSearchThreads>
 
