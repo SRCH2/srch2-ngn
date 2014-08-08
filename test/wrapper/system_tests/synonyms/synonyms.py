@@ -114,11 +114,13 @@ if __name__ == '__main__':
     global testRunId
     testRunId = 0
     exitCode = runTest( './synonyms/queries.txt', binary_path, './synonyms/conf_term_offset_on.xml')
+    time.sleep(2)
     print '----------------------------------------------------'
     print 'case 2: synonym and highlighting without offset information'
     print '----------------------------------------------------'
     testRunId = 1
     exitCode |= runTest( './synonyms/queries.txt', binary_path, './synonyms/conf_term_offset_off.xml')
+    time.sleep(2)
     print '----------------------------------------------------'
     print 'case 3: synonym with phrase search and highlighting with offset information'
     print '----------------------------------------------------'
