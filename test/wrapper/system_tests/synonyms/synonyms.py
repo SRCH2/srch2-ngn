@@ -106,7 +106,7 @@ def runTest(queriesAndResultsPath, binary_path, configFile):
         test_lib.killServer(serverHandle)
 
 if __name__ == '__main__': 
-    #Remove the old indexs
+    #Remove the old indexes
     if(os.path.exists("./synonyms/indexes")):
         shutil.rmtree("./synonyms/indexes")
     if(os.path.exists("./synonyms/indexes-with-offset")):
@@ -133,7 +133,7 @@ if __name__ == '__main__':
     print '----------------------------------------------------'
     testRunId = 2 
     exitCode |= runTest('./synonyms/queries1.txt' , binary_path, './synonyms/conf_term_offset_on_1.xml')
-    #Remove the indexs
+    #Remove the indexes
     if(os.path.exists("./synonyms/indexes")):
         shutil.rmtree("./synonyms/indexes")
     if(os.path.exists("./synonyms/indexes-with-offset")):
