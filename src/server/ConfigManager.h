@@ -30,6 +30,8 @@ class SearchableAttributeInfoContainer {
 public:
     SearchableAttributeInfoContainer(){
         attributeName = "";
+        // Just because it must have a default value, TEXT has no meaning or value here
+        attributeType = srch2::instantsearch::ATTRIBUTE_TYPE_TEXT;
 	required = false;
 	defaultValue = "";
 	offset = 0;
@@ -38,6 +40,7 @@ public:
 	highlight = false;
     }
     SearchableAttributeInfoContainer(const string & name,
+            srch2::instantsearch::FilterType type,
 				     const bool required,
 				     const string & defaultValue ,
 				     const unsigned offset,
@@ -45,6 +48,7 @@ public:
 				     const bool isMultiValued,
 				     bool highlight = false){
         this->attributeName = name;
+        this->attributeType = type;
         this->required = required;
         this->defaultValue = defaultValue;
         this->offset = offset;
@@ -56,6 +60,7 @@ public:
     // BECAUSE THIS CLASS IS MEANT TO BE A VERY SIMPLE CONTAINER WHICH ONLY CONTAINS THE
     // VALUES AND HAS NO BEHAVIOUR
     string attributeName;
+    srch2::instantsearch::FilterType attributeType;
     bool required;
     string defaultValue;
     unsigned offset;
@@ -68,7 +73,7 @@ class RefiningAttributeInfoContainer {
 public:
     RefiningAttributeInfoContainer(){
         attributeName = "";
-	// JUST BECAUSE IT MUST HAVE A DEFAULT VALUE, TEXT has no meaning or value here
+	// Just because it must have a default value, TEXT has no meaning or value here
 	attributeType = srch2::instantsearch::ATTRIBUTE_TYPE_TEXT;
 	defaultValue = "";
 	required = false;
@@ -102,6 +107,7 @@ struct CoreConfigParseState_t {
     bool hasLatitude;
     bool hasLongitude;
     vector<string> searchableFieldsVector;
+    vector<srch2::instantsearch::FilterType> searchableFieldTypesVector;
     vector<string> searchableFieldTypesVector;
     vector<bool> searchableAttributesRequiredFlagVector;
     vector<string> searchableAttributesDefaultVector;

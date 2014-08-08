@@ -14,7 +14,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright �� 2010 SRCH2 Inc. All rights reserved
+ * Copyright © 2010 SRCH2 Inc. All rights reserved
  */
 
 #include "SchemaInternal.h"
@@ -131,9 +131,13 @@ int SchemaInternal::setSearchableAttribute(const string &attributeName,
         attributeBoost = 100;
     }
 
+    // As of now (08/07/14), we assume each searchable attribute has a TEXT type.
+    FilterType type = ATTRIBUTE_TYPE_TEXT;
+
     map<string, unsigned>::iterator iter;
     iter = this->searchableAttributeNameToId.find(attributeName);
     if (iter != this->searchableAttributeNameToId.end()) {
+        this->searchableAttributeTypeVector[iter->second] = type;
         this->searchableAttributeBoostVector[iter->second] = attributeBoost;
         this->searchableAttributeIsMultiValuedVector[iter->second] = isMultiValued;
         this->searchableAttributeHighlightEnabled[iter->second] = enableHiglight;
@@ -142,6 +146,7 @@ int SchemaInternal::setSearchableAttribute(const string &attributeName,
         int searchAttributeMapSize = this->searchableAttributeNameToId.size();
         this->searchableAttributeNameToId[attributeName] =
                 searchAttributeMapSize;
+        this->searchableAttributeTypeVector.push_back(type);
         this->searchableAttributeBoostVector.push_back(attributeBoost);
         this->searchableAttributeIsMultiValuedVector.push_back(isMultiValued);
         this->searchableAttributeHighlightEnabled.push_back(enableHiglight);
@@ -206,10 +211,20 @@ FilterType SchemaInternal::getTypeOfRefiningAttribute(
     if (refiningAttributeNameId
             >= this->refiningAttributeTypeVector.size() ) {
         ASSERT(false);
-        return srch2::instantsearch::ATTRIBUTE_TYPE_TEXT; // TODO default is text, is it ok?
+        return srch2::instantsearch::ATTRIBUTE_TYPE_TEXT;
     }
     return this->refiningAttributeTypeVector[refiningAttributeNameId];
 
+}
+
+FilterType SchemaInternal::getTypeOfSearchableAttribute(
+           const unsigned searchableAttributeNameId) const{
+
+    if(searchableAttributeNameId>=this->searchableAttributeTypeVector.size()){
+        ASSERT(false);
+        return srch2::instantsearch::ATTRIBUTE_TYPE_TEXT;
+    }
+    return this->searchableAttributeTypeVector[searchableAttributeNameId];
 }
 
 const std::map<std::string, unsigned> * SchemaInternal::getRefiningAttributes() const {

@@ -1102,7 +1102,7 @@ bool ConfigManager::setCoreParseStateVector(bool isSearchable, bool isRefining, 
 		// Checking the validity of field type
 		temporaryString = string(field.attribute(typeString).value());
 		if (isValidFieldType(temporaryString , true)) {
-			coreParseState->searchableFieldTypesVector.push_back(temporaryString);
+		    coreParseState->searchableFieldTypesVector.push_back(parseFieldType(temporaryString));
 		} else {
 			parseError << "Config File Error: " << temporaryString << " is not a valid field type for searchable fields.\n";
 			parseError << " Note: searchable fields only accept 'text' type. Setting 'searchable' or 'indexed' to true makes a field searchable.\n";
@@ -1438,9 +1438,16 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
 	                		parseError << "Config File Error: Primary Key cannot be multivalued";
 	                		return;
 	                	}
+
+	                	if (string(field.attribute(typeString).value()).compare("text") != 0) {
+	                	    configSuccess = false;
+	                	    parseError << "Config File Error: Type of the primary key must be \"text\".\n";
+	                	    return;
+	                	}
 	                	if(isSearchable){
 	                		coreInfo->isPrimSearchable = 1;
 	                		coreParseState->searchableFieldsVector.push_back(string(field.attribute(nameString).value()));
+	                		coreParseState->searchableFieldTypesVector.push_back(ATTRIBUTE_TYPE_TEXT);
 	                		// there is no need for default value for primary key
 	                		coreParseState->searchableAttributesDefaultVector.push_back("");
 	                		// primary key is always required.
@@ -1973,7 +1980,7 @@ void ConfigManager::_setDefaultSearchableAttributeBoosts(const string &coreName,
 
     for (unsigned iter = 0; iter < searchableAttributesVector.size(); iter++) {
         coreInfo->searchableAttributesInfo[searchableAttributesVector[iter]] =
-            SearchableAttributeInfoContainer(searchableAttributesVector[iter] , false, "" , iter , 1 , false);
+            SearchableAttributeInfoContainer(searchableAttributesVector[iter] ,srch2::instantsearch::ATTRIBUTE_TYPE_TEXT, false, "" , iter , 1 , false);
     }
 }
 

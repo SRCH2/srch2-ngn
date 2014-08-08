@@ -83,22 +83,27 @@ class Serializer {
 	}
 public:
 	template<class T>
-	void load(T& dataObject, const string& serializedFileName) {
-		std::ifstream ifs(serializedFileName.c_str(), std::ios::binary);
-    	boost::archive::binary_iarchive ia(ifs);
-    	IndexVersion storedIndexVersion;
-    	ia >> storedIndexVersion;
-    	if (isCompatibleVersion(storedIndexVersion)){
-    		ia >> dataObject;
-    	} else {
-    		// throw invalid index file exception
-    		ifs.close();
-    		Logger::error("Invalid index file. Either index files are built with a previous version"
-    				"of engine or copied from a different machine/architecture.");
-    		throw exception();
-    	}
-		ifs.close();
-	}
+    void load(T& dataObject, const string& serializedFileName) {
+        std::ifstream ifs(serializedFileName.c_str(), std::ios::binary);
+        boost::archive::binary_iarchive ia(ifs);
+        IndexVersion storedIndexVersion;
+        ia >> storedIndexVersion;
+        try {
+            if (isCompatibleVersion(storedIndexVersion)) {
+                ia >> dataObject;
+            } else {
+                // throw invalid index file exception
+                throw exception();
+            }
+        } catch (exception& ex) {
+            ifs.close();
+            Logger::error(
+                    "Invalid index file. Either index files are built with a previous version"
+                            "of engine or copied from a different machine/architecture.");
+            throw ex;
+        }
+        ifs.close();
+    }
 	template<class T>
 	void save(const T& dataObject, const string& serializedFileName) {
 		std::ofstream ofs(serializedFileName.c_str(), std::ios::binary);

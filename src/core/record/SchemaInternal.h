@@ -105,9 +105,6 @@ public:
     int setSearchableAttribute(const std::string &attributeName,
             unsigned attributeBoost = 1, bool isMultiValued = false, bool higlightEnabled = false);
 
-    int setSortableAttribute(const std::string &attributeName, FilterType type,
-            std::string defaultValue);
-
     int setRefiningAttribute(const std::string &attributeName,
             FilterType type, const std::string & defaultValue, bool isMultiValued = false);
 
