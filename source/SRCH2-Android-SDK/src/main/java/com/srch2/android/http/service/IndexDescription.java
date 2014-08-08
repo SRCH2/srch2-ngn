@@ -400,9 +400,13 @@ final public class IndexDescription {
     }
 
     /**
-     * Gets the name tag of the index.
-     *
-     * @return name of the index.
+     * Gets the name of the index this <code>Indexable</code> represents as it was set in the
+     * <code>IndexDescription</code> returned in the <code>Indexable</code> implementation of
+     * <code>getIndexDescription()</code>. This can be used to call the static CRUD methods of
+     * the <code>SRCH2Engine</code> and used to identify which index the two callbacks
+     * <code>StateResponseListener</code> and <code>SearchResultsListener</code> refer to in
+     * their callback methods.
+     * @return the name of the index this <code>Indexable</code> represents
      */
     public String getIndexName() {
         return name;
