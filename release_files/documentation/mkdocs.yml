@@ -10,7 +10,6 @@ pages:
     - [ranking.mkd, Ranking]
     - [geo.mkd, Geo]
     - [database.mkd, Database]
-    - [configuration2.mkd, Configuration2]
 
 theme_dir : './srch2-theme'
 

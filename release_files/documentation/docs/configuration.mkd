@@ -79,7 +79,7 @@ This value specifies the type of data source indexed by the engine.  Notice that
 
 - 0: Create empty indexes, and ignore the data file specified by the "dataFile" tag (see below).
 - 1: Create indexes for records from the JSON file specified by the "dataFile" tag. "1" is the default value for this "dataSourceType" tag.
-- 2: Create indexes for records from an external database such as MongoDB or SQLite, as specified by the parameters under the corresponding tag such as the "mongodb" tag.
+- 2: Create indexes for records from an external database such as MongoDB or SQLite, as specified by the parameters under the "dbParameters" tag.
 
 ###6.2. Data File (Required if "dataSourceType" is 1)
 
@@ -88,17 +88,40 @@ This value specifies the type of data source indexed by the engine.  Notice that
 ```
 This value specifies a JSON data file to be loaded by the engine. Notice that it is a path relative to the [home directory](#2-home-directory-required).
 
-###6.3. MongoDB (Required if "dataSourceType" is 2)
+###6.3. Database (Required if "dataSourceType" is 2)
+For MongoDB:
 ```
- <mongodb>
-    <host>www.my-company.com</host>
-    <port>1234</port>
-    <db>database-name</db>
-    <collection>collection-name</collection>
-    <listenerWaitTime>3</listenerWaitTime>
- </mongodb> 
+    <dataSourceType>2</dataSourceType>
+    <dbParameters>
+        <dbSharedLibraryPath>db_connectors/</dbSharedLibraryPath>
+        <dbSharedLibraryName>libmongodbConnector</dbSharedLibraryName>
+        <dbKeyValues>
+            <dbKeyValue key="host" value="127.0.0.1" />
+            <dbKeyValue key="port" value="27017" />
+            <dbKeyValue key="db" value="demo" />
+            <dbKeyValue key="collection" value="movies" />
+            <dbKeyValue key="listenerWaitTime" value="3" />
+            <dbKeyValue key="maxRetryOnFailure" value="3" />
+        </dbKeyValues>
+    </dbParameters>
 ```
-This section specifies MongoDB instance information. Note: "listenerWaitTime" specifies how frequently (in seconds) the SRCH2 engine pulls changes from the MongoDB instance (e.g., every 3 seconds). 
+
+For SQLite:
+```
+   <dataSourceType>2</dataSourceType>
+    <dbParameters>
+        <dbSharedLibraryPath>db_connectors/</dbSharedLibraryPath>
+        <dbSharedLibraryName>libsqliteConnector</dbSharedLibraryName>
+        <dbKeyValues>
+            <dbKeyValue key="db" value="demo.db" />
+            <dbKeyValue key="dbPath" value="." />
+            <dbKeyValue key="tableName" value="COMPANY" />
+            <dbKeyValue key="listenerWaitTime" value="3" />
+            <dbKeyValue key="maxRetryOnFailure" value="2" />
+        </dbKeyValues>
+    </dbParameters>
+```
+This section specifies database instance information. Note: "listenerWaitTime" specifies how frequently (in seconds) the SRCH2 engine pulls changes from the database instance (e.g., every 3 seconds). 
 
 ##7. Index Config
 
