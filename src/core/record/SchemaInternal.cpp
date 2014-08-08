@@ -48,6 +48,8 @@ SchemaInternal::SchemaInternal(const SchemaInternal &schemaInternal) {
     this->primaryKey = schemaInternal.primaryKey;
     this->searchableAttributeNameToId =
             schemaInternal.searchableAttributeNameToId;
+    this->searchableAttributeTypeVector =
+            schemaInternal.searchableAttributeTypeVector;
     this->searchableAttributeBoostVector =
             schemaInternal.searchableAttributeBoostVector;
     this->searchableAttributeIsMultiValuedVector =
@@ -120,12 +122,6 @@ const std::string* SchemaInternal::getPrimaryKey() const {
 
 int SchemaInternal::setSearchableAttribute(const string &attributeName,
         unsigned attributeBoost, bool isMultiValued, bool enableHiglight) {
-    //ASSERT (this->boostVector.size() <= 255);
-
-//    if( this->searchableAttributeNameToId.size() > 255)
-//    {
-//        return -1;
-//    }
 
     if (attributeBoost < 1 || attributeBoost > 100) {
         attributeBoost = 100;

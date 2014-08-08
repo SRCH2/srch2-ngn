@@ -32,7 +32,7 @@
         <cores defaultCoreName="core1">
             <core name="core1">
                 <dataFile>movie-data.json</dataFile>
-                <dataDir>core1</dataDir>
+                <dataDir>core1Data</dataDir>
                 <dataSourceType>1</dataSourceType>
                 <indexConfig>
                     <indexType>0</indexType>
@@ -107,7 +107,7 @@
             </core>
 
             <core name="core2">
-                <dataDir>core2</dataDir>
+                <dataDir>core2Data</dataDir>
                 <dataSourceType>1</dataSourceType>
                 <dataFile>stackoverflow-data-100.json</dataFile>
                 <indexConfig>
@@ -194,7 +194,7 @@
 
             <core name="core3">
                 <dataFile>business-directory-data.json</dataFile>
-                <dataDir>core3</dataDir>
+                <dataDir>core3Data</dataDir>
                 <indexConfig>
                     <!--
                     Index Type
@@ -549,7 +549,7 @@
 
 <core name="core4">
     <dataFile>../core1/movie-data.json</dataFile>
-    <dataDir>core4</dataDir>
+    <dataDir>core4Data</dataDir>
     <dataSourceType>1</dataSourceType>
     <indexConfig>
         <indexType>0</indexType>
@@ -624,7 +624,7 @@
 </core>
 <core name="coreGeo">
 
-    <dataDir>coreGeo</dataDir>
+    <dataDir>coreGeoData</dataDir>
     <dataFile>data.json</dataFile>
     <indexConfig>
         <indexType>1</indexType>
@@ -706,7 +706,7 @@
 
                 Path to Access Log File
             -->
-            <accessLogFile>geolog.txt</accessLogFile>
+            <accessLogFile>../coreGeoData/geolog.txt</accessLogFile>
         </updateLog>
 
     </updatehandler>

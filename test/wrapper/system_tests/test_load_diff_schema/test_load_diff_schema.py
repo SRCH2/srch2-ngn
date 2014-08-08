@@ -53,7 +53,7 @@ if __name__ == '__main__':
 	time.sleep(2)
 	startSrch2Engine('test_load_diff_schema/conf2.xml')
 	shutdownSrch2Engine()
-	
+	time.sleep(2) # sleep to wait the engine shutdown
 	errorMsg = 'The schema in the config file is different from the serialized schema on the disk'
 	testIfErrorLogExists('data/test_load_diff_schema/log.txt',errorMsg)
 	print '=============================='

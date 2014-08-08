@@ -289,7 +289,7 @@ bool Srch2Server::checkSchemaConsistency(srch2is::Schema *confSchema,
             confIt != confSchema->getRefiningAttributes()->end()
                     && loadedIt != loadedSchema->getRefiningAttributes()->end();
             confIt++, loadedIt++) {
-        //Compare the refining attribute's name to see if they are same.
+        //Compare the refining attribute's name and type to see if they are same.
         if (confIt->first.compare(loadedIt->first) != 0) {
             return false;
         }
@@ -305,16 +305,16 @@ bool Srch2Server::checkSchemaConsistency(srch2is::Schema *confSchema,
             confIt != confSchema->getSearchableAttribute().end()
                     && loadedIt != loadedSchema->getSearchableAttribute().end();
             confIt++, loadedIt++) {
-        //Compare the searchable attribute's name to see if they are same.
+        //Compare the searchable attribute's name and type to see if they are same.
         if (confIt->first.compare(loadedIt->first) != 0) {
             return false;
         }
 
-        /*
-         * For searchable attribute, we do not need to compare the type because
-         * we only accept text | location_latitude | location_longitude as a
-         * searchable attribute type.
-         */
+        if (confSchema->getTypeOfSearchableAttribute(confIt->second)
+                != loadedSchema->getTypeOfSearchableAttribute(
+                        loadedIt->second)) {
+            return false;
+        }
     }
     return true;
 }

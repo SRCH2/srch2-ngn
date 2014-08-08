@@ -107,8 +107,9 @@ public:
     virtual const std::string* getPrimaryKey() const = 0;
 
 
-    // get searchable attribute
+    // Get searchable attribute
     virtual const std::map<std::string, unsigned>& getSearchableAttribute() const = 0;
+    virtual FilterType getTypeOfSearchableAttribute(const unsigned searchableAttributeNameId) const = 0;
     /**
      * Gets the index of an attribute name by doing an internal
      * lookup. The index of an attribute depends on the order in
