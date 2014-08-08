@@ -76,7 +76,7 @@ public class MyActivity extends Activity {
         SRCH2Engine.initialize(mMusicIndex, mMovieIndex, mGeoIndex);
         SRCH2Engine.setSearchResultsListener(mResultListener);
         SRCH2Engine.setStateResponseListener(mControlListener);
-        SRCH2Engine.setTestAndDebugMode(true);
+        SRCH2Engine.setAutomatedTestingMode(true);
     }
 
     public void callSRCH2EngineStart() {

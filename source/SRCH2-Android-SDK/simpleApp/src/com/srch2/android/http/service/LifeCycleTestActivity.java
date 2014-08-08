@@ -68,7 +68,7 @@ public class LifeCycleTestActivity extends Activity {
     public void initializeSRCH2Engine(boolean debugModeEnabled) {
         Log.d(TAG, "initializeSRCH2Engine");
         SRCH2Engine.initialize(testIndex);
-        SRCH2Engine.setTestAndDebugMode(debugModeEnabled);
+        SRCH2Engine.setAutomatedTestingMode(debugModeEnabled);
         SRCH2Engine.setStateResponseListener(control);
         SRCH2Engine.setSearchResultsListener(search);
     }
