@@ -349,7 +349,7 @@
 		    here and indexed="false" it will be also used for sort,filtering and facet.
 		    - 
 	   -->
-	   <field name="id" type="integer" searchable="false" refining="true" required="true" />
+	   <field name="id" type="text" searchable="false" refining="true" required="true" />
 	   <field name="title" type="text" searchable="true" refining="false" required="true"/>
 	   <field name="genre" type="text" searchable="false" refining="true" required="false"/>
 	   <field name="year" type="integer" searchable="false" refining="true" required="false"/>

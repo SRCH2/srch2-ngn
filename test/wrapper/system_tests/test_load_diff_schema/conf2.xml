@@ -22,7 +22,7 @@
             "/usr/share/srch2/data/sample-data.json"
             In this config file it should be as "data/sample-data.json"
     -->
-    <srch2Home>./refining_field_primary_key</srch2Home>
+    <srch2Home>./</srch2Home>
  
     <!--
         License Key File
@@ -49,8 +49,8 @@
         The file path to the folder where we store serialized index files.
         REQUIRED, when "index-load-or-create" is set to 1.
     -->
-    <dataDir>./data/refining_field_primary_key/</dataDir>
-     
+    <!--<dataDir>./data/test_load_diff_schema/</dataDir> -->
+    <dataDir>./data/test_load_diff_schema/</dataDir>
     <!--
         Data File
         Required if "indexLoadCreate" is set to 0
@@ -58,7 +58,7 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>./refining_field_primary_key/data.json</dataFile>
+    <dataFile>./test_load_diff_schema/data.json</dataFile>
      
     <!--
 	Maximum Number of Threads
@@ -311,7 +311,7 @@
                     3 INFO
                 Defaults to 3 INFO
             -->
-            <logLevel>3</logLevel>
+            <logLevel>2</logLevel>
                          
             <!--
                 Access Log File
@@ -319,7 +319,7 @@
                  
                 Path to Access Log File
             -->
-            <accessLogFile>./data/refining_field_primary_key/log.txt</accessLogFile>
+            <accessLogFile>./data/test_load_diff_schema/log.txt</accessLogFile>
         </updateLog>
      
     </updatehandler>
@@ -358,9 +358,8 @@
 		    here and indexed="false" it will be also used for sort,filtering and facet.
 		    - 
 	   -->
-           <field name="id" type="text" refining="true"/>
-	   <field name="category" type="text" searchable="true" indexed="false" />
-	   <field name="name" type="text" searchable="true" indexed="false" />
+	   <field name="category" type="text" indexed="true" />
+	   <field name="nameChanged" type="text" indexed="true" />
 	 </fields>
 	 
 	 <!--
