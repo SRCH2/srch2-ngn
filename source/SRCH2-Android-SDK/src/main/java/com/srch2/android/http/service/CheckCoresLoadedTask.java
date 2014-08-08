@@ -68,7 +68,7 @@ final class CheckCoresLoadedTask extends HttpTask {
 
                 Log.d("srch2:: " + TAG, "targetURL " + targetUrl.toExternalForm() + " connected!");
 
-                Log.d("srch2:: " + TAG, "ir literal " + ir.restfulResponseLiteral);
+                Log.d("srch2:: " + TAG, "ir literal " + ir.getRESTfulResponseLiteral());
 
                 responseMap.put(indexName, ir);
 

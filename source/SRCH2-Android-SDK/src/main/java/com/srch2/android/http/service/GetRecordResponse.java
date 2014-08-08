@@ -4,19 +4,47 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.json.JSONObject;
-
+/**
+ * Wraps the RESTful response from the SRCH2 search server upon completion of a record
+ * retrieval task.
+ * <br><br>
+ * When either of the method calls to retrieve a record from an index (
+ * <code>mIndexable.getRecordbyID(...)</code> or
+ * <code>SRCH2Engine.getRecordByIdFromIndex(...)</code>)
+ * is made, the <code>SRCH2Engine</code> will forward the record retrieval
+ * request to the SRCH2 search server; after the SRCH2 search server finishes retrieving
+ * the record, it will notify the <code>SRCH2Engine</code> of the status of the completed
+ * record retrieval task and pass the retrieved record if found. The <code>SRCH2Engine</code>
+ * will pass this information through the <code>StateResponseListener</code> callback method
+ * <code>onGetRecordByIDComplete(String indexName, GetRecordResponse response)</code> where the
+ * <code>GetRecordResponse response</code> is this object.
+ * <br><br>
+ * If the primary key submitted matches an existing record, <code>wasRecordRetrieved()</code>
+ * will return <b>true</b> and <code>getRetrievedRecord()</code> will return the
+ * <code>JSONObject</code> representing the record as it exists in the index; if the
+ * primary key did not match any existing records, <code>wasRecordRetrieved()</code>
+ * will return <b>false</b> and <code>getRetrievedRecord()</code> will return
+ * a <i>non-null</i> <code>JSONObject</code> containing <b>no</b> key-pair values.
+ */
 public final class GetRecordResponse extends RestfulResponse {
 
-    public final boolean isRecordRetrieved;
-    public final JSONObject record;
+    /**
+     * Indicates whether the record was able to be retrieved: that is, whether the submitted
+     * primary key matched an existing record.
+     * @return <b>true</b> if the record was retrieved; <b>false</b> otherwise
+     */
+    public boolean wasRecordRetrieved() { return isRecordRetrieved; }
+    final boolean isRecordRetrieved;
 
     /**
-     * Constructor of the Response
-     *
-     * @param theHttpResponseCode
-     * @param theRestfulResponseLiteral
-     * @param targetCoreName
+     * The record retrieved. If no record was able to be retrieved, this <code>JSONObject</code>
+     * will not be null but contain no key-pair values.
+     * @return the record retrieved if found
      */
+    public JSONObject getRetrievedRecord() { return record == null ? new JSONObject() : record; }
+    final JSONObject record;
+    final String sourceIndexName;
+
     GetRecordResponse(int theHttpResponseCode,
                       String theRestfulResponseLiteral, String targetCoreName) {
         super(theHttpResponseCode, theRestfulResponseLiteral);
@@ -41,34 +69,48 @@ public final class GetRecordResponse extends RestfulResponse {
         isRecordRetrieved = isRetrieved;
         record = tempRecord;
 
-
-    }
-
-    /**
-     * It returns a concise, human readable description of InfoResponse object.
-     *
-     * @return a human readable description of InfoResponse object
-     */
-    public String toHumanReadableString() {
-        if (httpResponseCode == -1) {
-            return "GetRecordResponse: error! unable to connect.";
+        if (!isRetrieved) {
+            sourceIndexName = "no index contained requested record";
+        } else {
+            sourceIndexName = targetCoreName;
         }
-        return "GetRecordResponse: isRecordRetrieved [ "
-                + isRecordRetrieved + " ] record.toString [ "
-                + record.toString() + " ]";
+    }
+
+    @Override
+    public String toString() {
+        if (getRESTfulHTTPStatusCode() == -1) {
+            return "GetRecordResponse: error! unable to connect. Printing info...\n" +
+                    "RESTful HTTP status code: " + getRESTfulHTTPStatusCode() + "\n" +
+                    "RESTful response: " + getRESTfulResponseLiteral();
+        } else {
+            if (isRecordRetrieved) {
+                return "Record retrieved from index with name " + sourceIndexName + "\n" +
+                        "Printing record: " + getRetrievedRecord().toString();
+            } else {
+                return "No record was found for given primary key";
+            }
+        }
     }
 
     /**
-     * Users of <code>DeleteResponse</code> may call this to get a concise,
-     * human readable description of this object that will fit in a toast
-     * such that each field member is on its own line.
-     *
+     * Convenience method for outputting to toasts.
      * @return a human readable description of this object that nicely fits
      * into a toast
      */
     public String toToastString() {
-        return "GetRecordResponse:\nhttpResponseCode[ " + httpResponseCode
-                + " ]\nrestfulResponseLiteral[ " + restfulResponseLiteral
-                + " ]";
+        if (getRESTfulHTTPStatusCode() == -1) {
+            return "GetRecordResponse: error!\nunable to connect. Printing info...\n" +
+                    "RESTful HTTP status code: " + getRESTfulHTTPStatusCode() + "\n" +
+                    "RESTful response:\n " + getRESTfulResponseLiteral();
+        } else {
+            if (isRecordRetrieved) {
+                return "Record retrieved!\n" +
+                        "Source index: " + sourceIndexName + "\n" +
+                        "Printing record:\n"
+                        + getRetrievedRecord().toString();
+            } else {
+                return "No record was found\nfor given primary key";
+            }
+        }
     }
 }

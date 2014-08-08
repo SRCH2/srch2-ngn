@@ -18,7 +18,7 @@ public class ResponseTest {
         Assert.assertEquals(100, infoResponse.getNumberOfDocumentsInTheIndex());
         Assert.assertEquals(2, infoResponse.getNumberOfSearchRequests());
         Assert.assertEquals(100, infoResponse.getNumberOfWriteRequests());
-        Assert.assertEquals(200, infoResponse.httpResponseCode);
+        Assert.assertEquals(200, infoResponse.getRESTfulHTTPStatusCode());
 
         literal = "{\"engine_status\":{\"search_requests\":\"2\",\"write_requests\":\"100\",\"docs_in_index\":\"100\",\"last_merge\":\"07/24/14 00:53:46\",\"doc_count\":\"0\"}, \"version\":\"4.3.4\"}";
         infoResponse = new InfoResponse(200, literal);
@@ -27,7 +27,7 @@ public class ResponseTest {
         Assert.assertEquals(100, infoResponse.getNumberOfDocumentsInTheIndex());
         Assert.assertEquals(2, infoResponse.getNumberOfSearchRequests());
         Assert.assertEquals(100, infoResponse.getNumberOfWriteRequests());
-        Assert.assertEquals(200, infoResponse.httpResponseCode);
+        Assert.assertEquals(200, infoResponse.getRESTfulHTTPStatusCode());
     }
 
     @Test

@@ -15,11 +15,6 @@ import android.util.Log;
 
 import com.srch2.android.http.service.HttpTask.ControlHttpTask;
 
-
-/**
- * An <code>InfoTask</code> performs the control restful request of doing an /info on a core. The core is specified by the caller in passing the fully formed URL
- * to the constructor for this class.
- */
 class InsertTask extends ControlHttpTask {
     private static final String TAG = "srch2:: InsertTask";
 

@@ -413,8 +413,8 @@ public class MySingleLaunchActivityTest extends SingleLaunchActivityTestCase<MyS
         mActivity.mControlListener.recordResponse = null;
         mActivity.mMusicIndex.getRecordbyID("2");
         GetRecordResponse response = mActivity.getRecordResponse();
-        assertTrue(response.isRecordRetrieved);
-        assertTrue(response.record.getString(MyActivity.MusicIndex.INDEX_KEY_SONG_TITLE).equals("All You Need Is Love"));
+        assertTrue(response.wasRecordRetrieved());
+        assertTrue(response.getRetrievedRecord().getString(MyActivity.MusicIndex.INDEX_KEY_SONG_TITLE).equals("All You Need Is Love"));
 
         //Try Geo Index GetDoc FIXME oh god GEO!
 //        mActivity.mControlListener.recordResponse = null;

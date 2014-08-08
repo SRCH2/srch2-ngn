@@ -47,6 +47,8 @@ public class TestControlResponseListener  implements StateResponseListener {
                                         UpdateResponse theReturnedUpdateResponse) {
         Log.d(TAG, "APP get updateResponse:" + theReturnedUpdateResponse.toString());
         updateResponse = theReturnedUpdateResponse;
+
+
     }
 
     @Override

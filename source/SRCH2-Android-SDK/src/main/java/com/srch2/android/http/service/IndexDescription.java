@@ -82,8 +82,17 @@ final public class IndexDescription {
     }
 
     /**
-     * It creates a description of the <code>Index</code>
-     * The first argument is the name of the index, and rest of the argument are of type Field.
+     * Creates the necessary configuration for the index that the <code>Indexable</code>
+     * implementation represents. 
+     * <br><br>
+     * The first argument <b>should always</b> be the name of the index, which can be used to
+     * reference the index when the static method calls of the <code>SRCH2Engine</code> are used
+     * to access an index (instead of using the non-static methods of the <code>Indexable</code>).
+     * <br><br>
+     * The second argument <b>should always</b> be the primary key field,
+     *
+     *
+     * and rest of the argument are of type Field.
      * It accepts an array of fields, and the first field is used as the primary key field.
      * Each entry of the primary key field should be unique.
      *

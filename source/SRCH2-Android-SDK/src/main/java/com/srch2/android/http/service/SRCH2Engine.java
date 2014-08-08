@@ -23,6 +23,33 @@ import java.util.concurrent.atomic.AtomicReference;
  * a reference to any instance. Note that any method that can be called on an instance of an
  * <code>Indexable</code>, can be called statically on this class by using the name of the index
  * that the <code>Indexable</code> represents.
+ * <br><br>
+ * The search functionality of the SRCH2 Android SDK is powered by the running of the SRCH2
+ * HTTP server. This server runs in its own process, and this process is started and stopped
+ * by the <code>SRCH2Service</code> remote service to insulate it from low-memory pressure.
+ * The <code>SRCH2Engine</code> starts and stops this service, which in turn starts and stops
+ * the SRCH2 search server. When <code>SRCH2Engine.onStop(Context context)</code> is called,
+ * the SRCH2 search server is not shut down immediately, but only after a delay in order to
+ * avoid unnecessary restarting in the event a user navigates away from the application using
+ * the SRCH2 Android SDK only to do some short task such as sending a text message.
+ * <br><br>
+ * Since the SRCH2 search server is running as a RESTful HTTP server, any commands to the
+ * SRCH2 search server must be formed as network or RESTful actions. This class and the rest
+ * of the API wraps this condition of operation so that users of the SRCH2 Android SDK do
+ * not have to manually form their own network tasks but can instead simply make the appropriate
+ * calls on either the <code>SRCH2Engine</code> or their <code>Indexable</code> implementations.
+ * Similarly, the output of the SRCH2 search server is wrapped in the various subclasses of
+ * <code>RestfulResponse</code> so that the RESTful responses from the SRCH2 search server
+ * do not have to be parsed: for instance, after inserting a record, the method <code>
+ * mStateResponseListener.onInsertRequestComplete(String indexName, InsertResponse response)</code>
+ * will be triggered where the <code>InsertResponse response</code> will contain a count of
+ * the number of successful inserts. Or, after performing an information request on an index,
+ * the method <code>mStateResponseListener.onInfoRequestComplete(String indexName, InfoResponse
+ * response)</code> will be triggered where the <code>InfoResponse response</code> contains
+ * various method getters for returning state about the index such as its number of records.
+ * <br><br>
+ * In particular, the <code>Query</code> class enables easy use of the sophisticated search power
+ * of the SRCH2 search server.
  */
 final public class SRCH2Engine {
 
@@ -208,7 +235,7 @@ final public class SRCH2Engine {
      * all indexes at once easy.
      * <br><br>
      * When the SRCH2 server is finished performing the search task, the method
-     * <code>onNewSearchResultsAvailable(int httpResponseCode, String jsonResultsLiteral,
+     * <code>onNewSearchResultsAvailable(int HTTPResponseCode, String jsonResultsLiteral,
      * HashMap<String, ArrayList<JSONObject>> resultRecordMap)</code> will be triggered. The
      * <code>resultRecordMap</code> will contain the search results in the form of <code>
      * JSONObject</code>s as they were originally inserted (and updated).
@@ -231,7 +258,7 @@ final public class SRCH2Engine {
      * the <code>IndexDescription</code> that was returned by <code>getIndexableDescription()</code>).
      * <br><br>
      * When the SRCH2 server is finished performing the search task, the method
-     * <code>onNewSearchResultsAvailable(int httpResponseCode, String jsonResultsLiteral,
+     * <code>onNewSearchResultsAvailable(int HTTPResponseCode, String jsonResultsLiteral,
      * HashMap<String, ArrayList<JSONObject>> resultRecordMap)</code> will be triggered. The
      * <code>resultRecordMap</code> will contain the search results in the form of <code>
      * JSONObject</code>s as they were originally inserted (and updated).
@@ -255,7 +282,7 @@ final public class SRCH2Engine {
      * makes performing an advanced search on all indexes at once easy.
      * <br><br>
      * When the SRCH2 server is finished performing the search task, the method
-     * <code>onNewSearchResultsAvailable(int httpResponseCode, String jsonResultsLiteral,
+     * <code>onNewSearchResultsAvailable(int HTTPResponseCode, String jsonResultsLiteral,
      * HashMap<String, ArrayList<JSONObject>> resultRecordMap)</code> will be triggered. The
      * <code>resultRecordMap</code> will contain the search results in the form of <code>
      * JSONObject</code>s as they were originally inserted (and updated).
@@ -277,7 +304,7 @@ final public class SRCH2Engine {
      * <code>getIndexableDescription()</code>).
      * <br><br>
      * When the SRCH2 server is finished performing the search task, the method
-     * <code>onNewSearchResultsAvailable(int httpResponseCode, String jsonResultsLiteral,
+     * <code>onNewSearchResultsAvailable(int HTTPResponseCode, String jsonResultsLiteral,
      * HashMap<String, ArrayList<JSONObject>> resultRecordMap)</code> will be triggered. The
      * <code>resultRecordMap</code> will contain the search results in the form of <code>
      * JSONObject</code>s as they were originally inserted (and updated).
@@ -581,7 +608,7 @@ final public class SRCH2Engine {
      * <br><br>
      * If this key is specified, each valid HTTP request needs to provide the following key-value pair in order to get the authorization.
      * OAuth=foobar
-     * Example: curl -i "http://localhost:8081/search?q=terminator&OAuth=foobar"
+     * Example: curl -i "HTTP://localhost:8081/search?q=terminator&OAuth=foobar"
      * <br><br>
      * If this key is not specified, it will be automatically generated by the <code>SRCH2Engine</code>.
      * <br><br>
@@ -622,5 +649,4 @@ final public class SRCH2Engine {
             this.query = query;
         }
     }
-
 }
