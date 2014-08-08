@@ -32,7 +32,6 @@
         Make sure to set the variable to the SRCH2 license key file.
     -->
     <licenseFile>../conf/srch2_license_key.txt</licenseFile>
-
  
     <!--
         Hostname and Port Number
@@ -50,8 +49,8 @@
         The file path to the folder where we store serialized index files.
         REQUIRED, when "index-load-or-create" is set to 1.
     -->
-    <dataDir>./data/refining_field_primary_key/</dataDir>
-     
+    <!--<dataDir>./data/test_load_diff_schema/</dataDir> -->
+    <dataDir>./data/test_load_diff_schema/</dataDir>
     <!--
         Data File
         Required if "indexLoadCreate" is set to 0
@@ -59,7 +58,7 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>./refining_field_primary_key/data.json</dataFile>
+    <dataFile>./test_load_diff_schema/data.json</dataFile>
      
     <!--
 	Maximum Number of Threads
@@ -312,7 +311,7 @@
                     3 INFO
                 Defaults to 3 INFO
             -->
-            <logLevel>3</logLevel>
+            <logLevel>2</logLevel>
                          
             <!--
                 Access Log File
@@ -320,7 +319,7 @@
                  
                 Path to Access Log File
             -->
-            <accessLogFile>./data/refining_field_primary_key/log.txt</accessLogFile>
+            <accessLogFile>./data/test_load_diff_schema/log.txt</accessLogFile>
         </updateLog>
      
     </updatehandler>
@@ -359,9 +358,8 @@
 		    here and indexed="false" it will be also used for sort,filtering and facet.
 		    - 
 	   -->
-           <field name="id" type="text" refining="true"/>
-	   <field name="category" type="text" refining="true" indexed="false" />
-	   <field name="name" type="text" searchable="true" indexed="false" />
+	   <field name="category" type="text" indexed="true" />
+	   <field name="nameChanged" type="text" indexed="true" />
 	 </fields>
 	 
 	 <!--
@@ -373,7 +371,7 @@
 		Note:
 		- If the "indexed" value of your primary key field is true, it will be a searchable field too.
 	 -->
-	 <uniqueKey>name</uniqueKey>
+	 <uniqueKey>id</uniqueKey>
 	     
 	  <!--
 	  		Facet enabled flag

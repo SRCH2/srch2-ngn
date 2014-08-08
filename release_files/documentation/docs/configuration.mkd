@@ -464,8 +464,10 @@ Here is an example:
 These parameters give information about each field, including its name, type, and certain properties. <br>
 
  - "name": the name of the field;<br>
- - "type": the type of the field, including text, integer, float, time, location_longitude (for geo search), and location_latitude (for geo search).
-
+ - "type": the type of the field;<br>
+           For a searchable attribute, its type can be text, location_longitude (for geo search), or location_latitude (for geo search).<br>
+           For a refining attribute, the type can be text, integer, float, or time.
+           
 The engine supports the following formats of time and date: <br>
 
  - HH:MM:SS<br>
