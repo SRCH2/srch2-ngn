@@ -19,6 +19,13 @@ import java.util.TimerTask;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * At the core of the SRCH2 Android SDK is the SRCH2 search server. This service runs remotely and hosts the
+ * process that the SRCH2 search server resides in. If you are using the <code>SRCH2-Android-SDK.aar</code> this
+ * service will be automatically included in the application's manifest. The life cycle of this remote service
+ * is controlled by broadcast receivers, and it is not bound to by the <code>SRCH2Engine</code>. Users of the
+ * SRCH2-Android-SDK should have no reason to modify this service in any way.
+ */
 final public class SRCH2Service extends Service {
 
     private static final String TAG = "Exe-Service";

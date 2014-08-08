@@ -69,7 +69,7 @@ final class CheckCoresLoadedTask extends HttpTask {
 
                 Log.d("srch2:: " + TAG, "targetURL " + targetUrl.toExternalForm() + " connected!");
 
-                Log.d("srch2:: " + TAG, "ir literal " + ir.restfulResponseLiteral);
+                Log.d("srch2:: " + TAG, "ir literal " + ir.getRESTfulResponseLiteral());
 
                 responseMap.put(indexName, ir);
 
@@ -90,17 +90,17 @@ final class CheckCoresLoadedTask extends HttpTask {
 
             ++superCount;
         }
-        if (pingCountSuccess == coreCount) {
-            Log.d("srch2:: " + TAG, "run - successful requerying etc");
-            SRCH2Engine.isReady.set(true);
-            SRCH2Engine.reQueryLastOne();
-        }
 
         if (controlResponseObserver != null && !noNetworkConnection) {
             Log.d("srch2:: " + TAG, "run - notifying observer");
             controlResponseObserver.onSRCH2ServiceReady(responseMap);
         }
 
+        if (pingCountSuccess == coreCount) {
+            Log.d("srch2:: " + TAG, "run - successful requerying etc");
+            SRCH2Engine.isReady.set(true);
+            SRCH2Engine.reQueryLastOne();
+        }
         Thread.currentThread().setName("CHECK CORES LOADED FIN");
     }
 

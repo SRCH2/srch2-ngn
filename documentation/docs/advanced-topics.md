@@ -16,6 +16,10 @@ No one inside the organization knows what step two is, but assumes someone else 
 
 // to do
 
+###Testing
+
+The SRCH2 Android SDK must be tested on a real device: the emulator does not support running the SRCH2 http server. When you initialize the `SRCH2Engine`, you can call `setDebugAndTestMode(true)` to enable the `SRCH2Engine` to quickly start and stop the SRCH2 http server. 
+
 ###Configuring for Proguard
 
 Configuring the SRCH2-Android-SDK for Proguard is easy. Just add:

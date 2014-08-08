@@ -17,16 +17,26 @@ public class InstantSearchEditText extends EditText implements TextWatcher {
     private static final String TAG = "InstantSearchInputField";
 
     /**
-     * Interface for observing for when this text field receives new input from user.
+     * Interface for observing for when the input field of this <code>Edit Text</code> receives new input from
+     * user.
      */
     public interface SearchInputEnteredObserver {
+
+        /**
+         * Called when the input field changes and is not empty.
+         *
+         * @param newSearchText the new text input
+         */
         public void onNewSearchInput(String newSearchText);
 
+        /**
+         * Called when the input field changes and is empty.
+         */
         public void onNewSearchInputIsBlank();
     }
 
     /**
-     * Who wants to be notified of changes to input.
+     * The observer of changes to the input field of this <code>EditText</code>.
      */
     private SearchInputEnteredObserver mSearchInputObserver;
 
@@ -36,35 +46,61 @@ public class InstantSearchEditText extends EditText implements TextWatcher {
     private StringBuilder mInputBuffer = new StringBuilder();
 
     /**
-     * Taken from the standard set of Android icons: originally something named ~ ic_menu_clear_action.
+     * Taken from the standard set of Android icons: originally named ic_menu_clear_action.
+     * Has a transparent background.
      */
     private Drawable mClearButton = null;
 
-    public InstantSearchEditText(Context context, AttributeSet attrs, int defStyle) {
-        super(context, attrs, defStyle);
-        setupConstructors(context);
-    }
-
-    public InstantSearchEditText(Context context, AttributeSet attrs) {
-        super(context, attrs);
-        setupConstructors(context);
-    }
-
+    /**
+     * Called when this <code>InstantSearchEditText</code> is inflated in code.
+     *
+     * @param context the context of the activity inflating this widget
+     */
     public InstantSearchEditText(Context context) {
         super(context);
         setupConstructors(context);
     }
 
     /**
-     * Setups this object for each SDK called constructor: note, currently the activity hosting this text field must implement <code>SearchInputEnteredObserver</code>.
+     * Called when this <code>InstantSearchEditText</code> is inflated by XML.
+     *
+     * @param context the context of the activity inflating this widget
+     * @param attrs the attribute set styling this widget
+     */
+    public InstantSearchEditText(Context context, AttributeSet attrs) {
+        super(context, attrs);
+        setupConstructors(context);
+    }
+
+    /**
+     * Called when this <code>InstantSearchEditText</code> is inflated by XML with an assigned style.
+     *
+     * @param context the context of the activity inflating this widget
+     * @param attrs the attribute set styling this widget
+     * @param defStyle the style identifier
+     */
+    public InstantSearchEditText(Context context, AttributeSet attrs, int defStyle) {
+        super(context, attrs, defStyle);
+        setupConstructors(context);
+    }
+
+    /**
+     * Sets up this widget for each constructor: note, currently the
+     * activity hosting this text field must implement
+     * <code>SearchInputEnteredObserver</code>.
+     *
+     * @param context the context of the activity inflating this widget
      */
     private void setupConstructors(Context context) {
         mSearchInputObserver = (SearchInputEnteredObserver) context;
 
         mInputBuffer.setLength(0);
-        mClearButton = context.getResources().getDrawable(R.drawable.clear_input_icon);
-        mClearButton.setBounds(0, 0, mClearButton.getIntrinsicWidth(), mClearButton.getIntrinsicHeight());
+        mClearButton = context.getResources().getDrawable(
+                R.drawable.instant_search_edit_text_clear_input_action);
+        mClearButton.setBounds(0, 0, mClearButton.getIntrinsicWidth(),
+                mClearButton.getIntrinsicHeight());
 
+        // Clears the input field when the right compound drawable is clicked
         setOnTouchListener(new OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -87,7 +123,9 @@ public class InstantSearchEditText extends EditText implements TextWatcher {
     }
 
     @Override
-    public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+    public void beforeTextChanged(CharSequence s, int start, int count,
+                                  int after) {
+        // Prepare the buffer
         mInputBuffer.setLength(0);
         mInputBuffer.append(s);
     }
@@ -96,10 +134,13 @@ public class InstantSearchEditText extends EditText implements TextWatcher {
     public void afterTextChanged(Editable s) {
         final String userInput = s.toString().trim();
 
+        // If the buffer text matches the current input text, do nothing
         if (mInputBuffer.toString().trim().equals(userInput)) {
             return;
         }
 
+        // If the input text is different from the buffer, redisplay the clear input icon
+        // if the input text is not empty; propagate the text of the input text to the observer
         if (s.length() > 0) {
             setCompoundDrawables(null, null, mClearButton, null);
             mSearchInputObserver.onNewSearchInput(userInput);
@@ -114,19 +155,22 @@ public class InstantSearchEditText extends EditText implements TextWatcher {
 
     @Override
     public void onTextChanged(CharSequence s, int start, int before, int count) {
+        // Do nothing
     }
 
     /**
      * Utility method for checking the state of the current text.
      *
-     * @return <b>true</b> if calling getText() wil not return an empty string; <b>false</b> otherwise
+     * @return <b>true</b> if calling getText() wil not return an empty string;
+     *         <b>false</b> otherwise
      */
     public boolean hasRealInput() {
         return getText().toString().trim().length() > 0;
     }
 
     /**
-     * Makes it so that every UI widget that is not InstantSearchEditText will cause the soft keyboard to close when touched by the user.
+     * Makes it so that every UI widget that is not InstantSearchEditText will
+     * cause the soft keyboard to close when touched by the user.
      *
      * @param view the root view of the layout
      */
@@ -149,17 +193,24 @@ public class InstantSearchEditText extends EditText implements TextWatcher {
     }
 
     /**
-     * Utility method for opening soft keyboard depending on if the search input text field is empty: call, for instance, in an activity's onResume.
+     * Utility method for opening soft keyboard depending on if the search input
+     * text field is empty: call, for instance, in an activity's onResume.
+     *
+     * @param context the activity context
+     * @param searchInputTextField the reference to this widget
+     * @return <bold>true</bold> if the soft keyboard will be opened, <bold>false</bold> otherwise
      */
-    public static boolean checkIfSearchInputShouldOpenSoftKeyboard(final Context context, final InstantSearchEditText searchInputTextField) {
+    public static boolean checkIfSearchInputShouldOpenSoftKeyboard(
+            final Context context,
+            final InstantSearchEditText searchInputTextField) {
         if (!searchInputTextField.hasRealInput()) {
             searchInputTextField.requestFocus();
             searchInputTextField.postDelayed(new Runnable() {
                 @Override
                 public void run() {
                     try {
-                        InputMethodManager keyboard = (InputMethodManager)
-                                context.getSystemService(Context.INPUT_METHOD_SERVICE);
+                        InputMethodManager keyboard = (InputMethodManager) context
+                                .getSystemService(Context.INPUT_METHOD_SERVICE);
                         keyboard.showSoftInput(searchInputTextField, 0);
                     } catch (NullPointerException npe) {
                         npe.printStackTrace();
@@ -172,6 +223,7 @@ public class InstantSearchEditText extends EditText implements TextWatcher {
 
     /**
      * Utility method that will open the soft keyboard.
+     * @param editText the reference to this widget
      */
     public static void forceOpenSoftKeyboard(final EditText editText) {
         editText.requestFocus();
@@ -179,7 +231,9 @@ public class InstantSearchEditText extends EditText implements TextWatcher {
             @Override
             public void run() {
                 try {
-                    InputMethodManager keyboard = (InputMethodManager) editText.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+                    InputMethodManager keyboard = (InputMethodManager) editText
+                            .getContext().getSystemService(
+                                    Context.INPUT_METHOD_SERVICE);
                     keyboard.showSoftInput(editText, 0);
                 } catch (NullPointerException npe) {
                     npe.printStackTrace();
@@ -189,15 +243,20 @@ public class InstantSearchEditText extends EditText implements TextWatcher {
     }
 
     /**
-     * Utility method to hide the soft keyboard if visible: caller must supply a valid view.
+     * Utility method to hide the soft keyboard if visible: caller must supply a
+     * valid view.
+     * @param view a reference to a view in the currently visible layout
      */
     public static void hideSoftKeyboard(final View view) {
         view.postDelayed(new Runnable() {
             @Override
             public void run() {
                 try {
-                    InputMethodManager inputMethodManager = (InputMethodManager) view.getContext().getSystemService(Activity.INPUT_METHOD_SERVICE);
-                    inputMethodManager.hideSoftInputFromWindow(view.getWindowToken(), 0);
+                    InputMethodManager inputMethodManager = (InputMethodManager) view
+                            .getContext().getSystemService(
+                                    Activity.INPUT_METHOD_SERVICE);
+                    inputMethodManager.hideSoftInputFromWindow(
+                            view.getWindowToken(), 0);
                 } catch (NullPointerException npe) {
                     npe.printStackTrace();
                 }

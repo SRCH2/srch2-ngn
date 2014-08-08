@@ -26,7 +26,8 @@ public class SearchResultsAdapter extends BaseAdapter {
         public TextView mGenreTextView;
         public TextView mYearTextView;
 
-        public ViewHolder(TextView titleTextView, TextView genreTextView, TextView yearTextView) {
+        public ViewHolder(TextView titleTextView, TextView genreTextView,
+                          TextView yearTextView) {
             mTitleTextView = titleTextView;
             mGenreTextView = genreTextView;
             mYearTextView = yearTextView;
@@ -42,7 +43,8 @@ public class SearchResultsAdapter extends BaseAdapter {
     }
 
     public SearchResultsAdapter(Context context) {
-        mLayoutInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        mLayoutInflater = (LayoutInflater) context
+                .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         mSearchResults = new ArrayList<MovieSearchResult>();
         mSearchResultsUiHandler = new SearchResultsUiHandler(this);
     }
@@ -52,7 +54,11 @@ public class SearchResultsAdapter extends BaseAdapter {
         notifyDataSetChanged();
     }
 
-    public void updateDisplayedSearchResults(ArrayList<MovieSearchResult> newSearchResults) {
+    public void updateDisplayedSearchResults(
+            ArrayList<MovieSearchResult> newSearchResults) {
+        // Swap out the data set of this adapter with the new set of search results
+        // and invalidate the list view this adapter is backing with these new
+        // search results.
         mSearchResults.clear();
         mSearchResults.addAll(newSearchResults);
         notifyDataSetChanged();
@@ -76,30 +82,41 @@ public class SearchResultsAdapter extends BaseAdapter {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         MovieSearchResult searchResult = mSearchResults.get(position);
-        if (searchResult == null) { // probably unnecessary
+        if (searchResult == null) {
             View view = new View(parent.getContext());
             view.setVisibility(View.GONE);
             return view;
         } else {
             ViewHolder viewHolder;
             if (convertView == null) {
-                convertView = mLayoutInflater.inflate(R.layout.listview_search_result_row, parent, false);
-                TextView titleTextView = (TextView) convertView.findViewById(R.id.tv_title_search_result_row);
-                TextView subtitleTextView = (TextView) convertView.findViewById(R.id.tv_genre_search_result_row);
-                TextView yearTextView = (TextView) convertView.findViewById(R.id.tv_year_search_result_row);
-                viewHolder = new ViewHolder(titleTextView, subtitleTextView, yearTextView);
+                convertView = mLayoutInflater.inflate(
+                        R.layout.listview_search_result_row, parent, false);
+                TextView titleTextView = (TextView) convertView
+                        .findViewById(R.id.tv_title_search_result_row);
+                TextView genreTextView = (TextView) convertView
+                        .findViewById(R.id.tv_genre_search_result_row);
+                TextView yearTextView = (TextView) convertView
+                        .findViewById(R.id.tv_year_search_result_row);
+                viewHolder = new ViewHolder(titleTextView, genreTextView,
+                        yearTextView);
                 convertView.setTag(viewHolder);
             } else {
                 viewHolder = (ViewHolder) convertView.getTag();
             }
             viewHolder.mTitleTextView.setText(searchResult.getTitle());
             viewHolder.mGenreTextView.setText(searchResult.getGenre());
-            viewHolder.mYearTextView.setText(searchResult.getYear());
+            viewHolder.mYearTextView.setText(String.valueOf(searchResult.getYear()));
             return convertView;
         }
     }
 
-    private static class SearchResultsUiHandler extends Handler implements SearchResultsListener {
+    private static class SearchResultsUiHandler extends Handler implements
+            SearchResultsListener {
+
+        // Since the SearchResultsListener callback method onNewSearchResults(...)
+        // is executed off the Ui thread, it is implemented in a handler that will
+        // pass the search results of this callback to the Ui thread: specifically,
+        // to the SearchResultsAdapter so they can be displayed to the user.
 
         private static final int MESSAGE_WHAT_PUBLISH_NEW_RESULTS = 001;
         private static final int MESSAGE_WHAT_PUBLISH_NO_NEW_RESULTS = 002;
@@ -107,13 +124,15 @@ public class SearchResultsAdapter extends BaseAdapter {
         private WeakReference<SearchResultsAdapter> mSearchResultsAdapterWeakReference;
 
         public SearchResultsUiHandler(SearchResultsAdapter searchResultsAdapter) {
-            mSearchResultsAdapterWeakReference = new WeakReference<SearchResultsAdapter>(searchResultsAdapter);
+            mSearchResultsAdapterWeakReference = new WeakReference<SearchResultsAdapter>(
+                    searchResultsAdapter);
         }
 
         @Override
         public void handleMessage(Message msg) {
 
-            SearchResultsAdapter searchResultAdapter = mSearchResultsAdapterWeakReference.get();
+            SearchResultsAdapter searchResultAdapter = mSearchResultsAdapterWeakReference
+                    .get();
 
             if (searchResultAdapter != null) {
                 switch (msg.what) {
@@ -125,7 +144,8 @@ public class SearchResultsAdapter extends BaseAdapter {
                         }
 
                         if (newResults != null) {
-                            searchResultAdapter.updateDisplayedSearchResults(newResults);
+                            searchResultAdapter
+                                    .updateDisplayedSearchResults(newResults);
                         }
                         return;
                     case MESSAGE_WHAT_PUBLISH_NO_NEW_RESULTS:
@@ -136,16 +156,25 @@ public class SearchResultsAdapter extends BaseAdapter {
         }
 
         @Override
-        public void onNewSearchResults(int httpResponseCode, String jsonResponse, HashMap<String, ArrayList<JSONObject>> resultRecordMap) {
+        public void onNewSearchResults(int httpResponseCode,
+                                       String jsonResponse,
+                                       HashMap<String, ArrayList<JSONObject>> resultRecordMap) {
             if (httpResponseCode == HttpURLConnection.HTTP_OK) {
                 ArrayList<MovieSearchResult> newResults = new ArrayList<MovieSearchResult>();
 
-                ArrayList<JSONObject> movieResults = resultRecordMap.get(MovieIndex.INDEX_NAME);
+                ArrayList<JSONObject> movieResults = resultRecordMap
+                        .get(MovieIndex.INDEX_NAME);
                 if (movieResults != null && movieResults.size() > 0) {
                     for (JSONObject jsonObject : movieResults) {
                         MovieSearchResult searchResult = null;
                         try {
-                            searchResult = new MovieSearchResult(jsonObject.getString(MovieIndex.INDEX_FIELD_TITLE), jsonObject.getString(MovieIndex.INDEX_FIELD_GENRE), jsonObject.getInt(MovieIndex.INDEX_FIELD_YEAR));
+                            searchResult = new MovieSearchResult(
+                                    jsonObject
+                                            .getString(MovieIndex.INDEX_FIELD_TITLE),
+                                    jsonObject
+                                            .getString(MovieIndex.INDEX_FIELD_GENRE),
+                                    jsonObject
+                                            .getInt(MovieIndex.INDEX_FIELD_YEAR));
                         } catch (JSONException oops) {
                             continue;
                         }
@@ -155,7 +184,11 @@ public class SearchResultsAdapter extends BaseAdapter {
                         }
                     }
                 }
-                sendMessage(Message.obtain(this, newResults.size() > 0 ? MESSAGE_WHAT_PUBLISH_NEW_RESULTS : MESSAGE_WHAT_PUBLISH_NO_NEW_RESULTS, newResults));
+                sendMessage(Message
+                        .obtain(this,
+                                newResults.size() > 0 ? MESSAGE_WHAT_PUBLISH_NEW_RESULTS
+                                        : MESSAGE_WHAT_PUBLISH_NO_NEW_RESULTS,
+                                newResults));
             }
         }
     }

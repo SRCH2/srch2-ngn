@@ -3,79 +3,97 @@ package com.srch2.android.http.service;
 import java.util.HashMap;
 
 /**
- * This interface contains the call-back methods for the control related restful
- * requests of the SRCH2 http server: upon completion of the specific request,
- * the corresponding call-back will be called passing the corresponding subclass
+ * This interface contains the callback methods for the control related RESTful
+ * requests of the SRCH2 search server: upon completion of the specific request,
+ * the corresponding callback method will be called passing the corresponding subclass
  * of <code>RestfulResponse</code>. Each <code>RestfulResponse</code> subclass
- * will always contain the <code>httpResponseCode</code> and
- * <code>restfulResponseLiteral</code> as it is returned by the SRCH2 server.
- * Implementors of this class can either parse the field member
- * <code>restfulResponseLiteral</code> of the specific subclass passed, or can
- * review the specific field members of each subclass and access them directly
- * to avoid having to parse the response literal. Implementors are encouraged to
- * check that the field member <code>httpResponseCode</code> is not equal to
- * <code>RestfulResponse.FAILED_TO_CONNECT_RESPONSE_CODE</code> (equal to -1)
- * before parsing or accessing any other field members.
- * <p/>
- * Users of this class <b>should</b> register their implementation of this
- * interface to the appropriate <code>IndexInternal</code> object by calling
- * <code>setStateResponseListener(ControlResponseListener observer)</code>,
- * although is unnecessary to do so if users are not interested in receiving
- * control response call-backs for their <code>Indexable</code> object.
+ * will always contain the HTTP status code and RESTful response literal as
+ * returned by the SRCH2 search server; these values can be returned by calling
+ * <code>getRESTfulHTTPStatusCode()</code> and <code>getRESTfulResponseLiteral()</code>
+ * on any of the <code>RestfulResponse</code> subclasses.
+ * <br><br>
+ * Implementers of this class can either parse the RESTful response literal as
+ * returned by <code>getRESTfulResponseLiteral()</code> of the specific
+ * <code>RestfulResponse</code> subclass in order to manually inspect the
+ * response from SRCH2 search server; however, this RESTful response literal
+ * is also parsed in the construction of the each <code>RestfulResponse</code>
+ * subclass and the relevant values of the RESTful response literal can be
+ * accessed from the specific <code>RestfulResponse</code> subclass methods.
+ * <br><br>
+ * While it is not necessary to implement this interface, it is strongly
+ * encouraged. Implementations of this interface can be registered by calling
+ * <code>SRCH2Engine.setStateResponseListener(StateResponseListener
+ * stateResponseListener)</code>.
+ * <br><br>
+ * All of the callback methods in this interface are executed off the Ui thread,
+ * so if any of the data is to be made visible to the user, it must be pushed to the
+ * Ui thread first. Starting any intensive execution from the implementation of
+ * these callbacks methods is highly discouraged as it could block subsequent
+ * tasks performed by the <code>SRCH2Engine</code>.
  */
 public interface StateResponseListener {
 
     /**
-     * Will be called when an /info request is completed on an index.
-     *
-     * @param indexName the target index
-     * @param response an object wrapping the info response literal
+     * Called after the SRCH2 search server completes an information task, which occurs
+     * when either <code>mIndexable.info()</code> or <code>SRCH2Engine.getIndexInfo(String
+     * indexName)</code> is called.
+     * @param indexName the name of the index that the information task was completed upon
+     * @param response a representation of the returned index information
      */
-    void onInfoRequestComplete(final String indexName,
-                               final InfoResponse response);
+    void onInfoRequestComplete(String indexName,
+                               InfoResponse response);
 
     /**
-     * Will be called when an insert record(s) request is completed on an index.
-     *
-     * @param indexName the target index
-     * @param response an object wrapping the insert response literal
+     * Called after the SRCH2 search server completes an insert task, which occurs
+     * when either <code>mIndexable.insert(...)</code> or
+     * <code>SRCH2Engine.insertIntoIndex(...)</code> is called.
+     * @param indexName the name of the index that was inserted into
+     * @param response a representation of the RESTful insert response
      */
-    void onInsertRequestComplete(final String indexName,
-                                 final InsertResponse response);
+    void onInsertRequestComplete(String indexName,
+                                 InsertResponse response);
 
     /**
-     * Will be called when an update record(s) request is completed on an index.
-     *
-     * @param indexName the target index
-     * @param response an object wrapping the update response literal
+     * Called after the SRCH2 search server completes an update task, which occurs
+     * when either <code>mIndexable.update(...)</code> or
+     * <code>SRCH2Engine.updateIndex(...)</code> is called.
+     * @param indexName the name of the index that was updated
+     * @param response a representation of the RESTful update response
      */
-    void onUpdateRequestComplete(final String indexName,
-                                 final UpdateResponse response);
+    void onUpdateRequestComplete(String indexName,
+                                 UpdateResponse response);
 
     /**
-     * Will be called when a delete record(s) request is completed on an index.
+     * Called after the SRCH2 search server comes online after the call to <code>SRCH2.onStart(Context
+     * context)</code> is made. When this method executes, it will pass a map of indexes ready for
+     * CRUD operations, defined by the <code>Indexable</code> implementations: this map contains the
+     * names of the indexes (as they were defined in the <code>IndexDescription</code> returned from
+     * the <code>Indexable</code> implementation of the method <code>getIndexDescription()</code>) as
+     * its keys mapping to the <code>InfoResponse</code> for each index.
      *
      * @param indexesToInfoResponseMap a mapping of indexes to their valid <code>InfoResponse</code>s
      */
-    void onSRCH2ServiceReady(final HashMap<String, InfoResponse> indexesToInfoResponseMap);
+    void onSRCH2ServiceReady(HashMap<String, InfoResponse> indexesToInfoResponseMap);
 
     /**
-     * Will be called when an delete record(s) request is completed on an index.
-     *
-     * @param indexName the target index
-     * @param response an object wrapping the record literal
+     * Called after the SRCH2 search server completes an deletion task, which occurs
+     * when either <code>mIndexable.delete(...)</code> or
+     * <code>SRCH2Engine.deleteFromIndex(...)</code> is called.
+     * @param indexName the name of the index that had deletions
+     * @param response a representation of the RESTful deletion response
      */
-    void onDeleteRequestComplete(final String indexName,
-                                 final DeleteResponse response);
+    void onDeleteRequestComplete(String indexName,
+                                 DeleteResponse response);
 
     /**
-     * Will be called when a get one record by id request is completed on an
-     * index.
-     *
-     * @param indexName the target index
-     * @param response an object wrapping the record literal
+     * Called after the SRCH2 search server completes an record retrieval task, which occurs
+     * when either <code>mIndexable.getRecordbyID(...)</code> or
+     * <code>SRCH2Engine.getRecordByIdFromIndex(...)</code> is called.
+     * @param indexName the name of the index that the record requested was retreived from
+     * @param response a representation of the RESTful record retrieval response, including the record
+     *                 retrieved if found
      */
-    void onGetRecordByIDComplete(final String indexName,
-                                 final GetRecordResponse response);
+    void onGetRecordByIDComplete(String indexName,
+                                 GetRecordResponse response);
 
 }

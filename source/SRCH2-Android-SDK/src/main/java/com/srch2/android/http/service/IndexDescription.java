@@ -3,6 +3,15 @@ package com.srch2.android.http.service;
 import java.util.Iterator;
 import java.util.Properties;
 
+/**
+ * Creates the necessary configuration for each index that will be searchable in the SRCH2 search server.
+ * Each index in the SRCH2 search server requires a name and a schema which is defined in the construction
+ * of this class.
+ * <br><br>
+ * The only place construction of an object of this class should occur is in the <code>Indexable</code>
+ * implementation of the abstract method <code>public IndexDescription getIndexDescription()</code> when
+ * returning from this method.
+ */
 final public class IndexDescription {
 
     private static final String RECORD_SCORE_EXPRESSION = "recordScoreExpression";
@@ -82,14 +91,30 @@ final public class IndexDescription {
     }
 
     /**
-     * It creates a description of the <code>Index</code>
-     * The first argument is the name of the index, and rest of the argument are of type Field.
-     * It accepts an array of fields, and the first field is used as the primary key field.
-     * Each entry of the primary key field should be unique.
-     *
-     * @param name            the name of the Index
-     * @param primaryKeyField the primaryKey {@link Field}
-     * @param remainingField  other Fields, could be empty
+     * Creates the necessary configuration for the index that the <code>Indexable</code>
+     * implementation represents. Should only be constructed when returning from the
+     * <code>Indexable</code> method <code>getIndexDescription()</code>.
+     * <br><br>
+     * The first argument <b>should always</b> be the name of the index. The value of this can
+     * be used to reference the index when the static method calls of the <code>SRCH2Engine</code>
+     * are used to request a task on an index (instead of using the non-static methods of the
+     * <code>Indexable</code>); or it can also be used to identify which set of search results
+     * belong to which indexes when the <code>SearchResultsListener</code> method
+     * <code>onNewSearchResultsAvailable()</code> is triggered. Thus <i>it is recommended</i> that
+     * this value be kept in a constant field in the <code>Indexable</code> class implementation.
+     * <br><br>
+     * The second argument <b>should always</b> be the primary key field, which can be used to
+     * retrieve a specific record or as the handle to delete the record from the index. Each
+     * record <b>should have a unique value</b> for its primary key.
+     * <br><br>
+     * The remaining set of arguments are the rest of the schema's fields as they are defined
+     * for the index. They can be passed in any order.
+     * <br><br>
+     * This method will throw exceptions if <code>name</code> is null or empty; or if
+     * any of the fields passed are null.
+     * @param name            the value to assign to name the index
+     * @param primaryKeyField the field which will be the primary key of the index's schema
+     * @param remainingField  the set of any other fields needed to define the schema
      */
     public IndexDescription(String name, Field primaryKeyField,
                             Field... remainingField) {
@@ -97,16 +122,35 @@ final public class IndexDescription {
     }
 
     /**
-     * Creates a description of the GeoLocation <code>Index</code>
-     * Notice that first argument is the name of the index, second the primary key field, third and fourth
-     * are strings denoting the name of latitude and longitude. And remaining variable arguments are of
-     * type Field.
-     *
-     * @param name               the name of the Index
-     * @param primaryKeyField    the primaryKey {@link Field}
-     * @param latitudeFieldName  the name of the latitudeField
-     * @param longitudeFieldName the name of the longitudeField
-     * @param remainingField     other Fields, could be empty
+     * Creates the necessary configuration for the index that the <code>Indexable</code>
+     * implementation represents for an index that includes geo-search capability. Should
+     * only be constructed when returning from the <code>Indexable</code> method
+     * <code>getIndexDescription()</code>.
+     * <br><br>
+     * The first argument <b>should always</b> be the name of the index. The value of this can
+     * be used to reference the index when the static method calls of the <code>SRCH2Engine</code>
+     * are used to request a task on an index (instead of using the non-static methods of the
+     * <code>Indexable</code>); or it can also be used to identify which set of search results
+     * belong to which indexes when the <code>SearchResultsListener</code> method
+     * <code>onNewSearchResultsAvailable()</code> is triggered. Thus <i>it is recommended</i> that
+     * this value be kept in a constant field in the <code>Indexable</code> class implementation.
+     * <br><br>
+     * The second argument <b>should always</b> be the primary key field, which can be used to
+     * retrieve a specific record or as the handle to delete the record from the index. Each
+     * record <b>should have a unique value</b> for its primary key.
+     * <br><br>
+     * The third and fourth arguments <b>should always</b> be the latitude and longitude
+     * fields, in that order, that are defined for the index's schema.
+     * The remaining set of arguments are the rest of the schema's fields as they are defined
+     * for the index. They can be passed in any order.
+     * <br><br>
+     * This method will throw exceptions if <code>name</code> is null or empty; or if
+     * any of the fields passed are null.
+     * @param name            the value to assign to name the index
+     * @param primaryKeyField the field which will be the primary key of the index's schema
+     * @param latitudeFieldName the field which will be the latitude field of the index's schema
+     * @param longitudeFieldName the field which will be the longitude field of the index's schema
+     * @param remainingField  the set of any other fields needed to define the schema
      */
     public IndexDescription(String name, Field primaryKeyField,
                             String latitudeFieldName, String longitudeFieldName,
@@ -146,10 +190,18 @@ final public class IndexDescription {
     }
 
     /**
-     * Set the default fuzziness similarity threshold. The Query string will take this fuzziness setting.
-     * User can use {@link com.srch2.android.http.service.Query} to enable the query specific similarity setting.
-     *
-     * @param threshold the similarity threshold
+     * Set the default fuzziness similarity threshold. This will determine how many character
+     * substitutions the original search input will match search results for: if set to 0.5,
+     * the search performed will include results as if half of the characters of the original
+     * search input were replaced by wild card characters.
+     * <br><br>
+     * <b>Note:</b> In the the formation of a <code>Query</code>, each <code>Term</code> can
+     * have its own fuzziness similarity threshold value set by calling the method
+     * <code>enableFuzzyMatching(Float value)</code>; by default it is disabled for terms.
+     * <br><br>
+     * This will throw an <code>IllegalArgumentException</code> if the value of
+     * <code>threshold</code> is less than zero or greater than one.
+     * @param threshold the similarity ratio to match against
      */
     public void setQueryTermSimilarityThreshold(float threshold) {
         if (threshold < 0 || threshold > 1) {
@@ -164,15 +216,17 @@ final public class IndexDescription {
     }
 
     /**
-     * It sets the default number of results that has to be returned by a query.
-     * User can override this setting by {@link com.srch2.android.http.service.Query#pagingRows} for each Query.
-     * @param rows specifies number of results on querying.
+     * Sets the number of search results to be returned per query or search task.
+     * <br><br>
+     * This method will throw an <code>IllegalArgumentException</code> if the value of
+     * <code>numberOfResultsToReturn</code> is less than one
+     * @param numberOfResultsToReturn the number of results to return per search
      */
-    public void setTopK(int rows) {
-        if (rows < 0) {
+    public void setTopK(int numberOfResultsToReturn) {
+        if (numberOfResultsToReturn < 1) {
             throw new IllegalArgumentException("The topK can not be negative number");
         }
-        queryProperties.setProperty("rows", String.valueOf(rows));
+        queryProperties.setProperty("rows", String.valueOf(numberOfResultsToReturn));
     }
 
     private void setMiscProperties() {
@@ -346,9 +400,13 @@ final public class IndexDescription {
     }
 
     /**
-     * Gets the name tag of the index.
-     *
-     * @return name of the index.
+     * Gets the name of the index this <code>Indexable</code> represents as it was set in the
+     * <code>IndexDescription</code> returned in the <code>Indexable</code> implementation of
+     * <code>getIndexDescription()</code>. This can be used to call the static CRUD methods of
+     * the <code>SRCH2Engine</code> and used to identify which index the two callbacks
+     * <code>StateResponseListener</code> and <code>SearchResultsListener</code> refer to in
+     * their callback methods.
+     * @return the name of the index this <code>Indexable</code> represents
      */
     public String getIndexName() {
         return name;

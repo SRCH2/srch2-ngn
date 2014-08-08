@@ -92,7 +92,7 @@ public class MyActivity extends TestableActivity {
         SRCH2Engine.initialize(mIndex1, mIndex2 );
         SRCH2Engine.setSearchResultsListener(mResultListener);
         SRCH2Engine.setStateResponseListener(mControlListener);
-        SRCH2Engine.setTestAndDebugMode(true);
+        SRCH2Engine.setAutomatedTestingMode(true);
     }
 
     public void callSRCH2EngineStart() {
