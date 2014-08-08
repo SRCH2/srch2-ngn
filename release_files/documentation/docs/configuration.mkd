@@ -465,8 +465,8 @@ These parameters give information about each field, including its name, type, an
 
  - "name": the name of the field;<br>
  - "type": the type of the field;<br>
-           For searchable attribute, the type can be text, location_longitude (for geo search) and location_latitude (for geo search).<br>
-           For refining attribte, the type can be text, integer, float and time.
+           For a searchable attribute, its type can be text, location_longitude (for geo search), or location_latitude (for geo search).<br>
+           For a refining attribute, the type can be text, integer, float, or time.
            
 The engine supports the following formats of time and date: <br>
 
