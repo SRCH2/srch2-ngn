@@ -3,7 +3,7 @@ package com.srch2.android.http.service;
 import java.util.HashMap;
 
 /**
- * This interface contains the callback methods for the control related restful
+ * This interface contains the callback methods for the control related RESTful
  * requests of the SRCH2 search server: upon completion of the specific request,
  * the corresponding callback method will be called passing the corresponding subclass
  * of <code>RestfulResponse</code>. Each <code>RestfulResponse</code> subclass
@@ -40,8 +40,8 @@ public interface StateResponseListener {
      * @param indexName the name of the index that the information task was completed upon
      * @param response a representation of the returned index information
      */
-    void onInfoRequestComplete(final String indexName,
-                               final InfoResponse response);
+    void onInfoRequestComplete(String indexName,
+                               InfoResponse response);
 
     /**
      * Called after the SRCH2 search server completes an insert task, which occurs
@@ -50,8 +50,8 @@ public interface StateResponseListener {
      * @param indexName the name of the index that was inserted into
      * @param response a representation of the RESTful insert response
      */
-    void onInsertRequestComplete(final String indexName,
-                                 final InsertResponse response);
+    void onInsertRequestComplete(String indexName,
+                                 InsertResponse response);
 
     /**
      * Called after the SRCH2 search server completes an update task, which occurs
@@ -60,15 +60,20 @@ public interface StateResponseListener {
      * @param indexName the name of the index that was updated
      * @param response a representation of the RESTful update response
      */
-    void onUpdateRequestComplete(final String indexName,
-                                 final UpdateResponse response);
+    void onUpdateRequestComplete(String indexName,
+                                 UpdateResponse response);
 
     /**
-     * Will be called when a delete record(s) request is completed on an index.
+     * Called after the SRCH2 search server comes online after the call to <code>SRCH2.onStart(Context
+     * context)</code> is made. When this method executes, it will pass a map of indexes ready for
+     * CRUD operations, defined by the <code>Indexable</code> implementations: this map contains the
+     * names of the indexes (as they were defined in the <code>IndexDescription</code> returned from
+     * the <code>Indexable</code> implementation of the method <code>getIndexDescription()</code>) as
+     * its keys mapping to the <code>InfoResponse</code> for each index.
      *
      * @param indexesToInfoResponseMap a mapping of indexes to their valid <code>InfoResponse</code>s
      */
-    void onSRCH2ServiceReady(final HashMap<String, InfoResponse> indexesToInfoResponseMap);
+    void onSRCH2ServiceReady(HashMap<String, InfoResponse> indexesToInfoResponseMap);
 
     /**
      * Called after the SRCH2 search server completes an deletion task, which occurs
@@ -77,8 +82,8 @@ public interface StateResponseListener {
      * @param indexName the name of the index that had deletions
      * @param response a representation of the RESTful deletion response
      */
-    void onDeleteRequestComplete(final String indexName,
-                                 final DeleteResponse response);
+    void onDeleteRequestComplete(String indexName,
+                                 DeleteResponse response);
 
     /**
      * Called after the SRCH2 search server completes an record retrieval task, which occurs
@@ -88,7 +93,7 @@ public interface StateResponseListener {
      * @param response a representation of the RESTful record retrieval response, including the record
      *                 retrieved if found
      */
-    void onGetRecordByIDComplete(final String indexName,
-                                 final GetRecordResponse response);
+    void onGetRecordByIDComplete(String indexName,
+                                 GetRecordResponse response);
 
 }

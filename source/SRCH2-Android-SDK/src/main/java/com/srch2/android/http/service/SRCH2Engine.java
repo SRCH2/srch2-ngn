@@ -241,7 +241,8 @@ final public class SRCH2Engine {
      * JSONObject</code>s as they were originally inserted (and updated).
      * <br><br>
      * This method will throw exceptions if the <code>searchInput</code> is null or if
-     * <code>SRCH2Engine.initialize(...)</code> has not been called.
+     * <code>SRCH2Engine.initialize(...)</code> has not been called; of if the value of
+     * <code>searchInput</code> is null or has a length less than one.
      * @param searchInput the textual input to search on
      */
     public static void searchAllIndexes(String searchInput) {
@@ -266,7 +267,8 @@ final public class SRCH2Engine {
      * This method will throw exceptions if the <code>indexName</code> is null or does not match any of
      * the index names as defined by the corresponding <code>Indexable</code>'s <code>IndexDescription</code>;
      * or if the <code>searchInput</code> is null; or if <code>SRCH2Engine.initialize(...)</code> has
-     * not been called.
+     * not been called; of if the value of <code>searchInput</code> is null or has a length
+     * less than one.
      * @param indexName the name of the index (defined in the <code>IndexDescription</code> of the
      *                  <code>Indexable</code>) to search
      * @param searchInput the textual input to search on
@@ -288,7 +290,8 @@ final public class SRCH2Engine {
      * JSONObject</code>s as they were originally inserted (and updated).
      * <br><br>
      * This method will throw exceptions if the <code>query</code> forming the advanced search is null;
-     * or if <code>SRCH2Engine.initialize(...)</code> has not been called.
+     * or if <code>SRCH2Engine.initialize(...)</code> has not been called; or if the value  of
+     * <code>query</code> is null;
      * @param query the formation of the advanced search
      */
     public static void advancedSearchOnAllIndexes(Query query) {
@@ -312,7 +315,8 @@ final public class SRCH2Engine {
      * This method will throw exceptions if the <code>indexName</code> is null or does not match any of
      * the index names as defined by the corresponding <code>Indexable</code>'s <code>IndexDescription</code>;
      * or if the <code>query</code> forming the advanced search is null; or if
-     * <code>SRCH2Engine.initialize(...)</code> has not been called.
+     * <code>SRCH2Engine.initialize(...)</code> has not been called; or if the value  of
+     * <code>query</code> is null;
      * @param indexName the name of the index (defined in the <code>IndexDescription</code> of the
      *                  <code>Indexable</code>) to search
      * @param query the formation of the advanced search
@@ -329,7 +333,7 @@ final public class SRCH2Engine {
      * only keys matching the schema fields defined for the corresponding <code>Indexable</code>.
      * <br><br>
      * When the SRCH2 search server completes the insert task, the method
-     * <code>onInsertRequestComplete(final String indexName, final InsertResponse response)</code>
+     * <code>onInsertRequestComplete(String indexName, InsertResponse response)</code>
      * of the <code>StateResponseListener</code> will be triggered. Whether the SRCH2 search server
      * was successful in inserting the record is signified by the value of the
      * <code>InsertReponse response</code>'s method <code>getSuccessCount()</code>.
@@ -355,7 +359,7 @@ final public class SRCH2Engine {
      * fields as defined for the corresponding <code>Indexable</code>).
      * <br><br>
      * When the SRCH2 search server completes the insert task, the method
-     * <code>onInsertRequestComplete(final String indexName, final InsertResponse response)</code>
+     * <code>onInsertRequestComplete(String indexName, InsertResponse response)</code>
      * of the <code>StateResponseListener</code> will be triggered. Whether the SRCH2 search server
      * was successful in inserting the records is signified by the value of the
      * <code>InsertReponse response</code>'s method <code>getSuccessCount()</code>.
@@ -384,7 +388,7 @@ final public class SRCH2Engine {
      * <code>recordToUpdate.</code>
      * <br><br>
      * When the SRCH2 search server completes the update task, the method
-     * <code>onUpdateRequestComplete(final String indexName, final UpdateResponse response)</code>
+     * <code>onUpdateRequestComplete(String indexName, UpdateResponse response)</code>
      * of the <code>StateResponseListener</code> will be triggered. Whether the SRCH2 search server
      * was successful in updating the record is signified by the value of the
      * <code>UpdateResponse response</code>'s method <code>getSuccessCount()</code>.
@@ -412,7 +416,7 @@ final public class SRCH2Engine {
      * otherwise, the existing record will have its fields updated with the new values.
      * <br><br>
      * When the SRCH2 search server completes the update task, the method
-     * <code>onUpdateRequestComplete(final String indexName, final UpdateResponse response)</code>
+     * <code>onUpdateRequestComplete(String indexName, UpdateResponse response)</code>
      * of the <code>StateResponseListener</code> will be triggered. Whether the SRCH2 search server
      * was successful in updating the records is signified by the value of the
      * <code>UpdateResponse response</code>'s method <code>getSuccessCount()</code>.
@@ -437,7 +441,7 @@ final public class SRCH2Engine {
      * defined in the <code>IndexDescription</code> of that <code>Indexable</code>.
      * <br><br>
      * When the SRCH2 search server completes the deletion task, the method
-     * <code>onDeleteRequestComplete(final String indexName, final DeleteResponse response)</code>
+     * <code>onDeleteRequestComplete(String indexName, DeleteResponse response)</code>
      * of the <code>StateResponseListener</code> will be triggered. Whether the SRCH2 search server
      * was successful in deleting the record is signified by the value of the
      * <code>DeleteResponse response</code>'s method <code>getSuccessCount()</code>.
@@ -458,14 +462,15 @@ final public class SRCH2Engine {
      * Returns the record with the specified <code>primaryKeyOfRecordToRetrieve</code> if found in
      * the index if it exists for the <code>Indexable</code> with the corresponding <code>indexName</code>
      * as defined in the <code>IndexDescription</code> of that <code>Indexable</code>. When the SRCH2
-     * search server completes the retrieval task, the method <code>onGetRecordByIDComplete(final String
-     * indexName, final GetRecordResponse response)</code> of the <code>StateResponseListener</code> will
+     * search server completes the retrieval task, the method <code>onGetRecordByIDComplete(String
+     * indexName, GetRecordResponse response)</code> of the <code>StateResponseListener</code> will
      * be triggered. The record retrieved will be in the form of a <code>JSONObject</code> inside the
      * <code>response GetRecordResponse</code>.
      * <br><br>
      * This method will throw exceptions if the <code>indexName</code> is null or does not match any of
      * the index names as defined by the corresponding <code>Indexable</code>'s <code>IndexDescription</code>;
-     * or if <code>SRCH2Engine.initialize(...)</code> has not been called.
+     * or if <code>SRCH2Engine.initialize(...)</code> has not been called; or if the value of
+     * <code>primaryKeyOfRecordToRetrieve</code> is null or has a length less than one.
      * @param indexName the name of the index (defined in the <code>IndexDescription</code> of the
      *                  <code>Indexable</code>) to retrieve the record from
      * @param primaryKeyOfRecordToRetrieve the primary key of the record to retrieve
@@ -479,7 +484,7 @@ final public class SRCH2Engine {
      * Performs an information task on the specified index for the <code>Indexable</code> with the
      * corresponding <code>indexName</code> as defined in the <code>IndexDescription</code> of that
      * <code>Indexable</code>. When the SRCH2 search server completes the information task, the
-     * method <code>void onInfoRequestComplete(final String indexName, final InfoResponse response)</code>
+     * method <code>void onInfoRequestComplete(String indexName, InfoResponse response)</code>
      * will be triggered. The <code>InfoResponse response</code> will contain information about the
      * index such as the number of records it contains or the time stamp of the last time the index
      * was updated to reflect any pending changes.

@@ -12,17 +12,10 @@ final class IndexInternal {
     private final IndexDescription indexDescription;
     private SearchTask currentSearchTask = null;
 
-    protected IndexInternal(IndexDescription description) {
+    IndexInternal(IndexDescription description) {
         this.indexDescription = description;
     }
 
-    /**
-     * Format the query string using all the default value. The default value
-     * comes from the indexInternal description with which the user create the indexInternal
-     *
-     * @param queryString
-     * @return The valid URL formatted string.
-     */
     static String formatDefaultQueryURL(String queryString) {
         String[] tokens = queryString.split("\\s+");
         StringBuilder rawSearchInput = new StringBuilder();
@@ -45,7 +38,7 @@ final class IndexInternal {
         return "&clat=33&clong=-117&radius=180";
     }
 
-    protected IndexDescription getConf() {
+    IndexDescription getConf() {
         return indexDescription;
     }
 
@@ -53,12 +46,7 @@ final class IndexInternal {
         return indexDescription.name;
     }
 
-    /**
-     * Inserts one record into the Index.
-     *
-     * @param record Json record to be inserted.
-     */
-    public void insert(JSONObject record) {
+    void insert(JSONObject record) {
         if (SRCH2Engine.isReady()) {
             InsertTask insertTask = new InsertTask(UrlBuilder.getInsertUrl(
                     SRCH2Engine.getConfig(), indexDescription),
@@ -69,12 +57,8 @@ final class IndexInternal {
         }
     }
 
-    /**
-     * Inserts a list of record into the Index in a batch way.
-     *
-     * @param records An array of Json objects of type JSONArray to be inserted.
-     */
-    public void insert(JSONArray records) {
+
+    void insert(JSONArray records) {
         if (SRCH2Engine.isReady()) {
 
             URL url = UrlBuilder.getInsertUrl(SRCH2Engine.getConfig(),
@@ -87,12 +71,7 @@ final class IndexInternal {
         }
     }
 
-    /**
-     * Update the record in the engine.
-     *
-     * @param record Json record to be updated.
-     */
-    public void update(JSONObject record) {
+    void update(JSONObject record) {
         if (SRCH2Engine.isReady()) {
             UpdateTask updateTask = new UpdateTask(UrlBuilder.getUpdateUrl(
                     SRCH2Engine.getConfig(), indexDescription),
@@ -103,12 +82,7 @@ final class IndexInternal {
         }
     }
 
-    /**
-     * Update a list of records in the engine.
-     *
-     * @param records An array of Json objects of type JSONArray to be updated.
-     */
-    public void update(JSONArray records) {
+    void update(JSONArray records) {
         if (SRCH2Engine.isReady()) {
             UpdateTask updateTask = new UpdateTask(UrlBuilder.getUpdateUrl(
                     SRCH2Engine.getConfig(), indexDescription),
@@ -119,12 +93,7 @@ final class IndexInternal {
         }
     }
 
-    /**
-     * Deletes the record using the record id, or a list of ids.
-     *
-     * @param id     id of the record to be deleted.
-     */
-    public void delete(String id) {
+    void delete(String id) {
         if (SRCH2Engine.isReady()) {
             DeleteTask deleteTast = new DeleteTask(UrlBuilder.getDeleteUrl(
                     SRCH2Engine.getConfig(), indexDescription, id),
@@ -135,10 +104,8 @@ final class IndexInternal {
         }
     }
 
-    /**
-     * Get the information from the indexInternal
-     */
-    public void info() {
+
+    void info() {
         if (SRCH2Engine.isReady()) {
             InfoTask infoTask = new InfoTask(UrlBuilder.getInfoUrl(
                     SRCH2Engine.getConfig(), indexDescription), getIndexCoreName(),
@@ -163,32 +130,18 @@ final class IndexInternal {
         }
     }
 
-    /**
-     * Does a basic search on the current index. The queryString containing the
-     * space will be split and searched using multiple keywords. All query
-     * keywords are treated as fuzzy, and the last keyword will
-     * be treated as fuzzy and prefix. For the more specific setting on
-     * the terms, please use {@link #advancedSearch(Query)} method.
-     *
-     * @param queryString query string to be searched.
-     */
-    public void search(String queryString) {
-        if (queryString == null || queryString.trim().length() < 1) {
-            throw new IllegalArgumentException("Invalid queryString");
+    void search(String searchInput) {
+        if (searchInput == null || searchInput.trim().length() < 1) {
+            throw new IllegalArgumentException("Invalid searchInput");
         }
-        queryString = formatDefaultQueryURL(queryString);
+        searchInput = formatDefaultQueryURL(searchInput);
         if (this.indexDescription.isGeoIndex()) {
-            queryString += formatDefaultGeoCircle();
+            searchInput += formatDefaultGeoCircle();
         }
-        searchRawString(queryString);
+        searchRawString(searchInput);
     }
 
-    /**
-     * Does a more powerful search using the {@link Query} object
-     *
-     * @param query query to be searched.
-     */
-    public void advancedSearch(Query query) {
+    void advancedSearch(Query query) {
         if (query == null) {
             throw new IllegalArgumentException("the query parameter is null");
         }
@@ -196,13 +149,7 @@ final class IndexInternal {
         searchRawString(queryString);
     }
 
-    /**
-     * Get the record by giving its primary key The record will be sent to the
-     * <code>searchResultsListener</code>
-     *
-     * @param id the primary key
-     */
-    public void getRecordbyID(String id) {
+    void getRecordbyID(String id) {
         if (id == null || id.length() < 1) {
             return;
         }
