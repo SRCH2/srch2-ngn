@@ -149,6 +149,8 @@ public:
     const std::string* getDefaultValueOfRefiningAttribute(
             const unsigned searchableAttributeNameId) const;
     FilterType getTypeOfRefiningAttribute(
+            const unsigned refiningAttributeNameId) const;
+    FilterType getTypeOfSearchableAttribute(
             const unsigned searchableAttributeNameId) const;
     int getRefiningAttributeId(
             const std::string &searchableAttributeName) const;
@@ -185,6 +187,7 @@ private:
      * http://stackoverflow.com/questions/535317/checking-value-exist-in-a-stdmap-c
      */
     std::map<std::string, unsigned> searchableAttributeNameToId;
+    std::vector<FilterType> searchableAttributeTypeVector;
 
     std::vector<unsigned> searchableAttributeBoostVector;
     std::vector<unsigned> searchableAttributeIsMultiValuedVector;
@@ -210,6 +213,7 @@ private:
         ar & primaryKey;
         ar & scoringExpressionString;
         ar & searchableAttributeNameToId;
+        ar & searchableAttributeTypeVector;
         ar & searchableAttributeBoostVector;
         ar & searchableAttributeIsMultiValuedVector;
         ar & refiningAttributeNameToId;

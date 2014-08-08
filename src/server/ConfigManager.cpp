@@ -987,6 +987,7 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_
         if (boostsMap.find(coreParseState.searchableFieldsVector[i]) == boostsMap.end()) {
             coreInfo->searchableAttributesInfo[coreParseState.searchableFieldsVector[i]] =
                 SearchableAttributeInfoContainer(coreParseState.searchableFieldsVector[i] ,
+                        coreParseState.searchableFieldTypesVector[i],
                                                  coreParseState.searchableAttributesRequiredFlagVector[i] ,
                                                  coreParseState.searchableAttributesDefaultVector[i] ,
                                                  0 , 1 , coreParseState.searchableAttributesIsMultiValued[i],
@@ -994,6 +995,7 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode, CoreInfo_
         } else {
             coreInfo->searchableAttributesInfo[coreParseState.searchableFieldsVector[i]] =
                 SearchableAttributeInfoContainer(coreParseState.searchableFieldsVector[i] ,
+                        coreParseState.searchableFieldTypesVector[i],
                                                  coreParseState.searchableAttributesRequiredFlagVector[i] ,
                                                  coreParseState.searchableAttributesDefaultVector[i] ,
                                                  0 , boostsMap[coreParseState.searchableFieldsVector[i]] ,

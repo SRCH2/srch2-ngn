@@ -108,7 +108,6 @@ struct CoreConfigParseState_t {
     bool hasLongitude;
     vector<string> searchableFieldsVector;
     vector<srch2::instantsearch::FilterType> searchableFieldTypesVector;
-    vector<string> searchableFieldTypesVector;
     vector<bool> searchableAttributesRequiredFlagVector;
     vector<string> searchableAttributesDefaultVector;
     vector<bool> searchableAttributesIsMultiValued;
