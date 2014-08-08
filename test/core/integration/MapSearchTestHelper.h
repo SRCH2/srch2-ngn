@@ -245,7 +245,7 @@ float pingToGetTopScoreGeo(const Analyzer *analyzer, QueryEvaluator * queryEvalu
 {
     Query *query = new Query(srch2::instantsearch::SearchTypeMapQuery);
 
-    vector<PositionalTerm> queryKeywords;
+    vector<AnalyzedTermInfo> queryKeywords;
     analyzer->tokenizeQuery(queryString,queryKeywords);
     // for each keyword in the user input, add a term to the querygetThreshold(queryKeywords[i].size())
     //cout<<"Query:";
@@ -279,7 +279,7 @@ int pingToCheckIfHasResults(const Analyzer *analyzer, QueryEvaluator * queryEval
 {
     Query *query = new Query(srch2::instantsearch::SearchTypeMapQuery);
 
-    vector<PositionalTerm> queryKeywords;
+    vector<AnalyzedTermInfo> queryKeywords;
     analyzer->tokenizeQuery(queryString,queryKeywords);
     // for each keyword in the user input, add a term to the querygetThreshold(queryKeywords[i].size())
     //cout<<"Query:";
@@ -320,7 +320,7 @@ unsigned existsInTopKGeo(const Analyzer *analyzer, QueryEvaluator *  queryEvalua
 {
     Query *query = new Query(srch2::instantsearch::SearchTypeMapQuery);
 
-    vector<PositionalTerm> queryKeywords;
+    vector<AnalyzedTermInfo> queryKeywords;
     analyzer->tokenizeQuery(queryString,queryKeywords);
     // for each keyword in the user input, add a term to the querygetThreshold(queryKeywords[i].size())
     for (unsigned i = 0; i < queryKeywords.size(); ++i)
