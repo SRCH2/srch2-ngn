@@ -36,38 +36,38 @@ class QuadTree;
  *
  *   We do not store engine's version because index version may not change in each new release.
  */
-class IndexVersion{
+class IndexVersion {
 public:
-	IndexVersion(uint8_t internalVersion, unsigned boostVersion);
-	IndexVersion(){
-		this->sequentialId = 0;
-		this->boostVersion = 0;
-		this->endianness = 0;
-		this->bitness = 0;
-	}
-	bool operator == (const IndexVersion& in){
-		return (this->sequentialId == in.sequentialId &&
-			this->boostVersion == in.boostVersion &&
-			this->endianness == in.endianness &&
-			this->bitness == in.bitness);
-	}
-	template<class Archive>
-	void serialize(Archive &ar, const unsigned int file_version ){
-		ar & sequentialId;
-		ar & boostVersion;
-		ar & endianness;
-		ar & bitness;
-	}
-	/*
-	 * As of now all indexes share same version because we do not support partially rebuilding of
-	 * indexes. If we support it in future then try creating separate version info for each indexes.
-	 */
-	static IndexVersion currentVersion;
+    IndexVersion(uint8_t internalVersion, unsigned boostVersion);
+    IndexVersion() {
+        this->sequentialId = 0;
+        this->boostVersion = 0;
+        this->endianness = 0;
+        this->bitness = 0;
+    }
+    bool operator ==(const IndexVersion& in) {
+        return (this->sequentialId == in.sequentialId
+                && this->boostVersion == in.boostVersion
+                && this->endianness == in.endianness
+                && this->bitness == in.bitness);
+    }
+    template<class Archive>
+    void serialize(Archive &ar, const unsigned int file_version) {
+        ar & sequentialId;
+        ar & boostVersion;
+        ar & endianness;
+        ar & bitness;
+    }
+    /*
+     * As of now all indexes share same version because we do not support partially rebuilding of
+     * indexes. If we support it in future then try creating separate version info for each indexes.
+     */
+    static IndexVersion currentVersion;
 private:
-	short sequentialId;
-	unsigned boostVersion;
-	uint8_t endianness;  // 0 for big endian or 1 for small endian
-	uint8_t bitness;     // this value holds size of pointer i.e 4/8 bytes.
+    short sequentialId;
+    unsigned boostVersion;
+    uint8_t endianness;  // 0 for big endian or 1 for small endian
+    uint8_t bitness;     // this value holds size of pointer i.e 4/8 bytes.
 };
 
 /*
@@ -78,11 +78,11 @@ private:
  *  Note: Use template specialization to write your specific implementation if required.
  */
 class Serializer {
-	bool isCompatibleVersion(IndexVersion& storedIndexVersion){
-		return IndexVersion::currentVersion == storedIndexVersion;
-	}
+    bool isCompatibleVersion(IndexVersion& storedIndexVersion) {
+        return IndexVersion::currentVersion == storedIndexVersion;
+    }
 public:
-	template<class T>
+    template<class T>
     void load(T& dataObject, const string& serializedFileName) {
         std::ifstream ifs(serializedFileName.c_str(), std::ios::binary);
         boost::archive::binary_iarchive ia(ifs);
@@ -104,17 +104,18 @@ public:
         }
         ifs.close();
     }
-	template<class T>
-	void save(const T& dataObject, const string& serializedFileName) {
-		std::ofstream ofs(serializedFileName.c_str(), std::ios::binary);
-		if (! ofs.good()) throw std::runtime_error("Error opening " + serializedFileName);
-		boost::archive::binary_oarchive oa(ofs);
-		oa << IndexVersion::currentVersion;
-		oa << dataObject;
-		ofs.close();
-	}
-	Serializer();
-	~Serializer();
+    template<class T>
+    void save(const T& dataObject, const string& serializedFileName) {
+        std::ofstream ofs(serializedFileName.c_str(), std::ios::binary);
+        if (!ofs.good())
+            throw std::runtime_error("Error opening " + serializedFileName);
+        boost::archive::binary_oarchive oa(ofs);
+        oa << IndexVersion::currentVersion;
+        oa << dataObject;
+        ofs.close();
+    }
+    Serializer();
+    ~Serializer();
 };
 
 }

@@ -26,12 +26,8 @@
 #include <map>
 #include <vector>
 
-namespace srch2
-{
-namespace instantsearch
-{
-
-
+namespace srch2 {
+namespace instantsearch {
 
 /**
  * This class defines a schema of records, which describes the
@@ -69,14 +65,15 @@ namespace instantsearch
  *    make the PrimaryKey searchable by adding it as one of the 
  *    [AttributeId, AttributeName, AttributeBoost] triple, say [3, PhoneNumber, 60].
  */
-class MYLIB_EXPORT Schema
-{
+class MYLIB_EXPORT Schema {
 public:
 
     /**
      * Creates a Schema object
      */
-    static Schema *create(srch2::instantsearch::IndexType indexType, srch2::instantsearch::PositionIndexType positionIndexType = srch2::instantsearch::POSITION_INDEX_NONE);
+    static Schema *create(srch2::instantsearch::IndexType indexType,
+            srch2::instantsearch::PositionIndexType positionIndexType =
+                    srch2::instantsearch::POSITION_INDEX_NONE);
     //    static Schema *create(srch2::instantsearch::IndexType indexType, srch2::instantsearch::PositionIndexType positionIndexType = srch2::instantsearch::FULLPOSITIONINDEX);
     static Schema *create();
 
@@ -95,21 +92,22 @@ public:
      *  @param attributeBoost The boost value in the range [1-100].
      */
     virtual int setSearchableAttribute(const std::string &attributeName,
-            unsigned attributeBoost = 1, bool isMultiValued = false, bool highlightEnabled = false) = 0;
-
+            unsigned attributeBoost = 1, bool isMultiValued = false,
+            bool highlightEnabled = false) = 0;
 
     virtual int setRefiningAttribute(const std::string &attributeName,
-            FilterType type, const std::string & defaultValue, bool isMultiValued = false) = 0;
+            FilterType type, const std::string & defaultValue,
+            bool isMultiValued = false) = 0;
 
     /**
      * Returns the AttributeName of the primaryKey
      */
     virtual const std::string* getPrimaryKey() const = 0;
 
-
     // Get searchable attribute
     virtual const std::map<std::string, unsigned>& getSearchableAttribute() const = 0;
-    virtual FilterType getTypeOfSearchableAttribute(const unsigned searchableAttributeNameId) const = 0;
+    virtual FilterType getTypeOfSearchableAttribute(
+            const unsigned searchableAttributeNameId) const = 0;
     /**
      * Gets the index of an attribute name by doing an internal
      * lookup. The index of an attribute depends on the order in
@@ -117,7 +115,8 @@ public:
      * at 0 for the first added attribute, than 1 and so on.
      * @return the index if the attribute is found, or -1 otherwise.
      */
-    virtual int getSearchableAttributeId(const std::string &searchableAttributeName) const = 0;
+    virtual int getSearchableAttributeId(
+            const std::string &searchableAttributeName) const = 0;
     /**
      * @returns the number of attributes in the schema.
      */
@@ -130,12 +129,14 @@ public:
      *  @param searchableAttributeNameId : A zero-based id according to the order
      *  searchable attributes are defined.
      */
-    virtual unsigned getBoostOfSearchableAttribute(const unsigned searchableAttributeNameId) const = 0;
+    virtual unsigned getBoostOfSearchableAttribute(
+            const unsigned searchableAttributeNameId) const = 0;
 
     /*
      * Returns true if this searchable attribute is multivalued
      */
-    virtual bool isSearchableAttributeMultiValued(const unsigned searchableAttributeNameId) const = 0;
+    virtual bool isSearchableAttributeMultiValued(
+            const unsigned searchableAttributeNameId) const = 0;
 
     /**
      * Gets the sum of all attribute boosts in the schema.  The
@@ -147,25 +148,27 @@ public:
     virtual bool isHighlightEnabled(unsigned id) const = 0;
 
     // non Searchable attributes
-    virtual const std::string* getDefaultValueOfRefiningAttribute(const unsigned refiningAttributeNameId) const = 0;
-    virtual FilterType getTypeOfRefiningAttribute(const unsigned refiningAttributeNameId) const = 0;
-    virtual int getRefiningAttributeId(const std::string &refiningAttributeName) const = 0;
+    virtual const std::string* getDefaultValueOfRefiningAttribute(
+            const unsigned refiningAttributeNameId) const = 0;
+    virtual FilterType getTypeOfRefiningAttribute(
+            const unsigned refiningAttributeNameId) const = 0;
+    virtual int getRefiningAttributeId(
+            const std::string &refiningAttributeName) const = 0;
     virtual unsigned getNumberOfRefiningAttributes() const = 0;
-    virtual const std::map<std::string , unsigned> * getRefiningAttributes() const  = 0;
-    virtual bool isRefiningAttributeMultiValued(const unsigned refiningAttributeNameId) const = 0;
-
-
-
+    virtual const std::map<std::string, unsigned> * getRefiningAttributes() const = 0;
+    virtual bool isRefiningAttributeMultiValued(
+            const unsigned refiningAttributeNameId) const = 0;
 
     /**
-	 * Sets the expression which is used to calculate the score of a record
-	 * for ranking.
+     * Sets the expression which is used to calculate the score of a record
+     * for ranking.
      */
     virtual void setScoringExpression(const std::string &scoringExpression) = 0;
     virtual const std::string getScoringExpression() const = 0;
 
     // set if support swap operation for edit distance
-    virtual void setSupportSwapInEditDistance(const bool supportSwapInEditDistance) = 0;
+    virtual void setSupportSwapInEditDistance(
+            const bool supportSwapInEditDistance) = 0;
     virtual bool getSupportSwapInEditDistance() const = 0;
 
     /**
@@ -177,9 +180,12 @@ public:
     /**
      * Destructor to free persistent resources used by the Schema
      */
-    virtual ~Schema() {};
+    virtual ~Schema() {
+    }
+    ;
 };
 
-}}
+}
+}
 
 #endif //__SCHEMA_H__
