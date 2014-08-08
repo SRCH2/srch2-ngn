@@ -1,7 +1,5 @@
 package com.srch2.android.http.service;
 
-import com.srch2.android.http.service.Indexable;
-import com.srch2.android.http.service.Query;
 import org.json.JSONArray;
 import org.json.JSONObject;
 

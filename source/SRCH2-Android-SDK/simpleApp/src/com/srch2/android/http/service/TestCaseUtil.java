@@ -1,5 +1,9 @@
 package com.srch2.android.http.service;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.sql.Timestamp;
 import java.util.Random;
 import java.util.UUID;
@@ -44,44 +48,44 @@ public class TestCaseUtil {
         return new TestIndex();
     }
 
-//    public static JSONObject generateRandomRecord(Indexable indexable) {
-//        JSONObject record = new JSONObject();
-//        try {
-//            for (Field f : indexable.getIndexDescription().schema.fields) {
-//                switch (f.type) {
-//                    case TEXT:
-//
-//                        record.put(f.name, generateRandomIdentifier(f.name));
-//                        break;
-//                    case INTEGER:
-//                        record.put(f.name, generateRandomInteger(0, 1000));
-//                        break;
-//                    case FLOAT:
-//                        record.put(f.name, generateRandomFloat(0, 1000));
-//                        break;
-//                    case TIME:
-//                        record.put(f.name, generateRandomTime());
-//                        break;
-//                    case LOCATION_LONGITUDE:
-//                        record.put(f.name, generateRandomGeo());
-//                        break;
-//                    case LOCATION_LATITUDE:
-//                        record.put(f.name, generateRandomGeo());
-//                        break;
-//                }
-//            }
-//        } catch (JSONException e) {
-//            e.printStackTrace();
-//        }
-//
-//        return record;
-//    }
-//
-//    public static JSONArray generateRandomRecordArray(Indexable indexable, int count) throws JSONException {
-//        JSONArray array = new JSONArray();
-//        for (int i = 0; i < count; i++) {
-//            array.put(generateRandomRecord(indexable));
-//        }
-//        return array;
-//    }
+    public static JSONObject generateRandomRecord(Indexable indexable) {
+        JSONObject record = new JSONObject();
+        try {
+            for (Field f : indexable.getIndexDescription().schema.fields) {
+                switch (f.type) {
+                    case TEXT:
+
+                        record.put(f.name, generateRandomIdentifier(f.name));
+                        break;
+                    case INTEGER:
+                        record.put(f.name, generateRandomInteger(0, 1000));
+                        break;
+                    case FLOAT:
+                        record.put(f.name, generateRandomFloat(0, 1000));
+                        break;
+                    case TIME:
+                        record.put(f.name, generateRandomTime());
+                        break;
+                    case LOCATION_LONGITUDE:
+                        record.put(f.name, generateRandomGeo());
+                        break;
+                    case LOCATION_LATITUDE:
+                        record.put(f.name, generateRandomGeo());
+                        break;
+                }
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        return record;
+    }
+
+    public static JSONArray generateRandomRecordArray(Indexable indexable, int count) throws JSONException {
+        JSONArray array = new JSONArray();
+        for (int i = 0; i < count; i++) {
+            array.put(generateRandomRecord(indexable));
+        }
+        return array;
+    }
 }

@@ -417,7 +417,7 @@ final public class SRCH2Service extends Service {
 
             File executableBinary = new File(binDirectory, "srch2ngn.exe");
             if (!executableBinary.exists()) {
-                InputStream sourceFile = c.getResources().openRawResource(R.raw.srch2engine4351);
+                InputStream sourceFile = c.getResources().openRawResource(R.raw.srch2engine434);
                 FileOutputStream destinationFile = new FileOutputStream(executableBinary);
                 copyStream(destinationFile, sourceFile);
                 chmod("775", executableBinary.getAbsolutePath());

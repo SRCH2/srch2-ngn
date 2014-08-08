@@ -19,17 +19,21 @@ public class TestGeoIndex extends TestableIndex {
     public static final String INDEX_FIELD_NAME_LONGITUDE = "lon";
 
 
-    /** Returns a core named "test" with fields "id" as primary key and "title" as searchable text title. */
+    /**
+     * Returns a core named "test" with fields "id" as primary key and "title" as searchable text title.
+     */
     @Override
     public IndexDescription getIndexDescription() {
         Field primaryKey = Field.createRefiningField(INDEX_FIELD_NAME_PRIMARY_KEY, Field.Type.TEXT);
-        Field title  = Field.createSearchableField(INDEX_FIELD_NAME_TITLE);
-        Field score  = Field.createRefiningField(INDEX_FIELD_NAME_SCORE, Field.Type.INTEGER);
+        Field title = Field.createSearchableField(INDEX_FIELD_NAME_TITLE);
+        Field score = Field.createRefiningField(INDEX_FIELD_NAME_SCORE, Field.Type.INTEGER);
 
-        return new IndexDescription(INDEX_NAME, primaryKey,"lat", "lng", title, score);
+        return new IndexDescription(INDEX_NAME, primaryKey, "lat", "lng", title, score);
     }
 
-    /** Returns a set of records with "id" field incremented by for loop and "title" set to "Title# + <loopIteration>". */
+    /**
+     * Returns a set of records with "id" field incremented by for loop and "title" set to "Title# + <loopIteration>".
+     */
     public JSONArray getRecordsArray(int numberOfRecordsToInsert, int primaryKeyStartIndice) {
         JSONArray recordsArray = new JSONArray();
         for (int i = primaryKeyStartIndice; i < numberOfRecordsToInsert + primaryKeyStartIndice; ++i) {
@@ -40,7 +44,8 @@ public class TestGeoIndex extends TestableIndex {
                 recordObject.put(INDEX_FIELD_NAME_SCORE, i);
 //                recordObject.put(INDEX_FIELD_NAME_LATITUDE, TestCaseUtil.generateRandomGeo());
 //                recordObject.put(INDEX_FIELD_NAME_LONGITUDE, TestCaseUtil.generateRandomGeo());
-            } catch (JSONException ignore) { }
+            } catch (JSONException ignore) {
+            }
             recordsArray.put(recordObject);
         }
         return recordsArray;

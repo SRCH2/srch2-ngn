@@ -336,7 +336,7 @@ final public class SRCH2Engine {
         HttpTask.onStop();
     }
 
-    private static String detectAppHomeDir(Context context) {
+    static String detectAppHomeDir(Context context) {
         Log.d("srch2:: " + TAG, "detectAppHomeDir");
         return context.getApplicationContext().getFilesDir().getAbsolutePath();
     }

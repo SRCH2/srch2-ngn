@@ -64,7 +64,7 @@ public class TestIndex extends TestableIndex {
         try {
             testRecord.put(INDEX_FIELD_NAME_PRIMARY_KEY, ONE_RECORD_PRIMARY_KEY);
 
-            testRecord.put(INDEX_FIELD_NAME_TITLE, "the chose one");
+            testRecord.put(INDEX_FIELD_NAME_TITLE, ONE_RECORD_PRIMARY_KEY);
             testRecord.put(INDEX_FIELD_NAME_SCORE, "42");
         } catch (JSONException e) {
             e.printStackTrace();
@@ -91,12 +91,11 @@ public class TestIndex extends TestableIndex {
         if (records.length() == 1) {
             if (singleRecordQueryString == null) {
                 singleRecordQueryString = new HashSet<String>();
-                singleRecordQueryString.add("the");
-                singleRecordQueryString.add("chose");
+                singleRecordQueryString.add("chosen");
                 singleRecordQueryString.add("one");
                 singleRecordQueryString.add("chos");
                 singleRecordQueryString.add("chase");
-                singleRecordQueryString.add("chase on");
+                singleRecordQueryString.add("chasen on");
             }
             return new ArrayList<String>(singleRecordQueryString);
         } else { // else the queries should make up to operate the batch searching.
@@ -113,6 +112,7 @@ public class TestIndex extends TestableIndex {
     @Override
     public List<String> getFailToSearchString(JSONArray records) {
         ArrayList<String> queries = new ArrayList<String>();
+        queries.add("the"); // stopwords
         queries.add("nothing");
         queries.add("xxxxxxxxxxx");
         return queries;
@@ -123,14 +123,14 @@ public class TestIndex extends TestableIndex {
         if (records.length() == 1) {
             if (singleRecordQueryQuery == null) {
                 singleRecordQueryQuery = new HashSet<Query>();
-                singleRecordQueryQuery.add(new Query(new SearchableTerm("chosen").disableFuzzyMatching()));
+                singleRecordQueryQuery.add(new Query(new SearchableTerm("chosen").disableFuzzyMatching()).pagingSize(BATCH_INSERT_NUM));
                 //TODO add all the advanced Query here
             }
             return new ArrayList<Query>(singleRecordQueryQuery);
         } else {
             if (multipleRecordQueryQuery == null) {
                 multipleRecordQueryQuery = new HashSet<Query>();
-                multipleRecordQueryQuery.add(new Query(new SearchableTerm("title").disableFuzzyMatching()));
+                multipleRecordQueryQuery.add(new Query(new SearchableTerm("title").disableFuzzyMatching()).pagingSize(BATCH_INSERT_NUM));
                 //TODO ditto
             }
             return new ArrayList<Query>(multipleRecordQueryQuery);
@@ -155,7 +155,7 @@ public class TestIndex extends TestableIndex {
     public JSONObject getFailToUpdateRecord() {
 
         try {
-            return new JSONObject("{\"" + INDEX_FIELD_NAME_PRIMARY_KEY + "invalidschema\"" + ":\"invalid Schema\"");
+            return new JSONObject("{\"" + INDEX_FIELD_NAME_PRIMARY_KEY + "invalidschema\"" + ":\"invalid Schema\"}");
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -176,7 +176,7 @@ public class TestIndex extends TestableIndex {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        return null;
+        return tobeDelete;
     }
 
     @Override
@@ -207,17 +207,17 @@ public class TestIndex extends TestableIndex {
         return array;
     }
 
-    boolean checkEveryRecords(ArrayList<JSONObject> jsonObjects){
+    boolean checkEveryRecords(ArrayList<JSONObject> jsonObjects, boolean getAll) {
         try {
-        if (jsonObjects.size() == BATCH_INSERT_NUM) {
-                    for (int i = 0; i < BATCH_INSERT_NUM; ++i) {
-                        if (jsonObjects.get(i).getInt(INDEX_FIELD_NAME_PRIMARY_KEY) != i) {
-                            return false;
-                        }
+            if (jsonObjects.size() == BATCH_INSERT_NUM || !getAll) {
+                for (int i = 0; i < BATCH_INSERT_NUM && i < jsonObjects.size(); ++i) {
+                    if (jsonObjects.get(i).getInt(INDEX_FIELD_NAME_PRIMARY_KEY) != i) {
+                        return false;
                     }
-                    return true;
                 }
-                return false;
+                return true;
+            }
+            return false;
         } catch (JSONException e) {
             return false;
         }
@@ -230,11 +230,11 @@ public class TestIndex extends TestableIndex {
             if (singleRecordQueryString.contains(query)) {
                 return jsonObjects.size() == 1 && jsonObjects.get(0).getString(INDEX_FIELD_NAME_PRIMARY_KEY).equals(ONE_RECORD_PRIMARY_KEY);
             } else if (multipleRecordQueryString.contains(query)) {
-                return checkEveryRecords(jsonObjects);
+                return checkEveryRecords(jsonObjects, false);
             } else {
                 throw new IllegalArgumentException("not supported yet");
             }
-        } catch (JSONException e){
+        } catch (JSONException e) {
             e.printStackTrace();
             return false;
         }
@@ -242,15 +242,15 @@ public class TestIndex extends TestableIndex {
 
     @Override
     public boolean verifyResult(Query query, ArrayList<JSONObject> jsonObjects) {
-        try{
-            if (singleRecordQueryQuery.contains(query)){
+        try {
+            if (singleRecordQueryQuery.contains(query)) {
                 return jsonObjects.size() == 1 && jsonObjects.get(0).getString(INDEX_FIELD_NAME_PRIMARY_KEY).equals(ONE_RECORD_PRIMARY_KEY);
-            } else if (multipleRecordQueryQuery.contains(query)){
-                return checkEveryRecords(jsonObjects);
+            } else if (multipleRecordQueryQuery.contains(query)) {
+                return checkEveryRecords(jsonObjects, true);
             } else {
                 throw new IllegalArgumentException("not supported yet");
             }
-        }catch (JSONException e){
+        } catch (JSONException e) {
             e.printStackTrace();
             return false;
         }
