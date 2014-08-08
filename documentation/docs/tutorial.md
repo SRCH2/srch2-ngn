@@ -95,7 +95,7 @@ public class MovieIndex extends Indexable {
 }
 ```
 
-`Field` instances can be obtained by calling the static factory methods of the class `com.srch2.android.http.service.Field`. A searchable field has textual data that will be searched during a query; a refining field is for storing data values that can be used for query filtering and post-processing. Both refining and searchable field data can be retrieved from the raw search results returned by the SRCH2 server. An additional parameter can be passed which will set the field's relative ranking (or relevance) to other searchable fields--the default value is one. Here, the relevance of the `Field title` is set to be three times more important than the fields `genre` and `year`.
+`Field` instances can be obtained by calling the static factory methods of the class `com.srch2.android.http.service.Field`. A searchable field has textual data that will be searched during a query; a refining field is for storing data values that can be used for query filtering and post-processing. Both refining and searchable field data can be retrieved from the raw search results returned by the SRCH2 search server. An additional parameter can be passed which will set the field's relative ranking (or relevance) to other searchable fields--the default value is one. Here, the relevance of the `Field title` is set to be three times more important than the fields `genre` and `year`.
 
 **An index always requires one field to be defined as the primary key**: each record should have a unique value for its primary key. It can be searchable, and/or refining. The primary key is the handle by which you can verify records were inserted correctly, deleted and/or retrieved by later.
 
@@ -134,11 +134,11 @@ The `SRCH2Engine` will use this `IndexDescription` to automatically create the c
     }
 ```
 
-The `SRCH2Engine` accepts a `JSONObject` or a `JSONArray` of `JSONObject`s when inserting or updating records. Insertions (and updates) are invoked by calling `insert(...)` on your `Indexable` implementation, or by specifying the index name and calling `SRCH2Engine.insertIntoIndex(String indexName, ...)`. Before actually calling this method it is time to set up the two asynchronous callbacks so that you can get index information and search results from the SRCH2 server.
+The `SRCH2Engine` accepts a `JSONObject` or a `JSONArray` of `JSONObject`s when inserting or updating records. Insertions (and updates) are invoked by calling `insert(...)` on your `Indexable` implementation, or by specifying the index name and calling `SRCH2Engine.insertIntoIndex(String indexName, ...)`. Before actually calling this method it is time to set up the two asynchronous callbacks so that you can get index information and search results from the SRCH2 search server.
 
 ###Getting Search Results
 
-The SRCH2 server passes information back to the `SRCH2Engine` through two asynchronous callbacks: `com.srch2.android.http.service.SearchResultsListener` and `com.srch2.android.http.service.StateResponseListener`. The first passes back search results from queries performed while the second passes back information about the indexes and engine (covered in the next section). These two interfaces *should be* implemented by you--in particular, the `SearchResultsListener` is the way in which you will receive search results. 
+The SRCH2 search server passes information back to the `SRCH2Engine` through two asynchronous callbacks: `com.srch2.android.http.service.SearchResultsListener` and `com.srch2.android.http.service.StateResponseListener`. The first passes back search results from queries performed while the second passes back information about the indexes and engine (covered in the next section). These two interfaces *should be* implemented by you--in particular, the `SearchResultsListener` is the way in which you will receive search results. 
 
 For the demonstration of this tutorial it is assumed you are familiar with how a [`android.widget.BaseAdapter`](http://developer.android.com/reference/android/widget/BaseAdapter.html) works to populate a [`android.widget.ListView`](http://developer.android.com/reference/android/widget/ListView.html). Familiarity with how to communicate with the UI thread via a [`android.os.Handler`](http://developer.android.com/reference/android/os/Handler.html) is also helpful, but you can read more about this on the Android developer website, [Communicating with the UI Thread](https://developer.android.com/training/multiple-threads/communicate-ui.html). 
 
@@ -196,7 +196,7 @@ public class SearchResultsAdapter extends BaseAdapter {
 }
 ```
 
-Since this handler implements `SearchResultsListener`, override its interface method `public void onNewSearchResults(int httpResponseCode, String jsonResponse, HashMap<String, ArrayList<JSONObject>>)` in the following way:
+Since this handler implements `SearchResultsListener`, override its interface method `public void onNewSearchResults(int httpResponseCode, String jsonResultsLiteral, HashMap<String, ArrayList<JSONObject>>)` in the following way:
 
 ```
 public class SearchResultsAdapter extends BaseAdapter {
@@ -210,7 +210,7 @@ public class SearchResultsAdapter extends BaseAdapter {
 		
         @Override
         public void onNewSearchResults(int httpResponseCode,
-                                       String jsonResponse,
+                                       String jsonResultsLiteral,
                                        HashMap<String, ArrayList<JSONObject>> resultRecordMap) {
             if (httpResponseCode == HttpURLConnection.HTTP_OK) {
                 ArrayList<MovieSearchResult> newResults = new ArrayList<MovieSearchResult>();
@@ -248,11 +248,11 @@ public class SearchResultsAdapter extends BaseAdapter {
 }
 ```
 
-Any time one of the search methods of the API is called (such as `MovieIndex.search(String searchInput)`), `onNewSearchResults(...)` will be triggered when the search results are returned from the SRCH2 server. Its parameters are:
+Any time one of the search methods of the API is called (such as `MovieIndex.search(String searchInput)`), `onNewSearchResults(...)` will be triggered when the search results are returned from the SRCH2 search server. Its parameters are:
 
 1. `int httpResponseCode` which indicates how the RESTful action was handled
-2. `String jsonResponse` which is the raw JSON literal as returned by the SRCH2 server containing the full set of search result data
-3. `HashMap<String, ArrayList<JSONObject>> resultRecordMap` which is a mapping of index names to their corresponding results parsed from the `jsonResponse` literal represented by how you defined them in the `Indexable` method `getIndexDescription`
+2. `String jsonResultsLiteral` which is the raw JSON literal as returned by the SRCH2 search server containing the full set of search result data
+3. `HashMap<String, ArrayList<JSONObject>> resultRecordMap` which is a mapping of index names to their corresponding results parsed from the `jsonResultsLiteral` literal represented by how you defined them in the `Indexable` method `getIndexDescription`
 
 The `resultRecordMap` will never be null: if there were no results for any of the indexes you've defined, the corresponding values for `ArrayList<JSONObject>` will be of size zero. 
 
@@ -387,7 +387,7 @@ public class MyActivity extends Activity implements
 
 These three methods will be triggered whenever its corresponding action is complete: note that like the `SearchResultsListener` these callbacks occur off the of the UI thread so in order to display the toasts, the method `runOnUiThread(...)` is used to push the returned information to the UI thread.
 
-For these callbacks, the first parameter indicates which `Indexable` the following parameter is referring too, and the second parameter is a `response` which is a subclass of `RestfulResponse`. These classes wrap the raw JSON response as returned by the SRCH2 server for each control-type task so that the data contained can be accessed from Java without parsing. These three `response`s contain the raw RESTful JSON response, as well as the success and failure counts of the insert, update or delete task performed. For example, after the `MovieIndex`'s method `insert(getAFewRecordsToInsert())` is called and the SRCH2 server finishes inserting the three records, the `SRCH2Engine` will parse the restful JSON response and trigger this callback which will contain a `successCount` of three. It is useful to note that each subclass of `RestfulResponse' has its `toString()` method overridden, as well as the convenience method `toToastString()` which contains line breaks for each field.  
+For these callbacks, the first parameter indicates which `Indexable` the following parameter is referring too, and the second parameter is a `response` which is a subclass of `RestfulResponse`. These classes wrap the raw JSON response as returned by the SRCH2 search server for each control-type task so that the data contained can be accessed from Java without parsing. These three `response`s contain the raw RESTful JSON response, as well as the success and failure counts of the insert, update or delete task performed. For example, after the `MovieIndex`'s method `insert(getAFewRecordsToInsert())` is called and the SRCH2 search server finishes inserting the three records, the `SRCH2Engine` will parse the restful JSON response and trigger this callback which will contain a `successCount` of three. It is useful to note that each subclass of `RestfulResponse' has its `toString()` method overridden, as well as the convenience method `toToastString()` which contains line breaks for each field.  
 
 Moving on, the method:
 
@@ -465,9 +465,11 @@ to be called. The `InfoResponse` object contains the fields that describe the st
 	public String getLastMergeTime();
 ```
 
-The method `boolean isValidInfoResponse()` will be return **true** if the JSON response from the SRCH2 server was able to be parsed: if it is **false** it means the index is not available. The method `int getNumberOfDocumentsInTheIndex()` can be used to determine whether records need to be inserted and can generally be used for a first pass referential integrity check. 
+The method `boolean isValidInfoResponse()` will be return **true** if the JSON response from the SRCH2 search server was able to be parsed: if it is **false** it means the index is not available. The method `int getNumberOfDocumentsInTheIndex()` can be used to determine whether records need to be inserted and can generally be used for a first pass referential integrity check. 
 
-`InfoResponse` objects are also passed back in what is perhaps the most useful of these control callback methods, `public void onSRCH2ServiceReady(...)` which is triggered as soon as the SRCH2 server is up and running: 
+`InfoResponse` objects are also passed back in what is perhaps the most useful of these control callback methods, `public void onSRCH2ServiceReady(...)` which is triggered as soon as the SRCH2 search server is up and running: 
+
+Note also that each of the RestfulResponse subclasses also contain two methods, `public int getRESTfulHTTPStatusCode()` and `public String getRESTfulResponseLiteral()`, that can be used to manually inspect the response from the SRCH2 search server.
 
 ```
 public class MyActivity extends Activity implements
@@ -499,7 +501,7 @@ public class MyActivity extends Activity implements
 }
 ```
 
-In the next section we'll see the call to initialize, start and stop the SRCH2 server, but before that let's use this callback method to determine if the `MovieIndex` needs to be created--that is, whether the initial set of records should be inserted. Since the `InfoResponse` object value of the key 'movies' in the map `indexesToInfoResponse` will contain the method `getNumberOfDocumentsInTheIndex()` we can implement the following logic in this callback:
+In the next section we'll see the call to initialize, start and stop the SRCH2 search server, but before that let's use this callback method to determine if the `MovieIndex` needs to be created--that is, whether the initial set of records should be inserted. Since the `InfoResponse` object value of the key 'movies' in the map `indexesToInfoResponse` will contain the method `getNumberOfDocumentsInTheIndex()` we can implement the following logic in this callback:
 
 ```
 public class MyActivity extends Activity implements
@@ -531,7 +533,7 @@ public class MyActivity extends Activity implements
 }
 ```
   
-Now when the SRCH2 server starts, it'll trigger the `SRCH2Engine` to callback this method. The first time this method gets called, our `MovieIndex` will contain no records. The `InfoResponse` `getNumberOfDocumentsInTheIndex()` will reflect this, returning a value of zero, which in cause the outer if statement to evaluate true, causing the method `SRCH2Engine.insertIntoIndex(MovieIndex.INDEX_NAME, MovieIndex.getAFewRecordsToInsert())` to execute. Shortly afterward, the method `onInsertRequestComplete(...)` will be triggered, containing an `InsertResponse` for the `movies` index: calling `getSuccessCount()` on this `InsertResponse` will return the value of three, since that is how many records we inserted. 
+Now when the SRCH2 search server starts, it'll trigger the `SRCH2Engine` to callback this method. The first time this method gets called, our `MovieIndex` will contain no records. The `InfoResponse` `getNumberOfDocumentsInTheIndex()` will reflect this, returning a value of zero, which in cause the outer if statement to evaluate true, causing the method `SRCH2Engine.insertIntoIndex(MovieIndex.INDEX_NAME, MovieIndex.getAFewRecordsToInsert())` to execute. Shortly afterward, the method `onInsertRequestComplete(...)` will be triggered, containing an `InsertResponse` for the `movies` index: calling `getSuccessCount()` on this `InsertResponse` will return the value of three, since that is how many records we inserted. 
 
 At this point, you could also call `MovieIndex.info()` and the `InfoResponse` returned would, instead of returning zero, return three for the method `getNumberOfDocumentsInTheIndex()`. 
 
@@ -598,7 +600,7 @@ public class MyActivity extends Activity implements
 }
 ```
 
-Passing in each `Indexable` in `SRCH2Engine.initialize(...)` causes the `SRCH2Engine` to create and pass the necessary configuration file to the SRCH2 server. Then the two `SRCH2Engine` callbacks are registered. Finally, the two calls `start(Context context)` and `stop(Context context)` cause the `SRCH2Engine` to start and stop the SRCH2 server: since this server is hosted by a remote service, the context is needed; a reference to this context is not held. It is **imperative** that for every call to `start(...)` the complementary call to `stop(...)` is called in order to let the SRCH2 server come to a stop and not take up the device's resources. 
+Passing in each `Indexable` in `SRCH2Engine.initialize(...)` causes the `SRCH2Engine` to create and pass the necessary configuration file to the SRCH2 search server. Then the two `SRCH2Engine` callbacks are registered. Finally, the two calls `start(Context context)` and `stop(Context context)` cause the `SRCH2Engine` to start and stop the SRCH2 search server: since this server is hosted by a remote service, the context is needed; a reference to this context is not held. It is **imperative** that for every call to `start(...)` the complementary call to `stop(...)` is called in order to let the SRCH2 search server come to a stop and not take up the device's resources. 
 
 `MyActivity` should now look something like this: 
 
@@ -802,7 +804,7 @@ The results come back fast, and even if we had we inserted thousands of records,
 
 ###Where To Go From Here
 
-This concludes the Hello SRCH2 Tutorial for learning how to get set up with the SRCH2-Android-SDK. Play around with the project: try updating a record, deleting a record, adding more records with searchable data that is similar in its sequence of letters to appreciate the power of SRCH2's fuzzy search capability-- and this is only the beginning! If you read on in [Advanced Topics](advanced-topics.md) you'll learn how to form powerful queries (such as filtering the search results for the `MovieIndex` by interval of year), perform lightning fast geo-searches using the device's location, or how to set up the SRCH2-Android-SDK for Proguard, or how to manually interact with the running SRCH2 server. Search on!
+This concludes the Hello SRCH2 Tutorial for learning how to get set up with the SRCH2-Android-SDK. Play around with the project: try updating a record, deleting a record, adding more records with searchable data that is similar in its sequence of letters to appreciate the power of SRCH2's fuzzy search capability-- and this is only the beginning! If you read on in [Advanced Topics](advanced-topics.md) you'll learn how to form powerful queries (such as filtering the search results for the `MovieIndex` by interval of year), perform lightning fast geo-searches using the device's location, or how to set up the SRCH2-Android-SDK for Proguard, or how to manually interact with the running SRCH2 search server. Search on!
 
 
 [tutorial-000]: ../img/000-tutorial.png "Module Settings - How to open 'Module Settings'"
