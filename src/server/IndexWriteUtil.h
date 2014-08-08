@@ -26,8 +26,9 @@ struct IndexWriteUtil
     	RecordSerializerUtil::populateStoredSchema(storedSchema, indexer->getSchema());
     	RecordSerializer recSerializer = RecordSerializer(*storedSchema);
     	Json::FastWriter writer;
-    	if(JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root, indexDataContainerConf, log_str, recSerializer) == false){
-    		log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"failed\"}";
+    	if(!JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root, indexDataContainerConf, log_str, recSerializer)){
+    		log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"failed\""
+                    << ",\"reason\":\"parse: The record is not in a correct json format\"}";
     		delete storedSchema;
     		return;
     	}
@@ -149,8 +150,9 @@ struct IndexWriteUtil
     	bool parseJson = JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root,
     			indexDataContainerConf, log_str, recSerializer);
     	delete storedSchema;
-        if(parseJson == false) {
-            log_str << "failed\",\"reason\":\"parse: The record is not in a correct json format\",";
+        if(!parseJson ) {
+    		log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"update\":\"failed\""
+                    << ",\"reason\":\"parse: The record is not in a correct json format\"}";
             return;
         }
 
