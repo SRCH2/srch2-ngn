@@ -89,7 +89,7 @@ public class MyActivity extends TestableActivity {
     public void initializeSRCH2Engine() {
 
         DeleteRecursive(new File(SRCH2Engine.detectAppHomeDir(this.getApplicationContext()) + File.separator + SRCH2Configuration.SRCH2_HOME_FOLDER_DEFAULT_NAME));
-        SRCH2Engine.initialize(mIndex1, mIndex2, mIndexGeo);
+        SRCH2Engine.initialize(mIndex1, mIndex2 );
         SRCH2Engine.setSearchResultsListener(mResultListener);
         SRCH2Engine.setStateResponseListener(mControlListener);
         SRCH2Engine.setTestAndDebugMode(true);
@@ -143,7 +143,6 @@ public class MyActivity extends TestableActivity {
     }
 
     public void testAll() {
-        testStartEngine(mIndex1, mIndex2, mIndexGeo);
         try {
             for (TestableIndex index : new TestableIndex[]{mIndex1, mIndex2}) {
                 testOneRecordCRUD(index);
@@ -154,7 +153,8 @@ public class MyActivity extends TestableActivity {
         }
     }
 
-    public void testStartEngine(TestableIndex... indexes) {
+    public void testStartEngine() {
+        TestableIndex[] indexes = {mIndex1, mIndex2};
         Log.i(TAG, "testStartEngine");
         waitForEngineReady();
         assertTrue(mControlListener.indexesInfoResponseMap.size() == indexes.length);
@@ -264,8 +264,44 @@ public class MyActivity extends TestableActivity {
         }
     }
 
-    public void testMultiCoreSearch(TestableIndex index1, TestableIndex... restIndex) {
-        //TODO
+    public void testMultiCoreSearch() {
+        // simplify the test cases, the mIndex1 and mIndex2 are of the same
+        TestableIndex [] testIndexes= {mIndex1, mIndex2};
+        JSONArray records = mIndex1.getSucceedToInsertBatchRecords();
+
+        Log.d(TAG, records.toString());
+        for(TestableIndex index : testIndexes) {
+
+            Log.i(TAG, "testBatchInsertShouldSuccess");
+            testBatchInsertShouldSuccess(index, records);
+            try {
+                Thread.currentThread().sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+
+        for (String query : mIndex1.getSucceedToSearchString(records)) {
+            mResultListener.reset();
+            SRCH2Engine.searchAllIndexes(query);
+            getSearchResult();
+
+            assertTrue(mResultListener.resultRecordMap.size() == testIndexes.length);
+            for(TestableIndex index : testIndexes) {
+                assertTrue(index.verifyResult(query, mResultListener.resultRecordMap.get(index.getIndexDescription().getIndexName())));
+            }
+        }
+
+        for (Query query : mIndex1.getSucceedToSearchQuery(records)) {
+            mResultListener.reset();
+            SRCH2Engine.advancedSearchOnAllIndexes(query);
+            getSearchResult();
+            assertTrue(mResultListener.resultRecordMap.size() == testIndexes.length);
+            for(TestableIndex index : testIndexes) {
+                assertTrue(index.verifyResult(query, mResultListener.resultRecordMap.get(index.getIndexDescription().getIndexName())));
+            }
+        }
     }
 
 
@@ -405,7 +441,11 @@ public class MyActivity extends TestableActivity {
 
     @Override
     public List<String> getTestMethodNameListWithOrder() {
-        return Arrays.asList(new String[]{"testAll"});
+        return Arrays.asList(new String[]{
+                "testStartEngine"
+                ,"testAll"
+                //,"testMultiCoreSearch"
+        });
     }
 
     @Override
