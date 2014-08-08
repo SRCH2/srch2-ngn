@@ -114,7 +114,7 @@ const char* const ConfigManager::srch2HomeString = "srch2home";
 const char* const ConfigManager::stopFilterString = "StopFilter";
 const char* const ConfigManager::protectedWordFilterString = "protectedKeyWordsFilter";
 const char* const ConfigManager::supportSwapInEditDistanceString = "supportswapineditdistance";
-const char* const ConfigManager::synonymFilterString = "SynonymFilter";
+const char* const ConfigManager::synonymFilterString = "synonymFilter";
 const char* const ConfigManager::synonymsString = "synonyms";
 const char* const ConfigManager::textEnString = "text_en";
 const char* const ConfigManager::typeString = "type";
@@ -1347,7 +1347,24 @@ void ConfigManager::parseSchemaType(const xml_node &childNode, CoreInfo_t *coreI
 								}else{
 									Logger::warn("words parameter for protected keywords is empty, so protected words filter is disabled");
 								}
+							} else if (string(field.attribute(nameString).value()).compare(synonymFilterString) == 0) {
+								if (string(field.attribute(synonymsString).value()).compare("") != 0) { // the file for synonyms filter is set.
+									temporaryString = string(field.attribute(synonymsString).value());
+									trimSpacesFromValue(temporaryString, synonymsString, parseWarnings);
+									coreInfo->synonymFilterFilePath = boost::filesystem::path(srch2Home + temporaryString).normalize().string();
+								}else{
+									Logger::warn("Synonym filter is disabled because synonym parameter is empty, ");
+								}
+								if (string(field.attribute(expandString).value()).compare("") != 0) {
+									temporaryString = string(field.attribute(expandString).value());
+									if (isValidBool(temporaryString)) {
+										coreInfo->synonymKeepOrigFlag = field.attribute(expandString).as_bool(true);
+									}
+								}else{
+									Logger::warn("Synonym filter's expand attribute is missing. Using default = true");
+								}
 							}
+
 						} else if (string(field.name()).compare(allowedRecordSpecialCharactersString) == 0) {
 							CharSet charTyper;
 							string in = field.text().get(), out; // TODO: Using type string NOT multi-lingual?
@@ -1533,7 +1550,7 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
 	        coreInfo->stopFilterFilePath = "";
 	        coreInfo->synonymFilterFilePath = "";
 	        coreInfo->protectedWordsFilePath = "";
-	        coreInfo->synonymKeepOrigFlag = false;
+	        coreInfo->synonymKeepOrigFlag = true;
 
 	        childNode = schemaNode.child(typesString);
 
@@ -1879,7 +1896,8 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
     childNode = configNode.child(listeningPortString);
     if (childNode && childNode.text()) { // checks if the config/listeningPort has any text in it or not
         this->httpServerListeningPort = string(childNode.text().get());
-        int value = atoi(httpServerListeningPort.c_str());
+        int value = static_cast<int>(strtol(httpServerListeningPort.c_str(),
+                NULL, 10));
         if (value <= 0 || value > USHRT_MAX) {
             parseError << listeningPortString << " must be between 1 and " << USHRT_MAX;
             configSuccess = false;
@@ -2338,9 +2356,10 @@ void ConfigManager::splitBoostFieldValues(string boostString, map<string, unsign
         if (pos != string::npos) {
             string field = boostTokens[i].substr(0, pos);
             string boost = boostTokens[i].substr(pos + 1, boostTokens[i].length());
-            boosts[field] = (unsigned) atoi(boost.c_str());
-            if(boosts[field] < 1 || boosts[field] > 100){
-            	boosts[field] = 1;
+            boosts[field] = static_cast<unsigned int>(strtoul(boost.c_str(),
+                    NULL, 10));
+            if (boosts[field] < 1 || boosts[field] > 100) {
+                boosts[field] = 1;
             }
         } else {
             boosts[boostTokens[i]] = 1;
@@ -2463,7 +2482,7 @@ bool ConfigManager::isValidQueryTermSimilarityThreshold(string & qTermSimilarity
 
 bool ConfigManager::isValidQueryTermLengthBoost(string& queryTermLengthBoost) {
     if (this->isFloat(queryTermLengthBoost)) {
-        float val = ::atof(queryTermLengthBoost.c_str());
+        float val = static_cast<float>(strtod(queryTermLengthBoost.c_str(),NULL));
         if (val >= 0 && val <= 1) {
             return true;
         }
@@ -2475,7 +2494,7 @@ bool ConfigManager::isValidQueryTermLengthBoost(string& queryTermLengthBoost) {
 
 bool ConfigManager::isValidPrefixMatch(string& prefixmatch) {
     if (this->isFloat(prefixmatch)) {
-        float val = ::atof(prefixmatch.c_str());
+        float val = static_cast<float>(strtod(prefixmatch.c_str(),NULL));
         if (val >= 0 && val <= 1) {
             return true;
         }
@@ -2487,7 +2506,7 @@ bool ConfigManager::isValidCacheSize(string& cacheSize) {
     unsigned minCacheSize = 50 * 1048576;     // 50MB
     unsigned maxCacheSize = 500 * 1048576;    // 500MB
     if (this->isOnlyDigits(cacheSize)) {
-        int cs = atoi(cacheSize.c_str());
+        int cs = static_cast<int>(strtol(cacheSize.c_str(),NULL,10));
         if (cs >= minCacheSize && cs <= maxCacheSize) {
             return true;
         }
@@ -2496,11 +2515,11 @@ bool ConfigManager::isValidCacheSize(string& cacheSize) {
 }
 
 bool ConfigManager::isValidRows(string& rows) {
-    return (this->isOnlyDigits(rows) && (atoi(rows.c_str()) > 0)); // should be number and greater that 1
+    return (this->isOnlyDigits(rows) && (strtol(rows.c_str(),NULL,10) > 0)); // should be number and greater that 1
 }
 
 bool ConfigManager::isValidMaxSearchThreads(string& maxSearchThreads) {
-    return (this->isOnlyDigits(maxSearchThreads) && (atoi(maxSearchThreads.c_str()) > 0)); // should be number and greater that 1
+    return (this->isOnlyDigits(maxSearchThreads) && (strtol(maxSearchThreads.c_str(),NULL,10) > 0)); // should be number and greater that 1
 }
 
 bool ConfigManager::isValidBooleanValue(string& fieldValue) {
@@ -2549,7 +2568,7 @@ bool ConfigManager::isValidMaxMemory(string& maxMemory) {
 
 bool ConfigManager::isValidMergeEveryNSeconds(string& mergeEveryNSeconds) {
     if (this->isOnlyDigits(mergeEveryNSeconds)) {
-        if (atoi(mergeEveryNSeconds.c_str()) >= 1) {
+        if (strtol(mergeEveryNSeconds.c_str(),NULL,10) >= 1) {
             return true;
         }
     }
@@ -2558,7 +2577,7 @@ bool ConfigManager::isValidMergeEveryNSeconds(string& mergeEveryNSeconds) {
 
 bool ConfigManager::isValidMergeEveryMWrites(string& mergeEveryMWrites) {
     if (this->isOnlyDigits(mergeEveryMWrites)) {
-        if (atoi(mergeEveryMWrites.c_str()) >= 1) {
+        if (strtol(mergeEveryMWrites.c_str(),NULL,10) >= 1) {
             return true;
         }
     }
@@ -2567,7 +2586,7 @@ bool ConfigManager::isValidMergeEveryMWrites(string& mergeEveryMWrites) {
 
 bool ConfigManager::isValidKeywordPopularityThreshold(string kpt){
     if (this->isOnlyDigits(kpt)) {
-        if (atoi(kpt.c_str()) >= 1) {
+        if (strtol(kpt.c_str(),NULL,10) >= 1) {
             return true;
         }
     }
@@ -2576,7 +2595,7 @@ bool ConfigManager::isValidKeywordPopularityThreshold(string kpt){
 
 bool ConfigManager::isValidGetAllResultsMaxResultsThreshold(string kpt){
     if (this->isOnlyDigits(kpt)) {
-        if (atoi(kpt.c_str()) >= 1) {
+        if (strtol(kpt.c_str(),NULL,10) >= 1) {
             return true;
         }
     }
@@ -2585,7 +2604,7 @@ bool ConfigManager::isValidGetAllResultsMaxResultsThreshold(string kpt){
 
 bool ConfigManager::isValidGetAllResultsKAlternative(string kpt){
     if (this->isOnlyDigits(kpt)) {
-        if (atoi(kpt.c_str()) >= 1) {
+        if (strtol(kpt.c_str(),NULL,10) >= 1) {
             return true;
         }
     }

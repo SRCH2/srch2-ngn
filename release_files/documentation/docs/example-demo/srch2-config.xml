@@ -47,6 +47,7 @@
               <analyzer>
                   <filter name="PorterStemFilter" dictionary="" />
                   <filter name="StopFilter" words="" />
+                  <filter name="synonymFilter" synonyms="" />
               </analyzer>
           </fieldType>
        </types>

@@ -53,6 +53,14 @@ public:
     	return tokenStreamContainer->currentTokenOffset;
     }
 
+    AnalyzedTokenType getProcessedTokentype() {
+    	return tokenStreamContainer->type;
+    }
+
+    unsigned getProcessedTokenLen() {
+    	return tokenStreamContainer->currentTokenLen;
+    }
+
     bool isEnd() const {
         return tokenStreamContainer->offset >= 
             (tokenStreamContainer->completeCharVector).size();
