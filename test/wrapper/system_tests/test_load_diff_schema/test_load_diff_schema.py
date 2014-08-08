@@ -54,7 +54,7 @@ if __name__ == '__main__':
 	startSrch2Engine('test_load_diff_schema/conf2.xml')
 	shutdownSrch2Engine()
 	
-	errorMsg = 'The schema in the config file has changed, remove all the index files and run it again'
+	errorMsg = 'The schema in the config file is different from the serialized schema on the disk'
 	testIfErrorLogExists('data/test_load_diff_schema/log.txt',errorMsg)
 	print '=============================='
 	
