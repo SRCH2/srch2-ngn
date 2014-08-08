@@ -168,7 +168,7 @@ public class Query {
      *
      * @return this
      */
-    public Query setFilterConnectorAND() {
+    public Query setFilterRelationAND() {
         filterConnector = Filter.BooleanOperation.AND;
         return this;
     }
@@ -180,7 +180,7 @@ public class Query {
      *
      * @return this
      */
-    public Query setFilterConnectorOR() {
+    public Query setFilterRelationOR() {
         filterConnector = Filter.BooleanOperation.OR;
         return this;
     }

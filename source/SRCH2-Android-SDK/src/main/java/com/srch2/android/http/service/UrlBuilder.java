@@ -144,6 +144,6 @@ class UrlBuilder {
     }
 
     private static String getURLEncodedString(String sentence){
-        return Uri.encode(sentence, "&=:*$.~^");
+        return Uri.encode(sentence, "&=:*$.~");
     }
 }

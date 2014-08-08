@@ -4,9 +4,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by ashton on 7/29/2014.
@@ -18,7 +16,7 @@ public class TestIndex extends TestableIndex {
     public static final String INDEX_FIELD_NAME_TITLE = "title";
     public static final String INDEX_FIELD_NAME_SCORE = "score";
 
-    protected static final String ONE_RECORD_PRIMARY_KEY = "the chosen one";
+    protected static final String ONE_RECORD_PRIMARY_KEY = "the chosen # one";
     protected static final int BATCH_INSERT_NUM = 200;
     protected static final int BATCH_START_NUM = 0;
 
@@ -27,13 +25,16 @@ public class TestIndex extends TestableIndex {
 
     HashSet<Query> singleRecordQueryQuery;
     HashSet<Query> multipleRecordQueryQuery;
+    private Query queryMultipleSortAllAsc;
+    private Query queryMultipleSortAllDcs;
+    private Query queryMultipleFilter;
 
     /**
      * Returns a core named "test" with fields "id" as primary key and "title" as searchable text title.
      */
     @Override
     public IndexDescription getIndexDescription() {
-        Field primaryKey = Field.createRefiningField(INDEX_FIELD_NAME_PRIMARY_KEY, Field.Type.TEXT);
+        Field primaryKey = Field.createSearchableField(INDEX_FIELD_NAME_PRIMARY_KEY);
         Field title = Field.createSearchableField(INDEX_FIELD_NAME_TITLE);
         Field score = Field.createRefiningField(INDEX_FIELD_NAME_SCORE, Field.Type.INTEGER);
 
@@ -64,7 +65,7 @@ public class TestIndex extends TestableIndex {
         try {
             testRecord.put(INDEX_FIELD_NAME_PRIMARY_KEY, ONE_RECORD_PRIMARY_KEY);
 
-            testRecord.put(INDEX_FIELD_NAME_TITLE, ONE_RECORD_PRIMARY_KEY);
+            testRecord.put(INDEX_FIELD_NAME_TITLE, ONE_RECORD_PRIMARY_KEY + " extra ");
             testRecord.put(INDEX_FIELD_NAME_SCORE, "42");
         } catch (JSONException e) {
             e.printStackTrace();
@@ -123,15 +124,52 @@ public class TestIndex extends TestableIndex {
         if (records.length() == 1) {
             if (singleRecordQueryQuery == null) {
                 singleRecordQueryQuery = new HashSet<Query>();
+                // search term
                 singleRecordQueryQuery.add(new Query(new SearchableTerm("chosen").disableFuzzyMatching()).pagingSize(BATCH_INSERT_NUM));
-                //TODO add all the advanced Query here
+                singleRecordQueryQuery.add(new Query(new SearchableTerm("chosen").AND(new SearchableTerm("one"))).pagingSize(BATCH_INSERT_NUM));
+                singleRecordQueryQuery.add(new Query(new SearchableTerm("chosen").OR(new SearchableTerm("two"))).pagingSize(BATCH_INSERT_NUM));
+
+                singleRecordQueryQuery.add(new Query(new SearchableTerm("chosen").AND_NOT(new SearchableTerm("two"))).pagingSize(BATCH_INSERT_NUM));
+
+                singleRecordQueryQuery.add(new Query(new SearchableTerm("chose").setIsPrefixMatching(true)).pagingSize(BATCH_INSERT_NUM));
+                singleRecordQueryQuery.add(new Query(new SearchableTerm("chosen").searchSpecificField(INDEX_FIELD_NAME_TITLE)).pagingSize(BATCH_INSERT_NUM));
+                singleRecordQueryQuery.add(new Query(new SearchableTerm("chosen").searchSpecificField(INDEX_FIELD_NAME_TITLE)
+                            .AND(new SearchableTerm("extra").searchSpecificField(INDEX_FIELD_NAME_TITLE))
+                        ).pagingSize(BATCH_INSERT_NUM));
+                singleRecordQueryQuery.add(new Query(new SearchableTerm("chosem").enableFuzzyMatching(0.7f)));
+                singleRecordQueryQuery.add(new Query(new SearchableTerm("chosem").enableFuzzyMatching(0.7f).setBoostValue(2)));
+                // queries
+                singleRecordQueryQuery.add(new Query(new SearchableTerm("chosem").enableFuzzyMatching(0.7f)).filterByFieldEndsTo(INDEX_FIELD_NAME_SCORE,"42"));
+                singleRecordQueryQuery.add(new Query(new SearchableTerm("chosem").enableFuzzyMatching(0.7f)).filterByFieldStartsFrom(INDEX_FIELD_NAME_SCORE, "42"));
+                singleRecordQueryQuery.add(new Query(new SearchableTerm("chosem").enableFuzzyMatching(0.7f)).filterByFieldEqualsTo(INDEX_FIELD_NAME_SCORE, "42"));
+                singleRecordQueryQuery.add(new Query(new SearchableTerm("chosem").enableFuzzyMatching(0.7f)).filterByFieldInRange(INDEX_FIELD_NAME_SCORE, "42", "42"));
+
+
+                singleRecordQueryQuery.add(new Query(new SearchableTerm("chosem").enableFuzzyMatching(0.7f))
+                        .filterByFieldEndsTo(INDEX_FIELD_NAME_SCORE, "42")
+                        .filterByFieldEqualsTo(INDEX_FIELD_NAME_SCORE, "42")
+                        .setFilterRelationAND());
+                singleRecordQueryQuery.add(new Query(new SearchableTerm("chosem").enableFuzzyMatching(0.7f))
+                        .filterByFieldEndsTo(INDEX_FIELD_NAME_SCORE, "42")
+                        .filterByFieldEqualsTo(INDEX_FIELD_NAME_SCORE, "43")
+                        .setFilterRelationOR());
             }
             return new ArrayList<Query>(singleRecordQueryQuery);
         } else {
             if (multipleRecordQueryQuery == null) {
                 multipleRecordQueryQuery = new HashSet<Query>();
-                multipleRecordQueryQuery.add(new Query(new SearchableTerm("title").disableFuzzyMatching()).pagingSize(BATCH_INSERT_NUM));
-                //TODO ditto
+                queryMultipleSortAllAsc= new Query(new SearchableTerm("title").disableFuzzyMatching())
+                        .sortOnFields(INDEX_FIELD_NAME_SCORE).orderByAscending().pagingSize(BATCH_INSERT_NUM);
+                multipleRecordQueryQuery.add(queryMultipleSortAllAsc);
+                // sorting and filtering queries
+                queryMultipleSortAllDcs = new Query(new SearchableTerm("title").disableFuzzyMatching())
+                        .sortOnFields(INDEX_FIELD_NAME_SCORE).orderByDescending().pagingSize(BATCH_INSERT_NUM);
+                multipleRecordQueryQuery.add(queryMultipleSortAllDcs);
+
+                queryMultipleFilter = new Query(new SearchableTerm("title").disableFuzzyMatching())
+                        .filterByFieldInRange(INDEX_FIELD_NAME_SCORE, "13", "20").sortOnFields(INDEX_FIELD_NAME_SCORE).orderByAscending();
+
+                multipleRecordQueryQuery.add(queryMultipleFilter);
             }
             return new ArrayList<Query>(multipleRecordQueryQuery);
         }
@@ -143,6 +181,32 @@ public class TestIndex extends TestableIndex {
         if (records.length() == 1) {
             //TODO add all the advanced Query here
             queries.add(new Query(new SearchableTerm("chason")));
+                            // search term
+            queries.add(new Query(new SearchableTerm("chosenn").disableFuzzyMatching()).pagingSize(BATCH_INSERT_NUM));
+            queries.add(new Query(new SearchableTerm("chosen").AND(new SearchableTerm("two"))).pagingSize(BATCH_INSERT_NUM));
+            queries.add(new Query(new SearchableTerm("chosenn").OR(new SearchableTerm("oone"))).pagingSize(BATCH_INSERT_NUM));
+            queries.add(new Query(new SearchableTerm("chosen").AND_NOT(new SearchableTerm("one"))).pagingSize(BATCH_INSERT_NUM));
+            queries.add(new Query(new SearchableTerm("chose").setIsPrefixMatching(false)).pagingSize(BATCH_INSERT_NUM));
+            queries.add(new Query(new SearchableTerm("extra").searchSpecificField(INDEX_FIELD_NAME_PRIMARY_KEY)).pagingSize(BATCH_INSERT_NUM));
+            queries.add(new Query(new SearchableTerm("chosem").enableFuzzyMatching(1f)));
+            queries.add(new Query(new SearchableTerm("chosem").enableFuzzyMatching(1f).setBoostValue(2)));
+            // queries
+            queries.add(new Query(new SearchableTerm("chosem").enableFuzzyMatching(0.7f)).filterByFieldEndsTo(INDEX_FIELD_NAME_SCORE,"41"));
+            queries.add(new Query(new SearchableTerm("chosem").enableFuzzyMatching(0.7f)).filterByFieldStartsFrom(INDEX_FIELD_NAME_SCORE, "43"));
+            queries.add(new Query(new SearchableTerm("chosem").enableFuzzyMatching(0.7f)).filterByFieldEqualsTo(INDEX_FIELD_NAME_SCORE, "45"));
+            queries.add(new Query(new SearchableTerm("chosem").enableFuzzyMatching(0.7f)).filterByFieldInRange(INDEX_FIELD_NAME_SCORE, "0", "2"));
+
+            queries.add(new Query(new SearchableTerm("chosem").enableFuzzyMatching(0.7f))
+                    .filterByFieldEndsTo(INDEX_FIELD_NAME_SCORE, "42")
+                    .filterByFieldEqualsTo(INDEX_FIELD_NAME_SCORE, "41")
+                    .filterByFieldStartsFrom(INDEX_FIELD_NAME_SCORE, "41")
+                    .setFilterRelationAND());
+            queries.add(new Query(new SearchableTerm("chosem").enableFuzzyMatching(0.7f))
+                    .filterByFieldEndsTo(INDEX_FIELD_NAME_SCORE, "41")
+                    .filterByFieldEqualsTo(INDEX_FIELD_NAME_SCORE, "43")
+                    .filterByFieldStartsFrom(INDEX_FIELD_NAME_SCORE, "43")
+                    .setFilterRelationOR());
+
         } else {
             queries.add(new Query(new SearchableTerm("titl").disableFuzzyMatching()));
             //TODO ditto
@@ -207,11 +271,11 @@ public class TestIndex extends TestableIndex {
         return array;
     }
 
-    boolean checkEveryRecords(ArrayList<JSONObject> jsonObjects, boolean getAll) {
+    boolean checkAllSortedRecord(ArrayList<JSONObject> jsonObjects, boolean getAll, int start, int end) {
         try {
-            if (jsonObjects.size() == BATCH_INSERT_NUM || !getAll) {
-                for (int i = 0; i < BATCH_INSERT_NUM && i < jsonObjects.size(); ++i) {
-                    if (jsonObjects.get(i).getInt(INDEX_FIELD_NAME_PRIMARY_KEY) != i) {
+            if (jsonObjects.size() == end-start || !getAll) {
+                for (int i = start; i < end && i < jsonObjects.size(); ++i) {
+                    if (jsonObjects.get(i-start).getInt(INDEX_FIELD_NAME_PRIMARY_KEY) != i) {
                         return false;
                     }
                 }
@@ -219,6 +283,25 @@ public class TestIndex extends TestableIndex {
             }
             return false;
         } catch (JSONException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    boolean checkPartialResult(Query query, ArrayList<JSONObject> jsonObjects) {
+        try{
+            if (query == queryMultipleSortAllAsc){
+                return checkAllSortedRecord(jsonObjects, true, 0, BATCH_INSERT_NUM);
+            }else if (query == queryMultipleSortAllDcs){
+                Collections.reverse(jsonObjects);
+                return checkAllSortedRecord(jsonObjects, true, 0, BATCH_INSERT_NUM);
+            } else if (query == queryMultipleFilter){
+                // depend on how queryMultipleFilter get constructed
+                return checkAllSortedRecord(jsonObjects, true, 13, 20+1);
+            }
+            return true;
+        } catch (Exception e){
+            e.printStackTrace();
             return false;
         }
     }
@@ -230,7 +313,8 @@ public class TestIndex extends TestableIndex {
             if (singleRecordQueryString.contains(query)) {
                 return jsonObjects.size() == 1 && jsonObjects.get(0).getString(INDEX_FIELD_NAME_PRIMARY_KEY).equals(ONE_RECORD_PRIMARY_KEY);
             } else if (multipleRecordQueryString.contains(query)) {
-                return checkEveryRecords(jsonObjects, false);
+                // String search don't have so much control, just check the size
+                return jsonObjects.size() == 10; // default row number
             } else {
                 throw new IllegalArgumentException("not supported yet");
             }
@@ -246,7 +330,7 @@ public class TestIndex extends TestableIndex {
             if (singleRecordQueryQuery.contains(query)) {
                 return jsonObjects.size() == 1 && jsonObjects.get(0).getString(INDEX_FIELD_NAME_PRIMARY_KEY).equals(ONE_RECORD_PRIMARY_KEY);
             } else if (multipleRecordQueryQuery.contains(query)) {
-                return checkEveryRecords(jsonObjects, true);
+                return checkPartialResult(query, jsonObjects);
             } else {
                 throw new IllegalArgumentException("not supported yet");
             }
@@ -255,6 +339,7 @@ public class TestIndex extends TestableIndex {
             return false;
         }
     }
+
 
     @Override
     public JSONObject getSucceedToUpdateExistRecord() {

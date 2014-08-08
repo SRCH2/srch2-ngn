@@ -8,9 +8,11 @@ abstract class Term {
 
     abstract public Term AND(Term rightTerm);
 
+    abstract public Term AND_NOT(Term rightTerm);
+
     abstract public Term OR(Term rightTerm);
 
-    abstract public Term NOT();
+    abstract Term NOT();
 }
 
 /**
@@ -137,6 +139,16 @@ final public class SearchableTerm extends Term {
     }
 
     /**
+     * Create a composite term by <code>AND</code> operator, inverse match the rightTerm
+     *
+     * @param rightTerm
+     * @return a new CompositeTerm as a result of <code>this AND NOT rightTerm</code>
+     */
+    public CompositeTerm AND_NOT(Term rightTerm) {
+        return new CompositeTerm(BooleanOperator.AND, this, rightTerm.NOT());
+    }
+
+    /**
      * Create a composite term by <code>OR</code> operator
      *
      * @param rightTerm
@@ -145,13 +157,12 @@ final public class SearchableTerm extends Term {
     public CompositeTerm OR(Term rightTerm) {
         return new CompositeTerm(BooleanOperator.OR, this, rightTerm);
     }
-
     /**
      * Create a composite term by <code>NOT</code> operator
      *
      * @return a new CompositeTerm as a result of <code>NOT this</code>
      */
-    public CompositeTerm NOT() {
+    CompositeTerm NOT() {
         return new CompositeTerm(BooleanOperator.NOT, this, null);
     }
 
@@ -247,6 +258,16 @@ final public class SearchableTerm extends Term {
         }
 
         /**
+         * Create a composite term by <code>AND NOT</code> operator. The rightTerm will be inverse matching
+         *
+         * @param rightTerm
+         * @return a new CompositeTerm as a result of <code>this AND NOT rightTerm</code>
+         */
+        @Override
+        public Term AND_NOT(Term rightTerm) {
+            return new CompositeTerm(BooleanOperator.AND, this, rightTerm.NOT());
+        }
+        /**
          * Create a composite term by <code>OR</code> operator
          *
          * @param rightTerm
@@ -263,7 +284,7 @@ final public class SearchableTerm extends Term {
          * @return a new CompositeTerm as a result of <code>NOT this</code>
          */
         @Override
-        public Term NOT() {
+        Term NOT() {
             return new CompositeTerm(BooleanOperator.NOT, this, null);
         }
     }
