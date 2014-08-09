@@ -5,10 +5,10 @@ import java.util.Iterator;
 
 final class Schema {
 
-    protected final String uniqueKey;
-    protected HashSet<Field> fields;
-    protected boolean facetEnabled = false;
-    protected int indexType = 0;
+    final String uniqueKey;
+    HashSet<Field> fields;
+    private boolean facetEnabled = false;
+    int indexType = 0;
 
     Schema(Field primaryKeyField, Field... remainingField) {
         if (primaryKeyField == null) {
@@ -92,13 +92,12 @@ final class Schema {
         return facetNodeXML.toString();
     }
 
-    protected String schemaToXML() {
+    String schemaToXML() {
 
         StringBuilder schemaXML = new StringBuilder("	<schema>\n"
                 + "		<fields>\n");
-        Iterator<Field> iter = fields.iterator();
-        while (iter.hasNext()) {
-            schemaXML.append(Field.toXML(iter.next()));
+        for (Field field : fields) {
+            schemaXML.append(Field.toXML(field));
         }
         schemaXML.append("		</fields>\n").append("		<uniqueKey>")
                 .append(uniqueKey).append("</uniqueKey>\n");

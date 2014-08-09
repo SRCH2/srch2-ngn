@@ -66,10 +66,10 @@ final public class IndexDescription {
     private static final String DEFAULT_VALUE_accessLogFile = "srch2-log.txt";
     String name;
     Schema schema;
-    private Properties queryProperties = new Properties();
-    private Properties miscProperties = new Properties();
-    private Properties indexProperties = new Properties();
-    private Properties updateProperties = new Properties();
+    private final Properties queryProperties = new Properties();
+    private final Properties miscProperties = new Properties();
+    private final Properties indexProperties = new Properties();
+    private final Properties updateProperties = new Properties();
 
     IndexDescription(String name, Schema schema) {
         if (name == null) {

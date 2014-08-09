@@ -1,7 +1,7 @@
 package com.srch2.android.http.service;
 
-import org.junit.Test;
 import org.junit.Assert;
+import org.junit.Test;
 
 import java.io.UnsupportedEncodingException;
 
@@ -130,7 +130,7 @@ public class QueryTest {
                         .filterByFieldStartsFrom("id", "1000")
                         .filterByFieldEqualsTo("genre", "drama")
                         .filterByFieldEndsTo("year", "1975")
-                        .setFilterConnectorAND().toString());
+                        .setFilterRelationAND().toString());
 
         Assert.assertEquals(
                 "term&fq=id:[1000 TO *] OR genre:drama OR year:[* TO 1975]&searchType=getAll",
@@ -138,7 +138,7 @@ public class QueryTest {
                         .filterByFieldStartsFrom("id", "1000")
                         .filterByFieldEqualsTo("genre", "drama")
                         .filterByFieldEndsTo("year", "1975")
-                        .setFilterConnectorOR().toString());
+                        .setFilterRelationOR().toString());
 
     }
 

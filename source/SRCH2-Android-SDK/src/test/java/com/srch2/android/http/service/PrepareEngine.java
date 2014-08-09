@@ -12,9 +12,9 @@ public class PrepareEngine {
     static final String DEFAULT_SRCH2HOME_PATH = "/tmp/data/com.srch2.server/sdk";
     static final String OAUTH = "SRCH2-OAUTH";
     static int DEFAULT_SRCH2SERVER_PORT = 55555;
-    static MusicIndex musicIndex = new MusicIndex();
-    static MovieIndex movieIndex = new MovieIndex();
-    static GeoIndex geoIndex = new GeoIndex();
+    static final MusicIndex musicIndex = new MusicIndex();
+    static final MovieIndex movieIndex = new MovieIndex();
+    static final GeoIndex geoIndex = new GeoIndex();
     static Indexable[] orderedIndexes = {musicIndex, movieIndex, geoIndex};
     static boolean isPrepared = false;
 
@@ -39,11 +39,11 @@ public class PrepareEngine {
         public IndexDescription getIndexDescription() {
 
 
-            Field primaryKey = Field.getRefiningField(INDEX_KEY_PRIMARY_KEY, Field.Type.TEXT);
-            Field songTitle = Field.getSearchableField(INDEX_KEY_SONG_TITLE, 5);
-            //Field songYear = Field.getRefiningField(INDEX_KEY_SONG_YEAR, Type.INTEGER);
-            //Field artist = Field.getSearchableField(INDEX_KEY_ARTIST, 4);
-            Field genre = Field.getSearchableField(INDEX_KEY_GENRE, 3);
+            Field primaryKey = Field.createRefiningField(INDEX_KEY_PRIMARY_KEY, Field.Type.TEXT);
+            Field songTitle = Field.createSearchableField(INDEX_KEY_SONG_TITLE, 5);
+            //Field songYear = Field.createRefiningField(INDEX_KEY_SONG_YEAR, Type.INTEGER);
+            //Field artist = Field.createSearchableField(INDEX_KEY_ARTIST, 4);
+            Field genre = Field.createSearchableField(INDEX_KEY_GENRE, 3);
             return new IndexDescription(INDEX_NAME, primaryKey, songTitle, genre);//songYear, artist, genre);
         }
 
@@ -81,10 +81,10 @@ public class PrepareEngine {
 
         @Override
         public IndexDescription getIndexDescription() {
-            Field primaryKey = Field.getRefiningField(INDEX_KEY_PRIMARY_KEY, Field.Type.TEXT);
-            Field title = Field.getSearchableField(INDEX_KEY_TITLE);
-            //Field year = Field.getRefiningField(INDEX_KEY_YEAR, Type.INTEGER);
-            Field genre = Field.getSearchableField(INDEX_KEY_GENRE);
+            Field primaryKey = Field.createRefiningField(INDEX_KEY_PRIMARY_KEY, Field.Type.TEXT);
+            Field title = Field.createSearchableField(INDEX_KEY_TITLE);
+            //Field year = Field.createRefiningField(INDEX_KEY_YEAR, Type.INTEGER);
+            Field genre = Field.createSearchableField(INDEX_KEY_GENRE);
             return new IndexDescription(INDEX_NAME, primaryKey, title, genre);//, year, genre);
         }
 
@@ -116,7 +116,7 @@ public class PrepareEngine {
         static final String LAT = "lat";
         static final String LON = "long";
 
-        static final Field fieldID = Field.getSearchableField(INDEX_KEY_PRIMARY_KEY);
+        static final Field fieldID = Field.createSearchableField(INDEX_KEY_PRIMARY_KEY);
 
         @Override
         public IndexDescription getIndexDescription() {

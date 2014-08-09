@@ -11,11 +11,9 @@ import java.util.ArrayList;
  */
 final public class Query {
 
-    static final String[] BOX_TAG = {"lblat=", "lblong=", "rtlat=", "rtlong="};
-    static final String[] CIRCLE_TAG = {"clat=", "clong=", "radius="};
-    /**
-     * this field will disable all the advanced settings
-     */
+    private static final String[] BOX_TAG = {"lblat=", "lblong=", "rtlat=", "rtlong="};
+    private static final String[] CIRCLE_TAG = {"clat=", "clong=", "radius="};
+
     private final String proximitySentence;
     private final Term term;
 
@@ -33,7 +31,8 @@ final public class Query {
      * Creates a query from a {@link SearchableTerm} or
      * {@link SearchableTerm.CompositeTerm};
      *
-     * @param term
+     * @param term {@link SearchableTerm} or
+     * {@link SearchableTerm.CompositeTerm}
      */
     public Query(Term term) {
         checkIsNotNull(term, "Input term should not be null");
@@ -42,53 +41,61 @@ final public class Query {
     }
 
     /**
-     * Proximity Search The engine supports finding words that are within a
+     * Creates a query doing a proximity search. The SRCH2 search server
+     * supports finding words that are within a
      * specified proximity. To use this feature, enablePositionIndex flag in
      * the configuration should be set to true.
-     * <p/>
+     * <br><br>
      * For example, the following query searches for records with the keywords
      * "saving" and "ryan" within 1 word
-     * <p/>
+     * <br><br>
      * <pre>
      * {@code Query("saving", "ryan", 1)}
      * </pre>
-     * <p/>
+     * <br><br>
      * (that is, either zero or one word separates them) of each other in a
-     * document:
-     * <p/>
-     * Notice that a proximity search does not support edit-distance-based fuzzy
+     * document.
+     * <br><br>
+     * <b>Note</b> that a proximity search does not support edit-distance-based fuzzy
      * match, i.e., we do not allow typos in the keywords in the quotes.
+     * <br><br>
+     * This method will throw exceptions if the term arguments passed have values that
+     * are null or have a length less than one; or if the value of <code>distance</code>
+     * is less than one.
      */
     public Query(String term1, String term2, int distance) {
-        checkNoEmptyString("saving", "invalid query keyword");
+        checkNoEmptyString(term1, "invalid query keyword");
         checkNoEmptyString(term2, "invalid query keyword");
         if (distance < 1) {
             throw new IllegalArgumentException("distance should >= 1");
         }
-        this.proximitySentence = "\"" + "saving" + " " + term2 + "\"~"
+        this.proximitySentence = "\"" + term1 + " " + term2 + "\"~"
                 + Integer.toString(distance);
         this.term = null;
     }
 
-    static void checkIsNotNull(Object term, String errMsg) {
+    private static void checkIsNotNull(Object term, String errMsg) {
         if (term == null) {
             throw new IllegalArgumentException(errMsg);
         }
     }
 
-    static void checkNoEmptyString(String str, String errMsg) {
+    private static void checkNoEmptyString(String str, String errMsg) {
         if (str == null || str.trim().length() == 0) {
             throw new IllegalArgumentException(errMsg);
         }
     }
 
     /**
-     * This method is used to specify a filter restricting the set of records
-     * returned, <code>fields[fieldName].value == equalToValue</code>.
-     *
-     * @param fieldName    the specific field.
-     * @param equalToValue the equalTo value.
-     * @return this
+     * Creates a query doing a filtered search. To initialize this kind of query, specify a filter
+     * that will restrict the set of records returned by using the conditionality of
+     * <code>fields[fieldName].value == equalToValue</code>.
+     * <br><br>
+     * This method will throw exceptions if the term arguments passed have values that
+     * are null or have a length less than one; or if the value of <code>distance</code>
+     * is less than one.
+     * @param fieldName the specific field to evaluate
+     * @param equalToValue the value to equate the <code>fieldName</code> to
      */
     public Query filterByFieldEqualsTo(String fieldName, String equalToValue) {
         checkNoEmptyString(fieldName, "fieldName is invalid");
@@ -172,7 +179,7 @@ final public class Query {
      *
      * @return this
      */
-    public Query setFilterConnectorAND() {
+    public Query setFilterRelationAND() {
         filterConnector = Filter.BooleanOperation.AND;
         return this;
     }
@@ -184,7 +191,7 @@ final public class Query {
      *
      * @return this
      */
-    public Query setFilterConnectorOR() {
+    public Query setFilterRelationOR() {
         filterConnector = Filter.BooleanOperation.OR;
         return this;
     }
@@ -195,7 +202,7 @@ final public class Query {
      * topK result is returned.
      *
      * @param searchType {@link SearchType}
-     * @return
+     * @return this
      */
     Query setSearchType(SearchType searchType) {
         checkIsNotNull(searchType, "SearchType can not be null");
@@ -211,8 +218,8 @@ final public class Query {
      * Note the <code>SearchType</code> will be automatically set to
      * <code>getAll</code> method
      *
-     * @param field1
-     * @param restFields
+     * @param field1 the first field
+     * @param restFields the rest of the fields
      * @return this
      */
     public Query sortOnFields(String field1, String... restFields) {
@@ -257,11 +264,11 @@ final public class Query {
      * It is the offset in the complete result set of the query, where the set
      * of returned records should begin. The default value is 0
      *
-     * @param skipNumberOfRecords
+     * @param startOffset specify the start offset of the result
      * @return this
      */
-    public Query pagingStartFrom(int skipNumberOfRecords) {
-        this.pagingStart = skipNumberOfRecords;
+    public Query pagingStartFrom(int startOffset) {
+        this.pagingStart = startOffset;
         return this;
     }
 
@@ -269,8 +276,8 @@ final public class Query {
      * It indicates the number of records to return from the complete result
      * set.
      *
-     * @param sizePerPage
-     * @return
+     * @param sizePerPage specify how many result within one search response
+     * @return this
      */
     public Query pagingSize(int sizePerPage) {
         this.pagingRows = sizePerPage;
@@ -279,14 +286,6 @@ final public class Query {
 
     /**
      * Get the GeoLocation search by specify a bounding box. <br>
-     * To enable geo indexing, use the following parameter in the configuration
-     * file
-     * <p/>
-     * <pre>
-     * {@code
-     * <indexType>1</indexType>
-     * }
-     * </pre>
      *
      * @param leftBottomLatitude
      * @param leftBottomLongitude
@@ -308,14 +307,7 @@ final public class Query {
 
     /**
      * Get the GeoLocation search by specify a center point and a radius. <br>
-     * To enable geo indexing, use the following parameter in the configuration
-     * file
-     * <p/>
-     * <pre>
-     * {@code
-     * <indexType>1</indexType>
-     * }
-     * </pre>
+
      *
      * @param centerLatitude
      * @param centerLongitude
@@ -395,7 +387,7 @@ final public class Query {
      * configuration file by setting the "facetEnabled" tag to true. FacetField function is protected as of now.
      *
      * @param fieldName
-     * @return
+     * @return this
      */
     protected Query facetOn(String fieldName) {
         facetFields.add(FacetField.getFacetFieldOnCategory(fieldName));
@@ -407,7 +399,7 @@ final public class Query {
      *
      * @param fieldName
      * @param rows
-     * @return
+     * @return this
      */
     protected Query facetOn(String fieldName, int rows) {
         facetFields.add(FacetField.getFacetFieldOnCategory(fieldName, rows));
@@ -420,7 +412,7 @@ final public class Query {
      * file.
      *
      * @param fieldName
-     * @return
+     * @return this
      */
     protected Query facetOnRange(String fieldName, String start, String end,
                                  String gap) {

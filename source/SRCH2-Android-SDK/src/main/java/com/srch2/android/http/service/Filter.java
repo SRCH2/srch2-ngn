@@ -9,11 +9,11 @@ class Filter {
         AND, OR,
     }
 
-    final String fieldName;
-    final String equalTo;
-    final String start;
-    final String end;
-    final String booleanExpression;
+    private final String fieldName;
+    private final String equalTo;
+    private final String start;
+    private final String end;
+    private final String booleanExpression;
 
     private Filter(String fieldName, String equalTo, String start, String end,
                    String booleanExpression) {

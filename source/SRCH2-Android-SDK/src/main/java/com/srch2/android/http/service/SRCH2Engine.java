@@ -9,7 +9,6 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
 import java.net.URL;
 import java.util.HashMap;
@@ -53,7 +52,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 final public class SRCH2Engine {
 
-    static final String TAG = "SRCH2Engine";
+    private static final String TAG = "SRCH2Engine";
     static final AtomicReference<IndexQueryPair> lastQuery = new AtomicReference<IndexQueryPair>();
     static final AtomicBoolean isChanged = new AtomicBoolean(false);
     static final AtomicBoolean isReady = new AtomicBoolean(false);
@@ -69,7 +68,7 @@ final public class SRCH2Engine {
     static StateResponseListener stateResponseListener = null;
     static boolean isStarted = false;
     static SRCH2Configuration conf = null;
-    static SearchTask allIndexSearchTask = null;
+    private static SearchTask allIndexSearchTask = null;
 
     private SRCH2Engine() { }
 
@@ -160,7 +159,7 @@ final public class SRCH2Engine {
         isStarted = true;
     }
 
-    static void startCheckCoresLoadedTask() {
+    private static void startCheckCoresLoadedTask() {
         Log.d("srch2:: " + TAG, "startCheckCoresLoadedTask");
         HashMap<String, URL> indexUrlMap = new HashMap<String, URL>();
         for (IndexInternal index : conf.indexesMap.values()) {
@@ -185,6 +184,10 @@ final public class SRCH2Engine {
         return searchResultsListener;
     }
 
+    static IndexInternal getIndexByNameReturnNullIfNotExists(String name){
+        return conf.indexesMap.get(name);
+    }
+
     /**
      * Registers the implementation of the interface <code>SearchResultsListener</code> for receiving
      * the results of a search performed by the SRCH2 search server. This can be reset at anytime, and
@@ -195,7 +198,7 @@ final public class SRCH2Engine {
      */
     public static void setSearchResultsListener(
             SearchResultsListener searchResultsListener) {
-        searchResultsListener = searchResultsListener;
+        SRCH2Engine.searchResultsListener = searchResultsListener;
     }
 
     static StateResponseListener getControlResponseListener() {
@@ -214,10 +217,10 @@ final public class SRCH2Engine {
      */
     public static void setStateResponseListener(
             StateResponseListener stateResponseListener) {
-        stateResponseListener = stateResponseListener;
+        SRCH2Engine.stateResponseListener = stateResponseListener;
     }
 
-    static void searchAllRawString(String rawQueryString) {
+    private static void searchAllRawString(String rawQueryString) {
         lastQuery.set(new IndexQueryPair(null, rawQueryString));
         if (isReady()) {
             if (allIndexSearchTask != null) {
@@ -248,8 +251,7 @@ final public class SRCH2Engine {
     public static void searchAllIndexes(String searchInput) {
         Log.d("srch2:: " + TAG, "searchAllIndexes");
         checkConfIsNullThrowIfIs();
-        String rawString = null;
-        rawString = IndexInternal.formatDefaultQueryURL(searchInput);
+        String rawString= IndexInternal.formatDefaultQueryURL(searchInput);
         searchAllRawString(rawString);
     }
 
@@ -273,7 +275,7 @@ final public class SRCH2Engine {
      *                  <code>Indexable</code>) to search
      * @param searchInput the textual input to search on
      */
-    public static void searchIndex(String indexName, String searchInput) throws UnsupportedEncodingException {
+    public static void searchIndex(String indexName, String searchInput) {
         checkConfIsNullThrowIfIs();
         conf.getIndexAndThrowIfNotThere(indexName).search(searchInput);
     }
@@ -529,7 +531,7 @@ final public class SRCH2Engine {
      * the engine keeps updating the last query and will automatically request
      * the
      *
-     * @return
+     * @return if the SRCH2 engine is ready or not.
      */
     public static boolean isReady() {
         return isReady.get();
@@ -567,7 +569,7 @@ final public class SRCH2Engine {
         HttpTask.onStop();
     }
 
-    private static String detectAppHomeDir(Context context) {
+    static String detectAppHomeDir(Context context) {
         Log.d("srch2:: " + TAG, "detectAppHomeDir");
         return context.getApplicationContext().getFilesDir().getAbsolutePath();
     }
@@ -601,7 +603,7 @@ final public class SRCH2Engine {
         return port;
     }
 
-    static void checkConfIsNullThrowIfIs() {
+    private static void checkConfIsNullThrowIfIs() {
         if (conf == null) {
             throw new NullPointerException(
                     "Cannot start SRCH2Engine without configuration being set.");

@@ -30,15 +30,7 @@ class UrlBuilder {
         return url;
     }
 
-    /**
-     * Create the URL for the query string. The <code>formatedQueryString</code>
-     * is
-     *
-     * @param engineConf
-     * @param indexConf
-     * @param formatedSearchInput "&fuzzy=true&rows=5"
-     * @return
-     */
+
     static URL getSearchUrl(SRCH2Configuration engineConf,
                             IndexDescription indexConf, String formatedSearchInput) {
         URL url = null;
@@ -151,7 +143,7 @@ class UrlBuilder {
         }
     }
 
-    static String getURLEncodedString(String sentence){
-        return Uri.encode(sentence, "&=:*$.~^");
+    private static String getURLEncodedString(String sentence){
+        return Uri.encode(sentence, "&=:*$.~");
     }
 }

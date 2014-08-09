@@ -1,13 +1,14 @@
 package com.srch2.android.http.service;
 
+import android.util.Log;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-
-import android.util.Log;
+import java.util.Map;
 
 
 final class CheckCoresLoadedTask extends HttpTask {
@@ -17,7 +18,7 @@ final class CheckCoresLoadedTask extends HttpTask {
 
     private static final int PING_RECONNECTION_TIME_MS = 250;
 
-    private HashMap<String, URL> targetCoreUrlsMap;
+    private final HashMap<String, URL> targetCoreUrlsMap;
 
     private boolean noNetworkConnection = false;
 
@@ -89,17 +90,17 @@ final class CheckCoresLoadedTask extends HttpTask {
 
             ++superCount;
         }
-        if (pingCountSuccess == coreCount) {
-            Log.d("srch2:: " + TAG, "run - successful requerying etc");
-            SRCH2Engine.isReady.set(true);
-            SRCH2Engine.reQueryLastOne();
-        }
 
         if (controlResponseObserver != null && !noNetworkConnection) {
             Log.d("srch2:: " + TAG, "run - notifying observer");
             controlResponseObserver.onSRCH2ServiceReady(responseMap);
         }
 
+        if (pingCountSuccess == coreCount) {
+            Log.d("srch2:: " + TAG, "run - successful requerying etc");
+            SRCH2Engine.isReady.set(true);
+            SRCH2Engine.reQueryLastOne();
+        }
         Thread.currentThread().setName("CHECK CORES LOADED FIN");
     }
 

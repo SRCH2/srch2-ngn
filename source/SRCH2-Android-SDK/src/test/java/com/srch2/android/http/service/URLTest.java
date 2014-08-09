@@ -16,34 +16,33 @@ public class URLTest {
         System.out.println("OAUTH KEY::::" + SRCH2Engine.conf.getAuthorizationKey());
     }
 
-    static final String QUERY_KEY_WORDS = "android servi";
-    static final String EXPECTED_QUERY_RAWSTRING = "android~ AND servi*~";
-    static final String EXPECTED_QUERY_FORMAT = Uri.encode(EXPECTED_QUERY_RAWSTRING);
-    static final IndexInternal TEST_CORE = SRCH2Engine.getConfig().indexesMap.values().iterator().next();
-    static final String DEFAULT_CORE_NAME = TEST_CORE.getIndexCoreName();
+    private static final String QUERY_KEY_WORDS = "android servi";
+    private static final String EXPECTED_QUERY_RAWSTRING = "android~ AND servi*~";
+    private static final String EXPECTED_QUERY_FORMAT = Uri.encode(EXPECTED_QUERY_RAWSTRING);
+    private static final IndexInternal TEST_CORE = SRCH2Engine.getConfig().indexesMap.values().iterator().next();
+    private static final String DEFAULT_CORE_NAME = TEST_CORE.getIndexCoreName();
 
 
-    static final String ONE_DOC_ID = "id1";
-    static final String[] MULTI_DOC_IDS = {"id2", "id3", "id4"};
+    private static final String ONE_DOC_ID = "id1";
 
-    static final String HOST_URL = "http://" + SRCH2Configuration.HOSTNAME
+    private static final String HOST_URL = "http://" + SRCH2Configuration.HOSTNAME
             + ":" + SRCH2Engine.getConfig().getPort() + "/";
-    static final String EXPECTED_DELETE_ONE = HOST_URL + DEFAULT_CORE_NAME
+    private static final String EXPECTED_DELETE_ONE = HOST_URL + DEFAULT_CORE_NAME
             + "/docs?OAuth=" + PrepareEngine.OAUTH + "&" + TEST_CORE.getConf().schema.uniqueKey + "=" + ONE_DOC_ID;
 
-    static final String EXPECTED_INFO = HOST_URL + DEFAULT_CORE_NAME + "/info?OAuth=" + PrepareEngine.OAUTH;
-    static final String EXPECTED_SAVE = HOST_URL + DEFAULT_CORE_NAME + "/save?OAuth=" + PrepareEngine.OAUTH;
-    static final String EXPECTED_SEARCH_ALL = HOST_URL + "_all/search?OAuth=" + PrepareEngine.OAUTH + "&q="
+    private static final String EXPECTED_INFO = HOST_URL + DEFAULT_CORE_NAME + "/info?OAuth=" + PrepareEngine.OAUTH;
+    private static final String EXPECTED_SAVE = HOST_URL + DEFAULT_CORE_NAME + "/save?OAuth=" + PrepareEngine.OAUTH;
+    private static final String EXPECTED_SEARCH_ALL = HOST_URL + "_all/search?OAuth=" + PrepareEngine.OAUTH + "&q="
             + EXPECTED_QUERY_FORMAT;
-    static final String EXPECTED_SEARCH_ONE = HOST_URL + DEFAULT_CORE_NAME
+    private static final String EXPECTED_SEARCH_ONE = HOST_URL + DEFAULT_CORE_NAME
             + "/search?OAuth=" + PrepareEngine.OAUTH + "&q=" + EXPECTED_QUERY_FORMAT;
-    static final String EXPECTED_SHUTDOWN = HOST_URL + "_all/shutdown?OAuth=" + PrepareEngine.OAUTH;
-    static final String EXPECTED_UPDATE = HOST_URL + DEFAULT_CORE_NAME
+    private static final String EXPECTED_SHUTDOWN = HOST_URL + "_all/shutdown?OAuth=" + PrepareEngine.OAUTH;
+    private static final String EXPECTED_UPDATE = HOST_URL + DEFAULT_CORE_NAME
             + "/update?OAuth=" + PrepareEngine.OAUTH;
-    static final String EXPECTED_INSERT = HOST_URL + DEFAULT_CORE_NAME
+    private static final String EXPECTED_INSERT = HOST_URL + DEFAULT_CORE_NAME
             + "/docs?OAuth=" + PrepareEngine.OAUTH;
 
-    static final String EXPECTED_GETDOC = HOST_URL + DEFAULT_CORE_NAME
+    private static final String EXPECTED_GETDOC = HOST_URL + DEFAULT_CORE_NAME
             + "/search?OAuth=" + PrepareEngine.OAUTH + "&docid=" + ONE_DOC_ID;
 
 

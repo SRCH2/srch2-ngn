@@ -6,8 +6,15 @@ import java.util.Locale;
  * Represents an attribute of the index. An index is described by its schema, and the schema consists of fields. If
  * an index is compared to the table of an SQLite database, a field is comparable to the column of that table. Each
  * field must be associated with a type--whether it is textual, numerical or geographical--and is identified by
- * the value set when constructing the field as its <code>fieldName</code>.
- *
+ * the value set when constructing the field as its <code>fieldName</code>. Fields can be searchable, refining,
+ * searchable and refining, or geographical. Searchable fields are those whose data associated with the field is
+ * matched against the keywords of the search input during a search--they are also textual in type; refining fields,
+ * on the other hand, are not matched against the key words of the search input, but are used to do advanced search
+ * functionality such as limiting the range of the search results or to do post-processing operations. Geographical
+ * fields can be used to do geo-searches.
+ * <br><br>
+ * Fields are used when constructing an <code>IndexDescription</code> in the <code>Indexable</code> implementation
+ * of the method <code>getIndexDescription()</code>. They should not be constructed or used otherwise.
  */
 final public class Field {
 
@@ -15,6 +22,9 @@ final public class Field {
         CATEGORICAL, RANGE
     }
 
+    /**
+     * The type of the data that the field will be associated with.
+     */
     public enum Type {
         TEXT, INTEGER, FLOAT, TIME
     }
@@ -24,6 +34,11 @@ final public class Field {
         static final InternalType[] values = InternalType.values();
     }
 
+    /**
+     * Defines the default boost value that searchable fields who boost values are not otherwise set will have.
+     * <br><br>
+     * Has the <bold>constant</bold> value of <code>1</code>.
+     */
     static final public int DEFAULT_BOOST_VALUE = 1;
     final String name;
     final InternalType type;
@@ -86,7 +101,7 @@ final public class Field {
      * @param boost the value to assign to the relevance of this field, relative to other searchable fields
      * @return the searchable field
      */
-    public static Field getSearchableField(String fieldName, int boost) {
+    public static Field createSearchableField(String fieldName, int boost) {
         if (boost < 1 || boost > 100) {
             throw new IllegalArgumentException(
                     "Boost value cannot be less than 1 or greater than 100.");
@@ -106,8 +121,8 @@ final public class Field {
      * @param fieldName the name identifying the field
      * @return the searchable field
      */
-    public static Field getSearchableField(String fieldName) {
-        return getSearchableField(fieldName, DEFAULT_BOOST_VALUE);
+    public static Field createSearchableField(String fieldName) {
+        return createSearchableField(fieldName, DEFAULT_BOOST_VALUE);
     }
 
     /**
@@ -130,7 +145,7 @@ final public class Field {
      *                  Field.FieldType.LOCATION_LATITUDE)
      * @return the refining field
      */
-    public static Field getRefiningField(String fieldName, Type fieldType) {
+    public static Field createRefiningField(String fieldName, Type fieldType) {
         checkIfFieldTypeIsValid(fieldType);
         return new Field(fieldName, InternalType.values[fieldType.ordinal()],
                 false, true, DEFAULT_BOOST_VALUE);
@@ -155,8 +170,8 @@ final public class Field {
      *                  Field.FieldType.LOCATION_LATITUDE)
      * @return the refining and searchable field
      */
-    public static Field getSearchableAndRefiningField(String fieldName,
-                                                      Type fieldType) {
+    public static Field createSearchableAndRefiningField(String fieldName,
+                                                         Type fieldType) {
         checkIfFieldTypeIsValid(fieldType);
         return new Field(fieldName, InternalType.values[fieldType.ordinal()],
                 true, true, DEFAULT_BOOST_VALUE);
@@ -187,8 +202,8 @@ final public class Field {
      *                  Field.FieldType.LOCATION_LATITUDE)
      * @return the refining and searchable field
      */
-    public static Field getSearchableAndRefiningField(String fieldName,
-                                                      Type fieldType, int boost) {
+    public static Field createSearchableAndRefiningField(String fieldName,
+                                                         Type fieldType, int boost) {
         if (boost < 1 || boost > 100) {
             throw new IllegalArgumentException(
                     "Boost value cannot be less than 1 or greater than 100.");

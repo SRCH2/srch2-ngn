@@ -3,9 +3,7 @@ package com.srch2.android.http.service;
 import junit.framework.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.util.ActivityController;
 
 @RunWith(RobolectricTestRunner.class)
 public class SRCH2EngineTest {

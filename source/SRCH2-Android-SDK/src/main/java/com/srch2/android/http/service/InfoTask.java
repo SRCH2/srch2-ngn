@@ -1,12 +1,12 @@
 package com.srch2.android.http.service;
 
+import android.util.Log;
+import com.srch2.android.http.service.HttpTask.ControlHttpTask;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-
-import android.util.Log;
-import com.srch2.android.http.service.HttpTask.ControlHttpTask;
 
 /**
  * An <code>InfoTask</code> performs the control restful request of doing an

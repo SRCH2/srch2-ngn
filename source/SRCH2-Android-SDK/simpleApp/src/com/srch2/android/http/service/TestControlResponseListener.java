@@ -7,7 +7,7 @@ import java.util.HashMap;
 /**
  * Created by ashton on 7/29/2014.
  */
-public class TestControlResponseListener  implements StateResponseListener {
+public class TestControlResponseListener implements StateResponseListener {
 
     public static final String TAG = "TestControlResponseListener";
 

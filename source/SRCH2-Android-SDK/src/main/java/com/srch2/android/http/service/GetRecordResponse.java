@@ -1,9 +1,11 @@
 package com.srch2.android.http.service;
 
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.HashMap;
-
 import org.json.JSONObject;
+
 /**
  * Wraps the RESTful response from the SRCH2 search server upon completion of a record
  * retrieval task.

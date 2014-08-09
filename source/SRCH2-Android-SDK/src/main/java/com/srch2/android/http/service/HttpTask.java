@@ -1,5 +1,7 @@
 package com.srch2.android.http.service;
 
+import android.util.Log;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,8 +11,6 @@ import java.net.URL;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
-
-import android.util.Log;
 
 abstract class HttpTask implements Runnable {
 
@@ -30,14 +30,6 @@ abstract class HttpTask implements Runnable {
         searchTaskExecutor = Executors.newFixedThreadPool(1);
     }
 
-    /**
-     * Only for test purpose
-     * @return
-     */
-    static boolean isExecuting(){
-        return isExecuting;
-    }
-
     static synchronized void onStop() {
         isExecuting = false;
 
@@ -50,7 +42,7 @@ abstract class HttpTask implements Runnable {
         }
     }
 
-    static synchronized protected void executeTask(HttpTask taskToExecte) {
+    static synchronized void executeTask(HttpTask taskToExecte) {
         if (!isExecuting || taskToExecte == null) {
             return;
         }
@@ -84,16 +76,16 @@ abstract class HttpTask implements Runnable {
 
 
 
-    protected static abstract class SingleCoreHttpTask extends HttpTask {
-        protected final String targetCoreName;
+    static abstract class SingleCoreHttpTask extends HttpTask {
+        final String targetCoreName;
 
-        protected SingleCoreHttpTask(String theTargetCoreName) {
+        SingleCoreHttpTask(String theTargetCoreName) {
             targetCoreName = theTargetCoreName;
         }
     }
 
     static abstract class ControlHttpTask extends SingleCoreHttpTask {
-        protected final URL targetUrl;
+        final URL targetUrl;
 
         public ControlHttpTask(final URL theTargetUrl, final String theTargetCoreName, final StateResponseListener theControlResponseListener) {
             super(theTargetCoreName);
@@ -113,16 +105,16 @@ abstract class HttpTask implements Runnable {
     }
 
     static abstract class SearchHttpTask extends SingleCoreHttpTask {
-        protected final URL targetUrl;
+        final URL targetUrl;
 
-        public SearchHttpTask(final URL theTargetUrl, final String theTargetCoreName, final SearchResultsListener theSearchResultsListener) {
+        SearchHttpTask(final URL theTargetUrl, final String theTargetCoreName, final SearchResultsListener theSearchResultsListener) {
             super(theTargetCoreName);
             targetUrl = theTargetUrl;
             searchResultsListener = theSearchResultsListener;
         }
     }
 
-	protected String handleStreams(HttpURLConnection connection, String internalClassLogcatTag) throws IOException {
+	String handleStreams(HttpURLConnection connection, String internalClassLogcatTag) throws IOException {
         String response = null;
 
         if (connection != null) {
@@ -162,7 +154,7 @@ abstract class HttpTask implements Runnable {
         return response;
     }
 
-    protected void handleIOExceptionMessagePassing(IOException ioException, String response, String internalClassLogcatTag) {
+    void handleIOExceptionMessagePassing(IOException ioException, String response, String internalClassLogcatTag) {
         String errorResponse = null;
         if (ioException != null) {
             errorResponse = ioException.getMessage();
@@ -191,7 +183,7 @@ abstract class HttpTask implements Runnable {
      * as UTF-8. If the <code>InputStream source</code> is null, the returned
      * string will contain "NULL SOURCE INPUT STREAM".
      */
-    final static String readInputStream(InputStream source) throws IOException {
+    static String readInputStream(InputStream source) throws IOException {
         if (source == null) {
             return "NULL SOURCE INPUT STREAM";
         }
