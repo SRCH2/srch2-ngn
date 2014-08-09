@@ -2,9 +2,16 @@ package com.srch2.android.http.service;
 
 import java.util.Locale;
 
+/**
+ * Represents an attribute of the index. An index is described by its schema, and the schema consists of fields. If
+ * an index is compared to the table of an SQLite database, a field is comparable to the column of that table. Each
+ * field must be associated with a type--whether it is textual, numerical or geographical--and is identified by
+ * the value set when constructing the field as its <code>fieldName</code>.
+ *
+ */
 final public class Field {
 
-    protected enum FacetType {
+    enum FacetType {
         CATEGORICAL, RANGE
     }
 
@@ -32,12 +39,12 @@ final public class Field {
     int facetEnd = 0;
     int facetGap = 0;
 
-    protected void setAsCategoricalFacet() {
+    void setAsCategoricalFacet() {
         facetEnabled = true;
         facetType = FacetType.CATEGORICAL;
     }
 
-    protected void setAsRangedFacet(int start, int end, int facetGap) {
+    void setAsRangedFacet(int start, int end, int facetGap) {
         if (start > end) {
             throw new IllegalArgumentException(
                     "start value cannot be greater than end value, Illegal argument");
@@ -63,12 +70,21 @@ final public class Field {
     }
 
     /**
-     * It returns a searchable field with configurable boost value 'boost'.
-     * Engine will include its values in the indices to support keyword search
-     * within the field.
-     *
-     * @param fieldName Name of the field
-     * @return It returns a searchable field
+     * Static factory method for obtaining a searchable field with configurable boost value 'boost'.
+     * Data associated with this field must be textual in type and will be searchable whenever a search
+     * on the index whose schema includes this field is searched. The data of this field will also be
+     * returned with the search results whenever a search is performed.
+     * <br><br>
+     * The value of the <code>boost</code> argument will be used to calculate the score of the of search
+     * results, making this field proportionally more or less relevant than other searchable fields. By
+     * default this value is set to one.
+     * <br><br>
+     * This method will throw an exceptions if the value passed for
+     * <code>boost</code> is less than one or greater than one hundred; or if the value of
+     * <code>fieldName</code> is null or has a length less than one.
+     * @param fieldName the name identifying the field
+     * @param boost the value to assign to the relevance of this field, relative to other searchable fields
+     * @return the searchable field
      */
     public static Field getSearchableField(String fieldName, int boost) {
         if (boost < 1 || boost > 100) {
@@ -80,28 +96,39 @@ final public class Field {
     }
 
     /**
-     * It returns a searchable field with boost value 1. Engine will include its
-     * values in the indices to support keyword search within the field.
-     *
-     * @param fieldName Name of the field
-     * @return It returns a searchable field
+     * Static factory method for obtaining a searchable field with default boost value of one.
+     * Data associated with this field must be textual in type and will be searchable whenever a search
+     * on the index whose schema includes this field is searched. The data of this field will also be
+     * returned with the search results whenever a search is performed.
+     * <br><br>
+     * This method will throw an exception if the value of
+     * <code>fieldName</code> is null or has a length less than one.
+     * @param fieldName the name identifying the field
+     * @return the searchable field
      */
     public static Field getSearchableField(String fieldName) {
         return getSearchableField(fieldName, DEFAULT_BOOST_VALUE);
     }
 
     /**
-     * It returns a refining field with boost value 1. Engine will include its
-     * values in the indices to support post-processing operations on query
-     * results, such as additional filtering predicates (e.g., "price < 20"),
-     * sort, and facet.
      *
-     * @param fieldName Name of the field
-     * @param fieldType Type of the field (Field.FieldType.TEXT,
+     * Static factory method for obtaining a refining field.
+     * Data associated with this field must be have a type specified by the value of
+     * <code>fieldType</code>. The data of this field will be
+     * returned with the search results whenever a search is performed, but it will not be
+     * matched against the key words of the search input. Using the <code>Query</code> class
+     * the data of this field can be used to filter search results, however, such as in limiting
+     * the range of values if the field type is numerical.
+     * <br><br>
+     * This method will throw an exception if the value of
+     * <code>fieldName</code> is null or has a length less than one; or if the
+     * value of <code>fieldType</code> is null.
+     * @param fieldName the name identifying the field
+     * @param fieldType the type of the field (Field.FieldType.TEXT,
      *                  Field.FieldType.INTEGER, Field.FieldType.FLOAT,
      *                  Field.FieldType.TIME, Field.FieldType.LOCATION_LONGITUDE,
-     *                  Field.FieldType.LOCATION_LATITUDE
-     * @return It returns a refining field
+     *                  Field.FieldType.LOCATION_LATITUDE)
+     * @return the refining field
      */
     public static Field getRefiningField(String fieldName, Type fieldType) {
         checkIfFieldTypeIsValid(fieldType);
@@ -110,17 +137,23 @@ final public class Field {
     }
 
     /**
-     * It returns a field that is both searchable and refining with boost value
-     * 1. Engine will include its values in the indices to support keyword
-     * search within the field and also support post-processing operations on
-     * query results.
-     *
-     * @param fieldName Name of the field
-     * @param fieldType Type of the field (Field.FieldType.TEXT,
+     * Static factory method for obtaining a field that is both searchable and
+     * refining with the searchable component having a the default boost value
+     * of one. The data associated with this field will be matched against the
+     * search input during a search, can also be used to support advanced
+     * search features with the <code>Query</code> class such as limiting the
+     * range of the search results, and can also be used to do post-processing
+     * operations on the search results.
+     * <br><br>
+     * This method will throw an exception if the value of
+     * <code>fieldName</code> is null or has a length less than one; or if the
+     * value of <code>fieldType</code> is null.
+     * @param fieldName  the name identifying the field
+     * @param fieldType the type of the field (Field.FieldType.TEXT,
      *                  Field.FieldType.INTEGER, Field.FieldType.FLOAT,
      *                  Field.FieldType.TIME, Field.FieldType.LOCATION_LONGITUDE,
-     *                  Field.FieldType.LOCATION_LATITUDE
-     * @return It returns a field that is both searchable and refining
+     *                  Field.FieldType.LOCATION_LATITUDE)
+     * @return the refining and searchable field
      */
     public static Field getSearchableAndRefiningField(String fieldName,
                                                       Type fieldType) {
@@ -130,17 +163,29 @@ final public class Field {
     }
 
     /**
-     * It returns a field that is both searchable and refining with configurable
-     * boost value 'boost'. Engine will include its values in the indices to
-     * support keyword search within the field and also support post-processing
-     * operations on query results.
-     *
-     * @param fieldName Name of the field
-     * @param fieldType Type of the field (Field.FieldType.TEXT,
+     * Static factory method for obtaining a field that is both searchable and
+     * refining with the searchable component having a the default boost value
+     * of one. The data associated with this field will be matched against the
+     * search input during a search, can also be used to support advanced
+     * search features with the <code>Query</code> class such as limiting the
+     * range of the search results, and can also be used to do post-processing
+     * operations on the search results.
+     * <br><br>
+     * The value of the <code>boost</code> argument will be used to calculate the score of the of search
+     * results, making this field proportionally more or less relevant than other searchable fields. By
+     * default this value is set to one.
+     * <br><br>
+     * This method will throw an exceptions if the value passed for
+     * <code>boost</code> is less than one or greater than one hundred; or if the value of
+     * <code>fieldName</code> is null or has a length less than one; or if the
+     * value of <code>fieldType</code> is null.
+     * @param fieldName  the name identifying the field
+     * @param boost the value to assign to the relevance of this field, relative to other searchable fields
+     * @param fieldType the type of the field (Field.FieldType.TEXT,
      *                  Field.FieldType.INTEGER, Field.FieldType.FLOAT,
      *                  Field.FieldType.TIME, Field.FieldType.LOCATION_LONGITUDE,
-     *                  Field.FieldType.LOCATION_LATITUDE
-     * @return It returns a field that is both searchable and refining
+     *                  Field.FieldType.LOCATION_LATITUDE)
+     * @return the refining and searchable field
      */
     public static Field getSearchableAndRefiningField(String fieldName,
                                                       Type fieldType, int boost) {
@@ -176,10 +221,15 @@ final public class Field {
     }
 
     /**
-     * It enables highlighting feature for the field. Engine will generate a
-     * snippet for this field with matching keyword highlighted.
-     *
-     * @return It returns the corresponding field
+     * Enables highlighting feature for the field. The SRCH2 search server
+     * will generate a snippet for this field whenever keywords of the search
+     * input match the data associated with this field: for instance, if the data
+     * was 'All You Need is Love' and the search input was 'lo' the 'Lo' in 'Love'
+     * would be surrounded by HTML tags colorizing this text.
+     * <br><br>
+     * This method returns the <code>Field</code> itself so that it can have
+     * these calls cascaded.
+     * @return the corresponding field for cascading method calls
      */
     public Field enableHighlighting() {
         highlight = true;

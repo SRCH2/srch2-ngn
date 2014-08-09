@@ -4,7 +4,12 @@ import com.srch2.android.http.service.Filter.BooleanOperation;
 
 import java.util.ArrayList;
 
-public class Query {
+/**
+ * Formulation of an advanced search. Users of the SRCH2 Android SDK can invoke this class
+ * to create advanced searches that enable operations above and beyond the basic default
+ * search performed.
+ */
+final public class Query {
 
     static final String[] BOX_TAG = {"lblat=", "lblong=", "rtlat=", "rtlong="};
     static final String[] CIRCLE_TAG = {"clat=", "clong=", "radius="};
