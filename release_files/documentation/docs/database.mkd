@@ -17,7 +17,8 @@ that periodically accesses the "oplog" of MongoDB to retrieve information about 
 will send these changes to the SRCH2 engine to modify the indexes.  The frequency of accessing the log can also be specified in the
 configuration file.
 
-<img style="float: center" width="60%" src="../images/mongodb-connector.png" />
+<span ><center><img style="float: center" width="60%" src="../images/mongodb-connector.png" /></center></span>
+
 ###2.1. Install MongoDB
 
 Follow the instructions at [here](http://docs.mongodb.org/manual/installation/) to install MongoDB. The following instructions
@@ -158,7 +159,7 @@ we use SQLite triggers to keep track of changes to a SQLite table, and add the c
 Again, the SRCH2 engine periodically accesses this log table to retrieve the information about data changes, and updates
 the indexes accordingly.
 
-<img style="float: center" width="60%" src="../images/sqlite-connector.png" />
+<span ><center><img style="float: center" width="60%" src="../images/sqlite-connector.png" /></center></span>
 
 ###3.1. Install SQLite
 
