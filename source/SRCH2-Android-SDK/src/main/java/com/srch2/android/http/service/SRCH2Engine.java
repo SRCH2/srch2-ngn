@@ -198,7 +198,7 @@ final public class SRCH2Engine {
      */
     public static void setSearchResultsListener(
             SearchResultsListener searchResultsListener) {
-        searchResultsListener = searchResultsListener;
+        SRCH2Engine.searchResultsListener = searchResultsListener;
     }
 
     static StateResponseListener getControlResponseListener() {
@@ -217,7 +217,7 @@ final public class SRCH2Engine {
      */
     public static void setStateResponseListener(
             StateResponseListener stateResponseListener) {
-        stateResponseListener = stateResponseListener;
+        SRCH2Engine.stateResponseListener = stateResponseListener;
     }
 
     private static void searchAllRawString(String rawQueryString) {
