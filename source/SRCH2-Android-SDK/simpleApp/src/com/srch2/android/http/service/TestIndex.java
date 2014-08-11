@@ -34,7 +34,7 @@ public class TestIndex extends TestableIndex {
      */
     @Override
     public IndexDescription getIndexDescription() {
-        Field primaryKey = Field.createSearchableField(INDEX_FIELD_NAME_PRIMARY_KEY);
+        PrimaryKeyField primaryKey = Field.createSearchablePrimaryKeyField(INDEX_FIELD_NAME_PRIMARY_KEY, 1);
         Field title = Field.createSearchableField(INDEX_FIELD_NAME_TITLE);
         Field score = Field.createRefiningField(INDEX_FIELD_NAME_SCORE, Field.Type.INTEGER);
 

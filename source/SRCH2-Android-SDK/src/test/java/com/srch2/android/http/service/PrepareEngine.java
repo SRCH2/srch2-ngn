@@ -39,7 +39,7 @@ public class PrepareEngine {
         public IndexDescription getIndexDescription() {
 
 
-            Field primaryKey = Field.createRefiningField(INDEX_KEY_PRIMARY_KEY, Field.Type.TEXT);
+            PrimaryKeyField primaryKey = Field.createPrimaryKeyField(INDEX_KEY_PRIMARY_KEY);
             Field songTitle = Field.createSearchableField(INDEX_KEY_SONG_TITLE, 5);
             //Field songYear = Field.createRefiningField(INDEX_KEY_SONG_YEAR, Type.INTEGER);
             //Field artist = Field.createSearchableField(INDEX_KEY_ARTIST, 4);
@@ -81,7 +81,7 @@ public class PrepareEngine {
 
         @Override
         public IndexDescription getIndexDescription() {
-            Field primaryKey = Field.createRefiningField(INDEX_KEY_PRIMARY_KEY, Field.Type.TEXT);
+            PrimaryKeyField primaryKey = Field.createPrimaryKeyField(INDEX_KEY_PRIMARY_KEY);
             Field title = Field.createSearchableField(INDEX_KEY_TITLE);
             //Field year = Field.createRefiningField(INDEX_KEY_YEAR, Type.INTEGER);
             Field genre = Field.createSearchableField(INDEX_KEY_GENRE);
@@ -116,12 +116,11 @@ public class PrepareEngine {
         static final String LAT = "lat";
         static final String LON = "long";
 
-        static final Field fieldID = Field.createSearchableField(INDEX_KEY_PRIMARY_KEY);
+        static final PrimaryKeyField fieldID = Field.createSearchablePrimaryKeyField(INDEX_KEY_PRIMARY_KEY);
 
         @Override
         public IndexDescription getIndexDescription() {
-            return new IndexDescription(NAME,
-                    fieldID, LAT, LON);
+            return new IndexDescription(NAME, fieldID , LAT, LON);
         }
 
         public void insertRecord() {

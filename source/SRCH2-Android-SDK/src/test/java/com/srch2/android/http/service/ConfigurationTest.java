@@ -4,11 +4,13 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+@Config(emulateSdk = 18)
 @RunWith(RobolectricTestRunner.class)
 public class ConfigurationTest {
 
@@ -33,7 +35,7 @@ public class ConfigurationTest {
     @Test
     public void testWriteTo() throws FileNotFoundException,
             UnsupportedEncodingException {
-        SRCH2Engine.getConfig().writeToSRCH2XML("/tmp/srch2-config-4.xml");
+        SRCH2Engine.getConfig().writeToSRCH2XML(System.getProperty("java.io.tmpdir") + File.separator + "srch2-config-4.xml");
     }
 
     @Test(expected = NullPointerException.class)
@@ -88,7 +90,8 @@ public class ConfigurationTest {
 
     @Test
     public void startEngineTest() throws IOException, InterruptedException {
-        SRCH2Engine.getConfig().writeToSRCH2XML("/tmp/srch2-config.xml");
+        final String configPath = System.getProperty("java.io.tmpdir") + File.separator + "srch2-config.xml";
+        SRCH2Engine.getConfig().writeToSRCH2XML(configPath);
         final String srch2bin = System.getProperty(SRCH2BIN_PROPERTY);
         if (srch2bin == null) {
             return;
@@ -96,7 +99,7 @@ public class ConfigurationTest {
 
         Thread serverThread = new Thread() {
             public void run() {
-                String args = "--config=/tmp/srch2-config.xml";
+                String args = "--config=" + configPath;
                 Process srch2Process;
                 try {
                     srch2Process = new ProcessBuilder(srch2bin, args).start();

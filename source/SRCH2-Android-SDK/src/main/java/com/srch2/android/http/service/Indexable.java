@@ -110,7 +110,6 @@ public abstract class Indexable {
      * completed update task.
      * @param records the <code>JSONArray</code> containing the set of <code>JSONObject</code>s
      *                representing the records to upsert
->>>>>>> ba89e5425625694a42fe88b4a728f180697479a7
      */
     public void update(JSONArray records) {
         if (indexInternal != null) {
@@ -119,11 +118,6 @@ public abstract class Indexable {
     }
 
     /**
-<<<<<<< HEAD
-     * Delete the record using the record id, or a list of ids.
-     *
-     * @param id the primary key of the record
-=======
      * Deletes from the index this <code>Indexable</code> represents the record with a primary
      * key matching the value of the <code>primaryKeyOfRecordToDelete</code>. If no record with
      * a matching primary key is found, the index will remain as it is.
@@ -133,7 +127,6 @@ public abstract class Indexable {
      * DeleteResponse response)</code> will be triggered containing the status of the
      * completed deletion task.
      * @param primaryKeyOfRecordToDelete the primary key of the record to delete
->>>>>>> ba89e5425625694a42fe88b4a728f180697479a7
      */
     public void delete(String primaryKeyOfRecordToDelete) {
         if (indexInternal != null) {
@@ -142,9 +135,6 @@ public abstract class Indexable {
     }
 
     /**
-<<<<<<< HEAD
-     * Get the information from the Index
-=======
      * Performs an information task on the index that this <code>Indexable</code> represents. This
      * method may be used to inspect the state of the index such as the number of records in the index
      * by calling <code>getNumberOfDocumentsInTheIndex()</code> on the resulting <code>InfoResponse</code>.
@@ -154,7 +144,6 @@ public abstract class Indexable {
      * will be triggered. The <code>InfoResponse response</code> will contain information about the
      * index such as the number of records it contains or the time stamp of the last time the index
      * was updated to reflect any pending changes.
->>>>>>> ba89e5425625694a42fe88b4a728f180697479a7
      */
     public void info() {
         if (indexInternal != null) {
@@ -164,15 +153,6 @@ public abstract class Indexable {
 
 
     /**
-<<<<<<< HEAD
-     * Do a basic search on the current indexInternal. The queryString contains the
-     * space will be split and searched using the multiple keywords. All query
-     * keywords will be treated all as fuzzy matching, and the last keyword will
-     * be treated as fuzzy and prefix matching. For the more specific setting on
-     * the terms, please use {@link #advancedSearch(Query)} } method.
-     *
-     * @param searchInput the string input
-=======
      * Does a basic search on the index that this <code>Indexable</code> represents. A basic
      * search means that all distinct keywords (delimited by white space) of the
      * <code>searchInput</code> are treated as fuzzy, and the last keyword will

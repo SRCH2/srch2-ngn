@@ -116,7 +116,7 @@ final public class IndexDescription {
      * @param primaryKeyField the field which will be the primary key of the index's schema
      * @param remainingField  the set of any other fields needed to define the schema
      */
-    public IndexDescription(String name, Field primaryKeyField,
+    public IndexDescription(String name, PrimaryKeyField primaryKeyField,
                             Field... remainingField) {
         this(name, new Schema(primaryKeyField, remainingField));
     }
@@ -152,7 +152,7 @@ final public class IndexDescription {
      * @param longitudeFieldName the field which will be the longitude field of the index's schema
      * @param remainingField  the set of any other fields needed to define the schema
      */
-    public IndexDescription(String name, Field primaryKeyField,
+    public IndexDescription(String name, PrimaryKeyField primaryKeyField,
                             String latitudeFieldName, String longitudeFieldName,
                             Field... remainingField) {
         this(name, new Schema(primaryKeyField, latitudeFieldName,

@@ -8,8 +8,6 @@ import com.srch2.android.http.service.MyActivity;
 public class MyActivityTest extends AbstractTest<MyActivity>{
     static final String TAG = "SRCH2ActivityTEST";
 
-    MyActivity activity;
-
     public MyActivityTest(){
         super("com.srch2.android.http.service", MyActivity.class);
     }

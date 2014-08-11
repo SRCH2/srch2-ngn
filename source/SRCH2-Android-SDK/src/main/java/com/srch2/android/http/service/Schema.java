@@ -10,18 +10,16 @@ final class Schema {
     private boolean facetEnabled = false;
     int indexType = 0;
 
-    Schema(Field primaryKeyField, Field... remainingField) {
+    Schema(PrimaryKeyField primaryKeyField, Field... remainingField) {
         if (primaryKeyField == null) {
             throw new IllegalArgumentException(
                     "Value of the field cannot be null");
         }
 
-        primaryKeyField.setAsPrimaryKeyBySettingRequiredToTrue();
-
-        uniqueKey = primaryKeyField.name;
+        uniqueKey = primaryKeyField.primaryKey.name;
         fields = new HashSet<Field>();
-        fields.add(primaryKeyField);
-        boolean searchableFieldExist = primaryKeyField.searchable;
+        fields.add(primaryKeyField.primaryKey);
+        boolean searchableFieldExist = primaryKeyField.primaryKey.searchable;
 
         for (Field f : remainingField) {
             if (f == null) {
@@ -38,7 +36,7 @@ final class Schema {
         }
     }
 
-    Schema(Field primaryKeyField, String latitudeFieldName,
+    Schema(PrimaryKeyField primaryKeyField, String latitudeFieldName,
            String longitudeFieldName, Field... remainingField) {
         this(primaryKeyField, remainingField);
         addToFields(new Field(latitudeFieldName, Field.InternalType.LOCATION_LATITUDE,

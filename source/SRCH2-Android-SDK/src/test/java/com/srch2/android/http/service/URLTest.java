@@ -5,9 +5,11 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 import java.io.UnsupportedEncodingException;
 
+@Config(emulateSdk = 18)
 @RunWith(RobolectricTestRunner.class)
 public class URLTest {
 

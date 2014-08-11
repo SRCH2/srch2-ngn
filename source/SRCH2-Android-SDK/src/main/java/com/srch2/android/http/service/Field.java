@@ -85,6 +85,62 @@ final public class Field {
     }
 
     /**
+     * Static factory method for obtaining a refining PrimaryKey field.
+     * PrimaryKey is always the textual in type. The data will be
+     * returned with the search results whenever a search is performed, but it will not be
+     * matched against the key words of the search input. Using the <code>Query</code> class
+     * the data of this field can be used to filter or sort on search results.
+     * <br><br>
+     * This method will throw an exception if the value of
+     * <code>fieldName</code> is null or has a length less than one.
+     *
+     * @param fieldName the name identifying the primary key field
+     * @return the {@link com.srch2.android.http.service.PrimaryKeyField}
+     */
+    public static PrimaryKeyField createPrimaryKeyField(String fieldName) {
+        return new PrimaryKeyField(createRefiningField(fieldName, Type.TEXT));
+    }
+
+
+    /**
+     * Static factory method for obtaining a searchable and refining PrimaryKey field with
+     * configurable boost value 'boost'.
+     * Whenever a search on the index, the data of this primary key field will also be
+     * returned with the search results.
+     * <br><br>
+     * The value of the <code>boost</code> argument will be used to calculate the score of the of search
+     * results, making this field proportionally more or less relevant than other searchable fields. By
+     * default this value is set to one.
+     * <br><br>
+     * This method will throw an exceptions if the value passed for
+     * <code>boost</code> is less than one or greater than one hundred; or if the value of
+     * <code>fieldName</code> is null or has a length less than one.
+     *
+     * @param fieldName the name identifying the primary key field.
+     * @param boost     the value to assign to the relevance of this field, relative to other searchable fields
+     * @return the {@link com.srch2.android.http.service.PrimaryKeyField}
+     */
+    public static PrimaryKeyField createSearchablePrimaryKeyField(String fieldName, int boost) {
+        return new PrimaryKeyField(createSearchableAndRefiningField(fieldName, Type.TEXT, boost));
+    }
+
+    /**
+     * Static factory method for obtaining a searchable and refining PrimaryKey field with default boost value of one.
+     * The data of this primary key field will be
+     * returned with the search results whenever a search is performed.
+     * <br><br>
+     * This method will throw an exception if the value of
+     * <code>fieldName</code> is null or has a length less than one.
+     *
+     * @param fieldName the name identifying the field
+     * @return the {@link com.srch2.android.http.service.PrimaryKeyField}
+     */
+    public static PrimaryKeyField createSearchablePrimaryKeyField(String fieldName){
+        return createSearchablePrimaryKeyField(fieldName, DEFAULT_BOOST_VALUE);
+    }
+
+
+    /**
      * Static factory method for obtaining a searchable field with configurable boost value 'boost'.
      * Data associated with this field must be textual in type and will be searchable whenever a search
      * on the index whose schema includes this field is searched. The data of this field will also be
@@ -97,8 +153,9 @@ final public class Field {
      * This method will throw an exceptions if the value passed for
      * <code>boost</code> is less than one or greater than one hundred; or if the value of
      * <code>fieldName</code> is null or has a length less than one.
+     *
      * @param fieldName the name identifying the field
-     * @param boost the value to assign to the relevance of this field, relative to other searchable fields
+     * @param boost     the value to assign to the relevance of this field, relative to other searchable fields
      * @return the searchable field
      */
     public static Field createSearchableField(String fieldName, int boost) {
@@ -118,6 +175,7 @@ final public class Field {
      * <br><br>
      * This method will throw an exception if the value of
      * <code>fieldName</code> is null or has a length less than one.
+     *
      * @param fieldName the name identifying the field
      * @return the searchable field
      */
@@ -126,7 +184,6 @@ final public class Field {
     }
 
     /**
-     *
      * Static factory method for obtaining a refining field.
      * Data associated with this field must be have a type specified by the value of
      * <code>fieldType</code>. The data of this field will be
@@ -138,6 +195,7 @@ final public class Field {
      * This method will throw an exception if the value of
      * <code>fieldName</code> is null or has a length less than one; or if the
      * value of <code>fieldType</code> is null.
+     *
      * @param fieldName the name identifying the field
      * @param fieldType the type of the field (Field.FieldType.TEXT,
      *                  Field.FieldType.INTEGER, Field.FieldType.FLOAT,
@@ -163,7 +221,8 @@ final public class Field {
      * This method will throw an exception if the value of
      * <code>fieldName</code> is null or has a length less than one; or if the
      * value of <code>fieldType</code> is null.
-     * @param fieldName  the name identifying the field
+     *
+     * @param fieldName the name identifying the field
      * @param fieldType the type of the field (Field.FieldType.TEXT,
      *                  Field.FieldType.INTEGER, Field.FieldType.FLOAT,
      *                  Field.FieldType.TIME, Field.FieldType.LOCATION_LONGITUDE,
@@ -194,8 +253,9 @@ final public class Field {
      * <code>boost</code> is less than one or greater than one hundred; or if the value of
      * <code>fieldName</code> is null or has a length less than one; or if the
      * value of <code>fieldType</code> is null.
-     * @param fieldName  the name identifying the field
-     * @param boost the value to assign to the relevance of this field, relative to other searchable fields
+     *
+     * @param fieldName the name identifying the field
+     * @param boost     the value to assign to the relevance of this field, relative to other searchable fields
      * @param fieldType the type of the field (Field.FieldType.TEXT,
      *                  Field.FieldType.INTEGER, Field.FieldType.FLOAT,
      *                  Field.FieldType.TIME, Field.FieldType.LOCATION_LONGITUDE,
@@ -208,7 +268,7 @@ final public class Field {
             throw new IllegalArgumentException(
                     "Boost value cannot be less than 1 or greater than 100.");
         }
-        if(fieldType == null){
+        if (fieldType == null) {
             throw new IllegalArgumentException("Field type cannot be null");
         }
         return new Field(fieldName, InternalType.values[fieldType.ordinal()],
@@ -244,15 +304,12 @@ final public class Field {
      * <br><br>
      * This method returns the <code>Field</code> itself so that it can have
      * these calls cascaded.
+     *
      * @return the corresponding field for cascading method calls
      */
     public Field enableHighlighting() {
         highlight = true;
         return this;
-    }
-
-    void setAsPrimaryKeyBySettingRequiredToTrue() {
-        required = true;
     }
 
     @Override

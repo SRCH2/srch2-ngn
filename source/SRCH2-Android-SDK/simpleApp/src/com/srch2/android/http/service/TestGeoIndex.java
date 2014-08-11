@@ -24,7 +24,7 @@ public class TestGeoIndex extends TestableIndex {
      */
     @Override
     public IndexDescription getIndexDescription() {
-        Field primaryKey = Field.createRefiningField(INDEX_FIELD_NAME_PRIMARY_KEY, Field.Type.TEXT);
+        PrimaryKeyField primaryKey = Field.createPrimaryKeyField(INDEX_FIELD_NAME_PRIMARY_KEY);
         Field title = Field.createSearchableField(INDEX_FIELD_NAME_TITLE);
         Field score = Field.createRefiningField(INDEX_FIELD_NAME_SCORE, Field.Type.INTEGER);
 
