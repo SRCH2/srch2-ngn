@@ -64,33 +64,33 @@ final public class IndexDescription {
     private static final String DEFAULT_VALUE_maxMemory = "10000000";
     private static final String DEFAULT_VALUE_logLevel = "3";
     private static final String DEFAULT_VALUE_accessLogFile = "srch2-log.txt";
-    String name;
-    Schema schema;
+
     private final Properties queryProperties = new Properties();
     private final Properties miscProperties = new Properties();
     private final Properties indexProperties = new Properties();
     private final Properties updateProperties = new Properties();
 
-    IndexDescription(String name, Schema schema) {
-        if (name == null) {
-            throw new NullPointerException(
-                    "Index description must be initialized with a name.");
-        }
-        if (name.length() == 0) {
-            throw new IllegalArgumentException(
-                    "Index description must be initialized with a non-empty string.");
-        }
-        this.name = name;
+    String name;
+    Schema schema;
 
-        this.schema = schema;
+    IndexDescription(Indexable idx) {
+
+        name = idx.getIndexName();
+
+        schema = idx.getSchema();
+
+        queryProperties.setProperty("rows", String.valueOf(idx.getTopK()));
+
+        queryProperties.setProperty("queryTermSimilarityThreshold",
+                String.valueOf(idx.getFuzzinessSimilarityThreshold()));
 
         setQueryProperties();
         setMiscProperties();
         setIndexProperties();
         setUpdateProperties();
     }
+/*
 
-    /**
      * Creates the necessary configuration for the index that the <code>Indexable</code>
      * implementation represents. Should only be constructed when returning from the
      * <code>Indexable</code> method <code>getIndexDescription()</code>.
@@ -115,13 +115,12 @@ final public class IndexDescription {
      * @param name            the value to assign to name the index
      * @param primaryKeyField the field which will be the primary key of the index's schema
      * @param remainingField  the set of any other fields needed to define the schema
-     */
-    public IndexDescription(String name, PrimaryKeyField primaryKeyField,
-                            Field... remainingField) {
-        this(name, new Schema(primaryKeyField, remainingField));
+
+    IndexDescription(String theIndexName, Schema theSchema) {
+        this(theIndexName, theSchema);
     }
 
-    /**
+
      * Creates the necessary configuration for the index that the <code>Indexable</code>
      * implementation represents for an index that includes geo-search capability. Should
      * only be constructed when returning from the <code>Indexable</code> method
@@ -151,14 +150,14 @@ final public class IndexDescription {
      * @param latitudeFieldName the field which will be the latitude field of the index's schema
      * @param longitudeFieldName the field which will be the longitude field of the index's schema
      * @param remainingField  the set of any other fields needed to define the schema
-     */
-    public IndexDescription(String name, PrimaryKeyField primaryKeyField,
+
+    IndexDescription(String name, PrimaryKeyField primaryKeyField,
                             String latitudeFieldName, String longitudeFieldName,
                             Field... remainingField) {
         this(name, new Schema(primaryKeyField, latitudeFieldName,
                 longitudeFieldName, remainingField));
     }
-
+    */
     boolean isGeoIndex() {
         return schema.indexType > 0;
     }
@@ -189,44 +188,8 @@ final public class IndexDescription {
         return Float.parseFloat(queryProperties.getProperty("queryTermSimilarityThreshold"));
     }
 
-    /**
-     * Set the default fuzziness similarity threshold. This will determine how many character
-     * substitutions the original search input will match search results for: if set to 0.5,
-     * the search performed will include results as if half of the characters of the original
-     * search input were replaced by wild card characters.
-     * <br><br>
-     * <b>Note:</b> In the the formation of a <code>Query</code>, each <code>Term</code> can
-     * have its own fuzziness similarity threshold value set by calling the method
-     * <code>enableFuzzyMatching(Float value)</code>; by default it is disabled for terms.
-     * <br><br>
-     * This will throw an <code>IllegalArgumentException</code> if the value of
-     * <code>threshold</code> is less than zero or greater than one.
-     * @param threshold the similarity ratio to match against
-     */
-    public void setQueryTermSimilarityThreshold(float threshold) {
-        if (threshold < 0 || threshold > 1) {
-            throw new IllegalArgumentException("The threshold should between (0,1)");
-        }
-        queryProperties.setProperty("queryTermSimilarityThreshold",
-                String.valueOf(threshold));
-    }
-
     int getTopK() {
         return Integer.parseInt(queryProperties.getProperty("rows"));
-    }
-
-    /**
-     * Sets the number of search results to be returned per query or search task.
-     * <br><br>
-     * This method will throw an <code>IllegalArgumentException</code> if the value of
-     * <code>numberOfResultsToReturn</code> is less than one
-     * @param numberOfResultsToReturn the number of results to return per search
-     */
-    public void setTopK(int numberOfResultsToReturn) {
-        if (numberOfResultsToReturn < 1) {
-            throw new IllegalArgumentException("The topK can not be negative number");
-        }
-        queryProperties.setProperty("rows", String.valueOf(numberOfResultsToReturn));
     }
 
     private void setMiscProperties() {
@@ -263,17 +226,6 @@ final public class IndexDescription {
 
     }
 
-    /**
-     * This function configures the parameter on how often the engine will merge
-     * the data.
-     *
-     * @param mergeEveryNSeconds This parameter sets the number of seconds the background
-     *                           thread sleeps before it wakes up and does the merge. This
-     *                           number should be at least 1 (second).
-     * @param mergeEveryMWrites  This parameter specifies the number of record changes after
-     *                           which the thread will awaken to do the merge. This number
-     *                           should be at least 1.
-     */
     void setMergeProperties(int mergeEveryNSeconds, int mergeEveryMWrites) {
         updateProperties.setProperty("mergeEveryNSeconds",
                 String.valueOf(mergeEveryNSeconds));
@@ -371,7 +323,7 @@ final public class IndexDescription {
                 .append("</responseFormat>\n")
                 .append("                </queryResponseWriter>\n")
                 .append("            </query>\n");
-        core.append(schema.schemaToXML());
+        core.append(schemaToXml());
         core.append("	  <updatehandler>\n").append("                <maxDocs>")
                 .append(updateProperties.getProperty(MAX_DOCS))
                 .append("</maxDocs>\n").append("                <maxMemory>")
@@ -399,16 +351,93 @@ final public class IndexDescription {
         return core.toString();
     }
 
-    /**
-     * Gets the name of the index this <code>Indexable</code> represents as it was set in the
-     * <code>IndexDescription</code> returned in the <code>Indexable</code> implementation of
-     * <code>getIndexDescription()</code>. This can be used to call the static CRUD methods of
-     * the <code>SRCH2Engine</code> and used to identify which index the two callbacks
-     * <code>StateResponseListener</code> and <code>SearchResultsListener</code> refer to in
-     * their callback methods.
-     * @return the name of the index this <code>Indexable</code> represents
-     */
-    public String getIndexName() {
+
+    String getIndexName() {
         return name;
     }
+
+    String schemaToXml() {
+        StringBuilder schemaXML = new StringBuilder("	<schema>\n"
+                + "		<fields>\n");
+        for (Field field : schema.fields) {
+            schemaXML.append(Field.toXML(field));
+        }
+        schemaXML.append("		</fields>\n").append("		<uniqueKey>")
+                .append(schema.uniqueKey).append("</uniqueKey>\n");
+
+        schemaXML
+                .append(facetToXML())
+                .append("		<types>\n")
+                .append("		  <fieldType name=\"text_en\">\n")
+                .append("			<analyzer>\n")
+                .append("				<filter name=\"PorterStemFilter\" dictionary=\"\" />\n")
+                .append("				<filter name=\"StopFilter\" words=\"stop-words.txt\" />\n")
+                .append("			</analyzer>\n").append("		  </fieldType>\n")
+                .append("		</types>\n").append("	</schema>\n");
+
+        return schemaXML.toString();
+
+    }
+
+    String facetToXML() {
+
+        StringBuilder facetNodeXML = new StringBuilder("		<facetEnabled>")
+                .append(schema.facetEnabled).append("</facetEnabled>\n");
+        if (schema.facetEnabled) {
+            Iterator<Field> iter = schema.fields.iterator();
+            StringBuilder facetFieldsXML = new StringBuilder("");
+            while (iter.hasNext()) {
+                Field f = iter.next();
+                if (f.facetEnabled) {
+                    schema.facetEnabled = true;
+                    switch (f.facetType) {
+                        case CATEGORICAL:
+                            facetFieldsXML.append("			<facetField name=\"")
+                                    .append(f.name)
+                                    .append("\" facetType=\"categorical\"/>\n");
+                            break;
+                        case RANGE:
+                        default:
+                            facetFieldsXML.append("			<facetField name=\"")
+                                    .append(f.name)
+                                    .append("\" facetType=\"range\" facetStart=\"")
+                                    .append(f.facetStart).append("\" facetEnd=\"")
+                                    .append(f.facetEnd).append("\"")
+                                    .append(" facetGap=\"").append(f.facetGap)
+                                    .append("\"/>\n");
+                    }
+                }
+            }
+            facetNodeXML = facetNodeXML.append("		<facetFields>\n")
+                    .append(facetFieldsXML).append("		</facetFields>\n");
+        }
+
+        return facetNodeXML.toString();
+    }
+
+
+    static void throwIfNonValidTopK(int topK) {
+        if (topK < 1) {
+            throw new IllegalArgumentException("The number of results to return per search per index, AKA topK, must be greater to or equal to one.");
+        }
+    }
+
+    static void throwIfNonValidFuzzinessSimilarityThreshold(float threshold) {
+        if (threshold < 0 || threshold > 1) {
+            throw new IllegalArgumentException("The fuzziness similarity threshold should between greater than zero or less than one.");
+        }
+    }
+
+    static void throwIfNonValidIndexName(String indexName) {
+        if (indexName == null) {
+            throw new NullPointerException(
+                    "The name of the index cannot be null.");
+        }
+        if (indexName.length() == 0) {
+            throw new IllegalArgumentException(
+                    "The name of the index must be a non-empty string");
+        }
+    }
+
+ 
 }

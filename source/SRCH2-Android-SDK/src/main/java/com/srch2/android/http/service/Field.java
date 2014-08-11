@@ -97,7 +97,7 @@ final public class Field {
      * @param fieldName the name identifying the primary key field
      * @return the {@link com.srch2.android.http.service.PrimaryKeyField}
      */
-    public static PrimaryKeyField createPrimaryKeyField(String fieldName) {
+    public static PrimaryKeyField createDefaultPrimaryKeyField(String fieldName) {
         return new PrimaryKeyField(createRefiningField(fieldName, Type.TEXT));
     }
 
@@ -117,7 +117,7 @@ final public class Field {
      * <code>fieldName</code> is null or has a length less than one.
      *
      * @param fieldName the name identifying the primary key field.
-     * @param boost     the value to assign to the relevance of this field, relative to other searchable fields
+     * @param boost the value to assign to the relevance of this field, relative to other searchable fields
      * @return the {@link com.srch2.android.http.service.PrimaryKeyField}
      */
     public static PrimaryKeyField createSearchablePrimaryKeyField(String fieldName, int boost) {
@@ -155,7 +155,7 @@ final public class Field {
      * <code>fieldName</code> is null or has a length less than one.
      *
      * @param fieldName the name identifying the field
-     * @param boost     the value to assign to the relevance of this field, relative to other searchable fields
+     * @param boost the value to assign to the relevance of this field, relative to other searchable fields
      * @return the searchable field
      */
     public static Field createSearchableField(String fieldName, int boost) {

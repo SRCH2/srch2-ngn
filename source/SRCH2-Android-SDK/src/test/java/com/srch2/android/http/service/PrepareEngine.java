@@ -35,17 +35,31 @@ public class PrepareEngine {
         public static final String INDEX_KEY_ARTIST = "artist";
         public static final String INDEX_KEY_GENRE = "genre";
 
+
+
         @Override
-        public IndexDescription getIndexDescription() {
+        public String getIndexName() {
+            return INDEX_NAME;
+        }
+
+        @Override
+        public Schema getSchema() {
 
 
-            PrimaryKeyField primaryKey = Field.createPrimaryKeyField(INDEX_KEY_PRIMARY_KEY);
+
+            PrimaryKeyField primaryKey = Field.createDefaultPrimaryKeyField(INDEX_KEY_PRIMARY_KEY);
             Field songTitle = Field.createSearchableField(INDEX_KEY_SONG_TITLE, 5);
             //Field songYear = Field.createRefiningField(INDEX_KEY_SONG_YEAR, Type.INTEGER);
             //Field artist = Field.createSearchableField(INDEX_KEY_ARTIST, 4);
             Field genre = Field.createSearchableField(INDEX_KEY_GENRE, 3);
-            return new IndexDescription(INDEX_NAME, primaryKey, songTitle, genre);//songYear, artist, genre);
+
+
+            Schema s = new Schema(primaryKey, songTitle, genre);
+
+
+            return null;
         }
+
 
         public void insertRecords() {
             JSONArray recordsJsonArray = new JSONArray();
@@ -69,6 +83,10 @@ public class PrepareEngine {
             }
             super.insert(recordsJsonArray);
         }
+
+
+
+
     }
 
     static class MovieIndex extends Indexable {
@@ -79,13 +97,23 @@ public class PrepareEngine {
         public static final String INDEX_KEY_YEAR = "year";
         public static final String INDEX_KEY_GENRE = "genre";
 
+
+
         @Override
-        public IndexDescription getIndexDescription() {
-            PrimaryKeyField primaryKey = Field.createPrimaryKeyField(INDEX_KEY_PRIMARY_KEY);
+        public String getIndexName() {
+            return INDEX_NAME;
+        }
+
+        @Override
+        public Schema getSchema() {
+            PrimaryKeyField primaryKey = Field.createDefaultPrimaryKeyField(INDEX_KEY_PRIMARY_KEY);
             Field title = Field.createSearchableField(INDEX_KEY_TITLE);
             //Field year = Field.createRefiningField(INDEX_KEY_YEAR, Type.INTEGER);
             Field genre = Field.createSearchableField(INDEX_KEY_GENRE);
-            return new IndexDescription(INDEX_NAME, primaryKey, title, genre);//, year, genre);
+
+            Schema s = new Schema(primaryKey, title, genre);
+
+            return new Schema( primaryKey, title, genre);//, year, genre);
         }
 
         public void insertRecords() {
@@ -118,9 +146,16 @@ public class PrepareEngine {
 
         static final PrimaryKeyField fieldID = Field.createSearchablePrimaryKeyField(INDEX_KEY_PRIMARY_KEY);
 
+
+
         @Override
-        public IndexDescription getIndexDescription() {
-            return new IndexDescription(NAME, fieldID , LAT, LON);
+        public String getIndexName() {
+            return NAME;
+        }
+
+        @Override
+        public Schema getSchema() {
+            return new Schema(fieldID, LAT, LON);
         }
 
         public void insertRecord() {

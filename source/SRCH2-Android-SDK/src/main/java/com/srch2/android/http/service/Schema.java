@@ -7,7 +7,7 @@ final class Schema {
 
     final String uniqueKey;
     HashSet<Field> fields;
-    private boolean facetEnabled = false;
+    boolean facetEnabled = false;
     int indexType = 0;
 
     Schema(PrimaryKeyField primaryKeyField, Field... remainingField) {
@@ -36,6 +36,10 @@ final class Schema {
         }
     }
 
+    public Schema createSchema(PrimaryKeyField primaryKeyField, Field... remainingField) {
+        return new Schema(primaryKeyField, remainingField);
+    }
+
     Schema(PrimaryKeyField primaryKeyField, String latitudeFieldName,
            String longitudeFieldName, Field... remainingField) {
         this(primaryKeyField, remainingField);
@@ -47,6 +51,16 @@ final class Schema {
         indexType = 1;
     }
 
+    public Schema createGeoSchema(PrimaryKeyField primaryKeyField, String latitudeFieldName,
+                                  String longitudeFieldName, Field... remainingField) {
+        return new Schema(primaryKeyField, latitudeFieldName,
+                longitudeFieldName, remainingField);
+    }
+
+
+
+
+
     private void addToFields(Field f) {
         if (fields.contains(f)) {
             throw new IllegalArgumentException("duplicated field:" + f.name);
@@ -54,63 +68,5 @@ final class Schema {
         fields.add(f);
     }
 
-    private String facetToXML() {
 
-        StringBuilder facetNodeXML = new StringBuilder("		<facetEnabled>")
-                .append(facetEnabled).append("</facetEnabled>\n");
-        if (facetEnabled) {
-            Iterator<Field> iter = fields.iterator();
-            StringBuilder facetFieldsXML = new StringBuilder("");
-            while (iter.hasNext()) {
-                Field f = iter.next();
-                if (f.facetEnabled) {
-                    facetEnabled = true;
-                    switch (f.facetType) {
-                        case CATEGORICAL:
-                            facetFieldsXML.append("			<facetField name=\"")
-                                    .append(f.name)
-                                    .append("\" facetType=\"categorical\"/>\n");
-                            break;
-                        case RANGE:
-                        default:
-                            facetFieldsXML.append("			<facetField name=\"")
-                                    .append(f.name)
-                                    .append("\" facetType=\"range\" facetStart=\"")
-                                    .append(f.facetStart).append("\" facetEnd=\"")
-                                    .append(f.facetEnd).append("\"")
-                                    .append(" facetGap=\"").append(f.facetGap)
-                                    .append("\"/>\n");
-                    }
-                }
-            }
-            facetNodeXML = facetNodeXML.append("		<facetFields>\n")
-                    .append(facetFieldsXML).append("		</facetFields>\n");
-        }
-
-        return facetNodeXML.toString();
-    }
-
-    String schemaToXML() {
-
-        StringBuilder schemaXML = new StringBuilder("	<schema>\n"
-                + "		<fields>\n");
-        for (Field field : fields) {
-            schemaXML.append(Field.toXML(field));
-        }
-        schemaXML.append("		</fields>\n").append("		<uniqueKey>")
-                .append(uniqueKey).append("</uniqueKey>\n");
-
-        schemaXML
-                .append(facetToXML())
-                .append("		<types>\n")
-                .append("		  <fieldType name=\"text_en\">\n")
-                .append("			<analyzer>\n")
-                .append("				<filter name=\"PorterStemFilter\" dictionary=\"\" />\n")
-                .append("				<filter name=\"StopFilter\" words=\"stop-words.txt\" />\n")
-                .append("			</analyzer>\n").append("		  </fieldType>\n")
-                .append("		</types>\n").append("	</schema>\n");
-
-        return schemaXML.toString();
-
-    }
 }
