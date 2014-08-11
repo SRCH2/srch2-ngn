@@ -7,13 +7,13 @@ import java.io.UnsupportedEncodingException;
 
 /**
  * Represents an index in the SRCH2 search server. For every index to be searched on, users of the
- * SRCH2 Android SDK should implement a separate subclass of this class to at least define a
- * <code>IndexDescription</code> that will be used by the <code>SRCH2Engine</code> to generate
- * the necessary configuration for the index for the SRCH2 search server.
+ * SRCH2 Android SDK should implement a separate subclass instance of this class.
  * <br><br>
- * Each <code>Indexable</code> implementation <b>must</b> at least override the abstract method
- * <code>public IndexDescription getIndexDescription()</code> in order to define the name
- * and schema of the index the <code>Indexable</code> is supposed to represent.
+ * For each implementation of this class, <b>it is necessary</b> to override:
+ * <br>
+ * <code>String getIndexName()</code>
+ * <br>
+ * <code>Schema getSchema()</code>
  * <br><br>
  * This class contains methods for performing CRUD actions on the index such as insertion and
  * searching; however, these same methods can be called statically from the <code>SRCH2Engine</code>

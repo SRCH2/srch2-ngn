@@ -3,16 +3,8 @@ package com.srch2.android.http.service;
 import java.util.Iterator;
 import java.util.Properties;
 
-/**
- * Creates the necessary configuration for each index that will be searchable in the SRCH2 search server.
- * Each index in the SRCH2 search server requires a name and a schema which is defined in the construction
- * of this class.
- * <br><br>
- * The only place construction of an object of this class should occur is in the <code>Indexable</code>
- * implementation of the abstract method <code>public IndexDescription getIndexDescription()</code> when
- * returning from this method.
- */
-final public class IndexDescription {
+
+final class IndexDescription {
 
     private static final String RECORD_SCORE_EXPRESSION = "recordScoreExpression";
     private static final String FUZZY_MATCH_PENALTY = "fuzzyMatchPenalty";
@@ -112,9 +104,7 @@ final public class IndexDescription {
      * <br><br>
      * This method will throw exceptions if <code>name</code> is null or empty; or if
      * any of the fields passed are null.
-     * @param name            the value to assign to name the index
-     * @param primaryKeyField the field which will be the primary key of the index's schema
-     * @param remainingField  the set of any other fields needed to define the schema
+
 
     IndexDescription(String theIndexName, Schema theSchema) {
         this(theIndexName, theSchema);
@@ -439,5 +429,5 @@ final public class IndexDescription {
         }
     }
 
- 
+
 }

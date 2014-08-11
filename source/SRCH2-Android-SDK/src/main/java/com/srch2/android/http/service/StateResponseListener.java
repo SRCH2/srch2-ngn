@@ -67,8 +67,8 @@ public interface StateResponseListener {
      * Called after the SRCH2 search server comes online after the call to <code>SRCH2.onStart(Context
      * context)</code> is made. When this method executes, it will pass a map of indexes ready for
      * CRUD operations, defined by the <code>Indexable</code> implementations: this map contains the
-     * names of the indexes (as they were defined in the <code>IndexDescription</code> returned from
-     * the <code>Indexable</code> implementation of the method <code>getIndexDescription()</code>) as
+     * names of the indexes (as they were defined in the return value of the <code>getIndexName()</code>
+     * implementation of each <code>Indexable</code>) as
      * its keys mapping to the <code>InfoResponse</code> for each index.
      *
      * @param indexesToInfoResponseMap a mapping of indexes to their valid <code>InfoResponse</code>s
