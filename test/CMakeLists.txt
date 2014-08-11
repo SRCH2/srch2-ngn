@@ -138,6 +138,9 @@ SET_TESTS_PROPERTIES(GetAllResultsQuery_Test PROPERTIES ENVIRONMENT "index_dir=$
 ADD_TEST(Lookup_Test ${CMAKE_CURRENT_BINARY_DIR}/core/integration/Lookup_Test "--verbose")
 SET_TESTS_PROPERTIES(Lookup_Test PROPERTIES ENVIRONMENT "index_dir=${INTEGRATION_TEST_INDEX_DIR}ranking-newly-inserted/")
 
+ADD_TEST(ThreadSafetyReadWriteGeo_Test ${CMAKE_CURRENT_BINARY_DIR}/core/integration/ThreadSafetyReadWriteGeo_Test "--verbose")
+SET_TESTS_PROPERTIES(ThreadSafetyReadWriteGeo_Test PROPERTIES ENVIRONMENT "index_dir=${INTEGRATION_TEST_INDEX_DIR}threadsafetyreadwritegeo_test/")
+
 ADD_TEST(Geo_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Geo_Test "--verbose")
 SET_TESTS_PROPERTIES(Geo_Test PROPERTIES ENVIRONMENT "directoryName=${CMAKE_SOURCE_DIR}/test/core/unit/test_data")
 

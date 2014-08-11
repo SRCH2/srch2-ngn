@@ -148,6 +148,7 @@ bool verifyByRandomAccessGeoHelper(PhysicalPlanRandomAccessVerificationParameter
 			parameters.forwardListDirectoryReadView,
 			parameters.recordToVerify->getRecordId(),
 			valid);
+
 	if(!valid){ // this record is invalid
 		return false;
 	}

@@ -9,9 +9,9 @@
 #define __QUADTREE_H__
 
 #include <vector>
-
-#include "geo/QuadTreeNode.h"
 #include <queue>
+#include "geo/QuadTreeNode.h"
+
 
 using namespace std;
 
@@ -22,25 +22,6 @@ const double GEO_TOP_RIGHT_X = 200.0;    // The top right point of the maximum r
 const double GEO_TOP_RIGHT_Y = 200.0;
 const double GEO_BOTTOM_LEFT_X = -200.0;    // The bottom left point of the maximum rectangle range of the whole quadtree
 const double GEO_BOTTOM_LEFT_Y = -200.0;
-
-class QuadTreeRootNodeAndFreeLists{
-public:
-	vector<const QuadTreeNode*> quadtreeNodes_free_list;
-	vector<const GeoElement*>   geoElements_free_list;
-	QuadTreeNode* root;
-
-	QuadTreeRootNodeAndFreeLists();
-	QuadTreeRootNodeAndFreeLists(const QuadTreeNode* src);
-	~QuadTreeRootNodeAndFreeLists();
-
-private:
-	friend class boost::serialization::access;
-
-	template<class Archive>
-	void serialize(Archive & ar, const unsigned int version){
-		ar & root;
-	}
-};
 
 class QuadTree
 {
@@ -67,10 +48,12 @@ public:
 
 	bool insert_ThreadSafe(const Record *record, unsigned recordInternalId);
 
+	bool insert_ThreadSafe(Point point, unsigned recordInternalId);
+
 	bool insert_ThreadSafe(GeoElement* element);
 
 	// Remove the record from the quadtree
-	bool remove_ThreadSafe(const Record *record, unsigned recordInternalId);
+	bool remove_ThreadSafe(Point point, unsigned recordInternalId);
 
 	// Remove the geo element from the quadtree
 	bool remove_ThreadSafe(GeoElement* element);
@@ -115,7 +98,7 @@ private:
     friend class boost::serialization::access;
 
     template<class Archive>
-    void save(Archive & ar, const unsigned int version){
+    void save(Archive & ar, const unsigned int version) const{
     	// We do NOT need to serialize the "committed" flag since the quadtree should have committed.
     	ar << root_readview;
     }
@@ -123,8 +106,8 @@ private:
     template<class Archive>
     void load(Archive & ar, const unsigned int version){
     	// We do NOT need to read the "committed" flag from the disk since the quadtree should have committed and the flag should true.
-    	this->commited = true;
-    	ar >> this->root_readview;
+    	commited = true;
+    	ar >> root_readview;
     	// free any old memory pointed by this->root_writeview to avoid memory leaks.
     	if(this->root_writeview)
     		delete this->root_writeview;

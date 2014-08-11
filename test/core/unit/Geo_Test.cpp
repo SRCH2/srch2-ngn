@@ -259,7 +259,9 @@ void testSingleNodeQuadTree(string directoryName)
     rectangle.max.y=20;
     rectangle.min.x=10;
     rectangle.min.y=10;
-    QuadTree *qt = dynamic_cast<IndexReaderWriter *>(indexer)->getQuadTree();
+    boost::shared_ptr<QuadTreeRootNodeAndFreeLists> quadtree_ReadView;
+    quadtree_ReadView = dynamic_cast<IndexReaderWriter *>(indexer)->getQuadTree_ReadView();
+    QuadTreeNode *qt = quadtree_ReadView->root;
     qt->rangeQuery(results,rectangle);
     vector<unsigned> res;
 
@@ -329,7 +331,9 @@ void testCircleRange(string directoryName)
     Point point;
     point.x = 100; point.y = 100;
     Circle circle(point,30);
-    QuadTree *qt = dynamic_cast<IndexReaderWriter *>(indexer)->getQuadTree();
+    boost::shared_ptr<QuadTreeRootNodeAndFreeLists> quadtree_ReadView;
+    quadtree_ReadView = dynamic_cast<IndexReaderWriter *>(indexer)->getQuadTree_ReadView();
+    QuadTreeNode *qt = quadtree_ReadView->root;
     qt->rangeQuery(results,circle);
     vector<unsigned> res;
 
@@ -418,7 +422,9 @@ void Serialize(string directoryName)
 
 	readRecordsFromFile(indexer, schema, analyzer, directoryName+"/quadtree/1K");
 
-	QuadTree *qt1 = dynamic_cast<IndexReaderWriter *>(indexer)->getQuadTree();
+    boost::shared_ptr<QuadTreeRootNodeAndFreeLists> quadtree_ReadView;
+    quadtree_ReadView = dynamic_cast<IndexReaderWriter *>(indexer)->getQuadTree_ReadView();
+    QuadTreeNode *qt = quadtree_ReadView->root;
 
 	// serialize the index
 	indexer->commit();
@@ -450,16 +456,20 @@ void testDeserialization(string directoryName)
 
 	// load the quadtree from disk
     Indexer *indexer1 = Indexer::load(indexMetaData);
-	QuadTree *qt1 = dynamic_cast<IndexReaderWriter *>(indexer1)->getQuadTree();
+    boost::shared_ptr<QuadTreeRootNodeAndFreeLists> quadtree_ReadView;
+    quadtree_ReadView = dynamic_cast<IndexReaderWriter *>(indexer1)->getQuadTree_ReadView();
+    QuadTreeNode *qt1 = quadtree_ReadView->root;
 
 	// rebuild the old quadtree
 	Indexer *indexer2 = Indexer::create(indexMetaData, analyzer, schema);
 	readRecordsFromFile(indexer2, schema, analyzer, directoryName+"/quadtree/1K");
 	indexer2->commit();
-	QuadTree *qt2 = dynamic_cast<IndexReaderWriter *>(indexer2)->getQuadTree();
+    boost::shared_ptr<QuadTreeRootNodeAndFreeLists> quadtree_ReadView2;
+    quadtree_ReadView2 = dynamic_cast<IndexReaderWriter *>(indexer2)->getQuadTree_ReadView();
+    QuadTreeNode *qt2 = quadtree_ReadView->root;
 
-	ASSERT(qt1->getRoot()->getNumOfElementsInSubtree() == qt2->getRoot()->getNumOfElementsInSubtree());
-	ASSERT(qt1->getRoot()->getNumOfLeafNodesInSubtree() == qt2->getRoot()->getNumOfLeafNodesInSubtree());
+	ASSERT(qt1->getNumOfElementsInSubtree() == qt2->getNumOfElementsInSubtree());
+	ASSERT(qt1->getNumOfLeafNodesInSubtree() == qt2->getNumOfLeafNodesInSubtree());
 
 	// test if the loaded quadtree is exactly the same as the old one
 	bool isEqual = false;

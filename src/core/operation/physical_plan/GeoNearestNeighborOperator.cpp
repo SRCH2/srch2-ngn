@@ -29,13 +29,13 @@ GeoNearestNeighborOperator::~GeoNearestNeighborOperator(){
 
 bool GeoNearestNeighborOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
 	this->queryEvaluator = queryEvaluator;
-	this->quadtree = queryEvaluator->getQuadTree();
 	// get the forward list read view
 	this->queryEvaluator->getForwardIndex()->getForwardListDirectory_ReadView(this->forwardListDirectoryReadView);
 	// finding the query region
 	this->queryShape = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->regionShape;
 	// get quadTreeNodeSet which contains all the subtrees in quadtree which have the answers
-	vector<QuadTreeNode*>* quadTreeNodeSet = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->stats->getQuadTreeNodeSetForEstimation();
+	this->quadTreeNodeSetSharedPtr = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->stats->getQuadTreeNodeSetForEstimation();
+	vector<QuadTreeNode*>* quadTreeNodeSet = this->quadTreeNodeSetSharedPtr->getQuadTreeNodeSet();
 	// put all the QuadTree nodes from quadTreeNodeSet into the heap vector
 
 	for( unsigned i = 0 ; i < quadTreeNodeSet->size() ; i++ ){
@@ -143,7 +143,7 @@ string GeoNearestNeighborOperator::toString(){
 // of parent open function.
 PhysicalPlanCost GeoNearestNeighborOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params){
 	PhysicalPlanCost resultCost;
-	resultCost.cost = this->getLogicalPlanNode()->stats->quadTreeNodeSet.size();
+	resultCost.cost = this->getLogicalPlanNode()->stats->quadTreeNodeSet->sizeOfQuadTreeNodeSet();
 	return resultCost;
 }
 // The cost of getNext of a child is multiplied by the estimated number of calls to this function
@@ -154,14 +154,14 @@ PhysicalPlanCost GeoNearestNeighborOptimizationOperator::getCostOfGetNext(const 
 	// cost of removing the item from the heap
 	// TODO: consider the number of all geoelements in the heap
 	double cost = 0;
-	resultCost.cost = log2(((double)(this->getLogicalPlanNode()->stats->quadTreeNodeSet.size() + GEO_MAX_NUM_OF_ELEMENTS + 1)));
+	resultCost.cost = log2(((double)(this->getLogicalPlanNode()->stats->quadTreeNodeSet->sizeOfQuadTreeNodeSet() + GEO_MAX_NUM_OF_ELEMENTS + 1)));
 	return resultCost;
 }
 // the cost of close of a child is only considered once since each node's close function is only called once.
 PhysicalPlanCost GeoNearestNeighborOptimizationOperator::getCostOfClose(const PhysicalPlanExecutionParameters & params) {
 	PhysicalPlanCost resultCost;
 	unsigned estimatedNumberOfleafNodes = this->getLogicalPlanNode()->stats->estimatedNumberOfLeafNodes;
-	resultCost.cost =  this->getLogicalPlanNode()->stats->quadTreeNodeSet.size() + GEO_MAX_NUM_OF_ELEMENTS;
+	resultCost.cost =  this->getLogicalPlanNode()->stats->quadTreeNodeSet->sizeOfQuadTreeNodeSet() + GEO_MAX_NUM_OF_ELEMENTS;
 	return resultCost;
 }
 

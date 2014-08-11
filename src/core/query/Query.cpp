@@ -23,7 +23,6 @@
 //#include <instantsearch/Term.h>
 #include <instantsearch/Ranker.h>
 #include "util/Logger.h"
-#include "record/LocationRecordUtil.h"
 #include <string>
 #include <sstream>
 
@@ -212,9 +211,9 @@ QueryType Query::getQueryType() const
     return impl->type;
 }
 
-void Query::getRange(vector<double> &values) const
+Shape* Query::getRange() const
 {
-    impl->range->getValues(values);
+    return impl->range;
 }
 
 void Query::setSortableAttribute(unsigned sortableAttributeId, srch2::instantsearch::SortOrder order)

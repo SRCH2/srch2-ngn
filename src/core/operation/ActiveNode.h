@@ -27,6 +27,7 @@
 #include "util/BusyBit.h"
 #include "util/Assert.h"
 #include "util/Logger.h"
+#include "src/core/geo/QuadTree.h"
 
 using srch2::util::Logger;
 
@@ -616,6 +617,31 @@ private:
     }
 
 };
+
+class GeoActiveNodeSet{
+private:
+	boost::shared_ptr<QuadTreeRootNodeAndFreeLists> quadTreeRootNodeSharedPtr;
+	vector<QuadTreeNode*> quadTreeNodeSet;
+
+public:
+	GeoActiveNodeSet(boost::shared_ptr<QuadTreeRootNodeAndFreeLists> &quadTreeRootNodeSharedPtr){
+		this->quadTreeRootNodeSharedPtr = quadTreeRootNodeSharedPtr;
+	}
+
+	void computeQuadTreeNodeSet(Shape& range){
+		this->quadTreeRootNodeSharedPtr->root->rangeQuery(this->quadTreeNodeSet,range);
+	}
+
+	vector<QuadTreeNode*>* getQuadTreeNodeSet(){
+		return &(this->quadTreeNodeSet);
+	}
+
+	unsigned sizeOfQuadTreeNodeSet(){
+		return this->quadTreeNodeSet.size();
+	}
+};
+
+
 
 
 }

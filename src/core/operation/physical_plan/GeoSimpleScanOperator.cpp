@@ -29,14 +29,13 @@ GeoSimpleScanOperator::~GeoSimpleScanOperator(){
 bool GeoSimpleScanOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
 	// first save the pointer to QueryEvaluator
 	this->queryEvaluator = queryEvaluator;
-	//TODO: after adding concurrency this line should be like: this->queryEvaluator->getQuadTree()->getQuadTree_ReadView(quadtree);
-	this->quadtree = this->queryEvaluator->getQuadTree();
 	// get the forward list read view
 	this->queryEvaluator->getForwardIndex()->getForwardListDirectory_ReadView(this->forwardListDirectoryReadView);
 	// get the query shape
 	this->queryShape = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->regionShape;
 	// get quadTreeNodeSet which contains all the subtrees in quadtree which have the answers
-	vector<QuadTreeNode*>* quadTreeNodeSet = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->stats->getQuadTreeNodeSetForEstimation();
+	this->quadTreeNodeSetSharedPtr = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->stats->getQuadTreeNodeSetForEstimation();
+	vector<QuadTreeNode*>* quadTreeNodeSet = this->quadTreeNodeSetSharedPtr->getQuadTreeNodeSet();
 
 	// put the vector of element in each node in geoElements
 	// rangeQuery will be called recursively to find all the leaf nodes.
@@ -134,7 +133,6 @@ bool GeoSimpleScanOperator::close(PhysicalPlanExecutionParameters & params){
 	this->cursorOnVectorOfGeoElements = 0;
 	this->vectorOffset = 0;
 	this->queryEvaluator = NULL;
-	this->quadtree = NULL;
 	this->geoElements.clear();
 	return true;
 }

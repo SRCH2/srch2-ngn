@@ -103,10 +103,6 @@ public:
         return this->indexData->forwardIndex;
     }
 
-    QuadTree * getQuadTree(){
-    	return this->indexData->quadTree;
-    }
-
     void getForwardIndex_ReadView(shared_ptr<vectorview<ForwardListPtr> > & readView){
     	readView = this->forwardIndexDirectoryReadView;
     }

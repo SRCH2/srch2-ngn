@@ -30,6 +30,8 @@
 #include <instantsearch/Analyzer.h>
 #include "util/FileOps.h"
 #include "serialization/Serializer.h"
+#include "util/RecordSerializerUtil.h"
+#include "util/RecordSerializer.h"
 #include <stdio.h>  /* defines FILENAME_MAX */
 #include <iostream>
 #include <string>
@@ -246,7 +248,11 @@ INDEXWRITE_RETVAL IndexData::_addRecordWithoutLock(const Record *record, Analyze
 
     // Geo Index: need to add this record to the quadtree.
     if(this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex){
-    	this->quadTree->insert(record, internalRecordId);
+    	if(!this->flagBulkLoadDone){
+    		this->quadTree->insert(record, internalRecordId);
+    	}else{
+    		this->quadTree->insert_ThreadSafe(record, internalRecordId);
+    	}
     }
    
     return OP_SUCCESS;
@@ -255,9 +261,35 @@ INDEXWRITE_RETVAL IndexData::_addRecordWithoutLock(const Record *record, Analyze
 // delete a record with a specific id //TODO Give the correct return message for delete pass/fail
 INDEXWRITE_RETVAL IndexData::_deleteRecord(const std::string &externalRecordId)
 {
+
+	if(this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex){
+		unsigned int internalRecordId;
+		this->forwardIndex->getInternalRecordIdFromExternalRecordId(externalRecordId, internalRecordId);
+		const ForwardList* forwardList = this->forwardIndex->getForwardList_ForCommit(internalRecordId);
+		StoredRecordBuffer buffer = forwardList->getInMemoryData();
+
+		Schema * storedSchema = Schema::create();
+		srch2::util::RecordSerializerUtil::populateStoredSchema(storedSchema, this->getSchema());
+		srch2::util::RecordSerializer compactRecDeserializer = srch2::util::RecordSerializer(*storedSchema);
+
+		// get the name of the attributes
+		const string* nameOfLatitudeAttribute = this->getSchema()->getNameOfLatituteAttribute();
+		const string* nameOfLongitudeAttribute = this->getSchema()->getNameOfLongitudeAttribute();
+
+		unsigned idLat = storedSchema->getRefiningAttributeId(*nameOfLatitudeAttribute);
+		unsigned latOffset = compactRecDeserializer.getRefiningOffset(idLat);
+
+		unsigned idLong = storedSchema->getRefiningAttributeId(*nameOfLongitudeAttribute);
+		unsigned longOffset = compactRecDeserializer.getRefiningOffset(idLong);
+		Point point;
+		point.x = *((float *)(buffer.start.get() + latOffset));
+		point.y = *((float *)(buffer.start.get() + longOffset));
+		this->quadTree->remove_ThreadSafe(point, internalRecordId);
+	}
+
     INDEXWRITE_RETVAL success = this->forwardIndex->deleteRecord(externalRecordId)  ? OP_SUCCESS: OP_FAIL;
 
-    if (success == OP_SUCCESS) {
+    if (success == OP_SUCCESS){
         this->mergeRequired = true; // need to tell the merge thread to merge
         this->writeCounter->decDocsCounter();
         this->writeCounter->incWritesCounter();
@@ -270,6 +302,30 @@ INDEXWRITE_RETVAL IndexData::_deleteRecord(const std::string &externalRecordId)
 // get the deleted internal recordID
 INDEXWRITE_RETVAL IndexData::_deleteRecordGetInternalId(const std::string &externalRecordId, unsigned &internalRecordId)
 {
+	if(this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex){
+			this->forwardIndex->getInternalRecordIdFromExternalRecordId(externalRecordId, internalRecordId);
+			const ForwardList* forwardList = this->forwardIndex->getForwardList_ForCommit(internalRecordId);
+			StoredRecordBuffer buffer = forwardList->getInMemoryData();
+
+			Schema * storedSchema = Schema::create();
+			srch2::util::RecordSerializerUtil::populateStoredSchema(storedSchema, this->getSchema());
+			srch2::util::RecordSerializer compactRecDeserializer = srch2::util::RecordSerializer(*storedSchema);
+
+			// get the name of the attributes
+			const string* nameOfLatitudeAttribute = this->getSchema()->getNameOfLatituteAttribute();
+			const string* nameOfLongitudeAttribute = this->getSchema()->getNameOfLongitudeAttribute();
+
+			unsigned idLat = storedSchema->getRefiningAttributeId(*nameOfLatitudeAttribute);
+			unsigned latOffset = compactRecDeserializer.getRefiningOffset(idLat);
+
+			unsigned idLong = storedSchema->getRefiningAttributeId(*nameOfLongitudeAttribute);
+			unsigned longOffset = compactRecDeserializer.getRefiningOffset(idLong);
+			Point point;
+			point.x = *((float *)(buffer.start.get() + latOffset));
+			point.y = *((float *)(buffer.start.get() + longOffset));
+			this->quadTree->remove_ThreadSafe(point, internalRecordId);
+		}
+
     INDEXWRITE_RETVAL success = this->forwardIndex->deleteRecordGetInternalId(externalRecordId, internalRecordId)  ? OP_SUCCESS: OP_FAIL;
 
     if (success == OP_SUCCESS) {
@@ -285,6 +341,30 @@ INDEXWRITE_RETVAL IndexData::_deleteRecordGetInternalId(const std::string &exter
 INDEXWRITE_RETVAL IndexData::_recoverRecord(const std::string &externalRecordId, unsigned internalRecordId)
 {
     INDEXWRITE_RETVAL success = this->forwardIndex->recoverRecord(externalRecordId, internalRecordId)  ? OP_SUCCESS: OP_FAIL;
+
+    if(success == OP_SUCCESS && this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex){
+    	this->forwardIndex->getInternalRecordIdFromExternalRecordId(externalRecordId, internalRecordId);
+    	const ForwardList* forwardList = this->forwardIndex->getForwardList_ForCommit(internalRecordId);
+    	StoredRecordBuffer buffer = forwardList->getInMemoryData();
+
+    	Schema * storedSchema = Schema::create();
+    	srch2::util::RecordSerializerUtil::populateStoredSchema(storedSchema, this->getSchema());
+    	srch2::util::RecordSerializer compactRecDeserializer = srch2::util::RecordSerializer(*storedSchema);
+
+    	// get the name of the attributes
+    	const string* nameOfLatitudeAttribute = this->getSchema()->getNameOfLatituteAttribute();
+    	const string* nameOfLongitudeAttribute = this->getSchema()->getNameOfLongitudeAttribute();
+
+    	unsigned idLat = storedSchema->getRefiningAttributeId(*nameOfLatitudeAttribute);
+    	unsigned latOffset = compactRecDeserializer.getRefiningOffset(idLat);
+
+    	unsigned idLong = storedSchema->getRefiningAttributeId(*nameOfLongitudeAttribute);
+    	unsigned longOffset = compactRecDeserializer.getRefiningOffset(idLong);
+    	Point point;
+    	point.x = *((float *)(buffer.start.get() + latOffset));
+    	point.y = *((float *)(buffer.start.get() + longOffset));
+    	this->quadTree->insert_ThreadSafe(point, internalRecordId);
+    }
 
     if (success == OP_SUCCESS) {
         this->mergeRequired = true; // need to tell the merge thread to merge
@@ -323,9 +403,6 @@ INDEXWRITE_RETVAL IndexData::finishBulkLoad()
          * 4. Commit Inverted Index, by traversing Trie by Depth First.
          * 5. For each Terminal Node, add InvertedIndex offset information in it.
          *
-         * For the text+Geo Index, two differences:
-         * 1. There is no InvertedIndex.
-         * 2. Need to go to the QuadTree to build filters.
          */
         const unsigned totalNumberofDocuments = this->forwardIndex->getTotalNumberOfForwardLists_WriteView();
 
@@ -333,6 +410,7 @@ INDEXWRITE_RETVAL IndexData::finishBulkLoad()
 
         this->forwardIndex->commit();
         this->trie->commit();
+        this->quadTree->commit();
         //this->trie->print_Trie();
         const vector<unsigned> *oldIdToNewIdMapVector = this->trie->getOldIdToNewIdMapVector();
 
@@ -411,20 +489,6 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
 
     invertedIndex = this->invertedIndex;
 
-    // Mahdi: This part is related to the old geo design. So we don't need to lock here anymore
-    // Also I removed the haveGlobalLockForM1 from rest of the code!!
-    /***** TODO: remove this code *************************/
-    /*//Need to block reader for both trie reassignment and quadtree merge in
-    //M1
-   	bool haveGlobalLockForM1 = true;
-    boost::unique_lock< boost::shared_mutex > lock(globalRwMutexForReadersWriters);
-    if (this->schemaInternal->getIndexType() !=
-        srch2::instantsearch::LocationIndex) {
-      lock.unlock();
-      haveGlobalLockForM1 = false;
-    }*/
-    /*****************************************************/
-
     // check if we need to reassign some keyword ids
     if (this->trie->needToReassignKeywordIds()) {
 
@@ -452,6 +516,9 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
     this->trie->merge(invertedIndex , this->forwardIndex,
     		this->forwardIndex->getTotalNumberOfForwardLists_ReadView() , updateHistogram);
     
+    if (this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex) {
+          this->quadTree->merge();
+    }
 
     this->mergeRequired = false;
 

@@ -51,8 +51,8 @@ public:
 	unsigned estimatedNumberOfLeafNodes;
 	boost::shared_ptr<PrefixActiveNodeSet> activeNodeSetExact;
 	boost::shared_ptr<PrefixActiveNodeSet> activeNodeSetFuzzy;
-	// vector of quadtree nodes. (query region contains the rectangle of these quadtree nodes.)
-	vector<QuadTreeNode*> quadTreeNodeSet;
+
+	boost::shared_ptr<GeoActiveNodeSet> quadTreeNodeSet;
 
 	LogicalPlanNodeAnnotation(){
 		estimatedNumberOfLeafNodes = 0;
@@ -91,8 +91,8 @@ public:
 		return activeNodeSetExact;
 	}
 
-	vector<QuadTreeNode*>* getQuadTreeNodeSetForEstimation(){
-		return &quadTreeNodeSet;
+	boost::shared_ptr<GeoActiveNodeSet> getQuadTreeNodeSetForEstimation(){
+		return this->quadTreeNodeSet;
 	}
 };
 
@@ -127,7 +127,7 @@ private:
 	unsigned countNumberOfKeywords(LogicalPlanNode * node , bool isFuzzy);
 
 	boost::shared_ptr<PrefixActiveNodeSet> computeActiveNodeSet(Term *term) const;
-	void computeQuadTreeNodeSet(vector<QuadTreeNode*> &results, Shape *range);
+	boost::shared_ptr<GeoActiveNodeSet> computeQuadTreeNodeSet(Shape *range);
 	void computeEstimatedProbabilityOfPrefixAndNumberOfLeafNodes(TermType termType, PrefixActiveNodeSet * activeNodes ,
 			unsigned threshold, double & probability, unsigned & numberOfLeafNodes) const;
 
@@ -141,8 +141,6 @@ private:
 			unsigned & aggregatedNumberOfLeafNodes) const;
 
 	unsigned computeEstimatedNumberOfResults(double probability);
-
-	unsigned computerEstimatedNumberOfResultsForGeo(double probability);
 
 };
 

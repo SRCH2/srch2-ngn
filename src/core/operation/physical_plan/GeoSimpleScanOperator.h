@@ -38,13 +38,12 @@ public:
 private:
 	GeoSimpleScanOperator();
 
-	//TODO: This pointer should change to a shared pointer
-	QuadTree* quadtree;
 	vector< vector<GeoElement*>* > geoElements;
 	QueryEvaluatorInternal* queryEvaluator;
 	unsigned vectorOffset; // keep the offset of the current reading vector in geoElements
 	unsigned cursorOnVectorOfGeoElements; // keep the offset of the current reading geoElement
 	Shape* queryShape;  // keep the shape of the query region
+	boost::shared_ptr<GeoActiveNodeSet> quadTreeNodeSetSharedPtr;
 	shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
 	unsigned latOffset;       // offset of the latitude attribute in the refining attribute memory
 	unsigned longOffset;      // offset of the longitude attribute in the refining attribute memory
@@ -69,8 +68,6 @@ public:
 
 	bool validateChildren();
 
-private:
-	QuadTree* quadtree;
 };
 
 }

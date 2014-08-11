@@ -27,11 +27,11 @@ QuadTreeRootNodeAndFreeLists::QuadTreeRootNodeAndFreeLists(const QuadTreeNode* s
 
 QuadTreeRootNodeAndFreeLists::~QuadTreeRootNodeAndFreeLists(){
 	//delete both free list members
-	for( vector<const QuadTreeNode*>::iterator it = this->quadtreeNodes_free_list.begin();
+	for( vector<QuadTreeNode*>::iterator it = this->quadtreeNodes_free_list.begin();
 			it != this->quadtreeNodes_free_list.end() ; ++it){
 		delete *it;
 	}
-	for( vector<const GeoElement*>::iterator it = this->geoElements_free_list.begin();
+	for( vector<GeoElement*>::iterator it = this->geoElements_free_list.begin();
 			it != this->geoElements_free_list.end() ; ++it){
 		delete *it;
 	}
@@ -51,7 +51,7 @@ QuadTree::~QuadTree(){
 	if(root == NULL)
 		return;
 	for(unsigned childIterator = 0; childIterator < root->getChildren()->size(); ++childIterator){
-		this->deleteQuadTreeNode(root->children[childIterator]);
+		this->deleteQuadTreeNode(root->getChildren()->at(childIterator));
 	}
 	/* Free root_writeview pointer. The if condition is a defensive check to make sure
 	 * that we do not get into a double free situation. 'root_readview' is a shared_pointer
@@ -104,6 +104,11 @@ bool QuadTree::insert_ThreadSafe(const Record* record, unsigned int recordIntern
 	return this->insert_ThreadSafe(newElement);
 }
 
+bool QuadTree::insert_ThreadSafe(Point point, unsigned recordInternalId){
+	GeoElement* newElement = new GeoElement(point.x, point.y, recordInternalId);
+	return this->insert_ThreadSafe(newElement);
+}
+
 bool QuadTree::insert_ThreadSafe(GeoElement* element){
 	this->mergeRequired = true;
 
@@ -114,8 +119,8 @@ bool QuadTree::insert_ThreadSafe(GeoElement* element){
 	return this->root_writeview->insertGeoElement_ThreadSafe(element,quadTreeRootNode_ReadView);
 }
 
-bool QuadTree::remove_ThreadSafe(const Record *record, unsigned recordInternalId){
-	GeoElement* element = new GeoElement(record, recordInternalId);
+bool QuadTree::remove_ThreadSafe(Point point, unsigned recordInternalId){
+	GeoElement* element = new GeoElement(point.x, point.y, recordInternalId);
 	return this->remove_ThreadSafe(element);
 }
 
@@ -168,7 +173,7 @@ void QuadTree::rangeQuery(vector<QuadTreeNode*> & results, const Shape &range, Q
 unsigned QuadTree::getTotalNumberOfGeoElements(){
 	boost::shared_ptr<QuadTreeRootNodeAndFreeLists> quadTreeRootNode_ReadView;
 	this->getQuadTreeRootNode_ReadView(quadTreeRootNode_ReadView);
-	const QuadTreeNode* root = quadTreeRootNode_ReadView->root;
+	QuadTreeNode* root = quadTreeRootNode_ReadView->root;
 	return root->getNumOfElementsInSubtree();
 }
 

@@ -27,6 +27,28 @@ const double GEO_MBR_LIMIT = (0.0005 * 0.0005); //0.005 The min size of a single
 const unsigned GEO_CHILD_NUM_SQRT = 2;    // Square root of the maximum number of children each intermediate node can have
 const unsigned GEO_CHILD_NUM = (GEO_CHILD_NUM_SQRT * GEO_CHILD_NUM_SQRT);
 
+class QuadTreeNode;
+class GeoElement;
+
+class QuadTreeRootNodeAndFreeLists{
+public:
+	vector<QuadTreeNode*> quadtreeNodes_free_list;
+	vector<GeoElement*>   geoElements_free_list;
+	QuadTreeNode* root;
+
+	QuadTreeRootNodeAndFreeLists();
+	QuadTreeRootNodeAndFreeLists(const QuadTreeNode* src);
+	~QuadTreeRootNodeAndFreeLists();
+
+private:
+	friend class boost::serialization::access;
+
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version){
+		ar & this->root;
+	}
+};
+
 class GeoElement
 {
 public:

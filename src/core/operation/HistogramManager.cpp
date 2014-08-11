@@ -112,7 +112,7 @@ void HistogramManager::annotateWithActiveNodeSets(LogicalPlanNode * node , bool 
 			}
 			break;
 		case LogicalPlanNodeTypeGeo:
-				 computeQuadTreeNodeSet(node->stats->quadTreeNodeSet, node->regionShape);
+				node->stats->quadTreeNodeSet = computeQuadTreeNodeSet(node->regionShape);
 			break;
 		default:
 			break;
@@ -235,16 +235,17 @@ void HistogramManager::annotateWithEstimatedProbabilitiesAndNumberOfResults(Logi
 			double quadTreeNodeProbability;
 			unsigned geoNumOfLeafNodes = 0;
 			QuadTreeNode *geoNode;
-			vector<QuadTreeNode*>* quadTreeNodeSet = logicalPlanNode->stats->getQuadTreeNodeSetForEstimation();
+			boost::shared_ptr<GeoActiveNodeSet> quadTreeNodeSetSharedPtr = logicalPlanNode->stats->getQuadTreeNodeSetForEstimation();
+			vector<QuadTreeNode*>* quadTreeNodeSet = quadTreeNodeSetSharedPtr->getQuadTreeNodeSet();
 			for( unsigned i = 0 ; i < quadTreeNodeSet->size() ; i++){
 				geoNode = quadTreeNodeSet->at(i);
 				quadTreeNodeProbability = ( double(geoNode->getNumOfElementsInSubtree()) /
-												this->queryEvaluator->getQuadTree()->getTotalNumberOfGeoElements());
+														this->queryEvaluator->indexData->forwardIndex->getTotalNumberOfForwardLists_ReadView());
 				geoElementsProbability = geoNode->aggregateValueByJointProbabilityDouble(geoElementsProbability, quadTreeNodeProbability);
 				geoNumOfLeafNodes += geoNode->getNumOfLeafNodesInSubtree();
 			}
 			logicalPlanNode->stats->setEstimatedProbability(geoElementsProbability);
-			logicalPlanNode->stats->setEstimatedNumberOfResults(computerEstimatedNumberOfResultsForGeo(geoElementsProbability));
+			logicalPlanNode->stats->setEstimatedNumberOfResults(computeEstimatedNumberOfResults(geoElementsProbability));
 			logicalPlanNode->stats->setEstimatedNumberOfLeafNodes(geoNumOfLeafNodes);
 			/*
 			 * if probability is not zero but estimated number of results is zero, it means probability has
@@ -338,8 +339,13 @@ boost::shared_ptr<PrefixActiveNodeSet> HistogramManager::computeActiveNodeSet(Te
     return prefixActiveNodeSet;
 }
 
-void HistogramManager::computeQuadTreeNodeSet(vector<QuadTreeNode*> &results, Shape *range){
-	this->queryEvaluator->getQuadTree()->rangeQuery(results,*range);
+boost::shared_ptr<GeoActiveNodeSet> HistogramManager::computeQuadTreeNodeSet(Shape* range){
+	// first create a shared pointer of geoActiveNodeSet
+	boost::shared_ptr<GeoActiveNodeSet> geoActiveNodeSet;
+	geoActiveNodeSet.reset(new GeoActiveNodeSet(this->queryEvaluator->indexReadToken.quadTreeRootNodeSharedPtr));
+	// Then by calling computeQuadTreeNodeSet find all quadTreeNodes inside the query region
+	geoActiveNodeSet->computeQuadTreeNodeSet(*range);
+	return geoActiveNodeSet;
 }
 
 void HistogramManager::computeEstimatedProbabilityOfPrefixAndNumberOfLeafNodes(TermType termType, PrefixActiveNodeSet * activeNodes ,
@@ -484,10 +490,6 @@ void HistogramManager::depthAggregateProbabilityAndNumberOfLeafNodes(const TrieN
 
 unsigned HistogramManager::computeEstimatedNumberOfResults(double probability){
 	return (unsigned)(probability * this->queryEvaluator->indexData->forwardIndex->getTotalNumberOfForwardLists_ReadView());
-}
-
-unsigned HistogramManager::computerEstimatedNumberOfResultsForGeo(double probability){
-	return (unsigned)(probability * this->queryEvaluator->getQuadTree()->getTotalNumberOfGeoElements());
 }
 
 

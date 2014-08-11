@@ -83,10 +83,10 @@ void printResults(vector<vector<GeoElement*>*> & results){
 }
 
 bool testMergeNewQuadTree(QuadTree* quadtree){
-	quadtree->remove(new GeoElement(10,10,3));
-	quadtree->remove(new GeoElement(100,100,2));
-	quadtree->remove(new GeoElement(-110,90,6));
-	quadtree->remove(new GeoElement(-80,-100,10));
+	quadtree->remove_ThreadSafe(new GeoElement(10,10,3));
+	quadtree->remove_ThreadSafe(new GeoElement(100,100,2));
+	quadtree->remove_ThreadSafe(new GeoElement(-110,90,6));
+	quadtree->remove_ThreadSafe(new GeoElement(-80,-100,10));
 
 	// Storing results of the query and expected results
 	vector<vector<GeoElement*>*> expectedResults;
@@ -97,7 +97,7 @@ bool testMergeNewQuadTree(QuadTree* quadtree){
 	rectangle.max.y=20;
 	rectangle.min.x=10;
 	rectangle.min.y=-10;
-	quadtree->rangeQuery(results,rectangle);
+	quadtree->getQuadTreeRootNode_WriteView()->rangeQuery(results,rectangle);
 	vector<GeoElement*> res;
 	res.push_back(new GeoElement(0,0,1));
 	res.push_back(new GeoElement(0,0,4));
@@ -110,7 +110,7 @@ bool testMergeNewQuadTree(QuadTree* quadtree){
 }
 
 bool testRemoveElementNewQuadTree(QuadTree* quadtree){
-	quadtree->remove(new GeoElement(10,10,8));
+	quadtree->remove_ThreadSafe(new GeoElement(10,10,8));
 
 	// Storing results of the query and expected results
 	vector<vector<GeoElement*>*> expectedResults;
@@ -122,7 +122,7 @@ bool testRemoveElementNewQuadTree(QuadTree* quadtree){
 	rectangle.max.y=20;
 	rectangle.min.x=10;
 	rectangle.min.y=-10;
-	quadtree->rangeQuery(results,rectangle);
+	quadtree->getQuadTreeRootNode_WriteView()->rangeQuery(results,rectangle);
 	vector<GeoElement*> res;
 	res.push_back(new GeoElement(0,0,2));
 	res.push_back(new GeoElement(0,0,3));
@@ -158,7 +158,7 @@ bool testMultiNodeNewQuadTree(QuadTree* quadtree){
 	rectangle.max.y=20;
 	rectangle.min.x=10;
 	rectangle.min.y=-10;
-	quadtree->rangeQuery(results, rectangle);
+	quadtree->getQuadTreeRootNode_WriteView()->rangeQuery(results, rectangle);
 	vector<GeoElement*> res;
 	res.push_back(new GeoElement(0,0,2));
 	res.push_back(new GeoElement(0,0,3));
@@ -198,7 +198,7 @@ bool testSingleNodeNewQuadTree(QuadTree* quadtree)
 	rectangle.max.y=20;
 	rectangle.min.x=10;
 	rectangle.min.y=10;
-	quadtree->rangeQuery(results,rectangle);
+	quadtree->getQuadTreeRootNode_WriteView()->rangeQuery(results,rectangle);
 	vector<GeoElement*> res;
 	res.push_back(element1);
 	res.push_back(element2);

@@ -115,6 +115,9 @@ struct IndexReadStateSharedPtr_Token
 
     typedef boost::shared_ptr<vectorview<InvertedListContainerPtr> > InvertedIndexReadView;
     InvertedIndexReadView invertedIndexReadViewSharedPtr;
+
+    typedef boost::shared_ptr<QuadTreeRootNodeAndFreeLists> QuadTreeRootNodeSharedPtr;
+    QuadTreeRootNodeSharedPtr quadTreeRootNodeSharedPtr;
 };
 
 // Uses spinlock and volatile to increment count.
@@ -263,6 +266,7 @@ public:
     void getReadView(IndexReadStateSharedPtr_Token &readToken)
     {
         this->trie->getTrieRootNode_ReadView(readToken.trieRootNodeSharedPtr);
+        this->quadTree->getQuadTreeRootNode_ReadView(readToken.quadTreeRootNodeSharedPtr);
         this->readCounter->increment();
     }
 
@@ -323,9 +327,6 @@ public:
     void changeKeywordIdsOnForwardLists(const map<TrieNode *, unsigned> &trieNodeIdMapper,
                                         const map<unsigned, unsigned> &keywordIdMapper,
                                         map<unsigned, unsigned> &processedRecordIds);
-
-    void changeKeywordIdsOnForwardListsAndOCFilters(map<unsigned, unsigned> &keywordIdMapper,
-                                                    map<unsigned, unsigned> &recordIdsToProcess);
 };
 
 }}
