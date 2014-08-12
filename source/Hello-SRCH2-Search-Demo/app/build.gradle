@@ -20,6 +20,5 @@ android {
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile project(':SRCH2-Android-SDK')
+    compile group: 'com.srch2', name: 'srch2-android-sdk', version: '1.0.0-SNAPSHOT',  ext:'aar'
 }
