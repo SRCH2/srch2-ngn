@@ -76,9 +76,9 @@ PhysicalPlanRecordItem * UnionLowestLevelSuggestionOperator::getNext(const Physi
     // static score
     newItem->setRecordStaticScore(nextItem.termRecordStaticScore);
     // attributeBitmap
-    vector<unsigned> attributeBitmaps;
-    attributeBitmaps.push_back(nextItem.termAttributeBitmap);
-    newItem->setRecordMatchAttributeBitmaps(attributeBitmaps);
+    vector<vector<unsigned> > matchedAttributeIdsList;
+    matchedAttributeIdsList.push_back(nextItem.attributeIdsList);
+    newItem->setRecordMatchAttributeBitmaps(matchedAttributeIdsList);
     newItem->addTermType(term->getTermType());
     return newItem;
 
@@ -96,7 +96,7 @@ void UnionLowestLevelSuggestionOperator::initializeHeap(Term * term, Ranker * ra
 	for(unsigned suggestionIndex = 0 ; suggestionIndex < suggestionPairsInvertedListReadViews.size() ; ++suggestionIndex){
 
 		unsigned firstInvertedListCursotToAdd = 0;
-		unsigned termAttributeBitmap = 0;
+		vector<unsigned> matchedAttributeIdsList;
 		float termRecordStaticScore = 0;
 		while(true){
 			// inverted list of this suggestion is completely invalid so we don't put anything from this
@@ -110,11 +110,12 @@ void UnionLowestLevelSuggestionOperator::initializeHeap(Term * term, Ranker * ra
 					this->invertedIndexKeywordIdsReadView,
 					recordId, suggestionPairs[suggestionIndex].suggestedCompleteTermNode->getInvertedListOffset());
 			// We check the record only if it's valid
+			vector<unsigned> filterAttributes;
 			if (keywordOffset != FORWARDLIST_NOTVALID &&
 				queryEvaluatorIntrnal->getInvertedIndex()->isValidTermPositionHit(forwardIndexDirectoryReadView,
 					recordId,
 					keywordOffset,
-					0x7fffffff,  termAttributeBitmap, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
+					filterAttributes, false, matchedAttributeIdsList, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
 
 				// calculate the runtime score of this record
 				float score = ranker->computeTermRecordRuntimeScore(termRecordStaticScore,
@@ -124,7 +125,7 @@ void UnionLowestLevelSuggestionOperator::initializeHeap(Term * term, Ranker * ra
                         prefixMatchPenalty , term->getSimilarityBoost())*term->getBoost();
 				// put the item in heap
 				recordItemsHeap.push_back(SuggestionCursorHeapItem(suggestionIndex, firstInvertedListCursotToAdd,
-						recordId, score, termAttributeBitmap, termRecordStaticScore ));
+						recordId, score, matchedAttributeIdsList, termRecordStaticScore ));
 				break;
 			}else{
 				firstInvertedListCursotToAdd++;
@@ -151,7 +152,7 @@ bool UnionLowestLevelSuggestionOperator::getNextHeapItem(Term * term, Ranker * r
 	// iterate on the same inverted list and push another record item to
 	// heap (starting from the next position on inverted list)
 	unsigned firstInvertedListCursotToAdd = item.invertedListCursor+1;
-	unsigned termAttributeBitmap = 0;
+	vector<unsigned> matchedAttributeIdsList;
 	float termRecordStaticScore = 0;
 	while(true){
 		if(suggestionPairsInvertedListReadViews.at(item.suggestionIndex)->size() <= firstInvertedListCursotToAdd){
@@ -163,11 +164,12 @@ bool UnionLowestLevelSuggestionOperator::getNextHeapItem(Term * term, Ranker * r
 				this->invertedIndexKeywordIdsReadView,
 				recordId, suggestionPairs[item.suggestionIndex].suggestedCompleteTermNode->getInvertedListOffset());
 		// We check the record only if it's valid
+		vector<unsigned> attributeFilter;
 		if (keywordOffset != FORWARDLIST_NOTVALID &&
 			queryEvaluatorIntrnal->getInvertedIndex()->isValidTermPositionHit(forwardIndexDirectoryReadView,
 				recordId,
 				keywordOffset,
-				0x7fffffff,  termAttributeBitmap, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
+				attributeFilter, false, matchedAttributeIdsList, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
 
 			float score = ranker->computeTermRecordRuntimeScore(termRecordStaticScore,
                     suggestionPairs[item.suggestionIndex].distance,
@@ -175,7 +177,7 @@ bool UnionLowestLevelSuggestionOperator::getNextHeapItem(Term * term, Ranker * r
                     true,
                     prefixMatchPenalty , term->getSimilarityBoost())*term->getBoost();
 			recordItemsHeap.push_back(SuggestionCursorHeapItem(item.suggestionIndex, firstInvertedListCursotToAdd,
-					recordId, score, termAttributeBitmap, termRecordStaticScore ));
+					recordId, score, matchedAttributeIdsList, termRecordStaticScore ));
 			std::push_heap(recordItemsHeap.begin(), recordItemsHeap.end(),SuggestionCursorHeapItem());
 			return true;
 		}else{

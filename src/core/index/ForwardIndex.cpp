@@ -131,12 +131,12 @@ void printForwardList(unsigned id, const ForwardList *fl , const Schema * schema
     }
 
     // keyword attribute list
-    if (fl->getKeywordAttributeBitmaps() != NULL) {
-
-        Logger::debug("keywordAttributeList: ");
-        for (unsigned idx = 0; idx < fl->getNumberOfKeywords(); idx++) {
-            Logger::debug("[%d]", fl->getKeywordAttributeBitmap(idx));
-        }
+    Logger::debug("keywordAttributeList: ");
+    for (unsigned idx = 0; idx < fl->getNumberOfKeywords(); idx++) {
+    	vector<unsigned> attrs;
+    	fl->getKeywordAttributeIdsList(idx, attrs);
+    	for (unsigned i = 0; i < attrs.size(); ++i)
+    		Logger::debug("[%d]", attrs[i]);
     }
 }
 
@@ -153,8 +153,9 @@ void printVector(const vector<unsigned> *fl) {
 bool ForwardIndex::haveWordInRange(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
 		const unsigned recordId,
         const unsigned minId, const unsigned maxId,
-        const unsigned termSearchableAttributeIdToFilterTermHits,
-        unsigned &matchingKeywordId, unsigned &matchingKeywordAttributeBitmap,
+        const vector<unsigned>& filteringAttributesList,
+        bool andOperation,
+        unsigned &matchingKeywordId, vector<unsigned>& matchingKeywordAttributesList,
         float &matchingKeywordRecordStaticScore) const {
     ASSERT(minId <= maxId);
     ASSERT(recordId < this->getTotalNumberOfForwardLists_ReadView());
@@ -167,8 +168,8 @@ bool ForwardIndex::haveWordInRange(shared_ptr<vectorview<ForwardListPtr> > & for
         return false;
 
     return fl->haveWordInRange(this->schemaInternal, minId, maxId,
-            termSearchableAttributeIdToFilterTermHits, matchingKeywordId,
-            matchingKeywordAttributeBitmap, matchingKeywordRecordStaticScore);
+    		filteringAttributesList, andOperation, matchingKeywordId,
+    		matchingKeywordAttributesList, matchingKeywordRecordStaticScore);
 }
 
 bool ForwardIndex::haveWordInRangeWithStemmer(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
@@ -310,10 +311,10 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     		vector<uint8_t> synonymBitFlagArray;
     		unsigned bitMapCursor = 0;
 
-    		for (unsigned j = 0; j < iterator->second.attributeList.size(); ++j) {
-    			unsigned attributeId = (iterator->second.attributeList[j] >> 24) - 1; // 0th based
-    			unsigned position =  (iterator->second.attributeList[j] & 0xFFFFFF);  // Non Zero
-    			unsigned offset =  (iterator->second.charOffsetOfTermInAttribute[j]);  // Non Zero
+    		for (unsigned j = 0; j < iterator->second.attributeIdList.size(); ++j) {
+    			unsigned attributeId = iterator->second.attributeIdList[j]; // 0th based
+    			unsigned position =  iterator->second.positionOfTermInAttribute[j];  // Non Zero
+    			unsigned offset =  iterator->second.charOffsetOfTermInAttribute[j];  // Non Zero
     			AnalyzedTokenType type =  (iterator->second.typesOfTermInAttribute[j]);
     			unsigned charLen =  (iterator->second.charLensOfTermInAttribute[j]);
     			// if it is a first element or current attribute is same as
@@ -388,9 +389,33 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     	}
     }
 
+    // support attribute-based search
+    vector<uint8_t> tempAttributeIdBuffer;
+    if (isEnabledAttributeBasedSearch(positionIndexType)) {
+    	this->isAttributeBasedSearch = true;
+		vector<unsigned> attributeIds;
+    	for (unsigned iter = 0; iter < uniqueKeywordIdList.size(); ++iter) {
+    		map<string, TokenAttributeHits>::const_iterator mapIterator =
+    				tokenAttributeHitsMap.find(
+    						uniqueKeywordIdList[iter].second.first);
+    		ASSERT(mapIterator != tokenAttributeHitsMap.end());
+    		unsigned prevAttrId = 0;
+    		for (unsigned i = 0; i < mapIterator->second.attributeIdList.size();
+    				i++) {
+    			unsigned attributeId = mapIterator->second.attributeIdList[i];
+    			if (i == 0 || attributeId != prevAttrId){
+    				attributeIds.push_back(attributeId);
+    				prevAttrId = attributeId;
+    			}
+    		}
+    		convertToVarLengthArray(attributeIds, tempAttributeIdBuffer);
+    		attributeIds.clear();
+    	}
+    }
+
     // set all extra information into the forward list.
     forwardList->allocateSpaceAndSetNSAValuesAndPosIndex(this->schemaInternal ,
-    		shouldAttributeBitMapBeAllocated , tempPositionIndexBuffer,
+    		tempAttributeIdBuffer , tempPositionIndexBuffer,
     		tempOffsetBuffer, tempcharLenBuffer, tempSynonymBitMapBuffer);
 
     // Add KeywordId List
@@ -407,26 +432,6 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
         forwardList->setKeywordRecordStaticScore(iter,
                 forwardList->computeFieldBoostSummation(this->schemaInternal,
                         mapIterator->second));
-    }
-
-    // support attribute-based search
-    if (isEnabledAttributeBasedSearch(positionIndexType)) {
-    	this->isAttributeBasedSearch = true;
-
-    	for (unsigned iter = 0; iter < uniqueKeywordIdList.size(); ++iter) {
-    		map<string, TokenAttributeHits>::const_iterator mapIterator =
-    				tokenAttributeHitsMap.find(
-    						uniqueKeywordIdList[iter].second.first);
-    		ASSERT(mapIterator != tokenAttributeHitsMap.end());
-    		unsigned bitVector = 0;
-    		for (unsigned i = 0; i < mapIterator->second.attributeList.size();
-    				i++) {
-    			int attributeId = ((mapIterator->second.attributeList.at(i))
-    					>> 24) - 1;
-    			bitVector |= (1 << attributeId);
-    		}
-    		forwardList->setKeywordAttributeBitmap(iter, bitVector);
-    	}
     }
 
     ForwardListPtr managedForwardListPtr;
@@ -566,10 +571,41 @@ void ForwardIndex::reorderForwardList(ForwardList *forwardList,
                 ->getKeywordRecordStaticScore(keywordOffset);
 
         // support attribute-based search
+        vector<unsigned>& keywordAttributes = keywordRichInformationList[keywordOffset].keywordAttribute;
         if ( isEnabledAttributeBasedSearch(this->schemaInternal->getPositionIndexType())) {
-            keywordRichInformationList[keywordOffset].keywordAttribute =
-                    forwardList->getKeywordAttributeBitmap(keywordOffset);
+            forwardList->getKeywordAttributeIdsList(keywordOffset, keywordAttributes);
         }
+
+        if (isEnabledWordPositionIndex(this->schemaInternal->getPositionIndexType())){
+        	keywordRichInformationList[keywordOffset].keywordPositionInAttribute.resize(keywordAttributes.size());
+        	for (unsigned i = 0; i < keywordAttributes.size(); ++i) {
+        		vector<unsigned> wordPositions;
+        		forwardList->getKeyWordPostionsInRecordField(keywordOffset, keywordAttributes[i],
+        				wordPositions);
+        		keywordRichInformationList[keywordOffset].keywordPositionInAttribute.push_back(wordPositions);
+        	}
+        }
+
+        if (isEnabledCharPositionIndex(this->schemaInternal->getPositionIndexType())){
+        	keywordRichInformationList[keywordOffset].keywordOffsetsInAttribute.resize(keywordAttributes.size());
+        	for (unsigned i = 0; i < keywordAttributes.size(); ++i) {
+        		vector<unsigned> charOffsetPositions;
+        		forwardList->getKeyWordOffsetInRecordField(keywordOffset, keywordAttributes[i],
+        				charOffsetPositions);
+        		keywordRichInformationList[keywordOffset].keywordOffsetsInAttribute.push_back(charOffsetPositions);
+        		vector<uint8_t> synonymBitMap;
+        		forwardList->getSynonymBitMapInRecordField(keywordOffset, keywordAttributes[i],
+        				synonymBitMap);
+        		keywordRichInformationList[keywordOffset].keywordSynonymBitMapInAttribute.push_back(synonymBitMap);
+        		vector<unsigned> charLenVector;
+        		forwardList->getSynonymCharLenInRecordField(keywordOffset, keywordAttributes[i],
+        				charLenVector);
+        		keywordRichInformationList[keywordOffset].keywordSynonymCharLenInAttribute.push_back(charLenVector);
+        	}
+
+
+        }
+
     }
 
     // Note: May be not necessary
@@ -580,6 +616,11 @@ void ForwardIndex::reorderForwardList(ForwardList *forwardList,
             keywordRichInformationList.end());
     //Unpack keywordRichInformation to keywordIdList, keywordRecordStaticScore, keywordAttributeList
     keywordOffset = 0;
+    vector<uint8_t> tempAttributeIdBuffer;
+    vector<uint8_t> tempKeywordPositionsBuffer;
+    vector<uint8_t> tempKeywordCharOffsetsBuffer;
+    vector<uint8_t> tempKeywordSynonymBitMapBuffer;
+    vector<uint8_t> tempKeywordSynonymCharLenBuffer;
     for (vector<KeywordRichInformation>::iterator iter =
             keywordRichInformationList.begin();
             iter != keywordRichInformationList.end(); ++iter) {
@@ -590,14 +631,42 @@ void ForwardIndex::reorderForwardList(ForwardList *forwardList,
         forwardList->setKeywordRecordStaticScore(keywordOffset,
                 iter->keywordScore);
 
-        //copy attribute
-        // support attribute-based search
+        //Build VLB array of attributes
         if (isEnabledAttributeBasedSearch(this->schemaInternal->getPositionIndexType())) {
-            forwardList->setKeywordAttributeBitmap(keywordOffset,
-                    iter->keywordAttribute);
+        	convertToVarLengthArray(iter->keywordAttribute, tempAttributeIdBuffer);
         }
+        //Build VLB array of word positions
+        if (isEnabledWordPositionIndex(this->schemaInternal->getPositionIndexType())){
+        	for (unsigned i = 0 ; i < iter->keywordPositionInAttribute.size(); ++i) {
+        		convertToVarLengthArray(iter->keywordPositionInAttribute[i], tempKeywordPositionsBuffer);
+        	}
+        }
+        //Build VLB array of char offsets
+        if (isEnabledCharPositionIndex(this->schemaInternal->getPositionIndexType())){
+        	for (unsigned i = 0 ; i < iter->keywordOffsetsInAttribute.size(); ++i) {
+        		convertToVarLengthArray(iter->keywordOffsetsInAttribute[i], tempKeywordCharOffsetsBuffer);
+        	}
+        }
+
+        //Build VLB array of char offsets
+        if (isEnabledCharPositionIndex(this->schemaInternal->getPositionIndexType())){
+        	for (unsigned i = 0 ; i < iter->keywordSynonymBitMapInAttribute.size(); ++i) {
+        		convertToVarLengthBitMap(iter->keywordSynonymBitMapInAttribute[i], tempKeywordSynonymBitMapBuffer);
+        	}
+        }
+
+        //Build VLB array of char offsets
+        if (isEnabledCharPositionIndex(this->schemaInternal->getPositionIndexType())){
+        	for (unsigned i = 0 ; i < iter->keywordSynonymCharLenInAttribute.size(); ++i) {
+        		convertToVarLengthArray(iter->keywordSynonymCharLenInAttribute[i], tempKeywordSynonymCharLenBuffer);
+        	}
+        }
+
         ++keywordOffset;
     }
+    // finally copy VLB array of attributes,  in-attribute positions and char offset to Forward list.
+    forwardList->copyByteArraysToForwardList(tempAttributeIdBuffer, tempKeywordPositionsBuffer,
+    		tempKeywordCharOffsetsBuffer, tempKeywordSynonymBitMapBuffer, tempKeywordSynonymCharLenBuffer);
 }
 
 void ForwardIndex::finalCommit() {
@@ -670,7 +739,8 @@ const unsigned* lower_bound(const unsigned* first, const unsigned* last,
 
 bool ForwardList::getWordsInRange(const SchemaInternal* schema,
         const unsigned minId, const unsigned maxId,
-        const unsigned termSearchableAttributeIdToFilterTermHits,
+        const vector<unsigned>& filteringAttributesList,
+        bool andOperation,
         vector<unsigned> &keywordIdsVector) const {
     const unsigned* vectorBegin = this->getKeywordIds();
     const unsigned* vectorEnd = this->getKeywordIds()
@@ -681,11 +751,11 @@ bool ForwardList::getWordsInRange(const SchemaInternal* schema,
     bool returnValue = false;
 
     float matchingKeywordRecordStaticScore = 0.0;
-    unsigned matchingKeywordRecordAttributeBitmap = 0;
+    vector<unsigned> matchedAttributesList;
     while ((vectorIterator != vectorEnd) && (*vectorIterator <= maxId)) {
         if (this->isValidRecordTermHit(schema, (vectorIterator - vectorBegin),
-                termSearchableAttributeIdToFilterTermHits,
-                matchingKeywordRecordAttributeBitmap,
+        		filteringAttributesList, andOperation,
+        		matchedAttributesList,
                 matchingKeywordRecordStaticScore)) {
             returnValue = true;
             keywordIdsVector.push_back(*vectorIterator); // found a keyword id in the [minId, maxId] range
@@ -700,8 +770,8 @@ bool ForwardList::getWordsInRange(const SchemaInternal* schema,
 // Do binary search to probe in the forward list
 bool ForwardList::haveWordInRange(const SchemaInternal* schema,
         const unsigned minId, const unsigned maxId,
-        const unsigned termSearchableAttributeIdToFilterTermHits,
-        unsigned &matchingKeywordId, unsigned &matchingKeywordAttributeBitmap,
+        const vector<unsigned>& filteringAttributesList, bool andOperation,
+        unsigned &matchingKeywordId, vector<unsigned>& matchingKeywordAttributesList,
         float &matchingKeywordRecordStaticScore) const {
     const unsigned* vectorBegin = this->getKeywordIds();
     const unsigned* vectorEnd = this->getKeywordIds()
@@ -711,16 +781,16 @@ bool ForwardList::haveWordInRange(const SchemaInternal* schema,
 
     bool returnValue = false;
     matchingKeywordRecordStaticScore = 0;
-    unsigned tempAttributeBitmap = 0;
+    vector<unsigned> matchedAttributesList;
 
     while ((vectorIterator != vectorEnd) && (*vectorIterator <= maxId)) {
         float tempScore = 0;
         if (this->isValidRecordTermHit(schema, (vectorIterator - vectorBegin),
-                termSearchableAttributeIdToFilterTermHits, tempAttributeBitmap,
+        		filteringAttributesList, andOperation, matchedAttributesList,
                 tempScore)) {
             if (tempScore >= matchingKeywordRecordStaticScore) {
                 matchingKeywordRecordStaticScore = tempScore;
-                matchingKeywordAttributeBitmap = tempAttributeBitmap;
+                matchingKeywordAttributesList = matchedAttributesList;
                 returnValue = true;
                 matchingKeywordId = *vectorIterator; // found a keyword id in the [minId, maxId] range
             }
@@ -776,10 +846,10 @@ float ForwardList::computeFieldBoostSummation(const Schema *schema,
         const TokenAttributeHits &hits) const {
     float sumOfFieldBoost = 0.0;
 
-    for (vector<unsigned>::const_iterator vectorIterator = hits.attributeList
-            .begin(); vectorIterator != hits.attributeList.end();
+    for (vector<unsigned>::const_iterator vectorIterator = hits.attributeIdList
+            .begin(); vectorIterator != hits.attributeIdList.end();
             vectorIterator++) {
-        int attributeId = ((*vectorIterator) >> 24) - 1;
+        int attributeId = *vectorIterator;
         sumOfFieldBoost += schema->getBoostOfSearchableAttribute(attributeId);
     }
 
@@ -813,29 +883,27 @@ bool ForwardIndex::getExternalRecordIdFromInternalRecordId(
 
 bool ForwardList::isValidRecordTermHit(const SchemaInternal *schema,
         unsigned keywordOffset, 
-        unsigned termSearchableAttributeIdToFilterTermHits,
-        unsigned &matchingKeywordAttributeBitmap,
+        const vector<unsigned>& filteringAttributesList,
+        bool andOperation,
+        vector<unsigned> &matchingKeywordAttributesList,
         float &matchingKeywordRecordStaticScore) const {
     matchingKeywordRecordStaticScore = this->getKeywordRecordStaticScore(
             keywordOffset);
     // support attribute-based search. Here we check if attribute search
     // is disabled, ie. the POSITION_INDEX_TYPE is neither FIELDBIT nor
-    // FULL. In this case, or if the masked attributes to validate is 0
+    // FULL. In this case, or if the masked attributes list to validate is of size 0
     // the the hit is always valid.
-    if (termSearchableAttributeIdToFilterTermHits == 0
+    if (filteringAttributesList.size() == 0
             || !isEnabledAttributeBasedSearch(schema->getPositionIndexType())) {
         return true;
     } else {
         ASSERT(
-                this->getKeywordAttributeBitmaps() != NULL and keywordOffset < this->getNumberOfKeywords());
-         // test the highest bit
-        bool highestBit =
-          termSearchableAttributeIdToFilterTermHits & 0x80000000;
-        matchingKeywordAttributeBitmap = getKeywordAttributeBitmap(
-                keywordOffset);
-        if (highestBit) {
-            // turn off the highest bit
-            termSearchableAttributeIdToFilterTermHits &= 0x7fffffff;
+                this->getKeywordAttributeIdsPointer()!= NULL and keywordOffset < this->getNumberOfKeywords());
+
+        getKeywordAttributeIdsList(
+                keywordOffset, matchingKeywordAttributesList);
+        if (andOperation) {
+
             /*
              *  Mask the record's keyword attribute bit map with query's keyword attribute bit map.
              *  e.g:
@@ -843,21 +911,27 @@ bool ForwardList::isValidRecordTermHit(const SchemaInternal *schema,
              *  python only in attribute body. Then we should set matchingKeywordAttributeBitmap to
              *  only have 'body' attribute set.
              */
-            matchingKeywordAttributeBitmap &=  termSearchableAttributeIdToFilterTermHits;
+            vector<unsigned> commonAttributesList;
+            fetchCommonAttributes(matchingKeywordAttributesList, filteringAttributesList,
+            		commonAttributesList);
+            matchingKeywordAttributesList = commonAttributesList;
             /*
              *  For AND condition on attributes e.g  title and body : python
              *  The masked bitmap should be same as query bit map to be considered as a valid hit.
              */
-            return (matchingKeywordAttributeBitmap
-                    == termSearchableAttributeIdToFilterTermHits);
+            return isAttributesListsMatching(commonAttributesList
+                    , filteringAttributesList);
         } else {
-        	matchingKeywordAttributeBitmap &=  termSearchableAttributeIdToFilterTermHits;
+        	vector<unsigned> commonAttributesList;
+        	fetchCommonAttributes(matchingKeywordAttributesList, filteringAttributesList,
+        			commonAttributesList);
         	/*
         	 *  For OR condition on attributes e.g  title or body : python
         	 *  The masked bitmap should have atleast one query attribute set to be considered as
         	 *  a valid hit.
         	 */
-            return (matchingKeywordAttributeBitmap != 0);
+        	matchingKeywordAttributesList = commonAttributesList;
+            return (commonAttributesList.size() != 0);
         }
     }
 }
@@ -941,9 +1015,39 @@ bool ForwardList::isValidRecordTermHitWithStemmer(const SchemaInternal *schema,
      return returnValue;
      */
 }
+void ForwardList::getKeywordAttributeIdsList(unsigned keywordOffset, vector<unsigned>& attributeIdsList) const{
+
+	if (attributeIdsIndexSize == 0){
+		Logger::warn("Attribute Index not found in forward index!!");
+		return;
+	}
+	const uint8_t * piPtr = getKeywordAttributeIdsPointer();  // pointer to position index for the record
+
+	if (piPtr == NULL) {
+		return;
+	}
+
+	if (*(piPtr + attributeIdsIndexSize - 1) & 0x80)
+	{
+		Logger::error("Attribute Ids index buffer has bad encoding..last byte is not a terminating one");
+		return;
+	}
+	attributeIdsList.clear();
+	unsigned piOffset = 0;
+	unsigned value;
+	short byteRead;
+	// First jump over all the attribute ids of other keywords.
+	for (unsigned j = 0; j < keywordOffset ; ++j) {
+		ULEB128::varLengthBytesToUInt32(piPtr + piOffset , &value, &byteRead);
+		piOffset += byteRead + value;
+	}
+	// Now read the length of current keyword's attribute.
+	ULEB128::varLengthBytesToUInt32(piPtr + piOffset , &value, &byteRead);
+	ULEB128::varLenByteArrayToInt32Vector((uint8_t *)(piPtr + piOffset + byteRead), value, attributeIdsList);
+}
 
 void ForwardList::getKeyWordPostionsInRecordField(unsigned keyOffset, unsigned attributeId,
-		unsigned currKeyattributeBitMap, vector<unsigned>& pl) const{
+		 vector<unsigned>& pl) const{
 
 	if (positionIndexSize == 0){
 		Logger::warn("Position Index not found in forward index!!");
@@ -951,7 +1055,6 @@ void ForwardList::getKeyWordPostionsInRecordField(unsigned keyOffset, unsigned a
 	}
 
 	const uint8_t * piPtr = getPositionIndexPointer();  // pointer to position index for the record
-	unsigned piOffset = 0;
 
 	if (*(piPtr + positionIndexSize - 1) & 0x80)
 	{
@@ -959,18 +1062,17 @@ void ForwardList::getKeyWordPostionsInRecordField(unsigned keyOffset, unsigned a
 		 return;
 	}
 
-	fetchDataFromVLBArray(keyOffset, attributeId, currKeyattributeBitMap, pl, piPtr, piOffset);
+	fetchDataFromVLBArray(keyOffset, attributeId, pl, piPtr);
 }
 
 void ForwardList::getKeyWordOffsetInRecordField(unsigned keyOffset, unsigned attributeId,
-		unsigned currKeyattributeBitMap, vector<unsigned>& pl) const{
+		vector<unsigned>& pl) const{
 	if (offsetIndexSize == 0){
 		Logger::warn("Offset Index not found in forward index!!");
 		return;
 	}
 
 	const uint8_t * piPtr = getOffsetIndexPointer();  // pointer to position index for the record
-	unsigned piOffset = 0;
 
 	if (*(piPtr + offsetIndexSize - 1) & 0x80)
 	{
@@ -978,7 +1080,7 @@ void ForwardList::getKeyWordOffsetInRecordField(unsigned keyOffset, unsigned att
 		return;
 	}
 
-	fetchDataFromVLBArray(keyOffset, attributeId, currKeyattributeBitMap, pl, piPtr, piOffset);
+	fetchDataFromVLBArray(keyOffset, attributeId, pl, piPtr);
 
 }
 
@@ -995,7 +1097,7 @@ void ForwardList::getSynonymCharLenInRecordField(unsigned keyOffset, unsigned at
 		return;
 	}
 
-	fetchDataFromVLBArray(keyOffset, attributeId, 0, pl, piPtr, 0);
+	fetchDataFromVLBArray(keyOffset, attributeId, pl, piPtr);
 }
 
 void ForwardList::getSynonymBitMapInRecordField(unsigned keyOffset, unsigned attributeId,
@@ -1008,36 +1110,36 @@ void ForwardList::getSynonymBitMapInRecordField(unsigned keyOffset, unsigned att
 	const uint8_t * piPtr = getSynonymBitMapPointer();  // pointer to Synonym BitMap for the record
 
 	unsigned offset = 0;
-	unsigned currKeyattributeBitMap = 0;
+	vector<unsigned> currKeywordAttributeIdsList;
 	for (unsigned j = 0; j < keyOffset ; ++j) {
-		currKeyattributeBitMap =
-				getKeywordAttributeBitmapsPointer()[j];
-		unsigned count = getBitSet(currKeyattributeBitMap);
+		getKeywordAttributeIdsList(j, currKeywordAttributeIdsList);
+
+		unsigned count = currKeywordAttributeIdsList.size();
 		for (unsigned k = 0; k < count; ++k){
 			unsigned value;
 			short byteRead;
 			ULEB128::varLengthBytesToUInt32(piPtr + offset , &value, &byteRead);
 			offset += byteRead + value;
 		}
+		currKeywordAttributeIdsList.clear();
 	}
 
-	currKeyattributeBitMap =
-			    getKeywordAttributeBitmapsPointer()[keyOffset];
+	getKeywordAttributeIdsList(keyOffset, currKeywordAttributeIdsList);
 
 	// If keyword's attribute bitmap is 0 ( highly unlikely) or Attribute is not in keyword's attribute
 	// bitmap (programmer's error) ...then return because we cannot get any position/offset info.
-	if (currKeyattributeBitMap == 0 || (currKeyattributeBitMap & (1 << attributeId)) == 0)
+
+	if (currKeywordAttributeIdsList.size() == 0 ||
+			std::find(currKeywordAttributeIdsList.begin(), currKeywordAttributeIdsList.end(), attributeId)
+					== currKeywordAttributeIdsList.end())
 		return;
 
-	unsigned totalBitSet = getBitSet(currKeyattributeBitMap);
-	unsigned attrBitPosition = getBitSetPositionOfAttr(currKeyattributeBitMap, attributeId);
-
-	ASSERT(totalBitSet > attrBitPosition);
-	for (int i = 0; i < totalBitSet; ++i){
+	unsigned totalAttributes = currKeywordAttributeIdsList.size();
+	for (int i = 0; i < totalAttributes; ++i){
 		unsigned value;
 		short byteRead;
 		ULEB128::varLengthBytesToUInt32(piPtr + offset , &value, &byteRead);
-		if (i == attrBitPosition){
+		if (attributeId == currKeywordAttributeIdsList[i]){
 			uint8_t * start = (uint8_t *)(piPtr + offset + byteRead);
 			for (unsigned i = 0; i < value; ++i) {
 				synonymBitMap.push_back(*(start + i));
@@ -1049,37 +1151,38 @@ void ForwardList::getSynonymBitMapInRecordField(unsigned keyOffset, unsigned att
 	}
 }
 void ForwardList::fetchDataFromVLBArray(unsigned keyOffset, unsigned attributeId,
-		unsigned currKeyattributeBitMap, vector<unsigned>& pl, const uint8_t * piPtr, unsigned piOffset) const{
+		 vector<unsigned>& pl, const uint8_t * piPtr) const{
 	// get the correct byte array position for current keyword + attribute combination
 
+	unsigned piOffset = 0;
+	vector<unsigned> currKeywordAttributeIdsList;
 	for (unsigned j = 0; j < keyOffset ; ++j) {
-		currKeyattributeBitMap =
-			    getKeywordAttributeBitmapsPointer()[j];
-		unsigned count = getBitSet(currKeyattributeBitMap);
+		getKeywordAttributeIdsList(j, currKeywordAttributeIdsList);
+		unsigned count = currKeywordAttributeIdsList.size();
 		for (unsigned k = 0; k < count; ++k){
 			unsigned value;
 			short byteRead;
 			ULEB128::varLengthBytesToUInt32(piPtr + piOffset , &value, &byteRead);
 			piOffset += byteRead + value;
 		}
+		currKeywordAttributeIdsList.clear();
 	}
-	currKeyattributeBitMap =
-		    getKeywordAttributeBitmapsPointer()[keyOffset];
+	getKeywordAttributeIdsList(keyOffset, currKeywordAttributeIdsList);
 
 	// If keyword's attribute bitmap is 0 ( highly unlikely) or Attribute is not in keyword's attribute
 	// bitmap (programmer's error) ...then return because we cannot get any position/offset info.
-	if (currKeyattributeBitMap == 0 || (currKeyattributeBitMap & (1 << attributeId)) == 0)
+	if (currKeywordAttributeIdsList.size() == 0 ||
+		std::find(currKeywordAttributeIdsList.begin(), currKeywordAttributeIdsList.end(), attributeId)
+								== currKeywordAttributeIdsList.end())
 		return;
 
-	unsigned totalBitSet = getBitSet(currKeyattributeBitMap);
-	unsigned attrBitPosition = getBitSetPositionOfAttr(currKeyattributeBitMap, attributeId);
+	unsigned totalAttributes = currKeywordAttributeIdsList.size();
 
-	ASSERT(totalBitSet > attrBitPosition);
-	for (int i = 0; i < totalBitSet; ++i){
+	for (int i = 0; i < totalAttributes; ++i){
 		unsigned value;
 		short byteRead;
 		ULEB128::varLengthBytesToUInt32(piPtr + piOffset , &value, &byteRead);
-		if (i == attrBitPosition){
+		if (attributeId == currKeywordAttributeIdsList[i]){
 			ULEB128::varLenByteArrayToInt32Vector((uint8_t *)(piPtr + piOffset + byteRead), value, pl);
 			break;
 		}else {
@@ -1138,15 +1241,15 @@ float ForwardIndex::getTermRecordStaticScore(unsigned forwardIndexId,
 
 bool ForwardIndex::isValidRecordTermHit(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
 		unsigned forwardIndexId,
-        unsigned keywordOffset, unsigned searchableAttributeId,
-        unsigned &matchingKeywordAttributeBitmap,
+        unsigned keywordOffset, const vector<unsigned>& filterAttributesList, bool andOperation,
+        vector<unsigned> &matchingKeywordAttributesList,
         float& matchingKeywordRecordStaticScore) const {
     bool valid = false;
     const ForwardList* forwardList = this->getForwardList(forwardListDirectoryReadView, forwardIndexId,valid);
     if (valid && forwardList != NULL)
         return forwardList->isValidRecordTermHit(this->schemaInternal,
-                keywordOffset, searchableAttributeId,
-                matchingKeywordAttributeBitmap,
+                keywordOffset, filterAttributesList, andOperation,
+                matchingKeywordAttributesList,
                 matchingKeywordRecordStaticScore);
     else
         return false;
@@ -1291,6 +1394,37 @@ void ForwardIndex::exportData(ForwardIndex &forwardIndex, const string &exported
     }
     out.close();
     delete storedSchema;
+}
+
+/*
+ *   Utility Functions
+ */
+
+void fetchCommonAttributes(const vector<unsigned>& list1, const vector<unsigned>& list2,
+		vector<unsigned>& outList) {
+
+	// if either list1 or list2 is of size 0, it means that all attributes in a record. Hence return
+	// the other list as an output.
+	if (list1.size() == 0) {
+		outList = list2;
+	} else if (list2.size() == 0) {
+		outList = list1;
+	} else {
+		// The assumption is that both list1 and list2 are sorted. Caller should ensure this.
+		std::set_intersection(list1.begin(), list1.end(), list2.begin(), list2.end(),
+				std::back_inserter(outList));
+	}
+}
+
+bool isAttributesListsMatching(const vector<unsigned>& list1, const vector<unsigned>& list2) {
+	if (list1.size() != list2.size())
+		return false;
+
+	for (unsigned i = 0; i < list1.size(); ++i) {
+		if (list1[i] != list2[i])
+			return false;
+	}
+	return true;
 }
 
 }

@@ -488,7 +488,9 @@ void QuadNode::splitOFilter(QuadTree *quadtree, const Trie *trie, OFilterMapPtr 
         // get all the keywords in the record (on the forward list) corresponding to the prefix on the O-filter
         // e.g. prefix: "can"   keyword: "candy", "canada", etc.
         vector<unsigned> matchingKeywordIds;
-        fl->getWordsInRange(quadtree->getForwardIndex()->getSchema(), prefixToSplit.minId, prefixToSplit.maxId, -1, matchingKeywordIds);
+        vector<unsigned> filterAttrs;
+        fl->getWordsInRange(quadtree->getForwardIndex()->getSchema(), prefixToSplit.minId,
+        		prefixToSplit.maxId, filterAttrs, true, matchingKeywordIds);
         
         // add each keyword to the delta oFilter along with the geoElement
         for (unsigned j = 0; j < matchingKeywordIds.size(); j++)
@@ -670,7 +672,9 @@ void QuadNode::recoverCFiltersOnThisNode(QuadTree *quadtree, CFilterMapPtr cMapP
         // get all the keywords in the record (on the forward list) corresponding to the prefix on the O-filter
         // e.g. prefix: "can"   keyword: "candy", "canada", etc.
         vector<unsigned> matchingKeywordIds;
-        fl->getWordsInRange(quadtree->getForwardIndex()->getSchema(), prefixToRecover.minId, prefixToRecover.maxId, -1, matchingKeywordIds);
+        vector<unsigned> filterAttrs;
+        fl->getWordsInRange(quadtree->getForwardIndex()->getSchema(), prefixToRecover.minId,
+        		prefixToRecover.maxId, filterAttrs, true, matchingKeywordIds);
         
         // if any, add this record to the c-filter of prefixToRecover
         if (matchingKeywordIds.size() > 0)
@@ -877,11 +881,12 @@ void QuadNode::gatherForwardListsAndAdjustOCFilters(QuadTree *quadtree, unsigned
                 continue;
 
             // check if this geoElement has keywords to be reassign
-            int termSearchableAttributeIdToFilterTermHits = -1;
+            vector<unsigned> filterAttrsList;
             float score;
             unsigned keywordId;
-            unsigned attributeBitmap;
-            if (fl->haveWordInRange(quadtree->getForwardIndex()->getSchema(), oldKeywordId, oldKeywordId, termSearchableAttributeIdToFilterTermHits, keywordId, attributeBitmap, score))
+            vector<unsigned> attributeBitmap;
+            if (fl->haveWordInRange(quadtree->getForwardIndex()->getSchema(), oldKeywordId,
+            		oldKeywordId, filterAttrsList, true, keywordId, attributeBitmap, score))
             {
                 if (recordIdsToProcess.find (forwardListID) == recordIdsToProcess.end())
                 {

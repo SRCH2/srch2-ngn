@@ -217,7 +217,9 @@ public:
     bool isValidTermPositionHit(shared_ptr<vectorview<ForwardListPtr> > & forwardIndexDirectoryReadView,
     		unsigned forwardListId,
     		unsigned keywordOffset,
-                    unsigned searchableAttributeId, unsigned& termAttributeBitmap, float &termRecordStaticScore) const;
+    		const vector<unsigned>& filterAttributesList, bool andOperation,
+    		vector<unsigned>& matchingKeywordAttributesList,
+            float &termRecordStaticScore) const;
 
     // return FORWARDLIST_NOTVALID if the forward list is not valid (e.g., already deleted)
     unsigned getKeywordOffset(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
@@ -280,10 +282,10 @@ public:
             unsigned recordId = invertedListElement.recordId;
             unsigned positionIndexOffset = invertedListElement.positionIndexOffset;
             float score;
-            unsigned termAttributeBitmap;
-
+            vector<unsigned> tempMatchedAttrsList;
+            vector<unsigned> filter;
             if (isValidTermPositionHit(forwardIndexDirectoryReadView, recordId,
-            		positionIndexOffset, -1, termAttributeBitmap, score) ){
+            		positionIndexOffset, filter, true, tempMatchedAttrsList, score) ){
                 Logger::debug("%d | %d | %.5f", recordId, positionIndexOffset, score);
             }
         }

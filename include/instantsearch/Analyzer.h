@@ -63,7 +63,8 @@ struct TokenAttributeHits {
      * i.e. 4 294 967 295
      *
      */
-    vector<unsigned> attributeList;
+    vector<unsigned> attributeIdList;
+    vector<unsigned> positionOfTermInAttribute;
     vector<unsigned> charOffsetOfTermInAttribute;
     vector<unsigned> charLensOfTermInAttribute;
     vector<AnalyzedTokenType> typesOfTermInAttribute;

@@ -139,10 +139,11 @@ InvertedIndex::~InvertedIndex()
 bool InvertedIndex::isValidTermPositionHit(shared_ptr<vectorview<ForwardListPtr> > & forwardIndexDirectoryReadView,
 		unsigned forwardListId,
 		unsigned keywordOffset,
-        unsigned searchableAttributeId, unsigned& termAttributeBitmap, float &termRecordStaticScore) const
+        const vector<unsigned>& filterAttributesList, bool andOperation,
+        vector<unsigned>& matchingKeywordAttributesList, float &termRecordStaticScore) const
 {
     return this->forwardIndex->isValidRecordTermHit(forwardIndexDirectoryReadView, forwardListId, keywordOffset,
-            searchableAttributeId, termAttributeBitmap, termRecordStaticScore);
+    		filterAttributesList, andOperation, matchingKeywordAttributesList, termRecordStaticScore);
 }
 
 // given a forworListId and invertedList offset, return the keyword offset
