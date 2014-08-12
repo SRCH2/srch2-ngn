@@ -114,9 +114,11 @@ bool MongoDBConnector::connectToDB() {
         } catch (const exception& ex) {
             printf("MOGNOLISTENER: Unknown exception %s \n", ex.what());
         }
+        if (retryCount != 0) {
+            printf("MONGOLISTENER: trying again ...\n");
+        }
         // sleep...do not hog the CPU
         sleep(listenerWaitTime);
-        printf("MONGOLISTENER: trying again ...\n");
     }
     // if all retries failed then exit the thread
     printf("MONGOLISTENER: exiting...\n");
