@@ -21,6 +21,10 @@ div.source-links {
  * sections of docs content.
  */
 
+.bs-sidebar{
+    height: 85%;
+    overflow: scroll ;
+}
 /* By default it's not affixed in mobile views, so undo that */
 .bs-sidebar.affix {
     position: static;
