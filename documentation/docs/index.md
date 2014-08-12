@@ -23,4 +23,4 @@ Finally, also included is set of classes giving you the power to unlock all the 
 
 Click [here](http://www.srch2.com) to get back to the main SRCH2 page.
 
-[welcome]: ../img/welcome.jpg "Welcome"
+[welcome]: ./img/welcome.jpg "Welcome"

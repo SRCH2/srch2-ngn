@@ -1,4 +1,4 @@
-site_name: SRCH2 Android SDK
+site_name: Android SDK
 
 pages:
   - [index.md, Main] 
@@ -7,4 +7,5 @@ pages:
   - [faq.md, FAQ]
   - [download.md, Download]
   
-theme: bootstrap
+theme_dir : './srch2-theme'
+
