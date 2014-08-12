@@ -131,16 +131,28 @@ void testIndexData()
     unsigned keywordId = 1;
     // define the attributeBitmap only in debug mode
 #if ASSERT_LEVEL > 0
-    unsigned attributeBitmap = 0;
+    vector<unsigned> attributeBitmap;
 #endif
-    ASSERT( forwardIndex->haveWordInRange(forwardListDirectoryReadView, 0,  trie->getTrieNodeFromUtf8String( root, "jack")->getId(),
-                                             trie->getTrieNodeFromUtf8String( root, "lennon")->getId(), -1, keywordId, attributeBitmap, score) == true );
-    ASSERT( forwardIndex->haveWordInRange(forwardListDirectoryReadView, 0,  trie->getTrieNodeFromUtf8String( root, "smith")->getId() + 1,
-                                             trie->getTrieNodeFromUtf8String( root, "tom")->getId() - 1, -1, keywordId, attributeBitmap, score) == false );
-    ASSERT( forwardIndex->haveWordInRange(forwardListDirectoryReadView, 1, trie->getTrieNodeFromUtf8String( root, "hendrix")->getId(),
-                                             trie->getTrieNodeFromUtf8String( root, "jimi")->getId(), -1, keywordId, attributeBitmap, score) == true );
-    ASSERT( forwardIndex->haveWordInRange(forwardListDirectoryReadView, 1, trie->getTrieNodeFromUtf8String( root, "wing")->getId() + 1,
-                                             trie->getTrieNodeFromUtf8String( root, "wing")->getId() + 2, -1, keywordId, attributeBitmap, score) == false );
+    ASSERT( forwardIndex->haveWordInRange(forwardListDirectoryReadView, 0,
+    		trie->getTrieNodeFromUtf8String( root, "jack")->getId(),
+    		trie->getTrieNodeFromUtf8String( root, "lennon")->getId(),
+    		vector<unsigned>(), true,
+    		keywordId, attributeBitmap, score) == true );
+    ASSERT( forwardIndex->haveWordInRange(forwardListDirectoryReadView, 0,
+    		trie->getTrieNodeFromUtf8String( root, "smith")->getId() + 1,
+    		trie->getTrieNodeFromUtf8String( root, "tom")->getId() - 1,
+    		vector<unsigned>(), true,
+    		keywordId, attributeBitmap, score) == false );
+    ASSERT( forwardIndex->haveWordInRange(forwardListDirectoryReadView, 1,
+    		trie->getTrieNodeFromUtf8String( root, "hendrix")->getId(),
+    		trie->getTrieNodeFromUtf8String( root, "jimi")->getId(),
+    		vector<unsigned>(), true,
+    		keywordId, attributeBitmap, score) == true );
+    ASSERT( forwardIndex->haveWordInRange(forwardListDirectoryReadView, 1,
+    		trie->getTrieNodeFromUtf8String( root, "wing")->getId() + 1,
+    		trie->getTrieNodeFromUtf8String( root, "wing")->getId() + 2,
+    		vector<unsigned>(), true,
+    		keywordId, attributeBitmap, score) == false );
 
     /// test InvertedIndex
     InvertedIndex *invertedIndex = indexData->invertedIndex;

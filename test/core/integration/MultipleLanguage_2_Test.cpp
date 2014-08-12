@@ -142,7 +142,7 @@ void testPolish() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	{
@@ -153,7 +153,7 @@ void testPolish() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -274,16 +274,16 @@ void testPortuguese() {
 
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	{
@@ -294,16 +294,16 @@ void testPortuguese() {
 
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	delete analyzer;
@@ -422,7 +422,7 @@ void testRomanian() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -434,7 +434,7 @@ void testRomanian() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -554,7 +554,7 @@ void testRussian() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -568,7 +568,7 @@ void testRussian() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 3,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -686,7 +686,7 @@ void testSerbian() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -698,7 +698,7 @@ void testSerbian() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -819,7 +819,7 @@ void testSlovak() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -832,7 +832,7 @@ void testSlovak() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -952,7 +952,7 @@ void testSlovenian() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -964,7 +964,7 @@ void testSlovenian() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -1084,16 +1084,16 @@ void testSpanish() {
 
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	{
@@ -1104,16 +1104,16 @@ void testSpanish() {
 
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	delete analyzer;
@@ -1233,7 +1233,7 @@ void testSwedish() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -1245,7 +1245,7 @@ void testSwedish() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -1366,7 +1366,7 @@ void testThai() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -1378,7 +1378,7 @@ void testThai() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -1498,7 +1498,7 @@ void testTurkish() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -1510,7 +1510,7 @@ void testTurkish() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -1629,7 +1629,7 @@ void testUkrainian() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -1641,7 +1641,7 @@ void testUkrainian() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -1762,7 +1762,7 @@ void testVietnamese() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -1774,7 +1774,7 @@ void testVietnamese() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -1877,7 +1877,7 @@ void testFarsi() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 	//Test a record that includes both French and English
@@ -1890,7 +1890,7 @@ void testFarsi() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -2089,16 +2089,16 @@ void testArabic() {
 		recordIds.push_back(1202);
 		recordIds.push_back(1203);
 		ASSERT(
-				pingExactPrefix(analyzer, queryEvaluator, query, 7, recordIds)
+				pingExactPrefix(analyzer, queryEvaluator, query, 7, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, queryEvaluator, query, 7, recordIds)
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 7, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingExactComplete(analyzer, queryEvaluator, query, 7, recordIds)
+				pingExactComplete(analyzer, queryEvaluator, query, 7, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, queryEvaluator, query, 7, recordIds)
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 7, recordIds, vector<unsigned>(), true)
 						== true);
 	}
 
@@ -2109,16 +2109,16 @@ void testArabic() {
 		recordIds.push_back(1001);
 		recordIds.push_back(1201);
 		ASSERT(
-				pingExactPrefix(analyzer, queryEvaluator, "book", 2, recordIds)
+				pingExactPrefix(analyzer, queryEvaluator, "book", 2, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, queryEvaluator, "book", 2, recordIds)
+				pingFuzzyPrefix(analyzer, queryEvaluator, "book", 2, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingExactComplete(analyzer, queryEvaluator, "book", 2, recordIds)
+				pingExactComplete(analyzer, queryEvaluator, "book", 2, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, queryEvaluator, "book", 2, recordIds)
+				pingFuzzyComplete(analyzer, queryEvaluator, "book", 2, recordIds, vector<unsigned>(), true)
 						== true);
 	}
 
@@ -2130,16 +2130,16 @@ void testArabic() {
 		recordIds.push_back(1202);
 		recordIds.push_back(1203);
 		ASSERT(
-				pingExactPrefix(analyzer, queryEvaluator, query, 2, recordIds)
+				pingExactPrefix(analyzer, queryEvaluator, query, 2, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2, recordIds)
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingExactComplete(analyzer, queryEvaluator, query, 2, recordIds)
+				pingExactComplete(analyzer, queryEvaluator, query, 2, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, queryEvaluator, query, 2, recordIds)
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 2, recordIds, vector<unsigned>(), true)
 						== true);
 	}
 
@@ -2151,16 +2151,16 @@ void testArabic() {
 		recordIds.push_back(1202);
 		recordIds.push_back(1203);
 		ASSERT(
-				pingExactPrefix(analyzer, queryEvaluator, query, 2, recordIds)
+				pingExactPrefix(analyzer, queryEvaluator, query, 2, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2, recordIds)
+				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingExactComplete(analyzer, queryEvaluator, query, 2, recordIds)
+				pingExactComplete(analyzer, queryEvaluator, query, 2, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, queryEvaluator, query, 2, recordIds)
+				pingFuzzyComplete(analyzer, queryEvaluator, query, 2, recordIds, vector<unsigned>(), true)
 						== true);
 	}
 
@@ -2272,7 +2272,7 @@ void testHebrew() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 	//Test a record that includes both French and English
@@ -2286,7 +2286,7 @@ void testHebrew() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	delete analyzer;
@@ -2392,7 +2392,7 @@ void testKazakh()
                 recordIds.push_back(1101);
 		recordIds.push_back(1102);
 
-		ASSERT(pingExactComplete(analyzer, queryEvaluator, query, 2,recordIds) == true);
+		ASSERT(pingExactComplete(analyzer, queryEvaluator, query, 2,recordIds, vector<unsigned>(), true) == true);
 	}
 
 
@@ -2498,7 +2498,7 @@ void testBurmese()
 		vector<unsigned> recordIds;
 		recordIds.push_back(1102);
 
-		ASSERT(pingExactComplete(analyzer, queryEvaluator, query, 1,recordIds) == true);
+		ASSERT(pingExactComplete(analyzer, queryEvaluator, query, 1,recordIds, vector<unsigned>(), true) == true);
 	}
 
 
@@ -2602,7 +2602,7 @@ void testPortugueseBrazil()
 		vector<unsigned> recordIds;
 		recordIds.push_back(1101);
 
-		ASSERT(pingExactComplete(analyzer, queryEvaluator, query, 1,recordIds) == true);
+		ASSERT(pingExactComplete(analyzer, queryEvaluator, query, 1,recordIds, vector<unsigned>(), true) == true);
 	}
 
 
@@ -2708,7 +2708,7 @@ void testSpanishLatin()
 		vector<unsigned> recordIds;
 		recordIds.push_back(1101);
 
-		ASSERT(pingExactComplete(analyzer, queryEvaluator, query, 1, recordIds) == true);
+		ASSERT(pingExactComplete(analyzer, queryEvaluator, query, 1, recordIds, vector<unsigned>(), true) == true);
 	}
 
 

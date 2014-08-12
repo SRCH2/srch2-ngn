@@ -245,13 +245,13 @@ void test1()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 2 , recordIds, vector<unsigned>(), true) == true);
     }
     //Query: "jimi", hit -> 1002
     {
         vector<unsigned> recordIds;
         recordIds.push_back(1002);
-        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 1 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 1 , recordIds, vector<unsigned>(), true) == true);
     }
 
     //Update Index
@@ -283,14 +283,14 @@ void test1()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( ping(analyzer, queryEvaluator, "smith" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "smith" , 2 , recordIds, vector<unsigned>(), true) == true);
     }
 
     //Query: "jobs", hit -> 1999
     {
         vector<unsigned> recordIds;
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 1 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 1 , recordIds, vector<unsigned>(), true) == true);
     }
 
     //indexer->print_index();
@@ -301,7 +301,7 @@ void test1()
         recordIds.push_back(1001);
         recordIds.push_back(1003);
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds, vector<unsigned>(), true) == true);
     }
 
     //Query: "tom", hits -> 1001, 1003
@@ -309,7 +309,7 @@ void test1()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 2 , recordIds) == false);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 2 , recordIds, vector<unsigned>(), true) == false);
     }
 
     index->commit();
@@ -321,7 +321,7 @@ void test1()
         recordIds.push_back(1001);
         recordIds.push_back(1003);
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds, vector<unsigned>(), true) == true);
     }
 
     (void)analyzer;
@@ -354,7 +354,7 @@ void test2()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( ping(analyzer, queryEvaluator, "smith" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "smith" , 2 , recordIds, vector<unsigned>(), true) == true);
     }
 
     //Query: "tom", hits -> 1001, 1003 , 1999
@@ -363,14 +363,14 @@ void test2()
         recordIds.push_back(1001);
         recordIds.push_back(1003);
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds, vector<unsigned>(), true) == true);
     }
 
     //Query: "jobs", hit -> 1999
     {
         vector<unsigned> recordIds;
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 1 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 1 , recordIds, vector<unsigned>(), true) == true);
     }
 
     //Update a Deserialised Index
@@ -391,7 +391,7 @@ void test2()
         vector<unsigned> recordIds;
         recordIds.push_back(1002);
         recordIds.push_back(1998);
-        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 2 , recordIds, vector<unsigned>(), true) == true);
     }
 
     //Query: "jobs", hits -> 1998 , 1999
@@ -399,7 +399,7 @@ void test2()
         vector<unsigned> recordIds;
         recordIds.push_back(1999);
         recordIds.push_back(1998);
-        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 2 , recordIds, vector<unsigned>(), true) == true);
     }
 
     //Query: "tom", hits -> 1001, 1003 , 1999
@@ -408,7 +408,7 @@ void test2()
         recordIds.push_back(1001);
         recordIds.push_back(1003);
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds, vector<unsigned>(), true) == true);
     }
 
     index->commit();
@@ -473,7 +473,7 @@ void test3()
         vector<unsigned> recordIds;
         recordIds.push_back(1002);
         recordIds.push_back(1998);
-        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 2 , recordIds, vector<unsigned>(), true) == true);
     }
 
     //Query: "jobs", hits -> 1998 , 1999
@@ -481,7 +481,7 @@ void test3()
         vector<unsigned> recordIds;
         recordIds.push_back(1999);
         recordIds.push_back(1998);
-        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 2 , recordIds, vector<unsigned>(), true) == true);
     }
 
     //Query: "tom", hits -> 1001, 1003 , 1999
@@ -490,7 +490,7 @@ void test3()
         recordIds.push_back(1001);
         recordIds.push_back(1003);
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds, vector<unsigned>(), true) == true);
     }
 
     index->commit();
@@ -534,7 +534,7 @@ void test4()
         vector<unsigned> recordIds;
         recordIds.push_back(1002);
         //recordIds.push_back(1998);
-        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 1 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 1 , recordIds, vector<unsigned>(), true) == true);
     }
 
     //Query: "jobs", hits -> 1998 , 1999
@@ -542,7 +542,7 @@ void test4()
         vector<unsigned> recordIds;
         //recordIds.push_back(1998);
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 1 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 1 , recordIds, vector<unsigned>(), true) == true);
     }
 
     //Query: "tom", hits -> 1001, 1003 , 1999
@@ -551,7 +551,7 @@ void test4()
         recordIds.push_back(1001);
         recordIds.push_back(1003);
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds, vector<unsigned>(), true) == true);
     }
 
     index->save(INDEX_DIR);
@@ -610,7 +610,7 @@ void test5()
         vector<unsigned> recordIds;
         recordIds.push_back(1002);
         recordIds.push_back(1998);
-        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 2 , recordIds, vector<unsigned>(), true) == true);
     }
 
     //Query: "jobs", hits -> 1998, 1999
@@ -618,7 +618,7 @@ void test5()
         vector<unsigned> recordIds;
         recordIds.push_back(1999);
         recordIds.push_back(1998);
-        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 2 , recordIds, vector<unsigned>(), true) == true);
     }
 
     //Query: "tom", hits -> 1001, 1003 , 1999
@@ -627,7 +627,7 @@ void test5()
         recordIds.push_back(1001);
         recordIds.push_back(1003);
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds, vector<unsigned>(), true) == true);
     }
 
     index->commit();
@@ -662,7 +662,7 @@ void test6()
         vector<unsigned> recordIds;
         recordIds.push_back(1002);
         recordIds.push_back(1998);
-        ASSERT ( ping(analyzer, queryEvaluator, "jemi" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jemi" , 2 , recordIds, vector<unsigned>(), true) == true);
     }
 
     //Query: "jobsi", hits -> 1998 , 1999
@@ -670,14 +670,14 @@ void test6()
         vector<unsigned> recordIds;
         recordIds.push_back(1999);
         recordIds.push_back(1998);
-        ASSERT ( ping(analyzer, queryEvaluator, "jobsi" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jobsi" , 2 , recordIds, vector<unsigned>(), true) == true);
     }
 
     //Query: "shiref", hits -> 1999
     {
         vector<unsigned> recordIds;
         recordIds.push_back(1998);
-        ASSERT ( ping(analyzer, queryEvaluator, "shiref" , 1 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "shiref" , 1 , recordIds, vector<unsigned>(), true) == true);
     }
 
     //delete analyzer;
@@ -773,7 +773,7 @@ void test8()
         vector<unsigned> recordIds;
         //recordIds.push_back(1002);
         recordIds.push_back(1998);
-        ASSERT ( ping(analyzer, queryEvaluator, "jimi+jobs" , 1 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jimi+jobs" , 1 , recordIds, vector<unsigned>(), true) == true);
     }
 
     //Query: "tom", hits -> 1001, 1003 , 1999
@@ -782,7 +782,7 @@ void test8()
         recordIds.push_back(1001);
         recordIds.push_back(1003);
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds, vector<unsigned>(), true) == true);
     }
 
     //Query: "jack", hits -> 1001, 1003
@@ -790,7 +790,7 @@ void test8()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( ping(analyzer, queryEvaluator, "jack" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jack" , 2 , recordIds, vector<unsigned>(), true) == true);
     }
 
     //Query: "tom+jack", hits -> 1001, 1003
@@ -798,7 +798,7 @@ void test8()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( ping(analyzer, queryEvaluator, "tom+jack" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom+jack" , 2 , recordIds, vector<unsigned>(), true) == true);
     }
 
     //indexer->print_Index();
@@ -856,14 +856,14 @@ void test9()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 2 , recordIds, vector<unsigned>(), true) == true);
     }
 
     //Query: "jimi", hit -> 1002
     {
         vector<unsigned> recordIds;
         recordIds.push_back(1002);
-        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 1 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 1 , recordIds, vector<unsigned>(), true) == true);
     }
 
     //Update Index
@@ -898,14 +898,14 @@ void test9()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( ping(analyzer, queryEvaluator, "smith" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "smith" , 2 , recordIds, vector<unsigned>(), true) == true);
     }
 
     //Query: "jobs", hit -> 1002
     {
         vector<unsigned> recordIds;
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 1 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 1 , recordIds, vector<unsigned>(), true) == true);
     }
 
     index->commit();
@@ -950,7 +950,7 @@ void test10()
         vector<unsigned> recordIds;
         //recordIds.push_back(1002);
         recordIds.push_back(1998);
-        ASSERT ( pingGetAllResultsQuery(analyzer, queryEvaluator, "jimi+jobs" , 1 , recordIds,-1,0) == true);
+        ASSERT ( pingGetAllResultsQuery(analyzer, queryEvaluator, "jimi+jobs" , 1 , recordIds, vector<unsigned>(), true ,0) == true);
     }
 
     //Query: "tom", hits -> 1001, 1003 , 1999 ;descending ;sortAttribute 0;
@@ -959,7 +959,7 @@ void test10()
         recordIds.push_back(1999);
         recordIds.push_back(1003);
         recordIds.push_back(1001);
-        ASSERT ( pingGetAllResultsQuery(analyzer, queryEvaluator, "tom" , 3 , recordIds,-1,0) == true);
+        ASSERT ( pingGetAllResultsQuery(analyzer, queryEvaluator, "tom" , 3 , recordIds, vector<unsigned>(), true ,0) == true);
     }
 
     //Query: "jack", hits -> 1001, 1003 ;descending ;sortAttribute 0;
@@ -967,7 +967,7 @@ void test10()
         vector<unsigned> recordIds;
         recordIds.push_back(1003);
         recordIds.push_back(1001);
-        ASSERT ( pingGetAllResultsQuery(analyzer, queryEvaluator, "jack" , 2 , recordIds,-1,0) == true);
+        ASSERT ( pingGetAllResultsQuery(analyzer, queryEvaluator, "jack" , 2 , recordIds, vector<unsigned>(), true ,0) == true);
     }
 
     //Query: "jack", hits -> 1001, 1003 ;descending ;sortAttribute 1;
@@ -975,7 +975,7 @@ void test10()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( pingGetAllResultsQuery(analyzer, queryEvaluator, "jack" , 2 , recordIds,-1,1) == true);
+        ASSERT ( pingGetAllResultsQuery(analyzer, queryEvaluator, "jack" , 2 , recordIds, vector<unsigned>(), true ,1) == true);
     }
 
     //Query: "tom+jack", hits -> 1001, 1003 ;descending ;sortAttribute 1;
@@ -983,7 +983,7 @@ void test10()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( pingGetAllResultsQuery(analyzer, queryEvaluator, "tom+jack" , 2 , recordIds,-1,1) == true);
+        ASSERT ( pingGetAllResultsQuery(analyzer, queryEvaluator, "tom+jack" , 2 , recordIds, vector<unsigned>(), true ,1) == true);
     }
 
     //indexer->print_Index();
@@ -993,7 +993,7 @@ void test10()
         vector<unsigned> recordIds;
         recordIds.push_back(1003);
         recordIds.push_back(1001);
-        ASSERT ( pingGetAllResultsQuery(analyzer, queryEvaluator, "tom+jack" , 2 , recordIds,-1,0) == true);
+        ASSERT ( pingGetAllResultsQuery(analyzer, queryEvaluator, "tom+jack" , 2 , recordIds, vector<unsigned>(), true ,0) == true);
     }
 
     /// positional index disabled, ignore the filter related tests for now
@@ -1088,14 +1088,14 @@ void test11()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003); // Should not be seen before commit
-        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 2 , recordIds, vector<unsigned>(), true) == true);
     }
 
     //Query: "jimi", hit -> 1002
     {
         vector<unsigned> recordIds;
         recordIds.push_back(1002);
-        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 1 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 1 , recordIds, vector<unsigned>(), true) == true);
     }
 
     //Update Index
@@ -1116,7 +1116,7 @@ void test11()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( ping(analyzer, queryEvaluator, "smith" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "smith" , 2 , recordIds, vector<unsigned>(), true) == true);
     }
 
     //Query: "jobs", hit -> 1002
@@ -1135,7 +1135,7 @@ void test11()
         recordIds.push_back(1001);
         recordIds.push_back(1003);
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds, vector<unsigned>(), true) == true);
     }
 
     //Query: "tom", hits -> 1001, 1003
@@ -1143,7 +1143,7 @@ void test11()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 2 , recordIds) == false);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 2 , recordIds, vector<unsigned>(), true) == false);
     }
 
     index->save(INDEX_DIR);
@@ -1154,7 +1154,7 @@ void test11()
         recordIds.push_back(1001);
         recordIds.push_back(1003);
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds, vector<unsigned>(), true) == true);
     }
 
     delete queryEvaluator;

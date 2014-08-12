@@ -110,8 +110,8 @@ Indexer *buildIndex(string data_file, string index_dir, string expression)
     return indexer;
 }
 
-void fireSearch(QueryEvaluator * queryEvaluator, unsigned filter, unsigned k, const vector<string> &searchKeywords,
-                unsigned numOfResults, const vector<string> &resultIds, const vector<vector<unsigned> > &resultAttributeBitmap)
+void fireSearch(QueryEvaluator * queryEvaluator, vector<unsigned> filter, bool andOperation, unsigned k, const vector<string> &searchKeywords,
+                unsigned numOfResults, const vector<string> &resultIds, const vector<vector<vector<unsigned> > > &resultAttributeBitmap)
 {
     
     Query *query = new Query(srch2::instantsearch::SearchTypeTopKQuery);
@@ -122,7 +122,7 @@ void fireSearch(QueryEvaluator * queryEvaluator, unsigned filter, unsigned k, co
     {
         TermType termType = TERM_TYPE_PREFIX;
         Term *term = ExactTerm::create(searchKeywords[i], termType, 1, 0.5);
-        term->addAttributeToFilterTermHits(filter);
+        term->addAttributesToFilter(filter, andOperation);
         query->setPrefixMatchPenalty(0.95);
         query->add(term);
     }
@@ -132,15 +132,17 @@ void fireSearch(QueryEvaluator * queryEvaluator, unsigned filter, unsigned k, co
     queryEvaluator->search(logicalPlan , queryResults);
 //    QueryEvaluatorRuntimeParametersContainer runTimeParameters;
 //    QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer,&runTimeParameters );
+    cout << "record found :" << queryResults->getNumberOfResults() << endl;
     ASSERT(queryResults->getNumberOfResults() == numOfResults);
 
-    vector<unsigned> matchedAttributeBitmap;
+    vector<vector<unsigned> > matchedAttributeBitmap;
     for (unsigned i = 0; i< numOfResults; ++i)
     {
         ASSERT(queryResults->getRecordId(i) == resultIds[i]);
-        queryResults->getMatchedAttributeBitmaps(i, matchedAttributeBitmap);
+        queryResults->getMatchedAttributes(i, matchedAttributeBitmap);
         for(int j = 0; j< matchedAttributeBitmap.size(); j++)
-        	ASSERT(matchedAttributeBitmap[j] == resultAttributeBitmap[i][j]);
+        	for(int k = 0; k< matchedAttributeBitmap[j].size(); k++)
+        		ASSERT(matchedAttributeBitmap[j][k] == resultAttributeBitmap[i][j][k]);
     }
 
     delete queryResults;
@@ -156,29 +158,29 @@ void test(string index_dir, string data_file)
     QueryEvaluatorRuntimeParametersContainer runTimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer,&runTimeParameters );
 
-    unsigned filter = 0;
+    vector<unsigned> filter;
     int k = 10;
 
     vector<string> searchKeywords;
     searchKeywords.push_back("jack");
 
     vector<string> resultIds;
-    vector<vector<unsigned> > resultAttributeBitmap;
+    vector<vector<vector<unsigned> > > resultAttributeBitmap;
     unsigned numOfResults = 0;
 
     // case 1
-    filter = 2; // set the second bit to 1, meaning the keyword need to appear in the second searchable attribute
+    filter.push_back(1); // set the second bit to 1, meaning the keyword need to appear in the second searchable attribute
     
     resultIds.push_back("4");
     resultIds.push_back("2");
     resultIds.push_back("3");
     numOfResults = 3;
     resultAttributeBitmap.resize(3);
-    resultAttributeBitmap[0].push_back(2);
-    resultAttributeBitmap[1].push_back(2);
-    resultAttributeBitmap[2].push_back(2);
-
-    fireSearch(queryEvaluator, filter, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
+    resultAttributeBitmap[0].push_back(filter);
+    resultAttributeBitmap[1].push_back(filter);
+    resultAttributeBitmap[2].push_back(filter);
+    // Do OR operation.
+    fireSearch(queryEvaluator, filter, false, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
 
     resultIds.clear();
     resultAttributeBitmap.clear();
@@ -186,16 +188,18 @@ void test(string index_dir, string data_file)
     cout << "case 1 passed." << endl;
 
     // case 2
-    filter = 1; // set the first bit to 1, meaning the keyword need to appear in the first searchable attribute
+    filter.clear();
+    filter.push_back(0); // set the first bit to 1, meaning the keyword need to appear in the first searchable attribute
 
     resultIds.push_back("4");
     resultIds.push_back("1");
     numOfResults = 2;
     resultAttributeBitmap.resize(2);
-    resultAttributeBitmap[0].push_back(1);
-    resultAttributeBitmap[1].push_back(1);
+    resultAttributeBitmap[0].push_back(filter);
+    resultAttributeBitmap[1].push_back(filter);
 
-    fireSearch(queryEvaluator, filter, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
+    // Do OR operation.
+    fireSearch(queryEvaluator, filter, false, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
 
     resultIds.clear();
     resultAttributeBitmap.clear();
@@ -203,7 +207,9 @@ void test(string index_dir, string data_file)
     cout << "case 2 passed." << endl;
 
     // case 3
-    filter = 3; // set both the first bit and second bit to 1, meaning the keyword need to appear either in the first searchable attribute or the second
+    filter.clear();
+    filter.push_back(0);
+    filter.push_back(1); // set both the first bit and second bit to 1, meaning the keyword need to appear either in the first searchable attribute or the second
 
     resultIds.push_back("4");
     resultIds.push_back("1");
@@ -211,12 +217,17 @@ void test(string index_dir, string data_file)
     resultIds.push_back("3");
     numOfResults = 4;
     resultAttributeBitmap.resize(4);
-    resultAttributeBitmap[0].push_back(3);
-    resultAttributeBitmap[1].push_back(1);
-    resultAttributeBitmap[2].push_back(2);
-    resultAttributeBitmap[3].push_back(2);
+    resultAttributeBitmap[0].push_back(filter);
+    vector<unsigned> result;
+    result.push_back(0);
+    resultAttributeBitmap[1].push_back(result);
+    result.clear();
+    result.push_back(1);
+    resultAttributeBitmap[2].push_back(result);
+    resultAttributeBitmap[3].push_back(result);
 
-    fireSearch(queryEvaluator, filter, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
+    // Do OR operation.
+    fireSearch(queryEvaluator, filter, false, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
 
     resultIds.clear();
     resultAttributeBitmap.clear();
@@ -224,15 +235,16 @@ void test(string index_dir, string data_file)
     cout << "case 3 passed." << endl;
 
     // case 4
-    filter = 3; // set both the first bit and second bit to 1, 
-    filter |= 0x80000000; // set the highest bit to 1, meaning the keyword need to appear BOTH in the first searchable attribute and the second
+    filter.clear();
+    filter.push_back(0);
+    filter.push_back(1); // set both the first bit and second bit to 1,
 
     resultIds.push_back("4");
     numOfResults = 1;
     resultAttributeBitmap.resize(1);
-    resultAttributeBitmap[0].push_back(3);
-
-    fireSearch(queryEvaluator, filter, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
+    resultAttributeBitmap[0].push_back(filter);
+    // Do AND operation.
+    fireSearch(queryEvaluator, filter, true, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
 
     resultIds.clear();
     resultAttributeBitmap.clear();
@@ -240,7 +252,7 @@ void test(string index_dir, string data_file)
     cout << "case 4 passed." << endl;
 
     // case 5
-    filter = 0x7fffffff; // no filter
+    filter.clear(); // no filter
 
     resultIds.push_back("4");
     resultIds.push_back("1");
@@ -248,12 +260,19 @@ void test(string index_dir, string data_file)
     resultIds.push_back("3");
     numOfResults = 4;
     resultAttributeBitmap.resize(4);
-    resultAttributeBitmap[0].push_back(3);
-    resultAttributeBitmap[1].push_back(1);
-    resultAttributeBitmap[2].push_back(2);
-    resultAttributeBitmap[3].push_back(2);
+    result.clear();
+    result.push_back(0);
+    result.push_back(1);
+    resultAttributeBitmap[0].push_back(result);
+    result.clear();
+    result.push_back(0);
+    resultAttributeBitmap[1].push_back(result);
+    result.clear();
+    result.push_back(1);
+    resultAttributeBitmap[2].push_back(result);
+    resultAttributeBitmap[3].push_back(result);
 
-    fireSearch(queryEvaluator, filter, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
+    fireSearch(queryEvaluator, filter, false, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
 
     resultIds.clear();
 

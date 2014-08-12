@@ -214,16 +214,16 @@ void testSimpleChinese() {
 		recordIds.push_back(1108);
 		recordIds.push_back(1201);
 		ASSERT(
-				pingExactPrefix(analyzer, queryEvaluator, "孔子", 3, recordIds)
+				pingExactPrefix(analyzer, queryEvaluator, "孔子", 3, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, queryEvaluator, "孔子", 3, recordIds)
+				pingFuzzyPrefix(analyzer, queryEvaluator, "孔子", 3, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingExactComplete(analyzer, queryEvaluator, "孔子", 3, recordIds)
+				pingExactComplete(analyzer, queryEvaluator, "孔子", 3, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, queryEvaluator, "孔子", 3, recordIds)
+				pingFuzzyComplete(analyzer, queryEvaluator, "孔子", 3, recordIds, vector<unsigned>(), true)
 						== true);
 	}
 
@@ -234,16 +234,16 @@ void testSimpleChinese() {
 		recordIds.push_back(1102);
 		recordIds.push_back(1104);
 		ASSERT(
-				pingExactPrefix(analyzer, queryEvaluator, "长江", 2, recordIds)
+				pingExactPrefix(analyzer, queryEvaluator, "长江", 2, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, queryEvaluator, "长江", 2, recordIds)
+				pingFuzzyPrefix(analyzer, queryEvaluator, "长江", 2, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingExactComplete(analyzer, queryEvaluator, "长江", 2, recordIds)
+				pingExactComplete(analyzer, queryEvaluator, "长江", 2, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, queryEvaluator, "长江", 2, recordIds)
+				pingFuzzyComplete(analyzer, queryEvaluator, "长江", 2, recordIds, vector<unsigned>(), true)
 						== true);
 	}
 
@@ -254,16 +254,16 @@ void testSimpleChinese() {
 		recordIds.push_back(1003);
 		recordIds.push_back(1201);
 		ASSERT(
-				pingExactPrefix(analyzer, queryEvaluator, "Mr", 2, recordIds)
+				pingExactPrefix(analyzer, queryEvaluator, "Mr", 2, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, queryEvaluator, "Mr", 2, recordIds)
+				pingFuzzyPrefix(analyzer, queryEvaluator, "Mr", 2, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingExactComplete(analyzer, queryEvaluator, "Mr", 2, recordIds)
+				pingExactComplete(analyzer, queryEvaluator, "Mr", 2, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, queryEvaluator, "Mr", 2, recordIds)
+				pingFuzzyComplete(analyzer, queryEvaluator, "Mr", 2, recordIds, vector<unsigned>(), true)
 						== true);
 	}
 
@@ -275,16 +275,16 @@ void testSimpleChinese() {
 		recordIds.push_back(1203);
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, "Miss 李清照", 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, "Miss 李清照", 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, "Miss 李清照", 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, "Miss 李清照", 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	//search long English and Chinese text
@@ -295,19 +295,19 @@ void testSimpleChinese() {
 		recordIds.push_back(1203);
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator,
-						"Miss 李清照 生当作people杰，死亦为ghost雄。", 2, recordIds)
+						"Miss 李清照 生当作people杰，死亦为ghost雄。", 2, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator,
-						"Miss 李清照 生当作people杰，死亦为ghost雄。", 2, recordIds)
+						"Miss 李清照 生当作people杰，死亦为ghost雄。", 2, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator,
-						"Miss 李清照 生当作people杰，死亦为ghost雄。", 2, recordIds)
+						"Miss 李清照 生当作people杰，死亦为ghost雄。", 2, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator,
-						"Miss 李清照 生当作people杰，死亦为ghost雄。", 2, recordIds)
+						"Miss 李清照 生当作people杰，死亦为ghost雄。", 2, recordIds, vector<unsigned>(), true)
 						== true);
 	}
 
@@ -319,18 +319,18 @@ void testSimpleChinese() {
 		recordIds.push_back(1203);
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator,
-						"Miss 李清照 生当作peple杰，死亦为ghost雄。", 2, recordIds)
+						"Miss 李清照 生当作peple杰，死亦为ghost雄。", 2, recordIds, vector<unsigned>(), true)
 						== false);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator,
-						"Miss 李清照 生当作peple杰，死亦为ghost雄。", 2, recordIds) == true);
+						"Miss 李清照 生当作peple杰，死亦为ghost雄。", 2, recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator,
-						"Miss 李清照 生当作peple杰，死亦为ghost雄。", 2, recordIds)
+						"Miss 李清照 生当作peple杰，死亦为ghost雄。", 2, recordIds, vector<unsigned>(), true)
 						== false);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator,
-						"Miss 李清照 生当作peple杰，死亦为ghost雄。", 2, recordIds) == true);
+						"Miss 李清照 生当作peple杰，死亦为ghost雄。", 2, recordIds, vector<unsigned>(), true) == true);
 	}
 
 	//Update Index
@@ -362,16 +362,16 @@ void testSimpleChinese() {
 		recordIds.push_back(1999);
 		recordIds.push_back(1998);
 		ASSERT(
-				pingExactPrefix(analyzer, queryEvaluator, "孔子", 5, recordIds)
+				pingExactPrefix(analyzer, queryEvaluator, "孔子", 5, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, queryEvaluator, "孔子", 5, recordIds)
+				pingFuzzyPrefix(analyzer, queryEvaluator, "孔子", 5, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingExactComplete(analyzer, queryEvaluator, "孔子", 5, recordIds)
+				pingExactComplete(analyzer, queryEvaluator, "孔子", 5, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, queryEvaluator, "孔子", 5, recordIds)
+				pingFuzzyComplete(analyzer, queryEvaluator, "孔子", 5, recordIds, vector<unsigned>(), true)
 						== true);
 	}
 
@@ -381,16 +381,16 @@ void testSimpleChinese() {
 		recordIds.push_back(1108);
 		recordIds.push_back(1999);
 		ASSERT(
-				pingExactPrefix(analyzer, queryEvaluator, "东山", 2, recordIds)
+				pingExactPrefix(analyzer, queryEvaluator, "东山", 2, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, queryEvaluator, "东山", 2, recordIds)
+				pingFuzzyPrefix(analyzer, queryEvaluator, "东山", 2, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingExactComplete(analyzer, queryEvaluator, "东山", 2, recordIds)
+				pingExactComplete(analyzer, queryEvaluator, "东山", 2, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, queryEvaluator, "东山", 2, recordIds)
+				pingFuzzyComplete(analyzer, queryEvaluator, "东山", 2, recordIds, vector<unsigned>(), true)
 						== true);
 	}
 
@@ -406,16 +406,16 @@ void testSimpleChinese() {
 		recordIds.push_back(1999);
 		recordIds.push_back(1998);
 		ASSERT(
-				pingExactPrefix(analyzer, queryEvaluator, "孔子", 5, recordIds)
+				pingExactPrefix(analyzer, queryEvaluator, "孔子", 5, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, queryEvaluator, "孔子", 5, recordIds)
+				pingFuzzyPrefix(analyzer, queryEvaluator, "孔子", 5, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingExactComplete(analyzer, queryEvaluator, "孔子", 5, recordIds)
+				pingExactComplete(analyzer, queryEvaluator, "孔子", 5, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, queryEvaluator, "孔子", 5, recordIds)
+				pingFuzzyComplete(analyzer, queryEvaluator, "孔子", 5, recordIds, vector<unsigned>(), true)
 						== true);
 	}
 
@@ -610,17 +610,17 @@ void testSimpleZhuyin() {
 		recordIds.push_back(1108);
 		recordIds.push_back(1201);
 		ASSERT(
-				pingExactPrefix(analyzer, queryEvaluator, "ㄎㄨㄥ ㄗ", 3, recordIds)
+				pingExactPrefix(analyzer, queryEvaluator, "ㄎㄨㄥ ㄗ", 3, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, queryEvaluator, "ㄎㄨㄥ ㄗ", 3, recordIds)
+				pingFuzzyPrefix(analyzer, queryEvaluator, "ㄎㄨㄥ ㄗ", 3, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, "ㄎㄨㄥ ㄗ", 3,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, "ㄎㄨㄥ ㄗ", 3,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	//search Zhuyin text on the second attribute
@@ -630,17 +630,17 @@ void testSimpleZhuyin() {
 		recordIds.push_back(1102);
 		recordIds.push_back(1104);
 		ASSERT(
-				pingExactPrefix(analyzer, queryEvaluator, "ㄔㄤ ㄐㄧㄤ", 2, recordIds)
+				pingExactPrefix(analyzer, queryEvaluator, "ㄔㄤ ㄐㄧㄤ", 2, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, queryEvaluator, "ㄔㄤ ㄐㄧㄤ", 2, recordIds)
+				pingFuzzyPrefix(analyzer, queryEvaluator, "ㄔㄤ ㄐㄧㄤ", 2, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, "ㄔㄤ ㄐㄧㄤ", 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, "ㄔㄤ ㄐㄧㄤ", 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	//search English text
@@ -650,16 +650,16 @@ void testSimpleZhuyin() {
 		recordIds.push_back(1003);
 		recordIds.push_back(1201);
 		ASSERT(
-				pingExactPrefix(analyzer, queryEvaluator, "Mr", 2, recordIds)
+				pingExactPrefix(analyzer, queryEvaluator, "Mr", 2, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, queryEvaluator, "Mr", 2, recordIds)
+				pingFuzzyPrefix(analyzer, queryEvaluator, "Mr", 2, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingExactComplete(analyzer, queryEvaluator, "Mr", 2, recordIds)
+				pingExactComplete(analyzer, queryEvaluator, "Mr", 2, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingFuzzyComplete(analyzer, queryEvaluator, "Mr", 2, recordIds)
+				pingFuzzyComplete(analyzer, queryEvaluator, "Mr", 2, recordIds, vector<unsigned>(), true)
 						== true);
 	}
 
@@ -671,16 +671,16 @@ void testSimpleZhuyin() {
 		recordIds.push_back(1203);
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, "Miss ㄌㄧ ㄑㄧㄥ ㄓㄠ", 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, "Miss ㄌㄧ ㄑㄧㄥ ㄓㄠ", 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, "Miss ㄌㄧ ㄑㄧㄥ ㄓㄠ", 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, "Miss ㄌㄧ ㄑㄧㄥ ㄓㄠ", 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	//search long English and Zhuyin text
@@ -692,19 +692,19 @@ void testSimpleZhuyin() {
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator,
 						"Miss ㄌㄧ ㄑㄧㄥ ㄓㄠ ㄕㄥ ㄉㄤ ㄗㄨㄛ people ㄐㄧㄝ ㄙ ㄧ ㄨㄟ ghost ㄒㄩㄥ",
-						2, recordIds) == true);
+						2, recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator,
 						"Miss ㄌㄧ ㄑㄧㄥ ㄓㄠ ㄕㄥ ㄉㄤ ㄗㄨㄛ people ㄐㄧㄝ ㄙ ㄧ ㄨㄟ ghost ㄒㄩㄥ",
-						2, recordIds) == true);
+						2, recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator,
 						"Miss ㄌㄧ ㄑㄧㄥ ㄓㄠ ㄕㄥ ㄉㄤ ㄗㄨㄛ people ㄐㄧㄝ ㄙ ㄧ ㄨㄟ ghost ㄒㄩㄥ",
-						2, recordIds) == true);
+						2, recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator,
 						"Miss ㄌㄧ ㄑㄧㄥ ㄓㄠ ㄕㄥ ㄉㄤ ㄗㄨㄛ people ㄐㄧㄝ ㄙ ㄧ ㄨㄟ ghost ㄒㄩㄥ",
-						2, recordIds) == true);
+						2, recordIds, vector<unsigned>(), true) == true);
 	}
 
 	//search long English and Chinese text fuzzy test
@@ -716,19 +716,19 @@ void testSimpleZhuyin() {
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator,
 						"Miss ㄌㄧ ㄑㄧㄥ ㄓㄠ ㄕㄥ ㄉㄤ ㄗㄨㄛ peple ㄐㄧㄝ ㄙ ㄧ ㄨㄟ ghost ㄒㄩㄥ",
-						2, recordIds) == false);
+						2, recordIds, vector<unsigned>(), true) == false);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator,
 						"Miss ㄌㄧ ㄑㄧㄥ ㄓㄠ ㄕㄥ ㄉㄤ ㄗㄨㄛ peple ㄐㄧㄝ ㄙ ㄧ ㄨㄟ ghost ㄒㄩㄥ",
-						2, recordIds) == true);
+						2, recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator,
 						"Miss ㄌㄧ ㄑㄧㄥ ㄓㄠ ㄕㄥ ㄉㄤ ㄗㄨㄛ peple ㄐㄧㄝ ㄙ ㄧ ㄨㄟ ghost ㄒㄩㄥ",
-						2, recordIds) == false);
+						2, recordIds, vector<unsigned>(), true) == false);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator,
 						"Miss ㄌㄧ ㄑㄧㄥ ㄓㄠ ㄕㄥ ㄉㄤ ㄗㄨㄛ peple ㄐㄧㄝ ㄙ ㄧ ㄨㄟ ghost ㄒㄩㄥ",
-						2, recordIds) == true);
+						2, recordIds, vector<unsigned>(), true) == true);
 	}
 
 	//Update Index
@@ -762,17 +762,17 @@ void testSimpleZhuyin() {
 		recordIds.push_back(1999);
 		recordIds.push_back(1998);
 		ASSERT(
-				pingExactPrefix(analyzer, queryEvaluator, "ㄎㄨㄥ ㄗ", 5, recordIds)
+				pingExactPrefix(analyzer, queryEvaluator, "ㄎㄨㄥ ㄗ", 5, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, queryEvaluator, "ㄎㄨㄥ ㄗ", 5, recordIds)
+				pingFuzzyPrefix(analyzer, queryEvaluator, "ㄎㄨㄥ ㄗ", 5, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, "ㄎㄨㄥ ㄗ", 5,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, "ㄎㄨㄥ ㄗ", 5,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	//Query: "ㄉㄨㄥ ㄕㄢ", hits ->  1108,  1999
@@ -781,17 +781,17 @@ void testSimpleZhuyin() {
 		recordIds.push_back(1108);
 		recordIds.push_back(1999);
 		ASSERT(
-				pingExactPrefix(analyzer, queryEvaluator, "ㄉㄨㄥ ㄕㄢ", 2, recordIds)
+				pingExactPrefix(analyzer, queryEvaluator, "ㄉㄨㄥ ㄕㄢ", 2, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, queryEvaluator, "ㄉㄨㄥ ㄕㄢ", 2, recordIds)
+				pingFuzzyPrefix(analyzer, queryEvaluator, "ㄉㄨㄥ ㄕㄢ", 2, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, "ㄉㄨㄥ ㄕㄢ", 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, "ㄉㄨㄥ ㄕㄢ", 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	index->commit();
@@ -806,17 +806,17 @@ void testSimpleZhuyin() {
 		recordIds.push_back(1999);
 		recordIds.push_back(1998);
 		ASSERT(
-				pingExactPrefix(analyzer, queryEvaluator, "ㄎㄨㄥ ㄗ", 5, recordIds)
+				pingExactPrefix(analyzer, queryEvaluator, "ㄎㄨㄥ ㄗ", 5, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
-				pingFuzzyPrefix(analyzer, queryEvaluator, "ㄎㄨㄥ ㄗ", 5, recordIds)
+				pingFuzzyPrefix(analyzer, queryEvaluator, "ㄎㄨㄥ ㄗ", 5, recordIds, vector<unsigned>(), true)
 						== true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, "ㄎㄨㄥ ㄗ", 5,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, "ㄎㄨㄥ ㄗ", 5,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	delete analyzer;
@@ -983,16 +983,16 @@ void testJapanese() {
 		recordIds.push_back(1203);
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 6,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 6,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 6,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 6,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	//search Japanese text on the second attribute
@@ -1006,16 +1006,16 @@ void testJapanese() {
 		recordIds.push_back(1201);
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 4,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 4,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 4,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 4,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -1029,16 +1029,16 @@ void testJapanese() {
 		recordIds.push_back(1201);
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	//Test a record that includes both Japanese and English
@@ -1051,16 +1051,16 @@ void testJapanese() {
 		recordIds.push_back(1203);
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 3,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 3,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 3,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 3,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 	//search long English and Japanese text
 	//Query: "yearンスのオベリスクプレ", hits -> 1202, 1203
@@ -1071,16 +1071,16 @@ void testJapanese() {
 		recordIds.push_back(1203);
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	//Update Index
@@ -1118,16 +1118,16 @@ void testJapanese() {
 		recordIds.push_back(1999);
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 5,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 5,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 5,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 5,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	delete analyzer;
@@ -1277,16 +1277,16 @@ void testFrench() {
 
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	//search French text on the second attribute
@@ -1299,16 +1299,16 @@ void testFrench() {
 		recordIds.push_back(1201);
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 3,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 3,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 3,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 3,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -1323,16 +1323,16 @@ void testFrench() {
 		recordIds.push_back(1201);
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 3,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 3,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 3,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 3,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	//Query: "book écrit ", hits -> 1201
@@ -1344,16 +1344,16 @@ void testFrench() {
 
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 	//search long English and French text
 	//Query: "A la fin du monde film", hits -> 1105, 1201
@@ -1365,7 +1365,7 @@ void testFrench() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -1403,7 +1403,7 @@ void testFrench() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	delete analyzer;
@@ -1524,16 +1524,16 @@ void testTranditionalChinese() {
 
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	//Query: "year學 ", hits ->1201
@@ -1545,16 +1545,16 @@ void testTranditionalChinese() {
 
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	delete analyzer;
@@ -1679,7 +1679,7 @@ void testBulgarian() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 3,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 	//Query: "кървене High", hits -> 1103 1201
@@ -1691,7 +1691,7 @@ void testBulgarian() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	delete analyzer;
@@ -1815,7 +1815,7 @@ void testPinyinChinese() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -1829,7 +1829,7 @@ void testPinyinChinese() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -1844,7 +1844,7 @@ void testPinyinChinese() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -1858,7 +1858,7 @@ void testPinyinChinese() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -1983,16 +1983,16 @@ void testZhuyinChinese() {
 
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	//Query: "ㄓㄨㄥ", hits -> 1101, 1102, 1104,1105
@@ -2005,7 +2005,7 @@ void testZhuyinChinese() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 3,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -2020,7 +2020,7 @@ void testZhuyinChinese() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -2034,7 +2034,7 @@ void testZhuyinChinese() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	delete analyzer;
@@ -2156,16 +2156,16 @@ void testCroatian() {
 
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	//Query: "čitatelji ", hits ->102
@@ -2177,16 +2177,16 @@ void testCroatian() {
 
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	delete analyzer;
@@ -2310,16 +2310,16 @@ void testCzech() {
 
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	//Query: "království ", hits ->1102 1201
@@ -2331,16 +2331,16 @@ void testCzech() {
 
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	delete analyzer;
@@ -2462,16 +2462,16 @@ void testDanish() {
 
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	//Query: "disse ", hits ->1103 1201
@@ -2483,16 +2483,16 @@ void testDanish() {
 
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	delete analyzer;
@@ -2614,16 +2614,16 @@ void testDutch() {
 
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	{
@@ -2634,16 +2634,16 @@ void testDutch() {
 
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	delete analyzer;
@@ -2765,7 +2765,7 @@ void testEstonian() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -2778,7 +2778,7 @@ void testEstonian() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -2901,16 +2901,16 @@ void testFinnish() {
 
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	//Query: "kuvernööri", hits ->1101
@@ -2922,16 +2922,16 @@ void testFinnish() {
 
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	delete analyzer;
@@ -3053,16 +3053,16 @@ void testGerman() {
 
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	//Query: "militärischen  important ", hits ->1103
@@ -3074,16 +3074,16 @@ void testGerman() {
 
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	delete analyzer;
@@ -3206,16 +3206,16 @@ void testGreek() {
 
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	//Query: "Ιησούς ", hits ->1102 1201
@@ -3227,7 +3227,7 @@ void testGreek() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -3350,16 +3350,16 @@ void testHungarian() {
 
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	//Query: "Kessinger ", hits ->1201
@@ -3371,16 +3371,16 @@ void testHungarian() {
 
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	delete analyzer;
@@ -3501,7 +3501,7 @@ void testIndonesia() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -3515,7 +3515,7 @@ void testIndonesia() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -3635,16 +3635,16 @@ void testItalian() {
 
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	{
@@ -3655,16 +3655,16 @@ void testItalian() {
 
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	delete analyzer;
@@ -3785,16 +3785,16 @@ void testKorean() {
 
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 3,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyPrefix(analyzer, queryEvaluator, query, 3,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 3,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 		ASSERT(
 				pingFuzzyComplete(analyzer, queryEvaluator, query, 3,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 	}
 
 	{
@@ -3805,11 +3805,11 @@ void testKorean() {
 
 		ASSERT(
 				pingExactPrefix(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -3930,7 +3930,7 @@ void testLatvian() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -3942,7 +3942,7 @@ void testLatvian() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 1,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -4063,7 +4063,7 @@ void testLithuanian() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -4076,7 +4076,7 @@ void testLithuanian() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -4197,7 +4197,7 @@ void testNorwegian() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 
@@ -4209,7 +4209,7 @@ void testNorwegian() {
 
 		ASSERT(
 				pingExactComplete(analyzer, queryEvaluator, query, 2,
-						recordIds) == true);
+						recordIds, vector<unsigned>(), true) == true);
 
 	}
 

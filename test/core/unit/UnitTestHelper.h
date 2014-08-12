@@ -47,7 +47,8 @@ LogicalPlan * prepareLogicalPlanForUnitTests(Query * exactQuery, Query * fuzzyQu
 				exactQuery->getQueryTerms()->at(t)->getBoost(),
 				exactQuery->getQueryTerms()->at(t)->getSimilarityBoost(),
 				exactQuery->getQueryTerms()->at(t)->getThreshold(),
-				exactQuery->getQueryTerms()->at(t)->getAttributeToFilterTermHits());
+				exactQuery->getQueryTerms()->at(t)->getAttributesToFilter(),
+				exactQuery->getQueryTerms()->at(t)->getFilterAndOperation());
 		if(shouldRunFuzzyQuery){
 			newNode->setFuzzyTerm(fuzzyQuery->getQueryTerms()->at(t));
 		}
