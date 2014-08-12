@@ -23,7 +23,7 @@ import java.util.HashMap;
  * While it is not necessary to implement this interface, it is strongly
  * encouraged. Implementations of this interface can be registered by calling
  * <code>SRCH2Engine.setStateResponseListener(StateResponseListener
- * stateResponseListener)</code>.
+ * stateResultsObserver)</code>.
  * <br><br>
  * All of the callback methods in this interface are executed off the Ui thread,
  * so if any of the data is to be made visible to the user, it must be pushed to the

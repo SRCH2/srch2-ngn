@@ -41,7 +41,7 @@ public abstract class Indexable {
     public static final float DEFAULT_FUZZINESS_SIMILARITY_THRESHOLD = 0.65f;
 
     /**
-     * Sets the name of the index this <code>Indexable</code> represents. This can be used to
+     * Implementing this method sets the name of the index this <code>Indexable</code> represents. This can be used to
      * call the static CRUD methods of the <code>SRCH2Engine</code> and to identify which index
      * the two callbacks
      * <code>StateResponseListener</code> and <code>SearchResultsListener</code> refer to in
@@ -51,9 +51,12 @@ public abstract class Indexable {
     abstract public String getIndexName();
 
 
-
-
-
+    /**
+     * Implementing this method sets the schema of the index this <code>Indexable</code> represents. The schema
+     * defines the data fields of the index, much like the table structure of an SQLite database table. See
+     * {@link com.srch2.android.http.service.Schema} for more information.
+     * @return the schema to define the index structure this <code>Indexable</code> represents
+     */
     abstract public Schema getSchema();
 
     /**

@@ -34,9 +34,6 @@ final class SRCH2Configuration {
         index1.indexInternal = createIndex(new IndexDescription(index1));
         if (restIndexes != null) {
             for (Indexable idx : restIndexes) {
-                if (idx == null) {
-
-                }
                 idx.indexInternal = createIndex(new IndexDescription(idx));
             }
         }
@@ -48,6 +45,10 @@ final class SRCH2Configuration {
         }
 
         IndexDescription.throwIfNonValidIndexName(indexable.getIndexName());
+
+        if (indexable.getSchema() == null) {
+            throw new NullPointerException("Indexable cannot be initialized with null schema: verify getSchema() is returning a valid schema object.");
+        }
 
         IndexDescription.throwIfNonValidFuzzinessSimilarityThreshold(indexable.getFuzzinessSimilarityThreshold());
 

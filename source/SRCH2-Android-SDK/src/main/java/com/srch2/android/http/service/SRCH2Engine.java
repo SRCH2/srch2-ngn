@@ -64,8 +64,8 @@ final public class SRCH2Engine {
 
     static boolean isDebugAndTestingMode = false;
     static SRCH2EngineBroadcastReciever incomingIntentReciever;
-    static SearchResultsListener searchResultsListener = null;
-    static StateResponseListener stateResponseListener = null;
+    static SearchResultsListener searchResultsObserver = null;
+    static StateResponseListener stateResultsObserver = null;
     static boolean isStarted = false;
     static SRCH2Configuration conf = null;
     private static SearchTask allIndexSearchTask = null;
@@ -169,7 +169,7 @@ final public class SRCH2Engine {
 
         resetState();
         CheckCoresLoadedTask task = new CheckCoresLoadedTask(indexUrlMap,
-                stateResponseListener);
+                stateResultsObserver);
         HttpTask.executeTask(task);
     }
 
@@ -180,8 +180,8 @@ final public class SRCH2Engine {
         isReady.set(false);
     }
 
-    static SearchResultsListener getSearchResultsListener() {
-        return searchResultsListener;
+    static SearchResultsListener getSearchResultsObserver() {
+        return searchResultsObserver;
     }
 
     static IndexInternal getIndexByNameReturnNullIfNotExists(String name){
@@ -198,11 +198,11 @@ final public class SRCH2Engine {
      */
     public static void setSearchResultsListener(
             SearchResultsListener searchResultsListener) {
-        SRCH2Engine.searchResultsListener = searchResultsListener;
+        searchResultsObserver = searchResultsListener;
     }
 
     static StateResponseListener getControlResponseListener() {
-        return stateResponseListener;
+        return stateResultsObserver;
     }
 
     /**
@@ -217,7 +217,7 @@ final public class SRCH2Engine {
      */
     public static void setStateResponseListener(
             StateResponseListener stateResponseListener) {
-        SRCH2Engine.stateResponseListener = stateResponseListener;
+        stateResultsObserver = stateResponseListener;
     }
 
     private static void searchAllRawString(String rawQueryString) {
@@ -227,7 +227,7 @@ final public class SRCH2Engine {
                 allIndexSearchTask.cancel();
             }
             allIndexSearchTask = new SearchTask(UrlBuilder.getSearchUrl(conf, null,
-                    rawQueryString), searchResultsListener);
+                    rawQueryString), searchResultsObserver);
             HttpTask.executeTask(allIndexSearchTask);
         }
     }

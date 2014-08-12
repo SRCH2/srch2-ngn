@@ -9,7 +9,7 @@ import java.util.Iterator;
  * for more information.
  * <br><br>
  * A schema <b>should only</b> be constructed when returning from the <code>Indexable</code> implementation of <code>getSchema()</code>.
- * A schema <b>should never</b> be initialized with null field values.
+ * A schema <b>should never</b> be initialized with null field values or duplicated fields.
  */
 public final class Schema {
 
@@ -63,7 +63,7 @@ public final class Schema {
      * @param primaryKeyField the field which will be the primary key of the index's schema
      * @param remainingField  the set of any other fields needed to define the schema
      */
-    public Schema createSchema(PrimaryKeyField primaryKeyField, Field... remainingField) {
+    static public Schema createSchema(PrimaryKeyField primaryKeyField, Field... remainingField) {
         return new Schema(primaryKeyField, remainingField);
     }
 
@@ -103,7 +103,7 @@ public final class Schema {
      * @param longitudeFieldName the field which will be the longitude field of the index's schema
      * @param remainingField  the set of any other fields needed to define the schema
      */
-    public Schema createGeoSchema(PrimaryKeyField primaryKeyField, String latitudeFieldName,
+    static public Schema createGeoSchema(PrimaryKeyField primaryKeyField, String latitudeFieldName,
                                   String longitudeFieldName, Field... remainingField) {
         return new Schema(primaryKeyField, latitudeFieldName,
                 longitudeFieldName, remainingField);
