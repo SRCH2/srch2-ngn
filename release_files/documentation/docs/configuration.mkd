@@ -1,0 +1,669 @@
+#Configuration
+
+##1. Overview
+
+The SRCH2 engine can be customized using a configuration file in XML. This documentation describes the details of how to do this configuration.  The package includes a sample [configuration file](../example-demo/srch2-config.xml).  Each parameter in the file can have one of the following two labels: "Required" means this tag must be present in the configuration file, and "Optional" means this tag does not need to be present.  Tag names and tag attribute names (but not values) are case insensitive.
+
+##2. Home Directory (Required)
+
+```
+ <srch2Home>/path/to/srch2/home/directory</srch2Home>
+```
+This parameter specifies the installation folder of the SRCH2 engine,
+which includes the binary, a folder "example-demo" with a movie
+example, and other files needed by the engine. Other
+file paths used in the configuration should be relative to this home
+path. For example, if we give the engine a data file at
+"/usr/joe/srch2/example-data/movie-data.json", and the SRCH2 home
+directory is set to "/usr/joe/srch2", then the configuration file
+should reference the data file's location as
+"example-data/movie-data.json".
+
+##3. Hostname/Ports (Required)
+```
+ <listeningHostname>127.0.0.1</listeningHostname>
+ <listeningPort>8081</listeningPort>
+```
+This parameter is the network identification (i.e., IP address or host name) of the server on which the SRCH2 engine is listening.
+NOTE: If you want the server to accept all incoming packets, please use <b>0.0.0.0</b>.
+
+The following parameters allow certain operations on different ports.  This feature allows network-based security
+to be implemented using standard firewall functionality.  Typically, the "search" and "info" operations remain on a port
+accessible from any IP address.  Operations such as "suggest", "docs", "update", "save", "export", and "resetLogger" are placed on a port to which access is restricted by a firewall to internal IP addresses.  An example of relocating ports is provided in
+the advanced example configuration file in [example-demo/srch2-config-advanced.xml](../example-demo/srch2-config-advanced.xml).
+
+###3.1 SearchPort (Optional)
+This parameter overrides "listeningPort" for "search" requests.  "Search" requests must be sent to this port instead.
+
+###3.2 SuggestPort (Optional)
+This parameter overrides "listeningPort" for "suggest" requests.  "Suggest" requests must be sent to this port instead.
+
+###3.3 InfoPort (Optional)
+This parameter overrides "listeningPort" for "info" requests.  "Info" requests must be sent to this port instead.
+
+###3.4 DocsPort (Optional)
+This parameter overrides "listeningPort" for "docs" requests.  "Docs" requests must be sent to this port instead.
+
+###3.5 UpdatePort (Optional)
+This parameter overrides "listeningPort" for "update" requests.  "Update" requests must be sent to this port instead.
+
+###3.6 SavePort (Optional)
+This parameter overrides "listeningPort" for "save" requests.  "Save" requests must be sent to this port instead.
+
+###3.7 ExportPort (Optional)
+This parameter overrides "listeningPort" for "export" requests.  "Export" requests must be sent to this port instead.
+
+###3.8 ResetLoggerPort (Optional)
+This parameter overrides "listeningPort" for "resetlogger" requests.  "ResetLogger" requests must be sent to this port instead.
+
+##4. Data Directory (Required)
+```
+ <dataDir>/path/to/data/directory/</dataDir>
+```
+This value specifies the path of a folder where the engine stores serialized index files. <br>
+
+##5. Thread Number (Optional)
+```
+ <maxSearchThreads>2</maxSearchThreads>
+```
+This setting specifies the number of threads that serve search requests. Its default value is 1. <br>
+
+##6. Data 
+
+###6.1. Data Source (Optional)
+
+```
+ <dataSourceType>1</dataSourceType>
+```
+This value specifies the type of data source indexed by the engine.  Notice that if there are previous indexes already created  and serialized on disk, the engine will always load them and ignore the flag.  The following flags are used only when there are no previous indexes on disk.
+
+- 0: Create empty indexes, and ignore the data file specified by the "dataFile" tag (see below).
+- 1: Create indexes for records from the JSON file specified by the "dataFile" tag. "1" is the default value for this "dataSourceType" tag.
+- 2: Create indexes for records from an external database such as MongoDB or SQLite, as specified by the parameters under the corresponding tag such as the "mongodb" tag.
+
+###6.2. Data File (Required if "dataSourceType" is 1)
+
+```
+ <dataFile>./example-demo/movie-data.json</dataFile>
+```
+This value specifies a JSON data file to be loaded by the engine. Notice that it is a path relative to the [home directory](#2-home-directory-required).
+
+###6.3. MongoDB (Required if "dataSourceType" is 2)
+```
+ <mongodb>
+    <host>www.my-company.com</host>
+    <port>1234</port>
+    <db>database-name</db>
+    <collection>collection-name</collection>
+    <listenerWaitTime>3</listenerWaitTime>
+ </mongodb> 
+```
+This section specifies MongoDB instance information. Note: "listenerWaitTime" specifies how frequently (in seconds) the SRCH2 engine pulls changes from the MongoDB instance (e.g., every 3 seconds). 
+
+##7. Index Config
+
+This tag has parameters to customize the search engine's indexes.
+```
+ <indexConfig>
+ ...
+ </indexConfig>
+```
+
+###7.1. Index Type (Required)
+IndexType specifies if the search engine should build text or location indexes.
+```
+ <indexType>0</indexType>
+```
+> 0: Text Indexes; <br>
+> 1: Text + Geo Indexes, which support location-based search. <br>
+
+
+###7.2. Field Boosts (Optional)
+```
+ <fieldBoost></fieldBoost>
+```
+This parameter is used to increase or decrease the weight of fields when calculating the ranking of search results.  It specifies boost values for the [searchable attributes](#112-fields-required) and has a range of [1,100]. If the value is outside the range, it will be set to 1. For example, the boost values for two searchable attributes can be specified as: <br>
+```
+ <fieldBoost>title^2 director^1</fieldBoost>
+```
+This parameter, together with the following parameters, is used in the
+[ranking function](ranking.mkd) of the engine.  They are grouped
+under the "indexConfig" tag because they are used to compute static
+scores during the construction of the indexes, which happens only once
+when the search engine is started.  There are also
+parameters under the "[query](#8-query-parameters)" tag that are used to
+compute query-specific scores. 
+
+In the example above, the field "title" has a boost value of 1.
+Notice that the fields are separated by a single white space. If a
+value is not provided for a field, the engine uses a default value of
+1. <br>
+
+###7.3. Record Boost (Optional)
+```
+ <recordBoostField>relevance</recordBoostField>
+```
+This setting specifies an attribute whose value is used as the score (boost value) of a record. The attribute's type should be "float".
+
+###7.4. Default Term Boost (Optional)
+```
+ <defaultQueryTermBoost>1</defaultQueryTermBoost>
+```
+The value of this field specifies default ranking value for terms that do not have the field specified in "recordBoostField". If the parameter is not given, the engine uses 1 as the default value.<br>
+
+###7.5. Enable Positional Index (Optional)
+
+A positional index supports queries with conditions related to keyword positions in a record, such as
+[proximity search](restful-search.mkd#334-proximity-search). The "enablePositionIndex" tag is used to enable or disable positional indexing.  For instance, the following example shows how to enable this indexing:
+
+```
+ <enablePositionIndex>1</enablePositionIndex>
+```  
+Note that the positional index takes more memory resources. By default it is disabled.<br>
+
+###7.6. Enable Character Offset Index (Optional)
+
+A character offset index supports fast keyword [highlighting](#812-highlighter-optional) during the snippet generation. The "enableCharOffsetIndex" tag can be used to enable or disable character offset indexing.  For instance, the following
+example shows how to enable this indexing:
+
+```
+ <enableCharOffsetIndex>1</enableCharOffsetIndex>
+```  
+Note that the character offset index takes more memory resources. By default it is disabled.<br>
+
+
+##8. Query Parameters
+
+The following tag includes parameters related to queries.
+```
+ <query>
+ ...
+ </query>
+```
+###8.1. Ranking
+
+The following tags and parameters are related to ranking. 
+
+```
+ <rankingAlgorithm>
+     <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
+ </rankingAlgorithm>
+```
+This expression is used to compute the static score of a record with respect to a term.  It is computed during index construction and stored in the indexes statically.  It can use the following parameters:
+
+- <b>idf_score</b>: internal IDF score;
+- <b>doc_boost</b>: the boost value of the record as specified in an attribute;
+- <b>doc_length</b>: number of unique keywords in the record.
+
+The expression allows operators such as +, -, /, *, (, ), 0-9, etc.  Check the [ranking](ranking.mkd) page to see how this static score is used in ranking.  An example of the power and complexity of this expression is provided in [example-demo/srch2-config-advanced.xml](../example-demo/srch2-config-advanced.xml).
+
+###8.2. Fuzzy Match Penalty (Optional)
+
+```
+ <fuzzyMatchPenalty>0.9</fuzzyMatchPenalty>
+```
+"FuzzyMatchPenalty" is used to decide how much penalty we want to give to records with a fuzzy
+match to a search term compared to terms with an exact match. See the [ranking](ranking.mkd) page
+about how this parameter is used. The default value is 0.5.
+
+###8.3. Term Similarity Threshold (Optional)
+```
+ <queryTermSimilarityThreshold>0.75</queryTermSimilarityThreshold>
+```
+This value is used in the computation of the maximum edit distance we allow in fuzzy search
+for a search term. [Edit distance](http://en.wikipedia.org/wiki/Edit_distance) is the minimum number of single-character changes required transform a search term into a term in a record.  Conceptually, edit distance represents the
+difference between the search term and a word in a record.
+
+The value of queryTermSimilarityThreshold must lie in [0,1], with 1 representing exact
+match, and 0 being the largest possible error tolerance. The default
+value is 0.5.
+
+This threshold is normalized by the length of the query term. The
+engine uses the following formula to compute the edit-distance threshold for this term:
+
+> floor((1-queryTermSimilarityThreshold) * length(query term)).
+
+For instance, suppose the query term is
+"schwarazenneggar", and queryTermSimilarityThreshold is 0.8.  Then the
+threshold of edit distance for this term is: floor((1-0.8)*16) = 3.
+
+###8.4. Support Swap as an Edit Distance Operation (Optional)
+```
+ <supportSwapInEditDistance>true</supportSwapInEditDistance>
+```
+This setting allows character swap operations (e.g., "iphone" versus
+"ipohne") in the edit distance function, in addition to insertion,
+deletion, and substitution operations. When true, swapping two adjacent characters
+is counted as a single operation when calculating the edit
+distance.  By default "supportSwapInEditDistance" is true.
+
+###8.5. Prefix Match Penalty (Optional)
+
+```
+ <prefixMatchPenalty>0.95</prefixMatchPenalty>
+```
+This setting specifies how much penalty we want to give to a record where the search term matches only the beginning of a term in the record (e.g., "can" versus "candy").  Its value should be in the range of 0 to 1, with a default value of 0.95. See the [ranking](ranking.mkd) page for more information.<br>
+
+
+###8.6. Cache Size (Optional)
+
+```
+ <cacheSize>65536000</cacheSize>
+```
+This parameter specifies the number of bytes used in caching. The number should be in the range [52428800,524288000] (i.e., [50MB, 500MB]). Its default value is 52428800 (50MB). <br>
+
+###8.7. Default value for number of returned results (Optional)
+```
+ <rows>10</rows>
+```
+"Rows" specifies the number of results retrieved and returned in a single query response.
+If there are more results that "Rows", another query with a different "start" value must be sent
+to retrieve the next "page" of results. The default value of "Rows" is 10.<br>
+
+###8.8. Field-Based Search (Optional)
+```
+ <fieldBasedSearch>0</fieldBasedSearch>
+```
+This is a flag to toggle attribute-based search. An attribute-based search applies conditions that determine in which attributes a keyword should appear.<br>
+> 0: Disabled <br>
+> 1: Enabled <br>
+
+Note that if field-based search is enabled, the number of searchable attributes as specified in [fields](#112-fields-required) is limited to 31.
+
+###8.9. Search Type (Optional)
+```
+ <searcherType>0</searcherType>
+```
+This parameter sets the default search type of a query to the engine. <br>
+> 0: find the top relevant results (with a number specified by the "rows" parameter); <br>
+> 1: find all matching results. <br>
+
+The default value is 0, i.e., the engine returns top results.<br>
+
+###8.10. Query Term Fuzzy Type (Optional)
+```
+ <queryTermFuzzyType>1</queryTermFuzzyType>
+```
+This parameter specifies how to treat a term by default with respect to match fuzziness.
+> 0: exact match;<br>
+> 1: fuzzy match.<br>
+
+Its default value is 0.
+
+###8.11. Query Term Prefix Type (Optional)
+```
+ <queryTermPrefixType>1</queryTermPrefixType>
+```
+This value specifies how to treat a term by default with respect to match completeness.
+> 0: prefix match (the query term matches the beginning of a word);<br>
+> 1: complete match (the entire word must match the search term).<br>
+
+Its default value is 0.
+
+###8.12. Highlighter (Optional)
+
+The engine can generate a brief snippet of matching text in a searchable field. Each matching keyword is highlighted
+in the snippet.  A snippet with highlighted keywords allows users to see more meaningful information from the field's text.  The
+following is an example setting in the configuration file:
+
+```
+ <highlighter>
+    <snippetSize>250</snippetSize>
+    <fuzzyTagPre value = '<span class="fuzzy">'></fuzzyTagPre>
+    <fuzzyTagPost value = '</span>'></fuzzyTagPost>
+    <exactTagPre value = '<span class="exact">' ></exactTagPre>
+    <exactTagPost value = '</span>'></exactTagPost>
+ </highlighter>
+```
+This composite parameter allows a user to specify snippet size and tags to enclose the matched keywords. 
+
+- <b>snippetSize</b>: It specifies the character size of snippet to be generated for an attribute.<br>
+- <b>fuzzyTagPre</b>: It specifies the tag value to be prefixed to a fuzzy keyword match.<br>
+- <b>fuzzyTagPost</b>: It specifies the tag value to be suffixed to a fuzzy keyword match.<br>
+- <b>exactTagPre</b>: It specifies the tag value to be prefixed to an exact keyword match.<br>
+- <b>exactTagPost</b>: It specifies the tag value to be suffixed to an exact keyword match.<br>
+
+In order for an attribute to be highlighted, its highlight attribute in the schema configuration section should be enabled.
+There is a highlighting example in [example-demo/srch2-config-advanced.xml](../example-demo/srch2-config-advanced.xml).
+Notice that to improve the query search time when the highlighting is enabled, consider enabling the [character offset index](#76-enable-character-offset-index-optional). 
+
+##9. Response Writer
+
+This tag has parameters related to configuring the response of a query.
+```
+    <queryResponseWriter>
+    ...
+    </queryResponseWriter>
+```
+
+###9.1. Response Content (Optional)
+
+ResponseContent specifies the search engine and record fields to be returned for each JSON record in the response. We
+should set the "type" attribute of "ResponseContent" to one of the following options: <br>
+
+- 0: format "rid,edit_dist,matching_prefix,in_memory_record"; <br>
+- 1: format "rid,edit_dist,matching_prefix". <br>
+- 2: format "rid,edit_dist,matching_prefix,fields_to_return". <br>
+
+The default value is 0. If "type" is 2, ResponseContent should also contain a comma-separated list of fields to be returned for each record in the query response. The following are two examples:
+
+```
+ <responseContent type="0"></responseContent>
+```
+or
+
+```
+ <responseContent type="2">lat,lng</responseContent>
+```
+
+###9.2 JSON Response Format (Optional)
+
+ResponseFormat specifies if the response should be JSON or JSONP formatted.  Possible values are:<br>
+
+- 0: JSON
+- 1: JSONP           
+
+The default value is 0.
+
+##10. Update Handler
+
+This tag includes tags related to configuring the engine to handle update requests.
+```
+<updatehandler>
+...
+</updatehandler>
+```
+###10.1. Maximum Number of Documents (Required)
+```
+<maxDocs>15000000</maxDocs>
+```
+This is the maximum number of records that can be indexed by the engine. Inserting more records than what is specified here will cause the insertions to fail.
+
+###10.2. Merge Policy (Required)
+
+```
+<mergePolicy>
+    <mergeEveryNSeconds>10</mergeEveryNSeconds>
+    <mergeEveryMWrites>100</mergeEveryMWrites>
+</mergePolicy>
+```
+ - <b>mergeEveryNSeconds</b>: The engine uses a background thread to periodically merge the data changes to the indexes. This parameter sets the number of seconds this background thread sleeps before it wakes up and does the merge. Note that decreasing this number may increase latency in the engine's search response time.  This number should be at least 1 (second).
+ 
+  - <b>mergeEveryMWrites</b>: Another event that can trigger the background thread to do the merge is the number of data changes (inserts, deletes, and updates). This parameter specifies the number of record changes after which the thread will wake up to do the merge.  This number should be at least 1 (second). <br>
+
+###10.3. Logging
+
+The following tag includes parameters related to logging by the SRCH2 engine.
+```
+<updateLog>
+...
+</updateLog>
+```
+####10.3.1. Log Level (Optional)
+```
+<logLevel>3</logLevel>
+```
+The parameter controls the amount of feedback information the engine will report in its log. <br>
+
+- 0: SILENT: Most logging will be suppressed.<br>
+- 1: ERROR: Only explicit error conditions will be logged.<br>
+- 2: WARNING: Error conditions and warnings will be logged.<br>
+- 3: INFO: Errors, warnings, and informative messages will be logged.<br>
+
+Its default value is 3.
+
+####10.3.2. Log File (Required)
+```
+<accessLogFile>./indexes/log.txt</accessLogFile>
+```
+This value specifies the file to which the engine writes logging information.
+Third-party tools such as
+[logrotate](http://linuxcommand.org/man_pages/logrotate8.html) can be utilized to
+manage the log messages.  Check [this
+page](restful-control.mkd#4-reseting-log-file) for more information about how
+to manage this log file using third-party tools such as "logrotate".<br>
+
+##11. Data Schema
+
+This section of the configuration concerns the data source to be searched.  The following sections explain each sub-tag under the <i>schema</i>
+component.
+```
+<schema name="SRCH2" version="3">
+...
+</schema>
+```
+
+###11.1. Primary Key (Required)
+```
+<uniqueKey>id</uniqueKey>
+```
+This value specifies the attribute used as the primary key to reference each record in the data, and
+thus the value of the specified field must be unique across all records. If a new record has a
+primary key conflicting with an existing record, the new record will be rejected by the engine.
+The attribute must be a "text" type.<br>
+
+###11.2. Fields (Required)
+"Fields" contains the specification of the each "field" in the records.
+```
+<fields>
+...
+</fields>
+```
+
+Here is an example:
+
+```
+<field name="category" type="text" searchable="true" />
+<field name="name" type="text" indexed="true" highlight="true" />
+<field name="model" default="benz" required="true" type="text" refining="true"/>
+<field name="price" default="200" required="true" type="float" refining="true"/>
+<field name="likes" default="0" required="true" type="integer" refining="true"/>
+<field name="seller_id" default="12324,546436,576864" required="false" type="integer" refining="true" multivalued="true">
+```
+
+These parameters give information about each field, including its name, type, and certain properties. <br>
+
+ - "name": the name of the field;<br>
+ - "type": the type of the field;<br>
+           For a searchable attribute, its type can be text, location_longitude (for geo search), or location_latitude (for geo search).<br>
+           For a refining attribute, the type can be text, integer, float, or time.
+           
+The engine supports the following formats of time and date: <br>
+
+ - HH:MM:SS<br>
+ - MM/DD/YY<br>
+ - YYYY-MM-DD HH:MM::SS<br>
+ - YYYY-MM-DD<br>
+ - YYYYMMDDHHMMSS<br>
+ - YYYYMMDDHHMM<br>
+ - YYYYMMDD<br>
+
+The engine supports time durations of the format "{integer}{date/time}", in which date and time can be SECOND, SECONDS, MINUTE, MINUTES, HOUR, HOURS, DAY, DAYS, WEEK, WEEKS, MONTH, MONTHS, YEAR, and YEARS.  Examples are: "DAY" (meaning 1 day) or "34WEEKS" (meaning 34 weeks).<br>
+
+Each field has certain properties:
+
+ - <b>Required</b>: This flag indicates whether a field can be empty or not. It is false by default.<br>
+ - <b>Default</b>: This attribute  gives the default value of this field if the field is missing from the record.<br>
+ - <b>Searchable</b>: If true, then the engine will include its values in the indexes to support keyword search within the field.<br>
+ - <b>Refining</b>: If true, then the engine will include its values in the indexes to support post-processing operations on query results, such as additional filtering predicates (e.g., "price < 20"), sort, and facet.<br>
+ - <b>Indexed</b>: If this flag is true, then the engine will treat the field as both a searchable and a refining attribute. <br>
+ - <b>Multivalued</b>: If this flag is true, then the field is considered a multi-valued attribute. If so, then the corresponding JSON value in the data file must be a valid array in JSON (e.g. [1245332,3435645,53465,6456745]). Also please note that if the attribute is multi-valued, the value of the 'default' property must be a comma-separated list of values.<br>
+ - <b>Highlight</b>: If this flag is true, then the engine will generate a snippet for this attribute with matching keyword highlighted. <br>
+
+In the example above, we can do keyword search on the attributes
+"category" and "name".  We can do post-processing on attributes
+"name", "model", "price", "likes", and "seller_id". The engine will generate a snippet for the attribute "name".
+
+Note:
+
+ - For geo search, two fields are required with the types location_latitude and location_longitude, respectively. The values of these geo fields should be a float type in the data file.<br>
+ - The primary key may optionally be included here. It can also be searchable and/or refining.<br>
+ - There must be at least one searchable field.
+
+###11.3. Enable Facet (Optional)
+
+This setting toggles the faceted search feature.<br>
+```
+<facetEnabled>true</facetEnabled>
+```
+Its value is either false (facet search disabled) or true (enabled). Its default value is false.<br>
+
+###11.4. Facet Fields
+
+This tag contains facet-related tags, and it is required if facet is enabled.<br>
+```
+<facetFields>
+...
+</facetFields>
+```
+
+Here is an example.
+
+```
+  <facetField name="genre" facetType="categorical"/>
+  <facetField name="year"  facetType="range" facetStart="1990" facetEnd="2050" facetGap="10"/>
+```
+
+ - <b>name</b>: The name of the field used for this facet. It must
+correspond to a refining field specified in the <a href=#112-fields-required>field tag</a>. <br> 
+ - <b>facetType</b>: It indicates whether this attribute is categorical or range. <br>
+ - <b>facetStart</b>: The start point of making a range facet. It is
+required if "facetType" is of "range" type. The value will be ignored for categorical
+facets. <br> 
+ - <b>facetEnd</b>: The end point of a range facet. It is required for a
+range facet. The value will be ignored for categorical facets. <br> 
+ - <b>facetGap</b>: The increment amount used for a range facet. The value
+will be ignored for categorical facets. <br> 
+
+Note that facet ranges are created in correspondence with the "facetStart"
+value, not the "facetEnd" value. Therefore, the last interval may not
+span the entire facetGap. Also all facet fields must be declared in a
+<a href=#112-fields-required>field tag</a> as well (with refining="true"). <br> 
+
+###11.5. Analyzer
+
+The parameters contained in this tag configure the analyzer to be used by the engine.<br>
+```
+<types>
+  <fieldType name="text_en">
+    <analyzer>
+    ...
+    </analyzer>
+  </fieldType>
+</types>
+```
+###11.5.1 Stemmer (Optional)
+
+The engine supports [Porter Stemming](http://tartarus.org/martin/PorterStemmer/). Inflected or derived words are reduced to their base or root form for matching against search terms.  The engine uses a dictionary file with keywords that should be ignored by the stemmer. Keywords not in the dictionary will go through a sequence of stemming rules.  If no file if provided, the stemmer is disabled.
+```
+<filter name="PorterStemFilter" dictionary="srch2_stemmer_dictionary.txt" />
+```
+###11.5.2 Stop Words (Optional)
+
+This tag specifies a file of stop words that will be ignored by the engine. Stop words will not be indexed, and will not match any search term.  This will consume fewer system resources. In English grammar, particle words have no meaning by themselves, and could be considered for inclusion as stop words.  Providing an empty string ("") for the "words" parameter disables this filter.
+```
+<filter name="StopFilter" words="srch2_stop_words.txt" />
+```
+The [advanced example](../example-demo/srch2-config-advanced.xml) provides a working example of stop words.
+
+###11.5.3 Protected Keywords Filter (Optional)
+It specifies a file of special protected keywords that should be preserved by the analyzer, such as "C++", "C#", ".NET", and "AT&T". Providing an empty string ("") for the "words" parameter disables this filter.
+```
+<filter name="protectedKeyWordsFilter" words="srch2_protected_words.txt" />
+```
+
+The [advanced example](../example-demo/srch2-config-advanced.xml) provides a working example of protected keywords.
+
+###11.5.4 Synonym Filter (Optional)
+
+The synonym filter allows synonyms while analyzing data records for indexing. The configuration setting is shown below.
+
+```
+<filter name="synonymFilter" synonyms="relative/path/to/synonyms/file" expand="true"/>
+```
+The <code>synonyms</code> attribute specifies the path to a synonym file relative to <code>srch2Home</code>. The boolean attribute <code>expand</code> indicates whether all the synonyms should be kept in index or replaced by a single synonym.
+
+The format of the synonym file is shown below. All comments start with '#' at the begining of a line.
+
+```
+#1. explicit synonym rule : Tokens on LHS will be replaced with tokens on RHS (the "expand" flag is ignored)
+nyc=>new york city, new york
+jvm=> java virtual machine
+centOS, federo => linux
+#2. equivalent synonym rule 
+ipad, i-pad, tablet
+#   if expand == true, then the rule is treated as "ipad, i-pad, tablet" => "ipad, i-pad, tablet"
+#   if expand == false, then the rule is treated as "i-pad, tablet" => "ipad"
+```
+Example: 
+
+Consider a record <code>"The CentOS Project is a community-driven free software effort"</code>
+
+If the synonym rule is <code>"centOS=>linux"</code>, then the query keyword "centOS" will not return any result because the keyword "CentOS" has been replaced by "linux". The query "linux" will return the record as a search result.
+
+If the synonym rule is <code>"centOS, linux"</code> (equivalent synonyms) and the <code>expand</code> attribute is set to <code>true</code>, then the both keyword queries "centOS" and "linux" will return the record as a search result.
+  
+###11.5.5 Allowed Special Characters (Optional)
+
+The engine has a number of rules on what characters can be used to decompose words, and what characters
+are punctuation or delimiters separating words.  To provide additional flexibility, the engine can be
+configured to add characters that should not be considered as delimiters between words.  Those sequences of
+characters that include those characters will be treated as a single term and will not be broken into
+separate words.  Here is an example for this setting to allow apostrophes, dashes, underscores, and at signs to occur within single words:
+
+```
+<allowedRecordSpecialCharacters>`-_@</allowedRecordSpecialCharacters>
+```
+
+This example will allow a search on "L'Absinthe" to match and return a record with the phrase "Edgar Degas' painting L'Absinthe hangs in the Musée d'Orsay in Paris" in an indexed attribute.
+Note that whitespace characters will also be considered word delimiters and are not permitted in this field.
+
+The [advanced example](../example-demo/srch2-config-advanced.xml) provides an example of allowing Twitter-hashtag-like terms to be queried.
+
+##12. Cores (Optional)
+
+The "Cores" tag can be used to support the creation of multiple data sources (called "cores") within the same SRCH2 server.  
+An engine can have multiple sources, and all cores run within the same server process.  A query can 
+specify a single core.
+
+When instantiated with multiple cores, queries specify a core by name to process the query.  For instance, the following query:
+```
+ http://localhost:8081/example-core/search/q=termina
+```
+requests that the core called "example-core" process a search request for "termina".  In the case when no core is
+specified in a query to a multi-core server, the server will use the sore specified by the "defaultCoreName" tag.
+
+A sample multi-core configuration is provided in [example-demo/srch2-config-advanced.xml](../example-demo/srch2-config-advanced.xml).
+
+###12.1 Core (Optional)
+
+Each "Core" tag under "Cores" specifies a server core to be created.  Each core requires a name
+attribute.  This name is used in query URI paths, as well as the aforementioned
+"defaultCoreName" attribute of "Cores".  Nearly all server configuration settings documented above can
+also appear under a "Core" tag.  The exceptions are "listeningHostName", "listeningPort",
+and "maxSearchThreads", which are global for all the cores.  Each Core must define all its own data source
+and behavioral rules, so for example, "dataDir" and "schema" are typically defined under each core.
+
+##13. Authorization Key (Optional)
+```
+<authorization-key>foobar</authorization-key>
+```
+This parameter specifies an authorization key that is required in each HTTP request
+to the engine.  If this key is specified, each valid HTTP request needs to 
+provide the following key-value pair in order to get the authorization. 
+
+```
+ OAuth=foobar
+```
+
+Here's an example search query:
+
+```
+ curl -i "http://localhost:8081/search?q=terminator&OAuth=foobar"
+```
+
+Notice that we use "foobar" as an example to indicate that the key in the HTTP request should 
+match the key in the config file.  A valid authorization key should include alphanumeric characters only, and the 
+authorization is case sensitive.  If no authorization key is provided in the 
+config file, then an HTTP request doesn't need to provide a key.
+

@@ -30,7 +30,6 @@ namespace instantsearch {
 typedef unsigned CharType;
 #define Byte char
 
-const std::string MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER = ",";
 
 /*
  * Example: tags is a multi valued attribute. Suppose one record has this value for tags :

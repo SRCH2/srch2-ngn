@@ -497,16 +497,16 @@ namespace srch2
 		this->valueType = type;
 		switch (type) {
 			case ATTRIBUTE_TYPE_UNSIGNED:
-				this->setTypedValue((unsigned)atoi(value.c_str()));
+				this->setTypedValue(static_cast<unsigned int>(strtoul(value.c_str(), NULL, 10)));
 				break;
 			case ATTRIBUTE_TYPE_FLOAT:
-				this->setTypedValue(atof(value.c_str()));
+				this->setTypedValue(static_cast<float>(strtod(value.c_str(), NULL)));
 				break;
 			case ATTRIBUTE_TYPE_TEXT:
 				this->setTypedValue(value);
 				break;
 			case ATTRIBUTE_TYPE_TIME:
-				this->setTypedValue(atol(value.c_str()));
+				this->setTypedValue(strtol(value.c_str(), NULL, 10));
 				break;
 			case ATTRIBUTE_TYPE_DURATION:
 				this->setTypedValue(DateAndTimeHandler::convertDurationTimeStringToTimeDurationObject(value));

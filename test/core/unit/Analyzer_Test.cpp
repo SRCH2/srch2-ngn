@@ -436,7 +436,7 @@ void testStopFilter(string dataDir) {
 void testSynonymFilter(string dataDir) {
     cout << "\n\n";
     cout << "#########################################################################" << endl;
-    cout << "#########################################################################" << "Stop Filter" << endl;
+    cout << "############################ Synonym Test ###############################" << endl;
     cout << "stopWords File:  " << dataDir + "/stopWordsFile.txt" << "\n";
     cout << "stemmer File:  " << dataDir + "/StemmerHeadwords.txt" << "\n";
     cout << "stynonym File:  " << dataDir + "/synonymFile.txt" << "\n\n";
@@ -843,6 +843,84 @@ void testSynonymFilter(string dataDir) {
     syn->free();
     stem->free();
     stop->free();
+
+    /*
+     *    Test 12. This test case tests whether the filter picks shorter synonym when large synonym
+     *    prefix do not match eventually.
+     *
+     *    Test record: "club los angeles galaxy"
+     *    synonym rule for this test:
+     *    los angeles = la
+     *    club los angeles lakers = showtime
+     */
+    SynonymContainer *synonymContainer = SynonymContainer::getInstance(dataDir + "/synonymFile.txt", SYNONYM_KEEP_ORIGIN);
+    simpleAnlyzer = new SimpleAnalyzer(NULL, NULL, NULL, synonymContainer, string(""));
+    tokenStream = simpleAnlyzer->createOperatorFlow();
+    simpleAnlyzer->setTokenStream(tokenStream);
+
+    string testRecord = "club los angeles galaxy";
+    tokenStream->fillInCharacters(testRecord);
+
+    cout << "## Test 12:  " << testRecord << endl;
+    vectorString.clear();
+    vectorString.push_back("club");
+    vectorString.push_back("los");
+    vectorString.push_back("angeles");
+    vectorString.push_back("la");  // los angeles = la
+    vectorString.push_back("galaxy");
+
+    i = 0;
+    while (tokenStream->processToken()) {
+        vector<CharType> charVector;
+        charVector = tokenStream->getProcessedToken();
+        charTypeVectorToUtf8String(charVector, src);
+        int pos = tokenStream->getProcessedTokenPosition();
+        int offset = tokenStream->getProcessedTokenCharOffset();
+        int charLen = tokenStream->getProcessedTokenLen();
+        AnalyzedTokenType type = tokenStream->getProcessedTokentype();
+
+        cout << "+++++++ SynonymFilter:  " << src  << " : " << pos << " : " << offset << " : "
+        		<<  charLen << " : " << type <<  endl;
+        ASSERT(vectorString[i] == src);
+        i++;
+    }
+
+    /*
+     *    Test 13. This test case tests replacement only synonyms. It ignores the expansion flag and
+     *    always replaces original token by its synonym.
+     *
+     *    Test record: "uci cs department"
+     *    synonym rule for this test:
+     *    cs=>computer science
+     */
+
+    testRecord = "uci cs department";
+    cout << "## Test 13:  " << testRecord << endl;
+
+    tokenStream->fillInCharacters(testRecord);
+
+    vectorString.clear();
+    vectorString.push_back("uci");
+    vectorString.push_back("computer science");   // cs=computer science
+    vectorString.push_back("department");
+
+    i = 0;
+    while (tokenStream->processToken()) {
+    	vector<CharType> charVector;
+    	charVector = tokenStream->getProcessedToken();
+    	charTypeVectorToUtf8String(charVector, src);
+        int pos = tokenStream->getProcessedTokenPosition();
+        int offset = tokenStream->getProcessedTokenCharOffset();
+        int charLen = tokenStream->getProcessedTokenLen();
+        AnalyzedTokenType type = tokenStream->getProcessedTokentype();
+
+        cout << "+++++++ SynonymFilter:  " << src  << " : " << pos << " : " << offset << " : "
+        		<<  charLen << " : " << type <<  endl;
+    	ASSERT(vectorString[i] == src);
+    	i++;
+    }
+    delete simpleAnlyzer;
+
 }
 
 void testAnalyzerSerilization(string dataDir) {

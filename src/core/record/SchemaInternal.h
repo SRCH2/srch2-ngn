@@ -83,7 +83,8 @@ public:
      * Creates a Schema object
      */
     SchemaInternal() {
-    };
+    }
+    ;
     SchemaInternal(srch2::instantsearch::IndexType indexType,
             srch2::instantsearch::PositionIndexType positionIndexType);
     SchemaInternal(const SchemaInternal &schemaInternal);
@@ -109,13 +110,11 @@ public:
      *  @param attributeBoost The boost value in the range [1-100].
      */
     int setSearchableAttribute(const std::string &attributeName,
-            unsigned attributeBoost = 1, bool isMultiValued = false, bool higlightEnabled = false);
+            unsigned attributeBoost = 1, bool isMultiValued = false,
+            bool higlightEnabled = false);
 
-    int setSortableAttribute(const std::string &attributeName, FilterType type,
-            std::string defaultValue);
-
-    int setRefiningAttribute(const std::string &attributeName,
-            FilterType type, const std::string & defaultValue, bool isMultiValued = false);
+    int setRefiningAttribute(const std::string &attributeName, FilterType type,
+            const std::string & defaultValue, bool isMultiValued = false);
 
     /**
      * Returns the AttributeName of the primaryKey
@@ -138,7 +137,8 @@ public:
     /*
      * Returns true if this searchable attribute is multivalued
      */
-    bool isSearchableAttributeMultiValued(const unsigned searchableAttributeNameId) const;
+    bool isSearchableAttributeMultiValued(
+            const unsigned searchableAttributeNameId) const;
 
     const std::map<std::string, unsigned>& getSearchableAttribute() const;
     /**
@@ -164,12 +164,15 @@ public:
     const std::string* getDefaultValueOfRefiningAttribute(
             const unsigned searchableAttributeNameId) const;
     FilterType getTypeOfRefiningAttribute(
+            const unsigned refiningAttributeNameId) const;
+    FilterType getTypeOfSearchableAttribute(
             const unsigned searchableAttributeNameId) const;
     int getRefiningAttributeId(
             const std::string &searchableAttributeName) const;
     unsigned getNumberOfRefiningAttributes() const;
     const std::map<std::string, unsigned> * getRefiningAttributes() const;
-    bool isRefiningAttributeMultiValued(const unsigned nonSearchableAttributeNameId) const;
+    bool isRefiningAttributeMultiValued(
+            const unsigned nonSearchableAttributeNameId) const;
 
     int commit() {
         this->commited = 1;
@@ -184,12 +187,10 @@ public:
 
     virtual bool isHighlightEnabled(unsigned id) const;
 
-
     /**
      * Destructor to free persistent resources used by the Schema
      */
     virtual ~SchemaInternal();
-
 
 private:
     std::string primaryKey;
@@ -200,6 +201,7 @@ private:
      * http://stackoverflow.com/questions/535317/checking-value-exist-in-a-stdmap-c
      */
     std::map<std::string, unsigned> searchableAttributeNameToId;
+    std::vector<FilterType> searchableAttributeTypeVector;
 
     std::vector<unsigned> searchableAttributeBoostVector;
     std::vector<unsigned> searchableAttributeIsMultiValuedVector;
@@ -228,6 +230,7 @@ private:
         ar & primaryKey;
         ar & scoringExpressionString;
         ar & searchableAttributeNameToId;
+        ar & searchableAttributeTypeVector;
         ar & searchableAttributeBoostVector;
         ar & searchableAttributeIsMultiValuedVector;
         ar & refiningAttributeNameToId;

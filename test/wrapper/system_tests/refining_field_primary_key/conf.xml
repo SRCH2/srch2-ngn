@@ -360,7 +360,7 @@
 		    here and indexed="false" it will be also used for sort,filtering and facet.
 		    - 
 	   -->
-           <field name="id" type="integer" refining="true"/>
+           <field name="id" type="text" refining="true"/>
 	   <field name="category" type="text" searchable="true" indexed="false" />
 	   <field name="name" type="text" searchable="true" indexed="false" />
 	 </fields>

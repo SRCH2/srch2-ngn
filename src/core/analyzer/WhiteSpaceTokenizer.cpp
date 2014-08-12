@@ -49,6 +49,7 @@ bool WhiteSpaceTokenizer::incrementToken() {
 }
 
 bool WhiteSpaceTokenizer::processToken() {
+	tokenStreamContainer->type = ANALYZED_ORIGINAL_TOKEN;
     return this->incrementToken();
 }
 

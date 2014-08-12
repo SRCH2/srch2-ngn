@@ -164,7 +164,7 @@ bool QueryRewriter::applyAnalyzer() {
 		string keywordAfterAnalyzer = "";
 		if (leafNode->termIntermediateStructure->isPhraseKeywordFlag){
 			PhraseInfo pi;
-			std::vector<PositionalTerm> analyzedQueryKeywords;
+			std::vector<AnalyzedTermInfo> analyzedQueryKeywords;
 			analyzerNotConst.tokenizeQuery(leafNode->termIntermediateStructure->rawQueryKeyword, analyzedQueryKeywords);
 			keywordAfterAnalyzer.clear();
 			for (int i=0; i < analyzedQueryKeywords.size(); ++i){
