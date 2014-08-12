@@ -333,8 +333,24 @@ CoreInfo_t::CoreInfo_t(const CoreInfo_t &src)
 
 void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode, CoreInfo_t *coreInfo, map<string, unsigned> &boostsMap, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
 {
+	xml_node childNode = indexConfigNode.child(indexTypeString);
+	if (childNode && childNode.text()) {
+		string it = string(childNode.text().get());
+		if (isValidIndexType(it)) {
+			coreInfo->indexType = childNode.text().as_int();
+		} else {
+			parseError << "Index Type's value can be only 0 or 1.\n";
+			configSuccess = false;
+			return;
+		}
+	} else {
+		parseError << "Index Type is not set.\n";
+		configSuccess = false;
+		return;
+	}
+
 	coreInfo->supportSwapInEditDistance = true; // by default it is true
-	xml_node childNode = indexConfigNode.child(supportSwapInEditDistanceString);
+	childNode = indexConfigNode.child(supportSwapInEditDistanceString);
 	if (childNode && childNode.text()) {
 		string qtmt = childNode.text().get();
 		if (isValidBool(qtmt)) {
@@ -1381,7 +1397,6 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
 	 * <field>  in config.xml file
 	 */
 	coreInfo->isPrimSearchable = 0;
-	coreInfo->indexType = DefaultIndex;
 
 	xml_node fieldsNode = schemaNode.child(fieldsString);
 	if (fieldsNode) {
@@ -1433,13 +1448,11 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
 					// Checks for geo types. location_latitude and location_longitude are geo types
 					if (string(field.attribute(typeString).value()).compare(locationLatitudeString) == 0) {
 						coreParseState->hasLatitude = true;
-						coreInfo->indexType = LocationIndex;
 						coreInfo->fieldLatitude = string(field.attribute(nameString).value());
 						isRefining = true;
 					}
 					if (string(field.attribute(typeString).value()).compare(locationLongitudeString) == 0) {
 						coreParseState->hasLongitude = true;
-						coreInfo->indexType = LocationIndex;
 						coreInfo->fieldLongitude = string(field.attribute(nameString).value());
 						isRefining = true;
 					}
