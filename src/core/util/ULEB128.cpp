@@ -60,6 +60,10 @@ int ULEB128::uInt32VectorToVarLenArray (const std::vector<unsigned>& positionLis
 void ULEB128::varLenByteArrayToInt32Vector (uint8_t* buffer, unsigned size,
 		vector<unsigned>& positionList) {
 
+	if (size == 0) {
+		return;
+	}
+
     if (*(buffer + size - 1) & 0x80) {
         Logger::error("buffer has bad encoding..last byte is not a terminating one");
         return;

@@ -187,14 +187,14 @@ public:
     void copyByteArraysToForwardList(vector<uint8_t>& AttributeIdsVector,
     		vector<uint8_t>& positionIndexDataVector,
     		vector<uint8_t>& offsetIndexDataVector,
-    		vector<uint8_t>& charLenDataVector,
-    		vector<uint8_t>& synonymBitMapVector){
+    		vector<uint8_t>& synonymBitMapVector,
+    		vector<uint8_t>& charLenDataVector){
 
     	ASSERT(this->attributeIdsIndexSize == AttributeIdsVector.size());
     	ASSERT(this->positionIndexSize == positionIndexDataVector.size());
     	ASSERT(this->offsetIndexSize == offsetIndexDataVector.size());
-    	ASSERT(this->charLenIndexSize == charLenDataVector.size());
     	ASSERT(this->synonymBitMapSize == synonymBitMapVector.size());
+    	ASSERT(this->charLenIndexSize == charLenDataVector.size());
 
     	unsigned dataSize = getKeywordIdsSizeInBytes() + getKeywordRecordStaticScoresSizeInBytes();
     	// copy attribute ids

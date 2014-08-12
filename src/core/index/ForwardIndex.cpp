@@ -577,7 +577,6 @@ void ForwardIndex::reorderForwardList(ForwardList *forwardList,
         }
 
         if (isEnabledWordPositionIndex(this->schemaInternal->getPositionIndexType())){
-        	keywordRichInformationList[keywordOffset].keywordPositionInAttribute.resize(keywordAttributes.size());
         	for (unsigned i = 0; i < keywordAttributes.size(); ++i) {
         		vector<unsigned> wordPositions;
         		forwardList->getKeyWordPostionsInRecordField(keywordOffset, keywordAttributes[i],
@@ -587,7 +586,6 @@ void ForwardIndex::reorderForwardList(ForwardList *forwardList,
         }
 
         if (isEnabledCharPositionIndex(this->schemaInternal->getPositionIndexType())){
-        	keywordRichInformationList[keywordOffset].keywordOffsetsInAttribute.resize(keywordAttributes.size());
         	for (unsigned i = 0; i < keywordAttributes.size(); ++i) {
         		vector<unsigned> charOffsetPositions;
         		forwardList->getKeyWordOffsetInRecordField(keywordOffset, keywordAttributes[i],
@@ -602,8 +600,6 @@ void ForwardIndex::reorderForwardList(ForwardList *forwardList,
         				charLenVector);
         		keywordRichInformationList[keywordOffset].keywordSynonymCharLenInAttribute.push_back(charLenVector);
         	}
-
-
         }
 
     }
@@ -648,7 +644,7 @@ void ForwardIndex::reorderForwardList(ForwardList *forwardList,
         	}
         }
 
-        //Build VLB array of char offsets
+        //Build VLB array of synonym bit map
         if (isEnabledCharPositionIndex(this->schemaInternal->getPositionIndexType())){
         	for (unsigned i = 0 ; i < iter->keywordSynonymBitMapInAttribute.size(); ++i) {
         		convertToVarLengthBitMap(iter->keywordSynonymBitMapInAttribute[i], tempKeywordSynonymBitMapBuffer);
