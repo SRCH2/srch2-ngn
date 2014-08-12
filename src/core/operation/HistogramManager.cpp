@@ -38,7 +38,7 @@ void HistogramManager::annotate(LogicalPlan * logicalPlan){
 			queryEvaluator->getQueryEvaluatorRuntimeParametersContainer()->keywordPopularityThreshold){
 				markTermToForceSuggestionPhysicalOperator(logicalPlan->getTree(), logicalPlan->isFuzzy());
 			}
-		}else{
+		}else if(logicalPlan->getTree()->children.size() == 2){
 			if(logicalPlan->getTree()->children[0]->stats->getEstimatedNumberOfResults() >
 						queryEvaluator->getQueryEvaluatorRuntimeParametersContainer()->keywordPopularityThreshold
 			   && logicalPlan->getTree()->children[1]->stats->getEstimatedNumberOfResults() >
