@@ -14,9 +14,9 @@ import org.json.JSONObject;
  * containing the results of the search. The RESTful response literal can be inspected by evaluating the
  * <code>String jsonResultsLiteral</code> to view the results of a search; in addition, this RESTful response
  * literal is parsed and the specific records of the search are parsed and put into the map
- * <code>resultRecordMap</code>. This map contains as its keys the names of the index (as set by the
- * <code>IndexDescription</code> returned from the <code>Indexable</code> implementation of
- * <code>getIndexDescription()</code>) mapped to an <code>ArrayList</code> of the parsed <code>JSONObject</code>
+ * <code>resultRecordMap</code>. This map contains as its keys the names of the index (as set by the return value
+ * of the
+ * <code>getIndexName()</code> implementation of each <code>Indexable</code>) mapped to an <code>ArrayList</code> of the parsed <code>JSONObject</code>
  * records. If the search that was performed is specific to a single index, this map will only contain one key--
  * the name of that index searched; otherwise the map will contain results for all the indexes (such as when
  * <code>SRCH2Engine.searchAllIndexes(String searchInput)</code> is called). If there are no results for a given
@@ -39,9 +39,9 @@ public interface SearchResultsListener {
      * SRCH2 search server can be evaluated in two ways: the RESTful response literal can be inspected by accessing the
      * <code>String jsonResultsLiteral</code> to view the results of a search; in addition, this RESTful response
      * literal is parsed and the specific records of the search are parsed and put into the map
-     * <code>resultRecordMap</code>. This map contains as its keys the names of the index (as set by the
-     * <code>IndexDescription</code> returned from the <code>Indexable</code> implementation of
-     * <code>getIndexDescription()</code>) mapped to an <code>ArrayList</code> of the parsed <code>JSONObject</code>
+     * <code>resultRecordMap</code>. This map contains as its keys the names of the index (as set by the return value
+     * of the
+     * <code>getIndexName()</code> implementation of each <code>Indexable</code>) mapped to an <code>ArrayList</code> of the parsed <code>JSONObject</code>
      * records. If the search that was performed is specific to a single index, this map will only contain one key--
      * the name of that index searched; otherwise the map will contain results for all the indexes (such as when
      * <code>SRCH2Engine.searchAllIndexes(String searchInput)</code> is called). If there are no results for a given

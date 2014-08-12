@@ -47,5 +47,5 @@ public class SRCH2EngineTest {
 //        SRCH2Engine.setStateResponseListener(null);
 //        SRCH2Engine.setSearchResultsListener(null);
     }
-
+    
 }

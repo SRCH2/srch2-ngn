@@ -7,13 +7,13 @@ import java.io.UnsupportedEncodingException;
 
 /**
  * Represents an index in the SRCH2 search server. For every index to be searched on, users of the
- * SRCH2 Android SDK should implement a separate subclass of this class to at least define a
- * <code>IndexDescription</code> that will be used by the <code>SRCH2Engine</code> to generate
- * the necessary configuration for the index for the SRCH2 search server.
+ * SRCH2 Android SDK should implement a separate subclass instance of this class.
  * <br><br>
- * Each <code>Indexable</code> implementation <b>must</b> at least override the abstract method
- * <code>public IndexDescription getIndexDescription()</code> in order to define the name
- * and schema of the index the <code>Indexable</code> is supposed to represent.
+ * For each implementation of this class, <b>it is necessary</b> to override:
+ * <br>
+ * <code>String getIndexName()</code>
+ * <br>
+ * <code>Schema getSchema()</code>
  * <br><br>
  * This class contains methods for performing CRUD actions on the index such as insertion and
  * searching; however, these same methods can be called statically from the <code>SRCH2Engine</code>
@@ -25,10 +25,72 @@ public abstract class Indexable {
     IndexInternal indexInternal;
 
     /**
-     * User need to implement this method to define what inside this Index.
-     * @return the Description of this Index
+     * The default value for the numbers of search results to return per search request.
+     * <br><br>
+     * Has the <b>constant</b> value of <code>10</code>.
      */
-    abstract public IndexDescription getIndexDescription();
+    public static final int DEFAULT_NUMBER_OF_SEARCH_RESULTS_TO_RETURN_AKA_TOPK = 10;
+
+
+    /**
+     * The default value for the fuzziness similarity threshold. Approximately one character
+     * per every three characters will be allowed to act as a wildcard during a search.
+     * <br><br>
+     * Has the <b>constant</b> value of <code>0.65</code>.
+     */
+    public static final float DEFAULT_FUZZINESS_SIMILARITY_THRESHOLD = 0.65f;
+
+    /**
+     * Implementing this method sets the name of the index this <code>Indexable</code> represents. This can be used to
+     * call the static CRUD methods of the <code>SRCH2Engine</code> and to identify which index
+     * the two callbacks
+     * <code>StateResponseListener</code> and <code>SearchResultsListener</code> refer to in
+     * their callback methods.
+     * @return the name of the index this <code>Indexable</code> represents
+     */
+    abstract public String getIndexName();
+
+
+    /**
+     * Implementing this method sets the schema of the index this <code>Indexable</code> represents. The schema
+     * defines the data fields of the index, much like the table structure of an SQLite database table. See
+     * {@link com.srch2.android.http.service.Schema} for more information.
+     * @return the schema to define the index structure this <code>Indexable</code> represents
+     */
+    abstract public Schema getSchema();
+
+    /**
+     * Override this method to set the number of search results to be returned per query or search task.
+     * <br><br>
+     * The default value of this method, if not overridden, is ten.
+     * <br><br>
+     * This method will cause an <code>IllegalArgumentException</code> to be thrown when calling
+     * <code>SRCH2Engine.initialize(...)</code> and passing this <code>Indexable</code> if the returned value
+     *  is less than one.
+     * @return the number of results to return per search
+     */
+    public int getTopK() {
+        return DEFAULT_NUMBER_OF_SEARCH_RESULTS_TO_RETURN_AKA_TOPK;
+    }
+
+    /**
+     * Set the default fuzziness similarity threshold. This will determine how many character
+     * substitutions the original search input will match search results for: if set to 0.5,
+     * the search performed will include results as if half of the characters of the original
+     * search input were replaced by wild card characters.
+     * <br><br>
+     * <b>Note:</b> In the the formation of a <code>Query</code>, each <code>Term</code> can
+     * have its own fuzziness similarity threshold value set by calling the method
+     * <code>enableFuzzyMatching(Float value)</code>; by default it is disabled for terms.
+     * <br><br>
+     * The default value of this method, if not overridden, is 0.65.
+     * <br><br>
+     * This method will cause an <code>IllegalArgumentException</code> to be thrown when calling
+     * <code>SRCH2Engine.initialize(...)</code> and passing this <code>Indexable</code> if the
+     * value returned is less than zero or greater than one.
+     * @return the fuzziness similarity ratio to match against search keywords against
+     */
+    public float getFuzzinessSimilarityThreshold() { return DEFAULT_FUZZINESS_SIMILARITY_THRESHOLD; }
 
     /**
      * Inserts the specified <code>JSONObject record</code> into the index that this
@@ -43,7 +105,7 @@ public abstract class Indexable {
      * completed insertion task.
      * @param record the <code>JSONObject</code> representing the record to insert
      */
-    public void insert(JSONObject record) {
+    public final void insert(JSONObject record) {
         if (indexInternal != null) {
             indexInternal.insert(record);
         }
@@ -65,7 +127,7 @@ public abstract class Indexable {
      * @param records the <code>JSONArray</code> containing the set of <code>JSONObject</code>s
      *                representing the records to insert
      */
-    public void insert(JSONArray records) {
+    public final void insert(JSONArray records) {
         if (indexInternal != null) {
             indexInternal.insert(records);
         }
@@ -86,7 +148,7 @@ public abstract class Indexable {
      * completed update task.
      * @param record the <code>JSONObject</code> representing the record to upsert
      */
-    public void update(JSONObject record) {
+    public final void update(JSONObject record) {
         if (indexInternal != null) {
             indexInternal.update(record);
         }
@@ -111,7 +173,7 @@ public abstract class Indexable {
      * @param records the <code>JSONArray</code> containing the set of <code>JSONObject</code>s
      *                representing the records to upsert
      */
-    public void update(JSONArray records) {
+    public final void update(JSONArray records) {
         if (indexInternal != null) {
             indexInternal.update(records);
         }
@@ -128,7 +190,7 @@ public abstract class Indexable {
      * completed deletion task.
      * @param primaryKeyOfRecordToDelete the primary key of the record to delete
      */
-    public void delete(String primaryKeyOfRecordToDelete) {
+    public final void delete(String primaryKeyOfRecordToDelete) {
         if (indexInternal != null) {
             indexInternal.delete(primaryKeyOfRecordToDelete);
         }
@@ -145,7 +207,7 @@ public abstract class Indexable {
      * index such as the number of records it contains or the time stamp of the last time the index
      * was updated to reflect any pending changes.
      */
-    public void info() {
+    public final void info() {
         if (indexInternal != null) {
             indexInternal.info();
         }
@@ -172,7 +234,7 @@ public abstract class Indexable {
      * or has a length less than one.
      * @param searchInput the textual input to search on
      */
-    public void search(String searchInput) {
+    public final void search(String searchInput) {
         if (indexInternal != null) {
             indexInternal.search(searchInput);
         }
@@ -193,7 +255,7 @@ public abstract class Indexable {
      * This method will throw an exception if the value of <code>query</code> is null.
      * @param query the formation of the query to do the advanced search
      */
-    public void advancedSearch(Query query) {
+    public final void advancedSearch(Query query) {
         if (indexInternal != null) {
             indexInternal.advancedSearch(query);
         }
@@ -211,7 +273,7 @@ public abstract class Indexable {
      * <code>primaryKeyOfRecordToRetrieve</code> is null or has a length less than one.
      * @param primaryKeyOfRecordToRetrieve the primary key
      */
-    public void getRecordbyID(String primaryKeyOfRecordToRetrieve) {
+    public final void getRecordbyID(String primaryKeyOfRecordToRetrieve) {
         if (indexInternal != null) {
             indexInternal.getRecordbyID(primaryKeyOfRecordToRetrieve);
         }

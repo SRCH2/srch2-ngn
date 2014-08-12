@@ -51,7 +51,7 @@ public class TestCaseUtil {
     public static JSONObject generateRandomRecord(Indexable indexable) {
         JSONObject record = new JSONObject();
         try {
-            for (Field f : indexable.getIndexDescription().schema.fields) {
+            for (Field f : indexable.getSchema().fields) {
                 switch (f.type) {
                     case TEXT:
 

@@ -18,18 +18,19 @@ public class TestGeoIndex extends TestableIndex {
     public static final String INDEX_FIELD_NAME_LATITUDE = "lat";
     public static final String INDEX_FIELD_NAME_LONGITUDE = "lon";
 
-
-    /**
-     * Returns a core named "test" with fields "id" as primary key and "title" as searchable text title.
-     */
     @Override
-    public IndexDescription getIndexDescription() {
-        PrimaryKeyField primaryKey = Field.createPrimaryKeyField(INDEX_FIELD_NAME_PRIMARY_KEY);
+    public String getIndexName() {
+        return INDEX_NAME;
+    }
+
+    @Override
+    public Schema getSchema() {
+        PrimaryKeyField primaryKey = Field.createDefaultPrimaryKeyField(INDEX_FIELD_NAME_PRIMARY_KEY);
         Field title = Field.createSearchableField(INDEX_FIELD_NAME_TITLE);
         Field score = Field.createRefiningField(INDEX_FIELD_NAME_SCORE, Field.Type.INTEGER);
-
-        return new IndexDescription(INDEX_NAME, primaryKey, "lat", "lng", title, score);
+        return new Schema(primaryKey, title, score);
     }
+
 
     /**
      * Returns a set of records with "id" field incremented by for loop and "title" set to "Title# + <loopIteration>".
@@ -136,4 +137,6 @@ public class TestGeoIndex extends TestableIndex {
     public JSONObject getSucceedToUpsertRecord() {
         return null;
     }
+
+
 }

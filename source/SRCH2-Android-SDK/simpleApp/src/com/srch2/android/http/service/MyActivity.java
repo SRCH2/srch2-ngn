@@ -159,7 +159,7 @@ public class MyActivity extends TestableActivity {
         waitForEngineReady();
         assertTrue(mControlListener.indexesInfoResponseMap.size() == indexes.length);
         for (TestableIndex index : indexes) {
-            assertTrue(mControlListener.indexesInfoResponseMap.get(index.getIndexDescription().getIndexName()).getNumberOfDocumentsInTheIndex() == 0);
+            assertTrue(mControlListener.indexesInfoResponseMap.get(index.getIndexName()).getNumberOfDocumentsInTheIndex() == 0);
         }
     }
 
@@ -289,7 +289,7 @@ public class MyActivity extends TestableActivity {
 
             assertTrue(mResultListener.resultRecordMap.size() == testIndexes.length);
             for(TestableIndex index : testIndexes) {
-                assertTrue(index.verifyResult(query, mResultListener.resultRecordMap.get(index.getIndexDescription().getIndexName())));
+                assertTrue(index.verifyResult(query, mResultListener.resultRecordMap.get(index.getIndexName())));
             }
         }
 
@@ -299,7 +299,7 @@ public class MyActivity extends TestableActivity {
             getSearchResult();
             assertTrue(mResultListener.resultRecordMap.size() == testIndexes.length);
             for(TestableIndex index : testIndexes) {
-                assertTrue(index.verifyResult(query, mResultListener.resultRecordMap.get(index.getIndexDescription().getIndexName())));
+                assertTrue(index.verifyResult(query, mResultListener.resultRecordMap.get(index.getIndexName())));
             }
         }
     }
@@ -343,8 +343,8 @@ public class MyActivity extends TestableActivity {
             index.search(query);
             getSearchResult();
             assertTrue(mResultListener.resultRecordMap.size() == 1);
-            assertTrue(mResultListener.resultRecordMap.get(index.getIndexDescription().getIndexName()) != null);
-            assertTrue(index.verifyResult(query, mResultListener.resultRecordMap.get(index.getIndexDescription().getIndexName())));
+            assertTrue(mResultListener.resultRecordMap.get(index.getIndexName()) != null);
+            assertTrue(index.verifyResult(query, mResultListener.resultRecordMap.get(index.getIndexName())));
         }
     }
 
@@ -354,7 +354,7 @@ public class MyActivity extends TestableActivity {
             index.search(query);
             getSearchResult();
             assertTrue(mResultListener.resultRecordMap.size() == 1);
-            assertTrue(mResultListener.resultRecordMap.get(index.getIndexDescription().getIndexName()).size() == 0);
+            assertTrue(mResultListener.resultRecordMap.get(index.getIndexName()).size() == 0);
         }
     }
 
@@ -364,8 +364,8 @@ public class MyActivity extends TestableActivity {
             index.advancedSearch(query);
             getSearchResult();
             assertTrue(mResultListener.resultRecordMap.size() == 1);
-            assertTrue(mResultListener.resultRecordMap.get(index.getIndexDescription().getIndexName()) != null);
-            assertTrue(index.verifyResult(query, mResultListener.resultRecordMap.get(index.getIndexDescription().getIndexName())));
+            assertTrue(mResultListener.resultRecordMap.get(index.getIndexName()) != null);
+            assertTrue(index.verifyResult(query, mResultListener.resultRecordMap.get(index.getIndexName())));
         }
     }
 
@@ -375,7 +375,7 @@ public class MyActivity extends TestableActivity {
             index.advancedSearch(query);
             getSearchResult();
             assertTrue(mResultListener.resultRecordMap.size() == 1);
-            assertTrue(mResultListener.resultRecordMap.get(index.getIndexDescription().getIndexName()).size() == 0);
+            assertTrue(mResultListener.resultRecordMap.get(index.getIndexName()).size() == 0);
         }
     }
 

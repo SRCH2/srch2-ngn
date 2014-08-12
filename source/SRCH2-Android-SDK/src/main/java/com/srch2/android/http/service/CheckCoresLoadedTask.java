@@ -92,15 +92,15 @@ final class CheckCoresLoadedTask extends HttpTask {
         }
 
         if (controlResponseObserver != null && !noNetworkConnection) {
+            if (pingCountSuccess == coreCount) {
+                Log.d("srch2:: " + TAG, "run - successful requerying etc");
+                SRCH2Engine.isReady.set(true);
+                controlResponseObserver.onSRCH2ServiceReady(responseMap);
+                SRCH2Engine.reQueryLastOne();
+            }
             Log.d("srch2:: " + TAG, "run - notifying observer");
-            controlResponseObserver.onSRCH2ServiceReady(responseMap);
         }
 
-        if (pingCountSuccess == coreCount) {
-            Log.d("srch2:: " + TAG, "run - successful requerying etc");
-            SRCH2Engine.isReady.set(true);
-            SRCH2Engine.reQueryLastOne();
-        }
         Thread.currentThread().setName("CHECK CORES LOADED FIN");
     }
 

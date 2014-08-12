@@ -23,6 +23,7 @@ mkdocs build
 
 sdk_source="../source/SRCH2-Android-SDK/"
 target="$sdk_source/target"
+deploy="${target}/deploy"
 cd $sdk_source
 mvn clean deploy
 [ $? -ne 0 ] && { echo $'\n Error happens while deploying, Stop the release'; exit -1;}
@@ -32,10 +33,11 @@ mvn javadoc:jar
 [ $? -ne 0 ] && { echo $'\n Error happens while creating javadoc, Stop the release'; exit -1;}
 cd $OLDPWD
 
-cp ${target}/deploy/com/srch2/*/*/*.{jar,aar} ./site/download/latest-releases/
+cp ${deploy}/com/srch2/*/*/*.{jar,aar} ./site/download/latest-releases/
 cp -r ${target}/apidocs ./site/javadoc
 
 echo $'\nLocal release is done, wait for sync to the webmaster'
 
-scp -r ${target}/deploy/ rvijax@web240.webfaction.com:~/webapps/srch2/repo/maven/
+scp -r ${deploy}/* rvijax@web240.webfaction.com:~/webapps/srch2/repo/maven/
+scp -r ./site/* rvijax@web240.webfaction.com:~/webapps/srch2/android/
 

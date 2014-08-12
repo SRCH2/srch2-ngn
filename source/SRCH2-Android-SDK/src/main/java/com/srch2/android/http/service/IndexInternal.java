@@ -1,5 +1,6 @@
 package com.srch2.android.http.service;
 
+import android.util.Log;
 import com.srch2.android.http.service.SRCH2Engine.IndexQueryPair;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -57,8 +58,10 @@ final class IndexInternal {
 
 
     void insert(JSONArray records) {
+        Log.d("srch2:: IndexInternal", "about to insert into index isReady is " + SRCH2Engine.isReady());
         if (SRCH2Engine.isReady()) {
 
+            Log.d("srch2:: IndexInternal", "actually inserting");
             URL url = UrlBuilder.getInsertUrl(SRCH2Engine.getConfig(),
                     indexDescription);
 
@@ -122,7 +125,7 @@ final class IndexInternal {
 
                     UrlBuilder.getSearchUrl(SRCH2Engine.getConfig(), indexDescription,
                             rawString), getIndexCoreName(),
-                    SRCH2Engine.getSearchResultsListener());
+                    SRCH2Engine.getSearchResultsObserver());
 
             HttpTask.executeTask(currentSearchTask);
         }

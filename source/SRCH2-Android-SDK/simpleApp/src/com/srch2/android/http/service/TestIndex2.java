@@ -10,16 +10,17 @@ import org.json.JSONObject;
 public class TestIndex2 extends TestIndex {
     public static final String INDEX_NAME = "test2";
 
-    /**
-     * Returns a core named "test" with fields "id" as primary key and "title" as searchable text title.
-     */
+
     @Override
-    public IndexDescription getIndexDescription() {
+    public String getIndexName() {
+        return INDEX_NAME;
+    }
+
+    @Override
+    public Schema getSchema() {
         PrimaryKeyField primaryKey = Field.createSearchablePrimaryKeyField(INDEX_FIELD_NAME_PRIMARY_KEY);
         Field title = Field.createSearchableField(INDEX_FIELD_NAME_TITLE);
         Field score = Field.createRefiningField(INDEX_FIELD_NAME_SCORE, Field.Type.INTEGER);
-
-        return new IndexDescription(INDEX_NAME, primaryKey, title, score);
+        return new Schema(primaryKey, title, score);
     }
-
 }

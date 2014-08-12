@@ -25,15 +25,32 @@ final class SRCH2Configuration {
      * @param restIndexes the other more indexes
      */
     SRCH2Configuration(Indexable index1, Indexable... restIndexes) {
-        index1.indexInternal = createIndex(index1.getIndexDescription());
+
+        validateIndexable(index1);
+        index1.indexInternal = createIndex(new IndexDescription(index1));
+
         if (restIndexes != null) {
             for (Indexable idx : restIndexes) {
-                if (idx == null) {
-                    throw new NullPointerException("the given index is null");
-                }
-                idx.indexInternal = createIndex(idx.getIndexDescription());
+                validateIndexable(idx);
+                idx.indexInternal = createIndex(new IndexDescription(idx));
             }
         }
+    }
+
+    void validateIndexable(Indexable indexable) {
+        if (indexable == null) {
+            throw new NullPointerException("Cannot initialize the SRCH2Engine when a null Indexable is passed.");
+        }
+
+        IndexDescription.throwIfNonValidIndexName(indexable.getIndexName());
+
+        if (indexable.getSchema() == null) {
+            throw new NullPointerException("Indexable cannot be initialized with null schema: verify getSchema() is returning a valid schema object.");
+        }
+
+        IndexDescription.throwIfNonValidFuzzinessSimilarityThreshold(indexable.getFuzzinessSimilarityThreshold());
+
+        IndexDescription.throwIfNonValidTopK(indexable.getTopK());
     }
 
     /**
