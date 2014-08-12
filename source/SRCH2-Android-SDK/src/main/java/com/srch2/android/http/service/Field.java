@@ -121,7 +121,7 @@ final public class Field {
      * @return the {@link com.srch2.android.http.service.PrimaryKeyField}
      */
     public static PrimaryKeyField createSearchablePrimaryKeyField(String fieldName, int boost) {
-        return new PrimaryKeyField(createSearchableAndRefiningField(fieldName, Type.TEXT, boost));
+        return new PrimaryKeyField(createSearchableAndRefiningField(fieldName, boost));
     }
 
     /**
@@ -212,34 +212,29 @@ final public class Field {
     /**
      * Static factory method for obtaining a field that is both searchable and
      * refining with the searchable component having a the default boost value
-     * of one. The data associated with this field will be matched against the
+     * of one. The searchable field can only be textual type.
+     * The data associated with this field will be matched against the
      * search input during a search, can also be used to support advanced
      * search features with the <code>Query</code> class such as limiting the
      * range of the search results, and can also be used to do post-processing
      * operations on the search results.
      * <br><br>
      * This method will throw an exception if the value of
-     * <code>fieldName</code> is null or has a length less than one; or if the
-     * value of <code>fieldType</code> is null.
+     * <code>fieldName</code> is null or has a length less than one.
      *
      * @param fieldName the name identifying the field
-     * @param fieldType the type of the field (Field.FieldType.TEXT,
-     *                  Field.FieldType.INTEGER, Field.FieldType.FLOAT,
-     *                  Field.FieldType.TIME, Field.FieldType.LOCATION_LONGITUDE,
-     *                  Field.FieldType.LOCATION_LATITUDE)
      * @return the refining and searchable field
      */
-    public static Field createSearchableAndRefiningField(String fieldName,
-                                                         Type fieldType) {
-        checkIfFieldTypeIsValid(fieldType);
-        return new Field(fieldName, InternalType.values[fieldType.ordinal()],
+    public static Field createSearchableAndRefiningField(String fieldName) {
+        return new Field(fieldName, InternalType.TEXT,
                 true, true, DEFAULT_BOOST_VALUE);
     }
 
     /**
      * Static factory method for obtaining a field that is both searchable and
      * refining with the searchable component having a the default boost value
-     * of one. The data associated with this field will be matched against the
+     * of one. The searchable field can only be textual type.
+     * The data associated with this field will be matched against the
      * search input during a search, can also be used to support advanced
      * search features with the <code>Query</code> class such as limiting the
      * range of the search results, and can also be used to do post-processing
@@ -251,27 +246,18 @@ final public class Field {
      * <br><br>
      * This method will throw an exceptions if the value passed for
      * <code>boost</code> is less than one or greater than one hundred; or if the value of
-     * <code>fieldName</code> is null or has a length less than one; or if the
-     * value of <code>fieldType</code> is null.
+     * <code>fieldName</code> is null or has a length less than one.
      *
      * @param fieldName the name identifying the field
      * @param boost     the value to assign to the relevance of this field, relative to other searchable fields
-     * @param fieldType the type of the field (Field.FieldType.TEXT,
-     *                  Field.FieldType.INTEGER, Field.FieldType.FLOAT,
-     *                  Field.FieldType.TIME, Field.FieldType.LOCATION_LONGITUDE,
-     *                  Field.FieldType.LOCATION_LATITUDE)
      * @return the refining and searchable field
      */
-    public static Field createSearchableAndRefiningField(String fieldName,
-                                                         Type fieldType, int boost) {
+    public static Field createSearchableAndRefiningField(String fieldName,int boost) {
         if (boost < 1 || boost > 100) {
             throw new IllegalArgumentException(
                     "Boost value cannot be less than 1 or greater than 100.");
         }
-        if (fieldType == null) {
-            throw new IllegalArgumentException("Field type cannot be null");
-        }
-        return new Field(fieldName, InternalType.values[fieldType.ordinal()],
+        return new Field(fieldName, InternalType.TEXT,
                 true, true, boost);
     }
 
