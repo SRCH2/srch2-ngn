@@ -157,14 +157,14 @@ int MongoDBConnector::createNewIndexes() {
             }
             printf("MOGNOLISTENER: Total indexed %d / %d records. \n", indexedRecordsCount,
                     collectionCount);
-            //Save the time right after create new indexes.
-            setLastAccessedLogRecordTime(time(NULL));
-            this->serverHandle->saveChanges();
 
         } else {
             printf("MOGNOLISTENER: No data found in the collection %s\n",
                     filterNamespace.c_str());
         }
+        //Save the time right after create new indexes.
+        setLastAccessedLogRecordTime(time(NULL));
+        this->serverHandle->saveChanges();
     } catch (const mongo::DBException &e) {
         printf("MOGNOLISTENER: MongoDb Exception %s\n", e.what());
         return -1;
