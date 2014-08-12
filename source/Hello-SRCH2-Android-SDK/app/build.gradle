@@ -1,0 +1,24 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 20
+    buildToolsVersion "20.0.0"
+
+    defaultConfig {
+        applicationId "com.srch2.android.demo.helloworld"
+        minSdkVersion 14
+        targetSdkVersion 20
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            runProguard false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    compile group: 'com.srch2', name: 'srch2-android-sdk', version: '1.0.0-SNAPSHOT',  ext:'aar'
+}

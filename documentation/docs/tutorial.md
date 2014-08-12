@@ -10,37 +10,22 @@ This tutorial will show you how to:
  
 To get started, this tutorial assumes you are familiar with Android Studio and can create, or have already created, Android Studio projects. For instructions how to set up the SRCH2 Android SDK on eclipse, see [Advanced Topics](advanced-topics.md). 
 
-You can download the [Hello SRCH2 Search Demo project](../download/hello-srch2-search-demo-files/hello-srch2-search-demo-project.zip) and import it into Android Studio and read the tutorial to understand the code. Or, if you want to follow along with this tutorial, create a project from scratch and refer to the source code by browsing the project at our [GitHub repository](http://www.endoftheinternet.com/). 
+Before you begin the tutorial, clone the project application from our [`hello-srch2-android-sdk` Github repository](https://github.com/SRCH2/hello-srch2-android-sdk). 
 
 ###Installing the SDK
  
-The first step is to obtain the SRCH2 Android SDK ``.aar`` file. An `.aar` file extension is an expansion of the JAR file format to include Android native resources, which the SRCH2 Android SDK requires to get the SRCH2 search engine running. For more information on the `.aar` file format, you can refer to [AAR Format](http://tools.android.com/tech-docs/new-build-system/aar-format) at the Android Tools Project Site.
-
-You can download the `SRCH2-Android-SDK.aar` file by clicking [here](../download/latest-releases/SRCH2-Android-SDK.aar).
- 
-*Quick Steps*:
-
-1. Open up Android Studio.
-2. Goto File->New Module and select 'Import JAR / AAR file' from the list of options.
-3. Select the `SRCH2-Android-SDK.aar` file from its download location.
-4. Click 'Finish'.
-5. Under ProjectName->app, open build.gradle and add `compile project(':SRCH2-Android-SDK')` to the dependencies node.
- 
-*Interactive Steps*:
+The Gradle build system makes it easy to install the SRCH2 Android SDK in an Android Studio project.
 
 1. Open up Android Studio.
 2. Create a new Android project called `HelloSRCH2SearchDemo`, declared with the package name `com.srch2.android.demo.hellosrch2` and 14 set as the minimum API version in this example.
 3. Choose to create the project with a blank activity, named `MyActivity` in this example.
-4. You should now have a new project open in Android Studio. To incorporate the SRCH2 Android SDK, you will first need to add the `SRCH2-Android-SDK.aar` file to the project as a new module. To do this, open up your project's 'Module Settings' by right clicking into your 'Project' view and select 'Module Settings':<br>![Module Settings - How to open 'Module Settings'][tutorial-000]
-5. Move the cursor to the upper-left hand of the dialogue box, and click the green addition symbol. This will add a new module to your project. This will look something like:<br>![Module Settings - How to add a new module][tutorial-001]
-6. From the list of options, select 'Import .JAR or .AAR Package' and click Next.<br>![Module Settings - Creating a new module from an .AAR file][tutorial-002]
-7. Select `SRCH2-Android-SDK.aar` from its download location, you can leave value of the field 'Subproject Name' the same, and click Finish.<br>![Module Settings - Importing the SRCH2-Android-SDK.aar file as the new module][tutorial-003]
-8. Now that you've added the `SRCH2-Android-SDK.aar` as a new module in your project, it's time to add it as a dependency to your app. From the 'Module Settings' dialog, click on your app from the 'Modules' column (on the left-hand side, SRCH2-Android-SDK.aar should also be in the list)
-9. Select the 'Dependencies' tab, move the cursor to the right side of the dialog. Click the green addition symbol, and from the drop down list select 'Module dependency'. This should look something like this:<br>![Module Settings - Adding the SRCH2-Android-SDK module as a dependency][tutorial-004]
-10. Select `SRCH2-Android-SDK` from the list of modules. Click OK.<br>![Module Settings - Selecting the SRCH2-Android-SDK module][tutorial-005]
-11. Now can click Apply and OK, or just OK to finish this process and close 'Module Settings'.<br>![Module Settings - Verifying SRCH2-Android-SDK module as been added as a compiled dependency][tutorial-006]
-12. For those curious, this process added the `SRCH2-Android-SDK.aar` as a new module, then altered the build.gradle file in your app's subdirectory to include the `SRCH2-Android-SDK` module to be compiled as a dependency; which you can verify by navigating to this file, and it will look something like:![Installation Complete - Confirming gradle has included the SRCH2 Android SDK as a dependency in your project][tutorial-007]
-13. Now you are ready to start accessing the API
+4. You should now have a new project open in Android Studio. To incorporate the SRCH2 Android SDK, you will need to configure the Gradle build system to retrieve the `SRCH2-Android-SDK.aar` file from the SRCH2 server Maven repository. To do this, navigate to the top-level <code>build.gradle</code> file in your project view:
+5. In the `repositories` node in the `buildscript` node, add the entry `maven { url 'http://srch2.com/repo/maven' }`.
+6. In the `repositories` node in the `allprojects` node, add the entry `maven { url 'http://srch2.com/repo/maven' }`.
+7. The `build.gradle` file should now look like:
+8. Now that the Gradle build script includes the SRCH2 server Maven repository, the SRCH2 Android SDK must be added as a dependency to the 'app' module. To do this navigate to the `build.gradle` file in your `app` module:
+9. In the `depedencies` node, add the entry `compile group: 'com.srch2', name: 'srch2-android-sdk', version: '1.0.0-SNAPSHOT',  ext:'aar'` so that the `build.gradle` file looks like:
+10. That's all there is to it. To verify the SRCH2 Android SDK has been incorporated into your project, open up `MyActivity` and try accessing the `SRCH2Engine` method `isUserAnAnteaterInATree()`: if <b> true, you've successfully installed the SRCH2 Android SDK.
 
 ###Including Default Project Files
 
