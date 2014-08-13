@@ -14,7 +14,7 @@
 
     <TextView
         android:id="@+id/tv_title_search_result_row"
-        android:layout_toLeftOf="@id/tv_year_search_result_row"
+        android:layout_toLeftOf="@+id/tv_year_search_result_row"
         android:layout_alignParentLeft="true"
         android:gravity="center_vertical"
         android:textSize="18sp"

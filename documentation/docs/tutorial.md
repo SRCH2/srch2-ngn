@@ -1,4 +1,4 @@
-﻿Hello and welcome to the Hello SRCH2 Search Tutorial for the SRCH2 Android SDK.
+﻿Hello and welcome to the Hello SRCH2 Android SDK tutorial. 
 
 ###Introduction
  
@@ -12,19 +12,27 @@ To get started, this tutorial assumes you are familiar with Android Studio and c
 
 Before you begin the tutorial, clone the project application from our [`hello-srch2-android-sdk` Github repository](https://github.com/SRCH2/hello-srch2-android-sdk). 
 
+###Quick Start
+
+1. Clone the tutorial application project from our [`hello-srch2-android-sdk` Github repository](https://github.com/SRCH2/hello-srch2-android-sdk).
+2. Open Android Studio and from the File menu (or the Quick Start menu) select 'Open Project' choosing the root folder of the cloned project:
+3. Select 
+
+
+
 ###Installing the SDK
  
 The Gradle build system makes it easy to install the SRCH2 Android SDK in an Android Studio project.
 
 1. Open up Android Studio.
-2. Create a new Android project called `HelloSRCH2SearchDemo`, declared with the package name `com.srch2.android.demo.hellosrch2` and 14 set as the minimum API version in this example.
+2. Create a new Android project. called `Hello SRCH2 Android SDK`, declared with the package name `com.srch2.android.demo.hellosrch2` and 14 set as the minimum API version in this example.
 3. Choose to create the project with a blank activity, named `MyActivity` in this example.
 4. You should now have a new project open in Android Studio. To incorporate the SRCH2 Android SDK, you will need to configure the Gradle build system to retrieve the `SRCH2-Android-SDK.aar` file from the SRCH2 server Maven repository. To do this, navigate to the top-level <code>build.gradle</code> file in your project view:
 5. In the `repositories` node in the `buildscript` node, add the entry `maven { url 'http://srch2.com/repo/maven' }`.
 6. In the `repositories` node in the `allprojects` node, add the entry `maven { url 'http://srch2.com/repo/maven' }`.
 7. The `build.gradle` file should now look like:
-8. Now that the Gradle build script includes the SRCH2 server Maven repository, the SRCH2 Android SDK must be added as a dependency to the 'app' module. To do this navigate to the `build.gradle` file in your `app` module:
-9. In the `depedencies` node, add the entry `compile group: 'com.srch2', name: 'srch2-android-sdk', version: '1.0.0-SNAPSHOT',  ext:'aar'` so that the `build.gradle` file looks like:
+8. Now that the Gradle build script includes the SRCH2 server Maven repository, the SRCH2 Android SDK must be added as a dependency to the 'app' module. To do this, navigate to the `build.gradle` file in your `app` module:
+9. In the `dependencies` node, add the entry `compile group: 'com.srch2', name: 'srch2-android-sdk', version: '1.0.0-SNAPSHOT',  ext:'aar'` so that the `build.gradle` file looks like:
 10. That's all there is to it. To verify the SRCH2 Android SDK has been incorporated into your project, open up `MyActivity` and try accessing the `SRCH2Engine` method `isUserAnAnteaterInATree()`: if <b> true, you've successfully installed the SRCH2 Android SDK.
 
 ###Including Default Project Files
@@ -791,7 +799,6 @@ The results come back fast, and even if we had we inserted thousands of records,
 
 This concludes the Hello SRCH2 Tutorial for learning how to get set up with the SRCH2-Android-SDK. Play around with the project: try updating a record, deleting a record, adding more records with searchable data that is similar in its sequence of letters to appreciate the power of SRCH2's fuzzy search capability-- and this is only the beginning! If you read on in [Advanced Topics](advanced-topics.md) you'll learn how to form powerful queries (such as filtering the search results for the `MovieIndex` by interval of year), perform lightning fast geo-searches using the device's location, or how to set up the SRCH2-Android-SDK for Proguard, or how to manually interact with the running SRCH2 search server. Search on!
 
-Follow the [javadoc](../javadoc) to write your powerfull app.
 
 [tutorial-000]: ../img/000-tutorial.png "Module Settings - How to open 'Module Settings'"
 [tutorial-001]: ../img/001-tutorial.png "Module Settings - How to add a new module"
