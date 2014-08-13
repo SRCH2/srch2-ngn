@@ -346,6 +346,7 @@ void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode,
         bool &configSuccess, std::stringstream &parseError,
         std::stringstream &parseWarnings) {
     xml_node childNode = indexConfigNode.child(indexTypeString);
+    coreInfo->indexType = 0; //Default index type is 0
     if (childNode && childNode.text()) {
         string it = string(childNode.text().get());
         if (isValidIndexType(it)) {
@@ -355,10 +356,8 @@ void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode,
             configSuccess = false;
             return;
         }
-    } else {
-        parseError << "Index Type is not set.\n";
-        configSuccess = false;
-        return;
+    }else{
+        parseWarnings << "Index Type is not set, so using the default value 0.\n";
     }
 
     coreInfo->supportSwapInEditDistance = true; // by default it is true
@@ -528,7 +527,7 @@ void ConfigManager::parseQuery(const xml_node &queryNode, CoreInfo_t *coreInfo,
     }
 
     // fuzzyMatchPenalty is an optional field
-    coreInfo->fuzzyMatchPenalty = 1; // By default it is 1
+    coreInfo->fuzzyMatchPenalty = 0.5; // By default it is 0.5
     childNode = queryNode.child(fuzzyMatchPenaltyString);
     if (childNode && childNode.text()) {
         string qtsb = childNode.text().get();
@@ -581,7 +580,7 @@ void ConfigManager::parseQuery(const xml_node &queryNode, CoreInfo_t *coreInfo,
     }
 
     // prefixMatchPenalty is an optional field.
-    coreInfo->prefixMatchPenalty = 0.95; // By default it is 0.5
+    coreInfo->prefixMatchPenalty = 0.95; // By default it is 0.95
     childNode = queryNode.child(prefixMatchPenaltyString);
     if (childNode && childNode.text()) {
         string pm = childNode.text().get();
@@ -1945,7 +1944,7 @@ bool ConfigManager::setFieldFlagsFromFile(const xml_node &field,
     if (string(field.attribute(highLightString).value()).compare("") != 0) {
         temporaryString = string(field.attribute(highLightString).value());
         if (isValidBool(temporaryString)) {
-            if (field.attribute(indexedString).as_bool()) {
+            if (field.attribute(highLightString).as_bool()) {
                 isHighlightEnabled = true;
             }
         }
