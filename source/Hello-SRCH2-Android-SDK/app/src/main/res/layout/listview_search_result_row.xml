@@ -14,11 +14,9 @@
 
     <TextView
         android:id="@+id/tv_title_search_result_row"
-        android:layout_toLeftOf="@+id/tv_year_search_result_row"
-        android:layout_alignParentLeft="true"
         android:gravity="center_vertical"
         android:textSize="18sp"
-        android:text="Title"
+        android:text="Movie Title"
         android:ellipsize="end"
         android:singleLine="true"
         android:paddingBottom="3dp"
@@ -29,9 +27,9 @@
         android:id="@+id/tv_year_search_result_row"
         android:gravity="center_vertical"
         android:textSize="14sp"
-        android:text="Year"
+        android:text="1999"
         android:layout_alignParentRight="true"
-        android:layout_alignParentTop="true"
+        android:layout_alignBaseline="@+id/tv_genre_search_result_row"
         android:layout_marginRight="4dp"
         android:layout_marginLeft="4dp"
         android:layout_width="wrap_content"
@@ -39,10 +37,14 @@
 
     <TextView
         android:id="@+id/tv_genre_search_result_row"
-        android:layout_below="@id/tv_title_search_result_row"
         android:gravity="center_vertical"
         android:textSize="14sp"
-        android:text="Genre"
+        android:text="Movie Genre"
+        android:ellipsize="end"
+        android:singleLine="true"
+        android:layout_below="@id/tv_title_search_result_row"
+        android:layout_alignParentLeft="true"
+        android:layout_toLeftOf="@id/tv_year_search_result_row"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
 

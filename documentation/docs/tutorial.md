@@ -1,4 +1,4 @@
-﻿Hello and welcome to the `Hello SRCH2 Android SDK` tutorial. 
+﻿Hello and welcome to the Hello SRCH2 Android SDK tutorial. 
 
 ###Introduction
  
@@ -8,16 +8,17 @@ This tutorial will show you how to:
 2. Create indexes and insert records
 3. Enable powerful search in your app and publish the search results to the UI or main thread
  
-To get started, this tutorial assumes you are familiar with Android Studio and can create, or have already created, Android Studio projects. For instructions how to set up the SRCH2 Android SDK on eclipse, see [Advanced Topics](advanced-topics.md). 
+To get started, this tutorial assumes you are familiar with Android Studio and can create, or have already created, Android Studio projects. 
 
 Before you begin the tutorial, clone the project application from our [`hello-srch2-android-sdk` Github repository](https://github.com/SRCH2/hello-srch2-android-sdk). 
 
 ###Quick Start
 
-1. Clone the tutorial application project from our [`hello-srch2-android-sdk` Github repository](https://github.com/SRCH2/hello-srch2-android-sdk).
-2. Open Android Studio and from the File menu option (or the Quick Start menu) select 'Open Project' choosing the root folder of the cloned project:
+1. Clone the tutorial application project from our [`hello-srch2-android-sdk` Github repository](https://github.com/SRCH2/hello-srch2-android-sdk). To do this from the command line you can enter the following git command: `clone githubrepo`
+2. Open Android Studio and from the File menu option (or the Quick Start menu) select 'Open Project' choosing the root folder of the cloned project: ![Opening the cloned Hello SRCH2 Android SDK application project][tutorial-010]
 3. With a device connected (currently hardware emulation does not support the SRCH2 Android SDK), from the Run menu option select 'Run app'. 
-4. Once the app is running enter some characters in the text input field at the top of the screen, and you should see search results such as:
+4. Once the app has launched, enter some characters in the text input field at the top of the screen and you should instantly see search results: <br>
+<center>![The SRCH2 Android SDK in action!][tutorial-011]</center>
 5. That's it! You're now using the SRCH2 Android SDK to power searches in an Android project with the SRCH2 search engine. 
 
 You can read on for an explanation of the source code and how to incorporate the SRCH2 Android SDK in your own projects.
@@ -26,13 +27,14 @@ You can read on for an explanation of the source code and how to incorporate the
  
 The Gradle build system makes it easy to install the SRCH2 Android SDK in an Android Studio project.
 
-1. If you have an open Android project in Android Studio, to incorporate the SRCH2 Android SDK, you will need to configure the Gradle build system to retrieve the `SRCH2-Android-SDK.aar` file from the SRCH2 server Maven repository. To do this, navigate to the top-level <code>build.gradle</code> file in your project view:
-5. In the `repositories` node in the `buildscript` node, add the entry `maven { url 'http://srch2.com/repo/maven' }`.
-6. In the `repositories` node in the `allprojects` node, add the entry `maven { url 'http://srch2.com/repo/maven' }`.
-7. The `build.gradle` file should now look like:
-8. Now that the Gradle build script includes the SRCH2 server Maven repository, the SRCH2 Android SDK must be added as a dependency to the 'app' module. To do this, navigate to the `build.gradle` file in your `app` module:
-9. In the `dependencies` node, add the entry `compile group: 'com.srch2', name: 'srch2-android-sdk', version: '1.0.0-SNAPSHOT',  ext:'aar'` so that the `build.gradle` file looks like:
-10. That's all there is to it. To verify the SRCH2 Android SDK has been incorporated into your project, open up `SearchActivity` and try accessing the `SRCH2Engine` method `isUserAnAnteaterInATree()`: if <b> true, you've successfully installed the SRCH2 Android SDK.
+1. If you have an open Android project in Android Studio, to incorporate the SRCH2 Android SDK, you will need to configure the Gradle build system to retrieve the `SRCH2-Android-SDK.aar` file from the SRCH2 server Maven repository. To do this, navigate to the top-level <code>build.gradle</code> file in your project view.
+2. In the `repositories` node in the `buildscript` node, add the entry:<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`maven { url 'http://srch2.com/repo/maven' }`
+3. In the `repositories` node in the `allprojects` node, add the entry:<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`maven { url 'http://srch2.com/repo/maven' }`
+4. The `build.gradle` file should now look like:<br>![Including the SRCH2 server Maven repository in the top-level build.gradle file][tutorial-012] 
+5. Now that the Gradle build script includes the SRCH2 server Maven repository, the SRCH2 Android SDK must be added as a dependency to the 'app' module. To do this, navigate to the `build.gradle` file in your `app` module.
+6. In the `dependencies` node, add the entry:<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`compile group: 'com.srch2', name: 'srch2-android-sdk', version: '1.0.0-SNAPSHOT',  ext:'aar'`<br>The `build.gradle` file should now look like:<br>![Including the SRCH2-Android-SDK.aar file as a dependency in the app module's build.gradle file][tutorial-013] 
+7. At the top of the editor window, you should be notified that Gradle needs to be synchronized. Click 'Sync Now' to refresh the Gradle build system to include these changes:<br>![Synchronizing the Gradle build system to include the new dependency][tutorial-014]
+8. And that's all there is to it! To verify the SRCH2 Android SDK has been incorporated into your project, open up `SearchActivity` and try accessing the `SRCH2Engine` method `isUserAnAnteaterInATree()`: if **true**, you've successfully installed the SRCH2 Android SDK:<br>![Confirming the SRCH2 Android SDK is integrated into the application][tutorial-015]
 
 ###Creating an Index
 
@@ -88,7 +90,7 @@ For searchable fields, an additional parameter can be passed which will set the 
 
 Like a `Field` instance, a `Schema` instance is obtained by the static factory method of the `Schema` class. The order of arguments is important when creating a default `Schema` object: the first parameter is **always** the primary key and any subsequent parameters are the rest of the fields you define, in no particular order.
 
-The `SRCH2Engine` will use the values returned from 'getIndexName()` and `getSchema()` to automatically create the configuration for this index. While we're in this class, let's review how to form records to be inserted in the movie index. Observe the method `public static JSONArray getAFewRecordsToInsert()` implemented as follows:
+The `SRCH2Engine` will use the values returned from `getIndexName()` and `getSchema()` to automatically create the configuration for this index. While we're in this class, let's review how to form records to be inserted in the movie index. Observe the method `public static JSONArray getAFewRecordsToInsert()` implemented as follows:
 
 ```
     public static JSONArray getAFewRecordsToInsert() {
@@ -124,7 +126,7 @@ The `SRCH2Engine` will use the values returned from 'getIndexName()` and `getSch
     }
 ```
 
-The `SRCH2Engine` accepts a `JSONObject` or a `JSONArray` of `JSONObject`s when inserting or updating records. Insertions (and updates) are invoked by calling `insert(...)` on your `Indexable` implementation, or by specifying the index name and calling `SRCH2Engine.insertIntoIndex(String indexName, ...)`. Each `JSONObject` representing a record should be properly formed and contain as its keys only the names of the fields that were defined in the schema and its values should be of the type as defined in the schema, as well. When using a `JSONArray` to do a batch insert, the `JSONArray` should only contain the set of `JSONObject`s representing the set of records to insert. 
+The `SRCH2Engine` accepts a `JSONObject` or a `JSONArray` of `JSONObject`s when inserting or updating records. Insertions (and updates) are invoked by calling `insert(...)` on your `Indexable` implementation. Each `JSONObject` representing a record should be properly formed and contain as its keys only the names of the fields that were defined in the schema and its values should be of the type as defined in the schema, as well. When using a `JSONArray` to do a batch insert, the `JSONArray` should only contain the set of `JSONObject`s representing the set of records to insert. 
 
 Before actually calling this method we will need two asynchronous callbacks to get index information and search results from the SRCH2 search server.
 
@@ -379,7 +381,7 @@ public class SearchActivity extends Activity implements
 }
 ```
 
-will pass the `response GetRecordResponse` which will contain the record requested, as the original `JSONObject` as it was defined when it was inserted. 
+will pass the `GetRecordResponse response` which will contain the record requested, as the original `JSONObject` as it was defined when it was inserted. 
 
 There is also a callback for obtaining information on the indexes themselves, which occurs when the method `info()` of an `Indexable` is called which will trigger the callback method:
 
@@ -501,13 +503,11 @@ Also at this point, if the application was quit from and started again, the meth
 
 ###Putting it All Together
 
-To recap, so far we have created a `MovieIndex` as our implementation of `Indexable` representing a index with data about movies, defining its schema and creating a couple of records to insert; we have implemented the asynchronous callback for getting search results, `SearchResultsListener`, and integrated it with a `BaseAdapter` and `Handler` to update a list-view on the UI thread showing the results of a search performed in the background; we have also implemented the asynchronous callback for index and engine-server state information, the `StateResponseListener`, and integrated it in our `SearchActivity` to log or display a `Toast` showing the results of each of its method callbacks, which in turn are called when the corresponding action is performed by the `SRCH2Engine`. 
-
 We are now ready to initialize the `SRCH2Engine` in our `SearchActivity` class. Initializing the `SRCH2Engine` is simple:
 
 1. From `onCreate(...)` or wherever a new instance of your application is created, call `SRCH2Engine.initialize(...)` passing in each `Indexable`
 2. Register the `SearchResultsListener` and `StateResponseListener`, you may reset it for instance if you are inserting from a `Service`, but in this example we'll also make these calls from `SearchActivity`'s `onCreate(...)`
-3. Start and stop the `SRCH2Engine` by calling `SRCH2Engine.start(Context context)` and `SRCH2Engine.stop(Context context)` where needed. For an activity requiring search, the ideal and *recommended* place is to call these from `onResume()' and `onPause()` respectively
+3. Start and stop the `SRCH2Engine` by calling `SRCH2Engine.start(Context context)` and `SRCH2Engine.stop(Context context)` where needed. For an activity requiring search, the **recommended** place is to call these from `onResume()' and `onPause()` respectively
 
 Make these calls in `SearchActivity` as follows:
 
@@ -558,7 +558,7 @@ public class SearchActivity extends Activity implements
 }
 ```
 
-Passing in each `Indexable` in `SRCH2Engine.initialize(...)` causes the `SRCH2Engine` to create and pass the necessary configuration file to the SRCH2 search server. Then the two `SRCH2Engine` callbacks are registered. Finally, the two calls `start(Context context)` and `stop(Context context)` cause the `SRCH2Engine` to start and stop the SRCH2 search server: since this server is hosted by a remote service, the context is needed; a reference to this context is not held. It is **imperative** that for every call to `start(...)` the complementary call to `stop(...)` is called in order to let the SRCH2 search server come to a stop and not take up the device's resources. 
+Passing in each `Indexable` in `SRCH2Engine.initialize(Indexable firstIndex, Indexable... additionalIndexes)` causes the `SRCH2Engine` to create and pass the necessary configuration file to the SRCH2 search server. Then the two `SRCH2Engine` callbacks are registered. Finally, the two calls `start(Context context)` and `stop(Context context)` cause the `SRCH2Engine` to start and stop the SRCH2 search server: since this server is hosted by a remote service, the context is needed; a reference to this context is not held. It is **imperative** that for every call to `start(...)` the complementary call to `stop(...)` is made in order to let the SRCH2 search server come to a stop and not take up the device's resources. 
 
 `SearchActivity` should now look something like this: 
 
@@ -726,22 +726,16 @@ There are three ways to pass search input to the `SRCH2Engine`:
 
 Here we use the last method in case you'd like to add some more indexes, such as for music, contacts or anything you can think of. 
 
-You are now ready to search! **Make sure you have a device connected** (at this time the SRCH2 Android SDK cannot be run on emulators), press 'Run' and after you see the toast saying "SRCH2 Service is Ready!" try entering "c" into the `EditText` at the top of your device's screen. You should see something like:<br><center>![Tutorial Finished - Seeing the SRCH2 Android SDK in action][tutorial-008]</center>
-
-The results come back fast, and even if we had we inserted thousands of records, the search results would still take less than milliseconds to reach the `SearchResultsAdapter`. Because of this, it is recommended that, while developing with the SRCH2-Android-SDK, you employ all of the optimizations for displaying data in a `ListView` as quickly as possible (such as the ViewHolder pattern, lazy loading of bitmaps if you incorporate icons, et cetera). 
+Whenever the SRCH2 search server does a search, the results come back fast and even if we had we inserted thousands of records, the search results would still take less than milliseconds to reach the `SearchResultsAdapter`. Because of this, it is recommended that, while developing with the SRCH2 Android SDK, you employ all of the optimizations for displaying data in a `ListView` as quickly as possible (such as the ViewHolder pattern, lazy loading of bitmaps if you incorporate icons, et cetera). 
 
 ###Where To Go From Here
 
-This concludes the Hello SRCH2 Tutorial for learning how to get set up with the SRCH2-Android-SDK. Play around with the project: try updating a record, deleting a record, adding more records with searchable data that is similar in its sequence of letters to appreciate the power of SRCH2's fuzzy search capability-- and this is only the beginning! If you read on in [Advanced Topics](advanced-topics.md) you'll learn how to form powerful queries (such as filtering the search results for the `MovieIndex` by interval of year), perform lightning fast geo-searches using the device's location, or how to set up the SRCH2-Android-SDK for Proguard, or how to manually interact with the running SRCH2 search server. Search on!
+This concludes the Hello SRCH2 Tutorial for learning how to get set up with the SRCH2 Android SDK. Play around with the project: try updating a record, deleting a record, adding more records with searchable data that is similar in its sequence of letters to appreciate the power of SRCH2's fuzzy search capability--and this is only the beginning! If you read on in [Advanced Topics](advanced-topics.md) you'll learn how to form powerful queries (such as filtering the search results for the `MovieIndex` by interval of year), perform lightning fast geo-searches using the device's location, or how to set up the SRCH2 Android SDK for Proguard, or how to manually interact with the running SRCH2 search server. Search on!
 
 
-[tutorial-000]: ../img/000-tutorial.png "Module Settings - How to open 'Module Settings'"
-[tutorial-001]: ../img/001-tutorial.png "Module Settings - How to add a new module"
-[tutorial-002]: ../img/002-tutorial.png "Module Settings - Creating a new module from an .AAR file"
-[tutorial-003]: ../img/003-tutorial.png "Module Settings - Importing the SRCH2-Android-SDK.aar file as the new module"
-[tutorial-004]: ../img/004-tutorial.png "Module Settings - Adding the SRCH2-Android-SDK module as a dependency"
-[tutorial-005]: ../img/005-tutorial.png "Module Settings - Selecting the SRCH2-Android-SDK module"
-[tutorial-006]: ../img/006-tutorial.png "Module Settings - Verifying SRCH2-Android-SDK module as been added as a compiled dependency"
-[tutorial-007]: ../img/007-tutorial.png "Installation Complete - Confirming gradle has included the SRCH2 Android SDK as a dependency in your project"
-[tutorial-008]: ../img/008-tutorial.png "Tutorial Finished - Seeing the SRCH2 Android SDK in action"
-[tutorial-009]: ../img/009-tutorial.png "Default Project Files - Project hierarchy after adding all the files"
+[tutorial-010]: ../img/010-tutorial.png "Opening the cloned Hello SRCH2 Android SDK application project"
+[tutorial-011]: ../img/011-tutorial.png "The SRCH2 Android SDK in action!"
+[tutorial-012]: ../img/012-tutorial.png "Including the SRCH2 server Maven repository in the top-level build.gradle file"
+[tutorial-013]: ../img/013-tutorial.png "Including the SRCH2-Android-SDK.aar file as a dependency in the app module's build.gradle file"
+[tutorial-014]: ../img/014-tutorial.png "Synchronizing the Gradle build system to include the new dependency"
+[tutorial-015]: ../img/015-tutorial.png "Confirming the SRCH2 Android SDK is integrated into the application"

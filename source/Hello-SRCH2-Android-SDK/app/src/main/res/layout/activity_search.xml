@@ -11,7 +11,7 @@
         android:id="@+id/et_instant_search_input"
         android:layout_width="match_parent"
         android:layout_height="40dp"
-        android:paddingLeft="4dp"
+        android:paddingLeft="12dp"
         android:paddingRight="4dp"
         android:gravity="center_vertical"
         android:hint="@string/instant_search_edit_text_hint"
@@ -20,7 +20,6 @@
 
     <ListView
         android:id="@+id/lv_search_results"
-        android:layout_below="@id/et_instant_search_input"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
