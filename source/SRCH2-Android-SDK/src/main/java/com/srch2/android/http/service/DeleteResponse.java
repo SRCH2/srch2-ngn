@@ -8,21 +8,20 @@ import org.json.JSONObject;
 /**
  * Wraps the RESTful response from the SRCH2 search server upon completion of a deletion task.
  * <br><br>
- * When either the method call <code>mIndexable.delete(String primaryKeyOfRecordToDelete)</code> or
- * the corresponding call <code>SRCH2Engine.deleteFromIndex(String indexName, String primaryKeyOfRecordToDelete)</code>
- * is made, the <code>SRCH2Engine</code> will forward the delete request to the SRCH2 search server;
+ * When the method call {@link com.srch2.android.http.service.Indexable#delete(String)}
+ * is made, the {@link com.srch2.android.http.service.SRCH2Engine} will forward the delete request to the SRCH2 search server;
  * after the SRCH2 search server finishes executing, it will notify the <code>SRCH2Engine</code>
  * of the status of the completed deletion task. The <code>SRCH2Engine</code> will pass this
- * information through the <code>StateResponseListener</code> callback method
- * <code>onDeleteRequestComplete(String indexName, DeleteResponse response)</code> where the
+ * information through the {@link com.srch2.android.http.service.StateResponseListener} callback method
+ * {@link com.srch2.android.http.service.StateResponseListener#onDeleteRequestComplete(String, DeleteResponse)} where the
  * <code>DeleteResponse response</code> is this object.
  * <br><br>
  * If the primary key submitted matches that of an existing record,
- * the deletion task will be successful and <code>getSuccessCount()</code> will return one. If no
- * record is found for the submitted primary key, <code>getSuccessCount()</code> will return zero and
+ * the deletion task will be successful and {@link #getSuccessCount()} will return one. If no
+ * record is found for the submitted primary key, {@link #getFailureCount()} will return zero and
  * <code>getFailureCount()</code> will return one.
  * <br><br>
- * In the event of a failure to delete a record, inspecting the value of <code>getRESTfulResponseLiteral()</code>
+ * In the event of a failure to delete a record, inspecting the value of {@link #getRESTfulResponseLiteral()}
  * will contain the reason for the failure.
  */
 public final class DeleteResponse extends RestfulResponse {

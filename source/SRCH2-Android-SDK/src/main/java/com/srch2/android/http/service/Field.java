@@ -13,8 +13,9 @@ import java.util.Locale;
  * functionality such as limiting the range of the search results or to do post-processing operations. Geographical
  * fields can be used to do geo-searches.
  * <br><br>
- * Fields are used when constructing an <code>IndexDescription</code> in the <code>Indexable</code> implementation
- * of the method <code>getIndexDescription()</code>. They should not be constructed or used otherwise.
+ * Fields are used when constructing an {@link com.srch2.android.http.service.Schema} in the
+ * {@link com.srch2.android.http.service.Indexable} implementation
+ * of the method {@link Indexable#getSchema()}. They should not be constructed or used otherwise.
  */
 final public class Field {
 
@@ -88,7 +89,7 @@ final public class Field {
      * Static factory method for obtaining a refining PrimaryKey field.
      * PrimaryKey is always the textual in type. The data will be
      * returned with the search results whenever a search is performed, but it will not be
-     * matched against the key words of the search input. Using the <code>Query</code> class
+     * matched against the key words of the search input. Using the {@link com.srch2.android.http.service.Query} class
      * the data of this field can be used to filter or sort on search results.
      * <br><br>
      * This method will throw an exception if the value of

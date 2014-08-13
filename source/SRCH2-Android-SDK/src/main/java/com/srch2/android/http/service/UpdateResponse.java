@@ -8,21 +8,20 @@ import org.json.JSONObject;
  * Wraps the RESTful response from the SRCH2 search server upon completion of an update task.
  * <br><br>
  * When any of the method calls to update a record or a set of records into an index (
- * <code>mIndexable.update(JSONObject recordToInsert)</code>,
- * <code>Indexable.update(JSONArray recordsToInsert)</code> or
- * the corresponding static calls in the <code>SRCH2Engine</code>)
+ * {@link com.srch2.android.http.service.Indexable#update(org.json.JSONArray)} or
+ * {@link com.srch2.android.http.service.Indexable#update(org.json.JSONObject)})
  * are made, the <code>SRCH2Engine</code> will forward the update request to the SRCH2 search server;
  * after the SRCH2 search server finishes executing, it will notify the <code>SRCH2Engine</code>
  * of the status of the completed update task. The <code>SRCH2Engine</code> will pass this
- * information through the <code>StateResponseListener</code> callback method
- * <code>onUpdateRequestComplete(String indexName, UpdateResponse response)</code> where the
+ * information through the callback method {@link com.srch2.android.http.service.StateResponseListener#onUpdateRequestComplete(String, UpdateResponse)}
+ * where the
  * <code>UpdateResponse response</code> is this object.
  * <br><br>
  * If there were no errors in any of the <code>JSONObject</code>(s) representing record(s),
- * the return value of <code>getSuccessCount()</code> will match the number of submitted
+ * the return value of {@link #getSuccessCount()} will match the number of submitted
  * <code>JSONObject</code>s. Any failures to update (missing or incorrect type for
  * one of the defined schema fields, for instance) will be reflected in the value of
- * <code>getFailureCount().</code>
+ * {@link #getFailureCount()}
  * <br><br>
  * In the event of a failure to update one or more records, inspecting the value of
  * <code>getRESTfulResponseLiteral()</code> will contain the reason for the failure.

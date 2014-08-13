@@ -1,14 +1,14 @@
 package com.srch2.android.http.service;
 
 import java.util.HashSet;
-import java.util.Iterator;
+
 /**
  * Defines an index's structure such as its data fields. If an index is like an SQLite database table, the schema
  * is the table structure and its fields are the columns of that table. The fields of a schema must be named and
  * typed; they can also have additional properties such as highlighting and facet. See {@link com.srch2.android.http.service.Field}
  * for more information.
  * <br><br>
- * A schema <b>should only</b> be constructed when returning from the <code>Indexable</code> implementation of <code>getSchema()</code>.
+ * A schema <b>should only</b> be constructed when returning from the <code>Indexable</code> implementation of {@link Indexable#getSchema()}.
  * A schema <b>should never</b> be initialized with null field values or duplicated fields.
  */
 public final class Schema {
@@ -49,7 +49,7 @@ public final class Schema {
      * the schema is the table structure and its fields are the columns of that table. This method should
      * only be called when
      * returning the from the <code>Indexable</code> implementation of the method
-     * <code>getSchema()</code>.
+     * {@link Indexable#getSchema()}.
      * <br><br>
      * The first argument <b>should always</b> be the primary key field, which can be used to
      * retrieve a specific record or as the handle to delete the record from the index. Each
@@ -59,7 +59,7 @@ public final class Schema {
      * for the index. They can be passed in any order.
      * <br><br>
      * A schema initialized with null field values will cause an exception to be thrown when
-     * <code>SRCH2Engine.initialize(Indexable firstIndex, Indexable... additionalIndexes)</code> is called.
+     * {@link com.srch2.android.http.service.SRCH2Engine#initialize(Indexable, Indexable...)} is called.
      * @param primaryKeyField the field which will be the primary key of the index's schema
      * @param remainingField  the set of any other fields needed to define the schema
      */
@@ -84,7 +84,7 @@ public final class Schema {
      * the schema is the table structure and its fields are the columns of that table. This method should
      * only be called when
      * returning the from the <code>Indexable</code> implementation of the method
-     * <code>getSchema()</code>.
+     * {@link Indexable#getSchema()}.
      * <br><br>
      * The first argument <b>should always</b> be the primary key field, which can be used to
      * retrieve a specific record or as the handle to delete the record from the index. Each
@@ -97,7 +97,7 @@ public final class Schema {
      * for the index. They can be passed in any order.
      * <br><br>
      * A schema initialized with null field values will cause an exception to be thrown when
-     * <code>SRCH2Engine.initialize(Indexable firstIndex, Indexable... additionalIndexes)</code> is called.
+     * {@link com.srch2.android.http.service.SRCH2Engine#initialize(Indexable, Indexable...)} is called.
      * @param primaryKeyField the field which will be the primary key of the index's schema
      * @param latitudeFieldName the field which will be the latitude field of the index's schema
      * @param longitudeFieldName the field which will be the longitude field of the index's schema

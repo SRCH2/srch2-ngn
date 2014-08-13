@@ -59,7 +59,7 @@ class UpdateTask extends ControlHttpTask {
             responseCode = connection.getResponseCode();
             response = handleStreams(connection, TAG);
         } catch (IOException e) {
-            handleIOExceptionMessagePassing(e, response, TAG);
+            response = handleIOExceptionMessagePassing(e, response, TAG);
         } finally {
             if (outStream != null) {
                 try {
@@ -107,7 +107,7 @@ class UpdateTask extends ControlHttpTask {
             responseCode = connection.getResponseCode();
             response = handleStreams(connection, TAG);
         } catch (IOException e) {
-            handleIOExceptionMessagePassing(e, response, TAG);
+            response = handleIOExceptionMessagePassing(e, response, TAG);
         } finally {
             if (outStream != null) {
                 try {
