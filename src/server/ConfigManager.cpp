@@ -1959,6 +1959,7 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
 
     xml_node childNode = updateHandlerNode.child(maxDocsString);
     bool mdflag = false;
+    coreInfo->documentLimit = 15000000;
     if (childNode && childNode.text()) {
         string md = childNode.text().get();
         if (this->isValidMaxDoc(md)) {
@@ -1967,12 +1968,10 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
         }
     }
     if (!mdflag) {
-        parseError << "MaxDoc is not set correctly\n";
-        configSuccess = false;
-        return;
+        parseWarnings << "MaxDoc is not set, so using the default value 15000000\n";
     }
 
-    coreInfo->memoryLimit = 100000;
+    coreInfo->memoryLimit = 10000000;
     bool mmflag = false;
     childNode = updateHandlerNode.child(maxMemoryString);
     if (childNode && childNode.text()) {
@@ -1983,9 +1982,7 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
         }
     }
     if (!mmflag) {
-        parseError << "MaxDoc is not set correctly\n";
-        configSuccess = false;
-        return;
+        parseWarnings << "MaxDoc is not set, so using the default value 10000000\n";
     }
 
     // mergeEveryNSeconds
