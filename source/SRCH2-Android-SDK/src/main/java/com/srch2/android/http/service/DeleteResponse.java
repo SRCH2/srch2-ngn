@@ -26,6 +26,8 @@ import org.json.JSONObject;
  */
 public final class DeleteResponse extends RestfulResponse {
 
+    private static final String TAG = "DeleteResponse";
+
     private final static String JSON_KEY_PRIMARY_KEY_INDICATOR_TAG = "rid";
     private final static String JSON_KEY_LOG = "log";
     private final static String JSON_KEY_INSERT_TAG = "delete";
@@ -57,7 +59,7 @@ public final class DeleteResponse extends RestfulResponse {
     DeleteResponse(int theHttpResponseCode, String theRestfulResponseLiteral) {
         super(theHttpResponseCode, theRestfulResponseLiteral);
 
-        Log.d("srch2:: DeleteResponse", "response\n" + theRestfulResponseLiteral + "\nend of response");
+        Cat.d(TAG, "response\n" + theRestfulResponseLiteral + "\nend of response");
         boolean success = false;
         try {
             JSONObject rootNode = new JSONObject(theRestfulResponseLiteral);

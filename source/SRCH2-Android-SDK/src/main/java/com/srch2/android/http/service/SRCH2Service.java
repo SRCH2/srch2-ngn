@@ -33,10 +33,10 @@ final public class SRCH2Service extends Service {
     private class ExecutableServiceBroadcastReciever extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
-            Log.d("srch2:: " + TAG, "ExecutableServiceBroadcastReciever -- onRecieve");
+            Cat.d(TAG, "ExecutableServiceBroadcastReciever -- onRecieve");
             String value = intent.getStringExtra(IPCConstants.INTENT_KEY_START_AWAITING_SHUTDOWN);
             if (value.equals(IPCConstants.INTENT_KEY_START_AWAITING_SHUTDOWN)) {
-                Log.d("srch2:: " + TAG, "ExecutableServiceBroadcastReciever -- onRecieve -- startAwaitingShutdown");
+                Cat.d(TAG, "ExecutableServiceBroadcastReciever -- onRecieve -- startAwaitingShutdown");
                 startAwaitingShutdown();
             }
         }
@@ -71,7 +71,7 @@ final public class SRCH2Service extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.d("srch2:: " + TAG, "onCreate");
+        Cat.d(TAG, "onCreate");
 
         shutdownMutex = new Semaphore(1);
 
@@ -85,7 +85,7 @@ final public class SRCH2Service extends Service {
 
     @Override
     public void onDestroy() {
-        Log.d("srch2:: " + TAG, "onDestroy");
+        Cat.d(TAG, "onDestroy");
         try {
             unregisterReceiver(incomingIntentReciever);
         } catch (IllegalArgumentException ignore) {
@@ -96,7 +96,7 @@ final public class SRCH2Service extends Service {
     @TargetApi(Build.VERSION_CODES.ECLAIR)
     @Override
     public int onStartCommand(final Intent intent, int flags, int startId) {
-        Log.d("srch2:: " + TAG, "onStartCommand");
+        Cat.d(TAG, "onStartCommand");
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -110,7 +110,7 @@ final public class SRCH2Service extends Service {
 
     private boolean checkIfProcessIsRunningWithoutHavingShutdownCalled() {
 
-        Log.d("srch2:: " + TAG, "checkIfProcessIsRunningWithoutHavingShutdownCalled");
+        Cat.d(TAG, "checkIfProcessIsRunningWithoutHavingShutdownCalled");
 
         SharedPreferences sharedpreferences = getSharedPreferences(PREFERENCES_NAME_SERVER_STARTED_LOG, Context.MODE_PRIVATE);
         String shutDownUrlsLiteral = sharedpreferences.getString(PREFERENCES_KEY_SERVER_LOG_SHUTDOWN_URLS, PREFERENCES_DEFAULT_NO_VALUE);
@@ -124,20 +124,20 @@ final public class SRCH2Service extends Service {
             executableShutdownUrlString = shutDownUrlsLiteral;
             executableOAuthLiteral = oauth;
             executableProcessPath = executablePath;
-            Log.d("srch2:: " + TAG, "checkIfProcessIsRunningWithoutHavingShutdownCalled was there with values " + portNumber + " " + shutDownUrlsLiteral);
+            Cat.d(TAG, "checkIfProcessIsRunningWithoutHavingShutdownCalled was there with values " + portNumber + " " + shutDownUrlsLiteral);
 
             return true;
         } else {
 
 
-            Log.d("srch2:: " + TAG, "checkIfProcessIsRunningWithoutHavingShutdownCalled was not there");
+            Cat.d(TAG, "checkIfProcessIsRunningWithoutHavingShutdownCalled was not there");
 
             return false;
         }
     }
 
     private void updateServerLog(int portNumberToPersist, String shutdownUrlToPersist, String oAuth, String executablePath) {
-        Log.d("srch2:: " + TAG, "updateServerLog with port " + portNumberToPersist + " and shutdownurl " + shutdownUrlToPersist);
+        Cat.d(TAG, "updateServerLog with port " + portNumberToPersist + " and shutdownurl " + shutdownUrlToPersist);
 
 
         SharedPreferences sharedpreferences = getSharedPreferences(PREFERENCES_NAME_SERVER_STARTED_LOG, Context.MODE_PRIVATE);
@@ -151,7 +151,7 @@ final public class SRCH2Service extends Service {
 
     private void clearServerLogEntries() {
 
-        Log.d("srch2:: " + TAG, "clearServerLogEntries");
+        Cat.d(TAG, "clearServerLogEntries");
 
 
         SharedPreferences sharedpreferences = getSharedPreferences(PREFERENCES_NAME_SERVER_STARTED_LOG, Context.MODE_PRIVATE);
@@ -164,39 +164,39 @@ final public class SRCH2Service extends Service {
     }
 
     private void resolveLifeCycleAction(final Intent startCommandIntent) {
-        Log.d("srch2:: " + TAG, "resolveLifeCycleAction");
+        Cat.d(TAG, "resolveLifeCycleAction");
         if (checkIfProcessIsRunningWithoutHavingShutdownCalled()) {
-            Log.d("srch2:: " + TAG, "resolveLifeCycleAction - was running");
+            Cat.d(TAG, "resolveLifeCycleAction - was running");
             stopAwaitingShutdown();
             if (isShuttingDown.get()) {
-                Log.d("srch2:: " + TAG, "resolveLifeCycleAction - was shutting down");
+                Cat.d(TAG, "resolveLifeCycleAction - was shutting down");
                 try {
-                    Log.d("srch2:: " + TAG, "resolveLifeCycleAction - acquired mutex");
+                    Cat.d(TAG, "resolveLifeCycleAction - acquired mutex");
                     shutdownMutex.acquire();
                 } catch (InterruptedException interruptedBySystem) {
                     interruptedBySystem.printStackTrace();
-                    Log.d("srch2:: " + TAG, "resolveLifeCycleAction - MUTEX INTERRUPTED");
+                    Cat.d(TAG, "resolveLifeCycleAction - MUTEX INTERRUPTED");
                     return;
                 } finally {
-                    Log.d("srch2:: " + TAG, "resolveLifeCycleAction - releasing mutex");
+                    Cat.d(TAG, "resolveLifeCycleAction - releasing mutex");
                     shutdownMutex.release();
                 }
-                Log.d("srch2:: " + TAG, "resolveLifeCycleAction - finished blocking on mutex, starting exectuabe...");
+                Cat.d(TAG, "resolveLifeCycleAction - finished blocking on mutex, starting exectuabe...");
                 startExecutable(startCommandIntent);
             } else {
-                Log.d("srch2:: " + TAG, "resolveLifeCycleAction - was running without shutdown CONTINUE running");
-                Log.d("srch2:: " + TAG, "resolveLifeCycleAction - CONTINUE RUNNING exe path " + executableProcessPath);
+                Cat.d(TAG, "resolveLifeCycleAction - was running without shutdown CONTINUE running");
+                Cat.d(TAG, "resolveLifeCycleAction - CONTINUE RUNNING exe path " + executableProcessPath);
 
                 signalSRCH2EngineToProceed(executablePortNumber, executableOAuthLiteral);
             }
         } else {
-            Log.d("srch2:: " + TAG, "resolveLifeCycleAction - was not running starting");
+            Cat.d(TAG, "resolveLifeCycleAction - was not running starting");
             startExecutable(startCommandIntent);
         }
     }
 
     private void signalSRCH2EngineToProceed(int portNumberForSRCH2EngineToReuse, String oAuthCodeForSRCH2EngineToReuse) {
-        Log.d("srch2:: " + TAG, "signalSRCH2EngineToProceed");
+        Cat.d(TAG, "signalSRCH2EngineToProceed");
         Intent i = new Intent(IPCConstants.getSRCH2EngineBroadcastRecieverIntentAction(getApplicationContext()));
         i.putExtra(IPCConstants.INTENT_KEY_PORT_NUMBER, portNumberForSRCH2EngineToReuse);
         i.putExtra(IPCConstants.INTENT_KEY_OAUTH, oAuthCodeForSRCH2EngineToReuse);
@@ -204,7 +204,7 @@ final public class SRCH2Service extends Service {
     }
 
     private void stopAwaitingShutdown() {
-        Log.d("srch2:: " + TAG, "stopAwaitingShutdown");
+        Cat.d(TAG, "stopAwaitingShutdown");
         if (awaitingShutdownTimer != null) {
             awaitingShutdownTimer.cancel();
             awaitingShutdownTimer = null;
@@ -214,7 +214,7 @@ final public class SRCH2Service extends Service {
 
 
     private void startAwaitingShutdown() {
-        Log.d("srch2:: " + TAG, "startAwaitingShutdown START AWAITING shutdown!");
+        Cat.d(TAG, "startAwaitingShutdown START AWAITING shutdown!");
         isAwaitingShutdown.set(true);
         awaitingShutdownTimer = new Timer();
         awaitingShutdownTimer.schedule(new TimerTask() {
@@ -225,29 +225,29 @@ final public class SRCH2Service extends Service {
                 if (!isAwaitingShutdown.get()) {
                     return;
                 }
-                Log.d("srch2:: " + TAG, "shutting down begin " + executableProcessPath);
+                Cat.d(TAG, "shutting down begin " + executableProcessPath);
                 if (executableProcessPath != null) {
                     isShuttingDown.set(true);
 
                     try {
-                        Log.d("srch2:: " + TAG, "shutting down begin - shutdownMutex acquired");
+                        Cat.d(TAG, "shutting down begin - shutdownMutex acquired");
                         shutdownMutex.acquire();
                     } catch (InterruptedException ignore) {
-                        Log.d("srch2:: " + TAG, "shutdowning MUTEX INTERRUPTED!");
+                        Cat.d(TAG, "shutdowning MUTEX INTERRUPTED!");
                     }
 
                     try {
 
                         doShutdownNetworkCall();
-                        Log.d("srch2:: " + TAG, "shutting down begin - about to enter while loop path is " + executableProcessPath);
+                        Cat.d(TAG, "shutting down begin - about to enter while loop path is " + executableProcessPath);
 
                         int totalSleepTime = 0;
                         while (ps(executableProcessPath)) {
                             if (totalSleepTime % 400 == 0) {
-                                Log.d("srch2:: " + TAG, "shutting down whiling while the ps is true");
+                                Cat.d(TAG, "shutting down whiling while the ps is true");
                             }
                             if (totalSleepTime > TIME_TO_WAIT_FOR_SHUTDOWN_MS) {
-                                Log.d("srch2:: " + TAG, "shuting down whileing ps is true breaking BREAKING");
+                                Cat.d(TAG, "shuting down whileing ps is true breaking BREAKING");
                                 break;
                             }
 
@@ -255,17 +255,17 @@ final public class SRCH2Service extends Service {
                                 Thread.currentThread().sleep(200);
                                 totalSleepTime += 200;
                             } catch (InterruptedException e) {
-                                Log.d("srch2:: " + TAG, "shutting down whiling while the ps is true INTERRUPED");
+                                Cat.d(TAG, "shutting down whiling while the ps is true INTERRUPED");
                                 e.printStackTrace();
                             }
                         }
                         clearServerLogEntries();
                         } finally {
-                            Log.d("srch2:: " + TAG, "shutting down finally block finished - releasing and setting to false");
+                            Cat.d(TAG, "shutting down finally block finished - releasing and setting to false");
                             shutdownMutex.release();
                             isShuttingDown.set(false);
                         }
-                Log.d("srch2:: " + TAG, "shutting down finished - about to check to stop self");
+                Cat.d(TAG, "shutting down finished - about to check to stop self");
 
                 checkToStopSelf();
                 }
@@ -275,7 +275,7 @@ final public class SRCH2Service extends Service {
 
 
     private void doShutdownNetworkCall() {
-        Log.d("srch2:: " + TAG, "doShutdownNetworkCall");
+        Cat.d(TAG, "doShutdownNetworkCall");
         URL url = null;
         try {
             url = new URL(executableShutdownUrlString);
@@ -296,7 +296,7 @@ final public class SRCH2Service extends Service {
 
             int responseCode = connection.getResponseCode();
 
-            Log.d("srch2:: " + TAG, "doShutdownNetworkCall - responseCode " + responseCode);
+            Cat.d(TAG, "doShutdownNetworkCall - responseCode " + responseCode);
 
 
             String response = "";
@@ -306,12 +306,12 @@ final public class SRCH2Service extends Service {
                 response = readInputStream(connection.getErrorStream());
             }
 
-            Log.d("srch2:: " + TAG, "doShutdownNetworkCall response " + response);
+            Cat.d(TAG, "doShutdownNetworkCall response " + response);
 
 
         } catch (IOException networkError) {
             networkError.printStackTrace();
-            Log.d("srch2:: " + TAG, "network error WHILE shutting down " + networkError.getMessage());
+            Cat.d(TAG, "network error WHILE shutting down " + networkError.getMessage());
         } finally {
             if (connection != null) {
                 connection.disconnect();
@@ -320,15 +320,15 @@ final public class SRCH2Service extends Service {
     }
 
     private void checkToStopSelf() {
-        Log.d("srch2:: " + TAG, "checkToStopSelf");
+        Cat.d(TAG, "checkToStopSelf");
         if (isAwaitingShutdown.get()) {
-            Log.d("srch2:: " + TAG, "checkToStopSelf - stopping service");
+            Cat.d(TAG, "checkToStopSelf - stopping service");
             stopSelf();
         }
     }
 
     private void startExecutable(Intent startCommandIntent) {
-        Log.d("srch2:: " + TAG, "startExecutable");
+        Cat.d(TAG, "startExecutable");
         executablePortNumber = startCommandIntent.getIntExtra(IPCConstants.INTENT_KEY_PORT_NUMBER, 0);
         executableShutdownUrlString = startCommandIntent.getStringExtra(IPCConstants.INTENT_KEY_SHUTDOWN_URL);
         executableOAuthLiteral = startCommandIntent.getStringExtra(IPCConstants.INTENT_KEY_OAUTH);
@@ -338,8 +338,8 @@ final public class SRCH2Service extends Service {
         autoInstallCoreFilesAndOverwriteXMLConfigurationFile(startCommandIntent.getStringExtra(IPCConstants.INTENT_KEY_XML_CONFIGURATION_FILE_LITERAL));
         startRunningExecutable(executablePortNumber, executableShutdownUrlString, executableOAuthLiteral);
 
-        Log.d("srch2:: " + TAG, "startExecutable port number " + executablePortNumber);
-        Log.d("srch2:: " + TAG, "startExecutable shutdown string " + executableShutdownUrlString);
+        Cat.d(TAG, "startExecutable port number " + executablePortNumber);
+        Cat.d(TAG, "startExecutable shutdown string " + executableShutdownUrlString);
 
         int totalSleepTime = 0;
         while (!ps(executableProcessPath)) {
@@ -358,7 +358,7 @@ final public class SRCH2Service extends Service {
     }
 
     private void startRunningExecutable(final int portBeingUsedToStartService, final String shutDownUrl, final String oAuthCode) {
-        Log.d("srch2:: " + TAG, "startRunningExecutable");
+        Cat.d(TAG, "startRunningExecutable");
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -367,25 +367,25 @@ final public class SRCH2Service extends Service {
                 try {
                     updateServerLog(portBeingUsedToStartService, shutDownUrl, oAuthCode, executableProcessPath);
 
-                    Log.d("srch2:: " + TAG, "startRunningExecutable - starting process");
+                    Cat.d(TAG, "startRunningExecutable - starting process");
                     p = pb.start();
 
                     if (p.getInputStream() != null) {
-                        Log.d("srch2:: " + TAG, "PRINTING INPUT STREAM\n" + readInputStream(p.getInputStream()));
+                        Cat.d(TAG, "PRINTING INPUT STREAM\n" + readInputStream(p.getInputStream()));
                     } else {
-                        Log.d("srch2:: " + TAG, "NO INPUT STREAM from process");
+                        Cat.d(TAG, "NO INPUT STREAM from process");
                     }
 
                     if (p.getErrorStream() != null) {
-                        Log.d("srch2:: " + TAG, "PRINTING ERROR STREAM\n" + readInputStream(p.getErrorStream()));
+                        Cat.d(TAG, "PRINTING ERROR STREAM\n" + readInputStream(p.getErrorStream()));
                     } else {
-                        Log.d("srch2:: " + TAG, "NO ERROR STREAM from process");
+                        Cat.d(TAG, "NO ERROR STREAM from process");
                     }
 
                     p.destroy();
 
                 } catch (IOException e) {
-                    Log.d("srch2:: " + TAG, "IOEXCEPTION starting executable!");
+                    Cat.d(TAG, "IOEXCEPTION starting executable!");
                     e.printStackTrace();
                 }
             }
@@ -396,7 +396,7 @@ final public class SRCH2Service extends Service {
 
     @TargetApi(Build.VERSION_CODES.DONUT)
     private void autoInstallCoreFilesAndOverwriteXMLConfigurationFile(String xmlConfigurationFileLiteral) { //verify chmod bitmask to use
-        Log.d("srch2:: " + TAG, "autoInstallCoreFilesAndOverwriteXMLConfigurationFile");
+        Cat.d(TAG, "autoInstallCoreFilesAndOverwriteXMLConfigurationFile");
         final Context c = getApplicationContext();
         String dataDirectoryFilePath = c.getApplicationInfo().dataDir;
         File filesDirectory = c.getFilesDir();
@@ -429,7 +429,7 @@ final public class SRCH2Service extends Service {
                 chmod("775", executableBinary.getAbsolutePath());
             }
             executableProcessPath = executableBinary.getAbsolutePath();
-            Log.d("srch2:: " + TAG, "autoInstallCoreFilesAndOverwriteXMLConfigurationFile - executableProcessPath " + executableProcessPath);
+            Cat.d(TAG, "autoInstallCoreFilesAndOverwriteXMLConfigurationFile - executableProcessPath " + executableProcessPath);
 
             File configFile = new File(srch2RootDirectory, "srch2-config.xml");
             if (!configFile.exists()) {
@@ -439,7 +439,7 @@ final public class SRCH2Service extends Service {
             buf.write(xmlConfigurationFileLiteral);
             buf.close();
             xmlConfigurationFilePath = configFile.getAbsolutePath();
-            Log.d("srch2:: " + TAG, "autoInstallCoreFilesAndOverwriteXMLConfigurationFile - xmlConfigurationFilePath " + xmlConfigurationFilePath);
+            Cat.d(TAG, "autoInstallCoreFilesAndOverwriteXMLConfigurationFile - xmlConfigurationFilePath " + xmlConfigurationFilePath);
         } catch (Exception ignore) {
             ignore.printStackTrace();
         }

@@ -83,7 +83,7 @@ final public class SRCH2Engine {
      * @param additionalIndexes any other <code>Indexable</code>s that are defined
      */
     public static void initialize(Indexable firstIndex, Indexable... additionalIndexes) {
-        Log.d("srch2:: " + TAG, "initialize");
+        Cat.d(TAG, "initialize");
 
         if (firstIndex == null) {
             throw new IllegalArgumentException("The provided Indexable object is null");
@@ -134,20 +134,20 @@ final public class SRCH2Engine {
         context.registerReceiver(incomingIntentReciever, IPCConstants
                 .getSRCH2EngineBroadcastRecieverIntentFilter(context));
 
-        Log.d("srch2:: " + TAG, "onStart");
+        Cat.d(TAG, "onStart");
         if (isStarted) {
             return;
         }
 
         checkConfIsNullThrowIfIs();
-        Log.d("srch2:: " + TAG,
+        Cat.d(TAG,
                 "onStart - conf NOT null ");
         int freePort = detectFreePort();
 
         conf.setPort(freePort);
 
         String appHomeDirectory = detectAppHomeDir(context);
-        Log.d(TAG, "$$$$$$$$$$$$$$$ app home directory is : " + appHomeDirectory);
+        Cat.d(TAG, "app home directory is : " + appHomeDirectory);
 
         SRCH2Engine.conf.setSRCH2Home(appHomeDirectory
                 + File.separator
@@ -158,7 +158,7 @@ final public class SRCH2Engine {
     }
 
     private static void startCheckCoresLoadedTask() {
-        Log.d("srch2:: " + TAG, "startCheckCoresLoadedTask");
+        Cat.d(TAG, "startCheckCoresLoadedTask");
         HashMap<String, URL> indexUrlMap = new HashMap<String, URL>();
         for (Indexable index : conf.indexableMap.values()) {
             indexUrlMap.put(index.indexInternal.getIndexCoreName(),
@@ -172,7 +172,7 @@ final public class SRCH2Engine {
     }
 
     private static void resetState() {
-        Log.d("srch2:: " + TAG, "resetState");
+        Cat.d(TAG, "resetState");
         lastQuery.set(null);
         isChanged.set(false);
         isReady.set(false);
@@ -243,7 +243,7 @@ final public class SRCH2Engine {
      * @param searchInput the textual input to search on
      */
     public static void searchAllIndexes(String searchInput) {
-        Log.d("srch2:: " + TAG, "searchAllIndexes");
+        Cat.d(TAG, "searchAllIndexes");
         checkConfIsNullThrowIfIs();
         String rawString= IndexInternal.formatDefaultQueryURL(searchInput);
         searchAllRawString(rawString);
@@ -266,7 +266,7 @@ final public class SRCH2Engine {
      * @param query the formation of the advanced search
      */
     public static void advancedSearchOnAllIndexes(Query query) {
-        Log.d("srch2:: " + TAG, "searchAllIndexes");
+        Cat.d(TAG, "searchAllIndexes");
         checkConfIsNullThrowIfIs();
         String rawString = query.toString();
         searchAllRawString(rawString);
@@ -300,7 +300,7 @@ final public class SRCH2Engine {
      * @param context needed to stop a remote service, any context will do
      */
     public static void onStop(Context context) {
-        Log.d("srch2:: " + TAG, "onStop");
+        Cat.d(TAG, "onStop");
         stopExecutable(context);
         resetState();
         isStarted = false;
@@ -329,8 +329,8 @@ final public class SRCH2Engine {
 
     private static void startSRCH2Service(final Context context,
                                           String xmlConfigLiteral) {
-        Log.d("srch2:: " + TAG, "startSRCH2Service METHOD being called");
-        Log.d("srch2:: " + TAG, "startSRCH2Service METHOD being called XML CONFIG IS \n"+xmlConfigLiteral);
+        Cat.d(TAG, "startSRCH2Service METHOD being called");
+        Cat.d(TAG, "startSRCH2Service METHOD being called XML CONFIG IS \n"+xmlConfigLiteral);
 
         Intent i = new Intent(context, SRCH2Service.class);
         i.putExtra(IPCConstants.INTENT_KEY_XML_CONFIGURATION_FILE_LITERAL,
@@ -345,7 +345,7 @@ final public class SRCH2Engine {
     }
 
     private static void stopExecutable(final Context context) {
-        Log.d("srch2:: " + TAG, "stopExecutable");
+        Cat.d(TAG, "stopExecutable");
         Intent i = new Intent(
                 IPCConstants
                         .getSRCH2ServiceBroadcastRecieverIntentAction(context));
@@ -356,15 +356,12 @@ final public class SRCH2Engine {
     }
 
     static String detectAppHomeDir(Context context) {
-        Log.d("srch2:: " + TAG, "detectAppHomeDir");
+        Cat.d(TAG, "detectAppHomeDir");
         return context.getApplicationContext().getFilesDir().getAbsolutePath();
     }
 
-    /**
-     * search the task again
-     */
     static void reQueryLastOne() {
-        Log.d("srch2:: " + TAG, "reQueryLastOne");
+        Cat.d(TAG, "reQueryLastOne");
         IndexQueryPair pair = lastQuery.get();
         if (pair == null || pair.query == null) {
             return;
@@ -377,7 +374,7 @@ final public class SRCH2Engine {
     }
 
     static int detectFreePort() {
-        Log.d("srch2:: " + TAG, "detectFreePort");
+        Cat.d(TAG, "detectFreePort");
         int port = 49152;
         for (; port < 65535; ++port) {
             try {
@@ -418,13 +415,13 @@ final public class SRCH2Engine {
     static private class SRCH2EngineBroadcastReciever extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
-            Log.d("srch2:: " + TAG, "onReceive");
+            Cat.d(TAG, "onReceive");
             int actualPortExecutableStartedWith = intent.getIntExtra(
                     IPCConstants.INTENT_KEY_PORT_NUMBER, 0);
             String actualOAuthExecutableStartedWith = intent.getStringExtra(IPCConstants.INTENT_KEY_OAUTH);
             if ((SRCH2Engine.conf.getPort() != actualPortExecutableStartedWith
                     && actualPortExecutableStartedWith != 0) && actualOAuthExecutableStartedWith != null) {
-                Log.d("srch2:: " + TAG, "onReceive - resting port to "
+                Cat.d(TAG, "onReceive - resting port to "
                         + actualPortExecutableStartedWith);
                 SRCH2Engine.conf.setPort(actualPortExecutableStartedWith);
                 SRCH2Engine.conf.setAuthorizationKey(actualOAuthExecutableStartedWith);
@@ -438,7 +435,7 @@ final public class SRCH2Engine {
         public String query = null;
 
         public IndexQueryPair(IndexInternal index, String query) {
-            Log.d("srch2:: " + TAG, "IndexQueryPair()");
+            Cat.d(TAG, "IndexQueryPair()");
             this.index = index;
             this.query = query;
         }

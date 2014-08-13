@@ -31,10 +31,10 @@ final class CheckCoresLoadedTask extends HttpTask {
     public void run() {
         Thread.currentThread().setName("CHECK CORES LOADED");
 
-        Log.d("srch2:: " + TAG, "run start");
+        Cat.d(TAG, "run start");
 
         int coreCount = targetCoreUrlsMap.size();
-        Log.d("srch2:: " + TAG, "run coreCount " + coreCount);
+        Cat.d(TAG, "run coreCount " + coreCount);
 
 
         ArrayList<String> indexNames = new ArrayList<String>();
@@ -57,24 +57,24 @@ final class CheckCoresLoadedTask extends HttpTask {
             URL targetUrl = targetCoreUrlsMap.get(indexName);
 
 
-            Log.d("srch2:: " + TAG, "run - core check loop @ iteration " + i);
-            Log.d("srch2:: " + TAG, "run - core check targeting url " + targetUrl);
+            Cat.d(TAG, "run - core check loop @ iteration " + i);
+            Cat.d(TAG, "run - core check targeting url " + targetUrl);
 
             InfoResponse ir = checkIfLoaded(targetUrl);
 
             if (ir != null) {
-                Log.d("srch2:: " + TAG, "run - inforesponse from core " + indexName + " returned positive");
+                Cat.d(TAG, "run - inforesponse from core " + indexName + " returned positive");
 
 
-                Log.d("srch2:: " + TAG, "targetURL " + targetUrl.toExternalForm() + " connected!");
+                Cat.d(TAG, "targetURL " + targetUrl.toExternalForm() + " connected!");
 
-                Log.d("srch2:: " + TAG, "ir literal " + ir.getRESTfulResponseLiteral());
+                Cat.d(TAG, "ir literal " + ir.getRESTfulResponseLiteral());
 
                 responseMap.put(indexName, ir);
 
                 ++pingCountSuccess;
             } else {
-                Log.d("srch2:: " + TAG, "run - inforesponse from core " + indexName + " returned negative");
+                Cat.d(TAG, "run - inforesponse from core " + indexName + " returned negative");
             }
 
             ++i;
@@ -83,7 +83,7 @@ final class CheckCoresLoadedTask extends HttpTask {
             }
 
             if (pingCountSuccess == coreCount || noNetworkConnection) {
-                Log.d("srch2:: " + TAG, "run - breaking from loop because: pingCount " + pingCountSuccess + " with coreCount " + coreCount + " and noNetworkConnection: " + noNetworkConnection);
+                Cat.d(TAG, "run - breaking from loop because: pingCount " + pingCountSuccess + " with coreCount " + coreCount + " and noNetworkConnection: " + noNetworkConnection);
                 break;
             }
 
@@ -92,12 +92,12 @@ final class CheckCoresLoadedTask extends HttpTask {
 
         if (controlResponseObserver != null && !noNetworkConnection) {
             if (pingCountSuccess == coreCount) {
-                Log.d("srch2:: " + TAG, "run - successful requerying etc");
+                Cat.d(TAG, "run - successful requerying etc");
                 SRCH2Engine.isReady.set(true);
                 controlResponseObserver.onSRCH2ServiceReady(responseMap);
                 SRCH2Engine.reQueryLastOne();
             }
-            Log.d("srch2:: " + TAG, "run - notifying observer");
+            Cat.d(TAG, "run - notifying observer");
         }
 
         Thread.currentThread().setName("CHECK CORES LOADED FIN");

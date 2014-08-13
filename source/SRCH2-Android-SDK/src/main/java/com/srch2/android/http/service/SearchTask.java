@@ -102,9 +102,6 @@ class SearchTask extends SearchHttpTask {
         HttpURLConnection connection = null;
         String jsonResponse = null;
         int responseCode = -1;
-        Log.d("SEARCHTASK", "about to start searching up results");
-        Log.d("SEARCHTASK", "targetUrl is " + targetUrl.toExternalForm());
-
         try {
             connection = (HttpURLConnection) targetUrl.openConnection();
             connection.setReadTimeout(1000);
@@ -119,23 +116,14 @@ class SearchTask extends SearchHttpTask {
             } else {
                 jsonResponse = readInputStream(connection.getErrorStream());
             }
-
-            Log.d("SEARCHTASK", "jsonResponse is " + jsonResponse);
-
         } catch (IOException networkProblem) {
             networkProblem.printStackTrace();
-            Log.d("SEARCHTASK",
-                    "NETWORK ERROR " + networkProblem.getLocalizedMessage());
-
             jsonResponse = networkProblem.getMessage();
         } finally {
             if (connection != null) {
                 connection.disconnect();
             }
         }
-
-        Log.d("SEARCHTASK", "about to serve up results");
-
         if (!shouldHalt()) {
             onTaskComplete(responseCode, jsonResponse);
         }
