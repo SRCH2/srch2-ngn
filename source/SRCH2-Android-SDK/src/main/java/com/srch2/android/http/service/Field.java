@@ -93,7 +93,7 @@ final public class Field {
      * the data of this field can be used to filter or sort on search results.
      * <br><br>
      * This method will throw an exception if the value of
-     * {@link } is null or has a length less than one.
+     * <code>fieldName</code> is null or has a length less than one.
      *
      * @param fieldName the name identifying the primary key field
      * @return the {@link com.srch2.android.http.service.PrimaryKeyField}
