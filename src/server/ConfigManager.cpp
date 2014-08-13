@@ -2661,8 +2661,8 @@ bool ConfigManager::isValidFieldType(string& fieldType, bool isSearchable) {
     } else {
         // supported types are: text, integer, float, time
         if ((fieldType.compare("text") == 0)
-                || (fieldType.compare("integer") == 0)
-                || (fieldType.compare("float") == 0)
+                || (fieldType.compare("integer") == 0) || (fieldType.compare("long") == 0)
+                || (fieldType.compare("float") == 0) ||  (fieldType.compare("double") == 0)
                 || (fieldType.compare("time") == 0)) {
             return true;
         }
@@ -2915,16 +2915,26 @@ bool ConfigManager::isValidSearcherType(string& searcherType) {
 srch2::instantsearch::FilterType ConfigManager::parseFieldType(
         string& fieldType) {
     if (fieldType.compare("integer") == 0)
-        return srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED;
+        return srch2::instantsearch::ATTRIBUTE_TYPE_INT;
+    else if (fieldType.compare("long") == 0)
+            return srch2::instantsearch::ATTRIBUTE_TYPE_LONG;
     else if (fieldType.compare("float") == 0)
         return srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT;
+    else if (fieldType.compare("double") == 0)
+            return srch2::instantsearch::ATTRIBUTE_TYPE_DOUBLE;
     else if (fieldType.compare("text") == 0)
         return srch2::instantsearch::ATTRIBUTE_TYPE_TEXT;
     else if (fieldType.compare("time") == 0)
         return srch2::instantsearch::ATTRIBUTE_TYPE_TIME;
 
-    ASSERT(false);
-    return srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED;
+    Logger::warn("\"%s\" is not a supported type. The following are supported "\
+            "types: text, integer, long, float, double, time, "\
+            "location_longitude (for geo search), "\
+            "and location_latitude (for geo search).",fieldType.c_str());
+    //The only possibility this function throws an exception is
+    //the programmer forget to call isValidFieldType() before using this function
+    throw;
+    return srch2::instantsearch::ATTRIBUTE_TYPE_INT;
 }
 
 int ConfigManager::parseFacetType(string& facetType) {

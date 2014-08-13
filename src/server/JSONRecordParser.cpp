@@ -313,11 +313,22 @@ bool JSONRecordParser::setCompactRecordRefiningValue(
 
         char * pEnd = NULL;
         switch (type) {
-        case srch2is::ATTRIBUTE_TYPE_UNSIGNED: {
-            unsigned val = static_cast<unsigned int>(strtoul(
-                    attributeStringValue.c_str(), &pEnd, 10));
+        case srch2is::ATTRIBUTE_TYPE_INT: {
+            int val = static_cast<int>(strtol(attributeStringValue.c_str(),
+                    &pEnd, 10));
             if (*pEnd != '\0') {
-                error << ("\nInvalid value %s of type unsigned.",
+                error << ("\nInvalid value %s of type integer.",
+                        attributeStringValue.c_str());
+                return false;
+            }
+            compactRecSerializer.addRefiningAttribute(iter->first, val);
+            break;
+        }
+        case srch2is::ATTRIBUTE_TYPE_LONG: {
+            long val = strtol(attributeStringValue.c_str(),
+                    &pEnd, 10);
+            if (*pEnd != '\0') {
+                error << ("\nInvalid value %s of type long.",
                         attributeStringValue.c_str());
                 return false;
             }
@@ -335,9 +346,20 @@ bool JSONRecordParser::setCompactRecordRefiningValue(
             compactRecSerializer.addRefiningAttribute(iter->first, val);
             break;
         }
+        case srch2is::ATTRIBUTE_TYPE_DOUBLE: {
+            double val = strtod(attributeStringValue.c_str(),
+                    &pEnd);
+            if (*pEnd != '\0') {
+                error << ("\nInvalid value %s of type double.",
+                        attributeStringValue.c_str());
+                return false;
+            }
+            compactRecSerializer.addRefiningAttribute(iter->first, val);
+            break;
+        }
         default: {
             error << ("\nRefining attribute that need to be compacted "
-                    "in memory should be UNSIGNED | FLOAT,"
+                    "in memory should be INT | LONG | FLOAT | DOUBLE,"
                     " no others are accepted.");
             return false;
             break;

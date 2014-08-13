@@ -31,7 +31,7 @@ Indexer *buildIndex(string data_file, string index_dir, string expression, map<s
     schema->setScoringExpression(expression);
 
 
-    schema->setRefiningAttribute("id_for_sort",srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED, "0" );
+    schema->setRefiningAttribute("id_for_sort",srch2::instantsearch::ATTRIBUTE_TYPE_INT, "0" );
     schema->setRefiningAttribute("latitude", srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT, "1" );
 
     /// Create an Analyzer

@@ -2725,7 +2725,7 @@ void addFarsiRecordsWithNonSearchableAttribute(){
 	schema->setSearchableAttribute("article_tittle", 2); // searchable text
 	schema->setSearchableAttribute("article_sentence", 7); // searchable text
 
-	schema->setRefiningAttribute("price" , ATTRIBUTE_TYPE_UNSIGNED , "0" );
+	schema->setRefiningAttribute("price" , ATTRIBUTE_TYPE_INT , "0" );
 	schema->setRefiningAttribute("class" , ATTRIBUTE_TYPE_TEXT , "الف" );
 
 

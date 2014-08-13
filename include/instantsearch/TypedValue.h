@@ -52,20 +52,21 @@ namespace srch2
     	TypedValue operator+(const TypedValue& a);
 
         TypedValue() : 
-            valueType(ATTRIBUTE_TYPE_UNSIGNED), intTypedValue(0), floatTypedValue(0.0), timeTypedValue(0)
+            valueType(ATTRIBUTE_TYPE_INT), intTypedValue(0), longTypedValue(0), floatTypedValue(0.0), doubleTypedValue(0), timeTypedValue(0)
         {
     	};
-    	void setTypedValue(unsigned intTypeValue);
-    	void setTypedValue(float floatTypeValue);
-    	void setTypedValue(double doubleTypeValue);
-    	void setTypedValue(string stringTypeValue);
-    	void setTypedValue(long timeTypeValue);
-    	void setTypedValue(vector< unsigned> intTypeValue);
-    	void setTypedValue(vector<float> floatTypeValue);
-    	void setTypedValue(vector<string> stringTypeValue);
-    	void setTypedValue(vector<long> timeTypeValue);
+    	void setTypedValue(int intTypeValue,FilterType valueType);
+    	void setTypedValue(long longTypeValue,FilterType valueType);
+    	void setTypedValue(float floatTypeValue,FilterType valueType);
+    	void setTypedValue(double doubleTypeValue,FilterType valueType);
+    	void setTypedValue(string stringTypeValue,FilterType valueType);
+    	void setTypedValue(vector<int> intTypeValue,FilterType valueType);
+        void setTypedValue(vector<long> longTypeValue,FilterType valueType);
+    	void setTypedValue(vector<float> floatTypeValue,FilterType valueType);
+        void setTypedValue(vector<double> doubleTypeValue,FilterType valueType);
+    	void setTypedValue(vector<string> stringTypeValue,FilterType valueType);
 
-    	void setTypedValue(const srch2::instantsearch::TimeDuration & duration);
+    	void setTypedValue(const srch2::instantsearch::TimeDuration & duration,FilterType valueType);
     	void setTypedValue(const TypedValue& typeValue);
     	void setTypedValue(FilterType type , string value);
 
@@ -76,21 +77,26 @@ namespace srch2
     	unsigned getNumberOfBytes() {
     		unsigned capacity = sizeof(TypedValue);
     		capacity += stringTypedValue.capacity();
-    		capacity += intTypedMultiValue.capacity() * sizeof(unsigned);  // vector<unsigned>
+    		capacity += intTypedMultiValue.capacity() * sizeof(int);  // vector<int>
+    		capacity += longTypedMultiValue.capacity() * sizeof(long);  // vector<long>
     		capacity += floatTypedMultiValue.capacity() * sizeof(float); // vector<float> ;
+    		capacity += doubleTypedMultiValue.capacity() * sizeof(double);  // vector<double>
     		capacity += stringTypedMultiValue.capacity() * sizeof(string);  //vector<string>
     		for (unsigned i = 0 ; i < stringTypedMultiValue.size(); ++i)
     			capacity += stringTypedMultiValue[i].capacity();
     		capacity += timeTypedMultiValue.capacity() * sizeof(long); ; // vector<long>;
         	return capacity;
     	}
-    	unsigned getIntTypedValue() const;
+    	int getIntTypedValue() const;
+    	long getLongTypedValue() const;
     	float getFloatTypedValue() const;
     	double getDoubleTypedValue() const;
     	string getTextTypedValue() const;
     	long getTimeTypedValue() const;
-    	vector<unsigned> getMultiIntTypedValue() const;
+    	vector<int> getMultiIntTypedValue() const;
+    	vector<long> getMultiLongTypedValue() const;
     	vector<float> getMultiFloatTypedValue() const;
+    	vector<double> getMultiDoubleTypedValue() const;
     	vector<string> getMultiTextTypedValue() const;
     	vector<long> getMultiTimeTypedValue() const;
 
@@ -128,12 +134,16 @@ namespace srch2
 
     private:
     	FilterType valueType;
-    	unsigned intTypedValue;
+    	int intTypedValue;
+    	long longTypedValue;
     	float floatTypedValue;
+    	double doubleTypedValue;
     	string stringTypedValue;
     	long timeTypedValue;
-    	vector<unsigned> intTypedMultiValue;
+    	vector<int> intTypedMultiValue;
+    	vector<long> longTypedMultiValue;
     	vector<float> floatTypedMultiValue;
+    	vector<double> doubleTypedMultiValue;
     	vector<string> stringTypedMultiValue;
     	vector<long> timeTypedMultiValue;
     	//

@@ -94,7 +94,7 @@ void testIntAndString(Alloc& alloc) {
   int nameID = schema->setSearchableAttribute("name");
   int addressID = 
     schema->setRefiningAttribute("address", 
-        srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED, std::string("0"));
+        srch2::instantsearch::ATTRIBUTE_TYPE_INT, std::string("0"));
 
   RecordSerializer s(*schema);
 
@@ -113,7 +113,7 @@ void testReuseBuffer(Alloc& alloc) {
   int nameID = schema->setSearchableAttribute("name");
   int addressID = 
     schema->setRefiningAttribute("address", 
-        srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED, std::string("0"));
+        srch2::instantsearch::ATTRIBUTE_TYPE_INT, std::string("0"));
 
   RecordSerializer s(*schema);
   
@@ -146,11 +146,11 @@ void testIntAndStringOutOfOrder(Alloc& alloc) {
   int str1ID = schema->setSearchableAttribute("str1");
   int int1ID = 
     schema->setRefiningAttribute("int1", 
-        srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED, std::string("0"));
+        srch2::instantsearch::ATTRIBUTE_TYPE_INT, std::string("0"));
   int str2ID = schema->setSearchableAttribute("str2");
   int int2ID = 
     schema->setRefiningAttribute("int2", 
-        srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED, std::string("0"));
+        srch2::instantsearch::ATTRIBUTE_TYPE_INT, std::string("0"));
   int str3ID = schema->setSearchableAttribute("str3");
   int str4ID = 
     schema->setRefiningAttribute("int4", 

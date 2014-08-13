@@ -135,7 +135,7 @@ void addAdvancedRecordsWithScoreSortableAttributes()
     schema->setSearchableAttribute("article_title", 7); // searchable text
 
 
-    schema->setRefiningAttribute("citationcount" , srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED, "0");
+    schema->setRefiningAttribute("citationcount" , srch2::instantsearch::ATTRIBUTE_TYPE_INT, "0");
     schema->setRefiningAttribute("pagerank", srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT, "1" );
 
     Record *record = new Record(schema);
