@@ -5,7 +5,6 @@ pages:
   - [tutorial.md, Tutorial]
   - [advanced-topics.md, Advanced Topics]
   - [faq.md, FAQ]
-  - [download.md, Download]
   
 theme_dir : './srch2-theme'
 
