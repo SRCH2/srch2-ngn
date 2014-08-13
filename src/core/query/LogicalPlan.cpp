@@ -80,6 +80,7 @@ LogicalPlan::LogicalPlan(){
 	postProcessingInfo = NULL;
 	fuzzyQuery = exactQuery = NULL;
 	postProcessingPlan = NULL;
+	roleId = "";
 }
 
 LogicalPlan::~LogicalPlan(){

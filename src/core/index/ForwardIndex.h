@@ -81,6 +81,59 @@ struct NewKeywordIdKeywordOffsetPairGreaterThan {
     }
 };
 
+class AccessList{
+private:
+	vector<string> roles;
+	mutable boost::shared_mutex globalRwMutexForReadersWriters;
+
+public:
+	AccessList(){};
+	~AccessList(){};
+	bool addRole(string roleId){
+		vector<string>::iterator it;
+		boost::unique_lock<boost::shared_mutex> lock(globalRwMutexForReadersWriters);
+		bool returnValue = findRole(roleId, it);
+		if(!returnValue)
+			this->roles.insert(it, roleId);
+		lock.unlock();
+		return !returnValue;
+	}
+	bool deleteRole(string roleId){
+		vector<string>::iterator it;
+		boost::unique_lock<boost::shared_mutex> lock(globalRwMutexForReadersWriters);
+		bool returnValue = findRole(roleId, it);
+		if(returnValue)
+			this->roles.erase(it);
+		lock.unlock();
+		return returnValue;
+	}
+
+	bool hasRole(string roleId){
+		vector<string>::iterator it;
+		boost::shared_lock< boost::shared_mutex> lock(globalRwMutexForReadersWriters);
+		bool returnValue = findRole(roleId, it);
+		lock.unlock();
+		return returnValue;
+	}
+private:
+	bool findRole(string roleId, std::vector<string>::iterator &it){
+		it = std::lower_bound(this->roles.begin(), this->roles.end(), roleId);
+		if(it == this->roles.end())
+			return false;
+		if( *it != roleId )
+			return false;
+		return true;
+	}
+
+	friend class boost::serialization::access;
+
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+		ar & this->roles;
+	}
+
+};
+
 // get the count of set bits in the number
 unsigned getBitSet(unsigned number);
 // get the count of bit set before the bit position of attributeId
@@ -313,6 +366,10 @@ public:
     void getSynonymBitMapInRecordField(unsigned keyOffset, unsigned attributeId,
     		vector<uint8_t>& synonymBitMap) const;
 
+    bool hasAccess(string &roleId){
+    	return this->accessList.hasRole(roleId);
+    };
+
 private:
     friend class boost::serialization::access;
 
@@ -327,6 +384,7 @@ private:
         ar & this->synonymBitMapSize;
         ar & this->charLenIndexSize;
         ar & this->dataSize;
+        ar & this->accessList;
         if (this->inMemoryData.get() == NULL)
         	this->inMemoryDataLen = 0;
         ar & this->inMemoryDataLen;
@@ -358,6 +416,7 @@ private:
     std::string externalRecordId;
     boost::shared_ptr<const char> inMemoryData;
     unsigned inMemoryDataLen;
+    AccessList accessList;
 
 
     /*
@@ -599,6 +658,10 @@ public:
      */
     const ForwardList *getForwardList(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
     		unsigned recordId, bool &valid) const;
+
+    bool hasAccessToForwardList(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+    		unsigned recordId, string &roleId);
+
     //ForwardList *getForwardListToChange(unsigned recordId, bool &valid); // CHENLI
     ForwardList *getForwardList_ForCommit(unsigned recordId);
 

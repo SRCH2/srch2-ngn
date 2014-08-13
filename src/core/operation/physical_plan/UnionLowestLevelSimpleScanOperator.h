@@ -71,6 +71,7 @@ private:
 	vector<unsigned> invertedListIDs;
 	unsigned invertedListOffset;
 	unsigned cursorOnInvertedList;
+	string roleId; // User id for access control
 };
 
 class UnionLowestLevelSimpleScanCacheEntry : public PhysicalOperatorCacheObject {

@@ -220,6 +220,7 @@ private:
     // a vector to keep all the inverted list readviews in current term virtual list
     vector<shared_ptr<vectorview<unsigned> > > invertedListReadViewVector;
     vector<unsigned> cursorVector;
+    string roleId; // User id for access control
 };
 
 class UnionLowestLevelTermVirtualListOptimizationOperator : public PhysicalPlanOptimizationNode {

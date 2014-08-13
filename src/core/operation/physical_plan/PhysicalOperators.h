@@ -78,6 +78,7 @@ public:
 private:
 	RandomAccessVerificationTermOperator();
 	QueryEvaluatorInternal * queryEvaluator;
+	string roleId;
 };
 
 class RandomAccessVerificationTermOptimizationOperator : public PhysicalPlanOptimizationNode {

@@ -17,6 +17,7 @@ RandomAccessVerificationTermOperator::~RandomAccessVerificationTermOperator(){
 bool RandomAccessVerificationTermOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
 	// random access needs no caching.
 	this->queryEvaluator = queryEvaluator;
+	this->roleId = params.roleId;
 	ASSERT(this->getPhysicalPlanOptimizationNode()->getChildrenCount() == 0);
 	return true;
 }
@@ -45,7 +46,7 @@ bool RandomAccessVerificationTermOperator::verifyByRandomAccess(PhysicalPlanRand
 
 	Term * term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->getTerm(parameters.isFuzzy);;
 
-	return verifyByRandomAccessHelper(this->queryEvaluator, prefixActiveNodeSet.get(), term, parameters);
+	return verifyByRandomAccessHelper(this->queryEvaluator, prefixActiveNodeSet.get(), term, parameters, this->roleId);
 
 }
 // The cost of open of a child is considered only once in the cost computation

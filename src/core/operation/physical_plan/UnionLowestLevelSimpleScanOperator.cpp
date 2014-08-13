@@ -26,6 +26,7 @@ bool UnionLowestLevelSimpleScanOperator::open(QueryEvaluatorInternal * queryEval
     this->queryEvaluator->getInvertedIndex()->getInvertedIndexDirectory_ReadView(invertedListDirectoryReadView);
     this->queryEvaluator->getInvertedIndex()->getInvertedIndexKeywordIds_ReadView(invertedIndexKeywordIdsReadView);
     this->queryEvaluator->getForwardIndex()->getForwardListDirectory_ReadView(forwardIndexDirectoryReadView);
+    this->roleId = params.roleId;
 
     // 1. get the pointer to logical plan node
     LogicalPlanNode * logicalPlanNode = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode();
@@ -133,8 +134,16 @@ PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const Physi
                 keywordOffset,
                 term->getAttributeToFilterTermHits(), termAttributeBitmap,
                 termRecordStaticScore) ) {
-            foundValidHit = 1;
-            break;
+        	bool hasAccess = true;
+        	if(roleId != ""){
+        		shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
+        		queryEvaluator->getForwardIndex()->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
+        		hasAccess = queryEvaluator->getForwardIndex()->hasAccessToForwardList(forwardListDirectoryReadView, recordID, roleId);
+        	}
+        	if(hasAccess){
+        		foundValidHit = 1;
+        		break;
+        	}
         }
         this->cursorOnInvertedList ++;
         if (this->cursorOnInvertedList < this->invertedLists.at(this->invertedListOffset)->size()) {
@@ -239,7 +248,7 @@ bool UnionLowestLevelSimpleScanOperator::verifyByRandomAccess(PhysicalPlanRandom
 
     Term * term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->getTerm(parameters.isFuzzy);
 
-    return verifyByRandomAccessHelper(this->queryEvaluator, prefixActiveNodeSet.get(), term, parameters);
+    return verifyByRandomAccessHelper(this->queryEvaluator, prefixActiveNodeSet.get(), term, parameters, this->roleId);
 }
 
 

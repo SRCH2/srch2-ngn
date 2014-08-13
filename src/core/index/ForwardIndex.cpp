@@ -207,6 +207,20 @@ const ForwardList *ForwardIndex::getForwardList(shared_ptr<vectorview<ForwardLis
     return flPtr.first;
 }
 
+bool ForwardIndex::hasAccessToForwardList(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+		unsigned recordId, string &roleId)
+{
+	if(recordId >= forwardListDirectoryReadView->size()){
+		return false;
+	}
+
+	ForwardListPtr flPtr = forwardListDirectoryReadView->getElement(recordId);
+	if(flPtr.second){
+		return flPtr.first->hasAccess(roleId);
+	}
+	return false;
+}
+
 ForwardList *ForwardIndex::getForwardList_ForCommit(unsigned recordId)
 {
     ASSERT (recordId < this->getTotalNumberOfForwardLists_WriteView());

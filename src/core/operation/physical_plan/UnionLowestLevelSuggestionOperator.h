@@ -101,6 +101,7 @@ private:
 	shared_ptr<vectorview<InvertedListContainerPtr> > invertedListDirectoryReadView;
     shared_ptr<vectorview<unsigned> > invertedIndexKeywordIdsReadView;
 	shared_ptr<vectorview<ForwardListPtr> > forwardIndexDirectoryReadView;
+	string roleId; // User id for access control
 
 	/*
 	 * this function iterates on possible suggestions and puts the first record
