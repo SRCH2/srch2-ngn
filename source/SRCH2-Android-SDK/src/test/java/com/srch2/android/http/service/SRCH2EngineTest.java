@@ -37,15 +37,8 @@ public class SRCH2EngineTest {
     }
 
     @Test
-    public void testPlan() {
-        //TODO
-//        SRCH2Engine.isReady();
-//        SRCH2Engine.onStop(null);
-//        SRCH2Engine.onStart(null);
-//        SRCH2Engine.powerSearchAllIndexes(null);
-//        SRCH2Engine.searchAllIndexes(null);
-//        SRCH2Engine.setStateResponseListener(null);
-//        SRCH2Engine.setSearchResultsListener(null);
+    public void getIndexGetsCorrectIndexable() {
+        SRCH2Engine.initialize(PrepareEngine.musicIndex);
+        Assert.assertEquals(PrepareEngine.musicIndex.getIndexName(), SRCH2Engine.getIndex(PrepareEngine.musicIndex.getIndexName()).getIndexName());
     }
-    
 }

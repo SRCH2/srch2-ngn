@@ -14,7 +14,10 @@ import org.json.JSONObject;
  * {@link #getSchema()}
  * <br><br>
  * This class contains methods for performing CRUD actions on the index such as insertion and
- * searching.
+ * searching; in addition, specific <code>Indexable</code> instances can be obtained from the
+ * <code>SRCH2Engine</code> static method <code>getIndex(String indexName)</code> (where <code>
+ * indexName</code> matches the return value of <code>getIndexName())</code> to access these
+ * same methods.
  */
 public abstract class Indexable {
 
