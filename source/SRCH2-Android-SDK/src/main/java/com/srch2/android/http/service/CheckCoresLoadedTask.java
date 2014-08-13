@@ -66,9 +66,9 @@ final class CheckCoresLoadedTask extends HttpTask {
                 Cat.d(TAG, "run - inforesponse from core " + indexName + " returned positive");
 
 
-                Log.d(TAG, "targetURL " + targetUrl.toExternalForm() + " connected!");
+                Cat.d(TAG, "targetURL " + targetUrl.toExternalForm() + " connected!");
 
-                Log.d(TAG, "ir literal " + ir.getRESTfulResponseLiteral());
+                Cat.d(TAG, "ir literal " + ir.getRESTfulResponseLiteral());
 
                 responseMap.put(indexName, ir);
 
