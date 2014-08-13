@@ -485,7 +485,7 @@ public class SearchActivity extends Activity implements
 			InfoResponse movieIndexInfoResponse = indexesToInfoResponseMap.get(MovieIndex.INDEX_NAME);
 			if (movieIndexInfoResponse != null && movieIndexInfoResponse.isValidInfoResponse()) {
 				if (movieIndexInfoResponse.getNumberOfDocumentsInTheIndex() == 0) {
-					SRCH2Engine.insertIntoIndex(MovieIndex.INDEX_NAME, MovieIndex.getAFewRecordsToInsert());
+					SRCH2Engine.getIndex(MovieIndex.INDEX_NAME).insert(MovieIndex.getAFewRecordsToInsert());
 				} else {
 					// Records already existed in the index, maybe time to check if the index need to be updated
 				}
@@ -495,7 +495,7 @@ public class SearchActivity extends Activity implements
 }
 ```
   
-Now when the SRCH2 search server starts, it'll trigger the `SRCH2Engine` to callback this method. The first time this method gets called, our `MovieIndex` will contain no records. The `InfoResponse` `getNumberOfDocumentsInTheIndex()` will reflect this, returning a value of zero, which in cause the outer if statement to evaluate true, causing the method `SRCH2Engine.insertIntoIndex(MovieIndex.INDEX_NAME, MovieIndex.getAFewRecordsToInsert())` to execute. Shortly afterwards, the method `onInsertRequestComplete(...)` will be triggered, containing an `InsertResponse` for the `movies` index: calling `getSuccessCount()` on this `InsertResponse` will return the value of records inserted which should be sixty four.
+Now when the SRCH2 search server starts, it'll trigger the `SRCH2Engine` to callback this method. The first time this method gets called, our `MovieIndex` will contain no records. The `InfoResponse` `getNumberOfDocumentsInTheIndex()` will reflect this, returning a value of zero, which in cause the outer if statement to evaluate true, causing the method `SRCH2Engine.getIndex(MovieIndex.INDEX_NAME).insert(MovieIndex.getAFewRecordsToInsert())` to execute. Shortly afterwards, the method `onInsertRequestComplete(...)` will be triggered, containing an `InsertResponse` for the `movies` index: calling `getSuccessCount()` on this `InsertResponse` will return the value of records inserted which should be sixty four.
 
 At this point, you could also call `MovieIndex.info()` and the `InfoResponse` returned would, instead of returning zero, return sixty four for the method `getNumberOfDocumentsInTheIndex()`. 
 
