@@ -54,8 +54,8 @@ mvn javadoc:jar
 [ $? -ne 0 ] && { echo $'\nERROR: Error happens while creating javadoc, Stop the release'; exit -1;}
 cd $OLDPWD
 
-cp ${deploy}/com/srch2/*/*/*.{jar,aar} ./site/download/releases/
-cp ${release_file} ./site/download/releases/
+#cp ${deploy}/com/srch2/*/*/*.{jar,aar} ./site/download/releases/
+#cp ${release_file} ./site/download/releases/
 cp -r ${target}/apidocs ./site/javadoc
 
 echo $'\nLocal release is done, wait for sync to the webmaster'

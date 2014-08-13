@@ -15,6 +15,11 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
 
+    <scm>
+        <url>https://bitbucket.org/srch2inc/srch2-android</url>
+        <connection>scm:git:git@bitbucket.org:srch2inc/srch2-android.git</connection>
+    </scm>
+
     <dependencies>
         <dependency>
             <groupId>junit</groupId>
@@ -41,6 +46,7 @@
 
     <build>
         <finalName>${project.artifactId}</finalName>
+
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -93,6 +99,11 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>2.5</version>
             </plugin>
         </plugins>
         <extensions>
