@@ -14,7 +14,7 @@ Before you begin the tutorial, clone the project application from our [`hello-sr
 
 ###Quick Start
 
-1. Clone the tutorial application project from our [`hello-srch2-android-sdk` Github repository](https://github.com/SRCH2/hello-srch2-android-sdk). To do this from the command line you can enter the following git command: `clone githubrepo`
+1. Clone the tutorial application project from our [`hello-srch2-android-sdk` Github repository](https://github.com/SRCH2/hello-srch2-android-sdk). To do this from the command line you can enter the following git command: `clone githubrepo` (**SUBSTITE WITH REAL LINK: for now navigate to *master->srch2-android-sdk>source>Hello-SRCH2-Android-SDK and use this directory for step two**)
 2. Open Android Studio and from the File menu option (or the Quick Start menu) select 'Open Project' choosing the root folder of the cloned project: ![Opening the cloned Hello SRCH2 Android SDK application project][tutorial-010]
 3. With a device connected (currently hardware emulation does not support the SRCH2 Android SDK), from the Run menu option select 'Run app'. 
 4. Once the app has launched, enter some characters in the text input field at the top of the screen and you should instantly see search results: <br>
