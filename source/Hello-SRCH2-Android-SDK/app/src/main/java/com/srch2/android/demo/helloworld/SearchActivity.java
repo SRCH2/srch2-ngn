@@ -176,8 +176,8 @@ public class SearchActivity extends Activity implements InstantSearchEditText.Se
             if (movieIndexInfoResponse != null
                     && movieIndexInfoResponse.isValidInfoResponse()) {
                 if (movieIndexInfoResponse.getNumberOfDocumentsInTheIndex() == 0) {
-                    SRCH2Engine.insertIntoIndex(MovieIndex.INDEX_NAME,
-                            MovieIndex.getAFewRecordsToInsert());
+                    SRCH2Engine.getIndex(MovieIndex.INDEX_NAME).
+                            insert(MovieIndex.getAFewRecordsToInsert());
                 }
             }
         }

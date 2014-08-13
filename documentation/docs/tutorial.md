@@ -15,13 +15,13 @@ Before you begin the tutorial, clone the project application from our [`hello-sr
 ###Quick Start
 
 1. Clone the tutorial application project from our [`hello-srch2-android-sdk` Github repository](https://github.com/SRCH2/hello-srch2-android-sdk). To do this from the command line you can enter the following git command: `clone githubrepo` (**SUBSTITE WITH REAL LINK: for now navigate to *master->srch2-android-sdk>source>Hello-SRCH2-Android-SDK and use this directory for step two**)
-2. Open Android Studio and from the File menu option (or the Quick Start menu) select 'Open Project' choosing the root folder of the cloned project: ![Opening the cloned Hello SRCH2 Android SDK application project][tutorial-010]
+2. Open Android Studio and from the File menu option (or the Quick Start menu) select 'Import Project' choosing the root folder of the cloned project: ![Opening the cloned Hello SRCH2 Android SDK application project][tutorial-010]
 3. With a device connected (currently hardware emulation does not support the SRCH2 Android SDK), from the Run menu option select 'Run app'. 
 4. Once the app has launched, enter some characters in the text input field at the top of the screen and you should instantly see search results: <br>
 <center>![The SRCH2 Android SDK in action!][tutorial-011]</center>
 5. That's it! You're now using the SRCH2 Android SDK to power searches in an Android project with the SRCH2 search engine. 
 
-You can read on for an explanation of the source code and how to incorporate the SRCH2 Android SDK in your own projects.
+The rest of this tutorial is an explanation of this source code and how to install the SRCH2 Android SDK in your own projects...
 
 ###Installing the SDK
  
@@ -38,7 +38,7 @@ The Gradle build system makes it easy to install the SRCH2 Android SDK in an And
 
 ###Creating an Index
 
-The first step to searching an index is creating an index. Indexes in the SRCH2 search server are accessed in the SRCH2 Android SDK via the `com.srch2.android.http.service.Indexable` class. For each index to be represented and searchable, a subclass of `Indexable` must be declared:
+The first step to searching an index is creating an index. Indexes in the SRCH2 search server are accessed in the SRCH2 Android SDK via the `com.srch2.android.http.service.Indexable` class. To create an index in the SRCH2 search server, create a subclass of `Indexable` to represent it:
 
 ```
 public class MovieIndex extends Indexable {
@@ -295,7 +295,7 @@ The two methods called on the `searchResultAdapter` (`updateDisplayedSearchResul
 
 ###Getting Index and Engine Information
 
-The other asynchronous callback that can be implemented is the `StateResponseListener`. For this tutorial, a new nested class is defined inside of `SearchActivity` declared as `private static class SRCH2ControlListener implements StateResponseListener`. By overriding its methods the status results of operations performed on indexes, such as when specific records when requested by their primary key or when the SRCH2Engine is ready to start searching, can be accessed. For this class, a reference to the `SearchActivity` is kept to display a toast when the SRCH2 search server is ready for searching or when an information request on an index is completed (implementing of which is left as an exercise for the reader). As long as the method `SRCH2Engine.stop(...)` is called in the `protected void onPause()` method of `SearchActivity`, it is safe to keep a reference to `SearchActivity` in this class: however, you could chose to keep a `WeakReference<SearchActivity>` (such as with the `SearchResultListener`) if you chose not (or forget) to call `SRCH2Engine.stop(...)` from `onPause()` or you could also incorporate an event bus system like [Otto](http://square.github.io/otto/) or [EventBus](https://github.com/greenrobot/EventBus) if you have more complicated application architecture. For the purposes of this tutorial, it's kept simple. 
+The other asynchronous callback that can be implemented is the `StateResponseListener`. For this tutorial, a new nested class is defined inside of `SearchActivity` declared as `private static class SRCH2ControlListener implements StateResponseListener`. By overriding its methods the status results of operations performed on indexes, such as when specific records are requested by their primary key or when the SRCH2Engine is ready to start searching, can be accessed. For this class, a reference to the `SearchActivity` is kept to display a toast when the SRCH2 search server is ready for searching or when an information request on an index is completed (implementing of which is left as an exercise for the reader). 
 
 ```
 public class SearchActivity extends Activity implements
@@ -315,7 +315,7 @@ public class SearchActivity extends Activity implements
 }
 ```
 
-In detail, here are the methods:
+In detail, here are the insert, update and delete completion callback methods:
 
 ```
 public class SearchActivity extends Activity implements
@@ -355,7 +355,7 @@ public class SearchActivity extends Activity implements
 }
 ```
 
-These three methods will be triggered whenever its corresponding action is complete. For these callbacks, the first parameter indicates which `Indexable` the following parameter is referring too, and the second parameter is a `response` which is a subclass of `RestfulResponse`. These classes wrap the raw JSON response as returned by the SRCH2 search server for each control-type task so that the data contained can be accessed from Java without parsing. These three `response`s contain the raw RESTful JSON response, as well as the success and failure counts of the insert, update or delete task performed. For example, after the `MovieIndex`'s method `insert(getAFewRecordsToInsert())` is called and the SRCH2 search server finishes inserting the three records, the `SRCH2Engine` will parse the restful JSON response and trigger this callback which will contain a `successCount` of three. It is useful to note that each subclass of `RestfulResponse' has its `toString()` method overridden, as well as the convenience method `toToastString()` which contains line breaks for each field.  
+These three methods will be triggered whenever its corresponding action is complete. For these callbacks, the first parameter indicates which `Indexable` the second parameter corresponds to, and this second parameter is a `response` which is a subclass of `RestfulResponse`. These classes wrap the raw JSON response as returned by the SRCH2 search server for each control-type task so that the data contained can be accessed from Java without parsing. These three `Restful Response` subclasses contain the raw RESTful JSON response, as well as the success and failure counts of the insert, update or delete task performed. For example, after the `MovieIndex`'s method `insert(getAFewRecordsToInsert())` is called and the SRCH2 search server finishes inserting the three records, the `SRCH2Engine` will parse the restful JSON response and trigger this callback which will contain a `successCount` of three. It is useful to note that each subclass of `RestfulResponse' has its `toString()` method overridden, as well as the convenience method `toToastString()` which contains line breaks for each field.  
 
 Moving on, the method:
 
@@ -463,7 +463,7 @@ public class SearchActivity extends Activity implements
 }
 ```
 
-In the next section we'll see the call to initialize, start and stop the SRCH2 search server, but before that observe the logic to determine if the `MovieIndex` needs to be created--that is, whether the initial set of records should be inserted. Since the `InfoResponse` object value of the key 'movies' in the map `indexesToInfoResponse` will contain the method `getNumberOfDocumentsInTheIndex()` the following logic is implemented in this callback method:
+In the next section we'll see the call to initialize, start and stop the SRCH2 search server, but before that observe the logic to determine if the `MovieIndex` needs to be created--that is, whether the initial set of records should be inserted. Since the value of the key 'movies' in the map `indexesToInfoResponse` is an `InfoResponse` object with the method `getNumberOfDocumentsInTheIndex()`, the following logic can be implemented in this callback method:
 
 ```
 public class SearchActivity extends Activity implements
