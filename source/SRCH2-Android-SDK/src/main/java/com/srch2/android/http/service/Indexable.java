@@ -3,22 +3,18 @@ package com.srch2.android.http.service;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.UnsupportedEncodingException;
-
 /**
  * Represents an index in the SRCH2 search server. For every index to be searched on, users of the
  * SRCH2 Android SDK should implement a separate subclass instance of this class.
  * <br><br>
  * For each implementation of this class, <b>it is necessary</b> to override:
  * <br>
- * <code>String getIndexName()</code>
+ * {@link #getIndexName()}
  * <br>
- * <code>Schema getSchema()</code>
+ * {@link #getSchema()}
  * <br><br>
  * This class contains methods for performing CRUD actions on the index such as insertion and
- * searching; however, these same methods can be called statically from the <code>SRCH2Engine</code>
- * by supplying the name of the index as it is defined in the <code>IndexDescription</code> returned
- * from the method <code>getIndexDescription().</code>
+ * searching.
  */
 public abstract class Indexable {
 
@@ -41,11 +37,7 @@ public abstract class Indexable {
     public static final float DEFAULT_FUZZINESS_SIMILARITY_THRESHOLD = 0.65f;
 
     /**
-     * Implementing this method sets the name of the index this <code>Indexable</code> represents. This can be used to
-     * call the static CRUD methods of the <code>SRCH2Engine</code> and to identify which index
-     * the two callbacks
-     * <code>StateResponseListener</code> and <code>SearchResultsListener</code> refer to in
-     * their callback methods.
+     * Implementing this method sets the name of the index this <code>Indexable</code> represents.
      * @return the name of the index this <code>Indexable</code> represents
      */
     abstract public String getIndexName();
@@ -65,7 +57,8 @@ public abstract class Indexable {
      * The default value of this method, if not overridden, is ten.
      * <br><br>
      * This method will cause an <code>IllegalArgumentException</code> to be thrown when calling
-     * <code>SRCH2Engine.initialize(...)</code> and passing this <code>Indexable</code> if the returned value
+     * {@link com.srch2.android.http.service.SRCH2Engine#initialize(Indexable, Indexable...)} and passing this
+     * <code>Indexable</code> if the returned value
      *  is less than one.
      * @return the number of results to return per search
      */
@@ -79,14 +72,14 @@ public abstract class Indexable {
      * the search performed will include results as if half of the characters of the original
      * search input were replaced by wild card characters.
      * <br><br>
-     * <b>Note:</b> In the the formation of a <code>Query</code>, each <code>Term</code> can
+     * <b>Note:</b> In the the formation of a {@link com.srch2.android.http.service.Query}, each <code>Term</code> can
      * have its own fuzziness similarity threshold value set by calling the method
-     * <code>enableFuzzyMatching(Float value)</code>; by default it is disabled for terms.
+     * {@link com.srch2.android.http.service.SearchableTerm#enableFuzzyMatching(float)}; by default it is disabled for terms.
      * <br><br>
      * The default value of this method, if not overridden, is 0.65.
      * <br><br>
      * This method will cause an <code>IllegalArgumentException</code> to be thrown when calling
-     * <code>SRCH2Engine.initialize(...)</code> and passing this <code>Indexable</code> if the
+     * {@link com.srch2.android.http.service.SRCH2Engine#initialize(Indexable, Indexable...)} and passing this <code>Indexable</code> if the
      * value returned is less than zero or greater than one.
      * @return the fuzziness similarity ratio to match against search keywords against
      */
@@ -100,8 +93,8 @@ public abstract class Indexable {
      * schema as well.
      * <br><br>
      * After the SRCH2 search server completes the insertion task, the callback method of the
-     * <code>StateResponseListener</code> <code>onInsertRequestComplete(String indexName,
-     * InsertResponse response)</code> will be triggered containing the status of the
+     * {@link com.srch2.android.http.service.StateResponseListener#onInsertRequestComplete(String, InsertResponse)}
+     * will be triggered containing the status of the
      * completed insertion task.
      * @param record the <code>JSONObject</code> representing the record to insert
      */
@@ -121,8 +114,8 @@ public abstract class Indexable {
      * inserted.
      * <br><br>
      * After the SRCH2 search server completes the insertion task, the callback method of the
-     * <code>StateResponseListener</code> <code>onInsertRequestComplete(String indexName,
-     * InsertResponse response)</code> will be triggered containing the status of the
+     * {@link com.srch2.android.http.service.StateResponseListener#onInsertRequestComplete(String, InsertResponse)}
+     * will be triggered containing the status of the
      * completed insertion task.
      * @param records the <code>JSONArray</code> containing the set of <code>JSONObject</code>s
      *                representing the records to insert
@@ -143,8 +136,8 @@ public abstract class Indexable {
      * inserted.
      * <br><br>
      * After the SRCH2 search server completes the update task, the callback method of the
-     * <code>StateResponseListener</code> <code>onUpdateRequestComplete(String indexName,
-     * UpdateResponse response)</code> will be triggered containing the status of the
+     * {@link com.srch2.android.http.service.StateResponseListener#onUpdateRequestComplete(String, UpdateResponse)}
+     * will be triggered containing the status of the
      * completed update task.
      * @param record the <code>JSONObject</code> representing the record to upsert
      */
@@ -167,8 +160,8 @@ public abstract class Indexable {
      * inserted.
      * <br><br>
      * After the SRCH2 search server completes the update task, the callback method of the
-     * <code>StateResponseListener</code> <code>onUpdateRequestComplete(String indexName,
-     * UpdateResponse response)</code> will be triggered containing the status of the
+     * {@link com.srch2.android.http.service.StateResponseListener#onUpdateRequestComplete(String, UpdateResponse)}
+     *  will be triggered containing the status of the
      * completed update task.
      * @param records the <code>JSONArray</code> containing the set of <code>JSONObject</code>s
      *                representing the records to upsert
@@ -180,13 +173,13 @@ public abstract class Indexable {
     }
 
     /**
-     * Deletes from the index this <code>Indexable</code> represents the record with a primary
+     * Deletes from the index this record with a primary
      * key matching the value of the <code>primaryKeyOfRecordToDelete</code>. If no record with
      * a matching primary key is found, the index will remain as it is.
      * <br><br>
      * After the SRCH2 search server completes the deletion task, the callback method of the
-     * <code>StateResponseListener</code> <code>onDeleteRequestComplete(String indexName,
-     * DeleteResponse response)</code> will be triggered containing the status of the
+     * {@link com.srch2.android.http.service.StateResponseListener#onDeleteRequestComplete(String, DeleteResponse)}
+     * will be triggered containing the status of the
      * completed deletion task.
      * @param primaryKeyOfRecordToDelete the primary key of the record to delete
      */
@@ -199,10 +192,10 @@ public abstract class Indexable {
     /**
      * Performs an information task on the index that this <code>Indexable</code> represents. This
      * method may be used to inspect the state of the index such as the number of records in the index
-     * by calling <code>getNumberOfDocumentsInTheIndex()</code> on the resulting <code>InfoResponse</code>.
+     * by calling {@link InfoResponse#getNumberOfDocumentsInTheIndex()}
      * <br><br>
      * When the SRCH2 search server completes the information task, the
-     * method <code>void onInfoRequestComplete(final String indexName, final InfoResponse response)</code>
+     * method {@link com.srch2.android.http.service.StateResponseListener#onInfoRequestComplete(String, InfoResponse)}
      * will be triggered. The <code>InfoResponse response</code> will contain information about the
      * index such as the number of records it contains or the time stamp of the last time the index
      * was updated to reflect any pending changes.
@@ -221,13 +214,13 @@ public abstract class Indexable {
      * be treated as fuzzy and prefix.
      * <br><br>
      * For more configurable searches, use the
-     * <code>Query</code> class in conjunction with the <code>advancedSearch(Query query)</code>
+     * {@link com.srch2.android.http.service.Query} class in conjunction with the {@link #advancedSearch(Query)}
      * method.
      * <br><br>
      * When the SRCH2 server is finished performing the search task, the method
-     * <code>onNewSearchResultsAvailable(int HTTPResponseCode, String jsonResultsLiteral,
-     * HashMap<String, ArrayList<JSONObject>> resultRecordMap)</code> will be triggered. The
-     * <code>resultRecordMap</code> will contain the search results in the form of <code>
+     * {@link com.srch2.android.http.service.SearchResultsListener#onNewSearchResults(int, String, java.util.HashMap)}
+     *  will be triggered. The
+     * <code>HashMap</code> argument will contain the search results in the form of <code>
      * JSONObject</code>s as they were originally inserted (and updated).
      * <br><br>
      * This method will throw an exception is the value of <code>searchInput</code> is null
@@ -241,15 +234,15 @@ public abstract class Indexable {
     }
 
     /**
-     * Does an advanced search by forming search request input as a <code>Query</code>. This enables
+     * Does an advanced search by forming search request input as a {@link com.srch2.android.http.service.Query}. This enables
      * searches to use all the advanced features of the SRCH2 search engine, such as per term
      * fuzziness similarity thresholds, limiting the range of results to a refining field, and
-     * much more. See the {@link Query} for more details.
+     * much more. See the {@link com.srch2.android.http.service.Query} for more details.
      * <br><br>
      * When the SRCH2 server is finished performing the search task, the method
-     * <code>onNewSearchResultsAvailable(int HTTPResponseCode, String jsonResultsLiteral,
-     * HashMap<String, ArrayList<JSONObject>> resultRecordMap)</code> will be triggered. The
-     * <code>resultRecordMap</code> will contain the search results in the form of <code>
+     * {@link com.srch2.android.http.service.SearchResultsListener#onNewSearchResults(int, String, java.util.HashMap)}
+     * will be triggered. The argument
+     * <code>HashMap</code> will contain the search results in the form of <code>
      * JSONObject</code>s as they were originally inserted (and updated).
      * <br><br>
      * This method will throw an exception if the value of <code>query</code> is null.
@@ -265,8 +258,8 @@ public abstract class Indexable {
      * Retrieves a record from the index this <code>Indexable</code> represents if the primary
      * key of any record in the index matches the value of <code>primaryKeyOfRecordToRetrieve</code>.
      * When the SRCH2 search server completes the retrieval task, the method
-     * <code>onGetRecordByIDComplete(final String indexName, final GetRecordResponse response)</code>
-     * of the <code>StateResponseListener</code> will be triggered. The record retrieved will be in
+     * {@link com.srch2.android.http.service.StateResponseListener#onGetRecordByIDComplete(String, GetRecordResponse)}
+     * will be triggered. The record retrieved will be in
      * the form of a <code>JSONObject</code> inside the <code>response GetRecordResponse</code>.
      * <br><br>
      * This method will than an <code>IllegalArgumentException</code>if the value of

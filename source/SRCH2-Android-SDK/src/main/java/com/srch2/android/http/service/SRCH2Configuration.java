@@ -116,7 +116,7 @@ final class SRCH2Configuration {
     /**
      * This function adds IndexStructure objects into Configuration Object.
      *
-     * @param indexDescription
+     * @param indexDescription indexDescription
      */
     IndexInternal createIndex(IndexDescription indexDescription) {
         IndexInternal indexInternal = new IndexInternal(indexDescription);
@@ -129,7 +129,7 @@ final class SRCH2Configuration {
     /**
      * It returns the SRCH2Home, path where engine stores the serialized files.
      *
-     * @return
+     * @return the full path of SRCH2 home
      */
     String getSRCH2Home() {
         return fullPathOfSRCH2home;
@@ -146,7 +146,7 @@ final class SRCH2Configuration {
     /**
      * It returns the port to which the engine is bound.
      *
-     * @return
+     * @return the port number of the server
      */
     protected int getPort() {
         return port;
@@ -155,7 +155,7 @@ final class SRCH2Configuration {
     /**
      * It sets the port of the local machine to which the engine is bound.
      *
-     * @param port
+     * @param port the port number
      */
     void setPort(int port) {
         this.port = port;
@@ -186,7 +186,7 @@ final class SRCH2Configuration {
      * OAuth=foobar
      * Example: curl -i "http://localhost:8081/search?q=terminator&OAuth=foobar"
      *
-     * @param authorizationKey
+     * @param authorizationKey the auth key
      */
     void setAuthorizationKey(String authorizationKey) {
         if (authorizationKey == null) {

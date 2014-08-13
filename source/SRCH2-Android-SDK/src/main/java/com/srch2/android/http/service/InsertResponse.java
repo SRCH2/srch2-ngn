@@ -8,24 +8,24 @@ import org.json.JSONObject;
 /**
  * Wraps the RESTful response from the SRCH2 search server upon completion of an insertion task.
  * <br><br>
- * When any of the method calls to insert a record or a set of records into an index (
- * <code>mIndexable.insert(JSONObject recordToInsert)</code>,
- * <code>Indexable.insert(JSONArray recordsToInsert)</code> or
- * the corresponding static calls in the <code>SRCH2Engine</code>)
+ * When any of the method calls to insert a record or a set of records into an index
+ * ({@link com.srch2.android.http.service.Indexable#insert(org.json.JSONArray)},
+ * or {@link com.srch2.android.http.service.Indexable#insert(org.json.JSONObject)})
  * are made, the <code>SRCH2Engine</code> will forward the insert request to the SRCH2 search server;
  * after the SRCH2 search server finishes executing, it will notify the <code>SRCH2Engine</code>
  * of the status of the completed insertion task. The <code>SRCH2Engine</code> will pass this
- * information through the <code>StateResponseListener</code> callback method
- * <code>onInsertRequestComplete(String indexName, InsertResponse response)</code> where the
+ * information through the
+ * {@link com.srch2.android.http.service.StateResponseListener#onInsertRequestComplete(String, InsertResponse)}
+ * where the
  * <code>InsertResponse response</code> is this object.
  * <br><br>
  * If there were no errors in any of the <code>JSONObject</code>(s) representing record(s),
- * the return value of <code>getSuccessCount()</code> will match the number of submitted
+ * the return value of {@link #getSuccessCount()} will match the number of submitted
  * <code>JSONObject</code>s. Any failures to insert (due to duplicate primary keys, for
  * instance) will be reflected in the value of <code>getFailureCount().</code>
  * <br><br>
  * In the event of a failure to insert one or more records, inspecting the value of
- * <code>getRESTfulResponseLiteral()</code> will contain the reason for the failure.
+ * {@link #getRESTfulResponseLiteral()} will contain the reason for the failure.
  */
 public final class InsertResponse extends RestfulResponse {
 
@@ -48,6 +48,7 @@ public final class InsertResponse extends RestfulResponse {
      */
     public int getSuccessCount() { return recordInsertSuccessCount; }
     private final int recordInsertSuccessCount;
+
     /**
      * Utility method for determining the number of JSONObjects, representing records to insert,
      * that failed to be inserted.

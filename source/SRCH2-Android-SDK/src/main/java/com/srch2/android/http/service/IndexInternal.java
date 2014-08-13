@@ -27,16 +27,6 @@ final class IndexInternal {
         return rawSearchInput.toString();
     }
 
-    /**
-     * FIXME
-     * this is the temporary solution for the GeoQuery. We need to give the engine one default range.
-     *
-     * @return
-     */
-    private static String formatDefaultGeoCircle() {
-        return "&clat=33&clong=-117&radius=180";
-    }
-
     IndexDescription getConf() {
         return indexDescription;
     }
@@ -136,9 +126,9 @@ final class IndexInternal {
             throw new IllegalArgumentException("Invalid searchInput");
         }
         searchInput = formatDefaultQueryURL(searchInput);
-        if (this.indexDescription.isGeoIndex()) {
-            searchInput += formatDefaultGeoCircle();
-        }
+        //if (this.indexDescription.isGeoIndex()) {
+        ////searchInput += formatDefaultGeoCircle();
+        //}
         searchRawString(searchInput);
     }
 

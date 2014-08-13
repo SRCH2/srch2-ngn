@@ -282,7 +282,6 @@ final public class SRCH2Service extends Service {
         } catch (MalformedURLException ignore) {
         }
 
-        InputStream is = null;
         HttpURLConnection connection = null;
         try {
             connection = (HttpURLConnection) url.openConnection();

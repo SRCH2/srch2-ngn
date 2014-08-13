@@ -154,7 +154,7 @@ abstract class HttpTask implements Runnable {
         return response;
     }
 
-    void handleIOExceptionMessagePassing(IOException ioException, String response, String internalClassLogcatTag) {
+    String handleIOExceptionMessagePassing(IOException ioException, String response, String internalClassLogcatTag) {
         String errorResponse = null;
         if (ioException != null) {
             errorResponse = ioException.getMessage();
@@ -172,9 +172,9 @@ abstract class HttpTask implements Runnable {
         }
 
         if (response == null) {
-            response = errorResponse;
+            return errorResponse;
         } else {
-            response += " " + errorResponse;
+            return response + " " + errorResponse;
         }
     }
 

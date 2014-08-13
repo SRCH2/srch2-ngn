@@ -39,15 +39,15 @@ import java.util.concurrent.atomic.AtomicReference;
  * calls on either the <code>SRCH2Engine</code> or their <code>Indexable</code> implementations.
  * Similarly, the output of the SRCH2 search server is wrapped in the various subclasses of
  * <code>RestfulResponse</code> so that the RESTful responses from the SRCH2 search server
- * do not have to be parsed: for instance, after inserting a record, the method <code>
- * mStateResponseListener.onInsertRequestComplete(String indexName, InsertResponse response)</code>
+ * do not have to be parsed: for instance, after inserting a record, the method
+ * {@link com.srch2.android.http.service.StateResponseListener#onInsertRequestComplete(String, InsertResponse)}
  * will be triggered where the <code>InsertResponse response</code> will contain a count of
  * the number of successful inserts. Or, after performing an information request on an index,
- * the method <code>mStateResponseListener.onInfoRequestComplete(String indexName, InfoResponse
- * response)</code> will be triggered where the <code>InfoResponse response</code> contains
+ * the method {@link com.srch2.android.http.service.StateResponseListener#onInfoRequestComplete(String, InfoResponse)}
+ * will be triggered where the <code>InfoResponse response</code> contains
  * various method getters for returning state about the index such as its number of records.
  * <br><br>
- * In particular, the <code>Query</code> class enables easy use of the sophisticated search power
+ * In particular, the {@link Query} class enables easy use of the sophisticated search power
  * of the SRCH2 search server.
  */
 final public class SRCH2Engine {
@@ -56,11 +56,6 @@ final public class SRCH2Engine {
     static final AtomicReference<IndexQueryPair> lastQuery = new AtomicReference<IndexQueryPair>();
     static final AtomicBoolean isChanged = new AtomicBoolean(false);
     static final AtomicBoolean isReady = new AtomicBoolean(false);
-    /**
-     * Automatic re-request the lastQuerySting whenever any index is
-     * updated. If the Index is null, that means the lastQuery is from the
-     * SearchAll
-     */
 
     static boolean isDebugAndTestingMode = false;
     static SRCH2EngineBroadcastReciever incomingIntentReciever;
@@ -78,7 +73,7 @@ final public class SRCH2Engine {
      * This method should only be called once per application life-cycle such as when an instance of
      * an activity requiring search is created (thus from the activity's <code>onCreate</code> method).
      * Calling this method will not start the SRCH2 search server and <b>must</b> be called before any
-     * call to the method <code>SRCH2Engine.onStart(Context context)</code> is made.
+     * call to the method {@link #onStart(android.content.Context)} is made.
      * <br><br>
      * Callers <b>must</b> pass at least one <code>Indexable</code> to be searched on and can pass in
      * as many as are needed.
@@ -104,7 +99,7 @@ final public class SRCH2Engine {
     /**
      * If JUnit or Android automated tests are to be run, calling this method and passing <b>true</b>
      * will cause the <code>SRCH2Engine</code> to immediately stop the SRCH2 search server if it is running
-     * anytime <code>SRCH2Engine.onStop(Context context)</code> is called instead of waiting to do so after
+     * anytime {@link #onStop(android.content.Context)} is called instead of waiting to do so after
      * a delay.
      * <br><br>
      * Developers performing automated testing <i>should</i> call this method before running any tests.
@@ -120,10 +115,11 @@ final public class SRCH2Engine {
      * This method should be called anytime the activity requiring search functionality comes to the
      * foreground and is visible--that is, when it can be interacted with by a user who might perform searches.
      * Starting the SRCH2 search server is fast, usually taking under a second, and when it comes online
-     * and is ready to handle search requests the callback method <code>onSRCH2ServiceReady()</code> of the
-     * <code>StateResponseListener</code> interface, if implemented, will be executed and contain index and
+     * and is ready to handle search requests the callback method
+     * {@link com.srch2.android.http.service.StateResponseListener#onSRCH2ServiceReady(java.util.HashMap)},
+     * if implemented, will be executed and contain index and
      * engine information. Checking whether the SRCH2 search server is ready can also determined by calling
-     * <code>SRCH2Engine.isReady()</code>.
+     * {@link #isReady()}.
      * <br><br>
      * A context is needed here to start the remote service that hosts the SRCH2 search server process. A
      * reference to this context is not kept.
@@ -234,17 +230,17 @@ final public class SRCH2Engine {
 
     /**
      * Searches all <code>Indexable</code>s that were initialized when included in the argument set
-     * of the method call <code>SRCH2Engine.initialize(...)</code>; that is, this method makes searching
+     * of the method call {@link #initialize(Indexable, Indexable...)}; that is, this method makes searching
      * all indexes at once easy.
      * <br><br>
      * When the SRCH2 server is finished performing the search task, the method
-     * <code>onNewSearchResultsAvailable(int HTTPResponseCode, String jsonResultsLiteral,
-     * HashMap<String, ArrayList<JSONObject>> resultRecordMap)</code> will be triggered. The
-     * <code>resultRecordMap</code> will contain the search results in the form of <code>
+     * {@link com.srch2.android.http.service.SearchResultsListener#onNewSearchResults(int, String, java.util.HashMap)}
+     * will be triggered. The
+     * <code>HashMap resultRecordMap</code> will contain the search results in the form of <code>
      * JSONObject</code>s as they were originally inserted (and updated).
      * <br><br>
      * This method will throw exceptions if the <code>searchInput</code> is null or if
-     * <code>SRCH2Engine.initialize(...)</code> has not been called; of if the value of
+     * {@link #initialize(Indexable, Indexable...)} has not been called; or if the value of
      * <code>searchInput</code> is null or has a length less than one.
      * @param searchInput the textual input to search on
      */
@@ -257,8 +253,7 @@ final public class SRCH2Engine {
 
 
     /**
-     * Searches the index with the specified <code>indexName</code> (as set by the <code>Indexable</code> implementation
-     * of the method <code>getIndexName()</code>) on the specified <code>searchInput</code>.
+     * Searches the index with the specified <code>indexName</code> (as set by the {@link Indexable#getIndexName()}) on the specified <code>searchInput</code>.
      * <br><br>
      * When the SRCH2 server is finished performing the search task, the method
      * <code>onNewSearchResultsAvailable(int HTTPResponseCode, String jsonResultsLiteral,
@@ -281,17 +276,17 @@ final public class SRCH2Engine {
 
     /**
      * Performs an advanced searches on all <code>Indexable</code>s that were initialized when included
-     * in the argument set of the method call <code>SRCH2Engine.initialize(...)</code>; that is, this method
+     * in the argument set of the method call {@link #initialize(Indexable, Indexable...)} ; that is, this method
      * makes performing an advanced search on all indexes at once easy.
      * <br><br>
      * When the SRCH2 server is finished performing the search task, the method
-     * <code>onNewSearchResultsAvailable(int HTTPResponseCode, String jsonResultsLiteral,
-     * HashMap<String, ArrayList<JSONObject>> resultRecordMap)</code> will be triggered. The
+     * {@link com.srch2.android.http.service.SearchResultsListener#onNewSearchResults(int, String, java.util.HashMap)}
+     * will be triggered. The
      * <code>resultRecordMap</code> will contain the search results in the form of <code>
      * JSONObject</code>s as they were originally inserted (and updated).
      * <br><br>
      * This method will throw exceptions if the <code>query</code> forming the advanced search is null;
-     * or if <code>SRCH2Engine.initialize(...)</code> has not been called; or if the value  of
+     * or if {@link #initialize(Indexable, Indexable...)} has not been called; or if the value  of
      * <code>query</code> is null;
      * @param query the formation of the advanced search
      */
@@ -304,8 +299,7 @@ final public class SRCH2Engine {
 
     /**
      * Performs an advanced search on the index with the specified <code>indexName</code> (as set by the
-     * <code>Indexable</code> implementation
-     * of the method <code>getIndexName()</code>) using the specified <code>query</code>.
+     * {@link Indexable#getIndexName()}) using the specified <code>query</code>.
      * <br><br>
      * When the SRCH2 server is finished performing the search task, the method
      * <code>onNewSearchResultsAvailable(int HTTPResponseCode, String jsonResultsLiteral,
@@ -507,9 +501,9 @@ final public class SRCH2Engine {
      * search server will not halt immediately, but instead wait a short duration in case the user
      * navigates back to the activity requiring search. In that case, the command to stop is
      * cancelled. Since the SRCH2 search server is hosted by a remote service, a context is needed
-     * to stop this service. After calling this method, <code>SRCH2Engine.isReady()</code> will
+     * to stop this service. After calling this method, {@link #isReady()} will
      * return false and no subsequent actions can be performed on the <code>SRCH2Engine</code> until
-     * <code>SRCH2Engine.onStart(Context context)</code> is called again. Pending tasks however,
+     * {@link #onStart(android.content.Context)} is called again. Pending tasks however,
      * such as batch inserts, will not be interrupted and be allowed to finish.
      * @param context needed to stop a remote service, any context will do
      */
@@ -598,6 +592,7 @@ final public class SRCH2Engine {
                 new ServerSocket(port).close();
                 break;
             } catch (IOException ex) {
+                ex.printStackTrace();
             }
         }
         return port;
@@ -619,7 +614,7 @@ final public class SRCH2Engine {
      * <br><br>
      * If this key is not specified, it will be automatically generated by the <code>SRCH2Engine</code>.
      * <br><br>
-     * This method will throw an exception if <code>SRCH2Engine.initialize(...)</code> has not been called.
+     * This method will throw an exception if {@link #initialize(Indexable, Indexable...)} has not been called.
      * @param authorizationKey the key that any request on the SRCH2 search server will have to supply in order for the
      *                         SRCH2 search server to carry out the command or task
      */

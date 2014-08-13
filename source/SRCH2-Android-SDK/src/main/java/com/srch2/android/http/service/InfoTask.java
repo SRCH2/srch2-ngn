@@ -78,7 +78,7 @@ class InfoTask extends ControlHttpTask {
             responseCode = connection.getResponseCode();
             response = handleStreams(connection, TAG);
         } catch (IOException networkError) {
-            handleIOExceptionMessagePassing(networkError, response, TAG);
+            response = handleIOExceptionMessagePassing(networkError, response, TAG);
         } finally {
             if (connection != null) {
                 connection.disconnect();

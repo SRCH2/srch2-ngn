@@ -5,33 +5,34 @@ import org.json.JSONObject;
 /**
  * Wraps the RESTful response from the SRCH2 search server upon completion of an information task.
  * <br><br>
- * When either of the method calls to retrieve information on an index (
- * <code>mIndexable.info()</code> or <code>SRCH2Engine.getIndexInfo(String indexName)</code>)
- * are made, the <code>SRCH2Engine</code> will forward the information request to the SRCH2 search server;
+ * When either of the method calls to retrieve information on an {@link Indexable#info()} ,
+ * the <code>SRCH2Engine</code> will forward the information request to the SRCH2 search server;
  * after the SRCH2 search server finishes executing, it will notify the <code>SRCH2Engine</code>
  * of the status of the completed information task and pass the returned index information.
- * The <code>SRCH2Engine</code> will pass this information through the <code>StateResponseListener</code>
- * callback method <code>onInfoRequestComplete(String indexName, InfoResponse response)</code> where the
+ * The <code>SRCH2Engine</code> will pass this information through the callback method
+ * {@link com.srch2.android.http.service.StateResponseListener#onInfoRequestComplete(String, InfoResponse)} where the
  * <code>InfoResponse response</code> is this object.
  * <br><br>
  * When this class is constructed, the RESTful response from the SRCH2 search server is parsed and made
  * available through the several methods of this class. For example, the number of records in the index
- * can be obtained by calling <code>getNumberOfDocumentsInTheIndex()</code>.
+ * can be obtained by calling {@link #getNumberOfDocumentsInTheIndex()}.
  * <br><br>
  * Users can verify that the SRCH2 server was able to retrieve information on the specified index by checking
- * the value returned from <code>isValidInfoResponse()</code>; if there was some error, such as the SRCH2
+ * the value returned from {@link #isValidInfoResponse}; if there was some error, such as the SRCH2
  * search server was unavailable, this method will return <b>false</b>.
  */
 public final class InfoResponse extends RestfulResponse {
 
     /**
-     * Indicates the InfoResponse was unable to be formed from the JSON response from the SRCH2 server upon performing an info command. Has the <bold>constant</bold> value <code>"null"</code>.
+     * Indicates the InfoResponse was unable to be formed from the JSON response from the SRCH2 server upon performing an info command.
+     * Has the <bold>constant</bold> value <code>"null"</code>.
      */
     public static final String INVALID_LAST_MERGE_TIME = "null";
 
 
     /**
-     * Indicates the InfoResponse was unable to be formed from the JSON response from the SRCH2 server upon performing an info command. Has the <bold>constant</bold> value <code>-1</code>.
+     * Indicates the InfoResponse was unable to be formed from the JSON response from the SRCH2 server upon performing an info command.
+     * Has the <bold>constant</bold> value <code>-1</code>.
      */
     public static final int INVALID_COUNT = -1;
 

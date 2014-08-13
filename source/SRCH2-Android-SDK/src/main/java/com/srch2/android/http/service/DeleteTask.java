@@ -36,7 +36,7 @@ class DeleteTask extends ControlHttpTask {
             responseCode = connection.getResponseCode();
             response = handleStreams(connection, TAG);
         } catch (IOException e) {
-            handleIOExceptionMessagePassing(e, response, TAG);
+            response = handleIOExceptionMessagePassing(e, response, TAG);
         } finally {
             if (connection != null) {
                 connection.disconnect();

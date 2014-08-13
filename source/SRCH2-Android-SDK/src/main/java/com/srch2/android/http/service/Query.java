@@ -43,14 +43,13 @@ final public class Query {
     /**
      * Creates a query doing a proximity search. The SRCH2 search server
      * supports finding words that are within a
-     * specified proximity. To use this feature, enablePositionIndex flag in
-     * the configuration should be set to true.
+     * specified proximity.
      * <br><br>
      * For example, the following query searches for records with the keywords
      * "saving" and "ryan" within 1 word
      * <br><br>
      * <pre>
-     * {@code Query("saving", "ryan", 1)}
+     * <code> Query("saving", "ryan", 1)</code>
      * </pre>
      * <br><br>
      * (that is, either zero or one word separates them) of each other in a
@@ -215,9 +214,6 @@ final public class Query {
      * order by the overall score of each record. The user can specify sorting
      * by other fields.
      * <p/>
-     * Note the <code>SearchType</code> will be automatically set to
-     * <code>getAll</code> method
-     *
      * @param field1 the first field
      * @param restFields the rest of the fields
      * @return this
@@ -287,10 +283,10 @@ final public class Query {
     /**
      * Get the GeoLocation search by specify a bounding box. <br>
      *
-     * @param leftBottomLatitude
-     * @param leftBottomLongitude
-     * @param rightTopLatitude
-     * @param rightTopLongitude
+     * @param leftBottomLatitude the left bottom point's latitude value
+     * @param leftBottomLongitude the left bottom point's longitude value
+     * @param rightTopLatitude  the right top point's latitude value
+     * @param rightTopLongitude the right top point's longitude value
      * @return this
      */
     public Query insideBoxRegion(double leftBottomLatitude,
@@ -307,11 +303,10 @@ final public class Query {
 
     /**
      * Get the GeoLocation search by specify a center point and a radius. <br>
-
      *
-     * @param centerLatitude
-     * @param centerLongitude
-     * @param radius
+     * @param centerLatitude the center point's latitude value
+     * @param centerLongitude the center point's longitude value
+     * @param radius the radius value of the search area
      * @return this
      */
     public Query insideCircleRegion(double centerLatitude,
@@ -389,7 +384,7 @@ final public class Query {
      * @param fieldName
      * @return this
      */
-    protected Query facetOn(String fieldName) {
+    Query facetOn(String fieldName) {
         facetFields.add(FacetField.getFacetFieldOnCategory(fieldName));
         return this;
     }
@@ -401,7 +396,7 @@ final public class Query {
      * @param rows
      * @return this
      */
-    protected Query facetOn(String fieldName, int rows) {
+    Query facetOn(String fieldName, int rows) {
         facetFields.add(FacetField.getFacetFieldOnCategory(fieldName, rows));
         return this;
     }
@@ -414,7 +409,7 @@ final public class Query {
      * @param fieldName
      * @return this
      */
-    protected Query facetOnRange(String fieldName, String start, String end,
+    Query facetOnRange(String fieldName, String start, String end,
                                  String gap) {
         facetFields.add(FacetField.getFacetFieldOnRange(fieldName, start, end,
                 gap));

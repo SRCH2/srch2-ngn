@@ -1,7 +1,5 @@
 package com.srch2.android.http.service;
 
-import org.json.JSONObject;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import org.json.JSONObject;
@@ -10,22 +8,22 @@ import org.json.JSONObject;
  * Wraps the RESTful response from the SRCH2 search server upon completion of a record
  * retrieval task.
  * <br><br>
- * When either of the method calls to retrieve a record from an index (
- * <code>mIndexable.getRecordbyID(...)</code> or
- * <code>SRCH2Engine.getRecordByIdFromIndex(...)</code>)
- * is made, the <code>SRCH2Engine</code> will forward the record retrieval
+ * When the method call to retrieve a record from an index
+ * {@link com.srch2.android.http.service.Indexable#getRecordbyID(String)}
+ * is made, the {@link com.srch2.android.http.service.SRCH2Engine} will forward the record retrieval
  * request to the SRCH2 search server; after the SRCH2 search server finishes retrieving
  * the record, it will notify the <code>SRCH2Engine</code> of the status of the completed
  * record retrieval task and pass the retrieved record if found. The <code>SRCH2Engine</code>
- * will pass this information through the <code>StateResponseListener</code> callback method
- * <code>onGetRecordByIDComplete(String indexName, GetRecordResponse response)</code> where the
+ * will pass this information through the callback method
+ * {@link com.srch2.android.http.service.StateResponseListener#onGetRecordByIDComplete(String, GetRecordResponse)}
+ * where the
  * <code>GetRecordResponse response</code> is this object.
  * <br><br>
- * If the primary key submitted matches an existing record, <code>wasRecordRetrieved()</code>
- * will return <b>true</b> and <code>getRetrievedRecord()</code> will return the
+ * If the primary key submitted matches an existing record, {@link #wasRecordRetrieved()}
+ * will return <b>true</b> and {@link #getRetrievedRecord()} will return the
  * <code>JSONObject</code> representing the record as it exists in the index; if the
- * primary key did not match any existing records, <code>wasRecordRetrieved()</code>
- * will return <b>false</b> and <code>getRetrievedRecord()</code> will return
+ * primary key did not match any existing records, {@link #wasRecordRetrieved()}
+ * will return <b>false</b> and {@link #getRetrievedRecord()} will return
  * a <i>non-null</i> <code>JSONObject</code> containing <b>no</b> key-pair values.
  */
 public final class GetRecordResponse extends RestfulResponse {

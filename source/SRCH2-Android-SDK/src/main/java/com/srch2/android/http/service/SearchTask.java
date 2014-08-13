@@ -54,6 +54,7 @@ class SearchTask extends SearchHttpTask {
                             JSONObject record = resultNodes.getJSONObject("record");
                             records.add(record);
                         } catch (Exception e) {
+                            e.printStackTrace();
                         }
                     }
                     resultMap.put(coreName, records);
@@ -73,6 +74,7 @@ class SearchTask extends SearchHttpTask {
                         JSONObject record = resultNodes.getJSONObject("record");
                         recordResults.add(record);
                     } catch (Exception e) {
+                        e.printStackTrace();
                     }
 
                 }
