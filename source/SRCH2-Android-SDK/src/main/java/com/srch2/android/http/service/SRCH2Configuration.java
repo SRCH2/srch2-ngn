@@ -27,16 +27,12 @@ final class SRCH2Configuration {
      * @param restIndexes the other more indexes
      */
     SRCH2Configuration(Indexable index1, Indexable... restIndexes) {
-
         validateIndexable(index1);
-        for (Indexable idx : restIndexes) {
-            validateIndexable(idx);
-        }
-
         index1.indexInternal = createIndex(new IndexDescription(index1));
         indexableMap.put(index1.getIndexName(), index1);
         if (restIndexes != null) {
             for (Indexable idx : restIndexes) {
+                validateIndexable(idx);
                 idx.indexInternal = createIndex(new IndexDescription(idx));
                 indexableMap.put(idx.getIndexName(), idx);
             }

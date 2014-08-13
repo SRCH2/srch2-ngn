@@ -5,7 +5,7 @@ import org.junit.Test;
 
 public class SchemaTest {
 
-    @Test(expected = NullPointerException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testNull(){
         Schema s = new Schema(null,null);
     }

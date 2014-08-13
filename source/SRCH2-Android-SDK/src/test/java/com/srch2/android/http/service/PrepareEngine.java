@@ -57,7 +57,7 @@ public class PrepareEngine {
             Schema s = new Schema(primaryKey, songTitle, genre);
 
 
-            return null;
+            return s;
         }
 
 
@@ -111,9 +111,8 @@ public class PrepareEngine {
             //Field year = Field.createRefiningField(INDEX_KEY_YEAR, Type.INTEGER);
             Field genre = Field.createSearchableField(INDEX_KEY_GENRE);
 
-            Schema s = new Schema(primaryKey, title, genre);
+            return new Schema(primaryKey, title, genre);
 
-            return new Schema( primaryKey, title, genre);//, year, genre);
         }
 
         public void insertRecords() {

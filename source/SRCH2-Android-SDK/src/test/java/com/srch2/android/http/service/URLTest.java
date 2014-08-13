@@ -21,7 +21,7 @@ public class URLTest {
     private static final String QUERY_KEY_WORDS = "android servi";
     private static final String EXPECTED_QUERY_RAWSTRING = "android~ AND servi*~";
     private static final String EXPECTED_QUERY_FORMAT = Uri.encode(EXPECTED_QUERY_RAWSTRING);
-    private static final IndexInternal TEST_CORE = SRCH2Engine.getConfig().indexesMap.values().iterator().next();
+    private static final IndexInternal TEST_CORE = SRCH2Engine.getConfig().indexableMap.values().iterator().next().indexInternal;
     private static final String DEFAULT_CORE_NAME = TEST_CORE.getIndexCoreName();
 
 

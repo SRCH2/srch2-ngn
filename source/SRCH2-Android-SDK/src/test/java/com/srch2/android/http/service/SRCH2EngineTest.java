@@ -39,6 +39,6 @@ public class SRCH2EngineTest {
     @Test
     public void getIndexGetsCorrectIndexable() {
         SRCH2Engine.initialize(PrepareEngine.musicIndex);
-        Assert.assertEquals(PrepareEngine.musicIndex.getIndexName(), SRCH2Engine.getIndex(PrepareEngine.musicIndex.getIndexName()));
+        Assert.assertEquals(PrepareEngine.musicIndex.getIndexName(), SRCH2Engine.getIndex(PrepareEngine.musicIndex.getIndexName()).getIndexName());
     }
 }

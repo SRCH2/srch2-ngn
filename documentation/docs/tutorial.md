@@ -791,6 +791,7 @@ The results come back fast, and even if we had we inserted thousands of records,
 
 This concludes the Hello SRCH2 Tutorial for learning how to get set up with the SRCH2-Android-SDK. Play around with the project: try updating a record, deleting a record, adding more records with searchable data that is similar in its sequence of letters to appreciate the power of SRCH2's fuzzy search capability-- and this is only the beginning! If you read on in [Advanced Topics](advanced-topics.md) you'll learn how to form powerful queries (such as filtering the search results for the `MovieIndex` by interval of year), perform lightning fast geo-searches using the device's location, or how to set up the SRCH2-Android-SDK for Proguard, or how to manually interact with the running SRCH2 search server. Search on!
 
+Follow the [javadoc](../javadoc) to write your powerfull app.
 
 [tutorial-000]: ../img/000-tutorial.png "Module Settings - How to open 'Module Settings'"
 [tutorial-001]: ../img/001-tutorial.png "Module Settings - How to add a new module"
