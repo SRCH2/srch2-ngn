@@ -12,7 +12,9 @@ final class SRCH2Configuration {
 
     static final String SRCH2_HOME_FOLDER_DEFAULT_NAME = "srch2/";
     static final String HOSTNAME = "127.0.0.1";
-    final HashMap<String, IndexInternal> indexesMap = new HashMap<String, IndexInternal>();
+
+    final HashMap<String, Indexable> indexableMap = new HashMap<String, Indexable>();
+
     private String fullPathOfSRCH2home = "srch2";
     private int maxSearchThreads = 2;
     private int port = 8081;
@@ -32,9 +34,11 @@ final class SRCH2Configuration {
         }
 
         index1.indexInternal = createIndex(new IndexDescription(index1));
+        indexableMap.put(index1.getIndexName(), index1);
         if (restIndexes != null) {
             for (Indexable idx : restIndexes) {
                 idx.indexInternal = createIndex(new IndexDescription(idx));
+                indexableMap.put(idx.getIndexName(), idx);
             }
         }
     }
@@ -63,11 +67,11 @@ final class SRCH2Configuration {
      */
     static String toXML(SRCH2Configuration conf) {
 
-        if (conf.indexesMap.size() == 0) {
+        if (conf.indexableMap.size() == 0) {
             throw new IllegalStateException("No index provided");
         }
 
-        String defaultIndexName = conf.indexesMap.values().iterator().next().getIndexCoreName();
+        String defaultIndexName = conf.indexableMap.values().iterator().next().getIndexName();
 
         StringBuilder configurationXML = new StringBuilder("<config>\n")
                 .append("<srch2Home>")
@@ -88,14 +92,17 @@ final class SRCH2Configuration {
                 .append("\n")
                 .append("    <!-- Testing multiple cores here -->\n").append("    <cores defaultCoreName=\"").append(defaultIndexName).append("\">\n");
 
-        for (IndexInternal indexInternal : conf.indexesMap.values()) {
-            configurationXML.append(indexInternal.getConf()
+        for (Indexable idxable : conf.indexableMap.values()) {
+            configurationXML.append(idxable.indexInternal.getConf()
                     .indexStructureToXML());
         }
 
         configurationXML.append("   </cores>\n" + "</config>\n");
         return configurationXML.toString();
     }
+
+
+
 
     String getUrlString() {
         return "http://" + HOSTNAME + ":" + getPort() + "/";
@@ -124,7 +131,7 @@ final class SRCH2Configuration {
         IndexInternal indexInternal = new IndexInternal(indexDescription);
 
         checkIfIndexNameValidAndAreadyExistedThrowIfNot(indexDescription.getIndexName());
-        indexesMap.put(indexInternal.getIndexCoreName(), indexInternal);
+
         return indexInternal;
     }
 
@@ -197,12 +204,26 @@ final class SRCH2Configuration {
         this.authorizationKey = authorizationKey;
     }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     void checkIfIndexNameValidAndAreadyExistedThrowIfNot(String indexName) {
         if (indexName == null) {
             throw new NullPointerException("Cannot pass null indexName.");
         } else if (indexName.length() < 1) {
             throw new IllegalArgumentException("Cannot pass empty string as indexName.");
-        } else if (indexesMap.containsKey(indexName)) {
+        } else if (indexableMap.containsKey(indexName)) {
             throw new IllegalArgumentException("The string indexName already existed.");
         }
     }
@@ -212,13 +233,13 @@ final class SRCH2Configuration {
             throw new NullPointerException("Cannot pass null indexName.");
         } else if (indexName.length() < 1) {
             throw new IllegalArgumentException("Cannot pass empty string as indexName.");
-        } else if (!indexesMap.containsKey(indexName)) {
+        } else if (!indexableMap.containsKey(indexName)) {
             throw new IllegalArgumentException("The string indexName must correspond to the name of Indexable passed into SRCH2Configuration upon SRCH2Engine.initialization(...).");
         }
     }
 
-    IndexInternal getIndexAndThrowIfNotThere(String name) {
+    Indexable getIndexableAndThrowIfNotThere(String name) {
         checkIfIndexNameValidAndThrowIfNot(name);
-        return indexesMap.get(name);
+        return indexableMap.get(name);
     }
 }

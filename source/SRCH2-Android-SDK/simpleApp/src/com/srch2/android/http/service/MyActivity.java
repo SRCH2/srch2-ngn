@@ -164,6 +164,7 @@ public class MyActivity extends TestableActivity {
     }
 
 
+
     public void testOneRecordCRUD(TestableIndex index) throws JSONException {
         Log.i(TAG, "testOneRecordCRUD");
         JSONObject record = index.getSucceedToInsertRecord();

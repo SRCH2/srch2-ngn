@@ -19,9 +19,11 @@ import java.util.concurrent.atomic.AtomicReference;
  * This is the primary point of access for all of the functions of the SRCH2 Android SDK.
  * <br><br>
  * All methods in this class are statically declared so that they may be called without having
- * a reference to any instance. Note that any method that can be called on an instance of an
- * <code>Indexable</code>, can be called statically on this class by using the name of the index
- * that the <code>Indexable</code> represents.
+ * a reference to any instance. In particular, note that reference to a specific <code>Indexable</code>
+ * instance can be obtained by calling the static method <code>getIndex(String indexName)</code>
+ * and supplying a value of <code>indexName</code> matching the return value of the <code>
+ * getIndexName()</code> for the particular <code>Indexable</code> to retrieve. Thus any of the
+ * <code>Indexable</code> methods can be accessed from everywhere in the code.
  * <br><br>
  * The search functionality of the SRCH2 Android SDK is powered by the running of the SRCH2
  * HTTP server. This server runs in its own process, and this process is started and stopped
@@ -36,7 +38,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * SRCH2 search server must be formed as network or RESTful actions. This class and the rest
  * of the API wraps this condition of operation so that users of the SRCH2 Android SDK do
  * not have to manually form their own network tasks but can instead simply make the appropriate
- * calls on either the <code>SRCH2Engine</code> or their <code>Indexable</code> implementations.
+ * calls their <code>Indexable</code> implementations.
  * Similarly, the output of the SRCH2 search server is wrapped in the various subclasses of
  * <code>RestfulResponse</code> so that the RESTful responses from the SRCH2 search server
  * do not have to be parsed: for instance, after inserting a record, the method <code>
@@ -162,9 +164,9 @@ final public class SRCH2Engine {
     private static void startCheckCoresLoadedTask() {
         Log.d("srch2:: " + TAG, "startCheckCoresLoadedTask");
         HashMap<String, URL> indexUrlMap = new HashMap<String, URL>();
-        for (IndexInternal index : conf.indexesMap.values()) {
-            indexUrlMap.put(index.getIndexCoreName(),
-                    UrlBuilder.getInfoUrl(conf, index.getConf()));
+        for (Indexable index : conf.indexableMap.values()) {
+            indexUrlMap.put(index.indexInternal.getIndexCoreName(),
+                    UrlBuilder.getInfoUrl(conf, index.indexInternal.getConf()));
         }
 
         resetState();
@@ -182,10 +184,6 @@ final public class SRCH2Engine {
 
     static SearchResultsListener getSearchResultsObserver() {
         return searchResultsObserver;
-    }
-
-    static IndexInternal getIndexByNameReturnNullIfNotExists(String name){
-        return conf.indexesMap.get(name);
     }
 
     /**
@@ -255,30 +253,6 @@ final public class SRCH2Engine {
         searchAllRawString(rawString);
     }
 
-
-    /**
-     * Searches the index with the specified <code>indexName</code> (as set by the <code>Indexable</code> implementation
-     * of the method <code>getIndexName()</code>) on the specified <code>searchInput</code>.
-     * <br><br>
-     * When the SRCH2 server is finished performing the search task, the method
-     * <code>onNewSearchResultsAvailable(int HTTPResponseCode, String jsonResultsLiteral,
-     * HashMap<String, ArrayList<JSONObject>> resultRecordMap)</code> will be triggered. The
-     * <code>resultRecordMap</code> will contain the search results in the form of <code>
-     * JSONObject</code>s as they were originally inserted (and updated).
-     * <br><br>
-     * This method will throw exceptions if the <code>indexName</code> is null or does not match any of
-     * the index names as defined by the corresponding <code>Indexable</code> implementation of
-     * of <code>getIndexName()</code>;
-     * or if the <code>searchInput</code> is null or has a length less than one; or if <code>SRCH2Engine.initialize(...)</code> has
-     * not been called.
-     * @param indexName the name of the index as defined by the <code>Indexable</code> implementation of <code>getIndexName()</code>
-     * @param searchInput the textual input to search on
-     */
-    public static void searchIndex(String indexName, String searchInput) {
-        checkConfIsNullThrowIfIs();
-        conf.getIndexAndThrowIfNotThere(indexName).search(searchInput);
-    }
-
     /**
      * Performs an advanced searches on all <code>Indexable</code>s that were initialized when included
      * in the argument set of the method call <code>SRCH2Engine.initialize(...)</code>; that is, this method
@@ -303,203 +277,19 @@ final public class SRCH2Engine {
     }
 
     /**
-     * Performs an advanced search on the index with the specified <code>indexName</code> (as set by the
-     * <code>Indexable</code> implementation
-     * of the method <code>getIndexName()</code>) using the specified <code>query</code>.
-     * <br><br>
-     * When the SRCH2 server is finished performing the search task, the method
-     * <code>onNewSearchResultsAvailable(int HTTPResponseCode, String jsonResultsLiteral,
-     * HashMap<String, ArrayList<JSONObject>> resultRecordMap)</code> will be triggered. The
-     * <code>resultRecordMap</code> will contain the search results in the form of <code>
-     * JSONObject</code>s as they were originally inserted (and updated).
-     * <br><br>
-     * This method will throw exceptions if the <code>indexName</code> is null or does not match any of
-     * the index names as defined by the corresponding <code>Indexable</code> implementation of
-     * of <code>getIndexName()</code>;
-     * or if the <code>query</code> forming the advanced search is null; or if
-     * <code>SRCH2Engine.initialize(...)</code> has not been called; or if the value  of
-     * <code>query</code> is null;
-     * @param indexName the name of the index as defined by the <code>Indexable</code>
-     *                  implementation of <code>getIndexName()</code>
-     * @param query the formation of the advanced search
-     */
-    public static void advancedSearchIndex(String indexName, Query query) {
-        checkConfIsNullThrowIfIs();
-        conf.getIndexAndThrowIfNotThere(indexName).advancedSearch(query);
-    }
-
-    /**
-     * Inserts the specified <code>recordToInsert</code> into the index with the matching name of
-     * <code>indexName</code> (as set by the <code>Indexable</code> implementation  of the method
-     * <code>getIndexName()</code>). This <code>JSONObject</code> should be properly formed and contain
-     * only keys matching the schema fields defined for the corresponding <code>Indexable</code>.
-     * <br><br>
-     * When the SRCH2 search server completes the insert task, the method
-     * <code>onInsertRequestComplete(String indexName, InsertResponse response)</code>
-     * of the <code>StateResponseListener</code> will be triggered. Whether the SRCH2 search server
-     * was successful in inserting the record is signified by the value of the
-     * <code>InsertReponse response</code>'s method <code>getSuccessCount()</code>.
-     * <br><br>
-     * This method will throw exceptions if the <code>indexName</code> is null or does not match any of
-     * the index names as defined by the corresponding <code>Indexable</code> implementation of
-     * of <code>getIndexName()</code>;
-     * or if <code>SRCH2Engine.initialize(...)</code> has not been called.
-     * @param indexName  the name of the index as defined by the <code>Indexable</code> implementation of <code>getIndexName()</code>
-     * @param recordToInsert the <code>JSONObject</code> with keys matching the fields of the
-     *                       schema as defined in the corresponding <code>Indexable</code> to insert
-     */
-    public static void insertIntoIndex(String indexName, JSONObject recordToInsert) {
-        checkConfIsNullThrowIfIs();
-        conf.getIndexAndThrowIfNotThere(indexName).insert(recordToInsert);
-    }
-
-    /**
-     * Inserts the specified <code>recordsToInsert</code> into the index with the matching name of
-     * <code>indexName</code> (as set by the <code>Indexable</code> implementation  of the method
-     * <code>getIndexName()</code>). This <code>JSONArray</code> should be properly formed and contain only
-     * the set of properly formed <code>JSONObject</code>s (that contain only keys matching the schema
-     * fields as defined for the corresponding <code>Indexable</code>).
-     * <br><br>
-     * When the SRCH2 search server completes the insert task, the method
-     * <code>onInsertRequestComplete(String indexName, InsertResponse response)</code>
-     * of the <code>StateResponseListener</code> will be triggered. Whether the SRCH2 search server
-     * was successful in inserting the records is signified by the value of the
-     * <code>InsertReponse response</code>'s method <code>getSuccessCount()</code>.
-     * <br><br>
-     * This method will throw exceptions if the <code>indexName</code> is null or does not match any of
-     * the index names as defined by the corresponding <code>Indexable</code> implementation of
-     * of <code>getIndexName()</code>;
-     * or if <code>SRCH2Engine.initialize(...)</code> has not been called.
-     * @param indexName  the name of the index as defined by the <code>Indexable</code> implementation of <code>getIndexName()</code>
-     * @param recordsToInsert the <code>JSONArray</code> containing the set of <code>JSONObject</code>s
-     *                        with keys matching the fields of the schema as defined in the corresponding
-     *                        <code>Indexable</code> to insert
-     */
-    public static void insertIntoIndex(String indexName, JSONArray recordsToInsert) {
-        checkConfIsNullThrowIfIs();
-        conf.getIndexAndThrowIfNotThere(indexName).insert(recordsToInsert);
-    }
-
-    /**
-     * Updates the specified <code>recordToUpdate</code> in the index with the matching name of
-     * <code>indexName</code> (as set by the <code>Indexable</code> implementation  of the method
-     * <code>getIndexName()</code>). This <code>JSONObject</code> should be properly formed and contain
-     * only keys matching the schema fields defined for the corresponding <code>Indexable</code>.
-     * If the primary key of this record does not already exist in the index, it will be inserted;
-     * otherwise, the existing record will have its fields updated with the new values in the
-     * <code>recordToUpdate.</code>
-     * <br><br>
-     * When the SRCH2 search server completes the update task, the method
-     * <code>onUpdateRequestComplete(String indexName, UpdateResponse response)</code>
-     * of the <code>StateResponseListener</code> will be triggered. Whether the SRCH2 search server
-     * was successful in updating the record is signified by the value of the
-     * <code>UpdateResponse response</code>'s method <code>getSuccessCount()</code>.
-     * <br><br>
-     * This method will throw exceptions if the <code>indexName</code> is null or does not match any of
-     * the index names as defined by the corresponding <code>Indexable</code> implementation of
-     * of <code>getIndexName()</code>;
-     * or if <code>SRCH2Engine.initialize(...)</code> has not been called.
-     * @param indexName  the name of the index as defined by the <code>Indexable</code> implementation of <code>getIndexName()</code>
-     * @param recordToUpdate the <code>JSONObject</code> with keys matching the fields of the
-     *                       schema as defined in the corresponding <code>Indexable</code> to update
-     */
-    public static void updateIndex(String indexName, JSONObject recordToUpdate) {
-        checkConfIsNullThrowIfIs();
-        conf.getIndexAndThrowIfNotThere(indexName).update(recordToUpdate);
-    }
-
-    /**
-     * Updates the set of records contained in the <code>recordsToUpdate</code> in the index with the matching name of
-     * <code>indexName</code> (as set by the <code>Indexable</code> implementation  of the method
-     * <code>getIndexName()</code>). This <code>JSONArray</code> should be properly formed and contain only
-     * the set of properly formed <code>JSONObject</code>s (that contain only keys matching the schema
-     * fields as defined for the corresponding <code>Indexable</code>). For each <code>JSONObject</code>
-     * in the set, if the primary key does not already exist in the index, the record will be inserted;
-     * otherwise, the existing record will have its fields updated with the new values.
-     * <br><br>
-     * When the SRCH2 search server completes the update task, the method
-     * <code>onUpdateRequestComplete(String indexName, UpdateResponse response)</code>
-     * of the <code>StateResponseListener</code> will be triggered. Whether the SRCH2 search server
-     * was successful in updating the records is signified by the value of the
-     * <code>UpdateResponse response</code>'s method <code>getSuccessCount()</code>.
-     * <br><br>
-     * This method will throw exceptions if the <code>indexName</code> is null or does not match any of
-     * the index names as defined by the corresponding <code>Indexable</code> implementation of
-     * of <code>getIndexName()</code>;
-     * or if <code>SRCH2Engine.initialize(...)</code> has not been called.
-     * @param indexName  the name of the index as defined by the <code>Indexable</code> implementation of <code>getIndexName()</code>
-     * @param recordsToUpdate the <code>JSONArray</code> containing the set of <code>JSONObject</code>s
-     *                        with keys matching the fields of the schema as defined in the corresponding
-     *                        <code>Indexable</code> to update
-     */
-    public static void updateIndex(String indexName, JSONArray recordsToUpdate) {
-        checkConfIsNullThrowIfIs();
-        conf.getIndexAndThrowIfNotThere(indexName).update(recordsToUpdate);
-    }
-
-    /**
-     * Deletes the record with the matching <code>primaryKeyToDelete</code> into the index with the matching name of
-     * <code>indexName</code> (as set by the <code>Indexable</code> implementation  of the method
-     * <code>getIndexName()</code>).
-     * <br><br>
-     * When the SRCH2 search server completes the deletion task, the method
-     * <code>onDeleteRequestComplete(String indexName, DeleteResponse response)</code>
-     * of the <code>StateResponseListener</code> will be triggered. Whether the SRCH2 search server
-     * was successful in deleting the record is signified by the value of the
-     * <code>DeleteResponse response</code>'s method <code>getSuccessCount()</code>.
-     * <br><br>
-     * This method will throw exceptions if the <code>indexName</code> is null or does not match any of
-     * the index names as defined by the corresponding <code>Indexable</code> implementation of
-     * of <code>getIndexName()</code>;
-     * or if <code>SRCH2Engine.initialize(...)</code> has not been called.
-     * @param indexName  the name of the index as defined by the <code>Indexable</code> implementation of <code>getIndexName()</code>
-     * @param primaryKeyOfRecordToDelete the primary key of the record to delete
-     */
-    public static void deleteFromIndex(String indexName, String primaryKeyOfRecordToDelete) {
-        checkConfIsNullThrowIfIs();
-        conf.getIndexAndThrowIfNotThere(indexName).delete(primaryKeyOfRecordToDelete);
-    }
-
-    /**
-     * Returns the record with the specified <code>primaryKeyOfRecordToRetrieve</code> if found in the index with the matching name of
-     * <code>indexName</code> (as set by the <code>Indexable</code> implementation  of the method
-     * <code>getIndexName()</code>). When the SRCH2
-     * search server completes the retrieval task, the method <code>onGetRecordByIDComplete(String
-     * indexName, GetRecordResponse response)</code> of the <code>StateResponseListener</code> will
-     * be triggered. The record retrieved will be in the form of a <code>JSONObject</code> inside the
-     * <code>response GetRecordResponse</code>.
-     * <br><br>
-     * This method will throw exceptions if the <code>indexName</code> is null or does not match any of
-     * the index names as defined by the corresponding <code>Indexable</code> implementation of
-     * of <code>getIndexName()</code>;
-     * or if <code>SRCH2Engine.initialize(...)</code> has not been called; or if the value of
-     * <code>primaryKeyOfRecordToRetrieve</code> is null or has a length less than one.
+     * Returns the <code>Indexable</code> representing the index that matches the value of
+     * <code>indexName</code> as it was defined in the <code>Indexable</code> implementation
+     * of <code>getIndexName()</code>. This method is a convenience getter, offering static access
+     * to the <code>Indexable</code> references as they were supplied to
+     * <code>SRCH2Engine.initialize(Indexable firstIndex, Indexable... additionalIndexes)</code>:
+     * by obtaining the <code>Indexable</code>, its methods can be called to search, insert, update or
+     * perform any other <code>Indexable</code> function.
      * @param indexName the name of the index as defined by the <code>Indexable</code> implementation of <code>getIndexName()</code>
-     * @param primaryKeyOfRecordToRetrieve the primary key of the record to retrieve
+     * @return the <code>Indexable</code> representing the index with the specified <code>indexName</code>
      */
-    public static void getRecordByIdFromIndex(String indexName, String primaryKeyOfRecordToRetrieve) {
+    public static Indexable getIndex(String indexName) {
         checkConfIsNullThrowIfIs();
-        conf.getIndexAndThrowIfNotThere(indexName).getRecordbyID(primaryKeyOfRecordToRetrieve);
-    }
-
-    /**
-     * Performs an information task on the specified index for the <code>Indexable</code> with the
-     * corresponding <code>indexName</code> as defined in the <code>getIndexName()</code> of that
-     * <code>Indexable</code>. When the SRCH2 search server completes the information task, the
-     * method <code>void onInfoRequestComplete(String indexName, InfoResponse response)</code>
-     * will be triggered. The <code>InfoResponse response</code> will contain information about the
-     * index such as the number of records it contains or the time stamp of the last time the index
-     * was updated to reflect any pending changes.
-     * <br><br>
-     * This method will throw exceptions if the <code>indexName</code> is null or does not match any of
-     * the index names as defined by the corresponding <code>Indexable</code> implementation of
-     * of <code>getIndexName()</code>;
-     * or if <code>SRCH2Engine.initialize(...)</code> has not been called.
-     * @param indexName the name of the index as defined by the <code>Indexable</code> implementation of <code>getIndexName()</code>
-     */
-    public static void getIndexInfo(String indexName) {
-        checkConfIsNullThrowIfIs();
-        conf.getIndexAndThrowIfNotThere(indexName).info();
+        return conf.getIndexableAndThrowIfNotThere(indexName);
     }
 
     /**
