@@ -1986,8 +1986,10 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
     }
 
     // mergeEveryNSeconds
+    //If the tag is not set the engine will assume default value of 1
     childNode = updateHandlerNode.child(mergePolicyString).child(
             mergeEveryNSecondsString);
+    coreInfo->mergeEveryNSeconds = 1;
     bool mensflag = false;
     if (childNode && childNode.text()) {
         string mens = childNode.text().get();
@@ -1997,14 +1999,14 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
         }
     }
     if (!mensflag) {
-        parseError << "mergeEveryNSeconds is not set.\n";
-        configSuccess = false;
-        return;
+        parseWarnings << "mergeEveryNSeconds is not set correctly, so using the default value 1.\n";
     }
 
     // mergeEveryMWrites
+    //If the tag is not set the engine will assume default value of 1
     childNode = updateHandlerNode.child(mergePolicyString).child(
             mergeEveryMWritesString);
+    coreInfo->mergeEveryMWrites = 1;
     bool memwflag = false;
     if (childNode && childNode.text()) {
         string memw = childNode.text().get();
@@ -2015,9 +2017,7 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
         }
     }
     if (!memwflag) {
-        parseError << "mergeEveryMWrites is not set.\n";
-        configSuccess = false;
-        return;
+        parseWarnings << "mergeEveryMWrites is not set correctly, so using the default value 1.\n";
     }
 
     // set default value for updateHistogramEveryPSeconds and updateHistogramEveryQWrites because there
@@ -2033,20 +2033,20 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
     // logLevel is required
     this->loglevel = Logger::SRCH2_LOG_INFO;
     childNode = updateHandlerNode.child(updateLogString).child(logLevelString);
-    bool llflag = true;
+    bool llflag = false;
     if (childNode && childNode.text()) {
         string ll = childNode.text().get();
         if (this->isValidLogLevel(ll)) {
             this->loglevel =
                     static_cast<Logger::LogLevel>(childNode.text().as_int());
+            llflag = true;
         } else {
             llflag = false;
         }
     }
     if (!llflag) {
-        parseError << "Log Level is not set correctly\n";
-        configSuccess = false;
-        return;
+        parseWarnings << "Log Level is either not set or not set correctly, so using the"
+                +" default value 3.\n";
     }
 
     // accessLogFile is required
