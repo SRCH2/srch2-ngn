@@ -60,9 +60,6 @@ public final class InsertResponse extends RestfulResponse {
 
     InsertResponse(int theHttpResponseCode, String theRestfulResponseLiteral) {
         super(theHttpResponseCode, theRestfulResponseLiteral);
-
-        Log.d("srch2:: InsertResponse", "response\n" + theRestfulResponseLiteral + "\nend of response");
-
         int successCount = 0;
         int failureCount = 0;
 
@@ -83,11 +80,7 @@ public final class InsertResponse extends RestfulResponse {
                     }
                 }
             }
-
-            Log.d("srch2:: InsertResponse", "insertSuccess " + successCount + " insertFailure " + failureCount);
-
         } catch (JSONException oops) {
-            Log.d("srch2:: InsertResponse", "JSON EXCEPTION");
             oops.printStackTrace();
             successCount = INVALID_COUNT;
             failureCount = INVALID_COUNT;

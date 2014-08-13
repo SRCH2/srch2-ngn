@@ -29,18 +29,9 @@ class InsertTask extends ControlHttpTask {
 
     @Override
     public void run() {
-
-        Log.d(TAG, "INSERT running");
-
         if (isSingleInsertion) {
-
-            Log.d(TAG, "doing single insert");
-
             doSingleInsert();
         } else {
-
-            Log.d(TAG, "doing batch insert");
-
             doBatchInsert();
         }
     }
@@ -100,8 +91,6 @@ class InsertTask extends ControlHttpTask {
 
         int responseCode = -1;
         String response = null;
-
-        Log.d(TAG, "targetUrl is " + targetUrl.toExternalForm());
 
         try {
             connection = (HttpURLConnection) targetUrl.openConnection();

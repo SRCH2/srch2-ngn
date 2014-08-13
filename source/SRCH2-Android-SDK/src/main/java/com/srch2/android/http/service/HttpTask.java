@@ -1,7 +1,5 @@
 package com.srch2.android.http.service;
 
-import android.util.Log;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,6 +11,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 
 abstract class HttpTask implements Runnable {
+
+    private static final String TAG = "HttpTask";
 
     protected StateResponseListener controlResponseObserver;
     protected SearchResultsListener searchResultsListener;
@@ -46,7 +46,6 @@ abstract class HttpTask implements Runnable {
         if (!isExecuting || taskToExecte == null) {
             return;
         }
-        Log.d("HttpTask", "1");
         boolean isSearchTask = taskToExecte.getClass() == SearchTask.class;
 
         if (isSearchTask && searchTaskExecutor != null) {
@@ -61,7 +60,6 @@ abstract class HttpTask implements Runnable {
             }
         } else if (!isSearchTask && controlTaskExecutor != null) {
             try {
-                Log.d("HttpTask", "2");
                 controlTaskExecutor.execute(taskToExecte);
             } catch (RejectedExecutionException ignore) { /*
 														 * Should not occur
@@ -124,27 +122,27 @@ abstract class HttpTask implements Runnable {
                 response = readInputStream(connection.getInputStream());
 
                 if (response == null || (response != null && response.trim().length() < 1)) {
-                    Log.d(internalClassLogcatTag, "INPUT STREAM data is null");
+                    Cat.d(internalClassLogcatTag, "INPUT STREAM data is null");
                     hasValidInputStreamData = false;
                     response = null;
                 } else {
-                    Log.d(internalClassLogcatTag, "INPUT STREAM is _" + response + "_");
+                    Cat.d(internalClassLogcatTag, "INPUT STREAM is _" + response + "_");
                 }
             }else {
-                Log.d(internalClassLogcatTag, "INPUT STREAM NULL");
+                Cat.d(internalClassLogcatTag, "INPUT STREAM NULL");
             }
 
             if (!hasValidInputStreamData) {
                 if (connection.getErrorStream() != null) {
                     response = readInputStream(connection.getErrorStream());
                     if (response == null || (response != null && response.trim().length() < 1)) {
-                        Log.d(internalClassLogcatTag, "ERROR STREAM data is null");
+                        Cat.d(internalClassLogcatTag, "ERROR STREAM data is null");
                         response = null;
                     } else {
-                        Log.d(internalClassLogcatTag, "ERROR STREAM is _" + response + "_");
+                        Cat.d(internalClassLogcatTag, "ERROR STREAM is _" + response + "_");
                     }
                 }else {
-                    Log.d(internalClassLogcatTag, "ERROR STREAM NULL");
+                    Cat.d(internalClassLogcatTag, "ERROR STREAM NULL");
                 }
             }
         }
@@ -160,9 +158,9 @@ abstract class HttpTask implements Runnable {
             errorResponse = ioException.getMessage();
             if (errorResponse == null || (errorResponse != null && errorResponse.trim().length() < 1)) {
                 errorResponse = null;
-                Log.d(internalClassLogcatTag, "IOEXCEPTION message is NULL");
+                Cat.d(internalClassLogcatTag, "IOEXCEPTION message is NULL");
             } else {
-                Log.d(internalClassLogcatTag, "IOEXCEPTION message is " + errorResponse);
+                Cat.d(internalClassLogcatTag, "IOEXCEPTION message is " + errorResponse);
             }
             ioException.printStackTrace();
         }

@@ -1,6 +1,5 @@
 package com.srch2.android.http.service;
 
-import android.util.Log;
 import com.srch2.android.http.service.HttpTask.ControlHttpTask;
 
 import java.io.IOException;
@@ -25,7 +24,7 @@ class DeleteTask extends ControlHttpTask {
         int responseCode = -1;
         String response = null;
 
-        Log.d("srch:: DeleteTask", "targeturl for DELETION is " + targetUrl);
+        Cat.d(TAG, "targeturl for DELETION is " + targetUrl);
 
         try {
             connection = (HttpURLConnection) targetUrl.openConnection();

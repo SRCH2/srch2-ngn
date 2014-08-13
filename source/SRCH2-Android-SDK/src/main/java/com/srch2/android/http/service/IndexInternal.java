@@ -8,6 +8,8 @@ import org.json.JSONObject;
 import java.net.URL;
 
 final class IndexInternal {
+    private static final String TAG = "IndexInternal";
+
     private final IndexDescription indexDescription;
     private SearchTask currentSearchTask = null;
 
@@ -58,10 +60,7 @@ final class IndexInternal {
 
 
     void insert(JSONArray records) {
-        Log.d("srch2:: IndexInternal", "about to insert into index isReady is " + SRCH2Engine.isReady());
         if (SRCH2Engine.isReady()) {
-
-            Log.d("srch2:: IndexInternal", "actually inserting");
             URL url = UrlBuilder.getInsertUrl(SRCH2Engine.getConfig(),
                     indexDescription);
 

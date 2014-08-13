@@ -103,13 +103,10 @@ class InfoTask extends ControlHttpTask {
         if (controlResponseObserver != null) {
             InfoResponse infoResponse;
             if (returnedResponseLiteral == null || returnedResponseLiteral.equals(RestfulResponse.IRRECOVERABLE_NETWORK_ERROR_MESSAGE)) {
-                Log.d(TAG, "failed to do the thing it was supposed to do!");
-
                 infoResponse = new InfoResponse(
                         returnedResponseCode,
                         RestfulResponse.IRRECOVERABLE_NETWORK_ERROR_MESSAGE);
             } else {
-                Log.d(TAG, "doing the thing it was supposed to do!");
                 infoResponse = new InfoResponse(returnedResponseCode,
                         returnedResponseLiteral);
             }
