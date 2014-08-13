@@ -1328,7 +1328,7 @@ void Trie::calculateNodeHistogramValuesFromChildren(TrieNode *node,
 				vector<unsigned> filterAttributeList;
 				if (invertedIndex->isValidTermPositionHit(forwardIndexDirectoryReadView, recordId,
 						keywordOffset,
-						filterAttributeList, false,  matchedAttrsList, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
+						filterAttributeList, ATTRIBUTES_OP_OR,  matchedAttrsList, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
 					break;
 				}
 			}

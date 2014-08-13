@@ -152,7 +152,7 @@ public:
     		const float boost,
     		const float similarityBoost,
     		const uint8_t threshold,
-    		const vector<unsigned>& fieldFilter, bool andOperation);
+    		const vector<unsigned>& fieldFilter, ATTRIBUTES_OP andOperation);
     // constructs an internal (operator) logical plan node
     LogicalPlanNode * createOperatorLogicalPlanNode(LogicalPlanNodeType nodeType);
     LogicalPlanNode * createPhraseLogicalPlanNode(const vector<string>& phraseKeyWords,

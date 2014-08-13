@@ -93,9 +93,9 @@ LogicalPlan::~LogicalPlan(){
 
 LogicalPlanNode * LogicalPlan::createTermLogicalPlanNode(const std::string &queryKeyword,
 		TermType type,const float boost, const float fuzzyMatchPenalty,
-		const uint8_t threshold , const vector<unsigned>& fieldFilter, bool andOperation){
+		const uint8_t threshold , const vector<unsigned>& fieldFilter,ATTRIBUTES_OP attrOp){
 	Term * term = new Term(queryKeyword, type, boost, fuzzyMatchPenalty, threshold);
-	term->addAttributesToFilter(fieldFilter, andOperation);
+	term->addAttributesToFilter(fieldFilter, attrOp);
 	LogicalPlanNode * node = new LogicalPlanNode(term , NULL);
 	return node;
 }

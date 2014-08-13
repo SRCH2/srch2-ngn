@@ -43,7 +43,7 @@ struct Term::Impl
     float similarityBoost;
     uint8_t threshold;
     vector<unsigned> searchableAttributeIdsToFilter;
-    bool andOperation;
+    ATTRIBUTES_OP attrOp;
 
     string toString(){
     	std::stringstream ss;
@@ -52,7 +52,7 @@ struct Term::Impl
     	ss << boost;
     	ss << similarityBoost;
     	ss << (threshold+1) << "";
-    	ss << andOperation;
+    	ss << attrOp;
     	for (unsigned i = 0; i < searchableAttributeIdsToFilter.size(); ++i)
     		ss << searchableAttributeIdsToFilter[i];
     	return ss.str();
@@ -67,7 +67,7 @@ Term::Term(const string &keywordStr, TermType type, const float boost, const flo
     impl->boost = boost;
     impl->similarityBoost = fuzzyMatchPenalty;
     impl->threshold = threshold;
-    impl->andOperation = false;
+    impl->attrOp = ATTRIBUTES_OP_OR;
 }
 
 Term::~Term()
@@ -143,14 +143,14 @@ TermType Term::getTermType() const
     return impl->type;
 }
 
-void Term::addAttributesToFilter(const vector<unsigned>& searchableAttributeId, bool andOperation)
+void Term::addAttributesToFilter(const vector<unsigned>& searchableAttributeId, ATTRIBUTES_OP attrOp)
 {
     this->impl->searchableAttributeIdsToFilter = searchableAttributeId;
-    this->impl->andOperation = andOperation;
+    this->impl->attrOp = attrOp;
 }
 
-bool Term::getFilterAndOperation() {
-	return this->impl->andOperation;
+ATTRIBUTES_OP Term::getFilterAttrOperation() {
+	return this->impl->attrOp;
 }
 
 vector<unsigned>& Term::getAttributesToFilter() const

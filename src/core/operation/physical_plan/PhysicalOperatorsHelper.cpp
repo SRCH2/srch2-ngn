@@ -39,7 +39,7 @@ bool verifyByRandomAccessHelper(QueryEvaluatorInternal * queryEvaluator, PrefixA
 			if (queryEvaluator->getForwardIndex()->haveWordInRange(parameters.forwardListDirectoryReadView,
 					parameters.recordToVerify->getRecordId(),
 					minId, maxId,
-					termSearchableAttributeIdToFilterTermHits, term->getFilterAndOperation(),
+					termSearchableAttributeIdToFilterTermHits, term->getFilterAttrOperation(),
 					matchingKeywordId, matchedAttributeIdsList, termRecordStaticScore)) {
 				parameters.termRecordMatchingPrefixes.push_back(trieNode);
 				parameters.attributeIdsList.push_back(matchedAttributeIdsList);
@@ -79,7 +79,7 @@ bool verifyByRandomAccessHelper(QueryEvaluatorInternal * queryEvaluator, PrefixA
 			if (queryEvaluator->getForwardIndex()->haveWordInRange(parameters.forwardListDirectoryReadView,
 					parameters.recordToVerify->getRecordId(),
 					minId, maxId,
-					termSearchableAttributeIdToFilterTermHits, term->getFilterAndOperation(),
+					termSearchableAttributeIdToFilterTermHits, term->getFilterAttrOperation(),
 					matchingKeywordId, matchedAttributeIdsList, termRecordStaticScore)) {
 				parameters.termRecordMatchingPrefixes.push_back(trieNode);
 				parameters.attributeIdsList.push_back(matchedAttributeIdsList);

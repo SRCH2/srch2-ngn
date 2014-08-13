@@ -490,7 +490,7 @@ void QuadNode::splitOFilter(QuadTree *quadtree, const Trie *trie, OFilterMapPtr 
         vector<unsigned> matchingKeywordIds;
         vector<unsigned> filterAttrs;
         fl->getWordsInRange(quadtree->getForwardIndex()->getSchema(), prefixToSplit.minId,
-        		prefixToSplit.maxId, filterAttrs, true, matchingKeywordIds);
+        		prefixToSplit.maxId, filterAttrs, ATTRIBUTES_OP_AND, matchingKeywordIds);
         
         // add each keyword to the delta oFilter along with the geoElement
         for (unsigned j = 0; j < matchingKeywordIds.size(); j++)
@@ -674,7 +674,7 @@ void QuadNode::recoverCFiltersOnThisNode(QuadTree *quadtree, CFilterMapPtr cMapP
         vector<unsigned> matchingKeywordIds;
         vector<unsigned> filterAttrs;
         fl->getWordsInRange(quadtree->getForwardIndex()->getSchema(), prefixToRecover.minId,
-        		prefixToRecover.maxId, filterAttrs, true, matchingKeywordIds);
+        		prefixToRecover.maxId, filterAttrs, ATTRIBUTES_OP_AND, matchingKeywordIds);
         
         // if any, add this record to the c-filter of prefixToRecover
         if (matchingKeywordIds.size() > 0)
@@ -886,7 +886,7 @@ void QuadNode::gatherForwardListsAndAdjustOCFilters(QuadTree *quadtree, unsigned
             unsigned keywordId;
             vector<unsigned> attributeBitmap;
             if (fl->haveWordInRange(quadtree->getForwardIndex()->getSchema(), oldKeywordId,
-            		oldKeywordId, filterAttrsList, true, keywordId, attributeBitmap, score))
+            		oldKeywordId, filterAttrsList, ATTRIBUTES_OP_AND, keywordId, attributeBitmap, score))
             {
                 if (recordIdsToProcess.find (forwardListID) == recordIdsToProcess.end())
                 {

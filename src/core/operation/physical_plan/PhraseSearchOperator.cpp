@@ -172,7 +172,7 @@ bool PhraseSearchOperator::matchPhrase(const ForwardList* forwardListPtr, const 
     }
 
     // check whether it is AND or OR boolean operator for multiple fields.
-    bool ANDOperation = phraseInfo.andOperation;
+    ATTRIBUTES_OP attrOp = phraseInfo.attrOps;
 
     //special check for AND operation ...if the set bits of query bit map does not match with all
     // the keywords bitmap then we should return false because AND condition will not be satisfied.
@@ -182,7 +182,7 @@ bool PhraseSearchOperator::matchPhrase(const ForwardList* forwardListPtr, const 
     // and "york" is present only in "title" field and
     // if query is title.description:"new york" then there should skip this record.
     //
-    if (ANDOperation && phraseInfo.attributeIdsList.size() > 0) {
+    if (attrOp == ATTRIBUTES_OP_AND && phraseInfo.attributeIdsList.size() > 0) {
     	for (int i = 0; i < keywordsAttrIdsInForwardList.size(); ++i) {
     		vector<unsigned> resultBitMap;
     		fetchCommonAttributes(phraseInfo.attributeIdsList, keywordsAttrIdsInForwardList[i],
@@ -240,10 +240,10 @@ bool PhraseSearchOperator::matchPhrase(const ForwardList* forwardListPtr, const 
             		matchedPositions, true);  // true means we stop at first match
         }
         // AND operation and we didn't find result so we should break
-        if (ANDOperation && result == false)
+        if (attrOp == ATTRIBUTES_OP_AND && result == false)
             break;
         // OR operation and we found result so we should break
-        if (!ANDOperation && result == true)
+        if (attrOp == ATTRIBUTES_OP_OR && result == true)
             break;
 
         // clear the position list for next iteration.

@@ -120,7 +120,7 @@ class PhraseInfo{
         vector<unsigned> phraseKeywordPositionIndex;
         unsigned proximitySlop;
         vector<unsigned> attributeIdsList;
-        bool andOperation;  // flag to indicate conjunction/disjunction in between attributes
+        ATTRIBUTES_OP attrOps;  // flag to indicate conjunction/disjunction in between attributes
 
         string toString(){
         	stringstream ss;
@@ -134,7 +134,7 @@ class PhraseInfo{
         		ss << phraseKeywordPositionIndex[i];
         	}
         	ss << proximitySlop;
-        	ss << andOperation;
+        	ss << attrOps;
         	for(unsigned i = 0 ; i < attributeIdsList.size() ; ++i ){
         		ss << attributeIdsList[i];
         	}
@@ -148,12 +148,12 @@ public:
 	void addPhrase(const vector<string>& phraseKeywords,
 			const vector<unsigned>& phraseKeywordsPositionIndex,
 			unsigned proximitySlop,
-			const vector<unsigned>& attributeIdsList, bool andOperation){
+			const vector<unsigned>& attributeIdsList, ATTRIBUTES_OP attrOps){
 
 		PhraseInfo pi;
 		pi.phraseKeywordPositionIndex = phraseKeywordsPositionIndex;
 		pi.attributeIdsList = attributeIdsList;
-		pi.andOperation = andOperation;
+		pi.attrOps = attrOps;
 		pi.phraseKeyWords = phraseKeywords;
 		pi.proximitySlop = proximitySlop;
 		phraseInfoVector.push_back(pi);

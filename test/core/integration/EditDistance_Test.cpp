@@ -137,85 +137,85 @@ void test1()
 
     vector<unsigned> filter;
     //Edit distance 0
-    ASSERT ( ping(analyzer, queryEvaluator, "smyth" , 1 , 1001, filter, true) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "smyth" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
 
     //Edit distance 1
-    ASSERT ( ping(analyzer, queryEvaluator, "smth" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "smith" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "smythe" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "smyth" , 1 , 1001, filter, true) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "smth" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "smith" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "smythe" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "smyth" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
 
     //swap operation
-    ASSERT ( pingEd(analyzer, queryEvaluator, "msyth" , 1 , 1001, filter, true) == true);
-    ASSERT ( pingEd(analyzer, queryEvaluator, "symth" , 1 , 1001, filter, true) == true);
-    ASSERT ( pingEd(analyzer, queryEvaluator, "smtyh" , 1 , 1001, filter, true) == true);
-    ASSERT ( pingEd(analyzer, queryEvaluator, "smyht" , 1 , 1001, filter, true) == true);
-    ASSERT ( pingEd(analyzer, queryEvaluator, "mxyth" , 1 , 1001, filter, true) == false);
+    ASSERT ( pingEd(analyzer, queryEvaluator, "msyth" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( pingEd(analyzer, queryEvaluator, "symth" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( pingEd(analyzer, queryEvaluator, "smtyh" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( pingEd(analyzer, queryEvaluator, "smyht" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( pingEd(analyzer, queryEvaluator, "mxyth" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == false);
 
-    ASSERT ( ping(analyzer, queryEvaluator, "smytx" , 1 , 1001, filter, true) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "smytx" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
 
-    ASSERT ( ping(analyzer, queryEvaluator, "pad" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padh" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhr" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhra" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhrai" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhraic" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+s" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+sm" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smy" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smyt" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smyth" , 1 , 1001, filter, true) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "pad" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padh" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhr" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhra" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhrai" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+s" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+sm" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smy" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smyt" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smyth" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
 
 
-    ASSERT ( ping(analyzer, queryEvaluator, "pad" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padh" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhr" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhra" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhrai" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhraic" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+s" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+sm" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smi" , 0 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smit" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smith" , 1 , 1001, filter, true) == true);
-    ping(analyzer, queryEvaluator, "padraic" , 1 , 1001, filter, true);
+    ASSERT ( ping(analyzer, queryEvaluator, "pad" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padh" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhr" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhra" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhrai" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+s" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+sm" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smi" , 0 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smit" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smith" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ping(analyzer, queryEvaluator, "padraic" , 1 , 1001, filter, ATTRIBUTES_OP_AND);
 
     //Edit distance 0 0
-    ASSERT ( ping(analyzer, queryEvaluator, "pad" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "pad" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padr" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padra" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padrai" , 1 , 1001, filter, true) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "pad" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "pad" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padr" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padra" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padrai" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
 
-    ASSERT ( ping(analyzer, queryEvaluator, "padraic+s" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padraic+sm" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padraic+smy" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padraic+smyt" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padraic+smyth" , 1 , 1001, filter, true) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padraic+s" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padraic+sm" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padraic+smy" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padraic+smyt" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padraic+smyth" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
 
     //Edit distance 1
-    ASSERT ( ping(analyzer, queryEvaluator, "padraic" , 1 , 1001, filter, true) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padraic" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
 
     //Edit distance 1 1
-    ASSERT ( ping(analyzer, queryEvaluator, "padraic+smith" , 1 , 1001, filter, true) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padraic+smith" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
 
     //Edit distance 0 1
-    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smith" , 1 , 1001, filter, true) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smith" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
 
     //Edit distance 0 2
-    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smithe" , 1 , 1001, filter, true) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smithe" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
 
     //Edit distance 2 2 swap operation
-    ASSERT ( ping(analyzer, queryEvaluator, "pahdraci+smithe" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "aphdraic+smithe" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "pdarhaic+smithe" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "pahdaric+smithe" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padrhiac+smithe" , 1 , 1001, filter, true) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "pahdraci+smithe" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "aphdraic+smithe" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "pdarhaic+smithe" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "pahdaric+smithe" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padrhiac+smithe" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
 
     // swap operation around the repetition of the same letters
-    ASSERT ( pingEd(analyzer, queryEvaluator, "baXXXXX" , 1 , 1002, filter, true) == true);
-    ASSERT ( pingEd(analyzer, queryEvaluator, "XXXbaXX" , 1 , 1002, filter, true) == true);
-    ASSERT ( pingEd(analyzer, queryEvaluator, "XXXXXba" , 1 , 1002, filter, true) == true);
+    ASSERT ( pingEd(analyzer, queryEvaluator, "baXXXXX" , 1 , 1002, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( pingEd(analyzer, queryEvaluator, "XXXbaXX" , 1 , 1002, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( pingEd(analyzer, queryEvaluator, "XXXXXba" , 1 , 1002, filter, ATTRIBUTES_OP_AND) == true);
 
     (void)analyzer;
     delete queryEvaluator;
@@ -248,77 +248,77 @@ void test2()
 
     vector<unsigned> filter;
     //Edit distance 0
-    ASSERT ( ping(analyzer, queryEvaluator, "smyth" , 1 , 1001, filter, true) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "smyth" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
 
     //Edit distance 1
-    ASSERT ( ping(analyzer, queryEvaluator, "smth" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "smith" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "smythe" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "smyth" , 1 , 1001, filter, true) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "smth" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "smith" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "smythe" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "smyth" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
 
     //swap operation
-    ASSERT ( pingEd(analyzer, queryEvaluator, "msyth" , 1 , 1001, filter, true) == false);
-    ASSERT ( pingEd(analyzer, queryEvaluator, "symth" , 1 , 1001, filter, true) == false);
-    ASSERT ( pingEd(analyzer, queryEvaluator, "smtyh" , 1 , 1001, filter, true) == false);
-    ASSERT ( pingEd(analyzer, queryEvaluator, "smyht" , 1 , 1001, filter, true) == false);
+    ASSERT ( pingEd(analyzer, queryEvaluator, "msyth" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == false);
+    ASSERT ( pingEd(analyzer, queryEvaluator, "symth" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == false);
+    ASSERT ( pingEd(analyzer, queryEvaluator, "smtyh" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == false);
+    ASSERT ( pingEd(analyzer, queryEvaluator, "smyht" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == false);
 
-    ASSERT ( ping(analyzer, queryEvaluator, "smytx" , 1 , 1001, filter, true) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "smytx" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
 
-    ASSERT ( ping(analyzer, queryEvaluator, "pad" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padh" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhr" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhra" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhrai" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhraic" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+s" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+sm" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smy" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smyt" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smyth" , 1 , 1001, filter, true) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "pad" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padh" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhr" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhra" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhrai" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+s" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+sm" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smy" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smyt" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smyth" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
 
 
-    ASSERT ( ping(analyzer, queryEvaluator, "pad" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padh" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhr" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhra" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhrai" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhraic" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+s" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+sm" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smi" , 0 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smit" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smith" , 1 , 1001, filter, true) == true);
-    ping(analyzer, queryEvaluator, "padraic" , 1 , 1001, filter, true);
+    ASSERT ( ping(analyzer, queryEvaluator, "pad" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padh" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhr" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhra" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhrai" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+s" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+sm" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smi" , 0 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smit" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smith" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ping(analyzer, queryEvaluator, "padraic" , 1 , 1001, filter, ATTRIBUTES_OP_AND);
 
     //Edit distance 0 0
-    ASSERT ( ping(analyzer, queryEvaluator, "pad" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "pad" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padr" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padra" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padrai" , 1 , 1001, filter, true) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "pad" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "pad" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padr" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padra" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padrai" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
 
-    ASSERT ( ping(analyzer, queryEvaluator, "padraic+s" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padraic+sm" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padraic+smy" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padraic+smyt" , 1 , 1001, filter, true) == true);
-    ASSERT ( ping(analyzer, queryEvaluator, "padraic+smyth" , 1 , 1001, filter, true) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padraic+s" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padraic+sm" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padraic+smy" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padraic+smyt" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padraic+smyth" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
 
     //Edit distance 1
-    ASSERT ( ping(analyzer, queryEvaluator, "padraic" , 1 , 1001, filter, true) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padraic" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
 
     //Edit distance 1 1
-    ASSERT ( ping(analyzer, queryEvaluator, "padraic+smith" , 1 , 1001, filter, true) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padraic+smith" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
 
     //Edit distance 0 1
-    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smith" , 1 , 1001, filter, true) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smith" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
 
     //Edit distance 0 2
-    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smithe" , 1 , 1001, filter, true) == true);
+    ASSERT ( ping(analyzer, queryEvaluator, "padhraic+smithe" , 1 , 1001, filter, ATTRIBUTES_OP_AND) == true);
 
     // swap operation around the repetition of the same letters
-    ASSERT ( pingEd(analyzer, queryEvaluator, "baXXXXX" , 1 , 1002, filter, true) == false);
-    ASSERT ( pingEd(analyzer, queryEvaluator, "XXXbaXX" , 1 , 1002, filter, true) == false);
-    ASSERT ( pingEd(analyzer, queryEvaluator, "XXXXXba" , 1 , 1002, filter, true) == false);
+    ASSERT ( pingEd(analyzer, queryEvaluator, "baXXXXX" , 1 , 1002, filter, ATTRIBUTES_OP_AND) == false);
+    ASSERT ( pingEd(analyzer, queryEvaluator, "XXXbaXX" , 1 , 1002, filter, ATTRIBUTES_OP_AND) == false);
+    ASSERT ( pingEd(analyzer, queryEvaluator, "XXXXXba" , 1 , 1002, filter, ATTRIBUTES_OP_AND) == false);
 
     (void)analyzer;
     delete queryEvaluator;

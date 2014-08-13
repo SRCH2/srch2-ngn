@@ -226,7 +226,7 @@ void QueryRewriter::prepareFieldFilters() {
     	ParseTreeLeafNodeIterator termIterator(paramContainer->parseTreeRoot);
     	while(termIterator.hasMore()){
     		leafNode = termIterator.getNext();
-    		leafNode->termIntermediateStructure->fieldFilterAndOperation = false;
+    		leafNode->termIntermediateStructure->fieldFilterAttrOperation = ATTRIBUTES_OP_OR;
     	}
         return;
     }
@@ -242,7 +242,7 @@ void QueryRewriter::prepareFieldFilters() {
 
             vector<unsigned> filter;
             if (leafNode->termIntermediateStructure->fieldFilter.size() == 0) {
-            	leafNode->termIntermediateStructure->fieldFilterAndOperation = false;
+            	leafNode->termIntermediateStructure->fieldFilterAttrOperation = ATTRIBUTES_OP_OR;
                 // TODO : get it from configuration file
             } else {
                 bool shouldApplyAnd = true;
@@ -259,9 +259,9 @@ void QueryRewriter::prepareFieldFilters() {
                     filter.push_back(id);
                 }
                 if (op == srch2is::BooleanOperatorAND && shouldApplyAnd) {
-                	leafNode->termIntermediateStructure->fieldFilterAndOperation = true;
+                	leafNode->termIntermediateStructure->fieldFilterAttrOperation = ATTRIBUTES_OP_AND;
                 } else {
-                	leafNode->termIntermediateStructure->fieldFilterAndOperation = false;
+                	leafNode->termIntermediateStructure->fieldFilterAttrOperation = ATTRIBUTES_OP_OR;
                 }
             }
             leafNode->termIntermediateStructure->fieldFilterList = filter;
@@ -273,7 +273,7 @@ void QueryRewriter::prepareFieldFilters() {
     	ParseTreeLeafNodeIterator termIterator(paramContainer->parseTreeRoot);
     	while(termIterator.hasMore()){
     		leafNode = termIterator.getNext();
-    		leafNode->termIntermediateStructure->fieldFilterAndOperation = false;
+    		leafNode->termIntermediateStructure->fieldFilterAttrOperation = ATTRIBUTES_OP_OR;
     	}
     }
 
@@ -540,7 +540,7 @@ LogicalPlanNode * QueryRewriter::buildLogicalPlan(ParseTreeNode * root, LogicalP
 											1, 				   // no fuzzy match
 											0,
 											root->termIntermediateStructure->fieldFilterList,
-											root->termIntermediateStructure->fieldFilterAndOperation);
+											root->termIntermediateStructure->fieldFilterAttrOperation);
 						/*
 						 *  Although phrase terms should not have fuzzy terms, it is created and
 						 *  assigned to the term node because it avoids issues with histogram manager that
@@ -555,7 +555,7 @@ LogicalPlanNode * QueryRewriter::buildLogicalPlan(ParseTreeNode * root, LogicalP
 									0);
 							fuzzyTerm->addAttributesToFilter(
 									root->termIntermediateStructure->fieldFilterList,
-									root->termIntermediateStructure->fieldFilterAndOperation);
+									root->termIntermediateStructure->fieldFilterAttrOperation);
 							termNode->setFuzzyTerm(fuzzyTerm);
 						}
 						mergeNode->children.push_back(termNode);
@@ -567,7 +567,7 @@ LogicalPlanNode * QueryRewriter::buildLogicalPlan(ParseTreeNode * root, LogicalP
                         indexDataConfig->getFuzzyMatchPenalty(),
                         0,
                         root->termIntermediateStructure->fieldFilterList,
-                        root->termIntermediateStructure->fieldFilterAndOperation);
+                        root->termIntermediateStructure->fieldFilterAttrOperation);
                 if(logicalPlan.isFuzzy()){
                     Term * fuzzyTerm = new Term(root->termIntermediateStructure->rawQueryKeyword ,
                             root->termIntermediateStructure->keywordPrefixComplete,
@@ -578,7 +578,7 @@ LogicalPlanNode * QueryRewriter::buildLogicalPlan(ParseTreeNode * root, LogicalP
                                                     root->termIntermediateStructure->keywordSimilarityThreshold));
                     fuzzyTerm->addAttributesToFilter(
                     		root->termIntermediateStructure->fieldFilterList,
-                    		root->termIntermediateStructure->fieldFilterAndOperation);
+                    		root->termIntermediateStructure->fieldFilterAttrOperation);
                     result->setFuzzyTerm(fuzzyTerm);
                 }
 			}
@@ -746,7 +746,7 @@ void QueryRewriter::fillExactAndFuzzyQueriesWithCommonInformation(
 					indexDataConfig->getFuzzyMatchPenalty(), 0);
 			exactTerm->addAttributesToFilter(
 					leafNode->termIntermediateStructure->fieldFilterList,
-					leafNode->termIntermediateStructure->fieldFilterAndOperation);
+					leafNode->termIntermediateStructure->fieldFilterAttrOperation);
 
 			plan.getExactQuery()->add(exactTerm);
 
@@ -761,7 +761,7 @@ void QueryRewriter::fillExactAndFuzzyQueriesWithCommonInformation(
 						1 , 0);
 				exactTerm->addAttributesToFilter(
 						leafNode->termIntermediateStructure->fieldFilterList,
-						leafNode->termIntermediateStructure->fieldFilterAndOperation);
+						leafNode->termIntermediateStructure->fieldFilterAttrOperation);
 				plan.getExactQuery()->add(exactTerm);
 			}
 		}
@@ -783,7 +783,7 @@ void QueryRewriter::fillExactAndFuzzyQueriesWithCommonInformation(
                     // configurable we should change this place.
             fuzzyTerm->addAttributesToFilter(
             		leafNode->termIntermediateStructure->fieldFilterList,
-            		leafNode->termIntermediateStructure->fieldFilterAndOperation);
+            		leafNode->termIntermediateStructure->fieldFilterAttrOperation);
 
             plan.getFuzzyQuery()->add(fuzzyTerm);
     	}

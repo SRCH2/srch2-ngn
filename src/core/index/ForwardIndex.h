@@ -296,7 +296,7 @@ public:
             float &matchingKeywordRecordStaticScore, bool &isStemmed) const;
     bool haveWordInRange(const SchemaInternal* schema, const unsigned minId,
             const unsigned maxId,
-            const vector<unsigned>& filteringAttributesList, bool andOperation,
+            const vector<unsigned>& filteringAttributesList, ATTRIBUTES_OP andOperation,
             unsigned &keywordId, vector<unsigned>& matchingKeywordAttributesList,
             float &termRecordStaticScore) const;
 
@@ -305,7 +305,7 @@ public:
     bool getWordsInRange(const SchemaInternal* schema, const unsigned minId,
             const unsigned maxId,
             const vector<unsigned>& filteringAttributesList,
-            bool andOperation,
+            ATTRIBUTES_OP attrOps,
             vector<unsigned> &keywordIdsVector) const;
 
     /**************************PositionIndex****************/
@@ -330,7 +330,7 @@ public:
      */
 
     bool isValidRecordTermHit(const SchemaInternal *schema,
-            unsigned keywordOffset,const vector<unsigned>& filteringAttributesList, bool andOperation,
+            unsigned keywordOffset,const vector<unsigned>& filteringAttributesList, ATTRIBUTES_OP attrOp,
             vector<unsigned>& matchingKeywordAttributesList, float& termRecordStaticScore) const;
     bool isValidRecordTermHitWithStemmer(const SchemaInternal *schema,
             unsigned keywordOffset, unsigned searchableAttributeId,
@@ -617,7 +617,7 @@ public:
     		const unsigned minId,
             const unsigned maxId,
             const vector<unsigned>& filteringAttributesList,
-            bool andOperation,
+            ATTRIBUTES_OP attrOp,
             unsigned &matchingKeywordId,
             vector<unsigned>& matchingKeywordAttributesList,
             float &matchingKeywordRecordStaticScore) const;
@@ -713,7 +713,7 @@ public:
     bool isValidRecordTermHit(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
     		unsigned forwardIndexId,
     		unsigned keywordOffset,
-    		const vector<unsigned>& filterAttributesList, bool andOperation,
+    		const vector<unsigned>& filterAttributesList, ATTRIBUTES_OP attrOp,
     		vector<unsigned> &matchingKeywordAttributesList,
             float& termRecordStaticScore) const;
     bool isValidRecordTermHitWithStemmer(unsigned forwardIndexId,

@@ -47,26 +47,15 @@ struct AnalyzedTermInfo {
 };
 
 struct TokenAttributeHits {
-    /** Each entry has position information as follows:
-     *  Attribute -> First 8bits -> Attribute in which the token hit occurred
-     *  Hits -> Last 24 bits -> Position within the attribute where the token hit occurred.
-     *  The positions start from 1, this is because the positions in PositionIndex are ZERO terminated.
-     *
-     *  The maximum number of allowed Attributes is checked by the following assert
-     *  ASSERT( attribute <  0xff);
-     *
-     *  i.e. 255
-     *
-     *  The maximum number of the positionHit is checked by the following assert
-     *  ASSERT( position <  0xffffff);
-     *
-     * i.e. 4 294 967 295
-     *
-     */
+	// list of attributes this token belongs to
     vector<unsigned> attributeIdList;
-    vector<unsigned> positionOfTermInAttribute;
-    vector<unsigned> charOffsetOfTermInAttribute;
+    // list of word positions of a term in all attributes
+    vector<unsigned> positionsOfTermInAttribute;
+    // list of character offsets of a term in all attributes
+    vector<unsigned> charOffsetsOfTermInAttribute;
+    // list of original term's length of a synonym term in all attributes
     vector<unsigned> charLensOfTermInAttribute;
+    // list of flag indicating whether a current position/offset of a term is synonym or not.
     vector<AnalyzedTokenType> typesOfTermInAttribute;
 };
 

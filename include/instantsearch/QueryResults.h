@@ -148,7 +148,7 @@ public:
      */
     void getEditDistances(const unsigned position, std::vector<unsigned> &editDistances) const ;
 
-    // The following function only work for attribute based search
+    // The following function only works for attribute based search
     void getMatchedAttributes(const unsigned position, std::vector<std::vector<unsigned> > &matchedAttributes) const ;
 
     void getTermTypes(unsigned position, std::vector<TermType>& tt) const;

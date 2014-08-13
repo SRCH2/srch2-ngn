@@ -217,7 +217,7 @@ public:
     bool isValidTermPositionHit(shared_ptr<vectorview<ForwardListPtr> > & forwardIndexDirectoryReadView,
     		unsigned forwardListId,
     		unsigned keywordOffset,
-    		const vector<unsigned>& filterAttributesList, bool andOperation,
+    		const vector<unsigned>& filterAttributesList, ATTRIBUTES_OP attrOp,
     		vector<unsigned>& matchingKeywordAttributesList,
             float &termRecordStaticScore) const;
 
@@ -285,7 +285,7 @@ public:
             vector<unsigned> tempMatchedAttrsList;
             vector<unsigned> filter;
             if (isValidTermPositionHit(forwardIndexDirectoryReadView, recordId,
-            		positionIndexOffset, filter, true, tempMatchedAttrsList, score) ){
+            		positionIndexOffset, filter, ATTRIBUTES_OP_AND, tempMatchedAttrsList, score) ){
                 Logger::debug("%d | %d | %.5f", recordId, positionIndexOffset, score);
             }
         }

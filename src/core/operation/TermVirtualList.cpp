@@ -56,7 +56,7 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
             this->invertedIndex->isValidTermPositionHit(this->forwardIndexDirectoryReadView,
                 recordId,
                 keywordOffset,
-                term->getAttributesToFilter(), term->getFilterAndOperation(), matchedAttributeIdsList,
+                term->getAttributesToFilter(), term->getFilterAttrOperation(), matchedAttributeIdsList,
                 termRecordStaticScore) ) {
             foundValidHit = 1;
             break;
@@ -419,7 +419,7 @@ bool TermVirtualList::getNext(HeapItemForIndexSearcher *returnHeapItem)
                         this->invertedIndex->isValidTermPositionHit(forwardIndexDirectoryReadView,
                         recordId,
                         keywordOffset,
-                        term->getAttributesToFilter(), term->getFilterAndOperation(), matchedAttributesList,
+                        term->getAttributesToFilter(), term->getFilterAttrOperation(), matchedAttributesList,
                         termRecordStaticScore)) {
                     foundValidHit = 1;
                     this->cursorVector[currentHeapMax->cursorVectorPosition] = currentHeapMaxCursor;

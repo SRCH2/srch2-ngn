@@ -254,7 +254,7 @@ float pingToGetTopScoreGeo(const Analyzer *analyzer, QueryEvaluator * queryEvalu
         //cout << "(" << queryKeywords[i] << ")("<< getNormalizedThreshold(queryKeywords[i].size()) << ")\t";
         TermType termType = TERM_TYPE_PREFIX;
         Term *term = FuzzyTerm::create(queryKeywords[i].term, termType, 1, 0.5, getNormalizedThresholdGeo(queryKeywords[i].term.size()));
-        term->addAttributesToFilter(vector<unsigned>(), true);
+        term->addAttributesToFilter(vector<unsigned>(), ATTRIBUTES_OP_AND);
         query->setPrefixMatchPenalty(0.95);
         query->add(term);
     }
@@ -294,7 +294,7 @@ int pingToCheckIfHasResults(const Analyzer *analyzer, QueryEvaluator * queryEval
             term = FuzzyTerm::create(queryKeywords[i].term, termType, 1, 0.5, ed);
         else
             term = ExactTerm::create(queryKeywords[i].term, termType, 1, 0.5);
-        term->addAttributesToFilter(vector<unsigned>(), true);
+        term->addAttributesToFilter(vector<unsigned>(), ATTRIBUTES_OP_AND);
         query->setPrefixMatchPenalty(0.95);
         query->add(term);
     }
@@ -327,7 +327,7 @@ unsigned existsInTopKGeo(const Analyzer *analyzer, QueryEvaluator *  queryEvalua
     {
         TermType termType = TERM_TYPE_PREFIX;
         Term *term = ExactTerm::create(queryKeywords[i].term, termType, 1, 0.5);
-        term->addAttributesToFilter(vector<unsigned>(), true);
+        term->addAttributesToFilter(vector<unsigned>(), ATTRIBUTES_OP_AND);
         query->setPrefixMatchPenalty(0.95);
         query->add(term);
     }

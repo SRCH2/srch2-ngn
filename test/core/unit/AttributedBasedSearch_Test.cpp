@@ -110,7 +110,7 @@ Indexer *buildIndex(string data_file, string index_dir, string expression)
     return indexer;
 }
 
-void fireSearch(QueryEvaluator * queryEvaluator, vector<unsigned> filter, bool andOperation, unsigned k, const vector<string> &searchKeywords,
+void fireSearch(QueryEvaluator * queryEvaluator, vector<unsigned> filter, ATTRIBUTES_OP attrOp, unsigned k, const vector<string> &searchKeywords,
                 unsigned numOfResults, const vector<string> &resultIds, const vector<vector<vector<unsigned> > > &resultAttributeBitmap)
 {
     
@@ -122,7 +122,7 @@ void fireSearch(QueryEvaluator * queryEvaluator, vector<unsigned> filter, bool a
     {
         TermType termType = TERM_TYPE_PREFIX;
         Term *term = ExactTerm::create(searchKeywords[i], termType, 1, 0.5);
-        term->addAttributesToFilter(filter, andOperation);
+        term->addAttributesToFilter(filter, attrOp);
         query->setPrefixMatchPenalty(0.95);
         query->add(term);
     }
@@ -180,7 +180,7 @@ void test(string index_dir, string data_file)
     resultAttributeBitmap[1].push_back(filter);
     resultAttributeBitmap[2].push_back(filter);
     // Do OR operation.
-    fireSearch(queryEvaluator, filter, false, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
+    fireSearch(queryEvaluator, filter, ATTRIBUTES_OP_OR, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
 
     resultIds.clear();
     resultAttributeBitmap.clear();
@@ -199,7 +199,7 @@ void test(string index_dir, string data_file)
     resultAttributeBitmap[1].push_back(filter);
 
     // Do OR operation.
-    fireSearch(queryEvaluator, filter, false, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
+    fireSearch(queryEvaluator, filter, ATTRIBUTES_OP_OR, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
 
     resultIds.clear();
     resultAttributeBitmap.clear();
@@ -227,7 +227,7 @@ void test(string index_dir, string data_file)
     resultAttributeBitmap[3].push_back(result);
 
     // Do OR operation.
-    fireSearch(queryEvaluator, filter, false, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
+    fireSearch(queryEvaluator, filter, ATTRIBUTES_OP_OR, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
 
     resultIds.clear();
     resultAttributeBitmap.clear();
@@ -244,7 +244,7 @@ void test(string index_dir, string data_file)
     resultAttributeBitmap.resize(1);
     resultAttributeBitmap[0].push_back(filter);
     // Do AND operation.
-    fireSearch(queryEvaluator, filter, true, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
+    fireSearch(queryEvaluator, filter, ATTRIBUTES_OP_AND, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
 
     resultIds.clear();
     resultAttributeBitmap.clear();
@@ -272,7 +272,7 @@ void test(string index_dir, string data_file)
     resultAttributeBitmap[2].push_back(result);
     resultAttributeBitmap[3].push_back(result);
 
-    fireSearch(queryEvaluator, filter, false, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
+    fireSearch(queryEvaluator, filter, ATTRIBUTES_OP_OR, k, searchKeywords, numOfResults, resultIds, resultAttributeBitmap);
 
     resultIds.clear();
 

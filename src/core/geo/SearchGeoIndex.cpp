@@ -99,7 +99,7 @@ bool QuadTree::verify(const ForwardList* forwardList, const SpatialRanker *ranke
         bool fullMatch = forwardList->haveWordInRange(this->forwardIndex->getSchema(),
         		minId, maxId,
         		mapSearcherTermVector[termToSkip].termPtr->getAttributesToFilter(),
-        		mapSearcherTermVector[termToSkip].termPtr->getFilterAndOperation(),
+        		mapSearcherTermVector[termToSkip].termPtr->getFilterAttrOperation(),
         		keywordId, attributeIdsList, score);
         //stat.endMessage();
         // e.g. we search for "cancer", we find "can" on o-filter, it gives us a result with "candy"
@@ -139,7 +139,7 @@ bool QuadTree::verify(const ForwardList* forwardList, const SpatialRanker *ranke
             // do the forward list check
             termResult = forwardList->haveWordInRange(this->forwardIndex->getSchema(), minId, maxId,
             		mapSearcherTermVector[i].termPtr->getAttributesToFilter(),
-            		mapSearcherTermVector[i].termPtr->getFilterAndOperation(),
+            		mapSearcherTermVector[i].termPtr->getFilterAttrOperation(),
             		keywordId, attributeIdsList, score);
 
             bool isPrefixMatch = ( (!mapSearcherTermVector[i].expansionStructureVector[j].expansionNodePtr->isTerminalNode()) || (minId != keywordId) );

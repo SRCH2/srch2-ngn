@@ -173,16 +173,16 @@ public:
 
     /*
      * Used in attribute based search. searchableAttributeIdsList specifies the list of attributes
-     * where keyword should be found in a data record.  andOperation flag indicates whether AND/OR
+     * where keyword should be found in a data record.  attrOp flag indicates whether AND/OR
      * logic is applied on filter attributes.
      */
-    void addAttributesToFilter(const vector<unsigned>& searchableAttributeIdsList, bool andOperation);
+    void addAttributesToFilter(const vector<unsigned>& searchableAttributeIdsList, ATTRIBUTES_OP attrOp);
 
     /*
      *   getter function for a flag which indicates whether disjunction or conjunction is
      *   applied on filter fields.
      */
-    bool getFilterAndOperation();
+    ATTRIBUTES_OP getFilterAttrOperation();
 
     vector<unsigned>& getAttributesToFilter() const;
 

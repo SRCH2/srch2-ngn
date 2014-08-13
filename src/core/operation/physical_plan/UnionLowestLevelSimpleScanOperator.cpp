@@ -131,7 +131,7 @@ PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const Physi
             this->queryEvaluator->getInvertedIndex()->isValidTermPositionHit(forwardIndexDirectoryReadView,
                 recordID,
                 keywordOffset,
-                term->getAttributesToFilter(),term->getFilterAndOperation(), matchedAttributeIdsList,
+                term->getAttributesToFilter(),term->getFilterAttrOperation(), matchedAttributeIdsList,
                 termRecordStaticScore) ) {
             foundValidHit = 1;
             break;

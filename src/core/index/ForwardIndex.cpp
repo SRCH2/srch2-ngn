@@ -154,7 +154,7 @@ bool ForwardIndex::haveWordInRange(shared_ptr<vectorview<ForwardListPtr> > & for
 		const unsigned recordId,
         const unsigned minId, const unsigned maxId,
         const vector<unsigned>& filteringAttributesList,
-        bool andOperation,
+        ATTRIBUTES_OP attrOp,
         unsigned &matchingKeywordId, vector<unsigned>& matchingKeywordAttributesList,
         float &matchingKeywordRecordStaticScore) const {
     ASSERT(minId <= maxId);
@@ -168,7 +168,7 @@ bool ForwardIndex::haveWordInRange(shared_ptr<vectorview<ForwardListPtr> > & for
         return false;
 
     return fl->haveWordInRange(this->schemaInternal, minId, maxId,
-    		filteringAttributesList, andOperation, matchingKeywordId,
+    		filteringAttributesList, attrOp, matchingKeywordId,
     		matchingKeywordAttributesList, matchingKeywordRecordStaticScore);
 }
 
@@ -313,8 +313,8 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
 
     		for (unsigned j = 0; j < iterator->second.attributeIdList.size(); ++j) {
     			unsigned attributeId = iterator->second.attributeIdList[j]; // 0th based
-    			unsigned position =  iterator->second.positionOfTermInAttribute[j];  // Non Zero
-    			unsigned offset =  iterator->second.charOffsetOfTermInAttribute[j];  // Non Zero
+    			unsigned position =  iterator->second.positionsOfTermInAttribute[j];  // Non Zero
+    			unsigned offset =  iterator->second.charOffsetsOfTermInAttribute[j];  // Non Zero
     			AnalyzedTokenType type =  (iterator->second.typesOfTermInAttribute[j]);
     			unsigned charLen =  (iterator->second.charLensOfTermInAttribute[j]);
     			// if it is a first element or current attribute is same as
@@ -390,10 +390,15 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     }
 
     // support attribute-based search
+    /*
+     *  Go over the each keyword in the current record and make a vector of attribute ids.
+     *  attributeIdList can have duplicate attributes. Once all unique attributes of a
+     *  given keyword are accumulated. Store the list of attribute ids as VLB array.
+     */
     vector<uint8_t> tempAttributeIdBuffer;
     if (isEnabledAttributeBasedSearch(positionIndexType)) {
     	this->isAttributeBasedSearch = true;
-		vector<unsigned> attributeIds;
+    	vector<unsigned> attributeIds;
     	for (unsigned iter = 0; iter < uniqueKeywordIdList.size(); ++iter) {
     		map<string, TokenAttributeHits>::const_iterator mapIterator =
     				tokenAttributeHitsMap.find(
@@ -736,7 +741,7 @@ const unsigned* lower_bound(const unsigned* first, const unsigned* last,
 bool ForwardList::getWordsInRange(const SchemaInternal* schema,
         const unsigned minId, const unsigned maxId,
         const vector<unsigned>& filteringAttributesList,
-        bool andOperation,
+        ATTRIBUTES_OP attrOps,
         vector<unsigned> &keywordIdsVector) const {
     const unsigned* vectorBegin = this->getKeywordIds();
     const unsigned* vectorEnd = this->getKeywordIds()
@@ -750,7 +755,7 @@ bool ForwardList::getWordsInRange(const SchemaInternal* schema,
     vector<unsigned> matchedAttributesList;
     while ((vectorIterator != vectorEnd) && (*vectorIterator <= maxId)) {
         if (this->isValidRecordTermHit(schema, (vectorIterator - vectorBegin),
-        		filteringAttributesList, andOperation,
+        		filteringAttributesList, attrOps,
         		matchedAttributesList,
                 matchingKeywordRecordStaticScore)) {
             returnValue = true;
@@ -766,7 +771,7 @@ bool ForwardList::getWordsInRange(const SchemaInternal* schema,
 // Do binary search to probe in the forward list
 bool ForwardList::haveWordInRange(const SchemaInternal* schema,
         const unsigned minId, const unsigned maxId,
-        const vector<unsigned>& filteringAttributesList, bool andOperation,
+        const vector<unsigned>& filteringAttributesList, ATTRIBUTES_OP attrOp,
         unsigned &matchingKeywordId, vector<unsigned>& matchingKeywordAttributesList,
         float &matchingKeywordRecordStaticScore) const {
     const unsigned* vectorBegin = this->getKeywordIds();
@@ -782,7 +787,7 @@ bool ForwardList::haveWordInRange(const SchemaInternal* schema,
     while ((vectorIterator != vectorEnd) && (*vectorIterator <= maxId)) {
         float tempScore = 0;
         if (this->isValidRecordTermHit(schema, (vectorIterator - vectorBegin),
-        		filteringAttributesList, andOperation, matchedAttributesList,
+        		filteringAttributesList, attrOp, matchedAttributesList,
                 tempScore)) {
             if (tempScore >= matchingKeywordRecordStaticScore) {
                 matchingKeywordRecordStaticScore = tempScore;
@@ -880,7 +885,7 @@ bool ForwardIndex::getExternalRecordIdFromInternalRecordId(
 bool ForwardList::isValidRecordTermHit(const SchemaInternal *schema,
         unsigned keywordOffset, 
         const vector<unsigned>& filteringAttributesList,
-        bool andOperation,
+        ATTRIBUTES_OP attrOp,
         vector<unsigned> &matchingKeywordAttributesList,
         float &matchingKeywordRecordStaticScore) const {
     matchingKeywordRecordStaticScore = this->getKeywordRecordStaticScore(
@@ -898,7 +903,7 @@ bool ForwardList::isValidRecordTermHit(const SchemaInternal *schema,
 
         getKeywordAttributeIdsList(
                 keywordOffset, matchingKeywordAttributesList);
-        if (andOperation) {
+        if (attrOp == ATTRIBUTES_OP_AND) {
 
             /*
              *  Mask the record's keyword attribute bit map with query's keyword attribute bit map.
@@ -1237,14 +1242,14 @@ float ForwardIndex::getTermRecordStaticScore(unsigned forwardIndexId,
 
 bool ForwardIndex::isValidRecordTermHit(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
 		unsigned forwardIndexId,
-        unsigned keywordOffset, const vector<unsigned>& filterAttributesList, bool andOperation,
+        unsigned keywordOffset, const vector<unsigned>& filterAttributesList, ATTRIBUTES_OP attrOp,
         vector<unsigned> &matchingKeywordAttributesList,
         float& matchingKeywordRecordStaticScore) const {
     bool valid = false;
     const ForwardList* forwardList = this->getForwardList(forwardListDirectoryReadView, forwardIndexId,valid);
     if (valid && forwardList != NULL)
         return forwardList->isValidRecordTermHit(this->schemaInternal,
-                keywordOffset, filterAttributesList, andOperation,
+                keywordOffset, filterAttributesList, attrOp,
                 matchingKeywordAttributesList,
                 matchingKeywordRecordStaticScore);
     else

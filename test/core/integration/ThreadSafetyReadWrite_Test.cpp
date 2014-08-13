@@ -131,14 +131,14 @@ void testRead(Indexer *indexer)
         recordIds.push_back(1001);
         recordIds.push_back(1003);
         //ASSERT ( ping(analyzer, queryEvaluator, "tom" , 2 , recordIds) == true);
-        ping(analyzer, queryEvaluator, "tom" , 2 , recordIds, vector<unsigned>(), true);
+        ping(analyzer, queryEvaluator, "tom" , 2 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND);
     }
     //Query: "jimi", hit -> 1002
     {
         vector<unsigned> recordIds;
         recordIds.push_back(1002);
         //ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 1 , recordIds) == true);
-        ping(analyzer, queryEvaluator, "jimi" , 1 , recordIds, vector<unsigned>(), true);
+        ping(analyzer, queryEvaluator, "jimi" , 1 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND);
     }
 
     //Query: "smith", hits -> 1001, 1003
@@ -147,7 +147,7 @@ void testRead(Indexer *indexer)
         recordIds.push_back(1001);
         recordIds.push_back(1003);
         //ASSERT ( ping(analyzer, queryEvaluator, "smith" , 2 , recordIds) == true);
-        ping(analyzer, queryEvaluator, "smith" , 2 , recordIds, vector<unsigned>(), true);
+        ping(analyzer, queryEvaluator, "smith" , 2 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND);
     }
 
     //Query: "jobs", hit -> 1002
@@ -155,7 +155,7 @@ void testRead(Indexer *indexer)
         vector<unsigned> recordIds;
         recordIds.push_back(1999);
         //ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 1 , recordIds) == true);
-        ping(analyzer, queryEvaluator, "jobs" , 1 , recordIds, vector<unsigned>(), true);
+        ping(analyzer, queryEvaluator, "jobs" , 1 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND);
     }
 
     //indexer->print_index();
@@ -166,7 +166,7 @@ void testRead(Indexer *indexer)
         recordIds.push_back(1001);
         recordIds.push_back(1003);
         //ASSERT ( ping(analyzer, queryEvaluator, "smith" , 2 , recordIds) == true);
-        ping(analyzer, queryEvaluator, "smith" , 2 , recordIds, vector<unsigned>(), true);
+        ping(analyzer, queryEvaluator, "smith" , 2 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND);
     }
 
     //Query: "jobs", hit -> 1999
@@ -174,7 +174,7 @@ void testRead(Indexer *indexer)
         vector<unsigned> recordIds;
         recordIds.push_back(1999);
         //ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 1 , recordIds) == true);
-        ping(analyzer, queryEvaluator, "jobs" , 1 , recordIds, vector<unsigned>(), true);
+        ping(analyzer, queryEvaluator, "jobs" , 1 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND);
     }
 
     //Query: "smith", hits -> 1002, 1998
@@ -183,7 +183,7 @@ void testRead(Indexer *indexer)
         recordIds.push_back(1998);
         recordIds.push_back(1002);
         //ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 2 , recordIds) == true);
-        ping(analyzer, queryEvaluator, "jimi" , 2 , recordIds, vector<unsigned>(), true);
+        ping(analyzer, queryEvaluator, "jimi" , 2 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND);
     }
 
     //Query: "jobs", hits -> 1998 , 1999
@@ -192,7 +192,7 @@ void testRead(Indexer *indexer)
         recordIds.push_back(1998);
         recordIds.push_back(1999);
         //ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 2 , recordIds) == true);
-        ping(analyzer, queryEvaluator, "jobs" , 2 , recordIds, vector<unsigned>(), true);
+        ping(analyzer, queryEvaluator, "jobs" , 2 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND);
     }
 
     //Query: "tom", hits -> 1001, 1003 , 1999
@@ -202,7 +202,7 @@ void testRead(Indexer *indexer)
         recordIds.push_back(1999);
         recordIds.push_back(1003);
         //ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds) == true);
-        ping(analyzer, queryEvaluator, "tom" , 3 , recordIds, vector<unsigned>(), true);
+        ping(analyzer, queryEvaluator, "tom" , 3 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND);
     }
 
     delete queryEvaluator;
@@ -231,7 +231,7 @@ void testWrite(Indexer *indexer, unsigned id)
         recordIds.push_back(1999);
         recordIds.push_back(1003);
         indexer->merge_ForTesting();
-        ping(analyzer, queryEvaluator, "tom" , 3 , recordIds, vector<unsigned>(), true);
+        ping(analyzer, queryEvaluator, "tom" , 3 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND);
         //ASSERT ( ping(analyzer, indexSearcher, "tom" , 3 , recordIds) == true);
     }
 

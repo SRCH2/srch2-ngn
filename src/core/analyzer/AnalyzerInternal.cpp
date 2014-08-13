@@ -196,8 +196,8 @@ void AnalyzerInternal::tokenizeRecord(const Record *record,
 			for (unsigned i = 0; i< tokens.size(); ++i) {
 				if (tokens[i].term.size()) {
 					tokenAttributeHitsMap[tokens[i].term].attributeIdList.push_back(attributeIterator);
-					tokenAttributeHitsMap[tokens[i].term].positionOfTermInAttribute.push_back(tokens[i].position);
-					tokenAttributeHitsMap[tokens[i].term].charOffsetOfTermInAttribute.push_back(
+					tokenAttributeHitsMap[tokens[i].term].positionsOfTermInAttribute.push_back(tokens[i].position);
+					tokenAttributeHitsMap[tokens[i].term].charOffsetsOfTermInAttribute.push_back(
 							tokens[i].charOffset);
 					tokenAttributeHitsMap[tokens[i].term].charLensOfTermInAttribute.push_back(
 							tokens[i].charLength);

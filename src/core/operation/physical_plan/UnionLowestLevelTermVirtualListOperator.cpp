@@ -164,7 +164,7 @@ PhysicalPlanRecordItem * UnionLowestLevelTermVirtualListOperator::getNext(const 
                 this->invertedIndex->isValidTermPositionHit(forwardIndexDirectoryReadView,
                     recordId,
                     keywordOffset,
-                    term->getAttributesToFilter(), term->getFilterAndOperation(), matchedAttributeIdsList,
+                    term->getAttributesToFilter(), term->getFilterAttrOperation(), matchedAttributeIdsList,
                     termRecordStaticScore)) {
                 foundValidHit = 1;
                 this->cursorVector[currentHeapMax->cursorVectorPosition] = currentHeapMaxCursor;
@@ -328,7 +328,7 @@ void UnionLowestLevelTermVirtualListOperator::initialiseTermVirtualListElement(T
             this->invertedIndex->isValidTermPositionHit(forwardIndexDirectoryReadView,
                 recordId,
                 keywordOffset,
-                term->getAttributesToFilter(), term->getFilterAndOperation(), termAttributeBitmap,
+                term->getAttributesToFilter(), term->getFilterAttrOperation(), termAttributeBitmap,
                 termRecordStaticScore) ) {
             foundValidHit = 1;
             break;

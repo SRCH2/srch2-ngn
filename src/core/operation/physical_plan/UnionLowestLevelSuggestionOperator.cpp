@@ -115,7 +115,7 @@ void UnionLowestLevelSuggestionOperator::initializeHeap(Term * term, Ranker * ra
 				queryEvaluatorIntrnal->getInvertedIndex()->isValidTermPositionHit(forwardIndexDirectoryReadView,
 					recordId,
 					keywordOffset,
-					filterAttributes, false, matchedAttributeIdsList, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
+					filterAttributes, ATTRIBUTES_OP_OR, matchedAttributeIdsList, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
 
 				// calculate the runtime score of this record
 				float score = ranker->computeTermRecordRuntimeScore(termRecordStaticScore,
@@ -169,7 +169,7 @@ bool UnionLowestLevelSuggestionOperator::getNextHeapItem(Term * term, Ranker * r
 			queryEvaluatorIntrnal->getInvertedIndex()->isValidTermPositionHit(forwardIndexDirectoryReadView,
 				recordId,
 				keywordOffset,
-				attributeFilter, false, matchedAttributeIdsList, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
+				attributeFilter, ATTRIBUTES_OP_OR, matchedAttributeIdsList, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
 
 			float score = ranker->computeTermRecordRuntimeScore(termRecordStaticScore,
                     suggestionPairs[item.suggestionIndex].distance,
