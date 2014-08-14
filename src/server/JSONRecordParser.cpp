@@ -677,6 +677,7 @@ string convertToStr(T value) {
 //If the value is null or empty, the vector<string> will only contain "".
 void convertValueToString(Json::Value value, vector<string> &stringValues) {
     std::string lowercaseString, originalString;
+
     if (value.isString()) {
         originalString = value.asString();
         lowercaseString = originalString;
@@ -697,8 +698,8 @@ void convertValueToString(Json::Value value, vector<string> &stringValues) {
         } else {
             stringValues.push_back(originalString);
         }
-    } else if (value.isInt()) {
-        originalString = convertToStr<int>(value.asInt());
+    } else if (value.isInt()||value.isUInt()) {
+        originalString = convertToStr<long>(value.asInt64());
         lowercaseString = originalString;
         std::transform(lowercaseString.begin(), lowercaseString.end(),
                 lowercaseString.begin(), ::tolower);
