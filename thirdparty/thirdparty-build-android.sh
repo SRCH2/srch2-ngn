@@ -1,14 +1,15 @@
 #!/bin/bash
 echo "BUILDING JSONCPP..."
 cd ./json
-if [ ! -d "jsoncpp-src-0.5.0" ]; then
- tar -xf jsoncpp-src-0.5.0.tar.gz
+if [ ! -d "jsoncpp-src" ]; then
+ tar -xf jsoncpp-src-0.6.0.tar.gz
+ mv jsoncpp-src-0.6.0 jsoncpp-src
 fi
-if [ ! -f "jsoncpp-src-0.5.0/CMakeLists.txt" ]; then
- tar -xf jsoncpp-src-0.5.0.tar.gz -C /tmp/
- cp /tmp/jsoncpp-src-0.5.0/CMakeLists.txt ./jsoncpp-src-0.5.0/CMakeLists.txt
+if [ ! -f "jsoncpp-src/CMakeLists.txt" ]; then
+ tar -xf jsoncpp-src-0.6.0.tar.gz -C /tmp/
+ cp /tmp/jsoncpp-src-0.6.0/CMakeLists.txt ./jsoncpp-src/CMakeLists.txt
 fi
-cd jsoncpp-src-0.5.0/
+cd jsoncpp-src/
 if [ ! -d "android" ]; then
  mkdir android 
 fi
