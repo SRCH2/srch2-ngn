@@ -39,6 +39,7 @@
                 <supportSwapInEditDistance>true</supportSwapInEditDistance>
                 <defaultQueryTermBoost>1</defaultQueryTermBoost>
                 <enablePositionIndex>1</enablePositionIndex> 
+                <recordBoostField>title</recordBoostField>
             </indexConfig>
 	    <query>
 	        <rankingAlgorithm>
@@ -64,8 +65,8 @@
 	    </query>
             <schema>
                 <fields>
-                    <field name="title" type="text" indexed="false" />
-                    <field name="director" type="text" indexed="false" searchable="false" refining="false"/>
+                    <field name="title" type="text" indexed="false" searchable="false" />
+                    <field name="director" type="text" indexed="false" refining="false"/>
                     <field name="genre" type="text" indexed="true"
                            default="HORROR" required="false"/>
                     <field name="year" type="integer" indexed="false" refining="true"

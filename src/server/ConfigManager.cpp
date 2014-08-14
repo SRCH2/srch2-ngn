@@ -419,11 +419,19 @@ void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode,
     }
 
     // recordBoostField is an optional field
+    // It should be refining and of type float, otherwise engine will not run
     coreInfo->recordBoostFieldFlag = false;
     childNode = indexConfigNode.child(recordBoostFieldString);
     if (childNode && childNode.text()) {
+        string recordBoostField = string(childNode.text().get());
+        cout << coreInfo->refiningAttributesInfo[recordBoostField].attributeType << "type \n";
+        if(coreInfo->refiningAttributesInfo[recordBoostField].attributeType != ATTRIBUTE_TYPE_FLOAT ){
+            Logger::error("Type of record boost field is invalid, it should be of type float");
+            configSuccess = false;
+            return;
+        }
         coreInfo->recordBoostFieldFlag = true;
-        coreInfo->recordBoostField = string(childNode.text().get());
+        coreInfo->recordBoostField = recordBoostField;
     }
 
     // queryTermBoost is an optional field
@@ -978,13 +986,7 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode,
     // set default number of suggestions because we don't have any config options for this yet
     coreInfo->defaultNumberOfSuggestions = 5;
 
-    xml_node indexConfigNode = parentNode.child(indexConfigString);
-    map<string, unsigned> boostsMap;
-    parseIndexConfig(indexConfigNode, coreInfo, boostsMap, configSuccess,
-            parseError, parseWarnings);
-    if (configSuccess == false) {
-        return;
-    }
+
 
     childNode = parentNode.child(queryString);
     if (childNode) {
@@ -1003,6 +1005,14 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode,
         if (configSuccess == false) {
             return;
         }
+    }
+
+    xml_node indexConfigNode = parentNode.child(indexConfigString);
+    map<string, unsigned> boostsMap;
+    parseIndexConfig(indexConfigNode, coreInfo, boostsMap, configSuccess,
+            parseError, parseWarnings);
+    if (configSuccess == false) {
+        return;
     }
 
     if (coreInfo->indexType == 1) {
@@ -1631,6 +1641,7 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
     vector<bool> RefiningAttributesRequiredFlagVector;
     vector<string> RefiningAttributesDefaultVector;
     vector<bool> RefiningAttributesIsMultiValued;
+    bool flagCheckRecordBoost = false;
 
     /*
      * <field>  in config.xml file
@@ -1806,7 +1817,6 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
     childNode = schemaNode.child(typesString);
 
     parseSchemaType(childNode, coreInfo, parseWarnings);
-
     /*
      * <Schema/>: End
      */
