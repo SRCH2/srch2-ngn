@@ -42,7 +42,9 @@ public class MovieIndex extends Indexable {
         // Records are inserted into an Indexable instance in the form of JSONObjects. For batch
         // insertion, insert the JSONObjects representing the records into a JSONArray.
         // Hopefully getting this record set will be retrieved from a server and not manually
-        // entered by hand.
+        // entered by hand. Each JSONObject should contain as its keys only the fields
+        // as defined in the schema and its values should match the type declared. A batch
+        // insert performed with a JSONArray should only contain properly formed JSONObjects.
 
         JSONArray jsonRecordsToInsert = new JSONArray();
         try {

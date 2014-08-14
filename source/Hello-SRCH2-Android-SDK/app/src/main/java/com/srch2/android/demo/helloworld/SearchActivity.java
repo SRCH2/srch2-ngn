@@ -43,7 +43,6 @@ public class SearchActivity extends Activity implements InstantSearchEditText.Se
     private void setupSRCH2Engine() {
         // The following calls only need to be made when an instance of the
         // activity is created, so this method is called from onCreate().
-
         mMovieIndex = new MovieIndex();
         SRCH2Engine.initialize(mMovieIndex);
 
