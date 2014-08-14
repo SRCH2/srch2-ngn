@@ -345,10 +345,14 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     				// if the previous attribute is not same as current attribute
     				// then convert the position list vector to variable length byte
     				// array and APPPEND to grand buffer.
-    				convertToVarLengthArray(positionListVector, tempPositionIndexBuffer);
-    				convertToVarLengthArray(offsetVector, tempOffsetBuffer);
-    				convertToVarLengthArray(synonymOriginalTokenLenArray, tempcharLenBuffer);
-    				convertToVarLengthBitMap(synonymBitFlagArray, tempSynonymBitMapBuffer);
+    				if (isEnabledWordPositionIndex(positionIndexType)) { 
+    					convertToVarLengthArray(positionListVector, tempPositionIndexBuffer);
+    				} 
+                                if (isEnabledCharPositionIndex(positionIndexType)) { 
+    					convertToVarLengthArray(offsetVector, tempOffsetBuffer);
+    					convertToVarLengthArray(synonymOriginalTokenLenArray, tempcharLenBuffer);
+    					convertToVarLengthBitMap(synonymBitFlagArray, tempSynonymBitMapBuffer);
+                                } 
 
     				positionListVector.clear();
     				offsetVector.clear();
@@ -378,10 +382,15 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
 
     		// convert the position list vector of last attribute to variable
     		// length byte array
-    		convertToVarLengthArray(positionListVector, tempPositionIndexBuffer);
-    		convertToVarLengthArray(offsetVector, tempOffsetBuffer);
-    		convertToVarLengthArray(synonymOriginalTokenLenArray, tempcharLenBuffer);
-    		convertToVarLengthBitMap(synonymBitFlagArray, tempSynonymBitMapBuffer);
+    		if (isEnabledWordPositionIndex(positionIndexType)) { 
+    			convertToVarLengthArray(positionListVector, tempPositionIndexBuffer);
+    		} 
+                if (isEnabledCharPositionIndex(positionIndexType)) { 
+    			convertToVarLengthArray(offsetVector, tempOffsetBuffer);
+    			convertToVarLengthArray(synonymOriginalTokenLenArray, tempcharLenBuffer);
+    			convertToVarLengthBitMap(synonymBitFlagArray, tempSynonymBitMapBuffer);
+                } 
+
     		positionListVector.clear();
     		offsetVector.clear();
     		synonymOriginalTokenLenArray.clear();
