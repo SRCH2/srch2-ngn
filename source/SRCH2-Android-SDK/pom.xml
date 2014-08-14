@@ -17,8 +17,8 @@
     <scm>
         <url>https://bitbucket.org/srch2inc/srch2-android</url>
         <connection>scm:git:git@bitbucket.org:srch2inc/srch2-android.git</connection>
-      <tag>HEAD</tag>
-  </scm>
+        <tag>HEAD</tag>
+    </scm>
 
     <dependencies>
         <dependency>
@@ -107,6 +107,13 @@
                 <configuration>
                     <preparationGoals>clean verify</preparationGoals>
                 </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.maven.scm</groupId>
+                        <artifactId>maven-scm-provider-gitexe</artifactId>
+                        <version>1.9</version>
+                    </dependency>
+                </dependencies>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -137,10 +144,13 @@
             <id>srch2repo</id>
             <name>SRCH2.com repo</name>
             <url>scp://rvijax@web240.webfaction.com:/home/rvijax/webapps/srch2/repo/maven/</url>
+            <layout>default</layout>
         </repository>
         <snapshotRepository>
             <id>srch2snapshot</id>
+            <name>SRCH2.com snapshot repo</name>
             <url>scp://rvijax@web240.webfaction.com:/home/rvijax/webapps/srch2/repo/snapshots/</url>
+            <layout>legacy</layout>
         </snapshotRepository>
     </distributionManagement>
 </project>

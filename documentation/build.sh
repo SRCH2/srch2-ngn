@@ -56,9 +56,8 @@ cd $sdk_source
     # This javadoc:jar command will produce the cleanner java doc site.
     mvn javadoc:jar
     [ $? -ne 0 ] && { echo $'\nERROR: Error happens while creating javadoc, Stop the release'; exit -1;}
-    cd $OLDPWD
 
-    mvn release:clean release:prepare release:perform
+    mvn release:prepare release:perform release:clean 
     [ $? -ne 0 ] && { echo $'\nERROR: Maven release failed, Stop the release'; exit -1;}
 
 cd $OLDPWD
