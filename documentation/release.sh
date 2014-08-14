@@ -53,12 +53,27 @@ cd $sdk_source
     mvn clean deploy
     [ $? -ne 0 ] && { echo $'\nERROR: Error happens while deploying, Stop the release'; exit -1;}
 
+    mvn release:prepare release:perform release:clean 
+    [ $? -ne 0 ] && { echo $'\nERROR: Maven release failed, Stop the release'; exit -1;}
+
+    # deploy again for the release version
+    newVersion=`mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version | grep -v '\['`
+    
+    mvn versions:set -DnewVersion=$version
+    [ $? -ne 0 ] && { echo $'\nERROR: Error happens while set release version, Stop the release'; exit -1;}
+
+    mvn deploy
+    [ $? -ne 0 ] && { echo $'\nERROR: Error happens while deploy release version, Stop the release'; exit -1;}
+
+    #set it back
+    mvn versions:set -DnewVersion=$newVersion
+    [ $? -ne 0 ] && { echo $'\nERROR: Error happens while set new master version, Stop the release'; exit -1;}
+
+    git add pom.xml && git commit -m "move to new version : $newVersion" && git push origin master
+
     # This javadoc:jar command will produce the cleanner java doc site.
     mvn javadoc:jar
     [ $? -ne 0 ] && { echo $'\nERROR: Error happens while creating javadoc, Stop the release'; exit -1;}
-
-    mvn release:prepare release:perform release:clean 
-    [ $? -ne 0 ] && { echo $'\nERROR: Maven release failed, Stop the release'; exit -1;}
 
 cd $OLDPWD
 
