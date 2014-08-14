@@ -47,7 +47,8 @@ LogicalPlan * prepareLogicalPlanForUnitTests(Query * exactQuery, Query * fuzzyQu
 				exactQuery->getQueryTerms()->at(t)->getBoost(),
 				exactQuery->getQueryTerms()->at(t)->getSimilarityBoost(),
 				exactQuery->getQueryTerms()->at(t)->getThreshold(),
-				exactQuery->getQueryTerms()->at(t)->getAttributeToFilterTermHits());
+				exactQuery->getQueryTerms()->at(t)->getAttributesToFilter(),
+				exactQuery->getQueryTerms()->at(t)->getFilterAttrOperation());
 		if(shouldRunFuzzyQuery){
 			newNode->setFuzzyTerm(fuzzyQuery->getQueryTerms()->at(t));
 		}
@@ -74,12 +75,13 @@ LogicalPlan * prepareLogicalPlanForGeoTest(Query * exactQuery, Query * fuzzyQuer
 
 	for(unsigned t = 0 ; t < exactQuery->getQueryTerms()->size() ; t++){
 		LogicalPlanNode * newNode = logicalPlan->createTermLogicalPlanNode(
-				*(exactQuery->getQueryTerms()->at(t)->getKeyword()),
-				exactQuery->getQueryTerms()->at(t)->getTermType(),
-				exactQuery->getQueryTerms()->at(t)->getBoost(),
-				exactQuery->getQueryTerms()->at(t)->getSimilarityBoost(),
-				exactQuery->getQueryTerms()->at(t)->getThreshold(),
-				exactQuery->getQueryTerms()->at(t)->getAttributeToFilterTermHits());
+						*(exactQuery->getQueryTerms()->at(t)->getKeyword()),
+						exactQuery->getQueryTerms()->at(t)->getTermType(),
+						exactQuery->getQueryTerms()->at(t)->getBoost(),
+						exactQuery->getQueryTerms()->at(t)->getSimilarityBoost(),
+						exactQuery->getQueryTerms()->at(t)->getThreshold(),
+						exactQuery->getQueryTerms()->at(t)->getAttributesToFilter(),
+						exactQuery->getQueryTerms()->at(t)->getFilterAttrOperation());
 		if(shouldRunFuzzyQuery){
 			newNode->setFuzzyTerm(fuzzyQuery->getQueryTerms()->at(t));
 		}

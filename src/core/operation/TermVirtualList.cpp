@@ -49,14 +49,14 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
 
     bool foundValidHit = 0;
     float termRecordStaticScore = 0;
-    unsigned termAttributeBitmap = 0;
+    vector<unsigned> matchedAttributeIdsList;
     while (1) {
         // We ignore the record if it's no longer valid
         if (keywordOffset != FORWARDLIST_NOTVALID &&
             this->invertedIndex->isValidTermPositionHit(this->forwardIndexDirectoryReadView,
                 recordId,
                 keywordOffset,
-                term->getAttributeToFilterTermHits(), termAttributeBitmap,
+                term->getAttributesToFilter(), term->getFilterAttrOperation(), matchedAttributeIdsList,
                 termRecordStaticScore) ) {
             foundValidHit = 1;
             break;
@@ -89,7 +89,7 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
                         isPrefixMatch,
                         this->prefixMatchPenalty , term->getSimilarityBoost());
             this->itemsHeap.push_back(new HeapItem(invertedListId, this->cursorVector.size(),
-                                                   recordId, termAttributeBitmap, termRecordRuntimeScore,
+                                                   recordId, matchedAttributeIdsList, termRecordRuntimeScore,
                                                    keywordOffset, prefixNode,
                                                    distance, isPrefixMatch));
         } else { // complete term
@@ -100,7 +100,7 @@ void TermVirtualList::initialiseTermVirtualListElement(TrieNodePointer prefixNod
                         false,
                         this->prefixMatchPenalty , term->getSimilarityBoost());// prefix match == false
             this->itemsHeap.push_back(new HeapItem(invertedListId, this->cursorVector.size(),
-                                                   recordId, termAttributeBitmap, termRecordRuntimeScore,
+                                                   recordId, matchedAttributeIdsList, termRecordRuntimeScore,
                                                    keywordOffset, leafNode, distance, false));
         }
 
@@ -366,7 +366,7 @@ bool TermVirtualList::getNext(HeapItemForIndexSearcher *returnHeapItem)
         // When we use the bitset to get the next record for this virtual list, we don't have all the information for this record.
         returnHeapItem->termRecordRuntimeScore = 1.0;
         returnHeapItem->trieNode = 0;
-        returnHeapItem->attributeBitMap = 0;
+        returnHeapItem->attributeIdsList.clear();
         returnHeapItem->ed = 0;
         returnHeapItem->positionIndexOffset = 0;
         if (returnHeapItem->recordId != RecordIdSetIterator::NO_MORE_RECORDS)
@@ -389,7 +389,7 @@ bool TermVirtualList::getNext(HeapItemForIndexSearcher *returnHeapItem)
             returnHeapItem->recordId = currentHeapMax->recordId;
             returnHeapItem->termRecordRuntimeScore = currentHeapMax->termRecordRuntimeScore;
             returnHeapItem->trieNode = currentHeapMax->trieNode;
-            returnHeapItem->attributeBitMap = currentHeapMax->attributeBitMap;
+            returnHeapItem->attributeIdsList = currentHeapMax->attributeIdsList;
             returnHeapItem->ed = currentHeapMax->ed;
             returnHeapItem->positionIndexOffset = currentHeapMax->positionIndexOffset;
 
@@ -409,7 +409,7 @@ bool TermVirtualList::getNext(HeapItemForIndexSearcher *returnHeapItem)
                 unsigned keywordOffset = this->invertedIndex->getKeywordOffset(this->forwardIndexDirectoryReadView,
                 		this->invertedIndexKeywordIdsReadView,
                 		recordId, currentHeapMaxInvertetedListId);
-                unsigned termAttributeBitmap = 0;
+                vector<unsigned> matchedAttributesList;
                 currentHeapMaxCursor++;
 
                 // check isValidTermPositionHit
@@ -419,7 +419,7 @@ bool TermVirtualList::getNext(HeapItemForIndexSearcher *returnHeapItem)
                         this->invertedIndex->isValidTermPositionHit(forwardIndexDirectoryReadView,
                         recordId,
                         keywordOffset,
-                        term->getAttributeToFilterTermHits(), termAttributeBitmap,
+                        term->getAttributesToFilter(), term->getFilterAttrOperation(), matchedAttributesList,
                         termRecordStaticScore)) {
                     foundValidHit = 1;
                     this->cursorVector[currentHeapMax->cursorVectorPosition] = currentHeapMaxCursor;
@@ -432,7 +432,7 @@ bool TermVirtualList::getNext(HeapItemForIndexSearcher *returnHeapItem)
                                 term->getKeyword()->size(),
                                 currentHeapMax->isPrefixMatch,
                                 this->prefixMatchPenalty , term->getSimilarityBoost());
-                    currentHeapMax->attributeBitMap = termAttributeBitmap;
+                    currentHeapMax->attributeIdsList = matchedAttributesList;
                     currentHeapMax->positionIndexOffset = keywordOffset;
                     push_heap(itemsHeap.begin(), itemsHeap.begin()+this->numberOfItemsInPartialHeap,
                               TermVirtualList::HeapItemCmp());

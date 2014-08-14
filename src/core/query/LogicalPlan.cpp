@@ -109,9 +109,11 @@ LogicalPlan::~LogicalPlan(){
 	delete fuzzyQuery; delete exactQuery;
 }
 
-LogicalPlanNode * LogicalPlan::createTermLogicalPlanNode(const std::string &queryKeyword, TermType type,const float boost, const float fuzzyMatchPenalty, const uint8_t threshold , unsigned fieldFilter){
+LogicalPlanNode * LogicalPlan::createTermLogicalPlanNode(const std::string &queryKeyword,
+		TermType type,const float boost, const float fuzzyMatchPenalty,
+		const uint8_t threshold , const vector<unsigned>& fieldFilter,ATTRIBUTES_OP attrOp){
 	Term * term = new Term(queryKeyword, type, boost, fuzzyMatchPenalty, threshold);
-	term->addAttributeToFilterTermHits(fieldFilter);
+	term->addAttributesToFilter(fieldFilter, attrOp);
 	LogicalPlanNode * node = new LogicalPlanNode(term , NULL);
 	return node;
 }
@@ -124,7 +126,7 @@ LogicalPlanNode * LogicalPlan::createOperatorLogicalPlanNode(LogicalPlanNodeType
 }
 LogicalPlanNode * LogicalPlan::createPhraseLogicalPlanNode(const vector<string>& phraseKeyWords,
 		const vector<unsigned>& phraseKeywordsPosition,
-		short slop, unsigned fieldFilter) {
+		short slop, const vector<unsigned>& fieldFilter) {
 
 	LogicalPlanNode * node = new LogicalPlanPhraseNode(phraseKeyWords, phraseKeywordsPosition,
 			slop, fieldFilter);

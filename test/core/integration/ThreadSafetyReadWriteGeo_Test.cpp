@@ -167,24 +167,24 @@ void testRead2(Indexer *indexer)
     	vector<unsigned> recordIds;
     	recordIds.push_back(1001);
     	recordIds.push_back(2001);
-    	ASSERT ( ping_WithGeo(analyzer, queryEvaluator, "tom", 0, 0, 10, 2 , recordIds) == true);
+    	ASSERT ( ping_WithGeo(analyzer, queryEvaluator, "tom", 0, 0, 10, 2 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
     {
     	vector<unsigned> recordIds;
     	recordIds.push_back(1002);
-    	ASSERT ( ping_WithGeo(analyzer, queryEvaluator, "jimi", 50, 50, 10, 1 , recordIds) == true);
+    	ASSERT ( ping_WithGeo(analyzer, queryEvaluator, "jimi", 50, 50, 10, 1 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
     {
     	vector<unsigned> recordIds;
     	recordIds.push_back(1003);
     	recordIds.push_back(1004);
     	recordIds.push_back(2003);
-    	ASSERT ( ping_WithGeo(analyzer, queryEvaluator, "tom", 100, 100, 10, 3 , recordIds) == true);
+    	ASSERT ( ping_WithGeo(analyzer, queryEvaluator, "tom", 100, 100, 10, 3 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
     {
     	vector<unsigned> recordIds;
     	recordIds.push_back(2002);
-    	ASSERT ( ping_WithGeo(analyzer, queryEvaluator, "Harry", 100, 100, 10, 1 , recordIds) == true);
+    	ASSERT ( ping_WithGeo(analyzer, queryEvaluator, "Harry", 100, 100, 10, 1 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
     delete queryEvaluator;
 
@@ -199,23 +199,23 @@ void testRead1(Indexer *indexer)
     {
     	vector<unsigned> recordIds;
     	recordIds.push_back(1001);
-    	ASSERT ( ping_WithGeo(analyzer, queryEvaluator, "tom", 0, 0, 10, 1 , recordIds) == true);
+    	ASSERT ( ping_WithGeo(analyzer, queryEvaluator, "tom", 0, 0, 10, 1 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
     {
     	vector<unsigned> recordIds;
     	recordIds.push_back(1002);
-    	ASSERT ( ping_WithGeo(analyzer, queryEvaluator, "jimi", 50, 50, 10, 1 , recordIds) == true);
+    	ASSERT ( ping_WithGeo(analyzer, queryEvaluator, "jimi", 50, 50, 10, 1 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
     {
     	vector<unsigned> recordIds;
     	recordIds.push_back(1003);
     	recordIds.push_back(1004);
-    	ASSERT ( ping_WithGeo(analyzer, queryEvaluator, "tom", 100, 100, 10, 2 , recordIds) == true);
+    	ASSERT ( ping_WithGeo(analyzer, queryEvaluator, "tom", 100, 100, 10, 2 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
     {
     	vector<unsigned> recordIds;
     	recordIds.push_back(1003);
-    	ASSERT ( ping_WithGeo(analyzer, queryEvaluator, "ripper", 100, 100, 10, 1 , recordIds) == true);
+    	ASSERT ( ping_WithGeo(analyzer, queryEvaluator, "ripper", 100, 100, 10, 1 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
     delete queryEvaluator;
 }

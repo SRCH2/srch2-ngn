@@ -48,8 +48,8 @@ void buildKeywordHighlightInfo(const QueryResults * qr, unsigned recIdx,
 	qr->getTermTypes(recIdx, termTypes);
 	vector<unsigned> editDistances;
 	qr->getEditDistances(recIdx, editDistances);
-	vector<unsigned> matchedKeywordsAttrBitmaps;
-	qr->getMatchedAttributeBitmaps(recIdx, matchedKeywordsAttrBitmaps);
+	vector<vector<unsigned> > matchedAttributeIdsList;
+	qr->getMatchedAttributes(recIdx, matchedAttributeIdsList);
 	for (unsigned i = 0; i <  matchingKeywords.size(); ++i) {
 		keywordHighlightInfo keywordInfo;
 		if(termTypes.at(i) == TERM_TYPE_COMPLETE)
@@ -60,7 +60,7 @@ void buildKeywordHighlightInfo(const QueryResults * qr, unsigned recIdx,
 			keywordInfo.flag = HIGHLIGHT_KEYWORD_IS_PERFIX;
 		utf8StringToCharTypeVector(matchingKeywords[i], keywordInfo.key);
 		keywordInfo.editDistance = editDistances.at(i);
-		keywordInfo.attrBitMap = matchedKeywordsAttrBitmaps.at(i);
+		keywordInfo.attributeIdsList = matchedAttributeIdsList.at(i);
 		keywordStrToHighlight.push_back(keywordInfo);
 	}
 }

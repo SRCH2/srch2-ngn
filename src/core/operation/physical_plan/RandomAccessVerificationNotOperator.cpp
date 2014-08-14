@@ -44,7 +44,7 @@ bool RandomAccessVerificationNotOperator::verifyByRandomAccess(PhysicalPlanRando
 		return false;
 	}
 	// we clear everything to make sure no junk propagates up
-	parameters.attributeBitmaps.clear();
+	parameters.attributeIdsList.clear();
 	parameters.positionIndexOffsets.clear();
 	parameters.prefixEditDistances.clear();
 	parameters.termRecordMatchingPrefixes.clear();

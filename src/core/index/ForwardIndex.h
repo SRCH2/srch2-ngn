@@ -67,7 +67,11 @@ typedef vector<pair<unsigned, pair<string, unsigned> > > KeywordIdKeywordStringI
 struct KeywordRichInformation {
     unsigned keywordId;
     float keywordScore;
-    unsigned keywordAttribute;
+    vector<unsigned> keywordAttribute;
+    vector<vector<unsigned> > keywordPositionInAttribute;
+    vector<vector<unsigned> > keywordOffsetsInAttribute;
+    vector<vector<uint8_t> > keywordSynonymBitMapInAttribute;
+    vector<vector<unsigned> > keywordSynonymCharLenInAttribute;
     bool operator <(const KeywordRichInformation& keyword) const {
         return keywordId < keyword.keywordId;
     }
@@ -140,12 +144,13 @@ public:
      * and setKeywordAttributeBitmap(...) API calls.
      */
     void allocateSpaceAndSetNSAValuesAndPosIndex(const Schema * schema,
-    		bool shouldAttributeBitMapBeAllocated,
+    		vector<uint8_t>& AttributeIdsVector,
     		vector<uint8_t>& positionIndexDataVector,
     		vector<uint8_t>& offsetIndexDataVector,
     		vector<uint8_t>& charLenDataVector,
     		vector<uint8_t>& synonymBitMapVector){
 
+    	this->attributeIdsIndexSize = AttributeIdsVector.size();
     	this->positionIndexSize = positionIndexDataVector.size();
     	this->offsetIndexSize = offsetIndexDataVector.size();
     	this->charLenIndexSize = charLenDataVector.size();
@@ -154,15 +159,15 @@ public:
     	// first two blocks are for keywordIDs and keywordRecordStaticScores.
     	dataSize = getKeywordIdsSizeInBytes() + getKeywordRecordStaticScoresSizeInBytes();
     	data = new Byte[dataSize +
-    	                          this->getKeywordAttributeBitmapsSizeInBytes() +
-    	                          this->getPositionIndexSize() + this->offsetIndexSize
-    	                          + this->synonymBitMapSize +  this->charLenIndexSize];
+    	                this->getKeywordAttributeIdsSize() +
+    	                this->getPositionIndexSize() + this->offsetIndexSize
+    	                + this->synonymBitMapSize +  this->charLenIndexSize];
 
     	// third block is attributeBitmap
     	/////
-    	if(shouldAttributeBitMapBeAllocated == true){
-			dataSize = dataSize + this->getKeywordAttributeBitmapsSizeInBytes();
-    	}
+    	copy(AttributeIdsVector.begin() , AttributeIdsVector.end(), data + this->dataSize);
+    	dataSize = dataSize + this->getKeywordAttributeIdsSize();
+
     	// last part is positionIndex
     	/////
     	copy(positionIndexDataVector.begin() , positionIndexDataVector.end(), data + this->dataSize);
@@ -176,6 +181,44 @@ public:
 
     	copy(charLenDataVector.begin() , charLenDataVector.end(), data + this->dataSize);
     	dataSize = dataSize + this->charLenIndexSize;
+
+    }
+
+    void copyByteArraysToForwardList(vector<uint8_t>& AttributeIdsVector,
+    		vector<uint8_t>& positionIndexDataVector,
+    		vector<uint8_t>& offsetIndexDataVector,
+    		vector<uint8_t>& synonymBitMapVector,
+    		vector<uint8_t>& charLenDataVector){
+
+    	ASSERT(this->attributeIdsIndexSize == AttributeIdsVector.size());
+    	ASSERT(this->positionIndexSize == positionIndexDataVector.size());
+    	ASSERT(this->offsetIndexSize == offsetIndexDataVector.size());
+    	ASSERT(this->synonymBitMapSize == synonymBitMapVector.size());
+    	ASSERT(this->charLenIndexSize == charLenDataVector.size());
+
+    	unsigned dataSize = getKeywordIdsSizeInBytes() + getKeywordRecordStaticScoresSizeInBytes();
+    	// copy attribute ids
+    	copy(AttributeIdsVector.begin() , AttributeIdsVector.end(), data + dataSize);
+    	dataSize = dataSize + this->getKeywordAttributeIdsSize();
+
+
+    	// copy position index
+    	copy(positionIndexDataVector.begin() , positionIndexDataVector.end(), data + dataSize);
+    	dataSize = dataSize + this->getPositionIndexSize();
+
+    	// copy char offset index
+    	copy(offsetIndexDataVector.begin() , offsetIndexDataVector.end(), data + dataSize);
+    	dataSize = dataSize + this->offsetIndexSize;
+
+    	// copy synonym bit map
+    	copy(synonymBitMapVector.begin() , synonymBitMapVector.end(), data + dataSize);
+    	dataSize = dataSize + this->synonymBitMapSize;
+
+    	// copy synonym's original char length
+    	copy(charLenDataVector.begin() , charLenDataVector.end(), data + dataSize);
+    	dataSize = dataSize + this->charLenIndexSize;
+
+    	ASSERT(dataSize == this->dataSize);
 
     }
 
@@ -201,19 +244,17 @@ public:
             this->getKeywordRecordStaticScoresPointer()[iter] = keywordScore;
     }
 
-    unsigned* getKeywordAttributeBitmaps() const {
-        return getKeywordAttributeBitmapsPointer();
+    uint8_t * getKeywordAttributesListPtr() const{
+    	return getKeywordAttributeIdsPointer();
     }
 
-    unsigned getKeywordAttributeBitmap(unsigned iter) const {
-        return getKeywordAttributeBitmapsPointer()[iter];
-    }
+    void getKeywordAttributeIdsList(unsigned keywordOffset, vector<unsigned>& attributeIdList) const;
 
-    void setKeywordAttributeBitmap(unsigned iter,
-            unsigned keywordAttributeBitmap) {
-        if (iter <= KEYWORD_THRESHOLD)
-            this->getKeywordAttributeBitmapsPointer()[iter] = keywordAttributeBitmap;
-    }
+//    void setKeywordAttributeBitmap(unsigned iter,
+//            unsigned keywordAttributeBitmap) {
+//        if (iter <= KEYWORD_THRESHOLD)
+//            this->getKeywordAttributeBitmapsPointer()[iter] = keywordAttributeBitmap;
+//    }
 
     //set the size of keywordIds and keywordRecordStaticScores to keywordListCapacity
     ForwardList(int keywordListCapacity = 0) {
@@ -229,7 +270,7 @@ public:
         // allocateSpaceAndSetNSAValuesAndPosIndex when other pieces of data are also ready.
         dataSize = 0;
         data = NULL;
-        nonSearchableAttributeValuesDataSize = 0;
+        attributeIdsIndexSize = 0;
         positionIndexSize = 0;
         offsetIndexSize = 0;
         charLenIndexSize = 0;
@@ -255,15 +296,16 @@ public:
             float &matchingKeywordRecordStaticScore, bool &isStemmed) const;
     bool haveWordInRange(const SchemaInternal* schema, const unsigned minId,
             const unsigned maxId,
-            const unsigned termSearchableAttributeIdToFilterTermHits,
-            unsigned &keywordId, unsigned &termAttributeBitmap,
+            const vector<unsigned>& filteringAttributesList, ATTRIBUTES_OP atrOps,
+            unsigned &keywordId, vector<unsigned>& matchingKeywordAttributesList,
             float &termRecordStaticScore) const;
 
     unsigned getKeywordOffset(unsigned keywordId) const;
 
     bool getWordsInRange(const SchemaInternal* schema, const unsigned minId,
             const unsigned maxId,
-            const unsigned termSearchableAttributeIdToFilterTermHits,
+            const vector<unsigned>& filteringAttributesList,
+            ATTRIBUTES_OP attrOps,
             vector<unsigned> &keywordIdsVector) const;
 
     /**************************PositionIndex****************/
@@ -288,8 +330,8 @@ public:
      */
 
     bool isValidRecordTermHit(const SchemaInternal *schema,
-            unsigned keywordOffset, unsigned searchableAttributeId,
-            unsigned &termAttributeBitVec, float& termRecordStaticScore) const;
+            unsigned keywordOffset,const vector<unsigned>& filteringAttributesList, ATTRIBUTES_OP attrOp,
+            vector<unsigned>& matchingKeywordAttributesList, float& termRecordStaticScore) const;
     bool isValidRecordTermHitWithStemmer(const SchemaInternal *schema,
             unsigned keywordOffset, unsigned searchableAttributeId,
             unsigned &matchingKeywordAttributeBitmap,
@@ -302,12 +344,11 @@ public:
 
     // Position Indexes APIs
     void getKeyWordPostionsInRecordField(unsigned keywordId, unsigned attributeId,
-    		unsigned attributeBitMap, vector<unsigned>& positionList) const;
+    		vector<unsigned>& positionList) const;
     void fetchDataFromVLBArray(unsigned keyOffset, unsigned attributeId,
-    		unsigned currKeyattributeBitMap, vector<unsigned>& pl,
-    		const uint8_t * piPtr, unsigned piOffset) const;
+    		vector<unsigned>& pl, const uint8_t * piPtr) const;
     void getKeyWordOffsetInRecordField(unsigned keyOffset, unsigned attributeId,
-    		unsigned currKeyattributeBitMap, vector<unsigned>& pl) const;
+    		vector<unsigned>& pl) const;
     void getSynonymCharLenInRecordField(unsigned keyOffset, unsigned attributeId,
     		vector<unsigned>& pl) const;
     void getSynonymBitMapInRecordField(unsigned keyOffset, unsigned attributeId,
@@ -321,7 +362,7 @@ private:
         typename Archive::is_loading load;
         ar & this->numberOfKeywords;
         ar & this->recordBoost;
-        ar & this->nonSearchableAttributeValuesDataSize;
+        ar & this->attributeIdsIndexSize;
         ar & this->positionIndexSize;
         ar & this->offsetIndexSize;
         ar & this->synonymBitMapSize;
@@ -368,7 +409,7 @@ private:
      */
     Byte * data;
 
-    unsigned nonSearchableAttributeValuesDataSize;
+    unsigned attributeIdsIndexSize;
     unsigned positionIndexSize;
     unsigned dataSize;
     unsigned offsetIndexSize;
@@ -414,22 +455,20 @@ private:
 
 
     //////////////////// Keyword Attributes Bitmap Helper Functions ////////////////////////////
-    inline unsigned * getKeywordAttributeBitmapsPointer() const{
+    inline uint8_t * getKeywordAttributeIdsPointer() const{
         /*
          * The format of data in this array is :
          * -------------------------------------------------------------------------------------------------
          * | keywordIDs | keywordRecordStaticScores | keywordAttributeBitMap | positionIndex | offsetIndex |
          * -------------------------------------------------------------------------------------------------
          */
-    	return (unsigned *)(data +
+    	return (uint8_t *)(data +
     			getKeywordIdsSizeInBytes() +
     			getKeywordRecordStaticScoresSizeInBytes());
     }
-    inline unsigned getKeywordAttributeBitmapsSizeInBytes(unsigned sizeInUnsigned) const{
-    	return sizeInUnsigned * (sizeof(unsigned) / sizeof(Byte));
-    }
-    inline unsigned getKeywordAttributeBitmapsSizeInBytes() const{
-    	return getKeywordAttributeBitmapsSizeInBytes(this->getNumberOfKeywords());
+
+    inline unsigned getKeywordAttributeIdsSize() const{
+    	return attributeIdsIndexSize;
     }
 
     /////////////////////// Position Index Helper Functions //////////////////////////////
@@ -443,7 +482,7 @@ private:
     	return (uint8_t *)(data +
     			getKeywordIdsSizeInBytes() +
     			getKeywordRecordStaticScoresSizeInBytes() +
-    			getKeywordAttributeBitmapsSizeInBytes());
+    			getKeywordAttributeIdsSize());
     }
     inline uint8_t * getOffsetIndexPointer() const{
     	/*
@@ -577,9 +616,10 @@ public:
     		const unsigned recordId,
     		const unsigned minId,
             const unsigned maxId,
-            const unsigned termSearchableAttributeIdToFilterTermHits,
+            const vector<unsigned>& filteringAttributesList,
+            ATTRIBUTES_OP attrOp,
             unsigned &matchingKeywordId,
-            unsigned &matchingKeywordAttributeBitmap,
+            vector<unsigned>& matchingKeywordAttributesList,
             float &matchingKeywordRecordStaticScore) const;
 
     /**
@@ -673,7 +713,8 @@ public:
     bool isValidRecordTermHit(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
     		unsigned forwardIndexId,
     		unsigned keywordOffset,
-            unsigned searchableAttributeId, unsigned &termAttributeBitmap,
+    		const vector<unsigned>& filterAttributesList, ATTRIBUTES_OP attrOp,
+    		vector<unsigned> &matchingKeywordAttributesList,
             float& termRecordStaticScore) const;
     bool isValidRecordTermHitWithStemmer(unsigned forwardIndexId,
             unsigned keywordOffset, unsigned searchableAttributeId,
@@ -734,6 +775,11 @@ public:
     void convertToVarLengthBitMap(const vector<uint8_t>& bitMapVector,
     		vector<uint8_t>& grandBuffer);
 };
+
+
+void fetchCommonAttributes(const vector<unsigned>& list1, const vector<unsigned>& list2,
+		vector<unsigned>& outList);
+bool isAttributesListsMatching(const vector<unsigned>& list1, const vector<unsigned>& list2);
 
 }
 }

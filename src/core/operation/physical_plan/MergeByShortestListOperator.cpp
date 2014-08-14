@@ -121,7 +121,7 @@ PhysicalPlanRecordItem * MergeByShortestListOperator::getNext(const PhysicalPlan
 		std::vector<float> runTimeTermRecordScores;
 		std::vector<float> staticTermRecordScores;
 		std::vector<TrieNodePointer> termRecordMatchingKeywords;
-		std::vector<unsigned> attributeBitmaps;
+		std::vector<vector<unsigned> > attributeIdsList;
 		std::vector<unsigned> prefixEditDistances;
 		std::vector<unsigned> positionIndexOffsets;
 		std::vector<TermType> termTypes;
@@ -129,17 +129,17 @@ PhysicalPlanRecordItem * MergeByShortestListOperator::getNext(const PhysicalPlan
 			runTimeTermRecordScores.push_back(nextRecord->getRecordRuntimeScore());
 			staticTermRecordScores.push_back(nextRecord->getRecordStaticScore());
 			nextRecord->getRecordMatchingPrefixes(termRecordMatchingKeywords);
-			nextRecord->getRecordMatchAttributeBitmaps(attributeBitmaps);
+			nextRecord->getRecordMatchAttributeBitmaps(attributeIdsList);
 			nextRecord->getRecordMatchEditDistances(prefixEditDistances);
 			nextRecord->getTermTypes(termTypes);
 			if(verifyRecordWithChildren(nextRecord,  runTimeTermRecordScores, staticTermRecordScores,
-					termRecordMatchingKeywords, attributeBitmaps, prefixEditDistances , positionIndexOffsets, termTypes, params,
+					termRecordMatchingKeywords, attributeIdsList, prefixEditDistances , positionIndexOffsets, termTypes, params,
 					this->getPhysicalPlanOptimizationNode()->getChildrenCount() - 1) == false){
 				continue;	// 2.1. and 2.2.
 			}
 		}else{
 			if(verifyRecordWithChildren(nextRecord,  runTimeTermRecordScores, staticTermRecordScores,
-					termRecordMatchingKeywords, attributeBitmaps, prefixEditDistances , positionIndexOffsets, termTypes, params ) == false){
+					termRecordMatchingKeywords, attributeIdsList, prefixEditDistances , positionIndexOffsets, termTypes, params ) == false){
 				continue;	// 2.1. and 2.2.
 			}
 		}
@@ -147,7 +147,7 @@ PhysicalPlanRecordItem * MergeByShortestListOperator::getNext(const PhysicalPlan
 		// from this point, nextRecord is a candidate
 		//3.
 		// set the members
-		nextRecord->setRecordMatchAttributeBitmaps(attributeBitmaps);
+		nextRecord->setRecordMatchAttributeBitmaps(attributeIdsList);
 		nextRecord->setRecordMatchEditDistances(prefixEditDistances);
 		nextRecord->setRecordMatchingPrefixes(termRecordMatchingKeywords);
 		nextRecord->setPositionIndexOffsets(positionIndexOffsets);
@@ -224,7 +224,7 @@ bool MergeByShortestListOperator::verifyRecordWithChildren(PhysicalPlanRecordIte
 					std::vector<float> & runTimeTermRecordScores,
 					std::vector<float> & staticTermRecordScores,
 					std::vector<TrieNodePointer> & termRecordMatchingKeywords,
-					std::vector<unsigned> & attributeBitmaps,
+					std::vector<vector<unsigned> > & attributeBitmaps,
 					std::vector<unsigned> & prefixEditDistances,
 					std::vector<unsigned> & positionIndexOffsets,
 					std::vector<TermType>& termTypes,
@@ -274,7 +274,7 @@ bool MergeByShortestListOperator::verifyRecordWithChildren(PhysicalPlanRecordIte
 			termRecordMatchingKeywords.insert(
 					termRecordMatchingKeywords.end(),parameters.termRecordMatchingPrefixes.begin(),parameters.termRecordMatchingPrefixes.end());
 			attributeBitmaps.insert(
-					attributeBitmaps.end(),parameters.attributeBitmaps.begin(),parameters.attributeBitmaps.end());
+					attributeBitmaps.end(),parameters.attributeIdsList.begin(),parameters.attributeIdsList.end());
 			prefixEditDistances.insert(
 					prefixEditDistances.end(),parameters.prefixEditDistances.begin(),parameters.prefixEditDistances.end());
 			positionIndexOffsets.insert(

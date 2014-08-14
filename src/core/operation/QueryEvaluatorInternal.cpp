@@ -287,7 +287,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 			charTypeVectorToUtf8String(temp, str);
 			queryResult->matchingKeywords.push_back(str);
 		}
-		newRecord->getRecordMatchAttributeBitmaps(queryResult->attributeBitmaps);
+		newRecord->getRecordMatchAttributeBitmaps(queryResult->attributeIdsList);
 
 		this->getForwardIndex()->getExternalRecordIdFromInternalRecordId(this->forwardIndexDirectoryReadView,
 				queryResult->internalRecordId,queryResult->externalRecordId );

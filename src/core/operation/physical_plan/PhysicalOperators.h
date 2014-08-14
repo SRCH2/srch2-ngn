@@ -448,7 +448,7 @@ public:
 						std::vector<float> & runTimeTermRecordScores,
 						std::vector<float> & staticTermRecordScores,
 						std::vector<TrieNodePointer> & termRecordMatchingKeywords,
-						std::vector<unsigned> & attributeBitmaps,
+						std::vector<vector<unsigned> > & attributeIdsList,
 						std::vector<unsigned> & prefixEditDistances,
 						std::vector<unsigned> & positionIndexOffsets,
 						std::vector<TermType>& termTypes,

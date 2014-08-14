@@ -2184,14 +2184,6 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
         return;
     }
 
-    if (defaultCoreInfo->supportAttributeBasedSearch
-            && defaultCoreInfo->searchableAttributesInfo.size() > 31) {
-        parseError
-                << "To support attribute-based search, the number of searchable attributes cannot be bigger than 31.\n";
-        configSuccess = false;
-        return;
-    }
-
     // TODO - move to individual cores?
     this->ordering = 0;
 

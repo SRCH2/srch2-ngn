@@ -177,7 +177,7 @@ INDEXWRITE_RETVAL IndexData::_addRecordWithoutLock(const Record *record, Analyze
 
     this->mergeRequired = true;
     /// analyze the record (tokenize it, remove stop words)
-    map<string, TokenAttributeHits > tokenAttributeHitsMap;
+    map<string, TokenAttributeHits>  tokenAttributeHitsMap;
     analyzer->tokenizeRecord(record, tokenAttributeHitsMap);
 
     KeywordIdKeywordStringInvertedListIdTriple keywordIdList;
