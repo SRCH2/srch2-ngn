@@ -5,7 +5,7 @@ Welcome to the web repository of the SRCH2 Android SDK Documentation.
 
 ![Welcome][Welcome]
 
-If you're new to the SRCH2 Android SDK and would like to get started using the power of the SRCH2 search engine in your app, you can read how to get it set-up and running by visiting the the [Hello SRCH2 Search Demo tutorial](tutorial.md). 
+If you're new to the SRCH2 Android SDK and would like to get started using the power of the SRCH2 search engine in your app, you can read how to get it set-up and running by visiting the the [Hello SRCH2 Android SDK tutorial](tutorial.md). 
 
 The [Advanced Topics](advanced-topics.md) section includes information on how to unlock the full power of the SRCH2 engine by using advanced features of the SRCH2 Android SDK API such as the `Query` class or geo-search. It also includes instructions for preparing your app for Progaurd when using the SRCH2 Android SDK, or how to set up the SDK for the Eclipse IDE. If you're curious as how the SRCH2 Android SDK works under the hood with your app in the Android system, you can also review the architecture and life-cycle diagrams in this section.
 
