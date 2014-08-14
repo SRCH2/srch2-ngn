@@ -240,7 +240,7 @@ void QueryRewriter::prepareFieldFilters() {
 
             srch2is::BooleanOperation op = leafNode->termIntermediateStructure->fieldFilterOp;
 
-            vector<unsigned> filter;
+            vector<unsigned> attributeFilter;
             if (leafNode->termIntermediateStructure->fieldFilter.size() == 0) {
             	leafNode->termIntermediateStructure->fieldFilterAttrOperation = ATTRIBUTES_OP_OR;
                 // TODO : get it from configuration file
@@ -251,12 +251,12 @@ void QueryRewriter::prepareFieldFilters() {
 
                     if (field->compare("*") == 0) { // all fields
                         //filter = 0x7fffffff;
-                    	filter.clear();
+                    	attributeFilter.clear();
                         shouldApplyAnd = false;
                         break;
                     }
                     unsigned id = schema.getSearchableAttributeId(*field);
-                    filter.push_back(id);
+                    attributeFilter.push_back(id);
                 }
                 if (op == srch2is::BooleanOperatorAND && shouldApplyAnd) {
                 	leafNode->termIntermediateStructure->fieldFilterAttrOperation = ATTRIBUTES_OP_AND;
@@ -264,7 +264,7 @@ void QueryRewriter::prepareFieldFilters() {
                 	leafNode->termIntermediateStructure->fieldFilterAttrOperation = ATTRIBUTES_OP_OR;
                 }
             }
-            leafNode->termIntermediateStructure->fieldFilterList = filter;
+            leafNode->termIntermediateStructure->fieldFilterList = attributeFilter;
 
     	}
 

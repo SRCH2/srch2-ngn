@@ -283,9 +283,9 @@ public:
             unsigned positionIndexOffset = invertedListElement.positionIndexOffset;
             float score;
             vector<unsigned> tempMatchedAttrsList;
-            vector<unsigned> filter;
+            vector<unsigned> filterAttributes;
             if (isValidTermPositionHit(forwardIndexDirectoryReadView, recordId,
-            		positionIndexOffset, filter, ATTRIBUTES_OP_AND, tempMatchedAttrsList, score) ){
+            		positionIndexOffset, filterAttributes, ATTRIBUTES_OP_AND, tempMatchedAttrsList, score) ){
                 Logger::debug("%d | %d | %.5f", recordId, positionIndexOffset, score);
             }
         }

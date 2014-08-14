@@ -1401,11 +1401,18 @@ void ForwardIndex::exportData(ForwardIndex &forwardIndex, const string &exported
  *   Utility Functions
  */
 
+// This function takes two attribute-ids lists as inputs and returns a third list which contains
+// attribute common in both the input lists.
 void fetchCommonAttributes(const vector<unsigned>& list1, const vector<unsigned>& list2,
 		vector<unsigned>& outList) {
 
-	// if either list1 or list2 is of size 0, it means that all attributes in a record. Hence return
-	// the other list as an output.
+	// if a input list is empty then we consider it equivalent to a list
+	// containing all the attributes of a data record. In such a case,
+	// return the non-empty input list because the intersection of empty (all attributes)
+	// and non-emoty (some attributes) will return some attributes (non-empty list).
+	// e.g list1 = [] (Universal Set) and list2 = [ A , B, C ]
+	// list1 intersectOp list2 = list2
+
 	if (list1.size() == 0) {
 		outList = list2;
 	} else if (list2.size() == 0) {
@@ -1417,6 +1424,8 @@ void fetchCommonAttributes(const vector<unsigned>& list1, const vector<unsigned>
 	}
 }
 
+// This function takes two attribute-ids lists as inputs and returns true if both the lists are same
+// (all elements match in same order) and false otherwise.
 bool isAttributesListsMatching(const vector<unsigned>& list1, const vector<unsigned>& list2) {
 	if (list1.size() != list2.size())
 		return false;

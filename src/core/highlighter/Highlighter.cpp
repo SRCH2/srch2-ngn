@@ -786,7 +786,7 @@ void TermOffsetAlgorithm::getSnippet(const QueryResults* qr, unsigned recidx, un
 		Logger::error("Invalid forward list for record id = %d", recordId);
 		return;
 	}
-	if (fwdList->getKeywordAttributesListPtr() == 0){
+	if (fwdList->getKeywordAttributesListPtr() == NULL){
 		Logger::warn("Attribute info not found in forward List!!");
 		return;
 	}

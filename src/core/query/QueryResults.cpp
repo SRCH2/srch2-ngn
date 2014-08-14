@@ -239,7 +239,7 @@ void QueryResults::printResult() const {
 		for(int j = 0; j < attributes.size(); j++)
 		{
 			for(int k = 0; k < attributes[j].size(); k++)
-                Logger::debug("%d", attributes[j][k]);
+				Logger::debug("%d", attributes[j][k]);
             Logger::debug("}");
 		}
 

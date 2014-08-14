@@ -184,10 +184,10 @@ bool PhraseSearchOperator::matchPhrase(const ForwardList* forwardListPtr, const 
     //
     if (attrOp == ATTRIBUTES_OP_AND && phraseInfo.attributeIdsList.size() > 0) {
     	for (int i = 0; i < keywordsAttrIdsInForwardList.size(); ++i) {
-    		vector<unsigned> resultBitMap;
+    		vector<unsigned> resultAttributeList;
     		fetchCommonAttributes(phraseInfo.attributeIdsList, keywordsAttrIdsInForwardList[i],
-    				resultBitMap);
-    		if (!isAttributesListsMatching(resultBitMap, phraseInfo.attributeIdsList)) {
+    				resultAttributeList);
+    		if (!isAttributesListsMatching(resultAttributeList, phraseInfo.attributeIdsList)) {
     			return false;
     		}
     	}
@@ -215,7 +215,7 @@ bool PhraseSearchOperator::matchPhrase(const ForwardList* forwardListPtr, const 
     	unsigned attributeId = allowedBitMap[i];
         for (int i = 0; i < phraseInfo.keywordIds.size(); ++i) {
             unsigned keyOffset = keywordsOffsetinForwardList[i];
-            vector<unsigned>& keyAttrBitMap = keywordsAttrIdsInForwardList[i];
+            vector<unsigned>& keyAttrIdsList = keywordsAttrIdsInForwardList[i];
             vector<unsigned>& positionList = positionListVector[i];
             forwardListPtr->getKeyWordPostionsInRecordField(keyOffset, attributeId,
             		positionList);

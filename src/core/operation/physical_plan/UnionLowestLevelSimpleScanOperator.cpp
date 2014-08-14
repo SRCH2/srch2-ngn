@@ -187,9 +187,9 @@ PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const Physi
     // static score
     newItem->setRecordStaticScore(termRecordStaticScore);
     // attributeBitmap
-    vector<vector<unsigned> > attributeBitmaps;
-    attributeBitmaps.push_back(matchedAttributeIdsList);
-    newItem->setRecordMatchAttributeBitmaps(attributeBitmaps);
+    vector<vector<unsigned> > matchedAttribureIdsList;
+    matchedAttribureIdsList.push_back(matchedAttributeIdsList);
+    newItem->setRecordMatchAttributeBitmaps(matchedAttribureIdsList);
 
     newItem->addTermType(term->getTermType());
 

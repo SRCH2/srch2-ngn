@@ -1,5 +1,8 @@
-#this test is used for exact A1
-#using: python exact_A1.py queriesAndResults.txt
+# This script tests large number of attributes in a record. 
+# The schema of test data contains 699 attributes. 
+# We fire two types of queries -
+# 1) regular term query and 
+# 2) attribute based (attr id = 97) query   
 
 import sys, urllib2, json, time, subprocess, os, commands, signal
 

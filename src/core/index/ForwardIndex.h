@@ -296,7 +296,7 @@ public:
             float &matchingKeywordRecordStaticScore, bool &isStemmed) const;
     bool haveWordInRange(const SchemaInternal* schema, const unsigned minId,
             const unsigned maxId,
-            const vector<unsigned>& filteringAttributesList, ATTRIBUTES_OP andOperation,
+            const vector<unsigned>& filteringAttributesList, ATTRIBUTES_OP atrOps,
             unsigned &keywordId, vector<unsigned>& matchingKeywordAttributesList,
             float &termRecordStaticScore) const;
 
