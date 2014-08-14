@@ -29,7 +29,7 @@ int MongoDBConnector::init(ServerInterface *serverHandle) {
     this->serverHandle->configLookUp("uniqueKey", uniqueKey);
     if (uniqueKey.compare("_id") != 0) {
         printf("MOGNOLISTENER: The PrimaryKey in the config file for the "
-                "MongoDB adapter should always be \"_id\", not %s",
+                "MongoDB adapter should always be \"_id\", not %s\n",
                 uniqueKey.c_str());
         return -1;
     }
@@ -58,7 +58,7 @@ bool MongoDBConnector::checkConfigValidity() {
 
     int value = atoi(port.c_str());
     if (value <= 0 || value > USHRT_MAX) {
-        printf("MOGNOLISTENER: database port must be between 1 and %d", USHRT_MAX);
+        printf("MOGNOLISTENER: database port must be between 1 and %d\n", USHRT_MAX);
         return false;
     }
 
@@ -114,9 +114,11 @@ bool MongoDBConnector::connectToDB() {
         } catch (const exception& ex) {
             printf("MOGNOLISTENER: Unknown exception %s \n", ex.what());
         }
+        if (retryCount != 0) {
+            printf("MONGOLISTENER: trying again ...\n");
+        }
         // sleep...do not hog the CPU
         sleep(listenerWaitTime);
-        printf("MONGOLISTENER: trying again ...");
     }
     // if all retries failed then exit the thread
     printf("MONGOLISTENER: exiting...\n");
@@ -152,24 +154,24 @@ int MongoDBConnector::createNewIndexes() {
 
                 ++indexedRecordsCount;
                 if (indexedRecordsCount && (indexedRecordsCount % 1000) == 0)
-                    printf("MOGNOLISTENER: Indexed %d records so far ...",
+                    printf("MOGNOLISTENER: Indexed %d records so far ...\n",
                             indexedRecordsCount);
             }
             printf("MOGNOLISTENER: Total indexed %d / %d records. \n", indexedRecordsCount,
                     collectionCount);
-            //Save the time right after create new indexes.
-            setLastAccessedLogRecordTime(time(NULL));
-            this->serverHandle->saveChanges();
 
         } else {
-            printf("MOGNOLISTENER: No data found in the collection %s",
+            printf("MOGNOLISTENER: No data found in the collection %s\n",
                     filterNamespace.c_str());
         }
+        //Save the time right after create new indexes.
+        setLastAccessedLogRecordTime(time(NULL));
+        this->serverHandle->saveChanges();
     } catch (const mongo::DBException &e) {
-        printf("MOGNOLISTENER: MongoDb Exception %s", e.what());
+        printf("MOGNOLISTENER: MongoDb Exception %s\n", e.what());
         return -1;
     } catch (const exception& ex) {
-        printf("MOGNOLISTENER: Unknown exception %s", ex.what());
+        printf("MOGNOLISTENER: Unknown exception %s\n", ex.what());
         return -1;
     }
 

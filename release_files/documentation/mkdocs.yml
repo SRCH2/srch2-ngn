@@ -1,0 +1,16 @@
+site_name: Docs (4.3.4)
+
+pages:
+    - [index.mkd, Home]
+    - [install.mkd, Installation]
+    - [configuration.mkd, Configuration]
+    - [restful-search.mkd, 'API', Search]
+    - [restful-insert-update-delete.mkd, 'API', Update]
+    - [restful-control.mkd,'API', Control]
+    - [ranking.mkd, Ranking]
+    - [geo.mkd, Geo]
+    - [databases.mkd, Databases]
+
+theme_dir : './srch2-theme'
+
+copyright: Copyright &copy; 2014, <a href="https://srch2.com/">SRCH2.COM</a>.

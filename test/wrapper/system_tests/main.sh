@@ -166,6 +166,17 @@ rm -rf data/ *.idx
 #         please be sure to append output using ">> system_test.log".
 #
 ###############################################################################################################
+test_id="synonyms"
+printTestBanner "$test_id"
+python ./synonyms/synonyms.py $SRCH2_ENGINE | eval "${html_escape_command}" >> system_test.log 2>&1
+if [ ${PIPESTATUS[0]} -gt 0 ]; then
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
+    if [ $force -eq 0 ]; then
+	exit 255
+    fi
+else
+    echo "-- PASSED: $test_id" >> ${output}
+fi
 
 test_id="highlighter"
 printTestBanner "$test_id"
@@ -777,6 +788,20 @@ fi
 rm -rf data/ *.idx
 rm -rf data/sqlite_data
 rm -rf ./adapter_sqlite/srch2Test.db
+
+test_id="test loading different schema"
+printTestBanner "$test_id"
+python ./test_load_diff_schema/test_load_diff_schema.py $SRCH2_ENGINE  | eval "${html_escape_command}" >> system_test.log 2>&1
+
+if [ ${PIPESTATUS[0]} -gt 0 ]; then
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
+    if [ $force -eq 0 ]; then
+        exit 255
+    fi
+else
+    echo "-- PASSED: $test_id" >> ${output}
+fi
+rm -rf data/ *.idx
 
 test_id="primary key - refining field"
 printTestBanner "$test_id"
