@@ -172,19 +172,19 @@ public:
     TermType getTermType() const;
 
     /*
-     * Used in attribute based search. If we want a keyword
-     * to appear in a certain group of attributes a
-     * @parameter searchableAttributeId is added.
-     *
-     * We can have maximum 31 searchable attributes for attribute based
-     * search.
-     *
-     * TODO modify function and parameter names
-     * TODO add some helper functions for attribute based search.
+     * Used in attribute based search. searchableAttributeIdsList specifies the list of attributes
+     * where keyword should be found in a data record.  attrOp flag indicates whether AND/OR
+     * logic is applied on filter attributes.
      */
-    void addAttributeToFilterTermHits(unsigned searchableAttributeId);
+    void addAttributesToFilter(const vector<unsigned>& searchableAttributeIdsList, ATTRIBUTES_OP attrOp);
 
-    unsigned getAttributeToFilterTermHits() const;
+    /*
+     *   getter function for a flag which indicates whether disjunction or conjunction is
+     *   applied on filter fields.
+     */
+    ATTRIBUTES_OP getFilterAttrOperation();
+
+    vector<unsigned>& getAttributesToFilter() const;
 
     string toString();
     /**

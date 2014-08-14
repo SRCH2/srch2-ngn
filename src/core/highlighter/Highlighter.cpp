@@ -218,7 +218,8 @@ void AnalyzerBasedAlgorithm::getSnippet(const QueryResults* /*not used*/, unsign
 			 * should only highlight its occurrence in that attribute.The Condition below checks
 			 * whether the current attribute is allowed for a given query keyword's.
 			 */
-			if (!(keywordStrToHighlight[i].attrBitMap & (1 << attributeId)))
+			vector<unsigned>& attrList = keywordStrToHighlight[i].attributeIdsList;
+			if (attrList.size() > 0 && std::find(attrList.begin(), attrList.end(), attributeId) == attrList.end())
 				continue;
 
 			switch (keywordStrToHighlight[i].flag) {
@@ -785,7 +786,7 @@ void TermOffsetAlgorithm::getSnippet(const QueryResults* qr, unsigned recidx, un
 		Logger::error("Invalid forward list for record id = %d", recordId);
 		return;
 	}
-	if (fwdList->getKeywordAttributeBitmaps() == 0){
+	if (fwdList->getKeywordAttributesListPtr() == NULL){
 		Logger::warn("Attribute info not found in forward List!!");
 		return;
 	}
@@ -837,14 +838,16 @@ void TermOffsetAlgorithm::getSnippet(const QueryResults* qr, unsigned recidx, un
 		 * should only highlight its occurrence in that attribute.The Condition below checks
 		 * whether the current attribute is allowed for a given query keyword's.
 		 */
-		if (!(keywordStrToHighlight[info.prefixKeyIdx].attrBitMap & (1 << attributeId)))
+		vector<unsigned>& attrList = keywordStrToHighlight[info.prefixKeyIdx].attributeIdsList;
+		if (attrList.size() > 0  && std::find(attrList.begin(), attrList.end(), attributeId) == attrList.end())
 			continue;
 
-		unsigned attributeBitMap =	fwdList->getKeywordAttributeBitmap(info.keywordOffset);
-		if (attributeBitMap & (1 << attributeId)) {
+		vector<unsigned> attributeIdsList;
+		fwdList->getKeywordAttributeIdsList(info.keywordOffset, attributeIdsList);
+		if (std::find(attributeIdsList.begin(),attributeIdsList.end(), attributeId) != attributeIdsList.end()) {
 			vector<unsigned> offsetPosition;
 			vector<unsigned> wordPosition;
-			fwdList->getKeyWordOffsetInRecordField(info.keywordOffset, attributeId, attributeBitMap, offsetPosition);
+			fwdList->getKeyWordOffsetInRecordField(info.keywordOffset, attributeId, offsetPosition);
 			vector<uint8_t> synonymBitMap;
 			fwdList->getSynonymBitMapInRecordField(info.keywordOffset, attributeId,  synonymBitMap);
 			ASSERT((offsetPosition.size() /  8 + 1) == synonymBitMap.size());
@@ -877,7 +880,7 @@ void TermOffsetAlgorithm::getSnippet(const QueryResults* qr, unsigned recidx, un
 				highlightPositions.push_back(mti);
 			}
 			if (phrasesInfoList.size() > 0) {
-				fwdList->getKeyWordPostionsInRecordField(info.keywordOffset, attributeId, attributeBitMap, wordPosition);
+				fwdList->getKeyWordPostionsInRecordField(info.keywordOffset, attributeId, wordPosition);
 				for(unsigned pidx = 0 ; pidx < phrasesInfoList.size(); ++pidx) {
 					if (phrasesInfoList[pidx].phraseKeyWords[info.prefixKeyIdx].recordPosition) {
 						phrasesInfoList[pidx].phraseKeyWords[info.prefixKeyIdx].recordPosition->
