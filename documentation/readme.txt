@@ -15,3 +15,5 @@ It will
 6. Deploy the site to the srch2.com/android/release/$version
 7. Tag the git code base
 8. Move the code base to the new version
+
+For update documentation only please run ./update_documentation.sh
