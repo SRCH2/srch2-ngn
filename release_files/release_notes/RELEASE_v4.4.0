@@ -1,6 +1,6 @@
  *------------------------------------------------------------------
  *  RELEASE NOTES Version 4.4.0
- *  Date: August, 14, 2014 
+ *  Date: August 14, 2014 
  *------------------------------------------------------------------
  
  * Added support for synonym filter during indexing phase.
