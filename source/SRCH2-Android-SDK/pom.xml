@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.srch2</groupId>
     <artifactId>srch2-android-sdk</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>0.2.0-SNAPSHOT</version>
     <packaging>aar</packaging>
     <name>SRCH2-Android-SDK</name>
     <description>The Software Development Kit for Android by SRCH2 Inc.</description>
@@ -18,7 +17,8 @@
     <scm>
         <url>https://bitbucket.org/srch2inc/srch2-android</url>
         <connection>scm:git:git@bitbucket.org:srch2inc/srch2-android.git</connection>
-    </scm>
+      <tag>HEAD</tag>
+  </scm>
 
     <dependencies>
         <dependency>
@@ -104,6 +104,14 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
                 <version>2.5</version>
+                <configuration>
+                    <preparationGoals>clean verify</preparationGoals>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-changelog-plugin</artifactId>
+                <version>2.3</version>
             </plugin>
         </plugins>
         <extensions>
@@ -115,11 +123,24 @@
         </extensions>
     </build>
 
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-changelog-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </reporting>
+
     <distributionManagement>
         <repository>
-            <id>internal.repo</id>
-            <name>My Internal Repository</name>
-            <url>file:./target/deploy/</url>
+            <id>srch2repo</id>
+            <name>SRCH2.com repo</name>
+            <url>scp://rvijax@web240.webfaction.com:/home/rvijax/webapps/srch2/repo/maven/</url>
         </repository>
+        <snapshotRepository>
+            <id>srch2snapshot</id>
+            <url>scp://rvijax@web240.webfaction.com:/home/rvijax/webapps/srch2/repo/snapshots/</url>
+        </snapshotRepository>
     </distributionManagement>
 </project>

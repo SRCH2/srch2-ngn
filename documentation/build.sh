@@ -20,25 +20,28 @@ set -o nounset                              # Treat unset variables as an error
 red='\e[0;31m'
 NC='\e[0m' # No Color
 
-sdk_source="../source/SRCH2-Android-SDK/"
-target="$sdk_source/target"
-deploy="${target}/deploy"
+sdk_source="../source/SRCH2-Android-SDK"
+javadoc="${sdk_source}/target/apidocs"
 
 echo "Starting the release ..."
+current_branch=`git rev-parse --symbolic-full-name --abbrev-ref HEAD`
+[ $current_branch == "master" ] || { echo $'\nERROR: Should only run in the master branch. Stop the release'; exit -1;}
+
+git pull origin master
+[ $? -ne 0 ] && { echo $'\nERROR: Pull origin master failed. Stop the release'; exit -1;}
 
 # reminder to change the pom.xml
 cd $sdk_source
 version=`mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version | grep -v '\['`
 cd $OLDPWD
 
-[[ $version == *SNAPSHOT ]] && { echo "ERROR:We should never release the SNAPSHOT version, please change the pom.xml" ; exit -1;}
+version=${version%'-SNAPSHOT'}
 
-echo "Don't forget to change the project.version in the pom.xml!"
 echo -e "Detected releaes version is ${red} $version ${NC}, is this correct? [y|N]"
 read yes
 [ "$yes" == "y" ] || { echo "Stopped."; exit -1; }
 
-release_file="./release_notes/release_$version"
+release_file="./docs/release_notes/release_${version}.txt"
 [ -f "$release_file" ] || { echo "ERROR:$release_file doesn't exist! Stopped."; exit -1; }
 
 \rm -rf site
@@ -46,21 +49,24 @@ mkdocs build
 [ $? -ne 0 ] && { echo $'\nERROR: Mkdocs build to "site" folder failed, Stop the release'; exit -1;}
 
 cd $sdk_source
-mvn clean deploy
-[ $? -ne 0 ] && { echo $'\nERROR: Error happens while deploying, Stop the release'; exit -1;}
 
-# This javadoc:jar command will produce the cleanner java doc site.
-mvn javadoc:jar
-[ $? -ne 0 ] && { echo $'\nERROR: Error happens while creating javadoc, Stop the release'; exit -1;}
+    mvn clean deploy
+    [ $? -ne 0 ] && { echo $'\nERROR: Error happens while deploying, Stop the release'; exit -1;}
+
+    # This javadoc:jar command will produce the cleanner java doc site.
+    mvn javadoc:jar
+    [ $? -ne 0 ] && { echo $'\nERROR: Error happens while creating javadoc, Stop the release'; exit -1;}
+    cd $OLDPWD
+
+    mvn release:clean release:prepare release:perform
+    [ $? -ne 0 ] && { echo $'\nERROR: Maven release failed, Stop the release'; exit -1;}
+
 cd $OLDPWD
 
-#cp ${deploy}/com/srch2/*/*/*.{jar,aar} ./site/download/releases/
-#cp ${release_file} ./site/download/releases/
-cp -r ${target}/apidocs ./site/javadoc
+cp -r $javadoc ./site/javadoc
 
 echo $'\nLocal release is done, wait for sync to the webmaster'
 
-rsync -rav --ignore-existing ${deploy}/* rvijax@web240.webfaction.com:~/webapps/srch2/repo/maven/
 rsync -rav ./site/ rvijax@web240.webfaction.com:~/webapps/srch2/android/releases/$version/
 
 echo "Done. Version is $version"
