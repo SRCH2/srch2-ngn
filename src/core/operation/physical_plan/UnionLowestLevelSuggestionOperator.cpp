@@ -20,7 +20,6 @@ bool UnionLowestLevelSuggestionOperator::open(QueryEvaluatorInternal * queryEval
     this->queryEvaluatorIntrnal->getInvertedIndex()->getInvertedIndexDirectory_ReadView(invertedListDirectoryReadView);
     this->queryEvaluatorIntrnal->getInvertedIndex()->getInvertedIndexKeywordIds_ReadView(invertedIndexKeywordIdsReadView);
     this->queryEvaluatorIntrnal->getForwardIndex()->getForwardListDirectory_ReadView(forwardIndexDirectoryReadView);
-    this->roleId = params.roleId;
     // 1. first iterate on active nodes and find best estimated leaf nodes.
     Term * term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->getTerm(params.isFuzzy);
     unsigned numberOfSuggestionsToFind = 350;
@@ -165,28 +164,20 @@ bool UnionLowestLevelSuggestionOperator::getNextHeapItem(Term * term, Ranker * r
 				recordId, suggestionPairs[item.suggestionIndex].suggestedCompleteTermNode->getInvertedListOffset());
 		// We check the record only if it's valid
 		if (keywordOffset != FORWARDLIST_NOTVALID &&
-			queryEvaluatorIntrnal->getInvertedIndex()->isValidTermPositionHit(forwardIndexDirectoryReadView,
-				recordId,
-				keywordOffset,
-				0x7fffffff,  termAttributeBitmap, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
+				queryEvaluatorIntrnal->getInvertedIndex()->isValidTermPositionHit(forwardIndexDirectoryReadView,
+						recordId,
+						keywordOffset,
+						0x7fffffff,  termAttributeBitmap, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
 
-        	bool hasAccess = true;
-        	if(roleId != ""){
-        		shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
-        		queryEvaluatorIntrnal->getForwardIndex()->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
-        		hasAccess = queryEvaluatorIntrnal->getForwardIndex()->hasAccessToForwardList(forwardListDirectoryReadView, recordId, roleId);
-        	}
-        	if(hasAccess){
-        		float score = ranker->computeTermRecordRuntimeScore(termRecordStaticScore,
-        				suggestionPairs[item.suggestionIndex].distance,
-        				term->getKeyword()->size(),
-        				true,
-        				prefixMatchPenalty , term->getSimilarityBoost())*term->getBoost();
-        		recordItemsHeap.push_back(SuggestionCursorHeapItem(item.suggestionIndex, firstInvertedListCursotToAdd,
-        				recordId, score, termAttributeBitmap, termRecordStaticScore ));
-        		std::push_heap(recordItemsHeap.begin(), recordItemsHeap.end(),SuggestionCursorHeapItem());
-        		return true;
-        	}
+			float score = ranker->computeTermRecordRuntimeScore(termRecordStaticScore,
+					suggestionPairs[item.suggestionIndex].distance,
+					term->getKeyword()->size(),
+					true,
+					prefixMatchPenalty , term->getSimilarityBoost())*term->getBoost();
+			recordItemsHeap.push_back(SuggestionCursorHeapItem(item.suggestionIndex, firstInvertedListCursotToAdd,
+					recordId, score, termAttributeBitmap, termRecordStaticScore ));
+			std::push_heap(recordItemsHeap.begin(), recordItemsHeap.end(),SuggestionCursorHeapItem());
+			return true;
 		}else{
 			firstInvertedListCursotToAdd++;
 		}

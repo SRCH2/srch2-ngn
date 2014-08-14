@@ -26,7 +26,6 @@ bool UnionLowestLevelTermVirtualListOperator::open(QueryEvaluatorInternal * quer
 
 	// first save the pointer to QueryEvaluator
 	this->queryEvaluator = queryEvaluator;
-	this->roleId = params.roleId;
 	// 1. get the pointer to logical plan node
 	LogicalPlanNode * logicalPlanNode = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode();
 	// 2. Get the Term object
@@ -163,35 +162,27 @@ PhysicalPlanRecordItem * UnionLowestLevelTermVirtualListOperator::getNext(const 
             // We check the record only if it's valid
             if (keywordOffset != FORWARDLIST_NOTVALID &&
                 this->invertedIndex->isValidTermPositionHit(forwardIndexDirectoryReadView,
-                    recordId,
-                    keywordOffset,
-                    term->getAttributeToFilterTermHits(), termAttributeBitmap,
-                    termRecordStaticScore)) {
-            	bool hasAccess = true;
-            	if(roleId != ""){
-            		shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
-            		queryEvaluator->getForwardIndex()->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
-            		hasAccess = queryEvaluator->getForwardIndex()->hasAccessToForwardList(forwardListDirectoryReadView, recordId, roleId);
-            	}
-            	if(hasAccess){
-            		foundValidHit = 1;
-            		this->cursorVector[currentHeapMax->cursorVectorPosition] = currentHeapMaxCursor;
-            		// Update cursor of popped virtualList in invertedListCursorVector.
-            		// Cursor always points to next element in invertedList
-            		currentHeapMax->recordId = recordId;
-            		currentHeapMax->termRecordRuntimeScore =
-            				params.ranker->computeTermRecordRuntimeScore(termRecordStaticScore,
-            						currentHeapMax->ed,
-            						term->getKeyword()->size(),
-            						currentHeapMax->isPrefixMatch,
-            						this->prefixMatchPenalty , term->getSimilarityBoost())/*added by Jamshid*/*term->getBoost();
-            		currentHeapMax->termRecordStaticScore = termRecordStaticScore;
-            		currentHeapMax->attributeBitMap = termAttributeBitmap;
-            		currentHeapMax->positionIndexOffset = keywordOffset;
-            		push_heap(itemsHeap.begin(), itemsHeap.begin()+this->numberOfItemsInPartialHeap,
-            				UnionLowestLevelTermVirtualListOperator::UnionLowestLevelTermVirtualListOperatorHeapItemCmp());
-            		break;
-            	}
+                		recordId,
+                		keywordOffset,
+                		term->getAttributeToFilterTermHits(), termAttributeBitmap,
+                		termRecordStaticScore)) {
+            	foundValidHit = 1;
+            	this->cursorVector[currentHeapMax->cursorVectorPosition] = currentHeapMaxCursor;
+            	// Update cursor of popped virtualList in invertedListCursorVector.
+            	// Cursor always points to next element in invertedList
+            	currentHeapMax->recordId = recordId;
+            	currentHeapMax->termRecordRuntimeScore =
+            			params.ranker->computeTermRecordRuntimeScore(termRecordStaticScore,
+            					currentHeapMax->ed,
+            					term->getKeyword()->size(),
+            					currentHeapMax->isPrefixMatch,
+            					this->prefixMatchPenalty , term->getSimilarityBoost())/*added by Jamshid*/*term->getBoost();
+            	currentHeapMax->termRecordStaticScore = termRecordStaticScore;
+            	currentHeapMax->attributeBitMap = termAttributeBitmap;
+            	currentHeapMax->positionIndexOffset = keywordOffset;
+            	push_heap(itemsHeap.begin(), itemsHeap.begin()+this->numberOfItemsInPartialHeap,
+            			UnionLowestLevelTermVirtualListOperator::UnionLowestLevelTermVirtualListOperatorHeapItemCmp());
+            	break;
             }
         }
 
@@ -251,7 +242,7 @@ bool UnionLowestLevelTermVirtualListOperator::verifyByRandomAccess(PhysicalPlanR
 
 	Term * term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->getTerm(parameters.isFuzzy);
 
-	return verifyByRandomAccessHelper(this->queryEvaluator, prefixActiveNodeSet.get(), term, parameters, this->roleId);
+	return verifyByRandomAccessHelper(this->queryEvaluator, prefixActiveNodeSet.get(), term, parameters);
 
 }
 // The cost of open of a child is considered only once in the cost computation

@@ -68,7 +68,6 @@ struct PhysicalPlanExecutionParameters {
 	bool parentIsCacheEnabled;
 	PhysicalOperatorCacheObject * cacheObject ;
 	unsigned totalNumberOfRecords;
-	string roleId; // User id for access control
 
 	PhysicalPlanExecutionParameters(unsigned k,bool isFuzzy,float prefixMatchPenalty,srch2is::QueryType searchType){
 		this->k = k;
@@ -91,7 +90,6 @@ struct PhysicalPlanExecutionParameters {
 
 		cacheObject = NULL;
 		parentIsCacheEnabled = false;
-		this->roleId = "";
 	}
 
 	~PhysicalPlanExecutionParameters(){

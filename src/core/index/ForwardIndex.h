@@ -81,42 +81,48 @@ struct NewKeywordIdKeywordOffsetPairGreaterThan {
     }
 };
 
+/*
+ *   this class keeps the id of roles that have access to a record
+ *   we keep an object of this class in forwardlist for each record
+ */
 class AccessList{
 private:
 	vector<string> roles;
-	mutable boost::shared_mutex globalRwMutexForReadersWriters;
+	mutable boost::shared_mutex mutexRW;
 
 public:
 	AccessList(){};
 	~AccessList(){};
-	bool addRole(string roleId){
+
+	// this function will return false if this roleId already exists
+	bool addRole(string &roleId){
 		vector<string>::iterator it;
-		boost::unique_lock<boost::shared_mutex> lock(globalRwMutexForReadersWriters);
-		bool returnValue = findRole(roleId, it);
-		if(!returnValue)
+		boost::unique_lock<boost::shared_mutex> lock(mutexRW);
+		bool roleExisted = findRole(roleId, it);
+		if(!roleExisted)
 			this->roles.insert(it, roleId);
 		lock.unlock();
-		return !returnValue;
+		return !roleExisted;
 	}
-	bool deleteRole(string roleId){
+	bool deleteRole(string &roleId){
 		vector<string>::iterator it;
-		boost::unique_lock<boost::shared_mutex> lock(globalRwMutexForReadersWriters);
-		bool returnValue = findRole(roleId, it);
-		if(returnValue)
+		boost::unique_lock<boost::shared_mutex> lock(mutexRW);
+		bool roleExisted = findRole(roleId, it);
+		if(roleExisted)
 			this->roles.erase(it);
 		lock.unlock();
-		return returnValue;
+		return roleExisted;
 	}
 
-	bool hasRole(string roleId){
+	bool hasRole(string &roleId){
 		vector<string>::iterator it;
-		boost::shared_lock< boost::shared_mutex> lock(globalRwMutexForReadersWriters);
-		bool returnValue = findRole(roleId, it);
+		boost::shared_lock< boost::shared_mutex> lock(mutexRW);
+		bool roleExisted = findRole(roleId, it);
 		lock.unlock();
-		return returnValue;
+		return roleExisted;
 	}
 private:
-	bool findRole(string roleId, std::vector<string>::iterator &it){
+	bool findRole(string &roleId, std::vector<string>::iterator &it){
 		it = std::lower_bound(this->roles.begin(), this->roles.end(), roleId);
 		if(it == this->roles.end())
 			return false;

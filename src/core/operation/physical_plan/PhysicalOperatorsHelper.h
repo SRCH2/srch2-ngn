@@ -38,7 +38,7 @@ namespace instantsearch {
 bool verifyByRandomAccessHelper(QueryEvaluatorInternal * queryEvaluator,
 		PrefixActiveNodeSet *prefixActiveNodeSet,
 		Term * term,
-		PhysicalPlanRandomAccessVerificationParameters & parameters, string & roleId);
+		PhysicalPlanRandomAccessVerificationParameters & parameters);
 
 
 

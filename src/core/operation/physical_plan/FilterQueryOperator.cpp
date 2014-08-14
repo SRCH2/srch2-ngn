@@ -17,7 +17,6 @@ namespace srch2
 namespace instantsearch
 {
 
-
 bool FilterQueryOperator::open(QueryEvaluatorInternal * queryEvaluatorInternal, PhysicalPlanExecutionParameters & params){
 	ASSERT(this->getPhysicalPlanOptimizationNode()->getChildrenCount() == 1);
 	this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->open(queryEvaluatorInternal, params);
@@ -32,7 +31,7 @@ PhysicalPlanRecordItem * FilterQueryOperator::getNext(const PhysicalPlanExecutio
 		}
 		Schema * schema = queryEvaluatorInternal->getSchema();
 		ForwardIndex * forwardIndex = queryEvaluatorInternal->getForwardIndex();
-		if(doPass(schema, forwardIndex, nextRecord)){
+		if(hasAccess(forwardIndex, nextRecord->getRecordId()) && doPass(schema, forwardIndex, nextRecord)){
 			return nextRecord;
 		}
 	}
@@ -64,6 +63,8 @@ FilterQueryOperator::FilterQueryOperator(RefiningAttributeExpressionEvaluator * 
 }
 
 bool FilterQueryOperator::doPass(Schema * schema, ForwardIndex * forwardIndex ,PhysicalPlanRecordItem * record){
+	if(this->filterQueryEvaluator == NULL) // filterQueryEvaluator is null. So we don't have any filter
+		return true;
     // fetch the names and ids of non searchable attributes from schema
     vector<string> attributes;
     for(map<string,unsigned>::const_iterator attr = schema->getRefiningAttributes()->begin();
@@ -94,6 +95,17 @@ bool FilterQueryOperator::doPass(Schema * schema, ForwardIndex * forwardIndex ,P
     }
     return this->filterQueryEvaluator->evaluate(valuesForEvaluation);
 }
+
+bool FilterQueryOperator::hasAccess(ForwardIndex * forwardIndex, unsigned recordId){
+	if(roleId == "") // it means that we don't have any access control check
+		return true;
+
+	shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
+	forwardIndex->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
+
+	return this->queryEvaluatorInternal->getForwardIndex()->hasAccessToForwardList(forwardListDirectoryReadView, recordId, this->roleId);
+}
+
 // The cost of open of a child is considered only once in the cost computation
 // of parent open function.
 PhysicalPlanCost FilterQueryOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params) {

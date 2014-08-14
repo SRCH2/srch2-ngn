@@ -145,7 +145,6 @@ public:
 	bool shouldRunFuzzyQuery;
 	Query *exactQuery;
 	Query *fuzzyQuery;
-	std::string roleId;
 
     // constructs a term logical plan node
     LogicalPlanNode * createTermLogicalPlanNode(const std::string &queryKeyword,
@@ -253,10 +252,6 @@ public:
 
 	void setDocIdForRetrieveByIdSearchType(const std::string & docid){
 		this->docIdForRetrieveByIdSearchType = docid;
-	}
-
-	void setRoleId(std::string & roleId){
-		this->roleId = roleId;
 	}
 
 

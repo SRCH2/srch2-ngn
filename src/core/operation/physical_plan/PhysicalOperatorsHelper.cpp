@@ -16,7 +16,7 @@ namespace instantsearch {
  * the record contains a term or not.
  */
 
-bool verifyByRandomAccessHelper(QueryEvaluatorInternal * queryEvaluator, PrefixActiveNodeSet *prefixActiveNodeSet, Term * term, PhysicalPlanRandomAccessVerificationParameters & parameters, string & roleId){
+bool verifyByRandomAccessHelper(QueryEvaluatorInternal * queryEvaluator, PrefixActiveNodeSet *prefixActiveNodeSet, Term * term, PhysicalPlanRandomAccessVerificationParameters & parameters){
 	unsigned termSearchableAttributeIdToFilterTermHits = term->getAttributeToFilterTermHits();
 	// assume the iterator returns the ActiveNodes in the increasing order based on edit distance
 
@@ -42,26 +42,18 @@ bool verifyByRandomAccessHelper(QueryEvaluatorInternal * queryEvaluator, PrefixA
 					termSearchableAttributeIdToFilterTermHits,
 					matchingKeywordId, termAttributeBitmap, termRecordStaticScore)) {
 				//// checking the access list
-				bool hasAccess = true;
-				if(roleId != ""){
-					shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
-					queryEvaluator->getForwardIndex()->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
-					hasAccess = queryEvaluator->getForwardIndex()->hasAccessToForwardList(forwardListDirectoryReadView, parameters.recordToVerify->getRecordId(), roleId);
-				}
-				if(hasAccess){
-					parameters.termRecordMatchingPrefixes.push_back(trieNode);
-					parameters.attributeBitmaps.push_back(termAttributeBitmap);
-					parameters.prefixEditDistances.push_back(distance);
-					bool isPrefixMatch = ( (!trieNode->isTerminalNode()) || (minId != matchingKeywordId) );
-					parameters.runTimeTermRecordScore = parameters.ranker->computeTermRecordRuntimeScore(termRecordStaticScore, distance,
-							term->getKeyword()->size(),
-							isPrefixMatch,
-							parameters.prefixMatchPenalty , term->getSimilarityBoost() * term->getBoost()) ;
-					parameters.staticTermRecordScore = termRecordStaticScore ;
-					parameters.termTypes.push_back(term->getTermType());
-					// parameters.positionIndexOffsets ????
-					return true;
-				}
+				parameters.termRecordMatchingPrefixes.push_back(trieNode);
+				parameters.attributeBitmaps.push_back(termAttributeBitmap);
+				parameters.prefixEditDistances.push_back(distance);
+				bool isPrefixMatch = ( (!trieNode->isTerminalNode()) || (minId != matchingKeywordId) );
+				parameters.runTimeTermRecordScore = parameters.ranker->computeTermRecordRuntimeScore(termRecordStaticScore, distance,
+						term->getKeyword()->size(),
+						isPrefixMatch,
+						parameters.prefixMatchPenalty , term->getSimilarityBoost() * term->getBoost()) ;
+				parameters.staticTermRecordScore = termRecordStaticScore ;
+				parameters.termTypes.push_back(term->getTermType());
+				// parameters.positionIndexOffsets ????
+				return true;
 			}
 		}
 		return false;

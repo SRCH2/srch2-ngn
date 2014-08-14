@@ -59,8 +59,10 @@ public:
 	FilterQueryOperator(RefiningAttributeExpressionEvaluator * filterQueryEvaluator) ;
 private:
 	bool doPass(Schema * schema, ForwardIndex * forwardIndex , PhysicalPlanRecordItem * record);
+	bool hasAccess(ForwardIndex * forwardIndex, unsigned recordId); // check the access of the role to this record
 	RefiningAttributeExpressionEvaluator * filterQueryEvaluator;
 	QueryEvaluatorInternal * queryEvaluatorInternal;
+	string roleId;   // role id for access control
 };
 
 class FilterQueryOptimizationOperator : public PhysicalPlanOptimizationNode {

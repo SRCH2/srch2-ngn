@@ -27,7 +27,6 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
     // we set fuzzy to false to the first session which is exact
     logicalPlan->setFuzzy(false);
     PhysicalPlanExecutionParameters params(0, logicalPlan->isFuzzy() , logicalPlan->getExactQuery()->getPrefixMatchPenalty(), logicalPlan->getQueryType());
-    params.roleId = logicalPlan->roleId;
     params.totalNumberOfRecords = queryEvaluator->getForwardIndex()->getTotalNumberOfForwardLists_ReadView();
     //2. Apply exact/fuzzy policy and run
     vector<unsigned> resultIds;
