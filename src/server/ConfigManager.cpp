@@ -357,7 +357,7 @@ void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode,
             return;
         }
     }else{
-        parseWarnings << "Index Type is not set, so using the default value 0.\n";
+        Logger::warn("Index Type is not set, so using the default value 0");
     }
 
     coreInfo->supportSwapInEditDistance = true; // by default it is true
@@ -1968,7 +1968,7 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
         }
     }
     if (!mdflag) {
-        parseWarnings << "MaxDoc is not set, so using the default value 15000000\n";
+        Logger::warn("MaxDoc is not set, so using the default value 15000000");
     }
 
     coreInfo->memoryLimit = 10000000;
@@ -1982,7 +1982,7 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
         }
     }
     if (!mmflag) {
-        parseWarnings << "MaxDoc is not set, so using the default value 10000000\n";
+        Logger::warn("Maximum memory limit is not set, so using the default value 10000000");
     }
 
     // mergeEveryNSeconds
@@ -1999,7 +1999,7 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
         }
     }
     if (!mensflag) {
-        parseWarnings << "mergeEveryNSeconds is not set correctly, so using the default value 1.\n";
+        Logger::warn("mergeEveryNSeconds is not set correctly, so using the default value 1");
     }
 
     // mergeEveryMWrites
@@ -2017,7 +2017,7 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
         }
     }
     if (!memwflag) {
-        parseWarnings << "mergeEveryMWrites is not set correctly, so using the default value 1.\n";
+        Logger::warn("mergeEveryMWrites is not set correctly, so using the default value 1");
     }
 
     // set default value for updateHistogramEveryPSeconds and updateHistogramEveryQWrites because there
@@ -2045,8 +2045,8 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
         }
     }
     if (!llflag) {
-        parseWarnings << "Log Level is either not set or not set correctly, so using the"
-                +" default value 3.\n";
+        Logger::warn("Log Level is either not set or not set correctly, so using the"
+                        " default value 3");
     }
 
     // accessLogFile is required
