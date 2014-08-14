@@ -1229,7 +1229,9 @@ bool ConfigManager::setRefiningStateVectors(const xml_node &field,
             parseError << "Config File Error: " << temporaryString
                     << " is not a valid field type for refining fields.\n";
             parseError
-                    << " Note: refining fields only accept 'text', 'integer', 'float' and 'time'. Setting 'refining' or 'indexed' to true makes a field refining.\n";
+                    << " Note: refining fields only accept 'text', 'integer',"
+                            " 'long', 'float', 'double' and 'time'. Setting 'refining' "
+                            "or 'indexed' to true makes a field refining.\n";
             return false;
         }
 
