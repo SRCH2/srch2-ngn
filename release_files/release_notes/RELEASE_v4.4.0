@@ -1,6 +1,9 @@
  *------------------------------------------------------------------
  *  RELEASE NOTES Version 4.4.0
- *  Date: ${MONTH} ${DAY}, ${YEAR} 
+ *  Date: August, 14, 2014 
  *------------------------------------------------------------------
  
  * Added support for synonym filter during indexing phase.
+ * Removed restriction on the number of attributes (previously 31) in a data record for attribute based search.
+ * Improved and changed layout of online web documentation.
+ * Fixed a bug where a refining attribute was not using a default value specified in config file.
