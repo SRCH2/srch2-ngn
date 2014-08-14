@@ -48,12 +48,12 @@ public:
 
 	bool insert_ThreadSafe(const Record *record, unsigned recordInternalId);
 
-	bool insert_ThreadSafe(Point point, unsigned recordInternalId);
+	bool insert_ThreadSafe(Point &point, unsigned recordInternalId);
 
 	bool insert_ThreadSafe(GeoElement* element);
 
 	// Remove the record from the quadtree
-	bool remove_ThreadSafe(Point point, unsigned recordInternalId);
+	bool remove_ThreadSafe(Point &point, unsigned recordInternalId);
 
 	// Remove the geo element from the quadtree
 	bool remove_ThreadSafe(GeoElement* element);

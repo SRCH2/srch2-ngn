@@ -168,5 +168,22 @@ bool verifyByRandomAccessGeoHelper(PhysicalPlanRandomAccessVerificationParameter
 	return false;
 }
 
+// this function finds the offset of the latitude and longitude attributes in the refining attributes memory
+void getLat_Long_Offset(unsigned & latOffset, unsigned & longOffset, Schema * schema){
+	Schema * storedSchema = Schema::create();
+	srch2::util::RecordSerializerUtil::populateStoredSchema(storedSchema, schema);
+	srch2::util::RecordSerializer compactRecDeserializer = srch2::util::RecordSerializer(*storedSchema);
+
+	// get the name of the attributes
+	const string* nameOfLatitudeAttribute = schema->getNameOfLatituteAttribute();
+	const string* nameOfLongitudeAttribute = schema->getNameOfLongitudeAttribute();
+
+	unsigned idLat = storedSchema->getRefiningAttributeId(*nameOfLatitudeAttribute);
+	latOffset = compactRecDeserializer.getRefiningOffset(idLat);
+
+	unsigned idLong = storedSchema->getRefiningAttributeId(*nameOfLongitudeAttribute);
+	longOffset = compactRecDeserializer.getRefiningOffset(idLong);
+}
+
 }
 }

@@ -134,12 +134,15 @@ bool QuadTreeNode::insertGeoElement_ThreadSafe(GeoElement* element, boost::share
 	// Find the child based on geo information
 	unsigned child = findChildContainingPoint(element->point);
 	if(this->children[child] != NULL){ // This child is already created
-		// 1- for the concurrency control, first we need to make a copy of this child and insert the new element in it.
-		QuadTreeNode* copiedNode = new QuadTreeNode(this->children[child]);
-		// 2- now we should add this child to the free list
-		quadTreeRootNode_ReadView->quadtreeNodes_free_list.push_back(this->children[child]);
-		// 3- now we should change this child with its copy
-		this->children[child] = copiedNode;
+		// 0 - first check if this node is a copy for the write view we don't need to create a copy of that again.
+		if(!(this->children[child]->isCopy)){
+			// 1- for the concurrency control, first we need to make a copy of this child and insert the new element in it.
+			QuadTreeNode* copiedNode = new QuadTreeNode(this->children[child]);
+			// 2- now we should add this child to the free list
+			quadTreeRootNode_ReadView->quadtreeNodes_free_list.push_back(this->children[child]);
+			// 3- now we should change this child with its copy
+			this->children[child] = copiedNode;
+		}
 		// 4- recursively call this function for the corresponding child
 		unsigned numOfLeafNodeInChild = this->children[child]->getNumOfLeafNodesInSubtree();
 		bool flag = this->children[child]->insertGeoElement(element);
@@ -178,12 +181,15 @@ bool QuadTreeNode::removeGeoElement_ThreadSafe(GeoElement* element, boost::share
 		// Find the child base on location information and recursively call this function at the corresponding child
 		unsigned child = findChildContainingPoint(element->point);
 		if(this->children[child] != NULL){
-			// 1- for the concurrency control, first we need to make a copy of this child and delete the element from it.
-			QuadTreeNode* copiedNode = new QuadTreeNode(this->children[child]);
-			// 2- now we should add this child to the free list
-			quadTreeRootNode_ReadView->quadtreeNodes_free_list.push_back(this->children[child]);
-			// 3- now we should change this child with its copy
-			this->children[child] = copiedNode;
+			// 0 - first check if this node is a copy for the write view we don't need to create a copy of that again.
+			if(!(this->children[child]->isCopy)){
+				// 1- for the concurrency control, first we need to make a copy of this child and delete the element from it.
+				QuadTreeNode* copiedNode = new QuadTreeNode(this->children[child]);
+				// 2- now we should add this child to the free list
+				quadTreeRootNode_ReadView->quadtreeNodes_free_list.push_back(this->children[child]);
+				// 3- now we should change this child with its copy
+				this->children[child] = copiedNode;
+			}
 			unsigned numOfLeafNodeInChild = this->children[child]->getNumOfLeafNodesInSubtree();
 			if( this->children[child]->removeGeoElement_ThreadSafe(element, quadTreeRootNode_ReadView) ){
 				this->numOfElementsInSubtree--;

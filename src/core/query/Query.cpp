@@ -211,7 +211,7 @@ QueryType Query::getQueryType() const
     return impl->type;
 }
 
-Shape* Query::getRange() const
+Shape* Query::getShape() const
 {
     return impl->range;
 }

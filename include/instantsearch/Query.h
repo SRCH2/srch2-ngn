@@ -104,7 +104,7 @@ public:
      * The number of elements in \parameter values is used to
      * see if it is rectangle or circle.
      */
-    Shape* getRange() const;
+    Shape* getShape() const;
 
 
     /*

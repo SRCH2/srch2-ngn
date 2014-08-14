@@ -275,6 +275,9 @@ void* writer2(void *arg)
 	return NULL;
 }
 
+/*
+ *  In this test case multiple readers do the search in a same time.
+ */
 void testMultipleReaders(){
 	pthread_t *threadReaders;
 	pthread_attr_t pthread_custom_attr;
@@ -312,6 +315,12 @@ void testMultipleReaders(){
     delete indexer;
 }
 
+/*
+ *  In this test case we have multiple readers and a writer. First this readers
+ *  do the search and in a same time the writer insert new records to the engine.
+ *  Then the readers sleep for a few seconds and in this time we do the merge for the indexer
+ *  Again these readers do the search and they should be get new records in their results.
+ */
 void testMultipleReadersOneWriter(){
     pthread_t *threadReaders1;
     //pthread_t *threadReaders2;
@@ -372,7 +381,15 @@ void testMultipleReadersOneWriter(){
 
     delete indexer;
 }
-
+/*
+ *    In this test case we have multiple readers and two writer.
+ *    First these readers do the search and in the same time first writer insert new records
+ *    to the engine. Then these readers sleep for a few seconds and after we merged the indexer
+ *    they start to do the search again and they should get these new records in their results.
+ *    Now the second writer remove some records from the engine. After that readers again sleep
+ *    for a few second and again they start searching and they should not get deleted records in
+ *    their results.
+ */
 void testMultipleReadersMultipleWriters(){
     pthread_t *threadReaders1;
     //pthread_t *threadReaders2;

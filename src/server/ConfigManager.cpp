@@ -1696,6 +1696,8 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
                 	if (string(field.attribute(typeString).value()).compare(
                 			locationLatitudeString) == 0) {
                 		coreParseState->hasLatitude = true;
+                		// we don't have indexType in the config file any more.
+                		// but we use this flag to create a quadtree and insert elements in it.
                 		coreInfo->indexType = LocationIndex;
                 		coreInfo->fieldLatitude = string(
                 				field.attribute(nameString).value());
@@ -1705,6 +1707,8 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
                 	if (string(field.attribute(typeString).value()).compare(
                 			locationLongitudeString) == 0) {
                 		coreParseState->hasLongitude = true;
+                		// we don't have indexType in the config file any more.
+                		// but we use this flag to create a quadtree and insert elements in it.
                 		coreInfo->indexType = LocationIndex;
                 		coreInfo->fieldLongitude = string(
                 				field.attribute(nameString).value());

@@ -58,19 +58,10 @@ bool GeoSimpleScanOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 	this->cursorOnVectorOfGeoElements = 0;
 
 	// finding the offset of the latitude and longitude attribute in the refining attributes' memory
-	Schema * storedSchema = Schema::create();
-	srch2::util::RecordSerializerUtil::populateStoredSchema(storedSchema, queryEvaluator->getSchema());
-	srch2::util::RecordSerializer compactRecDeserializer = srch2::util::RecordSerializer(*storedSchema);
-
-	// get the name of the attributes
-	const string* nameOfLatitudeAttribute = queryEvaluator->getSchema()->getNameOfLatituteAttribute();
-	const string* nameOfLongitudeAttribute = queryEvaluator->getSchema()->getNameOfLongitudeAttribute();
-
-	unsigned idLat = storedSchema->getRefiningAttributeId(*nameOfLatitudeAttribute);
-	this->latOffset = compactRecDeserializer.getRefiningOffset(idLat);
-
-	unsigned idLong = storedSchema->getRefiningAttributeId(*nameOfLongitudeAttribute);
-	this->longOffset = compactRecDeserializer.getRefiningOffset(idLong);
+	// we put this part in open function because we don't want to repeat it for each record
+	// base on our experiments this part of the code takes more time. So it is more sufficient to use it here and save
+	// the offset of latitude and longitude in the class.
+	getLat_Long_Offset(this->latOffset, this->longOffset, queryEvaluator->getSchema());
 
 	return true;
 }

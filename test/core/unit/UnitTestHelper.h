@@ -85,7 +85,7 @@ LogicalPlan * prepareLogicalPlanForGeoTest(Query * exactQuery, Query * fuzzyQuer
 		}
 		logicalPlan->getTree()->children.push_back(newNode);
 	}
-	LogicalPlanNode * newNode = logicalPlan->createGeoLogicalPlanNode(exactQuery->getRange());
+	LogicalPlanNode * newNode = logicalPlan->createGeoLogicalPlanNode(exactQuery->getShape());
 	logicalPlan->getTree()->children.push_back(newNode);
 
 	return logicalPlan;

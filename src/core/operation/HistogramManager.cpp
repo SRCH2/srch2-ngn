@@ -32,6 +32,8 @@ void HistogramManager::annotate(LogicalPlan * logicalPlan){
 
 	annotateWithEstimatedProbabilitiesAndNumberOfResults(logicalPlan->getTree(), logicalPlan->isFuzzy());
 
+	// if we only have one terminal node and the number of results is very large we can use suggestion operator for this node
+	// for this case the root of the tree should have one child or two child that one of them is a geo node
 	if(countNumberOfKeywords(logicalPlan->getTree() , logicalPlan->isFuzzy()) == 1){
 		if(logicalPlan->getTree()->children.size() == 1){
 			if(logicalPlan->getTree()->stats->getEstimatedNumberOfResults() >
@@ -76,6 +78,7 @@ void HistogramManager::markTermToForceSuggestionPhysicalOperator(LogicalPlanNode
 		}
 		case LogicalPlanNodeTypeGeo:
 		{
+			// if the type of the term node is UnionLowestLevelSuggestion the type of the geo node should be RandomAccessGeo
 			node->forcedPhysicalNode = PhysicalPlanNode_RandomAccessGeo;
 			return;
 		}
@@ -235,7 +238,7 @@ void HistogramManager::annotateWithEstimatedProbabilitiesAndNumberOfResults(Logi
 			double quadTreeNodeProbability;
 			unsigned geoNumOfLeafNodes = 0;
 			QuadTreeNode *geoNode;
-			boost::shared_ptr<GeoActiveNodeSet> quadTreeNodeSetSharedPtr = logicalPlanNode->stats->getQuadTreeNodeSetForEstimation();
+			boost::shared_ptr<GeoBusyNodeSet> quadTreeNodeSetSharedPtr = logicalPlanNode->stats->getQuadTreeNodeSetForEstimation();
 			vector<QuadTreeNode*>* quadTreeNodeSet = quadTreeNodeSetSharedPtr->getQuadTreeNodeSet();
 			for( unsigned i = 0 ; i < quadTreeNodeSet->size() ; i++){
 				geoNode = quadTreeNodeSet->at(i);
@@ -339,12 +342,12 @@ boost::shared_ptr<PrefixActiveNodeSet> HistogramManager::computeActiveNodeSet(Te
     return prefixActiveNodeSet;
 }
 
-boost::shared_ptr<GeoActiveNodeSet> HistogramManager::computeQuadTreeNodeSet(Shape* range){
+boost::shared_ptr<GeoBusyNodeSet> HistogramManager::computeQuadTreeNodeSet(Shape* shape){
 	// first create a shared pointer of geoActiveNodeSet
-	boost::shared_ptr<GeoActiveNodeSet> geoActiveNodeSet;
-	geoActiveNodeSet.reset(new GeoActiveNodeSet(this->queryEvaluator->indexReadToken.quadTreeRootNodeSharedPtr));
+	boost::shared_ptr<GeoBusyNodeSet> geoActiveNodeSet;
+	geoActiveNodeSet.reset(new GeoBusyNodeSet(this->queryEvaluator->indexReadToken.quadTreeRootNodeSharedPtr));
 	// Then by calling computeQuadTreeNodeSet find all quadTreeNodes inside the query region
-	geoActiveNodeSet->computeQuadTreeNodeSet(*range);
+	geoActiveNodeSet->computeQuadTreeNodeSet(*shape);
 	return geoActiveNodeSet;
 }
 

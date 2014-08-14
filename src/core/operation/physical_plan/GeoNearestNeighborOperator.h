@@ -81,7 +81,7 @@ private:
 	// Min Heap to find the nearest neighbor of the query point in the quadtree.
 	vector< GeoNearestNeighborOperatorHeapItem* >  heapItems;
 	QueryEvaluatorInternal* queryEvaluator;
-	boost::shared_ptr<GeoActiveNodeSet> quadTreeNodeSetSharedPtr;
+	boost::shared_ptr<GeoBusyNodeSet> quadTreeNodeSetSharedPtr;
 	Shape* queryShape;  // keep the shape of the query region
 	shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
 	unsigned latOffset;       // offset of the latitude attribute in the refining attribute memory

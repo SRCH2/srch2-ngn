@@ -268,6 +268,8 @@ void QueryOptimizer::buildIncompleteSubTreeOptionsTerm(LogicalPlanNode * root, v
     }
 }
 
+// if the type is not specified we will create all the options for this node
+// and if the type is specified in the forcedPhysicalNode variable then we only create that type
 void QueryOptimizer::buildIncompleteSubTreeOptionsGeo(LogicalPlanNode * root, vector<PhysicalPlanOptimizationNode *> & treeOptions){
 	if(root->forcedPhysicalNode == PhysicalPlanNode_NOT_SPECIFIED){
 		PhysicalPlanOptimizationNode *op = (PhysicalPlanOptimizationNode *)

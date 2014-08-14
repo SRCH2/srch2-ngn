@@ -30,6 +30,11 @@ const unsigned GEO_CHILD_NUM = (GEO_CHILD_NUM_SQRT * GEO_CHILD_NUM_SQRT);
 class QuadTreeNode;
 class GeoElement;
 
+/*    we use this class to keep a shared pointer to that in the quadtree as readview
+ *    this class keeps two vectors of pointers to quadtree nodes and GeoElements which
+ *    we want to delete later. So we can remove this objects when we don't have any reader
+ *    who use this readview.
+ */
 class QuadTreeRootNodeAndFreeLists{
 public:
 	vector<QuadTreeNode*> quadtreeNodes_free_list;

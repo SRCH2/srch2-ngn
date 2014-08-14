@@ -618,13 +618,18 @@ private:
 
 };
 
-class GeoActiveNodeSet{
+/*
+ *   This class keeps a readview of the quadtree (quadTreeRootNodeSharedPtr)
+ *   So as long as we use the quadtree nodes in quadTreeNodeSet vector we have the readview.
+ *   and it prevents to delete any node in this readview until we finish using this class.
+ */
+class GeoBusyNodeSet{
 private:
 	boost::shared_ptr<QuadTreeRootNodeAndFreeLists> quadTreeRootNodeSharedPtr;
 	vector<QuadTreeNode*> quadTreeNodeSet;
 
 public:
-	GeoActiveNodeSet(boost::shared_ptr<QuadTreeRootNodeAndFreeLists> &quadTreeRootNodeSharedPtr){
+	GeoBusyNodeSet(boost::shared_ptr<QuadTreeRootNodeAndFreeLists> &quadTreeRootNodeSharedPtr){
 		this->quadTreeRootNodeSharedPtr = quadTreeRootNodeSharedPtr;
 	}
 

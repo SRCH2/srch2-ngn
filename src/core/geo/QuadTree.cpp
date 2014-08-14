@@ -104,7 +104,7 @@ bool QuadTree::insert_ThreadSafe(const Record* record, unsigned int recordIntern
 	return this->insert_ThreadSafe(newElement);
 }
 
-bool QuadTree::insert_ThreadSafe(Point point, unsigned recordInternalId){
+bool QuadTree::insert_ThreadSafe(Point &point, unsigned recordInternalId){
 	GeoElement* newElement = new GeoElement(point.x, point.y, recordInternalId);
 	return this->insert_ThreadSafe(newElement);
 }
@@ -119,7 +119,7 @@ bool QuadTree::insert_ThreadSafe(GeoElement* element){
 	return this->root_writeview->insertGeoElement_ThreadSafe(element,quadTreeRootNode_ReadView);
 }
 
-bool QuadTree::remove_ThreadSafe(Point point, unsigned recordInternalId){
+bool QuadTree::remove_ThreadSafe(Point &point, unsigned recordInternalId){
 	GeoElement* element = new GeoElement(point.x, point.y, recordInternalId);
 	return this->remove_ThreadSafe(element);
 }
@@ -178,7 +178,8 @@ unsigned QuadTree::getTotalNumberOfGeoElements(){
 }
 
 void QuadTree::commit(){
-	ASSERT(commited == false);
+	if(commited)
+		return;
 	// remove the old readview's root first
 	delete this->root_readview->root;
 	// reset all the copy flags of nodes in the writeview to false
@@ -194,15 +195,15 @@ void QuadTree::merge(){
 	// copy flag from true to false
 	this->root_writeview->resetCopyFlag();
 
-    // In each merge, we first put the current read view to the end of the queue,
-    // and reset the current read view. Then we go through the read views one by one
-    // in the order of their arrival. For each read view, we check its reference count.
-    // If the count is > 1, then it means there are readers that are still using it,
-    // so we do nothing and return. If the read view's reference count is 1,
-    // then it means the current merge thread is the last thread using this read view,
-    // so we can delete it and move onto the next read view on the queue.
-    // We repeat the process until either we reach the end of the queue or we
-    // find a read view with a reference count > 1.
+	// In each merge, we first put the current read view to the end of the queue,
+	// and reset the current read view. Then we go through the read views one by one
+	// in the order of their arrival. For each read view, we check its reference count.
+	// If the count is > 1, then it means there are readers that are still using it,
+	// so we do nothing and return. If the read view's reference count is 1,
+	// then it means the current merge thread is the last thread using this read view,
+	// so we can delete it and move onto the next read view on the queue.
+	// We repeat the process until either we reach the end of the queue or we
+	// find a read view with a reference count > 1.
 	this->oldReadViewQueue.push(this->root_readview);
 	pthread_spin_lock(&m_spinlock);
 	this->root_readview.reset(new QuadTreeRootNodeAndFreeLists(this->root_writeview));

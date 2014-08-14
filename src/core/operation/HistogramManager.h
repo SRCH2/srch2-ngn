@@ -52,7 +52,7 @@ public:
 	boost::shared_ptr<PrefixActiveNodeSet> activeNodeSetExact;
 	boost::shared_ptr<PrefixActiveNodeSet> activeNodeSetFuzzy;
 
-	boost::shared_ptr<GeoActiveNodeSet> quadTreeNodeSet;
+	boost::shared_ptr<GeoBusyNodeSet> quadTreeNodeSet;
 
 	LogicalPlanNodeAnnotation(){
 		estimatedNumberOfLeafNodes = 0;
@@ -91,7 +91,7 @@ public:
 		return activeNodeSetExact;
 	}
 
-	boost::shared_ptr<GeoActiveNodeSet> getQuadTreeNodeSetForEstimation(){
+	boost::shared_ptr<GeoBusyNodeSet> getQuadTreeNodeSetForEstimation(){
 		return this->quadTreeNodeSet;
 	}
 };
@@ -127,7 +127,7 @@ private:
 	unsigned countNumberOfKeywords(LogicalPlanNode * node , bool isFuzzy);
 
 	boost::shared_ptr<PrefixActiveNodeSet> computeActiveNodeSet(Term *term) const;
-	boost::shared_ptr<GeoActiveNodeSet> computeQuadTreeNodeSet(Shape *range);
+	boost::shared_ptr<GeoBusyNodeSet> computeQuadTreeNodeSet(Shape *shape);
 	void computeEstimatedProbabilityOfPrefixAndNumberOfLeafNodes(TermType termType, PrefixActiveNodeSet * activeNodes ,
 			unsigned threshold, double & probability, unsigned & numberOfLeafNodes) const;
 
