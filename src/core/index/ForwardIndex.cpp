@@ -275,27 +275,7 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     ((Record *)record)->disownInMemoryData();
     forwardList->setNumberOfKeywords(uniqueKeywordIdList.size());
 
-    //Adding Non searchable Attribute list
-    vector<vector<string> > refiningAttributeValues;
-    for (unsigned iter = 0;
-            iter < this->schemaInternal->getNumberOfRefiningAttributes();
-            ++iter) {
 
-        const string * refiningAttributeValueStringTokens = record
-                ->getRefiningAttributeValue(iter);
-        vector<string> refiningAttributeValueStringTokensVector;
-        // If this attribute is multi-valued, we tokenize the value and prepate the vector
-        // otherwise, we just insert one value into the vector.
-        // Example: <"tag1","tag2","tag3"> vs. <"tag1">
-        if(this->schemaInternal->isRefiningAttributeMultiValued(iter) == true){
-			boost::split(refiningAttributeValueStringTokensVector , *refiningAttributeValueStringTokens ,
-					boost::is_any_of(srch2is::MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER) , boost::token_compress_on );
-        }else{
-        	refiningAttributeValueStringTokensVector.push_back(*refiningAttributeValueStringTokens);
-        }
-
-        refiningAttributeValues.push_back(refiningAttributeValueStringTokensVector);
-    }
     PositionIndexType positionIndexType = this->schemaInternal->getPositionIndexType();
     bool shouldAttributeBitMapBeAllocated = false;
     if (isEnabledAttributeBasedSearch(positionIndexType)) {
@@ -306,6 +286,9 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
 	// size is not known in advance.
 	vector<uint8_t> tempPositionIndexBuffer;
 	vector<uint8_t> tempOffsetBuffer;
+	vector<uint8_t> tempcharLenBuffer;
+
+	vector<uint8_t> tempSynonymBitMapBuffer;
 
     if (isEnabledWordPositionIndex(positionIndexType) || isEnabledCharPositionIndex(positionIndexType)) {
     	// Add position indexes in forward list
@@ -323,32 +306,71 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     		unsigned prevAttributeId = 0;
     		vector<unsigned> positionListVector;
     		vector<unsigned> offsetVector;
+    		vector<unsigned> synonymOriginalTokenLenArray;
+    		vector<uint8_t> synonymBitFlagArray;
+    		unsigned bitMapCursor = 0;
 
     		for (unsigned j = 0; j < iterator->second.attributeList.size(); ++j) {
     			unsigned attributeId = (iterator->second.attributeList[j] >> 24) - 1; // 0th based
     			unsigned position =  (iterator->second.attributeList[j] & 0xFFFFFF);  // Non Zero
     			unsigned offset =  (iterator->second.charOffsetOfTermInAttribute[j]);  // Non Zero
-
+    			AnalyzedTokenType type =  (iterator->second.typesOfTermInAttribute[j]);
+    			unsigned charLen =  (iterator->second.charLensOfTermInAttribute[j]);
     			// if it is a first element or current attribute is same as
     			// previous attribute id. then continue to push the position
     			// in position list vector
     			if (j == 0 || prevAttributeId == attributeId) {
     				if (isEnabledWordPositionIndex(positionIndexType))
     					positionListVector.push_back(position);
-    				if (isEnabledCharPositionIndex(positionIndexType))
+    				if (isEnabledCharPositionIndex(positionIndexType)){
     					offsetVector.push_back(offset);
+    					//add a new byte to bitMap vector
+    					if (bitMapCursor / 8 >= synonymBitFlagArray.size()) {
+    						synonymBitFlagArray.push_back(0);
+    					}
+    					if (type == ANALYZED_SYNONYM_TOKEN){
+    						// For synonym token set its bit flag to 1
+    						// and also push the original token character len in
+    						// synonymOriginalTokenLenArray
+    						unsigned byte = bitMapCursor / 8;
+    						uint8_t mask = 1;
+    						mask = mask << (bitMapCursor % 8);
+    						synonymBitFlagArray[byte] = synonymBitFlagArray[byte] | mask;
+    						synonymOriginalTokenLenArray.push_back(charLen);
+    					}
+    					++bitMapCursor;
+    				}
     			} else {
     				// if the previous attribute is not same as current attribute
     				// then convert the position list vector to variable length byte
     				// array and APPPEND to grand buffer.
     				convertToVarLengthArray(positionListVector, tempPositionIndexBuffer);
     				convertToVarLengthArray(offsetVector, tempOffsetBuffer);
+    				convertToVarLengthArray(synonymOriginalTokenLenArray, tempcharLenBuffer);
+    				convertToVarLengthBitMap(synonymBitFlagArray, tempSynonymBitMapBuffer);
+
     				positionListVector.clear();
     				offsetVector.clear();
+    				synonymOriginalTokenLenArray.clear();
+    				synonymBitFlagArray.clear();
+    				bitMapCursor = 0;
+
     				if (isEnabledWordPositionIndex(positionIndexType))
     					positionListVector.push_back(position);
-    				if (isEnabledCharPositionIndex(positionIndexType))
+    				if (isEnabledCharPositionIndex(positionIndexType)) {
     					offsetVector.push_back(offset);
+    					if (bitMapCursor / 8 >= synonymBitFlagArray.size()) {
+    						synonymBitFlagArray.push_back(0);
+    					}
+    					if (type == ANALYZED_SYNONYM_TOKEN){
+    						unsigned byte = bitMapCursor / 8;
+    						uint8_t mask = 1;
+    						mask = mask << (bitMapCursor % 8);
+    						synonymBitFlagArray[byte] = synonymBitFlagArray[byte] | mask;
+    						synonymOriginalTokenLenArray.push_back(charLen);
+    					}
+    					++bitMapCursor;
+    				}
     			}
     			prevAttributeId = attributeId;
     		}
@@ -357,15 +379,19 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     		// length byte array
     		convertToVarLengthArray(positionListVector, tempPositionIndexBuffer);
     		convertToVarLengthArray(offsetVector, tempOffsetBuffer);
+    		convertToVarLengthArray(synonymOriginalTokenLenArray, tempcharLenBuffer);
+    		convertToVarLengthBitMap(synonymBitFlagArray, tempSynonymBitMapBuffer);
     		positionListVector.clear();
     		offsetVector.clear();
-
+    		synonymOriginalTokenLenArray.clear();
+    		synonymBitFlagArray.clear();
     	}
     }
 
     // set all extra information into the forward list.
     forwardList->allocateSpaceAndSetNSAValuesAndPosIndex(this->schemaInternal ,
-    		refiningAttributeValues , shouldAttributeBitMapBeAllocated , tempPositionIndexBuffer, tempOffsetBuffer);
+    		shouldAttributeBitMapBeAllocated , tempPositionIndexBuffer,
+    		tempOffsetBuffer, tempcharLenBuffer, tempSynonymBitMapBuffer);
 
     // Add KeywordId List
     for (unsigned iter = 0; iter < uniqueKeywordIdList.size(); ++iter) {
@@ -421,8 +447,10 @@ void ForwardIndex::convertToVarLengthArray(const vector<unsigned>& positionListV
 	// convert to vector to variable length byte array
 	unsigned lengthOfDeltas = ULEB128::uInt32VectorToVarLenArray(positionListVector, &buffer);
 
-	if (buffer == NULL)
-		return;
+	if (buffer == NULL) {
+		ASSERT(lengthOfDeltas == 0);
+		lengthOfDeltas = 0;
+	}
 
 	uint8_t vlb[5];
 	short numberOfBytesForLength;
@@ -439,6 +467,18 @@ void ForwardIndex::convertToVarLengthArray(const vector<unsigned>& positionListV
 
 	if (buffer)
 		delete [] buffer;
+}
+void ForwardIndex::convertToVarLengthBitMap(const vector<uint8_t>& bitMapVector,
+		vector<uint8_t>& grandBuffer)
+{
+	unsigned sizeOfBitMap = bitMapVector.size();
+	uint8_t vlb[5];
+	short numberOfBytesForLength;
+	ULEB128::uInt32ToVarLengthBytes(sizeOfBitMap , vlb, &numberOfBytesForLength);
+	for (int k =0; k < numberOfBytesForLength; ++k)
+		grandBuffer.push_back(vlb[k]);
+	for (int k =0; k < bitMapVector.size(); ++k)
+		grandBuffer.push_back(bitMapVector[k]);
 }
 
 // TODO check if this is still useful
@@ -902,9 +942,6 @@ bool ForwardList::isValidRecordTermHitWithStemmer(const SchemaInternal *schema,
      */
 }
 
-unsigned getBitSet(unsigned number);
-unsigned getBitSetPositionOfAttr(unsigned bitmap, unsigned attribute);
-
 void ForwardList::getKeyWordPostionsInRecordField(unsigned keyOffset, unsigned attributeId,
 		unsigned currKeyattributeBitMap, vector<unsigned>& pl) const{
 
@@ -945,6 +982,72 @@ void ForwardList::getKeyWordOffsetInRecordField(unsigned keyOffset, unsigned att
 
 }
 
+void ForwardList::getSynonymCharLenInRecordField(unsigned keyOffset, unsigned attributeId,
+		vector<unsigned>& pl) const{
+	if (offsetIndexSize == 0 || charLenIndexSize == 0){
+		Logger::warn("Char Len Index not found in forward index!!");
+		return;
+	}
+	const uint8_t * piPtr = getCharLenIndexPointer();  // pointer to Char Len index for the record
+	if (*(piPtr + charLenIndexSize - 1) & 0x80)
+	{
+		Logger::error("Char Len index buffer has bad encoding..last byte is not a terminating one");
+		return;
+	}
+
+	fetchDataFromVLBArray(keyOffset, attributeId, 0, pl, piPtr, 0);
+}
+
+void ForwardList::getSynonymBitMapInRecordField(unsigned keyOffset, unsigned attributeId,
+		vector<uint8_t>& synonymBitMap) const {
+
+	if (offsetIndexSize == 0 || synonymBitMapSize == 0){
+		Logger::warn("Synonym bitMap Index not found in forward index!!");
+		return;
+	}
+	const uint8_t * piPtr = getSynonymBitMapPointer();  // pointer to Synonym BitMap for the record
+
+	unsigned offset = 0;
+	unsigned currKeyattributeBitMap = 0;
+	for (unsigned j = 0; j < keyOffset ; ++j) {
+		currKeyattributeBitMap =
+				getKeywordAttributeBitmapsPointer()[j];
+		unsigned count = getBitSet(currKeyattributeBitMap);
+		for (unsigned k = 0; k < count; ++k){
+			unsigned value;
+			short byteRead;
+			ULEB128::varLengthBytesToUInt32(piPtr + offset , &value, &byteRead);
+			offset += byteRead + value;
+		}
+	}
+
+	currKeyattributeBitMap =
+			    getKeywordAttributeBitmapsPointer()[keyOffset];
+
+	// If keyword's attribute bitmap is 0 ( highly unlikely) or Attribute is not in keyword's attribute
+	// bitmap (programmer's error) ...then return because we cannot get any position/offset info.
+	if (currKeyattributeBitMap == 0 || (currKeyattributeBitMap & (1 << attributeId)) == 0)
+		return;
+
+	unsigned totalBitSet = getBitSet(currKeyattributeBitMap);
+	unsigned attrBitPosition = getBitSetPositionOfAttr(currKeyattributeBitMap, attributeId);
+
+	ASSERT(totalBitSet > attrBitPosition);
+	for (int i = 0; i < totalBitSet; ++i){
+		unsigned value;
+		short byteRead;
+		ULEB128::varLengthBytesToUInt32(piPtr + offset , &value, &byteRead);
+		if (i == attrBitPosition){
+			uint8_t * start = (uint8_t *)(piPtr + offset + byteRead);
+			for (unsigned i = 0; i < value; ++i) {
+				synonymBitMap.push_back(*(start + i));
+			}
+			break;
+		}else {
+			offset += byteRead + value;
+		}
+	}
+}
 void ForwardList::fetchDataFromVLBArray(unsigned keyOffset, unsigned attributeId,
 		unsigned currKeyattributeBitMap, vector<unsigned>& pl, const uint8_t * piPtr, unsigned piOffset) const{
 	// get the correct byte array position for current keyword + attribute combination

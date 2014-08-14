@@ -83,6 +83,10 @@ void RecordSerializerUtil::convertCompactToJSONString(Schema * storedAttrSchema,
 			    std::find(attrToReturn->begin(), attrToReturn->end(), iter->first) == attrToReturn->end()) {
 				continue;
 			}
+			// check if it is also a primary key, skip if true because PK is emitted already.
+			if (*(storedAttrSchema->getPrimaryKey()) == iter->first) {
+				continue;
+			}
 			unsigned id = storedAttrSchema->getSearchableAttributeId(iter->first);
 			unsigned lenOffset = compactRecDeserializer.getSearchableOffset(id);
 			const char *attrdata = buffer.start.get() + *((unsigned *)(buffer.start.get() + lenOffset));
@@ -126,6 +130,10 @@ void RecordSerializerUtil::convertCompactToJSONString(Schema * storedAttrSchema,
 		{
 			if (attrToReturn &&
 					std::find(attrToReturn->begin(), attrToReturn->end(), iter->first) == attrToReturn->end()) {
+				continue;
+			}
+			// check if it is also a primary key, skip if true because PK is emitted already.
+			if (*(storedAttrSchema->getPrimaryKey()) == iter->first) {
 				continue;
 			}
 			unsigned id = storedAttrSchema->getRefiningAttributeId(iter->first);
@@ -374,13 +382,13 @@ void RecordSerializerUtil::convertByteArrayToTypedValue(const string& name,
 		switch (type) {
 		case ATTRIBUTE_TYPE_UNSIGNED:
 			for(int i=0;i<multiValues.size(); i++){
-				intValues.push_back(atol(multiValues[i].c_str()));
+				intValues.push_back(static_cast<unsigned int>(strtoul(multiValues[i].c_str(),NULL,10)));
 			}
 			result->setTypedValue(intValues);
 			break;
 		case ATTRIBUTE_TYPE_FLOAT:
 			for(int i=0;i<multiValues.size(); i++){
-				floatValues.push_back(atof(multiValues[i].c_str()));
+				floatValues.push_back(static_cast<float>(strtod(multiValues[i].c_str(),NULL)));
 			}
 			result->setTypedValue(floatValues);
 			break;

@@ -9,7 +9,6 @@
 #define __CORE_ANALYZER_ANALYZERCONTAINERS_H__
 
 #include <instantsearch/Analyzer.h>
-#include "SynonymFilter.h"
 
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
@@ -17,6 +16,7 @@
 #include <map>
 #include <set>
 #include <fstream>
+#include <boost/unordered_set.hpp>
 
 namespace srch2 {
 namespace instantsearch{
@@ -44,27 +44,29 @@ class AnalyzerContainer {
 
     string filePath;
 };
-
+typedef vector<std::string> SynonymVector;
 class SynonymContainer : public AnalyzerContainer {
 public:
 	void init();
 	void loadSynonymContainer(boost::archive::binary_iarchive& ia);
 	void saveSynonymContainer(boost::archive::binary_oarchive& oa);
 	bool contains(const std::string& str) const;
-	void getValue(const std::string& str, std::pair<SynonymTokenType, std::string>& returnValue) const;
+	bool isPrefix(const std::string& str) const;
+	bool getValue(const std::string& str, SynonymVector& returnValue) const;
 	// this is thread unsafe. Make sure you call it from main thread only.
 	static SynonymContainer *getInstance(const std::string &filePath,
                                              SynonymKeepOriginFlag synonymKeepOriginFlag);
 
-        SynonymKeepOriginFlag keepOrigin() const { return synonymKeepOriginFlag; }
+ 	SynonymKeepOriginFlag keepOrigin() const { return synonymKeepOriginFlag; }
 
 private:
-	std::map<std::string, std::pair<SynonymTokenType, std::string> > synonymMap;
-	const std::string synonymDelimiter;
+	std::map<std::string, std::pair<bool, SynonymVector> > synonymMap;
+	std::set<string>  prefixMap;
+ 	const std::string synonymDelimiter;
 
-        SynonymKeepOriginFlag synonymKeepOriginFlag;
+ 	SynonymKeepOriginFlag synonymKeepOriginFlag;
 
-        SynonymContainer(const std::string &delimiter) : synonymDelimiter(delimiter) {}
+ 	SynonymContainer(const std::string &delimiter) : synonymDelimiter(delimiter),synonymKeepOriginFlag(SYNONYM_KEEP_ORIGIN) {}
 	SynonymContainer(const SynonymContainer&) {}
 	void operator == (const SynonymContainer&){}
 };

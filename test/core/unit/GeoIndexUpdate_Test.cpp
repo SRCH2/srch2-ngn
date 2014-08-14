@@ -155,7 +155,7 @@ void searchRecords(const vector< pair<string, pair<string, Point> > > &recordsTo
     QueryEvaluatorRuntimeParametersContainer runTimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer,&runTimeParameters );
 
-    vector<PositionalTerm> queryKeywords;
+    vector<AnalyzedTermInfo> queryKeywords;
 
     // go through each record to verify
     for (unsigned i = 0; i < recordsToSearch.size(); i++)

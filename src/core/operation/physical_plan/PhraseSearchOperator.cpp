@@ -75,7 +75,7 @@ PhysicalPlanRecordItem * PhraseSearchOperator::getNext(const PhysicalPlanExecuti
         	continue;
         }
         if (matchPhrase(forwardListPtr, this->phraseSearchInfo)){
-        	vector<TermType> recordMatchingTermTypes = nextRecord->getTermTypesRef();
+        	vector<TermType>& recordMatchingTermTypes = nextRecord->getTermTypesRef();
         	for (unsigned i = 0; i < recordMatchingTermTypes.size(); ++i) {
         		recordMatchingTermTypes[i] = TERM_TYPE_PHRASE;
         	}
