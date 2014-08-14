@@ -5,6 +5,7 @@ pages:
   - [tutorial.md, Tutorial]
   - [advanced-topics.md, Advanced Topics]
   - [faq.md, FAQ]
+  - [changlog.md, Change Logs]
   
 theme_dir : './srch2-theme'
 
