@@ -10,11 +10,11 @@ This tutorial will show you how to:
  
 To get started, this tutorial assumes you are familiar with Android Studio and can create, or have already created, Android Studio projects. 
 
-Before you begin the tutorial, clone the project application from our [`hello-srch2-android-sdk` Github repository](https://github.com/SRCH2/hello-srch2-android-sdk). This project application is set to compile with Android SDK version 20; in case you have not updated your Android SDK build and platforms tools to include this version you should do so before cloning the project and continuing this tutorial.
+Before you begin the tutorial, clone the project application from our [`hello-srch2-android-sdk` Github repository](https://github.com/srch2-android/hello-srch2-android-sdk). This project application is set to compile with Android SDK version 20; in case you have not updated your Android SDK build and platforms tools to include this version you should do so before cloning the project and continuing this tutorial.
 
 ###Quick Start
 
-1. Clone the tutorial application project from our [`hello-srch2-android-sdk` Github repository](https://github.com/SRCH2/hello-srch2-android-sdk). To do this from the command line you can simply enter following git command:<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`git clone https://github.com/srch2-android/hello-srch2-android-sdk.git`
+1. Clone the tutorial application project from our [`hello-srch2-android-sdk` Github repository](https://github.com/srch2-android/hello-srch2-android-sdk). To do this from the command line you can simply enter following git command:<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`git clone https://github.com/srch2-android/hello-srch2-android-sdk.git`
 2. Open Android Studio and from the File menu option (or the Quick Start menu) select 'Import Project' choosing the root folder of the cloned project: ![Opening the cloned Hello SRCH2 Android SDK application project][tutorial-010]
 3. With a device connected (running Ice Cream Sandwich (API 4.0) or above)--*currently hardware emulation does not support the SRCH2 Android SDK*--from the Run menu option select 'Run app'. 
 4. Once the app has launched, enter some characters in the text input fiseld at the top of the screen and you should instantly see search results: <br>
