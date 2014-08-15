@@ -561,6 +561,19 @@ void ForwardIndex::reorderForwardList(ForwardList *forwardList,
 
     unsigned keywordOffset = 0;
 
+    /*
+     *  Go over the keyword-ids in the forward list and verify -
+     *  a) whether the keyword-ids have changed or not.
+     *  b) If the keyword-ids have changed, then whether the numerical order of keyword-ids have
+     *     changed or not.
+     *
+     *  if only a) is true then we need to change only the keyword-ids in the forward list. Other
+     *  VLB array information in the forward list should remain unchanged.
+     *
+     *  if both a) and b) are true then we have to reorder forward list completely.
+     *
+     *  Note: b) occurs only when a) occurs
+     */
     bool reorderRequired = false;
     bool keywordIdChanged = false;
     unsigned prevNewKeywordId = 0;
