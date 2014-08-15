@@ -1,9 +1,8 @@
-package com.srch2.android.http.service.test;
+package com.srch2.android.sdk;
 
 import android.test.SingleLaunchActivityTestCase;
 import android.util.Log;
 import android.widget.Toast;
-import com.srch2.android.sdk.TestableActivity;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;

@@ -15,7 +15,7 @@
         </activity>
 
         <service
-                android:name=".SRCH2Service"
+                android:name="com.srch2.android.sdk.SRCH2Service"
                 android:exported="false"
                 android:enabled="true"
                 android:process=":remotee">

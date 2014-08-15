@@ -1,6 +1,4 @@
-package com.srch2.android.http.service.test;
-
-import com.srch2.android.sdk.MyActivity;
+package com.srch2.android.sdk;
 
 /**
  * Created by jianfeng on 8/6/14.
@@ -9,7 +7,8 @@ public class MyActivityTest extends AbstractTest<MyActivity>{
     static final String TAG = "SRCH2ActivityTEST";
 
     public MyActivityTest(){
-        super("com.srch2.android.http.service", MyActivity.class);
+
+        super(MyActivity.class.getPackage().getName(), MyActivity.class);
     }
 
     @Override
