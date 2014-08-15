@@ -67,11 +67,11 @@ typedef vector<pair<unsigned, pair<string, unsigned> > > KeywordIdKeywordStringI
 struct KeywordRichInformation {
     unsigned keywordId;
     float keywordScore;
-    vector<unsigned> keywordAttribute;
-    vector<vector<unsigned> > keywordPositionInAttribute;
-    vector<vector<unsigned> > keywordOffsetsInAttribute;
-    vector<vector<uint8_t> > keywordSynonymBitMapInAttribute;
-    vector<vector<unsigned> > keywordSynonymCharLenInAttribute;
+    vector<uint8_t> keywordAttribute;
+    vector<uint8_t> keywordPositionsInAllAttribute;
+    vector<uint8_t> keywordOffsetsInAllAttribute;
+    vector<uint8_t> keywordSynonymBitMapInAllAttribute;
+    vector<uint8_t> keywordSynonymCharLenInAllAttribute;
     bool operator <(const KeywordRichInformation& keyword) const {
         return keywordId < keyword.keywordId;
     }
@@ -250,11 +250,12 @@ public:
 
     void getKeywordAttributeIdsList(unsigned keywordOffset, vector<unsigned>& attributeIdList) const;
 
-//    void setKeywordAttributeBitmap(unsigned iter,
-//            unsigned keywordAttributeBitmap) {
-//        if (iter <= KEYWORD_THRESHOLD)
-//            this->getKeywordAttributeBitmapsPointer()[iter] = keywordAttributeBitmap;
-//    }
+    void getKeywordAttributeIdsByteArray(unsigned keywordOffset, vector<uint8_t>& attributesVLBarray);
+    void getKeyWordPostionsByteArray(unsigned keywordOffset, vector<uint8_t>& positionsVLBarray);
+    void getKeyWordOffsetsByteArray(unsigned keywordOffset, vector<uint8_t>& charOffsetsVLBarray);
+    void getKeywordSynonymsBitMapByteArray(unsigned keywordOffset, vector<uint8_t>& synonymBitMapVLBarray);
+    void getSynonymCharLensByteArray(unsigned keywordOffset, vector<uint8_t>& synonymCharLensVLBarray);
+    void fetchVLBArrayForKeyword(unsigned keyOffset, const uint8_t * piPtr, vector<uint8_t>& vlbArray);
 
     //set the size of keywordIds and keywordRecordStaticScores to keywordListCapacity
     ForwardList(int keywordListCapacity = 0) {

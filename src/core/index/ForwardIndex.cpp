@@ -585,35 +585,35 @@ void ForwardIndex::reorderForwardList(ForwardList *forwardList,
                 ->getKeywordRecordStaticScore(keywordOffset);
 
         // support attribute-based search
-        vector<unsigned>& keywordAttributes = keywordRichInformationList[keywordOffset].keywordAttribute;
+        vector<uint8_t>& keywordAttributesVLB = keywordRichInformationList[keywordOffset].keywordAttribute;
         if ( isEnabledAttributeBasedSearch(this->schemaInternal->getPositionIndexType())) {
-            forwardList->getKeywordAttributeIdsList(keywordOffset, keywordAttributes);
+        	// fetch VLB representation of attribute Ids for the current keyword based on its offset.
+            forwardList->getKeywordAttributeIdsByteArray(keywordOffset, keywordAttributesVLB);
         }
 
         if (isEnabledWordPositionIndex(this->schemaInternal->getPositionIndexType())){
-        	for (unsigned i = 0; i < keywordAttributes.size(); ++i) {
-        		vector<unsigned> wordPositions;
-        		forwardList->getKeyWordPostionsInRecordField(keywordOffset, keywordAttributes[i],
-        				wordPositions);
-        		keywordRichInformationList[keywordOffset].keywordPositionInAttribute.push_back(wordPositions);
-        	}
+        	vector<uint8_t>& keywordPositionsVLB = keywordRichInformationList[keywordOffset].keywordPositionsInAllAttribute;
+        	// fetch VLB representation of all positions (in all attributes) for the
+        	// current keyword based on its offset.
+        	forwardList->getKeyWordPostionsByteArray(keywordOffset, keywordPositionsVLB);
         }
 
         if (isEnabledCharPositionIndex(this->schemaInternal->getPositionIndexType())){
-        	for (unsigned i = 0; i < keywordAttributes.size(); ++i) {
-        		vector<unsigned> charOffsetPositions;
-        		forwardList->getKeyWordOffsetInRecordField(keywordOffset, keywordAttributes[i],
-        				charOffsetPositions);
-        		keywordRichInformationList[keywordOffset].keywordOffsetsInAttribute.push_back(charOffsetPositions);
-        		vector<uint8_t> synonymBitMap;
-        		forwardList->getSynonymBitMapInRecordField(keywordOffset, keywordAttributes[i],
-        				synonymBitMap);
-        		keywordRichInformationList[keywordOffset].keywordSynonymBitMapInAttribute.push_back(synonymBitMap);
-        		vector<unsigned> charLenVector;
-        		forwardList->getSynonymCharLenInRecordField(keywordOffset, keywordAttributes[i],
-        				charLenVector);
-        		keywordRichInformationList[keywordOffset].keywordSynonymCharLenInAttribute.push_back(charLenVector);
-        	}
+
+        	vector<uint8_t>& charOffsetPositionsVLB = keywordRichInformationList[keywordOffset].keywordOffsetsInAllAttribute;
+        	// fetch VLB representation of all char offsets (in all attributes) for the
+        	// current keyword based on its offset.
+        	forwardList->getKeyWordOffsetsByteArray(keywordOffset, charOffsetPositionsVLB);
+
+        	vector<uint8_t>& synonymBitMapVLB =  keywordRichInformationList[keywordOffset].keywordSynonymBitMapInAllAttribute;
+        	// fetch VLB representation of all synonym bitmaps (in all attributes) for the
+        	// current keyword based on its offset.
+        	forwardList->getKeywordSynonymsBitMapByteArray(keywordOffset, synonymBitMapVLB);
+
+        	vector<uint8_t>& charLenVectorVLB = keywordRichInformationList[keywordOffset].keywordSynonymCharLenInAllAttribute;
+        	// fetch VLB representation of all synonym original char lengths (in all attributes) for the
+        	// current keyword based on its offset.
+        	forwardList->getSynonymCharLensByteArray(keywordOffset, charLenVectorVLB);
         }
 
     }
@@ -643,33 +643,39 @@ void ForwardIndex::reorderForwardList(ForwardList *forwardList,
 
         //Build VLB array of attributes
         if (isEnabledAttributeBasedSearch(this->schemaInternal->getPositionIndexType())) {
-        	convertToVarLengthArray(iter->keywordAttribute, tempAttributeIdBuffer);
+        	// append current keyword;s attribute VLB array to temp buffer
+        	tempAttributeIdBuffer.insert(tempAttributeIdBuffer.end(), iter->keywordAttribute.begin(),
+        	        			iter->keywordAttribute.end());
         }
         //Build VLB array of word positions
         if (isEnabledWordPositionIndex(this->schemaInternal->getPositionIndexType())){
-        	for (unsigned i = 0 ; i < iter->keywordPositionInAttribute.size(); ++i) {
-        		convertToVarLengthArray(iter->keywordPositionInAttribute[i], tempKeywordPositionsBuffer);
-        	}
+        	// append current keyword's positions VLB array to temp buffer
+        	tempKeywordPositionsBuffer.insert(tempKeywordPositionsBuffer.end(),
+        			iter->keywordPositionsInAllAttribute.begin(),
+        			iter->keywordPositionsInAllAttribute.end());
         }
         //Build VLB array of char offsets
         if (isEnabledCharPositionIndex(this->schemaInternal->getPositionIndexType())){
-        	for (unsigned i = 0 ; i < iter->keywordOffsetsInAttribute.size(); ++i) {
-        		convertToVarLengthArray(iter->keywordOffsetsInAttribute[i], tempKeywordCharOffsetsBuffer);
-        	}
+        	// append current keyword's char offsets VLB array to temp buffer
+        	tempKeywordCharOffsetsBuffer.insert(tempKeywordCharOffsetsBuffer.end(),
+        			iter->keywordOffsetsInAllAttribute.begin(),
+        			iter->keywordOffsetsInAllAttribute.end());
         }
 
         //Build VLB array of synonym bit map
         if (isEnabledCharPositionIndex(this->schemaInternal->getPositionIndexType())){
-        	for (unsigned i = 0 ; i < iter->keywordSynonymBitMapInAttribute.size(); ++i) {
-        		convertToVarLengthBitMap(iter->keywordSynonymBitMapInAttribute[i], tempKeywordSynonymBitMapBuffer);
-        	}
+        	// append current keyword's synonym bitmaps VLB array to temp buffer
+        	tempKeywordSynonymBitMapBuffer.insert(tempKeywordSynonymBitMapBuffer.end(),
+        			iter->keywordSynonymBitMapInAllAttribute.begin(),
+        			iter->keywordSynonymBitMapInAllAttribute.end());
         }
 
         //Build VLB array of char offsets
         if (isEnabledCharPositionIndex(this->schemaInternal->getPositionIndexType())){
-        	for (unsigned i = 0 ; i < iter->keywordSynonymCharLenInAttribute.size(); ++i) {
-        		convertToVarLengthArray(iter->keywordSynonymCharLenInAttribute[i], tempKeywordSynonymCharLenBuffer);
-        	}
+        	// append current keyword's synonym original char lens VLB array to temp buffer
+        	tempKeywordSynonymCharLenBuffer.insert(tempKeywordSynonymCharLenBuffer.end(),
+        			iter->keywordSynonymCharLenInAllAttribute.begin(),
+        			iter->keywordSynonymCharLenInAllAttribute.end());
         }
 
         ++keywordOffset;
@@ -1444,6 +1450,135 @@ bool isAttributesListsMatching(const vector<unsigned>& list1, const vector<unsig
 			return false;
 	}
 	return true;
+}
+
+/*
+ *  Util functions for reorder forward list logic
+ */
+// API to fetch VLB array of all attributes for a keyword.
+void ForwardList::getKeywordAttributeIdsByteArray(unsigned keywordOffset, vector<uint8_t>& attributesVLBarray){
+
+	if (attributeIdsIndexSize == 0){
+		Logger::warn("Attribute Index not found in forward index!!");
+		return;
+	}
+	const uint8_t * piPtr = getKeywordAttributeIdsPointer();  // pointer to position index for the record
+
+	if (piPtr == NULL) {
+		return;
+	}
+
+	if (*(piPtr + attributeIdsIndexSize - 1) & 0x80)
+	{
+		Logger::error("Attribute Ids index buffer has bad encoding..last byte is not a terminating one");
+		return;
+	}
+	attributesVLBarray.clear();
+	unsigned piOffset = 0;
+	unsigned value;
+	short byteRead;
+	// First jump over all the attribute ids of other keywords.
+	for (unsigned j = 0; j < keywordOffset ; ++j) {
+		ULEB128::varLengthBytesToUInt32(piPtr + piOffset , &value, &byteRead);
+		piOffset += byteRead + value;
+	}
+	// Now read the length of current keyword's attribute.
+	ULEB128::varLengthBytesToUInt32(piPtr + piOffset , &value, &byteRead);
+	unsigned totalbytes = byteRead + value;
+	attributesVLBarray.resize(totalbytes);
+	for (unsigned i = 0; i < totalbytes; ++i) {
+		attributesVLBarray[i] = *(piPtr + piOffset + i);
+	}
+}
+// API to fetch VLB array of word positions in all attributes for a keyword.
+void ForwardList::getKeyWordPostionsByteArray(unsigned keywordOffset, vector<uint8_t>& positionsVLBarray){
+	if (positionIndexSize == 0){
+		Logger::warn("Position Index not found in forward index!!");
+		return;
+	}
+
+	const uint8_t * piPtr = getPositionIndexPointer();  // pointer to position index for the record
+
+	if (*(piPtr + positionIndexSize - 1) & 0x80)
+	{
+		 Logger::error("position index buffer has bad encoding..last byte is not a terminating one");
+		 return;
+	}
+
+	fetchVLBArrayForKeyword(keywordOffset, piPtr, positionsVLBarray);
+}
+// API to fetch VLB array of char offsets in all attributes for a keyword.
+void ForwardList::getKeyWordOffsetsByteArray(unsigned keywordOffset, vector<uint8_t>& charOffsetsVLBarray){
+	if (offsetIndexSize == 0){
+		Logger::warn("Offset Index not found in forward index!!");
+		return;
+	}
+
+	const uint8_t * piPtr = getOffsetIndexPointer();  // pointer to position index for the record
+
+	if (*(piPtr + offsetIndexSize - 1) & 0x80)
+	{
+		Logger::error("Offset index buffer has bad encoding..last byte is not a terminating one");
+		return;
+	}
+
+	fetchVLBArrayForKeyword(keywordOffset, piPtr, charOffsetsVLBarray);
+}
+// API to fetch VLB array of synonym bitmaps in all attributes for a keyword.
+void ForwardList::getKeywordSynonymsBitMapByteArray(unsigned keywordOffset, vector<uint8_t>& synonymBitMapVLBarray){
+
+	if (offsetIndexSize == 0 || synonymBitMapSize == 0){
+		Logger::warn("Synonym bitMap Index not found in forward index!!");
+		return;
+	}
+	const uint8_t * piPtr = getSynonymBitMapPointer();  // pointer to Synonym BitMap for the record
+
+	fetchVLBArrayForKeyword(keywordOffset, piPtr, synonymBitMapVLBarray);
+}
+// API to fetch VLB array of synonym original char lens in all attributes for a keyword.
+void ForwardList::getSynonymCharLensByteArray(unsigned keywordOffset, vector<uint8_t>& synonymCharLensVLBarray){
+	if (offsetIndexSize == 0 || charLenIndexSize == 0){
+		Logger::warn("Char Len Index not found in forward index!!");
+		return;
+	}
+	const uint8_t * piPtr = getCharLenIndexPointer();  // pointer to Char Len index for the record
+	if (*(piPtr + charLenIndexSize - 1) & 0x80)
+	{
+		Logger::error("Char Len index buffer has bad encoding..last byte is not a terminating one");
+		return;
+	}
+
+	fetchVLBArrayForKeyword(keywordOffset, piPtr, synonymCharLensVLBarray);
+}
+// common API to fetch VLB array for a keyword.
+void ForwardList::fetchVLBArrayForKeyword(unsigned keyOffset, const uint8_t * piPtr, vector<uint8_t>& vlbArray) {
+
+	unsigned piOffset = 0;
+	vector<unsigned> currKeywordAttributeIdsList;
+	for (unsigned j = 0; j < keyOffset ; ++j) {
+		getKeywordAttributeIdsList(j, currKeywordAttributeIdsList);
+		unsigned count = currKeywordAttributeIdsList.size();
+		for (unsigned k = 0; k < count; ++k){
+			unsigned value;
+			short byteRead;
+			ULEB128::varLengthBytesToUInt32(piPtr + piOffset , &value, &byteRead);
+			piOffset += byteRead + value;
+		}
+		currKeywordAttributeIdsList.clear();
+	}
+
+	getKeywordAttributeIdsList(keyOffset, currKeywordAttributeIdsList);
+	unsigned totalAttributes = currKeywordAttributeIdsList.size();
+	for (int i = 0; i < totalAttributes; ++i){
+		unsigned value;
+		short byteRead;
+		ULEB128::varLengthBytesToUInt32(piPtr + piOffset , &value, &byteRead);
+		unsigned totalbytes = byteRead + value;
+		for (unsigned i = 0; i < totalbytes; ++i) {
+			vlbArray.push_back(*(piPtr + piOffset + i));
+		}
+		piOffset += totalbytes;
+	}
 }
 
 }
