@@ -86,9 +86,9 @@
                 <version>2.9.1</version>
                 <configuration>
                     <sourceFileExcludes>
-                        <sourceFileExclude>com.srch2.android.http.service.BuildConfig</sourceFileExclude>
-                        <sourceFileExclude>com.srch2.android.http.service.Manifest</sourceFileExclude>
-                        <sourceFileExclude>com.srch2.android.http.service.R.*</sourceFileExclude>
+                        <sourceFileExclude>com.srch2.android.sdk.BuildConfig</sourceFileExclude>
+                        <sourceFileExclude>com.srch2.android.sdk.Manifest</sourceFileExclude>
+                        <sourceFileExclude>com.srch2.android.sdk.R.*</sourceFileExclude>
                     </sourceFileExcludes>
                 </configuration>
                 <executions>
