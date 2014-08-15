@@ -149,11 +149,11 @@ PhraseSearchOperator::PhraseSearchOperator(const PhraseInfo& phraseSearchInfo) {
 bool PhraseSearchOperator::matchPhrase(const ForwardList* forwardListPtr, const PhraseInfo& phraseInfo) {
 
     vector<unsigned> keywordsOffsetinForwardList;
-    vector<unsigned> keywordsAttrBitMapInForwardList;
+    vector<vector<unsigned> > keywordsAttrIdsInForwardList;
 
     // Attribute bit map may not be initialized if position indexing is not
     // enabled in config file. Just return false if so.
-    if (forwardListPtr->getKeywordAttributeBitmaps() == 0){
+    if (forwardListPtr->getKeywordAttributesListPtr() == 0){
     	Logger::warn("Attribute info not found in forward List!!");
     	return false;
     }
@@ -167,12 +167,12 @@ bool PhraseSearchOperator::matchPhrase(const ForwardList* forwardListPtr, const 
     		return false;
     	}
     	keywordsOffsetinForwardList.push_back(keywordOffset);
-    	keywordsAttrBitMapInForwardList.push_back(
-    			forwardListPtr->getKeywordAttributeBitmap(keywordOffset));
+    	keywordsAttrIdsInForwardList.push_back(vector<unsigned>());
+    	forwardListPtr->getKeywordAttributeIdsList(keywordOffset, keywordsAttrIdsInForwardList[i]);
     }
 
     // check whether it is AND or OR boolean operator for multiple fields.
-    bool ANDOperation = phraseInfo.attributeBitMap & 0x80000000;
+    ATTRIBUTES_OP attrOp = phraseInfo.attrOps;
 
     //special check for AND operation ...if the set bits of query bit map does not match with all
     // the keywords bitmap then we should return false because AND condition will not be satisfied.
@@ -182,24 +182,28 @@ bool PhraseSearchOperator::matchPhrase(const ForwardList* forwardListPtr, const 
     // and "york" is present only in "title" field and
     // if query is title.description:"new york" then there should skip this record.
     //
-    if (ANDOperation && phraseInfo.attributeBitMap != 0xFFFFFFFF) {
-    	for (int i = 0; i < keywordsAttrBitMapInForwardList.size(); ++i) {
-    		unsigned resultBitMap = phraseInfo.attributeBitMap & keywordsAttrBitMapInForwardList[i];
-    		if (resultBitMap != phraseInfo.attributeBitMap) {
+    if (attrOp == ATTRIBUTES_OP_AND && phraseInfo.attributeIdsList.size() > 0) {
+    	for (int i = 0; i < keywordsAttrIdsInForwardList.size(); ++i) {
+    		vector<unsigned> resultAttributeList;
+    		fetchCommonAttributes(phraseInfo.attributeIdsList, keywordsAttrIdsInForwardList[i],
+    				resultAttributeList);
+    		if (!isAttributesListsMatching(resultAttributeList, phraseInfo.attributeIdsList)) {
     			return false;
     		}
     	}
     }
     // pre-determine the attributes that we should search. It is intersection of keyword
     // attributes and attributes mentioned in query
-    unsigned allowedBitMap = phraseInfo.attributeBitMap;
-    for (int i = 0; i < keywordsAttrBitMapInForwardList.size(); ++i) {
-    	allowedBitMap &= keywordsAttrBitMapInForwardList[i];
+    vector<unsigned> allowedBitMap = phraseInfo.attributeIdsList;
+    for (int i = 0; i < keywordsAttrIdsInForwardList.size(); ++i) {
+    	vector<unsigned> temp;
+    	fetchCommonAttributes( allowedBitMap, keywordsAttrIdsInForwardList[i], temp);
+    	allowedBitMap = temp;
     }
 
     unsigned mask = 1;
     bool result = false;
-    unsigned totalAttributes = sizeof(phraseInfo.attributeBitMap) * 8 - 1;
+    unsigned totalAttributes = phraseInfo.attributeIdsList.size();
 
     // pre-allocate the vectors for position lists of query keywords
     vector<vector<unsigned> > positionListVector;
@@ -207,16 +211,13 @@ bool PhraseSearchOperator::matchPhrase(const ForwardList* forwardListPtr, const 
     	positionListVector.push_back(vector<unsigned>());
     }
 
-    for (unsigned attributeId = 0; attributeId < totalAttributes; ++attributeId) {
-        mask = 1 << attributeId;
-        if ((allowedBitMap & mask) == 0) {
-        	continue;
-        }
+    for (unsigned i = 0; i < allowedBitMap.size(); ++i) {
+    	unsigned attributeId = allowedBitMap[i];
         for (int i = 0; i < phraseInfo.keywordIds.size(); ++i) {
             unsigned keyOffset = keywordsOffsetinForwardList[i];
-            unsigned keyAttrBitMap = keywordsAttrBitMapInForwardList[i];
+            vector<unsigned>& keyAttrIdsList = keywordsAttrIdsInForwardList[i];
             vector<unsigned>& positionList = positionListVector[i];
-            forwardListPtr->getKeyWordPostionsInRecordField(keyOffset, attributeId, keyAttrBitMap,
+            forwardListPtr->getKeyWordPostionsInRecordField(keyOffset, attributeId,
             		positionList);
             if (positionList.size() == 0){
                 Logger::debug("Position Indexes for keyword = %s , attribute = %d not be found",
@@ -239,10 +240,10 @@ bool PhraseSearchOperator::matchPhrase(const ForwardList* forwardListPtr, const 
             		matchedPositions, true);  // true means we stop at first match
         }
         // AND operation and we didn't find result so we should break
-        if (ANDOperation && result == false)
+        if (attrOp == ATTRIBUTES_OP_AND && result == false)
             break;
         // OR operation and we found result so we should break
-        if (!ANDOperation && result == true)
+        if (attrOp == ATTRIBUTES_OP_OR && result == true)
             break;
 
         // clear the position list for next iteration.

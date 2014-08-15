@@ -64,7 +64,7 @@ bool isFloat(const std::string & s) {
         return false;
 
     char * p;
-    int temp = strtof(s.c_str(), &p);
+    int temp = static_cast<float>(strtod(s.c_str(), &p));
 
     return (*p == 0);
 }

@@ -2,7 +2,7 @@
 # Data set used : data.json
 # Schema: body, title, tag, id 
 #
-import sys, urllib2, urllib, json, time, subprocess, os, commands, signal
+import sys, urllib2, urllib, json, time, subprocess, os, commands, signal,shutil
 # these imports have test results.
 import expectedResultsTermOffsetON, expectedResultsTermOffsetOFF, expectedResultsTermOffsetON_1
 sys.path.insert(0, 'srch2lib')
@@ -105,7 +105,14 @@ def runTest(queriesAndResultsPath, binary_path, configFile):
     finally:
         test_lib.killServer(serverHandle)
 
-if __name__ == '__main__':      
+if __name__ == '__main__': 
+    #Remove the old indexes
+    if(os.path.exists("./synonyms/indexes")):
+        shutil.rmtree("./synonyms/indexes")
+    if(os.path.exists("./synonyms/indexes-with-offset")):
+        shutil.rmtree("./synonyms/indexes-with-offset")
+    if(os.path.exists("./synonyms/indexes-with-offset-1")):
+        shutil.rmtree("./synonyms/indexes-with-offset-1")
     #Path of the query file
     binary_path = sys.argv[1]
     print '----------------------------------------------------'
@@ -114,14 +121,23 @@ if __name__ == '__main__':
     global testRunId
     testRunId = 0
     exitCode = runTest( './synonyms/queries.txt', binary_path, './synonyms/conf_term_offset_on.xml')
+    time.sleep(2)
     print '----------------------------------------------------'
     print 'case 2: synonym and highlighting without offset information'
     print '----------------------------------------------------'
     testRunId = 1
     exitCode |= runTest( './synonyms/queries.txt', binary_path, './synonyms/conf_term_offset_off.xml')
+    time.sleep(2)
     print '----------------------------------------------------'
     print 'case 3: synonym with phrase search and highlighting with offset information'
     print '----------------------------------------------------'
     testRunId = 2 
     exitCode |= runTest('./synonyms/queries1.txt' , binary_path, './synonyms/conf_term_offset_on_1.xml')
+    #Remove the indexes
+    if(os.path.exists("./synonyms/indexes")):
+        shutil.rmtree("./synonyms/indexes")
+    if(os.path.exists("./synonyms/indexes-with-offset")):
+        shutil.rmtree("./synonyms/indexes-with-offset")
+    if(os.path.exists("./synonyms/indexes-with-offset-1")):
+        shutil.rmtree("./synonyms/indexes-with-offset-1")
     os._exit(exitCode)

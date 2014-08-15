@@ -8,7 +8,7 @@
 #     <search-term>||<core1 ID result set>@<core2 ID result set>@<core3 ID result set>
 # where each ID result set is a space separated list of record IDs expected from the server.
 
-import sys, urllib2, json, time, subprocess, os, commands, signal, re
+import sys,shutil, urllib2, json, time, subprocess, os, commands, signal, re
 
 sys.path.insert(0, 'srch2lib')
 import test_lib
@@ -199,10 +199,30 @@ def testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path
     return failCount
 
 if __name__ == '__main__':      
+    if(os.path.exists("./multicore/core1Data")):
+        shutil.rmtree("./multicore/core1Data")
+    if(os.path.exists("./multicore/core2Data")):
+        shutil.rmtree("./multicore/core2Data")
+    if(os.path.exists("./multicore/core3Data")):
+        shutil.rmtree("./multicore/core3Data")
+    if(os.path.exists("./multicore/core4Data")):
+        shutil.rmtree("./multicore/core4Data")
+    if(os.path.exists("./multicore/coreGeoData")):
+        shutil.rmtree("./multicore/coreGeoData")
     #Path of the query file
     #each line like "trust||01c90b4effb2353742080000" ---- query||record_ids(results)
     binary_path = sys.argv[1]
     queriesAndResultsPath = sys.argv[2]
     queriesAndResultsPath2 = sys.argv[3]
     exitCode = testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path)
+    if(os.path.exists("./multicore/core1Data")):
+        shutil.rmtree("./multicore/core1Data")
+    if(os.path.exists("./multicore/core2Data")):
+        shutil.rmtree("./multicore/core2Data")
+    if(os.path.exists("./multicore/core3Data")):
+        shutil.rmtree("./multicore/core3Data")
+    if(os.path.exists("./multicore/core4Data")):
+        shutil.rmtree("./multicore/core4Data")
+    if(os.path.exists("./multicore/coreGeoData")):
+        shutil.rmtree("./multicore/coreGeoData")
     os._exit(exitCode)

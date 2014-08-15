@@ -37,25 +37,6 @@ using namespace std;
 namespace srch2 {
 namespace instantsearch {
 
-/**
- * Helper function to tokenizeRecord
- * @param attribbute
- * @param position
- * @return an unsigned with bits set with the following logic:
- * Attribute -> First 8bits -> Attribute in which the token hit occurred
- * Position -> Last 24 bits -> Position within the attribute where the token hit occurred.
- */
-unsigned setAttributePositionBitVector(unsigned attribute, unsigned position) {
-    ///assert that attribute is less than maximum allowed attributes
-    ASSERT(attribute < 0xff);
-
-    ///assert that position is less than maximum allowed document size
-    ASSERT(position < 0xffffff);
-
-    return ((attribute + 1) << 24) + (position & 0xffffff);
-
-//    return 1 << attribute;
-}
 
 bool isEmpty(const string &inString) {
     return inString.compare("") == 0;
@@ -214,10 +195,9 @@ void AnalyzerInternal::tokenizeRecord(const Record *record,
         	}
 			for (unsigned i = 0; i< tokens.size(); ++i) {
 				if (tokens[i].term.size()) {
-					tokenAttributeHitsMap[tokens[i].term].attributeList.push_back(
-							setAttributePositionBitVector(attributeIterator,
-									tokens[i].position));
-					tokenAttributeHitsMap[tokens[i].term].charOffsetOfTermInAttribute.push_back(
+					tokenAttributeHitsMap[tokens[i].term].attributeIdList.push_back(attributeIterator);
+					tokenAttributeHitsMap[tokens[i].term].positionsOfTermInAttribute.push_back(tokens[i].position);
+					tokenAttributeHitsMap[tokens[i].term].charOffsetsOfTermInAttribute.push_back(
 							tokens[i].charOffset);
 					tokenAttributeHitsMap[tokens[i].term].charLensOfTermInAttribute.push_back(
 							tokens[i].charLength);
