@@ -16,28 +16,33 @@ import java.util.concurrent.atomic.AtomicReference;
  * This is the primary point of access for all of the functions of the SRCH2 Android SDK.
  * <br><br>
  * All methods in this class are statically declared so that they may be called without having
- * a reference to any instance. In particular, note that reference to a specific <code>Indexable</code>
- * instance can be obtained by calling the static method <code>getIndex(String indexName)</code>
- * and supplying a value of <code>indexName</code> matching the return value of the <code>
- * getIndexName()</code> for the particular <code>Indexable</code> to retrieve. Thus any of the
+ * a reference to any instance. In particular, note that reference to a specific
+ * {@link com.srch2.android.sdk.Indexable}
+ * subclass instance can be obtained by calling the static method
+ * {@link com.srch2.android.sdk.SRCH2Engine#getIndex(String)}
+ * and supplying a value of <code>indexName</code> that matches the return value of the
+ * {@link Indexable#getIndexName()} for the particular <code>Indexable</code> to retrieve.
+ * Thus any of the
  * <code>Indexable</code> methods can be accessed from everywhere in the code.
  * <br><br>
  * The search functionality of the SRCH2 Android SDK is powered by the running of the SRCH2
  * HTTP server. This server runs in its own process, and this process is started and stopped
- * by the <code>SRCH2Service</code> remote service to insulate it from low-memory pressure.
+ * by the {@link com.srch2.android.sdk.SRCH2Service} (a remote service) to insulate it from
+ * low-memory pressures.
  * The <code>SRCH2Engine</code> starts and stops this service, which in turn starts and stops
- * the SRCH2 search server. When <code>SRCH2Engine.onStop(Context context)</code> is called,
+ * the SRCH2 search server. When {@link com.srch2.android.sdk.SRCH2Engine#onStop(android.content.Context)}
+ * is called,
  * the SRCH2 search server is not shut down immediately, but only after a delay in order to
- * avoid unnecessary restarting in the event a user navigates away from the application using
- * the SRCH2 Android SDK only to do some short task such as sending a text message.
+ * avoid unnecessary restarting in the event a user navigates away from the activity performing
+ * searches only to do some short task such as sending a text message.
  * <br><br>
  * Since the SRCH2 search server is running as a RESTful HTTP server, any commands to the
- * SRCH2 search server must be formed as network or RESTful actions. This class and the rest
+ * SRCH2 search server must be formed as network RESTful actions. This class and the rest
  * of the API wraps this condition of operation so that users of the SRCH2 Android SDK do
  * not have to manually form their own network tasks but can instead simply make the appropriate
- * calls their <code>Indexable</code> implementations.
+ * calls on their <code>Indexable</code> implementations.
  * Similarly, the output of the SRCH2 search server is wrapped in the various subclasses of
- * <code>RestfulResponse</code> so that the RESTful responses from the SRCH2 search server
+ * {@link com.srch2.android.sdk.RestfulResponse} so that the RESTful responses from the SRCH2 search server
  * do not have to be parsed: for instance, after inserting a record, the method
  * {@link StateResponseListener#onInsertRequestComplete(String, InsertResponse)}
  * will be triggered where the <code>InsertResponse response</code> will contain a count of
@@ -45,8 +50,8 @@ import java.util.concurrent.atomic.AtomicReference;
  * <code>Indexable</code> representing the edited index will have its {@link Indexable#getRecordCount()} updated
  * accordingly.
  * <br><br>
- * In particular, the {@link Query} class enables easy use of the sophisticated search power
- * of the SRCH2 search server.
+ * It is also possible to harness the power of the sophisticated search functionality of the SRCH2 search server
+ * through the SRCH2 Android SDK and its API by using the {@link Query} class.
  */
 final public class SRCH2Engine {
 
@@ -114,12 +119,12 @@ final public class SRCH2Engine {
      * foreground and is visible--that is, when it can be interacted with by a user who might perform searches.
      * Starting the SRCH2 search server is fast, usually taking under a second, and when it comes online
      * and is ready to handle search requests the callback method
-     * {@link com.srch2.android.sdk.StateResponseListener#onSRCH2ServiceReady()},
-     * if implemented, will be executed and contain index and
-     * engine information. Checking whether the SRCH2 search server is ready can also determined by calling
+     * {@link com.srch2.android.sdk.StateResponseListener#onSRCH2ServiceReady()} will be executed. Checking
+     * whether the SRCH2 search server is ready can also determined by calling
      * {@link #isReady()}.
      * <br><br>
-     * A context is needed here to start the remote service that hosts the SRCH2 search server process. A
+     * An <code>context</code> instance is needed here to start the remote service that hosts the SRCH2 search
+     * server process. A
      * reference to this context is not kept.
      * @param context needed to start a remote service, any context will do
      */
@@ -288,7 +293,8 @@ final public class SRCH2Engine {
      * Tells the <code>SRCH2Engine</code> to bring the SRCH2 search server to a stop. The SRCH2
      * search server will not halt immediately, but instead wait a short duration in case the user
      * navigates back to the activity requiring search. In that case, the command to stop is
-     * cancelled. Since the SRCH2 search server is hosted by a remote service, a context is needed
+     * cancelled as long as {@link #onStart(android.content.Context)} is called again from, for example,
+     * {@link android.app.Activity#onResume()}. Since the SRCH2 search server is hosted by a remote service, a context is needed
      * to stop this service. After calling this method, {@link #isReady()} will
      * return false and no subsequent actions can be performed on the <code>SRCH2Engine</code> until
      * {@link #onStart(android.content.Context)} is called again. Pending tasks however,
@@ -308,12 +314,15 @@ final public class SRCH2Engine {
     }
 
     /**
-     * The engine need some time to load the index. During these windows the
-     * engine will not response for any write operations. For the search query,
-     * the engine keeps updating the last query and will automatically request
-     * the
+     * Determines if any calls to the <code>Indexable</code> such as insert, search or retrieve record
+     * will be executed. This method should return <b>true</b> a short time after {@link #onStart(android.content.Context)}
+     * is called for the first time in an app's life-cycle (it takes a moment or two for the SRCH2 engine to come online)
+     * and remain <b>true</b> until
+     * {@link #onStop(android.content.Context)} is called. Search requests made before the SRCH2 search server
+     * comes online are cached, and the latest search input will be sent as a search request as soon it comes
+     * online.
      *
-     * @return if the SRCH2 engine is ready or not.
+     * @return if the <code>SRCH2Engine</code> is ready or not.
      */
     public static boolean isReady() {
         return isReady.get();
