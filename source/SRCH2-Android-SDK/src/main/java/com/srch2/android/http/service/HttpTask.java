@@ -14,12 +14,14 @@ abstract class HttpTask implements Runnable {
 
     private static final String TAG = "HttpTask";
 
-    protected StateResponseListener controlResponseObserver;
-    protected SearchResultsListener searchResultsListener;
-
     static private boolean isExecuting = false;
     static private ExecutorService controlTaskExecutor;
     static private ExecutorService searchTaskExecutor;
+    static private ExecutorService internalInfoTaskExecutor;
+
+    private static final int TASK_ID_INSERT_UPDATE_DELETE_GETRECORD = 1;
+    private static final int TASK_ID_SEARCH = 2;
+    private static final int TASK_ID_INFO = 3;
 
     abstract protected void onTaskComplete(int returnedResponseCode,
                                            String returnedResponseLiteral);
@@ -28,6 +30,7 @@ abstract class HttpTask implements Runnable {
         isExecuting = true;
         controlTaskExecutor = Executors.newFixedThreadPool(1);
         searchTaskExecutor = Executors.newFixedThreadPool(1);
+        internalInfoTaskExecutor = Executors.newFixedThreadPool(1);
     }
 
     static synchronized void onStop() {
@@ -40,52 +43,80 @@ abstract class HttpTask implements Runnable {
         if (searchTaskExecutor != null) {
             searchTaskExecutor.shutdown();
         }
+
+        if (internalInfoTaskExecutor != null) {
+            internalInfoTaskExecutor.shutdown();
+        }
     }
 
     static synchronized void executeTask(HttpTask taskToExecte) {
         if (!isExecuting || taskToExecte == null) {
             return;
         }
-        boolean isSearchTask = taskToExecte.getClass() == SearchTask.class;
 
-        if (isSearchTask && searchTaskExecutor != null) {
-            try {
-                searchTaskExecutor.execute(taskToExecte);
-            } catch (RejectedExecutionException ignore) { /*
-                                                         * Should not occur
-														 * since isExecuting
-														 * will control
-														 * propagation.
-														 */
-            }
-        } else if (!isSearchTask && controlTaskExecutor != null) {
-            try {
-                controlTaskExecutor.execute(taskToExecte);
-            } catch (RejectedExecutionException ignore) { /*
-														 * Should not occur
-														 * since isExecuting
-														 * will control
-														 * propagation.
-														 */
-            }
+        int taskId = -1;
+        final Class originatingTaskClass = taskToExecte.getClass();
+        if (originatingTaskClass == SearchTask.class) {
+            taskId = TASK_ID_SEARCH;
+        } else if (originatingTaskClass == GetRecordTask.class ||
+                     originatingTaskClass == UpdateTask.class ||
+                        originatingTaskClass == InsertTask.class ||
+                            originatingTaskClass == DeleteTask.class) {
+            taskId = TASK_ID_INSERT_UPDATE_DELETE_GETRECORD;
+        } else if (originatingTaskClass == InfoTask.class ||
+                    originatingTaskClass == InternalInfoTask.class ||
+                        originatingTaskClass == CheckCoresLoadedTask.class) {
+            taskId = TASK_ID_INFO;
+        }
+
+        switch (taskId) {
+            case TASK_ID_SEARCH:
+                if (searchTaskExecutor != null) {
+                    searchTaskExecutor.execute(taskToExecte);
+                }
+                break;
+            case TASK_ID_INSERT_UPDATE_DELETE_GETRECORD:
+                if (controlTaskExecutor != null) {
+                    controlTaskExecutor.execute(taskToExecte);
+                }
+                break;
+            case TASK_ID_INFO:
+                if (internalInfoTaskExecutor != null) {
+                    internalInfoTaskExecutor.execute(taskToExecte);
+                }
+                break;
         }
     }
+
+
+
+
+
+
+
+    protected StateResponseListener controlResponseObserver;
+    protected SearchResultsListener searchResultsListener;
+
+
 
 
 
 
     static abstract class SingleCoreHttpTask extends HttpTask {
         final String targetCoreName;
-
         SingleCoreHttpTask(String theTargetCoreName) {
             targetCoreName = theTargetCoreName;
         }
     }
 
-    static abstract class ControlHttpTask extends SingleCoreHttpTask {
+
+
+
+
+    static abstract class InsertUpdateDeleteTask extends SingleCoreHttpTask {
         final URL targetUrl;
 
-        public ControlHttpTask(final URL theTargetUrl, final String theTargetCoreName, final StateResponseListener theControlResponseListener) {
+        public InsertUpdateDeleteTask(final URL theTargetUrl, final String theTargetCoreName, final StateResponseListener theControlResponseListener) {
             super(theTargetCoreName);
             targetUrl = theTargetUrl;
             controlResponseObserver = theControlResponseListener;
@@ -94,13 +125,13 @@ abstract class HttpTask implements Runnable {
         @Override
         protected void onTaskComplete(int returnedResponseCode,
                                       String returnedResponseLiteral) {
+            updateIndexableIndexInformation(SRCH2Engine.conf.indexableMap.get(targetCoreName));
             if (SRCH2Engine.isChanged.get()) {
                 SRCH2Engine.reQueryLastOne();
             }
         }
-
-
     }
+
 
     static abstract class SearchHttpTask extends SingleCoreHttpTask {
         final URL targetUrl;
@@ -112,7 +143,46 @@ abstract class HttpTask implements Runnable {
         }
     }
 
-	String handleStreams(HttpURLConnection connection, String internalClassLogcatTag) throws IOException {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    void updateIndexableIndexInformation(Indexable indexableToUpdate) {
+        if (indexableToUpdate != null) {
+            InternalInfoTask iit = new InternalInfoTask(UrlBuilder
+                    .getInfoUrl(
+                            SRCH2Engine.conf,
+                            indexableToUpdate.indexInternal.indexDescription));
+            indexableToUpdate.updateFromInfoResponse(iit.getInfo());
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	static String handleStreams(HttpURLConnection connection, String internalClassLogcatTag) throws IOException {
         String response = null;
 
         if (connection != null) {
@@ -152,7 +222,7 @@ abstract class HttpTask implements Runnable {
         return response;
     }
 
-    String handleIOExceptionMessagePassing(IOException ioException, String response, String internalClassLogcatTag) {
+    static String handleIOExceptionMessagePassing(IOException ioException, String response, String internalClassLogcatTag) {
         String errorResponse = null;
         if (ioException != null) {
             errorResponse = ioException.getMessage();

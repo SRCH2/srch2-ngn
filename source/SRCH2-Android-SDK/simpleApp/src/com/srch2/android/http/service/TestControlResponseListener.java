@@ -14,7 +14,6 @@ public class TestControlResponseListener implements StateResponseListener {
     public InfoResponse infoResponse;
     public InsertResponse insertResponse;
     public UpdateResponse updateResponse;
-    public HashMap<String, InfoResponse> indexesInfoResponseMap;
     public DeleteResponse deleteResponse;
     public GetRecordResponse recordResponse;
 
@@ -22,7 +21,6 @@ public class TestControlResponseListener implements StateResponseListener {
         infoResponse = null;
         insertResponse = null;
         updateResponse = null;
-        indexesInfoResponseMap = null;
         deleteResponse = null;
         recordResponse = null;
     }
@@ -52,10 +50,8 @@ public class TestControlResponseListener implements StateResponseListener {
     }
 
     @Override
-    public void onSRCH2ServiceReady(
-            HashMap<String, InfoResponse> indexesToInfoResponseMap) {
-        Log.d(TAG, "APP get ServiceReady:" + indexesToInfoResponseMap.values());
-        indexesInfoResponseMap = indexesToInfoResponseMap;
+    public void onSRCH2ServiceReady() {
+        Log.d(TAG, "APP get ServiceReady");
     }
 
     @Override

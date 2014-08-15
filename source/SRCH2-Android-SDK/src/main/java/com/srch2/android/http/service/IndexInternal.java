@@ -10,7 +10,7 @@ import java.net.URL;
 final class IndexInternal {
     private static final String TAG = "IndexInternal";
 
-    private final IndexDescription indexDescription;
+    final IndexDescription indexDescription;
     private SearchTask currentSearchTask = null;
 
     IndexInternal(IndexDescription description) {

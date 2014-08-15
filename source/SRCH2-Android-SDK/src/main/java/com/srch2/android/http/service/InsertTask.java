@@ -1,7 +1,5 @@
 package com.srch2.android.http.service;
 
-import android.util.Log;
-import com.srch2.android.http.service.HttpTask.ControlHttpTask;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -9,7 +7,7 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-class InsertTask extends ControlHttpTask {
+class InsertTask extends HttpTask.InsertUpdateDeleteTask {
     private static final String TAG = "srch2:: InsertTask";
 
     private JSONArray recordsToInsert;
@@ -136,6 +134,7 @@ class InsertTask extends ControlHttpTask {
 
     @Override
     protected void onTaskComplete(int returnedResponseCode, String returnedResponseLiteral) {
+        super.onTaskComplete(returnedResponseCode, returnedResponseLiteral);
         if (controlResponseObserver != null) {
             InsertResponse insertResponse;
             if (returnedResponseLiteral == null || returnedResponseLiteral.equals(RestfulResponse.IRRECOVERABLE_NETWORK_ERROR_MESSAGE)) {
@@ -145,7 +144,7 @@ class InsertTask extends ControlHttpTask {
             }
             controlResponseObserver.onInsertRequestComplete(targetCoreName, insertResponse);
         }
-        super.onTaskComplete(returnedResponseCode, returnedResponseLiteral);
+
     }
 
 

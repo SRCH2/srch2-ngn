@@ -157,9 +157,8 @@ public class MyActivity extends TestableActivity {
         TestableIndex[] indexes = {mIndex1, mIndex2};
         Log.i(TAG, "testStartEngine");
         waitForEngineReady();
-        assertTrue(mControlListener.indexesInfoResponseMap.size() == indexes.length);
         for (TestableIndex index : indexes) {
-            assertTrue(mControlListener.indexesInfoResponseMap.get(index.getIndexName()).getNumberOfDocumentsInTheIndex() == 0);
+            assertTrue(SRCH2Engine.getIndex(index.getIndexName()).getRecordCount() == 0);
         }
     }
 

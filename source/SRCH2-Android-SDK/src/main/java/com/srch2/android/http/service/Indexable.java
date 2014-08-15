@@ -275,4 +275,53 @@ public abstract class Indexable {
         }
     }
 
+    public static final String INDEX_INFO_LAST_MERGE_TIME_NOT_SET = "0";
+    public static final int INDEX_INFO_STATE_NOT_SET = -1;
+
+
+
+
+
+
+    private int numberOfDocumentsInTheIndex = INDEX_INFO_STATE_NOT_SET;
+    final void setRecordCount(int latestRecordCount) {
+        numberOfDocumentsInTheIndex = latestRecordCount;
+    }
+    public final int getRecordCount() {
+        return numberOfDocumentsInTheIndex;
+    }
+
+    private int numberOfSearchRequests = INDEX_INFO_STATE_NOT_SET;
+    final void setSearchRequestCount(int latestSearchRequestCount) {
+        latestSearchRequestCount = numberOfSearchRequests;
+    }
+    final void incrementSearchRequestCount() { ++numberOfSearchRequests; }
+    public final int getSearchRequestCount() {
+        return numberOfSearchRequests;
+    }
+
+
+
+    private int numberOfWriteRequests = INDEX_INFO_STATE_NOT_SET;
+    final void setWriteRequestCount(int latestWriteRequestCount) {
+        numberOfWriteRequests = latestWriteRequestCount;
+    }
+    public final int getWriteRequestCount() {
+        return numberOfWriteRequests;
+    }
+
+    private String lastMergeTime = INDEX_INFO_LAST_MERGE_TIME_NOT_SET;
+    final void setLastMergeTime(String latestMergeTime) {
+        lastMergeTime = latestMergeTime;
+    }
+    public final String getLastMergeTime() {
+        return lastMergeTime;
+    }
+
+    final void updateFromInfoResponse(InternalInfoResponse ir) {
+        numberOfDocumentsInTheIndex = ir.numberOfDocumentsInTheIndex;
+        numberOfSearchRequests = ir.numberOfSearchRequests;
+        numberOfWriteRequests = ir.numberOfWriteRequests;
+        lastMergeTime = ir.lastMergeTime;
+    }
 }

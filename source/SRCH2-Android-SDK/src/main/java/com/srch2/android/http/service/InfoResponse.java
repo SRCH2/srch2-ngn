@@ -74,7 +74,7 @@ public final class InfoResponse extends RestfulResponse {
     /**
      * Returns whether this <code>InfoResponse</code> was parsed correctly. If <b>true</b>, the specified index
      * is up, running and searchable; if <b>false</b>, this indicates the index is unavailable and
-     * <code>getNumberOfSearchRequests()</code>, <code>getNumberOfWriteRequests()</code>, and
+     * <code>getSearchRequestCount()</code>, <code>getWriteRequestCount()</code>, and
      * <code>getNumberOfDocumentsInTheIndex()</code> will return <code>-1</code> or <code>INVALID_COUNT</code>
      * and <code>getLastMergeTime()</code> will return the literal value "null" or <code>INVALID_LAST_MERGE_TIME</code>.
      * @return whether this <code>InfoResponse</code> was formed properly from the JSON response

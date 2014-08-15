@@ -1,8 +1,5 @@
 package com.srch2.android.http.service;
 
-import android.util.Log;
-import com.srch2.android.http.service.HttpTask.ControlHttpTask;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -13,7 +10,7 @@ import java.net.URL;
  * /info on a core. The core is specified by the caller in passing the fully
  * formed URL to the constructor for this class.
  */
-class InfoTask extends ControlHttpTask {
+class InfoTask extends HttpTask.InsertUpdateDeleteTask {
 
     private static final String TAG = "srch2:: InfoTask";
 

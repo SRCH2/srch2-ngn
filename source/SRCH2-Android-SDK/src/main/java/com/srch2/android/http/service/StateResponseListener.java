@@ -1,7 +1,5 @@
 package com.srch2.android.http.service;
 
-import java.util.HashMap;
-
 /**
  * This interface contains the callback methods for the control related RESTful
  * requests of the SRCH2 search server: upon completion of the specific request,
@@ -63,14 +61,11 @@ public interface StateResponseListener {
 
     /**
      * Called after the SRCH2 search server comes online after the call to {@link com.srch2.android.http.service.SRCH2Engine#onStart(android.content.Context)}
-     * is made. When this method executes, it will pass a map of indexes ready for
-     * CRUD operations, defined by the <code>Indexable</code> implementations: this map contains the
-     * names of the indexes (as they were defined in the return value of the {@link Indexable#getIndexName()}) as
-     * its keys mapping to the {@link com.srch2.android.http.service.InfoResponse} for each index.
-     *
-     * @param indexesToInfoResponseMap a mapping of indexes to their valid <code>InfoResponse</code>s
-     */
-    void onSRCH2ServiceReady(HashMap<String, InfoResponse> indexesToInfoResponseMap);
+     * is made. When this callback method is triggered, it indicates all indexes are accessible
+     * and ready for searching. The <code>Indexable</code> of each index should also have its state
+     * information (ie {@link Indexable#getRecordCount()} updated to latest known values.
+    */
+    void onSRCH2ServiceReady();
 
     /**
      * Called after the SRCH2 search server completes an deletion task, which occurs

@@ -1,6 +1,5 @@
 package com.srch2.android.http.service;
 
-import android.util.Log;
 import com.srch2.android.http.service.HttpTask.SearchHttpTask;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -35,6 +34,7 @@ class SearchTask extends SearchHttpTask {
             String json, boolean isMultiCoreSearch, String targetCoreName) {
         HashMap<String, ArrayList<JSONObject>> resultMap = new HashMap<String, ArrayList<JSONObject>>();
 
+
         if (isMultiCoreSearch) {
             try {
                 JSONObject root = new JSONObject(json);
@@ -43,6 +43,12 @@ class SearchTask extends SearchHttpTask {
                 for (int j = 0; j < coreNodes.length(); ++j) {
 
                     String coreName = coreNodes.getString(j);
+
+                    Cat.d(TAG, "corename about to parse is " + coreName);
+
+                    SRCH2Engine.conf.indexableMap.get(coreName).incrementSearchRequestCount();
+
+
                     JSONObject o = root.getJSONObject(coreNodes.getString(j));
                     JSONArray nodes = o.getJSONArray("results");
 
@@ -63,6 +69,8 @@ class SearchTask extends SearchHttpTask {
                 ignore.printStackTrace();
             }
         } else {
+            SRCH2Engine.conf.indexableMap.get(targetCoreName).incrementSearchRequestCount();
+
             ArrayList<JSONObject> recordResults = new ArrayList<JSONObject>();
             try {
                 JSONObject root = new JSONObject(json);
