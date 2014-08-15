@@ -7,6 +7,8 @@
 
 /**
  * This test case tests schema section of the config file. Checks if it works for various combination and number of searchable, refining, and indexed fields.
+ * It also checks for invalid boost, invalid record boost field and all possible combinations for character offset/positionalIndex and field based search.
+ *
  */
 
 #include "server/util/xmlParser/pugixml.hpp"
@@ -80,6 +82,8 @@ int main(int argc, char* argv[])
     ASSERT(serverConf13->loadConfigFile() == true);
     ASSERT(serverConf14->loadConfigFile() == true);
 
+    const std::string &expr_string = "invalid Expression";
+    RankerExpression* rank = new RankerExpression(expr_string);
 
 	ConfigManager::CoreInfoMap_t::iterator it;
 

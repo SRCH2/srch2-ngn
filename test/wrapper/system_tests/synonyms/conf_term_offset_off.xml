@@ -49,11 +49,11 @@
        <!--  <fieldBoost>title^12 tags^16</fieldBoost> -->
         <fieldBoost>body^30</fieldBoost>
 
-        <recordBoostField>stars</recordBoostField>
-
         <defaultQueryTermBoost>1</defaultQueryTermBoost>
 
 	<enablePositionIndex>1</enablePositionIndex> 
+   <!--     <recordBoostField>stars</recordBoostField>  -->
+
 
     </indexConfig>
   

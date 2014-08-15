@@ -535,7 +535,7 @@ void ConfigManager::parseQuery(const xml_node &queryNode, CoreInfo_t *coreInfo,
     }
 
     // fuzzyMatchPenalty is an optional field
-    coreInfo->fuzzyMatchPenalty = 0.5; // By default it is 0.5
+    coreInfo->fuzzyMatchPenalty = 1; // By default it is 1
     childNode = queryNode.child(fuzzyMatchPenaltyString);
     if (childNode && childNode.text()) {
         string qtsb = childNode.text().get();
@@ -1654,7 +1654,6 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
     vector<bool> RefiningAttributesRequiredFlagVector;
     vector<string> RefiningAttributesDefaultVector;
     vector<bool> RefiningAttributesIsMultiValued;
-    bool flagCheckRecordBoost = false;
 
     /*
      * <field>  in config.xml file

@@ -51,7 +51,7 @@
        <!--  <fieldBoost>title^12 tags^16</fieldBoost> -->
         <fieldBoost>text^30</fieldBoost>
 
-        <recordBoostField>stars</recordBoostField>
+<!--        <recordBoostField>stars</recordBoostField> -->
 
         <defaultQueryTermBoost>1</defaultQueryTermBoost>
 
