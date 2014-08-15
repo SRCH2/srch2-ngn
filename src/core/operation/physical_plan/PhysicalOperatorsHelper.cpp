@@ -17,7 +17,7 @@ namespace instantsearch {
  */
 
 bool verifyByRandomAccessHelper(QueryEvaluatorInternal * queryEvaluator, PrefixActiveNodeSet *prefixActiveNodeSet, Term * term, PhysicalPlanRandomAccessVerificationParameters & parameters){
-	unsigned termSearchableAttributeIdToFilterTermHits = term->getAttributeToFilterTermHits();
+	const vector<unsigned>& termSearchableAttributeIdToFilterTermHits = term->getAttributesToFilter();
 	// assume the iterator returns the ActiveNodes in the increasing order based on edit distance
 
 	if (term->getTermType() == srch2::instantsearch::TERM_TYPE_COMPLETE) {
@@ -35,14 +35,14 @@ bool verifyByRandomAccessHelper(QueryEvaluatorInternal * queryEvaluator, PrefixA
 
 			unsigned matchingKeywordId;
 			float termRecordStaticScore;
-			unsigned termAttributeBitmap;
+			vector<unsigned> matchedAttributeIdsList;
 			if (queryEvaluator->getForwardIndex()->haveWordInRange(parameters.forwardListDirectoryReadView,
 					parameters.recordToVerify->getRecordId(),
 					minId, maxId,
-					termSearchableAttributeIdToFilterTermHits,
-					matchingKeywordId, termAttributeBitmap, termRecordStaticScore)) {
+					termSearchableAttributeIdToFilterTermHits, term->getFilterAttrOperation(),
+					matchingKeywordId, matchedAttributeIdsList, termRecordStaticScore)) {
 				parameters.termRecordMatchingPrefixes.push_back(trieNode);
-				parameters.attributeBitmaps.push_back(termAttributeBitmap);
+				parameters.attributeIdsList.push_back(matchedAttributeIdsList);
 				parameters.prefixEditDistances.push_back(distance);
 				bool isPrefixMatch = ( (!trieNode->isTerminalNode()) || (minId != matchingKeywordId) );
 				parameters.runTimeTermRecordScore = parameters.ranker->computeTermRecordRuntimeScore(termRecordStaticScore, distance,
@@ -75,14 +75,14 @@ bool verifyByRandomAccessHelper(QueryEvaluatorInternal * queryEvaluator, PrefixA
 
 			unsigned matchingKeywordId;
 			float termRecordStaticScore;
-			unsigned termAttributeBitmap;
+			vector<unsigned> matchedAttributeIdsList;
 			if (queryEvaluator->getForwardIndex()->haveWordInRange(parameters.forwardListDirectoryReadView,
 					parameters.recordToVerify->getRecordId(),
 					minId, maxId,
-					termSearchableAttributeIdToFilterTermHits,
-					matchingKeywordId, termAttributeBitmap, termRecordStaticScore)) {
+					termSearchableAttributeIdToFilterTermHits, term->getFilterAttrOperation(),
+					matchingKeywordId, matchedAttributeIdsList, termRecordStaticScore)) {
 				parameters.termRecordMatchingPrefixes.push_back(trieNode);
-				parameters.attributeBitmaps.push_back(termAttributeBitmap);
+				parameters.attributeIdsList.push_back(matchedAttributeIdsList);
 				parameters.prefixEditDistances.push_back(distance);
 				bool isPrefixMatch = ( (!trieNode->isTerminalNode()) || (minId != matchingKeywordId) );
 				parameters.runTimeTermRecordScore = parameters.ranker->computeTermRecordRuntimeScore(termRecordStaticScore, distance,

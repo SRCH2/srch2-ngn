@@ -67,7 +67,11 @@ typedef enum {
     CHINESE_ANALYZER    // ChineseAnalyzer
 } AnalyzerType;
 
-
+// Enum values to indicate conjunction or disjunction operation among a data record attributes.
+typedef enum {
+	ATTRIBUTES_OP_AND,
+	ATTRIBUTES_OP_OR
+} ATTRIBUTES_OP;
 
 /// Faceted search filter
 

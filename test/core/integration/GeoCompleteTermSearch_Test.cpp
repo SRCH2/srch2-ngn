@@ -121,7 +121,7 @@ void query(Indexer *indexer, const string &keyword, double lb_lat, double lb_lng
         term = FuzzyTerm::create(keyword, termType, 1, 0.5, ed);
     else
         term = ExactTerm::create(keyword, termType, 1, 0.5);
-    term->addAttributeToFilterTermHits(-1);
+    term->addAttributesToFilter(vector<unsigned>(), ATTRIBUTES_OP_AND);
     query->setPrefixMatchPenalty(0.95);
     query->add(term);
 

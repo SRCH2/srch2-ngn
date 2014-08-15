@@ -268,8 +268,6 @@ This is a flag to toggle attribute-based search. An attribute-based search appli
 > 0: Disabled <br>
 > 1: Enabled <br>
 
-Note that if field-based search is enabled, the number of searchable attributes as specified in [fields](#112-fields-required) is limited to 31.
-
 ###8.9. Search Type (Optional)
 ```
  <searcherType>0</searcherType>
