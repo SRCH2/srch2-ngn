@@ -1,6 +1,6 @@
 package com.srch2.android.http.service.test;
 
-import com.srch2.android.http.service.MyActivity;
+import com.srch2.android.sdk.MyActivity;
 
 /**
  * Created by jianfeng on 8/6/14.

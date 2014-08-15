@@ -3,7 +3,7 @@ package com.srch2.android.http.service.test;
 import android.test.SingleLaunchActivityTestCase;
 import android.util.Log;
 import android.widget.Toast;
-import com.srch2.android.http.service.TestableActivity;
+import com.srch2.android.sdk.TestableActivity;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
