@@ -96,7 +96,7 @@ final public class SearchableTerm extends Term {
      * @return this
      */
      public SearchableTerm enableFuzzyMatching() {
-        this.fuzzySimilarity = 1f;
+        this.fuzzySimilarity = 0f;
         return this;
     }
 
@@ -106,7 +106,7 @@ final public class SearchableTerm extends Term {
      * @return this
      */
     public SearchableTerm disableFuzzyMatching() {
-        this.fuzzySimilarity = -1f;
+        this.fuzzySimilarity = 1f;
         return this;
     }
 
@@ -197,10 +197,12 @@ final public class SearchableTerm extends Term {
         if (boostValue != null) {
             restStr.append('^').append(boostValue);
         }
-        if (fuzzySimilarity != null) {
-            restStr.append('~');
-            if (fuzzySimilarity < 1 && fuzzySimilarity > 0) {
-                restStr.append(fuzzySimilarity);
+        if (fuzzySimilarity != null ) {
+            if (fuzzySimilarity < 1) {
+                restStr.append('~');
+                if (fuzzySimilarity > 0) {
+                    restStr.append(fuzzySimilarity);
+                }
             }
         }
         return restStr.toString();
