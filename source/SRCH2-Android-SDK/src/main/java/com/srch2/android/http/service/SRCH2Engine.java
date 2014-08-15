@@ -44,10 +44,9 @@ import java.util.concurrent.atomic.AtomicReference;
  * do not have to be parsed: for instance, after inserting a record, the method
  * {@link com.srch2.android.http.service.StateResponseListener#onInsertRequestComplete(String, InsertResponse)}
  * will be triggered where the <code>InsertResponse response</code> will contain a count of
- * the number of successful inserts. Or, after performing an information request on an index,
- * the method {@link com.srch2.android.http.service.StateResponseListener#onInfoRequestComplete(String, InfoResponse)}
- * will be triggered where the <code>InfoResponse response</code> contains
- * various method getters for returning state about the index such as its number of records.
+ * the number of successful inserts. After any of insert, update or delete operations the
+ * <code>Indexable</code> representing the edited index will have its {@link Indexable#getRecordCount()} updated
+ * accordingly. 
  * <br><br>
  * In particular, the {@link Query} class enables easy use of the sophisticated search power
  * of the SRCH2 search server.
