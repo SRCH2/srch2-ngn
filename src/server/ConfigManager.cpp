@@ -648,6 +648,18 @@ void ConfigManager::parseQuery(const xml_node &queryNode, CoreInfo_t *coreInfo,
         }
     } else {
         // attribute based search is enabled if positional index is enabled
+        childNode = queryNode.child(fieldBasedSearchString);
+        string configValue = childNode.text().get();
+        if(isValidBooleanValue(configValue)){
+            if(configValue.compare("0") == 0){
+                if(coreInfo->enableWordPositionIndex == true){
+                    Logger::warn("Attribute based search is on because positional index is enabled");
+                }
+                if(coreInfo->enableCharOffsetIndex == true){
+                    Logger::warn("Attribute based search is on because character offset is enabled");
+                }
+            }
+        }
         coreInfo->supportAttributeBasedSearch = true;
     }
 
@@ -988,14 +1000,6 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode,
 
 
 
-    childNode = parentNode.child(queryString);
-    if (childNode) {
-        parseQuery(childNode, coreInfo, configSuccess, parseError,
-                parseWarnings);
-        if (configSuccess == false) {
-            return;
-        }
-    }
 
     // <schema>
     childNode = parentNode.child(schemaString);
@@ -1013,6 +1017,15 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode,
             parseError, parseWarnings);
     if (configSuccess == false) {
         return;
+    }
+
+    childNode = parentNode.child(queryString);
+    if (childNode) {
+        parseQuery(childNode, coreInfo, configSuccess, parseError,
+                parseWarnings);
+        if (configSuccess == false) {
+            return;
+        }
     }
 
     if (coreInfo->indexType == 1) {

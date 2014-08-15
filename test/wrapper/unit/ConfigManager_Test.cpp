@@ -46,6 +46,10 @@ int main(int argc, char* argv[])
 	string configFile8(string(getenv("srch2_config_file")) + "/conf-unique-refining.xml");
 	string configFile9(string(getenv("srch2_config_file")) + "/conf-invalid-boostField.xml");
     string configFile10(string(getenv("srch2_config_file")) + "/conf-invalidRecordBoostField.xml");
+    string configFile11(string(getenv("srch2_config_file")) + "/conf-fieldBasedSearch.xml");
+    string configFile12(string(getenv("srch2_config_file")) + "/conf-fieldBasedSearch-2.xml");
+    string configFile13(string(getenv("srch2_config_file")) + "/conf-fieldBasedSearch-3.xml");
+    string configFile14(string(getenv("srch2_config_file")) + "/conf-fieldBasedSearch-4.xml");
 
 	ConfigManager *serverConf1 = new ConfigManager(configFile1);
 	ConfigManager *serverConf2 = new ConfigManager(configFile2);
@@ -57,18 +61,44 @@ int main(int argc, char* argv[])
 	ConfigManager *serverConf8 = new ConfigManager(configFile8);
     ConfigManager *serverConf9 = new ConfigManager(configFile9);
     ConfigManager *serverConf10 = new ConfigManager(configFile10);
+    ConfigManager *serverConf11 = new ConfigManager(configFile11);
+    ConfigManager *serverConf12 = new ConfigManager(configFile12);
+    ConfigManager *serverConf13 = new ConfigManager(configFile13);
+    ConfigManager *serverConf14 = new ConfigManager(configFile14);
 
-//	ASSERT(serverConf1->loadConfigFile() == true);
-//	ASSERT(serverConf2->loadConfigFile() == true);
-//	ASSERT(serverConf3->loadConfigFile() == true);
-//	ASSERT(serverConf6->loadConfigFile() == true);
-//	ASSERT(serverConf5->loadConfigFile() == true);
-//	ASSERT(serverConf7->loadConfigFile() == true);
-//	ASSERT(serverConf8->loadConfigFile() == false);
+	ASSERT(serverConf1->loadConfigFile() == true);
+	ASSERT(serverConf2->loadConfigFile() == true);
+	ASSERT(serverConf3->loadConfigFile() == true);
+	ASSERT(serverConf6->loadConfigFile() == true);
+	ASSERT(serverConf5->loadConfigFile() == true);
+	ASSERT(serverConf7->loadConfigFile() == true);
+	ASSERT(serverConf8->loadConfigFile() == false);
     ASSERT(serverConf9->loadConfigFile() == false);
     ASSERT(serverConf10->loadConfigFile() == false);
+    ASSERT(serverConf11->loadConfigFile() == true);
+    ASSERT(serverConf12->loadConfigFile() == true);
+    ASSERT(serverConf13->loadConfigFile() == true);
+    ASSERT(serverConf14->loadConfigFile() == true);
+
 
 	ConfigManager::CoreInfoMap_t::iterator it;
+
+    for(it = serverConf14->coreInfoIterateBegin(); it != serverConf14->coreInfoIterateEnd(); it++) {
+        ASSERT(it->second->getSupportAttributeBasedSearch() == 1);
+    }
+
+
+	for(it = serverConf13->coreInfoIterateBegin(); it != serverConf13->coreInfoIterateEnd(); it++) {
+	    ASSERT(it->second->getSupportAttributeBasedSearch() == 1);
+	}
+
+	for(it = serverConf12->coreInfoIterateBegin(); it != serverConf12->coreInfoIterateEnd(); it++) {
+	    ASSERT(it->second->getSupportAttributeBasedSearch() == 0);
+	}
+
+    for(it = serverConf11->coreInfoIterateBegin(); it != serverConf11->coreInfoIterateEnd(); it++) {
+        ASSERT(it->second->getSupportAttributeBasedSearch() == 1);
+    }
 
 	for(it = serverConf7->coreInfoIterateBegin(); it != serverConf7->coreInfoIterateEnd(); it++) {
 

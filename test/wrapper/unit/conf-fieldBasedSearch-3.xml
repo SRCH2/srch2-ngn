@@ -39,6 +39,7 @@
                 <supportSwapInEditDistance>true</supportSwapInEditDistance>
                 <defaultQueryTermBoost>1</defaultQueryTermBoost>
                 <enablePositionIndex>1</enablePositionIndex> 
+                <enableCharOffsetIndex>0</enableCharOffsetIndex>
             </indexConfig>
 	    <query>
 	        <rankingAlgorithm>
@@ -49,7 +50,7 @@
 		<prefixMatchPenalty>0.95</prefixMatchPenalty>
 		<cacheSize>65536000</cacheSize>
 		<rows>10</rows>
-		<fieldBasedSearch>1</fieldBasedSearch>
+		<fieldBasedSearch>0</fieldBasedSearch>
 		<searcherType>0</searcherType>
 
 		<!-- 0: exact match; 1: fuzzy match.-->
