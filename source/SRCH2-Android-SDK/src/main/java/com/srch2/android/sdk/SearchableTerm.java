@@ -23,6 +23,8 @@ abstract class Term {
  */
 final public class SearchableTerm extends Term {
 
+    static final float FLAG_USE_DEFAULT_FUZZY_SIMILARITY = -1f;
+    static final float FLAG_DISABLE_FUZZY_MATCHING = -2f;
     /**
      * could be multiple words "George Lucas"
      */
@@ -90,12 +92,23 @@ final public class SearchableTerm extends Term {
     }
 
     /**
+     * Enable the fuzzy matching. The fuzziness similarity setting
+     * will get from the {@link Indexable#getFuzzinessSimilarityThreshold()}
+     *
+     * @return this
+     */
+     public SearchableTerm enableFuzzyMatching() {
+        this.fuzzySimilarity = FLAG_USE_DEFAULT_FUZZY_SIMILARITY;
+        return this;
+    }
+
+    /**
      * Disables the fuzzy matching
      *
      * @return this
      */
     public SearchableTerm disableFuzzyMatching() {
-        this.fuzzySimilarity = -1f;
+        this.fuzzySimilarity = FLAG_DISABLE_FUZZY_MATCHING;
         return this;
     }
 
@@ -166,11 +179,6 @@ final public class SearchableTerm extends Term {
         return new CompositeTerm(BooleanOperator.NOT, this, null);
     }
 
-    boolean isFuzzy() {
-        return fuzzySimilarity != null && fuzzySimilarity > 0
-                && fuzzySimilarity < 1;
-    }
-
     public String toString() {
         /**
          * the order of modifiers must always be prefix, boost, and then fuzzy
@@ -191,8 +199,13 @@ final public class SearchableTerm extends Term {
         if (boostValue != null) {
             restStr.append('^').append(boostValue);
         }
-        if (isFuzzy()) {
-            restStr.append('~').append(fuzzySimilarity);
+        if (fuzzySimilarity != null ) {
+            if (fuzzySimilarity != FLAG_DISABLE_FUZZY_MATCHING) {
+                restStr.append('~');
+                if (fuzzySimilarity != FLAG_USE_DEFAULT_FUZZY_SIMILARITY) {
+                    restStr.append(fuzzySimilarity);
+                }
+            }
         }
         return restStr.toString();
     }
