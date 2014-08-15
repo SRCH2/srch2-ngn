@@ -1,6 +1,5 @@
 package com.srch2.android.http.service;
 
-import android.util.Log;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -35,8 +34,8 @@ public final class InsertResponse extends RestfulResponse {
     private final static String JSON_VALUE_SUCCESS = "success";
 
     /**
-     * Indicates the InfoResponse was unable to be formed from the JSON response from the
-     * SRCH2 server upon performing an info command. Has the <b>constant</b> value <code>-1</code>.
+     * Indicates the InsertResponse was unable to be formed from the JSON response from the
+     * SRCH2 server upon performing an insertion. Has the <b>constant</b> value <code>-1</code>.
      */
     public static final int INVALID_COUNT = -1;
 

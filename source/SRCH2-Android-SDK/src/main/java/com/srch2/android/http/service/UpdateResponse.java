@@ -51,8 +51,8 @@ public final class UpdateResponse extends RestfulResponse {
     public int getNewRecordInsertedSuccessCount(){ return newRecordInsertedSuccessCount;}
 
     /**
-     * Indicates the InfoResponse was unable to be formed from the JSON response from the
-     * SRCH2 server upon performing an info command. Has the <b>constant</b> value <code>-1</code>.
+     * Indicates the UpdateResponse was unable to be formed from the JSON response from the
+     * SRCH2 server upon performing the update request. Has the <b>constant</b> value <code>-1</code>.
      */
     public static final int INVALID_COUNT = -1;
 
