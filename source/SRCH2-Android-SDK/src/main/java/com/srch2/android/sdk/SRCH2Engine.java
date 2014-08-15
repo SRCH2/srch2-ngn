@@ -309,12 +309,15 @@ final public class SRCH2Engine {
     }
 
     /**
-     * The engine need some time to load the index. During these windows the
-     * engine will not response for any write operations. For the search query,
-     * the engine keeps updating the last query and will automatically request
-     * the
+     * Determines if any calls to the <code>Indexable</code> such as insert, search or retrieve record
+     * will be executed. This method should return <b>true</b> a short time after {@link #onStart(android.content.Context)}
+     * is called for the first time in an app's life-cycle (it takes a moment or two for the SRCH2 engine to come online)
+     * and remain <b>true</b> until
+     * {@link #onStop(android.content.Context)} is called. Search requests made before the SRCH2 search server
+     * comes online are cached, and the latest search input will be sent as a search request as soon it comes
+     * online.
      *
-     * @return if the SRCH2 engine is ready or not.
+     * @return if the <code>SRCH2Engine</code> is ready or not.
      */
     public static boolean isReady() {
         return isReady.get();
