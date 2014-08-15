@@ -17,11 +17,10 @@ abstract class HttpTask implements Runnable {
     static private boolean isExecuting = false;
     static private ExecutorService controlTaskExecutor;
     static private ExecutorService searchTaskExecutor;
-    static private ExecutorService internalInfoTaskExecutor;
 
     private static final int TASK_ID_INSERT_UPDATE_DELETE_GETRECORD = 1;
     private static final int TASK_ID_SEARCH = 2;
-    private static final int TASK_ID_INFO = 3;
+
 
     abstract protected void onTaskComplete(int returnedResponseCode,
                                            String returnedResponseLiteral);
@@ -30,22 +29,15 @@ abstract class HttpTask implements Runnable {
         isExecuting = true;
         controlTaskExecutor = Executors.newFixedThreadPool(1);
         searchTaskExecutor = Executors.newFixedThreadPool(1);
-        internalInfoTaskExecutor = Executors.newFixedThreadPool(1);
     }
 
     static synchronized void onStop() {
         isExecuting = false;
-
         if (controlTaskExecutor != null) {
             controlTaskExecutor.shutdown();
         }
-
         if (searchTaskExecutor != null) {
             searchTaskExecutor.shutdown();
-        }
-
-        if (internalInfoTaskExecutor != null) {
-            internalInfoTaskExecutor.shutdown();
         }
     }
 
@@ -56,17 +48,13 @@ abstract class HttpTask implements Runnable {
 
         int taskId = -1;
         final Class originatingTaskClass = taskToExecte.getClass();
-        if (originatingTaskClass == SearchTask.class) {
+        if (originatingTaskClass == SearchTask.class || originatingTaskClass == CheckCoresLoadedTask.class) {
             taskId = TASK_ID_SEARCH;
         } else if (originatingTaskClass == GetRecordTask.class ||
                      originatingTaskClass == UpdateTask.class ||
                         originatingTaskClass == InsertTask.class ||
                             originatingTaskClass == DeleteTask.class) {
             taskId = TASK_ID_INSERT_UPDATE_DELETE_GETRECORD;
-        } else if (originatingTaskClass == InfoTask.class ||
-                    originatingTaskClass == InternalInfoTask.class ||
-                        originatingTaskClass == CheckCoresLoadedTask.class) {
-            taskId = TASK_ID_INFO;
         }
 
         switch (taskId) {
@@ -78,11 +66,6 @@ abstract class HttpTask implements Runnable {
             case TASK_ID_INSERT_UPDATE_DELETE_GETRECORD:
                 if (controlTaskExecutor != null) {
                     controlTaskExecutor.execute(taskToExecte);
-                }
-                break;
-            case TASK_ID_INFO:
-                if (internalInfoTaskExecutor != null) {
-                    internalInfoTaskExecutor.execute(taskToExecte);
                 }
                 break;
         }

@@ -31,15 +31,6 @@ package com.srch2.android.http.service;
 public interface StateResponseListener {
 
     /**
-     * Called after the SRCH2 search server completes an information task, which occurs
-     * when {@link Indexable#info()} is called.
-     * @param indexName the name of the index that the information task was completed upon
-     * @param response a representation of the returned index information
-     */
-    void onInfoRequestComplete(String indexName,
-                               InfoResponse response);
-
-    /**
      * Called after the SRCH2 search server completes an insert task, which occurs
      * when either {@link com.srch2.android.http.service.Indexable#insert(org.json.JSONArray)} or
      * {@link com.srch2.android.http.service.Indexable#insert(org.json.JSONObject)} is called.

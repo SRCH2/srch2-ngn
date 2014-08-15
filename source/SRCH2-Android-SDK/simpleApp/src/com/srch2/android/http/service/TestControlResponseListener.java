@@ -2,8 +2,6 @@ package com.srch2.android.http.service;
 
 import android.util.Log;
 
-import java.util.HashMap;
-
 /**
  * Created by ashton on 7/29/2014.
  */
@@ -11,25 +9,16 @@ public class TestControlResponseListener implements StateResponseListener {
 
     public static final String TAG = "TestControlResponseListener";
 
-    public InfoResponse infoResponse;
     public InsertResponse insertResponse;
     public UpdateResponse updateResponse;
     public DeleteResponse deleteResponse;
     public GetRecordResponse recordResponse;
 
     public void reset() {
-        infoResponse = null;
         insertResponse = null;
         updateResponse = null;
         deleteResponse = null;
         recordResponse = null;
-    }
-
-    @Override
-    public void onInfoRequestComplete(String targetIndexName,
-                                      InfoResponse theReturnedInfoResponse) {
-        infoResponse = theReturnedInfoResponse;
-
     }
 
     @Override

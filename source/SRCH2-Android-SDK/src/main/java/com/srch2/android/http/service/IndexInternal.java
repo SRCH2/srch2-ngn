@@ -1,6 +1,5 @@
 package com.srch2.android.http.service;
 
-import android.util.Log;
 import com.srch2.android.http.service.SRCH2Engine.IndexQueryPair;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -91,16 +90,6 @@ final class IndexInternal {
                     SRCH2Engine.getControlResponseListener());
             HttpTask.executeTask(deleteTast);
             SRCH2Engine.isChanged.set(true);
-        }
-    }
-
-
-    void info() {
-        if (SRCH2Engine.isReady()) {
-            InfoTask infoTask = new InfoTask(UrlBuilder.getInfoUrl(
-                    SRCH2Engine.getConfig(), indexDescription), getIndexCoreName(),
-                    SRCH2Engine.getControlResponseListener());
-            HttpTask.executeTask(infoTask);
         }
     }
 

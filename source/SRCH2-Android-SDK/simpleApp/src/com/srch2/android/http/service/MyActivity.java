@@ -108,11 +108,6 @@ public class MyActivity extends TestableActivity {
         mResultListener.reset();
     }
 
-    public InfoResponse getInfoResponse() {
-        Util.waitForResponse(mControlListener, InfoResponse.class);
-        return mControlListener.infoResponse;
-    }
-
     public InsertResponse getInsertResponse() {
         Util.waitForResponse(mControlListener, InsertResponse.class);
         return mControlListener.insertResponse;

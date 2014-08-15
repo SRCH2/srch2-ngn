@@ -107,12 +107,6 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
         private static final String TAG = "s2test:: SRCH2State";
 
         @Override
-        public void onInfoRequestComplete(String s, InfoResponse infoResponse) {
-            Log.d(TAG, "onInfo");
-
-        }
-
-        @Override
         public void onInsertRequestComplete(String s, InsertResponse insertResponse) {
             Log.d(TAG, "onInsertRequestComplete");
             Log.d(TAG, "onInsertRequestComplete - " + insertResponse.toString());
@@ -148,8 +142,4 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
 
         }
     }
-
-
-
-
 }

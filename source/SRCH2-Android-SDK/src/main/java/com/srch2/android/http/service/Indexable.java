@@ -192,22 +192,6 @@ public abstract class Indexable {
         }
     }
 
-    /**
-     * Performs an information task on the index that this <code>Indexable</code> represents. This
-     * method may be used to inspect the state of the index such as the number of records in the index
-     * by calling {@link InfoResponse#getNumberOfDocumentsInTheIndex()}
-     * <br><br>
-     * When the SRCH2 search server completes the information task, the
-     * method {@link com.srch2.android.http.service.StateResponseListener#onInfoRequestComplete(String, InfoResponse)}
-     * will be triggered. The <code>InfoResponse response</code> will contain information about the
-     * index such as the number of records it contains or the time stamp of the last time the index
-     * was updated to reflect any pending changes.
-     */
-    public final void info() {
-        if (indexInternal != null) {
-            indexInternal.info();
-        }
-    }
 
 
     /**
