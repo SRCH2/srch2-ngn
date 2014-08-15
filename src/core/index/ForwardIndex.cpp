@@ -561,6 +561,49 @@ void ForwardIndex::reorderForwardList(ForwardList *forwardList,
 
     unsigned keywordOffset = 0;
 
+    bool reorderRequired = false;
+    bool keywordIdChanged = false;
+    unsigned prevNewKeywordId = 0;
+    vector<unsigned> newKeywordIdsList;
+    for (keywordOffset = 0; keywordOffset < forwardList->getNumberOfKeywords();
+            ++keywordOffset) {
+    	unsigned keywordId = forwardList->getKeywordId(keywordOffset);
+    	unsigned newKeywordId;
+    	map<unsigned, unsigned>::const_iterator mapperIter = oldIdToNewIdMapper
+    			.find(keywordId);
+    	if (mapperIter == oldIdToNewIdMapper.end())
+    		newKeywordId = keywordId;
+    	else {
+    		keywordIdChanged = true;
+    		newKeywordId = mapperIter->second;
+    	}
+    	newKeywordIdsList.push_back(newKeywordId);
+    	if (prevNewKeywordId > newKeywordId) {
+    		reorderRequired = true;
+    		newKeywordIdsList.clear();
+    		keywordOffset = 0;
+    		break;
+    	}
+    	prevNewKeywordId = newKeywordId;
+
+        forwardListReOrderAtCommit[keywordOffset].first = newKeywordId;
+        forwardListReOrderAtCommit[keywordOffset].second.first = keywordOffset;
+        forwardListReOrderAtCommit[keywordOffset].second.second = keywordId;
+    }
+
+    if (!reorderRequired) {
+    	// re-ordering of forward list is not required. Check whether keyword ids changed
+    	if (keywordIdChanged) {
+    		ASSERT(newKeywordIdsList.size() == forwardList->getNumberOfKeywords());
+    		for (unsigned i = 0; i < newKeywordIdsList.size(); ++i)
+    			forwardList->setKeywordId(i, newKeywordIdsList[i]);
+    	}
+        std::sort(forwardListReOrderAtCommit.begin(),
+                forwardListReOrderAtCommit.end());
+    	return;
+    }
+    // Else reorder forward list
+    forwardListReOrderAtCommit.clear();
     // Pack keywordIdList, keywordRecordStaticScore, keywordAttributeList into keywordRichInformation for sorting based on new keywordId
     vector<KeywordRichInformation> keywordRichInformationList(numberOfKeywords);
     for (keywordOffset = 0; keywordOffset < forwardList->getNumberOfKeywords();
