@@ -23,6 +23,8 @@ abstract class Term {
  */
 final public class SearchableTerm extends Term {
 
+    static final float FLAG_USE_DEFAULT_FUZZY_SIMILARITY = -1f;
+    static final float FLAG_DISABLE_FUZZY_MATCHING = -2f;
     /**
      * could be multiple words "George Lucas"
      */
@@ -96,7 +98,7 @@ final public class SearchableTerm extends Term {
      * @return this
      */
      public SearchableTerm enableFuzzyMatching() {
-        this.fuzzySimilarity = 0f;
+        this.fuzzySimilarity = FLAG_USE_DEFAULT_FUZZY_SIMILARITY;
         return this;
     }
 
@@ -106,7 +108,7 @@ final public class SearchableTerm extends Term {
      * @return this
      */
     public SearchableTerm disableFuzzyMatching() {
-        this.fuzzySimilarity = 1f;
+        this.fuzzySimilarity = FLAG_DISABLE_FUZZY_MATCHING;
         return this;
     }
 
@@ -198,9 +200,9 @@ final public class SearchableTerm extends Term {
             restStr.append('^').append(boostValue);
         }
         if (fuzzySimilarity != null ) {
-            if (fuzzySimilarity < 1) {
+            if (fuzzySimilarity != FLAG_DISABLE_FUZZY_MATCHING) {
                 restStr.append('~');
-                if (fuzzySimilarity > 0) {
+                if (fuzzySimilarity != FLAG_USE_DEFAULT_FUZZY_SIMILARITY) {
                     restStr.append(fuzzySimilarity);
                 }
             }
