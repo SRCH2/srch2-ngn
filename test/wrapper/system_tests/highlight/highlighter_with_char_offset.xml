@@ -51,7 +51,7 @@
        <!--  <fieldBoost>title^12 tags^16</fieldBoost> -->
         <fieldBoost>text^30</fieldBoost>
 
-<!--        <recordBoostField>stars</recordBoostField> -->
+        <recordBoostField>stars</recordBoostField> 
 
         <defaultQueryTermBoost>1</defaultQueryTermBoost>
 
@@ -133,6 +133,7 @@
           <field name="text"  type="text" indexed="true" highlight="true"/>
           <field name="name"  type="text" indexed="true" highlight="true"/>
           <field name="genre"  type="text" indexed="true" highlight="true" multivalued="true"/>
+          <field name="stars" type="float" refining="true" highlight="true" />      
        </fields>
        
        <uniqueKey>review_id</uniqueKey>

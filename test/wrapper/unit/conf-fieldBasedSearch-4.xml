@@ -43,7 +43,7 @@
             </indexConfig>
 	    <query>
 	        <rankingAlgorithm>
-		    <recordScoreExpression>idf_score*doc_boost + rwe</recordScoreExpression>
+		    <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
 	        </rankingAlgorithm>
 		<fuzzyMatchPenalty>0.9</fuzzyMatchPenalty>
 		<queryTermSimilarityThreshold>0.75</queryTermSimilarityThreshold>
