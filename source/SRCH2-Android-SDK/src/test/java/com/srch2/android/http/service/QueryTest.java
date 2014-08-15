@@ -75,6 +75,9 @@ public class QueryTest {
         Assert.assertEquals("spielburrg~0.8", new SearchableTerm("spielburrg")
                 .enableFuzzyMatching(0.8f).toString());
 
+        Assert.assertEquals("spielburrg~", new SearchableTerm("spielburrg")
+                .enableFuzzyMatching().toString());
+
         Assert.assertEquals(
                 "sta*^4~0.6 AND wars~0.8",
                 new SearchableTerm("sta")

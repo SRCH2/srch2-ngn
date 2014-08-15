@@ -90,6 +90,17 @@ final public class SearchableTerm extends Term {
     }
 
     /**
+     * Enable the fuzzy matching. The fuzziness similarity setting
+     * will get from the {@link Indexable#getFuzzinessSimilarityThreshold()}
+     *
+     * @return this
+     */
+     public SearchableTerm enableFuzzyMatching() {
+        this.fuzzySimilarity = 1f;
+        return this;
+    }
+
+    /**
      * Disables the fuzzy matching
      *
      * @return this
@@ -166,11 +177,6 @@ final public class SearchableTerm extends Term {
         return new CompositeTerm(BooleanOperator.NOT, this, null);
     }
 
-    boolean isFuzzy() {
-        return fuzzySimilarity != null && fuzzySimilarity > 0
-                && fuzzySimilarity < 1;
-    }
-
     public String toString() {
         /**
          * the order of modifiers must always be prefix, boost, and then fuzzy
@@ -191,8 +197,11 @@ final public class SearchableTerm extends Term {
         if (boostValue != null) {
             restStr.append('^').append(boostValue);
         }
-        if (isFuzzy()) {
-            restStr.append('~').append(fuzzySimilarity);
+        if (fuzzySimilarity != null) {
+            restStr.append('~');
+            if (fuzzySimilarity < 1 && fuzzySimilarity > 0) {
+                restStr.append(fuzzySimilarity);
+            }
         }
         return restStr.toString();
     }
