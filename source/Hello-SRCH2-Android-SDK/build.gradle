@@ -4,7 +4,7 @@ buildscript {
     repositories {
         jcenter()
         maven { url 'http://srch2.com/repo/maven' }
-    }
+        }
     dependencies {
         classpath 'com.android.tools.build:gradle:0.12.2'
 

@@ -6,13 +6,13 @@ import android.util.Log;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import com.srch2.android.http.service.DeleteResponse;
-import com.srch2.android.http.service.GetRecordResponse;
-import com.srch2.android.http.service.InfoResponse;
-import com.srch2.android.http.service.InsertResponse;
-import com.srch2.android.http.service.SRCH2Engine;
-import com.srch2.android.http.service.StateResponseListener;
-import com.srch2.android.http.service.UpdateResponse;
+import com.srch2.android.sdk.DeleteResponse;
+import com.srch2.android.sdk.GetRecordResponse;
+import com.srch2.android.sdk.InfoResponse;
+import com.srch2.android.sdk.InsertResponse;
+import com.srch2.android.sdk.SRCH2Engine;
+import com.srch2.android.sdk.StateResponseListener;
+import com.srch2.android.sdk.UpdateResponse;
 
 import java.util.HashMap;
 

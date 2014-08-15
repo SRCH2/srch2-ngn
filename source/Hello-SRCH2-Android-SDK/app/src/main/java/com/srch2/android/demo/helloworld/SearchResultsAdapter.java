@@ -9,7 +9,7 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
-import com.srch2.android.http.service.SearchResultsListener;
+import com.srch2.android.sdk.SearchResultsListener;
 
 import org.json.JSONException;
 import org.json.JSONObject;
