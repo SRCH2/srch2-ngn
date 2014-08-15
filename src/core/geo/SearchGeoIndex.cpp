@@ -93,10 +93,14 @@ bool QuadTree::verify(const ForwardList* forwardList, const SpatialRanker *ranke
         unsigned minId = skippedExpansion->prefix.minId;
         unsigned maxId = skippedExpansion->prefix.maxId;
         unsigned keywordId;
-        unsigned attributeBitmap;
+        vector<unsigned> attributeIdsList;
         //stat.startMessage();
         // do the forward list check
-        bool fullMatch = forwardList->haveWordInRange(this->forwardIndex->getSchema(), minId, maxId, mapSearcherTermVector[termToSkip].termPtr->getAttributeToFilterTermHits(), keywordId, attributeBitmap, score);
+        bool fullMatch = forwardList->haveWordInRange(this->forwardIndex->getSchema(),
+        		minId, maxId,
+        		mapSearcherTermVector[termToSkip].termPtr->getAttributesToFilter(),
+        		mapSearcherTermVector[termToSkip].termPtr->getFilterAttrOperation(),
+        		keywordId, attributeIdsList, score);
         //stat.endMessage();
         // e.g. we search for "cancer", we find "can" on o-filter, it gives us a result with "candy"
         if(!fullMatch)
@@ -131,9 +135,12 @@ bool QuadTree::verify(const ForwardList* forwardList, const SpatialRanker *ranke
             unsigned maxId = mapSearcherTermVector[i].expansionStructureVector[j].prefix.maxId;
             float score;
             unsigned keywordId;
-            unsigned attributeBitmap;
+            vector<unsigned> attributeIdsList;
             // do the forward list check
-            termResult = forwardList->haveWordInRange(this->forwardIndex->getSchema(), minId, maxId, mapSearcherTermVector[i].termPtr->getAttributeToFilterTermHits(), keywordId, attributeBitmap, score);
+            termResult = forwardList->haveWordInRange(this->forwardIndex->getSchema(), minId, maxId,
+            		mapSearcherTermVector[i].termPtr->getAttributesToFilter(),
+            		mapSearcherTermVector[i].termPtr->getFilterAttrOperation(),
+            		keywordId, attributeIdsList, score);
 
             bool isPrefixMatch = ( (!mapSearcherTermVector[i].expansionStructureVector[j].expansionNodePtr->isTerminalNode()) || (minId != keywordId) );
             bool isPrefixTerm = ( mapSearcherTermVector[i].termPtr->getTermType() == TERM_TYPE_PREFIX );

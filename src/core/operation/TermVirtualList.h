@@ -53,7 +53,7 @@ typedef const TrieNode* TrieNodePointer;
 struct HeapItemForIndexSearcher {
     unsigned recordId;
     float termRecordRuntimeScore;
-    unsigned attributeBitMap;
+    vector<unsigned> attributeIdsList;
     TrieNodePointer trieNode;
     unsigned ed;
     unsigned positionIndexOffset;
@@ -62,7 +62,7 @@ struct HeapItemForIndexSearcher {
 struct HeapItem {
     //TODO (OPT) Use string and ed over each TermVirtualList rather than each HeapItem
     unsigned invertedListId;
-    unsigned attributeBitMap;           //only used for attribute based query
+    vector<unsigned> attributeIdsList;           //only used for attribute based query
     unsigned cursorVectorPosition;
     unsigned recordId; //invertedListTop
     float termRecordRuntimeScore;
@@ -75,7 +75,6 @@ struct HeapItem {
         this->invertedListId = 0;
         this->cursorVectorPosition = 0;
         this->recordId = 0;
-        this->attributeBitMap = 0;
         this->termRecordRuntimeScore = 0;
         this->positionIndexOffset = 0;
         this->trieNode = NULL;
@@ -85,7 +84,7 @@ struct HeapItem {
     HeapItem(unsigned invertedListId,
              unsigned cursorVectorPosition,
              unsigned recordId,
-             unsigned attributeBitMap,
+             const vector<unsigned>& attributeIdsList,
              float termRecordRuntimeScore,
              unsigned positionIndexOffset,
              TrieNodePointer trieNode,
@@ -94,7 +93,7 @@ struct HeapItem {
         this->invertedListId = invertedListId;
         this->cursorVectorPosition = cursorVectorPosition;
         this->recordId = recordId;
-        this->attributeBitMap = attributeBitMap;
+        this->attributeIdsList = attributeIdsList;
         this->termRecordRuntimeScore = termRecordRuntimeScore;
         this->positionIndexOffset = positionIndexOffset;
         this->trieNode = trieNode;
@@ -158,8 +157,8 @@ public:
     bool isTermVirtualListDisabled();
     float getScoreOfTopRecordWhenListIsDisabled();
 
-    inline unsigned getTermSearchableAttributeIdToFilterTermHits() const {
-        return this->term->getAttributeToFilterTermHits();
+    inline vector<unsigned>& getTermSearchableAttributeIdToFilterTermHits() const {
+        return this->term->getAttributesToFilter();
     }
 
     void print_test() const;
