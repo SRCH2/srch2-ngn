@@ -267,6 +267,7 @@ to retrieve the next "page" of results. The default value of "Rows" is 10.<br>
 This is a flag to toggle attribute-based search. An attribute-based search applies conditions that determine in which attributes a keyword should appear.<br>
 > 0: Disabled <br>
 > 1: Enabled <br>
+When either positional index or character offset is enabled, field based search will also be enabled.
 
 ###8.9. Search Type (Optional)
 ```
