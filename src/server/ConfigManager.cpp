@@ -1979,6 +1979,7 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
         std::stringstream &parseError, std::stringstream &parseWarnings) {
     string temporaryString = "";
 
+    //By default the maximum number of document is 15000000.
     xml_node childNode = updateHandlerNode.child(maxDocsString);
     bool mdflag = false;
     coreInfo->documentLimit = 15000000;
@@ -1993,6 +1994,7 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
         Logger::warn("MaxDoc is not set, so using the default value 15000000");
     }
 
+    //Default value for memory limit if it is not set is 10000000
     coreInfo->memoryLimit = 10000000;
     bool mmflag = false;
     childNode = updateHandlerNode.child(maxMemoryString);

@@ -109,8 +109,8 @@ This tag has parameters to customize the search engine's indexes.
  </indexConfig>
 ```
 
-###7.1. Index Type (Required)
-IndexType specifies if the search engine should build text or location indexes.
+###7.1. Index Type (Optional)
+IndexType specifies if the search engine should build text or location indexes. By default it assumes the value 0 (Text Index).
 ```
  <indexType>0</indexType>
 ```
@@ -143,7 +143,7 @@ value is not provided for a field, the engine uses a default value of
 ```
  <recordBoostField>relevance</recordBoostField>
 ```
-This setting specifies an attribute whose value is used as the score (boost value) of a record. The attribute's type should be "float".
+This setting specifies an attribute whose value is used as the score (boost value) of a record. This attribute should be refining and of type float.
 
 ###7.4. Default Term Boost (Optional)
 ```
@@ -204,7 +204,7 @@ The expression allows operators such as +, -, /, *, (, ), 0-9, etc.  Check the [
 ```
 "FuzzyMatchPenalty" is used to decide how much penalty we want to give to records with a fuzzy
 match to a search term compared to terms with an exact match. See the [ranking](ranking.mkd) page
-about how this parameter is used. The default value is 0.5.
+about how this parameter is used. The default value is 1.
 
 ###8.3. Term Similarity Threshold (Optional)
 ```
@@ -371,13 +371,13 @@ This tag includes tags related to configuring the engine to handle update reques
 ...
 </updatehandler>
 ```
-###10.1. Maximum Number of Documents (Required)
+###10.1. Maximum Number of Documents (Optional)
 ```
 <maxDocs>15000000</maxDocs>
 ```
-This is the maximum number of records that can be indexed by the engine. Inserting more records than what is specified here will cause the insertions to fail.
+This is the maximum number of records that can be indexed by the engine. Inserting more records than what is specified here will cause the insertions to fail. By default the engine uses 15000000 as maximum number of records.
 
-###10.2. Merge Policy (Required)
+###10.2. Merge Policy (Optional)
 
 ```
 <mergePolicy>
@@ -388,6 +388,8 @@ This is the maximum number of records that can be indexed by the engine. Inserti
  - <b>mergeEveryNSeconds</b>: The engine uses a background thread to periodically merge the data changes to the indexes. This parameter sets the number of seconds this background thread sleeps before it wakes up and does the merge. Note that decreasing this number may increase latency in the engine's search response time.  This number should be at least 1 (second).
  
   - <b>mergeEveryMWrites</b>: Another event that can trigger the background thread to do the merge is the number of data changes (inserts, deletes, and updates). This parameter specifies the number of record changes after which the thread will wake up to do the merge.  This number should be at least 1 (second). <br>
+
+1 will be used as the default value for both the parameters if they are missing from config file. 
 
 ###10.3. Logging
 
