@@ -611,8 +611,8 @@ void ForwardIndex::reorderForwardList(ForwardList *forwardList,
     		for (unsigned i = 0; i < newKeywordIdsList.size(); ++i)
     			forwardList->setKeywordId(i, newKeywordIdsList[i]);
     	}
-        std::sort(forwardListReOrderAtCommit.begin(),
-                forwardListReOrderAtCommit.end());
+    	// the sort forwardListReOrderAtCommit is not required because ordering check is
+    	// done above.
     	return;
     }
     // Else reorder forward list
