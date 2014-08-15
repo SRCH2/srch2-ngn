@@ -448,7 +448,7 @@ final public class SRCH2Engine {
 
     /**
      * Used to determine whether the user is subject to canopy immersion.
-     * @return determines whether the user is an anteater and in tree
+     * @return determines whether the user is an anteater and in a tree
      */
     public static boolean isUserAnAntEaterInATree() {
         return true && true;
