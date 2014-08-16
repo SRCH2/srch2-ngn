@@ -3,7 +3,7 @@
 #ifndef _INDEXWRITEUTIL_H_
 #define _INDEXWRITEUTIL_H_
 
-#include "json/json.h"
+#include "json/value.h"
 #include "JSONRecordParser.h"
 #include "ConfigManager.h"
 #include "AnalyzerFactory.h"
@@ -20,17 +20,27 @@ namespace httpwrapper
 
 struct IndexWriteUtil
 {
-    static void _insertCommand(Indexer *indexer, const CoreInfo_t *indexDataContainerConf, const Json::Value &root, Record *record, std::stringstream &log_str)
+    static Json::Value _insertCommand(Indexer *indexer, const CoreInfo_t *indexDataContainerConf, const Json::Value &root, Record *record)
     {
+        Json::Value response(Json::objectValue);
+        const char* c_rid = "rid";
+        const char* c_action = "insert";
+        const char* c_reason = "reason";
+        const char* c_detail= "details";
+
     	Schema * storedSchema = Schema::create();
     	RecordSerializerUtil::populateStoredSchema(storedSchema, indexer->getSchema());
     	RecordSerializer recSerializer = RecordSerializer(*storedSchema);
-    	Json::FastWriter writer;
-    	if(!JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root, indexDataContainerConf, log_str, recSerializer)){
-    		log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"failed\""
-                    << ",\"reason\":\"parse: The record is not in a correct json format\"}";
+
+        std::stringstream errorStream; 
+    	if(!JSONRecordParser::_JSONValueObjectToRecord(record, root, indexDataContainerConf, errorStream, recSerializer)){
+            response[c_rid] = record->getPrimaryKey();
+            response[c_action] = "failed";
+            response[c_reason] = "parse: The record is not in a correct json format";
+            response[c_detail] = errorStream.str();
+                
     		delete storedSchema;
-    		return;
+    		return response;
     	}
     	//add the record to the index
 
@@ -45,31 +55,40 @@ struct IndexWriteUtil
 			{
 				case srch2::instantsearch::OP_SUCCESS:
 				{
-					log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"success\"}";
+                    response[c_rid] = record->getPrimaryKey();
+                    response[c_action] = "success";
 					break;
 				}
 				case srch2::instantsearch::OP_FAIL:
 				{
-					log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"failed\",\"reason\":\"The record with same primary key already exists\"}";
+                    response[c_rid] = record->getPrimaryKey();
+                    response[c_action] = "failed";
+                    response[c_reason] = "The record with same primary key already exists";
 					break;
 				}
 			};
     	}
     	else
     	{
-    		log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"failed\",\"reason\":\"document limit reached. Email support@srch2.com for account upgrade.\"}";
+            response[c_rid]= record->getPrimaryKey();
+            response[c_action] = "failed";
+            response[c_reason] = "document limit reached. Email support@srch2.com for account upgrade.";
     	}
     	delete storedSchema;
-    	//std::cout << "INSERT request received. New number of documents = " << indexer->getNumberOfDocumentsInIndex() << "; Limit = " << indexDataContainerConf->getDocumentLimit() << "." << std::endl;
+        return response;
     }
 
-    static void _deleteCommand(Indexer *indexer, const CoreInfo_t *indexDataContainerConf, const Json::Value &root, std::stringstream &log_str)
+    static Json::Value _deleteCommand(Indexer *indexer, const CoreInfo_t *indexDataContainerConf, const Json::Value &root)
     {
+        Json::Value response(Json::objectValue);
+        const char* c_rid = "rid";
+        const char* c_action = "delete";
+        const char* c_reason = "reason";
     	//set the primary key of the record we want to delete
     	std::string primaryKeyName = indexDataContainerConf->getPrimaryKey();
     	const std::string primaryKeyStringValue = root.get(primaryKeyName, "NULL" ).asString();
 
-    	log_str << "{\"rid\":\"" << primaryKeyStringValue << "\",\"delete\":\"";
+        response[c_rid] = primaryKeyStringValue;
 
     	if (primaryKeyStringValue.compare("NULL") != 0)
     	{
@@ -79,24 +98,30 @@ struct IndexWriteUtil
     		{
 				case OP_FAIL:
     		    {
-    		    	log_str << "failed\",\"reason\":\"no record with given primary key\"}";
+                    response[c_action] = "failed";
+                    response[c_reason] = "no record with given primary key";
     		    	break;
     		    }
     		    default: // OP_SUCCESS.
     		    {
-    		    	log_str << "success\"}";
+                    response[c_action] = "success";
     		    }
 			};
     	}
     	else
     	{
-    		log_str << "failed\",\"reason\":\"no record with given primary key\"}";
+            response[c_action] = "failed";
+    		response[c_reason] = "no record with given primary key";
     	}
-
+        return response;
     }
 
-    static void _deleteCommand_QueryURI(Indexer *indexer, const CoreInfo_t *indexDataContainerConf, const evkeyvalq &headers, std::stringstream &log_str)
+    static Json::Value _deleteCommand_QueryURI(Indexer *indexer, const CoreInfo_t *indexDataContainerConf, const evkeyvalq &headers)
 	{
+        Json::Value response(Json::objectValue);
+        const char* c_rid = "rid";
+        const char* c_action = "delete";
+        const char* c_reason = "reason";
 		//set the primary key of the record we want to delete
     	std::string primaryKeyName = indexDataContainerConf->getPrimaryKey();
 
@@ -111,30 +136,40 @@ struct IndexWriteUtil
 			const std::string primaryKeyStringValue = string(pKeyParamName_cstar);
 			free(pKeyParamName_cstar);
 
-			log_str << "{\"rid\":\"" << primaryKeyStringValue << "\",\"delete\":\"";
+            response[c_rid] = primaryKeyStringValue;
 
 			//delete the record from the index
 			switch(indexer->deleteRecord(primaryKeyStringValue))
 			{
 				case OP_FAIL:
 				{
-					log_str << "failed\",\"reason\":\"no record with given primary key\"}";
+                    response[c_action] = "failed";
+					response[c_reason] = "no record with given primary key";
 					break;
 				}
 				default: // OP_SUCCESS.
 				{
-					log_str << "success\"}";
+                    response[c_action] = "success";
 				}
 			};
 		}
 		else
 		{
-            log_str << "{\"rid\":\"NULL\",\"delete\":\"failed\",\"reason\":\"no record with given primary key\"}";
+            response[c_rid] = "NULL";
+            response[c_action] = "failed";
+            response[c_reason] = "no record with given primary key";
 		}
+        return response;
 	}
 
-    static void _updateCommand(Indexer *indexer, const CoreInfo_t *indexDataContainerConf, const evkeyvalq &headers, const Json::Value &root, Record *record, std::stringstream &log_str)
+    static Json::Value _updateCommand(Indexer *indexer, const CoreInfo_t *indexDataContainerConf, const evkeyvalq &headers, const Json::Value &root, Record *record)
     {
+        Json::Value response(Json::objectValue);
+        const char* c_rid = "rid";
+        const char* c_action = "update";
+        const char* c_reason = "reason";
+        const char* c_detail = "reason";
+        const char* c_resume = "resume";
         /// step 1, delete old record
 
 		//set the primary key of the record we want to delete
@@ -146,18 +181,21 @@ struct IndexWriteUtil
         Schema * storedSchema = Schema::create();
         RecordSerializerUtil::populateStoredSchema(storedSchema, indexer->getSchema());
         RecordSerializer recSerializer = RecordSerializer(*storedSchema);
-    	Json::FastWriter writer;
-    	bool parseJson = JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root,
-    			indexDataContainerConf, log_str, recSerializer);
+
+        std::stringstream errorStream ;
+    	bool parseJson = JSONRecordParser::_JSONValueObjectToRecord(record, root,
+    			indexDataContainerConf, errorStream, recSerializer);
     	delete storedSchema;
         if(!parseJson ) {
-    		log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"update\":\"failed\""
-                    << ",\"reason\":\"parse: The record is not in a correct json format\"}";
-            return;
+            response[c_rid] = record->getPrimaryKey() ;
+            response[c_action] = "failed";
+            response[c_reason] = "parse: The record is not in a correct json format";
+            response[c_detail] = errorStream.str();
+            return response;
         }
 
     	primaryKeyStringValue = record->getPrimaryKey();
-		log_str << "{\"rid\":\"" << primaryKeyStringValue << "\",\"update\":\"";
+        response[c_rid] =  primaryKeyStringValue; 
 
 		//delete the record from the index
 		bool recordExisted = false;
@@ -189,23 +227,25 @@ struct IndexWriteUtil
 			{
 				case srch2::instantsearch::OP_SUCCESS:
 				{
-					if (recordExisted)
-					  log_str << "Existing record updated successfully\"}";
-					else
-					  log_str << "New record inserted successfully\"}";
-
-					return;
+					if (recordExisted){
+                        response[c_action] = "Existing record updated successfully";
+                    } else {
+                        response[c_action] = "New record inserted successfully";
+                    }
+					return response;
 				}
 				case srch2::instantsearch::OP_FAIL:
 				{
-					log_str << "failed\",\"reason\":\"insert: The record with same primary key already exists\",";
+                    response[c_action] = "failed";
+                    response[c_reason] = "insert: The record with same primary key already exists";
 					break;
 				}
 			};
     	}
     	else
     	{
-    		log_str << "failed\",\"reason\":\"insert: Document limit reached. Email support@srch2.com for account upgrade.\",";
+            response[c_action] = "failed";
+            response[c_reason] = "insert: Document limit reached. Email support@srch2.com for account upgrade.";
     	}
 
         /// reaching here means the insert failed, need to resume the deleted old record
@@ -216,43 +256,52 @@ struct IndexWriteUtil
         {
             case srch2::instantsearch::OP_FAIL:
             {
-                log_str << "\"resume\":\"no record with given primary key\"}";
+                response[c_resume] = "no record with given primary key";
                 break;
             }
             default: // OP_SUCCESS.
             {
-                log_str << "\"resume\":\"success\"}";
+                response[c_resume] = "success";
             }
         };
+        return response;
     }
+    
 
-    static void _saveCommand(Indexer *indexer, std::stringstream &log_str)
+    static Json::Value _saveCommand(Indexer *indexer)
     {
+        Json::Value response(Json::objectValue);
     	indexer->save();
-	    log_str << "{\"save\":\"success\"}";
+        response["save"] = "success";
+        return response;
     }
 
     // save the exported data to exported_data.json
-    static void _exportCommand(Indexer *indexer, const char* exportedDataFileName, std::stringstream &log_str)
+    static Json::Value _exportCommand(Indexer *indexer, const char* exportedDataFileName)
     {
+        Json::Value response(Json::objectValue);
         indexer->exportData(exportedDataFileName);
-        log_str << "{\"export\":\"success\"}";
+        response["export"] = "success";
+        return response;
     }
 
-    static void _commitCommand(Indexer *indexer, const CoreInfo_t *indexDataContainerConf, const uint64_t offset, std::stringstream &log_str)
+    static Json::Value _commitCommand(Indexer *indexer, const CoreInfo_t *indexDataContainerConf, const uint64_t offset)
     {
+        Json::Value response(Json::objectValue);
+        const char* c_action = "commit";
     	//commit the index.
     	if ( indexer->commit() == srch2::instantsearch::OP_SUCCESS)
     	{
+            response[c_action] = "success";
 	  
 	  // do not save indexes to disk since we can always rebuild them from
 	  // indexer->save();
-	  log_str << "{\"commit\":\"success\"}";
     	}
     	else
     	{
-    		log_str << "{\"commit\":\"failed\"}";
+            response[c_action] = "failed";
     	}
+        return response;
     }
 
 };

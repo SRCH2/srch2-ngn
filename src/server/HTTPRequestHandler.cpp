@@ -47,71 +47,83 @@ namespace {
     static const pair<string, string> global_internal_snippet("srch2_internal_snippet_123456789", "snippet");
     static const pair<string, string> internal_data[] = { global_internal_record, global_internal_snippet};
     static const vector<pair<string, string> > global_internal_skip_tags(internal_data, internal_data+2);    
-}
+    static CustomizableJsonWriter global_customized_writer (&global_internal_skip_tags);
+    static const char * JSON_MESSAGE = "message";
+    static const char * JSON_LOG= "log";
+    static const char * HTTP_INVALID_REQUEST_MESSAGE = "The request has an invalid or missing argument. See Srch2 API documentation for details.";
 
-/**
- * Create evbuffer. If failed, send 503 response.
- * @param req request
- * @return buffer
- */
-evbuffer *create_buffer(evhttp_request *req) {
-    evbuffer *buf = evbuffer_new();
-    if (!buf) {
-        fprintf(stderr, "Failed to create response buffer\n");
-        evhttp_send_reply(req, HTTP_SERVUNAVAIL,
-                "Failed to create response buffer", NULL);
-        return NULL;
+    /**
+     * Create evbuffer. If failed, send 503 response.
+     * @param req request
+     * @return buffer
+     */
+    evbuffer *create_buffer(evhttp_request *req) {
+        evbuffer *buf = evbuffer_new();
+        if (!buf) {
+            fprintf(stderr, "Failed to create response buffer\n");
+            evhttp_send_reply(req, HTTP_SERVUNAVAIL,
+                    "Failed to create response buffer", NULL);
+            return NULL;
+        }
+        return buf;
     }
-    return buf;
-}
 
-void bmhelper_check_add_callback(evbuffer *buf, const evkeyvalq &headers,
-        const string &out_payload) {
-    const char *jsonpCallBack = evhttp_find_header(&headers,
-            URLParser::jsonpCallBackName);
-    if (jsonpCallBack) {
-        size_t sz;
-        char *jsonpCallBack_cstar = evhttp_uridecode(jsonpCallBack, 0, &sz);
-        //std::cout << "[" << jsonpCallBack_cstar << "]" << std::endl;
+    void bmhelper_check_add_callback(evbuffer *buf, const evkeyvalq &headers,
+            const string &out_payload) {
+        const char *jsonpCallBack = evhttp_find_header(&headers,
+                URLParser::jsonpCallBackName);
+        if (jsonpCallBack) {
+            size_t sz;
+            char *jsonpCallBack_cstar = evhttp_uridecode(jsonpCallBack, 0, &sz);
+            //std::cout << "[" << jsonpCallBack_cstar << "]" << std::endl;
 
-        evbuffer_add_printf(buf, "%s(%s)", jsonpCallBack_cstar,
-                out_payload.c_str());
+            evbuffer_add_printf(buf, "%s(%s)", jsonpCallBack_cstar,
+                    out_payload.c_str());
 
-        // libevent uses malloc for memory allocation. Hence, use free
-        free(jsonpCallBack_cstar);
-    } else {
-        evbuffer_add_printf(buf, "%s", out_payload.c_str());
+            // libevent uses malloc for memory allocation. Hence, use free
+            free(jsonpCallBack_cstar);
+        } else {
+            evbuffer_add_printf(buf, "%s", out_payload.c_str());
+        }
+    }
+
+    void bmhelper_add_content_length(evhttp_request *req, evbuffer *buf) {
+        size_t length = EVBUFFER_LENGTH(buf);
+        std::stringstream length_str;
+        length_str << length;
+        evhttp_add_header(req->output_headers, "Content-Length",
+                length_str.str().c_str());
+    }
+
+    void bmhelper_evhttp_send_reply(evhttp_request *req, int code,
+            const char *reason, const string &out_payload,
+            const evkeyvalq &headers) {
+        evbuffer *returnbuffer = create_buffer(req);
+        bmhelper_check_add_callback(returnbuffer, headers, out_payload);
+        bmhelper_add_content_length(req, returnbuffer);
+        evhttp_send_reply(req, code, reason, returnbuffer);
+        evbuffer_free(returnbuffer);
+    }
+
+    void bmhelper_evhttp_send_reply(evhttp_request *req, int code,
+            const char *reason, const string &out_payload) {
+        evbuffer *returnbuffer = create_buffer(req);
+
+        evbuffer_add_printf(returnbuffer, "%s", out_payload.c_str());
+        bmhelper_add_content_length(req, returnbuffer);
+
+        evhttp_send_reply(req, code, reason, returnbuffer);
+        evbuffer_free(returnbuffer);
+    }
+
+    void response_to_invalid_request (evhttp_request *req, Json::Value &response){
+        response["error"] = HTTP_INVALID_REQUEST_MESSAGE;
+        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST", global_customized_writer.write(response));
+        Logger::error(HTTP_INVALID_REQUEST_MESSAGE);
     }
 }
 
-void bmhelper_add_content_length(evhttp_request *req, evbuffer *buf) {
-    size_t length = EVBUFFER_LENGTH(buf);
-    std::stringstream length_str;
-    length_str << length;
-    evhttp_add_header(req->output_headers, "Content-Length",
-            length_str.str().c_str());
-}
 
-void bmhelper_evhttp_send_reply(evhttp_request *req, int code,
-        const char *reason, const string &out_payload,
-        const evkeyvalq &headers) {
-    evbuffer *returnbuffer = create_buffer(req);
-    bmhelper_check_add_callback(returnbuffer, headers, out_payload);
-    bmhelper_add_content_length(req, returnbuffer);
-    evhttp_send_reply(req, code, reason, returnbuffer);
-    evbuffer_free(returnbuffer);
-}
-
-void bmhelper_evhttp_send_reply(evhttp_request *req, int code,
-        const char *reason, const string &out_payload) {
-    evbuffer *returnbuffer = create_buffer(req);
-
-    evbuffer_add_printf(returnbuffer, "%s", out_payload.c_str());
-    bmhelper_add_content_length(req, returnbuffer);
-
-    evhttp_send_reply(req, code, reason, returnbuffer);
-    evbuffer_free(returnbuffer);
-}
 void HTTPRequestHandler::cleanAndAppendToBuffer(const string& in, string& out) {
 	unsigned inLen = in.length();
 	unsigned inIdx = 0;
@@ -542,13 +554,15 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
         Srch2Server *server) {
     /* Yes, we are expecting a post request */
 
+    Json::Value response(Json::objectValue);
+    bool isSuccess = true;
     switch (req->type) {
     case EVHTTP_REQ_PUT: {
         size_t length = EVBUFFER_LENGTH(req->input_buffer);
 
         if (length == 0) {
-            bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "BAD REQUEST",
-                    "{\"message\":\"http body is empty\"}");
+            isSuccess = false;
+            response[JSON_MESSAGE] = "http body is empty";
             Logger::warn("http body is empty");
             break;
         }
@@ -557,7 +571,6 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
 
         //std::cout << "length:[" << length << "][" << string(post_data) << "]" << std::endl;
 
-        std::stringstream log_str;
 
         // Parse example data
         Json::Value root;
@@ -565,77 +578,84 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
         bool parseSuccess = reader.parse(post_data, root, false);
 
         if (parseSuccess == false) {
-            log_str << "JSON object parse error";
+            isSuccess = false;
+            response[JSON_MESSAGE] = "JSON object parse error";
+            Logger::warn("JSON object parse error");
+            break;
         } else {
             Record *record = new Record(server->indexer->getSchema());
 
+            Json::Value insert_responses(Json::arrayValue);
+            // apped to each response
             if(root.type() == Json::arrayValue) { // The input is an array of JSON objects.
                 // Iterates over the sequence elements.
+                insert_responses.resize(root.size());
                 for ( int index = 0; index < root.size(); ++index ) {
                     Json::Value defaultValueToReturn = Json::Value("");
                     const Json::Value doc = root.get(index,
                                                 defaultValueToReturn);
 
-                    IndexWriteUtil::_insertCommand(server->indexer,
-                            server->indexDataConfig, doc, record, log_str);
+                    Json::Value each_response = 
+                        IndexWriteUtil::_insertCommand(server->indexer,
+                            server->indexDataConfig, doc, record );
+                    insert_responses[index] = each_response;
                     record->clear();
-
-                    if (index < root.size() - 1)
-                        log_str << ",";
                 }
             } else {  // only one json object needs to be inserted
                 const Json::Value doc = root;
-                IndexWriteUtil::_insertCommand(server->indexer,
-                        server->indexDataConfig, doc, record, log_str);
+                insert_responses.append(IndexWriteUtil::_insertCommand(server->indexer,
+                        server->indexDataConfig, doc, record));
                 record->clear();
             }
             delete record;
+            response[JSON_MESSAGE] = "The insert was processed successfully";
+            response[JSON_LOG] = insert_responses;
         }
-        //std::cout << log_str.str() << std::endl;
-        Logger::info("%s", log_str.str().c_str());
-
-        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
-                "{\"message\":\"The batch was processed successfully\",\"log\":["
-                        + log_str.str() + "]}\n");
+        Logger::info("%s", global_customized_writer.write(response).c_str());
         break;
     }
     case EVHTTP_REQ_DELETE: {
-        std::stringstream log_str;
 
         evkeyvalq headers;
         evhttp_parse_query(req->uri, &headers);
 
-        IndexWriteUtil::_deleteCommand_QueryURI(server->indexer,
-                server->indexDataConfig, headers, log_str);
+        Json::Value deleteResponse = IndexWriteUtil::_deleteCommand_QueryURI(server->indexer,
+                server->indexDataConfig, headers);
+        response[JSON_MESSAGE] = "The delete was processed successfully";
+        response[JSON_LOG] = deleteResponse;
 
-        Logger::info("%s", log_str.str().c_str());
-        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
-                "{\"message\":\"The batch was processed successfully\",\"log\":["
-                        + log_str.str() + "]}\n");
-
+        Logger::info("%s", global_customized_writer.write(response).c_str());
         // Free the objects
         evhttp_clear_headers(&headers);
         break;
     }
     default: {
-        Logger::error(
-                "error: The request has an invalid or missing argument. See Srch2 API documentation for details");
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
-                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
+        response_to_invalid_request(req, response);
+        return;
     }
     };
+
+    if (isSuccess){
+        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", global_customized_writer.write(response));
+    } else {
+        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "BAD REQUEST", global_customized_writer.write(response));
+    }
+
 }
 
 void HTTPRequestHandler::updateCommand(evhttp_request *req,
         Srch2Server *server) {
     /* Yes, we are expecting a post request */
+
+    Json::Value response(Json::objectValue);
+    bool isSuccess = true;
     switch (req->type) {
     case EVHTTP_REQ_PUT: {
         size_t length = EVBUFFER_LENGTH(req->input_buffer);
 
         if (length == 0) {
-            bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "BAD REQUEST",
-                    "{\"message\":\"http body is empty\"}");
+            isSuccess = false;
+            response[JSON_MESSAGE] = "http body is empty";
             Logger::warn("http body is empty");
             break;
         }
@@ -644,92 +664,87 @@ void HTTPRequestHandler::updateCommand(evhttp_request *req,
 
         //std::cout << "length:[" << length << "][" << string(post_data) << "]" << std::endl;
 
-        std::stringstream log_str;
-
         // Parse example data
         Json::Value root;
         Json::Reader reader;
         bool parseSuccess = reader.parse(post_data, root, false);
 
         if (parseSuccess == false) {
-            log_str << "JSON object parse error";
+            isSuccess = false;
+            response[JSON_MESSAGE] = "JSON object parse error";
+            Logger::warn( response[JSON_MESSAGE].asCString());
         } else {
             evkeyvalq headers;
             evhttp_parse_query(req->uri, &headers);
             Record *record = new Record(server->indexer->getSchema());
 
+            Json::Value update_responses(Json::arrayValue);
             if (root.type() == Json::arrayValue) {
                 //the record parameter is an array of json objects
+                update_responses.resize(root.size());
                 for(Json::UInt index = 0; index < root.size(); index++) {
                     Json::Value defaultValueToReturn = Json::Value("");
                     const Json::Value doc = root.get(index,
                                                 defaultValueToReturn);
 
-                    IndexWriteUtil::_updateCommand(server->indexer,
-                            server->indexDataConfig, headers, doc, record,
-                            log_str);
+                    update_responses[index] = 
+                        IndexWriteUtil::_updateCommand(server->indexer,
+                            server->indexDataConfig, headers, doc, record);
 
                     record->clear();
-
-                    if (index < root.size() - 1)
-                        log_str << ",";
                 }
             } else {
                 // the record parameter is a single json object
                 const Json::Value doc = root;
-
-                IndexWriteUtil::_updateCommand(server->indexer,
-                        server->indexDataConfig, headers, doc, record,
-                        log_str);
-
+                update_responses.append( 
+                    IndexWriteUtil::_updateCommand(server->indexer,
+                        server->indexDataConfig, headers, doc, record));
                 record->clear();
             }
 
             delete record;
             evhttp_clear_headers(&headers);
+            response[JSON_MESSAGE] = "The update was processed successfully";
+            response[JSON_LOG] = update_responses;
         }
-        //std::cout << log_str.str() << std::endl;
-        Logger::info("%s", log_str.str().c_str());
-
-        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
-                "{\"message\":\"The batch was processed successfully\",\"log\":["
-                        + log_str.str() + "]}\n");
-
+        Logger::info("%s", global_customized_writer.write(response).c_str());
         break;
     }
     default: {
-        Logger::error(
-                "The request has an invalid or missing argument. See Srch2 API documentation for details");
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
-                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
+        response_to_invalid_request(req, response);
+        return;
     }
     };
+
+    if (isSuccess){
+        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", global_customized_writer.write(response));
+    } else {
+        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "BAD REQUEST", global_customized_writer.write(response));
+    }
 }
 
 void HTTPRequestHandler::saveCommand(evhttp_request *req, Srch2Server *server) {
     /* Yes, we are expecting a post request */
+    Json::Value response(Json::objectValue);
     switch (req->type) {
     case EVHTTP_REQ_PUT: {
-        std::stringstream log_str;
-        IndexWriteUtil::_saveCommand(server->indexer, log_str);
+        response[JSON_LOG] = IndexWriteUtil::_saveCommand(server->indexer);
+        response[JSON_MESSAGE] = "The indexes have been saved to disk successfully";
 
-        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
-                "{\"message\":\"The indexes have been saved to disk successfully\", \"log\":["
-                        + log_str.str() + "]}\n");
-        Logger::info("%s", log_str.str().c_str());
+        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", global_customized_writer.write(response));
+        Logger::info("%s", response[JSON_MESSAGE].asString().c_str());
         break;
     }
     default: {
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
-                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
-        Logger::error(
-                "The request has an invalid or missing argument. See Srch2 API documentation for details");
+        response_to_invalid_request(req, response);
+        return;
     }
     };
 }
 
 void HTTPRequestHandler::shutdownCommand(evhttp_request *req, const CoreNameServerMap_t *coreNameServerMap){
     /* Yes, we are expecting a post request */
+    Json::Value response(Json::objectValue);
     switch (req->type) {
     case EVHTTP_REQ_PUT: {
         // graceful shutdown
@@ -738,9 +753,8 @@ void HTTPRequestHandler::shutdownCommand(evhttp_request *req, const CoreNameServ
         // The kill signal seems not catchable under Android. We need to save the index first
         for( CoreNameServerMap_t::const_iterator it = coreNameServerMap->begin(); 
             it != coreNameServerMap->end(); ++it){
-            std::stringstream log_str;
-            IndexWriteUtil::_saveCommand(it->second->indexer, log_str);
-            Logger::info("%s", log_str.str().c_str());
+            Json::Value save_response  = IndexWriteUtil::_saveCommand(it->second->indexer);
+            Logger::info("%s", save_response.asString().c_str());
         }
 #endif
         bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
@@ -750,10 +764,8 @@ void HTTPRequestHandler::shutdownCommand(evhttp_request *req, const CoreNameServ
         break;
     }
     default: {
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
-                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
-        Logger::error(
-                "The request has an invalid or missing argument. See Srch2 API documentation for details");
+        response_to_invalid_request(req, response);
+        return;
     }
     };
 }
@@ -765,6 +777,7 @@ void HTTPRequestHandler::shutdownCommand(evhttp_request *req, const CoreNameServ
 // The purpose of this function is to let srch2 engine point to the new-created logger file "logger.txt"
 void HTTPRequestHandler::resetLoggerCommand(evhttp_request *req, Srch2Server *server) {
     //  TODO: we will need to consider concurrency control next.
+    Json::Value response(Json::objectValue);
     switch(req->type) {
     case EVHTTP_REQ_PUT: {
         // create a FILE* pointer to point to the new logger file "logger.txt"
@@ -772,25 +785,23 @@ void HTTPRequestHandler::resetLoggerCommand(evhttp_request *req, Srch2Server *se
                     "a");
 
         if (logFile == NULL) {
+            response[JSON_MESSAGE] = "The logger file repointing failed. Could not create new logger file";
+            response[JSON_LOG] = server->indexDataConfig->getHTTPServerAccessLogFile();
+
             Logger::error("Reopen Log file %s failed.",
                     server->indexDataConfig->getHTTPServerAccessLogFile().c_str());
-            bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "REQUEST FAILED",
-                "{\"message\":\"The logger file repointing failed. Could not create new logger file\", \"log\":\""
-                         + server->indexDataConfig->getHTTPServerAccessLogFile() + "\"}\n");
+            bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "REQUEST FAILED", global_customized_writer.write(response));
         } else {
             FILE * oldLogger = Logger::swapLoggerFile(logFile);
             fclose(oldLogger);
-            bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
-                "{\"message\":\"The logger file repointing succeeded\", \"log\":\""
-                         + server->indexDataConfig->getHTTPServerAccessLogFile() + "\"}\n");
+            response[JSON_MESSAGE] = "The logger file repointing succeeded";
+            response[JSON_LOG] = server->indexDataConfig->getHTTPServerAccessLogFile();
+            bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", global_customized_writer.write(response));
         }
         break;
     }
     default: {
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
-                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
-        Logger::error(
-                "The request has an invalid or missing argument. See Srch2 API documentation for details");
+        response_to_invalid_request(req, response);
     }
     };
 }
@@ -799,6 +810,7 @@ void HTTPRequestHandler::resetLoggerCommand(evhttp_request *req, Srch2Server *se
 // exportCommand: if search-response-format is 0 or 2, we keep the compressed Json data in Forward Index, we can uncompress the data and export to a file
 void HTTPRequestHandler::exportCommand(evhttp_request *req, Srch2Server *server) {
     /* Yes, we are expecting a post request */
+    Json::Value response(Json::objectValue);
     switch (req->type) {
     case EVHTTP_REQ_PUT: {
         // if search-response-format is 0 or 2
@@ -811,29 +823,24 @@ void HTTPRequestHandler::exportCommand(evhttp_request *req, Srch2Server *server)
                 if(checkDirExistence(exportedDataFileName)){
                     exportedDataFileName = "export_data.json";
                 }
-                IndexWriteUtil::_exportCommand(server->indexer, exportedDataFileName, log_str);
+                Json::Value export_response = IndexWriteUtil::_exportCommand(server->indexer, exportedDataFileName);
 
-                bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
-                        "{\"message\":\"The indexed data has been exported to the file "+ string(exportedDataFileName) +" successfully.\", \"log\":["
-                                + log_str.str() + "]}\n");
-                Logger::info("%s", log_str.str().c_str());
+                response[JSON_MESSAGE] ="The indexed data has been exported to the file "+ string(exportedDataFileName) +" successfully."; 
+                response[JSON_LOG] = export_response;
+                std::string str_response = global_customized_writer.write( response);
+                bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", str_response);
+                Logger::info("%s", str_response.c_str());
             }else {
-                bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
-                        "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
-                Logger::error(
-                        "The request has an invalid or missing argument. See Srch2 API documentation for details");
+                response_to_invalid_request(req, response);
             }
         } else{
-            bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
-                    "{\"message\":\"The indexed data failed to export to disk, The request need to set search-response-format to be 0 or 2\"}\n");
+            response[JSON_MESSAGE] = "The indexed data failed to export to disk, The request need to set search-response-format to be 0 or 2";
+            bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", global_customized_writer.write(response));
         }
         break;
     }
     default: {
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
-                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
-        Logger::error(
-                "The request has an invalid or missing argument. See Srch2 API documentation for details");
+        response_to_invalid_request(req, response);
     }
     };
 }
@@ -843,10 +850,11 @@ void HTTPRequestHandler::infoCommand(evhttp_request *req, Srch2Server *server,
     evkeyvalq headers;
     evhttp_parse_query(req->uri, &headers);
 
-    string combinedInfo = "{" + server->indexer->getIndexHealth() + ", "
-        + "\"version\":\"" + versioninfo + "\"}";
+    Json::Value response(Json::objectValue);
+    response["engine_status"] = server->indexer->getIndexHealth();
+    response["version"] = versioninfo;
 
-    bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", combinedInfo, headers);
+    bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", global_customized_writer.write(response) , headers);
     evhttp_clear_headers(&headers);
 }
 
@@ -855,12 +863,11 @@ void HTTPRequestHandler::lookupCommand(evhttp_request *req,
     evkeyvalq headers;
     evhttp_parse_query(req->uri, &headers);
 
+    Json::Value response(Json::objectValue);
     const CoreInfo_t *indexDataContainerConf = server->indexDataConfig;
     string primaryKeyName = indexDataContainerConf->getPrimaryKey();
     const char *pKeyParamName = evhttp_find_header(&headers,
             primaryKeyName.c_str());
-
-    std::stringstream response_msg;
 
     if (pKeyParamName) {
         size_t sz;
@@ -869,30 +876,31 @@ void HTTPRequestHandler::lookupCommand(evhttp_request *req,
         const std::string primaryKeyStringValue = string(pKeyParamName_cstar);
         delete pKeyParamName_cstar;
 
-        response_msg << "{\"rid\":\"" << primaryKeyStringValue
-                << "\",\"lookup\":\"";
+        response["rid"] = primaryKeyStringValue;
 
         //lookup the record on the index
+        const string LOG = "lookup";
         switch (server->indexer->lookupRecord(primaryKeyStringValue)) {
         case srch2is::LU_ABSENT_OR_TO_BE_DELETED: {
-            response_msg << "absent or to be deleted\"}";
+            response[LOG] = "absent or to be deleted";
             break;
         }
         case srch2is::LU_TO_BE_INSERTED: {
-            response_msg << "to be inserted\"}";
+            response[LOG] = "to be inserted";
             break;
         }
         default: // LU_PRESENT_IN_READVIEW_AND_WRITEVIEW
         {
-            response_msg << "present in readview and writeview\"}";
+            response[LOG] = "present in readview and writeview";
         }
         };
     } else {
-        response_msg
-                << "{\"rid\":\"NULL\",\"lookup\":\"failed\",\"reason\":\"no record with given primary key\"}";
+        response["rid"] = "NULL";
+        response["lookup"] = "failed";
+        response["reason"] = "no record with given primary key";
     }
 
-    bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", response_msg.str(), headers);
+    bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", global_customized_writer.write(response), headers);
     evhttp_clear_headers(&headers);
 }
 
@@ -914,14 +922,16 @@ void decodeAmpersand(const char *uri, unsigned len, string& decodeUri) {
 void HTTPRequestHandler::searchCommand(evhttp_request *req,
         Srch2Server *server) {
     evkeyvalq headers;
+
     std::stringstream errorStream;
     boost::shared_ptr<Json::Value> root = doSearchOneCore( req, server, &headers, errorStream );
 
     if (root ){
-        CustomizableJsonWriter writer (&global_internal_skip_tags);
-        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", writer.write(*root), headers);
+        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", global_customized_writer.write(*root), headers);
     } else{
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request", errorStream.str(), headers);
+        Json::Value errorResponse(Json::objectValue);
+        errorResponse["error"] = errorStream.str();
+        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request", global_customized_writer.write(errorResponse), headers);
     }
     evhttp_clear_headers(&headers);
 }
@@ -1100,14 +1110,14 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
 void HTTPRequestHandler::searchAllCommand(evhttp_request *req, const CoreNameServerMap_t * coreNameServerMap){
 
     evkeyvalq headers;
-    Json::Value root;
-    std::stringstream errorStream;
+    Json::Value root(Json::objectValue);
+    Json::Value errorResponse(Json::objectValue);
     int cSuccess = 0;
     for( CoreNameServerMap_t::const_iterator it = coreNameServerMap->begin(); 
             it != coreNameServerMap->end(); ++it){
-        errorStream << "core " << it->first << ":";
+        std::stringstream errorStream;
         boost::shared_ptr<Json::Value> subRoot = doSearchOneCore( req, it->second, &headers, errorStream );
-        errorStream << std::endl;
+        errorResponse["core"] = errorStream.str();
 
         if (subRoot ){
             root[it->first] = *subRoot;
@@ -1117,10 +1127,9 @@ void HTTPRequestHandler::searchAllCommand(evhttp_request *req, const CoreNameSer
 
     //We return SUCCESS as long as one of the cores succeeds.
     if (cSuccess > 0){
-        CustomizableJsonWriter writer (&global_internal_skip_tags);
-        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", writer.write(root), headers);
+        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", global_customized_writer.write(root), headers);
     } else {
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request", errorStream.str(), headers);
+        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request", global_customized_writer.write(errorResponse), headers);
     }
     evhttp_clear_headers(&headers);
 }
@@ -1138,6 +1147,7 @@ void HTTPRequestHandler::suggestCommand(evhttp_request *req, Srch2Server *server
     evkeyvalq headers;
     evhttp_parse_query(req->uri, &headers);
 
+    Json::Value response(Json::objectValue);
     QueryParser qp(headers);
 
     string keyword;
@@ -1165,8 +1175,9 @@ void HTTPRequestHandler::suggestCommand(evhttp_request *req, Srch2Server *server
 
     if(! isSyntaxValid){
         // if the query is not valid, print the error message to the response
+        response["error"] = messagesString;
         bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request",
-                messagesString, headers);
+                global_customized_writer.write(response), headers);
         return;
     }
 

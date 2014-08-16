@@ -229,14 +229,13 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
     }
 
     const CoreInfo_t *config = server->indexDataConfig;
-    stringstream errorMsg;
+    Json::Value errorResponse(Json::objectValue);
 
     switch(operation[0])
     {
     case 'i':
     case 'I':
     {
-        errorMsg << "INSERT : ";
         // Parse example data
         Json::Value root;
         Json::Reader reader;
@@ -245,11 +244,13 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
         bool parseSuccess = reader.parse(jsonRecord, root, false);
 
         if (parseSuccess == false) {
+            errorResponse["INSERT"] = "BSON object parse error:" + jsonRecord;
             Logger::error("BSON object parse error %s", jsonRecord.c_str());
         } else {
             srch2is::Record *record = new srch2is::Record(server->indexer->getSchema());
-            IndexWriteUtil::_insertCommand(server->indexer,
-                    config, root, record, errorMsg);
+            errorResponse["INSERT"] = 
+                IndexWriteUtil::_insertCommand(server->indexer,
+                    config, root, record);
             record->clear();
             delete record;
         }
@@ -258,10 +259,11 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
     case 'd':
     case 'D':
     {
-        errorMsg << "DELETE : ";
         mongo::BSONElement _oElement = bobj.getField("o");
         if (_oElement.type() != mongo::Object){
-            Logger::error("MONGO_LISTENER:DELETE: \"o\" element is not an Object type!! ..Cannot update engine");
+            const char* errorMessage = "MONGO_LISTENER:DELETE: \"o\" element is not an Object type!! ..Cannot update engine";
+            errorResponse["DELETE"] = errorMessage;
+            Logger::error(errorMessage);
             break;
         }
         mongo::BSONElement pk = _oElement.Obj().getField(config->getPrimaryKey().c_str());
@@ -276,31 +278,33 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
         }
         Logger::debug("Delete: pk = %s  val =  %s ", config->getPrimaryKey().c_str(), primaryKeyStringValue.c_str());
         if (primaryKeyStringValue.size()) {
-            errorMsg << "{\"rid\":\"" << primaryKeyStringValue << "\",\"delete\":\"";
+            errorResponse["rid"] = primaryKeyStringValue;
             //delete the record from the index
             switch(server->indexer->deleteRecord(primaryKeyStringValue))
             {
             case srch2is::OP_FAIL:
             {
-                errorMsg << "failed\",\"reason\":\"no record with given primary key\"}";
+                errorResponse["delete"] = "failed";
+                errorResponse["reason"] = "no record with given primary key";
                 break;
             }
             default: // OP_SUCCESS.
             {
-                errorMsg << "success\"}";
+                errorResponse["delete"] = "success";
             }
             };
         }
         else
         {
-            errorMsg << "{\"rid\":\"NULL\",\"delete\":\"failed\",\"reason\":\"no record with given primary key\"}";
+            errorResponse["rid"] = "NULL";
+            errorResponse["delete"] = "failed";
+            errorResponse["reason"] = "no record with given primary key";
         }
         break;
     }
     case 'u':
     case 'U':
     {
-        errorMsg << "UPDATE : ";
         mongo::BSONElement _o2Element = bobj.getField("o2");
         if (_o2Element.type() != mongo::Object){
             Logger::error("MONGO_LISTENER:UPDATE: o2 element is not an ObjectId type!! ..Cannot update engine");
@@ -331,7 +335,8 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
             		server->indexer->deleteRecordGetInternalId(primaryKeyStringValue, deletedInternalRecordId);
             if (ret == srch2is::OP_FAIL)
             {
-                errorMsg << "failed\",\"reason\":\"no record with given primary key\"}";
+                errorResponse["UPDATE"] = "failed";
+                errorResponse["reason"] = "no record with given primary key";
                 break;
             }
             else
@@ -347,8 +352,9 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
                     Logger::error("UPDATE : BSON object parse error %s", jsonRecord.c_str());
                 } else {
                     srch2is::Record *record = new srch2is::Record(server->indexer->getSchema());
+                    errorResponse["UPDATE"] = 
                     IndexWriteUtil::_insertCommand(server->indexer,
-                            config, root, record, errorMsg);
+                            config, root, record);
                     record->clear();
                     delete record;
                 }
@@ -356,7 +362,8 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
             }
             else
             {
-                errorMsg << "failed\",\"reason\":\"insert: Document limit reached." << endl;
+                errorResponse["UPDATE"] = "failed";
+                errorResponse["reason"] = "insert: Document limit reached.";
                 /// reaching here means the insert failed, need to resume the deleted old record
                 srch2::instantsearch::INDEXWRITE_RETVAL ret =
                 		server->indexer->recoverRecord(primaryKeyStringValue, deletedInternalRecordId);
@@ -368,7 +375,8 @@ void MongoDataSource::parseOpLogObject(mongo::BSONObj& bobj, string currentNS, S
         break;
         Logger::warn("The mongodb operation (ops='%c') is not supported by the engine", operation[0]);
     }
-    Logger::debug(errorMsg.str().c_str());
+    Json::FastWriter writer;
+    Logger::debug(writer.write(errorResponse).c_str());
 }
 
 }
