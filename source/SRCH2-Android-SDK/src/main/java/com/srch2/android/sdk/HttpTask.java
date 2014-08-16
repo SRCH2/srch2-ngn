@@ -8,7 +8,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.RejectedExecutionException;
 
 abstract class HttpTask implements Runnable {
 
@@ -148,7 +147,7 @@ abstract class HttpTask implements Runnable {
                     .getInfoUrl(
                             SRCH2Engine.conf,
                             indexableToUpdate.indexInternal.indexDescription));
-            indexableToUpdate.updateFromInfoResponse(iit.getInfo());
+            indexableToUpdate.setRecordCount(iit.getInfo().numberOfDocumentsInTheIndex);
         }
     }
 

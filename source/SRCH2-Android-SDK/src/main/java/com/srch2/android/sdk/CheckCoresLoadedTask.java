@@ -1,8 +1,5 @@
 package com.srch2.android.sdk;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -55,7 +52,7 @@ final class CheckCoresLoadedTask extends HttpTask {
             if (iir.isValidInfoResponse) {
                 Cat.d(TAG, "@ iteration " + i + " was valid info response ");
                 Indexable idx = SRCH2Engine.conf.indexableMap.get(indexName);
-                idx.updateFromInfoResponse(iir);
+                idx.setRecordCount(iir.numberOfDocumentsInTheIndex);
                 ++pingCountSuccess;
             } else {
                 Cat.d(TAG, "@ iteration " + i + " was NOT valid info response ");

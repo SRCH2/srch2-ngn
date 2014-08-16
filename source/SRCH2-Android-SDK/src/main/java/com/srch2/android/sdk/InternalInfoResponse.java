@@ -4,8 +4,8 @@ import org.json.JSONObject;
 
 final class InternalInfoResponse {
 
-    static final String INVALID_LAST_MERGE_TIME = Indexable.INDEX_INFO_LAST_MERGE_TIME_NOT_SET;
-    static final int INVALID_COUNT = Indexable.INDEX_INFO_STATE_NOT_SET;
+    static final String INVALID_LAST_MERGE_TIME = "not-set";
+    static final int INVALID_COUNT = Indexable.INDEX_RECORD_COUNT_NOT_SET;
 
     final int numberOfSearchRequests;
     final int numberOfWriteRequests;

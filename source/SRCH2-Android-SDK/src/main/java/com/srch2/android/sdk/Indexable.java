@@ -21,10 +21,10 @@ import org.json.JSONObject;
  * not overridden, these will take the default values {@link #DEFAULT_NUMBER_OF_SEARCH_RESULTS_TO_RETURN_AKA_TOPK} and
  * {@link #DEFAULT_FUZZINESS_SIMILARITY_THRESHOLD} respectively.
  * <br><br>
- * There are also four methods that return state information about the index (such as {@link #getRecordCount()}. The
- * values of these methods return will be set each time the SRCH2 search server comes online and each time an
- * insert, update, delete or search occurs. Note that they will return {@link #INDEX_INFO_STATE_NOT_SET} if they
- * have not been set yet (such as when {@link com.srch2.android.sdk.SRCH2Engine#initialize(Indexable, Indexable...)}
+ * There is also one method that returns the number of records in the index: (such as {@link #getRecordCount()}. The
+ * values of this method will return will be set each time the SRCH2 search server comes online and each time an
+ * insert, upsert or delete occurs. Note it can return {@link #INDEX_RECORD_COUNT_NOT_SET} if the SRCH2 search server
+ * is not online such as when {@link com.srch2.android.sdk.SRCH2Engine#initialize(Indexable, Indexable...)}
  * has been called but {@link com.srch2.android.sdk.SRCH2Engine#onStart(android.content.Context)} has not yet been
  * called).
  */
@@ -46,21 +46,13 @@ public abstract class Indexable {
     abstract public Schema getSchema();
 
     /**
-     * If returned from {@link #getLastMergeTime()}, indicates this value has not yet been set.
-     * <br><br>
-     * Has the <b>constant</b> value of <code>"0"</code>.
-     */
-    public static final String INDEX_INFO_LAST_MERGE_TIME_NOT_SET = "0";
-
-    /**
-     * If returned from {@link #getRecordCount()}, {@link #getSearchRequestCount()} or {@link #getWriteRequestCount()}
-     * indicates these values have not yet been set.
+     * If returned from {@link #getRecordCount()} indicates this value has not yet been set.
      * <br><br>
      * Has the <b>constant</b> value of <code>-1</code>.
      */
-    public static final int INDEX_INFO_STATE_NOT_SET = -1;
+    public static final int INDEX_RECORD_COUNT_NOT_SET = -1;
 
-    private int numberOfDocumentsInTheIndex = INDEX_INFO_STATE_NOT_SET;
+    private int numberOfDocumentsInTheIndex = INDEX_RECORD_COUNT_NOT_SET;
     /**
      * Returns the number of records that are currently in the index that this
      * <code>Indexable</code> represents.
@@ -70,48 +62,8 @@ public abstract class Indexable {
         return numberOfDocumentsInTheIndex;
     }
 
-    private int numberOfSearchRequests = INDEX_INFO_STATE_NOT_SET;
-    /**
-     * Returns the number of search requests that have been made on the
-     * index this <code>Indexable</code> represents.
-     * @return the number of search requests made on the index
-     */
-    public final int getSearchRequestCount() {
-        return numberOfSearchRequests;
-    }
-
-    private int numberOfWriteRequests = INDEX_INFO_STATE_NOT_SET;
-    /**
-     * Returns the number of write requests (insert, update, and delete) that have been made on the
-     * index this <code>Indexable</code> represents.
-     * @return the number of write requests made on the index
-     */
-    public final int getWriteRequestCount() {
-        return numberOfWriteRequests;
-    }
-
-    private String lastMergeTime = INDEX_INFO_LAST_MERGE_TIME_NOT_SET;
-    /**
-     * Returns the last time the specified the
-     * index this <code>Indexable</code> represents was merged--that is, the last time
-     * the index was updated to reflect any pending write
-     * requests prior to this time.
-     * @return the last time the index was merged
-     */
-    public final String getLastMergeTime() {
-        return lastMergeTime;
-    }
-
-    final void updateFromInfoResponse(InternalInfoResponse ir) {
-        // use this method to update the state of the index
-        numberOfDocumentsInTheIndex = ir.numberOfDocumentsInTheIndex;
-        numberOfSearchRequests = ir.numberOfSearchRequests;
-        numberOfWriteRequests = ir.numberOfWriteRequests;
-        lastMergeTime = ir.lastMergeTime;
-    }
-    final void incrementSearchRequestCount() {
-        // use this method to update the search requests from the SearchTask to increment per search task
-        ++numberOfSearchRequests;
+    final void setRecordCount(int recordCount) {
+        numberOfDocumentsInTheIndex = recordCount;
     }
 
     /**

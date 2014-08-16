@@ -45,9 +45,6 @@ class SearchTask extends HttpTask.SearchHttpTask {
 
                     Cat.d(TAG, "corename about to parse is " + coreName);
 
-                    SRCH2Engine.conf.indexableMap.get(coreName).incrementSearchRequestCount();
-
-
                     JSONObject o = root.getJSONObject(coreNodes.getString(j));
                     JSONArray nodes = o.getJSONArray("results");
 
@@ -68,7 +65,6 @@ class SearchTask extends HttpTask.SearchHttpTask {
                 ignore.printStackTrace();
             }
         } else {
-            SRCH2Engine.conf.indexableMap.get(targetCoreName).incrementSearchRequestCount();
 
             ArrayList<JSONObject> recordResults = new ArrayList<JSONObject>();
             try {

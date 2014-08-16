@@ -45,13 +45,13 @@ public class ConfigurationTest {
 
     @Test
     public void testConfiguration() {
-        SRCH2Configuration config = new SRCH2Configuration(PrepareEngine.movieIndex, null);
+        SRCH2Configuration config = new SRCH2Configuration(PrepareEngine.movieIndex, (Indexable[]) null);
         SRCH2Configuration config2 = new SRCH2Configuration(PrepareEngine.musicIndex);
     }
 
     @Test
     public void testConfigurationGeoIndex() {
-        SRCH2Configuration config = new SRCH2Configuration(PrepareEngine.geoIndex, null);
+        SRCH2Configuration config = new SRCH2Configuration(PrepareEngine.geoIndex, (Indexable[])  null);
     }
 
     @Test
@@ -61,7 +61,7 @@ public class ConfigurationTest {
 
     @Test(expected = NullPointerException.class)
     public void testConfigurationException3() {
-        SRCH2Configuration config = new SRCH2Configuration(null, null);
+        SRCH2Configuration config = new SRCH2Configuration(null, (Indexable[]) null);
     }
 
     @Test
