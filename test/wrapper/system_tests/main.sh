@@ -786,9 +786,9 @@ else
 fi
 rm -rf data/ *.idx
 
-test_id="relaxed config file"
+test_id="run engine with missing parameters from config file"
 printTestBanner "$test_id"
-python ./relaxed_config/relaxed_config.py $SRCH2_ENGINE ./relaxed_config/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
+python ./missing_parameters_from_cm/missingParameters_config.py $SRCH2_ENGINE ./missing_parameters_from_cm/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ ${PIPESTATUS[0]} -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}

@@ -50,7 +50,7 @@ struct RankerExpression
         exprtk::parser<double> parser;
         if (!parser.compile(expr_string, expression))
         {
-            Logger::warn("Ranking expression defined in config file is not valid, so using the default expression");
+            Logger::warn("Ranking expression defined in config file is not valid, so engine will use the default expression");
             parser.compile("1", expression); // Default ranking function in the case of bad ranking function.
         }
     }

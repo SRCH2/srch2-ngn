@@ -24,14 +24,6 @@
     -->
     <srch2Home>./</srch2Home>
     <authorization-key>blackberry</authorization-key> 
-    <!--
-        License Key File
-        Required
-         
-        Email contact@srch2.com to get a key file.  
-        Make sure to set the variable to the SRCH2 license key file.
-    -->
-    <licenseFile>../conf/srch2_license_key.txt</licenseFile>
  
     <!--
         Hostname and Port Number
@@ -49,7 +41,7 @@
         The file path to the folder where we store serialized index files.
         REQUIRED, when "index-load-or-create" is set to 1.
     -->
-    <dataDir>./data/relaxed_config/</dataDir>
+    <dataDir>./data/missing_parameters_from_cm/</dataDir>
      
     <!--
         Data File
@@ -58,7 +50,7 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>./relaxed_config/data.json</dataFile>
+    <dataFile>./missing_parameters_from_cm/data.json</dataFile>
      
     <!--
 	Maximum Number of Threads

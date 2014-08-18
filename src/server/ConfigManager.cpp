@@ -357,7 +357,7 @@ void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode,
             return;
         }
     }else{
-        Logger::warn("Index Type is not set, so using the default value 0");
+        Logger::warn("Index Type is not set, so the engine will use the default value 0");
     }
 
     coreInfo->supportSwapInEditDistance = true; // by default it is true
@@ -424,7 +424,6 @@ void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode,
     childNode = indexConfigNode.child(recordBoostFieldString);
     if (childNode && childNode.text()) {
         string recordBoostField = string(childNode.text().get());
-        cout << coreInfo->refiningAttributesInfo[recordBoostField].attributeType << "type \n";
         if(coreInfo->refiningAttributesInfo[recordBoostField].attributeType != ATTRIBUTE_TYPE_FLOAT ){
             Logger::error("Type of record boost field is invalid, it should be of type float");
             configSuccess = false;
@@ -725,7 +724,7 @@ void ConfigManager::parseQuery(const xml_node &queryNode, CoreInfo_t *coreInfo,
             coreInfo->exactHighlightMarkerPre = marker;
         } else {
             parseError
-                    << "The highlighter pre marker is an empty string. Using the default marker";
+                    << "The highlighter pre marker is an empty string, so engine will use the default marker";
             return;
         }
     }
@@ -737,7 +736,7 @@ void ConfigManager::parseQuery(const xml_node &queryNode, CoreInfo_t *coreInfo,
             coreInfo->exactHighlightMarkerPost = marker;
         } else {
             parseError
-                    << "The highlighter post marker is an empty string. Using the default marker";
+                    << "The highlighter post marker is an empty string, so engine will use the default marker";
             return;
         }
     }
@@ -749,7 +748,7 @@ void ConfigManager::parseQuery(const xml_node &queryNode, CoreInfo_t *coreInfo,
             coreInfo->fuzzyHighlightMarkerPre = marker;
         } else {
             parseError
-                    << "The highlighter pre marker is an empty string. Using the default marker";
+                    << "The highlighter pre marker is an empty string, so engine will use the default marker";
             return;
         }
     }
@@ -761,7 +760,7 @@ void ConfigManager::parseQuery(const xml_node &queryNode, CoreInfo_t *coreInfo,
             coreInfo->fuzzyHighlightMarkerPost = marker;
         } else {
             parseError
-                    << "The highlighter post marker is an empty string. Using the default marker";
+                    << "The highlighter post marker is an empty string, so engine will use the default marker";
             return;
         }
     }
@@ -1991,11 +1990,11 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
         }
     }
     if (!mdflag) {
-        Logger::warn("MaxDoc is not set, so using the default value 15000000");
+        Logger::warn("MaxDoc is not set, so engine will use the default value 15,000,000");
     }
 
-    //Default value for memory limit if it is not set is 10000000
-    coreInfo->memoryLimit = 10000000;
+    //Default value for memory limit if it is not set is 1000000000
+    coreInfo->memoryLimit = 1000000000;
     bool mmflag = false;
     childNode = updateHandlerNode.child(maxMemoryString);
     if (childNode && childNode.text()) {
@@ -2006,14 +2005,14 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
         }
     }
     if (!mmflag) {
-        Logger::warn("Maximum memory limit is not set, so using the default value 10000000");
+        Logger::warn("Maximum memory limit is not set, so engine will use the default value 1GB");
     }
 
     // mergeEveryNSeconds
     //If the tag is not set the engine will assume default value of 1
     childNode = updateHandlerNode.child(mergePolicyString).child(
             mergeEveryNSecondsString);
-    coreInfo->mergeEveryNSeconds = 1;
+    coreInfo->mergeEveryNSeconds = 10;
     bool mensflag = false;
     if (childNode && childNode.text()) {
         string mens = childNode.text().get();
@@ -2023,14 +2022,14 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
         }
     }
     if (!mensflag) {
-        Logger::warn("mergeEveryNSeconds is not set correctly, so using the default value 1");
+        Logger::warn("mergeEveryNSeconds is not set correctly, so engine will use the default value 10");
     }
 
     // mergeEveryMWrites
     //If the tag is not set the engine will assume default value of 1
     childNode = updateHandlerNode.child(mergePolicyString).child(
             mergeEveryMWritesString);
-    coreInfo->mergeEveryMWrites = 1;
+    coreInfo->mergeEveryMWrites = 100;
     bool memwflag = false;
     if (childNode && childNode.text()) {
         string memw = childNode.text().get();
@@ -2041,7 +2040,7 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
         }
     }
     if (!memwflag) {
-        Logger::warn("mergeEveryMWrites is not set correctly, so using the default value 1");
+        Logger::warn("mergeEveryMWrites is not set correctly, so engine will use the default value 100");
     }
 
     // set default value for updateHistogramEveryPSeconds and updateHistogramEveryQWrites because there
@@ -2054,7 +2053,8 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
                     / updateHistogramWorkRatioOverTime); // 10000 for mergeEvery 1000 Writes
 
     // TODO - logging per core
-    // logLevel is required
+    // logLevel is optional. To make loglevel optional the llflag's initial value has been set to false.
+    // llflag is false, if log level is not set in config file or wrong value is given by the user, otherwise llflag remains true.
     this->loglevel = Logger::SRCH2_LOG_INFO;
     childNode = updateHandlerNode.child(updateLogString).child(logLevelString);
     bool llflag = false;
@@ -2069,7 +2069,7 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
         }
     }
     if (!llflag) {
-        Logger::warn("Log Level is either not set or not set correctly, so using the"
+        Logger::warn("Log Level is either not set or not set correctly, so engine will use the"
                         " default value 3");
     }
 

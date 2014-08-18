@@ -1,4 +1,4 @@
-#This test is used to check if the engine can run if maxDox, IndexType, Maximum Memory, mergeEveryNSeconds, mergeEveryMWrites paramters are absent by querying the engine.
+#This test is used to check if the engine can run if maxDocs, IndexType, Maximum Memory, mergeEveryNSeconds, mergeEveryMWrites paramters are absent by querying the engine.
 
 import sys, urllib2, json, time, subprocess, os, commands, signal
 
@@ -96,7 +96,7 @@ def prepareQuery(queryKeywords):
 #This function queries the engine    
 def testRelaxedConfig(queriesAndResultsPath, binary_path, authKey):
     #Start the engine server
-    args = [ binary_path, '--config-file=./relaxed_config/conf.xml']
+    args = [ binary_path, '--config-file=./missing_parameters_from_cm/conf.xml']
 
     if confirmPortAvailable(port, authKey) == False:
         print 'Port ' + str(port) + ' already in use - aborting'
