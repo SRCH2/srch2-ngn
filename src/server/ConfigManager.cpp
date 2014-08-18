@@ -2926,8 +2926,8 @@ srch2::instantsearch::FilterType ConfigManager::parseFieldType(
             "location_longitude (for geo search), "\
             "and location_latitude (for geo search).",fieldType.c_str());
     //The only possibility this function throws an exception is
-    //the programmer forget to call isValidFieldType() before using this function
-    throw;
+    //the programmer forgets to call isValidFieldType() before using this function
+    ASSERT(false);
     return srch2::instantsearch::ATTRIBUTE_TYPE_INT;
 }
 

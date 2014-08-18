@@ -1,8 +1,6 @@
-#This function is doing the following things:
-#Start the engine with conf1.xml. The engine will load the data and build the indexes
-#Shutdown the engine.
-#Start the engine with another config file conf2.xml. In conf2.xml, the schema has been changed (name  => nameChanged)
-#The engine should raise a warning to tell the user that 'The schema in the config file has changed, remove all the index files and run it again'
+#This function is to test if the engine can support different types of refining attribute.
+#Insert 8 records into the engine.(min integer, max integer, min long, max long, min float, max float, min double, max double)
+#"curl" the result to see if they are still correct. 
 
 import sys, urllib2, time, subprocess, os, commands, signal,shutil,json
 

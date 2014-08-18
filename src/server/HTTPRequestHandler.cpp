@@ -361,6 +361,15 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
                     attr->second.second.begin(); category != attr->second.second.end();
                     ++category) {
 
+                /*
+                 * Offset is the relative position based on
+                 * the start position of the iterator. e.g.
+                 *
+                 * {<a,1>,<b,2>,<c,3>}
+                 *
+                 * The offset of <a,1> will be 0, <b,2> will be 1, and
+                 * <c,3> will be 2
+                 */
                 int offset = (category - attr->second.second.begin());
 
                 if(category == attr->second.second.begin() && attr->second.first == srch2is::FacetTypeRange){

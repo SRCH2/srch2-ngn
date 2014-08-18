@@ -59,16 +59,16 @@ namespace srch2
     	void setTypedValue(long longTypeValue,FilterType valueType);
     	void setTypedValue(float floatTypeValue,FilterType valueType);
     	void setTypedValue(double doubleTypeValue,FilterType valueType);
-    	void setTypedValue(string stringTypeValue,FilterType valueType);
-    	void setTypedValue(vector<int> intTypeValue,FilterType valueType);
-        void setTypedValue(vector<long> longTypeValue,FilterType valueType);
-    	void setTypedValue(vector<float> floatTypeValue,FilterType valueType);
-        void setTypedValue(vector<double> doubleTypeValue,FilterType valueType);
-    	void setTypedValue(vector<string> stringTypeValue,FilterType valueType);
+    	void setTypedValue(const string& stringTypeValue,FilterType valueType);
+    	void setTypedValue(const vector<int> & intTypeValue,FilterType valueType);
+        void setTypedValue(const vector<long> & longTypeValue,FilterType valueType);
+    	void setTypedValue(const vector<float> & floatTypeValue,FilterType valueType);
+        void setTypedValue(const vector<double> & doubleTypeValue,FilterType valueType);
+    	void setTypedValue(const vector<string> & stringTypeValue,FilterType valueType);
 
     	void setTypedValue(const srch2::instantsearch::TimeDuration & duration,FilterType valueType);
     	void setTypedValue(const TypedValue& typeValue);
-    	void setTypedValue(FilterType type , string value);
+    	void setTypedValue(FilterType type , const string & value);
 
     	FilterType getType() const{
     		return valueType;
@@ -87,23 +87,23 @@ namespace srch2
     		capacity += timeTypedMultiValue.capacity() * sizeof(long); ; // vector<long>;
         	return capacity;
     	}
-    	int getIntTypedValue() const;
-    	long getLongTypedValue() const;
-    	float getFloatTypedValue() const;
-    	double getDoubleTypedValue() const;
-    	string getTextTypedValue() const;
-    	long getTimeTypedValue() const;
-    	vector<int> getMultiIntTypedValue() const;
-    	vector<long> getMultiLongTypedValue() const;
-    	vector<float> getMultiFloatTypedValue() const;
-    	vector<double> getMultiDoubleTypedValue() const;
-    	vector<string> getMultiTextTypedValue() const;
-    	vector<long> getMultiTimeTypedValue() const;
+    	const int getIntTypedValue() const;
+    	const long getLongTypedValue() const;
+    	const float getFloatTypedValue() const;
+    	const double getDoubleTypedValue() const;
+    	const string & getTextTypedValue() const;
+    	const long getTimeTypedValue() const;
+    	const vector<int> & getMultiIntTypedValue() const;
+    	const vector<long> & getMultiLongTypedValue() const;
+    	const vector<float> & getMultiFloatTypedValue() const;
+    	const vector<double> & getMultiDoubleTypedValue() const;
+    	const vector<string> & getMultiTextTypedValue() const;
+    	const vector<long> & getMultiTimeTypedValue() const;
 
-    	TimeDuration getTimeDuration() const;
+    	const TimeDuration & getTimeDuration() const;
 
 
-    	TypedValue minimumValue();
+    	const TypedValue & minimumValue();
 
     	float castToFloat();
 
@@ -127,7 +127,7 @@ namespace srch2
     	 * which returns a list of indices (also refer to findIndexOfContainingInterval)
     	 * Example: <1,3,5> will cause calling findIndexOfContainingInterval for 1, 3 and 5 three times.
     	 */
-    	vector<unsigned> findIndicesOfContainingIntervals(TypedValue & start , TypedValue & end, TypedValue & gap) const;
+    	const vector<unsigned> & findIndicesOfContainingIntervals(TypedValue & start , TypedValue & end, TypedValue & gap) const;
 
     	string toString() const;
 

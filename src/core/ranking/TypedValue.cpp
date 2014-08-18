@@ -597,15 +597,15 @@ namespace srch2
 	    this->valueType = valueType;
 	    this->doubleTypedValue = doubleTypedValue;
 	}
-	void TypedValue::setTypedValue(string stringTypedValue,FilterType valueType){
+	void TypedValue::setTypedValue(const string & stringTypedValue,FilterType valueType){
 	    this->valueType = valueType;
 		this->stringTypedValue = stringTypedValue;
 	}
-	void TypedValue::setTypedValue(vector<int> intTypedValue,FilterType valueType){
+	void TypedValue::setTypedValue(const vector<int> & intTypedValue,FilterType valueType){
 	    this->valueType = valueType;
 		this->intTypedMultiValue = intTypedValue;
 	}
-    void TypedValue::setTypedValue(vector<long> longTypedValue,FilterType valueType){
+    void TypedValue::setTypedValue(const vector<long> & longTypedValue,FilterType valueType){
         this->valueType = valueType;
         if(this->valueType == ATTRIBUTE_TYPE_MULTI_TIME){
             this->timeTypedMultiValue = longTypedValue;
@@ -613,15 +613,15 @@ namespace srch2
             this->longTypedMultiValue = longTypedValue;
         }
     }
-	void TypedValue::setTypedValue(vector<float> floatTypedValue,FilterType valueType){
+	void TypedValue::setTypedValue(const vector<float> & floatTypedValue,FilterType valueType){
 	    this->valueType = valueType;
 		this->floatTypedMultiValue = floatTypedValue;
 	}
-    void TypedValue::setTypedValue(vector<double> doubleTypedValue,FilterType valueType){
+    void TypedValue::setTypedValue(const vector<double> & doubleTypedValue,FilterType valueType){
         this->valueType = valueType;
         this->doubleTypedMultiValue = doubleTypedValue;
     }
-	void TypedValue::setTypedValue(vector<string> stringTypedValue,FilterType valueType){
+	void TypedValue::setTypedValue(const vector<string> & stringTypedValue,FilterType valueType){
 	    this->valueType = valueType;
 		this->stringTypedMultiValue = stringTypedValue;
 	}
@@ -677,7 +677,7 @@ namespace srch2
 		}
 	}
 
-	void TypedValue::setTypedValue(FilterType type , string value){
+	void TypedValue::setTypedValue(FilterType type , const string & value){
 	    // TODO : do some validation to make sure engine does not crash.
 	    //        NOTE: The input to this function is supposed to be validated once...
 		this->valueType = type;
@@ -724,48 +724,48 @@ namespace srch2
 		}
 	}
 
-	int TypedValue::getIntTypedValue() const{
+	const int TypedValue::getIntTypedValue() const{
 		return intTypedValue;
 	}
-    long TypedValue::getLongTypedValue() const{
+    const long TypedValue::getLongTypedValue() const{
         return longTypedValue;
     }
-	float TypedValue::getFloatTypedValue() const{
+    const float TypedValue::getFloatTypedValue() const{
 		return floatTypedValue;
 	}
-    double TypedValue::getDoubleTypedValue() const{
+    const double TypedValue::getDoubleTypedValue() const{
         return doubleTypedValue;
     }
-	string TypedValue::getTextTypedValue() const{
+    const string & TypedValue::getTextTypedValue() const{
 		return stringTypedValue;
 	}
-	long TypedValue::getTimeTypedValue() const{
+    const long TypedValue::getTimeTypedValue() const{
 		return timeTypedValue;
 	}
-	vector<int> TypedValue::getMultiIntTypedValue() const{
+    const vector<int> & TypedValue::getMultiIntTypedValue() const{
 		return intTypedMultiValue;
 	}
-    vector<long> TypedValue::getMultiLongTypedValue() const{
+    const vector<long> & TypedValue::getMultiLongTypedValue() const{
         return longTypedMultiValue;
     }
-	vector<float> TypedValue::getMultiFloatTypedValue() const{
+    const vector<float> & TypedValue::getMultiFloatTypedValue() const{
 		return floatTypedMultiValue;
 	}
-    vector<double> TypedValue::getMultiDoubleTypedValue() const{
+    const vector<double> & TypedValue::getMultiDoubleTypedValue() const{
         return doubleTypedMultiValue;
     }
-	vector<string> TypedValue::getMultiTextTypedValue() const{
+    const vector<string> & TypedValue::getMultiTextTypedValue() const{
 		return stringTypedMultiValue;
 	}
-	vector<long> TypedValue::getMultiTimeTypedValue() const{
+    const vector<long> & TypedValue::getMultiTimeTypedValue() const{
 		return timeTypedMultiValue;
 	}
 
-	TimeDuration TypedValue::getTimeDuration() const{
+    const TimeDuration & TypedValue::getTimeDuration() const{
 		return timeDurationTypedValue;
 	}
 
-	TypedValue TypedValue::minimumValue(){
+	const TypedValue & TypedValue::minimumValue(){
 		TypedValue result ;
 		switch (valueType) {
 				case ATTRIBUTE_TYPE_INT:
@@ -973,7 +973,7 @@ namespace srch2
     }
 
 
-	vector<unsigned> TypedValue::findIndicesOfContainingIntervals(TypedValue & start , TypedValue & end, TypedValue & gap) const{
+	const vector<unsigned> & TypedValue::findIndicesOfContainingIntervals(TypedValue & start , TypedValue & end, TypedValue & gap) const{
 		vector<unsigned> result;
 		// move on all single values and find the index for each one of them
 		vector<TypedValue> singleValues;

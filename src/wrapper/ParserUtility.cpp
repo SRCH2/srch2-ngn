@@ -125,15 +125,13 @@ bool validateValueWithType(srch2::instantsearch::FilterType type,
     case srch2::instantsearch::ATTRIBUTE_TYPE_DOUBLE:
         return isFloat(value);
     case srch2::instantsearch::ATTRIBUTE_TYPE_TEXT:
-        return true; // TEXT does not have any criteria ?????
+        return true;
     case srch2::instantsearch::ATTRIBUTE_TYPE_TIME:
     case srch2::instantsearch::ATTRIBUTE_TYPE_DURATION:
         return isTime(value);
 	default:
 		break;
     }
-    // flow never reaches here
-    // TODO : Add assert
     return false;
 }
 
