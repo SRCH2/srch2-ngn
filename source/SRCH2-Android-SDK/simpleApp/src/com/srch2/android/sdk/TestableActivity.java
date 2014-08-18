@@ -4,9 +4,6 @@ import android.app.Activity;
 
 import java.util.List;
 
-/**
- * Created by jianfeng on 8/7/14.
- */
 public abstract class TestableActivity extends Activity {
     public abstract List<String> getTestMethodNameListWithOrder();
 

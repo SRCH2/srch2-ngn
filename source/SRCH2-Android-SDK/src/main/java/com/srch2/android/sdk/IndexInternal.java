@@ -40,8 +40,7 @@ final class IndexInternal {
         if (SRCH2Engine.isReady()) {
             InsertTask insertTask = new InsertTask(UrlBuilder.getInsertUrl(
                     SRCH2Engine.getConfig(), indexDescription),
-                    getIndexCoreName(),
-                    SRCH2Engine.getControlResponseListener(), record);
+                    getIndexCoreName(), record);
             HttpTask.executeTask(insertTask);
             SRCH2Engine.isChanged.set(true);
         }
@@ -54,7 +53,7 @@ final class IndexInternal {
                     indexDescription);
 
             InsertTask insertTask = new InsertTask(url, getIndexCoreName(),
-                    SRCH2Engine.getControlResponseListener(), records);
+                    records);
             HttpTask.executeTask(insertTask);
             SRCH2Engine.isChanged.set(true);
         }
@@ -64,8 +63,7 @@ final class IndexInternal {
         if (SRCH2Engine.isReady()) {
             UpdateTask updateTask = new UpdateTask(UrlBuilder.getUpdateUrl(
                     SRCH2Engine.getConfig(), indexDescription),
-                    getIndexCoreName(),
-                    SRCH2Engine.getControlResponseListener(), record);
+                    getIndexCoreName(), record);
             HttpTask.executeTask(updateTask);
             SRCH2Engine.isChanged.set(true);
         }
@@ -75,8 +73,7 @@ final class IndexInternal {
         if (SRCH2Engine.isReady()) {
             UpdateTask updateTask = new UpdateTask(UrlBuilder.getUpdateUrl(
                     SRCH2Engine.getConfig(), indexDescription),
-                    getIndexCoreName(),
-                    SRCH2Engine.getControlResponseListener(), records);
+                    getIndexCoreName(), records);
             HttpTask.executeTask(updateTask);
             SRCH2Engine.isChanged.set(true);
         }
@@ -86,8 +83,7 @@ final class IndexInternal {
         if (SRCH2Engine.isReady()) {
             DeleteTask deleteTast = new DeleteTask(UrlBuilder.getDeleteUrl(
                     SRCH2Engine.getConfig(), indexDescription, id),
-                    getIndexCoreName(),
-                    SRCH2Engine.getControlResponseListener());
+                    getIndexCoreName());
             HttpTask.executeTask(deleteTast);
             SRCH2Engine.isChanged.set(true);
         }
@@ -134,9 +130,7 @@ final class IndexInternal {
         }
         if (SRCH2Engine.isReady()) {
             HttpTask.executeTask(new GetRecordTask(UrlBuilder.getGetDocUrl(
-                    SRCH2Engine.getConfig(), indexDescription, id), this
-                    .getIndexCoreName(), SRCH2Engine
-                    .getControlResponseListener()));
+                    SRCH2Engine.getConfig(), indexDescription, id), this.getIndexCoreName()));
         }
     }
 

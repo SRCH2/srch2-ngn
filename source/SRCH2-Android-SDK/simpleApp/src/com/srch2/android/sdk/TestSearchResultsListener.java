@@ -1,14 +1,10 @@
 package com.srch2.android.sdk;
 
-import com.srch2.android.sdk.SearchResultsListener;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
-/**
- * Created by ashton on 7/29/2014.
- */
 public class TestSearchResultsListener implements SearchResultsListener {
 
     public int httpResponseCode;

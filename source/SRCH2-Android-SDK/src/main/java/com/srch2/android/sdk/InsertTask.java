@@ -1,6 +1,7 @@
 package com.srch2.android.sdk;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.*;
@@ -14,13 +15,13 @@ class InsertTask extends HttpTask.InsertUpdateDeleteTask {
     private JSONObject recordToInsert;
     private boolean isSingleInsertion = false;
 
-    public InsertTask(URL theTargetUrl, String theTargetCoreName, StateResponseListener theControlResponseListener, JSONArray recordsToBeInserted) {
-        super(theTargetUrl, theTargetCoreName, theControlResponseListener);
+    public InsertTask(URL theTargetUrl, String theTargetCoreName, JSONArray recordsToBeInserted) {
+        super(theTargetUrl, theTargetCoreName);
         recordsToInsert = recordsToBeInserted;
     }
 
-    public InsertTask(URL theTargetUrl, String theTargetCoreName, StateResponseListener theControlResponseListener, JSONObject recordToBeInserted) {
-        super(theTargetUrl, theTargetCoreName, theControlResponseListener);
+    public InsertTask(URL theTargetUrl, String theTargetCoreName, JSONObject recordToBeInserted) {
+        super(theTargetUrl, theTargetCoreName);
         isSingleInsertion = true;
         recordToInsert = recordToBeInserted;
     }
@@ -77,7 +78,7 @@ class InsertTask extends HttpTask.InsertUpdateDeleteTask {
         }
 
         if (response == null) {
-            response = RestfulResponse.IRRECOVERABLE_NETWORK_ERROR_MESSAGE;
+            response = Indexable.IRRECOVERABLE_NETWORK_ERROR_MESSAGE;
         }
         onTaskComplete(responseCode, response);
     }
@@ -125,7 +126,7 @@ class InsertTask extends HttpTask.InsertUpdateDeleteTask {
         }
 
         if (response == null) {
-            response = RestfulResponse.IRRECOVERABLE_NETWORK_ERROR_MESSAGE;
+            response = Indexable.IRRECOVERABLE_NETWORK_ERROR_MESSAGE;
         }
 
         onTaskComplete(responseCode, response);
@@ -135,17 +136,32 @@ class InsertTask extends HttpTask.InsertUpdateDeleteTask {
     @Override
     protected void onTaskComplete(int returnedResponseCode, String returnedResponseLiteral) {
         super.onTaskComplete(returnedResponseCode, returnedResponseLiteral);
-        if (controlResponseObserver != null) {
-            InsertResponse insertResponse;
-            if (returnedResponseLiteral == null || returnedResponseLiteral.equals(RestfulResponse.IRRECOVERABLE_NETWORK_ERROR_MESSAGE)) {
-                insertResponse = new InsertResponse(returnedResponseCode, RestfulResponse.IRRECOVERABLE_NETWORK_ERROR_MESSAGE);
-            } else {
-                insertResponse = new InsertResponse(returnedResponseCode, returnedResponseLiteral);
-            }
-            controlResponseObserver.onInsertRequestComplete(targetCoreName, insertResponse);
-        }
-
+        parseJsonResponseAndPushToCallbackThread(returnedResponseLiteral);
     }
 
+    void parseJsonResponseAndPushToCallbackThread(String jsonResponse) {
+        int successCount = 0;
+        int failureCount = 0;
+        try {
+            JSONObject rootNode = new JSONObject(jsonResponse);
+            JSONArray logNode = rootNode.getJSONArray(RESTfulResponseTags.JSON_KEY_LOG);
+            int length = logNode.length();
+            for (int i = 0; i < length; ++i) {
+                JSONObject recordStamp = (JSONObject) logNode.get(i);
+                if (recordStamp.has(RESTfulResponseTags.JSON_KEY_PRIMARY_KEY_INDICATOR)) {
+                    boolean insertSuccess = recordStamp.getString(RESTfulResponseTags.JSON_KEY_INSERT).equals(RESTfulResponseTags.JSON_VALUE_SUCCESS);
+                    if (insertSuccess) {
+                        ++successCount;
+                    } else {
+                        ++failureCount;
+                    }
+                }
+            }
+        } catch (JSONException oops) {
+            successCount = RESTfulResponseTags.INVALID_JSON_RESPONSE;
+            failureCount = RESTfulResponseTags.INVALID_JSON_RESPONSE;
+        }
 
+        HttpTask.executeTask(new InsertResponse(targetCoreName, successCount, failureCount, jsonResponse));
+    }
 }

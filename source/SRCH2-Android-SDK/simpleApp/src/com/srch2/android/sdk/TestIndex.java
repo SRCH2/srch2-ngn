@@ -6,9 +6,6 @@ import org.json.JSONObject;
 
 import java.util.*;
 
-/**
- * Created by ashton on 7/29/2014.
- */
 public class TestIndex extends TestableIndex {
 
     public static final String INDEX_NAME = "test";

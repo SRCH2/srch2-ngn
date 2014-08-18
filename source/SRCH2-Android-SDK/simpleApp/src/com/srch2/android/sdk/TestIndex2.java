@@ -1,8 +1,5 @@
 package com.srch2.android.sdk;
 
-/**
- * Created by jianfeng on 8/4/14.
- */
 public class TestIndex2 extends TestIndex {
     public static final String INDEX_NAME = "test2";
 

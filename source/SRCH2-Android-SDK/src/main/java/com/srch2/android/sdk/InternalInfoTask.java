@@ -32,7 +32,7 @@ class InternalInfoTask {
         InputStream is = null;
         HttpURLConnection connection = null;
 
-        int responseCode = RestfulResponse.FAILED_TO_CONNECT_RESPONSE_CODE;
+        int responseCode = HttpTask.RESTfulResponseTags.FAILED_TO_CONNECT_RESPONSE_CODE;
         String response = null;
         try {
             connection = (HttpURLConnection) targetUrl.openConnection();
@@ -58,7 +58,7 @@ class InternalInfoTask {
         }
 
         if (response == null) {
-            response = RestfulResponse.IRRECOVERABLE_NETWORK_ERROR_MESSAGE;
+            response = Indexable.IRRECOVERABLE_NETWORK_ERROR_MESSAGE;
         }
 
         return new InternalInfoResponse(responseCode, response);

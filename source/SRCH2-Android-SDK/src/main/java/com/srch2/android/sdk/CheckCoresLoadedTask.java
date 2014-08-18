@@ -1,5 +1,7 @@
 package com.srch2.android.sdk;
 
+import android.util.Log;
+
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,10 +18,8 @@ final class CheckCoresLoadedTask extends HttpTask {
 
     private boolean noNetworkConnection = false;
 
-    CheckCoresLoadedTask(HashMap<String, URL> theTargetCoreUrls,
-                         StateResponseListener theControlResponseListener) {
+    CheckCoresLoadedTask(HashMap<String, URL> theTargetCoreUrls) {
         targetCoreUrlsMap = theTargetCoreUrls;
-        controlResponseObserver = theControlResponseListener;
     }
 
     @Override
@@ -68,7 +68,14 @@ final class CheckCoresLoadedTask extends HttpTask {
             ++superCount;
         }
 
-        if (controlResponseObserver != null && !noNetworkConnection) {
+        Log.d(TAG, "CHECK CORE LOADED TASK pingCountSuccess is " + pingCountSuccess + " and coreCount is " + coreCount);
+
+        if (pingCountSuccess == coreCount) {
+            SRCH2Engine.isReady.set(true);
+            SRCH2Engine.reQueryLastOne();
+        }
+
+/*        if (controlResponseObserver != null && !noNetworkConnection) {
             if (pingCountSuccess == coreCount) {
                 Cat.d(TAG, "run - successful requerying etc");
                 SRCH2Engine.isReady.set(true);
@@ -78,13 +85,6 @@ final class CheckCoresLoadedTask extends HttpTask {
             Cat.d(TAG, "run - notifying observer");
         }
 
-        Thread.currentThread().setName("CHECK CORES LOADED FIN");
+        Thread.currentThread().setName("CHECK CORES LOADED FIN");*/
     }
-
-    @Override
-    protected void onTaskComplete(int returnedResponseCode,
-                                  String returnedResponseLiteral) {
-        // do nothing here
-    }
-
 }

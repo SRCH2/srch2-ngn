@@ -1,17 +1,81 @@
 package com.srch2.android.sdk;
 
-import com.srch2.android.sdk.Indexable;
-import com.srch2.android.sdk.Query;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
-
-/**
- * Created by jianfeng on 8/4/14.
- */
 public abstract class TestableIndex extends Indexable {
+
+
+    @Override
+    public void onInsertComplete(int success, int failed, String JSONResponse) {
+        insertResponse = JSONResponse;
+        insertSuccessCount = success;
+        insertFailedCount = failed;
+    }
+
+    @Override
+    public void onUpdateComplete(int success, int upserts, int failed, String JSONResponse) {
+        updateResponse = JSONResponse;
+        updateSuccessCount = success;
+        updateFailedCount = failed;
+        upsertSuccessCount = upserts;
+    }
+
+    @Override
+    public void onDeleteComplete(int success, int failed, String JSONResponse) {
+        deleteResponse = JSONResponse;
+        deleteSuccessCount = success;
+        deleteFailedCount = failed;
+    }
+
+    @Override
+    public void onGetRecordComplete(boolean success, JSONObject record, String JSONResponse) {
+        getRecordResponse = JSONResponse;
+        recordRetrievedSuccess = success;
+        recordRetreived = record;
+    }
+
+    String insertResponse;
+    int insertSuccessCount, insertFailedCount;
+    String deleteResponse;
+    int deleteSuccessCount, deleteFailedCount;
+    String updateResponse;
+    int updateSuccessCount, upsertSuccessCount, updateFailedCount;
+    String getRecordResponse;
+    boolean recordRetrievedSuccess;
+    JSONObject recordRetreived;
+
+    public void resetStateResponseFields() {
+        insertResponse = deleteResponse = updateResponse = getRecordResponse = null;
+        insertSuccessCount = insertFailedCount = deleteSuccessCount = deleteFailedCount =
+                updateSuccessCount = upsertSuccessCount = updateFailedCount = -1;
+        recordRetrievedSuccess = false;
+        recordRetreived = null;
+    }
+
+    public void resetGetRecordResponseFields() {
+        getRecordResponse = null;
+        recordRetrievedSuccess = false;
+        recordRetreived = null;
+    }
+
+    public void resetInsertResponseFields() {
+        insertResponse = null;
+        insertSuccessCount = insertFailedCount = -1;
+    }
+
+    public void resetUpdateResponseFields() {
+        updateResponse = null;
+        updateSuccessCount = upsertSuccessCount = updateFailedCount = -1;
+    }
+
+    public void resetDeleteResponseFields() {
+        deleteResponse = null;
+        deleteSuccessCount = deleteFailedCount = -1;
+    }
+
     public static final int BATCH_INSERT_NUM = 200;
 
     public abstract JSONObject getSucceedToInsertRecord();

@@ -19,7 +19,6 @@ public class MyActivity extends TestableActivity {
     public static final String TAG = "srch2:: MyActivity";
 
     public TestSearchResultsListener mResultListener = new TestSearchResultsListener();
-    public TestControlResponseListener mControlListener = new TestControlResponseListener();
 
     public TestableIndex mIndex1 = new TestIndex();
     public TestableIndex mIndex2 = new TestIndex2();
@@ -92,7 +91,6 @@ public class MyActivity extends TestableActivity {
         DeleteRecursive(new File(SRCH2Engine.detectAppHomeDir(this.getApplicationContext()) + File.separator + SRCH2Configuration.SRCH2_HOME_FOLDER_DEFAULT_NAME));
         SRCH2Engine.initialize(mIndex1, mIndex2 );
         SRCH2Engine.setSearchResultsListener(mResultListener);
-        SRCH2Engine.setStateResponseListener(mControlListener);
         SRCH2Engine.setAutomatedTestingMode(true);
 
     }
@@ -108,28 +106,27 @@ public class MyActivity extends TestableActivity {
     }
 
     private void reset() {
-        mControlListener.reset();
         mResultListener.reset();
     }
 
-    public InsertResponse getInsertResponse() {
-        Util.waitForResponse(mControlListener, InsertResponse.class);
-        return mControlListener.insertResponse;
+    public String getInsertResponse(TestableIndex index) {
+        Util.waitForResponse(Util.ResponseType.Insert, index);
+        return index.insertResponse;
     }
 
-    public DeleteResponse getDeleteResponse() {
-        Util.waitForResponse(mControlListener, DeleteResponse.class);
-        return mControlListener.deleteResponse;
+    public String getDeleteResponse(TestableIndex index) {
+        Util.waitForResponse(Util.ResponseType.Delete, index);
+        return index.deleteResponse;
     }
 
-    public UpdateResponse getUpdateResponse() {
-        Util.waitForResponse(mControlListener, UpdateResponse.class);
-        return mControlListener.updateResponse;
+    public String getUpdateResponse(TestableIndex index) {
+        Util.waitForResponse(Util.ResponseType.Update, index);
+        return index.updateResponse;
     }
 
-    public GetRecordResponse getRecordResponse() {
-        Util.waitForResponse(mControlListener, GetRecordResponse.class);
-        return mControlListener.recordResponse;
+    public String getRecordResponse(TestableIndex index) {
+        Util.waitForResponse(Util.ResponseType.GetRecord, index);
+        return index.getRecordResponse;
     }
 
     public SearchResultsListener getSearchResult() {
@@ -286,14 +283,15 @@ public class MyActivity extends TestableActivity {
 
     private void testGetRecordIdShouldSuccess(TestableIndex index, JSONArray records) throws JSONException {
         for (int i = 0; i < records.length(); i++) {
-            mControlListener.recordResponse = null;
             index.getRecordbyID(records.getJSONObject(i).getString(index.getPrimaryKeyFieldName()));
-            getRecordResponse();
+            String s = getRecordResponse(index);
 //            Log.i(TAG, "expected record::tostring():" + records.getJSONObject(i).toString());
 //            Log.i(TAG, "actual response::tostring():" + mControlListener.recordResponse.record.toString());
             // TODO wait engine to fix the all string type record
             //assertTrue(mControlListener.recordResponse.record.toString().equals(records.getJSONObject(i).toString()));
-            assertTrue(mControlListener.recordResponse.record.getString(index.getPrimaryKeyFieldName()).equals(records.getJSONObject(i).getString(index.getPrimaryKeyFieldName())));
+            assertTrue(index.recordRetreived.getString(
+                    index.getPrimaryKeyFieldName()).equals(records.getJSONObject(i).getString(index.getPrimaryKeyFieldName())));
+            index.resetGetRecordResponseFields();
         }
     }
 
@@ -342,35 +340,34 @@ public class MyActivity extends TestableActivity {
     }
 
     public void testInsertShouldSuccess(TestableIndex index, JSONObject record) {
-        mControlListener.insertResponse = null;
+        index.resetInsertResponseFields();
         index.insert(record);
-        getInsertResponse();
-        assertTrue(mControlListener.insertResponse.getSuccessCount() == 1);
-        assertTrue(mControlListener.insertResponse.getFailureCount() == 0);
+        getInsertResponse(index);
+        assertTrue(index.insertSuccessCount == 1);
     }
 
     public void testInsertShouldFail(TestableIndex index, JSONObject record) {
-        mControlListener.insertResponse = null;
+        index.resetInsertResponseFields();
         index.insert(record);
-        getInsertResponse();
-        assertTrue(mControlListener.insertResponse.getSuccessCount() == 0);
-        assertTrue(mControlListener.insertResponse.getFailureCount() == 1);
+        getInsertResponse(index);
+        assertTrue(index.insertSuccessCount == 0);
+        assertTrue(index.insertFailedCount == 1);
     }
 
     public void testBatchInsertShouldSuccess(TestableIndex index, JSONArray array) {
-        mControlListener.insertResponse = null;
+        index.resetInsertResponseFields();
         index.insert(array);
-        getInsertResponse();
-        assertTrue(mControlListener.insertResponse.getSuccessCount() == array.length());
-        assertTrue(mControlListener.insertResponse.getFailureCount() == 0);
+        getInsertResponse(index);
+        assertTrue(index.insertSuccessCount == array.length());
+        assertTrue(index.insertFailedCount == 0);
     }
 
     public void testBatchInsertShouldFail(TestableIndex index, JSONArray array) {
-        mControlListener.insertResponse = null;
+        index.resetInsertResponseFields();
         index.insert(array);
-        getInsertResponse();
-        assertTrue(mControlListener.insertResponse.getFailureCount() == array.length());
-        assertTrue(mControlListener.insertResponse.getSuccessCount() == 0);
+        getInsertResponse(index);
+        assertTrue(index.insertSuccessCount == 0);
+        assertTrue(index.insertFailedCount == array.length());
     }
 
     public void testSearchStringShouldSuccess(TestableIndex index, List<String> queries) {
@@ -416,62 +413,64 @@ public class MyActivity extends TestableActivity {
     }
 
     public void testUpdateExistShouldSuccess(TestableIndex index, JSONObject record) {
-        mControlListener.updateResponse = null;
+        index.resetUpdateResponseFields();
         index.update(record);
-        getUpdateResponse();
-        assertTrue(mControlListener.updateResponse.getExistRecordUpdatedSuccessCount() == 1);
-        assertTrue(mControlListener.updateResponse.getNewRecordInsertedSuccessCount() == 0);
-        assertTrue(mControlListener.updateResponse.getFailureCount() == 0);
+        getUpdateResponse(index);
+        assertTrue(index.updateSuccessCount == 1);
+        assertTrue(index.upsertSuccessCount == 0);
+        assertTrue(index.updateFailedCount == 0);
     }
 
     public void testUpdateNewShouldSuccess(TestableIndex index, JSONObject record) {
-        mControlListener.updateResponse = null;
+        index.resetUpdateResponseFields();
         index.update(record);
-        getUpdateResponse();
-        assertTrue(mControlListener.updateResponse.getExistRecordUpdatedSuccessCount() == 0);
-        assertTrue(mControlListener.updateResponse.getNewRecordInsertedSuccessCount() == 1);
-        assertTrue(mControlListener.updateResponse.getFailureCount() == 0);
+        getUpdateResponse(index);
+        assertTrue(index.updateSuccessCount == 0);
+        assertTrue(index.upsertSuccessCount == 1);
+        assertTrue(index.updateFailedCount == 0);
     }
 
     public void testUpdateShouldFail(TestableIndex index, JSONObject record) {
-        mControlListener.updateResponse = null;
+        index.resetUpdateResponseFields();
         index.update(record);
-        getUpdateResponse();
-        assertTrue(mControlListener.updateResponse.getSuccessCount() == 0);
-        assertTrue(mControlListener.updateResponse.getFailureCount() == 1);
+        getUpdateResponse(index);
+        assertTrue(index.updateSuccessCount == 0);
+        assertTrue(index.updateFailedCount == 1);
     }
 
     public void testBatchUpdateShouldSuccess(TestableIndex index, JSONArray array) {
-        mControlListener.updateResponse = null;
+        index.resetUpdateResponseFields();
         index.update(array);
-        getUpdateResponse();
-        assertTrue(mControlListener.updateResponse.getSuccessCount() == array.length());
-        assertTrue(mControlListener.updateResponse.getFailureCount() == 0);
+        getUpdateResponse(index);
+        assertTrue(index.updateSuccessCount == array.length());
+        assertTrue(index.updateFailedCount == 0);
     }
 
     public void testBatchUpdateShouldFail(TestableIndex index, JSONArray array) {
-        mControlListener.updateResponse = null;
+        index.resetUpdateResponseFields();
         index.update(array);
-        getUpdateResponse();
-        assertTrue(mControlListener.updateResponse.getSuccessCount() == 0);
-        assertTrue(mControlListener.updateResponse.getFailureCount() == array.length());
+        getUpdateResponse(index);
+        assertTrue(index.updateSuccessCount == 0);
+        assertTrue(index.updateFailedCount == array.length());
     }
 
     public void testDeleteShouldSuccess(TestableIndex index, List<String> ids) {
         for (String id : ids) {
-            mControlListener.deleteResponse = null;
+            index.resetDeleteResponseFields();
             index.delete(id);
-            getDeleteResponse();
-            assertTrue(mControlListener.deleteResponse.getSuccessCount() == 1);
+            getDeleteResponse(index);
+            assertTrue(index.deleteSuccessCount == 1);
+            assertTrue(index.deleteFailedCount == 0);
         }
     }
 
     public void testDeleteShouldFail(TestableIndex index, List<String> ids) {
         for (String id : ids) {
-            mControlListener.deleteResponse = null;
+            index.resetDeleteResponseFields();
             index.delete(id);
-            getDeleteResponse();
-            assertTrue(mControlListener.deleteResponse.getFailureCount() == 1);
+            getDeleteResponse(index);
+            assertTrue(index.deleteSuccessCount == 0);
+            assertTrue(index.deleteFailedCount == 1);
         }
     }
 

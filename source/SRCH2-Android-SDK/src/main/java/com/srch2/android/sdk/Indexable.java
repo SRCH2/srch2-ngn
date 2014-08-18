@@ -1,5 +1,6 @@
 package com.srch2.android.sdk;
 
+import android.util.Log;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -21,15 +22,25 @@ import org.json.JSONObject;
  * not overridden, these will take the default values {@link #DEFAULT_NUMBER_OF_SEARCH_RESULTS_TO_RETURN_AKA_TOPK} and
  * {@link #DEFAULT_FUZZINESS_SIMILARITY_THRESHOLD} respectively.
  * <br><br>
- * There is also one method that returns the number of records in the index: (such as {@link #getRecordCount()}. The
- * values of this method will return will be set each time the SRCH2 search server comes online and each time an
+ * The methods {@link #onInsertComplete(int, int, String)}, {@link #onUpdateComplete(int, int, int, String)},
+ * {@link #onDeleteComplete(int, int, String)}, and {@link #onGetRecordComplete(boolean, org.json.JSONObject, String)}
+ * can also be overridden. These methods will be executed after the SRCH2 search server completes the corresponding
+ * action as caused by the corresponding <code>Indexable</code> method calls (for instance,
+ * {@link #insert(org.json.JSONArray)} will trigger {@link #onInsertComplete(int, int, String)} when the
+ * SRCH2 search server completes the insertion).
+ * <br><br>
+ * There is also one method that returns the number of records in the index: {@link #getRecordCount()}. The
+ * value this method will return will be updated each time the SRCH2 search server comes online and each time an
  * insert, upsert or delete occurs. Note it can return {@link #INDEX_RECORD_COUNT_NOT_SET} if the SRCH2 search server
  * is not online such as when {@link com.srch2.android.sdk.SRCH2Engine#initialize(Indexable, Indexable...)}
  * has been called but {@link com.srch2.android.sdk.SRCH2Engine#onStart(android.content.Context)} has not yet been
  * called).
  */
 public abstract class Indexable {
+
     IndexInternal indexInternal;
+
+    public static final String IRRECOVERABLE_NETWORK_ERROR_MESSAGE = "Connection failed without known cause.";
 
     /**
      * Implementing this method sets the name of the index this <code>Indexable</code> represents.
@@ -123,7 +134,7 @@ public abstract class Indexable {
      * schema as well.
      * <br><br>
      * After the SRCH2 search server completes the insertion task, the callback method of the
-     * {@link StateResponseListener#onInsertRequestComplete(String, InsertResponse)}
+     * {@link #onInsertComplete(int, int, String)}
      * will be triggered containing the status of the
      * completed insertion task.
      * @param record the <code>JSONObject</code> representing the record to insert
@@ -144,7 +155,7 @@ public abstract class Indexable {
      * inserted.
      * <br><br>
      * After the SRCH2 search server completes the insertion task, the callback method of the
-     * {@link StateResponseListener#onInsertRequestComplete(String, InsertResponse)}
+     * {@link #onInsertComplete(int, int, String)}
      * will be triggered containing the status of the
      * completed insertion task.
      * @param records the <code>JSONArray</code> containing the set of <code>JSONObject</code>s
@@ -166,7 +177,7 @@ public abstract class Indexable {
      * inserted.
      * <br><br>
      * After the SRCH2 search server completes the update task, the callback method of the
-     * {@link StateResponseListener#onUpdateRequestComplete(String, UpdateResponse)}
+     * {@link #onUpdateComplete(int, int, int, String)}
      * will be triggered containing the status of the
      * completed update task.
      * @param record the <code>JSONObject</code> representing the record to upsert
@@ -190,7 +201,7 @@ public abstract class Indexable {
      * inserted.
      * <br><br>
      * After the SRCH2 search server completes the update task, the callback method of the
-     * {@link StateResponseListener#onUpdateRequestComplete(String, UpdateResponse)}
+     * {@link #onUpdateComplete(int, int, int, String)}
      *  will be triggered containing the status of the
      * completed update task.
      * @param records the <code>JSONArray</code> containing the set of <code>JSONObject</code>s
@@ -208,7 +219,7 @@ public abstract class Indexable {
      * a matching primary key is found, the index will remain as it is.
      * <br><br>
      * After the SRCH2 search server completes the deletion task, the callback method of the
-     * {@link StateResponseListener#onDeleteRequestComplete(String, DeleteResponse)}
+     * {@link #onDeleteComplete(int, int, String)}
      * will be triggered containing the status of the
      * completed deletion task.
      * @param primaryKeyOfRecordToDelete the primary key of the record to delete
@@ -270,9 +281,8 @@ public abstract class Indexable {
      * Retrieves a record from the index this <code>Indexable</code> represents if the primary
      * key of any record in the index matches the value of <code>primaryKeyOfRecordToRetrieve</code>.
      * When the SRCH2 search server completes the retrieval task, the method
-     * {@link StateResponseListener#onGetRecordByIDComplete(String, GetRecordResponse)}
-     * will be triggered. The record retrieved will be in
-     * the form of a <code>JSONObject</code> inside the <code>response GetRecordResponse</code>.
+     * {@link #onGetRecordComplete(boolean, org.json.JSONObject, String)}
+     * will be triggered containing the record represented as a <code>JSONObject</code> if found.
      * <br><br>
      * This method will than an <code>IllegalArgumentException</code>if the value of
      * <code>primaryKeyOfRecordToRetrieve</code> is null or has a length less than one.
@@ -284,6 +294,102 @@ public abstract class Indexable {
         }
     }
 
+    /**
+     * Callback executed upon completion of corresponding insert action by SRCH2 search server. After
+     * calling either {@link #insert(org.json.JSONObject)} or {@link #insert(org.json.JSONArray)} the
+     * SRCH2 search server will attempt to insert the specified records; upon completion, the JSON
+     * response will be parsed and this method will be triggered. Hopefully the value of the parameter
+     * <code>success</code> will match the number of records inserted; if not, the parameter
+     * <code>JSONResponse</code> contains the raw json response as it was received from the SRCH2
+     * search server which will contain the reason for the failure to insert.
+     * <br><br>
+     * <i>This method does not have to be overridden</i>. If it is not, the values of <code>success</code>
+     * and <code>failed</code> will be printed to logcat under the tag 'SRCH2' with the message
+     * prefixed by the name of the index this <code>Indexable</code> represents.
+     * @param success the number of successful inserts
+     * @param failed the number of failed inserts
+     * @param JSONResponse the raw JSON response from the SRCH2 search server
+     */
+    public void onInsertComplete(int success, int failed, String JSONResponse) {
+        Log.d("SRCH2", "Index " + getIndexName() + " completed insert action. Successful insertions: " +
+                success + ", failed insertions: " + failed);
+    }
 
+    /**
+     * Callback executed upon completion of corresponding update action by SRCH2 search server. After
+     * calling either {@link #update(org.json.JSONObject)} or {@link #update(org.json.JSONArray)} the
+     * SRCH2 search server will attempt to update the specified records; upon completion, the JSON
+     * response will be parsed and this method will be triggered. Hopefully the sum of the values of
+     * the parameters <code>success</code> and <code>upserts</code> will match the total number of records
+     * updated (an upsert means a record was inserted since no existing record was found to update);  if not,
+     * the parameter
+     * <code>JSONResponse</code> contains the raw json response as it was received from the SRCH2
+     * search server which will contain the reason for the failure to update.
+     * <br><br>
+     * <i>This method does not have to be overridden</i>. If it is not, the values of <code>success</code>,
+     * <code>upserts</code>, and <code>failed</code> will be printed to logcat under the tag 'SRCH2' with
+     * the message prefixed by the name of the index this <code>Indexable</code> represents.
+     * @param success the number of successfully updated records
+     * @param upserts the number of records that were inserted since no existing record of the same primary key
+     *                was found in the index to update
+     * @param failed the number of failed updates
+     * @param JSONResponse the raw JSON response from the SRCH2 search server
+     */
+    public void onUpdateComplete(int success, int upserts, int failed, String JSONResponse) {
+        Log.d("SRCH2", "Index " + getIndexName() + " completed update action. Successful updates: " +
+                success + ", successful upserts: " + upserts + ", failed updates: " + failed);
+    }
 
+    /**
+     * Callback executed upon completion of corresponding delete action by SRCH2 search server. After
+     * calling {@link #delete(String)}  the
+     * SRCH2 search server will attempt to delete the records with the specified primary keys; upon completion,
+     * the JSON
+     * response will be parsed and this method will be triggered. Hopefully the value of the parameter
+     * <code>success</code> will match the number of primary keys passed for records to be deleted; if not,
+     * the parameter
+     * <code>JSONResponse</code> contains the raw json response as it was received from the SRCH2
+     * search server which will contain the reason for the failure to delete.
+     * <br><br>
+     * <i>This method does not have to be overridden</i>. If it is not, the values of <code>success</code>
+     * and <code>failed</code> will be printed to logcat under the tag 'SRCH2' with the message
+     * prefixed by the name of the index this <code>Indexable</code> represents.
+     * @param success the number of successful inserts
+     * @param failed the number of failed inserts
+     * @param JSONResponse the raw JSON response from the SRCH2 search server
+     */
+    public void onDeleteComplete(int success, int failed, String JSONResponse) {
+        Log.d("SRCH2", "Index " + getIndexName() + " completed delete action. Successful deletions: " +
+                success + ", failed deletions: " + failed);
+    }
+
+    /**
+     * Callback executed upon completion of corresponding get record by id action by SRCH2 search server. After
+     * calling either {@link #getRecordbyID(String)}   the
+     * SRCH2 search server will attempt to retrieve the record in the index with the specified primary key;
+     * upon completion,
+     * the JSON
+     * response will be parsed and this method will be triggered. If the record was found, it will be the value of
+     * the parameter of <code>record</code> and the value of <code>success</code> will be <b>true</b>; if the
+     * record was not found, <code>success</code> will be <b>false</b> and the <code>record</code> <i>will not
+     * be null but contain no values</i>.
+     * The value of
+     * <code>JSONResponse</code> contains the raw json response as it was received from the SRCH2 search
+     * server.
+     * <br><br>
+     * <i>This method does not have to be overridden</i>. If it is not, the values of <code>success</code>
+     * and <code>record</code> will be printed to logcat under the tag 'SRCH2' with the message
+     * prefixed by the name of the index this <code>Indexable</code> represents.
+     * @param success whether the record was retrieved
+     * @param record the retrieved record, will have no values if the record was not in the index
+     * @param JSONResponse the raw JSON response from the SRCH2 search server
+     */
+    public void onGetRecordComplete(boolean success, JSONObject record, String JSONResponse) {
+        if (success) {
+            Log.d("SRCH2", "Index " + getIndexName() + " completed get record action. Record string: " +
+                    record.toString());
+        } else {
+            Log.d("SRCH2", "Index " + getIndexName() + " completed get record action but found no record.");
+        }
+    }
 }

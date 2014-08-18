@@ -40,15 +40,18 @@ import java.util.concurrent.atomic.AtomicReference;
  * SRCH2 search server must be formed as network RESTful actions. This class and the rest
  * of the API wraps this condition of operation so that users of the SRCH2 Android SDK do
  * not have to manually form their own network tasks but can instead simply make the appropriate
- * calls on their <code>Indexable</code> implementations.
- * Similarly, the output of the SRCH2 search server is wrapped in the various subclasses of
- * {@link com.srch2.android.sdk.RestfulResponse} so that the RESTful responses from the SRCH2 search server
- * do not have to be parsed: for instance, after inserting a record, the method
- * {@link StateResponseListener#onInsertRequestComplete(String, InsertResponse)}
- * will be triggered where the <code>InsertResponse response</code> will contain a count of
- * the number of successful inserts. After any of the insert, update or delete operations the
- * <code>Indexable</code> representing the edited index will have its {@link Indexable#getRecordCount()} updated
- * accordingly.
+ * calls on their <code>Indexable</code> implementations. For actions editing the index or
+ * retrieving a particular record, the response from the SRCH2 search server will be passed
+ * to the corresponding <code>Indexable</code> method: for example when the SRCH2 search server
+ * completes an insertion after the method {@link Indexable#insert(org.json.JSONArray)} is called,
+ * the method {@link com.srch2.android.sdk.Indexable#onInsertComplete(int, int, String)} will be
+ * executed on that <code>Indexable</code> indicating the number of successful and failed insertions.
+ * These methods should be overriden by the implementation of the <code>Indexable</code>, although
+ * they do not have to be: if they are not they will out to the logcat under the tag 'SRCH2'.
+ * For a search action, when the SRCH2 search completes the search, the results will be passed
+ * through the method {@link com.srch2.android.sdk.SearchResultsListener#onNewSearchResults(int, String, java.util.HashMap)}
+ * to the implementation of the <code>SearchResultsListener</code> set by calling
+ * {@link #setSearchResultsListener(SearchResultsListener)}.
  * <br><br>
  * It is also possible to harness the power of the sophisticated search functionality of the SRCH2 search server
  * through the SRCH2 Android SDK and its API by using the {@link Query} class.
@@ -63,7 +66,6 @@ final public class SRCH2Engine {
     static boolean isDebugAndTestingMode = false;
     static SRCH2EngineBroadcastReciever incomingIntentReciever;
     static SearchResultsListener searchResultsObserver = null;
-    static StateResponseListener stateResultsObserver = null;
     static boolean isStarted = false;
     static SRCH2Configuration conf = null;
     private static SearchTask allIndexSearchTask = null;
@@ -119,7 +121,10 @@ final public class SRCH2Engine {
      * foreground and is visible--that is, when it can be interacted with by a user who might perform searches.
      * Starting the SRCH2 search server is fast, usually taking under a second, and when it comes online
      * and is ready to handle search requests the callback method
-     * {@link com.srch2.android.sdk.StateResponseListener#onSRCH2ServiceReady()} will be executed. Checking
+     *
+     * EDIT HERE
+     *
+     * will be executed. Checking
      * whether the SRCH2 search server is ready can also determined by calling
      * {@link #isReady()}.
      * <br><br>
@@ -167,8 +172,7 @@ final public class SRCH2Engine {
         }
 
         resetState();
-        CheckCoresLoadedTask task = new CheckCoresLoadedTask(indexUrlMap,
-                stateResultsObserver);
+        CheckCoresLoadedTask task = new CheckCoresLoadedTask(indexUrlMap);
         HttpTask.executeTask(task);
     }
 
@@ -194,25 +198,6 @@ final public class SRCH2Engine {
     public static void setSearchResultsListener(
             SearchResultsListener searchResultsListener) {
         searchResultsObserver = searchResultsListener;
-    }
-
-    static StateResponseListener getControlResponseListener() {
-        return stateResultsObserver;
-    }
-
-    /**
-     * Registers the implementation of the interface <code>StateResponseListener</code> for receiving
-     * the state and status information about indexes and the SRCH2 search server.  This can be reset
-     * at anytime, and although it is not required to be set, the callbacks of the
-     * <code>StateResponseListener</code> are useful for knowing whether inserts, updates or deletes
-     * were performed correctly, or, more importantly, when the SRCH2 search server comes online
-     * and is ready for search.
-     * @param stateResponseListener the implementation of <code>StateResponseListener</code> that will
-     *                              receive index and engine status and state information
-     */
-    public static void setStateResponseListener(
-            StateResponseListener stateResponseListener) {
-        stateResultsObserver = stateResponseListener;
     }
 
     private static void searchAllRawString(String rawQueryString) {
@@ -448,7 +433,7 @@ final public class SRCH2Engine {
 
     /**
      * Used to determine whether the user is subject to canopy immersion.
-     * @return determines whether the user is an anteater and in a tree
+     * @return whether the user is an anteater and in a tree
      */
     public static boolean isUserAnAntEaterInATree() {
         return true && true;

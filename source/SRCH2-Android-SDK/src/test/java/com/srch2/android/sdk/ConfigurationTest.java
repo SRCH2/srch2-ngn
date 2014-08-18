@@ -126,7 +126,7 @@ public class ConfigurationTest {
         InputStream is = null;
         HttpURLConnection connection = null;
         String infoResponseLiteral = null;
-        int responseCode = RestfulResponse.FAILED_TO_CONNECT_RESPONSE_CODE;
+        int responseCode = HttpTask.RESTfulResponseTags.FAILED_TO_CONNECT_RESPONSE_CODE;
         try {
             URL url = UrlBuilder.getShutDownUrl(SRCH2Engine.getConfig());
             System.out.println("request url :" + url.toExternalForm());

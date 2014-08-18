@@ -7,24 +7,31 @@ public class Util {
     static final int TOLERANCE = 30000;
     static final int SLEEP_PER_ROUOND = 100;
 
-    public static void waitForResponse(TestControlResponseListener controlResponseListener, Class clazz) {
+    public static enum ResponseType {
+        Insert,
+        Delete,
+        Update,
+        GetRecord
+    }
+
+    public static void waitForResponse(ResponseType responseTypeToWaitFor, TestableIndex index) {
         int tolerate = TOLERANCE;
         int sleepPerRound = SLEEP_PER_ROUOND;
         for (; tolerate > 0; tolerate -= sleepPerRound) {
-            if (clazz == InsertResponse.class) {
-                if (checkIfNotNullElseSleep(controlResponseListener.insertResponse, sleepPerRound)) {
+            if (responseTypeToWaitFor == ResponseType.Insert) {
+                if (checkIfNotNullElseSleep(responseTypeToWaitFor, index, sleepPerRound)) {
                     return;
                 }
-            } else if (clazz == DeleteResponse.class) {
-                if (checkIfNotNullElseSleep(controlResponseListener.deleteResponse, sleepPerRound)) {
+            } else if (responseTypeToWaitFor == ResponseType.Delete) {
+                if (checkIfNotNullElseSleep(responseTypeToWaitFor, index, sleepPerRound)) {
                     return;
                 }
-            } else if (clazz == UpdateResponse.class) {
-                if (checkIfNotNullElseSleep(controlResponseListener.updateResponse, sleepPerRound)) {
+            } else if (responseTypeToWaitFor == ResponseType.Update) {
+                if (checkIfNotNullElseSleep(responseTypeToWaitFor, index, sleepPerRound)) {
                     return;
                 }
-            } else if (clazz == GetRecordResponse.class) {
-                if (checkIfNotNullElseSleep(controlResponseListener.recordResponse, sleepPerRound)) {
+            } else if (responseTypeToWaitFor == ResponseType.GetRecord) {
+                if (checkIfNotNullElseSleep(responseTypeToWaitFor, index, sleepPerRound)) {
                     return;
                 }
             }
@@ -32,8 +39,24 @@ public class Util {
         assertTrue(tolerate > 0);
     }
 
-    static boolean checkIfNotNullElseSleep(Object response, int sleepPerRound) {
-        if (response != null) {
+    static boolean checkIfNotNullElseSleep(ResponseType responseType, TestableIndex index, int sleepPerRound) {
+        String responseString = null;
+        switch (responseType) {
+            case Insert:
+                responseString = index.insertResponse;
+                break;
+            case Update:
+                responseString = index.updateResponse;
+                break;
+            case Delete:
+                responseString = index.deleteResponse;
+                break;
+            case GetRecord:
+                responseString = index.getRecordResponse;
+                break;
+        }
+
+        if (responseString != null) {
             return true;
         }
         try {

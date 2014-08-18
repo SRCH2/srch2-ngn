@@ -7,9 +7,6 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by jianfeng on 8/4/14.
- */
 public class TestGeoIndex extends TestableIndex {
     public static final String INDEX_NAME = "testGeo";
     public static final String INDEX_FIELD_NAME_PRIMARY_KEY = "id";

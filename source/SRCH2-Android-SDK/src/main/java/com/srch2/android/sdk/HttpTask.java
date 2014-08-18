@@ -1,5 +1,7 @@
 package com.srch2.android.sdk;
 
+import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,21 +15,36 @@ abstract class HttpTask implements Runnable {
 
     private static final String TAG = "HttpTask";
 
+    static final class RESTfulResponseTags {
+        static final int INVALID_JSON_RESPONSE = -1;
+        final static String JSON_KEY_PRIMARY_KEY_INDICATOR = "rid";
+        final static String JSON_KEY_LOG = "log";
+        final static String JSON_KEY_DELETE = "delete";
+        final static String JSON_KEY_INSERT = "insert";
+        final static String JSON_KEY_UPDATE = "update";
+        final static String JSON_VALUE_UPDATE_FAIL = "failed";
+        final static String JSON_VALUE_UPDATED_EXISTS = "Existing record updated successfully";
+        final static String JSON_VALUE_UPSERT_SUCCESS = "New record inserted successfully";
+        final static String JSON_VALUE_SUCCESS = "success";
+        public static final int FAILED_TO_CONNECT_RESPONSE_CODE = -1;
+    }
+
     static private boolean isExecuting = false;
     static private ExecutorService controlTaskExecutor;
     static private ExecutorService searchTaskExecutor;
+    static private ExecutorService clientCallbackTaskExecutor;
 
     private static final int TASK_ID_INSERT_UPDATE_DELETE_GETRECORD = 1;
     private static final int TASK_ID_SEARCH = 2;
+    private static final int TASK_ID_CLIENT_CALLBACK = 3;
 
-
-    abstract protected void onTaskComplete(int returnedResponseCode,
-                                           String returnedResponseLiteral);
+    protected SearchResultsListener searchResultsListener;
 
     static synchronized void onStart() {
         isExecuting = true;
         controlTaskExecutor = Executors.newFixedThreadPool(1);
         searchTaskExecutor = Executors.newFixedThreadPool(1);
+        clientCallbackTaskExecutor = Executors.newFixedThreadPool(1);
     }
 
     static synchronized void onStop() {
@@ -37,6 +54,9 @@ abstract class HttpTask implements Runnable {
         }
         if (searchTaskExecutor != null) {
             searchTaskExecutor.shutdown();
+        }
+        if (clientCallbackTaskExecutor != null) {
+            clientCallbackTaskExecutor.shutdown();
         }
     }
 
@@ -54,6 +74,11 @@ abstract class HttpTask implements Runnable {
                         originatingTaskClass == InsertTask.class ||
                             originatingTaskClass == DeleteTask.class) {
             taskId = TASK_ID_INSERT_UPDATE_DELETE_GETRECORD;
+        } else if (originatingTaskClass == InsertResponse.class ||
+                        originatingTaskClass == UpdateResponse.class ||
+                            originatingTaskClass == DeleteResponse.class ||
+                                originatingTaskClass == GetRecordResponse.class) {
+            taskId = TASK_ID_CLIENT_CALLBACK;
         }
 
         switch (taskId) {
@@ -67,22 +92,12 @@ abstract class HttpTask implements Runnable {
                     controlTaskExecutor.execute(taskToExecte);
                 }
                 break;
+            case TASK_ID_CLIENT_CALLBACK:
+                if (clientCallbackTaskExecutor != null) {
+                    clientCallbackTaskExecutor.execute(taskToExecte);
+                }
         }
     }
-
-
-
-
-
-
-
-    protected StateResponseListener controlResponseObserver;
-    protected SearchResultsListener searchResultsListener;
-
-
-
-
-
 
     static abstract class SingleCoreHttpTask extends HttpTask {
         final String targetCoreName;
@@ -91,20 +106,14 @@ abstract class HttpTask implements Runnable {
         }
     }
 
-
-
-
-
     static abstract class InsertUpdateDeleteTask extends SingleCoreHttpTask {
         final URL targetUrl;
 
-        public InsertUpdateDeleteTask(final URL theTargetUrl, final String theTargetCoreName, final StateResponseListener theControlResponseListener) {
+        public InsertUpdateDeleteTask(final URL theTargetUrl, final String theTargetCoreName) {
             super(theTargetCoreName);
             targetUrl = theTargetUrl;
-            controlResponseObserver = theControlResponseListener;
         }
 
-        @Override
         protected void onTaskComplete(int returnedResponseCode,
                                       String returnedResponseLiteral) {
             updateIndexableIndexInformation(SRCH2Engine.conf.indexableMap.get(targetCoreName));
@@ -113,33 +122,6 @@ abstract class HttpTask implements Runnable {
             }
         }
     }
-
-
-    static abstract class SearchHttpTask extends SingleCoreHttpTask {
-        final URL targetUrl;
-
-        SearchHttpTask(final URL theTargetUrl, final String theTargetCoreName, final SearchResultsListener theSearchResultsListener) {
-            super(theTargetCoreName);
-            targetUrl = theTargetUrl;
-            searchResultsListener = theSearchResultsListener;
-        }
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     void updateIndexableIndexInformation(Indexable indexableToUpdate) {
         if (indexableToUpdate != null) {
@@ -151,18 +133,108 @@ abstract class HttpTask implements Runnable {
         }
     }
 
+    static class DeleteResponse extends SingleCoreHttpTask {
+        final int success;
+        final int failed;
+        final String jsonResponse;
 
+        DeleteResponse(String theTargetCoreName, int successfulDeletions, int failedDeletions, String jsonResponseLiteral) {
+            super(theTargetCoreName);
+            success = successfulDeletions;
+            failed = failedDeletions;
+            jsonResponse = jsonResponseLiteral;
+        }
 
+        @Override
+        public void run() {
+            Indexable idx = SRCH2Engine.conf.indexableMap.get(targetCoreName);
+            if (idx != null) {
+                idx.onDeleteComplete(success, failed, jsonResponse);
+            }
+        }
+    }
 
+    static class InsertResponse extends SingleCoreHttpTask {
+        final int success;
+        final int failed;
+        final String jsonResponse;
 
+        InsertResponse(String theTargetCoreName, int successfulDeletions, int failedDeletions, String jsonResponseLiteral) {
+            super(theTargetCoreName);
+            success = successfulDeletions;
+            failed = failedDeletions;
+            jsonResponse = jsonResponseLiteral;
+        }
 
+        @Override
+        public void run() {
+            Indexable idx = SRCH2Engine.conf.indexableMap.get(targetCoreName);
+            if (idx != null) {
+                idx.onInsertComplete(success, failed, jsonResponse);
+            }
+        }
+    }
 
+    static class UpdateResponse extends SingleCoreHttpTask {
+        final int success;
+        final int upserts;
+        final int failed;
+        final String jsonResponse;
 
+        UpdateResponse(String theTargetCoreName, int successfulDeletions, int successfulUpserts, int failedDeletions, String jsonResponseLiteral) {
+            super(theTargetCoreName);
+            success = successfulDeletions;
+            upserts = successfulUpserts;
+            failed = failedDeletions;
+            jsonResponse = jsonResponseLiteral;
+        }
 
+        @Override
+        public void run() {
+            Indexable idx = SRCH2Engine.conf.indexableMap.get(targetCoreName);
+            if (idx != null) {
+                idx.onUpdateComplete(success, upserts, failed, jsonResponse);
+            }
+        }
+    }
 
+    static class GetRecordResponse extends SingleCoreHttpTask {
+        final boolean success;
+        final JSONObject retrievedRecord;
+        final String jsonResponse;
 
+        GetRecordResponse(String theTargetCoreName, boolean wasRecordRetrieved, JSONObject theRetrievedRecord, String jsonResponseLiteral) {
+            super(theTargetCoreName);
+            success = wasRecordRetrieved;
+            if (success) {
+                retrievedRecord = theRetrievedRecord;
+            } else {
+                retrievedRecord = new JSONObject();
+            }
+            jsonResponse = jsonResponseLiteral;
+        }
 
+        @Override
+        public void run() {
+            Indexable idx = SRCH2Engine.conf.indexableMap.get(targetCoreName);
+            if (idx != null) {
+                idx.onGetRecordComplete(success, retrievedRecord, jsonResponse);
+            }
+        }
+    }
 
+    static abstract class SearchHttpTask extends SingleCoreHttpTask {
+        final URL targetUrl;
+
+        SearchHttpTask(final URL theTargetUrl, final String theTargetCoreName, final SearchResultsListener theSearchResultsListener) {
+            super(theTargetCoreName);
+            targetUrl = theTargetUrl;
+            searchResultsListener = theSearchResultsListener;
+        }
+
+        abstract protected void onTaskComplete(int returnedResponseCode,
+                                               String returnedResponseLiteral);
+    }
 
 	static String handleStreams(HttpURLConnection connection, String internalClassLogcatTag) throws IOException {
         String response = null;
@@ -193,13 +265,13 @@ abstract class HttpTask implements Runnable {
                     } else {
                         Cat.d(internalClassLogcatTag, "ERROR STREAM is _" + response + "_");
                     }
-                }else {
+                } else {
                     Cat.d(internalClassLogcatTag, "ERROR STREAM NULL");
                 }
             }
         }
         if (response == null) {
-            response = RestfulResponse.IRRECOVERABLE_NETWORK_ERROR_MESSAGE;
+            response = Indexable.IRRECOVERABLE_NETWORK_ERROR_MESSAGE;
         }
         return response;
     }
@@ -216,11 +288,9 @@ abstract class HttpTask implements Runnable {
             }
             ioException.printStackTrace();
         }
-
         if (errorResponse == null) {
-            errorResponse = RestfulResponse.IRRECOVERABLE_NETWORK_ERROR_MESSAGE;
+            errorResponse = Indexable.IRRECOVERABLE_NETWORK_ERROR_MESSAGE;
         }
-
         if (response == null) {
             return errorResponse;
         } else {
@@ -288,5 +358,4 @@ abstract class HttpTask implements Runnable {
 	 * static HttpTaskExecutor getHttpTaskExecutor() { return new
 	 * HttpTaskExecutor(); }
 	 */
-
 }
