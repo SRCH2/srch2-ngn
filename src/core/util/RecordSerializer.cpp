@@ -231,16 +231,16 @@ initAttributeOffsetArray(srch2::instantsearch::Schema& schema,
           sizeof(float));
   initializeOffsetArray(refiningDouble, refiningOffsets, offset,
           sizeof(double));
-  initializeOffsetArray(refiningTimes, refiningOffsets, offset, 
+  initializeOffsetArray(refiningTimes, refiningOffsets, offset,
       sizeof(long));
 
   variableLengthOffsetStart = offset;
 
-    initializeOffsetArray(refiningTexts, refiningOffsets, offset, 
+    initializeOffsetArray(refiningTexts, refiningOffsets, offset,
         sizeof(offset_type));
-    initializeOffsetArray(refiningMultiValued, refiningOffsets, offset, 
+    initializeOffsetArray(refiningMultiValued, refiningOffsets, offset,
         sizeof(offset_type));
-    initializeOffsetArray(searchableStrings, searchableOffsets, offset, 
+    initializeOffsetArray(searchableStrings, searchableOffsets, offset,
         sizeof(offset_type));
 
   //have variable sized Attributes

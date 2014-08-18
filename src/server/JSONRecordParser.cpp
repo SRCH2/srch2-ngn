@@ -698,6 +698,14 @@ void convertValueToString(Json::Value value, vector<string> &stringValues) {
         } else {
             stringValues.push_back(originalString);
         }
+        /*
+         * In JSONCPP 0.6.0, long value (>0) will be treated as UInt (unsigned int)
+         * long value (<0) will be treated as Int.
+         * int value will be treated as Int.
+         *
+         * All the cases above can be parsed from JSON object to long long int
+         * by asInt64().
+         */
     } else if (value.isInt()||value.isUInt()) {
         originalString = convertToStr<long>(value.asInt64());
         lowercaseString = originalString;

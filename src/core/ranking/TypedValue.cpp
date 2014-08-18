@@ -59,10 +59,10 @@ namespace srch2
 
                 switch (typedValue.valueType) {
                     case ATTRIBUTE_TYPE_LONG:
-                        // comparing single-valued vs. single-valued : Example : 1.4 == 1.4
+                        // comparing single-valued vs. single-valued : Example : 1 == 1
                         return longTypedValue == typedValue.longTypedValue;
                     case ATTRIBUTE_TYPE_MULTI_LONG:{
-                        // comparing single-valued vs. multi-valued. Example : 1.4 == <1.3,3.2,23.0>
+                        // comparing single-valued vs. multi-valued. Example : 1 == <1,3,23>
                         vector<long> values = typedValue.getMultiLongTypedValue();
                         return std::find(values.begin() , values.end() , longTypedValue) != values.end();
                     }
@@ -186,7 +186,7 @@ namespace srch2
 
                 switch (typedValue.valueType) {
                     case ATTRIBUTE_TYPE_DOUBLE:{
-                        // comparing multi-valued vs. single-valued. Example : <1,3,3> == 2
+                        // comparing multi-valued vs. single-valued. Example : <1.3,3.4,3.45> == 2.4
                         vector<double> values = this->getMultiDoubleTypedValue();
                         return std::find(values.begin() , values.end() , typedValue.doubleTypedValue) != values.end();
                     }
@@ -724,22 +724,22 @@ namespace srch2
 		}
 	}
 
-	const int TypedValue::getIntTypedValue() const{
+	int TypedValue::getIntTypedValue() const{
 		return intTypedValue;
 	}
-    const long TypedValue::getLongTypedValue() const{
+    long TypedValue::getLongTypedValue() const{
         return longTypedValue;
     }
-    const float TypedValue::getFloatTypedValue() const{
+    float TypedValue::getFloatTypedValue() const{
 		return floatTypedValue;
 	}
-    const double TypedValue::getDoubleTypedValue() const{
+    double TypedValue::getDoubleTypedValue() const{
         return doubleTypedValue;
     }
     const string & TypedValue::getTextTypedValue() const{
 		return stringTypedValue;
 	}
-    const long TypedValue::getTimeTypedValue() const{
+    long TypedValue::getTimeTypedValue() const{
 		return timeTypedValue;
 	}
     const vector<int> & TypedValue::getMultiIntTypedValue() const{

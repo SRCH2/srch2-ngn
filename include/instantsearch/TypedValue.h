@@ -52,7 +52,7 @@ namespace srch2
     	TypedValue operator+(const TypedValue& a);
 
         TypedValue() : 
-            valueType(ATTRIBUTE_TYPE_INT), intTypedValue(0), longTypedValue(0), floatTypedValue(0.0), doubleTypedValue(0), timeTypedValue(0)
+            valueType(ATTRIBUTE_TYPE_INT), intTypedValue(0), longTypedValue(0), floatTypedValue(0.0), doubleTypedValue(0.0), timeTypedValue(0)
         {
     	};
     	void setTypedValue(int intTypeValue,FilterType valueType);
@@ -87,12 +87,12 @@ namespace srch2
     		capacity += timeTypedMultiValue.capacity() * sizeof(long); ; // vector<long>;
         	return capacity;
     	}
-    	const int getIntTypedValue() const;
-    	const long getLongTypedValue() const;
-    	const float getFloatTypedValue() const;
-    	const double getDoubleTypedValue() const;
+    	int getIntTypedValue() const;
+    	long getLongTypedValue() const;
+    	float getFloatTypedValue() const;
+    	double getDoubleTypedValue() const;
     	const string & getTextTypedValue() const;
-    	const long getTimeTypedValue() const;
+    	long getTimeTypedValue() const;
     	const vector<int> & getMultiIntTypedValue() const;
     	const vector<long> & getMultiLongTypedValue() const;
     	const vector<float> & getMultiFloatTypedValue() const;

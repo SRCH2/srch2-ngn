@@ -1727,14 +1727,16 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
                     }
 
                     // Checks for geo types. location_latitude and location_longitude are geo types
-                    if (string(field.attribute(typeString).value()).compare(
-                            locationLatitudeString) == 0) {
+                    string fieldType = field.attribute(typeString).value();
+                    string lowerCase = fieldType;
+                    std::transform(lowerCase.begin(), lowerCase.end(),
+                            lowerCase.begin(), ::tolower);
+                    if (lowerCase.compare(locationLatitudeString) == 0) {
                         coreParseState->hasLatitude = true;
                         coreInfo->fieldLatitude = string(
                                 field.attribute(nameString).value());
                     }
-                    if (string(field.attribute(typeString).value()).compare(
-                            locationLongitudeString) == 0) {
+                    if (lowerCase.compare(locationLongitudeString) == 0) {
                         coreParseState->hasLongitude = true;
                         coreInfo->fieldLongitude = string(
                                 field.attribute(nameString).value());
@@ -2644,20 +2646,26 @@ bool ConfigManager::isFloat(string str) {
 }
 
 bool ConfigManager::isValidFieldType(string& fieldType, bool isSearchable) {
+    string lowerCase = fieldType;
+    std::transform(lowerCase.begin(), lowerCase.end(), lowerCase.begin(),
+            ::tolower);
+
     if (isSearchable) {
         // supported types are: text, location_latitude, location_longitude
-        if ((fieldType.compare("text") == 0)
-                || (fieldType.compare(locationLatitudeString) == 0)
-                || (fieldType.compare("location_longitude") == 0)) {
+        if ((lowerCase.compare("text") == 0)
+                || (lowerCase.compare(locationLatitudeString) == 0)
+                || (lowerCase.compare("location_longitude") == 0)) {
             return true;
         }
         return false;
     } else {
         // supported types are: text, integer, float, time
-        if ((fieldType.compare("text") == 0)
-                || (fieldType.compare("integer") == 0) || (fieldType.compare("long") == 0)
-                || (fieldType.compare("float") == 0) ||  (fieldType.compare("double") == 0)
-                || (fieldType.compare("time") == 0)) {
+        if ((lowerCase.compare("text") == 0)
+                || (lowerCase.compare("integer") == 0)
+                || (lowerCase.compare("long") == 0)
+                || (lowerCase.compare("float") == 0)
+                || (lowerCase.compare("double") == 0)
+                || (lowerCase.compare("time") == 0)) {
             return true;
         }
         return false;
@@ -2908,17 +2916,20 @@ bool ConfigManager::isValidSearcherType(string& searcherType) {
 
 srch2::instantsearch::FilterType ConfigManager::parseFieldType(
         string& fieldType) {
-    if (fieldType.compare("integer") == 0)
+    string lowerCase = fieldType;
+    std::transform(lowerCase.begin(), lowerCase.end(), lowerCase.begin(),
+            ::tolower);
+    if (lowerCase.compare("integer") == 0)
         return srch2::instantsearch::ATTRIBUTE_TYPE_INT;
-    else if (fieldType.compare("long") == 0)
+    else if (lowerCase.compare("long") == 0)
             return srch2::instantsearch::ATTRIBUTE_TYPE_LONG;
-    else if (fieldType.compare("float") == 0)
+    else if (lowerCase.compare("float") == 0)
         return srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT;
-    else if (fieldType.compare("double") == 0)
+    else if (lowerCase.compare("double") == 0)
             return srch2::instantsearch::ATTRIBUTE_TYPE_DOUBLE;
-    else if (fieldType.compare("text") == 0)
+    else if (lowerCase.compare("text") == 0)
         return srch2::instantsearch::ATTRIBUTE_TYPE_TEXT;
-    else if (fieldType.compare("time") == 0)
+    else if (lowerCase.compare("time") == 0)
         return srch2::instantsearch::ATTRIBUTE_TYPE_TIME;
 
     Logger::warn("\"%s\" is not a supported type. The following are supported "\

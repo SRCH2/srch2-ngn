@@ -181,9 +181,6 @@ fi
 
 test_id="synonyms"
 printTestBanner "$test_id"
-rm ./synonyms/indexes/*
-rm ./synonyms/indexes-with-offset/*
-rm ./synonyms/indexes-with-offset-1/*
 python ./synonyms/synonyms.py $SRCH2_ENGINE | eval "${html_escape_command}" >> system_test.log 2>&1
 if [ ${PIPESTATUS[0]} -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}

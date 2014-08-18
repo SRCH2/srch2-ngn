@@ -170,7 +170,9 @@ void RecordSerializerUtil::convertCompactToJSONString(Schema * storedAttrSchema,
             }
             case srch2is::ATTRIBUTE_TYPE_DOUBLE:
             {
-                double attrdata = *((double *)(buffer.start.get() + lenOffset));
+                double attrdata;
+                void * source = (void *)(buffer.start.get() + lenOffset);
+                memcpy(&attrdata, source, sizeof(double));
                 stringstream ss;
                 ss << attrdata;
                 jsonBuffer += ss.str();
@@ -288,10 +290,13 @@ float RecordSerializerUtil::convertByteArrayToFloat(unsigned startOffset, const 
 /*
  *  read a float value at an offset (= startOffset) from the data pointer.
  */
-double RecordSerializerUtil::convertByteArrayToDouble(unsigned startOffset, const Byte * data) {
+double RecordSerializerUtil::convertByteArrayToDouble(unsigned startOffset,
+        const Byte * data) {
     const Byte * bytePointer = data + startOffset;
-    double * doublePointer = (double *) bytePointer;
-    return *doublePointer;
+
+    double attrdata;
+    memcpy(&attrdata, bytePointer, sizeof(double));
+    return attrdata;
 }
 /*
  *   Given a refining attribute name and type, fetch its value from in-memory compact representation.

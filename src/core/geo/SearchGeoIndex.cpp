@@ -275,7 +275,7 @@ void QuadTree::rangeQueryInternal(QueryResultsInternal *queryResultsInternal, co
 
                     QueryResult * queryResult = queryResultsInternal->getReultsFactory()->impl->createQueryResult();
                     queryResult->internalRecordId = this->geoElementIndex[offset]->forwardListID;
-                    queryResult->_score.setTypedValue(combinedScore,ATTRIBUTE_TYPE_FLOAT);//TODO
+                    queryResult->_score.setTypedValue(combinedScore, ATTRIBUTE_TYPE_FLOAT);//TODO
                     //queryResult.physicalDistance = Ranker::calculateHaversineDistanceBetweenTwoCoordinates();
 
                     // set up the matching keywords and editDistances for queryResults
