@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 public abstract class TestableIndex extends Indexable {
 
+
     @Override
     public void onInsertComplete(int success, int failed, String JSONResponse) {
         insertResponse = JSONResponse;
@@ -35,6 +36,16 @@ public abstract class TestableIndex extends Indexable {
         recordRetrievedSuccess = success;
         recordRetreived = record;
     }
+
+    // NOTE: the above is the callbacks from stateresponselistener (now goto indexable)
+    // NOTE: below is the fields of the (now deprecated) response classes: after one of the
+    // callbacks above is executed, it'll dump the values of its parameters into the
+    // corresponding fields
+    // Util.wait now waits for the String *response, in my MyActivity, after the waiting
+    // is complete, since the values will have been set, the tests can use these fields
+    // to confirm (insertcount = expected, for instance). After that, it can be
+    // reset next time. Thus the previous Stateresponselistener is now a part of this
+    // class, since these fields will apply FOR ALL subclasses of this class
 
     String insertResponse;
     int insertSuccessCount, insertFailedCount;
