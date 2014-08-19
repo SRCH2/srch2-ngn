@@ -86,7 +86,7 @@ void addRecords() {
     schema->setSearchableAttribute("article_id"); // convert id to searchable text
     schema->setSearchableAttribute("article_authors", 2); // searchable text
     schema->setSearchableAttribute("article_title", 7); // searchable text
-    schema->setRefiningAttribute("citation", ATTRIBUTE_TYPE_UNSIGNED, "0");
+    schema->setRefiningAttribute("citation", ATTRIBUTE_TYPE_INT, "0");
     schema->setRefiningAttribute("price", ATTRIBUTE_TYPE_FLOAT, "1.25");
     schema->setRefiningAttribute("class", ATTRIBUTE_TYPE_TEXT, "Z");
 
