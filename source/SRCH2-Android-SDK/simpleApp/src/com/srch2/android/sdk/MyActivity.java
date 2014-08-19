@@ -284,7 +284,7 @@ public class MyActivity extends TestableActivity {
     private void testGetRecordIdShouldSuccess(TestableIndex index, JSONArray records) throws JSONException {
         for (int i = 0; i < records.length(); i++) {
             index.getRecordbyID(records.getJSONObject(i).getString(index.getPrimaryKeyFieldName()));
-            String s = getRecordResponse(index);
+            getRecordResponse(index);
 //            Log.i(TAG, "expected record::tostring():" + records.getJSONObject(i).toString());
 //            Log.i(TAG, "actual response::tostring():" + mControlListener.recordResponse.record.toString());
             // TODO wait engine to fix the all string type record
