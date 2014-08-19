@@ -12,7 +12,6 @@ import java.util.List;
  * Created by jianfeng on 8/4/14.
  */
 public abstract class TestableIndex extends Indexable {
-    public static final int BATCH_INSERT_NUM = 200;
 
     public abstract JSONObject getSucceedToInsertRecord();
 

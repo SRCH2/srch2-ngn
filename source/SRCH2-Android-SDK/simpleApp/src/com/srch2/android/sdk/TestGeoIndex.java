@@ -11,6 +11,9 @@ import java.util.List;
  * Created by jianfeng on 8/4/14.
  */
 public class TestGeoIndex extends TestableIndex {
+    public static final int BATCH_INSERT_NUM = 200;
+
+
     public static final String INDEX_NAME = "testGeo";
     public static final String INDEX_FIELD_NAME_PRIMARY_KEY = "id";
     public static final String INDEX_FIELD_NAME_TITLE = "title";
