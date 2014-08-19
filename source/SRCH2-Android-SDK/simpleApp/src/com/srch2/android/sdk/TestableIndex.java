@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 public abstract class TestableIndex extends Indexable {
 
-
     @Override
     public void onInsertComplete(int success, int failed, String JSONResponse) {
         insertResponse = JSONResponse;
@@ -75,8 +74,6 @@ public abstract class TestableIndex extends Indexable {
         deleteResponse = null;
         deleteSuccessCount = deleteFailedCount = -1;
     }
-
-    public static final int BATCH_INSERT_NUM = 200;
 
     public abstract JSONObject getSucceedToInsertRecord();
 

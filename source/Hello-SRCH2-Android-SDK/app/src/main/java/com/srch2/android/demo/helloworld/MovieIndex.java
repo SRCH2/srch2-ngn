@@ -1,9 +1,10 @@
 package com.srch2.android.demo.helloworld;
 
-import com.srch2.android.http.service.Field;
-import com.srch2.android.http.service.Indexable;
-import com.srch2.android.http.service.PrimaryKeyField;
-import com.srch2.android.http.service.Schema;
+
+import com.srch2.android.sdk.Field;
+import com.srch2.android.sdk.Indexable;
+import com.srch2.android.sdk.PrimaryKeyField;
+import com.srch2.android.sdk.Schema;
 
 import org.json.JSONArray;
 import org.json.JSONException;

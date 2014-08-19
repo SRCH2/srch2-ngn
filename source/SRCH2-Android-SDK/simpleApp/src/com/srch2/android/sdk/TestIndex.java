@@ -7,6 +7,7 @@ import org.json.JSONObject;
 import java.util.*;
 
 public class TestIndex extends TestableIndex {
+    public static final int BATCH_INSERT_NUM = 200;
 
     public static final String INDEX_NAME = "test";
     public static final String INDEX_FIELD_NAME_PRIMARY_KEY = "id";
