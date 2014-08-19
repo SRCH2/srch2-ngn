@@ -1,6 +1,6 @@
 package com.srch2.android.sdk;
 
-import com.srch2.android.sdk.HttpTask.ControlHttpTask;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -8,7 +8,7 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-class UpdateTask extends ControlHttpTask {
+class UpdateTask extends HttpTask.InsertUpdateDeleteTask {
     private static final String TAG = "UpdateTask";
 
     private JSONArray recordsToUpdate;

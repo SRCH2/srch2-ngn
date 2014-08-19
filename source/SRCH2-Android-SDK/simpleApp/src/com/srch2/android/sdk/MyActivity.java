@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 
 public class MyActivity extends TestableActivity {
@@ -93,7 +94,10 @@ public class MyActivity extends TestableActivity {
         SRCH2Engine.setSearchResultsListener(mResultListener);
         SRCH2Engine.setStateResponseListener(mControlListener);
         SRCH2Engine.setAutomatedTestingMode(true);
+
     }
+
+
 
     public void callSRCH2EngineStart() {
         SRCH2Engine.onStart(this);
@@ -106,11 +110,6 @@ public class MyActivity extends TestableActivity {
     private void reset() {
         mControlListener.reset();
         mResultListener.reset();
-    }
-
-    public InfoResponse getInfoResponse() {
-        Util.waitForResponse(mControlListener, InfoResponse.class);
-        return mControlListener.infoResponse;
     }
 
     public InsertResponse getInsertResponse() {
@@ -155,25 +154,38 @@ public class MyActivity extends TestableActivity {
 
     public void testStartEngine() {
         TestableIndex[] indexes = {mIndex1, mIndex2};
+        for (TestableIndex index : indexes) {
+            assertTrue(SRCH2Engine.getIndex(index.getIndexName()).getRecordCount() == Indexable.INDEX_RECORD_COUNT_NOT_SET);
+        }
+
         Log.i(TAG, "testStartEngine");
         waitForEngineReady();
-        assertTrue(mControlListener.indexesInfoResponseMap.size() == indexes.length);
         for (TestableIndex index : indexes) {
-            assertTrue(mControlListener.indexesInfoResponseMap.get(index.getIndexName()).getNumberOfDocumentsInTheIndex() == 0);
+            assertTrue(SRCH2Engine.getIndex(index.getIndexName()).getRecordCount() == 0);
         }
     }
 
 
 
     public void testOneRecordCRUD(TestableIndex index) throws JSONException {
+
+        Log.i(TAG, "testIndexableWithNoRecordsHasZeroRecordCount");
+        testIndexableGetRecordCountMatches(index, 0);
+
         Log.i(TAG, "testOneRecordCRUD");
         JSONObject record = index.getSucceedToInsertRecord();
 
         Log.i(TAG, "testInsertShouldSuccess");
         testInsertShouldSuccess(index, record);
 
+        Log.i(TAG, "testIndexableWithOneRecordedInsertedHasOneRecordCount");
+        testIndexableGetRecordCountMatches(index, 1);
+
         Log.i(TAG, "testInsertShouldFail");
         testInsertShouldFail(index, index.getFailToInsertRecord());
+
+        Log.i(TAG, "testIndexableWithOneRecordedInsertedHasOneRecordCountAndOneFailedInsert");
+        testIndexableGetRecordCountMatches(index, 1);
 
         Log.i(TAG, "testGetRecordIdShouldSuccess");
         testGetRecordIdShouldSuccess(index, new JSONArray(Arrays.asList(record)));
@@ -196,12 +208,23 @@ public class MyActivity extends TestableActivity {
         Log.i(TAG, "testUpdateNewShouldSuccess");
         testUpdateNewShouldSuccess(index, index.getSucceedToUpsertRecord());
 
+        Log.i(TAG, "testIndexableWithOneRecordedInsertedAndOneRecordUpsertedGetRecordCount");
+        testIndexableGetRecordCountMatches(index, 2);
+
         Log.i(TAG, "testUpdateShouldFail");
 //        TODO too much problem inside the http error responds inside th engine, need time to clean up
 //        testUpdateShouldFail(index, index.getFailToUpdateRecord());
 
         Log.i(TAG, "testDeleteShouldSuccess");
         testDeleteShouldSuccess(index, Arrays.asList(record.getString(index.getPrimaryKeyFieldName())));
+
+        Log.i(TAG, "testIndexableWithTwoRecordsAddedThenOneDeletedGetRecordCount");
+        testIndexableGetRecordCountMatches(index, 1);
+
+        testDeleteShouldSuccess(index, Arrays.asList(index.getSucceedToUpsertRecord().getString(index.getPrimaryKeyFieldName())));
+
+        Log.i(TAG, "testIndexableWithTwoRecordsAddedThenBothDeleted");
+        testIndexableGetRecordCountMatches(index, 0);
 
         Log.i(TAG, "testDeleteShouldFail");
         testDeleteShouldFail(index, index.getFailToDeleteRecord());
@@ -211,8 +234,14 @@ public class MyActivity extends TestableActivity {
     public void testBatchRecordCRUD(TestableIndex index) throws JSONException {
         JSONArray records = index.getSucceedToInsertBatchRecords();
 
+        Log.i(TAG, "testIndexableGetRecordBeforeBatchInsert");
+        testIndexableGetRecordCountMatches(index, 0);
+
         Log.i(TAG, "testBatchInsertShouldSuccess");
         testBatchInsertShouldSuccess(index, records);
+
+        Log.i(TAG, "testIndexableWith200BatchInsertsGetRecordShouldMatch");
+        testIndexableGetRecordCountMatches(index, TestIndex.BATCH_INSERT_NUM );
 
         Log.i(TAG, "testGetRecordIdShouldSuccess");
         testGetRecordIdShouldSuccess(index, records);
@@ -246,6 +275,9 @@ public class MyActivity extends TestableActivity {
 
         Log.i(TAG, "testDeleteShouldSuccess");
         testDeleteShouldSuccess(index, ids);
+
+        Log.i(TAG, "testIndexableWithAllRecordsDeleted");
+        testIndexableGetRecordCountMatches(index, 0);
 
         Log.i(TAG, "testDeleteShouldFail");
         testDeleteShouldFail(index, ids);
@@ -305,6 +337,9 @@ public class MyActivity extends TestableActivity {
         }
     }
 
+    public void testIndexableGetRecordCountMatches(TestableIndex index, int expectedNumberOfRecords) {
+        assertEquals(index.getRecordCount(), expectedNumberOfRecords);
+    }
 
     public void testInsertShouldSuccess(TestableIndex index, JSONObject record) {
         mControlListener.insertResponse = null;

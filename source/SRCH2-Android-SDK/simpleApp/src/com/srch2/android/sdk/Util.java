@@ -15,10 +15,6 @@ public class Util {
                 if (checkIfNotNullElseSleep(controlResponseListener.insertResponse, sleepPerRound)) {
                     return;
                 }
-            } else if (clazz == InfoResponse.class) {
-                if (checkIfNotNullElseSleep(controlResponseListener.infoResponse, sleepPerRound)) {
-                    return;
-                }
             } else if (clazz == DeleteResponse.class) {
                 if (checkIfNotNullElseSleep(controlResponseListener.deleteResponse, sleepPerRound)) {
                     return;

@@ -5,46 +5,37 @@ import org.json.JSONObject;
 
 /**
  * Represents an index in the SRCH2 search server. For every index to be searched on, users of the
- * SRCH2 Android SDK should implement a separate subclass instance of this class.
+ * SRCH2 Android SDK should implement a separate subclass instance of this class. This class contains
+ * methods for performing CRUD actions on the index such as insertion and searching. Note that it is
+ * always possible to retrieve a reference to a specific <code>Indexable</code> from the static method
+ * {@link com.srch2.android.sdk.SRCH2Engine#getIndex(String)}  where <code>
+ * indexName</code> matches the return value of {@link #getIndexName()}.
  * <br><br>
- * For each implementation of this class, <b>it is necessary</b> to override:
- * <br>
- * {@link #getIndexName()}
- * <br>
- * {@link #getSchema()}
+ * <b>For each implementation of this class, it is necessary</b> to override the two methods:
+ * {@link #getIndexName()} and {@link #getSchema()} which determine the basic configuration for the index
+ * as it resides in the SRCH2 search server.
  * <br><br>
- * This class contains methods for performing CRUD actions on the index such as insertion and
- * searching; in addition, specific <code>Indexable</code> instances can be obtained from the
- * <code>SRCH2Engine</code> static method <code>getIndex(String indexName)</code> (where <code>
- * indexName</code> matches the return value of <code>getIndexName())</code> to access these
- * same methods.
+ * In addition, each implementation can optionally chose to override the methods {@link #getTopK()}
+ * (which sets the number of search results returned per search) and {@link #getFuzzinessSimilarityThreshold()}
+ * (which determines the number of wildcard substitutions that can occur per search input string). If
+ * not overridden, these will take the default values {@link #DEFAULT_NUMBER_OF_SEARCH_RESULTS_TO_RETURN_AKA_TOPK} and
+ * {@link #DEFAULT_FUZZINESS_SIMILARITY_THRESHOLD} respectively.
+ * <br><br>
+ * There is also one method that returns the number of records in the index: (such as {@link #getRecordCount()}. The
+ * values of this method will return will be set each time the SRCH2 search server comes online and each time an
+ * insert, upsert or delete occurs. Note it can return {@link #INDEX_RECORD_COUNT_NOT_SET} if the SRCH2 search server
+ * is not online such as when {@link com.srch2.android.sdk.SRCH2Engine#initialize(Indexable, Indexable...)}
+ * has been called but {@link com.srch2.android.sdk.SRCH2Engine#onStart(android.content.Context)} has not yet been
+ * called).
  */
 public abstract class Indexable {
-
     IndexInternal indexInternal;
-
-    /**
-     * The default value for the numbers of search results to return per search request.
-     * <br><br>
-     * Has the <b>constant</b> value of <code>10</code>.
-     */
-    public static final int DEFAULT_NUMBER_OF_SEARCH_RESULTS_TO_RETURN_AKA_TOPK = 10;
-
-
-    /**
-     * The default value for the fuzziness similarity threshold. Approximately one character
-     * per every three characters will be allowed to act as a wildcard during a search.
-     * <br><br>
-     * Has the <b>constant</b> value of <code>0.65</code>.
-     */
-    public static final float DEFAULT_FUZZINESS_SIMILARITY_THRESHOLD = 0.65f;
 
     /**
      * Implementing this method sets the name of the index this <code>Indexable</code> represents.
      * @return the name of the index this <code>Indexable</code> represents
      */
     abstract public String getIndexName();
-
 
     /**
      * Implementing this method sets the schema of the index this <code>Indexable</code> represents. The schema
@@ -53,6 +44,42 @@ public abstract class Indexable {
      * @return the schema to define the index structure this <code>Indexable</code> represents
      */
     abstract public Schema getSchema();
+
+    /**
+     * If returned from {@link #getRecordCount()} indicates this value has not yet been set.
+     * <br><br>
+     * Has the <b>constant</b> value of <code>-1</code>.
+     */
+    public static final int INDEX_RECORD_COUNT_NOT_SET = -1;
+
+    private int numberOfDocumentsInTheIndex = INDEX_RECORD_COUNT_NOT_SET;
+    /**
+     * Returns the number of records that are currently in the index that this
+     * <code>Indexable</code> represents.
+     * @return the number of records in the index
+     */
+    public final int getRecordCount() {
+        return numberOfDocumentsInTheIndex;
+    }
+
+    final void setRecordCount(int recordCount) {
+        numberOfDocumentsInTheIndex = recordCount;
+    }
+
+    /**
+     * The default value for the numbers of search results to return per search request.
+     * <br><br>
+     * Has the <b>constant</b> value of <code>10</code>.
+     */
+    public static final int DEFAULT_NUMBER_OF_SEARCH_RESULTS_TO_RETURN_AKA_TOPK = 10;
+
+    /**
+     * The default value for the fuzziness similarity threshold. Approximately one character
+     * per every three characters will be allowed to act as a wildcard during a search.
+     * <br><br>
+     * Has the <b>constant</b> value of <code>0.65</code>.
+     */
+    public static final float DEFAULT_FUZZINESS_SIMILARITY_THRESHOLD = 0.65f;
 
     /**
      * Override this method to set the number of search results to be returned per query or search task.
@@ -193,24 +220,6 @@ public abstract class Indexable {
     }
 
     /**
-     * Performs an information task on the index that this <code>Indexable</code> represents. This
-     * method may be used to inspect the state of the index such as the number of records in the index
-     * by calling {@link InfoResponse#getNumberOfDocumentsInTheIndex()}
-     * <br><br>
-     * When the SRCH2 search server completes the information task, the
-     * method {@link StateResponseListener#onInfoRequestComplete(String, InfoResponse)}
-     * will be triggered. The <code>InfoResponse response</code> will contain information about the
-     * index such as the number of records it contains or the time stamp of the last time the index
-     * was updated to reflect any pending changes.
-     */
-    public final void info() {
-        if (indexInternal != null) {
-            indexInternal.info();
-        }
-    }
-
-
-    /**
      * Does a basic search on the index that this <code>Indexable</code> represents. A basic
      * search means that all distinct keywords (delimited by white space) of the
      * <code>searchInput</code> are treated as fuzzy, and the last keyword will
@@ -274,5 +283,7 @@ public abstract class Indexable {
             indexInternal.getRecordbyID(primaryKeyOfRecordToRetrieve);
         }
     }
+
+
 
 }

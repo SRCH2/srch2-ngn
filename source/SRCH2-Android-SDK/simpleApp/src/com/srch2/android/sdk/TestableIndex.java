@@ -12,6 +12,7 @@ import java.util.List;
  * Created by jianfeng on 8/4/14.
  */
 public abstract class TestableIndex extends Indexable {
+
     public abstract JSONObject getSucceedToInsertRecord();
 
     public abstract JSONObject getFailToInsertRecord();

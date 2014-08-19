@@ -26,13 +26,13 @@ public class SRCH2EngineTest {
 
     @Test
     public void multipleInitializeShouldBeFine() {
-        SRCH2Engine.initialize(PrepareEngine.musicIndex, null);
+        SRCH2Engine.initialize(PrepareEngine.musicIndex, (Indexable[]) null);
 
     }
 
     @Test
     public void shouldNotReadyWhenNotOnResumed() {
-        SRCH2Engine.initialize(PrepareEngine.musicIndex, null);
+        SRCH2Engine.initialize(PrepareEngine.musicIndex, (Indexable[]) null);
         Assert.assertFalse(SRCH2Engine.isReady());
     }
 

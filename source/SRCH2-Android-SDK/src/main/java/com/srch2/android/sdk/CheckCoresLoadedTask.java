@@ -1,8 +1,5 @@
 package com.srch2.android.sdk;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,22 +25,15 @@ final class CheckCoresLoadedTask extends HttpTask {
     @Override
     public void run() {
         Thread.currentThread().setName("CHECK CORES LOADED");
-
         Cat.d(TAG, "run start");
 
         int coreCount = targetCoreUrlsMap.size();
         Cat.d(TAG, "run coreCount " + coreCount);
-
-
         ArrayList<String> indexNames = new ArrayList<String>();
         for (String s : targetCoreUrlsMap.keySet()) {
             indexNames.add(s);
         }
-
         int pingCountSuccess = 0;
-
-        HashMap<String, InfoResponse> responseMap = new HashMap<String, InfoResponse>();
-
         int i = 0;
         int superCount = 0;
         while (true) {
@@ -54,37 +44,26 @@ final class CheckCoresLoadedTask extends HttpTask {
             String indexName = indexNames.get(i);
             URL targetUrl = targetCoreUrlsMap.get(indexName);
 
+            Cat.d(TAG, "run - core check loop @ iteration " + i + " targetingUrl " + targetUrl);
 
-            Cat.d(TAG, "run - core check loop @ iteration " + i);
-            Cat.d(TAG, "run - core check targeting url " + targetUrl);
+            InternalInfoTask iit = new InternalInfoTask(targetUrl);
+            InternalInfoResponse iir = iit.getInfo();
 
-            InfoResponse ir = checkIfLoaded(targetUrl);
-
-            if (ir != null) {
-                Cat.d(TAG, "run - inforesponse from core " + indexName + " returned positive");
-
-
-                Cat.d(TAG, "targetURL " + targetUrl.toExternalForm() + " connected!");
-
-                Cat.d(TAG, "ir literal " + ir.getRESTfulResponseLiteral());
-
-                responseMap.put(indexName, ir);
-
+            if (iir.isValidInfoResponse) {
+                Cat.d(TAG, "@ iteration " + i + " was valid info response ");
+                Indexable idx = SRCH2Engine.conf.indexableMap.get(indexName);
+                idx.setRecordCount(iir.numberOfDocumentsInTheIndex);
                 ++pingCountSuccess;
             } else {
-                Cat.d(TAG, "run - inforesponse from core " + indexName + " returned negative");
+                Cat.d(TAG, "@ iteration " + i + " was NOT valid info response ");
             }
 
-            ++i;
-            if (i == coreCount) {
-                i = 0;
-            }
+            i = ++i % coreCount;
 
             if (pingCountSuccess == coreCount || noNetworkConnection) {
                 Cat.d(TAG, "run - breaking from loop because: pingCount " + pingCountSuccess + " with coreCount " + coreCount + " and noNetworkConnection: " + noNetworkConnection);
                 break;
             }
-
             ++superCount;
         }
 
@@ -92,61 +71,13 @@ final class CheckCoresLoadedTask extends HttpTask {
             if (pingCountSuccess == coreCount) {
                 Cat.d(TAG, "run - successful requerying etc");
                 SRCH2Engine.isReady.set(true);
-                controlResponseObserver.onSRCH2ServiceReady(responseMap);
+                controlResponseObserver.onSRCH2ServiceReady();
                 SRCH2Engine.reQueryLastOne();
             }
             Cat.d(TAG, "run - notifying observer");
         }
 
         Thread.currentThread().setName("CHECK CORES LOADED FIN");
-    }
-
-    private InfoResponse checkIfLoaded(URL coreUrl) {
-
-        InputStream is = null;
-        HttpURLConnection connection = null;
-        String infoResponseLiteral = null;
-        int responseCode = RestfulResponse.FAILED_TO_CONNECT_RESPONSE_CODE;
-        try {
-            connection = (HttpURLConnection) coreUrl.openConnection();
-            connection.setReadTimeout(PING_RECONNECTION_TIME_MS);
-            connection.setConnectTimeout(PING_RECONNECTION_TIME_MS);
-            connection.setDoInput(true);
-            connection.connect();
-
-            responseCode = connection.getResponseCode();
-
-            if (connection.getInputStream() != null) {
-                infoResponseLiteral = readInputStream(connection
-                        .getInputStream());
-            } else if (connection.getErrorStream() != null) {
-                infoResponseLiteral = readInputStream(connection
-                        .getErrorStream());
-            }
-
-        } catch (IOException networkError) {
-            networkError.printStackTrace();
-//			noNetworkConnection = true;
-            infoResponseLiteral = networkError.getMessage();
-        } finally {
-            if (connection != null) {
-                connection.disconnect();
-            }
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (IOException ignore) {
-                }
-            }
-        }
-
-        InfoResponse ir = new InfoResponse(responseCode, infoResponseLiteral);
-
-        if (responseCode == 200 && !ir.getLastMergeTime().equals(InfoResponse.INVALID_LAST_MERGE_TIME)) {
-            return ir;
-        } else {
-            return null;
-        }
     }
 
     @Override

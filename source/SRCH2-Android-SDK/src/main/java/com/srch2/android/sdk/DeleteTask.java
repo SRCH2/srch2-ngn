@@ -1,10 +1,14 @@
+
 package com.srch2.android.sdk;
 
 import java.io.IOException;
+
+
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-class DeleteTask extends HttpTask.ControlHttpTask {
+class DeleteTask extends HttpTask.InsertUpdateDeleteTask {
+
     private static final String TAG = "DeleteTask";
 
     DeleteTask(URL insertUrl, String theTargetCoreName, StateResponseListener theControlResponseListener) {

@@ -1,7 +1,5 @@
 package com.srch2.android.sdk;
 
-import com.srch2.android.sdk.Field;
-import com.srch2.android.sdk.Schema;
 import junit.framework.Assert;
 import org.junit.Test;
 
@@ -9,7 +7,7 @@ public class SchemaTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testNull(){
-        Schema s = new Schema(null,null);
+        Schema s = new Schema(null, (Field[]) null);
     }
 
     @Test(expected = IllegalArgumentException.class)

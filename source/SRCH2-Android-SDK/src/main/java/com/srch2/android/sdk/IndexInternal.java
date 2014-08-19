@@ -1,5 +1,6 @@
 package com.srch2.android.sdk;
 
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -8,7 +9,7 @@ import java.net.URL;
 final class IndexInternal {
     private static final String TAG = "IndexInternal";
 
-    private final IndexDescription indexDescription;
+    final IndexDescription indexDescription;
     private SearchTask currentSearchTask = null;
 
     IndexInternal(IndexDescription description) {
@@ -89,16 +90,6 @@ final class IndexInternal {
                     SRCH2Engine.getControlResponseListener());
             HttpTask.executeTask(deleteTast);
             SRCH2Engine.isChanged.set(true);
-        }
-    }
-
-
-    void info() {
-        if (SRCH2Engine.isReady()) {
-            InfoTask infoTask = new InfoTask(UrlBuilder.getInfoUrl(
-                    SRCH2Engine.getConfig(), indexDescription), getIndexCoreName(),
-                    SRCH2Engine.getControlResponseListener());
-            HttpTask.executeTask(infoTask);
         }
     }
 

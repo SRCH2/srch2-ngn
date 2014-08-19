@@ -10,6 +10,7 @@ import java.util.*;
  * Created by ashton on 7/29/2014.
  */
 public class TestIndex extends TestableIndex {
+    public static final int BATCH_INSERT_NUM = 200;
 
     public static final String INDEX_NAME = "test";
     public static final String INDEX_FIELD_NAME_PRIMARY_KEY = "id";
@@ -17,7 +18,6 @@ public class TestIndex extends TestableIndex {
     public static final String INDEX_FIELD_NAME_SCORE = "score";
 
     protected static final String ONE_RECORD_PRIMARY_KEY = "the chosen # one one#";
-    protected static final int BATCH_INSERT_NUM = 200;
     protected static final int BATCH_START_NUM = 0;
 
     HashSet<String> singleRecordQueryString;
