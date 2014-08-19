@@ -21,17 +21,22 @@ void CustomizableJsonWriter::enableYAMLCompatibility() {
 }
 
 std::string
-CustomizableJsonWriter::write( const Value &root )
+CustomizableJsonWriter::write( const Value &root )const
 {
-   document_ = "";
-   writeValue( root );
-   document_ += "\n";
-   return document_;
+    std::string result = this->writeValue( root ) + "\n";
+    return result;
 }
 
-
-void CustomizableJsonWriter::writeValue( const Value &value )
+std::string 
+CustomizableJsonWriter::write( const Json::Value &root )
 {
+    std::string result = this->writeValue( root ) + "\n";
+    return result;
+}
+
+std::string CustomizableJsonWriter::writeValue( const Value &value )const
+{
+    string document_ ("");
 	   switch ( value.type() )
 	   {
 	   case nullValue:
@@ -60,7 +65,7 @@ void CustomizableJsonWriter::writeValue( const Value &value )
 	         {
 	            if ( index > 0 )
 	               document_ += ",";
-	            writeValue( value[index] );
+	            document_ += writeValue( value[index] );
 	         }
 	         document_ += "]";
 	      }
@@ -93,7 +98,7 @@ void CustomizableJsonWriter::writeValue( const Value &value )
 					document_ += Json::valueToQuotedString( name.c_str() );
 					document_ += yamlCompatiblityEnabled_ ? ": "
 														  : ":";
-					writeValue( value[name] );
+					document_ += writeValue( value[name] );
 	            } else {
 	            	// We use the second string in the pair as the json label
 					document_ += Json::valueToQuotedString( this->skipTags->at(idx).second.c_str() );
@@ -106,6 +111,7 @@ void CustomizableJsonWriter::writeValue( const Value &value )
 	      }
 	      break;
 	   }
+    return document_;
 }
 
 

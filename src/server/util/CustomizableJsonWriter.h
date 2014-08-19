@@ -20,13 +20,13 @@ public:
 	virtual ~CustomizableJsonWriter() { };
 	void enableYAMLCompatibility();
 
-	virtual std::string write( const Json::Value &root );
+	virtual std::string write( const Json::Value &root ) ;
+	std::string write( const Json::Value &root ) const ;
 
 private:
-	void writeValue( const Json::Value &value );
+    std::string writeValue( const Json::Value &value ) const ;
 
 	const std::vector<std::pair<std::string, std::string> > *skipTags;
-    std::string document_;
     bool yamlCompatiblityEnabled_;
 };
 

@@ -47,7 +47,7 @@ namespace {
     static const pair<string, string> global_internal_snippet("srch2_internal_snippet_123456789", "snippet");
     static const pair<string, string> internal_data[] = { global_internal_record, global_internal_snippet};
     static const vector<pair<string, string> > global_internal_skip_tags(internal_data, internal_data+2);    
-    static CustomizableJsonWriter global_customized_writer (&global_internal_skip_tags);
+    static const CustomizableJsonWriter global_customized_writer (&global_internal_skip_tags);
     static const char * JSON_MESSAGE = "message";
     static const char * JSON_LOG= "log";
     static const char * HTTP_INVALID_REQUEST_MESSAGE = "The request has an invalid or missing argument. See Srch2 API documentation for details.";
@@ -120,6 +120,12 @@ namespace {
         response["error"] = HTTP_INVALID_REQUEST_MESSAGE;
         bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST", global_customized_writer.write(response));
         Logger::error(HTTP_INVALID_REQUEST_MESSAGE);
+    }
+
+    Json::Value wrap_with_json_array(Json::Value value){
+        Json::Value array(Json::arrayValue);
+        array.append(value);
+        return array;
     }
 }
 
@@ -585,10 +591,10 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
         } else {
             Record *record = new Record(server->indexer->getSchema());
 
-            Json::Value insert_responses(Json::arrayValue);
             // apped to each response
             if(root.type() == Json::arrayValue) { // The input is an array of JSON objects.
                 // Iterates over the sequence elements.
+                Json::Value insert_responses(Json::arrayValue);
                 insert_responses.resize(root.size());
                 for ( int index = 0; index < root.size(); ++index ) {
                     Json::Value defaultValueToReturn = Json::Value("");
@@ -601,15 +607,15 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
                     insert_responses[index] = each_response;
                     record->clear();
                 }
+                response[JSON_LOG] = insert_responses;
             } else {  // only one json object needs to be inserted
                 const Json::Value doc = root;
-                insert_responses.append(IndexWriteUtil::_insertCommand(server->indexer,
-                        server->indexDataConfig, doc, record));
+                response[JSON_LOG] = IndexWriteUtil::_insertCommand(server->indexer,
+                        server->indexDataConfig, doc, record);
                 record->clear();
             }
             delete record;
             response[JSON_MESSAGE] = "The insert was processed successfully";
-            response[JSON_LOG] = insert_responses;
         }
         Logger::info("%s", global_customized_writer.write(response).c_str());
         break;
@@ -622,7 +628,7 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
         Json::Value deleteResponse = IndexWriteUtil::_deleteCommand_QueryURI(server->indexer,
                 server->indexDataConfig, headers);
         response[JSON_MESSAGE] = "The delete was processed successfully";
-        response[JSON_LOG] = deleteResponse;
+        response[JSON_LOG] = wrap_with_json_array(deleteResponse);
 
         Logger::info("%s", global_customized_writer.write(response).c_str());
         // Free the objects
@@ -678,9 +684,9 @@ void HTTPRequestHandler::updateCommand(evhttp_request *req,
             evhttp_parse_query(req->uri, &headers);
             Record *record = new Record(server->indexer->getSchema());
 
-            Json::Value update_responses(Json::arrayValue);
             if (root.type() == Json::arrayValue) {
                 //the record parameter is an array of json objects
+                Json::Value update_responses(Json::arrayValue);
                 update_responses.resize(root.size());
                 for(Json::UInt index = 0; index < root.size(); index++) {
                     Json::Value defaultValueToReturn = Json::Value("");
@@ -693,19 +699,18 @@ void HTTPRequestHandler::updateCommand(evhttp_request *req,
 
                     record->clear();
                 }
+                response[JSON_LOG] = update_responses;
             } else {
                 // the record parameter is a single json object
                 const Json::Value doc = root;
-                update_responses.append( 
-                    IndexWriteUtil::_updateCommand(server->indexer,
-                        server->indexDataConfig, headers, doc, record));
+                response[JSON_LOG] = IndexWriteUtil::_updateCommand(server->indexer,
+                        server->indexDataConfig, headers, doc, record);
                 record->clear();
             }
 
             delete record;
             evhttp_clear_headers(&headers);
             response[JSON_MESSAGE] = "The update was processed successfully";
-            response[JSON_LOG] = update_responses;
         }
         Logger::info("%s", global_customized_writer.write(response).c_str());
         break;
@@ -728,7 +733,7 @@ void HTTPRequestHandler::saveCommand(evhttp_request *req, Srch2Server *server) {
     Json::Value response(Json::objectValue);
     switch (req->type) {
     case EVHTTP_REQ_PUT: {
-        response[JSON_LOG] = IndexWriteUtil::_saveCommand(server->indexer);
+        response[JSON_LOG] = wrap_with_json_array( IndexWriteUtil::_saveCommand(server->indexer));
         response[JSON_MESSAGE] = "The indexes have been saved to disk successfully";
 
         bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", global_customized_writer.write(response));
@@ -786,7 +791,7 @@ void HTTPRequestHandler::resetLoggerCommand(evhttp_request *req, Srch2Server *se
 
         if (logFile == NULL) {
             response[JSON_MESSAGE] = "The logger file repointing failed. Could not create new logger file";
-            response[JSON_LOG] = server->indexDataConfig->getHTTPServerAccessLogFile();
+            response[JSON_LOG] = wrap_with_json_array( server->indexDataConfig->getHTTPServerAccessLogFile());
 
             Logger::error("Reopen Log file %s failed.",
                     server->indexDataConfig->getHTTPServerAccessLogFile().c_str());
@@ -795,7 +800,7 @@ void HTTPRequestHandler::resetLoggerCommand(evhttp_request *req, Srch2Server *se
             FILE * oldLogger = Logger::swapLoggerFile(logFile);
             fclose(oldLogger);
             response[JSON_MESSAGE] = "The logger file repointing succeeded";
-            response[JSON_LOG] = server->indexDataConfig->getHTTPServerAccessLogFile();
+            response[JSON_LOG] = wrap_with_json_array(server->indexDataConfig->getHTTPServerAccessLogFile());
             bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", global_customized_writer.write(response));
         }
         break;
@@ -826,7 +831,7 @@ void HTTPRequestHandler::exportCommand(evhttp_request *req, Srch2Server *server)
                 Json::Value export_response = IndexWriteUtil::_exportCommand(server->indexer, exportedDataFileName);
 
                 response[JSON_MESSAGE] ="The indexed data has been exported to the file "+ string(exportedDataFileName) +" successfully."; 
-                response[JSON_LOG] = export_response;
+                response[JSON_LOG] = wrap_with_json_array(export_response);
                 std::string str_response = global_customized_writer.write( response);
                 bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", str_response);
                 Logger::info("%s", str_response.c_str());
@@ -850,8 +855,16 @@ void HTTPRequestHandler::infoCommand(evhttp_request *req, Srch2Server *server,
     evkeyvalq headers;
     evhttp_parse_query(req->uri, &headers);
 
+    const char* c_key = "engine_status";
     Json::Value response(Json::objectValue);
-    response["engine_status"] = server->indexer->getIndexHealth();
+    Json::Value root;
+    Json::Reader reader;
+    bool parseSuccess = reader.parse(server->indexer->getIndexHealth(), root);
+    if (parseSuccess){
+        response[c_key] = root[c_key];
+    } else {
+        response[c_key] = server->indexer->getIndexHealth();
+    }
     response["version"] = versioninfo;
 
     bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", global_customized_writer.write(response) , headers);
