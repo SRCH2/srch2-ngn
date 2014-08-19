@@ -651,11 +651,8 @@ void ConfigManager::parseQuery(const xml_node &queryNode, CoreInfo_t *coreInfo,
         string configValue = childNode.text().get();
         if(isValidBooleanValue(configValue)){
             if(configValue.compare("0") == 0){
-                if(coreInfo->enableWordPositionIndex == true){
-                    Logger::warn("Attribute based search is on because positional index is enabled");
-                }
-                if(coreInfo->enableCharOffsetIndex == true){
-                    Logger::warn("Attribute based search is on because character offset is enabled");
+                if(coreInfo->enableWordPositionIndex == true || coreInfo->enableCharOffsetIndex == true){
+                    Logger::warn("Attribute based search is on because either character offset or word positional index is enabled");
                 }
             }
         }
