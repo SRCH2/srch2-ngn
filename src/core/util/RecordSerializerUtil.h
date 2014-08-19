@@ -44,11 +44,13 @@ private:
 
     static FilterType getAttributeType(const string& name, const Schema * schema) ;
 
-    static unsigned convertByteArrayToUnsigned(unsigned startOffset, const Byte * data) ;
+    static int convertByteArrayToInt(unsigned startOffset, const Byte * data) ;
+
+    static long convertByteArrayToLong(unsigned startOffset, const Byte * data) ;
 
     static float convertByteArrayToFloat(unsigned startOffset, const Byte * data) ;
 
-    static long convertByteArrayToLong(unsigned startOffset, const Byte * data) ;
+    static double convertByteArrayToDouble(unsigned startOffset, const Byte * data) ;
 
     static void convertByteArrayToTypedValue(const string& name, bool isMultiValued, const FilterType& type,
     		RecordSerializer& recSerializer, const Byte * data, TypedValue * result) ;

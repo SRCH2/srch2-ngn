@@ -205,9 +205,9 @@ void QueryResultsInternal::finalizeResults(const ForwardIndex *forwardIndex) {
             qs->matchingKeywords.assign(
                     this->nextKResultsHeap.top()->matchingKeywords.begin(),
                     this->nextKResultsHeap.top()->matchingKeywords.end());
-            qs->attributeBitmaps.assign(
-                    this->nextKResultsHeap.top()->attributeBitmaps.begin(),
-                    this->nextKResultsHeap.top()->attributeBitmaps.end());
+            qs->attributeIdsList.assign(
+                    this->nextKResultsHeap.top()->attributeIdsList.begin(),
+                    this->nextKResultsHeap.top()->attributeIdsList.end());
             qs->editDistances.assign(
                     this->nextKResultsHeap.top()->editDistances.begin(),
                     this->nextKResultsHeap.top()->editDistances.end());

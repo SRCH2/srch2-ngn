@@ -313,11 +313,22 @@ bool JSONRecordParser::setCompactRecordRefiningValue(
 
         char * pEnd = NULL;
         switch (type) {
-        case srch2is::ATTRIBUTE_TYPE_UNSIGNED: {
-            unsigned val = static_cast<unsigned int>(strtoul(
-                    attributeStringValue.c_str(), &pEnd, 10));
+        case srch2is::ATTRIBUTE_TYPE_INT: {
+            int val = static_cast<int>(strtol(attributeStringValue.c_str(),
+                    &pEnd, 10));
             if (*pEnd != '\0') {
-                error << ("\nInvalid value %s of type unsigned.",
+                error << ("\nInvalid value %s of type integer.",
+                        attributeStringValue.c_str());
+                return false;
+            }
+            compactRecSerializer.addRefiningAttribute(iter->first, val);
+            break;
+        }
+        case srch2is::ATTRIBUTE_TYPE_LONG: {
+            long val = strtol(attributeStringValue.c_str(),
+                    &pEnd, 10);
+            if (*pEnd != '\0') {
+                error << ("\nInvalid value %s of type long.",
                         attributeStringValue.c_str());
                 return false;
             }
@@ -335,9 +346,20 @@ bool JSONRecordParser::setCompactRecordRefiningValue(
             compactRecSerializer.addRefiningAttribute(iter->first, val);
             break;
         }
+        case srch2is::ATTRIBUTE_TYPE_DOUBLE: {
+            double val = strtod(attributeStringValue.c_str(),
+                    &pEnd);
+            if (*pEnd != '\0') {
+                error << ("\nInvalid value %s of type double.",
+                        attributeStringValue.c_str());
+                return false;
+            }
+            compactRecSerializer.addRefiningAttribute(iter->first, val);
+            break;
+        }
         default: {
             error << ("\nRefining attribute that need to be compacted "
-                    "in memory should be UNSIGNED | FLOAT,"
+                    "in memory should be INT | LONG | FLOAT | DOUBLE,"
                     " no others are accepted.");
             return false;
             break;
@@ -634,7 +656,7 @@ unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, Sch
     }
     Logger::console("                                                     \r");
     Logger::console("Indexed %d / %d records.", indexedRecordsCount, lineCounter);
-
+    Logger::console("Finalizing ...");
     in.close();
 
     delete analyzer;
@@ -655,6 +677,7 @@ string convertToStr(T value) {
 //If the value is null or empty, the vector<string> will only contain "".
 void convertValueToString(Json::Value value, vector<string> &stringValues) {
     std::string lowercaseString, originalString;
+
     if (value.isString()) {
         originalString = value.asString();
         lowercaseString = originalString;
@@ -675,8 +698,16 @@ void convertValueToString(Json::Value value, vector<string> &stringValues) {
         } else {
             stringValues.push_back(originalString);
         }
-    } else if (value.isInt()) {
-        originalString = convertToStr<int>(value.asInt());
+        /*
+         * In JSONCPP 0.6.0, long value (>0) will be treated as UInt (unsigned int)
+         * long value (<0) will be treated as Int.
+         * int value will be treated as Int.
+         *
+         * All the cases above can be parsed from JSON object to long long int
+         * by asInt64().
+         */
+    } else if (value.isInt()||value.isUInt()) {
+        originalString = convertToStr<long>(value.asInt64());
         lowercaseString = originalString;
         std::transform(lowercaseString.begin(), lowercaseString.end(),
                 lowercaseString.begin(), ::tolower);

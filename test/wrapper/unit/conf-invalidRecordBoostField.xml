@@ -7,11 +7,7 @@
 
     Please email contact@srch2.com if you have questions.
 
-    This configuration file defines 4 separate cores (data sources) in order to allow testing of
-    basic multi-core functionality.  Core1 uses the movie demo database.  Core2 loads a small sample
-    of the StackOverflow posts database.  Core3 is a fictitious business directoy (or most common
-    test database).  Core4 also loads the movie demo database, however in addition to some
-    configuration setting differences, it uses a different stop words file.
+    This config file is used to test the CM when type of recordBoostField is wrong. 
 -->
  
 <config>
@@ -39,6 +35,7 @@
                 <supportSwapInEditDistance>true</supportSwapInEditDistance>
                 <defaultQueryTermBoost>1</defaultQueryTermBoost>
                 <enablePositionIndex>1</enablePositionIndex> 
+                <recordBoostField>title</recordBoostField>
             </indexConfig>
 	    <query>
 	        <rankingAlgorithm>
@@ -64,8 +61,8 @@
 	    </query>
             <schema>
                 <fields>
-                    <field name="title" type="text" indexed="true" refining="false" />
-                    <field name="director" type="text" indexed="true"/>
+                    <field name="title" type="text" indexed="false" searchable="false" />
+                    <field name="director" type="text" indexed="false" refining="false"/>
                     <field name="genre" type="text" indexed="true"
                            default="HORROR" required="false"/>
                     <field name="year" type="integer" indexed="false" refining="true"

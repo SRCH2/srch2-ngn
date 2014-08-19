@@ -4,9 +4,10 @@
 echo "BUILDING JSONCPP..."
 
 cd ./json
-tar -xvf jsoncpp-src-0.5.0.tar.gz
-cp scons-local-2.1.0.tar.gz jsoncpp-src-0.5.0
-cd jsoncpp-src-0.5.0
+tar -xvf jsoncpp-src-0.6.0.tar.gz
+mv jsoncpp-src-0.6.0 jsoncpp-src
+cp scons-local-2.1.0.tar.gz jsoncpp-src
+cd jsoncpp-src
 tar -xvf scons-local-2.1.0.tar.gz
 python scons.py platform=linux-gcc
 
@@ -60,3 +61,4 @@ tar -xvf pymongo.tar.gz
 cd pymongo
 CURRENTDIR=$(pwd)
 echo "Building python mongodb driver in $CURRENTDIR"
+python ../json/jsoncpp-src/scons.py 

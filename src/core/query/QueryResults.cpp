@@ -159,30 +159,20 @@ void QueryResults::getEditDistances(const unsigned position, std::vector<unsigne
     		impl->sortedFinalResults[position]->editDistances.end());
 }
 
-// The following two functions only work for attribute based search
-void QueryResults::getMatchedAttributeBitmaps(const unsigned position, std::vector<unsigned> &matchedAttributeBitmaps) const {
-	matchedAttributeBitmaps.assign(impl->sortedFinalResults[position]->attributeBitmaps.begin(),
-			impl->sortedFinalResults[position]->attributeBitmaps.end());
-}
 
 void QueryResults::getMatchedAttributes(const unsigned position, std::vector<std::vector<unsigned> > &matchedAttributes) const {
 	//TODO opt
-	const vector<unsigned> &matchedAttributeBitmaps = impl->sortedFinalResults[position]->attributeBitmaps;
-	matchedAttributes.resize(matchedAttributeBitmaps.size());
+	const vector<vector<unsigned> > &matchedAttributeIdsList = impl->sortedFinalResults[position]->attributeIdsList;
+	matchedAttributes.resize(matchedAttributeIdsList.size());
 
-	for(int i = 0; i < matchedAttributeBitmaps.size(); i++)
+	for(int i = 0; i < matchedAttributeIdsList.size(); i++)
 	{
 		unsigned idx = 0;
-		unsigned matchedAttributeBitmap = matchedAttributeBitmaps[i];
+		const vector<unsigned>& matchedAttributeIds = matchedAttributeIdsList[i];
 		matchedAttributes[i].clear();
-		while(matchedAttributeBitmap)
+		for (unsigned j =0; j < matchedAttributeIds.size(); ++j)
 		{
-			if(matchedAttributeBitmap & 0x1)
-			{
-				matchedAttributes[i].push_back(idx);
-			}
-			matchedAttributeBitmap >>= 1;
-			++idx;
+			matchedAttributes[i].push_back(matchedAttributeIds[j]);
 		}
 	}
 }
@@ -238,21 +228,18 @@ void QueryResults::printStats() const {
 
 void QueryResults::printResult() const {
 	// show attributeBitmaps
-	vector<unsigned> attributeBitmaps;
 	vector<vector<unsigned> > attributes;
 	vector<string> matchedKeywords;
     Logger::debug("Result count %d" ,this->getNumberOfResults());
 	for(int i = 0; i < this->getNumberOfResults(); i++)
 	{
         Logger::debug("Result #%d" ,i);
-		this->getMatchedAttributeBitmaps(i, attributeBitmaps);
 		this->getMatchingKeywords(i, matchedKeywords);
 		this->getMatchedAttributes(i, attributes);
-		for(int j = 0; j < attributeBitmaps.size(); j++)
+		for(int j = 0; j < attributes.size(); j++)
 		{
-            Logger::debug("%s %d {", matchedKeywords[j].c_str(), attributeBitmaps[j]);
 			for(int k = 0; k < attributes[j].size(); k++)
-                Logger::debug("%d", attributes[j][k]);
+				Logger::debug("%d", attributes[j][k]);
             Logger::debug("}");
 		}
 

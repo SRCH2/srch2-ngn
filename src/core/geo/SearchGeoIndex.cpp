@@ -59,7 +59,7 @@ void QuadTree::rangeQueryWithoutKeywordInformation(QueryResultsInternal *queryRe
 			queryResult->internalRecordId = this->geoElementIndex[offset]->forwardListID;
 			//take the distance to the center point of shape as the floatScore ,get the negative value of distance for sorting
 			queryResult->_score.setTypedValue(
-					(0-shape.getMinDist2FromLatLong(this->geoElementIndex[offset]->point.x,this->geoElementIndex[offset]->point.y)));//TODO
+					((float)(0-shape.getMinDist2FromLatLong(this->geoElementIndex[offset]->point.x,this->geoElementIndex[offset]->point.y))),ATTRIBUTE_TYPE_FLOAT);//TODO
 			queryResultsInternal->insertResult(queryResult);
 			}
 		}
@@ -93,10 +93,14 @@ bool QuadTree::verify(const ForwardList* forwardList, const SpatialRanker *ranke
         unsigned minId = skippedExpansion->prefix.minId;
         unsigned maxId = skippedExpansion->prefix.maxId;
         unsigned keywordId;
-        unsigned attributeBitmap;
+        vector<unsigned> attributeIdsList;
         //stat.startMessage();
         // do the forward list check
-        bool fullMatch = forwardList->haveWordInRange(this->forwardIndex->getSchema(), minId, maxId, mapSearcherTermVector[termToSkip].termPtr->getAttributeToFilterTermHits(), keywordId, attributeBitmap, score);
+        bool fullMatch = forwardList->haveWordInRange(this->forwardIndex->getSchema(),
+        		minId, maxId,
+        		mapSearcherTermVector[termToSkip].termPtr->getAttributesToFilter(),
+        		mapSearcherTermVector[termToSkip].termPtr->getFilterAttrOperation(),
+        		keywordId, attributeIdsList, score);
         //stat.endMessage();
         // e.g. we search for "cancer", we find "can" on o-filter, it gives us a result with "candy"
         if(!fullMatch)
@@ -131,9 +135,12 @@ bool QuadTree::verify(const ForwardList* forwardList, const SpatialRanker *ranke
             unsigned maxId = mapSearcherTermVector[i].expansionStructureVector[j].prefix.maxId;
             float score;
             unsigned keywordId;
-            unsigned attributeBitmap;
+            vector<unsigned> attributeIdsList;
             // do the forward list check
-            termResult = forwardList->haveWordInRange(this->forwardIndex->getSchema(), minId, maxId, mapSearcherTermVector[i].termPtr->getAttributeToFilterTermHits(), keywordId, attributeBitmap, score);
+            termResult = forwardList->haveWordInRange(this->forwardIndex->getSchema(), minId, maxId,
+            		mapSearcherTermVector[i].termPtr->getAttributesToFilter(),
+            		mapSearcherTermVector[i].termPtr->getFilterAttrOperation(),
+            		keywordId, attributeIdsList, score);
 
             bool isPrefixMatch = ( (!mapSearcherTermVector[i].expansionStructureVector[j].expansionNodePtr->isTerminalNode()) || (minId != keywordId) );
             bool isPrefixTerm = ( mapSearcherTermVector[i].termPtr->getTermType() == TERM_TYPE_PREFIX );
@@ -268,7 +275,7 @@ void QuadTree::rangeQueryInternal(QueryResultsInternal *queryResultsInternal, co
 
                     QueryResult * queryResult = queryResultsInternal->getReultsFactory()->impl->createQueryResult();
                     queryResult->internalRecordId = this->geoElementIndex[offset]->forwardListID;
-                    queryResult->_score.setTypedValue(combinedScore);//TODO
+                    queryResult->_score.setTypedValue(combinedScore, ATTRIBUTE_TYPE_FLOAT);//TODO
                     //queryResult.physicalDistance = Ranker::calculateHaversineDistanceBetweenTwoCoordinates();
 
                     // set up the matching keywords and editDistances for queryResults
@@ -342,7 +349,7 @@ void QuadTree::rangeQueryInternal(QueryResultsInternal *queryResultsInternal, co
 
                             QueryResult * queryResult = queryResultsInternal->getReultsFactory()->impl->createQueryResult();
                             queryResult->internalRecordId = geoElement->forwardListID;
-                            queryResult->_score.setTypedValue(combinedScore);//TODO
+                            queryResult->_score.setTypedValue(combinedScore,ATTRIBUTE_TYPE_FLOAT);//TODO
                             //queryResult.physicalDistance = Ranker::calculateHaversineDistanceBetweenTwoCoordinates();
 
                             // set up the matching keyword and editDistance of the picked term for queryResults

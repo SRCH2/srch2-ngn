@@ -166,6 +166,19 @@ rm -rf data/ *.idx
 #         please be sure to append output using ">> system_test.log".
 #
 ###############################################################################################################
+test_id="lot of attributes"
+printTestBanner "$test_id"
+rm ./attributes/indexes/*
+python ./attributes/attributes.py $SRCH2_ENGINE | eval "${html_escape_command}" >> system_test.log 2>&1
+if [ ${PIPESTATUS[0]} -gt 0 ]; then
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
+    if [ $force -eq 0 ]; then
+    exit 255
+    fi
+else
+    echo "-- PASSED: $test_id" >> ${output}
+fi
+
 test_id="synonyms"
 printTestBanner "$test_id"
 python ./synonyms/synonyms.py $SRCH2_ENGINE | eval "${html_escape_command}" >> system_test.log 2>&1
@@ -803,8 +816,23 @@ else
 fi
 rm -rf data/ *.idx
 
+test_id="refining attribute type"
+printTestBanner "$test_id"
+python ./refining_attr_type/refining_attr_type.py $SRCH2_ENGINE  | eval "${html_escape_command}" >> system_test.log 2>&1
+
+if [ ${PIPESTATUS[0]} -gt 0 ]; then
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
+    if [ $force -eq 0 ]; then
+        exit 255
+    fi
+else
+    echo "-- PASSED: $test_id" >> ${output}
+fi
+rm -rf data/ *.idx
+
 test_id="primary key - refining field"
 printTestBanner "$test_id"
+rm ./refining_field_primary_key/data/refining_field_primary_key/*
 python ./refining_field_primary_key/testPrimaryKey.py $SRCH2_ENGINE ./refining_field_primary_key/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ ${PIPESTATUS[0]} -gt 0 ]; then
@@ -816,6 +844,21 @@ else
     echo "-- PASSED: $test_id" >> ${output}
 fi
 rm -rf data/ *.idx
+
+test_id="run engine with missing parameters from config file"
+printTestBanner "$test_id"
+python ./missing_parameters_from_cm/missingParameters_config.py $SRCH2_ENGINE ./missing_parameters_from_cm/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
+
+if [ ${PIPESTATUS[0]} -gt 0 ]; then
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
+    if [ $force -eq 0 ]; then
+        exit 255
+    fi
+else
+    echo "-- PASSED: $test_id" >> ${output}
+fi
+rm -rf data/ *.idx
+
 
 # clear the output directory. First make sure that we are in correct directory
 if [ "$(pwd)" = "$SYSTEM_TEST_DIR" ]; then

@@ -132,8 +132,8 @@ This tag has parameters to customize the search engine's indexes.
  </indexConfig>
 ```
 
-###7.1. Index Type (Required)
-IndexType specifies if the search engine should build text or location indexes.
+###7.1. Index Type (Optional)
+IndexType specifies if the search engine should build text or location indexes. By default it assumes the value 0 (Text Index).
 ```
  <indexType>0</indexType>
 ```
@@ -166,7 +166,7 @@ value is not provided for a field, the engine uses a default value of
 ```
  <recordBoostField>relevance</recordBoostField>
 ```
-This setting specifies an attribute whose value is used as the score (boost value) of a record. The attribute's type should be "float".
+This setting specifies an attribute whose value is used as the score (boost value) of a record. This attribute should be refining and of type float.
 
 ###7.4. Default Term Boost (Optional)
 ```
@@ -227,7 +227,7 @@ The expression allows operators such as +, -, /, *, (, ), 0-9, etc.  Check the [
 ```
 "FuzzyMatchPenalty" is used to decide how much penalty we want to give to records with a fuzzy
 match to a search term compared to terms with an exact match. See the [ranking](ranking.mkd) page
-about how this parameter is used. The default value is 0.5.
+about how this parameter is used. The default value is 1.
 
 ###8.3. Term Similarity Threshold (Optional)
 ```
@@ -290,8 +290,7 @@ to retrieve the next "page" of results. The default value of "Rows" is 10.<br>
 This is a flag to toggle attribute-based search. An attribute-based search applies conditions that determine in which attributes a keyword should appear.<br>
 > 0: Disabled <br>
 > 1: Enabled <br>
-
-Note that if field-based search is enabled, the number of searchable attributes as specified in [fields](#112-fields-required) is limited to 31.
+When either positional index or character offset is enabled, field based search will also be enabled.
 
 ###8.9. Search Type (Optional)
 ```
@@ -323,7 +322,13 @@ This value specifies how to treat a term by default with respect to match comple
 
 Its default value is 0.
 
-###8.12. Highlighter (Optional)
+###8.12. Query Term Length Boost
+```
+<queryTermLengthBoost>0.5</queryTermLengthBoost>
+```
+This value boosts record based on the length of the query term. Valid values for the parameter lie in the range of 0-1 (inclusive of 0 and 1). When it is not specified, a default value of 0.5 is used.
+
+###8.13. Highlighter (Optional)
 
 The engine can generate a brief snippet of matching text in a searchable field. Each matching keyword is highlighted
 in the snippet.  A snippet with highlighted keywords allows users to see more meaningful information from the field's text.  The
@@ -396,13 +401,19 @@ This tag includes tags related to configuring the engine to handle update reques
 ...
 </updatehandler>
 ```
-###10.1. Maximum Number of Documents (Required)
+###10.1. Maximum Number of Documents (Optional)
 ```
 <maxDocs>15000000</maxDocs>
 ```
-This is the maximum number of records that can be indexed by the engine. Inserting more records than what is specified here will cause the insertions to fail.
+This is the maximum number of records that can be indexed by the engine. Inserting more records than what is specified here will cause the insertions to fail. By default the engine uses 15000000 as maximum number of records.
 
-###10.2. Merge Policy (Required)
+###10.2. Maximum Memory (Optional)
+```
+<maxMemory>10000000</maxMemory>
+```
+This is the maximum memory the engine will use. By default the engine uses 1GB as maximum memory. 
+
+###10.3. Merge Policy (Optional)
 
 ```
 <mergePolicy>
@@ -412,9 +423,11 @@ This is the maximum number of records that can be indexed by the engine. Inserti
 ```
  - <b>mergeEveryNSeconds</b>: The engine uses a background thread to periodically merge the data changes to the indexes. This parameter sets the number of seconds this background thread sleeps before it wakes up and does the merge. Note that decreasing this number may increase latency in the engine's search response time.  This number should be at least 1 (second).
  
-  - <b>mergeEveryMWrites</b>: Another event that can trigger the background thread to do the merge is the number of data changes (inserts, deletes, and updates). This parameter specifies the number of record changes after which the thread will wake up to do the merge.  This number should be at least 1 (second). <br>
+ - <b>mergeEveryMWrites</b>: Another event that can trigger the background thread to do the merge is the number of data changes (inserts, deletes, and updates). This parameter specifies the number of record changes after which the thread will wake up to do the merge.  This number should be at least 1 (second). <br>
 
-###10.3. Logging
+10, 100 will be used as the default value for mergeEveryNSeconds and mergeEveryMWrites respectively if they are missing from the config file.
+
+###10.4. Logging
 
 The following tag includes parameters related to logging by the SRCH2 engine.
 ```
@@ -422,7 +435,7 @@ The following tag includes parameters related to logging by the SRCH2 engine.
 ...
 </updateLog>
 ```
-####10.3.1. Log Level (Optional)
+####10.4.1. Log Level (Optional)
 ```
 <logLevel>3</logLevel>
 ```
@@ -435,7 +448,7 @@ The parameter controls the amount of feedback information the engine will report
 
 Its default value is 3.
 
-####10.3.2. Log File (Required)
+####10.4.2. Log File (Required)
 ```
 <accessLogFile>./indexes/log.txt</accessLogFile>
 ```
@@ -489,7 +502,7 @@ These parameters give information about each field, including its name, type, an
  - "name": the name of the field;<br>
  - "type": the type of the field;<br>
            For a searchable attribute, its type can be text, location_longitude (for geo search), or location_latitude (for geo search).<br>
-           For a refining attribute, the type can be text, integer, float, or time.
+           For a refining attribute, the type can be text, integer, long, float, double or time.
            
 The engine supports the following formats of time and date: <br>
 
