@@ -124,14 +124,14 @@ PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const Physi
 
     bool foundValidHit = 0;
     float termRecordStaticScore = 0;
-    unsigned termAttributeBitmap = 0;
+    vector<unsigned> matchedAttributeIdsList;
     while (1) {
         // We check the record only if it's valid
         if (keywordOffset != FORWARDLIST_NOTVALID &&
             this->queryEvaluator->getInvertedIndex()->isValidTermPositionHit(forwardIndexDirectoryReadView,
                 recordID,
                 keywordOffset,
-                term->getAttributeToFilterTermHits(), termAttributeBitmap,
+                term->getAttributesToFilter(),term->getFilterAttrOperation(), matchedAttributeIdsList,
                 termRecordStaticScore) ) {
         	foundValidHit = 1;
         	break;
@@ -187,9 +187,9 @@ PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const Physi
     // static score
     newItem->setRecordStaticScore(termRecordStaticScore);
     // attributeBitmap
-    vector<unsigned> attributeBitmaps;
-    attributeBitmaps.push_back(termAttributeBitmap);
-    newItem->setRecordMatchAttributeBitmaps(attributeBitmaps);
+    vector<vector<unsigned> > matchedAttribureIdsList;
+    matchedAttribureIdsList.push_back(matchedAttributeIdsList);
+    newItem->setRecordMatchAttributeBitmaps(matchedAttribureIdsList);
 
     newItem->addTermType(term->getTermType());
 

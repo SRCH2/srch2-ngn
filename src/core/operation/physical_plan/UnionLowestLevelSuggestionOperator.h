@@ -48,16 +48,15 @@ public:
 			this->invertedListCursor = 0;
 			this->recordId = 0;
 			this->score = 0;
-			this->termAttributeBitmap = 0;
 			this->termRecordStaticScore = 0;
 		}
 		SuggestionCursorHeapItem(unsigned suggestionIndex, unsigned invertedListCursor, unsigned recordId,  float score,
-				unsigned termAttributeBitmap, float termRecordStaticScore){
+				const vector<unsigned>& attributeIdsList, float termRecordStaticScore){
 			this->suggestionIndex = suggestionIndex;
 			this->invertedListCursor = invertedListCursor;
 			this->recordId = recordId;
 			this->score = score;
-			this->termAttributeBitmap = termAttributeBitmap;
+			this->attributeIdsList = attributeIdsList;
 			this->termRecordStaticScore = termRecordStaticScore;
 		}
 		SuggestionCursorHeapItem(const SuggestionCursorHeapItem & src){
@@ -65,7 +64,7 @@ public:
 			this->invertedListCursor = src.invertedListCursor;
 			this->recordId = src.recordId;
 			this->score = src.score;
-			this->termAttributeBitmap = src.termAttributeBitmap;
+			this->attributeIdsList = src.attributeIdsList;
 			this->termRecordStaticScore = src.termRecordStaticScore;
 		}
 
@@ -77,7 +76,7 @@ public:
 		unsigned invertedListCursor;
 		unsigned recordId;
 		float score;
-		unsigned termAttributeBitmap ;
+		vector<unsigned> attributeIdsList ;
 		float termRecordStaticScore ;
 	};
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);

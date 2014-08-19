@@ -290,7 +290,8 @@ void buildFactualIndex(string indexDir, unsigned docsToIndex)
 
 // There are four kinds of parse methods in this test helper to test four kinds of queries {exact,fuzzy} * {prefix,complete}
 // 1. parse a query to exact and prefix keywords
-void parseExactPrefixQuery(const Analyzer *analyzer, Query *query, string queryString, int attributeIdToFilter = -1)
+void parseExactPrefixQuery(const Analyzer *analyzer, Query *query, string queryString,
+		vector<unsigned> attributeIdToFilter, ATTRIBUTES_OP attrOp)
 {
     vector<AnalyzedTermInfo> queryKeywords;
     analyzer->tokenizeQuery(queryString,queryKeywords);
@@ -301,7 +302,7 @@ void parseExactPrefixQuery(const Analyzer *analyzer, Query *query, string queryS
         //cout << "(" << queryKeywords[i] << ")("<< getNormalizedThreshold(queryKeywords[i].size()) << ")\t";
         TermType termType = TERM_TYPE_PREFIX;
         Term *term = ExactTerm::create(queryKeywords[i].term, termType, 1, 0.5);
-        term->addAttributeToFilterTermHits(attributeIdToFilter);
+        term->addAttributesToFilter(attributeIdToFilter, attrOp);
         query->setPrefixMatchPenalty(0.95);
         query->add(term);
     }
@@ -310,7 +311,8 @@ void parseExactPrefixQuery(const Analyzer *analyzer, Query *query, string queryS
 }
 
 // 2. parse a query to exact and complete keywords
-void parseExactCompleteQuery(const Analyzer *analyzer, Query *query, string queryString, int attributeIdToFilter = -1)
+void parseExactCompleteQuery(const Analyzer *analyzer, Query *query, string queryString,
+		vector<unsigned> attributeIdToFilter, ATTRIBUTES_OP attrOp)
 {
     vector<AnalyzedTermInfo> queryKeywords;
     analyzer->tokenizeQuery(queryString,queryKeywords);
@@ -321,7 +323,7 @@ void parseExactCompleteQuery(const Analyzer *analyzer, Query *query, string quer
         //cout << "(" << queryKeywords[i] << ")("<< getNormalizedThreshold(queryKeywords[i].size()) << ")\t";
         TermType termType = TERM_TYPE_COMPLETE;
         Term *term = ExactTerm::create(queryKeywords[i].term, termType, 1, 0.5);
-        term->addAttributeToFilterTermHits(attributeIdToFilter);
+        term->addAttributesToFilter(attributeIdToFilter, attrOp);
         query->add(term);
     }
     //cout << endl;
@@ -329,7 +331,8 @@ void parseExactCompleteQuery(const Analyzer *analyzer, Query *query, string quer
 }
 
 // 3. parse a query to fuzzy and prefix keywords
-void parseFuzzyPrefixQuery(const Analyzer *analyzer, Query *query, string queryString, int attributeIdToFilter = -1)
+void parseFuzzyPrefixQuery(const Analyzer *analyzer, Query *query, string queryString,
+		vector<unsigned> attributeIdToFilter, ATTRIBUTES_OP attrOp)
 {
     vector<AnalyzedTermInfo> queryKeywords;
     analyzer->tokenizeQuery(queryString,queryKeywords);
@@ -340,7 +343,7 @@ void parseFuzzyPrefixQuery(const Analyzer *analyzer, Query *query, string queryS
         //cout << "(" << queryKeywords[i] << ")("<< getNormalizedThreshold(queryKeywords[i].size()) << ")\t";
         TermType termType = TERM_TYPE_PREFIX;
         Term *term = FuzzyTerm::create(queryKeywords[i].term, termType, 1, 0.5, getNormalizedThreshold(queryKeywords[i].term.size()));
-        term->addAttributeToFilterTermHits(attributeIdToFilter);
+        term->addAttributesToFilter(attributeIdToFilter, attrOp);
         query->setPrefixMatchPenalty(0.95);
         query->add(term);
     }
@@ -349,7 +352,8 @@ void parseFuzzyPrefixQuery(const Analyzer *analyzer, Query *query, string queryS
 }
 
 // 4. parse a query to fuzzy and complete keywords
-void parseFuzzyCompleteQuery(const Analyzer *analyzer, Query *query, string queryString, int attributeIdToFilter = -1)
+void parseFuzzyCompleteQuery(const Analyzer *analyzer, Query *query, string queryString,
+		vector<unsigned> attributeIdToFilter, ATTRIBUTES_OP attrOp)
 {
     vector<AnalyzedTermInfo> queryKeywords;
     analyzer->tokenizeQuery(queryString,queryKeywords);
@@ -360,7 +364,7 @@ void parseFuzzyCompleteQuery(const Analyzer *analyzer, Query *query, string quer
         //cout << "(" << queryKeywords[i] << ")("<< getNormalizedThreshold(queryKeywords[i].size()) << ")\t";
         TermType termType = TERM_TYPE_COMPLETE;
         Term *term = FuzzyTerm::create(queryKeywords[i].term, termType, 1, 0.5, getNormalizedThreshold(queryKeywords[i].term.size()));
-        term->addAttributeToFilterTermHits(attributeIdToFilter);
+        term->addAttributesToFilter(attributeIdToFilter, attrOp);
         //query->setPrefixMatchPenalty(0.95);
         query->add(term);
     }
@@ -389,7 +393,7 @@ void parseFuzzyQueryWithEdSet(const Analyzer *analyzer, Query *query, const stri
         else{
             term = FuzzyTerm::create(queryKeywords[i].term, termType, 1, 0.5, ed);
         }
-        term->addAttributeToFilterTermHits(-1);
+        term->addAttributesToFilter(vector<unsigned>(), ATTRIBUTES_OP_AND);
         query->setPrefixMatchPenalty(0.95);
         query->add(term);
     }
@@ -464,7 +468,9 @@ void printResults(srch2is::QueryResults *queryResults, bool &isStemmed, unsigned
 }
 
 //Stress Test
-bool doubleSearcherPing(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string queryString, unsigned numberofHits , unsigned recordID , int attributeIdToFilter = -1)
+bool doubleSearcherPing(const Analyzer *analyzer, QueryEvaluator *queryEvaluator,
+		string queryString, unsigned numberofHits , unsigned recordID ,
+		vector<unsigned> attributeIdToFilter, ATTRIBUTES_OP attrOps)
 {
     /*
     vector<unsigned> rIDList;
@@ -476,9 +482,9 @@ bool doubleSearcherPing(const Analyzer *analyzer, QueryEvaluator *queryEvaluator
     unsigned resultsToRetrieve = numberofHits;
 
     Query *exactQuery = new Query(srch2::instantsearch::SearchTypeTopKQuery);
-    parseExactPrefixQuery(analyzer, exactQuery, queryString, attributeIdToFilter);
+    parseExactPrefixQuery(analyzer, exactQuery, queryString, attributeIdToFilter, attrOps);
     Query *fuzzyQuery = new Query(srch2::instantsearch::SearchTypeTopKQuery);
-    parseFuzzyPrefixQuery(analyzer, fuzzyQuery, queryString, attributeIdToFilter);
+    parseFuzzyPrefixQuery(analyzer, fuzzyQuery, queryString, attributeIdToFilter, attrOps);
     QueryResults *exactQueryResults = new QueryResults(new QueryResultFactory(),queryEvaluator, exactQuery);
     LogicalPlan * logicalPlan = prepareLogicalPlanForUnitTests(exactQuery , fuzzyQuery, 0, offset + resultsToRetrieve, true, srch2::instantsearch::SearchTypeTopKQuery);
     unsigned idsExactFound = queryEvaluator->search(logicalPlan , exactQueryResults);
@@ -510,10 +516,12 @@ bool doubleSearcherPing(const Analyzer *analyzer, QueryEvaluator *queryEvaluator
 }
 
 //Stress Test
-bool pingNormalQuery(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string queryString, unsigned numberofHits , int attributeIdToFilter = -1)
+bool pingNormalQuery(const Analyzer *analyzer, QueryEvaluator *queryEvaluator,
+		string queryString, unsigned numberofHits ,
+		vector<unsigned> attributeIdToFilter, ATTRIBUTES_OP attrOps)
 {
     Query *query = new Query(srch2::instantsearch::SearchTypeTopKQuery);
-    parseFuzzyPrefixQuery(analyzer, query, queryString, attributeIdToFilter);
+    parseFuzzyPrefixQuery(analyzer, query, queryString, attributeIdToFilter, attrOps);
     int resultCount = numberofHits;
 
     //cout << "[" << queryString << "]" << endl;
@@ -660,11 +668,13 @@ bool checkResults_DUMMY(QueryResults *queryResults, unsigned numberofHits ,const
     return returnvalue;
 }
 
-bool pingGetAllResultsQuery(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string queryString, unsigned numberofHits , const vector<unsigned> &recordIDs, int attributeIdToFilter, int attributeIdToSort = -1)
+bool pingGetAllResultsQuery(const Analyzer *analyzer, QueryEvaluator *queryEvaluator,
+		string queryString, unsigned numberofHits , const vector<unsigned> &recordIDs,
+		vector<unsigned> attributeIdToFilter, ATTRIBUTES_OP attrOps, int attributeIdToSort = -1)
 {
     QueryEvaluatorInternal * queryEvaluatorInternal = queryEvaluator->impl;
     Query *query = new Query(srch2::instantsearch::SearchTypeGetAllResultsQuery);
-    parseExactPrefixQuery(analyzer, query, queryString, attributeIdToFilter);
+    parseExactPrefixQuery(analyzer, query, queryString, attributeIdToFilter, attrOps);
 
     srch2::httpwrapper::SortFilterEvaluator * eval =
             new srch2::httpwrapper::SortFilterEvaluator();
@@ -701,11 +711,13 @@ bool pingGetAllResultsQuery(const Analyzer *analyzer, QueryEvaluator *queryEvalu
     return returnvalue;
 }
 
-void getGetAllResultsQueryResults(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string queryString, bool descending, vector<string> &recordIds, int attributeIdToFilter, int attributeIdToSort = -1)
+void getGetAllResultsQueryResults(const Analyzer *analyzer, QueryEvaluator *queryEvaluator,
+		string queryString, bool descending, vector<string> &recordIds,
+		vector<unsigned> attributeIdToFilter, ATTRIBUTES_OP attrOps, int attributeIdToSort = -1)
 {
     QueryEvaluatorInternal * queryEvaluatorInternal = queryEvaluator->impl;
     Query *query = new Query(srch2::instantsearch::SearchTypeGetAllResultsQuery);
-    parseExactPrefixQuery(analyzer, query, queryString, attributeIdToFilter);
+    parseExactPrefixQuery(analyzer, query, queryString, attributeIdToFilter, attrOps);
     
     ResultsPostProcessorPlan * plan = NULL;
     plan = new ResultsPostProcessorPlan();
@@ -754,7 +766,7 @@ bool pingCache1(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string
     bool returnValue = false;
 
     Query *query = new Query(srch2::instantsearch::SearchTypeTopKQuery);
-    parseFuzzyPrefixQuery(analyzer, query, queryString, -1);
+    parseFuzzyPrefixQuery(analyzer, query, queryString, vector<unsigned>(), ATTRIBUTES_OP_AND);
 
     // for each keyword in the user input, add a term to the query
     QueryResults *queryResults =  new QueryResults(new QueryResultFactory(), queryEvaluator, query);
@@ -775,7 +787,7 @@ bool pingCache1(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string
 bool pingCache2(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string queryString)
 {
     Query *query = new Query(srch2::instantsearch::SearchTypeTopKQuery);
-    parseFuzzyPrefixQuery(analyzer, query, queryString, -1);
+    parseFuzzyPrefixQuery(analyzer, query, queryString, vector<unsigned>(), ATTRIBUTES_OP_AND);
     int resultCount = 10;
 
     // for each keyword in the user input, add a term to the query
@@ -793,10 +805,12 @@ bool pingCache2(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string
     return returnValue;
 }
 
-bool ping_DUMMY(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string queryString, unsigned numberofHits , const vector<unsigned> &recordIDs, int attributeIdToFilter = -1)
+bool ping_DUMMY(const Analyzer *analyzer, QueryEvaluator *queryEvaluator,
+		string queryString, unsigned numberofHits , const vector<unsigned> &recordIDs,
+		vector<unsigned> attributeIdToFilter, ATTRIBUTES_OP attrOps)
 {
     Query *query = new Query(srch2::instantsearch::SearchTypeTopKQuery);
-    parseFuzzyPrefixQuery(analyzer, query, queryString, attributeIdToFilter);
+    parseFuzzyPrefixQuery(analyzer, query, queryString, attributeIdToFilter, attrOps);
     int resultCount = 10;
 
     // for each keyword in the user input, add a term to the query
@@ -816,18 +830,22 @@ bool ping_DUMMY(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string
     return returnValue;
 }
 
-bool ping_DUMMY(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string queryString, unsigned numberofHits , unsigned recordID , int attributeIdToFilter = -1)
+bool ping_DUMMY(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string queryString,
+		unsigned numberofHits , unsigned recordID ,
+		vector<unsigned> attributeIdToFilter, ATTRIBUTES_OP attrOps)
 {
     vector<unsigned> rIDList;
     rIDList.push_back(recordID);
-    return ping_DUMMY(analyzer,queryEvaluator,queryString,numberofHits,rIDList,attributeIdToFilter);
+    return ping_DUMMY(analyzer,queryEvaluator,queryString,numberofHits,rIDList,attributeIdToFilter, attrOps);
 }
 
 
-bool ping(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string queryString, unsigned numberofHits , const vector<unsigned> &recordIDs, int attributeIdToFilter = -1)
+bool ping(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string queryString,
+		unsigned numberofHits , const vector<unsigned> &recordIDs,
+		vector<unsigned> attributeIdToFilter, ATTRIBUTES_OP attrOps)
 {
     Query *query = new Query(srch2::instantsearch::SearchTypeTopKQuery);
-    parseFuzzyPrefixQuery(analyzer, query, queryString, attributeIdToFilter);
+    parseFuzzyPrefixQuery(analyzer, query, queryString, attributeIdToFilter, attrOps);
     int resultCount = 10;
 
     //cout << "[" << queryString << "]" << endl;
@@ -845,17 +863,20 @@ bool ping(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string query
     return returnvalue;
 }
 
-bool ping(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string queryString, unsigned numberofHits , unsigned recordID , int attributeIdToFilter = -1)
+bool ping(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string queryString,
+		unsigned numberofHits , unsigned recordID , vector<unsigned> attributeIdToFilter, ATTRIBUTES_OP attrOps)
 {
     vector<unsigned> rIDList;
     rIDList.push_back(recordID);
-    return ping(analyzer,queryEvaluator,queryString,numberofHits,rIDList,attributeIdToFilter);
+    return ping(analyzer,queryEvaluator,queryString,numberofHits,rIDList,attributeIdToFilter,attrOps);
 }
 
-bool pingExactPrefix(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string queryString, unsigned numberofHits , const vector<unsigned> &recordIDs, int attributeIdToFilter = -1)
+bool pingExactPrefix(const Analyzer *analyzer, QueryEvaluator *queryEvaluator,
+		string queryString, unsigned numberofHits , const vector<unsigned> &recordIDs,
+		vector<unsigned> attributeIdToFilter, ATTRIBUTES_OP attrOps)
 {
     Query *query = new Query(srch2::instantsearch::SearchTypeTopKQuery);
-    parseExactPrefixQuery(analyzer, query, queryString, attributeIdToFilter);
+    parseExactPrefixQuery(analyzer, query, queryString, attributeIdToFilter, attrOps);
     int resultCount = 10;
 
     //cout << "[" << queryString << "]" << endl;
@@ -873,10 +894,12 @@ bool pingExactPrefix(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, s
     return returnvalue;
 }
 
-bool pingFuzzyPrefix(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string queryString, unsigned numberofHits , const vector<unsigned> &recordIDs, int attributeIdToFilter = -1)
+bool pingFuzzyPrefix(const Analyzer *analyzer, QueryEvaluator *queryEvaluator,
+		string queryString, unsigned numberofHits , const vector<unsigned> &recordIDs,
+		vector<unsigned> attributeIdToFilter, ATTRIBUTES_OP attrOps)
 {
     Query *query = new Query(srch2::instantsearch::SearchTypeTopKQuery);
-    parseFuzzyPrefixQuery(analyzer, query, queryString, attributeIdToFilter);
+    parseFuzzyPrefixQuery(analyzer, query, queryString, attributeIdToFilter, attrOps);
     int resultCount = 10;
 
     //cout << "[" << queryString << "]" << endl;
@@ -894,10 +917,12 @@ bool pingFuzzyPrefix(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, s
     return returnvalue;
 }
 
-bool pingExactComplete(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string queryString, unsigned numberofHits , const vector<unsigned> &recordIDs, int attributeIdToFilter = -1)
+bool pingExactComplete(const Analyzer *analyzer, QueryEvaluator *queryEvaluator,
+		string queryString, unsigned numberofHits , const vector<unsigned> &recordIDs,
+		vector<unsigned> attributeIdToFilter, ATTRIBUTES_OP attrOps)
 {
     Query *query = new Query(srch2::instantsearch::SearchTypeTopKQuery);
-    parseExactCompleteQuery(analyzer, query, queryString, attributeIdToFilter);
+    parseExactCompleteQuery(analyzer, query, queryString, attributeIdToFilter, attrOps);
     int resultCount = 10;
 
     //cout << "[" << queryString << "]" << endl;
@@ -915,10 +940,12 @@ bool pingExactComplete(const Analyzer *analyzer, QueryEvaluator *queryEvaluator,
     return returnvalue;
 }
 
-bool pingFuzzyComplete(const Analyzer *analyzer,  QueryEvaluator *queryEvaluator, string queryString, unsigned numberofHits , const vector<unsigned> &recordIDs, int attributeIdToFilter = -1)
+bool pingFuzzyComplete(const Analyzer *analyzer,  QueryEvaluator *queryEvaluator,
+		string queryString, unsigned numberofHits , const vector<unsigned> &recordIDs,
+		vector<unsigned> attributeIdToFilter, ATTRIBUTES_OP attrOps)
 {
     Query *query = new Query(srch2::instantsearch::SearchTypeTopKQuery);
-    parseFuzzyCompleteQuery(analyzer, query, queryString, attributeIdToFilter);
+    parseFuzzyCompleteQuery(analyzer, query, queryString, attributeIdToFilter, attrOps);
     int resultCount = 10;
 
     //cout << "[" << queryString << "]" << endl;
@@ -936,7 +963,8 @@ bool pingFuzzyComplete(const Analyzer *analyzer,  QueryEvaluator *queryEvaluator
     return returnvalue;
 }
 
-void parseEdQuery(const Analyzer *analyzer, Query *query, string queryString, int attributeIdToFilter = -1, unsigned ed = 1)
+void parseEdQuery(const Analyzer *analyzer, Query *query, string queryString, vector<unsigned> attributeIdToFilter,
+		ATTRIBUTES_OP attrOps, unsigned ed = 1)
 {
     vector<AnalyzedTermInfo> queryKeywords;
     analyzer->tokenizeQuery(queryString,queryKeywords);
@@ -947,7 +975,7 @@ void parseEdQuery(const Analyzer *analyzer, Query *query, string queryString, in
         //cout << "(" << queryKeywords[i] << ")("<< getNormalizedThreshold(queryKeywords[i].size()) << ")\t";
         TermType termType = TERM_TYPE_COMPLETE;
         Term *term = FuzzyTerm::create(queryKeywords[i].term, termType, 1, 0.5, ed);
-        term->addAttributeToFilterTermHits(attributeIdToFilter);
+        term->addAttributesToFilter(attributeIdToFilter, attrOps);
         //query->setPrefixMatchPenalty(0.95);
         query->add(term);
     }
@@ -955,10 +983,12 @@ void parseEdQuery(const Analyzer *analyzer, Query *query, string queryString, in
     queryKeywords.clear();
 }
 
-bool pingEd(const Analyzer *analyzer,  QueryEvaluator *queryEvaluator, string queryString, unsigned numberofHits , const vector<unsigned> &recordIDs, int attributeIdToFilter = -1)
+bool pingEd(const Analyzer *analyzer,  QueryEvaluator *queryEvaluator, string queryString,
+		unsigned numberofHits , const vector<unsigned> &recordIDs, vector<unsigned> attributeIdToFilter,
+		ATTRIBUTES_OP attrOps=ATTRIBUTES_OP_AND)
 {
     Query *query = new Query(srch2::instantsearch::SearchTypeTopKQuery);
-    parseEdQuery(analyzer, query, queryString, attributeIdToFilter);
+    parseEdQuery(analyzer, query, queryString, attributeIdToFilter, attrOps);
     int resultCount = 10;
 
     //cout << "[" << queryString << "]" << endl;
@@ -976,18 +1006,19 @@ bool pingEd(const Analyzer *analyzer,  QueryEvaluator *queryEvaluator, string qu
     return returnvalue;
 }
 
-bool pingEd(const Analyzer *analyzer,  QueryEvaluator *queryEvaluator, string queryString, unsigned numberofHits , unsigned recordID , int attributeIdToFilter = -1)
+bool pingEd(const Analyzer *analyzer,  QueryEvaluator *queryEvaluator, string queryString,
+		unsigned numberofHits , unsigned recordID , vector<unsigned> attributeIdToFilter, ATTRIBUTES_OP attrOps)
 {
     vector<unsigned> rIDList;
     rIDList.push_back(recordID);
-    return pingEd(analyzer,queryEvaluator,queryString,numberofHits,rIDList,attributeIdToFilter);
+    return pingEd(analyzer,queryEvaluator,queryString,numberofHits,rIDList,attributeIdToFilter, attrOps);
 }
 
 // fuzzy query by default
 float pingToGetTopScore(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string queryString)
 {
     Query *query = new Query(srch2::instantsearch::SearchTypeTopKQuery);
-    parseFuzzyPrefixQuery(analyzer, query, queryString, -1);
+    parseFuzzyPrefixQuery(analyzer, query, queryString, vector<unsigned>(), ATTRIBUTES_OP_AND);
 
     //cout << "[" << queryString << "]" << endl;
 
@@ -1029,7 +1060,7 @@ int pingForScalabilityTest(const Analyzer *analyzer, QueryEvaluator *queryEvalua
 void pingDummyStressTest(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string queryString, unsigned numberofHits = 10)
 {
     Query *query = new Query(srch2::instantsearch::SearchTypeTopKQuery);
-    parseExactPrefixQuery(analyzer, query, queryString, -1);
+    parseExactPrefixQuery(analyzer, query, queryString, vector<unsigned>(), ATTRIBUTES_OP_AND);
 
     int resultCount = 10;
 
@@ -1059,7 +1090,7 @@ bool topK1ConsistentWithTopK2(const Analyzer *analyzer, QueryEvaluator *queryEva
     }
 
     Query *query = new Query(srch2::instantsearch::SearchTypeTopKQuery);
-    parseExactPrefixQuery(analyzer, query, queryString, -1);
+    parseExactPrefixQuery(analyzer, query, queryString, vector<unsigned>(), ATTRIBUTES_OP_AND);
 
     //cout << "[" << queryString << "]" << endl;
 
@@ -1092,7 +1123,7 @@ bool existsInTopK(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, stri
 {
 
     Query *query = new Query(srch2::instantsearch::SearchTypeTopKQuery);
-    parseExactPrefixQuery(analyzer, query, queryString, -1);
+    parseExactPrefixQuery(analyzer, query, queryString, vector<unsigned>(), ATTRIBUTES_OP_AND);
 
     //cout << "[" << queryString << "]" << endl;
 
@@ -1124,7 +1155,7 @@ bool existsInTopK(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, stri
 unsigned pingExactTest(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string queryString)
 {
     Query *query = new Query(srch2::instantsearch::SearchTypeTopKQuery);
-    parseExactPrefixQuery(analyzer, query, queryString, -1);
+    parseExactPrefixQuery(analyzer, query, queryString, vector<unsigned>(), ATTRIBUTES_OP_AND);
     int resultCount = 10;
 
     //cout << "[" << queryString << "]" << endl;
