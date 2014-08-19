@@ -724,7 +724,7 @@ void ConfigManager::parseQuery(const xml_node &queryNode, CoreInfo_t *coreInfo,
             coreInfo->exactHighlightMarkerPre = marker;
         } else {
             parseError
-                    << "The highlighter pre marker is an empty string, so engine will use the default marker";
+                    << "The highlighter pre marker is an empty string, so the engine will use the default marker";
             return;
         }
     }
@@ -736,7 +736,7 @@ void ConfigManager::parseQuery(const xml_node &queryNode, CoreInfo_t *coreInfo,
             coreInfo->exactHighlightMarkerPost = marker;
         } else {
             parseError
-                    << "The highlighter post marker is an empty string, so engine will use the default marker";
+                    << "The highlighter post marker is an empty string, so the engine will use the default marker";
             return;
         }
     }
@@ -748,7 +748,7 @@ void ConfigManager::parseQuery(const xml_node &queryNode, CoreInfo_t *coreInfo,
             coreInfo->fuzzyHighlightMarkerPre = marker;
         } else {
             parseError
-                    << "The highlighter pre marker is an empty string, so engine will use the default marker";
+                    << "The highlighter pre marker is an empty string, so the engine will use the default marker";
             return;
         }
     }
@@ -760,7 +760,7 @@ void ConfigManager::parseQuery(const xml_node &queryNode, CoreInfo_t *coreInfo,
             coreInfo->fuzzyHighlightMarkerPost = marker;
         } else {
             parseError
-                    << "The highlighter post marker is an empty string, so engine will use the default marker";
+                    << "The highlighter post marker is an empty string, so the engine will use the default marker";
             return;
         }
     }
@@ -1990,7 +1990,7 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
         }
     }
     if (!mdflag) {
-        Logger::warn("MaxDoc is not set, so engine will use the default value 15,000,000");
+        Logger::warn("MaxDoc is not set, so the engine will use the default value 15,000,000");
     }
 
     //Default value for memory limit if it is not set is 1000000000
@@ -2005,7 +2005,7 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
         }
     }
     if (!mmflag) {
-        Logger::warn("Maximum memory limit is not set, so engine will use the default value 1GB");
+        Logger::warn("Maximum memory limit is not set, so the engine will use the default value 1GB");
     }
 
     // mergeEveryNSeconds
@@ -2022,7 +2022,7 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
         }
     }
     if (!mensflag) {
-        Logger::warn("mergeEveryNSeconds is not set correctly, so engine will use the default value 10");
+        Logger::warn("mergeEveryNSeconds is not set correctly, so the engine will use the default value 10");
     }
 
     // mergeEveryMWrites
@@ -2040,7 +2040,7 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
         }
     }
     if (!memwflag) {
-        Logger::warn("mergeEveryMWrites is not set correctly, so engine will use the default value 100");
+        Logger::warn("mergeEveryMWrites is not set correctly, so the engine will use the default value 100");
     }
 
     // set default value for updateHistogramEveryPSeconds and updateHistogramEveryQWrites because there
@@ -2069,7 +2069,7 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
         }
     }
     if (!llflag) {
-        Logger::warn("Log Level is either not set or not set correctly, so engine will use the"
+        Logger::warn("Log Level is either not set or not set correctly, so the engine will use the"
                         " default value 3");
     }
 
