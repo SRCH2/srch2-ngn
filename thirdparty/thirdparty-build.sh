@@ -61,4 +61,3 @@ tar -xvf pymongo.tar.gz
 cd pymongo
 CURRENTDIR=$(pwd)
 echo "Building python mongodb driver in $CURRENTDIR"
-python ../json/jsoncpp-src/scons.py 
