@@ -58,13 +58,12 @@ final class CheckCoresLoadedTask extends HttpTask {
                 Cat.d(TAG, "@ iteration " + i + " was NOT valid info response ");
             }
 
-            i = (i == coreCount - 1) ? 0 : ++i;
+            i = ++i % coreCount;
 
             if (pingCountSuccess == coreCount || noNetworkConnection) {
                 Cat.d(TAG, "run - breaking from loop because: pingCount " + pingCountSuccess + " with coreCount " + coreCount + " and noNetworkConnection: " + noNetworkConnection);
                 break;
             }
-
             ++superCount;
         }
 
