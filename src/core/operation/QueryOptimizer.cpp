@@ -423,9 +423,10 @@ PhysicalPlanNode * QueryOptimizer::buildPhysicalPlanFirstVersionFromTreeStructur
          PhysicalPlanNode_UnionLowestLevelSimpleScanOperator
          || chosenTree->getType() == 
          PhysicalPlanNode_UnionLowestLevelSuggestion)){
-        if(logicalPlan->getPostProcessingInfo()->getFilterQueryEvaluator() != NULL){
+        if(logicalPlan->getPostProcessingInfo()->getFilterQueryEvaluator() != NULL || logicalPlan->getPostProcessingInfo()->getRoleId()->compare("") != 0){
             filterQueryOp = this->queryEvaluator->getPhysicalOperatorFactory()->
-                    createFilterQueryOperator(logicalPlan->getPostProcessingInfo()->getFilterQueryEvaluator() );
+                    createFilterQueryOperator(logicalPlan->getPostProcessingInfo()->getFilterQueryEvaluator(),
+                    		*(logicalPlan->getPostProcessingInfo()->getRoleId()));
             FilterQueryOptimizationOperator * filterQueryOpOp = this->queryEvaluator->getPhysicalOperatorFactory()->
                     createFilterQueryOptimizationOperator();
             filterQueryOp->setPhysicalPlanOptimizationNode(filterQueryOpOp);

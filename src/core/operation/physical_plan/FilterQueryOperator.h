@@ -56,7 +56,7 @@ public:
 	string toString();
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~FilterQueryOperator();
-	FilterQueryOperator(RefiningAttributeExpressionEvaluator * filterQueryEvaluator) ;
+	FilterQueryOperator(RefiningAttributeExpressionEvaluator * filterQueryEvaluator, string &roleId) ;
 private:
 	bool doPass(Schema * schema, ForwardIndex * forwardIndex , PhysicalPlanRecordItem * record);
 	bool hasAccess(ForwardIndex * forwardIndex, unsigned recordId); // check the access of the role to this record

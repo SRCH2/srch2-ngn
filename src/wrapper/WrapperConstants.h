@@ -38,6 +38,7 @@ typedef enum {
     KeywordSimilarityThreshold,
     KeywordBoostLevel,
     FieldFilter,
+    AccessControl,
     QueryPrefixCompleteFlag,
     IsPhraseKeyword,
     IsDebugEnabled,

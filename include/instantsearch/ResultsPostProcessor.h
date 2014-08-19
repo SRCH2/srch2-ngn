@@ -179,6 +179,9 @@ public:
 	void setPhraseSearchInfoContainer(PhraseSearchInfoContainer * phraseSearchInfoContainer);
 	PhraseSearchInfoContainer * getPhraseSearchInfoContainer();
 
+	void setRoleId(string & roleId);
+	string* getRoleId();
+
 
 	string toString();
 private:
@@ -186,6 +189,7 @@ private:
 	SortEvaluator * sortEvaluator;
 	RefiningAttributeExpressionEvaluator * filterQueryEvaluator;
 	PhraseSearchInfoContainer * phraseSearchInfoContainer;
+	string roleId;
 };
 
 

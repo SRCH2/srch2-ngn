@@ -67,6 +67,8 @@ const char* const QueryParser::facetRangeStart = "start";
 const char* const QueryParser::facetField = "facet.field";
 const char* const QueryParser::facetRangeField = "facet.range";
 const char* const QueryParser::highlightSwitch = "hl";
+// access control
+const char* const QueryParser::roleIdParamName = "acl-id";
 
 //searchType
 const char* const QueryParser::searchType = "searchType";
@@ -221,6 +223,7 @@ bool QueryParser::parse() {
         this->prefixMatchPenaltyParser();
         this->extractSearchType();
         this->highlightParser();
+        this->accessControlParser();
         if (this->container->hasParameterInQuery(GeoSearchType)) {
             this->geoParser();
         } else if (this->container->hasParameterInQuery(
@@ -416,6 +419,25 @@ void QueryParser::isFuzzyParser() {
     } else {
         Logger::debug("fuzzy parameter not specified");
     }
+}
+
+void QueryParser::accessControlParser(){
+	/*
+	 *   check to see if "acl-id" for access control exists in parameters.
+	 */
+	Logger::debug("checking for acl-id parameter");
+	const char * aclIdTemp = evhttp_find_header(&headers,
+			QueryParser::roleIdParamName);
+	if (aclIdTemp){ // if acl-id parameter exists.
+		Logger::debug("acl-id parameter found");
+		string aclId;
+		decodeString(aclIdTemp, aclId);
+		this->container->parametersInQuery.push_back(srch2::httpwrapper::AccessControl);
+		this->container->aclId = aclId;
+
+	} else {
+		Logger::debug("acl-id parameter not specified");
+	}
 }
 
 void QueryParser::populateFacetFieldsSimple(FacetQueryContainer &fqc) {

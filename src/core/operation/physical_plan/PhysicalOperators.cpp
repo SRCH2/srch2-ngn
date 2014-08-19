@@ -151,8 +151,8 @@ UnionLowestLevelSuggestionOptimizationOperator * PhysicalOperatorFactory::create
 	return op;
 }
 
-FilterQueryOperator * PhysicalOperatorFactory::createFilterQueryOperator(RefiningAttributeExpressionEvaluator * filterQueryEvaluator){
-	FilterQueryOperator * filterQueryOp = new FilterQueryOperator(filterQueryEvaluator);
+FilterQueryOperator * PhysicalOperatorFactory::createFilterQueryOperator(RefiningAttributeExpressionEvaluator * filterQueryEvaluator, string & roleId){
+	FilterQueryOperator * filterQueryOp = new FilterQueryOperator(filterQueryEvaluator, roleId);
 	executionNodes.push_back(filterQueryOp);
 	return filterQueryOp;
 }

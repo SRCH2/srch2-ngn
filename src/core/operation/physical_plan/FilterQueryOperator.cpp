@@ -46,7 +46,7 @@ bool FilterQueryOperator::close(PhysicalPlanExecutionParameters & params){
 }
 
 string FilterQueryOperator::toString(){
-	string result = "filterQueryOperator" + this->filterQueryEvaluator->toString() ;
+	string result = "filterQueryOperator" + this->filterQueryEvaluator->toString() + this->roleId ;
 	if(this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode() != NULL){
 		result += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->toString();
 	}
@@ -58,8 +58,9 @@ bool FilterQueryOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificat
 }
 FilterQueryOperator::~FilterQueryOperator(){}
 
-FilterQueryOperator::FilterQueryOperator(RefiningAttributeExpressionEvaluator * filterQueryEvaluator) {
+FilterQueryOperator::FilterQueryOperator(RefiningAttributeExpressionEvaluator * filterQueryEvaluator, string &roleId) {
 	this->filterQueryEvaluator = filterQueryEvaluator;
+	this->roleId = roleId;
 }
 
 bool FilterQueryOperator::doPass(Schema * schema, ForwardIndex * forwardIndex ,PhysicalPlanRecordItem * record){
