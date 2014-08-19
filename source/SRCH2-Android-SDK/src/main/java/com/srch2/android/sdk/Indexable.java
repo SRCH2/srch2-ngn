@@ -40,6 +40,13 @@ public abstract class Indexable {
 
     IndexInternal indexInternal;
 
+    /**
+     * The value the <code>JSONObject</code> passed in {@link #onInsertComplete(int, int, String)},
+     * {@link #onGetRecordComplete(boolean, org.json.JSONObject, String)} will be set to if a connection
+     * to the SRCH2 search server could not be established.
+     * <br><br>
+     * Has the <b>constant</b> value 'Connection failed without known cause';
+     */
     public static final String IRRECOVERABLE_NETWORK_ERROR_MESSAGE = "Connection failed without known cause.";
 
     /**
