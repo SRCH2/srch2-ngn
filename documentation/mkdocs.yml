@@ -1,9 +1,8 @@
 site_name: Android SDK (0.2.0)
 
 pages:
-  - [index.md, Main] 
-  - [tutorial.md, Tutorial]
-  - [advanced-topics.md, Advanced Topics]
+  - [index.md, Basic]
+  - [advanced-topics.md, Advanced]
   - [faq.md, FAQ]
   - [releases.md, Releases]
   
