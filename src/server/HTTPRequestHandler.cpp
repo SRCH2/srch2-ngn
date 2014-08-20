@@ -591,10 +591,10 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
         } else {
             Record *record = new Record(server->indexer->getSchema());
 
+            Json::Value insert_responses(Json::arrayValue);
             // apped to each response
             if(root.type() == Json::arrayValue) { // The input is an array of JSON objects.
                 // Iterates over the sequence elements.
-                Json::Value insert_responses(Json::arrayValue);
                 insert_responses.resize(root.size());
                 for ( int index = 0; index < root.size(); ++index ) {
                     Json::Value defaultValueToReturn = Json::Value("");
@@ -607,14 +607,14 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
                     insert_responses[index] = each_response;
                     record->clear();
                 }
-                response[JSON_LOG] = insert_responses;
             } else {  // only one json object needs to be inserted
                 const Json::Value doc = root;
-                response[JSON_LOG] = IndexWriteUtil::_insertCommand(server->indexer,
-                        server->indexDataConfig, doc, record);
+                insert_responses.append(IndexWriteUtil::_insertCommand(server->indexer,
+                        server->indexDataConfig, doc, record));
                 record->clear();
             }
             delete record;
+            response[JSON_LOG] = insert_responses;
             response[JSON_MESSAGE] = "The insert was processed successfully";
         }
         Logger::info("%s", global_customized_writer.write(response).c_str());
@@ -684,9 +684,9 @@ void HTTPRequestHandler::updateCommand(evhttp_request *req,
             evhttp_parse_query(req->uri, &headers);
             Record *record = new Record(server->indexer->getSchema());
 
+            Json::Value update_responses(Json::arrayValue);
             if (root.type() == Json::arrayValue) {
                 //the record parameter is an array of json objects
-                Json::Value update_responses(Json::arrayValue);
                 update_responses.resize(root.size());
                 for(Json::UInt index = 0; index < root.size(); index++) {
                     Json::Value defaultValueToReturn = Json::Value("");
@@ -699,17 +699,17 @@ void HTTPRequestHandler::updateCommand(evhttp_request *req,
 
                     record->clear();
                 }
-                response[JSON_LOG] = update_responses;
             } else {
                 // the record parameter is a single json object
                 const Json::Value doc = root;
-                response[JSON_LOG] = IndexWriteUtil::_updateCommand(server->indexer,
-                        server->indexDataConfig, headers, doc, record);
+                update_responses.append(IndexWriteUtil::_updateCommand(server->indexer,
+                        server->indexDataConfig, headers, doc, record));
                 record->clear();
             }
 
             delete record;
             evhttp_clear_headers(&headers);
+            response[JSON_LOG] = update_responses;
             response[JSON_MESSAGE] = "The update was processed successfully";
         }
         Logger::info("%s", global_customized_writer.write(response).c_str());
