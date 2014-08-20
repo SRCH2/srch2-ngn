@@ -33,6 +33,7 @@ final class CheckCoresLoadedTask extends HttpTask {
         for (String s : targetCoreUrlsMap.keySet()) {
             indexNames.add(s);
         }
+        ArrayList<String> validIndexes = new ArrayList<String>();
         int pingCountSuccess = 0;
         int i = 0;
         int superCount = 0;
@@ -52,7 +53,10 @@ final class CheckCoresLoadedTask extends HttpTask {
             if (iir.isValidInfoResponse) {
                 Cat.d(TAG, "@ iteration " + i + " was valid info response ");
                 Indexable idx = SRCH2Engine.conf.indexableMap.get(indexName);
-                idx.setRecordCount(iir.numberOfDocumentsInTheIndex);
+                if (idx != null) {
+                    idx.setRecordCount(iir.numberOfDocumentsInTheIndex);
+                    validIndexes.add(idx.getIndexName());
+                }
                 ++pingCountSuccess;
             } else {
                 Cat.d(TAG, "@ iteration " + i + " was NOT valid info response ");
@@ -71,19 +75,10 @@ final class CheckCoresLoadedTask extends HttpTask {
 
         if (pingCountSuccess == coreCount) {
             SRCH2Engine.isReady.set(true);
+            for (String indexName : validIndexes) {
+                HttpTask.executeTask(new IndexIsReadyResponse(indexName));
+            }
             SRCH2Engine.reQueryLastOne();
         }
-
-/*        if (controlResponseObserver != null && !noNetworkConnection) {
-            if (pingCountSuccess == coreCount) {
-                Cat.d(TAG, "run - successful requerying etc");
-                SRCH2Engine.isReady.set(true);
-                controlResponseObserver.onSRCH2ServiceReady();
-                SRCH2Engine.reQueryLastOne();
-            }
-            Cat.d(TAG, "run - notifying observer");
-        }
-
-        Thread.currentThread().setName("CHECK CORES LOADED FIN");*/
     }
 }

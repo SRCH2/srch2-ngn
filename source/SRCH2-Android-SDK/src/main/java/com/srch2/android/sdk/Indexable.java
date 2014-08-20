@@ -399,4 +399,26 @@ public abstract class Indexable {
             Log.d("SRCH2", "Index " + getIndexName() + " completed get record action but found no record.");
         }
     }
+
+    /**
+     * Callback executed very shortly after the call to
+     * {@link com.srch2.android.sdk.SRCH2Engine#onStart(android.content.Context)} is made:
+     * when the SRCH2 search server is initialized by the <code>SRCH2Engine</code> (by the method just
+     * mentioned), it will load each index into memory; this can take anywhere from a couple of milliseconds
+     * to three seconds (depending on the number of records, how much data each record contains, and the
+     * processing power of the device). When the index this <code>Indexable</code> represents is finished loading,
+     * this method is thus triggered. At this point all operations on this index are valid: search, insert, update, et
+     * cetera.
+     * <br><br>
+     * By overriding this method, its implementation can be used to verify the integrity of the index such as if
+     * records need to be inserted (by checking {@link #getRecordCount()} for the first time or likewise if the index
+     * needs to be updated.
+     * <br><br>
+     * <i>This method does not have to be overridden</i> (thought it is <b>strongly encouraged</b> to do so). If it is
+     * not, the number of records it contains upon being loaded will be printed to logcat
+     * under the tag 'SRCH2' with the message prefixed by the name of the index this <code>Indexable</code> represents.
+     */
+    public void onIndexReady() {
+        Log.d("SRCH2", "Index " + getIndexName() + " is ready to be accessed and contains " + getRecordCount() + " records");
+    }
 }

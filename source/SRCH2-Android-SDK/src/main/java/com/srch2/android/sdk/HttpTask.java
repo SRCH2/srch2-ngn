@@ -77,7 +77,8 @@ abstract class HttpTask implements Runnable {
         } else if (originatingTaskClass == InsertResponse.class ||
                         originatingTaskClass == UpdateResponse.class ||
                             originatingTaskClass == DeleteResponse.class ||
-                                originatingTaskClass == GetRecordResponse.class) {
+                                originatingTaskClass == GetRecordResponse.class ||
+                                    originatingTaskClass == IndexIsReadyResponse.class) {
             taskId = TASK_ID_CLIENT_CALLBACK;
         }
 
@@ -219,6 +220,20 @@ abstract class HttpTask implements Runnable {
             Indexable idx = SRCH2Engine.conf.indexableMap.get(targetCoreName);
             if (idx != null) {
                 idx.onGetRecordComplete(success, retrievedRecord, jsonResponse);
+            }
+        }
+    }
+
+    static class IndexIsReadyResponse extends SingleCoreHttpTask {
+        IndexIsReadyResponse(String theTargetCoreName) {
+            super(theTargetCoreName);
+        }
+
+        @Override
+        public void run() {
+            Indexable idx = SRCH2Engine.conf.indexableMap.get(targetCoreName);
+            if (idx != null) {
+                idx.onIndexReady();
             }
         }
     }

@@ -159,6 +159,8 @@ public class MyActivity extends TestableActivity {
         waitForEngineReady();
         for (TestableIndex index : indexes) {
             assertTrue(SRCH2Engine.getIndex(index.getIndexName()).getRecordCount() == 0);
+            assertTrue(index.indexIsReadyCalled);
+            index.indexIsReadyCalled = false;
         }
     }
 

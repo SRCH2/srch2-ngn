@@ -33,7 +33,6 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_my);
 
-
         results = new SRCH2Results();
         index = new Index();
 
@@ -86,6 +85,12 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
             }
             return records;
         }
+
+        @Override
+        public void onIndexReady() {
+            super.onIndexReady();
+        }
+
     }
 
 

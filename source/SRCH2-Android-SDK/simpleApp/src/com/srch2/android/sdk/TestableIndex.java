@@ -10,6 +10,7 @@ public abstract class TestableIndex extends Indexable {
 
     @Override
     public void onInsertComplete(int success, int failed, String JSONResponse) {
+        super.onInsertComplete(success, failed, JSONResponse);
         insertResponse = JSONResponse;
         insertSuccessCount = success;
         insertFailedCount = failed;
@@ -17,6 +18,7 @@ public abstract class TestableIndex extends Indexable {
 
     @Override
     public void onUpdateComplete(int success, int upserts, int failed, String JSONResponse) {
+        super.onUpdateComplete(success, upserts, failed, JSONResponse);
         updateResponse = JSONResponse;
         updateSuccessCount = success;
         updateFailedCount = failed;
@@ -25,6 +27,7 @@ public abstract class TestableIndex extends Indexable {
 
     @Override
     public void onDeleteComplete(int success, int failed, String JSONResponse) {
+        super.onDeleteComplete(success, failed, JSONResponse);
         deleteResponse = JSONResponse;
         deleteSuccessCount = success;
         deleteFailedCount = failed;
@@ -32,9 +35,16 @@ public abstract class TestableIndex extends Indexable {
 
     @Override
     public void onGetRecordComplete(boolean success, JSONObject record, String JSONResponse) {
+        super.onGetRecordComplete(success, record, JSONResponse);
         getRecordResponse = JSONResponse;
         recordRetrievedSuccess = success;
         recordRetreived = record;
+    }
+
+    @Override
+    public void onIndexReady() {
+        super.onIndexReady();
+        indexIsReadyCalled = true;
     }
 
     // NOTE: the above is the callbacks from stateresponselistener (now goto indexable)
@@ -56,14 +66,7 @@ public abstract class TestableIndex extends Indexable {
     String getRecordResponse;
     boolean recordRetrievedSuccess;
     JSONObject recordRetreived;
-
-    public void resetStateResponseFields() {
-        insertResponse = deleteResponse = updateResponse = getRecordResponse = null;
-        insertSuccessCount = insertFailedCount = deleteSuccessCount = deleteFailedCount =
-                updateSuccessCount = upsertSuccessCount = updateFailedCount = -1;
-        recordRetrievedSuccess = false;
-        recordRetreived = null;
-    }
+    boolean indexIsReadyCalled = false;
 
     public void resetGetRecordResponseFields() {
         getRecordResponse = null;
@@ -85,6 +88,9 @@ public abstract class TestableIndex extends Indexable {
         deleteResponse = null;
         deleteSuccessCount = deleteFailedCount = -1;
     }
+
+
+
 
     public abstract JSONObject getSucceedToInsertRecord();
 
