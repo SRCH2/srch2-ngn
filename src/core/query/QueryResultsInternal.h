@@ -189,7 +189,7 @@ public:
      */
     void * serializeForNetwork(void * buffer);
     void * deserializeForNetwork(void * buffer,QueryResultFactory * resultsFactory);
-    unsigned getNumberOfBytesForSerializationForNetwork();
+    unsigned getNumberOfBytesForSerializationForNetwork() const;
 
 
     std::vector<QueryResult *> sortedFinalResults;

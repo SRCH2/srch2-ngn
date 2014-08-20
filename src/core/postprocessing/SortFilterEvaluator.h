@@ -57,6 +57,17 @@ public:
 		}
 	}
 
+	SortFilterEvaluator(){};
+	SortFilterEvaluator(const SortFilterEvaluator & evaluator){
+		this->order = evaluator.order;
+		this->field = evaluator.field;
+	};
+
+	SortEvaluator * getNewCopy() const{
+		SortFilterEvaluator * newCopy = new SortFilterEvaluator(*this);
+		return newCopy;
+	}
+
 	const std::vector<std::string> * getParticipatingAttributes() const {
 		return &field;
 	}

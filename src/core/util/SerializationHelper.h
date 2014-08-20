@@ -2,6 +2,7 @@
 #define __CORE_UTIL_SERIALIZATION_HELPER_H_
 
 #include<string.h>
+#include <map>
 
 namespace srch2is = srch2::instantsearch;
 using namespace std;
@@ -20,6 +21,16 @@ inline void * deserializeFixedTypes(void * buffer, FixedType & obj){
 	obj = *((FixedType *)(buffer));
 	return (char *)buffer + sizeof(obj);
 }
+
+#ifdef ANDROID
+// This is template specialization of double. On android devices, dereferencing double pointer
+// generates "bus error" ( similar to segmentation fault).
+template<>
+inline void * deserializeFixedTypes<double>(void * buffer, double & obj){
+	memcpy((char *)(&obj), buffer, sizeof(double));
+	return (char *)buffer + sizeof(double);
+}
+#endif
 
 inline void * serializeString(const string & msg, void * buffer){
 	// first serialize size
@@ -97,7 +108,6 @@ inline void * deserializeVectorOfString(void * buffer, vector<string> & msgVecto
 	return buffer;
 }
 
-
 template<class FixedType>
 inline unsigned getNumberOfBytesVectorOfFixedTypes(const vector<FixedType> & vectorObj){
 	unsigned numberOfBytes = 0;
@@ -105,6 +115,240 @@ inline unsigned getNumberOfBytesVectorOfFixedTypes(const vector<FixedType> & vec
 	numberOfBytes += sizeof(FixedType)*vectorObj.size(); // size of elements
 	return numberOfBytes;
 }
+
+template<class DynamicType>
+inline void * serializeVectorOfDynamicTypes(const vector<DynamicType> & vectorObj, void * buffer){
+
+	// first store the size
+	buffer = serializeFixedTypes(unsigned(vectorObj.size()) , buffer);
+	// and then store the elements
+	for(unsigned objIndex = 0 ; objIndex != vectorObj.size() ; objIndex ++){
+		buffer = vectorObj.at(objIndex).serialize(buffer);
+	}
+
+	return buffer;
+}
+
+template<class DynamicType>
+inline void * deserializeVectorOfDynamicTypes(void * buffer, vector<DynamicType> & objVector){
+
+	// first deserialize size of vector
+	unsigned sizeOfVector = 0;
+	buffer = deserializeFixedTypes(buffer, sizeOfVector);
+	// and deserialize objects one by one
+	for(unsigned i=0; i < sizeOfVector ; ++i){
+		DynamicType obj;
+		buffer = obj.deserialize(buffer);
+		objVector.push_back(obj);
+	}
+
+	return buffer;
+}
+
+template<class DynamicType>
+inline unsigned getNumberOfBytesVectorOfDynamicTypes(const vector<DynamicType> & vectorObj){
+	unsigned numberOfBytes = 0;
+	numberOfBytes += sizeof(unsigned); // size of vector
+	for(unsigned i = 0 ; i < vectorObj.size() ; ++i){
+		numberOfBytes += vectorObj.at(i).getNumberOfBytes();
+	}
+	return numberOfBytes;
+}
+
+
+
+template<class DynamicType, class FixedType>
+inline void * serializeMapDynamicToFixed(const map<DynamicType, FixedType> & mapObj, void * buffer){
+	buffer = serializeFixedTypes((unsigned)(mapObj.size()), buffer);
+	for(typename map<DynamicType, FixedType>::const_iterator itr = mapObj.begin();
+			itr != mapObj.end(); ++itr){
+		buffer = itr->first.serialize(buffer);
+		buffer = serializeFixedTypes(itr->second, buffer);
+	}
+	return buffer;
+}
+
+template<class DynamicType, class FixedType>
+inline void * deserializeMapDynamicToFixed(void * buffer, map<DynamicType, FixedType> & mapObj){
+	unsigned sizeTemp;
+	buffer = deserializeFixedTypes(buffer, sizeTemp);
+	for(unsigned i = 0 ; i < sizeTemp ; ++i){
+		DynamicType key;
+		FixedType value;
+		buffer = key.deserialize(buffer);
+		buffer = deserializeFixedTypes(buffer, value);
+		mapObj[key] = value;
+	}
+	return buffer;
+}
+
+template<class DynamicType, class FixedType>
+inline unsigned getNumberOfBytesMapDynamicToFixed(const map<DynamicType, FixedType> & mapObj){
+	unsigned numberOfBytes = 0;
+	numberOfBytes += sizeof(unsigned);
+	for(typename map<DynamicType, FixedType>::const_iterator itr = mapObj.begin();
+			itr != mapObj.end(); ++itr){
+		numberOfBytes += itr->first.getNumberOfBytes();
+		numberOfBytes += sizeof(FixedType);
+	}
+	return numberOfBytes;
+}
+
+
+template<class DynamicType, class DynamicType2>
+inline void * serializeMapDynamicToDynamic(const map<DynamicType, DynamicType2> & mapObj, void * buffer){
+	buffer = serializeFixedTypes((unsigned)(mapObj.size()), buffer);
+	for(typename map<DynamicType, DynamicType2>::const_iterator itr = mapObj.begin();
+			itr != mapObj.end(); ++itr){
+		buffer = itr->first.serialize(buffer);
+		buffer = itr->second.serialize(buffer);
+	}
+	return buffer;
+}
+
+template<class DynamicType, class DynamicType2>
+inline void * deserializeMapDynamicToDynamic(void * buffer, map<DynamicType, DynamicType2> & mapObj){
+	unsigned sizeTemp;
+	buffer = deserializeFixedTypes(buffer, sizeTemp);
+	for(unsigned i = 0 ; i < sizeTemp ; ++i){
+		DynamicType key;
+		DynamicType2 value;
+		buffer = key.deserialize(buffer);
+		buffer = value.deserialize(buffer);
+		mapObj[key] = value;
+	}
+	return buffer;
+}
+
+template<class DynamicType, class DynamicType2>
+inline unsigned getNumberOfBytesMapDynamicToDynamic(const map<DynamicType, DynamicType2> & mapObj){
+	unsigned numberOfBytes = 0;
+	numberOfBytes += sizeof(unsigned);
+	for(typename map<DynamicType, DynamicType2>::const_iterator itr = mapObj.begin();
+			itr != mapObj.end(); ++itr){
+		numberOfBytes += itr->first.getNumberOfBytes();
+		numberOfBytes += itr->second.getNumberOfBytes();
+	}
+	return numberOfBytes;
+}
+
+
+
+template<class FixedType, class DynamicType>
+inline void * serializeMapFixedToDynamic(const map<FixedType, DynamicType> & mapObj, void * buffer){
+	buffer = serializeFixedTypes((unsigned)(mapObj.size()), buffer);
+	for(typename map<FixedType, DynamicType>::const_iterator itr = mapObj.begin();
+			itr != mapObj.end(); ++itr){
+		buffer = serializeFixedTypes(itr->first, buffer);
+		buffer = itr->second.serialize(buffer);
+	}
+	return buffer;
+}
+
+template<class FixedType, class DynamicType>
+inline void * deserializeMapFixedToDynamic(void * buffer, map<FixedType, DynamicType> & mapObj){
+	unsigned sizeTemp;
+	buffer = deserializeFixedTypes(buffer, sizeTemp);
+	for(unsigned i = 0 ; i < sizeTemp ; ++i){
+		FixedType key;
+		DynamicType value;
+		buffer = deserializeFixedTypes(buffer, key);
+		buffer = value.deserialize(buffer);
+		mapObj[key] = value;
+	}
+	return buffer;
+}
+
+template<class FixedType, class DynamicType>
+inline unsigned getNumberOfBytesMapFixedToDynamic(const map<FixedType, DynamicType> & mapObj){
+	unsigned numberOfBytes = 0;
+	numberOfBytes += sizeof(unsigned);
+	for(typename map<FixedType, DynamicType>::const_iterator itr = mapObj.begin();
+			itr != mapObj.end(); ++itr){
+		numberOfBytes += sizeof(FixedType);
+		numberOfBytes += itr->second.getNumberOfBytes();
+	}
+	return numberOfBytes;
+}
+
+
+
+template<class FixedType, class FixedType2>
+inline void * serializeMapFixedToFixed(const map<FixedType, FixedType2> & mapObj, void * buffer){
+	buffer = serializeFixedTypes((unsigned)(mapObj.size()), buffer);
+	for(typename map<FixedType, FixedType2>::const_iterator itr = mapObj.begin();
+			itr != mapObj.end(); ++itr){
+		buffer = serializeFixedTypes(itr->first, buffer);
+		buffer = serializeFixedTypes(itr->second, buffer);
+	}
+	return buffer;
+}
+
+template<class FixedType, class FixedType2>
+inline void * deserializeMapFixedToFixed(void * buffer, map<FixedType, FixedType2> & mapObj){
+	unsigned sizeTemp;
+	buffer = deserializeFixedTypes(buffer, sizeTemp);
+	for(unsigned i = 0 ; i < sizeTemp ; ++i){
+		FixedType key;
+		FixedType2 value;
+		buffer = deserializeFixedTypes(key, buffer);
+		buffer = deserializeFixedTypes(value, buffer);
+		mapObj[key] = value;
+	}
+	return buffer;
+}
+
+template<class FixedType, class FixedType2>
+inline unsigned getNumberOfBytesMapFixedToFixed(const map<FixedType, FixedType2> & mapObj){
+	unsigned numberOfBytes = 0;
+	numberOfBytes += sizeof(unsigned);
+	for(typename map<FixedType, FixedType2>::const_iterator itr = mapObj.begin();
+			itr != mapObj.end(); ++itr){
+		numberOfBytes += sizeof(FixedType);
+		numberOfBytes += sizeof(FixedType2);
+	}
+	return numberOfBytes;
+}
+
+template<class DynamicType>
+inline void * serializeVectorOfDynamicTypePointers(const vector<DynamicType *> & vectorObj, void * buffer){
+
+	// first store the size
+	buffer = serializeFixedTypes(unsigned(vectorObj.size()) , buffer);
+	// and then store the elements
+	for(unsigned objIndex = 0 ; objIndex != vectorObj.size() ; objIndex ++){
+		buffer = vectorObj.at(objIndex)->serialize(buffer);
+	}
+
+	return buffer;
+}
+
+template<class DynamicType>
+inline void * deserializeVectorOfDynamicTypePointers(void * buffer, vector<DynamicType *> & objVector){
+
+	// first deserialize size of vector
+	unsigned sizeOfVector = 0;
+	buffer = deserializeFixedTypes(buffer, sizeOfVector);
+	// and deserialize objects one by one
+	for(unsigned i=0; i < sizeOfVector ; ++i){
+		DynamicType * obj = new DynamicType();
+		buffer = obj->deserialize(buffer);
+		objVector.push_back(obj);
+	}
+
+	return buffer;
+}
+
+template<class DynamicType>
+inline unsigned getNumberOfBytesVectorOfDynamicTypePointers(const vector<DynamicType *> & vectorObj){
+	unsigned numberOfBytes = 0;
+	numberOfBytes += sizeof(unsigned); // size of vector
+	for(unsigned i = 0 ; i < vectorObj.size() ; ++i){
+		numberOfBytes += vectorObj.at(i)->getNumberOfBytes();
+	}
+	return numberOfBytes;
+}
+
 
 inline unsigned getNumberOfBytesVectorOfString(const vector<string> & msgVector){
 	unsigned numberOfBytes = 0;

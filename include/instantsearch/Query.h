@@ -71,6 +71,8 @@ public:
      */
     Query(QueryType type, const Ranker *ranker);
 
+    Query(const Query & query);
+
     /**
      * Destructor to free the Query object. The query is
            responsible for freeing the space of the terms. Look at

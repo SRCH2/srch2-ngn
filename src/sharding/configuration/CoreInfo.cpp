@@ -1,6 +1,6 @@
 
 #include "CoreInfo.h"
-#include "Shard.h"
+#include "sharding/sharding/metadata_manager/Shard.h"
 #include "ConfigManager.h"
 
 using namespace std;
@@ -11,8 +11,8 @@ namespace srch2 {
 namespace httpwrapper {
 
 
-ShardId CoreInfo_t::getPrimaryShardId(unsigned partitionId) const{
-	ShardId rtn ;
+ClusterShardId CoreInfo_t::getPrimaryShardId(unsigned partitionId) const{
+	ClusterShardId rtn ;
 	rtn.coreId = this->coreId;
 	rtn.partitionId = partitionId;
 	rtn.replicaId = 0;

@@ -6,7 +6,6 @@
 #include <unistd.h>
 #include <errno.h>
 #include <event.h>
-#include "routing/RoutingManager.h"
 #include <ifaddrs.h>
 #include <netdb.h>
 #include <net/if.h>
@@ -62,25 +61,25 @@ void cb_sendMessage(int fd, short eventType, void *arg) {
  */
 void * TransportManager::notifyUpstreamHandlers(Message *msg, int fd, NodeId  nodeId) {
 
-	if(msg->isReply()) {
+	if(msg->isDPRequest() || msg->isDPReply()) {
 		Logger::debug("Reply message is received. Msg type is %d", msg->getType());
-		if ( ! getReplyMessageHandler()->resolveMessage(msg,
-				nodeId)){
-			getMessageAllocator()->deallocateByMessagePointer(msg);
-		}
-	} else if(msg->isInternal()) {
-		if(getInternalMessageHandler() != NULL){
-			getInternalMessageHandler()->resolveMessage(msg, nodeId);
+		if(getDPMessageHandler() != NULL){
+			getDPMessageHandler()->resolveMessage(msg, nodeId);
 		}
 		getMessageAllocator()->deallocateByMessagePointer(msg);
 
 	} else if(msg->isDiscovery()) {
-
 		if (getDiscoveryHandler() != NULL) {
 			getDiscoveryHandler()->resolveMessage(msg, nodeId);
 		}
 		getMessageAllocator()->deallocateByMessagePointer(msg);
-	}else {
+	} else if(msg->isSharding()){
+//		Logger::debug("Sharding message is received. Msg type is %d", msg->getType());
+		if(getShardManagerHandler() != NULL){
+			getShardManagerHandler()->resolveMessage(msg, nodeId);
+		}
+		getMessageAllocator()->deallocateByMessagePointer(msg);
+	}else{
 		// Check whether this node has registered SMHandler into TM yet. If not skip the message.
 		if (getSmHandler() != NULL){
 			getSmHandler()->resolveMessage(msg, nodeId);
@@ -296,10 +295,13 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb) {
 
 TransportManager::TransportManager(vector<struct event_base *>& bases, TransportConfig& config): evbases(bases) {
 
+
+	// TODO : There is a bug in this architecture:
+	// callback handlers like synchManagerHandler, dpMessageHandler and ... are set after transport manager
+	// starts working. Setting these pointers is not protected from reading them (which happens upon message arrival)
 	distributedUniqueId = 0;
 	synchManagerHandler = NULL;
-	internalMessageHandler = NULL;
-	routingManager = NULL;
+	dpMessageHandler = NULL;
 	shutDown = false;
 	discoveryHandler = NULL;
 	validateTransportConfig(config);
@@ -347,9 +349,20 @@ void TransportManager::validateTransportConfig(TransportConfig& config) {
 		}
 		this->publishedInterfaceNumericAddr = ipAddress.s_addr;
 
+//<<<<<<< HEAD
 	} else {
 		this->publisedInterfaceAddress = config.interfaceAddress;
 		this->publishedInterfaceNumericAddr = interfaceNumericAddr;
+//=======
+//	if (routeMap.begin()!= routeMap.end()) {
+//		unsigned currNodeSocketReadBuffer;
+//		socklen_t size = sizeof(unsigned);
+//		getsockopt(routeMap.begin()->second.fd, SOL_SOCKET, SO_RCVBUF, &socketReadBuffer,
+//				&size);
+//		getsockopt(routeMap.begin()->second.fd, SOL_SOCKET, SO_SNDBUF, &socketSendBuffer,
+//						&size);
+//		Logger::console("SO_RCVBUF = %d, SO_SNDBUF = %d", socketReadBuffer, socketSendBuffer);
+//>>>>>>> sharding-v0-integration
 	}
 }
 
@@ -529,12 +542,8 @@ MessageID_t TransportManager::getUniqueMessageIdValue(){
 	return __sync_fetch_and_add(&distributedUniqueId, 1);
 }
 
-CallBackHandler* TransportManager::getInternalMessageHandler() {
-	return internalMessageHandler;
-}
-
-CallBackHandler* TransportManager::getReplyMessageHandler(){
-	return replyMessageHandler;
+CallBackHandler* TransportManager::getDPMessageHandler(){
+	return dpMessageHandler;
 }
 
 pthread_t TransportManager::getListeningThread() const {
@@ -545,20 +554,16 @@ MessageAllocator * TransportManager::getMessageAllocator() {
 	return &messageAllocator;
 }
 
-RoutingManager * TransportManager::getRoutingManager(){
-	return this->routingManager;
-}
-
-void TransportManager::setRoutingManager(RoutingManager * rm){
-	this->routingManager = rm;
-}
-
 CallBackHandler* TransportManager::getSmHandler() {
 	return synchManagerHandler;
 }
 
 CallBackHandler* TransportManager::getDiscoveryHandler() {
 	return discoveryHandler;
+}
+
+CallBackHandler* TransportManager::getShardManagerHandler() {
+	return shardManagerHandler;
 }
 
 void TransportManager::registerCallbackHandlerForSynchronizeManager(CallBackHandler
@@ -571,12 +576,12 @@ void TransportManager::registerCallbackHandlerForDiscovery(CallBackHandler
 	discoveryHandler = callBackHandler;
 }
 
-void TransportManager::registerCallbackForInternalMessageHandler(CallBackHandler* cbh) {
-    internalMessageHandler = cbh;
+void TransportManager::registerCallbackForDPMessageHandler(CallBackHandler* cbh){
+	dpMessageHandler = cbh;
 }
 
-void TransportManager::registerCallbackForReplyMessageHandler(CallBackHandler* cbh){
-	replyMessageHandler = cbh;
+void TransportManager::registerCallbackForShardingMessageHandler(CallBackHandler * cbh){
+	shardManagerHandler = cbh;
 }
 
 TransportManager::~TransportManager() {

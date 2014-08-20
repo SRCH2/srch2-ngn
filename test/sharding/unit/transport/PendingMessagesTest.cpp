@@ -1,7 +1,7 @@
-#include "transport/Message.h"
-#include "routing/PendingMessages.h"
-#include "transport/MessageAllocator.h"
-#include "configuration/ShardingConstants.h"
+#include "sharding/transport/Message.h"
+#include "sharding/processor/PendingMessages.h"
+#include "sharding/transport/MessageAllocator.h"
+#include "sharding/configuration/ShardingConstants.h"
 #include <assert.h>
 #include <cstdlib>
 #include "util/Assert.h"

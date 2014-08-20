@@ -10,12 +10,16 @@
 
 #include "configuration/ConfigManager.h"
 #include "transport/TransportManager.h"
+#include "sharding/sharding/ShardManager.h"
 #include <utility>
 #include <queue>
 #include "util/Assert.h"
 #include <boost/thread.hpp>
 #include <boost/unordered_map.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/locks.hpp>
 #include <iostream>
+#include <sstream>
 
 using namespace std;
 
@@ -64,29 +68,6 @@ public:
 	 *  Note: should be called in new thread otherwise current thread will block
 	 */
 	void run();
-
-	// Moved from ConfigManager to here by Jamshid, will move to MM
-	// this code removes node from the cluster
-	void removeNodeFromCluster(unsigned nodeId) {
-		Cluster * cluster = config.getClusterWriteView();
-		std::map<Node *, std::vector<CoreShardContainer * > > * shardInformation =
-				cluster->getShardInformation();
-		for(std::map<Node *, std::vector<CoreShardContainer * > >::iterator shardInfoItr = shardInformation->begin();
-				shardInfoItr != shardInformation->end(); ++shardInfoItr){
-			if(shardInfoItr->first->getId() == nodeId){
-				// delete node
-				delete shardInfoItr->first;
-				for(unsigned cid = 0 ; cid < shardInfoItr->second.size(); ++cid){
-					delete shardInfoItr->second.at(cid);
-				}
-				shardInformation->erase(shardInfoItr);
-				// commit provides the changes writeview to readers
-				config.commitClusterMetadata();
-				return;
-			}
-		}
-		ASSERT(false);
-	}
 
 	/*
 	 *  This function implements initial discovery logic of the node. This should be called
@@ -163,6 +144,20 @@ private:
 	// Node identifier sequence.
 	unsigned uniqueNodeId;
 	std::map<NodeId, struct sockaddr_in>  nodeToAddressMap;
+
+	boost::mutex localNodesCopyMutex;
+	vector<Node> localNodesCopy;
+	string serializeClusterNodes(){
+		localNodesCopyMutex.lock();
+		stringstream ss;
+		ss << localNodesCopy.size();
+		for(vector<Node>::iterator nodeItr = localNodesCopy.begin(); nodeItr != localNodesCopy.end(); ++nodeItr){
+			ss << nodeItr->serialize().size();
+			ss << nodeItr->serialize();
+		}
+		localNodesCopyMutex.unlock();
+		return ss.str();
+	}
 };
 
 class SMCallBackHandler : public CallBackHandler{
@@ -318,7 +313,7 @@ public:
 private:
 
 	void updateNodeInCluster(Message *message);
-	void handleNodeFailure(unsigned nodeId);
+	void handleNodeFailure(NodeId nodeId);
 	// key = Node id , Value = Latest time when message was received from this node.
 	boost::unordered_map<unsigned, unsigned>  perNodeTimeStampEntry;
 

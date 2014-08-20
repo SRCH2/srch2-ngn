@@ -20,7 +20,7 @@ namespace srch2 {
 namespace httpwrapper {
 
 class ConfigManager;
-class ShardId;
+class ClusterShardId;
 
 // This class is used to collect information from the config file and pass them other modules
 // in the system.
@@ -113,7 +113,7 @@ public:
 		return this->numberOfReplicas;
 	}
 
-	ShardId getPrimaryShardId(unsigned partitionId) const;
+	ClusterShardId getPrimaryShardId(unsigned partitionId) const;
 
 	CoreInfo_t(class ConfigManager *manager) : configManager(manager) {
 		schema = NULL;
@@ -124,6 +124,14 @@ public:
 		}
 	};
 	friend class ConfigManager;
+
+
+	void getJsonFilePaths(vector<string> &paths) const{
+		for(vector<string>::const_iterator pathItr = dataFilePaths.begin(); pathItr != dataFilePaths.end(); ++pathItr){
+			paths.push_back(*pathItr);
+		}
+	}
+	void setJsonFilePaths(const string & path){ dataFilePaths.push_back(path); }
 
 	// **** accessors for settings in every core ****
 	const string &getName() const { return name; }
@@ -270,6 +278,7 @@ public:
 
 protected:
 
+	vector<string> dataFilePaths;
 	string name; // of core
 
 	unsigned coreId; // starting from 0, auto increment

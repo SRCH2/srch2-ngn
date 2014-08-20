@@ -43,6 +43,11 @@ public:
         y = 0;
     }
 
+    Point(const Point & p){
+    	this->x = p.x;
+    	this->y = p.y;
+    }
+
     bool operator==(const Point &point) const
     {
         return x == point.x && y == point.y;
@@ -129,6 +134,12 @@ public:
         this->max.y = rect.second.second;
     }
 
+    Rectangle(const Rectangle & rectangle)
+    {
+        this->min = rectangle.min;
+        this->max = rectangle.max;
+    }
+
     virtual ~Rectangle() {}
 
     // check whether two rectangles intersect or not
@@ -207,6 +218,11 @@ public:
     }
 
     Circle(Point c, double r) : center(c), radius(r) {}
+
+    Circle(const Circle & c){
+    	this->center = c.center;
+    	this->radius = c.radius;
+    }
 
     virtual ~Circle() {}
 

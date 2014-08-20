@@ -46,11 +46,12 @@
 #include "WrapperConstants.h"
 
 #include "transport/TransportManager.h"
-#include "routing/RoutingManager.h"
 #include "processor/DistributedProcessorExternal.h"
 #include "configuration/ConfigManager.h"
 #include "synchronization/SynchronizerManager.h"
-#include "sharding/migration/ShardManager.h"
+#include "sharding/sharding/ShardManager.h"
+#include "sharding/sharding/metadata_manager/MetadataInitializer.h"
+#include "sharding/sharding/metadata_manager/ResourceMetadataManager.h"
 #include "discovery/DiscoveryManager.h"
 
 
@@ -186,6 +187,8 @@ static const struct portMap_t {
 		{ srch2http::SavePort, "save" },
 		{ srch2http::ExportPort, "export" },
 		{ srch2http::ResetLoggerPort, "resetlogger" },
+		{ srch2http::CommitPort, "commit" },
+		{ srch2http::MergePort, "merge" },
 		{ srch2http::EndOfPortType, NULL },
 };
 
@@ -406,6 +409,52 @@ static void cb_resetLogger(evhttp_request *req, void *arg) {
 	}
 }
 
+/**
+ *  'comit' callback function
+ *  @param req evhttp request object
+ *  @param arg optional argument
+ */
+static void cb_commit(evhttp_request *req, void *arg) {
+	ExternalOperationArguments * dpExternalAndCoreId = (ExternalOperationArguments * )arg;
+
+	evhttp_add_header(req->output_headers, "Content-Type",
+			"application/json; charset=UTF-8");
+
+	if(!checkOperationPermission(req, dpExternalAndCoreId->coreId, srch2http::CommitPort))
+		return;
+
+	try {
+		dpExternalAndCoreId->dpExternal->externalCommitCommand(req, dpExternalAndCoreId->coreId);
+	} catch (exception& e) {
+		// exception caught
+		Logger::error(e.what());
+		srch2http::HTTPRequestHandler::handleException(req);
+	}
+}
+
+
+/**
+ *  'comit' callback function
+ *  @param req evhttp request object
+ *  @param arg optional argument
+ */
+static void cb_merge(evhttp_request *req, void *arg) {
+	ExternalOperationArguments * dpExternalAndCoreId = (ExternalOperationArguments * )arg;
+
+	evhttp_add_header(req->output_headers, "Content-Type",
+			"application/json; charset=UTF-8");
+
+	if(!checkOperationPermission(req, dpExternalAndCoreId->coreId, srch2http::MergePort))
+		return;
+
+	try {
+		dpExternalAndCoreId->dpExternal->externalMergeCommand(req, dpExternalAndCoreId->coreId);
+	} catch (exception& e) {
+		// exception caught
+		Logger::error(e.what());
+		srch2http::HTTPRequestHandler::handleException(req);
+	}
+}
 
 /**
  * Busy 409 event handler.
@@ -596,8 +645,7 @@ static void killServer(int signal) {
 #endif
 }
 
-static int getHttpServerMetadata(ConfigManager *config, 
-		PortSocketMap_t *globalPortSocketMap, boost::shared_ptr<const srch2::httpwrapper::Cluster> & clusterReadview) {
+static int getHttpServerMetadata(ConfigManager *config, PortSocketMap_t *globalPortSocketMap) {
 	// TODO : we should use default port if no port is provided. or just get rid of default port and move it to node
 	// as a <defaultPort>
 	std::set<short> ports;
@@ -708,7 +756,7 @@ typedef unsigned CoreId;//TODO is it needed ? if not let's delete it.
  */
 int setCallBacksonHTTPServer(ConfigManager *const config,
 		evhttp *const http_server,
-		boost::shared_ptr<const srch2::httpwrapper::Cluster> & clusterReadview,
+		boost::shared_ptr<const srch2::httpwrapper::ClusterResourceMetadata_Readview> & clusterReadview,
 		srch2::httpwrapper::DPExternalRequestHandler * dpExternal) {
 
 	// setup default core callbacks for queries without a core name
@@ -742,7 +790,7 @@ int setCallBacksonHTTPServer(ConfigManager *const config,
 	// for every core, for every OTHER port that core uses, do accept
 	// NOTE : CoreInfoMap is a typedef of std::map<const string, CoreInfo_t *>
 	std::vector<const srch2http::CoreInfo_t * > allCores;
-	clusterReadview->getCores(allCores);
+	clusterReadview->getAllCores(allCores);
 	for(unsigned i = 0 ; i < allCores.size(); ++i) {
 		string coreName = allCores.at(i)->getName();
 		unsigned coreId = allCores.at(i)->getCoreId();
@@ -822,21 +870,10 @@ int main(int argc, char** argv) {
 
 	// cluster metadata is populated and commited in this function for the first time,
 	// from now, MM is responsible for doing this.
-	serverConf->loadConfigFile();
+	srch2http::ResourceMetadataManager * metadataManager = new srch2http::ResourceMetadataManager();
+	srch2http::ShardManager * shardManager = srch2http::ShardManager::createShardManager(serverConf, metadataManager);
 
-	// create DP Internal
-	srch2http::DPInternalRequestHandler * dpInternal =
-			new srch2http::DPInternalRequestHandler(serverConf);
-
-	// get read view to use for system startup
-	boost::shared_ptr<const srch2::httpwrapper::Cluster> clusterReadview;
-	serverConf->getClusterReadView(clusterReadview);
-
-	Logger::console("Readview used in main : ");
-	Logger::console("====================================");
-	clusterReadview->print();
-	Logger::console("====================================");
-
+	serverConf->loadConfigFile(metadataManager);
 
 	LicenseVerifier::testFile(serverConf->getLicenseKeyFileName());
 	string logDir = getFilePath(serverConf->getHTTPServerAccessLogFile());
@@ -857,6 +894,20 @@ int main(int argc, char** argv) {
 	}
 	Logger::setLogLevel(serverConf->getHTTPServerLogLevel());
 
+
+	// create shard manager
+	// cores information is populated in CM but nodes map is not populated yet.
+	// writeview is prepared in good shape by having 0 for every place that we need currentNodeId.
+	// This is feasible because at this point we must not have any information in writeview about any other nodes
+	// because the information coming from disk is not usable.
+	srch2http::MetadataInitializer nodeInitializer(serverConf, metadataManager);
+	nodeInitializer.initializeNode();
+
+	cout << "Node shards are added:" << endl;
+	shardManager->print();
+	// TM pointer must be set later when node information is provided to SHM.
+
+
 	// all libevent base objects (one per thread)
 	vector<struct event_base *> evBasesForExternalRequests;
 	vector<struct event_base *> evBasesForInternalRequests;
@@ -864,7 +915,7 @@ int main(int argc, char** argv) {
 	// map of all ports across all cores to shared socket file descriptors
 	PortSocketMap_t globalPortSocketMap;
 
-	int start = getHttpServerMetadata(serverConf, &globalPortSocketMap, clusterReadview);
+	int start = getHttpServerMetadata(serverConf, &globalPortSocketMap);
 
 	if (start != 0) {
 		Logger::close();
@@ -872,7 +923,7 @@ int main(int argc, char** argv) {
 	}
 
 	MAX_THREADS = serverConf->getNumberOfThreads();
-	MAX_INTERNAL_THREADS = 3; // Todo : read from config file.
+	MAX_INTERNAL_THREADS = 3; // TODO : read from config file.
 
     evthread_use_pthreads();
 	// create threads for external requests
@@ -888,6 +939,8 @@ int main(int argc, char** argv) {
 	transportConfig.internalCommunicationPort = serverConf->getTransport().getPort();
 
 	transportManager = new srch2http::TransportManager(evBasesForInternalRequests, transportConfig);
+	shardManager->attachToTransportManager(transportManager);
+	// since internal threads are not dispatched yet, it's safe to set the callback handler of shard manager.
 
 	// start threads for internal messages.
 	// Note: eventbases are not assigned any event yet.
@@ -905,24 +958,32 @@ int main(int argc, char** argv) {
 	 *  3. SM get cluster info from master and setup connection with all the node in master.
 	 */
 
-	srch2http::SyncManager  *syncManager = new srch2http::SyncManager(*serverConf ,
-			*transportManager);
+	srch2http::SyncManager  *syncManager = new srch2http::SyncManager(*serverConf, *transportManager);
+	// Discovery of SyncManager adds {currentNodeId, list of nodes} to the writeview.
+	// we must start the ShardManager thread here before SM even has a chance to call it to
+	// not miss any notifications from SM.
 	syncManager->startDiscovery();
+	// at this point, node information is also available. So we can safely notify shard manager
+	// that you have all the initial node information and can start distributed initialization.
+
+	// Set ShardManager pointer (used for callbacks) to syncManager before it starts working.
+	shardManager->start();
+
 	pthread_t *synchronizerThread = new pthread_t;
 	pthread_create(synchronizerThread, NULL, srch2http::bootSynchronizer, (void *)syncManager);
 
-
-	// create Routing Module
-	srch2http::RoutingManager *routesManager =
-			new srch2http::RoutingManager(*serverConf, *dpInternal, *transportManager);
-
-	// create migration manager
-	srch2http::ShardManager * shardManager =
-			new srch2http::ShardManager(serverConf, dpInternal, routesManager);
+	// create DP Internal
+	srch2http::DPInternalRequestHandler * dpInternal =
+			new srch2http::DPInternalRequestHandler(serverConf);
 
 	// create DP external
 	srch2http::DPExternalRequestHandler *dpExternal =
-			new srch2http::DPExternalRequestHandler(serverConf, routesManager);
+			new srch2http::DPExternalRequestHandler(*serverConf, *transportManager, *dpInternal);
+
+
+	// get read view to use for system startup
+	boost::shared_ptr<const srch2::httpwrapper::ClusterResourceMetadata_Readview> clusterReadview;
+	srch2::httpwrapper::ShardManager::getReadview(clusterReadview);
 
 	// bound http_server and evbase and core objects together
 	for(int j=0; j < evServersForExternalRequests.size(); ++j) {
@@ -966,8 +1027,11 @@ int main(int argc, char** argv) {
 
 	pthread_join(transportManager->getListeningThread(), NULL);
 	Logger::console("Thread = <%u> stopped", transportManager->getListeningThread());
-
+#ifndef ANDROID
 	pthread_cancel(*synchronizerThread);
+#else
+	pthread_kill(*synchronizerThread, SIGKILL);
+#endif
 	pthread_join(*synchronizerThread, NULL);
 	Logger::console("synch thread stopped.");
 

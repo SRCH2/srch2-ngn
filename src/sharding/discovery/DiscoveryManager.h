@@ -146,6 +146,7 @@ private:
 	int listenSocket;
 	int sendSocket;
 	bool _discoveryDone;
+	struct sockaddr_in multicastGroupAddress;
 };
 
 ///
