@@ -27,6 +27,7 @@ final class IndexDescription {
     private static final String DEFAULT_QUERY_TERM_BOOST = "defaultQueryTermBoost";
     private static final String ENABLE_POSITION_INDEX = "enablePositionIndex";
     private static final String FIELD_BOOST = "fieldBoost";
+    private static final String RECORD_BOOST_FIELD = "recordBoostField";
     private static final String MERGE_EVERY_N_SECONDS = "mergeEveryNSeconds";
     private static final String MERGE_EVERY_M_WRITES = "mergeEveryMWrites";
     private static final String MAX_DOCS = "maxDocs";
@@ -200,7 +201,9 @@ final class IndexDescription {
         indexProperties.setProperty("enablePositionIndex",
                 DEFAULT_VALUE_enablePositionIndex);
         indexProperties.setProperty("fieldBoost", getBoostStatementString());
-
+        if (schema.recordBoostKey != null) {
+            indexProperties.setProperty("recordBoostField", schema.recordBoostKey);
+        }
     }
 
     private void setUpdateProperties() {
@@ -261,8 +264,14 @@ final class IndexDescription {
                 .append("</supportSwapInEditDistance>\n")
                 .append("                <fieldBoost>")
                 .append(indexProperties.getProperty(FIELD_BOOST))
-                .append("</fieldBoost>\n")
-                .append("                <defaultQueryTermBoost>")
+                .append("                </fieldBoost>\n");
+                // temporary fix since engine will crash if this is empty (ie has not been set by user)
+                if (schema.recordBoostKey != null) {
+                    core.append("                <recordBoostField>")
+                            .append(indexProperties.getProperty(RECORD_BOOST_FIELD))
+                            .append("                </recordBoostField>\n");
+                }
+                core.append("                <defaultQueryTermBoost>")
                 .append(indexProperties.getProperty(DEFAULT_QUERY_TERM_BOOST))
                 .append("</defaultQueryTermBoost>\n")
                 .append("                <enablePositionIndex>")
