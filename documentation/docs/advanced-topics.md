@@ -62,18 +62,30 @@ ascending order.</li>
 
 ###Search on Fields
 
-By default one search term can search on all the *searchable* fields that
-are defined in the *Indexable.getSchema()* method. A search term can be
-confined to only search on one specific field by calling the *searchSpecificField()* method.
-
-For example we can set the following search term to only search for the keyword "wind" in the field *title*.
+By default a record is a matching answer for a keyword as long as the keyword
+appears in one of the *searchable* fields defined in the schema
+returned by *Indexable.getSchema()* method.  If we want to specify
+attributes in which a keywords needs to appear, we can 
+use the *searchSpecificField()* method.  For example, we can set the
+following search term to only search for the keyword "wind" in the
+field *title*.
 ```
   new SearchableTerm("wind").searchSpecificField("title");
 ```
 
+<h1> Give an example to show how to specify multiple attributes for a
+term. </h1> 
+
 ####Prefix Condition
 
-We can call its member method *setIsPrefixMatching()* to enable or disable
+In type-ahead search, we may want to treat a term, especially the
+last term ("ame" in the example query "beaty ame") as a prefix
+condition.  That is, a record is considered to match this term if
+the record has a keyword (e.g., "american") with this term as a
+prefix.  To specify such a condition, we can call the member method of
+the *SearchableTerm* 
+
+*setIsPrefixMatching()* to enable or disable 
 prefix matching on this keyword. By default, it is "false", i.e., a
 *SearchableTerm* object is treated as a complete-word condition.
 
