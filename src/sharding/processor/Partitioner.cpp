@@ -121,7 +121,7 @@ void CorePartitioner::getAllReadTargets(vector<NodeTargetShardInfo> & targets) c
 	}
 
 	// add all prepared targets to the output
-	for(map<NodeId, NodeTargetShardInfo>::iterator nodeEntry = targetNodes.begin(); nodeEntry != targetNodes.end(); ++targetNodes){
+	for(map<NodeId, NodeTargetShardInfo>::iterator nodeEntry = targetNodes.begin(); nodeEntry != targetNodes.end(); ++nodeEntry){
 		targets.push_back(nodeEntry->second);
 	}
 
@@ -140,28 +140,30 @@ void CorePartitioner::getAllWriteTargets(unsigned hashKey, NodeId currentNodeId,
 	// now add cluster write targets
 	const ClusterPartition * writeClusterPartition = partitionContainer->getClusterPartitionForWrite(hashKey);
 	ASSERT(writeClusterPartition != NULL);
-	vector<NodeId> partitionCoveringNodes;
-	writeClusterPartition->getShardLocations(partitionCoveringNodes);
-	for(vector<NodeId>::iterator coveringNodeIdItr = partitionCoveringNodes.begin();
-			coveringNodeIdItr != partitionCoveringNodes.end(); ++coveringNodeIdItr){
-		if(currentNodeId != *coveringNodeIdItr){
-			targetNodes[currentNodeId] = NodeTargetShardInfo(*coveringNodeIdItr, partitionContainer->getCoreId());
+	if(! writeClusterPartition->isPartitionLocked()){
+		vector<NodeId> partitionCoveringNodes;
+		writeClusterPartition->getShardLocations(partitionCoveringNodes);
+		for(vector<NodeId>::iterator coveringNodeIdItr = partitionCoveringNodes.begin();
+				coveringNodeIdItr != partitionCoveringNodes.end(); ++coveringNodeIdItr){
+			if(currentNodeId != *coveringNodeIdItr){
+				targetNodes[currentNodeId] = NodeTargetShardInfo(*coveringNodeIdItr, partitionContainer->getCoreId());
+			}
+			addWritePartitionToNodeTargetContainer(writeClusterPartition, targetNodes[currentNodeId]);
 		}
-		addWritePartitionToNodeTargetContainer(writeClusterPartition, targetNodes[currentNodeId]);
 	}
 
 	// add all prepared targets to the output
-	for(map<NodeId, NodeTargetShardInfo>::iterator nodeEntry = targetNodes.begin(); nodeEntry != targetNodes.end(); ++targetNodes){
+	for(map<NodeId, NodeTargetShardInfo>::iterator nodeEntry = targetNodes.begin(); nodeEntry != targetNodes.end(); ++nodeEntry){
 		targets.push_back(nodeEntry->second);
 	}
 }
 
 
-void CorePartitioner::getAllShardIds(vector<ShardId> & allShardIds) const{
+void CorePartitioner::getAllShardIds(vector<ClusterShardId> & allShardIds) const{
 	for(unsigned pid = 0 ; pid < partitionContainer->getTotalNumberOfPartitions() ; ++pid){
-		allShardIds.push_back(ShardId(partitionContainer->getCoreId(), pid, 0)); // primary shard
+		allShardIds.push_back(ClusterShardId(partitionContainer->getCoreId(), pid, 0)); // primary shard
 		for(unsigned rid = 1; rid <= partitionContainer->getReplicationDegree(); ++rid ){
-			allShardIds.push_back(ShardId(partitionContainer->getCoreId(), pid, rid));
+			allShardIds.push_back(ClusterShardId(partitionContainer->getCoreId(), pid, rid));
 		}
 	}
 }
@@ -169,19 +171,19 @@ void CorePartitioner::getAllShardIds(vector<ShardId> & allShardIds) const{
 
 void CorePartitioner::addReadPartitionToNodeTargetContainer(const ClusterPartition * partition, NodeTargetShardInfo & targets ) const{
 	vector<unsigned> replicas;
-	ASSERT(partition->getNodeReplicaIds(*nodeIdItr, replicas));
+	ASSERT(partition->getNodeReplicaIds(targets.getNodeId(), replicas));
 	ASSERT(replicas.size() > 0);
 	//TODO always choose one replica?
 	unsigned replicaId = replicas.at(0);
-	targets.addClusterShard(ShardId(partitionContainer->getCoreId(), partition->getPartitionId(), replicaId));
+	targets.addClusterShard(ClusterShardId(partitionContainer->getCoreId(), partition->getPartitionId(), replicaId));
 }
 
 void CorePartitioner::addWritePartitionToNodeTargetContainer(const ClusterPartition * partition, NodeTargetShardInfo & targets ) const{
 	vector<unsigned> replicas;
-	ASSERT(partition->getNodeReplicaIds(*nodeIdItr, replicas));
+	ASSERT(partition->getNodeReplicaIds(targets.getNodeId(), replicas));
 	ASSERT(replicas.size() > 0);
 	for(vector<unsigned>::iterator replicaIdItr = replicas.begin(); replicaIdItr != replicas.end(); ++replicaIdItr){
-		targets.addClusterShard(ShardId(partitionContainer->getCoreId(), partition->getPartitionId(), *replicaIdItr));
+		targets.addClusterShard(ClusterShardId(partitionContainer->getCoreId(), partition->getPartitionId(), *replicaIdItr));
 	}
 }
 
@@ -190,7 +192,7 @@ void CorePartitioner::addPartitionToNodeTargetContainer(const NodePartition * pa
 	partition->getInternalPartitionIds(nodeInternalPartitionIds);
 	for(vector<unsigned>::iterator nodeInternalPIdItr = nodeInternalPartitionIds.begin();
 			nodeInternalPIdItr < nodeInternalPartitionIds.end(); ++nodeInternalPIdItr){
-		targets.addNodeShard(*nodeInternalPIdItr);
+		targets.addNodeShard(NodeShardId(partition->getCoreId(), partition->getNodeId(), *nodeInternalPIdItr));
 	}
 }
 

@@ -51,8 +51,9 @@
 #include "serializables/SerializableSearchResults.h"
 #include "serializables/SerializableSerializeCommandInput.h"
 
+#include "sharding/sharding/ShardManager.h"
 #include "sharding/configuration/ConfigManager.h"
-#include "sharding/routing/RoutingManager.h"
+#include "sharding/configuration/CoreInfo.h"
 #include "sharding/processor/Partitioner.h"
 #include "sharding/processor/aggregators/SearchResultsAggregatorAndPrint.h"
 #include "sharding/processor/aggregators/CommandStatusAggregatorAndPrint.h"
@@ -76,7 +77,7 @@ namespace httpwrapper {
 DPExternalRequestHandler::DPExternalRequestHandler(ConfigManager & configurationManager,
 		TransportManager& transportManager, DPInternalRequestHandler& dpInternal):
 			dpMessageHandler(configurationManager, transportManager, dpInternal){
-	this->configurationManager = configurationManager;
+	this->configurationManager = &configurationManager;
 	transportManager.registerCallbackForDPMessageHandler(&dpMessageHandler);
 };
 
@@ -95,8 +96,8 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , unsig
     clock_gettime(CLOCK_REALTIME, &tstart);
     // CoreInfo_t is a view of configurationManager which contains all information for the
     // core that we want to search on, this object is accesses through configurationManager.
-    boost::shared_ptr<const Cluster> clusterReadview;
-    configurationManager->getClusterReadView(clusterReadview);
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
+    ShardManager::getShardManager()->getMetadataManager()->getClusterReadView(clusterReadview);
 
 //    Logger::console("Cluster readview used for search: ");
 //    Logger::console("====================================");
@@ -171,7 +172,7 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , unsig
 		timeValue = timeValue + TIMEOUT_WAIT_TIME;
 		// pass logical plan to broadcast through SerializableSearchCommandInput
 		SearchCommand * searchInput =
-				new SearchCommand(&resultAggregator->getLogicalPlan());
+				new SearchCommand(&(resultAggregator->getLogicalPlan()));
 		// request object must be saved in aggregator to be able to delete it safely
 		resultAggregator->addRequestObj(searchInput);
 		bool routingStatus = dpMessageHandler.broadcast<SearchCommand, SearchCommandResults>(searchInput,
@@ -204,8 +205,8 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , unsig
 void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, unsigned coreId){
 
 
-    boost::shared_ptr<const Cluster> clusterReadview;
-    configurationManager->getClusterReadView(clusterReadview);
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
+    ShardManager::getShardManager()->getMetadataManager()->getClusterReadView(clusterReadview);
 
 //    Logger::console("Cluster readview used for insert: ");
 //    Logger::console("====================================");
@@ -374,8 +375,8 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, unsign
  */
 void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, unsigned coreId){
 
-    boost::shared_ptr<const Cluster> clusterReadview;
-    configurationManager->getClusterReadView(clusterReadview);
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
+    ShardManager::getShardManager()->getMetadataManager()->getClusterReadView(clusterReadview);
 
     const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
     // it must be an update query
@@ -545,8 +546,8 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, unsign
         return;
     }
 
-    boost::shared_ptr<const Cluster> clusterReadview;
-    configurationManager->getClusterReadView(clusterReadview);
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
+    ShardManager::getShardManager()->getMetadataManager()->getClusterReadView(clusterReadview);
 
     const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
 
@@ -620,8 +621,8 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, unsign
   */
 void DPExternalRequestHandler::externalGetInfoCommand(evhttp_request *req, unsigned coreId){
 
-    boost::shared_ptr<const Cluster> clusterReadview;
-    configurationManager->getClusterReadView(clusterReadview);
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
+    ShardManager::getShardManager()->getMetadataManager()->getClusterReadView(clusterReadview);
 
     const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
 
@@ -638,7 +639,7 @@ void DPExternalRequestHandler::externalGetInfoCommand(evhttp_request *req, unsig
         timeValue = timeValue + TIMEOUT_WAIT_TIME;
 		GetInfoCommand * getInfoInput = new GetInfoCommand();
 		resultsAggregator->addRequestObj(getInfoInput);
-		bool routingStatus = dpMessageHandler.broadcast<GetInfoCommand, CommandStatus>(getInfoInput,
+		bool routingStatus = dpMessageHandler.broadcast<GetInfoCommand, GetInfoCommandResults>(getInfoInput,
 						true,
 						true,
 						resultsAggregator,
@@ -664,8 +665,8 @@ void DPExternalRequestHandler::externalGetInfoCommand(evhttp_request *req, unsig
   */
 void DPExternalRequestHandler::externalSerializeIndexCommand(evhttp_request *req, unsigned coreId){
     /* Yes, we are expecting a post request */
-    boost::shared_ptr<const Cluster> clusterReadview;
-    configurationManager->getClusterReadView(clusterReadview);
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
+    ShardManager::getShardManager()->getMetadataManager()->getClusterReadView(clusterReadview);
 
     const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
     switch (req->type) {
@@ -724,8 +725,8 @@ void DPExternalRequestHandler::externalSerializeIndexCommand(evhttp_request *req
 void DPExternalRequestHandler::externalSerializeRecordsCommand(evhttp_request *req, unsigned coreId){
     /* Yes, we are expecting a post request */
 
-    boost::shared_ptr<const Cluster> clusterReadview;
-    configurationManager->getClusterReadView(clusterReadview);
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
+    ShardManager::getShardManager()->getMetadataManager()->getClusterReadView(clusterReadview);
 
     const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
 
@@ -802,8 +803,8 @@ void DPExternalRequestHandler::externalSerializeRecordsCommand(evhttp_request *r
   */
 void DPExternalRequestHandler::externalResetLogCommand(evhttp_request *req, unsigned coreId){
 
-    boost::shared_ptr<const Cluster> clusterReadview;
-    configurationManager->getClusterReadView(clusterReadview);
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
+    ShardManager::getShardManager()->getMetadataManager()->getClusterReadView(clusterReadview);
 
     const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
 
@@ -857,8 +858,8 @@ void DPExternalRequestHandler::externalResetLogCommand(evhttp_request *req, unsi
   */
 void DPExternalRequestHandler::externalCommitCommand(evhttp_request *req, unsigned coreId){
 
-    boost::shared_ptr<const Cluster> clusterReadview;
-    configurationManager->getClusterReadView(clusterReadview);
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
+    ShardManager::getShardManager()->getMetadataManager()->getClusterReadView(clusterReadview);
 
     const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
 
@@ -912,8 +913,8 @@ void DPExternalRequestHandler::externalCommitCommand(evhttp_request *req, unsign
   */
 void DPExternalRequestHandler::externalMergeCommand(evhttp_request *req, unsigned coreId){
 
-    boost::shared_ptr<const Cluster> clusterReadview;
-    configurationManager->getClusterReadView(clusterReadview);
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
+    ShardManager::getShardManager()->getMetadataManager()->getClusterReadView(clusterReadview);
 
     const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
 

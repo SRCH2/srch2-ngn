@@ -49,22 +49,28 @@ public:
     	ASSERT(reply->isDPReply());
     	switch (reply->getType()) {
 			case SearchResultsMessageType:
+			{
 				SearchCommandResults * searchResults =
 						SearchCommandResults::deserialize(Message::getBodyPointerFromMessagePointer(reply));
 				return resolveReply(searchResults, nodeId , reply->getRequestMessageId());
+			}
 			case StatusMessageType:
+			{
 				CommandStatus * statusResult =
 						CommandStatus::deserialize(Message::getBodyPointerFromMessagePointer(reply));
 				return resolveReply(statusResult, nodeId , reply->getRequestMessageId());
+			}
 			case GetInfoResultsMessageType:
+			{
 				GetInfoCommandResults * getInfoResult =
 						GetInfoCommandResults::deserialize(Message::getBodyPointerFromMessagePointer(reply));
 				return resolveReply(getInfoResult, nodeId , reply->getRequestMessageId());
-				break;
+			}
 			default:
+			{
 				ASSERT(false);
 				return false;
-				break;
+			}
 		}
     	return false;
     }

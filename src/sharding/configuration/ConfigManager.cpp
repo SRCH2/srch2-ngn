@@ -27,6 +27,11 @@
 #include "boost/filesystem/path.hpp"
 #include <boost/filesystem.hpp>
 
+#include "sharding/sharding/metadata_manager/ResourceMetadataManager.h"
+#include "sharding/sharding/metadata_manager/Cluster.h"
+#include "sharding/sharding/ShardManager.h"
+
+
 using namespace std;
 namespace srch2is = srch2::instantsearch;
 using namespace pugi;
@@ -80,6 +85,7 @@ const char* const ConfigManager::collectionString = "collection";
 const char* const ConfigManager::configString = "config";
 const char* const ConfigManager::dataDirString = "datadir";
 const char* const ConfigManager::dataFileString = "datafile";
+const char* const ConfigManager::multipleDataFilesTag = "multiple-data-file";
 const char* const ConfigManager::dataSourceTypeString = "datasourcetype";
 const char* const ConfigManager::dbString = "db";
 const char* const ConfigManager::defaultString = "default";
@@ -216,13 +222,9 @@ ConfigManager::ConfigManager(const string& configFile)
     this->configFile = configFile;
     defaultCoreName = "__DEFAULTCORE__";
     defaultCoreSetFlag = false;
-
-    // initialize Cluster readview and writeview
-    // initialize writeview
-    pthread_spin_init(&m_spinlock, 0);
 }
 
-void ConfigManager::loadConfigFile()
+void ConfigManager::loadConfigFile(srch2http::ResourceMetadataManager * metadataManager)
 {
     Logger::debug("Reading config file: %s\n", this->configFile.c_str());
     xml_document configDoc;
@@ -247,8 +249,9 @@ void ConfigManager::loadConfigFile()
     Logger::debug("WARNINGS while reading the configuration file:");
     Logger::debug("%s\n", parseWarnings.str().c_str());
 
-	ClusterResourceMetadata_Readview * firstReadview = new ClusterResourceMetadata_Readview(clusterNameStr, clusterCores);
-	this->commitClusterMetadata(firstReadview);
+    if(metadataManager != NULL){
+		metadataManager->setWriteview(new Cluster_Writeview(0, clusterNameStr, clusterCores));
+    }
 
     if (!configSuccess) {
         Logger::error("ERRORS while reading the configuration file");
@@ -822,6 +825,22 @@ void ConfigManager::parseCoreInformationTags(const xml_node &parentNode, CoreInf
     string tempUse = "";
     CoreConfigParseState_t coreParseState;
     // <config><dataDir>core0/data OR <core><dataDir>
+
+    xml_node multipleDataFile = parentNode.child("multiple-data-file");
+    if(multipleDataFile && multipleDataFile.text()){
+    	string paths = string(multipleDataFile.text().get());
+    	vector<string> path;
+		trimSpacesFromValue(paths, "multiple-data-file", parseWarnings);
+		string delimiterComma = ",";
+		this->splitString(paths,delimiterComma,path);
+		for (int i = 0; i < path.size(); i++){
+		    vector<string> temp;
+			trimSpacesFromValue(path[i], "DataFilePaths", parseWarnings);
+			string str = srch2Home + "/" + this->clusterNameStr + "/" +coreInfo->name + "/" + path[i];
+			coreInfo->setJsonFilePaths(str);
+		}
+    }
+
 
     xml_node childNodeOfCores = parentNode.child(primaryShardTag);
 
@@ -1929,7 +1948,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
 
     // maxSearchThreads is an optional field
     numberOfThreads = 1; // by default it is 1
-    xml_node childNode = configNode.child(maxSearchThreadsString);
+    childNode = configNode.child(maxSearchThreadsString);
     if (childNode && childNode.text()) {
         string mst = childNode.text().get();
         if (isValidMaxSearchThreads(mst)) {
@@ -2090,7 +2109,7 @@ int ConfigManager::getIndexType(const string &coreName) const
         coreNameTmp = getDefaultCoreName();
     }
     boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    getClusterReadView(clusterReadview);
+    ShardManager::getReadview(clusterReadview);
     return clusterReadview->getCoreByName(coreNameTmp)->getIndexType();
 
 }
@@ -2102,7 +2121,7 @@ bool ConfigManager::getSupportSwapInEditDistance(const string &coreName) const
         coreNameTmp = getDefaultCoreName();
     }
     boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    getClusterReadView(clusterReadview);
+    ShardManager::getReadview(clusterReadview);
     return clusterReadview->getCoreByName(coreNameTmp)->getSupportSwapInEditDistance();
 }
 
@@ -2113,7 +2132,7 @@ const string& ConfigManager::getAttributeLatitude(const string &coreName) const
         coreNameTmp = getDefaultCoreName();
     }
     boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    getClusterReadView(clusterReadview);
+    ShardManager::getReadview(clusterReadview);
     return clusterReadview->getCoreByName(coreNameTmp)->getFieldLatitude();
 }
 
@@ -2124,7 +2143,7 @@ const string& ConfigManager::getAttributeLongitude(const string &coreName) const
         coreNameTmp = getDefaultCoreName();
     }
     boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    getClusterReadView(clusterReadview);
+    ShardManager::getReadview(clusterReadview);
     return clusterReadview->getCoreByName(coreNameTmp)->getFieldLongitude();
 }
 
@@ -2143,7 +2162,7 @@ const string& ConfigManager::getIndexPath(const string &coreName) const {
         coreNameTmp = getDefaultCoreName();
     }
     boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    getClusterReadView(clusterReadview);
+    ShardManager::getReadview(clusterReadview);
     return clusterReadview->getCoreByName(coreNameTmp)->getIndexPath();
 }
 
@@ -2154,7 +2173,7 @@ const string& ConfigManager::getPrimaryKey(const string &coreName) const
         coreNameTmp = getDefaultCoreName();
     }
     boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    getClusterReadView(clusterReadview);
+    ShardManager::getReadview(clusterReadview);
     return clusterReadview->getCoreByName(coreNameTmp)->getPrimaryKey();
 }
 
@@ -2165,7 +2184,7 @@ const map<string, SearchableAttributeInfoContainer > * ConfigManager::getSearcha
         coreNameTmp = getDefaultCoreName();
     }
     boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    getClusterReadView(clusterReadview);
+    ShardManager::getReadview(clusterReadview);
     return clusterReadview->getCoreByName(coreNameTmp)->getSearchableAttributes();
 }
 
@@ -2176,7 +2195,7 @@ const map<string, RefiningAttributeInfoContainer > * ConfigManager::getRefiningA
         coreNameTmp = getDefaultCoreName();
     }
     boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    getClusterReadView(clusterReadview);
+    ShardManager::getReadview(clusterReadview);
     return clusterReadview->getCoreByName(coreNameTmp)->getRefiningAttributes();
 }
 
@@ -2187,7 +2206,7 @@ bool ConfigManager::isFacetEnabled(const string &coreName) const
         coreNameTmp = getDefaultCoreName();
     }
     boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    getClusterReadView(clusterReadview);
+    ShardManager::getReadview(clusterReadview);
     return clusterReadview->getCoreByName(coreNameTmp)->isFacetEnabled();
 }
 
@@ -2198,7 +2217,7 @@ const vector<string> * ConfigManager::getFacetAttributes(const string &coreName)
         coreNameTmp = getDefaultCoreName();
     }
     boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    getClusterReadView(clusterReadview);
+    ShardManager::getReadview(clusterReadview);
     return clusterReadview->getCoreByName(coreNameTmp)->getFacetAttributes();
 }
 
@@ -2209,7 +2228,7 @@ const vector<int> * ConfigManager::getFacetTypes(const string &coreName) const
         coreNameTmp = getDefaultCoreName();
     }
     boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    getClusterReadView(clusterReadview);
+    ShardManager::getReadview(clusterReadview);
     return clusterReadview->getCoreByName(coreNameTmp)->getFacetTypes();
 }
 
@@ -2220,7 +2239,7 @@ const vector<string> * ConfigManager::getFacetStarts(const string &coreName) con
         coreNameTmp = getDefaultCoreName();
     }
     boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    getClusterReadView(clusterReadview);
+    ShardManager::getReadview(clusterReadview);
     return clusterReadview->getCoreByName(coreNameTmp)->getFacetStarts();
 }
 
@@ -2231,7 +2250,7 @@ const vector<string> * ConfigManager::getFacetEnds(const string &coreName) const
         coreNameTmp = getDefaultCoreName();
     }
     boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    getClusterReadView(clusterReadview);
+    ShardManager::getReadview(clusterReadview);
     return clusterReadview->getCoreByName(coreNameTmp)->getFacetEnds();
 }
 
@@ -2242,7 +2261,7 @@ const vector<string> * ConfigManager::getFacetGaps(const string &coreName) const
         coreNameTmp = getDefaultCoreName();
     }
     boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    getClusterReadView(clusterReadview);
+    ShardManager::getReadview(clusterReadview);
     return clusterReadview->getCoreByName(coreNameTmp)->getFacetGaps();
 }
 
@@ -2258,7 +2277,7 @@ bool ConfigManager::getStemmerFlag(const string &coreName) const
         coreNameTmp = getDefaultCoreName();
     }
     boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    getClusterReadView(clusterReadview);
+    ShardManager::getReadview(clusterReadview);
     return clusterReadview->getCoreByName(coreNameTmp)->getStemmerFlag();
 }
 
@@ -2269,7 +2288,7 @@ const string &ConfigManager::getStemmerFile(const string &coreName) const
         coreNameTmp = getDefaultCoreName();
     }
     boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    getClusterReadView(clusterReadview);
+    ShardManager::getReadview(clusterReadview);
     return clusterReadview->getCoreByName(coreNameTmp)->getStemmerFile();
 }
 
@@ -2280,7 +2299,7 @@ const string &ConfigManager::getSynonymFilePath(const string &coreName) const
         coreNameTmp = getDefaultCoreName();
     }
     boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    getClusterReadView(clusterReadview);
+    ShardManager::getReadview(clusterReadview);
     return clusterReadview->getCoreByName(coreNameTmp)->getSynonymFilePath();
 }
 
@@ -2291,7 +2310,7 @@ const string &ConfigManager::getProtectedWordsFilePath(const string &coreName) c
         coreNameTmp = getDefaultCoreName();
     }
     boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    getClusterReadView(clusterReadview);
+    ShardManager::getReadview(clusterReadview);
     return clusterReadview->getCoreByName(coreNameTmp)->getProtectedWordsFilePath();
 }
 
@@ -2302,7 +2321,7 @@ bool ConfigManager::getSynonymKeepOrigFlag(const string &coreName) const
         coreNameTmp = getDefaultCoreName();
     }
     boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    getClusterReadView(clusterReadview);
+    ShardManager::getReadview(clusterReadview);
     return clusterReadview->getCoreByName(coreNameTmp)->getSynonymKeepOrigFlag();
 }
 
@@ -2313,7 +2332,7 @@ const string &ConfigManager::getStopFilePath(const string &coreName) const
         coreNameTmp = getDefaultCoreName();
     }
     boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    getClusterReadView(clusterReadview);
+    ShardManager::getReadview(clusterReadview);
     return clusterReadview->getCoreByName(coreNameTmp)->getStopFilePath();
 }
 
@@ -2324,7 +2343,7 @@ const string& ConfigManager::getAttributeRecordBoostName(const string &coreName)
         coreNameTmp = getDefaultCoreName();
     }
     boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    getClusterReadView(clusterReadview);
+    ShardManager::getReadview(clusterReadview);
     return clusterReadview->getCoreByName(coreNameTmp)->getrecordBoostField();
 }
 
@@ -2334,7 +2353,7 @@ const string& ConfigManager::getRecordAllowedSpecialCharacters(const string &cor
         coreNameTmp = getDefaultCoreName();
     }
     boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    getClusterReadView(clusterReadview);
+    ShardManager::getReadview(clusterReadview);
     return clusterReadview->getCoreByName(coreNameTmp)->getRecordAllowedSpecialCharacters();
 }
 
@@ -2345,7 +2364,7 @@ int ConfigManager::getSearchType(const string &coreName) const
         coreNameTmp = getDefaultCoreName();
     }
     boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    getClusterReadView(clusterReadview);
+    ShardManager::getReadview(clusterReadview);
     return clusterReadview->getCoreByName(coreNameTmp)->getSearchType();
 }
 
@@ -2356,7 +2375,7 @@ int ConfigManager::getIsPrimSearchable(const string &coreName) const
         coreNameTmp = getDefaultCoreName();
     }
     boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    getClusterReadView(clusterReadview);
+    ShardManager::getReadview(clusterReadview);
     return clusterReadview->getCoreByName(coreNameTmp)->getIsPrimSearchable();
 }
 
@@ -2367,7 +2386,7 @@ unsigned ConfigManager::getQueryTermBoost(const string &coreName) const
         coreNameTmp = getDefaultCoreName();
     }
     boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    getClusterReadView(clusterReadview);
+    ShardManager::getReadview(clusterReadview);
     return clusterReadview->getCoreByName(coreNameTmp)->getQueryTermBoost();
 }
 
@@ -2378,7 +2397,7 @@ bool ConfigManager::getSupportAttributeBasedSearch(const string &coreName) const
         coreNameTmp = getDefaultCoreName();
     }
     boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    getClusterReadView(clusterReadview);
+    ShardManager::getReadview(clusterReadview);
     return clusterReadview->getCoreByName(coreNameTmp)->getSupportAttributeBasedSearch();
 }
 
@@ -2406,7 +2425,7 @@ bool ConfigManager::isRecordBoostAttributeSet(const string &coreName) const
     	coreName2 = getDefaultCoreName();
     }
     boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    getClusterReadView(clusterReadview);
+    ShardManager::getReadview(clusterReadview);
     return clusterReadview->getCoreByName(coreName2)->getRecordBoostFieldFlag();
 }
 
@@ -2751,11 +2770,11 @@ int ConfigManager::parseFacetType(string& facetType){
 bool ConfigManager::isPositionIndexEnabled(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return (getDefaultCoreInfo()->isPositionIndexWordEnabled() ||
-        		getDefaultCoreInfo()->isPositionIndexCharEnabled());
+        return (getCoreByName(defaultCoreName)->isPositionIndexWordEnabled() ||
+        		getCoreByName(defaultCoreName)->isPositionIndexCharEnabled());
     }
     boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    getClusterReadView(clusterReadview);
+    ShardManager::getReadview(clusterReadview);
     return clusterReadview->getCoreByName(coreName)->isPositionIndexWordEnabled() ||
     		clusterReadview->getCoreByName(coreName)->isPositionIndexCharEnabled();
 }
@@ -2763,60 +2782,60 @@ bool ConfigManager::isPositionIndexEnabled(const string &coreName) const
 const string& ConfigManager::getMongoServerHost(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->getMongoServerHost();
+        return getCoreByName(defaultCoreName)->getMongoServerHost();
     }
     boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    getClusterReadView(clusterReadview);
+    ShardManager::getReadview(clusterReadview);
     return clusterReadview->getCoreByName(coreName)->getMongoServerHost();
 }
 
 const string& ConfigManager::getMongoServerPort(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->getMongoServerPort();
+        return getCoreByName(defaultCoreName)->getMongoServerPort();
     }
     boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    getClusterReadView(clusterReadview);
+    ShardManager::getReadview(clusterReadview);
     return clusterReadview->getCoreByName(coreName)->getMongoServerPort();
 }
 
 const string& ConfigManager::getMongoDbName(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->getMongoDbName();
+        return getCoreByName(defaultCoreName)->getMongoDbName();
     }
     boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    getClusterReadView(clusterReadview);
+    ShardManager::getReadview(clusterReadview);
     return clusterReadview->getCoreByName(coreName)->getMongoDbName();
 }
 
 const string& ConfigManager::getMongoCollection (const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->getMongoCollection();
+        return getCoreByName(defaultCoreName)->getMongoCollection();
     }
     boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    getClusterReadView(clusterReadview);
+    ShardManager::getReadview(clusterReadview);
     return clusterReadview->getCoreByName(coreName)->getMongoCollection();
 }
 
 const unsigned ConfigManager::getMongoListenerWaitTime (const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->getMongoListenerWaitTime();
+        return getCoreByName(defaultCoreName)->getMongoListenerWaitTime();
     }
     boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    getClusterReadView(clusterReadview);
+    ShardManager::getReadview(clusterReadview);
     return clusterReadview->getCoreByName(coreName)->getMongoListenerWaitTime();
 }
 
 const unsigned ConfigManager::getMongoListenerMaxRetryCount(const string &coreName) const
 {
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->getMongoListenerMaxRetryOnFailure();
+        return getCoreByName(defaultCoreName)->getMongoListenerMaxRetryOnFailure();
     }
     boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    getClusterReadView(clusterReadview);
+    ShardManager::getReadview(clusterReadview);
     return clusterReadview->getCoreByName(coreName)->getMongoListenerMaxRetryOnFailure();
 }
 
@@ -2851,9 +2870,9 @@ string ConfigManager::createCoreDir(const string& clusterName, const string& nod
 	return path;
 }
 
-string ConfigManager::createShardDir(const string& clusterName, const string& nodeName, const string& coreName, const ShardId &shardId)
+string ConfigManager::createShardDir(const string& clusterName, const string& nodeName, const string& coreName, const ShardId * shardId)
 {
-	string path = this->getSrch2Home() + clusterName + "/" + nodeName + "/" + coreName + "/" + shardId.toString();
+	string path = this->getSrch2Home() + clusterName + "/" + nodeName + "/" + coreName + "/" + shardId->toString();
 	createCoreDir(clusterName, nodeName, coreName);
 	boost::filesystem::create_directory(path);
 	return path;
@@ -2897,9 +2916,9 @@ string ConfigManager::getCoreDir(const string& clusterName, const string& nodeNa
 		return "";
 }
 
-string ConfigManager::getShardDir(const string& clusterName, const string& nodeName, const string& coreName, const ShardId& shardId)
+string ConfigManager::getShardDir(const string& clusterName, const string& nodeName, const string& coreName, const ShardId * shardId)
 {
-	string path = getCoreDir(clusterName, nodeName, coreName) + "/" + shardId.toString();
+	string path = getCoreDir(clusterName, nodeName, coreName) + "/" + shardId->toString();
 	if(boost::filesystem::is_directory(path))
 		return path;
 	else

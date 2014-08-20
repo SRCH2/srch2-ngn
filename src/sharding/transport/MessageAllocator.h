@@ -27,6 +27,14 @@ public:
 		return Message::getBodyPointerFromMessagePointer(msg);
 	}
 
+	void * allocateByteArray(size_type bodySize){
+		 return allocator<char>::allocate(bodySize);
+	}
+
+	void deallocateByreArray(void * buffer, size_type bufferSize){
+		 allocator<char>::deallocate((char *)(buffer), bufferSize );
+	}
+
 	/*
 	 * this function receives the pointer to the body of a message and deallocates
 	 * this message completely.

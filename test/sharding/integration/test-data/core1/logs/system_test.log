@@ -1,0 +1,31 @@
+---------------------do 2n-insertA-deleteA test--------------------------------
+starting engine: ../../../build/src/server/srch2-search-server ./2n-insertA-deleteA/confA.xml
+2014-05-14 15:27:58 ERROR	Parsing errors in XML configuration file './2n-insertA-deleteA/confA.xml'
+2014-05-14 15:27:58 ERROR	error: Start-end tags mismatch
+---------------------do 2n-insertA-deleteB test--------------------------------
+starting engine: ../../../build/src/server/srch2-search-server ./AllTestCases/confA.xml
+2014-05-14 15:28:10 INFO	!!!!!CoreId is not provided in core core1, engine will use the default value!!!!!
+---------------------do 2n-insertA-R1-B-R2-deleteA-R1-B-R2 test----------------
+starting engine: ../../../build/src/server/srch2-search-server ./AllTestCases/confA.xml
+2014-05-14 15:28:12 INFO	!!!!!CoreId is not provided in core core1, engine will use the default value!!!!!
+---------------------do 2n-insertA-R1-B-R2-deleteB-R1-A-R1 test----------------
+starting engine: ../../../build/src/server/srch2-search-server ./AllTestCases/confA.xml
+2014-05-14 15:28:12 INFO	!!!!!CoreId is not provided in core core1, engine will use the default value!!!!!
+---------------------do 2n-insertA-R1-B-R2-deleteB-R1-queryA-R1 test-----------
+starting engine: ../../../build/src/server/srch2-search-server ./AllTestCases/confA.xml
+2014-05-14 15:28:12 INFO	!!!!!CoreId is not provided in core core1, engine will use the default value!!!!!
+---------------------do ./AllTestCases/2n-insertAB-queryAB test----------------
+starting engine: ../../../build/src/server/srch2-search-server ./AllTestCases/confA.xml
+2014-05-14 15:28:13 INFO	!!!!!CoreId is not provided in core core1, engine will use the default value!!!!!
+---------------------do ./AllTestCases/2n-insertAABB test----------------------
+starting engine: ../../../build/src/server/srch2-search-server ./AllTestCases/confA.xml
+2014-05-14 15:28:13 INFO	!!!!!CoreId is not provided in core core1, engine will use the default value!!!!!
+---------------------do ./AllTestCases/3n-insertABC-queryABC test--------------
+starting engine: ../../../build/src/server/srch2-search-server ./AllTestCases/confA.xml
+2014-05-14 15:28:13 INFO	!!!!!CoreId is not provided in core core1, engine will use the default value!!!!!
+---------------------do ./AllTestCases/3n-insertABC-queryC test----------------
+starting engine: ../../../build/src/server/srch2-search-server ./AllTestCases/confA.xml
+2014-05-14 15:28:13 INFO	!!!!!CoreId is not provided in core core1, engine will use the default value!!!!!
+---------------------do ./AllTestCases/3n-insertA-queryABC test----------------
+starting engine: ../../../build/src/server/srch2-search-server ./AllTestCases/confA.xml
+2014-05-14 15:28:13 INFO	!!!!!CoreId is not provided in core core1, engine will use the default value!!!!!

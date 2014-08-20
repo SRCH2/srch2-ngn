@@ -5,6 +5,8 @@ using namespace std;
 #include <string>
 #include "instantsearch/Record.h"
 #include "sharding/configuration/ConfigManager.h"
+#include "sharding/sharding/metadata_manager/Shard.h"
+#include "sharding/sharding/metadata_manager/Partition.h"
 
 using namespace srch2::instantsearch;
 
@@ -23,7 +25,7 @@ public:
 
 	void getAllReadTargets(vector<NodeTargetShardInfo> & targets) const;
 	void getAllWriteTargets(unsigned hashKey, NodeId currentNodeId, vector<NodeTargetShardInfo> & targets) const;
-	void getAllShardIds(vector<ShardId> & allShardIds) const;
+	void getAllShardIds(vector<ClusterShardId> & allShardIds) const;
 	const unsigned getCoreId() const	;
 	const unsigned getTotalNumberOfPartitions() const;
 	const unsigned getReplicationDegree() const;

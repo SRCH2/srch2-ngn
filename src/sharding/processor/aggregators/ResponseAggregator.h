@@ -3,6 +3,7 @@
 
 
 #include "sharding/configuration/ConfigManager.h"
+#include "sharding/sharding/metadata_manager/Cluster.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace std;
@@ -28,16 +29,16 @@ class ResponseAggregatorInterface {
 public:
 
 
-	ResponseAggregatorInterface(boost::shared_ptr<const Cluster> clusterReadview){
+	ResponseAggregatorInterface(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview){
 		this->clusterReadview = clusterReadview;
 		clusterWriteview = NULL;
 	}
 
-	ResponseAggregatorInterface(Cluster * clusterWriteview){
+	ResponseAggregatorInterface(ClusterResourceMetadata_Readview * clusterWriteview){
 		this->clusterWriteview = clusterWriteview;
 	}
 
-	boost::shared_ptr<const Cluster> getClusterReadview(){
+	boost::shared_ptr<const ClusterResourceMetadata_Readview> getClusterReadview(){
 		return this->clusterReadview;
 	}
 	/*
@@ -70,8 +71,8 @@ public:
     virtual ~ResponseAggregatorInterface(){};
 
 private:
-    boost::shared_ptr<const Cluster> clusterReadview;
-    Cluster * clusterWriteview;
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
+    ClusterResourceMetadata_Readview * clusterWriteview;
 };
 
 }

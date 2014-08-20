@@ -19,12 +19,10 @@ public:
         SERIALIZE_RECORDS
     };
     SerializeCommand(OperationCode code){
-        ASSERT(code == SERIALIZE_INDEX);
         this->indexOrRecord = code;
         this->dataFileName = "";
     }
     SerializeCommand(OperationCode code, const string &dataFileName){
-        ASSERT(code == SERIALIZE_RECORDS);
         this->indexOrRecord = code;
         this->dataFileName = dataFileName;
     }
@@ -65,6 +63,10 @@ public:
             return new SerializeCommand(indexOrRecord, dataFileName);
         }
         return new SerializeCommand(indexOrRecord);
+    }
+
+    SerializeCommand * clone(){
+    	return new SerializeCommand(this->indexOrRecord, this->dataFileName);
     }
 
     //Returns the type of message which uses this kind of object as transport

@@ -2,7 +2,12 @@
 #define __SHARDING_PROCESSOR_DISTRIBUTED_PROCESSR_MESSAGE_HANDLER_H_
 
 #include "aggregators/ResponseAggregator.h"
-#include "sharding/configuration/Shard.h"
+#include "sharding/transport/CallbackHandler.h"
+#include "sharding/sharding/metadata_manager/Cluster.h"
+#include "sharding/transport/TransportManager.h"
+#include "DistributedProcessorInternal.h"
+#include "RequestMessageHandler.h"
+#include "ReplyMessageHandler.h"
 
 using namespace std;
 
@@ -47,7 +52,7 @@ public:
     		boost::shared_ptr<ResponseAggregatorInterface<RequestType , ResponseType> > aggregator,
             time_t timeoutValue,
             NodeTargetShardInfo target,
-            boost::shared_ptr<const Cluster> clusterReadview){
+            boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview){
     	broadcast(requestObj, waitForAll, withCallback, aggregator, timeoutValue, vector<NodeTargetShardInfo>({target}),
     			clusterReadview);
     }
@@ -59,7 +64,7 @@ public:
     		boost::shared_ptr<ResponseAggregatorInterface<RequestType , ResponseType> > aggregator,
             time_t timeoutValue,
             vector<NodeTargetShardInfo> & targets,
-            boost::shared_ptr<const Cluster> clusterReadview){
+            boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview){
 
     	// prepare the pending request which takes care of the replies of this request
         PendingRequest<RequestType, ResponseType> * pendingRequest = NULL;
@@ -89,8 +94,9 @@ public:
         	                        true);
         		}
 
+				RequestType * newRequestObj = requestObj->clone();
         	    LocalRequestHandlerArgs * args = new LocalRequestHandlerArgs(
-        	    		requestObj, clusterReadview->getCurrentNodeId(),
+        	    		newRequestObj, clusterReadview->getCurrentNodeId(),
         	    		messageIdForLocalShards, *targetItr, RequestType::messageType(),
         	    		clusterReadview, &requestMessageHandler);
 
@@ -109,7 +115,7 @@ public:
         		//1. First serialize the request object into a byte array (this must be done only once)
         		if(serializedRequestObj == NULL){
 					serializedSize = requestObj->getNumberOfBytes();
-					serializedRequestObj = requestObj->seriailize(transportManager.getMessageAllocator());
+					serializedRequestObj = requestObj->serialize(transportManager.getMessageAllocator());
         		}
         		//2. Prepare a message that it's body size is targetData+requestData and copy the request byte array
         		//   into it (so that we save serialization time)
@@ -156,22 +162,22 @@ private:
         		unsigned requestMessageId,
         		const NodeTargetShardInfo & target,
         		ShardingMessageType type,
-        		boost::shared_ptr<const Cluster> clusterReadview,
-        		RequestMessageHandler * requestMessageHandler){
+        		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
+        		RequestMessageHandler * requestMessageHandler):target(target){
     		this->requestObj = requestObj;
     		this->node = node;
     		this->requestMessageId = requestMessageId;
-    		this->target = target;
     		this->type = type;
     		this->clusterReadview = clusterReadview;
     		this->requestMessageHandler = requestMessageHandler;
     	}
+
     	void * requestObj;
     	NodeId node;
     	unsigned requestMessageId;
-    	const NodeTargetShardInfo & target;
+    	const NodeTargetShardInfo target;
     	ShardingMessageType type;
-    	boost::shared_ptr<const Cluster> clusterReadview;
+    	boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
     	RequestMessageHandler * requestMessageHandler;
     };
 
@@ -193,7 +199,7 @@ private:
 				delete reqHandlerArgs;
 				return NULL;
 			case DeleteCommandMessageType:
-				reqHandlerArgs->requestMessageHandler->resolveMessage<>((DeleteCommand*)reqHandlerArgs->requestObj,
+				reqHandlerArgs->requestMessageHandler->resolveMessage((DeleteCommand*)reqHandlerArgs->requestObj,
 						reqHandlerArgs->node, reqHandlerArgs->requestMessageId,
 						reqHandlerArgs->target, reqHandlerArgs->type,
 						reqHandlerArgs->clusterReadview);

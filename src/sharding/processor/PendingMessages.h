@@ -1,7 +1,8 @@
 #ifndef __SHARDING_ROUTING_PENDING_MESSAGES_H__
 #define __SHARDING_ROUTING_PENDING_MESSAGES_H__
 
-#include "sharding/routing/MessageResolverInterface.h"
+#include "aggregators/ResponseAggregator.h"
+#include "sharding/transport/MessageAllocator.h"
 
 namespace srch2 {
 namespace httpwrapper {
@@ -18,7 +19,7 @@ class PendingMessage{
 public:
     // sets the response message
     void setResponseObject(Response * responseObj){
-        ASSERT(this->responseObj == NULL);
+        ASSERT(this->responseObject == NULL);
         this->responseObject = responseObj;
     }
     Response * getResponseObject() const{
@@ -58,8 +59,7 @@ private:
     // be allocated through PendingRequest so that it also gets stored in that object
     PendingMessage(const Request * requestObj, MessageAllocator * messageAllocator, NodeId nodeId,
     		time_t timeout, unsigned requestMessageId):requestObject(requestObj){
-        ASSERT(requestMessage != NULL);
-        ASSERT(requestObject != NULL);
+        ASSERT(requestObj != NULL);
         this->messageAllocator = messageAllocator;
         this->nodeId = nodeId;
         this->timeout = timeout;
@@ -126,8 +126,6 @@ public:
         PendingMessage<Request, Response> * pendingMessage =
                 new PendingMessage<Request, Response>(requestObj, messageAllocator ,nodeId, timeout, requestMessageId);
 
-        // get a write lock on pendingMessages and add this new pendingMessage
-        boost::unique_lock< boost::shared_mutex > lock(_access);
 
         // add it to pendingMessages
         if(isLocal){
@@ -148,11 +146,9 @@ public:
             ASSERT(false);
             return false;
     	}
-        // 1. get a write lock on pendingMessages, remove the corresponding message
-        boost::unique_lock< boost::shared_mutex > lock(_access);
         ASSERT(isMessageMine(srcNodeId, requestMessageId));
 
-        // 2. find which PendingMessage is responsible
+        // 1. find which PendingMessage is responsible
         PendingMessage<Request , Response> * pendingMessage = NULL;
         unsigned pendingMessageLocation = 0;
         // is it the local response or the external one?
@@ -190,7 +186,7 @@ public:
         }
 
         // 4. set the response message and response object in the PendingMessage
-        pendingMessage->setResponseMessageAndObject(replyObject);
+        pendingMessage->setResponseObject(replyObject);
 
         // 5. put the satisfied pending message in pendingMessagesWithResponse
         if(isLocal){
@@ -216,9 +212,7 @@ public:
     // which does not restart after a new message is added. So the real timeout period could be as large as the parameter * 2.
     bool resolveTimedoutRequests(){
         // move on all pending messages and check if the are timed out or not
-        // 1. get an X lock on the pendingMessages vector
-        boost::unique_lock< boost::shared_mutex > lock(_access);
-        // 2. move on pendingMessages and check them for timeout
+        // 1. move on pendingMessages and check them for timeout
         for(unsigned pendingMessageIndex = 0; pendingMessageIndex < localPendingMessages.size(); ++pendingMessageIndex){
             PendingMessage<Request, Response> * pendingMessage = localPendingMessages.at(pendingMessageIndex);
             if(pendingMessage == NULL){
@@ -264,8 +258,6 @@ public:
 
     // returns true of it contains a PendingMessage corresponding to this responseMessage
     bool isMessageMine(NodeId srcNodeId, unsigned requestMessageId) const{
-        // get a read lock on pendingMessages,
-        boost::shared_lock< boost::shared_mutex > lock(_access);
 
         for(unsigned pMIdx = 0 ; pMIdx < localPendingMessages.size(); ++pMIdx){
         	if(localPendingMessages.at(pMIdx) == NULL){
@@ -349,8 +341,6 @@ private:
 
     MessageAllocator * messageAllocator;
 
-    // this lock is used to make PendingRequest thread safe
-    mutable boost::shared_mutex _access;
 
     // This vector contains the pointer to all pending messages which have not received any responses
     vector<PendingMessage<Request, Response> *> localPendingMessages;

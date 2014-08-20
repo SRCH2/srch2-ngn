@@ -93,6 +93,9 @@ public:
     	this->rangeGaps = contianer.rangeGaps;
     }
 
+    FacetQueryContainer(){};
+
+
     string toString();
 
     /*
@@ -150,29 +153,32 @@ class PhraseInfo{
 		this->phraseKeywordPositionIndex = info.phraseKeywordPositionIndex;
 		this->phraseKeyWords = info.phraseKeyWords;
 	}
-        unsigned proximitySlop;
-        unsigned attributeBitMap;
-        vector<unsigned> keywordIds;
-        vector<unsigned> phraseKeywordPositionIndex;
-        vector<string> phraseKeyWords;
+	PhraseInfo(){
 
-        string toString();
+	}
+	unsigned proximitySlop;
+	unsigned attributeBitMap;
+	vector<unsigned> keywordIds;
+	vector<unsigned> phraseKeywordPositionIndex;
+	vector<string> phraseKeyWords;
 
-        /*
-         * Serialization scheme :
-         * | proximitySlop | attributeBitMap | keywordIds  | phraseKeywordPositionIndex | phraseKeyWords |
-         */
-    	void * serializeForNetwork(void * buffer) const ;
-        /*
-         * Serialization scheme :
-         * | proximitySlop | attributeBitMap | keywordIds  | phraseKeywordPositionIndex | phraseKeyWords |
-         */
-    	void * deserializeForNetwork(void * buffer) ;
-        /*
-         * Serialization scheme :
-         * | proximitySlop | attributeBitMap | keywordIds  | phraseKeywordPositionIndex | phraseKeyWords |
-         */
-    	unsigned getNumberOfBytesForSerializationForNetwork() const;
+	string toString();
+
+	/*
+	 * Serialization scheme :
+	 * | proximitySlop | attributeBitMap | keywordIds  | phraseKeywordPositionIndex | phraseKeyWords |
+	 */
+	void * serializeForNetwork(void * buffer) const ;
+	/*
+	 * Serialization scheme :
+	 * | proximitySlop | attributeBitMap | keywordIds  | phraseKeywordPositionIndex | phraseKeyWords |
+	 */
+	void * deserializeForNetwork(void * buffer) ;
+	/*
+	 * Serialization scheme :
+	 * | proximitySlop | attributeBitMap | keywordIds  | phraseKeywordPositionIndex | phraseKeyWords |
+	 */
+	unsigned getNumberOfBytesForSerializationForNetwork() const;
 };
 
 

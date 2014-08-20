@@ -70,9 +70,9 @@ public:
 	    	string shardIdentifier ;
 	    	buffer = srch2::util::serializeString(shardIdentifier, buffer);
 	    	ShardResults * newShardResults = new ShardResults(shardIdentifier);
-	    	buffer = deserializeInMemoryRecordStrings(buffer, inMemoryRecordStrings);
-	    	buffer = QueryResults::deserializeForNetwork(queryResults, buffer, &resultsFactory);
-	    	buffer = srch2::util::deserializeFixedTypes(buffer, searcherTime);
+	    	buffer = newShardResults->deserializeInMemoryRecordStrings(buffer, newShardResults->inMemoryRecordStrings);
+	    	buffer = QueryResults::deserializeForNetwork(newShardResults->queryResults, buffer, &(newShardResults->resultsFactory));
+	    	buffer = srch2::util::deserializeFixedTypes(buffer, newShardResults->searcherTime);
 	        return newShardResults;
 	    }
 
@@ -124,12 +124,13 @@ public:
 	    /*
 	     * | size of map | id1 | string1 | id2 | string2 | ...
 	     */
-	    unsigned getNumberOfBytesOfInMemoryRecordStrings(const map<string, std::pair<string, RecordSnippet> > & inMemoryStrings) const{
+	    unsigned getNumberOfBytesOfInMemoryRecordStrings(
+	    		const map<string, std::pair<string, RecordSnippet> > & inMemoryStrings) const{
 	        unsigned numberOfBytes = 0;
 	        // size of map
 	        numberOfBytes += sizeof(unsigned);
 	        // map
-	        for(map<string, std::pair<string, RecordSnippet> >::iterator recordDataItr = inMemoryStrings.begin();
+	        for(map<string, std::pair<string, RecordSnippet> >::const_iterator recordDataItr = inMemoryStrings.begin();
 	                recordDataItr != inMemoryStrings.end() ; ++recordDataItr){
 	            // key
 	            numberOfBytes += sizeof(unsigned) + recordDataItr->first.size();
@@ -158,7 +159,7 @@ public:
     	this->shardResults.push_back(shardResults);
     }
 
-    vector<ShardResults *> & getShardResults(){
+    vector<ShardResults *> getShardResults() const{
     	return shardResults;
     }
 
@@ -194,7 +195,7 @@ public:
 		buffer = srch2::util::deserializeFixedTypes(buffer, sizeValue);
 		for(unsigned qrIdx = 0 ;  qrIdx < sizeValue; ++qrIdx){
 			ShardResults * newShardResults = ShardResults::deserialize(buffer);
-			buffer = buffer + newShardResults->getNumberOfBytes();
+			buffer = (void*)((char*)buffer + newShardResults->getNumberOfBytes());
 			searchResults->shardResults.push_back(newShardResults);
 		}
 		return searchResults;

@@ -3,8 +3,8 @@
 
 #include "sharding/processor/aggregators/DistributedProcessorAggregator.h"
 
-#include "serializables/SerializableGetInfoCommandInput.h"
-#include "serializables/SerializableGetInfoResults.h"
+#include "../serializables/SerializableGetInfoCommandInput.h"
+#include "../serializables/SerializableGetInfoResults.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace std;
@@ -17,7 +17,8 @@ namespace httpwrapper {
 
 class GetInfoResponseAggregator : public DistributedProcessorAggregator<GetInfoCommand,GetInfoCommandResults> {
 public:
-    GetInfoResponseAggregator(ConfigManager * configurationManager, evhttp_request *req, boost::shared_ptr<const Cluster> clusterReadview, unsigned coreId);
+    GetInfoResponseAggregator(ConfigManager * configurationManager, evhttp_request *req,
+    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, unsigned coreId);
 
     /*
      * This function is always called by RoutingManager as the first call back function

@@ -11,7 +11,7 @@ namespace httpwrapper {
 
 
 GetInfoResponseAggregator::GetInfoResponseAggregator(ConfigManager * configurationManager, evhttp_request *req,
-		boost::shared_ptr<const Cluster> clusterReadview, unsigned coreId):
+		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, unsigned coreId):
 		DistributedProcessorAggregator<GetInfoCommand,GetInfoCommandResults>(clusterReadview, coreId){
     this->configurationManager = configurationManager;
     this->req = req;

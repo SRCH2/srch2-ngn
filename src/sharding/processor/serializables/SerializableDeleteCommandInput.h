@@ -65,6 +65,10 @@ public:
         return new DeleteCommand(primaryKey, shardingKey);
     }
 
+    DeleteCommand * clone(){
+    	return new DeleteCommand(primaryKey, shardingKey);
+    }
+
     //Returns the type of message which uses this kind of object as transport
     static ShardingMessageType messageType(){
         return DeleteCommandMessageType;

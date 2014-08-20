@@ -10,7 +10,7 @@ namespace srch2 {
 namespace httpwrapper {
 
 SearchResultsAggregator::SearchResultsAggregator(ConfigManager * configurationManager, evhttp_request *req,
-		boost::shared_ptr<const Cluster> clusterReadview, unsigned coreId) :
+		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, unsigned coreId) :
 		DistributedProcessorAggregator<SearchCommand , SearchCommandResults>(clusterReadview, coreId){
     this->configurationManager = configurationManager;
     this->req = req;
@@ -64,7 +64,7 @@ void SearchResultsAggregator::callBack(vector<PendingMessage<SearchCommand,
         if(messages.at(responseIndex) == NULL || messages.at(responseIndex)->getResponseObject() == NULL){
             continue;
         }
-        vector<SearchCommandResults::ShardResults *> & shardResults = messages.at(responseIndex)->getResponseObject()->getShardResults();
+        vector<SearchCommandResults::ShardResults *> shardResults = messages.at(responseIndex)->getResponseObject()->getShardResults();
         for(unsigned shardIdx = 0 ; shardIdx < shardResults.size() ; ++shardIdx){
             QueryResults * resultsOfThisShard = &(shardResults.at(shardIdx)->queryResults);
 			const map<string, std::pair<string, RecordSnippet> > & queryResultInMemoryRecordString =

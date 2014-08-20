@@ -186,13 +186,13 @@ unsigned QueryResultsInternal::getNumberOfBytesForSerializationForNetwork() cons
 	}
 
 	numberOfBytes += sizeof(unsigned); // size
-	for(std::map<std::string , std::pair< FacetType , std::vector<std::pair<std::string, float> > > >::iterator facetResultItr =
+	for(std::map<std::string , std::pair< FacetType , std::vector<std::pair<std::string, float> > > >::const_iterator facetResultItr =
 			facetResults.begin() ; facetResultItr != facetResults.end() ; ++facetResultItr){
 		numberOfBytes += sizeof(unsigned) + facetResultItr->first.size();
 		numberOfBytes += sizeof(FacetType);
-		std::vector<std::pair<std::string, float> > & vectorToSerialize = facetResultItr->second.second;
+		const std::vector<std::pair<std::string, float> > & vectorToSerialize = facetResultItr->second.second;
 		numberOfBytes += sizeof(unsigned); // vector size
-		for(std::vector<std::pair<std::string, float> >::iterator pairItr = vectorToSerialize.begin();
+		for(std::vector<std::pair<std::string, float> >::const_iterator pairItr = vectorToSerialize.begin();
 				pairItr != vectorToSerialize.end() ; ++pairItr){
 			numberOfBytes += sizeof(unsigned) + pairItr->first.size(); // string
 			numberOfBytes += sizeof(float); // float

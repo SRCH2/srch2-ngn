@@ -31,6 +31,11 @@ public:
         return new ResetLogCommand();
     }
 
+    ResetLogCommand * clone(){
+    	return new ResetLogCommand();
+    }
+
+
     //Returns the type of message which uses this kind of object as transport
     static ShardingMessageType messageType(){
         return ResetLogCommandMessageType;

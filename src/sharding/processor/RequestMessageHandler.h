@@ -5,6 +5,24 @@
 #include "transport/Message.h"
 #include "transport/MessageAllocator.h"
 #include "sharding/transport/CallbackHandler.h"
+#include "sharding/transport/TransportManager.h"
+#include "sharding/configuration/ConfigManager.h"
+#include "ReplyMessageHandler.h"
+#include "sharding/sharding/ShardManager.h"
+#include "sharding/sharding/metadata_manager/ResourceMetadataManager.h"
+
+#include "processor/serializables/SerializableSearchCommandInput.h"
+#include "processor/serializables/SerializableSearchCommandInput.h"
+#include "processor/serializables/SerializableSearchResults.h"
+#include "processor/serializables/SerializableInsertUpdateCommandInput.h"
+#include "processor/serializables/SerializableDeleteCommandInput.h"
+#include "processor/serializables/SerializableCommandStatus.h"
+#include "processor/serializables/SerializableSerializeCommandInput.h"
+#include "processor/serializables/SerializableResetLogCommandInput.h"
+#include "processor/serializables/SerializableCommitCommandInput.h"
+#include "processor/serializables/SerializableGetInfoCommandInput.h"
+#include "processor/serializables/SerializableGetInfoResults.h"
+#include "processor/serializables/SerializableMergeCommandInput.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace std;
@@ -13,9 +31,6 @@ using namespace std;
 namespace srch2 {
 namespace httpwrapper {
 
-
-class ShardManager;
-class RoutingManager;
 
 class RequestMessageHandler : public CallBackHandler {
 public:
@@ -28,7 +43,7 @@ public:
 
 
     template<typename Reply>
-    bool sendReply(Reply * replyObject, NodeId waitingNode, unsigned requestMessageId, boost::shared_ptr<const Cluster> clusterReadview){
+    bool sendReply(Reply * replyObject, NodeId waitingNode, unsigned requestMessageId, boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview){
     	if(replyObject == NULL){
     		ASSERT(false);
     		return false;
@@ -50,57 +65,56 @@ public:
     		// delete message
     	    transportManager.getMessageAllocator()->deallocateByMessagePointer(replyMessage);
     	    // delete object
-    	    deleteResponseRequestObjectBasedOnType(Reply::messgeType(), replyObject);
+    	    deleteResponseRequestObjectBasedOnType(Reply::messageType(), replyObject);
     	}
+    	return true;
     }
 
     bool resolveMessage(Message * msg, NodeId node);
 
-    template<typename Request>
+    template<class Request>
     bool resolveMessage(Request * requestObj,
     		NodeId node,
     		unsigned requestMessageId,
     		const NodeTargetShardInfo & target,
     		ShardingMessageType type,
-    		boost::shared_ptr<const Cluster> clusterReadview){
+    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview){
 
     	bool resultFlag = true;
     	switch(type){
         case SearchCommandMessageType: // -> for LogicalPlan object
         	// give search query to DP internal and pass the result to sendReply
-        	resultFlag = sendReply(internalDP.internalSearchCommand(target, clusterReadview, requestObj), node, requestMessageId, clusterReadview);
+        	resultFlag = sendReply<SearchCommandResults>(internalDP.internalSearchCommand(target, clusterReadview, (SearchCommand*)requestObj), node, requestMessageId, clusterReadview);
         	break;
         case InsertUpdateCommandMessageType: // -> for Record object (used for insert and update)
-        	resultFlag = sendReply(internalDP.internalInsertUpdateCommand(target, clusterReadview, requestObj), node, requestMessageId, clusterReadview);
+        	resultFlag = sendReply<CommandStatus>(internalDP.internalInsertUpdateCommand(target, clusterReadview, (InsertUpdateCommand*)requestObj), node, requestMessageId, clusterReadview);
         	break;
         case DeleteCommandMessageType: // -> for DeleteCommandInput object (used for delete)
-        	resultFlag = sendReply(internalDP.internalDeleteCommand(target, clusterReadview, requestObj), node, requestMessageId, clusterReadview);
+        	resultFlag = sendReply<CommandStatus>(internalDP.internalDeleteCommand(target, clusterReadview, (DeleteCommand *)requestObj), node, requestMessageId, clusterReadview);
         	break;
         case SerializeCommandMessageType: // -> for SerializeCommandInput object
-        	resultFlag = sendReply(internalDP.internalSerializeCommand(target, clusterReadview, requestObj), node, requestMessageId, clusterReadview);
+        	resultFlag = sendReply<CommandStatus>(internalDP.internalSerializeCommand(target, clusterReadview, (SerializeCommand*)requestObj), node, requestMessageId, clusterReadview);
         	break;
         case GetInfoCommandMessageType: // -> for GetInfoCommandInput object (used for getInfo)
-        	resultFlag = sendReply(internalDP.internalGetInfoCommand(target, clusterReadview, requestObj), node, requestMessageId, clusterReadview);
+        	resultFlag = sendReply<GetInfoCommandResults>(internalDP.internalGetInfoCommand(target, clusterReadview, (GetInfoCommand*)requestObj), node, requestMessageId, clusterReadview);
         	break;
         case CommitCommandMessageType: // -> for CommitCommandInput object
-        	resultFlag = sendReply(internalDP.internalCommitCommand(target, clusterReadview, requestObj), node, requestMessageId, clusterReadview);
+        	resultFlag = sendReply<CommandStatus>(internalDP.internalCommitCommand(target, clusterReadview, (CommitCommand*)requestObj), node, requestMessageId, clusterReadview);
         	break;
         case ResetLogCommandMessageType: // -> for ResetLogCommandInput (used for resetting log)
-        	resultFlag = sendReply(internalDP.internalResetLogCommand(target, clusterReadview, requestObj), node, requestMessageId, clusterReadview);
+        	resultFlag = sendReply<CommandStatus>(internalDP.internalResetLogCommand(target, clusterReadview, (ResetLogCommand*)requestObj), node, requestMessageId, clusterReadview);
         	break;
         case MergeCommandMessageType: // -> for ResetLogCommandInput (used for resetting log)
-        	resultFlag = sendReply(internalDP.internalMergeCommand(target, clusterReadview, requestObj), node, requestMessageId, clusterReadview);
+        	resultFlag = sendReply<CommandStatus>(internalDP.internalMergeCommand(target, clusterReadview, (MergeCommand*)requestObj), node, requestMessageId, clusterReadview);
         	break;
         default:
             ASSERT(false);
             return false;
         }
 
-    	if(clusterReadview->getCurrentNodeId() != node){ // request comes from external node
-    		// delete request object we don't need it
-    		deleteResponseRequestObjectBasedOnType(Request::messageType(), requestObj);
-    	}
+		deleteResponseRequestObjectBasedOnType(Request::messageType(), requestObj);
 
+    	return false;
     }
 
 private:

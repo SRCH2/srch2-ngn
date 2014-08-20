@@ -123,8 +123,8 @@ public:
         buffer = srch2::util::deserializeFixedTypes(buffer, numberOfShards);
         for(unsigned infoIdx = 0; infoIdx < numberOfShards ; ++infoIdx){
         	ShardResults * shardResult = ShardResults::deserialize(buffer);
-        	buffer += shardResult->getNumberOfBytes();
-        	shardResults.push_back(shardResult);
+        	buffer = (void*)((char*)buffer +  shardResult->getNumberOfBytes());
+        	getInfoCommandResult->shardResults.push_back(shardResult);
         }
         // create object and return it
         return getInfoCommandResult;
@@ -136,7 +136,7 @@ public:
     }
 
 
-    vector<ShardResults *> & getShardResults() const{
+    vector<ShardResults *> getShardResults() const{
     	return shardResults;
     }
     void addShardResults(ShardResults * info){

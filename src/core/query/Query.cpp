@@ -22,6 +22,7 @@
 //#include <instantsearch/Query.h>
 //#include <instantsearch/Term.h>
 #include <instantsearch/Ranker.h>
+#include <instantsearch/ResultsPostProcessor.h>
 #include "util/Logger.h"
 #include "record/LocationRecordUtil.h"
 #include "util/SerializationHelper.h"

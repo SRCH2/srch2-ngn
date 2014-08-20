@@ -10,12 +10,12 @@
 #include <instantsearch/Constants.h>
 #include "src/wrapper/WrapperConstants.h"
 #include "ShardingConstants.h"
+#include "CoreInfo.h"
+#include "../sharding/metadata_manager/Shard.h"
+#include "../sharding/metadata_manager/Node.h"
 #include "src/core/util/Assert.h"
 #include "src/core/util/Logger.h"
 #include "src/core/util/mypthread.h"
-
-#include "Cluster.h"
-
 
 #include <string>
 #include <vector>
@@ -39,6 +39,7 @@ using namespace pugi;
 namespace srch2 {
 namespace httpwrapper {
 
+class ResourceMetadataManager;
 
 // A shard id consists of a core id, a partition id, and replica id
 // E.g.: a core with 7 partitions, each of which has a primary and 4 replicas
@@ -167,13 +168,13 @@ public:
 	string createClusterDir(const string& clusterName);
 	string createNodeDir(const string& clusterName, const string& nodeName);
 	string createCoreDir(const string& clusterName, const string& nodeName, const string& coreName);
-	string createShardDir(const string& clusterName, const string& nodeName, const string& coreName, const ShardId& shardId);
+	string createShardDir(const string& clusterName, const string& nodeName, const string& coreName, const ShardId * shardId);
 
 	string getSRCH2HomeDir();
 	string getClusterDir(const string& clusterName);
 	string getNodeDir(const string& clusterName, const string& nodeName);
 	string getCoreDir(const string& clusterName, const string& nodeName, const string& coreName);
-	string getShardDir(const string& clusterName, const string& nodeName, const string& coreName, const ShardId& shardId);
+	string getShardDir(const string& clusterName, const string& nodeName, const string& coreName, const ShardId * shardId);
 	void renameDir(const string & src, const string & target);
 
 	//It returns the number of files/directory deleted, if the returned value is 0, that means nothing got deleted.
@@ -193,37 +194,10 @@ public:
 
 	typedef std::map<const string, CoreInfo_t *> CoreInfoMap_t;
 
-	void getClusterReadView(boost::shared_ptr<const ClusterResourceMetadata_Readview> & clusterReadview) const{
-        // We need the lock it to prevent the following two operations from happening at the same time.
-        // One reader is doing reader = readview, which is reading the readview.
-        // At the same time, we can call merge(), in which we can have "readview=writeview", which is modifying the read view.
-        pthread_spin_lock(&m_spinlock);
-        clusterReadview = metadata_readView;
-        pthread_spin_unlock(&m_spinlock);
-	}
-
-	void commitClusterMetadata(ClusterResourceMetadata_Readview * newReadview){
-        pthread_spin_lock(&m_spinlock);
-        // set readview pointer to the new copy of writeview
-        metadata_readView.reset(newReadview);
-        pthread_spin_unlock(&m_spinlock);
-        Logger::console("====================================");
-        Logger::console("Cluster meta data committed, cluster state is as follows : ");
-        metadata_readView->print();
-        Logger::console("====================================");
-	}
-
 	const NodeConfig* getCurrentNodeConfig() {
 		return &this->nodeConfig;
 	}
 
-private:
-    boost::shared_ptr< const ClusterResourceMetadata_Readview > metadata_readView;
-    mutable pthread_spinlock_t m_spinlock;
-
-    // help in parsing and making the first Cluster readview
-    string clusterNameStr ;
-    vector<CoreInfo_t *> clusterCores;
     CoreInfo_t * getCoreByName(const string &coreName) const{
     	for(unsigned coreIdx = 0 ; coreIdx < clusterCores.size(); ++coreIdx){
     		if(clusterCores.at(coreIdx)->getName().compare(coreName) == 0){
@@ -232,6 +206,10 @@ private:
     	}
     	return NULL;
     }
+private:
+    // help in parsing and making the first Cluster readview
+    string clusterNameStr ;
+    vector<CoreInfo_t *> clusterCores;
 
 
 	volatile bool isLocked; //both read / write use this lock.
@@ -345,7 +323,7 @@ public:
 	ConfigManager(const string& configfile);
 	virtual ~ConfigManager();
 //	bool verifyConsistency(); // TODO : not used, to be deleted
-	bool isLocal(ShardId& shardId);
+	bool isLocal(ClusterShardId& shardId);
 
 	//Declaring function to parse node tags
 	void parseNode(std::vector<Node *>* nodes, xml_node& childNode, std::stringstream &parseWarnings, std::stringstream &parseError, bool configSuccess);
@@ -413,7 +391,7 @@ public:
 	const vector<string> * getFacetEnds(const string &coreName) const ;
 	const vector<string> * getFacetGaps(const string &coreName) const ;
 
-	void loadConfigFile() ;
+	void loadConfigFile(srch2http::ResourceMetadataManager * metadataManager = NULL) ;
 
 	// Mongo related getter/setter
 	const string& getMongoServerHost(const string &coreName) const;
@@ -487,6 +465,7 @@ private:
 	static const char* const configString;
 	static const char* const dataDirString;
 	static const char* const dataFileString;
+	static const char* const multipleDataFilesTag;
 	static const char* const dataSourceTypeString;
 	static const char* const dbString;
 	static const char* const defaultString;

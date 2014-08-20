@@ -3,7 +3,9 @@
 
 #include <instantsearch/Record.h>
 #include <instantsearch/LogicalPlan.h>
-
+#include "DistributedProcessorMessageHandler.h"
+#include "sharding/sharding/metadata_manager/Shard.h"
+#include "sharding/sharding/metadata_manager/Cluster.h"
 #include <event.h>
 #include <evhttp.h>
 #include <event2/http.h>

@@ -32,6 +32,10 @@ public:
         return new GetInfoCommand();
     }
 
+    GetInfoCommand * clone(){
+    	return new GetInfoCommand();
+    }
+
     //Returns the type of message which uses this kind of object as transport
     static ShardingMessageType messageType(){
         return GetInfoCommandMessageType;

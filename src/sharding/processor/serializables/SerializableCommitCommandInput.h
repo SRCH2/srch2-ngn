@@ -30,6 +30,10 @@ public:
     return new CommitCommand();
     }
 
+    CommitCommand * clone(){
+    	return new CommitCommand();
+    }
+
 
     //Returns the type of message which uses this kind of object as transport
     static ShardingMessageType messageType(){

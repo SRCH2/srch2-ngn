@@ -6,7 +6,6 @@
 #include <unistd.h>
 #include <errno.h>
 #include <event.h>
-#include "routing/RoutingManager.h"
 #include <ifaddrs.h>
 #include <netdb.h>
 #include <net/if.h>
@@ -296,6 +295,10 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb) {
 
 TransportManager::TransportManager(vector<struct event_base *>& bases, TransportConfig& config): evbases(bases) {
 
+
+	// TODO : There is a bug in this architecture:
+	// callback handlers like synchManagerHandler, dpMessageHandler and ... are set after transport manager
+	// starts working. Setting these pointers is not protected from reading them (which happens upon message arrival)
 	distributedUniqueId = 0;
 	synchManagerHandler = NULL;
 	dpMessageHandler = NULL;

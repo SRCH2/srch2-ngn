@@ -8,13 +8,11 @@
 #include "serializables/SerializableInsertUpdateCommandInput.h"
 #include "serializables/SerializableSerializeCommandInput.h"
 #include "serializables/SerializableDeleteCommandInput.h"
-#include "serializables/SerializableSearchResults.h"
 #include "serializables/SerializableSearchCommandInput.h"
-#include "serializables/SerializableCommandStatus.h"
 #include "serializables/SerializableGetInfoCommandInput.h"
-#include "serializables/SerializableGetInfoResults.h"
 #include "serializables/SerializableResetLogCommandInput.h"
 #include "serializables/SerializableCommitCommandInput.h"
+#include "serializables/SerializableMergeCommandInput.h"
 
 #include "QueryExecutor.h"
 #include "instantsearch/LogicalPlan.h"
@@ -23,6 +21,7 @@
 #include <core/util/Version.h>
 #include "ServerHighLighter.h"
 #include "wrapper/ParsedParameterContainer.h"
+#include "sharding/sharding/ShardManager.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -43,7 +42,7 @@ DPInternalRequestHandler::DPInternalRequestHandler(ConfigManager * configuration
  * 3. Sends the results to the shard which initiated this search query
  */
 SearchCommandResults * DPInternalRequestHandler::internalSearchCommand(const NodeTargetShardInfo & target,
-		boost::shared_ptr<const Cluster> clusterReadview, SearchCommand * searchData){
+		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, SearchCommand * searchData){
 
 	// 0. use target and readview to get Srch2Server pointers
 	vector<const Shard *> shards;
@@ -66,7 +65,6 @@ SearchCommandResults * DPInternalRequestHandler::internalSearchCommand(const Nod
 	    }
 	}
 	delete tstarts;
-	delete shardSearchThreads;
 
 	//2. When all threads are done, aggregate QueryResult objects and in-memory strings
 	//        and put them in a new SearchCommand object;
@@ -76,8 +74,9 @@ SearchCommandResults * DPInternalRequestHandler::internalSearchCommand(const Nod
 		clock_gettime(CLOCK_REALTIME, &tend);
 	    unsigned ts1 = (tend.tv_sec - tstarts[shardIdx].tv_sec) * 1000
 	            + (tend.tv_nsec - tstarts[shardIdx].tv_nsec) / 1000000;
-	    allShardsSearchArguments.at(shardIdx)->shardResults->searcherTimes = ts1;
+	    allShardsSearchArguments.at(shardIdx)->shardResults->searcherTime = ts1;
 	}
+	delete shardSearchThreads;
 	// at this point all shard searches are done.
 	// aggregate query results and etc ...
     // search results to be serialized and sent over the network
@@ -122,7 +121,7 @@ void * DPInternalRequestHandler::searchInShardThreadWork(void * args){
  * internalInsertCommand and internalUpdateCommand
  */
 CommandStatus * DPInternalRequestHandler::internalInsertUpdateCommand(const NodeTargetShardInfo & target,
-		boost::shared_ptr<const Cluster> clusterReadview, InsertUpdateCommand * insertUpdateData){
+		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, InsertUpdateCommand * insertUpdateData){
 
     if(insertUpdateData == NULL){
         CommandStatus * status = NULL;
@@ -143,7 +142,7 @@ CommandStatus * DPInternalRequestHandler::internalInsertUpdateCommand(const Node
 	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
 		const Shard * shard = shards.at(shardIdx);
 		ShardInsertUpdateArgs * shardInsertUpdateArgs = new ShardInsertUpdateArgs(insertUpdateData->getRecord(),
-				shards.at(shardIdx)->getSrch2Server().get(), shard->getShardIdentifier());
+				shard->getSrch2Server().get(), shard->getShardIdentifier());
 		allShardsInsertArguments.push_back(shardInsertUpdateArgs);
 		if(insertUpdateData->getInsertOrUpdate() == InsertUpdateCommand::DP_INSERT){ // insert case
 			if (pthread_create(&shardInsertUpdateThreads[shardIdx], NULL, insertInShardThreadWork , shardInsertUpdateArgs) != 0){
@@ -157,7 +156,6 @@ CommandStatus * DPInternalRequestHandler::internalInsertUpdateCommand(const Node
 			}
 		}
 	}
-	delete shardInsertUpdateThreads;
 
     CommandStatus * status = NULL;
 	if(insertUpdateData->getInsertOrUpdate() == InsertUpdateCommand::DP_INSERT){ // insert case
@@ -174,6 +172,7 @@ CommandStatus * DPInternalRequestHandler::internalInsertUpdateCommand(const Node
 		log_str << insertResults->shardResults->message ;
 		delete insertResults;
 	}
+	delete shardInsertUpdateThreads;
 
     Logger::info("%s", log_str.str().c_str());
     return status;
@@ -335,7 +334,7 @@ void * DPInternalRequestHandler::updateInShardThreadWork(void * args){
  * 3. Sends the results to the shard which initiated this delete request (Failure or Success)
  */
 CommandStatus * DPInternalRequestHandler::internalDeleteCommand(const NodeTargetShardInfo & target,
-		boost::shared_ptr<const Cluster> clusterReadview, DeleteCommand * deleteData){
+		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, DeleteCommand * deleteData){
 
     if(deleteData == NULL){
         CommandStatus * status =
@@ -353,14 +352,13 @@ CommandStatus * DPInternalRequestHandler::internalDeleteCommand(const NodeTarget
 		const Shard * shard = shards.at(shardIdx);
 		ShardDeleteArgs * shardDeleteArgs = new ShardDeleteArgs(deleteData->getPrimaryKey(),
 				deleteData->getShardingKey(),
-				shards.at(shardIdx)->getSrch2Server().get(), shard->getShardIdentifier());
+				shard->getSrch2Server().get(), shard->getShardIdentifier());
 		allShardsDeleteArguments.push_back(shardDeleteArgs);
 		if (pthread_create(&shardDeleteThreads[shardIdx], NULL, deleteInShardThreadWork , shardDeleteArgs) != 0){
 			perror("Cannot create thread for handling local message");
 			return NULL;
 		}
 	}
-	delete shardDeleteThreads;
 
     CommandStatus * status = new CommandStatus(CommandStatus::DP_DELETE);
 
@@ -372,6 +370,7 @@ CommandStatus * DPInternalRequestHandler::internalDeleteCommand(const NodeTarget
 		log_str << deleteResults->shardResults->message;
 		delete deleteResults;
 	}
+	delete shardDeleteThreads;
 
     Logger::info("%s", log_str.str().c_str());
     return status;
@@ -421,7 +420,7 @@ void * DPInternalRequestHandler::deleteInShardThreadWork(void * args){
  * 3. Sends the results to the shard which initiated this getInfo request (Failure or Success)
  */
 GetInfoCommandResults * DPInternalRequestHandler::internalGetInfoCommand(const NodeTargetShardInfo & target,
-		boost::shared_ptr<const Cluster> clusterReadview, GetInfoCommand * getInfoData){
+		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, GetInfoCommand * getInfoData){
 
 
 	if(getInfoData == NULL){
@@ -438,14 +437,13 @@ GetInfoCommandResults * DPInternalRequestHandler::internalGetInfoCommand(const N
     pthread_t * shardGetInfoThreads = new pthread_t[shards.size()];
 	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
 		const Shard * shard = shards.at(shardIdx);
-		ShardGetInfoArgs * shardGetInfoArgs = new ShardGetInfoArgs(shards.at(shardIdx)->getSrch2Server().get(), shard->getShardIdentifier());
+		ShardGetInfoArgs * shardGetInfoArgs = new ShardGetInfoArgs(shard->getSrch2Server().get(), shard->getShardIdentifier());
 		allShardsGetInfoArguments.push_back(shardGetInfoArgs);
 		if (pthread_create(&shardGetInfoThreads[shardIdx], NULL, getInfoInShardThreadWork , shardGetInfoArgs) != 0){
 			perror("Cannot create thread for handling local message");
 			return NULL;
 		}
 	}
-	delete shardGetInfoThreads;
 
 	GetInfoCommandResults * getInfoResult = new GetInfoCommandResults();
 
@@ -456,6 +454,7 @@ GetInfoCommandResults * DPInternalRequestHandler::internalGetInfoCommand(const N
 		getInfoResult->addShardResults(getInfoResults->shardResult);
 		delete getInfoResults;
 	}
+	delete shardGetInfoThreads;
 
     return getInfoResult;
 }
@@ -482,7 +481,7 @@ void * DPInternalRequestHandler::getInfoInShardThreadWork(void * args){
  * and internalSerializeRecordsCommand for our two types of serialization.
  */
 CommandStatus * DPInternalRequestHandler::internalSerializeCommand(const NodeTargetShardInfo & target,
-		boost::shared_ptr<const Cluster> clusterReadview, SerializeCommand * serailizeData){
+		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, SerializeCommand * serailizeData){
 	if(serailizeData == NULL){
         CommandStatus * status = NULL;
         if(serailizeData->getIndexOrRecord() == SerializeCommand::SERIALIZE_INDEX){ // serialize index
@@ -503,7 +502,7 @@ CommandStatus * DPInternalRequestHandler::internalSerializeCommand(const NodeTar
 		const Shard * shard = shards.at(shardIdx);
 		ShardSerializeArgs * shardSerializeArgs =
 				new ShardSerializeArgs(serailizeData->getDataFileName(),
-						shards.at(shardIdx)->getSrch2Server().get(), shard->getShardIdentifier());
+						shard->getSrch2Server().get(), shard->getShardIdentifier());
 		allShardsSerializeArguments.push_back(shardSerializeArgs);
 
 		if(serailizeData->getIndexOrRecord() == SerializeCommand::SERIALIZE_INDEX){ // insert case
@@ -518,7 +517,6 @@ CommandStatus * DPInternalRequestHandler::internalSerializeCommand(const NodeTar
 			}
 		}
 	}
-	delete shardSerializeThreads;
     CommandStatus * status = NULL;
 	if(serailizeData->getIndexOrRecord() == SerializeCommand::SERIALIZE_INDEX){ // insert case
 		status = new CommandStatus(CommandStatus::DP_SERIALIZE_INDEX);
@@ -534,6 +532,7 @@ CommandStatus * DPInternalRequestHandler::internalSerializeCommand(const NodeTar
 		status->addShardResult(serializeResults->shardResults);
 		delete serializeResults;
 	}
+	delete shardSerializeThreads;
     return status;
 }
 
@@ -562,7 +561,7 @@ void * DPInternalRequestHandler::serializeRecordsInShardThreadWork(void * args){
  * 3. Sends the results to the shard which initiated this reset-log request(Failure or Success)
  */
 CommandStatus * DPInternalRequestHandler::internalResetLogCommand(const NodeTargetShardInfo & target,
-		boost::shared_ptr<const Cluster> clusterReadview, ResetLogCommand * resetData){
+		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, ResetLogCommand * resetData){
 
     if(resetData == NULL ){
         CommandStatus * status =
@@ -579,7 +578,7 @@ CommandStatus * DPInternalRequestHandler::internalResetLogCommand(const NodeTarg
 	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
 		const Shard * shard = shards.at(shardIdx);
 		ShardStatusOnlyArgs * shardResetLogsArgs =
-				new ShardStatusOnlyArgs(shards.at(shardIdx)->getSrch2Server().get(), shard->getShardIdentifier());
+				new ShardStatusOnlyArgs(shard->getSrch2Server().get(), shard->getShardIdentifier());
 		allShardsResetLogsArguments.push_back(shardResetLogsArgs);
 
 		if (pthread_create(&shardResetLogsThreads[shardIdx], NULL, resetLogInShardThreadWork, shardResetLogsArgs) != 0){
@@ -587,7 +586,6 @@ CommandStatus * DPInternalRequestHandler::internalResetLogCommand(const NodeTarg
 			return NULL;
 		}
 	}
-	delete shardResetLogsThreads;
 
     CommandStatus * status = new CommandStatus(CommandStatus::DP_RESET_LOG);
 
@@ -597,6 +595,7 @@ CommandStatus * DPInternalRequestHandler::internalResetLogCommand(const NodeTarg
 		status->addShardResult(resetResults->shardResults);
 		delete resetResults;
 	}
+	delete shardResetLogsThreads;
 
     return status;
 
@@ -605,7 +604,7 @@ CommandStatus * DPInternalRequestHandler::internalResetLogCommand(const NodeTarg
 
 
 CommandStatus * DPInternalRequestHandler::internalCommitCommand(const NodeTargetShardInfo & target,
-		boost::shared_ptr<const Cluster> clusterReadview, CommitCommand * commitData){
+		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, CommitCommand * commitData){
 
 	if(commitData == NULL ){
         CommandStatus * status =
@@ -622,7 +621,7 @@ CommandStatus * DPInternalRequestHandler::internalCommitCommand(const NodeTarget
 	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
 		const Shard * shard = shards.at(shardIdx);
 		ShardStatusOnlyArgs * shardCommitArgs =
-				new ShardStatusOnlyArgs(shards.at(shardIdx)->getSrch2Server().get(), shard->getShardIdentifier());
+				new ShardStatusOnlyArgs(shard->getSrch2Server().get(), shard->getShardIdentifier());
 		allShardsCommitArguments.push_back(shardCommitArgs);
 
 		if (pthread_create(&shardCommitThreads[shardIdx], NULL, commitInShardThreadWork, shardCommitArgs) != 0){
@@ -630,7 +629,6 @@ CommandStatus * DPInternalRequestHandler::internalCommitCommand(const NodeTarget
 			return NULL;
 		}
 	}
-	delete shardCommitThreads;
 
     CommandStatus * status = new CommandStatus(CommandStatus::DP_COMMIT);
 
@@ -640,6 +638,7 @@ CommandStatus * DPInternalRequestHandler::internalCommitCommand(const NodeTarget
 		status->addShardResult(commitResults->shardResults);
 		delete commitResults;
 	}
+	delete shardCommitThreads;
 
     return status;
 
@@ -648,7 +647,7 @@ CommandStatus * DPInternalRequestHandler::internalCommitCommand(const NodeTarget
 
 
 CommandStatus * DPInternalRequestHandler::internalMergeCommand(const NodeTargetShardInfo & target,
-		boost::shared_ptr<const Cluster> clusterReadview, MergeCommand * mergeData){
+		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, MergeCommand * mergeData){
 
 	if(mergeData == NULL ){
         CommandStatus * status =
@@ -665,7 +664,7 @@ CommandStatus * DPInternalRequestHandler::internalMergeCommand(const NodeTargetS
 	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
 		const Shard * shard = shards.at(shardIdx);
 		ShardStatusOnlyArgs * shardMergeArgs =
-				new ShardStatusOnlyArgs(shards.at(shardIdx)->getSrch2Server().get(), shard->getShardIdentifier());
+				new ShardStatusOnlyArgs(shard->getSrch2Server().get(), shard->getShardIdentifier());
 		allShardsMergeArguments.push_back(shardMergeArgs);
 
 		if (pthread_create(&shardMergeThreads[shardIdx], NULL, mergeInShardThreadWork, shardMergeArgs) != 0){
@@ -673,7 +672,6 @@ CommandStatus * DPInternalRequestHandler::internalMergeCommand(const NodeTargetS
 			return NULL;
 		}
 	}
-	delete shardMergeThreads;
 
     CommandStatus * status = new CommandStatus(CommandStatus::DP_MERGE);
 
@@ -683,6 +681,7 @@ CommandStatus * DPInternalRequestHandler::internalMergeCommand(const NodeTargetS
 		status->addShardResult(mergeResults->shardResults);
 		delete mergeResults;
 	}
+	delete shardMergeThreads;
 
     return status;
 
@@ -744,8 +743,7 @@ void * DPInternalRequestHandler::mergeInShardThreadWork(void * args){
 	ShardStatusOnlyArgs * shardArgs = (ShardStatusOnlyArgs * )args;
 
     //merge the index.
-	// TODO : how should we merge?
-    if ( shardArgs->server->getIndexer()->merge_ForTesting() == srch2::instantsearch::OP_SUCCESS)
+    if ( shardArgs->server->getIndexer()->merge() == srch2::instantsearch::OP_SUCCESS)
     {
         Logger::info("%s", "{\"merge\":\"success\"}");
         shardArgs->shardResults->message = "{\"merge\":\"success\"}";
@@ -760,37 +758,6 @@ void * DPInternalRequestHandler::mergeInShardThreadWork(void * args){
 
 	//
 	return NULL;
-}
-
-DPInternalAPIStatus DPInternalRequestHandler::bootstrapSrch2Server(boost::shared_ptr<Srch2Server> srch2Server, const string & directoryPath){
-
-
-    if(srch2Server->getCoreInfo()->getDataSourceType() ==
-            srch2::httpwrapper::DATA_SOURCE_MONGO_DB) {
-        // set current time as cut off time for further updates
-        // this is a temporary solution. TODO
-        MongoDataSource::bulkLoadEndTime = time(NULL);
-        //require srch2Server
-        MongoDataSource::spawnUpdateListener(srch2Server.get());
-    }
-	//load the index from the data source
-    try{
-        srch2Server->init(directoryPath);
-    } catch(exception& ex) {
-        /*
-         *  We got some fatal error during server initialization. Print the error
-         *  message and exit the process.
-         *
-         *  Note: Other internal modules should make sure that no recoverable
-         *        exception reaches this point. All exceptions that reach here are
-         *        considered fatal and the server will stop.
-         */
-        Logger::error(ex.what());
-        exit(-1);
-    }
-
-
-	return DPInternal_Success;
 }
 
 }

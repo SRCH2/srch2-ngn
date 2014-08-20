@@ -67,6 +67,10 @@ public:
         return new InsertUpdateCommand(record, insertOrUpdate);
     }
 
+
+    InsertUpdateCommand * clone(){
+    	return new InsertUpdateCommand(new Record(*this->record), this->insertOrUpdate);
+    }
     //Returns the type of message which uses this kind of object as transport
     static ShardingMessageType messageType(){
         return InsertUpdateCommandMessageType;

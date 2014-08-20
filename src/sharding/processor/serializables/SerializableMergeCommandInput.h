@@ -30,6 +30,10 @@ public:
     return new MergeCommand();
     }
 
+    MergeCommand * clone(){
+    	return new MergeCommand();
+    }
+
 
     //Returns the type of message which uses this kind of object as transport
     static ShardingMessageType messageType(){

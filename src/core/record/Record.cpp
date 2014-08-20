@@ -54,6 +54,24 @@ struct Record::Impl
 
     //Point : The location lat,lang value of the geo object
     Point point;
+    Impl(){};
+    Impl(const Impl & copy){
+    	this->primaryKey = copy.primaryKey;
+    	this->searchableAttributeValues = copy.searchableAttributeValues;
+    	this->refiningAttributeValues = copy.refiningAttributeValues;
+    	this->boost = copy.boost;
+    	this->schema = copy.schema;
+    	this->inMemoryRecordString = copy.inMemoryRecordString;
+    	this->inMemoryStoredRecordLen = copy.inMemoryStoredRecordLen;
+    	if(copy.inMemoryStoredRecord != NULL){
+			this->inMemoryStoredRecord = new char[copy.inMemoryStoredRecordLen];
+			memcpy(this->inMemoryStoredRecord, copy.inMemoryStoredRecord, copy.inMemoryStoredRecordLen);
+    	}else{
+    		this->inMemoryStoredRecord = NULL;
+    	}
+    	this->point = copy.point;
+    }
+
     ~Impl() {
     	if (inMemoryStoredRecord) {
     		delete[] inMemoryStoredRecord;
@@ -162,6 +180,10 @@ Record::Record(const Schema *schema):impl(new Impl)
     impl->inMemoryStoredRecordLen = 0;
 }
 
+
+Record::Record(const Record & copy){
+	this->impl = new Record::Impl(*(copy.impl));
+}
 
 Record::~Record()
 {

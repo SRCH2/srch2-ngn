@@ -49,25 +49,26 @@ enum ShardingMessageType{
 
 
     // For SHM
-	ShardingCommitMessageType,
-	ShardingCommitACKMessageType,
-	ShardingProposalMessageType,
-	ShardingProposalOkMessageType,
-	ShardingProposalNoMessageType,
-	ShardingLockMessageType,
-	ShardingLockGrantedMessageType,
-	ShardingLockRejectedMessageType,
-	ShardingLockReleasedMessageType,
-	ShardingLockRvReleasesMessageType,
-	ShardingNewNodeWelcomeMessageType,
-	ShardingNewNodeBusyMessageType,
-	ShardingNewNodeNewHostMessageType,
-	ShardingNewNodeShardRequestMessageType,
-	ShardingNewNodeShardOfferMessageType,
-	ShardingNewNodeShardsReadyMessageType,
-	ShardingNewNodeJoinPermitMessageType,
-	ShardingCopyToMeMessageType,
-	ShardingMoveToMeMessageType
+    ShardingNewNodeLockMessageType,
+    ShardingNewNodeLockACKMessageType,
+    ShardingMoveToMeMessageType,
+    ShardingMoveToMeStartMessageType,
+    ShardingMoveToMeACKMessageType,
+    ShardingMoveToMeFinishMessageType,
+    ShardingMoveToMeAbortMessageType,
+    ShardingNewNodeReadMetadataMessageType,
+    ShardingNewNodeReadMetadataACKMessageType,
+    ShardingLockMessageType,
+    ShardingLockACKMessageType,
+    ShardingLockRVReleasedMessageType,
+    ShardingLoadBalancingReportMessageType,
+    ShardingLoadBalancingReportRequestMessageType,
+    ShardingCopyToMeMessageType,
+    ShardingCommitMessageType,
+    ShardingCommitACKMessageType,
+    // just notifications
+    ShardingMMNotificationMessageType,
+    ShardingNodeFailureNotificationMessageType
 };
 
 
@@ -88,6 +89,12 @@ enum ShardState {
 	SHARDSTATE_PENDING,
 	SHARDSTATE_READY
 
+};
+
+enum ShardingNodeState{
+	ShardingNodeStateNotArrived,
+	ShardingNodeStateArrived,
+	ShardingNodeStateFailed
 };
 
 // enum to allow loop iteration over listening ports
@@ -111,41 +118,79 @@ enum CLUSTERSTATE {
 	CLUSTERSTATE_YELLOW  // not all nodes are green.
 };
 
-enum NotificationType{
-	NotificationType_SM_NodeArrival,
-	NotificationType_SM_NodeFailure,
-	NotificationType_MM_Failed,
-	NotificationType_MM_Finished,
-	NotificationType_DP_UpdateLoads,
-	NotificationType_Sharding_Commit_ShardAssignChange,
-	NotificationType_Sharding_Commit_ShardCopyChange,
-	NotificationType_Sharding_Commit_ShardMoveChange,
-	NotificationType_Sharding_Commit_ShardLoadChange,
-	NotificationType_Sharding_Commit_ACK,
-	NotificationType_Sharding_Proposal_ShardAssignChange,
-	NotificationType_Sharding_Proposal_ShardMoveChange,
-	NotificationType_Sharding_Proposal_ShardLoadChange,
-	NotificationType_Sharding_Proposal_OK,
-	NotificationType_Sharding_Proposal_NO,
-	NotificationType_Sharding_Lock_S_Lock,
-	NotificationType_Sharding_Lock_S_UnLock,
-	NotificationType_Sharding_Lock_X_Lock,
-	NotificationType_Sharding_Lock_X_UnLock,
-	NotificationType_Sharding_Lock_GRANTED,
-	NotificationType_Sharding_Lock_REJECTED,
-	NotificationType_Sharding_Lock_RELEASED,
-	NotificationType_Sharding_Lock_RV_RELEASED,
-	NotificationType_Sharding_NewNode_Welcome,
-	NotificationType_Sharding_NewNode_Busy,
-	NotificationType_Sharding_NewNode_NewHost,
-	NotificationType_Sharding_NewNode_ShardRequest,
-	NotificationType_Sharding_NewNode_ShardOffer,
-	NotificationType_Sharding_NewNode_ShardsReady,
-	NotificationType_Sharding_NewNode_JoinPermit,
-	NotificationType_Sharding_CopyToMe,
-	NotificationType_Sharding_MoveToMe,
-	NotificationType_Default
+enum PartitionLockValue{
+	PartitionLock_Locked,
+	PartitionLock_Unlocked
 };
+
+enum ResourceLockType{
+	ResourceLockType_S,
+	ResourceLockType_X,
+	ResourceLockType_U
+};
+
+enum ResourceLockRequestType{
+	ResourceLockRequestTypeLock,
+	ResourceLockRequestTypeRelease,
+	ResourceLockRequestTypeUpgrade,
+	ResourceLockRequestTypeDowngrade
+};
+
+enum MultipleResourceLockRequestType{
+	MultipleResourceLockRequestTypeSerial, // used for lock and upgrade
+	MultipleResourceLockRequestTypeParallel // used for release and downgrade
+};
+
+enum MetadataChangeType {
+	ShardingChangeTypeNodeAdd,
+	ShardingChangeTypeShardAssign,
+	ShardingChangeTypeShardMove,
+	ShardingChangeTypeLoadChange
+};
+
+enum OperationStateType{
+	OperationStateType_LockSerial,
+	OperationStateType_LockParallel,
+	OperationStateType_Commit,
+	OperationStateType_NewNode_Lock,
+	OperationStateType_NewNode_Join,
+	OperationStateType_NewNode_Finalize,
+	OperationStateType_LoadBalancing_Start,
+	OperationStateType_ShardAssign_Start,
+	OperationStateType_ShardAssign_Commit,
+	OperationStateType_ShardCopy_Start,
+	OperationStateType_ShardMove_Start,
+	OperationStateType_ShardMove_Transfer,
+	OperationStateType_ShardMove_Commit,
+	OperationStateType_ShardMove_Finalize,
+	OperationStateType_NodeInitializer_NewNode_Init,
+	OperationStateType_NodeInitializer_NewNode_Ready,
+	OperationStateType_NodeInitializer_NewNode_Done,
+	OperationStateType_NodeInitializer_HostNode_Wait,
+	OperationStateType_NodeInitializer_HostNode_Offered,
+	OperationStateType_NodeInitializer_HostNode_Updating,
+	OperationStateType_NodeInitializer_OtherNodes_Wait,
+	OperationStateType_NodeInitializer_OtherNodes_Recovery,
+	OperationStateType_NodeInitializer_OtherNodes_Updating,
+	OperationStateType_ShardCopy_Src_Copying,
+	OperationStateType_ShardCopy_Dest_Proposed,
+	OperationStateType_ShardCopy_Dest_Locking,
+	OperationStateType_ShardCopy_Dest_Copying,
+	OperationStateType_ShardCopy_Dest_Commiting,
+	OperationStateType_ShardAssign_Proposed,
+	OperationStateType_ShardAssign_Commiting,
+	OperationStateType_ShardMove_Dest_Proposed,
+	OperationStateType_ShardMove_Dest_Locking,
+	OperationStateType_ShardMove_Dest_Moving,
+	OperationStateType_ShardMove_Dest_Committing,
+	OperationStateType_ShardMove_Src_Moving,
+	OperationStateType_ShardMove_Src_Cleanup,
+	OperationStateType_ShardMove_Src_Recovery,
+	OperationStateType_ClusterExecuteOperation,
+	OperationStateType_ClusterJoinOperation
+
+};
+
 
 }
 }

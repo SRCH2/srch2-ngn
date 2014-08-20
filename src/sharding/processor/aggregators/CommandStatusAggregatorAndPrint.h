@@ -2,13 +2,14 @@
 #define __SHARDING_PROCESSOR_COMMAND_STATUS_AGGREGATOR_AND_PRINT_H_
 
 #include "sharding/processor/aggregators/DistributedProcessorAggregator.h"
-#include "serializables/SerializableCommandStatus.h"
-#include "serializables/SerializableInsertUpdateCommandInput.h"
-#include "serializables/SerializableDeleteCommandInput.h"
-#include "serializables/SerializableSerializeCommandInput.h"
-#include "serializables/SerializableResetLogCommandInput.h"
-#include "serializables/SerializableCommitCommandInput.h"
-#include "PendingMessages.h"
+#include "../serializables/SerializableCommandStatus.h"
+#include "../serializables/SerializableInsertUpdateCommandInput.h"
+#include "../serializables/SerializableDeleteCommandInput.h"
+#include "../serializables/SerializableSerializeCommandInput.h"
+#include "../serializables/SerializableResetLogCommandInput.h"
+#include "../serializables/SerializableCommitCommandInput.h"
+#include "../PendingMessages.h"
+#include "sharding/processor/ProcessorUtil.h"
 #include <string>
 #include <sstream>
 
@@ -77,42 +78,42 @@ public:
             return;
         }
 
-        RequestWithStatusResponse * sentRequest = message->getRequestObject();
+        const RequestWithStatusResponse * sentRequest = message->getRequestObject();
 
-        if(typeid(InsertUpdateCommand *) == typeid(sentRequest)){// timeout in insert and update
+        if(typeid(const InsertUpdateCommand *) == typeid(sentRequest)){// timeout in insert and update
 
             boost::unique_lock< boost::shared_mutex > lock(_access);
-            InsertUpdateCommand * sentInsetUpdateRequest = (InsertUpdateCommand *)(sentRequest);
+            const InsertUpdateCommand * sentInsetUpdateRequest = (const InsertUpdateCommand *)(sentRequest);
             messages << "{\"rid\":\"" << sentInsetUpdateRequest->getRecord()->getPrimaryKey()
                                         << "\",\"" << (sentInsetUpdateRequest->getInsertOrUpdate()?"insert":"update") <<
                                         "\":\"failed\",\"reason\":\"Node #"<<
                                         message->getNodeId()<<" timedout.\"}";
 
-        }else if (typeid(DeleteCommand *) == typeid(sentRequest)){
+        }else if (typeid(const DeleteCommand *) == typeid(sentRequest)){
 
             boost::unique_lock< boost::shared_mutex > lock(_access);
-            DeleteCommand * sentDeleteRequest = (DeleteCommand *)(sentRequest);
+            const DeleteCommand * sentDeleteRequest = (const DeleteCommand *)(sentRequest);
             messages << "{\"rid\":\"" << sentDeleteRequest->getPrimaryKey()
                             << "\",\"delete\":\"failed\",\"reason\":\"Node #"<<
                             message->getNodeId() << " timedout.\"}";
 
-        }else if(typeid(SerializeCommand *) == typeid(sentRequest)){
+        }else if(typeid(const SerializeCommand *) == typeid(sentRequest)){
 
             boost::unique_lock< boost::shared_mutex > lock(_access);
-            SerializeCommand * serializeRequest = (SerializeCommand *)(sentRequest);
+            const SerializeCommand * serializeRequest = (const SerializeCommand *)(sentRequest);
             messages << "{\""<< (serializeRequest->getIndexOrRecord()?"save":"export") << "\":\"failed\",\"reason\":\"Node #" <<
                     message->getNodeId() << " timedout.\"}";
 
-        }else if(typeid(ResetLogCommand *) == typeid(sentRequest)){
+        }else if(typeid(const ResetLogCommand *) == typeid(sentRequest)){
 
             boost::unique_lock< boost::shared_mutex > lock(_access);
-            ResetLogCommand * resetRequest = (ResetLogCommand *)(sentRequest);
+            const ResetLogCommand * resetRequest = (const ResetLogCommand *)(sentRequest);
             messages << "{\"reset_log\":\"failed\",\"reason\":\"Node #" << message->getNodeId()<<" timedout.\"}";
 
-        }else if(typeid(CommitCommand *) == typeid(sentRequest)){
+        }else if(typeid(const CommitCommand *) == typeid(sentRequest)){
 
             boost::unique_lock< boost::shared_mutex > lock(_access);
-            CommitCommand * resetRequest = (CommitCommand *)(sentRequest);
+            const CommitCommand * resetRequest = (const CommitCommand *)(sentRequest);
             messages << "{\"commit\":\"failed\",\"reason\":\"Node #" << message->getNodeId()<<" timedout.\"}";
 
         }else{
@@ -139,9 +140,9 @@ public:
             messages << "\"Node #" << message->getNodeId() << " timed out.\"";
         }else{
             messages << "{ \"Node-id\":\"" << message->getNodeId() << "\",";
-            vector<CommandStatus::ShardResults *> & shardResults = messag->getResponseObject()->getShardResults();
+            vector<CommandStatus::ShardResults *> shardResults = message->getResponseObject()->getShardResults();
             for(unsigned shardIdx = 0 ; shardIdx < shardResults.size() ; ++shardIdx){
-				message << "\"shard" << shardResults.at(shardIdx)->shardIdentifier << "\":\"" << shardResults.at(shardIdx)->message << "\"";
+            	messages << "\"shard" << shardResults.at(shardIdx)->shardIdentifier << "\":\"" << shardResults.at(shardIdx)->message << "\"";
             }
 			messages << "}";
         }
@@ -166,9 +167,9 @@ public:
                 messages << "\"Node #" << message->getNodeId() << " timed out.\"";
             }else{
                 messages << "{ \"Node-id\":\"" << message->getNodeId() << "\",";
-                vector<CommandStatus::ShardResults *> & shardResults = messag->getResponseObject()->getShardResults();
+                vector<CommandStatus::ShardResults *> shardResults = message->getResponseObject()->getShardResults();
                 for(unsigned shardIdx = 0 ; shardIdx < shardResults.size() ; ++shardIdx){
-    				message << "\"shard" << shardResults.at(shardIdx)->shardIdentifier << "\":\"" << shardResults.at(shardIdx)->message << "\"";
+                	messages << "\"shard" << shardResults.at(shardIdx)->shardIdentifier << "\":\"" << shardResults.at(shardIdx)->message << "\"";
                 }
     			messages << "}";
             }

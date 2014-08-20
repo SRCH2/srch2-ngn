@@ -79,10 +79,6 @@ public:
 	pthread_t getListeningThread() const;
 	// getter function for message Allocator object.
 	MessageAllocator * getMessageAllocator();
-	// get RM object
-	RoutingManager * getRoutingManager();
-	// this API enables RM to register its pointer with TM
-	void setRoutingManager(RoutingManager * rm);
 	// get SM callback handler
 	CallBackHandler* getSmHandler();
 	// get Discovery callback handler

@@ -129,8 +129,8 @@ public:
         buffer = srch2::util::deserializeFixedTypes(buffer, vectorSize);
         for(unsigned shardIdx = 0; shardIdx < vectorSize ; ++shardIdx){
         	ShardResults * newShardResult = ShardResults::deserialize(buffer);
-        	buffer = buffer += newShardResult->getNumberOfBytes();
-        	shardResults.push_back(newShardResult);
+        	buffer = (void*)((char*)buffer +  newShardResult->getNumberOfBytes());
+        	commandStatus->shardResults.push_back(newShardResult);
         }
         return commandStatus;
     }
@@ -144,7 +144,7 @@ public:
         return commandCode;
     }
 
-    vector<ShardResults> & getShardResults() const {
+    vector<ShardResults *> getShardResults() const {
         return shardResults;
     }
 
@@ -159,7 +159,7 @@ private:
      */
     CommandCode commandCode;
 
-    vector<ShardResults *> shardResults;
+    vector<CommandStatus::ShardResults *> shardResults;
 };
 
 

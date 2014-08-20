@@ -3,14 +3,25 @@
 
 
 #include "sharding/configuration/ConfigManager.h"
+#include "sharding/configuration/CoreInfo.h"
 #include "sharding/configuration/ShardingConstants.h"
+#include "sharding/sharding/metadata_manager/Shard.h"
+#include "sharding/sharding/metadata_manager/Cluster.h"
+
+#include <instantsearch/Record.h>
+#include <instantsearch/LogicalPlan.h>
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/thread/locks.hpp>
 
+#include "serializables/SerializableSearchResults.h"
+#include "serializables/SerializableCommandStatus.h"
+#include "serializables/SerializableGetInfoResults.h"
+
 using namespace std;
+using namespace srch2::instantsearch;
 
 namespace srch2 {
 namespace httpwrapper {
@@ -18,15 +29,13 @@ namespace httpwrapper {
 class ConfigManager;
 class Srch2Server;
 class SearchCommand;
-class SearchCommandResults;
 class InsertUpdateCommand;
 class DeleteCommand;
-class CommandStatus;
 class SerializeCommand;
 class ResetLogCommand;
 class CommitCommand;
+class MergeCommand;
 class GetInfoCommand;
-class GetInfoCommandResults;
 
 
 
@@ -54,7 +63,7 @@ public:
      * 3. Sends the results to the shard which initiated this search query
      */
     SearchCommandResults * internalSearchCommand(const NodeTargetShardInfo & target,
-    		boost::shared_ptr<const Cluster> clusterReadview, SearchCommand * searchData);
+    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, SearchCommand * searchData);
 
 
     /*
@@ -62,7 +71,7 @@ public:
      * internalInsertCommand and internalUpdateCommand
      */
     CommandStatus * internalInsertUpdateCommand(const NodeTargetShardInfo & target,
-    		boost::shared_ptr<const Cluster> clusterReadview, InsertUpdateCommand * insertUpdateData);
+    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, InsertUpdateCommand * insertUpdateData);
 
     /*
      * 1. Receives a delete request from a shard and makes sure this
@@ -71,7 +80,7 @@ public:
      * 3. Sends the results to the shard which initiated this delete request (Failure or Success)
      */
     CommandStatus *  internalDeleteCommand(const NodeTargetShardInfo & target,
-    		boost::shared_ptr<const Cluster> clusterReadview, DeleteCommand * deleteData);
+    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, DeleteCommand * deleteData);
 
 
 
@@ -81,7 +90,7 @@ public:
      * 3. Sends the results to the shard which initiated this getInfo request (Failure or Success)
      */
     GetInfoCommandResults * internalGetInfoCommand(const NodeTargetShardInfo & target,
-    		boost::shared_ptr<const Cluster> clusterReadview, GetInfoCommand * getInfoData);
+    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, GetInfoCommand * getInfoData);
 
 
     /*
@@ -89,7 +98,7 @@ public:
      * and internalSerializeRecordsCommand for our two types of serialization.
      */
     CommandStatus * internalSerializeCommand(const NodeTargetShardInfo & target,
-    		boost::shared_ptr<const Cluster> clusterReadview, SerializeCommand * seralizeData);
+    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, SerializeCommand * seralizeData);
 
     /*
      * 1. Receives a ResetLog request from a shard
@@ -97,19 +106,18 @@ public:
      * 3. Sends the results to the shard which initiated this reset-log request(Failure or Success)
      */
     CommandStatus * internalResetLogCommand(const NodeTargetShardInfo & target,
-    		boost::shared_ptr<const Cluster> clusterReadview, ResetLogCommand * resetData);
+    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, ResetLogCommand * resetData);
 
 
     /*
      * Receives a commit command and commits the index
      */
     CommandStatus * internalCommitCommand(const NodeTargetShardInfo & target,
-    		boost::shared_ptr<const Cluster> clusterReadview, CommitCommand * resetData);
+    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, CommitCommand * resetData);
 
     CommandStatus * internalMergeCommand(const NodeTargetShardInfo & target,
-    		boost::shared_ptr<const Cluster> clusterReadview, MergeCommand * mergeData);
+    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, MergeCommand * mergeData);
 
-    DPInternalAPIStatus bootstrapSrch2Server(boost::shared_ptr<Srch2Server> srch2Server, const string & directoryPath);
 private:
 
     ConfigManager * configurationManager;

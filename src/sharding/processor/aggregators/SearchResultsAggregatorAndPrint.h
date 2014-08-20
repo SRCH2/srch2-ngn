@@ -2,8 +2,8 @@
 #define __SHARDING_PROCESSOR_SEARCH_RESULTS_AGGREGATOR_AND_PRINT_H__
 
 #include "sharding/processor/aggregators/DistributedProcessorAggregator.h"
-#include "serializables/SerializableSearchResults.h"
-#include "serializables/SerializableSearchCommandInput.h"
+#include "../serializables/SerializableSearchResults.h"
+#include "../serializables/SerializableSearchCommandInput.h"
 #include <event2/http.h>
 #include "wrapper/ParsedParameterContainer.h"
 
@@ -60,7 +60,7 @@ public:
     };
 
 
-    SearchResultsAggregator(ConfigManager * configurationManager, evhttp_request *req, boost::shared_ptr<const Cluster> clusterReadview, unsigned coreId);
+    SearchResultsAggregator(ConfigManager * configurationManager, evhttp_request *req, boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, unsigned coreId);
     LogicalPlan & getLogicalPlan();
     ParsedParameterContainer * getParamContainer();
 

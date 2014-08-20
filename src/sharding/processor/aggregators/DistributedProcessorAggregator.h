@@ -3,10 +3,6 @@
 
 
 #include "sharding/processor/aggregators/ResponseAggregator.h"
-
-
-#include "sharding/configuration/ConfigManager.h"
-
 #include <instantsearch/Record.h>
 #include "wrapper/ParsedParameterContainer.h"
 #include "util/CustomizableJsonWriter.h"
@@ -19,6 +15,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/serialization/shared_ptr.hpp>
 #include "sharding/processor/ProcessorUtil.h"
+
 
 namespace srch2is = srch2::instantsearch;
 using namespace std;
@@ -33,7 +30,8 @@ class DistributedProcessorAggregator : public ResponseAggregatorInterface<Reques
 public:
 
 
-	DistributedProcessorAggregator(boost::shared_ptr<const Cluster> clusterReadview, unsigned coreId):ResponseAggregatorInterface<Request,Response>(clusterReadview){
+	DistributedProcessorAggregator(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
+			unsigned coreId):ResponseAggregatorInterface<Request,Response>(clusterReadview){
 		this->coreId = coreId;
 	}
 
@@ -44,7 +42,7 @@ public:
     virtual ~DistributedProcessorAggregator(){
     	for(unsigned i = 0 ; i < requestObjs.size() ; ++i){
     		if(requestObjs.at(i) != NULL){
-    			delete requestObjs;
+    			delete requestObjs.at(i);
     		}
     	}
     };
