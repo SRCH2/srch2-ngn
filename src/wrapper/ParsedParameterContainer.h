@@ -294,6 +294,10 @@ public:
 
 class GeoParameterContainer {
 public:
+
+	~GeoParameterContainer(){
+		parametersInQuery.clear();
+	}
 	// while we are parsing we populate this vector by the names of those members
 	// which are set. It's a summary of the query parameters.
 	std::vector<ParameterName> parametersInQuery;
@@ -352,6 +356,9 @@ public:
             delete sortQueryContainer;
         if(parseTreeRoot != NULL){
         	delete parseTreeRoot;
+        }
+        if(geoParameterContainer != NULL){
+        	delete geoParameterContainer;
         }
     }
     // while we are parsing we populate this vector by the names of those members
