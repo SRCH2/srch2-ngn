@@ -1,22 +1,29 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
-    android:layout_width="wrap_content"
-    android:layout_height="match_parent"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="12dp"
     tools:context=".MyActivity">
 
     <TextView
         android:id="@+id/tv1"
+        android:textSize="24dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
+
     <TextView
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp"
         android:id="@+id/tv2"
-        android:background="#C8C8C8"
+        android:textSize="24dp"
+        android:background="#0AC8C8C8"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 
     <TextView
         android:id="@+id/tv3"
+        android:textSize="24dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 
