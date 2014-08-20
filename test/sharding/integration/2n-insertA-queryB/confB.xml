@@ -26,11 +26,11 @@
     <cluster-name>SRCH2_Cluster</cluster-name>
 
 
-    <discovery>
-        <ping-interval>2</ping-interval>
-        <ping-timeout>8</ping-timeout>
+    <ping>
+        <ping-interval>20000</ping-interval>
+        <ping-timeout>80000</ping-timeout>
         <retry-count>10</retry-count>
-    </discovery>
+    </ping>
     <transport>
         <port>3096</port>
         <ipaddress>127.0.0.1</ipaddress>
