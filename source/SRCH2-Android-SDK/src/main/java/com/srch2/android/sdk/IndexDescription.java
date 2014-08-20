@@ -228,13 +228,17 @@ final class IndexDescription {
 
     String getBoostStatementString() {
         Iterator<Field> iter = this.schema.fields.iterator();
-        String boostValue = "";
+        StringBuilder sb = new StringBuilder();
         while (iter.hasNext()) {
             Field f = iter.next();
-            if (f.searchable)
-                boostValue = boostValue + f.name + "^" + f.boost + " ";
+            if (f.searchable) {
+                sb.append(f.name);
+                sb.append("^");
+                sb.append(f.boost);
+                sb.append(" ");
+            }
         }
-        return boostValue;
+        return sb.substring(0, sb.length() - 1);
     }
 
     String indexStructureToXML() {
@@ -264,12 +268,12 @@ final class IndexDescription {
                 .append("</supportSwapInEditDistance>\n")
                 .append("                <fieldBoost>")
                 .append(indexProperties.getProperty(FIELD_BOOST))
-                .append("                </fieldBoost>\n");
+                .append("</fieldBoost>\n");
                 // temporary fix since engine will crash if this is empty (ie has not been set by user)
                 if (schema.recordBoostKey != null) {
                     core.append("                <recordBoostField>")
                             .append(indexProperties.getProperty(RECORD_BOOST_FIELD))
-                            .append("                </recordBoostField>\n");
+                            .append("</recordBoostField>\n");
                 }
                 core.append("                <defaultQueryTermBoost>")
                 .append(indexProperties.getProperty(DEFAULT_QUERY_TERM_BOOST))
