@@ -64,9 +64,6 @@ screenshot after this step:
 
 <center>![The SRCH2 Android SDK in action!][tutorial-011]</center>
 
-<h2> Use a screenshot with more keywords such as "beaty ame" to show the
-instant search results.  Also reduce the image size.</h2> 
-
 Congratulations! You're now using the SRCH2 Android SDK to power
 searches in an Android project.
 
