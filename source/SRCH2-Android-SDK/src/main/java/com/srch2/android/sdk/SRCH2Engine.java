@@ -120,11 +120,8 @@ final public class SRCH2Engine {
      * This method should be called anytime the activity requiring search functionality comes to the
      * foreground and is visible--that is, when it can be interacted with by a user who might perform searches.
      * Starting the SRCH2 search server is fast, usually taking under a second, and when it comes online
-     * and is ready to handle search requests the callback method
-     *
-     * EDIT HERE
-     *
-     * will be executed. Checking
+     * and is ready to handle search requests the callback method {@link Indexable#onIndexReady()} will
+     * be called for each index as it becomes loaded and ready for access. Checking
      * whether the SRCH2 search server is ready can also determined by calling
      * {@link #isReady()}.
      * <br><br>

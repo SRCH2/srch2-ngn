@@ -42,7 +42,15 @@ final class CheckCoresLoadedTask extends HttpTask {
                 noNetworkConnection = true;
                 break;
             }
+
+
+
             String indexName = indexNames.get(i);
+
+            if (validIndexes.contains(indexName)) {
+                continue;
+            }
+
             URL targetUrl = targetCoreUrlsMap.get(indexName);
 
             Cat.d(TAG, "run - core check loop @ iteration " + i + " targetingUrl " + targetUrl);
