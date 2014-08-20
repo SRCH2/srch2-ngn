@@ -46,9 +46,7 @@ std::string ClusterShardId::toString() const {
 	// Similarly, replicas of "P3" will be named "8_R3_1" and "8_R3_2".
 	if(coreId != unsigned(-1) || partitionId != unsigned(-1) || replicaId != unsigned(-1)){
 		std::stringstream sstm;
-		sstm << "C" << coreId << "_";
-		sstm << "P" << partitionId << "_";
-		sstm << "R" << replicaId;
+		sstm << "C" << coreId << "_" << partitionId << "_" << replicaId;
 		return sstm.str();
 	}
 	else{
@@ -80,35 +78,24 @@ ClusterShardId::ClusterShardId(unsigned coreId, unsigned partitionId, unsigned r
 
 bool ClusterShardId::operator==(const ClusterShardId& rhs) const {
 	return coreId == rhs.coreId && partitionId == rhs.partitionId
-			&& replicaId == replicaId;
+			&& replicaId == rhs.replicaId;
 }
 bool ClusterShardId::operator!=(const ClusterShardId& rhs) const {
-	return coreId != rhs.coreId || partitionId != rhs.partitionId
-			|| replicaId != replicaId;
+	return ! (*this == rhs);
 }
 bool ClusterShardId::operator>(const ClusterShardId& rhs) const {
 	return  coreId > rhs.coreId ||
-			(coreId == rhs.coreId &&
-					(partitionId > rhs.partitionId ||
+			(coreId == rhs.coreId && (partitionId > rhs.partitionId ||
 							(partitionId == rhs.partitionId && replicaId > rhs.replicaId)));
 }
 bool ClusterShardId::operator<(const ClusterShardId& rhs) const {
-	return  coreId < rhs.coreId ||
-			(coreId == rhs.coreId &&
-					(partitionId < rhs.partitionId ||
-							(partitionId == rhs.partitionId && replicaId < replicaId)));
+	return ! (*this == rhs || *this > rhs);
 }
 bool ClusterShardId::operator>=(const ClusterShardId& rhs) const {
-	return  coreId > rhs.coreId ||
-			(coreId == rhs.coreId &&
-					(partitionId > rhs.partitionId ||
-							(partitionId == rhs.partitionId && replicaId >= replicaId)));
+	return  (*this > rhs || *this == rhs);
 }
 bool ClusterShardId::operator<=(const ClusterShardId& rhs) const {
-	return  coreId < rhs.coreId ||
-			(coreId == rhs.coreId &&
-					(partitionId < rhs.partitionId ||
-							(partitionId == rhs.partitionId && replicaId <= replicaId)));
+	return  (*this < rhs || *this == rhs);
 }
 
 
@@ -153,7 +140,7 @@ NodeShardId::NodeShardId(unsigned coreId, NodeId nodeId, unsigned partitionId):S
 
 std::string NodeShardId::toString() const{
 	std::stringstream sstm;
-	sstm << "C" << coreId << "_N" << nodeId << "_P" << partitionId ;
+	sstm << "N" << coreId << "_" << nodeId << "_" << partitionId ;
 	return sstm.str();
 }
 

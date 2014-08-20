@@ -50,7 +50,7 @@ bool NodeOperationId::operator<(const NodeOperationId & right) const{
 
 string NodeOperationId::toString() const{
 	stringstream ss;
-	ss << "(" << nodeId << "," << operationId << ")" << endl;
+	ss << "(" << nodeId << "," << operationId << ")";
 	return ss.str();
 }
 
@@ -93,6 +93,7 @@ unsigned ShardingNotification::getNumberOfBytes() const{
 	unsigned numberOfBytes = 0;
 	numberOfBytes += srcOperationId.getNumberOfBytes();
 	numberOfBytes += destOperationId.getNumberOfBytes();
+	numberOfBytes += sizeof(bool);
 	return numberOfBytes;
 }
 void * ShardingNotification::deserialize(void * buffer) {

@@ -38,7 +38,10 @@ SingleResourceLockRequest::SingleResourceLockRequest(const ClusterShardId & reso
 		ResourceLockType lockType){
 	vector<NodeOperationId> holders;
 	holders.push_back(holder);
-	SingleResourceLockRequest(resource, holders, lockType);
+	this->resource = resource;
+	this->holders = holders;
+	this->lockType = lockType;
+	this->requestType = ResourceLockRequestTypeLock;
 }
 
 // Release
@@ -46,7 +49,9 @@ SingleResourceLockRequest::SingleResourceLockRequest(const ClusterShardId & reso
 		const NodeOperationId & holder){
 	vector<NodeOperationId> holders;
 	holders.push_back(holder);
-	SingleResourceLockRequest(resource, holders);
+	this->resource = resource;
+	this->holders = holders;
+	this->requestType = ResourceLockRequestTypeRelease;
 }
 
 SingleResourceLockRequest::SingleResourceLockRequest(const ClusterShardId & resource,ResourceLockRequestType requestType){
@@ -197,7 +202,7 @@ PendingLockRequest::PendingLockRequest(const NodeOperationId & requesterAddress,
 		ShardingMessageType ackType,
 		const unsigned priority,
 		ResourceLockRequest * request){
-	this->request;
+	this->request = request;
 	this->ackType = ackType;
 	this->requesterAddress = requesterAddress;
 	this->priority = priority;
@@ -575,11 +580,15 @@ void ResourceLockManager::resolve(NewNodeLockNotification * notification){
 	for(vector<NodeId>::iterator nodeItr = allNodesUpToNewNode.begin();
 			nodeItr != allNodesUpToNewNode.end(); ++nodeItr){
 		ASSERT(*nodeItr < notification->getSrc().nodeId);
+		if(*nodeItr == ShardManager::getCurrentNodeId()){
+			continue;
+		}
 		// 1. is this node in the writeview of this node ?
 		if(writeview->nodes.find(*nodeItr) == writeview->nodes.end()){
 			//add it to the list of nodes in writeview as NotArrived node
 			writeview->nodes[*nodeItr] = std::make_pair(ShardingNodeStateNotArrived,(Node*) NULL);
 		}
+		writeview->printNodes();
 		// reserve place in waitingList
 		pendingLockRequestBuffer.update(PendingLockRequest(NodeOperationId(*nodeItr),
 				ShardingNewNodeLockACKMessageType, LOCK_REQUEST_PRIORITY_NODE_ARRIVAL, NULL));
@@ -589,7 +598,7 @@ void ResourceLockManager::resolve(NewNodeLockNotification * notification){
 	pendingLockRequestBuffer.update(PendingLockRequest(notification->getSrc(),
 			ShardingNewNodeLockACKMessageType, LOCK_REQUEST_PRIORITY_NODE_ARRIVAL, notification->getLockRequest()));
 
-
+	pendingLockRequestBuffer.print();
 	// try to get the lock for the minimum nodeId of this waiting
 	// list if it's prepared (it has lock requests and it's not already on the lock)
 	tryPendingRequest();
@@ -790,6 +799,7 @@ void ResourceLockManager::executeBatch(const vector<SingleResourceLockRequest *>
 	// all requests can be granted.
 	for(unsigned i = 0 ; i < requestBatch.size(); ++i){
 		executeRequest(*(requestBatch.at(i)));
+		lockHolders->print();
 	}
 
 	needCommit = false;
@@ -1057,7 +1067,7 @@ bool ResourceLockManager::canLock_S(const ClusterShardId & resource, LockHolders
 		// we have X lock on it, not possible.
 		return false;
 	}
-	return false;
+	return true;
 }
 
 void ResourceLockManager::lock_S(const ClusterShardId & resource, const vector<NodeOperationId> & lockHolders, LockHoldersRepository & lockRepository){
@@ -1069,11 +1079,11 @@ void ResourceLockManager::lock_S(const ClusterShardId & resource, const vector<N
 
 	// 2. add lock holders to s list of this resource
 	if(lockRepository.S_Holders.find(resource) == lockRepository.S_Holders.end()){
-		lockRepository.S_Holders[resource] = lockHolders;
+		lockRepository.S_Holders.insert(std::make_pair(resource ,lockHolders));
 		return;
 	}
 
-	lockRepository.S_Holders[resource].insert(lockRepository.S_Holders[resource].end(), lockHolders.begin(), lockHolders.end());
+	lockRepository.S_Holders.find(resource)->second.insert(lockRepository.S_Holders.find(resource)->second.begin(), lockHolders.begin(), lockHolders.end());
 	return;
 }
 

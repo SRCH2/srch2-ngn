@@ -59,7 +59,7 @@ inline void * serializeVectorOfFixedTypes(const vector<FixedType> & vectorObj, v
 	// first store the size
 	buffer = serializeFixedTypes(unsigned(vectorObj.size()) , buffer);
 	// and then store the elements
-	for(unsigned objIndex = 0 ; objIndex != vectorObj.size() ; objIndex ++){
+	for(unsigned objIndex = 0 ; objIndex < vectorObj.size() ; objIndex ++){
 		buffer = serializeFixedTypes(vectorObj.at(objIndex), buffer);
 	}
 
@@ -122,7 +122,7 @@ inline void * serializeVectorOfDynamicTypes(const vector<DynamicType> & vectorOb
 	// first store the size
 	buffer = serializeFixedTypes(unsigned(vectorObj.size()) , buffer);
 	// and then store the elements
-	for(unsigned objIndex = 0 ; objIndex != vectorObj.size() ; objIndex ++){
+	for(unsigned objIndex = 0 ; objIndex < vectorObj.size() ; objIndex ++){
 		buffer = vectorObj.at(objIndex).serialize(buffer);
 	}
 
@@ -316,7 +316,7 @@ inline void * serializeVectorOfDynamicTypePointers(const vector<DynamicType *> &
 	// first store the size
 	buffer = serializeFixedTypes(unsigned(vectorObj.size()) , buffer);
 	// and then store the elements
-	for(unsigned objIndex = 0 ; objIndex != vectorObj.size() ; objIndex ++){
+	for(unsigned objIndex = 0 ; objIndex < vectorObj.size() ; objIndex ++){
 		buffer = vectorObj.at(objIndex)->serialize(buffer);
 	}
 

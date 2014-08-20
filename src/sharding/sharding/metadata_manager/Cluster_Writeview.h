@@ -125,6 +125,9 @@ public:
 	Cluster_Writeview(const Cluster_Writeview & copy);
 	Cluster_Writeview();
 	void print();
+
+	void printNodes();
+
 	~Cluster_Writeview();
 
 	void assignLocalClusterShard(const ClusterShardId & shardId, const LocalPhysicalShard & physicalShardInfo);

@@ -182,42 +182,7 @@ void Cluster_Writeview::print(){
 	srch2::util::TableFormatPrinter coresTable("Cores", 40, coreHeaders, coreLabels );
 	coresTable.printColumnHeaders();
 
-	vector<string> nodeHeaders;
-	for(map<NodeId, std::pair<ShardingNodeState, Node *> >::const_iterator nodeItr = nodes.begin(); nodeItr != nodes.end(); ++nodeItr){
-		stringstream ss;
-		ss << "ID-" << nodeItr->first << "%";
-		nodeHeaders.push_back(ss.str());
-	}
-
-	/// nodes
-	if(nodes.size() == 0){
-		cout << "Nodes : empty." << endl;
-	}else{
-		vector<string> nodeLables;
-		nodeLables.push_back("Node Information:");
-		srch2::util::TableFormatPrinter nodesTable("Nodes", 120, nodeHeaders, nodeLables );
-		nodesTable.printColumnHeaders();
-		nodesTable.startFilling();
-		for(map<NodeId, std::pair<ShardingNodeState, Node *> >::const_iterator nodeItr = nodes.begin(); nodeItr != nodes.end(); ++nodeItr){
-			stringstream ss;
-			switch (nodeItr->second.first) {
-				case ShardingNodeStateNotArrived:
-					ss << "STATE-NOT-ARRIVED" << "%";
-					break;
-				case ShardingNodeStateArrived:
-					ss << "STATE-ARRIVED" << "%";
-					break;
-				case ShardingNodeStateFailed:
-					ss << "STATE-FAILED" << "%";
-					break;
-			}
-
-			if(nodeItr->second.second != NULL){
-				ss << nodeItr->second.second->toString();
-			}
-			nodesTable.printNextCell(ss.str());
-		}
-	}
+	printNodes();
 
 	/// cluster shards
 
@@ -346,6 +311,45 @@ void Cluster_Writeview::print(){
 		}
 	}
 
+}
+
+void Cluster_Writeview::printNodes(){
+
+	/// nodes
+	if(nodes.size() == 0){
+		cout << "Nodes : empty." << endl;
+	}else{
+		vector<string> nodeHeaders;
+		for(map<NodeId, std::pair<ShardingNodeState, Node *> >::const_iterator nodeItr = nodes.begin(); nodeItr != nodes.end(); ++nodeItr){
+			stringstream ss;
+			ss << "ID-" << nodeItr->first << "%";
+			nodeHeaders.push_back(ss.str());
+		}
+		vector<string> nodeLables;
+		nodeLables.push_back("Node Information:");
+		srch2::util::TableFormatPrinter nodesTable("Nodes", 120, nodeHeaders, nodeLables );
+		nodesTable.printColumnHeaders();
+		nodesTable.startFilling();
+		for(map<NodeId, std::pair<ShardingNodeState, Node *> >::const_iterator nodeItr = nodes.begin(); nodeItr != nodes.end(); ++nodeItr){
+			stringstream ss;
+			switch (nodeItr->second.first) {
+				case ShardingNodeStateNotArrived:
+					ss << "STATE-NOT-ARRIVED" << "%";
+					break;
+				case ShardingNodeStateArrived:
+					ss << "STATE-ARRIVED" << "%";
+					break;
+				case ShardingNodeStateFailed:
+					ss << "STATE-FAILED" << "%";
+					break;
+			}
+
+			if(nodeItr->second.second != NULL){
+				ss << nodeItr->second.second->toString();
+			}
+			nodesTable.printNextCell(ss.str());
+		}
+	}
 }
 
 void Cluster_Writeview::getArrivedNodes(vector<NodeId> & arrivedNodes, bool returnThisNode) const{
