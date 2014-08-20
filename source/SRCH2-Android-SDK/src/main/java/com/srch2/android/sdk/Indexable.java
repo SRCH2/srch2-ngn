@@ -336,7 +336,7 @@ public abstract class Indexable {
      * <i>This method does not have to be overridden</i>. If it is not, the values of <code>success</code>,
      * <code>upserts</code>, and <code>failed</code> will be printed to logcat under the tag 'SRCH2' with
      * the message prefixed by the name of the index this <code>Indexable</code> represents.
-     * @param success the number of successfully updated records
+     * @param success the number of existing records updated successfully
      * @param upserts the number of records that were inserted since no existing record of the same primary key
      *                was found in the index to update
      * @param failed the number of failed updates

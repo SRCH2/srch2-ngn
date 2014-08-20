@@ -60,13 +60,13 @@ abstract class HttpTask implements Runnable {
         }
     }
 
-    static synchronized void executeTask(HttpTask taskToExecte) {
-        if (!isExecuting || taskToExecte == null) {
+    static synchronized void executeTask(HttpTask taskToExecute) {
+        if (!isExecuting || taskToExecute == null) {
             return;
         }
 
         int taskId = -1;
-        final Class originatingTaskClass = taskToExecte.getClass();
+        final Class originatingTaskClass = taskToExecute.getClass();
         if (originatingTaskClass == SearchTask.class || originatingTaskClass == CheckCoresLoadedTask.class) {
             taskId = TASK_ID_SEARCH;
         } else if (originatingTaskClass == GetRecordTask.class ||
@@ -80,19 +80,21 @@ abstract class HttpTask implements Runnable {
                                 originatingTaskClass == GetRecordResponse.class ||
                                     originatingTaskClass == IndexIsReadyResponse.class) {
             taskId = TASK_ID_CLIENT_CALLBACK;
+        } else {
+            throw new IllegalStateException("Meltdown imminent: taskToExecute does not match any assignable task executor");
         }
 
         if (taskId == TASK_ID_SEARCH) {
             if (searchTaskExecutor != null) {
-                searchTaskExecutor.execute(taskToExecte);
+                searchTaskExecutor.execute(taskToExecute);
             }
         } else if (taskId == TASK_ID_INSERT_UPDATE_DELETE_GETRECORD) {
             if (controlTaskExecutor != null) {
-                controlTaskExecutor.execute(taskToExecte);
+                controlTaskExecutor.execute(taskToExecute);
             }
         } else if (taskId == TASK_ID_CLIENT_CALLBACK) {
             if (clientCallbackTaskExecutor != null) {
-                clientCallbackTaskExecutor.execute(taskToExecte);
+                clientCallbackTaskExecutor.execute(taskToExecute);
             }
         }
     }
