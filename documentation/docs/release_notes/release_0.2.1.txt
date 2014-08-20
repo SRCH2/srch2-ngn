@@ -4,6 +4,7 @@
 *------------------------------------------------------------------
 
 + InfoResponse was absorbed into Indexable as getRecordCount()
++ InsertResponse, UpdateResponse, DeleteResponse, getRecordResponse were all absorbed into Indexable as callbacks (ie: mStateResponseListener.onInsertRequestComplete -> mIndexable.onInsertComplete)
 
 *------------------------------------------------------------------
 *  RELEASE NOTES Version Alpha 
@@ -11,3 +12,4 @@
 *------------------------------------------------------------------
 
 + Hello World! SRCH2 SDK is coming!
+

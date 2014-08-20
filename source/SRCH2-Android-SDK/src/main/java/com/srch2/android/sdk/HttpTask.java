@@ -82,20 +82,17 @@ abstract class HttpTask implements Runnable {
             taskId = TASK_ID_CLIENT_CALLBACK;
         }
 
-        switch (taskId) {
-            case TASK_ID_SEARCH:
-                if (searchTaskExecutor != null) {
-                    searchTaskExecutor.execute(taskToExecte);
-                }
-                break;
-            case TASK_ID_INSERT_UPDATE_DELETE_GETRECORD:
-                if (controlTaskExecutor != null) {
-                    controlTaskExecutor.execute(taskToExecte);
-                }
-                break;
-            case TASK_ID_CLIENT_CALLBACK:
-                if (clientCallbackTaskExecutor != null) {
-                    clientCallbackTaskExecutor.execute(taskToExecte);
+        if (taskId == TASK_ID_SEARCH) {
+            if (searchTaskExecutor != null) {
+                searchTaskExecutor.execute(taskToExecte);
+            }
+        } else if (taskId == TASK_ID_INSERT_UPDATE_DELETE_GETRECORD) {
+            if (controlTaskExecutor != null) {
+                controlTaskExecutor.execute(taskToExecte);
+            }
+        } else if (taskId == TASK_ID_CLIENT_CALLBACK) {
+            if (clientCallbackTaskExecutor != null) {
+                clientCallbackTaskExecutor.execute(taskToExecte);
                 }
         }
     }
