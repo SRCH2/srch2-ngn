@@ -93,7 +93,7 @@ abstract class HttpTask implements Runnable {
         } else if (taskId == TASK_ID_CLIENT_CALLBACK) {
             if (clientCallbackTaskExecutor != null) {
                 clientCallbackTaskExecutor.execute(taskToExecte);
-                }
+            }
         }
     }
 

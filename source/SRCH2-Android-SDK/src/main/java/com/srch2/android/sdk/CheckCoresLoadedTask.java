@@ -43,8 +43,6 @@ final class CheckCoresLoadedTask extends HttpTask {
                 break;
             }
 
-
-
             String indexName = indexNames.get(i);
 
             if (validIndexes.contains(indexName)) {
@@ -55,7 +53,7 @@ final class CheckCoresLoadedTask extends HttpTask {
 
             Cat.d(TAG, "run - core check loop @ iteration " + i + " targetingUrl " + targetUrl);
 
-            InternalInfoTask iit = new InternalInfoTask(targetUrl);
+            InternalInfoTask iit = new InternalInfoTask(targetUrl, PING_RECONNECTION_TIME_MS, true);
             InternalInfoResponse iir = iit.getInfo();
 
             if (iir.isValidInfoResponse) {

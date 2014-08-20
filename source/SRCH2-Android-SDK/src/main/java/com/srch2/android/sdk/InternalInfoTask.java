@@ -17,12 +17,22 @@ class InternalInfoTask {
 
     private URL targetUrl;
 
+    boolean ignoreIOException = false;
+
     InternalInfoTask(URL theTargetUrl) {
         targetUrl = theTargetUrl;
         connectionTimeOutInMilliseconds = DEFAULT_CONNECTION_TIMEOUT_MS;
     }
 
     InternalInfoTask(URL theTargetUrl, int theConnectionTimeOutInMilliseconds) {
+        targetUrl = theTargetUrl;
+        connectionTimeOutInMilliseconds = (theConnectionTimeOutInMilliseconds < 1) ? DEFAULT_CONNECTION_TIMEOUT_MS
+                : theConnectionTimeOutInMilliseconds;
+    }
+
+
+    InternalInfoTask(URL theTargetUrl, int theConnectionTimeOutInMilliseconds, boolean isCheckCoresLoadedTask) {
+        ignoreIOException = isCheckCoresLoadedTask;
         targetUrl = theTargetUrl;
         connectionTimeOutInMilliseconds = (theConnectionTimeOutInMilliseconds < 1) ? DEFAULT_CONNECTION_TIMEOUT_MS
                 : theConnectionTimeOutInMilliseconds;
@@ -44,7 +54,9 @@ class InternalInfoTask {
             responseCode = connection.getResponseCode();
             response = HttpTask.handleStreams(connection, TAG);
         } catch (IOException networkError) {
-            response = HttpTask.handleIOExceptionMessagePassing(networkError, response, TAG);
+            if (!ignoreIOException) {
+                response = HttpTask.handleIOExceptionMessagePassing(networkError, response, TAG);
+            }
         } finally {
             if (connection != null) {
                 connection.disconnect();
