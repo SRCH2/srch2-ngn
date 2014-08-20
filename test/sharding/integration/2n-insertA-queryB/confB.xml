@@ -23,73 +23,22 @@
             In this config file it should be as "data/sample-data.json"
     -->
     <srch2Home>/home/jamshid/workspace-srch2/srch2-ngn/test/sharding/integration</srch2Home>
-    <cluster-name>SRCH2 Cluster</cluster-name>
+    <cluster-name>SRCH2_Cluster</cluster-name>
+
 
     <discovery>
         <ping-interval>2</ping-interval>
         <ping-timeout>8</ping-timeout>
         <retry-count>10</retry-count>
-    </discovery> 
-    
-    
-
+    </discovery>
     <transport>
         <port>3096</port>
-        <ipaddress>128.195.53.204</ipaddress>
+        <ipaddress>127.0.0.1</ipaddress>
     </transport>
-    
-    <WellKnownHosts>128.195.53.204:54000</WellKnownHosts>
 
-    <ping>
-        <ping-interval>2</ping-interval>
-        <ping-timeout>6</ping-timeout>
-        <retry-count>10</retry-count>
-    </ping>
-
-
-    <node>
-        <this-is-me> false </this-is-me>
-        <number-of-shards>2</number-of-shards>
-        <listeningHostname> 127.0.0.1 </listeningHostname>
-        <node-name> queen </node-name>
-        <internalCommunicationPort> 3095 </internalCommunicationPort>
-    </node>
-
-    <node>
-        <listeningHostname> 127.0.0.1 </listeningHostname>
-        <internalCommunicationPort> 3096 </internalCommunicationPort>
-        <this-is-me> true </this-is-me>
-        <number-of-shards>2</number-of-shards>
-        <node-name> frozen </node-name>
-        <!--<node-master> true </node-master>-->
-        <node-data> true </node-data>
-        <srch2Home> ./ </srch2Home>
-        <dataDir> ./data/2n-insertA-queryB/frozen </dataDir>
-        <searchPort>6091</searchPort>
-        <savePort>6092</savePort>
-        <exportPort>6093</exportPort>
-        <resetLoggerPort>6094</resetLoggerPort>
-        <docsPort>6095</docsPort>
-        <updatePort>6096</updatePort>
-        <suggestPort>6097</suggestPort>
-        <infoPort>6098</infoPort>
-    </node>
-
-    <node>
-        <listeningHostname> 127.0.0.1 </listeningHostname>
-        <internalCommunicationPort> 3097 </internalCommunicationPort>
-        <this-is-me> false </this-is-me>
-        <number-of-shards>2</number-of-shards>        
-        <node-name> rio </node-name>
-    </node>
-
-    <node>
-        <listeningHostname> 127.0.0.1 </listeningHostname>
-        <internalCommunicationPort> 3098 </internalCommunicationPort>
-        <this-is-me> false </this-is-me>
-        <number-of-shards>2</number-of-shards>
-        <node-name> lion </node-name>
-    </node>    
+    <WellKnownHosts>127.0.0.1:54000</WellKnownHosts>
+    <listeningHostname>127.0.0.1</listeningHostname>
+    <listeningPort>7050</listeningPort>
 
     <!--
         License Key File
@@ -106,14 +55,13 @@
          
         Hostname and port number of the server. Make sure the port is open.
     -->
-    <listeningHostname>127.0.0.1</listeningHostname>
-    <listeningPort>4091</listeningPort>
 
         <cores defaultCoreName="core1">
         <core name="core1">
+        <multiple-data-file>json1.json,json2.json</multiple-data-file>
         <coreId>1</coreId>
         <core-number_of_shards>4</core-number_of_shards>
-        <core-number_of_replicas>1</core-number_of_replicas>
+        <core-number_of_replicas>2</core-number_of_replicas>
 
     <!--
         Index Directoy Path
