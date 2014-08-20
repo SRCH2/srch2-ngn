@@ -160,7 +160,7 @@ public:
 	void getLockedPartitions(vector<ClusterPID> & lockedPartitions);
 
 
-	void print() const;
+	void print() ;
 
 private:
 
@@ -172,8 +172,9 @@ private:
 	LockHoldersRepository * lockHolders;
 	PendingLockRequestBuffer pendingLockRequestBuffer;
 	vector<PendingLockRequest > pendingRVReleaseRequests;
+    boost::mutex readviewReleaseMutex;
 
-	void printRVReleasePendingRequests() const;
+	void printRVReleasePendingRequests();
 
 	void executeBatch(const vector<SingleResourceLockRequest *> & requestBatch, bool & needCommit);
 	bool canGrantRequest(const ResourceLockRequest * lockRequest);

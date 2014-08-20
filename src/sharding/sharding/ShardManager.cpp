@@ -535,7 +535,6 @@ void ShardManager::resolve(LockingNotification::ACK * lockAckNotif){
 }
 
 void ShardManager::resolveReadviewRelease(unsigned metadataVersion){
-	boost::unique_lock<boost::mutex> bouncedNotificationsLock(shardManagerGlobalMutex);
 	LockingNotification::RV_RELEASED * rvReleased = new LockingNotification::RV_RELEASED(metadataVersion);
 	this->getLockManager()->resolve(rvReleased);
 }

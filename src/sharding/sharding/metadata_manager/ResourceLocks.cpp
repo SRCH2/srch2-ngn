@@ -7,6 +7,8 @@
 #include "Cluster_Writeview.h"
 #include "ResourceMetadataManager.h"
 #include "sharding/util/FramedPrinter.h"
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/locks.hpp>
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -611,7 +613,8 @@ void ResourceLockManager::resolve(LockingNotification::RV_RELEASED * inputNotifi
 		ASSERT(false);
 		return;
 	}
-	NodeId currentNodeId = ShardManager::getCurrentNodeId();
+	boost::unique_lock<boost::mutex> bouncedNotificationsLock(readviewReleaseMutex);
+	NodeId currentNodeId = ShardManager::getCurrentNodeId(); // TODO : if current node id changes, then this line is NOT thread safe
 	vector<PendingLockRequest > newPendingNotifications;
 	for(vector<PendingLockRequest >::iterator pendingNotifItr = pendingRVReleaseRequests.begin();
 			pendingNotifItr != pendingRVReleaseRequests.end(); ++pendingNotifItr){
@@ -636,6 +639,7 @@ void ResourceLockManager::resolve(NodeFailureNotification * nodeFailureNotif){
 	this->pendingLockRequestBuffer.applyNodeFailure(nodeFailureNotif->getFailedNodeID());
 
 	//3. move on RV_RELEASE pending requests and remove them if not valid anynmore
+	readviewReleaseMutex.lock();
 	vector<PendingLockRequest > rvReleaseFixed;
 	for(unsigned i = 0 ; i < pendingRVReleaseRequests.size() ; ++i){
 		if(! pendingRVReleaseRequests.at(i).applyNodeFailure(nodeFailureNotif->getFailedNodeID())){
@@ -645,7 +649,7 @@ void ResourceLockManager::resolve(NodeFailureNotification * nodeFailureNotif){
 		}
 	}
 	pendingRVReleaseRequests = rvReleaseFixed;
-
+	readviewReleaseMutex.unlock();
 	// 4. commit the metadata
 	ShardManager::getShardManager()->getMetadataManager()->commitClusterMetadata();
 
@@ -691,7 +695,9 @@ bool ResourceLockManager::resolveBatch(const NodeOperationId & requesterAddress,
 		PendingLockRequest rvRelease(requesterAddress, ackType, priority, lockRequest);
 		rvRelease.metadataVersionId = ShardManager::getWriteview()->versionId;
 		ShardManager::getShardManager()->getMetadataManager()->commitClusterMetadata();
+		readviewReleaseMutex.lock();
 		pendingRVReleaseRequests.push_back(rvRelease);
+		readviewReleaseMutex.unlock();
 	}else{
 		sendAck(PendingLockRequest(requesterAddress, ackType, priority, lockRequest), true);
 		delete lockRequest;
@@ -735,7 +741,7 @@ void ResourceLockManager::getLockedPartitions(vector<ClusterPID> & lockedPartiti
 }
 
 
-void ResourceLockManager::print() const{
+void ResourceLockManager::print() {
 	lockHolders->print();
 
 	pendingLockRequestBuffer.print();
@@ -743,8 +749,9 @@ void ResourceLockManager::print() const{
 	printRVReleasePendingRequests();
 }
 
-void ResourceLockManager::printRVReleasePendingRequests() const{
+void ResourceLockManager::printRVReleasePendingRequests(){
 
+	boost::unique_lock<boost::mutex> rvReleaseLock(readviewReleaseMutex);
 	if(pendingRVReleaseRequests.size() == 0){
 		cout << "Pending RV release lock requests : empty." << endl;
 		return;
@@ -826,8 +833,9 @@ void ResourceLockManager::tryPendingRequest(){
 	if(needCommit){
 		pendingRequest.metadataVersionId = ShardManager::getWriteview()->versionId;
 		ShardManager::getShardManager()->getMetadataManager()->commitClusterMetadata();
-
+		readviewReleaseMutex.lock();
 		pendingRVReleaseRequests.push_back(pendingRequest);
+		readviewReleaseMutex.unlock();
 		tryPendingRequest();
 		return;
 	}
