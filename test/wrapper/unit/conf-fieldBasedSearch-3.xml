@@ -7,11 +7,7 @@
 
     Please email contact@srch2.com if you have questions.
 
-    This configuration file defines 4 separate cores (data sources) in order to allow testing of
-    basic multi-core functionality.  Core1 uses the movie demo database.  Core2 loads a small sample
-    of the StackOverflow posts database.  Core3 is a fictitious business directoy (or most common
-    test database).  Core4 also loads the movie demo database, however in addition to some
-    configuration setting differences, it uses a different stop words file.
+    This configuration file checks the value of field based search parameter when enablePositionIndex is set to true and enableCharOffsetIndex is set to false.
 -->
  
 <config>
@@ -39,6 +35,7 @@
                 <supportSwapInEditDistance>true</supportSwapInEditDistance>
                 <defaultQueryTermBoost>1</defaultQueryTermBoost>
                 <enablePositionIndex>1</enablePositionIndex> 
+                <enableCharOffsetIndex>0</enableCharOffsetIndex>
             </indexConfig>
 	    <query>
 	        <rankingAlgorithm>
@@ -49,7 +46,7 @@
 		<prefixMatchPenalty>0.95</prefixMatchPenalty>
 		<cacheSize>65536000</cacheSize>
 		<rows>10</rows>
-		<fieldBasedSearch>1</fieldBasedSearch>
+		<fieldBasedSearch>0</fieldBasedSearch>
 		<searcherType>0</searcherType>
 
 		<!-- 0: exact match; 1: fuzzy match.-->
@@ -64,11 +61,11 @@
 	    </query>
             <schema>
                 <fields>
-                    <field name="title" type="text" indexed="false" />
-                    <field name="director" type="text" indexed="false" searchable="false" refining="false"/>
-                    <field name="genre" type="text" indexed="true"
+                    <field name="title" type="text" indexed="false" searchable="false" />
+                    <field name="refining1" type="text" indexed="true"/>
+                    <field name="refining2" type="text" indexed="true"
                            default="HORROR" required="false"/>
-                    <field name="year" type="integer" indexed="false" refining="true"
+                    <field name="refining3" type="integer" indexed="false" refining="true"
                            default="2000" required="false"/>
                     <field name="id" type="text" refining="true" indexed="false"/>
                 </fields>
@@ -77,8 +74,8 @@
               
                 <facetEnabled>true</facetEnabled>
                 <facetFields>
-                    <facetField name="genre" facetType="categorical"/>
-                    <facetField name="year"  facetType="range" facetStart="1990" facetEnd="2050"
+                    <facetField name="refining2" facetType="categorical"/>
+                    <facetField name="refining3"  facetType="range" facetStart="1990" facetEnd="2050"
                                 facetGap="10"/>
                 </facetFields>
               

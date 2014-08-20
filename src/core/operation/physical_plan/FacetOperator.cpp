@@ -113,8 +113,10 @@ std::pair<unsigned , std::string> CategoricalFacetHelper::generateIDAndName(cons
 
 void FacetHelper::generateIDAndNameForMultiValued(const TypedValue & attributeValue ,
 		std::vector< std::pair<unsigned , std::string> > & resultIdsAndNames){
-	ASSERT(attributeValue.getType() == ATTRIBUTE_TYPE_MULTI_UNSIGNED ||
+	ASSERT(attributeValue.getType() == ATTRIBUTE_TYPE_MULTI_INT ||
+	        attributeValue.getType() == ATTRIBUTE_TYPE_MULTI_LONG ||
 			attributeValue.getType() == ATTRIBUTE_TYPE_MULTI_FLOAT ||
+			attributeValue.getType() == ATTRIBUTE_TYPE_MULTI_DOUBLE ||
 			attributeValue.getType() == ATTRIBUTE_TYPE_MULTI_TEXT ||
 			attributeValue.getType() == ATTRIBUTE_TYPE_MULTI_TIME);
 	std::vector<TypedValue> singleValues;
@@ -414,8 +416,10 @@ void FacetOperator::preFilter(QueryEvaluatorInternal *queryEvaluatorInternal){
 	}
 }
 void FacetOperator::doProcessOneResult(const TypedValue & attributeValue, const unsigned facetFieldIndex){
-	if(attributeValue.getType() == ATTRIBUTE_TYPE_MULTI_UNSIGNED ||
+	if(attributeValue.getType() == ATTRIBUTE_TYPE_MULTI_INT ||
+	        attributeValue.getType() == ATTRIBUTE_TYPE_MULTI_LONG ||
 			attributeValue.getType() == ATTRIBUTE_TYPE_MULTI_FLOAT ||
+			attributeValue.getType() == ATTRIBUTE_TYPE_MULTI_DOUBLE ||
 			attributeValue.getType() == ATTRIBUTE_TYPE_MULTI_TEXT ||
 			attributeValue.getType() == ATTRIBUTE_TYPE_MULTI_TIME){
 		std::vector<std::pair<unsigned , std::string> > idsAndNames;
