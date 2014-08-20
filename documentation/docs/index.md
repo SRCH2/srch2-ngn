@@ -1,76 +1,103 @@
 
 ###Overview
 
-The SRCH2 Android SDK is a tool for programmers to easily develop an Android application that supports powerful search on mobile devices.  The SDK is utilizing a search engine written in C++ ground up
-to deliver superior features with high performance.  The following figure illustrates how this SDK works.
+The SRCH2 Android SDK is a tool for programmers to easily develop an
+Android application that supports powerful search on mobile devices.
+The SDK is utilizing a search engine written in C++ ground up
+to deliver superior features with high performance.  The following
+figure illustrates how this SDK works.
 
 <span ><center><img style="width:45%" src="images/Android-SDK-Overview.jpg" /></center></span>
 
 The SDK supports the following search features:
 
-- Full-text search
-- Instant search (prefix predicates)
-- Error correction (fuzzy search)
-- Phrase search (e.g., "new york")
-- Rich data types (e.g., text, int, float, and date)
-- Attribute-based search
-- Sorting (e.g., "price < 20")
-- Multiple languages
-- Multiple data sources
-- Token-based authorization
+- Full-text search;
+- Instant search (prefix predicates);
+- Error correction (fuzzy search);
+- Phrase search (e.g., "new york");
+- Rich data types (e.g., text, int, float, and date);
+- Attribute-based search (e.g., "cameron" in a "director" attribute);
+- Sorting (e.g., "price < 20");
+- Multiple languages;
+- Multiple data sources;
+- Token-based authorization.
 
 <!-- ![Welcome][Welcome] -->
 
 This tutorial will show you how to:
 
-1. Incorporate the SDK into your Android Studio project;
+1. Incorporate the SDK into Android Studio projects;
 2. Create indexes and insert records;
-3. Enable powerful search in your app and display the results to the UI.
- 
-This tutorial assumes you are familiar with [Android Studio](https://developer.android.com/sdk/installing/studio.html).  You should also have an Android device (not an emulator) to run these instructions.  The Android OS version should be at least 4.0 (called "Ice Cream Sandwich").  This application is set to compile with Android SDK version 20.  In case you have not updated your Android SDK build and platforms tools to include this version, you should do so first.
+3. Enable powerful search in your app and display the results on the UI.
+
+This tutorial assumes you are familiar with [Android
+Studio](https://developer.android.com/sdk/installing/studio.html).
+You should also have an Android device (not an emulator) to run these
+instructions.  The Android OS version should be at least 4.0 (called
+"Ice Cream Sandwich").  This application is set to compile with
+Android SDK version 20.  In case you have not updated your Android SDK
+build and platforms tools to include this version, you should do so
+first.
 
 ###Quick Start
 
-(1) Clone the tutorial application project from our [Github repository](https://github.com/SRCH2/hello-srch2-android-sdk):
+(1) Clone the tutorial application project from our [Github
+repository](https://github.com/SRCH2/hello-srch2-android-sdk):
 
 ```
  shell> git clone https://github.com/SRCH2/hello-srch2-android-sdk.git
 ```
 
- (2) Open Android Studio. From the 'File' menu option (or the 'Quick Start' menu), select 'Import Project', and choose the root folder of the cloned project:
+(2) Open Android Studio. From the 'File' menu option (or the 'Quick
+Start' menu), select 'Import Project', and choose the root folder of
+the cloned project: 
 
 <center>![Opening the cloned Hello SRCH2 Android SDK application project][tutorial-010]</center>
 
- (3) Connect an Android device to your computer. From the 'Run' menu option, select 'Run app'. 
+(3) Connect an Android device to your computer. From the 'Run' menu
+option, select 'Run app'.
 
- (4) Once the app has launched, enter characters in the text input field.  You should instantly see search results.  The app is doing instant search on a few dozen movie records.  The following is a screentshot after this step:
+(4) Once the app has launched, enter characters in the text input
+field.  You should instantly see search results.  The app is doing
+instant search on a few dozen movie records.  The following is a
+screenshot after this step:
 
 <center>![The SRCH2 Android SDK in action!][tutorial-011]</center>
 
-<h2> Use a screenshot with more keywords such as "amerc" to show the instant search results.  Also reduce the image size.</h2>
+<h2> Use a screenshot with more keywords such as "beaty ame" to show the
+instant search results.  Also reduce the image size.</h2> 
 
-Congratulations! You're now using the SRCH2 Android SDK to power searches in an Android project.
+Congratulations! You're now using the SRCH2 Android SDK to power
+searches in an Android project.
 
-The rest of this tutorial explains how this SDK works and how to use it for your projects.
+The rest of this tutorial explains how this SDK works and how to use
+it for your projects.
 
 ###Installing SDK
  
-Now we show how to install the SRCH2 Android SDK using the built-in [Gradle build system](http://www.gradle.org/). Suppose you have an existing Android project in Android Studio and you want to incorporate the SDK.
-You need to add the SRCH2 server Maven repository to your project as follows:
+We first show how to install the SRCH2 Android SDK using the built-in
+[Gradle build system](http://www.gradle.org/). Suppose you have an
+existing Android project in Android Studio and you want to incorporate
+the SDK. You need to add the SRCH2 server Maven repository to your
+project as follows: 
 
-(1) On the left panel of Android Studio, click the 'build.gradle' file of the project. Add the following line 
+(1) We want to configure the Gradle build script to include the SRCH2
+ Maven server repository.  To do so, on the left panel of Android
+ Studio, click the 'build.gradle' file of the project. Add the
+ following line to the `buildscript.repositories` node and the
+ `allprojects.buildscript` node,
 
 ```
 maven { url 'http://srch2.com/repo/maven' }
 ```
-
-to the `buildscript.repositories` node and the `allprojects.buildscript` node, as shown in the following figure:
+as shown in the following figure:
 
 <center>![Including the SRCH2 server Maven repository in the top-level build.gradle file][tutorial-012] </center>
 
-(2) Now that the Gradle build script includes the SRCH2 Maven server repository.  Next we need to 
-add the SRCH2 Android SDK into the dependencies of your project.  To do so, on the left 
-panel, click 'app', then click 'build.gradle'.  On the right panel, add the following line into the `dependencies` node:
+(2) Next we need to add the SRCH2 Android SDK into the dependencies of
+your project.  To do so, on the left  panel, click 'app', then click
+'build.gradle'.  On the right panel, add the following line into the
+`dependencies` node:
 
 ```
 `compile group: 'com.srch2', name: 'srch2-android-sdk', version: '0.2.0',  ext:'aar'`
@@ -80,33 +107,43 @@ The following is a screenshot:
 
 <center>![Including the SRCH2-Android-SDK.aar file as a dependency in the app module's build.gradle file][tutorial-013]</center>
 
-Notice that this tutorial assumes the SDK version is 0.2.0.  Please make sure to get the latest SDK version
-from the [release page](releases.md) and update the version number accordingly.
+Notice that this tutorial assumes the SDK version is 0.2.0, which
+could be different from the latest version.  Please make sure to get
+the latest SDK version from the [release page](releases.md) and update
+the version number accordingly.
 
-(3) At the top of the editor window, you should be notified that Gradle needs to be synchronized. Click 'Sync Now' to refresh the Gradle build system to include these changes, as shown in the following figure:
+(3) At the top of the editor window, you should be notified that
+Gradle needs to be synchronized. Click 'Sync Now' to refresh the
+Gradle build system to include these changes, as shown in the
+following figure:
 
 <center>![Synchronizing the Gradle build system to include the new dependency][tutorial-014]</center>
 
-To verify if the SDK has been incorporated into your project, open the `SearchActivity` class file and 
-type in a `SRCH2Engine` method called `isUserAnAnteaterInATree()` (as a dummy function).  If the editor can
-show this function automatically, it means you've successfully installed the SDK, as shown in the
-following figure:
+To verify if the SDK has been incorporated into your project, open the
+`SearchActivity` class file and  type in a `SRCH2Engine` method called
+`isUserAnAnteaterInATree()` (as a dummy function).  If the editor can
+show this function automatically, it means you've successfully
+installed the SDK, as shown in the following figure: 
+
 <center>![Confirming the SRCH2 Android SDK is integrated into the application][tutorial-015]</center>
 
-Next we will go through several steps to create an index on a data set to support search.
+Next we will go through several steps to create an index on a data set
+to support powerful search.
 
 ###Creating Index
 
-The first step is creating an index. To create an index, we need to create a subclass of 
-`com.srch2.android.http.service.Indexable`.  For example, the following declaration defines
-an index called `MovieIndex` representing a movie data set:
+An index is created as a subclass of
+`com.srch2.android.http.service.Indexable`.  For example, the
+following declaration defines an index called `MovieIndex`
+for the movie data set: 
 
 ```
 public class MovieIndex extends Indexable {
 }
 ```
 
-Each index needs to implement two abstract methods as follows:
+Each index needs to implement two abstract methods called
+`getIndexName()` and `getSchema()`, shown in the following example:
 
 ```
 public class MovieIndex extends Indexable {
@@ -135,40 +172,41 @@ public class MovieIndex extends Indexable {
 }
 ```
 
-The `getIndexName()` function returns the name of this index.  The
+The `getIndexName()` function returns the name of the index.  The
 `getSchema()` function returns a `Schema` object, which includes a
 list of fields with their types. The values returned for these two
-methods should **never** change. 
+methods should *never* change. 
 
 Whenever a schema is defined in the `getSchema()` function, it must
-**always** contain a primary key field. The value of this field should
+contain a primary key field. The value of this field should
 be unique for each record in the index. In addition to the primary
 key, there are three other fields related to movies: two fields that are searchable and one
 that is refining. A "searchable" field has textual data that will be
-searched in a search query.  A "refining" field is for storing data values that can be used
-for query filtering and post-processing.  For instance, we can use the
+searched in a query.  A "refining" field is for storing data values that can be used
+for filtering and post-processing.  For instance, we can use the
 "year" refining attribute to specify a predicate "year > 2005" on
-  search results, or use it to sort the results. The values of refining and searchable
-fields can be retrieved from the search results returned by
-the search server. `Field` objects can be obtained by the
+search results, or use it to sort the results. The values of refining and searchable
+fields can be retrieved from the results returned by
+the server. `Field` objects can be obtained by the
 static factory method of the `Field` class.  
 
 For a searchable field, an additional parameter can be passed as
 the field's boost value, which is a relevance number that can be used in the ranking function
-to compute the relevance of each answer.  Its default value is one.
-Here, the boost value of the field `title` is set to be 3,  while
+to compute the relevance of each answer.  Its default value is 1.
+In our running example, the boost value of the field `title` is set to be 3,  while
 the value for the field `genre` is the default value 1.  Check [this
   page](http://srch2.com/documentation/ranking) for more
   information about how the engine ranks results.
 
 A `Schema` instance is obtained by the static factory method of the
 `Schema` class. The order of arguments is important when creating a
-default `Schema` object: the first parameter is **always** the primary
-key and any subsequent parameters are the rest of the fields you
-define, in no particular order.
+default `Schema` object: the first parameter is *always* the primary
+key, and the subsequent parameters are the rest of the fields, in no
+particular order. 
 
-Next let us show how to form records to be inserted in the movie
-index. The following method generates a `JSONArray` instance consistent with the schema: 
+Next we show how to form records to be inserted in the movie
+index. The following method generates a `JSONArray` instance
+consistent with the schema:
 
 ```
     public static JSONArray getAFewRecordsToInsert() {
@@ -207,45 +245,52 @@ index. The following method generates a `JSONArray` instance consistent with the
 The SDK accepts a `JSONObject` or a `JSONArray` of `JSONObject`s when
 inserting or updating records. Insertions and updates are invoked by calling
 `insert()` and `update()` of the `Indexable` object, respectively.
-For example we can call the following method to insert those records to the index:
+For example, we can call the following method to insert those records
+to the index:
 ```
     MovieIndex movieIndex = new MovieIndex();
     movieIndex.insert(getAFewRecordsToInsert());
 ```
 
+
 ###Sending Queries
 
-To search on the Indexable object, we can call the `Indexable.search(String searchInput)` to 
-search on a specific index. For example, the following function call searches for movie
-records that match the keywords "american beauty":
+We can call the `Indexable.search(String searchInput)` to search on a
+specific index. For example, the following function call searches for
+movie records that match the keywords "beaty ame":
 ```
-    movieIndex.search("american beauty");
+    movieIndex.search("beaty ame");
 ```
 
-The SDK also provides a function `SRCH2Engine.searchAllIndexes(String searchInput)`
-that can return resutls from all indexes registered using the `SRCH2Engine.initialize()` 
-function. 
+The SDK also provides a function `SRCH2Engine.searchAllIndexes()`
+that can return results from all indexes registered using the
+`SRCH2Engine.initialize()` function. 
+<h>Move materials from the Advanced Topic page to describe how the
+engine interprets this query string.</h>
 
 ###Getting Results
 
-The SRCH2 search server passes information back to the `SRCH2Engine` class through two
-asynchronous callbacks: `com.srch2.android.http.service.SearchResultsListener`
-and `com.srch2.android.http.service.StateResponseListener`. The first one returns
-search results, and the second returns state
+The SRCH2 server passes information back to the `SRCH2Engine`
+class through two asynchronous callbacks:
+`com.srch2.android.http.service.SearchResultsListener` and
+`com.srch2.android.http.service.StateResponseListener`. The first one
+returns search results, and the second one returns state
 information about the index and engine. 
 
-These two callbacks will be called by background threads.  So in order to update
-the user interface of your application, the search results must be passed to the
-UI thread.  Here we assume you are familiar with how a
+These two callbacks will be called by background threads.  So in order
+to update the user interface of your application, the search results
+must be passed to the UI thread.  Here we assume you are familiar with
+how a
 [`android.widget.BaseAdapter`](http://developer.android.com/reference/android/widget/BaseAdapter.html)
 works to populate a
-[`android.widget.ListView`](http://developer.android.com/reference/android/widget/ListView.html).
+[`android.widget.ListView`](http://developer.android.com/reference/android/widget/ListView.html). 
 Familiarity with how to communicate with the UI thread via a
 [`android.os.Handler`](http://developer.android.com/reference/android/os/Handler.html)
 is also helpful, but you can read more about it on the 
-[Android developer website](https://developer.android.com/training/multiple-threads/communicate-ui.html). 
+[Android developer
+web site](https://developer.android.com/training/multiple-threads/communicate-ui.html).  
 
-In this tutorial we will use subclass of the `android.os.Handler`
+In this tutorial we will use a subclass of the `android.os.Handler`
 class to implement the `SearchResultsListener` interface.  However, other means
 of propagating the search results to the UI thread can also be implemented, e.g., 
 by using `runOnUiThread()`.
@@ -266,7 +311,8 @@ public class SearchResultsAdapter extends BaseAdapter {
 }
 ```
 
-In this nested class, two constant `int` fields that will be used as the message keys for this handler:
+In this nested class, two constant `int` fields are used as the
+message keys for this handler: 
 
 ```
 public class SearchResultsAdapter extends BaseAdapter {
@@ -311,9 +357,8 @@ public class SearchResultsAdapter extends BaseAdapter {
 
 Now this handler subclass is ready to pass results from the `SRCH2Engine`
 callback to the adapter populating the list view. This handler implements
-`SearchResultsListener` which necessarily overrides its interface method
-`public void onNewSearchResults(int httpResponseCode,` `String
-jsonResultsLiteral, HashMap<String, ArrayList<JSONObject>>)` as follows:
+`SearchResultsListener`, which necessarily overrides its interface method
+`onNewSearchResults()` as follows:
 
 ```
 public class SearchResultsAdapter extends BaseAdapter {
@@ -366,14 +411,14 @@ public class SearchResultsAdapter extends BaseAdapter {
 ```
 
 Any time one of the search methods of the API is called (such as
-`MovieIndex.search(String searchInput)`), `onNewSearchResults(...)` will be
-triggered when the search results are returned from the SRCH2 search server.
+`search()`, `onNewSearchResults(...)` will be
+triggered when the search results are returned from the SRCH2 server.
 Its parameters are:
 
-1. `int httpResponseCode`: it indicates how the RESTful action was handled;
-2. `String jsonResultsLiteral`: it is the raw JSON literal as
+1. `httpResponseCode`: it indicates how the RESTful action was handled;
+2. `jsonResultsLiteral`: it is the raw JSON literal as
 returned by the search server containing the search result;
-3. `HashMap<String, ArrayList<JSONObject>> resultRecordMap`: it is a
+3. `resultRecordMap`: it is a
 mapping of index names to their corresponding results parsed from the
 `jsonResultsLiteral` literal. 
 
@@ -381,13 +426,12 @@ The `resultRecordMap` will never be null: if there were no results for any of
 the indexes you've defined, the corresponding values for
 `ArrayList<JSONObject>` will be of size zero. 
 
-The callback function checks the status of ther response, consumes
+The callback function checks the status of the response, consumes
 the results in the map, and adds the results to an object called `newResults`.
-Finally, by overriding the handler's `public void handleMessage(Message msg)`
+Finally, by overriding the handler's `handleMessage()`
 superclass method, the results can be pushed to the UI thread.  This
 handler is created when the `SearchResultsAdapter` is initialized in the
-`protected void onCreate(Bundle savedInstanceState)` method of
-`SearchActivity`. Overriding this method to do this looks like:
+`onCreate()` method of `SearchActivity`. Overriding this method to do this looks like:
 
 ```
 	private static class SearchResultsUiHandler extends Handler implements SearchResultsListener {
@@ -428,13 +472,13 @@ handler is created when the `SearchResultsAdapter` is initialized in the
 
 ###Check Status
 
-The other asynchronous callback that can be implemented is
+The other asynchronous callback is
 `StateResponseListener`. For this tutorial, a new nested class is
 defined inside of `SearchActivity` declared as `private static class
 SRCH2ControlListener implements StateResponseListener`. By overriding
-its methods, the status results of operations performed on indexes,
+its methods, we can access the status results of operations performed on indexes,
 such as when specific records are requested by their primary key or
-when the SRCH2Engine is ready to start searching, can be accessed. 
+when the SRCH2Engine is ready to start searching.
 
 ```
 public class SearchActivity extends Activity implements
@@ -491,22 +535,23 @@ public class SearchActivity extends Activity implements
 These `onInsertRequestComplete`, `onUpdateRequestComplete`, and
 `onDeleteRequestComplete` methods will be triggered whenever its corresponding
 action is complete. For these callbacks, the first parameter indicates which
-`Indexable` is called, and this second parameter is a `response` which is a
-subclass of `RestfulResponse`.  These three `Restful Response` subclasses
+`Indexable` is called, and this second parameter is a `response`, which is a
+subclass of `RestfulResponse`.  These three `Response` subclasses
 contain the raw RESTful JSON response, as well as the success and failure
-counts of the insert, update or delete task performed.  For example, after the
+counts of the insert, update, or delete tasks performed.  For example, after the
 `MovieIndex`'s method `insert(getAFewRecordsToInsert())` is called and the
-SRCH2 search server finishes inserting the three records, the `SRCH2Engine`
-will parse the restful JSON response and trigger this callback which will
+SRCH2 server finishes inserting the three records, the `SRCH2Engine`
+will parse the restful JSON response and trigger this callback, which will
 contain a `successCount` of three. 
 
 The `onGetRecordByIDComplete` callback will pass the `GetRecordResponse
-response` which will contain the record requested by the `Indexable.getRecordbyID()` function.
+response`, which contains the record requested by the
+`Indexable.getRecordbyID()` function.
 
-Another important callback function is `onSRCH2ServiceReady(...)`
-which is triggered as soon as the SRCH2 search server is up and running. The
+Another important callback function is `onSRCH2ServiceReady()`,
+which is triggered as soon as the SRCH2 server is up and running. The
 user can use this callback to check the status of the current loaded index,
-such as record number inside the index.  For instance, the following example
+such as the record number inside the index.  For instance, the following example
 shows that after the server is ready, we can insert records into the index.
 
 ```
@@ -541,25 +586,21 @@ public class SearchActivity extends Activity implements
   
 ###Completing Lifecycle
 
-After we defined the `Indexable`, `SearchResultsListener`,
-and `StateResponseListener` objects, we are now ready to link all the pieces together to
-complete the `SearchActivity` class.
-
 The `SRCH2Engine` lifecycle methods can be called in the following sequence:
 
-1. In *Activity.onCreate(...)*, call `SRCH2Engine.initialize(...)` by
+1. In *Activity.onCreate()*, call `SRCH2Engine.initialize()` by
 passing all the `Indexable` objects to initialize the server.
 2. Register the `SearchResultsListener` and `StateResponseListener`
-objects by calling `SRCH2Engine.setSearchResultsListener()` and
-`SRCH2Engine.setStateResponseListener()`;
-3. Start the server by calling `SRCH2Engine.start()`;
-4. Stop the server by calling `SRCH2Engine.stop(Context context)`.
+objects by calling `setSearchResultsListener()` and
+`setStateResponseListener()`;
+3. Start the server by calling `start()`;
+4. Stop the server by calling `stop(Context context)`.
 
 For an activity requiring search, it is recommended to call
 `SRCH2Engine.start()` in `Activity.onResume()`, and call `SRCH2Engine.stop()` in
 `Activity.onPause()`.  It is *imperative* that for every call to
-`start(...)`, the complementary call to `stop(...)` is made in order to let the
-SRCH2 search server stop so that it does not take up the device's resources.
+`start()`, the complementary call to `stop()` is made in order to let the
+SRCH2 server stop, so that it does not take up the device's resources.
 
 The following code shows how to setup the engine in the corresponding methods in the 
 lifecycle of the Android application:
@@ -611,16 +652,16 @@ public class SearchActivity extends Activity implements
 }
 ```
 
-The SearchActivity implements the nested interface
+The `SearchActivity` implements the nested interface
 `InstantSearchEditText.SearchInputEnteredObserver` of the class
 `InstantSearchEditText`, which is a subclass of `EditText` to capture
 character-by-character input.  Feel free to reuse this
 [code](https://github.com/SRCH2/hello-srch2-android-sdk/tree/master/Hello-SRCH2-Android-SDK/app/src/main/java/com/srch2/android/demo/helloworld)
 in your own projects.
 
-Whenever the SRCH2 search server does a search, the results come back fast. It
+Whenever the SRCH2 server does a search, the results come back instantly. It
 is recommended that, while developing with the SDK, you employ
-all of the optimizations for displaying data in a `ListView` as quickly as
+optimizations for displaying data in a `ListView` as quickly as
 possible, such as the ViewHolder pattern, lazy loading of bitmaps if you
 incorporate icons, et cetera. 
 
@@ -628,7 +669,7 @@ incorporate icons, et cetera.
 
 This tutorial shows how to use the SRCH2 Android SDK to do powerful search on 
 an application. Play around with the project, try updating a record,
-deleting a record, adding more records with searchable data that is similar in
+deleting a record, adding a record with searchable data that is similar in
 its sequence of letters to appreciate the power of SRCH2's search
 capability, and this is only the beginning! If you read on in [Advanced
 Topics](advanced-topics.md), you'll learn how to form powerful queries (such as
