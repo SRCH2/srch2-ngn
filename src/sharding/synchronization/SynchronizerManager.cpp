@@ -234,7 +234,9 @@ void SyncManager::run(){
 				}
 				sleep(pingInterval);
 			}
+#ifndef ANDROID
 			pthread_cancel(masterCbHandlerThread);
+#endif
 			pthread_join(masterCbHandlerThread, NULL);
 		} else {
 			/*

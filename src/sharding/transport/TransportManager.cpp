@@ -349,9 +349,20 @@ void TransportManager::validateTransportConfig(TransportConfig& config) {
 		}
 		this->publishedInterfaceNumericAddr = ipAddress.s_addr;
 
+//<<<<<<< HEAD
 	} else {
 		this->publisedInterfaceAddress = config.interfaceAddress;
 		this->publishedInterfaceNumericAddr = interfaceNumericAddr;
+//=======
+//	if (routeMap.begin()!= routeMap.end()) {
+//		unsigned currNodeSocketReadBuffer;
+//		socklen_t size = sizeof(unsigned);
+//		getsockopt(routeMap.begin()->second.fd, SOL_SOCKET, SO_RCVBUF, &socketReadBuffer,
+//				&size);
+//		getsockopt(routeMap.begin()->second.fd, SOL_SOCKET, SO_SNDBUF, &socketSendBuffer,
+//						&size);
+//		Logger::console("SO_RCVBUF = %d, SO_SNDBUF = %d", socketReadBuffer, socketSendBuffer);
+//>>>>>>> sharding-v0-integration
 	}
 }
 
