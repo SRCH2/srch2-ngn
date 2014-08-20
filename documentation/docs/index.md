@@ -7,7 +7,7 @@ The SDK is utilizing a search engine written in C++ ground up
 to deliver superior features with high performance.  The following
 figure illustrates how this SDK works.
 
-<span ><center><img style="width:45%" src="images/Android-SDK-Overview.jpg" /></center></span>
+<center>![SRCH2 Android SDK Overview][overview]</center>
 
 The SDK supports the following search features:
 
@@ -685,3 +685,4 @@ Please check our [Java doc](../javadoc) for the more powerful search options.
 [tutorial-013]: ../img/013-tutorial.png "Including the SRCH2-Android-SDK.aar file as a dependency in the app module's build.gradle file"
 [tutorial-014]: ../img/014-tutorial.png "Synchronizing the Gradle build system to include the new dependency"
 [tutorial-015]: ../img/015-tutorial.png "Confirming the SRCH2 Android SDK is integrated into the application"
+[overview]: ../img/Android-SDK-Overview.png "SRCH2 Android SDK Overview"
