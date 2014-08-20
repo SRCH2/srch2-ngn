@@ -1,65 +1,69 @@
-﻿
 In this documentation we explain advanced features of the SRCH2 Android SDK,
-such as how to formulate a sophisticated query, how to use the SDK to do
-testing, and how to use Proguard.
+such as how to formulate a query with various conditions, how to use
+the SDK to do testing, and how to use Proguard.
 
 ##Advanced Queries
 
-In the basic tutorial, we showed how to send a search *american beau* to the
-SRCH2 engine.  By default, the engine uses the space delimiter to tokenize the
-string to multiple keywords.  It treats the last keyword *beau* as a prefix
-keyword, and other keywords (e.g., *american*) as complete keywords.  For each
-keyword, the engine allows one typo for every three characters.  
+In the [basic tutorial](index.md), we showed how to send a search
+*beaty ame* to the SRCH2 engine.  By default, the engine uses the
+space delimiter to tokenize the string to multiple keywords ('beaty'
+and 'ame').  It treats the last keyword ('ame') as a prefix condition,
+and other keywords (e.g., 'beaty') as complete keywords.  The engine
+supports fuzzy search by allowing one typo for every three characters
+in a keyword. 
 
-Often you may want to have more control on the terms in a query, such as prefix
-versus complete keyword and their fuzziness.  The SDK allows you to have this
-control by customize the *Query* object and then search by the
-*Indexable.advancedSearch(Query)* method.  
-We use the following examples to explain.  Suppose we have defined two query
-terms. Term 1 specifies a condition that the word "terminator" has to appear in
-the <i>title</i> field; and term 2 says that the word "cameron" needs to be in
-the <i>director</i> field.
+Often we want to have more control on the keywords (a.k.a.,
+terms) in a query, such as prefix versus complete keyword and their
+fuzziness.  The SDK allows you to have this control by customizing the
+*Query* object and then search by the  *Indexable.advancedSearch()*
+method.  
+
+###Examples
+
+We use the following examples to explain.  Suppose we have defined two query terms: term 1 specifies a condition
+that the keyword "terminator" has to appear in the <i>title</i> field,
+and term 2 says that the keyword "cameron" needs to be in the
+<i>director</i> field.
 
 ```
     SearchableTerm term1 = new SearchableTerm("terminator").searchSpecificField("title");
     SearchableTerm term2 = new SearchableTerm("cameron").searchSpecificField("director");
 ```
 
-<li> Query q1 finds records with the word "terminator" in its <i>title</i> field and the word "cameron" in its <i>director</i> field:</li>
+<li> Query q1 finds records with the keyword "terminator" in its
+<i>title</i> field and the keyword "cameron" in its <i>director</i>
+field:</li> 
 
 ```
     Query q1 = new Query(term1.AND(term2));
 ```
 
-<li> Query q2 filters the results based on the year field, i.e., the year value needs to be between 1983 and 1992 (both inclusive).</li>
+<li> Query q2 filters the results based on the year field, i.e., the
+year value needs to be between 1983 and 1992 (both inclusive).</li> 
 
 ```
     Query q2 = new Query(term1.AND(term2));
     q2.filterByFieldInRange("year", "1983", "1992");
 ```
 
-<li> Query q3 filters the results by requiring that the genre value is
-"action". </li>
+<li> Query q3 filters the results by requiring that the genre value of
+a movie is "action". </li>
 ```
     Query q3 = new Query(term1.AND(term2));
     q3.filterByFieldEqualsTo("genre", "action");
 ```
 
-<li> Query q4 sorts the results based on the year attribute in the ascending order.</li>
+<li> Query q4 sorts the results based on the year attribute in the
+ascending order.</li> 
 ```
     Query q4 = new Query(term1.AND(term2));
     q4.sortOnFields("year").orderByAscending();
 ```
 
-###SearchableTerm
-
-We use the *SearchableTerm* class to specify keyword conditions to
-define an arbitrary boolean expression.
-
-####Search on the specified field
+###Search on Fields
 
 By default one search term can search on all the *searchable* fields that
-defined in the *Indexable.getSchema()* method. A search term can be
+are defined in the *Indexable.getSchema()* method. A search term can be
 confined to only search on one specific field by calling the *searchSpecificField()* method.
 
 For example we can set the following search term to only search for the keyword "wind" in the field *title*.
@@ -114,7 +118,7 @@ If we don't pass the similarity threshold, e.g.,
 the engine will use the similarity threshold specified in the *Indexable.getFuzzinessSimilarityThreshold()*. 
 If user doesn't override that getter method, we will use the system default threshold of 0.65f.
 
-####Boosting a Term
+####Term Boost
 
 The engine provides the relevance level of matching records based on its
 matching terms. The user can call the *setBoostValue(int)* method to
@@ -132,8 +136,12 @@ We can specify prefix, fuzziness and boosting condition to a single term, e.g.,
 ```
     new  SearchableTerm("sta").enableFuzzyMatching(0.6f).setBoostValue(4).setIsPrefixMatching(true);
 ```
+###Boolean Expression
 
-####Boolean Operators
+The SDK supports arbitrary boolean expressions (including operations
+such as 'AND', 'OR', and 'NOT'), by using the *SearchableTerm* class
+to specify keyword conditions.
+
 The engine supports three boolean operators: AND, OR, and AND_NOT. Each of the operation will generate a
 *CompositeTerm* object. Both *SearchableTerm* and *CompositeTerm* are inherited from the *Term* class. 
 The *Term* class is used to initialize the *Query* object.
