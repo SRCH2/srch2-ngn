@@ -183,6 +183,7 @@ void getLat_Long_Offset(unsigned & latOffset, unsigned & longOffset, Schema * sc
 
 	unsigned idLong = storedSchema->getRefiningAttributeId(*nameOfLongitudeAttribute);
 	longOffset = compactRecDeserializer.getRefiningOffset(idLong);
+	delete storedSchema;
 }
 
 }
