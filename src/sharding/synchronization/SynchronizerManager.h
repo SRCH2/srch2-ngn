@@ -150,9 +150,11 @@ private:
 	string serializeClusterNodes(){
 		localNodesCopyMutex.lock();
 		stringstream ss;
-		ss << localNodesCopy.size();
+		unsigned localCopySize = localNodesCopy.size();
+	    ss.write((const char *)&localCopySize, sizeof(unsigned));
 		for(vector<Node>::iterator nodeItr = localNodesCopy.begin(); nodeItr != localNodesCopy.end(); ++nodeItr){
-			ss << nodeItr->serialize().size();
+	        unsigned nodeSize = nodeItr->serialize().size();
+		    ss.write((const char *)&nodeSize, sizeof(unsigned));
 			ss << nodeItr->serialize();
 		}
 		localNodesCopyMutex.unlock();
