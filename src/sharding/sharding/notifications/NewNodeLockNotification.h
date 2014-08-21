@@ -80,6 +80,7 @@ public:
 		}
 		void * deserialize(void * buffer){
 			buffer = ShardingNotification::deserialize(buffer);
+			shardLockRepository = new LockHoldersRepository();
 			buffer = shardLockRepository->deserialize(buffer);
 			return buffer;
 		}

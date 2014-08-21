@@ -538,6 +538,7 @@ void ShardManager::resolve(LockingNotification::ACK * lockAckNotif){
 void ShardManager::resolveReadviewRelease(unsigned metadataVersion){
 	LockingNotification::RV_RELEASED * rvReleased = new LockingNotification::RV_RELEASED(metadataVersion);
 	this->getLockManager()->resolve(rvReleased);
+	delete rvReleased;
 }
 
 void ShardManager::resolveMMNotification(const ShardMigrationStatus & migrationStatus){

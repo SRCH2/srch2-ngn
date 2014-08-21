@@ -995,7 +995,7 @@ int main(int argc, char** argv) {
 		}
 	}
 
-
+	clusterReadview.reset();
 	/* Set signal handlers */
 	sigset_t sigset;
 	sigemptyset(&sigset);
