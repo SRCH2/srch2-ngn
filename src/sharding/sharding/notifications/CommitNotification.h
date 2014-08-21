@@ -61,7 +61,7 @@ public:
 				ASSERT(false);
 				break;
 		}
-		buffer = metadataChange->deserialize(metadataChange);
+		buffer = metadataChange->deserialize(buffer);
 		return buffer;
 	}
     ShardingMessageType messageType() const;

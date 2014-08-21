@@ -145,32 +145,16 @@ bool ShardLoadChange::doChange(Cluster_Writeview * metadata){
 
 
 void * ShardLoadChange::serialize(void * buffer) const{
-	buffer = srch2::util::serializeFixedTypes((unsigned)(addedLoads.size()), buffer); // size of map
-	for(map<ClusterShardId, double>::const_iterator i = addedLoads.begin() ; i != addedLoads.end(); ++i){
-		buffer = i->first.serialize(buffer);
-		buffer = srch2::util::serializeFixedTypes(i->second, buffer);
-	}
+	buffer = srch2::util::serializeMapDynamicToFixed(addedLoads, buffer);
 	return buffer;
 }
 unsigned ShardLoadChange::getNumberOfBytes() const{
 	unsigned numberOfBytes = 0 ;
-	numberOfBytes += sizeof(unsigned); // size of map
-	for(map<ClusterShardId, double>::const_iterator i = addedLoads.begin() ; i != addedLoads.end(); ++i){
-		numberOfBytes += i->first.getNumberOfBytes();
-		numberOfBytes += sizeof(double);
-	}
+	numberOfBytes += srch2::util::getNumberOfBytesMapDynamicToFixed(addedLoads);
 	return numberOfBytes;
 }
 void * ShardLoadChange::deserialize(void * buffer){
-	unsigned sizeOfMap;
-	buffer = srch2::util::deserializeFixedTypes(buffer, sizeOfMap); // size of map
-	for(unsigned i = 0; i < sizeOfMap; ++i){
-		ClusterShardId shardIdKey;
-		buffer = shardIdKey.deserialize(buffer);
-		double addedLoad ;
-		buffer = srch2::util::deserializeFixedTypes(buffer, addedLoad);
-		addedLoads[shardIdKey] = addedLoad;
-	}
+	buffer = srch2::util::deserializeMapDynamicToFixed(buffer, addedLoads);
 	return buffer;
 }
 

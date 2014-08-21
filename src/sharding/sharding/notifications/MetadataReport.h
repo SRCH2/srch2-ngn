@@ -34,6 +34,7 @@ public:
 	}
 	void * deserialize(void * buffer) {
 		buffer = ShardingNotification::deserialize(buffer);
+		writeview = new Cluster_Writeview();
 		buffer = writeview->deserialize(buffer, false);
 		return buffer;
 	}
