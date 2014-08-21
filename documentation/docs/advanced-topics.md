@@ -1,4 +1,5 @@
 ﻿
+# Advanced Features
 In this documentation we explain advanced features of the SRCH2 Android SDK,
 such as how to formulate a sophisticated query, how to use the SDK to do
 testing, and how to use Proguard.
@@ -56,7 +57,7 @@ the <i>director</i> field.
 We use the *SearchableTerm* class to specify keyword conditions to
 define an arbitrary boolean expression.
 
-####Search on the specified field
+###Search on the specified field
 
 By default one search term can search on all the *searchable* fields that
 defined in the *Indexable.getSchema()* method. A search term can be
@@ -67,7 +68,7 @@ For example we can set the following search term to only search for the keyword 
   new SearchableTerm("wind").searchSpecificField("title");
 ```
 
-####Prefix Condition
+###Prefix Condition
 
 We can call its member method *setIsPrefixMatching()* to enable or disable
 prefix matching on this keyword. By default, it is "false", i.e., a
@@ -81,7 +82,7 @@ the complete condition and the "beau" as the prefix condition,
     Query query = new Query(term1.AND(term2));
 ```
 
-####Fuzzy Search
+###Fuzzy Search
 
 We can call its member method *enableFuzzyMatching()* to enable the fuzzy
 match condition. User can also pass the specific fuzziness similarity
@@ -114,7 +115,7 @@ If we don't pass the similarity threshold, e.g.,
 the engine will use the similarity threshold specified in the *Indexable.getFuzzinessSimilarityThreshold()*. 
 If user doesn't override that getter method, we will use the system default threshold of 0.65f.
 
-####Boosting a Term
+###Boosting a Term
 
 The engine provides the relevance level of matching records based on its
 matching terms. The user can call the *setBoostValue(int)* method to
@@ -133,7 +134,7 @@ We can specify prefix, fuzziness and boosting condition to a single term, e.g.,
     new  SearchableTerm("sta").enableFuzzyMatching(0.6f).setBoostValue(4).setIsPrefixMatching(true);
 ```
 
-####Boolean Operators
+###Boolean Operators
 The engine supports three boolean operators: AND, OR, and AND_NOT. Each of the operation will generate a
 *CompositeTerm* object. Both *SearchableTerm* and *CompositeTerm* are inherited from the *Term* class. 
 The *Term* class is used to initialize the *Query* object.
@@ -166,7 +167,7 @@ All the conditions that set on the *Term* will be taken into the *Query* object.
 In extra, it allows us to set the filter, sorter and some other operators to
 refine the returned query results.
 
-####Filter by range
+###Filter by range
 
 The *filterByFieldInRange*, *filterByFieldEqualsTo*, *filterByFieldStartFrom*,
 *filterByFieldEndsTo* methods are used to specify a filter restricting the set
@@ -194,7 +195,7 @@ It returns the records with an *id* greater than or equal to 1000, a *genre* of 
 By default all the filters are connected by the *AND* relation.
 We can call the *setFilterRelationOR()* method to set it to the *OR* relation.
 
-####Sorting
+###Sorting
 
 The engine's default behavior is to sort the results using a descending order by the overall score of each record. 
 We can specify sorting by other fields. For example:
@@ -205,7 +206,7 @@ We can specify sorting by other fields. For example:
 **Note**: if a sort request is included in the query, the returned records' scores are still those calculated scores by the engine, 
 but the order of the results corresponds to the user specification.
 
-####Order
+###Order
 It specifies the order in which the result set should be sorted. The default
 behavior is to sort them in the descending order. We can call the
 *orderByAscending()* method to sort them in the ascending order.
@@ -216,7 +217,7 @@ return in ascending order on the *year* field,
     new Query(new SearchableTerm("star")).sortOnFields("director","year","title").orderByAscending();
 ```
 
-####Pagination
+###Pagination
 
 We can set the offset of the complete results of the Query. The default value is 0. 
 We can call the *pagingStartFrom(10)* method to return the query records that start from the 10th.
@@ -238,8 +239,8 @@ For example, the following code will get the records that ranked from the 25th t
 ##Testing
 
 The SRCH2 Android SDK must be tested on a real device: the emulator does not
-support running the SRCH2 http server. When you initialize the `SRCH2Engine`,
-you can call `setDebugAndTestMode(true)` to enable the `SRCH2Engine` to quickly
+support running the SRCH2 http server. When you initialize the *SRCH2Engine*,
+you can call *setDebugAndTestMode(true)* to enable the *SRCH2Engine* to quickly
 start and stop the SRCH2 http server. 
 
 ##Configuring for Proguard
