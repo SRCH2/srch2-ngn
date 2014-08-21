@@ -274,7 +274,7 @@ supports fuzzy search by allowing one typo for every three characters
 in a keyword. 
 The SDK allows you to have more control on the prefix and the fuzziness setting by using the
 *Indexable.advancedSearch()* method. 
-Please check the [Advanced page](advanced-topics.md) for more details.
+Please check the [Advanced page](advanced.md) for more details.
 
 ##Getting Results
 
@@ -678,7 +678,7 @@ an application. Play around with the project, try updating a record,
 deleting a record, adding a record with searchable data to appreciate the power of SRCH2's search
 capability, and this is only the beginning! 
 
-Please read on in [Advanced Topics](advanced-topics.md) to learn how to form
+Please read on in [Advanced Topics](advanced.md) to learn how to form
 powerful queries (such as filtering the search results for the *MovieIndex* by
 interval of year), or how to set up the SDK for Proguard, or how to manually
 interact with the running search server. Search on!
