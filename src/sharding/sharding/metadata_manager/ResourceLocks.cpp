@@ -147,7 +147,9 @@ ResourceLockRequest::ResourceLockRequest(){
 ResourceLockRequest::~ResourceLockRequest(){
 	for(unsigned i = 0; i < requestBatch.size(); ++i){
 		delete requestBatch.at(i);
+		requestBatch.at(i) = NULL;
 	}
+	requestBatch.clear();
 }
 
 bool ResourceLockRequest::applyNodeFailure(const unsigned failedNodeId){
@@ -271,20 +273,20 @@ void PendingLockRequestBuffer::push(const PendingLockRequest & pendingRequest){
 	std::push_heap(pendingRequests.begin(), pendingRequests.end());
 }
 // doesn't remove the request from the buffer, just to see what it is ...
-bool PendingLockRequestBuffer::top(PendingLockRequest & request){
+PendingLockRequest PendingLockRequestBuffer::top(bool & hasMore){
 	if(pendingRequests.size() == 0){
-		return false;
+		hasMore = false;
+		return PendingLockRequest();
 	}
-	request = pendingRequests.front();
-	return true;
+	hasMore = true;
+	return pendingRequests.front();
 }
-bool PendingLockRequestBuffer::pop(PendingLockRequest & request){
+bool PendingLockRequestBuffer::pop(){
 	if(pendingRequests.size() == 0){
 		return false;
 	}
-	request = pendingRequests.front();
-	pendingRequests.pop_back();
 	std::pop_heap(pendingRequests.begin(), pendingRequests.end());
+	pendingRequests.pop_back();
 	return true;
 }
 
@@ -590,13 +592,15 @@ void ResourceLockManager::resolve(NewNodeLockNotification * notification){
 		}
 		writeview->printNodes();
 		// reserve place in waitingList
-		pendingLockRequestBuffer.update(PendingLockRequest(NodeOperationId(*nodeItr),
-				ShardingNewNodeLockACKMessageType, LOCK_REQUEST_PRIORITY_NODE_ARRIVAL, NULL));
+		PendingLockRequest tempReq(NodeOperationId(*nodeItr),
+						ShardingNewNodeLockACKMessageType, LOCK_REQUEST_PRIORITY_NODE_ARRIVAL, NULL);
+		pendingLockRequestBuffer.update(tempReq);
 	}
 	// put the lock requests of this new node in it's entry
 	// first check if this node is already saved in the writeview and waiting list
-	pendingLockRequestBuffer.update(PendingLockRequest(notification->getSrc(),
-			ShardingNewNodeLockACKMessageType, LOCK_REQUEST_PRIORITY_NODE_ARRIVAL, notification->getLockRequest()));
+	PendingLockRequest tempReq(notification->getSrc(),
+				ShardingNewNodeLockACKMessageType, LOCK_REQUEST_PRIORITY_NODE_ARRIVAL, notification->getLockRequest());
+	pendingLockRequestBuffer.update(tempReq);
 
 	pendingLockRequestBuffer.print();
 	// try to get the lock for the minimum nodeId of this waiting
@@ -825,8 +829,9 @@ bool ResourceLockManager::canAcquireLock(const ClusterShardId & resource, Resour
 }
 
 void ResourceLockManager::tryPendingRequest(){
-	PendingLockRequest pendingRequest;
-	if(! pendingLockRequestBuffer.top(pendingRequest)){
+	bool hasMore;
+	PendingLockRequest pendingRequest(pendingLockRequestBuffer.top(hasMore));
+	if(! hasMore){
 		return;// we have no pending request
 	}
 
@@ -837,15 +842,15 @@ void ResourceLockManager::tryPendingRequest(){
 		return;
 	}
 
-	pendingLockRequestBuffer.pop(pendingRequest);
+	pendingLockRequestBuffer.pop();
 	bool needCommit;
 	executeBatch(pendingRequest.request->requestBatch, needCommit);
 	if(needCommit){
 		pendingRequest.metadataVersionId = ShardManager::getWriteview()->versionId;
-		ShardManager::getShardManager()->getMetadataManager()->commitClusterMetadata();
 		readviewReleaseMutex.lock();
 		pendingRVReleaseRequests.push_back(pendingRequest);
 		readviewReleaseMutex.unlock();
+		ShardManager::getShardManager()->getMetadataManager()->commitClusterMetadata();
 		tryPendingRequest();
 		return;
 	}
@@ -1079,11 +1084,13 @@ void ResourceLockManager::lock_S(const ClusterShardId & resource, const vector<N
 
 	// 2. add lock holders to s list of this resource
 	if(lockRepository.S_Holders.find(resource) == lockRepository.S_Holders.end()){
-		lockRepository.S_Holders.insert(std::make_pair(resource ,lockHolders));
-		return;
+		lockRepository.S_Holders.insert(std::make_pair(resource ,vector<NodeOperationId>()));
+	}
+	for(unsigned i = 0; i < lockHolders.size(); ++i){
+		lockRepository.S_Holders.find(resource)->second.push_back(lockHolders.at(i));
 	}
 
-	lockRepository.S_Holders.find(resource)->second.insert(lockRepository.S_Holders.find(resource)->second.begin(), lockHolders.begin(), lockHolders.end());
+//	lockRepository.S_Holders.find(resource)->second.insert(lockRepository.S_Holders.find(resource)->second.begin(), lockHolders.begin(), lockHolders.end());
 	return;
 }
 

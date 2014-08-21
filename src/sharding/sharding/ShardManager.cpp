@@ -208,6 +208,7 @@ bool ShardManager::resolveMessage(Message * msg, NodeId node){
 	switch (msg->getType()) {
 		case ShardingNewNodeLockMessageType:
 		{
+
 			NewNodeLockNotification * newNodeLockNotification =
 					ShardingNotification::deserializeAndConstruct<NewNodeLockNotification>(Message::getBodyPointerFromMessagePointer(msg));
 			if(newNodeLockNotification->isBounced()){

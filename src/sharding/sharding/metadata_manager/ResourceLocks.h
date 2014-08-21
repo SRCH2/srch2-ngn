@@ -45,6 +45,9 @@ struct SingleResourceLockRequest{
 
 	SingleResourceLockRequest(const SingleResourceLockRequest & copy);
 	SingleResourceLockRequest(){};
+	~SingleResourceLockRequest(){
+
+	};
 
 	void * serialize(void * buffer) const;
 	unsigned getNumberOfBytes() const;
@@ -100,8 +103,8 @@ public:
 
 	void push(const PendingLockRequest & pendingRequest);
 	// doesn't remove the request from the buffer, just to see what it is ...
-	bool top(PendingLockRequest & request);
-	bool pop(PendingLockRequest & request);
+	PendingLockRequest top(bool & hasMore);
+	bool pop();
 	void update(const PendingLockRequest & pendingRequest);
 	void applyNodeFailure(const unsigned failedNodeId);
 	void print() const;
