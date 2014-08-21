@@ -49,6 +49,7 @@ final public class Field {
     boolean facetEnabled = false;
     boolean required = false;
     boolean highlight = false;
+    boolean isRecordBoostField = false;
 
     FacetType facetType = null;
     int facetStart = 0;
@@ -140,6 +141,25 @@ final public class Field {
         return createSearchablePrimaryKeyField(fieldName, DEFAULT_BOOST_VALUE);
     }
 
+
+    /**
+     * Static factory method for obtaining a record boost field.
+     * Record boost field is always the float in type. The value that this is set for each
+     * record will be used in the scoring expression to compute each record's score. This
+     * type of field can be used to assign relevance to each record: for instance, if creating
+     * an index about contacts, all starred contacts could have the record boost field value
+     * set to fifty, while all non-starred contacts could have the value set to one. The value
+     * should never be set to zero, which will render the record unavailable to search results.
+     * <br><br>
+     * This method will throw an exception if the value of
+     * <code>fieldName</code> is null or has a length less than one.
+     *
+     * @param fieldName the name identifying the record boost field
+     * @return the {@link RecordBoostField}
+     */
+    public static RecordBoostField createRecordBoostField(String fieldName) {
+        return new RecordBoostField(createRefiningField(fieldName, Type.FLOAT));
+    }
 
     /**
      * Static factory method for obtaining a searchable field with configurable boost value 'boost'.
@@ -327,7 +347,16 @@ final public class Field {
     static String toXML(Field field) {
         StringBuilder fieldXML = new StringBuilder();
 
-        if (field.type == InternalType.LOCATION_LATITUDE
+        if (field.isRecordBoostField) {
+            fieldXML.append("			<field name=\"").append(field.name)
+                    .append("\" type=\"")
+                    .append(field.type.name().toLowerCase(Locale.ENGLISH))
+                    .append("\" default=\"").append(1)
+                    .append("\" searchable=\"").append(field.searchable)
+                    .append("\" refining=\"").append(field.refining)
+                    .append("\"").append(" required=\"")
+                    .append(field.required).append("\"/>\n");
+        } else if (field.type == InternalType.LOCATION_LATITUDE
                 || field.type == InternalType.LOCATION_LONGITUDE) {
             fieldXML.append("			<field name=\"").append(field.name)
                     .append("\" default=\"").append(0)

@@ -1,7 +1,5 @@
 package com.srch2.android.sdk;
 
-import com.srch2.android.sdk.Field;
-import com.srch2.android.sdk.Schema;
 import junit.framework.Assert;
 import org.junit.Test;
 
@@ -9,7 +7,7 @@ public class SchemaTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testNull(){
-        Schema s = new Schema(null,null);
+        Schema s = new Schema(null, (Field[]) null);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -37,6 +35,8 @@ public class SchemaTest {
         Assert.assertTrue(s.fields.size() == 2);
         Assert.assertTrue(s.fields.contains(Field.createRefiningField("id", Field.Type.TEXT)));
         Assert.assertTrue(s.fields.contains(Field.createSearchableField("text")));
+        Assert.assertNull(s.recordBoostKey);
+
 
         String lat = "lat";
         String lon = "lon";
@@ -48,5 +48,18 @@ public class SchemaTest {
         Assert.assertTrue(s.fields.contains(Field.createRefiningField(lat, Field.Type.FLOAT)));
         Assert.assertTrue(s.fields.contains(Field.createRefiningField(lon, Field.Type.FLOAT)));
         Assert.assertTrue(s.fields.contains(Field.createSearchableField("title")));
+        Assert.assertNull(s.recordBoostKey);
+
+
+        s = new Schema(Field.createDefaultPrimaryKeyField("id"),
+                    Field.createRecordBoostField("boost"),
+                        Field.createSearchableField("title"));
+
+        Assert.assertTrue(s.fields.size() == 3);
+        Assert.assertTrue(s.fields.contains(Field.createRefiningField("id", Field.Type.TEXT)));
+        Assert.assertTrue(s.fields.contains(Field.createRefiningField("boost", Field.Type.FLOAT)));
+        Assert.assertTrue(s.fields.contains(Field.createSearchableField("title")));
+        Assert.assertNotNull(s.recordBoostKey);
+
     }
 }

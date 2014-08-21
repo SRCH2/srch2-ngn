@@ -1,5 +1,6 @@
 package com.srch2.android.sdk;
 
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -8,7 +9,7 @@ import java.net.URL;
 final class IndexInternal {
     private static final String TAG = "IndexInternal";
 
-    private final IndexDescription indexDescription;
+    final IndexDescription indexDescription;
     private SearchTask currentSearchTask = null;
 
     IndexInternal(IndexDescription description) {
@@ -39,8 +40,7 @@ final class IndexInternal {
         if (SRCH2Engine.isReady()) {
             InsertTask insertTask = new InsertTask(UrlBuilder.getInsertUrl(
                     SRCH2Engine.getConfig(), indexDescription),
-                    getIndexCoreName(),
-                    SRCH2Engine.getControlResponseListener(), record);
+                    getIndexCoreName(), record);
             HttpTask.executeTask(insertTask);
             SRCH2Engine.isChanged.set(true);
         }
@@ -53,7 +53,7 @@ final class IndexInternal {
                     indexDescription);
 
             InsertTask insertTask = new InsertTask(url, getIndexCoreName(),
-                    SRCH2Engine.getControlResponseListener(), records);
+                    records);
             HttpTask.executeTask(insertTask);
             SRCH2Engine.isChanged.set(true);
         }
@@ -63,8 +63,7 @@ final class IndexInternal {
         if (SRCH2Engine.isReady()) {
             UpdateTask updateTask = new UpdateTask(UrlBuilder.getUpdateUrl(
                     SRCH2Engine.getConfig(), indexDescription),
-                    getIndexCoreName(),
-                    SRCH2Engine.getControlResponseListener(), record);
+                    getIndexCoreName(), record);
             HttpTask.executeTask(updateTask);
             SRCH2Engine.isChanged.set(true);
         }
@@ -74,8 +73,7 @@ final class IndexInternal {
         if (SRCH2Engine.isReady()) {
             UpdateTask updateTask = new UpdateTask(UrlBuilder.getUpdateUrl(
                     SRCH2Engine.getConfig(), indexDescription),
-                    getIndexCoreName(),
-                    SRCH2Engine.getControlResponseListener(), records);
+                    getIndexCoreName(), records);
             HttpTask.executeTask(updateTask);
             SRCH2Engine.isChanged.set(true);
         }
@@ -85,20 +83,9 @@ final class IndexInternal {
         if (SRCH2Engine.isReady()) {
             DeleteTask deleteTast = new DeleteTask(UrlBuilder.getDeleteUrl(
                     SRCH2Engine.getConfig(), indexDescription, id),
-                    getIndexCoreName(),
-                    SRCH2Engine.getControlResponseListener());
+                    getIndexCoreName());
             HttpTask.executeTask(deleteTast);
             SRCH2Engine.isChanged.set(true);
-        }
-    }
-
-
-    void info() {
-        if (SRCH2Engine.isReady()) {
-            InfoTask infoTask = new InfoTask(UrlBuilder.getInfoUrl(
-                    SRCH2Engine.getConfig(), indexDescription), getIndexCoreName(),
-                    SRCH2Engine.getControlResponseListener());
-            HttpTask.executeTask(infoTask);
         }
     }
 
@@ -143,9 +130,7 @@ final class IndexInternal {
         }
         if (SRCH2Engine.isReady()) {
             HttpTask.executeTask(new GetRecordTask(UrlBuilder.getGetDocUrl(
-                    SRCH2Engine.getConfig(), indexDescription, id), this
-                    .getIndexCoreName(), SRCH2Engine
-                    .getControlResponseListener()));
+                    SRCH2Engine.getConfig(), indexDescription, id), this.getIndexCoreName()));
         }
     }
 

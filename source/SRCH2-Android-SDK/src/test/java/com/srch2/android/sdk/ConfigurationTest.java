@@ -45,13 +45,13 @@ public class ConfigurationTest {
 
     @Test
     public void testConfiguration() {
-        SRCH2Configuration config = new SRCH2Configuration(PrepareEngine.movieIndex, null);
+        SRCH2Configuration config = new SRCH2Configuration(PrepareEngine.movieIndex, (Indexable[]) null);
         SRCH2Configuration config2 = new SRCH2Configuration(PrepareEngine.musicIndex);
     }
 
     @Test
     public void testConfigurationGeoIndex() {
-        SRCH2Configuration config = new SRCH2Configuration(PrepareEngine.geoIndex, null);
+        SRCH2Configuration config = new SRCH2Configuration(PrepareEngine.geoIndex, (Indexable[])  null);
     }
 
     @Test
@@ -61,7 +61,7 @@ public class ConfigurationTest {
 
     @Test(expected = NullPointerException.class)
     public void testConfigurationException3() {
-        SRCH2Configuration config = new SRCH2Configuration(null, null);
+        SRCH2Configuration config = new SRCH2Configuration(null, (Indexable[]) null);
     }
 
     @Test
@@ -126,7 +126,7 @@ public class ConfigurationTest {
         InputStream is = null;
         HttpURLConnection connection = null;
         String infoResponseLiteral = null;
-        int responseCode = RestfulResponse.FAILED_TO_CONNECT_RESPONSE_CODE;
+        int responseCode = HttpTask.RESTfulResponseTags.FAILED_TO_CONNECT_RESPONSE_CODE;
         try {
             URL url = UrlBuilder.getShutDownUrl(SRCH2Engine.getConfig());
             System.out.println("request url :" + url.toExternalForm());

@@ -1,4 +1,4 @@
-package com.srch2.android.demo.helloworld;
+package com.srch2.android.sdk.sandbox;
 
 import android.app.Activity;
 import android.content.Context;
