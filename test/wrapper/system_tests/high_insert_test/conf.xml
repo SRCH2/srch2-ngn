@@ -359,6 +359,7 @@
 		    - 
 	   -->
 	   <field name="attr" type="text" indexed="true" />
+           <field name="relevance" type="float" refining="true" highlight="true" />
 
 	 </fields>
 	 

@@ -142,7 +142,7 @@ ADD_TEST(Lookup_Test ${CMAKE_CURRENT_BINARY_DIR}/core/integration/Lookup_Test "-
 SET_TESTS_PROPERTIES(Lookup_Test PROPERTIES ENVIRONMENT "index_dir=${INTEGRATION_TEST_INDEX_DIR}ranking-newly-inserted/")
  
 ADD_TEST(GeoCompleteTermSearch_Test ${CMAKE_CURRENT_BINARY_DIR}/core/integration/GeoCompleteTermSearch_Test "--verbose")
-SET_TESTS_PROPERTIES(GeoCompleteTermSearch_Test PROPERTIES ENVIRONMENT "index_dir=${INTEGRATION_TEST_INDEX_DIR}geo-complete/")
+SET_TESTS_PROPERTIES(GeoCompleteTermSearch_Test PROPERTIES ENVIRONMENT "index_dir=${INTEGRATION_TEST_INDEX_DIR}/geo-complete/")
  
 ADD_TEST(QuadTree_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/QuadTree_Test "--verbose")
 SET_TESTS_PROPERTIES(QuadTree_Test PROPERTIES ENVIRONMENT "directoryName=${CMAKE_SOURCE_DIR}/test/core/unit/test_data")
