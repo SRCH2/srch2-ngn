@@ -183,12 +183,12 @@ void Srch2Server::createAndBootStrapIndexer() {
                 this->indexDataConfig);
         indexer = Indexer::create(indexMetaData, analyzer, schema);
         delete analyzer;
+        RecordSerializerUtil::populateStoredSchema(storedAttrSchema,
+                indexer->getSchema());
         switch (indexDataConfig->getDataSourceType()) {
         case srch2http::DATA_SOURCE_JSON_FILE: {
             // Create from JSON and save to index-dir
             Logger::console("Creating indexes from JSON file...");
-            RecordSerializerUtil::populateStoredSchema(storedAttrSchema,
-                    indexer->getSchema());
             unsigned indexedCounter = DaemonDataSource::createNewIndexFromFile(
                     indexer, storedAttrSchema, indexDataConfig);
             /*
