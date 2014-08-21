@@ -58,10 +58,6 @@ final class IndexDescription {
     private static final String DEFAULT_VALUE_logLevel = "3";
     private static final String DEFAULT_VALUE_accessLogFile = "srch2-log.txt";
 
-    private static final String DEFAULT_VALUE_fuzzyPreTag = "<i>";
-    private static final String DEFAULT_VALUE_fuzzyPostTag = "</i>";
-    private static final String DEFAULT_VALUE_exactPreTag = "<b>";
-    private static final String DEFAULT_VALUE_exactPostTag = "</b>";
 
 
     private final Properties queryProperties = new Properties();
@@ -114,13 +110,13 @@ final class IndexDescription {
         queryProperties.setProperty("responseFormat",
                 DEFAULT_VALUE_responseFormat);
         queryProperties.setProperty("fuzzyPreTag",
-                schema.highlight_fuzzyPrefix == null ? DEFAULT_VALUE_fuzzyPreTag : schema.highlight_fuzzyPrefix);
+                schema.highlight_fuzzyPrefix);
         queryProperties.setProperty("fuzzyPostTag",
-                schema.highlight_fuzzySuffix == null ? DEFAULT_VALUE_fuzzyPostTag : schema.highlight_fuzzySuffix);
+                schema.highlight_fuzzySuffix);
         queryProperties.setProperty("exactPreTag",
-                schema.highlight_exactPrefix == null ? DEFAULT_VALUE_exactPreTag : schema.highlight_exactPrefix);
+                schema.highlight_exactPrefix);
         queryProperties.setProperty("exactPostTag",
-                schema.highlight_exactSuffix == null ? DEFAULT_VALUE_exactPostTag : schema.highlight_exactSuffix);
+                schema.highlight_exactSuffix);
 
     }
 

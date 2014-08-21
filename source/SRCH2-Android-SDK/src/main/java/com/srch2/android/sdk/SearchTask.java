@@ -54,6 +54,12 @@ class SearchTask extends HttpTask.SearchHttpTask {
                         try {
                             JSONObject resultNodes = (JSONObject) nodes.get(i);
                             JSONObject record = resultNodes.getJSONObject("record");
+                            JSONObject snippet = resultNodes.getJSONObject("snippet");
+
+                            if (snippet.length() > 0) {
+                                record.put("highlighted", snippet);
+                            }
+
                             records.add(record);
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -75,6 +81,11 @@ class SearchTask extends HttpTask.SearchHttpTask {
                     try {
                         JSONObject resultNodes = (JSONObject) nodes.get(i);
                         JSONObject record = resultNodes.getJSONObject("record");
+                        JSONObject snippet = resultNodes.getJSONObject("snippet");
+
+                        if (snippet.length() > 0) {
+                            record.put("highlighted", snippet);
+                        }
                         recordResults.add(record);
                     } catch (Exception e) {
                         e.printStackTrace();

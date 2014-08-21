@@ -19,9 +19,15 @@ public final class Schema {
     boolean facetEnabled = false;
     int indexType = 0;
 
+    public static final String HIGHLIGHTED_DEFAULT_FUZZY_PRE_SCRIPT_TAG = "<i>";
+    public static final String HIGHLIGHTED_DEFAULT_FUZZY_POST_SCRIPT_TAG = "</i>";
+    public static final String HIGHLIGHTED_DEFAULT_EXACT_PRE_SCRIPT_TAG = "<b>";
+    public static final String HIGHLIGHTED_DEFAULT_EXACT_POST_SCRIPT_TAG = "</b>";
 
-    // tag values to use when forming <fuzzyTagPre/fuzzyTagPost/exactTagPre/exactTagPost /> config options
-    String highlight_fuzzyPrefix, highlight_fuzzySuffix, highlight_exactPrefix, highlight_exactSuffix;
+    String highlight_fuzzyPrefix = HIGHLIGHTED_DEFAULT_FUZZY_PRE_SCRIPT_TAG;
+    String highlight_fuzzySuffix = HIGHLIGHTED_DEFAULT_FUZZY_POST_SCRIPT_TAG;
+    String highlight_exactPrefix = HIGHLIGHTED_DEFAULT_EXACT_PRE_SCRIPT_TAG;
+    String highlight_exactSuffix = HIGHLIGHTED_DEFAULT_EXACT_POST_SCRIPT_TAG;
 
     /**
      * Sets the pre and post tags associated with a highlighted output of field. For example, <code>exactPreTag</code>
@@ -42,14 +48,17 @@ public final class Schema {
      * <br><br>
      * <br><br>
      * <b>If this method is not called when some schema's fields have {@link Field#enableHighlighting()} set</b>, the default
-     * behavior of the highlighter will be to bold exact matches and italicize fuzzy matches.
+     * behavior of the highlighter will be to bold exact matches and italicize fuzzy matches: see
+     * {@link #HIGHLIGHTED_DEFAULT_FUZZY_PRE_SCRIPT_TAG}, {@link #HIGHLIGHTED_DEFAULT_FUZZY_POST_SCRIPT_TAG},
+     * {@link #HIGHLIGHTED_DEFAULT_EXACT_PRE_SCRIPT_TAG}, {@link #HIGHLIGHTED_DEFAULT_EXACT_POST_SCRIPT_TAG}.
+     * <br><br>
      * This method will throw exceptions if any of the arguments are null or empty strings.
      * @param fuzzyPreTag specifies the tag value to be prefixed to a fuzzy keyword match
      * @param fuzzyPostTag specifies the tag value to be suffixed to a fuzzy keyword match
      * @param exactPreTag specifies the tag value to be prefixed to an exact keyword match
      * @param exactPostTag specifies the tag value to be suffixed to an exact keyword match
      */
-    public Schema setFuzzyAndExactPreAndPostTags(String fuzzyPreTag, String fuzzyPostTag, String exactPreTag, String exactPostTag) {
+    public Schema setHighlightedPreAndPostScript(String fuzzyPreTag, String fuzzyPostTag, String exactPreTag, String exactPostTag) {
         checkHighlightingTags("fuzzyPreTag", fuzzyPreTag);
         checkHighlightingTags("fuzzyPostTag", fuzzyPostTag);
         checkHighlightingTags("exactPreTag", exactPreTag);
