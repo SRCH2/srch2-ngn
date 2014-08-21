@@ -22,7 +22,7 @@ public final class Schema {
     Schema(PrimaryKeyField primaryKeyField, Field... remainingField) {
         if (primaryKeyField == null) {
             throw new IllegalArgumentException(
-                    "Value of the primary field cannot be null");
+                    "Value of the primary key field cannot be null");
         }
 
         uniqueKey = primaryKeyField.primaryKey.name;
@@ -224,7 +224,7 @@ public final class Schema {
 
     private void addToFields(Field f) {
         if (fields.contains(f)) {
-            throw new IllegalArgumentException("duplicated field:" + f.name);
+            throw new IllegalArgumentException("Duplicated field with name: " + f.name);
         }
         fields.add(f);
     }
