@@ -39,6 +39,8 @@ class Srch2Server {
 public:
     Indexer *indexer;
     const CoreInfo_t *indexDataConfig;
+    Srch2Server* roleCore;
+    vector<Srch2Server*> resourceCores;
     /* Fields used only for stats */
     time_t stat_starttime; /* Server start time */
     long long stat_numcommands; /* Number of processed commands */
@@ -54,6 +56,7 @@ public:
     Srch2Server() {
         this->indexer = NULL;
         this->indexDataConfig = NULL;
+        this->roleCore = NULL;
     }
 
     void init(const ConfigManager *config) {

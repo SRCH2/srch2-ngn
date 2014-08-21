@@ -78,10 +78,12 @@
 
 #include <string>
 #include <vector>
+#include <map>
 #include <memory>
 
 using std::vector;
 using std::string;
+using std::map;
 
 namespace srch2
 {
@@ -197,6 +199,55 @@ class WriteCounter
         uint32_t numberOfDocumentsIndex;
 };
 
+// we use this permission map for deleting a role core. then we can delete this role id from resources' access list
+class PermissionMap{
+public:
+	void addResourceToRole(string &resourceId, string &roleId){
+		map<string, vector<string> >::iterator it = permissionMap.find(roleId);
+		if( it == permissionMap.end()){
+			vector<string> resources;
+			resources.push_back(resourceId);
+			permissionMap.insert(std::pair<string,vector<string> >(roleId,resources));
+		}else{
+			it->second.push_back(resourceId);
+		}
+		print();
+	}
+
+	void removeResourceFromRole(string &resourceId, string &roleId){
+		map<string, vector<string> >::iterator it = permissionMap.find(roleId);
+		if( it != permissionMap.end()){
+			vector<string>::iterator resourceIt = std::find(it->second.begin(),it->second.end(),resourceId);
+			if( resourceIt != it->second.end()){
+				*resourceIt = *(it->second.end() - 1);
+				it->second.pop_back();
+			}
+		}
+		print();
+	}
+
+	void print(){
+		for(map<string, vector<string> >::iterator it=permissionMap.begin();it!=permissionMap.end();++it){
+			cout << "key: " << it->first << endl;
+			for (vector<string>::iterator it2 = it->second.begin();it2 != it->second.end();it2++){
+				cout << *it2 << " , ";
+			}
+			cout << endl;
+		}
+		cout << "-----------------" << endl;
+	}
+
+private:
+	map<string, vector<string> > permissionMap;
+
+    friend class boost::serialization::access;
+
+    template<class Archive>
+    void serialize(Archive & ar, const unsigned int version) {
+        ar & this->permissionMap;
+    }
+};
+
 class IndexData
 {
 private:
@@ -249,6 +300,9 @@ public:
     SchemaInternal *schemaInternal;
     
     RankerExpression *rankerExpression;
+
+    PermissionMap* permissionMap;
+
     // a global RW lock for readers and writers;
     // Used in several places, such as KeywordIdReassign and memory
     // recollection for deleted records

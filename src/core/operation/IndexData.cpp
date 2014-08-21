@@ -83,6 +83,8 @@ IndexData::IndexData(const string &directoryName,
         this->invertedIndex = NULL;
     }
 
+    this->permissionMap = new PermissionMap();
+
     this->readCounter = new ReadCounter();
     this->writeCounter = new WriteCounter();
     this->flagBulkLoadDone = false;
@@ -131,6 +133,9 @@ IndexData::IndexData(const string& directoryName)
     		this->quadTree->setTrie(this->trie);
     		//Logger::debug("QuadTree loaded");
     	}
+
+    	this->permissionMap = new PermissionMap();
+    	serializer.load(*(this->permissionMap),directoryName + "/" + IndexConfig::permissionMapFileName);
 
     	this->loadCounts(directoryName + "/" + IndexConfig::indexCountsFileName);
     	this->flagBulkLoadDone = true;
@@ -718,6 +723,12 @@ void IndexData::_save(const string &directoryName) const
     } catch (exception &ex) {
         Logger::error("Error writing index counts file: %s/%s", directoryName.c_str(), IndexConfig::indexCountsFileName);
     }
+
+    try{
+    	serializer.save(*this->permissionMap, directoryName + "/" + IndexConfig::permissionMapFileName);
+    } catch (exception &ex) {
+    	Logger::error("Error writing permissionMap file: %s/%s", directoryName.c_str(), IndexConfig::permissionMapFileName);
+    }
 }
 
 void IndexData::printNumberOfBytes() const
@@ -785,6 +796,7 @@ IndexData::~IndexData()
     delete this->readCounter;
     delete this->writeCounter;
     delete this->rankerExpression;
+    delete this->permissionMap;
 }
 
 

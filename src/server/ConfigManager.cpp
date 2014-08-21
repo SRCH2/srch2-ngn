@@ -161,6 +161,12 @@ const char* const ConfigManager::fuzzyTagPre = "fuzzytagpre";
 const char* const ConfigManager::fuzzyTagPost = "fuzzytagpost";
 const char* const ConfigManager::snippetSize = "snippetsize";
 
+const char* const ConfigManager::multipleAccessControlString = "access-controls";
+const char* const ConfigManager::resourceCore = "resourcecore";
+const char* const ConfigManager::roleCore = "rolecore";
+const char* const ConfigManager::accessControlDataFile = "datafile";
+
+
 const char* const ConfigManager::defaultFuzzyPreTag = "<b>";
 const char* const ConfigManager::defaultFuzzyPostTag = "</b>";
 const char* const ConfigManager::defaultExactPreTag = "<b>";
@@ -339,6 +345,7 @@ CoreInfo_t::CoreInfo_t(const CoreInfo_t &src) {
     allowedRecordTokenizerCharacters = src.allowedRecordTokenizerCharacters;
 
     ports = src.ports;
+    accessControlInfo = src.accessControlInfo;
 }
 
 void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode,
@@ -820,6 +827,51 @@ void ConfigManager::parseSingleCore(const xml_node &parentNode,
     }
 }
 
+void ConfigManager::parseSingleAccessControl(const xml_node &parentNode,
+		bool &configSuccess, std::stringstream &parseError,
+		std::stringstream &parseWarnings){
+	xml_node resourceCoreNode = parentNode.child(resourceCore);
+	xml_node roleCoreNode = parentNode.child(roleCore);
+	// both resourceCore and roleCore are requiered
+	if(resourceCoreNode && resourceCoreNode.text()){
+		if(roleCoreNode && roleCoreNode.text()){
+			string resourceCoreName = string(resourceCoreNode.text().get());
+			string roleCoreName = string(roleCoreNode.text().get());
+			// first we need to check if these cores exist
+			CoreInfoMap_t::iterator resourceIt = coreInfoMap.find(resourceCoreName);
+			if(resourceIt == coreInfoMap.end()){
+				parseError << resourceCoreName
+				<< " core does not exist\n";
+				configSuccess = false;
+				return;
+			}
+			CoreInfoMap_t::iterator roleIt = coreInfoMap.find(roleCoreName);
+			if(roleIt == coreInfoMap.end()){
+				parseError << roleCoreName
+						<< " core does not exist\n";
+				configSuccess = false;
+				return;
+			}
+			AccessControlInfo* newAccessControlInfo = new AccessControlInfo(resourceCoreName, roleCoreName);
+			xml_node dataFileNode = parentNode.child(accessControlDataFile);
+			if(dataFileNode && dataFileNode.text()){
+				newAccessControlInfo->dataFile = string(dataFileNode.text().get());
+			}
+			(*resourceIt).second->setAccessControlInfo(newAccessControlInfo);
+		}else{
+			parseError
+			<< " access-control roleCore is not set\n";
+			configSuccess = false;
+			return;
+		}
+	}else{
+		parseError
+		<< " access-control resourceCore is not set\n";
+		configSuccess = false;
+		return;
+	}
+}
+
 // only called by parseDataConfiguration()
 void ConfigManager::parseMultipleCores(const xml_node &coresNode,
         bool &configSuccess, std::stringstream &parseError,
@@ -853,6 +905,21 @@ void ConfigManager::parseMultipleCores(const xml_node &coresNode,
             }
         }
     }
+}
+
+void ConfigManager::parseAccessControls(const xml_node &accessControlsNode,
+        bool &configSuccess, std::stringstream &parseError,
+        std::stringstream &parseWarnings){
+	if(accessControlsNode){
+		// parse zero or more access-control settings
+		for ( xml_node accessControlNode = accessControlsNode.first_child(); accessControlNode;
+				accessControlNode = accessControlNode.next_sibling()){
+			parseSingleAccessControl(accessControlNode, configSuccess, parseError, parseWarnings);
+			if (configSuccess == false){
+				return;
+			}
+		}
+	}
 }
 
 /*
@@ -1160,6 +1227,15 @@ void ConfigManager::parseDataConfiguration(const xml_node &configNode,
         if (configSuccess == false) {
             return;
         }
+    }
+
+    // <access-controls>
+    childNode = configNode.child(multipleAccessControlString);
+    if(childNode){
+    	parseAccessControls(childNode, configSuccess, parseError, parseWarnings);
+    	if (configSuccess == false){
+    		return;
+    	}
     }
 }
 

@@ -126,6 +126,8 @@ enum PortType_t {
     SavePort,
     ExportPort,
     ResetLoggerPort,
+    AclRoleAddPort,
+    AclRoleDeletePort,
     EndOfPortType // stop value - not valid (also used to indicate all/default ports)
 };
 
@@ -243,6 +245,10 @@ protected:
     void parseSingleCore(const xml_node &parentNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
     void parseMultipleCores(const xml_node &coresNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+
+    void parseSingleAccessControl(const xml_node &parentNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+
+    void parseAccessControls(const xml_node &accessControlsNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
     // parse all data source settings (can handle multiple cores or default/no core)
     void parseDataConfiguration(const xml_node &configNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
@@ -494,6 +500,11 @@ private:
     static const char* const fuzzyTagPost;
     static const char* const snippetSize;
 
+    static const char* const multipleAccessControlString;
+    static const char* const resourceCore;
+    static const char* const roleCore;
+    static const char* const accessControlDataFile;
+
     static const char* const defaultFuzzyPreTag;
     static const char* const defaultFuzzyPostTag;
     static const char* const defaultExactPreTag;
@@ -502,11 +513,22 @@ private:
 
 };
 
+class AccessControlInfo{
+public:
+	string resourceCoreName;
+	string roleCoreName;
+	string dataFile;
+	AccessControlInfo(string &resourceCoreName, string &roleCoreName){
+		this->resourceCoreName = resourceCoreName;
+		this->roleCoreName = roleCoreName;
+	};
+};
+
 // definitions for data source(s) (srch2Server objects within one HTTP server)
 class CoreInfo_t {
 
 public:
-    CoreInfo_t(class ConfigManager *manager) : configManager(manager) {};
+    CoreInfo_t(class ConfigManager *manager) : configManager(manager), accessControlInfo(NULL) {};
     CoreInfo_t(const CoreInfo_t &src);
 
     friend class ConfigManager;
@@ -651,6 +673,13 @@ public:
     unsigned short getPort(PortType_t portType) const;
     void setPort(PortType_t portType, unsigned short portNumber);
 
+    AccessControlInfo* getAccessControlInfo(){
+    	return this->accessControlInfo;
+    }
+
+    void setAccessControlInfo(AccessControlInfo* accessControlInfo){
+    	this->accessControlInfo = accessControlInfo;
+    }
 
 protected:
     string name; // of core
@@ -770,6 +799,9 @@ protected:
 
     // array of local HTTP ports (if any) index by port type enum
     vector<unsigned short> ports;
+
+    // keep the access control info for this core
+    AccessControlInfo* accessControlInfo;
 
 };
 
