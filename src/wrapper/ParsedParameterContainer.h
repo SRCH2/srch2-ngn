@@ -328,6 +328,7 @@ public:
         filterQueryContainer = NULL;
     	facetQueryContainer = NULL;
     	sortQueryContainer = NULL;
+    	geoParameterContainer = NULL;
         onlyFacets = false;
         isFuzzy=true;
         prefixMatchPenalty=0;
