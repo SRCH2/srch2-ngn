@@ -8,19 +8,20 @@ In the [basic tutorial](index.md), we showed how to send a search
 *beaty ame* to the SRCH2 engine.  By default, the engine uses the
 space delimiter to tokenize the string to multiple keywords ('beaty'
 and 'ame').  It treats the last keyword ('ame') as a prefix condition,
-and other keywords (e.g., 'beaty') as complete keywords.  The engine
-supports fuzzy search by allowing one typo for every three characters
-in a keyword. 
+and other keywords (e.g., 'beaty') as complete keywords.  By default,
+the engine supports fuzzy search by allowing one typo for every three
+characters in a keyword. 
 
 Often we want to have more control on the keywords (a.k.a.,
 terms) in a query, such as prefix versus complete keyword and their
-fuzziness.  The SDK allows you to have this control by customizing the
-*Query* object and then search by the  *Indexable.advancedSearch()*
-method.  
+fuzziness.  The SDK allows you to have this control by using
+the *SearchableTerm* class, customizing *Query* class, and then
+calling  *Indexable.advancedSearch()* method.  
 
 ###Examples
 
-We use the following examples to explain.  Suppose we have defined two query terms: term 1 specifies a condition
+We use the following examples to explain these advanced features.
+Suppose we have defined two query terms: term 1 specifies a condition 
 that the keyword "terminator" has to appear in the <i>title</i> field,
 and term 2 says that the keyword "cameron" needs to be in the
 <i>director</i> field.
@@ -65,7 +66,7 @@ ascending order.</li>
 By default a record is a matching answer for a keyword as long as the keyword
 appears in one of the *searchable* fields defined in the schema
 returned by *Indexable.getSchema()* method.  If we want to specify
-attributes in which a keywords needs to appear, we can 
+attributes in which a keyword needs to appear, we can 
 use the *searchSpecificField()* method.  For example, we can set the
 following search term to only search for the keyword "wind" in the
 field *title*.
@@ -76,37 +77,31 @@ field *title*.
 <h1> Give an example to show how to specify multiple attributes for a
 term. </h1> 
 
-####Prefix Condition
+###Prefix Condition
 
 In type-ahead search, we may want to treat a term, especially the
 last term ("ame" in the example query "beaty ame") as a prefix
 condition.  That is, a record is considered to match this term if
 the record has a keyword (e.g., "american") with this term as a
-prefix.  To specify such a condition, we can call the member method of
-the *SearchableTerm* 
+prefix.  To specify such a condition, we can call the member method
+*setIsPrefixMatching()* of the *SearchableTerm* class to enable or
+disable prefix matching on this keyword. By default, it is "false",
+i.e., a *SearchableTerm* object is treated as a complete-word condition.
 
-*setIsPrefixMatching()* to enable or disable 
-prefix matching on this keyword. By default, it is "false", i.e., a
-*SearchableTerm* object is treated as a complete-word condition.
-
-Take *american beau* search term as an example, the following code sets the "american" as
-the complete condition and the "beau" as the prefix condition, 
+For example, the following code sets "american" as a complete keyword
+and the "beau" as a prefix keyword:
 ```
     SearchableTerm term1 = new SearchableTerm("american").setIsPrefixMatching(false);
     SearchableTerm term2 = new SearchableTerm("beau").setIsPrefixMatching(true);
     Query query = new Query(term1.AND(term2));
 ```
 
-####Fuzzy Search
+###Fuzzy Condition
 
-We can call its member method *enableFuzzyMatching()* to enable the fuzzy
-match condition. User can also pass the specific fuzziness similarity
-threshold into that method. By default, it is "disabled", i.e., a *SearchableTerm* 
-object is treated as a exact-word condition.
-
-The engine supports fuzzy search based on [Levenshtein distance (edit distance)](http://en.wikipedia.org/wiki/Levenshtein_distance).
+The SRCH2 engine supports fuzzy search based on [Levenshtein distance (edit
+distance)](http://en.wikipedia.org/wiki/Levenshtein_distance). 
 We use a customizable threshold (normalized based on the term length) to
-determine the edit distance used in finding the set of matching keywords.  The
+determine the edit distance used in finding matching keywords.  The
 *Similarity Threshold* is a normalized value (a float number between 0 and 1)
 for a term.
 Let "s" be the similarity threshold for a term given in the query. The engine
@@ -129,6 +124,11 @@ If we don't pass the similarity threshold, e.g.,
 ```
 the engine will use the similarity threshold specified in the *Indexable.getFuzzinessSimilarityThreshold()*. 
 If user doesn't override that getter method, we will use the system default threshold of 0.65f.
+
+We can call the method *enableFuzzyMatching()* to enable the fuzzy
+match condition of a term.  We can also pass a specific fuzziness similarity
+threshold to the method. By default, it is "disabled", i.e., a *SearchableTerm* 
+object is treated as an exact-word condition.
 
 ####Term Boost
 
