@@ -109,16 +109,7 @@ This tag has parameters to customize the search engine's indexes.
  </indexConfig>
 ```
 
-###7.1. Index Type (Optional)
-IndexType specifies if the search engine should build text or location indexes. By default it assumes the value 0 (Text Index).
-```
- <indexType>0</indexType>
-```
-> 0: Text Indexes; <br>
-> 1: Text + Geo Indexes, which support location-based search. <br>
-
-
-###7.2. Field Boosts (Optional)
+###7.1. Field Boosts (Optional)
 ```
  <fieldBoost></fieldBoost>
 ```
@@ -139,19 +130,19 @@ Notice that the fields are separated by a single white space. If a
 value is not provided for a field, the engine uses a default value of
 1. <br>
 
-###7.3. Record Boost (Optional)
+###7.2. Record Boost (Optional)
 ```
  <recordBoostField>relevance</recordBoostField>
 ```
 This setting specifies an attribute whose value is used as the score (boost value) of a record. This attribute should be refining and of type float.
 
-###7.4. Default Term Boost (Optional)
+###7.3. Default Term Boost (Optional)
 ```
  <defaultQueryTermBoost>1</defaultQueryTermBoost>
 ```
 The value of this field specifies default ranking value for terms that do not have the field specified in "recordBoostField". If the parameter is not given, the engine uses 1 as the default value.<br>
 
-###7.5. Enable Positional Index (Optional)
+###7.4. Enable Positional Index (Optional)
 
 A positional index supports queries with conditions related to keyword positions in a record, such as
 [proximity search](restful-search.mkd#334-proximity-search). The "enablePositionIndex" tag is used to enable or disable positional indexing.  For instance, the following example shows how to enable this indexing:
@@ -161,7 +152,7 @@ A positional index supports queries with conditions related to keyword positions
 ```  
 Note that the positional index takes more memory resources. By default it is disabled.<br>
 
-###7.6. Enable Character Offset Index (Optional)
+###7.5. Enable Character Offset Index (Optional)
 
 A character offset index supports fast keyword [highlighting](#812-highlighter-optional) during the snippet generation. The "enableCharOffsetIndex" tag can be used to enable or disable character offset indexing.  For instance, the following
 example shows how to enable this indexing:
