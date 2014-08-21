@@ -718,6 +718,17 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
         (*coreNameServerMap)[iterator->second->getName()] = core;
     }
 
+    // link resource and role cores to each other by setting their pointers
+    for (ConfigManager::CoreInfoMap_t::const_iterator iterator = config->coreInfoIterateBegin();
+         iterator != config->coreInfoIterateEnd(); iterator++) {
+    	if(iterator->second->getAccessControlInfo() != NULL){
+    		CoreNameServerMap_t::iterator resourceCoreIt = coreNameServerMap->find(iterator->second->getName());
+    		CoreNameServerMap_t::iterator roleCoreIt = coreNameServerMap->find(iterator->second->getAccessControlInfo()->roleCoreName);
+    		resourceCoreIt->second->roleCore = roleCoreIt->second;
+    		roleCoreIt->second->resourceCores.push_back(resourceCoreIt->second);
+    	}
+    }
+
     // make sure we have identified the default core
     srch2http::Srch2Server *defaultCore = NULL;
     if (coreNameServerMap->find(config->getDefaultCoreName()) != coreNameServerMap->end()) {

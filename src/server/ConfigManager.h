@@ -126,8 +126,6 @@ enum PortType_t {
     SavePort,
     ExportPort,
     ResetLoggerPort,
-    AclRoleAddPort,
-    AclRoleDeletePort,
     EndOfPortType // stop value - not valid (also used to indicate all/default ports)
 };
 
