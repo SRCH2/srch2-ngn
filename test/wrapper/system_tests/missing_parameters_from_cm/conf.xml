@@ -24,14 +24,6 @@
     -->
     <srch2Home>./</srch2Home>
     <authorization-key>blackberry</authorization-key> 
-    <!--
-        License Key File
-        Required
-         
-        Email contact@srch2.com to get a key file.  
-        Make sure to set the variable to the SRCH2 license key file.
-    -->
-    <licenseFile>../conf/srch2_license_key.txt</licenseFile>
  
     <!--
         Hostname and Port Number
@@ -49,7 +41,7 @@
         The file path to the folder where we store serialized index files.
         REQUIRED, when "index-load-or-create" is set to 1.
     -->
-    <dataDir>./data/exact_a1/</dataDir>
+    <dataDir>./data/missing_parameters_from_cm/</dataDir>
      
     <!--
         Data File
@@ -58,7 +50,7 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>./exact_a1/data.json</dataFile>
+    <dataFile>./missing_parameters_from_cm/data.json</dataFile>
      
     <!--
 	Maximum Number of Threads
@@ -79,7 +71,6 @@
                 0: Text Index
                 1: Geo+Text Index
         -->
-        <indexType>0</indexType>
         
 		<!--
             0: don't support swap operation in edit distance
@@ -273,7 +264,7 @@
             Maximum number of records that can be inserted into the engine.
             The number depends on the size of each record and the available memory
          -->
-        <maxDocs>15000000</maxDocs>
+  <!--      <maxDocs>15000000</maxDocs>   -->
  
         <!--
             Maximum Number of Documents
@@ -281,7 +272,7 @@
              
             Maximum size of memory that can be used.
         -->
-        <maxMemory>100000</maxMemory>
+      <!--  <maxMemory>100000</maxMemory> -->
              
         <!--
             Merge Policies
@@ -293,12 +284,13 @@
             mergeEveryMWrites:
             The number of write operations after which newly inserted/deleted records are merged into the indexes.
         -->
+<!--
         <mergePolicy>
-          <mergeEveryNSeconds>10</mergeEveryNSeconds>
-          <mergeEveryMWrites>100</mergeEveryMWrites>
+          <mergeEveryNSeconds>10</mergeEveryNSeconds> 
+          <mergeEveryMWrites>100</mergeEveryMWrites>  
         </mergePolicy>
-         
-         
+  -->       
+        
         <updateLog>
             <!-- 
                 Log Level
@@ -311,7 +303,7 @@
                     3 INFO
                 Defaults to 3 INFO
             -->
-            <logLevel>3</logLevel>
+           <!-- <logLevel>3</logLevel> -->
                          
             <!--
                 Access Log File
@@ -319,7 +311,7 @@
                  
                 Path to Access Log File
             -->
-            <accessLogFile>./data/exact_a1/log.txt</accessLogFile>
+            <accessLogFile>./data/relaxed_config/log.txt</accessLogFile>
         </updateLog>
      
     </updatehandler>

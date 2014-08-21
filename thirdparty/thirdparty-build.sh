@@ -4,9 +4,10 @@
 echo "BUILDING JSONCPP..."
 
 cd ./json
-tar -xvf jsoncpp-src-0.5.0.tar.gz
-cp scons-local-2.1.0.tar.gz jsoncpp-src-0.5.0
-cd jsoncpp-src-0.5.0
+tar -xvf jsoncpp-src-0.6.0.tar.gz
+mv jsoncpp-src-0.6.0 jsoncpp-src
+cp scons-local-2.1.0.tar.gz jsoncpp-src
+cd jsoncpp-src
 tar -xvf scons-local-2.1.0.tar.gz
 python scons.py platform=linux-gcc
 
@@ -45,4 +46,4 @@ tar -xf mongodb-linux-x86_64-v2.4-latest.tgz
 cd mongo-cxx-driver-v2.4
 CURRENTDIR=$(pwd)
 echo "Building mongo driver in $CURRENTDIR"
-python ../json/jsoncpp-src-0.5.0/scons.py 
+python ../json/jsoncpp-src/scons.py 

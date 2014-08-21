@@ -148,15 +148,19 @@ typedef enum
 // change the names, they are too general
 typedef enum
 {
-    ATTRIBUTE_TYPE_UNSIGNED,
-    ATTRIBUTE_TYPE_FLOAT ,
-    ATTRIBUTE_TYPE_TEXT ,
-    ATTRIBUTE_TYPE_TIME ,// Time is kept as a long integer in the core.
-         // The meaning of this long integer is the number of seconds past from January 1st, 1970
+    ATTRIBUTE_TYPE_INT,
+    ATTRIBUTE_TYPE_LONG,
+    ATTRIBUTE_TYPE_FLOAT,
+    ATTRIBUTE_TYPE_DOUBLE,
+    ATTRIBUTE_TYPE_TEXT,
+    ATTRIBUTE_TYPE_TIME,// Time is kept as a long integer in the core.
+    // The meaning of this long integer is the number of seconds past from January 1st, 1970
     // TypedValue class uses these constants to understand if it is dealing with a single-valued attribute
     // or a multi-valued one.
-    ATTRIBUTE_TYPE_MULTI_UNSIGNED,
+    ATTRIBUTE_TYPE_MULTI_INT,
+    ATTRIBUTE_TYPE_MULTI_LONG,
     ATTRIBUTE_TYPE_MULTI_FLOAT,
+    ATTRIBUTE_TYPE_MULTI_DOUBLE,
     ATTRIBUTE_TYPE_MULTI_TEXT,
     ATTRIBUTE_TYPE_MULTI_TIME,
     ATTRIBUTE_TYPE_DURATION
