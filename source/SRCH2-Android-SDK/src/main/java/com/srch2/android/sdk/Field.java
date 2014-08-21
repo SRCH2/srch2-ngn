@@ -365,13 +365,13 @@ final public class Field {
                     .append(field.type.name().toLowerCase(Locale.ENGLISH))
                     .append("\"/>\n");
         } else {
-            fieldXML.append("			<field name=\"").append(field.name)
-                    .append("\" type=\"")
-                    .append(field.type.name().toLowerCase(Locale.ENGLISH))
-                    .append("\" searchable=\"").append(field.searchable)
-                    .append("\" refining=\"").append(field.refining)
-                    .append("\"").append(" required=\"")
-                    .append(field.required).append("\"/>\n");
+            fieldXML.append("			<field name=\"").append(field.name).append("\"")
+                    .append(" type=\"").append(field.type.name().toLowerCase(Locale.ENGLISH)).append("\"")
+                    .append(" searchable=\"").append(field.searchable).append("\"")
+                    .append(" refining=\"").append(field.refining).append("\"")
+                    .append(" highlight=\"").append(field.highlight).append("\"")
+                    .append(" required=\"").append(field.required).append("\"/>")
+                    .append("\n");
         }
         return fieldXML.toString();
     }

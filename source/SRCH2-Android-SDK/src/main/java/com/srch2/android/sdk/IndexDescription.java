@@ -58,6 +58,12 @@ final class IndexDescription {
     private static final String DEFAULT_VALUE_logLevel = "3";
     private static final String DEFAULT_VALUE_accessLogFile = "srch2-log.txt";
 
+    private static final String DEFAULT_VALUE_fuzzyPreTag = "<i>";
+    private static final String DEFAULT_VALUE_fuzzyPostTag = "</i>";
+    private static final String DEFAULT_VALUE_exactPreTag = "<b>";
+    private static final String DEFAULT_VALUE_exactPostTag = "</b>";
+
+
     private final Properties queryProperties = new Properties();
     private final Properties miscProperties = new Properties();
     private final Properties indexProperties = new Properties();
@@ -173,6 +179,15 @@ final class IndexDescription {
                 DEFAULT_VALUE_queryTermPrefixType);
         queryProperties.setProperty("responseFormat",
                 DEFAULT_VALUE_responseFormat);
+        queryProperties.setProperty("fuzzyPreTag",
+                schema.highlight_fuzzyPrefix == null ? DEFAULT_VALUE_fuzzyPreTag : schema.highlight_fuzzyPrefix);
+        queryProperties.setProperty("fuzzyPostTag",
+                schema.highlight_fuzzySuffix == null ? DEFAULT_VALUE_fuzzyPostTag : schema.highlight_fuzzySuffix);
+        queryProperties.setProperty("exactPreTag",
+                schema.highlight_exactPrefix == null ? DEFAULT_VALUE_exactPreTag : schema.highlight_exactPrefix);
+        queryProperties.setProperty("exactPostTag",
+                schema.highlight_exactSuffix == null ? DEFAULT_VALUE_exactPostTag : schema.highlight_exactSuffix);
+
     }
 
     float getQueryTermSimilarityThreshold() {
@@ -325,9 +340,16 @@ final class IndexDescription {
                 .append(queryProperties.getProperty(RESPONSE_FORMAT))
                 .append("</responseFormat>\n")
                 .append("                </queryResponseWriter>\n")
+                .append("<highlighter>\n")
+                        .append("<snippetSize>").append(100).append("</snippetSize>\n")
+                        .append("<fuzzyTagPre value = \'").append(queryProperties.get("fuzzyPreTag")).append("\'></fuzzyTagPre>\n")
+                        .append("<fuzzyTagPost value = \'").append(queryProperties.get("fuzzyPostTag")).append("\'></fuzzyTagPost>\n")
+                        .append("<exactTagPre value = \'").append(queryProperties.get("exactPreTag")).append("\'></exactTagPre>\n")
+                        .append("<exactTagPost value = \'").append(queryProperties.get("exactPostTag")).append("\'></exactTagPost>\n")
+                .append("</highlighter>\n")
                 .append("            </query>\n");
-        core.append(schemaToXml());
-        core.append("	  <updatehandler>\n").append("                <maxDocs>")
+                core.append(schemaToXml());
+                core.append("	  <updatehandler>\n").append("                <maxDocs>")
                 .append(updateProperties.getProperty(MAX_DOCS))
                 .append("</maxDocs>\n").append("                <maxMemory>")
                 .append(updateProperties.getProperty(MAX_MEMORY))

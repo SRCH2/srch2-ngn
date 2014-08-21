@@ -26,6 +26,9 @@ public class Idx extends Indexable {
         Field title = Field.createSearchableField(INDEX_FIELD_NAME_TITLE);
         Field title2 = Field.createSearchableField(INDEX_FIELD_NAME_TITLE2);
         RecordBoostField score = Field.createRecordBoostField(INDEX_FIELD_NAME_SCORE);
+
+        title.enableHighlighting();
+
            return Schema.createSchema(pk, score, title, title2);
         //return Schema.createSchema(pk, title);
     }
