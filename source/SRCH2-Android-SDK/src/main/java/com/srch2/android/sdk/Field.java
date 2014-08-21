@@ -316,6 +316,8 @@ final public class Field {
      */
     public Field enableHighlighting() {
         highlight = true;
+        searchable = true;
+        refining = true;
         return this;
     }
 
@@ -365,13 +367,22 @@ final public class Field {
                     .append(field.type.name().toLowerCase(Locale.ENGLISH))
                     .append("\"/>\n");
         } else {
-            fieldXML.append("			<field name=\"").append(field.name).append("\"")
-                    .append(" type=\"").append(field.type.name().toLowerCase(Locale.ENGLISH)).append("\"")
-                    .append(" searchable=\"").append(field.searchable).append("\"")
-                    .append(" refining=\"").append(field.refining).append("\"")
-                    .append(" highlight=\"").append(field.highlight).append("\"")
-                    .append(" required=\"").append(field.required).append("\"/>")
-                    .append("\n");
+            if (field.highlight) {
+                fieldXML.append("			<field name=\"").append(field.name).append("\"")
+                        .append(" type=\"").append(field.type.name().toLowerCase(Locale.ENGLISH)).append("\"")
+                        .append(" indexed=\"").append("true").append("\"")
+                        .append(" highlight=\"").append(field.highlight).append("\"")
+                        .append(" required=\"").append(field.required).append("\"/>")
+                        .append("\n");
+            } else {
+                fieldXML.append("			<field name=\"").append(field.name).append("\"")
+                        .append(" type=\"").append(field.type.name().toLowerCase(Locale.ENGLISH)).append("\"")
+                        .append(" searchable=\"").append(field.searchable).append("\"")
+                        .append(" refining=\"").append(field.refining).append("\"")
+                        .append(" highlight=\"").append(field.highlight).append("\"")
+                        .append(" required=\"").append(field.required).append("\"/>")
+                        .append("\n");
+            }
         }
         return fieldXML.toString();
     }

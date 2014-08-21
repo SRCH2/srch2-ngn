@@ -88,73 +88,7 @@ final class IndexDescription {
         setIndexProperties();
         setUpdateProperties();
     }
-/*
 
-     * Creates the necessary configuration for the index that the <code>Indexable</code>
-     * implementation represents. Should only be constructed when returning from the
-     * <code>Indexable</code> method <code>getIndexDescription()</code>.
-     * <br><br>
-     * The first argument <b>should always</b> be the name of the index. The value of this can
-     * be used to reference the index when the static method calls of the <code>SRCH2Engine</code>
-     * are used to request a task on an index (instead of using the non-static methods of the
-     * <code>Indexable</code>); or it can also be used to identify which set of search results
-     * belong to which indexes when the <code>SearchResultsListener</code> method
-     * <code>onNewSearchResultsAvailable()</code> is triggered. Thus <i>it is recommended</i> that
-     * this value be kept in a constant field in the <code>Indexable</code> class implementation.
-     * <br><br>
-     * The second argument <b>should always</b> be the primary key field, which can be used to
-     * retrieve a specific record or as the handle to delete the record from the index. Each
-     * record <b>should have a unique value</b> for its primary key.
-     * <br><br>
-     * The remaining set of arguments are the rest of the schema's fields as they are defined
-     * for the index. They can be passed in any order.
-     * <br><br>
-     * This method will throw exceptions if <code>name</code> is null or empty; or if
-     * any of the fields passed are null.
-
-
-    IndexDescription(String theIndexName, Schema theSchema) {
-        this(theIndexName, theSchema);
-    }
-
-
-     * Creates the necessary configuration for the index that the <code>Indexable</code>
-     * implementation represents for an index that includes geo-search capability. Should
-     * only be constructed when returning from the <code>Indexable</code> method
-     * <code>getIndexDescription()</code>.
-     * <br><br>
-     * The first argument <b>should always</b> be the name of the index. The value of this can
-     * be used to reference the index when the static method calls of the <code>SRCH2Engine</code>
-     * are used to request a task on an index (instead of using the non-static methods of the
-     * <code>Indexable</code>); or it can also be used to identify which set of search results
-     * belong to which indexes when the <code>SearchResultsListener</code> method
-     * <code>onNewSearchResultsAvailable()</code> is triggered. Thus <i>it is recommended</i> that
-     * this value be kept in a constant field in the <code>Indexable</code> class implementation.
-     * <br><br>
-     * The second argument <b>should always</b> be the primary key field, which can be used to
-     * retrieve a specific record or as the handle to delete the record from the index. Each
-     * record <b>should have a unique value</b> for its primary key.
-     * <br><br>
-     * The third and fourth arguments <b>should always</b> be the latitude and longitude
-     * fields, in that order, that are defined for the index's schema.
-     * The remaining set of arguments are the rest of the schema's fields as they are defined
-     * for the index. They can be passed in any order.
-     * <br><br>
-     * This method will throw exceptions if <code>name</code> is null or empty; or if
-     * any of the fields passed are null.
-     * @param name            the value to assign to name the index
-     * @param primaryKeyField the field which will be the primary key of the index's schema
-     * @param latitudeFieldName the field which will be the latitude field of the index's schema
-     * @param longitudeFieldName the field which will be the longitude field of the index's schema
-     * @param remainingField  the set of any other fields needed to define the schema
-
-    IndexDescription(String name, PrimaryKeyField primaryKeyField,
-                            String latitudeFieldName, String longitudeFieldName,
-                            Field... remainingField) {
-        this(name, new Schema(primaryKeyField, latitudeFieldName,
-                longitudeFieldName, remainingField));
-    }
-    */
     boolean isGeoIndex() {
         return schema.indexType > 0;
     }
@@ -341,7 +275,7 @@ final class IndexDescription {
                 .append("</responseFormat>\n")
                 .append("                </queryResponseWriter>\n")
                 .append("<highlighter>\n")
-                        .append("<snippetSize>").append(100).append("</snippetSize>\n")
+                        .append("<snippetSize>").append(250).append("</snippetSize>\n")
                         .append("<fuzzyTagPre value = \'").append(queryProperties.get("fuzzyPreTag")).append("\'></fuzzyTagPre>\n")
                         .append("<fuzzyTagPost value = \'").append(queryProperties.get("fuzzyPostTag")).append("\'></fuzzyTagPost>\n")
                         .append("<exactTagPre value = \'").append(queryProperties.get("exactPreTag")).append("\'></exactTagPre>\n")
