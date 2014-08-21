@@ -1,4 +1,4 @@
-#This test is used to check if engine runs properly with empty record boost field
+#This test is used to check if engine runs with default behaviour when recordBoostField is not specified.
 
 import sys, urllib2, json, time, subprocess, os, commands, signal
 
