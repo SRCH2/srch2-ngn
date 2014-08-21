@@ -360,6 +360,11 @@ final public class SRCH2Engine {
         }
     }
 
+    static class ExceptionMessages {
+        static final String IO_EXCEPTION_EADDRINUSE_ADDRESS_ALREADY_IN_USE = "EADDRINUSE (Address already in use)";
+        static final String IO_EXCEPTION_EACCES_PERMISSION_DENIED = "EACCES (Permission Denied)";
+    }
+
     static int detectFreePort() {
         Cat.d(TAG, "detectFreePort");
         int port = 49152;
@@ -368,7 +373,17 @@ final public class SRCH2Engine {
                 new ServerSocket(port).close();
                 break;
             } catch (IOException ex) {
-                ex.printStackTrace();
+                String message = ex.getMessage();
+                if (message != null) {
+                    Cat.d(TAG, "message: [" + message + "]");
+
+                    if (message.contains(ExceptionMessages.IO_EXCEPTION_EADDRINUSE_ADDRESS_ALREADY_IN_USE)) {
+                        continue;
+                    } else if (message.contains(ExceptionMessages.IO_EXCEPTION_EACCES_PERMISSION_DENIED)) {
+                        port = -1;
+                        break;
+                    }
+                }
             }
         }
         return port;
