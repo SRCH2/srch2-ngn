@@ -284,11 +284,11 @@ final class IndexDescription {
                 .append("                <fieldBoost>")
                 .append(indexProperties.getProperty(FIELD_BOOST))
                 .append("</fieldBoost>\n");
-                // temporary fix since engine will crash if this is empty (ie has not been set by user)
                 if (schema.recordBoostKey != null) {
-                    core.append("                <recordBoostField>")
-                            .append(indexProperties.getProperty(RECORD_BOOST_FIELD))
-                            .append("</recordBoostField>\n");
+                    core
+                        .append("                <recordBoostField>")
+                        .append(indexProperties.getProperty(RECORD_BOOST_FIELD))
+                        .append("</recordBoostField>\n");
                 }
                 core.append("                <defaultQueryTermBoost>")
                 .append(indexProperties.getProperty(DEFAULT_QUERY_TERM_BOOST))
