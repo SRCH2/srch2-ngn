@@ -120,13 +120,19 @@ class SearchTask extends HttpTask.SearchHttpTask {
                 jsonResponse = readInputStream(connection.getErrorStream());
             }
         } catch (IOException networkProblem) {
-            networkProblem.printStackTrace();
-            jsonResponse = networkProblem.getMessage();
+            jsonResponse = handleIOExceptionMessagePassing(networkProblem, jsonResponse, "SearchTask");
+            responseCode = HttpURLConnection.HTTP_INTERNAL_ERROR;
         } finally {
             if (connection != null) {
                 connection.disconnect();
             }
         }
+
+        if (jsonResponse == null) {
+            jsonResponse = prepareIOExceptionMessageForCallback();
+            responseCode = HttpURLConnection.HTTP_INTERNAL_ERROR;
+        }
+
         if (!shouldHalt()) {
             onTaskComplete(responseCode, jsonResponse);
         }

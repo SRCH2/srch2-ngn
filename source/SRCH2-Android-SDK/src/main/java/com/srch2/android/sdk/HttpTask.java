@@ -13,6 +13,7 @@ import java.util.concurrent.Executors;
 
 abstract class HttpTask implements Runnable {
 
+    static final String IRRECOVERABLE_NETWORK_ERROR_MESSAGE = "Connection failed. ";
     private static final String TAG = "HttpTask";
 
     static final class RESTfulResponseTags {
@@ -285,7 +286,7 @@ abstract class HttpTask implements Runnable {
             }
         }
         if (response == null) {
-            response = Indexable.IRRECOVERABLE_NETWORK_ERROR_MESSAGE;
+            response = prepareIOExceptionMessageForCallback();
         }
         return response;
     }
@@ -303,13 +304,19 @@ abstract class HttpTask implements Runnable {
             ioException.printStackTrace();
         }
         if (errorResponse == null) {
-            errorResponse = Indexable.IRRECOVERABLE_NETWORK_ERROR_MESSAGE;
-        }
-        if (response == null) {
-            return errorResponse;
+            response = prepareIOExceptionMessageForCallback();
         } else {
-            return response + " " + errorResponse;
+            response = prepareIOExceptionMessageForCallback(errorResponse);
         }
+        return response;
+    }
+
+    static String prepareIOExceptionMessageForCallback(String message) {
+        return IRRECOVERABLE_NETWORK_ERROR_MESSAGE + " IOException message: " + message;
+    }
+
+    static String prepareIOExceptionMessageForCallback() {
+        return IRRECOVERABLE_NETWORK_ERROR_MESSAGE + " IOException message: irrecoverable error";
     }
 
     /**

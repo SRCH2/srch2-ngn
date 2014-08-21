@@ -70,7 +70,7 @@ class InternalInfoTask {
         }
 
         if (response == null) {
-            response = Indexable.IRRECOVERABLE_NETWORK_ERROR_MESSAGE;
+            response = HttpTask.IRRECOVERABLE_NETWORK_ERROR_MESSAGE;
         }
 
         return new InternalInfoResponse(responseCode, response);

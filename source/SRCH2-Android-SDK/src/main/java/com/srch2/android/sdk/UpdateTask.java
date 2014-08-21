@@ -80,7 +80,7 @@ class UpdateTask extends HttpTask.InsertUpdateDeleteTask {
         }
 
         if (response == null) {
-            response = Indexable.IRRECOVERABLE_NETWORK_ERROR_MESSAGE;
+            response = prepareIOExceptionMessageForCallback();
         }
         onTaskComplete(responseCode, response);
     }
@@ -128,7 +128,7 @@ class UpdateTask extends HttpTask.InsertUpdateDeleteTask {
         }
 
         if (response == null) {
-            response = Indexable.IRRECOVERABLE_NETWORK_ERROR_MESSAGE;
+            response = prepareIOExceptionMessageForCallback();
         }
         onTaskComplete(responseCode, response);
     }
