@@ -134,6 +134,7 @@ OperationState * NewNodeLockOperation::handle(NewNodeLockNotification::ACK * ack
 		// we reached to ourself. We can continue we initializing our repository
 		// and that's it. we are done. we can assume we have the locks.
 		ShardManager::getShardManager()->getLockManager()->setLockHolderRepository(lastShardLockRepository);
+		lastShardLockRepository = NULL; // so that we don't deallocate it in destructor.
 		// Commit the metadata, because maybe lock values on readview need to change
 		ShardManager::getShardManager()->getMetadataManager()->commitClusterMetadata();
 		// we are done.

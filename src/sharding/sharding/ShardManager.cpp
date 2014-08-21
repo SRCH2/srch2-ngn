@@ -327,7 +327,7 @@ bool ShardManager::resolveMessage(Message * msg, NodeId node){
 			delete moveFinishNotif;
 			return true;
 		}
-		case ShardingNewNodeReadMetadataMessageType:
+		case ShardingNewNodeReadMetadataRequestMessageType:
 		{
 			MetadataReport::REQUEST * readNotif =
 					ShardingNotification::deserializeAndConstruct<MetadataReport::REQUEST>(Message::getBodyPointerFromMessagePointer(msg));
@@ -348,7 +348,7 @@ bool ShardManager::resolveMessage(Message * msg, NodeId node){
 			delete readNotif;
 			return true;
 		}
-		case ShardingNewNodeReadMetadataACKMessageType:
+		case ShardingNewNodeReadMetadataReplyMessageType:
 		{
 			MetadataReport * readAckNotif =
 					ShardingNotification::deserializeAndConstruct<MetadataReport>(Message::getBodyPointerFromMessagePointer(msg));

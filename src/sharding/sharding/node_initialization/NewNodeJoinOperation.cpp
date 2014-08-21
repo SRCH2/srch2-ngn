@@ -41,7 +41,7 @@ OperationState * NewNodeJoinOperation::handle(Notification * notification){
 			return handle((NodeFailureNotification *)notification);
 		case ShardingNewNodeLockACKMessageType:
 			return handle((NewNodeLockNotification::ACK *)notification);
-		case ShardingNewNodeReadMetadataMessageType:
+		case ShardingNewNodeReadMetadataReplyMessageType:
 			return handle((MetadataReport *)notification);
 		case ShardingCommitACKMessageType:
 			return handle((CommitNotification::ACK *)notification);

@@ -26,12 +26,12 @@ void ClusterOperationStateMachine::handle(ShardingNotification * notification){
 		return;
 	}
 	// find the operation in the map
-	if(activeOperations.find(notification->getSrc().operationId) == activeOperations.end()){
+	if(activeOperations.find(notification->getDest().operationId) == activeOperations.end()){
 		return; // no operation is waiting for this notification.
 	}
 	OperationState * nextState =
-			activeOperations.find(notification->getSrc().operationId)->second->handle(notification);
-	stateTransit(activeOperations.find(notification->getSrc().operationId)->second, nextState);
+			activeOperations.find(notification->getDest().operationId)->second->handle(notification);
+	stateTransit(activeOperations.find(notification->getDest().operationId)->second, nextState);
 }
 
 // goes to everybody

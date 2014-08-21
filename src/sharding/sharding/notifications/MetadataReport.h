@@ -19,7 +19,7 @@ public:
 	}
 	MetadataReport(){};
     ShardingMessageType messageType() const{
-    	return ShardingNewNodeReadMetadataMessageType;
+    	return ShardingNewNodeReadMetadataReplyMessageType;
     }
 	void * serialize(void * buffer) const{
 		buffer = ShardingNotification::serialize(buffer);
@@ -49,7 +49,7 @@ public:
     class REQUEST : public ShardingNotification{
     public:
         ShardingMessageType messageType() const{
-        	return ShardingNewNodeReadMetadataACKMessageType;
+        	return ShardingNewNodeReadMetadataRequestMessageType;
         }
     };
 };
