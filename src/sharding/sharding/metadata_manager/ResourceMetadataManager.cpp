@@ -50,8 +50,7 @@ unsigned ResourceMetadataManager::applyAndCommit(MetadataChange * metadataChange
 		return 0;
 	}
 	metadataChange->doChange(writeview);
-	ClusterResourceMetadata_Readview * newReadview = writeview->getNewReadview();
-	this->commitClusterMetadata(newReadview);
+	this->commitClusterMetadata(writeview->getNewReadview());
 	return writeview->versionId - 1;
 }
 

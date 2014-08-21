@@ -691,7 +691,13 @@ void Cluster_Writeview::addLocalNodeShard(const NodeShardId & nodeShardId, const
 }
 
 void Cluster_Writeview::addExternalNodeShard(const NodeShardId & nodeShardId, const double load){
-	this->nodeShards.push_back(new NodeShard_Writeview(nodeShardId, true, load));
+    ASSERT(this->currentNodeId != nodeShardId.nodeId);
+    for(unsigned i = 0 ; i < this->nodeShards.size(); ++i){
+        if(this->nodeShards.at(i)->id == nodeShardId){
+            return;
+        }
+    }
+	this->nodeShards.push_back(new NodeShard_Writeview(nodeShardId, false, load));
 }
 
 void Cluster_Writeview::removeNodeShard(const NodeShardId & nodeShardId){

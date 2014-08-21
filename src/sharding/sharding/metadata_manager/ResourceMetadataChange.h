@@ -64,6 +64,10 @@ public:
 			}
 		}
 
+		for(unsigned i = 0 ; i < this->localNodeShardIds.size() ; ++i){
+		    metadata->addExternalNodeShard(this->localNodeShardIds.at(i),1);
+		}
+
 		return true;
 	}
 	MetadataChangeType getType() const{
