@@ -361,8 +361,12 @@ final public class SRCH2Engine {
     }
 
     static class ExceptionMessages {
+        /** Will be message of IOException when port already in use. */
         static final String IO_EXCEPTION_EADDRINUSE_ADDRESS_ALREADY_IN_USE = "EADDRINUSE (Address already in use)";
+        /** Will be message of IOException when Internet Permission missing from manifest. */
         static final String IO_EXCEPTION_EACCES_PERMISSION_DENIED = "EACCES (Permission Denied)";
+        /** Will be message of IOException when server crashes. */
+        static final String IO_EXCEPTION_ECONNREFUSED_CONNECTION_REFUSED = "ECONNREFUSED (Connection Refused)";
     }
 
     static int detectFreePort() {
