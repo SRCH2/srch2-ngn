@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="com.srch2.android.http.service">
+          package="com.srch2.android.sdk">
 
     <uses-permission android:name="android.permission.INTERNET"></uses-permission>
     <!--- for Robolectic test only
@@ -8,7 +8,7 @@
     -->
     <application>
         <service
-                android:name="com.srch2.android.http.service.SRCH2Service"
+                android:name=".SRCH2Service"
                 android:exported="false"
                 android:enabled="true"
                 android:process=":remotee">

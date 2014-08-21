@@ -1,17 +1,15 @@
-package com.srch2.android.demo.helloworld;
+package com.srch2.android.sdk.sandbox;
 
 import android.content.Context;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
-
 import com.srch2.android.sdk.SearchResultsListener;
-
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.lang.ref.WeakReference;
@@ -34,7 +32,19 @@ public class SearchResultsAdapter extends BaseAdapter {
         }
     }
 
-    private ArrayList<MovieSearchResult> mSearchResults;
+    public static class SearchResultItem {
+        public final String textOne;
+        public final String textTwo;
+        public final String textThree;
+
+        public SearchResultItem(String theTextOne, String theTextTwo, String theTextThree) {
+            textOne = theTextOne;
+            textTwo = theTextTwo;
+            textThree = theTextThree;
+        }
+    }
+
+    private ArrayList<SearchResultItem> mSearchResults;
     private LayoutInflater mLayoutInflater;
     private SearchResultsUiHandler mSearchResultsUiHandler;
 
@@ -45,7 +55,7 @@ public class SearchResultsAdapter extends BaseAdapter {
     public SearchResultsAdapter(Context context) {
         mLayoutInflater = (LayoutInflater) context
                 .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        mSearchResults = new ArrayList<MovieSearchResult>();
+        mSearchResults = new ArrayList<SearchResultItem>();
         mSearchResultsUiHandler = new SearchResultsUiHandler(this);
     }
 
@@ -55,7 +65,7 @@ public class SearchResultsAdapter extends BaseAdapter {
     }
 
     public void updateDisplayedSearchResults(
-            ArrayList<MovieSearchResult> newSearchResults) {
+            ArrayList<SearchResultItem> newSearchResults) {
         // Swap out the data set of this adapter with the new set of search results
         // and invalidate the list view this adapter is backing with these new
         // search results.
@@ -70,7 +80,7 @@ public class SearchResultsAdapter extends BaseAdapter {
     }
 
     @Override
-    public MovieSearchResult getItem(int position) {
+    public SearchResultItem getItem(int position) {
         return mSearchResults == null ? null : mSearchResults.get(position);
     }
 
@@ -81,7 +91,7 @@ public class SearchResultsAdapter extends BaseAdapter {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        MovieSearchResult searchResult = mSearchResults.get(position);
+        SearchResultItem searchResult = mSearchResults.get(position);
         if (searchResult == null) {
             View view = new View(parent.getContext());
             view.setVisibility(View.GONE);
@@ -90,22 +100,22 @@ public class SearchResultsAdapter extends BaseAdapter {
             ViewHolder viewHolder;
             if (convertView == null) {
                 convertView = mLayoutInflater.inflate(
-                        R.layout.listview_search_result_row, parent, false);
+                        R.layout.row, parent, false);
                 TextView titleTextView = (TextView) convertView
-                        .findViewById(R.id.tv_title_search_result_row);
+                        .findViewById(R.id.tv1);
                 TextView genreTextView = (TextView) convertView
-                        .findViewById(R.id.tv_genre_search_result_row);
+                        .findViewById(R.id.tv2);
                 TextView yearTextView = (TextView) convertView
-                        .findViewById(R.id.tv_year_search_result_row);
+                        .findViewById(R.id.tv3);
                 viewHolder = new ViewHolder(titleTextView, genreTextView,
                         yearTextView);
                 convertView.setTag(viewHolder);
             } else {
                 viewHolder = (ViewHolder) convertView.getTag();
             }
-            viewHolder.mTitleTextView.setText(searchResult.getTitle());
-            viewHolder.mGenreTextView.setText(searchResult.getGenre());
-            viewHolder.mYearTextView.setText(String.valueOf(searchResult.getYear()));
+            viewHolder.mTitleTextView.setText(searchResult.textOne);
+            viewHolder.mGenreTextView.setText(searchResult.textTwo);
+            viewHolder.mYearTextView.setText(searchResult.textThree);
             return convertView;
         }
     }
@@ -137,9 +147,9 @@ public class SearchResultsAdapter extends BaseAdapter {
             if (searchResultAdapter != null) {
                 switch (msg.what) {
                     case MESSAGE_WHAT_PUBLISH_NEW_RESULTS:
-                        ArrayList<MovieSearchResult> newResults = null;
+                        ArrayList<SearchResultItem> newResults = null;
                         try {
-                            newResults = (ArrayList<MovieSearchResult>) msg.obj;
+                            newResults = (ArrayList<SearchResultItem>) msg.obj;
                         } catch (ClassCastException oops) {
                         }
 
@@ -160,28 +170,17 @@ public class SearchResultsAdapter extends BaseAdapter {
                                        String jsonResponse,
                                        HashMap<String, ArrayList<JSONObject>> resultRecordMap) {
             if (httpResponseCode == HttpURLConnection.HTTP_OK) {
-                ArrayList<MovieSearchResult> newResults = new ArrayList<MovieSearchResult>();
+
+                Log.d("srch2:: search results", jsonResponse);
+
+                ArrayList<SearchResultItem> newResults = new ArrayList<SearchResultItem>();
 
                 ArrayList<JSONObject> movieResults = resultRecordMap
-                        .get(MovieIndex.INDEX_NAME);
+                        .get(Idx.INDEX_NAME);
                 if (movieResults != null && movieResults.size() > 0) {
-                    for (JSONObject jsonObject : movieResults) {
-                        MovieSearchResult searchResult = null;
-                        try {
-                            searchResult = new MovieSearchResult(
-                                    jsonObject
-                                            .getString(MovieIndex.INDEX_FIELD_TITLE),
-                                    jsonObject
-                                            .getString(MovieIndex.INDEX_FIELD_GENRE),
-                                    jsonObject
-                                            .getInt(MovieIndex.INDEX_FIELD_YEAR));
-                        } catch (JSONException oops) {
-                            continue;
-                        }
-
-                        if (searchResult != null) {
-                            newResults.add(searchResult);
-                        }
+                    ArrayList<SearchResultItem> results = Idx.wrap(movieResults);
+                    if (results != null) {
+                        newResults.addAll(results);
                     }
                 }
                 sendMessage(Message

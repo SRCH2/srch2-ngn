@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="com.srch2.android.http.service"
+          package="com.srch2.android.sdk"
           android:versionCode="1"
           android:versionName="1.0">
     <uses-sdk android:minSdkVersion="18"/>
     <uses-permission android:name="android.permission.INTERNET"></uses-permission>
     <application android:label="@string/app_name" android:icon="@drawable/ic_launcher">
-        <activity android:name="com.srch2.android.http.service.MyActivity"
+        <activity android:name="com.srch2.android.sdk.MyActivity"
                   android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -15,7 +15,7 @@
         </activity>
 
         <service
-                android:name="com.srch2.android.http.service.SRCH2Service"
+                android:name="com.srch2.android.sdk.SRCH2Service"
                 android:exported="false"
                 android:enabled="true"
                 android:process=":remotee">
