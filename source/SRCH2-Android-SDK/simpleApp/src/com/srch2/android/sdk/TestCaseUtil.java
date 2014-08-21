@@ -8,9 +8,6 @@ import java.sql.Timestamp;
 import java.util.Random;
 import java.util.UUID;
 
-/**
- * Created by jianfeng on 8/1/14.
- */
 public class TestCaseUtil {
 
     static final long offset = Timestamp.valueOf("2012-01-01 00:00:00").getTime();

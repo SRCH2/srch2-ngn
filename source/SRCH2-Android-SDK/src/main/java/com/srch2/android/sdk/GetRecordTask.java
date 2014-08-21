@@ -1,27 +1,46 @@
 package com.srch2.android.sdk;
 
+import org.json.JSONObject;
+
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 class GetRecordTask extends SearchTask {
 
-
-    GetRecordTask(URL url, String nameOfTheSingleCoreToQuery,
-                  StateResponseListener controlResultsListener) {
+    GetRecordTask(URL url, String nameOfTheSingleCoreToQuery) {
         super(url, nameOfTheSingleCoreToQuery, null);
-        super.controlResponseObserver = controlResultsListener;
     }
 
     @Override
     protected void onTaskComplete(int returnedResponseCode,
                                   String returnedResponseLiteral) {
-        if (super.controlResponseObserver != null) {
-            GetRecordResponse getRecordResponse;
-            if (returnedResponseLiteral == null || returnedResponseLiteral.equals(RestfulResponse.IRRECOVERABLE_NETWORK_ERROR_MESSAGE)) {
-                getRecordResponse = new GetRecordResponse(returnedResponseCode, RestfulResponse.IRRECOVERABLE_NETWORK_ERROR_MESSAGE, super.targetCoreName);
-            } else {
-                getRecordResponse = new GetRecordResponse(returnedResponseCode, returnedResponseLiteral, super.targetCoreName);
+        parseJsonResponseAndPushToCallbackThread(returnedResponseLiteral);
+    }
+
+    void parseJsonResponseAndPushToCallbackThread(String jsonResponse) {
+
+        boolean isRecordRetrieved = false;
+        JSONObject record = new JSONObject();
+        try {
+            HashMap<String, ArrayList<JSONObject>> resultMap = SearchTask
+                    .parseResponseForRecordResults(
+                            jsonResponse, false,
+                            targetCoreName);
+            ArrayList<JSONObject> jsonArray = resultMap.get(targetCoreName);
+
+            if (jsonArray != null && jsonArray.size() > 0) {
+                isRecordRetrieved = true;
+                record = jsonArray.get(0);
             }
-            this.controlResponseObserver.onGetRecordByIDComplete(super.targetCoreName, getRecordResponse);
+        } catch (Exception oops) {
+            isRecordRetrieved = false;
         }
+
+        if (record == null) {
+            isRecordRetrieved = false;
+        }
+
+        HttpTask.executeTask(new GetRecordResponse(targetCoreName, isRecordRetrieved, record, jsonResponse));
     }
 }

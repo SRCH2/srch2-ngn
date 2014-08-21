@@ -1,6 +1,5 @@
 package com.srch2.android.sdk;
 
-import com.srch2.android.sdk.Field;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -21,6 +20,7 @@ public class FieldTest {
         Assert.assertFalse(f.required);
         Assert.assertFalse(f.highlight);
         Assert.assertTrue(f.facetType == null);
+        Assert.assertFalse(f.isRecordBoostField);
 
         f = Field.createRefiningField("f2", Field.Type.INTEGER);
         Assert.assertTrue(f != null);
@@ -35,6 +35,7 @@ public class FieldTest {
         Assert.assertFalse(f.required);
         Assert.assertFalse(f.highlight);
         Assert.assertTrue(f.facetType == null);
+        Assert.assertFalse(f.isRecordBoostField);
 
         f = Field.createRefiningField("f2", Field.Type.TEXT);
         Assert.assertTrue(f != null);
@@ -49,13 +50,15 @@ public class FieldTest {
         Assert.assertFalse(f.required);
         Assert.assertFalse(f.highlight);
         Assert.assertTrue(f.facetType == null);
+        Assert.assertFalse(f.isRecordBoostField);
 
         f = Field.createRefiningField("f2", Field.Type.FLOAT);
         Assert.assertTrue(f.type == Field.InternalType.FLOAT);
+        Assert.assertFalse(f.isRecordBoostField);
 
         f = Field.createRefiningField("f2", Field.Type.TIME);
         Assert.assertTrue(f.type == Field.InternalType.TIME);
-
+        Assert.assertFalse(f.isRecordBoostField);
     }
 
     @Test
@@ -72,7 +75,21 @@ public class FieldTest {
         Assert.assertFalse(boostedField.required);
         Assert.assertFalse(boostedField.highlight);
         Assert.assertTrue(boostedField.facetType == null);
+        Assert.assertFalse(boostedField.isRecordBoostField);
+    }
 
+    @Test
+    public void testRecordBoostField() {
+
+        RecordBoostField recordBoostField = Field.createRecordBoostField("boost");
+        Assert.assertTrue(recordBoostField.recordBoost.name.equals("boost"));
+        Assert.assertTrue(recordBoostField.recordBoost.type == Field.InternalType.FLOAT);
+        Assert.assertTrue(!recordBoostField.recordBoost.facetEnabled);
+        Assert.assertFalse(recordBoostField.recordBoost.searchable);
+        Assert.assertTrue(recordBoostField.recordBoost.refining);
+        Assert.assertFalse(recordBoostField.recordBoost.highlight);
+        Assert.assertTrue(recordBoostField.recordBoost.isRecordBoostField);
+        Assert.assertFalse(recordBoostField.recordBoost.required);
     }
 
     @Test
