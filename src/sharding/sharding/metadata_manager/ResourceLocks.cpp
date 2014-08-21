@@ -670,13 +670,15 @@ void ResourceLockManager::resolve(NodeFailureNotification * nodeFailureNotif){
 	tryPendingRequest();
 }
 
-void ResourceLockManager::setLockHolderRepository(const LockHoldersRepository * shardLockHolders){
+void ResourceLockManager::setLockHolderRepository(LockHoldersRepository * shardLockHolders){
 	if(shardLockHolders == NULL){
 		ASSERT(false);
 		return ;
 	}
-	delete shardLockHolders;
-	this->lockHolders = new LockHoldersRepository(*(shardLockHolders));
+	if(this->lockHolders != NULL){
+		delete this->lockHolders;
+	}
+	this->lockHolders = shardLockHolders;
 }
 // this functions either executes all requests in this batch or non of them
 // if the request is not blocking, the returns type tells us whether the lock was granted or not.

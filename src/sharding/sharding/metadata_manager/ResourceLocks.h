@@ -150,7 +150,7 @@ public:
 
 	bool canAcquireLock(const ClusterShardId & resource, ResourceLockType lockType);
 
-	void setLockHolderRepository(const LockHoldersRepository * shardLockHolders);
+	void setLockHolderRepository(LockHoldersRepository * shardLockHolders);
 
 	// this functions either executes all requests in this batch or non of them
 	// and either puts the request in pending requests or sends the ack
