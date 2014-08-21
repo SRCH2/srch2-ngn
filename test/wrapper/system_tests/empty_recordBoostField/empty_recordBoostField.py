@@ -1,5 +1,4 @@
-#this test is used for exact A1
-#using: python exact_A1.py queriesAndResults.txt
+#This test is used to check if engine runs properly with empty record boost field
 
 import sys, urllib2, json, time, subprocess, os, commands, signal
 
@@ -65,9 +64,7 @@ def prepareQuery(queryKeywords):
     ##################################
     return query
     
-
-
-def testExactA1(queriesAndResultsPath, binary_path):
+def testEmptyRecordBoostField(queriesAndResultsPath, binary_path):
     #Start the engine server
     args = [ binary_path, '--config-file=./empty_recordBoostField/conf.xml' ]
 
@@ -108,5 +105,5 @@ if __name__ == '__main__':
     #each line like "trust||01c90b4effb2353742080000" ---- query||record_ids(results)
     binary_path = sys.argv[1]
     queriesAndResultsPath = sys.argv[2]
-    exitCode = testExactA1(queriesAndResultsPath, binary_path)
+    exitCode = testEmptyRecordBoostField(queriesAndResultsPath, binary_path)
     os._exit(exitCode)

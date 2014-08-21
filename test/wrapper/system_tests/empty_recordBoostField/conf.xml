@@ -1,10 +1,4 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<!--
-    Configuration file for SRCH2 search server. Please email
-    contact@srch2.com if you have questions.
-    In this documment, "attribute" and "field" are used interchangeably.
--->
- 
 <config>
     <srch2Home>./</srch2Home>
  
