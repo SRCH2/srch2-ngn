@@ -22,7 +22,7 @@
             "/usr/share/srch2/data/sample-data.json"
             In this config file it should be as "data/sample-data.json"
     -->
-    <srch2Home>/home/liusrch2/srch2-ngn/test/wrapper/system_tests</srch2Home>
+    <srch2Home>./</srch2Home>
  
     <!--
         License Key File
@@ -110,7 +110,6 @@
             Attribute used as the boost value of a record.
             Need to be float type in the json objects in the data file.
         -->
-        <recordBoostField>relevance</recordBoostField>
          
          
         <!--

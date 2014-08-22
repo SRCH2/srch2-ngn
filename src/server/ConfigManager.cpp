@@ -778,23 +778,34 @@ void ConfigManager::parseQuery(CoreConfigParseState_t *coreParseState , const xm
         }
 
         //A warning is displayed if the field present in responseContent is neither searchable nor refining.
+        //This also trims spaces from the field values read from responseContent
         if (coreInfo->searchResponseContent == 2) {
             if (childNode.text()) {
                 vector<string> temp;
                 splitString(string(childNode.text().get()), ",",
                                         temp);
+                string attributes = "";
+                vector<string>::iterator it;
+                //This flag tells if the warning should be displayed or not, it gets set when the field is neither searchable nor refining
+                bool warningFlag = false;
                 for(int i = 0; i< temp.size(); i++){
                     trimSpacesFromValue(temp[i], responseContentString, parseWarnings);
                     bool isRefining  = (coreInfo->refiningAttributesInfo.count(temp[i]) != 0);
-                    vector<string>::iterator it = (std::find(coreParseState->searchableFieldsVector.begin(), coreParseState->searchableFieldsVector.end(), temp[i]));
+                    it = (std::find(coreParseState->searchableFieldsVector.begin(), coreParseState->searchableFieldsVector.end(), temp[i]));
                     bool isSearchable = (it != coreParseState->searchableFieldsVector.end());
                     if(isRefining == false && isSearchable == false){
-                        string warning = "The field entered in responseContent tag " + temp[i] + " is not indexed therefore will not be returned by the engine";
-                        Logger::warn(warning.c_str());
+                        warningFlag = true;
+                        attributes = attributes + temp[i] +", ";
+                        continue;
                     }
+                    //we push back only valid fields
+                    coreInfo->attributesToReturn.push_back(temp[i]);
+                    cout << coreInfo->attributesToReturn[i] << "\n";
                 }
-                splitString(string(childNode.text().get()), ",",
-                        coreInfo->attributesToReturn);
+                if(warningFlag == true){
+                    string warning = "The field entered in responseContent tag: " + attributes + "is neither searchable, refining nor indexed therefore will not be returned by the engine";
+                    Logger::warn(warning.c_str());
+                }
             } else {
                 parseError
                         << "For specified response content type, return fields should be provided.";
