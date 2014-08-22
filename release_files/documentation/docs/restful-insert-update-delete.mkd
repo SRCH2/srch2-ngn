@@ -8,7 +8,7 @@ This request adds a record or a list of records to the indexes. The request body
 
  - The JSON object should include a record identifier (e.g., "id", where "id" is the name of the primary key), which should be a non-empty string no longer than 1024 bytes;
  - The JSON object should include searchable fields defined in the [configuration file](../example-demo/srch2-config.xml) and their corresponding values;
- - If the engine is doing geo indexing, the JSON object should include a location specified by a latitude and a longitude;
+ - If the engine is enabling geo indexing, the JSON object should include a location specified by a latitude and a longitude;
  - The sum of the length of each field value cannot be greater than 100 kilobytes.
 
 Here are two examples:
@@ -34,7 +34,7 @@ The request body should contain a JSON object or an array of JSON objects, which
 
  - The JSON object should include a record identifier (e.g., "id" or the name of the primary key), which should be a non-empty string no longer than 1024 bytes;
  - The JSON object should include searchable fields defined in the [configuration file](../example-demo/srch2-config.xml) and their corresponding values;
- - If the engine is doing geo indexing, the JSON object should include a location specified by a latitude and a longitude;
+ - If the engine is enabling geo indexing, the JSON object should include a location specified by a latitude and a longitude;
  - The sum of the length of all the records cannot be greater than 100 kilobytes;
 
 Here are two examples: 

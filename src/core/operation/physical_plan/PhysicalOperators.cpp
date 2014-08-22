@@ -59,6 +59,16 @@ RandomAccessVerificationNotOptimizationOperator * PhysicalOperatorFactory::creat
 	optimizationNodes.push_back(op);
 	return op;
 }
+RandomAccessVerificationGeoOperator * PhysicalOperatorFactory::createRandomAccessVerificationGeoOperator(){
+	RandomAccessVerificationGeoOperator * op = new RandomAccessVerificationGeoOperator();
+	executionNodes.push_back(op);
+	return op;
+}
+RandomAccessVerificationGeoOptimizationOperator * PhysicalOperatorFactory::createRandomAccessVerificationGeoOptimizationOperator(){
+	RandomAccessVerificationGeoOptimizationOperator * op = new RandomAccessVerificationGeoOptimizationOperator();
+	optimizationNodes.push_back(op);
+	return op;
+}
 SortByIdOperator * PhysicalOperatorFactory::createSortByIdOperator(){
 	SortByIdOperator *  op = new SortByIdOperator();
 	executionNodes.push_back(op);
@@ -173,6 +183,25 @@ PhraseSearchOptimizationOperator * PhysicalOperatorFactory::createPhraseSearchOp
 	optimizationNodes.push_back(object);
 	return object;
 }
-
+GeoNearestNeighborOperator * PhysicalOperatorFactory::createGeoNearestNeighborOperator(){
+	GeoNearestNeighborOperator * op = new GeoNearestNeighborOperator();
+	executionNodes.push_back(op);
+	return op;
+}
+GeoNearestNeighborOptimizationOperator * PhysicalOperatorFactory::createGeoNearestNeighborOptimizationOperator(){
+	GeoNearestNeighborOptimizationOperator * op = new GeoNearestNeighborOptimizationOperator();
+	optimizationNodes.push_back(op);
+	return op;
+}
+GeoSimpleScanOperator * PhysicalOperatorFactory::createGeoSimpleScanOperator(){
+	GeoSimpleScanOperator * op = new GeoSimpleScanOperator();
+	executionNodes.push_back(op);
+	return op;
+}
+GeoSimpleScanOptimizationOperator * PhysicalOperatorFactory::createGeoSimpleScanOptimizationOperator(){
+	GeoSimpleScanOptimizationOperator * op = new GeoSimpleScanOptimizationOperator();
+	optimizationNodes.push_back(op);
+	return op;
+}
 }
 }
