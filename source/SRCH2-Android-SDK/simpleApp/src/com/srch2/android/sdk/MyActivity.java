@@ -2,7 +2,6 @@ package com.srch2.android.sdk;
 
 import android.os.Bundle;
 import android.util.Log;
-import junit.framework.Assert;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -10,9 +9,11 @@ import org.json.JSONObject;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertTrue;
 
 public class MyActivity extends TestableActivity {
@@ -146,6 +147,9 @@ public class MyActivity extends TestableActivity {
                 testBatchRecordCRUD(index);
             }
         } catch (JSONException e) {
+
+            Log.d("TESTTEST", "THROWN EXCEPTION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+
             e.printStackTrace();
             Assert.fail();
         }
@@ -287,13 +291,24 @@ public class MyActivity extends TestableActivity {
 
     private void testGetRecordIdShouldSuccess(TestableIndex index, JSONArray records) throws JSONException {
         for (int i = 0; i < records.length(); i++) {
+
             index.getRecordbyID(records.getJSONObject(i).getString(index.getPrimaryKeyFieldName()));
+
             getRecordResponse(index);
 //            Log.i(TAG, "expected record::tostring():" + records.getJSONObject(i).toString());
 //            Log.i(TAG, "actual response::tostring():" + mControlListener.recordResponse.record.toString());
             // TODO wait engine to fix the all string type record
             //assertTrue(mControlListener.recordResponse.record.toString().equals(records.getJSONObject(i).toString()));
-            assertTrue(index.recordRetreived.getString(
+
+
+
+            JSONObject resultRecord = index.recordRetreived;
+            JSONObject record = resultRecord.getJSONObject(Indexable.SEARCH_RESULT_JSON_KEY_RECORD);
+
+            Log.d("TESTEST", "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+
+
+            assertTrue(record.getString(
                     index.getPrimaryKeyFieldName()).equals(records.getJSONObject(i).getString(index.getPrimaryKeyFieldName())));
             index.resetGetRecordResponseFields();
         }
@@ -380,9 +395,17 @@ public class MyActivity extends TestableActivity {
             mResultListener.reset();
             index.search(query);
             getSearchResult();
-            assertTrue(mResultListener.resultRecordMap.size() == 1);
-            assertTrue(mResultListener.resultRecordMap.get(index.getIndexName()) != null);
-            assertTrue(index.verifyResult(query, mResultListener.resultRecordMap.get(index.getIndexName())));
+
+            HashMap<String, ArrayList<JSONObject>> recordMap = mResultListener.resultRecordMap;
+            assertTrue(recordMap.size() == 1);
+            ArrayList<JSONObject> records = recordMap.get(index.getIndexName());
+
+            Log.d("testest", "###################################### records " + records.size());
+
+            assertNotNull(records);
+
+
+            assertTrue(index.verifyResult(query, records));
         }
     }
 

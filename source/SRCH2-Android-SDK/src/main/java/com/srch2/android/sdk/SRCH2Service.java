@@ -173,7 +173,7 @@ final public class SRCH2Service extends Service {
                     Cat.d(TAG, "resolveLifeCycleAction - acquired mutex");
                     shutdownMutex.acquire();
                 } catch (InterruptedException interruptedBySystem) {
-                    interruptedBySystem.printStackTrace();
+                    Cat.ex(TAG, "interrupted while shutting down", interruptedBySystem);
                     Cat.d(TAG, "resolveLifeCycleAction - MUTEX INTERRUPTED");
                     return;
                 } finally {
@@ -255,7 +255,7 @@ final public class SRCH2Service extends Service {
                                 totalSleepTime += 200;
                             } catch (InterruptedException e) {
                                 Cat.d(TAG, "shutting down whiling while the ps is true INTERRUPED");
-                                e.printStackTrace();
+                                Cat.ex(TAG, "shutting down whiling while ", e);
                             }
                         }
                         clearServerLogEntries();
@@ -309,7 +309,7 @@ final public class SRCH2Service extends Service {
 
 
         } catch (IOException networkError) {
-            networkError.printStackTrace();
+            Cat.ex(TAG, "shutdown network call IOException", networkError);
             Cat.d(TAG, "network error WHILE shutting down " + networkError.getMessage());
         } finally {
             if (connection != null) {
@@ -349,8 +349,7 @@ final public class SRCH2Service extends Service {
                 }
                 totalSleepTime += 200;
             } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                Cat.ex(TAG, "startingexecutable InterrupedException", e);
             }
         }
         signalSRCH2EngineToProceed(executablePortNumber, executableOAuthLiteral);
@@ -385,7 +384,7 @@ final public class SRCH2Service extends Service {
 
                 } catch (IOException e) {
                     Cat.d(TAG, "IOEXCEPTION starting executable!");
-                    e.printStackTrace();
+                    Cat.ex(TAG, "starting executable io error", e);
                 }
             }
         });
@@ -440,7 +439,7 @@ final public class SRCH2Service extends Service {
             xmlConfigurationFilePath = configFile.getAbsolutePath();
             Cat.d(TAG, "autoInstallCoreFilesAndOverwriteXMLConfigurationFile - xmlConfigurationFilePath " + xmlConfigurationFilePath);
         } catch (Exception ignore) {
-            ignore.printStackTrace();
+            Cat.ex(TAG, "while installing files", ignore);
         }
     }
 

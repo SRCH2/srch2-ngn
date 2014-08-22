@@ -1,10 +1,14 @@
 package com.srch2.android.sdk;
 
+import android.util.Log;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 
 public class TestIndex extends TestableIndex {
     public static final int BATCH_INSERT_NUM = 200;
@@ -246,7 +250,10 @@ public class TestIndex extends TestableIndex {
     public List<String> getFailToDeleteRecord() {
         ArrayList<String> tobeDelete = new ArrayList<String>();
         try {
-            String id = getSucceedToInsertRecord().getString(INDEX_FIELD_NAME_PRIMARY_KEY) + "nullExistKey";
+            JSONObject succeedRecord = getSucceedToInsertRecord();
+            JSONObject recordRecord = succeedRecord.getJSONObject(Indexable.SEARCH_RESULT_JSON_KEY_RECORD);
+            Log.d("failfail", "HERE I AM !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            String id = recordRecord.getString(INDEX_FIELD_NAME_PRIMARY_KEY) + "nullExistKey";
             tobeDelete.add(id);
         } catch (JSONException e) {
             e.printStackTrace();
@@ -286,7 +293,11 @@ public class TestIndex extends TestableIndex {
         try {
             if (jsonObjects.size() == end-start || !getAll) {
                 for (int i = start; i < end && i < jsonObjects.size(); ++i) {
-                    if (jsonObjects.get(i-start).getJSONObject(SEARCH_RESULT_JSON_KEY_RECORD).getInt(INDEX_FIELD_NAME_PRIMARY_KEY) != i) {
+
+                    JSONObject o = jsonObjects.get(i-start);
+                    JSONObject oo = o.getJSONObject(Indexable.SEARCH_RESULT_JSON_KEY_RECORD);
+
+                    if (oo.getInt(INDEX_FIELD_NAME_PRIMARY_KEY) != i) {
                         return false;
                     }
                 }
@@ -322,7 +333,17 @@ public class TestIndex extends TestableIndex {
         try {
             // simple way to detect if the index is the single record one or not
             if (singleRecordQueryString.contains(query)) {
-                return jsonObjects.size() == 1 && jsonObjects.get(0).getJSONObject(SEARCH_RESULT_JSON_KEY_RECORD).getString(INDEX_FIELD_NAME_PRIMARY_KEY).equals(ONE_RECORD_PRIMARY_KEY);
+
+                boolean sizeRight = jsonObjects.size() == 1;
+
+                Log.d("testest", "sizeRight is " + sizeRight + "@#$@$@$***HJFSDFSDFSDFSDF");
+
+                JSONObject resultRecord = jsonObjects.get(0);
+                JSONObject record = resultRecord.getJSONObject(Indexable.SEARCH_RESULT_JSON_KEY_RECORD);
+
+                boolean idRight = record.getString(INDEX_FIELD_NAME_PRIMARY_KEY).equals((ONE_RECORD_PRIMARY_KEY));
+
+                return sizeRight && idRight;
             } else if (multipleRecordQueryString.contains(query)) {
                 // String search don't have so much control, just check the size
                 return jsonObjects.size() == 10; // default row number
@@ -339,7 +360,13 @@ public class TestIndex extends TestableIndex {
     public boolean verifyResult(Query query, ArrayList<JSONObject> jsonObjects) {
         try {
             if (singleRecordQueryQuery.contains(query)) {
-                return jsonObjects.size() == 1 && jsonObjects.get(0).getJSONObject(SEARCH_RESULT_JSON_KEY_RECORD).getString(INDEX_FIELD_NAME_PRIMARY_KEY).equals(ONE_RECORD_PRIMARY_KEY);
+
+                boolean sizeRight = jsonObjects.size() == 1;
+                JSONObject resultRecord = jsonObjects.get(0);
+                JSONObject record = resultRecord.getJSONObject(Indexable.SEARCH_RESULT_JSON_KEY_RECORD);
+
+                boolean idRight = record.getString(INDEX_FIELD_NAME_PRIMARY_KEY).equals((ONE_RECORD_PRIMARY_KEY));
+                return sizeRight && idRight;
             } else if (multipleRecordQueryQuery.contains(query)) {
                 return checkPartialResult(query, jsonObjects);
             } else {
