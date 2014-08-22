@@ -153,6 +153,7 @@ public class MovieIndex extends Indexable {
     public static final String INDEX_NAME = "movies";
 
     public static final String INDEX_FIELD_PRIMARY_KEY = "id";
+	public static final String INDEX_FIELD_RECORD_BOOST = "recordBoost";
     public static final String INDEX_FIELD_TITLE = "title";
     public static final String INDEX_FIELD_YEAR = "year";
     public static final String INDEX_FIELD_GENRE = "genre";
@@ -170,10 +171,11 @@ public class MovieIndex extends Indexable {
     @Override
     public Schema getSchema() {
         PrimaryKeyField primaryKey = Field.createDefaultPrimaryKeyField(INDEX_FIELD_PRIMARY_KEY);
+		RecordBoostField recordBoost = Field.createRecordBoostField(INDEX_FIELD_RECORD_BOOST);
         Field title = Field.createSearchableField(INDEX_FIELD_TITLE, 3).enableHighlighting();
         Field year = Field.createRefiningField(INDEX_FIELD_YEAR, Field.Type.INTEGER);
         Field genre = Field.createSearchableField(INDEX_FIELD_GENRE);
-        return Schema.createSchema(primaryKey, title, year, genre)
+        return Schema.createSchema(primaryKey, recordBoost, title, year, genre)
                         .setHighlightedPreAndPostScript(
                                 HIGHLIGHTING_FUZZY_PRE_SCRIPT, HIGHLIGHTING_FUZZY_POST_SCRIPT,
                                     HIGHLIGHTING_EXACT_PRE_SCRIPT, HIGHLIGHTING_EXACT_POST_SCRIPT);
@@ -198,6 +200,14 @@ search results, or use it to sort the results. The values of refining and search
 fields can be retrieved from the results returned by
 the server. *Field* objects can be obtained by the
 static factory method of the *Field* class.  
+
+A schema can also contain a *RecordBoostField* which will determine each
+record's record (as opposed to field) score when computing the relevance of
+search results. This field **will always** be float in type, and should be set
+from one to one hundred. An example of using the *RecordBoostField* would be
+if making an index containing a user's contacts, all starred contacts could have
+the value of the *RecordBoostField* set to fifty, and all non-starred contacts left
+at at a value of one. One is the default value for all records.
 
 For a searchable field, an additional parameter can be passed as
 the field's boost value, which is a relevance number that can be used in the ranking function
@@ -268,16 +278,36 @@ public class MovieIndex extends Indexable {
 			
 			...
 			
+			for (int i = 0; i < jsonRecordsToInsert.length(); ++i) {
+                JSONObject recordObject = jsonRecordsToInsert.getJSONObject(i);
+                recordObject.put("boostScore",
+                        computeRecordBoostScore(recordObject.getString(INDEX_FIELD_GENRE)));
+            }
+			
         } catch (JSONException oops) {
             // We know there are no errors.
         }
         return jsonRecordsToInsert;
     }
+	
+	public float computeRecordBoostScore(String genre) {
+        if (genre == null) {
+            return 1;
+        }
+        return genre.contains("Science Fiction") ? 50 : 1;
+    }
 }
 ```
 
 The SDK accepts a *JSONObject* or a *JSONArray* of *JSONObject*s when
-inserting or updating records. Insertions and updates are invoked by calling
+inserting or updating records. Each *JSONObject* should contain as its keys the 
+set of fields as defined in the schema. At the end of this method the records are iterated
+over to compute the value for the *recordBoost* *RecordBoostField* defined in the 
+schema: here we assume the user doing search likes in particular movies of the 
+science fiction genre, and set the boost score for each movie of that genre to 
+fifty. 
+
+Insertions and updates are invoked by calling
 *insert()* and *update()* of the *Indexable* object, respectively.
 For example, we can call the following method to insert those records
 to the index:
