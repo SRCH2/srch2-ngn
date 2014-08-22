@@ -256,21 +256,21 @@ public class MovieIndex extends Indexable {
         JSONArray jsonRecordsToInsert = new JSONArray();
         try {
             JSONObject record = new JSONObject();
-            record.put(INDEX_FIELD_PRIMARY_KEY, 1);
+            record.put(INDEX_FIELD_PRIMARY_KEY, "1");
             record.put(INDEX_FIELD_TITLE, "The Good, the Bad And the Ugly");
             record.put(INDEX_FIELD_YEAR, 1966);
             record.put(INDEX_FIELD_GENRE, "Western Adventure");
             jsonRecordsToInsert.put(record);
 
             record = new JSONObject();
-            record.put(INDEX_FIELD_PRIMARY_KEY, 2);
+            record.put(INDEX_FIELD_PRIMARY_KEY, "2");
             record.put(INDEX_FIELD_TITLE, "Citizen Kane");
             record.put(INDEX_FIELD_YEAR, 1941);
             record.put(INDEX_FIELD_GENRE, "Mystery Drama");
             jsonRecordsToInsert.put(record);
 
             record = new JSONObject();
-            record.put(INDEX_FIELD_PRIMARY_KEY, 3);
+            record.put(INDEX_FIELD_PRIMARY_KEY, "3");
             record.put(INDEX_FIELD_TITLE, "大红灯笼高高挂 (Raise the Red Lantern)");
             record.put(INDEX_FIELD_YEAR, 1991);
             record.put(INDEX_FIELD_GENRE, "Drama");
