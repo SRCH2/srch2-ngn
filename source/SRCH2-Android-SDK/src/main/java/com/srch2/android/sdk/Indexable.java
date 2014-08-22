@@ -261,7 +261,7 @@ public abstract class Indexable {
      * When the SRCH2 server is finished performing the search task, the method
      * {@link SearchResultsListener#onNewSearchResults(int, String, java.util.HashMap)}
      *  will be triggered. The
-     * <code>HashMap</code> argument will contain the search results in the form of <code>
+     * <code>HashMap resultMap</code> argument will contain the search results in the form of <code>
      * JSONObject</code>s as they were originally inserted (and updated).
      * <br><br>
      * This method will throw an exception is the value of <code>searchInput</code> is null
@@ -283,7 +283,7 @@ public abstract class Indexable {
      * When the SRCH2 server is finished performing the search task, the method
      * {@link SearchResultsListener#onNewSearchResults(int, String, java.util.HashMap)}
      * will be triggered. The argument
-     * <code>HashMap</code> will contain the search results in the form of <code>
+     * <code>HashMap resultMap</code> will contain the search results in the form of <code>
      * JSONObject</code>s as they were originally inserted (and updated).
      * <br><br>
      * This method will throw an exception if the value of <code>query</code> is null.
