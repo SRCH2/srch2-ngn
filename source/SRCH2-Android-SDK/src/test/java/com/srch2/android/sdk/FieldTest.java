@@ -137,6 +137,16 @@ public class FieldTest {
 
     }
 
+    @Test
+    public void testHighlightedField() {
+        Field f = Field.createSearchableAndRefiningField("highlight");
+        Assert.assertFalse(f.highlight);
+        f.enableHighlighting();
+        Assert.assertTrue(f.highlight);
+        f = Field.createRefiningField("highlighter", Field.Type.FLOAT).enableHighlighting();
+        Assert.assertFalse(f.highlight);
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void testExceptionInSearchableField() {
         Field f = Field.createSearchableField(null);
