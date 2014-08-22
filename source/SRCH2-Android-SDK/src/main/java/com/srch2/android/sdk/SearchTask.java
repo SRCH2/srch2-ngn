@@ -1,5 +1,6 @@
 package com.srch2.android.sdk;
 
+import android.util.Log;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -55,30 +56,35 @@ class SearchTask extends HttpTask.SearchHttpTask {
                         try {
                             JSONObject resultNodes = (JSONObject) nodes.get(i);
                             JSONObject record = resultNodes.getJSONObject("record");
-                            JSONObject snippet = resultNodes.getJSONObject("snippet");
-
                             JSONObject newRecord = new JSONObject();
                             newRecord.put(Indexable.SEARCH_RESULT_JSON_KEY_RECORD, record);
-
-                            if (snippet.length() > 0) {
-                                Iterator<String> snippetKeys = snippet.keys();
-                                while (snippetKeys.hasNext()) {
-                                    String key = snippetKeys.next();
-                                    String highlight = null;
-                                    try {
-                                        highlight = snippet.getString(key);
-                                    } catch (JSONException highlighterOops) {
-                                        continue;
-                                    }
-                                    if (highlight != null) {
-                                        highlight = highlight.replace("<\\/", "</");
-                                        snippet.put(key, highlight);
-                                    }
+                            if (resultNodes.has("snippet")) {
+                                boolean highlightingNotEmpty = true;
+                                JSONObject snippet = null;
+                                try {
+                                    snippet = resultNodes.getJSONObject("snippet");
+                                } catch (JSONException eee) {
+                                    highlightingNotEmpty = false;
                                 }
+                                if (highlightingNotEmpty && snippet != null && snippet.length() > 0) {
+                                    Iterator<String> snippetKeys = snippet.keys();
+                                    while (snippetKeys.hasNext()) {
+                                        String key = snippetKeys.next();
+                                        String highlight = null;
+                                        try {
+                                            highlight = snippet.getString(key);
+                                        } catch (JSONException highlighterOops) {
+                                            continue;
+                                        }
+                                        if (highlight != null) {
+                                            highlight = highlight.replace("<\\/", "</");
+                                            snippet.put(key, highlight);
+                                        }
+                                    }
 
-                                newRecord.put(Indexable.SEARCH_RESULT_JSON_KEY_HIGHLIGHTED, snippet);
+                                    newRecord.put(Indexable.SEARCH_RESULT_JSON_KEY_HIGHLIGHTED, snippet);
+                                }
                             }
-
                             records.add(newRecord);
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -104,27 +110,34 @@ class SearchTask extends HttpTask.SearchHttpTask {
                         JSONObject newRecord = new JSONObject();
                         newRecord.put(Indexable.SEARCH_RESULT_JSON_KEY_RECORD, record);
 
-                        JSONObject snippet = resultNodes.getJSONObject("snippet");
-
-
-
-                        if (snippet.length() > 0) {
-
-                            Iterator<String> snippetKeys = snippet.keys();
-                            while (snippetKeys.hasNext()) {
-                                String key = snippetKeys.next();
-                                String highlight = null;
-                                try {
-                                    highlight = snippet.getString(key);
-                                } catch (JSONException highlighterOops) {
-                                    continue;
-                                }
-                                if (highlight != null) {
-                                    highlight = highlight.replace("<\\/", "</");
-                                    snippet.put(key, highlight);
-                                }
+                        if (resultNodes.has("snippet")) {
+                            Log.d("testest", "POS " + resultNodes.toString());
+                            boolean highlightingNotEmpty = true;
+                            JSONObject snippet = null;
+                            try {
+                                snippet = resultNodes.getJSONObject("snippet");
+                            } catch (JSONException eee) {
+                                highlightingNotEmpty = false;
                             }
-                            newRecord.put(Indexable.SEARCH_RESULT_JSON_KEY_HIGHLIGHTED, snippet);
+
+                            if (highlightingNotEmpty && snippet != null && snippet.length() > 0) {
+
+                                Iterator<String> snippetKeys = snippet.keys();
+                                while (snippetKeys.hasNext()) {
+                                    String key = snippetKeys.next();
+                                    String highlight = null;
+                                    try {
+                                        highlight = snippet.getString(key);
+                                    } catch (JSONException highlighterOops) {
+                                        continue;
+                                    }
+                                    if (highlight != null) {
+                                        highlight = highlight.replace("<\\/", "</");
+                                        snippet.put(key, highlight);
+                                    }
+                                }
+                                newRecord.put(Indexable.SEARCH_RESULT_JSON_KEY_HIGHLIGHTED, snippet);
+                            }
                         }
                         recordResults.add(newRecord);
                     } catch (Exception e) {
