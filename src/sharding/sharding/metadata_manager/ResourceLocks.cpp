@@ -154,7 +154,7 @@ ResourceLockRequest::~ResourceLockRequest(){
 
 ResourceLockRequest::ResourceLockRequest(const ResourceLockRequest & copy){
 	this->isBlocking = copy.isBlocking;
-	for(unsigned i = 0 ; i < this->requestBatch.size() ; ++i){
+	for(unsigned i = 0 ; i < copy.requestBatch.size() ; ++i){
 		this->requestBatch.push_back(new SingleResourceLockRequest(*(copy.requestBatch.at(i))));
 	}
 }
