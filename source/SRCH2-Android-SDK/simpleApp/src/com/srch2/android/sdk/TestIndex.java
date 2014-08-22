@@ -251,9 +251,7 @@ public class TestIndex extends TestableIndex {
         ArrayList<String> tobeDelete = new ArrayList<String>();
         try {
             JSONObject succeedRecord = getSucceedToInsertRecord();
-            JSONObject recordRecord = succeedRecord.getJSONObject(Indexable.SEARCH_RESULT_JSON_KEY_RECORD);
-            Log.d("failfail", "HERE I AM !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            String id = recordRecord.getString(INDEX_FIELD_NAME_PRIMARY_KEY) + "nullExistKey";
+            String id = succeedRecord.getString(INDEX_FIELD_NAME_PRIMARY_KEY) + "nullExistKey";
             tobeDelete.add(id);
         } catch (JSONException e) {
             e.printStackTrace();

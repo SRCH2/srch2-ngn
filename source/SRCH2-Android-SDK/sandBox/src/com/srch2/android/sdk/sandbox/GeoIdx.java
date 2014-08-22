@@ -18,7 +18,7 @@ public class GeoIdx extends Indexable {
         super.onIndexReady();
 
         if (getRecordCount() == 0) {
-
+            insert(getRecords());
         }
     }
 
@@ -28,16 +28,23 @@ public class GeoIdx extends Indexable {
 
             JSONObject jo = new JSONObject();
             jo.put(INDEX_FIELD_PK, 1);
-            jo.put(INDEX_FIELD_LATITUDE, "30");
-            jo.put(INDEX_FIELD_LONGITUDE, "30");
+            jo.put(INDEX_FIELD_LATITUDE, 10);
+            jo.put(INDEX_FIELD_LONGITUDE, 10);
             jo.put(INDEX_FIELD_NAME, "name one");
             recordArray.put(jo);
 
             jo = new JSONObject();
-            jo.put(INDEX_FIELD_PK, 1);
-            jo.put(INDEX_FIELD_LATITUDE, "30");
-            jo.put(INDEX_FIELD_LONGITUDE, "30");
-            jo.put(INDEX_FIELD_NAME, "name one");
+            jo.put(INDEX_FIELD_PK, 2);
+            jo.put(INDEX_FIELD_LATITUDE, 20);
+            jo.put(INDEX_FIELD_LONGITUDE, 20);
+            jo.put(INDEX_FIELD_NAME, "name two");
+            recordArray.put(jo);
+
+            jo = new JSONObject();
+            jo.put(INDEX_FIELD_PK, 3);
+            jo.put(INDEX_FIELD_LATITUDE, 30);
+            jo.put(INDEX_FIELD_LONGITUDE, 30);
+            jo.put(INDEX_FIELD_NAME, "name three");
             recordArray.put(jo);
 
         } catch (JSONException e) {

@@ -5,7 +5,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 
 public class TestGeoIndex extends TestIndex{
@@ -19,6 +18,8 @@ public class TestGeoIndex extends TestIndex{
     public static final String INDEX_FIELD_NAME_SCORE = "score";
     public static final String INDEX_FIELD_NAME_LATITUDE = "lat";
     public static final String INDEX_FIELD_NAME_LONGITUDE = "lon";
+
+
 
 
     @Override
@@ -46,8 +47,8 @@ public class TestGeoIndex extends TestIndex{
                 recordObject.put(INDEX_FIELD_NAME_PRIMARY_KEY, String.valueOf(i));
                 recordObject.put(INDEX_FIELD_NAME_TITLE, "Title ");
                 recordObject.put(INDEX_FIELD_NAME_SCORE, i);
-                recordObject.put(INDEX_FIELD_NAME_LATITUDE, (double)i);
-                recordObject.put(INDEX_FIELD_NAME_LONGITUDE, (double)i);
+                recordObject.put(INDEX_FIELD_NAME_LATITUDE, i);
+                recordObject.put(INDEX_FIELD_NAME_LONGITUDE, i);
             } catch (JSONException ignore) {
             }
             recordsArray.put(recordObject);

@@ -246,7 +246,7 @@ public class MyActivity extends TestableActivity {
         testBatchInsertShouldSuccess(index, records);
 
         Log.i(TAG, "testIndexableWith200BatchInsertsGetRecordShouldMatch");
-        testIndexableGetRecordCountMatches(index, TestIndex.BATCH_INSERT_NUM );
+        testIndexableGetRecordCountMatches(index, records.length());
 
         Log.i(TAG, "testGetRecordIdShouldSuccess");
         testGetRecordIdShouldSuccess(index, records);
