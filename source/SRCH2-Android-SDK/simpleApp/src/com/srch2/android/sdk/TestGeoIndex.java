@@ -28,7 +28,7 @@ public class TestGeoIndex extends TestableIndex {
         PrimaryKeyField primaryKey = Field.createDefaultPrimaryKeyField(INDEX_FIELD_NAME_PRIMARY_KEY);
         Field title = Field.createSearchableField(INDEX_FIELD_NAME_TITLE);
         Field score = Field.createRefiningField(INDEX_FIELD_NAME_SCORE, Field.Type.INTEGER);
-        return new Schema(primaryKey, title, score);
+        return new Schema(primaryKey, INDEX_FIELD_NAME_LATITUDE, INDEX_FIELD_NAME_LONGITUDE, title, score);
     }
 
 
@@ -43,8 +43,8 @@ public class TestGeoIndex extends TestableIndex {
                 recordObject.put(INDEX_FIELD_NAME_PRIMARY_KEY, String.valueOf(i));
                 recordObject.put(INDEX_FIELD_NAME_TITLE, "Title ");
                 recordObject.put(INDEX_FIELD_NAME_SCORE, i);
-//                recordObject.put(INDEX_FIELD_NAME_LATITUDE, TestCaseUtil.generateRandomGeo());
-//                recordObject.put(INDEX_FIELD_NAME_LONGITUDE, TestCaseUtil.generateRandomGeo());
+                recordObject.put(INDEX_FIELD_NAME_LATITUDE, TestCaseUtil.generateRandomGeo());
+                recordObject.put(INDEX_FIELD_NAME_LONGITUDE, TestCaseUtil.generateRandomGeo());
             } catch (JSONException ignore) {
             }
             recordsArray.put(recordObject);

@@ -27,6 +27,7 @@ final public class Query {
     private Integer pagingStart;
     private Integer pagingRows;
 
+
     /**
      * Creates a query from a {@link SearchableTerm} or
      * {@link SearchableTerm.CompositeTerm};
@@ -71,6 +72,55 @@ final public class Query {
         this.proximitySentence = "\"" + term1 + " " + term2 + "\"~"
                 + Integer.toString(distance);
         this.term = null;
+    }
+
+    /**
+     * Create a GeoLocation search query by specify a bounding box.
+     * It will return all the result inside that box region
+     *
+     * If user need to filter the result by keyword, you can try to create
+     * a normal search query and call the {@link #insideBoxRegion(double, double, double, double)}
+     * method.
+     *
+     * @param leftBottomLatitude the left bottom point's latitude value
+     * @param leftBottomLongitude the left bottom point's longitude value
+     * @param rightTopLatitude  the right top point's latitude value
+     * @param rightTopLongitude the right top point's longitude value
+     */
+    public Query(double leftBottomLatitude,
+                 double leftBottomLongitude,
+                 double rightTopLatitude,
+                 double rightTopLongitude) {
+        this.term = null;
+        this.proximitySentence = null;
+        this.geoPosition.clear();
+        this.geoPosition.add(leftBottomLatitude);
+        this.geoPosition.add(leftBottomLongitude);
+        this.geoPosition.add(rightTopLatitude);
+        this.geoPosition.add(rightTopLongitude);
+    }
+
+    /**
+     * Get the GeoLocation search query by specify a center point and a radius.
+     * It will return all the result inside that circle region
+     *
+     * If user need to filter the result by keyword, you can try to create
+     * a normal search query and call the {@link #insideCircleRegion(double, double, double)}
+     * method.
+     *
+     * @param centerLatitude the center point's latitude value
+     * @param centerLongitude the center point's longitude value
+     * @param radius the radius value of the search area
+     * @return this
+     */
+    public Query(double centerLatitude,
+                 double centerLongitude, double radius) {
+        this.term = null;
+        this.proximitySentence = null;
+        this.geoPosition.clear();
+        this.geoPosition.add(centerLatitude);
+        this.geoPosition.add(centerLongitude);
+        this.geoPosition.add(radius);
     }
 
     private static void checkIsNotNull(Object term, String errMsg) {
@@ -322,50 +372,59 @@ final public class Query {
         if (proximitySentence != null) {
             return proximitySentence;
         }
-        // term[s]
-        StringBuilder sb = new StringBuilder(term.toString());
-        // filter[s]
-        if (filters.size() > 0) {
-            sb.append('&').append(
-                    (Filter.ConnectWithOperation(filters, filterConnector)));
-        }
-
-        // facet
-        if (facetFields.size() > 0) {
-            sb.append('&').append((FacetField.ConnectFacetFields(facetFields)));
-        }
-
-        // searchType
-        if (searchType != null) {
-            sb.append('&').append("searchType=").append(searchType.name());
-        }
-        // sort
-        if (sortSentence != null) {
-            sb.append('&').append((sortSentence));
-            // orderby
-            if (orderbySentence != null) {
-                sb.append('&').append((orderbySentence));
+        StringBuilder sb = new StringBuilder("");
+        if (term != null) { // normal query
+            // term[s]
+            sb.append(term.toString());
+            // filter[s]
+            if (filters.size() > 0) {
+                sb.append('&').append(
+                        (Filter.ConnectWithOperation(filters, filterConnector)));
             }
-        }
 
-        // paging
-        if (pagingStart != null) {
-            sb.append('&').append("start=").append(pagingStart);
-        }
-        if (pagingRows != null) {
-            sb.append('&').append("rows=").append(pagingRows);
-        }
+            // facet
+            if (facetFields.size() > 0) {
+                sb.append('&').append((FacetField.ConnectFacetFields(facetFields)));
+            }
 
+            // searchType
+            if (searchType != null) {
+                sb.append('&').append("searchType=").append(searchType.name());
+            }
+            // sort
+            if (sortSentence != null) {
+                sb.append('&').append((sortSentence));
+                // orderby
+                if (orderbySentence != null) {
+                    sb.append('&').append((orderbySentence));
+                }
+            }
+
+            // paging
+            if (pagingStart != null) {
+                sb.append('&').append("start=").append(pagingStart);
+            }
+            if (pagingRows != null) {
+                sb.append('&').append("rows=").append(pagingRows);
+            }
+
+        }
         // Geo
         if (geoPosition.size() > 0) {
+            if (term != null){ // geo search with keyword
+                sb.append('&');
+            } // else do need to add that '&'
             if (geoPosition.size() == 4) {
-                for (int i = 0; i < 4; ++i) {
+                sb.append(BOX_TAG[0]).append(geoPosition.get(0));
+                for (int i = 1; i < 4; ++i) {
                     sb.append('&').append(BOX_TAG[i])
                             .append(geoPosition.get(i));
                 }
 
             } else if (geoPosition.size() == 3) {
-                for (int i = 0; i < 3; ++i) {
+                sb.append(CIRCLE_TAG[0])
+                        .append(geoPosition.get(0));
+                for (int i = 1; i < 3; ++i) {
                     sb.append('&').append(CIRCLE_TAG[i])
                             .append(geoPosition.get(i));
                 }

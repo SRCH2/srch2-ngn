@@ -68,6 +68,24 @@ public class QueryTest {
         q7.facetOn("genre");
         Assert.assertEquals("cameron&facet=true&facet.field=genre",
                 q7.toString());
+
+
+        // Geo Query
+        double [] box = {100.0, 200.0, -100.0, -200.0 };
+
+        Query q8 = new Query(box[0], box[1], box[2], box[3]);
+        Assert.assertEquals("lblat=100.0&lblong=200.0&rtlat=-100.0&rtlong=-200.0", q8.toString());
+
+        Query q88 = new Query(new SearchableTerm("cameron")).insideBoxRegion(box[0],box[1],box[2],box[3]);
+        Assert.assertEquals("cameron&lblat=100.0&lblong=200.0&rtlat=-100.0&rtlong=-200.0", q88.toString());
+
+        double [] circle = { 111.0, 222.0, 50.0};
+        Query q9 = new Query(circle[0], circle[1], circle[2]);
+        Assert.assertEquals("clat=111.0&clong=222.0&radius=50.0", q9.toString());
+
+        Query q99 = new Query(new SearchableTerm("cameron")).insideCircleRegion(circle[0],circle[1],circle[2]);
+        Assert.assertEquals("cameron&clat=111.0&clong=222.0&radius=50.0", q99.toString());
+
     }
 
     @Test

@@ -22,7 +22,6 @@ final class IndexDescription {
     private static final String DATA_DIR = "dataDir";
     private static final String DATA_SOURCE_TYPE = "dataSourceType";
     private static final String ACCESS_LOG_FILE = "accessLogFile";
-    private static final String INDEX_TYPE = "indexType";
     private static final String SUPPORT_SWAP_IN_EDIT_DISTANCE = "supportSwapInEditDistance";
     private static final String DEFAULT_QUERY_TERM_BOOST = "defaultQueryTermBoost";
     private static final String ENABLE_POSITION_INDEX = "enablePositionIndex";
@@ -149,9 +148,6 @@ final class IndexDescription {
                 longitudeFieldName, remainingField));
     }
     */
-    boolean isGeoIndex() {
-        return schema.indexType > 0;
-    }
 
     void setQueryProperties() {
         queryProperties.setProperty("recordScoreExpression",
@@ -192,8 +188,6 @@ final class IndexDescription {
     }
 
     private void setIndexProperties() {
-        indexProperties.setProperty("indexType",
-                Integer.toString(schema.indexType));
         indexProperties.setProperty("supportSwapInEditDistance",
                 DEFAULT_VALUE_supportSwapInEditDistance);
         indexProperties.setProperty("defaultQueryTermBoost",
@@ -259,9 +253,6 @@ final class IndexDescription {
                 .append(miscProperties.getProperty(DATA_SOURCE_TYPE))
                 .append("</dataSourceType>\n")
                 .append("            <indexConfig>\n")
-                .append("                <indexType>")
-                .append(indexProperties.getProperty(INDEX_TYPE))
-                .append("</indexType>\n")
                 .append("                <supportSwapInEditDistance>")
                 .append(indexProperties
                         .getProperty(SUPPORT_SWAP_IN_EDIT_DISTANCE))

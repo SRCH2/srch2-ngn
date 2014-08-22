@@ -17,7 +17,6 @@ public final class Schema {
     String recordBoostKey;
     HashSet<Field> fields;
     boolean facetEnabled = false;
-    int indexType = 0;
 
     Schema(PrimaryKeyField primaryKeyField, Field... remainingField) {
         if (primaryKeyField == null) {
@@ -136,7 +135,6 @@ public final class Schema {
         addToFields(new Field(longitudeFieldName,
                 Field.InternalType.LOCATION_LONGITUDE, false, false,
                 Field.DEFAULT_BOOST_VALUE));
-        indexType = 1;
     }
 
     Schema(PrimaryKeyField primaryKeyField, RecordBoostField recordBoostField, String latitudeFieldName,
@@ -147,7 +145,6 @@ public final class Schema {
         addToFields(new Field(longitudeFieldName,
                 Field.InternalType.LOCATION_LONGITUDE, false, false,
                 Field.DEFAULT_BOOST_VALUE));
-        indexType = 1;
     }
 
     /**
