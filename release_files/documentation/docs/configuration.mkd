@@ -469,7 +469,7 @@ These parameters give information about each field, including its name, type, an
 
  - "name": the name of the field;<br>
  - "type": the type of the field;<br>
-           For a searchable attribute, its type can be text, location_longitude (for geo search), or location_latitude (for geo search).<br>
+           For a searchable attribute, its type has to be text.<br>
            For a refining attribute, the type can be text, integer, long, float, double or time.
            
 The engine supports the following formats of time and date: <br>
@@ -500,7 +500,7 @@ In the example above, we can do keyword search on the attributes
 
 Note:
 
- - For geo search, two fields are required with the types location_latitude and location_longitude, respectively. The values of these geo fields should be a float type in the data file.<br>
+ - For geo search, two fields are required with the types location_latitude and location_longitude, respectively. The values of these geo fields should be a float type in the data file.  The engine internally treats these two fields as refining attributes, and their values can be returned in a query result if needed.<br>
  - The primary key may optionally be included here. It can also be searchable and/or refining.<br>
  - There must be at least one searchable field.
 

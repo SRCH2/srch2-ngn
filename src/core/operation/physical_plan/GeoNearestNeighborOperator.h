@@ -13,6 +13,7 @@
 
 #include "operation/QueryEvaluatorInternal.h"
 #include "operation/physical_plan/PhysicalPlan.h"
+#include "util/AndroidMath.h"
 
 using namespace std;
 

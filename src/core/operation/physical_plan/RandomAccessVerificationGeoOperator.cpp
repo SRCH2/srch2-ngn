@@ -29,6 +29,7 @@ bool RandomAccessVerificationGeoOperator::open(QueryEvaluatorInternal * queryEva
 	// base on our experiments this part of the code takes more time. So it is more sufficient to use it here and save
 	// the offset of latitude and longitude in the class.
 	getLat_Long_Offset(this->latOffset, this->longOffset, queryEvaluator->getSchema());
+    return true;
 }
 
 PhysicalPlanRecordItem * RandomAccessVerificationGeoOperator::getNext(const PhysicalPlanExecutionParameters & params){
