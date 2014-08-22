@@ -513,7 +513,7 @@ void ConfigManager::parseMongoDb(const xml_node &mongoDbNode,
     coreInfo->primaryKey = "_id";
 }
 
-void ConfigManager::parseQuery(const xml_node &queryNode, CoreInfo_t *coreInfo,
+void ConfigManager::parseQuery(CoreConfigParseState_t *coreParseState , const xml_node &queryNode, CoreInfo_t *coreInfo,
         bool &configSuccess, std::stringstream &parseError,
         std::stringstream &parseWarnings) {
     // scoringExpressionString is an optional field
@@ -777,8 +777,22 @@ void ConfigManager::parseQuery(const xml_node &queryNode, CoreInfo_t *coreInfo,
             return;
         }
 
+        //A warning is displayed if the field present in responseContent is neither searchable nor refining.
         if (coreInfo->searchResponseContent == 2) {
             if (childNode.text()) {
+                vector<string> temp;
+                splitString(string(childNode.text().get()), ",",
+                                        temp);
+                for(int i = 0; i< temp.size(); i++){
+                    trimSpacesFromValue(temp[i], responseContentString, parseWarnings);
+                    bool isRefining  = (coreInfo->refiningAttributesInfo.count(temp[i]) != 0);
+                    vector<string>::iterator it = (std::find(coreParseState->searchableFieldsVector.begin(), coreParseState->searchableFieldsVector.end(), temp[i]));
+                    bool isSearchable = (it != coreParseState->searchableFieldsVector.end());
+                    if(isRefining == false && isSearchable == false){
+                        string warning = "The field entered in responseContent tag " + temp[i] + " is not indexed therefore will not be returned by the engine";
+                        Logger::warn(warning.c_str());
+                    }
+                }
                 splitString(string(childNode.text().get()), ",",
                         coreInfo->attributesToReturn);
             } else {
@@ -1017,7 +1031,7 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode,
 
     childNode = parentNode.child(queryString);
     if (childNode) {
-        parseQuery(childNode, coreInfo, configSuccess, parseError,
+        parseQuery(&coreParseState, childNode, coreInfo, configSuccess, parseError,
                 parseWarnings);
         if (configSuccess == false) {
             return;

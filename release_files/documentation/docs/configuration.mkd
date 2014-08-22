@@ -361,6 +361,8 @@ or
  <responseContent type="2">lat,lng</responseContent>
 ```
 
+Note that the field mentioned in responseContent for type 2, should have either Searchable, Refining or Indexed set to true, otherwise the engine will not return the field.
+
 ###9.2 JSON Response Format (Optional)
 
 ResponseFormat specifies if the response should be JSON or JSONP formatted.  Possible values are:<br>
