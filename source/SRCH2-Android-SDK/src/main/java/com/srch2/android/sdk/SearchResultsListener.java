@@ -1,9 +1,9 @@
 package com.srch2.android.sdk;
 
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.HashMap;
-
-import org.json.JSONObject;
 
 /**
  * This interface contains the callback method for the search RESTful requests of the SRCH2 search server:
