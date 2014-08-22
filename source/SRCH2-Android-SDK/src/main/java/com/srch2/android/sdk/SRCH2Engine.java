@@ -46,7 +46,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * completes an insertion after the method {@link Indexable#insert(org.json.JSONArray)} is called,
  * the method {@link com.srch2.android.sdk.Indexable#onInsertComplete(int, int, String)} will be
  * executed on that <code>Indexable</code> indicating the number of successful and failed insertions.
- * These methods should be overriden by the implementation of the <code>Indexable</code>, although
+ * These methods should be overridden by the implementation of the <code>Indexable</code>, although
  * they do not have to be: if they are not they will out to the logcat under the tag 'SRCH2'.
  * For a search action, when the SRCH2 search completes the search, the results will be passed
  * through the method {@link com.srch2.android.sdk.SearchResultsListener#onNewSearchResults(int, String, java.util.HashMap)}
