@@ -1,6 +1,5 @@
 package com.srch2.android.sdk;
 
-import android.util.Log;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -81,19 +80,18 @@ class SearchTask extends HttpTask.SearchHttpTask {
                                             snippet.put(key, highlight);
                                         }
                                     }
-
                                     newRecord.put(Indexable.SEARCH_RESULT_JSON_KEY_HIGHLIGHTED, snippet);
                                 }
                             }
                             records.add(newRecord);
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            Cat.ex(TAG, "while parsing records General Exception", e);
                         }
                     }
                     resultMap.put(coreName, records);
                 }
             } catch (JSONException ignore) {
-                ignore.printStackTrace();
+                Cat.ex(TAG, "while parsing records JSONException", ignore);
             }
         } else {
 
@@ -111,7 +109,6 @@ class SearchTask extends HttpTask.SearchHttpTask {
                         newRecord.put(Indexable.SEARCH_RESULT_JSON_KEY_RECORD, record);
 
                         if (resultNodes.has("snippet")) {
-                            Log.d("testest", "POS " + resultNodes.toString());
                             boolean highlightingNotEmpty = true;
                             JSONObject snippet = null;
                             try {
@@ -141,7 +138,7 @@ class SearchTask extends HttpTask.SearchHttpTask {
                         }
                         recordResults.add(newRecord);
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        Cat.ex(TAG, "while parsing records", e);
                     }
 
                 }

@@ -106,7 +106,7 @@ class UrlBuilder {
                     + URL_DOCTS_PATH_PARAMETER
                     + engineConf.getAuthorizationKey() + "&" + indexConf.schema.uniqueKey + "=" + urlIds);
         } catch (MalformedURLException ignore) {
-            ignore.printStackTrace();
+            Cat.ex("UrlBuilder", "gettingDeleteURL", ignore);
         }
         return url;
     }

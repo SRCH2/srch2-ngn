@@ -30,4 +30,12 @@ class Cat {
             Log.e(TAG_PREFIX.concat(tag), message);
         }
     }
+
+    static void ex(String tag, String message, Exception exception) {
+        if (isLogging) {
+            Log.e(tag, "$EXCEPTION--------------------------------");
+            Log.e(tag, message);
+            exception.printStackTrace();
+        }
+    }
 }

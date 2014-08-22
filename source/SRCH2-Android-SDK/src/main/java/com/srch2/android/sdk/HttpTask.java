@@ -301,7 +301,7 @@ abstract class HttpTask implements Runnable {
             } else {
                 Cat.d(internalClassLogcatTag, "IOEXCEPTION message is " + errorResponse);
             }
-            ioException.printStackTrace();
+            Cat.ex(TAG, "httptask handleIOexception", ioException);
         }
         if (errorResponse == null) {
             response = prepareIOExceptionMessageForCallback();
