@@ -345,23 +345,9 @@ void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode,
         CoreInfo_t *coreInfo, map<string, unsigned> &boostsMap,
         bool &configSuccess, std::stringstream &parseError,
         std::stringstream &parseWarnings) {
-    xml_node childNode = indexConfigNode.child(indexTypeString);
-    coreInfo->indexType = 0; //Default index type is 0
-    if (childNode && childNode.text()) {
-        string it = string(childNode.text().get());
-        if (isValidIndexType(it)) {
-            coreInfo->indexType = childNode.text().as_int();
-        } else {
-            parseError << "Index Type's value can be only 0 or 1.\n";
-            configSuccess = false;
-            return;
-        }
-    }else{
-        Logger::warn("Index Type is not set, so the engine will use the default value 0");
-    }
 
     coreInfo->supportSwapInEditDistance = true; // by default it is true
-    childNode = indexConfigNode.child(supportSwapInEditDistanceString);
+    xml_node childNode = indexConfigNode.child(supportSwapInEditDistanceString);
     if (childNode && childNode.text()) {
         string qtmt = childNode.text().get();
         if (isValidBool(qtmt)) {
@@ -1657,6 +1643,7 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
      * <field>  in config.xml file
      */
     coreInfo->isPrimSearchable = 0;
+    coreInfo->indexType = DefaultIndex;
 
     xml_node fieldsNode = schemaNode.child(fieldsString);
     if (fieldsNode) {
@@ -1727,6 +1714,28 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
                         && string(field.attribute(typeString).value()).compare(
                                 "") != 0) {
 
+                	if (string(field.attribute(typeString).value()).compare(
+                			locationLatitudeString) == 0) {
+                		coreParseState->hasLatitude = true;
+                		// we don't have indexType in the config file any more.
+                		// but we use this flag to create a quadtree and insert elements in it.
+                		coreInfo->indexType = LocationIndex;
+                		coreInfo->fieldLatitude = string(
+                				field.attribute(nameString).value());
+                		isRefining = true;
+                	}
+
+                	if (string(field.attribute(typeString).value()).compare(
+                			locationLongitudeString) == 0) {
+                		coreParseState->hasLongitude = true;
+                		// we don't have indexType in the config file any more.
+                		// but we use this flag to create a quadtree and insert elements in it.
+                		coreInfo->indexType = LocationIndex;
+                		coreInfo->fieldLongitude = string(
+                				field.attribute(nameString).value());
+                		isRefining = true;
+                	}
+
                     if (!setCoreParseStateVector(isSearchable, isRefining,
                             isMultiValued, isHighlightEnabled, coreParseState,
                             coreInfo, parseError, field)) {
@@ -1744,21 +1753,8 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
                         return;
                     }
 
-                    // Checks for geo types. location_latitude and location_longitude are geo types
-                    string fieldType = field.attribute(typeString).value();
-                    string lowerCase = fieldType;
-                    std::transform(lowerCase.begin(), lowerCase.end(),
-                            lowerCase.begin(), ::tolower);
-                    if (lowerCase.compare(locationLatitudeString) == 0) {
-                        coreParseState->hasLatitude = true;
-                        coreInfo->fieldLatitude = string(
-                                field.attribute(nameString).value());
-                    }
-                    if (lowerCase.compare(locationLongitudeString) == 0) {
-                        coreParseState->hasLongitude = true;
-                        coreInfo->fieldLongitude = string(
-                                field.attribute(nameString).value());
-                    }
+
+
                 } else { // if one of the values of name, type or indexed is empty
                     parseError << "For the searchable fields, "
                             << "providing values for 'name' and 'type' is required\n ";
@@ -2946,8 +2942,12 @@ srch2::instantsearch::FilterType ConfigManager::parseFieldType(
             return srch2::instantsearch::ATTRIBUTE_TYPE_DOUBLE;
     else if (lowerCase.compare("text") == 0)
         return srch2::instantsearch::ATTRIBUTE_TYPE_TEXT;
-    else if (lowerCase.compare("time") == 0)
-        return srch2::instantsearch::ATTRIBUTE_TYPE_TIME;
+    else if (fieldType.compare("time") == 0)
+    	return srch2::instantsearch::ATTRIBUTE_TYPE_TIME;
+    else if (fieldType.compare(locationLatitudeString) == 0)
+    	return srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT;
+    else if (fieldType.compare(locationLongitudeString) == 0)
+    	return srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT;
 
     Logger::warn("\"%s\" is not a supported type. The following are supported "\
             "types: text, integer, long, float, double, time, "\

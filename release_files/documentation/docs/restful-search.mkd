@@ -415,18 +415,16 @@ Note that all start, end, and gap values, if given in the query, will override t
 
 ## 8. Search Type
 
-The engine offers three different strategies for searching records:
+The engine offers two different strategies for searching records:
 
  - topK: The results will be sorted descending by their score. This score is calculated for each record. This approach has a high performance, but does not support facet and sort operations. <br>
  - getAll: Use this strategy if facets and sort query parameters are needed.
- - geo: Use of a location-based search. Sort and facets are supported. <br>
 
 The following are examples of using searchType:
 ```
  1) searchType=topK
  2) searchType=getAll
- 3) searchType=geo
- 4) searchType=getAll&sort=director
+ 3) searchType=getAll&sort=director
 ```
 *Note:* if searchType is not included in the query, it is set to topK by default. However, if any facet or sort parameter is included in the query, the search type will be getAll.
 *Note:* If the searchType is 'getAll' and if the expected number of results is more than 10,000, the engine will return the top 2000 results based on the ranking score.

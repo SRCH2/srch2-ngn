@@ -102,9 +102,9 @@ ADD_EXECUTABLE(Lookup_Test Lookup_Test.cpp ${IndexIntegration_Source})
 TARGET_LINK_LIBRARIES(Lookup_Test ${INTEGRATION_TEST_LIBS} ${THREADING_TEST_LIBS})	
 LIST(APPEND INTEGRATION_TESTS Lookup_Test)
 
-ADD_EXECUTABLE(GeoCompleteTermSearch_Test GeoCompleteTermSearch_Test.cpp ${IndexIntegration_Source})
-TARGET_LINK_LIBRARIES(GeoCompleteTermSearch_Test ${INTEGRATION_TEST_LIBS} ${THREADING_TEST_LIBS})	
-LIST(APPEND INTEGRATION_TESTS GeoCompleteTermSearch_Test)
+ADD_EXECUTABLE(ThreadSafetyReadWriteGeo_Test ThreadSafetyReadWriteGeo_Test.cpp ${IndexIntegration_Source})
+TARGET_LINK_LIBRARIES(ThreadSafetyReadWriteGeo_Test ${INTEGRATION_TEST_LIBS} ${THREADING_TEST_LIBS})	
+LIST(APPEND INTEGRATION_TESTS ThreadSafetyReadWriteGeo_Test)
 
 ADD_CUSTOM_TARGET(build_integration_test ALL DEPENDS ${INTEGRATION_TESTS})
 foreach (target ${INTEGRATION_TESTS})

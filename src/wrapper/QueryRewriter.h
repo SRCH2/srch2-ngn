@@ -66,8 +66,8 @@ private:
 	void fillExactAndFuzzyQueriesWithCommonInformation(LogicalPlan & plan);
 	void createExactAndFuzzyQueriesForTopK(LogicalPlan & plan);
 	void createExactAndFuzzyQueriesForGetAllTResults(LogicalPlan & plan) ;
-	void createExactAndFuzzyQueriesForGeo(LogicalPlan & plan) ;
 	void createPostProcessingPlan(LogicalPlan & plan) ;
+	void addGeoToParseTree();
 };
 
 }

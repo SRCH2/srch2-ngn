@@ -30,6 +30,7 @@
 #include "SortFilterEvaluator.h"
 #include "instantsearch/LogicalPlan.h"
 #include "instantsearch/ResultsPostProcessor.h"
+#include "ParsedParameterContainer.h"
 
 
 namespace srch2 {
@@ -75,18 +76,52 @@ public:
 	}
 };
 
+/*
+ * This class contains the information required for a geo search coming from the
+ * query. This information (such as rblat and lblong and ...) are
+ * specified in the query, then saved in this class.
+ */
+class GeoIntermediateStructure{
+public:
+	GeoIntermediateStructure(float lblat, float lblong, float rtlat, float rtlong){
+		this->type = GeoTypeRectangular;
+		this->lblat = lblat;
+		this->lblong = lblong;
+		this->rtlat = rtlat;
+		this->rtlong = rtlong;
+	}
+
+	GeoIntermediateStructure(float clat, float clong, float radius){
+		this->type = GeoTypeCircular;
+		this->clat = clat;
+		this->clong = clong;
+		this->radius = radius;
+	}
+
+	ParameterName type; // specified the type of the region of the query. It could be GeoTypeRectangular or GeoTypeCircular
+	float lblat;        // latitude of left bottom point of the rectangle for rectangular query region
+	float lblong;       // longitude of left bottom point of the rectangle for rectangular query region
+	float rtlat;        // latitude of right top point of the rectangle for rectangular query region
+	float rtlong;       // longitude of right top point of the rectangle for rectangular query region
+	float clat;         // latitude of center of the circle for circular query region
+	float clong;        // longitude of center of the circle for circular query region
+	float radius;       // radius of the circle for circular query region
+};
+
 class ParseTreeNode{
 public:
 	LogicalPlanNodeType type;
 	ParseTreeNode * parent;
 	vector<ParseTreeNode *> children;
 	TermIntermediateStructure * termIntermediateStructure;
+	GeoIntermediateStructure * geoIntermediateStructure;
 
 //	static int objectCount;
 	ParseTreeNode(	LogicalPlanNodeType type,	ParseTreeNode * parent){
 	 this->type = type;
 	 this->parent = parent;
 	 this->termIntermediateStructure = NULL;
+	 this->geoIntermediateStructure  = NULL;
 //	 objectCount++;
 	}
     ~ParseTreeNode(){
@@ -96,6 +131,9 @@ public:
 
 		if(termIntermediateStructure != NULL){
 			delete termIntermediateStructure;
+		}
+		if(geoIntermediateStructure  != NULL){
+			delete geoIntermediateStructure;
 		}
 //		objectCount--;
 	}
@@ -124,6 +162,9 @@ public:
 				break;
 			case LogicalPlanNodeTypePhrase:
 				cout << indentation(indent) << "-- PHRASE" << endl;
+				break;
+			case LogicalPlanNodeTypeGeo:
+				cout << indentation(indent) << "-- Geo"  << endl;
 				break;
 		}
 		for(vector<ParseTreeNode *>::iterator child = children.begin() ; child != children.end() ; ++child){
@@ -253,6 +294,10 @@ public:
 
 class GeoParameterContainer {
 public:
+
+	~GeoParameterContainer(){
+		parametersInQuery.clear();
+	}
 	// while we are parsing we populate this vector by the names of those members
 	// which are set. It's a summary of the query parameters.
 	std::vector<ParameterName> parametersInQuery;
@@ -283,6 +328,7 @@ public:
         filterQueryContainer = NULL;
     	facetQueryContainer = NULL;
     	sortQueryContainer = NULL;
+    	geoParameterContainer = NULL;
         onlyFacets = false;
         isFuzzy=true;
         prefixMatchPenalty=0;
@@ -311,6 +357,9 @@ public:
             delete sortQueryContainer;
         if(parseTreeRoot != NULL){
         	delete parseTreeRoot;
+        }
+        if(geoParameterContainer != NULL){
+        	delete geoParameterContainer;
         }
     }
     // while we are parsing we populate this vector by the names of those members
