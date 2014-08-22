@@ -142,8 +142,7 @@ public class MyActivity extends TestableActivity {
 
     public void testAll() {
         try {
-//            for (TestableIndex index : new TestableIndex[]{mIndex1, mIndex2, mIndexGeo}) {
-            for (TestableIndex index : new TestableIndex[]{mIndexGeo}) {
+            for (TestableIndex index : new TestableIndex[]{ mIndexGeo}) {
                 testOneRecordCRUD(index);
                 testBatchRecordCRUD(index);
             }
@@ -446,6 +445,7 @@ public class MyActivity extends TestableActivity {
         index.resetUpdateResponseFields();
         index.update(record);
         getUpdateResponse(index);
+        Cat.d("testUpdateExistShouldSuccess:", index.updateResponse);
         assertTrue(index.updateSuccessCount == 1);
         assertTrue(index.upsertSuccessCount == 0);
         assertTrue(index.updateFailedCount == 0);

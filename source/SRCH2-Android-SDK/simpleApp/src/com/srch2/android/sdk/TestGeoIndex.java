@@ -9,7 +9,8 @@ import java.util.HashSet;
 import java.util.List;
 
 public class TestGeoIndex extends TestIndex{
-    public static final int BATCH_INSERT_NUM = 200;
+    public static final int BATCH_INSERT_NUM = 2;
+    public static final int BATCH_START_NUM= 0;
 
 
     public static final String INDEX_NAME = "testGeo";
@@ -93,8 +94,8 @@ public class TestGeoIndex extends TestIndex{
     public List<Query> getFailToSearchQuery(JSONArray records) {
         if (records.length() == 1){
             List<Query> queries = super.getFailToSearchQuery(records);
-            //queries.add( new Query(45,45,60,60));
-            //queries.add( new Query(45,45,1));
+            queries.add( new Query(45,45,60,60));
+            queries.add( new Query(45,45,1));
             queries.add( new Query(new SearchableTerm("chosen")).insideBoxRegion(45,45,60,60));
             queries.add( new Query(new SearchableTerm("chosen")).insideCircleRegion(45,45,1));
             return queries;
@@ -113,4 +114,39 @@ public class TestGeoIndex extends TestIndex{
         return this.getRecordsArray(BATCH_INSERT_NUM, BATCH_START_NUM);
     }
 
+
+    @Override
+    public JSONObject getSucceedToUpdateExistRecord() {
+
+        JSONObject record = super.getSucceedToUpdateExistRecord();
+        try {
+            record.put(INDEX_FIELD_NAME_LATITUDE, 42);
+            record.put(INDEX_FIELD_NAME_LONGITUDE, 42);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return record;
+    }
+
+    @Override
+    public JSONObject getSucceedToUpsertRecord() {
+        JSONObject record = super.getSucceedToUpsertRecord();
+         try {
+            record.put(INDEX_FIELD_NAME_LATITUDE, 42);
+            record.put(INDEX_FIELD_NAME_LONGITUDE, 42);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return record;
+    }
+
+    @Override
+    public JSONArray getFailToInsertBatchRecord() {
+        return this.getRecordsArray(BATCH_INSERT_NUM, BATCH_START_NUM);
+    }
+
+    @Override
+    public JSONArray getSucceedToUpdateBatchRecords() {
+        return this.getRecordsArray(BATCH_INSERT_NUM, BATCH_START_NUM);
+    }
 }
