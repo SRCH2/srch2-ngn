@@ -93,6 +93,7 @@ public class MyActivity extends TestableActivity {
         SRCH2Engine.setSearchResultsListener(mResultListener);
         SRCH2Engine.setAutomatedTestingMode(true);
 
+
     }
 
 
@@ -145,6 +146,7 @@ public class MyActivity extends TestableActivity {
                 testBatchRecordCRUD(index);
             }
         } catch (JSONException e) {
+            e.printStackTrace();
             Assert.fail();
         }
     }

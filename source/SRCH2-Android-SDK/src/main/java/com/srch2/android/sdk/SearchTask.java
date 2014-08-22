@@ -101,32 +101,43 @@ class SearchTask extends HttpTask.SearchHttpTask {
                         JSONObject resultNodes = (JSONObject) nodes.get(i);
                         JSONObject record = resultNodes.getJSONObject("record");
 
-                        JSONObject newRecord = new JSONObject();
-                        newRecord.put(Indexable.SEARCH_RESULT_JSON_KEY_RECORD, record);
 
-                        JSONObject snippet = resultNodes.getJSONObject("snippet");
+                        if (resultNodes.has("snippet")) {
+                            JSONObject newRecord = new JSONObject();
+                            newRecord.put(Indexable.SEARCH_RESULT_JSON_KEY_RECORD, record);
 
-
-
-                        if (snippet.length() > 0) {
-
-                            Iterator<String> snippetKeys = snippet.keys();
-                            while (snippetKeys.hasNext()) {
-                                String key = snippetKeys.next();
-                                String highlight = null;
-                                try {
-                                    highlight = snippet.getString(key);
-                                } catch (JSONException highlighterOops) {
-                                    continue;
-                                }
-                                if (highlight != null) {
-                                    highlight = highlight.replace("<\\/", "</");
-                                    snippet.put(key, highlight);
-                                }
+                            JSONObject snippet;
+                            try {
+                                snippet = resultNodes.getJSONObject("snippet");
+                            } catch (JSONException e){
+                                recordResults.add(newRecord);
+                                continue;
                             }
-                            newRecord.put(Indexable.SEARCH_RESULT_JSON_KEY_HIGHLIGHTED, snippet);
+
+
+                            if (snippet.length() > 0) {
+
+                                Iterator<String> snippetKeys = snippet.keys();
+                                while (snippetKeys.hasNext()) {
+                                    String key = snippetKeys.next();
+                                    String highlight = null;
+                                    try {
+                                        highlight = snippet.getString(key);
+                                    } catch (JSONException highlighterOops) {
+                                        continue;
+                                    }
+                                    if (highlight != null) {
+                                        highlight = highlight.replace("<\\/", "</");
+                                        snippet.put(key, highlight);
+                                    }
+                                }
+                                newRecord.put(Indexable.SEARCH_RESULT_JSON_KEY_HIGHLIGHTED, snippet);
+                            }
+
+                            recordResults.add(newRecord);
+                        } else { // that is the getRecordTask
+                            recordResults.add(record);
                         }
-                        recordResults.add(newRecord);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }

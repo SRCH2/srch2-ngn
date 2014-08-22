@@ -286,7 +286,7 @@ public class TestIndex extends TestableIndex {
         try {
             if (jsonObjects.size() == end-start || !getAll) {
                 for (int i = start; i < end && i < jsonObjects.size(); ++i) {
-                    if (jsonObjects.get(i-start).getInt(INDEX_FIELD_NAME_PRIMARY_KEY) != i) {
+                    if (jsonObjects.get(i-start).getJSONObject(SEARCH_RESULT_JSON_KEY_RECORD).getInt(INDEX_FIELD_NAME_PRIMARY_KEY) != i) {
                         return false;
                     }
                 }
@@ -322,7 +322,7 @@ public class TestIndex extends TestableIndex {
         try {
             // simple way to detect if the index is the single record one or not
             if (singleRecordQueryString.contains(query)) {
-                return jsonObjects.size() == 1 && jsonObjects.get(0).getString(INDEX_FIELD_NAME_PRIMARY_KEY).equals(ONE_RECORD_PRIMARY_KEY);
+                return jsonObjects.size() == 1 && jsonObjects.get(0).getJSONObject(SEARCH_RESULT_JSON_KEY_RECORD).getString(INDEX_FIELD_NAME_PRIMARY_KEY).equals(ONE_RECORD_PRIMARY_KEY);
             } else if (multipleRecordQueryString.contains(query)) {
                 // String search don't have so much control, just check the size
                 return jsonObjects.size() == 10; // default row number
@@ -339,7 +339,7 @@ public class TestIndex extends TestableIndex {
     public boolean verifyResult(Query query, ArrayList<JSONObject> jsonObjects) {
         try {
             if (singleRecordQueryQuery.contains(query)) {
-                return jsonObjects.size() == 1 && jsonObjects.get(0).getString(INDEX_FIELD_NAME_PRIMARY_KEY).equals(ONE_RECORD_PRIMARY_KEY);
+                return jsonObjects.size() == 1 && jsonObjects.get(0).getJSONObject(SEARCH_RESULT_JSON_KEY_RECORD).getString(INDEX_FIELD_NAME_PRIMARY_KEY).equals(ONE_RECORD_PRIMARY_KEY);
             } else if (multipleRecordQueryQuery.contains(query)) {
                 return checkPartialResult(query, jsonObjects);
             } else {
