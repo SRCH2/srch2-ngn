@@ -378,23 +378,23 @@ bool JSONRecordParser::setRecordLocationValue(srch2is::Record *record,
                 indexDataContainerConf->getAttributeLongitude();
         double recordLatitude;
 
-        getJsonValueDouble(root, latitudeAttributeKeyName, recordLatitude,
-                "attribute-latitude");
+        if(!getJsonValueDouble(root, latitudeAttributeKeyName, recordLatitude,
+                "attribute-latitude"))
+        	return false;
 
         if (recordLatitude > 200.0 || recordLatitude < -200.0) {
             Logger::warn("bad x: %f, set to 40.0 for testing purposes.\n",
                     recordLatitude);
-            recordLatitude = 40.0;
         }
         double recordLongitude;
 
-        getJsonValueDouble(root, longitudeAttributeKeyName, recordLongitude,
-                "attribute-longitude");
+        if(!getJsonValueDouble(root, longitudeAttributeKeyName, recordLongitude,
+                "attribute-longitude"))
+        	return false;
 
         if (recordLongitude > 200.0 || recordLongitude < -200.0) {
             Logger::warn("bad y: %f, set to -120.0 for testing purposes.\n",
                     recordLongitude);
-            recordLongitude = -120.0;
         }
         record->setLocationAttributeValue(recordLatitude, recordLongitude);
     }
@@ -577,6 +577,9 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema(const CoreInfo_t *ind
     std::string scoringExpressionString = indexDataContainerConf->getScoringExpressionString();
     schema->setScoringExpression(scoringExpressionString);
     schema->setSupportSwapInEditDistance(indexDataContainerConf->getSupportSwapInEditDistance());
+
+    schema->setNameOfLatitudeAttribute(indexDataContainerConf->getAttributeLatitude());
+    schema->setNameOfLongitudeAttribute(indexDataContainerConf->getAttributeLongitude());
 
     return schema;
 }

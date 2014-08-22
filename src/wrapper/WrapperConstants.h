@@ -48,11 +48,11 @@ typedef enum {
     MaxTimeAllowed,
     IsOmitHeader,
     ResponseFormat,
+    GeoSearchFlag,
     FilterQueryEvaluatorFlag,
     RetrieveByIdSearchType,
     TopKSearchType,
     GetAllResultsSearchType,
-    GeoSearchType,
     // values related to search type specific parameters
     FacetQueryHandler,
     SortQueryHandler,
