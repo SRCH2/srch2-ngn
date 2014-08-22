@@ -2052,7 +2052,7 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
     coreInfo->updateHistogramEveryQWrites =
             (unsigned) ((coreInfo->mergeEveryMWrites * 1.0)
                     / updateHistogramWorkRatioOverTime); // 10000 for mergeEvery 1000 Writes
-
+/*
     // TODO - logging per core
     // logLevel is optional. To make loglevel optional the llflag's initial value has been set to false.
     // llflag is false, if log level is not set in config file or wrong value is given by the user, otherwise llflag remains true.
@@ -2087,6 +2087,7 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
         configSuccess = false;
         return;
     }
+    */
 }
 
 bool checkValidity(string &parameter) {
@@ -2120,6 +2121,42 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
         configSuccess = false;
         return;
     }
+
+    // TODO - logging per core
+      // logLevel is optional. To make loglevel optional the llflag's initial value has been set to false.
+      // llflag is false, if log level is not set in config file or wrong value is given by the user, otherwise llflag remains true.
+      this->loglevel = Logger::SRCH2_LOG_INFO;
+      xml_node updateLog = configDoc.child("updateLog");
+      childNode = updateLog.child(logLevelString);
+      bool llflag = false;
+      if (childNode && childNode.text()) {
+          string ll = childNode.text().get();
+          if (this->isValidLogLevel(ll)) {
+              this->loglevel =
+                      static_cast<Logger::LogLevel>(childNode.text().as_int());
+              llflag = true;
+          } else {
+              llflag = false;
+          }
+      }
+      if (!llflag) {
+          Logger::warn("Log Level is either not set or not set correctly, so the engine will use the"
+                          " default value 3");
+      }
+
+      this->httpServerAccessLogFile = this->srch2Home + "/" + "logs" + "/" + "srch2-log.txt";
+      // accessLogFile is required
+      childNode = updateLog.child(accessLogFileString);
+      if (childNode && childNode.text()) {
+          temporaryString = string(childNode.text().get());
+          trimSpacesFromValue(temporaryString, updateLogString, parseWarnings);
+          this->httpServerAccessLogFile = this->srch2Home + "/"
+                   + temporaryString;
+      } else {
+          string warning = "httpServerAccessLogFile is not set, so the engine will use default location ";
+          warning = warning + this->srch2Home + "/" + "logs" + "/" + "srch2-log.txt";
+          Logger::warn(warning.c_str());
+      }
 
     string authKey = "";
     //Check for authorization key
