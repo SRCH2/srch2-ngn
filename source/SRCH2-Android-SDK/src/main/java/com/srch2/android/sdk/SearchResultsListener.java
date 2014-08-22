@@ -62,8 +62,8 @@ public interface SearchResultsListener {
      * search input, the map will be <b>non-null</b> but contain no values for each index name key.
      * @param httpResponseCode the HTTP response code as it was returned by the SRCH2 search server
      * @param jsonResponse the RESTful response as it was returned by the SRCH2 search server
-     * @param resultRecordMap a parsing of the <code>jsonResponse</code> that maps the names of indexes to the
+     * @param resultMap a parsing of the <code>jsonResponse</code> that maps the names of indexes to the
      *                        sets of their results
      */
-    void onNewSearchResults(int httpResponseCode, String jsonResponse, HashMap<String, ArrayList<JSONObject>> resultRecordMap);
+    void onNewSearchResults(int httpResponseCode, String jsonResponse, HashMap<String, ArrayList<JSONObject>> resultMap);
 }
