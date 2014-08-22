@@ -700,6 +700,17 @@ bool ResourceLockManager::resolveBatch(const NodeOperationId & requesterAddress,
 		return true;// blocking requests will be granted eventually.
 	}
 
+    // 4. check if any of the lock requests where RELEASE, in that case we must check to see if we can
+    //    apply a pending request.
+    bool hasRelease = false;
+    for(unsigned i = 0 ; i < lockRequest->requestBatch.size(); ++i){
+        if(lockRequest->requestBatch.at(i)->requestType == ResourceLockRequestTypeRelease ||
+                lockRequest->requestBatch.at(i)->requestType == ResourceLockRequestTypeDowngrade    ){
+            hasRelease = true;
+            break;
+        }
+    }
+
 	bool needCommit = false;
 
 	// 2. we can grant, apply the locks.
@@ -709,26 +720,16 @@ bool ResourceLockManager::resolveBatch(const NodeOperationId & requesterAddress,
 	if(needCommit){
 		PendingLockRequest rvRelease(requesterAddress, ackType, priority, lockRequest);
 		rvRelease.metadataVersionId = ShardManager::getWriteview()->versionId;
-		ShardManager::getShardManager()->getMetadataManager()->commitClusterMetadata();
 		readviewReleaseMutex.lock();
 		pendingRVReleaseRequests.push_back(rvRelease);
 		readviewReleaseMutex.unlock();
+		ShardManager::getShardManager()->getMetadataManager()->commitClusterMetadata();
 	}else{
 		sendAck(PendingLockRequest(requesterAddress, ackType, priority, lockRequest), true);
 		delete lockRequest;
 	}
 
 
-	// 4. check if any of the lock requests where RELEASE, in that case we must check to see if we can
-	//    apply a pending request.
-	bool hasRelease = false;
-	for(unsigned i = 0 ; i < lockRequest->requestBatch.size(); ++i){
-		if(lockRequest->requestBatch.at(i)->requestType == ResourceLockRequestTypeRelease ||
-				lockRequest->requestBatch.at(i)->requestType == ResourceLockRequestTypeDowngrade	){
-			hasRelease = true;
-			break;
-		}
-	}
 	if(hasRelease){
 		tryPendingRequest();
 	}
