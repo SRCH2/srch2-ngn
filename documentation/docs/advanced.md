@@ -1,8 +1,10 @@
+<h1><center>Advanced Features</center></h1>
+
 In this documentation we explain advanced features of the SRCH2 Android SDK,
 such as how to formulate a query with various conditions, how to use
 the SDK to do testing and use Proguard.
 
-##Advanced Queries
+##Queries
 
 In the [basic tutorial](index.md), we showed how to send a search
 *beaty ame* to the SRCH2 engine.  By default, the engine uses the
@@ -138,7 +140,7 @@ the engine will use the similarity threshold specified in the
 override this getter method, we will use the system's default threshold
 of 0.65f.
 
-####Term Boost
+###Term Boost
 
 The engine allows us to specify a boost value for a term to indicate
 how important this term is in the [ranking function](http://srch2.com/documentation/ranking/).
@@ -161,35 +163,35 @@ We can specify prefix, fuzziness, and boosting conditions to a single term, e.g.
 The engine supports three boolean operators: AND, OR, and
 AND_NOT. Each operator generates a *CompositeTerm*
 object. Both *SearchableTerm* and *CompositeTerm* are inherited from
-the *Term* class.  The *Term* class is used to initialize the *Query*
-object. 
+the *Term* class, which is used to initialize a *Query* object. 
 
 <h1> Why cannot we change "AND_NOT" just to "NOT"? </h1>
 <h1> We can change the AND_NO to "NOT". The "NOT" operator is normally is the unary operator, 
 like "NOT A". </h1>
 
-For example,
+For example, consider the following query:
 ```
  new SearchableTerm("star").AND(new SearchableTerm("wars")).OR(new SearchableTerm("George Lucas"));
 ```
-The query means searching records which either contain "star" and "wars", or the phrase "George Lucas".
+It searches records that contain either "star" and "wars", or the phrase "George Lucas".
 The following are a few more examples:
 ```
  new SearchableTerm("star wars").AND(new SearchableTerm("episode 3"))
    .OR(new SearchableTerm("George Lucas").AND_NOT(new SearchableTerm("Indiana Jones")));
 
  new SearchableTerm("big").AND(new SearchableTerm("fish"))
-   .AND((new SearchableTerm("Tim Burton").OR(new SearchableTerm("MacGregor").enableFuzzyMatching(0.5f))));
+   .AND((new SearchableTerm("Tim Burton").OR(new
+   SearchableTerm("MacGregor").enableFuzzyMatching(0.5f)))); 
 ```
 
 ###Filter by Range
 
-The *filterByFieldInRange*, *filterByFieldEqualsTo*, *filterByFieldStartFrom*,
-*filterByFieldEndsTo* methods are used to specify a filter restricting the set
-of records returned.  In the example below,
-only records having year equal to 2012 will return.  
+We can specify a range filter restricting the set of records by using
+the *filterByFieldInRange*, *filterByFieldEqualsTo*,
+*filterByFieldStartFrom*, and *filterByFieldEndsTo* methods.  In the
+example below, only records having a year equal to 2012 will return.  
 ```
-    new Query(new SearchableTerm("star")).filterByFieldEqualsTo("year", "2012");
+  new Query(new SearchableTerm("star")).filterByFieldEqualsTo("year", "2012");
 ```
 
 A range query allows us to match records whose field value is between
@@ -198,59 +200,52 @@ a specified lower bound and upper bound (both inclusive).  For example:
   new Query(new SearchableTerm("star")).filterByFieldInRange("year", "2010", "2012");
 ```
 
-A query can have multiple filters. For example:
+A query can have multiple range filters. For example:
 ```
   new Query(new SearchableTerm("star"))
-      .filterByFieldStartFrom("id","1000")
-      .filterByFieldEqualsTo("genre","drama")
+      .filterByFieldStartFrom("id", "1000")
+      .filterByFieldEqualsTo("genre", "drama")
       .filterByFieldEqualsTo("year", "1975");
 ```
-It returns the records with an *id* greater than or equal to 1000, a *genre* of drama, and *year* less than or equal to 1975.
+It returns the records with an *id* greater than or equal to 1000, a
+*genre* of drama, and *year* less than or equal to 1975.
 
-Note that the engine supports only one kind of boolean operator (OR or
-AND) between all the filter conditions.  By default, all the filters
-are connected by the *AND* operator. We can call the
-*setFilterRelationOR()* method to set it to the *OR* operator. 
+In this example, the engine treats these filters as conjunctive
+predicates (i.e., using the "AND" semantic).  If we want the engine to
+treat them as disjunctive predicates (i.e., using the "OR" semantic), 
+we can call the *setFilterRelationOR()* method.
 
 ###Sorting
 
-By default the engine sorts the results using a descending order by
+By default the engine sorts the results using a descending order based on
 the overall score of each record.  We can specify sorting by other
 fields. For example, the following query sorts the results based on
-the *director*, *year*, and *title* fields:  
+the *director*, *year*, and then *title* fields:
 ```
-  new Query(new SearchableTerm("star")).sortOnFields("director","year","title");
+  new Query(new SearchableTerm("star")).sortOnFields("director", "year", "title");
 ```
-
-Note that if a sort request is included in the query, the returned
-records' scores are still those calculated scores by the engine,  
-but the order of the results corresponds to the specified fields.
 
 We can specify the order in which the result set should be sorted. The default
 behavior is to sort them in the descending order. We can call the
 *orderByAscending()* method to sort them in the ascending order.
-
-As in the previous example, we can use the following code to let results
-be returned in the ascending order on the *year* field, 
+For example, we can use the following code to let sort the results
+in the ascending order on the *year* field:
 ```
-  new Query(new SearchableTerm("star")).sortOnFields("director","year","title").orderByAscending();
+ new Query(new SearchableTerm("star")).sortOnFields("director", "year", "title").orderByAscending();
 ```
 
 ###Pagination
 
-We can specify a range of records in the result set to be returned,
-including an offet and number of records.   The default offset value is 0. 
-We can call the *pagingStartFrom(10)* method to return the query
-records that start from the 10th record. 
+To implement pagination, we want to return some of the results
+by specifying a starting offet and number of records.  
+We can call the *pagingStartFrom()* method to specify the startng
+offset, and its default value is 0.
+We can also set the number of returned records by 
+calling the *pagingSize()* method. The number is obtained
+from the  *Indexable.getTopK()* method, and its default 
+value is 10.
 
-We can also set the number of records to be returned by 
-calling the *pagingSize()* method. By default the
-number is taken from the  *Indexable.getTopK()* method. If we
-do not override this getter method, the engine will take 10 as the
-default value.
-
-These two methods can be used to implement pagination.
-For example, the following code returns records that are ranked from
+For example, the following statement returns records that are ranked from
 the 25th to the 34th of all the results. 
 ```
   new Query(new SearchableTerm("star")).pagingStartFrom(25).pagingSize(10);
@@ -262,58 +257,66 @@ The engine can index records with location information specified as a latitude
 and a longitude, and do search based on both keywords and locations. For
 example, we can use the engine to find stores called "ghirardelli" within two
 miles to a location in San Francisco.  The engine provides all the features
-such as instant search and fuzzy search, making it easy to develop an
-application to provide great user experiences.
+such as instant search and fuzzy search, making it easy to develop a
+mobile application to provide great user experiences.
 
 To enable geo indexing, we need to create the geo type schema by calling the 
 *Schema.createGeoSchema()* function. In addition to the normal 
 *Schema.createSchema()* function, we need to provide the "latitude" and "longitude" 
-field name to the schema. Here is one Geo Schema example:
+field names to the schema. Here is an example:
 ```
   PrimaryKeyField primaryKey = Field.createDefaultPrimaryKeyField("id");
   Field nameField = Field.createSearchableField("name");
   Schema geoSchema = Schema.createGeoSchema(primaryKey, "lat", "lng", nameField);
 ```
-The second argument is the *latitude* name, and the third argument is the *longitude* name.
-Each record should have two corresponding values for these two types, and they
-should be float numbers.  For example:
+The second argument is the *latitude* field name, and the third
+argument is the *longitude* field name.
+Each record should have two corresponding float values for these two fields.
+For example:
 ```
- {"id" : "1234", "name" : "ghirardelli","lat" : 43.22, "lng": -80.22}
+ {"id" : "1234", "name" : "ghirardelli", "lat" : 43.22, "lng": -80.22}
 ```
 
-We can use the *Query* object to search the results inside one geo region. The engine
-supports the "Box Region" and the "Circle Region".
-To search on the "Box Region" we can use the *Query.insideBoxRegion()* method by
-specify the latitude and the longitude of the left-bottom point and the top-right point.
-To search on the "Circle Region" we can use the *Query.insideCircleRegion()* method by 
-specify the latitude and the longitude of the center point, and also the radius of the region.
+We can use the *Query* object to search results inside a geo region,
+such as a rectangle region or a circle region.
+To search using a rectangle region, we can use the *Query.insideRectangleRegion()* method by
+specifying the latitudes and the longitudes of the left-bottom location and the top-right location.
+To search using a circle region, we can use the *Query.insideCircleRegion()* method by 
+specifying the latitude and the longitude of the center point, and also the radius of the circle.
 
-Here are some examples
+Here are some examples:
 ```
   new Query(new SearchableTerm("ghirardelli")).insideBoxRegion(61.20, -149.90, 61.22, -149.70);
   new Query(new SearchableTerm("ghirardelli")).insideCircleRegion(61.20, -149.90, 5);
 ```
 
-Often we want to search all the record within one region without specify the keyword.
-We can use the *Query* constructor to create the geo type query directly like following 
+Often we want to search records within a region without specifying keywords.
+We can use the *Query* constructor to create a geo type query.  For example:
 ```
   new Query(61.20, -149.90, 61.22, -149.70);
   new Query(61.20, -149.90, 5);
 ```
-If we give four double number, the *Query* will be treated as the "Box Region" geo search.
-If we give three double number, it will be treated as the "Circle Region" geo search.
-Both query will give all the records within that specified region.
-
+If we give four numbers, the *Query* will be treated as a
+search using a rectangle region, in which the first two numbers are
+the latitude and longitude of the left-bottom location,
+while last two numbers are
+the latitude and longitude of the top-right location.
+If we give three numbers, it will be treated as a search using a
+circle region, where the first two numbers are
+the latitude and longitude of the center location, and the last number
+is the radius.
 
 ##Testing and Proguard
 
-The SRCH2 Android SDK must be tested on a real Android device, not an
+The SRCH2 Android SDK must be tested on a real Android device, not an emulator.
 When we initialize the `SRCH2Engine` class,
 you can call `setDebugAndTestMode(true)` to enable the `SRCH2Engine` to quickly
-start and stop the SRCH2 http server. 
+start and stop the SRCH2 server. 
 
-To configure the SRCH2-Android-SDK for Proguard, just add the following
-to your proguard configuration file:
+To configure the SRCH2-Android-SDK for
+[Proguard](http://developer.android.com/tools/help/proguard.html) to
+shrink, optimize, and obfuscate the code, just add the following 
+to the proguard configuration file:
 
 ```
 -keep class com.srch2.** { *; } 
