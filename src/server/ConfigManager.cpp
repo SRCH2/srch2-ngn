@@ -2680,7 +2680,7 @@ bool ConfigManager::isValidFieldType(string& fieldType, bool isSearchable) {
                 || (lowerCase.compare("double") == 0)
                 || (lowerCase.compare("time") == 0)
                 || (lowerCase.compare(locationLatitudeString) == 0)
-                || (lowerCase.compare("location_longitude") == 0)) {
+                || (lowerCase.compare(locationLongitudeString) == 0)) {
             return true;
         }
         return false;
