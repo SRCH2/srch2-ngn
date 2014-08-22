@@ -16,6 +16,12 @@ public class Idx extends Indexable {
     public static final String INDEX_FIELD_NAME_TITLE2 = "title2";
     public static final String INDEX_FIELD_NAME_SCORE = "score";
 
+    public static final String HIGHLIGHTING_EXACT_PRE_SCRIPT = "<font color=\"red\"><b>";
+    public static final String HIGHLIGHTING_EXACT_POST_SCRIPT = "</b></font>";
+
+    public static final String HIGHLIGHTING_FUZZY_PRE_SCRIPT = "<font color=\"#ff00ff\"><b>";
+    public static final String HIGHLIGHTING_FUZZY_POST_SCRIPT = "</b></font>";
+
     @Override
     public String getIndexName() {
         return INDEX_NAME;
@@ -28,7 +34,10 @@ public class Idx extends Indexable {
         Field title2 = Field.createSearchableField(INDEX_FIELD_NAME_TITLE2).enableHighlighting();
 
         RecordBoostField score = Field.createRecordBoostField(INDEX_FIELD_NAME_SCORE);
-        return Schema.createSchema(pk, score, title, title2);
+        return Schema.createSchema(pk, score, title, title2)
+                .setHighlightedPreAndPostScript(
+                        HIGHLIGHTING_FUZZY_PRE_SCRIPT, HIGHLIGHTING_FUZZY_POST_SCRIPT,
+                            HIGHLIGHTING_EXACT_PRE_SCRIPT, HIGHLIGHTING_EXACT_POST_SCRIPT);
     }
 
     final public JSONArray getRecords() {

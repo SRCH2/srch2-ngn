@@ -1,5 +1,6 @@
 package com.srch2.android.sdk;
 
+import android.util.Log;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -34,6 +35,7 @@ class SearchTask extends HttpTask.SearchHttpTask {
             String json, boolean isMultiCoreSearch, String targetCoreName) {
         HashMap<String, ArrayList<JSONObject>> resultMap = new HashMap<String, ArrayList<JSONObject>>();
 
+        Log.d("fucksearch", "fuck search fuck search");
 
         if (isMultiCoreSearch) {
             try {
@@ -76,7 +78,8 @@ class SearchTask extends HttpTask.SearchHttpTask {
                                             continue;
                                         }
                                         if (highlight != null) {
-                                            highlight = highlight.replace("<\\/", "</");
+                                            highlight = highlight.replace("\\/", "/");
+                                            highlight = highlight.replace("\\\"", "\"");
                                             snippet.put(key, highlight);
                                         }
                                     }
@@ -129,7 +132,8 @@ class SearchTask extends HttpTask.SearchHttpTask {
                                         continue;
                                     }
                                     if (highlight != null) {
-                                        highlight = highlight.replace("<\\/", "</");
+                                        highlight = highlight.replace("\\/", "/");
+                                        highlight = highlight.replace("\\\"", "\"");
                                         snippet.put(key, highlight);
                                     }
                                 }
