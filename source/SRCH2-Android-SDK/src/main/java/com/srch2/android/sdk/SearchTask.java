@@ -1,6 +1,5 @@
 package com.srch2.android.sdk;
 
-import android.util.Log;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -71,22 +70,17 @@ class SearchTask extends HttpTask.SearchHttpTask {
                                         String key = snippetKeys.next();
                                         String highlight = null;
 
-
-
                                         try {
                                             highlight = snippet.getString(key);
                                         } catch (JSONException highlighterOops) {
                                             continue;
                                         }
 
-                                        Log.d("HIGHLIGHT", "highlight " + highlight);
-
                                         if (highlight != null) {
                                             highlight = highlight.replace("\\/", "/");
                                             highlight = highlight.replace("\\\"", "\"");
                                             highlight = highlight.substring(2, highlight.length() - 2);
                                             snippet.put(key, highlight);
-                                            Log.d("HIGHLIGHT", "snippit " + snippet.toString());
                                         }
                                     }
                                     newRecord.put(Indexable.SEARCH_RESULT_JSON_KEY_HIGHLIGHTED, snippet);
@@ -137,7 +131,6 @@ class SearchTask extends HttpTask.SearchHttpTask {
                                     } catch (JSONException highlighterOops) {
                                         continue;
                                     }
-                                    StringBuilder b = new StringBuilder();
 
                                     if (highlight != null) {
                                         highlight = highlight.replace("\\/", "/");

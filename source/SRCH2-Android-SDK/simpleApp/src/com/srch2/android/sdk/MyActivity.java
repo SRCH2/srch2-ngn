@@ -88,15 +88,11 @@ public class MyActivity extends TestableActivity {
     }
 
     public void initializeSRCH2Engine() {
-
         DeleteRecursive(new File(SRCH2Engine.detectAppHomeDir(this.getApplicationContext()) + File.separator + SRCH2Configuration.SRCH2_HOME_FOLDER_DEFAULT_NAME));
         SRCH2Engine.initialize(mIndex1, mIndex2 );
         SRCH2Engine.setSearchResultsListener(mResultListener);
         SRCH2Engine.setAutomatedTestingMode(true);
-
     }
-
-
 
     public void callSRCH2EngineStart() {
         SRCH2Engine.onStart(this);
@@ -290,23 +286,14 @@ public class MyActivity extends TestableActivity {
 
     private void testGetRecordIdShouldSuccess(TestableIndex index, JSONArray records) throws JSONException {
         for (int i = 0; i < records.length(); i++) {
-
             index.getRecordbyID(records.getJSONObject(i).getString(index.getPrimaryKeyFieldName()));
-
             getRecordResponse(index);
 //            Log.i(TAG, "expected record::tostring():" + records.getJSONObject(i).toString());
 //            Log.i(TAG, "actual response::tostring():" + mControlListener.recordResponse.record.toString());
             // TODO wait engine to fix the all string type record
             //assertTrue(mControlListener.recordResponse.record.toString().equals(records.getJSONObject(i).toString()));
-
-
-
             JSONObject resultRecord = index.recordRetreived;
             JSONObject record = resultRecord.getJSONObject(Indexable.SEARCH_RESULT_JSON_KEY_RECORD);
-
-            Log.d("TESTEST", "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
-
-
             assertTrue(record.getString(
                     index.getPrimaryKeyFieldName()).equals(records.getJSONObject(i).getString(index.getPrimaryKeyFieldName())));
             index.resetGetRecordResponseFields();
