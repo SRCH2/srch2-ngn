@@ -217,9 +217,8 @@ The four constant fields *HIGHLIGHTING_EXACT_PRE_SCRIPT*,
 *HIGHLIGHTING_EXACT_POST_SCRIPT*, *HIGHLIGHTING_FUZZY_PRE_SCRIPT*,
 *HIGHLIGHTING_FUZZY_POST_SCRIPT* define how the SRCH2 search
 server will format data associated with a field that has
-highlighted enabled. Here, *title* has had highlighted enabled by
-the method call *enableHighlighting()*. Then when the schema is
-created, the method call *.setHighlightedPreAndPostScript(
+highlighting enabled which can be done by calling *enableHighlighting()*. Then 
+when the schema is created, the method call *.setHighlightedPreAndPostScript(
 HIGHLIGHTING_FUZZY_PRE_SCRIPT, HIGHLIGHTING_FUZZY_POST_SCRIPT,
 HIGHLIGHTING_EXACT_PRE_SCRIPT, HIGHLIGHTING_EXACT_POST_SCRIPT)* 
 will set the formatting values. This will cause the SRCH2 search
@@ -227,8 +226,9 @@ server to include in the search results a list of field data that
 is formatted against the search input. Thus if the search input 
 is 'citi', since *title* has had highlighting enabled, the
 search result for the move with the title 'Citizen Cane' will
-produce the output of '<font color="red"><b>Citi</b></font>zen Cane'.
-his can be used in conjunction with *Html.fromHtml(...)* such as
+produce the output of '&lt;font color="red"&gt;&lt;b&gt;Citi&lt;/b&gt;&lt;/font&gt;zen Cane'
+(or visually, '<font color="red"><b>Citi</b></font>zen Cane').
+This can be used in conjunction with *Html.fromHtml(...)* such as
 *mTextView.setText(Html.fromHtml(mHighlightTitleText))* to display it
 properly to the user. When defining your own highlighting pre and post
 script, make sure to properly escape characters!
@@ -338,27 +338,28 @@ public class MovieIndex extends Indexable {
 }
 ```
 
-The first three methods *onInsertComplete*, *onUpdateComplete*,
+The first four methods *onInsertComplete*, *onUpdateComplete*,
 *onDeleteComplete* and *onGetRecordComplete* will be executed 
 whenever its corresponding action is complete (for instance *onInsertComplete* 
 will trigger after the SRCH2 search server completes inserting a record in 
 response to *insert(getAFewRecordsToInsert())*). The parameters 
 of these methods always contain the raw JSON response (*JSONResponse*) as it was 
 returned by the SRCH2 server for inspection in case of a failure to
-complete the requested action. For insert, update and deletes the 
+complete the requested action. For inserts, updates and deletes the 
 parameters before this indicate the number of records that were either 
 successful or failed in completing the action: for instance, had we 
 inserted one dozen  records and the SRCH2 search server was able to 
 insert all of  them without a problem, the values of *success* and *failed* for
 *onInsertComplete* would be 12 and 0 respectively. Note that
 *onUpdateComplete* also contains *int upserts* which counts
-the number of records that were inserted instead of updated,
-when the *Indexable* *update* method was called, because no
-existing record could be found to update. Thus for *onUpdateComplete*
-the total success count would be *success* + *upserts*. The method 
+the number of records that were inserted instead of updated
+(after the *Indexable* *update* method was called) because no
+existing record could be found to update and was thus inserted as a new record. 
+Therefore for *onUpdateComplete* the total success count would be *success* + *upserts*. The method 
 *ononGetRecordComplete* contains the parameters *success* and *record* 
 where *success* will indicate if the record was in fact retrieved and 
-*record* will be that record if retrieved. 
+*record* will be that record if retrieved; if not retrieved it will not be
+null but contain no keys or values. 
 
 Finally the last method *onIndexReady* will be called as soon as the SRCH2 server is 
 up and running and has loaded the index this *Indexable* represents. The
@@ -523,8 +524,10 @@ public class SearchResultsAdapter extends BaseAdapter {
                     for (JSONObject jsonObject : movieResults) {
                         MovieSearchResult searchResult = null;
                         try {
-							JSONObject originalRecord = jsonObject.getJSONObject(Indexable.SEARCH_RESULT_JSON_KEY_RECORD);
-							JSONObject highlightedFields = jsonObject.getJSONObject(Indexable.SEARCH_RESULT_JSON_KEY_HIGHLIGHTED);
+							JSONObject originalRecord = 
+								jsonObject.getJSONObject(Indexable.SEARCH_RESULT_JSON_KEY_RECORD);
+							JSONObject highlightedFields = 
+								jsonObject.getJSONObject(Indexable.SEARCH_RESULT_JSON_KEY_HIGHLIGHTED);
                             searchResult = new MovieSearchResult(
                                     highlightedFields
                                             .getString(MovieIndex.INDEX_FIELD_TITLE),
@@ -580,7 +583,8 @@ can retrieved by using the constant value of
 In addition, each *JSONObject* in this *ArrayList* may also contain 
 another *JSONObject* that will contain the highlighted field's data for
 each field that had highlighting enabled (which was done for the field 'title'
-for the movie index). The keys in this *JSONObject* will also be the names
+for the movie index). This can be retrieved by using the constant value of 
+*Indexable.SEARCH_RESULT_JSON_KEY_HIGHLIGHTED*. The keys in this *JSONObject* will also be the names
 of only those fields with highlighting enabled. Since the highlighted formatting
 was set using HTML tags, when calling *setText* in the adapter's *getView(...)*
 method, it will be necessary to also use the method *Html.fromHtml(...)*: 
@@ -658,21 +662,20 @@ lifecycle of the Android application:
 public class SearchActivity extends Activity implements
         InstantSearchEditText.SearchInputEnteredObserver {
 
-	... 
-	
-	private SearchResultsAdapter mSearchResultsAdapter;
     private MovieIndex mMovieIndex;
 
-	...
+    private ListView mSearchResultsListView;
+    private SearchResultsAdapter mSearchResultsAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-	
-		...
-		mSearchResultsAdapter = new SearchResultsAdapter(this);
-		...
-		
+
+        setContentView(R.layout.activity_search);
+        mSearchResultsListView = (ListView) findViewById(R.id.lv_search_results);
+        mSearchResultsAdapter = new SearchResultsAdapter(this);
+        mSearchResultsListView.setAdapter(mSearchResultsAdapter);
+
         setupSRCH2Engine();
     }
 
@@ -694,6 +697,17 @@ public class SearchActivity extends Activity implements
         super.onPause();
         SRCH2Engine.onStop(this);
     }
+	
+	@Override
+    public void onNewSearchInput(String newSearchText) {
+        SRCH2Engine.searchAllIndexes(newSearchText);
+    }
+
+    @Override
+    public void onNewSearchInputIsBlank() {
+        mSearchResultsAdapter.clearDisplayedSearchResults();
+    }
+	
 }
 ```
 
@@ -701,7 +715,8 @@ The *SearchActivity* implements the nested interface
 *InstantSearchEditText.SearchInputEnteredObserver*, which is a subclass of *EditText* to capture
 character-by-character input. Feel free to reuse this
 [code](https://github.com/SRCH2/hello-srch2-android-sdk/tree/master/Hello-SRCH2-Android-SDK/app/src/main/java/com/srch2/android/demo/helloworld)
-in your own projects.
+in your own projects. It's two methods *onNewSearchInput* and *onNewSearchInputIsBlank* are used to pass search input from the user to
+the *SRCH2Engine* or clear the list if the user has cleared the search input text.
 
 Whenever the SRCH2 server does a search, the results come back instantly. It
 is recommended that, while developing with the SDK, you employ
@@ -721,6 +736,8 @@ powerful queries (such as filtering the search results for the *MovieIndex* by
 interval of year), or how to set up the SDK for Proguard, or how to manually
 interact with the running search server. Search on!
 
+<br>
+<br>
 
 [tutorial-010]: ../img/010-tutorial.png "Opening the cloned Hello SRCH2 Android SDK application project"
 [tutorial-011]: ../img/011-tutorial.png "The SRCH2 Android SDK in action!"
