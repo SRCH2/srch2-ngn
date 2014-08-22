@@ -105,6 +105,8 @@ class SearchTask extends HttpTask.SearchHttpTask {
                         JSONObject resultNodes = (JSONObject) nodes.get(i);
                         JSONObject record = resultNodes.getJSONObject("record");
 
+                        JSONObject newRecord = new JSONObject();
+                        newRecord.put(Indexable.SEARCH_RESULT_JSON_KEY_RECORD, record);
 
                         if (resultNodes.has("snippet")) {
                             boolean highlightingNotEmpty = true;
@@ -134,6 +136,8 @@ class SearchTask extends HttpTask.SearchHttpTask {
                                 newRecord.put(Indexable.SEARCH_RESULT_JSON_KEY_HIGHLIGHTED, snippet);
                             }
                         }
+                        recordResults.add(newRecord);
+
                     } catch (Exception e) {
                         Cat.ex(TAG, "while parsing records", e);
                     }

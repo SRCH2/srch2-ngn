@@ -75,6 +75,7 @@ final public class Query {
     }
 
     /**
+     * FIXME: current M1 has bug on this, wait for the new versoin engine
      * Create a GeoLocation search query by specify a bounding box.
      * It will return all the result inside that box region
      *
@@ -87,7 +88,7 @@ final public class Query {
      * @param rightTopLatitude  the right top point's latitude value
      * @param rightTopLongitude the right top point's longitude value
      */
-    public Query(double leftBottomLatitude,
+    Query(double leftBottomLatitude,
                  double leftBottomLongitude,
                  double rightTopLatitude,
                  double rightTopLongitude) {
@@ -101,6 +102,7 @@ final public class Query {
     }
 
     /**
+     * FIXME: current M1 has bug on this, wait for the new versoin engine
      * Get the GeoLocation search query by specify a center point and a radius.
      * It will return all the result inside that circle region
      *
@@ -113,7 +115,7 @@ final public class Query {
      * @param radius the radius value of the search area
      * @return this
      */
-    public Query(double centerLatitude,
+    Query(double centerLatitude,
                  double centerLongitude, double radius) {
         this.term = null;
         this.proximitySentence = null;
@@ -375,6 +377,7 @@ final public class Query {
         StringBuilder sb = new StringBuilder("");
         if (term != null) { // normal query
             // term[s]
+            sb.append("q=");
             sb.append(term.toString());
             // filter[s]
             if (filters.size() > 0) {

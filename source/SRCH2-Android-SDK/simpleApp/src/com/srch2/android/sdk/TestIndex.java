@@ -361,6 +361,10 @@ public class TestIndex extends TestableIndex {
         try {
             if (singleRecordQueryQuery.contains(query)) {
 
+                Cat.d("Query:" , query.toString());
+                Cat.d("Answer size :", String.valueOf(jsonObjects.size()));
+                Cat.d("Answer ", jsonObjects.get(0).toString());
+
                 boolean sizeRight = jsonObjects.size() == 1;
                 JSONObject resultRecord = jsonObjects.get(0);
                 JSONObject record = resultRecord.getJSONObject(Indexable.SEARCH_RESULT_JSON_KEY_RECORD);

@@ -27,7 +27,7 @@ public class TestGeoIndex extends TestIndex{
 
     @Override
     public Schema getSchema() {
-        PrimaryKeyField primaryKey = Field.createDefaultPrimaryKeyField(INDEX_FIELD_NAME_PRIMARY_KEY);
+        PrimaryKeyField primaryKey = Field.createSearchablePrimaryKeyField(INDEX_FIELD_NAME_PRIMARY_KEY);
         Field title = Field.createSearchableField(INDEX_FIELD_NAME_TITLE);
         Field score = Field.createRefiningField(INDEX_FIELD_NAME_SCORE, Field.Type.INTEGER);
         return new Schema(primaryKey, INDEX_FIELD_NAME_LATITUDE, INDEX_FIELD_NAME_LONGITUDE, title, score);
@@ -79,7 +79,7 @@ public class TestGeoIndex extends TestIndex{
             if (singleRecordQueryQuery == null) {
                 super.getSucceedToSearchQuery(records);
                 singleRecordQueryQuery.add(new Query(40, 40, 50, 50));
-                singleRecordQueryQuery.add(new Query(40, 40, 10));
+                singleRecordQueryQuery.add(new Query(42, 42, 10));
                 singleRecordQueryQuery.add(new Query(new SearchableTerm("chosen")).insideBoxRegion(40, 40, 50, 50));
                 singleRecordQueryQuery.add(new Query(new SearchableTerm("chosen")).insideCircleRegion(40, 40, 10));
             }
@@ -93,8 +93,8 @@ public class TestGeoIndex extends TestIndex{
     public List<Query> getFailToSearchQuery(JSONArray records) {
         if (records.length() == 1){
             List<Query> queries = super.getFailToSearchQuery(records);
-            queries.add( new Query(45,45,60,60));
-            queries.add( new Query(45,45,1));
+            //queries.add( new Query(45,45,60,60));
+            //queries.add( new Query(45,45,1));
             queries.add( new Query(new SearchableTerm("chosen")).insideBoxRegion(45,45,60,60));
             queries.add( new Query(new SearchableTerm("chosen")).insideCircleRegion(45,45,1));
             return queries;
