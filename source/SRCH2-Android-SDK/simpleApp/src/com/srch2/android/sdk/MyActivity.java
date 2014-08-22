@@ -2,6 +2,7 @@ package com.srch2.android.sdk;
 
 import android.os.Bundle;
 import android.util.Log;
+import junit.framework.Assert;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -12,9 +13,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.*;
 
 public class MyActivity extends TestableActivity {
     public static final String TAG = "srch2:: MyActivity";
@@ -142,11 +141,7 @@ public class MyActivity extends TestableActivity {
                 testBatchRecordCRUD(index);
             }
         } catch (JSONException e) {
-
-            Log.d("TESTTEST", "THROWN EXCEPTION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-
-            e.printStackTrace();
-       //     Assert.fail();
+            Assert.fail();
         }
     }
 
