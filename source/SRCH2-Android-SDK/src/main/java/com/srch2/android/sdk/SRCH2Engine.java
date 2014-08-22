@@ -46,7 +46,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * completes an insertion after the method {@link Indexable#insert(org.json.JSONArray)} is called,
  * the method {@link com.srch2.android.sdk.Indexable#onInsertComplete(int, int, String)} will be
  * executed on that <code>Indexable</code> indicating the number of successful and failed insertions.
- * These methods should be overriden by the implementation of the <code>Indexable</code>, although
+ * These methods should be overridden by the implementation of the <code>Indexable</code>, although
  * they do not have to be: if they are not they will out to the logcat under the tag 'SRCH2'.
  * For a search action, when the SRCH2 search completes the search, the results will be passed
  * through the method {@link com.srch2.android.sdk.SearchResultsListener#onNewSearchResults(int, String, java.util.HashMap)}
@@ -360,6 +360,15 @@ final public class SRCH2Engine {
         }
     }
 
+    static class ExceptionMessages {
+        /** Will be message of IOException when port already in use. */
+        static final String IO_EXCEPTION_EADDRINUSE_ADDRESS_ALREADY_IN_USE = "EADDRINUSE (Address already in use)";
+        /** Will be message of IOException when Internet Permission missing from manifest. */
+        static final String IO_EXCEPTION_EACCES_PERMISSION_DENIED = "EACCES (Permission Denied)";
+        /** Will be message of IOException when server crashes. */
+        static final String IO_EXCEPTION_ECONNREFUSED_CONNECTION_REFUSED = "ECONNREFUSED (Connection Refused)";
+    }
+
     static int detectFreePort() {
         Cat.d(TAG, "detectFreePort");
         int port = 49152;
@@ -368,7 +377,17 @@ final public class SRCH2Engine {
                 new ServerSocket(port).close();
                 break;
             } catch (IOException ex) {
-                ex.printStackTrace();
+                String message = ex.getMessage();
+                if (message != null) {
+                    Cat.d(TAG, "message: [" + message + "]");
+
+                    if (message.contains(ExceptionMessages.IO_EXCEPTION_EADDRINUSE_ADDRESS_ALREADY_IN_USE)) {
+                        continue;
+                    } else if (message.contains(ExceptionMessages.IO_EXCEPTION_EACCES_PERMISSION_DENIED)) {
+                        port = -1;
+                        break;
+                    }
+                }
             }
         }
         return port;

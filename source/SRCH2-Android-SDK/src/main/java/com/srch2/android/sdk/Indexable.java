@@ -38,16 +38,27 @@ import org.json.JSONObject;
  */
 public abstract class Indexable {
 
-    IndexInternal indexInternal;
+    /**
+     * The JSON key to use to retrieve each original record from each <code>JSONObject</code> in
+     * the <code>ArrayList<JSONObject</code> of the callback method
+     * {@link com.srch2.android.sdk.SearchResultsListener#onNewSearchResults(int, String, java.util.HashMap)}.
+     * <br><br>
+     * Has the <b>constant</b> value '<code>record</code>';
+     */
+    public static final String SEARCH_RESULT_JSON_KEY_RECORD = "record";
 
     /**
-     * The value the <code>JSONObject</code> passed in {@link #onInsertComplete(int, int, String)},
-     * {@link #onGetRecordComplete(boolean, org.json.JSONObject, String)} will be set to if a connection
-     * to the SRCH2 search server could not be established.
+     * The JSON key to use to retrieve each set of highlighted fields from each record from each <code>JSONObject</code> in
+     * the <code>ArrayList<JSONObject</code> of the callback method
+     * {@link com.srch2.android.sdk.SearchResultsListener#onNewSearchResults(int, String, java.util.HashMap)}.
      * <br><br>
-     * Has the <b>constant</b> value 'Connection failed without known cause';
+     * Has the <b>constant</b> value '<code>highlighted</code>';
      */
-    public static final String IRRECOVERABLE_NETWORK_ERROR_MESSAGE = "Connection failed without known cause.";
+    public static final String SEARCH_RESULT_JSON_KEY_HIGHLIGHTED = "highlighted";
+
+
+    IndexInternal indexInternal;
+
 
     /**
      * Implementing this method sets the name of the index this <code>Indexable</code> represents.

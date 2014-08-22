@@ -43,8 +43,8 @@ public class TestGeoIndex extends TestableIndex {
                 recordObject.put(INDEX_FIELD_NAME_PRIMARY_KEY, String.valueOf(i));
                 recordObject.put(INDEX_FIELD_NAME_TITLE, "Title ");
                 recordObject.put(INDEX_FIELD_NAME_SCORE, i);
-                recordObject.put(INDEX_FIELD_NAME_LATITUDE, TestCaseUtil.generateRandomGeo());
-                recordObject.put(INDEX_FIELD_NAME_LONGITUDE, TestCaseUtil.generateRandomGeo());
+                recordObject.put(INDEX_FIELD_NAME_LATITUDE, (double)i);
+                recordObject.put(INDEX_FIELD_NAME_LONGITUDE, (double)i);
             } catch (JSONException ignore) {
             }
             recordsArray.put(recordObject);
@@ -54,12 +54,23 @@ public class TestGeoIndex extends TestableIndex {
 
     @Override
     public JSONObject getSucceedToInsertRecord() {
-        return null;
+        try {
+            return getRecordsArray(BATCH_INSERT_NUM, 0).getJSONObject(0);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     @Override
     public JSONObject getFailToInsertRecord() {
-        return null;
+        // duplicate record
+        try {
+            return getRecordsArray(BATCH_INSERT_NUM, 0).getJSONObject(0);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     @Override
