@@ -128,6 +128,8 @@ struct LockHoldersRepository{
 
 	void printLockHolders(const map<ClusterShardId, vector<NodeOperationId> > & holders, const string & tableName) const;
 	void print() const;
+	bool operator==(const LockHoldersRepository & right) const;
+	void clear();
 
 private:
 	void * serializeHolderList(void * buffer,
@@ -151,7 +153,7 @@ public:
 	bool canAcquireLock(const ClusterShardId & resource, ResourceLockType lockType);
 
 	void setLockHolderRepository(LockHoldersRepository * shardLockHolders);
-
+	LockHoldersRepository * getLockHolderRepository() const;
 	// this functions either executes all requests in this batch or non of them
 	// and either puts the request in pending requests or sends the ack
 	bool resolveBatch(const NodeOperationId & requesterAddress, const unsigned priority,
@@ -165,6 +167,9 @@ public:
 
 	void print() ;
 
+	// NOTE : added to public API for testing.
+	void executeRequest(const SingleResourceLockRequest & request);
+	bool canGrantRequest(const SingleResourceLockRequest & request);
 private:
 
 	void tryPendingRequest();
@@ -181,9 +186,6 @@ private:
 
 	void executeBatch(const vector<SingleResourceLockRequest *> & requestBatch, bool & needCommit);
 	bool canGrantRequest(const ResourceLockRequest * lockRequest);
-
-	void executeRequest(const SingleResourceLockRequest & request);
-	bool canGrantRequest(const SingleResourceLockRequest & request);
 	// returns false if not found
 	void release(const ClusterShardId & shardId, const vector<NodeOperationId> & holders, LockHoldersRepository & lockRepository);
 	bool canRelease(const ClusterShardId & shardId, LockHoldersRepository & lockRepository);

@@ -528,6 +528,18 @@ void LockHoldersRepository::print() const{
 	printLockHolders(X_Holders, "Resource X Lock% Holders");
 }
 
+bool LockHoldersRepository::operator==(const LockHoldersRepository & right) const{
+	return (this->S_Holders == right.S_Holders)
+			&& (this->U_Holders == right.U_Holders)
+			&& (this->X_Holders == right.X_Holders);
+}
+
+void LockHoldersRepository::clear(){
+	S_Holders.clear();
+	U_Holders.clear();
+	X_Holders.clear();
+}
+
 void * LockHoldersRepository::serializeHolderList(void * buffer,
 		const map<ClusterShardId, vector<NodeOperationId> > & holders) const{
 	buffer = srch2::util::serializeFixedTypes((unsigned)(holders.size()),buffer);
@@ -686,6 +698,10 @@ void ResourceLockManager::setLockHolderRepository(LockHoldersRepository * shardL
 		delete this->lockHolders;
 	}
 	this->lockHolders = shardLockHolders;
+}
+
+LockHoldersRepository * ResourceLockManager::getLockHolderRepository() const{
+	return this->lockHolders;
 }
 // this functions either executes all requests in this batch or non of them
 // if the request is not blocking, the returns type tells us whether the lock was granted or not.
@@ -958,7 +974,7 @@ void ResourceLockManager::release(const ClusterShardId & shardId, const vector<N
 	// look up opId in all the three maps and remove it from them.
 	// if not found, ignore.
 	// S Locks
-	for(unsigned holderIdx = 0 ; holderIdx < holders.size(); holderIdx){
+	for(unsigned holderIdx = 0 ; holderIdx < holders.size(); holderIdx++){
 		if(lockRepository.S_Holders.find(shardId) != lockRepository.S_Holders.end()){
 			vector<NodeOperationId> & sLockHolders = lockRepository.S_Holders[shardId];
 			if(std::find(sLockHolders.begin(), sLockHolders.end(), holders.at(holderIdx)) != sLockHolders.end()){
@@ -966,7 +982,6 @@ void ResourceLockManager::release(const ClusterShardId & shardId, const vector<N
 				if(sLockHolders.size() == 0){ // remove entry from map is resource is completely released
 					lockRepository.S_Holders.erase(shardId);
 				}
-				return;
 			}
 		}
 		if(lockRepository.U_Holders.find(shardId) != lockRepository.U_Holders.end()){
@@ -976,7 +991,6 @@ void ResourceLockManager::release(const ClusterShardId & shardId, const vector<N
 				if(uLockHolders.size() == 0){ // remove entry from map is resource is completely released
 					lockRepository.U_Holders.erase(shardId);
 				}
-				return;
 			}
 		}
 
@@ -987,7 +1001,6 @@ void ResourceLockManager::release(const ClusterShardId & shardId, const vector<N
 				if(xLockHolders.size() == 0){ // remove entry from map is resource is completely released
 					lockRepository.X_Holders.erase(shardId);
 				}
-				return;
 			}
 		}
 	}

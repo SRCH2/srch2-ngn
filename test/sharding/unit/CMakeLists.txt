@@ -21,20 +21,19 @@ SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src-0.5.0/libs/
 set(MONGO_CLIENT_LIBRARY ${CMAKE_SOURCE_DIR}/thirdparty/mongo-cxx-driver-v2.4/libmongoclient.a)
 
 ADD_EXECUTABLE(ConfigManager_Test ConfigManager_Test.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:SHARDING_OBJECTS> $<TARGET_OBJECTS:SERVER_OBJECTS>)
-ADD_EXECUTABLE(Serialization_Test Serialization_Test.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:SHARDING_OBJECTS> $<TARGET_OBJECTS:SERVER_OBJECTS>)
 TARGET_LINK_LIBRARIES(ConfigManager_Test
                         ${Srch2InstantSearch_LIBRARIES} 
                         ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
                         ${MONGO_CLIENT_LIBRARY} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
                     )
 LIST(APPEND SHARD_UNIT_TESTS ConfigManager_Test)
+ADD_EXECUTABLE(Serialization_Test Serialization_Test.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:SHARDING_OBJECTS> $<TARGET_OBJECTS:SERVER_OBJECTS>)
 TARGET_LINK_LIBRARIES(Serialization_Test
                         ${Srch2InstantSearch_LIBRARIES} 
                         ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
                         ${MONGO_CLIENT_LIBRARY} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
                     )
 LIST(APPEND SHARD_UNIT_TESTS Serialization_Test)
-
 
 
  ADD_EXECUTABLE(TransportInitializationTest transport/TransportManagerInitializationTest.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:SHARDING_OBJECTS> $<TARGET_OBJECTS:SERVER_OBJECTS>)
@@ -69,6 +68,14 @@ TARGET_LINK_LIBRARIES(SingleNodeIntraCommunicationTest
                     )
 LIST(APPEND SHARD_UNIT_TESTS SingleNodeIntraCommunicationTest)
 
+
+ADD_EXECUTABLE(ResourceLockManager_Test ./shard_manager/ResourceLockManager_Test.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:SHARDING_OBJECTS> $<TARGET_OBJECTS:SERVER_OBJECTS>)
+TARGET_LINK_LIBRARIES(ResourceLockManager_Test
+                        ${Srch2InstantSearch_LIBRARIES} 
+                        ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
+                        ${MONGO_CLIENT_LIBRARY} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
+                    )
+LIST(APPEND SHARD_UNIT_TESTS ResourceLockManager_Test)
 
 ADD_CUSTOM_TARGET(build_shard_unit_test ALL DEPENDS ${SHARD_UNIT_TESTS} )
 ADD_DEPENDENCIES(build_shard_unit_test srch2_core)

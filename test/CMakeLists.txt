@@ -209,7 +209,7 @@ SET_TESTS_PROPERTIES(GeoIndexUpdate_Test PROPERTIES ENVIRONMENT "directoryName=$
 
 ADD_TEST(SingleNodeIntraCommunication_Test ${CMAKE_CURRENT_BINARY_DIR}/sharding/unit/SingleNodeIntraCommunicationTest"--verbose")
 ADD_TEST(TransportInitialization_Test ${CMAKE_CURRENT_BINARY_DIR}/sharding/unit/TransportInitializationTest"--verbose")
-
+ADD_TEST(ResourceLockManager_Test ${CMAKE_CURRENT_BINARY_DIR}/sharding/unit/ResourceLockManager_Test"--verbose")
 if (SYSTEM_TEST_ENABLED)
     ADD_TEST( System_Tests ${CMAKE_SOURCE_DIR}/test/wrapper/system_tests/main.sh ${CMAKE_SOURCE_DIR}/test/wrapper/system_tests ${CMAKE_BINARY_DIR}/src/server)
 endif()
