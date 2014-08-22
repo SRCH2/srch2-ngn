@@ -89,7 +89,7 @@ public class MyActivity extends TestableActivity {
     public void initializeSRCH2Engine() {
 
         DeleteRecursive(new File(SRCH2Engine.detectAppHomeDir(this.getApplicationContext()) + File.separator + SRCH2Configuration.SRCH2_HOME_FOLDER_DEFAULT_NAME));
-        SRCH2Engine.initialize(mIndex1, mIndex2 );
+        SRCH2Engine.initialize(mIndex1, mIndex2, mIndexGeo);
         SRCH2Engine.setSearchResultsListener(mResultListener);
         SRCH2Engine.setAutomatedTestingMode(true);
 
@@ -141,7 +141,7 @@ public class MyActivity extends TestableActivity {
 
     public void testAll() {
         try {
-            for (TestableIndex index : new TestableIndex[]{mIndex1, mIndex2}) {
+            for (TestableIndex index : new TestableIndex[]{mIndex1, mIndex2, mIndexGeo}) {
                 testOneRecordCRUD(index);
                 testBatchRecordCRUD(index);
             }
@@ -152,7 +152,7 @@ public class MyActivity extends TestableActivity {
     }
 
     public void testStartEngine() {
-        TestableIndex[] indexes = {mIndex1, mIndex2};
+        TestableIndex[] indexes = {mIndex1, mIndex2, mIndexGeo};
         for (TestableIndex index : indexes) {
             assertTrue(SRCH2Engine.getIndex(index.getIndexName()).getRecordCount() == Indexable.INDEX_RECORD_COUNT_NOT_SET);
         }
@@ -301,7 +301,7 @@ public class MyActivity extends TestableActivity {
 
     public void testMultiCoreSearch() {
         // simplify the test cases, the mIndex1 and mIndex2 are of the same
-        TestableIndex [] testIndexes= {mIndex1, mIndex2};
+        TestableIndex [] testIndexes= {mIndex1, mIndex2, mIndexGeo};
         JSONArray records = mIndex1.getSucceedToInsertBatchRecords();
 
         Log.d(TAG, records.toString());
@@ -337,6 +337,7 @@ public class MyActivity extends TestableActivity {
                 assertTrue(index.verifyResult(query, mResultListener.resultRecordMap.get(index.getIndexName())));
             }
         }
+
     }
 
     public void testIndexableGetRecordCountMatches(TestableIndex index, int expectedNumberOfRecords) {

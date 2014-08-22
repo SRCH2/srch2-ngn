@@ -362,12 +362,10 @@ final public class Field {
                     .append(field.required).append("\"/>\n");
         } else if (field.type == InternalType.LOCATION_LATITUDE
                 || field.type == InternalType.LOCATION_LONGITUDE) {
-            fieldXML.append("			<field name=\"").append(field.name)
-                    .append("\" default=\"").append(0)
-                    .append("\" required=\"").append("true")
+            fieldXML.append("           <field name=\"").append(field.name)
                     .append("\" type=\"")
                     .append(field.type.name().toLowerCase(Locale.ENGLISH))
-                    .append("\"/>\n");
+                    .append("\" indexed=\"false\" />\n");
         } else {
             if (field.highlight) {
                 fieldXML.append("			<field name=\"").append(field.name).append("\"")

@@ -97,7 +97,7 @@ public class TestIndex extends TestableIndex {
     }
 
     @Override
-    public ArrayList<String> getSucceedToSearchString(JSONArray records) {
+    public List<String> getSucceedToSearchString(JSONArray records) {
 
         // to make inteface simple, if the length is 1, we are supposed to verify the record from getSucceedToInsertRecord();
         if (records.length() == 1) {

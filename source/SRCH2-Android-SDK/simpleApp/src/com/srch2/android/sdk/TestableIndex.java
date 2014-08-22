@@ -1,6 +1,7 @@
 package com.srch2.android.sdk;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -92,7 +93,7 @@ public abstract class TestableIndex extends Indexable {
 
 
 
-    public abstract JSONObject getSucceedToInsertRecord();
+    public abstract JSONObject getSucceedToInsertRecord() ;
 
     public abstract JSONObject getFailToInsertRecord();
 
