@@ -220,7 +220,7 @@ OperationState * NewNodeJoinOperation::releaseLocks(){
 	double load;
 	writeview->beginClusterShardsIteration();
 	while(writeview->getNextClusterShard(id, load, state, isLocal, nodeId)){
-		batch.push_back(new SingleResourceLockRequest(id, NodeOperationId(writeview->currentNodeId)));
+		batch.push_back(new SingleResourceLockRequest(id, NodeOperationId(writeview->currentNodeId, this->getOperationId())));
 	}
 
 	ResourceLockRequest * resourceLockRequest = new ResourceLockRequest();
