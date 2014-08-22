@@ -263,6 +263,8 @@ static bool checkOperationPermission(evhttp_request *req, Srch2Server *srch2Serv
         { srch2http::SavePort, "save" },
         { srch2http::ExportPort, "export" },
         { srch2http::ResetLoggerPort, "resetlogger" },
+        { srch2http::DocsPort, "acl-role-add"},
+        { srch2http::DocsPort, "acl-role-delete"},
         { srch2http::EndOfPortType, NULL },
     };
 
@@ -398,6 +400,42 @@ static void cb_write(evhttp_request *req, void *arg)
         srch2http::HTTPRequestHandler::handleException(req);
     }
 
+}
+
+static void cb_aclRoleAdd(evhttp_request *req, void *arg){
+    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
+    evhttp_add_header(req->output_headers, "Content-Type",
+            "application/json; charset=UTF-8");
+
+    if (checkOperationPermission(req, srch2Server, srch2http::DocsPort) == false) {
+        return;
+    }
+
+    try {
+        HTTPRequestHandler::aclRoleAdd(req, srch2Server);
+    } catch (exception& e) {
+        // exception caught
+        Logger::error(e.what());
+        srch2http::HTTPRequestHandler::handleException(req);
+    }
+}
+
+static void cb_aclRoleDelete(evhttp_request *req, void *arg){
+    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
+    evhttp_add_header(req->output_headers, "Content-Type",
+            "application/json; charset=UTF-8");
+
+    if (checkOperationPermission(req, srch2Server, srch2http::DocsPort) == false) {
+        return;
+    }
+
+    try {
+        HTTPRequestHandler::aclRoleDelete(req, srch2Server);
+    } catch (exception& e) {
+        // exception caught
+        Logger::error(e.what());
+        srch2http::HTTPRequestHandler::handleException(req);
+    }
 }
 
 static void cb_update(evhttp_request *req, void *arg)
@@ -825,6 +863,8 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
             { "/save", srch2http::SavePort, cb_save },
             { "/export", srch2http::ExportPort, cb_export },
             { "/resetLogger", srch2http::ResetLoggerPort, cb_resetLogger },
+            { "/acl-role-add", srch2http::DocsPort, cb_aclRoleAdd},
+            { "/acl-role-delete", srch2http::DocsPort, cb_aclRoleDelete},
             { NULL, srch2http::EndOfPortType, NULL }
         };
 

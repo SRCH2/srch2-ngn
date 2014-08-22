@@ -47,6 +47,8 @@ class HTTPRequestHandler
         static void resetLoggerCommand(evhttp_request *req, Srch2Server *server);
         static void lookupCommand(evhttp_request *req, Srch2Server *server);
 		static void handleException(evhttp_request *req);
+		static void aclRoleAdd(evhttp_request *req, Srch2Server *server);
+		static void aclRoleDelete(evhttp_request *req, Srch2Server *server);
 
 	private:
 

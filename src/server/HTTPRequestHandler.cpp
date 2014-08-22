@@ -633,6 +633,33 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
     };
 }
 
+void HTTPRequestHandler::aclRoleAdd(evhttp_request *req, Srch2Server *server){
+
+	cout << "url:   " << req->uri << endl;
+	/*if(server->roleCore != NULL){
+
+		string roleId;
+		INDEXLOOKUP_RETVAL returnValue = server->roleCore->indexer->lookupRecord(roleId);
+		if(returnValue != INDEXLOOKUP_RETVAL::LU_ABSENT_OR_TO_BE_DELETED){
+
+		}else{
+	        Logger::error(
+	                "error: No record in " + server->roleCore->coreName.c_str() + " with given primary key");
+	        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
+	                "{\"error\":\"No record in " + server->roleCore->coreName.c_str() +" with given primary key.\"}");
+		}
+	}else{
+        Logger::error(
+                "error: " + server->coreName.c_str() + " does not have any role core.");
+        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
+                "{\"error\":\"" + server->coreName.c_str() + " does not have any role core.\"}");
+	}*/
+}
+
+void HTTPRequestHandler::aclRoleDelete(evhttp_request *req, Srch2Server *server){
+
+}
+
 void HTTPRequestHandler::updateCommand(evhttp_request *req,
         Srch2Server *server) {
     /* Yes, we are expecting a post request */
