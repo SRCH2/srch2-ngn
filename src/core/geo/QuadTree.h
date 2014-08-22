@@ -11,7 +11,7 @@
 #include <vector>
 #include <queue>
 #include "geo/QuadTreeNode.h"
-
+#include "util/mypthread.h"
 
 using namespace std;
 
