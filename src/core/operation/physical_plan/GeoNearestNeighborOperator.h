@@ -13,15 +13,12 @@
 
 #include "operation/QueryEvaluatorInternal.h"
 #include "operation/physical_plan/PhysicalPlan.h"
+#include "util/AndroidMath.h"
 
 using namespace std;
 
 namespace srch2 {
 namespace instantsearch {
-
-#ifdef ANDROID
-   double inline log2(double x) { return log(x) / log (2);  }
-#endif
 
 // Using this class to store pointers to quadtree nodes or geoElements inside the heap vector in GeoNearestNeighborOperator class.
 class GeoNearestNeighborOperatorHeapItem{
