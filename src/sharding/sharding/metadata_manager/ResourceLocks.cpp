@@ -595,7 +595,7 @@ void ResourceLockManager::resolve(NewNodeLockNotification * notification){
 		// 1. is this node in the writeview of this node ?
 		if(writeview->nodes.find(*nodeItr) == writeview->nodes.end()){
 			//add it to the list of nodes in writeview as NotArrived node
-			writeview->nodes[*nodeItr] = std::make_pair(ShardingNodeStateNotArrived,(Node*) NULL);
+			writeview->setNodeState(*nodeItr, ShardingNodeStateNotArrived);
 		}
 		writeview->printNodes();
 		// reserve place in waitingList

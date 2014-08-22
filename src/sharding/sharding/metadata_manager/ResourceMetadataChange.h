@@ -26,60 +26,15 @@ public:
 class NodeAddChange : public MetadataChange {
 public:
 	NodeAddChange(NodeId newNodeId, const vector<ClusterShardId> & localClusterShardIds,
-			const vector<NodeShardId> & localNodeShardIds){
+			const vector<NodeShardId> & localNodeShardIds);
+	NodeAddChange();
+	NodeAddChange(const NodeId & newNodeId);
+	NodeAddChange(const NodeAddChange & copy);
+	bool doChange(Cluster_Writeview * metadata);
+	MetadataChangeType getType() const;
 
-		this->newNodeId = newNodeId;
-		this->localClusterShardIds = localClusterShardIds;
-		this->localNodeShardIds = localNodeShardIds;
-	};
-	NodeAddChange(){};
-	NodeAddChange(const NodeId & newNodeId){
-		this->newNodeId = newNodeId;
-	};
-	NodeAddChange(const NodeAddChange & copy){
-		newNodeId = copy.newNodeId;
-		localClusterShardIds = copy.localClusterShardIds;
-		localNodeShardIds = copy.localNodeShardIds;
-	}
-	bool doChange(Cluster_Writeview * metadata){
-		if(metadata == NULL){
-			ASSERT(false);
-			return false;
-		}
-
-		ClusterShardId id;
-		NodeShardId nodeShardId;
-		ShardState state;
-		bool isLocal;
-		NodeId nodeId;
-		LocalPhysicalShard physicalShard;
-		double load;
-		metadata->beginClusterShardsIteration();
-		while(metadata->getNextClusterShard(id, load, state, isLocal, nodeId)){
-			if(state != SHARDSTATE_READY){
-				if(std::find(localClusterShardIds.begin(), localClusterShardIds.end(), id) !=
-						localClusterShardIds.end()){
-					metadata->assignExternalClusterShard(id, newNodeId, 0);
-				}
-			}
-		}
-
-		for(unsigned i = 0 ; i < this->localNodeShardIds.size() ; ++i){
-		    metadata->addExternalNodeShard(this->localNodeShardIds.at(i),1);
-		}
-
-		return true;
-	}
-	MetadataChangeType getType() const{
-		return ShardingChangeTypeNodeAdd;
-	}
-
-	vector<ClusterShardId> & getLocalClusterShardIds(){
-		return localClusterShardIds;
-	}
-	vector<NodeShardId> & getLocalNodeShardIds(){
-		return localNodeShardIds;
-	}
+	vector<ClusterShardId> & getLocalClusterShardIds();
+	vector<NodeShardId> & getLocalNodeShardIds();
 
 	void * serialize(void * buffer) const;
 	unsigned getNumberOfBytes() const;

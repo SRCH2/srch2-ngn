@@ -57,10 +57,8 @@ public:
 	// called from migration manager to inform us about the status of a migration
 	void resolveMMNotification(const ShardMigrationStatus & migrationStatus);
 	// called from SM to inform us about the arrival or failure of a node
-	void resolveSMNodeArrival(const Node & newNode){
-		// We don't do anything upon receiving node arrival.
-		// new node will introduce himself...
-	};
+	void resolveSMNodeArrival(const Node & newNode);
+
 	void resolveSMNodeFailure(const NodeId failedNodeId);
 
 	// getter functions

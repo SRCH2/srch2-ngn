@@ -360,10 +360,9 @@ void Cluster_Writeview::getArrivedNodes(vector<NodeId> & arrivedNodes, bool retu
 				continue;
 			}
 		}
-		if(nodeItr->second.first != ShardingNodeStateArrived){
-			continue;
+		if(nodeItr->second.first == ShardingNodeStateArrived && nodeItr->second.second != NULL){
+            arrivedNodes.push_back(nodeItr->first);
 		}
-		arrivedNodes.push_back(nodeItr->first);
 	}
 }
 
@@ -374,13 +373,26 @@ void Cluster_Writeview::getAllNodes(std::vector<const Node *> & localCopy) const
 	}
 }
 
-void Cluster_Writeview::addNode(Node * node, ShardingNodeState state){
+void Cluster_Writeview::addNode(Node * node){
 
+    if(node == NULL){
+        ASSERT(false);
+        return;
+    }
 	if(nodes.find(node->getId()) == nodes.end()){ // new node.
-		nodes[node->getId()] = std::make_pair(state, node);
-		return;
+		nodes[node->getId()] = std::make_pair(ShardingNodeStateNotArrived, node);
+	}else{
+        nodes[node->getId()].second = node;
 	}
-	this->nodes[node->getId()].second = node;
+}
+
+void Cluster_Writeview::setNodeState(NodeId nodeId, ShardingNodeState state){
+
+    if(nodes.find(nodeId) == nodes.end()){ // new node.
+        nodes[nodeId] = std::make_pair(state, (Node*)NULL);
+    }else{
+        nodes[nodeId].first = state;
+    }
 }
 
 void Cluster_Writeview::removeNode(const NodeId & failedNodeId){

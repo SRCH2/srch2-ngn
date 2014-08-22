@@ -547,6 +547,12 @@ void ShardManager::resolveMMNotification(const ShardMigrationStatus & migrationS
 	this->stateMachine->handle(mmNotif);
 }
 
+void ShardManager::resolveSMNodeArrival(const Node & newNode){
+    boost::unique_lock<boost::mutex> bouncedNotificationsLock(shardManagerGlobalMutex);
+    Cluster_Writeview * writeview = this->getWriteview();
+    writeview->addNode(new Node(newNode));
+};
+
 void ShardManager::resolveSMNodeFailure(const NodeId failedNodeId){
 	boost::unique_lock<boost::mutex> bouncedNotificationsLock(shardManagerGlobalMutex);
 	NodeFailureNotification * nodeFailureNotif = new NodeFailureNotification(failedNodeId);

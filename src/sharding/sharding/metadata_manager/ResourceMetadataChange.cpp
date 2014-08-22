@@ -10,6 +10,65 @@ using namespace std;
 namespace srch2 {
 namespace httpwrapper {
 
+NodeAddChange::NodeAddChange(NodeId newNodeId, const vector<ClusterShardId> & localClusterShardIds,
+        const vector<NodeShardId> & localNodeShardIds){
+
+    this->newNodeId = newNodeId;
+    this->localClusterShardIds = localClusterShardIds;
+    this->localNodeShardIds = localNodeShardIds;
+};
+NodeAddChange::NodeAddChange(){};
+NodeAddChange::NodeAddChange(const NodeId & newNodeId){
+    this->newNodeId = newNodeId;
+};
+NodeAddChange::NodeAddChange(const NodeAddChange & copy){
+    newNodeId = copy.newNodeId;
+    localClusterShardIds = copy.localClusterShardIds;
+    localNodeShardIds = copy.localNodeShardIds;
+}
+bool NodeAddChange::doChange(Cluster_Writeview * metadata){
+    if(metadata == NULL){
+        ASSERT(false);
+        return false;
+    }
+
+    ClusterShardId id;
+    NodeShardId nodeShardId;
+    ShardState state;
+    bool isLocal;
+    NodeId nodeId;
+    LocalPhysicalShard physicalShard;
+    double load;
+    metadata->beginClusterShardsIteration();
+    while(metadata->getNextClusterShard(id, load, state, isLocal, nodeId)){
+        if(state != SHARDSTATE_READY){
+            if(std::find(localClusterShardIds.begin(), localClusterShardIds.end(), id) !=
+                    localClusterShardIds.end()){
+                metadata->assignExternalClusterShard(id, newNodeId, 0);
+            }
+        }
+    }
+
+    for(unsigned i = 0 ; i < this->localNodeShardIds.size() ; ++i){
+        metadata->addExternalNodeShard(this->localNodeShardIds.at(i),1);
+    }
+
+    Cluster_Writeview * writeview = ShardManager::getWriteview();
+    writeview->setNodeState(newNodeId, ShardingNodeStateArrived);
+
+    return true;
+}
+MetadataChangeType NodeAddChange::getType() const{
+    return ShardingChangeTypeNodeAdd;
+}
+
+vector<ClusterShardId> & NodeAddChange::getLocalClusterShardIds(){
+    return localClusterShardIds;
+}
+vector<NodeShardId> & NodeAddChange::getLocalNodeShardIds(){
+    return localNodeShardIds;
+}
+
 void * NodeAddChange::serialize(void * buffer) const{
 	buffer = srch2::util::serializeFixedTypes(newNodeId, buffer);
 	buffer = srch2::util::serializeVectorOfDynamicTypes(this->localClusterShardIds, buffer);
