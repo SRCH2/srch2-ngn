@@ -94,11 +94,22 @@ public class Idx extends Indexable {
             Log.d("SEARCH RESULT OBJECT", jsonObject.toString());
             SearchResultsAdapter.SearchResultItem searchResult = null;
             try {
-                searchResult = new SearchResultsAdapter.SearchResultItem(
-                        jsonObject.getString(INDEX_FIELD_NAME_TITLE),
-                        "Score: " + String.valueOf(jsonObject.getDouble(INDEX_FIELD_NAME_SCORE)),
-                        "Primary Key: " + String.valueOf(jsonObject.getInt(INDEX_FIELD_NAME_PRIMARY_KEY)));
+
+                JSONObject originalRecord = jsonObject.getJSONObject(Indexable.SEARCH_RESULT_JSON_KEY_RECORD);
+
+                JSONObject highlightRecord = jsonObject.getJSONObject(Indexable.SEARCH_RESULT_JSON_KEY_HIGHLIGHTED);
+
+                String title = highlightRecord.getString("title");
+
+                Log.d("Highlight", "title is " + title);
+
+                if (title == null) {
+                    title =  "null title";
+                }
+
+                searchResult = new SearchResultsAdapter.SearchResultItem(title, " ", " ");
             } catch (JSONException oops) {
+                oops.printStackTrace();
                 continue;
             }
 

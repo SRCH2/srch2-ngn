@@ -45,9 +45,11 @@ public interface SearchResultsListener {
      * of the
      * {@link Indexable#getIndexName()} implementation of each <code>Indexable</code>) mapped to an <code>ArrayList</code>
      * of the parsed <code>JSONObject</code>
-     * records. Each record will have as its set of keys the field names as they were defined in the schema returned
+     * records. Each <code>JSONObject</code> <b>will always have one key by the name of 'record'</b> which will contain have
+     * as its set of keys the
+     * field names as they were defined in the schema returned
      * from {@link Indexable#getSchema()} in order to retrieve the corresponding data values set. If any field
-     * had highlighting enabled by calling {@link Field#enableHighlighting()}, each record will in addition
+     * had highlighting enabled by calling {@link Field#enableHighlighting()}, the <code>JSONObject</code> will also
      * contain the key 'highlighted' which will contain the highlighted text for each field as a <code>JSONArray</code>.
      * The highlighted text will be formatted according to the arguments passed into the method
      * {@link Schema#setHighlightedPreAndPostScript(String, String, String, String)}.

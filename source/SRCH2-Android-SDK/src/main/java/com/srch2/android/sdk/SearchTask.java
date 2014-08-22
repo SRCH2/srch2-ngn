@@ -9,6 +9,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 class SearchTask extends HttpTask.SearchHttpTask {
@@ -56,11 +57,29 @@ class SearchTask extends HttpTask.SearchHttpTask {
                             JSONObject record = resultNodes.getJSONObject("record");
                             JSONObject snippet = resultNodes.getJSONObject("snippet");
 
+                            JSONObject newRecord = new JSONObject();
+                            newRecord.put(Indexable.SEARCH_RESULT_JSON_KEY_RECORD, record);
+
                             if (snippet.length() > 0) {
-                                record.put("highlighted", snippet);
+                                Iterator<String> snippetKeys = snippet.keys();
+                                while (snippetKeys.hasNext()) {
+                                    String key = snippetKeys.next();
+                                    String highlight = null;
+                                    try {
+                                        highlight = snippet.getString(key);
+                                    } catch (JSONException highlighterOops) {
+                                        continue;
+                                    }
+                                    if (highlight != null) {
+                                        highlight = highlight.replace("<\\/", "</");
+                                        snippet.put(key, highlight);
+                                    }
+                                }
+
+                                newRecord.put(Indexable.SEARCH_RESULT_JSON_KEY_HIGHLIGHTED, snippet);
                             }
 
-                            records.add(record);
+                            records.add(newRecord);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -81,12 +100,33 @@ class SearchTask extends HttpTask.SearchHttpTask {
                     try {
                         JSONObject resultNodes = (JSONObject) nodes.get(i);
                         JSONObject record = resultNodes.getJSONObject("record");
+
+                        JSONObject newRecord = new JSONObject();
+                        newRecord.put(Indexable.SEARCH_RESULT_JSON_KEY_RECORD, record);
+
                         JSONObject snippet = resultNodes.getJSONObject("snippet");
 
+
+
                         if (snippet.length() > 0) {
-                            record.put("highlighted", snippet);
+
+                            Iterator<String> snippetKeys = snippet.keys();
+                            while (snippetKeys.hasNext()) {
+                                String key = snippetKeys.next();
+                                String highlight = null;
+                                try {
+                                    highlight = snippet.getString(key);
+                                } catch (JSONException highlighterOops) {
+                                    continue;
+                                }
+                                if (highlight != null) {
+                                    highlight = highlight.replace("<\\/", "</");
+                                    snippet.put(key, highlight);
+                                }
+                            }
+                            newRecord.put(Indexable.SEARCH_RESULT_JSON_KEY_HIGHLIGHTED, snippet);
                         }
-                        recordResults.add(record);
+                        recordResults.add(newRecord);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
