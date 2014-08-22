@@ -6,9 +6,9 @@ the SDK to do testing and use Proguard.
 
 In the [basic tutorial](index.md), we showed how to send a search
 *beaty ame* to the SRCH2 engine.  By default, the engine uses the
-space delimiter to tokenize the string to multiple keywords ('beaty'
-and 'ame').  It treats the last keyword ('ame') as a prefix condition,
-and other keywords (e.g., 'beaty') as complete keywords.  By default,
+space delimiter to tokenize the string to multiple keywords ("beaty"
+and "ame").  It treats the last keyword ("ame") as a prefix condition,
+and other keywords (e.g., "beaty") as complete keywords.  By default,
 the engine supports fuzzy search by allowing one typo for every three
 characters in a keyword. 
 
@@ -84,9 +84,6 @@ field *title*.
   new SearchableTerm("wind").searchSpecificField("title");
 ```
 
-<h1> Give an example to show how to specify multiple attributes for a
-term. </h1> 
-
 ###Prefix Condition
 
 In type-ahead search, we may want to treat a term, especially the
@@ -157,7 +154,7 @@ giving it a boost value of 4, we can call
 
 We can specify prefix, fuzziness, and boosting conditions to a single term, e.g.,  
 ```
-  new  SearchableTerm("sta").enableFuzzyMatching(0.6f).setBoostValue(4).setIsPrefixMatching(true);
+  new SearchableTerm("sta").enableFuzzyMatching(0.6f).setBoostValue(4).setIsPrefixMatching(true);
 ```
 ###Boolean Expression
 
@@ -168,6 +165,8 @@ the *Term* class.  The *Term* class is used to initialize the *Query*
 object. 
 
 <h1> Why cannot we change "AND_NOT" just to "NOT"? </h1>
+<h1> We can change the AND_NO to "NOT". The "NOT" operator is normally is the unary operator, 
+like "NOT A". </h1>
 
 For example,
 ```
@@ -256,6 +255,55 @@ the 25th to the 34th of all the results.
 ```
   new Query(new SearchableTerm("star")).pagingStartFrom(25).pagingSize(10);
 ```
+
+###Geo Search
+
+The engine can index records with location information specified as a latitude
+and a longitude, and do search based on both keywords and locations. For
+example, we can use the engine to find stores called "ghirardelli" within two
+miles to a location in San Francisco.  The engine provides all the features
+such as instant search and fuzzy search, making it easy to develop an
+application to provide great user experiences.
+
+To enable geo indexing, we need to create the geo type schema by calling the 
+*Schema.createGeoSchema()* function. In addition to the normal 
+*Schema.createSchema()* function, we need to provide the "latitude" and "longitude" 
+field name to the schema. Here is one Geo Schema example:
+```
+  PrimaryKeyField primaryKey = Field.createDefaultPrimaryKeyField("id");
+  Field nameField = Field.createSearchableField("name");
+  Schema geoSchema = Schema.createGeoSchema(primaryKey, "lat", "lng", nameField);
+```
+The second argument is the *latitude* name, and the third argument is the *longitude* name.
+Each record should have two corresponding values for these two types, and they
+should be float numbers.  For example:
+```
+ {"id" : "1234", "name" : "ghirardelli","lat" : 43.22, "lng": -80.22}
+```
+
+We can use the *Query* object to search the results inside one geo region. The engine
+supports the "Box Region" and the "Circle Region".
+To search on the "Box Region" we can use the *Query.insideBoxRegion()* method by
+specify the latitude and the longitude of the left-bottom point and the top-right point.
+To search on the "Circle Region" we can use the *Query.insideCircleRegion()* method by 
+specify the latitude and the longitude of the center point, and also the radius of the region.
+
+Here are some examples
+```
+  new Query(new SearchableTerm("ghirardelli")).insideBoxRegion(61.20, -149.90, 61.22, -149.70);
+  new Query(new SearchableTerm("ghirardelli")).insideCircleRegion(61.20, -149.90, 5);
+```
+
+Often we want to search all the record within one region without specify the keyword.
+We can use the *Query* constructor to create the geo type query directly like following 
+```
+  new Query(61.20, -149.90, 61.22, -149.70);
+  new Query(61.20, -149.90, 5);
+```
+If we give four double number, the *Query* will be treated as the "Box Region" geo search.
+If we give three double number, it will be treated as the "Circle Region" geo search.
+Both query will give all the records within that specified region.
+
 
 ##Testing and Proguard
 
