@@ -22,6 +22,7 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
         SRCH2Engine.initialize(index);
         SRCH2Engine.setSearchResultsListener(resultsAdapter.getSearchResultsListener());
         SRCH2Engine.setAutomatedTestingMode(true);
+
     }
 
     @Override
@@ -39,7 +40,7 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
 
     @Override
     public void onNewSearchInput(String newSearchText) {
-        SRCH2Engine.getIndex(Idx.INDEX_NAME).search(newSearchText);
+        SRCH2Engine.searchAllIndexes(newSearchText);
     }
 
     @Override

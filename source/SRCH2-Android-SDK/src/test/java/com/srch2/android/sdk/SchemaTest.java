@@ -62,4 +62,22 @@ public class SchemaTest {
         Assert.assertNotNull(s.recordBoostKey);
 
     }
+
+    @Test
+    public void testHighlightingPreAndPostScript() {
+
+        Schema s = new Schema(Field.createDefaultPrimaryKeyField("id"), Field.createSearchableField("title").enableHighlighting());
+
+        Assert.assertEquals(s.highlight_fuzzyPrefix, Schema.HIGHLIGHTED_DEFAULT_FUZZY_PRE_SCRIPT_TAG);
+        Assert.assertEquals(s.highlight_fuzzySuffix, Schema.HIGHLIGHTED_DEFAULT_FUZZY_POST_SCRIPT_TAG);
+        Assert.assertEquals(s.highlight_exactPrefix, Schema.HIGHLIGHTED_DEFAULT_EXACT_PRE_SCRIPT_TAG);
+        Assert.assertEquals(s.highlight_fuzzySuffix, Schema.HIGHLIGHTED_DEFAULT_EXACT_PRE_SCRIPT_TAG);
+
+        s.setHighlightedPreAndPostScript("FUZZYPRE", "FUZZYPOST", "EXACTPRE", "EXACTPOST");
+
+        Assert.assertEquals(s.highlight_fuzzyPrefix, "FUZZYPRE");
+        Assert.assertEquals(s.highlight_fuzzySuffix, "FUZZYPOST");
+        Assert.assertEquals(s.highlight_exactPrefix, "EXACTPRE");
+        Assert.assertEquals(s.highlight_fuzzySuffix, "EXACTPOST");
+    }
 }

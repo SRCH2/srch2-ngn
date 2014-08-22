@@ -38,6 +38,25 @@ import org.json.JSONObject;
  */
 public abstract class Indexable {
 
+    /**
+     * The JSON key to use to retrieve each original record from each <code>JSONObject</code> in
+     * the <code>ArrayList<JSONObject</code> of the callback method
+     * {@link com.srch2.android.sdk.SearchResultsListener#onNewSearchResults(int, String, java.util.HashMap)}.
+     * <br><br>
+     * Has the <b>constant</b> value '<code>record</code>';
+     */
+    public static final String SEARCH_RESULT_JSON_KEY_RECORD = "record";
+
+    /**
+     * The JSON key to use to retrieve each set of highlighted fields from each record from each <code>JSONObject</code> in
+     * the <code>ArrayList<JSONObject</code> of the callback method
+     * {@link com.srch2.android.sdk.SearchResultsListener#onNewSearchResults(int, String, java.util.HashMap)}.
+     * <br><br>
+     * Has the <b>constant</b> value '<code>highlighted</code>';
+     */
+    public static final String SEARCH_RESULT_JSON_KEY_HIGHLIGHTED = "highlighted";
+
+
     IndexInternal indexInternal;
 
 

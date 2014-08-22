@@ -3,6 +3,7 @@ package com.srch2.android.sdk.sandbox;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Message;
+import android.text.Html;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -113,7 +114,7 @@ public class SearchResultsAdapter extends BaseAdapter {
             } else {
                 viewHolder = (ViewHolder) convertView.getTag();
             }
-            viewHolder.mTitleTextView.setText(searchResult.textOne);
+            viewHolder.mTitleTextView.setText(Html.fromHtml(searchResult.textOne));
             viewHolder.mGenreTextView.setText(searchResult.textTwo);
             viewHolder.mYearTextView.setText(searchResult.textThree);
             return convertView;

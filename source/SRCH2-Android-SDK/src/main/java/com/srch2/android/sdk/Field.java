@@ -307,7 +307,9 @@ final public class Field {
      * will generate a snippet for this field whenever keywords of the search
      * input match the data associated with this field: for instance, if the data
      * was 'All You Need is Love' and the search input was 'lo' the 'Lo' in 'Love'
-     * would be surrounded by HTML tags colorizing this text.
+     * would be surrounded by HTML tags colorizing this text. See
+     * {@link Schema#setHighlightedPreAndPostScript(String, String, String, String)} for
+     * more details.
      * <br><br>
      * This method returns the <code>Field</code> itself so that it can have
      * these calls cascaded.
@@ -315,9 +317,9 @@ final public class Field {
      * @return the corresponding field for cascading method calls
      */
     public Field enableHighlighting() {
-        highlight = true;
-        searchable = true;
-        refining = true;
+        if (searchable) {
+            highlight = true;
+        }
         return this;
     }
 
