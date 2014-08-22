@@ -1,6 +1,5 @@
 package com.srch2.android.sdk;
 
-import android.util.Log;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -34,8 +33,6 @@ class SearchTask extends HttpTask.SearchHttpTask {
     static HashMap<String, ArrayList<JSONObject>> parseResponseForRecordResults(
             String json, boolean isMultiCoreSearch, String targetCoreName) {
         HashMap<String, ArrayList<JSONObject>> resultMap = new HashMap<String, ArrayList<JSONObject>>();
-
-        Log.d("fucksearch", "fuck search fuck search");
 
         if (isMultiCoreSearch) {
             try {
