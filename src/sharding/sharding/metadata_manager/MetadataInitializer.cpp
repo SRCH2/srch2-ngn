@@ -98,7 +98,7 @@ void MetadataInitializer::updateWriteviewForJsonFileShard(Cluster_Writeview * ne
 		LocalPhysicalShard physicalShard(builder->getShardServer(),
 						builder->getIndexDirectory(),
 						builder->getJsonFileCompletePath());
-		newWriteview->addLocalNodeShard(shardId, 0, physicalShard);
+		newWriteview->addLocalNodeShard(shardId, 1, physicalShard);
 	}else{  // we must leave the json file
 
 	}

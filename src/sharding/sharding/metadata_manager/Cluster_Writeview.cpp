@@ -425,11 +425,6 @@ void Cluster_Writeview::removeNode(const NodeId & failedNodeId){
 void Cluster_Writeview::setCurrentNodeId(NodeId currentNodeId){
 	this->currentNodeId = currentNodeId;
 
-	vector<ClusterShard_Writeview *> clusterShards;
-	map<ClusterShardId, unsigned> clusterShardIdIndexes;
-	vector<NodeShard_Writeview *> nodeShards;
-
-
 	for(unsigned i = 0 ; i < clusterShards.size(); ++i){
 		ClusterShard_Writeview * shard = clusterShards.at(i);
 		if(shard->isLocal){
@@ -445,7 +440,7 @@ void Cluster_Writeview::setCurrentNodeId(NodeId currentNodeId){
 	}
 }
 
-void Cluster_Writeview::fixAfterDiskLoad(Cluster_Writeview * newWrireview){
+void Cluster_Writeview::fixAfterDiskLoad(Cluster_Writeview * oldWrireview){
 	// we should make sure all cluster shard ids are either local,
 	// or we change them to PENDING
 	ClusterShardId id;
@@ -461,7 +456,7 @@ void Cluster_Writeview::fixAfterDiskLoad(Cluster_Writeview * newWrireview){
 		if(! isLocal){
 			shard->state = SHARDSTATE_PENDING;
 		}else{
-			shard->nodeId = newWrireview->currentNodeId;
+			shard->nodeId = oldWrireview->currentNodeId;
 		}
 	}
 
@@ -473,15 +468,15 @@ void Cluster_Writeview::fixAfterDiskLoad(Cluster_Writeview * newWrireview){
 		if(! isLocal){
 			delete shard;
 		}else{
-			shard->id.nodeId = newWrireview->currentNodeId;
+			shard->id.nodeId = oldWrireview->currentNodeId;
 			fixedNodeShards.push_back(shard);
 		}
 	}
 	this->nodeShards = fixedNodeShards;
 
-	this->currentNodeId = newWrireview->currentNodeId;
+	this->currentNodeId = oldWrireview->currentNodeId;
 	// and cores ...
-	this->cores = newWrireview->cores;
+	this->cores = oldWrireview->cores;
 
 }
 
@@ -685,7 +680,13 @@ bool Cluster_Writeview::getNextUnassignedClusterShard(ClusterShardId & shardId){
 
 
 void Cluster_Writeview::addLocalNodeShard(const NodeShardId & nodeShardId, const double load, const LocalPhysicalShard & physicalShardInfo){
+    ASSERT(this->currentNodeId == nodeShardId.nodeId);
 	ASSERT(this->localNodeDataShards.find(nodeShardId.partitionId) == this->localNodeDataShards.end());
+    for(unsigned i = 0 ; i < this->nodeShards.size(); ++i){
+        if(this->nodeShards.at(i)->id == nodeShardId){
+            return;
+        }
+    }
 	this->nodeShards.push_back(new NodeShard_Writeview(nodeShardId, true, load));
 	this->localNodeDataShards[nodeShardId.partitionId] = physicalShardInfo;
 }
