@@ -795,12 +795,11 @@ void ConfigManager::parseQuery(CoreConfigParseState_t *coreParseState , const xm
                     bool isSearchable = (it != coreParseState->searchableFieldsVector.end());
                     if(isRefining == false && isSearchable == false){
                         warningFlag = true;
-                        attributes = attributes + temp[i] +", ";
+                        attributes = attributes + temp[i] + ", ";
                         continue;
                     }
                     //we push back only valid fields
                     coreInfo->attributesToReturn.push_back(temp[i]);
-                    cout << coreInfo->attributesToReturn[i] << "\n";
                 }
                 if(warningFlag == true){
                     string warning = "The field entered in responseContent tag: " + attributes + "is neither searchable, refining nor indexed therefore will not be returned by the engine";
