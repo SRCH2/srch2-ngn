@@ -61,7 +61,7 @@ struct SingleResourceLockRequest{
 struct ResourceLockRequest{
 	ResourceLockRequest();
 	~ResourceLockRequest();
-
+	ResourceLockRequest(const ResourceLockRequest & copy);
 	bool applyNodeFailure(const unsigned failedNodeId);
 
 	vector<SingleResourceLockRequest *> requestBatch;

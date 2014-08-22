@@ -152,6 +152,13 @@ ResourceLockRequest::~ResourceLockRequest(){
 	requestBatch.clear();
 }
 
+ResourceLockRequest::ResourceLockRequest(const ResourceLockRequest & copy){
+	this->isBlocking = copy.isBlocking;
+	for(unsigned i = 0 ; i < this->requestBatch.size() ; ++i){
+		this->requestBatch.push_back(new SingleResourceLockRequest(*(copy.requestBatch.at(i))));
+	}
+}
+
 bool ResourceLockRequest::applyNodeFailure(const unsigned failedNodeId){
 	// any lock request that all its single requests get deleted will return false.
 	vector<SingleResourceLockRequest *> requestBatchFixed;
