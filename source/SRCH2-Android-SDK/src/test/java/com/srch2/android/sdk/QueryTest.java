@@ -98,7 +98,7 @@ public class QueryTest {
     @Test
     public void testBooleanExp() throws UnsupportedEncodingException {
         Assert.assertEquals(
-                "(\"star+wars\" AND \"episode+3\") OR (\"George+Lucas\" AND UNARY_NOT \"Indiana+Jones\")",
+                "(\"star+wars\" AND \"episode+3\") OR (\"George+Lucas\" AND NOT \"Indiana+Jones\")",
                 new SearchableTerm("star wars")
                         .AND(new SearchableTerm("episode 3"))
                         .OR(new SearchableTerm("George Lucas")
