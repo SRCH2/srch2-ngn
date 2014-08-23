@@ -144,7 +144,7 @@ final public class SRCH2Engine {
 
         checkConfIsNullThrowIfIs();
         Cat.d(TAG,
-                "onStart - conf NOT null ");
+                "onStart - conf UNARY_NOT null ");
         int freePort = detectFreePort();
 
         conf.setPort(freePort);

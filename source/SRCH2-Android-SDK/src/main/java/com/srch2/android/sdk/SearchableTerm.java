@@ -8,11 +8,11 @@ abstract class Term {
 
     abstract public Term AND(Term rightTerm);
 
-    abstract public Term AND_NOT(Term rightTerm);
+    abstract public Term NOT(Term rightTerm);
 
     abstract public Term OR(Term rightTerm);
 
-    abstract Term NOT();
+    abstract Term UNARY_NOT();
 }
 
 /**
@@ -155,10 +155,10 @@ final public class SearchableTerm extends Term {
      * Create a composite term by <code>AND</code> operator, inverse match the rightTerm
      *
      * @param rightTerm the right operand
-     * @return a new CompositeTerm as a result of <code>this AND NOT rightTerm</code>
+     * @return a new CompositeTerm as a result of <code>this AND UNARY_NOT rightTerm</code>
      */
-    public CompositeTerm AND_NOT(Term rightTerm) {
-        return new CompositeTerm(BooleanOperator.AND, this, rightTerm.NOT());
+    public CompositeTerm NOT(Term rightTerm) {
+        return new CompositeTerm(BooleanOperator.AND, this, rightTerm.UNARY_NOT());
     }
 
     /**
@@ -171,11 +171,11 @@ final public class SearchableTerm extends Term {
         return new CompositeTerm(BooleanOperator.OR, this, rightTerm);
     }
     /**
-     * Create a composite term by <code>NOT</code> operator
+     * Create a composite term by <code>UNARY_NOT</code> operator
      *
-     * @return a new CompositeTerm as a result of <code>NOT this</code>
+     * @return a new CompositeTerm as a result of <code>UNARY_NOT this</code>
      */
-    CompositeTerm NOT() {
+    CompositeTerm UNARY_NOT() {
         return new CompositeTerm(BooleanOperator.NOT, this, null);
     }
 
@@ -271,14 +271,14 @@ final public class SearchableTerm extends Term {
         }
 
         /**
-         * Create a composite term by <code>AND NOT</code> operator. The rightTerm will be inverse matching
+         * Create a composite term by <code>AND UNARY_NOT</code> operator. The rightTerm will be inverse matching
          *
          * @param rightTerm the right operand
-         * @return a new CompositeTerm as a result of <code>this AND NOT rightTerm</code>
+         * @return a new CompositeTerm as a result of <code>this AND UNARY_NOT rightTerm</code>
          */
         @Override
-        public Term AND_NOT(Term rightTerm) {
-            return new CompositeTerm(BooleanOperator.AND, this, rightTerm.NOT());
+        public Term NOT(Term rightTerm) {
+            return new CompositeTerm(BooleanOperator.AND, this, rightTerm.UNARY_NOT());
         }
         /**
          * Create a composite term by <code>OR</code> operator
@@ -292,12 +292,12 @@ final public class SearchableTerm extends Term {
         }
 
         /**
-         * Create a composite term by <code>NOT</code> operator
+         * Create a composite term by <code>UNARY_NOT</code> operator
          *
-         * @return a new CompositeTerm as a result of <code>NOT this</code>
+         * @return a new CompositeTerm as a result of <code>UNARY_NOT this</code>
          */
         @Override
-        Term NOT() {
+        Term UNARY_NOT() {
             return new CompositeTerm(BooleanOperator.NOT, this, null);
         }
     }

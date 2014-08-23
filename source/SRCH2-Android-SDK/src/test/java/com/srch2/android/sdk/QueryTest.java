@@ -1,7 +1,5 @@
 package com.srch2.android.sdk;
 
-import com.srch2.android.sdk.Query;
-import com.srch2.android.sdk.SearchableTerm;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -100,11 +98,11 @@ public class QueryTest {
     @Test
     public void testBooleanExp() throws UnsupportedEncodingException {
         Assert.assertEquals(
-                "(\"star+wars\" AND \"episode+3\") OR (\"George+Lucas\" AND NOT \"Indiana+Jones\")",
+                "(\"star+wars\" AND \"episode+3\") OR (\"George+Lucas\" AND UNARY_NOT \"Indiana+Jones\")",
                 new SearchableTerm("star wars")
                         .AND(new SearchableTerm("episode 3"))
                         .OR(new SearchableTerm("George Lucas")
-                                .AND(new SearchableTerm("Indiana Jones").NOT()))
+                                .AND(new SearchableTerm("Indiana Jones").UNARY_NOT()))
                         .toString());
 
         Assert.assertEquals(
@@ -178,7 +176,7 @@ public class QueryTest {
                 "girardelli&start=0&rows=20&lblat=61.2&lblong=-149.9&rtlat=61.22&rtlong=-149.7",
                 new Query(new SearchableTerm("girardelli")).pagingStartFrom(0)
                         .pagingSize(20)
-                        .insideBoxRegion(61.20, -149.90, 61.22, -149.70)
+                        .insideRectangleRegion(61.20, -149.90, 61.22, -149.70)
                         .toString());
     }
 
