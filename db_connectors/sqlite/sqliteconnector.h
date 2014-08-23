@@ -60,6 +60,10 @@ private:
     int maxRetryOnFailure;
     int listenerWaitTime;
 
+    //The engine will use the default sleep time after
+    //the "maxRetryOnFailure" is reached.
+    int defaultSleepTime;
+
     //Parameters for Sqlite
     sqlite3 *db;
     sqlite3_stmt *selectStmt;

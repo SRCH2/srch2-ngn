@@ -32,6 +32,10 @@ private:
     mongo::DBClientBase* oplogConnection;
     mongo::ScopedDbConnection * mongoConnector;
 
+    //The engine will use the default sleep time after
+    //the "maxRetryOnFailure" is reached.
+    int defaultSleepTime;
+
     //Connect to the mongodb
     bool connectToDB();
 

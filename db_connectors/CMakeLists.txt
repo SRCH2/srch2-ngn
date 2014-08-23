@@ -11,6 +11,11 @@
 cmake_minimum_required(VERSION 2.8)
 SET(RELEASE_BUILD ON CACHE BOOL "")
 SET(ANDROID OFF CACHE BOOL "")
+SET(MAC_OS OFF CACHE BOOL "")
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    MESSAGE(STATUS "PLATFORM = MAC OS")
+    SET(MAC_OS ON)
+ENDIF()
 #
 #  1.  MongoDB connector 
 #
@@ -18,11 +23,18 @@ IF(NOT ANDROID)
     FILE(GLOB_RECURSE MONGO_DB_CONNECTOR_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "mongo/*.cpp")
 
     MESSAGE(STATUS "This is SOURCE dir " ${CMAKE_SOURCE_DIR})
-					
-    INCLUDE_DIRECTORIES(
-        ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver/mongo-cxx-driver/build/use-system-boost/srch2/include/
-        ${CMAKE_SOURCE_DIR}/../src/adapter/
-    )
+
+    IF(MAC_OS)					
+        INCLUDE_DIRECTORIES(
+            ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver/mongo-cxx-driver/build/osx-version-min_10.8/use-system-boost/srch2/include/
+            ${CMAKE_SOURCE_DIR}/../src/adapter/
+        )
+    ELSE()
+        INCLUDE_DIRECTORIES(
+            ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver/mongo-cxx-driver/build/use-system-boost/srch2/include/
+            ${CMAKE_SOURCE_DIR}/../src/adapter/
+        )
+    ENDIF()
 
     ADD_LIBRARY(mongodbConnector SHARED ${MONGO_DB_CONNECTOR_SRC} )
 
@@ -36,7 +48,12 @@ IF(NOT ANDROID)
 
     SET_TARGET_PROPERTIES(mongodbConnector PROPERTIES COMPILE_FLAGS -fPIC)
 
-    set(MONGO_CLIENT_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver/mongo-cxx-driver/build/use-system-boost/libmongoclient.a)
+    IF(MAC_OS)
+        set(MONGO_CLIENT_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver/mongo-cxx-driver/build/osx-version-min_10.8/use-system-boost/libmongoclient.a)
+    ELSE()
+        set(MONGO_CLIENT_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver/mongo-cxx-driver/build/use-system-boost/libmongoclient.a)
+    ENDIF()
+
     if (RELEASE_BUILD)
         SET(Boost_USE_STATIC_LIBS ON)
     endif()
@@ -68,10 +85,10 @@ INCLUDE_DIRECTORIES(
 )
 
 IF (ANDROID) 
-    SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src-0.5.0/android/libs/armeabi-v7a/libjsoncpp.a)
+    SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/android/libs/armeabi-v7a/libjsoncpp.a)
     SET(CMAKE_REQUIRED_LIBRARIES stdc++ crypto ${CMAKE_REQUIRED_LIBRARIES})
 ELSE()
-    SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src-0.5.0/libs/linux-gcc-${gcc_compiler_version}/libjson_linux-gcc-${gcc_compiler_version}_libmt.a)
+    SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/build/libjsoncpp.a)
     IF (LINUX_OS)
         SET(CMAKE_REQUIRED_LIBRARIES dl pthread stdc++ rt z ${CMAKE_REQUIRED_LIBRARIES})
     ELSE()
@@ -79,7 +96,6 @@ ELSE()
     ENDIF()
 ENDIF()
 
-#SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/build/libjsoncpp.a)
 ADD_LIBRARY(sqliteConnector SHARED ${SQLITE_CONNECTOR_SRC} )
 
 set(SQLITE_VERSION_MAJOR 1)
