@@ -125,15 +125,15 @@ will use the formula
 to compute the edit-distance threshold to do the search. If "s" is 1, we do an
 exact search. For example, consider the following query:
 ```
-    SearchableTerm term = new SearchableTerm("spielburrg").enableFuzzyMatching(0.8f);
+    SearchableTerm term = new SearchableTerm("spielberg").enableFuzzyMatching(0.8f);
 ```
-The internal edit-distance threshold is `floor((1-0.8) * length("spielburrg")) =
-floor(0.2 * 10) = 2`. So the engine will find records with a keyword whose edit
-distance to the term "spielburrg" is at most 2.
+The internal edit-distance threshold is *floor((1-0.8) * length("spielburrg")) =
+floor(0.2 * 10) = 2*. So the engine will find records with a keyword whose edit
+distance to the term "spielberg" is at most 2.
 
 If we don't provide a similarity threshold, e.g.,
 ```
-    SearchableTerm term = new SearchableTerm("spielburrg").enableFuzzyMatching();
+    SearchableTerm term = new SearchableTerm("spielberg").enableFuzzyMatching();
 ```
 the engine will use the similarity threshold specified in the
 *Indexable.getFuzzinessSimilarityThreshold()*.  If we don't
@@ -226,7 +226,7 @@ the *director*, *year*, and then *title* fields:
 ```
 
 We can specify the order in which the result set should be sorted. The default
-behavior is to sort them in the descending order. We can call the
+behaviour is to sort them in the descending order. We can call the
 *orderByAscending()* method to sort them in the ascending order.
 For example, we can use the following code to let sort the results
 in the ascending order on the *year* field:
@@ -237,8 +237,8 @@ in the ascending order on the *year* field:
 ###Pagination
 
 To implement pagination, we want to return some of the results
-by specifying a starting offet and number of records.  
-We can call the *pagingStartFrom()* method to specify the startng
+by specifying a starting offset and number of records.  
+We can call the *pagingStartFrom()* method to specify the starting
 offset, and its default value is 0.
 We can also set the number of returned records by 
 calling the *pagingSize()* method. The number is obtained
@@ -309,8 +309,8 @@ is the radius.
 ##Testing and Proguard
 
 The SRCH2 Android SDK must be tested on a real Android device, not an emulator.
-When we initialize the `SRCH2Engine` class,
-you can call `setDebugAndTestMode(true)` to enable the `SRCH2Engine` to quickly
+When we initialize the *SRCH2Engine* class,
+you can call `setDebugAndTestMode(true)` to enable the *SRCH2Engine* to quickly
 start and stop the SRCH2 server. 
 
 To configure the SRCH2-Android-SDK for
