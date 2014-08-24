@@ -2708,7 +2708,9 @@ bool ConfigManager::isValidFieldType(string& fieldType, bool isSearchable) {
                 || (lowerCase.compare("long") == 0)
                 || (lowerCase.compare("float") == 0)
                 || (lowerCase.compare("double") == 0)
-                || (lowerCase.compare("time") == 0)) {
+                || (lowerCase.compare("time") == 0)
+                || (lowerCase.compare(locationLatitudeString) == 0)
+                || (lowerCase.compare("location_longitude") == 0)) {
             return true;
         }
         return false;
