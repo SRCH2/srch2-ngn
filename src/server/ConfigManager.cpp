@@ -782,6 +782,7 @@ void ConfigManager::parseQuery(CoreConfigParseState_t *coreParseState , const xm
         if (coreInfo->searchResponseContent == 2) {
             if (childNode.text()) {
                 vector<string> temp;
+                int wordCount = 0;   //It takes care of "is" and "are" in warning message
                 splitString(string(childNode.text().get()), ",",
                                         temp);
                 string attributes = "";
@@ -795,6 +796,7 @@ void ConfigManager::parseQuery(CoreConfigParseState_t *coreParseState , const xm
                     bool isSearchable = (it != coreParseState->searchableFieldsVector.end());
                     if(isRefining == false && isSearchable == false){
                         warningFlag = true;
+                        wordCount++;
                         attributes = attributes + temp[i] + ", ";
                         continue;
                     }
@@ -802,7 +804,11 @@ void ConfigManager::parseQuery(CoreConfigParseState_t *coreParseState , const xm
                     coreInfo->attributesToReturn.push_back(temp[i]);
                 }
                 if(warningFlag == true){
-                    string warning = "The field entered in responseContent tag: " + attributes + "is neither searchable, refining nor indexed therefore will not be returned by the engine";
+                    string warning = "";
+                    if(wordCount > 1)
+                        warning = "The field entered in responseContent tag: " + attributes + "are neither searchable, refining nor indexed therefore will not be returned by the engine";
+                    else
+                        warning = "The field entered in responseContent tag: " + attributes + "is neither searchable, refining nor indexed therefore will not be returned by the engine";
                     Logger::warn(warning.c_str());
                 }
             } else {
