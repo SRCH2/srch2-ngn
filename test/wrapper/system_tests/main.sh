@@ -784,7 +784,6 @@ rm -rf data/ *.idx
 
 test_id="primary key - refining field"
 printTestBanner "$test_id"
-rm ./refining_field_primary_key/data/refining_field_primary_key/*
 python ./refining_field_primary_key/testPrimaryKey.py $SRCH2_ENGINE ./refining_field_primary_key/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ ${PIPESTATUS[0]} -gt 0 ]; then

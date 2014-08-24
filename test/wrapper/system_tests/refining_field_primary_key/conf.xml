@@ -51,7 +51,7 @@
         The file path to the folder where we store serialized index files.
         REQUIRED, when "index-load-or-create" is set to 1.
     -->
-    <dataDir>../data/refining_field_primary_key/</dataDir>
+    <dataDir>./data/refining_field_primary_key/</dataDir>
      
     <!--
         Data File
@@ -60,7 +60,7 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>./data.json</dataFile>
+    <dataFile>./refining_field_primary_key/data.json</dataFile>
      
     <!--
 	Maximum Number of Threads
