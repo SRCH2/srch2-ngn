@@ -111,7 +111,6 @@
             Need to be float type in the json objects in the data file.
         -->
          
-         
         <!--
             Default Query Term Boost
             Optional

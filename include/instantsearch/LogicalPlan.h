@@ -23,6 +23,7 @@
 #include "instantsearch/Term.h"
 #include "instantsearch/ResultsPostProcessor.h"
 #include "util/Assert.h"
+#include "record/LocationRecordUtil.h"
 #include <vector>
 #include <string>
 #include <sstream>
@@ -44,6 +45,7 @@ public:
 	vector<LogicalPlanNode *> children;
 	Term * exactTerm;
 	Term * fuzzyTerm;
+	Shape* regionShape;
 	LogicalPlanNodeAnnotation * stats;
 
 	PhysicalPlanNodeType forcedPhysicalNode;
@@ -77,6 +79,7 @@ public:
 protected:
 	LogicalPlanNode(Term * exactTerm, Term * fuzzyTerm);
 	LogicalPlanNode(LogicalPlanNodeType nodeType);
+	LogicalPlanNode(Shape* regionShape);
 };
 
 class LogicalPlanPhraseNode : public LogicalPlanNode{
@@ -255,6 +258,8 @@ public:
 	void setDocIdForRetrieveByIdSearchType(const std::string & docid){
 		this->docIdForRetrieveByIdSearchType = docid;
 	}
+
+	LogicalPlanNode * createGeoLogicalPlanNode(Shape *regionShape);
 
 
 	/*
