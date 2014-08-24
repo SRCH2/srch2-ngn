@@ -254,15 +254,15 @@ protected:
     
     void parseSchema(const xml_node &schemaNode, CoreConfigParseState_t *coreParseState, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
-    bool setSearchableRefiningFromIndexedAttribute(const xml_node &field, bool &isSearchable, bool &isRefining, std::stringstream &parseError, bool &configSuccess);
+    bool setSearchableRefiningFromIndexedAttribute(const xml_node &field, bool &isSearchable, bool &isRefining, std::stringstream &parseError, bool &configSuccess, CoreInfo_t *coreInfo);
 
-    bool setSearchableAndRefining(const xml_node &field, bool &isSearchable, bool &isRefining, std::stringstream &parseError, bool &configSuccess);
+    bool setSearchableAndRefining(const xml_node &field, bool &isSearchable, bool &isRefining, std::stringstream &parseError, bool &configSuccess, CoreInfo_t *coreInfo);
 
-    bool setFieldFlagsFromFile(const xml_node &field, bool &isMultiValued, bool &isSearchable, bool &isRefining, bool &isHighlightEnabled, std::stringstream &parseError, bool &configSuccess);
+    bool setFieldFlagsFromFile(const xml_node &field, bool &isMultiValued, bool &isSearchable, bool &isRefining, bool &isHighlightEnabled, std::stringstream &parseError, bool &configSuccess, CoreInfo_t *coreInfo);
 
     bool setCoreParseStateVector(bool isSearchable, bool isRefining, bool isMultiValued, bool isHighlightEnabled, CoreConfigParseState_t *coreParseState, CoreInfo_t *coreInfo, std::stringstream &parseError, const xml_node &field);
 
-    bool setRefiningStateVectors(const xml_node &field, bool isMultiValued, bool isRefining, vector<string> &RefiningFieldsVector, vector<srch2::instantsearch::FilterType> &RefiningFieldTypesVector, vector<bool> &RefiningAttributesRequiredFlagVector, vector<string> &RefiningAttributesDefaultVector, vector<bool> &RefiningAttributesIsMultiValued, std::stringstream &parseError);
+    bool setRefiningStateVectors(const xml_node &field, bool isMultiValued, bool isRefining, vector<string> &RefiningFieldsVector, vector<srch2::instantsearch::FilterType> &RefiningFieldTypesVector, vector<bool> &RefiningAttributesRequiredFlagVector, vector<string> &RefiningAttributesDefaultVector, vector<bool> &RefiningAttributesIsMultiValued, std::stringstream &parseError, CoreInfo_t *coreInfo);
 
     void parseFacetFields(const xml_node &schemaNode, CoreInfo_t *coreInfo, std::stringstream &parseError);
 
