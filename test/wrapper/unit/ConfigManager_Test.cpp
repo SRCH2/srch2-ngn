@@ -53,6 +53,7 @@ int main(int argc, char* argv[])
     string configFile13(string(getenv("srch2_config_file")) + "/conf-fieldBasedSearch-3.xml");
     string configFile14(string(getenv("srch2_config_file")) + "/conf-fieldBasedSearch-4.xml");
     string configFile15(string(getenv("srch2_config_file")) + "/conf-logging.xml");
+    string configFile16(string(getenv("srch2_config_file")) + "/conf-singleCore.xml");
 
 
     ConfigManager *serverConf1 = new ConfigManager(configFile1);
@@ -70,6 +71,8 @@ int main(int argc, char* argv[])
     ConfigManager *serverConf13 = new ConfigManager(configFile13);
     ConfigManager *serverConf14 = new ConfigManager(configFile14);
     ConfigManager *serverConf15 = new ConfigManager(configFile15);
+    ConfigManager *serverConf16 = new ConfigManager(configFile16);
+
 
     ASSERT(serverConf15->loadConfigFile() == true);
     ASSERT(serverConf1->loadConfigFile() == true);
@@ -85,6 +88,8 @@ int main(int argc, char* argv[])
     ASSERT(serverConf12->loadConfigFile() == true);
     ASSERT(serverConf13->loadConfigFile() == true);
     ASSERT(serverConf14->loadConfigFile() == true);
+    ASSERT(serverConf15->loadConfigFile() == true);
+    ASSERT(serverConf16->loadConfigFile() == true);
 
     cout<< serverConf15->getHTTPServerAccessLogFile() << "\n";
 
