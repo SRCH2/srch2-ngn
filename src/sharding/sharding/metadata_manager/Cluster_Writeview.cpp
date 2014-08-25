@@ -963,6 +963,14 @@ void Cluster_Writeview::fixClusterMetadataOfAnotherNode(Cluster_Writeview * clus
 	cluster->currentNodeId = currentNodeId;
 	// 5.
 	cluster->nodes = nodes;
+	for(map<NodeId, std::pair<ShardingNodeState, Node *> >::const_iterator nodeItr = nodes.begin();
+	        nodeItr != nodes.end(); ++nodeItr){
+	    Node * nodePtr = NULL;
+	    if(nodeItr->second.second != NULL){
+	        nodePtr = new Node(*(nodeItr->second.second));
+	    }
+        cluster->nodes[nodeItr->first] = std::make_pair(nodeItr->second.first,nodePtr);
+	}
 	cluster->cores = cores;
 }
 
