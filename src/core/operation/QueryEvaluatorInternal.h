@@ -104,10 +104,7 @@ public:
     }
 
     void getForwardIndex_ReadView(shared_ptr<vectorview<ForwardListPtr> > & readView){
-    	readView = this->forwardIndexDirectoryReadView;
-    }
-    void setForwardIndex_ReadView(){
-        this->indexData->forwardIndex->getForwardListDirectory_ReadView(forwardIndexDirectoryReadView);
+    	readView = this->indexReadToken.forwardIndexReadViewSharedPtr;
     }
 
     Schema * getSchema() {
@@ -154,8 +151,6 @@ private:
     CacheManager *cacheManager;
     PhysicalOperatorFactory * physicalOperatorFactory;
     PhysicalPlanRecordItemPool * physicalPlanRecordItemPool;
-
-    shared_ptr<vectorview<ForwardListPtr> > forwardIndexDirectoryReadView;
 
 };
 

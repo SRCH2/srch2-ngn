@@ -68,7 +68,6 @@ QueryEvaluatorInternal::QueryEvaluatorInternal(IndexReaderWriter *indexer , Quer
     this->indexer = indexer;
     setPhysicalOperatorFactory(new PhysicalOperatorFactory());
     this->physicalPlanRecordItemPool = new PhysicalPlanRecordItemPool();
-    setForwardIndex_ReadView();
 }
 
 /*
@@ -112,7 +111,7 @@ int QueryEvaluatorInternal::suggest(const string & keyword, float fuzzyMatchPena
     		suggestion != suggestionPairs.end() && suggestionCount < numberOfSuggestionsToReturn ; ++suggestion , ++suggestionCount){
     	string suggestionString ;
 		boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
-		this->getTrie()->getTrieRootNode_ReadView(trieRootNode_ReadView);
+		trieRootNode_ReadView = this->indexReadToken.trieRootNodeSharedPtr;
         this->getTrie()->getPrefixString(trieRootNode_ReadView->root,
                                                suggestion->suggestedCompleteTermNode, suggestionString);
     	suggestions.push_back(suggestionString);
@@ -258,7 +257,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 
 
 	boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
-	this->getTrie()->getTrieRootNode_ReadView(trieRootNode_ReadView);
+	trieRootNode_ReadView = this->indexReadToken.trieRootNodeSharedPtr;
 	while(true){
 
 		PhysicalPlanRecordItem * newRecord = topOperator->getNext(dummy);
@@ -289,7 +288,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		}
 		newRecord->getRecordMatchAttributeBitmaps(queryResult->attributeIdsList);
 
-		this->getForwardIndex()->getExternalRecordIdFromInternalRecordId(this->forwardIndexDirectoryReadView,
+		this->getForwardIndex()->getExternalRecordIdFromInternalRecordId(this->indexReadToken.forwardIndexReadViewSharedPtr,
 				queryResult->internalRecordId,queryResult->externalRecordId );
 	}
 
@@ -334,7 +333,7 @@ void QueryEvaluatorInternal::search(const std::string & primaryKey, QueryResults
 	// First check to see if the record is valid.
 	bool validForwardList;
     shared_ptr<vectorview<ForwardListPtr> > readView;
-    this->indexData->forwardIndex->getForwardListDirectory_ReadView(readView);
+    readView = this->indexReadToken.forwardIndexReadViewSharedPtr;
 	this->indexData->forwardIndex->getForwardList(readView, internalRecordId, validForwardList);
 	if (validForwardList == false) {
 		return;

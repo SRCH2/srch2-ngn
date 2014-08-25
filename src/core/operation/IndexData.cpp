@@ -153,6 +153,15 @@ bool isSortedAlphabetically(const KeywordIdKeywordStringInvertedListIdTriple& ke
 	return true;
 }
 
+void IndexData::getReadView(IndexReadStateSharedPtr_Token &readToken)
+{
+    this->trie->getTrieRootNode_ReadView(readToken.trieRootNodeSharedPtr);
+    this->quadTree->getQuadTreeRootNode_ReadView(readToken.quadTreeRootNodeSharedPtr);
+    this->forwardIndex->getForwardListDirectory_ReadView(readToken.forwardIndexReadViewSharedPtr);
+    this->invertedIndex->getInvertedIndexDirectory_ReadView(readToken.invertedIndexReadViewSharedPtr);
+    this->readCounter->increment();
+}
+
 /// Add a record
 INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer)
 {

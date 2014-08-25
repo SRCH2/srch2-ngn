@@ -27,7 +27,7 @@ bool PhraseSearchOperator::open(QueryEvaluatorInternal * queryEvaluatorInternal,
 
 	{
 		boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
-		queryEvaluatorInternal->getTrie()->getTrieRootNode_ReadView(trieRootNode_ReadView);
+		trieRootNode_ReadView = queryEvaluatorInternal->indexReadToken.trieRootNodeSharedPtr;
 
 		for (int j = 0; j < phraseSearchInfo.phraseKeyWords.size(); ++j) {
 			const string& keywordString = phraseSearchInfo.phraseKeyWords[j];
