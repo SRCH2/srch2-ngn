@@ -53,6 +53,7 @@ public:
 				unsigned nodeSerializedSize = *(unsigned *)body;
 				body += sizeof(unsigned);
 				node.deserialize(body);
+				node.thisIsMe = false;
 				ShardManager::getWriteview()->addNode(node);
 				ShardManager::getWriteview()->setNodeState(node.getId(), ShardingNodeStateArrived);
 

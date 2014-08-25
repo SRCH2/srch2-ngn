@@ -150,15 +150,15 @@ void SyncManager::startDiscovery() {
 			char nodename[1024];
 			sprintf(nodename, "%d", this->masterNodeId);
 			std::string masterIp(inet_ntoa(destinationAddress.sin_addr));
-			Node node(nodename, masterIp, ntohs(destinationAddress.sin_port), false);
-			node.setId(this->masterNodeId);
-			node.setMaster(true);
+			Node masterNode(nodename, masterIp, ntohs(destinationAddress.sin_port), false);
+			masterNode.setId(this->masterNodeId);
+			masterNode.setMaster(true);
 
-			clusterWriteView->addNode(node);
-			clusterWriteView->setNodeState(node.getId(), ShardingNodeStateArrived);
+			clusterWriteView->addNode(masterNode);
+			clusterWriteView->setNodeState(masterNode.getId(), ShardingNodeStateArrived);
 
 			localNodesCopyMutex.lock();
-			localNodesCopy.push_back(node);
+			localNodesCopy.push_back(masterNode);
 			localNodesCopyMutex.unlock();
 		}
 		// use transport to fetch cluster state
