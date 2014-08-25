@@ -502,7 +502,7 @@ void ConfigManager::parseMongoDb(const xml_node &mongoDbNode,
     coreInfo->primaryKey = "_id";
 }
 
-void ConfigManager::parseQuery(const xml_node &queryNode, CoreInfo_t *coreInfo,
+void ConfigManager::parseQuery(CoreConfigParseState_t *coreParseState , const xml_node &queryNode, CoreInfo_t *coreInfo,
         bool &configSuccess, std::stringstream &parseError,
         std::stringstream &parseWarnings) {
     // scoringExpressionString is an optional field
@@ -766,10 +766,43 @@ void ConfigManager::parseQuery(const xml_node &queryNode, CoreInfo_t *coreInfo,
             return;
         }
 
+        //A warning is displayed if the field present in responseContent is neither searchable nor refining.
+        //This also trims spaces from the field values read from responseContent
         if (coreInfo->searchResponseContent == 2) {
             if (childNode.text()) {
+                vector<string> temp;
                 splitString(string(childNode.text().get()), ",",
-                        coreInfo->attributesToReturn);
+                                        temp);
+                vector<string> wrongAttributes;
+                vector<string>::iterator it;
+                //This flag tells if the warning should be displayed or not, it gets set when the field is neither searchable nor refining
+                bool warningFlag = false;
+                for(int i = 0; i< temp.size(); i++){
+                    trimSpacesFromValue(temp[i], responseContentString, parseWarnings);
+                    bool isRefining  = (coreInfo->refiningAttributesInfo.count(temp[i]) != 0);
+                    it = (std::find(coreParseState->searchableFieldsVector.begin(), coreParseState->searchableFieldsVector.end(), temp[i]));
+                    bool isSearchable = (it != coreParseState->searchableFieldsVector.end());
+                    if(isRefining == false && isSearchable == false){
+                        warningFlag = true;
+                        wrongAttributes.push_back(temp[i]);
+                        continue;
+                    }
+                    //we push back only valid fields
+                    coreInfo->attributesToReturn.push_back(temp[i]);
+                }
+
+                if(warningFlag == true){
+                    string warning = "";
+                    if(wrongAttributes.size() > 1){
+                        for(int i = 0; i < wrongAttributes.size() - 1; i++){
+                            warning = warning + wrongAttributes[i] + ", ";
+                        }
+                        warning = warning + "and " + wrongAttributes[wrongAttributes.size()-1];
+                        Logger::warn("The fields entered in responseContent tag, %s, are neither searchable, refining nor indexed therefore will not be returned by the engine.", warning.c_str());
+                    }
+                    else
+                        Logger::warn("The field entered in responseContent tag, %s, is neither searchable, refining nor indexed therefore will not be returned by the engine.", wrongAttributes[0].c_str());
+                }
             } else {
                 parseError
                         << "For specified response content type, return fields should be provided.";
@@ -1006,7 +1039,7 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode,
 
     childNode = parentNode.child(queryString);
     if (childNode) {
-        parseQuery(childNode, coreInfo, configSuccess, parseError,
+        parseQuery(&coreParseState, childNode, coreInfo, configSuccess, parseError,
                 parseWarnings);
         if (configSuccess == false) {
             return;
