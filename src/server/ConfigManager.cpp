@@ -771,7 +771,6 @@ void ConfigManager::parseQuery(CoreConfigParseState_t *coreParseState , const xm
                 splitString(string(childNode.text().get()), ",",
                                         temp);
                 vector<string> wrongAttribute;
-                string wrongAttributes = "";
                 vector<string>::iterator it;
                 //This flag tells if the warning should be displayed or not, it gets set when the field is neither searchable nor refining
                 bool warningFlag = false;
@@ -788,20 +787,18 @@ void ConfigManager::parseQuery(CoreConfigParseState_t *coreParseState , const xm
                     //we push back only valid fields
                     coreInfo->attributesToReturn.push_back(temp[i]);
                 }
-                //Takes care of warning message when there are multiple fields
-                if(wrongAttribute.size() > 1){
-                    for(int i = 0; i < wrongAttribute.size() -1; i++){
-                        wrongAttributes = wrongAttributes + wrongAttribute[i] + ", ";
-                    }
-                    wrongAttributes = wrongAttributes + "and " + wrongAttribute[wrongAttribute.size()-1];
-                }
+
                 if(warningFlag == true){
                     string warning = "";
-                    if(wrongAttribute.size() > 1)
-                        warning = "The fields entered in responseContent tag, " + wrongAttributes + ", are neither searchable, refining nor indexed therefore will not be returned by the engine.";
+                    if(wrongAttribute.size() > 1){
+                        for(int i = 0; i < wrongAttribute.size() -1; i++){
+                            warning = warning + wrongAttribute[i] + ", ";
+                        }
+                        warning = warning + "and " + wrongAttribute[wrongAttribute.size()-1];
+                        Logger::warn("The fields entered in responseContent tag, %s, are neither searchable, refining nor indexed therefore will not be returned by the engine.",warning.c_str());
+                    }
                     else
-                        warning = "The field entered in responseContent tag, " + wrongAttribute[0] + ", is neither searchable, refining nor indexed therefore will not be returned by the engine.";
-                    Logger::warn(warning.c_str());
+                        Logger::warn("The field entered in responseContent tag, %s, is neither searchable, refining nor indexed therefore will not be returned by the engine.",wrongAttribute[0].c_str());
                 }
             } else {
                 parseError
