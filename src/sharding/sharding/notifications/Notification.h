@@ -128,8 +128,7 @@ private:
 
 class MMNotification : public ShardingNotification{
 public:
-	MMNotification(const ShardMigrationStatus & status){
-		this->status = status;
+	MMNotification(const ShardMigrationStatus & status):status(status){
 		this->setSrc(NodeOperationId(this->status.sourceNodeId, this->status.srcOperationId));
 		this->setDest(NodeOperationId(this->status.destinationNodeId, this->status.dstOperationId));
 	}

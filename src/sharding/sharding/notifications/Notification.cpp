@@ -68,10 +68,10 @@ NodeOperationId ShardingNotification::getDest() const {
 	return destOperationId;
 }
 void ShardingNotification::setSrc(const NodeOperationId & src) {
-	this->srcOperationId = src;
+	this->srcOperationId = NodeOperationId(src);
 }
 void ShardingNotification::setDest(const NodeOperationId & dest) {
-	this->destOperationId = dest;
+	this->destOperationId = NodeOperationId(dest);
 }
 void ShardingNotification::setBounced(){
 	this->bounced = true;
