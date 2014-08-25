@@ -43,25 +43,13 @@ enum MIGRATION_STATUS{
 };
 struct ShardMigrationStatus{
 	ShardMigrationStatus(){};
-	ShardMigrationStatus(const ShardMigrationStatus & status){
-		this->srcOperationId = status.srcOperationId;
-		this->dstOperationId = status.dstOperationId;
-		this->sourceNodeId = status.sourceNodeId;
-		this->destinationNodeId = status.destinationNodeId;
-		this->shard = status.shard;
-		this->status = status.status;
+	ShardMigrationStatus(const ShardMigrationStatus & status);
+	ShardMigrationStatus & operator=(const ShardMigrationStatus & status);
 
-	};
-	ShardMigrationStatus operator=(const ShardMigrationStatus & status){
-		ShardMigrationStatus left;
-		left.srcOperationId = status.srcOperationId;
-		left.dstOperationId = status.dstOperationId;
-		left.sourceNodeId = status.sourceNodeId;
-		left.destinationNodeId = status.destinationNodeId;
-		left.shard = status.shard;
-		left.status = status.status;
-		return left;
-	}
+    void * serialize(void * buffer) const;
+    unsigned getNumberOfBytes() const;
+    void * deserialize(void * buffer) ;
+
 	unsigned srcOperationId;    // #1
     unsigned dstOperationId;   // #7
 	NodeId sourceNodeId;   // NodeA
@@ -130,24 +118,17 @@ class MMNotification : public ShardingNotification{
 public:
 
     // TODO : second argument must be removed when migration manager is merged with shard manager codes ...
-	MMNotification(const ShardMigrationStatus & status, const ClusterShardId & destShardId):status(status){
-		this->setSrc(NodeOperationId(this->status.sourceNodeId, this->status.srcOperationId));
-		this->setDest(NodeOperationId(this->status.destinationNodeId, this->status.dstOperationId));
-		this->destShardId = destShardId;
-	}
-	MMNotification(){};
-	ShardMigrationStatus getStatus() const{
-		return this->status;
-	}
-	void setStatus(const ShardMigrationStatus & status){
-		this->status = status;
-	}
-    ShardingMessageType messageType() const {
-    	return ShardingMMNotificationMessageType;
-    }
-    ClusterShardId getDestShardId() const{
-        return this->destShardId;
-    }
+	MMNotification(const ShardMigrationStatus & status, const ClusterShardId & destShardId);
+	MMNotification();
+	ShardMigrationStatus getStatus() const;
+	void setStatus(const ShardMigrationStatus & status);
+    ShardingMessageType messageType() const ;
+    ClusterShardId getDestShardId() const;
+
+    void * serialize(void * buffer) const;
+    unsigned getNumberOfBytes() const;
+    void * deserialize(void * buffer) ;
+
 private:
 	ShardMigrationStatus status;
 	ClusterShardId destShardId;
