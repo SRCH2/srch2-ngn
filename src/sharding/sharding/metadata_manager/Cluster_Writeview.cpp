@@ -898,12 +898,13 @@ void Cluster_Writeview::fixClusterMetadataOfAnotherNode(Cluster_Writeview * clus
 	// 1. isLocal values are from the perspective of src node of this "cluster" info
 	for(unsigned i = 0 ; i < cluster->clusterShards.size(); ++i){
 		ClusterShard_Writeview * shard = cluster->clusterShards.at(i);
-		if(shard->state != SHARDSTATE_READY){
+		if(shard->state == SHARDSTATE_UNASSIGNED || shard->state == SHARDSTATE_PENDING){
 			shard->isLocal = false;
 			shard->load = 0 ;
-			shard->nodeId = 0;
+			shard->nodeId = (unsigned)-1;
 			continue;
 		}
+
 		if(shard->nodeId != this->currentNodeId){
 			shard->isLocal = false;
 		}else{
@@ -925,6 +926,7 @@ void Cluster_Writeview::fixClusterMetadataOfAnotherNode(Cluster_Writeview * clus
 	for(unsigned i = 0 ; i < clusterShards.size(); ++i){
 		ClusterShard_Writeview * shard = clusterShards.at(i);
 		if(shard->isLocal){
+		    ASSERT(shard->nodeId == currentNodeId);
 			bool succeed = false;
 			for(unsigned j = 0 ; j < cluster->clusterShards.size(); ++j){
 				ClusterShard_Writeview * clusterShard = cluster->clusterShards.at(j);
@@ -935,13 +937,22 @@ void Cluster_Writeview::fixClusterMetadataOfAnotherNode(Cluster_Writeview * clus
 					clusterShard->isLocal = true;
 					clusterShard->load = shard->load;
 					clusterShard->state = SHARDSTATE_READY;
-					clusterShard->nodeId = shard->nodeId;
-					ASSERT(shard->nodeId == currentNodeId);
+					clusterShard->nodeId = currentNodeId;
 					succeed = true;
 					break;
 				}else{
-					ASSERT(false);// somebody else has this shard
-					break;
+				    // this node already believes that we are the owner of this shard
+				    if(clusterShard->nodeId == currentNodeId){
+	                    clusterShard->isLocal = true;
+	                    clusterShard->load = shard->load;
+	                    ASSERT(clusterShard->state == SHARDSTATE_READY);
+	                    clusterShard->nodeId = currentNodeId;
+	                    succeed = true;
+	                    break;
+				    }else{
+                        ASSERT(false);// somebody else has this shard
+                        break;
+				    }
 				}
 			}
 			if(succeed){
