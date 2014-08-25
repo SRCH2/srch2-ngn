@@ -204,6 +204,7 @@ void MetadataInitializer::loadShards(Cluster_Writeview * newWriteview){
 	}
 
 	vector<pair<NodeShardId, InitialShardLoader * > > nodeShardsToLoad;
+	newWriteview->beginNodeShardsIteration();
 	while(newWriteview->getNextLocalNodeShard(nodeShardId, load, physicalShard)){
 		InitialShardLoader * initialShardLoader = new InitialShardLoader(new ClusterShardId(id), physicalShard.indexDirectory);
 		nodeShardsToLoad.push_back(std::make_pair(nodeShardId, initialShardLoader));
@@ -215,7 +216,7 @@ void MetadataInitializer::loadShards(Cluster_Writeview * newWriteview){
 	}
 
 	// 1. load all shards
-	for(unsigned i = 1; i < clusterShardsToLoad.size(); ++i){
+	for(unsigned i = 0; i < clusterShardsToLoad.size(); ++i){
 		clusterShardsToLoad.at(i).second->prepare();
 	}
 	for( unsigned i = 0 ; i < nodeShardsToLoad.size(); ++i){
@@ -253,6 +254,14 @@ Cluster_Writeview * MetadataInitializer::loadFromDisk(const string & clusterName
 	}else{
 		return NULL; // not loaded.
 	}
+}
+
+void MetadataInitializer::saveToDisk(const string & clusterName){
+	string clusterFileDirectoryPath = configManager->getClusterDir(clusterName);
+	if(clusterFileDirectoryPath.compare("") == 0){
+		clusterFileDirectoryPath = configManager->createClusterDir(clusterName);
+	}
+	metadataManager->getClusterWriteview()->saveWriteviewOnDisk(clusterFileDirectoryPath);
 }
 
 

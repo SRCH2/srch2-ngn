@@ -23,7 +23,7 @@ public:
 	void * deserialize(void * buffer);
 	ShardingMessageType messageType() const;
     ResourceLockRequest * getLockRequest() const ;
-    bool isReleaseOfNodeInitialization() const;
+    bool operator==(const LockingNotification & lockingNotification);
 private:
 	// list of lock requests that we want to be executed in one batch.
 	// the order of these lock requests must be based on a general ordering on
@@ -44,6 +44,7 @@ public:
 		void * deserialize(void * buffer);
 		bool isGranted() const;
 
+	    bool operator==(const LockingNotification::ACK & right);
 	private:
 	    bool grantedFlag;
 	};

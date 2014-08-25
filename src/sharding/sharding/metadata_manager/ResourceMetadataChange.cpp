@@ -89,6 +89,11 @@ void * NodeAddChange::deserialize(void * buffer){
 	return buffer;
 }
 
+bool NodeAddChange::operator==(const MetadataChange & rightArg){
+	const NodeAddChange & right = (const NodeAddChange &) rightArg;
+	return (newNodeId == right.newNodeId) && (localClusterShardIds == right.localClusterShardIds) && (localNodeShardIds == right.localNodeShardIds);
+}
+
 ShardAssignChange::ShardAssignChange(){
 	// temporary initialization
 }
@@ -138,6 +143,12 @@ void * ShardAssignChange::deserialize(void * buffer){
 	return buffer;
 }
 
+bool ShardAssignChange::operator==(const MetadataChange & rightArg){
+	const ShardAssignChange & right = (const ShardAssignChange &) rightArg;
+	return (logicalShardToAssign == right.logicalShardToAssign) && (location == right.location) && (load == right.load);
+}
+
+
 ShardMoveChange::ShardMoveChange(ClusterShardId shardId, NodeId srcNodeId, NodeId destNodeId){
 	this->shardId = shardId;
 	this->srcNodeId = srcNodeId;
@@ -180,9 +191,18 @@ unsigned ShardMoveChange::getNumberOfBytes() const{
 	return numberOfBytes;
 }
 void * ShardMoveChange::deserialize(void * buffer){
-	buffer = shardId.serialize(buffer);
-	buffer = srch2::util::serializeFixedTypes(srcNodeId, buffer);
-    return srch2::util::serializeFixedTypes(destNodeId, buffer);
+	buffer = shardId.deserialize(buffer);
+	buffer = srch2::util::deserializeFixedTypes(buffer, srcNodeId);
+    return srch2::util::deserializeFixedTypes(buffer, destNodeId);
+}
+
+bool ShardMoveChange::operator==(const MetadataChange & rightArg){
+	const ShardMoveChange & right = (const ShardMoveChange &) rightArg;
+	return (shardId == right.shardId) && (srcNodeId == right.srcNodeId) && (destNodeId == right.destNodeId);
+}
+
+ShardLoadChange::ShardLoadChange(const map<ClusterShardId, double> & addedLoads){
+	this->addedLoads = addedLoads;
 }
 
 ShardLoadChange::ShardLoadChange(){
@@ -215,6 +235,11 @@ unsigned ShardLoadChange::getNumberOfBytes() const{
 void * ShardLoadChange::deserialize(void * buffer){
 	buffer = srch2::util::deserializeMapDynamicToFixed(buffer, addedLoads);
 	return buffer;
+}
+
+bool ShardLoadChange::operator==(const MetadataChange & rightArg){
+	const ShardLoadChange & right = (const ShardLoadChange &) rightArg;
+	return (addedLoads == right.addedLoads);
 }
 
 }

@@ -17,6 +17,19 @@ using namespace srch2::httpwrapper;
 typedef ClusterShardId R;
 typedef NodeOperationId O;
 
+enum ResourceLockRequestCaseCode{
+	ResourceLockRequestCaseCode_NewNodeLock0,
+	ResourceLockRequestCaseCode_NewNodeLock1,
+	ResourceLockRequestCaseCode_NewNodeRelease0,
+	ResourceLockRequestCaseCode_NewNodeRelease1,
+	ResourceLockRequestCaseCode_ShardCopyLock0,
+	ResourceLockRequestCaseCode_ShardCopyRelease0,
+	ResourceLockRequestCaseCode_ShardMoveLock0,
+	ResourceLockRequestCaseCode_ShardMoveRelease0,
+	ResourceLockRequestCaseCode_ShardMoveRelease1,
+	ResourceLockRequestCaseCode_EOF
+};
+
 
 enum LockReposTestCode{
 	LockReposTestCode_S_Lock_Grant_0,
@@ -52,6 +65,155 @@ enum LockReposTestCode{
 	//TODO
 	LockReposTestCode_EOF
 };
+
+ResourceLockRequest * createResourceLockRequest(const ResourceLockRequestCaseCode caseCode){
+	switch (caseCode) {
+	case ResourceLockRequestCaseCode_NewNodeLock0:
+	{
+		vector<O> lockHolders;
+		lockHolders.push_back(O(4,10));
+		vector<SingleResourceLockRequest *> lockRequestBatch;
+		// all S locks
+		for(unsigned c = 0; c < 2; ++c){
+			for(unsigned p = 0; p < 4; ++p){
+				for(unsigned r = 0; r < 3; ++r){
+					SingleResourceLockRequest * lockReq = new SingleResourceLockRequest(R(c,p,r) , lockHolders , ResourceLockType_S);
+					lockRequestBatch.push_back(lockReq);
+				}
+			}
+		}
+
+		//
+		ResourceLockRequest * resourceLockReq = new ResourceLockRequest();
+		resourceLockReq->requestBatch = lockRequestBatch;
+		resourceLockReq->isBlocking = true;
+		return resourceLockReq;
+	}
+	case ResourceLockRequestCaseCode_NewNodeLock1:
+	{
+		vector<O> lockHolders;
+		lockHolders.push_back(O(4,10));
+		vector<SingleResourceLockRequest *> lockRequestBatch;
+		// all S locks, two of them X
+		for(unsigned c = 0; c < 2; ++c){
+			for(unsigned p = 0; p < 4; ++p){
+				for(unsigned r = 0; r < 3; ++r){
+					if((c == 0 && p == 1 && r == 0)
+							|| (c == 1 && p == 3 && r == 2)){
+						SingleResourceLockRequest * lockReq = new SingleResourceLockRequest(R(c,p,r) , lockHolders , ResourceLockType_X);
+						lockRequestBatch.push_back(lockReq);
+					}else{
+						SingleResourceLockRequest * lockReq = new SingleResourceLockRequest(R(c,p,r) , lockHolders , ResourceLockType_S);
+						lockRequestBatch.push_back(lockReq);
+					}
+				}
+			}
+		}
+
+		//
+		ResourceLockRequest * resourceLockReq = new ResourceLockRequest();
+		resourceLockReq->requestBatch = lockRequestBatch;
+		resourceLockReq->isBlocking = true;
+		return resourceLockReq;
+	}
+	case ResourceLockRequestCaseCode_NewNodeRelease0:
+	case ResourceLockRequestCaseCode_NewNodeRelease1:
+	{
+		vector<O> lockHolders;
+		lockHolders.push_back(O(4,10));
+		vector<SingleResourceLockRequest *> lockRequestBatch;
+		// all S locks
+		for(unsigned c = 0; c < 2; ++c){
+			for(unsigned p = 0; p < 4; ++p){
+				for(unsigned r = 0; r < 3; ++r){
+					SingleResourceLockRequest * lockReq = new SingleResourceLockRequest(R(c,p,r) , lockHolders);
+					lockRequestBatch.push_back(lockReq);
+				}
+			}
+		}
+
+		//
+		ResourceLockRequest * resourceLockReq = new ResourceLockRequest();
+		resourceLockReq->requestBatch = lockRequestBatch;
+		resourceLockReq->isBlocking = true;
+		return resourceLockReq;
+	}
+	case ResourceLockRequestCaseCode_ShardCopyLock0:
+	{
+		vector<O> lockHolders;
+		lockHolders.push_back(O(4,10));
+		vector<SingleResourceLockRequest *> lockRequestBatch;
+		SingleResourceLockRequest * lockReq = new SingleResourceLockRequest(R(1,1,1) , lockHolders, ResourceLockType_S);
+		lockRequestBatch.push_back(lockReq);
+		SingleResourceLockRequest * lockReq2 = new SingleResourceLockRequest(R(1,1,3) , lockHolders, ResourceLockType_X);
+		lockRequestBatch.push_back(lockReq2);
+		//
+		ResourceLockRequest * resourceLockReq = new ResourceLockRequest();
+		resourceLockReq->requestBatch = lockRequestBatch;
+		resourceLockReq->isBlocking = false;
+		return resourceLockReq;
+	}
+	case ResourceLockRequestCaseCode_ShardCopyRelease0:
+	{
+		vector<O> lockHolders;
+		lockHolders.push_back(O(4,10));
+		vector<SingleResourceLockRequest *> lockRequestBatch;
+		SingleResourceLockRequest * lockReq = new SingleResourceLockRequest(R(1,1,1) , lockHolders);
+		lockRequestBatch.push_back(lockReq);
+		SingleResourceLockRequest * lockReq2 = new SingleResourceLockRequest(R(1,1,3) , lockHolders);
+		lockRequestBatch.push_back(lockReq2);
+		//
+		ResourceLockRequest * resourceLockReq = new ResourceLockRequest();
+		resourceLockReq->requestBatch = lockRequestBatch;
+		resourceLockReq->isBlocking = true;
+		return resourceLockReq;
+	}
+	case ResourceLockRequestCaseCode_ShardMoveLock0:
+	{
+		vector<O> lockHolders;
+		lockHolders.push_back(O(4,10));
+		lockHolders.push_back(O(2,3));
+		vector<SingleResourceLockRequest *> lockRequestBatch;
+		SingleResourceLockRequest * lockReq = new SingleResourceLockRequest(R(2,0,3) , lockHolders, ResourceLockType_X);
+		lockRequestBatch.push_back(lockReq);
+		//
+		ResourceLockRequest * resourceLockReq = new ResourceLockRequest();
+		resourceLockReq->requestBatch = lockRequestBatch;
+		resourceLockReq->isBlocking = false;
+		return resourceLockReq;
+	}
+	case ResourceLockRequestCaseCode_ShardMoveRelease0:
+	{
+		vector<O> lockHolders;
+		lockHolders.push_back(O(4,10));
+		vector<SingleResourceLockRequest *> lockRequestBatch;
+		SingleResourceLockRequest * lockReq = new SingleResourceLockRequest(R(2,0,3) , lockHolders);
+		lockRequestBatch.push_back(lockReq);
+		//
+		ResourceLockRequest * resourceLockReq = new ResourceLockRequest();
+		resourceLockReq->requestBatch = lockRequestBatch;
+		resourceLockReq->isBlocking = true;
+		return resourceLockReq;
+	}
+	case ResourceLockRequestCaseCode_ShardMoveRelease1:
+	{
+		vector<O> lockHolders;
+		lockHolders.push_back(O(2,3));
+		vector<SingleResourceLockRequest *> lockRequestBatch;
+		SingleResourceLockRequest * lockReq = new SingleResourceLockRequest(R(2,0,3) , lockHolders);
+		lockRequestBatch.push_back(lockReq);
+		//
+		ResourceLockRequest * resourceLockReq = new ResourceLockRequest();
+		resourceLockReq->requestBatch = lockRequestBatch;
+		resourceLockReq->isBlocking = true;
+		return resourceLockReq;
+	}
+	case ResourceLockRequestCaseCode_EOF:
+		ASSERT(false);
+		return NULL;
+	}
+}
+
 
 void initializeLockHoldersRepository(const LockReposTestCode caseValue, LockHoldersRepository * repo);
 

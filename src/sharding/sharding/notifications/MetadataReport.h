@@ -41,6 +41,11 @@ public:
     Cluster_Writeview * getWriteview() const{
     	return writeview;
     };
+
+    bool operator==(const MetadataReport & report){
+    	return *writeview == *(report.writeview);
+    }
+
 private:
     // must not be deleted in this class.
     Cluster_Writeview * writeview;

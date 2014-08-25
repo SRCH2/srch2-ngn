@@ -92,7 +92,6 @@ public:
 	bool required;
 	bool isMultiValued;
 };
-
 // definitions for data source(s) (srch2Server objects within one HTTP server)
 class CoreInfo_t {
 
@@ -118,6 +117,7 @@ public:
 	CoreInfo_t(class ConfigManager *manager) : configManager(manager) {
 		schema = NULL;
 	};
+
 	~CoreInfo_t() {
 		if(schema != NULL){
 			delete schema;
@@ -275,6 +275,15 @@ public:
 	const srch2::instantsearch::Schema* getSchema() const {
 		return this->schema;
 	};
+//	// used for test.
+//	CoreInfo_t(unsigned coreId, const string name, unsigned numberOfPartitions, unsigned replicaNumber){
+//		schema = NULL;
+//		configManager = NULL;
+//		this->setCoreId(coreId);
+//		this->name = name;
+//		this->numberOfPrimaryShards = numberOfPartitions;
+//		this->numberOfReplicas = replicaNumber;
+//	}
 
 protected:
 

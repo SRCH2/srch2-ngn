@@ -65,6 +65,8 @@ public:
 		return buffer;
 	}
     ShardingMessageType messageType() const;
+
+    bool operator==(const CommitNotification & right);
 private:
 	MetadataChange * metadataChange;
 
@@ -74,6 +76,7 @@ public:
 	    ShardingMessageType messageType() const{
 	    	return ShardingCommitACKMessageType;
 	    }
+	    bool operator==(const CommitNotification::ACK & right);
 	};
 };
 

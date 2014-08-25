@@ -21,6 +21,7 @@ public:
 
 	virtual bool doChange(Cluster_Writeview * metadata) = 0;
 	virtual MetadataChangeType getType() const = 0;
+	virtual bool operator==(const MetadataChange & right) = 0;
 };
 
 class NodeAddChange : public MetadataChange {
@@ -39,6 +40,8 @@ public:
 	void * serialize(void * buffer) const;
 	unsigned getNumberOfBytes() const;
 	void * deserialize(void * buffer);
+
+	bool operator==(const MetadataChange & right);
 
 private:
 	NodeId newNodeId;
@@ -59,7 +62,7 @@ public:
 	void * serialize(void * buffer) const;
 	unsigned getNumberOfBytes() const;
 	void * deserialize(void * buffer);
-
+	bool operator==(const MetadataChange & right);
 	void setPhysicalShard(const LocalPhysicalShard & physicalShard){
 		this->physicalShard = physicalShard;
 	}
@@ -85,7 +88,7 @@ public:
 	void * serialize(void * buffer) const;
 	unsigned getNumberOfBytes() const;
 	void * deserialize(void * buffer);
-
+	bool operator==(const MetadataChange & right);
 	ClusterShardId getShardId() const {
 		return shardId;
 	}
@@ -111,9 +114,9 @@ private:
 class ShardLoadChange : public MetadataChange{
 public:
 
+	ShardLoadChange(const map<ClusterShardId, double> & addedLoads);
 	ShardLoadChange();
 	ShardLoadChange(const ShardLoadChange & change);
-
 	MetadataChangeType getType() const;
 
 	bool doChange(Cluster_Writeview * metadata);
@@ -121,6 +124,7 @@ public:
 	void * serialize(void * buffer) const;
 	unsigned getNumberOfBytes() const;
 	void * deserialize(void * buffer);
+	bool operator==(const MetadataChange & right);
 
 	map<ClusterShardId, double> getAddedLoads() const{
 		return addedLoads;

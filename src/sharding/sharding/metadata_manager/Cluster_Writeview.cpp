@@ -35,9 +35,9 @@ LocalPhysicalShard::LocalPhysicalShard(const LocalPhysicalShard & copy){
 	this->jsonFileCompletePath = copy.jsonFileCompletePath;
 }
 
-void LocalPhysicalShard::setServer(boost::shared_ptr<Srch2Server> server){
-	this->server = server;
-}
+//void LocalPhysicalShard::setServer(boost::shared_ptr<Srch2Server> server){
+//	this->server = server;
+//}
 
 void * LocalPhysicalShard::serialize(void * buffer) const{
 	buffer = srch2::util::serializeString(this->indexDirectory, buffer);
@@ -100,6 +100,9 @@ Cluster_Writeview::Cluster_Writeview(unsigned versionId, string clusterName, vec
 	this->versionId = versionId;
 	this->clusterName = clusterName;
 	for(unsigned i = 0; i < cores.size(); ++i){
+		if(cores.at(i) == NULL){
+			continue;
+		}
 		this->cores[cores.at(i)->getCoreId()] = cores.at(i);
 	}
 
@@ -113,14 +116,15 @@ Cluster_Writeview::Cluster_Writeview(unsigned versionId, string clusterName, vec
 		for(unsigned pid = 0; pid < coreInfo->getNumberOfPrimaryShards(); ++pid){
 			for(unsigned rid = 0; rid <= coreInfo->getNumberOfReplicas(); ++rid){ // R+1 shards in total
 				ClusterShardId shardId(coreId, pid, rid);
-				ClusterShard_Writeview * shard = new ClusterShard_Writeview(shardId, SHARDSTATE_UNASSIGNED, 0, false, 0);
+				ClusterShard_Writeview * shard = new ClusterShard_Writeview(shardId, SHARDSTATE_UNASSIGNED,
+						(unsigned)-1, false, 0);
 				clusterShards.push_back(shard);
 				clusterShardIdIndexes[shardId] = clusterShards.size()-1;
 			}
 		}
 	}
 	// this node id will change by discovery module later ...
-	this->currentNodeId = 0;
+	this->currentNodeId = (unsigned)-1 ;
 }
 
 Cluster_Writeview::Cluster_Writeview(const Cluster_Writeview & copy){
@@ -130,7 +134,14 @@ Cluster_Writeview::Cluster_Writeview(const Cluster_Writeview & copy){
 	this->currentNodeId = copy.currentNodeId;
 	this->versionId = copy.versionId;
 
-	this->nodes = copy.nodes;
+	for(map<NodeId, std::pair<ShardingNodeState, Node *> >::const_iterator nodeItr = copy.nodes.begin();
+			nodeItr != copy.nodes.end(); ++nodeItr){
+		if(nodeItr->second.second != NULL){
+			this->nodes[nodeItr->first] = std::make_pair(nodeItr->second.first, new Node(*(nodeItr->second.second)) );
+		}else{
+			this->nodes[nodeItr->first] = std::make_pair(nodeItr->second.first, (Node *) NULL);
+		}
+	}
 	this->cores = copy.cores;
 
 	for(unsigned i = 0 ; i < clusterShards.size(); ++i){
@@ -156,7 +167,62 @@ Cluster_Writeview::Cluster_Writeview(const Cluster_Writeview & copy){
 	this->localNodeDataShards = copy.localNodeDataShards;
 }
 Cluster_Writeview::Cluster_Writeview(){}
+
+bool Cluster_Writeview::isEqualDiscardingLocalShards(const Cluster_Writeview & right){
+	if(clusterName.compare(right.clusterName) != 0){
+		return false;
+	}
+	if(currentNodeId != right.currentNodeId){
+		return false;
+	}
+	if(versionId != right.versionId){
+		return false;
+	}
+	if(clusterShardIdIndexes != right.clusterShardIdIndexes){
+		return false;
+	}
+	if(clusterShards.size() != right.clusterShards.size()){
+		return false;
+	}
+	if(nodeShards.size() != right.nodeShards.size()){
+		return false;
+	}
+	for(unsigned i = 0 ; i < clusterShards.size(); ++i){
+		if(! (*(clusterShards.at(i)) == *(right.clusterShards.at(i)))){
+			return false;
+		}
+	}
+	for(unsigned i = 0 ; i < nodeShards.size(); ++i){
+		if(! (*(nodeShards.at(i)) == *(right.nodeShards.at(i)))){
+			return false;
+		}
+	}
+	return true;
+}
+
+bool Cluster_Writeview::operator==(const Cluster_Writeview & right){
+
+	if(! isEqualDiscardingLocalShards(right)){
+		return false;
+	}
+	if(localClusterDataShards != right.localClusterDataShards){
+		return false;
+	}
+	if(localNodeDataShards != right.localNodeDataShards){
+		return false;
+	}
+
+	return true;
+}
+
 Cluster_Writeview::~Cluster_Writeview(){
+	for(map<NodeId, std::pair<ShardingNodeState, Node *> >::iterator nodeItr = nodes.begin();
+			nodeItr != nodes.end(); ++nodeItr){
+		if(nodeItr->second.second != NULL){
+			delete nodeItr->second.second;
+		}
+	}
+
 	for(unsigned i = 0 ; i < clusterShards.size(); ++i){
 		ClusterShard_Writeview * shard = clusterShards.at(i);
 		delete shard;
@@ -306,7 +372,11 @@ void Cluster_Writeview::print(){
 		localNodeShardsTable.startFilling();
 		for(map<unsigned,  LocalPhysicalShard >::const_iterator shardItr = localNodeDataShards.begin(); shardItr != localNodeDataShards.end(); ++shardItr){
 			stringstream ss;
-			ss << "Index size : " << shardItr->second.server->getIndexer()->getNumberOfDocumentsInIndex();
+			ss << "Index size : " ;
+			if(shardItr->second.server){
+
+				ss << shardItr->second.server->getIndexer()->getNumberOfDocumentsInIndex();
+			}
 			localNodeShardsTable.printNextCell(shardItr->second.indexDirectory + "%" + ss.str());
 		}
 	}
@@ -415,7 +485,7 @@ void Cluster_Writeview::removeNode(const NodeId & failedNodeId){
 			clusterShard->state = SHARDSTATE_UNASSIGNED;
 			clusterShard->isLocal = false;
 			clusterShard->load = 0;
-			clusterShard->nodeId = 0;
+			clusterShard->nodeId = (unsigned)-1;
 		}
 	}
 
@@ -464,9 +534,14 @@ void Cluster_Writeview::fixAfterDiskLoad(Cluster_Writeview * oldWrireview){
 	double load;
 	beginClusterShardsIteration();
 	while(getNextClusterShard(id, load, state, isLocal, nodeId)){
+		if(state == SHARDSTATE_UNASSIGNED){
+			continue;
+		}
 		ClusterShard_Writeview * shard = this->clusterShards.at(this->clusterShardsCursor-1);
-		if(! isLocal){
+		if(! isLocal ){
 			shard->state = SHARDSTATE_PENDING;
+			shard->load = 0;
+			shard->nodeId = (unsigned)-1;
 		}else{
 			shard->nodeId = oldWrireview->currentNodeId;
 		}
@@ -522,6 +597,7 @@ Cluster_Writeview * Cluster_Writeview::loadWriteviewFromDisk(string absDirectory
 	infile.read((char *)&numberOfBytes, sizeof(unsigned));
 	MessageAllocator ma;
 	void * serializedCluster = ma.allocateByteArray(numberOfBytes);
+	infile.read((char *)serializedCluster, numberOfBytes);
 	writeview->deserialize(serializedCluster);
 	ma.deallocateByreArray(serializedCluster, numberOfBytes);
 	infile.close();
@@ -586,6 +662,7 @@ void Cluster_Writeview::assignLocalClusterShard(const ClusterShardId & shardId, 
 	shard->isLocal = true;
 	shard->nodeId = this->currentNodeId;
 	shard->load = 0;
+	ASSERT(shard->state == SHARDSTATE_UNASSIGNED);
 	shard->state = SHARDSTATE_READY;
 	localClusterDataShards[shardId] = physicalShardInfo;
 }
@@ -675,21 +752,6 @@ bool Cluster_Writeview::getNextLocalClusterShard(ClusterShardId & shardId, doubl
 	}
 	return false;
 }
-bool Cluster_Writeview::getNextUnassignedClusterShard(ClusterShardId & shardId){
-	while(true){
-		if(this->clusterShardsCursor >= this->clusterShards.size()){
-			return false;
-		}
-		ClusterShard_Writeview * shard = this->clusterShards[this->clusterShardsCursor++];
-		if( shard->state != SHARDSTATE_UNASSIGNED ){
-			continue;
-		}
-		shardId = shard->id;
-		return true;
-	}
-	return false;
-}
-
 
 void Cluster_Writeview::addLocalNodeShard(const NodeShardId & nodeShardId, const double load, const LocalPhysicalShard & physicalShardInfo){
     ASSERT(this->currentNodeId == nodeShardId.nodeId);

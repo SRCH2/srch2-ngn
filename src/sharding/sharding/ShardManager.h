@@ -35,6 +35,7 @@ class ShardManager : public CallBackHandler{
 public:
 
 	static ShardManager * createShardManager(ConfigManager * configManager, ResourceMetadataManager * metadataManager);
+	static void deleteShardManager();
 	static ShardManager * getShardManager();
 	static NodeId getCurrentNodeId();
 	static Cluster_Writeview * getWriteview();

@@ -43,6 +43,10 @@ public:
 			return buffer;
 		}
 
+		bool operator==(const MoveToMeNotification::START & right){
+			return shardId == right.shardId;
+		}
+
 		ClusterShardId getShardId() const{
 			return this->shardId;
 		}

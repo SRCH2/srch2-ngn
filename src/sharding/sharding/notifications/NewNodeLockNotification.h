@@ -53,6 +53,13 @@ public:
 	ResourceLockRequest * getLockRequest() const{
 		return this->lockRequest;
 	}
+
+	bool operator==(const NewNodeLockNotification & right){
+		if(allNodesUpToNewNode != right.allNodesUpToNewNode){
+			return false;
+		}
+		return *lockRequest == *(right.lockRequest);
+	}
 private:
 	vector<NodeId> allNodesUpToNewNode; // without the new one itself
 	ResourceLockRequest * lockRequest;
@@ -89,6 +96,9 @@ public:
 	    }
 		LockHoldersRepository * getShardLockRepository() const{
 			return shardLockRepository;
+		}
+		bool operator==(const NewNodeLockNotification::ACK & right) const{
+			return (*shardLockRepository == *(right.shardLockRepository));
 		}
 	private:
 	    LockHoldersRepository * shardLockRepository;

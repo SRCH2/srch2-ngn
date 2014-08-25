@@ -45,6 +45,10 @@ ResourceLockRequest * LockingNotification::getLockRequest() const {
 	return this->lockRequest;
 }
 
+bool LockingNotification::operator==(const LockingNotification & lockingNotification){
+	return *lockRequest == *(lockingNotification.lockRequest);
+}
+
 LockingNotification::ACK::ACK(bool grantedFlag){
 	this->grantedFlag = grantedFlag;
 };
@@ -71,6 +75,10 @@ void * LockingNotification::ACK::deserialize(void * buffer){
 
 bool LockingNotification::ACK::isGranted() const{
 	return grantedFlag;
+}
+
+bool LockingNotification::ACK::operator==(const LockingNotification::ACK & right){
+	return grantedFlag == right.grantedFlag;
 }
 
 LockingNotification::RV_RELEASED::RV_RELEASED(unsigned metadataVersionId){

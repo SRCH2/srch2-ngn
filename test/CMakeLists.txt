@@ -210,6 +210,20 @@ SET_TESTS_PROPERTIES(GeoIndexUpdate_Test PROPERTIES ENVIRONMENT "directoryName=$
 ADD_TEST(SingleNodeIntraCommunication_Test ${CMAKE_CURRENT_BINARY_DIR}/sharding/unit/SingleNodeIntraCommunicationTest"--verbose")
 ADD_TEST(TransportInitialization_Test ${CMAKE_CURRENT_BINARY_DIR}/sharding/unit/TransportInitializationTest"--verbose")
 ADD_TEST(ResourceLockManager_Test ${CMAKE_CURRENT_BINARY_DIR}/sharding/unit/ResourceLockManager_Test"--verbose")
+ADD_TEST(Notification_Test ${CMAKE_CURRENT_BINARY_DIR}/sharding/unit/Notification_Test"--verbose")
+set_property(
+    TEST
+        Notification_Test
+    PROPERTY
+        ENVIRONMENT "ConfigManagerFilePath=${CMAKE_SOURCE_DIR}/test/sharding/unit/test_data/MetadataTestConf.xml"
+)
+ADD_TEST(Metadata_Test ${CMAKE_CURRENT_BINARY_DIR}/sharding/unit/Metadata_Test"--verbose")
+set_property(
+    TEST
+        Metadata_Test
+    PROPERTY
+        ENVIRONMENT "ConfigManagerFilePath=${CMAKE_SOURCE_DIR}/test/sharding/unit/test_data/MetadataTestConf.xml"
+)
 if (SYSTEM_TEST_ENABLED)
     ADD_TEST( System_Tests ${CMAKE_SOURCE_DIR}/test/wrapper/system_tests/main.sh ${CMAKE_SOURCE_DIR}/test/wrapper/system_tests ${CMAKE_BINARY_DIR}/src/server)
 endif()

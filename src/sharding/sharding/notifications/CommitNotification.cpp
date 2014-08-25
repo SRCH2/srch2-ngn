@@ -22,5 +22,13 @@ ShardingMessageType CommitNotification::messageType() const{
 	return ShardingCommitMessageType;
 }
 
+bool CommitNotification::operator==(const CommitNotification & right){
+	return *metadataChange == *(right.metadataChange);
+}
+
+bool CommitNotification::ACK::operator==(const CommitNotification::ACK & right){
+	return true;
+}
+
 }
 }

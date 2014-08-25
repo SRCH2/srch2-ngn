@@ -68,6 +68,11 @@ SingleResourceLockRequest::SingleResourceLockRequest(const SingleResourceLockReq
 	this->holders = copy.holders;
 }
 
+bool SingleResourceLockRequest::operator==(const SingleResourceLockRequest & right){
+	return (resource == right.resource) && (lockType == right.lockType)
+			&& (requestType == right.requestType) && (holders == right.holders);
+}
+
 void * SingleResourceLockRequest::serialize(void * buffer) const{
 	buffer = resource.serialize(buffer);
 	buffer = srch2::util::serializeFixedTypes(lockType, buffer);
@@ -175,6 +180,20 @@ bool ResourceLockRequest::applyNodeFailure(const unsigned failedNodeId){
 	}
 	requestBatch.clear();
 	return false;
+}
+bool ResourceLockRequest::operator==(const ResourceLockRequest & right){
+	if(isBlocking != right.isBlocking){
+		return false;
+	}
+	if(requestBatch.size() != right.requestBatch.size()){
+		return false;
+	}
+	for(unsigned i = 0 ; i < requestBatch.size(); ++i){
+		if(! ( *(requestBatch.at(i)) == *(right.requestBatch.at(i)))){
+			return false;
+		}
+	}
+	return true;
 }
 
 void * ResourceLockRequest::serialize(void * buffer) const{
@@ -567,8 +586,8 @@ void * LockHoldersRepository::deserializeHolderList(map<ClusterShardId, vector<N
 	for(unsigned i = 0 ; i < sizeTemp ; ++i){
 		ClusterShardId key;
 		vector<NodeOperationId> value;
-		holders[key] = value;
 		buffer = key.deserialize(buffer);
+		holders[key] = value;
 		buffer = srch2::util::deserializeVectorOfDynamicTypes(buffer, holders[key]);
 	}
 	return buffer;

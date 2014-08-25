@@ -1,5 +1,5 @@
 #include "Cluster.h"
-
+#include <iostream>
 
 #include "core/util/Assert.h"
 #include "core/util/SerializationHelper.h"

@@ -40,6 +40,10 @@ public:
     ClusterShardId getSrcShardId() const{
     	return srcShardId;
     }
+
+	bool operator==(const CopyToMeNotification & right){
+		return srcShardId == right.srcShardId;
+	}
 private:
 	ClusterShardId srcShardId;
 };

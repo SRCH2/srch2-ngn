@@ -9,6 +9,8 @@ INCLUDE_DIRECTORIES(
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/thirdparty/event/include
     ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src-0.5.0/include
+        ${CMAKE_SOURCE_DIR}/thirdparty/gperftools/include
+    ${CMAKE_SOURCE_DIR}/thirdparty/mongo-cxx-driver-v2.4/src/
 )
 
 set(GPERFTOOL_LIBS "")
@@ -76,6 +78,22 @@ TARGET_LINK_LIBRARIES(ResourceLockManager_Test
                         ${MONGO_CLIENT_LIBRARY} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
                     )
 LIST(APPEND SHARD_UNIT_TESTS ResourceLockManager_Test)
+
+ADD_EXECUTABLE(Notification_Test ./shard_manager/Notification_Test.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:SHARDING_OBJECTS> $<TARGET_OBJECTS:SERVER_OBJECTS>)
+TARGET_LINK_LIBRARIES(Notification_Test
+                        ${Srch2InstantSearch_LIBRARIES} 
+                        ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
+                        ${MONGO_CLIENT_LIBRARY} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
+                    )
+LIST(APPEND SHARD_UNIT_TESTS Notification_Test)
+
+ADD_EXECUTABLE(Metadata_Test ./shard_manager/Metadata_Test.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:SHARDING_OBJECTS> $<TARGET_OBJECTS:SERVER_OBJECTS>)
+TARGET_LINK_LIBRARIES(Metadata_Test
+                        ${Srch2InstantSearch_LIBRARIES} 
+                        ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
+                        ${MONGO_CLIENT_LIBRARY} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
+                    )
+LIST(APPEND SHARD_UNIT_TESTS Metadata_Test)
 
 ADD_CUSTOM_TARGET(build_shard_unit_test ALL DEPENDS ${SHARD_UNIT_TESTS} )
 ADD_DEPENDENCIES(build_shard_unit_test srch2_core)

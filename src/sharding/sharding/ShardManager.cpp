@@ -33,12 +33,20 @@ ShardManager * ShardManager::singleInstance = NULL;
 
 ShardManager * ShardManager::createShardManager(ConfigManager * configManager, ResourceMetadataManager * metadataManager){
 	if(singleInstance != NULL){
-		ASSERT(false);
 		return singleInstance;
 	}
 	// only shard manager must be singleton. ConfigManager must be accessed from shard manager
 	singleInstance = new ShardManager(configManager, metadataManager);
 	return singleInstance;
+}
+
+void ShardManager::deleteShardManager(){
+	if(singleInstance == NULL){
+		return ;
+	}
+	delete singleInstance;
+	singleInstance = NULL;
+	return;
 }
 
 ShardManager * ShardManager::getShardManager(){

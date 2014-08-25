@@ -49,6 +49,8 @@ struct SingleResourceLockRequest{
 
 	};
 
+	bool operator==(const SingleResourceLockRequest & right);
+
 	void * serialize(void * buffer) const;
 	unsigned getNumberOfBytes() const;
 	void * deserialize(void * buffer);
@@ -66,7 +68,7 @@ struct ResourceLockRequest{
 
 	vector<SingleResourceLockRequest *> requestBatch;
 	bool isBlocking;
-
+	bool operator==(const ResourceLockRequest & right);
 	void * serialize(void * buffer) const;
 	unsigned getNumberOfBytes() const;
 	void * deserialize(void * buffer);

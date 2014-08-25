@@ -34,6 +34,7 @@ public:
 	// 1. assigns the primary shard of each partition to this node
 	// 2. starts empty search engines for all primary shards.
 	void initializeCluster();
+	void saveToDisk(const string & clusterName);
 private:
 	ResourceMetadataManager * metadataManager;
 	ConfigManager * configManager;

@@ -31,7 +31,12 @@ struct LocalPhysicalShard{
 	LocalPhysicalShard(boost::shared_ptr<Srch2Server> server, const string & indexDirectory, const string & jsonFileCompletePath);
 	LocalPhysicalShard(const LocalPhysicalShard & copy);
 
-	void setServer(boost::shared_ptr<Srch2Server> server);
+//	void setServer(boost::shared_ptr<Srch2Server> server);
+
+	bool operator==(const LocalPhysicalShard & right) const{
+		return (indexDirectory.compare(right.indexDirectory) == 0) &&
+				(jsonFileCompletePath.compare(right.jsonFileCompletePath) == 0);
+	}
 
 	void * serialize(void * buffer) const;
 	unsigned getNumberOfBytes() const;
@@ -50,6 +55,10 @@ struct ClusterShard_Writeview{
 	void * deserialize(void * buffer);
 
 
+	bool operator==(const ClusterShard_Writeview & right){
+		return (id == right.id) && (state == right.state) &&
+				(isLocal == right.isLocal) && (nodeId == right.nodeId) && (load == right.load);
+	}
 	ClusterShardId id;
 	ShardState state;
 	bool isLocal;
@@ -89,6 +98,10 @@ struct NodeShard_Writeview{
 		return buffer;
 	}
 
+	bool operator==(const NodeShard_Writeview & right){
+		return (id == right.id) &&
+				(isLocal == right.isLocal) && (load == right.load);
+	}
 
 
 	NodeShardId id;
@@ -113,10 +126,6 @@ public:
 	map<unsigned,  LocalPhysicalShard > localNodeDataShards;
 
 
-	unsigned getLocalNodeTotalLoad(){
-		return localClusterDataShards.size()+localNodeDataShards.size();
-	}
-
 	//////////////////// Runtime information which should be serialized /////////////////////////
 	map<NodeId, std::pair<ShardingNodeState, Node *> > nodes;
 	map<unsigned, CoreInfo_t *> cores;
@@ -124,6 +133,8 @@ public:
 	Cluster_Writeview(unsigned versionId, string clusterName, vector<CoreInfo_t *> cores);
 	Cluster_Writeview(const Cluster_Writeview & copy);
 	Cluster_Writeview();
+	bool operator==(const Cluster_Writeview & right);
+	bool isEqualDiscardingLocalShards(const Cluster_Writeview & right);
 	void print();
 
 	void printNodes();
@@ -134,14 +145,12 @@ public:
 	void assignExternalClusterShard(const ClusterShardId & shardId, const NodeId & nodeId, const double & load);
 	void unassignClusterShard(const ClusterShardId & shardId);
 	void setClusterShardServer(const ClusterShardId & shardId, boost::shared_ptr<Srch2Server> server);
-	void moveClusterShard(const ClusterShardId & shardId, const NodeId & destNodeId, const LocalPhysicalShard & physicalShardInfo);
 	void moveClusterShard(const ClusterShardId & shardId, const NodeId & destNodeId);
 	void moveClusterShard(const ClusterShardId & shardId, const LocalPhysicalShard & physicalShard);
 
 	void beginClusterShardsIteration();
 	bool getNextClusterShard(ClusterShardId & shardId, double & load, ShardState & state, bool & isLocal, NodeId & nodeId);
 	bool getNextLocalClusterShard(ClusterShardId & shardId, double & load,  LocalPhysicalShard & localPhysicalShard );
-	bool getNextUnassignedClusterShard(ClusterShardId & shardId);
 
 	void addLocalNodeShard(const NodeShardId & nodeShardId, const double load, const LocalPhysicalShard & physicalShardInfo);
 	void addExternalNodeShard(const NodeShardId & nodeShardId, const double load);
@@ -176,6 +185,9 @@ public:
 
 	void fixAfterDiskLoad(Cluster_Writeview * newWrireview);
 
+	unsigned getLocalNodeTotalLoad(){
+		return localClusterDataShards.size()+localNodeDataShards.size();
+	}
 
 	// Serialization methods
 	void saveWriteviewOnDisk(string absDirectoryPath);
@@ -183,6 +195,14 @@ public:
 	void * serialize(void * buffer, bool includeLocalInfoFlag = true) const;
 	unsigned getNumberOfBytes(bool includeLocalInfoFlag = true) const;
 	void * deserialize(void * buffer, bool includeLocalInfoFlag = true);
+
+	vector<ClusterShard_Writeview *> & getClusterShards(){
+		return clusterShards;
+	}
+
+	vector<NodeShard_Writeview *> & getNodeShards(){
+		return nodeShards;
+	}
 private:
 	unsigned clusterShardsCursor;
 	vector<ClusterShard_Writeview *> clusterShards;
@@ -192,6 +212,7 @@ private:
 
 	// cluster shard id => array index
 	unsigned INDEX(const ClusterShardId & shardId);
+	void moveClusterShard(const ClusterShardId & shardId, const NodeId & destNodeId, const LocalPhysicalShard & physicalShardInfo);
 };
 
 }
