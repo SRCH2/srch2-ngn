@@ -425,7 +425,7 @@ void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode,
             coreInfo->queryTermBoost = childNode.text().as_uint();
         } else {
             configSuccess = false;
-            Logger::error("In core %s : The value provided for queryTermBoost is not a (non-negative)number.", coreInfo->name);
+            Logger::error("In core %s : The value provided for queryTermBoost is not a (non-negative)number.", coreInfo->name.c_str());
             return;
         }
     }
@@ -509,7 +509,7 @@ void ConfigManager::parseQuery(const xml_node &queryNode, CoreInfo_t *coreInfo,
             coreInfo->scoringExpressionString = exp;
         } else {
             configSuccess = false;
-            Logger::error("In core %s : The expression provided for recordScoreExpression is not a valid.", coreInfo->name);
+            Logger::error("In core %s : The expression provided for recordScoreExpression is not a valid.", coreInfo->name.c_str());
             return;
         }
     }
@@ -718,7 +718,7 @@ void ConfigManager::parseQuery(const xml_node &queryNode, CoreInfo_t *coreInfo,
         if (marker.length() > 0) {
             coreInfo->fuzzyHighlightMarkerPre = marker;
         } else {
-            Logger::error("In core %s : The highlighter pre marker is an empty string, so the engine will use the default marker.", coreInfo->name.c_str())
+            Logger::error("In core %s : The highlighter pre marker is an empty string, so the engine will use the default marker.", coreInfo->name.c_str());
             return;
         }
     }
@@ -1012,7 +1012,7 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode,
             if (isValidSearcherType(st)) {
                 coreInfo->searchType = childNode.text().as_int();
             } else {
-                Logger::error("In core %s : The Searcher Type only can get 0 or 1", coreInfo->name);
+                Logger::error("In core %s : The Searcher Type only can get 0 or 1", coreInfo->name.c_str());
                 configSuccess = false;
                 return;
             }
@@ -1162,7 +1162,7 @@ bool ConfigManager::setCoreParseStateVector(bool isSearchable, bool isRefining,
             coreParseState->searchableFieldTypesVector.push_back(
                     parseFieldType(temporaryString));
         } else {
-            Logger::error("In core %s : %s is not a valid field type for searchable fields.", coreInfo->name.c_str(), temporaryString);
+            Logger::error("In core %s : %s is not a valid field type for searchable fields.", coreInfo->name.c_str(), temporaryString.c_str());
             Logger::error("Note: searchable fields only accept 'text' type. Setting 'searchable' or 'indexed' to true makes a field searchable.");
             return false;
         }
@@ -1207,7 +1207,7 @@ bool ConfigManager::setRefiningStateVectors(const xml_node &field,
         if (this->isValidFieldType(temporaryString, false)) {
             RefiningFieldTypesVector.push_back(parseFieldType(temporaryString));
         } else {
-            Logger::error("In core %s : %s is not a valid field type for refining fields.", coreInfo->name.c_str(), temporaryString);
+            Logger::error("In core %s : %s is not a valid field type for refining fields.", coreInfo->name.c_str(), temporaryString.c_str());
             Logger::error(" Note: refining fields only accept 'text', 'integer',"
                             " 'long', 'float', 'double' and 'time'. Setting 'refining' "
                             "or 'indexed' to true makes a field refining.");
@@ -1256,7 +1256,7 @@ bool ConfigManager::setRefiningStateVectors(const xml_node &field,
                     }
                 }
             } else {
-                Logger::error("In core %s : %s is not compatible with the type used for this field.", coreInfo->name.c_str(), temporaryString);
+                Logger::error("In core %s : %s is not compatible with the type used for this field.", coreInfo->name.c_str(), temporaryString.c_str());
             }
             RefiningAttributesDefaultVector.push_back(temporaryString);
         } else {
@@ -2110,7 +2110,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
         }
     }
     // check if data source exists at the top level
-    xml_node topDataFileNode = childNode.child(dataFileString);
+    xml_node topDataFileNode = configNode.child(dataFileString);
     if (topDataFileNode) {
         // create a default core for settings outside of <cores>
         if (coreInfoMap.find(getDefaultCoreName()) == coreInfoMap.end()) {
@@ -2132,7 +2132,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
 
     defaultCoreInfo = coreInfoMap[getDefaultCoreName()];
     if (defaultCoreInfo == NULL) {
-        Logger::error("Default core %s not found.",getDefaultCoreName());
+        Logger::error("Default core %s not found.",getDefaultCoreName().c_str());
         configSuccess = false;
         return;
     }
