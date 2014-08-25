@@ -129,7 +129,6 @@
             <dbKeyValue key="db" value="srch2Test" />
             <dbKeyValue key="collection" value="movies" />
             <dbKeyValue key="listenerWaitTime" value="3" />
-            <dbKeyValue key="maxRetryOnFailure" value="3" />
         </dbKeyValues>
     </dbParameters>
          

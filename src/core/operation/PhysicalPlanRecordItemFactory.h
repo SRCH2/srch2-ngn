@@ -68,14 +68,20 @@ public:
 	inline void getRecordMatchEditDistances(vector<unsigned> & editDistances) const{
 		editDistances.insert(editDistances.end(),this->editDistances.begin(),this->editDistances.end());
 	}
-	inline void getRecordMatchAttributeBitmaps(vector<unsigned> & attributeBitmaps) const{
-		attributeBitmaps.insert(attributeBitmaps.end(),this->attributeBitmaps.begin(),this->attributeBitmaps.end());
+	inline void getRecordMatchAttributeBitmaps(vector<vector<unsigned> > & attributeIdsList) const{
+		for (unsigned i = 0; i < this->attributeIdsList.size(); ++i) {
+			attributeIdsList.push_back(vector<unsigned>());
+			attributeIdsList.back().assign(this->attributeIdsList[i].begin(), this->attributeIdsList[i].end());
+		}
 	}
 	inline void getPositionIndexOffsets(vector<unsigned> & positionIndexOffsets)const {
 		positionIndexOffsets.insert(positionIndexOffsets.end(),this->positionIndexOffsets.begin(),this->positionIndexOffsets.end());
 	}
 	inline void getTermTypes(vector<TermType> & rTermTypes) const {
 		rTermTypes.insert(rTermTypes.end(),this->termTypes.begin(),this->termTypes.end());
+	}
+	inline bool getIsGeo(){
+		return this->geoFlag;
 	}
 	vector<TermType> & getTermTypesRef(){
 		return termTypes;
@@ -97,14 +103,17 @@ public:
 	inline void setRecordMatchEditDistances(const vector<unsigned> & editDistances) {
 		this->editDistances = editDistances;
 	}
-	inline void setRecordMatchAttributeBitmaps(const vector<unsigned> & attributeBitmaps) {
-		this->attributeBitmaps = attributeBitmaps;
+	inline void setRecordMatchAttributeBitmaps(const vector<vector<unsigned> > & attributeIdsList) {
+		this->attributeIdsList = attributeIdsList;
 	}
 	inline void setPositionIndexOffsets(const vector<unsigned> & positionIndexOffsets){
 		this->positionIndexOffsets = positionIndexOffsets;
 	}
 	inline void setTermTypes(const vector<TermType> & rTermType){
 		this->termTypes = rTermType;
+	}
+	inline void setIsGeo(bool isGeoFlag){
+		this->geoFlag = isGeoFlag;
 	}
 	inline void addTermType(const TermType & rTermType){
 		this->termTypes.push_back(rTermType);
@@ -121,8 +130,9 @@ public:
     	// no need to loop over vector
 
     	// attributeBitmaps
-    	totalNumberOfBytes += attributeBitmaps.capacity() * sizeof(unsigned);
-    	// no need to loop over vector
+    	for (unsigned i = 0; i < attributeIdsList.size(); ++i)
+    		totalNumberOfBytes += attributeIdsList[i].capacity() * sizeof(unsigned);
+    	totalNumberOfBytes += attributeIdsList.capacity() * sizeof(void *);
 
     	// positionIndexOffsets
     	totalNumberOfBytes += positionIndexOffsets.capacity() * sizeof(unsigned);
@@ -147,21 +157,26 @@ public:
     	valuesOfParticipatingRefiningAttributes.clear();
     	matchingPrefixes.clear();
     	editDistances.clear();
-    	attributeBitmaps.clear();
+    	attributeIdsList.clear();
     	positionIndexOffsets.clear();
-	termTypes.clear();
+    	termTypes.clear();
     }
+
+    PhysicalPlanRecordItem(){
+    	this->geoFlag = false;
+    };
 
 	~PhysicalPlanRecordItem(){};
 
     std::map<std::string,TypedValue> valuesOfParticipatingRefiningAttributes;
 private:
+    bool geoFlag; // this flag shows that this Item is for a term or a geo element
 	unsigned recordId;
 	float recordStaticScore;
 	float recordRuntimeScore;
 	vector<TrieNodePointer> matchingPrefixes;
 	vector<unsigned> editDistances;
-	vector<unsigned> attributeBitmaps;
+	vector<vector<unsigned> >attributeIdsList;
 	vector<unsigned> positionIndexOffsets;
 	vector<TermType> termTypes;
 };
@@ -221,9 +236,9 @@ public:
 		vector<unsigned> editDistances;
 		oldObj->getRecordMatchEditDistances(editDistances);
 		newObj->setRecordMatchEditDistances(editDistances);
-		vector<unsigned> attributeBitmaps;
-		oldObj->getRecordMatchAttributeBitmaps(attributeBitmaps);
-		newObj->setRecordMatchAttributeBitmaps(attributeBitmaps);
+		vector<vector<unsigned> > attributeIdsList;
+		oldObj->getRecordMatchAttributeBitmaps(attributeIdsList);
+		newObj->setRecordMatchAttributeBitmaps(attributeIdsList);
 		vector<unsigned> positionIndexOffsets;
 		oldObj->getPositionIndexOffsets(positionIndexOffsets);
 		newObj->setPositionIndexOffsets(positionIndexOffsets);
@@ -245,9 +260,9 @@ public:
 		vector<unsigned> editDistances;
 		oldObj->getRecordMatchEditDistances(editDistances);
 		newObj->setRecordMatchEditDistances(editDistances);
-		vector<unsigned> attributeBitmaps;
-		oldObj->getRecordMatchAttributeBitmaps(attributeBitmaps);
-		newObj->setRecordMatchAttributeBitmaps(attributeBitmaps);
+		vector<vector<unsigned> > attributeIdsList;
+		oldObj->getRecordMatchAttributeBitmaps(attributeIdsList);
+		newObj->setRecordMatchAttributeBitmaps(attributeIdsList);
 		vector<unsigned> positionIndexOffsets;
 		oldObj->getPositionIndexOffsets(positionIndexOffsets);
 		newObj->setPositionIndexOffsets(positionIndexOffsets);

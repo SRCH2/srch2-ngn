@@ -13,6 +13,9 @@
 #include <map>
 #include <sqlite3.h>
 
+int indexedRecordsCount;
+int totalRecordsCount;
+
 //The callback function of createIndex.
 int addRecord_callback(void * dbConnector, int argc, char ** argv,
         char **azColName);
@@ -57,7 +60,6 @@ private:
     std::string LOG_TABLE_NAME_ID;
     std::string PRIMARY_KEY_TYPE;
     std::string PRIMARY_KEY_NAME;
-    int maxRetryOnFailure;
     int listenerWaitTime;
 
     //Parameters for Sqlite
@@ -85,7 +87,8 @@ private:
     bool createLogTableIfNotExistence();
 
     //Save the lastAccessedLogRecordTime from the disk
-    void saveLastAccessedLogRecordTime(const std::string & lastAccessedLogRecordTime);
+    void saveLastAccessedLogRecordTime(
+            const std::string & lastAccessedLogRecordTime);
     //Load the lastAccessedLogRecordTime from the disk
     void loadLastAccessedLogRecordTime(std::string & lastAccessedLogRecordTime);
 

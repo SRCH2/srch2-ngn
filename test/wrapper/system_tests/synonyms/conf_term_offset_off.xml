@@ -49,11 +49,11 @@
        <!--  <fieldBoost>title^12 tags^16</fieldBoost> -->
         <fieldBoost>body^30</fieldBoost>
 
-        <recordBoostField>stars</recordBoostField>
-
         <defaultQueryTermBoost>1</defaultQueryTermBoost>
 
 	<enablePositionIndex>1</enablePositionIndex> 
+        <recordBoostField>stars</recordBoostField>  
+
 
     </indexConfig>
   
@@ -127,6 +127,7 @@
 
     <schema name="SRCH2" version="3">
        <fields>
+          <field name="stars" type="float" refining="true" highlight="true" />
           <field name="title"  type="text" indexed="true" highlight="true"/>
           <field name="body"  type="text" indexed="true" highlight="true"/>
           <field name="tags"  type="text" indexed="true" highlight="true" multivalued="true"/>

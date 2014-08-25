@@ -34,7 +34,7 @@ namespace instantsearch {
 struct UnionLowestLevelTermVirtualListOperatorHeapItem {
     //TODO (OPT) Use string and ed over each TermVirtualList rather than each HeapItem
     unsigned invertedListId;
-    unsigned attributeBitMap;           //only used for attribute based query
+    vector<unsigned> attributeIdsList;           //only used for attribute based query
     unsigned cursorVectorPosition;
     unsigned recordId; //invertedListTop
     float termRecordRuntimeScore;
@@ -52,7 +52,6 @@ struct UnionLowestLevelTermVirtualListOperatorHeapItem {
         this->invertedListId = 0;
         this->cursorVectorPosition = 0;
         this->recordId = 0;
-        this->attributeBitMap = 0;
         this->termRecordRuntimeScore = 0;
         this->termRecordStaticScore = 0;
         this->positionIndexOffset = 0;
@@ -63,7 +62,7 @@ struct UnionLowestLevelTermVirtualListOperatorHeapItem {
     UnionLowestLevelTermVirtualListOperatorHeapItem(unsigned invertedListId,
              unsigned cursorVectorPosition,
              unsigned recordId,
-             unsigned attributeBitMap,
+             const vector<unsigned>& attributeIdsList,
              float termRecordRuntimeScore,
              float termRecordStaticScore,
              unsigned positionIndexOffset,
@@ -73,7 +72,7 @@ struct UnionLowestLevelTermVirtualListOperatorHeapItem {
         this->invertedListId = invertedListId;
         this->cursorVectorPosition = cursorVectorPosition;
         this->recordId = recordId;
-        this->attributeBitMap = attributeBitMap;
+        this->attributeIdsList = attributeIdsList;
         this->termRecordRuntimeScore = termRecordRuntimeScore;
         this->termRecordStaticScore = termRecordStaticScore;
         this->positionIndexOffset = positionIndexOffset;
@@ -86,7 +85,7 @@ struct UnionLowestLevelTermVirtualListOperatorHeapItem {
         this->invertedListId = oldObj.invertedListId;
         this->cursorVectorPosition = oldObj.cursorVectorPosition;
         this->recordId = oldObj.recordId;
-        this->attributeBitMap = oldObj.attributeBitMap;
+        this->attributeIdsList = oldObj.attributeIdsList;
         this->termRecordRuntimeScore = oldObj.termRecordRuntimeScore;
         this->termRecordStaticScore = oldObj.termRecordStaticScore;
         this->positionIndexOffset = oldObj.positionIndexOffset;

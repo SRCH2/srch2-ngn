@@ -126,7 +126,6 @@
             <dbKeyValue key="db" value="demo" />
             <dbKeyValue key="collection" value="movies" />
             <dbKeyValue key="listenerWaitTime" value="3" />
-            <dbKeyValue key="maxRetryOnFailure" value="3" />
         </dbKeyValues>
     </dbParameters>
 </config>

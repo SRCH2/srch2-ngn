@@ -236,7 +236,6 @@ void testTextEmptyId(const CoreInfo_t *indexDataConfig,
 }
 
 //Test the JSON record with bad id field ("1123dsaf"), the result should be true.
-//TODO Current engine treat all the primary as text format,
 //no matter user defined it as integer or text or float
 void testTextBadId(const CoreInfo_t *indexDataConfig,
         RecordSerializer & recSerializer, Record *record) {
@@ -248,7 +247,6 @@ void testTextBadId(const CoreInfo_t *indexDataConfig,
 }
 
 //Test the JSON record with bad id field ("dasf"), the result should be true.
-//TODO Current engine treat all the primary as text format,
 //no matter user defined it as integer or text or float
 void testTextBadId2(const CoreInfo_t *indexDataConfig,
         RecordSerializer & recSerializer, Record *record) {
@@ -364,7 +362,7 @@ int main(int argc, char **argv) {
     //Doing preparation for the tests.
     string configFile(string(getenv("srch2_config_file")) + "/conf.xml");
 
-    CoreInfo_t* indexDataConfig;
+    CoreInfo_t* indexDataConfig = NULL;
     stringstream log_str;
 
     ConfigManager * conf = new ConfigManager(configFile);

@@ -106,9 +106,9 @@ PhysicalPlanRecordItem * MergeSortedByIDOperator::getNext(const PhysicalPlanExec
 			for(vector<PhysicalPlanRecordItem *>::iterator match = recordMatches.begin() ; match != recordMatches.end(); ++match){
 				(*match)->getRecordMatchEditDistances(recordKeywordMatchEditDistances);
 			}
-			vector<unsigned> recordKeywordMatchBitmaps;
+			vector<vector<unsigned> > recordKeywordMatchedAttributeIdsList;
 			for(vector<PhysicalPlanRecordItem *>::iterator match = recordMatches.begin() ; match != recordMatches.end(); ++match){
-				(*match)->getRecordMatchAttributeBitmaps(recordKeywordMatchBitmaps);
+				(*match)->getRecordMatchAttributeBitmaps(recordKeywordMatchedAttributeIdsList);
 			}
 			vector<unsigned> positionIndexOffsets;
 			for(vector<PhysicalPlanRecordItem *>::iterator match = recordMatches.begin() ; match != recordMatches.end(); ++match){
@@ -124,7 +124,7 @@ PhysicalPlanRecordItem * MergeSortedByIDOperator::getNext(const PhysicalPlanExec
 			record->setRecordRuntimeScore(params.ranker->computeAggregatedRuntimeScoreForAnd(runtimeScores));
 			record->setRecordMatchingPrefixes(recordKeywordMatchPrefixes);
 			record->setRecordMatchEditDistances(recordKeywordMatchEditDistances);
-			record->setRecordMatchAttributeBitmaps(recordKeywordMatchBitmaps);
+			record->setRecordMatchAttributeBitmaps(recordKeywordMatchedAttributeIdsList);
 			record->setPositionIndexOffsets(positionIndexOffsets);
 			record->setTermTypes(termTypes);
 			// static score ignored for now
@@ -255,7 +255,9 @@ bool MergeSortedByIDOptimizationOperator::validateChildren(){
 			case PhysicalPlanNode_RandomAccessAnd:
 			case PhysicalPlanNode_RandomAccessOr:
 			case PhysicalPlanNode_RandomAccessNot:
+			case PhysicalPlanNode_RandomAccessGeo:
 			case PhysicalPlanNode_UnionLowestLevelTermVirtualList:
+			case PhysicalPlanNode_GeoNearestNeighbor:
 				// this operator cannot have TVL as a child, TVL overhead is not needed for this operator
 				return false;
 			default:{

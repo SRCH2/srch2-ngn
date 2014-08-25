@@ -105,17 +105,6 @@ public:
      */
     int search(LogicalPlan * logicalPlan , QueryResults *queryResults);
 
-    /**
-     * Does Map Search
-     */
-    int geoSearch(const Query *query, QueryResults *queryResults) ;
-
-    // for doing a geo range query with a circle
-    void geoSearch(const Circle &queryCircle, QueryResults *queryResults) ;
-
-    // for doing a geo range query with a rectangle
-    void geoSearch(const Rectangle &queryRectangle, QueryResults *queryResults) ;
-
     // for retrieving only one result by having the primary key
     void search(const std::string & primaryKey, QueryResults *queryResults) ;
 

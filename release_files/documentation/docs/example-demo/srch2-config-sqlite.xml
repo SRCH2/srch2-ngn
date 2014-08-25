@@ -101,7 +101,6 @@
             <dbKeyValue key="dbPath" value="." />
             <dbKeyValue key="tableName" value="COMPANY" />
             <dbKeyValue key="listenerWaitTime" value="3" />
-            <dbKeyValue key="maxRetryOnFailure" value="2" />
         </dbKeyValues>
     </dbParameters>
 </config>

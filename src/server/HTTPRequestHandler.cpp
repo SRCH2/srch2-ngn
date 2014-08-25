@@ -170,8 +170,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
     if(onlyFacets == false){ // We send the matching records only if "facet != only".
         (*root)["results"].resize(end - start);
         unsigned counter = 0;
-        if (queryPlan.getQueryType() == srch2is::SearchTypeMapQuery
-                && query->getQueryTerms()->empty()) //check if the query type is range query without keywords
+        if (query->getQueryTerms()->empty()) //check if the query type is range query without keywords
         {
             for (unsigned i = start; i < end; ++i) {
             	unsigned internalRecordId = queryResults->getInternalRecordId(i);
@@ -279,8 +278,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
             (*root)["fuzzy"] = (int) queryPlan.isFuzzy();
         }
     }else{ // facet only case: we only want query information
-    	if (queryPlan.getQueryType() != srch2is::SearchTypeMapQuery
-    			|| query->getQueryTerms()->empty() == false) //check if the query type is range query without keywords
+    	if ( query->getQueryTerms()->empty() == false) //check if the query type is range query without keywords
     	{
             (*root)["query_keywords"].resize(query->getQueryTerms()->size());
             for (unsigned i = 0; i < query->getQueryTerms()->size(); i++) {
@@ -363,20 +361,27 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
                     attr->second.second.begin(); category != attr->second.second.end();
                     ++category) {
 
+                /*
+                 * Offset is the relative position based on
+                 * the start position of the iterator. e.g.
+                 *
+                 * {<a,1>,<b,2>,<c,3>}
+                 *
+                 * The offset of <a,1> will be 0, <b,2> will be 1, and
+                 * <c,3> will be 2
+                 */
+                int offset = (category - attr->second.second.begin());
+
                 if(category == attr->second.second.begin() && attr->second.first == srch2is::FacetTypeRange){
-                    (*root)["facets"][attributeCounter]["facet_info"][(category
-                            - attr->second.second.begin())]["category_name"] = "lessThanStart";
+                    (*root)["facets"][attributeCounter]["facet_info"][offset]["category_name"] = "lessThanStart";
                 }else{
-                    (*root)["facets"][attributeCounter]["facet_info"][(category
-                            - attr->second.second.begin())]["category_name"] =
+                    (*root)["facets"][attributeCounter]["facet_info"][offset]["category_name"] =
                             category->first;
                 }
-                (*root)["facets"][attributeCounter]["facet_info"][(category
-                        - attr->second.second.begin())]["category_value"] =
+                (*root)["facets"][attributeCounter]["facet_info"][offset]["category_value"] =
                         category->second;
             }
 
-            //
             attributeCounter++;
         }
     }
@@ -1046,7 +1051,6 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
         break;
 
     case srch2is::SearchTypeGetAllResultsQuery:
-    case srch2is::SearchTypeMapQuery:
         finalResults->printStats();
         if(finalResults->impl->estimatedNumberOfResults < finalResults->impl->sortedFinalResults.size()){
 			finalResults->impl->estimatedNumberOfResults = finalResults->impl->sortedFinalResults.size();

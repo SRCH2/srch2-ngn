@@ -364,6 +364,7 @@
 	   <field name="price" default="200" required="true" type="float" indexed="false" refining="true"/>
 	   <field name="likes" default="0" required="true" type="integer" indexed="false" refining="true"/>
            <field name="expiration" multivalued="true" default="01/01/1920" required="true" type="time" indexed="false" refining="true"/>
+           <field name="relevance" type="float" refining="true" highlight="true" />
 	 </fields>
 	 
 	 <!--
