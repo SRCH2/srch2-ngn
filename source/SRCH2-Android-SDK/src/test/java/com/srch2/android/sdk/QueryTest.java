@@ -102,7 +102,7 @@ public class QueryTest {
                 new SearchableTerm("star wars")
                         .AND(new SearchableTerm("episode 3"))
                         .OR(new SearchableTerm("George Lucas")
-                                .AND(new SearchableTerm("Indiana Jones").UNARY_NOT()))
+                                .NOT(new SearchableTerm("Indiana Jones")))
                         .toString());
 
         Assert.assertEquals(
