@@ -28,13 +28,13 @@ struct AttributeSnippet{
 	// vector is for multiple snippets per field ..although we do not support it yet.
 	vector<string> snippet;
 
-	void * serializeForNetwork(void * buffer) {
+	void * serializeForNetwork(void * buffer) const{
 		buffer = srch2::util::serializeString(FieldId, buffer);
 		buffer = srch2::util::serializeVectorOfString(snippet, buffer);
 		return buffer;
 	}
 
-	unsigned getNumberOfBytesOfSnippets() {
+	unsigned getNumberOfBytesOfSnippets() const{
 		unsigned numberOfBytes = 0;
 		numberOfBytes += sizeof(unsigned) +FieldId.size();
 		numberOfBytes += srch2::util::getNumberOfBytesVectorOfString(snippet);
@@ -53,7 +53,7 @@ struct RecordSnippet {
 	/*
 	 * Serializes RecordSnippet object into byte array
 	 */
-	void * serializeForNetwork(void * buffer) {
+	void * serializeForNetwork(void * buffer) const{
 		buffer = srch2::util::serializeFixedTypes(recordId, buffer);
 		buffer = srch2::util::serializeFixedTypes((unsigned)fieldSnippets.size(), buffer);
 		for (unsigned i = 0; i < fieldSnippets.size(); ++i) {
@@ -62,7 +62,7 @@ struct RecordSnippet {
 		return buffer;
 	}
 
-	unsigned getNumberOfBytesOfSnippets() {
+	unsigned getNumberOfBytesOfSnippets() const{
 		unsigned numberOfBytes = 0;
 		numberOfBytes += sizeof(unsigned);
 		numberOfBytes += sizeof(unsigned);

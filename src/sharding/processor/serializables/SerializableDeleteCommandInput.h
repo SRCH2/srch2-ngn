@@ -33,9 +33,7 @@ public:
     //allocated by given allocator
     void* serialize(MessageAllocator * aloc){
         // calculate the needed size
-        unsigned numberOfBytes = 0 ;
-        numberOfBytes += sizeof(shardingKey);
-        numberOfBytes += sizeof(unsigned) + primaryKey.size();
+        unsigned numberOfBytes = getNumberOfBytes();
         // allocate memory
         void * buffer = aloc->allocateMessageReturnBody(numberOfBytes);
         // copy data
@@ -47,6 +45,14 @@ public:
         return buffer;
     }
 
+    unsigned getNumberOfBytes() const{
+        unsigned numberOfBytes = 0 ;
+        numberOfBytes += sizeof(shardingKey);
+        numberOfBytes += sizeof(unsigned) + primaryKey.size();
+        return numberOfBytes;
+    }
+
+
     //given a byte stream recreate the original object
     static DeleteCommand * deserialize(void* buffer){
 
@@ -57,6 +63,10 @@ public:
         buffer = srch2::util::deserializeString(buffer, primaryKey);
 
         return new DeleteCommand(primaryKey, shardingKey);
+    }
+
+    DeleteCommand * clone(){
+    	return new DeleteCommand(primaryKey, shardingKey);
     }
 
     //Returns the type of message which uses this kind of object as transport

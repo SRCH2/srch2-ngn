@@ -20,12 +20,20 @@ public:
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
     void* serialize(MessageAllocator * aloc){
-        return aloc->allocateMessageReturnBody(0);
+        return aloc->allocateMessageReturnBody(getNumberOfBytes());
+    }
+
+    unsigned getNumberOfBytes() const{
+        return 0;
     }
 
     //given a byte stream recreate the original object
     static GetInfoCommand * deserialize(void* buffer){
         return new GetInfoCommand();
+    }
+
+    GetInfoCommand * clone(){
+    	return new GetInfoCommand();
     }
 
     //Returns the type of message which uses this kind of object as transport

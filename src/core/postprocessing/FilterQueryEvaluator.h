@@ -68,6 +68,9 @@ public:
             std::map<std::string, TypedValue> & nonSearchableAttributeValues)= 0;
 
 	virtual string getUniqueStringForCaching() = 0;
+
+	virtual QueryExpression * getNewCopy()const =  0;
+
     virtual ~QueryExpression() {
     }
     ;
@@ -92,6 +95,19 @@ public:
         this->negative = false;
         this->messages = messages;
     }
+    RangeQueryExpression(const RangeQueryExpression & expr){
+    	this->attributeName = expr.attributeName;
+    	this->attributeValueLower = expr.attributeValueLower;
+    	this->attributeValueUpper = expr.attributeValueUpper;
+    	this->attributeName = expr.negative;
+    	this->messages = new std::vector<std::pair<MessageType, string> > ();
+    }
+
+	QueryExpression * getNewCopy() const{
+		RangeQueryExpression * newCopy = new RangeQueryExpression(*this);
+		return newCopy;
+	}
+
 
     bool parse(string &expressionString) {
         // it has field. create a vector and populate container->fieldFilter.
@@ -298,6 +314,19 @@ public:
         this->messages = messages;
     }
 
+    EqualityQueryExpression(const EqualityQueryExpression & expr){
+    	this->operation = expr.operation;
+    	this->negative = expr.negative;
+    	this->attributeName = expr.attributeName;
+    	this->attributeValue = expr.attributeValue;
+    	this->messages = new std::vector<std::pair<MessageType, string> > ();
+    }
+
+	QueryExpression * getNewCopy() const{
+		EqualityQueryExpression * newCopy = new EqualityQueryExpression(*this);
+		return newCopy;
+	}
+
     bool parse(string &expressionString) {
         string expression;
         // it has field. create a vector and populate container->fieldFilter.
@@ -453,6 +482,20 @@ public:
             std::vector<std::pair<MessageType, string> > *messages) {
         this->messages = messages;
     }
+
+    ComplexQueryExpression(const ComplexQueryExpression & expr){
+        this->parsedExpression = expr.parsedExpression;
+        this->expression = expr.expression;
+        this->symbolTable = expr.symbolTable;
+        this->symbolVariables = expr.symbolVariables;
+    	this->messages = new std::vector<std::pair<MessageType, string> > ();
+    }
+
+	QueryExpression * getNewCopy() const{
+		ComplexQueryExpression * newCopy = new ComplexQueryExpression(*this);
+		return newCopy;
+	}
+
     /*
      * this function recevies a expression string.with a trailing '$'. ex. 'Price>10$ AND Popularity:[10 TO 100]'
      * it takes out the expression and stores that in this->parsedExpression.
@@ -586,6 +629,21 @@ public:
         this->messages = messages;
         this->termFQBooleanOperator = srch2::instantsearch::BooleanOperatorAND;
     }
+    FilterQueryEvaluator(const FilterQueryEvaluator & evaluator){
+    	this->isFqBoolOperatorSet = evaluator.isFqBoolOperatorSet;
+    	this->messages = NULL;
+    	this->termFQBooleanOperator = evaluator.termFQBooleanOperator;
+
+    	std::vector<QueryExpression *> expressions;;
+    	for(unsigned exprIndx = 0 ; exprIndx < evaluator.expressions.size(); ++exprIndx){
+    		this->expressions.push_back(evaluator.expressions.at(exprIndx)->getNewCopy());
+    	}
+
+    }
+	RefiningAttributeExpressionEvaluator * getNewCopy() const{
+		FilterQueryEvaluator * newCopy = new FilterQueryEvaluator(*this);
+		return newCopy;
+	}
     void setOperation(BooleanOperation op) {
         this->termFQBooleanOperator = op;
     }

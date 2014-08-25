@@ -20,7 +20,7 @@ namespace srch2 {
 namespace httpwrapper {
 
 class ConfigManager;
-class ShardId;
+class ClusterShardId;
 
 // This class is used to collect information from the config file and pass them other modules
 // in the system.
@@ -92,7 +92,6 @@ public:
 	bool required;
 	bool isMultiValued;
 };
-
 // definitions for data source(s) (srch2Server objects within one HTTP server)
 class CoreInfo_t {
 
@@ -113,17 +112,26 @@ public:
 		return this->numberOfReplicas;
 	}
 
-	ShardId getPrimaryShardId(unsigned partitionId) const;
+	ClusterShardId getPrimaryShardId(unsigned partitionId) const;
 
 	CoreInfo_t(class ConfigManager *manager) : configManager(manager) {
 		schema = NULL;
 	};
+
 	~CoreInfo_t() {
 		if(schema != NULL){
 			delete schema;
 		}
 	};
 	friend class ConfigManager;
+
+
+	void getJsonFilePaths(vector<string> &paths) const{
+		for(vector<string>::const_iterator pathItr = dataFilePaths.begin(); pathItr != dataFilePaths.end(); ++pathItr){
+			paths.push_back(*pathItr);
+		}
+	}
+	void setJsonFilePaths(const string & path){ dataFilePaths.push_back(path); }
 
 	// **** accessors for settings in every core ****
 	const string &getName() const { return name; }
@@ -267,9 +275,19 @@ public:
 	const srch2::instantsearch::Schema* getSchema() const {
 		return this->schema;
 	};
+//	// used for test.
+//	CoreInfo_t(unsigned coreId, const string name, unsigned numberOfPartitions, unsigned replicaNumber){
+//		schema = NULL;
+//		configManager = NULL;
+//		this->setCoreId(coreId);
+//		this->name = name;
+//		this->numberOfPrimaryShards = numberOfPartitions;
+//		this->numberOfReplicas = replicaNumber;
+//	}
 
 protected:
 
+	vector<string> dataFilePaths;
 	string name; // of core
 
 	unsigned coreId; // starting from 0, auto increment

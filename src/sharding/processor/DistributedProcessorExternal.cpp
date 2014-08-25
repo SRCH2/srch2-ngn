@@ -51,12 +51,13 @@
 #include "serializables/SerializableSearchResults.h"
 #include "serializables/SerializableSerializeCommandInput.h"
 
+#include "sharding/sharding/ShardManager.h"
 #include "sharding/configuration/ConfigManager.h"
-#include "sharding/routing/RoutingManager.h"
+#include "sharding/configuration/CoreInfo.h"
 #include "sharding/processor/Partitioner.h"
-#include "sharding/processor/SearchResultsAggregatorAndPrint.h"
-#include "sharding/processor/CommandStatusAggregatorAndPrint.h"
-#include "sharding/processor/GetInfoAggregatorAndPrint.h"
+#include "sharding/processor/aggregators/SearchResultsAggregatorAndPrint.h"
+#include "sharding/processor/aggregators/CommandStatusAggregatorAndPrint.h"
+#include "sharding/processor/aggregators/GetInfoAggregatorAndPrint.h"
 #include "sharding/processor/ProcessorUtil.h"
 
 namespace srch2is = srch2::instantsearch;
@@ -73,11 +74,12 @@ namespace httpwrapper {
 //###########################################################################
 
 
-DPExternalRequestHandler::DPExternalRequestHandler(ConfigManager * configurationManager, RoutingManager * routingManager){
-    this->configurationManager = configurationManager;
-    this->routingManager = routingManager;
-    partitioner = new Partitioner(configurationManager);
-}
+DPExternalRequestHandler::DPExternalRequestHandler(ConfigManager & configurationManager,
+		TransportManager& transportManager, DPInternalRequestHandler& dpInternal):
+			dpMessageHandler(configurationManager, transportManager, dpInternal){
+	this->configurationManager = &configurationManager;
+	transportManager.registerCallbackForDPMessageHandler(&dpMessageHandler);
+};
 
 
 /*
@@ -94,15 +96,15 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , unsig
     clock_gettime(CLOCK_REALTIME, &tstart);
     // CoreInfo_t is a view of configurationManager which contains all information for the
     // core that we want to search on, this object is accesses through configurationManager.
-    boost::shared_ptr<const Cluster> clusterReadview;
-    configurationManager->getClusterReadView(clusterReadview);
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
+    ShardManager::getShardManager()->getMetadataManager()->getClusterReadView(clusterReadview);
 
 //    Logger::console("Cluster readview used for search: ");
 //    Logger::console("====================================");
 //    clusterReadview->print();
 //    Logger::console("====================================");
 
-    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCoreById(coreId);
+    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
 
     boost::shared_ptr<SearchResultsAggregator> resultAggregator(new SearchResultsAggregator(configurationManager, req, clusterReadview, coreId));
 
@@ -155,16 +157,12 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , unsig
 
     resultAggregator->setParsingValidatingRewritingTime(ts1);
 
-    // pass logical plan to broadcast through SerializableSearchCommandInput
-    SearchCommand * searchInput =
-            new SearchCommand(&resultAggregator->getLogicalPlan());
-
     // broadcasting search request to all shards , non-blocking, with timeout and callback to ResultAggregator
     // 1. first find all destination shards.
-    vector<const Shard *> destinations;
-    partitioner->getShardIDsForBroadcast(coreId, clusterReadview, destinations);
-    if(destinations.size() == 0){
-    	delete searchInput;
+    CorePartitioner * partitioner = new CorePartitioner(clusterReadview->getPartitioner(coreId));
+    vector<NodeTargetShardInfo> targets;
+    partitioner->getAllReadTargets(targets);
+    if(targets.size() == 0){
         bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
                 "All nodes are down.", headers);
     }else{
@@ -172,20 +170,25 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , unsig
 		time_t timeValue;
 		time(&timeValue);
 		timeValue = timeValue + TIMEOUT_WAIT_TIME;
-
-		RoutingManagerAPIReturnType routingStatus =
-				routingManager->broadcast<SearchCommand, SearchCommandResults>(searchInput,
+		// pass logical plan to broadcast through SerializableSearchCommandInput
+		SearchCommand * searchInput =
+				new SearchCommand(&(resultAggregator->getLogicalPlan()));
+		// request object must be saved in aggregator to be able to delete it safely
+		resultAggregator->addRequestObj(searchInput);
+		bool routingStatus = dpMessageHandler.broadcast<SearchCommand, SearchCommandResults>(searchInput,
 						true,
 						true,
 						resultAggregator,
 						timeValue,
-						destinations);
-		if(routingStatus != RoutingManagerAPIReturnTypeSuccess){
+						targets,
+						clusterReadview);
+
+		if(! routingStatus){
 	        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure",
 	                "", headers);
 		}
     }
-
+    delete partitioner;
 
 
     evhttp_clear_headers(&headers);
@@ -202,15 +205,15 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , unsig
 void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, unsigned coreId){
 
 
-    boost::shared_ptr<const Cluster> clusterReadview;
-    configurationManager->getClusterReadView(clusterReadview);
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
+    ShardManager::getShardManager()->getMetadataManager()->getClusterReadView(clusterReadview);
 
 //    Logger::console("Cluster readview used for insert: ");
 //    Logger::console("====================================");
 //    clusterReadview->print();
 //    Logger::console("====================================");
 
-    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCoreById(coreId);
+    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
     // it must be an insert query
     ASSERT(req->type == EVHTTP_REQ_PUT);
     if(req->type != EVHTTP_REQ_PUT){
@@ -325,35 +328,38 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, unsign
     resultsAggregator->setMessages(log_str);
 
 
-    vector<InsertUpdateCommand  *> inputs;
-    vector<ShardId> shardInfos;
+	// 1. first find all destination shards.
+	CorePartitioner * partitioner = new CorePartitioner(clusterReadview->getPartitioner(coreId));
     for(vector<Record *>::iterator recordItr = recordsToInsert.begin(); recordItr != recordsToInsert.end() ; ++recordItr){
-
 
         time_t timeValue;
         time(&timeValue);
         timeValue = timeValue + TIMEOUT_WAIT_TIME;
+        InsertUpdateCommand  * insertUpdateInput = new InsertUpdateCommand(*recordItr,InsertUpdateCommand::DP_INSERT);
+        resultsAggregator->addRequestObj(insertUpdateInput);
+        vector<NodeTargetShardInfo> targets;
+        partitioner->getAllWriteTargets(partitioner->hashDJB2(insertUpdateInput->getRecord()->getPrimaryKey().c_str()),
+        		clusterReadview->getCurrentNodeId(), targets);
+        if(targets.size() == 0){
+            bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
+                    "All nodes are down.");
+        }else{
 
-        const Shard * destination = partitioner->getShardIDForRecord(*recordItr,coreId, clusterReadview);
+    		bool routingStatus = dpMessageHandler.broadcast<InsertUpdateCommand, CommandStatus>(insertUpdateInput,
+    						true,
+    						true,
+    						resultsAggregator,
+    						timeValue,
+    						targets,
+    						clusterReadview);
 
-//        Logger::console("Shard destination for insert : %s", destination->toString().c_str());
-
-        InsertUpdateCommand  * insertUpdateInput=
-                new InsertUpdateCommand(*recordItr,InsertUpdateCommand::DP_INSERT);
-
-        RoutingManagerAPIReturnType routingStatus =
-                routingManager->sendMessage<InsertUpdateCommand, CommandStatus>(insertUpdateInput,
-                        true,
-                        resultsAggregator,
-                        timeValue,
-                        destination);
-
-		if(routingStatus != RoutingManagerAPIReturnTypeSuccess){
-			bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure",
-					"");
-		}
+    		if(! routingStatus){
+    	        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure","");
+    		}
+        }
 
     }
+    delete partitioner;
     // aggregated response will be prepared in CommandStatusAggregatorAndPrint::callBack and printed in
     // CommandStatusAggregatorAndPrint::finalize
 }
@@ -369,10 +375,10 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, unsign
  */
 void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, unsigned coreId){
 
-    boost::shared_ptr<const Cluster> clusterReadview;
-    configurationManager->getClusterReadView(clusterReadview);
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
+    ShardManager::getShardManager()->getMetadataManager()->getClusterReadView(clusterReadview);
 
-    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCoreById(coreId);
+    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
     // it must be an update query
     ASSERT(req->type == EVHTTP_REQ_PUT);
     if(req->type != EVHTTP_REQ_PUT){
@@ -485,31 +491,34 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, unsign
     boost::shared_ptr<StatusAggregator<InsertUpdateCommand> >
     resultsAggregator(new StatusAggregator<InsertUpdateCommand>(configurationManager,req, clusterReadview, coreId, recordsToUpdate.size()));
     resultsAggregator->setMessages(log_str);
-
+	CorePartitioner * partitioner = new CorePartitioner(clusterReadview->getPartitioner(coreId));
     for(vector<Record *>::iterator recordItr = recordsToUpdate.begin(); recordItr != recordsToUpdate.end() ; ++recordItr){
+        vector<NodeTargetShardInfo> targets;
+        partitioner->getAllWriteTargets(partitioner->hashDJB2((*recordItr)->getPrimaryKey().c_str()),
+        		clusterReadview->getCurrentNodeId(), targets);
+        if(targets.size() == 0){
+            bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
+                    "All nodes are down.");
+        }else{
+            time_t timeValue;
+            time(&timeValue);
+            timeValue = timeValue + TIMEOUT_WAIT_TIME;
+			InsertUpdateCommand  * insertUpdateInput = new InsertUpdateCommand(*recordItr,InsertUpdateCommand::DP_UPDATE);
+			resultsAggregator->addRequestObj(insertUpdateInput);
+    		bool routingStatus = dpMessageHandler.broadcast<InsertUpdateCommand, CommandStatus>(insertUpdateInput,
+    						true,
+    						true,
+    						resultsAggregator,
+    						timeValue,
+    						targets,
+    						clusterReadview);
 
-
-        time_t timeValue;
-        time(&timeValue);
-        timeValue = timeValue + TIMEOUT_WAIT_TIME;
-
-        const Shard * destination = partitioner->getShardIDForRecord(*recordItr,coreId, clusterReadview);
-
-        InsertUpdateCommand  * insertUpdateInput=
-                new InsertUpdateCommand(*recordItr,InsertUpdateCommand::DP_UPDATE);
-
-        RoutingManagerAPIReturnType routingStatus =
-                routingManager->sendMessage<InsertUpdateCommand, CommandStatus>(insertUpdateInput,
-                        true,
-                        resultsAggregator ,
-                        timeValue ,
-                        destination);
-
-		if(routingStatus != RoutingManagerAPIReturnTypeSuccess){
-			bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure",
-					"");
-		}
+    		if(! routingStatus){
+    	        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure","");
+    		}
+        }
     }
+    delete partitioner;
     // aggregated response will be prepared in CommandStatusAggregatorAndPrint::callBack and printed in
     // CommandStatusAggregatorAndPrint::finalize
 
@@ -537,10 +546,10 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, unsign
         return;
     }
 
-    boost::shared_ptr<const Cluster> clusterReadview;
-    configurationManager->getClusterReadView(clusterReadview);
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
+    ShardManager::getShardManager()->getMetadataManager()->getClusterReadView(clusterReadview);
 
-    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCoreById(coreId);
+    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
 
     evkeyvalq headers;
     evhttp_parse_query(req->uri, &headers);
@@ -560,21 +569,32 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, unsign
         //std::cout << "[" << termBoostsParamName_cstar << "]" << std::endl;
         const std::string primaryKeyStringValue = string(pKeyParamName_cstar);
         free(pKeyParamName_cstar);
+		CorePartitioner * partitioner = new CorePartitioner(clusterReadview->getPartitioner(coreId));
+        vector<NodeTargetShardInfo> targets;
+        partitioner->getAllWriteTargets(partitioner->hashDJB2(primaryKeyStringValue.c_str()),
+        		clusterReadview->getCurrentNodeId(), targets);
+        if(targets.size() == 0){
+            bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
+                    "All nodes are down.");
+        }else{
+            time_t timeValue;
+            time(&timeValue);
+            timeValue = timeValue + TIMEOUT_WAIT_TIME;
+			DeleteCommand * deleteInput = new DeleteCommand(primaryKeyStringValue,coreId);
+			resultsAggregator->addRequestObj(deleteInput);
+    		bool routingStatus = dpMessageHandler.broadcast<DeleteCommand, CommandStatus>(deleteInput,
+    						true,
+    						true,
+    						resultsAggregator,
+    						timeValue,
+    						targets,
+    						clusterReadview);
 
-        const Shard * destination = partitioner->getShardIDForRecord(primaryKeyStringValue,coreId, clusterReadview);
-
-
-		DeleteCommand * deleteInput = new DeleteCommand(primaryKeyStringValue,coreId);
-		// add request object to results aggregator which is the callback object
-		time_t timeValue;
-		time(&timeValue);
-		timeValue = timeValue + TIMEOUT_WAIT_TIME;
-		RoutingManagerAPIReturnType routingStatus =
-				routingManager->sendMessage<DeleteCommand, CommandStatus>(deleteInput,true, resultsAggregator , timeValue , destination);
-
-		if(routingStatus != RoutingManagerAPIReturnTypeSuccess){
-			bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure","");
-		}
+    		if(! routingStatus){
+    	        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure","");
+    		}
+        }
+        delete partitioner;
 
 
     }else{
@@ -601,39 +621,37 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, unsign
   */
 void DPExternalRequestHandler::externalGetInfoCommand(evhttp_request *req, unsigned coreId){
 
-    boost::shared_ptr<const Cluster> clusterReadview;
-    configurationManager->getClusterReadView(clusterReadview);
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
+    ShardManager::getShardManager()->getMetadataManager()->getClusterReadView(clusterReadview);
 
-    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCoreById(coreId);
+    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
 
     boost::shared_ptr<GetInfoResponseAggregator> resultsAggregator(new GetInfoResponseAggregator(configurationManager,req, clusterReadview, coreId));
-    GetInfoCommand * getInfoInput = new GetInfoCommand();
-
-
-    // 1. first find all destination shards.
-    vector<const Shard *> destinations;
-    partitioner->getShardIDsForBroadcast(coreId, clusterReadview , destinations);
-    if(destinations.size() == 0){
-    	delete getInfoInput;
+	CorePartitioner * partitioner = new CorePartitioner(clusterReadview->getPartitioner(coreId));
+    vector<NodeTargetShardInfo> targets;
+    partitioner->getAllReadTargets(targets);
+    if(targets.size() == 0){
         bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
                 "All nodes are down.");
     }else{
-    	//2. and use destinations to send the broadcast using RM
-		time_t timeValue;
-		time(&timeValue);
-		timeValue = timeValue + TIMEOUT_WAIT_TIME;
-		RoutingManagerAPIReturnType routingStatus =
-				routingManager->broadcast<GetInfoCommand, GetInfoCommandResults>(getInfoInput,
+        time_t timeValue;
+        time(&timeValue);
+        timeValue = timeValue + TIMEOUT_WAIT_TIME;
+		GetInfoCommand * getInfoInput = new GetInfoCommand();
+		resultsAggregator->addRequestObj(getInfoInput);
+		bool routingStatus = dpMessageHandler.broadcast<GetInfoCommand, GetInfoCommandResults>(getInfoInput,
 						true,
 						true,
 						resultsAggregator,
 						timeValue,
-						destinations);
-    	if(routingStatus != RoutingManagerAPIReturnTypeSuccess){
-			bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure",
-					"");
-    	}
+						targets,
+						clusterReadview);
+
+		if(! routingStatus){
+	        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure","");
+		}
     }
+    delete partitioner;
 
 }
 
@@ -647,42 +665,42 @@ void DPExternalRequestHandler::externalGetInfoCommand(evhttp_request *req, unsig
   */
 void DPExternalRequestHandler::externalSerializeIndexCommand(evhttp_request *req, unsigned coreId){
     /* Yes, we are expecting a post request */
-    boost::shared_ptr<const Cluster> clusterReadview;
-    configurationManager->getClusterReadView(clusterReadview);
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
+    ShardManager::getShardManager()->getMetadataManager()->getClusterReadView(clusterReadview);
 
-    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCoreById(coreId);
+    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
     switch (req->type) {
     case EVHTTP_REQ_PUT: {
         boost::shared_ptr<StatusAggregator<SerializeCommand> >
         resultsAggregator(new StatusAggregator<SerializeCommand>(configurationManager,req, clusterReadview, coreId));
 
-        SerializeCommand * serializeInput =
-                new SerializeCommand(SerializeCommand::SERIALIZE_INDEX);
 
-        // 1. first find all destination shards.
-        vector<const Shard *> destinations;
-        partitioner->getShardIDsForBroadcast(coreId, clusterReadview , destinations);
-        if(destinations.size() == 0){
-        	delete serializeInput;
+    	CorePartitioner * partitioner = new CorePartitioner(clusterReadview->getPartitioner(coreId));
+        vector<NodeTargetShardInfo> targets;
+        partitioner->getAllReadTargets(targets);
+        if(targets.size() == 0){
             bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
                     "All nodes are down.");
         }else{
-        	//2. and use destinations to send the broadcast using RM
-			time_t timeValue;
-			time(&timeValue);
-			timeValue = timeValue + TIMEOUT_WAIT_TIME;
-			RoutingManagerAPIReturnType routingStatus =
-					routingManager->broadcast<SerializeCommand, CommandStatus>(serializeInput,
-							true,
-							true,
-							resultsAggregator,
-							timeValue,
-							destinations);
-			if(routingStatus != RoutingManagerAPIReturnTypeSuccess){
-				bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure",
-						"");
-			}
+            time_t timeValue;
+            time(&timeValue);
+            timeValue = timeValue + TIMEOUT_WAIT_TIME;
+			SerializeCommand * serializeInput =
+					new SerializeCommand(SerializeCommand::SERIALIZE_INDEX);
+			resultsAggregator->addRequestObj(serializeInput);
+    		bool routingStatus = dpMessageHandler.broadcast<SerializeCommand, CommandStatus>(serializeInput,
+    						true,
+    						true,
+    						resultsAggregator,
+    						timeValue,
+    						targets,
+    						clusterReadview);
+
+    		if(! routingStatus){
+    	        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure","");
+    		}
         }
+        delete partitioner;
 
         break;
     }
@@ -707,10 +725,10 @@ void DPExternalRequestHandler::externalSerializeIndexCommand(evhttp_request *req
 void DPExternalRequestHandler::externalSerializeRecordsCommand(evhttp_request *req, unsigned coreId){
     /* Yes, we are expecting a post request */
 
-    boost::shared_ptr<const Cluster> clusterReadview;
-    configurationManager->getClusterReadView(clusterReadview);
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
+    ShardManager::getShardManager()->getMetadataManager()->getClusterReadView(clusterReadview);
 
-    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCoreById(coreId);
+    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
 
     switch (req->type) {
     case EVHTTP_REQ_PUT: {
@@ -725,33 +743,32 @@ void DPExternalRequestHandler::externalSerializeRecordsCommand(evhttp_request *r
                 boost::shared_ptr<StatusAggregator<SerializeCommand> >
                 resultsAggregator(new StatusAggregator<SerializeCommand>(configurationManager,req, clusterReadview, coreId));
 
-                SerializeCommand * serializeInput =
-                        new SerializeCommand(SerializeCommand::SERIALIZE_RECORDS, string(exportedDataFileName));
-
-                // 1. first find all destination shards.
-                vector<const Shard *> destinations;
-                partitioner->getShardIDsForBroadcast(coreId, clusterReadview , destinations);
-                if(destinations.size() == 0){
-                	delete serializeInput;
+            	CorePartitioner * partitioner = new CorePartitioner(clusterReadview->getPartitioner(coreId));
+                vector<NodeTargetShardInfo> targets;
+                partitioner->getAllReadTargets(targets);
+                if(targets.size() == 0){
                     bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
                             "All nodes are down.");
                 }else{
-                	//2. and use destinations to send the broadcast using RM
-					time_t timeValue;
-					time(&timeValue);
-					timeValue = timeValue + TIMEOUT_WAIT_TIME;
-					RoutingManagerAPIReturnType routingStatus =
-							routingManager->broadcast<SerializeCommand, CommandStatus>(serializeInput,
-									true,
-									true,
-									resultsAggregator,
-									timeValue,
-									destinations);
-					if(routingStatus != RoutingManagerAPIReturnTypeSuccess){
-						bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure",
-								"");
-					}
+                    time_t timeValue;
+                    time(&timeValue);
+                    timeValue = timeValue + TIMEOUT_WAIT_TIME;
+					SerializeCommand * serializeInput =
+							new SerializeCommand(SerializeCommand::SERIALIZE_RECORDS, string(exportedDataFileName));
+					resultsAggregator->addRequestObj(serializeInput);
+            		bool routingStatus = dpMessageHandler.broadcast<SerializeCommand, CommandStatus>(serializeInput,
+            						true,
+            						true,
+            						resultsAggregator,
+            						timeValue,
+            						targets,
+            						clusterReadview);
+
+            		if(! routingStatus){
+            	        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure","");
+            		}
                 }
+                delete partitioner;
             }else {
                 bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "INVALID REQUEST",
                         "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
@@ -786,40 +803,40 @@ void DPExternalRequestHandler::externalSerializeRecordsCommand(evhttp_request *r
   */
 void DPExternalRequestHandler::externalResetLogCommand(evhttp_request *req, unsigned coreId){
 
-    boost::shared_ptr<const Cluster> clusterReadview;
-    configurationManager->getClusterReadView(clusterReadview);
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
+    ShardManager::getShardManager()->getMetadataManager()->getClusterReadView(clusterReadview);
 
-    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCoreById(coreId);
+    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
 
     switch(req->type) {
     case EVHTTP_REQ_PUT: {
         boost::shared_ptr<StatusAggregator<ResetLogCommand> >
         resultsAggregator(new StatusAggregator<ResetLogCommand>(configurationManager,req, clusterReadview, coreId));
-        ResetLogCommand * resetInput = new ResetLogCommand();
-
-        // 1. first find all destination shards.
-        vector<const Shard *> destinations;
-        partitioner->getShardIDsForBroadcast(coreId, clusterReadview , destinations);
-        if(destinations.size() == 0){
-        	delete resetInput;
+    	CorePartitioner * partitioner = new CorePartitioner(clusterReadview->getPartitioner(coreId));
+        vector<NodeTargetShardInfo> targets;
+        partitioner->getAllReadTargets(targets);
+        if(targets.size() == 0){
             bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
                     "All nodes are down.");
         }else{
-        	//2. and use destinations to send the broadcast using RM
-			time_t timeValue;
-			time(&timeValue);
-			timeValue = timeValue + TIMEOUT_WAIT_TIME;
-			RoutingManagerAPIReturnType routingStatus =
-					routingManager->broadcast<ResetLogCommand, CommandStatus>(resetInput,
-							true,
-							true,
-							resultsAggregator,
-							timeValue,
-							destinations);
-			if(routingStatus != RoutingManagerAPIReturnTypeSuccess){
-				bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure","");
-			}
+            time_t timeValue;
+            time(&timeValue);
+            timeValue = timeValue + TIMEOUT_WAIT_TIME;
+			ResetLogCommand * resetInput = new ResetLogCommand();
+			resultsAggregator->addRequestObj(resetInput);
+    		bool routingStatus = dpMessageHandler.broadcast<ResetLogCommand, CommandStatus>(resetInput,
+    						true,
+    						true,
+    						resultsAggregator,
+    						timeValue,
+    						targets,
+    						clusterReadview);
+
+    		if(! routingStatus){
+    	        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure","");
+    		}
         }
+        delete partitioner;
 
         break;
     }
@@ -833,49 +850,115 @@ void DPExternalRequestHandler::externalResetLogCommand(evhttp_request *req, unsi
     };
 }
 
-
 /*
- * Receives a commit request and boardcasts it to other shards
- */
+  * 1. Receives a commit request from a client (not from another shard)
+  * 2. broadcasts this request to DPInternalRequestHandler objects of other shards
+  * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
+  *       results. Results will be aggregator by another thread since it's not a blocking call.
+  */
 void DPExternalRequestHandler::externalCommitCommand(evhttp_request *req, unsigned coreId){
 
-    boost::shared_ptr<const Cluster> clusterReadview;
-    configurationManager->getClusterReadView(clusterReadview);
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
+    ShardManager::getShardManager()->getMetadataManager()->getClusterReadView(clusterReadview);
 
-    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCoreById(coreId);
+    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
 
-    boost::shared_ptr<StatusAggregator<CommitCommand> >
-    resultsAggregator(new StatusAggregator<CommitCommand>(configurationManager, req, clusterReadview, coreId));
+    switch(req->type) {
+    case EVHTTP_REQ_PUT: {
+        boost::shared_ptr<StatusAggregator<CommitCommand> >
+        resultsAggregator(new StatusAggregator<CommitCommand>(configurationManager,req, clusterReadview, coreId));
+    	CorePartitioner * partitioner = new CorePartitioner(clusterReadview->getPartitioner(coreId));
+        vector<NodeTargetShardInfo> targets;
+        partitioner->getAllReadTargets(targets);
+        if(targets.size() == 0){
+            bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
+                    "All nodes are down.");
+        }else{
+            time_t timeValue;
+            time(&timeValue);
+            timeValue = timeValue + TIMEOUT_WAIT_TIME;
+			CommitCommand * commitInput = new CommitCommand();
+			resultsAggregator->addRequestObj(commitInput);
+    		bool routingStatus = dpMessageHandler.broadcast<CommitCommand, CommandStatus>(commitInput,
+    						true,
+    						true,
+    						resultsAggregator,
+    						timeValue,
+    						targets,
+    						clusterReadview);
 
-    CommitCommand * commitInput = new CommitCommand();
+    		if(! routingStatus){
+    	        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure","");
+    		}
+        }
+        delete partitioner;
 
-    // 1. first find all destination shards.
-    vector<const Shard *> destinations;
-    partitioner->getShardIDsForBroadcast(coreId, clusterReadview , destinations);
-    if(destinations.size() == 0){
-    	delete commitInput;
-        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
-                "All nodes are down.");
-    }else{
-    	//2. and use destinations to send the broadcast using RM
-		time_t timeValue;
-		time(&timeValue);
-		timeValue = timeValue + TIMEOUT_WAIT_TIME;
-	    RoutingManagerAPIReturnType routingStatus =
-	            routingManager->broadcast<CommitCommand, CommandStatus>(commitInput,
-	                    true,
-	                    true,
-	                    resultsAggregator,
-	                    timeValue,
-	                    destinations);
-		if(routingStatus != RoutingManagerAPIReturnTypeSuccess){
-			bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure","");
-		}
+        break;
     }
-
+    default: {
+        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "INVALID REQUEST",
+                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
+        Logger::error(
+                "The request has an invalid or missing argument. See Srch2 API documentation for details");
+        break;
+    }
+    };
 }
 
+/*
+  * 1. Receives a merge request from a client (not from another shard)
+  * 2. broadcasts this request to DPInternalRequestHandler objects of other shards
+  * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
+  *       results. Results will be aggregator by another thread since it's not a blocking call.
+  */
+void DPExternalRequestHandler::externalMergeCommand(evhttp_request *req, unsigned coreId){
 
+    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
+    ShardManager::getShardManager()->getMetadataManager()->getClusterReadView(clusterReadview);
+
+    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
+
+    switch(req->type) {
+    case EVHTTP_REQ_PUT: {
+        boost::shared_ptr<StatusAggregator<MergeCommand> >
+        resultsAggregator(new StatusAggregator<MergeCommand>(configurationManager,req, clusterReadview, coreId));
+    	CorePartitioner * partitioner = new CorePartitioner(clusterReadview->getPartitioner(coreId));
+        vector<NodeTargetShardInfo> targets;
+        partitioner->getAllReadTargets(targets);
+        if(targets.size() == 0){
+            bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
+                    "All nodes are down.");
+        }else{
+            time_t timeValue;
+            time(&timeValue);
+            timeValue = timeValue + TIMEOUT_WAIT_TIME;
+            MergeCommand * mergeInput = new MergeCommand();
+			resultsAggregator->addRequestObj(mergeInput);
+    		bool routingStatus = dpMessageHandler.broadcast<MergeCommand, CommandStatus>(mergeInput,
+    						true,
+    						true,
+    						resultsAggregator,
+    						timeValue,
+    						targets,
+    						clusterReadview);
+
+    		if(! routingStatus){
+    	        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure","");
+    		}
+        }
+        delete partitioner;
+
+        break;
+    }
+    default: {
+        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "INVALID REQUEST",
+                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
+        Logger::error(
+                "The request has an invalid or missing argument. See Srch2 API documentation for details");
+        break;
+    }
+    };
+}
 
 }
 }

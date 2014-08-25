@@ -191,7 +191,7 @@ public:
 
     void * serializeForNetwork(void * buffer);
     static void * deserializeForNetwork(QueryResults &queryResults, void * buffer,QueryResultFactory * resultsFactory);
-    unsigned getNumberOfBytesForSerializationForNetwork();
+    unsigned getNumberOfBytesForSerializationForNetwork() const;
 
 
 

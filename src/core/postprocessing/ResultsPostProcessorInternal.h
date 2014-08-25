@@ -43,6 +43,13 @@ public:
 	    filterIterator = filterVector.end();
 	}
 
+	ResultsPostProcessorPlanInternal(const ResultsPostProcessorPlanInternal & planInternal){
+		for(unsigned filterIdx = 0; filterIdx < planInternal.filterVector.size(); ++filterIdx){
+			filterVector.push_back(planInternal.filterVector.at(filterIdx)->getNewCopy());
+		}
+		filterIterator = filterVector.end();
+	}
+
 	~ResultsPostProcessorPlanInternal(){
 		for(vector<ResultsPostProcessorFilter *>::iterator filter = filterVector.begin();
 								filter != filterVector.end(); ++filter){

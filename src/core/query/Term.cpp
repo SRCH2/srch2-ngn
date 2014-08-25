@@ -38,6 +38,16 @@ namespace instantsearch
 //TODO OPT pass string pointer in FuzzyTerm/ExactTerm constructor rather than copying. But copy terms into cache
 struct Term::Impl
 {
+
+	Impl(const Term::Impl & impl){
+	    this->boost = impl.boost;
+	    this->similarityBoost = impl.similarityBoost;
+	    this->threshold  = impl.threshold;
+	    this->searchableAttributeIdToFilter  = impl.searchableAttributeIdToFilter;
+	    this->type  = impl.type;
+	    this->keyword  = impl.keyword;
+	};
+	Impl(){};
     float boost;
     float similarityBoost;
     uint8_t threshold;
@@ -102,6 +112,10 @@ Term::Term(const string &keywordStr, TermType type, const float boost, const flo
     impl->similarityBoost = fuzzyMatchPenalty;
     impl->threshold = threshold;
     impl->searchableAttributeIdToFilter = -1;
+}
+
+Term::Term(const Term & term){
+	impl = new Impl(*(term.impl));
 }
 
 Term::~Term()
