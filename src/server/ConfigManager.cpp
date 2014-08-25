@@ -366,7 +366,7 @@ void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode,
         if (isValidBooleanValue(configValue)) {
             coreInfo->enableWordPositionIndex = childNode.text().as_bool();
         } else {
-            parseError << "In core " << coreInfo->name << " : enablePositionIndex should be either 0 or 1.\n";
+            Logger::error("In core %s : enablePositionIndex should be either 0 or 1.", coreInfo->name.c_str());
             configSuccess = false;
             return;
         }
@@ -382,7 +382,7 @@ void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode,
         if (isValidBooleanValue(configValue)) {
             coreInfo->enableCharOffsetIndex = childNode.text().as_bool();
         } else {
-            parseError << "enableCharOffsetIndex should be either 0 or 1.\n";
+            Logger::error("enableCharOffsetIndex should be either 0 or 1.");
             configSuccess = false;
             return;
         }
@@ -438,7 +438,7 @@ void ConfigManager::parseMongoDb(const xml_node &mongoDbNode,
     if (childNode && childNode.text()) {
         coreInfo->mongoHost = string(childNode.text().get());
     } else {
-        parseError << "mongo host is not set.\n";
+        Logger::error("mongo host is not set.");
         configSuccess = false;
         return;
     }
@@ -461,7 +461,7 @@ void ConfigManager::parseMongoDb(const xml_node &mongoDbNode,
     if (childNode && childNode.text()) {
         coreInfo->mongoDbName = string(childNode.text().get());
     } else {
-        parseError << "mongo data base name is not set.\n";
+        Logger::error("mongo data base name is not set.");
         configSuccess = false;
         return;
     }
@@ -470,7 +470,7 @@ void ConfigManager::parseMongoDb(const xml_node &mongoDbNode,
     if (childNode && childNode.text()) {
         coreInfo->mongoCollection = string(childNode.text().get());
     } else {
-        parseError << "mongo collection name is not set.\n";
+        Logger::error("mongo collection name is not set.");
         configSuccess = false;
         return;
     }
