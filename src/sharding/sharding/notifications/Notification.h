@@ -128,9 +128,12 @@ private:
 
 class MMNotification : public ShardingNotification{
 public:
-	MMNotification(const ShardMigrationStatus & status):status(status){
+
+    // TODO : second argument must be removed when migration manager is merged with shard manager codes ...
+	MMNotification(const ShardMigrationStatus & status, const ClusterShardId & destShardId):status(status){
 		this->setSrc(NodeOperationId(this->status.sourceNodeId, this->status.srcOperationId));
 		this->setDest(NodeOperationId(this->status.destinationNodeId, this->status.dstOperationId));
+		this->destShardId = destShardId;
 	}
 	MMNotification(){};
 	ShardMigrationStatus getStatus() const{
@@ -142,8 +145,13 @@ public:
     ShardingMessageType messageType() const {
     	return ShardingMMNotificationMessageType;
     }
+    ClusterShardId getDestShardId() const{
+        return this->destShardId;
+    }
 private:
 	ShardMigrationStatus status;
+	ClusterShardId destShardId;
+
 };
 
 }

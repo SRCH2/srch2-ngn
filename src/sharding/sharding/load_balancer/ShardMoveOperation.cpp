@@ -233,7 +233,7 @@ OperationState * ShardMoveOperation::release(){
 }
 
 void ShardMoveOperation::start(){
-	MoveToMeNotification *  startNotif = new MoveToMeNotification();
+	MoveToMeNotification *  startNotif = new MoveToMeNotification(shardId);
 	this->send(startNotif, srcAddress);
 	delete startNotif;
 	return;

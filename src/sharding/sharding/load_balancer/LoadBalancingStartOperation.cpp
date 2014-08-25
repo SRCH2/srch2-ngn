@@ -224,6 +224,8 @@ OperationState * LoadBalancingStartOperation::tryShardAssginmentAndShardCopy(){
 	vector<AssignCandidatePartition *> assignCandidatesNotOnLocalNode;
 	for(unsigned i = 0 ; i < assignCandidates.size() ; ++i){
 		if(! assignCandidates.at(i)->hasReplicaOnNode(ShardManager::getCurrentNodeId())){
+		    // those replicas that we have a local lock them and
+		    // we already know we cannot use them...
 			assignCandidates.at(i)->removeUnavailableReadyReplicas();
 			if(assignCandidates.at(i)->readyReplicas.size() > 0){
 				assignCandidatesNotOnLocalNode.push_back(assignCandidates.at(i));

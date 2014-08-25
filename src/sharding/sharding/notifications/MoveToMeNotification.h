@@ -16,6 +16,38 @@ public:
 	ShardingMessageType messageType() const{
 		return ShardingMoveToMeMessageType;
 	}
+	MoveToMeNotification(const ClusterShardId & shardId){
+        this->shardId = shardId;
+    }
+	MoveToMeNotification(){};
+
+	void * serialize(void * buffer) const{
+        buffer = ShardingNotification::serialize(buffer);
+        buffer = shardId.serialize(buffer);
+        return buffer;
+    }
+    unsigned getNumberOfBytes() const{
+        unsigned numberOfBytes = 0;
+        numberOfBytes += ShardingNotification::getNumberOfBytes();
+        numberOfBytes += shardId.getNumberOfBytes();
+        return numberOfBytes;
+    }
+    void * deserialize(void * buffer){
+        buffer = ShardingNotification::deserialize(buffer);
+        buffer = shardId.deserialize(buffer);
+        return buffer;
+    }
+
+    bool operator==(const MoveToMeNotification & right){
+        return shardId == right.shardId;
+    }
+
+    ClusterShardId getShardId() const{
+        return this->shardId;
+    }
+private:
+    ClusterShardId shardId;
+
 public:
 	class START : public ShardingNotification {
 	public:

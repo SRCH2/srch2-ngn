@@ -265,7 +265,7 @@ bool ShardManager::resolveMessage(Message * msg, NodeId node){
 			mmStatus.destinationNodeId = moveNotif->getSrc().nodeId;
 			mmStatus.dstOperationId = moveNotif->getSrc().operationId;
 			mmStatus.status = MIGRATION_STATUS_FINISH;
-			MMNotification * mmNotif = new MMNotification(mmStatus);
+			MMNotification * mmNotif = new MMNotification(mmStatus, moveNotif->getShardId());
 			send(mmNotif);
 			delete mmNotif;
 			delete moveNotif;
@@ -472,7 +472,7 @@ bool ShardManager::resolveMessage(Message * msg, NodeId node){
 			mmStatus.destinationNodeId = copyNotif->getSrc().nodeId;
 			mmStatus.dstOperationId = copyNotif->getSrc().operationId;
 			mmStatus.status = MIGRATION_STATUS_FINISH;
-			MMNotification * mmNotif = new MMNotification(mmStatus);
+			MMNotification * mmNotif = new MMNotification(mmStatus, copyNotif->getDestShardId());
 			send(mmNotif);
 			delete mmNotif;
 			delete copyNotif;
@@ -490,7 +490,8 @@ bool ShardManager::resolveMessage(Message * msg, NodeId node){
 			}
 			ShardMigrationStatus mmStatus = mmNotif->getStatus();
 			// add empty shard to it...
-			EmptyShardBuilder emptyShard(new ClusterShardId(), "");
+			ClusterShardId * destShardId = new ClusterShardId(mmNotif->getDestShardId());
+			EmptyShardBuilder emptyShard(destShardId, "");
 			emptyShard.prepare();
 			mmStatus.shard = emptyShard.getShardServer();
 			mmNotif->setStatus(mmStatus);
@@ -551,7 +552,8 @@ void ShardManager::resolveReadviewRelease(unsigned metadataVersion){
 
 void ShardManager::resolveMMNotification(const ShardMigrationStatus & migrationStatus){
 	boost::unique_lock<boost::mutex> bouncedNotificationsLock(shardManagerGlobalMutex);
-	MMNotification * mmNotif = new MMNotification(migrationStatus);
+	// TODO : second argument must be deleted when migration manager is merged with this code.
+	MMNotification * mmNotif = new MMNotification(migrationStatus, ClusterShardId());
 	this->stateMachine->handle(mmNotif);
 }
 
