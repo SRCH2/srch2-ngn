@@ -40,7 +40,8 @@ def checkResult(query, responseJson,resultValue,checkField):
     if  len(responseJson) == len(resultValue):
         for i in range(0, len(resultValue)):
             #print response_json['results'][i]['record'][checkField]
-            if responseJson[i]['record'][checkField] !=  resultValue[i]:
+            if (resultValue.count(responseJson[i]['record'][checkField]) != 1):
+            #if responseJson[i]['record'][checkField] !=  resultValue[i]:
                 isPass=0
                 print query+' test failed'
                 print 'query results||given results'
