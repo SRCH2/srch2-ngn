@@ -3,9 +3,9 @@ EXEC_PROGRAM( ${CMAKE_CXX_COMPILER}
                   OUTPUT_VARIABLE gcc_compiler_version)
 
 IF (ANDROID) 
-   SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src-0.5.0/android/libs/armeabi-v7a/libjsoncpp.a)
+   SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src/android/libs/armeabi-v7a/libjsoncpp.a)
 ELSE()
-   SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src-0.5.0/libs/linux-gcc-${gcc_compiler_version}/libjson_linux-gcc-${gcc_compiler_version}_libmt.a)
+   SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src/build/libjsoncpp.a)
 ENDIF()
 
 FILE(GLOB SRCH2_SERVER_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.cpp" "./util/*.cpp" "./util/xmlParser/*.cpp"
@@ -15,16 +15,16 @@ LIST(REMOVE_ITEM SRCH2_SERVER_SRC "srch2SearchServer.cpp")
 SET(SRCH2_SERVER_NAME srch2-search-server)
 
 INCLUDE_DIRECTORIES(
-	${CMAKE_BINARY_DIR}/include
-	${CMAKE_SOURCE_DIR}/src/wrapper/
-	${CMAKE_SOURCE_DIR}/src/core/
-	${CMAKE_SOURCE_DIR}/src/server/
-	${CMAKE_SOURCE_DIR}/src/adapter/
+    ${CMAKE_BINARY_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src/wrapper/
+    ${CMAKE_SOURCE_DIR}/src/core/
+    ${CMAKE_SOURCE_DIR}/src/server/
+    ${CMAKE_SOURCE_DIR}/src/adapter/
     ${Boost_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/thirdparty/event/include
     ${CMAKE_SOURCE_DIR}/thirdparty/event/android/include
-    ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src-0.5.0/include
+    ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src/include
     ${CMAKE_SOURCE_DIR}/thirdparty/gperftools/include
 )
 

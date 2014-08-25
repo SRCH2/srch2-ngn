@@ -99,6 +99,7 @@ bool StandardTokenizer::incrementToken() {
 }
 
 bool StandardTokenizer::processToken() {
+    tokenStreamContainer->type = ANALYZED_ORIGINAL_TOKEN;
     return this->incrementToken();
 }
 

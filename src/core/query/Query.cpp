@@ -23,7 +23,6 @@
 //#include <instantsearch/Term.h>
 #include <instantsearch/Ranker.h>
 #include "util/Logger.h"
-#include "record/LocationRecordUtil.h"
 #include <string>
 #include <sstream>
 
@@ -182,9 +181,6 @@ Query::Query(QueryType type):impl(new Impl)
         case srch2::instantsearch::SearchTypeGetAllResultsQuery:
             impl->ranker = new GetAllResultsRanker();
             break;
-        case srch2::instantsearch::SearchTypeMapQuery:
-            impl->ranker = new SpatialRanker();
-            break;
         default:
             impl->ranker = new DefaultTopKRanker();
     };
@@ -215,9 +211,9 @@ QueryType Query::getQueryType() const
     return impl->type;
 }
 
-void Query::getRange(vector<double> &values) const
+Shape* Query::getShape() const
 {
-    impl->range->getValues(values);
+    return impl->range;
 }
 
 void Query::setSortableAttribute(unsigned sortableAttributeId, srch2::instantsearch::SortOrder order)

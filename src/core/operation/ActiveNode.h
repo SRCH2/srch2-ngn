@@ -27,6 +27,7 @@
 #include "util/BusyBit.h"
 #include "util/Assert.h"
 #include "util/Logger.h"
+#include "src/core/geo/QuadTree.h"
 
 using srch2::util::Logger;
 
@@ -616,6 +617,36 @@ private:
     }
 
 };
+
+/*
+ *   This class keeps a readview of the quadtree (quadTreeRootNodeSharedPtr)
+ *   So as long as we use the quadtree nodes in quadTreeNodeSet vector we have the readview.
+ *   and it prevents to delete any node in this readview until we finish using this class.
+ */
+class GeoBusyNodeSet{
+private:
+	boost::shared_ptr<QuadTreeRootNodeAndFreeLists> quadTreeRootNodeSharedPtr;
+	vector<QuadTreeNode*> quadTreeNodeSet;
+
+public:
+	GeoBusyNodeSet(boost::shared_ptr<QuadTreeRootNodeAndFreeLists> &quadTreeRootNodeSharedPtr){
+		this->quadTreeRootNodeSharedPtr = quadTreeRootNodeSharedPtr;
+	}
+
+	void computeQuadTreeNodeSet(Shape& range){
+		this->quadTreeRootNodeSharedPtr->root->rangeQuery(this->quadTreeNodeSet,range);
+	}
+
+	vector<QuadTreeNode*>* getQuadTreeNodeSet(){
+		return &(this->quadTreeNodeSet);
+	}
+
+	unsigned sizeOfQuadTreeNodeSet(){
+		return this->quadTreeNodeSet.size();
+	}
+};
+
+
 
 
 }

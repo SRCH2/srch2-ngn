@@ -1,0 +1,8 @@
+manu||5 1 6
+lfc||4
+lfc%20OR%20cfc||4 2 6
+gunners||6
+%22Di%20Maria%22||5
+manchester%20AND%20united||5 1 6
+the%20AND%20reds||4
+Southampton||3 4

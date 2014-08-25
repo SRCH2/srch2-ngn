@@ -23,6 +23,7 @@
 #include "instantsearch/Term.h"
 #include "instantsearch/ResultsPostProcessor.h"
 #include "util/Assert.h"
+#include "record/LocationRecordUtil.h"
 #include <vector>
 #include <string>
 #include <sstream>
@@ -44,6 +45,7 @@ public:
 	vector<LogicalPlanNode *> children;
 	Term * exactTerm;
 	Term * fuzzyTerm;
+	Shape* regionShape;
 	LogicalPlanNodeAnnotation * stats;
 
 	PhysicalPlanNodeType forcedPhysicalNode;
@@ -77,18 +79,21 @@ public:
 protected:
 	LogicalPlanNode(Term * exactTerm, Term * fuzzyTerm);
 	LogicalPlanNode(LogicalPlanNodeType nodeType);
+	LogicalPlanNode(Shape* regionShape);
 };
 
 class LogicalPlanPhraseNode : public LogicalPlanNode{
 public:
 	LogicalPlanPhraseNode(const vector<string>& phraseKeyWords,
 	    		const vector<unsigned>& phraseKeywordsPosition,
-	    		short slop, unsigned fieldFilter) : LogicalPlanNode(LogicalPlanNodeTypePhrase) {
+	    		short slop, const vector<unsigned>& fieldFilter,
+                        ATTRIBUTES_OP attrOp) : LogicalPlanNode(LogicalPlanNodeTypePhrase) {
 		phraseInfo = new PhraseInfo();
-		phraseInfo->attributeBitMap = fieldFilter;
+		phraseInfo->attributeIdsList = fieldFilter;
 		phraseInfo->phraseKeyWords = phraseKeyWords;
 		phraseInfo->phraseKeywordPositionIndex = phraseKeywordsPosition;
 		phraseInfo->proximitySlop = slop;
+		phraseInfo->attrOps = attrOp; 
 	}
 	string toString() {
 		string key = LogicalPlanNode::toString();
@@ -152,12 +157,12 @@ public:
     		const float boost,
     		const float similarityBoost,
     		const uint8_t threshold,
-    		unsigned fieldFilter);
+    		const vector<unsigned>& fieldFilter, ATTRIBUTES_OP atrOps);
     // constructs an internal (operator) logical plan node
     LogicalPlanNode * createOperatorLogicalPlanNode(LogicalPlanNodeType nodeType);
     LogicalPlanNode * createPhraseLogicalPlanNode(const vector<string>& phraseKeyWords,
     		const vector<unsigned>& phraseKeywordsPosition,
-    		short slop, unsigned fieldFilter) ;
+    		short slop, const vector<unsigned>& fieldFilter, ATTRIBUTES_OP attrOp) ;
 
 	ResultsPostProcessorPlan* getPostProcessingPlan() const {
 		return postProcessingPlan;
@@ -253,6 +258,8 @@ public:
 	void setDocIdForRetrieveByIdSearchType(const std::string & docid){
 		this->docIdForRetrieveByIdSearchType = docid;
 	}
+
+	LogicalPlanNode * createGeoLogicalPlanNode(Shape *regionShape);
 
 
 	/*

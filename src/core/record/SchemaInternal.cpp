@@ -14,7 +14,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright �� 2010 SRCH2 Inc. All rights reserved
+ * Copyright © 2010 SRCH2 Inc. All rights reserved
  */
 
 #include "SchemaInternal.h"
@@ -42,31 +42,36 @@ SchemaInternal::SchemaInternal(srch2::instantsearch::IndexType indexType,
     this->refiningAttributeTypeVector.clear();
     this->refiningAttributeIsMultiValuedVector.clear();
     this->supportSwapInEditDistance = true;
+    this->nameOfLatitudeAttribute = "";
+    this->nameOfLongitudeAttribute = "";
 }
 
 SchemaInternal::SchemaInternal(const SchemaInternal &schemaInternal) {
     this->primaryKey = schemaInternal.primaryKey;
     this->searchableAttributeNameToId =
             schemaInternal.searchableAttributeNameToId;
+    this->searchableAttributeTypeVector =
+            schemaInternal.searchableAttributeTypeVector;
     this->searchableAttributeBoostVector =
             schemaInternal.searchableAttributeBoostVector;
     this->searchableAttributeIsMultiValuedVector =
-    		schemaInternal.searchableAttributeIsMultiValuedVector;
-    this->refiningAttributeNameToId =
-            schemaInternal.refiningAttributeNameToId;
+            schemaInternal.searchableAttributeIsMultiValuedVector;
+    this->refiningAttributeNameToId = schemaInternal.refiningAttributeNameToId;
     this->refiningAttributeTypeVector =
             schemaInternal.refiningAttributeTypeVector;
     this->refiningAttributeDefaultValueVector =
             schemaInternal.refiningAttributeDefaultValueVector;
     this->refiningAttributeIsMultiValuedVector =
-    		schemaInternal.refiningAttributeIsMultiValuedVector;
+            schemaInternal.refiningAttributeIsMultiValuedVector;
     this->searchableAttributeHighlightEnabled =
-    		schemaInternal.searchableAttributeHighlightEnabled;
+            schemaInternal.searchableAttributeHighlightEnabled;
     this->scoringExpressionString = schemaInternal.scoringExpressionString;
     this->indexType = schemaInternal.indexType;
     this->positionIndexType = schemaInternal.positionIndexType;
     this->commited = schemaInternal.commited;
     this->supportSwapInEditDistance =  schemaInternal.supportSwapInEditDistance;
+    this->nameOfLatitudeAttribute = schemaInternal.nameOfLatitudeAttribute;
+    this->nameOfLongitudeAttribute = schemaInternal.nameOfLongitudeAttribute;
 }
 
 srch2::instantsearch::IndexType SchemaInternal::getIndexType() const {
@@ -97,8 +102,7 @@ int SchemaInternal::getRefiningAttributeId(
         const std::string &refiningAttributeName) const {
 
     map<string, unsigned>::const_iterator iter =
-            this->refiningAttributeNameToId.find(
-                    refiningAttributeName.c_str());
+            this->refiningAttributeNameToId.find(refiningAttributeName.c_str());
     if (iter != this->refiningAttributeNameToId.end()) {
         return iter->second;
     } else {
@@ -114,34 +118,51 @@ void SchemaInternal::setPrimaryKey(const string &primaryKey) {
     this->primaryKey = primaryKey;
 }
 
+void SchemaInternal::setNameOfLatitudeAttribute(const string &nameOfLatitudeAttribute){
+	this->nameOfLatitudeAttribute = nameOfLatitudeAttribute;
+}
+
+void SchemaInternal::setNameOfLongitudeAttribute(const string &nameOfLongitudeAttribute){
+	this->nameOfLongitudeAttribute = nameOfLongitudeAttribute;
+}
+
 const std::string* SchemaInternal::getPrimaryKey() const {
     return &this->primaryKey;
 }
 
+const std::string* SchemaInternal::getNameOfLatituteAttribute() const{
+	return &this->nameOfLatitudeAttribute;
+}
+
+const std::string* SchemaInternal::getNameOfLongitudeAttribute() const{
+	return &this->nameOfLongitudeAttribute;
+}
+
 int SchemaInternal::setSearchableAttribute(const string &attributeName,
         unsigned attributeBoost, bool isMultiValued, bool enableHiglight) {
-    //ASSERT (this->boostVector.size() <= 255);
-
-//    if( this->searchableAttributeNameToId.size() > 255)
-//    {
-//        return -1;
-//    }
 
     if (attributeBoost < 1 || attributeBoost > 100) {
         attributeBoost = 100;
     }
 
+    // As of now (08/07/14), we assume each searchable attribute has a TEXT type.
+    FilterType type = ATTRIBUTE_TYPE_TEXT;
+
     map<string, unsigned>::iterator iter;
     iter = this->searchableAttributeNameToId.find(attributeName);
     if (iter != this->searchableAttributeNameToId.end()) {
+        this->searchableAttributeTypeVector[iter->second] = type;
         this->searchableAttributeBoostVector[iter->second] = attributeBoost;
-        this->searchableAttributeIsMultiValuedVector[iter->second] = isMultiValued;
-        this->searchableAttributeHighlightEnabled[iter->second] = enableHiglight;
+        this->searchableAttributeIsMultiValuedVector[iter->second] =
+                isMultiValued;
+        this->searchableAttributeHighlightEnabled[iter->second] =
+                enableHiglight;
         return iter->second;
     } else {
         int searchAttributeMapSize = this->searchableAttributeNameToId.size();
         this->searchableAttributeNameToId[attributeName] =
                 searchAttributeMapSize;
+        this->searchableAttributeTypeVector.push_back(type);
         this->searchableAttributeBoostVector.push_back(attributeBoost);
         this->searchableAttributeIsMultiValuedVector.push_back(isMultiValued);
         this->searchableAttributeHighlightEnabled.push_back(enableHiglight);
@@ -155,10 +176,10 @@ int SchemaInternal::setRefiningAttribute(const std::string &attributeName,
     map<string, unsigned>::iterator iter;
     iter = this->refiningAttributeNameToId.find(attributeName);
     if (iter != this->refiningAttributeNameToId.end()) {
-        this->refiningAttributeDefaultValueVector[iter->second] =
-                defaultValue;
+        this->refiningAttributeDefaultValueVector[iter->second] = defaultValue;
         this->refiningAttributeTypeVector[iter->second] = type;
-        this->refiningAttributeIsMultiValuedVector[iter->second] = isMultiValued;
+        this->refiningAttributeIsMultiValuedVector[iter->second] =
+                isMultiValued;
         return iter->second;
     } else {
         unsigned sizeNonSearchable = this->refiningAttributeNameToId.size();
@@ -183,11 +204,12 @@ const std::string* SchemaInternal::getDefaultValueOfRefiningAttribute(
     return NULL;
 }
 
-void SchemaInternal::setSupportSwapInEditDistance(const bool supportSwapInEditDistance) {
+void SchemaInternal::setSupportSwapInEditDistance(
+        const bool supportSwapInEditDistance) {
     this->supportSwapInEditDistance = supportSwapInEditDistance;
 }
 
-bool SchemaInternal::getSupportSwapInEditDistance() const{
+bool SchemaInternal::getSupportSwapInEditDistance() const {
     return supportSwapInEditDistance;
 }
 
@@ -203,22 +225,33 @@ const std::string SchemaInternal::getScoringExpression() const {
 FilterType SchemaInternal::getTypeOfRefiningAttribute(
         const unsigned refiningAttributeNameId) const {
 
-    if (refiningAttributeNameId
-            >= this->refiningAttributeTypeVector.size() ) {
+    if (refiningAttributeNameId >= this->refiningAttributeTypeVector.size()) {
         ASSERT(false);
-        return srch2::instantsearch::ATTRIBUTE_TYPE_TEXT; // TODO default is text, is it ok?
+        return srch2::instantsearch::ATTRIBUTE_TYPE_TEXT;
     }
     return this->refiningAttributeTypeVector[refiningAttributeNameId];
 
+}
+
+FilterType SchemaInternal::getTypeOfSearchableAttribute(
+        const unsigned searchableAttributeNameId) const {
+
+    if (searchableAttributeNameId
+            >= this->searchableAttributeTypeVector.size()) {
+        ASSERT(false);
+        return srch2::instantsearch::ATTRIBUTE_TYPE_TEXT;
+    }
+    return this->searchableAttributeTypeVector[searchableAttributeNameId];
 }
 
 const std::map<std::string, unsigned> * SchemaInternal::getRefiningAttributes() const {
     return &this->refiningAttributeNameToId;
 }
 
-bool SchemaInternal::isRefiningAttributeMultiValued(const unsigned refiningAttributeNameId) const{
+bool SchemaInternal::isRefiningAttributeMultiValued(
+        const unsigned refiningAttributeNameId) const {
     if (refiningAttributeNameId
-            >= this->refiningAttributeIsMultiValuedVector.size() ) {
+            >= this->refiningAttributeIsMultiValuedVector.size()) {
         ASSERT(false);
         return false;
     }
@@ -237,11 +270,13 @@ unsigned SchemaInternal::getBoostOfSearchableAttribute(
 /*
  * Returns true if this searchable attribute is multivalued
  */
-bool SchemaInternal::isSearchableAttributeMultiValued(const unsigned searchableAttributeNameId) const{
-    if (searchableAttributeNameId < this->searchableAttributeBoostVector.size()) {
+bool SchemaInternal::isSearchableAttributeMultiValued(
+        const unsigned searchableAttributeNameId) const {
+    if (searchableAttributeNameId
+            < this->searchableAttributeBoostVector.size()) {
         return this->searchableAttributeIsMultiValuedVector[searchableAttributeNameId];
     } else {
-    	ASSERT(false);
+        ASSERT(false);
         return false;
     }
 }
@@ -260,13 +295,12 @@ unsigned SchemaInternal::getNumberOfRefiningAttributes() const {
 }
 
 bool SchemaInternal::isHighlightEnabled(unsigned attributeId) const {
-	if (attributeId < this->searchableAttributeHighlightEnabled.size()) {
-		return this->searchableAttributeHighlightEnabled[attributeId];
-	} else {
-		return false;
-	}
+    if (attributeId < this->searchableAttributeHighlightEnabled.size()) {
+        return this->searchableAttributeHighlightEnabled[attributeId];
+    } else {
+        return false;
+    }
 }
-
 
 }
 }

@@ -319,8 +319,10 @@ public:
         TypedValue value = nonSearchableAttributeValues[this->attributeName];
 
         if (attributeValue.compare("") == 0
-                && (value.getType() == srch2is::ATTRIBUTE_TYPE_UNSIGNED
-                        || value.getType() == srch2is::ATTRIBUTE_TYPE_FLOAT)) {
+                && (value.getType() == srch2is::ATTRIBUTE_TYPE_INT
+                        || value.getType() == srch2is::ATTRIBUTE_TYPE_LONG
+                        || value.getType() == srch2is::ATTRIBUTE_TYPE_FLOAT
+                        || value.getType() == srch2is::ATTRIBUTE_TYPE_DOUBLE)) {
             attributeValue = value.minimumValue().toString() + "";
         }
         TypedValue valueToCheck;
@@ -403,15 +405,21 @@ public:
                 nonSearchableAttributes->begin();
                 nonSearchableAttribute != nonSearchableAttributes->end();
                 ++nonSearchableAttribute) {
-            // Since we only accept unsigned and float non-searchable attributes
+            // Since we only accept integer, long float and double as non-searchable attributes
             // this if-else statement only inserts these non-searchable-attributes into
             // the symbol table. This symbol table is passed to exprtk library.
             if (schema.getTypeOfRefiningAttribute(
                     nonSearchableAttribute->second)
-                    == srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED
+                    == srch2::instantsearch::ATTRIBUTE_TYPE_INT
                     || schema.getTypeOfRefiningAttribute(
                             nonSearchableAttribute->second)
-                            == srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT) {
+                            == srch2::instantsearch::ATTRIBUTE_TYPE_LONG
+                    || schema.getTypeOfRefiningAttribute(
+                            nonSearchableAttribute->second)
+                            == srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT
+                    || schema.getTypeOfRefiningAttribute(
+                            nonSearchableAttribute->second)
+                            == srch2::instantsearch::ATTRIBUTE_TYPE_DOUBLE) {
                 symbolVariables.insert(
                         std::make_pair(nonSearchableAttribute->first, 0)); // zero is just a place holder, so that a variable is allocated in the vector
                 symbolTable.add_variable(nonSearchableAttribute->first,

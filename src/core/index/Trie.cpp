@@ -1312,7 +1312,7 @@ void Trie::calculateNodeHistogramValuesFromChildren(TrieNode *node,
 					node->getInvertedListOffset(), invertedListReadView);
 
 			float termRecordStaticScore = 0;
-			unsigned termAttributeBitmap = 0;
+			vector<unsigned> matchedAttrsList;
 			// move on inverted list to find the first record which is valid
 			unsigned invertedListCursor = 0;
 			while(invertedListCursor < invertedListReadView->size()){
@@ -1325,9 +1325,10 @@ void Trie::calculateNodeHistogramValuesFromChildren(TrieNode *node,
 				// if the record is not valid (e.g., deleted), ignore it.
 				if (keywordOffset == FORWARDLIST_NOTVALID)
 					continue;
+				vector<unsigned> filterAttributeList;
 				if (invertedIndex->isValidTermPositionHit(forwardIndexDirectoryReadView, recordId,
 						keywordOffset,
-						0x7fffffff,  termAttributeBitmap, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
+						filterAttributeList, ATTRIBUTES_OP_OR,  matchedAttrsList, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
 					break;
 				}
 			}

@@ -103,6 +103,7 @@ bool RandomAccessVerificationAndOptimizationOperator::validateChildren(){
 			case PhysicalPlanNode_RandomAccessAnd:
 			case PhysicalPlanNode_RandomAccessOr:
 			case PhysicalPlanNode_RandomAccessNot:
+			case PhysicalPlanNode_RandomAccessGeo:
 				continue;
 			default:
 				return false;

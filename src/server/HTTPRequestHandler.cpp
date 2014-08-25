@@ -170,8 +170,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
     if(onlyFacets == false){ // We send the matching records only if "facet != only".
         (*root)["results"].resize(end - start);
         unsigned counter = 0;
-        if (queryPlan.getQueryType() == srch2is::SearchTypeMapQuery
-                && query->getQueryTerms()->empty()) //check if the query type is range query without keywords
+        if (query->getQueryTerms()->empty()) //check if the query type is range query without keywords
         {
             for (unsigned i = start; i < end; ++i) {
             	unsigned internalRecordId = queryResults->getInternalRecordId(i);
@@ -279,8 +278,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
             (*root)["fuzzy"] = (int) queryPlan.isFuzzy();
         }
     }else{ // facet only case: we only want query information
-    	if (queryPlan.getQueryType() != srch2is::SearchTypeMapQuery
-    			|| query->getQueryTerms()->empty() == false) //check if the query type is range query without keywords
+    	if ( query->getQueryTerms()->empty() == false) //check if the query type is range query without keywords
     	{
             (*root)["query_keywords"].resize(query->getQueryTerms()->size());
             for (unsigned i = 0; i < query->getQueryTerms()->size(); i++) {
@@ -363,20 +361,27 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
                     attr->second.second.begin(); category != attr->second.second.end();
                     ++category) {
 
+                /*
+                 * Offset is the relative position based on
+                 * the start position of the iterator. e.g.
+                 *
+                 * {<a,1>,<b,2>,<c,3>}
+                 *
+                 * The offset of <a,1> will be 0, <b,2> will be 1, and
+                 * <c,3> will be 2
+                 */
+                int offset = (category - attr->second.second.begin());
+
                 if(category == attr->second.second.begin() && attr->second.first == srch2is::FacetTypeRange){
-                    (*root)["facets"][attributeCounter]["facet_info"][(category
-                            - attr->second.second.begin())]["category_name"] = "lessThanStart";
+                    (*root)["facets"][attributeCounter]["facet_info"][offset]["category_name"] = "lessThanStart";
                 }else{
-                    (*root)["facets"][attributeCounter]["facet_info"][(category
-                            - attr->second.second.begin())]["category_name"] =
+                    (*root)["facets"][attributeCounter]["facet_info"][offset]["category_name"] =
                             category->first;
                 }
-                (*root)["facets"][attributeCounter]["facet_info"][(category
-                        - attr->second.second.begin())]["category_value"] =
+                (*root)["facets"][attributeCounter]["facet_info"][offset]["category_value"] =
                         category->second;
             }
 
-            //
             attributeCounter++;
         }
     }
@@ -736,6 +741,15 @@ void HTTPRequestHandler::shutdownCommand(evhttp_request *req, const CoreNameServ
     case EVHTTP_REQ_PUT: {
         // graceful shutdown
         // since the main process is catching the kill signal, we can simply send the kill to itself
+#ifdef ANDROID
+        // The kill signal seems not catchable under Android. We need to save the index first
+        for( CoreNameServerMap_t::const_iterator it = coreNameServerMap->begin(); 
+            it != coreNameServerMap->end(); ++it){
+            std::stringstream log_str;
+            IndexWriteUtil::_saveCommand(it->second->indexer, log_str);
+            Logger::info("%s", log_str.str().c_str());
+        }
+#endif
         bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
                 "{\"message\":\"Bye\"}\n");
         Logger::info("Server is shuting down");
@@ -907,17 +921,20 @@ void decodeAmpersand(const char *uri, unsigned len, string& decodeUri) {
 void HTTPRequestHandler::searchCommand(evhttp_request *req,
         Srch2Server *server) {
     evkeyvalq headers;
-    boost::shared_ptr<Json::Value> root = doSearchOneCore( req, server, &headers );
+    std::stringstream errorStream;
+    boost::shared_ptr<Json::Value> root = doSearchOneCore( req, server, &headers, errorStream );
 
     if (root ){
         CustomizableJsonWriter writer (&global_internal_skip_tags);
         bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", writer.write(*root), headers);
+    } else{
+        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request", errorStream.str(), headers);
     }
     evhttp_clear_headers(&headers);
 }
 
 boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_request *req,
-        Srch2Server *server, evkeyvalq* headers) {
+        Srch2Server *server, evkeyvalq* headers, std::stringstream &errorStream) {
 
     boost::shared_ptr<Json::Value> root;
     ParsedParameterContainer paramContainer;
@@ -932,9 +949,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
     bool isSyntaxValid = qp.parse();
     if (!isSyntaxValid) {
         // if the query is not valid print the error message to the response
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request",
-                paramContainer.getMessageString(), *headers);
-        evhttp_clear_headers(headers);
+        errorStream << paramContainer.getMessageString();
         return root;
     }
 
@@ -959,9 +974,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
 
     if (!valid) {
         // if the query is not valid, print the error message to the response
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request",
-                paramContainer.getMessageString(), *headers);
-        evhttp_clear_headers(headers);
+        errorStream << paramContainer.getMessageString();
         return root;
     }
     //3. rewrite the query and apply analyzer and other stuff ...
@@ -972,9 +985,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
     LogicalPlan logicalPlan;
     if(qr.rewrite(logicalPlan) == false){
         // if the query is not valid, print the error message to the response
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request",
-                paramContainer.getMessageString(), *headers);
-        evhttp_clear_headers(headers);
+        errorStream << paramContainer.getMessageString();
         return root;
     }
 
@@ -1040,7 +1051,6 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
         break;
 
     case srch2is::SearchTypeGetAllResultsQuery:
-    case srch2is::SearchTypeMapQuery:
         finalResults->printStats();
         if(finalResults->impl->estimatedNumberOfResults < finalResults->impl->sortedFinalResults.size()){
 			finalResults->impl->estimatedNumberOfResults = finalResults->impl->sortedFinalResults.size();
@@ -1097,17 +1107,27 @@ void HTTPRequestHandler::searchAllCommand(evhttp_request *req, const CoreNameSer
 
     evkeyvalq headers;
     Json::Value root;
+    std::stringstream errorStream;
+    int cSuccess = 0;
     for( CoreNameServerMap_t::const_iterator it = coreNameServerMap->begin(); 
             it != coreNameServerMap->end(); ++it){
-        boost::shared_ptr<Json::Value> subRoot = doSearchOneCore( req, it->second, &headers );
+        errorStream << "core " << it->first << ":";
+        boost::shared_ptr<Json::Value> subRoot = doSearchOneCore( req, it->second, &headers, errorStream );
+        errorStream << std::endl;
 
         if (subRoot ){
             root[it->first] = *subRoot;
+            cSuccess +=1;
         }
     }
 
-    CustomizableJsonWriter writer (&global_internal_skip_tags);
-    bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", writer.write(root), headers);
+    //We return SUCCESS as long as one of the cores succeeds.
+    if (cSuccess > 0){
+        CustomizableJsonWriter writer (&global_internal_skip_tags);
+        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", writer.write(root), headers);
+    } else {
+        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request", errorStream.str(), headers);
+    }
     evhttp_clear_headers(&headers);
 }
 

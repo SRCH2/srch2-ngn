@@ -4,9 +4,11 @@
 echo "BUILDING JSONCPP..."
 
 cd ./json
-tar -xvf jsoncpp-src-0.5.0.tar.gz
-cp scons-local-2.1.0.tar.gz jsoncpp-src-0.5.0
-cd jsoncpp-src-0.5.0
+tar -xvf jsoncpp-src-0.6.0.tar.gz
+rm -rf jsoncpp-src
+mv jsoncpp-src-0.6.0 jsoncpp-src
+cp scons-local-2.1.0.tar.gz jsoncpp-src
+cd jsoncpp-src
 tar -xvf scons-local-2.1.0.tar.gz
 python scons.py platform=linux-gcc
 
@@ -49,11 +51,20 @@ make && make install
 
 cd ../../mongo-cxx-driver
 tar -xvf mongo-cxx-driver-legacy-0.0-26compat-2.6.2.tar.gz
+rm -rf mongo-cxx-driver
 mv mongo-cxx-driver-legacy-0.0-26compat-2.6.2 mongo-cxx-driver
 cd mongo-cxx-driver
 CURRENTDIR=$(pwd)
 echo "Building mongodb driver in $CURRENTDIR"
-python ../../json/jsoncpp-src-0.5.0/scons.py --prefix=srch2 --use-system-boost --sharedclient --full install-mongoclient
+
+if [ "$(uname)" == "Darwin" ]; then
+    echo "Building mongodb driver under MAC_OS"
+    python ../../json/jsoncpp-src/scons.py --osx-version-min=10.7 --use-system-boost --sharedclient --full install-mongoclient 
+else
+    echo "Building mongodb driver under LINUX"
+    python ../../json/jsoncpp-src/scons.py --prefix=srch2 --use-system-boost --sharedclient --full install-mongoclient
+fi
+
 
 cd ../../pymongo
 tar -xvf pymongo.tar.gz

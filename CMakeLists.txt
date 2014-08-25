@@ -75,7 +75,6 @@ SET(BUILD_UTILITY OFF CACHE BOOL "Build utilities. Default OFF")
 #SET(CMAKE_CXX_FLAGS_RELEASE "") 
 
 SET(ANDROID_SERVER OFF CACHE BOOL "Build srch2-server for android. Default OFF")
-
 IF(ANDROID)
     SET(BUILD_STATIC OFF)
     IF (ANDROID_SERVER)
@@ -133,7 +132,11 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
                   OUTPUT_VARIABLE gcc_compiler_version)
     MESSAGE(STATUS "C++ compiler version: ${gcc_compiler_version}") 
     string(COMPARE LESS ${gcc_compiler_version} "4.6" _compiler_version_lt_4.6)
-    
+   
+    IF(MAC_OS)
+        SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libstdc++")
+    ENDIF()
+ 
     if (_compiler_version_lt_4.6)
        SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -Wno-long-long -Wno-conversion -Wno-sign-compare -Wno-unused -Wno-gnu -Wno-c++11-extensions -Wno-c++11-extra-semi")
     else()
@@ -283,7 +286,7 @@ SET(INSTALL_AUXILLARY_FILES_DIR "" CACHE STRING "Directory Path of Auxillary Fil
 SET(PACKAGE_INSTALL_DIR "" CACHE STRING "Package files directory")
 SET(CMAKE_INSTALL_PREFIX "${PACKAGE_INSTALL_DIR}")
 INSTALL(FILES ${INSTALL_AUXILLARY_FILES_DIR}/readme.txt DESTINATION . PERMISSIONS OWNER_READ OWNER_WRITE)
-INSTALL(DIRECTORY ${INSTALL_AUXILLARY_FILES_DIR}/docs/example-demo/ DESTINATION example-demo USE_SOURCE_PERMISSIONS PATTERN "*.mkd" EXCLUDE) 
+INSTALL(DIRECTORY ${INSTALL_AUXILLARY_FILES_DIR}/documentation/docs/example-demo/ DESTINATION example-demo USE_SOURCE_PERMISSIONS PATTERN "*.mkd" EXCLUDE) 
 #INSTALL(FILES ${INSTALL_AUXILLARY_FILES_DIR}/srch2_config.xml DESTINATION conf PERMISSIONS OWNER_READ OWNER_WRITE)
 INSTALL(FILES ${INSTALL_AUXILLARY_FILES_DIR}/release_notes/RELEASE_${VERSION} DESTINATION . RENAME "RELEASE_NOTES" PERMISSIONS OWNER_READ OWNER_WRITE)
 INSTALL(DIRECTORY ${INSTALL_AUXILLARY_FILES_DIR}/srch2_data/ DESTINATION srch2_data USE_SOURCE_PERMISSIONS)

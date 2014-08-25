@@ -30,7 +30,6 @@ namespace instantsearch {
 typedef unsigned CharType;
 #define Byte char
 
-const std::string MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER = ",";
 
 /*
  * Example: tags is a multi valued attribute. Suppose one record has this value for tags :
@@ -68,7 +67,11 @@ typedef enum {
     CHINESE_ANALYZER    // ChineseAnalyzer
 } AnalyzerType;
 
-
+// Enum values to indicate conjunction or disjunction operation among a data record attributes.
+typedef enum {
+	ATTRIBUTES_OP_AND,
+	ATTRIBUTES_OP_OR
+} ATTRIBUTES_OP;
 
 /// Faceted search filter
 
@@ -93,7 +96,6 @@ typedef enum
 {
     SearchTypeTopKQuery ,
     SearchTypeGetAllResultsQuery ,
-    SearchTypeMapQuery,
     SearchTypeRetrieveById
 } QueryType;
 
@@ -146,15 +148,19 @@ typedef enum
 // change the names, they are too general
 typedef enum
 {
-    ATTRIBUTE_TYPE_UNSIGNED,
-    ATTRIBUTE_TYPE_FLOAT ,
-    ATTRIBUTE_TYPE_TEXT ,
-    ATTRIBUTE_TYPE_TIME ,// Time is kept as a long integer in the core.
-         // The meaning of this long integer is the number of seconds past from January 1st, 1970
+    ATTRIBUTE_TYPE_INT,
+    ATTRIBUTE_TYPE_LONG,
+    ATTRIBUTE_TYPE_FLOAT,
+    ATTRIBUTE_TYPE_DOUBLE,
+    ATTRIBUTE_TYPE_TEXT,
+    ATTRIBUTE_TYPE_TIME,// Time is kept as a long integer in the core.
+    // The meaning of this long integer is the number of seconds past from January 1st, 1970
     // TypedValue class uses these constants to understand if it is dealing with a single-valued attribute
     // or a multi-valued one.
-    ATTRIBUTE_TYPE_MULTI_UNSIGNED,
+    ATTRIBUTE_TYPE_MULTI_INT,
+    ATTRIBUTE_TYPE_MULTI_LONG,
     ATTRIBUTE_TYPE_MULTI_FLOAT,
+    ATTRIBUTE_TYPE_MULTI_DOUBLE,
     ATTRIBUTE_TYPE_MULTI_TEXT,
     ATTRIBUTE_TYPE_MULTI_TIME,
     ATTRIBUTE_TYPE_DURATION
@@ -235,7 +241,8 @@ typedef enum {
 	LogicalPlanNodeTypeOr,
 	LogicalPlanNodeTypeTerm,
 	LogicalPlanNodeTypeNot,
-	LogicalPlanNodeTypePhrase
+	LogicalPlanNodeTypePhrase,
+	LogicalPlanNodeTypeGeo
 } LogicalPlanNodeType;
 
 typedef enum {
@@ -253,6 +260,9 @@ typedef enum {
 	PhysicalPlanNode_RandomAccessAnd,
 	PhysicalPlanNode_RandomAccessOr,
 	PhysicalPlanNode_RandomAccessNot,
+	PhysicalPlanNode_RandomAccessGeo,
+	PhysicalPlanNode_GeoSimpleScan,
+	PhysicalPlanNode_GeoNearestNeighbor,
 	PhysicalPlanNode_Facet,
 	PhysicalPlanNode_SortByRefiningAttribute,
 	PhysicalPlanNode_FilterQuery,

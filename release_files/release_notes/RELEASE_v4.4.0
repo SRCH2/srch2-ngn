@@ -1,6 +1,6 @@
  *------------------------------------------------------------------
- *  RELEASE NOTES Version 4.3.1
- *  Date: ${MONTH} ${DAY}, ${YEAR} 
+ *  RELEASE NOTES Version 4.4.0
+ *  Date: August 14, 2014 
  *------------------------------------------------------------------
 
 * Introduced a new postprocessing step to dynamically boost ranking of results
@@ -14,4 +14,8 @@
   This commit contains the qf documentation to be restored in ranking.mkd:
   https://bitbucket.org/srch2inc/srch2-ngn/commits/5d6b1c44e4439319384178f8e721ad694d572f10?at=master
 
-* Changed the syntax of the mongodb section in the configuration.
+ * Changed the syntax of the mongodb section in the configuration.
+ * Added support for synonym filter during indexing phase.
+ * Removed restriction on the number of attributes (previously 31) in a data record for attribute based search.
+ * Improved and changed layout of online web documentation.
+ * Fixed a bug where a refining attribute was not using a default value specified in config file.
