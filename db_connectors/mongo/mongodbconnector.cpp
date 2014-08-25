@@ -53,13 +53,15 @@ bool MongoDBConnector::checkConfigValidity() {
     bool ret = (host.size() != 0) && (port.size() != 0) && (db.size() != 0)
             && (uniqueKey.size() != 0) && (collection.size() != 0);
     if (!ret) {
-        printf("MOGNOLISTENER: database host, port, db, collection, uniquekey must be set.\n");
+        printf(
+                "MOGNOLISTENER: database host, port, db, collection, uniquekey must be set.\n");
         return false;
     }
 
-    int value = strtol(port.c_str(),NULL,10);
+    int value = strtol(port.c_str(), NULL, 10);
     if (value <= 0 || value > USHRT_MAX) {
-        printf("MOGNOLISTENER: database port must be between 1 and %d\n", USHRT_MAX);
+        printf("MOGNOLISTENER: database port must be between 1 and %d\n",
+                USHRT_MAX);
         return false;
     }
 
@@ -77,7 +79,8 @@ bool MongoDBConnector::connectToDB() {
 
     int listenerWaitTime = 1;
     if (listenerWaitTimeStr.size() != 0) {
-        listenerWaitTime = static_cast<int>(strtol(listenerWaitTimeStr.c_str(),NULL,10));
+        listenerWaitTime = static_cast<int>(strtol(listenerWaitTimeStr.c_str(),
+                NULL, 10));
     }
 
     string hostAndport = host;
@@ -157,9 +160,10 @@ int MongoDBConnector::createNewIndexes() {
                     string recNS = obj.getStringField("ns");
 
                     string jsonRecord = obj.jsonString();
-                    this->serverHandle->insertRecord(jsonRecord);
+                    if (this->serverHandle->insertRecord(jsonRecord) == 0) {
+                        ++indexedRecordsCount;
+                    }
 
-                    ++indexedRecordsCount;
                     if (indexedRecordsCount
                             && (indexedRecordsCount % 1000) == 0)
                         printf("MOGNOLISTENER: Indexed %d records so far ...\n",
@@ -181,7 +185,7 @@ int MongoDBConnector::createNewIndexes() {
             printf("MOGNOLISTENER: Unknown exception %s\n", ex.what());
         }
         return 0;
-    }while(connectToDB());
+    } while (connectToDB());
 
     return -1;
 }
@@ -237,14 +241,15 @@ int MongoDBConnector::runListener() {
 
     int listenerWaitTime = 1;
     if (listenerWaitTimeStr.size() != 0) {
-        listenerWaitTime = static_cast<int>(strtol(listenerWaitTimeStr.c_str(),NULL,10));
+        listenerWaitTime = static_cast<int>(strtol(listenerWaitTimeStr.c_str(),
+                NULL, 10));
     }
 
     do {
         bool printOnce = true;
         time_t opLogTime = 0;
         time_t threadSpecificCutOffTime = 0;
-        if(!getLastAccessedLogRecordTime(threadSpecificCutOffTime)){
+        if (!getLastAccessedLogRecordTime(threadSpecificCutOffTime)) {
             //If false, means the file is not found on the disk, so we save a new one.
             setLastAccessedLogRecordTime(threadSpecificCutOffTime);
         }
@@ -357,8 +362,9 @@ void MongoDBConnector::parseOpLogObject(mongo::BSONObj& bobj,
         // Parse example data , find the pk and delete
         mongo::BSONElement _oElement = bobj.getField("o");
         if (_oElement.type() != mongo::Object) {
-            printf("MONGOLISTENER: \"o\" element is "
-                    "not an Object type in the delete operation!! ..Cannot update engine \n");
+            printf(
+                    "MONGOLISTENER: \"o\" element is "
+                            "not an Object type in the delete operation!! ..Cannot update engine \n");
             break;
         }
         mongo::BSONElement pk = _oElement.Obj().getField(uniqueKey.c_str());
@@ -381,8 +387,9 @@ void MongoDBConnector::parseOpLogObject(mongo::BSONObj& bobj,
         // Parse example data , find the pk and update
         mongo::BSONElement _o2Element = bobj.getField("o2");
         if (_o2Element.type() != mongo::Object) {
-            printf("MONGOLISTENER: o2 element is not an"
-                    " ObjectId type in the update operation!! ..Cannot update engine\n");
+            printf(
+                    "MONGOLISTENER: o2 element is not an"
+                            " ObjectId type in the update operation!! ..Cannot update engine\n");
             break;
         }
         mongo::BSONObj _internalMongoId = bobj.getField("o2").Obj();
@@ -391,8 +398,9 @@ void MongoDBConnector::parseOpLogObject(mongo::BSONObj& bobj,
         mongo::BSONObj updateRecord = cursor->next();  // should return only one
 
         if (string(updateRecord.firstElementFieldName()).compare("$err") == 0) {
-            printf("MONGOLISTENER: updated record could"
-                    " not be found in db in the update operation!! ..Cannot update engine \n");
+            printf(
+                    "MONGOLISTENER: updated record could"
+                            " not be found in db in the update operation!! ..Cannot update engine \n");
             break;
         }
 
@@ -418,7 +426,7 @@ void MongoDBConnector::parseOpLogObject(mongo::BSONObj& bobj,
 }
 
 MongoDBConnector::~MongoDBConnector() {
-    if(mongoConnector != NULL){
+    if (mongoConnector != NULL) {
         mongoConnector->done();
         delete mongoConnector;
     }
