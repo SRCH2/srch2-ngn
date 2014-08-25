@@ -101,7 +101,6 @@ For MongoDB:
             <dbKeyValue key="db" value="demo" />
             <dbKeyValue key="collection" value="movies" />
             <dbKeyValue key="listenerWaitTime" value="3" />
-            <dbKeyValue key="maxRetryOnFailure" value="3" />
         </dbKeyValues>
     </dbParameters>
 ```
@@ -117,7 +116,6 @@ For SQLite:
             <dbKeyValue key="dbPath" value="." />
             <dbKeyValue key="tableName" value="COMPANY" />
             <dbKeyValue key="listenerWaitTime" value="3" />
-            <dbKeyValue key="maxRetryOnFailure" value="2" />
         </dbKeyValues>
     </dbParameters>
 ```

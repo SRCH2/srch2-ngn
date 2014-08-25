@@ -77,15 +77,13 @@ Download a sample <a href="../example-demo/srch2-config-mongo.xml">configuration
             <dbKeyValue key="db" value="demo" />
             <dbKeyValue key="collection" value="movies" />
             <dbKeyValue key="listenerWaitTime" value="3" />
-            <dbKeyValue key="maxRetryOnFailure" value="3" />
         </dbKeyValues>
     </dbParameters>
 ```
 
 Most parameters are self-explanatory.  The "dataSourceType" value "2" indicates that this core is
 an external data source.  The "listenerWaitTime" value specifies how often (in seconds)
-the SRCH2 engine checks the latest changes from the MongoDB oplog.  The "maxRetryOnFailure" value
-specifies how many times the SRCH2 engine accesses MongoDB in the case of failures.  The MongoDB connector is implemented 
+the SRCH2 engine checks the latest changes from the MongoDB oplog.  The MongoDB connector is implemented 
 as a shared library specified by the parameters "dbSharedLibraryPath" and "dbSharedLibraryName", which is included in the package and loaded by the main SRCH2 engine.
 
 Change the parameters if needed.  Make sure that you have also set the "srch2Home" variable in the SRCH2 configuration file. All other paths mentioned in the configuration file are relative to the "srch2Home" folder.
@@ -219,7 +217,6 @@ Download a sample <a href="../example-demo/srch2-config-sqlite.xml">configuratio
             <dbKeyValue key="dbPath" value="." />
             <dbKeyValue key="tableName" value="COMPANY" />
             <dbKeyValue key="listenerWaitTime" value="3" />
-            <dbKeyValue key="maxRetryOnFailure" value="2" />
         </dbKeyValues>
     </dbParameters>
 ```
