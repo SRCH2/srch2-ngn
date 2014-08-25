@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TestGeoIndex extends TestIndex{
-    public static final int BATCH_INSERT_NUM = 2;
+    public static final int BATCH_INSERT_NUM = 20;
     public static final int BATCH_START_NUM= 0;
 
 
@@ -78,7 +78,7 @@ public class TestGeoIndex extends TestIndex{
     @Override
     public List<Query> getSucceedToSearchQuery(JSONArray records) {
         if (records.length() == 1){
-            if (singleRecordQueryQuery == null) {
+            if (singleRecordQueryQuery.isEmpty()) {
                 super.getSucceedToSearchQuery(records);
                 singleRecordQueryQuery.add(new Query(40, 40, 50, 50));
                 singleRecordQueryQuery.add(new Query(42, 42, 10));

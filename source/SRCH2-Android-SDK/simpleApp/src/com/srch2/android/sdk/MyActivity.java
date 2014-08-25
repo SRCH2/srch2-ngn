@@ -143,7 +143,7 @@ public class MyActivity extends TestableActivity {
     public void testAll() {
         try {
             for (TestableIndex index : new TestableIndex[]{ mIndexGeo}) {
-                testOneRecordCRUD(index);
+                //testOneRecordCRUD(index);
                 testBatchRecordCRUD(index);
             }
         } catch (JSONException e) {
@@ -228,11 +228,11 @@ public class MyActivity extends TestableActivity {
 
         testDeleteShouldSuccess(index, Arrays.asList(index.getSucceedToUpsertRecord().getString(index.getPrimaryKeyFieldName())));
 
-        Log.i(TAG, "testIndexableWithTwoRecordsAddedThenBothDeleted");
+      Log.i(TAG, "testIndexableWithTwoRecordsAddedThenBothDeleted");
         testIndexableGetRecordCountMatches(index, 0);
 
         Log.i(TAG, "testDeleteShouldFail");
-        testDeleteShouldFail(index, index.getFailToDeleteRecord());
+       testDeleteShouldFail(index, index.getFailToDeleteRecord());
     }
 
 
@@ -240,7 +240,7 @@ public class MyActivity extends TestableActivity {
         JSONArray records = index.getSucceedToInsertBatchRecords();
 
         Log.i(TAG, "testIndexableGetRecordBeforeBatchInsert");
-        testIndexableGetRecordCountMatches(index, 0);
+//        testIndexableGetRecordCountMatches(index, 0);
 
         Log.i(TAG, "testBatchInsertShouldSuccess");
         testBatchInsertShouldSuccess(index, records);
@@ -405,6 +405,9 @@ public class MyActivity extends TestableActivity {
             assertNotNull(records);
 
 
+            Cat.d("Check Search result:", "record:" + records.get(0));
+            Cat.d("Check Search result:", "query:" + query);
+
             assertTrue(index.verifyResult(query, records));
         }
     }
@@ -509,7 +512,7 @@ public class MyActivity extends TestableActivity {
         return Arrays.asList(new String[]{
                 "testStartEngine"
                 ,"testAll"
-                //,"testMultiCoreSearch"
+//                ,"testMultiCoreSearch"
         });
     }
 
