@@ -19,12 +19,10 @@ public:
         SERIALIZE_RECORDS
     };
     SerializeCommand(OperationCode code){
-        ASSERT(code == SERIALIZE_INDEX);
         this->indexOrRecord = code;
         this->dataFileName = "";
     }
     SerializeCommand(OperationCode code, const string &dataFileName){
-        ASSERT(code == SERIALIZE_RECORDS);
         this->indexOrRecord = code;
         this->dataFileName = dataFileName;
     }
@@ -33,11 +31,7 @@ public:
     //allocated by given allocator
     void* serialize(MessageAllocator * aloc){
         // calculate number of needed bytes
-        unsigned numberOfBytes = 0;
-        numberOfBytes += sizeof(indexOrRecord);
-        if(indexOrRecord == SERIALIZE_RECORDS){
-            numberOfBytes += sizeof(unsigned) + dataFileName.size();
-        }
+        unsigned numberOfBytes = getNumberOfBytes();
         // allocate space
         void * buffer = aloc->allocateMessageReturnBody(numberOfBytes);
         // serialize data now
@@ -48,6 +42,15 @@ public:
         }
 
         return buffer;
+    }
+
+    unsigned getNumberOfBytes() const{
+        unsigned numberOfBytes = 0;
+        numberOfBytes += sizeof(indexOrRecord);
+        if(indexOrRecord == SERIALIZE_RECORDS){
+            numberOfBytes += sizeof(unsigned) + dataFileName.size();
+        }
+        return numberOfBytes;
     }
 
     //given a byte stream recreate the original object
@@ -62,13 +65,16 @@ public:
         return new SerializeCommand(indexOrRecord);
     }
 
+    SerializeCommand * clone(){
+    	return new SerializeCommand(this->indexOrRecord, this->dataFileName);
+    }
+
     //Returns the type of message which uses this kind of object as transport
     static ShardingMessageType messageType(){
         return SerializeCommandMessageType;
     }
 
     string getDataFileName() const {
-        ASSERT(indexOrRecord == SERIALIZE_RECORDS);
         return dataFileName;
     }
 

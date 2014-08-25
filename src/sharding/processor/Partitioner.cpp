@@ -9,65 +9,10 @@ namespace srch2 {
 namespace httpwrapper {
 
 
-//###########################################################################
-//                       Partitioner
-//###########################################################################
+CorePartitioner::CorePartitioner(const	CorePartitionContianer *
+		partitionContainer):partitionContainer(partitionContainer){}
 
-
-Partitioner::Partitioner(ConfigManager * configurationManager){
-    this->configurationManager = configurationManager;
-}
-
-/*
- * Hash implementation :
- * 1. Uses getRecordValueToHash to find the value to be hashed for this record
- * 2. Uses TransportationManager to get total number of shards to know the hash space
- * 3. Uses hash(...) to choose which shard should be responsible for this record
- * 4. Returns the information of corresponding Shard (which can be discovered from SM)
- */
-const Shard * Partitioner::getShardIDForRecord(Record * record, unsigned coreId, boost::shared_ptr<const Cluster> clusterReadview){
-
-    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCoreById(coreId);
-
-    unsigned valueToHash = getRecordValueToHash(record);
-
-    unsigned totalNumberOfShards = clusterReadview->getCoreTotalNumberOfPrimaryShards(coreId);
-//    Logger::console("Total number of shards to be used in partitioned : %d", totalNumberOfShards);
-
-    return convertUnsignedToCoreShardInfo(hash(valueToHash , totalNumberOfShards), coreId, clusterReadview);
-
-}
-
-const Shard * Partitioner::getShardIDForRecord(string primaryKeyStringValue, unsigned coreId, boost::shared_ptr<const Cluster> clusterReadview){
-
-    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCoreById(coreId);
-
-    unsigned valueToHash = getRecordValueToHash(primaryKeyStringValue);
-
-    unsigned totalNumberOfShards = clusterReadview->getCoreTotalNumberOfPrimaryShards(coreId);
-//    Logger::console("Total number of shards to be used in partitioned : %d", totalNumberOfShards);
-
-    return convertUnsignedToCoreShardInfo(hash(valueToHash , totalNumberOfShards), coreId, clusterReadview);
-}
-
-/*
- *	Returns all valid shardIds for a broadcast
- */
-void Partitioner::getShardIDsForBroadcast(unsigned coreId,
-		boost::shared_ptr<const Cluster> clusterReadview,
-		vector<const Shard *> & broadcastShards){
-
-    clusterReadview->addCorePrimaryShards(coreId, broadcastShards);
-}
-
-
-/*
- * Uses Configuration file and the given expression to
- * calculate the record corresponding value to be hashed
- * for example if this value is just ID for each record we just return
- * the value of ID
- */
-unsigned Partitioner::getRecordValueToHash(Record * record){
+unsigned CorePartitioner::getRecordValueToHash(Record * record){
 
     // When the record is being parsed, configuration is used to compute the hashable value of this
     // record. It will be saved in record.
@@ -76,29 +21,191 @@ unsigned Partitioner::getRecordValueToHash(Record * record){
 }
 
 
-unsigned Partitioner::getRecordValueToHash(string primaryKeyStringValue){
+unsigned CorePartitioner::getRecordValueToHash(string primaryKeyStringValue){
     return hashDJB2(primaryKeyStringValue.c_str());
 }
 
-/*
- * Uses a hash function to hash valueToHash to a value in range [0,hashSpace)
- * and returns this value
- */
-unsigned Partitioner::hash(unsigned valueToHash, unsigned hashSpace){
-    // use a hash function
-    // now simply round robin
-    return valueToHash % hashSpace;
+
+void CorePartitioner::getAllReadTargets(vector<NodeTargetShardInfo> & targets) const{
+	vector<const NodePartition *> nodePartitions;
+	partitionContainer->getNodePartitionsForRead(nodePartitions);
+
+	map<NodeId, NodeTargetShardInfo> targetNodes;
+
+	// first move on node partitions and add all those nodes to targetNodes;
+	for(unsigned nodePartitionIdx = 0 ; nodePartitionIdx < nodePartitions.size(); ++nodePartitionIdx){
+		const NodePartition * nodePartition = nodePartitions.at(nodePartitionIdx);
+		targetNodes[nodePartition->getNodeId()] = NodeTargetShardInfo(nodePartition->getNodeId(), partitionContainer->getCoreId());
+		addPartitionToNodeTargetContainer(nodePartition, targetNodes[nodePartition->getNodeId()]);
+	}
+
+	// now cover ClusterPartitions with the least number of nodes
+	vector<const ClusterPartition *> clusterPartitions;
+	partitionContainer->getClusterPartitionsForRead(clusterPartitions);
+
+	// nodeId => list of partitions that have at least one shard in that node
+	map<NodeId, vector<const ClusterPartition *> > partitionCoverGraph;
+
+	// first try to cover partitions with those nodes that we added for NodePartitions
+	for(unsigned clusterPartitionIdx = 0 ; clusterPartitionIdx < clusterPartitions.size(); ++clusterPartitionIdx){
+		const ClusterPartition * clusterPartition = clusterPartitions.at(clusterPartitionIdx);
+
+		// those nodes that cover this partition
+		vector<NodeId> partitionCoveringNodes;
+		clusterPartition->getShardLocations(partitionCoveringNodes);
+
+		bool partitionCovered = false;
+		for(vector<NodeId>::iterator nodeIdItr = partitionCoveringNodes.begin(); nodeIdItr != partitionCoveringNodes.end(); ++nodeIdItr){
+			// if one of the covering nodes of this partition is already added, we use that node to cover this partition
+			if(targetNodes.find(*nodeIdItr) != targetNodes.end()){
+				addReadPartitionToNodeTargetContainer(clusterPartition, targetNodes.find(*nodeIdItr)->second);
+				partitionCovered = true;
+				break;
+			}
+		}
+		// if the partition is not covered yet,
+		if(! partitionCovered){
+			// add all coveringNode->partition edges in partitionCover map
+			for(vector<NodeId>::iterator nodeIdItr = partitionCoveringNodes.begin(); nodeIdItr != partitionCoveringNodes.end(); ++nodeIdItr){
+				if(partitionCoverGraph.find(*nodeIdItr) == partitionCoverGraph.end()){
+					partitionCoverGraph[*nodeIdItr] = vector<const ClusterPartition *>();
+				}
+				partitionCoverGraph[*nodeIdItr].push_back(clusterPartition);
+			}
+		}
+	}
+
+	// if partionCoverGraph has any edges, we still have partitions to cover
+	while(partitionCoverGraph.size() > 0){
+		//1. find the node which covers the maximum number of partitions
+		map<NodeId, vector<const ClusterPartition *> >::iterator mostCoveringNodeEntry = partitionCoverGraph.begin();
+		for(map<NodeId, vector<const ClusterPartition *> >::iterator nodeEntry = partitionCoverGraph.begin();
+				nodeEntry != partitionCoverGraph.end(); ++nodeEntry){
+			if(nodeEntry->second.size() > mostCoveringNodeEntry->second.size()){
+				mostCoveringNodeEntry = nodeEntry;
+			}
+		}
+		NodeId mostCoveringNodeId = mostCoveringNodeEntry->first;
+		vector<const ClusterPartition *> mostCoveringNodeCoveredPartitions = mostCoveringNodeEntry->second;
+		// 2. use this node to cover as mostCoveringNodeCoveredPartitions partitions
+		NodeTargetShardInfo coveringNodeTarget(mostCoveringNodeId, partitionContainer->getCoreId());
+		for(unsigned partitionIdx = 0; partitionIdx < mostCoveringNodeCoveredPartitions.size() ; ++partitionIdx){
+			const ClusterPartition * coveredPartition = mostCoveringNodeCoveredPartitions.at(partitionIdx);
+			addReadPartitionToNodeTargetContainer(coveredPartition, coveringNodeTarget);
+		}
+		targetNodes[mostCoveringNodeId] = coveringNodeTarget;
+		// 3. remove the entry from map and remove all ClusterPartition pointers from other entries
+		// a) remove entry from map
+		partitionCoverGraph.erase(mostCoveringNodeEntry);
+		// b) remove all covered partitions from other entries
+		for(unsigned partitionIdx = 0; partitionIdx < mostCoveringNodeCoveredPartitions.size() ; ++partitionIdx){
+			const ClusterPartition * coveredPartition = mostCoveringNodeCoveredPartitions.at(partitionIdx);
+			for(map<NodeId, vector<const ClusterPartition *> >::iterator nodeEntry = partitionCoverGraph.begin();
+					nodeEntry != partitionCoverGraph.end(); ++nodeEntry){
+				if(std::find(nodeEntry->second.begin(), nodeEntry->second.end(), coveredPartition)
+					!= nodeEntry->second.end()){
+					nodeEntry->second.erase(std::find(nodeEntry->second.begin(), nodeEntry->second.end(), coveredPartition));
+				}
+			}
+		}
+		// c) remove those partitionCoverGraph entries that their vector is empty now
+		map<NodeId, vector<const ClusterPartition *> > partitionCoverGraphTemp;
+		for(map<NodeId, vector<const ClusterPartition *> >::iterator nodeEntry = partitionCoverGraph.begin();
+				nodeEntry != partitionCoverGraph.end(); ++nodeEntry){
+			if(nodeEntry->second.size() > 0){
+				partitionCoverGraphTemp[nodeEntry->first] = nodeEntry->second;
+			}
+		}
+		partitionCoverGraph = partitionCoverGraphTemp;
+
+	}
+
+	// add all prepared targets to the output
+	for(map<NodeId, NodeTargetShardInfo>::iterator nodeEntry = targetNodes.begin(); nodeEntry != targetNodes.end(); ++nodeEntry){
+		targets.push_back(nodeEntry->second);
+	}
+
+}
+
+void CorePartitioner::getAllWriteTargets(unsigned hashKey, NodeId currentNodeId, vector<NodeTargetShardInfo> & targets) const{
+
+	map<NodeId, NodeTargetShardInfo> targetNodes;
+	// first get local write targets if this node has any node partition
+	const NodePartition * localNodePartition = partitionContainer->getNodePartitionForWrite(hashKey, currentNodeId);
+	if(localNodePartition != NULL){
+		targetNodes[currentNodeId] = NodeTargetShardInfo(currentNodeId, partitionContainer->getCoreId());
+		addPartitionToNodeTargetContainer(localNodePartition, targetNodes[currentNodeId]);
+	}
+
+	// now add cluster write targets
+	const ClusterPartition * writeClusterPartition = partitionContainer->getClusterPartitionForWrite(hashKey);
+	ASSERT(writeClusterPartition != NULL);
+	if(! writeClusterPartition->isPartitionLocked()){
+		vector<NodeId> partitionCoveringNodes;
+		writeClusterPartition->getShardLocations(partitionCoveringNodes);
+		for(vector<NodeId>::iterator coveringNodeIdItr = partitionCoveringNodes.begin();
+				coveringNodeIdItr != partitionCoveringNodes.end(); ++coveringNodeIdItr){
+			if(currentNodeId != *coveringNodeIdItr){
+				targetNodes[currentNodeId] = NodeTargetShardInfo(*coveringNodeIdItr, partitionContainer->getCoreId());
+			}
+			addWritePartitionToNodeTargetContainer(writeClusterPartition, targetNodes[currentNodeId]);
+		}
+	}
+
+	// add all prepared targets to the output
+	for(map<NodeId, NodeTargetShardInfo>::iterator nodeEntry = targetNodes.begin(); nodeEntry != targetNodes.end(); ++nodeEntry){
+		targets.push_back(nodeEntry->second);
+	}
 }
 
 
-const Shard * Partitioner::convertUnsignedToCoreShardInfo(unsigned coreShardIndex, unsigned coreId, boost::shared_ptr<const Cluster> clusterReadview){
-	vector<const Shard *> corePrimaryShards;
-	clusterReadview->addCorePrimaryShards(coreId, corePrimaryShards);
-	if(coreShardIndex >= corePrimaryShards.size()){
-		Logger::console("%d out of %d", coreShardIndex, corePrimaryShards.size());
-		ASSERT(coreShardIndex < corePrimaryShards.size());
+void CorePartitioner::getAllShardIds(vector<ClusterShardId> & allShardIds) const{
+	for(unsigned pid = 0 ; pid < partitionContainer->getTotalNumberOfPartitions() ; ++pid){
+		allShardIds.push_back(ClusterShardId(partitionContainer->getCoreId(), pid, 0)); // primary shard
+		for(unsigned rid = 1; rid <= partitionContainer->getReplicationDegree(); ++rid ){
+			allShardIds.push_back(ClusterShardId(partitionContainer->getCoreId(), pid, rid));
+		}
 	}
-    return corePrimaryShards.at(coreShardIndex);
+}
+
+
+void CorePartitioner::addReadPartitionToNodeTargetContainer(const ClusterPartition * partition, NodeTargetShardInfo & targets ) const{
+	vector<unsigned> replicas;
+	ASSERT(partition->getNodeReplicaIds(targets.getNodeId(), replicas));
+	ASSERT(replicas.size() > 0);
+	//TODO always choose one replica?
+	unsigned replicaId = replicas.at(0);
+	targets.addClusterShard(ClusterShardId(partitionContainer->getCoreId(), partition->getPartitionId(), replicaId));
+}
+
+void CorePartitioner::addWritePartitionToNodeTargetContainer(const ClusterPartition * partition, NodeTargetShardInfo & targets ) const{
+	vector<unsigned> replicas;
+	ASSERT(partition->getNodeReplicaIds(targets.getNodeId(), replicas));
+	ASSERT(replicas.size() > 0);
+	for(vector<unsigned>::iterator replicaIdItr = replicas.begin(); replicaIdItr != replicas.end(); ++replicaIdItr){
+		targets.addClusterShard(ClusterShardId(partitionContainer->getCoreId(), partition->getPartitionId(), *replicaIdItr));
+	}
+}
+
+void CorePartitioner::addPartitionToNodeTargetContainer(const NodePartition * partition, NodeTargetShardInfo & targets ) const{
+	vector<unsigned> nodeInternalPartitionIds;
+	partition->getInternalPartitionIds(nodeInternalPartitionIds);
+	for(vector<unsigned>::iterator nodeInternalPIdItr = nodeInternalPartitionIds.begin();
+			nodeInternalPIdItr < nodeInternalPartitionIds.end(); ++nodeInternalPIdItr){
+		targets.addNodeShard(NodeShardId(partition->getCoreId(), partition->getNodeId(), *nodeInternalPIdItr));
+	}
+}
+
+// computes the hash value of a string
+unsigned CorePartitioner::hashDJB2(const char *str) const {
+    unsigned hash = 5381;
+    unsigned c;
+    do
+    {
+        c = *str;
+        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+    }while(*str++);
+    return hash;
 }
 
 }

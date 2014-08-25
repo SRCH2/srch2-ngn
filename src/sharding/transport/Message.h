@@ -11,10 +11,9 @@ typedef unsigned MessageID_t;
 
 const char MSG_LOCAL_MASK = 0x1;        // 00000001
 const char MSG_DISCOVERY_MASK = 0x2;    // 00000010
-const char MSG_DP_INTERNAL_MASK = 0x4;  // 00000100
-const char MSG_SHM_INTERNAL_MASK = 0x4; // 00001000
-const char MSG_DP_REPLY_MASK = 0x10;// 00010000
-const char MSG_SHM_REPLY_MASK = 0x20;   // 00100000
+const char MSG_DP_REQUEST_MASK = 0x4;   // 00000100
+const char MSG_DP_REPLY_MASK = 0x8;     // 00001000
+const char MSG_SHARDING_MASK = 0x10;     // 00010000
 
 class Message {
 
@@ -29,52 +28,36 @@ public:
    bool isLocal(){
      return mask & MSG_LOCAL_MASK;
    }
-   bool isReply() {
-     return isDPReply() || isSHMReply();
+   bool isDPRequest() {
+     return mask & MSG_DP_REQUEST_MASK;
    }
-
    bool isDPReply() {
      return mask & MSG_DP_REPLY_MASK;
-   }
-
-   bool isSHMReply() {
-     return mask & MSG_SHM_REPLY_MASK;
-   }
-   bool isInternal() {
-     return isDPInternal() || isSHMInternal();
-   }
-   bool isDPInternal() {
-     return mask & MSG_DP_INTERNAL_MASK;
-   }
-   bool isSHMInternal() {
-     return mask & MSG_SHM_INTERNAL_MASK;
    }
    bool isDiscovery() {
      return mask & MSG_DISCOVERY_MASK;
    }
-
+   bool isSharding() {
+     return mask & MSG_SHARDING_MASK;
+   }
    Message * setLocal(){
 	   mask |= MSG_LOCAL_MASK;
 	   return this;
    }
-   Message * setDPReply(){
+   Message * setDPRequestMask(){
+	   mask |= MSG_DP_REQUEST_MASK;
+	   return this;
+   }
+   Message * setDPReplyMask(){
 	   mask |= MSG_DP_REPLY_MASK;
-	   return this;
-   }
-   Message * setSHMReply(){
-	   mask |= MSG_SHM_REPLY_MASK;
-	   return this;
-   }
-   Message * setDPInternal(){
-	   mask |= MSG_DP_INTERNAL_MASK;
-	   return this;
-   }
-   Message * setSHMInternal(){
-	   mask |= MSG_SHM_INTERNAL_MASK;
 	   return this;
    }
    Message * setDiscoveryMask(){
 	   mask |= MSG_DISCOVERY_MASK;
+	   return this;
+   }
+   Message * setShardingMask(){
+	   mask |= MSG_SHARDING_MASK;
 	   return this;
    }
    unsigned getBodySize(){
@@ -102,12 +85,6 @@ public:
    void setType(ShardingMessageType type){
 	   this->shardingMessageType = type;
    }
-   ShardId getDestinationShardId(){
-	   return destinationShardId;
-   }
-   void setDestinationShardId(const ShardId& destShardId){
-	   this->destinationShardId = destShardId;
-   }
    void setBodySize(unsigned bodySize){
 	   this->bodySize = bodySize;
    }
@@ -127,7 +104,6 @@ public:
 private:
    ShardingMessageType shardingMessageType;
    char mask;
-   ShardId destinationShardId;
    unsigned bodySize;
    MessageID_t id;
    MessageID_t requestMessageId; //used by response type messages

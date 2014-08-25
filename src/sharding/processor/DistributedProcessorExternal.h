@@ -1,10 +1,11 @@
 #ifndef __SHARDING_PROCESSOR_DISTRIBUTED_PROCESSR_EXTERNAL_H_
 #define __SHARDING_PROCESSOR_DISTRIBUTED_PROCESSR_EXTERNAL_H_
 
-
 #include <instantsearch/Record.h>
 #include <instantsearch/LogicalPlan.h>
-
+#include "DistributedProcessorMessageHandler.h"
+#include "sharding/sharding/metadata_manager/Shard.h"
+#include "sharding/sharding/metadata_manager/Cluster.h"
 #include <event.h>
 #include <evhttp.h>
 #include <event2/http.h>
@@ -29,7 +30,6 @@
  *
  */
 
-
 namespace srch2is = srch2::instantsearch;
 using namespace std;
 using srch2is::Record;
@@ -39,107 +39,94 @@ namespace srch2 {
 namespace httpwrapper {
 
 class ConfigManager;
-class RoutingManager;
-class Partitioner;
-class CoreShardInfo;
 
 class DPExternalRequestHandler {
 
 public:
 
-    DPExternalRequestHandler(ConfigManager * configurationManager, RoutingManager * routingManager);
+	DPExternalRequestHandler(ConfigManager & configurationManager,
+			TransportManager& transportManager, DPInternalRequestHandler& dpInternal);
 
-    // Public API which can be used by other modules
+	// Public API which can be used by other modules
 
-    /*
-     * 1. Receives a search request from a client (not from another shard)
-     * 2. broadcasts this request to DPInternalRequestHandler objects of other shards
-     * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
-     * 	  results. Results will be aggregator by another thread since it's not a blocking call.
-     */
-    void externalSearchCommand(evhttp_request *req , unsigned coreId);
+	/*
+	 * 1. Receives a search request from a client (not from another shard)
+	 * 2. broadcasts this request to DPInternalRequestHandler objects of other shards
+	 * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
+	 * 	  results. Results will be aggregator by another thread since it's not a blocking call.
+	 */
+	void externalSearchCommand(evhttp_request *req, unsigned coreId);
 
-    /*
-     * 1. Receives an insert request from a client (not from another shard)
-     * 2. Uses Partitioner to know which shard should handle this request
-     * 3. sends this request to DPInternalRequestHandler objects of the chosen shard
-     *    in a non-blocking manner. The status response is taken care of by aggregator in
-     *    another thread when these responses come.
-     */
-    void externalInsertCommand(evhttp_request *req, unsigned coreId);
+	/*
+	 * 1. Receives an insert request from a client (not from another shard)
+	 * 2. Uses Partitioner to know which shard should handle this request
+	 * 3. sends this request to DPInternalRequestHandler objects of the chosen shard
+	 *    in a non-blocking manner. The status response is taken care of by aggregator in
+	 *    another thread when these responses come.
+	 */
+	void externalInsertCommand(evhttp_request *req, unsigned coreId);
 
-    /*
-     * 1. Receives an update request from a client (not from another shard)
-     * 2. Uses Partitioner to know which shard should handle this request
-     * 3. sends this request to DPInternalRequestHandler objects of the chosen shard
-     *    in a non-blocking manner. The status response is taken care of by aggregator in
-     *    another thread when these responses come.
-     */
-    void externalUpdateCommand(evhttp_request *req, unsigned coreId);
+	/*
+	 * 1. Receives an update request from a client (not from another shard)
+	 * 2. Uses Partitioner to know which shard should handle this request
+	 * 3. sends this request to DPInternalRequestHandler objects of the chosen shard
+	 *    in a non-blocking manner. The status response is taken care of by aggregator in
+	 *    another thread when these responses come.
+	 */
+	void externalUpdateCommand(evhttp_request *req, unsigned coreId);
 
-    /*
-     * 1. Receives an delete request from a client (not from another shard)
-     * 2. Uses Partitioner to know which shard should handle this request
-     * 3. sends this request to DPInternalRequestHandler objects of the chosen shard
-     *    in a non-blocking manner. The status response is taken care of by aggregator in
-     *    another thread when these responses come.
-     */
-    void externalDeleteCommand(evhttp_request *req, unsigned coreId);
+	/*
+	 * 1. Receives an delete request from a client (not from another shard)
+	 * 2. Uses Partitioner to know which shard should handle this request
+	 * 3. sends this request to DPInternalRequestHandler objects of the chosen shard
+	 *    in a non-blocking manner. The status response is taken care of by aggregator in
+	 *    another thread when these responses come.
+	 */
+	void externalDeleteCommand(evhttp_request *req, unsigned coreId);
 
-    /*
-      * 1. Receives a getinfo request from a client (not from another shard)
-      * 2. broadcasts this request to DPInternalRequestHandler objects of other shards
-      * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
-      * 	  results. Results will be aggregator by another thread since it's not a blocking call.
-      */
-    void externalGetInfoCommand(evhttp_request *req, unsigned coreId);
+	/*
+	 * 1. Receives a getinfo request from a client (not from another shard)
+	 * 2. broadcasts this request to DPInternalRequestHandler objects of other shards
+	 * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
+	 * 	  results. Results will be aggregator by another thread since it's not a blocking call.
+	 */
+	void externalGetInfoCommand(evhttp_request *req, unsigned coreId);
 
-    /*
-      * 1. Receives a save request from a client (not from another shard)
-      * 2. broadcasts this request to DPInternalRequestHandler objects of other shards
-      * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
-      * 	  results. Results will be aggregator by another thread since it's not a blocking call.
-      */
-    void externalSerializeIndexCommand(evhttp_request *req, unsigned coreId);
-    /*
-      * 1. Receives a export request from a client (not from another shard)
-      * 2. broadcasts this request to DPInternalRequestHandler objects of other shards
-      * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
-      * 	  results. Results will be aggregator by another thread since it's not a blocking call.
-      */
-    void externalSerializeRecordsCommand(evhttp_request *req, unsigned coreId);
+	/*
+	 * 1. Receives a save request from a client (not from another shard)
+	 * 2. broadcasts this request to DPInternalRequestHandler objects of other shards
+	 * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
+	 * 	  results. Results will be aggregator by another thread since it's not a blocking call.
+	 */
+	void externalSerializeIndexCommand(evhttp_request *req, unsigned coreId);
+	/*
+	 * 1. Receives a export request from a client (not from another shard)
+	 * 2. broadcasts this request to DPInternalRequestHandler objects of other shards
+	 * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
+	 * 	  results. Results will be aggregator by another thread since it's not a blocking call.
+	 */
+	void externalSerializeRecordsCommand(evhttp_request *req, unsigned coreId);
 
-    /*
-      * 1. Receives a reset log request from a client (not from another shard)
-      * 2. broadcasts this request to DPInternalRequestHandler objects of other shards
-      * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
-      * 	  results. Results will be aggregator by another thread since it's not a blocking call.
-      */
-    void externalResetLogCommand(evhttp_request *req, unsigned coreId);
+	/*
+	 * 1. Receives a reset log request from a client (not from another shard)
+	 * 2. broadcasts this request to DPInternalRequestHandler objects of other shards
+	 * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
+	 * 	  results. Results will be aggregator by another thread since it's not a blocking call.
+	 */
+	void externalResetLogCommand(evhttp_request *req, unsigned coreId);
 
-    /*
-     * Receives a commit request and boardcasts it to other shards
-     */
-    void externalCommitCommand(evhttp_request *req, unsigned coreId);
-
+	/*
+	 * Receives a commit request and boardcasts it to other shards
+	 */
+	void externalCommitCommand(evhttp_request *req, unsigned coreId);
+	void externalMergeCommand(evhttp_request *req, unsigned coreId);
 
 private:
-    ConfigManager * configurationManager;
-    RoutingManager * routingManager;
-
-    // now, use Partitioner to choose a shard for this record
-    Partitioner * partitioner;
-
+	ConfigManager * configurationManager;
+	DPMessageHandler dpMessageHandler;
 };
 
-
 }
 }
-
-
-
-
-
-
 
 #endif // __SHARDING_PROCESSOR_DISTRIBUTED_PROCESSR_EXTERNAL_H_

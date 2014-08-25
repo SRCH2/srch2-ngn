@@ -32,6 +32,7 @@ namespace srch2 {
 namespace instantsearch {
 
 class LogicalPlanNodeAnnotation;
+class LogicalPlan ;
 /*
  * LogicalPlanNode is the common class used for the logical plan tree operators and operands. And tree is
  * constructed by attaching the instances of this class and the pointer to the root is kept in LogicalPlan.

@@ -56,6 +56,7 @@ public:
      * @param schema A const reference to the Schema of the record.
      */
     Record(const Schema *schema);
+    Record(const Record & copy);
 
     /** 
      * Sets the primary key value.

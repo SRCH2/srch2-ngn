@@ -40,6 +40,8 @@ class LogicalPlanNode{
 	// Since constructor is private, only LogicalPlan can allocate space for LogicalPlanNodes.
 	friend class LogicalPlan;
 public:
+	LogicalPlanNode(const LogicalPlanNode & node);
+
 	LogicalPlanNodeType nodeType;
 	// this flag is used in case we want to force Query Optimizer to use a specific physical node.
 	// currently it's used for Suggestion
@@ -104,6 +106,12 @@ public:
 		phraseInfo->proximitySlop = slop;
 	}
 
+
+	LogicalPlanPhraseNode(const LogicalPlanPhraseNode & node):
+	LogicalPlanNode(node){
+		this->phraseInfo = new PhraseInfo(*(node.phraseInfo));
+	}
+
 	/*
 	 * this constructor makes an empty object for deserialization
 	 */
@@ -151,6 +159,8 @@ private:
 
 public:
     LogicalPlan();
+    LogicalPlan(const LogicalPlan & logicalPlan);
+
     ~LogicalPlan();
 
 

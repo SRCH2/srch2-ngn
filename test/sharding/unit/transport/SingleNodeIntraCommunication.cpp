@@ -65,11 +65,12 @@ using namespace srch2::httpwrapper;
 
 struct TestHandler : public CallBackHandler {
   int messageRecieved;
-  void resolveMessage(Message *msg, unsigned nodeId) {
+  bool resolveMessage(Message *msg, unsigned nodeId) {
    // assert(!strcmp(msg->buffer, MESSAGE_CONTENTS[messageRecieved]));
-    printf("%d: \t %s\n", msg->getDestinationShardId().coreId, msg->getMessageBody());
+    printf("%d: \t %s\n", 0, msg->getMessageBody());
     fflush(stdout);
     if(++messageRecieved == 52) pthread_exit(0);
+    return true;
   }
   TestHandler() : messageRecieved(0) {}
 };
@@ -80,47 +81,47 @@ void* dispatch(void *arg) {
 }
 
 int main() {
-  std::vector<Node>* nodes = new std::vector<Node>();
-  nodes->push_back(
-      Node(std::string("apple"), std::string("127.0.0.1"), 9552, false));
-
-  int i=0;
-  for(std::vector<Node>::iterator node = nodes->begin(); 
-      node != nodes->end(); ++node) {
-    node->setId(i++);
-  }
-
-  std::vector<Node>::iterator n = nodes->begin(); 
-  n->thisIsMe = true;
-
-  int cid; i = 0;
-
-  const int NUM_THREADS = 3;
-  EventBases eventbases;
-  for(int t=0; t<NUM_THREADS; ++t) 
-    eventbases.push_back(event_base_new());
-
-  TransportManager *tm =  new TransportManager(eventbases, *nodes);
-  tm->registerCallbackForInternalMessageHandler(new TestHandler());
-
-  pthread_t tmp[NUM_THREADS];
-  for(int t=0;  t < NUM_THREADS; ++t) {
-    pthread_create(tmp + t, NULL, dispatch, eventbases[t]);
-  }
-  
-  for(int m=0; m < 52; ++m) {
-    int messageLength = strlen(MESSAGE_CONTENTS[m]);
-    Message* msg = tm->getMessageAllocator()->allocateMessage(messageLength+1);
-    msg->setType(StatusMessageType);
-    msg->setDPInternal();
-    msg->setBodySize(messageLength+1);
-    ShardId shardId;
-    shardId.coreId = n->getId();
-    msg->setDestinationShardId(shardId);
-    msg->setMessageId(tm->getUniqueMessageIdValue());
-    memcpy(msg->getMessageBody(), MESSAGE_CONTENTS[m], messageLength);
-
-    tm->sendMessage(n->getId(), msg);
-    tm->getMessageAllocator()->deallocateByMessagePointer(msg);
-  }
+//  std::vector<Node>* nodes = new std::vector<Node>();
+//  nodes->push_back(
+//      Node(std::string("apple"), std::string("127.0.0.1"), 9552, false));
+//
+//  int i=0;
+//  for(std::vector<Node>::iterator node = nodes->begin();
+//      node != nodes->end(); ++node) {
+//    node->setId(i++);
+//  }
+//
+//  std::vector<Node>::iterator n = nodes->begin();
+//  n->thisIsMe = true;
+//
+//  int cid; i = 0;
+//
+//  const int NUM_THREADS = 3;
+//  EventBases eventbases;
+//  for(int t=0; t<NUM_THREADS; ++t)
+//    eventbases.push_back(event_base_new());
+//
+//  TransportManager *tm =  new TransportManager(eventbases, *nodes);
+//  tm->registerCallbackForInternalMessageHandler(new TestHandler());
+//
+//  pthread_t tmp[NUM_THREADS];
+//  for(int t=0;  t < NUM_THREADS; ++t) {
+//    pthread_create(tmp + t, NULL, dispatch, eventbases[t]);
+//  }
+//
+//  for(int m=0; m < 52; ++m) {
+//    int messageLength = strlen(MESSAGE_CONTENTS[m]);
+//    Message* msg = tm->getMessageAllocator()->allocateMessage(messageLength+1);
+//    msg->setType(StatusMessageType);
+//    msg->setDPInternal();
+//    msg->setBodySize(messageLength+1);
+//    ClusterShardId shardId;
+//    shardId.coreId = n->getId();
+//    msg->setDestinationShardId(shardId);
+//    msg->setMessageId(tm->getUniqueMessageIdValue());
+//    memcpy(msg->getMessageBody(), MESSAGE_CONTENTS[m], messageLength);
+//
+//    tm->sendMessage(n->getId(), msg);
+//    tm->getMessageAllocator()->deallocateByMessagePointer(msg);
+//  }
 }

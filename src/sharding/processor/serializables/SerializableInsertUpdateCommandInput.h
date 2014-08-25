@@ -40,9 +40,7 @@ public:
     void* serialize(MessageAllocator * aloc){
         ASSERT(record != NULL);
         // calculate the size
-        unsigned numberOfBytes = 0;
-        numberOfBytes += sizeof(OperationCode);
-        numberOfBytes += record->getNumberOfBytesSize();
+        unsigned numberOfBytes = getNumberOfBytes();
         // allocate the space
         void * buffer = aloc->allocateMessageReturnBody(numberOfBytes);
         void * bufferWritePointer = buffer;
@@ -51,6 +49,13 @@ public:
         bufferWritePointer = record->serializeForNetwork(bufferWritePointer);
 
         return buffer;
+    }
+
+    unsigned getNumberOfBytes() const{
+        unsigned numberOfBytes = 0;
+        numberOfBytes += sizeof(OperationCode);
+        numberOfBytes += record->getNumberOfBytesSize();
+        return numberOfBytes;
     }
 
     //given a byte stream recreate the original object
@@ -62,6 +67,10 @@ public:
         return new InsertUpdateCommand(record, insertOrUpdate);
     }
 
+
+    InsertUpdateCommand * clone(){
+    	return new InsertUpdateCommand(new Record(*this->record), this->insertOrUpdate);
+    }
     //Returns the type of message which uses this kind of object as transport
     static ShardingMessageType messageType(){
         return InsertUpdateCommandMessageType;
