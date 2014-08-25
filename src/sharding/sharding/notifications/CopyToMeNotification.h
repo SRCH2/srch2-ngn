@@ -12,26 +12,33 @@ namespace httpwrapper {
 
 class CopyToMeNotification : public ShardingNotification {
 public:
-	CopyToMeNotification(const ClusterShardId & srcShardId){
+	CopyToMeNotification(const ClusterShardId & srcShardId, const ClusterShardId & destShardId){
 		this->srcShardId = srcShardId;
+		this->destShardId = destShardId;
 	}
+    CopyToMeNotification(const ClusterShardId & srcShardId){
+        this->srcShardId = srcShardId;
+    }
 	CopyToMeNotification(){};
 
 
 	void * serialize(void * buffer) const{
 		buffer = ShardingNotification::serialize(buffer);
 		buffer = srcShardId.serialize(buffer);
+        buffer = destShardId.serialize(buffer);
 		return buffer;
 	}
 	unsigned getNumberOfBytes() const{
 		unsigned numberOfBytes = 0;
 		numberOfBytes += ShardingNotification::getNumberOfBytes();
 		numberOfBytes += srcShardId.getNumberOfBytes();
+        numberOfBytes += destShardId.getNumberOfBytes();
 		return numberOfBytes;
 	}
 	void * deserialize(void * buffer) {
 		buffer = ShardingNotification::deserialize(buffer);
 		buffer = srcShardId.deserialize(buffer);
+        buffer = destShardId.deserialize(buffer);
 		return buffer;
 	}
 	ShardingMessageType messageType() const{
@@ -40,12 +47,15 @@ public:
     ClusterShardId getSrcShardId() const{
     	return srcShardId;
     }
-
+    ClusterShardId getDestShardId() const{
+        return destShardId;
+    }
 	bool operator==(const CopyToMeNotification & right){
-		return srcShardId == right.srcShardId;
+		return srcShardId == right.srcShardId && destShardId == right.destShardId;
 	}
 private:
 	ClusterShardId srcShardId;
+	ClusterShardId destShardId;
 };
 
 

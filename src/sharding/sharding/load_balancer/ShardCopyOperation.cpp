@@ -87,7 +87,7 @@ OperationState * ShardCopyOperation::handle(LockingNotification::ACK * ack){
 OperationState * ShardCopyOperation::transfer(){
 	// start transfering the data
 	// call MM to transfer the shard.
-	accessMigrationManager(replicaShardId, srcNodeId);
+	accessMigrationManager(shardId, replicaShardId, srcNodeId);
 	return this;
 }
 OperationState * ShardCopyOperation::handle(MMNotification * mmStatus){
@@ -208,8 +208,8 @@ OperationState * ShardCopyOperation::release(){
 	return this;
 }
 
-void ShardCopyOperation::accessMigrationManager(const ClusterShardId & srcShardId, const NodeId srcNodeId){
-	CopyToMeNotification * copyToMeNotif = new CopyToMeNotification(replicaShardId);
+void ShardCopyOperation::accessMigrationManager(const ClusterShardId & shardId, const ClusterShardId & srcShardId, const NodeId srcNodeId){
+	CopyToMeNotification * copyToMeNotif = new CopyToMeNotification(replicaShardId, shardId);
 	this->send(copyToMeNotif, NodeOperationId(srcNodeId));
 	delete copyToMeNotif;
 }

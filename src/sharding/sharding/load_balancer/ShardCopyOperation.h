@@ -49,7 +49,7 @@ private:
 	OperationState * transfer();
 	OperationState * commit();
 	OperationState * release();
-	void accessMigrationManager(const ClusterShardId & srcShardId, const NodeId srcNodeId);
+	void accessMigrationManager(const ClusterShardId & shardId, const ClusterShardId & srcShardId, const NodeId srcNodeId);
 };
 
 
