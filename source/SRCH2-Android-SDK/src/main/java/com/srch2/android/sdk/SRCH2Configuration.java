@@ -21,17 +21,17 @@ final class SRCH2Configuration {
     private String authorizationKey ;
 
     /**
-     * The constructor to build a SRCH2Configuration. User can give multiple indexes to one configuration
+     * The constructor to build a SRCH2Configuration. User can give multiple indexes to one configuration.
      *
-     * @param index1      the index
-     * @param restIndexes the other more indexes
+     * @param firstIndex      the Indexable representing the first index
+     * @param additionalIndexes additional Indexables representing additional indexes
      */
-    SRCH2Configuration(Indexable index1, Indexable... restIndexes) {
-        validateIndexable(index1);
-        index1.indexInternal = createIndex(new IndexDescription(index1));
-        indexableMap.put(index1.getIndexName(), index1);
-        if (restIndexes != null) {
-            for (Indexable idx : restIndexes) {
+    SRCH2Configuration(Indexable firstIndex, Indexable... additionalIndexes) {
+        validateIndexable(firstIndex);
+        firstIndex.indexInternal = createIndex(new IndexDescription(firstIndex));
+        indexableMap.put(firstIndex.getIndexName(), firstIndex);
+        if (additionalIndexes != null) {
+            for (Indexable idx : additionalIndexes) {
                 validateIndexable(idx);
                 idx.indexInternal = createIndex(new IndexDescription(idx));
                 indexableMap.put(idx.getIndexName(), idx);
@@ -47,7 +47,11 @@ final class SRCH2Configuration {
         IndexDescription.throwIfNonValidIndexName(indexable.getIndexName());
 
         if (indexable.getSchema() == null) {
-            throw new NullPointerException("Indexable cannot be initialized with null schema: verify getSchema() is returning a valid schema object.");
+            throw new NullPointerException("Indexable " + indexable.getIndexName() + " cannot be initialized with null schema: verify getSchema() is returning a valid schema object.");
+        }
+
+        if (indexable.getHighlighter() == null) {
+            throw new NullPointerException("Indexable " + indexable.getIndexName() + " cannot be initialized with null highlighter: verify getHighlighter() is returning a valid highlighter object.");
         }
 
         IndexDescription.throwIfNonValidFuzzinessSimilarityThreshold(indexable.getFuzzinessSimilarityThreshold());
@@ -55,12 +59,6 @@ final class SRCH2Configuration {
         IndexDescription.throwIfNonValidTopK(indexable.getTopK());
     }
 
-    /**
-     * It returns configuration object in the form of an XML string.
-     *
-     * @return It returns an XML string for the corresponding Configuration
-     * object
-     */
     static String toXML(SRCH2Configuration conf) {
 
         if (conf.indexableMap.size() == 0) {

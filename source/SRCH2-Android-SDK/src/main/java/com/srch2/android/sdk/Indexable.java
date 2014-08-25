@@ -60,6 +60,7 @@ public abstract class Indexable {
     IndexInternal indexInternal;
 
 
+
     /**
      * Implementing this method sets the name of the index this <code>Indexable</code> represents.
      * @return the name of the index this <code>Indexable</code> represents
@@ -73,6 +74,10 @@ public abstract class Indexable {
      * @return the schema to define the index structure this <code>Indexable</code> represents
      */
     abstract public Schema getSchema();
+
+    public Highlighter getHighlighter() {
+        return new Highlighter();
+    }
 
     /**
      * If returned from {@link #getRecordCount()} indicates this value has not yet been set.

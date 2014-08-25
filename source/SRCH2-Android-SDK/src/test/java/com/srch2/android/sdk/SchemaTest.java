@@ -63,36 +63,4 @@ public class SchemaTest {
 
     }
 
-    @Test
-    public void testHighlightingPreAndPostScript() {
-
-        Schema s = new Schema(Field.createDefaultPrimaryKeyField("id"), Field.createSearchableField("title").enableHighlighting());
-
-        s.setHighlightedPreAndPostScript("FUZZYPRE", "FUZZYPOST", "EXACTPRE", "EXACTPOST");
-
-        Assert.assertEquals(s.highlightFuzzyPreTag, "FUZZYPRE");
-        Assert.assertEquals(s.highlightFuzzyPostTag, "FUZZYPOST");
-        Assert.assertEquals(s.highlightExactPreTag, "EXACTPRE");
-        Assert.assertEquals(s.highlightExactPostTag, "EXACTPOST");
-
-        s = new Schema(Field.createDefaultPrimaryKeyField("id"), Field.createSearchableField("title").enableHighlighting())
-                    .formatExactTextMatchesHighlighting(true, true, "#FFFFFF")
-                    .formatFuzzyTextMatchesHighlighting(true, true, "#0000AA");
-
-        Assert.assertEquals(s.highlightBoldFuzzy, true);
-        Assert.assertEquals(s.highlightBoldExact, true);
-        Assert.assertEquals(s.highlightColorExact, "FFFFFF");
-        Assert.assertEquals(s.highlightColorFuzzy, "0000AA");
-
-        s = new Schema(Field.createDefaultPrimaryKeyField("id"), Field.createSearchableField("title").enableHighlighting())
-                .formatExactTextMatchesHighlighting(false, true)
-                .formatFuzzyTextMatchesHighlighting(false, true);
-
-        Assert.assertEquals(s.highlightBoldFuzzy, false);
-        Assert.assertEquals(s.highlightBoldExact, false);
-        Assert.assertEquals(s.highlightItalicFuzzy, true);
-        Assert.assertEquals(s.highlightItalicExact, true);
-        Assert.assertNull(s.highlightColorExact);
-        Assert.assertNull(s.highlightColorFuzzy);
-    }
 }
