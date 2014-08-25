@@ -74,5 +74,25 @@ public class SchemaTest {
         Assert.assertEquals(s.highlight_fuzzySuffix, "FUZZYPOST");
         Assert.assertEquals(s.highlight_exactPrefix, "EXACTPRE");
         Assert.assertEquals(s.highlight_exactSuffix, "EXACTPOST");
+
+        s = new Schema(Field.createDefaultPrimaryKeyField("id"), Field.createSearchableField("title").enableHighlighting())
+                    .formatExactTextMatchesHighlighting(true, true, "#FFFFFF")
+                    .formatFuzzyTextMatchesHighlighting(true, true, "#0000AA");
+
+        Assert.assertEquals(s.highlightBoldFuzzy, true);
+        Assert.assertEquals(s.highlightBoldExact, true);
+        Assert.assertEquals(s.highlightColorExact, "FFFFFF");
+        Assert.assertEquals(s.highlightColorFuzzy, "0000AA");
+
+        s = new Schema(Field.createDefaultPrimaryKeyField("id"), Field.createSearchableField("title").enableHighlighting())
+                .formatExactTextMatchesHighlighting(false, true)
+                .formatFuzzyTextMatchesHighlighting(false, true);
+
+        Assert.assertEquals(s.highlightBoldFuzzy, false);
+        Assert.assertEquals(s.highlightBoldExact, false);
+        Assert.assertEquals(s.highlightItalicFuzzy, true);
+        Assert.assertEquals(s.highlightItalicExact, true);
+        Assert.assertNull(s.highlightColorExact);
+        Assert.assertNull(s.highlightColorFuzzy);
     }
 }
