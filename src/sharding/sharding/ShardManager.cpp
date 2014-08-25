@@ -586,7 +586,7 @@ void * ShardManager::periodicWork(void *args) {
 		 * 2. is we are joined, start load balancing.
 		 */
 		//
-		sleep(20);
+		sleep(2);
 
 		boost::unique_lock<boost::mutex> bouncedNotificationsLock(ShardManager::getShardManager()->shardManagerGlobalMutex);
 
@@ -600,7 +600,7 @@ void * ShardManager::periodicWork(void *args) {
 
 
 		// 2. if we are joined, start load balancing.
-		if(false && ShardManager::getShardManager()->isJoined() && ! ShardManager::getShardManager()->isLoadBalancing()){
+		if(ShardManager::getShardManager()->isJoined() && ! ShardManager::getShardManager()->isLoadBalancing()){
 			ShardManager::getShardManager()->setLoadBalancing();
 			ShardManager::getShardManager()->stateMachine->registerOperation(new LoadBalancingStartOperation());
 		}
