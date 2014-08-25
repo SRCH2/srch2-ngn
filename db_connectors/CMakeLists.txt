@@ -26,7 +26,7 @@ IF(NOT ANDROID)
 
     IF(MAC_OS)					
         INCLUDE_DIRECTORIES(
-            ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver/mongo-cxx-driver/build/osx-version-min_10.8/use-system-boost/srch2/include/
+            ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver/mongo-cxx-driver/build/osx-version-min_10.6/use-system-boost/srch2/include/
             ${CMAKE_SOURCE_DIR}/../src/adapter/
         )
     ELSE()
@@ -49,7 +49,7 @@ IF(NOT ANDROID)
     SET_TARGET_PROPERTIES(mongodbConnector PROPERTIES COMPILE_FLAGS -fPIC)
 
     IF(MAC_OS)
-        set(MONGO_CLIENT_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver/mongo-cxx-driver/build/osx-version-min_10.8/use-system-boost/libmongoclient.a)
+        set(MONGO_CLIENT_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver/mongo-cxx-driver/build/osx-version-min_10.6/use-system-boost/libmongoclient.a)
     ELSE()
         set(MONGO_CLIENT_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver/mongo-cxx-driver/build/use-system-boost/libmongoclient.a)
     ENDIF()

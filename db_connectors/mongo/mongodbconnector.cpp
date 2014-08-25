@@ -19,7 +19,6 @@ MongoDBConnector::MongoDBConnector() {
     serverHandle = NULL;
     oplogConnection = NULL;
     mongoConnector = NULL;
-    defaultSleepTime = 60;
 }
 
 //Init the connector, call connect
@@ -35,23 +34,6 @@ int MongoDBConnector::init(ServerInterface *serverHandle) {
                 uniqueKey.c_str());
         return -1;
     }
-
-    /*
-     * Get the default sleep time if user defines it in the xml file.
-     * The default sleep time is only used after the "max retry count" is
-     * reached. And it will be used in the infinite loops,
-     * so it should be better to greater than 1 minute.
-     */
-
-    std::string defaultSleepTimeString;
-    this->serverHandle->configLookUp("defaultSleepTime",
-            defaultSleepTimeString);
-    int tmpSleepTime = static_cast<int>(strtol(defaultSleepTimeString.c_str(), NULL, 10));
-    if (defaultSleepTimeString.compare("") != 0 && tmpSleepTime < 60) {
-        printf("The default sleep time should be greater than 1 minute."
-                " The engine is using the default value 60 seconds .\n");
-    }
-    defaultSleepTime = tmpSleepTime > 60 ? tmpSleepTime : 60;
 
     if (!checkConfigValidity() || !connectToDB()) {
         return -1;
@@ -88,20 +70,14 @@ bool MongoDBConnector::checkConfigValidity() {
 bool MongoDBConnector::connectToDB() {
     string mongoNamespace = "local.oplog.rs";
 
-    string host, port, listenerWaitTimeStr, maxRetryOnFailureStr;
+    string host, port, listenerWaitTimeStr;
     this->serverHandle->configLookUp("host", host);
     this->serverHandle->configLookUp("port", port);
     this->serverHandle->configLookUp("listenerWaitTime", listenerWaitTimeStr);
-    this->serverHandle->configLookUp("maxRetryOnFailure", maxRetryOnFailureStr);
 
     int listenerWaitTime = 1;
     if (listenerWaitTimeStr.size() != 0) {
         listenerWaitTime = static_cast<int>(strtol(listenerWaitTimeStr.c_str(),NULL,10));
-    }
-
-    int maxRetryOnFailure = 3;
-    if (maxRetryOnFailureStr.size() != 0) {
-        maxRetryOnFailure = static_cast<int>(strtol(maxRetryOnFailureStr.c_str(),NULL,10));
     }
 
     string hostAndport = host;
@@ -109,7 +85,6 @@ bool MongoDBConnector::connectToDB() {
         hostAndport.append(":").append(port);
     }
 
-    int retryCount = maxRetryOnFailure;
     while (1) {
         try {
             if (mongoConnector != NULL) {
@@ -131,13 +106,7 @@ bool MongoDBConnector::connectToDB() {
                         "member of replica set \n");
                 printf("MOGNOLISTENER: trying again ... \n");
 
-                if (retryCount >= 0) {
-                    --retryCount;
-                    // sleep...do not hog the CPU
-                    sleep(listenerWaitTime);
-                } else {
-                    sleep(defaultSleepTime);
-                }
+                sleep(listenerWaitTime);
                 continue;
             }
             return true;
@@ -148,13 +117,8 @@ bool MongoDBConnector::connectToDB() {
         }
         printf("MONGOLISTENER: trying again ...\n");
 
-        if (retryCount >= 0) {
-            --retryCount;
-            // sleep...do not hog the CPU
-            sleep(listenerWaitTime);
-        } else {
-            sleep(defaultSleepTime);
-        }
+        // sleep...do not hog the CPU
+        sleep(listenerWaitTime);
     }
 
     /*
@@ -281,6 +245,7 @@ int MongoDBConnector::runListener() {
         time_t opLogTime = 0;
         time_t threadSpecificCutOffTime = 0;
         if(!getLastAccessedLogRecordTime(threadSpecificCutOffTime)){
+            //If false, means the file is not found on the disk, so we save a new one.
             setLastAccessedLogRecordTime(threadSpecificCutOffTime);
         }
         try {

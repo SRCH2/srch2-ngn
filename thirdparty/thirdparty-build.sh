@@ -59,7 +59,7 @@ echo "Building mongodb driver in $CURRENTDIR"
 
 if [ "$(uname)" == "Darwin" ]; then
     echo "Building mongodb driver under MAC_OS"
-    python ../../json/jsoncpp-src/scons.py --osx-version-min=10.8 --use-system-boost --sharedclient --full install-mongoclient 
+    python ../../json/jsoncpp-src/scons.py --osx-version-min=10.6 --use-system-boost --sharedclient --full install-mongoclient 
 else
     echo "Building mongodb driver under LINUX"
     python ../../json/jsoncpp-src/scons.py --prefix=srch2 --use-system-boost --sharedclient --full install-mongoclient

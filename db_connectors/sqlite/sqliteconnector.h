@@ -57,12 +57,7 @@ private:
     std::string LOG_TABLE_NAME_ID;
     std::string PRIMARY_KEY_TYPE;
     std::string PRIMARY_KEY_NAME;
-    int maxRetryOnFailure;
     int listenerWaitTime;
-
-    //The engine will use the default sleep time after
-    //the "maxRetryOnFailure" is reached.
-    int defaultSleepTime;
 
     //Parameters for Sqlite
     sqlite3 *db;
