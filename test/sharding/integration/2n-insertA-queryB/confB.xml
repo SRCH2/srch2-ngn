@@ -27,9 +27,9 @@
 
 
     <ping>
-        <ping-interval>20000</ping-interval>
-        <ping-timeout>80000</ping-timeout>
-        <retry-count>10</retry-count>
+        <ping-interval>2</ping-interval>
+        <ping-timeout>8</ping-timeout>
+        <retry-count>3</retry-count>
     </ping>
     <transport>
         <port>3096</port>
