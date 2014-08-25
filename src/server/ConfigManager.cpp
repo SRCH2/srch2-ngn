@@ -405,18 +405,21 @@ void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode,
     }
 
     // recordBoostField is an optional field
+    // We allow the tag to be missing and also empty string within the tag
     // It should be refining and of type float, otherwise engine will not run
     coreInfo->recordBoostFieldFlag = false;
     childNode = indexConfigNode.child(recordBoostFieldString);
     if (childNode && childNode.text()) {
         string recordBoostField = string(childNode.text().get());
-        if(coreInfo->refiningAttributesInfo[recordBoostField].attributeType != ATTRIBUTE_TYPE_FLOAT ){
-            Logger::error("Type of record boost field is invalid, it should be of type float");
-            configSuccess = false;
-            return;
+        if(recordBoostField != ""){
+            if(coreInfo->refiningAttributesInfo[recordBoostField].attributeType != ATTRIBUTE_TYPE_FLOAT ){
+                Logger::error("Type of record boost field is invalid, it should be of type float");
+                configSuccess = false;
+                return;
+            }
+            coreInfo->recordBoostFieldFlag = true;
+            coreInfo->recordBoostField = recordBoostField;
         }
-        coreInfo->recordBoostFieldFlag = true;
-        coreInfo->recordBoostField = recordBoostField;
     }
 
     // queryTermBoost is an optional field
