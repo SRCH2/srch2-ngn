@@ -32,6 +32,18 @@
         <retry-count>10</retry-count>
     </discovery>    
 
+    <transport>
+        <port>3097</port>
+        <ipaddress>128.195.53.204</ipaddress>
+    </transport>
+    
+    <WellKnownHosts>128.195.53.204:54000</WellKnownHosts>
+
+    <ping>
+        <ping-interval>2</ping-interval>
+        <ping-timeout>6</ping-timeout>
+        <retry-count>10</retry-count>
+    </ping>
 
     <node>
         <this-is-me> false </this-is-me>
