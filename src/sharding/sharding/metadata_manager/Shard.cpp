@@ -98,6 +98,15 @@ bool ClusterShardId::operator<=(const ClusterShardId& rhs) const {
 	return  (*this < rhs || *this == rhs);
 }
 
+ClusterShardId & ClusterShardId::operator=(const ClusterShardId & rhs){
+    if(this != &rhs){
+        this->coreId = rhs.coreId;
+        this->partitionId = rhs.partitionId;
+        this->replicaId = rhs.replicaId;
+    }
+    return *this;
+}
+
 
 //serializes the object to a byte array and places array into the region
 //allocated by given allocator
@@ -168,6 +177,15 @@ bool NodeShardId::operator>=(const NodeShardId& rhs) const {
 }
 bool NodeShardId::operator<=(const NodeShardId& rhs) const {
 	return !(*this > rhs);
+}
+
+NodeShardId & NodeShardId::operator=(const NodeShardId & rhs){
+    if(this != &rhs){
+        this->coreId = rhs.coreId;
+        this->nodeId = rhs.nodeId;
+        this->partitionId = rhs.partitionId;
+    }
+    return *this;
 }
 
 //serializes the object to a byte array and places array into the region

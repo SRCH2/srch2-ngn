@@ -61,6 +61,7 @@ public:
 	bool operator<(const ClusterShardId& rhs) const ;
 	bool operator>=(const ClusterShardId& rhs) const ;
 	bool operator<=(const ClusterShardId& rhs) const ;
+	ClusterShardId & operator=(const ClusterShardId & rhs);
 
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
@@ -91,6 +92,7 @@ public:
 	bool operator<(const NodeShardId& rhs) const ;
 	bool operator>=(const NodeShardId& rhs) const ;
 	bool operator<=(const NodeShardId& rhs) const ;
+	NodeShardId & operator=(const NodeShardId & rhs);
 
     void* serialize(void * buffer) const;
     void * deserialize(void* buffer);
