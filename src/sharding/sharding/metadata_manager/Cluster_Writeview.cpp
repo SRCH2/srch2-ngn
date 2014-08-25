@@ -963,7 +963,9 @@ ClusterResourceMetadata_Readview * Cluster_Writeview::getNewReadview(){
 	// add nodes
 	for(map<NodeId, std::pair<ShardingNodeState, Node *> > ::iterator nodeItr = nodes.begin(); nodeItr != nodes.end(); ++nodeItr){
 		if(nodeItr->second.first != ShardingNodeStateFailed){
-			newReadview->addNode(*(nodeItr->second.second));
+		    if(nodeItr->second.second != NULL){
+                newReadview->addNode(*(nodeItr->second.second));
+		    }
 		}
 	}
 
