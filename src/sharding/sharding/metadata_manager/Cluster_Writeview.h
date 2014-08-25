@@ -177,7 +177,7 @@ public:
 	// Does not return this node by default
 	void getArrivedNodes(vector<NodeId> & allNodes, bool returnThisNode = false) const;
 	void getAllNodes(std::vector<const Node *> & localCopy) const;
-	void addNode(Node * node);
+	void addNode(const Node & node);
 	void setNodeState(NodeId nodeId, ShardingNodeState state);
 	void removeNode(const NodeId & failedNodeId);
 	void setCurrentNodeId(NodeId currentNodeId);

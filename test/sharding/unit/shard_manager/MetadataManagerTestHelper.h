@@ -126,7 +126,7 @@ void testFreshClusterInit(ConfigManager * serverConf , ResourceMetadataManager *
 	Node * currentNode = new Node("currentNode", "192.168.0.0" , 5050, true, 4, true);
 	currentNode->setId(0);
 	metadataManager->getClusterWriteview()->setCurrentNodeId(currentNode->getId());
-	metadataManager->getClusterWriteview()->addNode(currentNode);
+	metadataManager->getClusterWriteview()->addNode(*currentNode);
 	metadataManager->getClusterWriteview()->setNodeState(currentNode->getId(), ShardingNodeStateArrived);
 
 	nodeInitializer.initializeCluster();
@@ -174,7 +174,7 @@ void testNode1FirstArrival(NodeId currentNodeId, ResourceMetadataManager * metad
 	NodeAddChange * nodeAddChange = new NodeAddChange(newNode->getId(), clusterShards, nodeShards);
 
 	// SM comes first
-	writeview->addNode(newNode);
+	writeview->addNode(*newNode);
 	nodeAddChange->doChange(writeview);
 
 
@@ -305,7 +305,7 @@ void testNode2FirstArrival(NodeId currentNodeId, ResourceMetadataManager * metad
 
 	nodeAddChange->doChange(writeview);
 	// SM comes late
-	writeview->addNode(newNode);
+	writeview->addNode(*newNode);
 
 
 
@@ -411,7 +411,7 @@ void testNode1Reclaim(NodeId currentNodeId, ResourceMetadataManager * metadataMa
 	NodeAddChange * nodeAddChange = new NodeAddChange(newNode->getId(), clusterShards, nodeShards);
 
 	// SM comes first
-	writeview->addNode(newNode);
+	writeview->addNode(*newNode);
 	nodeAddChange->doChange(writeview);
 
 
@@ -613,7 +613,7 @@ void testNode2Reclaim(NodeId currentNodeId, ResourceMetadataManager * metadataMa
 
 	nodeAddChange->doChange(writeview);
 	// SM comes late
-	writeview->addNode(newNode);
+	writeview->addNode(*newNode);
 
 
 
@@ -656,7 +656,7 @@ void restart(const string & confPath, ConfigManager * & serverConf, ResourceMeta
 	Node * currentNode = new Node("currentNode", "192.168.0.0" , 5050, true, 4, true);
 	currentNode->setId(0);
 	metadataManager->getClusterWriteview()->setCurrentNodeId(currentNode->getId());
-	metadataManager->getClusterWriteview()->addNode(currentNode);
+	metadataManager->getClusterWriteview()->addNode(*currentNode);
 	metadataManager->getClusterWriteview()->setNodeState(currentNode->getId(), ShardingNodeStateArrived);
 
 }

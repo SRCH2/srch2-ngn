@@ -53,7 +53,7 @@ public:
 				unsigned nodeSerializedSize = *(unsigned *)body;
 				body += sizeof(unsigned);
 				node.deserialize(body);
-				ShardManager::getWriteview()->addNode(new Node(node));
+				ShardManager::getWriteview()->addNode(node);
 				ShardManager::getWriteview()->setNodeState(node.getId(), ShardingNodeStateArrived);
 
 				syncManger.localNodesCopyMutex.lock();

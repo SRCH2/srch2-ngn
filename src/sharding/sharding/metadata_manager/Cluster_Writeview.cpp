@@ -443,16 +443,12 @@ void Cluster_Writeview::getAllNodes(std::vector<const Node *> & localCopy) const
 	}
 }
 
-void Cluster_Writeview::addNode(Node * node){
+void Cluster_Writeview::addNode(const Node & node){
 
-    if(node == NULL){
-        ASSERT(false);
-        return;
-    }
-	if(nodes.find(node->getId()) == nodes.end()){ // new node.
-		nodes[node->getId()] = std::make_pair(ShardingNodeStateNotArrived, node);
+    if(nodes.find(node.getId()) == nodes.end()){ // new node.
+		nodes[node.getId()] = std::make_pair(ShardingNodeStateNotArrived, new Node(node));
 	}else{
-        nodes[node->getId()].second = node;
+        nodes[node.getId()].second = new Node(node);
 	}
 }
 

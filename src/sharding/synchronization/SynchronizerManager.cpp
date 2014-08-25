@@ -124,7 +124,7 @@ void SyncManager::startDiscovery() {
 	transport.setListeningThread(listenThread);
 
 	// Add new node in CM
-	clusterWriteView->addNode(new Node(node));
+	clusterWriteView->addNode(node);
 	clusterWriteView->setNodeState(node.getId(), ShardingNodeStateArrived);
 
 	localNodesCopyMutex.lock();
@@ -154,7 +154,7 @@ void SyncManager::startDiscovery() {
 			node.setId(this->masterNodeId);
 			node.setMaster(true);
 
-			clusterWriteView->addNode(new Node(node));
+			clusterWriteView->addNode(node);
 			clusterWriteView->setNodeState(node.getId(), ShardingNodeStateArrived);
 
 			localNodesCopyMutex.lock();
