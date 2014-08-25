@@ -70,10 +70,10 @@ public class SchemaTest {
 
         s.setHighlightedPreAndPostScript("FUZZYPRE", "FUZZYPOST", "EXACTPRE", "EXACTPOST");
 
-        Assert.assertEquals(s.highlight_fuzzyPrefix, "FUZZYPRE");
-        Assert.assertEquals(s.highlight_fuzzySuffix, "FUZZYPOST");
-        Assert.assertEquals(s.highlight_exactPrefix, "EXACTPRE");
-        Assert.assertEquals(s.highlight_exactSuffix, "EXACTPOST");
+        Assert.assertEquals(s.highlightFuzzyPreTag, "FUZZYPRE");
+        Assert.assertEquals(s.highlightFuzzyPostTag, "FUZZYPOST");
+        Assert.assertEquals(s.highlightExactPreTag, "EXACTPRE");
+        Assert.assertEquals(s.highlightExactPostTag, "EXACTPOST");
 
         s = new Schema(Field.createDefaultPrimaryKeyField("id"), Field.createSearchableField("title").enableHighlighting())
                     .formatExactTextMatchesHighlighting(true, true, "#FFFFFF")

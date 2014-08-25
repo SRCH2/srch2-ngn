@@ -26,10 +26,10 @@ public final class Schema {
     static final String HIGHLIGHTING_ITALIC_PRE_SCRIPT_TAG = "<i>";
     static final String HIGHLIGHTING_ITALIC_POST_SCRIPT_TAG = "</i>";
 
-    String highlight_fuzzyPrefix;
-    String highlight_fuzzySuffix;
-    String highlight_exactPrefix;
-    String highlight_exactSuffix;
+    String highlightFuzzyPreTag;
+    String highlightFuzzyPostTag;
+    String highlightExactPreTag;
+    String highlightExactPostTag;
 
     boolean highlightingHasBeenCustomSet = false;
     boolean highlightBoldExact = true;
@@ -75,10 +75,10 @@ public final class Schema {
         checkHighlightingTags("exactPreTag", exactPreTag);
         checkHighlightingTags("exactPostTag", exactPostTag);
         highlightingHasBeenCustomSet = true;
-        highlight_fuzzyPrefix = fuzzyPreTag;
-        highlight_fuzzySuffix = fuzzyPostTag;
-        highlight_exactPrefix = exactPreTag;
-        highlight_exactSuffix = exactPostTag;
+        highlightFuzzyPreTag = fuzzyPreTag;
+        highlightFuzzyPostTag = fuzzyPostTag;
+        highlightExactPreTag = exactPreTag;
+        highlightExactPostTag = exactPostTag;
         return this;
     }
 
@@ -172,6 +172,9 @@ public final class Schema {
         return this;
     }
 
+    /** Call this method in {@link com.srch2.android.sdk.IndexDescription#IndexDescription(Indexable)} to
+     * set the highlight fields before calling {@link IndexDescription#setQueryProperties()}.
+     */
     void configureHighlighting() {
         String exactPreTag = "";
         String exactPostTag = "";
@@ -208,12 +211,13 @@ public final class Schema {
                 fuzzyPostTag += "</font>";
             }
         } else {
-            exactPreTag = highlight_exactPrefix;
-            exactPostTag = highlight_exactSuffix;
-            fuzzyPreTag = highlight_fuzzyPrefix;
-            fuzzyPostTag = highlight_fuzzySuffix;
+            exactPreTag = highlightExactPreTag;
+            exactPostTag = highlightExactPostTag;
+            fuzzyPreTag = highlightFuzzyPreTag;
+            fuzzyPostTag = highlightFuzzyPostTag;
         }
 
+        // safety check --> default to bold if any problems
         if (exactPreTag == null || exactPreTag.length() < 1) {
             exactPreTag = HIGHLIGHTING_BOLD_PRE_SCRIPT_TAG;
         }
@@ -227,14 +231,15 @@ public final class Schema {
             fuzzyPostTag = HIGHLIGHTING_BOLD_POST_SCRIPT_TAG;
         }
 
-        highlight_exactPrefix = exactPreTag;
-        highlight_exactSuffix = exactPostTag;
-        highlight_fuzzyPrefix = fuzzyPreTag;
-        highlight_fuzzySuffix = fuzzyPostTag;
+        highlightExactPreTag = exactPreTag;
+        highlightExactPostTag = exactPostTag;
+        highlightFuzzyPreTag = fuzzyPreTag;
+        highlightFuzzyPostTag = fuzzyPostTag;
     }
 
     String checkHexColorValue(String whichTextToMatch, String hexColorValue) {
         if (hexColorValue != null && hexColorValue.length() > 1 && hexColorValue.charAt(0) == '#') {
+            // strips the leading # if present
             hexColorValue = hexColorValue.substring(1, hexColorValue.length());
         }
 
@@ -245,7 +250,7 @@ public final class Schema {
                     + " must be a 6 character html color code");
         } else {
             try {
-                Integer.parseInt(hexColorValue, 16);
+                Integer.parseInt(hexColorValue, 16); // verifies is valid hex
             } catch (NumberFormatException nan) {
                 throw new IllegalArgumentException("hexColorValue: " + hexColorValue + " submitted for "
                         + whichTextToMatch + " must be a valid hex color representation");

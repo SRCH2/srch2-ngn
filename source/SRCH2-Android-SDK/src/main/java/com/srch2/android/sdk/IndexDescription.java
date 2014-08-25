@@ -112,13 +112,13 @@ final class IndexDescription {
         queryProperties.setProperty("responseFormat",
                 DEFAULT_VALUE_responseFormat);
         queryProperties.setProperty("fuzzyPreTag",
-                schema.highlight_fuzzyPrefix);
+                schema.highlightFuzzyPreTag);
         queryProperties.setProperty("fuzzyPostTag",
-                schema.highlight_fuzzySuffix);
+                schema.highlightFuzzyPostTag);
         queryProperties.setProperty("exactPreTag",
-                schema.highlight_exactPrefix);
+                schema.highlightExactPreTag);
         queryProperties.setProperty("exactPostTag",
-                schema.highlight_exactSuffix);
+                schema.highlightExactPostTag);
 
     }
 
