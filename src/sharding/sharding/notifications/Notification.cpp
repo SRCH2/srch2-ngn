@@ -73,7 +73,7 @@ ShardMigrationStatus & ShardMigrationStatus::operator=(const ShardMigrationStatu
     sourceNodeId = status.sourceNodeId;
     destinationNodeId = status.destinationNodeId;
     shard = status.shard;
-    status = status.status;
+    this->status = status.status;
     return *this;
 }
 
