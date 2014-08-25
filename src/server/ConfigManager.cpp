@@ -768,10 +768,10 @@ void ConfigManager::parseQuery(CoreConfigParseState_t *coreParseState , const xm
         if (coreInfo->searchResponseContent == 2) {
             if (childNode.text()) {
                 vector<string> temp;
-                int wordCount = 0;   //It takes care of "is" and "are" in warning message
                 splitString(string(childNode.text().get()), ",",
                                         temp);
-                string attributes = "";
+                vector<string> wrongAttribute;
+                string wrongAttributes = "";
                 vector<string>::iterator it;
                 //This flag tells if the warning should be displayed or not, it gets set when the field is neither searchable nor refining
                 bool warningFlag = false;
@@ -782,19 +782,25 @@ void ConfigManager::parseQuery(CoreConfigParseState_t *coreParseState , const xm
                     bool isSearchable = (it != coreParseState->searchableFieldsVector.end());
                     if(isRefining == false && isSearchable == false){
                         warningFlag = true;
-                        wordCount++;
-                        attributes = attributes + temp[i] + ", ";
+                        wrongAttribute.push_back(temp[i]);
                         continue;
                     }
                     //we push back only valid fields
                     coreInfo->attributesToReturn.push_back(temp[i]);
                 }
+                //Takes care of warning message when there are multiple fields
+                if(wrongAttribute.size() > 1){
+                    for(int i = 0; i < wrongAttribute.size() -1; i++){
+                        wrongAttributes = wrongAttributes + wrongAttribute[i] + ", ";
+                    }
+                    wrongAttributes = wrongAttributes + "and " + wrongAttribute[wrongAttribute.size()-1];
+                }
                 if(warningFlag == true){
                     string warning = "";
-                    if(wordCount > 1)
-                        warning = "The field entered in responseContent tag: " + attributes + "are neither searchable, refining nor indexed therefore will not be returned by the engine";
+                    if(wrongAttribute.size() > 1)
+                        warning = "The fields entered in responseContent tag, " + wrongAttributes + ", are neither searchable, refining nor indexed therefore will not be returned by the engine.";
                     else
-                        warning = "The field entered in responseContent tag: " + attributes + "is neither searchable, refining nor indexed therefore will not be returned by the engine";
+                        warning = "The field entered in responseContent tag, " + wrongAttribute[0] + ", is neither searchable, refining nor indexed therefore will not be returned by the engine.";
                     Logger::warn(warning.c_str());
                 }
             } else {
@@ -2708,9 +2714,7 @@ bool ConfigManager::isValidFieldType(string& fieldType, bool isSearchable) {
                 || (lowerCase.compare("long") == 0)
                 || (lowerCase.compare("float") == 0)
                 || (lowerCase.compare("double") == 0)
-                || (lowerCase.compare("time") == 0)
-                || (lowerCase.compare(locationLatitudeString) == 0)
-                || (lowerCase.compare("location_longitude") == 0)) {
+                || (lowerCase.compare("time") == 0)) {
             return true;
         }
         return false;

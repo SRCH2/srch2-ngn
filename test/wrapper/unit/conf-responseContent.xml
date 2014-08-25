@@ -57,7 +57,7 @@
 
 		<queryResponseWriter>
 		    <responseFormat>1</responseFormat>
-		    <responseContent type="2">uniqueSearchableField,name,id,time</responseContent>
+		    <responseContent type="2">uniqueSearchableField, name, id, time </responseContent>
 		</queryResponseWriter>
 	    </query>
             <schema>
