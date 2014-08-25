@@ -600,7 +600,7 @@ void * ShardManager::periodicWork(void *args) {
 
 
 		// 2. if we are joined, start load balancing.
-		if(ShardManager::getShardManager()->isJoined() && ! ShardManager::getShardManager()->isLoadBalancing()){
+		if(false && ShardManager::getShardManager()->isJoined() && ! ShardManager::getShardManager()->isLoadBalancing()){
 			ShardManager::getShardManager()->setLoadBalancing();
 			ShardManager::getShardManager()->stateMachine->registerOperation(new LoadBalancingStartOperation());
 		}
