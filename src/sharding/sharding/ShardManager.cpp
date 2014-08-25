@@ -491,7 +491,14 @@ bool ShardManager::resolveMessage(Message * msg, NodeId node){
 			ShardMigrationStatus mmStatus = mmNotif->getStatus();
 			// add empty shard to it...
 			ClusterShardId * destShardId = new ClusterShardId(mmNotif->getDestShardId());
-			EmptyShardBuilder emptyShard(destShardId, "");
+			// prepare indexDirectory
+	        string indexDirectory = configManager->getShardDir(writeview->clusterName,
+	                writeview->nodes[ShardManager::getCurrentNodeId()].second->getName(), writeview->cores[destShardId->coreId]->getName(), destShardId);
+	        if(indexDirectory.compare("") == 0){
+	            indexDirectory = configManager->createShardDir(writeview->clusterName,
+	                    writeview->nodes[ShardManager::getCurrentNodeId()].second->getName(), writeview->cores[destShardId->coreId]->getName(), destShardId);
+	        }
+			EmptyShardBuilder emptyShard(destShardId, indexDirectory);
 			emptyShard.prepare();
 			mmStatus.shard = emptyShard.getShardServer();
 			mmNotif->setStatus(mmStatus);
