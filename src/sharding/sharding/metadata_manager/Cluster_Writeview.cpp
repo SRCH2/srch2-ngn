@@ -61,7 +61,7 @@ ClusterShard_Writeview::ClusterShard_Writeview(	const ClusterShardId id, const S
 	this->state = state;
 	this->isLocal = isLocal;
 	this->nodeId = nodeId;
-	this->load;
+	this->load = load;
 }
 ClusterShard_Writeview::ClusterShard_Writeview(const ClusterShard_Writeview & copy){
 	this->state = copy.state;
@@ -675,15 +675,21 @@ void Cluster_Writeview::unassignClusterShard(const ClusterShardId & shardId){
 	if(shard->isLocal){
 		this->localClusterDataShards.erase(shardId);
 	}
+	shard->isLocal = false;
+	shard->nodeId = (unsigned)-1;
 }
 
 void Cluster_Writeview::assignExternalClusterShard(const ClusterShardId & shardId, const NodeId & nodeId, const double & load){
 	unsigned indexOfShard = INDEX(shardId);
 	ClusterShard_Writeview * shard = this->clusterShards[indexOfShard];
 	ASSERT(shard->id == shardId);
+	if(nodeId == currentNodeId){
+        ASSERT(false);
+        return;
+	}
 	shard->isLocal = false;
 	shard->nodeId = nodeId;
-	shard->load = 0;
+	shard->load = load;
 	shard->state = SHARDSTATE_READY;
 
 	if(this->localClusterDataShards.find(shardId) != this->localClusterDataShards.end()){
@@ -702,17 +708,31 @@ void Cluster_Writeview::moveClusterShard(const ClusterShardId & shardId, const L
 void Cluster_Writeview::moveClusterShard(const ClusterShardId & shardId, const NodeId & destNodeId, const LocalPhysicalShard & physicalShardInfo){
 	unsigned indexOfShard = INDEX(shardId);
 	ClusterShard_Writeview * shard = this->clusterShards[indexOfShard];
+	ASSERT(destNodeId != shard->nodeId);
+	if(destNodeId == shard->nodeId){ // moving from a node to itself ? wrong!
+	    return;
+	}
 	if(shard->isLocal){
 		shard->isLocal = false;
 		shard->nodeId = destNodeId;
 		ASSERT(shard->state == SHARDSTATE_READY);
 		// erase the physical shard
-		localClusterDataShards.erase(shardId);
+		if(localClusterDataShards.find(shardId) != localClusterDataShards.end()){
+            localClusterDataShards.erase(shardId);
+		}else{
+		    ASSERT(false);
+		}
 	}else{
-		shard->isLocal = true;
+	    if(destNodeId == currentNodeId){
+            shard->isLocal = true;
+	    }else{
+	        shard->isLocal = false;
+	    }
 		shard->nodeId = destNodeId;
 		ASSERT(shard->state == SHARDSTATE_READY);
-		localClusterDataShards[shardId] = physicalShardInfo;
+        if(destNodeId == currentNodeId){
+            localClusterDataShards[shardId] = physicalShardInfo;
+        }
 	}
 }
 
