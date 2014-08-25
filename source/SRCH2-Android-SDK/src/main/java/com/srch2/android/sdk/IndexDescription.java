@@ -74,6 +74,8 @@ final class IndexDescription {
 
         schema = idx.getSchema();
 
+        schema.configureHighlighting();
+
         queryProperties.setProperty("rows", String.valueOf(idx.getTopK()));
 
         queryProperties.setProperty("queryTermSimilarityThreshold",

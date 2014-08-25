@@ -158,11 +158,6 @@ public class MovieIndex extends Indexable {
     public static final String INDEX_FIELD_YEAR = "year";
     public static final String INDEX_FIELD_GENRE = "genre";
 
-	public static final String HIGHLIGHTING_EXACT_PRE_SCRIPT = "<font color=\"red\"><b>";
-    public static final String HIGHLIGHTING_EXACT_POST_SCRIPT = "</b></font>";
-    public static final String HIGHLIGHTING_FUZZY_PRE_SCRIPT = "<font color=\"#ff00ff\"><b>";
-    public static final String HIGHLIGHTING_FUZZY_POST_SCRIPT = "</b></font>";
-    
     @Override
     public String getIndexName() {
         return INDEX_NAME;
@@ -176,9 +171,8 @@ public class MovieIndex extends Indexable {
         Field year = Field.createRefiningField(INDEX_FIELD_YEAR, Field.Type.INTEGER);
         Field genre = Field.createSearchableField(INDEX_FIELD_GENRE);
         return Schema.createSchema(primaryKey, recordBoost, title, year, genre)
-                        .setHighlightedPreAndPostScript(
-                                HIGHLIGHTING_FUZZY_PRE_SCRIPT, HIGHLIGHTING_FUZZY_POST_SCRIPT,
-                                    HIGHLIGHTING_EXACT_PRE_SCRIPT, HIGHLIGHTING_EXACT_POST_SCRIPT);
+                        .formatExactTextMatchesHighlighting(true, false, "#FF0000")
+                        .formatFuzzyTextMatchesHighlighting(true, false, "#FF00FF");
     }
 }
 ```
@@ -201,14 +195,6 @@ fields can be retrieved from the results returned by
 the server. *Field* objects can be obtained by the
 static factory method of the *Field* class.  
 
-A schema can also contain a *RecordBoostField* which will determine each
-record's record (as opposed to field) score when computing the relevance of
-search results. This field **will always** be float in type, and should be set
-from one to one hundred. An example of using the *RecordBoostField* would be
-if making an index containing a user's contacts, all starred contacts could have
-the value of the *RecordBoostField* set to fifty, and all non-starred contacts left
-at at a value of one. One is the default value for all records.
-
 For a searchable field, an additional parameter can be passed as
 the field's boost value, which is a relevance number that can be used in the ranking function
 to compute the relevance of each answer. Its default value is 1.
@@ -217,31 +203,35 @@ the value for the field *genre* is the default value 1. Check
 [this page](http://srch2.com/documentation/ranking) for more
 information about how the engine ranks results.
 
+A schema can also contain a *RecordBoostField* which will determine each
+record's record (as opposed to field) score when computing the relevance of
+search results. This field **will always** be float in type, and should be set
+from 1 to 100. An example of using the *RecordBoostField* would be
+if making an index containing a user's contacts, all starred contacts could have
+the value of the *RecordBoostField* set to 50, and all non-starred contacts left
+at at a value of 1. One is the default value for all records.
+
 A *Schema* instance is obtained by the static factory method of the
 *Schema* class. The order of arguments is important when creating a
 default *Schema* object: the first parameter is *always* the primary
 key, and the subsequent parameters are the rest of the fields, in no
 particular order. 
 
-The four constant fields *HIGHLIGHTING_EXACT_PRE_SCRIPT*, 
-*HIGHLIGHTING_EXACT_POST_SCRIPT*, *HIGHLIGHTING_FUZZY_PRE_SCRIPT*,
-*HIGHLIGHTING_FUZZY_POST_SCRIPT* define how the SRCH2 search
+The following two chained method calls *formatExactTextMatchesHighlighting* and
+*formatExactTextMatchesHighlighting* configure how the SRCH2 search
 server will format data associated with a field that has
-highlighting enabled which can be done by calling *enableHighlighting()*. Then 
-when the schema is created, the method call *.setHighlightedPreAndPostScript(
-HIGHLIGHTING_FUZZY_PRE_SCRIPT, HIGHLIGHTING_FUZZY_POST_SCRIPT,
-HIGHLIGHTING_EXACT_PRE_SCRIPT, HIGHLIGHTING_EXACT_POST_SCRIPT)* 
-will set the formatting values. This will cause the SRCH2 search
+highlighting enabled with the method *enableHighlighting()* called. 
+This will cause the SRCH2 search
 server to include in the search results a list of field data that
-is formatted against the search input. Thus if the search input 
-is 'citi', since *title* has had highlighting enabled, the
+is formatted against the search input. If the search input 
+is 'citi' for instance, since *title* has highlighting enabled, the
 search result for the move with the title 'Citizen Cane' will
-produce the output of '&lt;font color="red"&gt;&lt;b&gt;Citi&lt;/b&gt;&lt;/font&gt;zen Cane'
-(or visually, '<font color="red"><b>Citi</b></font>zen Cane').
+produce the output of '&lt;font color="#FF0000"&gt;&lt;b&gt;Citi&lt;/b&gt;&lt;/font&gt;zen Cane'
+(or visually, '<font color="FF0000"><b>Citi</b></font>zen Cane').
 This can be used in conjunction with *Html.fromHtml(...)* such as
 *mTextView.setText(Html.fromHtml(mHighlightTitleText))* to display it
-properly to the user. When defining your own highlighting pre and post
-script, make sure to properly escape characters!
+properly to the user. Here both exact and fuzzy text matches will be
+made bold, not italicized and set to red and magenta respectively.
 
 Next we show how to form records to be inserted in the movie
 index. The following method generates a *JSONArray* instance

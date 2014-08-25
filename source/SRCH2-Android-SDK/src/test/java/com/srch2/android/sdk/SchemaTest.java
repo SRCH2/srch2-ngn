@@ -68,11 +68,6 @@ public class SchemaTest {
 
         Schema s = new Schema(Field.createDefaultPrimaryKeyField("id"), Field.createSearchableField("title").enableHighlighting());
 
-        Assert.assertEquals(s.highlight_fuzzyPrefix, Schema.HIGHLIGHTED_DEFAULT_FUZZY_PRE_SCRIPT_TAG);
-        Assert.assertEquals(s.highlight_fuzzySuffix, Schema.HIGHLIGHTED_DEFAULT_FUZZY_POST_SCRIPT_TAG);
-        Assert.assertEquals(s.highlight_exactPrefix, Schema.HIGHLIGHTED_DEFAULT_EXACT_PRE_SCRIPT_TAG);
-        Assert.assertEquals(s.highlight_exactSuffix, Schema.HIGHLIGHTED_DEFAULT_EXACT_POST_SCRIPT_TAG);
-
         s.setHighlightedPreAndPostScript("FUZZYPRE", "FUZZYPOST", "EXACTPRE", "EXACTPOST");
 
         Assert.assertEquals(s.highlight_fuzzyPrefix, "FUZZYPRE");
