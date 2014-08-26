@@ -13,9 +13,6 @@
 #include <map>
 #include <sqlite3.h>
 
-int indexedRecordsCount;
-int totalRecordsCount;
-
 //The callback function of createIndex.
 int addRecord_callback(void * dbConnector, int argc, char ** argv,
         char **azColName);
