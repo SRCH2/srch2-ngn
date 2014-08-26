@@ -1,9 +1,16 @@
 package com.srch2.android.sdk.sandbox;
 
 import android.app.Activity;
+import android.content.Context;
 import android.os.Bundle;
 import android.widget.ListView;
+import android.widget.Toast;
 import com.srch2.android.sdk.SRCH2Engine;
+import com.srch2.android.sdk.SearchResultsListener;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class MyActivity extends Activity implements InstantSearchEditText.SearchInputEnteredObserver {
 
@@ -11,20 +18,37 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
     public SearchResultsAdapter resultsAdapter;
     public Idx index;
     public GeoIdx geoIndex;
+    public Context context;
+
+    SearchResults sr;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        context = this;
         setContentView(R.layout.activity_my);
         searchResultsListView = (ListView) findViewById(R.id.lv);
         resultsAdapter = new SearchResultsAdapter(this);
         searchResultsListView.setAdapter(resultsAdapter);
         index = new Idx();
         geoIndex = new GeoIdx();
+
         SRCH2Engine.initialize(geoIndex);
-        SRCH2Engine.setSearchResultsListener(resultsAdapter.getSearchResultsListener());
+
+        sr = new SearchResults();
+        SRCH2Engine.setSearchResultsListener(sr, true);
         SRCH2Engine.setAutomatedTestingMode(true);
     }
+
+    class SearchResults implements SearchResultsListener {
+        @Override
+        public void onNewSearchResults(int HTTPResponseCode, String JSONResponse, HashMap<String, ArrayList<JSONObject>> resultMap) {
+            Toast.makeText(context, "hello everybody", Toast.LENGTH_LONG).show();
+        }
+    }
+
+
+
 
     @Override
     protected void onResume() {

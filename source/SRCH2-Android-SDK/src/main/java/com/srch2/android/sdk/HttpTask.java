@@ -41,6 +41,8 @@ abstract class HttpTask implements Runnable {
 
     protected SearchResultsListener searchResultsListener;
 
+
+
     static synchronized void onStart() {
         isExecuting = true;
         controlTaskExecutor = Executors.newFixedThreadPool(1);

@@ -1,5 +1,6 @@
 package com.srch2.android.sdk;
 
+import android.os.Handler;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -208,21 +209,46 @@ class SearchTask extends HttpTask.SearchHttpTask {
     }
 
     @Override
-    protected void onTaskComplete(int returnedResponseCode,
-                                  String returnedResponseLiteral) {
+    protected void onTaskComplete(final int returnedResponseCode,
+                                  final String returnedResponseLiteral) {
         if (searchResultsListener != null) {
-            HashMap<String, ArrayList<JSONObject>> resultMap;
 
-            if (returnedResponseCode / 100 == 2) {
-                resultMap = parseResponseForRecordResults(
-                        returnedResponseLiteral, isMultiCoreSearch,
-                        super.targetCoreName);
-                searchResultsListener.onNewSearchResults(returnedResponseCode,
-                        returnedResponseLiteral, resultMap);
+            if (SRCH2Engine.searchResultsPublishedToUiThread) {
+                Handler uiHandler = SRCH2Engine.getSearchResultsUiCallbackHandler();
+                if (uiHandler != null) {
+                    final String targetCoreName = super.targetCoreName;
+                    uiHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            HashMap<String, ArrayList<JSONObject>> resultMap;
+                            if (returnedResponseCode / 100 == 2) {
+                                resultMap = parseResponseForRecordResults(
+                                        returnedResponseLiteral, isMultiCoreSearch,
+                                        targetCoreName);
+                                searchResultsListener.onNewSearchResults(returnedResponseCode,
+                                        returnedResponseLiteral, resultMap);
+                            } else {
+                                searchResultsListener.onNewSearchResults(returnedResponseCode,
+                                        returnedResponseLiteral,
+                                        new HashMap<String, ArrayList<JSONObject>>(0));
+                            }
+                        }
+                    });
+                }
             } else {
-                searchResultsListener.onNewSearchResults(returnedResponseCode,
-                        returnedResponseLiteral,
-                        new HashMap<String, ArrayList<JSONObject>>(0));
+                HashMap<String, ArrayList<JSONObject>> resultMap;
+
+                if (returnedResponseCode / 100 == 2) {
+                    resultMap = parseResponseForRecordResults(
+                            returnedResponseLiteral, isMultiCoreSearch,
+                            super.targetCoreName);
+                    searchResultsListener.onNewSearchResults(returnedResponseCode,
+                            returnedResponseLiteral, resultMap);
+                } else {
+                    searchResultsListener.onNewSearchResults(returnedResponseCode,
+                            returnedResponseLiteral,
+                            new HashMap<String, ArrayList<JSONObject>>(0));
+                }
             }
         }
     }

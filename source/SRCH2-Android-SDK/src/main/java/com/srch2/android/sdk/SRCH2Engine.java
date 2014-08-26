@@ -3,6 +3,8 @@ package com.srch2.android.sdk;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Handler;
+import android.os.Looper;
 
 import java.io.File;
 import java.io.IOException;
@@ -69,6 +71,18 @@ final public class SRCH2Engine {
     static boolean isStarted = false;
     static SRCH2Configuration conf = null;
     private static SearchTask allIndexSearchTask = null;
+    static boolean searchResultsPublishedToUiThread = false;
+    private static Handler searchResultsUiCallbackHandler;
+    static Handler getSearchResultsUiCallbackHandler() {
+        if (isReady.get()) {
+            if (searchResultsUiCallbackHandler == null) {
+                searchResultsUiCallbackHandler = new Handler(Looper.getMainLooper());
+            }
+            return searchResultsUiCallbackHandler;
+        } else {
+            return null;
+        }
+    }
 
     private SRCH2Engine() { }
 
@@ -175,9 +189,13 @@ final public class SRCH2Engine {
 
     private static void resetState() {
         Cat.d(TAG, "resetState");
+        isReady.set(false);
         lastQuery.set(null);
         isChanged.set(false);
-        isReady.set(false);
+        searchResultsPublishedToUiThread = false;
+        if (searchResultsUiCallbackHandler != null) {
+            searchResultsUiCallbackHandler = null;
+        }
     }
 
     static SearchResultsListener getSearchResultsObserver() {
@@ -188,7 +206,36 @@ final public class SRCH2Engine {
      * Registers the implementation of the interface <code>SearchResultsListener</code> for receiving
      * the results of a search performed by the SRCH2 search server. This can be reset at anytime, and
      * although it is not required to be set, it is the only way to get search results within the API.
-     *
+     * <br><br>
+     * The callback method
+     * {@link com.srch2.android.sdk.SearchResultsListener#onNewSearchResults(int, String, java.util.HashMap)}
+     * can be executed on a background thread, enabling post-processing operations, or can be executed
+     * on the Ui thread. If it is not executed on the Ui thread, the search results will have to be
+     * pushed the Ui thread before altering any of the Ui (such as when invalidating the adapter of
+     * the <code>ListView</code> showing the search results).
+     * @param searchResultsListener the implementation of <code>SearchResultsListener</code> that will
+     *                              receive search results
+     * @param callbackToUiThread whether to push the search results to the Ui thread
+     */
+    public static void setSearchResultsListener(
+            SearchResultsListener searchResultsListener, boolean callbackToUiThread) {
+        searchResultsObserver = searchResultsListener;
+        searchResultsPublishedToUiThread = callbackToUiThread;
+    }
+
+    /**
+     * Registers the implementation of the interface <code>SearchResultsListener</code> for receiving
+     * the results of a search performed by the SRCH2 search server. This can be reset at anytime, and
+     * although it is not required to be set, it is the only way to get search results within the API.
+     * <br><br>
+     * The callback method
+     * {@link com.srch2.android.sdk.SearchResultsListener#onNewSearchResults(int, String, java.util.HashMap)}
+     * can be executed on a background thread, enabling post-processing operations, or can be executed
+     * on the Ui thread. If it is not executed on the Ui thread, the search results will have to be
+     * pushed the Ui thread before altering any of the Ui (such as when invalidating the adapter of
+     * the <code>ListView</code> showing the search results). By default, this callback will not be
+     * called on the Ui thread. Use {@link #setSearchResultsListener(SearchResultsListener, boolean)}
+     * to enable pushing search results to the Ui thread.
      * @param searchResultsListener the implementation of <code>SearchResultsListener</code> that will
      *                              receive search results
      */
