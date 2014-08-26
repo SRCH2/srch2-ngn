@@ -192,7 +192,7 @@ def testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path
             failCount += checkResult(query, response_json[coreName]['results'], resultValue)
             index +=1
 
-        
+    time.sleep(5)
     test_lib.killServer(serverHandle)
 
     print '=============================='

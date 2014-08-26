@@ -3,9 +3,6 @@ SET(LINK_SEARCH_END_STATIC ON)
 
 FILE(GLOB_RECURSE SRCH2_SHARDING_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.cpp")
 					
-MESSAGE(STATUS "CMAKE_REQUIRED_LIBRARIES="  ${CMAKE_REQUIRED_LIBRARIES})
-MESSAGE(STATUS "Srch2InstantSearch_LIBRARIES="  ${Srch2InstantSearch_LIBRARIES} )
-
 INCLUDE_DIRECTORIES(
 	${CMAKE_BINARY_DIR}/include
 	${CMAKE_SOURCE_DIR}/src/
@@ -13,10 +10,8 @@ INCLUDE_DIRECTORIES(
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/thirdparty/event/include
     ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src/include
-    ${CMAKE_SOURCE_DIR}/thirdparty/mongo-cxx-driver-v2.4/src
 )
 
-MESSAGE(STATUS "Srch2 source dir="  ${CMAKE_SOURCE_DIR} )
 SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-conversion -Wno-sign-compare")		
 
 add_library(SHARDING_OBJECTS OBJECT ${SRCH2_SHARDING_SRC})
