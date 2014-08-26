@@ -318,8 +318,9 @@ public class MovieIndex extends Indexable {
   public Schema getSchema() {
       PrimaryKeyField primaryKey = Field.createDefaultPrimaryKeyField(INDEX_FIELD_PRIMARY_KEY);
       Field title = Field.createSearchableField(INDEX_FIELD_TITLE, 3).enableHighlighting();
+	  Field genre = Field.createSearchableField(INDEX_FIELD_GENRE).enableHighlighting();
       ...
-      return Schema.createSchema(primaryKey, title)
+      return Schema.createSchema(primaryKey, title, genre);
   }
 
   @Override
@@ -372,10 +373,8 @@ The following code shows how to get the highlighted "title" field into the Adapt
                       searchResult = new MovieSearchResult(
                               highlightedFields
                                       .getString(MovieIndex.INDEX_FIELD_TITLE),
-                              originalRecord
+                              highlightedFields
                                       .getString(MovieIndex.INDEX_FIELD_GENRE),
-                              originalRecord
-                                      .getInt(MovieIndex.INDEX_FIELD_YEAR));
                   } catch (JSONException oops) {
                       continue;
                   }
@@ -403,7 +402,6 @@ from 1 to 100.
 The following code tells the SDK to take the value of the "recordBoost" field from the record
 as the *RecordBoostField*. 
 ```
-
 public class MovieIndex extends Indexable {
   public static final String INDEX_FIELD_PRIMARY_KEY = "id";
   public static final String INDEX_FIELD_RECORD_BOOST = "recordBoost";
@@ -414,12 +412,52 @@ public class MovieIndex extends Indexable {
   public Schema getSchema() {
       PrimaryKeyField primaryKey = Field.createDefaultPrimaryKeyField(INDEX_FIELD_PRIMARY_KEY);
       RecordBoostField recordBoost = Field.createRecordBoostField(INDEX_FIELD_RECORD_BOOST);
-      Field title = Field.createSearchableField(INDEX_FIELD_TITLE, 3).enableHighlighting();
-      return Schema.createSchema(primaryKey, recordBoost, title );
+      Field title = Field.createSearchableField(INDEX_FIELD_TITLE);
+      return Schema.createSchema(primaryKey, recordBoost, title);
   }
 }
-  
 ```
+
+For instance, assume the user of the app was able to enter their favorite movie genres and they 
+entered the genre 'science fiction'. Then when inserting the initial movie records (or by updating
+each record) we can assign the value of the recordBoost field for a record like the following
+
+```
+  public JSONArray getAFewRecordsToInsert() {
+
+  ...
+		
+    JSONObject record = new JSONObject();
+    record.put(INDEX_FIELD_PRIMARY_KEY, "1");
+    record.put(INDEX_FIELD_TITLE, "The Good, the Bad And the Ugly");
+    record.put(INDEX_FIELD_YEAR, 1966);
+    record.put(INDEX_FIELD_GENRE, "Western Adventure");
+	record.put(INDEX_FIELD_RECORD_BOOST, computeRecordBoostScore("Western Adventure"));
+    jsonRecordsToInsert.put(record);
+			
+	...
+			
+	record = new JSONObject();
+    record.put(INDEX_FIELD_PRIMARY_KEY, "14");
+    record.put(INDEX_FIELD_TITLE, "The Matrix");
+    record.put(INDEX_FIELD_YEAR, 1999);
+    record.put(INDEX_FIELD_GENRE, "Science Fiction Action");
+	record.put(INDEX_FIELD_RECORD_BOOST, computeRecordBoostScore("Science Fiction Action"));
+    jsonRecordsToInsert.put(record);
+			
+	...
+	
+  ...
+  }
+	
+  public float computeRecordBoostScore(String genre) {
+    if (genre == null) {
+      return 1;
+    }
+    return genre.contains("Science Fiction") ? 50 : 1;
+  }
+```	
+so that any movie of the genre "Science Fiction" will be boosted 50 times higher in the search results. 
 
 ##Testing and Proguard
 
