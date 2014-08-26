@@ -126,6 +126,8 @@ public:
      */
     INDEXWRITE_RETVAL addRecord(const Record *record, Analyzer *analyzer);
 
+    INDEXWRITE_RETVAL aclRoleAdd(const std::string &primaryKeyID, vector<string> &roleIds);
+
     /**
      * Deletes all the records.
      */

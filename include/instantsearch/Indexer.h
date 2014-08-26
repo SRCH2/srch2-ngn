@@ -111,6 +111,8 @@ public:
     * Adds a record. If primary key is duplicate, insert fails and -1 is returned. Otherwise, 0 is returned.*/
     virtual INDEXWRITE_RETVAL addRecord(const Record *record, Analyzer *analyzer) = 0;
 
+    virtual INDEXWRITE_RETVAL aclRoleAdd(const std::string &primaryKeyID, vector<string> &roleIds) = 0;
+
     /*
     * Deletes all the records.*/
     virtual INDEXWRITE_RETVAL deleteRecord(const std::string &primaryKeyID) = 0;

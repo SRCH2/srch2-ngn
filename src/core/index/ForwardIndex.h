@@ -418,6 +418,12 @@ public:
     	return this->accessList.hasRole(roleId);
     };
 
+    void addRoleToResource(vector<string> &roleIds){
+    	for (unsigned i = 0 ; i < roleIds.size() ; i++){
+    		this->accessList.addRole(roleIds[i]);
+    	}
+    }
+
 private:
     friend class boost::serialization::access;
 
@@ -651,6 +657,8 @@ public:
     void addRecord(const Record *record, const unsigned recordId,
             KeywordIdKeywordStringInvertedListIdTriple &keywordIdList,
             map<string, TokenAttributeHits> &tokenAttributeHitsMap);
+
+    bool addRoleToResource(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView, const string& primaryKeyID, vector<string> &roleIds);
 
     /**
      * Set the deletedFlag on the forwardList, representing record deletion.

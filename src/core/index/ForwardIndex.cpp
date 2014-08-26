@@ -222,6 +222,21 @@ bool ForwardIndex::hasAccessToForwardList(shared_ptr<vectorview<ForwardListPtr> 
 	return false;
 }
 
+// returnValue: true if record with this primaryKey exists and false otherwise.
+bool ForwardIndex::addRoleToResource(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+		const string& primaryKeyID, vector<string> &roleIds){
+	unsigned recordId;
+	getInternalRecordIdFromExternalRecordId(primaryKeyID, recordId);
+
+	ForwardListPtr flPtr = forwardListDirectoryReadView->getElement(recordId);
+
+	if(flPtr.first){
+		flPtr.first->addRoleToResource(roleIds);
+		return true;
+	}
+	return false;
+}
+
 ForwardList *ForwardIndex::getForwardList_ForCommit(unsigned recordId)
 {
     ASSERT (recordId < this->getTotalNumberOfForwardLists_WriteView());

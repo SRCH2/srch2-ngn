@@ -62,6 +62,24 @@ struct IndexWriteUtil
     	//std::cout << "INSERT request received. New number of documents = " << indexer->getNumberOfDocumentsInIndex() << "; Limit = " << indexDataContainerConf->getDocumentLimit() << "." << std::endl;
     }
 
+    static void _aclRoleAdd(Indexer *indexer, string &primaryKeyID, vector<string> &roleIds, std::stringstream &log_str){
+
+    	srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->aclRoleAdd(primaryKeyID, roleIds);
+    	switch( ret )
+    	{
+			case srch2::instantsearch::OP_SUCCESS:
+			{
+				log_str << "{ Role id added successfully}";
+				break;
+			}
+			case srch2::instantsearch::OP_FAIL:
+			{
+				log_str << "{rid: " << primaryKeyID << " Add role failed. reason: No record with this primary key}" ;
+				break;
+			}
+    	};
+    }
+
     static void _deleteCommand(Indexer *indexer, const CoreInfo_t *indexDataContainerConf, const Json::Value &root, std::stringstream &log_str)
     {
     	//set the primary key of the record we want to delete

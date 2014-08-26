@@ -26,6 +26,7 @@ public:
             const std::string &inputLine, const Json::Value &root,
             const CoreInfo_t *indexDataContainerConf, std::stringstream &error,
             RecordSerializer& compactRecSerializer);
+    static bool _extractRoleIds(vector<string> &roleIds, string &primaryKeyID, const Json::Value &root, const CoreInfo_t *indexDataContainerConf, std::stringstream &error);
     static srch2is::Schema* createAndPopulateSchema(
             const CoreInfo_t *indexDataContainerConf);
 

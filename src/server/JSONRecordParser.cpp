@@ -474,6 +474,39 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
     return true;
 }
 
+bool JSONRecordParser::_extractRoleIds(std::vector<string> &roleIds, string& primaryKeyID, const Json::Value &root, const CoreInfo_t *indexDataContainerConf, std::stringstream &error){
+	if (root.type() != Json::objectValue)
+	{
+		error << "\nFailed to parse JSON.";
+		return false;// Raise Error
+	}
+	string aclIdName = ConfigManager::getRoleId();
+
+    string primaryKeyName = indexDataContainerConf->getPrimaryKey();
+
+    std::vector<string> stringValues;
+
+    getJsonValueString(root, primaryKeyName, stringValues, "primary-key");
+
+    if (!stringValues.empty() && stringValues.at(0).compare("") != 0) {
+        string primaryKeyStringValue = stringValues.at(0);
+        // trim to avoid any mismatch due to leading and trailing white space
+        boost::algorithm::trim(primaryKeyStringValue);
+        primaryKeyID = primaryKeyStringValue.c_str();
+
+    } else {
+        error << "\nFailed to parse JSON - No primary key found.";
+        return false; // Raise Error
+    }
+
+	if(!getJsonValueString(root, primaryKeyName, roleIds, "role-id")){
+		error << "\nFailed to parse JSON - No role id found.";
+		return false; // Raise Error
+	}
+
+	return true;
+}
+
 bool JSONRecordParser::populateRecordFromJSON(const string &inputLine,
         const CoreInfo_t *indexDataContainerConf, srch2is::Record *record, std::stringstream &error,
         RecordSerializer& compactRecSerializer)

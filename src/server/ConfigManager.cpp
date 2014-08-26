@@ -165,7 +165,7 @@ const char* const ConfigManager::multipleAccessControlString = "access-controls"
 const char* const ConfigManager::resourceCore = "resourcecore";
 const char* const ConfigManager::roleCore = "rolecore";
 const char* const ConfigManager::accessControlDataFile = "datafile";
-
+const char* const ConfigManager::roleId = "aclId";
 
 const char* const ConfigManager::defaultFuzzyPreTag = "<b>";
 const char* const ConfigManager::defaultFuzzyPostTag = "</b>";
@@ -2754,7 +2754,9 @@ bool ConfigManager::isValidFieldType(string& fieldType, bool isSearchable) {
                 || (lowerCase.compare("long") == 0)
                 || (lowerCase.compare("float") == 0)
                 || (lowerCase.compare("double") == 0)
-                || (lowerCase.compare("time") == 0)) {
+                || (lowerCase.compare("time") == 0)
+                || (lowerCase.compare(locationLatitudeString) == 0)
+                || (lowerCase.compare("location_longitude") == 0)) {
             return true;
         }
         return false;

@@ -204,14 +204,19 @@ class WriteCounter
 // we use this permission map for deleting a role core. then we can delete this role id from resources' access list
 class PermissionMap{
 public:
-	void addResourceToRole(string &resourceId, string &roleId){
-		map<string, vector<string> >::iterator it = permissionMap.find(roleId);
-		if( it == permissionMap.end()){
-			vector<string> resources;
-			resources.push_back(resourceId);
-			permissionMap.insert(std::pair<string,vector<string> >(roleId,resources));
-		}else{
-			it->second.push_back(resourceId);
+	void addResourceToRole(const string &resourceId, vector<string> &roleIds){
+		for(unsigned i = 0 ; i < roleIds.size() ; i++){
+			map<string, vector<string> >::iterator it = permissionMap.find(roleIds[i]);
+			if( it == permissionMap.end()){
+				vector<string> resources;
+				resources.push_back(resourceId);
+				permissionMap.insert(std::pair<string,vector<string> >(roleIds[i],resources));
+			}else{
+				vector<string>::iterator rIt = std::find(it->second.begin(),it->second.end(),resourceId);
+				if(rIt == it->second.end()){
+					it->second.push_back(resourceId);
+				}
+			}
 		}
 		print();
 	}
@@ -327,6 +332,8 @@ public:
     // add a record
     INDEXWRITE_RETVAL _addRecord(const Record *record, Analyzer *analyzer);
     
+    INDEXWRITE_RETVAL _aclRoleAdd(const std::string& primaryKeyID, vector<string> &roleIds);
+
     inline uint64_t _getReadCount() const { return this->readCounter->getCount(); }
     inline uint32_t _getWriteCount() const { return this->writeCounter->getCount(); }
     inline uint32_t _getNumberOfDocumentsInIndex() const { return this->writeCounter->getNumberOfDocuments(); }
