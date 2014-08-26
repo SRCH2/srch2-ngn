@@ -24,7 +24,8 @@ IF(NOT ANDROID)
 
     MESSAGE(STATUS "This is SOURCE dir " ${CMAKE_SOURCE_DIR})
 
-    IF(MAC_OS)					
+    IF(MAC_OS)
+        SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libstdc++")	    
         INCLUDE_DIRECTORIES(
             ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver/mongo-cxx-driver/build/osx-version-min_10.7/use-system-boost/srch2/include/
             ${CMAKE_SOURCE_DIR}/../src/adapter/
@@ -111,6 +112,7 @@ ELSE()
     IF (LINUX_OS)
         SET(CMAKE_REQUIRED_LIBRARIES dl pthread stdc++ rt z ${CMAKE_REQUIRED_LIBRARIES})
     ELSE()
+	SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libstdc++")
         SET(CMAKE_REQUIRED_LIBRARIES pthread stdc++ ${CMAKE_REQUIRED_LIBRARIES})
     ENDIF()
     
@@ -129,6 +131,10 @@ set_target_properties(sqliteConnector PROPERTIES VERSION ${SQLITE_VERSION_STRING
 
 SET_TARGET_PROPERTIES(sqliteConnector PROPERTIES COMPILE_FLAGS -fPIC)
 
+<<<<<<< HEAD
+=======
+TARGET_LINK_LIBRARIES(sqliteConnector ${jsoncpp_LIBRARY} ${CMAKE_REQUIRED_LIBRARIES} ${Boost_LIBRARIES} sqlite3)
+>>>>>>> d0a5ff24240b6fc2472a8fafa82749afb07421ff
 
 IF (ANDROID) 
     TARGET_LINK_LIBRARIES(sqliteConnector ${jsoncpp_LIBRARY} ${CMAKE_SOURCE_DIR}/../thirdparty/event/android/lib/libevent.a ${CMAKE_SOURCE_DIR}/../thirdparty/event/android/lib/libevent_pthreads.a ${CMAKE_REQUIRED_LIBRARIES} ${Boost_LIBRARIES} sqlite3)
