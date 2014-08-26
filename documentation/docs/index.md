@@ -217,21 +217,33 @@ default *Schema* object: the first parameter is *always* the primary
 key, and the subsequent parameters are the rest of the fields, in no
 particular order. 
 
-The following two chained method calls *formatExactTextMatchesHighlighting* and
-*formatExactTextMatchesHighlighting* configure how the SRCH2 search
-server will format data associated with a field that has
-highlighting enabled with the method *enableHighlighting()* called. 
-This will cause the SRCH2 search
-server to include in the search results a list of field data that
-is formatted against the search input. If the search input 
-is 'citi' for instance, since *title* has highlighting enabled, the
+Besides the name and the schema, a highlighter can also be returned from
+an *Indexable* implementation: this will cause the SRCH2 search server
+to generate, for every field with highlighting enabled, output of that
+field's data such that the text in the field's data matching the search
+input will having leading and trailing tags as part of the search result. 
+Suppose the search input is 'citi' for instance, since *title* has highlighting enabled, the
 search result for the move with the title 'Citizen Cane' will
 produce the output of '&lt;font color="#FF0000"&gt;&lt;b&gt;Citi&lt;/b&gt;&lt;/font&gt;zen Cane'
 (or visually, '<font color="FF0000"><b>Citi</b></font>zen Cane').
 This can be used in conjunction with *Html.fromHtml(...)* such as
 *mTextView.setText(Html.fromHtml(mHighlightTitleText))* to display it
-properly to the user. Here both exact and fuzzy text matches will be
-made bold, not italicized and set to red and magenta respectively.
+properly to the user. Here we'll make exact text matches bold and red
+and fuzzy text matches bold and magenta: 
+
+```
+public class MovieIndex extends Indexable {
+    
+    ...
+	
+	@Override
+    public Highlighter getHighlighter() {
+        return Highlighter.createHighlighter()
+                .formatExactTextMatches(true, false, "#FF0000")
+                .formatFuzzyTextMatches(true, false, "#FF00FF");
+    }
+}
+```
 
 Next we show how to form records to be inserted in the movie
 index. The following method generates a *JSONArray* instance
