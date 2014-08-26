@@ -55,7 +55,7 @@ public:
     unsigned internalRecordId;
     TypedValue _score;
     std::vector<std::string> matchingKeywords;
-    std::vector<unsigned> attributeBitmaps;
+    std::vector<vector<unsigned> > attributeIdsList;
     std::vector<unsigned> editDistances;
     std::vector<TermType> termTypes;
     std::vector< TrieNodePointer > matchingKeywordTrieNodes;
@@ -73,7 +73,9 @@ public:
     	for(unsigned i=0 ; i< matchingKeywords.size(); ++i){
     		result += matchingKeywords[i].capacity();
     	}
-    	result += attributeBitmaps.capacity() * sizeof(unsigned);
+    	for (unsigned i = 0; i < attributeIdsList.size(); ++i)
+    		result += attributeIdsList[i].capacity() * sizeof(unsigned);
+    	result += attributeIdsList.capacity() * sizeof(void *);
     	result += editDistances.capacity() * sizeof(unsigned);
     	result += termTypes.capacity() * sizeof(unsigned);
     	result += matchingKeywordTrieNodes.capacity() * sizeof(TrieNodePointer);
@@ -87,7 +89,7 @@ private:
     	internalRecordId = copy_from_me.internalRecordId;
     	_score = copy_from_me._score;
     	matchingKeywords = copy_from_me.matchingKeywords;
-    	attributeBitmaps = copy_from_me.attributeBitmaps;
+    	attributeIdsList = copy_from_me.attributeIdsList;
     	editDistances = copy_from_me.editDistances;
     	termTypes = copy_from_me.termTypes;
     	matchingKeywordTrieNodes = copy_from_me.matchingKeywordTrieNodes;

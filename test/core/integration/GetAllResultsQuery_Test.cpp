@@ -31,7 +31,7 @@ Indexer *buildIndex(string data_file, string index_dir, string expression, map<s
     schema->setScoringExpression(expression);
 
 
-    schema->setRefiningAttribute("id_for_sort",srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED, "0" );
+    schema->setRefiningAttribute("id_for_sort",srch2::instantsearch::ATTRIBUTE_TYPE_INT, "0" );
     schema->setRefiningAttribute("latitude", srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT, "1" );
 
     /// Create an Analyzer
@@ -128,7 +128,8 @@ void validateIntSortableAttrDescending(const Analyzer *analyzer, QueryEvaluator 
     vector<string> recordIds;
 
     // sort use the id number
-    getGetAllResultsQueryResults(analyzer, queryEvaluator, "Professional", descending, recordIds, -1, 0);
+    getGetAllResultsQueryResults(analyzer, queryEvaluator, "Professional", descending, recordIds,
+    		vector<unsigned>(), ATTRIBUTES_OP_AND, 0);
 
     // there are 139 records containing the word "professional" in the data.
     ASSERT(recordIds.size()==139);
@@ -153,7 +154,8 @@ void validateFloatSortableAttrDescending(const Analyzer *analyzer, QueryEvaluato
     vector<string> recordIds;
 
     // sort use the latitude
-    getGetAllResultsQueryResults(analyzer, queryEvaluator, "Professional", descending, recordIds, -1, 1);
+    getGetAllResultsQueryResults(analyzer, queryEvaluator, "Professional", descending, recordIds,
+    		vector<unsigned>(), ATTRIBUTES_OP_AND, 1);
 
     // there are 139 records containing the word "professional" in the data.
     ASSERT(recordIds.size()==139);

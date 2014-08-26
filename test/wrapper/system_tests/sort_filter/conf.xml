@@ -352,6 +352,7 @@
                 here and indexed="false" it will be also used for sort,filtering and facet.
                 - 
        -->
+       <field name="relevance" type="float" refining="true" highlight="true" />
        <field name="category" type="text" indexed="true" />
        <field name="name" type="text" indexed="true" />
        <field name="model" default="benz" required="true" type="text" indexed="false" refining="true"/>

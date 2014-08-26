@@ -343,24 +343,9 @@ void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode,
         CoreInfo_t *coreInfo, map<string, unsigned> &boostsMap,
         bool &configSuccess, std::stringstream &parseError,
         std::stringstream &parseWarnings) {
-    xml_node childNode = indexConfigNode.child(indexTypeString);
-    if (childNode && childNode.text()) {
-        string it = string(childNode.text().get());
-        if (isValidIndexType(it)) {
-            coreInfo->indexType = childNode.text().as_int();
-        } else {
-            parseError << "Index Type's value can be only 0 or 1.\n";
-            configSuccess = false;
-            return;
-        }
-    } else {
-        parseError << "Index Type is not set.\n";
-        configSuccess = false;
-        return;
-    }
 
     coreInfo->supportSwapInEditDistance = true; // by default it is true
-    childNode = indexConfigNode.child(supportSwapInEditDistanceString);
+    xml_node childNode = indexConfigNode.child(supportSwapInEditDistanceString);
     if (childNode && childNode.text()) {
         string qtmt = childNode.text().get();
         if (isValidBool(qtmt)) {
@@ -418,11 +403,21 @@ void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode,
     }
 
     // recordBoostField is an optional field
+    // We allow the tag to be missing and also empty string within the tag
+    // It should be refining and of type float, otherwise engine will not run
     coreInfo->recordBoostFieldFlag = false;
     childNode = indexConfigNode.child(recordBoostFieldString);
     if (childNode && childNode.text()) {
-        coreInfo->recordBoostFieldFlag = true;
-        coreInfo->recordBoostField = string(childNode.text().get());
+        string recordBoostField = string(childNode.text().get());
+        if(recordBoostField != ""){
+            if(coreInfo->refiningAttributesInfo[recordBoostField].attributeType != ATTRIBUTE_TYPE_FLOAT ){
+                Logger::error("Type of record boost field is invalid, it should be of type float");
+                configSuccess = false;
+                return;
+            }
+            coreInfo->recordBoostFieldFlag = true;
+            coreInfo->recordBoostField = recordBoostField;
+        }
     }
 
     // queryTermBoost is an optional field
@@ -510,7 +505,7 @@ void ConfigManager::parseDbParameters(const xml_node &dbNode, CoreInfo_t *coreIn
 
 }
 
-void ConfigManager::parseQuery(const xml_node &queryNode, CoreInfo_t *coreInfo,
+void ConfigManager::parseQuery(CoreConfigParseState_t *coreParseState , const xml_node &queryNode, CoreInfo_t *coreInfo,
         bool &configSuccess, std::stringstream &parseError,
         std::stringstream &parseWarnings) {
     // scoringExpressionString is an optional field
@@ -584,7 +579,7 @@ void ConfigManager::parseQuery(const xml_node &queryNode, CoreInfo_t *coreInfo,
     }
 
     // prefixMatchPenalty is an optional field.
-    coreInfo->prefixMatchPenalty = 0.95; // By default it is 0.5
+    coreInfo->prefixMatchPenalty = 0.95; // By default it is 0.95
     childNode = queryNode.child(prefixMatchPenaltyString);
     if (childNode && childNode.text()) {
         string pm = childNode.text().get();
@@ -644,6 +639,15 @@ void ConfigManager::parseQuery(const xml_node &queryNode, CoreInfo_t *coreInfo,
         }
     } else {
         // attribute based search is enabled if positional index is enabled
+        childNode = queryNode.child(fieldBasedSearchString);
+        string configValue = childNode.text().get();
+        if(isValidBooleanValue(configValue)){
+            if(configValue.compare("0") == 0){
+                if(coreInfo->enableWordPositionIndex == true || coreInfo->enableCharOffsetIndex == true){
+                    Logger::warn("Attribute based search is on because either character offset or word positional index is enabled");
+                }
+            }
+        }
         coreInfo->supportAttributeBasedSearch = true;
     }
 
@@ -709,7 +713,7 @@ void ConfigManager::parseQuery(const xml_node &queryNode, CoreInfo_t *coreInfo,
             coreInfo->exactHighlightMarkerPre = marker;
         } else {
             parseError
-                    << "The highlighter pre marker is an empty string. Using the default marker";
+                    << "The highlighter pre marker is an empty string, so the engine will use the default marker";
             return;
         }
     }
@@ -721,7 +725,7 @@ void ConfigManager::parseQuery(const xml_node &queryNode, CoreInfo_t *coreInfo,
             coreInfo->exactHighlightMarkerPost = marker;
         } else {
             parseError
-                    << "The highlighter post marker is an empty string. Using the default marker";
+                    << "The highlighter post marker is an empty string, so the engine will use the default marker";
             return;
         }
     }
@@ -733,7 +737,7 @@ void ConfigManager::parseQuery(const xml_node &queryNode, CoreInfo_t *coreInfo,
             coreInfo->fuzzyHighlightMarkerPre = marker;
         } else {
             parseError
-                    << "The highlighter pre marker is an empty string. Using the default marker";
+                    << "The highlighter pre marker is an empty string, so the engine will use the default marker";
             return;
         }
     }
@@ -745,7 +749,7 @@ void ConfigManager::parseQuery(const xml_node &queryNode, CoreInfo_t *coreInfo,
             coreInfo->fuzzyHighlightMarkerPost = marker;
         } else {
             parseError
-                    << "The highlighter post marker is an empty string. Using the default marker";
+                    << "The highlighter post marker is an empty string, so the engine will use the default marker";
             return;
         }
     }
@@ -765,10 +769,43 @@ void ConfigManager::parseQuery(const xml_node &queryNode, CoreInfo_t *coreInfo,
             return;
         }
 
+        //A warning is displayed if the field present in responseContent is neither searchable nor refining.
+        //This also trims spaces from the field values read from responseContent
         if (coreInfo->searchResponseContent == 2) {
             if (childNode.text()) {
+                vector<string> temp;
                 splitString(string(childNode.text().get()), ",",
-                        coreInfo->attributesToReturn);
+                                        temp);
+                vector<string> wrongAttributes;
+                vector<string>::iterator it;
+                //This flag tells if the warning should be displayed or not, it gets set when the field is neither searchable nor refining
+                bool warningFlag = false;
+                for(int i = 0; i< temp.size(); i++){
+                    trimSpacesFromValue(temp[i], responseContentString, parseWarnings);
+                    bool isRefining  = (coreInfo->refiningAttributesInfo.count(temp[i]) != 0);
+                    it = (std::find(coreParseState->searchableFieldsVector.begin(), coreParseState->searchableFieldsVector.end(), temp[i]));
+                    bool isSearchable = (it != coreParseState->searchableFieldsVector.end());
+                    if(isRefining == false && isSearchable == false){
+                        warningFlag = true;
+                        wrongAttributes.push_back(temp[i]);
+                        continue;
+                    }
+                    //we push back only valid fields
+                    coreInfo->attributesToReturn.push_back(temp[i]);
+                }
+
+                if(warningFlag == true){
+                    string warning = "";
+                    if(wrongAttributes.size() > 1){
+                        for(int i = 0; i < wrongAttributes.size() - 1; i++){
+                            warning = warning + wrongAttributes[i] + ", ";
+                        }
+                        warning = warning + "and " + wrongAttributes[wrongAttributes.size()-1];
+                        Logger::warn("The fields entered in responseContent tag, %s, are neither searchable, refining nor indexed therefore will not be returned by the engine.", warning.c_str());
+                    }
+                    else
+                        Logger::warn("The field entered in responseContent tag, %s, is neither searchable, refining nor indexed therefore will not be returned by the engine.", wrongAttributes[0].c_str());
+                }
             } else {
                 parseError
                         << "For specified response content type, return fields should be provided.";
@@ -978,6 +1015,19 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode,
     // set default number of suggestions because we don't have any config options for this yet
     coreInfo->defaultNumberOfSuggestions = 5;
 
+
+
+
+    // <schema>
+    childNode = parentNode.child(schemaString);
+    if (childNode) {
+        parseSchema(childNode, &coreParseState, coreInfo, configSuccess,
+                parseError, parseWarnings);
+        if (configSuccess == false) {
+            return;
+        }
+    }
+
     xml_node indexConfigNode = parentNode.child(indexConfigString);
     map<string, unsigned> boostsMap;
     parseIndexConfig(indexConfigNode, coreInfo, boostsMap, configSuccess,
@@ -988,18 +1038,8 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode,
 
     childNode = parentNode.child(queryString);
     if (childNode) {
-        parseQuery(childNode, coreInfo, configSuccess, parseError,
+        parseQuery(&coreParseState, childNode, coreInfo, configSuccess, parseError,
                 parseWarnings);
-        if (configSuccess == false) {
-            return;
-        }
-    }
-
-    // <schema>
-    childNode = parentNode.child(schemaString);
-    if (childNode) {
-        parseSchema(childNode, &coreParseState, coreInfo, configSuccess,
-                parseError, parseWarnings);
         if (configSuccess == false) {
             return;
         }
@@ -1228,7 +1268,9 @@ bool ConfigManager::setRefiningStateVectors(const xml_node &field,
             parseError << "Config File Error: " << temporaryString
                     << " is not a valid field type for refining fields.\n";
             parseError
-                    << " Note: refining fields only accept 'text', 'integer', 'float' and 'time'. Setting 'refining' or 'indexed' to true makes a field refining.\n";
+                    << " Note: refining fields only accept 'text', 'integer',"
+                            " 'long', 'float', 'double' and 'time'. Setting 'refining' "
+                            "or 'indexed' to true makes a field refining.\n";
             return false;
         }
 
@@ -1636,6 +1678,7 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
      * <field>  in config.xml file
      */
     coreInfo->isPrimSearchable = 0;
+    coreInfo->indexType = DefaultIndex;
 
     xml_node fieldsNode = schemaNode.child(fieldsString);
     if (fieldsNode) {
@@ -1706,6 +1749,28 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
                         && string(field.attribute(typeString).value()).compare(
                                 "") != 0) {
 
+                	if (string(field.attribute(typeString).value()).compare(
+                			locationLatitudeString) == 0) {
+                		coreParseState->hasLatitude = true;
+                		// we don't have indexType in the config file any more.
+                		// but we use this flag to create a quadtree and insert elements in it.
+                		coreInfo->indexType = LocationIndex;
+                		coreInfo->fieldLatitude = string(
+                				field.attribute(nameString).value());
+                		isRefining = true;
+                	}
+
+                	if (string(field.attribute(typeString).value()).compare(
+                			locationLongitudeString) == 0) {
+                		coreParseState->hasLongitude = true;
+                		// we don't have indexType in the config file any more.
+                		// but we use this flag to create a quadtree and insert elements in it.
+                		coreInfo->indexType = LocationIndex;
+                		coreInfo->fieldLongitude = string(
+                				field.attribute(nameString).value());
+                		isRefining = true;
+                	}
+
                     if (!setCoreParseStateVector(isSearchable, isRefining,
                             isMultiValued, isHighlightEnabled, coreParseState,
                             coreInfo, parseError, field)) {
@@ -1723,19 +1788,8 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
                         return;
                     }
 
-                    // Checks for geo types. location_latitude and location_longitude are geo types
-                    if (string(field.attribute(typeString).value()).compare(
-                            locationLatitudeString) == 0) {
-                        coreParseState->hasLatitude = true;
-                        coreInfo->fieldLatitude = string(
-                                field.attribute(nameString).value());
-                    }
-                    if (string(field.attribute(typeString).value()).compare(
-                            locationLongitudeString) == 0) {
-                        coreParseState->hasLongitude = true;
-                        coreInfo->fieldLongitude = string(
-                                field.attribute(nameString).value());
-                    }
+
+
                 } else { // if one of the values of name, type or indexed is empty
                     parseError << "For the searchable fields, "
                             << "providing values for 'name' and 'type' is required\n ";
@@ -1806,7 +1860,6 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
     childNode = schemaNode.child(typesString);
 
     parseSchemaType(childNode, coreInfo, parseWarnings);
-
     /*
      * <Schema/>: End
      */
@@ -1944,7 +1997,7 @@ bool ConfigManager::setFieldFlagsFromFile(const xml_node &field,
     if (string(field.attribute(highLightString).value()).compare("") != 0) {
         temporaryString = string(field.attribute(highLightString).value());
         if (isValidBool(temporaryString)) {
-            if (field.attribute(indexedString).as_bool()) {
+            if (field.attribute(highLightString).as_bool()) {
                 isHighlightEnabled = true;
             }
         }
@@ -1957,8 +2010,10 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
         std::stringstream &parseError, std::stringstream &parseWarnings) {
     string temporaryString = "";
 
+    //By default the maximum number of document is 15000000.
     xml_node childNode = updateHandlerNode.child(maxDocsString);
     bool mdflag = false;
+    coreInfo->documentLimit = 15000000;
     if (childNode && childNode.text()) {
         string md = childNode.text().get();
         if (this->isValidMaxDoc(md)) {
@@ -1967,12 +2022,11 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
         }
     }
     if (!mdflag) {
-        parseError << "MaxDoc is not set correctly\n";
-        configSuccess = false;
-        return;
+        Logger::warn("MaxDoc is not set, so the engine will use the default value 15,000,000");
     }
 
-    coreInfo->memoryLimit = 100000;
+    //Default value for memory limit if it is not set is 1000000000
+    coreInfo->memoryLimit = 1000000000;
     bool mmflag = false;
     childNode = updateHandlerNode.child(maxMemoryString);
     if (childNode && childNode.text()) {
@@ -1983,14 +2037,14 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
         }
     }
     if (!mmflag) {
-        parseError << "MaxDoc is not set correctly\n";
-        configSuccess = false;
-        return;
+        Logger::warn("Maximum memory limit is not set, so the engine will use the default value 1GB");
     }
 
     // mergeEveryNSeconds
+    //If the tag is not set the engine will assume default value of 1
     childNode = updateHandlerNode.child(mergePolicyString).child(
             mergeEveryNSecondsString);
+    coreInfo->mergeEveryNSeconds = 10;
     bool mensflag = false;
     if (childNode && childNode.text()) {
         string mens = childNode.text().get();
@@ -2000,14 +2054,14 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
         }
     }
     if (!mensflag) {
-        parseError << "mergeEveryNSeconds is not set.\n";
-        configSuccess = false;
-        return;
+        Logger::warn("mergeEveryNSeconds is not set correctly, so the engine will use the default value 10");
     }
 
     // mergeEveryMWrites
+    //If the tag is not set the engine will assume default value of 1
     childNode = updateHandlerNode.child(mergePolicyString).child(
             mergeEveryMWritesString);
+    coreInfo->mergeEveryMWrites = 100;
     bool memwflag = false;
     if (childNode && childNode.text()) {
         string memw = childNode.text().get();
@@ -2018,9 +2072,7 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
         }
     }
     if (!memwflag) {
-        parseError << "mergeEveryMWrites is not set.\n";
-        configSuccess = false;
-        return;
+        Logger::warn("mergeEveryMWrites is not set correctly, so the engine will use the default value 100");
     }
 
     // set default value for updateHistogramEveryPSeconds and updateHistogramEveryQWrites because there
@@ -2033,23 +2085,24 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
                     / updateHistogramWorkRatioOverTime); // 10000 for mergeEvery 1000 Writes
 
     // TODO - logging per core
-    // logLevel is required
+    // logLevel is optional. To make loglevel optional the llflag's initial value has been set to false.
+    // llflag is false, if log level is not set in config file or wrong value is given by the user, otherwise llflag remains true.
     this->loglevel = Logger::SRCH2_LOG_INFO;
     childNode = updateHandlerNode.child(updateLogString).child(logLevelString);
-    bool llflag = true;
+    bool llflag = false;
     if (childNode && childNode.text()) {
         string ll = childNode.text().get();
         if (this->isValidLogLevel(ll)) {
             this->loglevel =
                     static_cast<Logger::LogLevel>(childNode.text().as_int());
+            llflag = true;
         } else {
             llflag = false;
         }
     }
     if (!llflag) {
-        parseError << "Log Level is not set correctly\n";
-        configSuccess = false;
-        return;
+        Logger::warn("Log Level is either not set or not set correctly, so the engine will use the"
+                        " default value 3");
     }
 
     // accessLogFile is required
@@ -2182,14 +2235,6 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
         }
     } else {
         parseError << "listeningPort is not set.\n";
-        configSuccess = false;
-        return;
-    }
-
-    if (defaultCoreInfo->supportAttributeBasedSearch
-            && defaultCoreInfo->searchableAttributesInfo.size() > 31) {
-        parseError
-                << "To support attribute-based search, the number of searchable attributes cannot be bigger than 31.\n";
         configSuccess = false;
         return;
     }
@@ -2649,20 +2694,28 @@ bool ConfigManager::isFloat(string str) {
 }
 
 bool ConfigManager::isValidFieldType(string& fieldType, bool isSearchable) {
+    string lowerCase = fieldType;
+    std::transform(lowerCase.begin(), lowerCase.end(), lowerCase.begin(),
+            ::tolower);
+
     if (isSearchable) {
         // supported types are: text, location_latitude, location_longitude
-        if ((fieldType.compare("text") == 0)
-                || (fieldType.compare(locationLatitudeString) == 0)
-                || (fieldType.compare("location_longitude") == 0)) {
+        if ((lowerCase.compare("text") == 0)
+                || (lowerCase.compare(locationLatitudeString) == 0)
+                || (lowerCase.compare("location_longitude") == 0)) {
             return true;
         }
         return false;
     } else {
         // supported types are: text, integer, float, time
-        if ((fieldType.compare("text") == 0)
-                || (fieldType.compare("integer") == 0)
-                || (fieldType.compare("float") == 0)
-                || (fieldType.compare("time") == 0)) {
+        if ((lowerCase.compare("text") == 0)
+                || (lowerCase.compare("integer") == 0)
+                || (lowerCase.compare("long") == 0)
+                || (lowerCase.compare("float") == 0)
+                || (lowerCase.compare("double") == 0)
+                || (lowerCase.compare("time") == 0)
+                || (lowerCase.compare(locationLatitudeString) == 0)
+                || (lowerCase.compare(locationLongitudeString) == 0)) {
             return true;
         }
         return false;
@@ -2913,17 +2966,34 @@ bool ConfigManager::isValidSearcherType(string& searcherType) {
 
 srch2::instantsearch::FilterType ConfigManager::parseFieldType(
         string& fieldType) {
-    if (fieldType.compare("integer") == 0)
-        return srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED;
-    else if (fieldType.compare("float") == 0)
+    string lowerCase = fieldType;
+    std::transform(lowerCase.begin(), lowerCase.end(), lowerCase.begin(),
+            ::tolower);
+    if (lowerCase.compare("integer") == 0)
+        return srch2::instantsearch::ATTRIBUTE_TYPE_INT;
+    else if (lowerCase.compare("long") == 0)
+            return srch2::instantsearch::ATTRIBUTE_TYPE_LONG;
+    else if (lowerCase.compare("float") == 0)
         return srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT;
-    else if (fieldType.compare("text") == 0)
+    else if (lowerCase.compare("double") == 0)
+            return srch2::instantsearch::ATTRIBUTE_TYPE_DOUBLE;
+    else if (lowerCase.compare("text") == 0)
         return srch2::instantsearch::ATTRIBUTE_TYPE_TEXT;
     else if (fieldType.compare("time") == 0)
-        return srch2::instantsearch::ATTRIBUTE_TYPE_TIME;
+    	return srch2::instantsearch::ATTRIBUTE_TYPE_TIME;
+    else if (fieldType.compare(locationLatitudeString) == 0)
+    	return srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT;
+    else if (fieldType.compare(locationLongitudeString) == 0)
+    	return srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT;
 
+    Logger::warn("\"%s\" is not a supported type. The following are supported "\
+            "types: text, integer, long, float, double, time, "\
+            "location_longitude (for geo search), "\
+            "and location_latitude (for geo search).",fieldType.c_str());
+    //The only possibility this function throws an exception is
+    //the programmer forgets to call isValidFieldType() before using this function
     ASSERT(false);
-    return srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED;
+    return srch2::instantsearch::ATTRIBUTE_TYPE_INT;
 }
 
 int ConfigManager::parseFacetType(string& facetType) {

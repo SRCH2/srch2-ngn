@@ -158,7 +158,7 @@
                             default="0"           required="false"/>
                         <field name="answer_count"   type="integer" indexed="false"   refining="true"
                             default="0"           required="false"/>
-                        <field name="votes_count"    type="integer" indexed="false"   refining="true"
+                        <field name="votes_count"    type="float" indexed="false"   refining="true"
                             default="0"           required="false"/>
                     </fields>
 
@@ -403,6 +403,7 @@
                               default value. If primary key is included here and indexed="false" it will
                               be also used for sort,filtering and facet.
                     -->
+                    <field name="relevance" type="float" refining="true" highlight="true" />
                     <field name="category" type="text" indexed="true" />
                     <field name="name" type="text" indexed="true" />
                 </fields>
@@ -745,6 +746,7 @@
             here and indexed="false" it will be also used for sort,filtering and facet.
             - 
        -->
+       <field name="relevance" type="float" refining="true" highlight="true" />
        <field name="category" type="text" indexed="true" />
        <field name="name" type="text" indexed="true" />
        <field name="lng" type="location_longitude" indexed="false"  />

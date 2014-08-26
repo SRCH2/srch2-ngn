@@ -1,0 +1,8 @@
+{"int_value": 1, "name": "maxlong", "long_value":9223372036854775807, "float_value": 2, "double_value": 4, "id": 3}
+{"int_value": 0, "name": "minlong", "long_value": -9223372036854775808, "float_value": 0, "double_value": 0, "id": 4}
+{"int_value": 2147483647, "name": "maxint", "long_value": 0, "float_value": 0, "double_value": 0, "id": 1}
+{"int_value": -2147483648, "name": "minint", "long_value": 0, "float_value": 0, "double_value": 0, "id": 2}
+{"int_value": 0, "name": "maxfloat", "long_value": 0, "float_value": 3.40282e+038, "double_value": 0, "id": 5}
+{"int_value": 0, "name": "minfloat", "long_value": 0, "float_value": 1.17549e-038, "double_value": 0, "id": 6}
+{"int_value": 0, "name": "maxdouble", "long_value": 0, "float_value": 0, "double_value": 1.79769e+308, "id": 7}
+{"int_value": 0, "name": "mindouble", "long_value": 0, "float_value": 0, "double_value": 2.22507e-308, "id": 8}

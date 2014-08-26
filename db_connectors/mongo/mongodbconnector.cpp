@@ -11,6 +11,7 @@
 #include <iomanip>
 #include <fstream>
 #include <boost/filesystem.hpp>
+#include <stdlib.h>
 
 using namespace std;
 
@@ -52,13 +53,15 @@ bool MongoDBConnector::checkConfigValidity() {
     bool ret = (host.size() != 0) && (port.size() != 0) && (db.size() != 0)
             && (uniqueKey.size() != 0) && (collection.size() != 0);
     if (!ret) {
-        printf("MOGNOLISTENER: database host, port, db, collection, uniquekey must be set.\n");
+        printf(
+                "MOGNOLISTENER: database host, port, db, collection, uniquekey must be set.\n");
         return false;
     }
 
-    int value = atoi(port.c_str());
+    int value = strtol(port.c_str(), NULL, 10);
     if (value <= 0 || value > USHRT_MAX) {
-        printf("MOGNOLISTENER: database port must be between 1 and %d\n", USHRT_MAX);
+        printf("MOGNOLISTENER: database port must be between 1 and %d\n",
+                USHRT_MAX);
         return false;
     }
 
@@ -69,30 +72,30 @@ bool MongoDBConnector::checkConfigValidity() {
 bool MongoDBConnector::connectToDB() {
     string mongoNamespace = "local.oplog.rs";
 
-    string host, port, listenerWaitTimeStr, maxRetryOnFailureStr;
+    string host, port, listenerWaitTimeStr;
     this->serverHandle->configLookUp("host", host);
     this->serverHandle->configLookUp("port", port);
     this->serverHandle->configLookUp("listenerWaitTime", listenerWaitTimeStr);
-    this->serverHandle->configLookUp("maxRetryOnFailure", maxRetryOnFailureStr);
 
     int listenerWaitTime = 1;
     if (listenerWaitTimeStr.size() != 0) {
-        listenerWaitTime = atoi(listenerWaitTimeStr.c_str());
+        listenerWaitTime = static_cast<int>(strtol(listenerWaitTimeStr.c_str(),
+                NULL, 10));
     }
 
-    int maxRetryOnFailure = 3;
-    if (maxRetryOnFailureStr.size() != 0) {
-        maxRetryOnFailure = atoi(maxRetryOnFailureStr.c_str());
+    string hostAndport = host;
+    if (port.size()) {
+        hostAndport.append(":").append(port);
     }
 
-    for (int retryCount = maxRetryOnFailure; retryCount >=0;
-            --retryCount) {
-
+    while (1) {
         try {
-            string hostAndport = host;
-            if (port.size()) {
-                hostAndport.append(":").append(port);
+            if (mongoConnector != NULL) {
+                mongoConnector->done();
+                delete mongoConnector;
+                mongoConnector = NULL;
             }
+
             mongoConnector = new mongo::ScopedDbConnection(hostAndport);
             oplogConnection = &mongoConnector->conn();
 
@@ -104,23 +107,28 @@ bool MongoDBConnector::connectToDB() {
                 printf("MOGNOLISTENER: either replication is not enabled on"
                         " the host instance or the host is not a primary "
                         "member of replica set \n");
-                printf("MOGNOLISTENER: exiting ... \n");
-                return false;
-            }
+                printf("MOGNOLISTENER: trying again ... \n");
 
+                sleep(listenerWaitTime);
+                continue;
+            }
             return true;
         } catch (const mongo::DBException &e) {
             printf("MOGNOLISTENER: MongoDb Exception %s \n", e.what());
         } catch (const exception& ex) {
             printf("MOGNOLISTENER: Unknown exception %s \n", ex.what());
         }
-        if (retryCount != 0) {
-            printf("MONGOLISTENER: trying again ...\n");
-        }
+        printf("MONGOLISTENER: trying again ...\n");
+
         // sleep...do not hog the CPU
         sleep(listenerWaitTime);
     }
-    // if all retries failed then exit the thread
+
+    /*
+     * If all retries failed then exit the thread
+     * TODO engine will crash under MAC_OS at point of pthread_tsd_cleaup if the
+     * code reaches this line.
+     */
     printf("MONGOLISTENER: exiting...\n");
     return false;
 }
@@ -132,50 +140,54 @@ int MongoDBConnector::createNewIndexes() {
     this->serverHandle->configLookUp("db", dbname);
     this->serverHandle->configLookUp("collection", collection);
     string filterNamespace = dbname + "." + collection;
-    try {
-        unsigned collectionCount = oplogConnection->count(filterNamespace);
-        // We fetch data from mongo db only
-        // if there are some records to be processed
-        unsigned indexedRecordsCount = 0;
-        if (collectionCount > 0) {
-            // query the mongo database for all the objects in collection.
-            // mongo::BSONObj() means get all records from mongo db
-            auto_ptr<mongo::DBClientCursor> cursor = oplogConnection->query(
-                    filterNamespace, mongo::BSONObj());
-            // get data from cursor
-            while (cursor->more()) {
-                mongo::BSONObj obj = cursor->next();
-                // parse BSON object returned by cursor
-                // and fill in record object
-                string recNS = obj.getStringField("ns");
 
-                string jsonRecord = obj.jsonString();
-                this->serverHandle->insertRecord(jsonRecord);
+    do {
+        try {
+            unsigned collectionCount = oplogConnection->count(filterNamespace);
+            // We fetch data from mongo db only
+            // if there are some records to be processed
+            unsigned indexedRecordsCount = 0;
+            if (collectionCount > 0) {
+                // query the mongo database for all the objects in collection.
+                // mongo::BSONObj() means get all records from mongo db
+                auto_ptr<mongo::DBClientCursor> cursor = oplogConnection->query(
+                        filterNamespace, mongo::BSONObj());
+                // get data from cursor
+                while (cursor->more()) {
+                    mongo::BSONObj obj = cursor->next();
+                    // parse BSON object returned by cursor
+                    // and fill in record object
+                    string recNS = obj.getStringField("ns");
 
-                ++indexedRecordsCount;
-                if (indexedRecordsCount && (indexedRecordsCount % 1000) == 0)
-                    printf("MOGNOLISTENER: Indexed %d records so far ...\n",
-                            indexedRecordsCount);
+                    string jsonRecord = obj.jsonString();
+                    if (this->serverHandle->insertRecord(jsonRecord) == 0) {
+                        ++indexedRecordsCount;
+                    }
+
+                    if (indexedRecordsCount
+                            && (indexedRecordsCount % 1000) == 0)
+                        printf("MOGNOLISTENER: Indexed %d records so far ...\n",
+                                indexedRecordsCount);
+                }
+                printf("MOGNOLISTENER: Total indexed %d / %d records. \n",
+                        indexedRecordsCount, collectionCount);
+
+            } else {
+                printf("MOGNOLISTENER: No data found in the collection %s\n",
+                        filterNamespace.c_str());
             }
-            printf("MOGNOLISTENER: Total indexed %d / %d records. \n", indexedRecordsCount,
-                    collectionCount);
-
-        } else {
-            printf("MOGNOLISTENER: No data found in the collection %s\n",
-                    filterNamespace.c_str());
+            //Save the time right after create new indexes.
+            setLastAccessedLogRecordTime(time(NULL));
+            this->serverHandle->saveChanges();
+        } catch (const mongo::DBException &e) {
+            printf("MOGNOLISTENER: MongoDb Exception %s\n", e.what());
+        } catch (const exception& ex) {
+            printf("MOGNOLISTENER: Unknown exception %s\n", ex.what());
         }
-        //Save the time right after create new indexes.
-        setLastAccessedLogRecordTime(time(NULL));
-        this->serverHandle->saveChanges();
-    } catch (const mongo::DBException &e) {
-        printf("MOGNOLISTENER: MongoDb Exception %s\n", e.what());
-        return -1;
-    } catch (const exception& ex) {
-        printf("MOGNOLISTENER: Unknown exception %s\n", ex.what());
-        return -1;
-    }
+        return 0;
+    } while (connectToDB());
 
-    return 0;
+    return -1;
 }
 
 //Load the last time last oplog record accessed
@@ -193,8 +205,9 @@ bool MongoDBConnector::getLastAccessedLogRecordTime(time_t& t) {
         a_file.close();
         return true;
     } else {
-        printf("MONGOLISTENER: Can not find %s. Listener starts failed.\n",
-                path.c_str());
+        printf("MONGOLISTENER: Warning. Can not find %s."
+                " The connector will use the current time.\n", path.c_str());
+        t = time(NULL);
         return false;
     }
 }
@@ -228,17 +241,17 @@ int MongoDBConnector::runListener() {
 
     int listenerWaitTime = 1;
     if (listenerWaitTimeStr.size() != 0) {
-        listenerWaitTime = atoi(listenerWaitTimeStr.c_str());
+        listenerWaitTime = static_cast<int>(strtol(listenerWaitTimeStr.c_str(),
+                NULL, 10));
     }
 
     do {
         bool printOnce = true;
         time_t opLogTime = 0;
         time_t threadSpecificCutOffTime = 0;
-        if(!getLastAccessedLogRecordTime(threadSpecificCutOffTime)){
-            printf("MONGOLISTENER: exiting...\n");
-            mongoConnector->done();
-            return -1;
+        if (!getLastAccessedLogRecordTime(threadSpecificCutOffTime)) {
+            //If false, means the file is not found on the disk, so we save a new one.
+            setLastAccessedLogRecordTime(threadSpecificCutOffTime);
         }
         try {
             mongo::BSONElement _lastValue = mongo::BSONObj().firstElement();
@@ -318,7 +331,6 @@ int MongoDBConnector::runListener() {
         sleep(listenerWaitTime);
     } while (connectToDB());	//Retry connecting to the mongodb
 
-    mongoConnector->done();
     return -1;
 }
 
@@ -350,8 +362,9 @@ void MongoDBConnector::parseOpLogObject(mongo::BSONObj& bobj,
         // Parse example data , find the pk and delete
         mongo::BSONElement _oElement = bobj.getField("o");
         if (_oElement.type() != mongo::Object) {
-            printf("MONGOLISTENER: \"o\" element is "
-                    "not an Object type in the delete operation!! ..Cannot update engine \n");
+            printf(
+                    "MONGOLISTENER: \"o\" element is "
+                            "not an Object type in the delete operation!! ..Cannot update engine \n");
             break;
         }
         mongo::BSONElement pk = _oElement.Obj().getField(uniqueKey.c_str());
@@ -374,8 +387,9 @@ void MongoDBConnector::parseOpLogObject(mongo::BSONObj& bobj,
         // Parse example data , find the pk and update
         mongo::BSONElement _o2Element = bobj.getField("o2");
         if (_o2Element.type() != mongo::Object) {
-            printf("MONGOLISTENER: o2 element is not an"
-                    " ObjectId type in the update operation!! ..Cannot update engine\n");
+            printf(
+                    "MONGOLISTENER: o2 element is not an"
+                            " ObjectId type in the update operation!! ..Cannot update engine\n");
             break;
         }
         mongo::BSONObj _internalMongoId = bobj.getField("o2").Obj();
@@ -384,8 +398,9 @@ void MongoDBConnector::parseOpLogObject(mongo::BSONObj& bobj,
         mongo::BSONObj updateRecord = cursor->next();  // should return only one
 
         if (string(updateRecord.firstElementFieldName()).compare("$err") == 0) {
-            printf("MONGOLISTENER: updated record could"
-                    " not be found in db in the update operation!! ..Cannot update engine \n");
+            printf(
+                    "MONGOLISTENER: updated record could"
+                            " not be found in db in the update operation!! ..Cannot update engine \n");
             break;
         }
 
@@ -411,6 +426,10 @@ void MongoDBConnector::parseOpLogObject(mongo::BSONObj& bobj,
 }
 
 MongoDBConnector::~MongoDBConnector() {
+    if (mongoConnector != NULL) {
+        mongoConnector->done();
+        delete mongoConnector;
+    }
 }
 
 /*

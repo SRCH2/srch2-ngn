@@ -24,6 +24,8 @@
 #include <boost/archive/binary_iarchive.hpp>
 #include <cmath>
 #include <vector>
+#include <string>
+#include <sstream>
 
 namespace srch2
 {
@@ -73,11 +75,15 @@ public:
     Shape() {};
     virtual ~Shape() {};
 
-    virtual bool contains(const Point &point) const = 0;
+    virtual bool contain(const Point &point) const = 0;
+    virtual bool contain(const Rectangle &rectangle) const = 0;
     virtual bool intersects(const Rectangle &) const = 0;
     virtual double getMinDist2FromLatLong(double resultLat, double resultLng) const = 0;
     virtual double getSearchRadius2() const = 0;
     virtual void getValues(std::vector<double> &values) const = 0;
+    virtual double getMinDistFromBoundary(double lat, double lng) const = 0;
+    virtual void getCenter(Point &point) = 0;
+    virtual std::string toString() = 0;
 };
 
 class Rectangle : public Shape
@@ -114,10 +120,16 @@ public:
     };
 
     // check whether the rectangle contains the point
-    virtual bool contains(const Point &point) const
+    virtual bool contain(const Point &point) const
     {
         return min.x <= point.x && max.x >= point.x
             && min.y <= point.y && max.y >= point.y;
+    };
+
+    // check whether the rectangle contains the rectangle
+    virtual bool contain(const Rectangle &rectangle) const
+    {
+    	return this->contain(rectangle.min) && this->contain(rectangle.max);
     };
 
     // check whether this rectangle is contained by another
@@ -139,6 +151,25 @@ public:
         return pow((resultLat - rangeMidLat), 2) + pow((resultLng - rangeMidLng), 2);
     }
 
+    // this function will return the distance of closest point on the boundary of the shape to the input point
+    virtual double getMinDistFromBoundary(double lat, double lng) const
+    {
+    	Point point;
+    	point.x = lat;
+    	point.y = lng;
+    	if(this->contain(point))
+    		return 0;
+    	double xDist =  std::min(abs(max.x - lat), abs(min.x - lat));
+    	double yDist =  std::min(abs(max.y - lng), abs(min.y - lng));
+    	return sqrt(xDist * xDist + yDist * yDist);
+    }
+
+    // this function will return the center of the shape
+    virtual void getCenter(Point &point){
+    	point.x = (this->max.x + this->min.x) / 2.0;
+    	point.y = (this->max.y + this->min.y) / 2.0;
+    }
+
     virtual double getSearchRadius2() const
     {
         return pow((this->max.x - this->min.x)/2.0, 2) + pow((this->max.y - this->min.y)/2.0, 2);
@@ -150,6 +181,14 @@ public:
         values.push_back(this->min.y);
         values.push_back(this->max.x);
         values.push_back(this->max.y);
+    }
+
+    virtual std::string toString(){
+    	std::ostringstream ss;
+    	ss << "Rectangle";
+    	ss << "/" << this->min.x << "/" << this->min.y;
+    	ss << "/" << this->max.x << "/" << this->max.y;
+    	return ss.str();
     }
 
 private:
@@ -173,9 +212,21 @@ public:
 
     virtual ~Circle() {}
 
-    virtual bool contains(const Point &point) const
+    virtual bool contain(const Point &point) const
     {
         return center.distSquare(point) <= radius*radius;
+    }
+
+    // check whether the Circle contains the rectangle
+    virtual bool contain(const Rectangle &rectangle) const
+    {
+    	Point point1;
+    	point1.x = rectangle.max.x;
+    	point1.y = rectangle.min.y;
+    	Point point2;
+    	point2.x = rectangle.min.x;
+    	point2.y = rectangle.max.y;
+    	return this->contain(point1) && this->contain(point2) && this->contain(rectangle.max) && this->contain(rectangle.min);
     }
 
     // how to detect the intersection between a circle and a rectangle
@@ -207,6 +258,23 @@ public:
         return pow((resultLat - center.x), 2) + pow((resultLng - center.y), 2);
     }
 
+    // this function will return the distance of closest point on the boundary of the shape to the input point
+    virtual double getMinDistFromBoundary(double lat, double lng) const
+    {
+    	Point point;
+    	point.x = lat;
+    	point.y = lng;
+    	if(this->contain(point))
+    		return 0;
+    	return sqrt(this->getMinDist2FromLatLong(lat,lng)) - this->radius;
+    }
+
+    // this function will return the center of the shape
+    virtual void getCenter(Point &point){
+    	point.x = this->center.x;
+    	point.y = this->center.y;
+    }
+
     virtual double getSearchRadius2() const
     {
         return pow(radius, 2);
@@ -217,6 +285,15 @@ public:
         values.push_back(center.x);
         values.push_back(center.y);
         values.push_back(radius);
+    }
+
+    virtual std::string toString(){
+    	std::ostringstream ss;
+    	ss << "Circle";
+    	ss << "/" << this->center.x;
+    	ss << "/" << this->center.y;
+    	ss << "/" << this->radius;
+    	return ss.str();
     }
 
 };

@@ -75,7 +75,6 @@ SET(BUILD_UTILITY OFF CACHE BOOL "Build utilities. Default OFF")
 #SET(CMAKE_CXX_FLAGS_RELEASE "") 
 
 SET(ANDROID_SERVER OFF CACHE BOOL "Build srch2-server for android. Default OFF")
-
 IF(ANDROID)
     SET(BUILD_STATIC OFF)
     IF (ANDROID_SERVER)
@@ -133,7 +132,11 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
                   OUTPUT_VARIABLE gcc_compiler_version)
     MESSAGE(STATUS "C++ compiler version: ${gcc_compiler_version}") 
     string(COMPARE LESS ${gcc_compiler_version} "4.6" _compiler_version_lt_4.6)
-    
+   
+    IF(MAC_OS)
+        SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libstdc++")
+    ENDIF()
+ 
     if (_compiler_version_lt_4.6)
        SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -Wno-long-long -Wno-conversion -Wno-sign-compare -Wno-unused -Wno-gnu -Wno-c++11-extensions -Wno-c++11-extra-semi")
     else()

@@ -24,6 +24,7 @@
 #include <instantsearch/Term.h>
 #include <instantsearch/Query.h>
 #include <instantsearch/TypedValue.h>
+#include "record/LocationRecordUtil.h"
 #include <vector>
 
 using std::vector;
@@ -39,6 +40,8 @@ namespace srch2 {
         static float computeTermRecordRuntimeScore(float recordStaticScore, 
                                unsigned editDistance, unsigned termLength, 
                                bool isPrefixMatch, float prefixMatchPenalty, float termSimilarityBoost);
+
+        static double computeScoreforGeo(Point &recordPosition, Shape &queryShape);
 
         virtual float aggregateBoostedTermRuntimeScore(float oldRecordScore, 
                                float termBoost,
@@ -76,8 +79,6 @@ namespace srch2 {
         virtual float computeAggregatedRuntimeScoreForOr(std::vector<float> runTimeTermRecordScores);
 
         virtual float computeScoreForNot(float score);
-
-
 
         virtual ~Ranker() {};
     };
