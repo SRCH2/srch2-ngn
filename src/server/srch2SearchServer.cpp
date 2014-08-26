@@ -970,9 +970,11 @@ int main(int argc, char** argv) {
         delete iterator->second;
     }
 
+#ifndef __MACH__
     for (unsigned int i = 0; i < MAX_THREADS; i++) {
         event_base_free(evBases[i]);
     }
+#endif
 
     // use global port map to close each file descriptor just once
     for (PortSocketMap_t::iterator iterator = globalPortSocketMap.begin(); iterator != globalPortSocketMap.end(); iterator++) {
