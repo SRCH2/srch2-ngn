@@ -53,6 +53,9 @@ public:
 
 	bool doesExpect(const LockingNotification::ACK * ack) const;
 
+	string getOperationName() const ;
+	string getOperationStatus() const ;
+
 private:
 	vector<NodeId> participantNodes;
 	ResourceLockRequest * lockRequests;

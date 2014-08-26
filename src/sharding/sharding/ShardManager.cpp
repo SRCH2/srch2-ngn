@@ -586,10 +586,6 @@ void * ShardManager::periodicWork(void *args) {
 
 	while(! ShardManager::getShardManager()->isCancelled()){
 
-		ShardManager::getShardManager()->print();
-		cout << "========================================================================================================================================" << endl;
-		cout << "========================================================================================================================================" << endl;
-
 		/*
 		 * 1. Resend bounced notifications.
 		 * 2. is we are joined, start load balancing.
@@ -598,7 +594,9 @@ void * ShardManager::periodicWork(void *args) {
 		sleep(2);
 
 		boost::unique_lock<boost::mutex> bouncedNotificationsLock(ShardManager::getShardManager()->shardManagerGlobalMutex);
-
+		ShardManager::getShardManager()->print();
+		cout << "========================================================================================================================================" << endl;
+		cout << "========================================================================================================================================" << endl;
 
 		// 1. Resend bounced notifications.
 		for(unsigned i = 0 ; i < ShardManager::getShardManager()->bouncedNotifications.size() ; ++i){

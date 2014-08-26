@@ -15,11 +15,12 @@ using namespace std;
 namespace srch2 {
 namespace httpwrapper {
 
-
-class ShardAssignOperation : public OperationState{
+class ShardAssignOperation: public OperationState {
 public:
 
-	ShardAssignOperation(const unsigned operationId, const ClusterShardId & unassignedShard);
+	ShardAssignOperation(const unsigned operationId,
+			const ClusterShardId & unassignedShard);
+	~ShardAssignOperation();
 
 	OperationState * entry();
 
@@ -28,6 +29,9 @@ public:
 	OperationState * handle(NodeFailureNotification * nodeFailure);
 
 	OperationState * handle(Notification * notification);
+
+	string getOperationName() const ;
+	string getOperationStatus() const ;
 
 private:
 	const ClusterShardId shardId;

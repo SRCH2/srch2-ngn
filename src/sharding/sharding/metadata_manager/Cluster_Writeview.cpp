@@ -35,6 +35,15 @@ LocalPhysicalShard::LocalPhysicalShard(const LocalPhysicalShard & copy){
 	this->jsonFileCompletePath = copy.jsonFileCompletePath;
 }
 
+LocalPhysicalShard & LocalPhysicalShard::operator=(const LocalPhysicalShard & rhs){
+	if(this != &rhs){
+		indexDirectory = rhs.indexDirectory;
+		jsonFileCompletePath = rhs.jsonFileCompletePath;
+		server = rhs.server;
+	}
+	return *this;
+}
+
 //void LocalPhysicalShard::setServer(boost::shared_ptr<Srch2Server> server){
 //	this->server = server;
 //}

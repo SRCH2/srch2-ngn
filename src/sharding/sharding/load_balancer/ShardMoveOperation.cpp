@@ -6,6 +6,7 @@
 #include "../metadata_manager/Cluster_Writeview.h"
 #include "../ShardManager.h"
 #include "LoadBalancingStartOperation.h"
+#include "server/Srch2Server.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -214,6 +215,37 @@ OperationState * ShardMoveOperation::handle(Notification * notification){
 			// ignore;
 			return this;
 	}
+}
+
+string ShardMoveOperation::getOperationName() const {
+	return "shard_move";
+}
+string ShardMoveOperation::getOperationStatus() const {
+	stringstream ss;
+	ss << "Moving " << shardId.toString() << " from node " << srcAddress.toString() << " %";
+	if (lockOperation != NULL) {
+		ss << lockOperation->getOperationName() << "%";
+		ss << lockOperation->getOperationStatus();
+	} else {
+		ss << "Lock result : " << lockOperationResult->grantedFlag << "%";
+		if(commitOperation == NULL && releaseOperation == NULL){ // we are in transfer session
+			ss << "Transferring data ...%" ;
+		}else{
+			ss << "Transferred " << physicalShard.server->getIndexer()->getNumberOfDocumentsInIndex() << " records.%";
+		}
+
+		if(commitOperation != NULL){
+			ss << commitOperation->getOperationName() << "%";
+			ss << commitOperation->getOperationStatus();
+		}
+
+		if(releaseOperation != NULL){
+			ss << releaseOperation->getOperationName() << "%";
+			ss << releaseOperation->getOperationStatus();
+		}
+	}
+
+	return ss.str();
 }
 
 OperationState * ShardMoveOperation::release(){

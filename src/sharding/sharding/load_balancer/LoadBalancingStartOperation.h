@@ -41,6 +41,9 @@ public:
 	OperationState * handle(Notification * n);
 	static OperationState * finalizeLoadBalancing();
 
+	string getOperationName() const ;
+	string getOperationStatus() const ;
+
 private:
 
 	map<NodeId, double> nodeLoads;

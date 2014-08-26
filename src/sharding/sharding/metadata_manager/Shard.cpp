@@ -99,12 +99,12 @@ bool ClusterShardId::operator<=(const ClusterShardId& rhs) const {
 }
 
 ClusterShardId & ClusterShardId::operator=(const ClusterShardId & rhs){
-    if(this != &rhs){
-        this->coreId = rhs.coreId;
-        this->partitionId = rhs.partitionId;
-        this->replicaId = rhs.replicaId;
-    }
-    return *this;
+	if(this != &rhs){
+		coreId = rhs.coreId;
+		partitionId = rhs.partitionId;
+		replicaId = rhs.replicaId;
+	}
+	return *this;
 }
 
 
@@ -180,12 +180,12 @@ bool NodeShardId::operator<=(const NodeShardId& rhs) const {
 }
 
 NodeShardId & NodeShardId::operator=(const NodeShardId & rhs){
-    if(this != &rhs){
-        this->coreId = rhs.coreId;
-        this->nodeId = rhs.nodeId;
-        this->partitionId = rhs.partitionId;
-    }
-    return *this;
+	if(this != &rhs){
+		coreId = rhs.coreId;
+		nodeId = rhs.nodeId;
+		partitionId = rhs.partitionId;
+	}
+	return *this;
 }
 
 //serializes the object to a byte array and places array into the region

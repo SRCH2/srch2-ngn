@@ -41,6 +41,9 @@ public:
 	OperationState * handle(CommitNotification::ACK * ack);
 	OperationState * handle(LockingNotification::ACK * ack);
 
+	string getOperationName() const ;
+	string getOperationStatus() const ;
+
 private:
 
 

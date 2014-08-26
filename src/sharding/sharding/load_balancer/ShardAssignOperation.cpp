@@ -22,6 +22,12 @@ ShardAssignOperation::ShardAssignOperation(const unsigned operationId, const Clu
 	this->releaseOperation = NULL;
 }
 
+ShardAssignOperation::~ShardAssignOperation(){
+	if(lockOperationResult != NULL){
+		delete lockOperationResult;
+	}
+}
+
 OperationState * ShardAssignOperation::entry(){
 	// 1. lock the shardId
 	// 2. apply the change on local metadata and commit.
@@ -151,6 +157,32 @@ OperationState * ShardAssignOperation::handle(Notification * notification){
 			// ignore;
 			return this;
 	}
+}
+
+string ShardAssignOperation::getOperationName() const {
+	return "shard_assignment";
+}
+string ShardAssignOperation::getOperationStatus() const {
+	stringstream ss;
+	ss << "Shard : " << shardId.toString() << "%";
+
+	if (lockOperation != NULL) {
+		ss << lockOperation->getOperationName() << "%";
+		ss << lockOperation->getOperationStatus();
+	} else {
+		ss << "Lock result : " << lockOperationResult->grantedFlag << "%";
+	}
+
+	if(commitOperation != NULL){
+		ss << commitOperation->getOperationName() << "%";
+		ss << commitOperation->getOperationStatus();
+	}
+
+	if(releaseOperation != NULL){
+		ss << releaseOperation->getOperationName() << "%";
+		ss << releaseOperation->getOperationStatus();
+	}
+	return ss.str();
 }
 
 OperationState * ShardAssignOperation::release(){

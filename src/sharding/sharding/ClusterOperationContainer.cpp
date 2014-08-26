@@ -50,11 +50,12 @@ void ClusterOperationStateMachine::handle(Notification * notification){
 }
 
 void ClusterOperationStateMachine::print() const{
+	cout << "State machine : ";
 	if(activeOperations.size() == 0){
-		cout << "**************************************" << endl;
 		cout << "No active operation." << endl;
-		cout << "**************************************" << endl;
 		return;
+	}else{
+		cout << endl;
 	}
 	vector<string> operationHeaders;
 	operationHeaders.push_back("Name");

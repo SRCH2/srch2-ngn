@@ -47,6 +47,10 @@ public:
 	}
 	// returns false when it's done.
 	bool doesExpect(CommitNotification::ACK * inputNotification) const;
+
+	string getOperationName() const ;
+	string getOperationStatus() const ;
+
 private:
 	MetadataChange * metadataChange;
 	vector<NodeId> participants;

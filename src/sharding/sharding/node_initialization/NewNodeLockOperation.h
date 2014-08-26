@@ -41,6 +41,8 @@ public:
 	OperationState * handle(NodeFailureNotification * nodeFailure);
 	OperationState * handle(NewNodeLockNotification::ACK * ack);
 
+	string getOperationName() const ;
+	string getOperationStatus() const ;
 
 	bool doesExpect(NewNodeLockNotification::ACK * ack) const;
 private:

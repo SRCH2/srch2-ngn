@@ -4,6 +4,8 @@
 #include "core/util/SerializationHelper.h"
 #include "../ShardManager.h"
 
+#include <sstream>
+
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
 using namespace std;
@@ -94,6 +96,47 @@ bool NodeAddChange::operator==(const MetadataChange & rightArg){
 	return (newNodeId == right.newNodeId) && (localClusterShardIds == right.localClusterShardIds) && (localNodeShardIds == right.localNodeShardIds);
 }
 
+NodeAddChange & NodeAddChange::operator=(const NodeAddChange & rhs){
+	if(this != &rhs){
+		newNodeId = rhs.newNodeId;
+		localClusterShardIds = rhs.localClusterShardIds;
+		localNodeShardIds = rhs.localNodeShardIds;
+	}
+	return *this;
+}
+
+string NodeAddChange::toString() const{
+	stringstream ss ;
+	ss << "New node change : %";
+	ss << "New node id : " << newNodeId << "%";
+	ss << "Cluster shards :" ;
+	if(localClusterShardIds.size() == 0){
+		ss << "empty.%";
+	}else{
+		ss << "%";
+	}
+	for(unsigned i = 0 ; i < localClusterShardIds.size(); ++i){
+		if(i != 0){
+			ss << " - ";
+		}
+		ss << localClusterShardIds.at(i).toString();
+	}
+
+	ss << "Node shards :" ;
+	if(localNodeShardIds.size() == 0){
+		ss << "empty.%";
+	}else{
+		ss << "%";
+	}
+	for(unsigned i = 0 ; i < localNodeShardIds.size(); ++i){
+		if(i != 0){
+			ss << " - ";
+		}
+		ss << localNodeShardIds.at(i).toString();
+	}
+	return ss.str();
+}
+
 ShardAssignChange::ShardAssignChange(){
 	// temporary initialization
 }
@@ -148,6 +191,24 @@ bool ShardAssignChange::operator==(const MetadataChange & rightArg){
 	return (logicalShardToAssign == right.logicalShardToAssign) && (location == right.location) && (load == right.load);
 }
 
+ShardAssignChange & ShardAssignChange::operator=(const ShardAssignChange & rhs){
+	if(this != &rhs){
+		logicalShardToAssign = rhs.logicalShardToAssign;
+		location = rhs.location;
+		load = rhs.load;
+		physicalShard = rhs.physicalShard;
+	}
+	return *this;
+}
+
+string ShardAssignChange::toString() const{
+	stringstream ss;
+	ss << "ShardAssignChange : %";
+	ss << "Shard to assign : " << logicalShardToAssign.toString() << "%";
+	ss << "Location : " << location << "%";
+	ss << "Load : " << load << "%";
+	return ss.str();
+}
 
 ShardMoveChange::ShardMoveChange(ClusterShardId shardId, NodeId srcNodeId, NodeId destNodeId){
 	this->shardId = shardId;
@@ -201,6 +262,24 @@ bool ShardMoveChange::operator==(const MetadataChange & rightArg){
 	return (shardId == right.shardId) && (srcNodeId == right.srcNodeId) && (destNodeId == right.destNodeId);
 }
 
+ShardMoveChange & ShardMoveChange::operator=(const ShardMoveChange & rhs){
+	if(this != &rhs){
+		shardId = rhs.shardId;
+		srcNodeId = rhs.srcNodeId;
+		destNodeId = rhs.destNodeId;
+		physicalShard = rhs.physicalShard;
+	}
+	return *this;
+}
+
+string ShardMoveChange::toString() const{
+	stringstream ss;
+	ss << "ShardMoveChange : %";
+	ss << "Moving shard id : " << shardId.toString() << "%";
+	ss << "From src:" << srcNodeId << " to dest:" << destNodeId << "%";
+	return ss.str();
+}
+
 ShardLoadChange::ShardLoadChange(const map<ClusterShardId, double> & addedLoads){
 	this->addedLoads = addedLoads;
 }
@@ -240,6 +319,27 @@ void * ShardLoadChange::deserialize(void * buffer){
 bool ShardLoadChange::operator==(const MetadataChange & rightArg){
 	const ShardLoadChange & right = (const ShardLoadChange &) rightArg;
 	return (addedLoads == right.addedLoads);
+}
+
+ShardLoadChange & ShardLoadChange::operator=(const ShardLoadChange & rhs){
+	if(this != &rhs){
+		addedLoads = rhs.addedLoads;
+	}
+	return *this;
+}
+
+string ShardLoadChange::toString() const{
+	stringstream ss;
+	ss << "Shard Load Change :%" ;
+	for(map<ClusterShardId, double>::const_iterator shardItr = addedLoads.begin();
+			shardItr != addedLoads.end(); ++shardItr){
+		ss << shardItr->first.toString() << " : " << shardItr->second << "%";
+	}
+	return ss.str();
+}
+
+map<ClusterShardId, double> ShardLoadChange::getAddedLoads() const{
+	return addedLoads;
 }
 
 }

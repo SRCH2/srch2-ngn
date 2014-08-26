@@ -159,6 +159,38 @@ OperationState * LoadBalancingStartOperation::finalizeLoadBalancing(){
 	return NULL;
 }
 
+string LoadBalancingStartOperation::getOperationName() const {
+	return "load_balancing_check";
+}
+string LoadBalancingStartOperation::getOperationStatus() const {
+	stringstream ss;
+	ss << "Node reports: ";
+	if(nodeReportArrived.size() == 0){
+		ss << "empty. %";
+	}else{
+		ss << "%";
+	}
+	for(map<NodeId, bool>::const_iterator nodeItr = nodeReportArrived.begin();
+			nodeItr != nodeReportArrived.end(); ++ nodeItr){
+		ss << "Node : " << nodeItr->first;
+		if(nodeItr->second){
+			ss << " Arrvied.%";
+		}else{
+			ss << " Not arrived.%";
+		}
+	}
+	ss << "Node loads: ";
+	if(nodeLoads.size() == 0){
+		ss << "empty. %";
+	}else{
+		ss << "%";
+	}
+	for(map<NodeId, double>::const_iterator nodeItr = nodeLoads.begin();
+			nodeItr != nodeLoads.end(); ++ nodeItr){
+		ss << "Node : " << nodeItr->first << ", load : " << nodeItr->second << "%";
+	}
+	return ss.str();
+}
 
 bool LoadBalancingStartOperation::haveAllReportsArrived(){
 	for(map<NodeId, bool>::iterator nodeItr = nodeReportArrived.begin(); nodeItr != nodeReportArrived.end(); ++nodeItr){

@@ -136,6 +136,29 @@ bool CommitOperation::doesExpect(CommitNotification::ACK * inputNotification) co
 	return false;
 }
 
+string CommitOperation::getOperationName() const {
+	return "commit_operation";
+};
+string CommitOperation::getOperationStatus() const {
+	stringstream ss;
+	ss << "Metadata change : " ;
+	if(metadataChange == NULL){
+		ss << "NULL%";
+	}else{
+		ss << metadataChange->toString();;
+	}
+	ss << "Participants : " ;
+	for(unsigned i  = 0 ; i < participants.size(); ++i){
+		if(i != 0){
+			ss << " - ";
+		}
+
+		ss << i << ":" << participants.at(i) ;
+	}
+	ss << "%";
+	return ss.str();
+};
+
 
 }
 }

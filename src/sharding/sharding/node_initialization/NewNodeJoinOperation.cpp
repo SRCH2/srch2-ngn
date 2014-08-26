@@ -248,6 +248,25 @@ OperationState * NewNodeJoinOperation::handle(LockingNotification::ACK * ack){
 	return this;
 }
 
+string NewNodeJoinOperation::getOperationName() const {
+	return "new_node_join";
+};
+string NewNodeJoinOperation::getOperationStatus() const {
+	stringstream ss;
+	if(lockerOperation != NULL){
+		ss << lockerOperation->getOperationName() << "%";
+		ss << lockerOperation->getOperationStatus();
+    }else if (commitOperation != NULL){
+		ss << commitOperation->getOperationName() << "%";
+		ss << commitOperation->getOperationStatus();
+	}else if(releaseOperation != NULL){
+		ss << releaseOperation->getOperationName() << "%";
+		ss << releaseOperation->getOperationStatus();
+	}else { // all null
+		ss << "Node to give metadata report : " << randomNodeToReadFrom << "%";
+	}
+	return ss.str();
+};
 
 OperationState * NewNodeJoinOperation::finalizeJoin(){
 	// release is also done.

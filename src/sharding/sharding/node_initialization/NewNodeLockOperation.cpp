@@ -148,6 +148,33 @@ OperationState * NewNodeLockOperation::handle(NewNodeLockNotification::ACK * ack
 
 }
 
+string NewNodeLockOperation::getOperationName() const {
+	return "new_node_lock";
+};
+string NewNodeLockOperation::getOperationStatus() const {
+
+	stringstream ss;
+	ss << "All nodes up to this node : % ++ " ;
+	for(unsigned i  = 0 ; i < allNodesUpToCurrentNode.size(); ++i){
+		if(i != 0){
+			ss << " - ";
+		}
+
+		ss << i << ":" << allNodesUpToCurrentNode.at(i) ;
+	}
+	ss << " ++%";
+	ss << "Node Index : " << nodeIndex << "%";
+
+	ss << "Lock request : ";
+	if(lockRequests == NULL){
+		ss << "NULL%";
+	}else{
+		ss << "%";
+		ss << lockRequests->toString();
+	}
+	return ss.str();
+};
+
 bool NewNodeLockOperation::doesExpect(NewNodeLockNotification::ACK * ack) const{
 	if(ack == NULL){
 		ASSERT(false);

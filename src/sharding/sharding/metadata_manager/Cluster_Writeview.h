@@ -30,6 +30,7 @@ struct LocalPhysicalShard{
 	LocalPhysicalShard();
 	LocalPhysicalShard(boost::shared_ptr<Srch2Server> server, const string & indexDirectory, const string & jsonFileCompletePath);
 	LocalPhysicalShard(const LocalPhysicalShard & copy);
+	LocalPhysicalShard & operator=(const LocalPhysicalShard & rhs);
 
 //	void setServer(boost::shared_ptr<Srch2Server> server);
 

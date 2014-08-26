@@ -34,7 +34,8 @@ public:
 	OperationState * handle(NodeFailureNotification * nodeFailure);
 
 	OperationState * handle(Notification * notification);
-
+	string getOperationName() const ;
+	string getOperationStatus() const ;
 private:
 	const ClusterShardId shardId;
 	NodeOperationId srcAddress;

@@ -7,6 +7,8 @@
 #include "./metadata_manager/Cluster_Writeview.h"
 #include "./ShardManager.h"
 
+#include <sstream>
+
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
 using namespace std;
@@ -140,6 +142,44 @@ bool SerialLockOperation::doesExpect(const LockingNotification::ACK * ack) const
 	}
 	return true;
 }
+
+string SerialLockOperation::getOperationName() const {
+	return "lock_operation";
+};
+string SerialLockOperation::getOperationStatus() const {
+	stringstream ss;
+	ss << "Participants : " ;
+	for(unsigned i  = 0 ; i < participantNodes.size(); ++i){
+		if(i != 0){
+			ss << " - ";
+		}
+
+		ss << i << ":" << participantNodes.at(i) ;
+	}
+	ss << "%";
+	ss << "Node index : " << nodeIndex << "%";
+
+	if(nodeIndex == (unsigned) -1){
+		ss << "Entry not called yet.%";
+	}
+		if(nodeIndex >= participantNodes.size()){
+		ss << "Result of lock : ";
+		if(resultStatus->grantedFlag){
+			ss << "Granted. %";
+		}else{
+			ss << "Rejected. %";
+		}
+	}
+
+	ss << "Lock request : ";
+	if(lockRequests == NULL){
+		ss << "NULL%";
+	}else{
+		ss << "%";
+		ss << lockRequests->toString();
+	}
+	return ss.str();
+};
 
 OperationState * SerialLockOperation::askNextNode(NodeId targetNodeId){
 	NodeId currentNodeID = ShardManager::getCurrentNodeId();
