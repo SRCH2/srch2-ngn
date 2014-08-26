@@ -98,13 +98,17 @@ IF (ANDROID)
     FIND_LIBRARY(log_LIBRARY NAMES log PATHS ${sys_LIBRARY_DIRS})
     FIND_LIBRARY(dl_LIBRARY NAMES dl PATHS ${sys_LIBRARY_DIRS})
     FIND_LIBRARY(z_LIBRARY NAMES z PATHS ${sys_LIBRARY_DIRS})
-
+    FIND_LIBRARY(crypto_LIBRARY NAMES libcrypto.a PATHS ${sys_LIBRARY_DIRS})
+    
     MESSAGE(STATUS "liblog = ${log_LIBRARY}")
     MESSAGE(STATUS "libdl = ${dl_LIBRARY}")
     MESSAGE(STATUS "libz = ${z_LIBRARY}")
-   
-    SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-sr/android/libs/armeabi-v7a/libjsoncpp.a)
-    SET(CMAKE_REQUIRED_LIBRARIES stdc++ crypto ${CMAKE_REQUIRED_LIBRARIES} ${dl_LIBRARY} ${z_LIBRARY} ${log_LIBRARY})
+    MESSAGE(STATUS "libcrypto = ${crypto_LIBRARY}")   
+
+    SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/android/libs/armeabi-v7a/libjsoncpp.a)
+#    SET(CMAKE_REQUIRED_LIBRARIES stdc++ crypto ${CMAKE_REQUIRED_LIBRARIES} ${dl_LIBRARY} ${z_LIBRARY} ${log_LIBRARY})
+    SET(CMAKE_REQUIRED_LIBRARIES stdc++ crypto ${OPENSSL_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES} ${dl_LIBRARY} ${z_LIBRARY})
+#    SET(CMAKE_REQUIRED_LIBRARIES stdc++ crypto ${CMAKE_REQUIRED_LIBRARIES})
     LINK_DIRECTORIES("${sys_LIBRARY_DIRS}")
 ELSE()
     SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/build/libjsoncpp.a)

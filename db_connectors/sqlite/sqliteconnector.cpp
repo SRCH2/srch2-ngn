@@ -48,7 +48,7 @@ int SQLiteConnector::init(ServerInterface * serverHandle) {
     TRIGGER_UPDATE_NAME.append(tableName.c_str());
 
     //Get listenerWaitTime value from the config file.
-    std::string listenerWaitTimeStr;
+    std::string listenerWaitTimeStr = "1";
     this->serverHandle->configLookUp("listenerWaitTime", listenerWaitTimeStr);
     listenerWaitTime = static_cast<int>(strtol(listenerWaitTimeStr.c_str(),
     NULL, 10));
@@ -239,7 +239,8 @@ int addRecord_callback(void *dbConnector, int argc, char **argv,
  * corresponding requests to the SRCH2 engine
  */
 int SQLiteConnector::runListener() {
-    std::string tableName, lastAccessedLogRecordTime;
+    std::string tableName = "1";
+    std::string lastAccessedLogRecordTime = "1";
     this->serverHandle->configLookUp("tableName", tableName);
 
     //A timestamp that indicates the last time the SRCH2 engine
@@ -698,15 +699,9 @@ bool SQLiteConnector::createTriggerIfNotExistence() {
 }
 
 //Load the lastAccessedLogRecordTime from disk
-<<<<<<< Updated upstream
-void SQLiteConnector::loadLastAccessedLogRecordTime(
-        std::string & lastAccessedLogRecordTime) {
-    std::string path, srch2Home;
-=======
 void SQLiteConnector::loadLastAccessedLogRecordTime(std::string & lastAccessedLogRecordTime) {
     std::string path = "1";
     std::string srch2Home = "1";
->>>>>>> Stashed changes
     this->serverHandle->configLookUp("srch2Home", srch2Home);
     this->serverHandle->configLookUp("dataDir", path);
     path = srch2Home + "/" + path + "/" + "sqlite_data/data.bin";
@@ -720,15 +715,9 @@ void SQLiteConnector::loadLastAccessedLogRecordTime(std::string & lastAccessedLo
 }
 
 //Save lastAccessedLogRecordTime to disk
-<<<<<<< Updated upstream
-void SQLiteConnector::saveLastAccessedLogRecordTime(
-        const std::string & lastAccessedLogRecordTime) {
-    std::string path, srch2Home;
-=======
 void SQLiteConnector::saveLastAccessedLogRecordTime(const std::string & lastAccessedLogRecordTime) {
     std::string path = "1";
     std::string srch2Home = "1";
->>>>>>> Stashed changes
     this->serverHandle->configLookUp("srch2Home", srch2Home);
     this->serverHandle->configLookUp("dataDir", path);
     path = srch2Home + "/" + path + "/" + "sqlite_data/";
