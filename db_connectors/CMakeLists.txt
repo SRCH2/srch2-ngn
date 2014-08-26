@@ -90,7 +90,7 @@ FILE(GLOB_RECURSE SQLITE_CONNECTOR_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "sql
 INCLUDE_DIRECTORIES(
     ${CMAKE_SOURCE_DIR}/sqlite/
     ${CMAKE_SOURCE_DIR}/../src/adapter/
-    ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src-0.5.0/include
+    ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/include
     ${Boost_INCLUDE_DIRS}
 )
 
@@ -130,6 +130,8 @@ set_target_properties(sqliteConnector PROPERTIES VERSION ${SQLITE_VERSION_STRING
 SET_TARGET_PROPERTIES(sqliteConnector PROPERTIES COMPILE_FLAGS -fPIC)
 
 
-
-TARGET_LINK_LIBRARIES(sqliteConnector ${jsoncpp_LIBRARY} ${CMAKE_SOURCE_DIR}/../thirdparty/event/android/lib/libevent.a ${CMAKE_SOURCE_DIR}/../thirdparty/event/android/lib/libevent_pthreads.a ${CMAKE_REQUIRED_LIBRARIES} ${Boost_LIBRARIES} sqlite3)
-
+IF (ANDROID) 
+    TARGET_LINK_LIBRARIES(sqliteConnector ${jsoncpp_LIBRARY} ${CMAKE_SOURCE_DIR}/../thirdparty/event/android/lib/libevent.a ${CMAKE_SOURCE_DIR}/../thirdparty/event/android/lib/libevent_pthreads.a ${CMAKE_REQUIRED_LIBRARIES} ${Boost_LIBRARIES} sqlite3)
+ELSE()
+    TARGET_LINK_LIBRARIES(sqliteConnector ${jsoncpp_LIBRARY} ${CMAKE_REQUIRED_LIBRARIES} ${Boost_LIBRARIES} sqlite3)
+ENDIF()
