@@ -91,7 +91,7 @@ FILE(GLOB_RECURSE SQLITE_CONNECTOR_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "sql
 INCLUDE_DIRECTORIES(
     ${CMAKE_SOURCE_DIR}/sqlite/
     ${CMAKE_SOURCE_DIR}/../src/adapter/
-    ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/include
+    ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src-0.5.0/include
     ${Boost_INCLUDE_DIRS}
 )
 
@@ -136,8 +136,14 @@ SET_TARGET_PROPERTIES(sqliteConnector PROPERTIES COMPILE_FLAGS -fPIC)
 TARGET_LINK_LIBRARIES(sqliteConnector ${jsoncpp_LIBRARY} ${CMAKE_REQUIRED_LIBRARIES} ${Boost_LIBRARIES} sqlite3)
 >>>>>>> d0a5ff24240b6fc2472a8fafa82749afb07421ff
 
+<<<<<<< HEAD
 IF (ANDROID) 
     TARGET_LINK_LIBRARIES(sqliteConnector ${jsoncpp_LIBRARY} ${CMAKE_SOURCE_DIR}/../thirdparty/event/android/lib/libevent.a ${CMAKE_SOURCE_DIR}/../thirdparty/event/android/lib/libevent_pthreads.a ${CMAKE_REQUIRED_LIBRARIES} ${Boost_LIBRARIES} sqlite3)
 ELSE()
     TARGET_LINK_LIBRARIES(sqliteConnector ${jsoncpp_LIBRARY} ${CMAKE_REQUIRED_LIBRARIES} ${Boost_LIBRARIES} sqlite3)
 ENDIF()
+=======
+
+TARGET_LINK_LIBRARIES(sqliteConnector ${jsoncpp_LIBRARY} ${CMAKE_SOURCE_DIR}/../thirdparty/event/android/lib/libevent.a ${CMAKE_SOURCE_DIR}/../thirdparty/event/android/lib/libevent_pthreads.a ${CMAKE_REQUIRED_LIBRARIES} ${Boost_LIBRARIES} sqlite3)
+
+>>>>>>> parent of c0667b0... Fixed the issue can not compiled on linux
