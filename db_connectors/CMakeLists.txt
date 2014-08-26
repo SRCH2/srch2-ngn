@@ -90,7 +90,7 @@ FILE(GLOB_RECURSE SQLITE_CONNECTOR_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "sql
 INCLUDE_DIRECTORIES(
     ${CMAKE_SOURCE_DIR}/sqlite/
     ${CMAKE_SOURCE_DIR}/../src/adapter/
-    ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/include
+    ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src-0.5.0/include
     ${Boost_INCLUDE_DIRS}
 )
 
@@ -105,10 +105,11 @@ IF (ANDROID)
     MESSAGE(STATUS "libz = ${z_LIBRARY}")
     MESSAGE(STATUS "libcrypto = ${crypto_LIBRARY}")   
 
-    SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/android/libs/armeabi-v7a/libjsoncpp.a)
+#    SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/android/libs/armeabi-v7a/libjsoncpp.a)
 #    SET(CMAKE_REQUIRED_LIBRARIES stdc++ crypto ${CMAKE_REQUIRED_LIBRARIES} ${dl_LIBRARY} ${z_LIBRARY} ${log_LIBRARY})
     SET(CMAKE_REQUIRED_LIBRARIES stdc++ crypto ${OPENSSL_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES} ${dl_LIBRARY} ${z_LIBRARY})
 #    SET(CMAKE_REQUIRED_LIBRARIES stdc++ crypto ${CMAKE_REQUIRED_LIBRARIES})
+    SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src-0.5.0/android/libs/armeabi-v7a/libjsoncpp.a)
     LINK_DIRECTORIES("${sys_LIBRARY_DIRS}")
 ELSE()
     SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/build/libjsoncpp.a)
