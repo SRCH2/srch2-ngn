@@ -11,10 +11,18 @@
 cmake_minimum_required(VERSION 2.8)
 SET(RELEASE_BUILD ON CACHE BOOL "")
 SET(ANDROID OFF CACHE BOOL "")
+
+#Find the platform information.
 SET(MAC_OS OFF CACHE BOOL "")
+SET(LINUX_OS OFF CACHE BOOL "")
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     MESSAGE(STATUS "PLATFORM = MAC OS")
     SET(MAC_OS ON)
+ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    MESSAGE(STATUS "PLATFORM = LINUX")
+    SET(LINUX_OS ON)
+ELSE()
+    MESSAGE(STATUS "PLATFORM = UNKNOWN")
 ENDIF()
 #
 #  1.  MongoDB connector 
@@ -24,7 +32,8 @@ IF(NOT ANDROID)
 
     MESSAGE(STATUS "This is SOURCE dir " ${CMAKE_SOURCE_DIR})
 
-    IF(MAC_OS)					
+    IF(MAC_OS)
+        SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libstdc++")	    
         INCLUDE_DIRECTORIES(
             ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver/mongo-cxx-driver/build/osx-version-min_10.7/use-system-boost/srch2/include/
             ${CMAKE_SOURCE_DIR}/../src/adapter/
@@ -116,6 +125,7 @@ ELSE()
     IF (LINUX_OS)
         SET(CMAKE_REQUIRED_LIBRARIES dl pthread stdc++ rt z ${CMAKE_REQUIRED_LIBRARIES})
     ELSE()
+	SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libstdc++")
         SET(CMAKE_REQUIRED_LIBRARIES pthread stdc++ ${CMAKE_REQUIRED_LIBRARIES})
     ENDIF()
     

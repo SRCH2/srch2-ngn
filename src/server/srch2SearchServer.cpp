@@ -685,7 +685,6 @@ static void killServer(int signal) {
      *  the engine. This request allows the threads to come out of blocking syscall and get killed.
      */
     makeHttpRequest();
-    exit(0);
 #endif
 }
 
@@ -971,9 +970,23 @@ int main(int argc, char** argv) {
         delete iterator->second;
     }
 
+    /*
+     * THIS IS A HACKY SOLUTION FOR MAC OS!
+     * JIRA: https://srch2inc.atlassian.net/browse/SRCN-473
+     *
+     * The function "event_base_free(evBases[i])" is blocking the engine from
+     *  a proper exit on MacOS
+     *
+     * This function ("event_base_free(evBases[i])") does not deallocate any
+     * of the events that are currently associated with the event_base, or
+     * close any of their sockets, or free any of their pointers.
+     * --http://www.wangafu.net/~nickm/libevent-book/Ref2_eventbase.html
+     */
+#ifndef __MACH__
     for (unsigned int i = 0; i < MAX_THREADS; i++) {
         event_base_free(evBases[i]);
     }
+#endif
 
     // use global port map to close each file descriptor just once
     for (PortSocketMap_t::iterator iterator = globalPortSocketMap.begin(); iterator != globalPortSocketMap.end(); iterator++) {

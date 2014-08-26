@@ -155,6 +155,7 @@ def testMongoDB(binary_path,queriesAndResultPath):
 		#Test 3: test offline modification, first shut down the engine and delete the record in mongodb, then start the engine to test if the engine can fetch the deletion.
 		if testNum == 2:
 			test_lib.killServer(serverHandle)
+			time.sleep(5)
          		mongoDBDeleteRecord()
          		if test_lib.confirmPortAvailable(port) == False:
          			print 'Port' + str(port) + ' already in use -aborting '
