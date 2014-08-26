@@ -51,8 +51,8 @@ public interface SearchResultsListener {
      * from {@link Indexable#getSchema()} in order to retrieve the corresponding data values set. If any field
      * had highlighting enabled by calling {@link Field#enableHighlighting()}, the <code>JSONObject</code> will also
      * contain the key 'highlighted' which will contain the highlighted text for each field as a <code>JSONArray</code>.
-     * The highlighted text will be formatted according to the arguments passed into the method
-     * {@link Schema#setHighlightedPreAndPostScript(String, String, String, String)}.
+     * The highlighted text will be formatted according to the configuration of the {@link com.srch2.android.sdk.Highlighter}
+     * returned from {@link Indexable#getHighlighter()}.
      * <br><br>
      * If the search that was performed is specific to a single index, this map will only contain one key--
      * the name of that index searched; otherwise the map will contain results for all the indexes (such as when

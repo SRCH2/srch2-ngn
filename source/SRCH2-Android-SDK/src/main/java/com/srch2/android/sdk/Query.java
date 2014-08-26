@@ -80,7 +80,7 @@ final public class Query {
      * It will return all the result inside that box region
      *
      * If user need to filter the result by keyword, you can try to create
-     * a normal search query and call the {@link #insideBoxRegion(double, double, double, double)}
+     * a normal search query and call the {@link #insideRectangleRegion(double, double, double, double)}
      * method.
      *
      * @param leftBottomLatitude the left bottom point's latitude value
@@ -113,7 +113,6 @@ final public class Query {
      * @param centerLatitude the center point's latitude value
      * @param centerLongitude the center point's longitude value
      * @param radius the radius value of the search area
-     * @return this
      */
     Query(double centerLatitude,
                  double centerLongitude, double radius) {
@@ -213,7 +212,7 @@ final public class Query {
      * example, the user can submit the "log(year) + 5 > log(2003)" as a
      * expression to the engine using the boolean filter
      *
-     * @param booleanExpression
+     * @param booleanExpression expression to evaluate
      * @return this
      */
     Query filterByBooleanExpression(String booleanExpression) {
@@ -443,7 +442,7 @@ final public class Query {
      * TODO future release Please note: facet must also be enabled from the
      * configuration file by setting the "facetEnabled" tag to true. FacetField function is protected as of now.
      *
-     * @param fieldName
+     * @param fieldName name of field to facet on
      * @return this
      */
     Query facetOn(String fieldName) {
@@ -454,8 +453,8 @@ final public class Query {
     /**
      * Control how many rows to fetch
      *
-     * @param fieldName
-     * @param rows
+     * @param fieldName name of field to face on
+     * @param rows the number of rows to return for the faceted field
      * @return this
      */
     Query facetOn(String fieldName, int rows) {
@@ -468,7 +467,7 @@ final public class Query {
      * the query, will override the corresponding values in the configuration
      * file.
      *
-     * @param fieldName
+     * @param fieldName name of the field to facet on
      * @return this
      */
     Query facetOnRange(String fieldName, String start, String end,
