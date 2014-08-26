@@ -10,7 +10,7 @@ figure illustrates how this SDK works.
 <center>![SRCH2 Android SDK Overview][overview]</center>
 
 The SDK has a search server that working in the background. The user can operate on
-the *Indexable* interface to build and search the index data. The search
+the *Indexable* interface to build and search the indexed data. The search
 result can be obtained from the *SearchResultsListener* interface asynchronously. The user can
 also talk to the *SRCH2Engine* interface to control the lifecycle of the
 background service.
@@ -63,8 +63,8 @@ option, select 'Run app'.
 
 (4) Once the app has launched, enter characters in the text input
 field. You should instantly see search results. The app is doing
-instant search on a few dozen movie records. The following is a
-screenshot after this step:
+instant search on a few dozen movie records. The following are 
+screenshots after this step:
 
 <center>![The SRCH2 Android SDK in action!][tutorial-011]</center>
 
@@ -77,9 +77,9 @@ it for your projects.
 ##Installing SDK
  
 We first show how to install the SRCH2 Android SDK using the built-in
-[Gradle build system](http://www.gradle.org/). Suppose you have an
-existing Android project in Android Studio and you want to incorporate
-the SDK. You need to add the SRCH2 server Maven repository to your
+[Gradle build system](http://www.gradle.org/). Suppose we have an
+existing Android project in Android Studio and we want to incorporate
+the SDK. We need to add the SRCH2 server Maven repository to the 
 project as follows: 
 
 (1) We want to configure the Gradle build script to include the SRCH2
@@ -97,19 +97,19 @@ as shown in the following figure:
 <center>![Including the SRCH2 server Maven repository in the top-level build.gradle file][tutorial-012] </center>
 
 (2) Next we need to add the SRCH2 Android SDK into the dependencies of
-your project. To do so, on the left panel, click 'app', then click
+the project. To do so, on the left panel, click 'app', then click
 'build.gradle'. On the right panel, add the following line into the
 *dependencies* node:
 
 ```
- compile group: 'com.srch2', name: 'srch2-android-sdk', version: '0.2.0', ext:'aar'
+ compile group: 'com.srch2', name: 'srch2-android-sdk', version: '0.2.1', ext:'aar'
 ```
 
 The following is a screenshot:
 
 <center>![Including the SRCH2-Android-SDK.aar file as a dependency in the app module's build.gradle file][tutorial-013]</center>
 
-Notice that this tutorial assumes the SDK version is 0.2.0, which
+Notice that this tutorial assumes the SDK version is 0.2.1, which
 could be different from the latest version. Please make sure to get
 the latest SDK version from the [release page](releases.md) and update
 the version number accordingly.
@@ -153,7 +153,6 @@ public class MovieIndex extends Indexable {
     public static final String INDEX_NAME = "movies";
 
     public static final String INDEX_FIELD_PRIMARY_KEY = "id";
-	public static final String INDEX_FIELD_RECORD_BOOST = "recordBoost";
     public static final String INDEX_FIELD_TITLE = "title";
     public static final String INDEX_FIELD_YEAR = "year";
     public static final String INDEX_FIELD_GENRE = "genre";
@@ -166,13 +165,10 @@ public class MovieIndex extends Indexable {
     @Override
     public Schema getSchema() {
         PrimaryKeyField primaryKey = Field.createDefaultPrimaryKeyField(INDEX_FIELD_PRIMARY_KEY);
-		RecordBoostField recordBoost = Field.createRecordBoostField(INDEX_FIELD_RECORD_BOOST);
         Field title = Field.createSearchableField(INDEX_FIELD_TITLE, 3).enableHighlighting();
         Field year = Field.createRefiningField(INDEX_FIELD_YEAR, Field.Type.INTEGER);
         Field genre = Field.createSearchableField(INDEX_FIELD_GENRE);
-        return Schema.createSchema(primaryKey, recordBoost, title, year, genre)
-                        .formatExactTextMatchesHighlighting(true, false, "#FF0000")
-                        .formatFuzzyTextMatchesHighlighting(true, false, "#FF00FF");
+        return Schema.createSchema(primaryKey, title, year, genre)
     }
 }
 ```
@@ -203,47 +199,11 @@ the value for the field *genre* is the default value 1. Check
 [this page](http://srch2.com/documentation/ranking) for more
 information about how the engine ranks results.
 
-A schema can also contain a *RecordBoostField* which will determine each
-record's record (as opposed to field) score when computing the relevance of
-search results. This field **will always** be float in type, and should be set
-from 1 to 100. An example of using the *RecordBoostField* would be
-if making an index containing a user's contacts, all starred contacts could have
-the value of the *RecordBoostField* set to 50, and all non-starred contacts left
-at at a value of 1. One is the default value for all records.
-
 A *Schema* instance is obtained by the static factory method of the
 *Schema* class. The order of arguments is important when creating a
 default *Schema* object: the first parameter is *always* the primary
 key, and the subsequent parameters are the rest of the fields, in no
 particular order. 
-
-Besides the name and the schema, a highlighter can also be returned from
-an *Indexable* implementation: this will cause the SRCH2 search server
-to generate, for every field with highlighting enabled, output of that
-field's data such that the text in the field's data matching the search
-input will having leading and trailing tags as part of the search result. 
-Suppose the search input is 'citi' for instance, since *title* has highlighting enabled, the
-search result for the move with the title 'Citizen Cane' will
-produce the output of '&lt;font color="#FF0000"&gt;&lt;b&gt;Citi&lt;/b&gt;&lt;/font&gt;zen Cane'
-(or visually, '<font color="FF0000"><b>Citi</b></font>zen Cane').
-This can be used in conjunction with *Html.fromHtml(...)* such as
-*mTextView.setText(Html.fromHtml(mHighlightTitleText))* to display it
-properly to the user. Here we'll make exact text matches bold and red
-and fuzzy text matches bold and magenta: 
-
-```
-public class MovieIndex extends Indexable {
-    
-    ...
-	
-	@Override
-    public Highlighter getHighlighter() {
-        return Highlighter.createHighlighter()
-                .formatExactTextMatches(true, false, "#FF0000")
-                .formatFuzzyTextMatches(true, false, "#FF00FF");
-    }
-}
-```
 
 Next we show how to form records to be inserted in the movie
 index. The following method generates a *JSONArray* instance
@@ -292,22 +252,13 @@ public class MovieIndex extends Indexable {
         return jsonRecordsToInsert;
     }
 	
-	public float computeRecordBoostScore(String genre) {
-        if (genre == null) {
-            return 1;
-        }
-        return genre.contains("Science Fiction") ? 50 : 1;
-    }
+
 }
 ```
 
 The SDK accepts a *JSONObject* or a *JSONArray* of *JSONObject*s when
-inserting or updating records. Each *JSONObject* should contain as its keys the 
-set of fields as defined in the schema. At the end of this method the records are iterated
-over to compute the value for the *recordBoost* *RecordBoostField* defined in the 
-schema: here we assume the user doing search likes in particular movies of the 
-science fiction genre, and set the boost score for each movie of that genre to 
-fifty. 
+inserting or updating records. Each *JSONObject* should contain as its key the 
+set of fields as defined in the schema. 
 
 Insertions and updates are invoked by calling
 *insert()* and *update()* of the *Indexable* object, respectively.
@@ -321,11 +272,7 @@ to the index:
 ##Checking Index Status
 
 The *Indexable* class contains a set of methods that can be overridden to
-get callbacks associated with the state and status of the index the 
-*Indexable* implementation represents. For instance, we can access the status
-results of operations performed on indexes, such as when specific records are
-requested by their primary key, when inserting records is completed by the SRCH2
-search server, or when the index is ready for searching.
+get the result of operations performed on indexes.
 
 Overriding these methods looks like:
 
@@ -379,21 +326,17 @@ of these methods always contain the raw JSON response (*JSONResponse*) as it was
 returned by the SRCH2 server for inspection in case of a failure to
 complete the requested action. For inserts, updates and deletes the 
 parameters before this indicate the number of records that were either 
-successful or failed in completing the action: for instance, had we 
-inserted one dozen  records and the SRCH2 search server was able to 
-insert all of  them without a problem, the values of *success* and *failed* for
-*onInsertComplete* would be 12 and 0 respectively. Note that
+successful or failed in completing the action. Note that
 *onUpdateComplete* also contains *int upserts* which counts
-the number of records that were inserted instead of updated
-(after the *Indexable* *update* method was called) because no
-existing record could be found to update and was thus inserted as a new record. 
-Therefore for *onUpdateComplete* the total success count would be *success* + *upserts*. The method 
-*ononGetRecordComplete* contains the parameters *success* and *record* 
-where *success* will indicate if the record was in fact retrieved and 
+the number of records that were inserted instead of updated.
+Therefore for *onUpdateComplete* the total success count would be *success* + *upserts*. 
+The method 
+*onGetRecordComplete* contains the parameters *success* and *record* 
+where *success* will indicate if the record was retrieved and 
 *record* will be that record if retrieved; if not retrieved it will not be
 null but contain no keys or values. 
 
-Finally the last method *onIndexReady* will be called as soon as the SRCH2 server is 
+The last method *onIndexReady* will be called as soon as the SRCH2 server is 
 up and running and has loaded the index this *Indexable* represents. The
 user can use this callback to check the status of the current loaded index,
 such as the record number inside the index. For instance, here the logic:
@@ -408,17 +351,10 @@ such as the record number inside the index. For instance, here the logic:
 
 simply checks whether there are any existing records. The very first time
 this callback method is called there will be zero records in the index, therefore 
-the records from *getAFewRecordsToInsert()* are inserted. Subsequent times
-this method is called, there will be records and it may be a good time to
-check if the index needs to be updated. 
+the records from *getAFewRecordsToInsert()* are inserted. 
 
-Note that for all of the callback methods, calling the super function will
-cause output to logcat that will include the name of the index and the values
-of each callback parameters excluding the *JSONResponse*. 
-
-Also note that these callbacks **will occur off the UI thread**, so it would be
-necessary to push any data to the UI thread if, for instance, a toast should
-be displayed whenever *onIndexReady* were called. 
+Note that these callbacks **will occur off the UI thread**, so it would be
+necessary to push any data to the UI thread. 
 
 ##Sending Queries
 
@@ -435,8 +371,8 @@ that can return results from all indexes registered using the
 *SRCH2Engine.initialize()* function. 
 
 By default, the engine uses the space delimiter to tokenize the string to multiple keywords 
-('beaty' and 'ame'). It treats the last keyword ('ame') as a prefix condition,
-and other keywords (e.g., 'beaty') as complete keywords. The engine
+("beaty" and "ame"). It treats the last keyword ("ame") as a prefix condition,
+and other keywords (e.g., "beaty) as complete keywords. The engine
 supports fuzzy search by allowing one typo for every three characters
 in a keyword. 
 
@@ -453,11 +389,11 @@ the implementation of the interface *SearchResultsListener*.
 This method will be executed by background threads. So in order
 to update the user interface of your application, the search results
 must be passed to the UI thread. Here we assume you are familiar with
-how a
+how an
 [*android.widget.BaseAdapter*](http://developer.android.com/reference/android/widget/BaseAdapter.html)
-works to populate a
+works to populate an
 [*android.widget.ListView*](http://developer.android.com/reference/android/widget/ListView.html). 
-Familiarity with how to communicate with the UI thread via a
+Familiarity with how to communicate with the UI thread via an
 [*android.os.Handler*](http://developer.android.com/reference/android/os/Handler.html)
 is also helpful, but you can read more about it on the 
 [Android developer
@@ -558,10 +494,8 @@ public class SearchResultsAdapter extends BaseAdapter {
                         try {
 							JSONObject originalRecord = 
 								jsonObject.getJSONObject(Indexable.SEARCH_RESULT_JSON_KEY_RECORD);
-							JSONObject highlightedFields = 
-								jsonObject.getJSONObject(Indexable.SEARCH_RESULT_JSON_KEY_HIGHLIGHTED);
                             searchResult = new MovieSearchResult(
-                                    highlightedFields
+                                    originalRecord 
                                             .getString(MovieIndex.INDEX_FIELD_TITLE),
                                     originalRecord
                                             .getString(MovieIndex.INDEX_FIELD_GENRE),
@@ -604,35 +538,18 @@ the indexes you've defined, the corresponding values for
 *ArrayList<JSONObject>* will be of size zero. 
 
 Each *ArrayList<JSONObject>* will contain a set of records that were
-returned as search results. Each *JSONObject* will always contain at
-least one *JSONObject* which represents the record as it exists in the
-index: that is, its keys will be the names of the fields as they were
-defined in the schema for the index where each value corresponds to 
-the data for that field. Here, *originalRecord* is this object and it
-can retrieved by using the constant value of 
-*Indexable.SEARCH_RESULT_JSON_KEY_RECORD*.
-
-In addition, each *JSONObject* in this *ArrayList* may also contain 
-another *JSONObject* that will contain the highlighted field's data for
-each field that had highlighting enabled (which was done for the field 'title'
-for the movie index). This can be retrieved by using the constant value of 
-*Indexable.SEARCH_RESULT_JSON_KEY_HIGHLIGHTED*. The keys in this *JSONObject* will also be the names
-of only those fields with highlighting enabled. Since the highlighted formatting
-was set using HTML tags, when calling *setText* in the adapter's *getView(...)*
-method, it will be necessary to also use the method *Html.fromHtml(...)*: 
-
+returned as search results. This JSONObject contains the original record in the index, 
+which can be obtained by 
 ```
-  viewHolder.mTitleTextView.setText(Html.fromHtml(searchResult.getTitle()));
+  jsonObject.getJSONObject(Indexable.SEARCH_RESULT_JSON_KEY_RECORD);
 ```
 
-Since the callback function checks the status of the response, consumes
-the results in the map, and adds the results to an object called *newResults* 
-the next step it to push the results to the UI thread by overriding the 
-handler's *handleMessage()* superclass method. Since this handler is created when 
-the *SearchResultsAdapter* is initialized in the *onCreate()* method of *SearchActivity*,
-it will be bound to the UI thread.
- 
-Overriding this method to do this looks like:
+In addition, if we set up the highlight field, it also contains the 
+highlight informations. Please read the [Highlighting section](advanced.md##Highlighting) for 
+more details.
+
+The next step it to push the results to the UI thread by overriding the 
+handler's *handleMessage()* superclass method. Following code is the example.
 
 ```
 	private static class SearchResultsUiHandler extends Handler implements SearchResultsListener {
@@ -676,8 +593,8 @@ Overriding this method to do this looks like:
 The *SRCH2Engine* lifecycle methods can be called in the following sequence:
 
 1. In *Activity.onCreate()*, call *SRCH2Engine.initialize()* by
-passing all the *Indexable* objects to initialize the server.
-2. Register the *SearchResultsListener* implementation by calling *setSearchResultsListener()* 
+passing all the *Indexable* objects to initialize the server;
+2. Register the *SearchResultsListener* implementation by calling *setSearchResultsListener()* ;
 3. Start the server by calling *start()*;
 4. Stop the server by calling *stop()*.
 
