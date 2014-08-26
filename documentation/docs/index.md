@@ -165,7 +165,7 @@ public class MovieIndex extends Indexable {
     @Override
     public Schema getSchema() {
         PrimaryKeyField primaryKey = Field.createDefaultPrimaryKeyField(INDEX_FIELD_PRIMARY_KEY);
-        Field title = Field.createSearchableField(INDEX_FIELD_TITLE, 3).enableHighlighting();
+        Field title = Field.createSearchableField(INDEX_FIELD_TITLE, 3);
         Field year = Field.createRefiningField(INDEX_FIELD_YEAR, Field.Type.INTEGER);
         Field genre = Field.createSearchableField(INDEX_FIELD_GENRE);
         return Schema.createSchema(primaryKey, title, year, genre)

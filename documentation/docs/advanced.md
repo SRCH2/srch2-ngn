@@ -321,8 +321,8 @@ public class MovieIndex extends Indexable {
       ...
       return Schema.createSchema(primaryKey, title)
   }
-	
-	@Override
+
+  @Override
   public Highlighter getHighlighter() {
       return Highlighter.createHighlighter()
               .formatExactTextMatches(true, false, "#FF0000")
@@ -338,14 +338,13 @@ The highlighted fields can be retrieved by using the constant value of
 The keys in this *JSONObject* will also be the names
 of those fields with highlighting enabled. 
 
-If we use the default highlighter that provided by the engine by calling the *Highlighter.createHighlighter()*
-method, for the keyword of "beaty ame", 
+If we use the highlighter that provided above, for the keyword of "beaty ame", 
 the search result for the movie with the title "American Beauty " will
 produce the output of 
 ```
-'&lt;b&gt;Ame&lt;/b&gt;rican &lt;b&gt;&lt;i&gt;Beauty&lt;/i&gt;&lt;b&gt;'
+'<b><font color="#FF0000">Ame</font></b>rican <b><font color="#FF00FF">Beauty</font></b>'
 ```
-(or visually, <b>Ame</b>rican <b><i>Beauty</i></b>).
+(or visually, <b><font color="#FF0000">Ame</font></b>rican <b><font color="#FF00FF">Beauty</font></b>).
 
 The highlighted result should be used in conjunction with *Html.fromHtml(...)* such as
 *mTextView.setText(Html.fromHtml(mHighlightTitleText))* to display it
@@ -407,14 +406,14 @@ as the *RecordBoostField*.
 
 public class MovieIndex extends Indexable {
   public static final String INDEX_FIELD_PRIMARY_KEY = "id";
-	public static final String INDEX_FIELD_RECORD_BOOST = "recordBoost";
+  public static final String INDEX_FIELD_RECORD_BOOST = "recordBoost";
   public static final String INDEX_FIELD_TITLE = "title";
 
 
   @Override
   public Schema getSchema() {
       PrimaryKeyField primaryKey = Field.createDefaultPrimaryKeyField(INDEX_FIELD_PRIMARY_KEY);
-		RecordBoostField recordBoost = Field.createRecordBoostField(INDEX_FIELD_RECORD_BOOST);
+      RecordBoostField recordBoost = Field.createRecordBoostField(INDEX_FIELD_RECORD_BOOST);
       Field title = Field.createSearchableField(INDEX_FIELD_TITLE, 3).enableHighlighting();
       return Schema.createSchema(primaryKey, recordBoost, title );
   }
@@ -447,4 +446,4 @@ to the proguard configuration file:
 
 [//]: (##Using the Eclipse IDE	)
 [//]: (##Using the IntelliJ IDE	)
-	
+
