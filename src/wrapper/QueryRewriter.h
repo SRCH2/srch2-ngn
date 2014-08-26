@@ -69,10 +69,10 @@ private:
 	void fillExactAndFuzzyQueriesWithCommonInformation(LogicalPlan & plan);
 	void createExactAndFuzzyQueriesForTopK(LogicalPlan & plan);
 	void createExactAndFuzzyQueriesForGetAllTResults(LogicalPlan & plan) ;
-	void createExactAndFuzzyQueriesForGeo(LogicalPlan & plan) ;
 	void createPostProcessingPlan(LogicalPlan & plan) ;
 	void getFieldFiltersBasedOnAcl(vector<unsigned>& fieldFiltersList,
 			ATTRIBUTES_OP& attributeOperation, vector<unsigned> *allowedAttributesForRole);
+	void addGeoToParseTree();
 };
 
 }

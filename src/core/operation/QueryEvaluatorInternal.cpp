@@ -30,7 +30,6 @@
 #include "index/InvertedIndex.h"
 #include "util/Assert.h"
 #include "index/ForwardIndex.h"
-#include "geo/QuadTree.h"
 #include "HistogramManager.h"
 #include "physical_plan/PhysicalPlan.h"
 #include "physical_plan/PhysicalOperators.h"
@@ -274,7 +273,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		queryResult->internalRecordId = newRecord->getRecordId();
 		newRecord->getRecordMatchEditDistances(queryResult->editDistances);
 		//
-		queryResult->_score.setTypedValue(newRecord->getRecordRuntimeScore());
+		queryResult->_score.setTypedValue(newRecord->getRecordRuntimeScore(),ATTRIBUTE_TYPE_FLOAT);
 
 		newRecord->getRecordMatchingPrefixes(queryResult->matchingKeywordTrieNodes);
 
@@ -323,34 +322,6 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 	return queryResults->impl->sortedFinalResults.size();
 }
 
-/**
- * Does Map Search
- */
-int QueryEvaluatorInternal::geoSearch(const Query *query, QueryResults *queryResults){
-	 // need to lock the mutex
-	boost::shared_lock< boost::shared_mutex > lock(this->indexData->globalRwMutexForReadersWriters);
-    int returnValue = this->searchMapQuery(query, queryResults);
-    return returnValue;
-}
-
-// for doing a geo range query with a circle
-void QueryEvaluatorInternal::geoSearch(const Circle &queryCircle, QueryResults *queryResults){
-    QueryResultsInternal *queryResultsInternal = queryResults->impl;
-    // need to lock the mutex
-    boost::shared_lock< boost::shared_mutex > lock(this->indexData->globalRwMutexForReadersWriters);
-    this->indexData->quadTree->rangeQueryWithoutKeywordInformation(queryCircle,queryResultsInternal);
-    queryResultsInternal->finalizeResults(this->indexData->forwardIndex);
-}
-
-// for doing a geo range query with a rectangle
-void QueryEvaluatorInternal::geoSearch(const Rectangle &queryRectangle, QueryResults *queryResults){
-    QueryResultsInternal *queryResultsInternal = queryResults->impl;
-    // need to lock the mutex
-    boost::shared_lock< boost::shared_mutex > lock(this->indexData->globalRwMutexForReadersWriters);
-    this->indexData->quadTree->rangeQueryWithoutKeywordInformation(queryRectangle,queryResultsInternal);
-    queryResultsInternal->finalizeResults(this->indexData->forwardIndex);
-}
-
 // for retrieving only one result by having the primary key
 void QueryEvaluatorInternal::search(const std::string & primaryKey, QueryResults *queryResults){
 	unsigned internalRecordId ; // ForwardListId is the same as InternalRecordId
@@ -372,7 +343,7 @@ void QueryEvaluatorInternal::search(const std::string & primaryKey, QueryResults
 	QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
 	queryResult->externalRecordId = primaryKey;
 	queryResult->internalRecordId = internalRecordId;
-	queryResult->_score.setTypedValue((float)0.0);
+	queryResult->_score.setTypedValue((float)0.0,ATTRIBUTE_TYPE_FLOAT);
 	queryResults->impl->sortedFinalResults.push_back(queryResult);
 	return;
 }
@@ -433,96 +404,6 @@ boost::shared_ptr<PrefixActiveNodeSet> QueryEvaluatorInternal::computeActiveNode
 
 void QueryEvaluatorInternal::cacheClear() {
     this->cacheManager->clear();
-}
-
-int QueryEvaluatorInternal::searchMapQuery(const Query *query, QueryResults* queryResults){
-    QueryResultsInternal *queryResultsInternal = queryResults->impl;
-
-    const std::vector<Term* > *queryTerms = query->getQueryTerms();
-
-    //Empty Query case
-    if (queryTerms->size() == 0) {
-        return 0;
-    }
-
-    //build mario's SearcherTerm for each query term
-    //timespec ts1;
-    //timespec ts2;
-    //clock_gettime(CLOCK_REALTIME, &ts1);
-    vector<MapSearcherTerm> mapSearcherTermVector;
-    for (unsigned i = 0; i < queryTerms->size(); i++) {
-        MapSearcherTerm mapSearcherTerm;
-        // TODO
-        // after the bug in active node is fixed, see if we should use LeafNodeSetIterator/ActiveNodeSetIterator for PREFIX/COMPLETE terms.
-        // see TermVirtualList::TermVirtualList() in src/operation/TermVirtualList.cpp
-        boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet = computeActiveNodeSet(queryTerms->at(i));
-        for (ActiveNodeSetIterator iter(prefixActiveNodeSet.get(), queryTerms->at(i)->getThreshold()); !iter.isDone(); iter.next()) {
-            TrieNodePointer trieNode;
-            unsigned distance;
-            iter.getItem(trieNode, distance);
-            ExpansionStructure expansion(trieNode->getMinId(), trieNode->getMaxId(), (unsigned char)distance, trieNode);
-            //expansion.termPtr = queryTerms->at(i);
-
-            if(queryTerms->at(i)->getTermType() == TERM_TYPE_COMPLETE){
-                distance = prefixActiveNodeSet->getEditdistanceofPrefix(trieNode);
-                // If the keyword is a fuzzy complete keyword, we also need to add additional keywords with a distance up to the threashold
-                addMoreNodesToExpansion(trieNode, distance, queryTerms->at(i)->getThreshold(), mapSearcherTerm);
-            }
-            else{
-                mapSearcherTerm.expansionStructureVector.push_back(expansion);
-            }
-        }
-
-        mapSearcherTerm.termPtr = queryTerms->at(i);
-        mapSearcherTermVector.push_back(mapSearcherTerm);
-    }
-    //clock_gettime(CLOCK_REALTIME, &ts2);
-    //cout << "Time to compute active nodes " << ((double)(ts2.tv_nsec - ts1.tv_nsec)) / 1000000.0 << " milliseconds" << endl;
-
-    //clock_gettime(CLOCK_REALTIME, &ts1);
-    // TODO bad design, should change Query::getRange()
-    vector<double> values;
-    query->getRange(values);
-    Shape *searchRange = NULL;
-    if (values.size()==3) {
-        Point p;
-        p.x = values[0];
-        p.y = values[1];
-        searchRange = new Circle(p, values[2]);
-    } else {
-        pair<pair<double, double>, pair<double, double> > rect;
-        rect.first.first = values[0];
-        rect.first.second = values[1];
-        rect.second.first = values[2];
-        rect.second.second = values[3];
-        searchRange = new Rectangle(rect);
-    }
-    const SpatialRanker *ranker = dynamic_cast<const SpatialRanker*>(query->getRanker());
-    indexData->quadTree->rangeQuery(queryResultsInternal, *searchRange, mapSearcherTermVector, ranker, query->getPrefixMatchPenalty());
-
-    delete searchRange;
-
-    //clock_gettime(CLOCK_REALTIME, &ts2);
-    //cout << "Time to range query " << ((double)(ts2.tv_nsec - ts1.tv_nsec)) / 1000000.0 << " milliseconds" << endl;
-
-    queryResultsInternal->finalizeResults(this->indexData->forwardIndex);
-
-    return queryResultsInternal->sortedFinalResults.size();
-}
-
-// Given a trie node, a distance, and an upper bound, we want to insert its descendants to the mapSearcherTerm.exapnsions (as restricted by the distance and the bound)
-void QueryEvaluatorInternal::addMoreNodesToExpansion(const TrieNode* trieNode, unsigned distance, unsigned bound, MapSearcherTerm &mapSearcherTerm)
-{
-    if (trieNode->isTerminalNode()) {
-        ExpansionStructure expansion(trieNode->getMinId(), trieNode->getMaxId(), (unsigned char)distance, trieNode);
-        mapSearcherTerm.expansionStructureVector.push_back(expansion);
-    }
-    if (distance < bound) {
-        for (unsigned int childIterator = 0; childIterator < trieNode->getChildrenCount(); childIterator++) {
-            const TrieNode *child = trieNode->getChild(childIterator);
-            addMoreNodesToExpansion(child, distance+1, bound, mapSearcherTerm);
-        }
-    }
 }
 
 

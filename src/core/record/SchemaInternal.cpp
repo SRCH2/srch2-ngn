@@ -42,6 +42,8 @@ SchemaInternal::SchemaInternal(srch2::instantsearch::IndexType indexType,
     this->refiningAttributeTypeVector.clear();
     this->refiningAttributeIsMultiValuedVector.clear();
     this->supportSwapInEditDistance = true;
+    this->nameOfLatitudeAttribute = "";
+    this->nameOfLongitudeAttribute = "";
 }
 
 SchemaInternal::SchemaInternal(const SchemaInternal &schemaInternal) {
@@ -74,6 +76,8 @@ SchemaInternal::SchemaInternal(const SchemaInternal &schemaInternal) {
     this->aclSearchableAttrIds =  schemaInternal.aclSearchableAttrIds;
     this->nonAclSearchableAttrIds = schemaInternal.nonAclSearchableAttrIds;
 
+    this->nameOfLatitudeAttribute = schemaInternal.nameOfLatitudeAttribute;
+    this->nameOfLongitudeAttribute = schemaInternal.nameOfLongitudeAttribute;
 }
 
 srch2::instantsearch::IndexType SchemaInternal::getIndexType() const {
@@ -120,8 +124,24 @@ void SchemaInternal::setPrimaryKey(const string &primaryKey) {
     this->primaryKey = primaryKey;
 }
 
+void SchemaInternal::setNameOfLatitudeAttribute(const string &nameOfLatitudeAttribute){
+	this->nameOfLatitudeAttribute = nameOfLatitudeAttribute;
+}
+
+void SchemaInternal::setNameOfLongitudeAttribute(const string &nameOfLongitudeAttribute){
+	this->nameOfLongitudeAttribute = nameOfLongitudeAttribute;
+}
+
 const std::string* SchemaInternal::getPrimaryKey() const {
     return &this->primaryKey;
+}
+
+const std::string* SchemaInternal::getNameOfLatituteAttribute() const{
+	return &this->nameOfLatitudeAttribute;
+}
+
+const std::string* SchemaInternal::getNameOfLongitudeAttribute() const{
+	return &this->nameOfLongitudeAttribute;
 }
 
 int SchemaInternal::setSearchableAttribute(const string &attributeName,

@@ -41,5 +41,5 @@ To test the engine, please first set the "license-file" option in "srch2-engine/
 # Possible Compiling Errors
 1. Your compiler may not support "-Wno-implicit". To fix it, you can remove it from "CMakeLists.txt". 
 2. Your compiler may not find "libdl.a" in "/usr/lib/". It might be in "/usr/lib32". To fix it, you can copy "/usr/lib32/libdl.a" into "/usr/lib".
-3. When compiling "jsoncpp-src-0.5.0/libs", there would generate a folder called "linux-gcc-4.7" (4.7 is supposed to be your gcc version), but if your gcc is not 4.7, say it is 4.7.2, the compiler will not find the folder "linux-gcc-4.7". To fix it, you can copy "linux-gcc-4.7" to "linux-gcc-4.7.2".   
+3. When compiling "jsoncpp-src/libs", there would generate a folder called "linux-gcc-4.7" (4.7 is supposed to be your gcc version), but if your gcc is not 4.7, say it is 4.7.2, the compiler will not find the folder "linux-gcc-4.7". To fix it, you can copy "linux-gcc-4.7" to "linux-gcc-4.7.2".   
 

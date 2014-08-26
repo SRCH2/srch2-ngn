@@ -297,7 +297,6 @@ PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfOpen(const Ph
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
 		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfOpen(params);
 	}
-
 	return resultCost;
 }
 // The cost of getNext of a child is multiplied by the estimated number of calls to this function
@@ -409,11 +408,11 @@ PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfGetNext(const
 	 double PPart = 1;
 	 unsigned RndPart = 0;
 	 for(unsigned d = 0; d < P.size(); ++d){
-		 RndPart += Rnd[d];
 		 if(d != S){
+			 RndPart += Rnd[d];
 			 COST_NC += PPart * (1 - P[d]) * RndPart;
+			 PPart *= P[d];
 		 }
-		 PPart *= P[d];
 	 }
 	 COST_NC += Scn[S];
 	 //
@@ -427,7 +426,6 @@ PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfGetNext(const
 	 */
 	 PhysicalPlanCost resultCost ;
 	 resultCost.cost = (cost_candidates + cost_noncandidates) / R ;
-
 	 return resultCost;
 
 }
@@ -438,7 +436,6 @@ PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfClose(const P
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
 		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfClose(params);
 	}
-
 	return resultCost;
 }
 PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
@@ -449,7 +446,6 @@ PhysicalPlanCost MergeByShortestListOptimizationOperator::getCostOfVerifyByRando
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
 		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfVerifyByRandomAccess(params);
 	}
-
 	return resultCost;
 }
 void MergeByShortestListOptimizationOperator::getOutputProperties(IteratorProperties & prop){
@@ -472,8 +468,10 @@ bool MergeByShortestListOptimizationOperator::validateChildren(){
 			case PhysicalPlanNode_RandomAccessAnd:
 			case PhysicalPlanNode_RandomAccessOr:
 			case PhysicalPlanNode_RandomAccessNot:
+			case PhysicalPlanNode_RandomAccessGeo:
 				break;
 			case PhysicalPlanNode_UnionLowestLevelTermVirtualList:
+			case PhysicalPlanNode_GeoNearestNeighbor:
 				// this operator cannot have TVL as a child, TVL overhead is not needed for this operator
 				return false;
 			default:{ // we count the number of non-verification operators.
@@ -502,6 +500,7 @@ unsigned MergeByShortestListOptimizationOperator::getShortestListOffsetInChildre
 			case PhysicalPlanNode_RandomAccessAnd:
 			case PhysicalPlanNode_RandomAccessOr:
 			case PhysicalPlanNode_RandomAccessNot:
+			case PhysicalPlanNode_RandomAccessGeo:
 				break;
 			default:{
 				return i;

@@ -69,7 +69,7 @@
 #include "index/Trie.h"
 //#include "index/InvertedIndex.h"
 #include "index/ForwardIndex.h"
-//#include "geo/QuadTree.h"
+#include "geo/QuadTree.h"
 //#include "record/AnalyzerInternal.h"
 //#include "record/SchemaInternal.h"
 //#include "license/LicenseVerifier.h"
@@ -92,7 +92,6 @@ namespace instantsearch
  *  It would be nice to move them to a separate forward declaration header file
  */
 class InvertedIndex;
-class QuadTree;
 //class ForwardIndex;
 class Analyzer;
 class SchemaInternal;
@@ -116,6 +115,9 @@ struct IndexReadStateSharedPtr_Token
 
     typedef boost::shared_ptr<vectorview<InvertedListContainerPtr> > InvertedIndexReadView;
     InvertedIndexReadView invertedIndexReadViewSharedPtr;
+
+    typedef boost::shared_ptr<QuadTreeRootNodeAndFreeLists> QuadTreeRootNodeSharedPtr;
+    QuadTreeRootNodeSharedPtr quadTreeRootNodeSharedPtr;
 };
 
 // Uses spinlock and volatile to increment count.
@@ -243,6 +245,7 @@ public:
 
     Trie_Internal *trie;
     InvertedIndex *invertedIndex;
+
     QuadTree *quadTree;
 
     ForwardIndex *forwardIndex;
@@ -265,6 +268,7 @@ public:
     void getReadView(IndexReadStateSharedPtr_Token &readToken)
     {
         this->trie->getTrieRootNode_ReadView(readToken.trieRootNodeSharedPtr);
+        this->quadTree->getQuadTreeRootNode_ReadView(readToken.quadTreeRootNodeSharedPtr);
         this->readCounter->increment();
     }
 
@@ -325,9 +329,6 @@ public:
     void changeKeywordIdsOnForwardLists(const map<TrieNode *, unsigned> &trieNodeIdMapper,
                                         const map<unsigned, unsigned> &keywordIdMapper,
                                         map<unsigned, unsigned> &processedRecordIds);
-
-    void changeKeywordIdsOnForwardListsAndOCFilters(map<unsigned, unsigned> &keywordIdMapper,
-                                                    map<unsigned, unsigned> &recordIdsToProcess);
 };
 
 }}

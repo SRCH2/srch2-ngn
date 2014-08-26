@@ -86,6 +86,12 @@ public:
      */
     virtual void setPrimaryKey(const std::string &primaryKey) = 0;
 
+    // sets the name of the latitude attribute
+    virtual void setNameOfLatitudeAttribute(const std::string &nameOfLatitudeAttribute) = 0;
+
+    // sets the name of the longitude attribute
+    virtual void setNameOfLongitudeAttribute(const std::string &nameOfLatitudeAttribute) = 0;
+
     /**
      * \ingroup RankingFunctions Sets the boost value of an attribute.
      *  @param attributeName  Name of the attribute.
@@ -104,7 +110,13 @@ public:
      */
     virtual const std::string* getPrimaryKey() const = 0;
 
-    // Get searchable attribute
+    // Returns the AttributeName of the latitude
+    virtual const std::string* getNameOfLatituteAttribute() const = 0;
+
+    //Returns the AttributeName of the longitude
+    virtual const std::string* getNameOfLongitudeAttribute() const = 0;
+
+    // get searchable attribute
     virtual const std::map<std::string, unsigned>& getSearchableAttribute() const = 0;
     virtual FilterType getTypeOfSearchableAttribute(
             const unsigned searchableAttributeNameId) const = 0;

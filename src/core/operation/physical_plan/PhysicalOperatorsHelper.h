@@ -46,6 +46,11 @@ bool verifyByRandomAccessAndHelper(PhysicalPlanOptimizationNode * node, Physical
 
 bool verifyByRandomAccessOrHelper(PhysicalPlanOptimizationNode * node, PhysicalPlanRandomAccessVerificationParameters & parameters);
 
+bool verifyByRandomAccessGeoHelper(PhysicalPlanRandomAccessVerificationParameters & parameters, QueryEvaluatorInternal * queryEvaluator, Shape* queryShape, unsigned &latOffset, unsigned &longOffset);
+
+// this function finds the offset of the latitude and longitude attributes in the refining attributes memory
+void getLat_Long_Offset(unsigned & latOffset, unsigned & longOffset, Schema * schema);
+
 }
 }
 #endif // __PHYSICALPLAN_PHYSICALOPERATORSHELPER_H__

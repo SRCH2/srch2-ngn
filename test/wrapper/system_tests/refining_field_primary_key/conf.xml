@@ -22,7 +22,9 @@
             "/usr/share/srch2/data/sample-data.json"
             In this config file it should be as "data/sample-data.json"
     -->
-    <srch2Home>./refining_field_primary_key</srch2Home>
+
+    <srch2Home>./</srch2Home>
+
  
     <!--
         License Key File
@@ -319,7 +321,7 @@
                  
                 Path to Access Log File
             -->
-            <accessLogFile>./data/refining_field_primary_key/log.txt</accessLogFile>
+            <accessLogFile>../data/refining_field_primary_key/log.txt</accessLogFile>
         </updateLog>
      
     </updatehandler>
@@ -358,6 +360,7 @@
 		    here and indexed="false" it will be also used for sort,filtering and facet.
 		    - 
 	   -->
+           <field name="relevance" type="float" refining="true" highlight="true" />
            <field name="id" type="text" refining="true"/>
 	   <field name="category" type="text" searchable="true" indexed="false" />
 	   <field name="name" type="text" searchable="true" indexed="false" />

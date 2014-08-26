@@ -313,11 +313,22 @@ bool JSONRecordParser::setCompactRecordRefiningValue(
 
         char * pEnd = NULL;
         switch (type) {
-        case srch2is::ATTRIBUTE_TYPE_UNSIGNED: {
-            unsigned val = static_cast<unsigned int>(strtoul(
-                    attributeStringValue.c_str(), &pEnd, 10));
+        case srch2is::ATTRIBUTE_TYPE_INT: {
+            int val = static_cast<int>(strtol(attributeStringValue.c_str(),
+                    &pEnd, 10));
             if (*pEnd != '\0') {
-                error << ("\nInvalid value %s of type unsigned.",
+                error << ("\nInvalid value %s of type integer.",
+                        attributeStringValue.c_str());
+                return false;
+            }
+            compactRecSerializer.addRefiningAttribute(iter->first, val);
+            break;
+        }
+        case srch2is::ATTRIBUTE_TYPE_LONG: {
+            long val = strtol(attributeStringValue.c_str(),
+                    &pEnd, 10);
+            if (*pEnd != '\0') {
+                error << ("\nInvalid value %s of type long.",
                         attributeStringValue.c_str());
                 return false;
             }
@@ -335,9 +346,20 @@ bool JSONRecordParser::setCompactRecordRefiningValue(
             compactRecSerializer.addRefiningAttribute(iter->first, val);
             break;
         }
+        case srch2is::ATTRIBUTE_TYPE_DOUBLE: {
+            double val = strtod(attributeStringValue.c_str(),
+                    &pEnd);
+            if (*pEnd != '\0') {
+                error << ("\nInvalid value %s of type double.",
+                        attributeStringValue.c_str());
+                return false;
+            }
+            compactRecSerializer.addRefiningAttribute(iter->first, val);
+            break;
+        }
         default: {
             error << ("\nRefining attribute that need to be compacted "
-                    "in memory should be UNSIGNED | FLOAT,"
+                    "in memory should be INT | LONG | FLOAT | DOUBLE,"
                     " no others are accepted.");
             return false;
             break;
@@ -356,23 +378,23 @@ bool JSONRecordParser::setRecordLocationValue(srch2is::Record *record,
                 indexDataContainerConf->getAttributeLongitude();
         double recordLatitude;
 
-        getJsonValueDouble(root, latitudeAttributeKeyName, recordLatitude,
-                "attribute-latitude");
+        if(!getJsonValueDouble(root, latitudeAttributeKeyName, recordLatitude,
+                "attribute-latitude"))
+        	return false;
 
         if (recordLatitude > 200.0 || recordLatitude < -200.0) {
             Logger::warn("bad x: %f, set to 40.0 for testing purposes.\n",
                     recordLatitude);
-            recordLatitude = 40.0;
         }
         double recordLongitude;
 
-        getJsonValueDouble(root, longitudeAttributeKeyName, recordLongitude,
-                "attribute-longitude");
+        if(!getJsonValueDouble(root, longitudeAttributeKeyName, recordLongitude,
+                "attribute-longitude"))
+        	return false;
 
         if (recordLongitude > 200.0 || recordLongitude < -200.0) {
             Logger::warn("bad y: %f, set to -120.0 for testing purposes.\n",
                     recordLongitude);
-            recordLongitude = -120.0;
         }
         record->setLocationAttributeValue(recordLatitude, recordLongitude);
     }
@@ -580,6 +602,9 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema(const CoreInfo_t *ind
     schema->setScoringExpression(scoringExpressionString);
     schema->setSupportSwapInEditDistance(indexDataContainerConf->getSupportSwapInEditDistance());
 
+    schema->setNameOfLatitudeAttribute(indexDataContainerConf->getAttributeLatitude());
+    schema->setNameOfLongitudeAttribute(indexDataContainerConf->getAttributeLongitude());
+
     return schema;
 }
 
@@ -679,6 +704,7 @@ string convertToStr(T value) {
 //If the value is null or empty, the vector<string> will only contain "".
 void convertValueToString(Json::Value value, vector<string> &stringValues) {
     std::string lowercaseString, originalString;
+
     if (value.isString()) {
         originalString = value.asString();
         lowercaseString = originalString;
@@ -699,8 +725,16 @@ void convertValueToString(Json::Value value, vector<string> &stringValues) {
         } else {
             stringValues.push_back(originalString);
         }
-    } else if (value.isInt()) {
-        originalString = convertToStr<int>(value.asInt());
+        /*
+         * In JSONCPP 0.6.0, long value (>0) will be treated as UInt (unsigned int)
+         * long value (<0) will be treated as Int.
+         * int value will be treated as Int.
+         *
+         * All the cases above can be parsed from JSON object to long long int
+         * by asInt64().
+         */
+    } else if (value.isInt()||value.isUInt()) {
+        originalString = convertToStr<long>(value.asInt64());
         lowercaseString = originalString;
         std::transform(lowercaseString.begin(), lowercaseString.end(),
                 lowercaseString.begin(), ::tolower);
