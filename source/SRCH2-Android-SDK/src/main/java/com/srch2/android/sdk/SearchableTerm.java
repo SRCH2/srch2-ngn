@@ -8,11 +8,11 @@ abstract class Term {
 
     abstract public Term AND(Term rightTerm);
 
-    abstract public Term AND_NOT(Term rightTerm);
+    abstract public Term NOT(Term rightTerm);
 
     abstract public Term OR(Term rightTerm);
 
-    abstract Term NOT();
+    abstract Term UNARY_NOT();
 }
 
 /**
@@ -41,9 +41,9 @@ final public class SearchableTerm extends Term {
      * treated as one word.
      * <p/>
      * The prefix, fuzziness, boostValue is set using the default value present
-     * in <code>IndexDescription</code>
+     * in {@link Indexable}.
      *
-     * @param keywords the search key word[s].
+     * @param keywords the search key word[s]
      */
     public SearchableTerm(String keywords) {
         checkString(keywords, "search keywords is not valid");
@@ -93,7 +93,7 @@ final public class SearchableTerm extends Term {
 
     /**
      * Enable the fuzzy matching. The fuzziness similarity setting
-     * will get from the {@link Indexable#getFuzzinessSimilarityThreshold()}
+     * will get from the {@link Indexable#getFuzzinessSimilarityThreshold()}.
      *
      * @return this
      */
@@ -103,7 +103,7 @@ final public class SearchableTerm extends Term {
     }
 
     /**
-     * Disables the fuzzy matching
+     * Disables the fuzzy matching.
      *
      * @return this
      */
@@ -142,7 +142,7 @@ final public class SearchableTerm extends Term {
     }
 
     /**
-     * Create a composite term by <code>AND</code> operator
+     * Create a composite term by <code>AND</code> operator.
      *
      * @param rightTerm the right operand
      * @return a new CompositeTerm as a result of <code>this AND rightTerm</code>
@@ -152,17 +152,17 @@ final public class SearchableTerm extends Term {
     }
 
     /**
-     * Create a composite term by <code>AND</code> operator, inverse match the rightTerm
+     * Create a composite term by <code>AND</code> operator, inverse match the rightTerm.
      *
      * @param rightTerm the right operand
      * @return a new CompositeTerm as a result of <code>this AND NOT rightTerm</code>
      */
-    public CompositeTerm AND_NOT(Term rightTerm) {
-        return new CompositeTerm(BooleanOperator.AND, this, rightTerm.NOT());
+    public CompositeTerm NOT(Term rightTerm) {
+        return new CompositeTerm(BooleanOperator.AND, this, rightTerm.UNARY_NOT());
     }
 
     /**
-     * Create a composite term by <code>OR</code> operator
+     * Create a composite term by <code>OR</code> operator.
      *
      * @param rightTerm the right operand
      * @return a new CompositeTerm as a result of <code>this OR rightTerm</code>
@@ -171,11 +171,11 @@ final public class SearchableTerm extends Term {
         return new CompositeTerm(BooleanOperator.OR, this, rightTerm);
     }
     /**
-     * Create a composite term by <code>NOT</code> operator
+     * Create a composite term by <code>NOT</code> operator.
      *
-     * @return a new CompositeTerm as a result of <code>NOT this</code>
+     * @return a new CompositeTerm as a result of <code>NOT this</code>.
      */
-    CompositeTerm NOT() {
+    CompositeTerm UNARY_NOT() {
         return new CompositeTerm(BooleanOperator.NOT, this, null);
     }
 
@@ -277,8 +277,8 @@ final public class SearchableTerm extends Term {
          * @return a new CompositeTerm as a result of <code>this AND NOT rightTerm</code>
          */
         @Override
-        public Term AND_NOT(Term rightTerm) {
-            return new CompositeTerm(BooleanOperator.AND, this, rightTerm.NOT());
+        public Term NOT(Term rightTerm) {
+            return new CompositeTerm(BooleanOperator.AND, this, rightTerm.UNARY_NOT());
         }
         /**
          * Create a composite term by <code>OR</code> operator
@@ -297,7 +297,7 @@ final public class SearchableTerm extends Term {
          * @return a new CompositeTerm as a result of <code>NOT this</code>
          */
         @Override
-        Term NOT() {
+        Term UNARY_NOT() {
             return new CompositeTerm(BooleanOperator.NOT, this, null);
         }
     }

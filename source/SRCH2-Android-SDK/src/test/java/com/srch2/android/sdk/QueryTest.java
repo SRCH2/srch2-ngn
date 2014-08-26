@@ -1,7 +1,5 @@
 package com.srch2.android.sdk;
 
-import com.srch2.android.sdk.Query;
-import com.srch2.android.sdk.SearchableTerm;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -14,7 +12,7 @@ public class QueryTest {
         // f1) curl -i "http://localhost:8081/search?q=terminator"
         final String title = "terminator";
         Query q = new Query(new SearchableTerm(title));
-        Assert.assertEquals(title, q.toString());
+        Assert.assertEquals("q=" + title, q.toString());
 
         // f2) http://localhost:8081/search?q=title:terminator AND
         // director:cameron
@@ -24,34 +22,34 @@ public class QueryTest {
         SearchableTerm term2 = new SearchableTerm(director)
                 .searchSpecificField("director");
         q = new Query(term1.AND(term2));
-        Assert.assertEquals("title:terminator AND director:cameron",
+        Assert.assertEquals("q=title:terminator AND director:cameron",
                 q.toString());
 
         // f3) http://localhost:8081/search?q=title:terminator AND
         // director:cameron&fq=year:[1983 TO 1992]
         q.filterByFieldInRange("year", "1983", "1992");
         Assert.assertEquals(
-                "title:terminator AND director:cameron&fq=year:[1983 TO 1992]&searchType=getAll",
+                "q=title:terminator AND director:cameron&fq=year:[1983 TO 1992]&searchType=getAll",
                 q.toString());
 
         Query q4 = new Query(term1.AND(term2));
-        Assert.assertEquals("title:terminator AND director:cameron",
+        Assert.assertEquals("q=title:terminator AND director:cameron",
                 q4.toString());
         // f4) "http://localhost:8081/search?q=title:terminator AND
         // director:cameron&fq=genre:action
         q4.filterByFieldEqualsTo("genre", "action");
         Assert.assertEquals(
-                "title:terminator AND director:cameron&fq=genre:action&searchType=getAll",
+                "q=title:terminator AND director:cameron&fq=genre:action&searchType=getAll",
                 q4.toString());
 
         // f5) http://localhost:8081/search?q=title:terminator AND
         // director:cameron&fq=boolexp$ year>1982 $
         Query q5 = new Query(term1.AND(term2));
-        Assert.assertEquals("title:terminator AND director:cameron",
+        Assert.assertEquals("q=title:terminator AND director:cameron",
                 q5.toString());
         q5.filterByBooleanExpression("year>1982");
         Assert.assertEquals(
-                "title:terminator AND director:cameron&fq=boolexp$ year>1982 $&searchType=getAll",
+                "q=title:terminator AND director:cameron&fq=boolexp$ year>1982 $&searchType=getAll",
                 q5.toString());
 
         // f6) curl -i
@@ -59,15 +57,33 @@ public class QueryTest {
 
         Query q6 = new Query(new SearchableTerm("cameron"));
         q6.sortOnFields("year").orderByAscending();
-        Assert.assertEquals("cameron&searchType=getAll&sort=year&orderby=asc", q6.toString());
+        Assert.assertEquals("q=cameron&searchType=getAll&sort=year&orderby=asc", q6.toString());
 
         // f7) curl -i
         // "http://localhost:8081/search?q=cameron&facet=true&facet.field=genre"
 
         Query q7 = new Query(new SearchableTerm("cameron"));
         q7.facetOn("genre");
-        Assert.assertEquals("cameron&facet=true&facet.field=genre",
+        Assert.assertEquals("q=cameron&facet=true&facet.field=genre",
                 q7.toString());
+
+
+        // Geo Query
+        double [] box = {100.0, 200.0, -100.0, -200.0 };
+
+        Query q8 = new Query(box[0], box[1], box[2], box[3]);
+        Assert.assertEquals("lblat=100.0&lblong=200.0&rtlat=-100.0&rtlong=-200.0", q8.toString());
+
+        Query q88 = new Query(new SearchableTerm("cameron")).insideRectangleRegion(box[0],box[1],box[2],box[3]);
+        Assert.assertEquals("q=cameron&lblat=100.0&lblong=200.0&rtlat=-100.0&rtlong=-200.0", q88.toString());
+
+        double [] circle = { 111.0, 222.0, 50.0};
+        Query q9 = new Query(circle[0], circle[1], circle[2]);
+        Assert.assertEquals("clat=111.0&clong=222.0&radius=50.0", q9.toString());
+
+        Query q99 = new Query(new SearchableTerm("cameron")).insideCircleRegion(circle[0],circle[1],circle[2]);
+        Assert.assertEquals("q=cameron&clat=111.0&clong=222.0&radius=50.0", q99.toString());
+
     }
 
     @Test
@@ -104,7 +120,7 @@ public class QueryTest {
                 new SearchableTerm("star wars")
                         .AND(new SearchableTerm("episode 3"))
                         .OR(new SearchableTerm("George Lucas")
-                                .AND(new SearchableTerm("Indiana Jones").NOT()))
+                                .NOT(new SearchableTerm("Indiana Jones")))
                         .toString());
 
         Assert.assertEquals(
@@ -120,17 +136,17 @@ public class QueryTest {
     public void testFilter() throws UnsupportedEncodingException {
 
         Assert.assertEquals(
-                "term&fq=year:[2010 TO 2012]&searchType=getAll",
+                "q=term&fq=year:[2010 TO 2012]&searchType=getAll",
                 new Query(new SearchableTerm("term")).filterByFieldInRange(
                         "year", "2010", "2012").toString());
 
         Assert.assertEquals(
-                "term&fq=genre:[comedy TO drama]&searchType=getAll",
+                "q=term&fq=genre:[comedy TO drama]&searchType=getAll",
                 new Query(new SearchableTerm("term")).filterByFieldInRange(
                         "genre", "comedy", "drama").toString());
 
         Assert.assertEquals(
-                "term&fq=id:[1000 TO *] AND genre:drama AND year:[* TO 1975]&searchType=getAll",
+                "q=term&fq=id:[1000 TO *] AND genre:drama AND year:[* TO 1975]&searchType=getAll",
                 new Query(new SearchableTerm("term"))
                         .filterByFieldStartsFrom("id", "1000")
                         .filterByFieldEqualsTo("genre", "drama")
@@ -138,7 +154,7 @@ public class QueryTest {
                         .setFilterRelationAND().toString());
 
         Assert.assertEquals(
-                "term&fq=id:[1000 TO *] OR genre:drama OR year:[* TO 1975]&searchType=getAll",
+                "q=term&fq=id:[1000 TO *] OR genre:drama OR year:[* TO 1975]&searchType=getAll",
                 new Query(new SearchableTerm("term"))
                         .filterByFieldStartsFrom("id", "1000")
                         .filterByFieldEqualsTo("genre", "drama")
@@ -150,7 +166,7 @@ public class QueryTest {
     @Test
     public void testFacet() throws UnsupportedEncodingException {
         Assert.assertEquals(
-                "term&facet=true&facet.field=year&facet.field=genre",
+                "q=term&facet=true&facet.field=year&facet.field=genre",
                 new Query(new SearchableTerm("term")).facetOn("year")
                         .facetOn("genre").toString());
     }
@@ -158,7 +174,7 @@ public class QueryTest {
     @Test
     public void testSort() throws UnsupportedEncodingException {
         Assert.assertEquals(
-                "term&searchType=getAll&sort=director,year,title&orderby=asc",
+                "q=term&searchType=getAll&sort=director,year,title&orderby=asc",
                 new Query(new SearchableTerm("term"))
                         .sortOnFields("director", "year", "title")
                         .orderByAscending().toString());
@@ -166,7 +182,7 @@ public class QueryTest {
 
     @Test
     public void testPaging() throws UnsupportedEncodingException {
-        Assert.assertEquals("term&start=10&rows=7", new Query(
+        Assert.assertEquals("q=term&start=10&rows=7", new Query(
                 new SearchableTerm("term")).pagingSize(7).pagingStartFrom(10)
                 .toString());
     }
@@ -175,10 +191,10 @@ public class QueryTest {
     public void testGeo() throws UnsupportedEncodingException {
         // girardelli&start=0&rows=20&lblat=61.20&lblong=-149.90&rtlat=61.22&rtlong=-149.70
         Assert.assertEquals(
-                "girardelli&start=0&rows=20&lblat=61.2&lblong=-149.9&rtlat=61.22&rtlong=-149.7",
+                "q=girardelli&start=0&rows=20&lblat=61.2&lblong=-149.9&rtlat=61.22&rtlong=-149.7",
                 new Query(new SearchableTerm("girardelli")).pagingStartFrom(0)
                         .pagingSize(20)
-                        .insideBoxRegion(61.20, -149.90, 61.22, -149.70)
+                        .insideRectangleRegion(61.20, -149.90, 61.22, -149.70)
                         .toString());
     }
 

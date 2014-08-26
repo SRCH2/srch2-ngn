@@ -92,7 +92,7 @@ public abstract class TestableIndex extends Indexable {
 
 
 
-    public abstract JSONObject getSucceedToInsertRecord();
+    public abstract JSONObject getSucceedToInsertRecord() ;
 
     public abstract JSONObject getFailToInsertRecord();
 

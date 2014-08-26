@@ -65,7 +65,7 @@ final class CheckCoresLoadedTask extends HttpTask {
                 }
                 ++pingCountSuccess;
             } else {
-                Cat.d(TAG, "@ iteration " + i + " was NOT valid info response ");
+                Cat.d(TAG, "@ iteration " + i + " was UNARY_NOT valid info response ");
             }
 
             i = ++i % coreCount;

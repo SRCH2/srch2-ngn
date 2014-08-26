@@ -10,6 +10,7 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
     public ListView searchResultsListView;
     public SearchResultsAdapter resultsAdapter;
     public Idx index;
+    public GeoIdx geoIndex;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -19,7 +20,8 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
         resultsAdapter = new SearchResultsAdapter(this);
         searchResultsListView.setAdapter(resultsAdapter);
         index = new Idx();
-        SRCH2Engine.initialize(index);
+        geoIndex = new GeoIdx();
+        SRCH2Engine.initialize(geoIndex);
         SRCH2Engine.setSearchResultsListener(resultsAdapter.getSearchResultsListener());
         SRCH2Engine.setAutomatedTestingMode(true);
     }

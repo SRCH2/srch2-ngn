@@ -143,6 +143,7 @@ class SearchTask extends HttpTask.SearchHttpTask {
                             }
                         }
                         recordResults.add(newRecord);
+
                     } catch (Exception e) {
                         Cat.ex(TAG, "while parsing records", e);
                     }
@@ -173,6 +174,7 @@ class SearchTask extends HttpTask.SearchHttpTask {
         String jsonResponse = null;
         int responseCode = -1;
         try {
+            Cat.d("SEARCH_TASK:", targetUrl.toString());
             connection = (HttpURLConnection) targetUrl.openConnection();
             connection.setReadTimeout(1000);
             connection.setConnectTimeout(1000);

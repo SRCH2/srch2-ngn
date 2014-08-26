@@ -21,6 +21,7 @@ public class TestSearchResultsListener implements SearchResultsListener {
     public void onNewSearchResults(int httpResponseCode,
                                    String jsonResultsLiteral,
                                    HashMap<String, ArrayList<JSONObject>> resultRecordMap) {
+        Cat.d("onNewSearchResults:", jsonResultsLiteral);
         this.httpResponseCode = httpResponseCode;
         this.jsonResultsLiteral = jsonResultsLiteral;
         this.resultRecordMap = resultRecordMap;

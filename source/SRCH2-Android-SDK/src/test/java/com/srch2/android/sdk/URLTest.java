@@ -19,8 +19,8 @@ public class URLTest {
     }
 
     private static final String QUERY_KEY_WORDS = "android servi";
-    private static final String EXPECTED_QUERY_RAWSTRING = "android~ AND servi*~";
-    private static final String EXPECTED_QUERY_FORMAT = Uri.encode(EXPECTED_QUERY_RAWSTRING);
+    private static final String EXPECTED_QUERY_RAWSTRING = "q=android~ AND servi*~";
+    private static final String EXPECTED_QUERY_FORMAT = UrlBuilder.getURLEncodedString(EXPECTED_QUERY_RAWSTRING);
     private static final IndexInternal TEST_CORE = SRCH2Engine.getConfig().indexableMap.values().iterator().next().indexInternal;
     private static final String DEFAULT_CORE_NAME = TEST_CORE.getIndexCoreName();
 
@@ -34,10 +34,10 @@ public class URLTest {
 
     private static final String EXPECTED_INFO = HOST_URL + DEFAULT_CORE_NAME + "/info?OAuth=" + PrepareEngine.OAUTH;
     private static final String EXPECTED_SAVE = HOST_URL + DEFAULT_CORE_NAME + "/save?OAuth=" + PrepareEngine.OAUTH;
-    private static final String EXPECTED_SEARCH_ALL = HOST_URL + "_all/search?OAuth=" + PrepareEngine.OAUTH + "&q="
+    private static final String EXPECTED_SEARCH_ALL = HOST_URL + "_all/search?OAuth=" + PrepareEngine.OAUTH + "&"
             + EXPECTED_QUERY_FORMAT;
     private static final String EXPECTED_SEARCH_ONE = HOST_URL + DEFAULT_CORE_NAME
-            + "/search?OAuth=" + PrepareEngine.OAUTH + "&q=" + EXPECTED_QUERY_FORMAT;
+            + "/search?OAuth=" + PrepareEngine.OAUTH + "&" + EXPECTED_QUERY_FORMAT;
     private static final String EXPECTED_SHUTDOWN = HOST_URL + "_all/shutdown?OAuth=" + PrepareEngine.OAUTH;
     private static final String EXPECTED_UPDATE = HOST_URL + DEFAULT_CORE_NAME
             + "/update?OAuth=" + PrepareEngine.OAUTH;

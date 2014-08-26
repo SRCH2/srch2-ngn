@@ -18,14 +18,14 @@ public class TestIndex extends TestableIndex {
     public static final String INDEX_FIELD_NAME_TITLE = "title";
     public static final String INDEX_FIELD_NAME_SCORE = "score";
 
-    protected static final String ONE_RECORD_PRIMARY_KEY = "the chosen # one one#";
+    protected static final String ONE_RECORD_PRIMARY_KEY = "the chosen one";
     protected static final int BATCH_START_NUM = 0;
 
-    HashSet<String> singleRecordQueryString;
-    HashSet<String> multipleRecordQueryString;
+    HashSet<String> singleRecordQueryString = new HashSet<String>();
+    HashSet<String> multipleRecordQueryString = new HashSet<String>();
 
-    HashSet<Query> singleRecordQueryQuery;
-    HashSet<Query> multipleRecordQueryQuery;
+    HashSet<Query> singleRecordQueryQuery = new HashSet<Query>();
+    HashSet<Query> multipleRecordQueryQuery = new HashSet<Query>();
     private Query queryMultipleSortAllAsc;
     private Query queryMultipleSortAllDcs;
     private Query queryMultipleFilter;
@@ -101,12 +101,11 @@ public class TestIndex extends TestableIndex {
     }
 
     @Override
-    public ArrayList<String> getSucceedToSearchString(JSONArray records) {
+    public List<String> getSucceedToSearchString(JSONArray records) {
 
         // to make inteface simple, if the length is 1, we are supposed to verify the record from getSucceedToInsertRecord();
         if (records.length() == 1) {
-            if (singleRecordQueryString == null) {
-                singleRecordQueryString = new HashSet<String>();
+            if (singleRecordQueryString.isEmpty()) {
                 singleRecordQueryString.add("chosen");
                 singleRecordQueryString.add("one");
                 singleRecordQueryString.add("chos");
@@ -115,7 +114,7 @@ public class TestIndex extends TestableIndex {
             }
             return new ArrayList<String>(singleRecordQueryString);
         } else { // else the queries should make up to operate the batch searching.
-            if (multipleRecordQueryString == null) {
+            if (multipleRecordQueryString.isEmpty()) {
                 multipleRecordQueryString = new HashSet<String>();
                 multipleRecordQueryString.add("title");
                 multipleRecordQueryString.add("titl");
@@ -137,14 +136,13 @@ public class TestIndex extends TestableIndex {
     @Override
     public List<Query> getSucceedToSearchQuery(JSONArray records) {
         if (records.length() == 1) {
-            if (singleRecordQueryQuery == null) {
-                singleRecordQueryQuery = new HashSet<Query>();
+            if (singleRecordQueryQuery.isEmpty()) {
                 // search term
                 singleRecordQueryQuery.add(new Query(new SearchableTerm("chosen").disableFuzzyMatching()).pagingSize(BATCH_INSERT_NUM));
                 singleRecordQueryQuery.add(new Query(new SearchableTerm("chosen").AND(new SearchableTerm("one"))).pagingSize(BATCH_INSERT_NUM));
                 singleRecordQueryQuery.add(new Query(new SearchableTerm("chosen").OR(new SearchableTerm("two"))).pagingSize(BATCH_INSERT_NUM));
 
-                singleRecordQueryQuery.add(new Query(new SearchableTerm("chosen").AND_NOT(new SearchableTerm("two"))).pagingSize(BATCH_INSERT_NUM));
+                singleRecordQueryQuery.add(new Query(new SearchableTerm("chosen").NOT(new SearchableTerm("two"))).pagingSize(BATCH_INSERT_NUM));
 
                 singleRecordQueryQuery.add(new Query(new SearchableTerm("chose").setIsPrefixMatching(true)).pagingSize(BATCH_INSERT_NUM));
                 singleRecordQueryQuery.add(new Query(new SearchableTerm("chosen").searchSpecificField(INDEX_FIELD_NAME_TITLE)).pagingSize(BATCH_INSERT_NUM));
@@ -171,8 +169,7 @@ public class TestIndex extends TestableIndex {
             }
             return new ArrayList<Query>(singleRecordQueryQuery);
         } else {
-            if (multipleRecordQueryQuery == null) {
-                multipleRecordQueryQuery = new HashSet<Query>();
+            if (multipleRecordQueryQuery.isEmpty()) {
                 queryMultipleSortAllAsc= new Query(new SearchableTerm("title").disableFuzzyMatching())
                         .sortOnFields(INDEX_FIELD_NAME_SCORE).orderByAscending().pagingSize(BATCH_INSERT_NUM);
                 multipleRecordQueryQuery.add(queryMultipleSortAllAsc);
@@ -200,7 +197,7 @@ public class TestIndex extends TestableIndex {
             queries.add(new Query(new SearchableTerm("chosenn").disableFuzzyMatching()).pagingSize(BATCH_INSERT_NUM));
             queries.add(new Query(new SearchableTerm("chosen").AND(new SearchableTerm("two"))).pagingSize(BATCH_INSERT_NUM));
             queries.add(new Query(new SearchableTerm("chosenn").OR(new SearchableTerm("oone"))).pagingSize(BATCH_INSERT_NUM));
-            queries.add(new Query(new SearchableTerm("chosen").AND_NOT(new SearchableTerm("one"))).pagingSize(BATCH_INSERT_NUM));
+            queries.add(new Query(new SearchableTerm("chosen").NOT(new SearchableTerm("one"))).pagingSize(BATCH_INSERT_NUM));
             queries.add(new Query(new SearchableTerm("chose").setIsPrefixMatching(false)).pagingSize(BATCH_INSERT_NUM));
             queries.add(new Query(new SearchableTerm("extra").searchSpecificField(INDEX_FIELD_NAME_PRIMARY_KEY)).pagingSize(BATCH_INSERT_NUM));
             queries.add(new Query(new SearchableTerm("chosem").enableFuzzyMatching(1f)));
@@ -251,9 +248,7 @@ public class TestIndex extends TestableIndex {
         ArrayList<String> tobeDelete = new ArrayList<String>();
         try {
             JSONObject succeedRecord = getSucceedToInsertRecord();
-            JSONObject recordRecord = succeedRecord.getJSONObject(Indexable.SEARCH_RESULT_JSON_KEY_RECORD);
-            Log.d("failfail", "HERE I AM !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            String id = recordRecord.getString(INDEX_FIELD_NAME_PRIMARY_KEY) + "nullExistKey";
+            String id = succeedRecord.getString(INDEX_FIELD_NAME_PRIMARY_KEY) + "nullExistKey";
             tobeDelete.add(id);
         } catch (JSONException e) {
             e.printStackTrace();
@@ -360,6 +355,10 @@ public class TestIndex extends TestableIndex {
     public boolean verifyResult(Query query, ArrayList<JSONObject> jsonObjects) {
         try {
             if (singleRecordQueryQuery.contains(query)) {
+
+                Cat.d("Query:" , query.toString());
+                Cat.d("Answer size :", String.valueOf(jsonObjects.size()));
+                Cat.d("Answer ", jsonObjects.get(0).toString());
 
                 boolean sizeRight = jsonObjects.size() == 1;
                 JSONObject resultRecord = jsonObjects.get(0);

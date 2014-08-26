@@ -38,11 +38,11 @@ class UrlBuilder {
             formatedSearchInput = getURLEncodedString(formatedSearchInput);
             if (indexConf == null) {
                 url = new URL(engineConf.getUrlString()
-                        + URL_SEARCH_ALL_PATH_PARAMETER + engineConf.getAuthorizationKey() + "&q=" + formatedSearchInput);
+                        + URL_SEARCH_ALL_PATH_PARAMETER + engineConf.getAuthorizationKey() + "&" + formatedSearchInput);
 
             } else {
                 url = new URL(engineConf.getUrlString()
-                        + indexConf.getIndexName() + URL_QUERY_PATH_PARAMETER + engineConf.getAuthorizationKey() + "&q="
+                        + indexConf.getIndexName() + URL_QUERY_PATH_PARAMETER + engineConf.getAuthorizationKey() + "&"
                         + formatedSearchInput);
             }
         } catch (MalformedURLException ignore) {
@@ -143,7 +143,7 @@ class UrlBuilder {
         }
     }
 
-    private static String getURLEncodedString(String sentence){
+    static String getURLEncodedString(String sentence){
         return Uri.encode(sentence, "&=:*$.~");
     }
 }

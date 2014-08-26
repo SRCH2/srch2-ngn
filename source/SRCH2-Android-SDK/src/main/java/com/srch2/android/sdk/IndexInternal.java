@@ -18,7 +18,7 @@ final class IndexInternal {
 
     static String formatDefaultQueryURL(String queryString) {
         String[] tokens = queryString.split("\\s+");
-        StringBuilder rawSearchInput = new StringBuilder();
+        StringBuilder rawSearchInput = new StringBuilder("q=");
         for (int i = 0; i < tokens.length - 1; i++) {
             tokens[i] = UrlBuilder.getURLEncodedUTF8String(tokens[i]);
             rawSearchInput.append(tokens[i]).append("~").append(" AND ");

@@ -7,8 +7,9 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TestGeoIndex extends TestableIndex {
+public class TestGeoIndex extends TestIndex{
     public static final int BATCH_INSERT_NUM = 200;
+    public static final int BATCH_START_NUM= 0;
 
 
     public static final String INDEX_NAME = "testGeo";
@@ -18,6 +19,9 @@ public class TestGeoIndex extends TestableIndex {
     public static final String INDEX_FIELD_NAME_LATITUDE = "lat";
     public static final String INDEX_FIELD_NAME_LONGITUDE = "lon";
 
+
+
+
     @Override
     public String getIndexName() {
         return INDEX_NAME;
@@ -25,10 +29,10 @@ public class TestGeoIndex extends TestableIndex {
 
     @Override
     public Schema getSchema() {
-        PrimaryKeyField primaryKey = Field.createDefaultPrimaryKeyField(INDEX_FIELD_NAME_PRIMARY_KEY);
+        PrimaryKeyField primaryKey = Field.createSearchablePrimaryKeyField(INDEX_FIELD_NAME_PRIMARY_KEY);
         Field title = Field.createSearchableField(INDEX_FIELD_NAME_TITLE);
         Field score = Field.createRefiningField(INDEX_FIELD_NAME_SCORE, Field.Type.INTEGER);
-        return new Schema(primaryKey, title, score);
+        return new Schema(primaryKey, INDEX_FIELD_NAME_LATITUDE, INDEX_FIELD_NAME_LONGITUDE, title, score);
     }
 
 
@@ -43,8 +47,8 @@ public class TestGeoIndex extends TestableIndex {
                 recordObject.put(INDEX_FIELD_NAME_PRIMARY_KEY, String.valueOf(i));
                 recordObject.put(INDEX_FIELD_NAME_TITLE, "Title ");
                 recordObject.put(INDEX_FIELD_NAME_SCORE, i);
-//                recordObject.put(INDEX_FIELD_NAME_LATITUDE, TestCaseUtil.generateRandomGeo());
-//                recordObject.put(INDEX_FIELD_NAME_LONGITUDE, TestCaseUtil.generateRandomGeo());
+                recordObject.put(INDEX_FIELD_NAME_LATITUDE, i);
+                recordObject.put(INDEX_FIELD_NAME_LONGITUDE, i);
             } catch (JSONException ignore) {
             }
             recordsArray.put(recordObject);
@@ -53,90 +57,97 @@ public class TestGeoIndex extends TestableIndex {
     }
 
     @Override
-    public JSONObject getSucceedToInsertRecord() {
-        return null;
+    public JSONObject getSucceedToInsertRecord()  {
+        JSONObject obj = super.getSucceedToInsertRecord();
+        try {
+            obj.put(INDEX_FIELD_NAME_LATITUDE, 42.42);
+            obj.put(INDEX_FIELD_NAME_LONGITUDE, 42.42);
+            return obj;
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     @Override
     public JSONObject getFailToInsertRecord() {
-        return null;
+       return getSucceedToInsertRecord();
     }
 
-    @Override
-    public List<String> getSucceedToSearchString(JSONArray records) {
-        return null;
-    }
-
-    @Override
-    public List<String> getFailToSearchString(JSONArray records) {
-        return null;
-    }
 
     @Override
     public List<Query> getSucceedToSearchQuery(JSONArray records) {
-        return null;
+        if (records.length() == 1){
+            if (singleRecordQueryQuery.isEmpty()) {
+                super.getSucceedToSearchQuery(records);
+                singleRecordQueryQuery.add(new Query(40, 40, 50, 50));
+                singleRecordQueryQuery.add(new Query(42, 42, 10));
+                singleRecordQueryQuery.add(new Query(new SearchableTerm("chosen")).insideRectangleRegion(40, 40, 50, 50));
+                singleRecordQueryQuery.add(new Query(new SearchableTerm("chosen")).insideCircleRegion(40, 40, 10));
+            }
+            return new ArrayList<Query>(singleRecordQueryQuery);
+        } else {
+            return super.getSucceedToSearchQuery(records);
+        }
     }
 
     @Override
     public List<Query> getFailToSearchQuery(JSONArray records) {
-        return null;
+        if (records.length() == 1){
+            List<Query> queries = super.getFailToSearchQuery(records);
+            queries.add( new Query(45,45,60,60));
+            queries.add( new Query(45,45,1));
+            queries.add( new Query(new SearchableTerm("chosen")).insideRectangleRegion(45,45,60,60));
+            queries.add( new Query(new SearchableTerm("chosen")).insideCircleRegion(45,45,1));
+            return queries;
+        }
+        return super.getFailToSearchQuery(records);
     }
 
-
-    @Override
-    public JSONObject getFailToUpdateRecord() {
-        return null;
-    }
 
     @Override
     public String getPrimaryKeyFieldName() {
-        return null;
-    }
-
-    @Override
-    public List<String> getFailToDeleteRecord() {
-        return null;
+        return this.INDEX_FIELD_NAME_PRIMARY_KEY;
     }
 
     @Override
     public JSONArray getSucceedToInsertBatchRecords() {
-        return null;
+        return this.getRecordsArray(BATCH_INSERT_NUM, BATCH_START_NUM);
     }
 
-    @Override
-    public JSONArray getFailToInsertBatchRecord() {
-        return null;
-    }
-
-    @Override
-    public JSONArray getSucceedToUpdateBatchRecords() {
-        return null;
-    }
-
-    @Override
-    public JSONArray getFailToUpdateBatchRecords() {
-        return null;
-    }
-
-    @Override
-    public boolean verifyResult(String query, ArrayList<JSONObject> jsonObjects) {
-        return false;
-    }
-
-    @Override
-    public boolean verifyResult(Query query, ArrayList<JSONObject> jsonObjects) {
-        return false;
-    }
 
     @Override
     public JSONObject getSucceedToUpdateExistRecord() {
-        return null;
+
+        JSONObject record = super.getSucceedToUpdateExistRecord();
+        try {
+            record.put(INDEX_FIELD_NAME_LATITUDE, 42);
+            record.put(INDEX_FIELD_NAME_LONGITUDE, 42);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return record;
     }
 
     @Override
     public JSONObject getSucceedToUpsertRecord() {
-        return null;
+        JSONObject record = super.getSucceedToUpsertRecord();
+         try {
+            record.put(INDEX_FIELD_NAME_LATITUDE, 42);
+            record.put(INDEX_FIELD_NAME_LONGITUDE, 42);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return record;
     }
 
+    @Override
+    public JSONArray getFailToInsertBatchRecord() {
+        return this.getRecordsArray(BATCH_INSERT_NUM, BATCH_START_NUM);
+    }
 
+    @Override
+    public JSONArray getSucceedToUpdateBatchRecords() {
+        return this.getRecordsArray(BATCH_INSERT_NUM, BATCH_START_NUM);
+    }
 }
