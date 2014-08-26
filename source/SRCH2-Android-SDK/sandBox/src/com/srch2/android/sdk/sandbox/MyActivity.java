@@ -24,7 +24,6 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
         SRCH2Engine.initialize(geoIndex);
         SRCH2Engine.setSearchResultsListener(resultsAdapter.getSearchResultsListener());
         SRCH2Engine.setAutomatedTestingMode(true);
-
     }
 
     @Override

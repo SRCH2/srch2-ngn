@@ -34,7 +34,6 @@ class SearchTask extends HttpTask.SearchHttpTask {
             String json, boolean isMultiCoreSearch, String targetCoreName) {
         HashMap<String, ArrayList<JSONObject>> resultMap = new HashMap<String, ArrayList<JSONObject>>();
 
-
         if (isMultiCoreSearch) {
             try {
                 JSONObject root = new JSONObject(json);
@@ -70,13 +69,17 @@ class SearchTask extends HttpTask.SearchHttpTask {
                                     while (snippetKeys.hasNext()) {
                                         String key = snippetKeys.next();
                                         String highlight = null;
+
                                         try {
                                             highlight = snippet.getString(key);
                                         } catch (JSONException highlighterOops) {
                                             continue;
                                         }
+
                                         if (highlight != null) {
-                                            highlight = highlight.replace("<\\/", "</");
+                                            highlight = highlight.replace("\\/", "/");
+                                            highlight = highlight.replace("\\\"", "\"");
+                                            highlight = highlight.substring(2, highlight.length() - 2);
                                             snippet.put(key, highlight);
                                         }
                                     }
@@ -128,8 +131,11 @@ class SearchTask extends HttpTask.SearchHttpTask {
                                     } catch (JSONException highlighterOops) {
                                         continue;
                                     }
+
                                     if (highlight != null) {
-                                        highlight = highlight.replace("<\\/", "</");
+                                        highlight = highlight.replace("\\/", "/");
+                                        highlight = highlight.replace("\\\"", "\"");
+                                        highlight = highlight.substring(2, highlight.length() - 2);
                                         snippet.put(key, highlight);
                                     }
                                 }

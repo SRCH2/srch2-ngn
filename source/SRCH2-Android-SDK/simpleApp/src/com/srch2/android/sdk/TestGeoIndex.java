@@ -82,7 +82,7 @@ public class TestGeoIndex extends TestIndex{
                 super.getSucceedToSearchQuery(records);
                 singleRecordQueryQuery.add(new Query(40, 40, 50, 50));
                 singleRecordQueryQuery.add(new Query(42, 42, 10));
-                singleRecordQueryQuery.add(new Query(new SearchableTerm("chosen")).insideBoxRegion(40, 40, 50, 50));
+                singleRecordQueryQuery.add(new Query(new SearchableTerm("chosen")).insideRectangleRegion(40, 40, 50, 50));
                 singleRecordQueryQuery.add(new Query(new SearchableTerm("chosen")).insideCircleRegion(40, 40, 10));
             }
             return new ArrayList<Query>(singleRecordQueryQuery);
@@ -97,7 +97,7 @@ public class TestGeoIndex extends TestIndex{
             List<Query> queries = super.getFailToSearchQuery(records);
             queries.add( new Query(45,45,60,60));
             queries.add( new Query(45,45,1));
-            queries.add( new Query(new SearchableTerm("chosen")).insideBoxRegion(45,45,60,60));
+            queries.add( new Query(new SearchableTerm("chosen")).insideRectangleRegion(45,45,60,60));
             queries.add( new Query(new SearchableTerm("chosen")).insideCircleRegion(45,45,1));
             return queries;
         }

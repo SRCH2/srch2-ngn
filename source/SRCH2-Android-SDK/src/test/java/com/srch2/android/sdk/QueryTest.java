@@ -1,7 +1,5 @@
 package com.srch2.android.sdk;
 
-import com.srch2.android.sdk.Query;
-import com.srch2.android.sdk.SearchableTerm;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -76,7 +74,7 @@ public class QueryTest {
         Query q8 = new Query(box[0], box[1], box[2], box[3]);
         Assert.assertEquals("lblat=100.0&lblong=200.0&rtlat=-100.0&rtlong=-200.0", q8.toString());
 
-        Query q88 = new Query(new SearchableTerm("cameron")).insideBoxRegion(box[0],box[1],box[2],box[3]);
+        Query q88 = new Query(new SearchableTerm("cameron")).insideRectangleRegion(box[0],box[1],box[2],box[3]);
         Assert.assertEquals("q=cameron&lblat=100.0&lblong=200.0&rtlat=-100.0&rtlong=-200.0", q88.toString());
 
         double [] circle = { 111.0, 222.0, 50.0};
@@ -122,7 +120,7 @@ public class QueryTest {
                 new SearchableTerm("star wars")
                         .AND(new SearchableTerm("episode 3"))
                         .OR(new SearchableTerm("George Lucas")
-                                .AND(new SearchableTerm("Indiana Jones").NOT()))
+                                .NOT(new SearchableTerm("Indiana Jones")))
                         .toString());
 
         Assert.assertEquals(
@@ -196,7 +194,7 @@ public class QueryTest {
                 "q=girardelli&start=0&rows=20&lblat=61.2&lblong=-149.9&rtlat=61.22&rtlong=-149.7",
                 new Query(new SearchableTerm("girardelli")).pagingStartFrom(0)
                         .pagingSize(20)
-                        .insideBoxRegion(61.20, -149.90, 61.22, -149.70)
+                        .insideRectangleRegion(61.20, -149.90, 61.22, -149.70)
                         .toString());
     }
 

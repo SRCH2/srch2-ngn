@@ -9,7 +9,7 @@ import java.util.HashMap;
  * This interface contains the callback method for the search RESTful requests of the SRCH2 search server:
  * upon completion of the search request, the method {@link #onNewSearchResults(int, String, java.util.HashMap)} will be triggered
  * containing the results of the search. The RESTful response literal can be inspected by evaluating the
- * <code>String jsonResponse</code> to view the results of a search; in addition, this RESTful response
+ * <code>String JSONResponse</code> to view the results of a search; in addition, this RESTful response
  * literal is parsed and the specific records of the search are parsed and put into the map
  * <code>HashMap resultRecordMap</code>. This map contains as its keys the names of the index (as set by the return value
  * of the
@@ -60,10 +60,10 @@ public interface SearchResultsListener {
      * <br><br>
      * If there are no results for a given
      * search input, the map will be <b>non-null</b> but contain no values for each index name key.
-     * @param httpResponseCode the HTTP response code as it was returned by the SRCH2 search server
-     * @param jsonResponse the RESTful response as it was returned by the SRCH2 search server
-     * @param resultMap a parsing of the <code>jsonResponse</code> that maps the names of indexes to the
+     * @param HTTPResponseCode the HTTP response code as it was returned by the SRCH2 search server
+     * @param JSONResponse the RESTful response as it was returned by the SRCH2 search server
+     * @param resultMap a parsing of the <code>JSONResponse</code> that maps the names of indexes to the
      *                        sets of their results
      */
-    void onNewSearchResults(int httpResponseCode, String jsonResponse, HashMap<String, ArrayList<JSONObject>> resultMap);
+    void onNewSearchResults(int HTTPResponseCode, String JSONResponse, HashMap<String, ArrayList<JSONObject>> resultMap);
 }

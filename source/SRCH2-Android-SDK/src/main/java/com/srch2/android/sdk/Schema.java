@@ -8,7 +8,9 @@ import java.util.HashSet;
  * typed; they can also have additional properties such as highlighting and facet. See {@link Field}
  * for more information.
  * <br><br>
- * A schema <b>should only</b> be constructed when returning from the <code>Indexable</code> implementation of {@link Indexable#getSchema()}.
+ * A schema <b>should only</b> be constructed when returning from the <code>Indexable</code> implementation of
+ * {@link Indexable#getSchema()}.
+ * <br><br>
  * A schema <b>should never</b> be initialized with null field values or duplicated fields.
  */
 public final class Schema {
@@ -17,66 +19,6 @@ public final class Schema {
     String recordBoostKey;
     HashSet<Field> fields;
     boolean facetEnabled = false;
-
-    public static final String HIGHLIGHTED_DEFAULT_FUZZY_PRE_SCRIPT_TAG = "<i>";
-    public static final String HIGHLIGHTED_DEFAULT_FUZZY_POST_SCRIPT_TAG = "</i>";
-    public static final String HIGHLIGHTED_DEFAULT_EXACT_PRE_SCRIPT_TAG = "<b>";
-    public static final String HIGHLIGHTED_DEFAULT_EXACT_POST_SCRIPT_TAG = "</b>";
-
-    String highlight_fuzzyPrefix = HIGHLIGHTED_DEFAULT_FUZZY_PRE_SCRIPT_TAG;
-    String highlight_fuzzySuffix = HIGHLIGHTED_DEFAULT_FUZZY_POST_SCRIPT_TAG;
-    String highlight_exactPrefix = HIGHLIGHTED_DEFAULT_EXACT_PRE_SCRIPT_TAG;
-    String highlight_exactSuffix = HIGHLIGHTED_DEFAULT_EXACT_POST_SCRIPT_TAG;
-
-    /**
-     * Sets the pre and post tags associated with a highlighted output of field. For example, <code>exactPreTag</code>
-     * and
-     * <code>exactPostTag</code> will be the prefix and suffix of the substring of the search input keyword that
-     * matches for exactness: if the search input were 'Joh' matching a textual value of 'John' and the values of
-     * <code>exactPreTag</code> and <code>exactPostTag</code> supplied to this method where &lt;b&gt; and &lt;/b&gt;,
-     * respectively, the output of the highlighting function would be '<b>Joh</b>n' (technically it would be
-     * '&lt;b&gt;Joh&lt;/b&gt;n' without the auto-formatting of the javadoc's html).
-     * <br><br>
-     * Thus by setting these values and enabling highlighting on a searchable field will cause search results to
-     * be automatically formatted indicating the match between the current user's search input and every highlighted
-     * field in a search result. In the example above, by using the value returned in the search result with the
-     * method {@link android.text.Html#fromHtml(String)} inside the {@link android.widget.TextView#setText(CharSequence)}
-     * method, search results can be made to dynamically reflect the search input as it is entered by the user. In fact,
-     * any tags can be used and then reformatted during post-processing to fully customize the appearance of the highlighted
-     * fields of the search results.
-     * <br><br>
-     * <br><br>
-     * <b>If this method is not called when some schema's fields have {@link Field#enableHighlighting()} set</b>, the default
-     * behavior of the highlighter will be to bold exact matches and italicize fuzzy matches: see
-     * {@link #HIGHLIGHTED_DEFAULT_FUZZY_PRE_SCRIPT_TAG}, {@link #HIGHLIGHTED_DEFAULT_FUZZY_POST_SCRIPT_TAG},
-     * {@link #HIGHLIGHTED_DEFAULT_EXACT_PRE_SCRIPT_TAG}, {@link #HIGHLIGHTED_DEFAULT_EXACT_POST_SCRIPT_TAG}.
-     * <br><br>
-     * This method will throw exceptions if any of the arguments are null or empty strings.
-     * @param fuzzyPreTag specifies the tag value to be prefixed to a fuzzy keyword match
-     * @param fuzzyPostTag specifies the tag value to be suffixed to a fuzzy keyword match
-     * @param exactPreTag specifies the tag value to be prefixed to an exact keyword match
-     * @param exactPostTag specifies the tag value to be suffixed to an exact keyword match
-     */
-    public Schema setHighlightedPreAndPostScript(String fuzzyPreTag, String fuzzyPostTag, String exactPreTag, String exactPostTag) {
-        checkHighlightingTags("fuzzyPreTag", fuzzyPreTag);
-        checkHighlightingTags("fuzzyPostTag", fuzzyPostTag);
-        checkHighlightingTags("exactPreTag", exactPreTag);
-        checkHighlightingTags("exactPostTag", exactPostTag);
-
-        highlight_fuzzyPrefix = fuzzyPreTag;
-        highlight_fuzzySuffix = fuzzyPostTag;
-        highlight_exactPrefix = exactPreTag;
-        highlight_exactSuffix = exactPostTag;
-        return this;
-    }
-
-    private void checkHighlightingTags(String nameOfVariable, String tagToCheck) {
-        if (tagToCheck == null) {
-            throw new NullPointerException("Highlighter tag \'" + nameOfVariable + "\' cannot be null");
-        } else if (tagToCheck.length() < 1) {
-            throw new IllegalArgumentException("Highlighter tag \'" + nameOfVariable + "\' must be non-empty string");
-        }
-    }
 
     Schema(PrimaryKeyField primaryKeyField, Field... remainingField) {
         if (primaryKeyField == null) {

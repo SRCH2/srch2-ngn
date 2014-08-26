@@ -16,6 +16,7 @@ public class Idx extends Indexable {
     public static final String INDEX_FIELD_NAME_TITLE2 = "title2";
     public static final String INDEX_FIELD_NAME_SCORE = "score";
 
+
     @Override
     public String getIndexName() {
         return INDEX_NAME;
@@ -26,9 +27,15 @@ public class Idx extends Indexable {
         PrimaryKeyField pk = Field.createDefaultPrimaryKeyField(INDEX_FIELD_NAME_PRIMARY_KEY);
         Field title = Field.createSearchableField(INDEX_FIELD_NAME_TITLE).enableHighlighting();
         Field title2 = Field.createSearchableField(INDEX_FIELD_NAME_TITLE2).enableHighlighting();
-
         RecordBoostField score = Field.createRecordBoostField(INDEX_FIELD_NAME_SCORE);
         return Schema.createSchema(pk, score, title, title2);
+    }
+
+    @Override
+    public Highlighter getHighlighter() {
+        return Highlighter.createHighlighter()
+                .formatExactTextMatches(true, false, "#FF0000")
+                .formatFuzzyTextMatches(true, false, "#FF00FF");
     }
 
     final public JSONArray getRecords() {

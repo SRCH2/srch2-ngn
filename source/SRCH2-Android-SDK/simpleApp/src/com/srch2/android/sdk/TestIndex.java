@@ -142,7 +142,7 @@ public class TestIndex extends TestableIndex {
                 singleRecordQueryQuery.add(new Query(new SearchableTerm("chosen").AND(new SearchableTerm("one"))).pagingSize(BATCH_INSERT_NUM));
                 singleRecordQueryQuery.add(new Query(new SearchableTerm("chosen").OR(new SearchableTerm("two"))).pagingSize(BATCH_INSERT_NUM));
 
-                singleRecordQueryQuery.add(new Query(new SearchableTerm("chosen").AND_NOT(new SearchableTerm("two"))).pagingSize(BATCH_INSERT_NUM));
+                singleRecordQueryQuery.add(new Query(new SearchableTerm("chosen").NOT(new SearchableTerm("two"))).pagingSize(BATCH_INSERT_NUM));
 
                 singleRecordQueryQuery.add(new Query(new SearchableTerm("chose").setIsPrefixMatching(true)).pagingSize(BATCH_INSERT_NUM));
                 singleRecordQueryQuery.add(new Query(new SearchableTerm("chosen").searchSpecificField(INDEX_FIELD_NAME_TITLE)).pagingSize(BATCH_INSERT_NUM));
@@ -197,7 +197,7 @@ public class TestIndex extends TestableIndex {
             queries.add(new Query(new SearchableTerm("chosenn").disableFuzzyMatching()).pagingSize(BATCH_INSERT_NUM));
             queries.add(new Query(new SearchableTerm("chosen").AND(new SearchableTerm("two"))).pagingSize(BATCH_INSERT_NUM));
             queries.add(new Query(new SearchableTerm("chosenn").OR(new SearchableTerm("oone"))).pagingSize(BATCH_INSERT_NUM));
-            queries.add(new Query(new SearchableTerm("chosen").AND_NOT(new SearchableTerm("one"))).pagingSize(BATCH_INSERT_NUM));
+            queries.add(new Query(new SearchableTerm("chosen").NOT(new SearchableTerm("one"))).pagingSize(BATCH_INSERT_NUM));
             queries.add(new Query(new SearchableTerm("chose").setIsPrefixMatching(false)).pagingSize(BATCH_INSERT_NUM));
             queries.add(new Query(new SearchableTerm("extra").searchSpecificField(INDEX_FIELD_NAME_PRIMARY_KEY)).pagingSize(BATCH_INSERT_NUM));
             queries.add(new Query(new SearchableTerm("chosem").enableFuzzyMatching(1f)));

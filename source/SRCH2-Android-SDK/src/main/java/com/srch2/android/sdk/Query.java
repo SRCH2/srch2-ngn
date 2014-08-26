@@ -341,9 +341,9 @@ final public class Query {
      * @param rightTopLongitude the right top point's longitude value
      * @return this
      */
-    public Query insideBoxRegion(double leftBottomLatitude,
-                                 double leftBottomLongitude, double rightTopLatitude,
-                                 double rightTopLongitude) {
+    public Query insideRectangleRegion(double leftBottomLatitude,
+                                       double leftBottomLongitude, double rightTopLatitude,
+                                       double rightTopLongitude) {
         this.geoPosition.clear();
         this.geoPosition.add(leftBottomLatitude);
         this.geoPosition.add(leftBottomLongitude);

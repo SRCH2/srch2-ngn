@@ -144,7 +144,7 @@ final public class SRCH2Engine {
 
         checkConfIsNullThrowIfIs();
         Cat.d(TAG,
-                "onStart - conf NOT null ");
+                "onStart - conf UNARY_NOT null ");
         int freePort = detectFreePort();
 
         conf.setPort(freePort);
@@ -217,7 +217,7 @@ final public class SRCH2Engine {
      * When the SRCH2 server is finished performing the search task, the method
      * {@link SearchResultsListener#onNewSearchResults(int, String, java.util.HashMap)}
      * will be triggered. The
-     * <code>HashMap resultRecordMap</code> will contain the search results in the form of <code>
+     * <code>HashMap resultMap</code> will contain the search results in the form of <code>
      * JSONObject</code>s as they were originally inserted (and updated).
      * <br><br>
      * This method will throw exceptions if the <code>searchInput</code> is null or if
@@ -240,7 +240,7 @@ final public class SRCH2Engine {
      * When the SRCH2 server is finished performing the search task, the method
      * {@link SearchResultsListener#onNewSearchResults(int, String, java.util.HashMap)}
      * will be triggered. The
-     * <code>resultRecordMap</code> will contain the search results in the form of <code>
+     * <code>resultMap</code> will contain the search results in the form of <code>
      * JSONObject</code>s as they were originally inserted (and updated).
      * <br><br>
      * This method will throw exceptions if the <code>query</code> forming the advanced search is null;
