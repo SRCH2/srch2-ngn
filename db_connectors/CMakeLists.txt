@@ -95,18 +95,16 @@ INCLUDE_DIRECTORIES(
 )
 
 IF (ANDROID) 
-#    FIND_LIBRARY(log_LIBRARY NAMES log PATHS ${sys_LIBRARY_DIRS})
-#    FIND_LIBRARY(dl_LIBRARY NAMES dl PATHS ${sys_LIBRARY_DIRS})
-#    FIND_LIBRARY(z_LIBRARY NAMES z PATHS ${sys_LIBRARY_DIRS})
+    FIND_LIBRARY(log_LIBRARY NAMES log PATHS ${sys_LIBRARY_DIRS})
+    FIND_LIBRARY(dl_LIBRARY NAMES dl PATHS ${sys_LIBRARY_DIRS})
+    FIND_LIBRARY(z_LIBRARY NAMES z PATHS ${sys_LIBRARY_DIRS})
 
-#    MESSAGE(STATUS "liblog = ${log_LIBRARY}")
+    MESSAGE(STATUS "liblog = ${log_LIBRARY}")
     MESSAGE(STATUS "libdl = ${dl_LIBRARY}")
     MESSAGE(STATUS "libz = ${z_LIBRARY}")
    
-#    SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/android/libs/armeabi-v7a/libjsoncpp.a)
-#    SET(CMAKE_REQUIRED_LIBRARIES stdc++ crypto ${CMAKE_REQUIRED_LIBRARIES} ${dl_LIBRARY} ${z_LIBRARY} ${log_LIBRARY})
-    SET(CMAKE_REQUIRED_LIBRARIES stdc++ crypto ${CMAKE_REQUIRED_LIBRARIES} ${dl_LIBRARY} ${z_LIBRARY})
-    SET(CMAKE_REQUIRED_LIBRARIES stdc++ crypto ${CMAKE_REQUIRED_LIBRARIES})
+    SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-sr/android/libs/armeabi-v7a/libjsoncpp.a)
+    SET(CMAKE_REQUIRED_LIBRARIES stdc++ crypto ${CMAKE_REQUIRED_LIBRARIES} ${dl_LIBRARY} ${z_LIBRARY} ${log_LIBRARY})
     LINK_DIRECTORIES("${sys_LIBRARY_DIRS}")
 ELSE()
     SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/build/libjsoncpp.a)
@@ -131,9 +129,8 @@ set_target_properties(sqliteConnector PROPERTIES VERSION ${SQLITE_VERSION_STRING
 
 SET_TARGET_PROPERTIES(sqliteConnector PROPERTIES COMPILE_FLAGS -fPIC)
 
-
 IF (ANDROID) 
-    TARGET_LINK_LIBRARIES(sqliteConnector ${jsoncpp_LIBRARY} ${CMAKE_SOURCE_DIR}/../thirdparty/event/android/lib/libevent.a ${CMAKE_SOURCE_DIR}/../thirdparty/event/android/lib/libevent_pthreads.a ${CMAKE_REQUIRED_LIBRARIES} ${Boost_LIBRARIES} sqlite3)
+    TARGET_LINK_LIBRARIES(sqliteConnector ${jsoncpp_LIBRARY} ${CMAKE_SOURCE_DIR}/../thirdparty/event/android/lib/libevent.a ${CMAKE_SOURCE_DIR}/../thirdparty/event/android/lib/libevent_pthreads.a ${CMAKE_REQUIRED_LIBRARIES} ${Boost_LIBRARIES} /system/lib/libsqlite.so)
 ELSE()
     TARGET_LINK_LIBRARIES(sqliteConnector ${jsoncpp_LIBRARY} ${CMAKE_REQUIRED_LIBRARIES} ${Boost_LIBRARIES} sqlite3)
 ENDIF()
