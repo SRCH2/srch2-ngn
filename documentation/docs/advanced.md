@@ -7,7 +7,7 @@ the SDK to do testing and use Proguard.
 ##Queries
 
 In the [basic tutorial](index.md), we showed how to send a search
-*beaty ame* to the SRCH2 engine.  By default, the engine uses the
+"beaty ame" to the SRCH2 engine.  By default, the engine uses the
 space delimiter to tokenize the string to multiple keywords ("beaty"
 and "ame").  It treats the last keyword ("ame") as a prefix condition,
 and other keywords (e.g., "beaty") as complete keywords.  By default,
@@ -224,7 +224,7 @@ the *director*, *year*, and then *title* fields:
 We can specify the order in which the result set should be sorted. The default
 behaviour is to sort them in the descending order. We can call the
 *orderByAscending()* method to sort them in the ascending order.
-For example, we can use the following code to let sort the results
+For example, we can use the following code to sort the results
 in the ascending order on the *year* field:
 ```
  new Query(new SearchableTerm("star")).sortOnFields("director", "year", "title").orderByAscending();
@@ -301,6 +301,126 @@ If we give three numbers, it will be treated as a search using a
 circle region, where the first two numbers are
 the latitude and longitude of the center location, and the last number
 is the radius.
+
+##Highlighting
+The SDK allows an index to specify a highlighter for matching keywords
+of this index.  The highlighter, used by the engine, sets the pre and post html tags for matching keywords. 
+We can specify the highlighter of an index by implementing the *getHighlighter()* method of the index object.
+
+If we use the default highlighter that provided by the engine by calling the *Highlighter.createHighlighter()*
+method, for the keyword of "beaty ame", 
+the search result for the movie with the title "Beauty American" will
+produce the output of 
+```
+'&lt;b&gt;&lt;i&gt;Beauty&lt;/i&gt;&lt;b&gt; &lt;b&gt;Ame&lt;/b&gt;rican'
+```
+(or visually, <b><i>Beauty</i></b> <b>Ame</b>rican).
+
+A highlighter can be enabled for certain fields.
+The following code shows how to enable the feature on the field "title" and 
+how to create a highlighter by the factory method.
+
+```
+public class MovieIndex extends Indexable {
+    ...
+    @Override
+    public Schema getSchema() {
+        PrimaryKeyField primaryKey = Field.createDefaultPrimaryKeyField(INDEX_FIELD_PRIMARY_KEY);
+        Field title = Field.createSearchableField(INDEX_FIELD_TITLE, 3).enableHighlighting();
+        ...
+        return Schema.createSchema(primaryKey, title)
+    }
+	
+	@Override
+    public Highlighter getHighlighter() {
+        return Highlighter.createHighlighter()
+                .formatExactTextMatches(true, false, "#FF0000")
+                .formatFuzzyTextMatches(true, false, "#FF00FF");
+    }
+}
+```
+
+The highlighted result will be returned with the original records by the 
+*SearchResultsListener.onNewSearchResults()* callback method.
+The highlighted fields can be retrieved by using the constant value of 
+*Indexable.SEARCH_RESULT_JSON_KEY_HIGHLIGHTED*. 
+The keys in this *JSONObject* will also be the names
+of those fields with highlighting enabled. 
+ 
+The highlighted result should be used in conjunction with *Html.fromHtml(...)* such as
+*mTextView.setText(Html.fromHtml(mHighlightTitleText))* to display it
+properly on the UI.  
+
+The following code shows how to get the highlighted "title" field into the Adapter.
+```
+    @Override
+    public void onNewSearchResults(int HTTPresponseCode,
+                                   String JSONresponse,
+                                   HashMap<String, ArrayList<JSONObject>> resultMap) {
+        if (HTTPresponseCode == HttpURLConnection.HTTP_OK) {
+            ArrayList<MovieSearchResult> newResults = new ArrayList<MovieSearchResult>();
+
+            ArrayList<JSONObject> movieResults = resultMap
+                    .get(MovieIndex.INDEX_NAME);
+            if (movieResults != null && movieResults.size() > 0) {
+                for (JSONObject jsonObject : movieResults) {
+                    MovieSearchResult searchResult = null;
+                    try {
+                        JSONObject originalRecord = 
+                            jsonObject.getJSONObject(Indexable.SEARCH_RESULT_JSON_KEY_RECORD);
+                        JSONObject highlightedFields = 
+                            jsonObject.getJSONObject(Indexable.SEARCH_RESULT_JSON_KEY_HIGHLIGHTED);
+                        searchResult = new MovieSearchResult(
+                                highlightedFields
+                                        .getString(MovieIndex.INDEX_FIELD_TITLE),
+                                originalRecord
+                                        .getString(MovieIndex.INDEX_FIELD_GENRE),
+                                originalRecord
+                                        .getInt(MovieIndex.INDEX_FIELD_YEAR));
+                    } catch (JSONException oops) {
+                        continue;
+                    }
+
+                    if (searchResult != null) {
+                        newResults.add(searchResult);
+                    }
+                }
+            }
+            sendMessage(Message
+                    .obtain(this,
+                            newResults.size() > 0 ? MESSAGE_WHAT_PUBLISH_NEW_RESULTS
+                                    : MESSAGE_WHAT_PUBLISH_NO_NEW_RESULTS,
+                            newResults));
+        }
+    }
+
+```
+
+##Custom Ranking
+The SDK provides a *RecordBoostField* to determine each record's score when computing the relevance of
+search results. This field will always be float in type, and should be set
+from 1 to 100. 
+
+The following code tells the SDK to take the value of the "recordBoost" field from the record
+as the *RecordBoostField*. 
+```
+
+public class MovieIndex extends Indexable {
+    public static final String INDEX_FIELD_PRIMARY_KEY = "id";
+	public static final String INDEX_FIELD_RECORD_BOOST = "recordBoost";
+    public static final String INDEX_FIELD_TITLE = "title";
+
+
+    @Override
+    public Schema getSchema() {
+        PrimaryKeyField primaryKey = Field.createDefaultPrimaryKeyField(INDEX_FIELD_PRIMARY_KEY);
+		RecordBoostField recordBoost = Field.createRecordBoostField(INDEX_FIELD_RECORD_BOOST);
+        Field title = Field.createSearchableField(INDEX_FIELD_TITLE, 3).enableHighlighting();
+        return Schema.createSchema(primaryKey, recordBoost, title );
+    }
+}
+    
+```
 
 ##Testing and Proguard
 
