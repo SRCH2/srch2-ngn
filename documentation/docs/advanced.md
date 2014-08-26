@@ -1,4 +1,4 @@
-<h1><center>Advanced Features</center></h1>
+<h1>Advanced Features</h1>
 
 In this documentation we explain advanced features of the SRCH2 Android SDK,
 such as how to formulate a query with various conditions, how to use
@@ -160,14 +160,10 @@ We can specify prefix, fuzziness, and boosting conditions to a single term, e.g.
 ```
 ###Boolean Expression
 
-The engine supports three boolean operators: AND, OR, and
-AND_NOT. Each operator generates a *CompositeTerm*
+The engine supports three boolean operators: AND, OR, and NOT. 
+Each operator generates a *CompositeTerm*
 object. Both *SearchableTerm* and *CompositeTerm* are inherited from
 the *Term* class, which is used to initialize a *Query* object. 
-
-<h1> Why cannot we change "AND_NOT" just to "NOT"? </h1>
-<h1> We can change the AND_NO to "NOT". The "NOT" operator is normally is the unary operator, 
-like "NOT A". </h1>
 
 For example, consider the following query:
 ```
@@ -177,7 +173,7 @@ It searches records that contain either "star" and "wars", or the phrase "George
 The following are a few more examples:
 ```
  new SearchableTerm("star wars").AND(new SearchableTerm("episode 3"))
-   .OR(new SearchableTerm("George Lucas").AND_NOT(new SearchableTerm("Indiana Jones")));
+   .OR(new SearchableTerm("George Lucas").NOT(new SearchableTerm("Indiana Jones")));
 
  new SearchableTerm("big").AND(new SearchableTerm("fish"))
    .AND((new SearchableTerm("Tim Burton").OR(new

@@ -1,9 +1,8 @@
-site_name: Android SDK (0.2.0)
+site_name: Android SDK (0.2.1)
 
 pages:
   - [index.md, Basic]
   - [advanced.md, Advanced]
-  - [faq.md, FAQ]
   - [releases.md, Releases]
   
 theme_dir : './srch2-theme'

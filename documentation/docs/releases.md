@@ -13,10 +13,10 @@
 
     <tbody>
         <tr>
-            <td>Aug 14 2014</td>
-            <td>0.2.0</td>
-            <td>Hello World!</td>
-            <td><a href="../../0.2.0/javadoc" target="_blank">Reference</a></td>
+            <td>Aug 25 2014</td>
+            <td>0.2.1</td>
+            <td>Beta Release</td>
+            <td><a href="../../0.2.1/javadoc" target="_blank">Reference</a></td>
         </tr>
     </tbody>
 </table>
