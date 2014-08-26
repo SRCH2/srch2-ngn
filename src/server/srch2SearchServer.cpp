@@ -970,6 +970,18 @@ int main(int argc, char** argv) {
         delete iterator->second;
     }
 
+    /*
+     * THIS IS A HACK SOLUTION FOR MAC OS!
+     * JIRA: https://srch2inc.atlassian.net/browse/SRCN-473
+     *
+     * The function "event_base_free(evBases[i])" is blocking the engine exits
+     * properly on MAC OS.
+     *
+     * This function ("event_base_free(evBases[i])") does not deallocate any
+     * of the events that are currently associated with the event_base, or
+     * close any of their sockets, or free any of their pointers.
+     * --http://www.wangafu.net/~nickm/libevent-book/Ref2_eventbase.html
+     */
 #ifndef __MACH__
     for (unsigned int i = 0; i < MAX_THREADS; i++) {
         event_base_free(evBases[i]);
