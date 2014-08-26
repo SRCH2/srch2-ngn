@@ -685,7 +685,6 @@ static void killServer(int signal) {
      *  the engine. This request allows the threads to come out of blocking syscall and get killed.
      */
     makeHttpRequest();
-    exit(0);
 #endif
 }
 
