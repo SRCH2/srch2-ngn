@@ -771,10 +771,10 @@ interact with the running search server. Search on!
 <br>
 <br>
 
-[tutorial-010]: ../img/010-tutorial.png "Opening the cloned Hello SRCH2 Android SDK application project"
-[tutorial-011]: ../img/011-tutorial.png "The SRCH2 Android SDK in action!"
-[tutorial-012]: ../img/012-tutorial.png "Including the SRCH2 server Maven repository in the top-level build.gradle file"
-[tutorial-013]: ../img/013-tutorial.png "Including the SRCH2-Android-SDK.aar file as a dependency in the app module's build.gradle file"
-[tutorial-014]: ../img/014-tutorial.png "Synchronizing the Gradle build system to include the new dependency"
-[tutorial-015]: ../img/015-tutorial.png "Confirming the SRCH2 Android SDK is integrated into the application"
-[overview]: ../img/Android-SDK-Overview.png "SRCH2 Android SDK Overview"
+[tutorial-010]: ./img/010-tutorial.png "Opening the cloned Hello SRCH2 Android SDK application project"
+[tutorial-011]: ./img/011-tutorial.png "The SRCH2 Android SDK in action!"
+[tutorial-012]: ./img/012-tutorial.png "Including the SRCH2 server Maven repository in the top-level build.gradle file"
+[tutorial-013]: ./img/013-tutorial.png "Including the SRCH2-Android-SDK.aar file as a dependency in the app module's build.gradle file"
+[tutorial-014]: ./img/014-tutorial.png "Synchronizing the Gradle build system to include the new dependency"
+[tutorial-015]: ./img/015-tutorial.png "Confirming the SRCH2 Android SDK is integrated into the application"
+[overview]: ./img/Android-SDK-Overview.png "SRCH2 Android SDK Overview"
