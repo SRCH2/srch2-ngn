@@ -16,7 +16,7 @@ final class SRCH2Configuration {
     final HashMap<String, Indexable> indexableMap = new HashMap<String, Indexable>();
 
     private String fullPathOfSRCH2home = "srch2";
-    private int maxSearchThreads = 2;
+    private int maxSearchThreads = 1;
     private int port = 8081;
     private String authorizationKey ;
 

@@ -142,8 +142,8 @@ public class MyActivity extends TestableActivity {
 
     public void testAll() {
         try {
-            for (TestableIndex index : new TestableIndex[]{ mIndexGeo}) {
-                //testOneRecordCRUD(index);
+            for (TestableIndex index : new TestableIndex[]{ mIndex1, mIndexGeo}) {
+                testOneRecordCRUD(index);
                 testBatchRecordCRUD(index);
             }
         } catch (JSONException e) {

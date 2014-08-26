@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TestGeoIndex extends TestIndex{
-    public static final int BATCH_INSERT_NUM = 20;
+    public static final int BATCH_INSERT_NUM = 200;
     public static final int BATCH_START_NUM= 0;
 
 
