@@ -248,6 +248,8 @@ public:
     ForwardIndex *forwardIndex;
     SchemaInternal *schemaInternal;
     
+    AttributeAccessControl *attributeAcl;
+
     RankerExpression *rankerExpression;
     // a global RW lock for readers and writers;
     // Used in several places, such as KeywordIdReassign and memory

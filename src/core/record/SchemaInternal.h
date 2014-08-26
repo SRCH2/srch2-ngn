@@ -175,6 +175,18 @@ public:
 
     virtual bool isHighlightEnabled(unsigned id) const;
 
+    void setPositionIndexType(PositionIndexType positionIndexType);
+
+    virtual void setAclSearchableAttrIdsList(const std::vector<unsigned>& aclEnabledFieldIds);
+    virtual void setNonAclSearchableAttrIdsList(const std::vector<unsigned>& nonAclEnabledFieldIds);
+    virtual void setAclRefiningAttrIdsList(const std::vector<unsigned>& aclEnabledFieldIds);
+    virtual void setNonAclRefiningAttrIdsList(const std::vector<unsigned>& nonAclEnabledFieldIds);
+
+    virtual const std::vector<unsigned>& getAclSearchableAttrIdsList() const;
+    virtual const std::vector<unsigned>& getNonAclSearchableAttrIdsList() const;
+    virtual const std::vector<unsigned>& getAclRefiningAttrIdsList() const;
+    virtual const std::vector<unsigned>& getNonAclRefiningAttrIdsList() const;
+
     /**
      * Destructor to free persistent resources used by the Schema
      */
@@ -203,6 +215,11 @@ private:
     srch2::instantsearch::IndexType indexType;
     srch2::instantsearch::PositionIndexType positionIndexType;
 
+    std::vector<unsigned> aclSearchableAttrIds;
+    std::vector<unsigned> nonAclSearchableAttrIds;
+    std::vector<unsigned> aclRefiningAttrIds;
+    std::vector<unsigned> nonAclRefiningAttrIds;
+
     std::string scoringExpressionString;
     bool supportSwapInEditDistance;
 
@@ -226,6 +243,10 @@ private:
         ar & indexType;
         ar & positionIndexType;
         ar & supportSwapInEditDistance;
+        ar & aclSearchableAttrIds;
+        ar & nonAclSearchableAttrIds;
+        ar & aclRefiningAttrIds;
+        ar & nonAclRefiningAttrIds;
     }
 };
 

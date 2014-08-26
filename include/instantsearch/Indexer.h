@@ -39,6 +39,7 @@ class Analyzer;
 class Schema;
 class Record;
 class GlobalCache;
+class AttributeAccessControl;
 
 class IndexMetaData
 {
@@ -138,6 +139,8 @@ public:
     virtual srch2::instantsearch::Schema *getSchema() = 0;
 
     virtual StoredRecordBuffer getInMemoryData(unsigned internalRecordId) const = 0;
+
+    virtual const AttributeAccessControl & getAttributeAcl() const = 0;
 
     /**
      * Builds the index. The records are made searchable after the first commit.

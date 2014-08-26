@@ -38,6 +38,7 @@ public:
 	boost = 1;
 	isMultiValued = false;
 	highlight = false;
+	isAclEnabled = false;
     }
     SearchableAttributeInfoContainer(const string & name,
             srch2::instantsearch::FilterType type,
@@ -46,7 +47,8 @@ public:
 				     const unsigned offset,
 				     const unsigned boost,
 				     const bool isMultiValued,
-				     bool highlight = false){
+				     bool highlight = false,
+				     bool isAclEnabled = false){
         this->attributeName = name;
         this->attributeType = type;
         this->required = required;
@@ -55,6 +57,7 @@ public:
         this->boost = boost;
         this->isMultiValued = isMultiValued;
         this->highlight = highlight;
+        this->isAclEnabled = isAclEnabled;
     }
     // NO GETTER OR SETTERS ARE IMPLEMENTED FOR THESE MEMBERS
     // BECAUSE THIS CLASS IS MEANT TO BE A VERY SIMPLE CONTAINER WHICH ONLY CONTAINS THE
@@ -67,6 +70,7 @@ public:
     unsigned boost;
     bool isMultiValued;
     bool highlight;
+    bool isAclEnabled;
 };
 
 class RefiningAttributeInfoContainer {
@@ -83,12 +87,14 @@ public:
 				   srch2::instantsearch::FilterType type,
 				   const string & defaultValue,
 				   const bool required,
-				   const bool isMultiValued){
+				   const bool isMultiValued,
+				   const bool isAclEnabled){
         this->attributeName = name;
 	this->attributeType = type;
 	this->defaultValue = defaultValue;
 	this->required = required;
 	this->isMultiValued = isMultiValued;
+	this->isAclEnabled = isAclEnabled;
     }
     // NO GETTER OR SETTERS ARE IMPLEMENTED FOR THESE MEMBERS
     // BECAUSE THIS CLASS IS MEANT TO BE A VERY SIMPLE CONTAINER WHICH ONLY CONTAINS THE
@@ -98,6 +104,7 @@ public:
     string defaultValue;
     bool required;
     bool isMultiValued;
+    bool isAclEnabled;
 };
 
 class CoreInfo_t;
@@ -111,8 +118,8 @@ struct CoreConfigParseState_t {
     vector<bool> searchableAttributesRequiredFlagVector;
     vector<string> searchableAttributesDefaultVector;
     vector<bool> searchableAttributesIsMultiValued;
+    vector<bool> searchableAttributesAclFlags;
     vector<bool> searchableAttributesHighlight;
-
     CoreConfigParseState_t() : hasLatitude(false), hasLongitude(false) {};
 };
 
@@ -258,11 +265,22 @@ protected:
 
     bool setSearchableAndRefining(const xml_node &field, bool &isSearchable, bool &isRefining, std::stringstream &parseError, bool &configSuccess);
 
-    bool setFieldFlagsFromFile(const xml_node &field, bool &isMultiValued, bool &isSearchable, bool &isRefining, bool &isHighlightEnabled, std::stringstream &parseError, bool &configSuccess);
+    bool setFieldFlagsFromFile(const xml_node &field, bool &isMultiValued, bool &isSearchable,
+    		bool &isRefining, bool &isHighlightEnabled, bool & isAclEnabled,
+    		std::stringstream &parseError, bool &configSuccess);
 
-    bool setCoreParseStateVector(bool isSearchable, bool isRefining, bool isMultiValued, bool isHighlightEnabled, CoreConfigParseState_t *coreParseState, CoreInfo_t *coreInfo, std::stringstream &parseError, const xml_node &field);
+    bool setCoreParseStateVector(bool isSearchable, bool isRefining, bool isMultiValued,
+    		bool isHighlightEnabled, bool isAclEnabled, CoreConfigParseState_t *coreParseState,
+    		CoreInfo_t *coreInfo, std::stringstream &parseError, const xml_node &field);
 
-    bool setRefiningStateVectors(const xml_node &field, bool isMultiValued, bool isRefining, vector<string> &RefiningFieldsVector, vector<srch2::instantsearch::FilterType> &RefiningFieldTypesVector, vector<bool> &RefiningAttributesRequiredFlagVector, vector<string> &RefiningAttributesDefaultVector, vector<bool> &RefiningAttributesIsMultiValued, std::stringstream &parseError);
+    bool setRefiningStateVectors(const xml_node &field, bool isMultiValued,
+    		bool isRefining, vector<string> &RefiningFieldsVector,
+    		vector<srch2::instantsearch::FilterType> &RefiningFieldTypesVector,
+    		vector<bool> &RefiningAttributesRequiredFlagVector,
+    		vector<string> &RefiningAttributesDefaultVector,
+    		vector<bool> &RefiningAttributesIsMultiValued,
+    		vector<bool> &refiningAttributesAclEnabledFlags, bool isAclEnabled,
+    		std::stringstream &parseError);
 
     void parseFacetFields(const xml_node &schemaNode, CoreInfo_t *coreInfo, std::stringstream &parseError);
 
@@ -399,6 +417,7 @@ private:
     static const char* const enableCharOffsetIndexString;
     static const char* const expandString;
     static const char* const facetEnabledString;
+    static const char* const attributeAclFileString;
     static const char* const facetEndString;
     static const char* const facetFieldString;
     static const char* const facetFieldsString;
@@ -415,6 +434,7 @@ private:
     static const char* const hostString;
     static const char* const indexConfigString;
     static const char* const indexedString;
+    static const char* const aclString;
     static const char* const multiValuedString;
     static const char* const indexTypeString;
     //static const char* const licenseFileString;
@@ -562,6 +582,7 @@ public:
     bool getSupportSwapInEditDistance() const
         { return supportSwapInEditDistance; }
     bool getSupportAttributeBasedSearch() const { return supportAttributeBasedSearch; }
+    void setSupportAttributeBasedSearch(bool flag) { supportAttributeBasedSearch = flag; }
     unsigned getQueryTermBoost() const { return queryTermBoost; }
     int getOrdering() const { return configManager->getOrdering(); }
 
@@ -651,6 +672,10 @@ public:
     unsigned short getPort(PortType_t portType) const;
     void setPort(PortType_t portType, unsigned short portNumber);
 
+
+    const std::string& getAttibutesAclFile() const {
+    	return attrAclFilePath;
+    }
 
 protected:
     string name; // of core
@@ -746,6 +771,7 @@ protected:
     bool synonymKeepOrigFlag;
     std::string stopFilterFilePath;
     std::string protectedWordsFilePath;
+    std::string attrAclFilePath;
 
     // characters to specially treat as part of words, and not as a delimiter
     std::string allowedRecordTokenizerCharacters;

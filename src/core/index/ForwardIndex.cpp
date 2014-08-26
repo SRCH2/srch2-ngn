@@ -963,12 +963,22 @@ bool ForwardList::isValidRecordTermHit(const SchemaInternal *schema,
             keywordOffset);
     // support attribute-based search. Here we check if attribute search
     // is disabled, ie. the POSITION_INDEX_TYPE is neither FIELDBIT nor
-    // FULL. In this case, or if the masked attributes list to validate is of size 0
-    // the the hit is always valid.
-    if (filteringAttributesList.size() == 0
-            || !isEnabledAttributeBasedSearch(schema->getPositionIndexType())) {
+    // FULL. In this case the the hit is always valid.
+    if (!isEnabledAttributeBasedSearch(schema->getPositionIndexType())) {
         return true;
-    } else {
+    } else if (filteringAttributesList.size() == 0){
+    	// Check if the filtering attributes list is of size 0 ( which means all attributes)
+    	if (attrOp == ATTRIBUTES_OP_NAND) {
+    		// if operation is NAND (which means not match in all attributes), we should return false
+    		return false;
+    	} else if(attrOp == ATTRIBUTES_OP_OR) {
+    		// if operation is OR then return true because term is present in the record.
+    		return true;
+    	} else {
+    		ASSERT(false);  // cannot be AND
+    		return false;
+    	}
+    }else {
         ASSERT(
                 this->getKeywordAttributeIdsPointer()!= NULL and keywordOffset < this->getNumberOfKeywords());
 
@@ -993,7 +1003,28 @@ bool ForwardList::isValidRecordTermHit(const SchemaInternal *schema,
              */
             return isAttributesListsMatching(commonAttributesList
                     , filteringAttributesList);
-        } else {
+        } else if (attrOp == ATTRIBUTES_OP_NAND) {
+        	vector<unsigned> differenceAttributesList;
+        	// check whether matching attributes for this term are subset of filter attributes.
+        	// if yes then return false otherwise return true.
+        	// e.g
+        	//  filtering list = [a b c] , operation NAND ( not in any attributes)
+        	//  1. matching list = [b ,c]  then return false
+        	//  2. matching list = [c ,d ] then return true
+        	//
+        	set_difference(matchingKeywordAttributesList.begin(), matchingKeywordAttributesList.end(),
+        			filteringAttributesList.begin(), filteringAttributesList.end(),
+        			back_inserter(differenceAttributesList));
+
+        	if (differenceAttributesList.size() == 0){
+        		matchingKeywordAttributesList.clear();
+        		return false;
+        	} else {
+        		matchingKeywordAttributesList = differenceAttributesList;
+        		return true;
+        	}
+
+        }else { // OR operation
         	vector<unsigned> commonAttributesList;
         	fetchCommonAttributes(matchingKeywordAttributesList, filteringAttributesList,
         			commonAttributesList);

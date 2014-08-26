@@ -3,6 +3,7 @@
 #include <syslog.h>
 #include "Srch2Server.h"
 #include "util/RecordSerializerUtil.h"
+#include "operation/AccessControl.h"
 namespace srch2 {
 namespace httpwrapper {
 
@@ -196,6 +197,8 @@ void Srch2Server::createAndBootStrapIndexer() {
              *  if number of indexed record is > 0.
              */
             indexer->commit();
+            // Load ACL list from disk
+            indexer->getAttributeAcl().bulkLoadAcl(indexDataConfig->getAttibutesAclFile());
             if (indexedCounter > 0) {
                 indexer->save();
                 Logger::console("Indexes saved.");
@@ -208,6 +211,8 @@ void Srch2Server::createAndBootStrapIndexer() {
             unsigned indexedCounter = MongoDataSource::createNewIndexes(indexer,
                     indexDataConfig);
             indexer->commit();
+            // Load ACL list from disk
+            indexer->getAttributeAcl().bulkLoadAcl(indexDataConfig->getAttibutesAclFile());
             if (indexedCounter > 0) {
                 indexer->save();
                 Logger::console("Indexes saved.");
@@ -217,6 +222,8 @@ void Srch2Server::createAndBootStrapIndexer() {
 #endif
         default: {
             indexer->commit();
+            // Load ACL list from disk
+            indexer->getAttributeAcl().bulkLoadAcl(indexDataConfig->getAttibutesAclFile());
             Logger::console("Creating new empty index");
         }
         };

@@ -525,6 +525,24 @@ static void cb_resetLogger(evhttp_request *req, void *arg)
     }
 }
 
+static void cb_attributeAcl(evhttp_request *req, void *arg)
+{
+    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
+    evhttp_add_header(req->output_headers, "Content-Type",
+            "application/json; charset=UTF-8");
+
+    if (checkOperationPermission(req, srch2Server, srch2http::DocsPort) == false) {
+    	return;
+    }
+
+    try {
+    	HTTPRequestHandler::attributeAclModify(req, srch2Server);
+    } catch (exception& e) {
+        // exception caught
+        Logger::error(e.what());
+        srch2http::HTTPRequestHandler::handleException(req);
+    }
+}
 
 /**
  * Busy 409 event handler.
@@ -814,6 +832,7 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
             { "/save", srch2http::SavePort, cb_save },
             { "/export", srch2http::ExportPort, cb_export },
             { "/resetLogger", srch2http::ResetLoggerPort, cb_resetLogger },
+            { "/aclAttribute", srch2http::DocsPort, cb_attributeAcl },
             { NULL, srch2http::EndOfPortType, NULL }
         };
 

@@ -38,7 +38,7 @@
 #include <map>
 #include <memory>
 #include <exception>
-
+#include "AccessControl.h"
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/thread/locks.hpp>
@@ -88,6 +88,8 @@ IndexData::IndexData(const string &directoryName,
     this->flagBulkLoadDone = false;
 
     this->mergeRequired = true;
+
+    this->attributeAcl = new AttributeAccessControl(this->schemaInternal);
 }
 
 IndexData::IndexData(const string& directoryName)
@@ -130,6 +132,12 @@ IndexData::IndexData(const string& directoryName)
     		this->quadTree->setForwardIndex(this->forwardIndex);
     		this->quadTree->setTrie(this->trie);
     		//Logger::debug("QuadTree loaded");
+    	}
+
+    	this->attributeAcl = new AttributeAccessControl(this->schemaInternal);
+    	string attrAclFileName = directoryName + "/" + IndexConfig::AccessControlFile;
+    	if (::access(attrAclFileName.c_str(), F_OK) != -1) {
+    		serializer.load(*(this->attributeAcl), attrAclFileName);
     	}
 
     	this->loadCounts(directoryName + "/" + IndexConfig::indexCountsFileName);
@@ -717,6 +725,13 @@ void IndexData::_save(const string &directoryName) const
         this->saveCounts(directoryName + "/" + IndexConfig::indexCountsFileName);
     } catch (exception &ex) {
         Logger::error("Error writing index counts file: %s/%s", directoryName.c_str(), IndexConfig::indexCountsFileName);
+    }
+
+    try{
+    	 serializer.save(*(this->attributeAcl), directoryName + "/" + IndexConfig::AccessControlFile);
+    } catch (exception &ex) {
+        Logger::error("Error saving access control file: %s/%s", directoryName.c_str(),
+        		IndexConfig::AccessControlFile);
     }
 }
 

@@ -67,6 +67,7 @@ const char* const QueryParser::facetRangeStart = "start";
 const char* const QueryParser::facetField = "facet.field";
 const char* const QueryParser::facetRangeField = "facet.range";
 const char* const QueryParser::highlightSwitch = "hl";
+const char* const QueryParser::aclSwitch = "aclId";
 
 //searchType
 const char* const QueryParser::searchType = "searchType";
@@ -221,6 +222,7 @@ bool QueryParser::parse() {
         this->prefixMatchPenaltyParser();
         this->extractSearchType();
         this->highlightParser();
+        this->aclParser();
         if (this->container->hasParameterInQuery(GeoSearchType)) {
             this->geoParser();
         } else if (this->container->hasParameterInQuery(
@@ -385,6 +387,19 @@ void QueryParser::highlightParser() {
 	 } else {
 		 this->container->isHighlightOn = true;
 	 }
+}
+
+void QueryParser::aclParser() {
+	/*
+	 *  Check whether the acl option is present.
+	 */
+	const char * aclTemp = evhttp_find_header(&headers,
+			QueryParser::aclSwitch);
+	if (aclTemp) {
+		string aclStr;
+		decodeString(aclTemp, aclStr);
+		this->container->aclRole = aclTemp;
+	}
 }
 
 void QueryParser::isFuzzyParser() {

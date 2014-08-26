@@ -525,19 +525,30 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema(const CoreInfo_t *ind
         schema->setSearchableAttribute(primaryKey); // searchable primaryKey
     }
 
+    vector<unsigned> aclSearchableAttrIds;
+    vector<unsigned> nonAclSearchableAttrIds;
     // Set SearchableAttributes
     // map<string, pair<bool, pair<string, pair<unsigned,pair<unsigned , bool> > > > >
     map<string, SearchableAttributeInfoContainer>::const_iterator searchableAttributeIter = indexDataContainerConf->getSearchableAttributes()->begin();
     for ( ; searchableAttributeIter != indexDataContainerConf->getSearchableAttributes()->end();
                     searchableAttributeIter++)
     {
-        schema->setSearchableAttribute(searchableAttributeIter->first,
+        unsigned id = schema->setSearchableAttribute(searchableAttributeIter->first,
                 searchableAttributeIter->second.boost ,
                 searchableAttributeIter->second.isMultiValued,
                 searchableAttributeIter->second.highlight); // searchable text
+        if (searchableAttributeIter->second.isAclEnabled) {
+        	aclSearchableAttrIds.push_back(id);
+        } else {
+        	nonAclSearchableAttrIds.push_back(id);
+        }
+
     }
+    schema->setAclSearchableAttrIdsList(aclSearchableAttrIds);
+    schema->setNonAclSearchableAttrIdsList(nonAclSearchableAttrIds);
 
-
+    vector<unsigned> aclRefiningAttrIds;
+    vector<unsigned> nonAclRefiningAttrIds;
     // Set NonSearchableAttributes
     map<string, RefiningAttributeInfoContainer >::const_iterator
         nonSearchableAttributeIter = indexDataContainerConf->getRefiningAttributes()->begin();
@@ -545,13 +556,26 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema(const CoreInfo_t *ind
     for ( ; nonSearchableAttributeIter != indexDataContainerConf->getRefiningAttributes()->end(); ++nonSearchableAttributeIter)
     {
 
-        schema->setRefiningAttribute(nonSearchableAttributeIter->first,
+    	unsigned id = schema->setRefiningAttribute(nonSearchableAttributeIter->first,
                 nonSearchableAttributeIter->second.attributeType,
                 nonSearchableAttributeIter->second.defaultValue,
                 nonSearchableAttributeIter->second.isMultiValued);
+
+        if (nonSearchableAttributeIter->second.isAclEnabled) {
+        	aclRefiningAttrIds.push_back(id);
+        } else {
+        	nonAclRefiningAttrIds.push_back(id);
+        }
     }
+    schema->setAclRefiningAttrIdsList(aclRefiningAttrIds);
+    schema->setNonAclRefiningAttrIdsList(nonAclRefiningAttrIds);
 
-
+    if (aclSearchableAttrIds.size() > 0 && !isEnabledAttributeBasedSearch(positionIndexType)) {
+    	//make sure to enable attributes position index if ACL on attributes is set.
+    	positionIndexType = srch2::instantsearch::POSITION_INDEX_FIELDBIT;
+    	schema->setPositionIndexType(positionIndexType);
+    	const_cast<CoreInfo_t *>(indexDataContainerConf)->setSupportAttributeBasedSearch(true);
+    }
     std::string scoringExpressionString = indexDataContainerConf->getScoringExpressionString();
     schema->setScoringExpression(scoringExpressionString);
     schema->setSupportSwapInEditDistance(indexDataContainerConf->getSupportSwapInEditDistance());

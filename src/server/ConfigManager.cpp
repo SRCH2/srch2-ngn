@@ -58,6 +58,7 @@ const char* const ConfigManager::enableCharOffsetIndexString =
         "enablecharoffsetindex";
 const char* const ConfigManager::expandString = "expand";
 const char* const ConfigManager::facetEnabledString = "facetenabled";
+const char* const ConfigManager::attributeAclFileString = "attributeaclfile";
 const char* const ConfigManager::facetEndString = "facetend";
 const char* const ConfigManager::facetFieldString = "facetfield";
 const char* const ConfigManager::facetFieldsString = "facetfields";
@@ -75,6 +76,7 @@ const char* const ConfigManager::hostString = "host";
 const char* const ConfigManager::indexConfigString = "indexconfig";
 const char* const ConfigManager::indexedString = "indexed";
 const char* const ConfigManager::multiValuedString = "multivalued";
+const char* const ConfigManager::aclString = "acl";
 const char* const ConfigManager::indexTypeString = "indextype";
 //const char* const ConfigManager::licenseFileString = "licensefile";
 const char* const ConfigManager::listenerWaitTimeString = "listenerwaittime";
@@ -1050,7 +1052,8 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode,
                             coreParseState.searchableAttributesDefaultVector[i],
                             0, 1,
                             coreParseState.searchableAttributesIsMultiValued[i],
-                            coreParseState.searchableAttributesHighlight[i]);
+                            coreParseState.searchableAttributesHighlight[i],
+                            coreParseState.searchableAttributesAclFlags[i]);
         } else {
             coreInfo->searchableAttributesInfo[coreParseState.searchableFieldsVector[i]] =
                     SearchableAttributeInfoContainer(
@@ -1061,7 +1064,8 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode,
                             0,
                             boostsMap[coreParseState.searchableFieldsVector[i]],
                             coreParseState.searchableAttributesIsMultiValued[i],
-                            coreParseState.searchableAttributesHighlight[i]);
+                            coreParseState.searchableAttributesHighlight[i],
+                            coreParseState.searchableAttributesAclFlags[i]);
         }
     }
 
@@ -1164,7 +1168,7 @@ void ConfigManager::parseDataConfiguration(const xml_node &configNode,
 }
 
 bool ConfigManager::setCoreParseStateVector(bool isSearchable, bool isRefining,
-        bool isMultiValued, bool isHighlightEnabled,
+        bool isMultiValued, bool isHighlightEnabled, bool isAclEnabled,
         CoreConfigParseState_t *coreParseState, CoreInfo_t *coreInfo,
         std::stringstream &parseError, const xml_node &field) {
     string temporaryString = "";
@@ -1204,6 +1208,9 @@ bool ConfigManager::setCoreParseStateVector(bool isSearchable, bool isRefining,
         }
         coreParseState->searchableAttributesIsMultiValued.push_back(
                 isMultiValued);
+
+        coreParseState->searchableAttributesAclFlags.push_back(
+                        isAclEnabled);
     }
     return true;
 }
@@ -1215,6 +1222,8 @@ bool ConfigManager::setRefiningStateVectors(const xml_node &field,
         vector<bool> &RefiningAttributesRequiredFlagVector,
         vector<string> &RefiningAttributesDefaultVector,
         vector<bool> &RefiningAttributesIsMultiValued,
+        vector<bool> &refiningAttributesAclEnabledFlags,
+        bool isAclEnabled,
         std::stringstream &parseError) {
 
     string temporaryString = "";
@@ -1294,6 +1303,8 @@ bool ConfigManager::setRefiningStateVectors(const xml_node &field,
         }
 
         RefiningAttributesIsMultiValued.push_back(isMultiValued);
+
+        refiningAttributesAclEnabledFlags.push_back(isAclEnabled);
     }
 
     return true;
@@ -1632,6 +1643,7 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
     vector<bool> RefiningAttributesRequiredFlagVector;
     vector<string> RefiningAttributesDefaultVector;
     vector<bool> RefiningAttributesIsMultiValued;
+    vector<bool> refiningAttributesAclEnabledFlags;
 
     /*
      * <field>  in config.xml file
@@ -1648,8 +1660,9 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
                 bool isSearchable = false;
                 bool isRefining = false;
                 bool isHighlightEnabled = false;
+                bool isAclEnabled = false;
                 if (!setFieldFlagsFromFile(field, isMultiValued, isSearchable,
-                        isRefining, isHighlightEnabled, parseError,
+                        isRefining, isHighlightEnabled, isAclEnabled, parseError,
                         configSuccess)) {
                     configSuccess = false;
                     return;
@@ -1685,6 +1698,7 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
                         // primary key is always required.
                         coreParseState->searchableAttributesRequiredFlagVector.push_back(
                                 true);
+                        coreParseState->searchableAttributesAclFlags.push_back(isAclEnabled);
                         coreParseState->searchableAttributesHighlight.push_back(
                                 isHighlightEnabled);
                         coreParseState->searchableAttributesIsMultiValued.push_back(
@@ -1699,6 +1713,7 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
                         RefiningAttributesRequiredFlagVector.push_back(true);
                         RefiningAttributesIsMultiValued.push_back(
                                 isMultiValued);
+                        refiningAttributesAclEnabledFlags.push_back(isAclEnabled);
                     }
                     continue;
                 }
@@ -1708,7 +1723,7 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
                                 "") != 0) {
 
                     if (!setCoreParseStateVector(isSearchable, isRefining,
-                            isMultiValued, isHighlightEnabled, coreParseState,
+                            isMultiValued, isHighlightEnabled, isAclEnabled, coreParseState,
                             coreInfo, parseError, field)) {
                         configSuccess = false;
                         return;
@@ -1719,7 +1734,8 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
                             RefiningFieldTypesVector,
                             RefiningAttributesRequiredFlagVector,
                             RefiningAttributesDefaultVector,
-                            RefiningAttributesIsMultiValued, parseError)) {
+                            RefiningAttributesIsMultiValued,
+                            refiningAttributesAclEnabledFlags, isAclEnabled, parseError)) {
                         configSuccess = false;
                         return;
                     }
@@ -1770,8 +1786,18 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
                             RefiningFieldTypesVector[iter],
                             RefiningAttributesDefaultVector[iter],
                             RefiningAttributesRequiredFlagVector[iter],
-                            RefiningAttributesIsMultiValued[iter]);
+                            RefiningAttributesIsMultiValued[iter],
+                            refiningAttributesAclEnabledFlags[iter]);
         }
+    }
+
+    /*
+     * <attributeAclFile> in config.xml file
+     */
+    xml_node aclFileNode = schemaNode.child(attributeAclFileString);
+    if (aclFileNode && aclFileNode.text()) {
+    	string tempString = aclFileNode.text().get();
+    	coreInfo->attrAclFilePath = boost::filesystem::path(getSrch2Home() + tempString).normalize().string();
     }
 
     /*
@@ -1913,7 +1939,7 @@ bool ConfigManager::setSearchableAndRefining(const xml_node &field,
 
 bool ConfigManager::setFieldFlagsFromFile(const xml_node &field,
         bool &isMultiValued, bool &isSearchable, bool &isRefining,
-        bool &isHighlightEnabled, std::stringstream &parseError,
+        bool &isHighlightEnabled, bool& isAclEnabled, std::stringstream &parseError,
         bool &configSuccess) {
     string temporaryString = "";
     if (string(field.attribute(multiValuedString).value()).compare("") != 0) {
@@ -1939,6 +1965,15 @@ bool ConfigManager::setFieldFlagsFromFile(const xml_node &field,
             configSuccess = false;
             return false;
         }
+    }
+
+    if (string(field.attribute(aclString).value()).compare("") != 0) {
+    	temporaryString = string(field.attribute(aclString).value());
+    	if (isValidBool(temporaryString)) {
+    		if (field.attribute(aclString).as_bool()) {
+    			isAclEnabled = true;
+    		}
+    	}
     }
 
     //set highlight flags

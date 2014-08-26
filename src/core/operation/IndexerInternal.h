@@ -158,6 +158,9 @@ public:
         return this->index->getInMemoryData(internalRecordId);
     }
 
+    const AttributeAccessControl & getAttributeAcl() const {
+    	return *(this->index->attributeAcl);
+    }
     void exportData(const string &exportedDataFileName);
 
     void save();

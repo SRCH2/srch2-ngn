@@ -910,6 +910,120 @@ void decodeAmpersand(const char *uri, unsigned len, string& decodeUri) {
 		}
 	}
 }
+/*
+ *   Helper API to handle a single ACL operation. (insert, delete, or append)
+ */
+bool processSingleAttributeAclRequest(Srch2Server *server,const Json::Value& doc,
+		std::stringstream& log_str) {
+
+	Json::Value defaultValueToReturn = Json::Value("");
+	Json::Value attributesToAdd = doc.get("fields", defaultValueToReturn);
+	Json::Value attributesRoles = doc.get("role-values", defaultValueToReturn);
+
+	if (attributesToAdd.asString() == "") {
+		log_str << "\"fields\" key is missing in request JSON.";
+		return false;
+	}
+	if (attributesRoles.asString() == "") {
+		log_str << "\"role-values\" key is missing in request JSON.";
+		return false;
+	}
+
+	Json::Value actionType = doc.get("action", defaultValueToReturn);
+
+	if (actionType.asString() == ""){
+		log_str << "\"action\" key is missing in request JSON.";
+		return false;
+	}
+	string actionString = actionType.asString();
+	std::transform(actionString.begin(), actionString.end(), actionString.begin(), ::tolower);
+	AclActionType action;
+	if (actionString == "insert")
+		action = ACL_INSERT;
+	else if (actionString == "delete")
+		action = ACL_DELETE;
+	else if (actionString == "append")
+		action = ACL_APPEND;
+	else {
+		log_str << "\"action\" key has invalid value =\"" << actionString << "\" in request JSON.";
+		return false;
+	}
+
+	return server->indexer->getAttributeAcl().processHTTPAclRequest(attributesToAdd.asString(),
+			attributesRoles.asString(), action);
+}
+
+/*
+ *   Wrapper layer API to handle ACL operations such as insert, delete, and append.
+ */
+void HTTPRequestHandler::attributeAclModify(evhttp_request *req, Srch2Server *server) {
+	switch (req->type) {
+	    case EVHTTP_REQ_PUT: {
+	        size_t length = EVBUFFER_LENGTH(req->input_buffer);
+
+	        if (length == 0) {
+	            bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "BAD REQUEST",
+	                    "{\"message\":\"http body is empty\"}");
+	            Logger::warn("http body is empty");
+	            break;
+	        }
+
+	        // get input JSON
+	        const char *post_data = (char *) EVBUFFER_DATA(req->input_buffer);
+
+	        std::stringstream log_str;
+	        Json::Value root;
+	        Json::Reader reader;
+	        bool parseSuccess = reader.parse(post_data, root, false);
+	        bool error = false;
+	        if (parseSuccess == false) {
+	            log_str << "JSON object parse error";
+	            error = true;
+	        } else {
+	        	if (root.type() == Json::arrayValue) {
+	        		//the record parameter is an array of json objects
+	        		for(Json::UInt index = 0; index < root.size(); index++) {
+	        			Json::Value defaultValueToReturn = Json::Value("");
+	        			const Json::Value doc = root.get(index,
+	        					defaultValueToReturn);
+
+	        			bool  status = processSingleAttributeAclRequest(server, doc, log_str);
+	        			if (status == false) {
+	        				error = true;
+	        				break;
+	        			}
+	        			if (index < root.size() - 1)
+	        				log_str << ", ";
+	        		}
+	        	} else {
+	        		// the record parameter is a single json object
+	        		const Json::Value doc = root;
+	        		bool  status = processSingleAttributeAclRequest(server, doc, log_str);
+	        		if (status == false) {
+	        			error = true;
+	        		}
+	        	}
+	        }
+
+	        if (!error) {
+	        	bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
+	        			"{\"message\":\"The batch was processed successfully\",\"log\":["
+	        			+ log_str.str() + "]}\n");
+	        } else {
+	        	bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID DATA",
+	        			"{\"message\":\"The request was NOT processed successfully\",\"log\":["
+	        			+ log_str.str() + "]}\n");
+	        }
+	        break;
+	    }
+	    default:
+	        Logger::error(
+	                "The request is not a HTTP PUT command. See Srch2 API documentation for details");
+	        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
+	                "{\"error\":\"The request is not a HTTP PUT command. See Srch2 API documentation for details.\"}");
+
+	}
+}
 
 void HTTPRequestHandler::searchCommand(evhttp_request *req,
         Srch2Server *server) {
@@ -974,7 +1088,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
     QueryRewriter qr(server->indexDataConfig,
             *(server->indexer->getSchema()),
             *(AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf)),
-            &paramContainer);
+            &paramContainer, server->indexer->getAttributeAcl());
     LogicalPlan logicalPlan;
     if(qr.rewrite(logicalPlan) == false){
         // if the query is not valid, print the error message to the response

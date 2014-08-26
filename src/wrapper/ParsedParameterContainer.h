@@ -423,6 +423,8 @@ public:
     // "into the wild" becomes "into wild" after applying stop word filter.
     // the map stores key = "into wild" and value = "1, 3".
     std::map<string, PhraseInfo> PhraseKeyWordsInfoMap;
+
+    std::string aclRole;
 };
 
 }
