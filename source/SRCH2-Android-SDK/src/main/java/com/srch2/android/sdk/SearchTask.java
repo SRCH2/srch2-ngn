@@ -212,7 +212,14 @@ class SearchTask extends HttpTask.SearchHttpTask {
     protected void onTaskComplete(final int returnedResponseCode,
                                   final String returnedResponseLiteral) {
         if (searchResultsListener != null) {
-
+            final HashMap<String, ArrayList<JSONObject>> resultMap;
+            if (returnedResponseCode / 100 == 2) {
+                resultMap = parseResponseForRecordResults(
+                        returnedResponseLiteral, isMultiCoreSearch,
+                        targetCoreName);
+            } else {
+                resultMap = new HashMap<String, ArrayList<JSONObject>>(0);
+            }
             if (SRCH2Engine.searchResultsPublishedToUiThread) {
                 Handler uiHandler = SRCH2Engine.getSearchResultsUiCallbackHandler();
                 if (uiHandler != null) {
@@ -220,34 +227,23 @@ class SearchTask extends HttpTask.SearchHttpTask {
                     uiHandler.post(new Runnable() {
                         @Override
                         public void run() {
-                            HashMap<String, ArrayList<JSONObject>> resultMap;
                             if (returnedResponseCode / 100 == 2) {
-                                resultMap = parseResponseForRecordResults(
-                                        returnedResponseLiteral, isMultiCoreSearch,
-                                        targetCoreName);
                                 searchResultsListener.onNewSearchResults(returnedResponseCode,
                                         returnedResponseLiteral, resultMap);
                             } else {
                                 searchResultsListener.onNewSearchResults(returnedResponseCode,
-                                        returnedResponseLiteral,
-                                        new HashMap<String, ArrayList<JSONObject>>(0));
+                                        returnedResponseLiteral, resultMap);
                             }
                         }
                     });
                 }
             } else {
-                HashMap<String, ArrayList<JSONObject>> resultMap;
-
                 if (returnedResponseCode / 100 == 2) {
-                    resultMap = parseResponseForRecordResults(
-                            returnedResponseLiteral, isMultiCoreSearch,
-                            super.targetCoreName);
                     searchResultsListener.onNewSearchResults(returnedResponseCode,
                             returnedResponseLiteral, resultMap);
                 } else {
                     searchResultsListener.onNewSearchResults(returnedResponseCode,
-                            returnedResponseLiteral,
-                            new HashMap<String, ArrayList<JSONObject>>(0));
+                            returnedResponseLiteral, resultMap);
                 }
             }
         }
