@@ -54,7 +54,27 @@ public class Highlighter {
     Highlighter() {
         highlightingHasBeenCustomSet = false;
     }
-
+    /**
+     * A simple highlighter with methods for building the highlighting format of exact and fuzzy text
+     * matches: exact or fuzzy text matches can be made bold, italicized, or colorized. For example, using the
+     * method {@link com.srch2.android.sdk.Highlighter.SimpleHighlighter#formatExactTextMatches(boolean, boolean)} with
+     * the values <b>true</b> and <b>false</b> will set the output of the SRCH2 highlighter to make all exact text
+     * matches bold: if the search input were 'Jo' matching a textual value of 'John' , the output of the highlighting
+     * function will be '<b>Jo</b>n' (technically it would be
+     * '&lt;b&gt;Jo&lt;/b&gt;n' without the auto-formatting of the javadoc's html).
+     * <br><br>
+     * The <code>SimpleHighlighter</code> uses HTML tags to format the output so it is recommended to use the
+     * highlighting output with the
+     * method {@link android.text.Html#fromHtml(String)} inside the {@link android.widget.TextView#setText(CharSequence)}
+     * method so search results can be made to dynamically reflect the search input as it is entered by the user.
+     * <br><br>
+     * Use the methods:
+     * <br>{@link com.srch2.android.sdk.Highlighter.SimpleHighlighter#formatExactTextMatches(boolean, boolean)}
+     * <br>{@link com.srch2.android.sdk.Highlighter.SimpleHighlighter#formatExactTextMatches(boolean, boolean, String)}
+     * <br>{@link com.srch2.android.sdk.Highlighter.SimpleHighlighter#formatFuzzyTextMatches(boolean, boolean)}
+     * <br>{@link com.srch2.android.sdk.Highlighter.SimpleHighlighter#formatFuzzyTextMatches(boolean, boolean, String)}
+     * <br>to format the highlighting.
+     */
     public static class SimpleHighlighter extends Highlighter {
         SimpleHighlighter() {
             super();
