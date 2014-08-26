@@ -240,12 +240,6 @@ public class MovieIndex extends Indexable {
 			
 			...
 			
-			for (int i = 0; i < jsonRecordsToInsert.length(); ++i) {
-                JSONObject recordObject = jsonRecordsToInsert.getJSONObject(i);
-                recordObject.put("boostScore",
-                        computeRecordBoostScore(recordObject.getString(INDEX_FIELD_GENRE)));
-            }
-			
         } catch (JSONException oops) {
             // We know there are no errors.
         }
@@ -339,7 +333,7 @@ null but contain no keys or values.
 The last method *onIndexReady* will be called as soon as the SRCH2 server is 
 up and running and has loaded the index this *Indexable* represents. The
 user can use this callback to check the status of the current loaded index,
-such as the record number inside the index. For instance, here the logic:
+such as the record number inside the index. For example:
 
 ```
     if (getRecordCount() == 0) {
@@ -348,9 +342,8 @@ such as the record number inside the index. For instance, here the logic:
         // Do any necessary updates...
     }
 ```
-
-simply checks whether there are any existing records. The very first time
-this callback method is called there will be zero records in the index, therefore 
+We simply check whether there are any existing records. The very first time
+this callback method is called there will be zero records in the index, then
 the records from *getAFewRecordsToInsert()* are inserted. 
 
 ##Sending Queries
@@ -542,7 +535,7 @@ which can be obtained by
 ```
 
 In addition, if we set up the highlight field, the search results will also contain the 
-highlight information. Please read the [Highlighting section](advanced.md##Highlighting) for 
+highlight information. Please read the [Highlighting section](advanced.md#highlighting) for 
 more details.
 
 The next step is to push the results to the UI thread by overriding the 

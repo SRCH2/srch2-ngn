@@ -282,15 +282,15 @@ specifying the latitude and the longitude of the center point, and also the radi
 
 Here are some examples:
 ```
-  new Query(new SearchableTerm("ghirardelli")).insideBoxRegion(61.20, -149.90, 61.22, -149.70);
-  new Query(new SearchableTerm("ghirardelli")).insideCircleRegion(61.20, -149.90, 5);
+  new Query(new SearchableTerm("ghirardelli")).insideRectangleRegion(61.2, -149.9, 61.2, -149.7);
+  new Query(new SearchableTerm("ghirardelli")).insideCircleRegion(61.2, -149.9, 5);
 ```
 
 Often we want to search records within a region without specifying keywords.
 We can use the *Query* constructor to create a geo type query.  For example:
 ```
-  new Query(61.20, -149.90, 61.22, -149.70);
-  new Query(61.20, -149.90, 5);
+  new Query(61.2, -149.9, 61.2, -149.7);
+  new Query(61.2, -149.9, 5);
 ```
 If we give four numbers, the *Query* will be treated as a
 search using a rectangle region, in which the first two numbers are
@@ -306,15 +306,6 @@ is the radius.
 The SDK allows an index to specify a highlighter for matching keywords
 of this index.  The highlighter, used by the engine, sets the pre and post html tags for matching keywords. 
 We can specify the highlighter of an index by implementing the *getHighlighter()* method of the index object.
-
-If we use the default highlighter that provided by the engine by calling the *Highlighter.createHighlighter()*
-method, for the keyword of "beaty ame", 
-the search result for the movie with the title "Beauty American" will
-produce the output of 
-```
-'&lt;b&gt;&lt;i&gt;Beauty&lt;/i&gt;&lt;b&gt; &lt;b&gt;Ame&lt;/b&gt;rican'
-```
-(or visually, <b><i>Beauty</i></b> <b>Ame</b>rican).
 
 A highlighter can be enabled for certain fields.
 The following code shows how to enable the feature on the field "title" and 
@@ -346,7 +337,16 @@ The highlighted fields can be retrieved by using the constant value of
 *Indexable.SEARCH_RESULT_JSON_KEY_HIGHLIGHTED*. 
 The keys in this *JSONObject* will also be the names
 of those fields with highlighting enabled. 
- 
+
+If we use the default highlighter that provided by the engine by calling the *Highlighter.createHighlighter()*
+method, for the keyword of "beaty ame", 
+the search result for the movie with the title "American Beauty " will
+produce the output of 
+```
+'&lt;b&gt;Ame&lt;/b&gt;rican &lt;b&gt;&lt;i&gt;Beauty&lt;/i&gt;&lt;b&gt;'
+```
+(or visually, <b>Ame</b>rican <b><i>Beauty</i></b>).
+
 The highlighted result should be used in conjunction with *Html.fromHtml(...)* such as
 *mTextView.setText(Html.fromHtml(mHighlightTitleText))* to display it
 properly on the UI.  
