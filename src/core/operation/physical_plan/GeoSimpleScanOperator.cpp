@@ -43,6 +43,8 @@ bool GeoSimpleScanOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 		quadTreeNodeSet->at(i)->rangeQuery(this->geoElements, *this->queryShape);
 	}
 
+	// we are removing elements from the vector in the iteration on the vector
+	// so when we erase one element we have to reset the iterator.
 	for (  vector< vector<GeoElement*>* >::iterator i = this->geoElements.begin() ; i != this->geoElements.end() ;){
 		vector<GeoElement*>* tmp = *i;
 		if(tmp->size() == 0){
