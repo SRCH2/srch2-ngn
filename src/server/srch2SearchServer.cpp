@@ -971,11 +971,11 @@ int main(int argc, char** argv) {
     }
 
     /*
-     * THIS IS A HACK SOLUTION FOR MAC OS!
+     * THIS IS A HACKY SOLUTION FOR MAC OS!
      * JIRA: https://srch2inc.atlassian.net/browse/SRCN-473
      *
-     * The function "event_base_free(evBases[i])" is blocking the engine exits
-     * properly on MAC OS.
+     * The function "event_base_free(evBases[i])" is blocking the engine from
+     *  a proper exit on MacOS
      *
      * This function ("event_base_free(evBases[i])") does not deallocate any
      * of the events that are currently associated with the event_base, or
