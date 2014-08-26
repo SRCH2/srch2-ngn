@@ -67,12 +67,17 @@ final class IndexDescription {
 
     String name;
     Schema schema;
+    Highlighter highlighter;
+
 
     IndexDescription(Indexable idx) {
 
         name = idx.getIndexName();
 
         schema = idx.getSchema();
+
+        highlighter = idx.getHighlighter();
+        highlighter.configureHighlightingForIndexDescription();
 
         queryProperties.setProperty("rows", String.valueOf(idx.getTopK()));
 
@@ -110,14 +115,13 @@ final class IndexDescription {
         queryProperties.setProperty("responseFormat",
                 DEFAULT_VALUE_responseFormat);
         queryProperties.setProperty("fuzzyPreTag",
-                schema.highlight_fuzzyPrefix);
+                highlighter.highlightFuzzyPreTag);
         queryProperties.setProperty("fuzzyPostTag",
-                schema.highlight_fuzzySuffix);
+                highlighter.highlightFuzzyPostTag);
         queryProperties.setProperty("exactPreTag",
-                schema.highlight_exactPrefix);
+                highlighter.highlightExactPreTag);
         queryProperties.setProperty("exactPostTag",
-                schema.highlight_exactSuffix);
-
+                highlighter.highlightExactPostTag);
     }
 
     float getQueryTermSimilarityThreshold() {
