@@ -1,0 +1,12 @@
+#comments are allowed with '#' at begining.
+#Format : aclRoleValue, attribute1, attribute2, ... 
+100, attr1, attr6, attr3
+101, attr6
+102, attr8, attr7
+103, attr8, attr2, attr6
+#below is a duplicate acl entry, will be merged with the previous one.
+103, attr4
+#below are the bad examples which will ignored. 
+110, invalid attribute name
+111, 
+,wrong, acl, format

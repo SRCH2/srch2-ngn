@@ -1,0 +1,75 @@
+#-----------------------------------
+# Normal search with ACL
+#-----------------------------------
+
+#case 1. no acl-role-id provided, keyword should match non-acl attributes only.
+S||attr8&fuzzy=false||2
+
+#case 2. acl-role-id=102 is provided, keyword should match any non-acl attributes or attributes allowed for this role-id
+S||attr8&fuzzy=false&aclId=102||1 2
+
+#case 3. acl-role-id=100 is provided, keyword is found in the attributes that is NOT allowed for this role-id, so no record is retured
+S||attr10&fuzzy=false&aclId=100||
+
+#case 4. acl-role-id=103 is provided, keyword is found in the attributes that is allowed for this role-id, so records are retured
+S||attr10&fuzzy=false&aclId=103||2
+
+#-----------------------------------
+# Attribute based search with ACL
+#-----------------------------------
+
+#case 5. acl-role-id is not provided, attr5 is non-acl (allowed for all) and attr6 is acl controlled. Keyword "Attr7" is found in attr5 
+#        in record 2. 
+S||attr5%2Battr6:attr7&fuzzy=false||2
+
+#case 6. acl-role-id=101 is provided, attr5 is non-acl (allowed for all) and attr6 is acl controlled and accessible by 101. 
+#        Keyword="Attr7" is found in attr5 in record 2 and attr6 in record 1. 
+S||attr5%2Battr6:attr7&fuzzy=false&aclId=101||1 2
+
+#case 7. acl-role-id=102 is provided, attr5 is non-acl (allowed for all) and attr6 is acl controlled and is NOT accessible by 102. 
+#        Keyword="Attr7" is found in attr5 in record 2. (similar to case 5)
+S||attr5%2Battr6:attr7&fuzzy=false&aclId=102||2
+
+#case 8. acl-role-id=101 is provided.  attr7 and attr8 are acl controlled and are NOT accessible by 101. No record should be found.
+S||attr7%2Battr8:attr9&fuzzy=false&aclId=101||
+
+#case 9. acl-role-id=102 is provided.  attr7 and attr8 are acl controlled and are accessible by 102. One record is found for the match.
+S||attr7%2Battr8:attr9&fuzzy=false&aclId=102||2 1
+
+
+#--------------------------------------
+# Rest API for appending to exiting ACL
+#--------------------------------------
+
+C||aclAttribute||{ "fields": "attr7,attr8", "role-values": "101", "action" : "append" }
+#case 10. repetition of case 8 , after inserting 
+S||attr7%2Battr8:attr9&fuzzy=false&aclId=101||2 1
+
+
+#-----------------------------------
+# Rest API for adding new ACL
+#-----------------------------------
+
+#case 11:  acl-role-id = 104 is not present. 
+S||attr7%2Battr8:attr9&fuzzy=false&aclId=104||
+
+#insert 104 role Id
+C||aclAttribute||{ "fields": "attr7, attr8", "role-values": "104", "action" : "insert" }
+
+#case 12:
+S||attr7%2Battr8:attr9&fuzzy=false&aclId=104||2 1
+
+#-----------------------------------
+# Rest API for deleting ACL
+#-----------------------------------
+
+#delete 104 role Id
+C||aclAttribute||{"fields": "attr7", "role-values": "104", "action" : "delete" }
+#case 12:  acl-role-id = 104 is present but can only access attr8. Below query should return 0 results. 
+S||attr7:attr9&fuzzy=false&aclId=104||
+#case 13:  acl-role-id = 104 is present but can only access attr8. Below query should return 1 results. 
+S||attr8:attr9&fuzzy=false&aclId=104||1
+#  delte all attributes of acl-role-id = 104 
+C||aclAttribute||{"fields": "*", "role-values": "104", "action" : "delete" }
+#case 14:  acl-role-id = 104 is NOT present. Below query should return 0 results. 
+S||attr8:attr9&fuzzy=false&aclId=104||
