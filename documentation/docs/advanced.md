@@ -37,8 +37,8 @@ and term 2 says that the keyword "cameron" needs to be in the
 <i>director</i> field.
 
 ```
-    SearchableTerm term1 = new SearchableTerm("terminator").searchSpecificField("title");
-    SearchableTerm term2 = new SearchableTerm("cameron").searchSpecificField("director");
+  SearchableTerm term1 = new SearchableTerm("terminator").searchSpecificField("title");
+  SearchableTerm term2 = new SearchableTerm("cameron").searchSpecificField("director");
 ```
 
 <li> Query q1 finds records with the keyword "terminator" in its
@@ -46,29 +46,29 @@ and term 2 says that the keyword "cameron" needs to be in the
 field:</li> 
 
 ```
-    Query q1 = new Query(term1.AND(term2));
+  Query q1 = new Query(term1.AND(term2));
 ```
 
 <li> Query q2 filters the results based on the year field, i.e., the
 year value needs to be between 1983 and 1992 (both inclusive).</li> 
 
 ```
-    Query q2 = new Query(term1.AND(term2));
-    q2.filterByFieldInRange("year", "1983", "1992");
+  Query q2 = new Query(term1.AND(term2));
+  q2.filterByFieldInRange("year", "1983", "1992");
 ```
 
 <li> Query q3 filters the results by requiring that the genre value of
 a movie is "action". </li>
 ```
-    Query q3 = new Query(term1.AND(term2));
-    q3.filterByFieldEqualsTo("genre", "action");
+  Query q3 = new Query(term1.AND(term2));
+  q3.filterByFieldEqualsTo("genre", "action");
 ```
 
 <li> Query q4 sorts the results based on the year attribute in the
 ascending order.</li> 
 ```
-    Query q4 = new Query(term1.AND(term2));
-    q4.sortOnFields("year").orderByAscending();
+  Query q4 = new Query(term1.AND(term2));
+  q4.sortOnFields("year").orderByAscending();
 ```
 
 Next we explain the details of these advanced features.
@@ -100,9 +100,9 @@ i.e., a *SearchableTerm* object is treated as a complete-word condition.
 For example, the following code sets "american" as a complete keyword
 and the "beau" as a prefix keyword:
 ```
-    SearchableTerm term1 = new SearchableTerm("american").setIsPrefixMatching(false);
-    SearchableTerm term2 = new SearchableTerm("beau").setIsPrefixMatching(true);
-    Query query = new Query(term1.AND(term2));
+  SearchableTerm term1 = new SearchableTerm("american").setIsPrefixMatching(false);
+  SearchableTerm term2 = new SearchableTerm("beau").setIsPrefixMatching(true);
+  Query query = new Query(term1.AND(term2));
 ```
 
 ###Fuzzy Condition
@@ -120,12 +120,12 @@ for a term.
 Let "s" be the similarity threshold for a term given in the query. The engine
 will use the formula
 ```
-     floor((1-s) * length(keyword))
+  floor((1-s) * length(keyword))
 ```
 to compute the edit-distance threshold to do the search. If "s" is 1, we do an
 exact search. For example, consider the following query:
 ```
-    SearchableTerm term = new SearchableTerm("spielberg").enableFuzzyMatching(0.8f);
+  SearchableTerm term = new SearchableTerm("spielberg").enableFuzzyMatching(0.8f);
 ```
 The internal edit-distance threshold is *floor((1-0.8) * length("spielburrg")) =
 floor(0.2 * 10) = 2*. So the engine will find records with a keyword whose edit
@@ -133,7 +133,7 @@ distance to the term "spielberg" is at most 2.
 
 If we don't provide a similarity threshold, e.g.,
 ```
-    SearchableTerm term = new SearchableTerm("spielberg").enableFuzzyMatching();
+  SearchableTerm term = new SearchableTerm("spielberg").enableFuzzyMatching();
 ```
 the engine will use the similarity threshold specified in the
 *Indexable.getFuzzinessSimilarityThreshold()*.  If we don't
@@ -167,15 +167,15 @@ the *Term* class, which is used to initialize a *Query* object.
 
 For example, consider the following query:
 ```
- new SearchableTerm("star").AND(new SearchableTerm("wars")).OR(new SearchableTerm("George Lucas"));
+  new SearchableTerm("star").AND(new SearchableTerm("wars")).OR(new SearchableTerm("George Lucas"));
 ```
 It searches records that contain either "star" and "wars", or the phrase "George Lucas".
 The following are a few more examples:
 ```
- new SearchableTerm("star wars").AND(new SearchableTerm("episode 3"))
+  new SearchableTerm("star wars").AND(new SearchableTerm("episode 3"))
    .OR(new SearchableTerm("George Lucas").NOT(new SearchableTerm("Indiana Jones")));
 
- new SearchableTerm("big").AND(new SearchableTerm("fish"))
+  new SearchableTerm("big").AND(new SearchableTerm("fish"))
    .AND((new SearchableTerm("Tim Burton").OR(new
    SearchableTerm("MacGregor").enableFuzzyMatching(0.5f)))); 
 ```
@@ -199,9 +199,9 @@ a specified lower bound and upper bound (both inclusive).  For example:
 A query can have multiple range filters. For example:
 ```
   new Query(new SearchableTerm("star"))
-      .filterByFieldStartFrom("id", "1000")
-      .filterByFieldEqualsTo("genre", "drama")
-      .filterByFieldEqualsTo("year", "1975");
+    .filterByFieldStartFrom("id", "1000")
+    .filterByFieldEqualsTo("genre", "drama")
+    .filterByFieldEqualsTo("year", "1975");
 ```
 It returns the records with an *id* greater than or equal to 1000, a
 *genre* of drama, and *year* less than or equal to 1975.
@@ -227,7 +227,7 @@ behaviour is to sort them in the descending order. We can call the
 For example, we can use the following code to sort the results
 in the ascending order on the *year* field:
 ```
- new Query(new SearchableTerm("star")).sortOnFields("director", "year", "title").orderByAscending();
+  new Query(new SearchableTerm("star")).sortOnFields("director", "year", "title").orderByAscending();
 ```
 
 ###Pagination
@@ -313,21 +313,21 @@ how to create a highlighter by the factory method.
 
 ```
 public class MovieIndex extends Indexable {
-    ...
-    @Override
-    public Schema getSchema() {
-        PrimaryKeyField primaryKey = Field.createDefaultPrimaryKeyField(INDEX_FIELD_PRIMARY_KEY);
-        Field title = Field.createSearchableField(INDEX_FIELD_TITLE, 3).enableHighlighting();
-        ...
-        return Schema.createSchema(primaryKey, title)
-    }
+  ...
+  @Override
+  public Schema getSchema() {
+      PrimaryKeyField primaryKey = Field.createDefaultPrimaryKeyField(INDEX_FIELD_PRIMARY_KEY);
+      Field title = Field.createSearchableField(INDEX_FIELD_TITLE, 3).enableHighlighting();
+      ...
+      return Schema.createSchema(primaryKey, title)
+  }
 	
 	@Override
-    public Highlighter getHighlighter() {
-        return Highlighter.createHighlighter()
-                .formatExactTextMatches(true, false, "#FF0000")
-                .formatFuzzyTextMatches(true, false, "#FF00FF");
-    }
+  public Highlighter getHighlighter() {
+      return Highlighter.createHighlighter()
+              .formatExactTextMatches(true, false, "#FF0000")
+              .formatFuzzyTextMatches(true, false, "#FF00FF");
+  }
 }
 ```
 
@@ -353,46 +353,46 @@ properly on the UI.
 
 The following code shows how to get the highlighted "title" field into the Adapter.
 ```
-    @Override
-    public void onNewSearchResults(int HTTPresponseCode,
-                                   String JSONresponse,
-                                   HashMap<String, ArrayList<JSONObject>> resultMap) {
-        if (HTTPresponseCode == HttpURLConnection.HTTP_OK) {
-            ArrayList<MovieSearchResult> newResults = new ArrayList<MovieSearchResult>();
+  @Override
+  public void onNewSearchResults(int HTTPresponseCode,
+                                 String JSONresponse,
+                                 HashMap<String, ArrayList<JSONObject>> resultMap) {
+      if (HTTPresponseCode == HttpURLConnection.HTTP_OK) {
+          ArrayList<MovieSearchResult> newResults = new ArrayList<MovieSearchResult>();
 
-            ArrayList<JSONObject> movieResults = resultMap
-                    .get(MovieIndex.INDEX_NAME);
-            if (movieResults != null && movieResults.size() > 0) {
-                for (JSONObject jsonObject : movieResults) {
-                    MovieSearchResult searchResult = null;
-                    try {
-                        JSONObject originalRecord = 
-                            jsonObject.getJSONObject(Indexable.SEARCH_RESULT_JSON_KEY_RECORD);
-                        JSONObject highlightedFields = 
-                            jsonObject.getJSONObject(Indexable.SEARCH_RESULT_JSON_KEY_HIGHLIGHTED);
-                        searchResult = new MovieSearchResult(
-                                highlightedFields
-                                        .getString(MovieIndex.INDEX_FIELD_TITLE),
-                                originalRecord
-                                        .getString(MovieIndex.INDEX_FIELD_GENRE),
-                                originalRecord
-                                        .getInt(MovieIndex.INDEX_FIELD_YEAR));
-                    } catch (JSONException oops) {
-                        continue;
-                    }
+          ArrayList<JSONObject> movieResults = resultMap
+                  .get(MovieIndex.INDEX_NAME);
+          if (movieResults != null && movieResults.size() > 0) {
+              for (JSONObject jsonObject : movieResults) {
+                  MovieSearchResult searchResult = null;
+                  try {
+                      JSONObject originalRecord = 
+                          jsonObject.getJSONObject(Indexable.SEARCH_RESULT_JSON_KEY_RECORD);
+                      JSONObject highlightedFields = 
+                          jsonObject.getJSONObject(Indexable.SEARCH_RESULT_JSON_KEY_HIGHLIGHTED);
+                      searchResult = new MovieSearchResult(
+                              highlightedFields
+                                      .getString(MovieIndex.INDEX_FIELD_TITLE),
+                              originalRecord
+                                      .getString(MovieIndex.INDEX_FIELD_GENRE),
+                              originalRecord
+                                      .getInt(MovieIndex.INDEX_FIELD_YEAR));
+                  } catch (JSONException oops) {
+                      continue;
+                  }
 
-                    if (searchResult != null) {
-                        newResults.add(searchResult);
-                    }
-                }
-            }
-            sendMessage(Message
-                    .obtain(this,
-                            newResults.size() > 0 ? MESSAGE_WHAT_PUBLISH_NEW_RESULTS
-                                    : MESSAGE_WHAT_PUBLISH_NO_NEW_RESULTS,
-                            newResults));
-        }
-    }
+                  if (searchResult != null) {
+                      newResults.add(searchResult);
+                  }
+              }
+          }
+          sendMessage(Message
+                  .obtain(this,
+                          newResults.size() > 0 ? MESSAGE_WHAT_PUBLISH_NEW_RESULTS
+                                  : MESSAGE_WHAT_PUBLISH_NO_NEW_RESULTS,
+                          newResults));
+      }
+  }
 
 ```
 
@@ -406,20 +406,20 @@ as the *RecordBoostField*.
 ```
 
 public class MovieIndex extends Indexable {
-    public static final String INDEX_FIELD_PRIMARY_KEY = "id";
+  public static final String INDEX_FIELD_PRIMARY_KEY = "id";
 	public static final String INDEX_FIELD_RECORD_BOOST = "recordBoost";
-    public static final String INDEX_FIELD_TITLE = "title";
+  public static final String INDEX_FIELD_TITLE = "title";
 
 
-    @Override
-    public Schema getSchema() {
-        PrimaryKeyField primaryKey = Field.createDefaultPrimaryKeyField(INDEX_FIELD_PRIMARY_KEY);
+  @Override
+  public Schema getSchema() {
+      PrimaryKeyField primaryKey = Field.createDefaultPrimaryKeyField(INDEX_FIELD_PRIMARY_KEY);
 		RecordBoostField recordBoost = Field.createRecordBoostField(INDEX_FIELD_RECORD_BOOST);
-        Field title = Field.createSearchableField(INDEX_FIELD_TITLE, 3).enableHighlighting();
-        return Schema.createSchema(primaryKey, recordBoost, title );
-    }
+      Field title = Field.createSearchableField(INDEX_FIELD_TITLE, 3).enableHighlighting();
+      return Schema.createSchema(primaryKey, recordBoost, title );
+  }
 }
-    
+  
 ```
 
 ##Testing and Proguard
