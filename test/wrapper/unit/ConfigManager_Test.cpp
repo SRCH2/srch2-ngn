@@ -8,7 +8,6 @@
 /**
  * This test case tests schema section of the config file. Checks if it works for various combination and number of searchable, refining, and indexed fields.
  * It also checks for invalid boost, invalid record boost field and all possible combinations for character offset/positionalIndex and field based search.
- *
  */
 
 #include "server/util/xmlParser/pugixml.hpp"
@@ -52,6 +51,7 @@ int main(int argc, char* argv[])
     string configFile12(string(getenv("srch2_config_file")) + "/conf-fieldBasedSearch-2.xml");
     string configFile13(string(getenv("srch2_config_file")) + "/conf-fieldBasedSearch-3.xml");
     string configFile14(string(getenv("srch2_config_file")) + "/conf-fieldBasedSearch-4.xml");
+    string configFile15(string(getenv("srch2_config_file")) + "/conf-responseContent.xml");
 
     ConfigManager *serverConf1 = new ConfigManager(configFile1);
     ConfigManager *serverConf2 = new ConfigManager(configFile2);
@@ -67,6 +67,7 @@ int main(int argc, char* argv[])
     ConfigManager *serverConf12 = new ConfigManager(configFile12);
     ConfigManager *serverConf13 = new ConfigManager(configFile13);
     ConfigManager *serverConf14 = new ConfigManager(configFile14);
+    ConfigManager *serverConf15 = new ConfigManager(configFile15);
 
     ASSERT(serverConf1->loadConfigFile() == true);
     ASSERT(serverConf2->loadConfigFile() == true);
@@ -81,6 +82,7 @@ int main(int argc, char* argv[])
     ASSERT(serverConf12->loadConfigFile() == true);
     ASSERT(serverConf13->loadConfigFile() == true);
     ASSERT(serverConf14->loadConfigFile() == true);
+    ASSERT(serverConf15->loadConfigFile() == true);
 
     const std::string &expr_string = "invalid Expression";
     RankerExpression* rank = new RankerExpression(expr_string);
