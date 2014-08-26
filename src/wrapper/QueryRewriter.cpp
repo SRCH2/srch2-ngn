@@ -219,7 +219,6 @@ bool QueryRewriter::applyAnalyzer() {
 }
 
 // this function creates the bit sequence needed for field filter based on the filter names
-std::map<string, vector<unsigned> *> attributeAclMap;
 void QueryRewriter::prepareFieldFilters() {
 
 
@@ -256,6 +255,8 @@ void QueryRewriter::prepareFieldFilters() {
             			allowedAttributesForRole);
             } else {
             	vector<unsigned> attributeFilter;
+            	// flag is used to indicate whether the wildcard "*" was found in attributes list in
+            	// attribute based search.
                 bool hasWildCard = false;
                 for (std::vector<std::string>::iterator field = leafNode->termIntermediateStructure->fieldFilter.begin();
                         field != leafNode->termIntermediateStructure->fieldFilter.end(); ++field) {
@@ -285,9 +286,13 @@ void QueryRewriter::prepareFieldFilters() {
                 if (!hasWildCard) {
 
                 	if (attributeFilter.size() == 0) {
-                		// user has specified attributes which are not accessible by a given acl role-id
+                		// if attributeFilter size is 0 , it indicates that all the attributes specified
+                		// in the attribute based search were NOT accessible by a given acl role-id. We
+                		// set the operation as NAND to indicate that the term should not match in any of
+                		// the attributes of a record. See ForwardIndex.cpp isValidTermHits().
                 		leafNode->termIntermediateStructure->fieldFilterAttrOperation = ATTRIBUTES_OP_NAND;
                 	} else if (op == srch2is::BooleanOperatorAND) {
+                		// if attributeFilter size is > 0. Then use user specified operands AND or OR
                 		leafNode->termIntermediateStructure->fieldFilterAttrOperation = ATTRIBUTES_OP_AND;
                 	} else {
                 		leafNode->termIntermediateStructure->fieldFilterAttrOperation = ATTRIBUTES_OP_OR;
@@ -332,8 +337,28 @@ void QueryRewriter::prepareFieldFilters() {
  *
  *   otherwise filter attributes are (NA) with NAND operation.(i.e. keyword should NOT be present
  *   in only these attribute)
- *   See ForwardIndex.cpp : isValidRecordTermHit() for more detail.
  *
+ *   e.g
+ *   sample schema in config file.
+ *   <fields name = f1 .....acl=true >
+ *   <fields name = f2 .....acl=true >
+ *   <fields name = f3 .....acl=false >
+ *   <fields name = f4 .....acl=false >
+ *
+ *   set1 (non-acl attributes) = [f3 , f4]
+ *   set2 (acl attributes) = [f1 , f2]
+ *   set3 = [ f2, f3 ]  for role-id = 100  (fetched from attributes ACL map)
+ *
+ *   allowed attributes set (A) : set1 union set3 : [ f2 f3 f4 ]
+ *   not-allowed attributes (NA) set: set2 - set3 : [ f1 ]
+ *
+ *   and len(NA) = 1  < len(A) = 3
+ *
+ *   so the filtering attributes for forward index is (NA) i.e. [f1]
+ *   and the filtering attributes operation is NAND. i.e. do NOT match in [f1]
+ *
+ *   If the record's term hit is only on [f1] attribute then the record will not be returned.
+ *   See ForwardIndex.cpp : isValidRecordTermHit() for more detail.
  */
 void QueryRewriter::getFieldFiltersBasedOnAcl(vector<unsigned>& parseNodeFieldFilter,
 		ATTRIBUTES_OP& parseNodeFieldFilterOperaton, vector<unsigned> *allowedAttributesForRole) {
