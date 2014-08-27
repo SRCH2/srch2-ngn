@@ -1,9 +1,9 @@
 package com.srch2.android.sdk;
 
-import android.os.Handler;
-
 import java.net.URL;
 import java.util.Iterator;
+import java.util.Timer;
+import java.util.TimerTask;
 
 class HeartBeatPing {
 
@@ -11,15 +11,8 @@ class HeartBeatPing {
 
     // should be slightly less than the amount of time the SRCH2 server core waits to autoshutdown
     static final int HEART_BEAT_PING_DELAY = 50000;
-    private Handler timer;
-    private DelayTask timerCallback;
-
+    private Timer timer;
     private static HeartBeatPing instance;
-
-    private HeartBeatPing() {
-        Cat.d(TAG, "HeartBeatPing()");
-        timer = new Handler();
-    }
 
     // call when checkcores loaded finishes
     static void start() {
@@ -42,22 +35,17 @@ class HeartBeatPing {
 
     private void pingAndRepeat() {
         Cat.d(TAG, "pingAndRepeat");
-        if (instance != null && timer != null) {
-            Cat.d(TAG, "pingAndRepeat - instance,timer not null");
-            timerCallback = new DelayTask();
-            timer.postDelayed(timerCallback, HEART_BEAT_PING_DELAY);
-        }
-    }
-
-    // callback for handling delay, necessary so that callback can be removed/interrupted
-    private class DelayTask implements Runnable {
-        @Override
-        public void run() {
-            Cat.d(TAG, "delaytask::run()");
-            if (instance != null) {
-                Cat.d(TAG, "delaytask::run() instance not null executing pingtask");
-                HttpTask.executeTask(new PingTask(instance));
+        if (instance != null) {
+            if (timer != null) {
+                timer.cancel();
             }
+            timer = new Timer();
+            timer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    HttpTask.executeTask(new PingTask(instance));
+                }
+            }, HEART_BEAT_PING_DELAY);
         }
     }
 
@@ -66,9 +54,9 @@ class HeartBeatPing {
         Cat.d(TAG, "interrupt");
         if (instance != null) {
             Cat.d(TAG, "interrupt - instaqnce not null");
-            if (instance.timerCallback != null) {
-                instance.timer.removeCallbacks(instance.timerCallback);
-                instance.timerCallback = null;
+            if (instance.timer != null) {
+                instance.timer.cancel();
+                instance.timer = null;
             }
         }
     }

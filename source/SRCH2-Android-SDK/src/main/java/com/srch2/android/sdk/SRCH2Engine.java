@@ -340,6 +340,7 @@ final public class SRCH2Engine {
             context.unregisterReceiver(incomingIntentReciever);
         } catch (IllegalArgumentException ignore) {
         }
+
     }
 
     /**
