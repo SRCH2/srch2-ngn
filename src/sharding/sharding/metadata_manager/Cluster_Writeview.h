@@ -110,7 +110,38 @@ struct NodeShard_Writeview{
 	double load;
 };
 
+class Cluster_Writeview;
+class ClusterShardIterator{
+public:
+    ClusterShardIterator(Cluster_Writeview * writeview){
+        this->clusterShardsCursor = 0;
+        ASSERT(writeview != NULL);
+        this->writeview = writeview;
+    }
+    unsigned clusterShardsCursor;
+    Cluster_Writeview * writeview;
+    void beginClusterShardsIteration();
+    bool getNextClusterShard(ClusterShardId & shardId, double & load, ShardState & state, bool & isLocal, NodeId & nodeId);
+    bool getNextLocalClusterShard(ClusterShardId & shardId, double & load,  LocalPhysicalShard & localPhysicalShard );
+};
+
+class NodeShardIterator{
+public:
+    NodeShardIterator(Cluster_Writeview * writeview){
+        this->nodeShardsCursor = 0;
+        ASSERT(writeview != NULL);
+        this->writeview = writeview;
+    }
+    unsigned nodeShardsCursor;
+    Cluster_Writeview * writeview;
+    void beginNodeShardsIteration() ;
+    bool getNextNodeShard(NodeShardId & nodeShardId, bool & isLocal) ;
+    bool getNextLocalNodeShard(NodeShardId & nodeShardId, double & load,  LocalPhysicalShard & dataInfo) ;
+};
+
 class Cluster_Writeview{
+    friend class ClusterShardIterator;
+    friend class NodeShardIterator;
 public:
 	string clusterName;
 	NodeId currentNodeId;
@@ -149,18 +180,11 @@ public:
 	void moveClusterShard(const ClusterShardId & shardId, const NodeId & destNodeId);
 	void moveClusterShard(const ClusterShardId & shardId, const LocalPhysicalShard & physicalShard);
 
-	void beginClusterShardsIteration();
-	bool getNextClusterShard(ClusterShardId & shardId, double & load, ShardState & state, bool & isLocal, NodeId & nodeId);
-	bool getNextLocalClusterShard(ClusterShardId & shardId, double & load,  LocalPhysicalShard & localPhysicalShard );
-
 	void addLocalNodeShard(const NodeShardId & nodeShardId, const double load, const LocalPhysicalShard & physicalShardInfo);
 	void addExternalNodeShard(const NodeShardId & nodeShardId, const double load);
 	void removeNodeShard(const NodeShardId & nodeShardId);
 	void setNodeShardServer(const NodeShardId & nodeShardId, boost::shared_ptr<Srch2Server> server);
 
-	void beginNodeShardsIteration() ;
-	bool getNextNodeShard(NodeShardId & nodeShardId, bool & isLocal) ;
-	bool getNextLocalNodeShard(NodeShardId & nodeShardId, double & load,  LocalPhysicalShard & dataInfo) ;
 
 
 	// these partitions don't have write access yet.
@@ -208,7 +232,6 @@ private:
 	unsigned clusterShardsCursor;
 	vector<ClusterShard_Writeview *> clusterShards;
 	map<ClusterShardId, unsigned> clusterShardIdIndexes;
-	unsigned nodeShardsCursor;
 	vector<NodeShard_Writeview *> nodeShards;
 
 	// cluster shard id => array index

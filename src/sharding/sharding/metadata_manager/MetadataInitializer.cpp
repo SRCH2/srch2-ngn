@@ -61,8 +61,9 @@ void MetadataInitializer::initializeCluster(){
 	NodeId nodeId;
 	LocalPhysicalShard physicalShard;
 	double load;
-	writeview->beginClusterShardsIteration();
-	while(writeview->getNextClusterShard(id, load, state, isLocal, nodeId)){
+	ClusterShardIterator cShardItr(writeview);
+	cShardItr.beginClusterShardsIteration();
+	while(cShardItr.getNextClusterShard(id, load, state, isLocal, nodeId)){
 		ClusterShardId pid(id.coreId,id.partitionId);
 		if(state == SHARDSTATE_UNASSIGNED){
 			if(unassignedPartitions.count(pid) == 0){
@@ -197,15 +198,17 @@ void MetadataInitializer::loadShards(Cluster_Writeview * newWriteview){
 	double load;
 
 	vector<pair<ClusterShardId, InitialShardLoader *> > clusterShardsToLoad;
-	newWriteview->beginClusterShardsIteration();
-	while(newWriteview->getNextLocalClusterShard(id,load,physicalShard)){
+	ClusterShardIterator cShardItr(newWriteview);
+	cShardItr.beginClusterShardsIteration();
+	while(cShardItr.getNextLocalClusterShard(id,load,physicalShard)){
 		InitialShardLoader * initialShardLoader = new InitialShardLoader(new ClusterShardId(id), physicalShard.indexDirectory);
 		clusterShardsToLoad.push_back(std::make_pair(id, initialShardLoader));
 	}
 
 	vector<pair<NodeShardId, InitialShardLoader * > > nodeShardsToLoad;
-	newWriteview->beginNodeShardsIteration();
-	while(newWriteview->getNextLocalNodeShard(nodeShardId, load, physicalShard)){
+    NodeShardIterator nShardItr(newWriteview);
+    nShardItr.beginNodeShardsIteration();
+	while(nShardItr.getNextLocalNodeShard(nodeShardId, load, physicalShard)){
 		InitialShardLoader * initialShardLoader = new InitialShardLoader(new ClusterShardId(id), physicalShard.indexDirectory);
 		nodeShardsToLoad.push_back(std::make_pair(nodeShardId, initialShardLoader));
 	}

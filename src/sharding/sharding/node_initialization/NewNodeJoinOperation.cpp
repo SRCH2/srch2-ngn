@@ -173,12 +173,15 @@ OperationState * NewNodeJoinOperation::commit(){
 	NodeId nodeId;
 	LocalPhysicalShard physicalShard;
 	double load;
-	writeview->beginClusterShardsIteration();
-	while(writeview->getNextLocalClusterShard(id, load, physicalShard)){
+	ClusterShardIterator cShardItr(writeview);
+	cShardItr.beginClusterShardsIteration();
+	while(cShardItr.getNextLocalClusterShard(id, load, physicalShard)){
 		localClusterShards.push_back(id);
 	}
-	writeview->beginNodeShardsIteration();
-	while(writeview->getNextLocalNodeShard(nodeShardId, load, physicalShard)){
+
+	NodeShardIterator nShardItr(writeview);
+	nShardItr.beginNodeShardsIteration();
+	while(nShardItr.getNextLocalNodeShard(nodeShardId, load, physicalShard)){
 		nodeShardIds.push_back(nodeShardId);
 	}
 
@@ -218,8 +221,10 @@ OperationState * NewNodeJoinOperation::releaseLocks(){
 	NodeId nodeId;
 	LocalPhysicalShard physicalShard;
 	double load;
-	writeview->beginClusterShardsIteration();
-	while(writeview->getNextClusterShard(id, load, state, isLocal, nodeId)){
+
+	ClusterShardIterator cShardItr(writeview);
+	cShardItr.beginClusterShardsIteration();
+	while(cShardItr.getNextClusterShard(id, load, state, isLocal, nodeId)){
 		batch.push_back(new SingleResourceLockRequest(id, NodeOperationId(writeview->currentNodeId, this->getOperationId())));
 	}
 

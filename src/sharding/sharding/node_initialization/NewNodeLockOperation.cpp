@@ -28,8 +28,9 @@ NewNodeLockOperation::NewNodeLockOperation(const unsigned & operationId):Operati
 	NodeId nodeId;
 	LocalPhysicalShard physicalShard;
 	double load;
-	writeview->beginClusterShardsIteration();
-	while(writeview->getNextClusterShard(id, load, state, isLocal, nodeId)){
+	ClusterShardIterator cShardItr(writeview);
+	cShardItr.beginClusterShardsIteration();
+	while(cShardItr.getNextClusterShard(id, load, state, isLocal, nodeId)){
 		if(isLocal){
 			lockTypes[id] = ResourceLockType_X;
 		}else{

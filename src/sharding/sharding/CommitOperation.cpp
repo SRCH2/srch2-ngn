@@ -19,7 +19,7 @@ CommitOperation::CommitOperation(const unsigned & operationId,
 	this->metadataChange = metadataChange;
 	Cluster_Writeview * writeview = ShardManager::getShardManager()->getWriteview();
 	vector<NodeId> allNodes;
-	writeview->getArrivedNodes(allNodes);
+	writeview->getArrivedNodes(allNodes, true);
 	for(unsigned i = 0;  i < allNodes.size(); ++i){
 		if(std::find(exceptions.begin(), exceptions.end(), allNodes.at(i)) == exceptions.end()){
 			this->participants.push_back(allNodes.at(i));

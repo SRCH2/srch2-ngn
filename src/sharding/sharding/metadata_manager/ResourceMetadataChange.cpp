@@ -41,8 +41,9 @@ bool NodeAddChange::doChange(Cluster_Writeview * metadata){
     NodeId nodeId;
     LocalPhysicalShard physicalShard;
     double load;
-    metadata->beginClusterShardsIteration();
-    while(metadata->getNextClusterShard(id, load, state, isLocal, nodeId)){
+    ClusterShardIterator cShardItr(metadata);
+    cShardItr.beginClusterShardsIteration();
+    while(cShardItr.getNextClusterShard(id, load, state, isLocal, nodeId)){
         if(state != SHARDSTATE_READY){
             if(std::find(localClusterShardIds.begin(), localClusterShardIds.end(), id) !=
                     localClusterShardIds.end()){

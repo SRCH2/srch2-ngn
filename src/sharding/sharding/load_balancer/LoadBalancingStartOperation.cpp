@@ -308,9 +308,9 @@ void LoadBalancingStartOperation::prepareAssignmentCandidates(vector<AssignCandi
 	LocalPhysicalShard physicalShard;
 	double load;
 
-
-	writeview->beginClusterShardsIteration();
-	while(writeview->getNextClusterShard(id, load, state, isLocal, nodeId)){
+	ClusterShardIterator cShardItr(writeview);
+	cShardItr.beginClusterShardsIteration();
+	while(cShardItr.getNextClusterShard(id, load, state, isLocal, nodeId)){
 		if(state != SHARDSTATE_UNASSIGNED){
 			continue;
 		}
@@ -330,8 +330,9 @@ void LoadBalancingStartOperation::prepareAssignmentCandidates(vector<AssignCandi
 	}
 
 	// now add ready replicas
-	writeview->beginClusterShardsIteration();
-	while(writeview->getNextClusterShard(id, load, state, isLocal, nodeId)){
+    ClusterShardIterator cShardItr2(writeview);
+    cShardItr2.beginClusterShardsIteration();
+	while(cShardItr2.getNextClusterShard(id, load, state, isLocal, nodeId)){
 		if(state != SHARDSTATE_READY){
 			continue;
 		}
@@ -378,8 +379,9 @@ void LoadBalancingStartOperation::prepareMoveCandidates(vector<std::pair<NodeId,
 	map<ClusterPID, unsigned> partitionNumberOfReadyReplicas;
 	set<ClusterPID> partitionHasReplicaOnCurrentNode;
 
-	writeview->beginClusterShardsIteration();
-	while(writeview->getNextClusterShard(id, load, state, isLocal, nodeId)){
+    ClusterShardIterator cShardItr(writeview);
+    cShardItr.beginClusterShardsIteration();
+	while(cShardItr.getNextClusterShard(id, load, state, isLocal, nodeId)){
 		if(state != SHARDSTATE_READY){
 			continue;
 		}
