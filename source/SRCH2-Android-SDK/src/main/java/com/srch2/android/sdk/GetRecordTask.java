@@ -40,7 +40,6 @@ class GetRecordTask extends SearchTask {
         if (record == null) {
             isRecordRetrieved = false;
         }
-        SRCH2Engine.resetHeartBeatPing();
         HttpTask.executeTask(new GetRecordResponse(targetCoreName, isRecordRetrieved, record, jsonResponse));
     }
 }

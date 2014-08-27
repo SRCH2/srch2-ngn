@@ -98,11 +98,15 @@ final public class SRCH2Engine {
         }
     }
 
-    static void stopHeartBeatPing() {
+    static void clearHeatBeatPingReference() {
+        clearHeartBeatPing();
+        heartBeatPinger = null;
+    }
+
+    static void clearHeartBeatPing() {
         if (heartBeatPinger != null) {
             heartBeatPinger.stopPinging();
         }
-        heartBeatPinger = null;
     }
 
     private SRCH2Engine() { }
@@ -353,7 +357,7 @@ final public class SRCH2Engine {
      */
     public static void onStop(Context context) {
         Cat.d(TAG, "onStop");
-        stopHeartBeatPing();
+        clearHeatBeatPingReference();
         stopExecutable(context);
         resetState();
         isStarted = false;

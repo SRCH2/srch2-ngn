@@ -89,14 +89,17 @@ abstract class HttpTask implements Runnable {
 
         if (taskId == TASK_ID_SEARCH) {
             if (searchTaskExecutor != null) {
+                SRCH2Engine.clearHeartBeatPing();
                 searchTaskExecutor.execute(taskToExecute);
             }
         } else if (taskId == TASK_ID_INSERT_UPDATE_DELETE_GETRECORD) {
             if (controlTaskExecutor != null) {
+                SRCH2Engine.clearHeartBeatPing();
                 controlTaskExecutor.execute(taskToExecute);
             }
         } else if (taskId == TASK_ID_CLIENT_CALLBACK) {
             if (clientCallbackTaskExecutor != null) {
+                SRCH2Engine.resetHeartBeatPing();
                 clientCallbackTaskExecutor.execute(taskToExecute);
             }
         }
@@ -120,7 +123,6 @@ abstract class HttpTask implements Runnable {
         protected void onTaskComplete(int returnedResponseCode,
                                       String returnedResponseLiteral) {
             updateIndexableIndexInformation(SRCH2Engine.conf.indexableMap.get(targetCoreName));
-            SRCH2Engine.resetHeartBeatPing();
             if (SRCH2Engine.isChanged.get()) {
                 SRCH2Engine.reQueryLastOne();
             }

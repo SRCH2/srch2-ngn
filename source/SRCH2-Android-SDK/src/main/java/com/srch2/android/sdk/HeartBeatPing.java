@@ -6,8 +6,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 class HeartBeatPing {
-
-    static final int HEART_BEAT_PING_DELAY = 10000;
+    // should be slightly less than the amount of time the SRCH2 server core waits to autoshutdown
+    static final int HEART_BEAT_PING_DELAY = 40000;
     Timer heartBeatTimer;
 
     void startPinging() {
