@@ -1,0 +1,142 @@
+<config>
+<srch2Home>null</srch2Home>
+    <listeningHostname>localhost</listeningHostname>
+    <listeningPort>8081</listeningPort>
+
+    <!-- moved from <query> which is now per core -->
+    <maxSearchThreads>2</maxSearchThreads>
+
+    <!-- Testing multiple cores here -->
+    <cores defaultCoreName="movie">
+ <core name="movie">
+            <dataFile>empty-data.json</dataFile>
+            <dataDir>movie</dataDir>
+            <dataSourceType>0</dataSourceType>
+            <indexConfig>
+                <indexType>0</indexType>
+                <supportSwapInEditDistance>true</supportSwapInEditDistance>
+                <fieldBoost>movieName^1 </fieldBoost>
+                <defaultQueryTermBoost>1</defaultQueryTermBoost>
+                <enablePositionIndex>1</enablePositionIndex>
+            </indexConfig>
+            <query>
+                <rankingAlgorithm>
+                    <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
+                </rankingAlgorithm>
+                <fuzzyMatchPenalty>0.9</fuzzyMatchPenalty>
+                <queryTermSimilarityThreshold>0.75</queryTermSimilarityThreshold>
+                <prefixMatchPenalty>0.95</prefixMatchPenalty>
+                <cacheSize>65536000</cacheSize>
+                <rows>10</rows>
+                <fieldBasedSearch>1</fieldBasedSearch>
+                <searcherType>0</searcherType>
+
+                <!-- 0: exact match; 1: fuzzy match.-->
+                <queryTermFuzzyType>0</queryTermFuzzyType>
+
+                <!-- 0: prefix match; 1: complete match -->
+                <queryTermPrefixType>1</queryTermPrefixType>
+
+                <queryResponseWriter>
+                    <responseFormat>1</responseFormat>
+                </queryResponseWriter>
+            </query>
+	<schema>
+		<fields>
+			<field name="year" type="integer" searchable="false" refining="true" required="false"/>
+			<field name="id" type="text" searchable="false" refining="true" required="false"/>
+			<field name="movieName" type="text" searchable="true" refining="false" required="false"/>
+		</fields>
+		<uniqueKey>id</uniqueKey>
+		<facetEnabled>true</facetEnabled>
+		<facetFields>
+			<facetField name="year" facetType="categorical"/>
+		</facetFields>
+		<types>
+		  <fieldType name="text_en">
+			<analyzer>
+				<filter name="PorterStemFilter" dictionary="" />
+				<filter name="StopFilter" words="stop-words.txt" />
+			</analyzer>
+		  </fieldType>
+		</types>
+	</schema>
+	  <updatehandler>
+                <maxDocs>15000000</maxDocs>
+                <maxMemory>10000000</maxMemory>
+                <mergePolicy>
+                    <mergeEveryNSeconds>10</mergeEveryNSeconds>
+                    <mergeEveryMWrites>10</mergeEveryMWrites>
+                </mergePolicy>
+                <updateLog>
+                    <logLevel>3</logLevel>
+                    <accessLogFile>srch2-log.txt</accessLogFile>
+                </updateLog>
+            </updatehandler>
+        </core>
+ <core name="businessDirectory">
+            <dataFile>empty-data.json</dataFile>
+            <dataDir>businessDirectory</dataDir>
+            <dataSourceType>0</dataSourceType>
+            <indexConfig>
+                <indexType>0</indexType>
+                <supportSwapInEditDistance>true</supportSwapInEditDistance>
+                <fieldBoost>name^10 category^20 </fieldBoost>
+                <defaultQueryTermBoost>1</defaultQueryTermBoost>
+                <enablePositionIndex>1</enablePositionIndex>
+            </indexConfig>
+            <query>
+                <rankingAlgorithm>
+                    <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
+                </rankingAlgorithm>
+                <fuzzyMatchPenalty>0.9</fuzzyMatchPenalty>
+                <queryTermSimilarityThreshold>0.75</queryTermSimilarityThreshold>
+                <prefixMatchPenalty>0.95</prefixMatchPenalty>
+                <cacheSize>65536000</cacheSize>
+                <rows>10</rows>
+                <fieldBasedSearch>1</fieldBasedSearch>
+                <searcherType>0</searcherType>
+
+                <!-- 0: exact match; 1: fuzzy match.-->
+                <queryTermFuzzyType>0</queryTermFuzzyType>
+
+                <!-- 0: prefix match; 1: complete match -->
+                <queryTermPrefixType>1</queryTermPrefixType>
+
+                <queryResponseWriter>
+                    <responseFormat>1</responseFormat>
+                </queryResponseWriter>
+            </query>
+	<schema>
+		<fields>
+			<field name="id" type="text" searchable="false" refining="true" required="false"/> 
+			<field name="name" type="text" searchable="true" refining="false" required="false"/>
+			<field name="category" type="text" searchable="true" refining="false" required="false"/>
+		</fields>
+		<uniqueKey>id</uniqueKey>
+		<facetEnabled>false</facetEnabled>
+		<types>
+		  <fieldType name="text_en">
+			<analyzer>
+				<filter name="PorterStemFilter" dictionary="" />
+				<filter name="StopFilter" words="stop-words.txt" />
+			</analyzer>
+		  </fieldType>
+		</types>
+	</schema>
+	  <updatehandler>
+                <maxDocs>15000000</maxDocs>
+                <maxMemory>10000000</maxMemory>
+                <mergePolicy>
+                    <mergeEveryNSeconds>10</mergeEveryNSeconds>
+                    <mergeEveryMWrites>10</mergeEveryMWrites>
+                </mergePolicy>
+                <updateLog>
+                    <logLevel>3</logLevel>
+                    <accessLogFile>srch2-log.txt</accessLogFile>
+                </updateLog>
+            </updatehandler>
+        </core>
+   </cores>
+</config>
+

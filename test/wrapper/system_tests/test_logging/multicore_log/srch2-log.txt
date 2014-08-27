@@ -1,0 +1,86 @@
+2014-08-27 11:00:34 INFO	Creating indexes from JSON file...
+2014-08-27 11:00:34 INFO	                                                     
+2014-08-27 11:00:34 INFO	Indexed 244 / 244 records.
+2014-08-27 11:00:34 INFO	Finalizing ...
+2014-08-27 11:00:34 INFO	Saving Indexes ...
+2014-08-27 11:00:34 INFO	Indexes saved.
+2014-08-27 11:00:34 INFO	Creating indexes from JSON file...
+2014-08-27 11:00:34 INFO	                                                     
+2014-08-27 11:00:34 INFO	Indexed 101 / 101 records.
+2014-08-27 11:00:34 INFO	Finalizing ...
+2014-08-27 11:00:34 INFO	Saving Indexes ...
+2014-08-27 11:00:34 INFO	Indexes saved.
+2014-08-27 11:00:34 INFO	Creating indexes from JSON file...
+2014-08-27 11:00:34 INFO	                                                     
+2014-08-27 11:00:34 INFO	Indexed 101 / 101 records.
+2014-08-27 11:00:34 INFO	Finalizing ...
+2014-08-27 11:00:34 INFO	Saving Indexes ...
+2014-08-27 11:00:34 INFO	Indexes saved.
+2014-08-27 11:00:34 INFO	Creating indexes from JSON file...
+2014-08-27 11:00:34 INFO	                                                     
+2014-08-27 11:00:34 INFO	Indexed 244 / 244 records.
+2014-08-27 11:00:34 INFO	Finalizing ...
+2014-08-27 11:00:34 INFO	Saving Indexes ...
+2014-08-27 11:00:34 INFO	Indexes saved.
+2014-08-27 11:00:34 INFO	Creating indexes from JSON file...
+2014-08-27 11:00:34 INFO	                                                     
+2014-08-27 11:00:34 INFO	Indexed 100 / 100 records.
+2014-08-27 11:00:34 INFO	Finalizing ...
+2014-08-27 11:00:34 INFO	Saving Indexes ...
+2014-08-27 11:00:35 INFO	Indexes saved.
+2014-08-27 11:00:35 INFO	Starting Srch2 server with 2 serving threads at 0.0.0.0:8087
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36773 GET query: search?q=march, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36774 GET query: search?q=Aviator, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36775 GET query: core1/search?q=Aviator, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36776 GET query: core2/search?q=Aviator, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36777 GET query: core3/search?q=Aviator, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36778 GET query: core4/search?q=Aviator, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36779 GET query: search?q=javascript, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36780 GET query: core1/search?q=javascript, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36781 GET query: core2/search?q=javascript, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36782 GET query: core3/search?q=javascript, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36783 GET query: core4/search?q=javascript, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36784 GET query: search?q=attorney, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36785 GET query: core1/search?q=attorney, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36786 GET query: core2/search?q=attorney, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36787 GET query: core3/search?q=attorney, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36788 GET query: core4/search?q=attorney, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36789 GET query: core1/search?q=Aviatro, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36790 GET query: core4/search?q=Aviatro, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36791 GET query: _all/search?q=Aviatro, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36791 GET query: _all/search?q=Aviatro, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36791 GET query: _all/search?q=Aviatro, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36791 GET query: _all/search?q=Aviatro, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36791 GET query: _all/search?q=Aviatro, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36792 GET query: core1/search?q=Aviat, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36793 GET query: core4/search?q=Aviat, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36794 GET query: _all/search?q=Aviat, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36794 GET query: _all/search?q=Aviat, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36794 GET query: _all/search?q=Aviat, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36794 GET query: _all/search?q=Aviat, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36794 GET query: _all/search?q=Aviat, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36795 GET query: core1/search?q=monkeys, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36796 GET query: core4/search?q=monkeys, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36797 GET query: _all/search?q=monkeys, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36797 GET query: _all/search?q=monkeys, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36797 GET query: _all/search?q=monkeys, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36797 GET query: _all/search?q=monkeys, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36797 GET query: _all/search?q=monkeys, searcher_time: 1 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36798 GET query: core1/search?q=Rings, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36799 GET query: core4/search?q=Rings, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36800 GET query: _all/search?q=Rings, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36800 GET query: _all/search?q=Rings, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36800 GET query: _all/search?q=Rings, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36800 GET query: _all/search?q=Rings, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36800 GET query: _all/search?q=Rings, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36801 GET query: core1/search?q=martn~, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36802 GET query: core4/search?q=martn~, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36803 GET query: _all/search?q=martn~, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36803 GET query: _all/search?q=martn~, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36803 GET query: _all/search?q=martn~, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36803 GET query: _all/search?q=martn~, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	ip: 127.0.0.1, port: 36803 GET query: _all/search?q=martn~, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-08-27 11:00:35 INFO	Stopping server.
+2014-08-27 11:00:35 INFO	Thread = <2416764672> stopped
+2014-08-27 11:00:35 INFO	Thread = <2408371968> stopped
+2014-08-27 11:00:35 INFO	Server stopped successfully
