@@ -71,6 +71,24 @@ typedef std::map<unsigned short /*portNumber*/, int /*fd*/> PortSocketMap_t;
 pthread_t *threads = NULL;
 unsigned int MAX_THREADS = 0;
 
+pthread_t * global_heart_beat_thread = NULL;
+volatile bool has_one_pulse = false;
+
+void* heart_beat_function(void *arg){
+    unsigned seconds = *(unsigned*) arg;
+    if (seconds > 0){
+        while(true){
+            has_one_pulse = false;
+            sleep(static_cast<unsigned>(seconds));
+            if (!has_one_pulse){
+                kill(getpid(), SIGTERM);
+            }
+        }
+    }
+    return NULL;
+}
+
+
 // These are global variables that store host and port information for srch2 engine
 unsigned short globalDefaultPort;
 const char *globalHostName;
@@ -302,230 +320,106 @@ static bool checkOperationPermission(evhttp_request *req, Srch2Server *srch2Serv
     return true;
 }
 
-/**
- * 'search' callback function
- * @param req evhttp request object
- * @param arg optional argument
- */
-static void cb_search(evhttp_request *req, void *arg)
-{
-    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
+struct type_cb_args{
+    srch2http::PortType_t portType;
+    void* real_args;
+
+    type_cb_args(srch2http::PortType_t type, void* args):portType(type), real_args(args)
+    {}
+};
+
+static void cb_single_core_operator_route(evhttp_request *req, void *arg){
+    if (arg == NULL){
+        return;
+    }
+    struct type_cb_args args = *(reinterpret_cast<type_cb_args*>(arg));
+    if (args.real_args == NULL){
+        return;
+    }
+    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(args.real_args);
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
 
-    if (checkOperationPermission(req, srch2Server, srch2http::SearchPort) == false) {
+    has_one_pulse = true;
+    if (checkOperationPermission(req, srch2Server, args.portType) == false) {
         return;
     }
 
     try {
-        srch2http::HTTPRequestHandler::searchCommand(req, srch2Server);
+        switch (args.portType){
+            case srch2http::SearchPort:
+                HTTPRequestHandler::searchCommand(req, srch2Server);
+                break;
+            case srch2http::SuggestPort:
+                HTTPRequestHandler::suggestCommand(req, srch2Server);
+                break;
+            case srch2http::InfoPort:
+            {
+                string versioninfo = getCurrentVersion();
+                HTTPRequestHandler::infoCommand(req, srch2Server, versioninfo);
+                break;
+            }
+            case srch2http::DocsPort:
+                HTTPRequestHandler::writeCommand(req, srch2Server);
+                break;
+            case srch2http::UpdatePort:
+                HTTPRequestHandler::updateCommand(req, srch2Server);
+                break;
+            case srch2http::SavePort:
+                HTTPRequestHandler::saveCommand(req, srch2Server);
+                break;
+            case srch2http::ExportPort:
+                HTTPRequestHandler::exportCommand(req, srch2Server);
+                break;
+            case srch2http::ResetLoggerPort:
+    	        HTTPRequestHandler::resetLoggerCommand(req, srch2Server);
+                break;
+            default:
+                cb_notfound(req, srch2Server);
+                break;
+        }
     } catch (exception& e) {
         // exception caught
         Logger::error(e.what());
         srch2http::HTTPRequestHandler::handleException(req);
     }
+
 }
 
-/**
- * 'suggest' callback function
- * @param req evhttp request object
- * @param arg optional argument
- */
-static void cb_suggest(evhttp_request *req, void *arg)
-{
-    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
-    evhttp_add_header(req->output_headers, "Content-Type",
-            "application/json; charset=UTF-8");
-
-    if (checkOperationPermission(req, srch2Server, srch2http::SuggestPort) == false) {
+static void cb_all_core_operator_route(evhttp_request *req, void *arg){
+    if (arg == NULL){
         return;
     }
-
-    try {
-        srch2http::HTTPRequestHandler::suggestCommand(req, srch2Server);
-    } catch (exception& e) {
-        // exception caught
-        Logger::error(e.what());
-        srch2http::HTTPRequestHandler::handleException(req);
-    }
-}
-
-/**
- * 'info' callback function
- * @param req evhttp request object
- * @param arg optional argument
- */
-static void cb_info(evhttp_request *req, void *arg)
-{
-    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
-    evhttp_add_header(req->output_headers, "Content-Type",
-            "application/json; charset=UTF-8");
-
-    if (checkOperationPermission(req, srch2Server, srch2http::InfoPort) == false) {
+    struct type_cb_args args = *(reinterpret_cast<type_cb_args*>(arg));
+    if (args.real_args == NULL){
         return;
     }
-
-    string versioninfo = getCurrentVersion();
-    try {
-        HTTPRequestHandler::infoCommand(req, srch2Server, versioninfo);
-    } catch (exception& e) {
-        // exception caught
-        Logger::error(e.what());
-        srch2http::HTTPRequestHandler::handleException(req);
-    }
-
-}
-
-/**
- * 'write/v1/' callback function
- * @param req evhttp request object
- * @param arg optional argument
- */
-static void cb_write(evhttp_request *req, void *arg)
-{
-    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
+    CoreNameServerMap_t *coreNameServerMap = reinterpret_cast<CoreNameServerMap_t*>(args.real_args);
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
 
-    if (checkOperationPermission(req, srch2Server, srch2http::DocsPort) == false) {
-        return;
-    }
-
-    try {
-        HTTPRequestHandler::writeCommand(req, srch2Server);
-    } catch (exception& e) {
-        // exception caught
-        Logger::error(e.what());
-        srch2http::HTTPRequestHandler::handleException(req);
-    }
-
-}
-
-static void cb_update(evhttp_request *req, void *arg)
-{
-    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
-    evhttp_add_header(req->output_headers, "Content-Type",
-            "application/json; charset=UTF-8");
-
-    if (checkOperationPermission(req, srch2Server, srch2http::UpdatePort) == false) {
-        return;
-    }
-
-    try {
-        HTTPRequestHandler::updateCommand(req, srch2Server);
-    } catch (exception& e) {
-        // exception caught
-        Logger::error(e.what());
-        srch2http::HTTPRequestHandler::handleException(req);
-    }
-
-}
-
-static void cb_save(evhttp_request *req, void *arg)
-{
-    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
-    evhttp_add_header(req->output_headers, "Content-Type",
-            "application/json; charset=UTF-8");
-
-    if (checkOperationPermission(req, srch2Server, srch2http::SavePort) == false) {
-        return;
-    }
-
-    try {
-        HTTPRequestHandler::saveCommand(req, srch2Server);
-    } catch (exception& e) {
-        // exception caught
-        Logger::error(e.what());
-        srch2http::HTTPRequestHandler::handleException(req);
-    }
-
-}
-
-static void cb_shutdown(evhttp_request *req, void *arg)
-{
-    CoreNameServerMap_t *coreNameServerMap = reinterpret_cast<CoreNameServerMap_t*>(arg);
-    evhttp_add_header(req->output_headers, "Content-Type",
-            "application/json; charset=UTF-8");
-    
-    // The call should only send from the default port
-    if (checkGlobalOperationPermission(req, coreNameServerMap, "shutdown") == false ) {
-        return ;
-    }
-	
-    try {
-        HTTPRequestHandler::shutdownCommand(req, coreNameServerMap);
-    } catch (exception& e) {
-        // exception caught
-        Logger::error(e.what());
-        srch2http::HTTPRequestHandler::handleException(req);
-    }
-
-}
-
-/*
- * 'search_all' callback function. It will search each of the core and wrapup the result
- * in a json format
- */
-static void cb_search_all (evhttp_request *req, void * arg)
-{
-    CoreNameServerMap_t *coreNameServerMap = reinterpret_cast<CoreNameServerMap_t*>(arg);
-    evhttp_add_header(req->output_headers, "Content-Type",
-            "application/json; charset=UTF-8");
-    
-    // The call should only send from the default port
-    if (checkGlobalOperationPermission(req, coreNameServerMap, "search_all") == false ) {
-        return ;
-    }
-	
-    try {
-        srch2http::HTTPRequestHandler::searchAllCommand(req, coreNameServerMap);
-    } catch (exception& e) {
-        // exception caught
-        Logger::error(e.what());
-        srch2http::HTTPRequestHandler::handleException(req);
-    }
-   
-}
-
-
-
-static void cb_export(evhttp_request *req, void *arg)
-{
-    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
-    evhttp_add_header(req->output_headers, "Content-Type",
-                      "application/json; charset=UTF-8");
-
-    if (checkOperationPermission(req, srch2Server, srch2http::ExportPort) == false) {
-        return;
-    }
-
-    HTTPRequestHandler::exportCommand(req, srch2Server);
-}
-
-/**
- *  'reset logger file' callback function
- *  @param req evhttp request object
- *  @param arg optional argument
- */
-static void cb_resetLogger(evhttp_request *req, void *arg)
-{
-    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
-    evhttp_add_header(req->output_headers, "Content-Type",
-            "application/json; charset=UTF-8");
-
-    if (checkOperationPermission(req, srch2Server, srch2http::ResetLoggerPort) == false) {
-        return;
-    }
-
-    try {
-    	HTTPRequestHandler::resetLoggerCommand(req, srch2Server);
-    } catch (exception& e) {
-        // exception caught
+    has_one_pulse = true;
+    try{
+        switch (args.portType){
+            case srch2http::SearchAllPort:
+                if (checkGlobalOperationPermission(req, coreNameServerMap, "searchall")) {
+                    HTTPRequestHandler::searchAllCommand(req, coreNameServerMap);
+                }
+                break;
+            case srch2http::ShutDownAllPort:
+                if (checkGlobalOperationPermission(req, coreNameServerMap, "shutdown")) {
+                    HTTPRequestHandler::shutdownCommand(req, coreNameServerMap);
+                }
+                break;
+            default:
+                cb_notfound(req, NULL);
+                break;
+        }
+    } catch (exception& e){
         Logger::error(e.what());
         srch2http::HTTPRequestHandler::handleException(req);
     }
 }
-
 
 /**
  * Busy 409 event handler.
@@ -594,6 +488,58 @@ void* dispatch(void *arg) {
     // ask libevent to loop on events
     event_base_dispatch((struct event_base*) arg);
     return NULL;
+}
+
+void graceful_exit(CoreNameServerMap_t &coreNameServerMap, vector<struct event_base *> evBases
+        ,PortSocketMap_t &globalPortSocketMap, ConfigManager *serverConf ){
+
+    if ( global_heart_beat_thread != NULL ){
+        pthread_kill(*global_heart_beat_thread, SIGTERM);
+    }
+#ifndef ANDROID
+    // Android will send the pthread_kill directly, then the main thread can't get the
+    // response from the pthread_join any more.
+    for (int i = 0; i < MAX_THREADS; i++) {
+        pthread_join(threads[i], NULL);
+        Logger::console("Thread = <%u> stopped", threads[i]);
+    }
+#endif
+
+    delete[] threads;
+
+    for (CoreNameServerMap_t::iterator iterator = coreNameServerMap.begin(); iterator != coreNameServerMap.end(); iterator++) {
+        iterator->second->indexer->save();
+        delete iterator->second;
+    }
+
+    /*
+     * THIS IS A HACKY SOLUTION FOR MAC OS!
+     * JIRA: https://srch2inc.atlassian.net/browse/SRCN-473
+     *
+     * The function "event_base_free(evBases[i])" is blocking the engine from
+     *  a proper exit on MacOS
+     *
+     * This function ("event_base_free(evBases[i])") does not deallocate any
+     * of the events that are currently associated with the event_base, or
+     * close any of their sockets, or free any of their pointers.
+     * --http://www.wangafu.net/~nickm/libevent-book/Ref2_eventbase.html
+     */
+#ifndef __MACH__
+    for (unsigned int i = 0; i < MAX_THREADS; i++) {
+        event_base_free(evBases[i]);
+    }
+#endif
+
+    // use global port map to close each file descriptor just once
+    for (PortSocketMap_t::iterator iterator = globalPortSocketMap.begin(); iterator != globalPortSocketMap.end(); iterator++) {
+        shutdown(iterator->second, SHUT_RD);
+    }
+
+    AnalyzerContainer::freeAll();
+    delete serverConf;
+
+    Logger::console("Server stopped successfully");
+    Logger::close();
 }
 
 void parseProgramArguments(int argc, char** argv,
@@ -673,9 +619,6 @@ static void killServer(int signal) {
         pthread_cancel(threads[i]);
 #endif
     }
-#ifdef ANDROID
-    exit(0);
-#endif
 
 #ifdef __MACH__
     /*
@@ -801,14 +744,14 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
             void (*callback)(struct evhttp_request *, void *);
         };
         PortList_t portList[] = {
-            { "/search", srch2http::SearchPort, cb_search },
-            { "/suggest", srch2http::SuggestPort, cb_suggest },
-            { "/info", srch2http::InfoPort, cb_info },
-            { "/docs", srch2http::DocsPort, cb_write },
-            { "/update", srch2http::UpdatePort, cb_update },
-            { "/save", srch2http::SavePort, cb_save },
-            { "/export", srch2http::ExportPort, cb_export },
-            { "/resetLogger", srch2http::ResetLoggerPort, cb_resetLogger },
+            { "/search", srch2http::SearchPort, cb_single_core_operator_route},
+            { "/suggest", srch2http::SuggestPort, cb_single_core_operator_route},
+            { "/info", srch2http::InfoPort, cb_single_core_operator_route},
+            { "/docs", srch2http::DocsPort, cb_single_core_operator_route},
+            { "/update", srch2http::UpdatePort, cb_single_core_operator_route},
+            { "/save", srch2http::SavePort, cb_single_core_operator_route},
+            { "/export", srch2http::ExportPort, cb_single_core_operator_route},
+            { "/resetLogger", srch2http::ResetLoggerPort, cb_single_core_operator_route},
             { NULL, srch2http::EndOfPortType, NULL }
         };
 
@@ -818,7 +761,8 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
             if (port == 1) {
                 port = globalDefaultPort;
             }
-            evhttp_set_cb(http_server, portList[j].path, portList[j].callback, defaultCore);
+            type_cb_args cb_args(portList[j].portType, defaultCore);
+            evhttp_set_cb(http_server, portList[j].path, portList[j].callback, (void*)(&cb_args));
             Logger::debug("Routing port %d route %s to default core %s", port, portList[j].path, defaultCore->getCoreName().c_str());
         }
         evhttp_set_gencb(http_server, cb_notfound, NULL);
@@ -835,7 +779,8 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
                     if (port < 1) {
                         port = globalDefaultPort;
                     }
-                    evhttp_set_cb(http_server, path.c_str(), portList[j].callback, iterator->second);
+                    type_cb_args cb_args(portList[j].portType, iterator->second);
+                    evhttp_set_cb(http_server, path.c_str(), portList[j].callback, (void*)(&cb_args));
 
                     Logger::debug("Adding port %d route %s to core %s", port, path.c_str(), coreName.c_str());
                 }
@@ -844,14 +789,15 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
 
         // set the global callbacks for all the indexes
         PortList_t global_PortList[] = {
-            { "/_all/search", srch2http::EndOfPortType, cb_search_all },
-            { "/_all/shutdown", srch2http::EndOfPortType, cb_shutdown },
+            { "/_all/search", srch2http::SearchAllPort, cb_all_core_operator_route},
+            { "/_all/shutdown", srch2http::ShutDownAllPort, cb_all_core_operator_route},
             { NULL , srch2http::EndOfPortType, NULL }
         };
 
         for(int j = 0; global_PortList[j].path != NULL; j++){
             string path = string(global_PortList[j].path);
-            evhttp_set_cb(http_server, path.c_str(), global_PortList[j].callback, coreNameServerMap);
+            type_cb_args cb_args(portList[j].portType, coreNameServerMap);
+            evhttp_set_cb(http_server, path.c_str(), global_PortList[j].callback, (void*)(&cb_args));
         }
 
         /* 4). accept bound socket */
@@ -870,6 +816,8 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
 
     return 0;
 }
+
+
 
 int main(int argc, char** argv) {
     if (argc > 1) {
@@ -958,45 +906,10 @@ int main(int argc, char** argv) {
     sigaction(SIGINT, &siginfo, NULL);
     sigaction(SIGTERM, &siginfo, NULL);
 
-    for (int i = 0; i < MAX_THREADS; i++) {
-        pthread_join(threads[i], NULL);
-        Logger::console("Thread = <%u> stopped", threads[i]);
+    unsigned int pulse_per_seconds = serverConf->getHeartBeatTimer();
+    if (pulse_per_seconds > 0){
+        pthread_create(global_heart_beat_thread, NULL, heart_beat_function, &pulse_per_seconds);
     }
-
-    delete[] threads;
-
-    for (CoreNameServerMap_t::iterator iterator = coreNameServerMap.begin(); iterator != coreNameServerMap.end(); iterator++) {
-        iterator->second->indexer->save();
-        delete iterator->second;
-    }
-
-    /*
-     * THIS IS A HACKY SOLUTION FOR MAC OS!
-     * JIRA: https://srch2inc.atlassian.net/browse/SRCN-473
-     *
-     * The function "event_base_free(evBases[i])" is blocking the engine from
-     *  a proper exit on MacOS
-     *
-     * This function ("event_base_free(evBases[i])") does not deallocate any
-     * of the events that are currently associated with the event_base, or
-     * close any of their sockets, or free any of their pointers.
-     * --http://www.wangafu.net/~nickm/libevent-book/Ref2_eventbase.html
-     */
-#ifndef __MACH__
-    for (unsigned int i = 0; i < MAX_THREADS; i++) {
-        event_base_free(evBases[i]);
-    }
-#endif
-
-    // use global port map to close each file descriptor just once
-    for (PortSocketMap_t::iterator iterator = globalPortSocketMap.begin(); iterator != globalPortSocketMap.end(); iterator++) {
-        shutdown(iterator->second, SHUT_RD);
-    }
-
-    AnalyzerContainer::freeAll();
-    delete serverConf;
-
-    Logger::console("Server stopped successfully");
-    Logger::close();
+    graceful_exit(coreNameServerMap, evBases, globalPortSocketMap, serverConf);
     return EXIT_SUCCESS;
 }

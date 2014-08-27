@@ -741,15 +741,6 @@ void HTTPRequestHandler::shutdownCommand(evhttp_request *req, const CoreNameServ
     case EVHTTP_REQ_PUT: {
         // graceful shutdown
         // since the main process is catching the kill signal, we can simply send the kill to itself
-#ifdef ANDROID
-        // The kill signal seems not catchable under Android. We need to save the index first
-        for( CoreNameServerMap_t::const_iterator it = coreNameServerMap->begin(); 
-            it != coreNameServerMap->end(); ++it){
-            std::stringstream log_str;
-            IndexWriteUtil::_saveCommand(it->second->indexer, log_str);
-            Logger::info("%s", log_str.str().c_str());
-        }
-#endif
         bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
                 "{\"message\":\"Bye\"}\n");
         Logger::info("Server is shuting down");

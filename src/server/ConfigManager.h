@@ -126,6 +126,8 @@ enum PortType_t {
     SavePort,
     ExportPort,
     ResetLoggerPort,
+    SearchAllPort,
+    ShutDownAllPort,
     EndOfPortType // stop value - not valid (also used to indicate all/default ports)
 };
 
@@ -151,6 +153,7 @@ private:
     string srch2Home;
 
     unsigned int numberOfThreads;
+    unsigned int heartBeatTimer;
 
     // <config><keywordPopularitythreshold>
     unsigned keywordPopularityThreshold;
@@ -316,6 +319,8 @@ public:
     unsigned getKeywordPopularityThreshold() const ;
 
     unsigned int getNumberOfThreads() const;
+
+    unsigned int getHeartBeatTimer() const;
 
     const std::string& getAttributeStringForMySQLQuery() const;
 
@@ -498,7 +503,7 @@ private:
     static const char* const defaultExactPreTag;
     static const char* const defaultExactPostTag;
 
-
+    static const char* const heartBeatTimerTag; 
 };
 
 // definitions for data source(s) (srch2Server objects within one HTTP server)
