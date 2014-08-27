@@ -84,6 +84,27 @@ final public class SRCH2Engine {
         }
     }
 
+    private static HeartBeatPing heartBeatPinger;
+    static void startHeartBeatPing() {
+        if (heartBeatPinger == null) {
+            heartBeatPinger = new HeartBeatPing();
+        }
+        heartBeatPinger.startPinging();
+    }
+
+    static void resetHeartBeatPing() {
+        if (heartBeatPinger != null) {
+            heartBeatPinger.resetHeartBeatPing();
+        }
+    }
+
+    static void stopHeartBeatPing() {
+        if (heartBeatPinger != null) {
+            heartBeatPinger.stopPinging();
+        }
+        heartBeatPinger = null;
+    }
+
     private SRCH2Engine() { }
 
     /**
@@ -332,6 +353,7 @@ final public class SRCH2Engine {
      */
     public static void onStop(Context context) {
         Cat.d(TAG, "onStop");
+        stopHeartBeatPing();
         stopExecutable(context);
         resetState();
         isStarted = false;

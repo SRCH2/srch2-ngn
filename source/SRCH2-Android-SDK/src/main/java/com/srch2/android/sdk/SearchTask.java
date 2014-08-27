@@ -211,6 +211,7 @@ class SearchTask extends HttpTask.SearchHttpTask {
     @Override
     protected void onTaskComplete(final int returnedResponseCode,
                                   final String returnedResponseLiteral) {
+        SRCH2Engine.resetHeartBeatPing();
         if (searchResultsListener != null) {
             final HashMap<String, ArrayList<JSONObject>> resultMap;
             if (returnedResponseCode / 100 == 2) {

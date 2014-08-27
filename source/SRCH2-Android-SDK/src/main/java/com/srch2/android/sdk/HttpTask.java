@@ -120,6 +120,7 @@ abstract class HttpTask implements Runnable {
         protected void onTaskComplete(int returnedResponseCode,
                                       String returnedResponseLiteral) {
             updateIndexableIndexInformation(SRCH2Engine.conf.indexableMap.get(targetCoreName));
+            SRCH2Engine.resetHeartBeatPing();
             if (SRCH2Engine.isChanged.get()) {
                 SRCH2Engine.reQueryLastOne();
             }
