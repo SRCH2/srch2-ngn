@@ -614,12 +614,15 @@ void ResourceLockManager::resolve(NewNodeLockNotification * notification){
 		ASSERT(false);
 		return;
 	}
-
-
 	Cluster_Writeview * writeview = ShardManager::getWriteview();
+
+//	vector<const Node *> allNodes;
+//	writeview->getAllNodes(allNodes);
+//	for(vector<const Node *>::iterator nodeItr = allNodes.begin(); nodeItr != allNodes.end(); ++nodeItr){
+//
+//	}//TODO
 	for(vector<NodeId>::iterator nodeItr = allNodesUpToNewNode.begin();
 			nodeItr != allNodesUpToNewNode.end(); ++nodeItr){
-		ASSERT(*nodeItr < notification->getSrc().nodeId);
 		if(*nodeItr == ShardManager::getCurrentNodeId()){
 			continue;
 		}
