@@ -1,39 +1,80 @@
 package com.srch2.android.sdk;
 
+import android.os.Handler;
+
 import java.net.URL;
 import java.util.Iterator;
-import java.util.Timer;
-import java.util.TimerTask;
 
 class HeartBeatPing {
+
     // should be slightly less than the amount of time the SRCH2 server core waits to autoshutdown
     static final int HEART_BEAT_PING_DELAY = 40000;
-    Timer heartBeatTimer;
+    private Handler timer;
+    private DelayTask timerCallback;
 
-    void startPinging() {
-        resetHeartBeatPing();
+    private static HeartBeatPing instance;
+
+    private HeartBeatPing() {
+        timer = new Handler();
     }
 
-    void resetHeartBeatPing() {
-        if (heartBeatTimer != null) {
-            heartBeatTimer.cancel();
+    // call when checkcores loaded finishes
+    static void start() {
+        if (instance == null) {
+            instance = new HeartBeatPing();
         }
-        heartBeatTimer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                HttpTask.executeTask(new HeartBeatPingTask());
-                resetHeartBeatPing();
+        instance.pingAndRepeat();
+    }
+
+    // call anytime need to start pinging
+    static void ping() {
+        if (instance != null) {
+            instance.pingAndRepeat();
+        }
+    }
+
+    private void pingAndRepeat() {
+        if (instance != null && timer != null) {
+            timerCallback = new DelayTask();
+            timer.postDelayed(timerCallback, HEART_BEAT_PING_DELAY);
+        }
+    }
+
+    // callback for handling delay, necessary so that callback can be removed/interrupted
+    private class DelayTask implements Runnable {
+        @Override
+        public void run() {
+            if (instance != null) {
+                HttpTask.executeTask(new PingTask(instance));
             }
-        }, HEART_BEAT_PING_DELAY);
-    }
-
-    void stopPinging() {
-        if (heartBeatTimer != null) {
-            heartBeatTimer.cancel();
         }
     }
 
-    static class HeartBeatPingTask extends HttpTask {
+    // call before beforing any CRUD that will itself serve as the ping
+    static void interrupt() {
+        if (instance != null) {
+            if (instance.timerCallback != null) {
+                instance.timer.removeCallbacks(instance.timerCallback);
+                instance.timerCallback = null;
+            }
+        }
+    }
+
+    // call when stopping executable
+    static void stop() {
+        interrupt();
+        if (instance != null) {
+            instance = null;
+        }
+    }
+
+    static class PingTask extends HttpTask {
+        private HeartBeatPing heartBeatPing;
+
+        public PingTask(HeartBeatPing pinger) {
+            heartBeatPing = pinger;
+        }
+
         @Override
         public void run() {
             Indexable defaultIndexable = null;
@@ -48,6 +89,9 @@ class HeartBeatPing {
                                 defaultIndexable.indexInternal.indexDescription);
                 InternalInfoTask t = new InternalInfoTask(url, 250, false);
                 t.getInfo();
+            }
+            if (heartBeatPing != null) {
+                heartBeatPing.pingAndRepeat();
             }
         }
     }

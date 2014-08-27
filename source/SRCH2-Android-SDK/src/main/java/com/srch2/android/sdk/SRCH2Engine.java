@@ -84,31 +84,6 @@ final public class SRCH2Engine {
         }
     }
 
-    private static HeartBeatPing heartBeatPinger;
-    static void startHeartBeatPing() {
-        if (heartBeatPinger == null) {
-            heartBeatPinger = new HeartBeatPing();
-        }
-        heartBeatPinger.startPinging();
-    }
-
-    static void resetHeartBeatPing() {
-        if (heartBeatPinger != null) {
-            heartBeatPinger.resetHeartBeatPing();
-        }
-    }
-
-    static void clearHeatBeatPingReference() {
-        clearHeartBeatPing();
-        heartBeatPinger = null;
-    }
-
-    static void clearHeartBeatPing() {
-        if (heartBeatPinger != null) {
-            heartBeatPinger.stopPinging();
-        }
-    }
-
     private SRCH2Engine() { }
 
     /**
@@ -357,7 +332,7 @@ final public class SRCH2Engine {
      */
     public static void onStop(Context context) {
         Cat.d(TAG, "onStop");
-        clearHeatBeatPingReference();
+        HeartBeatPing.stop();
         stopExecutable(context);
         resetState();
         isStarted = false;
@@ -365,7 +340,6 @@ final public class SRCH2Engine {
             context.unregisterReceiver(incomingIntentReciever);
         } catch (IllegalArgumentException ignore) {
         }
-
     }
 
     /**
