@@ -70,7 +70,7 @@ OperationState * SerialLockOperation::handle(NodeFailureNotification * nodeFailu
 			if(i < nodeIndex){ // we are passed this node, so we don't care
 				nodeIndexFixed--;
 			}else if(i == nodeIndex){ // we are waiting for ACK from this node, move on to the next node.
-				nodeIndexFixed++;
+//				nodeIndexFixed++;
 				mustAskNextNode = true;
 			}//else{
 			//// We haven't reached to this node so we are fine.

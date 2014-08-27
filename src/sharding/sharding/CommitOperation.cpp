@@ -83,6 +83,11 @@ OperationState * CommitOperation::handle(NodeFailureNotification * nodeFailure){
 	for(map<NodeId, std::pair<ShardingNodeState, Node *> >::iterator nodeItr =
 			allNodes.begin(); nodeItr != allNodes.end(); ++nodeItr){
 		nodeStates[nodeItr->first] = nodeItr->second.first;
+		if(nodeItr->second.first == ShardingNodeStateArrived){
+			if(find(participants.begin(), participants.end(), nodeItr->first) == participants.end()){
+				ASSERT(false); // commit must be inside a lock and no new node should be able to arrive
+			}
+		}
 	}
 	vector<NodeId> participantsFixed;
 	for(unsigned i = 0 ; i < participants.size(); ++i){

@@ -81,6 +81,42 @@ OperationState * LoadBalancingStartOperation::handle(LoadBalancingReport * n){
 	nodeReportArrived[n->getSrc().nodeId] = true;
 	nodeLoads[n->getSrc().nodeId] = newLoad;
 
+	update();
+	return balance();
+}
+OperationState * LoadBalancingStartOperation::handle(NodeFailureNotification * n){
+
+    update();
+
+	return balance();
+}
+
+OperationState * LoadBalancingStartOperation::handle(Notification * n){
+	if(n == NULL){
+		ASSERT(false);
+		return LoadBalancingStartOperation::finalizeLoadBalancing();
+	}
+	switch(n->messageType()){
+	case ShardingNodeFailureNotificationMessageType:
+		return handle((NodeFailureNotification *)n);
+	case ShardingLoadBalancingReportMessageType:
+		return handle((LoadBalancingReport *)n);
+	default:
+		// ignore;
+		return this;
+	}
+}
+
+OperationState * LoadBalancingStartOperation::finalizeLoadBalancing(){
+	ShardManager::getShardManager()->resetLoadBalancing();
+	return NULL;
+}
+
+OperationState * LoadBalancingStartOperation::balance(){
+	if(nodeReportArrived.size() < 2){
+		// only us ?
+		return LoadBalancingStartOperation::finalizeLoadBalancing();
+	}
 	// do we have all load reports ?
 	if(haveAllReportsArrived()){
 		Cluster_Writeview * writeview = ShardManager::getWriteview();
@@ -106,7 +142,8 @@ OperationState * LoadBalancingStartOperation::handle(LoadBalancingReport * n){
 	}
 	return this;
 }
-OperationState * LoadBalancingStartOperation::handle(NodeFailureNotification * n){
+
+void LoadBalancingStartOperation::update(){
 	Cluster_Writeview * writeview = ShardManager::getWriteview();
 	for(map<NodeId, std::pair<ShardingNodeState, Node *> >::iterator nodeItr = writeview->nodes.begin();
 			nodeItr != writeview->nodes.end(); ++nodeItr){
@@ -131,32 +168,6 @@ OperationState * LoadBalancingStartOperation::handle(NodeFailureNotification * n
 		}
 
 	}
-	if(nodeReportArrived.size() < 2){
-		// only us ?
-		return LoadBalancingStartOperation::finalizeLoadBalancing();
-	}
-	return this;
-}
-
-OperationState * LoadBalancingStartOperation::handle(Notification * n){
-	if(n == NULL){
-		ASSERT(false);
-		return LoadBalancingStartOperation::finalizeLoadBalancing();
-	}
-	switch(n->messageType()){
-	case ShardingNodeFailureNotificationMessageType:
-		return handle((NodeFailureNotification *)n);
-	case ShardingLoadBalancingReportMessageType:
-		return handle((LoadBalancingReport *)n);
-	default:
-		// ignore;
-		return this;
-	}
-}
-
-OperationState * LoadBalancingStartOperation::finalizeLoadBalancing(){
-	ShardManager::getShardManager()->resetLoadBalancing();
-	return NULL;
 }
 
 string LoadBalancingStartOperation::getOperationName() const {

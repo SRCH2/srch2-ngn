@@ -89,8 +89,8 @@ OperationState * NewNodeLockOperation::handle(NodeFailureNotification * nodeFail
 		if(nodeStates[clusterNode] == ShardingNodeStateFailed){
 			if(i < this->nodeIndex){ // we are passed that node so we don't care
 				nodeIndexFixed--;
-			}else if( i == this->nodeIndex){ // we are waiting for this ack, must resend the notification
-				nodeIndexFixed ++; // we must retry on the next node
+			}else if(i == this->nodeIndex){ // we are waiting for this ack, must resend the notification
+//				nodeIndexFixed ++; // we must retry on the next node
 				mustRetry = true;
 			}//else{
 			//// i > this->nodeIndex : We haven't reached this node, so we are fine.
