@@ -134,7 +134,7 @@ bool ShardManager::isLoadBalancing() const{
 }
 
 void ShardManager::print(){
-
+	return;//TEMP
 	metadataManager->print();
 
 	lockManager->print();
