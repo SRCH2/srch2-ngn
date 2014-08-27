@@ -223,28 +223,17 @@ class SearchTask extends HttpTask.SearchHttpTask {
             if (SRCH2Engine.searchResultsPublishedToUiThread) {
                 Handler uiHandler = SRCH2Engine.getSearchResultsUiCallbackHandler();
                 if (uiHandler != null) {
-                    final String targetCoreName = super.targetCoreName;
                     uiHandler.post(new Runnable() {
                         @Override
                         public void run() {
-                            if (returnedResponseCode / 100 == 2) {
-                                searchResultsListener.onNewSearchResults(returnedResponseCode,
-                                        returnedResponseLiteral, resultMap);
-                            } else {
-                                searchResultsListener.onNewSearchResults(returnedResponseCode,
-                                        returnedResponseLiteral, resultMap);
-                            }
+                            searchResultsListener.onNewSearchResults(returnedResponseCode,
+                                    returnedResponseLiteral, resultMap);
                         }
                     });
                 }
             } else {
-                if (returnedResponseCode / 100 == 2) {
-                    searchResultsListener.onNewSearchResults(returnedResponseCode,
-                            returnedResponseLiteral, resultMap);
-                } else {
-                    searchResultsListener.onNewSearchResults(returnedResponseCode,
-                            returnedResponseLiteral, resultMap);
-                }
+                searchResultsListener.onNewSearchResults(returnedResponseCode,
+                        returnedResponseLiteral, resultMap);
             }
         }
     }
