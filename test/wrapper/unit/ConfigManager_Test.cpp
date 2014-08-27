@@ -8,7 +8,6 @@
 /**
  * This test case tests schema section of the config file. Checks if it works for various combination and number of searchable, refining, and indexed fields.
  * It also checks for invalid boost, invalid record boost field and all possible combinations for character offset/positionalIndex and field based search.
- *
  */
 
 #include "server/util/xmlParser/pugixml.hpp"
@@ -54,7 +53,7 @@ int main(int argc, char* argv[])
     string configFile14(string(getenv("srch2_config_file")) + "/conf-fieldBasedSearch-4.xml");
     string configFile15(string(getenv("srch2_config_file")) + "/conf-logging.xml");
     string configFile16(string(getenv("srch2_config_file")) + "/conf-singleCore.xml");
-
+    string configFile17(string(getenv("srch2_config_file")) + "/conf-responseContent.xml");
 
     ConfigManager *serverConf1 = new ConfigManager(configFile1);
     ConfigManager *serverConf2 = new ConfigManager(configFile2);
@@ -72,6 +71,7 @@ int main(int argc, char* argv[])
     ConfigManager *serverConf14 = new ConfigManager(configFile14);
     ConfigManager *serverConf15 = new ConfigManager(configFile15);
     ConfigManager *serverConf16 = new ConfigManager(configFile16);
+    ConfigManager *serverConf17 = new ConfigManager(configFile17);
 
 
     ASSERT(serverConf15->loadConfigFile() == true);
@@ -90,8 +90,10 @@ int main(int argc, char* argv[])
     ASSERT(serverConf14->loadConfigFile() == true);
     ASSERT(serverConf15->loadConfigFile() == true);
     ASSERT(serverConf16->loadConfigFile() == true);
+    ASSERT(serverConf17->loadConfigFile() == true);
 
-    cout<< serverConf15->getHTTPServerAccessLogFile() << "\n";
+    ASSERT(serverConf15->getHTTPServerAccessLogFile() == "./multicore//srch2-log.txt");
+    ASSERT(serverConf15->getHTTPServerLogLevel() == 3);
 
     const std::string &expr_string = "invalid Expression";
     RankerExpression* rank = new RankerExpression(expr_string);
@@ -101,7 +103,6 @@ int main(int argc, char* argv[])
     for(it = serverConf14->coreInfoIterateBegin(); it != serverConf14->coreInfoIterateEnd(); it++) {
         ASSERT(it->second->getSupportAttributeBasedSearch() == 1);
     }
-
 
     for(it = serverConf13->coreInfoIterateBegin(); it != serverConf13->coreInfoIterateEnd(); it++) {
         ASSERT(it->second->getSupportAttributeBasedSearch() == 1);
