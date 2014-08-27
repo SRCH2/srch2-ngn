@@ -134,7 +134,6 @@ bool ShardManager::isLoadBalancing() const{
 }
 
 void ShardManager::print(){
-	return;//TEMP
 	metadataManager->print();
 
 	lockManager->print();
@@ -612,7 +611,7 @@ void * ShardManager::periodicWork(void *args) {
 		 * 2. is we are joined, start load balancing.
 		 */
 		//
-		sleep(2);
+		sleep(10);
 
 		boost::unique_lock<boost::mutex> bouncedNotificationsLock(ShardManager::getShardManager()->shardManagerGlobalMutex);
 
