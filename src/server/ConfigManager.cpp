@@ -2005,32 +2005,6 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
             (unsigned) ((coreInfo->mergeEveryMWrites * 1.0)
                     / updateHistogramWorkRatioOverTime); // 10000 for mergeEvery 1000 Writes
 
-    // TODO - logging per core
-    // logLevel is optional. To make loglevel optional the llflag's initial value has been set to false.
-    // llflag is false, if log level is not set in config file or wrong value is given by the user, otherwise llflag remains true.
-
-    //Warning message and error check has been removed because logging is moved out of core, the code below is only for
-    //backward compatibility
-    this->loglevel = Logger::SRCH2_LOG_INFO;
-    childNode = updateHandlerNode.child(updateLogString).child(logLevelString);
-    bool llflag = false;
-    if (childNode && childNode.text()) {
-        string ll = childNode.text().get();
-        if (this->isValidLogLevel(ll)) {
-            this->loglevel =
-                    static_cast<Logger::LogLevel>(childNode.text().as_int());
-            llflag = true;
-        }
-    }
-    // accessLogFile is required
-    childNode = updateHandlerNode.child(updateLogString).child(
-            accessLogFileString);
-    if (childNode && childNode.text()) {
-        temporaryString = string(childNode.text().get());
-        trimSpacesFromValue(temporaryString, updateLogString, parseWarnings);
-        this->httpServerAccessLogFile = this->srch2Home + "/"
-                + coreInfo->getName() + "/" + temporaryString;
-    }
 }
 
 bool checkValidity(string &parameter) {

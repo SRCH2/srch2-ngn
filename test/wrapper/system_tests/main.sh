@@ -811,6 +811,32 @@ else
 fi
 rm -rf data/ *.idx
 
+test_id="testing global logging module in multicore configuration"
+python ./test_logging/loggingInMulticore.py $SRCH2_ENGINE ./test_logging/queriesAndResults.txt ./test_logging/queriesAndResults2.txt | eval "${html_escape_command}" >> system_test.log 2>&1
+
+if [ ${PIPESTATUS[0]} -gt 0 ]; then
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
+    if [ $force -eq 0 ]; then
+        exit 255
+    fi
+else
+    echo "-- PASSED: $test_id" >> ${output}
+fi
+rm -rf data/ *.idx
+
+test_id="testing global logging module in single core configuration"
+python ./logging_in_singleCore/loggingInSingleCore.py ../../../build/src/server/srch2-search-server ./logging_in_singleCore/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
+
+if [ ${PIPESTATUS[0]} -gt 0 ]; then
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
+    if [ $force -eq 0 ]; then
+        exit 255
+    fi
+else
+    echo "-- PASSED: $test_id" >> ${output}
+fi
+rm -rf data/ *.idx
+
 
 # clear the output directory. First make sure that we are in correct directory
 if [ "$(pwd)" = "$SYSTEM_TEST_DIR" ]; then
