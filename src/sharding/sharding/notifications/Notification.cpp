@@ -16,6 +16,16 @@ NodeOperationId::NodeOperationId(const NodeOperationId & id){
 	this->nodeId = id.nodeId;
 	this->operationId = id.operationId;
 }
+
+NodeOperationId & NodeOperationId::operator=(const NodeOperationId & rhs){
+	if(this == &rhs){
+		return *this;
+	}
+	this->nodeId = rhs.nodeId;
+	this->operationId = rhs.operationId;
+	return *this;
+}
+
 NodeOperationId::NodeOperationId(NodeId nodeId, unsigned operationId){
 	this->nodeId = nodeId;
 	this->operationId = operationId;

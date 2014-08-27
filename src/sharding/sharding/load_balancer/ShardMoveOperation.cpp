@@ -17,7 +17,7 @@ namespace httpwrapper {
 
 ShardMoveOperation::ShardMoveOperation(const unsigned operationId, const NodeId & srcNodeId, const ClusterShardId & moveShardId):
 	OperationState(operationId),shardId(moveShardId){
-	this->srcAddress.nodeId = srcNodeId;
+	this->srcAddress = NodeOperationId(srcNodeId);
 	this->lockOperation = NULL;
 	this->lockOperationResult = new SerialLockResultStatus();
 	this->commitOperation = NULL;
