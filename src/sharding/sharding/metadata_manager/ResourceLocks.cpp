@@ -757,7 +757,7 @@ bool ResourceLockManager::resolveBatch(const NodeOperationId & requesterAddress,
 
 	// 2. we can grant, apply the locks.
 	executeBatch(lockRequest->requestBatch, needCommit);
-
+	lockHolders->print();
 	// 3. send back the ack or save it in RV release pending requests .
 	if(needCommit){
 		PendingLockRequest rvRelease(requesterAddress, ackType, priority, lockRequest);
@@ -848,7 +848,7 @@ void ResourceLockManager::executeBatch(const vector<SingleResourceLockRequest *>
 	// all requests can be granted.
 	for(unsigned i = 0 ; i < requestBatch.size(); ++i){
 		executeRequest(*(requestBatch.at(i)));
-		lockHolders->print();
+//		lockHolders->print();
 	}
 
 	needCommit = false;
