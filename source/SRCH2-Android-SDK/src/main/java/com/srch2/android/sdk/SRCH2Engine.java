@@ -192,10 +192,6 @@ final public class SRCH2Engine {
         isReady.set(false);
         lastQuery.set(null);
         isChanged.set(false);
-        searchResultsPublishedToUiThread = false;
-        if (searchResultsUiCallbackHandler != null) {
-            searchResultsUiCallbackHandler = null;
-        }
     }
 
     static SearchResultsListener getSearchResultsObserver() {
@@ -241,6 +237,7 @@ final public class SRCH2Engine {
      */
     public static void setSearchResultsListener(
             SearchResultsListener searchResultsListener) {
+        searchResultsPublishedToUiThread = false;
         searchResultsObserver = searchResultsListener;
     }
 
@@ -332,9 +329,12 @@ final public class SRCH2Engine {
      */
     public static void onStop(Context context) {
         Cat.d(TAG, "onStop");
-        HeartBeatPing.stop();
-        stopExecutable(context);
         resetState();
+        HeartBeatPing.stop();
+        if (searchResultsUiCallbackHandler != null) {
+            searchResultsUiCallbackHandler = null;
+        }
+        stopExecutable(context);
         isStarted = false;
         try {
             context.unregisterReceiver(incomingIntentReciever);

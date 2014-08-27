@@ -3,6 +3,7 @@ package com.srch2.android.sdk.sandbox;
 import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.ListView;
 import android.widget.Toast;
 import com.srch2.android.sdk.SRCH2Engine;
@@ -50,7 +51,7 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
                     ++count;
                 }
             }
-
+            Log.d("SandboxMyActivity", "onnewsearchresults " + count);
             Toast.makeText(context, "result count: " + count, Toast.LENGTH_LONG).show();
         }
     }
