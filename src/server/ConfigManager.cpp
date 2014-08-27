@@ -37,6 +37,7 @@ const char* const ConfigManager::OAuthParam = "OAuth";
 const char* const ConfigManager::authorizationKeyTag = "authorization-key";
 
 string ConfigManager::authorizationKey = "";
+const char* const ConfigManager::defaultCore = "__DEFAULTCORE__";
 // configuration file tag and attribute names for ConfigManager
 // *MUST* be lowercase
 const char* const ConfigManager::accessLogFileString = "accesslogfile";
@@ -168,7 +169,7 @@ const char* const ConfigManager::defaultExactPostTag = "</b>";
 
 ConfigManager::ConfigManager(const string& configFile) {
     this->configFile = configFile;
-    defaultCoreName = "__DEFAULTCORE__";
+    defaultCoreName = defaultCore;
     defaultCoreSetFlag = false;
 }
 
@@ -889,8 +890,16 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode,
         if (childNode && childNode.text()) { // checks if the config/dataFile has any text in it or not
             temporaryString = string(childNode.text().get());
             trimSpacesFromValue(temporaryString, dataFileString, parseWarnings);
-            coreInfo->dataFilePath = srch2Home + string("")
+
+            //If it is default core, we do not use the core name in dataFile path
+            if(coreInfo->name == defaultCore){
+                coreInfo->dataFilePath = srch2Home + string("")
+                    + string("/") + temporaryString;
+            }else{
+                coreInfo->dataFilePath = srch2Home + string("")
                     + coreInfo->getName() + string("/") + temporaryString;
+            }
+
         } else {
             parseError
                     << (coreInfo->name.compare("") != 0 ?

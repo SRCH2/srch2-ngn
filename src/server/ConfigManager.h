@@ -499,6 +499,8 @@ private:
     static const char* const defaultExactPreTag;
     static const char* const defaultExactPostTag;
 
+    static const char* const defaultCore;
+
 
 };
 
