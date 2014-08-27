@@ -608,7 +608,7 @@ void Cluster_Writeview::fixAfterDiskLoad(Cluster_Writeview * oldWrireview){
 		if(state == SHARDSTATE_UNASSIGNED){
 			continue;
 		}
-		ClusterShard_Writeview * shard = this->clusterShards.at(this->clusterShardsCursor-1);
+		ClusterShard_Writeview * shard = this->clusterShards.at(cShardItr.clusterShardsCursor-1);
 		if(! isLocal ){
 			shard->state = SHARDSTATE_PENDING;
 			shard->load = 0;
