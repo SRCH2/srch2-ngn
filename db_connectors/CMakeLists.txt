@@ -11,10 +11,18 @@
 cmake_minimum_required(VERSION 2.8)
 SET(RELEASE_BUILD ON CACHE BOOL "")
 SET(ANDROID OFF CACHE BOOL "")
+
+#Find the platform information.
 SET(MAC_OS OFF CACHE BOOL "")
+SET(LINUX_OS OFF CACHE BOOL "")
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     MESSAGE(STATUS "PLATFORM = MAC OS")
     SET(MAC_OS ON)
+ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    MESSAGE(STATUS "PLATFORM = LINUX")
+    SET(LINUX_OS ON)
+ELSE()
+    MESSAGE(STATUS "PLATFORM = UNKNOWN")
 ENDIF()
 #
 #  1.  MongoDB connector 
@@ -99,13 +107,13 @@ IF (ANDROID)
     FIND_LIBRARY(log_LIBRARY NAMES log PATHS ${sys_LIBRARY_DIRS})
     FIND_LIBRARY(dl_LIBRARY NAMES dl PATHS ${sys_LIBRARY_DIRS})
     FIND_LIBRARY(z_LIBRARY NAMES z PATHS ${sys_LIBRARY_DIRS})
-
+    
     MESSAGE(STATUS "liblog = ${log_LIBRARY}")
     MESSAGE(STATUS "libdl = ${dl_LIBRARY}")
     MESSAGE(STATUS "libz = ${z_LIBRARY}")
-   
+
     SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/android/libs/armeabi-v7a/libjsoncpp.a)
-    SET(CMAKE_REQUIRED_LIBRARIES stdc++ crypto ${CMAKE_REQUIRED_LIBRARIES} ${dl_LIBRARY} ${z_LIBRARY} ${log_LIBRARY})
+    SET(CMAKE_REQUIRED_LIBRARIES stdc++ crypto ${OPENSSL_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES} ${dl_LIBRARY} ${z_LIBRARY} ${log_LIBRARY})
     LINK_DIRECTORIES("${sys_LIBRARY_DIRS}")
 ELSE()
     SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/build/libjsoncpp.a)
@@ -131,19 +139,9 @@ set_target_properties(sqliteConnector PROPERTIES VERSION ${SQLITE_VERSION_STRING
 
 SET_TARGET_PROPERTIES(sqliteConnector PROPERTIES COMPILE_FLAGS -fPIC)
 
-<<<<<<< HEAD
-=======
-TARGET_LINK_LIBRARIES(sqliteConnector ${jsoncpp_LIBRARY} ${CMAKE_REQUIRED_LIBRARIES} ${Boost_LIBRARIES} sqlite3)
->>>>>>> d0a5ff24240b6fc2472a8fafa82749afb07421ff
-
-<<<<<<< HEAD
 IF (ANDROID) 
-    TARGET_LINK_LIBRARIES(sqliteConnector ${jsoncpp_LIBRARY} ${CMAKE_SOURCE_DIR}/../thirdparty/event/android/lib/libevent.a ${CMAKE_SOURCE_DIR}/../thirdparty/event/android/lib/libevent_pthreads.a ${CMAKE_REQUIRED_LIBRARIES} ${Boost_LIBRARIES} sqlite3)
+    TARGET_LINK_LIBRARIES(sqliteConnector ${jsoncpp_LIBRARY} ${CMAKE_SOURCE_DIR}/../thirdparty/event/android/lib/libevent.a ${CMAKE_SOURCE_DIR}/../thirdparty/event/android/lib/libevent_pthreads.a ${CMAKE_REQUIRED_LIBRARIES} ${Boost_LIBRARIES} /system/lib/libsqlite.so)
 ELSE()
     TARGET_LINK_LIBRARIES(sqliteConnector ${jsoncpp_LIBRARY} ${CMAKE_REQUIRED_LIBRARIES} ${Boost_LIBRARIES} sqlite3)
 ENDIF()
-=======
 
-TARGET_LINK_LIBRARIES(sqliteConnector ${jsoncpp_LIBRARY} ${CMAKE_SOURCE_DIR}/../thirdparty/event/android/lib/libevent.a ${CMAKE_SOURCE_DIR}/../thirdparty/event/android/lib/libevent_pthreads.a ${CMAKE_REQUIRED_LIBRARIES} ${Boost_LIBRARIES} sqlite3)
-
->>>>>>> parent of c0667b0... Fixed the issue can not compiled on linux
