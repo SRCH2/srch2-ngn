@@ -7,20 +7,25 @@ import java.util.Iterator;
 
 class HeartBeatPing {
 
+    private static final String TAG = "HeartBeatPing";
+
     // should be slightly less than the amount of time the SRCH2 server core waits to autoshutdown
-    static final int HEART_BEAT_PING_DELAY = 40000;
+    static final int HEART_BEAT_PING_DELAY = 50000;
     private Handler timer;
     private DelayTask timerCallback;
 
     private static HeartBeatPing instance;
 
     private HeartBeatPing() {
+        Cat.d(TAG, "HeartBeatPing()");
         timer = new Handler();
     }
 
     // call when checkcores loaded finishes
     static void start() {
+        Cat.d(TAG, "start");
         if (instance == null) {
+            Cat.d(TAG, "start - instance null - initializing");
             instance = new HeartBeatPing();
         }
         instance.pingAndRepeat();
@@ -28,13 +33,17 @@ class HeartBeatPing {
 
     // call anytime need to start pinging
     static void ping() {
+        Cat.d(TAG, "ping");
         if (instance != null) {
+            Cat.d(TAG, "ping - instance not null - pingAndRepeating");
             instance.pingAndRepeat();
         }
     }
 
     private void pingAndRepeat() {
+        Cat.d(TAG, "pingAndRepeat");
         if (instance != null && timer != null) {
+            Cat.d(TAG, "pingAndRepeat - instance,timer not null");
             timerCallback = new DelayTask();
             timer.postDelayed(timerCallback, HEART_BEAT_PING_DELAY);
         }
@@ -44,7 +53,9 @@ class HeartBeatPing {
     private class DelayTask implements Runnable {
         @Override
         public void run() {
+            Cat.d(TAG, "delaytask::run()");
             if (instance != null) {
+                Cat.d(TAG, "delaytask::run() instance not null executing pingtask");
                 HttpTask.executeTask(new PingTask(instance));
             }
         }
@@ -52,7 +63,9 @@ class HeartBeatPing {
 
     // call before beforing any CRUD that will itself serve as the ping
     static void interrupt() {
+        Cat.d(TAG, "interrupt");
         if (instance != null) {
+            Cat.d(TAG, "interrupt - instaqnce not null");
             if (instance.timerCallback != null) {
                 instance.timer.removeCallbacks(instance.timerCallback);
                 instance.timerCallback = null;
@@ -62,8 +75,10 @@ class HeartBeatPing {
 
     // call when stopping executable
     static void stop() {
+        Cat.d(TAG, "stop");
         interrupt();
         if (instance != null) {
+            Cat.d(TAG, "stop - instaqnce assigned to null");
             instance = null;
         }
     }
@@ -72,11 +87,13 @@ class HeartBeatPing {
         private HeartBeatPing heartBeatPing;
 
         public PingTask(HeartBeatPing pinger) {
+            Cat.d(TAG, "PingTask()");
             heartBeatPing = pinger;
         }
 
         @Override
         public void run() {
+            Cat.d(TAG, "run");
             Indexable defaultIndexable = null;
             Iterator<Indexable> it = SRCH2Engine.conf.indexableMap.values().iterator();
             if (it.hasNext()) {
@@ -88,9 +105,11 @@ class HeartBeatPing {
                                 SRCH2Engine.conf,
                                 defaultIndexable.indexInternal.indexDescription);
                 InternalInfoTask t = new InternalInfoTask(url, 250, false);
-                t.getInfo();
+                InternalInfoResponse iir = t.getInfo();
+                Cat.d(TAG, "run - got info is valid? " + iir.isValidInfoResponse);
             }
             if (heartBeatPing != null) {
+                Cat.d(TAG, "run - finished doing info heartbeatping not null ping and repeating");
                 heartBeatPing.pingAndRepeat();
             }
         }

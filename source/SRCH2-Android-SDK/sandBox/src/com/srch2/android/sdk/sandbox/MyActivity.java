@@ -33,7 +33,7 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
         index = new Idx();
         geoIndex = new GeoIdx();
 
-        SRCH2Engine.initialize(geoIndex);
+        SRCH2Engine.initialize(index);
 
         sr = new SearchResults();
         SRCH2Engine.setSearchResultsListener(sr, true);
@@ -43,7 +43,15 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
     class SearchResults implements SearchResultsListener {
         @Override
         public void onNewSearchResults(int HTTPResponseCode, String JSONResponse, HashMap<String, ArrayList<JSONObject>> resultMap) {
-            Toast.makeText(context, "hello everybody", Toast.LENGTH_LONG).show();
+
+            int count = 0;
+            for (ArrayList<JSONObject> results : resultMap.values()) {
+                for (JSONObject jo : results) {
+                    ++count;
+                }
+            }
+
+            Toast.makeText(context, "result count: " + count, Toast.LENGTH_LONG).show();
         }
     }
 

@@ -2,7 +2,6 @@ package com.srch2.android.sdk;
 
 import android.os.Bundle;
 import android.util.Log;
-import junit.framework.Assert;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
