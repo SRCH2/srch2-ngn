@@ -13,6 +13,7 @@ enum IPCConstants {
     static final String INTENT_KEY_SHUTDOWN_URL = "url_shutdown";
     static final String INTENT_KEY_START_AWAITING_SHUTDOWN = "service_shutdown";
     static final String INTENT_KEY_IS_DEBUG_AND_TESTING_MODE = "debug-testing-mode-switch";
+    static final String INTENT_KEY_PING_URL = "ping-url";
 
     static IntentFilter getSRCH2ServiceBroadcastRecieverIntentFilter(Context c) {
         IntentFilter intentFilter = new IntentFilter();

@@ -96,8 +96,6 @@ final class SRCH2Configuration {
     }
 
 
-
-
     String getUrlString() {
         return "http://" + HOSTNAME + ":" + getPort() + "/";
     }

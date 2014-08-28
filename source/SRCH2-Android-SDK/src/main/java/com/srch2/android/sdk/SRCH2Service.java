@@ -48,6 +48,7 @@ final public class SRCH2Service extends Service {
     private int executablePortNumber;
     private String executableShutdownUrlString;
     private String executableOAuthLiteral;
+    private String executablePingUrl;
 
     private AtomicBoolean isAwaitingShutdown;
     private Timer awaitingShutdownTimer;
@@ -63,7 +64,7 @@ final public class SRCH2Service extends Service {
     private final String PREFERENCES_KEY_SERVER_LOG_USED_PORT_NUMBER = "srch2-server-log-port-number";
     private final String PREFERENCES_KEY_SERVER_LOG_PREVIOUS_O_AUTH_CODE = "srch2-server-o-auth";
     private final String PREFERENCES_KEY_SERVER_LOG_EXECUTABLE_PATH = "exe-path";
-
+    private final String PREFERENCES_KEY_SERVER_LOG_PING_URL = "ping-url";
 
     private final static String PREFERENCES_DEFAULT_NO_VALUE = "no-value";
 
@@ -116,13 +117,17 @@ final public class SRCH2Service extends Service {
         int portNumber = sharedpreferences.getInt(PREFERENCES_KEY_SERVER_LOG_USED_PORT_NUMBER, 0);
         String oauth = sharedpreferences.getString(PREFERENCES_KEY_SERVER_LOG_PREVIOUS_O_AUTH_CODE, PREFERENCES_DEFAULT_NO_VALUE);
         String executablePath = sharedpreferences.getString(PREFERENCES_KEY_SERVER_LOG_EXECUTABLE_PATH, PREFERENCES_DEFAULT_NO_VALUE);
+        String pingUrl = sharedpreferences.getString(PREFERENCES_KEY_SERVER_LOG_PING_URL, PREFERENCES_DEFAULT_NO_VALUE);
 
-        if (!shutDownUrlsLiteral.equals(PREFERENCES_DEFAULT_NO_VALUE) && portNumber != 0 && !oauth.equals(PREFERENCES_DEFAULT_NO_VALUE) && !executablePath.equals(PREFERENCES_DEFAULT_NO_VALUE)) {
+        if (!shutDownUrlsLiteral.equals(PREFERENCES_DEFAULT_NO_VALUE) && portNumber != 0
+                && !oauth.equals(PREFERENCES_DEFAULT_NO_VALUE) && !executablePath.equals(PREFERENCES_DEFAULT_NO_VALUE)
+                    && !pingUrl.equals(PREFERENCES_DEFAULT_NO_VALUE)) {
 
             executablePortNumber = portNumber;
             executableShutdownUrlString = shutDownUrlsLiteral;
             executableOAuthLiteral = oauth;
             executableProcessPath = executablePath;
+            executablePingUrl = pingUrl;
             Cat.d(TAG, "checkIfProcessIsRunningWithoutHavingShutdownCalled was there with values " + portNumber + " " + shutDownUrlsLiteral);
 
             return true;
@@ -135,7 +140,7 @@ final public class SRCH2Service extends Service {
         }
     }
 
-    private void updateServerLog(int portNumberToPersist, String shutdownUrlToPersist, String oAuth, String executablePath) {
+    private void updateServerLog(int portNumberToPersist, String shutdownUrlToPersist, String oAuth, String executablePath, String pingUrl) {
         Cat.d(TAG, "updateServerLog with port " + portNumberToPersist + " and shutdownurl " + shutdownUrlToPersist);
 
 
@@ -145,6 +150,7 @@ final public class SRCH2Service extends Service {
         editor.putInt(PREFERENCES_KEY_SERVER_LOG_USED_PORT_NUMBER, portNumberToPersist);
         editor.putString(PREFERENCES_KEY_SERVER_LOG_PREVIOUS_O_AUTH_CODE, oAuth);
         editor.putString(PREFERENCES_KEY_SERVER_LOG_EXECUTABLE_PATH, executablePath);
+        editor.putString(PREFERENCES_KEY_SERVER_LOG_PING_URL, pingUrl);
         editor.commit();
     }
 
@@ -159,6 +165,7 @@ final public class SRCH2Service extends Service {
         editor.remove(PREFERENCES_KEY_SERVER_LOG_USED_PORT_NUMBER);
         editor.remove(PREFERENCES_KEY_SERVER_LOG_PREVIOUS_O_AUTH_CODE);
         editor.remove(PREFERENCES_KEY_SERVER_LOG_EXECUTABLE_PATH);
+        editor.remove(PREFERENCES_KEY_SERVER_LOG_PING_URL);
         editor.commit();
     }
 
@@ -333,13 +340,15 @@ final public class SRCH2Service extends Service {
         executableOAuthLiteral = startCommandIntent.getStringExtra(IPCConstants.INTENT_KEY_OAUTH);
         boolean isDebugAndTestingMode = startCommandIntent.getBooleanExtra(IPCConstants.INTENT_KEY_IS_DEBUG_AND_TESTING_MODE, false);
         TIME_TO_WAIT_FOR_SHUTDOWN_MS = isDebugAndTestingMode ? 0 : DEFAULT_TIME_TO_WAIT_FOR_SHUTDOWN_MS;
+        executablePingUrl = startCommandIntent.getStringExtra(IPCConstants.INTENT_KEY_PING_URL);
 
         autoInstallCoreFilesAndOverwriteXMLConfigurationFile(startCommandIntent.getStringExtra(IPCConstants.INTENT_KEY_XML_CONFIGURATION_FILE_LITERAL));
-        startRunningExecutable(executablePortNumber, executableShutdownUrlString, executableOAuthLiteral);
+        startRunningExecutable(executablePortNumber, executableShutdownUrlString, executableOAuthLiteral, executablePingUrl);
 
         Cat.d(TAG, "startExecutable port number " + executablePortNumber);
         Cat.d(TAG, "startExecutable shutdown string " + executableShutdownUrlString);
-
+        Cat.d(TAG, "startExecutable pingUrl " + executablePingUrl);
+        
         int totalSleepTime = 0;
         while (!ps(executableProcessPath)) {
             try {
@@ -355,7 +364,7 @@ final public class SRCH2Service extends Service {
         signalSRCH2EngineToProceed(executablePortNumber, executableOAuthLiteral);
     }
 
-    private void startRunningExecutable(final int portBeingUsedToStartService, final String shutDownUrl, final String oAuthCode) {
+    private void startRunningExecutable(final int portBeingUsedToStartService, final String shutDownUrl, final String oAuthCode, final String pingUrl) {
         Cat.d(TAG, "startRunningExecutable");
         Thread t = new Thread(new Runnable() {
             @Override
@@ -363,7 +372,7 @@ final public class SRCH2Service extends Service {
                 ProcessBuilder pb = new ProcessBuilder(executableProcessPath, "--config-file", xmlConfigurationFilePath);
                 Process p;
                 try {
-                    updateServerLog(portBeingUsedToStartService, shutDownUrl, oAuthCode, executableProcessPath);
+                    updateServerLog(portBeingUsedToStartService, shutDownUrl, oAuthCode, executableProcessPath, pingUrl);
 
                     Cat.d(TAG, "startRunningExecutable - starting process");
                     p = pb.start();
