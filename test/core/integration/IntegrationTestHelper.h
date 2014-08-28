@@ -883,6 +883,29 @@ bool ping(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string query
 }
 
 
+bool ping_WithACL(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string queryString,
+		unsigned numberofHits , const vector<unsigned> &recordIDs,
+		vector<unsigned> attributeIdToFilter, ATTRIBUTES_OP attrOps, string roleId)
+{
+    Query *query = new Query(srch2::instantsearch::SearchTypeTopKQuery);
+    parseFuzzyPrefixQuery(analyzer, query, queryString, attributeIdToFilter, attrOps);
+    int resultCount = 10;
+
+    //cout << "[" << queryString << "]" << endl;
+
+    // for each keyword in the user input, add a term to the query
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),queryEvaluator, query);
+
+    LogicalPlan * logicalPlan = prepareLogicalPlanForACLTests(query , NULL, 0, resultCount, false, srch2::instantsearch::SearchTypeTopKQuery, roleId);
+    queryEvaluator->search(logicalPlan , queryResults);
+    bool returnvalue =  checkResults(queryResults, numberofHits, recordIDs);
+    //printResults(queryResults);
+    queryResults->printStats();
+    delete queryResults;
+    delete query;
+    return returnvalue;
+}
+
 bool ping_WithGeo(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string queryString, float lat, float lng, float radius, unsigned numberofHits , const vector<unsigned> &recordIDs, vector<unsigned> attributeIdToFilter, ATTRIBUTES_OP attrOps)
 {
     Query *query = new Query(srch2::instantsearch::SearchTypeTopKQuery);

@@ -76,10 +76,6 @@ public:
 
     			break;
     		}
-    		case srch2http::DATA_SOURCE_MONGO_DB: {
-
-    			break;
-    		}
     		default: {
 
     			break;

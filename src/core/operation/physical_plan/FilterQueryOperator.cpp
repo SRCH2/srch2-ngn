@@ -46,7 +46,11 @@ bool FilterQueryOperator::close(PhysicalPlanExecutionParameters & params){
 }
 
 string FilterQueryOperator::toString(){
-	string result = "filterQueryOperator" + this->filterQueryEvaluator->toString() + this->roleId ;
+	string result;
+	if(this->filterQueryEvaluator != NULL)
+		result = "filterQueryOperator" + this->filterQueryEvaluator->toString() + this->roleId ;
+	else
+		result = this->roleId;
 	if(this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode() != NULL){
 		result += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->toString();
 	}
