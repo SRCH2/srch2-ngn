@@ -6,7 +6,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -14,7 +13,7 @@ import java.util.List;
 
 import static junit.framework.Assert.*;
 
-public class MyActivity extends TestableActivity {
+public class CrudTestActivity extends TestableActivity {
     public static final String TAG = "srch2:: MyActivity";
 
     public TestSearchResultsListener mResultListener = new TestSearchResultsListener();
@@ -77,16 +76,8 @@ public class MyActivity extends TestableActivity {
         callSRCH2EngineStart();
     }
 
-    void DeleteRecursive(File fileOrDirectory) {
-        if (fileOrDirectory.isDirectory())
-            for (File child : fileOrDirectory.listFiles())
-                DeleteRecursive(child);
-
-        fileOrDirectory.delete();
-    }
-
     public void initializeSRCH2Engine() {
-        DeleteRecursive(new File(SRCH2Engine.detectAppHomeDir(this.getApplicationContext()) + File.separator + SRCH2Configuration.SRCH2_HOME_FOLDER_DEFAULT_NAME));
+        deleteSrch2Files();
         SRCH2Engine.initialize(mIndex1, mIndex2, mIndexGeo);
         SRCH2Engine.setSearchResultsListener(mResultListener);
         SRCH2Engine.setAutomatedTestingMode(true);
@@ -140,9 +131,6 @@ public class MyActivity extends TestableActivity {
                 testBatchRecordCRUD(index);
             }
         } catch (JSONException e) {
-
-            Log.d("TESTTEST", "THROWN EXCEPTION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-
             e.printStackTrace();
             //Assert.fail();
         }
@@ -379,19 +367,10 @@ public class MyActivity extends TestableActivity {
             mResultListener.reset();
             index.search(query);
             getSearchResult();
-
             HashMap<String, ArrayList<JSONObject>> recordMap = mResultListener.resultRecordMap;
             assertTrue(recordMap.size() == 1);
             ArrayList<JSONObject> records = recordMap.get(index.getIndexName());
-
-            Log.d("testest", "###################################### records " + records.size());
-
             assertNotNull(records);
-
-
-            Cat.d("Check Search result:", "record:" + records.get(0));
-            Cat.d("Check Search result:", "query:" + query);
-
             assertTrue(index.verifyResult(query, records));
         }
     }
