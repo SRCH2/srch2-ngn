@@ -42,12 +42,17 @@ string ConfigManager::authorizationKey = "";
 const char* const ConfigManager::accessLogFileString = "accesslogfile";
 const char* const ConfigManager::analyzerString = "analyzer";
 const char* const ConfigManager::cacheSizeString = "cachesize";
-const char* const ConfigManager::collectionString = "collection";
 const char* const ConfigManager::configString = "config";
 const char* const ConfigManager::dataDirString = "datadir";
 const char* const ConfigManager::dataFileString = "datafile";
 const char* const ConfigManager::dataSourceTypeString = "datasourcetype";
-const char* const ConfigManager::dbString = "db";
+const char* const ConfigManager::dbKeyString = "key";
+const char* const ConfigManager::dbValueString = "value";
+const char* const ConfigManager::dbKeyValuesString = "dbkeyvalues";
+const char* const ConfigManager::dbKeyValueString = "dbkeyvalue";
+const char* const ConfigManager::dbParametersString = "dbparameters";
+const char* const ConfigManager::dbSharedLibraryPathString = "dbsharedlibrarypath";
+const char* const ConfigManager::dbSharedLibraryNameString = "dbsharedlibraryname";
 const char* const ConfigManager::defaultString = "default";
 const char* const ConfigManager::defaultQueryTermBoostString =
         "defaultquerytermboost";
@@ -72,7 +77,6 @@ const char* const ConfigManager::fieldsString = "fields";
 const char* const ConfigManager::fieldTypeString = "fieldtype";
 const char* const ConfigManager::filterString = "filter";
 const char* const ConfigManager::fuzzyMatchPenaltyString = "fuzzymatchpenalty";
-const char* const ConfigManager::hostString = "host";
 const char* const ConfigManager::indexConfigString = "indexconfig";
 const char* const ConfigManager::indexedString = "indexed";
 const char* const ConfigManager::multiValuedString = "multivalued";
@@ -87,14 +91,11 @@ const char* const ConfigManager::locationLongitudeString = "location_longitude";
 const char* const ConfigManager::logLevelString = "loglevel";
 const char* const ConfigManager::maxDocsString = "maxdocs";
 const char* const ConfigManager::maxMemoryString = "maxmemory";
-const char* const ConfigManager::maxRetryOnFailureString = "maxretryonfailure";
 const char* const ConfigManager::maxSearchThreadsString = "maxsearchthreads";
 const char* const ConfigManager::mergeEveryMWritesString = "mergeeverymwrites";
 const char* const ConfigManager::mergeEveryNSecondsString = "mergeeverynseconds";
 const char* const ConfigManager::mergePolicyString = "mergepolicy";
-const char* const ConfigManager::mongoDbString = "mongodb";
 const char* const ConfigManager::nameString = "name";
-const char* const ConfigManager::portString = "port";
 const char* const ConfigManager::porterStemFilterString = "PorterStemFilter";
 const char* const ConfigManager::prefixMatchPenaltyString = "prefixmatchpenalty";
 const char* const ConfigManager::queryString = "query";
@@ -292,12 +293,9 @@ CoreInfo_t::CoreInfo_t(const CoreInfo_t &src) {
     dataFile = src.dataFile;
     dataFilePath = src.dataFilePath;
 
-    mongoHost = src.mongoHost;
-    mongoPort = src.mongoPort;
-    mongoDbName = src.mongoDbName;
-    mongoCollection = src.mongoCollection;
-    mongoListenerWaitTime = src.mongoListenerWaitTime;
-    mongoListenerMaxRetryOnFailure = src.mongoListenerMaxRetryOnFailure;
+    dbParameters = src.dbParameters;
+    dbSharedLibraryName = src.dbSharedLibraryName;
+    dbSharedLibraryPath = src.dbSharedLibraryPath;
 
     isPrimSearchable = src.isPrimSearchable;
 
@@ -440,68 +438,73 @@ void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode,
     }
 }
 
-void ConfigManager::parseMongoDb(const xml_node &mongoDbNode,
-        CoreInfo_t *coreInfo, bool &configSuccess,
-        std::stringstream &parseError, std::stringstream &parseWarnings) {
-    xml_node childNode = mongoDbNode.child(hostString);
+/*
+ * Add all database related config values into <key,value> pairs. Validity
+ * should be checked in different connectors, since different databases have
+ * different requirement.
+ * Also add "dirPath", "primary key" and "srch2home" into the database config map.
+ */
+void ConfigManager::parseDbParameters(const xml_node &dbNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
+{
+    coreInfo->dbParameters[dataDirString] = coreInfo->dataDir;
+    coreInfo->dbParameters[srch2HomeString] = srch2Home;
+    coreInfo->dbParameters[uniqueKeyString] = coreInfo->primaryKey;
+
+    xml_node childNode = dbNode.child(dbSharedLibraryPathString);
     if (childNode && childNode.text()) {
-        coreInfo->mongoHost = string(childNode.text().get());
+        coreInfo->dbSharedLibraryPath = childNode.text().get();
     } else {
-        parseError << "mongo host is not set.\n";
+        parseError << "database shared library path is not set. \n";
         configSuccess = false;
         return;
     }
 
-    childNode = mongoDbNode.child(portString);
+    childNode = dbNode.child(dbSharedLibraryNameString);
     if (childNode && childNode.text()) {
-        coreInfo->mongoPort = string(childNode.text().get());
-        int value = static_cast<int>(strtol(coreInfo->mongoPort.c_str(), NULL,
-                10));
-        if (value <= 0 || value > USHRT_MAX) {
-            parseError << "mongoPort must be between 1 and " << USHRT_MAX;
-            configSuccess = false;
-            return;
+        coreInfo->dbSharedLibraryName = childNode.text().get();
+    } else {
+        parseError << "database shared library name is not set. \n";
+        configSuccess = false;
+        return;
+    }
+
+    childNode = dbNode.child(dbKeyValuesString);
+    if (childNode) {
+        string dbKey, dbValue;
+        for (xml_node keyValue = childNode.first_child(); keyValue; keyValue =
+                keyValue.next_sibling()) {
+            if (string(keyValue.name()).compare(dbKeyValueString) == 0) {
+                dbKey = keyValue.attribute(dbKeyString).value();
+                dbValue = keyValue.attribute(dbValueString).value();
+                //Transform dbKey to lower case. dbKey should be case insensitive.
+                std::transform(dbKey.begin(), dbKey.end(), dbKey.begin(), ::tolower);
+                if (dbKey.size() != 0 && dbValue.size() != 0) {
+                    /*
+                     * Check if the key value pairs contain the predefined key
+                     * "dataDir" , "srch2Home" , "uniqueKey". If the key value
+                     * pairs contain the above keys, log a warning for each one.
+                     */
+                    if (dbKey.compare(dataDirString) == 0) {
+                        Logger::warn("Replacing value of key %s from %s to %s.",
+                                dataDirString, coreInfo->dataDir.c_str(),
+                                dbValue.c_str());
+                    }
+                    if (dbKey.compare(srch2HomeString) == 0) {
+                        Logger::warn("Replacing value of key %s from %s to %s.",
+                                srch2HomeString, srch2Home.c_str(),
+                                dbValue.c_str());
+                    }
+                    if (dbKey.compare(uniqueKeyString) == 0) {
+                        Logger::warn("Replacing value of key %s from %s to %s.",
+                                uniqueKeyString, coreInfo->primaryKey.c_str(),
+                                dbValue.c_str());
+                    }
+                    coreInfo->dbParameters[dbKey] = dbValue;
+                }
+            }
         }
-    } else {
-        coreInfo->mongoPort = ""; // use default port
     }
 
-    childNode = mongoDbNode.child(dbString);
-    if (childNode && childNode.text()) {
-        coreInfo->mongoDbName = string(childNode.text().get());
-    } else {
-        parseError << "mongo data base name is not set.\n";
-        configSuccess = false;
-        return;
-    }
-
-    childNode = mongoDbNode.child(collectionString);
-    if (childNode && childNode.text()) {
-        coreInfo->mongoCollection = string(childNode.text().get());
-    } else {
-        parseError << "mongo collection name is not set.\n";
-        configSuccess = false;
-        return;
-    }
-
-    childNode = mongoDbNode.child(listenerWaitTimeString);
-    if (childNode && childNode.text()) {
-        coreInfo->mongoListenerWaitTime = childNode.text().as_uint(1);
-    } else {
-        coreInfo->mongoListenerWaitTime = 1;
-    }
-
-    childNode = mongoDbNode.child(maxRetryOnFailureString);
-    if (childNode && childNode.text()) {
-        coreInfo->mongoListenerMaxRetryOnFailure = childNode.text().as_uint(3);
-    } else {
-        coreInfo->mongoListenerMaxRetryOnFailure = 3;
-    }
-
-    // For MongoDB as a data source , primary key must be "_id" which is a unique key generated
-    // by MongoDB. It is important to set primary key to "_id" because oplog entries for inserts
-    // and deletes in MongoDB can be identified by _id only.
-    coreInfo->primaryKey = "_id";
 }
 
 void ConfigManager::parseQuery(CoreConfigParseState_t *coreParseState , const xml_node &queryNode, CoreInfo_t *coreInfo,
@@ -927,7 +930,7 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode,
             coreInfo->dataSourceType = DATA_SOURCE_JSON_FILE;
             break;
         case 2:
-            coreInfo->dataSourceType = DATA_SOURCE_MONGO_DB;
+            coreInfo->dataSourceType = DATA_SOURCE_DATABASE;
             break;
         default:
             // if user forgets to specify this option, we will assume data source is JSON file
@@ -982,28 +985,14 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode,
         }
     }
 
-    if (coreInfo->dataSourceType == DATA_SOURCE_MONGO_DB) {
-        childNode = parentNode.child(mongoDbString);
-        parseMongoDb(childNode, coreInfo, configSuccess, parseError,
-                parseWarnings);
-        if (configSuccess == false) {
-            return;
-        }
-    }
-
-    // uniqueKey is required
+    /*
+     * uniqueKey is required
+     * populate uniqueKey before DATA_SOURCE_DATABASE, so that we can add
+     * the uniqueKey into the database config map.
+     */
     childNode = parentNode.child(schemaString).child(uniqueKeyString);
     if (childNode && childNode.text()) {
         coreInfo->primaryKey = string(childNode.text().get());
-        // For MongoDB, the primary key should always be "_id".
-        if (coreInfo->dataSourceType == DATA_SOURCE_MONGO_DB
-                && coreInfo->primaryKey.compare("_id") != 0) {
-            parseError
-                    << "The PrimaryKey in the config file for the MongoDB adapter should always be \"_id\", not "
-                    << coreInfo->primaryKey << ".";
-            configSuccess = false;
-            return;
-        }
     } else {
         parseError
                 << (coreInfo->name.compare("") != 0 ? coreInfo->name : "default")
@@ -1011,6 +1000,16 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode,
         configSuccess = false;
         return;
     }
+
+    if (coreInfo->dataSourceType == DATA_SOURCE_DATABASE) {
+        childNode = parentNode.child(dbParametersString);
+        parseDbParameters(childNode, coreInfo, configSuccess, parseError, parseWarnings);
+        if (configSuccess == false) {
+            return;
+        }
+    }
+
+
 
     coreInfo->allowedRecordTokenizerCharacters = "";
     coreInfo->attributeToSort = 0;
@@ -3052,48 +3051,28 @@ bool ConfigManager::isPositionIndexEnabled(const string &coreName) const {
             || ((CoreInfoMap_t) coreInfoMap)[coreName]->enableCharOffsetIndex);
 }
 
-const string& ConfigManager::getMongoServerHost(const string &coreName) const {
+const map<string,string> * ConfigManager::getDbParameters(const string &coreName) const
+{
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->mongoHost;
+        return &getDefaultCoreInfo()->dbParameters;
     }
-    return ((CoreInfoMap_t) coreInfoMap)[coreName]->mongoHost;
+    return &((CoreInfoMap_t) coreInfoMap)[coreName]->dbParameters;
 }
 
-const string& ConfigManager::getMongoServerPort(const string &coreName) const {
+const string& ConfigManager::getDatabaseSharedLibraryName(const string &coreName) const
+{
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->mongoPort;
+        return getDefaultCoreInfo()->dbSharedLibraryName;
     }
-    return ((CoreInfoMap_t) coreInfoMap)[coreName]->mongoPort;
+    return ((CoreInfoMap_t) coreInfoMap)[coreName]->dbSharedLibraryName;
 }
 
-const string& ConfigManager::getMongoDbName(const string &coreName) const {
+const string& ConfigManager::getDatabaseSharedLibraryPath(const string &coreName) const
+{
     if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->mongoDbName;
+        return getDefaultCoreInfo()->dbSharedLibraryPath;
     }
-    return ((CoreInfoMap_t) coreInfoMap)[coreName]->mongoDbName;
-}
-
-const string& ConfigManager::getMongoCollection(const string &coreName) const {
-    if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->mongoCollection;
-    }
-    return ((CoreInfoMap_t) coreInfoMap)[coreName]->mongoCollection;
-}
-
-const unsigned ConfigManager::getMongoListenerWaitTime(
-        const string &coreName) const {
-    if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->mongoListenerWaitTime;
-    }
-    return ((CoreInfoMap_t) coreInfoMap)[coreName]->mongoListenerWaitTime;
-}
-
-const unsigned ConfigManager::getMongoListenerMaxRetryCount(
-        const string &coreName) const {
-    if (coreName.compare("") == 0) {
-        return getDefaultCoreInfo()->mongoListenerMaxRetryOnFailure;
-    }
-    return ((CoreInfoMap_t) coreInfoMap)[coreName]->mongoListenerMaxRetryOnFailure;
+    return ((CoreInfoMap_t) coreInfoMap)[coreName]->dbSharedLibraryPath;
 }
 
 CoreInfo_t *ConfigManager::getDefaultCoreInfo() const {

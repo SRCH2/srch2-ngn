@@ -43,8 +43,9 @@
 #include <boost/filesystem.hpp>
 #include "util/FileOps.h"
 #include "analyzer/AnalyzerContainers.cpp"
-#include "MongodbAdapter.h"
 #include "WrapperConstants.h"
+#include "ServerInterfaceInternal.h"
+#include "DataConnectorThread.h"
 namespace po = boost::program_options;
 namespace srch2is = srch2::instantsearch;
 namespace srch2http = srch2::httpwrapper;
@@ -762,20 +763,14 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
     	Logger::error(ex.what());
     	return 255;
     }
-    //cout << "srch2 server started." << endl;
 
-    // loop over cores setting up mongodb and binding all ports to use
+    // loop over cores setting up database connector and binding all ports to use
     for (CoreNameServerMap_t::const_iterator iterator = coreNameServerMap->begin(); iterator != coreNameServerMap->end(); iterator++) {
         const srch2http::CoreInfo_t *coreInfo = config->getCoreInfo(iterator->second->getCoreName());
         if (coreInfo != NULL) {
-#ifndef ANDROID
-            if (coreInfo->getDataSourceType() == srch2::httpwrapper::DATA_SOURCE_MONGO_DB) {
-                // set current time as cut off time for further updates
-                // this is a temporary solution. TODO
-                srch2http::MongoDataSource::bulkLoadEndTime = time(NULL);
-                srch2http::MongoDataSource::spawnUpdateListener(iterator->second);
-            }
-#endif
+            //Create adapter thread for database connectors. Ignore unknown config file (Like JSON file).
+            DataConnectorThread::getDataConnectorThread(
+                    (void*) iterator->second);
             // bind once each port defined for use by this core
             for (enum srch2http::PortType_t portType = static_cast<srch2http::PortType_t> (0); portType < srch2http::EndOfPortType; portType = srch2http::incrementPortType(portType)) {
                 // IETF RFC 6335 specifies port number range is 0 - 65535: http://tools.ietf.org/html/rfc6335#page-11
@@ -994,9 +989,23 @@ int main(int argc, char** argv) {
         delete iterator->second;
     }
 
+    /*
+     * THIS IS A HACKY SOLUTION FOR MAC OS!
+     * JIRA: https://srch2inc.atlassian.net/browse/SRCN-473
+     *
+     * The function "event_base_free(evBases[i])" is blocking the engine from
+     *  a proper exit on MacOS
+     *
+     * This function ("event_base_free(evBases[i])") does not deallocate any
+     * of the events that are currently associated with the event_base, or
+     * close any of their sockets, or free any of their pointers.
+     * --http://www.wangafu.net/~nickm/libevent-book/Ref2_eventbase.html
+     */
+#ifndef __MACH__
     for (unsigned int i = 0; i < MAX_THREADS; i++) {
         event_base_free(evBases[i]);
     }
+#endif
 
     // use global port map to close each file descriptor just once
     for (PortSocketMap_t::iterator iterator = globalPortSocketMap.begin(); iterator != globalPortSocketMap.end(); iterator++) {
