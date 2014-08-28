@@ -90,6 +90,7 @@ final public class SRCH2Service extends Service {
             unregisterReceiver(incomingIntentReciever);
         } catch (IllegalArgumentException ignore) {
         }
+        AutoPing.stop();
         super.onDestroy();
     }
 
@@ -206,6 +207,7 @@ final public class SRCH2Service extends Service {
         Intent i = new Intent(IPCConstants.getSRCH2EngineBroadcastRecieverIntentAction(getApplicationContext()));
         i.putExtra(IPCConstants.INTENT_KEY_PORT_NUMBER, portNumberForSRCH2EngineToReuse);
         i.putExtra(IPCConstants.INTENT_KEY_OAUTH, oAuthCodeForSRCH2EngineToReuse);
+        AutoPing.start(executablePingUrl);
         sendBroadcast(i);
     }
 
@@ -241,7 +243,7 @@ final public class SRCH2Service extends Service {
                     } catch (InterruptedException ignore) {
                         Cat.d(TAG, "shutdowning MUTEX INTERRUPTED!");
                     }
-
+                    AutoPing.stop();
                     try {
 
                         doShutdownNetworkCall();
@@ -373,7 +375,7 @@ final public class SRCH2Service extends Service {
                 Process p;
                 try {
                     updateServerLog(portBeingUsedToStartService, shutDownUrl, oAuthCode, executableProcessPath, pingUrl);
-
+                    AutoPing.start(pingUrl);
                     Cat.d(TAG, "startRunningExecutable - starting process");
                     p = pb.start();
 
