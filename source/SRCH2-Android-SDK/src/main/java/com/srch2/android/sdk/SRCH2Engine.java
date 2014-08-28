@@ -67,9 +67,9 @@ final public class SRCH2Engine {
         /** Will be message of IOException when port already in use. */
         static final String IO_EXCEPTION_EADDRINUSE_ADDRESS_ALREADY_IN_USE = "EADDRINUSE (Address already in use)";
         /** Will be message of IOException when Internet Permission missing from manifest. */
-        static final String IO_EXCEPTION_EACCES_PERMISSION_DENIED = "EACCES (Permission Denied)";
+        static final String IO_EXCEPTION_EACCES_PERMISSION_DENIED = "EACCES (Permission denied)";
         /** Will be message of IOException when server crashes. */
-        static final String IO_EXCEPTION_ECONNREFUSED_CONNECTION_REFUSED = "ECONNREFUSED (Connection Refused)";
+        static final String IO_EXCEPTION_ECONNREFUSED_CONNECTION_REFUSED = "ECONNREFUSED (Connection refused)";
     }
 
     static final AtomicReference<IndexQueryPair> lastQuery = new AtomicReference<IndexQueryPair>();
@@ -268,7 +268,7 @@ final public class SRCH2Engine {
     }
 
 
-    private static void startCheckCoresLoadedTask() {
+    private static void startCheckCoresLoadedTask(boolean isCheckingAfterCrash) {
         Cat.d(TAG, "startCheckCoresLoadedTask");
         HashMap<String, URL> indexUrlMap = new HashMap<String, URL>();
         for (Indexable index : conf.indexableMap.values()) {
@@ -277,7 +277,7 @@ final public class SRCH2Engine {
         }
 
         resetState();
-        CheckCoresLoadedTask task = new CheckCoresLoadedTask(indexUrlMap);
+        CheckCoresLoadedTask task = new CheckCoresLoadedTask(indexUrlMap, isCheckingAfterCrash);
         HttpTask.executeTask(task);
     }
 
@@ -334,8 +334,8 @@ final public class SRCH2Engine {
         Intent i = new Intent(
                 IPCConstants
                         .getSRCH2ServiceBroadcastRecieverIntentAction(context));
-        i.putExtra(IPCConstants.INTENT_KEY_START_AWAITING_SHUTDOWN,
-                IPCConstants.INTENT_KEY_START_AWAITING_SHUTDOWN);
+        i.putExtra(IPCConstants.INTENT_KEY_BROADCAST_ACTION,
+                IPCConstants.INTENT_VALUE_BROADCAST_ACTION_START_AWAITING_SHUTDOWN);
         context.sendBroadcast(i);
         HttpTask.onStop();
     }
@@ -343,7 +343,7 @@ final public class SRCH2Engine {
     static void reQueryLastOne() {
         Cat.d(TAG, "reQueryLastOne");
         IndexQueryPair pair = lastQuery.get();
-        if (pair == null || pair.query == null) {
+        if (pair == null || pair.query == null || pair.query.length() < 1) {
             return;
         }
         if (pair.index == null) {
@@ -355,14 +355,14 @@ final public class SRCH2Engine {
 
     private static void searchAllRawString(String rawQueryString) {
         lastQuery.set(new IndexQueryPair(null, rawQueryString));
-        if (isReady()) {
+//        if (isReady()) {
             if (allIndexSearchTask != null) {
                 allIndexSearchTask.cancel();
             }
             allIndexSearchTask = new SearchTask(UrlBuilder.getSearchUrl(conf, null,
                     rawQueryString), searchResultsObserver);
-            HttpTask.executeTask(allIndexSearchTask);
-        }
+            HttpTask.addToQueue(allIndexSearchTask);
+//        }
     }
 
     /**
@@ -481,7 +481,19 @@ final public class SRCH2Engine {
                 SRCH2Engine.conf.setPort(actualPortExecutableStartedWith);
                 SRCH2Engine.conf.setAuthorizationKey(actualOAuthExecutableStartedWith);
             }
-            SRCH2Engine.startCheckCoresLoadedTask();
+
+            String broadcastActionTag = intent.getStringExtra(IPCConstants.INTENT_KEY_BROADCAST_ACTION);
+            boolean isResumingAfterCrash = false;
+            if (broadcastActionTag != null) {
+                if (broadcastActionTag.equals(IPCConstants.INTENT_VALUE_BROADCAST_ACTION_ENGINE_CRASHED_BUT_CAN_RESUME)) {
+                    Cat.d(TAG, "SRCH2EngineBroadcastReciever onReceive - resume after crash");
+                    isResumingAfterCrash = true;
+                } else if (broadcastActionTag.equals(IPCConstants.INTENT_VALUE_BROADCAST_ACTION_START_AWAITING_SHUTDOWN)) {
+                    Cat.d(TAG, "SRCH2EngineBroadcastReciever onReceive - proceed");
+                    isResumingAfterCrash = false;
+                }
+            }
+            SRCH2Engine.startCheckCoresLoadedTask(isResumingAfterCrash);
         }
     }
 

@@ -108,6 +108,9 @@ class InsertTask extends HttpTask.InsertUpdateDeleteTask {
             response = handleStreams(connection, TAG);
         } catch (IOException e) {
             response = handleIOExceptionMessagePassing(e, response, TAG);
+            if (response.contains(SRCH2Engine.ExceptionMessages.IO_EXCEPTION_ECONNREFUSED_CONNECTION_REFUSED)) {
+                onTaskCrashedSRCH2SearchServer();
+            }
         } finally {
             if (outStream != null) {
                 try {
@@ -162,7 +165,7 @@ class InsertTask extends HttpTask.InsertUpdateDeleteTask {
             successCount = RESTfulResponseTags.INVALID_JSON_RESPONSE;
             failureCount = RESTfulResponseTags.INVALID_JSON_RESPONSE;
         }
-
+        onExecutionCompleted(TASK_ID_INSERT_UPDATE_DELETE_GETRECORD);
         HttpTask.executeTask(new InsertResponse(targetCoreName, successCount, failureCount, jsonResponse));
     }
 }

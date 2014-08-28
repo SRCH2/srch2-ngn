@@ -37,61 +37,61 @@ final class IndexInternal {
     }
 
     void insert(JSONObject record) {
-        if (SRCH2Engine.isReady()) {
+//        if (SRCH2Engine.isReady()) {
             InsertTask insertTask = new InsertTask(UrlBuilder.getInsertUrl(
                     SRCH2Engine.getConfig(), indexDescription),
                     getIndexCoreName(), record);
-            HttpTask.executeTask(insertTask);
+            HttpTask.addToQueue(insertTask);
             SRCH2Engine.isChanged.set(true);
-        }
+//        }
     }
 
 
     void insert(JSONArray records) {
-        if (SRCH2Engine.isReady()) {
+//        if (SRCH2Engine.isReady()) {
             URL url = UrlBuilder.getInsertUrl(SRCH2Engine.getConfig(),
                     indexDescription);
 
             InsertTask insertTask = new InsertTask(url, getIndexCoreName(),
                     records);
-            HttpTask.executeTask(insertTask);
+            HttpTask.addToQueue(insertTask);
             SRCH2Engine.isChanged.set(true);
-        }
+//        }
     }
 
     void update(JSONObject record) {
-        if (SRCH2Engine.isReady()) {
+//        if (SRCH2Engine.isReady()) {
             UpdateTask updateTask = new UpdateTask(UrlBuilder.getUpdateUrl(
                     SRCH2Engine.getConfig(), indexDescription),
                     getIndexCoreName(), record);
-            HttpTask.executeTask(updateTask);
+            HttpTask.addToQueue(updateTask);
             SRCH2Engine.isChanged.set(true);
-        }
+//        }
     }
 
     void update(JSONArray records) {
-        if (SRCH2Engine.isReady()) {
+//        if (SRCH2Engine.isReady()) {
             UpdateTask updateTask = new UpdateTask(UrlBuilder.getUpdateUrl(
                     SRCH2Engine.getConfig(), indexDescription),
                     getIndexCoreName(), records);
-            HttpTask.executeTask(updateTask);
+            HttpTask.addToQueue(updateTask);
             SRCH2Engine.isChanged.set(true);
-        }
+//        }
     }
 
     void delete(String id) {
-        if (SRCH2Engine.isReady()) {
+//        if (SRCH2Engine.isReady()) {
             DeleteTask deleteTast = new DeleteTask(UrlBuilder.getDeleteUrl(
                     SRCH2Engine.getConfig(), indexDescription, id),
                     getIndexCoreName());
-            HttpTask.executeTask(deleteTast);
+            HttpTask.addToQueue(deleteTast);
             SRCH2Engine.isChanged.set(true);
-        }
+//        }
     }
 
     void searchRawString(String rawString) {
         SRCH2Engine.lastQuery.set(new SRCH2Engine.IndexQueryPair(this, rawString));
-        if (SRCH2Engine.isReady()) {
+  //      if (SRCH2Engine.isReady()) {
             if (currentSearchTask != null) {
                 currentSearchTask.cancel();
             }
@@ -101,8 +101,8 @@ final class IndexInternal {
                             rawString), getIndexCoreName(),
                     SRCH2Engine.getSearchResultsObserver());
 
-            HttpTask.executeTask(currentSearchTask);
-        }
+            HttpTask.addToQueue(currentSearchTask);
+//        }
     }
 
     void search(String searchInput) {
@@ -128,10 +128,10 @@ final class IndexInternal {
         if (id == null || id.length() < 1) {
             return;
         }
-        if (SRCH2Engine.isReady()) {
-            HttpTask.executeTask(new GetRecordTask(UrlBuilder.getGetDocUrl(
+ //       if (SRCH2Engine.isReady()) {
+            HttpTask.addToQueue(new GetRecordTask(UrlBuilder.getGetDocUrl(
                     SRCH2Engine.getConfig(), indexDescription, id), this.getIndexCoreName()));
-        }
+ //       }
     }
 
 }

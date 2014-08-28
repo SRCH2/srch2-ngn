@@ -192,6 +192,12 @@ class SearchTask extends HttpTask.SearchHttpTask {
         } catch (IOException networkProblem) {
             jsonResponse = handleIOExceptionMessagePassing(networkProblem, jsonResponse, "SearchTask");
             responseCode = HttpURLConnection.HTTP_INTERNAL_ERROR;
+            if (jsonResponse.contains(SRCH2Engine.ExceptionMessages.IO_EXCEPTION_ECONNREFUSED_CONNECTION_REFUSED)) {
+                Cat.d(TAG, "search task crashed server contained message");
+                onTaskCrashedSRCH2SearchServer();
+            } else {
+                Cat.d(TAG, "search task DID NOT crashed server message was " + jsonResponse);
+            }
         } finally {
             if (connection != null) {
                 connection.disconnect();
@@ -204,6 +210,7 @@ class SearchTask extends HttpTask.SearchHttpTask {
         }
 
         if (!shouldHalt()) {
+            onExecutionCompleted(TASK_ID_SEARCH);
             onTaskComplete(responseCode, jsonResponse);
         }
     }

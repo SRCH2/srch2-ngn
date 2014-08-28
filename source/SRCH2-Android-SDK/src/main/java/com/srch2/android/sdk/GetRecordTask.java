@@ -40,6 +40,7 @@ class GetRecordTask extends SearchTask {
         if (record == null) {
             isRecordRetrieved = false;
         }
+        onExecutionCompleted(TASK_ID_INSERT_UPDATE_DELETE_GETRECORD);
         HttpTask.executeTask(new GetRecordResponse(targetCoreName, isRecordRetrieved, record, jsonResponse));
     }
 }

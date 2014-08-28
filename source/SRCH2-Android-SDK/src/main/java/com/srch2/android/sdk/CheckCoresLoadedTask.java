@@ -18,7 +18,10 @@ final class CheckCoresLoadedTask extends HttpTask {
 
     private boolean noNetworkConnection = false;
 
-    CheckCoresLoadedTask(HashMap<String, URL> theTargetCoreUrls) {
+    private boolean isCheckingCoresAfterCrash = false;
+
+    CheckCoresLoadedTask(HashMap<String, URL> theTargetCoreUrls, boolean isCheckingAfterCrash) {
+        isCheckingCoresAfterCrash = isCheckingAfterCrash;
         targetCoreUrlsMap = theTargetCoreUrls;
     }
 
@@ -38,7 +41,7 @@ final class CheckCoresLoadedTask extends HttpTask {
         int i = 0;
         int superCount = 0;
         while (true) {
-            if (superCount > 10) {
+            if (superCount > 100) {
                 noNetworkConnection = true;
                 break;
             }
@@ -81,10 +84,14 @@ final class CheckCoresLoadedTask extends HttpTask {
 
         if (pingCountSuccess == coreCount) {
             SRCH2Engine.isReady.set(true);
-            for (String indexName : validIndexes) {
-                HttpTask.executeTask(new IndexIsReadyResponse(indexName));
+            if (!isCheckingCoresAfterCrash) {
+                for (String indexName : validIndexes) {
+                    HttpTask.executeTask(new IndexIsReadyResponse(indexName));
+                }
+                SRCH2Engine.reQueryLastOne();
             }
-            SRCH2Engine.reQueryLastOne();
         }
+        onExecutionCompleted(TASK_ID_SEARCH);
+        onExecutionCompleted(TASK_ID_INSERT_UPDATE_DELETE_GETRECORD);
     }
 }

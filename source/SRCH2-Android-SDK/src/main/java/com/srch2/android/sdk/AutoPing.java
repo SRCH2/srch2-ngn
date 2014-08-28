@@ -108,6 +108,7 @@ class AutoPing {
             if (autoPingInstance != null && !Thread.currentThread().isInterrupted()) {
                 URL pingUrl = autoPingInstance.getPingUrl();
                 if (pingUrl != null) {
+                    Cat.d(TAG, "autopinging info url " + pingUrl);
                     InternalInfoTask t = new InternalInfoTask(autoPingInstance.pingUrl , 250, false);
                     InternalInfoResponse iir = t.getInfo();
                     Cat.d(TAG, "run - got info is valid? " + iir.isValidInfoResponse);

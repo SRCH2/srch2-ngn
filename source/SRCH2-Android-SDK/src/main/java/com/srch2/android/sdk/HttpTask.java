@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -35,19 +36,22 @@ abstract class HttpTask implements Runnable {
     static private ExecutorService searchTaskExecutor;
     static private ExecutorService clientCallbackTaskExecutor;
 
-    private static final int TASK_ID_INSERT_UPDATE_DELETE_GETRECORD = 1;
-    private static final int TASK_ID_SEARCH = 2;
-    private static final int TASK_ID_CLIENT_CALLBACK = 3;
+    protected static final int TASK_ID_INSERT_UPDATE_DELETE_GETRECORD = 1;
+    protected static final int TASK_ID_SEARCH = 2;
+    protected static final int TASK_ID_CLIENT_CALLBACK = 3;
 
     protected SearchResultsListener searchResultsListener;
 
-
+    private static ConcurrentLinkedQueue<HttpTask> controlTaskQueue;
+    private static ConcurrentLinkedQueue<HttpTask> searchTaskQueue;
 
     static synchronized void onStart() {
         isExecuting = true;
         controlTaskExecutor = Executors.newFixedThreadPool(1);
         searchTaskExecutor = Executors.newFixedThreadPool(1);
         clientCallbackTaskExecutor = Executors.newFixedThreadPool(1);
+        controlTaskQueue = new ConcurrentLinkedQueue<HttpTask>();
+        searchTaskQueue = new ConcurrentLinkedQueue<HttpTask>();
     }
 
     static synchronized void onStop() {
@@ -55,19 +59,107 @@ abstract class HttpTask implements Runnable {
         if (controlTaskExecutor != null) {
             controlTaskExecutor.shutdown();
         }
+        if (controlTaskQueue != null) {
+           controlTaskQueue.clear();
+        }
         if (searchTaskExecutor != null) {
             searchTaskExecutor.shutdown();
+        }
+        if (searchTaskQueue != null) {
+            searchTaskQueue.clear();
         }
         if (clientCallbackTaskExecutor != null) {
             clientCallbackTaskExecutor.shutdown();
         }
     }
 
-    static synchronized void executeTask(HttpTask taskToExecute) {
-        if (!isExecuting || taskToExecute == null) {
+    protected void onExecutionCompleted(int originatingTaskId) {
+        if (!SRCH2Engine.isReady()) {
             return;
         }
 
+        switch (originatingTaskId) {
+            case TASK_ID_SEARCH:
+                if (searchTaskQueue != null && searchTaskQueue.size() > 0) {
+                    Cat.d(TAG, "execution completed from search task executing pending task!");
+                    executeTask(searchTaskQueue.poll());
+                } else {
+                    Cat.d(TAG, "execution completed from search task NO pending task to execute!");
+                }
+                break;
+            case TASK_ID_INSERT_UPDATE_DELETE_GETRECORD:
+                if (controlTaskQueue != null && controlTaskQueue.size() > 0) {
+                    Cat.d(TAG, "execution completed from control executing pending task!");
+                    executeTask(controlTaskQueue.poll());
+                } else {
+                    Cat.d(TAG, "execution completed from control task NO pending task to execute!");
+                }
+                break;
+            default:
+                throw new IllegalStateException("Meltdown imminent: originatingTaskId does not match any completed task");
+        }
+    }
+
+    protected void onTaskCrashedSRCH2SearchServer() {
+        Cat.d(TAG, "onTaskCrashedSRCH2SearchServer setting is ready to false");
+        // here would we pass some arguements that contain the data we want to send in crash report!
+        SRCH2Engine.isReady.set(false);
+    }
+
+    static void addToQueue(HttpTask taskToExecute) {
+
+        int taskId = -1;
+        final Class originatingTaskClass = taskToExecute.getClass();
+        if (originatingTaskClass == SearchTask.class
+                || originatingTaskClass == CheckCoresLoadedTask.class) {
+            taskId = TASK_ID_SEARCH;
+        } else if (originatingTaskClass == GetRecordTask.class ||
+                originatingTaskClass == UpdateTask.class ||
+                originatingTaskClass == InsertTask.class ||
+                originatingTaskClass == DeleteTask.class) {
+            taskId = TASK_ID_INSERT_UPDATE_DELETE_GETRECORD;
+        } else if (originatingTaskClass == InsertResponse.class ||
+                originatingTaskClass == UpdateResponse.class ||
+                originatingTaskClass == DeleteResponse.class ||
+                originatingTaskClass == GetRecordResponse.class ||
+                originatingTaskClass == IndexIsReadyResponse.class) {
+            executeTask(taskToExecute);
+        } else {
+            throw new IllegalStateException("Meltdown imminent: taskToExecute does not match any assignable task executor");
+        }
+        Cat.d(TAG, "addToQueue adding with taskid " + taskId);
+        if (taskId == TASK_ID_SEARCH) {
+            if (searchTaskQueue.size() <  1) {
+                if (!SRCH2Engine.isReady()) {
+                    Cat.d(TAG, "addToQueue adding search task but engine wasn't reading queueing up");
+                    searchTaskQueue.add(taskToExecute);
+                } else {
+                    Cat.d(TAG, "addToQueue executing search task!");
+                    executeTask(taskToExecute);
+                }
+            } else {
+                Cat.d(TAG, "addToQueue adding search task since queue had tasks to do");
+                searchTaskQueue.add(taskToExecute);
+            }
+        } else if (taskId == TASK_ID_INSERT_UPDATE_DELETE_GETRECORD) {
+            if (controlTaskQueue.size() < 1) {
+                if (!SRCH2Engine.isReady()) {
+                    controlTaskQueue.add(taskToExecute);
+                } else {
+                    executeTask(taskToExecute);
+                }
+            } else {
+                controlTaskQueue.add(taskToExecute);
+            }
+        }
+    }
+
+    static synchronized void executeTask(HttpTask taskToExecute) {
+        Cat.d(TAG, "executing task");
+        if (!isExecuting || taskToExecute == null) {
+            return;
+        }
+        Cat.d(TAG, "executing task - actually executing");
         int taskId = -1;
         final Class originatingTaskClass = taskToExecute.getClass();
         if (originatingTaskClass == SearchTask.class
@@ -137,7 +229,13 @@ abstract class HttpTask implements Runnable {
         }
     }
 
-    static class DeleteResponse extends SingleCoreHttpTask {
+    abstract static class ResponseTask extends SingleCoreHttpTask {
+        ResponseTask(String targetCoreName) {
+            super(targetCoreName);
+        }
+    }
+
+    static class DeleteResponse extends ResponseTask {
         final int success;
         final int failed;
         final String jsonResponse;
@@ -158,7 +256,7 @@ abstract class HttpTask implements Runnable {
         }
     }
 
-    static class InsertResponse extends SingleCoreHttpTask {
+    static class InsertResponse extends ResponseTask {
         final int success;
         final int failed;
         final String jsonResponse;
@@ -179,7 +277,7 @@ abstract class HttpTask implements Runnable {
         }
     }
 
-    static class UpdateResponse extends SingleCoreHttpTask {
+    static class UpdateResponse extends ResponseTask {
         final int success;
         final int upserts;
         final int failed;
@@ -202,7 +300,7 @@ abstract class HttpTask implements Runnable {
         }
     }
 
-    static class GetRecordResponse extends SingleCoreHttpTask {
+    static class GetRecordResponse extends ResponseTask {
         final boolean success;
         final JSONObject retrievedRecord;
         final String jsonResponse;
@@ -227,7 +325,7 @@ abstract class HttpTask implements Runnable {
         }
     }
 
-    static class IndexIsReadyResponse extends SingleCoreHttpTask {
+    static class IndexIsReadyResponse extends ResponseTask {
         IndexIsReadyResponse(String theTargetCoreName) {
             super(theTargetCoreName);
         }

@@ -42,6 +42,9 @@ class DeleteTask extends HttpTask.InsertUpdateDeleteTask {
             response = handleStreams(connection, TAG);
         } catch (IOException e) {
             response = handleIOExceptionMessagePassing(e, response, TAG);
+            if (response.contains(SRCH2Engine.ExceptionMessages.IO_EXCEPTION_ECONNREFUSED_CONNECTION_REFUSED)) {
+                onTaskCrashedSRCH2SearchServer();
+            }
         } finally {
             if (connection != null) {
                 connection.disconnect();
@@ -85,7 +88,7 @@ class DeleteTask extends HttpTask.InsertUpdateDeleteTask {
         } else {
             successCount = 0;
         }
-
+        onExecutionCompleted(TASK_ID_INSERT_UPDATE_DELETE_GETRECORD);
         HttpTask.executeTask(new DeleteResponse(targetCoreName, successCount, deleteCount, jsonResponse));
     }
 

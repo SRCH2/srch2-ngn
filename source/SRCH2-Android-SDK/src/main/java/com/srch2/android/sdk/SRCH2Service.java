@@ -33,8 +33,8 @@ final public class SRCH2Service extends Service {
         @Override
         public void onReceive(Context context, Intent intent) {
             Cat.d(TAG, "ExecutableServiceBroadcastReciever -- onRecieve");
-            String value = intent.getStringExtra(IPCConstants.INTENT_KEY_START_AWAITING_SHUTDOWN);
-            if (value.equals(IPCConstants.INTENT_KEY_START_AWAITING_SHUTDOWN)) {
+            String value = intent.getStringExtra(IPCConstants.INTENT_KEY_BROADCAST_ACTION);
+            if (value.equals(IPCConstants.INTENT_VALUE_BROADCAST_ACTION_START_AWAITING_SHUTDOWN)) {
                 Cat.d(TAG, "ExecutableServiceBroadcastReciever -- onRecieve -- startAwaitingShutdown");
                 startAwaitingShutdown();
             }
@@ -72,15 +72,11 @@ final public class SRCH2Service extends Service {
     public void onCreate() {
         super.onCreate();
         Cat.d(TAG, "onCreate");
-
         shutdownMutex = new Semaphore(1);
-
         isAwaitingShutdown = new AtomicBoolean(false);
         isShuttingDown = new AtomicBoolean(false);
         incomingIntentReciever = new ExecutableServiceBroadcastReciever();
-
         registerReceiver(incomingIntentReciever, IPCConstants.getSRCH2ServiceBroadcastRecieverIntentFilter(getApplicationContext()));
-
     }
 
     @Override
@@ -130,21 +126,15 @@ final public class SRCH2Service extends Service {
             executableProcessPath = executablePath;
             executablePingUrl = pingUrl;
             Cat.d(TAG, "checkIfProcessIsRunningWithoutHavingShutdownCalled was there with values " + portNumber + " " + shutDownUrlsLiteral);
-
             return true;
         } else {
-
-
             Cat.d(TAG, "checkIfProcessIsRunningWithoutHavingShutdownCalled was not there");
-
             return false;
         }
     }
 
     private void updateServerLog(int portNumberToPersist, String shutdownUrlToPersist, String oAuth, String executablePath, String pingUrl) {
         Cat.d(TAG, "updateServerLog with port " + portNumberToPersist + " and shutdownurl " + shutdownUrlToPersist);
-
-
         SharedPreferences sharedpreferences = getSharedPreferences(PREFERENCES_NAME_SERVER_STARTED_LOG, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedpreferences.edit();
         editor.putString(PREFERENCES_KEY_SERVER_LOG_SHUTDOWN_URLS, shutdownUrlToPersist);
@@ -156,10 +146,7 @@ final public class SRCH2Service extends Service {
     }
 
     private void clearServerLogEntries() {
-
         Cat.d(TAG, "clearServerLogEntries");
-
-
         SharedPreferences sharedpreferences = getSharedPreferences(PREFERENCES_NAME_SERVER_STARTED_LOG, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedpreferences.edit();
         editor.remove(PREFERENCES_KEY_SERVER_LOG_SHUTDOWN_URLS);
@@ -203,6 +190,39 @@ final public class SRCH2Service extends Service {
     }
 
     private void signalSRCH2EngineToProceed(int portNumberForSRCH2EngineToReuse, String oAuthCodeForSRCH2EngineToReuse) {
+        int totalSleepTime = 0;
+        while (!ps(executableProcessPath)) {
+            try {
+                Thread.currentThread().sleep(200);
+                if (totalSleepTime > 1000) {
+                    break;
+                }
+                totalSleepTime += 200;
+            } catch (InterruptedException e) {
+                Cat.ex(TAG, "startingexecutable InterrupedException", e);
+            }
+        }
+        Cat.d(TAG, "signalSRCH2EngineToProceed");
+        Intent i = new Intent(IPCConstants.getSRCH2EngineBroadcastRecieverIntentAction(getApplicationContext()));
+        i.putExtra(IPCConstants.INTENT_KEY_PORT_NUMBER, portNumberForSRCH2EngineToReuse);
+        i.putExtra(IPCConstants.INTENT_KEY_OAUTH, oAuthCodeForSRCH2EngineToReuse);
+        AutoPing.start(executablePingUrl);
+        sendBroadcast(i);
+    }
+
+    private void signalSRCH2EngineToResume(int portNumberForSRCH2EngineToReuse, String oAuthCodeForSRCH2EngineToReuse) {
+        int totalSleepTime = 0;
+        while (!ps(executableProcessPath)) {
+            try {
+                Thread.currentThread().sleep(200);
+                if (totalSleepTime > 1000) {
+                    break;
+                }
+                totalSleepTime += 200;
+            } catch (InterruptedException e) {
+                Cat.ex(TAG, "startingexecutable InterrupedException", e);
+            }
+        }
         Cat.d(TAG, "signalSRCH2EngineToProceed");
         Intent i = new Intent(IPCConstants.getSRCH2EngineBroadcastRecieverIntentAction(getApplicationContext()));
         i.putExtra(IPCConstants.INTENT_KEY_PORT_NUMBER, portNumberForSRCH2EngineToReuse);
@@ -219,7 +239,6 @@ final public class SRCH2Service extends Service {
         }
         isAwaitingShutdown.set(false);
     }
-
 
     private void startAwaitingShutdown() {
         Cat.d(TAG, "startAwaitingShutdown START AWAITING shutdown!");
@@ -280,7 +299,6 @@ final public class SRCH2Service extends Service {
             }
         }, TIME_TO_WAIT_FOR_SHUTDOWN_MS);
     }
-
 
     private void doShutdownNetworkCall() {
         Cat.d(TAG, "doShutdownNetworkCall");
@@ -351,18 +369,6 @@ final public class SRCH2Service extends Service {
         Cat.d(TAG, "startExecutable shutdown string " + executableShutdownUrlString);
         Cat.d(TAG, "startExecutable pingUrl " + executablePingUrl);
 
-        int totalSleepTime = 0;
-        while (!ps(executableProcessPath)) {
-            try {
-                Thread.currentThread().sleep(200);
-                if (totalSleepTime > 1000) {
-                    break;
-                }
-                totalSleepTime += 200;
-            } catch (InterruptedException e) {
-                Cat.ex(TAG, "startingexecutable InterrupedException", e);
-            }
-        }
         signalSRCH2EngineToProceed(executablePortNumber, executableOAuthLiteral);
     }
 
@@ -378,21 +384,25 @@ final public class SRCH2Service extends Service {
                     AutoPing.start(pingUrl);
                     Cat.d(TAG, "startRunningExecutable - starting process");
                     p = pb.start();
-
+                    Cat.d(TAG, "startRunningExe - after pbstart isShuttingDown is " + isShuttingDown.get());
                     if (p.getInputStream() != null) {
                         Cat.d(TAG, "PRINTING INPUT STREAM\n" + readInputStream(p.getInputStream()));
                     } else {
                         Cat.d(TAG, "NO INPUT STREAM from process");
                     }
-
                     if (p.getErrorStream() != null) {
                         Cat.d(TAG, "PRINTING ERROR STREAM\n" + readInputStream(p.getErrorStream()));
                     } else {
                         Cat.d(TAG, "NO ERROR STREAM from process");
                     }
-
                     p.destroy();
-
+                    if (!isShuttingDown.get()) {
+                        Cat.d(TAG, "startRunningExe - after p.destory engine crashed restarting ... ");
+                        AutoPing.interrupt();
+                        startRunningExecutable(executablePortNumber, executableShutdownUrlString, executableOAuthLiteral, executablePingUrl);
+                        signalSRCH2EngineToResume(executablePortNumber, executableOAuthLiteral);
+                    }
+                    Cat.d(TAG, "startRunningExe - after p.destory isShuttingDown is " + isShuttingDown.get());
                 } catch (IOException e) {
                     Cat.d(TAG, "IOEXCEPTION starting executable!");
                     Cat.ex(TAG, "starting executable io error", e);
