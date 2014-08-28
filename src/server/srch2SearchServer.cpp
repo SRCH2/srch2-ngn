@@ -35,6 +35,8 @@
 #include <event2/thread.h>
 #include <signal.h>
 
+#include <sys/syscall.h>
+
 #include <sys/types.h>
 #include <map>
 
@@ -68,13 +70,50 @@ using srch2http::CoreNameServerMap_t;
 // IETF RFC 6335 specifies port number range is 0 - 65535: http://tools.ietf.org/html/rfc6335#page-11
 typedef std::map<unsigned short /*portNumber*/, int /*fd*/> PortSocketMap_t;
 
+// each args of the cb_single_core_operator_route function is composed by the PortType_t and the search core
+struct type_cb_args{
+    srch2http::PortType_t portType;
+    void* real_args;
+
+    type_cb_args(srch2http::PortType_t type, void* args):portType(type), real_args(args)
+    {}
+};
+typedef std::vector<type_cb_args*> CbArgs_t;
+
 pthread_t *threads = NULL;
 unsigned int MAX_THREADS = 0;
 
 pthread_t * global_heart_beat_thread = NULL;
 volatile bool has_one_pulse = false;
 
+void thread_exit_handler(int sig){
+    pthread_exit(0);
+}
+
+void setup_sigusr1_to_exit(){
+//#ifdef ANDROID
+    // for the Android, there is no pthread_cancel function, 
+    // alternatively we use the pthread_kill(thread, SIGUSR1) 
+    // to send the SIGUSR1 to exit the pthread.
+    // reference: http://stackoverflow.com/questions/4610086/pthread-cancel-alternatives-in-android-ndk
+    sigset_t sigset;
+    sigemptyset(&sigset);
+
+    // handle signal of SIGUSR1
+    sigaddset(&sigset, SIGUSR1);
+    struct sigaction siginfo;
+    siginfo.sa_handler = thread_exit_handler;
+    siginfo.sa_mask = sigset;
+    // If a blocked call to one of the following interfaces is interrupted by a signal handler,
+    // then the call will be automatically restarted after the signal handler returns if the SA_RESTART flag was used;
+    // otherwise the call will fail with the error EINTR, check the detail at http://man7.org/linux/man-pages/man7/signal.7.html
+    siginfo.sa_flags = SA_RESTART;
+    sigaction(SIGUSR1, &siginfo, NULL);
+//#endif
+}
+
 void* heart_beat_function(void *arg){
+    setup_sigusr1_to_exit();
     unsigned seconds = *(unsigned*) arg;
     if (seconds > 0){
         while(true){
@@ -320,14 +359,6 @@ static bool checkOperationPermission(evhttp_request *req, Srch2Server *srch2Serv
     return true;
 }
 
-struct type_cb_args{
-    srch2http::PortType_t portType;
-    void* real_args;
-
-    type_cb_args(srch2http::PortType_t type, void* args):portType(type), real_args(args)
-    {}
-};
-
 static void cb_single_core_operator_route(evhttp_request *req, void *arg){
     if (arg == NULL){
         return;
@@ -483,34 +514,29 @@ int bindSocket(const char * hostname, unsigned short port) {
     return nfd;
 }
 
+
+
 // entry point for each thread
 void* dispatch(void *arg) {
     // ask libevent to loop on events
+    setup_sigusr1_to_exit();
     event_base_dispatch((struct event_base*) arg);
     return NULL;
 }
 
 void graceful_exit(CoreNameServerMap_t &coreNameServerMap, vector<struct event_base *> evBases
-        ,PortSocketMap_t &globalPortSocketMap, ConfigManager *serverConf ){
-
-    if ( global_heart_beat_thread != NULL ){
-        pthread_kill(*global_heart_beat_thread, SIGTERM);
-    }
-#ifndef ANDROID
-    // Android will send the pthread_kill directly, then the main thread can't get the
-    // response from the pthread_join any more.
-    for (int i = 0; i < MAX_THREADS; i++) {
-        pthread_join(threads[i], NULL);
-        Logger::console("Thread = <%u> stopped", threads[i]);
-    }
-#endif
-
-    delete[] threads;
+        ,PortSocketMap_t &globalPortSocketMap, ConfigManager *serverConf, CbArgs_t &cbArgs){
 
     for (CoreNameServerMap_t::iterator iterator = coreNameServerMap.begin(); iterator != coreNameServerMap.end(); iterator++) {
         iterator->second->indexer->save();
         delete iterator->second;
     }
+
+    if (global_heart_beat_thread != NULL){
+        delete global_heart_beat_thread;
+        global_heart_beat_thread = NULL;
+    }
+    delete[] threads;
 
     /*
      * THIS IS A HACKY SOLUTION FOR MAC OS!
@@ -533,6 +559,10 @@ void graceful_exit(CoreNameServerMap_t &coreNameServerMap, vector<struct event_b
     // use global port map to close each file descriptor just once
     for (PortSocketMap_t::iterator iterator = globalPortSocketMap.begin(); iterator != globalPortSocketMap.end(); iterator++) {
         shutdown(iterator->second, SHUT_RD);
+    }
+
+    for (CbArgs_t::iterator it = cbArgs.begin(); it != cbArgs.end(); ++it){
+        delete *it;
     }
 
     AnalyzerContainer::freeAll();
@@ -614,9 +644,18 @@ static void killServer(int signal) {
 #ifdef ANDROID
     	// Android thread implementation does not have pthread_cancel()
     	// use pthread_kill instead.
-    	pthread_kill(threads[i], signal);
+    	pthread_kill(threads[i], SIGUSR1);
 #else
-        pthread_cancel(threads[i]);
+    	pthread_kill(threads[i], SIGUSR1);
+        //pthread_cancel(threads[i]);
+#endif
+    }
+    if ( global_heart_beat_thread != NULL ){
+#ifdef ANDROID
+        pthread_kill(*global_heart_beat_thread, SIGUSR1);
+#else
+        pthread_kill(*global_heart_beat_thread, SIGUSR1);
+        //pthread_cancel(*global_heart_beat_thread);
 #endif
     }
 
@@ -634,7 +673,8 @@ static void killServer(int signal) {
 /*
  * Start the srch2 servers, one per core in the config
  */
-static int startServers(ConfigManager *config, vector<struct event_base *> *evBases, vector<struct evhttp *> *evServers, CoreNameServerMap_t *coreNameServerMap, PortSocketMap_t *globalPortSocketMap)
+static int startServers(ConfigManager *config, vector<struct event_base *> *evBases, vector<struct evhttp *> *evServers, 
+        CoreNameServerMap_t *coreNameServerMap, PortSocketMap_t *globalPortSocketMap, CbArgs_t *globalCBArgs)
 {
     // Step 1: Waiting server
     // http://code.google.com/p/imhttpd/source/browse/trunk/MHttpd.c
@@ -761,8 +801,8 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
             if (port == 1) {
                 port = globalDefaultPort;
             }
-            type_cb_args cb_args(portList[j].portType, defaultCore);
-            evhttp_set_cb(http_server, portList[j].path, portList[j].callback, (void*)(&cb_args));
+            globalCBArgs->push_back(new type_cb_args(portList[j].portType, defaultCore));
+            evhttp_set_cb(http_server, portList[j].path, portList[j].callback, (void*)(globalCBArgs->back()));
             Logger::debug("Routing port %d route %s to default core %s", port, portList[j].path, defaultCore->getCoreName().c_str());
         }
         evhttp_set_gencb(http_server, cb_notfound, NULL);
@@ -779,8 +819,8 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
                     if (port < 1) {
                         port = globalDefaultPort;
                     }
-                    type_cb_args cb_args(portList[j].portType, iterator->second);
-                    evhttp_set_cb(http_server, path.c_str(), portList[j].callback, (void*)(&cb_args));
+                    globalCBArgs->push_back(new type_cb_args(portList[j].portType, iterator->second));
+                    evhttp_set_cb(http_server, path.c_str(), portList[j].callback, (void*)(globalCBArgs->back()));
 
                     Logger::debug("Adding port %d route %s to core %s", port, path.c_str(), coreName.c_str());
                 }
@@ -796,8 +836,8 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
 
         for(int j = 0; global_PortList[j].path != NULL; j++){
             string path = string(global_PortList[j].path);
-            type_cb_args cb_args(portList[j].portType, coreNameServerMap);
-            evhttp_set_cb(http_server, path.c_str(), global_PortList[j].callback, (void*)(&cb_args));
+            globalCBArgs->push_back(new type_cb_args(global_PortList[j].portType, coreNameServerMap));
+            evhttp_set_cb(http_server, path.c_str(), global_PortList[j].callback, (void*)(globalCBArgs->back()));
         }
 
         /* 4). accept bound socket */
@@ -881,10 +921,17 @@ int main(int argc, char** argv) {
     vector<struct evhttp *> evServers;
     PortSocketMap_t globalPortSocketMap;  // map of all ports across all cores to shared socket file descriptors
     CoreNameServerMap_t coreNameServerMap; // map from core names to Srch2Servers
-    int start = startServers(serverConf, &evBases, &evServers, &coreNameServerMap, &globalPortSocketMap);
+    CbArgs_t cbArgs;
+    int start = startServers(serverConf, &evBases, &evServers, &coreNameServerMap, &globalPortSocketMap, &cbArgs);
     if (start != 0) {
         Logger::close();
         return start; // startup failed
+    }
+
+    unsigned int pulse_per_seconds = serverConf->getHeartBeatTimer();
+    if (pulse_per_seconds > 0){
+        global_heart_beat_thread = new pthread_t();
+        pthread_create(global_heart_beat_thread, NULL, heart_beat_function, &pulse_per_seconds);
     }
 
     /* Set signal handlers */
@@ -906,10 +953,16 @@ int main(int argc, char** argv) {
     sigaction(SIGINT, &siginfo, NULL);
     sigaction(SIGTERM, &siginfo, NULL);
 
-    unsigned int pulse_per_seconds = serverConf->getHeartBeatTimer();
-    if (pulse_per_seconds > 0){
-        pthread_create(global_heart_beat_thread, NULL, heart_beat_function, &pulse_per_seconds);
+    for (int i = 0; i < MAX_THREADS; i++) {
+        pthread_join(threads[i], NULL);
+        Logger::console("Thread = <%u> stopped", threads[i]);
     }
-    graceful_exit(coreNameServerMap, evBases, globalPortSocketMap, serverConf);
+
+    if (global_heart_beat_thread != NULL){
+        pthread_join(*global_heart_beat_thread, NULL);
+        Logger::console("HeartBeat Thread = <%u> stopped", *global_heart_beat_thread);
+    }
+
+    graceful_exit(coreNameServerMap, evBases, globalPortSocketMap, serverConf, cbArgs);
     return EXIT_SUCCESS;
 }

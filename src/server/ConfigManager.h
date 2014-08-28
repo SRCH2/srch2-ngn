@@ -118,7 +118,7 @@ struct CoreConfigParseState_t {
 
 // enum to allow loop iteration over listening ports
 enum PortType_t {
-    SearchPort,
+    SearchPort = 0,
     SuggestPort,
     InfoPort,
     DocsPort,
