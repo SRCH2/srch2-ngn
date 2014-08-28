@@ -211,6 +211,7 @@ OperationState * NewNodeJoinOperation::commit(){
 	NodeAddChange * nodeAddChange =
 			new NodeAddChange(ShardManager::getCurrentNodeId(),localClusterShards, nodeShardIds);
 	vector<NodeId> olderNodes;
+	getOlderNodesList(olderNodes);
 	CommitOperation * commitOperation = new CommitOperation(this->getOperationId(), nodeAddChange, olderNodes);
 	this->commitOperation = OperationState::startOperation(commitOperation);
 	if(this->commitOperation == NULL){
