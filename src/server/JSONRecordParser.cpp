@@ -499,12 +499,37 @@ bool JSONRecordParser::_extractRoleIds(std::vector<string> &roleIds, string& pri
         return false; // Raise Error
     }
 
-	if(!getJsonValueString(root, primaryKeyName, roleIds, "role-id")){
-		error << "\nFailed to parse JSON - No role id found.";
-		return false; // Raise Error
+	if(!getJsonValueString(root, aclIdName, roleIds, "role-id")){
+		return false;
 	}
 
 	return true;
+}
+
+bool JSONRecordParser::getAclInfoFromJSON(vector<string> &roleIds, string &primaryKeyID,
+    		const string& inputLine, const CoreInfo_t *indexDataContainerConf, std::stringstream &error){
+	string::const_iterator end_it = utf8::find_invalid(inputLine.begin(), inputLine.end());
+	if (end_it != inputLine.end()) {
+		error << "Invalid UTF-8 encoding detected.";
+		return false;
+	}
+
+	// Parse example data
+	Json::Value root;
+	Json::Reader reader;
+
+	bool parseSuccess = reader.parse(inputLine, root, false);
+
+	if (!parseSuccess)
+	{
+		error << "\nFailed to parse JSON - " << reader.getFormatedErrorMessages();
+		return false;
+	}
+	else
+	{
+		parseSuccess = JSONRecordParser::_extractRoleIds(roleIds, primaryKeyID, root, indexDataContainerConf, error);
+	}
+	return parseSuccess;
 }
 
 bool JSONRecordParser::populateRecordFromJSON(const string &inputLine,
@@ -698,6 +723,91 @@ unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, Sch
     delete analyzer;
     delete record;
     return indexedRecordsCount;
+}
+
+void DaemonDataSource::addAccessControlsFromFile(srch2is::Indexer *indexer,
+                const CoreInfo_t *indexDataContainerConf, srch2is::Indexer *roleCoreIndexer){
+	AccessControlInfo* accessControl = indexDataContainerConf->getAccessControlInfo();
+	if(accessControl == NULL)
+		return;
+
+	string filePath = accessControl->dataFile;
+	ifstream in(filePath.c_str());
+	if (in.fail())
+	{
+		Logger::error("Access-Control DataSource file not found at: %s", filePath.c_str());
+		return;
+	}
+
+	string line;
+
+    unsigned lineCounter = 0;
+    unsigned indexedRecordsCount = 0;
+
+	if(in.good()){
+		bool isArrayOfJsonRecords = false;
+		while(getline(in, line)){
+			bool parseSuccess = false;
+
+			// remove the trailing space or "," characters
+			while (!line.empty() && (
+					line.at(line.length() - 1) == ' ' ||
+					line.at(line.length() - 1) == ','
+			)
+			) {
+				line.erase(line.length() - 1);
+			}
+
+			boost::trim(line);
+			if (indexedRecordsCount == 0 &&  line == "[") {
+				// Solr style data source - array of JSON records
+				isArrayOfJsonRecords = true;
+				continue;
+			}
+			if (isArrayOfJsonRecords == true && line == "]") {
+				// end of JSON array in Solr style data source
+				break; // assume nothing follows array (will ignore more records or another array)
+			}
+
+			std::stringstream error;
+			vector<string> roleIds;
+			string primaryKeyID;
+			parseSuccess = JSONRecordParser::getAclInfoFromJSON(roleIds, primaryKeyID,
+					line, indexDataContainerConf, error);
+
+			if(parseSuccess)
+			{
+				// Add the role ids to the record
+				bool roleIdsExist = true;
+				for(unsigned i = 0 ; i < roleIds.size() ; i++){
+					INDEXLOOKUP_RETVAL returnValue = roleCoreIndexer->lookupRecord(roleIds[i]);
+					if(returnValue == LU_ABSENT_OR_TO_BE_DELETED){
+						roleIdsExist = false;
+						break;
+					}
+				}
+				if(roleIdsExist){
+					indexer->aclRoleAdd(primaryKeyID, roleIds);
+					indexedRecordsCount++;
+				}
+			}
+			else
+			{
+				Logger::error("at line: %d" , lineCounter);
+				Logger::error("%s", error.str().c_str());
+			}
+			int reportFreq = 10000;
+			++lineCounter;
+			if ( indexedRecordsCount > 0 && indexedRecordsCount % reportFreq == 0) {
+				Logger::console("Adding first %d record's access control info.\r", indexedRecordsCount);
+			}
+
+		}
+	}
+	Logger::console("Added access controls %d / %d records.", indexedRecordsCount, lineCounter);
+    in.close();
+
+	return;
 }
 
 // convert other types to string

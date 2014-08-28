@@ -80,6 +80,23 @@ struct IndexWriteUtil
     	};
     }
 
+    static void _aclRoleDelete(Indexer *indexer, string &primaryKeyID, vector<string> &roleIds, std::stringstream &log_str){
+    	srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->aclRoleDelete(primaryKeyID, roleIds);
+    	switch( ret )
+    	{
+			case srch2::instantsearch::OP_SUCCESS:
+			{
+				log_str << "{ Role id deleted successfully}";
+				break;
+			}
+			case srch2::instantsearch::OP_FAIL:
+			{
+				log_str << "{rid: " << primaryKeyID << " delete role failed. reason: No record with this primary key}" ;
+				break;
+			}
+    	};
+    }
+
     static void _deleteCommand(Indexer *indexer, const CoreInfo_t *indexDataContainerConf, const Json::Value &root, std::stringstream &log_str)
     {
     	//set the primary key of the record we want to delete
@@ -108,6 +125,24 @@ struct IndexWriteUtil
     	else
     	{
     		log_str << "failed\",\"reason\":\"no record with given primary key\"}";
+    	}
+
+    }
+
+    static void _deleteRoleRecord(Indexer *resourceIndexer, std::string rolePrimaryKeyName, const evkeyvalq &headers){
+
+    	const char *pKeyParamName = evhttp_find_header(&headers, rolePrimaryKeyName.c_str());
+
+    	if (pKeyParamName)
+    	{
+    		size_t sz;
+    		char *pKeyParamName_cstar = evhttp_uridecode(pKeyParamName, 0, &sz);
+
+    		//std::cout << "[" << termBoostsParamName_cstar << "]" << std::endl;
+    		const std::string rolePrimaryKeyStringValue = string(pKeyParamName_cstar);
+    		free(pKeyParamName_cstar);
+
+    		resourceIndexer->deleteRoleRecord(rolePrimaryKeyStringValue);
     	}
 
     }

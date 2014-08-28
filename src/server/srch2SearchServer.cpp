@@ -783,6 +783,11 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
         for (CoreNameServerMap_t::iterator iterator = coreNameServerMap->begin(); iterator != coreNameServerMap->end(); iterator++) {
             iterator->second->init(config);
         }
+        for (CoreNameServerMap_t::iterator iterator = coreNameServerMap->begin(); iterator != coreNameServerMap->end(); iterator++) {
+        	if(iterator->second->roleCore != NULL){
+                    iterator->second->initAccessControls();
+        	}
+        }
     }catch(exception& ex) {
     	/*
     	 *  We got some fatal error during server initialization. Print the error message and

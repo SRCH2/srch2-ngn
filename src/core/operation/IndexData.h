@@ -218,18 +218,55 @@ public:
 				}
 			}
 		}
-		print();
+		//print();
 	}
 
-	void removeResourceFromRole(string &resourceId, string &roleId){
-		map<string, vector<string> >::iterator it = permissionMap.find(roleId);
-		if( it != permissionMap.end()){
-			vector<string>::iterator resourceIt = std::find(it->second.begin(),it->second.end(),resourceId);
-			if( resourceIt != it->second.end()){
-				*resourceIt = *(it->second.end() - 1);
-				it->second.pop_back();
+	void addResourceToRole(const string &resourceId, vector<string> *roleIds){
+		for(unsigned i = 0 ; i < roleIds->size() ; i++){
+			map<string, vector<string> >::iterator it = permissionMap.find(roleIds->at(i));
+			if( it == permissionMap.end()){
+				vector<string> resources;
+				resources.push_back(resourceId);
+				permissionMap.insert(std::pair<string,vector<string> >(roleIds->at(i),resources));
+			}else{
+				vector<string>::iterator rIt = std::find(it->second.begin(),it->second.end(),resourceId);
+				if(rIt == it->second.end()){
+					it->second.push_back(resourceId);
+				}
 			}
 		}
+		//print();
+	}
+
+	void deleteResourceFromRole(const string &resourceId, vector<string> &roleIds){
+		for(unsigned i = 0 ; i < roleIds.size() ; i++){
+			map<string, vector<string> >::iterator it = permissionMap.find(roleIds[i]);
+			if( it != permissionMap.end()){
+				vector<string>::iterator resourceIt = std::find(it->second.begin(),it->second.end(),resourceId);
+				if( resourceIt != it->second.end()){
+					*resourceIt = *(it->second.end() - 1);
+					it->second.pop_back();
+				}
+			}
+		}
+		//print();
+	}
+
+	vector<string>* getResourceIdsForRole(const string &roleId){
+		map<string, vector<string> >::iterator it = permissionMap.find(roleId);
+		if( it != permissionMap.end()){
+			return &(it->second);
+		}else{
+			return NULL;
+		}
+	}
+
+	void deleteRole(const string &roleId){
+		map<string, vector<string> >::iterator it = permissionMap.find(roleId);
+		if( it != permissionMap.end() ){
+			permissionMap.erase(it);
+		}
+		cout << "after removing role record" << endl;
 		print();
 	}
 
@@ -333,6 +370,10 @@ public:
     INDEXWRITE_RETVAL _addRecord(const Record *record, Analyzer *analyzer);
     
     INDEXWRITE_RETVAL _aclRoleAdd(const std::string& primaryKeyID, vector<string> &roleIds);
+
+    INDEXWRITE_RETVAL _aclRoleDelete(const std::string& primaryKeyID, vector<string> &roleIds);
+
+    INDEXWRITE_RETVAL _aclRoleRecordDelete(const std::string& rolePrimaryKeyID);
 
     inline uint64_t _getReadCount() const { return this->readCounter->getCount(); }
     inline uint32_t _getWriteCount() const { return this->writeCounter->getCount(); }

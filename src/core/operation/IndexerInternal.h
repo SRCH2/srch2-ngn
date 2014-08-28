@@ -128,6 +128,10 @@ public:
 
     INDEXWRITE_RETVAL aclRoleAdd(const std::string &primaryKeyID, vector<string> &roleIds);
 
+    INDEXWRITE_RETVAL aclRoleDelete(const std::string &primaryKeyID, vector<string> &roleIds);
+
+    INDEXWRITE_RETVAL deleteRoleRecord(const std::string &primaryKeyID);
+
     /**
      * Deletes all the records.
      */

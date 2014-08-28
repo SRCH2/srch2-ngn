@@ -581,8 +581,36 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
                     const Json::Value doc = root.get(index,
                                                 defaultValueToReturn);
 
-                    IndexWriteUtil::_insertCommand(server->indexer,
-                            server->indexDataConfig, doc, record, log_str);
+                    vector<string> roleIds;
+                    string primaryKeyID;
+                    bool allCoreExisted = true;
+                    if( JSONRecordParser::_extractRoleIds(roleIds, primaryKeyID, doc, server->indexDataConfig, log_str) ){
+                    	if(server->roleCore != NULL){
+                    		for(unsigned i = 0 ; i < roleIds.size() ; i++){
+                    			INDEXLOOKUP_RETVAL returnValue = server->roleCore->indexer->lookupRecord(roleIds[i]);
+                    			if(returnValue == LU_ABSENT_OR_TO_BE_DELETED){
+                    				log_str << "error: No record in " + server->roleCore->getCoreName() + " with given primary key";
+                    				bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
+                    						"{\"message\":\"The batch was processed successfully\",\"log\":["
+                    						+ log_str.str() + "]}\n");
+                    				allCoreExisted = false;
+                    				break;
+                    			}
+                    			record->addRoleId(roleIds[i]);
+                    		}
+                    	}else{
+                    		Logger::error(
+                    				"error: %s does not have any role core.",server->getCoreName().c_str());
+                    		bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
+                    				"{\"error\":\"" + server->getCoreName() + " does not have any role core.\"}");
+                    		return;
+                    	}
+                    }
+
+                    if(allCoreExisted){
+                    	IndexWriteUtil::_insertCommand(server->indexer,
+                    			server->indexDataConfig, doc, record, log_str);
+                    }
                     record->clear();
 
                     if (index < root.size() - 1)
@@ -590,8 +618,34 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
                 }
             } else {  // only one json object needs to be inserted
                 const Json::Value doc = root;
+
+                vector<string> roleIds;
+                string primaryKeyID;
+                if( JSONRecordParser::_extractRoleIds(roleIds, primaryKeyID, doc, server->indexDataConfig, log_str) ){
+                	if(server->roleCore != NULL){
+                		for(unsigned i = 0 ; i < roleIds.size() ; i++){
+                			INDEXLOOKUP_RETVAL returnValue = server->roleCore->indexer->lookupRecord(roleIds[i]);
+                			if(returnValue == LU_ABSENT_OR_TO_BE_DELETED){
+                				log_str << "error: No record in " + server->roleCore->getCoreName() + " with given primary key";
+                				bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
+                						"{\"message\":\"The batch was processed successfully\",\"log\":["
+                						+ log_str.str() + "]}\n");
+                				return;
+                			}
+                			record->addRoleId(roleIds[i]);
+                		}
+
+                	}else{
+                		Logger::error(
+                				"error: %s does not have any role core.",server->getCoreName().c_str());
+                		bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
+                				"{\"error\":\"" + server->getCoreName() + " does not have any role core.\"}");
+                		return;
+                	}
+                }
                 IndexWriteUtil::_insertCommand(server->indexer,
-                        server->indexDataConfig, doc, record, log_str);
+                		server->indexDataConfig, doc, record, log_str);
+
                 record->clear();
             }
             delete record;
@@ -610,8 +664,12 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
         evkeyvalq headers;
         evhttp_parse_query(req->uri, &headers);
 
+        for(unsigned i = 0 ; i < server->resourceCores.size() ; ++i ){
+        	IndexWriteUtil::_deleteRoleRecord(server->resourceCores[i]->indexer, server->indexDataConfig->getPrimaryKey(), headers);
+        }
+
         IndexWriteUtil::_deleteCommand_QueryURI(server->indexer,
-                server->indexDataConfig, headers, log_str);
+        		server->indexDataConfig, headers, log_str);
 
         Logger::info("%s", log_str.str().c_str());
         bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
@@ -632,81 +690,160 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
 }
 
 void HTTPRequestHandler::aclRoleAdd(evhttp_request *req, Srch2Server *server){
+	if(server->roleCore != NULL){
+		size_t length = EVBUFFER_LENGTH(req->input_buffer);
 
+		if (length == 0) {
+			bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "BAD REQUEST",
+					"{\"message\":\"http body is empty\"}");
+			Logger::warn("http body is empty");
+		}
 
-	size_t length = EVBUFFER_LENGTH(req->input_buffer);
+		const char *post_data = (char *) EVBUFFER_DATA(req->input_buffer);
 
-	if (length == 0) {
-		bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "BAD REQUEST",
-				"{\"message\":\"http body is empty\"}");
-		Logger::warn("http body is empty");
-	}
+		std::stringstream log_str;
 
-	const char *post_data = (char *) EVBUFFER_DATA(req->input_buffer);
+		// Parse example data
+		Json::Value root;
+		Json::Reader reader;
+		bool parseSuccess = reader.parse(post_data, root, false);
 
-	std::stringstream log_str;
-
-	// Parse example data
-	Json::Value root;
-	Json::Reader reader;
-	bool parseSuccess = reader.parse(post_data, root, false);
-
-	if (parseSuccess == false) {
-		log_str << "JSON object parse error";
-	}else{
-		if(root.type() == Json::arrayValue) { // The input is an array of JSON objects.
-
-		}else{ // The input is only one JSON object.
-			const Json::Value doc = root;
-			vector<string> roleIds;
-			string primaryKeyID;
-			if( JSONRecordParser::_extractRoleIds(roleIds, primaryKeyID, doc, server->indexDataConfig, log_str) ){
-				bool allCoreExisted = true;
-				for(unsigned i = 0 ; i < roleIds.size() ; i++){
-					INDEXLOOKUP_RETVAL returnValue = server->roleCore->indexer->lookupRecord(roleIds[i]);
-					if(returnValue == LU_ABSENT_OR_TO_BE_DELETED){
-						log_str << "error: No record in " + server->roleCore->getCoreName() + " with given primary key";
-						bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
-								"{\"message\":\"The batch was processed successfully\",\"log\":["
-								+ log_str.str() + "]}\n");
-						return;
+		if (parseSuccess == false) {
+			log_str << "JSON object parse error";
+		}else{
+			if(root.type() == Json::arrayValue) { // The input is an array of JSON objects.
+				vector<string> roleIds;
+				for ( int index = 0; index < root.size(); ++index ) {
+					Json::Value defaultValueToReturn = Json::Value("");
+					const Json::Value doc = root.get(index,
+							defaultValueToReturn);
+					string primaryKeyID;
+					if( JSONRecordParser::_extractRoleIds(roleIds, primaryKeyID, doc, server->indexDataConfig, log_str) ){
+						bool allCoreExisted = true;
+						for(unsigned i = 0 ; i < roleIds.size() ; i++){
+							INDEXLOOKUP_RETVAL returnValue = server->roleCore->indexer->lookupRecord(roleIds[i]);
+							if(returnValue == LU_ABSENT_OR_TO_BE_DELETED){
+								log_str << "error: No record in " + server->roleCore->getCoreName() + " with given primary key";
+								bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
+										"{\"message\":\"The batch was processed successfully\",\"log\":["
+										+ log_str.str() + "]}\n");
+								allCoreExisted = false;
+							}
+						}
+						if(allCoreExisted)
+							IndexWriteUtil::_aclRoleAdd(server->indexer, primaryKeyID, roleIds, log_str);
 					}
+
+					roleIds.clear();
+					if (index < root.size() - 1)
+						log_str << ",";
 				}
-				IndexWriteUtil::_aclRoleAdd(server->indexer, primaryKeyID, roleIds, log_str);
+			}else{ // The input is only one JSON object.
+				const Json::Value doc = root;
+				vector<string> roleIds;
+				string primaryKeyID;
+				if( JSONRecordParser::_extractRoleIds(roleIds, primaryKeyID, doc, server->indexDataConfig, log_str) ){
+					for(unsigned i = 0 ; i < roleIds.size() ; i++){
+						INDEXLOOKUP_RETVAL returnValue = server->roleCore->indexer->lookupRecord(roleIds[i]);
+						if(returnValue == LU_ABSENT_OR_TO_BE_DELETED){
+							log_str << "error: No record in " + server->roleCore->getCoreName() + " with given primary key";
+							bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
+									"{\"message\":\"The batch was processed successfully\",\"log\":["
+									+ log_str.str() + "]}\n");
+							return;
+						}
+					}
+					IndexWriteUtil::_aclRoleAdd(server->indexer, primaryKeyID, roleIds, log_str);
+				}
+
 			}
 		}
-	}
 
-	Logger::info("%s", log_str.str().c_str());
+		Logger::info("%s", log_str.str().c_str());
 
-	bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
-			"{\"message\":\"The batch was processed successfully\",\"log\":["
-			+ log_str.str() + "]}\n");
-
-
-	/*if(server->roleCore != NULL){
-
-
-
+		bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
+				"{\"message\":\"The batch was processed successfully\",\"log\":["
+				+ log_str.str() + "]}\n");
 	}else{
-        Logger::error(
-                "error: " + server->coreName.c_str() + " does not have any role core.");
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
-                "{\"error\":\"" + server->coreName.c_str() + " does not have any role core.\"}");
-	}*/
+		Logger::error(
+				"error: %s does not have any role core.",server->getCoreName().c_str());
+		bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
+				"{\"error\":\"" + server->getCoreName() + " does not have any role core.\"}");
+	}
 
 
 }
 
 void HTTPRequestHandler::aclRoleDelete(evhttp_request *req, Srch2Server *server){
+	if(server->roleCore != NULL){
+		size_t length = EVBUFFER_LENGTH(req->input_buffer);
 
+		if (length == 0) {
+			bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "BAD REQUEST",
+					"{\"message\":\"http body is empty\"}");
+			Logger::warn("http body is empty");
+		}
+
+		const char *post_data = (char *) EVBUFFER_DATA(req->input_buffer);
+
+		std::stringstream log_str;
+
+		// Parse example data
+		Json::Value root;
+		Json::Reader reader;
+		bool parseSuccess = reader.parse(post_data, root, false);
+
+		if (parseSuccess == false) {
+			log_str << "JSON object parse error";
+		}else{
+			if(root.type() == Json::arrayValue) { // The input is an array of JSON objects.
+				vector<string> roleIds;
+				for ( int index = 0; index < root.size(); ++index ) {
+					Json::Value defaultValueToReturn = Json::Value("");
+					const Json::Value doc = root.get(index,
+							defaultValueToReturn);
+					string primaryKeyID;
+					if( JSONRecordParser::_extractRoleIds(roleIds, primaryKeyID, doc, server->indexDataConfig, log_str) ){
+
+						IndexWriteUtil::_aclRoleDelete(server->indexer, primaryKeyID, roleIds, log_str);
+
+					}
+
+					roleIds.clear();
+					if (index < root.size() - 1)
+						log_str << ",";
+				}
+			}else{ // The input is only one JSON object.
+				const Json::Value doc = root;
+				vector<string> roleIds;
+				string primaryKeyID;
+				if( JSONRecordParser::_extractRoleIds(roleIds, primaryKeyID, doc, server->indexDataConfig, log_str) ){
+
+					IndexWriteUtil::_aclRoleDelete(server->indexer, primaryKeyID, roleIds, log_str);
+
+				}
+
+			}
+		}
+
+		Logger::info("%s", log_str.str().c_str());
+
+		bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
+				"{\"message\":\"The batch was processed successfully\",\"log\":["
+				+ log_str.str() + "]}\n");
+	}else{
+		Logger::error(
+				"error: %s does not have any role core.",server->getCoreName().c_str());
+		bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
+				"{\"error\":\"" + server->getCoreName() + " does not have any role core.\"}");
+	}
 }
 
 void HTTPRequestHandler::updateCommand(evhttp_request *req,
-        Srch2Server *server) {
-    /* Yes, we are expecting a post request */
-    switch (req->type) {
-    case EVHTTP_REQ_PUT: {
+		Srch2Server *server) {
+	/* Yes, we are expecting a post request */
+	switch (req->type) {
+	case EVHTTP_REQ_PUT: {
         size_t length = EVBUFFER_LENGTH(req->input_buffer);
 
         if (length == 0) {

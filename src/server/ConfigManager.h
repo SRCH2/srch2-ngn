@@ -677,7 +677,7 @@ public:
     unsigned short getPort(PortType_t portType) const;
     void setPort(PortType_t portType, unsigned short portNumber);
 
-    AccessControlInfo* getAccessControlInfo(){
+    AccessControlInfo* getAccessControlInfo() const{
     	return this->accessControlInfo;
     }
 

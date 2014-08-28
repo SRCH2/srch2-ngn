@@ -226,12 +226,50 @@ bool ForwardIndex::hasAccessToForwardList(shared_ptr<vectorview<ForwardListPtr> 
 bool ForwardIndex::addRoleToResource(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
 		const string& primaryKeyID, vector<string> &roleIds){
 	unsigned recordId;
-	getInternalRecordIdFromExternalRecordId(primaryKeyID, recordId);
+	bool hasRecord = getInternalRecordIdFromExternalRecordId(primaryKeyID, recordId);
+
+	if(hasRecord == false)
+		return false;
 
 	ForwardListPtr flPtr = forwardListDirectoryReadView->getElement(recordId);
 
-	if(flPtr.first){
+	if(flPtr.second){
 		flPtr.first->addRoleToResource(roleIds);
+		return true;
+	}
+	return false;
+}
+
+// returnValue: true if record with this primaryKey exists and false otherwise.
+bool ForwardIndex::deleteRoleFromResource(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+		const string& primaryKeyID, vector<string> &roleIds){
+	unsigned recordId;
+	bool hasRecord = getInternalRecordIdFromExternalRecordId(primaryKeyID, recordId);
+
+	if(hasRecord == false)
+		return false;
+
+	ForwardListPtr flPtr = forwardListDirectoryReadView->getElement(recordId);
+
+	if(flPtr.second){
+		flPtr.first->deleteRoleFromResource(roleIds);
+		return true;
+	}
+	return false;
+}
+
+bool ForwardIndex::deleteRoleFromResource(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+		const string& primaryKeyID, const string &roleId){
+	unsigned recordId;
+	bool hasRecord = getInternalRecordIdFromExternalRecordId(primaryKeyID, recordId);
+
+	if(hasRecord == false)
+		return false;
+
+	ForwardListPtr flPtr = forwardListDirectoryReadView->getElement(recordId);
+
+	if(flPtr.second){
+		flPtr.first->deleteRoleFromResource(roleId);
 		return true;
 	}
 	return false;
@@ -305,6 +343,7 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     ((Record *)record)->disownInMemoryData();
     forwardList->setNumberOfKeywords(uniqueKeywordIdList.size());
 
+    forwardList->addRoleToResource(record->getRoleIds());
 
     PositionIndexType positionIndexType = this->schemaInternal->getPositionIndexType();
     bool shouldAttributeBitMapBeAllocated = false;

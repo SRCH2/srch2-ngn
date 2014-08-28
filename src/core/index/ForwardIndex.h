@@ -106,15 +106,17 @@ public:
 		if(!roleExisted)
 			this->roles.insert(it, roleId);
 		lock.unlock();
+		//print();
 		return !roleExisted;
 	}
-	bool deleteRole(string &roleId){
+	bool deleteRole(const string &roleId){
 		vector<string>::iterator it;
 		boost::unique_lock<boost::shared_mutex> lock(mutexRW);
 		bool roleExisted = findRole(roleId, it);
 		if(roleExisted)
 			this->roles.erase(it);
 		lock.unlock();
+		//print();
 		return roleExisted;
 	}
 
@@ -123,10 +125,27 @@ public:
 		boost::shared_lock< boost::shared_mutex> lock(mutexRW);
 		bool roleExisted = findRole(roleId, it);
 		lock.unlock();
+		//print();
 		return roleExisted;
 	}
+
+	/*
+	 *  we use this function for deleting a record.
+	 *  and becuase we only have one writer at a moment we don't need to use the lock.
+	 */
+	vector<string>& getRoles(){
+		return this->roles;
+	}
+
+	void print(){
+		std::cout << "----roles----" << std::endl;
+		for(unsigned i = 0 ; i<roles.size();++i){
+			std::cout << roles[i] << std::endl;
+		}
+		std::cout << "------------" << std::endl;
+	}
 private:
-	bool findRole(string &roleId, std::vector<string>::iterator &it){
+	bool findRole(const string &roleId, std::vector<string>::iterator &it){
 		it = std::lower_bound(this->roles.begin(), this->roles.end(), roleId);
 		if(it == this->roles.end())
 			return false;
@@ -424,6 +443,26 @@ public:
     	}
     }
 
+    void addRoleToResource(vector<string> *roleIds){
+    	for (unsigned i = 0 ; i < roleIds->size() ; i++){
+    		this->accessList.addRole(roleIds->at(i));
+    	}
+    }
+
+    void deleteRoleFromResource(vector<string> &roleIds){
+    	for (unsigned i = 0 ; i < roleIds.size() ; i++){
+    		this->accessList.deleteRole(roleIds[i]);
+    	}
+    }
+
+    void deleteRoleFromResource(const string &roleId){
+    	this->accessList.deleteRole(roleId);
+    }
+
+    AccessList* getAccessList(){
+    	return &(this->accessList);
+    }
+
 private:
     friend class boost::serialization::access;
 
@@ -659,6 +698,10 @@ public:
             map<string, TokenAttributeHits> &tokenAttributeHitsMap);
 
     bool addRoleToResource(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView, const string& primaryKeyID, vector<string> &roleIds);
+
+    bool deleteRoleFromResource(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView, const string& primaryKeyID, vector<string> &roleIds);
+
+    bool deleteRoleFromResource(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView, const string& primaryKeyID, const string &roleId);
 
     /**
      * Set the deletedFlag on the forwardList, representing record deletion.

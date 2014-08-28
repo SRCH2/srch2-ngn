@@ -892,7 +892,8 @@ void ConfigManager::parseSingleAccessControl(const xml_node &parentNode,
 			AccessControlInfo* newAccessControlInfo = new AccessControlInfo(resourceCoreName, roleCoreName);
 			xml_node dataFileNode = parentNode.child(accessControlDataFile);
 			if(dataFileNode && dataFileNode.text()){
-				newAccessControlInfo->dataFile = string(dataFileNode.text().get());
+				newAccessControlInfo->dataFile = srch2Home + string("")
+                            + (*resourceIt).second->getName() + string("/") + string(dataFileNode.text().get());
 			}
 			(*resourceIt).second->setAccessControlInfo(newAccessControlInfo);
 		}else{

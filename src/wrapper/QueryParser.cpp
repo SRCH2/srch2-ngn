@@ -68,7 +68,7 @@ const char* const QueryParser::facetField = "facet.field";
 const char* const QueryParser::facetRangeField = "facet.range";
 const char* const QueryParser::highlightSwitch = "hl";
 // access control
-const char* const QueryParser::roleIdParamName = "acl-id";
+const char* const QueryParser::roleIdParamName = "aclId";
 
 //searchType
 const char* const QueryParser::searchType = "searchType";
@@ -223,6 +223,7 @@ bool QueryParser::parse() {
         this->geoParser();
         this->extractSearchType();
         this->highlightParser();
+        this->accessControlParser();
         if (this->container->hasParameterInQuery(
                 GetAllResultsSearchType)) {
             this->getAllResultsParser();
