@@ -612,7 +612,7 @@ void * ShardManager::periodicWork(void *args) {
 		 * 2. is we are joined, start load balancing.
 		 */
 		//
-		sleep(10);
+		sleep(2);
 
 		boost::unique_lock<boost::mutex> shardManagerGlobalLock(ShardManager::getShardManager()->shardManagerGlobalMutex);
 
