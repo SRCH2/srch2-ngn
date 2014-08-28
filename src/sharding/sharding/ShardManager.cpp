@@ -628,9 +628,9 @@ void * ShardManager::periodicWork(void *args) {
 		if(ShardManager::getShardManager()->isJoined() && ! ShardManager::getShardManager()->isLoadBalancing()){
 			ShardManager::getShardManager()->setLoadBalancing();
 			ShardManager::getShardManager()->stateMachine->registerOperation(new LoadBalancingStartOperation());
-			ShardManager::getShardManager()->stateMachine->print();
-            cout << "======================================================================" << endl;
 		}
+	    ShardManager::getShardManager()->print();
+	    cout << "======================================================================" << endl;
 	}
 	return NULL;
 }
