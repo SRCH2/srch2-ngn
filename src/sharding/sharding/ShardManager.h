@@ -101,6 +101,8 @@ private:
 
 	static void * periodicWork(void *args) ;
 
+	void saveBouncedNotification(ShardingNotification * notif);
+	void bounceNotification(ShardingNotification * notif);
 
 };
 
