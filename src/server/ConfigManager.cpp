@@ -352,7 +352,7 @@ void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode,
         if (isValidBool(qtmt)) {
             coreInfo->supportSwapInEditDistance = childNode.text().as_bool();
         } else {
-            Logger::error("In core %s : The provided supportSwapInEditDistance flag is not valid", coreInfo->name.c_str());
+            Logger::error("In core %s : The provided supportSwapInEditDistance flag is not valid.", coreInfo->name.c_str());
             configSuccess = false;
             return;
         }
@@ -370,7 +370,7 @@ void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode,
             return;
         }
         if (coreInfo->enableWordPositionIndex) {
-            Logger::debug("In core %s : turning on attribute based search because position index is enabled", coreInfo->name.c_str());
+            Logger::debug("In core %s : Turning on attribute based search because position index is enabled.", coreInfo->name.c_str());
             coreInfo->supportAttributeBasedSearch = true;
         } // else leave supportAttributeBasedSearch set to previous value
     }
@@ -387,7 +387,7 @@ void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode,
         }
         if (!coreInfo->enableWordPositionIndex
                 && coreInfo->enableCharOffsetIndex) {
-            Logger::debug("In core %s : turning on attribute based search because position index is enabled.", coreInfo->name.c_str());
+            Logger::debug("In core %s : Turning on attribute based search because position index is enabled.", coreInfo->name.c_str());
             coreInfo->supportAttributeBasedSearch = true;
         } // else leave supportAttributeBasedSearch set to previous value
     }
@@ -450,7 +450,6 @@ void ConfigManager::parseDbParameters(const xml_node &dbNode, CoreInfo_t *coreIn
     if (childNode && childNode.text()) {
         coreInfo->dbSharedLibraryPath = childNode.text().get();
     } else {
-
         parseError << "database shared library path is not set. \n";
         configSuccess = false;
         return;
@@ -518,7 +517,7 @@ void ConfigManager::parseQuery(CoreConfigParseState_t *coreParseState , const xm
             coreInfo->scoringExpressionString = exp;
         } else {
             configSuccess = false;
-            Logger::error("In core %s : The expression provided for recordScoreExpression is not a valid.", coreInfo->name.c_str());
+            Logger::error("In core %s : The expression provided for recordScoreExpression is not valid.", coreInfo->name.c_str());
             return;
         }
     }
@@ -549,11 +548,11 @@ void ConfigManager::parseQuery(CoreConfigParseState_t *coreParseState , const xm
             if (coreInfo->queryTermSimilarityThreshold < 0
                     || coreInfo->queryTermSimilarityThreshold > 1) {
                 coreInfo->queryTermSimilarityThreshold = 0.5;
-                Logger::error("In core %s : The value provided for queryTermSimilarityThreshold is not in [0,1].", coreInfo->name.c_str());
+                Logger::error("In core %s : The value provided for queryTermSimilarityThreshold is not in range [0,1].", coreInfo->name.c_str());
             }
         } else {
             configSuccess = false;
-            Logger::error("In core %s : The value provided for queryTermSimilarityThreshold is not a valid.", coreInfo->name.c_str());
+            Logger::error("In core %s : The value provided for queryTermSimilarityThreshold is not valid.", coreInfo->name.c_str());
             return;
         }
     }
@@ -567,7 +566,7 @@ void ConfigManager::parseQuery(CoreConfigParseState_t *coreParseState , const xm
             coreInfo->queryTermLengthBoost = childNode.text().as_float();
         } else {
             configSuccess = false;
-            Logger::error("In core %s : The expression provided for queryTermLengthBoost is not a valid.", coreInfo->name.c_str());
+            Logger::error("In core %s : The expression provided for queryTermLengthBoost is not valid.", coreInfo->name.c_str());
             return;
         }
     }
@@ -582,7 +581,7 @@ void ConfigManager::parseQuery(CoreConfigParseState_t *coreParseState , const xm
             coreInfo->prefixMatchPenalty = childNode.text().as_float();
         } else {
             configSuccess = false;
-            Logger::error("In code %s : The value provided for prefixMatch is not a valid.", coreInfo->name.c_str());
+            Logger::error("In core %s : The value provided for prefixMatch is not valid.", coreInfo->name.c_str());
             return;
         }
     }
@@ -595,7 +594,7 @@ void ConfigManager::parseQuery(CoreConfigParseState_t *coreParseState , const xm
         if (isValidCacheSize(cs)) {
             coreInfo->cacheSizeInBytes = childNode.text().as_uint();
         } else {
-            Logger::error("In core %s : cache size provided is not set correctly.", coreInfo->name.c_str());
+            Logger::error("In core %s : Cache size provided is not set correctly.", coreInfo->name.c_str());
             configSuccess = false;
             return;
         }
@@ -609,7 +608,7 @@ void ConfigManager::parseQuery(CoreConfigParseState_t *coreParseState , const xm
         if (isValidRows(row)) {
             coreInfo->resultsToRetrieve = childNode.text().as_int();
         } else {
-            Logger::error("In core %s : rows is not set correctly.", coreInfo->name.c_str());
+            Logger::error("In core %s : Value of rows is not set correctly.", coreInfo->name.c_str());
             configSuccess = false;
             return;
         }
@@ -638,7 +637,7 @@ void ConfigManager::parseQuery(CoreConfigParseState_t *coreParseState , const xm
         if(isValidBooleanValue(configValue)){
             if(configValue.compare("0") == 0){
                 if(coreInfo->enableWordPositionIndex == true || coreInfo->enableCharOffsetIndex == true){
-                    Logger::warn("In core %s : Attribute based search is on because either character offset or word positional index is enabled", coreInfo->name.c_str());
+                    Logger::warn("In core %s : Attribute based search is on because either character offset or word positional index is enabled.", coreInfo->name.c_str());
                 }
             }
         }
@@ -753,7 +752,7 @@ void ConfigManager::parseQuery(CoreConfigParseState_t *coreParseState , const xm
             coreInfo->searchResponseContent =
                     (ResponseType) childNode.attribute(typeString).as_int();
         } else {
-            Logger::error("In core %s : The type provided for responseContent is not valid.",coreInfo->name.c_str());
+            Logger::error("In core %s : The type provided for responseContent is not valid.", coreInfo->name.c_str());
             configSuccess = false;
             return;
         }
@@ -790,10 +789,10 @@ void ConfigManager::parseQuery(CoreConfigParseState_t *coreParseState , const xm
                             warning = warning + wrongAttributes[i] + ", ";
                         }
                         warning = warning + "and " + wrongAttributes[wrongAttributes.size()-1];
-                        Logger::warn("The fields entered in responseContent tag, %s, are neither searchable, refining nor indexed therefore will not be returned by the engine.", warning.c_str());
+                        Logger::warn("In core %s : The fields entered in responseContent tag, %s, are neither searchable, refining nor indexed therefore will not be returned by the engine.", coreInfo->name.c_str(), warning.c_str());
                     }
                     else
-                        Logger::warn("The field entered in responseContent tag, %s, is neither searchable, refining nor indexed therefore will not be returned by the engine.", wrongAttributes[0].c_str());
+                        Logger::warn("In core %s : The field entered in responseContent tag, %s, is neither searchable, refining nor indexed therefore will not be returned by the engine.", coreInfo->name.c_str(), wrongAttributes[0].c_str());
                 }
             } else {
                 Logger::error("In core %s : For specified response content type, return fields should be provided.", coreInfo->name.c_str());
@@ -933,6 +932,9 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode,
             trimSpacesFromValue(temporaryString, dataFileString, parseWarnings);
 
             //If it is default core, we do not use the core name in dataFile path
+            //This change is there so as not to break system test case. If this "if" condition is not present,
+            //it will add "__DEFAULTCORE__" to the dataFile path.
+            //So if it is "DEFAULTCORE" corename is not added to dataFile path.
             if(coreInfo->name == defaultCore){
                 coreInfo->dataFilePath = srch2Home + string("")
                     + string("/") + temporaryString;
@@ -944,7 +946,7 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode,
         } else {
             parseError
                     << (coreInfo->name.compare("") != 0 ?
-                            coreInfo->name : "default")
+                            coreInfo->name : defaultCore)
                     << " core path to the data file is not set. "
                             "You should set it as <dataFile>path/to/data/file</dataFile> in the config file.\n";
             configSuccess = false;
@@ -1387,7 +1389,7 @@ void ConfigManager::parseFacetFields(const xml_node &schemaNode,
                                     buffer << timeValue;
                                     startTextValue = buffer.str();
                                 } else {
-                                    Logger::error("In core %s : Facet attribute start value is in wrong format.Facet disabled.", coreInfo->name.c_str());
+                                    Logger::error("In core %s : Facet attribute start value is in wrong format. Facet disabled.", coreInfo->name.c_str());
                                     coreInfo->facetEnabled = false;
                                     break;
                                 }
@@ -1423,7 +1425,7 @@ void ConfigManager::parseFacetFields(const xml_node &schemaNode,
                                     buffer << timeValue;
                                     endTextValue = buffer.str();
                                 } else {
-                                    Logger::error("In core %s : Facet attribute start value is in wrong format.Facet disabled.", coreInfo->name.c_str());
+                                    Logger::error("In core %s : Facet attribute start value is in wrong format. Facet disabled.", coreInfo->name.c_str());
                                     coreInfo->facetEnabled = false;
                                     break;
                                 }
@@ -1449,7 +1451,7 @@ void ConfigManager::parseFacetFields(const xml_node &schemaNode,
                                 if (!srch2is::DateAndTimeHandler::verifyDateTimeString(
                                         gapTextValue,
                                         srch2is::DateTimeTypeDurationOfTime)) {
-                                    Logger::error("In core %s : Facet attribute end value is in wrong format.Facet disabled.", coreInfo->name.c_str());
+                                    Logger::error("In core %s : Facet attribute end value is in wrong format. Facet disabled.", coreInfo->name.c_str());
                                     coreInfo->facetEnabled = false;
                                     break;
                                 }
@@ -1524,7 +1526,7 @@ void ConfigManager::parseSchemaType(const xml_node &childNode,
                                             boost::filesystem::path(
                                                     srch2Home + temporaryString).normalize().string();
                                 } else {
-                                    Logger::warn("In core %s : word parameter in StopFilter is empty, so stop word filter is disabled", coreInfo->name.c_str());
+                                    Logger::warn("In core %s : Words parameter in StopFilter is empty, so stop word filter is disabled.", coreInfo->name.c_str());
                                 }
                             } else if (string(
                                     field.attribute(nameString).value()).compare(
@@ -1541,7 +1543,7 @@ void ConfigManager::parseSchemaType(const xml_node &childNode,
                                             boost::filesystem::path(
                                                     srch2Home + temporaryString).normalize().string();
                                 } else {
-                                    Logger::warn("In core %s : words parameter for protected keywords is empty, so protected words filter is disabled", coreInfo->name.c_str());
+                                    Logger::warn("In core %s : Words parameter for protected keywords is empty, so protected words filter is disabled.", coreInfo->name.c_str());
                                 }
                             } else if (string(
                                     field.attribute(nameString).value()).compare(
@@ -1559,7 +1561,7 @@ void ConfigManager::parseSchemaType(const xml_node &childNode,
                                             boost::filesystem::path(
                                                     srch2Home + temporaryString).normalize().string();
                                 } else {
-                                    Logger::warn("In core %s : Synonym filter is disabled because synonym parameter is empty", coreInfo->name.c_str());
+                                    Logger::warn("In core %s : Synonym filter is disabled because synonym parameter is empty.", coreInfo->name.c_str());
                                 }
                                 if (string(
                                         field.attribute(expandString).value()).compare(
@@ -1574,7 +1576,7 @@ void ConfigManager::parseSchemaType(const xml_node &childNode,
                                                         true);
                                     }
                                 } else {
-                                    Logger::warn("In core %s : Synonym filter's expand attribute is missing. Using default = true", coreInfo->name.c_str());
+                                    Logger::warn("In core %s : Synonym filter's expand attribute is missing. Using default = true.", coreInfo->name.c_str());
                                 }
                             }
 
@@ -1617,11 +1619,11 @@ void ConfigManager::parseSchemaType(const xml_node &childNode,
 
                             coreInfo->allowedRecordTokenizerCharacters = out;
                         } else {
-                            Logger::error(" In core %s : Valid tag is not set, it can only be filter or allowedrecordspecialcharacters", coreInfo->name.c_str());
+                            Logger::error(" In core %s : Valid tag is not set, it can only be filter or allowedrecordspecialcharacters.", coreInfo->name.c_str());
                         }
                     }
                 } else {
-                    Logger::error(" In core %s : Not a valid fieldType name in config file, currently we only support text_en", coreInfo->name.c_str());
+                    Logger::error(" In core %s : Not a valid fieldType name in config file, currently we only support text_en.", coreInfo->name.c_str());
                 }
             }
         }
@@ -1671,7 +1673,7 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
 
                     if (isMultiValued) {
                         configSuccess = false;
-                        Logger::error("In core %s : Primary Key cannot be multivalued", coreInfo->name.c_str());
+                        Logger::error("In core %s : Primary Key cannot be multivalued.", coreInfo->name.c_str());
                         return;
                     }
 
@@ -1980,7 +1982,7 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
         }
     }
     if (!mdflag) {
-        Logger::warn("In core %s : MaxDoc is not set, so the engine will use the default value 15,000,000", coreInfo->name.c_str());
+        Logger::warn("In core %s : MaxDoc is not set, so the engine will use the default value 15,000,000.", coreInfo->name.c_str());
     }
 
     //Default value for memory limit if it is not set is 1000000000
@@ -1995,7 +1997,7 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
         }
     }
     if (!mmflag) {
-        Logger::warn("In core %s : Maximum memory limit is not set, so the engine will use the default value 1GB", coreInfo->name.c_str());
+        Logger::warn("In core %s : Maximum memory limit is not set, so the engine will use the default value 1GB.", coreInfo->name.c_str());
     }
 
     // mergeEveryNSeconds
@@ -2012,7 +2014,7 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
         }
     }
     if (!mensflag) {
-        Logger::warn("In core %s : mergeEveryNSeconds is not set correctly, so the engine will use the default value 10", coreInfo->name.c_str());
+        Logger::warn("In core %s : mergeEveryNSeconds is not set correctly, so the engine will use the default value 10.", coreInfo->name.c_str());
     }
 
     // mergeEveryMWrites
@@ -2030,7 +2032,7 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode,
         }
     }
     if (!memwflag) {
-        Logger::warn("In core %s : mergeEveryMWrites is not set correctly, so the engine will use the default value 100", coreInfo->name.c_str());
+        Logger::warn("In core %s : mergeEveryMWrites is not set correctly, so the engine will use the default value 100.", coreInfo->name.c_str());
     }
 
     // set default value for updateHistogramEveryPSeconds and updateHistogramEveryQWrites because there
@@ -2099,7 +2101,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
       }
 
       this->httpServerAccessLogFile = this->srch2Home + "logs" + "/" + "srch2-log.txt";
-      // accessLogFile is required
+      // accessLogFile is optional. The default value is "srch2Home/logs/srch2-log.txt"
       childNode = updateLog.child(accessLogFileString);
       if (childNode && childNode.text()) {
           temporaryString = string(childNode.text().get());
@@ -2178,7 +2180,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
     if (childNode && childNode.text()) { // checks if config/listeningHostname exists and have any text value or not
         this->httpServerListeningHostname = string(childNode.text().get());
     } else {
-        parseError << "listeningHostname is not set.\n";
+        Logger::error("listeningHostname is not set.");
         configSuccess = false;
         return;
     }

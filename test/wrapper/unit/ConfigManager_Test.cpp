@@ -7,7 +7,9 @@
 
 /**
  * This test case tests schema section of the config file. Checks if it works for various combination and number of searchable, refining, and indexed fields.
- * It also checks for invalid boost, invalid record boost field and all possible combinations for character offset/positionalIndex and field based search.
+ * It checks for invalid boost, invalid record boost field and all possible combinations for character offset/positionalIndex and field based search.
+ *
+ * The conf-logging.xml file has log tag outside core, it enables testing of global log tag.
  */
 
 #include "server/util/xmlParser/pugixml.hpp"
@@ -92,6 +94,8 @@ int main(int argc, char* argv[])
     ASSERT(serverConf16->loadConfigFile() == true);
     ASSERT(serverConf17->loadConfigFile() == true);
 
+    //This checks if the log file path and log level are correctly set in the config file where log
+    //tag has been moved out of core
     ASSERT(serverConf15->getHTTPServerAccessLogFile() == "./multicore//srch2-log.txt");
     ASSERT(serverConf15->getHTTPServerLogLevel() == 3);
 
