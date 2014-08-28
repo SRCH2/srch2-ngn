@@ -2131,9 +2131,11 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
                     "Authorization Key is invalid string, so it will not be used by the engine! ");
         }
     }
-    // check if data source exists at the top level
+    //check if data source or dataDir exists at the top level,
+    //if it exists then it is a single core configuration file with no core tags.
     xml_node topDataFileNode = configNode.child(dataFileString);
-    if (topDataFileNode) {
+    xml_node topDataDirNode = configNode.child(dataDirString);
+    if (topDataFileNode || topDataDirNode) {
         // create a default core for settings outside of <cores>
         if (coreInfoMap.find(getDefaultCoreName()) == coreInfoMap.end()) {
             defaultCoreInfo = new CoreInfo_t(this);

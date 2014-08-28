@@ -56,6 +56,7 @@ int main(int argc, char* argv[])
     string configFile15(string(getenv("srch2_config_file")) + "/conf-logging.xml");
     string configFile16(string(getenv("srch2_config_file")) + "/conf-singleCore.xml");
     string configFile17(string(getenv("srch2_config_file")) + "/conf-responseContent.xml");
+    string configFile18(string(getenv("srch2_config_file")) + "/conf-sqlLite.xml");
 
     ConfigManager *serverConf1 = new ConfigManager(configFile1);
     ConfigManager *serverConf2 = new ConfigManager(configFile2);
@@ -74,6 +75,7 @@ int main(int argc, char* argv[])
     ConfigManager *serverConf15 = new ConfigManager(configFile15);
     ConfigManager *serverConf16 = new ConfigManager(configFile16);
     ConfigManager *serverConf17 = new ConfigManager(configFile17);
+    ConfigManager *serverConf18 = new ConfigManager(configFile18);
 
 
     ASSERT(serverConf15->loadConfigFile() == true);
@@ -93,6 +95,10 @@ int main(int argc, char* argv[])
     ASSERT(serverConf15->loadConfigFile() == true);
     ASSERT(serverConf16->loadConfigFile() == true);
     ASSERT(serverConf17->loadConfigFile() == true);
+
+    //This config file is single core with no core tags and dataFile at top, but it
+    //has dataDir at the top level.
+    ASSERT(serverConf18->loadConfigFile() == true);
 
     //This checks if the log file path and log level are correctly set in the config file where log
     //tag has been moved out of core
