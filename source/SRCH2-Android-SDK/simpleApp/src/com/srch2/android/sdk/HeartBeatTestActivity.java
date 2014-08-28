@@ -1,12 +1,15 @@
 package com.srch2.android.sdk;
 
 import android.os.Bundle;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+
+import static junit.framework.Assert.*;
 
 public class HeartBeatTestActivity extends TestableActivity {
 
@@ -16,7 +19,7 @@ public class HeartBeatTestActivity extends TestableActivity {
     @Override
     public List<String> getTestMethodNameListWithOrder() {
         return Arrays.asList(new String[]{
-
+            "testHeartBeat",
         });
     }
 
@@ -59,50 +62,24 @@ public class HeartBeatTestActivity extends TestableActivity {
         super.onPause();
     }
 
-    
 
-    static class DumbIndex extends Indexable {
 
-        public static final String INDEX_NAME = "dumb-index";
-        public static final String INDEX_FIELD_NAME_PRIMARY_KEY = "id";
-        public static final String INDEX_FIELD_NAME_TITLE = "title";
-
-        @Override
-        public String getIndexName() {
-            return INDEX_NAME;
+    public void testHeartBeat() {
+        assertTrue(HeartBeatPing.instance == null);
+        assertFalse(SRCH2Engine.isReady());
+        onStartAndWaitForIsReady(this, 60000);
+        assertTrue(SRCH2Engine.isReady());
+        assertTrue(HeartBeatPing.instance != null);
+        JSONArray longTimeInsertionRecordArray = new JSONArray();
+        for (int  i = 1; i < 5000; ++i) {
+            longTimeInsertionRecordArray.put(DumbIndex.getRecord(String.valueOf(i), String.valueOf(i)));
         }
-
-        @Override
-        public Schema getSchema() {
-            return Schema.createSchema(
-                    Field.createDefaultPrimaryKeyField(INDEX_FIELD_NAME_PRIMARY_KEY),
-                    Field.createSearchableField(INDEX_FIELD_NAME_TITLE));
-        }
-
-        @Override
-        public void onInsertComplete(int success, int failed, String JSONResponse) {
-            super.onInsertComplete(success, failed, JSONResponse);
-        }
-
-        @Override
-        public void onUpdateComplete(int success, int upserts, int failed, String JSONResponse) {
-            super.onUpdateComplete(success, upserts, failed, JSONResponse);
-        }
-
-        @Override
-        public void onDeleteComplete(int success, int failed, String JSONResponse) {
-            super.onDeleteComplete(success, failed, JSONResponse);
-        }
-
-        @Override
-        public void onGetRecordComplete(boolean success, JSONObject record, String JSONResponse) {
-            super.onGetRecordComplete(success, record, JSONResponse);
-        }
-
-        @Override
-        public void onIndexReady() {
-            super.onIndexReady();
-        }
+        index.insert(longTimeInsertionRecordArray);
+        assertNull(HeartBeatPing.instance.timer);
+        sleep(60000);
+        assertNotNull(HeartBeatPing.instance.timer);
+        onStopAndWaitForNotIsReady(this, 60000);
+        assertTrue(HeartBeatPing.instance == null);
     }
 
     static class SearchResultsCallback implements SearchResultsListener {

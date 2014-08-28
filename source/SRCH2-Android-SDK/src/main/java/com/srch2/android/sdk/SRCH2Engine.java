@@ -372,6 +372,7 @@ final public class SRCH2Engine {
                 xmlConfigLiteral);
         i.putExtra(IPCConstants.INTENT_KEY_SHUTDOWN_URL, UrlBuilder
                 .getShutDownUrl(getConfig()).toString());
+        i.putExtra(IPCConstants)
         i.putExtra(IPCConstants.INTENT_KEY_PORT_NUMBER, conf.getPort());
         i.putExtra(IPCConstants.INTENT_KEY_OAUTH, conf.getAuthorizationKey());
         i.putExtra(IPCConstants.INTENT_KEY_IS_DEBUG_AND_TESTING_MODE, isDebugAndTestingMode);

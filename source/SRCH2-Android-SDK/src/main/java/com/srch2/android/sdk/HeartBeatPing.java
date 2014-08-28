@@ -11,8 +11,8 @@ class HeartBeatPing {
 
     // should be slightly less than the amount of time the SRCH2 server core waits to autoshutdown
     static final int HEART_BEAT_PING_DELAY = 50000;
-    private Timer timer;
-    private static HeartBeatPing instance;
+    Timer timer;
+    static HeartBeatPing instance;
 
     // call when checkcores loaded finishes
     static void start() {

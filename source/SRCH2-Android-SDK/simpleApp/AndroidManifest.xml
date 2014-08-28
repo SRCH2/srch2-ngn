@@ -17,6 +17,10 @@
         <activity android:name="com.srch2.android.sdk.LifeCycleTestActivity"
                   android:label="@string/app_name">
         </activity>
+
+        <activity android:name="com.srch2.android.sdk.HeartBeatTestActivity"
+                  android:label="@string/app_name">
+        </activity>
         <service
                 android:name="com.srch2.android.sdk.SRCH2Service"
                 android:exported="false"
