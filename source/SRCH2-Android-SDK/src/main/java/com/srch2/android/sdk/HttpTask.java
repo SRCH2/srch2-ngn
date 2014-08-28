@@ -38,7 +38,6 @@ abstract class HttpTask implements Runnable {
     private static final int TASK_ID_INSERT_UPDATE_DELETE_GETRECORD = 1;
     private static final int TASK_ID_SEARCH = 2;
     private static final int TASK_ID_CLIENT_CALLBACK = 3;
-    private static final int TASK_ID_HEARTBEAT_PING = 4;
 
     protected SearchResultsListener searchResultsListener;
 
@@ -85,30 +84,21 @@ abstract class HttpTask implements Runnable {
                                 originatingTaskClass == GetRecordResponse.class ||
                                     originatingTaskClass == IndexIsReadyResponse.class) {
             taskId = TASK_ID_CLIENT_CALLBACK;
-        } else if (originatingTaskClass == HeartBeatPing.PingTask.class) {
-            taskId = TASK_ID_HEARTBEAT_PING;
         } else {
             throw new IllegalStateException("Meltdown imminent: taskToExecute does not match any assignable task executor");
         }
 
         if (taskId == TASK_ID_SEARCH) {
             if (searchTaskExecutor != null) {
-                HeartBeatPing.interrupt();
                 searchTaskExecutor.execute(taskToExecute);
             }
         } else if (taskId == TASK_ID_INSERT_UPDATE_DELETE_GETRECORD) {
             if (controlTaskExecutor != null) {
-                HeartBeatPing.interrupt();
                 controlTaskExecutor.execute(taskToExecute);
             }
         } else if (taskId == TASK_ID_CLIENT_CALLBACK) {
             if (clientCallbackTaskExecutor != null) {
-                HeartBeatPing.ping();
                 clientCallbackTaskExecutor.execute(taskToExecute);
-            }
-        } else if (taskId == TASK_ID_HEARTBEAT_PING) {
-            if (searchTaskExecutor != null) {
-                searchTaskExecutor.execute(taskToExecute);
             }
         }
     }

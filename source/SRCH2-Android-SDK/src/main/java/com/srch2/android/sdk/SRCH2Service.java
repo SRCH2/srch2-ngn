@@ -348,7 +348,7 @@ final public class SRCH2Service extends Service {
         Cat.d(TAG, "startExecutable port number " + executablePortNumber);
         Cat.d(TAG, "startExecutable shutdown string " + executableShutdownUrlString);
         Cat.d(TAG, "startExecutable pingUrl " + executablePingUrl);
-        
+
         int totalSleepTime = 0;
         while (!ps(executableProcessPath)) {
             try {

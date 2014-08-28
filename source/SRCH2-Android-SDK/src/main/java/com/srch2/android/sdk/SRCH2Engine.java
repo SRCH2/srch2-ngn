@@ -318,7 +318,6 @@ final public class SRCH2Engine {
     public static void onStop(Context context) {
         Cat.d(TAG, "onStop");
         resetState();
-        HeartBeatPing.stop();
         if (searchResultsUiCallbackHandler != null) {
             searchResultsUiCallbackHandler = null;
         }

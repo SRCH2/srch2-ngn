@@ -84,7 +84,6 @@ final class CheckCoresLoadedTask extends HttpTask {
             for (String indexName : validIndexes) {
                 HttpTask.executeTask(new IndexIsReadyResponse(indexName));
             }
-            HeartBeatPing.start();
             SRCH2Engine.reQueryLastOne();
         }
     }
