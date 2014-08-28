@@ -602,7 +602,7 @@ void QueryParser::prefixMatchPenaltyParser() {
             this->isParsedError = true;
         }
     }
-    Logger::debug("returnig from prefixMatchPenaltyParser function");
+    Logger::debug("returning from prefixMatchPenaltyParser function");
 }
 
 void QueryParser::fieldListParser() {

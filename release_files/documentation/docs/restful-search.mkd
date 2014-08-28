@@ -342,6 +342,15 @@ Please note: the attributes used in "fq" must have the "refining" property set t
 Also, only the attributes of type INT and FLOAT can be used in the "boolexp$$" block.
 In the movie demo, some of the attributes are not refining. 
 
+### 6.3. fl: Field list parameter
+
+This parameter is used to specify fields or attributes that the user wants the engine to return. For example the following url:
+```
+http://localhost:8087/search?q=services&fl=name,category
+```
+will return records containing the term "services" in it, but the record returned will only contain the two fields "name" and "category" in it.
+
+Note that the fields to be returned by the engine can also be specifed through the "responseContent" tag in the configuration file. But fields specified through the "fl" parameter of query will always override the parameter specified in "responseContent" tag of configuration file.  
 
 ## 7. Facet Parameters 
 
