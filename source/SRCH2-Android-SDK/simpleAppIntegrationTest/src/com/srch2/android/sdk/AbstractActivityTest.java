@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * Created by jianfeng on 8/7/14.
  */
-public abstract class AbstractTest<T extends TestableActivity> extends SingleLaunchActivityTestCase<T> {
+public abstract class AbstractActivityTest<T extends TestableActivity> extends SingleLaunchActivityTestCase<T> {
 
     abstract String getTAG();
     /**
@@ -22,7 +22,7 @@ public abstract class AbstractTest<T extends TestableActivity> extends SingleLau
      * @param pkg           The package hosting the activity to be launched.
      * @param activityClass The activity to test.
      */
-    public AbstractTest(String pkg, Class<T> activityClass) {
+    public AbstractActivityTest(String pkg, Class<T> activityClass) {
         super(pkg, activityClass);
     }
 

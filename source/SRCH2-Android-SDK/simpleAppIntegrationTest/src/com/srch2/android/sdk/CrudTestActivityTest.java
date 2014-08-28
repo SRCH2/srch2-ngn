@@ -1,6 +1,6 @@
 package com.srch2.android.sdk;
 
-public class CrudTestActivityTest extends AbstractTest<CrudTestActivity>{
+public class CrudTestActivityTest extends AbstractActivityTest<CrudTestActivity> {
     static final String TAG = "SRCH2ActivityTEST";
 
     public CrudTestActivityTest(){

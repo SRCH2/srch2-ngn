@@ -6,6 +6,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 
 class AutoPing {
 
@@ -24,7 +25,8 @@ class AutoPing {
         pingPool = Executors.newFixedThreadPool(1);
     }
 
-    // call when checkcores loaded finishes
+    // from SRCH2Engine call when checkcores loaded finishes
+    // from SRCH2Service call when signling SRCH2Engine to proceed
     static void start(String pingUrlString) {
         Cat.d(TAG, "start");
         if (instance == null) {
@@ -60,13 +62,16 @@ class AutoPing {
                 @Override
                 public void run() {
                     PingTask pt = new PingTask(instance);
-                    instance.pingPool.execute(pt);
+                    try {
+                        instance.pingPool.execute(pt);
+                    } catch (RejectedExecutionException ignore) {
+                    }
                 }
             }, HEART_BEAT_PING_DELAY);
         }
     }
 
-    // call before beforing any CRUD that will itself serve as the ping
+    // call before beforing any CRUD that will itself serve as the ping (not necessary)
     static void interrupt() {
         Cat.d(TAG, "interrupt");
         if (instance != null) {
