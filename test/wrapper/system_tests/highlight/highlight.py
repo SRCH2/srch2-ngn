@@ -33,7 +33,7 @@ def checkResult(query, responseJson,resultValue, queryId):
     if  len(responseJson) == len(resultValue):
         print 'fetched rec#' + str(len(responseJson)) + '|expected rec#' + str(len(resultValue))
         for i in range(0, len(resultValue)):
-            if str(responseJson[i]['record_id']) !=  str(resultValue[i]):
+            if (resultValue.count(responseJson[i]['record_id']) != 1):
                 isPass=0
                 print query+' test failed'
                 print 'query results||given results'

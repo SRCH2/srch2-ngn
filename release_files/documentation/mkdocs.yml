@@ -9,7 +9,7 @@ pages:
     - [restful-control.mkd,'API', Control]
     - [ranking.mkd, Ranking]
     - [geo.mkd, Geo]
-    - [mongodb.mkd, Mongodb]
+    - [databases.mkd, Databases]
 
 theme_dir : './srch2-theme'
 

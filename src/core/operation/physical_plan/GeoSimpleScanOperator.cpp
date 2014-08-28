@@ -43,14 +43,14 @@ bool GeoSimpleScanOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 		quadTreeNodeSet->at(i)->rangeQuery(this->geoElements, *this->queryShape);
 	}
 
-	int count = 0;
-	for ( int i = 0 ; i < this->geoElements.size() ; i++){
-		vector<GeoElement*> tmp = *(this->geoElements[i]);
-		for ( int j = 0; j < tmp.size() ; j++){
-			if(this->queryShape->contain(tmp[j]->point)){
-				count++;
-				break;
-			}
+	// we are removing elements from the vector in the iteration on the vector
+	// so when we erase one element we have to reset the iterator.
+	for (  vector< vector<GeoElement*>* >::iterator i = this->geoElements.begin() ; i != this->geoElements.end() ;){
+		vector<GeoElement*>* tmp = *i;
+		if(tmp->size() == 0){
+			i = this->geoElements.erase(i);
+		}else{
+			++i;
 		}
 	}
 	// set the offsets to use them in getNext

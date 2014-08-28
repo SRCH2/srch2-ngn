@@ -1,0 +1,336 @@
+<div id="content" > <!-- Table of content, id=content-->
+<table><tbody><tr><td>
+<div><h3><a style="text-decoration: none;color:#ee2e24" href="#doc">Content</a></h3></div>
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#overview">1. Overview</a><br><br>
+
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#mongo">2. Search in MongoDB</a><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#mongoInstallMongoDB">2.1. Install MongoDB</a><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#mongoPopulate-mongo">2.2. Populate MongoDB</a><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#mongoConfigureSrch2">2.3. Configure SRCH2</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#mongoStartSrch2">2.4. Start SRCH2 Engine</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#mongoSearch">2.5. Search</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#mongoInsertData">2.6. Insert a Record</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#mongoUpdateRecord">2.7. Update a Record</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#mongoDeleteRecord">2.8. Delete a Record</a></br><br>
+
+&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#sqlite">2. Search in SQLite</a><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#sqliteInstallSQLite">3.1. Install SQLite</a><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#sqlitePopulate-sqlite">3.2. Populate SQLite</a><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#sqliteConfigureSrch2">3.3. Configure SRCH2</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#sqliteStartSrch2">3.4. Start SRCH2 Engine</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#sqliteSearch">3.5. Search</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#sqliteInsertData">3.6. Insert a Record</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#sqliteUpdateRecord">3.7. Update a Record</a></br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a style="text-decoration: none;color:#3366FF" href="#sqliteDeleteRecord">3.8. Delete a Record</a></br><br>
+</td></tr></tbody></table>
+
+</div> <!-- Table of content, id=content-->
+<!-- Google Tag Manager -->
+<noscript><iframe src="//www.googletagmanager.com/ns.html?id=GTM-MQK794"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'//www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-MQK794');</script>
+<!-- End Google Tag Manager -->
+</div> <!-- Sidebar -->
+
+</td>
+
+<td id="docBody" style="width:70%">
+</br>
+<div><table><tbody><tr><td>
+<div><h3><a style="text-decoration: none;color:#ee2e24" href="#doc"></a></h3></div>
+
+</td></tr></tbody></table></div>
+#<center>SRCH2: Search in Databases </center>#{id="doc" style="color:#ee2e24" }
+
+##1. Overview###{id="overview"}
+
+The SRCH2 engine currently provides connectors for [MongoDB](http://www.mongodb.org/) and [SQLite](http://www.sqlite.org/).  Notice that
+a SRCH2 instance can have multiple data sources ("cores" as described in <a href="configuration.html#Cores">here</a>).
+Each core can be a JSON file, a MongoDB table, or a SQLite table.  Each SRCH2 connector for a database builds indexes for the records in the table, 
+and periodically checks data updates to incrementally maintain the indexes.
+
+##2. Search in MongoDB###{id="mongo"}
+
+This section describes how to use SRCH2 to do text search on [MongoDB](http://www.mongodb.org/).  The following figure illustrates how
+a SRCH2 connector interacts with a MongoDB table.  In the configuration file of SRCH2, a user specifies a MongoDB data source with 
+information such as host name, port number, and table name.  The SRCH2 engine will load the MongoDB connector (as a shared library called "libmongodbConnector"), which 
+will read the records from the table, and insert the records into the SRCH2 engine.  In addition, the connector has a thread
+that periodically accesses the "oplog" of MongoDB to retrieve information about the changes (insert, delete, and update).  It
+will send these changes to the SRCH2 engine to modify the indexes.  The frequency of accessing the log can also be specified in the
+configuration file.
+
+<img style="float: center" width="60%" src="images/mongodb-connector.png" />
+
+###2.1. Install MongoDB{id="mongoInstallMongoDB"}
+
+Follow the instructions at [here](http://docs.mongodb.org/manual/installation/) to install MongoDB. The following instructions
+are for Ubuntu:
+
+```
+shell> sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10
+shell> echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | sudo tee /etc/apt/sources.list.d/mongodb.list
+shell> sudo apt-get update
+shell> sudo apt-get install mongodb-org
+shell> sudo service mongod stop
+shell> mkdir -p ~/tmp/mongodb/db0
+shell> mongod --port 27017 --dbpath ~/tmp/mongodb/db0 --replSet rs0
+```
+
+Notice that the SRCH2 engine works with a MongoDB server running with the [replication mode](http://docs.mongodb.org/manual/tutorial/convert-standalone-to-replica-set/) enabled. The MongoDB host specified in the configuration file should be the primary of the replica set.  The SRCH2 engine collects incremental inserts/deletes/updates on MongoDB from its oplog.
+
+Use another terminal to run the following commands to initialize mongodb (needed only once):
+
+```
+shell> mongo
+mongo> rs.initiate()
+```
+
+These commands will start the mongodb engine with the replication mode enabled. 
+
+###2.2. Populate MongoDB{id="mongoPopulate-mongo"}
+
+Download a <a href=example-demo/movie-data.json>sample data file</a> with movie information to a local folder. Run the following MongoDB command to insert those records into a collection (table) called "movies" in a database called "demo".
+
+```
+shell> mongoimport --db demo --collection movies --type json --file movie-data.json 
+```
+To check if the data has been loaded, run following commands:
+
+```
+shell> mongo
+mongodb> use demo
+mongodb> db.movies.find().count()
+```
+
+There should be 243 movies in the "movies" collection.
+
+###2.3. Configure SRCH2{id="mongoConfigureSrch2"}
+
+Download a sample <a href="example-demo/srch2-config-mongo.xml">configuration file</a> for the SRCH2 engine.  Find the following lines inside the <i>config</i> element to specify information about this MongoDB data source:
+ 
+```
+    <dataSourceType>2</dataSourceType>
+    <dbParameters>
+        <dbSharedLibraryPath>db_connectors/</dbSharedLibraryPath>
+        <dbSharedLibraryName>libmongodbConnector</dbSharedLibraryName>
+        <dbKeyValues>
+            <dbKeyValue key="host" value="127.0.0.1" />
+            <dbKeyValue key="port" value="27017" />
+            <dbKeyValue key="db" value="demo" />
+            <dbKeyValue key="collection" value="movies" />
+            <dbKeyValue key="listenerWaitTime" value="3" />
+            <dbKeyValue key="maxRetryOnFailure" value="3" />
+        </dbKeyValues>
+    </dbParameters>
+```
+
+Most parameters are self-explanatory.  The "dataSourceType" value "2" indicates that this core is
+an external data source.  The "listenerWaitTime" value specifies how often (in seconds)
+the SRCH2 engine checks the latest changes from the MongoDB oplog.  The "maxRetryOnFailure" value
+specifies how many times the SRCH2 engine accesses MongoDB in the case of failures.  The MongoDB connector is implemented 
+as a shared library specified by the parameters "dbSharedLibraryPath" and "dbSharedLibraryName", which is included in the package and loaded by the main SRCH2 engine.
+
+Change the parameters if needed.  Make sure that you have also set the "srch2Home" variable in the SRCH2 configuration file. All other paths mentioned in the configuration file are relative to the "srch2Home" folder.
+
+###2.4. Start SRCH2 Engine{id="mongoStartSrch2"}
+
+Go to the install folder of SRCH2 and run the following:
+
+```
+shell> ./bin/srch2-engine --config-file=./example-demo/srch2-config-mongo.xml
+```
+
+The engine will use a MongoDB connector to read the data from the MongoDB table, build indexes, and wait for queries. It also starts a thread that periodically pulls latest changes from MongoDB (as specified by the "listenerWaitTime" parameter) and add these changes to its indexes.  
+
+###2.5. Search{id="mongoSearch"}
+
+In a shell terminal, run the following command:
+
+```
+shell> curl "http://localhost:8081/search?q=terminator"
+```
+You should see the records with the keyword "terminator".
+
+###2.6. Insert a Record{id="mongoInsertData"}
+
+In the MongoDB client, run the following command to insert a new record.
+```
+shell> mongo
+mongodb> use demo
+mongodb> db.movies.find().count()
+mongodb> db.movies.insert(
+{
+"trailer_url" : "http://www.youtube.com/watch?v=QHhZK-g7wHo",
+"title" : "Terminator 3: Rise of the Machines",
+"director" : "James Cameron",
+"year" : NumberLong(2003),
+"banner_url" : "http://ia.media-imdb.com/images/M/MV5BMTk5NzM1ODgyN15BMl5BanBnXkFtZTcwMzA5MjAzMw@@._V1_SY317_CR0,0,214,317_.jpg",
+"id" : NumberLong(765006),
+"genre" : "drama"
+});
+```
+
+Th last command inserts a new record into MongoDB.  Wait for about 4 seconds for the SRCH2 server to pull the change. Do the above search query again. The search engine should return this newly inserted record.  Notice that the wait time depends upon your configuration such as <a href="configuration.html#database">listenerWaitTime</a> and <a href="configuration.html#mergePolicy">merge policy</a>.  It is suggested to wait for "listenerWaitTime + mergeEveryNSeconds" seconds.
+
+###2.7. Update a Record{id="mongoUpdateRecord"}
+
+The record we inserted has a wrong director "James Cameron." The correct director is "Jonathan Mostow". To fix the error, run the following command in the MongoDB shell to update the record:
+```
+mongodb> db.movies.update( { id: 765006 },
+{
+$set: { director: "Jonathan Mostow" },
+});
+```
+
+Wait for about 4 seconds for the SRCH2 server to pull the change, then do the above search query again. The SRCH2 engine should be able to return this updated record, with "Jonathan Mostow" as the <i>director</i> value.
+
+###2.8. Delete a Record{id="mongoDeleteRecord"}
+
+Run the following command in the MongoDB shell to delete the updated record:
+```
+mongodb> db.movies.remove({"id" : 765006 });
+```
+
+Again, wait for about 4 seconds for the SRCH2 server to pull the change, then do the above search query again. The SRCH2 engine should not return the record that we just deleted.
+
+##3. Search in SQLite###{id="sqlite"}
+
+This section explains how to use SRCH2 to do text search on [SQLite](http://www.sqlite.org/).  The following diagram explains
+the architecture, which is similar to the way SRCH2 interacts with MongoDB.  The main difference is that 
+we use SQLite triggers to keep track of changes to a SQLite table, and add the corresponding change records to a log table.
+Again, the SRCH2 engine periodically accesses this log table to retrieve the information about data changes, and updates
+the indexes accordingly.
+
+<img style="float: center" width="60%" src="images/sqlite-connector.png" />
+
+###3.1. Install SQLite{id="sqliteInstallSQLite"}
+
+If you have not installed SQLite, follow the instructions at [here](http://www.sqlite.org/download.html) to
+install it.  The following commands are for Ubuntu:
+
+```
+shell> mkdir ~/sqlite
+shell> cd ~/sqlite
+shell> wget http://www.sqlite.org/2014/sqlite-autoconf-3080500.tar.gz 
+shell> tar xvfz sqlite-autoconf-*.tar.gz
+shell> cd sqlite-autoconf-*
+shell> ./configure 
+shell> make
+shell> sudo make install
+```
+
+###3.2. Populate a SQLite Table {id="sqlitePopulate-sqlite"}
+
+Download a <a href=example-demo/company-data.csv>sample data file</a> with company information to a local folder. Run the following SQLite command to insert those records into a table called "COMPANY" in a database called "demo".
+
+```
+shell> sqlite3 <srch2Home>/demo.db
+sqlite> CREATE TABLE COMPANY(
+   ID INT PRIMARY KEY NOT NULL,
+   NAME TEXT NOT NULL,
+   AGE INT NOT NULL,
+   ADDRESS CHAR(50),
+   SALARY REAL
+);
+sqlite> .separator ","
+sqlite> .import company-data.csv COMPANY
+```
+To check if the data has been loaded, run following command:
+```
+sqlite> SELECT * FROM COMPANY;
+1, 'Paul',32, 'California',20000.0
+2, 'Allen',25, 'Texas',15000.0
+3, 'Teddy',23, 'Norway',20000.0
+4, 'Mark',25, 'Rich-Mond ',65000.0
+5, 'David',27, 'Texas',85000.0
+6, 'Kim',22, 'South-Hall',45000.0
+```
+As shown above, there should be six records in the "COMPANY" table.
+
+###3.3. Configure SRCH2{id="sqliteConfigureSrch2"}
+
+Download a sample <a href="example-demo/srch2-config-sqlite.xml">configuration file</a> for the SRCH2 engine.  Find the following lines inside the <i>config</i> element to specify information about this SQLite data source:
+ 
+```
+   <dataSourceType>2</dataSourceType>
+    <dbParameters>
+        <dbSharedLibraryPath>db_connectors/</dbSharedLibraryPath>
+        <dbSharedLibraryName>libsqliteConnector</dbSharedLibraryName>
+        <dbKeyValues>
+            <dbKeyValue key="db" value="demo.db" />
+            <dbKeyValue key="dbPath" value="." />
+            <dbKeyValue key="tableName" value="COMPANY" />
+            <dbKeyValue key="listenerWaitTime" value="3" />
+            <dbKeyValue key="maxRetryOnFailure" value="2" />
+        </dbKeyValues>
+    </dbParameters>
+```
+
+These parameters are similar to those used in the MongoDB connector.  Notice that the engine requires a shared library
+called "libsqliteConnector" for SQLite, which is included in the package.  Change the parameters if needed.  Make sure that you have also set the "srch2Home" variable in the SRCH2 configuration file. All other paths mentioned in the configuration file are relative to the "srch2Home" folder.
+
+###3.4. Start SRCH2 Engine{id="sqliteStartSrch2"}
+
+Go to the install folder of SRCH2 and run the following:
+
+```
+shell> ./bin/srch2-engine --config-file=./example-demo/srch2-config-sqlite.xml
+```
+
+The engine should read the data from the SQLite instance, build indexes, and wait for queries. It also starts a thread that periodically pulls latest changes from SQLite (as specified by the "listenerWaitTime" parameter) and add these changes to its search indexes.
+
+###3.5. Search{id="sqliteSearch"}
+
+In a terminal, run the following command:
+
+```
+shell> curl "http://localhost:8081/search?q=paul"
+```
+You should see a record with the keyword "Paul".
+
+###3.6. Insert a Record{id="sqliteInsertData"}
+
+In the SQLite shell, run the following command to insert a new record.
+```
+shell> sqlite3 <srch2Home>/demo.db
+sqlite> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (7, 'Joe', 20, 'Nevada', 15000.00 );
+```
+
+Wait for about 4 seconds for the SRCH2 server to pull the change. Do the search query:
+```
+shell> curl "http://localhost:8081/search?q=joe"
+```
+The search engine should return this newly inserted record. 
+
+###3.7. Update a Record{id="sqliteUpdateRecord"}
+
+We want to update Kim's address from "South-Hall" to "Texas" by running the following command:
+```
+sqlite> UPDATE COMPANY SET ADDRESS = 'Texas' WHERE ID = 6;
+```
+
+Wait for about 4 seconds for the SRCH2 server to pull the change, then do the search query:
+```
+shell> curl "http://localhost:8081/search?q=kim"
+```
+The SRCH2 engine should be able to return this updated record, with "Texas" as the <i>ADDRESS</i> value.
+
+###3.8. Delete a Record{id="sqliteDeleteRecord"}
+
+Run the following command in the SQLite shell to delete the updated record:
+```
+sqlite> DELETE FROM COMPANY WHERE ID = 6;
+```
+
+Again, wait for about 4 seconds for the SRCH2 server to pull the change, then do the above search query:
+
+```
+shell> curl "http://localhost:8081/search?q=Kim"
+```
+The SRCH2 engine should not return the record that we just deleted.
+
+Besides MongoDB and SQLite, we are developing connectors for other database sources.
