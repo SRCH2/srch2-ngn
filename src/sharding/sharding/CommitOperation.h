@@ -21,11 +21,9 @@ public:
 
 	CommitOperation(const unsigned & operationId, const vector<NodeId> & exceptions, MetadataChange * metadataChange);
 	CommitOperation(const unsigned & operationId, const NodeId & exception, MetadataChange * metadataChange);
-	~CommitOperation(){
-		if(metadataChange != NULL){
-			delete metadataChange;
-		}
-	}
+	CommitOperation(const unsigned & operationId, MetadataChange * metadataChange, const vector<NodeId> & participants);
+	~CommitOperation();
+
 	OperationState * entry();
 
 	OperationState * handle(NodeFailureNotification * nodeFailure);

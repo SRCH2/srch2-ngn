@@ -728,7 +728,7 @@ LockHoldersRepository * ResourceLockManager::getLockHolderRepository() const{
 // this functions either executes all requests in this batch or non of them
 // if the request is not blocking, the returns type tells us whether the lock was granted or not.
 bool ResourceLockManager::resolveBatch(const NodeOperationId & requesterAddress, const unsigned priority,
-		ResourceLockRequest * lockRequest, ShardingMessageType ackType){
+		ResourceLockRequest * lockRequest, const ShardingMessageType & ackType){
 
 	// 1. check to see whether we should GRANT or REJECT the lock
 	//    or push it to the waiting list.

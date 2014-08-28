@@ -14,6 +14,21 @@ using namespace std;
 namespace srch2 {
 namespace httpwrapper {
 
+
+/*
+ * Note about the effect of node arrival and node failure on this operation :
+ *
+ * Node arrival does not affect this operator because this operator is only interested in those nodes
+ * that have some smaller node ID. If a new node comes, it will have a greater node ID and therefore
+ * no change needs to be done on this node.
+ * Node failure: when it happens,
+ * 1. We have already passed that node ID : only nodeIndex must decrement because that node
+ *    is going to be removed from the allNodesUpToCurrentNode vector.
+ * 2. We are waiting for this node: we move to the next node or if there is no more nodes, we
+ *    are done.
+ * 3. We have not reached to this node, no need to do anything, just remove the node from that vector.
+ */
+
 class NewNodeLockOperation : public OperationState{
 public:
 
@@ -46,6 +61,8 @@ public:
 
 	bool doesExpect(NewNodeLockNotification::ACK * ack) const;
 private:
+	// NOTE : this vector does not include current node ID
+	//        all elements are smaller than the current node ID.
 	vector<NodeId> allNodesUpToCurrentNode;
 //	vector<SingleResourceLockRequest *> lockRequests;
 	ResourceLockRequest * lockRequests;

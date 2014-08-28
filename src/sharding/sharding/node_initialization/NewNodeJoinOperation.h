@@ -26,6 +26,8 @@ namespace httpwrapper {
 /*
  * NOTE : The mutex of metadata manager and lock manager is locked/unlocked in handle functions of this class.
  */
+
+
 class NewNodeJoinOperation : public OperationState{
 public:
 
@@ -58,6 +60,8 @@ private:
 	OperationState * commitOperation;
 	OperationState * releaseOperation;
 	NodeId randomNodeToReadFrom;
+
+	void getOlderNodesList(vector<NodeId> & olderNodes);
 
 
 };

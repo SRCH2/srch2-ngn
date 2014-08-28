@@ -49,7 +49,7 @@ struct ClusterShard_Writeview{
 	ClusterShard_Writeview(	const ClusterShardId id, const ShardState & state,
 			const NodeId nodeId, const bool isLocal, const double load);
 	ClusterShard_Writeview(const ClusterShard_Writeview & copy);
-	ClusterShard_Writeview(){};
+	ClusterShard_Writeview();
 
 	void * serialize(void * buffer) const;
 	unsigned getNumberOfBytes() const;

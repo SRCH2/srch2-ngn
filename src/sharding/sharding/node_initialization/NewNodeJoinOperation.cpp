@@ -54,15 +54,29 @@ OperationState * NewNodeJoinOperation::handle(Notification * notification){
 }
 
 OperationState * NewNodeJoinOperation::handle(NodeFailureNotification * nodeFailure){
+
+	Cluster_Writeview * writeview = ShardManager::getWriteview();
 	// 1. check if we are the only left node:
-	vector<NodeId> arrivedNodes;
-	ShardManager::getWriteview()->getArrivedNodes(arrivedNodes);
-	if(arrivedNodes.size() == 0){ // we are alone.
-		//1. use metadata initializer to make sure no partition remains unassigned.
-		MetadataInitializer metadataInitializer(ShardManager::getShardManager()->getConfigManager(), ShardManager::getShardManager()->getMetadataManager());
+	unsigned numberOfRemainingOlderNodes = 0;
+	bool isMetadataSrcAlive = false;
+	for(map<NodeId, std::pair<ShardingNodeState, Node *> >::const_iterator nodeItr = writeview->nodes.begin();
+			nodeItr != writeview->nodes.end(); ++nodeItr){
+		if(nodeItr->second.first != ShardingNodeStateFailed && nodeItr->first < writeview->currentNodeId){
+			numberOfRemainingOlderNodes ++;
+			if(randomNodeToReadFrom == nodeItr->first){
+				isMetadataSrcAlive = true;
+			}
+		}
+	}
+
+	if(numberOfRemainingOlderNodes == 0){
+		//use metadata initializer to make sure no partition remains unassigned.
+		MetadataInitializer metadataInitializer(ShardManager::getShardManager()->getConfigManager(),
+				ShardManager::getShardManager()->getMetadataManager());
 		metadataInitializer.initializeCluster();
 		return finalizeJoin();
 	}
+
 	// if we are not alone, pass notification to operators.
 	if(lockerOperation != NULL){
 		OperationState::stateTransit(lockerOperation, nodeFailure);
@@ -71,14 +85,17 @@ OperationState * NewNodeJoinOperation::handle(NodeFailureNotification * nodeFail
 		}
 		return this;
 	}
+
 	if(commitOperation != NULL){
 		OperationState::stateTransit(commitOperation, nodeFailure);
 		OperationState * nextState = startOperation(commitOperation->handle(nodeFailure));
+		//TODO : why is the above line needed ?
 		if(commitOperation == NULL){
 			return releaseLocks();
 		}
 		return this;
 	}
+
 	if(releaseOperation != NULL){
 		OperationState::stateTransit(releaseOperation, nodeFailure);
 		if(releaseOperation == NULL){
@@ -86,9 +103,10 @@ OperationState * NewNodeJoinOperation::handle(NodeFailureNotification * nodeFail
 		}
 		return this;
 	}
+
 	// so we are reading the metadata
-	if(std::find(arrivedNodes.begin(), arrivedNodes.end(), this->randomNodeToReadFrom) == arrivedNodes.end()){
-		// the src of metadata that we chose died. We must choose anther one.
+
+	if(! isMetadataSrcAlive){
 		return readMetadata();
 	}
 
@@ -119,12 +137,13 @@ OperationState * NewNodeJoinOperation::handle(NewNodeLockNotification::ACK * ack
 }
 
 OperationState * NewNodeJoinOperation::readMetadata(){
+	ASSERT(lockerOperation == NULL && commitOperation == NULL && releaseOperation == NULL);
 	// send read_metadata notification to the smallest node id
-	Cluster_Writeview * currentWriteview = ShardManager::getWriteview();
-	vector<NodeId> allNodes;
-	currentWriteview->getArrivedNodes(allNodes);
+	vector<NodeId> olderNodes;
+	getOlderNodesList(olderNodes);
+
 	srand(time(NULL));
-	this->randomNodeToReadFrom = allNodes.at(rand() % allNodes.size());
+	this->randomNodeToReadFrom = olderNodes.at(rand() % olderNodes.size());
 
 	MetadataReport::REQUEST * readMetadataNotif = new MetadataReport::REQUEST();
 	NodeOperationId destAddress(this->randomNodeToReadFrom);
@@ -145,7 +164,11 @@ OperationState * NewNodeJoinOperation::handle(MetadataReport * report){
 	Cluster_Writeview * clusterWriteview = report->getWriteview();
 	if(clusterWriteview == NULL){
 		ASSERT(false);
-		return this;
+		//use metadata initializer to make sure no partition remains unassigned.
+		MetadataInitializer metadataInitializer(ShardManager::getShardManager()->getConfigManager(),
+				ShardManager::getShardManager()->getMetadataManager());
+		metadataInitializer.initializeCluster();
+		return finalizeJoin();
 	}
 	Cluster_Writeview * currentWriteview = ShardManager::getWriteview();
 	// attach data pointers of current writeview to the new writeview coming from
@@ -187,15 +210,15 @@ OperationState * NewNodeJoinOperation::commit(){
 
 	NodeAddChange * nodeAddChange =
 			new NodeAddChange(ShardManager::getCurrentNodeId(),localClusterShards, nodeShardIds);
-	vector<NodeId> exceptions;
-	exceptions.push_back(ShardManager::getCurrentNodeId());
-	CommitOperation * commitOperation = new CommitOperation(this->getOperationId(), exceptions, nodeAddChange);
+	vector<NodeId> olderNodes;
+	CommitOperation * commitOperation = new CommitOperation(this->getOperationId(), nodeAddChange, olderNodes);
 	this->commitOperation = OperationState::startOperation(commitOperation);
 	if(this->commitOperation == NULL){
 		return releaseLocks();
 	}
 	return this;
 }
+
 OperationState * NewNodeJoinOperation::handle(CommitNotification::ACK * ack){
 	if(lockerOperation != NULL || commitOperation == NULL ||
 			releaseOperation != NULL){
@@ -278,6 +301,21 @@ OperationState * NewNodeJoinOperation::finalizeJoin(){
 	// just setJoined and done.
 	ShardManager::getShardManager()->setJoined();
 	return NULL;
+}
+
+void NewNodeJoinOperation::getOlderNodesList(vector<NodeId> & olderNodes){
+	Cluster_Writeview * currentWriteview = ShardManager::getWriteview();
+	for(map<NodeId, std::pair<ShardingNodeState, Node *> >::const_iterator nodeItr = currentWriteview->nodes.begin();
+			nodeItr != currentWriteview->nodes.end(); ++nodeItr){
+		if(nodeItr->first >= currentWriteview->currentNodeId){
+			continue;
+		}
+		if(nodeItr->second.first == ShardingNodeStateFailed){
+			continue;
+		}
+		ASSERT(nodeItr->second.second != NULL); // we must have seen this node
+		olderNodes.push_back(nodeItr->first);
+	}
 }
 
 }

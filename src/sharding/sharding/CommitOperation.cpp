@@ -16,6 +16,7 @@ namespace httpwrapper {
 
 CommitOperation::CommitOperation(const unsigned & operationId,
 		const vector<NodeId> & exceptions, MetadataChange * metadataChange):OperationState(operationId){
+	ASSERT(metadataChange != NULL);
 	this->metadataChange = metadataChange;
 	Cluster_Writeview * writeview = ShardManager::getShardManager()->getWriteview();
 	vector<NodeId> allNodes;
@@ -29,6 +30,7 @@ CommitOperation::CommitOperation(const unsigned & operationId,
 
 CommitOperation::CommitOperation(const unsigned & operationId,
 		const NodeId & exception, MetadataChange * metadataChange):OperationState(operationId){
+	ASSERT(metadataChange != NULL);
 	this->metadataChange = metadataChange;
 	Cluster_Writeview * writeview = ShardManager::getShardManager()->getWriteview();
 	vector<NodeId> allNodes;
@@ -37,6 +39,19 @@ CommitOperation::CommitOperation(const unsigned & operationId,
 		if(exception != allNodes.at(i)){
 			this->participants.push_back(allNodes.at(i));
 		}
+	}
+}
+
+CommitOperation::CommitOperation(const unsigned & operationId,
+		MetadataChange * metadataChange, const vector<NodeId> & participants):OperationState(operationId){
+	ASSERT(metadataChange != NULL);
+	this->metadataChange = metadataChange;
+	this->participants = participants;
+}
+
+CommitOperation::~CommitOperation(){
+	if(metadataChange != NULL){
+		delete metadataChange;
 	}
 }
 
@@ -76,26 +91,24 @@ OperationState * CommitOperation::entry(){
 }
 
 OperationState * CommitOperation::handle(NodeFailureNotification * nodeFailure){
-	// erase any failed nodes from the participants list.
-	Cluster_Writeview * writeview = ShardManager::getWriteview();
-	map<NodeId, ShardingNodeState> nodeStates;
-	map<NodeId, std::pair<ShardingNodeState, Node *> > & allNodes = writeview->nodes;
-	for(map<NodeId, std::pair<ShardingNodeState, Node *> >::iterator nodeItr =
-			allNodes.begin(); nodeItr != allNodes.end(); ++nodeItr){
-		nodeStates[nodeItr->first] = nodeItr->second.first;
-		if(nodeItr->second.first == ShardingNodeStateArrived){
-			if(find(participants.begin(), participants.end(), nodeItr->first) == participants.end()){
-				ASSERT(false); // commit must be inside a lock and no new node should be able to arrive
-			}
+	if(nodeFailure == NULL){
+		ASSERT(false);
+		return this;
+	}
+
+	unsigned failedNodeIndex = 0;
+	for(failedNodeIndex = 0; failedNodeIndex < participants.size(); ++failedNodeIndex){
+		if( participants.at(failedNodeIndex) == nodeFailure->getFailedNodeID() ){
+			break;
 		}
 	}
-	vector<NodeId> participantsFixed;
-	for(unsigned i = 0 ; i < participants.size(); ++i){
-		if(nodeStates[participants.at(i)] == ShardingNodeStateArrived){
-			participantsFixed.push_back(participants.at(i));
-		}
+
+	if(failedNodeIndex >= participants.size()){
+		return this; // failed node is not in the list, either returned the response before or not in list from the beginning
 	}
-	participants = participantsFixed;
+
+	participants.erase(participants.begin() + failedNodeIndex);
+
 	if(participants.size() > 0){
 		return this;
 	}
@@ -103,12 +116,14 @@ OperationState * CommitOperation::handle(NodeFailureNotification * nodeFailure){
 }
 
 // returns false when it's done.
-OperationState * CommitOperation::handle(CommitNotification::ACK * inputNotification){
-	if(! doesExpect(inputNotification)){
+OperationState * CommitOperation::handle(CommitNotification::ACK * commitAck){
+
+	if(! doesExpect(commitAck)){
 		ASSERT(false);
 		return this;
 	}
-	NodeOperationId srcOpId = inputNotification->getSrc();
+
+	NodeOperationId srcOpId = commitAck->getSrc();
 	// remove nodeid from participants list
 	unsigned nodeIndex = participants.size();
 	for(unsigned i = 0 ; i < participants.size(); ++i){
@@ -150,7 +165,7 @@ string CommitOperation::getOperationStatus() const {
 	if(metadataChange == NULL){
 		ss << "NULL%";
 	}else{
-		ss << metadataChange->toString();;
+		ss << metadataChange->toString();
 	}
 	ss << "Participants : " ;
 	for(unsigned i  = 0 ; i < participants.size(); ++i){

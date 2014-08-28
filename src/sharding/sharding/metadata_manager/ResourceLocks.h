@@ -159,7 +159,7 @@ public:
 	// this functions either executes all requests in this batch or non of them
 	// and either puts the request in pending requests or sends the ack
 	bool resolveBatch(const NodeOperationId & requesterAddress, const unsigned priority,
-			ResourceLockRequest * lockRequest, ShardingMessageType ackType);
+			ResourceLockRequest * lockRequest, const ShardingMessageType & ackType);
 	LockHoldersRepository * getShardLockHolders();
 
 	bool isPartitionLocked(const ClusterPID & pid);

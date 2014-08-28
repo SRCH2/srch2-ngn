@@ -79,6 +79,14 @@ ClusterShard_Writeview::ClusterShard_Writeview(const ClusterShard_Writeview & co
 	this->load = copy.load;
 }
 
+ClusterShard_Writeview::ClusterShard_Writeview(){
+	id = ClusterShardId(0,0,0);
+	state = SHARDSTATE_UNASSIGNED;
+	isLocal = false;
+	nodeId = 0;
+	load = 0;
+};
+
 void * ClusterShard_Writeview::serialize(void * buffer) const{
 	buffer = id.serialize(buffer);
 	buffer = srch2::util::serializeFixedTypes(state, buffer);

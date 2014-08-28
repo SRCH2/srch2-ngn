@@ -24,7 +24,8 @@ struct SerialLockResultStatus{
 
 class SerialLockOperation : public OperationState{
 public:
-	SerialLockOperation(const unsigned & operationId, ResourceLockRequest * lockRequests, SerialLockResultStatus * resultStatus = NULL);
+	SerialLockOperation(const unsigned & operationId, ResourceLockRequest * lockRequests,
+			SerialLockResultStatus * resultStatus = NULL);
 	SerialLockOperation(const unsigned & operationId, const vector<NodeId> & participants,
 			ResourceLockRequest * lockRequests, SerialLockResultStatus * resultStatus = NULL);
 
@@ -62,7 +63,7 @@ private:
 	unsigned nodeIndex;
 	SerialLockResultStatus * resultStatus;
 
-	OperationState * askNextNode(NodeId targetNodeId);
+	OperationState * askNextNode(const NodeId & targetNodeId);
 
 	OperationState * handleRejectNonBlocking();
 

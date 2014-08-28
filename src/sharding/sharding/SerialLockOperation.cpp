@@ -18,15 +18,18 @@ namespace httpwrapper {
 SerialLockOperation::SerialLockOperation(const unsigned & operationId,
 		ResourceLockRequest * lockRequests,
 		SerialLockResultStatus * resultStatus):OperationState(operationId){
+	ASSERT(lockRequests != NULL);
 	this->lockRequests = lockRequests;
 	this->resultStatus = resultStatus;
 
 	Cluster_Writeview * writeview = ShardManager::getWriteview();
+	// Get all nodes that are in ARRIVED state
+	// and their Node structure is not NULL (they are completely arrived)
 	writeview->getArrivedNodes(this->participantNodes, true);
 	// participants must be sorted based on the nodeId
 	std::sort(this->participantNodes.begin(), this->participantNodes.end());
 
-	this->nodeIndex = -1; // very big number
+	this->nodeIndex = (unsigned)-1; // very big number
 }
 
 SerialLockOperation::SerialLockOperation(const unsigned & operationId, const vector<NodeId> & participants,
@@ -48,40 +51,44 @@ OperationState * SerialLockOperation::entry(){
 	}
 
 	// send the notification to the first node
-	NodeId targetNodeId = participantNodes.at(0);
 	this->nodeIndex = 0;
 	return askNextNode(participantNodes.at(nodeIndex));
 }
 
 OperationState * SerialLockOperation::handle(NodeFailureNotification * nodeFailure){
 	// erase any failed nodes from the participants list.
-	Cluster_Writeview * writeview = ShardManager::getWriteview();
-	map<NodeId, ShardingNodeState> nodeStates;
-	map<NodeId, std::pair<ShardingNodeState, Node *> > & allNodes = writeview->nodes;
-	for(map<NodeId, std::pair<ShardingNodeState, Node *> >::iterator nodeItr =
-			allNodes.begin(); nodeItr != allNodes.end(); ++nodeItr){
-		nodeStates[nodeItr->first] = nodeItr->second.first;
+	if(nodeFailure == NULL){
+		ASSERT(false);
+		return this;
 	}
-	vector<NodeId> participantsFixed;
-	unsigned nodeIndexFixed = this->nodeIndex;
-	bool mustAskNextNode = false;
-	for(unsigned i = 0 ; i < participantNodes.size(); ++i){
-		if(nodeStates[participantNodes.at(i)] == ShardingNodeStateFailed){
-			if(i < nodeIndex){ // we are passed this node, so we don't care
-				nodeIndexFixed--;
-			}else if(i == nodeIndex){ // we are waiting for ACK from this node, move on to the next node.
-//				nodeIndexFixed++;
-				mustAskNextNode = true;
-			}//else{
-			//// We haven't reached to this node so we are fine.
-			//}
-		}else{
-			participantsFixed.push_back(participantNodes.at(i));
+	unsigned failedNodeIndex = 0;
+	for(failedNodeIndex = 0 ; failedNodeIndex < participantNodes.size(); failedNodeIndex++){
+		if(participantNodes.at(failedNodeIndex) == nodeFailure->getFailedNodeID()){
+			break;
 		}
 	}
 
-	participantNodes = participantsFixed;
-	this->nodeIndex = nodeIndexFixed;
+	if(failedNodeIndex >= participantNodes.size()){
+		// this failed node is not in participants list
+		return this;
+	}
+
+	if(failedNodeIndex < nodeIndex){ // we have passed this node, we can just ignore the failure and continue;
+		participantNodes.erase(participantNodes.begin()+failedNodeIndex);
+		nodeIndex--;
+		ASSERT(nodeIndex < participantNodes.size());
+	}else if(failedNodeIndex == nodeIndex){
+		participantNodes.erase(participantNodes.begin()+failedNodeIndex);
+		// nodeIndex is now pointing to a new node so we must send lock request
+		if(nodeIndex < participantNodes.size()){
+			// send lock request to this node
+			return askNextNode(participantNodes.at(nodeIndex));
+		}
+	}else{
+		ASSERT(failedNodeIndex > nodeIndex);
+		participantNodes.erase(participantNodes.begin()+failedNodeIndex);
+		ASSERT(nodeIndex < participantNodes.size());
+	}
 
 	if(this->nodeIndex >= participantNodes.size()){
 		// success
@@ -89,10 +96,6 @@ OperationState * SerialLockOperation::handle(NodeFailureNotification * nodeFailu
 			resultStatus->grantedFlag = true;
 		}
 		return NULL;
-	}
-
-	if(mustAskNextNode){
-		return askNextNode(participantNodes.at(nodeIndex));
 	}
 	return this;
 }
@@ -114,7 +117,6 @@ OperationState * SerialLockOperation::handle(LockingNotification::ACK * ack){
 		}
 		return askNextNode(participantNodes.at(nodeIndex));
 	}else{ // reject case
-		// 1. blocking mode : we must try until we get it
 		if(lockRequests->isBlocking){
 			// if it's blocking, we should never receive REJECT
 			ASSERT(false);
@@ -123,7 +125,8 @@ OperationState * SerialLockOperation::handle(LockingNotification::ACK * ack){
 			}
 			return NULL;
 		}else{
-			// 2. non-blocking mode : we must send release/downgrade to all previous nodes
+			// 2. non-blocking mode : we must send release/downgrade to all
+			//    nodes that we have already locked.
 			return handleRejectNonBlocking();
 		}
 	}
@@ -148,12 +151,11 @@ string SerialLockOperation::getOperationName() const {
 };
 string SerialLockOperation::getOperationStatus() const {
 	stringstream ss;
-	ss << "Participants : " ;
+	ss << "Participants : ";
 	for(unsigned i  = 0 ; i < participantNodes.size(); ++i){
 		if(i != 0){
 			ss << " - ";
 		}
-
 		ss << i << ":" << participantNodes.at(i) ;
 	}
 	ss << "%";
@@ -162,7 +164,7 @@ string SerialLockOperation::getOperationStatus() const {
 	if(nodeIndex == (unsigned) -1){
 		ss << "Entry not called yet.%";
 	}
-		if(nodeIndex >= participantNodes.size()){
+	if(nodeIndex >= participantNodes.size()){
 		ss << "Result of lock : ";
 		if(resultStatus->grantedFlag){
 			ss << "Granted. %";
@@ -181,7 +183,7 @@ string SerialLockOperation::getOperationStatus() const {
 	return ss.str();
 };
 
-OperationState * SerialLockOperation::askNextNode(NodeId targetNodeId){
+OperationState * SerialLockOperation::askNextNode(const NodeId & targetNodeId){
 	NodeId currentNodeID = ShardManager::getCurrentNodeId();
 	if(targetNodeId == currentNodeID){
 		// ask our own repository
@@ -193,15 +195,15 @@ OperationState * SerialLockOperation::askNextNode(NodeId targetNodeId){
 		args->priority = LOCK_REQUEST_PRIORITY_LOAD_BALANCING;
 		args->requester = NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId());
 	    if (pthread_create(&localLockThread, NULL, localLockRequest , args) != 0){
-	        //        Logger::console("Cannot create thread for handling local message");
+	        // Logger::console("Cannot create thread for handling local message");
 	        perror("Cannot create thread for handling local message");
 	        return NULL;
 	    }
 	}else{
 		// send the notification
-		LockingNotification * lockingRequest = new LockingNotification(lockRequests);
-		this->send(lockingRequest, NodeOperationId(targetNodeId));
-		delete lockingRequest;
+		LockingNotification * lockingRequestNotif = new LockingNotification(lockRequests);
+		this->send(lockingRequestNotif, NodeOperationId(targetNodeId));
+		delete lockingRequestNotif;
 	}
 	// we must wait for result
 	return this;
@@ -209,7 +211,7 @@ OperationState * SerialLockOperation::askNextNode(NodeId targetNodeId){
 
 OperationState * SerialLockOperation::handleRejectNonBlocking(){
 	// I) If it was the first node that we tried, we have no compensation to do,
-	//    so we should just move to the next state
+	//    so we should just return REJECTED
 	if(nodeIndex == 0){
 		if(resultStatus != NULL){
 			resultStatus->grantedFlag = false;
@@ -235,10 +237,10 @@ OperationState * SerialLockOperation::handleRejectNonBlocking(){
 	for(unsigned i = 0 ; i < nodeIndex ; ++i){
 		participantsInCompensation.push_back(participantNodes.at(i));
 	}
-	// move to a parallel lock operation to do the release/downgrade job and pass the nextState
+	// move to another lock operation to do the release/downgrade job and pass the nextState
 	ResourceLockRequest * resourceLockRequest = new ResourceLockRequest();
 	resourceLockRequest->requestBatch = lockRequestsCompensation;
-	resourceLockRequest->isBlocking = lockRequests->isBlocking;
+	resourceLockRequest->isBlocking = true; // release is blocking although it doesn't matter because it's always granted
 	SerialLockOperation * compensationOp = new SerialLockOperation(this->getOperationId(), participantsInCompensation, resourceLockRequest);
 	// set result of locking
 	if(resultStatus != NULL){
@@ -250,7 +252,9 @@ OperationState * SerialLockOperation::handleRejectNonBlocking(){
 void * SerialLockOperation::localLockRequest(void *arg){
 	LockRequestArguments * args = (LockRequestArguments * )arg;
 	boost::unique_lock<boost::mutex> lock(ShardManager::getShardManager()->shardManagerGlobalMutex);
-	ShardManager::getShardManager()->getLockManager()->resolveBatch(args->requester,args->priority , args->lockRequest, args->ackType);
+	ShardManager::getShardManager()->getLockManager()->resolveBatch(args->requester,
+			args->priority , args->lockRequest, args->ackType);
+	delete args;
 	return NULL;
 }
 
