@@ -1,3 +1,8 @@
+# test case format
+# query type = S (search) || query content || record ids || core name ( default if empty) 
+# or
+# query type = C (non-search command)] || json record ||  core name ( default if empty) 
+
 #-----------------------------------
 # Normal search with ACL
 #-----------------------------------

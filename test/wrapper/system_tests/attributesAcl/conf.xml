@@ -9,7 +9,7 @@
 -->
  
 <config>
-    <srch2Home>/Users/srch2/repos/srch2-ngn-4.0/test/wrapper/system_tests/</srch2Home>
+    <srch2Home>./</srch2Home>
         <!-- Make sure to specify the home of your SRCH2 installation.  Example: 
 	  <srch2Home>/home/joe/srch2</srch2Home>
         -->
@@ -49,7 +49,7 @@
        <!--  <fieldBoost>title^12 tags^16</fieldBoost> -->
         <fieldBoost>attr1^30</fieldBoost>
 
-        <recordBoostField>stars</recordBoostField>
+        <recordBoostField></recordBoostField>
 
         <defaultQueryTermBoost>1</defaultQueryTermBoost>
 
@@ -145,7 +145,6 @@
        <facetEnabled>true</facetEnabled>
         
         <facetFields>
-          <facetField name="stars" facetType="categorical"/>
         </facetFields>
         
         <types>

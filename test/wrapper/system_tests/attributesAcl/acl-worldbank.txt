@@ -1,0 +1,3 @@
+#acl for world-bank data
+# role-value , attributes,
+superman,impagency

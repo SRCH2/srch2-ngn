@@ -14,13 +14,13 @@ def checkResult(query, responseJson,resultValue):
     if  len(responseJson) == len(resultValue):
         for i in range(0, len(resultValue)):
             #print response_json['results'][i]['record']['id']
-            if responseJson[i]['record']['id'] !=  resultValue[i]:
+            if responseJson[i]['record_id'] !=  resultValue[i]:
                 isPass=0
                 print query+' test failed'
                 print 'query results||given results'
                 print 'number of results:'+str(len(responseJson))+'||'+str(len(resultValue))
                 for i in range(0, len(responseJson)):
-                    print responseJson[i]['record']['id']+'||'+resultValue[i]
+                    print responseJson[i]['record_id']+'||'+resultValue[i]
                 break
     else:
         isPass=0
@@ -30,11 +30,11 @@ def checkResult(query, responseJson,resultValue):
         maxLen = max(len(responseJson),len(resultValue))
         for i in range(0, maxLen):
             if i >= len(resultValue):
-             print responseJson[i]['record']['id']+'||'
+             print responseJson[i]['record_id']+'||'
             elif i >= len(responseJson):
              print '  '+'||'+resultValue[i]
             else:
-             print responseJson[i]['record']['id']+'||'+resultValue[i]
+             print responseJson[i]['record_id']+'||'+resultValue[i]
 
     if isPass == 1:
         print  query+' test pass'
@@ -57,9 +57,9 @@ def prepareQuery(queryKeywords):
             query=query+queryKeywords[i]+'%20AND%20'
     return query
     
-def test(queriesAndResultsPath, binary_path):
+def test(queriesAndResultsPath, binary_path, configFilePath):
     #Start the engine server
-    args = [ binary_path, '--config-file=./attributesAcl/conf.xml' ]
+    args = [ binary_path, '--config-file=' + configFilePath]
 
     if test_lib.confirmPortAvailable(port) == False:
         print 'Port ' + str(port) + ' already in use - aborting'
@@ -88,7 +88,14 @@ def test(queriesAndResultsPath, binary_path):
             # the line is command query (insert/delete/update/acl etc)
             command = value[1]
             payload = value[2]
-            query='http://localhost:' + port + '/' + command
+            coreName = ''
+            if len(value) > 3:
+                coreName = value[3].strip('\n').strip()
+
+            if coreName == "":
+                query='http://localhost:' + port + '/' + command
+            else:
+                query='http://localhost:' + port + '/' + coreName + '/' + command
             print query
             request = urllib2.Request(query, data=payload)
             request.get_method = lambda: 'PUT'
@@ -99,10 +106,17 @@ def test(queriesAndResultsPath, binary_path):
             # the line is a search query
             queryValue=value[1].split()
             resultValue=(value[2]).split()
+            coreName = ''
+            if len(value) > 3:
+                coreName = value[3].strip('\n').strip()
+
             #construct the query
-            query='http://localhost:' + port + '/search?'
+            if coreName == '':
+                query='http://localhost:' + port + '/search?'
+            else:
+                query='http://localhost:' + port + '/' + coreName  + '/' + 'search?'
             query = query + prepareQuery(queryValue) 
-            #print query
+            print query
             #do the query
             response = urllib2.urlopen(query).read()
             response_json = json.loads(response)
@@ -117,5 +131,7 @@ def test(queriesAndResultsPath, binary_path):
 if __name__ == '__main__':      
     binary_path = sys.argv[1]
     queriesAndResultsPath = './attributesACL/testCases.txt'
-    exitCode = test(queriesAndResultsPath, binary_path)
+    exitCode = test(queriesAndResultsPath, binary_path , './attributesAcl/conf.xml')
+    queriesAndResultsPath = './attributesACL/testCasesMultiCore.txt'
+    exitCode |= test(queriesAndResultsPath, binary_path, './attributesAcl/conf-multicore.xml')
     os._exit(exitCode)

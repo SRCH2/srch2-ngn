@@ -73,7 +73,7 @@ bool JSONRecordParser::setRecordPrimaryKey(srch2is::Record *record,
                     primaryKeyStringValue);
         }
     } else {
-        error << "\nFailed to parse JSON - No primary key found.";
+        error << "Failed to parse JSON - No primary key found.";
         return false; // Raise Error
     }
 
