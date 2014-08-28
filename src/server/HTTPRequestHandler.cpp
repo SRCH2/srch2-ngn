@@ -216,7 +216,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
                 	// attach the data string to the JSON tree without parsing it.
                 	(*root)["results"][counter][global_internal_record.first] = sbuffer;
                 }else{
-                    //This case handles RESPONSE_WITH_NO_STORED_ATTR. If user specifies attribute in query, we let the user override the condition.
+                    //This case handles RESPONSE_WITH_NO_STORED_ATTR. If user specifies attribute in query, we let the user override the condition of RESPONSE_WITH_NO_STORED_ATTR.
                     string stringBuffer;
                     vector<string> attributesToReturnFromQuery = queryPlan.getAttrToReturn();
                     if(attributesToReturnFromQuery.size() > 0){
@@ -294,7 +294,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
                 	// attach the data string to the JSON tree without parsing it.
                 	(*root)["results"][counter][global_internal_record.first] = sbuffer;
                 }else{
-                    //This case handles RESPONSE_WITH_NO_STORED_ATTR. If user specifies attribute in query, we let the user override the condition.
+                    //This case handles RESPONSE_WITH_NO_STORED_ATTR. If user specifies attribute in query, we let the user override the condition of RESPONSE_WITH_NO_STORED_ATTR.
                     string stringBuffer;
                     vector<string> attributesToReturnFromQuery = queryPlan.getAttrToReturn();
                     if(attributesToReturnFromQuery.size() > 0){
@@ -484,30 +484,32 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printOneResultRetrievedById(e
             //If user specifies field names in query, we display those fields in the result
             if(attributesToReturnFromQuery.size() != 0){
                 genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-                                sbuffer, &attributesToReturnFromQuery);
+                        sbuffer, &attributesToReturnFromQuery);
             }else{
                 genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i), sbuffer);
             }
             (*root)["results"][counter][global_internal_record.first] = sbuffer;
         } else if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SELECTED_ATTR){
-        	unsigned internalRecordId = queryResults->getInternalRecordId(i);
-        	string sbuffer;
-        	const vector<string> *attrToReturn = indexDataConfig->getAttributesToReturn();
+            unsigned internalRecordId = queryResults->getInternalRecordId(i);
+            string sbuffer;
+            const vector<string> *attrToReturn = indexDataConfig->getAttributesToReturn();
 
-            //If user specifies field names in query, we display those fields in the result
-        	vector<string> attributesToReturnFromQuery = queryPlan.getAttrToReturn();
-        	if(attributesToReturnFromQuery.size() != 0){
-        	    genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-        	                       sbuffer, &attributesToReturnFromQuery);
-        	}else{
-        	    genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-        			               sbuffer, attrToReturn);
-        	}
-        	// The class CustomizableJsonWriter allows us to
-        	// attach the data string to the JSON tree without parsing it.
-        	(*root)["results"][counter][global_internal_record.first] = sbuffer;
+            //If user specifies field names in query, we display those fields in the result and override the list
+            //mentioned in the response content of config file.
+            vector<string> attributesToReturnFromQuery = queryPlan.getAttrToReturn();
+            if(attributesToReturnFromQuery.size() != 0){
+                genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
+                        sbuffer, &attributesToReturnFromQuery);
+            }else{
+                genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
+                        sbuffer, attrToReturn);
+            }
+            // The class CustomizableJsonWriter allows us to
+            // attach the data string to the JSON tree without parsing it.
+            (*root)["results"][counter][global_internal_record.first] = sbuffer;
         }else{
-            //This case handles RESPONSE_WITH_NO_STORED_ATTR. If user specifies attribute in query, we let the user override the condition.
+            //This case handles RESPONSE_WITH_NO_STORED_ATTR. If user specifies attribute in query, we let the user override the condition
+            //of RESPONSE_WITH_NO_STORED_ATTR specified in config file.
             string stringBuffer;
             vector<string> attributesToReturnFromQuery = queryPlan.getAttrToReturn();
             if(attributesToReturnFromQuery.size() > 0){
