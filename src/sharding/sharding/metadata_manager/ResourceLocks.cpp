@@ -324,6 +324,7 @@ bool PendingLockRequestBuffer::pop(){
 	}
 	std::pop_heap(pendingRequests.begin(), pendingRequests.end());
 	pendingRequests.pop_back();
+	print();
 	return true;
 }
 
@@ -338,12 +339,14 @@ void PendingLockRequestBuffer::update(const PendingLockRequest & pendingRequest)
 				pendingRequests.at(i) = pendingRequest;
 				std::make_heap(pendingRequests.begin(), pendingRequests.end());
 			}
+			print();
 			return;
 		}
 	}
 	// we couldn't find anything to update;
 	// so just insert.
 	push(pendingRequest);
+	print();
 }
 
 void PendingLockRequestBuffer::applyNodeFailure(const unsigned failedNodeId){
@@ -637,11 +640,6 @@ void ResourceLockManager::resolve(NewNodeLockNotification * notification){
 	}
 	Cluster_Writeview * writeview = ShardManager::getWriteview();
 
-//	vector<const Node *> allNodes;
-//	writeview->getAllNodes(allNodes);
-//	for(vector<const Node *>::iterator nodeItr = allNodes.begin(); nodeItr != allNodes.end(); ++nodeItr){
-//
-//	}//TODO
 	for(vector<NodeId>::iterator nodeItr = allNodesUpToNewNode.begin();
 			nodeItr != allNodesUpToNewNode.end(); ++nodeItr){
 		if(*nodeItr == ShardManager::getCurrentNodeId()){
@@ -652,7 +650,7 @@ void ResourceLockManager::resolve(NewNodeLockNotification * notification){
 			//add it to the list of nodes in writeview as NotArrived node
 			writeview->setNodeState(*nodeItr, ShardingNodeStateNotArrived);
 		}
-		writeview->printNodes();
+//		writeview->printNodes();
 		// reserve place in waitingList
 		PendingLockRequest tempReq(NodeOperationId(*nodeItr),
 						ShardingNewNodeLockACKMessageType, LOCK_REQUEST_PRIORITY_NODE_ARRIVAL, NULL);
@@ -664,7 +662,6 @@ void ResourceLockManager::resolve(NewNodeLockNotification * notification){
 				ShardingNewNodeLockACKMessageType, LOCK_REQUEST_PRIORITY_NODE_ARRIVAL, notification->getLockRequest());
 	pendingLockRequestBuffer.update(tempReq);
 
-	pendingLockRequestBuffer.print();
 	// try to get the lock for the minimum nodeId of this waiting
 	// list if it's prepared (it has lock requests and it's not already on the lock)
 	tryPendingRequest();

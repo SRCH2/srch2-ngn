@@ -460,9 +460,9 @@ MessageID_t TransportManager::_sendMessage(int fd, Message *message) {
 
 		if (writeSize ==  totalbufferSize) {
 			// write completed.
-			if(! message->isSMRelated()){
-				Logger::console("Success");
-			}
+//			if(! message->isSMRelated()){
+//				Logger::console("Success");
+//			}
 			break;
 		}
 
