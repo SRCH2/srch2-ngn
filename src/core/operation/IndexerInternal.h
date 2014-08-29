@@ -203,7 +203,12 @@ public:
         this->merge(false);
     }
 
-    inline QuadTree *getQuadTree() const { return this->index->quadTree; }
+    boost::shared_ptr<QuadTreeRootNodeAndFreeLists> getQuadTree_ReadView(){
+    	boost::shared_ptr<QuadTreeRootNodeAndFreeLists> quadTreeRootNodeAndFreeLists;
+    	this->index->quadTree->getQuadTreeRootNode_ReadView(quadTreeRootNodeAndFreeLists);
+    	return quadTreeRootNodeAndFreeLists;
+    }
+
     inline ForwardIndex * getForwardIndex() const { return this->index->forwardIndex; }
 
     pthread_t createAndStartMergeThreadLoop();

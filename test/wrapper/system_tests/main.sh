@@ -754,6 +754,54 @@ else
 fi
 rm -rf data/ *.idx
 
+test_id="adapter_mongo"
+printTestBanner "$test_id"
+python ./adapter_mongo/MongoTest.py $SRCH2_ENGINE ./adapter_mongo/queries.txt  | eval "${html_escape_command}" >> system_test.log 2>&1
+
+fun_ret=${PIPESTATUS[0]}
+if [ $fun_ret -gt 0 ]; then
+    if [ $fun_ret -eq 10 ]; then
+        echo "-- SKIPPED: Cannot connect to the MongoDB. Check instructions in the file db_connectors/mongo/readme.txt. " >> ${output}
+    else
+        echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
+
+        if [ $force -eq 0 ]; then
+	    exit 255
+        fi
+    fi
+else
+    echo "-- PASSED: $test_id" >> ${output}
+fi
+rm -rf data/*.idx
+rm -rf data/mongodb_data
+
+test_id="adapter_sqlite"
+printTestBanner "$test_id"
+
+rm -rf data/ *.idx
+rm -rf data/sqlite_data
+rm -rf ./adapter_sqlite/srch2Test.db
+
+python ./adapter_sqlite/adapter_sqlite.py $SRCH2_ENGINE ./adapter_sqlite/testCreateIndexes_sql.txt ./adapter_sqlite/testCreateIndexes.txt ./adapter_sqlite/testRunListener_sql.txt ./adapter_sqlite/testRunListener.txt ./adapter_sqlite/testOfflineLog_sql.txt ./adapter_sqlite/testOfflineLog.txt | eval "${html_escape_command}" >> system_test.log 2>&1
+
+fun_ret=${PIPESTATUS[0]}
+if [ $fun_ret -gt 0 ]; then
+    if [ $fun_ret -eq 255 ]; then
+        echo "-- SKIPPED: Cannot connect to the Sqlite. Check if sqlite3 is installed." >> ${output}
+    else
+        echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
+    fi
+
+    if [ $force -eq 0 ]; then
+        exit 255
+    fi
+else
+    echo "-- PASSED: $test_id" >> ${output}
+fi
+rm -rf data/ *.idx
+rm -rf data/sqlite_data
+rm -rf ./adapter_sqlite/srch2Test.db
+
 test_id="test loading different schema"
 printTestBanner "$test_id"
 python ./test_load_diff_schema/test_load_diff_schema.py $SRCH2_ENGINE  | eval "${html_escape_command}" >> system_test.log 2>&1
@@ -784,7 +832,6 @@ rm -rf data/ *.idx
 
 test_id="primary key - refining field"
 printTestBanner "$test_id"
-rm ./refining_field_primary_key/data/refining_field_primary_key/*
 python ./refining_field_primary_key/testPrimaryKey.py $SRCH2_ENGINE ./refining_field_primary_key/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ ${PIPESTATUS[0]} -gt 0 ]; then
@@ -800,6 +847,20 @@ rm -rf data/ *.idx
 test_id="run engine with missing parameters from config file"
 printTestBanner "$test_id"
 python ./missing_parameters_from_cm/missingParameters_config.py $SRCH2_ENGINE ./missing_parameters_from_cm/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
+
+if [ ${PIPESTATUS[0]} -gt 0 ]; then
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
+    if [ $force -eq 0 ]; then
+        exit 255
+    fi
+else
+    echo "-- PASSED: $test_id" >> ${output}
+fi
+rm -rf data/ *.idx
+
+test_id="empty record boost field"
+printTestBanner "$test_id"
+python ./empty_recordBoostField/empty_recordBoostField.py $SRCH2_ENGINE ./empty_recordBoostField/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ ${PIPESTATUS[0]} -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}

@@ -204,8 +204,8 @@ bool QueryRewriter::applyAnalyzer() {
 		termIterator.getNext();
 		numberOfKeywords ++;
 	}
-
-    if(numberOfKeywords == 0){
+	// If query has geo parameters then it can be without any terms. but if it doesn't have geo parameters it should have at least one term for search.
+	if(paramContainer->hasParameterInQuery(GeoSearchFlag) == false && numberOfKeywords == 0){
         if(paramContainer->hasParameterInQuery(TopKSearchType) || paramContainer->hasParameterInQuery(GetAllResultsSearchType)){
             paramContainer->messages.push_back(
                     std::make_pair(MessageWarning,
@@ -463,9 +463,17 @@ void QueryRewriter::prepareLogicalPlan(LogicalPlan & plan){
     createPostProcessingPlan(plan);
 
 	/*
+	 * 0. Add Geo node to the parseTree if it has GeoSearchFlag
+	 */
+	if(paramContainer->hasParameterInQuery(GeoSearchFlag)){
+		addGeoToParseTree();
+	}
+
+	/*
 	 * 1. rewrite the parseTree
 	 */
 	rewriteParseTree();
+
 	/*
 	 * 2. Build the logicalPlan tree from the parse tree
 	 */
@@ -477,6 +485,42 @@ void QueryRewriter::prepareLogicalPlan(LogicalPlan & plan){
 void QueryRewriter::rewriteParseTree(){
 	// rule 1 : merge similar levels in the tree
 	paramContainer->parseTreeRoot = TreeOperations::mergeSameOperatorLevels(paramContainer->parseTreeRoot);
+}
+
+// This function add the a new node to the parse tree for geo search
+// so it add a new and node and make it the root and the previous root of the parse tree and the new geo node become its chilren
+//
+//                  |---- The previous root of parse tree
+//    NewAndNode ---|
+//                  |---- New Geo Node
+void QueryRewriter::addGeoToParseTree(){
+	ParseTreeNode* newGeoNode;
+	if(paramContainer->parseTreeRoot != NULL){
+		ParseTreeNode* newAndNode = new ParseTreeNode(LogicalPlanNodeTypeAnd, NULL);
+		newAndNode->children.push_back(paramContainer->parseTreeRoot);
+		paramContainer->parseTreeRoot->parent = newAndNode;
+		paramContainer->parseTreeRoot = newAndNode;
+		newGeoNode = new ParseTreeNode(LogicalPlanNodeTypeGeo, newAndNode);
+		newAndNode->children.push_back(newGeoNode);
+		//newGeoNode->geoIntermediateStructure
+	}else{ // if the root of parse tree is null, the new geo node become the new root
+		newGeoNode = new ParseTreeNode(LogicalPlanNodeTypeGeo, NULL);
+		paramContainer->parseTreeRoot = newGeoNode;
+	}
+	// now we should fill the value of new geo node's variables
+	if(paramContainer->geoParameterContainer->hasParameterInQuery(GeoTypeRectangular)){
+		newGeoNode->geoIntermediateStructure = new GeoIntermediateStructure(
+				paramContainer->geoParameterContainer->leftBottomLatitude,
+				paramContainer->geoParameterContainer->leftBottomLongitude,
+				paramContainer->geoParameterContainer->rightTopLatitude,
+				paramContainer->geoParameterContainer->rightTopLongitude);
+	}else if(paramContainer->geoParameterContainer->hasParameterInQuery(GeoTypeCircular)){
+		newGeoNode->geoIntermediateStructure = new GeoIntermediateStructure(
+				paramContainer->geoParameterContainer->centerLatitude,
+				paramContainer->geoParameterContainer->centerLongitude,
+				paramContainer->geoParameterContainer->radius);
+	}
+
 }
 
 void QueryRewriter::buildLogicalPlan(LogicalPlan & logicalPlan){
@@ -584,6 +628,24 @@ LogicalPlanNode * QueryRewriter::buildLogicalPlan(ParseTreeNode * root, LogicalP
                 }
 			}
 			break;
+		case LogicalPlanNodeTypeGeo:
+			if(root->geoIntermediateStructure->type == GeoTypeRectangular){
+				Rectangle* regionShape = new Rectangle();
+				regionShape->min.x = root->geoIntermediateStructure->lblat;
+				regionShape->min.y = root->geoIntermediateStructure->lblong;
+				regionShape->max.x = root->geoIntermediateStructure->rtlat;
+				regionShape->max.y = root->geoIntermediateStructure->rtlong;
+				result = logicalPlan.createGeoLogicalPlanNode(regionShape);
+			}else if(root->geoIntermediateStructure->type == GeoTypeCircular){
+				Point center;
+				center.x = root->geoIntermediateStructure->clat;
+				center.y = root->geoIntermediateStructure->clong;
+				Circle* regionShape = new Circle(center,root->geoIntermediateStructure->radius);
+				result = logicalPlan.createGeoLogicalPlanNode(regionShape);
+			}else{
+				ASSERT(false); // the type of the geoIntermediateStructure is not correct.
+			}
+			break;
 		default:
 			ASSERT(true);  // 1.avoids compiler warning. 2. Informs developer that they made some mistake
 	}
@@ -602,9 +664,8 @@ void QueryRewriter::createExactAndFuzzyQueries(LogicalPlan & plan) {
         plan.setQueryType(srch2is::SearchTypeTopKQuery);
     } else if (paramContainer->hasParameterInQuery(GetAllResultsSearchType)) { // get all results
         plan.setQueryType(srch2is::SearchTypeGetAllResultsQuery);
-    } else if (paramContainer->hasParameterInQuery(GeoSearchType)) { // GEO
-        plan.setQueryType(srch2is::SearchTypeMapQuery);
-    } // else : there is no else because validator makes sure type is set in parser
+    }
+	// else : there is no else because validator makes sure type is set in parser
 
     // 2. see if it is a fuzzy search or exact search, if there is no keyword (which means GEO search), then fuzzy is always false
 	ParseTreeLeafNodeIterator termIterator(paramContainer->parseTreeRoot);
@@ -637,15 +698,13 @@ void QueryRewriter::createExactAndFuzzyQueries(LogicalPlan & plan) {
     }
 
     // 5. based on the search type, get needed information and create the query objects
+    // TODO: check if we can merge this two function and remove the switch-case
     switch (plan.getQueryType()) {
     case srch2is::SearchTypeTopKQuery:
         createExactAndFuzzyQueriesForTopK(plan);
         break;
     case srch2is::SearchTypeGetAllResultsQuery:
         createExactAndFuzzyQueriesForGetAllTResults(plan);
-        break;
-    case srch2is::SearchTypeMapQuery:
-        createExactAndFuzzyQueriesForGeo(plan);
         break;
     default:
         ASSERT(false);
@@ -657,6 +716,29 @@ void QueryRewriter::createExactAndFuzzyQueries(LogicalPlan & plan) {
 
 void QueryRewriter::fillExactAndFuzzyQueriesWithCommonInformation(
         LogicalPlan & plan) {
+
+	// 0. Extract the common information from the container
+	//  Geo query information
+	if(paramContainer->hasParameterInQuery(GeoSearchFlag)){
+		GeoParameterContainer * gpc = paramContainer->geoParameterContainer;
+		if (gpc->hasParameterInQuery(GeoTypeRectangular)) {
+			plan.getExactQuery()->setRange(gpc->leftBottomLatitude,
+					gpc->leftBottomLongitude, gpc->rightTopLatitude,
+					gpc->rightTopLongitude);
+			if (plan.isFuzzy()) {
+				plan.getFuzzyQuery()->setRange(gpc->leftBottomLatitude,
+						gpc->leftBottomLongitude, gpc->rightTopLatitude,
+						gpc->rightTopLongitude);
+			}
+		} else if (gpc->hasParameterInQuery(GeoTypeCircular)) {
+			plan.getExactQuery()->setRange(gpc->centerLatitude,
+					gpc->centerLongitude, gpc->radius);
+			if (plan.isFuzzy()) {
+				plan.getFuzzyQuery()->setRange(gpc->centerLatitude,
+						gpc->centerLongitude, gpc->radius);
+			}
+		}
+	}
 
     // 1. first check to see if there is any keyword in the query
     if (! paramContainer->hasParameterInQuery(RawQueryKeywords)) {
@@ -796,12 +878,10 @@ void QueryRewriter::createExactAndFuzzyQueriesForTopK(LogicalPlan & plan){
     // allocate the objects
     plan.setExactQuery(new Query(srch2is::SearchTypeTopKQuery));
     if (plan.isFuzzy()) {
-        plan.setFuzzyQuery(new Query(srch2is::SearchTypeTopKQuery));
+    	plan.setFuzzyQuery(new Query(srch2is::SearchTypeTopKQuery));
     }
-
 }
-void QueryRewriter::createExactAndFuzzyQueriesForGetAllTResults(
-        LogicalPlan & plan) {
+void QueryRewriter::createExactAndFuzzyQueriesForGetAllTResults(LogicalPlan & plan) {
     plan.setExactQuery(new Query(srch2is::SearchTypeGetAllResultsQuery));
     srch2is::SortOrder order =
             (indexDataConfig->getOrdering() == 0) ?
@@ -818,33 +898,6 @@ void QueryRewriter::createExactAndFuzzyQueriesForGetAllTResults(
         plan.getFuzzyQuery()->setSortableAttribute(
         		indexDataConfig->getAttributeToSort(), order);
     }
-}
-
-void QueryRewriter::createExactAndFuzzyQueriesForGeo(LogicalPlan & plan) {
-    plan.setExactQuery(new Query(srch2is::SearchTypeMapQuery));
-    if (plan.isFuzzy()) {
-        plan.setFuzzyQuery(new Query(srch2is::SearchTypeMapQuery));
-    }
-    GeoParameterContainer * gpc = paramContainer->geoParameterContainer;
-
-    if (gpc->hasParameterInQuery(GeoTypeRectangular)) {
-        plan.getExactQuery()->setRange(gpc->leftBottomLatitude,
-                gpc->leftBottomLongitude, gpc->rightTopLatitude,
-                gpc->rightTopLongitude);
-        if (plan.isFuzzy()) {
-            plan.getFuzzyQuery()->setRange(gpc->leftBottomLatitude,
-                    gpc->leftBottomLongitude, gpc->rightTopLatitude,
-                    gpc->rightTopLongitude);
-        }
-    } else if (gpc->hasParameterInQuery(GeoTypeCircular)) {
-        plan.getExactQuery()->setRange(gpc->centerLatitude,
-                gpc->centerLongitude, gpc->radius);
-        if (plan.isFuzzy()) {
-            plan.getFuzzyQuery()->setRange(gpc->centerLatitude,
-                    gpc->centerLongitude, gpc->radius);
-        }
-    }
-
 }
 
 // creates a post processing plan based on information from Query

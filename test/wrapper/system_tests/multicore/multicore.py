@@ -23,7 +23,7 @@ def checkResult(query, responseJson,resultValue):
     if  len(responseJson) == len(resultValue):
         for i in range(0, len(resultValue)):
             #print response_json['results'][i]['record']['id']
-            if int(responseJson[i]['record']['id']) !=  int(resultValue[i]):
+           if (resultValue.count(responseJson[i]['record']['id']) != 1):
                 isPass=0
                 print query+' test failed'
                 print 'query results||given results'
@@ -196,7 +196,7 @@ def testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path
             failCount += checkResult(query, response_json[coreName]['results'], resultValue)
             index +=1
 
-        
+    time.sleep(5)
     test_lib.killServer(serverHandle)
 
     print '=============================='

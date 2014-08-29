@@ -18,7 +18,7 @@ def startServer(argList):
 # curl's a request to the server until it gets a response
 # blocks until server is up (!)
 def pingServer(port, query = 'q=march', timeout = 15):
-    info = 'curl -s \"http://localhost:' + str(port) + '/search?' + query + '\" | grep -q results'
+    info = 'curl -s \"http://127.0.0.1:' + str(port) + '/search?' + query + '\" | grep -q results'
     #print "Pinging with: " + info
     while timeout >= 0 and subprocess.call(info, shell=True) != 0:
         timeout -= 1

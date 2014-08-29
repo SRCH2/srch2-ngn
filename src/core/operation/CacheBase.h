@@ -172,6 +172,7 @@ public:
 		return true;
 	}
 	bool get(string & key, boost::shared_ptr<T> & objectPointer) {
+
 		boost::unique_lock< boost::shared_mutex > lock(_access);
 //		ASSERT(checkCacheConsistency());
 		//1. compute the hashed key

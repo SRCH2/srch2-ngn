@@ -114,19 +114,4 @@
         </updateLog>
      
     </updatehandler>
-
-    <!-- 
-        Mongo DB settings
-        Required if dataSourceType = 2
-    -->
-    <!--
-    <dataSourceType>2</dataSourceType>
-    <mongodb>
-        <host>localhost</host>
-        <port>27017</port>
-        <db>demo</db>
-        <collection>movies</collection>
-        <listenerWaitTime>3</listenerWaitTime>
-    </mongodb>
-    -->     
 </config>

@@ -170,7 +170,6 @@ void Srch2Server::createAndBootStrapIndexer() {
     else
         indexCreateOrLoad = srch2http::INDEXCREATE;
     Schema * storedAttrSchema = Schema::create();
-
     // Create a schema to the data source definition in the Srch2ServerConf
     srch2is::Schema *schema = JSONRecordParser::createAndPopulateSchema(
             indexDataConfig);
@@ -183,12 +182,12 @@ void Srch2Server::createAndBootStrapIndexer() {
                 this->indexDataConfig);
         indexer = Indexer::create(indexMetaData, analyzer, schema);
         delete analyzer;
+        RecordSerializerUtil::populateStoredSchema(storedAttrSchema,
+                indexer->getSchema());
         switch (indexDataConfig->getDataSourceType()) {
         case srch2http::DATA_SOURCE_JSON_FILE: {
             // Create from JSON and save to index-dir
             Logger::console("Creating indexes from JSON file...");
-            RecordSerializerUtil::populateStoredSchema(storedAttrSchema,
-                    indexer->getSchema());
             unsigned indexedCounter = DaemonDataSource::createNewIndexFromFile(
                     indexer, storedAttrSchema, indexDataConfig);
             /*
@@ -202,19 +201,6 @@ void Srch2Server::createAndBootStrapIndexer() {
             }
             break;
         }
-#ifndef ANDROID
-        case srch2http::DATA_SOURCE_MONGO_DB: {
-            Logger::console("Creating indexes from a MongoDb instance...");
-            unsigned indexedCounter = MongoDataSource::createNewIndexes(indexer,
-                    indexDataConfig);
-            indexer->commit();
-            if (indexedCounter > 0) {
-                indexer->save();
-                Logger::console("Indexes saved.");
-            }
-            break;
-        }
-#endif
         default: {
             indexer->commit();
             Logger::console("Creating new empty index");

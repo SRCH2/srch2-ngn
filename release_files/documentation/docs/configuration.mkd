@@ -79,7 +79,7 @@ This value specifies the type of data source indexed by the engine.  Notice that
 
 - 0: Create empty indexes, and ignore the data file specified by the "dataFile" tag (see below).
 - 1: Create indexes for records from the JSON file specified by the "dataFile" tag. "1" is the default value for this "dataSourceType" tag.
-- 2: Create indexes for records from an external database such as MongoDB or SQLite, as specified by the parameters under the corresponding tag such as the "mongodb" tag.
+- 2: Create indexes for records from an external database such as MongoDB or SQLite, as specified by the parameters under the "dbParameters" tag.
 
 ###6.2. Data File (Required if "dataSourceType" is 1)
 
@@ -88,17 +88,38 @@ This value specifies the type of data source indexed by the engine.  Notice that
 ```
 This value specifies a JSON data file to be loaded by the engine. Notice that it is a path relative to the [home directory](#2-home-directory-required).
 
-###6.3. MongoDB (Required if "dataSourceType" is 2)
+###6.3. Database (Required if "dataSourceType" is 2)
+For MongoDB:
 ```
- <mongodb>
-    <host>www.my-company.com</host>
-    <port>1234</port>
-    <db>database-name</db>
-    <collection>collection-name</collection>
-    <listenerWaitTime>3</listenerWaitTime>
- </mongodb> 
+    <dataSourceType>2</dataSourceType>
+    <dbParameters>
+        <dbSharedLibraryPath>db_connectors/</dbSharedLibraryPath>
+        <dbSharedLibraryName>libmongodbConnector</dbSharedLibraryName>
+        <dbKeyValues>
+            <dbKeyValue key="host" value="127.0.0.1" />
+            <dbKeyValue key="port" value="27017" />
+            <dbKeyValue key="db" value="demo" />
+            <dbKeyValue key="collection" value="movies" />
+            <dbKeyValue key="listenerWaitTime" value="3" />
+        </dbKeyValues>
+    </dbParameters>
 ```
-This section specifies MongoDB instance information. Note: "listenerWaitTime" specifies how frequently (in seconds) the SRCH2 engine pulls changes from the MongoDB instance (e.g., every 3 seconds). 
+
+For SQLite:
+```
+   <dataSourceType>2</dataSourceType>
+    <dbParameters>
+        <dbSharedLibraryPath>db_connectors/</dbSharedLibraryPath>
+        <dbSharedLibraryName>libsqliteConnector</dbSharedLibraryName>
+        <dbKeyValues>
+            <dbKeyValue key="db" value="demo.db" />
+            <dbKeyValue key="dbPath" value="." />
+            <dbKeyValue key="tableName" value="COMPANY" />
+            <dbKeyValue key="listenerWaitTime" value="3" />
+        </dbKeyValues>
+    </dbParameters>
+```
+This section specifies database instance information. Note: "listenerWaitTime" specifies how frequently (in seconds) the SRCH2 engine pulls changes from the database instance (e.g., every 3 seconds). 
 
 ##7. Index Config
 
@@ -109,16 +130,7 @@ This tag has parameters to customize the search engine's indexes.
  </indexConfig>
 ```
 
-###7.1. Index Type (Optional)
-IndexType specifies if the search engine should build text or location indexes. By default it assumes the value 0 (Text Index).
-```
- <indexType>0</indexType>
-```
-> 0: Text Indexes; <br>
-> 1: Text + Geo Indexes, which support location-based search. <br>
-
-
-###7.2. Field Boosts (Optional)
+###7.1. Field Boosts (Optional)
 ```
  <fieldBoost></fieldBoost>
 ```
@@ -139,19 +151,19 @@ Notice that the fields are separated by a single white space. If a
 value is not provided for a field, the engine uses a default value of
 1. <br>
 
-###7.3. Record Boost (Optional)
+###7.2. Record Boost (Optional)
 ```
  <recordBoostField>relevance</recordBoostField>
 ```
 This setting specifies an attribute whose value is used as the score (boost value) of a record. This attribute should be refining and of type float.
 
-###7.4. Default Term Boost (Optional)
+###7.3. Default Term Boost (Optional)
 ```
  <defaultQueryTermBoost>1</defaultQueryTermBoost>
 ```
 The value of this field specifies default ranking value for terms that do not have the field specified in "recordBoostField". If the parameter is not given, the engine uses 1 as the default value.<br>
 
-###7.5. Enable Positional Index (Optional)
+###7.4. Enable Positional Index (Optional)
 
 A positional index supports queries with conditions related to keyword positions in a record, such as
 [proximity search](restful-search.mkd#334-proximity-search). The "enablePositionIndex" tag is used to enable or disable positional indexing.  For instance, the following example shows how to enable this indexing:
@@ -161,7 +173,7 @@ A positional index supports queries with conditions related to keyword positions
 ```  
 Note that the positional index takes more memory resources. By default it is disabled.<br>
 
-###7.6. Enable Character Offset Index (Optional)
+###7.5. Enable Character Offset Index (Optional)
 
 A character offset index supports fast keyword [highlighting](#812-highlighter-optional) during the snippet generation. The "enableCharOffsetIndex" tag can be used to enable or disable character offset indexing.  For instance, the following
 example shows how to enable this indexing:
@@ -361,6 +373,8 @@ or
  <responseContent type="2">lat,lng</responseContent>
 ```
 
+Note that the fields mentioned in responseContent for type 2 should have either Searchable, Refining, or Indexed set to true, otherwise they will not be returned by the engine in query results.
+
 ###9.2 JSON Response Format (Optional)
 
 ResponseFormat specifies if the response should be JSON or JSONP formatted.  Possible values are:<br>
@@ -478,7 +492,7 @@ These parameters give information about each field, including its name, type, an
 
  - "name": the name of the field;<br>
  - "type": the type of the field;<br>
-           For a searchable attribute, its type can be text, location_longitude (for geo search), or location_latitude (for geo search).<br>
+           For a searchable attribute, its type has to be text.<br>
            For a refining attribute, the type can be text, integer, long, float, double or time.
            
 The engine supports the following formats of time and date: <br>
@@ -509,7 +523,7 @@ In the example above, we can do keyword search on the attributes
 
 Note:
 
- - For geo search, two fields are required with the types location_latitude and location_longitude, respectively. The values of these geo fields should be a float type in the data file.<br>
+ - For geo search, two fields are required with the types location_latitude and location_longitude, respectively. The values of these geo fields should be a float type in the data file.  The engine internally treats these two fields as refining attributes, and their values can be returned in a query result if needed.<br>
  - The primary key may optionally be included here. It can also be searchable and/or refining.<br>
  - There must be at least one searchable field.
 

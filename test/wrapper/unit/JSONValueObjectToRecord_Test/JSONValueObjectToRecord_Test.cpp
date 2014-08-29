@@ -361,7 +361,7 @@ int main(int argc, char **argv) {
     //Doing preparation for the tests.
     string configFile(string(getenv("srch2_config_file")) + "/conf.xml");
 
-    CoreInfo_t* indexDataConfig;
+    CoreInfo_t* indexDataConfig = NULL;
     stringstream log_str;
 
     ConfigManager * conf = new ConfigManager(configFile);

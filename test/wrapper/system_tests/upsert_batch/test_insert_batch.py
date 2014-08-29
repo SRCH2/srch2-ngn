@@ -142,6 +142,12 @@ if __name__ == '__main__':
     tester.killServer()
 
     print '=====================Batch Insert Test Passed!=========================='
+
+    #The test "batch insert" may take time to close the SRCH2 engine. 
+    #If the engine is still running, starting another engine on the same port could cause error.
+    #So we sleep several seconds to wait for the engine to shut down completely.
+    time.sleep(3)
+
     os._exit(0)
 
 
