@@ -168,6 +168,13 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
     clock_gettime(CLOCK_REALTIME, &tstart);
 
     vector<string> attributesToReturnFromQuery = queryPlan.getAttrToReturn();
+    vector<string> *attributesToReturnFromQueryPtr;
+
+    if (attributesToReturnFromQuery.size() != 0)
+      attributesToReturnFromQueryPtr = &attributesToReturnFromQuery;
+    else
+     attributesToReturnFromQueryPtr = NULL;
+
 
     if(onlyFacets == false){ // We send the matching records only if "facet != only".
         (*root)["results"].resize(end - start);
@@ -190,7 +197,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
                     //This case executes when all the attributes are to be returned. However we let the user
                     //override if field list parameter is given in query
                     genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-                            sbuffer, &attributesToReturnFromQuery);
+                            sbuffer, attributesToReturnFromQueryPtr);
                     // The class CustomizableJsonWriter allows us to
                     // attach the data string to the JSON tree without parsing it.
                     (*root)["results"][counter][global_internal_record.first] = sbuffer;
@@ -202,7 +209,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
                 	//If query has field list parameter we override attrToReturn using the attributes from query
                 	//otherwise we use attributes mentioned in config file
                 	if(attributesToReturnFromQuery.size() > 0){
-                	    attrToReturn = &attributesToReturnFromQuery;
+                	    attrToReturn = attributesToReturnFromQueryPtr;
                 	}
 
                 	genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
@@ -216,7 +223,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
                     string stringBuffer;
                     if(attributesToReturnFromQuery.size() > 0){
                         genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-                                stringBuffer, &attributesToReturnFromQuery);
+                                stringBuffer, attributesToReturnFromQueryPtr);
                         (*root)["results"][counter][global_internal_record.first] = stringBuffer;
                     }
 
@@ -263,7 +270,8 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
                     //This case executes when all the attributes are to be returned. However we let the user
                     //override if field list parameter is given in query
                     genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-                                                sbuffer, &attributesToReturnFromQuery);
+                                                sbuffer, attributesToReturnFromQueryPtr);
+
                     // The class CustomizableJsonWriter allows us to
                     // attach the data string to the JSON tree without parsing it.
                     (*root)["results"][counter][global_internal_record.first] = sbuffer;
@@ -276,7 +284,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
                     //If query has field list parameter we override attrToReturn using the attributes from query
                     //otherwise we use attributes mentioned in config file
                     if(attributesToReturnFromQuery.size() > 0){
-                        attrToReturn = &attributesToReturnFromQuery;
+                        attrToReturn = attributesToReturnFromQueryPtr;
                     }
 
                     genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
@@ -290,7 +298,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
                     string stringBuffer;
                     if(attributesToReturnFromQuery.size() > 0){
                         genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-                                stringBuffer, &attributesToReturnFromQuery);
+                                stringBuffer, attributesToReturnFromQueryPtr);
                         (*root)["results"][counter][global_internal_record.first] = stringBuffer;
                     }
                 }
@@ -453,6 +461,12 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printOneResultRetrievedById(e
     string logQueries;
 
     vector<string> attributesToReturnFromQuery = queryPlan.getAttrToReturn();
+    vector<string> *attributesToReturnFromQueryPtr;
+
+    if (attributesToReturnFromQuery.size() != 0)
+      attributesToReturnFromQueryPtr = &attributesToReturnFromQuery;
+    else
+      attributesToReturnFromQueryPtr = NULL;
 
     (*root)["searcher_time"] = ts1;
     (*root)["results"].resize(queryResults->getNumberOfResults());
@@ -477,7 +491,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printOneResultRetrievedById(e
             //This case executes when all the attributes are to be returned. However we let the user
             //override if field list parameter is given in query
             genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-                    sbuffer, &attributesToReturnFromQuery);
+                    sbuffer, attributesToReturnFromQueryPtr);
 
             (*root)["results"][counter][global_internal_record.first] = sbuffer;
         } else if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SELECTED_ATTR){
@@ -489,7 +503,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printOneResultRetrievedById(e
             //If query has field list parameter we override attrToReturn using the attributes from query
             //otherwise we use attributes mentioned in config file
             if(attributesToReturnFromQuery.size() > 0){
-                attrToReturn = &attributesToReturnFromQuery;
+                attrToReturn = attributesToReturnFromQueryPtr;
             }
             genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
                                         sbuffer, attrToReturn);
@@ -502,7 +516,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printOneResultRetrievedById(e
             string stringBuffer;
             if(attributesToReturnFromQuery.size() > 0){
                 genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-                        stringBuffer, &attributesToReturnFromQuery);
+                        stringBuffer, attributesToReturnFromQueryPtr);
                 (*root)["results"][counter][global_internal_record.first] = stringBuffer;
             }
         }

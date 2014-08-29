@@ -61,7 +61,7 @@
 
                     <queryResponseWriter>
                         <responseFormat>1</responseFormat>
-                        <responseContent type="1"></responseContent>
+                        <responseContent type="0"></responseContent>
                     </queryResponseWriter>
                 </query>
                 <schema>
