@@ -83,6 +83,7 @@ struct PendingLockRequest{
 			const unsigned priority,
 			ResourceLockRequest * request);
 	PendingLockRequest(const PendingLockRequest & copy);
+	PendingLockRequest & operator=(const PendingLockRequest & rhs);
 	PendingLockRequest(){
 		request = NULL;
 	}

@@ -58,6 +58,7 @@ OperationState * LoadBalancingStartOperation::entry(){
 	vector<NodeId> allNodes;
 	writeview->getArrivedNodes(allNodes, true);
 	if(allNodes.size() == 1){
+		ASSERT(allNodes.at(0) == ShardManager::getCurrentNodeId());
 		return LoadBalancingStartOperation::finalizeLoadBalancing();
 	}
 	for(vector<NodeId>::iterator nodeItr = allNodes.begin(); nodeItr != allNodes.end(); ++nodeItr){

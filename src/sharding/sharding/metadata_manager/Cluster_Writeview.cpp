@@ -742,7 +742,6 @@ void Cluster_Writeview::assignLocalClusterShard(const ClusterShardId & shardId, 
 	shard->isLocal = true;
 	shard->nodeId = this->currentNodeId;
 	shard->load = 0;
-	ASSERT(shard->state == SHARDSTATE_UNASSIGNED);
 	shard->state = SHARDSTATE_READY;
 	localClusterDataShards[shardId] = physicalShardInfo;
 }

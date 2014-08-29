@@ -119,6 +119,10 @@ OperationState * ShardAssignOperation::handle(CommitNotification::ACK * ack){
 OperationState * ShardAssignOperation::handle(NodeFailureNotification * nodeFailure){
 	// no node failure can abort this transaction, it's separate than others
 	// if we are not alone, pass notification to operators.
+	if(nodeFailure == NULL){
+		ASSERT(false);
+		return this;
+	}
 	if(lockOperation != NULL){
 		OperationState::stateTransit(lockOperation, nodeFailure);
 		if(lockOperation == NULL){
@@ -128,7 +132,6 @@ OperationState * ShardAssignOperation::handle(NodeFailureNotification * nodeFail
 	}
 	if(commitOperation != NULL){
 		OperationState::stateTransit(commitOperation, nodeFailure);
-		OperationState * nextState = startOperation(commitOperation->handle(nodeFailure));
 		if(commitOperation == NULL){
 			return release();
 		}

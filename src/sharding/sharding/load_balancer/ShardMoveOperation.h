@@ -39,6 +39,7 @@ public:
 private:
 	const ClusterShardId shardId;
 	NodeOperationId srcAddress;
+	bool connectedFlag;
 
 	OperationState * lockOperation;
 	SerialLockResultStatus * lockOperationResult;

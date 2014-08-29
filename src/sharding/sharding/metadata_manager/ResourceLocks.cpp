@@ -245,6 +245,17 @@ PendingLockRequest::PendingLockRequest(const PendingLockRequest & copy){
 	this->metadataVersionId = copy.metadataVersionId;
 }
 
+PendingLockRequest & PendingLockRequest::operator=(const PendingLockRequest & rhs){
+	if(this != &rhs){
+		this->request = rhs.request;
+		this->ackType = rhs.ackType;
+		this->requesterAddress = rhs.requesterAddress;
+		this->priority = rhs.priority;
+		this->metadataVersionId = rhs.metadataVersionId;
+	}
+	return *this;
+}
+
 bool PendingLockRequest::operator<(const PendingLockRequest & right) const{
 	return (this->priority < right.priority) ||
 			((this->priority == right.priority)  && (this->requesterAddress > right.requesterAddress));
@@ -760,7 +771,7 @@ bool ResourceLockManager::resolveBatch(const NodeOperationId & requesterAddress,
 
 	// 2. we can grant, apply the locks.
 	executeBatch(lockRequest->requestBatch, needCommit);
-	lockHolders->print();
+//	lockHolders->print();
 	// 3. send back the ack or save it in RV release pending requests .
 	if(needCommit){
 		PendingLockRequest rvRelease(requesterAddress, ackType, priority, lockRequest);
@@ -851,7 +862,6 @@ void ResourceLockManager::executeBatch(const vector<SingleResourceLockRequest *>
 	// all requests can be granted.
 	for(unsigned i = 0 ; i < requestBatch.size(); ++i){
 		executeRequest(*(requestBatch.at(i)));
-//		lockHolders->print();
 	}
 
 	needCommit = false;
