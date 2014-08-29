@@ -52,7 +52,7 @@ private:
 	OperationState * acquireLocks();
 	OperationState * readMetadata();
 	OperationState * commit();
-	OperationState * releaseLocks();
+	OperationState * release();
 	OperationState * finalizeJoin();
 
 

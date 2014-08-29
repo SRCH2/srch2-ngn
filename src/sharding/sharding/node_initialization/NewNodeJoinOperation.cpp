@@ -5,6 +5,8 @@
 #include "../CommitOperation.h"
 #include "../SerialLockOperation.h"
 
+#include "core/util/Logger.h"
+
 using namespace std;
 namespace srch2is = srch2::instantsearch;
 using namespace srch2::instantsearch;
@@ -91,7 +93,7 @@ OperationState * NewNodeJoinOperation::handle(NodeFailureNotification * nodeFail
 		OperationState * nextState = startOperation(commitOperation->handle(nodeFailure));
 		//TODO : why is the above line needed ?
 		if(commitOperation == NULL){
-			return releaseLocks();
+			return release();
 		}
 		return this;
 	}
@@ -116,6 +118,7 @@ OperationState * NewNodeJoinOperation::handle(NodeFailureNotification * nodeFail
 
 OperationState * NewNodeJoinOperation::acquireLocks(){
 	// create a lock operation.
+	Logger::debug("Requesting for locks ...");
 	NewNodeLockOperation * lockOperation = new NewNodeLockOperation(this->getOperationId());
 	lockerOperation = OperationState::startOperation(lockOperation);
 	if(lockerOperation == NULL){
@@ -138,6 +141,7 @@ OperationState * NewNodeJoinOperation::handle(NewNodeLockNotification::ACK * ack
 
 OperationState * NewNodeJoinOperation::readMetadata(){
 	ASSERT(lockerOperation == NULL && commitOperation == NULL && releaseOperation == NULL);
+	Logger::debug("Reading metadata writeview ...");
 	// send read_metadata notification to the smallest node id
 	vector<NodeId> olderNodes;
 	getOlderNodesList(olderNodes);
@@ -178,13 +182,14 @@ OperationState * NewNodeJoinOperation::handle(MetadataReport * report){
 	// new writeview is ready, replace current writeview with the new one
 	ShardManager::getShardManager()->getMetadataManager()->setWriteview(clusterWriteview);
 	ShardManager::getShardManager()->getMetadataManager()->commitClusterMetadata();
-
+	Logger::debug("Metadata initialized from the cluster.");
 	// ready to commit.
 	return commit();
 }
 
 
 OperationState * NewNodeJoinOperation::commit(){
+	Logger::debug("Committing the new node change to the cluster ...");
 	// prepare the commit operation
 	Cluster_Writeview * writeview = ShardManager::getWriteview();
 	vector<ClusterShardId> localClusterShards;
@@ -215,7 +220,7 @@ OperationState * NewNodeJoinOperation::commit(){
 	CommitOperation * commitOperation = new CommitOperation(this->getOperationId(), nodeAddChange, olderNodes);
 	this->commitOperation = OperationState::startOperation(commitOperation);
 	if(this->commitOperation == NULL){
-		return releaseLocks();
+		return release();
 	}
 	return this;
 }
@@ -228,13 +233,13 @@ OperationState * NewNodeJoinOperation::handle(CommitNotification::ACK * ack){
 
 	OperationState::stateTransit(commitOperation, ack);
 	if(commitOperation == NULL){
-		return releaseLocks();
+		return release();
 	}
 	return this;
 }
 
-OperationState * NewNodeJoinOperation::releaseLocks(){
-
+OperationState * NewNodeJoinOperation::release(){
+	Logger::debug("Releasing locks ...");
 	Cluster_Writeview * writeview = ShardManager::getWriteview();
 
 	vector<SingleResourceLockRequest *> batch;
@@ -301,6 +306,7 @@ OperationState * NewNodeJoinOperation::finalizeJoin(){
 	// release is also done.
 	// just setJoined and done.
 	ShardManager::getShardManager()->setJoined();
+	Logger::info("Joined to the cluster.");
 	return NULL;
 }
 

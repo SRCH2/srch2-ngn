@@ -873,6 +873,9 @@ int main(int argc, char** argv) {
 	srch2http::ResourceMetadataManager * metadataManager = new srch2http::ResourceMetadataManager();
 	srch2http::ShardManager * shardManager = srch2http::ShardManager::createShardManager(serverConf, metadataManager);
 
+	//TODO to remove
+	srch2::util::Logger::setLogLevel(srch2::util::Logger::SRCH2_LOG_DEBUG);
+
 	serverConf->loadConfigFile(metadataManager);
 
 	LicenseVerifier::testFile(serverConf->getLicenseKeyFileName());

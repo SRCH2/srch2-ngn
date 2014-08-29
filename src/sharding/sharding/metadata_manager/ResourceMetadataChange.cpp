@@ -12,6 +12,24 @@ using namespace std;
 namespace srch2 {
 namespace httpwrapper {
 
+string MetadataChange::toNameString() const{
+	switch (getType()) {
+		case ShardingChangeTypeNodeAdd:
+			return "NodeAdd";
+		case ShardingChangeTypeShardAssign:
+			return "ShardAssign";
+		case ShardingChangeTypeShardMove:
+			return "ShardMove";
+		case ShardingChangeTypeLoadChange:
+			return "LoadChange";
+		default:
+			ASSERT(false);
+			break;
+	}
+	return "";
+}
+
+
 NodeAddChange::NodeAddChange(NodeId newNodeId, const vector<ClusterShardId> & localClusterShardIds,
         const vector<NodeShardId> & localNodeShardIds){
 

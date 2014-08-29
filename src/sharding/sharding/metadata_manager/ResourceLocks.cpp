@@ -814,11 +814,17 @@ void ResourceLockManager::getLockedPartitions(vector<ClusterPID> & lockedPartiti
 
 
 void ResourceLockManager::print() {
+
+	cout << "**************************************************************************************************" << endl;
+	cout << "Lock repository : " << endl;
+	cout << "**************************************************************************************************" << endl;
 	lockHolders->print();
 
+	cout << "**************************************************************************************************" << endl;
+	cout << "Pending requests : " << endl;
 	pendingLockRequestBuffer.print();
-
 	printRVReleasePendingRequests();
+	cout << "**************************************************************************************************" << endl;
 }
 
 void ResourceLockManager::printRVReleasePendingRequests(){

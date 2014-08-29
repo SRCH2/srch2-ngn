@@ -66,8 +66,20 @@ OperationState * NewNodeLockOperation::entry(){
 			continue;
 		}
 		allNodesUpToCurrentNode.push_back(allNodes.at(i)->getId());
+
+
+
 	}
 	std::sort(allNodesUpToCurrentNode.begin(), allNodesUpToCurrentNode.end());
+
+	stringstream ss;
+	for(unsigned i = 0 ; i < allNodesUpToCurrentNode.size(); ++i){
+		if(i != 0){
+			ss << ",";
+		}
+		ss << allNodes.at(i)->getId();
+	}
+	Logger::debug("Sending list of nodes : %s with the lock request.", ss.str().c_str());
 
 	ASSERT(allNodesUpToCurrentNode.size() > 0 &&
 			allNodesUpToCurrentNode.at(allNodesUpToCurrentNode.size()-1) < ShardManager::getCurrentNodeId());
@@ -75,6 +87,7 @@ OperationState * NewNodeLockOperation::entry(){
 	// prepare the notification and send it to the first node
 	this->newNodeLockNotification = new NewNodeLockNotification(allNodesUpToCurrentNode, lockRequests);
 	this->nodeIndex = 0;
+
 	this->send(newNodeLockNotification, NodeOperationId(allNodesUpToCurrentNode.at(this->nodeIndex)));
 	return this;
 }
@@ -157,9 +170,9 @@ OperationState * NewNodeLockOperation::handle(NewNodeLockNotification::ACK * ack
 		ShardManager::getShardManager()->getMetadataManager()->commitClusterMetadata();
 		// we are done.
 		// transit to the join operation of new node.
+		Logger::debug("Lock repository initialized from the cluster.");
 		return NULL;
 	}
-
 	this->send(newNodeLockNotification, NodeOperationId(allNodesUpToCurrentNode.at(this->nodeIndex)));
 	return this;
 

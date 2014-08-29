@@ -93,6 +93,17 @@ public:
 		destOperationId = temp;
 	}
 
+	string getDescription(){
+		stringstream ss;
+		ss << "(" << srcOperationId.toString() << " => " << destOperationId.toString();
+		if(bounced){
+			ss << ", bounced)";
+		}else{
+			ss << ")";
+		}
+		return ss.str();
+	}
+
 private:
     NodeOperationId srcOperationId;
     NodeOperationId destOperationId;
