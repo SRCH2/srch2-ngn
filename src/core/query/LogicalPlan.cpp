@@ -445,7 +445,7 @@ unsigned LogicalPlan::getNumberOfBytesForSerializationForNetwork(){
 	numberOfBytes += sizeof(this->numberOfResultsToRetrieve);
 	numberOfBytes += sizeof(this->shouldRunFuzzyQuery);
 	numberOfBytes += sizeof(this->queryType);
-	numberOfBytes += sizeof(this->docIdForRetrieveByIdSearchType);
+	numberOfBytes += sizeof(unsigned) + this->docIdForRetrieveByIdSearchType.size();
 
 	numberOfBytes += sizeof(bool)*4; // isNULL
 	// exact query
