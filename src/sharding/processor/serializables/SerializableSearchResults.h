@@ -183,7 +183,7 @@ public:
         unsigned numberOfBytes = 0;
         numberOfBytes += sizeof(unsigned);// number of shardresults
         for(unsigned qrIdx = 0; qrIdx < shardResults.size(); ++qrIdx){
-        	numberOfBytes = shardResults.at(qrIdx)->getNumberOfBytes();
+        	numberOfBytes += shardResults.at(qrIdx)->getNumberOfBytes();
         }
         return numberOfBytes;
     }
