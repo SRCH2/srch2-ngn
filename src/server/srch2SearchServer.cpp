@@ -35,8 +35,6 @@
 #include <event2/thread.h>
 #include <signal.h>
 
-#include <sys/syscall.h>
-
 #include <sys/types.h>
 #include <map>
 
@@ -83,6 +81,11 @@ typedef std::vector<type_cb_args*> CbArgs_t;
 pthread_t *threads = NULL;
 unsigned int MAX_THREADS = 0;
 
+// The belowing global_heart_beat_thread is used to create a heart_beat thread
+// which will kill the server itself when there is no actions within certain time range.
+// The timer is set through the configuration file by 
+// <heartbeattimer> tag
+// If it is not set, the engine will not start the heart_beat thread, that is run forever.
 pthread_t * global_heart_beat_thread = NULL;
 volatile bool has_one_pulse = false;
 
@@ -91,7 +94,7 @@ void thread_exit_handler(int sig){
 }
 
 void setup_sigusr1_to_exit(){
-//#ifdef ANDROID
+#ifdef ANDROID
     // for the Android, there is no pthread_cancel function, 
     // alternatively we use the pthread_kill(thread, SIGUSR1) 
     // to send the SIGUSR1 to exit the pthread.
@@ -109,7 +112,7 @@ void setup_sigusr1_to_exit(){
     // otherwise the call will fail with the error EINTR, check the detail at http://man7.org/linux/man-pages/man7/signal.7.html
     siginfo.sa_flags = SA_RESTART;
     sigaction(SIGUSR1, &siginfo, NULL);
-//#endif
+#endif
 }
 
 void* heart_beat_function(void *arg){
@@ -643,19 +646,17 @@ static void killServer(int signal) {
     for (int i = 0; i < MAX_THREADS; i++) {
 #ifdef ANDROID
     	// Android thread implementation does not have pthread_cancel()
-    	// use pthread_kill instead.
+    	// use pthread_kill instead. We use the SIGUSR1 to replace the SIGTERM signal
     	pthread_kill(threads[i], SIGUSR1);
 #else
-    	pthread_kill(threads[i], SIGUSR1);
-        //pthread_cancel(threads[i]);
+        pthread_cancel(threads[i]);
 #endif
     }
     if ( global_heart_beat_thread != NULL ){
 #ifdef ANDROID
         pthread_kill(*global_heart_beat_thread, SIGUSR1);
 #else
-        pthread_kill(*global_heart_beat_thread, SIGUSR1);
-        //pthread_cancel(*global_heart_beat_thread);
+        pthread_cancel(*global_heart_beat_thread);
 #endif
     }
 
