@@ -261,7 +261,11 @@ OperationState * NewNodeJoinOperation::release(){
 	resourceLockRequest->requestBatch = batch;
 	resourceLockRequest->isBlocking = true;
 
-	SerialLockOperation * releaseOperation = new SerialLockOperation(this->getOperationId(), resourceLockRequest);
+	vector<NodeId> oldNodes;
+	this->getOlderNodesList(oldNodes);
+	oldNodes.push_back(writeview->currentNodeId);
+
+	SerialLockOperation * releaseOperation = new SerialLockOperation(this->getOperationId(), oldNodes, resourceLockRequest);
 	this->releaseOperation = OperationState::startOperation(releaseOperation);
 	if(releaseOperation == NULL){
 		return finalizeJoin();
