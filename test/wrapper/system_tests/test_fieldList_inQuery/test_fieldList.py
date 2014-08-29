@@ -68,9 +68,9 @@ def prepareQuery(queryKeywords):
     ##################################
     return query
     
-def testExactA1(queriesAndResultsPath, binary_path):
+def testFieldList(queriesAndResultsPath, binary_path, configFile):
     #Start the engine server
-    args = [ binary_path, '--config-file=./test_fieldList_inQuery/conf.xml' ]
+    args = [ binary_path, '--config-file=' + configFile ]
 
     if test_lib.confirmPortAvailable(port) == False:
         print 'Port ' + str(port) + ' already in use - aborting'
@@ -110,5 +110,7 @@ if __name__ == '__main__':
     #each line like "trust||01c90b4effb2353742080000" ---- query||record_ids(results)
     binary_path = sys.argv[1]
     queriesAndResultsPath = sys.argv[2]
-    exitCode = testExactA1(queriesAndResultsPath, binary_path)
+    exitCode = testFieldList(queriesAndResultsPath, binary_path, "./test_fieldList_inQuery/conf.xml")
+    exitCode = testFieldList(queriesAndResultsPath, binary_path, "./test_fieldList_inQuery/conf1.xml")
+    exitCode = testFieldList(queriesAndResultsPath, binary_path, "./test_fieldList_inQuery/conf2.xml")
     os._exit(exitCode)
