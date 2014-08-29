@@ -418,38 +418,6 @@ This is the maximum memory the engine will use. By default the engine uses 1GB a
 
 10, 100 will be used as the default value for mergeEveryNSeconds and mergeEveryMWrites respectively if they are missing from the config file.
 
-###10.4. Logging
-
-The following tag includes parameters related to logging by the SRCH2 engine.
-```
-<updateLog>
-...
-</updateLog>
-```
-####10.4.1. Log Level (Optional)
-```
-<logLevel>3</logLevel>
-```
-The parameter controls the amount of feedback information the engine will report in its log. <br>
-
-- 0: SILENT: Most logging will be suppressed.<br>
-- 1: ERROR: Only explicit error conditions will be logged.<br>
-- 2: WARNING: Error conditions and warnings will be logged.<br>
-- 3: INFO: Errors, warnings, and informative messages will be logged.<br>
-
-Its default value is 3.
-
-####10.4.2. Log File (Required)
-```
-<accessLogFile>./indexes/log.txt</accessLogFile>
-```
-This value specifies the file to which the engine writes logging information.
-Third-party tools such as
-[logrotate](http://linuxcommand.org/man_pages/logrotate8.html) can be utilized to
-manage the log messages.  Check [this
-page](restful-control.mkd#4-reseting-log-file) for more information about how
-to manage this log file using third-party tools such as "logrotate".<br>
-
 ##11. Data Schema
 
 This section of the configuration concerns the data source to be searched.  The following sections explain each sub-tag under the <i>schema</i>
@@ -647,7 +615,42 @@ Note that whitespace characters will also be considered word delimiters and are 
 
 The [advanced example](../example-demo/srch2-config-advanced.xml) provides an example of allowing Twitter-hashtag-like terms to be queried.
 
-##12. Cores (Optional)
+##12. Logging
+
+The following tag includes parameters related to logging by the SRCH2 engine.
+```
+<updateLog>
+...
+</updateLog>
+```
+
+###12.1. Log Level (Optional)
+```
+<logLevel>3</logLevel>
+```
+The parameter controls the amount of feedback information the engine will report in its log. <br>
+
+- 0: SILENT: Most logging will be suppressed.<br>
+- 1: ERROR: Only explicit error conditions will be logged.<br>
+- 2: WARNING: Error conditions and warnings will be logged.<br>
+- 3: INFO: Errors, warnings, and informative messages will be logged.<br>
+
+Its default value is 3.
+
+###12.2. Log File (Optional)
+```
+<accessLogFile>./indexes/log.txt</accessLogFile>
+```
+This value specifies the file to which the engine writes logging information.
+Third-party tools such as
+[logrotate](http://linuxcommand.org/man_pages/logrotate8.html) can be utilized to
+manage the log messages.  Check [this
+page](restful-control.mkd#4-reseting-log-file) for more information about how
+to manage this log file using third-party tools such as "logrotate".<br>
+
+If it is not specified, the default file path for log file would be "srch2Home/logs/srch2-log.txt". 
+
+##13. Cores (Optional)
 
 The "Cores" tag can be used to support the creation of multiple data sources (called "cores") within the same SRCH2 server.  
 An engine can have multiple sources, and all cores run within the same server process.  A query can 
@@ -658,11 +661,11 @@ When instantiated with multiple cores, queries specify a core by name to process
  http://localhost:8081/example-core/search/q=termina
 ```
 requests that the core called "example-core" process a search request for "termina".  In the case when no core is
-specified in a query to a multi-core server, the server will use the sore specified by the "defaultCoreName" tag.
+specified in a query to a multi-core server, the server will use the core specified by the "defaultCoreName" tag.
 
 A sample multi-core configuration is provided in [example-demo/srch2-config-advanced.xml](../example-demo/srch2-config-advanced.xml).
 
-###12.1 Core (Optional)
+###13.1 Core (Optional)
 
 Each "Core" tag under "Cores" specifies a server core to be created.  Each core requires a name
 attribute.  This name is used in query URI paths, as well as the aforementioned
@@ -671,7 +674,7 @@ also appear under a "Core" tag.  The exceptions are "listeningHostName", "listen
 and "maxSearchThreads", which are global for all the cores.  Each Core must define all its own data source
 and behavioral rules, so for example, "dataDir" and "schema" are typically defined under each core.
 
-##13. Authorization Key (Optional)
+##14. Authorization Key (Optional)
 ```
 <authorization-key>foobar</authorization-key>
 ```
