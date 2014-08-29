@@ -6,6 +6,12 @@ import java.util.Properties;
 
 final class IndexDescription {
 
+    static final String tMinus = "    ";
+    static final String t = "        ";
+    static final String tt = "            ";
+    static final String ttt = "                ";
+    static final String tttt = "                    ";
+
     private static final String RECORD_SCORE_EXPRESSION = "recordScoreExpression";
     private static final String FUZZY_MATCH_PENALTY = "fuzzyMatchPenalty";
     private static final String QUERY_TERM_SIMILARITY_THRESHOLD = "queryTermSimilarityThreshold";
@@ -57,8 +63,6 @@ final class IndexDescription {
     private static final String DEFAULT_VALUE_logLevel = "3";
     private static final String DEFAULT_VALUE_accessLogFile = "srch2-log.txt";
 
-
-
     private final Properties queryProperties = new Properties();
     private final Properties miscProperties = new Properties();
     private final Properties indexProperties = new Properties();
@@ -68,18 +72,18 @@ final class IndexDescription {
     Schema schema;
     Highlighter highlighter;
 
+    String getIndexName() {
+        return name;
+    }
 
     IndexDescription(Indexable idx) {
-
         name = idx.getIndexName();
-
         schema = idx.getSchema();
 
         highlighter = idx.getHighlighter();
         highlighter.configureHighlightingForIndexDescription();
 
         queryProperties.setProperty("rows", String.valueOf(idx.getTopK()));
-
         queryProperties.setProperty("queryTermSimilarityThreshold",
                 String.valueOf(idx.getFuzzinessSimilarityThreshold()));
 
@@ -117,14 +121,6 @@ final class IndexDescription {
                 highlighter.highlightExactPreTag);
         queryProperties.setProperty("exactPostTag",
                 highlighter.highlightExactPostTag);
-    }
-
-    float getQueryTermSimilarityThreshold() {
-        return Float.parseFloat(queryProperties.getProperty("queryTermSimilarityThreshold"));
-    }
-
-    int getTopK() {
-        return Integer.parseInt(queryProperties.getProperty("rows"));
     }
 
     private void setMiscProperties() {
@@ -184,154 +180,235 @@ final class IndexDescription {
     }
 
     String indexStructureToXML() {
-
-        StringBuilder core = new StringBuilder("");
-
-        core = core
-                .append(" <core name=\"")
-                .append(miscProperties.getProperty(INDEX_NAME))
+        StringBuilder core = new StringBuilder()
+            .append(t)
+                .append("<core name=\"")
+                    .append(miscProperties.getProperty(INDEX_NAME))
                 .append("\">\n")
-                .append("            <dataFile>")
-                .append(miscProperties.getProperty(DATA_FILE))
+            .append(tt)
+                .append("<dataFile>")
+                    .append(miscProperties.getProperty(DATA_FILE))
                 .append("</dataFile>\n")
-                .append("            <dataDir>")
-                .append(miscProperties.getProperty(DATA_DIR))
+            .append(tt)
+                .append("<dataDir>")
+                    .append(miscProperties.getProperty(DATA_DIR))
                 .append("</dataDir>\n")
-                .append("            <dataSourceType>")
-                .append(miscProperties.getProperty(DATA_SOURCE_TYPE))
-                .append("</dataSourceType>\n")
-                .append("            <indexConfig>\n")
-                .append("                <supportSwapInEditDistance>")
-                .append(indexProperties
-                        .getProperty(SUPPORT_SWAP_IN_EDIT_DISTANCE))
-                .append("</supportSwapInEditDistance>\n")
-                .append("                <fieldBoost>")
-                .append(indexProperties.getProperty(FIELD_BOOST))
-                .append("</fieldBoost>\n");
-                if (schema.recordBoostKey != null) {
-                    core
-                        .append("                <recordBoostField>")
-                        .append(indexProperties.getProperty(RECORD_BOOST_FIELD))
-                        .append("</recordBoostField>\n");
-                }
-                core.append("                <defaultQueryTermBoost>")
-                .append(indexProperties.getProperty(DEFAULT_QUERY_TERM_BOOST))
-                .append("</defaultQueryTermBoost>\n")
-                .append("                <enablePositionIndex>")
-                .append(indexProperties.getProperty(ENABLE_POSITION_INDEX))
-                .append("</enablePositionIndex>\n")
-                .append("            </indexConfig>\n")
-                .append("            <query>\n")
-                .append("                <rankingAlgorithm>\n")
-                .append("                    <recordScoreExpression>")
-                .append(queryProperties.getProperty(RECORD_SCORE_EXPRESSION))
-                .append("</recordScoreExpression>\n")
-                .append("                </rankingAlgorithm>\n")
-                .append("                <fuzzyMatchPenalty>")
-                .append(queryProperties.getProperty(FUZZY_MATCH_PENALTY))
-                .append("</fuzzyMatchPenalty>\n")
-                .append("                <queryTermSimilarityThreshold>")
-                .append(queryProperties
-                        .getProperty(QUERY_TERM_SIMILARITY_THRESHOLD))
-                .append("</queryTermSimilarityThreshold>\n")
-                .append("                <prefixMatchPenalty>")
-                .append(queryProperties.getProperty(PREFIX_MATCH_PENALTY))
-                .append("</prefixMatchPenalty>\n")
-                .append("                <cacheSize>")
-                .append(queryProperties.getProperty(CACHE_SIZE))
-                .append("</cacheSize>\n")
-                .append("                <rows>")
-                .append(queryProperties.getProperty(ROWS))
-                .append("</rows>\n")
-                .append("                <fieldBasedSearch>")
-                .append(queryProperties.getProperty(FIELD_BASED_SEARCH))
-                .append("</fieldBasedSearch>\n")
-                .append("                <searcherType>")
-                .append(queryProperties.getProperty(SEARCHER_TYPE))
-                .append("</searcherType>\n")
-                .append("\n")
-                .append("                <!-- 0: exact match; 1: fuzzy match.-->\n")
-                .append("                <queryTermFuzzyType>")
-                .append(queryProperties.getProperty(QUERY_TERM_FUZZY_TYPE))
-                .append("</queryTermFuzzyType>\n")
-                .append("\n")
-                .append("                <!-- 0: prefix match; 1: complete match -->\n")
-                .append("                <queryTermPrefixType>")
-                .append(queryProperties.getProperty(QUERY_TERM_PREFIX_TYPE))
-                .append("</queryTermPrefixType>\n").append("\n")
-                .append("                <queryResponseWriter>\n")
-                .append("                    <responseFormat>")
-                .append(queryProperties.getProperty(RESPONSE_FORMAT))
-                .append("</responseFormat>\n")
-                .append("                </queryResponseWriter>\n")
-                .append("<highlighter>\n")
-                        .append("<snippetSize>").append(250).append("</snippetSize>\n")
-                        .append("<fuzzyTagPre value = \'").append(queryProperties.get("fuzzyPreTag")).append("\'></fuzzyTagPre>\n")
-                        .append("<fuzzyTagPost value = \'").append(queryProperties.get("fuzzyPostTag")).append("\'></fuzzyTagPost>\n")
-                        .append("<exactTagPre value = \'").append(queryProperties.get("exactPreTag")).append("\'></exactTagPre>\n")
-                        .append("<exactTagPost value = \'").append(queryProperties.get("exactPostTag")).append("\'></exactTagPost>\n")
-                .append("</highlighter>\n")
-                .append("            </query>\n");
-                core.append(schemaToXml());
-                core.append("	  <updatehandler>\n").append("                <maxDocs>")
-                .append(updateProperties.getProperty(MAX_DOCS))
-                .append("</maxDocs>\n").append("                <maxMemory>")
-                .append(updateProperties.getProperty(MAX_MEMORY))
-                .append("</maxMemory>\n")
-                .append("                <mergePolicy>\n")
-                .append("                    <mergeEveryNSeconds>")
-                .append(updateProperties.getProperty(MERGE_EVERY_N_SECONDS))
-                .append("</mergeEveryNSeconds>\n")
-                .append("                    <mergeEveryMWrites>")
-                .append(updateProperties.getProperty(MERGE_EVERY_M_WRITES))
-                .append("</mergeEveryMWrites>\n")
-                .append("                </mergePolicy>\n")
-                .append("                <updateLog>\n")
-                .append("                    <logLevel>")
-                .append(updateProperties.getProperty(LOG_LEVEL))
-                .append("</logLevel>\n")
-                .append("                    <accessLogFile>")
-                .append(updateProperties.getProperty(ACCESS_LOG_FILE))
-                .append("</accessLogFile>\n")
-                .append("                </updateLog>\n")
-                .append("            </updatehandler>\n")
-                .append("        </core>\n");
+            .append(tt)
+                .append("<dataSourceType>")
+                    .append(miscProperties.getProperty(DATA_SOURCE_TYPE))
+                .append("</dataSourceType>\n\n")
 
+/* INDEX CONFIGURATION NODE START */
+            .append(tt)
+                .append("<indexConfig>\n")
+            .append(ttt)
+                .append("<supportSwapInEditDistance>")
+                    .append(indexProperties.getProperty(SUPPORT_SWAP_IN_EDIT_DISTANCE))
+                .append("</supportSwapInEditDistance>\n")
+            .append(ttt)
+                .append("<fieldBoost>")
+                    .append(indexProperties.getProperty(FIELD_BOOST))
+                .append("</fieldBoost>\n");
+
+        if (schema.recordBoostKey != null) {
+            core
+            .append(ttt)
+                .append("<recordBoostField>")
+                    .append(indexProperties.getProperty(RECORD_BOOST_FIELD))
+                .append("</recordBoostField>\n");
+        }
+        core
+            .append(ttt)
+                .append("<defaultQueryTermBoost>")
+                    .append(indexProperties.getProperty(DEFAULT_QUERY_TERM_BOOST))
+                .append("</defaultQueryTermBoost>\n")
+            .append(ttt)
+                .append("<enablePositionIndex>")
+                    .append(indexProperties.getProperty(ENABLE_POSITION_INDEX))
+                .append("</enablePositionIndex>\n")
+            .append(tt)
+                .append("</indexConfig>\n\n")
+/* INDEX CONFIGURATION NODE END */
+/* QUERY CONFIGURATION NODE START */
+            .append(tt)
+                .append("<query>\n")
+            .append(ttt)
+                .append("<rankingAlgorithm>\n")
+            .append(tttt)
+                .append("<recordScoreExpression>")
+                    .append(queryProperties.getProperty(RECORD_SCORE_EXPRESSION))
+                .append("</recordScoreExpression>\n")
+            .append(ttt)
+                .append("</rankingAlgorithm>\n")
+            .append(ttt)
+                .append("<fuzzyMatchPenalty>")
+                    .append(queryProperties.getProperty(FUZZY_MATCH_PENALTY))
+                .append("</fuzzyMatchPenalty>\n")
+            .append(ttt)
+                .append("<queryTermSimilarityThreshold>")
+                    .append(queryProperties.getProperty(QUERY_TERM_SIMILARITY_THRESHOLD))
+                .append("</queryTermSimilarityThreshold>\n")
+            .append(ttt)
+                .append("<prefixMatchPenalty>")
+                    .append(queryProperties.getProperty(PREFIX_MATCH_PENALTY))
+                .append("</prefixMatchPenalty>\n")
+            .append(ttt)
+                .append("<cacheSize>")
+                    .append(queryProperties.getProperty(CACHE_SIZE))
+                .append("</cacheSize>\n")
+            .append(ttt)
+                .append("<rows>")
+                    .append(queryProperties.getProperty(ROWS))
+                .append("</rows>\n")
+            .append(ttt)
+                .append("<fieldBasedSearch>")
+                    .append(queryProperties.getProperty(FIELD_BASED_SEARCH))
+                .append("</fieldBasedSearch>\n")
+            .append(ttt)
+                .append("<searcherType>")
+                    .append(queryProperties.getProperty(SEARCHER_TYPE))
+                .append("</searcherType>\n")
+            .append(ttt)
+                .append("<queryTermFuzzyType>")
+                    .append(queryProperties.getProperty(QUERY_TERM_FUZZY_TYPE))
+                .append("</queryTermFuzzyType>\n")
+            .append(ttt)
+                .append("<queryTermPrefixType>")
+                    .append(queryProperties.getProperty(QUERY_TERM_PREFIX_TYPE))
+                .append("</queryTermPrefixType>\n")
+            .append(ttt)
+                .append("<queryResponseWriter>\n")
+            .append(tttt)
+                .append("<responseFormat>")
+                    .append(queryProperties.getProperty(RESPONSE_FORMAT))
+                .append("</responseFormat>\n")
+            .append(ttt)
+                .append("</queryResponseWriter>\n")
+            .append(ttt)
+                .append("<highlighter>\n")
+            .append(tttt)
+                .append("<snippetSize>")
+                    .append(250)
+                .append("</snippetSize>\n")
+            .append(tttt)
+                .append("<fuzzyTagPre value = \'")
+                    .append(queryProperties.get("fuzzyPreTag"))
+                .append("\'></fuzzyTagPre>\n")
+            .append(tttt)
+                .append("<fuzzyTagPost value = \'")
+                    .append(queryProperties.get("fuzzyPostTag"))
+                .append("\'></fuzzyTagPost>\n")
+            .append(tttt)
+                .append("<exactTagPre value = \'")
+                    .append(queryProperties.get("exactPreTag"))
+                .append("\'></exactTagPre>\n")
+            .append(tttt)
+                .append("<exactTagPost value = \'")
+                    .append(queryProperties.get("exactPostTag"))
+                .append("\'></exactTagPost>\n")
+            .append(ttt)
+                .append("</highlighter>\n")
+            .append(tt)
+                .append("</query>\n\n");
+/* QUERY CONFIGURATION NODE END */
+
+/* SCHEMA CONFIGURATION NODE START */
+        core
+            .append(schemaToXml());
+/* SCHEMA CONFIGURATION NODE END */
+
+/* UPDATE CONFIGURATION NODE START */
+        core
+            .append(tt)
+                .append("<updatehandler>\n")
+            .append(ttt)
+                .append("<maxDocs>")
+                    .append(updateProperties.getProperty(MAX_DOCS))
+                .append("</maxDocs>\n")
+            .append(ttt)
+                .append("<maxMemory>")
+                    .append(updateProperties.getProperty(MAX_MEMORY))
+                .append("</maxMemory>\n")
+            .append(ttt)
+                .append("<mergePolicy>\n")
+            .append(tttt)
+                .append("<mergeEveryNSeconds>")
+                    .append(updateProperties.getProperty(MERGE_EVERY_N_SECONDS))
+                .append("</mergeEveryNSeconds>\n")
+            .append(tttt)
+                .append("<mergeEveryMWrites>")
+                    .append(updateProperties.getProperty(MERGE_EVERY_M_WRITES))
+                .append("</mergeEveryMWrites>\n")
+            .append(ttt)
+                .append("</mergePolicy>\n")
+            .append(ttt)
+                .append("<updateLog>\n")
+            .append(tttt)
+                .append("<logLevel>")
+                    .append(updateProperties.getProperty(LOG_LEVEL))
+                .append("</logLevel>\n")
+            .append(tttt)
+                .append("<accessLogFile>")
+                    .append(updateProperties.getProperty(ACCESS_LOG_FILE))
+                .append("</accessLogFile>\n")
+            .append(ttt)
+                .append("</updateLog>\n")
+            .append(tt)
+                .append("</updatehandler>\n")
+/* UPDATE CONFIGURATION NODE END */
+            .append(t)
+                .append("</core>\n");
         return core.toString();
     }
 
-
-    String getIndexName() {
-        return name;
-    }
-
     String schemaToXml() {
-        StringBuilder schemaXML = new StringBuilder("	<schema>\n"
-                + "		<fields>\n");
+        StringBuilder schemaXML = new StringBuilder()
+            .append(tt)
+                .append("<schema>\n")
+            .append(ttt)
+                .append("<fields>\n");
+
         for (Field field : schema.fields) {
             schemaXML.append(Field.toXML(field));
         }
-        schemaXML.append("		</fields>\n").append("		<uniqueKey>")
-                .append(schema.uniqueKey).append("</uniqueKey>\n");
-
         schemaXML
+            .append(ttt)
+                .append("</fields>\n")
+            .append(ttt)
+                .append("<uniqueKey>")
+                    .append(schema.uniqueKey)
+                .append("</uniqueKey>\n")
+/* ADDING FACETS */
                 .append(facetToXML())
-                .append("		<types>\n")
-                .append("		  <fieldType name=\"text_en\">\n")
-                .append("			<analyzer>\n")
-                .append("				<filter name=\"PorterStemFilter\" dictionary=\"\" />\n")
-                .append("				<filter name=\"StopFilter\" words=\"stop-words.txt\" />\n")
-                .append("			</analyzer>\n").append("		  </fieldType>\n")
-                .append("		</types>\n").append("	</schema>\n");
-
+/* DEFAULT CONFIGURATION FOR SCHEMA */
+            .append(ttt)
+                .append("<types>\n")
+            .append(tttt)
+                .append("<fieldType name=\"text_en\">\n")
+            .append(tttt).append(tMinus)
+                .append("<analyzer>\n")
+            .append(tttt).append(t)
+                .append("<filter name=\"PorterStemFilter\" dictionary=\"\" />\n")
+            .append(tttt).append(t)
+                .append("<filter name=\"StopFilter\" words=\"stop-words.txt\" />\n")
+            .append(tttt).append(tMinus)
+                .append("</analyzer>\n")
+            .append(tttt)
+                .append("</fieldType>\n")
+            .append(ttt)
+                .append("</types>\n")
+            .append(tt)
+                .append("</schema>\n\n");
         return schemaXML.toString();
-
     }
 
     String facetToXML() {
+        StringBuilder facetNodeXML = new StringBuilder()
+            .append(ttt)
+                .append("<facetEnabled>")
+                    .append(schema.facetEnabled)
+                .append("</facetEnabled>\n");
 
-        StringBuilder facetNodeXML = new StringBuilder("		<facetEnabled>")
-                .append(schema.facetEnabled).append("</facetEnabled>\n");
         if (schema.facetEnabled) {
             Iterator<Field> iter = schema.fields.iterator();
             StringBuilder facetFieldsXML = new StringBuilder("");
@@ -341,29 +418,35 @@ final class IndexDescription {
                     schema.facetEnabled = true;
                     switch (f.facetType) {
                         case CATEGORICAL:
-                            facetFieldsXML.append("			<facetField name=\"")
-                                    .append(f.name)
+                            facetFieldsXML
+                                    .append(tttt).append(t)
+                                        .append("<facetField name=\"")
+                                            .append(f.name)
                                     .append("\" facetType=\"categorical\"/>\n");
                             break;
                         case RANGE:
                         default:
-                            facetFieldsXML.append("			<facetField name=\"")
-                                    .append(f.name)
-                                    .append("\" facetType=\"range\" facetStart=\"")
-                                    .append(f.facetStart).append("\" facetEnd=\"")
-                                    .append(f.facetEnd).append("\"")
-                                    .append(" facetGap=\"").append(f.facetGap)
-                                    .append("\"/>\n");
+                            facetFieldsXML
+                                    .append(tttt).append(t)
+                                        .append("<facetField name=\"")
+                                        .append(f.name)
+                                        .append("\" facetType=\"range\" facetStart=\"")
+                                        .append(f.facetStart).append("\" facetEnd=\"")
+                                        .append(f.facetEnd).append("\"")
+                                        .append(" facetGap=\"").append(f.facetGap)
+                                        .append("\"/>\n");
                     }
                 }
             }
-            facetNodeXML = facetNodeXML.append("		<facetFields>\n")
-                    .append(facetFieldsXML).append("		</facetFields>\n");
+            facetNodeXML
+                    .append(tttt)
+                        .append("<facetFields>\n")
+                            .append(facetFieldsXML)
+                    .append(tttt)
+                        .append("</facetFields>\n");
         }
-
         return facetNodeXML.toString();
     }
-
 
     static void throwIfNonValidTopK(int topK) {
         if (topK < 1) {
@@ -387,6 +470,4 @@ final class IndexDescription {
                     "The name of the index must be a non-empty string");
         }
     }
-
-
 }

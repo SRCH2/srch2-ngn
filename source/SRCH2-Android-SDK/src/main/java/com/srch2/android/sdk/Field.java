@@ -19,6 +19,8 @@ import java.util.Locale;
  */
 final public class Field {
 
+    static final String tttt = "                    ";
+
     enum FacetType {
         CATEGORICAL, RANGE
     }
@@ -352,7 +354,8 @@ final public class Field {
         StringBuilder fieldXML = new StringBuilder();
 
         if (field.isRecordBoostField) {
-            fieldXML.append("			<field name=\"").append(field.name)
+            fieldXML.append(tttt)
+                    .append("<field name=\"").append(field.name)
                     .append("\" type=\"")
                     .append(field.type.name().toLowerCase(Locale.ENGLISH))
                     .append("\" default=\"").append(1)
@@ -362,20 +365,23 @@ final public class Field {
                     .append(field.required).append("\"/>\n");
         } else if (field.type == InternalType.LOCATION_LATITUDE
                 || field.type == InternalType.LOCATION_LONGITUDE) {
-            fieldXML.append("           <field name=\"").append(field.name)
+            fieldXML.append(tttt)
+                    .append("<field name=\"").append(field.name)
                     .append("\" type=\"")
                     .append(field.type.name().toLowerCase(Locale.ENGLISH))
                     .append("\" indexed=\"false\" />\n");
         } else {
             if (field.highlight) {
-                fieldXML.append("			<field name=\"").append(field.name).append("\"")
+                fieldXML.append(tttt)
+                        .append("<field name=\"").append(field.name).append("\"")
                         .append(" type=\"").append(field.type.name().toLowerCase(Locale.ENGLISH)).append("\"")
                         .append(" indexed=\"").append("true").append("\"")
                         .append(" highlight=\"").append(field.highlight).append("\"")
                         .append(" required=\"").append(field.required).append("\"/>")
                         .append("\n");
             } else {
-                fieldXML.append("			<field name=\"").append(field.name).append("\"")
+                fieldXML.append(tttt)
+                        .append("<field name=\"").append(field.name).append("\"")
                         .append(" type=\"").append(field.type.name().toLowerCase(Locale.ENGLISH)).append("\"")
                         .append(" searchable=\"").append(field.searchable).append("\"")
                         .append(" refining=\"").append(field.refining).append("\"")

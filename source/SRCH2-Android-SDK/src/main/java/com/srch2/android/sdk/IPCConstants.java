@@ -9,6 +9,13 @@ enum IPCConstants {
     static final String INTENT_KEY_BROADCAST_ACTION = "do-action";
     static final String INTENT_VALUE_BROADCAST_ACTION_START_AWAITING_SHUTDOWN = "service_shutdown";
     static final String INTENT_VALUE_BROADCAST_ACTION_ENGINE_CRASHED_BUT_CAN_RESUME = "do-resume";
+   /** Use this set the timer for the server core and autoping: nothing else! */
+    static final int HEART_BEAT_SERVER_CORE_SHUTDOWN_DELAY_SECONDS = 20;
+    /** Is determined by {@link #HEART_BEAT_SERVER_CORE_SHUTDOWN_DELAY_SECONDS} and something less than it, so that
+     * the server doesn't shut down since it will get pinged before doing so. */
+    static final int HEART_BEAT_AUTO_PING_PING_DELAY_MILLISECONDS = (int) ((HEART_BEAT_SERVER_CORE_SHUTDOWN_DELAY_SECONDS * 1000) * .9f);
+
+    static final int DEBUG_AND_TESTING_MODE_QUICK_SHUTDOWN_DELAY = 3000;
 
     static final String INTENT_KEY_PORT_NUMBER = "exe_port_number";
     static final String INTENT_KEY_XML_CONFIGURATION_FILE_LITERAL = "xml_configuration_file";

@@ -35,7 +35,7 @@ public class ConfigurationTest {
     @Test
     public void testWriteTo() throws FileNotFoundException,
             UnsupportedEncodingException {
-        SRCH2Engine.getConfig().writeToSRCH2XML(System.getProperty("java.io.tmpdir") + File.separator + "srch2-config-4.xml");
+        SRCH2Engine.getConfig().writeConfigurationFileToDisk(System.getProperty("java.io.tmpdir") + File.separator + "srch2-config-4.xml");
     }
 
     @Test(expected = NullPointerException.class)
@@ -81,7 +81,7 @@ public class ConfigurationTest {
     public void testSet() {
         Assert.assertEquals(PrepareEngine.DEFAULT_SRCH2SERVER_PORT, SRCH2Engine.getConfig().getPort());
         Assert.assertEquals(PrepareEngine.DEFAULT_SRCH2HOME_PATH, SRCH2Engine.getConfig().getSRCH2Home());
-        String confXML = SRCH2Configuration.toXML(SRCH2Engine.getConfig());
+        String confXML = SRCH2Configuration.generateConfigurationFileString(SRCH2Engine.getConfig());
         Assert.assertTrue(confXML.contains("<listeningHostname>"
                 + SRCH2Configuration.HOSTNAME + "</listeningHostname>"));
         Assert.assertTrue(confXML.contains("<listeningPort>"
@@ -91,7 +91,7 @@ public class ConfigurationTest {
     @Test
     public void startEngineTest() throws IOException, InterruptedException {
         final String configPath = System.getProperty("java.io.tmpdir") + File.separator + "srch2-config.xml";
-        SRCH2Engine.getConfig().writeToSRCH2XML(configPath);
+        SRCH2Engine.getConfig().writeConfigurationFileToDisk(configPath);
         final String srch2bin = System.getProperty(SRCH2BIN_PROPERTY);
         if (srch2bin == null) {
             return;

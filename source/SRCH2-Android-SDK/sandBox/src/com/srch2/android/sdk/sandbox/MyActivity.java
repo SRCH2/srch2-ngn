@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.ListView;
 import android.widget.Toast;
 import com.srch2.android.sdk.SRCH2Engine;
@@ -56,7 +57,12 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
         }
     }
 
+    Object o;
+    public void foo(View v) {
 
+
+        o.hashCode();
+    }
 
 
     @Override

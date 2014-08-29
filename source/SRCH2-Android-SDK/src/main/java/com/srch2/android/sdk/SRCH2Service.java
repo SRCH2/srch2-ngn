@@ -359,7 +359,7 @@ final public class SRCH2Service extends Service {
         executableShutdownUrlString = startCommandIntent.getStringExtra(IPCConstants.INTENT_KEY_SHUTDOWN_URL);
         executableOAuthLiteral = startCommandIntent.getStringExtra(IPCConstants.INTENT_KEY_OAUTH);
         boolean isDebugAndTestingMode = startCommandIntent.getBooleanExtra(IPCConstants.INTENT_KEY_IS_DEBUG_AND_TESTING_MODE, false);
-        TIME_TO_WAIT_FOR_SHUTDOWN_MS = isDebugAndTestingMode ? 0 : DEFAULT_TIME_TO_WAIT_FOR_SHUTDOWN_MS;
+        TIME_TO_WAIT_FOR_SHUTDOWN_MS = isDebugAndTestingMode ? IPCConstants.DEBUG_AND_TESTING_MODE_QUICK_SHUTDOWN_DELAY : DEFAULT_TIME_TO_WAIT_FOR_SHUTDOWN_MS;
         executablePingUrl = startCommandIntent.getStringExtra(IPCConstants.INTENT_KEY_PING_URL);
 
         autoInstallCoreFilesAndOverwriteXMLConfigurationFile(startCommandIntent.getStringExtra(IPCConstants.INTENT_KEY_XML_CONFIGURATION_FILE_LITERAL));
@@ -442,7 +442,7 @@ final public class SRCH2Service extends Service {
 
             File executableBinary = new File(binDirectory, "srch2ngn.exe");
             if (!executableBinary.exists()) {
-                InputStream sourceFile = c.getResources().openRawResource(R.raw.srch2engine440android021);
+                InputStream sourceFile = c.getResources().openRawResource(R.raw.srch2heartbeat);
                 FileOutputStream destinationFile = new FileOutputStream(executableBinary);
                 copyStream(destinationFile, sourceFile);
                 chmod("775", executableBinary.getAbsolutePath());

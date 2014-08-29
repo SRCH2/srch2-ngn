@@ -13,7 +13,7 @@ class AutoPing {
     private static final String TAG = "HeartBeatPing";
 
     // should be slightly less than the amount of time the SRCH2 server core waits to autoshutdown
-    static final int HEART_BEAT_PING_DELAY = 50000;
+    static final int HEART_BEAT_PING_DELAY = IPCConstants.HEART_BEAT_AUTO_PING_PING_DELAY_MILLISECONDS;
     URL pingUrl;
     synchronized URL getPingUrl() { return pingUrl; }
     synchronized void setPingUrl(URL url) { pingUrl = url; }
