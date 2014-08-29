@@ -234,7 +234,7 @@ final public class SRCH2Engine {
         SRCH2Engine.conf.setSRCH2Home(appHomeDirectory
                 + File.separator
                 + SRCH2Configuration.SRCH2_HOME_FOLDER_DEFAULT_NAME);
-        startSRCH2Service(context, SRCH2Configuration.toXML(SRCH2Engine.conf));
+        startSRCH2Service(context, SRCH2Configuration.generateConfigurationFileString(SRCH2Engine.conf));
         isStarted = true;
     }
 
