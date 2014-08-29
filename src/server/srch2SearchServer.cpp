@@ -13,6 +13,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <assert.h>
 #include <string.h>
 #include <unistd.h>
@@ -68,15 +69,16 @@ using srch2http::CoreNameServerMap_t;
 // IETF RFC 6335 specifies port number range is 0 - 65535: http://tools.ietf.org/html/rfc6335#page-11
 typedef std::map<unsigned short /*portNumber*/, int /*fd*/> PortSocketMap_t;
 
-// each args of the cb_single_core_operator_route function is composed by the PortType_t and the search core
-struct type_cb_args{
+// Each arg of the cb_single_core_operator_route function includes the PortType_t and the search core object
+// Each arg of the cb_all_core_operator_route function includes the PortType_t and the CoreNameServerMap_t object
+struct CbArg_t{
     srch2http::PortType_t portType;
-    void* real_args;
+    void* args;
 
-    type_cb_args(srch2http::PortType_t type, void* args):portType(type), real_args(args)
+    CbArg_t(srch2http::PortType_t type, void* args):portType(type), args(args)
     {}
 };
-typedef std::vector<type_cb_args*> CbArgs_t;
+typedef std::vector<CbArg_t*> CbArgsVector_t;
 
 pthread_t *threads = NULL;
 unsigned int MAX_THREADS = 0;
@@ -89,21 +91,24 @@ unsigned int MAX_THREADS = 0;
 pthread_t * global_heart_beat_thread = NULL;
 volatile bool has_one_pulse = false;
 
+#ifdef ANDROID
 void thread_exit_handler(int sig){
     pthread_exit(0);
 }
+#endif
 
-void setup_sigusr1_to_exit(){
+void setup_sigusr2_to_exit(){
 #ifdef ANDROID
     // for the Android, there is no pthread_cancel function, 
-    // alternatively we use the pthread_kill(thread, SIGUSR1) 
-    // to send the SIGUSR1 to exit the pthread.
-    // reference: http://stackoverflow.com/questions/4610086/pthread-cancel-alternatives-in-android-ndk
+    // alternatively we use the pthread_kill(thread, SIGUSR2) 
+    // to send the SIGUSR2 to exit the pthread.
+    // reference: http://stackoverflow.com/questions/46SIGUSR2086/pthread-cancel-alternatives-in-android-ndk
     sigset_t sigset;
     sigemptyset(&sigset);
 
-    // handle signal of SIGUSR1
-    sigaddset(&sigset, SIGUSR1);
+    // handle signal of SIGUSR2, for whatever reason the SIGUSR1 doesn't work well on our Android phone, 
+    // The SIGUSR2 works fine.
+    sigaddset(&sigset, SIGUSR2);
     struct sigaction siginfo;
     siginfo.sa_handler = thread_exit_handler;
     siginfo.sa_mask = sigset;
@@ -111,17 +116,22 @@ void setup_sigusr1_to_exit(){
     // then the call will be automatically restarted after the signal handler returns if the SA_RESTART flag was used;
     // otherwise the call will fail with the error EINTR, check the detail at http://man7.org/linux/man-pages/man7/signal.7.html
     siginfo.sa_flags = SA_RESTART;
-    sigaction(SIGUSR1, &siginfo, NULL);
+    sigaction(SIGUSR2, &siginfo, NULL);
 #endif
 }
 
-void* heart_beat_function(void *arg){
-    setup_sigusr1_to_exit();
+// This function is the handler of the heart beat thread. 
+// 1. The heartbeat thread sets the SIGUSR2 signal to handle the pthread_exit() function.
+//    We have to use this alternate approach because the Android don't have th pthread_cancel()
+// 2. This thread will sleep every certain seconds, if there is no activity happens during 
+//    that time, this thread will send the "SIGTERM" to the process.
+void* heartBeatHandler(void *arg){
+    setup_sigusr2_to_exit();
     unsigned seconds = *(unsigned*) arg;
     if (seconds > 0){
         while(true){
             has_one_pulse = false;
-            sleep(static_cast<unsigned>(seconds));
+            sleep(seconds);
             if (!has_one_pulse){
                 kill(getpid(), SIGTERM);
             }
@@ -366,21 +376,23 @@ static void cb_single_core_operator_route(evhttp_request *req, void *arg){
     if (arg == NULL){
         return;
     }
-    struct type_cb_args args = *(reinterpret_cast<type_cb_args*>(arg));
-    if (args.real_args == NULL){
+    struct CbArg_t cbArgs = *(reinterpret_cast<CbArg_t*>(arg));
+    if (cbArgs.args== NULL){
         return;
     }
-    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(args.real_args);
+    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(cbArgs.args);
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
 
-    has_one_pulse = true;
-    if (checkOperationPermission(req, srch2Server, args.portType) == false) {
+    // set has_one_pulse to true to let the heart-beat thread notice there is one activity.
+    has_one_pulse = true; 
+
+    if (checkOperationPermission(req, srch2Server, cbArgs.portType) == false) {
         return;
     }
 
     try {
-        switch (args.portType){
+        switch (cbArgs.portType){
             case srch2http::SearchPort:
                 HTTPRequestHandler::searchCommand(req, srch2Server);
                 break;
@@ -424,17 +436,19 @@ static void cb_all_core_operator_route(evhttp_request *req, void *arg){
     if (arg == NULL){
         return;
     }
-    struct type_cb_args args = *(reinterpret_cast<type_cb_args*>(arg));
-    if (args.real_args == NULL){
+    struct CbArg_t cbArgs = *(reinterpret_cast<CbArg_t*>(arg));
+    if (cbArgs.args== NULL){
         return;
     }
-    CoreNameServerMap_t *coreNameServerMap = reinterpret_cast<CoreNameServerMap_t*>(args.real_args);
+    CoreNameServerMap_t *coreNameServerMap = reinterpret_cast<CoreNameServerMap_t*>(cbArgs.args);
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
 
+    // set has_one_pulse to true to let the heart-beat thread notice there is one activity.
     has_one_pulse = true;
+
     try{
-        switch (args.portType){
+        switch (cbArgs.portType){
             case srch2http::SearchAllPort:
                 if (checkGlobalOperationPermission(req, coreNameServerMap, "searchall")) {
                     HTTPRequestHandler::searchAllCommand(req, coreNameServerMap);
@@ -522,13 +536,13 @@ int bindSocket(const char * hostname, unsigned short port) {
 // entry point for each thread
 void* dispatch(void *arg) {
     // ask libevent to loop on events
-    setup_sigusr1_to_exit();
+    setup_sigusr2_to_exit();
     event_base_dispatch((struct event_base*) arg);
     return NULL;
 }
 
 void graceful_exit(CoreNameServerMap_t &coreNameServerMap, vector<struct event_base *> evBases
-        ,PortSocketMap_t &globalPortSocketMap, ConfigManager *serverConf, CbArgs_t &cbArgs){
+        ,PortSocketMap_t &globalPortSocketMap, ConfigManager *serverConf, CbArgsVector_t &cbArgsVector){
 
     for (CoreNameServerMap_t::iterator iterator = coreNameServerMap.begin(); iterator != coreNameServerMap.end(); iterator++) {
         iterator->second->indexer->save();
@@ -564,7 +578,7 @@ void graceful_exit(CoreNameServerMap_t &coreNameServerMap, vector<struct event_b
         shutdown(iterator->second, SHUT_RD);
     }
 
-    for (CbArgs_t::iterator it = cbArgs.begin(); it != cbArgs.end(); ++it){
+    for (CbArgsVector_t::iterator it = cbArgsVector.begin(); it != cbArgsVector.end(); ++it){
         delete *it;
     }
 
@@ -646,15 +660,15 @@ static void killServer(int signal) {
     for (int i = 0; i < MAX_THREADS; i++) {
 #ifdef ANDROID
     	// Android thread implementation does not have pthread_cancel()
-    	// use pthread_kill instead. We use the SIGUSR1 to replace the SIGTERM signal
-    	pthread_kill(threads[i], SIGUSR1);
+    	// use pthread_kill instead. We use the SIGUSR2 to replace the SIGTERM signal
+    	pthread_kill(threads[i], SIGUSR2);
 #else
         pthread_cancel(threads[i]);
 #endif
     }
     if ( global_heart_beat_thread != NULL ){
 #ifdef ANDROID
-        pthread_kill(*global_heart_beat_thread, SIGUSR1);
+        pthread_kill(*global_heart_beat_thread, SIGUSR2);
 #else
         pthread_cancel(*global_heart_beat_thread);
 #endif
@@ -673,9 +687,15 @@ static void killServer(int signal) {
 
 /*
  * Start the srch2 servers, one per core in the config
+ *
+ * The globalCBArgs stores all the arguments for each thread on each certain port. 
+ * If we have 4 threads and each have 5 ports, this globalCBArgs will contain 4*5 = 20 arguments.
+ * Each thread will have 5 different arguments for its 5 ports.
+ * All of the 20 arguments is created in the following function, they will be deallocated 
+ * in the graceful_exit() function, when the server is stopped.
  */
 static int startServers(ConfigManager *config, vector<struct event_base *> *evBases, vector<struct evhttp *> *evServers, 
-        CoreNameServerMap_t *coreNameServerMap, PortSocketMap_t *globalPortSocketMap, CbArgs_t *globalCBArgs)
+        CoreNameServerMap_t *coreNameServerMap, PortSocketMap_t *globalPortSocketMap, CbArgsVector_t *globalCBArgs)
 {
     // Step 1: Waiting server
     // http://code.google.com/p/imhttpd/source/browse/trunk/MHttpd.c
@@ -802,7 +822,7 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
             if (port == 1) {
                 port = globalDefaultPort;
             }
-            globalCBArgs->push_back(new type_cb_args(portList[j].portType, defaultCore));
+            globalCBArgs->push_back(new CbArg_t(portList[j].portType, defaultCore));
             evhttp_set_cb(http_server, portList[j].path, portList[j].callback, (void*)(globalCBArgs->back()));
             Logger::debug("Routing port %d route %s to default core %s", port, portList[j].path, defaultCore->getCoreName().c_str());
         }
@@ -820,7 +840,7 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
                     if (port < 1) {
                         port = globalDefaultPort;
                     }
-                    globalCBArgs->push_back(new type_cb_args(portList[j].portType, iterator->second));
+                    globalCBArgs->push_back(new CbArg_t(portList[j].portType, iterator->second));
                     evhttp_set_cb(http_server, path.c_str(), portList[j].callback, (void*)(globalCBArgs->back()));
 
                     Logger::debug("Adding port %d route %s to core %s", port, path.c_str(), coreName.c_str());
@@ -837,7 +857,7 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
 
         for(int j = 0; global_PortList[j].path != NULL; j++){
             string path = string(global_PortList[j].path);
-            globalCBArgs->push_back(new type_cb_args(global_PortList[j].portType, coreNameServerMap));
+            globalCBArgs->push_back(new CbArg_t(global_PortList[j].portType, coreNameServerMap));
             evhttp_set_cb(http_server, path.c_str(), global_PortList[j].callback, (void*)(globalCBArgs->back()));
         }
 
@@ -922,17 +942,17 @@ int main(int argc, char** argv) {
     vector<struct evhttp *> evServers;
     PortSocketMap_t globalPortSocketMap;  // map of all ports across all cores to shared socket file descriptors
     CoreNameServerMap_t coreNameServerMap; // map from core names to Srch2Servers
-    CbArgs_t cbArgs;
-    int start = startServers(serverConf, &evBases, &evServers, &coreNameServerMap, &globalPortSocketMap, &cbArgs);
+    CbArgsVector_t cbArgsVector;
+    int start = startServers(serverConf, &evBases, &evServers, &coreNameServerMap, &globalPortSocketMap, &cbArgsVector);
     if (start != 0) {
         Logger::close();
         return start; // startup failed
     }
 
-    unsigned int pulse_per_seconds = serverConf->getHeartBeatTimer();
-    if (pulse_per_seconds > 0){
+    unsigned int heartBeatTimer = serverConf->getHeartBeatTimer();
+    if (heartBeatTimer > 0){
         global_heart_beat_thread = new pthread_t();
-        pthread_create(global_heart_beat_thread, NULL, heart_beat_function, &pulse_per_seconds);
+        pthread_create(global_heart_beat_thread, NULL, heartBeatHandler, &heartBeatTimer);
     }
 
     /* Set signal handlers */
@@ -964,6 +984,6 @@ int main(int argc, char** argv) {
         Logger::console("HeartBeat Thread = <%u> stopped", *global_heart_beat_thread);
     }
 
-    graceful_exit(coreNameServerMap, evBases, globalPortSocketMap, serverConf, cbArgs);
+    graceful_exit(coreNameServerMap, evBases, globalPortSocketMap, serverConf, cbArgsVector);
     return EXIT_SUCCESS;
 }

@@ -1,4 +1,9 @@
-#this test is used for Heartbeat
+# This test is used for Heartbeat. 
+# It will get the heartbeat timer from the configuration file. 
+# The first test will not send any action to the server during the heart beat time.
+#   Then the engine should be stopped by the heart beat thread when the timer is done.
+# The second test will ping the server once at the end of heart beat time.
+#   Then the engine should keep alive.
 
 import sys, urllib2, json, time, subprocess, os, commands, signal
 
