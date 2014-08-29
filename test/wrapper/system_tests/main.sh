@@ -709,7 +709,7 @@ else
 fi
 rm -rf data/ upsert_batch/*.idx upsert_batch/indexes/*.idx
 
-
+sleep 3
 test_id="multicore"
 printTestBanner "$test_id"
 rm -f ./multicore/core?/*.idx ./multicore/core?/srch2-log.txt
