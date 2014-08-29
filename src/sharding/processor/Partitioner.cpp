@@ -129,6 +129,54 @@ void CorePartitioner::getAllReadTargets(vector<NodeTargetShardInfo> & targets) c
 
 }
 
+
+void CorePartitioner::getAllTargets(vector<NodeTargetShardInfo> & target) const{
+
+	map<NodeId, NodeTargetShardInfo> targetsMap;
+
+	vector<const NodePartition *> nodePartitions;
+	partitionContainer->getNodePartitionsForRead(nodePartitions);
+
+	for(unsigned i = 0; i < nodePartitions.size(); ++i){
+		NodeId nodeId = nodePartitions.at(i)->getNodeId();
+		unsigned coreId = nodePartitions.at(i)->getCoreId();
+		if(targetsMap.find(nodeId) == targetsMap.end()){
+			targetsMap[nodeId] = NodeTargetShardInfo(nodeId, coreId);
+		}
+		addPartitionToNodeTargetContainer(nodePartitions.at(i), targetsMap[nodeId]);
+	}
+
+	vector<const ClusterPartition *> clusterPartitions;
+	partitionContainer->getClusterPartitionsForRead(clusterPartitions);
+
+	for(unsigned i = 0 ; i < clusterPartitions.size(); ++i){
+
+		if(clusterPartitions.at(i)->isPartitionLocked()){
+			continue;
+		}
+
+		unsigned coreId = clusterPartitions.at(i)->getCoreId();
+
+		vector<NodeId> shardLocations;
+		clusterPartitions.at(i)->getShardLocations(shardLocations);
+		for(vector<NodeId>::iterator nodeItr = shardLocations.begin();
+				nodeItr != shardLocations.end(); ++nodeItr){
+			if(targetsMap.find(*nodeItr) == targetsMap.end()){
+				targetsMap[*nodeItr] = NodeTargetShardInfo(*nodeItr, coreId);
+			}
+			addWritePartitionToNodeTargetContainer(clusterPartitions.at(i), targetsMap[*nodeItr]);
+		}
+	}
+
+	for(map<NodeId, NodeTargetShardInfo>::iterator targetsMapItr = targetsMap.begin();
+			targetsMapItr != targetsMap.end(); ++targetsMapItr){
+		target.push_back(targetsMapItr->second);
+	}
+
+
+
+}
+
 void CorePartitioner::getAllWriteTargets(unsigned hashKey, NodeId currentNodeId, vector<NodeTargetShardInfo> & targets) const{
 
 	map<NodeId, NodeTargetShardInfo> targetNodes;

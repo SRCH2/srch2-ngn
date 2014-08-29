@@ -345,8 +345,8 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, unsign
                     "All nodes are down.");
         }else{
 
-        	// TODO remove
-        	NodeTargetShardInfo::printTargets(targets);
+//        	// TODO remove
+//        	NodeTargetShardInfo::printTargets(targets);
 
     		bool routingStatus = dpMessageHandler.broadcast<InsertUpdateCommand, CommandStatus>(insertUpdateInput,
     						true,
@@ -632,7 +632,7 @@ void DPExternalRequestHandler::externalGetInfoCommand(evhttp_request *req, unsig
     boost::shared_ptr<GetInfoResponseAggregator> resultsAggregator(new GetInfoResponseAggregator(configurationManager,req, clusterReadview, coreId));
 	CorePartitioner * partitioner = new CorePartitioner(clusterReadview->getPartitioner(coreId));
     vector<NodeTargetShardInfo> targets;
-    partitioner->getAllReadTargets(targets);
+    partitioner->getAllTargets(targets);
     if(targets.size() == 0){
         bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
                 "All nodes are down.");
@@ -680,7 +680,7 @@ void DPExternalRequestHandler::externalSerializeIndexCommand(evhttp_request *req
 
     	CorePartitioner * partitioner = new CorePartitioner(clusterReadview->getPartitioner(coreId));
         vector<NodeTargetShardInfo> targets;
-        partitioner->getAllReadTargets(targets);
+        partitioner->getAllTargets(targets);
         if(targets.size() == 0){
             bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
                     "All nodes are down.");
@@ -748,7 +748,7 @@ void DPExternalRequestHandler::externalSerializeRecordsCommand(evhttp_request *r
 
             	CorePartitioner * partitioner = new CorePartitioner(clusterReadview->getPartitioner(coreId));
                 vector<NodeTargetShardInfo> targets;
-                partitioner->getAllReadTargets(targets);
+                partitioner->getAllTargets(targets);
                 if(targets.size() == 0){
                     bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
                             "All nodes are down.");
@@ -817,7 +817,7 @@ void DPExternalRequestHandler::externalResetLogCommand(evhttp_request *req, unsi
         resultsAggregator(new StatusAggregator<ResetLogCommand>(configurationManager,req, clusterReadview, coreId));
     	CorePartitioner * partitioner = new CorePartitioner(clusterReadview->getPartitioner(coreId));
         vector<NodeTargetShardInfo> targets;
-        partitioner->getAllReadTargets(targets);
+        partitioner->getAllTargets(targets);
         if(targets.size() == 0){
             bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
                     "All nodes are down.");
@@ -872,7 +872,7 @@ void DPExternalRequestHandler::externalCommitCommand(evhttp_request *req, unsign
         resultsAggregator(new StatusAggregator<CommitCommand>(configurationManager,req, clusterReadview, coreId));
     	CorePartitioner * partitioner = new CorePartitioner(clusterReadview->getPartitioner(coreId));
         vector<NodeTargetShardInfo> targets;
-        partitioner->getAllReadTargets(targets);
+        partitioner->getAllTargets(targets);
         if(targets.size() == 0){
             bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
                     "All nodes are down.");
@@ -927,7 +927,7 @@ void DPExternalRequestHandler::externalMergeCommand(evhttp_request *req, unsigne
         resultsAggregator(new StatusAggregator<MergeCommand>(configurationManager,req, clusterReadview, coreId));
     	CorePartitioner * partitioner = new CorePartitioner(clusterReadview->getPartitioner(coreId));
         vector<NodeTargetShardInfo> targets;
-        partitioner->getAllReadTargets(targets);
+        partitioner->getAllTargets(targets);
         if(targets.size() == 0){
             bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
                     "All nodes are down.");
