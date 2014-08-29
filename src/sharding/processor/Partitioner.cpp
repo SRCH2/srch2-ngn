@@ -35,7 +35,9 @@ void CorePartitioner::getAllReadTargets(vector<NodeTargetShardInfo> & targets) c
 	// first move on node partitions and add all those nodes to targetNodes;
 	for(unsigned nodePartitionIdx = 0 ; nodePartitionIdx < nodePartitions.size(); ++nodePartitionIdx){
 		const NodePartition * nodePartition = nodePartitions.at(nodePartitionIdx);
-		targetNodes[nodePartition->getNodeId()] = NodeTargetShardInfo(nodePartition->getNodeId(), partitionContainer->getCoreId());
+		if(targetNodes.find(nodePartition->getNodeId()) == targetNodes.end()){
+			targetNodes[nodePartition->getNodeId()] = NodeTargetShardInfo(nodePartition->getNodeId(), partitionContainer->getCoreId());
+		}
 		addPartitionToNodeTargetContainer(nodePartition, targetNodes[nodePartition->getNodeId()]);
 	}
 
@@ -133,7 +135,9 @@ void CorePartitioner::getAllWriteTargets(unsigned hashKey, NodeId currentNodeId,
 	// first get local write targets if this node has any node partition
 	const NodePartition * localNodePartition = partitionContainer->getNodePartitionForWrite(hashKey, currentNodeId);
 	if(localNodePartition != NULL){
-		targetNodes[currentNodeId] = NodeTargetShardInfo(currentNodeId, partitionContainer->getCoreId());
+		if(targetNodes.find(currentNodeId) == targetNodes.end()){
+			targetNodes[currentNodeId] = NodeTargetShardInfo(currentNodeId, partitionContainer->getCoreId());
+		}
 		addPartitionToNodeTargetContainer(localNodePartition, targetNodes[currentNodeId]);
 	}
 
@@ -141,14 +145,15 @@ void CorePartitioner::getAllWriteTargets(unsigned hashKey, NodeId currentNodeId,
 	const ClusterPartition * writeClusterPartition = partitionContainer->getClusterPartitionForWrite(hashKey);
 	ASSERT(writeClusterPartition != NULL);
 	if(! writeClusterPartition->isPartitionLocked()){
+
 		vector<NodeId> partitionCoveringNodes;
 		writeClusterPartition->getShardLocations(partitionCoveringNodes);
 		for(vector<NodeId>::iterator coveringNodeIdItr = partitionCoveringNodes.begin();
 				coveringNodeIdItr != partitionCoveringNodes.end(); ++coveringNodeIdItr){
-			if(currentNodeId != *coveringNodeIdItr){
-				targetNodes[currentNodeId] = NodeTargetShardInfo(*coveringNodeIdItr, partitionContainer->getCoreId());
+			if(targetNodes.find(*coveringNodeIdItr) == targetNodes.end()){
+				targetNodes[*coveringNodeIdItr] = NodeTargetShardInfo(*coveringNodeIdItr, partitionContainer->getCoreId());
 			}
-			addWritePartitionToNodeTargetContainer(writeClusterPartition, targetNodes[currentNodeId]);
+			addWritePartitionToNodeTargetContainer(writeClusterPartition, targetNodes[*coveringNodeIdItr]);
 		}
 	}
 

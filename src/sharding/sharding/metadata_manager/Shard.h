@@ -161,6 +161,15 @@ public:
 		this->targetClusterShards = copy.targetClusterShards;
 		this->targetNodeShards = copy.targetNodeShards;
 	};
+	NodeTargetShardInfo & operator=(const NodeTargetShardInfo & rhs){
+		if(this != &rhs){
+			this->nodeId = rhs.nodeId;
+			this->coreId = rhs.coreId;
+			this->targetClusterShards = rhs.targetClusterShards;
+			this->targetNodeShards = rhs.targetNodeShards;
+		}
+		return *this;
+	}
 	void addClusterShard(ClusterShardId shardId);
 	void addNodeShard(const NodeShardId & shardId);
 
