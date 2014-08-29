@@ -171,6 +171,8 @@ INDEXWRITE_RETVAL IndexData::_aclRoleAdd( const std::string& primaryKeyID,
 	shared_ptr<vectorview<ForwardListPtr> >  forwardListDirectoryReadView;
 	this->forwardIndex->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
 
+	// 1- add these role ids to the access list of the record
+	// 2- add the id of this record to vector of resource ids for this role id in the permission map
 	if(this->forwardIndex->addRoleToResource(forwardListDirectoryReadView, primaryKeyID, roleIds)){
 		this->permissionMap->addResourceToRole(primaryKeyID, roleIds);
 		return OP_SUCCESS;
@@ -185,6 +187,8 @@ INDEXWRITE_RETVAL IndexData::_aclRoleDelete( const std::string& primaryKeyID,
 	shared_ptr<vectorview<ForwardListPtr> >  forwardListDirectoryReadView;
 	this->forwardIndex->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
 
+	// 1- Delete these role ids from the access list of the record
+	// 2- delete the id of this record from the vector of resource ids for this role id in the permission map
 	if(this->forwardIndex->deleteRoleFromResource(forwardListDirectoryReadView, primaryKeyID, roleIds)){
 		this->permissionMap->deleteResourceFromRole(primaryKeyID, roleIds);
 		return OP_SUCCESS;
@@ -195,6 +199,7 @@ INDEXWRITE_RETVAL IndexData::_aclRoleDelete( const std::string& primaryKeyID,
 
 INDEXWRITE_RETVAL IndexData::_aclRoleRecordDelete(const std::string& rolePrimaryKeyID){
 
+	// 1- get the resource ids for this role record
 	vector<string>* resourceIds = this->permissionMap->getResourceIdsForRole(rolePrimaryKeyID);
 
 	if( resourceIds != NULL){
@@ -203,9 +208,10 @@ INDEXWRITE_RETVAL IndexData::_aclRoleRecordDelete(const std::string& rolePrimary
 		this->forwardIndex->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
 
 		for(unsigned i = 0 ; i < resourceIds->size() ; ++i ){
+			// 2- delete this role record id from the access list of these resource records
 			this->forwardIndex->deleteRoleFromResource(forwardListDirectoryReadView, resourceIds->at(i), rolePrimaryKeyID);
 		}
-
+		// 3- delete this role id from the permission map
 		this->permissionMap->deleteRole(rolePrimaryKeyID);
 	}
 }

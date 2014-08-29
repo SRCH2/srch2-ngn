@@ -219,6 +219,22 @@ fi
 rm -rf data/ *.idx
 
 
+test_id="access_control"
+printTestBanner "$test_id"
+rm -f ./access_control/core?/*.idx ./access_control/core?/srch2-log.txt
+python ./access_control/accessControl.py $SRCH2_ENGINE ./access_control/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
+
+if [ ${PIPESTATUS[0]} -gt 0 ]; then
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
+    if [ $force -eq 0 ]; then
+	exit 255
+    fi
+else
+    echo "-- PASSED: $test_id" >> ${output}
+fi
+rm -rf data/ access_control/core?/*.idx
+
+
 test_id="boolean expression"
 printTestBanner "$test_id"
 python ./boolean-expression-test/boolean-expression.py $SRCH2_ENGINE ./boolean-expression-test/queries.txt | eval "${html_escape_command}" >> system_test.log 2>&1

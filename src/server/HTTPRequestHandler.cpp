@@ -586,8 +586,10 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
                     vector<string> roleIds;
                     string primaryKeyID;
                     bool allCoreExisted = true;
+                    // check if there is roleId in the query or not
                     if( JSONRecordParser::_extractRoleIds(roleIds, primaryKeyID, doc, server->indexDataConfig, log_str) ){
                     	if(server->roleCore != NULL){
+                    		// check all the records are exists in the role core with these role ids
                     		for(unsigned i = 0 ; i < roleIds.size() ; i++){
                     			INDEXLOOKUP_RETVAL returnValue = server->roleCore->indexer->lookupRecord(roleIds[i]);
                     			if(returnValue == LU_ABSENT_OR_TO_BE_DELETED){
@@ -623,8 +625,10 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
 
                 vector<string> roleIds;
                 string primaryKeyID;
+                // check if there is roleId in the query or not
                 if( JSONRecordParser::_extractRoleIds(roleIds, primaryKeyID, doc, server->indexDataConfig, log_str) ){
                 	if(server->roleCore != NULL){
+                		// check all the records are exists in the role core with these role ids
                 		for(unsigned i = 0 ; i < roleIds.size() ; i++){
                 			INDEXLOOKUP_RETVAL returnValue = server->roleCore->indexer->lookupRecord(roleIds[i]);
                 			if(returnValue == LU_ABSENT_OR_TO_BE_DELETED){

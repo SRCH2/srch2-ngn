@@ -109,6 +109,8 @@ public:
 		//print();
 		return !roleExisted;
 	}
+
+	// return false if this role id doesn't exit
 	bool deleteRole(const string &roleId){
 		vector<string>::iterator it;
 		boost::unique_lock<boost::shared_mutex> lock(mutexRW);
@@ -120,6 +122,7 @@ public:
 		return roleExisted;
 	}
 
+	// check whether a role id exits in the access list or not
 	bool hasRole(string &roleId){
 		vector<string>::iterator it;
 		boost::shared_lock< boost::shared_mutex> lock(mutexRW);

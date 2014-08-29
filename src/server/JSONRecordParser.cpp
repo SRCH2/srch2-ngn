@@ -474,6 +474,8 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
     return true;
 }
 
+// this function finds all the role ids in the query
+// and return false if there is not aclId in the query
 bool JSONRecordParser::_extractRoleIds(std::vector<string> &roleIds, string& primaryKeyID, const Json::Value &root, const CoreInfo_t *indexDataContainerConf, std::stringstream &error){
 	if (root.type() != Json::objectValue)
 	{
@@ -506,6 +508,8 @@ bool JSONRecordParser::_extractRoleIds(std::vector<string> &roleIds, string& pri
 	return true;
 }
 
+// this function extracts the role ids from a JSON object
+// and returns false if parsing the json object was not successful
 bool JSONRecordParser::getAclInfoFromJSON(vector<string> &roleIds, string &primaryKeyID,
     		const string& inputLine, const CoreInfo_t *indexDataContainerConf, std::stringstream &error){
 	string::const_iterator end_it = utf8::find_invalid(inputLine.begin(), inputLine.end());

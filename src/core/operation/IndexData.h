@@ -202,8 +202,11 @@ class WriteCounter
 };
 
 // we use this permission map for deleting a role core. then we can delete this role id from resources' access list
+// we don't need to use lock for permission map because only writers use this data
 class PermissionMap{
 public:
+	// Adds resource ids to a specific role id if the role id exists in the permission map
+	// or adds new record to the map if this role ids doesn't exist
 	void addResourceToRole(const string &resourceId, vector<string> &roleIds){
 		for(unsigned i = 0 ; i < roleIds.size() ; i++){
 			map<string, vector<string> >::iterator it = permissionMap.find(roleIds[i]);
@@ -218,9 +221,10 @@ public:
 				}
 			}
 		}
-		//print();
 	}
 
+	// Adds resource ids to a specific role id if the role id exists in the permission map
+	// or adds new record to the map if this role ids doesn't exist
 	void addResourceToRole(const string &resourceId, vector<string> *roleIds){
 		for(unsigned i = 0 ; i < roleIds->size() ; i++){
 			map<string, vector<string> >::iterator it = permissionMap.find(roleIds->at(i));
@@ -235,9 +239,9 @@ public:
 				}
 			}
 		}
-		//print();
 	}
 
+	// Deletes resource ids from a specific role id if the role ids exists in the permission map
 	void deleteResourceFromRole(const string &resourceId, vector<string> &roleIds){
 		for(unsigned i = 0 ; i < roleIds.size() ; i++){
 			map<string, vector<string> >::iterator it = permissionMap.find(roleIds[i]);
@@ -249,9 +253,10 @@ public:
 				}
 			}
 		}
-		//print();
 	}
 
+	// return the resource ids for the given role id
+	// notice that we can use this without lock because only one writer at a moment use this permission map (we only have one writer in the system)
 	vector<string>* getResourceIdsForRole(const string &roleId){
 		map<string, vector<string> >::iterator it = permissionMap.find(roleId);
 		if( it != permissionMap.end()){
@@ -261,6 +266,7 @@ public:
 		}
 	}
 
+	// deletes a role id from the permission map
 	void deleteRole(const string &roleId){
 		map<string, vector<string> >::iterator it = permissionMap.find(roleId);
 		if( it != permissionMap.end() ){
@@ -346,6 +352,8 @@ public:
     
     RankerExpression *rankerExpression;
 
+    // we store a map of the role id to resource ids. then when we delete a record from a role core
+    // we can use this map to delete the id of this record from the access lists of the resource records
     PermissionMap* permissionMap;
 
     // a global RW lock for readers and writers;
@@ -369,10 +377,15 @@ public:
     // add a record
     INDEXWRITE_RETVAL _addRecord(const Record *record, Analyzer *analyzer);
     
+    // Adds role ids to the access list of a record
     INDEXWRITE_RETVAL _aclRoleAdd(const std::string& primaryKeyID, vector<string> &roleIds);
 
+    // Deletes role ids from the access list of a record
     INDEXWRITE_RETVAL _aclRoleDelete(const std::string& primaryKeyID, vector<string> &roleIds);
 
+    // Deletes the role id from the permission map
+    // we use this function for deleting a record from a role core
+    // then we need to delete this record from the permission map of the resource cores of this core
     INDEXWRITE_RETVAL _aclRoleRecordDelete(const std::string& rolePrimaryKeyID);
 
     inline uint64_t _getReadCount() const { return this->readCounter->getCount(); }

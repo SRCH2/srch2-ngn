@@ -64,23 +64,24 @@ public:
     }
 
     void initAccessControls(){
+        if (!checkIndexExistence(indexDataConfig)){
+        	switch (indexDataConfig->getDataSourceType()) {
+        	case srch2http::DATA_SOURCE_JSON_FILE: {
+        		Logger::console("%s: Adding access controls from JSON file...",this->coreName.c_str());
 
-    		switch (indexDataConfig->getDataSourceType()) {
-    		case srch2http::DATA_SOURCE_JSON_FILE: {
-    			Logger::console("%s: Adding access controls from JSON file...",this->coreName.c_str());
+        		DaemonDataSource::addAccessControlsFromFile(indexer, indexDataConfig, this->roleCore->indexer);
 
-    			DaemonDataSource::addAccessControlsFromFile(indexer, indexDataConfig, this->roleCore->indexer);
+        		indexer->save();
+        		Logger::console("Indexes saved.");
 
-    			indexer->save();
-    			Logger::console("Indexes saved.");
+        		break;
+        	}
+        	default: {
 
-    			break;
-    		}
-    		default: {
-
-    			break;
-    		}
-    		};
+        		break;
+        	}
+        	};
+        }
     }
 
     // Check if index files already exist.
