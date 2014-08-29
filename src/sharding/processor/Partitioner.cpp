@@ -185,7 +185,10 @@ void CorePartitioner::addReadPartitionToNodeTargetContainer(const ClusterPartiti
 
 void CorePartitioner::addWritePartitionToNodeTargetContainer(const ClusterPartition * partition, NodeTargetShardInfo & targets ) const{
 	vector<unsigned> replicas;
-	ASSERT(partition->getNodeReplicaIds(targets.getNodeId(), replicas));
+	if(! partition->getNodeReplicaIds(targets.getNodeId(), replicas)){
+		ASSERT(false);
+		return;
+	}
 	ASSERT(replicas.size() > 0);
 	for(vector<unsigned>::iterator replicaIdItr = replicas.begin(); replicaIdItr != replicas.end(); ++replicaIdItr){
 		targets.addClusterShard(ClusterShardId(partitionContainer->getCoreId(), partition->getPartitionId(), *replicaIdItr));

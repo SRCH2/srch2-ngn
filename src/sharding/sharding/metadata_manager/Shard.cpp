@@ -422,6 +422,30 @@ void * NodeTargetShardInfo::deserialize(void* buffer){
 }
 
 
+string NodeTargetShardInfo::toString() const{
+	stringstream ss;
+	ss << "Node " << nodeId << "%";
+	ss << "Core " << coreId << "%";
+	ss << "Cluster shards : ";
+	for(unsigned i = 0 ; i < targetClusterShards.size(); ++i){
+		if(i != 0){
+			ss << "|" ;
+		}
+		ss << targetClusterShards.at(i).toString();
+	}
+	ss << "%";
+
+	ss << "Node shards : ";
+	for(unsigned i = 0 ; i < targetNodeShards.size(); ++i){
+		if(i != 0){
+			ss << "|";
+		}
+		ss << targetNodeShards.at(i).toString();
+	}
+	ss << "%";
+	return ss.str();
+}
+
 
 LocalShardContainer::LocalShardContainer(const unsigned coreId, const NodeId nodeId):
 		coreId(coreId), nodeId(nodeId){}

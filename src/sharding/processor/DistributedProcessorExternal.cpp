@@ -345,6 +345,9 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, unsign
                     "All nodes are down.");
         }else{
 
+        	// TODO remove
+        	NodeTargetShardInfo::printTargets(targets);
+
     		bool routingStatus = dpMessageHandler.broadcast<InsertUpdateCommand, CommandStatus>(insertUpdateInput,
     						true,
     						true,
