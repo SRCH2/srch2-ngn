@@ -122,6 +122,10 @@ OperationState * LoadBalancingStartOperation::balance(){
 	if(haveAllReportsArrived()){
 		Cluster_Writeview * writeview = ShardManager::getWriteview();
 		if(! isLightLoadedNode(ShardManager::getCurrentNodeId())){
+			OperationState * assignCopy = tryShardAssginmentAndShardCopy(true);// assignment only
+			if(assignCopy != NULL){
+				return assignCopy;
+			}
 			return LoadBalancingStartOperation::finalizeLoadBalancing();
 		}
 
@@ -227,7 +231,7 @@ OperationState * LoadBalancingStartOperation::tryShardMove(){
 
 }
 
-OperationState * LoadBalancingStartOperation::tryShardAssginmentAndShardCopy(){
+OperationState * LoadBalancingStartOperation::tryShardAssginmentAndShardCopy(bool assignOnly){
 	Cluster_Writeview * writeview = ShardManager::getWriteview();
 	/*
 	 * 1. UNASSIGNED shards
@@ -261,6 +265,9 @@ OperationState * LoadBalancingStartOperation::tryShardAssginmentAndShardCopy(){
 		unsigned assignOptionIndex = rand() % totallyUnassignedPartitions.size();
 		deleteAssignmentCandidates(assignCandidates);
 		return assignShard(totallyUnassignedPartitions.at(assignOptionIndex)); // we first assign the primary shard
+	}
+	if(assignOnly){
+		return NULL;
 	}
 
 	// all partitions at least have one alive replica

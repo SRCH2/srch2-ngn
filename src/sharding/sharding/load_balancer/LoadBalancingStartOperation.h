@@ -55,7 +55,7 @@ private:
 
 	OperationState * tryShardMove();
 
-	OperationState * tryShardAssginmentAndShardCopy();
+	OperationState * tryShardAssginmentAndShardCopy(bool assignOnly = false);
 
 
 	/*
