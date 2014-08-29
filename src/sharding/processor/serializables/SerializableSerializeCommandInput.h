@@ -33,7 +33,7 @@ public:
         // calculate number of needed bytes
         unsigned numberOfBytes = getNumberOfBytes();
         // allocate space
-        void * buffer = aloc->allocateMessageReturnBody(numberOfBytes);
+        void * buffer = aloc->allocateByteArray(numberOfBytes);
         // serialize data now
         void * bufferWritePointer = buffer;
         bufferWritePointer = srch2::util::serializeFixedTypes(indexOrRecord, bufferWritePointer);

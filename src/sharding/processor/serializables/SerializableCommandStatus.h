@@ -93,7 +93,7 @@ public:
         // calculate the size of object
         unsigned numberOfBytes = getNumberOfBytes();
         // allocate the space
-        void * buffer = allocatorObj->allocateMessageReturnBody(numberOfBytes);
+        void * buffer = allocatorObj->allocateByteArray(numberOfBytes);
         void * bufferWritePointer = buffer;
 
         bufferWritePointer = srch2::util::serializeFixedTypes(commandCode, bufferWritePointer);

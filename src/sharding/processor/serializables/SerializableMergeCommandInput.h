@@ -17,7 +17,7 @@ public:
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
     void* serialize(MessageAllocator * aloc){
-    return aloc->allocateMessageReturnBody(getNumberOfBytes());
+    return aloc->allocateByteArray(getNumberOfBytes());
     }
 
     unsigned getNumberOfBytes() const{

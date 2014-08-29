@@ -35,7 +35,7 @@ public:
         // calculate the needed size
         unsigned numberOfBytes = getNumberOfBytes();
         // allocate memory
-        void * buffer = aloc->allocateMessageReturnBody(numberOfBytes);
+        void * buffer = aloc->allocateByteArray(numberOfBytes);
         // copy data
         void * bufferWritePointer = buffer;
 

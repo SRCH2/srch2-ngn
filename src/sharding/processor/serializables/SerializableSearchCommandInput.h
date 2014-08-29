@@ -30,7 +30,7 @@ public:
 
         if(logicalPlan == NULL){
         	ASSERT(false);
-            void * buffer = aloc->allocateMessageReturnBody(sizeof(bool));
+            void * buffer = aloc->allocateByteArray(sizeof(bool));
             void * bufferWritePointer = buffer;
             bufferWritePointer = srch2::util::serializeFixedTypes(false, bufferWritePointer); // NULL
             return buffer;

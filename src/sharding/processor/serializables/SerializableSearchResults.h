@@ -169,7 +169,7 @@ public:
         // first calculate the number of bytes needed
         unsigned numberOfBytes = getNumberOfBytes();
         // allocate space
-        void * buffer = aloc->allocateMessageReturnBody(numberOfBytes);
+        void * buffer = aloc->allocateByteArray(numberOfBytes);
         // serialize
         void * bufferWritePointer = buffer;
         bufferWritePointer = srch2::util::serializeFixedTypes((unsigned)shardResults.size(), bufferWritePointer);

@@ -42,7 +42,7 @@ public:
         // calculate the size
         unsigned numberOfBytes = getNumberOfBytes();
         // allocate the space
-        void * buffer = aloc->allocateMessageReturnBody(numberOfBytes);
+        void * buffer = aloc->allocateByteArray(numberOfBytes);
         void * bufferWritePointer = buffer;
         // and serialize things in calculate
         bufferWritePointer = srch2::util::serializeFixedTypes(insertOrUpdate, bufferWritePointer);

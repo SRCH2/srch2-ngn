@@ -95,7 +95,7 @@ public:
         unsigned numberOfBytes = getNumberOfBytes();
 
         // allocate space
-        void * buffer = aloc->allocateMessageReturnBody(numberOfBytes);
+        void * buffer = aloc->allocateByteArray(numberOfBytes);
         void * bufferWritePointer = buffer;
         // copy data
         bufferWritePointer = srch2::util::serializeFixedTypes((unsigned)shardResults.size(), bufferWritePointer);
