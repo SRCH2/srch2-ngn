@@ -365,9 +365,12 @@ void PendingLockRequestBuffer::applyNodeFailure(const unsigned failedNodeId){
 
 void PendingLockRequestBuffer::print() const{
 	if(pendingRequests.size() == 0){
-		cout << "Pending lock requests : empty." << endl;
+//		cout << "Pending lock requests : empty." << endl;
 		return;
 	}
+	cout << "**************************************************************************************************" << endl;
+	cout << "Pending requests : " << endl;
+	cout << "**************************************************************************************************" << endl;
 	vector<string> pendingHeaders;
 	pendingHeaders.push_back("Info");
 	vector<string> pendingLables;
@@ -528,7 +531,7 @@ void LockHoldersRepository::applyNodeFailure(const unsigned failedNodeId){
 
 void LockHoldersRepository::printLockHolders(const map<ClusterShardId, vector<NodeOperationId> > & holders, const string & tableName) const{
 	if(holders.size() == 0){
-		cout << tableName << " : " << "empty." << endl;
+//		cout << tableName << " : " << "empty." << endl;
 		return;
 	}
 	vector<string> holderHeaders;
@@ -553,6 +556,13 @@ void LockHoldersRepository::printLockHolders(const map<ClusterShardId, vector<No
 }
 
 void LockHoldersRepository::print() const{
+	if(S_Holders.size() > 0 ||
+			U_Holders.size() > 0 ||
+			X_Holders.size() > 0){
+		cout << "**************************************************************************************************" << endl;
+		cout << "Lock repository : " << endl;
+		cout << "**************************************************************************************************" << endl;
+	}
 	printLockHolders(S_Holders, "Resource S Lock% Holders");
 	printLockHolders(U_Holders, "Resource U Lock% Holders");
 	printLockHolders(X_Holders, "Resource X Lock% Holders");
@@ -815,25 +825,22 @@ void ResourceLockManager::getLockedPartitions(vector<ClusterPID> & lockedPartiti
 
 void ResourceLockManager::print() {
 
-	cout << "**************************************************************************************************" << endl;
-	cout << "Lock repository : " << endl;
-	cout << "**************************************************************************************************" << endl;
 	lockHolders->print();
 
-	cout << "**************************************************************************************************" << endl;
-	cout << "Pending requests : " << endl;
 	pendingLockRequestBuffer.print();
 	printRVReleasePendingRequests();
-	cout << "**************************************************************************************************" << endl;
 }
 
 void ResourceLockManager::printRVReleasePendingRequests(){
 
 	boost::unique_lock<boost::mutex> rvReleaseLock(readviewReleaseMutex);
 	if(pendingRVReleaseRequests.size() == 0){
-		cout << "Pending RV release lock requests : empty." << endl;
+//		cout << "Pending RV release lock requests : empty." << endl;
 		return;
 	}
+	cout << "**************************************************************************************************" << endl;
+	cout << "Pending requests : " << endl;
+	cout << "**************************************************************************************************" << endl;
 
 	vector<string> pendingHeaders;
 	pendingHeaders.push_back("Info");

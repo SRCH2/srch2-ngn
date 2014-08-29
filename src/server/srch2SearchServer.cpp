@@ -873,9 +873,6 @@ int main(int argc, char** argv) {
 	srch2http::ResourceMetadataManager * metadataManager = new srch2http::ResourceMetadataManager();
 	srch2http::ShardManager * shardManager = srch2http::ShardManager::createShardManager(serverConf, metadataManager);
 
-	//TODO to remove
-	srch2::util::Logger::setLogLevel(srch2::util::Logger::SRCH2_LOG_DEBUG);
-
 	serverConf->loadConfigFile(metadataManager);
 
 	LicenseVerifier::testFile(serverConf->getLicenseKeyFileName());
@@ -897,6 +894,9 @@ int main(int argc, char** argv) {
 	}
 	Logger::setLogLevel(serverConf->getHTTPServerLogLevel());
 
+	//TODO to remove
+	srch2::util::Logger::setLogLevel(srch2::util::Logger::SRCH2_LOG_DEBUG);
+
 
 	// create shard manager
 	// cores information is populated in CM but nodes map is not populated yet.
@@ -906,8 +906,6 @@ int main(int argc, char** argv) {
 	srch2http::MetadataInitializer nodeInitializer(serverConf, metadataManager);
 	nodeInitializer.initializeNode();
 
-	cout << "Node shards are added:" << endl;
-	shardManager->print();
 	// TM pointer must be set later when node information is provided to SHM.
 
 

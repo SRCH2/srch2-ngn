@@ -169,7 +169,11 @@ public:
 	bool isEqualDiscardingLocalShards(const Cluster_Writeview & right);
 	void print();
 
+	void printCores();
 	void printNodes();
+	void printClusterShards();
+	void printNodeShards();
+	void printLocalShards();
 
 	~Cluster_Writeview();
 

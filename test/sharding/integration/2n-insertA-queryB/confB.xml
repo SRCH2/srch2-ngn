@@ -342,7 +342,7 @@
                  
                 Path to Access Log File
             -->
-            <accessLogFile>./data/exact_a1/log.txt</accessLogFile>
+            <accessLogFile>./logs/log.txt</accessLogFile>
         </updateLog>
      
     </updatehandler>

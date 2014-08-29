@@ -142,6 +142,9 @@ void ShardManager::print(){
 	stateMachine->print();
 
 	// bounced notifications
+	if(bouncedNotifications.size() == 0){
+		return;
+	}
 	cout << "**************************************************************************************************" << endl;
 	cout << "Bounced notifications' source addresses : " ;
 	if(bouncedNotifications.size() == 0 ){
@@ -154,7 +157,6 @@ void ShardManager::print(){
 		const ShardingNotification * notif = bouncedNotifications.at(i);
 		cout << notif->getDest().toString() << endl;
 	}
-	cout << "**************************************************************************************************" << endl;
 
 }
 
@@ -691,6 +693,8 @@ void * ShardManager::periodicWork(void *args) {
 			ShardManager::getShardManager()->setLoadBalancing();
 			ShardManager::getShardManager()->stateMachine->registerOperation(new LoadBalancingStartOperation());
 		}
+
+		// TODO remove
 	    ShardManager::getShardManager()->print();
 	}
 	return NULL;

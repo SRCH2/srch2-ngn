@@ -50,14 +50,9 @@ void ClusterOperationStateMachine::handle(Notification * notification){
 }
 
 void ClusterOperationStateMachine::print() const{
-	cout << "**************************************************************************************************" << endl;
-	cout << "State machine : ";
-	if(activeOperations.size() == 0){
-		cout << "No active operation." << endl;
-	cout << "**************************************************************************************************" << endl;
-		return;
-	}else{
-		cout << endl;
+	if(activeOperations.size() > 0){
+		cout << "**************************************************************************************************" << endl;
+		cout << "State machine : " << endl;
 		cout << "**************************************************************************************************" << endl;
 	}
 	vector<string> operationHeaders;
@@ -77,7 +72,6 @@ void ClusterOperationStateMachine::print() const{
 		operationTable.printNextCell(opItr->second->getOperationName());
 		operationTable.printNextCell(opItr->second->getOperationStatus());
 	}
-	cout << "**************************************************************************************************" << endl;
 }
 
 bool ClusterOperationStateMachine::addActiveOperation(OperationState * operation){
@@ -87,11 +81,6 @@ bool ClusterOperationStateMachine::addActiveOperation(OperationState * operation
 		return false; // operation id is not accepted because it already exists.
 	}
 	activeOperations[operation->getOperationId()] = operation;
-
-	// TODO : remove
-	cout << "**************************************************************************************************" << endl;
-	cout << "Operation " << operation->getOperationName() << " is added, id = " << operation->getOperationId() << endl;
-	print();
 
 	return true;
 }
