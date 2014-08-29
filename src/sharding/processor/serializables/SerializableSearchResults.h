@@ -68,7 +68,7 @@ public:
 	    static ShardResults * deserialize(void* buffer){
 
 	    	string shardIdentifier ;
-	    	buffer = srch2::util::serializeString(shardIdentifier, buffer);
+	    	buffer = srch2::util::deserializeString(buffer, shardIdentifier);
 	    	ShardResults * newShardResults = new ShardResults(shardIdentifier);
 	    	buffer = newShardResults->deserializeInMemoryRecordStrings(buffer, newShardResults->inMemoryRecordStrings);
 	    	buffer = QueryResults::deserializeForNetwork(newShardResults->queryResults, buffer, &(newShardResults->resultsFactory));
