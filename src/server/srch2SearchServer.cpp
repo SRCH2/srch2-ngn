@@ -83,11 +83,11 @@ typedef std::vector<CbArg_t*> CbArgsVector_t;
 pthread_t *threads = NULL;
 unsigned int MAX_THREADS = 0;
 
-// The belowing global_heart_beat_thread is used to create a heart_beat thread
-// which will kill the server itself when there is no actions within certain time range.
+// The below global_heart_beat_thread is used to create a heart_beat thread
+// which will kill the server itself when there is no action within certain time period.
 // The timer is set through the configuration file by 
 // <heartbeattimer> tag
-// If it is not set, the engine will not start the heart_beat thread, that is run forever.
+// If it is not set, the engine will not start the heart_beat thread, that is, it will run forever.
 pthread_t * global_heart_beat_thread = NULL;
 volatile bool has_one_pulse = false;
 
