@@ -133,11 +133,19 @@ private:
 	// SearchType
 	// PostProcessingInfo
     LogicalPlanNode * tree;
+    vector<string> attributesToReturn;
 
 public:
     LogicalPlan();
     ~LogicalPlan();
 
+    void setAttrToReturn(const vector<string>& attr){
+        attributesToReturn = attr;
+    }
+
+    const vector<string> getAttrToReturn() const{
+        return this->attributesToReturn;
+    }
 
 	std::string docIdForRetrieveByIdSearchType;
 	ResultsPostProcessorPlan * postProcessingPlan;

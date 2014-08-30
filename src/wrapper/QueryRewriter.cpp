@@ -61,6 +61,11 @@ bool QueryRewriter::rewrite(LogicalPlan & logicalPlan) {
 		logicalPlan.setDocIdForRetrieveByIdSearchType(this->paramContainer->docIdForRetrieveByIdSearchType);
 		return true;
 	}
+
+	//If query contains list of attributes to return, we set the vector<string> attributesToReturn vector inside LogicalPlan.
+	if(this->paramContainer->responseAttributesList.size() != 0){
+	    logicalPlan.setAttrToReturn(this->paramContainer->responseAttributesList);
+	}
     // go through the queryParameters and call the analyzer on the query if needed.
 
     /*

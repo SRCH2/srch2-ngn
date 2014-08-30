@@ -723,7 +723,7 @@ else
 fi
 rm -rf data/ upsert_batch/*.idx upsert_batch/indexes/*.idx
 
-
+sleep 3
 test_id="multicore"
 printTestBanner "$test_id"
 rm -f ./multicore/core?/*.idx ./multicore/core?/srch2-log.txt
@@ -886,6 +886,19 @@ else
 fi
 rm -rf data/ *.idx
 
+test_id="test field list parameter in query"
+printTestBanner "$test_id"
+python ./test_fieldList_inQuery/test_fieldList.py $SRCH2_ENGINE ./test_fieldList_inQuery/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
+
+if [ ${PIPESTATUS[0]} -gt 0 ]; then
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
+    if [ $force -eq 0 ]; then
+        exit 255
+    fi
+else
+    echo "-- PASSED: $test_id" >> ${output}
+fi
+rm -rf data/ *.idx
 
 # clear the output directory. First make sure that we are in correct directory
 if [ "$(pwd)" = "$SYSTEM_TEST_DIR" ]; then
