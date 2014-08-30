@@ -158,15 +158,35 @@ fi
 # We remove the old indexes, if any, before doing the test.
 rm -rf data/ *.idx
 
+# This is the general test case function.
+# Normally it takes 2 arguments, it can also 4 arguments:
+#  $1: the name of the test, corresponding to the previous test_id
+#  $2: the full command line, like "python ./run_something.py args1, args2". 
+#      Note , the full command line should be ONE string
+#  $3: [optional], the skipped return code if it is not equal to 0. 
+#      Some test cases (the db_connector test cases)
+#      we want to skip it if it failed by return certain code. 
+#  $4: [optional], the skipped the message. 
+#      This field works with the $3, if the test case is allowed to skip,
+#      we should provide the reason why it fail.
 function test_case(){
     test_id="$1"
     printTestBanner "$test_id"
     eval $2 | eval "${html_escape_command}" >> system_test.log 2>&1
 
-    if [ ${PIPESTATUS[0]} -gt 0 ]; then
-        echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-        if [ $force -eq 0 ]; then
-            exit 255
+    ret=${PIPESTATUS[0]}
+    if [ $ret -gt 0 ]; then
+        if [ $# -gt 2 ] && [ $ret -eq $3 ] ;then
+            if [ $# -gt 3 ] ;then
+                echo $4
+            else
+                echo "-- SKIPPED"
+            fi
+        else
+            echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
+            if [ $force -eq 0 ]; then
+                exit 255
+            fi
         fi
     else
         echo "-- PASSED: $test_id" >> ${output}
@@ -283,14 +303,14 @@ test_case "empty record boost field" "python ./empty_recordBoostField/empty_reco
 
 test_case "heart_beat_test"  "python ./heartbeat/heart_beat.py $SRCH2_ENGINE"
 
+test_case "test field list parameter in query" "python ./test_fieldList_inQuery/test_fieldList.py $SRCH2_ENGINE ./test_fieldList_inQuery/queriesAndResults.txt"
+
 if [ $os != "$macName" ];then
     test_case "high_insert" "./high_insert_test/autotest.sh $SRCH2_ENGINE" 
 else
     echo "-- IGNORING high_insert test on $macName" >> ${output}
 fi
 
-test_id="tests_used_for_statemedia"
-printTestBanner "$test_id"
 # server is a little slow to exit for reset_logger, causing the server in statemedia's first test (write_correctness)
 # to fail to bind the port, hanging the test script, so wait just a sec here
 sleep 1
@@ -302,16 +322,7 @@ if [ $HAVE_NODE -gt 0 ]; then
     fi
 
     if [ `uname -s` != 'Darwin' ]; then
-        NODECMD=${NODE_CMD:-node} ./tests_used_for_statemedia/autotest.sh $SRCH2_ENGINE | eval "${html_escape_command}" >> system_test.log 2>&1
-
-        if [ ${PIPESTATUS[0]} -gt 0 ]; then
-	    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-            if [ $force -eq 0 ]; then
-                exit 255
-	    fi
-        else
-	    echo "-- PASSED: $test_id" >> ${output}
-        fi
+        test_case "tests_used_for_statemedia" "NODECMD=${NODE_CMD:-node} ./tests_used_for_statemedia/autotest.sh $SRCH2_ENGINE" 
     else
         echo "-- IGNORING $test_id on MacOS"
     fi
@@ -324,29 +335,20 @@ fi
 rm -rf data/ *.idx
 
 
-test_id="adapter_sqlite"
-printTestBanner "$test_id"
-rm -rf data/ *.idx
 rm -rf data/sqlite_data
 rm -rf ./adapter_sqlite/srch2Test.db
-python ./adapter_sqlite/adapter_sqlite.py $SRCH2_ENGINE ./adapter_sqlite/testCreateIndexes_sql.txt ./adapter_sqlite/testCreateIndexes.txt ./adapter_sqlite/testRunListener_sql.txt ./adapter_sqlite/testRunListener.txt ./adapter_sqlite/testOfflineLog_sql.txt ./adapter_sqlite/testOfflineLog.txt | eval "${html_escape_command}" >> system_test.log 2>&1
-fun_ret=${PIPESTATUS[0]}
-if [ $fun_ret -gt 0 ]; then
-    if [ $fun_ret -eq 255 ]; then
-        echo "-- SKIPPED: Cannot connect to the Sqlite. Check if sqlite3 is installed." >> ${output}
-    else
-        echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    fi
+test_case "adapter_sqlite" "python ./adapter_sqlite/adapter_sqlite.py $SRCH2_ENGINE \
+    ./adapter_sqlite/testCreateIndexes_sql.txt ./adapter_sqlite/testCreateIndexes.txt \
+    ./adapter_sqlite/testRunListener_sql.txt ./adapter_sqlite/testRunListener.txt \
+    ./adapter_sqlite/testOfflineLog_sql.txt ./adapter_sqlite/testOfflineLog.txt" \
+    255 "-- SKIPPED: Cannot connect to the Sqlite. Check if sqlite3 is installed."
+rm -rf data/sqlite_data
+rm -rf ./adapter_sqlite/srch2Test.db
 
-    if [ $force -eq 0 ]; then
-        exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx
-rm -rf data/sqlite_data
-rm -rf ./adapter_sqlite/srch2Test.db
+test_case "adapter_mongo" "python ./adapter_mongo/MongoTest.py $SRCH2_ENGINE \
+    ./adapter_mongo/queries.txt" 10 "-- SKIPPED: Cannot connect to the MongoDB. \
+    Check instructions in the file db_connectors/mongo/readme.txt. "
+rm -rf data/mongodb_data
 
 
 # clear the output directory. First make sure that we are in correct directory
@@ -365,27 +367,6 @@ fi
 if [ "$upload" != '' ]; then
     eval $upload
 fi
-
-test_id="adapter_mongo"
-printTestBanner "$test_id"
-python ./adapter_mongo/MongoTest.py $SRCH2_ENGINE ./adapter_mongo/queries.txt  | eval "${html_escape_command}" >> system_test.log 2>&1
-
-fun_ret=${PIPESTATUS[0]}
-if [ $fun_ret -gt 0 ]; then
-    if [ $fun_ret -eq 10 ]; then
-        echo "-- SKIPPED: Cannot connect to the MongoDB. Check instructions in the file db_connectors/mongo/readme.txt. " >> ${output}
-    else
-        echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-
-        if [ $force -eq 0 ]; then
-	    exit 255
-        fi
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/*.idx
-rm -rf data/mongodb_data
 
 
 cd $PWD_DIR
