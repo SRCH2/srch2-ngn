@@ -323,7 +323,7 @@ void QueryRewriter::prepareFieldFilters() {
 /*
  *   This function decides the filter attributes for the current role-id and operation
  *   to be performed among those attributes (AND, OR , NAND). This API is called when a user has
- *   not specified any attributes in query. First get three sets
+ *   not specified any attributes in a query. First get three sets
  *
  *   set1 : set of non-acl attributes ( accessible by all)
  *   set2 : set of acl attributes (access only to specific role-id based on acl definition)
@@ -380,6 +380,9 @@ void QueryRewriter::getFieldFiltersBasedOnAcl(vector<unsigned>& parseNodeFieldFi
 				allowedAttributesForRole->begin(), allowedAttributesForRole->end(),
 				back_inserter(unAccessibleAttrsList));
 	} else {
+		// when no role is specified or role is not found in acl map then
+		// attributes marked as non-acl (public) are accessible
+		// and attributes marked as acl (private) are not accessible.
 		accessibleAttrsList = schemaNonAclAttrsList;
 		unAccessibleAttrsList = schemaAclAttrsList;
 	}

@@ -168,7 +168,8 @@ rm -rf data/ *.idx
 ###############################################################################################################
 test_id="attributes ACL"
 printTestBanner "$test_id"
-rm ./attributes/indexes/*
+rm attributesAcl/stackoverflow/indexes/*
+rm attributesAcl/worldbank/indexes/*
 python ./attributesAcl/testProgram.py $SRCH2_ENGINE | eval "${html_escape_command}" >> system_test.log 2>&1
 if [ ${PIPESTATUS[0]} -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}

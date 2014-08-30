@@ -32,6 +32,6 @@ const char* const IndexConfig::recordIdConverterFileName = "CL5.idx";
 const char* const IndexConfig::indexCountsFileName = "counts.idx";
 const char* const IndexConfig::schemaFileName = "Schema.idx";
 const char* const IndexConfig::analyzerFileName = "Analyzer.idx";
-const char* const IndexConfig::AccessControlFile = "acl1.idx";
+const char* const IndexConfig::AccessControlFile = "aclAttributes.idx";
 
 }}

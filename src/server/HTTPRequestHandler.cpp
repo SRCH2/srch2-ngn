@@ -919,6 +919,10 @@ void decodeAmpersand(const char *uri, unsigned len, string& decodeUri) {
 }
 /*
  *   Helper API to handle a single ACL operation. (insert, delete, or append)
+ *   example url :
+ *   http://<ip>:<port>/aclAttribute -X PUT -d { "fields": "f1,f2", "role-values": "r1", "action": "append" }
+ *   http://<ip>:<port>/aclAttribute -X PUT -d { "fields": "f1,f2", "role-values": "r2", "action": "insert" }
+ *   http://<ip>:<port>/aclAttribute -X PUT -d { "fields": "f2", "role-values": "r2", "action": "delete" }
  */
 bool processSingleAttributeAclRequest(Srch2Server *server,const Json::Value& doc,
 		std::stringstream& log_str) {
@@ -962,6 +966,10 @@ bool processSingleAttributeAclRequest(Srch2Server *server,const Json::Value& doc
 
 /*
  *   Wrapper layer API to handle ACL operations such as insert, delete, and append.
+ *   example url :
+ *   http://<ip>:<port>/aclAttribute -X PUT -d { "fields": "f1,f2", "role-values": "r1", "action": "append" }
+ *   http://<ip>:<port>/aclAttribute -X PUT -d { "fields": "f1,f2", "role-values": "r2", "action": "insert" }
+ *   http://<ip>:<port>/aclAttribute -X PUT -d { "fields": "f2", "role-values": "r2", "action": "delete" }
  */
 void HTTPRequestHandler::attributeAclModify(evhttp_request *req, Srch2Server *server) {
 	switch (req->type) {
@@ -1025,7 +1033,7 @@ void HTTPRequestHandler::attributeAclModify(evhttp_request *req, Srch2Server *se
 	    }
 	    default:
 	        Logger::error(
-	                "The request is not a HTTP PUT command. See Srch2 API documentation for details");
+	                "The request is not an HTTP PUT command. See Srch2 API documentation for details");
 	        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
 	                "{\"error\":\"The request is not a HTTP PUT command. See Srch2 API documentation for details.\"}");
 

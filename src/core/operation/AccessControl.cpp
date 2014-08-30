@@ -2,7 +2,7 @@
  * AccessControl.cpp
  *
  *  Created on: Aug 18, 2014
- *      Author: srch2
+ *      Author: Surendra
  */
 
 #include "AccessControl.h"
@@ -27,8 +27,7 @@ void  AttributeAccessControl::bulkLoadAcl(const std::string& aclLoadFileName) co
 		return;
 
 	std::ifstream input(aclLoadFileName.c_str());
-	if (!input.good())
-	{
+	if (!input.good()) {
 		Logger::warn("The attribute acl file = \"%s\" could not be opened.",
 				aclLoadFileName.c_str());
 		return;
@@ -38,6 +37,7 @@ void  AttributeAccessControl::bulkLoadAcl(const std::string& aclLoadFileName) co
 	unsigned lineCount = 0;
 	while (getline(input, line)) {
 		++lineCount;
+		boost::algorithm::trim(line);
 		if (line.size() == 0)  // ignore empty line
 			continue;
 
@@ -61,7 +61,7 @@ void  AttributeAccessControl::bulkLoadAcl(const std::string& aclLoadFileName) co
 
 		std::vector<unsigned> searchableAttrIdsList;
 		std::vector<unsigned> refiningAttrIdsList;
-		covertFieldNamesToSortedFieldIds(tokens, searchableAttrIdsList, refiningAttrIdsList);
+		convertFieldNamesToSortedFieldIds(tokens, searchableAttrIdsList, refiningAttrIdsList);
 
 		// if searchableAttrIdsList and refiningAttrIdsList are empty then skip this row
 		// this can happen when all field names mentioned in the row are bogus.
@@ -82,7 +82,7 @@ void  AttributeAccessControl::bulkLoadAcl(const std::string& aclLoadFileName) co
 /*
  *   This API converts attribute names to attribute ids and return sorted attribute ids.
  */
-void AttributeAccessControl::covertFieldNamesToSortedFieldIds(vector<string>& fieldTokens,
+void AttributeAccessControl::convertFieldNamesToSortedFieldIds(vector<string>& fieldTokens,
 		vector<unsigned>& searchableAttrIdsList, vector<unsigned>& refiningAttrIdsList) const{
 	for (unsigned i = 0; i < fieldTokens.size(); ++i) {
 		if (fieldTokens[i].size() == 0)
@@ -106,7 +106,7 @@ void AttributeAccessControl::covertFieldNamesToSortedFieldIds(vector<string>& fi
 			if (id != -1) {
 				refiningAttrIdsList.push_back(id);
 			} else {
-				Logger::warn("ACL: invalid attribute name = '%s' in fields list",
+				Logger::warn("ACL: invalid attribute name = '%s' in field list",
 						fieldTokens[i].c_str());
 			}
 		}
@@ -142,7 +142,7 @@ bool  AttributeAccessControl::processHTTPAclRequest(const string& fields,
 	std::vector<unsigned> searchableAttrIdsList;
 	std::vector<unsigned> refiningAttrIdsList;
 
-	covertFieldNamesToSortedFieldIds(fieldTokens, searchableAttrIdsList, refiningAttrIdsList);
+	convertFieldNamesToSortedFieldIds(fieldTokens, searchableAttrIdsList, refiningAttrIdsList);
 
 	std::vector<std::string> roleValueTokens;
 	boost::algorithm::split(roleValueTokens, roleValues, boost::is_any_of(","));
@@ -202,44 +202,46 @@ bool  AttributeAccessControl::processHTTPAclRequest(const string& fields,
  *   This API inserts given Acl role id and its attributes into the acl map. If the role-id exists
  *   then it will be overwritten.
  */
-void AttributeAccessControl::setAcl(string aclRoleValue, vector<unsigned>& searchableAttrIdsList,
+void AttributeAccessControl::setAcl(const string& aclRoleValue, vector<unsigned>& searchableAttrIdsList,
 		vector<unsigned>& refiningAttrIdsList) {
-	WriterLock lock(attrAclLock);  // X-lock
+	AclWriteLock lock(attrAclLock);  // X-lock
 	AclMapIter iter = attributeAclMap.find(aclRoleValue);
 	if (iter != attributeAclMap.end()) {
 		// If role Id is found, then overwrite it.The old vector will
 		// be free'd automatically by shared_ptr after the last reader.
-		iter->second.first.reset(new vector<unsigned>());
+		iter->second.searchableAttrList.reset(new vector<unsigned>());
 		// note: this API swaps the internal pointers of vectors to avoid copy
-		iter->second.first->swap(searchableAttrIdsList);
-		iter->second.second.reset(new vector<unsigned>());
-		iter->second.second->swap(refiningAttrIdsList);
+		iter->second.searchableAttrList->swap(searchableAttrIdsList);
+		iter->second.refiningAttrList.reset(new vector<unsigned>());
+		iter->second.refiningAttrList->swap(refiningAttrIdsList);
 		return;
 	} else {
 		// If role Id is not found, then insert it.
+		PairOfAttrsListSharedPtr newAttrListPair;
+		newAttrListPair.searchableAttrList.reset(new vector<unsigned>());
+		newAttrListPair.refiningAttrList.reset(new vector<unsigned>());
 		pair<AclMapIter , bool> ret =
-		attributeAclMap.insert(make_pair(aclRoleValue,
-				make_pair(new vector<unsigned>(), new vector<unsigned>())));
-		ret.first->second.first->swap(searchableAttrIdsList);
-		ret.first->second.second->swap(refiningAttrIdsList);
+		attributeAclMap.insert(make_pair(aclRoleValue, newAttrListPair));
+		ret.first->second.searchableAttrList->swap(searchableAttrIdsList);
+		ret.first->second.refiningAttrList->swap(refiningAttrIdsList);
 		return;
 	}
 }
 
 /*
- *  This API merge the attributes to an existing acl for a give role-id. If role-id is not found
+ *  This API merges the attributes to an existing acl for a give role-id. If role-id is not found
  *  then it is created.
  *  e.g
  *  existing acl for 101
- *  101 -> [ f1, f2, f3 ]
+ *  "101" -> [ f1, f2, f3 ]
  *
- *  input acl for 101 -> [ f2, f7 ]
+ *  input acl for "101" -> [ f2, f7 ]
  *
- *  final acl for 101 -> [f1, f2, f3, f7]
+ *  final acl for "101" -> [f1, f2, f3, f7]
  */
-void AttributeAccessControl::appendToAcl(string aclRoleValue, const vector<unsigned>& searchableAttrIdsList,
+void AttributeAccessControl::appendToAcl(const string& aclRoleValue, const vector<unsigned>& searchableAttrIdsList,
 		const vector<unsigned>& refiningAttrIdsList) {
-	WriterLock lock(attrAclLock); // X-lock
+	AclWriteLock lock(attrAclLock); // X-lock
 	AclMapIter iter = attributeAclMap.find(aclRoleValue);
 	if (iter != attributeAclMap.end()) {
 		// if role-id is found then merge the existing attributes list with the new attributes
@@ -247,27 +249,29 @@ void AttributeAccessControl::appendToAcl(string aclRoleValue, const vector<unsig
 		// Then replace the old (existing attributes) vector with the new vector. The old vector will
 		// be free'd automatically by shared_ptr after the last reader.
 		vector<unsigned> *attrListPtr = new vector<unsigned>();
-		attrListPtr->reserve(searchableAttrIdsList.size() + iter->second.first->size());
-		std::set_union(iter->second.first->begin(), iter->second.first->end(),
+		attrListPtr->reserve(searchableAttrIdsList.size() + iter->second.searchableAttrList->size());
+		std::set_union(iter->second.searchableAttrList->begin(), iter->second.searchableAttrList->end(),
 				searchableAttrIdsList.begin(), searchableAttrIdsList.end(),
 				back_inserter(*attrListPtr));
-		iter->second.first.reset(attrListPtr);
+		iter->second.searchableAttrList.reset(attrListPtr);
 
 		attrListPtr = new vector<unsigned>();
-		attrListPtr->reserve(refiningAttrIdsList.size() + iter->second.second->size());
-		std::set_union(iter->second.second->begin(), iter->second.second->end(),
+		attrListPtr->reserve(refiningAttrIdsList.size() + iter->second.refiningAttrList->size());
+		std::set_union(iter->second.refiningAttrList->begin(), iter->second.refiningAttrList->end(),
 				refiningAttrIdsList.begin(), refiningAttrIdsList.end(),
 				back_inserter(*attrListPtr));
-		iter->second.second.reset(attrListPtr);
+		iter->second.refiningAttrList.reset(attrListPtr);
 		return;
 	} else {
 		// if not found then insert new entry.
+		PairOfAttrsListSharedPtr newAttrListPair;
+		newAttrListPair.searchableAttrList.reset(new vector<unsigned>());
+		newAttrListPair.refiningAttrList.reset(new vector<unsigned>());
 		pair<AclMapIter, bool> ret =
-		attributeAclMap.insert(make_pair(aclRoleValue,
-				make_pair(new vector<unsigned>(), new vector<unsigned>())));
-		ret.first->second.first->insert(ret.first->second.first->end(),
+		attributeAclMap.insert(make_pair(aclRoleValue,newAttrListPair));
+		ret.first->second.searchableAttrList->insert(ret.first->second.searchableAttrList->end(),
 				searchableAttrIdsList.begin(), searchableAttrIdsList.end());
-		ret.first->second.second->insert(ret.first->second.second->end(),
+		ret.first->second.refiningAttrList->insert(ret.first->second.refiningAttrList->end(),
 				refiningAttrIdsList.begin(), refiningAttrIdsList.end());
 		return;
 	}
@@ -288,9 +292,9 @@ void AttributeAccessControl::appendToAcl(string aclRoleValue, const vector<unsig
  *  Note: if not attributes are left in acl for a role-id then that role-id will be removed from
  *  the acl.
  */
-void AttributeAccessControl::deleteFromAcl(string aclRoleValue, const vector<unsigned>& searchableAttrIdsList,
+void AttributeAccessControl::deleteFromAcl(const string& aclRoleValue, const vector<unsigned>& searchableAttrIdsList,
 		const vector<unsigned>& refiningAttrIdsList) {
-	WriterLock lock(attrAclLock); // X-lock
+	AclWriteLock lock(attrAclLock); // X-lock
 	AclMapIter iter = attributeAclMap.find(aclRoleValue);
 	if (iter != attributeAclMap.end()) {
 		// if role-id is found then copy the difference of existing attributes list and to be
@@ -298,22 +302,22 @@ void AttributeAccessControl::deleteFromAcl(string aclRoleValue, const vector<uns
 		// in a sorted order. Then replace the old (existing attributes) vector with the new vector.
 		// The old vector will be free'd automatically by shared_ptr after the last reader.
 		vector<unsigned> *attrListPtr = new vector<unsigned>();
-		attrListPtr->reserve(searchableAttrIdsList.size() + iter->second.first->size());
-		std::set_difference(iter->second.first->begin(), iter->second.first->end(),
+		attrListPtr->reserve(searchableAttrIdsList.size() + iter->second.searchableAttrList->size());
+		std::set_difference(iter->second.searchableAttrList->begin(), iter->second.searchableAttrList->end(),
 				searchableAttrIdsList.begin(), searchableAttrIdsList.end(),
 				back_inserter(*attrListPtr));
 
-		iter->second.first.reset(attrListPtr);
+		iter->second.searchableAttrList.reset(attrListPtr);
 
 		attrListPtr = new vector<unsigned>();
-		attrListPtr->reserve(refiningAttrIdsList.size() + iter->second.second->size());
-		std::set_difference(iter->second.second->begin(), iter->second.second->end(),
+		attrListPtr->reserve(refiningAttrIdsList.size() + iter->second.refiningAttrList->size());
+		std::set_difference(iter->second.refiningAttrList->begin(), iter->second.refiningAttrList->end(),
 				refiningAttrIdsList.begin(), refiningAttrIdsList.end(),
 				back_inserter(*attrListPtr));
-		iter->second.second.reset(attrListPtr);
+		iter->second.refiningAttrList.reset(attrListPtr);
 
 		// if all the attributes are deleted then remove the acl role from map as well.
-		if (iter->second.first->size() == 0 && iter->second.second->size() == 0)
+		if (iter->second.searchableAttrList->size() == 0 && iter->second.refiningAttrList->size() == 0)
 			attributeAclMap.erase(iter);
 		return;
 	}
@@ -322,11 +326,11 @@ void AttributeAccessControl::deleteFromAcl(string aclRoleValue, const vector<uns
 /*
  *  This API fetches accessible searchable attributes for a given acl role-id.
  */
-void AttributeAccessControl::fetchSearchableAttrsAcl(string aclRoleValue, boost::shared_ptr<vector<unsigned> >& attrList) const{
-	ReaderLock lock(attrAclLock); // shared-lock
+void AttributeAccessControl::fetchSearchableAttrsAcl(const string& aclRoleValue, boost::shared_ptr<vector<unsigned> >& attrList) const{
+	AclReadLock lock(attrAclLock); // shared-lock
 	AclMapConstIter iter = attributeAclMap.find(aclRoleValue);
 	if (iter != attributeAclMap.end()) {
-		attrList = iter->second.first;
+		attrList = iter->second.searchableAttrList;
 	} else {
 		attrList.reset();
 	}
@@ -335,11 +339,11 @@ void AttributeAccessControl::fetchSearchableAttrsAcl(string aclRoleValue, boost:
 /*
  *  This API fetches accessible refining attributes for a given acl role-id.
  */
-void AttributeAccessControl::fetchRefiningAttrsAcl(string aclRoleValue, boost::shared_ptr<vector<unsigned> >& attrList) const{
-	ReaderLock lock(attrAclLock); // shared-lock
+void AttributeAccessControl::fetchRefiningAttrsAcl(const string& aclRoleValue, boost::shared_ptr<vector<unsigned> >& attrList) const{
+	AclReadLock lock(attrAclLock); // shared-lock
 	AclMapConstIter iter = attributeAclMap.find(aclRoleValue);
 	if (iter != attributeAclMap.end()) {
-		attrList = iter->second.second;
+		attrList = iter->second.refiningAttrList;
 	} else {
 		attrList.reset();
 	}
@@ -351,12 +355,12 @@ void AttributeAccessControl::toString(stringstream& ss) const{
 	AclMapConstIter iter = attributeAclMap.begin();
 	while(iter != attributeAclMap.end()) {
 		ss << iter->first << " = S : [ ";
-		for (unsigned i = 0; i < iter->second.first->size(); ++i) {
-			ss << iter->second.first->operator [](i) << " ";
+		for (unsigned i = 0; i < iter->second.searchableAttrList->size(); ++i) {
+			ss << iter->second.searchableAttrList->operator [](i) << " ";
 		}
 		ss << "], R : [ ";
-		for (unsigned i = 0; i < iter->second.second->size(); ++i) {
-			ss << iter->second.second->operator [](i) << " ";
+		for (unsigned i = 0; i < iter->second.refiningAttrList->size(); ++i) {
+			ss << iter->second.refiningAttrList->operator [](i) << " ";
 		}
 		ss << "]\n";
 		++iter;

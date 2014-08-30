@@ -6,7 +6,7 @@
 103, attr8, attr2, attr6
 #below is a duplicate acl entry, will be merged with the previous one.
 103, attr4
-#below are the bad examples which will ignored. 
+#below are the bad examples which will be ignored. 
 110, invalid attribute name
 111, 
 ,wrong, acl, format

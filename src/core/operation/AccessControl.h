@@ -2,7 +2,7 @@
  * AccessControl.h
  *
  *  Created on: Aug 18, 2014
- *      Author: srch2
+ *      Author: Surendra
  */
 
 #ifndef __CORE_OPERATION_ACCESSCONTROL_H__
@@ -23,17 +23,28 @@ namespace srch2 {
 namespace instantsearch {
 
 typedef boost::shared_mutex AttributeAclLock;
-typedef boost::unique_lock< AttributeAclLock > WriterLock;
-typedef boost::shared_lock< AttributeAclLock > ReaderLock;
+typedef boost::unique_lock< AttributeAclLock > AclWriteLock;
+typedef boost::shared_lock< AttributeAclLock > AclReadLock;
 using namespace std;
-typedef pair< boost::shared_ptr<vector<unsigned> >, boost::shared_ptr<vector<unsigned> > > PairOfAttrsListSharedPtr;
+
+class PairOfAttrsListSharedPtr{
+public:
+	boost::shared_ptr<vector<unsigned> > searchableAttrList;
+	boost::shared_ptr<vector<unsigned> > refiningAttrList;
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+		ar & searchableAttrList;
+		ar & refiningAttrList;
+	}
+};
+
 typedef map<string, PairOfAttrsListSharedPtr>::iterator AclMapIter;
 typedef map<string, PairOfAttrsListSharedPtr>::const_iterator AclMapConstIter;
 
 enum AclActionType {
-	ACL_INSERT,
-	ACL_DELETE,
-	ACL_APPEND,
+	ACL_INSERT, // insert new acl
+	ACL_DELETE, // delete existing acl
+	ACL_APPEND  // append to existing acl
 };
 class AttributeAccessControl {
 public:
@@ -45,32 +56,32 @@ public:
 	// ----------------------------
 
 	// Get accessible searchable attributes for a given acl role name.
-	void fetchSearchableAttrsAcl(string aclRoleValue, boost::shared_ptr<vector<unsigned> >& attrList) const;
+	void fetchSearchableAttrsAcl(const string& aclRoleValue, boost::shared_ptr<vector<unsigned> >& attrList) const;
 
 	// Get accessible refining attributes for a given acl role name.
-	void fetchRefiningAttrsAcl(string aclRoleValue, boost::shared_ptr<vector<unsigned> >& attrList) const;
+	void fetchRefiningAttrsAcl(const string& aclRoleValue, boost::shared_ptr<vector<unsigned> >& attrList) const;
 
 	// ----------------------------
 	// write operations
 	// ----------------------------
 
 	// Bulk load ACL for first time.
-	// Thread unsafe. Should be called only form main thread during initial load.
+	// Thread unsafe. Should be called only from main thread during initial load.
 	void bulkLoadAcl(const string& aclLoadFileName) const;
 
 	// process ReST HTTP API
 	bool processHTTPAclRequest(const string& fields, const string& roleValues, AclActionType action) const;
 
 	// add new acl for a role
-	void setAcl(string aclRoleValue, vector<unsigned>& searchableAttrIdsList,
+	void setAcl(const string& aclRoleValue, vector<unsigned>& searchableAttrIdsList,
 			vector<unsigned>& refiningAttrIdsList);
 
 	// append to existing acl for a role. If role is not found then it is created.
-	void appendToAcl(string aclRoleValue, const vector<unsigned>& searchableAttrIdsList,
+	void appendToAcl(const string& aclRoleValue, const vector<unsigned>& searchableAttrIdsList,
 			const vector<unsigned>& refiningAttrIdsList);
 
 	// delete the attributes from existing acl for a role. If role is not found then it is ignored.
-	void deleteFromAcl(string aclRoleValue, const vector<unsigned>& searchableAttrIdsList,
+	void deleteFromAcl(const string& aclRoleValue, const vector<unsigned>& searchableAttrIdsList,
 			const vector<unsigned>& refiningAttrIdsList);
 
 	virtual ~AttributeAccessControl() {
@@ -80,13 +91,16 @@ public:
 
 private:
 	mutable AttributeAclLock attrAclLock;
+	// This is the data structure which stores the mapping from acl-role to
+	// attributes accessible by this role. Attributes are stored as pair of searchable
+	// and refining attribute lists.
 	map<string, PairOfAttrsListSharedPtr > attributeAclMap;
 	const SchemaInternal *schema;
 
 	// private Helper functions
 
 	//convert attribute names to attribute ids
-	void covertFieldNamesToSortedFieldIds(vector<string>& fieldTokens,
+	void convertFieldNamesToSortedFieldIds(vector<string>& fieldTokens,
 			vector<unsigned>& searchableAttrIdsList, vector<unsigned>& refiningAttrIdsList) const;
 
     friend class boost::serialization::access;

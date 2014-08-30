@@ -132,6 +132,7 @@ if __name__ == '__main__':
     binary_path = sys.argv[1]
     queriesAndResultsPath = './attributesACL/testCases.txt'
     exitCode = test(queriesAndResultsPath, binary_path , './attributesAcl/conf.xml')
+    time.sleep(2)
     queriesAndResultsPath = './attributesACL/testCasesMultiCore.txt'
     exitCode |= test(queriesAndResultsPath, binary_path, './attributesAcl/conf-multicore.xml')
     os._exit(exitCode)

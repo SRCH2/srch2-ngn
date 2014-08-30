@@ -1016,13 +1016,8 @@ bool ForwardList::isValidRecordTermHit(const SchemaInternal *schema,
         			filteringAttributesList.begin(), filteringAttributesList.end(),
         			back_inserter(differenceAttributesList));
 
-        	if (differenceAttributesList.size() == 0){
-        		matchingKeywordAttributesList.clear();
-        		return false;
-        	} else {
-        		matchingKeywordAttributesList = differenceAttributesList;
-        		return true;
-        	}
+        	matchingKeywordAttributesList = differenceAttributesList;
+        	return differenceAttributesList.size() != 0;
 
         }else { // OR operation
         	vector<unsigned> commonAttributesList;
