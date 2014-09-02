@@ -69,6 +69,7 @@ final public class SRCH2Service extends Service implements AutoPing.ValidatePing
     private Timer awaitingShutdownTimer;
     private static final int DEFAULT_TIME_TO_WAIT_FOR_SHUTDOWN_MS = (IPCConstants.HEART_BEAT_SERVER_CORE_SHUTDOWN_DELAY_SECONDS * 1000) / 2;
     private static int TIME_TO_WAIT_FOR_SHUTDOWN_MS = DEFAULT_TIME_TO_WAIT_FOR_SHUTDOWN_MS;
+    static int getTimeToWaitForShutdown() { return TIME_TO_WAIT_FOR_SHUTDOWN_MS; }
 
     private AtomicBoolean isShuttingDown;
     private Semaphore shutdownMutex;
@@ -484,7 +485,7 @@ final public class SRCH2Service extends Service implements AutoPing.ValidatePing
 
             File executableBinary = new File(binDirectory, "srch2ngn.exe");
             if (!executableBinary.exists()) {
-                InputStream sourceFile = c.getResources().openRawResource(R.raw.srch2crashwhensearch);
+                InputStream sourceFile = c.getResources().openRawResource(R.raw.srch2heartbeat);
                 FileOutputStream destinationFile = new FileOutputStream(executableBinary);
                 copyStream(destinationFile, sourceFile);
                 chmod("775", executableBinary.getAbsolutePath());

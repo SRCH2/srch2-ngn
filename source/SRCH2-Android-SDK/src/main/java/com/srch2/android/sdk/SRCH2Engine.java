@@ -222,20 +222,29 @@ final public class SRCH2Engine {
      */
     public static void onStart(Context context) {
         Cat.d(TAG, "onStart");
-        incomingIntentReciever = new SRCH2EngineBroadcastReciever();
-        context.registerReceiver(incomingIntentReciever, IPCConstants
-                .getSRCH2EngineBroadcastRecieverIntentFilter(context));
+        registerReciever(context);
         if (isStarted) { return; }
         checkConfIsNullThrowIfIs();
+        initializeConfiguration(context);
+        startSRCH2Service(context, SRCH2Configuration.generateConfigurationFileString(SRCH2Engine.conf));
+        isStarted = true;
+    }
 
+    // moved out for testing of remote service
+    static void initializeConfiguration(Context c) {
         conf.setPort(detectFreePort());
-        String appHomeDirectory = detectAppHomeDir(context);
+        String appHomeDirectory = detectAppHomeDir(c);
         Cat.d(TAG, "app home directory is : " + appHomeDirectory);
         SRCH2Engine.conf.setSRCH2Home(appHomeDirectory
                 + File.separator
                 + SRCH2Configuration.SRCH2_HOME_FOLDER_DEFAULT_NAME);
-        startSRCH2Service(context, SRCH2Configuration.generateConfigurationFileString(SRCH2Engine.conf));
-        isStarted = true;
+    }
+
+    // moved out for testing of remote service
+    static void registerReciever(Context c) {
+        incomingIntentReciever = new SRCH2EngineBroadcastReciever();
+        c.registerReceiver(incomingIntentReciever, IPCConstants
+                .getSRCH2EngineBroadcastRecieverIntentFilter(c));
     }
 
     private static void startSRCH2Service(final Context context,
@@ -266,6 +275,7 @@ final public class SRCH2Engine {
         context.startService(i);
         HttpTask.onStart();
     }
+
 
 
     private static void startCheckCoresLoadedTask(boolean isCheckingAfterCrash) {
@@ -323,10 +333,7 @@ final public class SRCH2Engine {
         }
         stopExecutable(context);
         isStarted = false;
-        try {
-            context.unregisterReceiver(incomingIntentReciever);
-        } catch (IllegalArgumentException ignore) {
-        }
+        unregisterReciever(context);
     }
 
     private static void stopExecutable(final Context context) {
@@ -338,6 +345,13 @@ final public class SRCH2Engine {
                 IPCConstants.INTENT_VALUE_BROADCAST_ACTION_START_AWAITING_SHUTDOWN);
         context.sendBroadcast(i);
         HttpTask.onStop();
+    }
+
+    static void unregisterReciever(Context context) {
+        try {
+            context.unregisterReceiver(incomingIntentReciever);
+        } catch (IllegalArgumentException ignore) {
+        }
     }
 
     static void reQueryLastOne() {
