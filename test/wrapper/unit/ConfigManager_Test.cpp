@@ -102,7 +102,7 @@ int main(int argc, char* argv[])
 
     //This checks if the log file path and log level are correctly set in the config file where log
     //tag has been moved out of core
-    ASSERT(serverConf15->getHTTPServerAccessLogFile() == "./multicore//srch2-log.txt");
+    ASSERT(serverConf15->getHTTPServerAccessLogFile() == "./multicore/srch2-log.txt");
     ASSERT(serverConf15->getHTTPServerLogLevel() == 3);
 
     const std::string &expr_string = "invalid Expression";
