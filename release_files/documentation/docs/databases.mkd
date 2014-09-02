@@ -126,7 +126,7 @@ mongodb> db.movies.insert(
 });
 ```
 
-Th last command inserts a new record into MongoDB.  Wait for about 4 seconds for the SRCH2 server to pull the change. Do the above search query again. The search engine should return this newly inserted record.  Notice that the wait time depends upon your configuration such as [listenerWaitTime](configuration.mkd#63-database-required-if-datasourcetype-is-2) and [merge policy](configuration.mkd#102-merge-policy-required).  It is suggested to wait for "listenerWaitTime + mergeEveryNSeconds" seconds.
+Th last command inserts a new record into MongoDB.  Wait for about 4 seconds for the SRCH2 server to pull the change. Do the above search query again. The search engine should return this newly inserted record.  Notice that the wait time depends upon your configuration such as [listenerWaitTime](configuration.mkd#63-database-required-if-datasourcetype-is-2) and [merge policy](configuration.mkd#103-merge-policy-optional).  It is suggested to wait for "listenerWaitTime + mergeEveryNSeconds" seconds.
 
 ###2.7. Update a Record
 

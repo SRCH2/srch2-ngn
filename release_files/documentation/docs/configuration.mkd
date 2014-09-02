@@ -175,7 +175,7 @@ Note that the positional index takes more memory resources. By default it is dis
 
 ###7.5. Enable Character Offset Index (Optional)
 
-A character offset index supports fast keyword [highlighting](#812-highlighter-optional) during the snippet generation. The "enableCharOffsetIndex" tag can be used to enable or disable character offset indexing.  For instance, the following
+A character offset index supports fast keyword [highlighting](#813-highlighter-optional) during the snippet generation. The "enableCharOffsetIndex" tag can be used to enable or disable character offset indexing.  For instance, the following
 example shows how to enable this indexing:
 
 ```
@@ -342,7 +342,7 @@ This composite parameter allows a user to specify snippet size and tags to enclo
 
 In order for an attribute to be highlighted, its highlight attribute in the schema configuration section should be enabled.
 There is a highlighting example in [example-demo/srch2-config-advanced.xml](../example-demo/srch2-config-advanced.xml).
-Notice that to improve the query search time when the highlighting is enabled, consider enabling the [character offset index](#76-enable-character-offset-index-optional). 
+Notice that to improve the query search time when the highlighting is enabled, consider enabling the [character offset index](#75-enable-character-offset-index-optional). 
 
 ##9. Response Writer
 
