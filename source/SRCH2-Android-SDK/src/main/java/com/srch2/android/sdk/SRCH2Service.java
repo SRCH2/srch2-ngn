@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.IBinder;
+import android.os.SystemClock;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -25,9 +26,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * is controlled by broadcast receivers, and it is not bound to by the <code>SRCH2Engine</code>. Users of the
  * SRCH2-Android-SDK should have no reason to modify this service in any way.
  */
-final public class SRCH2Service extends Service {
+final public class SRCH2Service extends Service implements AutoPing.ValidatePingCommandCallback {
 
     private static final String TAG = "Exe-Service";
+
+    @Override
+    public void validateIfSRCH2EngineAlive() {
+        signalSRCH2EngineIsAlive(true);
+    }
 
     private class ExecutableServiceBroadcastReciever extends BroadcastReceiver {
         @Override
@@ -37,9 +43,18 @@ final public class SRCH2Service extends Service {
             if (value.equals(IPCConstants.INTENT_VALUE_BROADCAST_ACTION_START_AWAITING_SHUTDOWN)) {
                 Cat.d(TAG, "ExecutableServiceBroadcastReciever -- onRecieve -- startAwaitingShutdown");
                 startAwaitingShutdown();
+            } else if (value.equals(IPCConstants.INTENT_VALUE_BROADCAST_ACTION_VALIDATE_SRCH2ENGINE_ALIVE)) {
+                Cat.d(TAG, "ExecutableServiceBroadcastReciever -- validated alive restarting server");
+                srch2SignaledIsAlive.set(true);
+                restartServer();
+            } else if (value.equals(IPCConstants.INTENT_VALUE_BROADCAST_ACTION_VALIDATE_SRCH2ENGINE_ALIVE_FOR_PING)) {
+                Cat.d(TAG, "ExecutableServiceBroadcastReciever -- recieved validation for doing ping");
+                AutoPing.doPing();
             }
         }
     }
+
+    AtomicBoolean srch2SignaledIsAlive;
 
     private ExecutableServiceBroadcastReciever incomingIntentReciever;
 
@@ -52,12 +67,11 @@ final public class SRCH2Service extends Service {
 
     private AtomicBoolean isAwaitingShutdown;
     private Timer awaitingShutdownTimer;
-    private static int TIME_TO_WAIT_FOR_SHUTDOWN_MS = 60000;
-    private static final int DEFAULT_TIME_TO_WAIT_FOR_SHUTDOWN_MS = 60000;
+    private static final int DEFAULT_TIME_TO_WAIT_FOR_SHUTDOWN_MS = (IPCConstants.HEART_BEAT_SERVER_CORE_SHUTDOWN_DELAY_SECONDS * 1000) / 2;
+    private static int TIME_TO_WAIT_FOR_SHUTDOWN_MS = DEFAULT_TIME_TO_WAIT_FOR_SHUTDOWN_MS;
 
     private AtomicBoolean isShuttingDown;
     private Semaphore shutdownMutex;
-
 
     private final String PREFERENCES_NAME_SERVER_STARTED_LOG = "srch2-server-started-log";
     private final String PREFERENCES_KEY_SERVER_LOG_SHUTDOWN_URLS = "srch2-server-log-shutdown-urls";
@@ -72,6 +86,7 @@ final public class SRCH2Service extends Service {
     public void onCreate() {
         super.onCreate();
         Cat.d(TAG, "onCreate");
+        srch2SignaledIsAlive = new AtomicBoolean(false);
         shutdownMutex = new Semaphore(1);
         isAwaitingShutdown = new AtomicBoolean(false);
         isShuttingDown = new AtomicBoolean(false);
@@ -204,9 +219,10 @@ final public class SRCH2Service extends Service {
         }
         Cat.d(TAG, "signalSRCH2EngineToProceed");
         Intent i = new Intent(IPCConstants.getSRCH2EngineBroadcastRecieverIntentAction(getApplicationContext()));
+        i.putExtra(IPCConstants.INTENT_KEY_BROADCAST_ACTION, IPCConstants.INTENT_VALUE_BROADCAST_ACTION_ENGINE_STARTED_PROCEED);
         i.putExtra(IPCConstants.INTENT_KEY_PORT_NUMBER, portNumberForSRCH2EngineToReuse);
         i.putExtra(IPCConstants.INTENT_KEY_OAUTH, oAuthCodeForSRCH2EngineToReuse);
-        AutoPing.start(executablePingUrl);
+        AutoPing.start(this, executablePingUrl);
         sendBroadcast(i);
     }
 
@@ -223,11 +239,24 @@ final public class SRCH2Service extends Service {
                 Cat.ex(TAG, "startingexecutable InterrupedException", e);
             }
         }
-        Cat.d(TAG, "signalSRCH2EngineToProceed");
+        Cat.d(TAG, "signalSRCH2EngineToResume");
         Intent i = new Intent(IPCConstants.getSRCH2EngineBroadcastRecieverIntentAction(getApplicationContext()));
+        i.putExtra(IPCConstants.INTENT_KEY_BROADCAST_ACTION, IPCConstants.INTENT_VALUE_BROADCAST_ACTION_ENGINE_CRASHED_BUT_CAN_RESUME);
         i.putExtra(IPCConstants.INTENT_KEY_PORT_NUMBER, portNumberForSRCH2EngineToReuse);
         i.putExtra(IPCConstants.INTENT_KEY_OAUTH, oAuthCodeForSRCH2EngineToReuse);
-        AutoPing.start(executablePingUrl);
+        AutoPing.start(this, executablePingUrl);
+        sendBroadcast(i);
+    }
+
+    private void signalSRCH2EngineIsAlive(boolean forPing) {
+        Cat.d(TAG, "signalSRCH2EngineForPingValidation");
+        Intent i = new Intent(IPCConstants.getSRCH2EngineBroadcastRecieverIntentAction(getApplicationContext()));
+        if (forPing) {
+            i.putExtra(IPCConstants.INTENT_KEY_BROADCAST_ACTION, IPCConstants.INTENT_VALUE_BROADCAST_ACTION_VALIDATE_SRCH2ENGINE_ALIVE_FOR_PING);
+        } else {
+            i.putExtra(IPCConstants.INTENT_KEY_BROADCAST_ACTION, IPCConstants.INTENT_VALUE_BROADCAST_ACTION_VALIDATE_SRCH2ENGINE_ALIVE);
+        }
+
         sendBroadcast(i);
     }
 
@@ -307,7 +336,6 @@ final public class SRCH2Service extends Service {
             url = new URL(executableShutdownUrlString);
         } catch (MalformedURLException ignore) {
         }
-
         HttpURLConnection connection = null;
         try {
             connection = (HttpURLConnection) url.openConnection();
@@ -319,22 +347,15 @@ final public class SRCH2Service extends Service {
                     connection.getOutputStream());
             out.write("X");
             out.close();
-
             int responseCode = connection.getResponseCode();
-
             Cat.d(TAG, "doShutdownNetworkCall - responseCode " + responseCode);
-
-
             String response = "";
             if (connection.getInputStream() != null) {
                 response = readInputStream(connection.getInputStream());
             } else if (connection.getErrorStream() != null) {
                 response = readInputStream(connection.getErrorStream());
             }
-
             Cat.d(TAG, "doShutdownNetworkCall response " + response);
-
-
         } catch (IOException networkError) {
             Cat.ex(TAG, "shutdown network call IOException", networkError);
             Cat.d(TAG, "network error WHILE shutting down " + networkError.getMessage());
@@ -361,14 +382,11 @@ final public class SRCH2Service extends Service {
         boolean isDebugAndTestingMode = startCommandIntent.getBooleanExtra(IPCConstants.INTENT_KEY_IS_DEBUG_AND_TESTING_MODE, false);
         TIME_TO_WAIT_FOR_SHUTDOWN_MS = isDebugAndTestingMode ? IPCConstants.DEBUG_AND_TESTING_MODE_QUICK_SHUTDOWN_DELAY : DEFAULT_TIME_TO_WAIT_FOR_SHUTDOWN_MS;
         executablePingUrl = startCommandIntent.getStringExtra(IPCConstants.INTENT_KEY_PING_URL);
-
         autoInstallCoreFilesAndOverwriteXMLConfigurationFile(startCommandIntent.getStringExtra(IPCConstants.INTENT_KEY_XML_CONFIGURATION_FILE_LITERAL));
         startRunningExecutable(executablePortNumber, executableShutdownUrlString, executableOAuthLiteral, executablePingUrl);
-
         Cat.d(TAG, "startExecutable port number " + executablePortNumber);
         Cat.d(TAG, "startExecutable shutdown string " + executableShutdownUrlString);
         Cat.d(TAG, "startExecutable pingUrl " + executablePingUrl);
-
         signalSRCH2EngineToProceed(executablePortNumber, executableOAuthLiteral);
     }
 
@@ -381,7 +399,6 @@ final public class SRCH2Service extends Service {
                 Process p;
                 try {
                     updateServerLog(portBeingUsedToStartService, shutDownUrl, oAuthCode, executableProcessPath, pingUrl);
-                    AutoPing.start(pingUrl);
                     Cat.d(TAG, "startRunningExecutable - starting process");
                     p = pb.start();
                     Cat.d(TAG, "startRunningExe - after pbstart isShuttingDown is " + isShuttingDown.get());
@@ -397,10 +414,24 @@ final public class SRCH2Service extends Service {
                     }
                     p.destroy();
                     if (!isShuttingDown.get()) {
-                        Cat.d(TAG, "startRunningExe - after p.destory engine crashed restarting ... ");
+                        Cat.d(TAG, "startRunningExe - after p.destory engine may have crash validating ... ");
                         AutoPing.interrupt();
-                        startRunningExecutable(executablePortNumber, executableShutdownUrlString, executableOAuthLiteral, executablePingUrl);
-                        signalSRCH2EngineToResume(executablePortNumber, executableOAuthLiteral);
+                        srch2SignaledIsAlive.set(false);
+                        signalSRCH2EngineIsAlive(false);
+
+                        long timeToWaitForSRCH2EngineAliveCallback = SystemClock.uptimeMillis() + 2000;
+                        while (SystemClock.uptimeMillis() < timeToWaitForSRCH2EngineAliveCallback && !srch2SignaledIsAlive.get()) {
+                            Cat.d(TAG, "startRunningExe - waiting for validation to restart waited");
+                            try {
+                                Thread.sleep(250);
+                            } catch (InterruptedException e) {
+                            }
+                        }
+                        if (!srch2SignaledIsAlive.get()) {
+                            Cat.d(TAG, "startRunningExe - did not get validation should be stopping self");
+                            stopSelf();
+                        }
+                        srch2SignaledIsAlive.set(false);
                     }
                     Cat.d(TAG, "startRunningExe - after p.destory isShuttingDown is " + isShuttingDown.get());
                 } catch (IOException e) {
@@ -411,6 +442,12 @@ final public class SRCH2Service extends Service {
         });
         t.setName("EXECUTABLE PROCESS THREAD");
         t.start();
+    }
+
+    private void restartServer() {
+        Cat.d(TAG, "restarting server");
+        startRunningExecutable(executablePortNumber, executableShutdownUrlString, executableOAuthLiteral, executablePingUrl);
+        signalSRCH2EngineToResume(executablePortNumber, executableOAuthLiteral);
     }
 
     @TargetApi(Build.VERSION_CODES.DONUT)
@@ -442,7 +479,7 @@ final public class SRCH2Service extends Service {
 
             File executableBinary = new File(binDirectory, "srch2ngn.exe");
             if (!executableBinary.exists()) {
-                InputStream sourceFile = c.getResources().openRawResource(R.raw.srch2heartbeat);
+                InputStream sourceFile = c.getResources().openRawResource(R.raw.srch2crashwhensearch);
                 FileOutputStream destinationFile = new FileOutputStream(executableBinary);
                 copyStream(destinationFile, sourceFile);
                 chmod("775", executableBinary.getAbsolutePath());

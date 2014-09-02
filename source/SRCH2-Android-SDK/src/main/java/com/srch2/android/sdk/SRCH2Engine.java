@@ -470,30 +470,49 @@ final public class SRCH2Engine {
     static private class SRCH2EngineBroadcastReciever extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
-            Cat.d(TAG, "onReceive");
-            int actualPortExecutableStartedWith = intent.getIntExtra(
-                    IPCConstants.INTENT_KEY_PORT_NUMBER, 0);
-            String actualOAuthExecutableStartedWith = intent.getStringExtra(IPCConstants.INTENT_KEY_OAUTH);
-            if ((SRCH2Engine.conf.getPort() != actualPortExecutableStartedWith
-                    && actualPortExecutableStartedWith != 0) && actualOAuthExecutableStartedWith != null) {
-                Cat.d(TAG, "onReceive - resting port to "
-                        + actualPortExecutableStartedWith);
-                SRCH2Engine.conf.setPort(actualPortExecutableStartedWith);
-                SRCH2Engine.conf.setAuthorizationKey(actualOAuthExecutableStartedWith);
-            }
-
-            String broadcastActionTag = intent.getStringExtra(IPCConstants.INTENT_KEY_BROADCAST_ACTION);
-            boolean isResumingAfterCrash = false;
-            if (broadcastActionTag != null) {
-                if (broadcastActionTag.equals(IPCConstants.INTENT_VALUE_BROADCAST_ACTION_ENGINE_CRASHED_BUT_CAN_RESUME)) {
-                    Cat.d(TAG, "SRCH2EngineBroadcastReciever onReceive - resume after crash");
-                    isResumingAfterCrash = true;
-                } else if (broadcastActionTag.equals(IPCConstants.INTENT_VALUE_BROADCAST_ACTION_START_AWAITING_SHUTDOWN)) {
-                    Cat.d(TAG, "SRCH2EngineBroadcastReciever onReceive - proceed");
-                    isResumingAfterCrash = false;
+            Cat.d(TAG, " SRCH2EngineBroadcastReciever onReceive");
+            String broadCastCommand = intent.getStringExtra(IPCConstants.INTENT_KEY_BROADCAST_ACTION);
+            if (broadCastCommand != null) {
+                if (broadCastCommand.equals(IPCConstants.INTENT_VALUE_BROADCAST_ACTION_VALIDATE_SRCH2ENGINE_ALIVE)) {
+                    Cat.d(TAG, " SRCH2EngineBroadcastReciever INTENT_VALUE_BROADCAST_ACTION_VALIDATE_SRCH2ENGINE_ALIVE");
+                    Intent i = new Intent(
+                            IPCConstants
+                                    .getSRCH2ServiceBroadcastRecieverIntentAction(context));
+                    i.putExtra(IPCConstants.INTENT_KEY_BROADCAST_ACTION,
+                            IPCConstants.INTENT_VALUE_BROADCAST_ACTION_VALIDATE_SRCH2ENGINE_ALIVE);
+                    context.sendBroadcast(i);
+                } else if (broadCastCommand.equals(IPCConstants.INTENT_VALUE_BROADCAST_ACTION_VALIDATE_SRCH2ENGINE_ALIVE_FOR_PING)) {
+                    Cat.d(TAG, " SRCH2EngineBroadcastReciever INTENT_VALUE_BROADCAST_ACTION_VALIDATE_SRCH2ENGINE_ALIVE_FOR_PING");
+                    Intent i = new Intent(
+                            IPCConstants
+                                    .getSRCH2ServiceBroadcastRecieverIntentAction(context));
+                    i.putExtra(IPCConstants.INTENT_KEY_BROADCAST_ACTION,
+                            IPCConstants.INTENT_VALUE_BROADCAST_ACTION_VALIDATE_SRCH2ENGINE_ALIVE_FOR_PING);
+                    context.sendBroadcast(i);
+                } else if (broadCastCommand.equals(IPCConstants.INTENT_VALUE_BROADCAST_ACTION_ENGINE_CRASHED_BUT_CAN_RESUME)
+                             || broadCastCommand.equals(IPCConstants.INTENT_VALUE_BROADCAST_ACTION_ENGINE_STARTED_PROCEED)) {
+                    Cat.d(TAG, " SRCH2EngineBroadcastReciever - proceed or resume");
+                    int actualPortExecutableStartedWith = intent.getIntExtra(
+                            IPCConstants.INTENT_KEY_PORT_NUMBER, 0);
+                    String actualOAuthExecutableStartedWith = intent.getStringExtra(IPCConstants.INTENT_KEY_OAUTH);
+                    if ((SRCH2Engine.conf.getPort() != actualPortExecutableStartedWith
+                            && actualPortExecutableStartedWith != 0) && actualOAuthExecutableStartedWith != null) {
+                        Cat.d(TAG, "onReceive - resting port to "
+                                + actualPortExecutableStartedWith);
+                        SRCH2Engine.conf.setPort(actualPortExecutableStartedWith);
+                        SRCH2Engine.conf.setAuthorizationKey(actualOAuthExecutableStartedWith);
+                    }
+                    boolean isResumingAfterCrash = false;
+                    if (broadCastCommand.equals(IPCConstants.INTENT_VALUE_BROADCAST_ACTION_ENGINE_CRASHED_BUT_CAN_RESUME)) {
+                        Cat.d(TAG, "SRCH2EngineBroadcastReciever onReceive - resume after crash");
+                        isResumingAfterCrash = true;
+                    } else if (broadCastCommand.equals(IPCConstants.INTENT_VALUE_BROADCAST_ACTION_START_AWAITING_SHUTDOWN)) {
+                        Cat.d(TAG, "SRCH2EngineBroadcastReciever onReceive - proceed");
+                        isResumingAfterCrash = false;
+                    }
+                    SRCH2Engine.startCheckCoresLoadedTask(isResumingAfterCrash);
                 }
             }
-            SRCH2Engine.startCheckCoresLoadedTask(isResumingAfterCrash);
         }
     }
 

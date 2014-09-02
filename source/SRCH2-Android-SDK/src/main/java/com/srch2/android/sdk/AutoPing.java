@@ -10,6 +10,10 @@ import java.util.concurrent.RejectedExecutionException;
 
 class AutoPing {
 
+    interface ValidatePingCommandCallback {
+        void validateIfSRCH2EngineAlive();
+    }
+
     private static final String TAG = "HeartBeatPing";
 
     // should be slightly less than the amount of time the SRCH2 server core waits to autoshutdown
@@ -20,6 +24,7 @@ class AutoPing {
     ExecutorService pingPool;
     Timer timer;
     static AutoPing instance;
+    ValidatePingCommandCallback callback;
 
     AutoPing() {
         pingPool = Executors.newFixedThreadPool(1);
@@ -27,7 +32,7 @@ class AutoPing {
 
     // from SRCH2Engine call when checkcores loaded finishes
     // from SRCH2Service call when signling SRCH2Engine to proceed
-    static void start(String pingUrlString) {
+    static void start(ValidatePingCommandCallback theCallback, String pingUrlString) {
         Cat.d(TAG, "start");
         if (instance == null) {
             Cat.d(TAG, "start - instance null - initializing");
@@ -40,16 +45,9 @@ class AutoPing {
         }
         instance.setPingUrl(url);
         instance.pingAndRepeat();
+        instance.callback = theCallback;
     }
 
-    // call anytime need to start pinging
-    static void ping() {
-        Cat.d(TAG, "ping");
-        if (instance != null) {
-            Cat.d(TAG, "ping - instance not null - pingAndRepeating");
-            instance.pingAndRepeat();
-        }
-    }
 
     private void pingAndRepeat() {
         Cat.d(TAG, "pingAndRepeat");
@@ -61,13 +59,20 @@ class AutoPing {
             timer.schedule(new TimerTask() {
                 @Override
                 public void run() {
-                    PingTask pt = new PingTask(instance);
-                    try {
-                        instance.pingPool.execute(pt);
-                    } catch (RejectedExecutionException ignore) {
-                    }
+                   if (instance.callback != null) {
+                       instance.callback.validateIfSRCH2EngineAlive();
+                   }
                 }
             }, HEART_BEAT_PING_DELAY);
+        }
+    }
+
+    static void doPing() {
+        PingTask pt = new PingTask(instance);
+        try {
+            Cat.d(TAG, "doing autoping");
+            instance.pingPool.execute(pt);
+        } catch (RejectedExecutionException ignore) {
         }
     }
 
