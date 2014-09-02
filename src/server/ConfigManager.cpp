@@ -167,10 +167,13 @@ const char* const ConfigManager::defaultFuzzyPostTag = "</b>";
 const char* const ConfigManager::defaultExactPreTag = "<b>";
 const char* const ConfigManager::defaultExactPostTag = "</b>";
 
+const char* const ConfigManager::heartBeatTimerTag = "heartbeattimer";
+
 ConfigManager::ConfigManager(const string& configFile) {
     this->configFile = configFile;
     defaultCoreName = "__DEFAULTCORE__";
     defaultCoreSetFlag = false;
+    heartBeatTimer = 0;
 }
 
 bool ConfigManager::loadConfigFile() {
@@ -2167,6 +2170,15 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
                     "Authorization Key is invalid string, so it will not be used by the engine! ");
         }
     }
+
+    xml_node heartBeatTimerNode = configNode.child(heartBeatTimerTag);
+    if ( heartBeatTimerNode && heartBeatTimerNode.text()){
+        string timerInText = string(heartBeatTimerNode.text().get());
+        if ( isOnlyDigits(timerInText)){
+            heartBeatTimer = static_cast<int>(strtol(timerInText.c_str(), NULL, 10));
+        }
+    }
+
     // check if data source exists at the top level
     xml_node topDataFileNode = childNode.child(dataFileString);
     if (topDataFileNode) {
@@ -2383,6 +2395,10 @@ float ConfigManager::getDefaultSpatialQueryBoundingBox() const {
 
 unsigned int ConfigManager::getNumberOfThreads() const {
     return numberOfThreads;
+}
+
+unsigned int ConfigManager::getHeartBeatTimer() const{
+    return heartBeatTimer;
 }
 
 const string& ConfigManager::getIndexPath(const string &coreName) const {
@@ -3078,6 +3094,8 @@ void CoreInfo_t::setPort(PortType_t portType, unsigned short portNumber) {
     case SavePort:
     case ExportPort:
     case ResetLoggerPort:
+    case SearchAllPort:
+    case ShutDownAllPort:
         ports[portType] = portNumber;
         break;
 
