@@ -12,13 +12,6 @@
         <!-- Make sure to specify the home of your SRCH2 installation.  Example: 
           <srch2Home>/home/joe/srch2</srch2Home>
         -->
-  
-        <updateLog>
-		    <logLevel>3</logLevel>
-		    <accessLogFile>srch2-log.txt</accessLogFile>
-		</updateLog>
-		
-    <licenseFile>../../conf/srch2_license_key.txt</licenseFile>
  
     <listeningHostname>0.0.0.0</listeningHostname>
     <listeningPort>8087</listeningPort>
@@ -93,4 +86,10 @@
         </core>
 
     </cores>
+    
+        <updateLog>
+		    <logLevel>3</logLevel>
+		    <accessLogFile>srch2-log.txt</accessLogFile>
+		</updateLog>
+    
 </config>

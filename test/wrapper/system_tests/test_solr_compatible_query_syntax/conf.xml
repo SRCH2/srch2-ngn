@@ -124,9 +124,6 @@
          
     </indexConfig>
   
-  
-  
-  
     <query>
         <!-- 
             Ranking Algorithm
@@ -217,8 +214,6 @@
             Defaults to 0
         -->
         <queryTermFuzzyType>1</queryTermFuzzyType>
-         
-                     
              
         <!--
             Query Term Type
@@ -297,30 +292,6 @@
           <mergeEveryNSeconds>10</mergeEveryNSeconds>
           <mergeEveryMWrites>100</mergeEveryMWrites>
         </mergePolicy>
-         
-         
-        <updateLog>
-            <!-- 
-                Log Level
-                Optional
-                 
-                Log level
-                    0 SILENT
-                    1 ERROR
-                    2 WARN
-                    3 INFO
-                Defaults to 3 INFO
-            -->
-            <logLevel>3</logLevel>
-                         
-            <!--
-                Access Log File
-                Required
-                 
-                Path to Access Log File
-            -->
-            <accessLogFile>./data/test_new_query_syntax/log.txt</accessLogFile>
-        </updateLog>
      
     </updatehandler>
  
@@ -444,5 +415,28 @@
     </fieldType>
  </types>
 </schema>
+
+        <updateLog>
+            <!-- 
+                Log Level
+                Optional
+                 
+                Log level
+                    0 SILENT
+                    1 ERROR
+                    2 WARN
+                    3 INFO
+                Defaults to 3 INFO
+            -->
+            <logLevel>3</logLevel>
+                         
+            <!--
+                Access Log File
+                Required
+                 
+                Path to Access Log File
+            -->
+            <accessLogFile>./data/test_new_query_syntax/log.txt</accessLogFile>
+        </updateLog>
 
 </config>

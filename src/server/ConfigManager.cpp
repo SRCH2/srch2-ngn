@@ -37,7 +37,7 @@ const char* const ConfigManager::OAuthParam = "OAuth";
 const char* const ConfigManager::authorizationKeyTag = "authorization-key";
 
 string ConfigManager::authorizationKey = "";
-const char* const ConfigManager::defaultCore = "__DEFAULTCORE__";
+const char* const ConfigManager::defaultCore = "core0";
 // configuration file tag and attribute names for ConfigManager
 // *MUST* be lowercase
 const char* const ConfigManager::accessLogFileString = "accesslogfile";
@@ -936,8 +936,8 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode,
 
             //If it is default core, we do not use the core name in dataFile path
             //This change is there so as not to break system test case. If this "if" condition is not present,
-            //it will add "__DEFAULTCORE__" to the dataFile path.
-            //So if it is "DEFAULTCORE" corename is not added to dataFile path.
+            //it will add "core0" to the dataFile path.
+            //So if it is "core0", we do not add corename to the dataFile path.
             if(coreInfo->name == defaultCore){
                 coreInfo->dataFilePath = srch2Home + string("")
                     + string("/") + temporaryString;
