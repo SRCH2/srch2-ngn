@@ -159,16 +159,16 @@ fi
 rm -rf data/ *.idx
 
 # This is the general test case function.
-# Normally it takes 2 arguments, it can also 4 arguments:
+# Normally it takes 2 arguments, but sometimes it can also 4 arguments:
 #  $1: the name of the test, corresponding to the previous test_id
 #  $2: the full command line, like "python ./run_something.py args1, args2". 
 #      Note , the full command line should be ONE string
 #  $3: [optional], the skipped return code if it is not equal to 0. 
-#      Some test cases (the db_connector test cases)
-#      we want to skip it if it failed by return certain code. 
+#      For some test cases (e.g. db_connector test cases)
+#      we want to skip it if it failed by returning a certain code. 
 #  $4: [optional], the skipped the message. 
-#      This field works with the $3, if the test case is allowed to skip,
-#      we should provide the reason why it fail.
+#      This field works with the $3 argument, if the test case is allowed to skip,
+#      we should provide the reason why it failed.
 function test_case(){
     test_id="$1"
     printTestBanner "$test_id"
