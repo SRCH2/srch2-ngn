@@ -168,10 +168,13 @@ const char* const ConfigManager::defaultFuzzyPostTag = "</b>";
 const char* const ConfigManager::defaultExactPreTag = "<b>";
 const char* const ConfigManager::defaultExactPostTag = "</b>";
 
+const char* const ConfigManager::heartBeatTimerTag = "heartbeattimer";
+
 ConfigManager::ConfigManager(const string& configFile) {
     this->configFile = configFile;
     defaultCoreName = defaultCore;
     defaultCoreSetFlag = false;
+    heartBeatTimer = 0;
 }
 
 bool ConfigManager::loadConfigFile() {
@@ -1003,16 +1006,11 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode,
         }
     }
 
-
-
     coreInfo->allowedRecordTokenizerCharacters = "";
     coreInfo->attributeToSort = 0;
 
     // set default number of suggestions because we don't have any config options for this yet
     coreInfo->defaultNumberOfSuggestions = 5;
-
-
-
 
     // <schema>
     childNode = parentNode.child(schemaString);
@@ -2078,7 +2076,6 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
         return;
     }
 
-    // TODO - logging per core
       // logLevel is optional. To make loglevel optional the llflag's initial value has been set to false.
       // llflag is false, if log level is not set in config file or wrong value is given by the user, otherwise llflag remains true.
       this->loglevel = Logger::SRCH2_LOG_INFO;
@@ -2131,6 +2128,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
                     "Authorization Key is invalid string, so it will not be used by the engine! ");
         }
     }
+
     //check if data source or dataDir exists at the top level,
     //if it exists then it is a single core configuration file with no core tags.
     xml_node topDataFileNode = configNode.child(dataFileString);
@@ -2143,6 +2141,15 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
             coreInfoMap[defaultCoreInfo->name] = defaultCoreInfo;
         } else {
             defaultCoreInfo = coreInfoMap[getDefaultCoreName()];
+        }
+    }
+
+
+    xml_node heartBeatTimerNode = configNode.child(heartBeatTimerTag);
+    if ( heartBeatTimerNode && heartBeatTimerNode.text()){
+        string timerInText = string(heartBeatTimerNode.text().get());
+        if ( isOnlyDigits(timerInText)){
+            heartBeatTimer = static_cast<int>(strtol(timerInText.c_str(), NULL, 10));
         }
     }
 
@@ -2349,6 +2356,10 @@ float ConfigManager::getDefaultSpatialQueryBoundingBox() const {
 
 unsigned int ConfigManager::getNumberOfThreads() const {
     return numberOfThreads;
+}
+
+unsigned int ConfigManager::getHeartBeatTimer() const{
+    return heartBeatTimer;
 }
 
 const string& ConfigManager::getIndexPath(const string &coreName) const {
@@ -3044,6 +3055,8 @@ void CoreInfo_t::setPort(PortType_t portType, unsigned short portNumber) {
     case SavePort:
     case ExportPort:
     case ResetLoggerPort:
+    case SearchAllPort:
+    case ShutDownAllPort:
         ports[portType] = portNumber;
         break;
 

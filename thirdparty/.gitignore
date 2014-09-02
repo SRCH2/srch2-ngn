@@ -1,0 +1,21 @@
+json/jsoncpp-src/
+json/srch2_readme.txt
+
+# ignore mongo files
+mongo-cxx-driver/mongo-cxx-driver/*
+event/bin/
+event/include/
+event/lib/
+event/android/
+event/libevent-*-stable/
+json/jsoncpp-src-0.5.0/
+gperftools/bin/
+gperftools/gperftools-2.0/
+gperftools/include/
+gperftools/lib/
+gperftools/share/
+libunwind/libunwind-0.99-beta/
+libunwind/include/
+libunwind/lib/
+libunwind/share/
+pymongo/pymongo/
