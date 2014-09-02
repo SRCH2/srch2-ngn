@@ -374,6 +374,11 @@ final public class SRCH2Service extends Service implements AutoPing.ValidatePing
         }
     }
 
+    /** For testing purposes only */
+    void stopService() {
+        stopSelf();
+    }
+
     private void startExecutable(Intent startCommandIntent) {
         Cat.d(TAG, "startExecutable");
         executablePortNumber = startCommandIntent.getIntExtra(IPCConstants.INTENT_KEY_PORT_NUMBER, 0);
@@ -419,7 +424,7 @@ final public class SRCH2Service extends Service implements AutoPing.ValidatePing
                         srch2SignaledIsAlive.set(false);
                         signalSRCH2EngineIsAlive(false);
 
-                        long timeToWaitForSRCH2EngineAliveCallback = SystemClock.uptimeMillis() + 2000;
+                        long timeToWaitForSRCH2EngineAliveCallback = SystemClock.uptimeMillis() + 3000;
                         while (SystemClock.uptimeMillis() < timeToWaitForSRCH2EngineAliveCallback && !srch2SignaledIsAlive.get()) {
                             Cat.d(TAG, "startRunningExe - waiting for validation to restart waited");
                             try {
