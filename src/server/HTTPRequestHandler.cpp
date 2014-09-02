@@ -1200,17 +1200,19 @@ void HTTPRequestHandler::searchAllCommand(evhttp_request *req, const CoreNameSer
 
     evkeyvalq headers;
     Json::Value root(Json::objectValue);
-    Json::Value errorResponse(Json::objectValue);
     int cSuccess = 0;
     for( CoreNameServerMap_t::const_iterator it = coreNameServerMap->begin(); 
             it != coreNameServerMap->end(); ++it){
         std::stringstream errorStream;
         boost::shared_ptr<Json::Value> subRoot = doSearchOneCore( req, it->second, &headers, errorStream );
-        errorResponse["core"] = errorStream.str();
+        Json::Value errorResponse(Json::objectValue);
+        errorResponse["error"] = errorStream.str();
 
         if (subRoot ){
             root[it->first] = *subRoot;
             cSuccess +=1;
+        } else {
+            root[it->first] = errorResponse;
         }
     }
 
@@ -1218,7 +1220,7 @@ void HTTPRequestHandler::searchAllCommand(evhttp_request *req, const CoreNameSer
     if (cSuccess > 0){
         bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", global_customized_writer.write(root), headers);
     } else {
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request", global_customized_writer.write(errorResponse), headers);
+        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request", global_customized_writer.write(root), headers);
     }
     evhttp_clear_headers(&headers);
 }
