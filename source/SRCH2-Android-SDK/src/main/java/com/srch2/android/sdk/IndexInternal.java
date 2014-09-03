@@ -5,6 +5,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.net.URL;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 final class IndexInternal {
     private static final String TAG = "IndexInternal";
@@ -12,7 +13,10 @@ final class IndexInternal {
     final IndexDescription indexDescription;
     private SearchTask currentSearchTask = null;
 
+    AtomicBoolean isDirty;
+
     IndexInternal(IndexDescription description) {
+        isDirty = new AtomicBoolean(false);
         this.indexDescription = description;
     }
 
@@ -43,6 +47,7 @@ final class IndexInternal {
                     getIndexCoreName(), record);
             HttpTask.addToQueue(insertTask);
             SRCH2Engine.isChanged.set(true);
+            isDirty.set(true);
 //        }
     }
 
@@ -56,6 +61,7 @@ final class IndexInternal {
                     records);
             HttpTask.addToQueue(insertTask);
             SRCH2Engine.isChanged.set(true);
+            isDirty.set(true);
 //        }
     }
 
@@ -66,6 +72,7 @@ final class IndexInternal {
                     getIndexCoreName(), record);
             HttpTask.addToQueue(updateTask);
             SRCH2Engine.isChanged.set(true);
+            isDirty.set(true);
 //        }
     }
 
@@ -76,6 +83,7 @@ final class IndexInternal {
                     getIndexCoreName(), records);
             HttpTask.addToQueue(updateTask);
             SRCH2Engine.isChanged.set(true);
+            isDirty.set(true);
 //        }
     }
 
@@ -86,6 +94,7 @@ final class IndexInternal {
                     getIndexCoreName());
             HttpTask.addToQueue(deleteTast);
             SRCH2Engine.isChanged.set(true);
+            isDirty.set(true);
 //        }
     }
 

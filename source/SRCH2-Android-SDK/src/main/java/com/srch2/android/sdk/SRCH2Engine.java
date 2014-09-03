@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -327,6 +328,15 @@ final public class SRCH2Engine {
      */
     public static void onStop(Context context) {
         Cat.d(TAG, "onStop");
+        ArrayList<Indexable> dirtyIndexList = new ArrayList<Indexable>();
+        for (Indexable idx : conf.indexableMap.values()) {
+            Cat.d(TAG, "indexable " + idx.getIndexName() + " was dirty adding to save task");
+            dirtyIndexList.add(idx);
+        }
+        if (dirtyIndexList.size() > 0 && !isDebugAndTestingMode) {
+            MultiSaveTask mst = new MultiSaveTask(dirtyIndexList);
+            HttpTask.executeTask(mst);
+        }
         resetState();
         if (searchResultsUiCallbackHandler != null) {
             searchResultsUiCallbackHandler = null;

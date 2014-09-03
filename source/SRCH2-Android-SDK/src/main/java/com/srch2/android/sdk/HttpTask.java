@@ -163,7 +163,8 @@ abstract class HttpTask implements Runnable {
         int taskId = -1;
         final Class originatingTaskClass = taskToExecute.getClass();
         if (originatingTaskClass == SearchTask.class
-                || originatingTaskClass == CheckCoresLoadedTask.class) {
+                || originatingTaskClass == CheckCoresLoadedTask.class
+                 || originatingTaskClass == MultiSaveTask.class) {
             taskId = TASK_ID_SEARCH;
         } else if (originatingTaskClass == GetRecordTask.class ||
                      originatingTaskClass == UpdateTask.class ||

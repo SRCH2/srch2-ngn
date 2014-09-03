@@ -39,7 +39,7 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
 
         sr = new SearchResults();
         SRCH2Engine.setSearchResultsListener(sr, true);
-        SRCH2Engine.setAutomatedTestingMode(true);
+        //SRCH2Engine.setAutomatedTestingMode(true);
     }
 
     class SearchResults implements SearchResultsListener {
