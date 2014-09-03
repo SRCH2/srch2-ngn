@@ -4,7 +4,7 @@
     contact@srch2.com if you have questions.
     In this documment, "attribute" and "field" are used interchangeably.
 -->
-
+ 
 <config>
     <!--
         SRCH2 Home directory 
@@ -25,15 +25,6 @@
     <srch2Home>./</srch2Home>
  
     <!--
-        License Key File
-        Required
-         
-        Email contact@srch2.com to get a key file.  
-        Make sure to set the variable to the SRCH2 license key file.
-    -->
-    <licenseFile>../conf/srch2_license_key.txt</licenseFile>
- 
-    <!--
         Hostname and Port Number
         Required
          
@@ -49,7 +40,7 @@
         The file path to the folder where we store serialized index files.
         REQUIRED, when "index-load-or-create" is set to 1.
     -->
-    <dataDir>./data/fuzzy_attribute_based_search_geo/</dataDir>
+    <dataDir>./data/logging_in_singleCore/</dataDir>
      
     <!--
         Data File
@@ -58,7 +49,7 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>./exact_attribute_based_search_geo/data.json</dataFile>
+    <dataFile>./logging_in_singleCore/data.json</dataFile>
      
     <!--
 	Maximum Number of Threads
@@ -79,14 +70,14 @@
                 0: Text Index
                 1: Geo+Text Index
         -->
-        <indexType>1</indexType>
+        <indexType>0</indexType>
         
 		<!--
             0: don't support swap operation in edit distance
             1: support swap operation in edit distance
             default value is true
         -->
-        <supportSwapInEditDistance>false</supportSwapInEditDistance>  
+        <supportSwapInEditDistance>false</supportSwapInEditDistance> 
          
         <!--
             Boost Values
@@ -100,7 +91,7 @@
                 - fields are sparated by one space
                 - if you do not provide any value for a field, it will be considered as 1
         -->
-        <fieldBoost>category^2 name^1</fieldBoost>
+        <fieldBoost></fieldBoost>
          
          
         <!-- 
@@ -110,7 +101,7 @@
             Attribute used as the boost value of a record.
             Need to be float type in the json objects in the data file.
         -->
-        <recordBoostField></recordBoostField>
+        <recordBoostField>relevance</recordBoostField>
          
          
         <!--
@@ -142,10 +133,10 @@
         </rankingAlgorithm>
  
         <!--
-            Query Term Fuzzy Penalty 
+            Query Term Fuzzy Penalty
             Optional
              
-            Defaults to 0.5
+            Defaults to 1
         -->
         <fuzzyMatchPenalty>0.5</fuzzyMatchPenalty>
          
@@ -193,7 +184,7 @@
                 1 - Enable
             Note that to support field-based search, the number of searchable attributes cannot be bigger than 31.
         -->
-        <fieldBasedSearch>1</fieldBasedSearch>
+        <fieldBasedSearch>0</fieldBasedSearch>
          
          
         <!-- 
@@ -214,7 +205,7 @@
              
             0: exact match
             1: fuzzy match
-            Defaults to 
+            Defaults to 0
         -->
         <queryTermFuzzyType>0</queryTermFuzzyType>
          
@@ -258,9 +249,9 @@
                 It is REQUIRED to set fields_to_return if search-response-format=2
                 These are attributes returned to the user.
                 For Example:
-                    
+                    <responseContent type="2">lat,lng</responseContent>
             -->
-           <responseContent type="0"></responseContent>
+            <responseContent type="0"></responseContent>
              
         </queryResponseWriter>
     </query>
@@ -297,7 +288,7 @@
           <mergeEveryNSeconds>10</mergeEveryNSeconds>
           <mergeEveryMWrites>100</mergeEveryMWrites>
         </mergePolicy>
-     
+              
     </updatehandler>
 
 	<schema>
@@ -336,9 +327,7 @@
 	   -->
 	   <field name="category" type="text" indexed="true" />
 	   <field name="name" type="text" indexed="true" />
-	   <field name="lng" type="location_longitude" indexed="false"  />
-	   <field name="lat" type="location_latitude" indexed="false"   />
-	    
+           <field name="relevance" type="float" refining="true" highlight="true" />
 	 </fields>
 	 
 	 <!--
@@ -360,7 +349,7 @@
 	  		- values are false (disabled) and true (enabled)
 	  		- By default it is disabled.
 	  -->
-	  <facetEnabled>false</facetEnabled>
+	  <facetEnabled>true</facetEnabled>
 	  
 	  <facetFields>
 		  <!--
@@ -443,7 +432,7 @@
                  
                 Path to Access Log File
             -->
-            <accessLogFile>./data/fuzzy_attribute_based_search_geo/log.txt</accessLogFile>
+            <accessLogFile>./data/exact_a1/log.txt</accessLogFile>
         </updateLog>
 	
 </config>

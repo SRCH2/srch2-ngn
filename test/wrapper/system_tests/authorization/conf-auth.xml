@@ -6,22 +6,7 @@
 -->
  
 <config>
-    <!--
-        SRCH2 Home directory 
-        Required
-         
-        This directory is going to be your srch2 home's directory.
-        All other paths HAVE to be reletive to this path.
-        For Example:
-            To have "/usr/share/srch2/" as srch2 home directory, you should have the following line
-            <srch2Home>/usr/share/srch2/</srch2Home>
-             
-        All other paths in this conif file have to be relative to this path.
-        For Example:
-            If your data file is inside srch2 home directory, having the following absolute path
-            "/usr/share/srch2/data/sample-data.json"
-            In this config file it should be as "data/sample-data.json"
-    -->
+
     <srch2Home>./</srch2Home>
     <authorization-key>blackberry</authorization-key> 
     <!--
@@ -297,31 +282,7 @@
           <mergeEveryNSeconds>10</mergeEveryNSeconds>
           <mergeEveryMWrites>100</mergeEveryMWrites>
         </mergePolicy>
-         
-         
-        <updateLog>
-            <!-- 
-                Log Level
-                Optional
-                 
-                Log level
-                    0 SILENT
-                    1 ERROR
-                    2 WARN
-                    3 INFO
-                Defaults to 3 INFO
-            -->
-            <logLevel>3</logLevel>
-                         
-            <!--
-                Access Log File
-                Required
-                 
-                Path to Access Log File
-            -->
-            <accessLogFile>./data/exact_a1/log.txt</accessLogFile>
-        </updateLog>
-     
+              
     </updatehandler>
 
 	<schema>
@@ -444,6 +405,30 @@
 	    </fieldType>
 	 </types>
 	</schema>
+	
+    <updateLog>
+            <!-- 
+                Log Level
+                Optional
+                 
+                Log level
+                    0 SILENT
+                    1 ERROR
+                    2 WARN
+                    3 INFO
+                Defaults to 3 INFO
+            -->
+            <logLevel>3</logLevel>
+                         
+            <!--
+                Access Log File
+                Required
+                 
+                Path to Access Log File
+            -->
+            <accessLogFile>./data/exact_a1/log.txt</accessLogFile>
+    </updateLog>
+	
 </config>
  
 
