@@ -358,6 +358,27 @@ final public class SRCH2Engine {
         Cat.d(TAG, "reQueryLastOne");
         IndexQueryPair pair = lastQuery.get();
         if (pair == null || pair.query == null || pair.query.length() < 1) {
+/* must push back zero results
+            if (searchResultsObserver != null) {
+                final HashMap<String, ArrayList<JSONObject>> resultMap = new HashMap<String, ArrayList<JSONObject>>(0);
+                }
+                if (SRCH2Engine.searchResultsPublishedToUiThread) {
+                    Handler uiHandler = SRCH2Engine.getSearchResultsUiCallbackHandler();
+                    if (uiHandler != null) {
+                        uiHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                searchResultsObserver.onNewSearchResults(200,
+                                        returnedResponseLiteral, resultMap);
+                            }
+                        });
+                    }
+                } else {
+                    searchResultsListener.onNewSearchResults(200,
+                            returnedResponseLiteral, resultMap);
+                }
+            }
+ */
             return;
         }
         if (pair.index == null) {
@@ -520,7 +541,7 @@ final public class SRCH2Engine {
                     if (broadCastCommand.equals(IPCConstants.INTENT_VALUE_BROADCAST_ACTION_ENGINE_CRASHED_BUT_CAN_RESUME)) {
                         Cat.d(TAG, "SRCH2EngineBroadcastReciever onReceive - resume after crash");
                         isResumingAfterCrash = true;
-                    } else if (broadCastCommand.equals(IPCConstants.INTENT_VALUE_BROADCAST_ACTION_START_AWAITING_SHUTDOWN)) {
+                    } else if (broadCastCommand.equals(IPCConstants.INTENT_VALUE_BROADCAST_ACTION_ENGINE_STARTED_PROCEED)) {
                         Cat.d(TAG, "SRCH2EngineBroadcastReciever onReceive - proceed");
                         isResumingAfterCrash = false;
                     }

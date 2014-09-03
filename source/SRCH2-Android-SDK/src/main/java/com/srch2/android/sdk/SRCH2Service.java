@@ -435,6 +435,7 @@ final public class SRCH2Service extends Service implements AutoPing.ValidatePing
                         }
                         if (!srch2SignaledIsAlive.get()) {
                             Cat.d(TAG, "startRunningExe - did not get validation should be stopping self");
+                            clearServerLogEntries();
                             stopSelf();
                         }
                         srch2SignaledIsAlive.set(false);

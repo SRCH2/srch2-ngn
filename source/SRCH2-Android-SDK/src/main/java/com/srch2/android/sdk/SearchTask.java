@@ -218,6 +218,10 @@ class SearchTask extends HttpTask.SearchHttpTask {
     @Override
     protected void onTaskComplete(final int returnedResponseCode,
                                   final String returnedResponseLiteral) {
+        pushSearchResultsToCallback(returnedResponseCode, returnedResponseLiteral);
+    }
+
+    void pushSearchResultsToCallback(final int returnedResponseCode, final String returnedResponseLiteral) {
         if (searchResultsListener != null) {
             final HashMap<String, ArrayList<JSONObject>> resultMap;
             if (returnedResponseCode / 100 == 2) {
