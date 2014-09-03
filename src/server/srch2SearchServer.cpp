@@ -827,7 +827,9 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
             { "/save", srch2http::SavePort, cb_save },
             { "/export", srch2http::ExportPort, cb_export },
             { "/resetLogger", srch2http::ResetLoggerPort, cb_resetLogger },
-            { "/aclAttribute", srch2http::DocsPort, cb_attributeAcl },
+            { "/aclAttributeRoleAdd", srch2http::DocsPort, cb_attributeAcl },
+            { "/aclAttributeRoleDelete", srch2http::DocsPort, cb_attributeAcl },
+            { "/aclAttributeRoleAppend", srch2http::DocsPort, cb_attributeAcl },
             { NULL, srch2http::EndOfPortType, NULL }
         };
 

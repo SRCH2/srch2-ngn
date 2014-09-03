@@ -8,12 +8,12 @@
 S||impagency:india||||worldbank
 
 #case 2. acl-role-id=superman is provided, keyword should match any non-acl attributes or attributes allowed for this role-id
-S||impagency:india&aclId=superman||52b213b38594d8a2be17c961 52b213b38594d8a2be17c925||worldbank
+S||impagency:india&roleId=superman||52b213b38594d8a2be17c961 52b213b38594d8a2be17c925||worldbank
 
 #case 3. No acl-role-id provided. This query will not generate any result because author_name is acl controlled
 S||author_name:nightcracker||||stackoverflow
 
 #case 4. acl-role-id=spidername is provided, keyword should return a result because author_name is accessible for this role-id  
-S||author_name:nightcracker&aclId=spiderman||5206508||stackoverflow
+S||author_name:nightcracker&roleId=spiderman||5206508||stackoverflow
 
 

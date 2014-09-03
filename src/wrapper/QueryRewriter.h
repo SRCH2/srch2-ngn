@@ -29,7 +29,7 @@
 #include "analyzer/SimpleAnalyzer.h"
 #include "ConfigManager.h"
 #include "instantsearch/LogicalPlan.h"
-#include "operation/AccessControl.h"
+#include "operation/AttributeAccessControl.h"
 using srch2::instantsearch::Analyzer;
 using srch2::instantsearch::Schema;
 

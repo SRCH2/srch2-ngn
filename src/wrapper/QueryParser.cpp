@@ -67,7 +67,7 @@ const char* const QueryParser::facetRangeStart = "start";
 const char* const QueryParser::facetField = "facet.field";
 const char* const QueryParser::facetRangeField = "facet.range";
 const char* const QueryParser::highlightSwitch = "hl";
-const char* const QueryParser::aclSwitch = "aclId";
+const char* const QueryParser::aclSwitch = "roleId";
 
 //searchType
 const char* const QueryParser::searchType = "searchType";

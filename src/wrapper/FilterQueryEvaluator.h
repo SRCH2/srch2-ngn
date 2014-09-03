@@ -36,7 +36,7 @@
 #include "RegexConstants.h"
 #include "util/Assert.h"
 #include "util/DateAndTimeHandler.h"
-#include "operation/AccessControl.h"
+#include "operation/AttributeAccessControl.h"
 
 using namespace std;
 using srch2::instantsearch::TypedValue;

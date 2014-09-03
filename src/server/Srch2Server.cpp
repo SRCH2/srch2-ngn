@@ -3,7 +3,7 @@
 #include <syslog.h>
 #include "Srch2Server.h"
 #include "util/RecordSerializerUtil.h"
-#include "operation/AccessControl.h"
+#include "operation/AttributeAccessControl.h"
 namespace srch2 {
 namespace httpwrapper {
 

@@ -70,7 +70,7 @@ public:
 	void bulkLoadAcl(const string& aclLoadFileName) const;
 
 	// process ReST HTTP API
-	bool processHTTPAclRequest(const string& fields, const string& roleValues, AclActionType action) const;
+	bool processHTTPAclRequest(vector<string>& fields, vector<string>& roleValues, AclActionType action) const;
 
 	// add new acl for a role
 	void setAcl(const string& aclRoleValue, vector<unsigned>& searchableAttrIdsList,

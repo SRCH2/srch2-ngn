@@ -1035,56 +1035,102 @@ void decodeAmpersand(const char *uri, unsigned len, string& decodeUri) {
 /*
  *   Helper API to handle a single ACL operation. (insert, delete, or append)
  *   example url :
- *   http://<ip>:<port>/aclAttribute -X PUT -d { "fields": "f1,f2", "role-values": "r1", "action": "append" }
- *   http://<ip>:<port>/aclAttribute -X PUT -d { "fields": "f1,f2", "role-values": "r2", "action": "insert" }
- *   http://<ip>:<port>/aclAttribute -X PUT -d { "fields": "f2", "role-values": "r2", "action": "delete" }
+ *   http://<ip>:<port>/aclAttributeRoleApped -X PUT -d { "attributes": "f1,f2", "roleId": "r1"}
+ *   http://<ip>:<port>/aclAttributeRoleAdd -X PUT -d { "attributes": "f1,f2", "roleId": "r2"}
+ *   http://<ip>:<port>/aclAttributeRoleDelete -X PUT -d { "attributes": "f2", "roleId": "r2"}
  */
-bool processSingleAttributeAclRequest(Srch2Server *server,const Json::Value& doc,
+bool processSingleAttributeAclRequest(Srch2Server *server,const Json::Value& doc, AclActionType action,
 		std::stringstream& log_str) {
 
-	Json::Value defaultValueToReturn = Json::Value("");
-	Json::Value attributesToAdd = doc.get("fields", defaultValueToReturn);
-	Json::Value attributesRoles = doc.get("role-values", defaultValueToReturn);
+	Json::Value attributesToAdd = doc.get("attributes", Json::Value(Json::arrayValue));
+	Json::Value attributesRoles = doc.get("roleId", Json::Value(Json::arrayValue));
 
-	if (attributesToAdd.asString() == "") {
-		log_str << "\"fields\" key is missing in request JSON.";
+	if (attributesToAdd.type()  != Json::arrayValue) {
+		log_str << "\"attributes\" key is not an array in request JSON.";
 		return false;
 	}
-	if (attributesRoles.asString() == "") {
-		log_str << "\"role-values\" key is missing in request JSON.";
+	if (attributesToAdd.size() == 0) {
+		log_str << "\"attributes\" key is empty or missing in request JSON.";
 		return false;
 	}
-
-	Json::Value actionType = doc.get("action", defaultValueToReturn);
-
-	if (actionType.asString() == ""){
-		log_str << "\"action\" key is missing in request JSON.";
+	if (attributesRoles.type() != Json::arrayValue) {
+		log_str << "\"roleId\" key is not an array in request JSON.";
 		return false;
 	}
-	string actionString = actionType.asString();
-	std::transform(actionString.begin(), actionString.end(), actionString.begin(), ::tolower);
-	AclActionType action;
-	if (actionString == "insert")
-		action = ACL_INSERT;
-	else if (actionString == "delete")
-		action = ACL_DELETE;
-	else if (actionString == "append")
-		action = ACL_APPEND;
-	else {
-		log_str << "\"action\" key has invalid value =\"" << actionString << "\" in request JSON.";
+	if (attributesRoles.size() == 0) {
+		log_str << "\"roleId\" key is empty or missing in request JSON.";
 		return false;
 	}
 
-	return server->indexer->getAttributeAcl().processHTTPAclRequest(attributesToAdd.asString(),
-			attributesRoles.asString(), action);
+	vector<string> attributeList;
+	for (unsigned i = 0; i < attributesToAdd.size(); ++i) {
+		Json::Value defaultValueToReturn = Json::Value("");
+		const Json::Value attribute = attributesToAdd.get(i, defaultValueToReturn);
+		if (attribute.type() != Json::stringValue){
+			log_str << "\"attributes\" key's element at index "<< i << " is not convertible to string";
+			return false;
+		}
+		if (attribute.asString().size() != 0)
+			attributeList.push_back(attribute.asString());
+	}
+
+	vector<string> roleIds;
+	for (unsigned i = 0; i < attributesRoles.size(); ++i) {
+		Json::Value defaultValueToReturn = Json::Value("");
+		const Json::Value roleId = attributesRoles.get(i, defaultValueToReturn);
+
+		switch (roleId.type()) {
+		case Json::stringValue:
+		{
+			if (roleId.asString().size() != 0)
+				roleIds.push_back(roleId.asString());
+			break;
+		}
+		case Json::intValue:
+		{
+			// convert int to string instead of returning error to user
+			stringstream tempString;
+			tempString << roleId.asInt64();
+			roleIds.push_back(tempString.str());
+			break;
+		}
+		case Json::uintValue:
+		{
+			// convert unsigned int to string instead of returning error to user
+			stringstream tempString;
+			tempString << roleId.asUInt64();
+			roleIds.push_back(tempString.str());
+			break;
+		}
+		case Json::realValue:
+		{
+			// convert double to string instead of returning error to user
+			stringstream tempString;
+			tempString << roleId.asDouble();
+			roleIds.push_back(tempString.str());
+			break;
+		}
+		case Json::arrayValue:
+		case Json::objectValue:
+		{
+			// Can't convert to array ..user should fix the input JSON.
+			log_str << "\"roleId\" key's element at index "<< i << " is not convertible to string";
+			return false;
+		}
+		default:
+			ASSERT(false);
+		}
+	}
+
+	return server->indexer->getAttributeAcl().processHTTPAclRequest(attributeList, roleIds, action);
 }
 
 /*
  *   Wrapper layer API to handle ACL operations such as insert, delete, and append.
  *   example url :
- *   http://<ip>:<port>/aclAttribute -X PUT -d { "fields": "f1,f2", "role-values": "r1", "action": "append" }
- *   http://<ip>:<port>/aclAttribute -X PUT -d { "fields": "f1,f2", "role-values": "r2", "action": "insert" }
- *   http://<ip>:<port>/aclAttribute -X PUT -d { "fields": "f2", "role-values": "r2", "action": "delete" }
+ *   http://<ip>:<port>/aclAttributeRoleApped -X PUT -d { "attributes": "f1,f2", "roleId": "r1"}
+ *   http://<ip>:<port>/aclAttributeRoleAdd -X PUT -d { "attributes": "f1,f2", "roleId": "r2"}
+ *   http://<ip>:<port>/aclAttributeRoleDelete -X PUT -d { "attributes": "f2", "roleId": "r2"}
  */
 void HTTPRequestHandler::attributeAclModify(evhttp_request *req, Srch2Server *server) {
 	switch (req->type) {
@@ -1098,6 +1144,24 @@ void HTTPRequestHandler::attributeAclModify(evhttp_request *req, Srch2Server *se
 	            break;
 	        }
 
+	        // Identify the type of access control request.
+	        // req->uri should be "/aclAttributeRoleDelete" or "/aclAttributeRoleAppend"
+	        // or "/aclAttributeRoleAdd"
+	        string uriString = req->uri;
+	        AclActionType action;
+	        if (uriString == "/aclAttributeRoleAdd")
+	        	action = ACL_INSERT;
+	        else if (uriString == "/aclAttributeRoleDelete")
+	        	action = ACL_DELETE;
+	        else if (uriString == "/aclAttributeRoleAppend")
+	        	action = ACL_APPEND;
+	        else {
+	        	stringstream log_str;
+	        	log_str << "Invalid access control HTTP request =\"" << uriString << "\"";
+	        	bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID DATA",
+	        			"{\"message\":\"The request was NOT processed successfully\",\"log\":["
+	        			+ log_str.str() + "]}\n");
+	        }
 	        // get input JSON
 	        const char *post_data = (char *) EVBUFFER_DATA(req->input_buffer);
 
@@ -1117,7 +1181,7 @@ void HTTPRequestHandler::attributeAclModify(evhttp_request *req, Srch2Server *se
 	        			const Json::Value doc = root.get(index,
 	        					defaultValueToReturn);
 
-	        			bool  status = processSingleAttributeAclRequest(server, doc, log_str);
+	        			bool  status = processSingleAttributeAclRequest(server, doc, action, log_str);
 	        			if (status == false) {
 	        				error = true;
 	        				break;
@@ -1128,7 +1192,7 @@ void HTTPRequestHandler::attributeAclModify(evhttp_request *req, Srch2Server *se
 	        	} else {
 	        		// the record parameter is a single json object
 	        		const Json::Value doc = root;
-	        		bool  status = processSingleAttributeAclRequest(server, doc, log_str);
+	        		bool  status = processSingleAttributeAclRequest(server, doc, action, log_str);
 	        		if (status == false) {
 	        			error = true;
 	        		}

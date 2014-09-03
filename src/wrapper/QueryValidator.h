@@ -23,7 +23,7 @@
 #include "ParsedParameterContainer.h"
 #include <instantsearch/Schema.h>
 #include "ConfigManager.h"
-#include "operation/AccessControl.h"
+#include "operation/AttributeAccessControl.h"
 namespace srch2 {
 
 namespace httpwrapper {

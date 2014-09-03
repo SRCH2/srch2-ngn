@@ -11,20 +11,20 @@
 S||project_name:food&fq=approvalfy:2014||P132780 P145339 P128905 P130412
 
 #case 2. acl-role-id is provided and filter query attribute is accessible for the acl-role-id. Filter will be performed 
-S||project_name:food&fq=approvalfy:2014&aclId=superman||P145339
+S||project_name:food&fq=approvalfy:2014&roleId=superman||P145339
 
 #case 3. acl-role-id is NOT provided and sort attribute is acl controlled. Sort will not be performed 
 S||project_name:education&fq=board_approval_month:october&sort=approvalfy&orderby=asc||P132616 P129381 
 
 #case 4. acl-role-id is provided and sort attribute is accessible for the acl-role-id. Sort will be performed 
-S||project_name:education&fq=board_approval_month:october&sort=approvalfy&orderby=asc&aclId=superman||P129381 P132616  
+S||project_name:education&fq=board_approval_month:october&sort=approvalfy&orderby=asc&roleId=superman||P129381 P132616  
 
 #case 5. acl-role-id is NOT provided and facet attribute is acl controlled. Facet will not be calculated
 F||project_name:education&facet=only&facet.field=approvalfy||
 
 #case 6. acl-role-id is provided and facet attribute is accessible for the acl-role-id. Facet will be calculated. Note: in python script we check whether
 #        facet key is present in returned JSON response.
-F||project_name:education&facet=only&facet.field=approvalfy&aclId=superman||approvalfy
+F||project_name:education&facet=only&facet.field=approvalfy&roleId=superman||approvalfy
 
 #case 7. acl-role-id is NOT provided and one of the facet attributes (approvalfy) is not accessible. Facet will be calculated only for field = board_approval_month
 #        Note: in python script we check whether the facet field is present or not. 
@@ -32,7 +32,7 @@ F||project_name:education&facet=only&facet.field=approvalfy&facet.field=board_ap
 
 #case 8. acl-role-id is provided and both the facet attributes are accessible for the acl-role-id. Facets will be calculated. Note: in python script we check whether
 #        facet field names are present in returned JSON response.
-F||project_name:education&facet=only&facet.field=approvalfy&facet.field=board_approval_month&aclId=superman||board_approval_month approvalfy
+F||project_name:education&facet=only&facet.field=approvalfy&facet.field=board_approval_month&roleId=superman||board_approval_month approvalfy
 
 #case 9. acl-role-id is NOT provided. Snippet will be generated only for public (non-acl) searchable fields. 
 #        Note: in python script we check whether the snippet is persent for the fields listed below.
@@ -40,7 +40,7 @@ H||project_name:food&fq=board_approval_month:october||project_name
 
 #case 10. acl-role-id is provided. Snippet will be generated for public (non-acl) searchable fields and the fields accessible by the given role. 
 #        Note: in python script we check whether the snippet is persent for the fields listed below.
-H||project_name:food&fq=board_approval_month:october&aclId=superman||project_name lendinginstr
+H||project_name:food&fq=board_approval_month:october&roleId=superman||project_name lendinginstr
 
 #case 11. acl-role-id is NOT provided. Only for public (non-acl) fields will be generated in response
 #        Note: in python script we check whether the response contains the fields listed below.
@@ -48,7 +48,7 @@ R||project_name:food&fq=board_approval_month:october||id board_approval_month bo
 
 #case 12. acl-role-id is provided. Public (non-acl) fields and the fields accessible by the given role will be generated in response.
 #        Note: in python script we check whether the response contains the fields listed below.
-R||project_name:food&fq=board_approval_month:october&aclId=superman||id board_approval_month borrower docty impagency lendinginstr project_name approvalfy dacommamt
+R||project_name:food&fq=board_approval_month:october&roleId=superman||id board_approval_month borrower docty impagency lendinginstr project_name approvalfy dacommamt
 
 #case 13. acl-role-id is NOT provided and fl parameter is present in query.  Only public (non-acl) fields will be allowed from the fl list. 
 #        Note: in python script we check whether the response contains the fields listed below.
@@ -56,4 +56,4 @@ R||project_name:food&fq=board_approval_month:october&fl=docty%2Cproject_name%2Cl
 
 #case 14. acl-role-id is provided and fl parameter is also present in query.  Only public (non-acl) fields or field accessible by role-id will be allowed from the fl list. 
 #        Note: in python script we check whether the response contains the fields listed below.
-R||project_name:food&fq=board_approval_month:october&fl=docty%2Cproject_name%2Clendinginstr&aclId=superman||id docty project_name lendinginstr
+R||project_name:food&fq=board_approval_month:october&fl=docty%2Cproject_name%2Clendinginstr&roleId=superman||id docty project_name lendinginstr

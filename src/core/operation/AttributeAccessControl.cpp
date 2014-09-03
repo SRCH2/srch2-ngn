@@ -5,7 +5,7 @@
  *      Author: Surendra
  */
 
-#include "AccessControl.h"
+#include "AttributeAccessControl.h"
 #include "util/Logger.h"
 #include "util/Assert.h"
 #include <boost/algorithm/string.hpp>
@@ -130,11 +130,8 @@ void AttributeAccessControl::convertFieldNamesToSortedFieldIds(vector<string>& f
  *  101 -> [ f1 , f2, f3 ]
  *
  */
-bool  AttributeAccessControl::processHTTPAclRequest(const string& fields,
-		const string& roleValues, AclActionType action) const{
-
-	std::vector<std::string> fieldTokens;
-	boost::algorithm::split(fieldTokens, fields, boost::is_any_of(","));
+bool  AttributeAccessControl::processHTTPAclRequest( vector<string>& fieldTokens,
+		vector<string>& roleValueTokens, AclActionType action) const{
 
 	if (fieldTokens.size() == 0)
 		return false;
@@ -143,9 +140,6 @@ bool  AttributeAccessControl::processHTTPAclRequest(const string& fields,
 	std::vector<unsigned> refiningAttrIdsList;
 
 	convertFieldNamesToSortedFieldIds(fieldTokens, searchableAttrIdsList, refiningAttrIdsList);
-
-	std::vector<std::string> roleValueTokens;
-	boost::algorithm::split(roleValueTokens, roleValues, boost::is_any_of(","));
 
 	if (roleValueTokens.size() == 0)
 		return false;
@@ -161,11 +155,13 @@ bool  AttributeAccessControl::processHTTPAclRequest(const string& fields,
 				// setAcl API swaps the internal pointer of the vector passed in. Because we
 				// need searchableAttrIdsList, refiningAttrIdsList for next iteration, copy them
 				// to a temporary vector.
+				boost::algorithm::trim(roleValueTokens[i]);
 				const_cast<AttributeAccessControl *>(this)->setAcl(roleValueTokens[i], tempSearchableAttrIdsList, tempRefiningAttrIdsList);
 			} else {
 				// This is a last iteration. We can let setAcl API to swap pointers of
 				// searchableAttrIdsList and refiningAttrIdsList because we will not need these
 				// vectors anymore.
+				boost::algorithm::trim(roleValueTokens[i]);
 				const_cast<AttributeAccessControl *>(this)->setAcl(roleValueTokens[i], searchableAttrIdsList, refiningAttrIdsList);
 			}
 //			stringstream ss;
@@ -176,6 +172,7 @@ bool  AttributeAccessControl::processHTTPAclRequest(const string& fields,
 		case ACL_DELETE:
 		{
 			// delete from ACL
+			boost::algorithm::trim(roleValueTokens[i]);
 			const_cast<AttributeAccessControl *>(this)->deleteFromAcl(roleValueTokens[i], searchableAttrIdsList, refiningAttrIdsList);
 //			stringstream ss;
 //			toString(ss);
@@ -185,6 +182,7 @@ bool  AttributeAccessControl::processHTTPAclRequest(const string& fields,
 		case ACL_APPEND:
 		{
 			// append to existing ACL. If acl-role is not found then add it.
+			boost::algorithm::trim(roleValueTokens[i]);
 			const_cast<AttributeAccessControl *>(this)->appendToAcl(roleValueTokens[i], searchableAttrIdsList, refiningAttrIdsList);
 //			stringstream ss;
 //			toString(ss);
