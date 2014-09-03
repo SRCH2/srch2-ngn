@@ -89,6 +89,12 @@ public:
 
 	void toString(stringstream& ss) const;
 
+	// Helper function to validate whether searchable field is accessible for given role-id
+	bool isSearchableFieldAccessibleForRole(const string& roleId, const string& fieldName) const;
+
+	// Helper function to validate whether refining field is accessible for given role-id
+	bool isRefiningFieldAccessibleForRole(const string& roleId, const string& fieldName) const;
+
 private:
 	mutable AttributeAclLock attrAclLock;
 	// This is the data structure which stores the mapping from acl-role to
@@ -102,6 +108,10 @@ private:
 	//convert attribute names to attribute ids
 	void convertFieldNamesToSortedFieldIds(vector<string>& fieldTokens,
 			vector<unsigned>& searchableAttrIdsList, vector<unsigned>& refiningAttrIdsList) const;
+
+	// Helper function to validate whether field is accessible for given role-id
+	bool isFieldAccessibleForRole(const string& roleId, const string& fieldName,
+			bool isFieldSearchable = true) const;
 
     friend class boost::serialization::access;
     template<class Archive>

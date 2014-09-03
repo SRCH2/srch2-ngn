@@ -349,6 +349,65 @@ void AttributeAccessControl::fetchRefiningAttrsAcl(const string& aclRoleValue, b
 	}
 }
 
+/*
+ *   Helper function to validate whether searchable field is accessible for given role-id
+ */
+bool AttributeAccessControl::isSearchableFieldAccessibleForRole(const string& roleId,
+		const string& fieldName) const{
+	// The last argument is trur to indicate that the field is searchable.
+	return isFieldAccessibleForRole(roleId, fieldName, true);
+}
+
+/*
+ *   Helper function to validate whether refining field is accessible for given role-id
+ */
+bool AttributeAccessControl::isRefiningFieldAccessibleForRole(const string& roleId,
+		const string& fieldName) const{
+	// The last argument is false to indicate that the field is refining.
+	return isFieldAccessibleForRole(roleId, fieldName, false);
+}
+
+/*
+ *   Helper function to validate whether field is accessible for given role-id
+ */
+bool AttributeAccessControl::isFieldAccessibleForRole(const string& roleId,
+		const string& fieldName, bool isfieldSearchable) const{
+
+	unsigned fieldId;
+	vector<unsigned> schemaNonAclAttrsList;
+	boost::shared_ptr<vector<unsigned> > allowedAttributesSharedPtr;
+
+	if (isfieldSearchable) {
+		// get field id for fieldname
+		fieldId = schema->getSearchableAttributeId(fieldName);
+		// fetch public (non-acl) searchable field
+		schemaNonAclAttrsList = schema->getNonAclSearchableAttrIdsList();
+		// Fetch list of attributes accessible by this role-id
+		fetchSearchableAttrsAcl(roleId, allowedAttributesSharedPtr);
+
+
+	} else {
+		// get field id for fieldname
+		fieldId = schema->getRefiningAttributeId(fieldName);
+		// fetch public (non-acl) searchable field
+		schemaNonAclAttrsList = schema->getNonAclRefiningAttrIdsList();
+		// Fetch list of attributes accessible by this role-id
+		fetchRefiningAttrsAcl(roleId, allowedAttributesSharedPtr);
+	}
+
+	vector<unsigned> *allowedAttributesForRole = allowedAttributesSharedPtr.get();
+
+	// if the filed name is present in a list of attributes for a given roleId OR field is public
+	// field ( non-acl), then it is accessible field otherwise it is unaccessible.
+	bool accessible = (allowedAttributesForRole != NULL &&
+			find(allowedAttributesForRole->begin(), allowedAttributesForRole->end(), fieldId)
+				!= allowedAttributesForRole->end()) ||
+			(find(schemaNonAclAttrsList.begin(), schemaNonAclAttrsList.end(), fieldId)
+				!= schemaNonAclAttrsList.end());;
+
+	return accessible;
+}
+
 // This function serializes the access control datastructure to string. This API is
 // used for debugging.
 void AttributeAccessControl::toString(stringstream& ss) const{

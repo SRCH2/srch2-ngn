@@ -32,8 +32,9 @@ namespace httpwrapper {
 
 QueryValidator::QueryValidator(const Schema & schema,
         const CoreInfo_t &indexDataContainerConf,
-        ParsedParameterContainer * paramContainer) :
-        schema(schema), indexDataContainerConf(indexDataContainerConf){
+        ParsedParameterContainer * paramContainer,
+        const AttributeAccessControl & attrAcl) :
+        schema(schema), indexDataContainerConf(indexDataContainerConf), attributeAcl(attrAcl){
     this->paramContainer = paramContainer;
 }
 
@@ -146,23 +147,27 @@ bool QueryValidator::validateExistenceOfAttributesInQueryFieldBoost() {
 
         const std::map<std::string, unsigned>& searchableAttributes =
                 schema.getSearchableAttribute();
-        std::vector<QueryFieldAttributeBoost>&
-          boosts(paramContainer->qfContainer->boosts);
+        std::vector<QueryFieldAttributeBoost> validatedBoostFields;
 
-        for (std::vector<QueryFieldAttributeBoost>::iterator boost =
-                boosts.begin(); boost != boosts.end(); ++boost) {
-                if (searchableAttributes.find(boost->attribute)
-                        == searchableAttributes.end()) {
-                  // field does not exist in searchable attributes
-                        // write a warning and remove it
-                    paramContainer->messages.push_back(
-                            std::make_pair(MessageWarning,
-                                    "Field " + boost->attribute
-                                            + " is not a searchable field."
-                                           "It will be removed"));
-                    boost= boosts.erase(boost);
-                } 
+        for (std::vector<QueryFieldAttributeBoost>::iterator boostIter =
+        		paramContainer->qfContainer->boosts.begin();
+        		boostIter != paramContainer->qfContainer->boosts.end(); ++boostIter) {
+
+        	if (!attributeAcl.isSearchableFieldAccessibleForRole(paramContainer->aclRole,
+        			boostIter->attribute)){
+        		// field does not exist in accessible searchable attributes
+        		// write a warning and remove it
+        		paramContainer->messages.push_back(
+        				std::make_pair(MessageWarning,
+        						"Field " + boostIter->attribute
+        						+ " is not an accessible searchable field."
+        						"It will be removed"));
+        		continue;
+        	}
+
+        	validatedBoostFields.push_back(*boostIter);
         }
+        paramContainer->qfContainer->boosts.swap(validatedBoostFields);
     }  
     return true;
 }
@@ -213,11 +218,12 @@ bool QueryValidator::validateExistenceOfAttributesInSortFiler() {
     for (std::vector<std::string>::iterator field =
             sortQueryContainer->evaluator->field.begin();
             field != sortQueryContainer->evaluator->field.end(); ++field) {
-        if (schema.getRefiningAttributeId(*field) < 0) { // field does not exist
+        if (!attributeAcl.isRefiningFieldAccessibleForRole(paramContainer->aclRole, *field)) {
+        	// field does not exist in accessible refining list.
             paramContainer->messages.push_back(
                     std::make_pair(MessageWarning,
                             "Field " + *field
-                                    + " is not a non-searchable field. No sort will be performed. "));
+                                    + " is not an accessible refining field. No sort will be performed. "));
 
             sortFilterShouldBeRemoved = true;
             break;
@@ -255,23 +261,25 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
         return false;
     }
 
-    int facetParallelVectorsIndex = 0;
+    int facetParallelVectorsIndex = -1;
     vector<int> facetParallelVectorsIndexesToErase;
     for (std::vector<std::string>::iterator field =
             facetQueryContainer->fields.begin();
             field != facetQueryContainer->fields.end(); ++field) {
+        facetParallelVectorsIndex++;
 
-        //1. Validate the existence of attributes
-        if (schema.getRefiningAttributeId(*field) < 0) { // field does not exist
-            // Warning : Facet will be canceled for this field.
-            paramContainer->messages.push_back(
-                    std::make_pair(MessageWarning,
-                            "Field " + *field
-                                    + " is not a proper field. No facet will be calculated on this field. "));
+        //1. Validate the existence of attributes and also
+        //   check whether the attribute is accessible for current role.
+        if (!attributeAcl.isRefiningFieldAccessibleForRole(paramContainer->aclRole, *field)) {
+            //Facet will be not be calculated for this field.
+        	paramContainer->messages.push_back(
+        			std::make_pair(MessageWarning,
+        					"Field " + *field
+        					+ " is unaccessible refining field. No facet will be calculated on this field. "));
 
-            facetParallelVectorsIndexesToErase.push_back(
-                    facetParallelVectorsIndex);
-            continue; // no need to do anymore validation for this field because it'll be removed from facets.
+        	facetParallelVectorsIndexesToErase.push_back(
+        			facetParallelVectorsIndex);
+        	continue; // no need to do anymore validation for this field because it'll be removed from facets.
         }
 
         //2. Range facets should be of type unsigned or float or date
@@ -381,8 +389,6 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
             continue;
         }
 
-        //
-        facetParallelVectorsIndex++;
     }
     if (facetQueryContainer->fields.size() != 0 &&
             facetParallelVectorsIndexesToErase.size() == facetQueryContainer->fields.size()) {
@@ -439,7 +445,7 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
 bool QueryValidator::validateFilterQuery(){
     if(paramContainer->hasParameterInQuery(FilterQueryEvaluatorFlag)){
         FilterQueryContainer * filterQueryContainer = paramContainer->filterQueryContainer;
-        if (! filterQueryContainer->evaluator->validate(schema)){
+        if (! filterQueryContainer->evaluator->validate(schema, paramContainer->aclRole, attributeAcl)){
             paramContainer->parametersInQuery.erase(
                     remove(
                             paramContainer->parametersInQuery.begin(),

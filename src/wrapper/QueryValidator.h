@@ -23,7 +23,7 @@
 #include "ParsedParameterContainer.h"
 #include <instantsearch/Schema.h>
 #include "ConfigManager.h"
-
+#include "operation/AccessControl.h"
 namespace srch2 {
 
 namespace httpwrapper {
@@ -36,7 +36,8 @@ public:
 
     QueryValidator(const Schema & schema,
             const CoreInfo_t &indexDataContainerConf,
-            ParsedParameterContainer * paramContainer);
+            ParsedParameterContainer * paramContainer,
+            const AttributeAccessControl & attrAcl);
 
     // this function goes through the summary and based on that validates the query.
     bool validate();
@@ -45,6 +46,7 @@ private:
     ParsedParameterContainer * paramContainer;
     const Schema & schema;
     const CoreInfo_t &indexDataContainerConf;
+    const AttributeAccessControl& attributeAcl;
 
     /*
      * This function goes over the field names in Filter List and

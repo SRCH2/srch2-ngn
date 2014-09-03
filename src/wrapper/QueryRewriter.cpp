@@ -343,6 +343,9 @@ void QueryRewriter::prepareFieldFilters() {
  *   otherwise filter attributes are (NA) with NAND operation.(i.e. keyword should NOT be present
  *   in only these attribute)
  *
+ *   The decision to use smaller length set is for optimization so that forward index has to scan
+ *   smaller filter list.
+ *
  *   e.g
  *   sample schema in config file.
  *   <fields name = f1 .....acl=true >

@@ -1168,7 +1168,8 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
     const CoreInfo_t *indexDataContainerConf = server->indexDataConfig;
     //2. validate the query
     QueryValidator qv(*(server->indexer->getSchema()),
-            *(server->indexDataConfig), &paramContainer);
+            *(server->indexDataConfig), &paramContainer,
+            server->indexer->getAttributeAcl());
 
     bool valid = qv.validate();
 
