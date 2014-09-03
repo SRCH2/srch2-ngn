@@ -83,14 +83,14 @@ The client can send a shutdown message to let the server stop gracefully. The re
  curl -i "http://localhost:8081/_all/shutdown" -X PUT
 ```
 
-##6. Modify attribute access control 
+##6. Modify attribute-based access control 
 
-The user can add, delete, and modify existing access control mapping using the following APIs. The modified access control mapping does not affect the ongoing search. It will be reflected in the subsequent search queries.
+The user can add, delete, and modify existing access control map using the following APIs. The modified access control map does not affect the ongoing search. It will be reflected in the subsequent search queries.
 
-####6.1. Add a new access control
+####6.1. Add a new attribute-based access control
 
 The API <code>aclAttributeRoleAdd</code> adds new access control to the engine. For example, 
-following HTTP PUT request adds attributes "attr1" and "attr20" into the access control list of the 
+the following HTTP PUT request adds attributes "attr1" and "attr20" into the access control list of the 
 role-ids "1001" and "1002" for the "product" core.
 
 ```
@@ -98,41 +98,41 @@ curl -i "http://localhost:8081/product/aclAttributeRoleAdd" -X PUT -d '{ “attr
 
 ```
 
-The <code>aclAttributeRoleAdd</code> request above creates the following access control mapping in the engine.
+The <code>aclAttributeRoleAdd</code> request above creates the following access control map in the engine.
 ```
 "1001" => "attr1" , "attr20"
 "1002" => "attr1" , "attr20"
 ```
 
-<b>Note:</b> <code>aclAttributeRoleAdd</code> overrides the existing access control mapping for a role-id.
+<b>Note:</b> <code>aclAttributeRoleAdd</code> overwrites the existing access control map for a role-id.
 
 
-####6.2. Append to an existing access control
+####6.2. Append to an existing attribute-based access control
 
-The API <code>aclAttributeRoleAppend</code> adds attributes to the existing access control list for a role-id. 
+The API <code>aclAttributeRoleAppend</code> appends attributes to the existing access control list for a role-id. 
 If the role-id is not found in access control map then the role-id is added. For example, the following 
 HTTP PUT request adds attribute "attr31" to the access control list of the role-id "1001" for the "product" core.
 
 ```
- curl -i "http://localhost:8081/product/aclAttributeRoleAppend" -X PUT -d '{ “attributes”: “attr31", “roleId”: ["1001”]}'
+ curl -i "http://localhost:8081/product/aclAttributeRoleAppend" -X PUT -d '{ “attributes”: [“attr31"], “roleId”: ["1001”]}'
 ```
-The append command above modifies the access control mapping in the engine as shown below.
+The append command above modifies the access control map in the engine as shown below.
 ```
 "1001" => "attr1" , "attr20" , "attr31"
 "1002" => "attr1" , "attr20"
 ```
 
-####6.3. Delete an access control
+####6.3. Delete an attribute-based access control
 
 The API <code>aclAttributeRoleDelete</code> deletes attributes from the existing access control list for a role-id. If the role-id is 
-not present then the request will be ignored. If all the attributes for a role-id are deleted then the role-id is removed from access control mapping.
+not present, then the request will be ignored. If all the attributes for a role-id are deleted, then the role-id is removed from the access control map.
 For example, the following HTTP PUT request deletes attribute "attr1" from the access control list of the role-id "1001" for the "product" core.
 
 ```
- curl -i "http://localhost:8081/product/aclAttributeRoleDelete" -X PUT -d '{ “attributes”: “attr1", “roleId”: ["1001"]}'
+ curl -i "http://localhost:8081/product/aclAttributeRoleDelete" -X PUT -d '{ “attributes”: [“attr1"], “roleId”: ["1001"]}'
 ```
 
-The delete command above modifies the access control mapping in the engine as shown below.
+The delete command above modifies the access control map in the engine as shown below.
 ```
 "1001" => "attr20",  "attr31"   # Note: "attr1" is deleted
 "1002" => "attr1" , "attr20"
@@ -141,10 +141,10 @@ The delete command above modifies the access control mapping in the engine as sh
 To delete the whole access control for a particular role-id, use <code>*</code> as a value for the <code>attributes</code> key in the input JSON. For example:
 
 ```
- curl -i "http://localhost:8081/product/aclAttributeRoleDelete" -X PUT -d '{ “attributes”: “*", “roleId”: ["1001"]}'
+ curl -i "http://localhost:8081/product/aclAttributeRoleDelete" -X PUT -d '{ “attributes”: [“*"], “roleId”: ["1001"]}'
 ```
 
-The above delete command modifies the access control mapping in the engine as shown below.
+The above delete command modifies the access control map in the engine as shown below.
 
 ```
 "1002" => "field1" , "field20"
