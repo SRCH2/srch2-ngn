@@ -420,6 +420,7 @@ final public class SRCH2Service extends Service implements AutoPing.ValidatePing
                     }
                     p.destroy();
                     if (!isShuttingDown.get()) {
+                        clearServerLogEntries();
                         Cat.d(TAG, "startRunningExe - after p.destory engine may have crash validating ... ");
                         AutoPing.interrupt();
                         srch2SignaledIsAlive.set(false);

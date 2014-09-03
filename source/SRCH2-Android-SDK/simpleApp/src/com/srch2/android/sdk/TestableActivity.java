@@ -45,7 +45,7 @@ public abstract class TestableActivity extends Activity {
     }
 
     void onStopAndWaitForNotIsReady(Context context, int stopWaitingAfterDelayTime) {
-        SRCH2Engine.onStart(context);
+        SRCH2Engine.onStop(context);
         int timeSum = 0;
         while (true) {
             if (!SRCH2Engine.isReady()) {
