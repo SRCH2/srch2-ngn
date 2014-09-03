@@ -20026,3 +20026,598 @@ Failed to parse JSON - * Line 1, Column 32
 2014-08-29 10:48:57 INFO	Thread = <338462464> stopped
 2014-08-29 10:48:57 INFO	Thread = <330069760> stopped
 2014-08-29 10:48:57 INFO	Server stopped successfully
+2014-09-02 17:12:54 WARN	The protected words file = "" could not be opened.
+2014-09-02 17:12:54 WARN	The protected words file = "" could not be opened.
+2014-09-02 17:12:54 WARN	The protected words file = "" could not be opened.
+2014-09-02 17:12:54 INFO	Starting Srch2 server with 2 serving threads at 0.0.0.0:8087
+2014-09-02 17:12:54 DEBUG	Routing port 0 route /search to default core core1
+2014-09-02 17:12:54 DEBUG	Routing port 0 route /suggest to default core core1
+2014-09-02 17:12:54 DEBUG	Routing port 0 route /info to default core core1
+2014-09-02 17:12:54 DEBUG	Routing port 0 route /docs to default core core1
+2014-09-02 17:12:54 DEBUG	Routing port 0 route /update to default core core1
+2014-09-02 17:12:54 DEBUG	Routing port 0 route /save to default core core1
+2014-09-02 17:12:54 DEBUG	Routing port 0 route /export to default core core1
+2014-09-02 17:12:54 DEBUG	Routing port 0 route /resetLogger to default core core1
+2014-09-02 17:12:54 DEBUG	Routing port 0 route /acl-role-add to default core core1
+2014-09-02 17:12:54 DEBUG	Routing port 0 route /acl-role-delete to default core core1
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core1/search to core core1
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core1/suggest to core core1
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core1/info to core core1
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core1/docs to core core1
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core1/update to core core1
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core1/save to core core1
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core1/export to core core1
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core1/resetLogger to core core1
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core1/acl-role-add to core core1
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core1/acl-role-delete to core core1
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core2/search to core core2
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core2/suggest to core core2
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core2/info to core core2
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core2/docs to core core2
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core2/update to core core2
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core2/save to core core2
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core2/export to core core2
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core2/resetLogger to core core2
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core2/acl-role-add to core core2
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core2/acl-role-delete to core core2
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core3/search to core core3
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core3/suggest to core core3
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core3/info to core core3
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core3/docs to core core3
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core3/update to core core3
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core3/save to core core3
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core3/export to core core3
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core3/resetLogger to core core3
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core3/acl-role-add to core core3
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core3/acl-role-delete to core core3
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core4/search to core core4
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core4/suggest to core core4
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core4/info to core core4
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core4/docs to core core4
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core4/update to core core4
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core4/save to core core4
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core4/export to core core4
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core4/resetLogger to core core4
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core4/acl-role-add to core core4
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core4/acl-role-delete to core core4
+2014-09-02 17:12:54 DEBUG	Socket accept by thread 0 on port 8087
+2014-09-02 17:12:54 DEBUG	Routing port 0 route /search to default core core1
+2014-09-02 17:12:54 DEBUG	Routing port 0 route /suggest to default core core1
+2014-09-02 17:12:54 DEBUG	Routing port 0 route /info to default core core1
+2014-09-02 17:12:54 DEBUG	Routing port 0 route /docs to default core core1
+2014-09-02 17:12:54 DEBUG	Routing port 0 route /update to default core core1
+2014-09-02 17:12:54 DEBUG	Routing port 0 route /save to default core core1
+2014-09-02 17:12:54 DEBUG	Routing port 0 route /export to default core core1
+2014-09-02 17:12:54 DEBUG	Routing port 0 route /resetLogger to default core core1
+2014-09-02 17:12:54 DEBUG	Routing port 0 route /acl-role-add to default core core1
+2014-09-02 17:12:54 DEBUG	Routing port 0 route /acl-role-delete to default core core1
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core1/search to core core1
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core1/suggest to core core1
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core1/info to core core1
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core1/docs to core core1
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core1/update to core core1
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core1/save to core core1
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core1/export to core core1
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core1/resetLogger to core core1
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core1/acl-role-add to core core1
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core1/acl-role-delete to core core1
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core2/search to core core2
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core2/suggest to core core2
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core2/info to core core2
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core2/docs to core core2
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core2/update to core core2
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core2/save to core core2
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core2/export to core core2
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core2/resetLogger to core core2
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core2/acl-role-add to core core2
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core2/acl-role-delete to core core2
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core3/search to core core3
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core3/suggest to core core3
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core3/info to core core3
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core3/docs to core core3
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core3/update to core core3
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core3/save to core core3
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core3/export to core core3
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core3/resetLogger to core core3
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core3/acl-role-add to core core3
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core3/acl-role-delete to core core3
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core4/search to core core4
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core4/suggest to core core4
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core4/info to core core4
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core4/docs to core core4
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core4/update to core core4
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core4/save to core core4
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core4/export to core core4
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core4/resetLogger to core core4
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core4/acl-role-add to core core4
+2014-09-02 17:12:54 DEBUG	Adding port 8087 route /core4/acl-role-delete to core core4
+2014-09-02 17:12:54 DEBUG	Socket accept by thread 1 on port 8087
+2014-09-02 17:12:55 DEBUG	checking for docid parameter
+2014-09-02 17:12:55 DEBUG	docid parameter not specified
+2014-09-02 17:12:55 DEBUG	checking for fuzzy parameter
+2014-09-02 17:12:55 DEBUG	fuzzy parameter not specified
+2014-09-02 17:12:55 DEBUG	parsing the main query.
+2014-09-02 17:12:55 DEBUG	inside localParameterParser parsing the localparameters in the input string march
+2014-09-02 17:12:55 DEBUG	no localparameter info to parse in the input string. returning
+2014-09-02 17:12:55 DEBUG	returning from localParameterParser
+2014-09-02 17:12:55 DEBUG	inside term parser.
+2014-09-02 17:12:55 DEBUG	input received is march
+2014-09-02 17:12:55 DEBUG	no fieldFilter present in query, looking into localparameter for field filter
+2014-09-02 17:12:55 DEBUG	inside populateFieldFilterUsingLp
+2014-09-02 17:12:55 DEBUG	returning from populateFieldFilterUsingLp
+2014-09-02 17:12:55 DEBUG	Remove march,input modified to: 
+2014-09-02 17:12:55 DEBUG	indide populateRawKeywords, parsing for raw keywords
+2014-09-02 17:12:55 DEBUG	inside setInQueryParametersIfNotSet
+2014-09-02 17:12:55 DEBUG	parameter not in parametersInQuery, setting it.
+2014-09-02 17:12:55 DEBUG	returning from setInQueryParametersIfNotSet
+2014-09-02 17:12:55 DEBUG	raw keyword found: march
+2014-09-02 17:12:55 DEBUG	returning from populateRawKeywords
+2014-09-02 17:12:55 DEBUG	boost value is not specified, using the lp value or -1
+2014-09-02 17:12:55 DEBUG	fuzzy value is not specified, use 0
+2014-09-02 17:12:55 DEBUG	inside setSimilarityThresholdInContainer
+2014-09-02 17:12:55 DEBUG	Similarity threshold is not specified, use 1
+2014-09-02 17:12:55 DEBUG	returning from the termParser.
+2014-09-02 17:12:55 DEBUG	inside clearMainQueryParallelVectorsIfNeeded().
+2014-09-02 17:12:55 DEBUG	keywordSimilarityThreshold paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	keywordBoostLevel paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	keywordPrefixComplete paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	fieldFilter and fieldFilterOps paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	isPhraseKeyword paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	returning from clearMainQueryParallelVectorsIfNeeded().
+2014-09-02 17:12:55 DEBUG	indide debugQueryParser function
+2014-09-02 17:12:55 DEBUG	returning from debugQueryParser function
+2014-09-02 17:12:55 DEBUG	inside fieldListParser function
+2014-09-02 17:12:55 DEBUG	returning from fieldListParser function
+2014-09-02 17:12:55 DEBUG	inside startOffsetParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from startOffsetParameterParser function
+2014-09-02 17:12:55 DEBUG	inside numberOfResultsParser function
+2014-09-02 17:12:55 DEBUG	returning from numberOfResultsParser function
+2014-09-02 17:12:55 DEBUG	inside timeAllowedParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from timeAllowedParameterParser function
+2014-09-02 17:12:55 DEBUG	inside omitHeaderParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from omitHeaderParameterParser function
+2014-09-02 17:12:55 DEBUG	inside responseWriteTypeParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from responseWriteTypeParameterParser function
+2014-09-02 17:12:55 DEBUG	inside filterQueryParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from filterQueryParameterParser function
+2014-09-02 17:12:55 DEBUG	inside queryFieldBoostParser function
+2014-09-02 17:12:55 DEBUG	returning from quertFieldBoostParser function
+2014-09-02 17:12:55 DEBUG	inside lengthBoostParser function
+2014-09-02 17:12:55 DEBUG	returnig from lengthBoostParser function
+2014-09-02 17:12:55 DEBUG	inside prefixMatchPenaltyParser function
+2014-09-02 17:12:55 DEBUG	returnig from prefixMatchPenaltyParser function
+2014-09-02 17:12:55 DEBUG	inside gepParser function
+2014-09-02 17:12:55 DEBUG	inside geoParser, checking for geo parameter
+2014-09-02 17:12:55 DEBUG	returning from geoParser
+2014-09-02 17:12:55 DEBUG	inside extractSearchType function
+2014-09-02 17:12:55 DEBUG	returning from extractSearchType
+2014-09-02 17:12:55 DEBUG	checking for acl-id parameter
+2014-09-02 17:12:55 DEBUG	acl-id parameter not specified
+2014-09-02 17:12:55 DEBUG	inside facetParser function
+2014-09-02 17:12:55 DEBUG	returning from facetParser function
+2014-09-02 17:12:55 DEBUG	inside sortParser function
+2014-09-02 17:12:55 DEBUG	returning from sortParser function
+2014-09-02 17:12:55 DEBUG	Create Analyzer object for thread = -1519175936 
+2014-09-02 17:12:55 DEBUG	Query Results internal created.
+2014-09-02 17:12:55 DEBUG	Query Results internal initialized.
+2014-09-02 17:12:55 INFO	ip: 127.0.0.1, port: 49510 GET query: search?q=march, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-09-02 17:12:55 DEBUG	Query results are being destroyed in factory destructor.
+2014-09-02 17:12:55 DEBUG	checking for docid parameter
+2014-09-02 17:12:55 DEBUG	docid parameter not specified
+2014-09-02 17:12:55 DEBUG	checking for fuzzy parameter
+2014-09-02 17:12:55 DEBUG	fuzzy parameter not specified
+2014-09-02 17:12:55 DEBUG	parsing the main query.
+2014-09-02 17:12:55 DEBUG	inside localParameterParser parsing the localparameters in the input string Episode
+2014-09-02 17:12:55 DEBUG	no localparameter info to parse in the input string. returning
+2014-09-02 17:12:55 DEBUG	returning from localParameterParser
+2014-09-02 17:12:55 DEBUG	inside term parser.
+2014-09-02 17:12:55 DEBUG	input received is Episode
+2014-09-02 17:12:55 DEBUG	no fieldFilter present in query, looking into localparameter for field filter
+2014-09-02 17:12:55 DEBUG	inside populateFieldFilterUsingLp
+2014-09-02 17:12:55 DEBUG	returning from populateFieldFilterUsingLp
+2014-09-02 17:12:55 DEBUG	Remove Episode,input modified to: 
+2014-09-02 17:12:55 DEBUG	indide populateRawKeywords, parsing for raw keywords
+2014-09-02 17:12:55 DEBUG	inside setInQueryParametersIfNotSet
+2014-09-02 17:12:55 DEBUG	parameter not in parametersInQuery, setting it.
+2014-09-02 17:12:55 DEBUG	returning from setInQueryParametersIfNotSet
+2014-09-02 17:12:55 DEBUG	raw keyword found: Episode
+2014-09-02 17:12:55 DEBUG	returning from populateRawKeywords
+2014-09-02 17:12:55 DEBUG	boost value is not specified, using the lp value or -1
+2014-09-02 17:12:55 DEBUG	fuzzy value is not specified, use 0
+2014-09-02 17:12:55 DEBUG	inside setSimilarityThresholdInContainer
+2014-09-02 17:12:55 DEBUG	Similarity threshold is not specified, use 1
+2014-09-02 17:12:55 DEBUG	returning from the termParser.
+2014-09-02 17:12:55 DEBUG	inside clearMainQueryParallelVectorsIfNeeded().
+2014-09-02 17:12:55 DEBUG	keywordSimilarityThreshold paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	keywordBoostLevel paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	keywordPrefixComplete paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	fieldFilter and fieldFilterOps paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	isPhraseKeyword paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	returning from clearMainQueryParallelVectorsIfNeeded().
+2014-09-02 17:12:55 DEBUG	indide debugQueryParser function
+2014-09-02 17:12:55 DEBUG	returning from debugQueryParser function
+2014-09-02 17:12:55 DEBUG	inside fieldListParser function
+2014-09-02 17:12:55 DEBUG	returning from fieldListParser function
+2014-09-02 17:12:55 DEBUG	inside startOffsetParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from startOffsetParameterParser function
+2014-09-02 17:12:55 DEBUG	inside numberOfResultsParser function
+2014-09-02 17:12:55 DEBUG	returning from numberOfResultsParser function
+2014-09-02 17:12:55 DEBUG	inside timeAllowedParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from timeAllowedParameterParser function
+2014-09-02 17:12:55 DEBUG	inside omitHeaderParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from omitHeaderParameterParser function
+2014-09-02 17:12:55 DEBUG	inside responseWriteTypeParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from responseWriteTypeParameterParser function
+2014-09-02 17:12:55 DEBUG	inside filterQueryParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from filterQueryParameterParser function
+2014-09-02 17:12:55 DEBUG	inside queryFieldBoostParser function
+2014-09-02 17:12:55 DEBUG	returning from quertFieldBoostParser function
+2014-09-02 17:12:55 DEBUG	inside lengthBoostParser function
+2014-09-02 17:12:55 DEBUG	returnig from lengthBoostParser function
+2014-09-02 17:12:55 DEBUG	inside prefixMatchPenaltyParser function
+2014-09-02 17:12:55 DEBUG	returnig from prefixMatchPenaltyParser function
+2014-09-02 17:12:55 DEBUG	inside gepParser function
+2014-09-02 17:12:55 DEBUG	inside geoParser, checking for geo parameter
+2014-09-02 17:12:55 DEBUG	returning from geoParser
+2014-09-02 17:12:55 DEBUG	inside extractSearchType function
+2014-09-02 17:12:55 DEBUG	returning from extractSearchType
+2014-09-02 17:12:55 DEBUG	checking for acl-id parameter
+2014-09-02 17:12:55 DEBUG	acl-id parameter found
+2014-09-02 17:12:55 DEBUG	inside facetParser function
+2014-09-02 17:12:55 DEBUG	returning from facetParser function
+2014-09-02 17:12:55 DEBUG	inside sortParser function
+2014-09-02 17:12:55 DEBUG	returning from sortParser function
+2014-09-02 17:12:55 DEBUG	Query Results internal created.
+2014-09-02 17:12:55 DEBUG	Query Results internal initialized.
+2014-09-02 17:12:55 INFO	ip: 127.0.0.1, port: 49511 GET query: core1/search?q=Episode&roleId=1004, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-09-02 17:12:55 DEBUG	Query results are being destroyed in factory destructor.
+2014-09-02 17:12:55 DEBUG	checking for docid parameter
+2014-09-02 17:12:55 DEBUG	docid parameter not specified
+2014-09-02 17:12:55 DEBUG	checking for fuzzy parameter
+2014-09-02 17:12:55 DEBUG	fuzzy parameter not specified
+2014-09-02 17:12:55 DEBUG	parsing the main query.
+2014-09-02 17:12:55 DEBUG	inside localParameterParser parsing the localparameters in the input string Science
+2014-09-02 17:12:55 DEBUG	no localparameter info to parse in the input string. returning
+2014-09-02 17:12:55 DEBUG	returning from localParameterParser
+2014-09-02 17:12:55 DEBUG	inside term parser.
+2014-09-02 17:12:55 DEBUG	input received is Science
+2014-09-02 17:12:55 DEBUG	no fieldFilter present in query, looking into localparameter for field filter
+2014-09-02 17:12:55 DEBUG	inside populateFieldFilterUsingLp
+2014-09-02 17:12:55 DEBUG	returning from populateFieldFilterUsingLp
+2014-09-02 17:12:55 DEBUG	Remove Science,input modified to: 
+2014-09-02 17:12:55 DEBUG	indide populateRawKeywords, parsing for raw keywords
+2014-09-02 17:12:55 DEBUG	inside setInQueryParametersIfNotSet
+2014-09-02 17:12:55 DEBUG	parameter not in parametersInQuery, setting it.
+2014-09-02 17:12:55 DEBUG	returning from setInQueryParametersIfNotSet
+2014-09-02 17:12:55 DEBUG	raw keyword found: Science
+2014-09-02 17:12:55 DEBUG	returning from populateRawKeywords
+2014-09-02 17:12:55 DEBUG	boost value is not specified, using the lp value or -1
+2014-09-02 17:12:55 DEBUG	fuzzy value is not specified, use 0
+2014-09-02 17:12:55 DEBUG	inside setSimilarityThresholdInContainer
+2014-09-02 17:12:55 DEBUG	Similarity threshold is not specified, use 1
+2014-09-02 17:12:55 DEBUG	returning from the termParser.
+2014-09-02 17:12:55 DEBUG	inside clearMainQueryParallelVectorsIfNeeded().
+2014-09-02 17:12:55 DEBUG	keywordSimilarityThreshold paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	keywordBoostLevel paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	keywordPrefixComplete paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	fieldFilter and fieldFilterOps paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	isPhraseKeyword paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	returning from clearMainQueryParallelVectorsIfNeeded().
+2014-09-02 17:12:55 DEBUG	indide debugQueryParser function
+2014-09-02 17:12:55 DEBUG	returning from debugQueryParser function
+2014-09-02 17:12:55 DEBUG	inside fieldListParser function
+2014-09-02 17:12:55 DEBUG	returning from fieldListParser function
+2014-09-02 17:12:55 DEBUG	inside startOffsetParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from startOffsetParameterParser function
+2014-09-02 17:12:55 DEBUG	inside numberOfResultsParser function
+2014-09-02 17:12:55 DEBUG	returning from numberOfResultsParser function
+2014-09-02 17:12:55 DEBUG	inside timeAllowedParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from timeAllowedParameterParser function
+2014-09-02 17:12:55 DEBUG	inside omitHeaderParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from omitHeaderParameterParser function
+2014-09-02 17:12:55 DEBUG	inside responseWriteTypeParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from responseWriteTypeParameterParser function
+2014-09-02 17:12:55 DEBUG	inside filterQueryParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from filterQueryParameterParser function
+2014-09-02 17:12:55 DEBUG	inside queryFieldBoostParser function
+2014-09-02 17:12:55 DEBUG	returning from quertFieldBoostParser function
+2014-09-02 17:12:55 DEBUG	inside lengthBoostParser function
+2014-09-02 17:12:55 DEBUG	returnig from lengthBoostParser function
+2014-09-02 17:12:55 DEBUG	inside prefixMatchPenaltyParser function
+2014-09-02 17:12:55 DEBUG	returnig from prefixMatchPenaltyParser function
+2014-09-02 17:12:55 DEBUG	inside gepParser function
+2014-09-02 17:12:55 DEBUG	inside geoParser, checking for geo parameter
+2014-09-02 17:12:55 DEBUG	returning from geoParser
+2014-09-02 17:12:55 DEBUG	inside extractSearchType function
+2014-09-02 17:12:55 DEBUG	returning from extractSearchType
+2014-09-02 17:12:55 DEBUG	checking for acl-id parameter
+2014-09-02 17:12:55 DEBUG	acl-id parameter found
+2014-09-02 17:12:55 DEBUG	inside facetParser function
+2014-09-02 17:12:55 DEBUG	returning from facetParser function
+2014-09-02 17:12:55 DEBUG	inside sortParser function
+2014-09-02 17:12:55 DEBUG	returning from sortParser function
+2014-09-02 17:12:55 DEBUG	Query Results internal created.
+2014-09-02 17:12:55 DEBUG	Query Results internal initialized.
+2014-09-02 17:12:55 INFO	ip: 127.0.0.1, port: 49512 GET query: core1/search?q=Science&roleId=1006, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-09-02 17:12:55 DEBUG	Query results are being destroyed in factory destructor.
+2014-09-02 17:12:55 DEBUG	checking for docid parameter
+2014-09-02 17:12:55 DEBUG	docid parameter not specified
+2014-09-02 17:12:55 DEBUG	checking for fuzzy parameter
+2014-09-02 17:12:55 DEBUG	fuzzy parameter not specified
+2014-09-02 17:12:55 DEBUG	parsing the main query.
+2014-09-02 17:12:55 DEBUG	inside localParameterParser parsing the localparameters in the input string spider
+2014-09-02 17:12:55 DEBUG	no localparameter info to parse in the input string. returning
+2014-09-02 17:12:55 DEBUG	returning from localParameterParser
+2014-09-02 17:12:55 DEBUG	inside term parser.
+2014-09-02 17:12:55 DEBUG	input received is spider
+2014-09-02 17:12:55 DEBUG	no fieldFilter present in query, looking into localparameter for field filter
+2014-09-02 17:12:55 DEBUG	inside populateFieldFilterUsingLp
+2014-09-02 17:12:55 DEBUG	returning from populateFieldFilterUsingLp
+2014-09-02 17:12:55 DEBUG	Remove spider,input modified to: 
+2014-09-02 17:12:55 DEBUG	indide populateRawKeywords, parsing for raw keywords
+2014-09-02 17:12:55 DEBUG	inside setInQueryParametersIfNotSet
+2014-09-02 17:12:55 DEBUG	parameter not in parametersInQuery, setting it.
+2014-09-02 17:12:55 DEBUG	returning from setInQueryParametersIfNotSet
+2014-09-02 17:12:55 DEBUG	raw keyword found: spider
+2014-09-02 17:12:55 DEBUG	returning from populateRawKeywords
+2014-09-02 17:12:55 DEBUG	boost value is not specified, using the lp value or -1
+2014-09-02 17:12:55 DEBUG	fuzzy value is not specified, use 0
+2014-09-02 17:12:55 DEBUG	inside setSimilarityThresholdInContainer
+2014-09-02 17:12:55 DEBUG	Similarity threshold is not specified, use 1
+2014-09-02 17:12:55 DEBUG	returning from the termParser.
+2014-09-02 17:12:55 DEBUG	inside clearMainQueryParallelVectorsIfNeeded().
+2014-09-02 17:12:55 DEBUG	keywordSimilarityThreshold paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	keywordBoostLevel paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	keywordPrefixComplete paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	fieldFilter and fieldFilterOps paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	isPhraseKeyword paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	returning from clearMainQueryParallelVectorsIfNeeded().
+2014-09-02 17:12:55 DEBUG	indide debugQueryParser function
+2014-09-02 17:12:55 DEBUG	returning from debugQueryParser function
+2014-09-02 17:12:55 DEBUG	inside fieldListParser function
+2014-09-02 17:12:55 DEBUG	returning from fieldListParser function
+2014-09-02 17:12:55 DEBUG	inside startOffsetParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from startOffsetParameterParser function
+2014-09-02 17:12:55 DEBUG	inside numberOfResultsParser function
+2014-09-02 17:12:55 DEBUG	returning from numberOfResultsParser function
+2014-09-02 17:12:55 DEBUG	inside timeAllowedParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from timeAllowedParameterParser function
+2014-09-02 17:12:55 DEBUG	inside omitHeaderParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from omitHeaderParameterParser function
+2014-09-02 17:12:55 DEBUG	inside responseWriteTypeParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from responseWriteTypeParameterParser function
+2014-09-02 17:12:55 DEBUG	inside filterQueryParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from filterQueryParameterParser function
+2014-09-02 17:12:55 DEBUG	inside queryFieldBoostParser function
+2014-09-02 17:12:55 DEBUG	returning from quertFieldBoostParser function
+2014-09-02 17:12:55 DEBUG	inside lengthBoostParser function
+2014-09-02 17:12:55 DEBUG	returnig from lengthBoostParser function
+2014-09-02 17:12:55 DEBUG	inside prefixMatchPenaltyParser function
+2014-09-02 17:12:55 DEBUG	returnig from prefixMatchPenaltyParser function
+2014-09-02 17:12:55 DEBUG	inside gepParser function
+2014-09-02 17:12:55 DEBUG	inside geoParser, checking for geo parameter
+2014-09-02 17:12:55 DEBUG	returning from geoParser
+2014-09-02 17:12:55 DEBUG	inside extractSearchType function
+2014-09-02 17:12:55 DEBUG	returning from extractSearchType
+2014-09-02 17:12:55 DEBUG	checking for acl-id parameter
+2014-09-02 17:12:55 DEBUG	acl-id parameter found
+2014-09-02 17:12:55 DEBUG	inside facetParser function
+2014-09-02 17:12:55 DEBUG	returning from facetParser function
+2014-09-02 17:12:55 DEBUG	inside sortParser function
+2014-09-02 17:12:55 DEBUG	returning from sortParser function
+2014-09-02 17:12:55 DEBUG	Query Results internal created.
+2014-09-02 17:12:55 DEBUG	Query Results internal initialized.
+2014-09-02 17:12:55 INFO	ip: 127.0.0.1, port: 49513 GET query: core1/search?q=spider&roleId=1001, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-09-02 17:12:55 DEBUG	Query results are being destroyed in factory destructor.
+2014-09-02 17:12:55 DEBUG	checking for docid parameter
+2014-09-02 17:12:55 DEBUG	docid parameter not specified
+2014-09-02 17:12:55 DEBUG	checking for fuzzy parameter
+2014-09-02 17:12:55 DEBUG	fuzzy parameter not specified
+2014-09-02 17:12:55 DEBUG	parsing the main query.
+2014-09-02 17:12:55 DEBUG	inside localParameterParser parsing the localparameters in the input string man
+2014-09-02 17:12:55 DEBUG	no localparameter info to parse in the input string. returning
+2014-09-02 17:12:55 DEBUG	returning from localParameterParser
+2014-09-02 17:12:55 DEBUG	inside term parser.
+2014-09-02 17:12:55 DEBUG	input received is man
+2014-09-02 17:12:55 DEBUG	no fieldFilter present in query, looking into localparameter for field filter
+2014-09-02 17:12:55 DEBUG	inside populateFieldFilterUsingLp
+2014-09-02 17:12:55 DEBUG	returning from populateFieldFilterUsingLp
+2014-09-02 17:12:55 DEBUG	Remove man,input modified to: 
+2014-09-02 17:12:55 DEBUG	indide populateRawKeywords, parsing for raw keywords
+2014-09-02 17:12:55 DEBUG	inside setInQueryParametersIfNotSet
+2014-09-02 17:12:55 DEBUG	parameter not in parametersInQuery, setting it.
+2014-09-02 17:12:55 DEBUG	returning from setInQueryParametersIfNotSet
+2014-09-02 17:12:55 DEBUG	raw keyword found: man
+2014-09-02 17:12:55 DEBUG	returning from populateRawKeywords
+2014-09-02 17:12:55 DEBUG	boost value is not specified, using the lp value or -1
+2014-09-02 17:12:55 DEBUG	fuzzy value is not specified, use 0
+2014-09-02 17:12:55 DEBUG	inside setSimilarityThresholdInContainer
+2014-09-02 17:12:55 DEBUG	Similarity threshold is not specified, use 1
+2014-09-02 17:12:55 DEBUG	returning from the termParser.
+2014-09-02 17:12:55 DEBUG	inside clearMainQueryParallelVectorsIfNeeded().
+2014-09-02 17:12:55 DEBUG	keywordSimilarityThreshold paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	keywordBoostLevel paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	keywordPrefixComplete paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	fieldFilter and fieldFilterOps paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	isPhraseKeyword paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	returning from clearMainQueryParallelVectorsIfNeeded().
+2014-09-02 17:12:55 DEBUG	indide debugQueryParser function
+2014-09-02 17:12:55 DEBUG	returning from debugQueryParser function
+2014-09-02 17:12:55 DEBUG	inside fieldListParser function
+2014-09-02 17:12:55 DEBUG	returning from fieldListParser function
+2014-09-02 17:12:55 DEBUG	inside startOffsetParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from startOffsetParameterParser function
+2014-09-02 17:12:55 DEBUG	inside numberOfResultsParser function
+2014-09-02 17:12:55 DEBUG	returning from numberOfResultsParser function
+2014-09-02 17:12:55 DEBUG	inside timeAllowedParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from timeAllowedParameterParser function
+2014-09-02 17:12:55 DEBUG	inside omitHeaderParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from omitHeaderParameterParser function
+2014-09-02 17:12:55 DEBUG	inside responseWriteTypeParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from responseWriteTypeParameterParser function
+2014-09-02 17:12:55 DEBUG	inside filterQueryParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from filterQueryParameterParser function
+2014-09-02 17:12:55 DEBUG	inside queryFieldBoostParser function
+2014-09-02 17:12:55 DEBUG	returning from quertFieldBoostParser function
+2014-09-02 17:12:55 DEBUG	inside lengthBoostParser function
+2014-09-02 17:12:55 DEBUG	returnig from lengthBoostParser function
+2014-09-02 17:12:55 DEBUG	inside prefixMatchPenaltyParser function
+2014-09-02 17:12:55 DEBUG	returnig from prefixMatchPenaltyParser function
+2014-09-02 17:12:55 DEBUG	inside gepParser function
+2014-09-02 17:12:55 DEBUG	inside geoParser, checking for geo parameter
+2014-09-02 17:12:55 DEBUG	returning from geoParser
+2014-09-02 17:12:55 DEBUG	inside extractSearchType function
+2014-09-02 17:12:55 DEBUG	returning from extractSearchType
+2014-09-02 17:12:55 DEBUG	checking for acl-id parameter
+2014-09-02 17:12:55 DEBUG	acl-id parameter found
+2014-09-02 17:12:55 DEBUG	inside facetParser function
+2014-09-02 17:12:55 DEBUG	returning from facetParser function
+2014-09-02 17:12:55 DEBUG	inside sortParser function
+2014-09-02 17:12:55 DEBUG	returning from sortParser function
+2014-09-02 17:12:55 DEBUG	Create Analyzer object for thread = -1527568640 
+2014-09-02 17:12:55 DEBUG	Query Results internal created.
+2014-09-02 17:12:55 DEBUG	Query Results internal initialized.
+2014-09-02 17:12:55 INFO	ip: 127.0.0.1, port: 49514 GET query: core1/search?q=man&roleId=1020, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-09-02 17:12:55 DEBUG	Query results are being destroyed in factory destructor.
+2014-09-02 17:12:55 DEBUG	checking for docid parameter
+2014-09-02 17:12:55 DEBUG	docid parameter not specified
+2014-09-02 17:12:55 DEBUG	checking for fuzzy parameter
+2014-09-02 17:12:55 DEBUG	fuzzy parameter not specified
+2014-09-02 17:12:55 DEBUG	parsing the main query.
+2014-09-02 17:12:55 DEBUG	inside localParameterParser parsing the localparameters in the input string men
+2014-09-02 17:12:55 DEBUG	no localparameter info to parse in the input string. returning
+2014-09-02 17:12:55 DEBUG	returning from localParameterParser
+2014-09-02 17:12:55 DEBUG	inside term parser.
+2014-09-02 17:12:55 DEBUG	input received is men
+2014-09-02 17:12:55 DEBUG	no fieldFilter present in query, looking into localparameter for field filter
+2014-09-02 17:12:55 DEBUG	inside populateFieldFilterUsingLp
+2014-09-02 17:12:55 DEBUG	returning from populateFieldFilterUsingLp
+2014-09-02 17:12:55 DEBUG	Remove men,input modified to: 
+2014-09-02 17:12:55 DEBUG	indide populateRawKeywords, parsing for raw keywords
+2014-09-02 17:12:55 DEBUG	inside setInQueryParametersIfNotSet
+2014-09-02 17:12:55 DEBUG	parameter not in parametersInQuery, setting it.
+2014-09-02 17:12:55 DEBUG	returning from setInQueryParametersIfNotSet
+2014-09-02 17:12:55 DEBUG	raw keyword found: men
+2014-09-02 17:12:55 DEBUG	returning from populateRawKeywords
+2014-09-02 17:12:55 DEBUG	boost value is not specified, using the lp value or -1
+2014-09-02 17:12:55 DEBUG	fuzzy value is not specified, use 0
+2014-09-02 17:12:55 DEBUG	inside setSimilarityThresholdInContainer
+2014-09-02 17:12:55 DEBUG	Similarity threshold is not specified, use 1
+2014-09-02 17:12:55 DEBUG	returning from the termParser.
+2014-09-02 17:12:55 DEBUG	inside clearMainQueryParallelVectorsIfNeeded().
+2014-09-02 17:12:55 DEBUG	keywordSimilarityThreshold paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	keywordBoostLevel paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	keywordPrefixComplete paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	fieldFilter and fieldFilterOps paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	isPhraseKeyword paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	returning from clearMainQueryParallelVectorsIfNeeded().
+2014-09-02 17:12:55 DEBUG	indide debugQueryParser function
+2014-09-02 17:12:55 DEBUG	returning from debugQueryParser function
+2014-09-02 17:12:55 DEBUG	inside fieldListParser function
+2014-09-02 17:12:55 DEBUG	returning from fieldListParser function
+2014-09-02 17:12:55 DEBUG	inside startOffsetParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from startOffsetParameterParser function
+2014-09-02 17:12:55 DEBUG	inside numberOfResultsParser function
+2014-09-02 17:12:55 DEBUG	returning from numberOfResultsParser function
+2014-09-02 17:12:55 DEBUG	inside timeAllowedParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from timeAllowedParameterParser function
+2014-09-02 17:12:55 DEBUG	inside omitHeaderParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from omitHeaderParameterParser function
+2014-09-02 17:12:55 DEBUG	inside responseWriteTypeParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from responseWriteTypeParameterParser function
+2014-09-02 17:12:55 DEBUG	inside filterQueryParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from filterQueryParameterParser function
+2014-09-02 17:12:55 DEBUG	inside queryFieldBoostParser function
+2014-09-02 17:12:55 DEBUG	returning from quertFieldBoostParser function
+2014-09-02 17:12:55 DEBUG	inside lengthBoostParser function
+2014-09-02 17:12:55 DEBUG	returnig from lengthBoostParser function
+2014-09-02 17:12:55 DEBUG	inside prefixMatchPenaltyParser function
+2014-09-02 17:12:55 DEBUG	returnig from prefixMatchPenaltyParser function
+2014-09-02 17:12:55 DEBUG	inside gepParser function
+2014-09-02 17:12:55 DEBUG	inside geoParser, checking for geo parameter
+2014-09-02 17:12:55 DEBUG	returning from geoParser
+2014-09-02 17:12:55 DEBUG	inside extractSearchType function
+2014-09-02 17:12:55 DEBUG	returning from extractSearchType
+2014-09-02 17:12:55 DEBUG	checking for acl-id parameter
+2014-09-02 17:12:55 DEBUG	acl-id parameter found
+2014-09-02 17:12:55 DEBUG	inside facetParser function
+2014-09-02 17:12:55 DEBUG	returning from facetParser function
+2014-09-02 17:12:55 DEBUG	inside sortParser function
+2014-09-02 17:12:55 DEBUG	returning from sortParser function
+2014-09-02 17:12:55 DEBUG	Query Results internal created.
+2014-09-02 17:12:55 DEBUG	Query Results internal initialized.
+2014-09-02 17:12:55 INFO	ip: 127.0.0.1, port: 49515 GET query: core3/search?q=men&roleId=1013, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-09-02 17:12:55 DEBUG	Query results are being destroyed in factory destructor.
+2014-09-02 17:12:55 DEBUG	checking for docid parameter
+2014-09-02 17:12:55 DEBUG	docid parameter not specified
+2014-09-02 17:12:55 DEBUG	checking for fuzzy parameter
+2014-09-02 17:12:55 DEBUG	fuzzy parameter not specified
+2014-09-02 17:12:55 DEBUG	parsing the main query.
+2014-09-02 17:12:55 DEBUG	inside localParameterParser parsing the localparameters in the input string repair
+2014-09-02 17:12:55 DEBUG	no localparameter info to parse in the input string. returning
+2014-09-02 17:12:55 DEBUG	returning from localParameterParser
+2014-09-02 17:12:55 DEBUG	inside term parser.
+2014-09-02 17:12:55 DEBUG	input received is repair
+2014-09-02 17:12:55 DEBUG	no fieldFilter present in query, looking into localparameter for field filter
+2014-09-02 17:12:55 DEBUG	inside populateFieldFilterUsingLp
+2014-09-02 17:12:55 DEBUG	returning from populateFieldFilterUsingLp
+2014-09-02 17:12:55 DEBUG	Remove repair,input modified to: 
+2014-09-02 17:12:55 DEBUG	indide populateRawKeywords, parsing for raw keywords
+2014-09-02 17:12:55 DEBUG	inside setInQueryParametersIfNotSet
+2014-09-02 17:12:55 DEBUG	parameter not in parametersInQuery, setting it.
+2014-09-02 17:12:55 DEBUG	returning from setInQueryParametersIfNotSet
+2014-09-02 17:12:55 DEBUG	raw keyword found: repair
+2014-09-02 17:12:55 DEBUG	returning from populateRawKeywords
+2014-09-02 17:12:55 DEBUG	boost value is not specified, using the lp value or -1
+2014-09-02 17:12:55 DEBUG	fuzzy value is not specified, use 0
+2014-09-02 17:12:55 DEBUG	inside setSimilarityThresholdInContainer
+2014-09-02 17:12:55 DEBUG	Similarity threshold is not specified, use 1
+2014-09-02 17:12:55 DEBUG	returning from the termParser.
+2014-09-02 17:12:55 DEBUG	inside clearMainQueryParallelVectorsIfNeeded().
+2014-09-02 17:12:55 DEBUG	keywordSimilarityThreshold paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	keywordBoostLevel paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	keywordPrefixComplete paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	fieldFilter and fieldFilterOps paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	isPhraseKeyword paralel vector cleared.
+2014-09-02 17:12:55 DEBUG	returning from clearMainQueryParallelVectorsIfNeeded().
+2014-09-02 17:12:55 DEBUG	indide debugQueryParser function
+2014-09-02 17:12:55 DEBUG	returning from debugQueryParser function
+2014-09-02 17:12:55 DEBUG	inside fieldListParser function
+2014-09-02 17:12:55 DEBUG	returning from fieldListParser function
+2014-09-02 17:12:55 DEBUG	inside startOffsetParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from startOffsetParameterParser function
+2014-09-02 17:12:55 DEBUG	inside numberOfResultsParser function
+2014-09-02 17:12:55 DEBUG	returning from numberOfResultsParser function
+2014-09-02 17:12:55 DEBUG	inside timeAllowedParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from timeAllowedParameterParser function
+2014-09-02 17:12:55 DEBUG	inside omitHeaderParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from omitHeaderParameterParser function
+2014-09-02 17:12:55 DEBUG	inside responseWriteTypeParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from responseWriteTypeParameterParser function
+2014-09-02 17:12:55 DEBUG	inside filterQueryParameterParser function
+2014-09-02 17:12:55 DEBUG	returning from filterQueryParameterParser function
+2014-09-02 17:12:55 DEBUG	inside queryFieldBoostParser function
+2014-09-02 17:12:55 DEBUG	returning from quertFieldBoostParser function
+2014-09-02 17:12:55 DEBUG	inside lengthBoostParser function
+2014-09-02 17:12:55 DEBUG	returnig from lengthBoostParser function
+2014-09-02 17:12:55 DEBUG	inside prefixMatchPenaltyParser function
+2014-09-02 17:12:55 DEBUG	returnig from prefixMatchPenaltyParser function
+2014-09-02 17:12:55 DEBUG	inside gepParser function
+2014-09-02 17:12:55 DEBUG	inside geoParser, checking for geo parameter
+2014-09-02 17:12:55 DEBUG	returning from geoParser
+2014-09-02 17:12:55 DEBUG	inside extractSearchType function
+2014-09-02 17:12:55 DEBUG	returning from extractSearchType
+2014-09-02 17:12:55 DEBUG	checking for acl-id parameter
+2014-09-02 17:12:55 DEBUG	acl-id parameter found
+2014-09-02 17:12:55 DEBUG	inside facetParser function
+2014-09-02 17:12:55 DEBUG	returning from facetParser function
+2014-09-02 17:12:55 DEBUG	inside sortParser function
+2014-09-02 17:12:55 DEBUG	returning from sortParser function
+2014-09-02 17:12:55 DEBUG	Query Results internal created.
+2014-09-02 17:12:55 DEBUG	Query Results internal initialized.
+2014-09-02 17:12:55 INFO	ip: 127.0.0.1, port: 49516 GET query: core3/search?q=repair&roleId=1006, searcher_time: 0 ms, highlighter_time: 0 ms, payload_access_time: 0 ms
+2014-09-02 17:12:55 DEBUG	Query results are being destroyed in factory destructor.
+2014-09-02 17:13:00 INFO	Stopping server.
+2014-09-02 17:13:00 INFO	Thread = <2775791360> stopped
+2014-09-02 17:13:00 INFO	Thread = <2767398656> stopped
+2014-09-02 17:13:00 INFO	Server stopped successfully

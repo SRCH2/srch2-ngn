@@ -382,7 +382,7 @@ public:
     static void setAuthorizationKey(string &key);
 
     static const char* getRoleId(){
-    	return roleId;
+    	return aclRoleId;
     }
 
 private:
@@ -505,7 +505,7 @@ private:
     static const char* const resourceCore;
     static const char* const roleCore;
     static const char* const accessControlDataFile;
-    static const char* const roleId;
+    static const char* const aclRoleId;
 
     static const char* const defaultFuzzyPreTag;
     static const char* const defaultFuzzyPostTag;
@@ -519,7 +519,7 @@ class AccessControlInfo{
 public:
 	string resourceCoreName;
 	string roleCoreName;
-	string dataFile;
+	string aclDataFileName;
 	AccessControlInfo(string &resourceCoreName, string &roleCoreName){
 		this->resourceCoreName = resourceCoreName;
 		this->roleCoreName = roleCoreName;

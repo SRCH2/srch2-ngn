@@ -165,8 +165,8 @@ const char* const ConfigManager::snippetSize = "snippetsize";
 const char* const ConfigManager::multipleAccessControlString = "access-controls";
 const char* const ConfigManager::resourceCore = "resourcecore";
 const char* const ConfigManager::roleCore = "rolecore";
-const char* const ConfigManager::accessControlDataFile = "datafile";
-const char* const ConfigManager::roleId = "aclId";
+const char* const ConfigManager::accessControlDataFile = "acldatafile";
+const char* const ConfigManager::aclRoleId = "aclId";
 
 const char* const ConfigManager::defaultFuzzyPreTag = "<b>";
 const char* const ConfigManager::defaultFuzzyPostTag = "</b>";
@@ -867,10 +867,20 @@ void ConfigManager::parseSingleCore(const xml_node &parentNode,
     }
 }
 
+// parse single access control in the config file here is an example:
+/*
+ * 		<access-control>
+   	   	    <resourceCore> Product</resourceCore>
+   	    	<roleCore> Company </roleCore>
+   	    	<aclDataFile>data.json</aclDataFile>
+		</access-control>
+ */
 void ConfigManager::parseSingleAccessControl(const xml_node &parentNode,
 		bool &configSuccess, std::stringstream &parseError,
 		std::stringstream &parseWarnings){
+	// 1- extract the resource core name-->  <resourceCore> Product </resourceCore>
 	xml_node resourceCoreNode = parentNode.child(resourceCore);
+	// 2- extract the role core name.-->   <roleCore> Company </roleCore>
 	xml_node roleCoreNode = parentNode.child(roleCore);
 	// both resourceCore and roleCore are requiered
 	if(resourceCoreNode && resourceCoreNode.text()){
@@ -893,9 +903,10 @@ void ConfigManager::parseSingleAccessControl(const xml_node &parentNode,
 				return;
 			}
 			AccessControlInfo* newAccessControlInfo = new AccessControlInfo(resourceCoreName, roleCoreName);
+			// 3- extract the name of the data file for bulk load -->    <aclDataFile> data.json </aclDataFile>
 			xml_node dataFileNode = parentNode.child(accessControlDataFile);
 			if(dataFileNode && dataFileNode.text()){
-				newAccessControlInfo->dataFile = srch2Home + string("")
+				newAccessControlInfo->aclDataFileName = srch2Home + string("")
                             + (*resourceIt).second->getName() + string("/") + string(dataFileNode.text().get());
 			}
 			(*resourceIt).second->setAccessControlInfo(newAccessControlInfo);

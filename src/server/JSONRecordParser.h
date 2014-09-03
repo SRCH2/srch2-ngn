@@ -26,7 +26,7 @@ public:
             const std::string &inputLine, const Json::Value &root,
             const CoreInfo_t *indexDataContainerConf, std::stringstream &error,
             RecordSerializer& compactRecSerializer);
-    static bool _extractRoleIds(vector<string> &roleIds, string &primaryKeyID,
+    static bool _extractRoleIds(vector<string> &roleIds, string &resourcePrimaryKeyID,
     		const Json::Value &root, const CoreInfo_t *indexDataContainerConf, std::stringstream &error);
     static bool getAclInfoFromJSON(vector<string> &roleIds, string &primaryKeyID,
     		const string& inputLine, const CoreInfo_t *indexDataContainerConf, std::stringstream &error);

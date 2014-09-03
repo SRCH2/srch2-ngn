@@ -126,11 +126,16 @@ public:
      */
     INDEXWRITE_RETVAL addRecord(const Record *record, Analyzer *analyzer);
 
-    INDEXWRITE_RETVAL aclRoleAdd(const std::string &primaryKeyID, vector<string> &roleIds);
+    // Adds role ids to a specific record
+    INDEXWRITE_RETVAL aclRoleAdd(const std::string &resourcePrimaryKeyID, vector<string> &roleIds);
 
-    INDEXWRITE_RETVAL aclRoleDelete(const std::string &primaryKeyID, vector<string> &roleIds);
+    // Deletes role ids from a specific record
+    INDEXWRITE_RETVAL aclRoleDelete(const std::string &resourcePrimaryKeyID, vector<string> &roleIds);
 
-    INDEXWRITE_RETVAL deleteRoleRecord(const std::string &primaryKeyID);
+    // Deletes the role id from the permission map
+    // we use this function for deleting a record from a role core
+    // then we need to delete this record from the permission map of the resource cores of this core
+    INDEXWRITE_RETVAL deleteRoleRecord(const std::string &rolePrimaryKeyID);
 
     /**
      * Deletes all the records.

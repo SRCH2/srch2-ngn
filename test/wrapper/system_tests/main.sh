@@ -219,10 +219,10 @@ fi
 rm -rf data/ *.idx
 
 
-test_id="access_control"
+test_id="record-based-ACL"
 printTestBanner "$test_id"
 rm -f ./access_control/core?/*.idx ./access_control/core?/srch2-log.txt
-python ./access_control/accessControl.py $SRCH2_ENGINE ./access_control/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
+python ./access_control/record-based-ACL.py $SRCH2_ENGINE ./access_control/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ ${PIPESTATUS[0]} -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}

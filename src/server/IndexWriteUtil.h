@@ -62,6 +62,7 @@ struct IndexWriteUtil
     	//std::cout << "INSERT request received. New number of documents = " << indexer->getNumberOfDocumentsInIndex() << "; Limit = " << indexDataContainerConf->getDocumentLimit() << "." << std::endl;
     }
 
+    // add role ids to a record
     static void _aclRoleAdd(Indexer *indexer, string &primaryKeyID, vector<string> &roleIds, std::stringstream &log_str){
 
     	srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->aclRoleAdd(primaryKeyID, roleIds);
@@ -80,6 +81,7 @@ struct IndexWriteUtil
     	};
     }
 
+    // delete role ids from a record
     static void _aclRoleDelete(Indexer *indexer, string &primaryKeyID, vector<string> &roleIds, std::stringstream &log_str){
     	srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->aclRoleDelete(primaryKeyID, roleIds);
     	switch( ret )
@@ -138,7 +140,6 @@ struct IndexWriteUtil
     		size_t sz;
     		char *pKeyParamName_cstar = evhttp_uridecode(pKeyParamName, 0, &sz);
 
-    		//std::cout << "[" << termBoostsParamName_cstar << "]" << std::endl;
     		const std::string rolePrimaryKeyStringValue = string(pKeyParamName_cstar);
     		free(pKeyParamName_cstar);
 

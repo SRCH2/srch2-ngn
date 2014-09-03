@@ -217,7 +217,7 @@ bool ForwardIndex::hasAccessToForwardList(shared_ptr<vectorview<ForwardListPtr> 
 
 	ForwardListPtr flPtr = forwardListDirectoryReadView->getElement(recordId);
 	if(flPtr.second){
-		return flPtr.first->hasAccess(roleId);
+		return flPtr.first->accessibleByRole(roleId);
 	}
 	return false;
 }
@@ -234,7 +234,7 @@ bool ForwardIndex::addRoleToResource(shared_ptr<vectorview<ForwardListPtr> > & f
 	ForwardListPtr flPtr = forwardListDirectoryReadView->getElement(recordId);
 
 	if(flPtr.second){
-		flPtr.first->addRoleToResource(roleIds);
+		flPtr.first->addRolesToResource(roleIds);
 		return true;
 	}
 	return false;
@@ -252,7 +252,7 @@ bool ForwardIndex::deleteRoleFromResource(shared_ptr<vectorview<ForwardListPtr> 
 	ForwardListPtr flPtr = forwardListDirectoryReadView->getElement(recordId);
 
 	if(flPtr.second){
-		flPtr.first->deleteRoleFromResource(roleIds);
+		flPtr.first->deleteRolesFromResource(roleIds);
 		return true;
 	}
 	return false;
@@ -343,7 +343,7 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     ((Record *)record)->disownInMemoryData();
     forwardList->setNumberOfKeywords(uniqueKeywordIdList.size());
 
-    forwardList->addRoleToResource(record->getRoleIds());
+    forwardList->addRolesToResource(*(record->getRoleIds()));
 
     PositionIndexType positionIndexType = this->schemaInternal->getPositionIndexType();
     bool shouldAttributeBitMapBeAllocated = false;

@@ -413,7 +413,7 @@ static void cb_aclRoleAdd(evhttp_request *req, void *arg){
     }
 
     try {
-        HTTPRequestHandler::aclRoleAdd(req, srch2Server);
+        HTTPRequestHandler::aclAddRolesToRecord(req, srch2Server);
     } catch (exception& e) {
         // exception caught
         Logger::error(e.what());
@@ -431,7 +431,7 @@ static void cb_aclRoleDelete(evhttp_request *req, void *arg){
     }
 
     try {
-        HTTPRequestHandler::aclRoleDelete(req, srch2Server);
+        HTTPRequestHandler::aclDeleteRolesFromRecord(req, srch2Server);
     } catch (exception& e) {
         // exception caught
         Logger::error(e.what());

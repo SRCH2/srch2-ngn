@@ -190,7 +190,7 @@ INDEXWRITE_RETVAL IndexData::_aclRoleDelete( const std::string& primaryKeyID,
 	// 1- Delete these role ids from the access list of the record
 	// 2- delete the id of this record from the vector of resource ids for this role id in the permission map
 	if(this->forwardIndex->deleteRoleFromResource(forwardListDirectoryReadView, primaryKeyID, roleIds)){
-		this->permissionMap->deleteResourceFromRole(primaryKeyID, roleIds);
+		this->permissionMap->deleteResourceFromRoles(primaryKeyID, roleIds);
 		return OP_SUCCESS;
 	}
 
@@ -318,7 +318,7 @@ INDEXWRITE_RETVAL IndexData::_addRecordWithoutLock(const Record *record,
 	}
 
 	if(record->hasRoleIds()){
-		this->permissionMap->addResourceToRole(record->getPrimaryKey(), record->getRoleIds());
+		this->permissionMap->addResourceToRole(record->getPrimaryKey(), *(record->getRoleIds()));
 	}
 
 	// Geo Index: need to add this record to the quadtree.
@@ -346,7 +346,7 @@ INDEXWRITE_RETVAL IndexData::_deleteRecord(
 		ForwardList* forwardList =
 				this->forwardIndex->getForwardList_ForCommit(
 						internalRecordId);
-		this->permissionMap->deleteResourceFromRole(externalRecordId, forwardList->getAccessList()->getRoles());
+		this->permissionMap->deleteResourceFromRoles(externalRecordId, forwardList->getAccessList()->getRoles());
 
 		if (this->schemaInternal->getIndexType()
 				== srch2::instantsearch::LocationIndex) {
@@ -406,7 +406,7 @@ INDEXWRITE_RETVAL IndexData::_deleteRecordGetInternalId(
 				this->forwardIndex->getForwardList_ForCommit(
 						internalRecordId);
 
-		this->permissionMap->deleteResourceFromRole(externalRecordId, forwardList->getAccessList()->getRoles());
+		this->permissionMap->deleteResourceFromRoles(externalRecordId, forwardList->getAccessList()->getRoles());
 
 		if (this->schemaInternal->getIndexType()
 				== srch2::instantsearch::LocationIndex) {
@@ -898,6 +898,40 @@ IndexData::~IndexData() {
 	delete this->rankerExpression;
 	delete this->permissionMap;
 }
+
+// Adds resource id to some of the role ids.
+// for each role id if it exists in the permission map it will add this resource id to its vector
+// otherwise it adds new record to the map with this role id and then adds this resource id to it.
+void PermissionMap::addResourceToRole(const string &resourceId, vector<string> &roleIds){
+	for(unsigned i = 0 ; i < roleIds.size() ; i++){
+		map<string, vector<string> >::iterator it = permissionMap.find(roleIds[i]);
+		if( it == permissionMap.end()){
+			vector<string> resources;
+			resources.push_back(resourceId);
+			permissionMap.insert(std::pair<string,vector<string> >(roleIds[i],resources));
+		}else{
+			vector<string>::iterator rIt = std::find(it->second.begin(),it->second.end(),resourceId);
+			if(rIt == it->second.end()){
+				it->second.push_back(resourceId);
+			}
+		}
+	}
+}
+
+// Deletes resource id from the role ids.
+void PermissionMap::deleteResourceFromRoles(const string &resourceId, vector<string> &roleIds){
+	for(unsigned i = 0 ; i < roleIds.size() ; i++){
+		map<string, vector<string> >::iterator it = permissionMap.find(roleIds[i]);
+		if( it != this->permissionMap.end()){
+			vector<string>::iterator resourceIt = std::find(it->second.begin(),it->second.end(),resourceId);
+			if( resourceIt != it->second.end()){
+				*resourceIt = *(it->second.end() - 1);
+				it->second.pop_back();
+			}
+		}
+	}
+}
+
 
 }
 }

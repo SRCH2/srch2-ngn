@@ -89,14 +89,14 @@ struct NewKeywordIdKeywordOffsetPairGreaterThan {
  *   this class keeps the id of roles that have access to a record
  *   we keep an object of this class in forwardlist for each record
  */
-class AccessList{
+class RoleAccessList{
 private:
 	vector<string> roles;
 	mutable boost::shared_mutex mutexRW;
 
 public:
-	AccessList(){};
-	~AccessList(){};
+	RoleAccessList(){};
+	~RoleAccessList(){};
 
 	// this function will return false if this roleId already exists
 	bool addRole(string &roleId){
@@ -106,7 +106,6 @@ public:
 		if(!roleExisted)
 			this->roles.insert(it, roleId);
 		lock.unlock();
-		//print();
 		return !roleExisted;
 	}
 
@@ -118,7 +117,6 @@ public:
 		if(roleExisted)
 			this->roles.erase(it);
 		lock.unlock();
-		//print();
 		return roleExisted;
 	}
 
@@ -128,7 +126,6 @@ public:
 		boost::shared_lock< boost::shared_mutex> lock(mutexRW);
 		bool roleExisted = findRole(roleId, it);
 		lock.unlock();
-		//print();
 		return roleExisted;
 	}
 
@@ -142,7 +139,7 @@ public:
 
 	void print(){
 		std::cout << "----roles----" << std::endl;
-		for(unsigned i = 0 ; i<roles.size();++i){
+		for(unsigned i = 0 ; i < roles.size(); ++i){
 			std::cout << roles[i] << std::endl;
 		}
 		std::cout << "------------" << std::endl;
@@ -436,34 +433,34 @@ public:
     void getSynonymBitMapInRecordField(unsigned keyOffset, unsigned attributeId,
     		vector<uint8_t>& synonymBitMap) const;
 
-    bool hasAccess(string &roleId){
-    	return this->accessList.hasRole(roleId);
+    bool accessibleByRole(string &roleId){
+    	return this->roleAccessList.hasRole(roleId);
     };
 
-    void addRoleToResource(vector<string> &roleIds){
+    void addRolesToResource(vector<string> &roleIds){
     	for (unsigned i = 0 ; i < roleIds.size() ; i++){
-    		this->accessList.addRole(roleIds[i]);
+    		this->roleAccessList.addRole(roleIds[i]);
     	}
     }
 
-    void addRoleToResource(vector<string> *roleIds){
-    	for (unsigned i = 0 ; i < roleIds->size() ; i++){
-    		this->accessList.addRole(roleIds->at(i));
-    	}
-    }
+//    void addRoleToResource(vector<string> *roleIds){
+//    	for (unsigned i = 0 ; i < roleIds->size() ; i++){
+//    		this->roleAccessList.addRole(roleIds->at(i));
+//    	}
+//    }
 
-    void deleteRoleFromResource(vector<string> &roleIds){
+    void deleteRolesFromResource(vector<string> &roleIds){
     	for (unsigned i = 0 ; i < roleIds.size() ; i++){
-    		this->accessList.deleteRole(roleIds[i]);
+    		this->roleAccessList.deleteRole(roleIds[i]);
     	}
     }
 
     void deleteRoleFromResource(const string &roleId){
-    	this->accessList.deleteRole(roleId);
+    	this->roleAccessList.deleteRole(roleId);
     }
 
-    AccessList* getAccessList(){
-    	return &(this->accessList);
+    RoleAccessList* getAccessList(){
+    	return &(this->roleAccessList);
     }
 
 private:
@@ -480,7 +477,7 @@ private:
         ar & this->synonymBitMapSize;
         ar & this->charLenIndexSize;
         ar & this->dataSize;
-        ar & this->accessList;
+        ar & this->roleAccessList;
         if (this->inMemoryData.get() == NULL)
         	this->inMemoryDataLen = 0;
         ar & this->inMemoryDataLen;
@@ -512,7 +509,7 @@ private:
     std::string externalRecordId;
     boost::shared_ptr<const char> inMemoryData;
     unsigned inMemoryDataLen;
-    AccessList accessList;
+    RoleAccessList roleAccessList;
 
 
     /*

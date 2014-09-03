@@ -476,13 +476,15 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
 
 // this function finds all the role ids in the query
 // and return false if there is not aclId in the query
-bool JSONRecordParser::_extractRoleIds(std::vector<string> &roleIds, string& primaryKeyID, const Json::Value &root, const CoreInfo_t *indexDataContainerConf, std::stringstream &error){
+// sample: {“name_of_primaryKey”: “1234", “aclId”: [33, 45]}
+//
+bool JSONRecordParser::_extractRoleIds(std::vector<string> &roleIds, string& resourcePrimaryKeyID, const Json::Value &root, const CoreInfo_t *indexDataContainerConf, std::stringstream &error){
 	if (root.type() != Json::objectValue)
 	{
 		error << "\nFailed to parse JSON.";
 		return false;// Raise Error
 	}
-	string aclIdName = ConfigManager::getRoleId();
+	string aclRoleId = ConfigManager::getRoleId();
 
     string primaryKeyName = indexDataContainerConf->getPrimaryKey();
 
@@ -494,14 +496,14 @@ bool JSONRecordParser::_extractRoleIds(std::vector<string> &roleIds, string& pri
         string primaryKeyStringValue = stringValues.at(0);
         // trim to avoid any mismatch due to leading and trailing white space
         boost::algorithm::trim(primaryKeyStringValue);
-        primaryKeyID = primaryKeyStringValue.c_str();
+        resourcePrimaryKeyID = primaryKeyStringValue.c_str();
 
     } else {
         error << "\nFailed to parse JSON - No primary key found.";
         return false; // Raise Error
     }
 
-	if(!getJsonValueString(root, aclIdName, roleIds, "role-id")){
+	if(!getJsonValueString(root, aclRoleId, roleIds, "role-id")){
 		return false;
 	}
 
@@ -510,6 +512,7 @@ bool JSONRecordParser::_extractRoleIds(std::vector<string> &roleIds, string& pri
 
 // this function extracts the role ids from a JSON object
 // and returns false if parsing the json object was not successful
+// sample:  {“name_of_primaryKey”: “1234", “aclId”: [33, 45]}
 bool JSONRecordParser::getAclInfoFromJSON(vector<string> &roleIds, string &primaryKeyID,
     		const string& inputLine, const CoreInfo_t *indexDataContainerConf, std::stringstream &error){
 	string::const_iterator end_it = utf8::find_invalid(inputLine.begin(), inputLine.end());
@@ -729,13 +732,15 @@ unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, Sch
     return indexedRecordsCount;
 }
 
+// Each line of the file is like this:
+//  {“name_of_primaryKey”: “1234", “aclId”: [33, 45]}
 void DaemonDataSource::addAccessControlsFromFile(srch2is::Indexer *indexer,
                 const CoreInfo_t *indexDataContainerConf, srch2is::Indexer *roleCoreIndexer){
 	AccessControlInfo* accessControl = indexDataContainerConf->getAccessControlInfo();
 	if(accessControl == NULL)
 		return;
 
-	string filePath = accessControl->dataFile;
+	string filePath = accessControl->aclDataFileName;
 	ifstream in(filePath.c_str());
 	if (in.fail())
 	{
@@ -775,13 +780,15 @@ void DaemonDataSource::addAccessControlsFromFile(srch2is::Indexer *indexer,
 
 			std::stringstream error;
 			vector<string> roleIds;
-			string primaryKeyID;
-			parseSuccess = JSONRecordParser::getAclInfoFromJSON(roleIds, primaryKeyID,
+			string resourcePrimaryKeyID;
+			// extract the the primarykey of the resource record and all the role ids from the json object.
+			parseSuccess = JSONRecordParser::getAclInfoFromJSON(roleIds, resourcePrimaryKeyID,
 					line, indexDataContainerConf, error);
 
 			if(parseSuccess)
 			{
 				// Add the role ids to the record
+				// first check that all role ids exist
 				bool roleIdsExist = true;
 				for(unsigned i = 0 ; i < roleIds.size() ; i++){
 					INDEXLOOKUP_RETVAL returnValue = roleCoreIndexer->lookupRecord(roleIds[i]);
@@ -791,7 +798,7 @@ void DaemonDataSource::addAccessControlsFromFile(srch2is::Indexer *indexer,
 					}
 				}
 				if(roleIdsExist){
-					indexer->aclRoleAdd(primaryKeyID, roleIds);
+					indexer->aclRoleAdd(resourcePrimaryKeyID, roleIds);
 					indexedRecordsCount++;
 				}
 			}

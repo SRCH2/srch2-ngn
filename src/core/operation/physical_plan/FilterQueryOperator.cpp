@@ -31,7 +31,7 @@ PhysicalPlanRecordItem * FilterQueryOperator::getNext(const PhysicalPlanExecutio
 		}
 		Schema * schema = queryEvaluatorInternal->getSchema();
 		ForwardIndex * forwardIndex = queryEvaluatorInternal->getForwardIndex();
-		if(hasAccess(forwardIndex, nextRecord->getRecordId()) && doPass(schema, forwardIndex, nextRecord)){
+		if(hasAccessToRecord(forwardIndex, nextRecord->getRecordId()) && doPass(schema, forwardIndex, nextRecord)){
 			return nextRecord;
 		}
 	}
@@ -101,7 +101,7 @@ bool FilterQueryOperator::doPass(Schema * schema, ForwardIndex * forwardIndex ,P
     return this->filterQueryEvaluator->evaluate(valuesForEvaluation);
 }
 
-bool FilterQueryOperator::hasAccess(ForwardIndex * forwardIndex, unsigned recordId){
+bool FilterQueryOperator::hasAccessToRecord(ForwardIndex * forwardIndex, unsigned recordId){
 	if(roleId == "") // it means that we don't have any access control check
 		return true;
 

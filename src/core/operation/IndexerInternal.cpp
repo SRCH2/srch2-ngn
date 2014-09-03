@@ -67,11 +67,11 @@ INDEXWRITE_RETVAL IndexReaderWriter::addRecord(const Record *record, Analyzer* a
     return returnValue;
 }
 
-INDEXWRITE_RETVAL IndexReaderWriter::aclRoleAdd(const std::string &primaryKeyID, vector<string> &roleIds)
+INDEXWRITE_RETVAL IndexReaderWriter::aclRoleAdd(const std::string &resourcePrimaryKeyID, vector<string> &roleIds)
 {
 	pthread_mutex_lock(&lockForWriters);
 
-	INDEXWRITE_RETVAL returnValue = this->index->_aclRoleAdd(primaryKeyID, roleIds);
+	INDEXWRITE_RETVAL returnValue = this->index->_aclRoleAdd(resourcePrimaryKeyID, roleIds);
 
 	if(returnValue == OP_SUCCESS){
 	    if (this->cache != NULL)
@@ -82,11 +82,11 @@ INDEXWRITE_RETVAL IndexReaderWriter::aclRoleAdd(const std::string &primaryKeyID,
 	return returnValue;
 }
 
-INDEXWRITE_RETVAL IndexReaderWriter::aclRoleDelete(const std::string &primaryKeyID, vector<string> &roleIds)
+INDEXWRITE_RETVAL IndexReaderWriter::aclRoleDelete(const std::string &resourcePrimaryKeyID, vector<string> &roleIds)
 {
 	pthread_mutex_lock(&lockForWriters);
 
-	INDEXWRITE_RETVAL returnValue = this->index->_aclRoleDelete(primaryKeyID, roleIds);
+	INDEXWRITE_RETVAL returnValue = this->index->_aclRoleDelete(resourcePrimaryKeyID, roleIds);
 
 	if(returnValue == OP_SUCCESS){
 		if (this->cache != NULL)

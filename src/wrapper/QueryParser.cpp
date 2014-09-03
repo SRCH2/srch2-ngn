@@ -68,7 +68,7 @@ const char* const QueryParser::facetField = "facet.field";
 const char* const QueryParser::facetRangeField = "facet.range";
 const char* const QueryParser::highlightSwitch = "hl";
 // access control
-const char* const QueryParser::roleIdParamName = "aclId";
+const char* const QueryParser::roleIdParamName = "roleId";
 
 //searchType
 const char* const QueryParser::searchType = "searchType";
@@ -431,7 +431,7 @@ void QueryParser::accessControlParser(){
 		string aclId;
 		decodeString(aclIdTemp, aclId);
 		this->container->parametersInQuery.push_back(srch2::httpwrapper::AccessControl);
-		this->container->aclId = aclId;
+		this->container->roleId = aclId;
 
 	} else {
 		Logger::debug("acl-id parameter not specified");

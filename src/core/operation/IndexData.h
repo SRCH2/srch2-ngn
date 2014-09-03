@@ -202,58 +202,17 @@ class WriteCounter
 };
 
 // we use this permission map for deleting a role core. then we can delete this role id from resources' access list
-// we don't need to use lock for permission map because only writers use this data
+// we don't need to use lock for permission map because only writers use this data and the engine makes
+// sure only one writer can access the indexes at any time.
 class PermissionMap{
 public:
-	// Adds resource ids to a specific role id if the role id exists in the permission map
-	// or adds new record to the map if this role ids doesn't exist
-	void addResourceToRole(const string &resourceId, vector<string> &roleIds){
-		for(unsigned i = 0 ; i < roleIds.size() ; i++){
-			map<string, vector<string> >::iterator it = permissionMap.find(roleIds[i]);
-			if( it == permissionMap.end()){
-				vector<string> resources;
-				resources.push_back(resourceId);
-				permissionMap.insert(std::pair<string,vector<string> >(roleIds[i],resources));
-			}else{
-				vector<string>::iterator rIt = std::find(it->second.begin(),it->second.end(),resourceId);
-				if(rIt == it->second.end()){
-					it->second.push_back(resourceId);
-				}
-			}
-		}
-	}
+	// Adds resource id to some of the role ids.
+	// for each role id if it exists in the permission map it will add this resource id to its vector
+	// otherwise it adds new record to the map with this role id and then adds this resource id to it.
+	void addResourceToRole(const string &resourceId, vector<string> &roleIds);
 
-	// Adds resource ids to a specific role id if the role id exists in the permission map
-	// or adds new record to the map if this role ids doesn't exist
-	void addResourceToRole(const string &resourceId, vector<string> *roleIds){
-		for(unsigned i = 0 ; i < roleIds->size() ; i++){
-			map<string, vector<string> >::iterator it = permissionMap.find(roleIds->at(i));
-			if( it == permissionMap.end()){
-				vector<string> resources;
-				resources.push_back(resourceId);
-				permissionMap.insert(std::pair<string,vector<string> >(roleIds->at(i),resources));
-			}else{
-				vector<string>::iterator rIt = std::find(it->second.begin(),it->second.end(),resourceId);
-				if(rIt == it->second.end()){
-					it->second.push_back(resourceId);
-				}
-			}
-		}
-	}
-
-	// Deletes resource ids from a specific role id if the role ids exists in the permission map
-	void deleteResourceFromRole(const string &resourceId, vector<string> &roleIds){
-		for(unsigned i = 0 ; i < roleIds.size() ; i++){
-			map<string, vector<string> >::iterator it = permissionMap.find(roleIds[i]);
-			if( it != permissionMap.end()){
-				vector<string>::iterator resourceIt = std::find(it->second.begin(),it->second.end(),resourceId);
-				if( resourceIt != it->second.end()){
-					*resourceIt = *(it->second.end() - 1);
-					it->second.pop_back();
-				}
-			}
-		}
-	}
+	// Deletes resource id from the role ids.
+	void deleteResourceFromRoles(const string &resourceId, vector<string> &roleIds);
 
 	// return the resource ids for the given role id
 	// notice that we can use this without lock because only one writer at a moment use this permission map (we only have one writer in the system)
@@ -272,19 +231,6 @@ public:
 		if( it != permissionMap.end() ){
 			permissionMap.erase(it);
 		}
-		cout << "after removing role record" << endl;
-		print();
-	}
-
-	void print(){
-		for(map<string, vector<string> >::iterator it=permissionMap.begin();it!=permissionMap.end();++it){
-			cout << "key: " << it->first << endl;
-			for (vector<string>::iterator it2 = it->second.begin();it2 != it->second.end();it2++){
-				cout << *it2 << " , ";
-			}
-			cout << endl;
-		}
-		cout << "-----------------" << endl;
 	}
 
 private:
@@ -352,8 +298,9 @@ public:
     
     RankerExpression *rankerExpression;
 
-    // we store a map of the role id to resource ids. then when we delete a record from a role core
+    // we store a map from role ids to resource ids. then when we delete a record from a role core
     // we can use this map to delete the id of this record from the access lists of the resource records
+    // Notice that this map is only used by a writer, and it is never used by a reader. So concurrency control is simple.
     PermissionMap* permissionMap;
 
     // a global RW lock for readers and writers;

@@ -455,6 +455,7 @@ PhysicalPlanNode * QueryOptimizer::buildPhysicalPlanFirstVersionFromTreeStructur
          PhysicalPlanNode_GeoNearestNeighbor
          || chosenTree->getType() ==
          PhysicalPlanNode_GeoSimpleScan)){
+    	// we need to create a FilterQueryOperator if we have a filter in the query or if we have record-base access control.
         if(logicalPlan->getPostProcessingInfo()->getFilterQueryEvaluator() != NULL  || logicalPlan->getPostProcessingInfo()->getRoleId()->compare("") != 0){
             filterQueryOp = this->queryEvaluator->getPhysicalOperatorFactory()->
                     createFilterQueryOperator(logicalPlan->getPostProcessingInfo()->getFilterQueryEvaluator(),

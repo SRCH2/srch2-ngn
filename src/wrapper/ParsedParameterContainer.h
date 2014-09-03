@@ -373,7 +373,7 @@ public:
     float lengthBoost; // store the value of lengthboost query parameter
     float prefixMatchPenalty; // stores the value of 'pmp' query parameter.
     bool isHighlightOn;
-    std::string aclId;  // if acl-id is given in the query, we will return results that has this id in their access list.
+    std::string roleId;  // if acl-id is given in the query, we will return results that has this id in their access list.
 
     // This object contains the boolean structure of terms. For example for query
     // q= (A AND B)OR(C AND D)
