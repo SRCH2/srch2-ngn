@@ -81,12 +81,14 @@ Here the field inconsistent and inconsistent2 have indexed = true, but searchabl
 		    <mergeEveryNSeconds>10</mergeEveryNSeconds>
 		    <mergeEveryMWrites>10</mergeEveryMWrites>
 		</mergePolicy>
-		<updateLog>
-		    <logLevel>3</logLevel>
-		    <accessLogFile>srch2-log.txt</accessLogFile>
-		</updateLog>
 	    </updatehandler>
         </core>
 
     </cores>
+    
+    	<updateLog>
+		    <logLevel>3</logLevel>
+		    <accessLogFile>srch2-log.txt</accessLogFile>
+		</updateLog>
+    
 </config>
