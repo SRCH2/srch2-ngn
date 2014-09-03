@@ -630,13 +630,13 @@
 	<access-control>
 		<resourceCore>core1</resourceCore> 
 		<roleCore>core2</roleCore>
-		<dataFile>acl-data1.json</dataFile>
+		<aclDataFile>acl-data1.json</aclDataFile>
 	</access-control>
 
 	<access-control>
 		<resourceCore>core3</resourceCore> 
 		<roleCore>core2</roleCore>
-		<dataFile>acl-data3.json</dataFile>
+		<aclDataFile>acl-data3.json</aclDataFile>
 	</access-control>
 </access-controls>
 </config>

@@ -166,7 +166,7 @@ const char* const ConfigManager::multipleAccessControlString = "access-controls"
 const char* const ConfigManager::resourceCore = "resourcecore";
 const char* const ConfigManager::roleCore = "rolecore";
 const char* const ConfigManager::accessControlDataFile = "acldatafile";
-const char* const ConfigManager::aclRoleId = "aclId";
+const char* const ConfigManager::aclRoleId = "roleId";
 
 const char* const ConfigManager::defaultFuzzyPreTag = "<b>";
 const char* const ConfigManager::defaultFuzzyPostTag = "</b>";
