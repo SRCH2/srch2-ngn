@@ -354,7 +354,7 @@ void AttributeAccessControl::fetchRefiningAttrsAcl(const string& aclRoleValue, b
  */
 bool AttributeAccessControl::isSearchableFieldAccessibleForRole(const string& roleId,
 		const string& fieldName) const{
-	// The last argument is trur to indicate that the field is searchable.
+	// The last argument is true to indicate that the field is searchable.
 	return isFieldAccessibleForRole(roleId, fieldName, true);
 }
 

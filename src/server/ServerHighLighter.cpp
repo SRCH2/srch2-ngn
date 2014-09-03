@@ -90,7 +90,7 @@ void ServerHighLighter::genSnippetsForSingleRecord(const QueryResults *qr, unsig
         	bool isFieldAccessible = server->indexer->getAttributeAcl().isSearchableFieldAccessibleForRole(
         			aclRoleValue, highlightAttributes[i].second);
         	if (!isFieldAccessible)
-        		continue;
+        		continue;  // ignore unaccessible attributes. Do not generate snippet.
         	unsigned lenOffset = compactRecDeserializer->getSearchableOffset(id);
         	const char *attrdata = buffer.start.get() + *((unsigned *)(buffer.start.get() + lenOffset));
         	unsigned len = *(((unsigned *)(buffer.start.get() + lenOffset)) + 1) -
