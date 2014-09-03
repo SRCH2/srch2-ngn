@@ -41,6 +41,56 @@ def checkResult(query, responseJson,resultValue):
         return 0
     return 1
 
+#verify facet reults by matching input facet fields in response JSON
+#for this test case it is enough to check whether 'facets' is present in response JSON from engine.
+def checkFacetResults(query, response_json, facetFields):
+
+    if len(facetFields) == 0  and 'facets' not in response_json:
+        print query + ' PASS!'
+        return 0
+
+    if len(facetFields) == 0 and 'facets' in response_json:
+        print query + ' FAIL! ...facet found when not expected'
+        return 1
+
+    if len(facetFields) > 0 and 'facets' not in response_json:
+        print query + ' FAIL! ...no facet found'
+        return 1
+
+    facetResults = response_json['facets']
+
+    if len(facetFields) != len(facetResults):
+        print query + ' FAIL! ..facet mismtach'
+        return 1
+
+    for facetField in facetFields:
+        facetMatch = False
+        for facetResult in facetResults:
+            if facetField == facetResult['facet_field_name']:
+                facetMatch = True
+                break
+        if not facetMatch:
+            print query + ' FAIL! ..facet field not found '
+            return 1
+
+    print query + ' PASS!'
+    return 0
+
+def checkFieldsInResults(query, response_results, fields, key):
+    for results in  response_results:
+        keyValues = results[key]
+        if len(keyValues) != len(fields):
+            print query + ' Fail! ...fields mimatch in ' + key + ' field of the response'
+            print str(len(keyValues)) + '||' + str(len(fields))
+            return 1
+
+        for field in fields:
+            if field not in keyValues:
+                print query + ' Fail! ...field not found in ' + key + ' field of the response'
+                return 1
+
+    print query + ' PASS!'
+    return 0
 
 #prepare the query based on the valid syntax
 def prepareQuery(queryKeywords):
@@ -122,7 +172,14 @@ def test(queriesAndResultsPath, binary_path, configFilePath):
             response_json = json.loads(response)
 
             #check the result
-            failCount += checkResult(query, response_json['results'], resultValue )
+            if value[0] == 'F': # test case for facet query
+                failCount += checkFacetResults(query, response_json, resultValue )
+            elif value[0] == 'H': # test case for checking highlighting only
+                failCount += checkFieldsInResults(query, response_json['results'], resultValue, 'snippet')
+            elif value[0] == 'R': # test case for only checking fields in response
+                failCount += checkFieldsInResults(query, response_json['results'], resultValue, 'record' )
+            else:
+                failCount += checkResult(query, response_json['results'], resultValue )
 
     test_lib.killServer(serverHandle)
     print '=============================='
@@ -135,4 +192,8 @@ if __name__ == '__main__':
     time.sleep(2)
     queriesAndResultsPath = './attributesACL/testCasesMultiCore.txt'
     exitCode |= test(queriesAndResultsPath, binary_path, './attributesAcl/conf-multicore.xml')
+    time.sleep(2)
+    queriesAndResultsPath = './attributesACL/testCasesFilterSortFacetQuery.txt'
+    exitCode |= test(queriesAndResultsPath, binary_path , './attributesAcl/conf2.xml')
     os._exit(exitCode)
+
