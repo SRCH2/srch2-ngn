@@ -756,7 +756,7 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
     };
 }
 
-// this function first, checks that all the role ids exist then it add them to record object
+// This function first checks if all the role ids exist, then adds them to the record object
 bool HTTPRequestHandler::addRoleIdsToRecord(vector<string> &roleIds, Srch2Server* server, evhttp_request *req, Record* record, std::stringstream &log_str){
 	for(unsigned i = 0 ; i < roleIds.size() ; i++){
 		INDEXLOOKUP_RETVAL returnValue = server->roleCore->indexer->lookupRecord(roleIds[i]);
@@ -773,7 +773,7 @@ bool HTTPRequestHandler::addRoleIdsToRecord(vector<string> &roleIds, Srch2Server
 }
 
 // add role ids to a record
-// example query:   curl "http://localhost:8081/product/acl-role-add" -i -X PUT -d '{“name_of_primaryKey”: “1234", “aclId”: [33, 45]}'
+// example query:   curl "http://localhost:8081/product/acl-role-add" -i -X PUT -d '{“id”: “1234", “roleId”: [33, 45]}'
 //
 void HTTPRequestHandler::aclAddRolesToRecord(evhttp_request *req, Srch2Server *server){
 	if(server->roleCore != NULL){ // this core has a role core
@@ -865,7 +865,7 @@ void HTTPRequestHandler::aclAddRolesToRecord(evhttp_request *req, Srch2Server *s
 }
 
 // delete role ids from a records access list
-// example query:   curl "http://localhost:8081/product/acl-role-delete" -i -X PUT -d '{“name_of_primaryKey”: “1234", “aclId”: [33, 45]}'
+// example query:   curl "http://localhost:8081/product/acl-role-delete" -i -X PUT -d '{“id”: “1234", “roleId”: [33, 45]}'
 //
 void HTTPRequestHandler::aclDeleteRolesFromRecord(evhttp_request *req, Srch2Server *server){
 	if(server->roleCore != NULL){ // this core should have a role core

@@ -25,11 +25,8 @@ using namespace std;
 using namespace srch2::instantsearch;
 
 
-LogicalPlan * prepareLogicalPlanForUnitTests(Query * exactQuery, Query * fuzzyQuery ,
-																			int offset,
-																			int resultsToRetrieve,
-																			bool shouldRunFuzzyQuery,
-																			srch2::instantsearch::QueryType searchType){
+LogicalPlan * prepareLogicalPlanForUnitTests(Query * exactQuery, Query * fuzzyQuery,
+		int offset, int resultsToRetrieve, bool shouldRunFuzzyQuery, srch2::instantsearch::QueryType searchType){
 	LogicalPlan * logicalPlan = new LogicalPlan();
 	logicalPlan->exactQuery = exactQuery;
 	logicalPlan->fuzzyQuery = fuzzyQuery;
@@ -58,11 +55,8 @@ LogicalPlan * prepareLogicalPlanForUnitTests(Query * exactQuery, Query * fuzzyQu
 	return logicalPlan;
 }
 
-LogicalPlan * prepareLogicalPlanForGeoTest(Query * exactQuery, Query * fuzzyQuery ,
-																			int offset,
-																			int resultsToRetrieve,
-																			bool shouldRunFuzzyQuery,
-																			srch2::instantsearch::QueryType searchType){
+LogicalPlan * prepareLogicalPlanForGeoTest(Query * exactQuery, Query * fuzzyQuery, int offset,
+		int resultsToRetrieve, bool shouldRunFuzzyQuery, srch2::instantsearch::QueryType searchType){
 	LogicalPlan * logicalPlan = new LogicalPlan();
 	logicalPlan->exactQuery = exactQuery;
 	logicalPlan->fuzzyQuery = fuzzyQuery;
@@ -93,12 +87,8 @@ LogicalPlan * prepareLogicalPlanForGeoTest(Query * exactQuery, Query * fuzzyQuer
 	return logicalPlan;
 }
 
-LogicalPlan * prepareLogicalPlanForACLTests(Query * exactQuery, Query * fuzzyQuery ,
-																			int offset,
-																			int resultsToRetrieve,
-																			bool shouldRunFuzzyQuery,
-																			srch2::instantsearch::QueryType searchType,
-																			string& roleId){
+LogicalPlan * prepareLogicalPlanForACLTests(Query * exactQuery, Query * fuzzyQuery,
+		int offset, int resultsToRetrieve, bool shouldRunFuzzyQuery, srch2::instantsearch::QueryType searchType, string& roleId){
 	LogicalPlan * logicalPlan = new LogicalPlan();
 	logicalPlan->exactQuery = exactQuery;
 	logicalPlan->fuzzyQuery = fuzzyQuery;

@@ -68,6 +68,7 @@ FilterQueryOperator::FilterQueryOperator(RefiningAttributeExpressionEvaluator * 
 }
 
 bool FilterQueryOperator::doPass(Schema * schema, ForwardIndex * forwardIndex ,PhysicalPlanRecordItem * record){
+	// Because we use this operator for filters and for access control. When we just have access control the filter query evaluator is NULL
 	if(this->filterQueryEvaluator == NULL) // filterQueryEvaluator is null. So we don't have any filter
 		return true;
     // fetch the names and ids of non searchable attributes from schema

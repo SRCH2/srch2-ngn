@@ -476,7 +476,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
 
 // this function finds all the role ids in the query
 // and return false if there is not aclId in the query
-// sample: {“name_of_primaryKey”: “1234", “aclId”: [33, 45]}
+// sample: {“id”: “1234", “roleId”: [33, 45]}
 //
 bool JSONRecordParser::_extractRoleIds(std::vector<string> &roleIds, string& resourcePrimaryKeyID, const Json::Value &root, const CoreInfo_t *indexDataContainerConf, std::stringstream &error){
 	if (root.type() != Json::objectValue)
@@ -733,7 +733,7 @@ unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, Sch
 }
 
 // Each line of the file is like this:
-//  {“name_of_primaryKey”: “1234", “aclId”: [33, 45]}
+//  {“id”: “1234", “roleId”: [33, 45]}
 void DaemonDataSource::addAccessControlsFromFile(srch2is::Indexer *indexer,
                 const CoreInfo_t *indexDataContainerConf, srch2is::Indexer *roleCoreIndexer){
 	AccessControlInfo* accessControl = indexDataContainerConf->getAccessControlInfo();
@@ -742,8 +742,7 @@ void DaemonDataSource::addAccessControlsFromFile(srch2is::Indexer *indexer,
 
 	string filePath = accessControl->aclDataFileName;
 	ifstream in(filePath.c_str());
-	if (in.fail())
-	{
+	if (in.fail()){
 		Logger::error("Access-Control DataSource file not found at: %s", filePath.c_str());
 		return;
 	}
@@ -785,8 +784,7 @@ void DaemonDataSource::addAccessControlsFromFile(srch2is::Indexer *indexer,
 			parseSuccess = JSONRecordParser::getAclInfoFromJSON(roleIds, resourcePrimaryKeyID,
 					line, indexDataContainerConf, error);
 
-			if(parseSuccess)
-			{
+			if(parseSuccess){
 				// Add the role ids to the record
 				// first check that all role ids exist
 				bool roleIdsExist = true;
@@ -802,8 +800,7 @@ void DaemonDataSource::addAccessControlsFromFile(srch2is::Indexer *indexer,
 					indexedRecordsCount++;
 				}
 			}
-			else
-			{
+			else{
 				Logger::error("at line: %d" , lineCounter);
 				Logger::error("%s", error.str().c_str());
 			}

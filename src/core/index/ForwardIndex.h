@@ -443,12 +443,6 @@ public:
     	}
     }
 
-//    void addRoleToResource(vector<string> *roleIds){
-//    	for (unsigned i = 0 ; i < roleIds->size() ; i++){
-//    		this->roleAccessList.addRole(roleIds->at(i));
-//    	}
-//    }
-
     void deleteRolesFromResource(vector<string> &roleIds){
     	for (unsigned i = 0 ; i < roleIds.size() ; i++){
     		this->roleAccessList.deleteRole(roleIds[i]);

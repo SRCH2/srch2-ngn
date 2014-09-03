@@ -114,7 +114,7 @@ void buildIndex(string indexDir)
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		indexDir);
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
-    
+
     Record *record = new Record(schema);
 
     std::string line;
@@ -204,7 +204,7 @@ void buildFactualIndex(string indexDir, unsigned docsToIndex)
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		indexDir);
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
-    
+
     Record *record = new Record(schema);
 
     std::string line;
@@ -400,7 +400,7 @@ void parseFuzzyQueryWithEdSet(const Analyzer *analyzer, Query *query, const stri
     srch2is::TermType termType = TERM_TYPE_COMPLETE;
     for (unsigned i = 0; i < queryKeywords.size(); ++i){
         //cout << "(" << queryKeywords[i] << ")("<< getNormalizedThreshold(queryKeywords[i].size()) << ")\t";
-        
+
         Term *term;
         if(i == (queryKeywords.size()-1)){
             termType = TERM_TYPE_PREFIX;
@@ -737,7 +737,7 @@ void getGetAllResultsQueryResults(const Analyzer *analyzer, QueryEvaluator *quer
     QueryEvaluatorInternal * queryEvaluatorInternal = queryEvaluator->impl;
     Query *query = new Query(srch2::instantsearch::SearchTypeGetAllResultsQuery);
     parseExactPrefixQuery(analyzer, query, queryString, attributeIdToFilter, attrOps);
-    
+
     ResultsPostProcessorPlan * plan = NULL;
     plan = new ResultsPostProcessorPlan();
     srch2::httpwrapper::SortFilterEvaluator * eval =

@@ -73,6 +73,8 @@ INDEXWRITE_RETVAL IndexReaderWriter::aclRoleAdd(const std::string &resourcePrima
 
 	INDEXWRITE_RETVAL returnValue = this->index->_aclRoleAdd(resourcePrimaryKeyID, roleIds);
 
+	// Because by adding new role ids to a record's access list the results of the search will change
+	// we need to clear the cache
 	if(returnValue == OP_SUCCESS){
 	    if (this->cache != NULL)
 	        this->cache->clear();
@@ -88,6 +90,8 @@ INDEXWRITE_RETVAL IndexReaderWriter::aclRoleDelete(const std::string &resourcePr
 
 	INDEXWRITE_RETVAL returnValue = this->index->_aclRoleDelete(resourcePrimaryKeyID, roleIds);
 
+	// Because by deleting some role ids from a record's access list the results of the search will change
+	// we need to clear the cache
 	if(returnValue == OP_SUCCESS){
 		if (this->cache != NULL)
 			this->cache->clear();

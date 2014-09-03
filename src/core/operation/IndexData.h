@@ -236,12 +236,12 @@ public:
 private:
 	map<string, vector<string> > permissionMap;
 
-    friend class boost::serialization::access;
+	friend class boost::serialization::access;
 
-    template<class Archive>
-    void serialize(Archive & ar, const unsigned int version) {
-        ar & this->permissionMap;
-    }
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+		ar & this->permissionMap;
+	}
 };
 
 class IndexData

@@ -767,6 +767,11 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
     	if(iterator->second->getAccessControlInfo() != NULL){
     		CoreNameServerMap_t::iterator resourceCoreIt = coreNameServerMap->find(iterator->second->getName());
     		CoreNameServerMap_t::iterator roleCoreIt = coreNameServerMap->find(iterator->second->getAccessControlInfo()->roleCoreName);
+    		/*
+    		 * Now each core can have one role core. But each core can be a role core for multiple cores.
+    		 * if we want to change this design to many-to-many, instead of storing a access list in forward
+    		 * list we need to store a map of the core names to access lists. Then we can have multiple role cores for a core
+    		 */
     		resourceCoreIt->second->roleCore = roleCoreIt->second;
     		roleCoreIt->second->resourceCores.push_back(resourceCoreIt->second);
     	}

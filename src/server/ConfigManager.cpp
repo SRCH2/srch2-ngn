@@ -872,11 +872,11 @@ void ConfigManager::parseSingleCore(const xml_node &parentNode,
 
 // parse single access control in the config file here is an example:
 /*
- * 		<access-control>
-   	   	    <resourceCore> Product</resourceCore>
-   	    	<roleCore> Company </roleCore>
-   	    	<aclDataFile>data.json</aclDataFile>
-		</access-control>
+   <access-control>
+        <resourceCore> Product</resourceCore>
+        <roleCore> Company </roleCore>
+        <aclDataFile>data.json</aclDataFile>
+   </access-control>
  */
 void ConfigManager::parseSingleAccessControl(const xml_node &parentNode,
 		bool &configSuccess, std::stringstream &parseError,
