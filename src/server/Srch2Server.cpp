@@ -10,7 +10,7 @@ namespace httpwrapper {
 
 //Helper function to calculate size of the file
 namespace {
-    ifstream::pos_type filesize(const char* filename) {
+    ifstream::pos_type getFileSize(const char* filename) {
         std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
         ifstream::pos_type size = in.tellg();
         in.close();
@@ -201,33 +201,31 @@ void Srch2Server::createAndBootStrapIndexer() {
         case srch2http::DATA_SOURCE_JSON_FILE: {
 
             //check file size in KB
-            unsigned fileSize= filesize(indexDataConfig->getDataFilePath().c_str());
-
-            Logger::console("size of file is %lu", fileSize/(1024));
+            unsigned fileSize = getFileSize(indexDataConfig->getDataFilePath().c_str());
+            //Logger::console("The size of the data file is %lu KB", fileSize/(1024));
 
             struct statvfs *buff;
-            if ( !(buff = (struct statvfs *)
-                    malloc(sizeof(struct statvfs)))) {
-                    Logger::error ("Failed to allocate memory to buffer.");
-            }
-            //We check the space available for the disk on which the engine resides, therefore PWD is used
-            if (statvfs(getenv("PWD"), buff) < 0) {
-                    Logger::warn("Failed to calculate free disk space, statvfs() failed.");
+            if (!(buff = (struct statvfs *) malloc(sizeof(struct statvfs)))) {
+                Logger::error("Failed to allocate memory to buffer.");
             } else {
-                    Logger::console("free blocks in disk %lu",buff->f_bfree);
-                    Logger::console ("block size %lu",buff->f_bsize);
-                    Logger::console("free space is %lu ",(buff->f_bfree * buff->f_bsize)/(1024));
+                //We check the space available for the disk where srch2Home is set
+                if (statvfs(indexDataConfig->getSrch2Home().c_str(), buff) < 0) {
+                    Logger::warn("Failed to calculate free disk space, statvfs() failed.");
+                } else {
+                    //Logger::console("The number of free blocks on disk is %lu", buff->f_bfree);
+                    //Logger::console("The size of each block is %lu bytes", buff->f_bsize);
+                    //Logger::console("The total size of free disk space is %lu KB", (buff->f_bfree * buff->f_bsize) / (1024));
 
                     //calculate free disk space. (No. of free blocks * block size) KB
-                    unsigned long freeDiskSpace = (buff->f_bfree * buff->f_bsize)/(1024);
+                    unsigned long freeDiskSpace = (buff->f_bfree * buff->f_bsize) / (1024);
 
                     //Display warning if free disk space is less than twice the size of file
-                    if(freeDiskSpace < (2 * fileSize)){
-                        Logger::warn("Not enough free disk space available to serialize the index.");
+                    if (freeDiskSpace < (2 * fileSize)) {
+                        Logger::warn("The system may not have enough disk space to serialize the indexes for the given json file.");
                     }
+                }
+                free(buff);
             }
-            free(buff);
-
 
             // Create from JSON and save to index-dir
             Logger::console("Creating indexes from JSON file...");
