@@ -649,7 +649,8 @@ page](restful-control.mkd#4-reseting-log-file) for more information about how
 to manage this log file using third-party tools such as "logrotate".<br>
 
 If it is not specified, the default file path for log file would be "srch2Home/logs/srch2-log.txt". 
-Also, note that when no core is specified in the configuration file then log message will have ```"__DEFAULTCORE__"``` as the default core name and for multicore configuration, it will be the corresponding core name.
+
+Note that when no core is specified in the configuration file, then the log message will have ```"__DEFAULTCORE__"``` as the default core name. For a multicore configuration, it will use the corresponding core name in the log message.
 
 ##13. Cores (Optional)
 
