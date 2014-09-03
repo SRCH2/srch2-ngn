@@ -24,7 +24,6 @@ final class IndexInternal {
             rawSearchInput.append(tokens[i]).append("~").append(" AND ");
         }
         rawSearchInput.append(tokens[tokens.length - 1]).append("*~");
-
         return rawSearchInput.toString();
     }
 
@@ -37,72 +36,58 @@ final class IndexInternal {
     }
 
     void insert(JSONObject record) {
-//        if (SRCH2Engine.isReady()) {
-            InsertTask insertTask = new InsertTask(UrlBuilder.getInsertUrl(
-                    SRCH2Engine.getConfig(), indexDescription),
-                    getIndexCoreName(), record);
-            HttpTask.addToQueue(insertTask);
-            SRCH2Engine.isChanged.set(true);
-//        }
+        InsertTask insertTask = new InsertTask(UrlBuilder.getInsertUrl(
+                SRCH2Engine.getConfig(), indexDescription), getIndexCoreName(),
+                record);
+        HttpTask.addToQueue(insertTask);
+        SRCH2Engine.isChanged.set(true);
     }
 
-
     void insert(JSONArray records) {
-//        if (SRCH2Engine.isReady()) {
-            URL url = UrlBuilder.getInsertUrl(SRCH2Engine.getConfig(),
-                    indexDescription);
-
-            InsertTask insertTask = new InsertTask(url, getIndexCoreName(),
-                    records);
-            HttpTask.addToQueue(insertTask);
-            SRCH2Engine.isChanged.set(true);
-//        }
+        URL url = UrlBuilder.getInsertUrl(SRCH2Engine.getConfig(),
+                indexDescription);
+        InsertTask insertTask = new InsertTask(url, getIndexCoreName(), records);
+        HttpTask.addToQueue(insertTask);
+        SRCH2Engine.isChanged.set(true);
     }
 
     void update(JSONObject record) {
-//        if (SRCH2Engine.isReady()) {
-            UpdateTask updateTask = new UpdateTask(UrlBuilder.getUpdateUrl(
-                    SRCH2Engine.getConfig(), indexDescription),
-                    getIndexCoreName(), record);
-            HttpTask.addToQueue(updateTask);
-            SRCH2Engine.isChanged.set(true);
-//        }
+        UpdateTask updateTask = new UpdateTask(UrlBuilder.getUpdateUrl(
+                SRCH2Engine.getConfig(), indexDescription), getIndexCoreName(),
+                record);
+        HttpTask.addToQueue(updateTask);
+        SRCH2Engine.isChanged.set(true);
     }
 
     void update(JSONArray records) {
-//        if (SRCH2Engine.isReady()) {
-            UpdateTask updateTask = new UpdateTask(UrlBuilder.getUpdateUrl(
-                    SRCH2Engine.getConfig(), indexDescription),
-                    getIndexCoreName(), records);
-            HttpTask.addToQueue(updateTask);
-            SRCH2Engine.isChanged.set(true);
-//        }
+        UpdateTask updateTask = new UpdateTask(UrlBuilder.getUpdateUrl(
+                SRCH2Engine.getConfig(), indexDescription), getIndexCoreName(),
+                records);
+        HttpTask.addToQueue(updateTask);
+        SRCH2Engine.isChanged.set(true);
     }
 
     void delete(String id) {
-//        if (SRCH2Engine.isReady()) {
-            DeleteTask deleteTast = new DeleteTask(UrlBuilder.getDeleteUrl(
-                    SRCH2Engine.getConfig(), indexDescription, id),
-                    getIndexCoreName());
-            HttpTask.addToQueue(deleteTast);
-            SRCH2Engine.isChanged.set(true);
-//        }
+        DeleteTask deleteTast = new DeleteTask(UrlBuilder.getDeleteUrl(
+                SRCH2Engine.getConfig(), indexDescription, id),
+                getIndexCoreName());
+        HttpTask.addToQueue(deleteTast);
+        SRCH2Engine.isChanged.set(true);
     }
 
     void searchRawString(String rawString) {
-        SRCH2Engine.lastQuery.set(new SRCH2Engine.IndexQueryPair(this, rawString));
-  //      if (SRCH2Engine.isReady()) {
-            if (currentSearchTask != null) {
-                currentSearchTask.cancel();
-            }
-            currentSearchTask = new SearchTask(
+        SRCH2Engine.lastQuery.set(new SRCH2Engine.IndexQueryPair(this,
+                rawString));
+        if (currentSearchTask != null) {
+            currentSearchTask.cancel();
+        }
+        currentSearchTask = new SearchTask(
 
-                    UrlBuilder.getSearchUrl(SRCH2Engine.getConfig(), indexDescription,
-                            rawString), getIndexCoreName(),
-                    SRCH2Engine.getSearchResultsObserver());
+                UrlBuilder.getSearchUrl(SRCH2Engine.getConfig(), indexDescription,
+                        rawString), getIndexCoreName(),
+                SRCH2Engine.getSearchResultsObserver());
 
-            HttpTask.addToQueue(currentSearchTask);
-//        }
+        HttpTask.addToQueue(currentSearchTask);
     }
 
     void search(String searchInput) {
@@ -110,9 +95,9 @@ final class IndexInternal {
             throw new IllegalArgumentException("Invalid searchInput");
         }
         searchInput = formatDefaultQueryURL(searchInput);
-        //if (this.indexDescription.isGeoIndex()) {
-        ////searchInput += formatDefaultGeoCircle();
-        //}
+        // if (this.indexDescription.isGeoIndex()) {
+        // //searchInput += formatDefaultGeoCircle();
+        // }
         searchRawString(searchInput);
     }
 
@@ -128,10 +113,9 @@ final class IndexInternal {
         if (id == null || id.length() < 1) {
             return;
         }
- //       if (SRCH2Engine.isReady()) {
-            HttpTask.addToQueue(new GetRecordTask(UrlBuilder.getGetDocUrl(
-                    SRCH2Engine.getConfig(), indexDescription, id), this.getIndexCoreName()));
- //       }
+        HttpTask.addToQueue(new GetRecordTask(UrlBuilder.getGetDocUrl(
+                SRCH2Engine.getConfig(), indexDescription, id), this
+                .getIndexCoreName()));
     }
 
 }

@@ -222,8 +222,8 @@ final public class SRCH2Engine {
      */
     public static void onStart(Context context) {
         Cat.d(TAG, "onStart");
-        registerReciever(context);
         if (isStarted) { return; }
+        registerReciever(context);
         checkConfIsNullThrowIfIs();
         initializeConfiguration(context);
         startSRCH2Service(context, SRCH2Configuration.generateConfigurationFileString(SRCH2Engine.conf));
