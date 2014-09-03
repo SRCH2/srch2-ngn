@@ -480,10 +480,10 @@ The attribute must be a "text" type.<br>
 Here is an example:
 
 ```
-<field name="category" type="text" searchable="true" />
+<field name="category" type="text" searchable="true" acl="true" />
 <field name="name" type="text" indexed="true" highlight="true" />
 <field name="model" default="benz" required="true" type="text" refining="true"/>
-<field name="price" default="200" required="true" type="float" refining="true"/>
+<field name="price" default="200" required="true" type="float" refining="true" acl="true"/>
 <field name="likes" default="0" required="true" type="integer" refining="true"/>
 <field name="seller_id" default="12324,546436,576864" required="false" type="integer" refining="true" multivalued="true">
 ```
@@ -512,17 +512,19 @@ Each field has certain properties:
  - <b>Required</b>: This flag indicates whether a field can be empty or not. It is false by default.<br>
  - <b>Default</b>: This attribute  gives the default value of this field if the field is missing from the record.<br>
  - <b>Searchable</b>: If true, then the engine will include its values in the indexes to support keyword search within the field.<br>
+e.g. In the <code>fields</code> list above, we can do keyword search on the attributes <code>category</code> and <code>name</code>.  
  - <b>Refining</b>: If true, then the engine will include its values in the indexes to support post-processing operations on query results, such as additional filtering predicates (e.g., "price < 20"), sort, and facet.<br>
+e.g. In the <code>fields</code> list above, We can do post-processing on attributes <code>name</code>, <code>model</code>, <code>price</code>, <code>likes</code>, and <code>seller_id</code>.
  - <b>Indexed</b>: If this flag is true, then the engine will treat the field as both a searchable and a refining attribute. <br>
  - <b>Multivalued</b>: If this flag is true, then the field is considered a multi-valued attribute. If so, then the corresponding JSON value in the data file must be a valid array in JSON (e.g. [1245332,3435645,53465,6456745]). Also please note that if the attribute is multi-valued, the value of the 'default' property must be a comma-separated list of values.<br>
  - <b>Highlight</b>: If this flag is true, then the engine will generate a snippet for this attribute with matching keyword highlighted. <br>
- - <b>Acl</b>: This flag is optional and its default value is <code>false</code>. If this flag is <code>true</code>, then the corresponding field is considered to be a private field. The access to such a private field is determined by an access control map. Access controlled field will be searched only when a given role-id has a permission to access the field. Similarly, the acl field should be used in filter, sort, and facet queries along with a qualifying role-id. Otherwise such field will be ignored. If the flag value is <code>false</code> then the corresponding field is a public field and it can be used for search, filter, sort, and facet queries without any role-id.<br>
+e.g. The engine will generate a snippet for the attribute <code>name</code>. 
+ - <b>Acl</b>: This flag is optional and its default value is <code>false</code>. If this flag is <code>true</code>, then the corresponding field is considered to be a private field. The access to such a private field is determined by an access control map. A field with access control will be searched only when a given role-id has a permission to access the field. Similarly, the acl field should be used in filter, sort, and facet queries along with a qualifying role-id. Otherwise such a field will be ignored. If the flag value is <code>false</code>, then the corresponding field is a public field and it can be used for search, filter, sort, and facet queries without any access restriction.<br>
+e.g. In the <code>fields</code> list above, <code>category</code> and <code>price</code> fields are acl enabled. The <code>category</code> field is searchable only for a qualifying role-id. Similarly, the <code>price</code> field can be used in filter, sort, and facet query only for a qualifying role-id.
 
-In the example above, we can do keyword search on the attributes
-"category" and "name".  We can do post-processing on attributes
-"name", "model", "price", "likes", and "seller_id". The engine will generate a snippet for the attribute "name".
 
-Note:
+
+<b>Note:</b>
 
  - For geo search, two fields are required with the types location_latitude and location_longitude, respectively. The values of these geo fields should be a float type in the data file.  The engine internally treats these two fields as refining attributes, and their values can be returned in a query result if needed.<br>
  - The primary key may optionally be included here. It can also be searchable and/or refining.<br>
@@ -530,7 +532,7 @@ Note:
 
 ###11.3. Attribute Access Control (Optional)
 
-This field specifies an access control file for the attributes having <code>acl</code> flag set to <code>true</code> in the schema. The engine bulk loads access control mapping from the file during index creation phase. The file is not used during the index load from the disk.<br>
+This field specifies an access control file for the attributes having <code>acl</code> flag set to <code>true</code> in the schema. The engine bulk loads access control mapping from the file during the index-creation phase. The file is not used when the indexes are loaded from the disk.<br>
 ```
 <attributeAclFile>path/to/acl/file</attributeAclFile>
 ```
@@ -538,7 +540,7 @@ This field specifies an access control file for the attributes having <code>acl<
 The access control file should be in a csv format as shown below.<br>
 
 ```
-# Comment is supported and must have '#' as a first character of the line. 
+# Comment is supported and must have '#' as the first character of the line. 
 # First column is role-id followed by comma separated attribute names having acl=true
 user1, name, seller_id, price
 user2, seller_id
