@@ -172,7 +172,7 @@ rm -rf data/ *.idx
 function test_case(){
     test_id="$1"
     printTestBanner "$test_id"
-    eval $2 | eval "${html_escape_command}" >> system_test.log 2>&1
+    eval $2 2>&1 | eval "${html_escape_command}" >> system_test.log 2>&1
 
     ret=${PIPESTATUS[0]}
     if [ $ret -gt 0 ]; then
@@ -386,6 +386,8 @@ test_case "heart_beat_test"  "python ./heartbeat/heart_beat.py $SRCH2_ENGINE"
 sleep 2
 
 test_case "test field list parameter in query" "python ./test_fieldList_inQuery/test_fieldList.py $SRCH2_ENGINE ./test_fieldList_inQuery/queriesAndResults.txt"
+
+test_case "validate json response" "python ./json_response/json_response_format_test.py $SRCH2_ENGINE"
 
 if [ $os != "$macName" ];then
     test_case "high_insert" "./high_insert_test/autotest.sh $SRCH2_ENGINE" 
