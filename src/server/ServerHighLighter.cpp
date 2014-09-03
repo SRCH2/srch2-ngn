@@ -85,6 +85,12 @@ void ServerHighLighter::genSnippetsForSingleRecord(const QueryResults *qr, unsig
         for (unsigned i = 0 ; i < highlightAttributes.size(); ++i) {
     		AttributeSnippet attrSnippet;
         	unsigned id = highlightAttributes[i].first;
+        	// check whether the searchable attribute is accessible for current role-id.
+        	// snippet is generated for accessible searchable attributes only.
+        	bool isFieldAccessible = server->indexer->getAttributeAcl().isSearchableFieldAccessibleForRole(
+        			aclRoleValue, highlightAttributes[i].second);
+        	if (!isFieldAccessible)
+        		continue;
         	unsigned lenOffset = compactRecDeserializer->getSearchableOffset(id);
         	const char *attrdata = buffer.start.get() + *((unsigned *)(buffer.start.get() + lenOffset));
         	unsigned len = *(((unsigned *)(buffer.start.get() + lenOffset)) + 1) -
@@ -119,7 +125,7 @@ ServerHighLighter::ServerHighLighter(QueryResults * queryResults,Srch2Server *se
 	server->indexDataConfig->getFuzzyHighLightMarkerPost(post);
 	hconf.highlightMarkers.push_back(make_pair(pre, post));
 	server->indexDataConfig->getHighLightSnippetSize(hconf.snippetSize);
-
+	this->aclRoleValue = param.aclRole;
 	if (!isEnabledWordPositionIndex(server->indexer->getSchema()->getPositionIndexType())){
 		// we do not need phrase information because position index is not enabled.
 		param.PhraseKeyWordsInfoMap.clear();
