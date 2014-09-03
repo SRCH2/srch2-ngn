@@ -3,8 +3,20 @@
 #include <syslog.h>
 #include "Srch2Server.h"
 #include "util/RecordSerializerUtil.h"
+#include <sys/statvfs.h>
+
 namespace srch2 {
 namespace httpwrapper {
+
+//Helper function to calculate size of the file
+namespace {
+    ifstream::pos_type filesize(const char* filename) {
+        std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
+        ifstream::pos_type size = in.tellg();
+        in.close();
+        return size;
+    }
+}
 
 const char *HTTPServerEndpoints::index_search_url = "/srch2/search";
 const char *HTTPServerEndpoints::index_info_url = "/srch2/info";
@@ -91,6 +103,7 @@ const char *HTTPServerEndpoints::ajax_delete_fail_500 =
                 "Cache: no-cache\r\n"
                 "Content-Type: application/x-javascript\r\n"
                 "\r\n";
+
 
 bool Srch2Server::checkIndexExistence(const CoreInfo_t *indexDataConfig) {
     const string &directoryName = indexDataConfig->getIndexPath();
@@ -186,6 +199,36 @@ void Srch2Server::createAndBootStrapIndexer() {
                 indexer->getSchema());
         switch (indexDataConfig->getDataSourceType()) {
         case srch2http::DATA_SOURCE_JSON_FILE: {
+
+            //check file size in KB
+            unsigned fileSize= filesize(indexDataConfig->getDataFilePath().c_str());
+
+            Logger::console("size of file is %lu", fileSize/(1024));
+
+            struct statvfs *buff;
+            if ( !(buff = (struct statvfs *)
+                    malloc(sizeof(struct statvfs)))) {
+                    Logger::error ("Failed to allocate memory to buffer.");
+            }
+            //We check the space available for the disk on which the engine resides, therefore PWD is used
+            if (statvfs(getenv("PWD"), buff) < 0) {
+                    Logger::warn("Failed to calculate free disk space, statvfs() failed.");
+            } else {
+                    Logger::console("free blocks in disk %lu",buff->f_bfree);
+                    Logger::console ("block size %lu",buff->f_bsize);
+                    Logger::console("free space is %lu ",(buff->f_bfree * buff->f_bsize)/(1024));
+
+                    //calculate free disk space. (No. of free blocks * block size) KB
+                    unsigned long freeDiskSpace = (buff->f_bfree * buff->f_bsize)/(1024);
+
+                    //Display warning if free disk space is less than twice the size of file
+                    if(freeDiskSpace < (2 * fileSize)){
+                        Logger::warn("Not enough free disk space available to serialize the index.");
+                    }
+            }
+            free(buff);
+
+
             // Create from JSON and save to index-dir
             Logger::console("Creating indexes from JSON file...");
             unsigned indexedCounter = DaemonDataSource::createNewIndexFromFile(
