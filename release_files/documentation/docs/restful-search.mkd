@@ -558,3 +558,10 @@ For example, the following is a sample response from two cores:
     }
 
 ```
+## 15. Access Control
+
+When an access control ([attribute](../configuration/#113-attribute-access-control-optional) or [record]()) is enabled in the config file, the role-id can be specified using <code>roleId</code> parameter. For example.
+```
+curl "http://localhost:8087/search?q=project_name:food&roleId=spiderman
+```
+If <code>roleId=spiderman</code> has access to the field <code>project_name</code> then the engine will search in the field <code>project_name</code> otherwise no result will be returned.

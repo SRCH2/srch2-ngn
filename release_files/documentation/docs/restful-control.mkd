@@ -83,4 +83,50 @@ The client can send a shutdown message to let the server stop gracefully. The re
  curl -i "http://localhost:8081/_all/shutdown" -X PUT
 ```
 
+##6. Modify attribute access control 
 
+The user can insert, delete, and modify existing access control mapping using the following APIs. 
+
+####6.1. Insert new access control
+```
+ curl -i "http://localhost:8081/aclAttribute" -X PUT i -X PUT -d '{ “fields”: “field1, field20", “role-values”: "1001, 1002", “action” : “insert”}'
+```
+
+The insert command above creates the following access control mapping in the engine.
+```
+"1001" => "field1" , "field20"
+"1002" => "field1" , "field20"
+```
+
+####6.2. Append to an existing access control
+```
+ curl -i "http://localhost:8081/aclAttribute" -X PUT i -X PUT -d '{ “fields”: “field31", “role-values”: "1001", “action” : “append”}'
+```
+The append command above modifies the access control mapping in the engine as shown below.
+```
+"1001" => "field1" , "field20",  "field31"
+"1002" => "field1" , "field20"
+```
+
+####6.3. Delete an access control
+```
+ curl -i "http://localhost:8081/aclAttribute" -X PUT i -X PUT -d '{ “fields”: “field1", “role-values”: "1001", “action” : “insert”}'
+```
+
+The delete command above modifies the access control mapping in the engine as shown below.
+```
+"1001" => "field20",  "field31"   # Note: "field1" is deleted
+"1002" => "field1" , "field20"
+```
+
+To delete the whole access control for a particular role-id, use <code>*</code> as a value for the <code>fields</code> key in the input JSON. For example:
+
+```
+ curl -i "http://localhost:8081/aclAttribute" -X PUT i -X PUT -d '{ “fields”: “*", “role-values”: "1001", “action” : “insert”}'
+```
+
+The above delete command modifies the access control mapping in the engine as shown below.
+
+```
+"1002" => "field1" , "field20"
+```

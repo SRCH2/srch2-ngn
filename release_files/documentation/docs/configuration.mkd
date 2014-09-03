@@ -516,6 +516,7 @@ Each field has certain properties:
  - <b>Indexed</b>: If this flag is true, then the engine will treat the field as both a searchable and a refining attribute. <br>
  - <b>Multivalued</b>: If this flag is true, then the field is considered a multi-valued attribute. If so, then the corresponding JSON value in the data file must be a valid array in JSON (e.g. [1245332,3435645,53465,6456745]). Also please note that if the attribute is multi-valued, the value of the 'default' property must be a comma-separated list of values.<br>
  - <b>Highlight</b>: If this flag is true, then the engine will generate a snippet for this attribute with matching keyword highlighted. <br>
+ - <b>Acl</b>: This flag is optional and its default value is <code>false</code>. If this flag is <code>true</code>, then the corresponding field is considered to be a private field. The access to such a private field is determined by an access control map. Access controlled field will be searched only when a given role-id has a permission to access the field. Similarly, the acl field should be used in filter, sort, and facet queries along with a qualifying role-id. Otherwise such field will be ignored. If the flag value is <code>false</code> then the corresponding field is a public field and it can be used for search, filter, sort, and facet queries without any role-id.<br>
 
 In the example above, we can do keyword search on the attributes
 "category" and "name".  We can do post-processing on attributes
@@ -527,7 +528,25 @@ Note:
  - The primary key may optionally be included here. It can also be searchable and/or refining.<br>
  - There must be at least one searchable field.
 
-###11.3. Enable Facet (Optional)
+###11.3. Attribute Access Control (Optional)
+
+This field specifies an access control file for the attributes having <code>acl</code> flag set to <code>true</code> in the schema. The engine bulk loads access control mapping from the file during index creation phase. The file is not used during the index load from the disk.<br>
+```
+<attributeAclFile>path/to/acl/file</attributeAclFile>
+```
+
+The access control file should be in a csv format as shown below.<br>
+
+```
+# Comment is supported and must have '#' as a first character of the line. 
+# First column is role-id followed by comma separated attribute names having acl=true
+user1, name, seller_id, price
+user2, seller_id
+```
+
+Note: Attribute access control mapping can also be defined at runtime using the RESTful [APIs](../restful-control/#6-modify-attribute-access-control).
+
+###11.4. Enable Facet (Optional)
 
 This setting toggles the faceted search feature.<br>
 ```
@@ -535,7 +554,7 @@ This setting toggles the faceted search feature.<br>
 ```
 Its value is either false (facet search disabled) or true (enabled). Its default value is false.<br>
 
-###11.4. Facet Fields
+###11.5. Facet Fields
 
 This tag contains facet-related tags, and it is required if facet is enabled.<br>
 ```
@@ -567,7 +586,7 @@ value, not the "facetEnd" value. Therefore, the last interval may not
 span the entire facetGap. Also all facet fields must be declared in a
 <a href=#112-fields-required>field tag</a> as well (with refining="true"). <br> 
 
-###11.5. Analyzer
+###11.6. Analyzer
 
 The parameters contained in this tag configure the analyzer to be used by the engine.<br>
 ```
@@ -579,13 +598,13 @@ The parameters contained in this tag configure the analyzer to be used by the en
   </fieldType>
 </types>
 ```
-###11.5.1 Stemmer (Optional)
+###11.6.1 Stemmer (Optional)
 
 The engine supports [Porter Stemming](http://tartarus.org/martin/PorterStemmer/). Inflected or derived words are reduced to their base or root form for matching against search terms.  The engine uses a dictionary file with keywords that should be ignored by the stemmer. Keywords not in the dictionary will go through a sequence of stemming rules.  If no file if provided, the stemmer is disabled.
 ```
 <filter name="PorterStemFilter" dictionary="srch2_stemmer_dictionary.txt" />
 ```
-###11.5.2 Stop Words (Optional)
+###11.6.2 Stop Words (Optional)
 
 This tag specifies a file of stop words that will be ignored by the engine. Stop words will not be indexed, and will not match any search term.  This will consume fewer system resources. In English grammar, particle words have no meaning by themselves, and could be considered for inclusion as stop words.  Providing an empty string ("") for the "words" parameter disables this filter.
 ```
@@ -593,7 +612,7 @@ This tag specifies a file of stop words that will be ignored by the engine. Stop
 ```
 The [advanced example](../example-demo/srch2-config-advanced.xml) provides a working example of stop words.
 
-###11.5.3 Protected Keywords Filter (Optional)
+###11.6.3 Protected Keywords Filter (Optional)
 It specifies a file of special protected keywords that should be preserved by the analyzer, such as "C++", "C#", ".NET", and "AT&T". Providing an empty string ("") for the "words" parameter disables this filter.
 ```
 <filter name="protectedKeyWordsFilter" words="srch2_protected_words.txt" />
@@ -601,7 +620,7 @@ It specifies a file of special protected keywords that should be preserved by th
 
 The [advanced example](../example-demo/srch2-config-advanced.xml) provides a working example of protected keywords.
 
-###11.5.4 Synonym Filter (Optional)
+###11.6.4 Synonym Filter (Optional)
 
 The synonym filter allows synonyms while analyzing data records for indexing. The configuration setting is shown below.
 
@@ -630,7 +649,7 @@ If the synonym rule is <code>"centOS=>linux"</code>, then the query keyword "cen
 
 If the synonym rule is <code>"centOS, linux"</code> (equivalent synonyms) and the <code>expand</code> attribute is set to <code>true</code>, then the both keyword queries "centOS" and "linux" will return the record as a search result.
   
-###11.5.5 Allowed Special Characters (Optional)
+###11.6.5 Allowed Special Characters (Optional)
 
 The engine has a number of rules on what characters can be used to decompose words, and what characters
 are punctuation or delimiters separating words.  To provide additional flexibility, the engine can be
