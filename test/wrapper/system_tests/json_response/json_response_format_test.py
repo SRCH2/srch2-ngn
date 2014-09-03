@@ -1,8 +1,8 @@
 #!/usr/bin/python
-# This test is to make sure all of our returned responses is in a valid Json format
-# It will test all the open path ( e.g. '/search', '/docs', '/update' ...). 
+# This test is to make sure all of our returned responses are in a valid Json format
+# It will test all the entry points ( e.g. '/search', '/docs', '/update' ...). 
 # It will run the positive test and the negative test. In both cases, the engine should 
-# return a well formated Json response.
+# return a well formatted Json response.
 
 import sys, urllib2, json, time, subprocess, os, commands, signal
 import inspect
