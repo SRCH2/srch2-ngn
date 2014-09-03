@@ -11,7 +11,6 @@
 	<listeningHostname>0.0.0.0</listeningHostname>
 	<listeningPort>8087</listeningPort>
 
-
 	<maxSearchThreads>2</maxSearchThreads>
 
 			<dataDir>./data/</dataDir>
@@ -105,10 +104,11 @@
 					<dbKeyValue key="listenerWaitTime" value="3" />
 				</dbKeyValues>
 			</dbParameters>
+			
+				<updateLog>
+					<logLevel>4</logLevel>
+					<accessLogFile>./logs/srch2-log-sqlite.txt</accessLogFile>
+				</updateLog>
+						
 
-			<updateLog>
-				<logLevel>4</logLevel>
-				<accessLogFile>./logs/srch2-log-sqlite.txt</accessLogFile>
-			</updateLog>
-									
 </config>

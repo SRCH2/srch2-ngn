@@ -107,11 +107,6 @@
           <mergeEveryMWrites>10</mergeEveryMWrites>
         </mergePolicy>
          
-        <updateLog>
-            <logLevel>4</logLevel>
-            <accessLogFile>./logs/srch2-log.txt</accessLogFile>
-        </updateLog>
-     
     </updatehandler>
 
     <!-- 
@@ -131,5 +126,10 @@
             <dbKeyValue key="listenerWaitTime" value="3" />
         </dbKeyValues>
     </dbParameters>
-         
+ 
+           <updateLog>
+            <logLevel>4</logLevel>
+            <accessLogFile>./logs/srch2-log.txt</accessLogFile>
+        </updateLog>
+    
 </config>
