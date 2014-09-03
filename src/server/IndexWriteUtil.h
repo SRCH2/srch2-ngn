@@ -168,7 +168,7 @@ struct IndexWriteUtil
         const char* c_rid = "rid";
         const char* c_action = "update";
         const char* c_reason = "reason";
-        const char* c_detail = "reason";
+        const char* c_detail = "details";
         const char* c_resume = "resume";
         /// step 1, delete old record
 

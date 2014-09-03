@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# This test is to make sure all the returned respondse is in a valid json format
 
 import sys, urllib2, json, time, subprocess, os, commands, signal
 import inspect
@@ -190,9 +191,8 @@ def testUpdateResponds(host_url):
             print inspect.stack()[0][3]
             record = '{"category": "pet"}'
             response = open_url_put( update_url, record)
-            # expected: {"log":[{"reason":" No primary key found.","rid":"","update":"failed"}],"message":"The update was processed successfully"}
             return check_keys(response, ['log', 'message']) and \
-                    check_keys(response['log'][0], ['reason', 'rid', 'update'])
+                    check_keys(response['log'][0], ['reason', 'rid', 'update', 'details'])
 
         return testMalformedJsonRecord() and testNoPrimaryKeyProvided()
 

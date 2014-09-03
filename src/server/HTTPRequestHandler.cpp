@@ -670,14 +670,14 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
 
         if (parseSuccess == false) {
             isSuccess = false;
-            response[JSON_MESSAGE] = "JSON object parse error";
+            response[JSON_MESSAGE] = "JSON object parsing error";
             Logger::warn("JSON object parse error");
             break;
         } else {
             Record *record = new Record(server->indexer->getSchema());
 
             Json::Value insert_responses(Json::arrayValue);
-            // apped to each response
+            // append to each response
             if(root.type() == Json::arrayValue) { // The input is an array of JSON objects.
                 // Iterates over the sequence elements.
                 insert_responses.resize(root.size());
@@ -867,7 +867,7 @@ void HTTPRequestHandler::resetLoggerCommand(evhttp_request *req, Srch2Server *se
                     "a");
 
         if (logFile == NULL) {
-            response[JSON_MESSAGE] = "The logger file repointing failed. Could not create new logger file";
+            response[JSON_MESSAGE] = "The logger file repointing failed. Could not create a new logger file";
             response[JSON_LOG] = wrap_with_json_array( server->indexDataConfig->getHTTPServerAccessLogFile());
 
             Logger::error("Reopen Log file %s failed.",
