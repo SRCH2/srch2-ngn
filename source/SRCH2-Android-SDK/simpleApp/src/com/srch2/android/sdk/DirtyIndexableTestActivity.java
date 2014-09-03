@@ -9,7 +9,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import static junit.framework.Assert.*;
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertTrue;
 
 public class DirtyIndexableTestActivity extends TestableActivity {
 
@@ -28,6 +29,7 @@ public class DirtyIndexableTestActivity extends TestableActivity {
         deleteSrch2Files();
         index = new DumbIndex();
         searchResultsCallback = new SearchResultsCallback();
+
         SRCH2Engine.initialize(index);
         SRCH2Engine.setSearchResultsListener(searchResultsCallback);
     }
@@ -76,9 +78,9 @@ public class DirtyIndexableTestActivity extends TestableActivity {
         assertFalse(SRCH2Engine.conf.indexableMap.get(DumbIndex.INDEX_NAME).indexInternal.isDirty.get());
         JSONArray records = new JSONArray();
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 100; ++i) {
+        for (int i = 1; i < 100; ++i) {
             sb.setLength(0);
-            for (int j = 0; j < i + 1; ++j) {
+            for (int j = 1; j < i + 1; ++j) {
                 sb.append(String.valueOf(i));
                 sb.append(" title ");
                 sb.append(String.valueOf(j));
@@ -90,6 +92,7 @@ public class DirtyIndexableTestActivity extends TestableActivity {
         assertTrue(SRCH2Engine.conf.indexableMap.get(DumbIndex.INDEX_NAME).indexInternal.isDirty.get());
         onStopAndWaitForNotIsReady(this, 30000);
         assertFalse(SRCH2Engine.isReady());
+        sleep(3000);
         assertFalse(SRCH2Engine.conf.indexableMap.get(DumbIndex.INDEX_NAME).indexInternal.isDirty.get());
 
 
