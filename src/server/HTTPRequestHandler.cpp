@@ -48,6 +48,9 @@ namespace {
     static const pair<string, string> global_internal_record("srch2_internal_record_123456789", "record");
     static const pair<string, string> global_internal_snippet("srch2_internal_snippet_123456789", "snippet");
     static const pair<string, string> internal_data[] = { global_internal_record, global_internal_snippet};
+
+    // The below objects are used to format the global_customized_writer. 
+    // This global_customized_writer is created once and then can be used multiple times.
     static const vector<pair<string, string> > global_internal_skip_tags(internal_data, internal_data+2);    
     static const CustomizableJsonWriter global_customized_writer (&global_internal_skip_tags);
     static const char * JSON_MESSAGE = "message";
@@ -70,6 +73,7 @@ namespace {
         return buf;
     }
 
+    // The below functions are the helper functions to format the HTTP response
     void bmhelper_check_add_callback(evbuffer *buf, const evkeyvalq &headers,
             const string &out_payload) {
         const char *jsonpCallBack = evhttp_find_header(&headers,
@@ -124,6 +128,7 @@ namespace {
         Logger::error(HTTP_INVALID_REQUEST_MESSAGE);
     }
 
+    // This helper function is to wrap a Json::Value into a Json::Array and then return the later object.
     Json::Value wrap_with_json_array(Json::Value value){
         Json::Value array(Json::arrayValue);
         array.append(value);

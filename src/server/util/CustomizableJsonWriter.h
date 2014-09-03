@@ -16,17 +16,17 @@
 // The goal is to save parsing time.
 class CustomizableJsonWriter : public Json::Writer {
 public:
-	CustomizableJsonWriter(const std::vector<std::pair<std::string, std::string> > *tags);
-	virtual ~CustomizableJsonWriter() { };
-	void enableYAMLCompatibility();
+    CustomizableJsonWriter(const std::vector<std::pair<std::string, std::string> > *tags);
+    virtual ~CustomizableJsonWriter() { };
+    void enableYAMLCompatibility();
 
-	virtual std::string write( const Json::Value &root ) ;
-	std::string write( const Json::Value &root ) const ;
+    virtual std::string write( const Json::Value &root ) ;
+    std::string write( const Json::Value &root ) const ;
 
 private:
     std::string writeValue( const Json::Value &value ) const ;
 
-	const std::vector<std::pair<std::string, std::string> > *skipTags;
+    const std::vector<std::pair<std::string, std::string> > *skipTags;
     bool yamlCompatiblityEnabled_;
 };
 
