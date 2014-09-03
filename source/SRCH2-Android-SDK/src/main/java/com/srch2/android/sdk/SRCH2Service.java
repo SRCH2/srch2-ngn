@@ -28,6 +28,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 final public class SRCH2Service extends Service implements AutoPing.ValidatePingCommandCallback {
 
+    /* README: see diagram explaning the logic of this class @
+    https://docs.google.com/a/srch2.com/drawings/d/1mIkQR8ax-TOG0JQHPqmzyWYjBMd0vbXpwk80Zv4EjyE/edit?usp=sharing */
+
     private static final String TAG = "Exe-Service";
 
     @Override
