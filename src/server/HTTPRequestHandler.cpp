@@ -167,6 +167,15 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
     (*root)["searcher_time"] = ts1;
     clock_gettime(CLOCK_REALTIME, &tstart);
 
+    vector<string> attributesToReturnFromQuery = queryPlan.getAttrToReturn();
+    vector<string> *attributesToReturnFromQueryPtr;
+
+    if (attributesToReturnFromQuery.size() != 0)
+      attributesToReturnFromQueryPtr = &attributesToReturnFromQuery;
+    else
+     attributesToReturnFromQueryPtr = NULL;
+
+
     if(onlyFacets == false){ // We send the matching records only if "facet != only".
         (*root)["results"].resize(end - start);
         unsigned counter = 0;
@@ -185,25 +194,45 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
                         - queryResults->getResultScore(i).getFloatTypedValue()); //the actual distance between the point of record and the center point of the range
                 if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_STORED_ATTR){
                     string sbuffer;
-                    genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i), sbuffer);
+                    //This case executes when all the attributes are to be returned. However we let the user
+                    //override if field list parameter is given in query
+                    genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
+                            sbuffer, attributesToReturnFromQueryPtr);
                     // The class CustomizableJsonWriter allows us to
                     // attach the data string to the JSON tree without parsing it.
                     (*root)["results"][counter][global_internal_record.first] = sbuffer;
                 } else if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SELECTED_ATTR){
                 	string sbuffer;
                 	const vector<string> *attrToReturn = indexDataConfig->getAttributesToReturn();
+
+                	//Return the attributes specified in the config file
+                	//If query has field list parameter we override attrToReturn using the attributes from query
+                	//otherwise we use attributes mentioned in config file
+                	if(attributesToReturnFromQuery.size() > 0){
+                	    attrToReturn = attributesToReturnFromQueryPtr;
+                	}
+
                 	genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-                			sbuffer, attrToReturn);
+                	                            sbuffer, attrToReturn);
+
                 	// The class CustomizableJsonWriter allows us to
                 	// attach the data string to the JSON tree without parsing it.
                 	(*root)["results"][counter][global_internal_record.first] = sbuffer;
+                }else{
+                    //Return the attributes specified explicitly in the query otherwise no attributes are returned
+                    string stringBuffer;
+                    if(attributesToReturnFromQuery.size() > 0){
+                        genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
+                                stringBuffer, attributesToReturnFromQueryPtr);
+                        (*root)["results"][counter][global_internal_record.first] = stringBuffer;
+                    }
+
                 }
                 ++counter;
             }
 
         } else // the query is including keywords:(1)only keywords (2)keywords+geo
         {
-
             for (unsigned i = start; i < end; ++i) {
             	unsigned internalRecordId = queryResults->getInternalRecordId(i);
             	StoredRecordBuffer inMemoryData = indexer->getInMemoryData(internalRecordId);
@@ -237,22 +266,42 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
                 if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_STORED_ATTR) {
                     unsigned internalRecordId = queryResults->getInternalRecordId(i);
                     string sbuffer;
+
+                    //This case executes when all the attributes are to be returned. However we let the user
+                    //override if field list parameter is given in query
                     genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-                    		 sbuffer);
+                                                sbuffer, attributesToReturnFromQueryPtr);
+
                     // The class CustomizableJsonWriter allows us to
                     // attach the data string to the JSON tree without parsing it.
                     (*root)["results"][counter][global_internal_record.first] = sbuffer;
                 } else if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SELECTED_ATTR){
                 	unsigned internalRecordId = queryResults->getInternalRecordId(i);
-                	string sbuffer;
-                	const vector<string> *attrToReturn = indexDataConfig->getAttributesToReturn();
-                	genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-                			sbuffer, attrToReturn);
+                    string sbuffer;
+                    const vector<string> *attrToReturn = indexDataConfig->getAttributesToReturn();
+
+                    //Return the attributes specified in the config file
+                    //If query has field list parameter we override attrToReturn using the attributes from query
+                    //otherwise we use attributes mentioned in config file
+                    if(attributesToReturnFromQuery.size() > 0){
+                        attrToReturn = attributesToReturnFromQueryPtr;
+                    }
+
+                    genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
+                                                sbuffer, attrToReturn);
+
                 	// The class CustomizableJsonWriter allows us to
                 	// attach the data string to the JSON tree without parsing it.
                 	(*root)["results"][counter][global_internal_record.first] = sbuffer;
+                }else{
+                    //Return the attributes specified explicitly in the query otherwise no attributes are returned
+                    string stringBuffer;
+                    if(attributesToReturnFromQuery.size() > 0){
+                        genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
+                                stringBuffer, attributesToReturnFromQueryPtr);
+                        (*root)["results"][counter][global_internal_record.first] = stringBuffer;
+                    }
                 }
-
                 string sbuffer = string();
                 sbuffer.reserve(1024);  //<< TODO: set this to max allowed snippet len
                 genSnippetJSONString(i, start, recordSnippets, sbuffer, queryResults);
@@ -411,6 +460,14 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printOneResultRetrievedById(e
     // For logging
     string logQueries;
 
+    vector<string> attributesToReturnFromQuery = queryPlan.getAttrToReturn();
+    vector<string> *attributesToReturnFromQueryPtr;
+
+    if (attributesToReturnFromQuery.size() != 0)
+      attributesToReturnFromQueryPtr = &attributesToReturnFromQuery;
+    else
+      attributesToReturnFromQueryPtr = NULL;
+
     (*root)["searcher_time"] = ts1;
     (*root)["results"].resize(queryResults->getNumberOfResults());
 
@@ -430,17 +487,38 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printOneResultRetrievedById(e
         if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_STORED_ATTR) {
             unsigned internalRecordId = queryResults->getInternalRecordId(i);
             string sbuffer;
-            genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i), sbuffer);
+
+            //This case executes when all the attributes are to be returned. However we let the user
+            //override if field list parameter is given in query
+            genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
+                    sbuffer, attributesToReturnFromQueryPtr);
+
             (*root)["results"][counter][global_internal_record.first] = sbuffer;
         } else if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SELECTED_ATTR){
-        	unsigned internalRecordId = queryResults->getInternalRecordId(i);
-        	string sbuffer;
-        	const vector<string> *attrToReturn = indexDataConfig->getAttributesToReturn();
-        	genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-        			sbuffer, attrToReturn);
-        	// The class CustomizableJsonWriter allows us to
-        	// attach the data string to the JSON tree without parsing it.
-        	(*root)["results"][counter][global_internal_record.first] = sbuffer;
+            unsigned internalRecordId = queryResults->getInternalRecordId(i);
+            string sbuffer;
+            const vector<string> *attrToReturn = indexDataConfig->getAttributesToReturn();
+
+            //Return the attributes specified in the config file
+            //If query has field list parameter we override attrToReturn using the attributes from query
+            //otherwise we use attributes mentioned in config file
+            if(attributesToReturnFromQuery.size() > 0){
+                attrToReturn = attributesToReturnFromQueryPtr;
+            }
+            genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
+                                        sbuffer, attrToReturn);
+
+            // The class CustomizableJsonWriter allows us to
+            // attach the data string to the JSON tree without parsing it.
+            (*root)["results"][counter][global_internal_record.first] = sbuffer;
+        }else{
+            //Return the attributes specified explicitly in the query otherwise no attributes are returned
+            string stringBuffer;
+            if(attributesToReturnFromQuery.size() > 0){
+                genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
+                        stringBuffer, attributesToReturnFromQueryPtr);
+                (*root)["results"][counter][global_internal_record.first] = stringBuffer;
+            }
         }
         ++counter;
     }
@@ -964,15 +1042,6 @@ void HTTPRequestHandler::shutdownCommand(evhttp_request *req, const CoreNameServ
     case EVHTTP_REQ_PUT: {
         // graceful shutdown
         // since the main process is catching the kill signal, we can simply send the kill to itself
-#ifdef ANDROID
-        // The kill signal seems not catchable under Android. We need to save the index first
-        for( CoreNameServerMap_t::const_iterator it = coreNameServerMap->begin(); 
-            it != coreNameServerMap->end(); ++it){
-            std::stringstream log_str;
-            IndexWriteUtil::_saveCommand(it->second->indexer, log_str);
-            Logger::info("%s", log_str.str().c_str());
-        }
-#endif
         bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
                 "{\"message\":\"Bye\"}\n");
         Logger::info("Server is shuting down");

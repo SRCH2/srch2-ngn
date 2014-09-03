@@ -158,6 +158,45 @@ fi
 # We remove the old indexes, if any, before doing the test.
 rm -rf data/ *.idx
 
+# This is the general test case function.
+# Normally it takes 2 arguments, but sometimes it can also 4 arguments:
+#  $1: the name of the test, corresponding to the previous test_id
+#  $2: the full command line, like "python ./run_something.py args1, args2". 
+#      Note , the full command line should be ONE string
+#  $3: [optional], the skipped return code if it is not equal to 0. 
+#      For some test cases (e.g. db_connector test cases)
+#      we want to skip it if it failed by returning a certain code. 
+#  $4: [optional], the skipped the message. 
+#      This field works with the $3 argument, if the test case is allowed to skip,
+#      we should provide the reason why it failed.
+function test_case(){
+    test_id="$1"
+    printTestBanner "$test_id"
+    eval $2 | eval "${html_escape_command}" >> system_test.log 2>&1
+
+    ret=${PIPESTATUS[0]}
+    if [ $ret -gt 0 ]; then
+        if [ $# -gt 2 ] && [ $ret -eq $3 ] ;then
+            if [ $# -gt 3 ] ;then
+                echo $4
+            else
+                echo "-- SKIPPED"
+            fi
+        else
+            echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
+            if [ $force -eq 0 ]; then
+                exit 255
+            fi
+        fi
+    else
+        echo "-- PASSED: $test_id" >> ${output}
+    fi
+    [ -d "./data" ] && rm -rf data/ 
+    for idx in *.idx ; do 
+        [ -f $idx ] && rm -f $idx
+    done
+}
+
 ###############################################################################################################
 #
 #  SYSTEM TEST CASES SHOULD BE ADDED BELOW THIS MESSAGE
@@ -166,501 +205,114 @@ rm -rf data/ *.idx
 #         please be sure to append output using ">> system_test.log".
 #
 ###############################################################################################################
-test_id="lot of attributes"
-printTestBanner "$test_id"
+
+
 rm ./attributes/indexes/*
-python ./attributes/attributes.py $SRCH2_ENGINE | eval "${html_escape_command}" >> system_test.log 2>&1
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-    exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
+test_case "lot of attributes" "python ./attributes/attributes.py $SRCH2_ENGINE" 
 
-test_id="synonyms"
-printTestBanner "$test_id"
-python ./synonyms/synonyms.py $SRCH2_ENGINE | eval "${html_escape_command}" >> system_test.log 2>&1
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-	exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
+test_case "synonyms" "python ./synonyms/synonyms.py $SRCH2_ENGINE" 
 
-test_id="highlighter"
-printTestBanner "$test_id"
-python ./highlight/highlight.py $SRCH2_ENGINE ./highlight/queries.txt  | eval "${html_escape_command}" >> system_test.log 2>&1
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-	exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx
+test_case "record-based-ACL" "python ./access_control/record-based-ACL.py $SRCH2_ENGINE ./access_control/queriesAndResults.txt"
 
-test_id="cache_A1"
-printTestBanner "$test_id"
-python ./cache_a1/cache_A1.py $SRCH2_ENGINE ./cache_a1/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
+test_case "highlighter" "python ./highlight/highlight.py $SRCH2_ENGINE ./highlight/queries.txt"
 
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-        exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx
+test_case "cache_A1" "python ./cache_a1/cache_A1.py $SRCH2_ENGINE ./cache_a1/queriesAndResults.txt" 
 
+test_case "boolean expression" "python ./boolean-expression-test/boolean-expression.py $SRCH2_ENGINE ./boolean-expression-test/queries.txt" 
 
-test_id="record-based-ACL"
-printTestBanner "$test_id"
-rm -f ./access_control/core?/*.idx ./access_control/core?/srch2-log.txt
-python ./access_control/record-based-ACL.py $SRCH2_ENGINE ./access_control/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
-
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-	exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ access_control/core?/*.idx
-
-
-test_id="boolean expression"
-printTestBanner "$test_id"
-python ./boolean-expression-test/boolean-expression.py $SRCH2_ENGINE ./boolean-expression-test/queries.txt | eval "${html_escape_command}" >> system_test.log 2>&1
-
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-        exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx
-
-
-test_id="qf_dynamic_ranking"
 # qf disabled for now - will fail until we integrate with Jamshid's boolean expression changes
+#test_case "qf_dynamic_ranking" "./qf_dynamic_ranking/qf_dynamic_ranking.py $SRCH2_ENGINE ./qf_dynamic_ranking/queriesAndResults.txt"
 #printTestBanner "$test_id"
-#python ./qf_dynamic_ranking/qf_dynamic_ranking.py $SRCH2_ENGINE ./qf_dynamic_ranking/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
 
-#if [ ${PIPESTATUS[0]} -gt 0 ]; then
-#    echo "${html_fail_pre}IGNORING FAILED: $test_id${html_fail_post}" >> ${output}
-#    if [ $force -eq 0 ]; then
-#	exit 255
-#    fi
-#else
-#    echo "-- PASSED: $test_id" >> ${output}
-#fi
-#rm -rf data/ *.idx
+test_case "phrase search" "python ./phraseSearch/phrase_search.py $SRCH2_ENGINE ./phraseSearch/queries.txt" 
 
-test_id="phrase search"
-printTestBanner "$test_id"
-python ./phraseSearch/phrase_search.py $SRCH2_ENGINE ./phraseSearch/queries.txt | eval "${html_escape_command}" >> system_test.log 2>&1
+test_case "phrase search with boolean expression" "python ./phraseSearch/phrase_search.py $SRCH2_ENGINE ./phraseSearch/booleanQueries.txt" 
 
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-#    if [ $force -eq 0 ]; then
-#	exit 255
-#    fi
-    echo "-- IGNORING FAILURE: $test_id" >> ${output}
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx
+test_case "multi valued attribute" "python ./test_multi_valued_attributes/test_multi_valued_attributes.py '--srch2' $SRCH2_ENGINE '--qryNrslt' \
+./test_multi_valued_attributes/queriesAndResults.txt '--frslt' ./test_multi_valued_attributes/facetResults.txt"
 
-test_id="phrase search with boolean expression"
-printTestBanner "$test_id"
-python ./phraseSearch/phrase_search.py $SRCH2_ENGINE ./phraseSearch/booleanQueries.txt | eval "${html_escape_command}" >> system_test.log 2>&1
+test_case "save_shutdown_restart" "python ./save_shutdown_restart_export_test/save_shutdown_restart_export_test.py $SRCH2_ENGINE" 
 
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_idi${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-        exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx
+test_case "empty_index" "python ./empty_index/empty_index.py $SRCH2_ENGINE"
 
-test_id="multi valued attribute"
-printTestBanner "$test_id"
-python ./test_multi_valued_attributes/test_multi_valued_attributes.py '--srch' $SRCH2_ENGINE '--qryNrslt' ./test_multi_valued_attributes/queriesAndResults.txt '--frslt' ./test_multi_valued_attributes/facetResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
+test_case "exact_A1" "python ./exact_a1/exact_A1.py $SRCH2_ENGINE ./exact_a1/queriesAndResults.txt" 
 
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-	exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx
+test_case "fuzzy_A1" "python ./fuzzy_a1/fuzzy_A1.py $SRCH2_ENGINE ./fuzzy_a1/queriesAndResults.txt" 
 
-test_id="save_shutdown_restart"
-printTestBanner "$test_id"
-python ./save_shutdown_restart_export_test/save_shutdown_restart_export_test.py $SRCH2_ENGINE | eval "${html_escape_command}" >> system_test.log 2>&1
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-	exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx
+test_case "fuzzy_A1_swap test" "python ./fuzzy_a1_swap/fuzzy_A1_swap.py $SRCH2_ENGINE ./fuzzy_a1_swap/queriesAndResults.txt"
 
+test_case "exact_M1" "python ./exact_m1/exact_M1.py $SRCH2_ENGINE ./exact_m1/queriesAndResults.txt" 
 
-test_id="empty_index"
-printTestBanner "$test_id"
-python ./empty_index/empty_index.py $SRCH2_ENGINE | eval "${html_escape_command}" >> system_test.log 2>&1
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-	exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx
+test_case "fuzzy_M1" "python ./fuzzy_m1/fuzzy_M1.py $SRCH2_ENGINE ./fuzzy_m1/queriesAndResults.txt" 
 
+test_case "exact_Attribute_Based_Search" "python ./exact_attribute_based_search/exact_Attribute_Based_Search.py $SRCH2_ENGINE ./exact_attribute_based_search/queriesAndResults.txt" 
+
+test_case "fuzzy_Attribute_Based_Search" "python ./fuzzy_attribute_based_search/fuzzy_Attribute_Based_Search.py $SRCH2_ENGINE ./fuzzy_attribute_based_search/queriesAndResults.txt"
+
+test_case "exact_Attribute_Based_Search_Geo" "python ./exact_attribute_based_search_geo/exact_Attribute_Based_Search_Geo.py $SRCH2_ENGINE ./exact_attribute_based_search_geo/queriesAndResults.txt"
+
+test_case "fuzzy_Attribute_Based_Search_Geo" "python ./fuzzy_attribute_based_search_geo/fuzzy_Attribute_Based_Search_Geo.py $SRCH2_ENGINE ./fuzzy_attribute_based_search_geo/queriesAndResults.txt"
+
+test_case "faceted search" "python ./faceted_search/faceted_search.py '--srch' $SRCH2_ENGINE '--qryNrslt' ./faceted_search/queriesAndResults.txt '--frslt' ./faceted_search/facetResults.txt"
+
+test_case "sort filter" "python ./sort_filter/sort_filter.py $SRCH2_ENGINE ./sort_filter/queriesAndResults.txt ./sort_filter/facetResults.txt" 
+
+test_case "filter query" "python ./filter_query/filter_query.py $SRCH2_ENGINE ./filter_query/queriesAndResults.txt ./filter_query/facetResults.txt"
+
+test_case "test_solr_compatible_query_syntax" "python ./test_solr_compatible_query_syntax/test_solr_compatible_query_syntax.py $SRCH2_ENGINE \
+    ./test_solr_compatible_query_syntax/queriesAndResults.txt ./test_solr_compatible_query_syntax/facetResults.txt"
+
+test_case "test_search_by_id" "python ./test_search_by_id/test_search_by_id.py $SRCH2_ENGINE" 
+
+test_case "date and time implementation" "python ./date_time_new_features_test/date_time_new_features_test.py $SRCH2_ENGINE ./date_time_new_features_test/queriesAndResults.txt" 
+
+test_case "geo" "python ./geo/geo.py $SRCH2_ENGINE ./geo/queriesAndResults.txt" 
+
+test_case "term type" "python ./term_type/term_type.py $SRCH2_ENGINE ./term_type/queriesAndResults.txt"
+
+test_case "analyzer end to end" "python ./analyzer_exact_a1/analyzer_exact_A1.py $SRCH2_ENGINE ./analyzer_exact_a1/queriesAndResults.txt"
+
+test_case "top_k" "python ./top_k/test_srch2_top_k.py $SRCH2_ENGINE food 10 20"
+
+test_case "reset logger" "python ./reset_logger/test_reset_logger.py $SRCH2_ENGINE"
+rm -rf data/ *.idx reset_logger/indexes
+
+test_case "batch upsert" "python ./upsert_batch/test_upsert_batch.py $SRCH2_ENGINE" 
+rm -rf data/ *.idx upsert_batch/indexes upsert_batch/*.idx upsert_batch/indexes/*.idx
+
+test_case "batch insert" "python ./upsert_batch/test_insert_batch.py $SRCH2_ENGINE"
+rm -rf data/ upsert_batch/*.idx upsert_batch/indexes/*.idx
+
+rm -f ./multicore/core?/*.idx ./multicore/core?/srch2-log.txt
+test_case "multicore" "python ./multicore/multicore.py $SRCH2_ENGINE ./multicore/queriesAndResults.txt ./multicore/queriesAndResults2.txt"
+rm -rf data/ multicore/core?/*.idx
+
+rm -f ./multiport/core?/*.idx ./multiport/core?/srch2-log.txt
+test_case "multiport" "python ./multiport/multiport.py $SRCH2_ENGINE ./multiport/queriesAndResults.txt"
+rm -rf data/ multiport/core?/*.idx
+
+test_case "authorization" "python ./authorization/authorization.py $SRCH2_ENGINE ./authorization/queriesAndResults.txt"
+
+test_case "test loading different schema" "python ./test_load_diff_schema/test_load_diff_schema.py $SRCH2_ENGINE"
+
+test_case "refining attribute type" "python ./refining_attr_type/refining_attr_type.py $SRCH2_ENGINE"
+
+test_case "primary key - refining field" "python ./refining_field_primary_key/testPrimaryKey.py $SRCH2_ENGINE ./refining_field_primary_key/queriesAndResults.txt"
+
+test_case "run engine with missing parameters from config file" "python ./missing_parameters_from_cm/missingParameters_config.py $SRCH2_ENGINE ./missing_parameters_from_cm/queriesAndResults.txt"
+
+test_case "empty record boost field" "python ./empty_recordBoostField/empty_recordBoostField.py $SRCH2_ENGINE ./empty_recordBoostField/queriesAndResults.txt"
+
+test_case "heart_beat_test"  "python ./heartbeat/heart_beat.py $SRCH2_ENGINE"
+
+test_case "test field list parameter in query" "python ./test_fieldList_inQuery/test_fieldList.py $SRCH2_ENGINE ./test_fieldList_inQuery/queriesAndResults.txt"
 
 if [ $os != "$macName" ];then
-    test_id="high_insert"
-    printTestBanner "$test_id"
-    ./high_insert_test/autotest.sh $SRCH2_ENGINE | eval "${html_escape_command}" >> system_test.log 2>&1
-    if [ ${PIPESTATUS[0]} -gt 0 ]; then
-        echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-	exit 255
-    fi
-    else
-        echo "-- PASSED: $test_id" >> ${output}
-    fi
-    rm -rf data/ *.idx
+    test_case "high_insert" "./high_insert_test/autotest.sh $SRCH2_ENGINE" 
 else
     echo "-- IGNORING high_insert test on $macName" >> ${output}
 fi
 
-test_id="exact_A1"
-printTestBanner "$test_id"
-python ./exact_a1/exact_A1.py $SRCH2_ENGINE ./exact_a1/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
-
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-	exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx
-
-
-test_id="fuzzy_A1"
-printTestBanner "$test_id"
-python ./fuzzy_a1/fuzzy_A1.py $SRCH2_ENGINE ./fuzzy_a1/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
-
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-	exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx
-
-test_id="fuzzy_A1_swap test"
-printTestBanner "$test_id"
-python ./fuzzy_a1_swap/fuzzy_A1_swap.py $SRCH2_ENGINE ./fuzzy_a1_swap/queriesAndResults.txt >> system_test.log 2>&1
-
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "FAILED: $test_id" >> ${output}
-    if [ $force -eq 0 ]; then
-	exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx
-
-
-
-test_id="exact_M1"
-printTestBanner "$test_id"
-python ./exact_m1/exact_M1.py $SRCH2_ENGINE ./exact_m1/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
-
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-	exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx
-
-
-test_id="fuzzy_M1"
-printTestBanner "$test_id"
-python ./fuzzy_m1/fuzzy_M1.py $SRCH2_ENGINE ./fuzzy_m1/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
-
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-	exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx
-
-
-test_id="exact_Attribute_Based_Search"
-printTestBanner "$test_id"
-python ./exact_attribute_based_search/exact_Attribute_Based_Search.py $SRCH2_ENGINE ./exact_attribute_based_search/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-	exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx
-
-test_id="fuzzy_Attribute_Based_Search"
-printTestBanner "$test_id"
-python ./fuzzy_attribute_based_search/fuzzy_Attribute_Based_Search.py $SRCH2_ENGINE ./fuzzy_attribute_based_search/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-        exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx
-
-
-test_id="exact_Attribute_Based_Search_Geo"
-printTestBanner "$test_id"
-python ./exact_attribute_based_search_geo/exact_Attribute_Based_Search_Geo.py $SRCH2_ENGINE ./exact_attribute_based_search_geo/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
-
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-	exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx
-
-
-test_id="fuzzy_Attribute_Based_Search_Geo"
-printTestBanner "$test_id"
-python ./fuzzy_attribute_based_search_geo/fuzzy_Attribute_Based_Search_Geo.py $SRCH2_ENGINE ./fuzzy_attribute_based_search_geo/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
-
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-	exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx
-
-
-test_id="faceted search"
-printTestBanner "$test_id"
-python ./faceted_search/faceted_search.py '--srch' $SRCH2_ENGINE '--qryNrslt' ./faceted_search/queriesAndResults.txt '--frslt' ./faceted_search/facetResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
-
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-	exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx
-
-
-test_id="sort filter"
-printTestBanner "$test_id"
-python ./sort_filter/sort_filter.py $SRCH2_ENGINE ./sort_filter/queriesAndResults.txt ./sort_filter/facetResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
-
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-	exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx
-
-
-test_id="filter query"
-printTestBanner "$test_id"
-python ./filter_query/filter_query.py $SRCH2_ENGINE ./filter_query/queriesAndResults.txt ./filter_query/facetResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
-
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-	exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx
-
-
-test_id="test_solr_compatible_query_syntax"
-printTestBanner "$test_id"
-python ./test_solr_compatible_query_syntax/test_solr_compatible_query_syntax.py $SRCH2_ENGINE ./test_solr_compatible_query_syntax/queriesAndResults.txt ./test_solr_compatible_query_syntax/facetResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
-
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-	exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx
-
-
-#if [ ${PIPESTATUS[0]} -gt 0 ]; then
-#    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-#if [ $force -eq 0 ]; then
-#    exit 255
-#fi
-#fi
-#echo "-- PASSED: $test_id" >> ${output}
-
-test_id="test_search_by_id"
-printTestBanner "$test_id"
-python ./test_search_by_id/test_search_by_id.py $SRCH2_ENGINE | eval "${html_escape_command}" >> system_test.log 2>&1
-
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-	exit 255
-    fi
-else
-    echo "-- PASSED:$test_id" >> ${output}
-fi
-rm -rf data/ *.idx
-
-
-test_id="date and time implementation"
-printTestBanner "$test_id"
-python ./date_time_new_features_test/date_time_new_features_test.py $SRCH2_ENGINE ./date_time_new_features_test/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
-
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-	exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx
-
-
-test_id="geo"
-printTestBanner "$test_id"
-python ./geo/geo.py $SRCH2_ENGINE ./geo/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
-
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-	exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx
-
-
-test_id="term type"
-printTestBanner "$test_id"
-python ./term_type/term_type.py $SRCH2_ENGINE ./term_type/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
-
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-	exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx
-
-
-test_id="analyzer end to end"
-printTestBanner "$test_id"
-python ./analyzer_exact_a1/analyzer_exact_A1.py $SRCH2_ENGINE ./analyzer_exact_a1/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
-
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-	exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx
-
-
-test_id="top_k"
-printTestBanner "$test_id"
-python ./top_k/test_srch2_top_k.py $SRCH2_ENGINE food 10 20 | eval "${html_escape_command}" >> system_test.log 2>&1
-
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-	exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx
-
-
-test_id="reset logger"
-printTestBanner "$test_id"
-python ./reset_logger/test_reset_logger.py $SRCH2_ENGINE | eval "${html_escape_command}" >> system_test.log 2>&1
-
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-#    if [ $force -eq 0 ]; then
-#	exit 255
-#    fi
-    echo "-- IGNORING FAILURE: $test_id" >> ${output}
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx reset_logger/indexes
-
-
-test_id="tests_used_for_statemedia"
-printTestBanner "$test_id"
 # server is a little slow to exit for reset_logger, causing the server in statemedia's first test (write_correctness)
 # to fail to bind the port, hanging the test script, so wait just a sec here
 sleep 1
@@ -672,221 +324,33 @@ if [ $HAVE_NODE -gt 0 ]; then
     fi
 
     if [ `uname -s` != 'Darwin' ]; then
-        NODECMD=${NODE_CMD:-node} ./tests_used_for_statemedia/autotest.sh $SRCH2_ENGINE | eval "${html_escape_command}" >> system_test.log 2>&1
-
-        if [ ${PIPESTATUS[0]} -gt 0 ]; then
-	    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-            if [ $force -eq 0 ]; then
-                exit 255
-	    fi
-        else
-	    echo "-- PASSED: $test_id" >> ${output}
-        fi
+        test_case "tests_used_for_statemedia" "NODECMD=${NODE_CMD:-node} ./tests_used_for_statemedia/autotest.sh $SRCH2_ENGINE" 
     else
         echo "-- IGNORING $test_id on MacOS"
     fi
 else
     echo "-- node.js NOT INSTALLED - SKIPPING: ${test_id}" >> ${output}
 fi
-
 # TODO - hack until we figure out why tests_used_for_statemedia/large_insertion_test/large_insertion_test.rb
 # won't run and tests_used_for_statemedia/update_endpoint_test
 #echo "-- IGNORING FAILURE: $test_id" >> ${output}
-
 rm -rf data/ *.idx
 
 
-test_id="batch upsert"
-printTestBanner "$test_id"
-python ./upsert_batch/test_upsert_batch.py $SRCH2_ENGINE | eval "${html_escape_command}" >> system_test.log 2>&1
+rm -rf data/sqlite_data
+rm -rf ./adapter_sqlite/srch2Test.db
+test_case "adapter_sqlite" "python ./adapter_sqlite/adapter_sqlite.py $SRCH2_ENGINE \
+    ./adapter_sqlite/testCreateIndexes_sql.txt ./adapter_sqlite/testCreateIndexes.txt \
+    ./adapter_sqlite/testRunListener_sql.txt ./adapter_sqlite/testRunListener.txt \
+    ./adapter_sqlite/testOfflineLog_sql.txt ./adapter_sqlite/testOfflineLog.txt" \
+    255 "-- SKIPPED: Cannot connect to the Sqlite. Check if sqlite3 is installed."
+rm -rf data/sqlite_data
+rm -rf ./adapter_sqlite/srch2Test.db
 
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-	exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx upsert_batch/indexes upsert_batch/*.idx upsert_batch/indexes/*.idx
-
-
-test_id="batch insert"
-printTestBanner "$test_id"
-python ./upsert_batch/test_insert_batch.py $SRCH2_ENGINE | eval "${html_escape_command}" >> system_test.log 2>&1
-
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-	exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ upsert_batch/*.idx upsert_batch/indexes/*.idx
-
-
-test_id="multicore"
-printTestBanner "$test_id"
-rm -f ./multicore/core?/*.idx ./multicore/core?/srch2-log.txt
-python ./multicore/multicore.py $SRCH2_ENGINE ./multicore/queriesAndResults.txt ./multicore/queriesAndResults2.txt | eval "${html_escape_command}" >> system_test.log 2>&1
-
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-	exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ multicore/core?/*.idx
-
-test_id="multiport"
-printTestBanner "$test_id"
-rm -f ./multiport/core?/*.idx ./multiport/core?/srch2-log.txt
-python ./multiport/multiport.py $SRCH2_ENGINE ./multiport/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
-
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-	exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ multiport/core?/*.idx
-
-test_id="authentication"
-printTestBanner "$test_id"
-python ./authorization/authorization.py $SRCH2_ENGINE ./authorization/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
-
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-        exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx
-
-test_id="adapter_mongo"
-printTestBanner "$test_id"
-python ./adapter_mongo/MongoTest.py $SRCH2_ENGINE ./adapter_mongo/queries.txt  | eval "${html_escape_command}" >> system_test.log 2>&1
-
-fun_ret=${PIPESTATUS[0]}
-if [ $fun_ret -gt 0 ]; then
-    if [ $fun_ret -eq 10 ]; then
-        echo "-- SKIPPED: Cannot connect to the MongoDB. Check instructions in the file db_connectors/mongo/readme.txt. " >> ${output}
-    else
-        echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-
-        if [ $force -eq 0 ]; then
-	    exit 255
-        fi
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/*.idx
+test_case "adapter_mongo" "python ./adapter_mongo/MongoTest.py $SRCH2_ENGINE \
+    ./adapter_mongo/queries.txt" 10 "-- SKIPPED: Cannot connect to the MongoDB. \
+    Check instructions in the file db_connectors/mongo/readme.txt. "
 rm -rf data/mongodb_data
-
-test_id="adapter_sqlite"
-printTestBanner "$test_id"
-
-rm -rf data/ *.idx
-rm -rf data/sqlite_data
-rm -rf ./adapter_sqlite/srch2Test.db
-
-python ./adapter_sqlite/adapter_sqlite.py $SRCH2_ENGINE ./adapter_sqlite/testCreateIndexes_sql.txt ./adapter_sqlite/testCreateIndexes.txt ./adapter_sqlite/testRunListener_sql.txt ./adapter_sqlite/testRunListener.txt ./adapter_sqlite/testOfflineLog_sql.txt ./adapter_sqlite/testOfflineLog.txt | eval "${html_escape_command}" >> system_test.log 2>&1
-
-fun_ret=${PIPESTATUS[0]}
-if [ $fun_ret -gt 0 ]; then
-    if [ $fun_ret -eq 255 ]; then
-        echo "-- SKIPPED: Cannot connect to the Sqlite. Check if sqlite3 is installed." >> ${output}
-    else
-        echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    fi
-
-    if [ $force -eq 0 ]; then
-        exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx
-rm -rf data/sqlite_data
-rm -rf ./adapter_sqlite/srch2Test.db
-
-test_id="test loading different schema"
-printTestBanner "$test_id"
-python ./test_load_diff_schema/test_load_diff_schema.py $SRCH2_ENGINE  | eval "${html_escape_command}" >> system_test.log 2>&1
-
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-        exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx
-
-test_id="refining attribute type"
-printTestBanner "$test_id"
-python ./refining_attr_type/refining_attr_type.py $SRCH2_ENGINE  | eval "${html_escape_command}" >> system_test.log 2>&1
-
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-        exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx
-
-test_id="primary key - refining field"
-printTestBanner "$test_id"
-python ./refining_field_primary_key/testPrimaryKey.py $SRCH2_ENGINE ./refining_field_primary_key/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
-
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-        exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx
-
-test_id="run engine with missing parameters from config file"
-printTestBanner "$test_id"
-python ./missing_parameters_from_cm/missingParameters_config.py $SRCH2_ENGINE ./missing_parameters_from_cm/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
-
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-        exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx
-
-test_id="empty record boost field"
-printTestBanner "$test_id"
-python ./empty_recordBoostField/empty_recordBoostField.py $SRCH2_ENGINE ./empty_recordBoostField/queriesAndResults.txt | eval "${html_escape_command}" >> system_test.log 2>&1
-
-if [ ${PIPESTATUS[0]} -gt 0 ]; then
-    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-    if [ $force -eq 0 ]; then
-        exit 255
-    fi
-else
-    echo "-- PASSED: $test_id" >> ${output}
-fi
-rm -rf data/ *.idx
 
 
 # clear the output directory. First make sure that we are in correct directory
@@ -905,5 +369,6 @@ fi
 if [ "$upload" != '' ]; then
     eval $upload
 fi
+
 
 cd $PWD_DIR
