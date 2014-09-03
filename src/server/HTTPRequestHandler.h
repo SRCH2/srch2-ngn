@@ -63,6 +63,7 @@ class HTTPRequestHandler
 				const unsigned offset,
 				const unsigned nextK,
 				const unsigned retrievedResults,
+				const string & aclRoleId,
 				const string & message,
 				const unsigned ts1,
 				struct timespec &tstart, struct timespec &tend,
@@ -75,6 +76,7 @@ class HTTPRequestHandler
 				const CoreInfo_t *indexDataConfig,
 				const QueryResults *queryResults,
 				const srch2is::Indexer *indexer,
+				const string & aclRoleId,
 				const string & message,
 				const unsigned ts1,
 				struct timespec &tstart, struct timespec &tend);
@@ -87,9 +89,9 @@ class HTTPRequestHandler
 				struct timespec &tstart, struct timespec &tend);
 		static void cleanAndAppendToBuffer(const string& in, string& out);
 		static void genRecordJsonString(const srch2is::Indexer *indexer, StoredRecordBuffer buffer,
-				const string& externalId, string& sbuffer);
+				const string& externalId, string& sbuffer, const string& aclRoleId);
 		static void genRecordJsonString(const srch2is::Indexer *indexer, StoredRecordBuffer buffer,
-				const string& externalId, string& sbuffer,const vector<string>* attrToReturn);
+				const string& externalId, string& sbuffer,const vector<string>* attrToReturn, const string& aclRoleId);
 		static void genSnippetJSONString(unsigned recIdx, unsigned start,
 				const vector<RecordSnippet>& recordSnippets, string& sbuffer,
 				const QueryResults *queryResults);

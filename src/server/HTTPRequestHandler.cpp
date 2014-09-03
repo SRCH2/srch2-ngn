@@ -156,7 +156,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
         const CoreInfo_t *indexDataConfig,
         const QueryResults *queryResults, const Query *query,
         const Indexer *indexer, const unsigned start, const unsigned end,
-        const unsigned retrievedResults, const string & message,
+        const unsigned retrievedResults, const string& aclRoleId, const string & message,
         const unsigned ts1, struct timespec &tstart, struct timespec &tend ,
         const vector<RecordSnippet>& recordSnippets, unsigned hlTime, bool onlyFacets) {
 
@@ -197,7 +197,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
                     //This case executes when all the attributes are to be returned. However we let the user
                     //override if field list parameter is given in query
                     genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-                            sbuffer, attributesToReturnFromQueryPtr);
+                            sbuffer, attributesToReturnFromQueryPtr, aclRoleId);
                     // The class CustomizableJsonWriter allows us to
                     // attach the data string to the JSON tree without parsing it.
                     (*root)["results"][counter][global_internal_record.first] = sbuffer;
@@ -213,7 +213,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
                 	}
 
                 	genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-                	                            sbuffer, attrToReturn);
+                	                            sbuffer, attrToReturn, aclRoleId);
 
                 	// The class CustomizableJsonWriter allows us to
                 	// attach the data string to the JSON tree without parsing it.
@@ -223,7 +223,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
                     string stringBuffer;
                     if(attributesToReturnFromQuery.size() > 0){
                         genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-                                stringBuffer, attributesToReturnFromQueryPtr);
+                                stringBuffer, attributesToReturnFromQueryPtr, aclRoleId);
                         (*root)["results"][counter][global_internal_record.first] = stringBuffer;
                     }
 
@@ -270,7 +270,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
                     //This case executes when all the attributes are to be returned. However we let the user
                     //override if field list parameter is given in query
                     genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-                                                sbuffer, attributesToReturnFromQueryPtr);
+                                                sbuffer, attributesToReturnFromQueryPtr, aclRoleId);
 
                     // The class CustomizableJsonWriter allows us to
                     // attach the data string to the JSON tree without parsing it.
@@ -288,7 +288,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
                     }
 
                     genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-                                                sbuffer, attrToReturn);
+                                                sbuffer, attrToReturn, aclRoleId);
 
                 	// The class CustomizableJsonWriter allows us to
                 	// attach the data string to the JSON tree without parsing it.
@@ -298,7 +298,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
                     string stringBuffer;
                     if(attributesToReturnFromQuery.size() > 0){
                         genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-                                stringBuffer, attributesToReturnFromQueryPtr);
+                                stringBuffer, attributesToReturnFromQueryPtr, aclRoleId);
                         (*root)["results"][counter][global_internal_record.first] = stringBuffer;
                     }
                 }
@@ -452,6 +452,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printOneResultRetrievedById(e
         const CoreInfo_t *indexDataConfig,
         const QueryResults *queryResults,
         const srch2is::Indexer *indexer,
+        const string & aclRoleId,
         const string & message,
         const unsigned ts1,
         struct timespec &tstart, struct timespec &tend){
@@ -491,7 +492,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printOneResultRetrievedById(e
             //This case executes when all the attributes are to be returned. However we let the user
             //override if field list parameter is given in query
             genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-                    sbuffer, attributesToReturnFromQueryPtr);
+                    sbuffer, attributesToReturnFromQueryPtr, aclRoleId);
 
             (*root)["results"][counter][global_internal_record.first] = sbuffer;
         } else if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SELECTED_ATTR){
@@ -506,7 +507,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printOneResultRetrievedById(e
                 attrToReturn = attributesToReturnFromQueryPtr;
             }
             genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-                                        sbuffer, attrToReturn);
+                                        sbuffer, attrToReturn, aclRoleId);
 
             // The class CustomizableJsonWriter allows us to
             // attach the data string to the JSON tree without parsing it.
@@ -516,7 +517,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printOneResultRetrievedById(e
             string stringBuffer;
             if(attributesToReturnFromQuery.size() > 0){
                 genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-                        stringBuffer, attributesToReturnFromQueryPtr);
+                        stringBuffer, attributesToReturnFromQueryPtr, aclRoleId);
                 (*root)["results"][counter][global_internal_record.first] = stringBuffer;
             }
         }
@@ -541,15 +542,51 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printOneResultRetrievedById(e
 }
 
 void HTTPRequestHandler::genRecordJsonString(const srch2is::Indexer *indexer, StoredRecordBuffer buffer,
-		const string& extrnalRecordId, string& sbuffer){
+		const string& extrnalRecordId, string& sbuffer, const string& aclRoleId){
 	genRecordJsonString(indexer, buffer, extrnalRecordId,
-	                    		 sbuffer, NULL);
+	                    		 sbuffer, NULL, aclRoleId);
 }
 void HTTPRequestHandler::genRecordJsonString(const srch2is::Indexer *indexer, StoredRecordBuffer buffer,
-		const string& externalRecordId, string& sbuffer, const vector<string>* attrToReturn){
+		const string& externalRecordId, string& sbuffer, const vector<string>* attrToReturn,
+		const string& aclRoleId){
+
+	vector<string>  accessibleAttrsList;
+	// perform access control check on fields to be returned to a user.
+	if (attrToReturn == NULL) {
+		// attributes to return are not specified. Hence, Go over the fields in the schema and check
+		// whether they are accessible for a given role id.
+
+		const Schema *schema = indexer->getSchema();
+		std::map<std::string, unsigned>::const_iterator iter =
+				schema->getSearchableAttribute().begin();
+		// 1. Searchable fields in schema
+		for ( ; iter != schema->getSearchableAttribute().end(); iter++) {
+			if (indexer->getAttributeAcl().isSearchableFieldAccessibleForRole(aclRoleId, iter->first)) {
+				accessibleAttrsList.push_back(iter->first);
+			}
+		}
+		// 2. Refining fields in schema
+		iter = schema->getRefiningAttributes()->begin();
+		for ( ; iter != schema->getRefiningAttributes()->end(); iter++) {
+			if (indexer->getAttributeAcl().isRefiningFieldAccessibleForRole(aclRoleId, iter->first)) {
+				accessibleAttrsList.push_back(iter->first);
+			}
+		}
+
+	} else {
+		// if attributes to returned are specified then verify whether these attributes are accessible
+		for (unsigned i = 0; i < attrToReturn->size(); ++i) {
+			const string & fieldName = attrToReturn->operator[](i);
+			if (indexer->getAttributeAcl().isRefiningFieldAccessibleForRole(aclRoleId, fieldName) ||
+			    indexer->getAttributeAcl().isSearchableFieldAccessibleForRole(aclRoleId, fieldName)) {
+				accessibleAttrsList.push_back(fieldName);
+			}
+		}
+	}
 	Schema * storedSchema = Schema::create();
 	RecordSerializerUtil::populateStoredSchema(storedSchema, indexer->getSchema());
-	RecordSerializerUtil::convertCompactToJSONString(storedSchema, buffer, externalRecordId, sbuffer, attrToReturn);
+	RecordSerializerUtil::convertCompactToJSONString(storedSchema, buffer, externalRecordId, sbuffer,
+			&accessibleAttrsList);
 	delete storedSchema;
 }
 
@@ -1245,7 +1282,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
                 indexDataContainerConf, finalResults, logicalPlan.getExactQuery(),
                 server->indexer, logicalPlan.getOffset(),
                 finalResults->getNumberOfResults(),
-                finalResults->getNumberOfResults(),
+                finalResults->getNumberOfResults(), paramContainer.aclRole,
                 paramContainer.getMessageString(), ts1, tstart, tend, highlightInfo, hlTime,
                 paramContainer.onlyFacets);
 
@@ -1263,7 +1300,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
                     indexDataContainerConf, finalResults,
                     logicalPlan.getExactQuery(), server->indexer,
                     logicalPlan.getOffset(), finalResults->getNumberOfResults(),
-                    finalResults->getNumberOfResults(),
+                    finalResults->getNumberOfResults(), paramContainer.aclRole,
                     paramContainer.getMessageString(), ts1, tstart, tend , highlightInfo, hlTime,
                     paramContainer.onlyFacets);
         } else { // Case where you have return 10,20, but we got only 0,25 results and so return 10,20
@@ -1272,7 +1309,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
                     logicalPlan.getExactQuery(), server->indexer,
                     logicalPlan.getOffset(),
                     logicalPlan.getOffset() + logicalPlan.getNumberOfResultsToRetrieve(),
-                    finalResults->getNumberOfResults(),
+                    finalResults->getNumberOfResults(), paramContainer.aclRole,
                     paramContainer.getMessageString(), ts1, tstart, tend, highlightInfo, hlTime,
                     paramContainer.onlyFacets);
         }
@@ -1285,6 +1322,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
                 indexDataContainerConf,
                 finalResults ,
                 server->indexer ,
+                paramContainer.aclRole,
                 paramContainer.getMessageString() ,
                 ts1, tstart , tend);
         break;
