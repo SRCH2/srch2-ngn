@@ -334,8 +334,9 @@ static bool checkOperationPermission(evhttp_request *req, Srch2Server *srch2Serv
         { srch2http::SavePort, "save" },
         { srch2http::ExportPort, "export" },
         { srch2http::ResetLoggerPort, "resetlogger" },
-        { srch2http::DocsPort, "acl-role-add"},
-        { srch2http::DocsPort, "acl-role-delete"},
+        { srch2http::RecordAclAdd, "aclRecordRoleAdd"},
+        { srch2http::RecordAclAppend, "aclRecordRoleAppend"},
+        { srch2http::RecordAclDelete, "aclRecordRoleDelete"},
         { srch2http::EndOfPortType, NULL },
     };
 
@@ -422,6 +423,15 @@ static void cb_single_core_operator_route(evhttp_request *req, void *arg){
             case srch2http::ResetLoggerPort:
     	        HTTPRequestHandler::resetLoggerCommand(req, srch2Server);
                 break;
+            case srch2http::RecordAclAdd:
+            	HTTPRequestHandler::aclAddRolesToRecord(req, srch2Server);
+            	break;
+            case srch2http::RecordAclAppend:
+            	HTTPRequestHandler::aclAppendRolesToRecord(req, srch2Server);
+            	break;
+            case srch2http::RecordAclDelete:
+            	HTTPRequestHandler::aclDeleteRolesFromRecord(req, srch2Server);
+            	break;
             default:
                 cb_notfound(req, srch2Server);
                 break;
@@ -434,59 +444,59 @@ static void cb_single_core_operator_route(evhttp_request *req, void *arg){
 
 }
 
-static void cb_aclRecordRoleAdd(evhttp_request *req, void *arg){
-    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
-    evhttp_add_header(req->output_headers, "Content-Type",
-            "application/json; charset=UTF-8");
-
-    if (checkOperationPermission(req, srch2Server, srch2http::DocsPort) == false) {
-        return;
-    }
-
-    try {
-        HTTPRequestHandler::aclAddRolesToRecord(req, srch2Server);
-    } catch (exception& e) {
-        // exception caught
-        Logger::error(e.what());
-        srch2http::HTTPRequestHandler::handleException(req);
-    }
-}
-
-static void cb_aclRecordRoleAppend(evhttp_request *req, void *arg){
-    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
-    evhttp_add_header(req->output_headers, "Content-Type",
-            "application/json; charset=UTF-8");
-
-    if (checkOperationPermission(req, srch2Server, srch2http::DocsPort) == false) {
-        return;
-    }
-
-    try {
-        HTTPRequestHandler::aclAppendRolesToRecord(req, srch2Server);
-    } catch (exception& e) {
-        // exception caught
-        Logger::error(e.what());
-        srch2http::HTTPRequestHandler::handleException(req);
-    }
-}
-
-static void cb_aclRecordRoleDelete(evhttp_request *req, void *arg){
-    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
-    evhttp_add_header(req->output_headers, "Content-Type",
-            "application/json; charset=UTF-8");
-
-    if (checkOperationPermission(req, srch2Server, srch2http::DocsPort) == false) {
-        return;
-    }
-
-    try {
-        HTTPRequestHandler::aclDeleteRolesFromRecord(req, srch2Server);
-    } catch (exception& e) {
-        // exception caught
-        Logger::error(e.what());
-        srch2http::HTTPRequestHandler::handleException(req);
-    }
-}
+//static void cb_aclRecordRoleAdd(evhttp_request *req, void *arg){
+//    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
+//    evhttp_add_header(req->output_headers, "Content-Type",
+//            "application/json; charset=UTF-8");
+//
+//    if (checkOperationPermission(req, srch2Server, srch2http::DocsPort) == false) {
+//        return;
+//    }
+//
+//    try {
+//        HTTPRequestHandler::aclAddRolesToRecord(req, srch2Server);
+//    } catch (exception& e) {
+//        // exception caught
+//        Logger::error(e.what());
+//        srch2http::HTTPRequestHandler::handleException(req);
+//    }
+//}
+//
+//static void cb_aclRecordRoleAppend(evhttp_request *req, void *arg){
+//    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
+//    evhttp_add_header(req->output_headers, "Content-Type",
+//            "application/json; charset=UTF-8");
+//
+//    if (checkOperationPermission(req, srch2Server, srch2http::DocsPort) == false) {
+//        return;
+//    }
+//
+//    try {
+//        HTTPRequestHandler::aclAppendRolesToRecord(req, srch2Server);
+//    } catch (exception& e) {
+//        // exception caught
+//        Logger::error(e.what());
+//        srch2http::HTTPRequestHandler::handleException(req);
+//    }
+//}
+//
+//static void cb_aclRecordRoleDelete(evhttp_request *req, void *arg){
+//    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
+//    evhttp_add_header(req->output_headers, "Content-Type",
+//            "application/json; charset=UTF-8");
+//
+//    if (checkOperationPermission(req, srch2Server, srch2http::DocsPort) == false) {
+//        return;
+//    }
+//
+//    try {
+//        HTTPRequestHandler::aclDeleteRolesFromRecord(req, srch2Server);
+//    } catch (exception& e) {
+//        // exception caught
+//        Logger::error(e.what());
+//        srch2http::HTTPRequestHandler::handleException(req);
+//    }
+//}
 
 static void cb_all_core_operator_route(evhttp_request *req, void *arg){
     if (arg == NULL){
@@ -890,9 +900,9 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
             { "/save", srch2http::SavePort, cb_single_core_operator_route},
             { "/export", srch2http::ExportPort, cb_single_core_operator_route},
             { "/resetLogger", srch2http::ResetLoggerPort, cb_single_core_operator_route},
-            { "/aclRecordRoleAdd", srch2http::DocsPort, cb_aclRecordRoleAdd},
-            { "/aclRecordRoleAppend", srch2http::DocsPort, cb_aclRecordRoleAppend},
-            { "/aclRecordRoleDelete", srch2http::DocsPort, cb_aclRecordRoleDelete},
+            { "/aclRecordRoleAdd", srch2http::RecordAclAdd, cb_single_core_operator_route},
+            { "/aclRecordRoleAppend", srch2http::RecordAclAppend, cb_single_core_operator_route},
+            { "/aclRecordRoleDelete", srch2http::RecordAclDelete, cb_single_core_operator_route},
             { NULL, srch2http::EndOfPortType, NULL }
         };
 

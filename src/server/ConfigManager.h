@@ -128,6 +128,9 @@ enum PortType_t {
     ResetLoggerPort,
     SearchAllPort,
     ShutDownAllPort,
+    RecordAclAdd,
+    RecordAclAppend,
+    RecordAclDelete,
     EndOfPortType // stop value - not valid (also used to indicate all/default ports)
 };
 
