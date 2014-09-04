@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -247,5 +248,54 @@ class SearchTask extends HttpTask.SearchHttpTask {
                         returnedResponseLiteral, resultMap);
             }
         }
+    }
+
+    static HashMap<String, ArrayList<JSONObject>> getEmptyResultSet(Collection<Indexable> indexables) {
+        HashMap<String, ArrayList<JSONObject>> emptyResultSet = new HashMap<String, ArrayList<JSONObject>>(0);
+        for (Indexable idx : indexables) {
+            emptyResultSet.put(idx.getIndexName(), new ArrayList<JSONObject>(0));
+        }
+        return emptyResultSet;
+    }
+
+    private final static String getEmptyResultSetPerCoreJSONResponse(String indexName, boolean isLast) {
+        if (isLast) {
+            return "\"" + indexName + "\":" +
+                    "{\"estimated_number_of_results\":0," +
+                    "\"fuzzy\":1," +
+                    "\"limit\":0," +
+                    "\"message\":\"NOTICE : topK query\"," +
+                    "\"offset\":0,\"payload_access_time\":0," +
+                    "\"query_keywords\":[\"\"]," +
+                    "\"query_keywords_complete\":[false]," +
+                    "\"results\":[]," +
+                    "\"results_found\":0," +
+                    "\"searcher_time\":0," +
+                    "\"type\":0}";
+        } else {
+            return "\"" + indexName + "\":" +
+                    "{\"estimated_number_of_results\":0," +
+                    "\"fuzzy\":1," +
+                    "\"limit\":0," +
+                    "\"message\":\"NOTICE : topK query\"," +
+                    "\"offset\":0,\"payload_access_time\":0," +
+                    "\"query_keywords\":[\"\"]," +
+                    "\"query_keywords_complete\":[false]," +
+                    "\"results\":[]," +
+                    "\"results_found\":0," +
+                    "\"searcher_time\":0," +
+                    "\"type\":0},";
+            }
+    }
+
+    static String getEmptyResultJSONResponse(Collection<Indexable> indexables) {
+        StringBuilder sb = new StringBuilder("{");
+        Iterator<Indexable> idxs = indexables.iterator();
+        while (idxs.hasNext()) {
+            Indexable idx = idxs.next();
+            sb.append(getEmptyResultSetPerCoreJSONResponse(idx.getIndexName(), !idxs.hasNext()));
+        }
+        sb.append("}");
+        return sb.toString();
     }
 }

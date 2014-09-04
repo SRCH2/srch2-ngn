@@ -5,11 +5,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.Looper;
+import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -358,10 +360,9 @@ final public class SRCH2Engine {
         Cat.d(TAG, "reQueryLastOne");
         IndexQueryPair pair = lastQuery.get();
         if (pair == null || pair.query == null || pair.query.length() < 1) {
-/* must push back zero results
+            final HashMap<String, ArrayList<JSONObject>> emptyResultSet = SearchTask.getEmptyResultSet(conf.indexableMap.values());
+            final String JSONresponse = SearchTask.getEmptyResultJSONResponse(conf.indexableMap.values());
             if (searchResultsObserver != null) {
-                final HashMap<String, ArrayList<JSONObject>> resultMap = new HashMap<String, ArrayList<JSONObject>>(0);
-                }
                 if (SRCH2Engine.searchResultsPublishedToUiThread) {
                     Handler uiHandler = SRCH2Engine.getSearchResultsUiCallbackHandler();
                     if (uiHandler != null) {
@@ -369,16 +370,15 @@ final public class SRCH2Engine {
                             @Override
                             public void run() {
                                 searchResultsObserver.onNewSearchResults(200,
-                                        returnedResponseLiteral, resultMap);
+                                        JSONresponse, emptyResultSet);
                             }
                         });
                     }
                 } else {
-                    searchResultsListener.onNewSearchResults(200,
-                            returnedResponseLiteral, resultMap);
+                    searchResultsObserver.onNewSearchResults(200,
+                            JSONresponse, emptyResultSet);
                 }
             }
- */
             return;
         }
         if (pair.index == null) {
@@ -390,14 +390,12 @@ final public class SRCH2Engine {
 
     private static void searchAllRawString(String rawQueryString) {
         lastQuery.set(new IndexQueryPair(null, rawQueryString));
-//        if (isReady()) {
-            if (allIndexSearchTask != null) {
-                allIndexSearchTask.cancel();
-            }
-            allIndexSearchTask = new SearchTask(UrlBuilder.getSearchUrl(conf, null,
-                    rawQueryString), searchResultsObserver);
-            HttpTask.addToQueue(allIndexSearchTask);
-//        }
+        if (allIndexSearchTask != null) {
+            allIndexSearchTask.cancel();
+        }
+        allIndexSearchTask = new SearchTask(UrlBuilder.getSearchUrl(conf, null,
+                                                rawQueryString), searchResultsObserver);
+        HttpTask.addToQueue(allIndexSearchTask);
     }
 
     /**

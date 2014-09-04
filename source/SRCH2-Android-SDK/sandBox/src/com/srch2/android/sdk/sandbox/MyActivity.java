@@ -19,6 +19,7 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
     public ListView searchResultsListView;
     public SearchResultsAdapter resultsAdapter;
     public Idx index;
+    public IdxTwo indexTwo;
     public GeoIdx geoIndex;
     public Context context;
 
@@ -33,9 +34,10 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
         resultsAdapter = new SearchResultsAdapter(this);
         searchResultsListView.setAdapter(resultsAdapter);
         index = new Idx();
+        indexTwo = new IdxTwo();
         geoIndex = new GeoIdx();
 
-        SRCH2Engine.initialize(index);
+        SRCH2Engine.initialize(index, indexTwo);
 
         sr = new SearchResults();
         SRCH2Engine.setSearchResultsListener(sr, true);
@@ -46,7 +48,11 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
         @Override
         public void onNewSearchResults(int HTTPResponseCode, String JSONResponse, HashMap<String, ArrayList<JSONObject>> resultMap) {
 
+            Log.d("SEARCHRESULTS", "response is [" + JSONResponse + "]");
+
             int count = 0;
+
+
             for (ArrayList<JSONObject> results : resultMap.values()) {
                 for (JSONObject jo : results) {
                     ++count;
