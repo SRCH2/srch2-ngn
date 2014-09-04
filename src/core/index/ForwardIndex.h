@@ -99,7 +99,7 @@ public:
 	~RoleAccessList(){};
 
 	// this function will return false if this roleId already exists
-	bool addRole(string &roleId){
+	bool appendRole(string &roleId){
 		vector<string>::iterator it;
 		boost::unique_lock<boost::shared_mutex> lock(mutexRW);
 		bool roleExisted = findRole(roleId, it);
@@ -127,6 +127,11 @@ public:
 		bool roleExisted = findRole(roleId, it);
 		lock.unlock();
 		return roleExisted;
+	}
+
+	void clearRoles(){
+		boost::unique_lock<boost::shared_mutex> lock(mutexRW);
+		roles.clear();
 	}
 
 	/*
@@ -437,9 +442,9 @@ public:
     	return this->roleAccessList.hasRole(roleId);
     };
 
-    void addRolesToResource(vector<string> &roleIds){
+    void appendRolesToResource(vector<string> &roleIds){
     	for (unsigned i = 0 ; i < roleIds.size() ; i++){
-    		this->roleAccessList.addRole(roleIds[i]);
+    		this->roleAccessList.appendRole(roleIds[i]);
     	}
     }
 
@@ -691,11 +696,13 @@ public:
             KeywordIdKeywordStringInvertedListIdTriple &keywordIdList,
             map<string, TokenAttributeHits> &tokenAttributeHitsMap);
 
-    bool addRoleToResource(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView, const string& primaryKeyID, vector<string> &roleIds);
+    bool appendRoleToResource(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView, const string& primaryKeyID, vector<string> &roleIds);
 
     bool deleteRoleFromResource(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView, const string& primaryKeyID, vector<string> &roleIds);
 
     bool deleteRoleFromResource(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView, const string& primaryKeyID, const string &roleId);
+
+    RoleAccessList* getRecordAccessList(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView, const string& primaryKeyID);
 
     /**
      * Set the deletedFlag on the forwardList, representing record deletion.

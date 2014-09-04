@@ -62,40 +62,44 @@ struct IndexWriteUtil
     	//std::cout << "INSERT request received. New number of documents = " << indexer->getNumberOfDocumentsInIndex() << "; Limit = " << indexDataContainerConf->getDocumentLimit() << "." << std::endl;
     }
 
-    // add role ids to a record
-    static void _aclRoleAdd(Indexer *indexer, string &primaryKeyID, vector<string> &roleIds, std::stringstream &log_str){
+    static void _aclEditRoles(Indexer *indexer, string &primaryKeyID, vector<string> &roleIds, std::stringstream &log_str, srch2::instantsearch::AclCommandType commandType){
 
-    	srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->aclRoleAdd(primaryKeyID, roleIds);
-    	switch( ret )
-    	{
-			case srch2::instantsearch::OP_SUCCESS:
-			{
-				log_str << "{ Role id added successfully}";
-				break;
-			}
-			case srch2::instantsearch::OP_FAIL:
-			{
-				log_str << "{rid: " << primaryKeyID << " Add role failed. reason: No record with this primary key}" ;
-				break;
-			}
-    	};
-    }
+    	srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->aclEditRoles(primaryKeyID, roleIds, commandType);
 
-    // delete role ids from a record
-    static void _aclRoleDelete(Indexer *indexer, string &primaryKeyID, vector<string> &roleIds, std::stringstream &log_str){
-    	srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->aclRoleDelete(primaryKeyID, roleIds);
-    	switch( ret )
-    	{
-			case srch2::instantsearch::OP_SUCCESS:
-			{
-				log_str << "{ Role id deleted successfully}";
-				break;
-			}
-			case srch2::instantsearch::OP_FAIL:
-			{
-				log_str << "{rid: " << primaryKeyID << " delete role failed. reason: No record with this primary key}" ;
-				break;
-			}
+    	switch(commandType){
+    	case srch2::instantsearch::AddRoles:
+    		switch( ret ){
+    		case srch2::instantsearch::OP_SUCCESS:
+    			log_str << "{ Role id added successfully}";
+    			break;
+    		case srch2::instantsearch::OP_FAIL:
+    			log_str << "{rid: " << primaryKeyID << " add role failed. reason: No record with this primary key}" ;
+    			break;
+    		};
+    		break;
+    	case srch2::instantsearch::AppendRoles:
+    		switch( ret ){
+    		case srch2::instantsearch::OP_SUCCESS:
+    			log_str << "{ Role id appended successfully}";
+    			break;
+    		case srch2::instantsearch::OP_FAIL:
+    			log_str << "{rid: " << primaryKeyID << " append role failed. reason: No record with this primary key}" ;
+    			break;
+    		};
+    		break;
+    	case srch2::instantsearch::DeleteRoles:
+    		switch( ret ){
+    		case srch2::instantsearch::OP_SUCCESS:
+    			log_str << "{ Role id deleted successfully}";
+    			break;
+    		case srch2::instantsearch::OP_FAIL:
+    			log_str << "{rid: " << primaryKeyID << " delete role failed. reason: No record with this primary key}" ;
+    			break;
+    		};
+    		break;
+    	default:
+    		ASSERT(false);
+    		break;
     	};
     }
 

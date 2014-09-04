@@ -403,6 +403,10 @@ public:
     	return aclRoleId;
     }
 
+    static const char* getResourceId(){
+    	return aclResourceId;
+    }
+
 private:
 
 // configuration file tag and attribute names for ConfigManager
@@ -524,6 +528,7 @@ private:
     static const char* const roleCore;
     static const char* const accessControlDataFile;
     static const char* const aclRoleId;
+    static const char* const aclResourceId;
 
     static const char* const defaultFuzzyPreTag;
     static const char* const defaultFuzzyPostTag;

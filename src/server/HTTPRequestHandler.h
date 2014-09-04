@@ -48,6 +48,7 @@ class HTTPRequestHandler
         static void lookupCommand(evhttp_request *req, Srch2Server *server);
 		static void handleException(evhttp_request *req);
 		static void aclAddRolesToRecord(evhttp_request *req, Srch2Server *server);
+		static void aclAppendRolesToRecord(evhttp_request *req, Srch2Server *server);
 		static void aclDeleteRolesFromRecord(evhttp_request *req, Srch2Server *server);
 
 	private:
@@ -95,7 +96,8 @@ class HTTPRequestHandler
 				const vector<RecordSnippet>& recordSnippets, string& sbuffer,
 				const QueryResults *queryResults);
 		// this function first, checks that all the role ids exist then it add them to record object
-		static bool addRoleIdsToRecord(vector<string> &roleIds, Srch2Server* server, evhttp_request *req, Record* record, std::stringstream &log_str);
+		static void addRoleIdsToRecord(vector<string> &roleIds, Srch2Server* server, evhttp_request *req, Record* record, std::stringstream &log_str);
+		static void aclEditRolesOfRecord(evhttp_request *req, Srch2Server *server, srch2::instantsearch::AclCommandType commandType);
 
 };
 

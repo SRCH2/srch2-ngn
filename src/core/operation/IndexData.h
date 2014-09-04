@@ -64,6 +64,7 @@
 
 #include <instantsearch/Indexer.h>
 #include <instantsearch/Record.h>
+#include <instantsearch/Constants.h>
 
 //#include "index/IndexUtil.h"
 #include "index/Trie.h"
@@ -209,7 +210,7 @@ public:
 	// Adds resource id to some of the role ids.
 	// for each role id if it exists in the permission map it will add this resource id to its vector
 	// otherwise it adds new record to the map with this role id and then adds this resource id to it.
-	void addResourceToRole(const string &resourceId, vector<string> &roleIds);
+	void appendResourceToRole(const string &resourceId, vector<string> &roleIds);
 
 	// Deletes resource id from the role ids.
 	void deleteResourceFromRoles(const string &resourceId, vector<string> &roleIds);
@@ -324,11 +325,8 @@ public:
     // add a record
     INDEXWRITE_RETVAL _addRecord(const Record *record, Analyzer *analyzer);
     
-    // Adds role ids to the access list of a record
-    INDEXWRITE_RETVAL _aclRoleAdd(const std::string& primaryKeyID, vector<string> &roleIds);
-
-    // Deletes role ids from the access list of a record
-    INDEXWRITE_RETVAL _aclRoleDelete(const std::string& primaryKeyID, vector<string> &roleIds);
+    // Edit role ids of a record's access list based on command type
+    INDEXWRITE_RETVAL _aclEditRecordAccessList(const std::string& primaryKeyID, vector<string> &roleIds, AclCommandType commandType);
 
     // Deletes the role id from the permission map
     // we use this function for deleting a record from a role core

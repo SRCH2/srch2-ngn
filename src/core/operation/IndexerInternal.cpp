@@ -67,34 +67,17 @@ INDEXWRITE_RETVAL IndexReaderWriter::addRecord(const Record *record, Analyzer* a
     return returnValue;
 }
 
-INDEXWRITE_RETVAL IndexReaderWriter::aclRoleAdd(const std::string &resourcePrimaryKeyID, vector<string> &roleIds)
+INDEXWRITE_RETVAL IndexReaderWriter::aclEditRoles(const std::string &resourcePrimaryKeyID, vector<string> &roleIds, AclCommandType commandType)
 {
 	pthread_mutex_lock(&lockForWriters);
 
-	INDEXWRITE_RETVAL returnValue = this->index->_aclRoleAdd(resourcePrimaryKeyID, roleIds);
+	INDEXWRITE_RETVAL returnValue = this->index->_aclEditRecordAccessList(resourcePrimaryKeyID, roleIds, commandType);
 
-	// Because by adding new role ids to a record's access list the results of the search will change
-	// we need to clear the cache
+	// By editing the access list of a record the result of a search could change
+	// So we need to clear the cache.
 	if(returnValue == OP_SUCCESS){
 	    if (this->cache != NULL)
 	        this->cache->clear();
-	}
-
-	pthread_mutex_unlock(&lockForWriters);
-	return returnValue;
-}
-
-INDEXWRITE_RETVAL IndexReaderWriter::aclRoleDelete(const std::string &resourcePrimaryKeyID, vector<string> &roleIds)
-{
-	pthread_mutex_lock(&lockForWriters);
-
-	INDEXWRITE_RETVAL returnValue = this->index->_aclRoleDelete(resourcePrimaryKeyID, roleIds);
-
-	// Because by deleting some role ids from a record's access list the results of the search will change
-	// we need to clear the cache
-	if(returnValue == OP_SUCCESS){
-		if (this->cache != NULL)
-			this->cache->clear();
 	}
 
 	pthread_mutex_unlock(&lockForWriters);

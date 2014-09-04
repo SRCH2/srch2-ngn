@@ -885,8 +885,9 @@ bool ping(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string query
 
 bool ping_WithACL(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string queryString,
 		unsigned numberofHits , const vector<unsigned> &recordIDs,
-		vector<unsigned> attributeIdToFilter, ATTRIBUTES_OP attrOps, string roleId)
+		ATTRIBUTES_OP attrOps, string roleId)
 {
+	vector<unsigned> attributeIdToFilter;
     Query *query = new Query(srch2::instantsearch::SearchTypeTopKQuery);
     parseFuzzyPrefixQuery(analyzer, query, queryString, attributeIdToFilter, attrOps);
     int resultCount = 10;

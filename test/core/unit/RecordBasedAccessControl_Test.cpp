@@ -78,18 +78,18 @@ void testInsert(){
     recordIds.push_back(1);
     recordIds.push_back(2);
     ASSERT ( ping_WithACL(analyzer, queryEvaluator, "tom", 2 , recordIds,
-    		vector<unsigned>(), ATTRIBUTES_OP_AND, "100") == true);
+    		ATTRIBUTES_OP_AND, "100") == true);
 
     recordIds.clear();
     recordIds.push_back(3);
     ASSERT ( ping_WithACL(analyzer, queryEvaluator, "tom", 1 , recordIds,
-    		vector<unsigned>(), ATTRIBUTES_OP_AND, "300") == true);
+    		ATTRIBUTES_OP_AND, "300") == true);
 
     recordIds.clear();
     recordIds.push_back(2);
     recordIds.push_back(3);
     ASSERT ( ping_WithACL(analyzer, queryEvaluator, "tom", 2 , recordIds,
-    		vector<unsigned>(), ATTRIBUTES_OP_AND, "200") == true);
+    		ATTRIBUTES_OP_AND, "200") == true);
 
     // test search without ACL
     recordIds.clear();
@@ -108,31 +108,31 @@ void testAddRole(){
 
     vector<unsigned> recordIds;
     ASSERT ( ping_WithACL(analyzer, queryEvaluator, "tom", 0 , recordIds,
-    		vector<unsigned>(), ATTRIBUTES_OP_AND, "400") == true);
+    		ATTRIBUTES_OP_AND, "400") == true);
 
     recordIds.clear();
     ASSERT ( ping_WithACL(analyzer, queryEvaluator, "tom", 0 , recordIds,
-    		vector<unsigned>(), ATTRIBUTES_OP_AND, "500") == true);
+    		ATTRIBUTES_OP_AND, "500") == true);
 
 	vector<string> roleIds;
 	roleIds.push_back("400");
 	roleIds.push_back("500");
-	indexer->aclRoleAdd("1",roleIds);
+	indexer->aclEditRoles("1",roleIds, AddRoles);
 
     recordIds.clear();
     recordIds.push_back(1);
     ASSERT ( ping_WithACL(analyzer, queryEvaluator, "tom", 1 , recordIds,
-    		vector<unsigned>(), ATTRIBUTES_OP_AND, "500") == true);
+    		ATTRIBUTES_OP_AND, "500") == true);
 
     roleIds.clear();
 	roleIds.push_back("400");
-	indexer->aclRoleAdd("2",roleIds);
+	indexer->aclEditRoles("2",roleIds, AddRoles);
 
 	recordIds.clear();
 	recordIds.push_back(1);
 	recordIds.push_back(2);
 	ASSERT ( ping_WithACL(analyzer, queryEvaluator, "tom", 2 , recordIds,
-			vector<unsigned>(), ATTRIBUTES_OP_AND, "400") == true);
+			ATTRIBUTES_OP_AND, "400") == true);
 }
 
 void testDeleteRole(){
@@ -143,26 +143,26 @@ void testDeleteRole(){
 	recordIds.push_back(1);
 	recordIds.push_back(2);
 	ASSERT ( ping_WithACL(analyzer, queryEvaluator, "tom", 2 , recordIds,
-			vector<unsigned>(), ATTRIBUTES_OP_AND, "400") == true);
+			ATTRIBUTES_OP_AND, "400") == true);
 
 	vector<string> roleIds;
 	roleIds.push_back("400");
 	roleIds.push_back("500");
-	indexer->aclRoleDelete("1",roleIds);
+	indexer->aclEditRoles("1",roleIds, DeleteRoles);
 
 	recordIds.clear();
 	recordIds.push_back(2);
 	ASSERT ( ping_WithACL(analyzer, queryEvaluator, "tom", 1 , recordIds,
-			vector<unsigned>(), ATTRIBUTES_OP_AND, "400") == true);
+			ATTRIBUTES_OP_AND, "400") == true);
 
 	roleIds.clear();
 	roleIds.push_back("400");
 	roleIds.push_back("500");
-	indexer->aclRoleDelete("2",roleIds);
+	indexer->aclEditRoles("2",roleIds, DeleteRoles);
 
 	recordIds.clear();
 	ASSERT ( ping_WithACL(analyzer, queryEvaluator, "tom", 0 , recordIds,
-			vector<unsigned>(), ATTRIBUTES_OP_AND, "400") == true);
+			ATTRIBUTES_OP_AND, "400") == true);
 
 }
 
@@ -194,18 +194,18 @@ void testSerialization(string directoryName){
 	recordIds.push_back(1);
 	recordIds.push_back(2);
 	ASSERT ( ping_WithACL(analyzer, queryEvaluator, "tom", 2 , recordIds,
-			vector<unsigned>(), ATTRIBUTES_OP_AND, "100") == true);
+			ATTRIBUTES_OP_AND, "100") == true);
 
 	recordIds.clear();
 	recordIds.push_back(3);
 	ASSERT ( ping_WithACL(analyzer, queryEvaluator, "tom", 1 , recordIds,
-			vector<unsigned>(), ATTRIBUTES_OP_AND, "300") == true);
+			ATTRIBUTES_OP_AND, "300") == true);
 
 	recordIds.clear();
 	recordIds.push_back(2);
 	recordIds.push_back(3);
 	ASSERT ( ping_WithACL(analyzer, queryEvaluator, "tom", 2 , recordIds,
-			vector<unsigned>(), ATTRIBUTES_OP_AND, "200") == true);
+			ATTRIBUTES_OP_AND, "200") == true);
 
 	// test search without ACL
 	recordIds.clear();

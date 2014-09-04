@@ -223,7 +223,7 @@ bool ForwardIndex::hasAccessToForwardList(shared_ptr<vectorview<ForwardListPtr> 
 }
 
 // returnValue: true if record with this primaryKey exists and false otherwise.
-bool ForwardIndex::addRoleToResource(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+bool ForwardIndex::appendRoleToResource(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
 		const string& primaryKeyID, vector<string> &roleIds){
 	unsigned recordId;
 	bool hasRecord = getInternalRecordIdFromExternalRecordId(primaryKeyID, recordId);
@@ -234,7 +234,7 @@ bool ForwardIndex::addRoleToResource(shared_ptr<vectorview<ForwardListPtr> > & f
 	ForwardListPtr flPtr = forwardListDirectoryReadView->getElement(recordId);
 
 	if(flPtr.second){
-		flPtr.first->addRolesToResource(roleIds);
+		flPtr.first->appendRolesToResource(roleIds);
 		return true;
 	}
 	return false;
@@ -273,6 +273,22 @@ bool ForwardIndex::deleteRoleFromResource(shared_ptr<vectorview<ForwardListPtr> 
 		return true;
 	}
 	return false;
+}
+
+RoleAccessList* ForwardIndex::getRecordAccessList(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+		const string& primaryKeyID){
+	unsigned recordId;
+	bool hasRecord = getInternalRecordIdFromExternalRecordId(primaryKeyID, recordId);
+
+	if(hasRecord == false)
+		return NULL;
+
+	ForwardListPtr flPtr = forwardListDirectoryReadView->getElement(recordId);
+
+	if(flPtr.second){
+		return flPtr.first->getAccessList();
+	}
+	return NULL;
 }
 
 ForwardList *ForwardIndex::getForwardList_ForCommit(unsigned recordId)
@@ -343,7 +359,7 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     ((Record *)record)->disownInMemoryData();
     forwardList->setNumberOfKeywords(uniqueKeywordIdList.size());
 
-    forwardList->addRolesToResource(*(record->getRoleIds()));
+    forwardList->appendRolesToResource(*(record->getRoleIds()));
 
     PositionIndexType positionIndexType = this->schemaInternal->getPositionIndexType();
     bool shouldAttributeBitMapBeAllocated = false;

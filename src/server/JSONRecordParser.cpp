@@ -24,6 +24,7 @@
 #include "boost/algorithm/string/split.hpp"
 #include "boost/algorithm/string/classification.hpp"
 #include "util/RecordSerializerUtil.h"
+#include "include/instantsearch/Constants.h"
 
 using namespace snappy;
 
@@ -474,11 +475,12 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
     return true;
 }
 
-// this function finds all the role ids in the query
-// and return false if there is not aclId in the query
-// sample: {“id”: “1234", “roleId”: [33, 45]}
+// this function finds roleId in the query
+// and return false if there is not roleId in the query
+// sample: {"pid" : "234", ..... , “roleId”: ["33", "45"]}
 //
-bool JSONRecordParser::_extractRoleIds(std::vector<string> &roleIds, string& resourcePrimaryKeyID, const Json::Value &root, const CoreInfo_t *indexDataContainerConf, std::stringstream &error){
+bool JSONRecordParser::_extractRoleIds(vector<string> &roleIds, const Json::Value &root,
+    		const CoreInfo_t *indexDataContainerConf, std::stringstream &error){
 	if (root.type() != Json::objectValue)
 	{
 		error << "\nFailed to parse JSON.";
@@ -486,7 +488,26 @@ bool JSONRecordParser::_extractRoleIds(std::vector<string> &roleIds, string& res
 	}
 	string aclRoleId = ConfigManager::getRoleId();
 
-    string primaryKeyName = indexDataContainerConf->getPrimaryKey();
+	if(!getJsonValueString(root, aclRoleId, roleIds, "roleId")){
+		return false;
+	}
+
+	return true;
+}
+
+// this function finds resourceID and roleId in the query
+// and return false if there is not roleId or resourceId in the query
+// sample: {“resourceId”: “1234", “roleId”: ["33", "45"]}
+//
+bool JSONRecordParser::_extractResourceAndRoleIds(std::vector<string> &roleIds, string& resourcePrimaryKeyID, const Json::Value &root, const CoreInfo_t *indexDataContainerConf, std::stringstream &error){
+	if (root.type() != Json::objectValue)
+	{
+		error << "\nFailed to parse JSON.";
+		return false;// Raise Error
+	}
+	string aclRoleId = ConfigManager::getRoleId();
+
+    string primaryKeyName = ConfigManager::getResourceId();
 
     std::vector<string> stringValues;
 
@@ -503,7 +524,7 @@ bool JSONRecordParser::_extractRoleIds(std::vector<string> &roleIds, string& res
         return false; // Raise Error
     }
 
-	if(!getJsonValueString(root, aclRoleId, roleIds, "role-id")){
+	if(!getJsonValueString(root, aclRoleId, roleIds, "roleId")){
 		return false;
 	}
 
@@ -512,7 +533,7 @@ bool JSONRecordParser::_extractRoleIds(std::vector<string> &roleIds, string& res
 
 // this function extracts the role ids from a JSON object
 // and returns false if parsing the json object was not successful
-// sample:  {“name_of_primaryKey”: “1234", “aclId”: [33, 45]}
+// sample:  {“resourceId”: “1234", “roleId”: ["33", "45"]}
 bool JSONRecordParser::getAclInfoFromJSON(vector<string> &roleIds, string &primaryKeyID,
     		const string& inputLine, const CoreInfo_t *indexDataContainerConf, std::stringstream &error){
 	string::const_iterator end_it = utf8::find_invalid(inputLine.begin(), inputLine.end());
@@ -534,7 +555,7 @@ bool JSONRecordParser::getAclInfoFromJSON(vector<string> &roleIds, string &prima
 	}
 	else
 	{
-		parseSuccess = JSONRecordParser::_extractRoleIds(roleIds, primaryKeyID, root, indexDataContainerConf, error);
+		parseSuccess = JSONRecordParser::_extractResourceAndRoleIds(roleIds, primaryKeyID, root, indexDataContainerConf, error);
 	}
 	return parseSuccess;
 }
@@ -733,7 +754,7 @@ unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, Sch
 }
 
 // Each line of the file is like this:
-//  {“id”: “1234", “roleId”: [33, 45]}
+//  {“resourceId”: “1234", “roleId”: ["33", "45"]}
 void DaemonDataSource::addAccessControlsFromFile(srch2is::Indexer *indexer,
                 const CoreInfo_t *indexDataContainerConf, srch2is::Indexer *roleCoreIndexer){
 	AccessControlInfo* accessControl = indexDataContainerConf->getAccessControlInfo();
@@ -796,7 +817,7 @@ void DaemonDataSource::addAccessControlsFromFile(srch2is::Indexer *indexer,
 					}
 				}
 				if(roleIdsExist){
-					indexer->aclRoleAdd(resourcePrimaryKeyID, roleIds);
+					indexer->aclEditRoles(resourcePrimaryKeyID, roleIds, srch2::instantsearch::AddRoles);
 					indexedRecordsCount++;
 				}
 			}

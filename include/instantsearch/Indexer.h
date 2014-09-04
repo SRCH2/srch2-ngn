@@ -111,11 +111,8 @@ public:
     * Adds a record. If primary key is duplicate, insert fails and -1 is returned. Otherwise, 0 is returned.*/
     virtual INDEXWRITE_RETVAL addRecord(const Record *record, Analyzer *analyzer) = 0;
 
-    // Adds role ids to a specific record
-    virtual INDEXWRITE_RETVAL aclRoleAdd(const std::string &resourcePrimaryKeyID, vector<string> &roleIds) = 0;
-
-    // Deletes role ids from a specific record
-    virtual INDEXWRITE_RETVAL aclRoleDelete(const std::string &resourcePrimaryKeyID, vector<string> &roleIds) = 0;
+    // Edits the record's access list based on the command type
+    virtual INDEXWRITE_RETVAL aclEditRoles(const std::string &resourcePrimaryKeyID, vector<string> &roleIds, AclCommandType commandType) = 0;
 
     // Deletes the role id from the permission map
     // we use this function for deleting a record from a role core
