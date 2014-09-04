@@ -444,60 +444,6 @@ static void cb_single_core_operator_route(evhttp_request *req, void *arg){
 
 }
 
-//static void cb_aclRecordRoleAdd(evhttp_request *req, void *arg){
-//    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
-//    evhttp_add_header(req->output_headers, "Content-Type",
-//            "application/json; charset=UTF-8");
-//
-//    if (checkOperationPermission(req, srch2Server, srch2http::DocsPort) == false) {
-//        return;
-//    }
-//
-//    try {
-//        HTTPRequestHandler::aclAddRolesToRecord(req, srch2Server);
-//    } catch (exception& e) {
-//        // exception caught
-//        Logger::error(e.what());
-//        srch2http::HTTPRequestHandler::handleException(req);
-//    }
-//}
-//
-//static void cb_aclRecordRoleAppend(evhttp_request *req, void *arg){
-//    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
-//    evhttp_add_header(req->output_headers, "Content-Type",
-//            "application/json; charset=UTF-8");
-//
-//    if (checkOperationPermission(req, srch2Server, srch2http::DocsPort) == false) {
-//        return;
-//    }
-//
-//    try {
-//        HTTPRequestHandler::aclAppendRolesToRecord(req, srch2Server);
-//    } catch (exception& e) {
-//        // exception caught
-//        Logger::error(e.what());
-//        srch2http::HTTPRequestHandler::handleException(req);
-//    }
-//}
-//
-//static void cb_aclRecordRoleDelete(evhttp_request *req, void *arg){
-//    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
-//    evhttp_add_header(req->output_headers, "Content-Type",
-//            "application/json; charset=UTF-8");
-//
-//    if (checkOperationPermission(req, srch2Server, srch2http::DocsPort) == false) {
-//        return;
-//    }
-//
-//    try {
-//        HTTPRequestHandler::aclDeleteRolesFromRecord(req, srch2Server);
-//    } catch (exception& e) {
-//        // exception caught
-//        Logger::error(e.what());
-//        srch2http::HTTPRequestHandler::handleException(req);
-//    }
-//}
-
 static void cb_all_core_operator_route(evhttp_request *req, void *arg){
     if (arg == NULL){
         return;

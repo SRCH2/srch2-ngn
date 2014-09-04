@@ -495,6 +495,30 @@ Note:
  - The primary key may optionally be included here. It can also be searchable and/or refining.<br>
  - There must be at least one searchable field.
 
+###11.3. Record Access Control (Optional)
+
+"access-controls" contains the specification of the cores' access control. "access-control" is optional for each core. Here is an example:
+```
+<access-controls>
+    <access-control>
+        <resourceCore> Product1 </resourceCore>
+        <roleCore> Company1 </roleCore>
+        <aclDataFile> acl-data1.json </aclDataFile>
+    </access-control>
+    <access-control>
+        <resourceCore> Product2 </resourceCore>
+        <roleCore> Company2 </roleCore>
+        <aclDataFile> acl-data2.json </aclDataFile>
+    </access-control>
+</access-controls>
+```
+ - <b>resourceCore</b>: This tag contains the name of the resource core. Then each record in this core has a access list of roleIds which have access to this record. A record in this core will be searched only when a given roleId has a permission to access the record.  
+ - <b>roleCore</b>: This tag contains the name of the role core. Then each roleId in the access list of the records of resource core should be a primary key of a record in this core.
+ - <b>aclDataFile</b>: This tag specifies a JSON data file to be loaded by the engine. This file contains the roleIds for each record in resource core. Notice it is a path relative to the directory of the resource core's data source. Here is an example of each line of this file:
+```
+{"resourceId": "1234", "roleId": ["33", "45"]}
+```
+"resourceId" is the primary key of a record in resource core. "roleId" is an array of primary keys of records in role core. For example here roleId 33 and 45 have access to the record in resource core with primary key 1234.
 ###11.3. Enable Facet (Optional)
 
 This setting toggles the faceted search feature.<br>

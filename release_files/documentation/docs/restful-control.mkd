@@ -83,4 +83,9 @@ The client can send a shutdown message to let the server stop gracefully. The re
  curl -i "http://localhost:8081/_all/shutdown" -X PUT
 ```
 
-
+###7. Modify record-based access control
+The user can modify the access list of each record using the following APIs.
+###7. Modify record-based access control
+The user can modify the access list of each record using the following APIs.
+###7. Modify record-based access control
+The user can modify the access list of each record using the following APIs. 
