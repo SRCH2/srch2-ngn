@@ -286,6 +286,15 @@ protected:
     void parseSchemaType(const xml_node &childNode, CoreInfo_t *coreInfo, std::stringstream &parseWarnings);
 
 
+    void setUpStemmer(CoreInfo_t *coreInfo, const xml_node &field, std::stringstream &parseWarnings);
+    
+    void setUpChineseDictionary(CoreInfo_t * coreInfo, const xml_node &field, std::stringstream &parseWarnings);
+    
+    void setUpProtectedWord(CoreInfo_t *coreInfo, const xml_node &field, std::stringstream &parseWarnings);
+    void setUpSynonym(CoreInfo_t *coreInfo, const xml_node &field, std::stringstream &parseWarnings);
+    void setUpRecordSpecialCharacters(CoreInfo_t *coreInfo, const xml_node &field);
+    void setUpEnglishAnalyzer(CoreInfo_t * coreInfo, const xml_node &childNodeTemp, std::stringstream &parseWarnings);
+    void setUpChineseAnalyzer(CoreInfo_t * coreInfo, const xml_node &childNodeTemp, std::stringstream &parseWarnings);
 public:
     ConfigManager(const string& configfile);
     virtual ~ConfigManager();
@@ -311,7 +320,6 @@ public:
     //const vector<unsigned>* getAttributesBoosts() const;
     const std::string& getAttributeRecordBoostName(const string &coreName) const;
     //string getDefaultAttributeRecordBoost() const;
-
     const std::string& getRecordAllowedSpecialCharacters(const string &coreName) const;
     int getSearchType(const string &coreName) const;
     int getIsPrimSearchable(const string &coreName) const;
@@ -452,6 +460,7 @@ private:
     static const char* const mergePolicyString;
     static const char* const nameString;
     static const char* const porterStemFilterString;
+    static const char* const tokenizerFilterString;
     static const char* const prefixMatchPenaltyString;
     static const char* const queryString;
     static const char* const queryResponseWriterString;
@@ -477,6 +486,7 @@ private:
     static const char* const synonymFilterString;
     static const char* const synonymsString;
     static const char* const textEnString;
+    static const char* const textZhString;
     static const char* const typeString;
     static const char* const typesString;
     static const char* const uniqueKeyString;
@@ -610,6 +620,9 @@ public:
     const string &getProtectedWordsFilePath() const { return protectedWordsFilePath; }
     const string& getRecordAllowedSpecialCharacters() const
         { return allowedRecordTokenizerCharacters; }
+    AnalyzerType getAnalyzerType() const { return analyzerType; }
+
+    const string& getChineseDictionaryPath() const { return chineseDictionaryFilePath;}
 
     uint32_t getDocumentLimit() const;
     uint64_t getMemoryLimit() const;
@@ -761,6 +774,9 @@ protected:
     bool synonymKeepOrigFlag;
     std::string stopFilterFilePath;
     std::string protectedWordsFilePath;
+
+    AnalyzerType analyzerType;
+    std::string chineseDictionaryFilePath;
 
     // characters to specially treat as part of words, and not as a delimiter
     std::string allowedRecordTokenizerCharacters;

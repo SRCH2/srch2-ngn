@@ -34,7 +34,7 @@ Analyzer* AnalyzerFactory::createAnalyzer(const CoreInfo_t* config, bool isSearc
 		stemmerFlag = srch2is::DISABLE_STEMMER_NORMALIZER;
 	}
 	// This flag shows if we need to keep the origin word or not.
-        SynonymKeepOriginFlag synonymKeepOriginFlag;
+    SynonymKeepOriginFlag synonymKeepOriginFlag;
 	if (config->getSynonymKeepOrigFlag()) {
 		synonymKeepOriginFlag = srch2is::SYNONYM_KEEP_ORIGIN;
 	} else {
@@ -43,7 +43,7 @@ Analyzer* AnalyzerFactory::createAnalyzer(const CoreInfo_t* config, bool isSearc
 
 	// append the stemmer file to the install directory
 	std::string stemmerFilePath = config->getStemmerFile();
-        StemmerContainer *stemmer = NULL;
+    StemmerContainer *stemmer = NULL;
 	if (stemmerFlag == ENABLE_STEMMER_NORMALIZER) {
             struct stat stResult;
             if (stat(stemmerFilePath.c_str(), &stResult) == 0) {
@@ -67,7 +67,6 @@ Analyzer* AnalyzerFactory::createAnalyzer(const CoreInfo_t* config, bool isSearc
 	StopWordContainer *stopWords = StopWordContainer::getInstance(stopWordFilePath);
 
 	// gets the path of stopFilter
-
 	SynonymContainer *synonyms = NULL;
 	if (!isSearcherThread) {
 		// Do not use synonym filter during search.
