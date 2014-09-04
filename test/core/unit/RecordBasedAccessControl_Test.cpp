@@ -117,7 +117,7 @@ void testAddRole(){
 	vector<string> roleIds;
 	roleIds.push_back("400");
 	roleIds.push_back("500");
-	indexer->aclEditRoles("1",roleIds, AddRoles);
+	indexer->aclEditRoles("1",roleIds, AppendRoles);
 
     recordIds.clear();
     recordIds.push_back(1);
@@ -126,7 +126,7 @@ void testAddRole(){
 
     roleIds.clear();
 	roleIds.push_back("400");
-	indexer->aclEditRoles("2",roleIds, AddRoles);
+	indexer->aclEditRoles("2",roleIds, AppendRoles);
 
 	recordIds.clear();
 	recordIds.push_back(1);
