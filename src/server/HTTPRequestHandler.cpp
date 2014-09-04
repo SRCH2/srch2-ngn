@@ -1058,38 +1058,72 @@ void decodeAmpersand(const char *uri, unsigned len, string& decodeUri) {
  *   http://<ip>:<port>/aclAttributeRoleDelete -X PUT -d { "attributes": "f2", "roleId": "r2"}
  */
 bool processSingleAttributeAclRequest(Srch2Server *server,const Json::Value& doc, AclActionType action,
-		std::stringstream& log_str) {
+		Json::Value& aclAttributeResponse) {
 
 	Json::Value attributesToAdd = doc.get("attributes", Json::Value(Json::arrayValue));
 	Json::Value attributesRoles = doc.get("roleId", Json::Value(Json::arrayValue));
 
 	if (attributesToAdd.type()  != Json::arrayValue) {
-		log_str << "\"attributes\" key is not an array in request JSON.";
+		aclAttributeResponse = "Error: 'attributes' key is not an array in request JSON.";
 		return false;
 	}
 	if (attributesToAdd.size() == 0) {
-		log_str << "\"attributes\" key is empty or missing in request JSON.";
+		aclAttributeResponse = "Error: 'attributes' key is empty or missing in request JSON.";
 		return false;
 	}
 	if (attributesRoles.type() != Json::arrayValue) {
-		log_str << "\"roleId\" key is not an array in request JSON.";
+		aclAttributeResponse = "Error: 'roleId' key is not an array in request JSON.";
 		return false;
 	}
 	if (attributesRoles.size() == 0) {
-		log_str << "\"roleId\" key is empty or missing in request JSON.";
+		aclAttributeResponse = "Error: 'roleId' key is empty or missing in request JSON.";
 		return false;
 	}
 
 	vector<string> attributeList;
+	vector<string> invalidAttributeNames;
 	for (unsigned i = 0; i < attributesToAdd.size(); ++i) {
 		Json::Value defaultValueToReturn = Json::Value("");
 		const Json::Value attribute = attributesToAdd.get(i, defaultValueToReturn);
 		if (attribute.type() != Json::stringValue){
-			log_str << "\"attributes\" key's element at index "<< i << " is not convertible to string";
+			std::stringstream log_str;
+			log_str << "Error: 'attributes' key's element at index "<< i << " is not convertible to string";
+			aclAttributeResponse = log_str.str();
 			return false;
 		}
-		if (attribute.asString().size() != 0)
-			attributeList.push_back(attribute.asString());
+		string tempString = attribute.asString();
+		boost::algorithm::trim(tempString);
+		if (tempString.size() != 0) {
+			const Schema * schema = server->indexer->getSchema();
+			if (schema->isValidAttribute(tempString)) {
+				attributeList.push_back(tempString);
+			} else {
+				invalidAttributeNames.push_back(tempString);
+			}
+		}
+	}
+
+	if (attributeList.size() == 0) {
+		// All elements in the attribute list are either empty or have bogus value.
+		aclAttributeResponse = "Error: 'attributes' key's elements are not valid.";
+		return false;
+	}
+
+	// We have some valid attribute names in attributes list. Check whether there are some invalid
+	// name as well. If there are invalid attribute names, then generate warning log message and proceed
+	if (invalidAttributeNames.size() > 0) {
+		std::stringstream log_str;
+		if (invalidAttributeNames.size() > 1)
+			log_str << "Warning: 'attributes' key has bad attributes = '";
+		else
+			log_str << "Warning: 'attributes' key has bad attribute = '";
+		for (unsigned i = 0; i < invalidAttributeNames.size(); ++i) {
+			if (i)
+				log_str << ", ";
+			log_str << invalidAttributeNames[i];
+		}
+		log_str << "'.";
+		aclAttributeResponse = log_str.str();
 	}
 
 	vector<string> roleIds;
@@ -1100,8 +1134,10 @@ bool processSingleAttributeAclRequest(Srch2Server *server,const Json::Value& doc
 		switch (roleId.type()) {
 		case Json::stringValue:
 		{
-			if (roleId.asString().size() != 0)
-				roleIds.push_back(roleId.asString());
+			string tempString = roleId.asString();
+			boost::algorithm::trim(tempString);
+			if (tempString.size() != 0)
+				roleIds.push_back(tempString);
 			break;
 		}
 		case Json::intValue:
@@ -1132,12 +1168,19 @@ bool processSingleAttributeAclRequest(Srch2Server *server,const Json::Value& doc
 		case Json::objectValue:
 		{
 			// Can't convert to array ..user should fix the input JSON.
-			log_str << "\"roleId\" key's element at index "<< i << " is not convertible to string";
+			std::stringstream log_str;
+			log_str << "Error: 'roleId' key's element at index "<< i << " is not convertible to string";
+			aclAttributeResponse = log_str.str();
 			return false;
 		}
 		default:
 			ASSERT(false);
 		}
+	}
+
+	if (roleIds.size() == 0) {
+		aclAttributeResponse = "Error: 'roleId' key's elements are not valid.";
+		return false;
 	}
 
 	return server->indexer->getAttributeAcl().processHTTPAclRequest(attributeList, roleIds, action);
@@ -1151,6 +1194,7 @@ bool processSingleAttributeAclRequest(Srch2Server *server,const Json::Value& doc
  *   http://<ip>:<port>/aclAttributeRoleDelete -X PUT -d { "attributes": "f2", "roleId": "r2"}
  */
 void HTTPRequestHandler::attributeAclModify(evhttp_request *req, Srch2Server *server) {
+	Json::Value response(Json::objectValue);
 	switch (req->type) {
 	    case EVHTTP_REQ_PUT: {
 	        size_t length = EVBUFFER_LENGTH(req->input_buffer);
@@ -1183,10 +1227,12 @@ void HTTPRequestHandler::attributeAclModify(evhttp_request *req, Srch2Server *se
 	        	action = ACL_APPEND;
 	        else {
 	        	stringstream log_str;
-	        	log_str << "Invalid access control HTTP request =\"" << uriString << "\"";
+	        	log_str << "Error: Invalid access control HTTP request ='" << uriString << "'";
+	        	response[JSON_LOG] = log_str.str();
+	        	response[JSON_MESSAGE] = "The request was NOT processed successfully";
 	        	bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID DATA",
-	        			"{\"message\":\"The request was NOT processed successfully\",\"log\":["
-	        			+ log_str.str() + "]}\n");
+	        			global_customized_writer.write(response));
+	        	return;
 	        }
 	        // get input JSON
 	        const char *post_data = (char *) EVBUFFER_DATA(req->input_buffer);
@@ -1196,29 +1242,36 @@ void HTTPRequestHandler::attributeAclModify(evhttp_request *req, Srch2Server *se
 	        Json::Reader reader;
 	        bool parseSuccess = reader.parse(post_data, root, false);
 	        bool error = false;
+        	Json::Value aclAttributeResponses(Json::arrayValue);
 	        if (parseSuccess == false) {
-	            log_str << "JSON object parse error";
-	            error = true;
+	            log_str << "Error: JSON object parse error";
+	            response[JSON_LOG] = log_str.str();
+	            response[JSON_MESSAGE] = "The request was NOT processed successfully";
+	            bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID DATA",
+	            		global_customized_writer.write(response));
+	            return;
 	        } else {
 	        	if (root.type() == Json::arrayValue) {
+	        		aclAttributeResponses.resize(root.size());
 	        		//the record parameter is an array of json objects
 	        		for(Json::UInt index = 0; index < root.size(); index++) {
 	        			Json::Value defaultValueToReturn = Json::Value("");
 	        			const Json::Value doc = root.get(index,
 	        					defaultValueToReturn);
 
-	        			bool  status = processSingleAttributeAclRequest(server, doc, action, log_str);
+	        			bool  status = processSingleAttributeAclRequest(server, doc, action,
+	        					aclAttributeResponses[index]);
 	        			if (status == false) {
 	        				error = true;
 	        				break;
 	        			}
-	        			if (index < root.size() - 1)
-	        				log_str << ", ";
 	        		}
 	        	} else {
+	        		aclAttributeResponses.resize(1);
 	        		// the record parameter is a single json object
 	        		const Json::Value doc = root;
-	        		bool  status = processSingleAttributeAclRequest(server, doc, action, log_str);
+	        		bool  status = processSingleAttributeAclRequest(server, doc, action,
+	        				aclAttributeResponses[0]);
 	        		if (status == false) {
 	        			error = true;
 	        		}
@@ -1226,21 +1279,20 @@ void HTTPRequestHandler::attributeAclModify(evhttp_request *req, Srch2Server *se
 	        }
 
 	        if (!error) {
+	        	response[JSON_LOG] = aclAttributeResponses;
+	        	response[JSON_MESSAGE] = "The batch was processed successfully";
 	        	bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
-	        			"{\"message\":\"The batch was processed successfully\",\"log\":["
-	        			+ log_str.str() + "]}\n");
+	        			global_customized_writer.write(response));
 	        } else {
+	        	response[JSON_LOG] = aclAttributeResponses;
+	        	response[JSON_MESSAGE] = "The request was NOT processed successfully";
 	        	bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID DATA",
-	        			"{\"message\":\"The request was NOT processed successfully\",\"log\":["
-	        			+ log_str.str() + "]}\n");
+	        			global_customized_writer.write(response));
 	        }
 	        break;
 	    }
 	    default:
-	        Logger::error(
-	                "The request is not an HTTP PUT command. See Srch2 API documentation for details");
-	        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
-	                "{\"error\":\"The request is not a HTTP PUT command. See Srch2 API documentation for details.\"}");
+	    	response_to_invalid_request(req, response);
 
 	}
 }

@@ -199,6 +199,8 @@ public:
     virtual const std::vector<unsigned>& getAclRefiningAttrIdsList() const;
     virtual const std::vector<unsigned>& getNonAclRefiningAttrIdsList() const;
 
+    bool isValidAttribute(const std::string& attributeName) const;
+
     /**
      * Destructor to free persistent resources used by the Schema
      */

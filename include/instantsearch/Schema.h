@@ -194,6 +194,8 @@ public:
     virtual const std::vector<unsigned>& getNonAclSearchableAttrIdsList() const = 0;
     virtual const std::vector<unsigned>& getAclRefiningAttrIdsList() const = 0;
     virtual const std::vector<unsigned>& getNonAclRefiningAttrIdsList() const = 0;
+
+    virtual bool isValidAttribute(const std::string& attributeName) const = 0;
     /**
      * Writes the schema to a folder specified in schema::create(...) function.
      * After commit(), no more changes can be added.

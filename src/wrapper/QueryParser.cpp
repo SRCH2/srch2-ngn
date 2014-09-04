@@ -1621,7 +1621,7 @@ void QueryParser::extractSearchType() {
     	}
     } else { // search type is not given by the user, and there is no post processing task either
     	// no searchType provided use topK
-    	this->container->messages.push_back(make_pair(MessageNotice, "topK query"));
+    	this->container->messages.push_back(make_pair(MessageNotice, "topK query. "));
     	this->container->parametersInQuery.push_back(TopKSearchType);
     }
     Logger::debug("returning from extractSearchType");

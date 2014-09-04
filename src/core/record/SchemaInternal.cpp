@@ -339,5 +339,19 @@ const std::vector<unsigned>& SchemaInternal::getNonAclRefiningAttrIdsList() cons
 	return this->nonAclRefiningAttrIds;
 }
 
+bool SchemaInternal::isValidAttribute(const std::string& attributeName) const {
+	int id = this->getSearchableAttributeId(attributeName);
+	if (id != -1) {
+		return true;
+	} else {
+		id = this->getRefiningAttributeId(attributeName);
+		if (id != -1) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+}
+
 }
 }
