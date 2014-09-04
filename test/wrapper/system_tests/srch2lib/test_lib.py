@@ -59,3 +59,13 @@ def killServer(serverHandle):
         except:
             print "no running instance found to kill, moving ahead."
 
+
+def detectPort(configPath):
+    wholecontent = open(configPath).read()
+    keywords = ['<listeningPort>', '</listeningPort>']
+    start = wholecontent.find(keywords[0]) + len(keywords[0]) 
+    end = wholecontent.find(keywords[1], start)
+    try:
+        return int(wholecontent[start:end].strip())
+    except Exception, err:
+        print "Detect port Exception: " + str(err)

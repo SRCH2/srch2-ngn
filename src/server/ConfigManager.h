@@ -125,7 +125,7 @@ struct CoreConfigParseState_t {
 
 // enum to allow loop iteration over listening ports
 enum PortType_t {
-    SearchPort,
+    SearchPort = 0,
     SuggestPort,
     InfoPort,
     DocsPort,
@@ -133,6 +133,8 @@ enum PortType_t {
     SavePort,
     ExportPort,
     ResetLoggerPort,
+    SearchAllPort,
+    ShutDownAllPort,
     EndOfPortType // stop value - not valid (also used to indicate all/default ports)
 };
 
@@ -158,6 +160,7 @@ private:
     string srch2Home;
 
     unsigned int numberOfThreads;
+    unsigned int heartBeatTimer;
 
     // <config><keywordPopularitythreshold>
     unsigned keywordPopularityThreshold;
@@ -262,13 +265,18 @@ protected:
     
     void parseSchema(const xml_node &schemaNode, CoreConfigParseState_t *coreParseState, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
-    bool setSearchableRefiningFromIndexedAttribute(const xml_node &field, bool &isSearchable, bool &isRefining, std::stringstream &parseError, bool &configSuccess);
+    bool setSearchableRefiningFromIndexedAttribute(const xml_node &field,
+            bool &isSearchable, bool &isRefining, std::stringstream &parseError,
+            bool &configSuccess, CoreInfo_t *coreInfo);
 
-    bool setSearchableAndRefining(const xml_node &field, bool &isSearchable, bool &isRefining, std::stringstream &parseError, bool &configSuccess);
+    bool setSearchableAndRefining(const xml_node &field, bool &isSearchable,
+            bool &isRefining, std::stringstream &parseError,
+            bool &configSuccess, CoreInfo_t *coreInfo);
 
     bool setFieldFlagsFromFile(const xml_node &field, bool &isMultiValued, bool &isSearchable,
     		bool &isRefining, bool &isHighlightEnabled, bool & isAclEnabled,
-    		std::stringstream &parseError, bool &configSuccess);
+    		std::stringstream &parseError, bool &configSuccess,
+    		CoreInfo_t *coreInfo);
 
     bool setCoreParseStateVector(bool isSearchable, bool isRefining, bool isMultiValued,
     		bool isHighlightEnabled, bool isAclEnabled, CoreConfigParseState_t *coreParseState,
@@ -281,7 +289,7 @@ protected:
     		vector<string> &RefiningAttributesDefaultVector,
     		vector<bool> &RefiningAttributesIsMultiValued,
     		vector<bool> &refiningAttributesAclEnabledFlags, bool isAclEnabled,
-    		std::stringstream &parseError);
+    		std::stringstream &parseError, CoreInfo_t *coreInfo);
 
     void parseFacetFields(const xml_node &schemaNode, CoreInfo_t *coreInfo, std::stringstream &parseError);
 
@@ -334,6 +342,8 @@ public:
     unsigned getKeywordPopularityThreshold() const ;
 
     unsigned int getNumberOfThreads() const;
+
+    unsigned int getHeartBeatTimer() const;
 
     const std::string& getAttributeStringForMySQLQuery() const;
 
@@ -518,7 +528,8 @@ private:
     static const char* const defaultExactPreTag;
     static const char* const defaultExactPostTag;
 
-
+    static const char* const defaultCore;
+    static const char* const heartBeatTimerTag; 
 };
 
 // definitions for data source(s) (srch2Server objects within one HTTP server)

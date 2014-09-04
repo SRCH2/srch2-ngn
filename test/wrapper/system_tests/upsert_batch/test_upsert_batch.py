@@ -17,6 +17,8 @@ import os, time, sys, commands, urllib2, signal
 
 sys.path.insert(0, 'srch2lib')
 import test_lib
+from test_insert_batch import verify_insert_response
+from test_insert_batch import verify_search_rid
 
 port = 8087
 
@@ -67,18 +69,18 @@ if __name__ == '__main__':
     command1 = 'curl "http://localhost:' + str(port) + '/update" -i -X PUT -d ' + '\'{"id":"101","post_type_id":"2","parent_id":"6272262","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"3","view_count":"0","body":"february monday","owner_user_id":"356674","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"NULL","favorite_count":"NULL"}\'';
     status1, output1 = commands.getstatusoutput(command1)
     #print 'output1 --- ' + str(output1) + "\n-----------------";
-    flag = str(output1).find('{"rid":"101","update":"Existing record updated successfully"}');
+    expect = '{"rid":"101","update":"Existing record updated successfully"}';
     #print flag
-    assert flag > -1, 'Error, rid 101 is not updated correctly!'
+    assert verify_insert_response(expect, output1), 'Error, rid 101 is not updated correctly!'
 
     time.sleep(1.5)
     command2 = 'curl -i http://localhost:' + str(port) + '/search?q=monday'
     status2, output2 = commands.getstatusoutput(command2)
     #print 'output2 --- ' + str(output2) + '\n------------------'
-    flag = str(output2).find('"id":"101"');
+    expect = '"id":"101"';
     #print flag
     # can't find the new result untill several tries
-    assert flag > -1, 'Error, id 101 is not updated correctly!'
+    assert verify_search_rid(expect, output2), 'Error, id 101 is not updated correctly!'
 
 
     # test 2, upsert a record that doesn't exist
@@ -86,15 +88,15 @@ if __name__ == '__main__':
 
     status3, output3 = commands.getstatusoutput(command3)
     #print 'output3 -----' + output3 + '\n-----------------'
-    flag = str(output3).find('{"rid":"111","update":"New record inserted successfully"}');
-    assert flag > -1, 'Error, rid 111 is not updated correctly!'
+    expect = '{"rid":"111","update":"New record inserted successfully"}';
+    assert verify_insert_response(expect, output3), 'Error, rid 111 is not updated correctly!'
 
     time.sleep(1.5)
     command4 = 'curl -i http://localhost:' + str(port) + '/search?q=december'
     status4, output4 = commands.getstatusoutput(command4)
     #print 'output4 -----' + output4 + '\n----------------'
-    flag = str(output4).find('"id":"111"')
-    assert flag > -1, 'Error, rid 111 is not updated correctly!'
+    expect = '"id":"111"'
+    assert verify_search_rid(expect, output4), 'Error, rid 111 is not updated correctly!'
 
 
     # test 3, upsert multiple records, some exsit some don't
@@ -102,28 +104,28 @@ if __name__ == '__main__':
 
     status5, output5 = commands.getstatusoutput(command5)
     #print 'output5 -----' + output5 + '\n-----------------'
-    flag = str(output5).find('{"rid":"102","update":"Existing record updated successfully"}');
-    assert flag > -1, 'Error, rid 102 is not updated correctly!'
-    flag = str(output5).find('{"rid":"103","update":"Existing record updated successfully"}');
-    assert flag > -1, 'Error, rid 103 is not updated correctly!'
-    flag = str(output5).find('{"rid":"115","update":"New record inserted successfully"}');
-    assert flag > -1, 'Error, rid 115 is not updated correctly!'
-    flag = str(output5).find('{"rid":"116","update":"New record inserted successfully"}');
-    assert flag > -1, 'Error, rid 116 is not updated correctly!'
+    expect = '{"rid":"102","update":"Existing record updated successfully"}';
+    assert verify_insert_response(expect, output5), 'Error, rid 102 is not updated correctly!'
+    expect = '{"rid":"103","update":"Existing record updated successfully"}';
+    assert verify_insert_response(expect, output5), 'Error, rid 103 is not updated correctly!'
+    expect = '{"rid":"115","update":"New record inserted successfully"}';
+    assert verify_insert_response(expect, output5), 'Error, rid 115 is not updated correctly!'
+    expect = '{"rid":"116","update":"New record inserted successfully"}';
+    assert verify_insert_response(expect, output5), 'Error, rid 116 is not updated correctly!'
 
 
     time.sleep(1.5)
     command6 = 'curl -i http://localhost:' + str(port) + '/search?q=wonderful'
     status6, output6 = commands.getstatusoutput(command6)
     #print 'output4 -----' + output4 + '\n----------------'
-    flag = str(output6).find('"id":"102"')
-    assert flag > -1, 'Error, rid 102 is not updated correctly!'
-    flag = str(output6).find('"id":"103"')
-    assert flag > -1, 'Error, rid 103 is not updated correctly!'
-    flag = str(output6).find('"id":"115"')
-    assert flag > -1, 'Error, rid 115 is not updated correctly!'
-    flag = str(output6).find('"id":"116"')
-    assert flag > -1, 'Error, rid 116 is not updated correctly!'
+    expect = '"id":"102"'
+    assert verify_search_rid(expect, output6), 'Error, rid 102 is not updated correctly!'
+    expect = '"id":"103"'
+    assert verify_search_rid(expect, output6), 'Error, rid 103 is not updated correctly!'
+    expect = '"id":"115"'
+    assert verify_search_rid(expect, output6), 'Error, rid 115 is not updated correctly!'
+    expect = '"id":"116"'
+    assert verify_search_rid(expect, output6), 'Error, rid 116 is not updated correctly!'
 
 
 
