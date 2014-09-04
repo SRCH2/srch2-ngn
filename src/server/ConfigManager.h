@@ -531,8 +531,9 @@ private:
     static const char* const defaultExactPreTag;
     static const char* const defaultExactPostTag;
 
+    static const char* const heartBeatTimerTag;
+public:
     static const char* const defaultCore;
-    static const char* const heartBeatTimerTag; 
 };
 
 // definitions for data source(s) (srch2Server objects within one HTTP server)

@@ -1170,7 +1170,7 @@ void HTTPRequestHandler::attributeAclModify(evhttp_request *req, Srch2Server *se
 
 	        AclActionType action;
 	        string corename = server->getCoreName();
-	        if (corename == "__DEFAULTCORE__") {
+	        if (corename == ConfigManager::defaultCore) {
 	        	corename.clear();
 	        } else {
 	        	corename = "/" + corename;
