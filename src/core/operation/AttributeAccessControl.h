@@ -42,7 +42,7 @@ typedef map<string, PairOfAttrsListSharedPtr>::iterator AclMapIter;
 typedef map<string, PairOfAttrsListSharedPtr>::const_iterator AclMapConstIter;
 
 enum AclActionType {
-	ACL_INSERT, // insert new acl
+	ACL_ADD, // insert new acl
 	ACL_DELETE, // delete existing acl
 	ACL_APPEND  // append to existing acl
 };

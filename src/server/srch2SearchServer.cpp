@@ -334,6 +334,9 @@ static bool checkOperationPermission(evhttp_request *req, Srch2Server *srch2Serv
         { srch2http::SavePort, "save" },
         { srch2http::ExportPort, "export" },
         { srch2http::ResetLoggerPort, "resetlogger" },
+        { srch2http::AttributeAclAdd, "aclAttributeRoleAdd" },
+        { srch2http::AttributeAclDelete, "aclAttributeRoleDelete" },
+        { srch2http::AttributeAclAppend, "aclAttributeRoleAppend" },
         { srch2http::EndOfPortType, NULL },
     };
 
@@ -420,6 +423,11 @@ static void cb_single_core_operator_route(evhttp_request *req, void *arg){
             case srch2http::ResetLoggerPort:
     	        HTTPRequestHandler::resetLoggerCommand(req, srch2Server);
                 break;
+            case srch2http::AttributeAclAdd:
+            case srch2http::AttributeAclDelete:
+            case srch2http::AttributeAclAppend:
+            	HTTPRequestHandler::attributeAclModify(req, srch2Server);
+            	break;
             default:
                 cb_notfound(req, srch2Server);
                 break;
@@ -469,24 +477,24 @@ static void cb_all_core_operator_route(evhttp_request *req, void *arg){
     }
 }
 
-static void cb_attributeAcl(evhttp_request *req, void *arg)
-{
-    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
-    evhttp_add_header(req->output_headers, "Content-Type",
-            "application/json; charset=UTF-8");
-
-    if (checkOperationPermission(req, srch2Server, srch2http::DocsPort) == false) {
-    	return;
-    }
-
-    try {
-    	HTTPRequestHandler::attributeAclModify(req, srch2Server);
-    } catch (exception& e) {
-        // exception caught
-        Logger::error(e.what());
-        srch2http::HTTPRequestHandler::handleException(req);
-    }
-}
+//static void cb_attributeAcl(evhttp_request *req, void *arg)
+//{
+//    Srch2Server *srch2Server = reinterpret_cast<Srch2Server *>(arg);
+//    evhttp_add_header(req->output_headers, "Content-Type",
+//            "application/json; charset=UTF-8");
+//
+//    if (checkOperationPermission(req, srch2Server, srch2http::DocsPort) == false) {
+//    	return;
+//    }
+//
+//    try {
+//    	HTTPRequestHandler::attributeAclModify(req, srch2Server);
+//    } catch (exception& e) {
+//        // exception caught
+//        Logger::error(e.what());
+//        srch2http::HTTPRequestHandler::handleException(req);
+//    }
+//}
 
 /**
  * Busy 409 event handler.
@@ -832,9 +840,9 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
             { "/save", srch2http::SavePort, cb_single_core_operator_route},
             { "/export", srch2http::ExportPort, cb_single_core_operator_route},
             { "/resetLogger", srch2http::ResetLoggerPort, cb_single_core_operator_route},
-            { "/aclAttributeRoleAdd", srch2http::DocsPort, cb_attributeAcl },
-            { "/aclAttributeRoleDelete", srch2http::DocsPort, cb_attributeAcl },
-            { "/aclAttributeRoleAppend", srch2http::DocsPort, cb_attributeAcl },
+            { "/aclAttributeRoleAdd", srch2http::AttributeAclAdd, cb_single_core_operator_route },
+            { "/aclAttributeRoleDelete", srch2http::AttributeAclDelete, cb_single_core_operator_route },
+            { "/aclAttributeRoleAppend", srch2http::AttributeAclAppend, cb_single_core_operator_route },
             { NULL, srch2http::EndOfPortType, NULL }
         };
 

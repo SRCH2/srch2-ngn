@@ -147,7 +147,7 @@ bool  AttributeAccessControl::processHTTPAclRequest( vector<string>& fieldTokens
 	// Loop over all the role-ids and perform required operations for the list of attributes
 	for (unsigned i = 0; i < roleValueTokens.size(); ++i) {
 		switch(action) {
-		case ACL_INSERT:
+		case ACL_ADD:
 		{
 			if (i < roleValueTokens.size() - 1) {
 				std::vector<unsigned> tempSearchableAttrIdsList = searchableAttrIdsList;

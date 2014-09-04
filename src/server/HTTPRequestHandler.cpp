@@ -1053,7 +1053,7 @@ void decodeAmpersand(const char *uri, unsigned len, string& decodeUri) {
 /*
  *   Helper API to handle a single ACL operation. (insert, delete, or append)
  *   example url :
- *   http://<ip>:<port>/aclAttributeRoleApped -X PUT -d { "attributes": "f1,f2", "roleId": "r1"}
+ *   http://<ip>:<port>/aclAttributeRoleAppend -X PUT -d { "attributes": "f1,f2", "roleId": "r1"}
  *   http://<ip>:<port>/aclAttributeRoleAdd -X PUT -d { "attributes": "f1,f2", "roleId": "r2"}
  *   http://<ip>:<port>/aclAttributeRoleDelete -X PUT -d { "attributes": "f2", "roleId": "r2"}
  */
@@ -1146,7 +1146,7 @@ bool processSingleAttributeAclRequest(Srch2Server *server,const Json::Value& doc
 /*
  *   Wrapper layer API to handle ACL operations such as insert, delete, and append.
  *   example url :
- *   http://<ip>:<port>/aclAttributeRoleApped -X PUT -d { "attributes": "f1,f2", "roleId": "r1"}
+ *   http://<ip>:<port>/aclAttributeRoleAppend -X PUT -d { "attributes": "f1,f2", "roleId": "r1"}
  *   http://<ip>:<port>/aclAttributeRoleAdd -X PUT -d { "attributes": "f1,f2", "roleId": "r2"}
  *   http://<ip>:<port>/aclAttributeRoleDelete -X PUT -d { "attributes": "f2", "roleId": "r2"}
  */
@@ -1164,14 +1164,22 @@ void HTTPRequestHandler::attributeAclModify(evhttp_request *req, Srch2Server *se
 
 	        // Identify the type of access control request.
 	        // req->uri should be "/aclAttributeRoleDelete" or "/aclAttributeRoleAppend"
-	        // or "/aclAttributeRoleAdd"
+	        // or "/aclAttributeRoleAdd" for default core
+	        // Otherwise it should be /corename/aclAttributeRoleDelete etc.
 	        string uriString = req->uri;
+
 	        AclActionType action;
-	        if (uriString == "/aclAttributeRoleAdd")
-	        	action = ACL_INSERT;
-	        else if (uriString == "/aclAttributeRoleDelete")
+	        string corename = server->getCoreName();
+	        if (corename == "__DEFAULTCORE__") {
+	        	corename.clear();
+	        } else {
+	        	corename = "/" + corename;
+	        }
+	        if (uriString == corename + "/aclAttributeRoleAdd")
+	        	action = ACL_ADD;
+	        else if (uriString == corename + "/aclAttributeRoleDelete")
 	        	action = ACL_DELETE;
-	        else if (uriString == "/aclAttributeRoleAppend")
+	        else if (uriString == corename + "/aclAttributeRoleAppend")
 	        	action = ACL_APPEND;
 	        else {
 	        	stringstream log_str;
