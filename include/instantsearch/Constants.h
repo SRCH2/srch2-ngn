@@ -71,7 +71,7 @@ typedef enum {
 typedef enum {
 	ATTRIBUTES_OP_AND,
 	ATTRIBUTES_OP_OR,
-	ATTRIBUTES_OP_NAND,
+	ATTRIBUTES_OP_NAND
 } ATTRIBUTES_OP;
 
 /// Faceted search filter
