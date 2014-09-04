@@ -187,13 +187,13 @@ def test(queriesAndResultsPath, binary_path, configFilePath):
 
 if __name__ == '__main__':      
     binary_path = sys.argv[1]
-    queriesAndResultsPath = './attributesACL/testCases.txt'
+    queriesAndResultsPath = './attributesAcl/testCases.txt'
     exitCode = test(queriesAndResultsPath, binary_path , './attributesAcl/conf.xml')
     time.sleep(2)
-    queriesAndResultsPath = './attributesACL/testCasesMultiCore.txt'
+    queriesAndResultsPath = './attributesAcl/testCasesMultiCore.txt'
     exitCode |= test(queriesAndResultsPath, binary_path, './attributesAcl/conf-multicore.xml')
     time.sleep(2)
-    queriesAndResultsPath = './attributesACL/testCasesFilterSortFacetQuery.txt'
+    queriesAndResultsPath = './attributesAcl/testCasesFilterSortFacetQuery.txt'
     exitCode |= test(queriesAndResultsPath, binary_path , './attributesAcl/conf2.xml')
     os._exit(exitCode)
 
