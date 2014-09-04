@@ -28,6 +28,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 final public class SRCH2Service extends Service implements AutoPing.ValidatePingCommandCallback {
 
+    /* README: see diagram explaning the logic of this class @
+    https://docs.google.com/a/srch2.com/drawings/d/1mIkQR8ax-TOG0JQHPqmzyWYjBMd0vbXpwk80Zv4EjyE/edit?usp=sharing
+    or look for file SRCH2-Android-SDK-App-Service-Server-Interaction-Diagram.png at project root. */
+
     private static final String TAG = "Exe-Service";
 
     @Override
@@ -45,7 +49,7 @@ final public class SRCH2Service extends Service implements AutoPing.ValidatePing
                 startAwaitingShutdown();
             } else if (value.equals(IPCConstants.INTENT_VALUE_BROADCAST_ACTION_VALIDATE_SRCH2ENGINE_ALIVE)) {
                 Cat.d(TAG, "ExecutableServiceBroadcastReciever -- validated alive restarting server");
-                srch2SignaledIsAlive.set(true);
+                SRCH2EngineSignaledThatItIsAlive.set(true);
                 restartServer();
             } else if (value.equals(IPCConstants.INTENT_VALUE_BROADCAST_ACTION_VALIDATE_SRCH2ENGINE_ALIVE_FOR_PING)) {
                 Cat.d(TAG, "ExecutableServiceBroadcastReciever -- recieved validation for doing ping");
@@ -54,7 +58,7 @@ final public class SRCH2Service extends Service implements AutoPing.ValidatePing
         }
     }
 
-    AtomicBoolean srch2SignaledIsAlive;
+    private AtomicBoolean SRCH2EngineSignaledThatItIsAlive;
 
     private ExecutableServiceBroadcastReciever incomingIntentReciever;
 
@@ -87,7 +91,7 @@ final public class SRCH2Service extends Service implements AutoPing.ValidatePing
     public void onCreate() {
         super.onCreate();
         Cat.d(TAG, "onCreate");
-        srch2SignaledIsAlive = new AtomicBoolean(false);
+        SRCH2EngineSignaledThatItIsAlive = new AtomicBoolean(false);
         shutdownMutex = new Semaphore(1);
         isAwaitingShutdown = new AtomicBoolean(false);
         isShuttingDown = new AtomicBoolean(false);
@@ -423,22 +427,23 @@ final public class SRCH2Service extends Service implements AutoPing.ValidatePing
                         clearServerLogEntries();
                         Cat.d(TAG, "startRunningExe - after p.destory engine may have crash validating ... ");
                         AutoPing.interrupt();
-                        srch2SignaledIsAlive.set(false);
+                        SRCH2EngineSignaledThatItIsAlive.set(false);
                         signalSRCH2EngineIsAlive(false);
 
                         long timeToWaitForSRCH2EngineAliveCallback = SystemClock.uptimeMillis() + 3000;
-                        while (SystemClock.uptimeMillis() < timeToWaitForSRCH2EngineAliveCallback && !srch2SignaledIsAlive.get()) {
+                        while (SystemClock.uptimeMillis() < timeToWaitForSRCH2EngineAliveCallback && !SRCH2EngineSignaledThatItIsAlive.get()) {
                             Cat.d(TAG, "startRunningExe - waiting for validation to restart waited");
                             try {
                                 Thread.sleep(250);
                             } catch (InterruptedException e) {
                             }
                         }
-                        if (!srch2SignaledIsAlive.get()) {
+                        if (!SRCH2EngineSignaledThatItIsAlive.get()) {
                             Cat.d(TAG, "startRunningExe - did not get validation should be stopping self");
+                            clearServerLogEntries();
                             stopSelf();
                         }
-                        srch2SignaledIsAlive.set(false);
+                        SRCH2EngineSignaledThatItIsAlive.set(false);
                     }
                     Cat.d(TAG, "startRunningExe - after p.destory isShuttingDown is " + isShuttingDown.get());
                 } catch (IOException e) {

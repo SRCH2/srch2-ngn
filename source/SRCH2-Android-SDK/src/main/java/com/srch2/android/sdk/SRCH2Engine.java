@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.Looper;
+import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
@@ -223,8 +224,8 @@ final public class SRCH2Engine {
      */
     public static void onStart(Context context) {
         Cat.d(TAG, "onStart");
-        registerReciever(context);
         if (isStarted) { return; }
+        registerReciever(context);
         checkConfIsNullThrowIfIs();
         initializeConfiguration(context);
         startSRCH2Service(context, SRCH2Configuration.generateConfigurationFileString(SRCH2Engine.conf));
@@ -368,6 +369,25 @@ final public class SRCH2Engine {
         Cat.d(TAG, "reQueryLastOne");
         IndexQueryPair pair = lastQuery.get();
         if (pair == null || pair.query == null || pair.query.length() < 1) {
+            final HashMap<String, ArrayList<JSONObject>> emptyResultSet = SearchTask.getEmptyResultSet(conf.indexableMap.values());
+            final String JSONresponse = SearchTask.getEmptyResultJSONResponse(conf.indexableMap.values());
+            if (searchResultsObserver != null) {
+                if (SRCH2Engine.searchResultsPublishedToUiThread) {
+                    Handler uiHandler = SRCH2Engine.getSearchResultsUiCallbackHandler();
+                    if (uiHandler != null) {
+                        uiHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                searchResultsObserver.onNewSearchResults(200,
+                                        JSONresponse, emptyResultSet);
+                            }
+                        });
+                    }
+                } else {
+                    searchResultsObserver.onNewSearchResults(200,
+                            JSONresponse, emptyResultSet);
+                }
+            }
             return;
         }
         if (pair.index == null) {
@@ -379,14 +399,12 @@ final public class SRCH2Engine {
 
     private static void searchAllRawString(String rawQueryString) {
         lastQuery.set(new IndexQueryPair(null, rawQueryString));
-//        if (isReady()) {
-            if (allIndexSearchTask != null) {
-                allIndexSearchTask.cancel();
-            }
-            allIndexSearchTask = new SearchTask(UrlBuilder.getSearchUrl(conf, null,
-                    rawQueryString), searchResultsObserver);
-            HttpTask.addToQueue(allIndexSearchTask);
-//        }
+        if (allIndexSearchTask != null) {
+            allIndexSearchTask.cancel();
+        }
+        allIndexSearchTask = new SearchTask(UrlBuilder.getSearchUrl(conf, null,
+                                                rawQueryString), searchResultsObserver);
+        HttpTask.addToQueue(allIndexSearchTask);
     }
 
     /**
@@ -530,7 +548,7 @@ final public class SRCH2Engine {
                     if (broadCastCommand.equals(IPCConstants.INTENT_VALUE_BROADCAST_ACTION_ENGINE_CRASHED_BUT_CAN_RESUME)) {
                         Cat.d(TAG, "SRCH2EngineBroadcastReciever onReceive - resume after crash");
                         isResumingAfterCrash = true;
-                    } else if (broadCastCommand.equals(IPCConstants.INTENT_VALUE_BROADCAST_ACTION_START_AWAITING_SHUTDOWN)) {
+                    } else if (broadCastCommand.equals(IPCConstants.INTENT_VALUE_BROADCAST_ACTION_ENGINE_STARTED_PROCEED)) {
                         Cat.d(TAG, "SRCH2EngineBroadcastReciever onReceive - proceed");
                         isResumingAfterCrash = false;
                     }

@@ -102,7 +102,7 @@ abstract class HttpTask implements Runnable {
 
     protected void onTaskCrashedSRCH2SearchServer() {
         Cat.d(TAG, "onTaskCrashedSRCH2SearchServer setting is ready to false");
-        // here would we pass some arguements that contain the data we want to send in crash report!
+        // TODO pass some arguements that contain the data we want to send in crash report!
         SRCH2Engine.isReady.set(false);
     }
 
