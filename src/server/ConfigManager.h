@@ -290,6 +290,7 @@ protected:
     
     void setUpChineseDictionary(CoreInfo_t * coreInfo, const xml_node &field, std::stringstream &parseWarnings);
     
+    void setUpStopword(CoreInfo_t *coreInfo, const xml_node &field, std::stringstream &parseWarnings);
     void setUpProtectedWord(CoreInfo_t *coreInfo, const xml_node &field, std::stringstream &parseWarnings);
     void setUpSynonym(CoreInfo_t *coreInfo, const xml_node &field, std::stringstream &parseWarnings);
     void setUpRecordSpecialCharacters(CoreInfo_t *coreInfo, const xml_node &field);

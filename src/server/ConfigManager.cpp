@@ -1506,6 +1506,17 @@ void ConfigManager::setUpChineseDictionary(CoreInfo_t * coreInfo, const xml_node
     }   
 }
 
+void ConfigManager::setUpStopword(CoreInfo_t *coreInfo, const xml_node &field, std::stringstream &parseWarnings){
+    std::string path = field.attribute(wordsString).value();
+    if (path.compare("") != 0) { // the words file for stop filter is set.
+        trimSpacesFromValue(path, stopFilterString, parseWarnings);
+        coreInfo->stopFilterFilePath =
+            boost::filesystem::path(srch2Home + path).normalize().string();
+    } else {
+        Logger::warn("In core %s : Words parameter in StopFilter is empty, so stop word filter is disabled.", coreInfo->name.c_str());
+    }
+}
+
 void ConfigManager::setUpProtectedWord(CoreInfo_t *coreInfo, const xml_node &field, std::stringstream &parseWarnings){
     std::string path = field.attribute(wordsString).value();
     if (path.compare("") != 0) { 
@@ -1580,6 +1591,8 @@ void ConfigManager::setUpEnglishAnalyzer(CoreInfo_t * coreInfo, const xml_node &
         std::string nameTag = field.attribute(nameString).value();
         if ( nameTag.compare(porterStemFilterString) == 0){
             setUpStemmer(coreInfo, field, parseWarnings);
+        } else if ( nameTag.compare(stopFilterString) == 0) { 
+            setUpStopword(coreInfo, field, parseWarnings);
         } else if ( nameTag.compare(protectedWordFilterString) == 0){
             setUpProtectedWord(coreInfo, field, parseWarnings);
         } else if ( nameTag.compare(synonymFilterString) == 0){
@@ -1600,6 +1613,8 @@ void ConfigManager::setUpChineseAnalyzer(CoreInfo_t * coreInfo, const xml_node &
         std::string nameTag = field.attribute(nameString).value();
         if ( nameTag.compare(tokenizerFilterString) == 0){
             setUpChineseDictionary(coreInfo, field, parseWarnings);
+        } else if ( nameTag.compare(stopFilterString) == 0) { 
+            setUpStopword(coreInfo, field, parseWarnings);
         } else if ( nameTag.compare(protectedWordFilterString) == 0){
             setUpProtectedWord(coreInfo, field, parseWarnings);
         } else if ( nameTag.compare(synonymFilterString) == 0){

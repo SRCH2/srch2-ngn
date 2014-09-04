@@ -17,6 +17,7 @@
 #include <set>
 #include <fstream>
 #include <boost/unordered_set.hpp>
+#include "Dictionary.h"
 
 namespace srch2 {
 namespace instantsearch{
@@ -68,7 +69,7 @@ private:
 
  	SynonymContainer(const std::string &delimiter) : synonymDelimiter(delimiter),synonymKeepOriginFlag(SYNONYM_KEEP_ORIGIN) {}
 	SynonymContainer(const SynonymContainer&) {}
-	void operator == (const SynonymContainer&){}
+	SynonymContainer& operator = (const SynonymContainer&){ return *this;}
 };
 
 class StemmerContainer : public AnalyzerContainer {
@@ -84,7 +85,7 @@ private:
 	std::map<std::string, int> dictionaryWords;
 	StemmerContainer() {}
 	StemmerContainer(const StemmerContainer&) {}
-	void operator == (const StemmerContainer&){}
+	StemmerContainer& operator = (const StemmerContainer&){ return *this;}
 };
 
 class StopWordContainer : public AnalyzerContainer {
@@ -100,7 +101,7 @@ private:
 	std::set<std::string> stopWordsSet;
 	StopWordContainer() {}
 	StopWordContainer(const StopWordContainer&) {}
-	void operator == (const StopWordContainer&){}
+	StopWordContainer& operator = (const StopWordContainer&){ return *this;}
 };
 
 /*
@@ -116,7 +117,24 @@ private:
 	set<string> protectedWords;
 	ProtectedWordsContainer() {}
 	ProtectedWordsContainer(const ProtectedWordsContainer&) {}
-	void operator == (const ProtectedWordsContainer&){}
+	ProtectedWordsContainer& operator = (const ProtectedWordsContainer&){return *this;}
+};
+
+class ChineseDictionaryContainer : public AnalyzerContainer {
+public:
+	static ChineseDictionaryContainer* getInstance(const std::string &filePath);
+    void init();
+    void loadDictionaryContainer(boost::archive::binary_iarchive ia);
+    void saveDictionaryContainer(boost::archive::binary_oarchive oa);
+
+    short getFreq(const std::vector<CharType> &buffer, unsigned istart, unsigned length) const;
+    short getFreq(const std::string &str) const;
+    int getMaxWordLength() const;
+private:
+    Dictionary chineseDictionary;
+    ChineseDictionaryContainer():chineseDictionary() {}
+	ChineseDictionaryContainer(const ChineseDictionaryContainer&):chineseDictionary() {}
+	ChineseDictionaryContainer& operator = (const ChineseDictionaryContainer&){ return *this;}
 };
 
 } // instantsearch

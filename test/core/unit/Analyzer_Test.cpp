@@ -106,7 +106,8 @@ void testChineseAnalyzer(const string &dataDir){
     string src="We are美丽 Chineseㄓㄠ我是一个中国人。，上海自来水来自海上，从４月１０号起，“一票制” 朱镕基";
     src +="!，。》@##%     在民国时期，插画Picture在中国曾经盛极一时。";
     src += "END";
-    AnalyzerInternal *chineseAnalyzer = new ChineseAnalyzer(dictPath, NULL, NULL, NULL, string(""));
+    ChineseDictionaryContainer *dict = ChineseDictionaryContainer::getInstance(dictPath);
+    AnalyzerInternal *chineseAnalyzer = new ChineseAnalyzer(dict, NULL, NULL, NULL, string(""));
     TokenStream * tokenStream = chineseAnalyzer->createOperatorFlow();
     chineseAnalyzer->setTokenStream(tokenStream);
     tokenStream->fillInCharacters(src);
@@ -397,8 +398,9 @@ void testStopFilter(string dataDir) {
     stop->free();
 
     stop = StopWordContainer::getInstance(dataDir + "/stopWordsFile.txt");
+    ChineseDictionaryContainer * dict = ChineseDictionaryContainer::getInstance(dataDir +"/srch2_dict_ch.core");
     AnalyzerInternal *chineseAnalyzer = new ChineseAnalyzer(
-            dataDir + "/srch2_dict_ch.core", 
+            dict,
             stop,
             NULL, NULL,
             "" // special characters
@@ -812,8 +814,9 @@ void testSynonymFilter(string dataDir) {
 
     // TEST 11 : Test ChineseAnayzer
     Logger::info("current dir:%s", dataDir.c_str());
-    AnalyzerInternal* chineseAnalyzer = new ChineseAnalyzer(
-            dataDir + "/srch2_dict_ch.core", stop, NULL, syn, "");
+    ChineseDictionaryContainer* dict = ChineseDictionaryContainer::getInstance(dataDir + "/srch2_dict_ch.core");
+    AnalyzerInternal* chineseAnalyzer = new ChineseAnalyzer( dict
+            , stop, NULL, syn, "");
     tokenStream = chineseAnalyzer->createOperatorFlow();
     chineseAnalyzer->setTokenStream(tokenStream);
     src = "ok~dd 美丽还是美";
@@ -1190,6 +1193,7 @@ int main() {
     SynonymContainer::getInstance(dataDir + "/synonymFile.txt", SYNONYM_KEEP_ORIGIN)->init();
     StemmerContainer::getInstance(dataDir + "/StemmerHeadwords.txt")->init();
     StopWordContainer::getInstance(dataDir + "/stopWordsFile.txt")->init();
+    ChineseDictionaryContainer::getInstance(dataDir +"/srch2_dict_ch.core")->init();
 
     testSimpleAnalyzer();
     cout << "SimpleAnalyzer test passed" << endl;

@@ -14,10 +14,12 @@ namespace srch2
 namespace instantsearch
 {
 
+class ChineseDictionaryContainer;
+
 class ChineseTokenizer: public Tokenizer
 {
 public:
-    ChineseTokenizer(const std::string &dictFilePath);
+    ChineseTokenizer(const ChineseDictionaryContainer* container);
     bool processToken();
     virtual ~ChineseTokenizer() {};
 protected:
@@ -34,7 +36,7 @@ private:
                                                 // a ChineseToken in the original vector 
     typedef std::vector<TokenSpan>  TokenBuffer;
 
-    Dictionary  mChineseDict;
+    const ChineseDictionaryContainer* mChineseDictionaryContainer;
     TokenBuffer mCurrentChineseTokens;
 };
 

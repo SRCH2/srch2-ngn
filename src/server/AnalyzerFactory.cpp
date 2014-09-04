@@ -92,9 +92,29 @@ Analyzer* AnalyzerFactory::createAnalyzer(const CoreInfo_t* config, bool isSearc
 	}
 	ProtectedWordsContainer *protectedWords = ProtectedWordsContainer::getInstance(protectedWordFilePath);
 
+    AnalyzerType analyzerType = config->getAnalyzerType(); 
+    std::string chineseDictFilePath = config->getChineseDictionaryPath();
+    ChineseDictionaryContainer* chineseDictionaryContainer = NULL;
+    if (analyzerType == CHINESE_ANALYZER){
+        if (chineseDictFilePath.compare("") == 0){
+            // If the user set to use the Chinese analyzer, but didn't provide the dictionary path
+            // we will use the StandardAnalyzer instead.
+            analyzerType = STANDARD_ANALYZER;
+        } else {
+            struct stat stResult;
+            if (stat(chineseDictFilePath.c_str(), &stResult) != 0) {
+                analyzerType = STANDARD_ANALYZER;
+                Logger::error("The dictionary file %s is not valid. Please provide a valid file path.",
+                              chineseDictFilePath.c_str());
+            } else {
+                chineseDictionaryContainer = ChineseDictionaryContainer::getInstance(chineseDictFilePath);
+            }
+        }
+    }
 	// Create an analyzer
 	return new Analyzer(stemmer, stopWords, protectedWords, synonyms,
-                            config->getRecordAllowedSpecialCharacters());
+                            config->getRecordAllowedSpecialCharacters(),
+                            analyzerType, chineseDictionaryContainer);
 }
 
 Analyzer* AnalyzerFactory::getCurrentThreadAnalyzer(const CoreInfo_t* config) {
@@ -163,6 +183,9 @@ void AnalyzerHelper::initializeAnalyzerResource (const CoreInfo_t* conf)
     }
     if (conf->getStopFilePath().compare("") != 0) {
         StopWordContainer::getInstance(conf->getStopFilePath())->init();
+    }
+    if (conf->getChineseDictionaryPath().compare("") != 0){
+        ChineseDictionaryContainer::getInstance(conf->getChineseDictionaryPath())->init();
     }
 }
 

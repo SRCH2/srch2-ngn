@@ -408,12 +408,64 @@ void ProtectedWordsContainer::init()
 		std::transform(str.begin(), str.end(), str.begin(), ::tolower);
 		this->protectedWords.insert(str);
 	}
+    input.close();
 }
 
 bool ProtectedWordsContainer::isProtected(const string& val) const
 {
     return protectedWords.count(val) > 0; 
 }
+
+ChineseDictionaryContainer* ChineseDictionaryContainer::getInstance(const std::string &filePath){
+    ChineseDictionaryContainer *chineseDictionaryContainer= NULL;
+    const string key = string("ChineseDictionaryContainer:") + filePath;
+    Map_t::iterator iterator = containers.find(key);
+    if (iterator == containers.end()) {
+        chineseDictionaryContainer = new ChineseDictionaryContainer();
+        chineseDictionaryContainer->filePath = filePath;
+        containers[key] = chineseDictionaryContainer;
+    } else {
+        chineseDictionaryContainer = dynamic_cast<ChineseDictionaryContainer*> (iterator->second);
+        // in case the same path was used to create a different type of container
+        if (chineseDictionaryContainer == NULL) {
+            Logger::warn("AnalyzerContainer for %s found but of type %s instead of ChineseDictionaryContainer",
+                filePath.c_str(), typeid(*(iterator->second)).name());
+        }
+        ASSERT(chineseDictionaryContainer!= NULL);
+    }
+    return chineseDictionaryContainer;
+}
+
+void ChineseDictionaryContainer::init(){
+    std::ifstream input(filePath.c_str());
+    if (input.fail()){
+        Logger::warn("The Chinese dictionary file :\"%s\" could not be opened.", filePath.c_str());
+        return ;
+    }
+    input.close();
+    chineseDictionary.loadDict(filePath);
+}
+
+void ChineseDictionaryContainer::loadDictionaryContainer(boost::archive::binary_iarchive ia){
+	ia >> this->chineseDictionary;
+}
+
+void ChineseDictionaryContainer::saveDictionaryContainer(boost::archive::binary_oarchive oa){
+    oa << this->chineseDictionary;
+}
+
+short ChineseDictionaryContainer::getFreq(const std::vector<CharType> &buffer, unsigned istart, unsigned length) const {
+    return  chineseDictionary.getFreq(buffer, istart, length);
+}
+
+short ChineseDictionaryContainer::getFreq(const std::string &str) const {
+    return chineseDictionary.getFreq(str);
+}
+
+int ChineseDictionaryContainer::getMaxWordLength() const {
+    return chineseDictionary.getMaxWordLength();
+}
+
 
 } // instantsearch
 } // namespace srch2
