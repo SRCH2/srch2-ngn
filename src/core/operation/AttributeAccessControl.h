@@ -119,6 +119,9 @@ private:
 	// process acl request
 	bool processAclRequest(vector<string>& fields, vector<string>& roleValues, AclActionType action) const;
 
+	//Internal API which loads acl JSON file. This API is called from wrapper API bulkLoadAclJSON
+	void _bulkLoadAclJSON(const std::string& aclLoadFileName) const;
+
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive & ar, const unsigned int version) {

@@ -80,8 +80,24 @@ void  AttributeAccessControl::bulkLoadAclCSV(const std::string& aclLoadFileName)
 //	toString(ss);
 //	cout << ss.str() << endl;
 }
-
+/*
+ *   This API loads acl JSON file and should be called during engine's boot up.
+ *   The format of ACL file is
+ *   { "roleId" : ["role_id1", "role_id2"] , attributes : ["attribute1", "attribute 2" , .... ] }
+ *   This API is exception safe.
+ */
 void  AttributeAccessControl::bulkLoadAclJSON(const std::string& aclLoadFileName) const{
+	try{
+		_bulkLoadAclJSON(aclLoadFileName);
+	} catch (exception& ex) {
+		Logger::error(ex.what());
+		Logger::error("Attribute acl bulk load was not successful. Please check JSON file.");
+	}
+}
+/*
+ *   Internal API which loads acl JSON file. This API is called from wrapper API bulkLoadAclJSON
+ */
+void  AttributeAccessControl::_bulkLoadAclJSON(const std::string& aclLoadFileName) const{
 	if (aclLoadFileName == "")
 		return;
 
