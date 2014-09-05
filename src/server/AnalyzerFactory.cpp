@@ -206,6 +206,7 @@ void AnalyzerHelper::loadAnalyzerResource(const CoreInfo_t* conf) {
 			SynonymContainer::getInstance(conf->getSynonymFilePath(), synonymKeepOriginFlag)->loadSynonymContainer(ia);
 			StemmerContainer::getInstance(conf->getStemmerFile())->loadStemmerContainer(ia);
 			StopWordContainer::getInstance(conf->getStopFilePath())->loadStopWordContainer(ia);
+            ChineseDictionaryContainer::getInstance(conf->getChineseDictionaryPath())->loadDictionaryContainer(ia);
 			ifs.close();
 		}else {
 			ifs.close();
@@ -227,15 +228,17 @@ void AnalyzerHelper::saveAnalyzerResource(const CoreInfo_t* conf) {
 		if (ofs.good()) {
 			boost::archive::binary_oarchive oa(ofs);
 
-                        SynonymKeepOriginFlag synonymKeepOriginFlag;
-                        if (conf->getSynonymKeepOrigFlag()) {
-                            synonymKeepOriginFlag = srch2is::SYNONYM_KEEP_ORIGIN;
-                        } else {
-                            synonymKeepOriginFlag = srch2is::SYNONYM_DONOT_KEEP_ORIGIN;
-                        }
+            SynonymKeepOriginFlag synonymKeepOriginFlag;
+            if (conf->getSynonymKeepOrigFlag()) {
+                synonymKeepOriginFlag = srch2is::SYNONYM_KEEP_ORIGIN;
+            } else {
+                synonymKeepOriginFlag = srch2is::SYNONYM_DONOT_KEEP_ORIGIN;
+            }
 			SynonymContainer::getInstance(conf->getSynonymFilePath(), synonymKeepOriginFlag)->saveSynonymContainer(oa);
 			StemmerContainer::getInstance(conf->getStemmerFile())->saveStemmerContainer(oa);
 			StopWordContainer::getInstance(conf->getStopFilePath())->saveStopWordContainer(oa);
+            ChineseDictionaryContainer::getInstance(conf->getChineseDictionaryPath())
+                ->saveDictionaryContainer(oa);
 		}
 		ofs.close();
 	}catch(std::exception& ex){

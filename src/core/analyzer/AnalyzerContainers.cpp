@@ -446,11 +446,11 @@ void ChineseDictionaryContainer::init(){
     chineseDictionary.loadDict(filePath);
 }
 
-void ChineseDictionaryContainer::loadDictionaryContainer(boost::archive::binary_iarchive ia){
+void ChineseDictionaryContainer::loadDictionaryContainer(boost::archive::binary_iarchive &ia){
 	ia >> this->chineseDictionary;
 }
 
-void ChineseDictionaryContainer::saveDictionaryContainer(boost::archive::binary_oarchive oa){
+void ChineseDictionaryContainer::saveDictionaryContainer(boost::archive::binary_oarchive &oa){
     oa << this->chineseDictionary;
 }
 

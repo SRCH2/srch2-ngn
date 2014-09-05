@@ -124,8 +124,8 @@ class ChineseDictionaryContainer : public AnalyzerContainer {
 public:
 	static ChineseDictionaryContainer* getInstance(const std::string &filePath);
     void init();
-    void loadDictionaryContainer(boost::archive::binary_iarchive ia);
-    void saveDictionaryContainer(boost::archive::binary_oarchive oa);
+    void loadDictionaryContainer(boost::archive::binary_iarchive &ia);
+    void saveDictionaryContainer(boost::archive::binary_oarchive &oa);
 
     short getFreq(const std::vector<CharType> &buffer, unsigned istart, unsigned length) const;
     short getFreq(const std::string &str) const;

@@ -169,6 +169,7 @@ void AnalyzerInternal::tokenizeRecord(const Record *record,
 					AnalyzedTokenType tokenType =  tokenStream->getProcessedTokentype();
 					unsigned charLen = tokenStream->getProcessedTokenLen();
 					charTypeVectorToUtf8String(charVector, currentToken);
+
 					if (tokenType == ANALYZED_SYNONYM_TOKEN) {
 						vector<string> currentTokens;
 						unsigned synonymCharOffset = prevAttrCombinedLen + charOffset;
@@ -222,6 +223,7 @@ void AnalyzerInternal::tokenizeQuery(const string &queryString,
         charVector = this->tokenStream->getProcessedToken();
         unsigned position = this->tokenStream->getProcessedTokenPosition();
         charTypeVectorToUtf8String(charVector, currentToken);
+        Logger::console("currentToken: %s", currentToken.c_str());
         AnalyzedTermInfo pterm = {currentToken, position};
         queryKeywords.push_back(pterm);
         //cout<<currentToken<<endl;
