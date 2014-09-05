@@ -620,7 +620,7 @@ public:
 	UnionLowestLevelSimpleScanOptimizationOperator * createUnionLowestLevelSimpleScanOptimizationOperator();
 	UnionLowestLevelSuggestionOperator * createUnionLowestLevelSuggestionOperator();
 	UnionLowestLevelSuggestionOptimizationOperator * createUnionLowestLevelSuggestionOptimizationOperator();
-	FilterQueryOperator * createFilterQueryOperator(RefiningAttributeExpressionEvaluator * filterQueryEvaluator);
+	FilterQueryOperator * createFilterQueryOperator(RefiningAttributeExpressionEvaluator * filterQueryEvaluator, string & roleId);
 	FilterQueryOptimizationOperator * createFilterQueryOptimizationOperator();
 	PhraseSearchOperator * createPhraseSearchOperator(PhraseInfo * phraseSearchInfo);
 	PhraseSearchOptimizationOperator * createPhraseSearchOptimzationOperator();

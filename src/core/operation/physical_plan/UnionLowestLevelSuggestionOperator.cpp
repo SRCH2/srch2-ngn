@@ -172,10 +172,10 @@ bool UnionLowestLevelSuggestionOperator::getNextHeapItem(Term * term, Ranker * r
 				attributeFilter, ATTRIBUTES_OP_OR, matchedAttributeIdsList, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
 
 			float score = ranker->computeTermRecordRuntimeScore(termRecordStaticScore,
-                    suggestionPairs[item.suggestionIndex].distance,
-                    term->getKeyword()->size(),
-                    true,
-                    prefixMatchPenalty , term->getSimilarityBoost())*term->getBoost();
+					suggestionPairs[item.suggestionIndex].distance,
+					term->getKeyword()->size(),
+					true,
+					prefixMatchPenalty , term->getSimilarityBoost())*term->getBoost();
 			recordItemsHeap.push_back(SuggestionCursorHeapItem(item.suggestionIndex, firstInvertedListCursotToAdd,
 					recordId, score, matchedAttributeIdsList, termRecordStaticScore ));
 			std::push_heap(recordItemsHeap.begin(), recordItemsHeap.end(),SuggestionCursorHeapItem());

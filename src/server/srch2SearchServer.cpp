@@ -337,6 +337,9 @@ static bool checkOperationPermission(evhttp_request *req, Srch2Server *srch2Serv
         { srch2http::AttributeAclAdd, "aclAttributeRoleAdd" },
         { srch2http::AttributeAclDelete, "aclAttributeRoleDelete" },
         { srch2http::AttributeAclAppend, "aclAttributeRoleAppend" },
+        { srch2http::RecordAclAdd, "aclRecordRoleAdd"},
+        { srch2http::RecordAclAppend, "aclRecordRoleAppend"},
+        { srch2http::RecordAclDelete, "aclRecordRoleDelete"},
         { srch2http::EndOfPortType, NULL },
     };
 
@@ -427,6 +430,14 @@ static void cb_single_core_operator_route(evhttp_request *req, void *arg){
             case srch2http::AttributeAclDelete:
             case srch2http::AttributeAclAppend:
             	HTTPRequestHandler::attributeAclModify(req, srch2Server);
+            case srch2http::RecordAclAdd:
+            	HTTPRequestHandler::aclAddRolesToRecord(req, srch2Server);
+            	break;
+            case srch2http::RecordAclAppend:
+            	HTTPRequestHandler::aclAppendRolesToRecord(req, srch2Server);
+            	break;
+            case srch2http::RecordAclDelete:
+            	HTTPRequestHandler::aclDeleteRolesFromRecord(req, srch2Server);
             	break;
             default:
                 cb_notfound(req, srch2Server);
@@ -732,6 +743,22 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
         (*coreNameServerMap)[iterator->second->getName()] = core;
     }
 
+    // link resource and role cores to each other by setting their pointers
+    for (ConfigManager::CoreInfoMap_t::const_iterator iterator = config->coreInfoIterateBegin();
+         iterator != config->coreInfoIterateEnd(); iterator++) {
+    	if(iterator->second->getAccessControlInfo() != NULL){
+    		CoreNameServerMap_t::iterator resourceCoreIt = coreNameServerMap->find(iterator->second->getName());
+    		CoreNameServerMap_t::iterator roleCoreIt = coreNameServerMap->find(iterator->second->getAccessControlInfo()->roleCoreName);
+    		/*
+    		 * Now each core can have one role core. But each core can be a role core for multiple resource cores.
+    		 * if we want to change this design to many-to-many, instead of storing a access list in forward
+    		 * list we need to store a map of the core names to access lists. Then we can have multiple role cores for a resource core
+    		 */
+    		resourceCoreIt->second->roleCore = roleCoreIt->second;
+    		roleCoreIt->second->resourceCores.push_back(resourceCoreIt->second);
+    	}
+    }
+
     // make sure we have identified the default core
     srch2http::Srch2Server *defaultCore = NULL;
     if (coreNameServerMap->find(config->getDefaultCoreName()) != coreNameServerMap->end()) {
@@ -747,6 +774,11 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
     try{
         for (CoreNameServerMap_t::iterator iterator = coreNameServerMap->begin(); iterator != coreNameServerMap->end(); iterator++) {
             iterator->second->init(config);
+        }
+        for (CoreNameServerMap_t::iterator iterator = coreNameServerMap->begin(); iterator != coreNameServerMap->end(); iterator++) {
+        	if(iterator->second->roleCore != NULL){
+                    iterator->second->initAccessControls();
+        	}
         }
     }catch(exception& ex) {
     	/*
@@ -825,6 +857,9 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
             { "/aclAttributeRoleAdd", srch2http::AttributeAclAdd, cb_single_core_operator_route },
             { "/aclAttributeRoleDelete", srch2http::AttributeAclDelete, cb_single_core_operator_route },
             { "/aclAttributeRoleAppend", srch2http::AttributeAclAppend, cb_single_core_operator_route },
+            { "/aclRecordRoleAdd", srch2http::RecordAclAdd, cb_single_core_operator_route},
+            { "/aclRecordRoleAppend", srch2http::RecordAclAppend, cb_single_core_operator_route},
+            { "/aclRecordRoleDelete", srch2http::RecordAclDelete, cb_single_core_operator_route},
             { NULL, srch2http::EndOfPortType, NULL }
         };
 

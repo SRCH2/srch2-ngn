@@ -133,8 +133,8 @@ PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const Physi
                 keywordOffset,
                 term->getAttributesToFilter(),term->getFilterAttrOperation(), matchedAttributeIdsList,
                 termRecordStaticScore) ) {
-            foundValidHit = 1;
-            break;
+        	foundValidHit = 1;
+        	break;
         }
         this->cursorOnInvertedList ++;
         if (this->cursorOnInvertedList < this->invertedLists.at(this->invertedListOffset)->size()) {

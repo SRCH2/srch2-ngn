@@ -85,6 +85,89 @@ struct NewKeywordIdKeywordOffsetPairGreaterThan {
     }
 };
 
+/*
+ *   this class keeps the id of roles that have access to a record
+ *   we keep an object of this class in forwardlist for each record
+ */
+class RoleAccessList{
+private:
+	vector<string> roles;
+	mutable boost::shared_mutex mutexRW;
+
+public:
+	RoleAccessList(){};
+	~RoleAccessList(){};
+
+	// this function will return false if this roleId already exists
+	bool appendRole(string &roleId){
+		vector<string>::iterator it;
+		boost::unique_lock<boost::shared_mutex> lock(mutexRW);
+		bool roleExisted = findRole(roleId, it);
+		if(!roleExisted)
+			this->roles.insert(it, roleId);
+		lock.unlock();
+		return !roleExisted;
+	}
+
+	// return false if this role id doesn't exit
+	bool deleteRole(const string &roleId){
+		vector<string>::iterator it;
+		boost::unique_lock<boost::shared_mutex> lock(mutexRW);
+		bool roleExisted = findRole(roleId, it);
+		if(roleExisted)
+			this->roles.erase(it);
+		lock.unlock();
+		return roleExisted;
+	}
+
+	// check whether a role id exits in the access list or not
+	bool hasRole(string &roleId){
+		vector<string>::iterator it;
+		boost::shared_lock< boost::shared_mutex> lock(mutexRW);
+		bool roleExisted = findRole(roleId, it);
+		lock.unlock();
+		return roleExisted;
+	}
+
+	void clearRoles(){
+		boost::unique_lock<boost::shared_mutex> lock(mutexRW);
+		roles.clear();
+	}
+
+	/*
+	 *  we use this function for deleting a record.
+	 *  and becuase we only have one writer at a moment we don't need to use the lock.
+	 */
+	vector<string>& getRoles(){
+		return this->roles;
+	}
+
+	void print(){
+		std::cout << "----roles----" << std::endl;
+		for(unsigned i = 0 ; i < roles.size(); ++i){
+			std::cout << roles[i] << std::endl;
+		}
+		std::cout << "------------" << std::endl;
+	}
+private:
+	bool findRole(const string &roleId, std::vector<string>::iterator &it){
+		it = std::lower_bound(this->roles.begin(), this->roles.end(), roleId);
+		if(it == this->roles.end())
+			return false;
+		if( *it != roleId )
+			return false;
+		return true;
+	}
+
+	friend class boost::serialization::access;
+
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+		ar & this->roles;
+	}
+
+};
+
 // get the count of set bits in the number
 unsigned getBitSet(unsigned number);
 // get the count of bit set before the bit position of attributeId
@@ -355,6 +438,30 @@ public:
     void getSynonymBitMapInRecordField(unsigned keyOffset, unsigned attributeId,
     		vector<uint8_t>& synonymBitMap) const;
 
+    bool accessibleByRole(string &roleId){
+    	return this->roleAccessList.hasRole(roleId);
+    };
+
+    void appendRolesToResource(vector<string> &roleIds){
+    	for (unsigned i = 0 ; i < roleIds.size() ; i++){
+    		this->roleAccessList.appendRole(roleIds[i]);
+    	}
+    }
+
+    void deleteRolesFromResource(vector<string> &roleIds){
+    	for (unsigned i = 0 ; i < roleIds.size() ; i++){
+    		this->roleAccessList.deleteRole(roleIds[i]);
+    	}
+    }
+
+    void deleteRoleFromResource(const string &roleId){
+    	this->roleAccessList.deleteRole(roleId);
+    }
+
+    RoleAccessList* getAccessList(){
+    	return &(this->roleAccessList);
+    }
+
 private:
     friend class boost::serialization::access;
 
@@ -369,6 +476,7 @@ private:
         ar & this->synonymBitMapSize;
         ar & this->charLenIndexSize;
         ar & this->dataSize;
+        ar & this->roleAccessList;
         if (this->inMemoryData.get() == NULL)
         	this->inMemoryDataLen = 0;
         ar & this->inMemoryDataLen;
@@ -400,6 +508,7 @@ private:
     std::string externalRecordId;
     boost::shared_ptr<const char> inMemoryData;
     unsigned inMemoryDataLen;
+    RoleAccessList roleAccessList;
 
 
     /*
@@ -587,6 +696,14 @@ public:
             KeywordIdKeywordStringInvertedListIdTriple &keywordIdList,
             map<string, TokenAttributeHits> &tokenAttributeHitsMap);
 
+    bool appendRoleToResource(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView, const string& resourcePrimaryKeyID, vector<string> &roleIds);
+
+    bool deleteRoleFromResource(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView, const string& resourcePrimaryKeyID, vector<string> &roleIds);
+
+    bool deleteRoleFromResource(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView, const string& resourcePrimaryKeyID, const string &roleId);
+
+    RoleAccessList* getRecordAccessList(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView, const string& resourcePrimaryKeyID);
+
     /**
      * Set the deletedFlag on the forwardList, representing record deletion.
      */
@@ -640,6 +757,10 @@ public:
      */
     const ForwardList *getForwardList(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
     		unsigned recordId, bool &valid) const;
+
+    bool hasAccessToForwardList(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+    		unsigned recordId, string &roleId);
+
     //ForwardList *getForwardListToChange(unsigned recordId, bool &valid); // CHENLI
     ForwardList *getForwardList_ForCommit(unsigned recordId);
 

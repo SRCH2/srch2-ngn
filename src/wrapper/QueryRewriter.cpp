@@ -238,7 +238,7 @@ void QueryRewriter::prepareFieldFilters() {
     }
     boost::shared_ptr<vector<unsigned> > allowedAttributesSharedPtr;
     // Fetch list of attributes accessible by this role-id
-    attributeAcl.fetchSearchableAttrsAcl(paramContainer->aclRole, allowedAttributesSharedPtr);
+    attributeAcl.fetchSearchableAttrsAcl(paramContainer->roleId, allowedAttributesSharedPtr);
     vector<unsigned> *allowedAttributesForRole = allowedAttributesSharedPtr.get();
 
 	const vector<unsigned>& schemaNonAclAttrsList = schema.getNonAclSearchableAttrIdsList();
@@ -1076,6 +1076,11 @@ void QueryRewriter::createPostProcessingPlan(LogicalPlan & plan) {
 				paramContainer->facetQueryContainer;
 
 		plan.getPostProcessingInfo()->setFacetInfo(container);
+	}
+
+	//4. if there is a role id set the role id for access control
+	if(paramContainer->hasParameterInQuery(AccessControl)){ // there is access control
+		plan.getPostProcessingInfo()->setRoleId(paramContainer->roleId);
 	}
 
 }

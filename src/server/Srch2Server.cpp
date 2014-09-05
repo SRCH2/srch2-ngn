@@ -229,17 +229,19 @@ void Srch2Server::createAndBootStrapIndexer() {
             }
 
             // Create from JSON and save to index-dir
-            Logger::console("Creating indexes from JSON file...");
+            Logger::console("%s: Creating indexes from JSON file...",this->coreName.c_str());
             unsigned indexedCounter = DaemonDataSource::createNewIndexFromFile(
                     indexer, storedAttrSchema, indexDataConfig);
+
             /*
              *  commit the indexes once bulk load is done and then save it to the disk only
              *  if number of indexed record is > 0.
              */
             indexer->commit();
+
             // Load ACL list from disk
             indexer->getAttributeAcl().bulkLoadAclJSON(indexDataConfig->getAttibutesAclFile());
-            if (indexedCounter > 0) {
+            if (indexedCounter > 0 && this->roleCore == NULL) {
                 indexer->save();
                 Logger::console("Indexes saved.");
             }

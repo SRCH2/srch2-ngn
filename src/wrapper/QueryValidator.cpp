@@ -153,7 +153,7 @@ bool QueryValidator::validateExistenceOfAttributesInQueryFieldBoost() {
         		paramContainer->qfContainer->boosts.begin();
         		boostIter != paramContainer->qfContainer->boosts.end(); ++boostIter) {
 
-        	if (!attributeAcl.isSearchableFieldAccessibleForRole(paramContainer->aclRole,
+        	if (!attributeAcl.isSearchableFieldAccessibleForRole(paramContainer->roleId,
         			boostIter->attribute)){
         		// field does not exist in accessible searchable attributes
         		// write a warning and remove it
@@ -218,7 +218,7 @@ bool QueryValidator::validateExistenceOfAttributesInSortFiler() {
     for (std::vector<std::string>::iterator field =
             sortQueryContainer->evaluator->field.begin();
             field != sortQueryContainer->evaluator->field.end(); ++field) {
-        if (!attributeAcl.isRefiningFieldAccessibleForRole(paramContainer->aclRole, *field)) {
+        if (!attributeAcl.isRefiningFieldAccessibleForRole(paramContainer->roleId, *field)) {
         	// field does not exist in accessible refining list.
             paramContainer->messages.push_back(
                     std::make_pair(MessageWarning,
@@ -270,7 +270,7 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
 
         //1. Validate the existence of attributes and also
         //   check whether the attribute is accessible for current role.
-        if (!attributeAcl.isRefiningFieldAccessibleForRole(paramContainer->aclRole, *field)) {
+        if (!attributeAcl.isRefiningFieldAccessibleForRole(paramContainer->roleId, *field)) {
             //Facet will be not be calculated for this field.
         	paramContainer->messages.push_back(
         			std::make_pair(MessageWarning,
@@ -445,7 +445,7 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
 bool QueryValidator::validateFilterQuery(){
     if(paramContainer->hasParameterInQuery(FilterQueryEvaluatorFlag)){
         FilterQueryContainer * filterQueryContainer = paramContainer->filterQueryContainer;
-        if (! filterQueryContainer->evaluator->validate(schema, paramContainer->aclRole, attributeAcl)){
+        if (! filterQueryContainer->evaluator->validate(schema, paramContainer->roleId, attributeAcl)){
             paramContainer->parametersInQuery.erase(
                     remove(
                             paramContainer->parametersInQuery.begin(),

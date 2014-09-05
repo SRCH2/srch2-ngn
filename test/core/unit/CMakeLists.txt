@@ -140,6 +140,10 @@ ADD_EXECUTABLE(RandomAccessVerificationNot_Test physical_plan/RandomAccessVerifi
 TARGET_LINK_LIBRARIES(RandomAccessVerificationNot_Test ${UNIT_TEST_LIBS})  
 LIST(APPEND UNIT_TESTS RandomAccessVerificationNot_Test)
 
+ADD_EXECUTABLE(RecordBasedAccessControl_Test RecordBasedAccessControl_Test.cpp)
+TARGET_LINK_LIBRARIES(RecordBasedAccessControl_Test ${UNIT_TEST_LIBS})  
+LIST(APPEND UNIT_TESTS RecordBasedAccessControl_Test)
+
 ADD_CUSTOM_TARGET(build_unit_test ALL DEPENDS ${UNIT_TESTS} )
 ADD_DEPENDENCIES(build_unit_test srch2_core)
 foreach (target ${UNIT_TESTS})

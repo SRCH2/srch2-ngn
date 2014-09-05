@@ -218,6 +218,10 @@ test_case "synonyms" "python ./synonyms/synonyms.py $SRCH2_ENGINE"
 
 sleep 2
 
+test_case "record-based-ACL" "python ./access_control/record-based-ACL.py $SRCH2_ENGINE ./access_control/queriesAndResults.txt"
+rm -rf access_control/*Data
+sleep 2
+
 test_case "highlighter" "python ./highlight/highlight.py $SRCH2_ENGINE ./highlight/queries.txt"
 
 sleep 2

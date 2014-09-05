@@ -208,6 +208,89 @@ const ForwardList *ForwardIndex::getForwardList(shared_ptr<vectorview<ForwardLis
     return flPtr.first;
 }
 
+bool ForwardIndex::hasAccessToForwardList(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+		unsigned recordId, string &roleId)
+{
+	if(recordId >= forwardListDirectoryReadView->size()){
+		return false;
+	}
+
+	ForwardListPtr flPtr = forwardListDirectoryReadView->getElement(recordId);
+	if(flPtr.second){
+		return flPtr.first->accessibleByRole(roleId);
+	}
+	return false;
+}
+
+// returnValue: true if record with this primaryKey exists and false otherwise.
+bool ForwardIndex::appendRoleToResource(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+		const string& resourcePrimaryKeyID, vector<string> &roleIds){
+	unsigned recordId;
+	bool hasRecord = getInternalRecordIdFromExternalRecordId(resourcePrimaryKeyID, recordId);
+
+	if(hasRecord == false)
+		return false;
+
+	ForwardListPtr flPtr = forwardListDirectoryReadView->getElement(recordId);
+
+	if(flPtr.second){
+		flPtr.first->appendRolesToResource(roleIds);
+		return true;
+	}
+	return false;
+}
+
+// returnValue: true if record with this primaryKey exists and false otherwise.
+bool ForwardIndex::deleteRoleFromResource(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+		const string& resourcePrimaryKeyID, vector<string> &roleIds){
+	unsigned recordId;
+	bool hasRecord = getInternalRecordIdFromExternalRecordId(resourcePrimaryKeyID, recordId);
+
+	if(hasRecord == false)
+		return false;
+
+	ForwardListPtr flPtr = forwardListDirectoryReadView->getElement(recordId);
+
+	if(flPtr.second){
+		flPtr.first->deleteRolesFromResource(roleIds);
+		return true;
+	}
+	return false;
+}
+
+bool ForwardIndex::deleteRoleFromResource(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+		const string& resourcePrimaryKeyID, const string &roleId){
+	unsigned recordId;
+	bool hasRecord = getInternalRecordIdFromExternalRecordId(resourcePrimaryKeyID, recordId);
+
+	if(hasRecord == false)
+		return false;
+
+	ForwardListPtr flPtr = forwardListDirectoryReadView->getElement(recordId);
+
+	if(flPtr.second){
+		flPtr.first->deleteRoleFromResource(roleId);
+		return true;
+	}
+	return false;
+}
+
+RoleAccessList* ForwardIndex::getRecordAccessList(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+		const string& resourcePrimaryKeyID){
+	unsigned recordId;
+	bool hasRecord = getInternalRecordIdFromExternalRecordId(resourcePrimaryKeyID, recordId);
+
+	if(hasRecord == false)
+		return NULL;
+
+	ForwardListPtr flPtr = forwardListDirectoryReadView->getElement(recordId);
+
+	if(flPtr.second){
+		return flPtr.first->getAccessList();
+	}
+	return NULL;
+}
+
 ForwardList *ForwardIndex::getForwardList_ForCommit(unsigned recordId)
 {
     ASSERT (recordId < this->getTotalNumberOfForwardLists_WriteView());
@@ -276,6 +359,7 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     ((Record *)record)->disownInMemoryData();
     forwardList->setNumberOfKeywords(uniqueKeywordIdList.size());
 
+    forwardList->appendRolesToResource(*(record->getRoleIds()));
 
     PositionIndexType positionIndexType = this->schemaInternal->getPositionIndexType();
     bool shouldAttributeBitMapBeAllocated = false;

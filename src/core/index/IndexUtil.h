@@ -40,6 +40,7 @@ public:
     static const char* const invertedIndexFileName;
     static const char* const forwardIndexFileName;
     static const char* const recordIdConverterFileName;
+    static const char* const permissionMapFileName;
     static const char* const schemaFileName;
     static const char* const analyzerFileName;
     static const char* const indexCountsFileName;

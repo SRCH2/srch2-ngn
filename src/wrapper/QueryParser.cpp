@@ -67,7 +67,8 @@ const char* const QueryParser::facetRangeStart = "start";
 const char* const QueryParser::facetField = "facet.field";
 const char* const QueryParser::facetRangeField = "facet.range";
 const char* const QueryParser::highlightSwitch = "hl";
-const char* const QueryParser::aclSwitch = "roleId";
+// access control
+const char* const QueryParser::roleIdParamName = "roleId";
 
 //searchType
 const char* const QueryParser::searchType = "searchType";
@@ -222,7 +223,7 @@ bool QueryParser::parse() {
         this->geoParser();
         this->extractSearchType();
         this->highlightParser();
-        this->aclParser();
+        this->accessControlParser();
         if (this->container->hasParameterInQuery(
                 GetAllResultsSearchType)) {
             this->getAllResultsParser();
@@ -387,19 +388,6 @@ void QueryParser::highlightParser() {
 	 }
 }
 
-void QueryParser::aclParser() {
-	/*
-	 *  Check whether the acl option is present.
-	 */
-	const char * aclTemp = evhttp_find_header(&headers,
-			QueryParser::aclSwitch);
-	if (aclTemp) {
-		string aclStr;
-		decodeString(aclTemp, aclStr);
-		this->container->aclRole = aclTemp;
-	}
-}
-
 void QueryParser::isFuzzyParser() {
     /*
      * checks to see if "fuzzy" exists in parameters.
@@ -429,6 +417,25 @@ void QueryParser::isFuzzyParser() {
     } else {
         Logger::debug("fuzzy parameter not specified");
     }
+}
+
+void QueryParser::accessControlParser(){
+	/*
+	 *   check to see if "acl-id" for access control exists in parameters.
+	 */
+	Logger::debug("checking for acl-id parameter");
+	const char * aclIdTemp = evhttp_find_header(&headers,
+			QueryParser::roleIdParamName);
+	if (aclIdTemp){ // if acl-id parameter exists.
+		Logger::debug("acl-id parameter found");
+		string aclId;
+		decodeString(aclIdTemp, aclId);
+		this->container->parametersInQuery.push_back(srch2::httpwrapper::AccessControl);
+		this->container->roleId = aclId;
+
+	} else {
+		Logger::debug("acl-id parameter not specified");
+	}
 }
 
 void QueryParser::populateFacetFieldsSimple(FacetQueryContainer &fqc) {
@@ -1621,7 +1628,7 @@ void QueryParser::extractSearchType() {
     	}
     } else { // search type is not given by the user, and there is no post processing task either
     	// no searchType provided use topK
-    	this->container->messages.push_back(make_pair(MessageNotice, "topK query. "));
+    	this->container->messages.push_back(make_pair(MessageNotice, "topK query"));
     	this->container->parametersInQuery.push_back(TopKSearchType);
     }
     Logger::debug("returning from extractSearchType");

@@ -91,6 +91,13 @@ typedef enum {
     OP_SUCCESS
 } INDEXWRITE_RETVAL;
 
+// Type of the acl query command
+typedef enum{
+	AddRoles,
+	AppendRoles,
+	DeleteRoles
+}RecordAclCommandType;
+
 /// Query constants
 // TODO : change getAllResults in the code to FindAllResults
 typedef enum

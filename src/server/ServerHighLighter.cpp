@@ -125,7 +125,7 @@ ServerHighLighter::ServerHighLighter(QueryResults * queryResults,Srch2Server *se
 	server->indexDataConfig->getFuzzyHighLightMarkerPost(post);
 	hconf.highlightMarkers.push_back(make_pair(pre, post));
 	server->indexDataConfig->getHighLightSnippetSize(hconf.snippetSize);
-	this->aclRoleValue = param.aclRole;
+	this->aclRoleValue = param.roleId;
 	if (!isEnabledWordPositionIndex(server->indexer->getSchema()->getPositionIndexType())){
 		// we do not need phrase information because position index is not enabled.
 		param.PhraseKeyWordsInfoMap.clear();
