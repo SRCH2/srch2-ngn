@@ -814,9 +814,9 @@ void HTTPRequestHandler::addRoleIdsToRecord(vector<string> &roleIds, Srch2Server
 	}
 }
 
-// this function gets the acl command and do the appropriate operations
+// this function gets the acl command and does the appropriate operations
 // the acl command could be add, append or delete
-void HTTPRequestHandler::aclEditRolesOfRecord(evhttp_request *req, Srch2Server *server, srch2::instantsearch::AclCommandType commandType){
+void HTTPRequestHandler::aclEditRolesOfRecord(evhttp_request *req, Srch2Server *server, srch2::instantsearch::RecordAclCommandType commandType){
 
 	Json::Value response(Json::objectValue);
 	bool isSuccess = true;
@@ -943,21 +943,24 @@ void HTTPRequestHandler::aclEditRolesOfRecord(evhttp_request *req, Srch2Server *
 }
 
 // overwrites role ids in a record's access list
-// example query:   curl "http://localhost:8081/product/aclRecordRoleAdd" -i -X PUT -d '{“id”: “1234", “roleId”: [33, 45]}'
+// example : Suppose we have a resource core called "product" with a primary key attribute called "pid then the query is like:
+// curl "http://localhost:8081/product/aclRecordRoleAdd" -i -X PUT -d '{“pid”: “1234", “roleId”: ["33", "45"]}'
 //
 void HTTPRequestHandler::aclAddRolesToRecord(evhttp_request *req, Srch2Server *server){
 	aclEditRolesOfRecord(req, server, srch2::instantsearch::AddRoles);
 }
 
 // add role ids to a record
-// example query:   curl "http://localhost:8081/product/aclRecordRoleAppend" -i -X PUT -d '{“id”: “1234", “roleId”: [33, 45]}'
+// example : Suppose we have a resource core called "product" with a primary key attribute called "pid then the query is like:
+// curl "http://localhost:8081/product/aclRecordRoleAppend" -i -X PUT -d '{“pid”: “1234", “roleId”: ["33", "45"]}'
 //
 void HTTPRequestHandler::aclAppendRolesToRecord(evhttp_request *req, Srch2Server *server){
 	aclEditRolesOfRecord(req, server, srch2::instantsearch::AppendRoles);
 }
 
 // delete role ids from a records access list
-// example query:   curl "http://localhost:8081/product/aclRecordRoleDelete" -i -X PUT -d '{“id”: “1234", “roleId”: [33, 45]}'
+// example : Suppose we have a resource core called "product" with a primary key attribute called "pid then the query is like:
+// curl "http://localhost:8081/product/aclRecordRoleDelete" -i -X PUT -d '{“pid”: “1234", “roleId”: ["33", "45"]}'
 //
 void HTTPRequestHandler::aclDeleteRolesFromRecord(evhttp_request *req, Srch2Server *server){
 	aclEditRolesOfRecord(req, server, srch2::instantsearch::DeleteRoles);

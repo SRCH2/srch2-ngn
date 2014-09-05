@@ -281,10 +281,10 @@ Json::Value IndexWriteUtil::_commitCommand(Indexer *indexer,
 
 Json::Value IndexWriteUtil::_aclEditRoles(Indexer *indexer,
 		string &primaryKeyID, vector<string> &roleIds,
-		srch2::instantsearch::AclCommandType commandType) {
+		srch2::instantsearch::RecordAclCommandType commandType) {
 
 	Json::Value response(Json::objectValue);
-	srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->aclEditRoles(
+	srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->aclModifyRoles(
 			primaryKeyID, roleIds, commandType);
 
 	switch (commandType) {

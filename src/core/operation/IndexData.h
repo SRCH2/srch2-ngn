@@ -210,7 +210,7 @@ public:
 	// Adds resource id to some of the role ids.
 	// for each role id if it exists in the permission map it will add this resource id to its vector
 	// otherwise it adds new record to the map with this role id and then adds this resource id to it.
-	void appendResourceToRole(const string &resourceId, vector<string> &roleIds);
+	void appendResourceToRoles(const string &resourceId, vector<string> &roleIds);
 
 	// Deletes resource id from the role ids.
 	void deleteResourceFromRoles(const string &resourceId, vector<string> &roleIds);
@@ -326,7 +326,7 @@ public:
     INDEXWRITE_RETVAL _addRecord(const Record *record, Analyzer *analyzer);
     
     // Edit role ids of a record's access list based on command type
-    INDEXWRITE_RETVAL _aclEditRecordAccessList(const std::string& primaryKeyID, vector<string> &roleIds, AclCommandType commandType);
+    INDEXWRITE_RETVAL _aclEditRecordAccessList(const std::string& resourcePrimaryKeyID, vector<string> &roleIds, RecordAclCommandType commandType);
 
     // Deletes the role id from the permission map
     // we use this function for deleting a record from a role core

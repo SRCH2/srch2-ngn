@@ -67,7 +67,7 @@ INDEXWRITE_RETVAL IndexReaderWriter::addRecord(const Record *record, Analyzer* a
     return returnValue;
 }
 
-INDEXWRITE_RETVAL IndexReaderWriter::aclEditRoles(const std::string &resourcePrimaryKeyID, vector<string> &roleIds, AclCommandType commandType)
+INDEXWRITE_RETVAL IndexReaderWriter::aclModifyRoles(const std::string &resourcePrimaryKeyID, vector<string> &roleIds, RecordAclCommandType commandType)
 {
 	pthread_mutex_lock(&lockForWriters);
 

@@ -696,13 +696,13 @@ public:
             KeywordIdKeywordStringInvertedListIdTriple &keywordIdList,
             map<string, TokenAttributeHits> &tokenAttributeHitsMap);
 
-    bool appendRoleToResource(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView, const string& primaryKeyID, vector<string> &roleIds);
+    bool appendRoleToResource(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView, const string& resourcePrimaryKeyID, vector<string> &roleIds);
 
-    bool deleteRoleFromResource(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView, const string& primaryKeyID, vector<string> &roleIds);
+    bool deleteRoleFromResource(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView, const string& resourcePrimaryKeyID, vector<string> &roleIds);
 
-    bool deleteRoleFromResource(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView, const string& primaryKeyID, const string &roleId);
+    bool deleteRoleFromResource(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView, const string& resourcePrimaryKeyID, const string &roleId);
 
-    RoleAccessList* getRecordAccessList(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView, const string& primaryKeyID);
+    RoleAccessList* getRecordAccessList(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView, const string& resourcePrimaryKeyID);
 
     /**
      * Set the deletedFlag on the forwardList, representing record deletion.

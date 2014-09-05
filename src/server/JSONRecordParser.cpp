@@ -817,7 +817,7 @@ void DaemonDataSource::addAccessControlsFromFile(srch2is::Indexer *indexer,
 					}
 				}
 				if(roleIdsExist){
-					indexer->aclEditRoles(resourcePrimaryKeyID, roleIds, srch2::instantsearch::AddRoles);
+					indexer->aclModifyRoles(resourcePrimaryKeyID, roleIds, srch2::instantsearch::AddRoles);
 					indexedRecordsCount++;
 				}
 			}

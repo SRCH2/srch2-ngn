@@ -165,36 +165,36 @@ bool isSortedAlphabetically(
 	return true;
 }
 
-INDEXWRITE_RETVAL IndexData::_aclEditRecordAccessList(const std::string& primaryKeyID,
-		vector<string> &roleIds, AclCommandType commandType) {
+INDEXWRITE_RETVAL IndexData::_aclEditRecordAccessList(const std::string& resourcePrimaryKeyID,
+		vector<string> &roleIds, RecordAclCommandType commandType) {
 
 	shared_ptr<vectorview<ForwardListPtr> >  forwardListDirectoryReadView;
 	this->forwardIndex->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
-	RoleAccessList* accessList = this->forwardIndex->getRecordAccessList(forwardListDirectoryReadView, primaryKeyID);
+	RoleAccessList* accessList = this->forwardIndex->getRecordAccessList(forwardListDirectoryReadView, resourcePrimaryKeyID);
 
 	switch (commandType){
 	case AddRoles:
 		if(accessList != NULL){
-			this->permissionMap->deleteResourceFromRoles(primaryKeyID, accessList->getRoles());
-			this->permissionMap->appendResourceToRole(primaryKeyID, roleIds);
+			this->permissionMap->deleteResourceFromRoles(resourcePrimaryKeyID, accessList->getRoles());
+			this->permissionMap->appendResourceToRoles(resourcePrimaryKeyID, roleIds);
 			accessList->clearRoles();
-			this->forwardIndex->appendRoleToResource(forwardListDirectoryReadView, primaryKeyID, roleIds);
+			this->forwardIndex->appendRoleToResource(forwardListDirectoryReadView, resourcePrimaryKeyID, roleIds);
 			return OP_SUCCESS;
 		}
 		break;
 	case AppendRoles:
 		// 1- append these role ids to the access list of the record
 		// 2- add the id of this record to vector of resource ids for this role id in the permission map
-		if(this->forwardIndex->appendRoleToResource(forwardListDirectoryReadView, primaryKeyID, roleIds)){
-			this->permissionMap->appendResourceToRole(primaryKeyID, roleIds);
+		if(this->forwardIndex->appendRoleToResource(forwardListDirectoryReadView, resourcePrimaryKeyID, roleIds)){
+			this->permissionMap->appendResourceToRoles(resourcePrimaryKeyID, roleIds);
 			return OP_SUCCESS;
 		}
 		break;
 	case DeleteRoles:
 		// 1- Delete these role ids from the access list of the record
 		// 2- delete the id of this record from the vector of resource ids for this role id in the permission map
-		if(this->forwardIndex->deleteRoleFromResource(forwardListDirectoryReadView, primaryKeyID, roleIds)){
-			this->permissionMap->deleteResourceFromRoles(primaryKeyID, roleIds);
+		if(this->forwardIndex->deleteRoleFromResource(forwardListDirectoryReadView, resourcePrimaryKeyID, roleIds)){
+			this->permissionMap->deleteResourceFromRoles(resourcePrimaryKeyID, roleIds);
 			return OP_SUCCESS;
 		}
 		break;
@@ -327,7 +327,7 @@ INDEXWRITE_RETVAL IndexData::_addRecordWithoutLock(const Record *record,
 	}
 
 	if(record->hasRoleIds()){
-		this->permissionMap->appendResourceToRole(record->getPrimaryKey(), *(record->getRoleIds()));
+		this->permissionMap->appendResourceToRoles(record->getPrimaryKey(), *(record->getRoleIds()));
 	}
 
 	// Geo Index: need to add this record to the quadtree.
@@ -476,7 +476,7 @@ INDEXWRITE_RETVAL IndexData::_recoverRecord(const std::string &externalRecordId,
 		ForwardList* forwardList =
 				this->forwardIndex->getForwardList_ForCommit(internalRecordId);
 
-		this->permissionMap->appendResourceToRole(externalRecordId, forwardList->getAccessList()->getRoles());
+		this->permissionMap->appendResourceToRoles(externalRecordId, forwardList->getAccessList()->getRoles());
 
 		if (this->schemaInternal->getIndexType()
 						== srch2::instantsearch::LocationIndex) {
@@ -911,7 +911,7 @@ IndexData::~IndexData() {
 // Adds resource id to some of the role ids.
 // for each role id if it exists in the permission map it will add this resource id to its vector
 // otherwise it adds new record to the map with this role id and then adds this resource id to it.
-void PermissionMap::appendResourceToRole(const string &resourceId, vector<string> &roleIds){
+void PermissionMap::appendResourceToRoles(const string &resourceId, vector<string> &roleIds){
 	for(unsigned i = 0 ; i < roleIds.size() ; i++){
 		map<string, vector<string> >::iterator it = permissionMap.find(roleIds[i]);
 		if( it == permissionMap.end()){

@@ -97,7 +97,7 @@ class HTTPRequestHandler
 				const QueryResults *queryResults);
 		// this function first, checks that all the role ids exist then it add them to record object
 		static void addRoleIdsToRecord(vector<string> &roleIds, Srch2Server* server, evhttp_request *req, Record* record, std::stringstream &log_str);
-		static void aclEditRolesOfRecord(evhttp_request *req, Srch2Server *server, srch2::instantsearch::AclCommandType commandType);
+		static void aclEditRolesOfRecord(evhttp_request *req, Srch2Server *server, srch2::instantsearch::RecordAclCommandType commandType);
 
 };
 

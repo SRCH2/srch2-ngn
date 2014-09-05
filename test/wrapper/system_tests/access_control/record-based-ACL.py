@@ -7,13 +7,14 @@ import test_lib
 
 port = '8087'
 
-# This test case read data from the json files
-# Then it read all the access control data from json files too
-# Then it do some search and it use roleId in the query
+# This test case reads data from the json files
+# Then it reads all the access control data from json files too
+# Then it does some search and it uses roleId in the query
 # And all the results should have this roleId in their access list
 # it reads the keywords and role ids from queriesAndResults.txt file
 # the format of each line in this file is like:
 #       coreName keyword roleid || results
+# example :  core1 hello 103 || 12 14 18
 
 #Function of checking the results
 def checkResult(query, responseJson,resultValue):

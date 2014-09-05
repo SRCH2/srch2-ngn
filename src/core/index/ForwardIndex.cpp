@@ -224,9 +224,9 @@ bool ForwardIndex::hasAccessToForwardList(shared_ptr<vectorview<ForwardListPtr> 
 
 // returnValue: true if record with this primaryKey exists and false otherwise.
 bool ForwardIndex::appendRoleToResource(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
-		const string& primaryKeyID, vector<string> &roleIds){
+		const string& resourcePrimaryKeyID, vector<string> &roleIds){
 	unsigned recordId;
-	bool hasRecord = getInternalRecordIdFromExternalRecordId(primaryKeyID, recordId);
+	bool hasRecord = getInternalRecordIdFromExternalRecordId(resourcePrimaryKeyID, recordId);
 
 	if(hasRecord == false)
 		return false;
@@ -242,9 +242,9 @@ bool ForwardIndex::appendRoleToResource(shared_ptr<vectorview<ForwardListPtr> > 
 
 // returnValue: true if record with this primaryKey exists and false otherwise.
 bool ForwardIndex::deleteRoleFromResource(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
-		const string& primaryKeyID, vector<string> &roleIds){
+		const string& resourcePrimaryKeyID, vector<string> &roleIds){
 	unsigned recordId;
-	bool hasRecord = getInternalRecordIdFromExternalRecordId(primaryKeyID, recordId);
+	bool hasRecord = getInternalRecordIdFromExternalRecordId(resourcePrimaryKeyID, recordId);
 
 	if(hasRecord == false)
 		return false;
@@ -259,9 +259,9 @@ bool ForwardIndex::deleteRoleFromResource(shared_ptr<vectorview<ForwardListPtr> 
 }
 
 bool ForwardIndex::deleteRoleFromResource(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
-		const string& primaryKeyID, const string &roleId){
+		const string& resourcePrimaryKeyID, const string &roleId){
 	unsigned recordId;
-	bool hasRecord = getInternalRecordIdFromExternalRecordId(primaryKeyID, recordId);
+	bool hasRecord = getInternalRecordIdFromExternalRecordId(resourcePrimaryKeyID, recordId);
 
 	if(hasRecord == false)
 		return false;
@@ -276,9 +276,9 @@ bool ForwardIndex::deleteRoleFromResource(shared_ptr<vectorview<ForwardListPtr> 
 }
 
 RoleAccessList* ForwardIndex::getRecordAccessList(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
-		const string& primaryKeyID){
+		const string& resourcePrimaryKeyID){
 	unsigned recordId;
-	bool hasRecord = getInternalRecordIdFromExternalRecordId(primaryKeyID, recordId);
+	bool hasRecord = getInternalRecordIdFromExternalRecordId(resourcePrimaryKeyID, recordId);
 
 	if(hasRecord == false)
 		return NULL;

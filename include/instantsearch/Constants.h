@@ -95,7 +95,7 @@ typedef enum{
 	AddRoles,
 	AppendRoles,
 	DeleteRoles
-}AclCommandType;
+}RecordAclCommandType;
 
 /// Query constants
 // TODO : change getAllResults in the code to FindAllResults

@@ -117,7 +117,7 @@ void testAddRole(){
 	vector<string> roleIds;
 	roleIds.push_back("400");
 	roleIds.push_back("500");
-	indexer->aclEditRoles("1",roleIds, AppendRoles);
+	indexer->aclModifyRoles("1",roleIds, AppendRoles);
 
     recordIds.clear();
     recordIds.push_back(1);
@@ -126,7 +126,7 @@ void testAddRole(){
 
     roleIds.clear();
 	roleIds.push_back("400");
-	indexer->aclEditRoles("2",roleIds, AppendRoles);
+	indexer->aclModifyRoles("2",roleIds, AppendRoles);
 
 	recordIds.clear();
 	recordIds.push_back(1);
@@ -148,7 +148,7 @@ void testDeleteRole(){
 	vector<string> roleIds;
 	roleIds.push_back("400");
 	roleIds.push_back("500");
-	indexer->aclEditRoles("1",roleIds, DeleteRoles);
+	indexer->aclModifyRoles("1",roleIds, DeleteRoles);
 
 	recordIds.clear();
 	recordIds.push_back(2);
@@ -158,7 +158,7 @@ void testDeleteRole(){
 	roleIds.clear();
 	roleIds.push_back("400");
 	roleIds.push_back("500");
-	indexer->aclEditRoles("2",roleIds, DeleteRoles);
+	indexer->aclModifyRoles("2",roleIds, DeleteRoles);
 
 	recordIds.clear();
 	ASSERT ( ping_WithACL(analyzer, queryEvaluator, "tom", 0 , recordIds,
