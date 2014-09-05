@@ -1,6 +1,35 @@
-Search core1 Episode 1004||901
-Search core1 Science 1006||901 902
-Search core1 spider 1001||902 906 907 908 910
-Search core1 man 1020||
-Search core3 men 1013||1
-Search core3 repair 1006||3 8 9 6
+S||core1 Episode 1004||901
+S||core1 Science 1006||901 902
+S||core1 spider 1001||902 906 907 908 910
+S||core1 man 1020||
+S||core3 men 1013||1
+S||core3 repair 1006||3 8 9 6
+S||core1 test 1001||902 906 907 908 910
+C||core1||aclRecordRoleDelete||{"resourceId": "902", "roleId":["1001"]}
+S||core1 spider 1001||906 907 908 910
+S||core1 test 1001||906 907 908 910
+S||core1 test 1002||901 906 907
+S||core1 test 1003||901 906 907
+C||core1||aclRecordRoleAdd||{"resourceId": "906", "roleId":["1010", "1011"]}
+S||core1 test 1001||907 908 910
+S||core1 test 1002||901 907
+S||core1 test 1003||901 907
+S||core1 test 1010||905 906 908
+S||core1 test 1011||905 906 909
+C||core1||aclRecordRoleAdd||{"resourceId": "909", "roleId":["1008"]}
+S||core1 test 1011||905 906
+S||core1 spider 1012||905 910
+S||core1 special 1003||
+C||core1||aclRecordRoleAppend||{"resourceId": "904", "roleId":["1003"]}
+S||core1 special 1003||904
+C||core1||aclRecordRoleAppend||{"resourceId": "906", "roleId":["1003"]}
+C||core1||aclRecordRoleAppend||{"resourceId": "908", "roleId":["1003"]}
+S||core1 test 1003||901 904 906 907 908
+C||core1||aclRecordRoleDelete||{"resourceId": "906", "roleId":["1003"]}
+S||core1 test 1003||901 904 907 908
+S||core1 test 1008||903 905 909
+C||core1||aclRecordRoleDelete||{"resourceId": "909", "roleId":["1008"]}
+S||core1 test 1008||903 905
+C||core1||aclRecordRoleDelete||{"resourceId": "903", "roleId":["1008"]}
+C||core1||aclRecordRoleDelete||{"resourceId": "905", "roleId":["1008"]}
+S||core1 test 1008||

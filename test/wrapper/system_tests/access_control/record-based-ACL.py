@@ -93,16 +93,14 @@ def testMultipleCores(queriesAndResultsPath, binary_path):
     for line in f_in:
         #get the query keyword and results
         value=line.split('||')
-        queryValue=value[0].split(' ')
-        allResults=value[1].split('@')
-
-        if(queryValue[0] == 'Search'):
-		coreNum=1
+	if(value[0] == 'S'):
+        	queryValue=value[1].split(' ')
+        	allResults=value[2].split('@')
         	for coreResult in allResults:
             		resultValue=coreResult.split()
             		#construct the query
-            		query='http://localhost:' + port + '/' + queryValue[1] + '/search?'
-            		query = query + prepareQuery(queryValue[2], queryValue[3], False)
+            		query='http://localhost:' + port + '/' + queryValue[0] + '/search?'
+            		query = query + prepareQuery(queryValue[1], queryValue[2], False)
 
             		#do the query
             		response = urllib2.urlopen(query).read()
@@ -113,7 +111,21 @@ def testMultipleCores(queriesAndResultsPath, binary_path):
             		failCount += checkResult(query, response_json['results'], resultValue)
 
 	else:
-		
+		# the line is command query (insert/delete/update/acl etc)
+		coreName = value[1]
+                command = value[2]
+                payload = value[3]
+                
+                if coreName == "":
+            	    query='http://localhost:' + port + '/' + command
+                else:
+                	query='http://localhost:' + port + '/' + coreName + '/' + command
+                print query
+                request = urllib2.Request(query, data=payload)
+                request.get_method = lambda: 'PUT'
+                opener = urllib2.build_opener(urllib2.HTTPHandler)
+                url = opener.open(request)
+                time.sleep(1)
 
 
     time.sleep(5)
