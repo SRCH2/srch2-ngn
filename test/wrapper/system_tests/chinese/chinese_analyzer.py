@@ -1,5 +1,13 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+# This test is to test the Chinese language support.
+# We need to set the fieldType name to "text_zh" inside the schema configuration to 
+# enable the Chinese Analyzer. And we need to provide the Chinese Dictionary to 
+# tokenize the sentence. The conf.xml has all the details.
+#
+# This test use the Chinese Analyzer to parse the record. The record is tokenized based
+# on the Chinese Dictionary. Then we should be able to search all the records by the 
+# Chinese keywords.
 
 import sys, json, os, urllib
 sys.path.insert(0, 'srch2lib')
