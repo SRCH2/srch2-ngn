@@ -1,0 +1,115 @@
+
+#Access Control
+
+Many applications need to have restrictions on what information can be
+accessed by what users.  To meet these requirements, SRCH2 provides
+native support of access control to set restrictions on search
+results.  
+
+As shown in the following figure, SRCH2 supports two types of access
+control:
+
+<ul>
+ <li> <b>Record-based</b>: a user (called
+ "role") can access certain records  in a core (called "resource").
+ For each record, we can specify an access control list  (ACL) of
+ roles who can access this record.
+
+ <li> <b>Attribute-based</b>: a user can access certain attributes  in
+ a core.  For each role,  we can specify the list of attribute they
+ can access.
+</ul>
+
+<center>
+![Access Control Overview](../images/ACL-overview.png)
+</center>
+
+Notice that a simple way to do record-based access control 
+is to introduce a multi-valued attribute to a data core to
+include the information about roles who can access a record.  This
+approach is known to be slow and inefficient, and not acceptable for
+large amounts of information or very dynamic changes of the access
+control lists.  To solve this problem, SRCH2 adopts an
+advanced implementation to deliver higher performance.
+
+In this documentation we use the following example to explain how to
+use SRCH2 to do access control:
+
+<ul>
+ <li> <b>Data source 1</b>: Product(pid, name, description, price, 
+ manufacturer, state), and "pid" is the primary key attribute;
+ <li> <b>Data source 2</b>: Company(cid, name), and "cid" is the
+ primary key attribute.
+</ul>
+
+By doing access control, we can allow a company to access certain
+records and certain attributes in the "Product" table.  The following
+are sample records in the two cores:
+
+<b>Product.json</b>
+
+```json
+{"pid" : "p501", "name" : "laptop", "description" : "Inspiron with Windows", "price" : 600, "manufacturer" : "Dell", "state" : "Texas"}
+{"pid" : "p502", "name" : "phone", "description" : "Samsung Galaxy with Android", "price" : 350, "manufacturer" : "Samsung", "state" : "California"}
+{"pid" : "p503", "name" : "phone", "description" : "iPhone 5", "price" : 500, "manufacturer" : "Apple", "state" : "California"}
+```
+
+<b>Company.json</b>
+```json
+{"cid" : "c25", "name" : "Walmart"}
+{"cid" : "c26", "name" : "Costco"}
+{"cid" : "c27", "name" : "Target"}
+{"cid" : "c28", "name" : "Best Buy"}
+
+```
+
+## 1. Record-Based
+
+###1.1 Configuration File
+
+In the configuration file, we want to tell the engine to use <tt>Product</tt>
+as the resource core and <tt>Company</tt> as the role core. To specify
+this relationship we use an <i>access-control</i> tag as shown below:
+
+```
+<cores>
+ <core name="Product">
+   ...
+ </core>
+
+ <core name="Company">
+ </core>
+<cores>
+
+<access-controls>
+  <access-control>
+     <resourceCore>Product</resourceCore>
+     <roleCore>Product</roleCore>
+     <aclDataFile>record-acl-product-company.json</aclDataFile>
+   </access-control>
+</access-controls>
+
+```
+
+We can have multiple <i>access-control</i> tags under
+<i>access-controls</i> when we want to specify many ACL pairs of
+cores.
+
+Under the <i>aclDataFile</i> tag, there is a data file
+<tt>record-acl-product-company.json</tt>, which includes the initial ACL
+information to be loaded by the engine.  Each line includes an primary
+id of the <tt>Product</tt> core and an array of ids of the
+<tt>Company</tt> core. The following are some example records:
+
+```json
+{"resourceId" : "p501" , "roleId" : ["c25", "c26"]}
+{"resourceId" : "p502" , "roleId" : ["c26"]}
+{"resourceId" : "p503" , "roleId" : ["c26", "c28"]}
+```
+
+For instance, the first line says that product with the id "p501" can
+be accessed by companies with the ids "c25" and "c26".  The second
+line says that product with the id "p502" can be accessed by the company
+with the id "c26"". 
+
+## 2. Attribute-Based
