@@ -1050,141 +1050,6 @@ void decodeAmpersand(const char *uri, unsigned len, string& decodeUri) {
 		}
 	}
 }
-/*
- *   Helper API to handle a single ACL operation. (insert, delete, or append)
- *   example url :
- *   http://<ip>:<port>/aclAttributeRoleAppend -X PUT -d { "attributes": "f1,f2", "roleId": "r1"}
- *   http://<ip>:<port>/aclAttributeRoleAdd -X PUT -d { "attributes": "f1,f2", "roleId": "r2"}
- *   http://<ip>:<port>/aclAttributeRoleDelete -X PUT -d { "attributes": "f2", "roleId": "r2"}
- */
-bool processSingleAttributeAclRequest(Srch2Server *server,const Json::Value& doc, AclActionType action,
-		Json::Value& aclAttributeResponse) {
-
-	Json::Value attributesToAdd = doc.get("attributes", Json::Value(Json::arrayValue));
-	Json::Value attributesRoles = doc.get("roleId", Json::Value(Json::arrayValue));
-
-	if (attributesToAdd.type()  != Json::arrayValue) {
-		aclAttributeResponse = "Error: 'attributes' key is not an array in request JSON.";
-		return false;
-	}
-	if (attributesToAdd.size() == 0) {
-		aclAttributeResponse = "Error: 'attributes' key is empty or missing in request JSON.";
-		return false;
-	}
-	if (attributesRoles.type() != Json::arrayValue) {
-		aclAttributeResponse = "Error: 'roleId' key is not an array in request JSON.";
-		return false;
-	}
-	if (attributesRoles.size() == 0) {
-		aclAttributeResponse = "Error: 'roleId' key is empty or missing in request JSON.";
-		return false;
-	}
-
-	vector<string> attributeList;
-	vector<string> invalidAttributeNames;
-	for (unsigned i = 0; i < attributesToAdd.size(); ++i) {
-		Json::Value defaultValueToReturn = Json::Value("");
-		const Json::Value attribute = attributesToAdd.get(i, defaultValueToReturn);
-		if (attribute.type() != Json::stringValue){
-			std::stringstream log_str;
-			log_str << "Error: 'attributes' key's element at index "<< i << " is not convertible to string";
-			aclAttributeResponse = log_str.str();
-			return false;
-		}
-		string tempString = attribute.asString();
-		boost::algorithm::trim(tempString);
-		if (tempString.size() != 0) {
-			const Schema * schema = server->indexer->getSchema();
-			if (schema->isValidAttribute(tempString)) {
-				attributeList.push_back(tempString);
-			} else {
-				invalidAttributeNames.push_back(tempString);
-			}
-		}
-	}
-
-	if (attributeList.size() == 0) {
-		// All elements in the attribute list are either empty or have bogus value.
-		aclAttributeResponse = "Error: 'attributes' key's elements are not valid.";
-		return false;
-	}
-
-	// We have some valid attribute names in attributes list. Check whether there are some invalid
-	// name as well. If there are invalid attribute names, then generate warning log message and proceed
-	if (invalidAttributeNames.size() > 0) {
-		std::stringstream log_str;
-		if (invalidAttributeNames.size() > 1)
-			log_str << "Warning: 'attributes' key has bad attributes = '";
-		else
-			log_str << "Warning: 'attributes' key has bad attribute = '";
-		for (unsigned i = 0; i < invalidAttributeNames.size(); ++i) {
-			if (i)
-				log_str << ", ";
-			log_str << invalidAttributeNames[i];
-		}
-		log_str << "'.";
-		aclAttributeResponse = log_str.str();
-	}
-
-	vector<string> roleIds;
-	for (unsigned i = 0; i < attributesRoles.size(); ++i) {
-		Json::Value defaultValueToReturn = Json::Value("");
-		const Json::Value roleId = attributesRoles.get(i, defaultValueToReturn);
-
-		switch (roleId.type()) {
-		case Json::stringValue:
-		{
-			string tempString = roleId.asString();
-			boost::algorithm::trim(tempString);
-			if (tempString.size() != 0)
-				roleIds.push_back(tempString);
-			break;
-		}
-		case Json::intValue:
-		{
-			// convert int to string instead of returning error to user
-			stringstream tempString;
-			tempString << roleId.asInt64();
-			roleIds.push_back(tempString.str());
-			break;
-		}
-		case Json::uintValue:
-		{
-			// convert unsigned int to string instead of returning error to user
-			stringstream tempString;
-			tempString << roleId.asUInt64();
-			roleIds.push_back(tempString.str());
-			break;
-		}
-		case Json::realValue:
-		{
-			// convert double to string instead of returning error to user
-			stringstream tempString;
-			tempString << roleId.asDouble();
-			roleIds.push_back(tempString.str());
-			break;
-		}
-		case Json::arrayValue:
-		case Json::objectValue:
-		{
-			// Can't convert to array ..user should fix the input JSON.
-			std::stringstream log_str;
-			log_str << "Error: 'roleId' key's element at index "<< i << " is not convertible to string";
-			aclAttributeResponse = log_str.str();
-			return false;
-		}
-		default:
-			ASSERT(false);
-		}
-	}
-
-	if (roleIds.size() == 0) {
-		aclAttributeResponse = "Error: 'roleId' key's elements are not valid.";
-		return false;
-	}
-
-	return server->indexer->getAttributeAcl().processHTTPAclRequest(attributeList, roleIds, action);
-}
 
 /*
  *   Wrapper layer API to handle ACL operations such as insert, delete, and append.
@@ -1251,6 +1116,7 @@ void HTTPRequestHandler::attributeAclModify(evhttp_request *req, Srch2Server *se
 	            		global_customized_writer.write(response));
 	            return;
 	        } else {
+	        	const AttributeAccessControl& attrAcl = server->indexer->getAttributeAcl();
 	        	if (root.type() == Json::arrayValue) {
 	        		aclAttributeResponses.resize(root.size());
 	        		//the record parameter is an array of json objects
@@ -1259,7 +1125,7 @@ void HTTPRequestHandler::attributeAclModify(evhttp_request *req, Srch2Server *se
 	        			const Json::Value doc = root.get(index,
 	        					defaultValueToReturn);
 
-	        			bool  status = processSingleAttributeAclRequest(server, doc, action,
+	        			bool  status = attrAcl.processSingleJSONAttributeAcl(doc, action,
 	        					aclAttributeResponses[index]);
 	        			if (status == false) {
 	        				error = true;
@@ -1270,7 +1136,7 @@ void HTTPRequestHandler::attributeAclModify(evhttp_request *req, Srch2Server *se
 	        		aclAttributeResponses.resize(1);
 	        		// the record parameter is a single json object
 	        		const Json::Value doc = root;
-	        		bool  status = processSingleAttributeAclRequest(server, doc, action,
+	        		bool  status = attrAcl.processSingleJSONAttributeAcl(doc, action,
 	        				aclAttributeResponses[0]);
 	        		if (status == false) {
 	        			error = true;

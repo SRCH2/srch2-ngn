@@ -238,7 +238,7 @@ void Srch2Server::createAndBootStrapIndexer() {
              */
             indexer->commit();
             // Load ACL list from disk
-            indexer->getAttributeAcl().bulkLoadAcl(indexDataConfig->getAttibutesAclFile());
+            indexer->getAttributeAcl().bulkLoadAclJSON(indexDataConfig->getAttibutesAclFile());
             if (indexedCounter > 0) {
                 indexer->save();
                 Logger::console("Indexes saved.");
@@ -248,7 +248,7 @@ void Srch2Server::createAndBootStrapIndexer() {
         default: {
             indexer->commit();
             // Load ACL list from disk
-            indexer->getAttributeAcl().bulkLoadAcl(indexDataConfig->getAttibutesAclFile());
+            indexer->getAttributeAcl().bulkLoadAclJSON(indexDataConfig->getAttibutesAclFile());
             Logger::console("Creating new empty index");
         }
         };

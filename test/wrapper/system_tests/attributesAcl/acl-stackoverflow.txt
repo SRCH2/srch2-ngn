@@ -1,2 +1,2 @@
 #acl for stackoverflow data
-spiderman,author_name
+{ "attributes": ["author_name"], "roleId": ["spiderman"]}

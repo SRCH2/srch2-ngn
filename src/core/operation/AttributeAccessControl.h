@@ -18,6 +18,7 @@
 #include <boost/serialization/shared_ptr.hpp>
 #include <boost/thread/shared_mutex.hpp>
 #include "record/SchemaInternal.h"
+#include "json/json.h"
 
 namespace srch2 {
 namespace instantsearch {
@@ -67,10 +68,12 @@ public:
 
 	// Bulk load ACL for first time.
 	// Thread unsafe. Should be called only from main thread during initial load.
-	void bulkLoadAcl(const string& aclLoadFileName) const;
+	void bulkLoadAclCSV(const string& aclLoadFileName) const;
 
-	// process ReST HTTP API
-	bool processHTTPAclRequest(vector<string>& fields, vector<string>& roleValues, AclActionType action) const;
+	void bulkLoadAclJSON(const std::string& aclLoadFileName) const;
+
+	bool processSingleJSONAttributeAcl(const Json::Value& doc, AclActionType action,
+			Json::Value& aclAttributeResponse) const;
 
 	// add new acl for a role
 	void setAcl(const string& aclRoleValue, vector<unsigned>& searchableAttrIdsList,
@@ -112,6 +115,9 @@ private:
 	// Helper function to validate whether field is accessible for given role-id
 	bool isFieldAccessibleForRole(const string& roleId, const string& fieldName,
 			bool isFieldSearchable = true) const;
+
+	// process acl request
+	bool processAclRequest(vector<string>& fields, vector<string>& roleValues, AclActionType action) const;
 
     friend class boost::serialization::access;
     template<class Archive>

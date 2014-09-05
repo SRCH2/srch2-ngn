@@ -12,7 +12,7 @@ IF(BUILD_JNI)
 ENDIF()
 
 # additional includes
-INCLUDE_DIRECTORIES(. "${CMAKE_BINARY_DIR}/include" ${Boost_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR})
+INCLUDE_DIRECTORIES(. "${CMAKE_BINARY_DIR}/include" ${Boost_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src/include)
 
 
 #CHENLI: generating a shared library if needed.

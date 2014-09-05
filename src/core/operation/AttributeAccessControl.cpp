@@ -9,6 +9,7 @@
 #include "util/Logger.h"
 #include "util/Assert.h"
 #include <boost/algorithm/string.hpp>
+#include "thirdparty/utf8/utf8.h"
 
 using namespace srch2::util;
 
@@ -21,7 +22,7 @@ namespace instantsearch {
  *   role_id , attribute1, attribute 2 , ....
  *
  */
-void  AttributeAccessControl::bulkLoadAcl(const std::string& aclLoadFileName) const{
+void  AttributeAccessControl::bulkLoadAclCSV(const std::string& aclLoadFileName) const{
 
 	if (aclLoadFileName == "")
 		return;
@@ -79,6 +80,198 @@ void  AttributeAccessControl::bulkLoadAcl(const std::string& aclLoadFileName) co
 //	toString(ss);
 //	cout << ss.str() << endl;
 }
+
+void  AttributeAccessControl::bulkLoadAclJSON(const std::string& aclLoadFileName) const{
+	if (aclLoadFileName == "")
+		return;
+
+	std::ifstream input(aclLoadFileName.c_str());
+	if (!input.good()) {
+		Logger::warn("The attribute acl file = \"%s\" could not be opened.",
+				aclLoadFileName.c_str());
+		return;
+	}
+	Logger::info("Loading attributes acl file %s", aclLoadFileName.c_str());
+	std::string line;
+	unsigned lineCount = 0;
+	bool isArrayOfJsonRecords = false;
+	while (getline(input, line)) {
+		++lineCount;
+		boost::algorithm::trim(line);
+		if (line.size() == 0)  // ignore empty line
+			continue;
+		if (line[0] == '#') // ignore comment
+			continue;
+
+		if (line == "[") {
+			// begin of JSON array in file
+			isArrayOfJsonRecords = true;
+			continue; // ignore
+		}
+		if (isArrayOfJsonRecords == true && line == "]") {
+			// end of JSON array in file
+			break; // assume nothing follows array (will ignore more records or another array)
+		}
+
+	    string::const_iterator end_it = utf8::find_invalid(line.begin(), line.end());
+	    if (end_it != line.end()) {
+	    	stringstream ss;
+	    	ss << "Invalid UTF-8 encoding detected at line " << lineCount << ". Ignoring this line";
+	        Logger::warn("%s", ss.str().c_str());
+	        continue;  // ignore this line
+	    }
+
+	    Json::Value doc;
+	    Json::Reader reader;
+	    bool parseSuccess = reader.parse(line, doc, false);
+	    if (!parseSuccess)
+	    {
+	    	stringstream ss;
+	        ss << "Failed to parse JSON - " << reader.getFormatedErrorMessages();
+	        Logger::warn("%s", ss.str().c_str());
+	        continue; // ignore this line
+	    }
+	    Json::Value response;
+		processSingleJSONAttributeAcl(doc, ACL_APPEND, response);
+		if (response.type() == Json::stringValue && response.asString().size() > 0) {
+			Logger::info(response.asCString());
+		}
+	}
+//	cout << "bulk load done" << endl ;
+//	stringstream ss;
+//	toString(ss);
+//	cout << ss.str() << endl;
+}
+/*
+ *   Helper API to handle a single ACL operation. (insert, delete, or append)
+ */
+bool AttributeAccessControl::processSingleJSONAttributeAcl(const Json::Value& doc, AclActionType action,
+		Json::Value& aclAttributeResponse) const{
+
+	Json::Value attributesToAdd = doc.get("attributes", Json::Value(Json::arrayValue));
+	Json::Value attributesRoles = doc.get("roleId", Json::Value(Json::arrayValue));
+
+	if (attributesToAdd.type()  != Json::arrayValue) {
+		aclAttributeResponse = "Error: 'attributes' key is not an array in request JSON.";
+		return false;
+	}
+	if (attributesToAdd.size() == 0) {
+		aclAttributeResponse = "Error: 'attributes' key is empty or missing in request JSON.";
+		return false;
+	}
+	if (attributesRoles.type() != Json::arrayValue) {
+		aclAttributeResponse = "Error: 'roleId' key is not an array in request JSON.";
+		return false;
+	}
+	if (attributesRoles.size() == 0) {
+		aclAttributeResponse = "Error: 'roleId' key is empty or missing in request JSON.";
+		return false;
+	}
+
+	vector<string> attributeList;
+	vector<string> invalidAttributeNames;
+	for (unsigned i = 0; i < attributesToAdd.size(); ++i) {
+		Json::Value defaultValueToReturn = Json::Value("");
+		const Json::Value attribute = attributesToAdd.get(i, defaultValueToReturn);
+		if (attribute.type() != Json::stringValue){
+			std::stringstream log_str;
+			log_str << "Error: 'attributes' key's element at index "<< i << " is not convertible to string";
+			aclAttributeResponse = log_str.str();
+			return false;
+		}
+		string tempString = attribute.asString();
+		boost::algorithm::trim(tempString);
+		if (tempString.size() != 0) {
+			if (tempString == "*" || schema->isValidAttribute(tempString)) {
+				attributeList.push_back(tempString);
+			} else {
+				invalidAttributeNames.push_back(tempString);
+			}
+		}
+	}
+
+	if (attributeList.size() == 0) {
+		// All elements in the attribute list are either empty or have bogus value.
+		aclAttributeResponse = "Error: 'attributes' key's elements are not valid.";
+		return false;
+	}
+
+	// We have some valid attribute names in attributes list. Check whether there are some invalid
+	// name as well. If there are invalid attribute names, then generate warning log message and proceed
+	if (invalidAttributeNames.size() > 0) {
+		std::stringstream log_str;
+		if (invalidAttributeNames.size() > 1)
+			log_str << "Warning: 'attributes' key has bad attributes = '";
+		else
+			log_str << "Warning: 'attributes' key has bad attribute = '";
+		for (unsigned i = 0; i < invalidAttributeNames.size(); ++i) {
+			if (i)
+				log_str << ", ";
+			log_str << invalidAttributeNames[i];
+		}
+		log_str << "'.";
+		aclAttributeResponse = log_str.str();
+	}
+
+	vector<string> roleIds;
+	for (unsigned i = 0; i < attributesRoles.size(); ++i) {
+		Json::Value defaultValueToReturn = Json::Value("");
+		const Json::Value roleId = attributesRoles.get(i, defaultValueToReturn);
+
+		switch (roleId.type()) {
+		case Json::stringValue:
+		{
+			string tempString = roleId.asString();
+			boost::algorithm::trim(tempString);
+			if (tempString.size() != 0)
+				roleIds.push_back(tempString);
+			break;
+		}
+		case Json::intValue:
+		{
+			// convert int to string instead of returning error to user
+			stringstream tempString;
+			tempString << roleId.asInt64();
+			roleIds.push_back(tempString.str());
+			break;
+		}
+		case Json::uintValue:
+		{
+			// convert unsigned int to string instead of returning error to user
+			stringstream tempString;
+			tempString << roleId.asUInt64();
+			roleIds.push_back(tempString.str());
+			break;
+		}
+		case Json::realValue:
+		{
+			// convert double to string instead of returning error to user
+			stringstream tempString;
+			tempString << roleId.asDouble();
+			roleIds.push_back(tempString.str());
+			break;
+		}
+		case Json::arrayValue:
+		case Json::objectValue:
+		{
+			// Can't convert to array ..user should fix the input JSON.
+			std::stringstream log_str;
+			log_str << "Error: 'roleId' key's element at index "<< i << " is not convertible to string";
+			aclAttributeResponse = log_str.str();
+			return false;
+		}
+		default:
+			ASSERT(false);
+		}
+	}
+
+	if (roleIds.size() == 0) {
+		aclAttributeResponse = "Error: 'roleId' key's elements are not valid.";
+		return false;
+	}
+
+	return processAclRequest(attributeList, roleIds, action);
+}
 /*
  *   This API converts attribute names to attribute ids and return sorted attribute ids.
  */
@@ -116,7 +309,7 @@ void AttributeAccessControl::convertFieldNamesToSortedFieldIds(vector<string>& f
 }
 
 /*
- *  This API processes the HTTP ACL operations such as insertion, deletion, and append.
+ *  This API processes the  ACL operations such as insertion, deletion, and append.
  *  The inputs are list of attributes, list of role-ids, and operation to be performed.
  *
  *  e.g.
@@ -130,7 +323,7 @@ void AttributeAccessControl::convertFieldNamesToSortedFieldIds(vector<string>& f
  *  101 -> [ f1 , f2, f3 ]
  *
  */
-bool  AttributeAccessControl::processHTTPAclRequest( vector<string>& fieldTokens,
+bool  AttributeAccessControl::processAclRequest( vector<string>& fieldTokens,
 		vector<string>& roleValueTokens, AclActionType action) const{
 
 	if (fieldTokens.size() == 0)
