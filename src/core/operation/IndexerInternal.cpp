@@ -78,6 +78,7 @@ INDEXWRITE_RETVAL IndexReaderWriter::aclEditRoles(const std::string &resourcePri
 	if(returnValue == OP_SUCCESS){
 	    if (this->cache != NULL)
 	        this->cache->clear();
+	    this->needToSaveIndexes = true;
 	}
 
 	pthread_mutex_unlock(&lockForWriters);
@@ -92,6 +93,7 @@ INDEXWRITE_RETVAL IndexReaderWriter::deleteRoleRecord(const std::string &rolePri
 	if(returnValue == OP_SUCCESS){
 		if (this->cache != NULL)
 			this->cache->clear();
+		this->needToSaveIndexes = true;
 	}
 
 	pthread_mutex_unlock(&lockForWriters);

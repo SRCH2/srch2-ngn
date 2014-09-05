@@ -179,6 +179,7 @@ INDEXWRITE_RETVAL IndexData::_aclEditRecordAccessList(const std::string& primary
 			this->permissionMap->appendResourceToRole(primaryKeyID, roleIds);
 			accessList->clearRoles();
 			this->forwardIndex->appendRoleToResource(forwardListDirectoryReadView, primaryKeyID, roleIds);
+			return OP_SUCCESS;
 		}
 		break;
 	case AppendRoles:
