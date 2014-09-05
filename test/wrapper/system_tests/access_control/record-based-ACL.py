@@ -96,24 +96,25 @@ def testMultipleCores(queriesAndResultsPath, binary_path):
         queryValue=value[0].split(' ')
         allResults=value[1].split('@')
 
-        coreNum=1
-        for coreResult in allResults:
-            resultValue=coreResult.split()
-            #construct the query
-            query='http://localhost:' + port + '/' + queryValue[0] + '/search?'
-            query = query + prepareQuery(queryValue[1], queryValue[2], False)
+        if(queryValue[0] == 'Search'):
+		coreNum=1
+        	for coreResult in allResults:
+            		resultValue=coreResult.split()
+            		#construct the query
+            		query='http://localhost:' + port + '/' + queryValue[1] + '/search?'
+            		query = query + prepareQuery(queryValue[2], queryValue[3], False)
 
-            #do the query
-            response = urllib2.urlopen(query).read()
+            		#do the query
+            		response = urllib2.urlopen(query).read()
 
-            # TODO - Replace srch2 bad JSON (spurious comma).  Ticket SRCN-335 already filed.
-            #response = re.sub('[,][}]', '}', response)
-            #print query + ' Got ==> ' + response
+            		response_json = json.loads(response)
 
-            response_json = json.loads(response)
+            		#check the result
+            		failCount += checkResult(query, response_json['results'], resultValue)
 
-            #check the result
-            failCount += checkResult(query, response_json['results'], resultValue)
+	else:
+		
+
 
     time.sleep(5)
     test_lib.killServer(serverHandle)
@@ -130,8 +131,6 @@ if __name__ == '__main__':
         shutil.rmtree("./access-control/core3Data")
     if(os.path.exists("./access-control/core4Data")):
         shutil.rmtree("./access-control/core4Data")
-    if(os.path.exists("./access-control/coreGeoData")):
-        shutil.rmtree("./access-control/coreGeoData")
     #Path of the query file
     #each line like "core1 trust 1000||01c90b4effb2353742080000" ---- coreName query roleId||record_ids(results)
     binary_path = sys.argv[1]
@@ -145,6 +144,4 @@ if __name__ == '__main__':
         shutil.rmtree("./access-control/core3Data")
     if(os.path.exists("./access-control/core4Data")):
         shutil.rmtree("./access-control/core4Data")
-    if(os.path.exists("./access-control/coreGeoData")):
-        shutil.rmtree("./access-control/coreGeoData")
     os._exit(exitCode)

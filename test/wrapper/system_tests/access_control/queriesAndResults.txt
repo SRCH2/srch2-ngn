@@ -1,6 +1,6 @@
-core1 Episode 1004||901
-core1 Science 1006||901 902
-core1 spider 1001||902 906 907 908 910
-core1 man 1020||
-core3 men 1013||1
-core3 repair 1006||3 8 9 6
+Search core1 Episode 1004||901
+Search core1 Science 1006||901 902
+Search core1 spider 1001||902 906 907 908 910
+Search core1 man 1020||
+Search core3 men 1013||1
+Search core3 repair 1006||3 8 9 6
