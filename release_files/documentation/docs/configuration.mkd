@@ -502,19 +502,18 @@ e.g. In the <code>fields</code> list above, <code>category</code> and <code>pric
 
 This field specifies an access control file for the attributes having <code>acl</code> flag set to <code>true</code> in the schema. The engine bulk loads access control mapping from the file during the index-creation phase. The file is not used when the indexes are loaded from the disk.<br>
 ```
-<attributeAclFile>path/to/acl/file</attributeAclFile>
+<attributeAclFile>path/to/acl/file/relative/to/srch2_home</attributeAclFile>
 ```
 
-The access control file should be in a csv format as shown below.<br>
+The attribute access control file should be in a JSON format having one JSON object per line as shown below.<br>
 
 ```
-# Comment is supported and must have '#' as the first character of the line. 
-# First column is role-id followed by comma separated attribute names having acl=true
-user1, name, seller_id, price
-user2, seller_id
+{ attributes : { "name", "seller_id", "price" }, roleId : ["user1"] }
+{ attributes : { "seller_id" }, roleId : ["user2"] }
 ```
 
-Note: Attribute access control mapping can also be defined at runtime using the RESTful [APIs](../restful-control/#6-modify-attribute-access-control).
+
+<b>Note</b>: Attribute access control mapping can also be defined at runtime using the RESTful [APIs](../restful-control/#6-modify-attribute-access-control).
 
 ###11.4. Enable Facet (Optional)
 
@@ -605,7 +604,7 @@ The format of the synonym file is shown below. All comments start with '#' at th
 #1. explicit synonym rule : Tokens on LHS will be replaced with tokens on RHS (the "expand" flag is ignored)
 nyc=>new york city, new york
 jvm=> java virtual machine
-centOS, federo => linux
+centOS, fedora => linux
 #2. equivalent synonym rule 
 ipad, i-pad, tablet
 #   if expand == true, then the rule is treated as "ipad, i-pad, tablet" => "ipad, i-pad, tablet"
