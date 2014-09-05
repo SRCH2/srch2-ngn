@@ -22,6 +22,11 @@ public:
     ChineseTokenizer(const ChineseDictionaryContainer* container);
     bool processToken();
     virtual ~ChineseTokenizer() {};
+    virtual void clearState() {     
+        Tokenizer::clearState();
+        mCurrentChineseTokens.clear();
+    }
+
 protected:
     bool incrementToken();
 

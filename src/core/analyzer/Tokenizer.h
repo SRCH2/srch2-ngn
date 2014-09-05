@@ -19,6 +19,7 @@ public:
     Tokenizer():TokenStream(){
     }
 protected:
+    virtual void clearState() {};
     virtual bool incrementToken() = 0;
     virtual ~Tokenizer() {
     }

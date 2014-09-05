@@ -93,6 +93,7 @@ string AnalyzerInternal::applyFilters(string input, bool isPrefix) {
 void AnalyzerInternal::clearFilterStates() {
   // clear the state of each filter on the chain
   if (tokenStream != NULL) {
+
     tokenStream->clearState();
   }
 }
@@ -223,7 +224,6 @@ void AnalyzerInternal::tokenizeQuery(const string &queryString,
         charVector = this->tokenStream->getProcessedToken();
         unsigned position = this->tokenStream->getProcessedTokenPosition();
         charTypeVectorToUtf8String(charVector, currentToken);
-        Logger::console("currentToken: %s", currentToken.c_str());
         AnalyzedTermInfo pterm = {currentToken, position};
         queryKeywords.push_back(pterm);
         //cout<<currentToken<<endl;
