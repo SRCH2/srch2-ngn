@@ -113,25 +113,25 @@ void  AttributeAccessControl::bulkLoadAclJSON(const std::string& aclLoadFileName
 			break; // assume nothing follows array (will ignore more records or another array)
 		}
 
-	    string::const_iterator end_it = utf8::find_invalid(line.begin(), line.end());
-	    if (end_it != line.end()) {
-	    	stringstream ss;
-	    	ss << "Invalid UTF-8 encoding detected at line " << lineCount << ". Ignoring this line";
-	        Logger::warn("%s", ss.str().c_str());
-	        continue;  // ignore this line
-	    }
+		string::const_iterator end_it = utf8::find_invalid(line.begin(), line.end());
+		if (end_it != line.end()) {
+			stringstream ss;
+			ss << "Invalid UTF-8 encoding detected at line " << lineCount << ". Ignoring this line";
+			Logger::warn("%s", ss.str().c_str());
+			continue;  // ignore this line
+		}
 
-	    Json::Value doc;
-	    Json::Reader reader;
-	    bool parseSuccess = reader.parse(line, doc, false);
-	    if (!parseSuccess)
-	    {
-	    	stringstream ss;
-	        ss << "Failed to parse JSON - " << reader.getFormatedErrorMessages();
-	        Logger::warn("%s", ss.str().c_str());
-	        continue; // ignore this line
-	    }
-	    Json::Value response;
+		Json::Value doc;
+		Json::Reader reader;
+		bool parseSuccess = reader.parse(line, doc, false);
+		if (!parseSuccess)
+		{
+			stringstream ss;
+			ss << "Failed to parse JSON - " << reader.getFormatedErrorMessages();
+			Logger::warn("%s", ss.str().c_str());
+			continue; // ignore this line
+		}
+		Json::Value response;
 		processSingleJSONAttributeAcl(doc, ACL_APPEND, "bulkLoad", response);
 		if (response.type() == Json::stringValue && response.asString().size() > 0) {
 			Logger::info(response.asCString());
