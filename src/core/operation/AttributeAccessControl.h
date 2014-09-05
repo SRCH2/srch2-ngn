@@ -73,7 +73,7 @@ public:
 	void bulkLoadAclJSON(const std::string& aclLoadFileName) const;
 
 	bool processSingleJSONAttributeAcl(const Json::Value& doc, AclActionType action,
-			Json::Value& aclAttributeResponse) const;
+			const string& apiName, Json::Value& aclAttributeResponse) const;
 
 	// add new acl for a role
 	void setAcl(const string& aclRoleValue, vector<unsigned>& searchableAttrIdsList,

@@ -132,7 +132,7 @@ void  AttributeAccessControl::bulkLoadAclJSON(const std::string& aclLoadFileName
 	        continue; // ignore this line
 	    }
 	    Json::Value response;
-		processSingleJSONAttributeAcl(doc, ACL_APPEND, response);
+		processSingleJSONAttributeAcl(doc, ACL_APPEND, "bulkLoad", response);
 		if (response.type() == Json::stringValue && response.asString().size() > 0) {
 			Logger::info(response.asCString());
 		}
@@ -146,25 +146,33 @@ void  AttributeAccessControl::bulkLoadAclJSON(const std::string& aclLoadFileName
  *   Helper API to handle a single ACL operation. (insert, delete, or append)
  */
 bool AttributeAccessControl::processSingleJSONAttributeAcl(const Json::Value& doc, AclActionType action,
-		Json::Value& aclAttributeResponse) const{
+		const string& apiName, Json::Value& aclAttributeResponse) const{
 
 	Json::Value attributesToAdd = doc.get("attributes", Json::Value(Json::arrayValue));
 	Json::Value attributesRoles = doc.get("roleId", Json::Value(Json::arrayValue));
 
 	if (attributesToAdd.type()  != Json::arrayValue) {
-		aclAttributeResponse = "Error: 'attributes' key is not an array in request JSON.";
+		std::stringstream log_str;
+		log_str << "API : " << apiName << ", Error: 'attributes' key is not an array in request JSON.";
+		aclAttributeResponse = log_str.str();
 		return false;
 	}
 	if (attributesToAdd.size() == 0) {
-		aclAttributeResponse = "Error: 'attributes' key is empty or missing in request JSON.";
+		std::stringstream log_str;
+		log_str << "API : " << apiName << ", Error: 'attributes' key is empty or missing in request JSON.";
+		aclAttributeResponse = log_str.str();
 		return false;
 	}
 	if (attributesRoles.type() != Json::arrayValue) {
-		aclAttributeResponse = "Error: 'roleId' key is not an array in request JSON.";
+		std::stringstream log_str;
+		log_str << "API : " << apiName << ", Error: 'roleId' key is not an array in request JSON.";
+		aclAttributeResponse = log_str.str();
 		return false;
 	}
 	if (attributesRoles.size() == 0) {
-		aclAttributeResponse = "Error: 'roleId' key is empty or missing in request JSON.";
+		std::stringstream log_str;
+		log_str << "API : " << apiName << ", Error: 'roleId' key is empty or missing in request JSON.";
+		aclAttributeResponse = log_str.str();
 		return false;
 	}
 
@@ -175,7 +183,7 @@ bool AttributeAccessControl::processSingleJSONAttributeAcl(const Json::Value& do
 		const Json::Value attribute = attributesToAdd.get(i, defaultValueToReturn);
 		if (attribute.type() != Json::stringValue){
 			std::stringstream log_str;
-			log_str << "Error: 'attributes' key's element at index "<< i << " is not convertible to string";
+			log_str << "API : " << apiName << ", Error: 'attributes' key's element at index "<< i << " is not convertible to string";
 			aclAttributeResponse = log_str.str();
 			return false;
 		}
@@ -192,7 +200,9 @@ bool AttributeAccessControl::processSingleJSONAttributeAcl(const Json::Value& do
 
 	if (attributeList.size() == 0) {
 		// All elements in the attribute list are either empty or have bogus value.
-		aclAttributeResponse = "Error: 'attributes' key's elements are not valid.";
+		std::stringstream log_str;
+		log_str << "API : " << apiName << ", Error: 'attributes' key's elements are not valid.";
+		aclAttributeResponse = log_str.str();
 		return false;
 	}
 
@@ -201,9 +211,9 @@ bool AttributeAccessControl::processSingleJSONAttributeAcl(const Json::Value& do
 	if (invalidAttributeNames.size() > 0) {
 		std::stringstream log_str;
 		if (invalidAttributeNames.size() > 1)
-			log_str << "Warning: 'attributes' key has bad attributes = '";
+			log_str << "API : " << apiName << ", Warning: 'attributes' key has bad attributes = '";
 		else
-			log_str << "Warning: 'attributes' key has bad attribute = '";
+			log_str << "API : " << apiName << ", Warning: 'attributes' key has bad attribute = '";
 		for (unsigned i = 0; i < invalidAttributeNames.size(); ++i) {
 			if (i)
 				log_str << ", ";
@@ -256,7 +266,7 @@ bool AttributeAccessControl::processSingleJSONAttributeAcl(const Json::Value& do
 		{
 			// Can't convert to array ..user should fix the input JSON.
 			std::stringstream log_str;
-			log_str << "Error: 'roleId' key's element at index "<< i << " is not convertible to string";
+			log_str << "API : " << apiName << ", Error: 'roleId' key's element at index "<< i << " is not convertible to string";
 			aclAttributeResponse = log_str.str();
 			return false;
 		}
@@ -266,7 +276,9 @@ bool AttributeAccessControl::processSingleJSONAttributeAcl(const Json::Value& do
 	}
 
 	if (roleIds.size() == 0) {
-		aclAttributeResponse = "Error: 'roleId' key's elements are not valid.";
+		std::stringstream log_str;
+		log_str << "API : " << apiName << ", Error: 'roleId' key's elements are not valid.";
+		aclAttributeResponse = log_str.str();
 		return false;
 	}
 

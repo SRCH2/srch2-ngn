@@ -1076,7 +1076,7 @@ void HTTPRequestHandler::attributeAclModify(evhttp_request *req, Srch2Server *se
 	        // or "/aclAttributeRoleAdd" for default core
 	        // Otherwise it should be /corename/aclAttributeRoleDelete etc.
 	        string uriString = req->uri;
-
+	        string apiName;
 	        AclActionType action;
 	        string corename = server->getCoreName();
 	        if (corename == ConfigManager::defaultCore) {
@@ -1084,12 +1084,18 @@ void HTTPRequestHandler::attributeAclModify(evhttp_request *req, Srch2Server *se
 	        } else {
 	        	corename = "/" + corename;
 	        }
-	        if (uriString == corename + "/aclAttributeRoleAdd")
+	        if (uriString == corename + "/aclAttributeRoleAdd") {
 	        	action = ACL_ADD;
-	        else if (uriString == corename + "/aclAttributeRoleDelete")
+	        	apiName = "aclAttributeRoleAdd";
+	        }
+	        else if (uriString == corename + "/aclAttributeRoleDelete") {
+	        	apiName = "aclAttributeRoleDelete";
 	        	action = ACL_DELETE;
-	        else if (uriString == corename + "/aclAttributeRoleAppend")
+	        }
+	        else if (uriString == corename + "/aclAttributeRoleAppend") {
+	        	apiName = "aclAttributeRoleAppend";
 	        	action = ACL_APPEND;
+	        }
 	        else {
 	        	stringstream log_str;
 	        	log_str << "Error: Invalid access control HTTP request ='" << uriString << "'";
@@ -1097,6 +1103,7 @@ void HTTPRequestHandler::attributeAclModify(evhttp_request *req, Srch2Server *se
 	        	response[JSON_MESSAGE] = "The request was NOT processed successfully";
 	        	bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID DATA",
 	        			global_customized_writer.write(response));
+	        	Logger::info("%s", global_customized_writer.write(response).c_str());
 	        	return;
 	        }
 	        // get input JSON
@@ -1109,11 +1116,12 @@ void HTTPRequestHandler::attributeAclModify(evhttp_request *req, Srch2Server *se
 	        bool error = false;
         	Json::Value aclAttributeResponses(Json::arrayValue);
 	        if (parseSuccess == false) {
-	            log_str << "Error: JSON object parse error";
+	            log_str << "API : "<< apiName << ", Error: JSON object parse error";
 	            response[JSON_LOG] = log_str.str();
 	            response[JSON_MESSAGE] = "The request was NOT processed successfully";
 	            bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID DATA",
 	            		global_customized_writer.write(response));
+	            Logger::info("%s", global_customized_writer.write(response).c_str());
 	            return;
 	        } else {
 	        	const AttributeAccessControl& attrAcl = server->indexer->getAttributeAcl();
@@ -1125,21 +1133,35 @@ void HTTPRequestHandler::attributeAclModify(evhttp_request *req, Srch2Server *se
 	        			const Json::Value doc = root.get(index,
 	        					defaultValueToReturn);
 
-	        			bool  status = attrAcl.processSingleJSONAttributeAcl(doc, action,
+	        			bool  status = attrAcl.processSingleJSONAttributeAcl(doc, action, apiName,
 	        					aclAttributeResponses[index]);
 	        			if (status == false) {
 	        				error = true;
 	        				break;
+	        			} else {
+	        				// if the response is empty then add success message.
+	        				if (aclAttributeResponses[index].asString().size() == 0){
+	        					stringstream ss;
+	        					ss << "API : " << apiName << ", Success";
+	        					aclAttributeResponses[index] = ss.str();
+	        				}
 	        			}
 	        		}
 	        	} else {
 	        		aclAttributeResponses.resize(1);
 	        		// the record parameter is a single json object
 	        		const Json::Value doc = root;
-	        		bool  status = attrAcl.processSingleJSONAttributeAcl(doc, action,
+	        		bool  status = attrAcl.processSingleJSONAttributeAcl(doc, action, apiName,
 	        				aclAttributeResponses[0]);
 	        		if (status == false) {
 	        			error = true;
+	        		} else {
+	        			// if the response is empty then add success message.
+	        			if (aclAttributeResponses[0].asString().size() == 0){
+	        				stringstream ss;
+	        				ss << "API : " << apiName << ", Success";
+	        				aclAttributeResponses[0] = ss.str();
+	        			}
 	        		}
 	        	}
 	        }
@@ -1155,6 +1177,7 @@ void HTTPRequestHandler::attributeAclModify(evhttp_request *req, Srch2Server *se
 	        	bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID DATA",
 	        			global_customized_writer.write(response));
 	        }
+	        Logger::info("%s", global_customized_writer.write(response).c_str());
 	        break;
 	    }
 	    default:
