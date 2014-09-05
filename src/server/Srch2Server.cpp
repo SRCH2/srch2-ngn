@@ -3,7 +3,9 @@
 #include <syslog.h>
 #include "Srch2Server.h"
 #include "util/RecordSerializerUtil.h"
+#ifndef ANDROID
 #include <sys/statvfs.h>
+#endif
 
 namespace srch2 {
 namespace httpwrapper {
@@ -204,6 +206,7 @@ void Srch2Server::createAndBootStrapIndexer() {
             unsigned fileSize = getFileSize(indexDataConfig->getDataFilePath().c_str());
             //Logger::console("The size of the data file is %lu KB", fileSize/(1024));
 
+#ifndef ANDROID
             struct statvfs *buff;
             if (!(buff = (struct statvfs *) malloc(sizeof(struct statvfs)))) {
                 Logger::error("Failed to allocate memory to buffer.");
@@ -226,6 +229,7 @@ void Srch2Server::createAndBootStrapIndexer() {
                 }
                 free(buff);
             }
+#endif
 
             // Create from JSON and save to index-dir
             Logger::console("Creating indexes from JSON file...");
