@@ -1,32 +1,69 @@
 package com.srch2.android.sdk;
 
-import com.srch2.android.sdk.*;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.io.File;
+import java.util.ArrayList;
 
 /**
  * Created by jianfeng on 7/23/14.
  */
 public class PrepareEngine {
 
-    static final String DEFAULT_SRCH2HOME_PATH = "/tmp/data/com.srch2.server/sdk";
+    static final String DEFAULT_SRCH2HOME_PATH = "/tmp/data/com.srch2.server" + File.separator;
     static final String OAUTH = "SRCH2-OAUTH";
     static int DEFAULT_SRCH2SERVER_PORT = 55555;
     static final MusicIndex musicIndex = new MusicIndex();
     static final MovieIndex movieIndex = new MovieIndex();
     static final GeoIndex geoIndex = new GeoIndex();
+    static final DbIndex dbIndex = new DbIndex();
     static Indexable[] orderedIndexes = {musicIndex, movieIndex, geoIndex};
     static boolean isPrepared = false;
 
     static void prepareEngine() {
-        SRCH2Engine.conf = new SRCH2Configuration(musicIndex, movieIndex, geoIndex);
+        ArrayList<IndexableCore> idxs = new ArrayList<IndexableCore>();
+        idxs.add(musicIndex);
+        idxs.add(movieIndex);
+        idxs.add(geoIndex);
+        idxs.add(dbIndex);
+        SRCH2Engine.conf = new SRCH2Configuration(idxs);
         SRCH2Engine.conf.setSRCH2Home(DEFAULT_SRCH2HOME_PATH);
         DEFAULT_SRCH2SERVER_PORT = SRCH2Engine.detectFreePort();
         SRCH2Engine.conf.setPort(DEFAULT_SRCH2SERVER_PORT);
         SRCH2Engine.setAuthorizationKey(OAUTH);
-
     }
+
+    static class DbIndex extends SQLiteIndexable {
+
+        static final String TABLE_NAME = "table";
+        static final String DATABASE_NAME = "db";
+        static final String INDEX_NAME = "table";
+        static final String INDEX_PK_NAME = "id";
+        static final String INDEX_TITLE_NAME = "title";
+
+        @Override
+        public String getTableName() {
+            return TABLE_NAME;
+        }
+
+        @Override
+        public String getDatabaseName() {
+            return DATABASE_NAME;
+        }
+
+        @Override
+        public String getIndexName() {
+            return INDEX_NAME;
+        }
+
+        @Override
+        public Schema getSchema() {
+            return Schema.createSchema(Field.createDefaultPrimaryKeyField(INDEX_PK_NAME), Field.createSearchableField(INDEX_TITLE_NAME));
+        }
+    }
+
 
     static class MusicIndex extends Indexable {
         public static final String INDEX_NAME = "music";

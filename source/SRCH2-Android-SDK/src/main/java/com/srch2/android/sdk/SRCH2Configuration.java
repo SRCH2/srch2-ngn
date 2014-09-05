@@ -1,13 +1,17 @@
 package com.srch2.android.sdk;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 final class SRCH2Configuration {
+
+    static final String TAG = "SRCH2Configuration";
 
     static final String tab = "    ";
     static final String tabtab = "        ";
@@ -15,12 +19,32 @@ final class SRCH2Configuration {
     static final String SRCH2_HOME_FOLDER_DEFAULT_NAME = "srch2/";
     static final String HOSTNAME = "127.0.0.1";
 
+    private static final String DEFAULT_VALUE_logLevel = "3";
+    private static final String DEFAULT_VALUE_accessLogFile = "srch2-log.txt";
+
+
     private String fullPathOfSRCH2home = "srch2";
     private int maxSearchThreads = 1;
     private int port = 8081;
     private String authorizationKey ;
 
-    final HashMap<String, Indexable> indexableMap = new HashMap<String, Indexable>();
+    final HashMap<String, IndexableCore> indexableMap = new HashMap<String, IndexableCore>();
+
+    /** Note is used by the xml configuration file relative to SRCH2Home by SQLiteConnector: hence we go up
+     * two directories as /data/data/apppath/files/srch2 is home but databases is in /data/data/apppath/databases  */
+    private String relativeDatabasePath = "../../databases";
+    String getAppDatabasePath() {
+        return relativeDatabasePath;
+    }
+    /** Note is used by the xml configuration file relative to SRCH2Home by SQLiteConnector: hence we go up
+     * two directories as /data/data/apppath/files/srch2 is home but bin is in /data/data/apppath/bin  */
+    private String relativeBinPath = "../../bin";
+    String getAppBinDirectory() {
+        return relativeBinPath;
+    }
+
+    /** Used only during configuration initialization: is dereferenced after initialization is finished. */
+    ArrayList<String> uniqueTableNameList = new ArrayList<String>();
 
     /**
      * It returns the SRCH2Home, path where engine stores the serialized files.
@@ -34,8 +58,8 @@ final class SRCH2Configuration {
      * This value specifies the path of a folder where the engine stores.
      * serialized index files.
      */
-    void setSRCH2Home(String fullPath) {
-        fullPathOfSRCH2home = fullPath;
+    void setSRCH2Home(String appHomeDirectory) {
+        fullPathOfSRCH2home = appHomeDirectory + File.separator + SRCH2Configuration.SRCH2_HOME_FOLDER_DEFAULT_NAME;
     }
 
     /**
@@ -81,30 +105,31 @@ final class SRCH2Configuration {
         this.authorizationKey = authorizationKey;
     }
 
-    SRCH2Configuration(Indexable firstIndex, Indexable... additionalIndexes) {
-        validateIndexable(firstIndex);
-        firstIndex.indexInternal = createIndex(new IndexDescription(firstIndex));
-        indexableMap.put(firstIndex.getIndexName(), firstIndex);
-        if (additionalIndexes != null) {
-            for (Indexable idx : additionalIndexes) {
-                validateIndexable(idx);
-                idx.indexInternal = createIndex(new IndexDescription(idx));
+    SRCH2Configuration(ArrayList<IndexableCore> indexes) {
+        Class<?> c = null;
+        if (indexes != null) {
+            for (IndexableCore idx : indexes) {
+                c = idx.getClass();
+                if (Indexable.class.isAssignableFrom(c)) {
+                    validateIndexable((Indexable) idx);
+                    idx.indexInternal = createIndex(new IndexDescription((Indexable) idx));
+                } else if (SQLiteIndexable.class.isAssignableFrom(c)) {
+                    validateSqliteIndexable((SQLiteIndexable) idx);
+                    idx.indexInternal = createIndex(new IndexDescription((SQLiteIndexable) idx));
+                }
                 indexableMap.put(idx.getIndexName(), idx);
             }
         }
+        uniqueTableNameList = null;
     }
 
-    /**
-     * This function adds IndexStructure objects into Configuration Object.
-     * @param indexDescription indexDescription
-     */
     IndexInternal createIndex(IndexDescription indexDescription) {
         IndexInternal indexInternal = new IndexInternal(indexDescription);
-        checkIfIndexNameValidAndAreadyExistedThrowIfNot(indexDescription.getIndexName());
+        checkIfIndexNameValidAndAlreadyExistedThrowIfNot(indexDescription.getIndexName());
         return indexInternal;
     }
 
-    void validateIndexable(Indexable indexable) {
+    void validateSRCH2Index(IndexableCore indexable) {
         if (indexable == null) {
             throw new NullPointerException("Cannot initialize the SRCH2Engine when a null Indexable is passed.");
         }
@@ -119,7 +144,37 @@ final class SRCH2Configuration {
         IndexDescription.throwIfNonValidTopK(indexable.getTopK());
     }
 
-    void checkIfIndexNameValidAndAreadyExistedThrowIfNot(String indexName) {
+    void validateIndexable(Indexable indexable) {
+        validateSRCH2Index((IndexableCore) indexable);
+    }
+
+    void validateSqliteIndexable(SQLiteIndexable indexable) {
+        validateSRCH2Index((IndexableCore) indexable);
+        checkIfDatabaseNameValidThrowIfNot(indexable.getDatabaseName());
+        checkIfDatabaseTableNameValidThrowIfNot(indexable.getTableName());
+    }
+
+    void checkIfDatabaseNameValidThrowIfNot(String databaseName) {
+        if (databaseName == null) {
+            throw new NullPointerException("Cannot pass null database name.");
+        } else if (databaseName.length() < 1) {
+            throw new IllegalArgumentException("Cannot pass empty string as databaseName.");
+        }
+    }
+
+    void checkIfDatabaseTableNameValidThrowIfNot(String tableName) {
+        if (tableName == null) {
+            throw new NullPointerException("Cannot pass null tableName.");
+        } else if (tableName.length() < 1) {
+            throw new IllegalArgumentException("Cannot pass empty string as tableName.");
+        } else if (uniqueTableNameList.contains(tableName)) {
+            throw new IllegalArgumentException("The string tableName already existed.");
+        } else {
+            uniqueTableNameList.add(tableName);
+        }
+    }
+
+    void checkIfIndexNameValidAndAlreadyExistedThrowIfNot(String indexName) {
         if (indexName == null) {
             throw new NullPointerException("Cannot pass null indexName.");
         } else if (indexName.length() < 1) {
@@ -141,7 +196,20 @@ final class SRCH2Configuration {
 
     Indexable getIndexableAndThrowIfNotThere(String name) {
         checkIfIndexNameValidAndThrowIfNot(name);
-        return indexableMap.get(name);
+        IndexableCore idx = indexableMap.get(name);
+        if (!Indexable.class.isAssignableFrom(idx.getClass())) {
+            throw new IllegalArgumentException("The value of the string name: " + name + " does not match any Indexable.");
+        }
+        return (Indexable) idx;
+    }
+
+    SQLiteIndexable getSqliteIndexableAndThrowIfNotThere(String name) {
+        checkIfIndexNameValidAndThrowIfNot(name);
+        IndexableCore idx = indexableMap.get(name);
+        if (!SQLiteIndexable.class.isAssignableFrom(idx.getClass())) {
+            throw new IllegalArgumentException("The value of the string name: " + name + " does not match any SqliteIndexable.");
+        }
+        return (SQLiteIndexable) idx;
     }
 
     /** generates the configuration file literal that will be passed to the SRCH2Service */
@@ -149,6 +217,10 @@ final class SRCH2Configuration {
         if (conf.indexableMap.size() == 0) {
             throw new IllegalStateException("No index provided");
         }
+
+
+
+
         String defaultIndexName = conf.indexableMap.values().iterator().next().getIndexName();
         StringBuilder configurationXML = new StringBuilder()
             .append("<config>\n\n")
@@ -162,13 +234,26 @@ final class SRCH2Configuration {
             .append(tab).append("<maxSearchThreads>").append(conf.maxSearchThreads).append("</maxSearchThreads>\n")
             .append(tab).append("<cores defaultCoreName=\"").append(defaultIndexName).append("\">\n\n");
 
-        for (Indexable idxable : conf.indexableMap.values()) {
+        for (IndexableCore idxable : conf.indexableMap.values()) {
             configurationXML.append(idxable.indexInternal.getConf().indexStructureToXML()).append("\n");
 
         }
 
         configurationXML
-            .append(tab).append("</cores>\n")
+            .append(tab)
+                .append("</cores>\n")
+            .append(tab)
+                .append("<updateLog>\n")
+            .append(tabtab)
+                .append("<logLevel>")
+                    .append(DEFAULT_VALUE_logLevel)
+                .append("</logLevel>\n")
+            .append(tabtab)
+                .append("<accessLogFile>")
+                    .append(DEFAULT_VALUE_accessLogFile)
+                .append("</accessLogFile>\n")
+            .append(tab)
+                .append("</updateLog>\n")
             .append("</config>\n");
         return configurationXML.toString();
     }

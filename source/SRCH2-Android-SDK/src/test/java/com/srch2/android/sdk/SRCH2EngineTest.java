@@ -14,30 +14,61 @@ public class SRCH2EngineTest {
         PrepareEngine.prepareEngine();
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = IllegalStateException.class)
     public void nullConfiguration() {
-        SRCH2Engine.initialize(null, null, null);
+        SRCH2Engine.initialize();
     }
 
     @Test
     public void listenerCouldBeNull() {
-        SRCH2Engine.initialize(PrepareEngine.musicIndex, PrepareEngine.movieIndex, PrepareEngine.geoIndex);
+        SRCH2Engine.setIndexables(PrepareEngine.musicIndex, PrepareEngine.movieIndex, PrepareEngine.geoIndex);
+        SRCH2Engine.initialize();
     }
 
     @Test
     public void multipleInitializeShouldBeFine() {
-        SRCH2Engine.initialize(PrepareEngine.musicIndex, (Indexable[]) null);
+        SRCH2Engine.setIndexables(PrepareEngine.musicIndex, (Indexable[]) null);
     }
 
     @Test
     public void shouldNotReadyWhenNotOnResumed() {
-        SRCH2Engine.initialize(PrepareEngine.musicIndex, (Indexable[]) null);
+        SRCH2Engine.setIndexables(PrepareEngine.musicIndex, (Indexable[]) null);
         Assert.assertFalse(SRCH2Engine.isReady());
     }
 
     @Test
     public void getIndexGetsCorrectIndexable() {
-        SRCH2Engine.initialize(PrepareEngine.musicIndex);
+        SRCH2Engine.setIndexables(PrepareEngine.musicIndex);
+        SRCH2Engine.initialize();
         Assert.assertEquals(PrepareEngine.musicIndex.getIndexName(), SRCH2Engine.getIndex(PrepareEngine.musicIndex.getIndexName()).getIndexName());
+    }
+
+
+    @Test
+    public void getIndexGetsCorrectSqliteIndexable() {
+        SRCH2Engine.setSQLiteIndexables(PrepareEngine.dbIndex);
+        SRCH2Engine.initialize();
+        Assert.assertEquals(PrepareEngine.dbIndex.getIndexName(), SRCH2Engine.getSQLiteIndex(PrepareEngine.dbIndex.getIndexName()).getIndexName());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void getIndexThrowsWhenGettingIndexableWhenNameCorrespondsToSqliteIndexable() {
+        SRCH2Engine.setIndexables(PrepareEngine.musicIndex);
+        SRCH2Engine.setSQLiteIndexables(PrepareEngine.dbIndex);
+        SRCH2Engine.initialize();
+        SRCH2Engine.getIndex(PrepareEngine.dbIndex.getIndexName());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void getIndexThrowsWhenGettingSqliteIndexableWhenNameCorrespondsToIndexable() {
+        SRCH2Engine.setIndexables(PrepareEngine.musicIndex);
+        SRCH2Engine.setSQLiteIndexables(PrepareEngine.dbIndex);
+        SRCH2Engine.initialize();
+        SRCH2Engine.getSQLiteIndex(PrepareEngine.musicIndex.getIndexName());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void shouldNotStartWithoutIndexableOrSqliteIndexableSet() {
+        SRCH2Engine.initialize();
     }
 }

@@ -5,7 +5,17 @@
     android:layout_height="match_parent"
     tools:context=".MyActivity">
 
-    <Button android:layout_width="match_parent" android:layout_height="wrap_content" android:onClick="foo"/>
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+        <Button android:text="foo" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:onClick="foo"/>
+        <Button android:text="bar" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:onClick="bar"/>
+
+
+
+    </LinearLayout>
+
 
     <com.srch2.android.sdk.sandbox.InstantSearchEditText
             android:id="@+id/et_instant_search_input"

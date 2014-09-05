@@ -19,7 +19,8 @@ public class SRCH2ServiceTest extends ServiceTestCase<SRCH2Service> {
     protected void setUp() throws Exception {
         super.setUp();
         DumbIndex index = new DumbIndex();
-        SRCH2Engine.initialize(index);
+        SRCH2Engine.setIndexables(index);
+        SRCH2Engine.initialize();
         SRCH2Engine.initializeConfiguration(getContext());
         SRCH2Engine.registerReciever(getContext());
         Intent i = new Intent(getContext(), SRCH2Service.class);
@@ -28,8 +29,8 @@ public class SRCH2ServiceTest extends ServiceTestCase<SRCH2Service> {
         i.putExtra(IPCConstants.INTENT_KEY_SHUTDOWN_URL, UrlBuilder
                 .getShutDownUrl(SRCH2Engine.getConfig()).toString());
         URL pingUrl = null;
-        Indexable defaultIndexable = null;
-        Iterator<Indexable> it = SRCH2Engine.conf.indexableMap.values().iterator();
+        IndexableCore defaultIndexable = null;
+        Iterator<IndexableCore> it = SRCH2Engine.conf.indexableMap.values().iterator();
         if (it.hasNext()) {
             defaultIndexable = it.next();
             pingUrl = UrlBuilder

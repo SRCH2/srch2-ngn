@@ -491,13 +491,21 @@ final public class SRCH2Service extends Service implements AutoPing.ValidatePing
 
             File executableBinary = new File(binDirectory, "srch2ngn.exe");
             if (!executableBinary.exists()) {
-                InputStream sourceFile = c.getResources().openRawResource(R.raw.srch2heartbeat);
+                InputStream sourceFile = c.getResources().openRawResource(R.raw.srch2sqliteenabled);
                 FileOutputStream destinationFile = new FileOutputStream(executableBinary);
                 copyStream(destinationFile, sourceFile);
                 chmod("775", executableBinary.getAbsolutePath());
             }
             executableProcessPath = executableBinary.getAbsolutePath();
             Cat.d(TAG, "autoInstallCoreFilesAndOverwriteXMLConfigurationFile - executableProcessPath " + executableProcessPath);
+
+            File sqliteSharedLibrary = new File(binDirectory, "sqliteconn.so");
+            if (!sqliteSharedLibrary.exists()) {
+                InputStream sourceFile = c.getResources().openRawResource(R.raw.sqliteconn);
+                FileOutputStream destinationFile = new FileOutputStream(sqliteSharedLibrary);
+                copyStream(destinationFile, sourceFile);
+                chmod("775", executableBinary.getAbsolutePath());
+            }
 
             File configFile = new File(srch2RootDirectory, "srch2-config.xml");
             if (!configFile.exists()) {

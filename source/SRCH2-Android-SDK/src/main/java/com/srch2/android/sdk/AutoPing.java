@@ -80,7 +80,7 @@ class AutoPing {
     static void interrupt() {
         Cat.d(TAG, "interrupt");
         if (instance != null) {
-            Cat.d(TAG, "interrupt - instaqnce not null");
+            Cat.d(TAG, "interrupt - instance not null");
             if (instance.timer != null) {
                 instance.timer.cancel();
                 instance.timer = null;

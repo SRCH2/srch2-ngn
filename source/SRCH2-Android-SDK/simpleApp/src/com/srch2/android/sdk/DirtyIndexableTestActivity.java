@@ -29,8 +29,8 @@ public class DirtyIndexableTestActivity extends TestableActivity {
         deleteSrch2Files();
         index = new DumbIndex();
         searchResultsCallback = new SearchResultsCallback();
-
-        SRCH2Engine.initialize(index);
+        SRCH2Engine.setIndexables(index);
+        SRCH2Engine.initialize();
         SRCH2Engine.setSearchResultsListener(searchResultsCallback);
     }
 

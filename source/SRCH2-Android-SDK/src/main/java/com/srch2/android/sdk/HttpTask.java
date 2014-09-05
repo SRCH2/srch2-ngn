@@ -213,7 +213,7 @@ abstract class HttpTask implements Runnable {
 
         protected void onTaskComplete(int returnedResponseCode,
                                       String returnedResponseLiteral) {
-            updateIndexableIndexInformation(SRCH2Engine.conf.indexableMap.get(targetCoreName));
+            updateIndexableIndexInformation((Indexable) SRCH2Engine.conf.indexableMap.get(targetCoreName));
             if (SRCH2Engine.isChanged.get()) {
                 SRCH2Engine.reQueryLastOne();
             }
@@ -250,7 +250,7 @@ abstract class HttpTask implements Runnable {
 
         @Override
         public void run() {
-            Indexable idx = SRCH2Engine.conf.indexableMap.get(targetCoreName);
+            Indexable idx = (Indexable) SRCH2Engine.conf.indexableMap.get(targetCoreName);
             if (idx != null) {
                 idx.onDeleteComplete(success, failed, jsonResponse);
             }
@@ -271,7 +271,7 @@ abstract class HttpTask implements Runnable {
 
         @Override
         public void run() {
-            Indexable idx = SRCH2Engine.conf.indexableMap.get(targetCoreName);
+            Indexable idx = (Indexable) SRCH2Engine.conf.indexableMap.get(targetCoreName);
             if (idx != null) {
                 idx.onInsertComplete(success, failed, jsonResponse);
             }
@@ -294,7 +294,7 @@ abstract class HttpTask implements Runnable {
 
         @Override
         public void run() {
-            Indexable idx = SRCH2Engine.conf.indexableMap.get(targetCoreName);
+            Indexable idx = (Indexable) SRCH2Engine.conf.indexableMap.get(targetCoreName);
             if (idx != null) {
                 idx.onUpdateComplete(success, upserts, failed, jsonResponse);
             }
@@ -319,7 +319,7 @@ abstract class HttpTask implements Runnable {
 
         @Override
         public void run() {
-            Indexable idx = SRCH2Engine.conf.indexableMap.get(targetCoreName);
+            Indexable idx = (Indexable) SRCH2Engine.conf.indexableMap.get(targetCoreName);
             if (idx != null) {
                 idx.onGetRecordComplete(success, retrievedRecord, jsonResponse);
             }
@@ -333,7 +333,7 @@ abstract class HttpTask implements Runnable {
 
         @Override
         public void run() {
-            Indexable idx = SRCH2Engine.conf.indexableMap.get(targetCoreName);
+            IndexableCore idx = SRCH2Engine.conf.indexableMap.get(targetCoreName);
             if (idx != null) {
                 idx.onIndexReady();
             }

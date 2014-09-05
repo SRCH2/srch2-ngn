@@ -1,8 +1,8 @@
 package com.srch2.android.sdk;
 
 /**
- * Represents the primary key attribute of the index. The primary key has to be textual type
- * <code>PrimaryKeyField</code> is set to <code>searchable = false</code>, and <code>refining = true</code> by default.
+ * Represents the primary key attribute of the index. The primary key will be textual in type;
+ * however it is permissible to pass integer values, and they will be automatically converted.
  * <br><br>
  * <code>PrimaryKeyField</code> is a special field to construct a {@link Schema}.
  */

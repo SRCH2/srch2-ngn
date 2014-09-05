@@ -29,6 +29,7 @@ package com.srch2.android.sdk;
  * {@link #createCustomHighlighter(String, String, String, String)} and passing in the corresponding tags.
  * <br><br>
  * A <code>Highlighter</code> object should only be returned from the method {@link Indexable#getHighlighter()}
+ * or {@link SQLiteIndexable#getHighlighter()}
  * when setting the highlighting formatting for highlighted fields.
  */
 public class Highlighter {

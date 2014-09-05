@@ -9,6 +9,7 @@ import org.robolectric.annotation.Config;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 
 @Config(emulateSdk = 18)
 @RunWith(RobolectricTestRunner.class)
@@ -38,49 +39,84 @@ public class ConfigurationTest {
         SRCH2Engine.getConfig().writeConfigurationFileToDisk(System.getProperty("java.io.tmpdir") + File.separator + "srch2-config-4.xml");
     }
 
-    @Test(expected = NullPointerException.class)
-    public void testConfigurationException() {
-        SRCH2Configuration config2 = new SRCH2Configuration(null, PrepareEngine.musicIndex);
-    }
-
     @Test
     public void testConfiguration() {
-        SRCH2Configuration config = new SRCH2Configuration(PrepareEngine.movieIndex, (Indexable[]) null);
-        SRCH2Configuration config2 = new SRCH2Configuration(PrepareEngine.musicIndex);
+        ArrayList<IndexableCore> idxs = new ArrayList<IndexableCore>();
+        idxs.add(PrepareEngine.movieIndex);
+        SRCH2Configuration config = new SRCH2Configuration(idxs);
+        Assert.assertEquals(config.indexableMap.get(PrepareEngine.movieIndex.getIndexName()).indexInternal.indexDescription.type, IndexDescription.IndexableType.Default);
+
+        idxs.clear();
+        idxs.add(PrepareEngine.musicIndex);
+        SRCH2Configuration config2 = new SRCH2Configuration(idxs);
+        Assert.assertEquals(config2.indexableMap.get(PrepareEngine.musicIndex.getIndexName()).indexInternal.indexDescription.type, IndexDescription.IndexableType.Default);
     }
 
     @Test
     public void testConfigurationGeoIndex() {
-        SRCH2Configuration config = new SRCH2Configuration(PrepareEngine.geoIndex, (Indexable[])  null);
+        ArrayList<IndexableCore> idxs = new ArrayList<IndexableCore>();
+        idxs.add(PrepareEngine.geoIndex);
+        SRCH2Configuration config = new SRCH2Configuration(idxs);
+    }
+
+    @Test
+    public void testConfigurationDatabaseIndex() {
+        ArrayList<IndexableCore> idxs = new ArrayList<IndexableCore>();
+        idxs.add(PrepareEngine.dbIndex);
+        SRCH2Configuration config = new SRCH2Configuration(idxs);
+        Assert.assertEquals(config.indexableMap.get(PrepareEngine.DbIndex.INDEX_NAME).indexInternal.indexDescription.type, IndexDescription.IndexableType.Sqlite);
     }
 
     @Test
     public void testConfigurationMultipleIndex() {
-        SRCH2Configuration config = new SRCH2Configuration(PrepareEngine.geoIndex, PrepareEngine.musicIndex);
+        ArrayList<IndexableCore> idxs = new ArrayList<IndexableCore>();
+        idxs.add(PrepareEngine.geoIndex);
+        idxs.add(PrepareEngine.musicIndex);
+        SRCH2Configuration config = new SRCH2Configuration(idxs);
+        Assert.assertEquals(config.indexableMap.get(PrepareEngine.geoIndex.getIndexName())
+                .indexInternal.indexDescription.type, IndexDescription.IndexableType.Default);
+        Assert.assertEquals(config.indexableMap.get(PrepareEngine.musicIndex.getIndexName())
+                .indexInternal.indexDescription.type, IndexDescription.IndexableType.Default);
     }
 
-    @Test(expected = NullPointerException.class)
-    public void testConfigurationException3() {
-        SRCH2Configuration config = new SRCH2Configuration(null, (Indexable[]) null);
+    @Test
+    public void testConfigurationMultipleIndexIncludingDatabaseIndex() {
+        ArrayList<IndexableCore> idxs = new ArrayList<IndexableCore>();
+        idxs.add(PrepareEngine.geoIndex);
+        idxs.add(PrepareEngine.musicIndex);
+        idxs.add(PrepareEngine.dbIndex);
+        SRCH2Configuration config = new SRCH2Configuration(idxs);
+        Assert.assertEquals(config.indexableMap.get(PrepareEngine.geoIndex.getIndexName())
+                .indexInternal.indexDescription.type, IndexDescription.IndexableType.Default);
+        Assert.assertEquals(config.indexableMap.get(PrepareEngine.musicIndex.getIndexName())
+                .indexInternal.indexDescription.type, IndexDescription.IndexableType.Default);
+        Assert.assertEquals(config.indexableMap.get(PrepareEngine.dbIndex.getIndexName())
+                .indexInternal.indexDescription.type, IndexDescription.IndexableType.Sqlite);
     }
 
     @Test
     public void testAuthorization() {
-        SRCH2Configuration config = new SRCH2Configuration(PrepareEngine.movieIndex, PrepareEngine.musicIndex);
+        ArrayList<IndexableCore> idxs = new ArrayList<IndexableCore>();
+        idxs.add(PrepareEngine.movieIndex);
+        idxs.add(PrepareEngine.musicIndex);
+        SRCH2Configuration config = new SRCH2Configuration(idxs);
         config.setAuthorizationKey("myAuthorizationKey");
         Assert.assertEquals(config.getAuthorizationKey(), "myAuthorizationKey");
     }
 
     @Test(expected = NullPointerException.class)
     public void testAuthorizationNullException() {
-        SRCH2Configuration config = new SRCH2Configuration(PrepareEngine.movieIndex, PrepareEngine.musicIndex);
+        ArrayList<IndexableCore> idxs = new ArrayList<IndexableCore>();
+        idxs.add(PrepareEngine.movieIndex);
+        idxs.add(PrepareEngine.musicIndex);
+        SRCH2Configuration config = new SRCH2Configuration(idxs);
         config.setAuthorizationKey(null);
     }
 
     @Test
     public void testSet() {
         Assert.assertEquals(PrepareEngine.DEFAULT_SRCH2SERVER_PORT, SRCH2Engine.getConfig().getPort());
-        Assert.assertEquals(PrepareEngine.DEFAULT_SRCH2HOME_PATH, SRCH2Engine.getConfig().getSRCH2Home());
+        Assert.assertEquals(PrepareEngine.DEFAULT_SRCH2HOME_PATH + File.separator + "srch2/", SRCH2Engine.getConfig().getSRCH2Home());
         String confXML = SRCH2Configuration.generateConfigurationFileString(SRCH2Engine.getConfig());
         Assert.assertTrue(confXML.contains("<listeningHostname>"
                 + SRCH2Configuration.HOSTNAME + "</listeningHostname>"));

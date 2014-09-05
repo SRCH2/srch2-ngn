@@ -172,7 +172,7 @@ public class SearchResultsAdapter extends BaseAdapter {
                                        HashMap<String, ArrayList<JSONObject>> resultRecordMap) {
             if (httpResponseCode == HttpURLConnection.HTTP_OK) {
 
-                Log.d("srch2:: search results", jsonResponse);
+                Log.d(MyActivity.S2_TAG.concat("search results"), jsonResponse);
 
                 ArrayList<SearchResultItem> newResults = new ArrayList<SearchResultItem>();
 

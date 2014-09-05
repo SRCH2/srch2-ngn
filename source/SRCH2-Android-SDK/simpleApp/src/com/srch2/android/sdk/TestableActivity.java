@@ -26,7 +26,7 @@ public abstract class TestableActivity extends Activity {
     }
 
     void deleteSrch2Files() {
-        deleteRecursive(new File(SRCH2Engine.detectAppHomeDir(this.getApplicationContext()) + File.separator + SRCH2Configuration.SRCH2_HOME_FOLDER_DEFAULT_NAME));
+        deleteRecursive(new File(SRCH2Engine.detectAppFilesDirectory(this.getApplicationContext()) + File.separator + SRCH2Configuration.SRCH2_HOME_FOLDER_DEFAULT_NAME));
     }
 
     void onStartAndWaitForIsReady(Context context,  int stopWaitingAfterDelayTime) {

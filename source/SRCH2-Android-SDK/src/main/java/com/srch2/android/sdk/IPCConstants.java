@@ -19,7 +19,7 @@ enum IPCConstants {
      * the server doesn't shut down since it will get pinged before doing so. */
     static final int HEART_BEAT_AUTO_PING_PING_DELAY_MILLISECONDS = (int) ((HEART_BEAT_SERVER_CORE_SHUTDOWN_DELAY_SECONDS * 1000) * .9f);
 
-    static final int DEBUG_AND_TESTING_MODE_QUICK_SHUTDOWN_DELAY = 5000;
+    static final int DEBUG_AND_TESTING_MODE_QUICK_SHUTDOWN_DELAY = 2500;
 
     static final String INTENT_KEY_PORT_NUMBER = "exe_port_number";
     static final String INTENT_KEY_XML_CONFIGURATION_FILE_LITERAL = "xml_configuration_file";

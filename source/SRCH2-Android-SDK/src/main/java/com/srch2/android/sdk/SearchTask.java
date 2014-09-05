@@ -250,9 +250,9 @@ class SearchTask extends HttpTask.SearchHttpTask {
         }
     }
 
-    static HashMap<String, ArrayList<JSONObject>> getEmptyResultSet(Collection<Indexable> indexables) {
+    static HashMap<String, ArrayList<JSONObject>> getEmptyResultSet(Collection<IndexableCore> indexables) {
         HashMap<String, ArrayList<JSONObject>> emptyResultSet = new HashMap<String, ArrayList<JSONObject>>(0);
-        for (Indexable idx : indexables) {
+        for (IndexableCore idx : indexables) {
             emptyResultSet.put(idx.getIndexName(), new ArrayList<JSONObject>(0));
         }
         return emptyResultSet;
@@ -288,11 +288,11 @@ class SearchTask extends HttpTask.SearchHttpTask {
             }
     }
 
-    static String getEmptyResultJSONResponse(Collection<Indexable> indexables) {
+    static String getEmptyResultJSONResponse(Collection<IndexableCore> indexables) {
         StringBuilder sb = new StringBuilder("{");
-        Iterator<Indexable> idxs = indexables.iterator();
+        Iterator<IndexableCore> idxs = indexables.iterator();
         while (idxs.hasNext()) {
-            Indexable idx = idxs.next();
+            IndexableCore idx = idxs.next();
             sb.append(getEmptyResultSetPerCoreJSONResponse(idx.getIndexName(), !idxs.hasNext()));
         }
         sb.append("}");

@@ -27,7 +27,6 @@ final class IndexDescription {
     private static final String DATA_FILE = "dataFile";
     private static final String DATA_DIR = "dataDir";
     private static final String DATA_SOURCE_TYPE = "dataSourceType";
-    private static final String ACCESS_LOG_FILE = "accessLogFile";
     private static final String SUPPORT_SWAP_IN_EDIT_DISTANCE = "supportSwapInEditDistance";
     private static final String DEFAULT_QUERY_TERM_BOOST = "defaultQueryTermBoost";
     private static final String ENABLE_POSITION_INDEX = "enablePositionIndex";
@@ -37,7 +36,14 @@ final class IndexDescription {
     private static final String MERGE_EVERY_M_WRITES = "mergeEveryMWrites";
     private static final String MAX_DOCS = "maxDocs";
     private static final String MAX_MEMORY = "maxMemory";
-    private static final String LOG_LEVEL = "logLevel";
+
+    static final String DB_SHARED_LIBRARY_PATH = "dbSharedLibraryPath";
+    static final String DB_SHARED_LIBRARY_NAME = "dbSharedLibraryName";
+    static final String DB_APP_DATABASE_PATH = "dbPath";
+    static final String DB_DATABASE_NAME = "db";
+    static final String DB_DATABASE_TABLE_NAME = "tableName";
+    static final String DB_LISTENER_WAIT_TIME = "listenerWaitTime";
+    static final String DB_MAX_RETRY_ON_FAILURE = "maxRetryOnFailure";
 
     // DEFAULT VALUES
     private static final String DEFAULT_VALUE_RecordScoreExpression = "idf_score*doc_boost";
@@ -52,7 +58,7 @@ final class IndexDescription {
     private static final String DEFAULT_VALUE_queryTermPrefixType = "1";
     private static final String DEFAULT_VALUE_responseFormat = "1";
     private static final String DEFAULT_VALUE_dataFile = "empty-data.json";
-    private static final String DEFAULT_VALUE_dataSourceType = "0";
+
     private static final String DEFAULT_VALUE_supportSwapInEditDistance = "true";
     private static final String DEFAULT_VALUE_defaultQueryTermBoost = "1";
     private static final String DEFAULT_VALUE_enablePositionIndex = "1";
@@ -60,14 +66,24 @@ final class IndexDescription {
     private static final String DEFAULT_VALUE_mergeEveryMWrites = "1";
     private static final String DEFAULT_VALUE_maxDocs = "15000000";
     private static final String DEFAULT_VALUE_maxMemory = "10000000";
-    private static final String DEFAULT_VALUE_logLevel = "3";
-    private static final String DEFAULT_VALUE_accessLogFile = "srch2-log.txt";
 
-    private final Properties queryProperties = new Properties();
-    private final Properties miscProperties = new Properties();
-    private final Properties indexProperties = new Properties();
-    private final Properties updateProperties = new Properties();
+    private static final String DEFAULT_VALUE_dataSourceTypeDefault = "0";
+    private static final String DEFAULT_VALUE_dataSourceTypeSqlite = "2";
+    private static final String DEFAULT_VALUE_dataSourceTypeJSON = "1";
 
+
+    final Properties queryProperties = new Properties();
+    final Properties coreProperties = new Properties();
+    final Properties indexProperties = new Properties();
+    final Properties updateProperties = new Properties();
+    final Properties sqliteDatabaseProperties = new Properties();
+
+    static enum IndexableType {
+        Default,
+        Sqlite;
+    }
+
+    IndexableType type;
     String name;
     Schema schema;
     Highlighter highlighter;
@@ -76,7 +92,8 @@ final class IndexDescription {
         return name;
     }
 
-    IndexDescription(Indexable idx) {
+    private IndexDescription(IndexableCore idx) {
+        type = IndexableType.Default;
         name = idx.getIndexName();
         schema = idx.getSchema();
 
@@ -86,11 +103,40 @@ final class IndexDescription {
         queryProperties.setProperty("rows", String.valueOf(idx.getTopK()));
         queryProperties.setProperty("queryTermSimilarityThreshold",
                 String.valueOf(idx.getFuzzinessSimilarityThreshold()));
+    }
 
+    private void setGeneralProperties() {
         setQueryProperties();
         setMiscProperties();
         setIndexProperties();
         setUpdateProperties();
+    }
+
+    IndexDescription(Indexable idx) {
+        this((IndexableCore) idx);
+        type = IndexableType.Default;
+        setGeneralProperties();
+    }
+
+    IndexDescription(SQLiteIndexable idx) {
+        this((IndexableCore) idx);
+        type = IndexableType.Sqlite;
+/*
+        String databaseName = idx.getDatabaseName();
+        if (!databaseName.endsWith(".db")) {
+            databaseName += ".db";
+        }
+*/
+
+        sqliteDatabaseProperties.setProperty(DB_DATABASE_NAME, idx.getDatabaseName());
+        sqliteDatabaseProperties.setProperty(DB_DATABASE_TABLE_NAME, idx.getTableName());
+
+        // TODO make setable by user
+        sqliteDatabaseProperties.setProperty(DB_LISTENER_WAIT_TIME, "3");
+
+        sqliteDatabaseProperties.setProperty(DB_MAX_RETRY_ON_FAILURE, "2");
+
+        setGeneralProperties();
     }
 
     void setQueryProperties() {
@@ -124,11 +170,21 @@ final class IndexDescription {
     }
 
     private void setMiscProperties() {
-        miscProperties.setProperty("name", this.name);
-        miscProperties.setProperty("dataFile", DEFAULT_VALUE_dataFile);
-        miscProperties.setProperty("dataDir", name);
-        miscProperties.setProperty("dataSourceType",
-                DEFAULT_VALUE_dataSourceType);
+        coreProperties.setProperty("name", name);
+        switch (type) {
+            case Default:
+                coreProperties.setProperty(DATA_FILE, DEFAULT_VALUE_dataFile);
+                coreProperties.setProperty(DATA_DIR, name);
+                coreProperties.setProperty(DATA_SOURCE_TYPE,
+                        DEFAULT_VALUE_dataSourceTypeDefault);
+                break;
+            case Sqlite:
+                coreProperties.setProperty("name", name);
+                coreProperties.setProperty("dataDir", name);
+                coreProperties.setProperty("dataSourceType",
+                        DEFAULT_VALUE_dataSourceTypeSqlite);
+                break;
+        }
     }
 
     private void setIndexProperties() {
@@ -139,7 +195,7 @@ final class IndexDescription {
         indexProperties.setProperty("enablePositionIndex",
                 DEFAULT_VALUE_enablePositionIndex);
         indexProperties.setProperty("fieldBoost", getBoostStatementString());
-        if (schema.recordBoostKey != null) {
+        if (schema != null && schema.recordBoostKey != null) {
             indexProperties.setProperty("recordBoostField", schema.recordBoostKey);
         }
     }
@@ -151,17 +207,7 @@ final class IndexDescription {
                 DEFAULT_VALUE_mergeEveryMWrites);
         updateProperties.setProperty("maxDocs", DEFAULT_VALUE_maxDocs);
         updateProperties.setProperty("maxMemory", DEFAULT_VALUE_maxMemory);
-        updateProperties.setProperty("logLevel", DEFAULT_VALUE_logLevel);
-        updateProperties.setProperty("accessLogFile",
-                DEFAULT_VALUE_accessLogFile);
 
-    }
-
-    void setMergeProperties(int mergeEveryNSeconds, int mergeEveryMWrites) {
-        updateProperties.setProperty("mergeEveryNSeconds",
-                String.valueOf(mergeEveryNSeconds));
-        updateProperties.setProperty("mergeEveryMWrites",
-                String.valueOf(mergeEveryMWrites));
     }
 
     String getBoostStatementString() {
@@ -180,25 +226,40 @@ final class IndexDescription {
     }
 
     String indexStructureToXML() {
+
+
+        if (type == IndexableType.Sqlite) {
+            sqliteDatabaseProperties.setProperty(DB_SHARED_LIBRARY_PATH, SRCH2Engine.conf.getAppBinDirectory());
+            sqliteDatabaseProperties.setProperty(DB_SHARED_LIBRARY_NAME, "sqliteconn");
+            sqliteDatabaseProperties.setProperty(DB_APP_DATABASE_PATH, SRCH2Engine.conf.getAppDatabasePath());
+        }
+
+
+
         StringBuilder core = new StringBuilder()
             .append(t)
                 .append("<core name=\"")
-                    .append(miscProperties.getProperty(INDEX_NAME))
-                .append("\">\n")
-            .append(tt)
+                    .append(coreProperties.getProperty(INDEX_NAME))
+                .append("\">\n")/*
+            .append(tt) ONLY USED FOR JSON LEAVE OUT FOR NOW
                 .append("<dataFile>")
-                    .append(miscProperties.getProperty(DATA_FILE))
-                .append("</dataFile>\n")
+                    .append(coreProperties.getProperty(DATA_FILE))
+                .append("</dataFile>\n")*/
             .append(tt)
                 .append("<dataDir>")
-                    .append(miscProperties.getProperty(DATA_DIR))
+                    .append(coreProperties.getProperty(DATA_DIR))
                 .append("</dataDir>\n")
             .append(tt)
                 .append("<dataSourceType>")
-                    .append(miscProperties.getProperty(DATA_SOURCE_TYPE))
-                .append("</dataSourceType>\n\n")
-
+                    .append(coreProperties.getProperty(DATA_SOURCE_TYPE))
+                .append("</dataSourceType>\n\n");
+/* SQLITE CONFIGURATION NODE START */
+        if (type == IndexableType.Sqlite) {
+            core.append(sqliteDatabaseParametersToXML().toString());
+        }
+/* SQLITE CONFIGURATION NODE END */
 /* INDEX CONFIGURATION NODE START */
+            core
             .append(tt)
                 .append("<indexConfig>\n")
             .append(ttt)
@@ -210,7 +271,7 @@ final class IndexDescription {
                     .append(indexProperties.getProperty(FIELD_BOOST))
                 .append("</fieldBoost>\n");
 
-        if (schema.recordBoostKey != null) {
+        if (schema != null && schema.recordBoostKey != null) {
             core
             .append(ttt)
                 .append("<recordBoostField>")
@@ -341,18 +402,6 @@ final class IndexDescription {
                 .append("</mergeEveryMWrites>\n")
             .append(ttt)
                 .append("</mergePolicy>\n")
-            .append(ttt)
-                .append("<updateLog>\n")
-            .append(tttt)
-                .append("<logLevel>")
-                    .append(updateProperties.getProperty(LOG_LEVEL))
-                .append("</logLevel>\n")
-            .append(tttt)
-                .append("<accessLogFile>")
-                    .append(updateProperties.getProperty(ACCESS_LOG_FILE))
-                .append("</accessLogFile>\n")
-            .append(ttt)
-                .append("</updateLog>\n")
             .append(tt)
                 .append("</updatehandler>\n")
 /* UPDATE CONFIGURATION NODE END */
@@ -446,6 +495,38 @@ final class IndexDescription {
                         .append("</facetFields>\n");
         }
         return facetNodeXML.toString();
+    }
+
+    String sqliteDatabaseParametersToXML() {
+        StringBuilder sb = new StringBuilder()
+                .append(t)
+                .append("<dbParameters>\n")
+                .append(tt)
+                .append("<dbSharedLibraryPath>")
+                .append(sqliteDatabaseProperties.getProperty(DB_SHARED_LIBRARY_PATH))
+                .append("</dbSharedLibraryPath>\n")
+                .append(tt)
+                .append("<dbSharedLibraryName>")
+                .append(sqliteDatabaseProperties.get(DB_SHARED_LIBRARY_NAME))
+                .append("</dbSharedLibraryName>\n")
+                .append(tt)
+                .append("<dbKeyValues>\n")
+                .append(ttt)
+                .append("<dbKeyValue key=\"db\" value=\"" +
+                        sqliteDatabaseProperties.getProperty(DB_DATABASE_NAME) + "\" />\n")
+                .append("<dbKeyValue key=\"dbPath\" value=\"" +
+                        sqliteDatabaseProperties.getProperty(DB_APP_DATABASE_PATH) + "\" />\n")
+                .append("<dbKeyValue key=\"tableName\" value=\"" +
+                        sqliteDatabaseProperties.getProperty(DB_DATABASE_TABLE_NAME) + "\" />\n")
+                .append("<dbKeyValue key=\"listenerWaitTime\" value=\"" +
+                        sqliteDatabaseProperties.getProperty(DB_LISTENER_WAIT_TIME) + "\"/>\n")
+                .append("<dbKeyValue key=\"maxRetryOnFailure\" value=\"" +
+                        sqliteDatabaseProperties.getProperty(DB_MAX_RETRY_ON_FAILURE) + "\"/>\n")
+                .append(tt)
+                .append("</dbKeyValues>\n")
+                .append(t)
+                .append("</dbParameters>\n");
+        return sb.toString();
     }
 
     static void throwIfNonValidTopK(int topK) {
