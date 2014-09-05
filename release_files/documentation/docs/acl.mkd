@@ -193,5 +193,33 @@ This command will remove "u25" and "u27" from the ACL of the product
 curl "http://localhost:8081/product/aclRecordRoleDelete" -i -X PUT -d '[{"resourceId": “p501", “roleId”:["u25", "u27"]} , {"resourceId": “p502", “roleId”:["u25"]}]'
 ```
 
-
 ## 2. Attribute-Based
+
+The SRCH2 engine also allows developers to specify what attributes can
+be accessed by a role.  Here is how it works.
+
+<ul>
+ <li> To do access control for an attribute, when we declare the
+ attribute in the configuration, we need to add a tag
+ <tt>acl="true"</tt> to this attribute.  Attributes with this tag,
+ called ACL-attributes, by default cannot be accessed by a role,
+ unless it's specified otherwise  using one of the commands described
+ below.  Attributes without this 
+ tag don't have any access control constraints, thus can be accessed
+ by all roles.
+
+ <li> By using attribute-based ACL commands, we can explicitly allow a
+ role to access some of the ACL-attributes.  
+
+ <li> For a search query from a particular role, the conditions in the
+ query can only be specified on those ACL-attributes accessiable by
+ this role and those non-ACL attributes.  Conditions not on these
+ attributes will be ignored.
+</ul>
+
+
+###2.1 Configuration File
+
+###2.2 Search
+
+###2.3 Modify Roles for ACL-Attributes
