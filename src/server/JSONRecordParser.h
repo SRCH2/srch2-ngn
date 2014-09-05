@@ -23,8 +23,8 @@ public:
             const CoreInfo_t *indexDataContainerConf, srch2is::Record *record,
             std::stringstream &error, RecordSerializer& compactRecSerializer);
     static bool _JSONValueObjectToRecord(srch2is::Record *record,
-            const std::string &inputLine, const Json::Value &root,
-            const CoreInfo_t *indexDataContainerConf, std::stringstream &error,
+            const Json::Value &root,const CoreInfo_t *indexDataContainerConf, 
+            std::stringstream &error,
             RecordSerializer& compactRecSerializer);
     static bool _extractResourceAndRoleIds(vector<string> &roleIds, string &resourcePrimaryKeyID,
     		const Json::Value &root, const CoreInfo_t *indexDataContainerConf, std::stringstream &error);

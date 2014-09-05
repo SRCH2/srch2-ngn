@@ -421,7 +421,7 @@ bool JSONRecordParser::setRecordBoostValue(srch2is::Record *record,
     return true;
 }
 
-bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const std::string &inputLine,
+bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, 
                         const Json::Value &root,
                         const CoreInfo_t *indexDataContainerConf,
                         std::stringstream &error,
@@ -583,7 +583,7 @@ bool JSONRecordParser::populateRecordFromJSON(const string &inputLine,
     }
     else
     {
-        parseSuccess = JSONRecordParser::_JSONValueObjectToRecord(record, inputLine, root,
+        parseSuccess = JSONRecordParser::_JSONValueObjectToRecord(record, root,
                 indexDataContainerConf, error, compactRecSerializer);
     }
     return parseSuccess;

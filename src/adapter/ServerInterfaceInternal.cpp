@@ -30,12 +30,13 @@ ServerInterfaceInternal::ServerInterfaceInternal(void *server) {
 
 //Called by the connector, accepts json format record and insert into the index
 int ServerInterfaceInternal::insertRecord(const std::string& jsonString) {
-    stringstream errorMsg;
-    errorMsg << "INSERT : ";
+    stringstream debugMsg;
+    debugMsg << "INSERT : ";
 
     // Parse example data
     Json::Value root;
     Json::Reader reader;
+    Json::FastWriter writer;
     bool parseSuccess = reader.parse(jsonString, root, false);
 
     if (parseSuccess == false) {
@@ -44,42 +45,44 @@ int ServerInterfaceInternal::insertRecord(const std::string& jsonString) {
     } else {
         srch2is::Record *record = new srch2is::Record(
                 this->server->indexer->getSchema());
-        srch2::httpwrapper::IndexWriteUtil::_insertCommand(
+        Json::Value response = srch2::httpwrapper::IndexWriteUtil::_insertCommand(
                 this->server->indexer, this->server->indexDataConfig, root,
-                record, errorMsg);
+                record);
+        debugMsg << writer.write(response);
         record->clear();
         delete record;
     }
 
-    Logger::debug(errorMsg.str().c_str());
+    Logger::debug(debugMsg.str().c_str());
     return 0;
 }
 
 //Called by the connector, accepts record pkey and delete from the index
 int ServerInterfaceInternal::deleteRecord(const std::string& primaryKey) {
-    stringstream errorMsg;
-    errorMsg << "DELETE : ";
+    stringstream debugMsg;
+    debugMsg << "DELETE : ";
 
+    Json::FastWriter writer;
     if (primaryKey.size()) {
-        errorMsg << "{\"rid\":\"" << primaryKey << "\",\"delete\":\"";
+        debugMsg << "{\"rid\":\"" << primaryKey << "\",\"delete\":\"";
         //delete the record from the index
         switch (server->indexer->deleteRecord(primaryKey)) {
         case srch2is::OP_FAIL: {
-            errorMsg << "failed\",\"reason\":\"no record with given"
+            debugMsg << "failed\",\"reason\":\"no record with given"
                     " primary key\"}";
             break;
         }
         default: // OP_SUCCESS.
         {
-            errorMsg << "success\"}";
+            debugMsg << "success\"}";
         }
         };
     } else {
-        errorMsg << "{\"rid\":\"NULL\",\"delete\":\"failed\",\"reason\":\""
+        debugMsg << "{\"rid\":\"NULL\",\"delete\":\"failed\",\"reason\":\""
                 "no record with given primary key\"}";
     }
 
-    Logger::debug(errorMsg.str().c_str());
+    Logger::debug(debugMsg.str().c_str());
     return 0;
 }
 
@@ -90,8 +93,8 @@ int ServerInterfaceInternal::deleteRecord(const std::string& primaryKey) {
  */
 int ServerInterfaceInternal::updateRecord(const std::string& pk,
         const std::string& jsonString) {
-    stringstream errorMsg;
-    errorMsg << "UPDATE : ";
+    stringstream debugMsg;
+    debugMsg << "UPDATE : ";
 
     //Parse JSON Object;
     Json::Value root;
@@ -109,7 +112,7 @@ int ServerInterfaceInternal::updateRecord(const std::string& pk,
                 server->indexer->deleteRecordGetInternalId(pk,
                         deletedInternalRecordId);
         if (ret == srch2is::OP_FAIL) {
-            errorMsg << "failed\",\"reason\":\"no record "
+            debugMsg << "failed\",\"reason\":\"no record "
                     "with given primary key\"}";
         } else
             Logger::debug("DATABASE_LISTENER:UPDATE: deleted record ");
@@ -119,13 +122,13 @@ int ServerInterfaceInternal::updateRecord(const std::string& pk,
 
             srch2is::Record *record = new srch2is::Record(
                     server->indexer->getSchema());
-            srch2::httpwrapper::IndexWriteUtil::_insertCommand(server->indexer,
-                    this->server->indexDataConfig, root, record, errorMsg);
+            Json::Value response = srch2::httpwrapper::IndexWriteUtil::_insertCommand(server->indexer,
+                    this->server->indexDataConfig, root, record);
             record->clear();
             delete record;
             Logger::debug("DATABASE_LISTENER:UPDATE: inserted record ");
         } else {
-            errorMsg << "failed\",\"reason\":\"insert: Document limit reached."
+            debugMsg << "failed\",\"reason\":\"insert: Document limit reached."
                     << endl;
             /// reaching here means the insert failed,
             //  need to resume the deleted old record
@@ -133,7 +136,7 @@ int ServerInterfaceInternal::updateRecord(const std::string& pk,
                     server->indexer->recoverRecord(pk, deletedInternalRecordId);
         }
     }
-    Logger::debug(errorMsg.str().c_str());
+    Logger::debug(debugMsg.str().c_str());
     return 0;
 }
 
