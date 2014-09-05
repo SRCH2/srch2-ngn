@@ -389,6 +389,8 @@ test_case "test field list parameter in query" "python ./test_fieldList_inQuery/
 
 test_case "validate json response" "python ./json_response/json_response_format_test.py $SRCH2_ENGINE"
 
+test_case "test Chinese" "python ./chinese/chinese_analyzer.py $SRCH2_ENGINE"
+
 if [ $os != "$macName" ];then
     test_case "high_insert" "./high_insert_test/autotest.sh $SRCH2_ENGINE" 
 else
