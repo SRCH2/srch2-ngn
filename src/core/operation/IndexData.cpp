@@ -231,6 +231,7 @@ INDEXWRITE_RETVAL IndexData::_aclRoleRecordDelete(const std::string& rolePrimary
 		// 3- delete this role id from the permission map
 		this->permissionMap->deleteRole(rolePrimaryKeyID);
 	}
+	return OP_SUCCESS;
 }
 
 /// Add a record

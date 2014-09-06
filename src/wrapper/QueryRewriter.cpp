@@ -1080,7 +1080,8 @@ void QueryRewriter::createPostProcessingPlan(LogicalPlan & plan) {
 
 	//4. if there is a role id set the role id for access control
 	if(paramContainer->hasParameterInQuery(AccessControl)){ // there is access control
-		plan.getPostProcessingInfo()->setRoleId(paramContainer->roleId);
+		if(paramContainer->hasRoleCore)
+			plan.getPostProcessingInfo()->setRoleId(paramContainer->roleId);
 	}
 
 }
