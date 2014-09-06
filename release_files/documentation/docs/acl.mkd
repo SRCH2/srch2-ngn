@@ -10,8 +10,7 @@ As shown in the following figure, SRCH2 supports two types of access
 control:
 
 <ul>
- <li> <b>Record-based</b>: a user (called
- "role") can access certain records  in a core (called "resource").
+ <li> <b>Record-based</b>: a user (a.k.a. "role") can access certain records  in a core (called "resource").
  For each record, we can specify an access control list  (ACL) of
  roles who can access this record.
 
@@ -25,21 +24,19 @@ control:
 </center>
 
 A simple way to do record-based access control 
-is to introduce a multi-valued attribute to a data core to
-include the information about roles who can access a record.  This
-approach is
-[known](http://stackoverflow.com/questions/9222835/solr-permissions-filtering-results-depending-on-access-rights)
-to be slow and inefficient, and not acceptable for 
-large amounts of information or very dynamic changes of the access
-control lists.  To solve this problem, SRCH2 adopts an
+is to introduce a multi-valued attribute to a resource core to
+include the information about roles who can access each record.  This
+approach is known to be [slow and inefficient](http://stackoverflow.com/questions/9222835/solr-permissions-filtering-results-depending-on-access-rights), and not acceptable for 
+large amounts of information or very dynamic ACL changes.  To solve this problem, SRCH2 adopts an
 advanced implementation to deliver higher performance.
 
 In this documentation we use the following example to explain how to
 use SRCH2 to do access control:
 
 <ul>
- <li> <b>Product(pid, name, description, price, manufacturer, state)</b>, and "pid" is the primary key;
- <li> <b>User(uid, name)</b>, and "uid" is the primary key.
+ <li> <b>Product(pid, name, description, price, manufacturer,
+ state)</b>: "pid" is the primary key;
+ <li> <b>User(uid, name)</b>: "uid" is the primary key.
 </ul>
 
 By doing access control, we can allow a user to access certain
@@ -116,7 +113,7 @@ with the id "u26".
 ###1.2 Role-Based Search
 
 To submit a query as a specific user, we need to add a "roleId=XYZ"
-condition to the query, where "XYZ" is the id of the user.
+condition in the query, where "XYZ" is the id of the user.
 For instance, consider the following query:
 ```json
 curl -i "http://localhost:8081/product/search?q=phone&roleId=u26"
@@ -124,8 +121,8 @@ curl -i "http://localhost:8081/product/search?q=phone&roleId=u26"
 
 This query is asking for products with the keyword "phone" as
 a user with the id "u26". The engine returns product "p502"
-only.  It will not return product "p503" (even though it has
-the keyword "phone"), since it cannot be accessed by this user.
+only.  It will not return product "p503", even though it has
+the keyword "phone", since it cannot be accessed by this user.
 In general, the engine ignores records that cannot
 be accessed by this role. 
 
@@ -202,10 +199,10 @@ be accessed by a role.  Here is how it works.
  <li> To do access control for an attribute, when we declare it
  in the configuration file, we need to add a tag
  <tt>acl="true"</tt> to this attribute.  Attributes with this tag,
- called ACL-attributes, by default cannot be accessed by a role,
+ called <i>ACL-attributes</i>, by default cannot be accessed by a role,
  unless it's specified using one of the ACL commands described
- below.  Attributes without this tag (called "non-ACL" or "public"
- attributes) don't have access control constraints, thus can be
+ below.  Attributes without this tag are called "non-ACL" or "public"
+ attributes, and they don't have access control constraints, thus can be
  accessed by all roles.
 
  <li> By using attribute-based ACL commands, we can explicitly allow
@@ -213,8 +210,8 @@ be accessed by a role.  Here is how it works.
 
  <li> For a search query from a particular role, the conditions in the
  query can only be specified on those ACL-attributes accessible by
- this role and those non-ACL attributes.  Conditions not on these
- attributes will be ignored.
+ this role and those non-ACL attributes.  Otherwise, the conditions
+ will be ignored.
 </ul>
 
 ###2.1 Configuration File
@@ -232,7 +229,7 @@ the tag <tt>acl="true"</tt> to these attributes:
     <fields>
        <field name="pid" type="text"/>
        <field name="name" type="text" indexed="true" acl="true"/>
-       <field name="description" type="text" indexed="true"/>
+       <field name="description" type="text" indexed="true" acl="true"/>
        <field name="price" type="integer" indexed="false" required="true" refining="true"/>
        <field name="manufacturer" type="text" indexed="true" refining="true"/>
        <field name="state" type="text" refining="true" indexed="false" acl="true"/>
@@ -247,6 +244,30 @@ the tag <tt>acl="true"</tt> to these attributes:
 The other attributes without this tag are not ACL-attributes, i.e.,
 they can be accessible by all roles, and we cannot do access control
 on them.
+
+We can also specify a file with initial attribute ACL information for
+the <tt>Product</tt> records:
+
+```xml
+ <core name="Product"> 
+  <schema>
+     ...
+  </schema>
+  <attributeAclFile>./attribute-acl-data.json</attributeAclFile>
+ </core>
+```
+
+The data file <tt>attribute-acl-data.json</tt> has attribute ACL
+information for roles.  For instance:
+
+```json
+{ "attributes": ["name", "description"], "roleId": ["u25"]}
+{ "attributes": ["name", "state"], "roleId": ["u26", "u27"]}
+```
+
+The first line says that role "u25" can access attributes "name" and
+"description", while the second line says that roles "u25" and "u27"
+can access attributes "name" and "state".
 
 ###2.2 Replace Accessible Attributes
 
@@ -293,7 +314,7 @@ attribute "description".
 ###2.5 Search
 
 Similar to the case of record-based access control, to submit a query
-as a specific user, we need to add a "roleId=XYZ" condition to the
+as a specific user, we need to add a "roleId=XYZ" condition in the
 query, where "XYZ" is the role id.  The following is an example query
 submitted as role "u26":
 ```python
@@ -304,7 +325,7 @@ The engine will apply the conditions to those attributes that are
 either public (i.e., non-ACL), or accessible by this role.  For
 instance, suppose role "u26" has accessible attributes "name" and
 "description", then the query will find records that have keyword
-"phone" in attributes "pid" (public attribute), "name" (ACL),
+"phone" in attributes "pid" (public attribute), "name" (ACL attribute),
 "description" (ACL), "price" (public), "manufacturer" (public), but
 will ignore the attribute "state" since it cannot be accessible by
 this role.

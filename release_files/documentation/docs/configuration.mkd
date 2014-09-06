@@ -505,7 +505,7 @@ This field specifies an access control file for the attributes having <code>acl<
 <attributeAclFile>path/to/acl/file/relative/to/srch2_home</attributeAclFile>
 ```
 
-The attribute access control file should be in a JSON format having one JSON object per line as shown below.<br>
+The attribute access control file should be in a JSON format having one JSON object per line as shown below:<br>
 
 ```
 { attributes : { "name", "seller_id", "price" }, roleId : ["user1"] }
@@ -513,7 +513,10 @@ The attribute access control file should be in a JSON format having one JSON obj
 ```
 
 
-<b>Note</b>: Attribute access control mapping can also be defined at runtime using the RESTful [APIs](../restful-control/#6-modify-attribute-access-control).
+Attribute access control mapping can also be defined at runtime using
+the RESTful
+[APIs](../restful-control/#6-modify-attribute-access-control). More
+details about how to do attribute-based access control can be found [here](acl.mkd#2-attribute-based).
 
 ###11.4. Enable Facet (Optional)
 
