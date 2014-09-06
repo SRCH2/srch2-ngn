@@ -1,5 +1,8 @@
 package com.srch2.android.sdk;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+
 /**
  * Represents an index in the SRCH2 search server that will be backed by an SQLite database table.
  * For every SQLite table to be searched on, users of the
@@ -55,6 +58,45 @@ public abstract class SQLiteIndexable extends IndexableCore {
     public abstract String getDatabaseName();
 
 
+    /**
+     * Returns the number of records that are currently in the index that this
+     * <code>Indexable</code> or <code>SQLiteIndexable</code> represents.
+     * @return the number of records in the index
+     */
+    public final int getRecordCount() {
+        GetRecordCountTask t = new GetRecordCountTask(this);
+        int count = INDEX_RECORD_COUNT_NOT_SET;
+        try {
+            count = HttpTask.doSQLiteBlockingGetRecordCountTask(t).get();
+        } catch (InterruptedException e) {
+        } catch (ExecutionException e) {
+        }
+        return count;
+    }
+
+    static class GetRecordCountTask implements Callable<Integer> {
+        SQLiteIndexable requestingIndexable;
+
+        public GetRecordCountTask(SQLiteIndexable idx) {
+            requestingIndexable = idx;
+        }
+
+        @Override
+        public Integer call() throws Exception {
+            if (requestingIndexable != null) {
+                InternalInfoTask iit = new InternalInfoTask(UrlBuilder
+                        .getInfoUrl(
+                                SRCH2Engine.conf, requestingIndexable.indexInternal.indexDescription), 400, false);
+                InternalInfoResponse iir = iit.getInfo();
+                if (iir.isValidInfoResponse) {
+                    return iir.numberOfDocumentsInTheIndex;
+                } else {
+                    return INDEX_RECORD_COUNT_NOT_SET;
+                }
+            }
+            return INDEX_RECORD_COUNT_NOT_SET;
+        }
+    }
 
 
 

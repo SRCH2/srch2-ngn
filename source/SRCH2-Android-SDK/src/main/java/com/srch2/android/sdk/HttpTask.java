@@ -8,9 +8,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 abstract class HttpTask implements Runnable {
 
@@ -104,6 +102,20 @@ abstract class HttpTask implements Runnable {
         Cat.d(TAG, "onTaskCrashedSRCH2SearchServer setting is ready to false");
         // TODO pass some arguements that contain the data we want to send in crash report!
         SRCH2Engine.isReady.set(false);
+    }
+
+    static Future<Integer> doSQLiteBlockingGetRecordCountTask(Callable<Integer> callableToExecute) {
+        if (!isExecuting || callableToExecute == null) {
+            return null;
+        }
+
+        if (callableToExecute.getClass() == SQLiteIndexable.GetRecordCountTask.class) {
+            if (controlTaskExecutor != null) {
+                return controlTaskExecutor.submit(callableToExecute);
+            }
+        }
+
+        return null;
     }
 
     static void addToQueue(HttpTask taskToExecute) {

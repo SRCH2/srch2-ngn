@@ -62,7 +62,7 @@ final class CheckCoresLoadedTask extends HttpTask {
             if (iir.isValidInfoResponse) {
                 Cat.d(TAG, "@ iteration " + i + " was valid info response ");
                 IndexableCore idx = SRCH2Engine.conf.indexableMap.get(indexName);
-                if (idx != null) {
+                if (idx != null && Indexable.class.isAssignableFrom(idx.getClass())) {
                     idx.setRecordCount(iir.numberOfDocumentsInTheIndex);
                     validIndexes.add(idx.getIndexName());
                 }

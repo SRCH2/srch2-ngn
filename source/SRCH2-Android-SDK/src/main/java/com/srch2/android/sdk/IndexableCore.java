@@ -78,20 +78,20 @@ abstract class IndexableCore {
     public Highlighter getHighlighter() {
         return new Highlighter();
     }
-
-    private int numberOfDocumentsInTheIndex = INDEX_RECORD_COUNT_NOT_SET;
+    int numberOfDocumentsInTheIndex = INDEX_RECORD_COUNT_NOT_SET;
     /**
      * Returns the number of records that are currently in the index that this
      * <code>Indexable</code> or <code>SQLiteIndexable</code> represents.
      * @return the number of records in the index
      */
-    public final int getRecordCount() {
+    public int getRecordCount() {
         return numberOfDocumentsInTheIndex;
     }
 
     final void setRecordCount(int recordCount) {
         numberOfDocumentsInTheIndex = recordCount;
     }
+
     /**
      * Override this method to set the number of search results to be returned per query or search task.
      * <br><br>

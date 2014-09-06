@@ -39,6 +39,15 @@ import org.json.JSONObject;
 public abstract class Indexable extends IndexableCore {
 
     /**
+     * Returns the number of records that are currently in the index that this
+     * <code>Indexable</code> or <code>SQLiteIndexable</code> represents.
+     * @return the number of records in the index
+     */
+    public final int getRecordCount() {
+        return numberOfDocumentsInTheIndex;
+    }
+
+    /**
      * Inserts the specified <code>JSONObject record</code> into the index that this
      * <code>Indexable</code> represents. This <code>JSONObject</code> should be properly
      * formed and its keys should only consist of the fields as defined in the index's

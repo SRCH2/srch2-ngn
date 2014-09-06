@@ -38,7 +38,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public DatabaseHelper(Context context) {
         super(context, Schema.DATABASE_NAME, null, Schema.DATABASE_VERSION); // assuming version will never change,
         SQLiteDatabase db = getReadableDatabase();
+
+
+
         db.close();
+
+
+
     }
 
     @Override
@@ -71,7 +77,27 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public void insertRecords() {
         Log.d(TAG, "insertRecords");
-        SQLiteDatabase db = getWritableDatabase();
+
+        SQLiteDatabase db = getReadableDatabase();
+
+        Cursor c = db.query(Schema.TABLE_NAME, null, null, null, null, null, null);
+
+        int count = 0;
+        if (c != null) {
+            count = c.getCount();
+            c.close();
+            Log.d(TAG, "cursor count " + c.getCount());
+        } else {
+            Log.d(TAG, "something wrong!");
+        }
+
+        db.close();
+
+        if (count == 100) {
+            return;
+        }
+
+        db = getWritableDatabase();
         try {
             for (int i = 0; i < 100; i++) {
                 ContentValues cv = new ContentValues();
@@ -93,10 +119,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         db = getReadableDatabase();
 
-        Cursor c = db.query(Schema.TABLE_NAME, null, null, null, null, null, null);
+        c = db.query(Schema.TABLE_NAME, null, null, null, null, null, null);
 
         if (c != null) {
             Log.d(TAG, "cursor count " + c.getCount());
+            c.close();
         } else {
             Log.d(TAG, "something wrong!");
         }

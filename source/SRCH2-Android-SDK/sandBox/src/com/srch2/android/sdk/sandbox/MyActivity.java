@@ -7,6 +7,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ListView;
 import android.widget.Toast;
+import com.srch2.android.sdk.SRCH2Engine;
 import com.srch2.android.sdk.SearchResultsListener;
 import org.json.JSONObject;
 
@@ -54,7 +55,7 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
 
 
 
-/*
+
         SRCH2Engine.setSQLiteIndexables(sqliteIndex);
         SRCH2Engine.initialize();
 
@@ -64,8 +65,10 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
 
         sr = new SearchResults();
         SRCH2Engine.setSearchResultsListener(sr, true);
-        SRCH2Engine.setAutomatedTestingMode(true);*/
+        SRCH2Engine.setAutomatedTestingMode(true);
     }
+
+
 
 
     class SearchResults implements SearchResultsListener {
@@ -92,6 +95,8 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
     }
 
     public void bar(View v) {
+
+
         Toast.makeText(context, "Record count: " + sqliteIndex.getRecordCount(), Toast.LENGTH_SHORT).show();
     }
 
@@ -99,19 +104,19 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
     @Override
     protected void onResume() {
         super.onResume();
-       // SRCH2Engine.onStart(this);
+        SRCH2Engine.onStart(this);
         InstantSearchEditText.checkIfSearchInputShouldOpenSoftKeyboard(this, (InstantSearchEditText) findViewById(R.id.et_instant_search_input));
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-       // SRCH2Engine.onStop(this);
+        SRCH2Engine.onStop(this);
     }
 
     @Override
     public void onNewSearchInput(String newSearchText) {
-      //  SRCH2Engine.searchAllIndexes(newSearchText);
+        SRCH2Engine.searchAllIndexes(newSearchText);
     }
 
     @Override
