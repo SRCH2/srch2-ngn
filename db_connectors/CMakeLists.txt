@@ -94,11 +94,12 @@ EXEC_PROGRAM( ${CMAKE_CXX_COMPILER}
                   OUTPUT_VARIABLE gcc_compiler_version)
 
 
-FILE(GLOB_RECURSE SQLITE_CONNECTOR_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "sqlite/*.cpp")
+FILE(GLOB_RECURSE SQLITE_CONNECTOR_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "sqlite/*.cpp" "../src/core/util/Logger.cpp")
 					
 INCLUDE_DIRECTORIES(
     ${CMAKE_SOURCE_DIR}/sqlite/
     ${CMAKE_SOURCE_DIR}/../src/adapter/
+    ${CMAKE_SOURCE_DIR}/../src/core/util
     ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src-0.5.0/include
     ${Boost_INCLUDE_DIRS}
 )

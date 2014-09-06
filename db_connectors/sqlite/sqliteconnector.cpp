@@ -10,10 +10,13 @@
 #include <stdlib.h>
 #include <sstream>
 #include "json/json.h"
+#include "Logger.h"
 #include <cstring>
 #include <iostream>
 #include <fstream>
 #include <boost/filesystem.hpp>
+
+using srch2::util::Logger;
 
 int indexedRecordsCount = 0;
 int totalRecordsCount = 0;
@@ -64,7 +67,7 @@ int SQLiteConnector::init(ServerInterface * serverHandle) {
      * If one of these checks failed, the init() fails and does not continue.
      */
     if (!checkConfigValidity() || !connectToDB() || !checkTableExistence()) {
-        printf("SQLITECONNECTOR: exiting...\n");
+        Logger::error("SQLITECONNECTOR: exiting...");
         return -1;
     }
 
@@ -78,7 +81,7 @@ int SQLiteConnector::init(ServerInterface * serverHandle) {
      */
     if (!populateTableSchema() || !createLogTableIfNotExistence()
             || !createTriggerIfNotExistence() || !createPreparedStatement()) {
-        printf("SQLITECONNECTOR: exiting...\n");
+        Logger::error("SQLITECONNECTOR: exiting...");
         return -1;
     }
 
@@ -96,21 +99,22 @@ bool SQLiteConnector::connectToDB() {
 
     //Check if the user defined database name contains the suffix ".db".
     //If not, append the ".db" to make sure the connector could find the database.
-    if (db_name.find(".db") == std::string::npos) {
-        db_name.append(".db");
-    }
+    //if (db_name.find(".db") == std::string::npos) {
+    //    db_name.append(".db");
+    //}
+    
     //Try to connect to the database.
     int rc;
     do {
-        rc = sqlite3_open((srch2Home + "/" + db_path + "/" + db_name).c_str(),
-                &db);
+        std::string path = srch2Home + "/" +  db_path + "/" + db_name;
+        rc = sqlite3_open(path.c_str(),&db);
         if (rc == 0) {
             return true;
         }
 
-        fprintf(stderr, "SQLITECONNECTOR: Can't open database: %s\n",
-                sqlite3_errmsg(db));
-        printf("SQLITECONNECTOR: trying again ...\n");
+        Logger::error("SQLITECONNECTOR: Can't open database file:%s, sqlite msg: %s",
+                path.c_str(), sqlite3_errmsg(db));
+        Logger::info("SQLITECONNECTOR: trying again ...");
         sleep(listenerWaitTime);
     } while (1);
 
@@ -136,8 +140,8 @@ bool SQLiteConnector::checkConfigValidity() {
     bool ret = (dbPath.size() != 0) && (db.size() != 0)
             && (uniqueKey.size() != 0) && (tableName.size() != 0);
     if (!ret) {
-        printf("SQLITECONNECTOR: database path, db, tableName,"
-                " uniquekey must be set.\n");
+        Logger::error("SQLITECONNECTOR: database path, db, tableName,"
+                " uniquekey must be set.");
         return false;
     }
 
@@ -162,10 +166,10 @@ bool SQLiteConnector::checkTableExistence() {
             return true;
         }
 
-        fprintf(stderr, "SQLITECONNECTOR: SQL error %d : %s\n", rc, zErrMsg);
+        Logger::error( "SQLITECONNECTOR: SQL error %d : %s", rc, zErrMsg);
         sqlite3_free(zErrMsg);
 
-        printf("SQLITECONNECTOR: trying again ...\n");
+        Logger::info("SQLITECONNECTOR: trying again ...");
         sleep(listenerWaitTime);
     } while (1);
 
@@ -192,16 +196,16 @@ int SQLiteConnector::createNewIndexes() {
         int rc = sqlite3_exec(db, sql.str().c_str(), addRecord_callback,
                 (void *) this, &zErrMsg);\
         if (rc == SQLITE_OK) {
-            printf("SQLITECONNECTOR: Total indexed %d / %d records. \n",
+            Logger::info("SQLITECONNECTOR: Total indexed %d / %d records. ",
                     indexedRecordsCount, totalRecordsCount);
             this->serverHandle->saveChanges();
             return 0;
         }
 
-        fprintf(stderr, "SQLITECONNECTOR: SQL error %d : %s\n", rc, zErrMsg);
+        Logger::error("SQLITECONNECTOR: SQL error %d : %s", rc, zErrMsg);
         sqlite3_free(zErrMsg);
 
-        printf("SQLITECONNECTOR: trying again ...\n");
+        Logger::info("SQLITECONNECTOR: trying again ...");
         sleep(listenerWaitTime);
     } while (1);
 
@@ -229,7 +233,7 @@ int addRecord_callback(void *dbConnector, int argc, char **argv,
     }
 
     if (indexedRecordsCount && (indexedRecordsCount % 1000) == 0)
-        printf("SQLITECONNECTOR: Indexed %d records so far ...\n",
+        Logger::info("SQLITECONNECTOR: Indexed %d records so far ...",
                 indexedRecordsCount);
     return 0;
 }
@@ -250,7 +254,7 @@ int SQLiteConnector::runListener() {
     Json::Value record;
     Json::FastWriter writer;
 
-    printf("SQLITECONNECTOR: waiting for updates ...\n");
+    Logger::info("SQLITECONNECTOR: waiting for updates ...");
     bool fatal_error = false;
     do {
         /*
@@ -265,7 +269,7 @@ int SQLiteConnector::runListener() {
                     lastAccessedLogRecordTime.c_str(),
                     lastAccessedLogRecordTime.size(), SQLITE_STATIC);
             if (rc != SQLITE_OK) {
-                fprintf(stderr, "SQLITECONNECTOR: SQL error %d : %s\n", rc,
+                Logger::error("SQLITECONNECTOR: SQL error %d : %s", rc,
                         sqlite3_errmsg(db));
                 break;
             }
@@ -312,8 +316,8 @@ int SQLiteConnector::runListener() {
                      * table schema changed
                      */
                     if (it != tableSchema.end() || i != ctotal) {
-                        printf("SQLITECONNECTOR : Fatal Error. Table %s and"
-                                " log table %s are not consistent!\n",
+                        Logger::error("SQLITECONNECTOR : Fatal Error. Table %s and"
+                                " log table %s are not consistent!",
                                 tableName.c_str(), LOG_TABLE_NAME.c_str());
                         fatal_error = true;
                         break;
@@ -329,7 +333,7 @@ int SQLiteConnector::runListener() {
                      */
                     std::string jsonString = writer.write(record);
 
-                    printf("SQLITECONNECTOR: Processing %s \n", jsonString.c_str());
+                    Logger::info("SQLITECONNECTOR: Processing %s ", jsonString.c_str());
 
                     if (strcmp(op, "i") == 0) {
                         serverHandle->insertRecord(jsonString);
@@ -341,8 +345,8 @@ int SQLiteConnector::runListener() {
                 } else if (res == SQLITE_BUSY) {
                     //Retry if the database is busy.
                     //Wait for the next time to check the database
-                    printf(
-                            "SQLITECONNECTOR : SQLITE database is busy. Retrying\n");
+                    Logger::warn(
+                            "SQLITECONNECTOR : SQLITE database is busy. Retrying");
                     sleep(listenerWaitTime);
                 } else {
                     break;
@@ -357,8 +361,8 @@ int SQLiteConnector::runListener() {
             //Retry the connection if the sql error happens.
             if (sqlite3_errcode(db) != SQLITE_DONE
                     && sqlite3_errcode(db) != SQLITE_OK) {
-                fprintf(stderr,
-                        "SQLITECONNECTOR: Error code SQL error %d : %s\n", rc,
+                Logger::error(
+                        "SQLITECONNECTOR: Error code SQL error %d : %s", rc,
                         sqlite3_errmsg(db));
                 sqlite3_reset(selectStmt);
                 break;
@@ -366,7 +370,7 @@ int SQLiteConnector::runListener() {
 
             //Reset the prepared statement
             if (sqlite3_reset(selectStmt) != SQLITE_OK) {
-                fprintf(stderr, "SQLITECONNECTOR: SQL error %d : %s\n", rc,
+                Logger::error("SQLITECONNECTOR: SQL error %d : %s", rc,
                         sqlite3_errmsg(db));
                 break;
             }
@@ -379,7 +383,7 @@ int SQLiteConnector::runListener() {
                 this->serverHandle->saveChanges();
                 deleteProcessedLog(lastAccessedLogRecordTime);
                 saveLastAccessedLogRecordTime(lastAccessedLogRecordTime);
-                printf("SQLITECONNECTOR: waiting for updates ...\n");
+                Logger::info("SQLITECONNECTOR: waiting for updates ...");
             }
             sleep(listenerWaitTime);
         }
@@ -387,11 +391,11 @@ int SQLiteConnector::runListener() {
             break;
         }
 
-        printf("SQLITECONNECTOR: trying again ...\n");
+        Logger::info("SQLITECONNECTOR: trying again ...");
         sleep(listenerWaitTime);
     } while (1);
 
-    printf("SQLITECONNECTOR: exiting...\n");
+    Logger::info("SQLITECONNECTOR: exiting...");
 
     sqlite3_finalize(selectStmt);
     sqlite3_finalize(deleteLogStmt);
@@ -430,18 +434,18 @@ bool SQLiteConnector::createLogTableIfNotExistence() {
         if ((rc != SQLITE_OK)
                 && (std::string(zErrMsg).find("already exists")
                         == std::string::npos)) {
-            fprintf(stderr, "SQLITECONNECTOR: SQL error %d : %s\n", rc,
+            Logger::error( "SQLITECONNECTOR: SQL error %d : %s", rc,
                     zErrMsg);
             sqlite3_free(zErrMsg);
         } else {
             return true;
         }
 
-        printf("SQLITECONNECTOR: trying again ...\n");
+        Logger::info("SQLITECONNECTOR: trying again ...");
         sleep(listenerWaitTime);
     } while (1);
 
-    printf("SQLITECONNECTOR: Create log table %s failed.\n",
+    Logger::info("SQLITECONNECTOR: Create log table %s failed.",
             LOG_TABLE_NAME.c_str());
     return false;
 }
@@ -478,13 +482,13 @@ bool SQLiteConnector::populateTableSchema() {
             return true;
         }
 
-        fprintf(stderr, "SQLITECONNECTOR: SQL error %d : %s\n", rc, zErrMsg);
+        Logger::error("SQLITECONNECTOR: SQL error %d : %s", rc, zErrMsg);
         sqlite3_free(zErrMsg);
-        printf("SQLITECONNECTOR: trying again ...\n");
+        Logger::info("SQLITECONNECTOR: trying again ...");
         sleep(listenerWaitTime);
     } while (1);
 
-    printf("SQLITECONNECTOR: Populate schema of table %s failed.\n",
+    Logger::error("SQLITECONNECTOR: Populate schema of table %s failed.",
             tableName.c_str());
     return false;
 }
@@ -542,9 +546,9 @@ bool SQLiteConnector::createPreparedStatement() {
         if (rc == SQLITE_OK) {
             break;
         }
-        fprintf(stderr, "SQLITECONNECTOR: SQL error %d : %s\n", rc,
+        Logger::error( "SQLITECONNECTOR: SQL error %d : %s", rc,
                 sqlite3_errmsg(db));
-        printf("SQLITECONNECTOR: trying again ...\n");
+        Logger::info("SQLITECONNECTOR: trying again ...");
         sleep(listenerWaitTime);
     } while (1);
 
@@ -559,9 +563,9 @@ bool SQLiteConnector::createPreparedStatement() {
         if (rc == SQLITE_OK) {
             break;
         }
-        fprintf(stderr, "SQLITECONNECTOR: SQL error %d : %s\n", rc,
+        Logger::error("SQLITECONNECTOR: SQL error %d : %s", rc,
                 sqlite3_errmsg(db));
-        printf("SQLITECONNECTOR: trying again ...\n");
+        Logger::info("SQLITECONNECTOR: trying again ...");
         sleep(listenerWaitTime);
     } while (1);
 
@@ -615,14 +619,14 @@ bool SQLiteConnector::createTriggerIfNotExistence() {
         if ((rc != SQLITE_OK)
                 && (std::string(zErrMsgInsert).find("already exists")
                         == std::string::npos)) {
-            fprintf(stderr, "SQLITECONNECTOR: SQL error %d : %s\n", rc,
+            Logger::error( "SQLITECONNECTOR: SQL error %d : %s", rc,
                     zErrMsgInsert);
             sqlite3_free(zErrMsgInsert);
         } else {
             break;
         }
 
-        printf("SQLITECONNECTOR: trying again ...\n");
+        Logger::info("SQLITECONNECTOR: trying again ...");
         sleep(listenerWaitTime);
     } while (1);
 
@@ -650,14 +654,14 @@ bool SQLiteConnector::createTriggerIfNotExistence() {
         if ((rc != SQLITE_OK)
                 && (std::string(zErrMsgDelete).find("already exists")
                         == std::string::npos)) {
-            fprintf(stderr, "SQLITECONNECTOR: SQL error %d : %s\n", rc,
+            Logger::error( "SQLITECONNECTOR: SQL error %d : %s", rc,
                     zErrMsgDelete);
             sqlite3_free(zErrMsgDelete);
         } else {
             break;
         }
 
-        printf("SQLITECONNECTOR: trying again ...\n");
+        Logger::info("SQLITECONNECTOR: trying again ...");
         sleep(listenerWaitTime);
     } while (1);
 
@@ -684,14 +688,14 @@ bool SQLiteConnector::createTriggerIfNotExistence() {
         if ((rc != SQLITE_OK)
                 && (std::string(zErrMsgUpdate).find("already exists")
                         == std::string::npos)) {
-            fprintf(stderr, "SQLITECONNECTOR: SQL error %d : %s\n", rc,
+            Logger::error("SQLITECONNECTOR: SQL error %d : %s", rc,
                     zErrMsgUpdate);
             sqlite3_free(zErrMsgUpdate);
         } else {
             break;
         }
 
-        printf("SQLITECONNECTOR: trying again ...\n");
+        Logger::info("SQLITECONNECTOR: trying again ...");
         sleep(listenerWaitTime);
     } while (1);
 
@@ -740,7 +744,7 @@ bool SQLiteConnector::deleteProcessedLog(
             lastAccessedLogRecordTime.c_str(), lastAccessedLogRecordTime.size(),
             SQLITE_STATIC);
     if (rc != SQLITE_OK && rc != SQLITE_DONE) {
-        fprintf(stderr, "SQLITECONNECTOR: SQL error %d : %s\n", rc,
+        Logger::error("SQLITECONNECTOR: SQL error %d : %s", rc,
                 sqlite3_errmsg(db));
         return false;
     }
@@ -749,7 +753,7 @@ bool SQLiteConnector::deleteProcessedLog(
     rc = sqlite3_step(deleteLogStmt);
 
     if (rc != SQLITE_OK && rc != SQLITE_DONE) {
-        fprintf(stderr, "SQLITECONNECTOR: SQL error %d : %s\n", rc,
+        Logger::error( "SQLITECONNECTOR: SQL error %d : %s", rc,
                 sqlite3_errmsg(db));
         sqlite3_reset(deleteLogStmt);
         return false;
@@ -759,7 +763,7 @@ bool SQLiteConnector::deleteProcessedLog(
     rc = sqlite3_reset(deleteLogStmt);
 
     if (rc != SQLITE_OK && rc != SQLITE_DONE) {
-        fprintf(stderr, "SQLITECONNECTOR: SQL error %d : %s\n", rc,
+        Logger::error( "SQLITECONNECTOR: SQL error %d : %s", rc,
                 sqlite3_errmsg(db));
         return false;
     }
