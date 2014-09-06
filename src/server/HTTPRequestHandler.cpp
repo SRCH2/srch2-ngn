@@ -1450,6 +1450,10 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
         return root;
     }
 
+    // if this core doesn't have any roleCore then we can ignore the roleId in the query for record-based access control
+    if(server->roleCore == NULL){
+    	paramContainer.roleId = "";
+    }
 //    clock_gettime(CLOCK_REALTIME, &tend);
 //    unsigned parserTime = (tend.tv_sec - tstart2.tv_sec) * 1000
 //            + (tend.tv_nsec - tstart2.tv_nsec) / 1000000;
