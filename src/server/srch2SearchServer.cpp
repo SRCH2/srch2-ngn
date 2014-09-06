@@ -430,6 +430,7 @@ static void cb_single_core_operator_route(evhttp_request *req, void *arg){
             case srch2http::AttributeAclDelete:
             case srch2http::AttributeAclAppend:
             	HTTPRequestHandler::attributeAclModify(req, srch2Server);
+            	break;
             case srch2http::RecordAclAdd:
             	HTTPRequestHandler::aclAddRolesToRecord(req, srch2Server);
             	break;
