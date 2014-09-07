@@ -69,7 +69,13 @@ SchemaInternal::SchemaInternal(const SchemaInternal &schemaInternal) {
     this->indexType = schemaInternal.indexType;
     this->positionIndexType = schemaInternal.positionIndexType;
     this->commited = schemaInternal.commited;
-    this->supportSwapInEditDistance =  schemaInternal.supportSwapInEditDistance;
+    this->supportSwapInEditDistance = schemaInternal.supportSwapInEditDistance;
+
+    this->aclRefiningAttrIds =  schemaInternal.aclRefiningAttrIds;
+    this->nonAclRefiningAttrIds = schemaInternal.nonAclRefiningAttrIds;
+    this->aclSearchableAttrIds =  schemaInternal.aclSearchableAttrIds;
+    this->nonAclSearchableAttrIds = schemaInternal.nonAclSearchableAttrIds;
+
     this->nameOfLatitudeAttribute = schemaInternal.nameOfLatitudeAttribute;
     this->nameOfLongitudeAttribute = schemaInternal.nameOfLongitudeAttribute;
 }
@@ -300,6 +306,51 @@ bool SchemaInternal::isHighlightEnabled(unsigned attributeId) const {
     } else {
         return false;
     }
+}
+
+void SchemaInternal::setPositionIndexType(PositionIndexType positionIndexType) {
+	this->positionIndexType = positionIndexType;
+}
+
+void SchemaInternal::setAclSearchableAttrIdsList(const std::vector<unsigned>& aclSearchableAttrIds){
+	this->aclSearchableAttrIds = aclSearchableAttrIds;
+}
+void SchemaInternal::setNonAclSearchableAttrIdsList(const std::vector<unsigned>& nonAclSearchableAttrIds){
+	this->nonAclSearchableAttrIds = nonAclSearchableAttrIds;
+}
+
+void SchemaInternal::setAclRefiningAttrIdsList(const std::vector<unsigned>& aclRefiningAttrIds){
+	this->aclRefiningAttrIds = aclRefiningAttrIds;
+}
+void SchemaInternal::setNonAclRefiningAttrIdsList(const std::vector<unsigned>& nonAclRefiningAttrIds){
+	this->nonAclRefiningAttrIds = nonAclRefiningAttrIds;
+}
+
+const std::vector<unsigned>& SchemaInternal::getAclSearchableAttrIdsList() const{
+	return this->aclSearchableAttrIds;
+}
+const std::vector<unsigned>& SchemaInternal::getNonAclSearchableAttrIdsList() const{
+	return this->nonAclSearchableAttrIds;
+}
+const std::vector<unsigned>& SchemaInternal::getAclRefiningAttrIdsList() const{
+	return this->aclRefiningAttrIds;
+}
+const std::vector<unsigned>& SchemaInternal::getNonAclRefiningAttrIdsList() const{
+	return this->nonAclRefiningAttrIds;
+}
+
+bool SchemaInternal::isValidAttribute(const std::string& attributeName) const {
+	int id = this->getSearchableAttributeId(attributeName);
+	if (id != -1) {
+		return true;
+	} else {
+		id = this->getRefiningAttributeId(attributeName);
+		if (id != -1) {
+			return true;
+		} else {
+			return false;
+		}
+	}
 }
 
 }

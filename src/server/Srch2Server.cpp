@@ -3,6 +3,7 @@
 #include <syslog.h>
 #include "Srch2Server.h"
 #include "util/RecordSerializerUtil.h"
+#include "operation/AttributeAccessControl.h"
 #include <sys/statvfs.h>
 
 namespace srch2 {
@@ -228,15 +229,24 @@ void Srch2Server::createAndBootStrapIndexer() {
             }
 
             // Create from JSON and save to index-dir
-            Logger::console("Creating indexes from JSON file...");
+            Logger::console("%s: Creating indexes from JSON file...",this->coreName.c_str());
             unsigned indexedCounter = DaemonDataSource::createNewIndexFromFile(
                     indexer, storedAttrSchema, indexDataConfig);
+
             /*
              *  commit the indexes once bulk load is done and then save it to the disk only
              *  if number of indexed record is > 0.
              */
             indexer->commit();
-            if (indexedCounter > 0) {
+
+            // Load ACL list from disk
+            indexer->getAttributeAcl().bulkLoadAclJSON(indexDataConfig->getAttibutesAclFile());
+            /*
+             *  if the roleCore is null it means that this core doesn't have any access control
+             *  so we can save it now.
+             *  otherwise first we should read the data for acl and we will save this core after that.
+             */
+            if (indexedCounter > 0 && this->roleCore == NULL) {
                 indexer->save();
                 Logger::console("Indexes saved.");
             }
@@ -244,6 +254,8 @@ void Srch2Server::createAndBootStrapIndexer() {
         }
         default: {
             indexer->commit();
+            // Load ACL list from disk
+            indexer->getAttributeAcl().bulkLoadAclJSON(indexDataConfig->getAttibutesAclFile());
             Logger::console("Creating new empty index");
         }
         };

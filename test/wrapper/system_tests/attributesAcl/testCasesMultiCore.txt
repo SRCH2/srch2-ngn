@@ -1,0 +1,40 @@
+#-----------------------------------
+# Normal search with ACL
+#-----------------------------------
+#FORMAT of test cases
+# query type = S (search) || query content || record ids || core name ( default if empty) 
+# query type = C (non-search command)] || API Name || json record ||  core name ( default if empty) 
+
+#case 1. no acl-role-id provided, keyword should match non-acl attributes only.
+S||impagency:india||||worldbank
+
+#case 2. acl-role-id=superman is provided, keyword should match any non-acl attributes or attributes allowed for this role-id
+S||impagency:india&roleId=superman||52b213b38594d8a2be17c961 52b213b38594d8a2be17c925||worldbank
+
+#case 3. No acl-role-id provided. This query will not generate any result because author_name is acl controlled
+S||author_name:nightcracker||||stackoverflow
+
+#case 4. acl-role-id=spidername is provided, keyword should return a result because author_name is accessible for this role-id  
+S||author_name:nightcracker&roleId=spiderman||5206508||stackoverflow
+
+#case 5. acl-role-id=spiderman is provided but it does not have any acl defined in core = worldbank. 
+#        In this case no record should be returned.
+S||impagency:india&roleId=spiderman||||worldbank
+
+# case7:  Add role-id for spiderman
+C||aclAttributeRoleAdd||{ "attributes" : ["impagency"] , "roleId" :  ["spiderman"] }||worldbank
+
+#case 8. acl-role-id=spiderman is provided, keyword should match any non-acl attributes or attributes allowed for this role-id
+S||impagency:india&roleId=spiderman||52b213b38594d8a2be17c961 52b213b38594d8a2be17c925||worldbank
+
+# case9:  Delete role-id = spiderman
+C||aclAttributeRoleDelete||{ "attributes" : ["*"] , "roleId" :  ["spiderman"] }||worldbank
+
+# case10: repeat case 5: We should not get search result
+S||impagency:india&roleId=spiderman||||worldbank
+
+# case7:  Append role-id for spiderman
+C||aclAttributeRoleAppend||{ "attributes" : ["impagency"] , "roleId" :  ["spiderman"] }||worldbank
+
+#case 8. acl-role-id=spiderman is provided, keyword should match any non-acl attributes or attributes allowed for this role-id
+S||impagency:india&roleId=spiderman||52b213b38594d8a2be17c961 52b213b38594d8a2be17c925||worldbank

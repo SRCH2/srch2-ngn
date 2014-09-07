@@ -205,7 +205,9 @@ function test_case(){
 #         please be sure to append output using ">> system_test.log".
 #
 ###############################################################################################################
-
+rm ./attributesAcl/stackoverflow/indexes/*
+rm ./attributesAcl/worldbank/indexes/*
+test_case "attributes ACL" "python ./attributesAcl/testProgram.py $SRCH2_ENGINE"
 
 rm ./attributes/indexes/*
 test_case "lot of attributes" "python ./attributes/attributes.py $SRCH2_ENGINE" 
@@ -214,6 +216,10 @@ sleep 2
 
 test_case "synonyms" "python ./synonyms/synonyms.py $SRCH2_ENGINE" 
 
+sleep 2
+
+rm -rf access_control/*Data
+test_case "record-based-ACL" "python ./access_control/record-based-ACL.py $SRCH2_ENGINE ./access_control/queriesAndResults.txt"
 sleep 2
 
 test_case "highlighter" "python ./highlight/highlight.py $SRCH2_ENGINE ./highlight/queries.txt"

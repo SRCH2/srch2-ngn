@@ -163,6 +163,8 @@ private:
     static const char* const facetField;
     static const char* const facetRangeField;
     static const char* const highlightSwitch;
+    // access control
+    static const char* const roleIdParamName;
     static const string getFacetRangeKey(const string &facetField,
             const string &facetRangeProperty) {
         return "f."+facetField+".facet."+facetRangeProperty;
@@ -204,6 +206,11 @@ private:
      * checks to see if "fuzzy" exists in parameters.
      */
     void isFuzzyParser();
+
+    /*
+     *  check to see if role id exists in prameters.
+     */
+    void accessControlParser();
 
     /*
      * parses the lengthBoost parameter and fills up the container
