@@ -6,11 +6,11 @@
  New features:
 
  * Implemented native support for access control on search results. 
-   Access control is of two type : a) record-based and b) attribute-based.
+   Access control is of two types : a) record-based and b) attribute-based.
    
    For more information please refer to srch2's documentaton (http://srch2.com/releases/4.4.1/docs/acl/)
 
- * Implemented db connectors for mongoDb and SQLite as a shared library which 
+ * Implemented db connectors for mongoDb and SQLite as shared libraries which 
    can be loaded into the engine on demand via config file settings.
    
    For more information please refer to srch2's documentaton (http://srch2.com/releases/4.4.1/docs/databases/)
@@ -24,12 +24,13 @@
    text, integer, long, float, double, time, location_longitude (geo search only),
    and location_latitude (geo search only).
 
- * Added boolean search capability to geo search.
+ * Added capabilities of boolean expressions, faceted search, filtering, and sorting to geo search.
 
- * Optimized geo search in the engine. 
+ * Optimized geo search.
 
  Bug fixes:
 
  * HTTP response from the engine is a valid JSON. 
  * Added disk space check before creating indexes. 
  * Improved sanity check of configuration file.
+ * multiple cores can use the same log file
