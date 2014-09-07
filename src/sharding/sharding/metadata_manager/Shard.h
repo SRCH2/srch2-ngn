@@ -5,6 +5,7 @@
 #include <vector>
 #include <set>
 #include "src/core/util/Assert.h"
+#include "src/sharding/util/FramedPrinter.h"
 #include "../../configuration/CoreInfo.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/serialization/shared_ptr.hpp>
@@ -161,6 +162,15 @@ public:
 		this->targetClusterShards = copy.targetClusterShards;
 		this->targetNodeShards = copy.targetNodeShards;
 	};
+	NodeTargetShardInfo & operator=(const NodeTargetShardInfo & rhs){
+		if(this != &rhs){
+			this->nodeId = rhs.nodeId;
+			this->coreId = rhs.coreId;
+			this->targetClusterShards = rhs.targetClusterShards;
+			this->targetNodeShards = rhs.targetNodeShards;
+		}
+		return *this;
+	}
 	void addClusterShard(ClusterShardId shardId);
 	void addNodeShard(const NodeShardId & shardId);
 
@@ -172,6 +182,19 @@ public:
     void* serialize(void * buffer);
     unsigned getNumberOfBytes() const;
     void * deserialize(void* buffer);
+
+    string toString() const;
+
+    static void printTargets(const vector<NodeTargetShardInfo> & targets){
+		vector<string> targetHeaders;
+		for(unsigned i = 0 ; i < targets.size(); ++i){
+			targetHeaders.push_back(targets.at(i).toString());
+		}
+		vector<string> targetLables;
+		targetLables.push_back("Info:");
+		srch2::util::TableFormatPrinter nodesTable("Node Targets", 120, targetHeaders, targetLables );
+		nodesTable.printColumnHeaders();
+    }
 
 private:
 	NodeId nodeId;

@@ -79,6 +79,14 @@ ClusterShard_Writeview::ClusterShard_Writeview(const ClusterShard_Writeview & co
 	this->load = copy.load;
 }
 
+ClusterShard_Writeview::ClusterShard_Writeview(){
+	id = ClusterShardId(0,0,0);
+	state = SHARDSTATE_UNASSIGNED;
+	isLocal = false;
+	nodeId = 0;
+	load = 0;
+};
+
 void * ClusterShard_Writeview::serialize(void * buffer) const{
 	buffer = id.serialize(buffer);
 	buffer = srch2::util::serializeFixedTypes(state, buffer);
@@ -103,6 +111,69 @@ void * ClusterShard_Writeview::deserialize(void * buffer){
 	buffer = srch2::util::deserializeFixedTypes(buffer, nodeId);
 	buffer = srch2::util::deserializeFixedTypes(buffer, load);
 	return buffer;
+}
+
+
+void ClusterShardIterator::beginClusterShardsIteration(){
+    this->clusterShardsCursor = 0;
+}
+bool ClusterShardIterator::getNextClusterShard(ClusterShardId & shardId, double & load, ShardState & state, bool & isLocal, NodeId & nodeId){
+    if(this->clusterShardsCursor >= writeview->clusterShards.size()){
+        return false;
+    }
+    ClusterShard_Writeview * shard = writeview->clusterShards[this->clusterShardsCursor++];
+    shardId = shard->id;
+    // TODO : loads are not handled yet
+    load = 1;
+    state = shard->state;
+    isLocal = shard->isLocal;
+    nodeId = shard->nodeId;
+    return true;
+}
+bool ClusterShardIterator::getNextLocalClusterShard(ClusterShardId & shardId, double & load, LocalPhysicalShard & localPhysicalShard ){
+    while(true){
+        if(this->clusterShardsCursor >= writeview->clusterShards.size()){
+            return false;
+        }
+        ClusterShard_Writeview * shard = writeview->clusterShards[this->clusterShardsCursor++];
+        if(! shard->isLocal){
+            continue;
+        }
+        shardId = shard->id;
+        load = shard->load;
+        localPhysicalShard = writeview->localClusterDataShards[shardId];
+        return true;
+    }
+    return false;
+}
+
+void NodeShardIterator::beginNodeShardsIteration(){
+    this->nodeShardsCursor = 0;
+}
+bool NodeShardIterator::getNextNodeShard(NodeShardId & nodeShardId, bool & isLocal){
+    if(this->nodeShardsCursor >= writeview->nodeShards.size()){
+        return false;
+    }
+    NodeShard_Writeview * shard = writeview->nodeShards[this->nodeShardsCursor++];
+    nodeShardId = shard->id;
+    isLocal = shard->isLocal;
+    return true;
+}
+bool NodeShardIterator::getNextLocalNodeShard(NodeShardId & nodeShardId, double & load,  LocalPhysicalShard & dataInfo){
+    while(true){
+        if(this->nodeShardsCursor >= writeview->nodeShards.size()){
+            return false;
+        }
+        NodeShard_Writeview * shard = writeview->nodeShards[this->nodeShardsCursor++];
+        if(! shard->isLocal){
+            continue;
+        }
+        nodeShardId = shard->id;
+        load = shard->load;
+        dataInfo = writeview->localNodeDataShards[nodeShardId.partitionId];
+        return true;
+    }
+    return false;
 }
 
 Cluster_Writeview::Cluster_Writeview(unsigned versionId, string clusterName, vector<CoreInfo_t *> cores){
@@ -246,6 +317,25 @@ Cluster_Writeview::~Cluster_Writeview(){
 
 void Cluster_Writeview::print(){
 
+	printCores();
+
+	printNodes();
+
+	/// cluster shards
+
+	printClusterShards();
+
+
+
+	///// node shards
+	printNodeShards();
+
+
+	printLocalShards();
+
+}
+
+void Cluster_Writeview::printCores(){
 	vector<string> coreHeaders;
 	for(map<unsigned, CoreInfo_t *>::const_iterator coreItr = cores.begin(); coreItr != cores.end(); ++coreItr){
 		stringstream ss;
@@ -256,15 +346,51 @@ void Cluster_Writeview::print(){
 	vector<string> coreLabels;
 	srch2::util::TableFormatPrinter coresTable("Cores", 40, coreHeaders, coreLabels );
 	coresTable.printColumnHeaders();
+}
 
-	printNodes();
+void Cluster_Writeview::printNodes(){
 
-	/// cluster shards
-
-	ClusterShardId id;double load;ShardState state;bool isLocal;NodeId nodeId;NodeShardId nodeShardId;
-	if(clusterShards.size() == 0){
-		cout << "cluster shards : empty." << endl;
+	/// nodes
+	if(nodes.size() == 0){
+		cout << "Nodes : empty." << endl;
 	}else{
+		vector<string> nodeHeaders;
+		for(map<NodeId, std::pair<ShardingNodeState, Node *> >::const_iterator nodeItr = nodes.begin(); nodeItr != nodes.end(); ++nodeItr){
+			stringstream ss;
+			ss << "ID-" << nodeItr->first << "%";
+			nodeHeaders.push_back(ss.str());
+		}
+		vector<string> nodeLables;
+		nodeLables.push_back("Node Information:");
+		srch2::util::TableFormatPrinter nodesTable("Nodes", 120, nodeHeaders, nodeLables );
+		nodesTable.printColumnHeaders();
+		nodesTable.startFilling();
+		for(map<NodeId, std::pair<ShardingNodeState, Node *> >::const_iterator nodeItr = nodes.begin(); nodeItr != nodes.end(); ++nodeItr){
+			stringstream ss;
+			switch (nodeItr->second.first) {
+				case ShardingNodeStateNotArrived:
+					ss << "STATE-NOT-ARRIVED" << "%";
+					break;
+				case ShardingNodeStateArrived:
+					ss << "STATE-ARRIVED" << "%";
+					break;
+				case ShardingNodeStateFailed:
+					ss << "STATE-FAILED" << "%";
+					break;
+			}
+
+			if(nodeItr->second.second != NULL){
+				ss << nodeItr->second.second->toString();
+			}
+			nodesTable.printNextCell(ss.str());
+		}
+	}
+}
+
+
+void Cluster_Writeview::printClusterShards(){
+	ClusterShardId id;double load;ShardState state;bool isLocal;NodeId nodeId;NodeShardId nodeShardId;
+	if(clusterShards.size() > 0){
 		for(map<unsigned, CoreInfo_t *>::const_iterator coreItr = cores.begin(); coreItr != cores.end(); ++coreItr){
 			vector<string> clusterHeaders;
 			vector<string> clusterLabels;
@@ -283,8 +409,9 @@ void Cluster_Writeview::print(){
 			srch2::util::TableFormatPrinter clusterShardsTable("Core name : " + coreItr->second->getName(), 120, clusterHeaders, clusterLabels);
 			clusterShardsTable.printColumnHeaders();
 			clusterShardsTable.startFilling();
-			beginClusterShardsIteration();
-			while(getNextClusterShard(id, load, state, isLocal, nodeId)){
+			ClusterShardIterator cShardItr(this);
+			cShardItr.beginClusterShardsIteration();
+			while(cShardItr.getNextClusterShard(id, load, state, isLocal, nodeId)){
 				if(id.coreId != coreItr->first){
 					continue;
 				}
@@ -311,13 +438,12 @@ void Cluster_Writeview::print(){
 			}
 		}
 	}
+}
 
 
-
-	///// node shards
-	if(nodeShards.size() == 0){
-		cout << "Node shards : empty." << endl;
-	}else{
+void Cluster_Writeview::printNodeShards(){
+	if(nodeShards.size() > 0){
+		ClusterShardId id;double load;ShardState state;bool isLocal;NodeId nodeId;NodeShardId nodeShardId;
 		vector<string> nodeShardHeaders;
 		vector<string> nodeShardLabels;
 		unsigned counter = 0;
@@ -331,8 +457,9 @@ void Cluster_Writeview::print(){
 		srch2::util::TableFormatPrinter nodeShardsTable("Node Shards :" , 120, nodeShardHeaders, nodeShardLabels);
 		nodeShardsTable.printColumnHeaders();
 		nodeShardsTable.startFilling();
-		beginNodeShardsIteration();
-		while(getNextNodeShard(nodeShardId,isLocal)){
+		NodeShardIterator nShardItr(this);
+		nShardItr.beginNodeShardsIteration();
+		while(nShardItr.getNextNodeShard(nodeShardId,isLocal)){
 			stringstream ss;
 			if(isLocal){
 				ss << "********%";
@@ -342,8 +469,10 @@ void Cluster_Writeview::print(){
 			nodeShardsTable.printNextCell(ss.str());
 		}
 	}
+}
 
 
+void Cluster_Writeview::printLocalShards(){
 	if(localClusterDataShards.size() == 0){
 		cout << "Local cluster shards : empty." << endl;
 	}else{
@@ -387,46 +516,6 @@ void Cluster_Writeview::print(){
 				ss << shardItr->second.server->getIndexer()->getNumberOfDocumentsInIndex();
 			}
 			localNodeShardsTable.printNextCell(shardItr->second.indexDirectory + "%" + ss.str());
-		}
-	}
-
-}
-
-void Cluster_Writeview::printNodes(){
-
-	/// nodes
-	if(nodes.size() == 0){
-		cout << "Nodes : empty." << endl;
-	}else{
-		vector<string> nodeHeaders;
-		for(map<NodeId, std::pair<ShardingNodeState, Node *> >::const_iterator nodeItr = nodes.begin(); nodeItr != nodes.end(); ++nodeItr){
-			stringstream ss;
-			ss << "ID-" << nodeItr->first << "%";
-			nodeHeaders.push_back(ss.str());
-		}
-		vector<string> nodeLables;
-		nodeLables.push_back("Node Information:");
-		srch2::util::TableFormatPrinter nodesTable("Nodes", 120, nodeHeaders, nodeLables );
-		nodesTable.printColumnHeaders();
-		nodesTable.startFilling();
-		for(map<NodeId, std::pair<ShardingNodeState, Node *> >::const_iterator nodeItr = nodes.begin(); nodeItr != nodes.end(); ++nodeItr){
-			stringstream ss;
-			switch (nodeItr->second.first) {
-				case ShardingNodeStateNotArrived:
-					ss << "STATE-NOT-ARRIVED" << "%";
-					break;
-				case ShardingNodeStateArrived:
-					ss << "STATE-ARRIVED" << "%";
-					break;
-				case ShardingNodeStateFailed:
-					ss << "STATE-FAILED" << "%";
-					break;
-			}
-
-			if(nodeItr->second.second != NULL){
-				ss << nodeItr->second.second->toString();
-			}
-			nodesTable.printNextCell(ss.str());
 		}
 	}
 }
@@ -537,12 +626,13 @@ void Cluster_Writeview::fixAfterDiskLoad(Cluster_Writeview * oldWrireview){
 	NodeId nodeId;
 	LocalPhysicalShard physicalShard;
 	double load;
-	beginClusterShardsIteration();
-	while(getNextClusterShard(id, load, state, isLocal, nodeId)){
+    ClusterShardIterator cShardItr(this);
+    cShardItr.beginClusterShardsIteration();
+	while(cShardItr.getNextClusterShard(id, load, state, isLocal, nodeId)){
 		if(state == SHARDSTATE_UNASSIGNED){
 			continue;
 		}
-		ClusterShard_Writeview * shard = this->clusterShards.at(this->clusterShardsCursor-1);
+		ClusterShard_Writeview * shard = this->clusterShards.at(cShardItr.clusterShardsCursor-1);
 		if(! isLocal ){
 			shard->state = SHARDSTATE_PENDING;
 			shard->load = 0;
@@ -553,10 +643,11 @@ void Cluster_Writeview::fixAfterDiskLoad(Cluster_Writeview * oldWrireview){
 	}
 
 	// and remove those node shards that are not ours
-	beginNodeShardsIteration();
+    NodeShardIterator nShardItr(this);
+    nShardItr.beginNodeShardsIteration();
 	vector<NodeShard_Writeview *> fixedNodeShards;
-	while(getNextNodeShard(nodeShardId, isLocal)){
-		NodeShard_Writeview * shard = this->nodeShards.at(this->nodeShardsCursor-1);
+	while(nShardItr.getNextNodeShard(nodeShardId, isLocal)){
+		NodeShard_Writeview * shard = this->nodeShards.at(nShardItr.nodeShardsCursor - 1);
 		if(! isLocal){
 			delete shard;
 		}else{
@@ -667,7 +758,6 @@ void Cluster_Writeview::assignLocalClusterShard(const ClusterShardId & shardId, 
 	shard->isLocal = true;
 	shard->nodeId = this->currentNodeId;
 	shard->load = 0;
-	ASSERT(shard->state == SHARDSTATE_UNASSIGNED);
 	shard->state = SHARDSTATE_READY;
 	localClusterDataShards[shardId] = physicalShardInfo;
 }
@@ -745,39 +835,6 @@ void Cluster_Writeview::moveClusterShard(const ClusterShardId & shardId, const N
 	}
 }
 
-void Cluster_Writeview::beginClusterShardsIteration(){
-	this->clusterShardsCursor = 0;
-}
-bool Cluster_Writeview::getNextClusterShard(ClusterShardId & shardId, double & load, ShardState & state, bool & isLocal, NodeId & nodeId){
-	if(this->clusterShardsCursor >= this->clusterShards.size()){
-		return false;
-	}
-	ClusterShard_Writeview * shard = this->clusterShards[this->clusterShardsCursor++];
-	shardId = shard->id;
-	// TODO : loads are not handled yet
-	load = 1;
-	state = shard->state;
-	isLocal = shard->isLocal;
-	nodeId = shard->nodeId;
-	return true;
-}
-bool Cluster_Writeview::getNextLocalClusterShard(ClusterShardId & shardId, double & load, LocalPhysicalShard & localPhysicalShard ){
-	while(true){
-		if(this->clusterShardsCursor >= this->clusterShards.size()){
-			return false;
-		}
-		ClusterShard_Writeview * shard = this->clusterShards[this->clusterShardsCursor++];
-		if(! shard->isLocal){
-			continue;
-		}
-		shardId = shard->id;
-		load = shard->load;
-		localPhysicalShard = this->localClusterDataShards[shardId];
-		return true;
-	}
-	return false;
-}
-
 void Cluster_Writeview::addLocalNodeShard(const NodeShardId & nodeShardId, const double load, const LocalPhysicalShard & physicalShardInfo){
     ASSERT(this->currentNodeId == nodeShardId.nodeId);
 	ASSERT(this->localNodeDataShards.find(nodeShardId.partitionId) == this->localNodeDataShards.end());
@@ -818,36 +875,6 @@ void Cluster_Writeview::setNodeShardServer(const NodeShardId & nodeShardId, boos
 	this->localNodeDataShards.find(nodeShardId.partitionId)->second.server = server;
 }
 
-void Cluster_Writeview::beginNodeShardsIteration(){
-	this->nodeShardsCursor = 0;
-}
-bool Cluster_Writeview::getNextNodeShard(NodeShardId & nodeShardId, bool & isLocal){
-	if(this->nodeShardsCursor >= this->nodeShards.size()){
-		return false;
-	}
-	NodeShard_Writeview * shard = this->nodeShards[this->nodeShardsCursor++];
-	nodeShardId = shard->id;
-	isLocal = shard->isLocal;
-	return true;
-}
-bool Cluster_Writeview::getNextLocalNodeShard(NodeShardId & nodeShardId, double & load,  LocalPhysicalShard & dataInfo){
-	while(true){
-		if(this->nodeShardsCursor >= this->nodeShards.size()){
-			return false;
-		}
-		NodeShard_Writeview * shard = this->nodeShards[this->nodeShardsCursor++];
-		if(! shard->isLocal){
-			continue;
-		}
-		nodeShardId = shard->id;
-		load = shard->load;
-		dataInfo = this->localNodeDataShards[nodeShardId.partitionId];
-		return true;
-	}
-	return false;
-}
-
-
 void Cluster_Writeview::getFullUnassignedPartitions(vector<ClusterPID> & fullUnassignedPartitions ){
 
 	ClusterShardId id;
@@ -860,8 +887,9 @@ void Cluster_Writeview::getFullUnassignedPartitions(vector<ClusterPID> & fullUna
 
 	map<ClusterPID, bool> isFullUnassigned;
 
-	beginClusterShardsIteration();
-	while(getNextClusterShard(id, load, state, isLocal, nodeId)){
+    ClusterShardIterator cShardItr(this);
+    cShardItr.beginClusterShardsIteration();
+	while(cShardItr.getNextClusterShard(id, load, state, isLocal, nodeId)){
 		if(state == SHARDSTATE_UNASSIGNED){
 			if(isFullUnassigned.find(id.getPartitionId()) == isFullUnassigned.end()){
 				isFullUnassigned[id.getPartitionId()] = true;
@@ -887,8 +915,9 @@ bool Cluster_Writeview::isPartitionPending(const ClusterPID & pid){
 	LocalPhysicalShard physicalShard;
 	double load;
 
-	beginClusterShardsIteration();
-	while(getNextClusterShard(id, load, state, isLocal, nodeId)){
+    ClusterShardIterator cShardItr(this);
+	cShardItr.beginClusterShardsIteration();
+	while(cShardItr.getNextClusterShard(id, load, state, isLocal, nodeId)){
 		if(id.getPartitionId() == pid && state == SHARDSTATE_PENDING){
 			return true;
 		}
@@ -1031,15 +1060,17 @@ ClusterResourceMetadata_Readview * Cluster_Writeview::getNewReadview(){
 		LocalPhysicalShard physicalShard;
 		double load;
 
-		beginClusterShardsIteration();
-		while(getNextClusterShard(id, load, state, isLocal, nodeId)){
+	    ClusterShardIterator cShardItr(this);
+		cShardItr.beginClusterShardsIteration();
+		while(cShardItr.getNextClusterShard(id, load, state, isLocal, nodeId)){
 			if(id.coreId == coreId && state == SHARDSTATE_READY){
 				corePartitionContainer->addClusterShard(nodeId, id);
 			}
 		}
 
-		beginNodeShardsIteration();
-		while(getNextNodeShard(nodeShardId, isLocal)){
+        NodeShardIterator nShardItr(this);
+        nShardItr.beginNodeShardsIteration();
+		while(nShardItr.getNextNodeShard(nodeShardId, isLocal)){
 			corePartitionContainer->addNodeShard(nodeShardId.nodeId, nodeShardId.partitionId);
 		}
 
@@ -1051,8 +1082,10 @@ ClusterResourceMetadata_Readview * Cluster_Writeview::getNewReadview(){
 				corePartitionContainer->setPartitionLock(lockedPartitions.at(i).partitionId, PartitionLock_Locked);
 			}
 		}
-		beginClusterShardsIteration();
-		while(getNextClusterShard(id, load, state, isLocal, nodeId)){
+
+        ClusterShardIterator cShardItr2(this);
+        cShardItr2.beginClusterShardsIteration();
+		while(cShardItr2.getNextClusterShard(id, load, state, isLocal, nodeId)){
 			if(id.coreId == coreId && state == SHARDSTATE_PENDING){
 				corePartitionContainer->setPartitionLock(id.partitionId, PartitionLock_Locked);
 			}
@@ -1065,16 +1098,17 @@ ClusterResourceMetadata_Readview * Cluster_Writeview::getNewReadview(){
 			return NULL;
 		}
 
-		beginClusterShardsIteration();
-		while(getNextLocalClusterShard(id, load,  physicalShard)){
+        ClusterShardIterator cShardItr3(this);
+		cShardItr3.beginClusterShardsIteration();
+		while(cShardItr3.getNextLocalClusterShard(id, load,  physicalShard)){
 			if(id.coreId == coreId){
 				localShardContainer->addClusterShard(id, physicalShard.server,
 						physicalShard.indexDirectory,  physicalShard.jsonFileCompletePath, load);
 			}
 		}
-
-		beginNodeShardsIteration();
-		while(getNextLocalNodeShard(nodeShardId, load,  physicalShard)){
+        NodeShardIterator nShardItr2(this);
+        nShardItr2.beginNodeShardsIteration();
+		while(nShardItr2.getNextLocalNodeShard(nodeShardId, load,  physicalShard)){
 			if(nodeShardId.coreId == coreId){
 				localShardContainer->addNodeShard(nodeShardId, physicalShard.server,
 						physicalShard.indexDirectory,  physicalShard.jsonFileCompletePath, load);

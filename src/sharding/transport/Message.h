@@ -99,6 +99,53 @@ public:
 	   return messagePointer->body;
    }
 
+   string getDescription(){
+	   switch (shardingMessageType) {
+	   case ShardingNewNodeLockMessageType:
+		   return "ShardingNewNodeLockMessageType";
+	   case ShardingNewNodeLockACKMessageType:
+		   return "ShardingNewNodeLockACKMessageType";
+	   case ShardingMoveToMeMessageType:
+		   return "ShardingMoveToMeMessageType";
+	   case ShardingMoveToMeStartMessageType:
+		   return "ShardingMoveToMeStartMessageType";
+	   case ShardingMoveToMeACKMessageType:
+		   return "ShardingMoveToMeACKMessageType";
+	   case ShardingMoveToMeFinishMessageType:
+		   return "ShardingMoveToMeFinishMessageType";
+	   case ShardingMoveToMeAbortMessageType:
+		   return "ShardingMoveToMeAbortMessageType";
+	   case ShardingNewNodeReadMetadataRequestMessageType:
+		   return "ShardingNewNodeReadMetadataRequestMessageType";
+	   case ShardingNewNodeReadMetadataReplyMessageType:
+		   return "ShardingNewNodeReadMetadataReplyMessageType";
+	   case ShardingLockMessageType:
+		   return "ShardingLockMessageType";
+	   case ShardingLockACKMessageType:
+		   return "ShardingLockACKMessageType";
+	   case ShardingLockRVReleasedMessageType:
+		   return "ShardingLockACKMessageType";
+	   case ShardingLoadBalancingReportMessageType:
+		   return "ShardingLoadBalancingReportMessageType";
+	   case ShardingLoadBalancingReportRequestMessageType:
+		   return "ShardingLoadBalancingReportRequestMessageType";
+	   case ShardingCopyToMeMessageType:
+		   return "ShardingCopyToMeMessageType";
+	   case ShardingCommitMessageType:
+		   return "ShardingCommitMessageType";
+	   case ShardingCommitACKMessageType:
+		   return "ShardingCommitACKMessageType";
+	   case ShardingMMNotificationMessageType:
+		   return "ShardingMMNotificationMessageType";
+	   case ShardingNodeFailureNotificationMessageType:
+		   return "ShardingNodeFailureNotificationMessageType";
+	   default:
+		   return "Message";
+		   break;
+	   }
+	   ASSERT(false);
+	   return "";
+   }
 
 
 private:

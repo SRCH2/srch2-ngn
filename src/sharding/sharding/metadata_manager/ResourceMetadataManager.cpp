@@ -63,18 +63,21 @@ Cluster_Writeview * ResourceMetadataManager::getClusterWriteview() const{
 }
 
 void ResourceMetadataManager::print(){
-	cout << "************************************" << endl;
-	if(writeview == NULL){
-		cout << "Write view is not available." << endl;
-	}else{
+	if(writeview != NULL){
+		cout << "**************************************************************************************************" << endl;
+		cout << "Writeview : " << endl;
+		cout << "**************************************************************************************************" << endl;
 		writeview->print();
 	}
-	if(! metadata_readView){
-		cout << "Read view is not available." << endl;
-	}else{
-		metadata_readView->print();
-	}
-	cout << "************************************" << endl;
+
+//	if(! metadata_readView){
+//		cout << "Read view is not initialized yet ..." << endl;
+//	}else{
+//		cout << "**************************************************************************************************" << endl;
+//		cout << "Readview : " << endl;
+//		cout << "**************************************************************************************************" << endl;
+//		metadata_readView->print();
+//	}
 }
 
 }

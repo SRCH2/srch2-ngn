@@ -136,9 +136,11 @@ OperationState * ShardCopyOperation::handle(CommitNotification::ACK * ack){
 }
 
 OperationState * ShardCopyOperation::handle(NodeFailureNotification * nodeFailure){
-	vector<NodeId> arrivedNodes;
-	ShardManager::getWriteview()->getArrivedNodes(arrivedNodes);
-	if(std::find(arrivedNodes.begin(), arrivedNodes.end(), srcNodeId) == arrivedNodes.end()){ // src node died : abort
+	if(nodeFailure == NULL){
+		ASSERT(false);
+		return this;
+	}
+	if(nodeFailure->getFailedNodeID() == srcNodeId){
 		if(lockOperation != NULL){
 			delete lockOperation;
 			lockOperation = NULL;
@@ -158,7 +160,6 @@ OperationState * ShardCopyOperation::handle(NodeFailureNotification * nodeFailur
 	// now pass the notification to all operations
 	if(commitOperation != NULL){
 		OperationState::stateTransit(commitOperation, nodeFailure);
-		OperationState * nextState = startOperation(commitOperation->handle(nodeFailure));
 		if(commitOperation == NULL){
 			return release();
 		}

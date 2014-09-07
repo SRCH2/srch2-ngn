@@ -25,6 +25,7 @@ public:
 
 	void getAllReadTargets(vector<NodeTargetShardInfo> & targets) const;
 	void getAllWriteTargets(unsigned hashKey, NodeId currentNodeId, vector<NodeTargetShardInfo> & targets) const;
+	void getAllTargets(vector<NodeTargetShardInfo> & target) const;
 	void getAllShardIds(vector<ClusterShardId> & allShardIds) const;
 	const unsigned getCoreId() const	;
 	const unsigned getTotalNumberOfPartitions() const;

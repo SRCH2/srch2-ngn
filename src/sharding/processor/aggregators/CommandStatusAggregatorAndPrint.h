@@ -142,7 +142,10 @@ public:
             messages << "{ \"Node-id\":\"" << message->getNodeId() << "\",";
             vector<CommandStatus::ShardResults *> shardResults = message->getResponseObject()->getShardResults();
             for(unsigned shardIdx = 0 ; shardIdx < shardResults.size() ; ++shardIdx){
-            	messages << "\"shard" << shardResults.at(shardIdx)->shardIdentifier << "\":\"" << shardResults.at(shardIdx)->message << "\"";
+            	if(shardIdx != 0){
+            		messages << ",";
+            	}
+            	messages << "\"shard(" << shardResults.at(shardIdx)->shardIdentifier << ")\":\"" << shardResults.at(shardIdx)->message << "\"";
             }
 			messages << "}";
         }
@@ -169,7 +172,10 @@ public:
                 messages << "{ \"Node-id\":\"" << message->getNodeId() << "\",";
                 vector<CommandStatus::ShardResults *> shardResults = message->getResponseObject()->getShardResults();
                 for(unsigned shardIdx = 0 ; shardIdx < shardResults.size() ; ++shardIdx){
-                	messages << "\"shard" << shardResults.at(shardIdx)->shardIdentifier << "\":\"" << shardResults.at(shardIdx)->message << "\"";
+                	if(shardIdx != 0){
+                		messages << ",";
+                	}
+                	messages << "\"shard(" << shardResults.at(shardIdx)->shardIdentifier << ")\":\"" << shardResults.at(shardIdx)->message << "\"";
                 }
     			messages << "}";
             }

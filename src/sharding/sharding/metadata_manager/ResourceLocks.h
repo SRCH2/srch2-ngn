@@ -83,6 +83,7 @@ struct PendingLockRequest{
 			const unsigned priority,
 			ResourceLockRequest * request);
 	PendingLockRequest(const PendingLockRequest & copy);
+	PendingLockRequest & operator=(const PendingLockRequest & rhs);
 	PendingLockRequest(){
 		request = NULL;
 	}
@@ -159,7 +160,7 @@ public:
 	// this functions either executes all requests in this batch or non of them
 	// and either puts the request in pending requests or sends the ack
 	bool resolveBatch(const NodeOperationId & requesterAddress, const unsigned priority,
-			ResourceLockRequest * lockRequest, ShardingMessageType ackType);
+			ResourceLockRequest * lockRequest, const ShardingMessageType & ackType);
 	LockHoldersRepository * getShardLockHolders();
 
 	bool isPartitionLocked(const ClusterPID & pid);

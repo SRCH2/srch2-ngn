@@ -23,6 +23,7 @@ public:
 	virtual MetadataChangeType getType() const = 0;
 	virtual bool operator==(const MetadataChange & right) = 0;
 	virtual string toString() const = 0;
+	string toNameString() const;
 };
 
 class NodeAddChange : public MetadataChange {

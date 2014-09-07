@@ -134,8 +134,9 @@ void testFreshClusterInit(ConfigManager * serverConf , ResourceMetadataManager *
 	// 1. only one shard of each partition must be assigned to this node and the rest of
 	//    shards must be unassigned.
 	ClusterShardId id;double load;ShardState state;bool isLocal;NodeId nodeId;NodeShardId nodeShardId;
-	metadataManager->getClusterWriteview()->beginClusterShardsIteration();
-	while(metadataManager->getClusterWriteview()->getNextClusterShard(id, load, state, isLocal, nodeId)){
+    ClusterShardIterator cShardItr(metadataManager->getClusterWriteview());
+    cShardItr.beginClusterShardsIteration();
+	while(cShardItr.getNextClusterShard(id, load, state, isLocal, nodeId)){
 		if(id.replicaId == 0){
 			ASSERT(state == SHARDSTATE_READY);
 			ASSERT(isLocal);
@@ -146,8 +147,9 @@ void testFreshClusterInit(ConfigManager * serverConf , ResourceMetadataManager *
 		}
 	}
 	// 2. we must have two node shards in the current node
-	metadataManager->getClusterWriteview()->beginNodeShardsIteration();
-	while(metadataManager->getClusterWriteview()->getNextNodeShard(nodeShardId, isLocal)){
+    NodeShardIterator nShardItr(metadataManager->getClusterWriteview());
+	nShardItr.beginNodeShardsIteration();
+	while(nShardItr.getNextNodeShard(nodeShardId, isLocal)){
 		ASSERT(nodeShardId.coreId == 1); // core id in this test is 1
 		ASSERT(nodeShardId.partitionId > 3); // we have 4 partitions
 		ASSERT(nodeShardId.nodeId == currentNode->getId());
@@ -195,8 +197,9 @@ void testNode1FirstArrival(NodeId currentNodeId, ResourceMetadataManager * metad
 	// 2. we must have no non local cluster shards
 	ClusterShardId id;double load;ShardState state;bool isLocal;
 	NodeId nodeId;NodeShardId nodeShardId;LocalPhysicalShard localPhysicalShard;
-	metadataManager->getClusterWriteview()->beginClusterShardsIteration();
-	while(metadataManager->getClusterWriteview()->getNextClusterShard(id, load, state, isLocal, nodeId)){
+    ClusterShardIterator cShardItr(metadataManager->getClusterWriteview());
+    cShardItr.beginClusterShardsIteration();
+	while(cShardItr.getNextClusterShard(id, load, state, isLocal, nodeId)){
 		if(id.replicaId == 0){
 			ASSERT(state == SHARDSTATE_READY);
 			ASSERT(isLocal);
@@ -206,16 +209,17 @@ void testNode1FirstArrival(NodeId currentNodeId, ResourceMetadataManager * metad
 		}
 	}
 	// and also if we use the local iteration :
-	metadataManager->getClusterWriteview()->beginClusterShardsIteration();
+	cShardItr.beginClusterShardsIteration();
 	unsigned counter = 0;
-	while(metadataManager->getClusterWriteview()->getNextLocalClusterShard(id, load, localPhysicalShard)){
+	while(cShardItr.getNextLocalClusterShard(id, load, localPhysicalShard)){
 		ASSERT(id.replicaId == 0);
 		counter ++;
 	}
 	ASSERT(counter == 4);
 	// 3. we must have 4 node shards, 2 of them local, 2 of them from node
-	metadataManager->getClusterWriteview()->beginNodeShardsIteration();
-	while(metadataManager->getClusterWriteview()->getNextNodeShard(nodeShardId, isLocal)){
+    NodeShardIterator nShardItr(metadataManager->getClusterWriteview());
+	nShardItr.beginNodeShardsIteration();
+	while(nShardItr.getNextNodeShard(nodeShardId, isLocal)){
 		if(nodeShardId.nodeId == currentNodeId){
 			ASSERT(nodeShardId.coreId == 1); // core id in this test is 1
 			ASSERT(nodeShardId.partitionId > 3); // we have 4 partitions
@@ -254,8 +258,9 @@ void testNode1LoadBalancing(NodeId currentNodeId, ResourceMetadataManager * meta
 	// 1. we must have 8 cluster shards, 4 local for on node 2
 	ClusterShardId id;double load;ShardState state;bool isLocal;
 	NodeId nodeId;NodeShardId nodeShardId;LocalPhysicalShard localPhysicalShard;
-	writeview->beginClusterShardsIteration();
-	while(writeview->getNextClusterShard(id, load, state, isLocal, nodeId)){
+	ClusterShardIterator cShardItr(writeview);
+	cShardItr.beginClusterShardsIteration();
+	while(cShardItr.getNextClusterShard(id, load, state, isLocal, nodeId)){
 		if(nodeId == currentNodeId){
 			ASSERT(state == SHARDSTATE_READY);
 			ASSERT(isLocal);
@@ -268,9 +273,9 @@ void testNode1LoadBalancing(NodeId currentNodeId, ResourceMetadataManager * meta
 		}
 	}
 	// and also if we use the local iteration :
-	writeview->beginClusterShardsIteration();
+	cShardItr.beginClusterShardsIteration();
 	unsigned counter = 0;
-	while(writeview->getNextLocalClusterShard(id, load, localPhysicalShard)){
+	while(cShardItr.getNextLocalClusterShard(id, load, localPhysicalShard)){
 		ASSERT(id.replicaId == 0);
 		counter ++;
 	}
@@ -279,8 +284,9 @@ void testNode1LoadBalancing(NodeId currentNodeId, ResourceMetadataManager * meta
 	ASSERT(writeview->localClusterDataShards.size() == 4);
 
 	// 2. we must have 4 node shards, 2 local, 2 on node 2
-	writeview->beginNodeShardsIteration();
-	while(writeview->getNextNodeShard(nodeShardId, isLocal)){
+	NodeShardIterator nShardItr(writeview);
+	nShardItr.beginNodeShardsIteration();
+	while(nShardItr.getNextNodeShard(nodeShardId, isLocal)){
 		if(nodeShardId.nodeId == currentNodeId){
 			ASSERT(isLocal);
 		}else if(nodeShardId.nodeId == 1){
@@ -337,8 +343,9 @@ void validateRestart(ConfigManager * serverConf, ResourceMetadataManager * metad
 	// 1. We must have 4 local cluster shards which are ready and 4 pending shards
 	ClusterShardId id;double load;ShardState state;bool isLocal;
 	NodeId nodeId;NodeShardId nodeShardId;LocalPhysicalShard localPhysicalShard;
-	writeview->beginClusterShardsIteration();
-	while(writeview->getNextClusterShard(id, load, state, isLocal, nodeId)){
+	ClusterShardIterator cShardItr(writeview);
+	cShardItr.beginClusterShardsIteration();
+	while(cShardItr.getNextClusterShard(id, load, state, isLocal, nodeId)){
 
 		if(nodeId == writeview->currentNodeId){
 			// current node
@@ -365,8 +372,9 @@ void validateRestart(ConfigManager * serverConf, ResourceMetadataManager * metad
 	}
 
 	// 2. we must have 2 node shards which are local
-	metadataManager->getClusterWriteview()->beginNodeShardsIteration();
-	while(metadataManager->getClusterWriteview()->getNextNodeShard(nodeShardId, isLocal)){
+	NodeShardIterator nShardItr(metadataManager->getClusterWriteview());
+	nShardItr.beginNodeShardsIteration();
+	while(nShardItr.getNextNodeShard(nodeShardId, isLocal)){
 		if(nodeState[2] == NodeStatus_Ready){
 			if(nodeShardId.nodeId == writeview->currentNodeId){
 				ASSERT(isLocal);
@@ -432,8 +440,9 @@ void testNode1Reclaim(NodeId currentNodeId, ResourceMetadataManager * metadataMa
 	// 2. we must have 4 local cluster shards and 4 on node 2
 	ClusterShardId id;double load;ShardState state;bool isLocal;
 	NodeId nodeId;NodeShardId nodeShardId;LocalPhysicalShard localPhysicalShard;
-	metadataManager->getClusterWriteview()->beginClusterShardsIteration();
-	while(metadataManager->getClusterWriteview()->getNextClusterShard(id, load, state, isLocal, nodeId)){
+	ClusterShardIterator cShardItr(metadataManager->getClusterWriteview());
+	cShardItr.beginClusterShardsIteration();
+	while(cShardItr.getNextClusterShard(id, load, state, isLocal, nodeId)){
 		if(id.replicaId == 0){
 			ASSERT(state == SHARDSTATE_READY);
 			ASSERT(isLocal);
@@ -448,16 +457,17 @@ void testNode1Reclaim(NodeId currentNodeId, ResourceMetadataManager * metadataMa
 		}
 	}
 	// and also if we use the local iteration :
-	metadataManager->getClusterWriteview()->beginClusterShardsIteration();
+	cShardItr.beginClusterShardsIteration();
 	unsigned counter = 0;
-	while(metadataManager->getClusterWriteview()->getNextLocalClusterShard(id, load, localPhysicalShard)){
+	while(cShardItr.getNextLocalClusterShard(id, load, localPhysicalShard)){
 		ASSERT(id.replicaId == 0);
 		counter ++;
 	}
 	ASSERT(counter == 4);
 	// 3. we must have 4 node shards, 2 of them local, 2 of them from node
-	metadataManager->getClusterWriteview()->beginNodeShardsIteration();
-	while(metadataManager->getClusterWriteview()->getNextNodeShard(nodeShardId, isLocal)){
+    NodeShardIterator nShardItr(metadataManager->getClusterWriteview());
+    nShardItr.beginNodeShardsIteration();
+	while(nShardItr.getNextNodeShard(nodeShardId, isLocal)){
 		if(nodeShardId.nodeId == currentNodeId){
 			ASSERT(nodeShardId.coreId == 1); // core id in this test is 1
 			ASSERT(nodeShardId.partitionId > 3); // we have 4 partitions
@@ -497,8 +507,9 @@ void testNode2LoadBalancing(NodeId currentNodeId, ResourceMetadataManager * meta
 	// 1. we must have 12 cluster shards, 4 local, 4 on node 2, 4 on node 3
 	ClusterShardId id;double load;ShardState state;bool isLocal;
 	NodeId nodeId;NodeShardId nodeShardId;LocalPhysicalShard localPhysicalShard;
-	writeview->beginClusterShardsIteration();
-	while(writeview->getNextClusterShard(id, load, state, isLocal, nodeId)){
+	ClusterShardIterator cShardItr(writeview);
+	cShardItr.beginClusterShardsIteration();
+	while(cShardItr.getNextClusterShard(id, load, state, isLocal, nodeId)){
 		if(nodeId == currentNodeId){
 			ASSERT(state == SHARDSTATE_READY);
 			ASSERT(isLocal);
@@ -513,9 +524,9 @@ void testNode2LoadBalancing(NodeId currentNodeId, ResourceMetadataManager * meta
 		}
 	}
 	// and also if we use the local iteration :
-	writeview->beginClusterShardsIteration();
+	cShardItr.beginClusterShardsIteration();
 	unsigned counter = 0;
-	while(writeview->getNextLocalClusterShard(id, load, localPhysicalShard)){
+	while(cShardItr.getNextLocalClusterShard(id, load, localPhysicalShard)){
 		ASSERT(id.replicaId == 0);
 		counter ++;
 	}
@@ -524,8 +535,9 @@ void testNode2LoadBalancing(NodeId currentNodeId, ResourceMetadataManager * meta
 	ASSERT(writeview->localClusterDataShards.size() == 4);
 
 	// 2. we must have 4 node shards, 2 local, 2 on node 2
-	writeview->beginNodeShardsIteration();
-	while(writeview->getNextNodeShard(nodeShardId, isLocal)){
+    NodeShardIterator nShardItr(writeview);
+	nShardItr.beginNodeShardsIteration();
+	while(nShardItr.getNextNodeShard(nodeShardId, isLocal)){
 		if(nodeShardId.nodeId == currentNodeId){
 			ASSERT(isLocal);
 		}else if(nodeShardId.nodeId == 1){
@@ -561,8 +573,9 @@ void testNode1Failure(ResourceMetadataManager * metadataManager){
 	// 2. we must have 4 cluster shards on local node and 4 on node Id 3
 	ClusterShardId id;double load;ShardState state;bool isLocal;
 	NodeId nodeId;NodeShardId nodeShardId;LocalPhysicalShard localPhysicalShard;
-	writeview->beginClusterShardsIteration();
-	while(writeview->getNextClusterShard(id, load, state, isLocal, nodeId)){
+	ClusterShardIterator cShardItr(writeview);
+	cShardItr.beginClusterShardsIteration();
+	while(cShardItr.getNextClusterShard(id, load, state, isLocal, nodeId)){
 		if(state == SHARDSTATE_UNASSIGNED){
 			continue;
 		}
@@ -584,8 +597,9 @@ void testNode1Failure(ResourceMetadataManager * metadataManager){
 	}
 
 	// 3. we must have only two node shards that belong to current node
-	writeview->beginNodeShardsIteration();
-	while(writeview->getNextNodeShard(nodeShardId, isLocal)){
+	NodeShardIterator nShardItr(writeview);
+	nShardItr.beginNodeShardsIteration();
+	while(nShardItr.getNextNodeShard(nodeShardId, isLocal)){
 		ASSERT(nodeShardId.nodeId == writeview->currentNodeId);
 		ASSERT(isLocal);
 	}

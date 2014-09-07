@@ -178,7 +178,7 @@ void SyncManager::startDiscovery() {
 		localNodesCopyMutex.unlock();
 		for (unsigned i = 0 ; i < localCopy.size(); ++i) {
 			unsigned destinationNodeId = localCopy[i].getId();
-			if ( destinationNodeId == currentNodeId || destinationNodeId == masterNodeId) {
+			if ( destinationNodeId >= currentNodeId || destinationNodeId == masterNodeId) {
 				continue;
 			}
 			//Logger::console("Connecting to node %d, %s, %d", destinationNodeId, localCopy[i].getIpAddress().c_str(),

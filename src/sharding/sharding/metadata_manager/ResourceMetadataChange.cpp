@@ -12,6 +12,24 @@ using namespace std;
 namespace srch2 {
 namespace httpwrapper {
 
+string MetadataChange::toNameString() const{
+	switch (getType()) {
+		case ShardingChangeTypeNodeAdd:
+			return "NodeAdd";
+		case ShardingChangeTypeShardAssign:
+			return "ShardAssign";
+		case ShardingChangeTypeShardMove:
+			return "ShardMove";
+		case ShardingChangeTypeLoadChange:
+			return "LoadChange";
+		default:
+			ASSERT(false);
+			break;
+	}
+	return "";
+}
+
+
 NodeAddChange::NodeAddChange(NodeId newNodeId, const vector<ClusterShardId> & localClusterShardIds,
         const vector<NodeShardId> & localNodeShardIds){
 
@@ -41,8 +59,9 @@ bool NodeAddChange::doChange(Cluster_Writeview * metadata){
     NodeId nodeId;
     LocalPhysicalShard physicalShard;
     double load;
-    metadata->beginClusterShardsIteration();
-    while(metadata->getNextClusterShard(id, load, state, isLocal, nodeId)){
+    ClusterShardIterator cShardItr(metadata);
+    cShardItr.beginClusterShardsIteration();
+    while(cShardItr.getNextClusterShard(id, load, state, isLocal, nodeId)){
         if(state != SHARDSTATE_READY){
             if(std::find(localClusterShardIds.begin(), localClusterShardIds.end(), id) !=
                     localClusterShardIds.end()){

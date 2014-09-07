@@ -50,12 +50,10 @@ void ClusterOperationStateMachine::handle(Notification * notification){
 }
 
 void ClusterOperationStateMachine::print() const{
-	cout << "State machine : ";
-	if(activeOperations.size() == 0){
-		cout << "No active operation." << endl;
-		return;
-	}else{
-		cout << endl;
+	if(activeOperations.size() > 0){
+		cout << "**************************************************************************************************" << endl;
+		cout << "State machine : " << endl;
+		cout << "**************************************************************************************************" << endl;
 	}
 	vector<string> operationHeaders;
 	operationHeaders.push_back("Name");
@@ -83,6 +81,7 @@ bool ClusterOperationStateMachine::addActiveOperation(OperationState * operation
 		return false; // operation id is not accepted because it already exists.
 	}
 	activeOperations[operation->getOperationId()] = operation;
+
 	return true;
 }
 
@@ -93,6 +92,7 @@ void ClusterOperationStateMachine::startOperation(OperationState * operation){
 	}
 	OperationState * nextState = operation->entry();
 	stateTransit(operation, nextState);
+
 }
 
 void ClusterOperationStateMachine::stateTransit(OperationState * operation, OperationState * nextState){

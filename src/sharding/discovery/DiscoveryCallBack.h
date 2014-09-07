@@ -58,7 +58,16 @@ public:
 				ShardManager::getWriteview()->setNodeState(node.getId(), ShardingNodeStateArrived);
 
 				syncManger.localNodesCopyMutex.lock();
-				syncManger.localNodesCopy.push_back(node);
+                bool isPresent = false;
+                for(unsigned i = 0 ; i < syncManger.localNodesCopy.size(); ++i){
+                    if(syncManger.localNodesCopy.at(i).getId() == node.getId()){
+                        isPresent = true;
+                        break;
+                    }
+                }
+                if(! isPresent){
+                    syncManger.localNodesCopy.push_back(node);
+                }
 				syncManger.localNodesCopyMutex.unlock();
 
 				body += nodeSerializedSize;

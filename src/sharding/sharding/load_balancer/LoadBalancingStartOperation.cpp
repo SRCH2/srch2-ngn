@@ -58,6 +58,7 @@ OperationState * LoadBalancingStartOperation::entry(){
 	vector<NodeId> allNodes;
 	writeview->getArrivedNodes(allNodes, true);
 	if(allNodes.size() == 1){
+		ASSERT(allNodes.at(0) == ShardManager::getCurrentNodeId());
 		return LoadBalancingStartOperation::finalizeLoadBalancing();
 	}
 	for(vector<NodeId>::iterator nodeItr = allNodes.begin(); nodeItr != allNodes.end(); ++nodeItr){
@@ -81,10 +82,50 @@ OperationState * LoadBalancingStartOperation::handle(LoadBalancingReport * n){
 	nodeReportArrived[n->getSrc().nodeId] = true;
 	nodeLoads[n->getSrc().nodeId] = newLoad;
 
+	update();
+	return balance();
+}
+OperationState * LoadBalancingStartOperation::handle(NodeFailureNotification * n){
+
+    update();
+
+	return balance();
+}
+
+OperationState * LoadBalancingStartOperation::handle(Notification * n){
+	if(n == NULL){
+		ASSERT(false);
+		return LoadBalancingStartOperation::finalizeLoadBalancing();
+	}
+	switch(n->messageType()){
+	case ShardingNodeFailureNotificationMessageType:
+		return handle((NodeFailureNotification *)n);
+	case ShardingLoadBalancingReportMessageType:
+		return handle((LoadBalancingReport *)n);
+	default:
+		// ignore;
+		return this;
+	}
+}
+
+OperationState * LoadBalancingStartOperation::finalizeLoadBalancing(){
+	ShardManager::getShardManager()->resetLoadBalancing();
+	return NULL;
+}
+
+OperationState * LoadBalancingStartOperation::balance(){
+	if(nodeReportArrived.size() < 2){
+		// only us ?
+		return LoadBalancingStartOperation::finalizeLoadBalancing();
+	}
 	// do we have all load reports ?
 	if(haveAllReportsArrived()){
 		Cluster_Writeview * writeview = ShardManager::getWriteview();
 		if(! isLightLoadedNode(ShardManager::getCurrentNodeId())){
+			OperationState * assignCopy = tryShardAssginmentAndShardCopy(true);// assignment only
+			if(assignCopy != NULL){
+				return assignCopy;
+			}
 			return LoadBalancingStartOperation::finalizeLoadBalancing();
 		}
 
@@ -106,7 +147,8 @@ OperationState * LoadBalancingStartOperation::handle(LoadBalancingReport * n){
 	}
 	return this;
 }
-OperationState * LoadBalancingStartOperation::handle(NodeFailureNotification * n){
+
+void LoadBalancingStartOperation::update(){
 	Cluster_Writeview * writeview = ShardManager::getWriteview();
 	for(map<NodeId, std::pair<ShardingNodeState, Node *> >::iterator nodeItr = writeview->nodes.begin();
 			nodeItr != writeview->nodes.end(); ++nodeItr){
@@ -131,32 +173,6 @@ OperationState * LoadBalancingStartOperation::handle(NodeFailureNotification * n
 		}
 
 	}
-	if(nodeReportArrived.size() < 2){
-		// only us ?
-		return LoadBalancingStartOperation::finalizeLoadBalancing();
-	}
-	return this;
-}
-
-OperationState * LoadBalancingStartOperation::handle(Notification * n){
-	if(n == NULL){
-		ASSERT(false);
-		return LoadBalancingStartOperation::finalizeLoadBalancing();
-	}
-	switch(n->messageType()){
-	case ShardingNodeFailureNotificationMessageType:
-		return handle((NodeFailureNotification *)n);
-	case ShardingLoadBalancingReportMessageType:
-		return handle((LoadBalancingReport *)n);
-	default:
-		// ignore;
-		return this;
-	}
-}
-
-OperationState * LoadBalancingStartOperation::finalizeLoadBalancing(){
-	ShardManager::getShardManager()->resetLoadBalancing();
-	return NULL;
 }
 
 string LoadBalancingStartOperation::getOperationName() const {
@@ -215,7 +231,7 @@ OperationState * LoadBalancingStartOperation::tryShardMove(){
 
 }
 
-OperationState * LoadBalancingStartOperation::tryShardAssginmentAndShardCopy(){
+OperationState * LoadBalancingStartOperation::tryShardAssginmentAndShardCopy(bool assignOnly){
 	Cluster_Writeview * writeview = ShardManager::getWriteview();
 	/*
 	 * 1. UNASSIGNED shards
@@ -249,6 +265,9 @@ OperationState * LoadBalancingStartOperation::tryShardAssginmentAndShardCopy(){
 		unsigned assignOptionIndex = rand() % totallyUnassignedPartitions.size();
 		deleteAssignmentCandidates(assignCandidates);
 		return assignShard(totallyUnassignedPartitions.at(assignOptionIndex)); // we first assign the primary shard
+	}
+	if(assignOnly){
+		return NULL;
 	}
 
 	// all partitions at least have one alive replica
@@ -308,9 +327,9 @@ void LoadBalancingStartOperation::prepareAssignmentCandidates(vector<AssignCandi
 	LocalPhysicalShard physicalShard;
 	double load;
 
-
-	writeview->beginClusterShardsIteration();
-	while(writeview->getNextClusterShard(id, load, state, isLocal, nodeId)){
+	ClusterShardIterator cShardItr(writeview);
+	cShardItr.beginClusterShardsIteration();
+	while(cShardItr.getNextClusterShard(id, load, state, isLocal, nodeId)){
 		if(state != SHARDSTATE_UNASSIGNED){
 			continue;
 		}
@@ -330,8 +349,9 @@ void LoadBalancingStartOperation::prepareAssignmentCandidates(vector<AssignCandi
 	}
 
 	// now add ready replicas
-	writeview->beginClusterShardsIteration();
-	while(writeview->getNextClusterShard(id, load, state, isLocal, nodeId)){
+    ClusterShardIterator cShardItr2(writeview);
+    cShardItr2.beginClusterShardsIteration();
+	while(cShardItr2.getNextClusterShard(id, load, state, isLocal, nodeId)){
 		if(state != SHARDSTATE_READY){
 			continue;
 		}
@@ -378,8 +398,9 @@ void LoadBalancingStartOperation::prepareMoveCandidates(vector<std::pair<NodeId,
 	map<ClusterPID, unsigned> partitionNumberOfReadyReplicas;
 	set<ClusterPID> partitionHasReplicaOnCurrentNode;
 
-	writeview->beginClusterShardsIteration();
-	while(writeview->getNextClusterShard(id, load, state, isLocal, nodeId)){
+    ClusterShardIterator cShardItr(writeview);
+    cShardItr.beginClusterShardsIteration();
+	while(cShardItr.getNextClusterShard(id, load, state, isLocal, nodeId)){
 		if(state != SHARDSTATE_READY){
 			continue;
 		}

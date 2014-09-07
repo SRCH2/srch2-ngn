@@ -41,6 +41,9 @@ public:
 	OperationState * handle(Notification * n);
 	static OperationState * finalizeLoadBalancing();
 
+	OperationState * balance();
+	void update();
+
 	string getOperationName() const ;
 	string getOperationStatus() const ;
 
@@ -52,7 +55,7 @@ private:
 
 	OperationState * tryShardMove();
 
-	OperationState * tryShardAssginmentAndShardCopy();
+	OperationState * tryShardAssginmentAndShardCopy(bool assignOnly = false);
 
 
 	/*

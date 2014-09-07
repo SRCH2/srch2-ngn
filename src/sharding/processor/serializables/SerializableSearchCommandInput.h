@@ -30,7 +30,7 @@ public:
 
         if(logicalPlan == NULL){
         	ASSERT(false);
-            void * buffer = aloc->allocateMessageReturnBody(sizeof(bool));
+            void * buffer = aloc->allocateByteArray(sizeof(bool));
             void * bufferWritePointer = buffer;
             bufferWritePointer = srch2::util::serializeFixedTypes(false, bufferWritePointer); // NULL
             return buffer;
@@ -38,7 +38,7 @@ public:
         //first calculate the number of bytes needed for serializing logical plan
         unsigned numberOfBytes = getNumberOfBytes();
         // allocate the space
-        void * buffer = aloc->allocateMessageReturnBody(numberOfBytes);
+        void * buffer = aloc->allocateByteArray(numberOfBytes);
         // serialize logical plan into buffer
         void * bufferWritePointer = buffer;
         bufferWritePointer = srch2::util::serializeFixedTypes(true, bufferWritePointer); // not NULL

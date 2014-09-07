@@ -1,12 +1,14 @@
 #include "ShardMoveOperation.h"
 #include "core/util/SerializationHelper.h"
 #include "src/core/util/Assert.h"
+#include "src/core/util/Logger.h"
 #include "sharding/configuration/ShardingConstants.h"
 #include "../metadata_manager/ResourceLocks.h"
 #include "../metadata_manager/Cluster_Writeview.h"
 #include "../ShardManager.h"
 #include "LoadBalancingStartOperation.h"
 #include "server/Srch2Server.h"
+
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -17,11 +19,12 @@ namespace httpwrapper {
 
 ShardMoveOperation::ShardMoveOperation(const unsigned operationId, const NodeId & srcNodeId, const ClusterShardId & moveShardId):
 	OperationState(operationId),shardId(moveShardId){
-	this->srcAddress.nodeId = srcNodeId;
+	this->srcAddress = NodeOperationId(srcNodeId);
 	this->lockOperation = NULL;
 	this->lockOperationResult = new SerialLockResultStatus();
 	this->commitOperation = NULL;
 	this->releaseOperation = NULL;
+	this->connectedFlag = false;
 }
 
 OperationState * ShardMoveOperation::entry(){
@@ -49,6 +52,7 @@ OperationState * ShardMoveOperation::handle(MoveToMeNotification::ACK * ack){
 		return this;// ignore.
 	}
 	srcAddress = ack->getSrc();
+	connectedFlag = true;
 	return acquireLocks();
 }
 
@@ -158,9 +162,14 @@ OperationState * ShardMoveOperation::handle(CommitNotification::ACK * ack){
 
 
 OperationState * ShardMoveOperation::handle(NodeFailureNotification * nodeFailure){
-	vector<NodeId> arrivedNodes;
-	ShardManager::getWriteview()->getArrivedNodes(arrivedNodes);
-	if(std::find(arrivedNodes.begin(), arrivedNodes.end(), srcAddress.nodeId) == arrivedNodes.end()){ // src node died : abort
+	if(nodeFailure == NULL){
+		ASSERT(false);
+		return this;
+	}
+	if(nodeFailure->getFailedNodeID() == srcAddress.nodeId){
+		if(connectedFlag == false){ // not replied from src yet, nothing has started
+			return LoadBalancingStartOperation::finalizeLoadBalancing();
+		}
 		if(lockOperation != NULL){
 			delete lockOperation;
 			lockOperation = NULL;
@@ -178,10 +187,10 @@ OperationState * ShardMoveOperation::handle(NodeFailureNotification * nodeFailur
 			// just continue ....
 		}
 	}
+
 	// now pass the notification to all operations
 	if(commitOperation != NULL){
 		OperationState::stateTransit(commitOperation, nodeFailure);
-		OperationState * nextState = startOperation(commitOperation->handle(nodeFailure));
 		if(commitOperation == NULL){
 			return release();
 		}
@@ -279,13 +288,9 @@ OperationState * ShardMoveOperation::abort(){
 }
 
 OperationState * ShardMoveOperation::finish(){
-	vector<NodeId> arrivedNodes;
-	ShardManager::getWriteview()->getArrivedNodes(arrivedNodes);
-	if(std::find(arrivedNodes.begin(), arrivedNodes.end(), srcAddress.nodeId) != arrivedNodes.end()){ // src node alive
-		MoveToMeNotification::FINISH * finishNotif = new MoveToMeNotification::FINISH();
-		this->send(finishNotif, srcAddress);
-		delete finishNotif;
-	}
+	MoveToMeNotification::FINISH * finishNotif = new MoveToMeNotification::FINISH();
+	this->send(finishNotif, srcAddress);
+	delete finishNotif;
 	return LoadBalancingStartOperation::finalizeLoadBalancing();
 }
 
@@ -375,15 +380,18 @@ OperationState * ShardMoveSrcOperation::handle(LockingNotification::ACK * ack){
 }
 
 OperationState * ShardMoveSrcOperation::handle(NodeFailureNotification * nodeFailure){
-	vector<NodeId> arrivedNodes;
-	ShardManager::getWriteview()->getArrivedNodes(arrivedNodes);
-	if(std::find(arrivedNodes.begin(), arrivedNodes.end(), destination.nodeId) == arrivedNodes.end()){ // dest node died : abort
+	if(nodeFailure == NULL){
+		ASSERT(false);
+		return this;
+	}
+	if(nodeFailure->getFailedNodeID() == destination.nodeId){
 		if(compensateOperation == NULL && releaseOperation == NULL){
 			return compensate();
 		}
 		// compensate cannot be non-NULL because dest node cannot die two times
 		if(releaseOperation != NULL){
 			// just continue with release ... NOTE : we lost the data
+			Logger::error("Data loss because of node failure.");
 		}
 	}
 	if(releaseOperation != NULL){

@@ -245,6 +245,17 @@ PendingLockRequest::PendingLockRequest(const PendingLockRequest & copy){
 	this->metadataVersionId = copy.metadataVersionId;
 }
 
+PendingLockRequest & PendingLockRequest::operator=(const PendingLockRequest & rhs){
+	if(this != &rhs){
+		this->request = rhs.request;
+		this->ackType = rhs.ackType;
+		this->requesterAddress = rhs.requesterAddress;
+		this->priority = rhs.priority;
+		this->metadataVersionId = rhs.metadataVersionId;
+	}
+	return *this;
+}
+
 bool PendingLockRequest::operator<(const PendingLockRequest & right) const{
 	return (this->priority < right.priority) ||
 			((this->priority == right.priority)  && (this->requesterAddress > right.requesterAddress));
@@ -313,6 +324,7 @@ bool PendingLockRequestBuffer::pop(){
 	}
 	std::pop_heap(pendingRequests.begin(), pendingRequests.end());
 	pendingRequests.pop_back();
+	print();
 	return true;
 }
 
@@ -327,12 +339,14 @@ void PendingLockRequestBuffer::update(const PendingLockRequest & pendingRequest)
 				pendingRequests.at(i) = pendingRequest;
 				std::make_heap(pendingRequests.begin(), pendingRequests.end());
 			}
+			print();
 			return;
 		}
 	}
 	// we couldn't find anything to update;
 	// so just insert.
 	push(pendingRequest);
+	print();
 }
 
 void PendingLockRequestBuffer::applyNodeFailure(const unsigned failedNodeId){
@@ -354,9 +368,12 @@ void PendingLockRequestBuffer::applyNodeFailure(const unsigned failedNodeId){
 
 void PendingLockRequestBuffer::print() const{
 	if(pendingRequests.size() == 0){
-		cout << "Pending lock requests : empty." << endl;
+//		cout << "Pending lock requests : empty." << endl;
 		return;
 	}
+	cout << "**************************************************************************************************" << endl;
+	cout << "Pending requests : " << endl;
+	cout << "**************************************************************************************************" << endl;
 	vector<string> pendingHeaders;
 	pendingHeaders.push_back("Info");
 	vector<string> pendingLables;
@@ -517,7 +534,7 @@ void LockHoldersRepository::applyNodeFailure(const unsigned failedNodeId){
 
 void LockHoldersRepository::printLockHolders(const map<ClusterShardId, vector<NodeOperationId> > & holders, const string & tableName) const{
 	if(holders.size() == 0){
-		cout << tableName << " : " << "empty." << endl;
+//		cout << tableName << " : " << "empty." << endl;
 		return;
 	}
 	vector<string> holderHeaders;
@@ -542,6 +559,13 @@ void LockHoldersRepository::printLockHolders(const map<ClusterShardId, vector<No
 }
 
 void LockHoldersRepository::print() const{
+	if(S_Holders.size() > 0 ||
+			U_Holders.size() > 0 ||
+			X_Holders.size() > 0){
+		cout << "**************************************************************************************************" << endl;
+		cout << "Lock repository : " << endl;
+		cout << "**************************************************************************************************" << endl;
+	}
 	printLockHolders(S_Holders, "Resource S Lock% Holders");
 	printLockHolders(U_Holders, "Resource U Lock% Holders");
 	printLockHolders(X_Holders, "Resource X Lock% Holders");
@@ -614,12 +638,10 @@ void ResourceLockManager::resolve(NewNodeLockNotification * notification){
 		ASSERT(false);
 		return;
 	}
-
-
 	Cluster_Writeview * writeview = ShardManager::getWriteview();
+
 	for(vector<NodeId>::iterator nodeItr = allNodesUpToNewNode.begin();
 			nodeItr != allNodesUpToNewNode.end(); ++nodeItr){
-		ASSERT(*nodeItr < notification->getSrc().nodeId);
 		if(*nodeItr == ShardManager::getCurrentNodeId()){
 			continue;
 		}
@@ -628,7 +650,7 @@ void ResourceLockManager::resolve(NewNodeLockNotification * notification){
 			//add it to the list of nodes in writeview as NotArrived node
 			writeview->setNodeState(*nodeItr, ShardingNodeStateNotArrived);
 		}
-		writeview->printNodes();
+//		writeview->printNodes();
 		// reserve place in waitingList
 		PendingLockRequest tempReq(NodeOperationId(*nodeItr),
 						ShardingNewNodeLockACKMessageType, LOCK_REQUEST_PRIORITY_NODE_ARRIVAL, NULL);
@@ -640,7 +662,6 @@ void ResourceLockManager::resolve(NewNodeLockNotification * notification){
 				ShardingNewNodeLockACKMessageType, LOCK_REQUEST_PRIORITY_NODE_ARRIVAL, notification->getLockRequest());
 	pendingLockRequestBuffer.update(tempReq);
 
-	pendingLockRequestBuffer.print();
 	// try to get the lock for the minimum nodeId of this waiting
 	// list if it's prepared (it has lock requests and it's not already on the lock)
 	tryPendingRequest();
@@ -725,7 +746,7 @@ LockHoldersRepository * ResourceLockManager::getLockHolderRepository() const{
 // this functions either executes all requests in this batch or non of them
 // if the request is not blocking, the returns type tells us whether the lock was granted or not.
 bool ResourceLockManager::resolveBatch(const NodeOperationId & requesterAddress, const unsigned priority,
-		ResourceLockRequest * lockRequest, ShardingMessageType ackType){
+		ResourceLockRequest * lockRequest, const ShardingMessageType & ackType){
 
 	// 1. check to see whether we should GRANT or REJECT the lock
 	//    or push it to the waiting list.
@@ -757,7 +778,7 @@ bool ResourceLockManager::resolveBatch(const NodeOperationId & requesterAddress,
 
 	// 2. we can grant, apply the locks.
 	executeBatch(lockRequest->requestBatch, needCommit);
-
+//	lockHolders->print();
 	// 3. send back the ack or save it in RV release pending requests .
 	if(needCommit){
 		PendingLockRequest rvRelease(requesterAddress, ackType, priority, lockRequest);
@@ -800,10 +821,10 @@ void ResourceLockManager::getLockedPartitions(vector<ClusterPID> & lockedPartiti
 
 
 void ResourceLockManager::print() {
+
 	lockHolders->print();
 
 	pendingLockRequestBuffer.print();
-
 	printRVReleasePendingRequests();
 }
 
@@ -811,9 +832,12 @@ void ResourceLockManager::printRVReleasePendingRequests(){
 
 	boost::unique_lock<boost::mutex> rvReleaseLock(readviewReleaseMutex);
 	if(pendingRVReleaseRequests.size() == 0){
-		cout << "Pending RV release lock requests : empty." << endl;
+//		cout << "Pending RV release lock requests : empty." << endl;
 		return;
 	}
+	cout << "**************************************************************************************************" << endl;
+	cout << "Pending requests : " << endl;
+	cout << "**************************************************************************************************" << endl;
 
 	vector<string> pendingHeaders;
 	pendingHeaders.push_back("Info");
@@ -848,7 +872,6 @@ void ResourceLockManager::executeBatch(const vector<SingleResourceLockRequest *>
 	// all requests can be granted.
 	for(unsigned i = 0 ; i < requestBatch.size(); ++i){
 		executeRequest(*(requestBatch.at(i)));
-		lockHolders->print();
 	}
 
 	needCommit = false;

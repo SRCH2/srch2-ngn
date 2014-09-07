@@ -18,6 +18,7 @@ struct NodeOperationId{
 	unsigned operationId;
 	NodeOperationId();
 	NodeOperationId(const NodeOperationId & id);
+	NodeOperationId & operator=(const NodeOperationId & rhs);
 	NodeOperationId(NodeId nodeId, unsigned operationId = 0);
 	void * serialize(void * buffer) const;
 	unsigned getNumberOfBytes() const;
@@ -90,6 +91,17 @@ public:
 		NodeOperationId temp = srcOperationId;
 		srcOperationId = destOperationId;
 		destOperationId = temp;
+	}
+
+	string getDescription(){
+		stringstream ss;
+		ss << "(" << srcOperationId.toString() << " => " << destOperationId.toString();
+		if(bounced){
+			ss << ", bounced)";
+		}else{
+			ss << ")";
+		}
+		return ss.str();
 	}
 
 private:

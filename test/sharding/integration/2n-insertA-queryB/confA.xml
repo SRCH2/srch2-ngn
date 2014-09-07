@@ -27,10 +27,10 @@
     <srch2Home>/home/jamshid/workspace-srch2-v4/srch2-ngn/test/sharding/integration</srch2Home>
  
     <ping>
-        <ping-interval>20000</ping-interval>
+        <ping-interval>2</ping-interval>
 
-        <ping-timeout>80000</ping-timeout>
-        <retry-count>300</retry-count>
+        <ping-timeout>8</ping-timeout>
+        <retry-count>3</retry-count>
     </ping>    
     <transport>
         <port>3095</port>
@@ -343,7 +343,7 @@
                  
                 Path to Access Log File
             -->
-            <accessLogFile>./data/exact_a1/log.txt</accessLogFile>
+            <accessLogFile>./logs/log.txt</accessLogFile>
         </updateLog>
      
     </updatehandler>
