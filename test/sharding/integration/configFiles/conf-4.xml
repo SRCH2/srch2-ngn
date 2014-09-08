@@ -26,11 +26,11 @@
     <cluster-name>SRCH2_Cluster</cluster-name>
     <srch2Home>./</srch2Home>
 
-    <discovery>
+    <ping>
         <ping-interval>2</ping-interval>
         <ping-timeout>8</ping-timeout>
         <retry-count>3</retry-count>
-    </discovery> 
+    </ping> 
 
     <transport>
         <port>4004</port>
