@@ -49,6 +49,7 @@ struct Record::Impl
     std::string inMemoryRecordString;
     char * inMemoryStoredRecord;
     unsigned inMemoryStoredRecordLen;
+    std::vector<string> roleIds;
 
     //Point : The location lat,lang value of the geo object
     Point point;
@@ -162,6 +163,20 @@ bool Record::setRefiningAttributeValue(const unsigned attributeId,
 
     impl->refiningAttributeValues[attributeId] = attributeValue;
     return true;
+}
+
+void Record::addRoleId(const std::string &roleId){
+	impl->roleIds.push_back(roleId);
+}
+
+std::vector<std::string>* Record::getRoleIds() const{
+	return &(this->impl->roleIds);
+}
+
+bool Record::hasRoleIds() const{
+	if(this->impl->roleIds.size() == 0)
+		return false;
+	return true;
 }
 
 
@@ -312,6 +327,7 @@ void Record::clear()
     vector<string> emptyVector;
     impl->searchableAttributeValues.assign(impl->schema->getNumberOfSearchableAttributes(),emptyVector);
     impl->refiningAttributeValues.assign(impl->schema->getNumberOfRefiningAttributes(), "");
+    impl->roleIds.clear();
     impl->boost = 1;
     impl->primaryKey = "";
     impl->inMemoryRecordString = "";

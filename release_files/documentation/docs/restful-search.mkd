@@ -360,10 +360,10 @@ This value is "true", "false" or "only", indicating whether we want to enable fa
 ```
  facet=true
 ```
-Setting fact to "only" will make the engine only return facet results. This option helps the user when he only needs facet results and wants to avoid network communication overhead of sending back the results.
+Setting facet to "only" will make the engine only return facet results. This option helps the user when he only needs facet results and wants to avoid network communication overhead of sending back the results.
 
 Please note: facet must also be enabled from the configuration file by setting the
- ["facetEnabled"](configuration.mkd#113-enable-facet-optional) tag to true.
+ ["facetEnabled"](configuration.mkd#114-enable-facet-optional) tag to true.
 
 ### 7.2. Facet by Category 
 
@@ -378,7 +378,7 @@ This query specifies <i>"facet=true"</i> to turn on faceting. The parameters <i>
 ### 7.2.2 f.<i>category</i>.rows 
 This is the maximum number of categories with maximal frequencies to be returned. All categories are returned by default. Example: adding the following parameter to the query will tell the engine to return the top 10 most popular genres.
 ```
- f.year.rows=10
+ f.genre.rows=10
 ```
 Note the different query parameter name of <i>f</i> instead of <i>field</i> for backward compatibility to Solr.
 
@@ -558,3 +558,10 @@ For example, the following is a sample response from two cores:
     }
 
 ```
+## 15. Access Control
+
+When an [attribute based access control](../configuration/#113-attribute-access-control-optional) or [record based access control]()) is enabled in the config file, the role-id can be specified using <code>roleId</code> parameter. For example.
+```
+curl "http://localhost:8087/search?q=project_name:food&roleId=spiderman
+```
+If <code>roleId=spiderman</code> has access to the field <code>project_name</code>, then the engine will search in the field <code>project_name</code>; otherwise no result will be returned.

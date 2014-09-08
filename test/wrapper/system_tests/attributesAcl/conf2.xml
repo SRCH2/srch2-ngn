@@ -1,0 +1,166 @@
+<!--
+    Configuration file for SRCH2 search server. 
+
+    For more information about how to use this configuration file, please
+    visit http://www.srch2.com/downloads.html and select the correct
+    documentation version.
+
+    Please email contact@srch2.com if you have questions.
+-->
+ 
+<config>
+    <srch2Home>./</srch2Home>
+        <!-- Make sure to specify the home of your SRCH2 installation.  Example: 
+	  <srch2Home>/home/joe/srch2</srch2Home>
+        -->
+ 
+    <listeningHostname>0.0.0.0</listeningHostname>
+    <listeningPort>8087</listeningPort>
+ 
+    <maxSearchThreads>8</maxSearchThreads>
+    
+    <dataDir>./data/acl/indexes2</dataDir>
+     
+    <dataSourceType>1</dataSourceType>
+    
+    <dataFile>./attributesAcl/worldbank/world_bank.json</dataFile>
+
+    <!-- 
+        Mongo DB settings
+        Required if dataSourceType = 2
+    -->
+    <!--
+    <dataSourceType>2</dataSourceType>
+    <mongodb>
+        <host>localhost</host>
+        <port>27017</port>
+        <db>demo</db>
+        <collection>movies</collection>
+        <listenerWaitTime>3</listenerWaitTime>
+    </mongodb>
+    -->     
+         
+    <indexConfig>
+         
+        <indexType>0</indexType>
+         
+        <supportSwapInEditDistance>true</supportSwapInEditDistance>
+
+       <!--  <fieldBoost>title^12 tags^16</fieldBoost> -->
+        <fieldBoost></fieldBoost>
+
+        <recordBoostField></recordBoostField>
+
+        <defaultQueryTermBoost>1</defaultQueryTermBoost>
+
+	<enablePositionIndex>1</enablePositionIndex> 
+    <enableCharOffsetIndex>1</enableCharOffsetIndex>
+    
+    </indexConfig>
+  
+    <KeywordPopularityThreshold>10000</KeywordPopularityThreshold>
+    <getAllResultsMaxResultsThreshold>2000</getAllResultsMaxResultsThreshold>
+    <getAllResultsKAlternative>500</getAllResultsKAlternative>
+ 
+    <query>
+        <rankingalgorithm>
+            <recordScoreExpression>(idf_score*(log(doc_boost+1)^1.5))/(idf_score+log(doc_boost+1))</recordScoreExpression>
+        </rankingalgorithm>
+ 
+        <fuzzyMatchPenalty>0.75</fuzzyMatchPenalty>
+
+	<queryTermSimilarityThreshold>0.8</queryTermSimilarityThreshold>
+         
+        <prefixMatchPenalty>0.85</prefixMatchPenalty>
+ 
+        <cacheSize>65536000</cacheSize>
+
+        <rows>10</rows>
+
+        <fieldBasedSearch>0</fieldBasedSearch>
+         
+        <searcherType>0</searcherType>
+         
+        <queryTermFuzzyType>1</queryTermFuzzyType>
+         
+        <queryTermPrefixType>0</queryTermPrefixType>
+ 
+        <queryResponseWriter>
+
+            <responseFormat>1</responseFormat>
+
+        </queryResponseWriter>
+
+        <highlighter>
+            <snippetSize>250</snippetSize>
+            <fuzzyTagPre value = '<b>' ></fuzzyTagPre>
+            <fuzzyTagPost value = '</b>'></fuzzyTagPost>
+            <exactTagPre value = '<b>' ></exactTagPre>
+            <exactTagPost value = '</b>'></exactTagPost>
+        </highlighter>
+
+    </query>
+  
+    <updatehandler>
+
+        <maxDocs>15000000</maxDocs>
+ 
+        <maxMemory>10000000</maxMemory>
+        
+        <mergePolicy>
+
+          <mergeEveryNSeconds>10</mergeEveryNSeconds>
+
+          <mergeEveryMWrites>10</mergeEveryMWrites>
+
+        </mergePolicy>
+         
+         
+        <updateLog>
+
+            <logLevel>3</logLevel>
+                         
+            <accessLogFile>./data/acl/log2.txt</accessLogFile>
+
+        </updateLog>
+     
+    </updatehandler>
+
+    <schema name="SRCH2" version="3">
+       <fields>
+         <field name="approvalfy" type="integer" refining="true" acl="true"/>
+         <field name="board_approval_month" type="text" refining="true" />
+         <field name="borrower" type="text" searchable="true" />
+         <field name="docty"  type="text" searchable="true" />
+         <field name="lendinginstr" type="text" searchable="true" acl="true" highlight="true"/>
+         <field name="project_name" type="text" searchable="true" highlight="true"/>
+         <field name="impagency" type="text" searchable="true" acl="true" />
+         <field name="dacommamt" type="long" refining="true" acl="true"/>
+       </fields>
+
+       <attributeAclFile>./attributesAcl/acl-worldbank.txt</attributeAclFile>
+
+       <uniqueKey>id</uniqueKey>
+           
+       <facetEnabled>true</facetEnabled>
+        
+        <facetFields>
+          <facetField name="board_approval_month" facetType="categorical"/>
+          <facetField name="approvalfy"  facetType="range" facetStart="1990" facetEnd="2050" facetGap="1"/>
+        </facetFields>
+        
+        <types>
+          <fieldType name="text_en">
+              <analyzer>
+
+                  <filter name="PorterStemFilter" dictionary="" />
+                   
+                  <filter name="StopFilter" words="" />	
+
+		          <filter name="protectedKeyWordsFilter" words="" />
+
+              </analyzer>
+          </fieldType>
+       </types>
+    </schema>
+</config>

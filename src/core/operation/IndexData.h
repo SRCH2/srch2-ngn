@@ -64,6 +64,7 @@
 
 #include <instantsearch/Indexer.h>
 #include <instantsearch/Record.h>
+#include <instantsearch/Constants.h>
 
 //#include "index/IndexUtil.h"
 #include "index/Trie.h"
@@ -78,10 +79,12 @@
 
 #include <string>
 #include <vector>
+#include <map>
 #include <memory>
 
 using std::vector;
 using std::string;
+using std::map;
 
 namespace srch2
 {
@@ -199,6 +202,49 @@ class WriteCounter
         uint32_t numberOfDocumentsIndex;
 };
 
+// we use this permission map for deleting a role core. then we can delete this role id from resources' access list
+// we don't need to use lock for permission map because only writers use this data and the engine makes
+// sure only one writer can access the indexes at any time.
+class PermissionMap{
+public:
+	// Adds resource id to some of the role ids.
+	// for each role id if it exists in the permission map it will add this resource id to its vector
+	// otherwise it adds new record to the map with this role id and then adds this resource id to it.
+	void appendResourceToRoles(const string &resourceId, vector<string> &roleIds);
+
+	// Deletes resource id from the role ids.
+	void deleteResourceFromRoles(const string &resourceId, vector<string> &roleIds);
+
+	// return the resource ids for the given role id
+	// notice that we can use this without lock because only one writer at a moment use this permission map (we only have one writer in the system)
+	vector<string>* getResourceIdsForRole(const string &roleId){
+		map<string, vector<string> >::iterator it = permissionMap.find(roleId);
+		if( it != permissionMap.end()){
+			return &(it->second);
+		}else{
+			return NULL;
+		}
+	}
+
+	// deletes a role id from the permission map
+	void deleteRole(const string &roleId){
+		map<string, vector<string> >::iterator it = permissionMap.find(roleId);
+		if( it != permissionMap.end() ){
+			permissionMap.erase(it);
+		}
+	}
+
+private:
+	map<string, vector<string> > permissionMap;
+
+	friend class boost::serialization::access;
+
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+		ar & this->permissionMap;
+	}
+};
+
 class IndexData
 {
 private:
@@ -251,7 +297,15 @@ public:
     ForwardIndex *forwardIndex;
     SchemaInternal *schemaInternal;
     
+    AttributeAccessControl *attributeAcl;
+
     RankerExpression *rankerExpression;
+
+    // we store a map from role ids to resource ids. then when we delete a record from a role core
+    // we can use this map to delete the id of this record from the access lists of the resource records
+    // Notice that this map is only used by a writer, and it is never used by a reader. So concurrency control is simple.
+    PermissionMap* permissionMap;
+
     // a global RW lock for readers and writers;
     // Used in several places, such as KeywordIdReassign and memory
     // recollection for deleted records
@@ -273,6 +327,14 @@ public:
     // add a record
     INDEXWRITE_RETVAL _addRecord(const Record *record, Analyzer *analyzer);
     
+    // Edit role ids of a record's access list based on command type
+    INDEXWRITE_RETVAL _aclEditRecordAccessList(const std::string& resourcePrimaryKeyID, vector<string> &roleIds, RecordAclCommandType commandType);
+
+    // Deletes the role id from the permission map
+    // we use this function for deleting a record from a role core
+    // then we need to delete this record from the permission map of the resource cores of this core
+    INDEXWRITE_RETVAL _aclRoleRecordDelete(const std::string& rolePrimaryKeyID);
+
     inline uint64_t _getReadCount() const { return this->readCounter->getCount(); }
     inline uint32_t _getWriteCount() const { return this->writeCounter->getCount(); }
     inline uint32_t _getNumberOfDocumentsInIndex() const { return this->writeCounter->getNumberOfDocuments(); }
