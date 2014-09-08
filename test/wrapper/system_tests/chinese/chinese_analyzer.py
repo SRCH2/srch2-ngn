@@ -5,7 +5,7 @@
 # enable the Chinese Analyzer. And we need to provide the Chinese Dictionary to 
 # tokenize the sentence. The conf.xml has all the details.
 #
-# This test use the Chinese Analyzer to parse the record. The record is tokenized based
+# This test uses the Chinese Analyzer to parse the record. The record is tokenized based
 # on the Chinese Dictionary. Then we should be able to search all the records by the 
 # Chinese keywords.
 
