@@ -23,6 +23,7 @@
 #include <string>
 #include <cstring>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include <iostream>
 #include <functional>
 #include <map>
@@ -1178,6 +1179,23 @@ void testProtectedWords(string dataDir){
     stop->free();
 }
 
+int buildChineseDictionary(const string & builder, const string & textFile, const string &outputBin){
+    Logger::debug("builder: %s", builder.c_str());
+    Logger::debug("textFile: %s", textFile.c_str());
+    Logger::debug("outputBin: %s", outputBin.c_str());
+    struct stat stResult;
+    if ( stat(builder.c_str(), &stResult) != 0){
+        Logger::warn("utility bin not found, the test will not rebuild the ChineseDictionary.%s"
+                , outputBin.c_str());
+        return 0;
+    }
+    string command = builder + " " + textFile + " " + outputBin;
+    int ret = system(command.c_str());
+    if (ret != 0){
+        Logger::error("ChineseDictionaryBuilder run error.");
+    }
+    return ret;
+}
 
 int main() {
     if ((getenv("dataDir") == NULL) ) {
@@ -1190,10 +1208,18 @@ int main() {
 
     string dataDir(getenv("dataDir"));
 
+    string chineseDictionaryBuilder(getenv("cnDictBuilder"));
+    string chineseDictionaryTextFile(getenv("cnDictTxt"));
+    const string chineseDictionaryBinary = dataDir +"/srch2_dict_ch.core";
+
+    int ret = buildChineseDictionary(chineseDictionaryBuilder, chineseDictionaryTextFile, 
+            chineseDictionaryBinary);
+    if (ret != 0) return ret;
+
     SynonymContainer::getInstance(dataDir + "/synonymFile.txt", SYNONYM_KEEP_ORIGIN)->init();
     StemmerContainer::getInstance(dataDir + "/StemmerHeadwords.txt")->init();
     StopWordContainer::getInstance(dataDir + "/stopWordsFile.txt")->init();
-    ChineseDictionaryContainer::getInstance(dataDir +"/srch2_dict_ch.core")->init();
+    ChineseDictionaryContainer::getInstance(chineseDictionaryBinary)->init();
 
     testSimpleAnalyzer();
     cout << "SimpleAnalyzer test passed" << endl;
