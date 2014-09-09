@@ -837,7 +837,7 @@
 
                 Path to Access Log File
             -->
-            <accessLogFile>../coreGeoData/geolog.txt</accessLogFile>
+            <accessLogFile>geolog.txt</accessLogFile>
         </updateLog>
         
 </config>
