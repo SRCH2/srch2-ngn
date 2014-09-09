@@ -20,6 +20,7 @@ public:
     bool incrementToken();
     bool processToken();
     virtual ~WhiteSpaceTokenizer();
+    virtual void clearState() {};
 };
 }
 }
