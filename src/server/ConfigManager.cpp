@@ -2197,7 +2197,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
         int lastPosition = temporaryString.length() - 1;
 
         //If config file has "/" in srch2Home we don't append "/", otherwise we do
-        if(temporaryString[lastPosition] == '/')
+        if(temporaryString.length() > 0 && temporaryString[lastPosition] == '/')
             srch2Home = temporaryString;
         else
             srch2Home = temporaryString + "/";
