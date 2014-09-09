@@ -80,8 +80,8 @@ private:
 
 public:
 	Ping(){
-		pingInterval = 1;
-		pingTimeout = 1;
+		pingInterval = 2;
+		pingTimeout = 8;
 		retryCount = 1;
 	}
 
