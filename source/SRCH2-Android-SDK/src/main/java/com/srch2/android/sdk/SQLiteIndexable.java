@@ -4,6 +4,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteDatabaseLockedException;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.os.Build;
 
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
@@ -45,6 +46,13 @@ import java.util.concurrent.ExecutionException;
 public abstract class SQLiteIndexable extends IndexableCore {
 
     final Schema getSchema() {
+
+        if (getTableName() == null || getTableName().length() < 1) {
+            throw new IllegalArgumentException("While generating com.srch2.android.sdk.Schema from SQLite database, " +
+                    "table name was not found or found to be incorrect. Please verify the return value of " +
+                    "getTableName() matches that which was passed into the CREATE table string.");
+        }
+
         boolean success = false;
         Schema s = null;
         while (!success) {
@@ -84,6 +92,16 @@ public abstract class SQLiteIndexable extends IndexableCore {
 
 
     final private Schema resolveSchemaFromSqliteOpenHelper(String tableName, SQLiteOpenHelper mSqliteOpenHelper) {
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+            String databaseNameCheck = mSqliteOpenHelper.getDatabaseName();
+            if (!getDatabaseName().equals(databaseNameCheck)) {
+                throw new IllegalStateException("While generating com.srch2.android.sdk.Schema from SQLite table, " +
+                        "database name was not found or found to be incorrect. Please verify the return value of " +
+                        "getDatabaseName() matches that which was passed into the SQLiteOpenHelper super constructor.");
+            }
+        }
+
         final int PRAGMA_COLUMN_INDEX_COLUMN_INDEX = 0;
         final int PRAGMA_COLUMN_INDEX_COLUMN_NAME = 1;
         final int PRAGMA_COLUMN_INDEX_COLUMN_TYPE = 2;
@@ -158,7 +176,7 @@ public abstract class SQLiteIndexable extends IndexableCore {
                 } while (c.moveToNext());
             } else {
                 throw new IllegalStateException("While generating com.srch2.android.sdk.Schema from SQLite table, " +
-                        "table was not found. Please verify the value of tabelName matches the name of the table" +
+                        "table was not found. Please verify the return value of getTableName() matches the name of the table" +
                         "as it was entered in the CREATE TABLE string.");
             }
         } finally {
@@ -171,12 +189,14 @@ public abstract class SQLiteIndexable extends IndexableCore {
         }
 
         if (!containsPrimaryKey) {
-            throw new IllegalStateException("While generating com.srch2.android.sdk.Schema from SQLite table, " +
+            throw new IllegalStateException("While generating com.srch2.android.sdk.Schema from SQLite table " +
+                    tableName.toUpperCase() + ", " +
                     "table did not contain primary key. Table must contain one column that is PRIMARY KEY; please " +
                     "verify CREATE TABLE string contains PRIMARY KEY.");
         }
         if (!containsAtLeastOneSearchableField) {
-            throw new IllegalStateException("While generating com.srch2.android.sdk.Schema from SQLite table, " +
+            throw new IllegalStateException("While generating com.srch2.android.sdk.Schema from SQLite table " +
+                    tableName.toUpperCase() + ", " +
                     "table did not contain at least one searchable field. Table must contain at least one column" +
                     " that is TEXT; please verify CREATE TABLE string contains at least one column of type TEXT.");
         }
