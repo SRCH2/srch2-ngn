@@ -317,6 +317,15 @@ int TrieNode::findLowerBoundChildNodePositionByMinId(unsigned minId) const
     return first - 1;    // failed to find key, return lower bound
 }
 
+void TrieNode::resetCopyFlag(){
+	this->isCopy = false;
+	for(unsigned i = 0; i < this->childrenPointerList.size() ; i++){
+		if(this->childrenPointerList[i] != NULL && this->childrenPointerList[i]->isCopy == true){
+			this->childrenPointerList[i]->resetCopyFlag();
+		}
+	}
+}
+
 
 
 TrieRootNodeAndFreeList::TrieRootNodeAndFreeList()
@@ -697,9 +706,6 @@ unsigned Trie::addKeyword_ThreadSafe(const std::vector<CharType> &keyword, unsig
 
 unsigned Trie::addKeyword_ThreadSafe(const std::vector<CharType> &keyword, unsigned &invertedListOffset, bool &isNewTrieNode, bool &isNewInternalTerminalNode)
 {
-	if(this->numberOfCopies > 1000000){
-		this->numberOfCopies = 0;
-	}
     /// corner case to check invalid empty string
     if (keyword.size() == 0)
         return 0;
@@ -738,21 +744,22 @@ unsigned Trie::addKeyword_ThreadSafe(const std::vector<CharType> &keyword, unsig
             // clone a new trie node
             TrieNode *childNode = nodeCopy->getChild(childPosition);
 
-            childNodeCopy = new TrieNode(childNode);
-            //TODO delete these two lines
-            this->numberOfCopies++;
-            cout << "number of copies:  " << this->numberOfCopies << endl;
-            oldToNewTrieNodeMap[childNode] = childNodeCopy; // remember the mapping
-            nodeCopy->setChild(childPosition, childNodeCopy);
+            if(childNode->isCopy){
+            	childNodeCopy = childNode;
+            }else{
+            	childNodeCopy = new TrieNode(childNode);
+            	childNodeCopy->isCopy = true;
+            	oldToNewTrieNodeMap[childNode] = childNodeCopy; // remember the mapping
+            	nodeCopy->setChild(childPosition, childNodeCopy);
 
-            // Add to free_list for future deletion
-            trieRootNode_ReadView->free_list.push_back(childNode);
+            	// Add to free_list for future deletion
+            	trieRootNode_ReadView->free_list.push_back(childNode);
+            }
+
         } else {
             // create a TrieNode with terminal flag set to false.
             childNodeCopy = new TrieNode(depthCounter, (CharType) *charTypeIterator);
-            //TODO delete these two lines
-            this->numberOfCopies++;
-            cout << "number of copies:  " << this->numberOfCopies << endl;
+            childNodeCopy->isCopy = true;
             nodeCopy->addChild(-childPosition-1, childNodeCopy);
             isNewTrieNode = true;
         }
@@ -1498,6 +1505,7 @@ void Trie::merge(const InvertedIndex * invertedIndex ,
 		const unsigned totalNumberOfRecords  , bool updateHistogram)
 {
 
+	this->root_writeview->resetCopyFlag();
 	// if it's the time for updating histogram (because we don't do it for all merges, it's for example every 10 merges)
 	// then update the histogram information in Trie.
 	if(updateHistogram == true){
@@ -1534,6 +1542,7 @@ void Trie::commit()
     ASSERT(commited == false);
     // we remove the old readview's root first
     delete this->root_readview->root;
+    this->root_writeview->resetCopyFlag();
     this->root_readview->root = root_writeview;
     // We create a new write view's root by copying the root of the read review
     this->root_writeview = new TrieNode(this->root_readview->root);

@@ -447,6 +447,8 @@ public:
 
     int findLowerBoundChildNodePositionByMinId(unsigned minId) const;
 
+    void resetCopyFlag();
+
 };
 
 class TrieRootNodeAndFreeList
@@ -517,8 +519,6 @@ public:
 class Trie
 {
 public:
-
-	int numberOfCopies;
 
     // we partition the integer space into two ranges;
     //  Range 1: [0 - x], for keywords already with integer ids;
