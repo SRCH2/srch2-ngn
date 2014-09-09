@@ -156,6 +156,10 @@ public abstract class SQLiteIndexable extends IndexableCore {
                         }
                     }
                 } while (c.moveToNext());
+            } else {
+                throw new IllegalStateException("While generating com.srch2.android.sdk.Schema from SQLite table, " +
+                        "table was not found. Please verify the value of tabelName matches the name of the table" +
+                        "as it was entered in the CREATE TABLE string.");
             }
         } finally {
             if (db != null) {
@@ -168,12 +172,13 @@ public abstract class SQLiteIndexable extends IndexableCore {
 
         if (!containsPrimaryKey) {
             throw new IllegalStateException("While generating com.srch2.android.sdk.Schema from SQLite table, " +
-                    "table did not contain primary key. Table must contain one column that is PRIMARY KEY");
+                    "table did not contain primary key. Table must contain one column that is PRIMARY KEY; please " +
+                    "verify CREATE TABLE string contains PRIMARY KEY.");
         }
         if (!containsAtLeastOneSearchableField) {
             throw new IllegalStateException("While generating com.srch2.android.sdk.Schema from SQLite table, " +
                     "table did not contain at least one searchable field. Table must contain at least one column" +
-                    " that is TEXT.");
+                    " that is TEXT; please verify CREATE TABLE string contains at least one column of type TEXT.");
         }
 
         return new Schema(pkField, fields.toArray(new Field[fields.size()]));
