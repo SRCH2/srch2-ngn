@@ -212,27 +212,27 @@ test_case "attributes ACL" "python ./attributesAcl/testProgram.py $SRCH2_ENGINE"
 rm ./attributes/indexes/*
 test_case "lot of attributes" "python ./attributes/attributes.py $SRCH2_ENGINE" 
 
-sleep 2
+sleep 3
 
 test_case "synonyms" "python ./synonyms/synonyms.py $SRCH2_ENGINE" 
 
-sleep 2
+sleep 3
 
 rm -rf access_control/*Data
 test_case "record-based-ACL" "python ./access_control/record-based-ACL.py $SRCH2_ENGINE ./access_control/queriesAndResults.txt"
-sleep 2
+sleep 3
 
 test_case "highlighter" "python ./highlight/highlight.py $SRCH2_ENGINE ./highlight/queries.txt"
 
-sleep 2
+sleep 3
 
 test_case "cache_A1" "python ./cache_a1/cache_A1.py $SRCH2_ENGINE ./cache_a1/queriesAndResults.txt" 
 
-sleep 2
+sleep 3
 
 test_case "boolean expression" "python ./boolean-expression-test/boolean-expression.py $SRCH2_ENGINE ./boolean-expression-test/queries.txt" 
 
-sleep 2
+sleep 3
 
 # qf disabled for now - will fail until we integrate with Jamshid's boolean expression changes
 #test_case "qf_dynamic_ranking" "./qf_dynamic_ranking/qf_dynamic_ranking.py $SRCH2_ENGINE ./qf_dynamic_ranking/queriesAndResults.txt"
@@ -240,158 +240,160 @@ sleep 2
 
 test_case "phrase search" "python ./phraseSearch/phrase_search.py $SRCH2_ENGINE ./phraseSearch/queries.txt" 
 
-sleep 2
+sleep 3
 
 test_case "phrase search with boolean expression" "python ./phraseSearch/phrase_search.py $SRCH2_ENGINE ./phraseSearch/booleanQueries.txt" 
 
-sleep 2
+sleep 3
 
 test_case "multi valued attribute" "python ./test_multi_valued_attributes/test_multi_valued_attributes.py '--srch2' $SRCH2_ENGINE '--qryNrslt' \
 ./test_multi_valued_attributes/queriesAndResults.txt '--frslt' ./test_multi_valued_attributes/facetResults.txt"
 
-sleep 2
+sleep 3
 
 test_case "save_shutdown_restart" "python ./save_shutdown_restart_export_test/save_shutdown_restart_export_test.py $SRCH2_ENGINE" 
 
-sleep 2
+sleep 3
 
 test_case "empty_index" "python ./empty_index/empty_index.py $SRCH2_ENGINE"
 
-sleep 2
+sleep 3
 
 test_case "exact_A1" "python ./exact_a1/exact_A1.py $SRCH2_ENGINE ./exact_a1/queriesAndResults.txt" 
 
-sleep 2
+sleep 3
 
 test_case "fuzzy_A1" "python ./fuzzy_a1/fuzzy_A1.py $SRCH2_ENGINE ./fuzzy_a1/queriesAndResults.txt" 
 
-sleep 2
+sleep 3
 
 test_case "fuzzy_A1_swap test" "python ./fuzzy_a1_swap/fuzzy_A1_swap.py $SRCH2_ENGINE ./fuzzy_a1_swap/queriesAndResults.txt"
 
-sleep 2
+sleep 3
 
 test_case "exact_M1" "python ./exact_m1/exact_M1.py $SRCH2_ENGINE ./exact_m1/queriesAndResults.txt" 
 
-sleep 2
+sleep 3
 
 test_case "fuzzy_M1" "python ./fuzzy_m1/fuzzy_M1.py $SRCH2_ENGINE ./fuzzy_m1/queriesAndResults.txt" 
 
-sleep 2
+sleep 3
 
 test_case "exact_Attribute_Based_Search" "python ./exact_attribute_based_search/exact_Attribute_Based_Search.py $SRCH2_ENGINE ./exact_attribute_based_search/queriesAndResults.txt" 
 
-sleep 2
+sleep 3
 
 test_case "fuzzy_Attribute_Based_Search" "python ./fuzzy_attribute_based_search/fuzzy_Attribute_Based_Search.py $SRCH2_ENGINE ./fuzzy_attribute_based_search/queriesAndResults.txt"
 
-sleep 2
+sleep 3
 
 test_case "exact_Attribute_Based_Search_Geo" "python ./exact_attribute_based_search_geo/exact_Attribute_Based_Search_Geo.py $SRCH2_ENGINE ./exact_attribute_based_search_geo/queriesAndResults.txt"
 
-sleep 2
+sleep 3
 
 test_case "fuzzy_Attribute_Based_Search_Geo" "python ./fuzzy_attribute_based_search_geo/fuzzy_Attribute_Based_Search_Geo.py $SRCH2_ENGINE ./fuzzy_attribute_based_search_geo/queriesAndResults.txt"
 
-sleep 2
+sleep 3
 
 test_case "faceted search" "python ./faceted_search/faceted_search.py '--srch' $SRCH2_ENGINE '--qryNrslt' ./faceted_search/queriesAndResults.txt '--frslt' ./faceted_search/facetResults.txt"
 
-sleep 2
+sleep 3
 
 test_case "sort filter" "python ./sort_filter/sort_filter.py $SRCH2_ENGINE ./sort_filter/queriesAndResults.txt ./sort_filter/facetResults.txt" 
 
-sleep 2
+sleep 3
 
 test_case "filter query" "python ./filter_query/filter_query.py $SRCH2_ENGINE ./filter_query/queriesAndResults.txt ./filter_query/facetResults.txt"
 
-sleep 2
+sleep 3
 
 test_case "test_solr_compatible_query_syntax" "python ./test_solr_compatible_query_syntax/test_solr_compatible_query_syntax.py $SRCH2_ENGINE \
     ./test_solr_compatible_query_syntax/queriesAndResults.txt ./test_solr_compatible_query_syntax/facetResults.txt"
 
-sleep 2
+sleep 3
 
 test_case "test_search_by_id" "python ./test_search_by_id/test_search_by_id.py $SRCH2_ENGINE" 
 
-sleep 2
+sleep 3
 
 test_case "date and time implementation" "python ./date_time_new_features_test/date_time_new_features_test.py $SRCH2_ENGINE ./date_time_new_features_test/queriesAndResults.txt" 
 
-sleep 2
+sleep 3
 
 test_case "geo" "python ./geo/geo.py $SRCH2_ENGINE ./geo/queriesAndResults.txt" 
 
-sleep 2
+sleep 3
 
 test_case "term type" "python ./term_type/term_type.py $SRCH2_ENGINE ./term_type/queriesAndResults.txt"
 
-sleep 2
+sleep 3
 
 test_case "analyzer end to end" "python ./analyzer_exact_a1/analyzer_exact_A1.py $SRCH2_ENGINE ./analyzer_exact_a1/queriesAndResults.txt"
 
-sleep 2
+sleep 3
 
 test_case "top_k" "python ./top_k/test_srch2_top_k.py $SRCH2_ENGINE food 10 20"
 
-sleep 2
+sleep 3
 
 test_case "reset logger" "python ./reset_logger/test_reset_logger.py $SRCH2_ENGINE"
 rm -rf data/ *.idx reset_logger/indexes
 
-sleep 2
+sleep 3
 
 test_case "batch upsert" "python ./upsert_batch/test_upsert_batch.py $SRCH2_ENGINE" 
 rm -rf data/ *.idx upsert_batch/indexes upsert_batch/*.idx upsert_batch/indexes/*.idx
 
-sleep 2
+sleep 3
 
 test_case "batch insert" "python ./upsert_batch/test_insert_batch.py $SRCH2_ENGINE"
 rm -rf data/ upsert_batch/*.idx upsert_batch/indexes/*.idx
 
-sleep 2
+sleep 3
 
 rm -f ./multicore/core?/*.idx ./multicore/core?/srch2-log.txt
 test_case "multicore" "python ./multicore/multicore.py $SRCH2_ENGINE ./multicore/queriesAndResults.txt ./multicore/queriesAndResults2.txt"
 rm -rf data/ multicore/core?/*.idx
 
-sleep 2
+sleep 3
 
 rm -f ./multiport/core?/*.idx ./multiport/core?/srch2-log.txt
 test_case "multiport" "python ./multiport/multiport.py $SRCH2_ENGINE ./multiport/queriesAndResults.txt"
 rm -rf data/ multiport/core?/*.idx
 
-sleep 2
+sleep 3
 
 test_case "authorization" "python ./authorization/authorization.py $SRCH2_ENGINE ./authorization/queriesAndResults.txt"
 
-sleep 2
+sleep 3
 
 test_case "test loading different schema" "python ./test_load_diff_schema/test_load_diff_schema.py $SRCH2_ENGINE"
 
-sleep 2
+sleep 3
 
 test_case "refining attribute type" "python ./refining_attr_type/refining_attr_type.py $SRCH2_ENGINE"
 
-sleep 2
+sleep 3
 
 test_case "primary key - refining field" "python ./refining_field_primary_key/testPrimaryKey.py $SRCH2_ENGINE ./refining_field_primary_key/queriesAndResults.txt"
 
-sleep 2
+sleep 3
 
 test_case "run engine with missing parameters from config file" "python ./missing_parameters_from_cm/missingParameters_config.py $SRCH2_ENGINE ./missing_parameters_from_cm/queriesAndResults.txt"
 
-sleep 2
+sleep 3
 
 test_case "empty record boost field" "python ./empty_recordBoostField/empty_recordBoostField.py $SRCH2_ENGINE ./empty_recordBoostField/queriesAndResults.txt"
 
-sleep 2
+sleep 3
 
 test_case "heart_beat_test"  "python ./heartbeat/heart_beat.py $SRCH2_ENGINE"
 
-sleep 2
+sleep 3
 
 test_case "test field list parameter in query" "python ./test_fieldList_inQuery/test_fieldList.py $SRCH2_ENGINE ./test_fieldList_inQuery/queriesAndResults.txt"
+
+sleep 3
 
 test_case "validate json response" "python ./json_response/json_response_format_test.py $SRCH2_ENGINE"
 
@@ -405,7 +407,7 @@ fi
 
 # server is a little slow to exit for reset_logger, causing the server in statemedia's first test (write_correctness)
 # to fail to bind the port, hanging the test script, so wait just a sec here
-sleep 1
+sleep 2
 rm -rf data/tests_used_for_statemedia
 if [ $HAVE_NODE -gt 0 ]; then
 
@@ -430,7 +432,7 @@ rm -rf data/ *.idx
 rm -rf data/sqlite_data
 rm -rf ./adapter_sqlite/srch2Test.db
 
-sleep 2
+sleep 3
 
 test_case "adapter_sqlite" "python ./adapter_sqlite/adapter_sqlite.py $SRCH2_ENGINE \
     ./adapter_sqlite/testCreateIndexes_sql.txt ./adapter_sqlite/testCreateIndexes.txt \
@@ -440,7 +442,7 @@ test_case "adapter_sqlite" "python ./adapter_sqlite/adapter_sqlite.py $SRCH2_ENG
 rm -rf data/sqlite_data
 rm -rf ./adapter_sqlite/srch2Test.db
 
-sleep 2
+sleep 3
 
 test_case "adapter_mongo" "python ./adapter_mongo/MongoTest.py $SRCH2_ENGINE \
     ./adapter_mongo/queries.txt" 10 "-- SKIPPED: Cannot connect to the MongoDB. \
