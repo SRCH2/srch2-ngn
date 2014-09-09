@@ -22,12 +22,12 @@ public:
     int loadDict(const std::string &dictFilePath);
     bool saveDict(const std::string &dictFilePath);
 
-    short getFreq(const std::vector<CharType> &buffer, unsigned istart, unsigned length);
-    short getFreq(const std::string &str);
+    short getFreq(const std::vector<CharType> &buffer, unsigned istart, unsigned length) const;
+    short getFreq(const std::string &str) const;
 
     bool insert(const std::string &str, short freq);
     
-    int getMaxWordLength()const{
+    int getMaxWordLength() const {
         return mMaxWordLength;
     }
 private:

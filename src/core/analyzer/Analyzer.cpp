@@ -41,7 +41,8 @@ Analyzer::Analyzer(const StemmerContainer *stemmer,
                    const SynonymContainer *synonyms,
                    const std::string &allowedSpecialCharacters,
                    const AnalyzerType &analyzerType,
-                   const std::string &chineseDictFilePath)
+                   const ChineseDictionaryContainer* chineseDictionaryContainer
+                   )
 {
     switch (analyzerType) {
     case SIMPLE_ANALYZER:
@@ -49,7 +50,7 @@ Analyzer::Analyzer(const StemmerContainer *stemmer,
                                                     allowedSpecialCharacters);
         break;
     case CHINESE_ANALYZER:
-        this->analyzerInternal = new ChineseAnalyzer(chineseDictFilePath,
+        this->analyzerInternal = new ChineseAnalyzer(chineseDictionaryContainer,
                                                      stopWords, protectedWords, synonyms,
                                                      allowedSpecialCharacters);
         break;
