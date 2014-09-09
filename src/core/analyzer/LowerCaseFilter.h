@@ -24,6 +24,7 @@ class LowerCaseFilter:public TokenFilter {
 public:
 	LowerCaseFilter(TokenStream* tokenStream);
 	bool processToken();
+    virtual void clearState(){};
 	virtual ~LowerCaseFilter();
 private:
 	void transformToLowerCase(std::vector<CharType> &token);

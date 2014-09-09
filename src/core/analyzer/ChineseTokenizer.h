@@ -23,7 +23,6 @@ public:
     bool processToken();
     virtual ~ChineseTokenizer() {};
     virtual void clearState() {     
-        Tokenizer::clearState();
         mCurrentChineseTokens.clear();
     }
 
