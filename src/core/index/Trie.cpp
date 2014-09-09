@@ -697,6 +697,9 @@ unsigned Trie::addKeyword_ThreadSafe(const std::vector<CharType> &keyword, unsig
 
 unsigned Trie::addKeyword_ThreadSafe(const std::vector<CharType> &keyword, unsigned &invertedListOffset, bool &isNewTrieNode, bool &isNewInternalTerminalNode)
 {
+	if(this->numberOfCopies > 1000000){
+		this->numberOfCopies = 0;
+	}
     /// corner case to check invalid empty string
     if (keyword.size() == 0)
         return 0;
@@ -736,6 +739,9 @@ unsigned Trie::addKeyword_ThreadSafe(const std::vector<CharType> &keyword, unsig
             TrieNode *childNode = nodeCopy->getChild(childPosition);
 
             childNodeCopy = new TrieNode(childNode);
+            //TODO delete these two lines
+            this->numberOfCopies++;
+            cout << "number of copies:  " << this->numberOfCopies << endl;
             oldToNewTrieNodeMap[childNode] = childNodeCopy; // remember the mapping
             nodeCopy->setChild(childPosition, childNodeCopy);
 
@@ -744,6 +750,9 @@ unsigned Trie::addKeyword_ThreadSafe(const std::vector<CharType> &keyword, unsig
         } else {
             // create a TrieNode with terminal flag set to false.
             childNodeCopy = new TrieNode(depthCounter, (CharType) *charTypeIterator);
+            //TODO delete these two lines
+            this->numberOfCopies++;
+            cout << "number of copies:  " << this->numberOfCopies << endl;
             nodeCopy->addChild(-childPosition-1, childNodeCopy);
             isNewTrieNode = true;
         }
