@@ -2,6 +2,7 @@ package com.srch2.android.sdk;
 
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteDatabaseLockedException;
 import android.database.sqlite.SQLiteOpenHelper;
 
 import java.util.ArrayList;
@@ -44,7 +45,20 @@ import java.util.concurrent.ExecutionException;
 public abstract class SQLiteIndexable extends IndexableCore {
 
     final Schema getSchema() {
-        return resolveSchemaFromSqliteOpenHelper(getTableName(), getSQLiteOpenHelper());
+        boolean success = false;
+        Schema s = null;
+        while (!success) {
+            boolean wasLocked = false;
+            try {
+                s = resolveSchemaFromSqliteOpenHelper(getTableName(), getSQLiteOpenHelper());
+            } catch (SQLiteDatabaseLockedException locked) {
+                wasLocked = true;
+            }
+            if (s != null && !wasLocked) {
+                success = true;
+            }
+        }
+        return s;
     }
 
     public abstract SQLiteOpenHelper getSQLiteOpenHelper();
