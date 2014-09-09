@@ -98,6 +98,7 @@ const char* const ConfigManager::mergeEveryNSecondsString = "mergeeverynseconds"
 const char* const ConfigManager::mergePolicyString = "mergepolicy";
 const char* const ConfigManager::nameString = "name";
 const char* const ConfigManager::porterStemFilterString = "PorterStemFilter";
+const char* const ConfigManager::tokenizerFilterString = "TokenizerFilter";
 const char* const ConfigManager::prefixMatchPenaltyString = "prefixmatchpenalty";
 const char* const ConfigManager::queryString = "query";
 const char* const ConfigManager::queryResponseWriterString =
@@ -130,6 +131,7 @@ const char* const ConfigManager::supportSwapInEditDistanceString =
 const char* const ConfigManager::synonymFilterString = "synonymFilter";
 const char* const ConfigManager::synonymsString = "synonyms";
 const char* const ConfigManager::textEnString = "text_en";
+const char* const ConfigManager::textZhString = "text_zh";
 const char* const ConfigManager::typeString = "type";
 const char* const ConfigManager::typesString = "types";
 const char* const ConfigManager::uniqueKeyString = "uniquekey";
@@ -346,6 +348,9 @@ CoreInfo_t::CoreInfo_t(const CoreInfo_t &src) {
     synonymKeepOrigFlag = src.synonymKeepOrigFlag;
     stopFilterFilePath = src.stopFilterFilePath;
     protectedWordsFilePath = src.protectedWordsFilePath;
+
+    analyzerType = src.analyzerType;
+    chineseDictionaryFilePath = src.chineseDictionaryFilePath;
 
     allowedRecordTokenizerCharacters = src.allowedRecordTokenizerCharacters;
 
@@ -1575,6 +1580,153 @@ void ConfigManager::parseFacetFields(const xml_node &schemaNode,
     }
 }
 
+
+void ConfigManager::setUpStemmer(CoreInfo_t *coreInfo, const xml_node &field, std::stringstream &parseWarnings){
+    std::string path = field.attribute(dictionaryString).value();
+    if (path.compare("") != 0) { 
+        // the dictionary for porter stemmer is set.
+        coreInfo->stemmerFlag = true;
+        trimSpacesFromValue(path, porterStemFilterString, parseWarnings);
+        coreInfo->stemmerFile = boost::filesystem::path(this->srch2Home + path).normalize().string();
+    } else {
+        Logger::warn("In core %s : Dictionary file is not set for PorterStemFilter, so stemming is disabled", coreInfo->name.c_str());
+    }
+}
+
+void ConfigManager::setUpChineseDictionary(CoreInfo_t * coreInfo, const xml_node &field, std::stringstream &parseWarnings){
+    std::string path = field.attribute(dictionaryString).value();
+    if (path.compare("") != 0) { 
+        coreInfo->analyzerType = CHINESE_ANALYZER;
+        trimSpacesFromValue(path, tokenizerFilterString, parseWarnings);
+        coreInfo->chineseDictionaryFilePath = 
+            boost::filesystem::path(this->srch2Home + path).normalize().string();
+    } else {
+        Logger::warn("In core %s : Dictionary file is not set for tokenizerFilter, so ChineseAnalyzer is disabled", coreInfo->name.c_str());
+        coreInfo->analyzerType = STANDARD_ANALYZER;
+    }   
+}
+
+void ConfigManager::setUpStopword(CoreInfo_t *coreInfo, const xml_node &field, std::stringstream &parseWarnings){
+    std::string path = field.attribute(wordsString).value();
+    if (path.compare("") != 0) { // the words file for stop filter is set.
+        trimSpacesFromValue(path, stopFilterString, parseWarnings);
+        coreInfo->stopFilterFilePath =
+            boost::filesystem::path(srch2Home + path).normalize().string();
+    } else {
+        Logger::warn("In core %s : Words parameter in StopFilter is empty, so stop word filter is disabled.", coreInfo->name.c_str());
+    }
+}
+
+void ConfigManager::setUpProtectedWord(CoreInfo_t *coreInfo, const xml_node &field, std::stringstream &parseWarnings){
+    std::string path = field.attribute(wordsString).value();
+    if (path.compare("") != 0) { 
+         // the file for protected words filter is set.
+        trimSpacesFromValue(path, protectedWordFilterString, parseWarnings);
+        coreInfo->protectedWordsFilePath = boost::filesystem::path(srch2Home + path).normalize().string();
+    } else {
+        Logger::warn("In core %s : Words parameter for protected keywords is empty, so protected words filter is disabled.", coreInfo->name.c_str());
+    }
+}
+
+void ConfigManager::setUpSynonym(CoreInfo_t *coreInfo, const xml_node &field, std::stringstream &parseWarnings){
+    std::string path = field.attribute(synonymsString).value();
+    if (path.compare("") != 0) { 
+        // the file for synonyms filter is set.
+        trimSpacesFromValue(path, synonymsString, parseWarnings);
+        coreInfo->synonymFilterFilePath = boost::filesystem::path(srch2Home + path).normalize().string();
+    } else {
+        Logger::warn("In core %s : Synonym filter is disabled because synonym parameter is empty.", coreInfo->name.c_str());
+    }
+    std::string expand = field.attribute(expandString).value();
+    if ( expand.compare("") != 0) {
+        if (isValidBool(expand)) {
+            coreInfo->synonymKeepOrigFlag = field.attribute(expandString).as_bool(true);
+        }
+    } else {
+        Logger::warn("In core %s : Synonym filter's expand attribute is missing. Using default = true.", coreInfo->name.c_str());
+    }
+}
+
+void ConfigManager::setUpRecordSpecialCharacters(CoreInfo_t *coreInfo, const xml_node &field){
+    CharSet charTyper;
+    string in = field.text().get(), out; // TODO: Using type string NOT multi-lingual?
+
+    // validate allowed characters
+    for (std::string::iterator iterator = in.begin();
+        iterator != in.end(); iterator++) {
+        switch (charTyper.getCharacterType(*iterator)) {
+        case CharSet::DELIMITER_TYPE:
+            out += *iterator;
+            break;
+        case CharSet::LATIN_TYPE:
+        case CharSet::BOPOMOFO_TYPE:
+        case CharSet::HANZI_TYPE:
+            Logger::warn(
+                    "%s character %c already included in terms, ignored",
+                    allowedRecordSpecialCharactersString,
+                    *iterator);
+            break;
+        case CharSet::WHITESPACE:
+            Logger::warn(
+                    "%s character %c is whitespace and cannot be treated as part of a term, ignored",
+                    allowedRecordSpecialCharactersString,
+                    *iterator);
+            break;
+        default:
+            Logger::warn(
+                    "%s character %c of unexpected type %d, ignored",
+                    allowedRecordSpecialCharactersString,
+                    *iterator,
+                    static_cast<int>(charTyper.getCharacterType(
+                            *iterator)));
+            break;
+        }
+    }
+    coreInfo->allowedRecordTokenizerCharacters = out;
+}
+
+void ConfigManager::setUpEnglishAnalyzer(CoreInfo_t * coreInfo, const xml_node &childNodeTemp, std::stringstream &parseWarnings){
+    // Checking if the values are empty or not
+    for (xml_node field = childNodeTemp.first_child(); field; field = field.next_sibling()) {
+        std::string nameTag = field.attribute(nameString).value();
+        if ( nameTag.compare(porterStemFilterString) == 0){
+            setUpStemmer(coreInfo, field, parseWarnings);
+        } else if ( nameTag.compare(stopFilterString) == 0) { 
+            setUpStopword(coreInfo, field, parseWarnings);
+        } else if ( nameTag.compare(protectedWordFilterString) == 0){
+            setUpProtectedWord(coreInfo, field, parseWarnings);
+        } else if ( nameTag.compare(synonymFilterString) == 0){
+            setUpSynonym(coreInfo, field, parseWarnings);
+        } else if ( nameTag.compare(allowedRecordSpecialCharactersString) == 0){
+            setUpRecordSpecialCharacters(coreInfo, field);
+        } else {
+            Logger::error(" In core %s : Valid tag is not set, it can only be filter or allowedrecordspecialcharacters.", coreInfo->name.c_str());
+        }
+    }
+}
+
+// The Chinese Analyzer doesn't have the stemmer. 
+// In addition, we need one more field of the Chinese dictionary to tokenize the sentence.
+void ConfigManager::setUpChineseAnalyzer(CoreInfo_t * coreInfo, const xml_node &childNodeTemp, std::stringstream &parseWarnings){
+    coreInfo->stemmerFlag = false;
+    for (xml_node field = childNodeTemp.first_child(); field; field = field.next_sibling()) {
+        std::string nameTag = field.attribute(nameString).value();
+        if ( nameTag.compare(tokenizerFilterString) == 0){
+            setUpChineseDictionary(coreInfo, field, parseWarnings);
+        } else if ( nameTag.compare(stopFilterString) == 0) { 
+            setUpStopword(coreInfo, field, parseWarnings);
+        } else if ( nameTag.compare(protectedWordFilterString) == 0){
+            setUpProtectedWord(coreInfo, field, parseWarnings);
+        } else if ( nameTag.compare(synonymFilterString) == 0){
+            setUpSynonym(coreInfo, field, parseWarnings);
+        } else if ( nameTag.compare(allowedRecordSpecialCharactersString) == 0){
+            setUpRecordSpecialCharacters(coreInfo, field);
+        } else {
+            Logger::error(" In core %s : Valid tag is not set, it can only be filter or allowedrecordspecialcharacters.", coreInfo->name.c_str());
+        }
+    }
+}
+
 void ConfigManager::parseSchemaType(const xml_node &childNode,
         CoreInfo_t *coreInfo, std::stringstream &parseWarnings) {
 
@@ -1585,143 +1737,14 @@ void ConfigManager::parseSchemaType(const xml_node &childNode,
             if ((string(fieldType.name()).compare(fieldTypeString) == 0)) { // Finds the fieldTypes
                 if (string(fieldType.attribute(nameString).value()).compare(
                         textEnString) == 0) {
-                    // Checking if the values are empty or not
                     xml_node childNodeTemp = fieldType.child(analyzerString); // looks for analyzer
-                    for (xml_node field = childNodeTemp.first_child(); field;
-                            field = field.next_sibling()) {
-                        if (string(field.name()).compare(filterString) == 0) {
-                            if (string(field.attribute(nameString).value()).compare(
-                                    porterStemFilterString) == 0) { // STEMMER FILTER
-                                if (string(
-                                        field.attribute(dictionaryString).value()).compare(
-                                        "") != 0) { // the dictionary for porter stemmer is set.
-                                    coreInfo->stemmerFlag = true;
-                                    temporaryString =
-                                            string(
-                                                    field.attribute(
-                                                            dictionaryString).value());
-                                    trimSpacesFromValue(temporaryString,
-                                            porterStemFilterString,
-                                            parseWarnings);
-                                    coreInfo->stemmerFile =
-                                            boost::filesystem::path(
-                                                    this->srch2Home
-                                                            + temporaryString).normalize().string();
-                                } else {
-                                    Logger::warn("In core %s : Dictionary file is not set for PorterStemFilter, so stemming is disabled", coreInfo->name.c_str());
-                                }
-                            } else if (string(
-                                    field.attribute(nameString).value()).compare(
-                                    stopFilterString) == 0) { // STOP FILTER
-                                if (string(field.attribute(wordsString).value()).compare(
-                                        "") != 0) { // the words file for stop filter is set.
-                                    temporaryString =
-                                            string(
-                                                    field.attribute(wordsString).value());
-                                    trimSpacesFromValue(temporaryString,
-                                            stopFilterString, parseWarnings);
-                                    coreInfo->stopFilterFilePath =
-                                            boost::filesystem::path(
-                                                    srch2Home + temporaryString).normalize().string();
-                                } else {
-                                    Logger::warn("In core %s : Words parameter in StopFilter is empty, so stop word filter is disabled.", coreInfo->name.c_str());
-                                }
-                            } else if (string(
-                                    field.attribute(nameString).value()).compare(
-                                    protectedWordFilterString) == 0) {
-                                if (string(field.attribute(wordsString).value()).compare(
-                                        "") != 0) { // the file for protected words filter is set.
-                                    temporaryString =
-                                            string(
-                                                    field.attribute(wordsString).value());
-                                    trimSpacesFromValue(temporaryString,
-                                            protectedWordFilterString,
-                                            parseWarnings);
-                                    coreInfo->protectedWordsFilePath =
-                                            boost::filesystem::path(
-                                                    srch2Home + temporaryString).normalize().string();
-                                } else {
-                                    Logger::warn("In core %s : Words parameter for protected keywords is empty, so protected words filter is disabled.", coreInfo->name.c_str());
-                                }
-                            } else if (string(
-                                    field.attribute(nameString).value()).compare(
-                                    synonymFilterString) == 0) {
-                                if (string(
-                                        field.attribute(synonymsString).value()).compare(
-                                        "") != 0) { // the file for synonyms filter is set.
-                                    temporaryString =
-                                            string(
-                                                    field.attribute(
-                                                            synonymsString).value());
-                                    trimSpacesFromValue(temporaryString,
-                                            synonymsString, parseWarnings);
-                                    coreInfo->synonymFilterFilePath =
-                                            boost::filesystem::path(
-                                                    srch2Home + temporaryString).normalize().string();
-                                } else {
-                                    Logger::warn("In core %s : Synonym filter is disabled because synonym parameter is empty.", coreInfo->name.c_str());
-                                }
-                                if (string(
-                                        field.attribute(expandString).value()).compare(
-                                        "") != 0) {
-                                    temporaryString =
-                                            string(
-                                                    field.attribute(
-                                                            expandString).value());
-                                    if (isValidBool(temporaryString)) {
-                                        coreInfo->synonymKeepOrigFlag =
-                                                field.attribute(expandString).as_bool(
-                                                        true);
-                                    }
-                                } else {
-                                    Logger::warn("In core %s : Synonym filter's expand attribute is missing. Using default = true.", coreInfo->name.c_str());
-                                }
-                            }
-
-                        } else if (string(field.name()).compare(
-                                allowedRecordSpecialCharactersString) == 0) {
-                            CharSet charTyper;
-                            string in = field.text().get(), out; // TODO: Using type string NOT multi-lingual?
-
-                            // validate allowed characters
-                            for (std::string::iterator iterator = in.begin();
-                                    iterator != in.end(); iterator++) {
-                                switch (charTyper.getCharacterType(*iterator)) {
-                                case CharSet::DELIMITER_TYPE:
-                                    out += *iterator;
-                                    break;
-                                case CharSet::LATIN_TYPE:
-                                case CharSet::BOPOMOFO_TYPE:
-                                case CharSet::HANZI_TYPE:
-                                    Logger::warn(
-                                            "%s character %c already included in terms, ignored",
-                                            allowedRecordSpecialCharactersString,
-                                            *iterator);
-                                    break;
-                                case CharSet::WHITESPACE:
-                                    Logger::warn(
-                                            "%s character %c is whitespace and cannot be treated as part of a term, ignored",
-                                            allowedRecordSpecialCharactersString,
-                                            *iterator);
-                                    break;
-                                default:
-                                    Logger::warn(
-                                            "%s character %c of unexpected type %d, ignored",
-                                            allowedRecordSpecialCharactersString,
-                                            *iterator,
-                                            static_cast<int>(charTyper.getCharacterType(
-                                                    *iterator)));
-                                    break;
-                                }
-                            }
-
-                            coreInfo->allowedRecordTokenizerCharacters = out;
-                        } else {
-                            Logger::error(" In core %s : Valid tag is not set, it can only be filter or allowedrecordspecialcharacters.", coreInfo->name.c_str());
-                        }
-                    }
+                    setUpEnglishAnalyzer(coreInfo, childNodeTemp, parseWarnings);
+                } else if (string(fieldType.attribute(nameString).value()).compare(
+                        textZhString) == 0) {
+                    xml_node childNodeTemp = fieldType.child(analyzerString); // looks for analyzer
+                    setUpChineseAnalyzer(coreInfo, childNodeTemp, parseWarnings);
                 } else {
-                    Logger::error(" In core %s : Not a valid fieldType name in config file, currently we only support text_en.", coreInfo->name.c_str());
+                    Logger::error(" In core %s : Not a valid fieldType name in config file, currently we only support text_en and text_zh.", coreInfo->name.c_str());
                 }
             }
         }
@@ -1936,6 +1959,8 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
     coreInfo->synonymFilterFilePath = "";
     coreInfo->protectedWordsFilePath = "";
     coreInfo->synonymKeepOrigFlag = true;
+    coreInfo->analyzerType = STANDARD_ANALYZER;
+    coreInfo->chineseDictionaryFilePath = "";
 
     childNode = schemaNode.child(typesString);
 
@@ -2193,9 +2218,14 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
     xml_node childNode = configNode.child(srch2HomeString);
     if (childNode && childNode.text()) { // checks if the config/srch2Home has any text in it or not
         temporaryString = string(childNode.text().get());
-        trimSpacesFromValue(temporaryString, srch2HomeString, parseWarnings,
-                "/");
-        srch2Home = temporaryString;
+        trimSpacesFromValue(temporaryString, srch2HomeString, parseWarnings);
+        int lastPosition = temporaryString.length() - 1;
+
+        //If config file has "/" in srch2Home we don't append "/", otherwise we do
+        if(temporaryString.length() > 0 && temporaryString[lastPosition] == '/')
+            srch2Home = temporaryString;
+        else
+            srch2Home = temporaryString + "/";
     } else {
         Logger::error("srch2Home is not set.");
         configSuccess = false;
@@ -2234,8 +2264,9 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
                        + temporaryString;
           }
       } else {
+          //When srch2Home is "." or "./" warning message will be "httpServerAccessLogFile is not set, so the engine will use default location ./logs/srch2-log.txt"
           string warning = "httpServerAccessLogFile is not set, so the engine will use default location ";
-          warning = warning + this->srch2Home + "/" + "logs" + "/" + "srch2-log.txt";
+          warning = warning + this->srch2Home + "logs" + "/" + "srch2-log.txt";
           Logger::warn(warning.c_str());
       }
 

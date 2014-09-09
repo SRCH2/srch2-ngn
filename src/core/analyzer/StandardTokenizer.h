@@ -22,6 +22,7 @@ public:
     bool incrementToken();
     bool processToken();
     virtual ~StandardTokenizer();
+    virtual void clearState() {};
 };
 }
 }
