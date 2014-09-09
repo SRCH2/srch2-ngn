@@ -2234,8 +2234,10 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
                        + temporaryString;
           }
       } else {
+          //When srch2Home is "." warning message will be "httpServerAccessLogFile is not set, so the engine will use default location ./logs/srch2-log.txt"
+          //When srch2Home is "./" warning message will be "httpServerAccessLogFile is not set, so the engine will use default location .//logs/srch2-log.txt"
           string warning = "httpServerAccessLogFile is not set, so the engine will use default location ";
-          warning = warning + this->srch2Home + "/" + "logs" + "/" + "srch2-log.txt";
+          warning = warning + this->srch2Home + "logs" + "/" + "srch2-log.txt";
           Logger::warn(warning.c_str());
       }
 
