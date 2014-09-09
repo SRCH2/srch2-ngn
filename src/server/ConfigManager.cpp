@@ -98,7 +98,6 @@ const char* const ConfigManager::mergeEveryNSecondsString = "mergeeverynseconds"
 const char* const ConfigManager::mergePolicyString = "mergepolicy";
 const char* const ConfigManager::nameString = "name";
 const char* const ConfigManager::porterStemFilterString = "PorterStemFilter";
-const char* const ConfigManager::tokenizerFilterString = "TokenizerFilter";
 const char* const ConfigManager::prefixMatchPenaltyString = "prefixmatchpenalty";
 const char* const ConfigManager::queryString = "query";
 const char* const ConfigManager::queryResponseWriterString =
@@ -1593,13 +1592,12 @@ void ConfigManager::setUpStemmer(CoreInfo_t *coreInfo, const xml_node &field, st
     }
 }
 
-void ConfigManager::setUpChineseDictionary(CoreInfo_t * coreInfo, const xml_node &field, std::stringstream &parseWarnings){
-    std::string path = field.attribute(dictionaryString).value();
-    if (path.compare("") != 0) { 
+void ConfigManager::setUpChineseDictionary(CoreInfo_t * coreInfo, string &dictionaryPath, std::stringstream &parseWarnings){
+    if (dictionaryPath.compare("") != 0) { 
         coreInfo->analyzerType = CHINESE_ANALYZER;
-        trimSpacesFromValue(path, tokenizerFilterString, parseWarnings);
+        trimSpacesFromValue(dictionaryPath, dictionaryString, parseWarnings);
         coreInfo->chineseDictionaryFilePath = 
-            boost::filesystem::path(this->srch2Home + path).normalize().string();
+            boost::filesystem::path(this->srch2Home + dictionaryPath).normalize().string();
     } else {
         Logger::warn("In core %s : Dictionary file is not set for tokenizerFilter, so ChineseAnalyzer is disabled", coreInfo->name.c_str());
         coreInfo->analyzerType = STANDARD_ANALYZER;
@@ -1707,13 +1705,12 @@ void ConfigManager::setUpEnglishAnalyzer(CoreInfo_t * coreInfo, const xml_node &
 
 // The Chinese Analyzer doesn't have the stemmer. 
 // In addition, we need one more field of the Chinese dictionary to tokenize the sentence.
-void ConfigManager::setUpChineseAnalyzer(CoreInfo_t * coreInfo, const xml_node &childNodeTemp, std::stringstream &parseWarnings){
+void ConfigManager::setUpChineseAnalyzer(CoreInfo_t * coreInfo, string& dictionaryPath, const xml_node &childNodeTemp, std::stringstream &parseWarnings){
+    setUpChineseDictionary(coreInfo, dictionaryPath, parseWarnings);
     coreInfo->stemmerFlag = false;
     for (xml_node field = childNodeTemp.first_child(); field; field = field.next_sibling()) {
         std::string nameTag = field.attribute(nameString).value();
-        if ( nameTag.compare(tokenizerFilterString) == 0){
-            setUpChineseDictionary(coreInfo, field, parseWarnings);
-        } else if ( nameTag.compare(stopFilterString) == 0) { 
+        if ( nameTag.compare(stopFilterString) == 0) { 
             setUpStopword(coreInfo, field, parseWarnings);
         } else if ( nameTag.compare(protectedWordFilterString) == 0){
             setUpProtectedWord(coreInfo, field, parseWarnings);
@@ -1741,8 +1738,9 @@ void ConfigManager::parseSchemaType(const xml_node &childNode,
                     setUpEnglishAnalyzer(coreInfo, childNodeTemp, parseWarnings);
                 } else if (string(fieldType.attribute(nameString).value()).compare(
                         textZhString) == 0) {
+                    string dictionaryPath = fieldType.attribute(dictionaryString).value();
                     xml_node childNodeTemp = fieldType.child(analyzerString); // looks for analyzer
-                    setUpChineseAnalyzer(coreInfo, childNodeTemp, parseWarnings);
+                    setUpChineseAnalyzer(coreInfo, dictionaryPath, childNodeTemp, parseWarnings);
                 } else {
                     Logger::error(" In core %s : Not a valid fieldType name in config file, currently we only support text_en and text_zh.", coreInfo->name.c_str());
                 }

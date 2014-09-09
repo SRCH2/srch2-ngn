@@ -81,9 +81,8 @@
         <facetEnabled>false</facetEnabled>
 
         <types>
-            <fieldType name="text_zh">
+            <fieldType name="text_zh" dictionary="./chinese/srch2_dict_ch.core" >
                 <analyzer>
-                    <filter name="TokenizerFilter" dictionary="./chinese/srch2_dict_ch.core" />
                     <filter name="StopFilter" words="./chinese/srch2_stop_words_zh_cn.txt" />
                     <filter name="protectedKeyWordsFilter" words="./chinese/srch2_protected_words.txt" />
                 </analyzer>
