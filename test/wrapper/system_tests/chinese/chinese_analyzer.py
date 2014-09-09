@@ -30,7 +30,7 @@ def check_expected_hit(expected_hit, search_url):
         response = open_url_get(search_url + encoded)
         ret = check_array_contains(response['results'], hit[1])
         if ret != 0:
-            print "hit assert failed:", hit
+            print "hit assert failed:", hit[0]
             return ret
     return 0
 

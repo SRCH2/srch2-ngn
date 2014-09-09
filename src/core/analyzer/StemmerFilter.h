@@ -58,7 +58,6 @@ public:
      * incrementToken() is a virtual function of class TokenOperator. Here we have to implement it. It goes on all tokens.
      * */
     bool processToken();
-    virtual void clearState() {};
 
     virtual ~StemmerFilter();
 
