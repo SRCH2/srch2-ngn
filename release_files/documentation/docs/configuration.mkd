@@ -577,7 +577,7 @@ the following configuration specifies the English analyzer:
 And the following configuration specifies the Chinese analyzer:
 ```
 <types>
-  <fieldType name="text_zh">
+  <fieldType name="text_zh" dictionary="/relativ/path/to/srch2home/srch2_dict_ch.core">
     <analyzer>
     ...
     </analyzer>
@@ -652,7 +652,7 @@ Note that whitespace characters will also be considered word delimiters and are 
 
 The [advanced example](../example-demo/srch2-config-advanced.xml) provides an example of allowing Twitter-hashtag-like terms to be queried.
 
-###11.6.6 Chinese Dictionary (Optional)
+###11.6.6 Chinese Dictionary 
 
 If we want to use the Chinese analyzer by setting <code>fieldType
 name="text_zh"</code>, then we should also provide the path of a Chinese
@@ -660,7 +660,7 @@ dictionary (relative to the <code>srch2Home</code> folder) for the
 engine to use to tokenize records and queries. 
 The following is an example:
 ```
-<filter name="TokenizerFilter" dictionary="/relativ/path/to/srch2home/srch2_dict_ch.core" />
+ <fieldType name="text_zh" dictionary="/relativ/path/to/srch2home/srch2_dict_ch.core">
 ```
 
 For example, the engine can tokenize the string "海边城市" (meaning
