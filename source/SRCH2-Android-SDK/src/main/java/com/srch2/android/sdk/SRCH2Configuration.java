@@ -114,8 +114,9 @@ final class SRCH2Configuration {
                     validateIndexable((Indexable) idx);
                     idx.indexInternal = createIndex(new IndexDescription((Indexable) idx));
                 } else if (SQLiteIndexable.class.isAssignableFrom(c)) {
-                    validateSqliteIndexable((SQLiteIndexable) idx);
-                    idx.indexInternal = createIndex(new IndexDescription((SQLiteIndexable) idx));
+                    Schema s = ((SQLiteIndexable) idx).getSchema();
+                    validateSqliteIndexable((SQLiteIndexable) idx, s);
+                    idx.indexInternal = createIndex(new IndexDescription((SQLiteIndexable) idx, s));
                 }
                 indexableMap.put(idx.getIndexName(), idx);
             }
@@ -129,14 +130,16 @@ final class SRCH2Configuration {
         return indexInternal;
     }
 
-    void validateSRCH2Index(IndexableCore indexable) {
+    void validateSRCH2Index(IndexableCore indexable, Schema idxSchema) {
         if (indexable == null) {
             throw new NullPointerException("Cannot initialize the SRCH2Engine when a null Indexable is passed.");
         }
         IndexDescription.throwIfNonValidIndexName(indexable.getIndexName());
-        if (indexable.getSchema() == null) {
+
+        if (idxSchema == null) {
             throw new NullPointerException("Indexable " + indexable.getIndexName() + " cannot be initialized with null schema: verify getSchema() is returning a valid schema object.");
         }
+
         if (indexable.getHighlighter() == null) {
             throw new NullPointerException("Indexable " + indexable.getIndexName() + " cannot be initialized with null highlighter: verify getHighlighter() is returning a valid highlighter object.");
         }
@@ -145,11 +148,12 @@ final class SRCH2Configuration {
     }
 
     void validateIndexable(Indexable indexable) {
-        validateSRCH2Index((IndexableCore) indexable);
+
+        validateSRCH2Index((IndexableCore) indexable, indexable.getSchema());
     }
 
-    void validateSqliteIndexable(SQLiteIndexable indexable) {
-        validateSRCH2Index((IndexableCore) indexable);
+    void validateSqliteIndexable(SQLiteIndexable indexable, Schema s) {
+        validateSRCH2Index((IndexableCore) indexable, s);
         checkIfDatabaseNameValidThrowIfNot(indexable.getDatabaseName());
         checkIfDatabaseTableNameValidThrowIfNot(indexable.getTableName());
     }

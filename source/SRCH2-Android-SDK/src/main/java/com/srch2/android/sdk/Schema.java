@@ -1,5 +1,6 @@
 package com.srch2.android.sdk;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 
 /**
@@ -148,6 +149,7 @@ public final class Schema {
                 Field.InternalType.LOCATION_LONGITUDE, false, false,
                 Field.DEFAULT_BOOST_VALUE));
     }
+
 
     /**
      * Defines the structure of an index's data fields that is to include geosearch capability. If an index

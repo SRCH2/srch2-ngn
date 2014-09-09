@@ -92,20 +92,14 @@ final class IndexDescription {
         return name;
     }
 
-    private IndexDescription(IndexableCore idx) {
-        type = IndexableType.Default;
-        name = idx.getIndexName();
-        schema = idx.getSchema();
-
+    private void setGeneralProperties(IndexableCore idx) {
         highlighter = idx.getHighlighter();
         highlighter.configureHighlightingForIndexDescription();
 
         queryProperties.setProperty("rows", String.valueOf(idx.getTopK()));
         queryProperties.setProperty("queryTermSimilarityThreshold",
                 String.valueOf(idx.getFuzzinessSimilarityThreshold()));
-    }
 
-    private void setGeneralProperties() {
         setQueryProperties();
         setMiscProperties();
         setIndexProperties();
@@ -113,30 +107,23 @@ final class IndexDescription {
     }
 
     IndexDescription(Indexable idx) {
-        this((IndexableCore) idx);
+        name = idx.getIndexName();
+        schema = idx.getSchema();
         type = IndexableType.Default;
-        setGeneralProperties();
+        setGeneralProperties(idx);
     }
 
-    IndexDescription(SQLiteIndexable idx) {
-        this((IndexableCore) idx);
+    IndexDescription(SQLiteIndexable idx, Schema s) {
+        name = idx.getIndexName();
+        schema = s;
         type = IndexableType.Sqlite;
-/*
-        String databaseName = idx.getDatabaseName();
-        if (!databaseName.endsWith(".db")) {
-            databaseName += ".db";
-        }
-*/
 
         sqliteDatabaseProperties.setProperty(DB_DATABASE_NAME, idx.getDatabaseName());
         sqliteDatabaseProperties.setProperty(DB_DATABASE_TABLE_NAME, idx.getTableName());
-
+        sqliteDatabaseProperties.setProperty(DB_MAX_RETRY_ON_FAILURE, "2");
         // TODO make setable by user
         sqliteDatabaseProperties.setProperty(DB_LISTENER_WAIT_TIME, "3");
-
-        sqliteDatabaseProperties.setProperty(DB_MAX_RETRY_ON_FAILURE, "2");
-
-        setGeneralProperties();
+        setGeneralProperties(idx);
     }
 
     void setQueryProperties() {

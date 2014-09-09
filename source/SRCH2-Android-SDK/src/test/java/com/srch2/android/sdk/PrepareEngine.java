@@ -1,5 +1,6 @@
 package com.srch2.android.sdk;
 
+import android.database.sqlite.SQLiteOpenHelper;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -59,8 +60,8 @@ public class PrepareEngine {
         }
 
         @Override
-        public Schema getSchema() {
-            return Schema.createSchema(Field.createDefaultPrimaryKeyField(INDEX_PK_NAME), Field.createSearchableField(INDEX_TITLE_NAME));
+        public SQLiteOpenHelper getSQLiteOpenHelper() {
+            return null;
         }
     }
 

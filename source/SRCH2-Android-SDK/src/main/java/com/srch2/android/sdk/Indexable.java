@@ -38,6 +38,22 @@ import org.json.JSONObject;
  */
 public abstract class Indexable extends IndexableCore {
 
+
+    /**
+     * Implementing this method sets the schema of the index this <code>Indexable</code>
+     * or <code>SQLiteIndexable</code> represents. The schema
+     * defines the data fields of the index, much like the table structure of an SQLite database table. See
+     * {@link Schema} for more information.
+     * <br><br>
+     * <b>Note that if this is <code>SQLiteIndexable</code> the schema must correspond to the
+     * table structure</b>: the {@link com.srch2.android.sdk.PrimaryKeyField} must correspond to the
+     * auto-incrementing primary key of the table; any text columns should be searchable; any integer or
+     * real values should be refining (but can be searchable and refining).
+     * @return the schema to define the index structure this <code>Indexable</code> or <code>SQLiteIndexable</code> represents
+     */
+    abstract public Schema getSchema();
+
+
     /**
      * Returns the number of records that are currently in the index that this
      * <code>Indexable</code> or <code>SQLiteIndexable</code> represents.

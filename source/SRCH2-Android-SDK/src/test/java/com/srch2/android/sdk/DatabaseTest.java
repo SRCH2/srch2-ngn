@@ -1,5 +1,6 @@
 package com.srch2.android.sdk;
 
+import android.database.sqlite.SQLiteOpenHelper;
 import junit.framework.Assert;
 import org.junit.Test;
 
@@ -80,8 +81,8 @@ public class DatabaseTest {
         }
 
         @Override
-        public Schema getSchema() {
-            return Schema.createSchema(Field.createDefaultPrimaryKeyField(INDEX_PK_NAME), Field.createSearchableField(INDEX_TITLE_NAME));
+        public SQLiteOpenHelper getSQLiteOpenHelper() {
+            return null;
         }
     }
 }

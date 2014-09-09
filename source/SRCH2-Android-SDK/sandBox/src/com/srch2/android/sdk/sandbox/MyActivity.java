@@ -28,7 +28,6 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
 
     DatabaseHelper dbHelper;
 
-    DatabaseHelper.SqliteIndexable sqliteIndex;
 
     SearchResults sr;
 
@@ -51,12 +50,9 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
 
         dbHelper = new DatabaseHelper(this);
         dbHelper.insertRecords();
-        sqliteIndex = new DatabaseHelper.SqliteIndexable();
 
 
-
-
-        SRCH2Engine.setSQLiteIndexables(sqliteIndex);
+        SRCH2Engine.setSQLiteIndexables(dbHelper.idx);
         SRCH2Engine.initialize();
 
 
@@ -66,6 +62,7 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
         sr = new SearchResults();
         SRCH2Engine.setSearchResultsListener(sr, true);
         SRCH2Engine.setAutomatedTestingMode(true);
+
     }
 
 
@@ -97,7 +94,7 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
     public void bar(View v) {
 
 
-        Toast.makeText(context, "Record count: " + sqliteIndex.getRecordCount(), Toast.LENGTH_SHORT).show();
+        Toast.makeText(context, "Record count: " + dbHelper.idx.getRecordCount(), Toast.LENGTH_SHORT).show();
     }
 
 
@@ -116,7 +113,7 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
 
     @Override
     public void onNewSearchInput(String newSearchText) {
-        SRCH2Engine.searchAllIndexes(newSearchText);
+       SRCH2Engine.searchAllIndexes(newSearchText);
     }
 
     @Override

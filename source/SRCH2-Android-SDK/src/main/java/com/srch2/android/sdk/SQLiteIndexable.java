@@ -1,5 +1,10 @@
 package com.srch2.android.sdk;
 
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+
+import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
@@ -38,6 +43,12 @@ import java.util.concurrent.ExecutionException;
  */
 public abstract class SQLiteIndexable extends IndexableCore {
 
+    final Schema getSchema() {
+        return resolveSchemaFromSqliteOpenHelper(getTableName(), getSQLiteOpenHelper());
+    }
+
+    public abstract SQLiteOpenHelper getSQLiteOpenHelper();
+
     /**
      * Implementing this method enables the SRCH2 search server to automatically observe data content
      * of the table that will be used to create and update the index this <code>SQLiteIndexable</code> represents.
@@ -58,9 +69,160 @@ public abstract class SQLiteIndexable extends IndexableCore {
     public abstract String getDatabaseName();
 
 
+    final private Schema resolveSchemaFromSqliteOpenHelper(String tableName, SQLiteOpenHelper mSqliteOpenHelper) {
+        final int PRAGMA_COLUMN_INDEX_COLUMN_INDEX = 0;
+        final int PRAGMA_COLUMN_INDEX_COLUMN_NAME = 1;
+        final int PRAGMA_COLUMN_INDEX_COLUMN_TYPE = 2;
+        final int PRAGMA_COLUMN_INDEX_COLUMN_IS_NOT_NULL = 3;
+        final int PRAGMA_COLUMN_INDEX_COLUMN_DEFAULT_VALUE = 4;
+        final int PRAGMA_COLUMN_INDEX_COLUMN_IS_PRIMARY_KEY = 5;
+
+        SQLiteDatabase db = null;
+        Cursor c = null;
+
+        ArrayList<Field> fields = new ArrayList<Field>();
+        PrimaryKeyField pkField = null;
+        boolean containsPrimaryKey = false;
+        boolean containsAtLeastOneSearchableField = false;
+
+        try {
+            db = mSqliteOpenHelper.getReadableDatabase();
+            c = db.rawQuery("PRAGMA table_info(" + tableName + ")", null);
+            if (c.moveToFirst()) {
+                // each row represents a column in the table we do the pragma info on
+                // each column in this row represents data about that table column
+                // (see PRAMGA_COLUMN_INDEX_* above)
+                do {
+                    String name = null;
+
+                    // first get the type of the this column: skip if blob (media) or null
+                    // note we are comparing the value for the table column's type NOT getting the
+                    // type of the column in the cursor
+                    SQLiteColumnType columnType = SQLiteColumnType.getType(c.getString(PRAGMA_COLUMN_INDEX_COLUMN_TYPE));
+                    if (columnType != SQLiteColumnType.BLOB && columnType != SQLiteColumnType.NULL) {
+
+                        // get the name of the column
+                        name = c.getString(PRAGMA_COLUMN_INDEX_COLUMN_NAME);
+
+
+                        // check if it is it the primary key
+                        boolean primaryKey = false;
+                        if (pkField == null) {
+                            primaryKey = c.getInt(PRAGMA_COLUMN_INDEX_COLUMN_IS_PRIMARY_KEY) == 1;
+                            if (primaryKey) {
+                                containsPrimaryKey = true;
+                            }
+                        }
+
+                        if (name != null) {
+                            if (primaryKey) {
+                                if (columnType.schemaType == SQLiteColumnType.SchemaType.Searchable) {
+                                    pkField = Field.createSearchablePrimaryKeyField(name);
+                                } else {
+                                    pkField = Field.createDefaultPrimaryKeyField(name);
+                                }
+                            } else {
+                                Field extraField = null;
+                                switch (columnType.schemaType) {
+                                    case Searchable:
+                                        extraField = Field.createSearchableField(name);
+                                        if (!containsAtLeastOneSearchableField) {
+                                            containsAtLeastOneSearchableField = true;
+                                        }
+                                        break;
+                                    case RefiningInteger:
+                                        extraField = Field.createRefiningField(name, Field.Type.INTEGER);
+                                        break;
+                                    case RefiningReal:
+                                        extraField = Field.createRefiningField(name, Field.Type.FLOAT);
+                                        break;
+                                }
+                                fields.add(extraField);
+                            }
+                        }
+                    }
+                } while (c.moveToNext());
+            }
+        } finally {
+            if (db != null) {
+                db.close();
+            }
+            if (c != null) {
+                c.close();
+            }
+        }
+
+        if (!containsPrimaryKey) {
+            throw new IllegalStateException("While generating com.srch2.android.sdk.Schema from SQLite table, " +
+                    "table did not contain primary key. Table must contain one column that is PRIMARY KEY");
+        }
+        if (!containsAtLeastOneSearchableField) {
+            throw new IllegalStateException("While generating com.srch2.android.sdk.Schema from SQLite table, " +
+                    "table did not contain at least one searchable field. Table must contain at least one column" +
+                    " that is TEXT.");
+        }
+
+        return new Schema(pkField, fields.toArray(new Field[fields.size()]));
+    }
+
+    private static enum SQLiteColumnType {
+        TEXT(SchemaType.Searchable),
+        INTEGER(SchemaType.RefiningInteger),
+        NULL(null),
+        BLOB(null),
+        REAL(SchemaType.RefiningReal);
+
+        static enum SchemaType {
+            Searchable,
+            RefiningInteger,
+            RefiningReal;
+        }
+
+        public SchemaType schemaType;
+
+        SQLiteColumnType(SchemaType srch2FieldType) {
+            schemaType = srch2FieldType;
+        }
+
+        public static SQLiteColumnType getType(int type) {
+            switch (type) {
+                case Cursor.FIELD_TYPE_STRING:
+                    return SQLiteColumnType.TEXT;
+                case Cursor.FIELD_TYPE_FLOAT:
+                    return SQLiteColumnType.REAL;
+                case Cursor.FIELD_TYPE_INTEGER:
+                    return SQLiteColumnType.INTEGER;
+                case Cursor.FIELD_TYPE_NULL:
+                    return SQLiteColumnType.NULL;
+                case Cursor.FIELD_TYPE_BLOB:
+                    return SQLiteColumnType.BLOB;
+                default:
+                    return SQLiteColumnType.NULL;
+            }
+        }
+
+        public static SQLiteColumnType getType(String typeName) {
+            if (typeName.equals(SQLiteColumnType.TEXT.name())) {
+                return SQLiteColumnType.TEXT;
+            } else if (typeName.equals(SQLiteColumnType.INTEGER.name())) {
+                return SQLiteColumnType.INTEGER;
+            } else if (typeName.equals(SQLiteColumnType.REAL.name())) {
+                return SQLiteColumnType.REAL;
+            } else if (typeName.equals(SQLiteColumnType.NULL.name())) {
+                return SQLiteColumnType.NULL;
+            } else if (typeName.equals(SQLiteColumnType.BLOB.name())) {
+                return SQLiteColumnType.BLOB;
+            } else {
+                return SQLiteColumnType.NULL;
+            }
+        }
+    }
+
     /**
      * Returns the number of records that are currently in the index that this
-     * <code>Indexable</code> or <code>SQLiteIndexable</code> represents.
+     * <code>SQLiteIndexable</code> represents.
+     * <br><br>
+     * <b>Note that this is a blocking call</b>: however it typically will block less than 50ms.
      * @return the number of records in the index
      */
     public final int getRecordCount() {
