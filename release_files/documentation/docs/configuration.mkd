@@ -561,10 +561,10 @@ span the entire facetGap. Also all facet fields must be declared in a
 ###11.6. Analyzer
 
 The parameters contained in this tag configure the analyzer to be used by the engine. 
-Currently we support English and Chinese analyzers. 
-We can specify which language to use by setting <code>fieldType name="text_en"</code> or <code>fieldType name="text_zh"</code>
-correspondingly. 
-For example the following configuration specified to use the English language support,
+Currently we support English and Chinese analyzers.  We can specify
+which language to use by setting <code>fieldType name="text_en"</code>
+or <code>fieldType name="text_zh"</code> correspondingly.  For example,
+the following configuration specifies the English analyzer:
 ```
 <types>
   <fieldType name="text_en">
@@ -574,7 +574,7 @@ For example the following configuration specified to use the English language su
   </fieldType>
 </types>
 ```
-And the following configuration specified to use the Chinese language support,
+And the following configuration specifies the Chinese analyzer:
 ```
 <types>
   <fieldType name="text_zh">
@@ -653,14 +653,23 @@ Note that whitespace characters will also be considered word delimiters and are 
 The [advanced example](../example-demo/srch2-config-advanced.xml) provides an example of allowing Twitter-hashtag-like terms to be queried.
 
 ###11.6.6 Chinese Dictionary (Optional)
-If we specify to use Chinese analyzer by setting <code>fieldType name="text_zh"</code>, then we should also provide the path of Chinese dictionary to the engine to tokenize records and queries.
-For example, the engine can split the text field "中国城市" into "中国" and "城市".
-If the user didn't provide the dictionary file, the engine will treat each of the Chinese characters as one keyword. e.g. the "中国城市" will be tokenized as "中","国","城" and "市".
-The SRCH2 Chinese dictionary is a binary file named as "srch2_dict_ch.core" inside the "srch2_data" folder. 
-The user need to provide the path to the dictionary file relative to <code>srch2Home</code> as following,
+
+If we want to use the Chinese analyzer by setting <code>fieldType
+name="text_zh"</code>, then we should also provide the path of a Chinese
+dictionary (relative to the <code>srch2Home</code> folder) for the
+engine to use to tokenize records and queries. 
+The following is an example:
 ```
 <filter name="TokenizerFilter" dictionary="/relativ/path/to/srch2home/srch2_dict_ch.core" />
 ```
+
+For example, the engine can tokenize the string "海边城市" (meaning
+"ocean cities" in English) into "海边" ("ocean") and "城市"
+("cities").  If the user doesn't provide the dictionary file, the
+engine will treat each Chinese character as a separate keyword. For
+instance, the string "海边城市" will be tokenized as "海","边","城",
+and "市".  The SRCH2 Chinese dictionary is a binary file named as
+"srch2_dict_ch.core" inside the "srch2_data" folder. 
 
 ##12. Logging
 
