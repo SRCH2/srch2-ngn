@@ -167,6 +167,11 @@ public:
     TrieNode *rightMostDescendant;
     std::vector<TrieNode*> childrenPointerList;
 
+    // we use this flag for concurrency control. so when we made a copy of this node for example
+    // for insertion we don't need to copy it again for next insertions. and in the merge we change
+    // this flag to false;
+    bool isCopy;
+
     // The following functions are used to get/set the leftInsertCounter and
     // rightInsertCounter for each leaf node in the trie.
     // They are used to assign an integer id for a new keyword inserted
@@ -240,6 +245,7 @@ private:
         ar & leftMostDescendant;
         ar & rightMostDescendant;
         ar & childrenPointerList;
+        ar & isCopy;
     }
 
     // for boost serialization
@@ -511,6 +517,9 @@ public:
 class Trie
 {
 public:
+
+	int numberOfCopies;
+
     // we partition the integer space into two ranges;
     //  Range 1: [0 - x], for keywords already with integer ids;
     //  Range 2: [x + 1, 2^32 - 1], for new keywords that can get an order-preserving integer ids;

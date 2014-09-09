@@ -50,6 +50,7 @@ TrieNode::TrieNode()
     this->insertCounters = 0;
     this->setLeftInsertCounter(1); // default values: 1
     this->setRightInsertCounter(1);
+    this->isCopy = false;
 }
 
 TrieNode::TrieNode(bool create_root)
@@ -70,6 +71,7 @@ TrieNode::TrieNode(bool create_root)
     this->insertCounters = 0;
     this->setLeftInsertCounter(1); // default values: 1
     this->setRightInsertCounter(1);
+    this->isCopy = false;
 }
 
 TrieNode::TrieNode(int depth, CharType character)
@@ -88,6 +90,7 @@ TrieNode::TrieNode(int depth, CharType character)
     this->insertCounters = 0;
     this->setLeftInsertCounter(1); // default values: 1
     this->setRightInsertCounter(1);
+    this->isCopy = false;
 }
 
 TrieNode::TrieNode(const TrieNode *src)
@@ -106,6 +109,7 @@ TrieNode::TrieNode(const TrieNode *src)
     this->insertCounters = 0;
     this->setLeftInsertCounter(src->getLeftInsertCounter());
     this->setRightInsertCounter(src->getRightInsertCounter());
+    this->isCopy = src->isCopy;
 }
 
 TrieNode::~TrieNode()
