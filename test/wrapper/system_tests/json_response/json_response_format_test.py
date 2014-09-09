@@ -7,7 +7,7 @@
 import sys, urllib2, json, time, subprocess, os, commands, signal
 import inspect
 sys.path.insert(0, 'srch2lib')
-import test_lib
+from test_lib import *
 
 def check_keys( json, keys):
     for key in keys:
@@ -15,30 +15,6 @@ def check_keys( json, keys):
             print >> sys.stderr, 'missing key:', key , 'inside this json object:', json
             return False
     return True
-
-def open_url_get(url):
-    try:
-        return json.loads(urllib2.urlopen(url).read())
-    except urllib2.HTTPError as e:
-        return json.loads(e.read())
-    
-def open_url_put(url, record):
-    try:
-        opener = urllib2.build_opener(urllib2.HTTPHandler)
-        request = urllib2.Request(url, record)
-        request.get_method = lambda: 'PUT'
-        return json.loads( opener.open(request).read())
-    except urllib2.HTTPError as e:
-        return json.loads(e.read())
-
-def open_url_delete(url):
-    try:
-        opener = urllib2.build_opener(urllib2.HTTPHandler)
-        request = urllib2.Request(url, '')
-        request.get_method = lambda: 'DELETE'
-        return json.loads(opener.open(request).read())
-    except urllib2.HTTPError as e:
-        return json.loads(e.read())
 
 def testSearchResponds(host_url):
     search_url = host_url + '/search'
@@ -279,14 +255,14 @@ def testShutDownResponds(host_url):
 if __name__ == '__main__':
     binary_path = sys.argv[1]
     conf = './json_response/conf.xml'
-    port = test_lib.detectPort(conf)
-    if test_lib.confirmPortAvailable(port) == False:
+    port = detectPort(conf)
+    if confirmPortAvailable(port) == False:
         print 'Port ' + str(port) + ' already in use - aborting'
         os._exit(-1)
 
-    serverHandle = test_lib.startServer([binary_path, '--config=' + conf]) 
+    serverHandle = startServer([binary_path, '--config=' + conf]) 
     host_url = 'http://127.0.0.1:' + str(port) 
-    test_lib.pingServer(port)
+    pingServer(port)
     print 'starting engine: ' + host_url + ' ' + conf
     exit_code = 0;
     try :
@@ -308,7 +284,7 @@ if __name__ == '__main__':
         print 'ERROR:', e
         exit_code = -1
     finally:
-        test_lib.killServer(serverHandle)  
+        killServer(serverHandle)  
         if exit_code == 0:
             print '\033[92m'+ "All passed", '\033[0m'
         else:

@@ -93,6 +93,7 @@ string AnalyzerInternal::applyFilters(string input, bool isPrefix) {
 void AnalyzerInternal::clearFilterStates() {
   // clear the state of each filter on the chain
   if (tokenStream != NULL) {
+
     tokenStream->clearState();
   }
 }
@@ -169,6 +170,7 @@ void AnalyzerInternal::tokenizeRecord(const Record *record,
 					AnalyzedTokenType tokenType =  tokenStream->getProcessedTokentype();
 					unsigned charLen = tokenStream->getProcessedTokenLen();
 					charTypeVectorToUtf8String(charVector, currentToken);
+
 					if (tokenType == ANALYZED_SYNONYM_TOKEN) {
 						vector<string> currentTokens;
 						unsigned synonymCharOffset = prevAttrCombinedLen + charOffset;

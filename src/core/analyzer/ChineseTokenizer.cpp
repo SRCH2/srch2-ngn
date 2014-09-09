@@ -1,6 +1,6 @@
 //$Id$
 #include "ChineseTokenizer.h"
-
+#include "AnalyzerContainers.h"
 #include <utility>  // std::pair
 #include "CharSet.h"
 #include "util/Assert.h"
@@ -16,12 +16,8 @@ const int MAXIMUM_SEQUENCE_SCORE = 1000000;
 namespace srch2{
 namespace instantsearch{
 
-ChineseTokenizer::ChineseTokenizer(const string &chineseDictFilePath)
-    :Tokenizer(),mChineseDict(), mCurrentChineseTokens(){
-    int ret = mChineseDict.loadDict(chineseDictFilePath);
-    if (ret < 0){
-        //TODO throw exception in future
-    }
+ChineseTokenizer::ChineseTokenizer(const ChineseDictionaryContainer* chineseDictionaryContainer)
+    :Tokenizer(),mChineseDictionaryContainer(chineseDictionaryContainer), mCurrentChineseTokens(){
     mCurrentChineseTokens.reserve(32);  // Assuming most Chinese sentences have less than 32 tokens. It will grow automatically if larger.
 }
 
@@ -187,8 +183,8 @@ void ChineseTokenizer::tokenize(const vector<CharType> &sentence, int istart, in
     preBestGap[0] = 0;
 
     for(int endPosition = 1; endPosition < size; ++endPosition){
-        for(int spanSize = 1; spanSize < mChineseDict.getMaxWordLength() && spanSize <= endPosition; ++spanSize){
-            short freq = mChineseDict.getFreq(sentence, (unsigned)(istart + endPosition-spanSize),(unsigned) spanSize);
+        for(int spanSize = 1; spanSize < mChineseDictionaryContainer->getMaxWordLength() && spanSize <= endPosition; ++spanSize){
+            short freq = mChineseDictionaryContainer->getFreq(sentence, (unsigned)(istart + endPosition-spanSize),(unsigned) spanSize);
             if (freq == Dictionary::INVALID_WORD_FREQ){ // The character does not exist
                 if ( spanSize == 1){                    // Refer to: Special case
                     freq = UNKNOWN_CHAR_FREQ;   

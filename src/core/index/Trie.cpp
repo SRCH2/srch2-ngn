@@ -1141,13 +1141,21 @@ void Trie::doReassignment(const vector<TrieNode *> &reassignRange, map<TrieNode 
         trieNodeIdMapper[reassignRange[reassignRange.size()-1]] = MAX_ALLOCATED_KEYWORD_ID;
     }
 
-    // calculate the distance between each Id
-    ASSERT(leftId < rightId);
-    unsigned pace = (rightId - leftId) / (reassignRange.size()-1);
+    if (reassignRange.size() > 1) {
+    	// calculate the distance between each Id
+    	ASSERT(leftId < rightId);
+    	unsigned pace = (rightId - leftId) / (reassignRange.size()-1);
 
-    // store the reassigned Id in a map
-    for (unsigned i = 1; i < reassignRange.size() - 1; i++)
-        trieNodeIdMapper[reassignRange[i]] = leftId + i * pace;
+    	// store the reassigned Id in a map
+    	for (unsigned i = 1; i < reassignRange.size() - 1; i++)
+    		trieNodeIdMapper[reassignRange[i]] = leftId + i * pace;
+    } else {
+    	// when trie is empty and first insertion only has one keyword leftId and rightId both are zero
+    	// and reassignRange.size() is 1
+    	// So in this special case we just assign id "MAX_ALLOCATED_KEYWORD_ID/2" to this node
+    	trieNodeIdMapper[reassignRange[0]] = MAX_ALLOCATED_KEYWORD_ID/2;
+    }
+
 }
 
 // For all the TrieNodes we need to reassign,

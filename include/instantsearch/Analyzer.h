@@ -63,8 +63,9 @@ struct TokenAttributeHits {
 class Record;
 class StemmerContainer;
 class StopWordContainer;
-class  ProtectedWordsContainer;
-class  SynonymContainer;
+class ProtectedWordsContainer;
+class SynonymContainer;
+class ChineseDictionaryContainer;
 /**
  * An Analyzer is used at query time to tokenize a queryString into
  * a vector of query keywords and also prevents very common words from
@@ -79,7 +80,7 @@ public:
              const SynonymContainer *synonyms,
              const std::string &allowedSpecialCharacters,
              const AnalyzerType &analyzerType = STANDARD_ANALYZER,
-             const std::string &chineseDictFilePath = "");
+             const ChineseDictionaryContainer* chineseDict = NULL);
 
 
 	void setRecordAllowedSpecialCharacters(const std::string &allowedSpecialCharacters);
