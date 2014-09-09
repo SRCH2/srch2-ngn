@@ -129,8 +129,8 @@ const char* const ConfigManager::supportSwapInEditDistanceString =
         "supportswapineditdistance";
 const char* const ConfigManager::synonymFilterString = "synonymFilter";
 const char* const ConfigManager::synonymsString = "synonyms";
-const char* const ConfigManager::textEnString = "text_en";
-const char* const ConfigManager::textZhString = "text_zh";
+const char* const ConfigManager::textEnString = "text_standard";
+const char* const ConfigManager::textZhString = "text_chinese";
 const char* const ConfigManager::typeString = "type";
 const char* const ConfigManager::typesString = "types";
 const char* const ConfigManager::uniqueKeyString = "uniquekey";
@@ -1742,7 +1742,7 @@ void ConfigManager::parseSchemaType(const xml_node &childNode,
                     xml_node childNodeTemp = fieldType.child(analyzerString); // looks for analyzer
                     setUpChineseAnalyzer(coreInfo, dictionaryPath, childNodeTemp, parseWarnings);
                 } else {
-                    Logger::error(" In core %s : Not a valid fieldType name in config file, currently we only support text_en and text_zh.", coreInfo->name.c_str());
+                    Logger::error(" In core %s : Not a valid fieldType name in config file, currently we only support text_standard and text_chinese.", coreInfo->name.c_str());
                 }
             }
         }

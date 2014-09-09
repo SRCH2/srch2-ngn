@@ -30,13 +30,13 @@ the ctest case "Analyzer_Test":
 
 ```bash
 build$ utilities/dictionary-builder/DictionaryBuilder \
- ../utilities/dictionary-builder/data/chinese.dict ../test/core/unit/test_data/analyzer/srch2_dict_ch.core 
+ ../utilities/dictionary-builder/data/chinese.dict ../test/core/unit/test_data/analyzer/srch2_dictionary_zh_cn.bin 
 
 #The following command generates the dictionary binary in the release folder:
 
 ```bash
 build$ utilities/dictionary-builder/DictionaryBuilder \
- ../utilities/dictionary-builder/data/chinese.dict ../release_files/srch2_data/srch2_data/srch2_dict_ch.core
+ ../utilities/dictionary-builder/data/chinese.dict ../release_files/srch2_data/srch2_data/srch2_dictionary_zh_cn.bin
 ```
 #About the format of the text dictionary
 

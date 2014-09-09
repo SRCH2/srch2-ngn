@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 # This test is to test the Chinese language support.
-# We need to set the fieldType name to "text_zh" inside the schema configuration to 
+# We need to set the fieldType name to "text_chinese" inside the schema configuration to 
 # enable the Chinese Analyzer. And we need to provide the Chinese Dictionary to 
 # tokenize the sentence. The conf.xml has all the details.
 #

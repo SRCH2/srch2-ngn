@@ -84,7 +84,7 @@
                     </facetFields>
 
                     <types>
-                        <fieldType name="text_en">
+                        <fieldType name="text_standard">
                             <analyzer>
                                 <filter name="PorterStemFilter" dictionary="" />
                                 <filter name="StopFilter" words="stop-words.txt" />
@@ -169,7 +169,7 @@
                     </facetFields>
 
                     <types>
-                        <fieldType name="text_en">
+                        <fieldType name="text_standard">
                             <analyzer>
                                 <filter name="PorterStemFilter" dictionary="" />
                                 <filter name="StopFilter" words="stop-words.txt" />
@@ -421,7 +421,7 @@
                 <uniqueKey>id</uniqueKey>
 
                 <types>
-                    <fieldType name="text_en">
+                    <fieldType name="text_standard">
                         <analyzer>
                             <!--
                                 Stemmer
@@ -571,7 +571,7 @@
         </facetFields>
 
         <types>
-            <fieldType name="text_en">
+            <fieldType name="text_standard">
                 <analyzer>
                     <filter name="PorterStemFilter" dictionary="" />
                     <filter name="StopFilter" words="stop-words2.txt" />
