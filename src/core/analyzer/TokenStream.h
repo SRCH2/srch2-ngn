@@ -24,8 +24,8 @@ public:
     }
     virtual bool processToken() = 0;
 
-    // by default, no state needs to be cleared
-    virtual void clearState() {};
+    // All the subclass need to implement this function to clear their state.
+    virtual void clearState() = 0;
 
     void fillInCharacters(const std::vector<CharType> &charVector){
         tokenStreamContainer->fillInCharacters(charVector);

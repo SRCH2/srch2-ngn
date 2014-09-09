@@ -2,7 +2,7 @@
 
 # Library of useful srch2 system test functions
 
-import sys, subprocess, time, signal, urllib2
+import sys, subprocess, time, signal, urllib2, json
 
 # Start the srch2 search engine server
 # Non-blocking (background process)
@@ -69,3 +69,29 @@ def detectPort(configPath):
         return int(wholecontent[start:end].strip())
     except Exception, err:
         print "Detect port Exception: " + str(err)
+
+def open_url_get(url):
+    try:
+        return json.loads(urllib2.urlopen(url).read())
+    except urllib2.HTTPError as e:
+        return json.loads(e.read())
+    
+def open_url_put(url, record):
+    try:
+        opener = urllib2.build_opener(urllib2.HTTPHandler)
+        request = urllib2.Request(url, record)
+        request.get_method = lambda: 'PUT'
+        return json.loads( opener.open(request).read())
+    except urllib2.HTTPError as e:
+        return json.loads(e.read())
+
+def open_url_delete(url):
+    try:
+        opener = urllib2.build_opener(urllib2.HTTPHandler)
+        request = urllib2.Request(url, '')
+        request.get_method = lambda: 'DELETE'
+        return json.loads(opener.open(request).read())
+    except urllib2.HTTPError as e:
+        return json.loads(e.read())
+
+
