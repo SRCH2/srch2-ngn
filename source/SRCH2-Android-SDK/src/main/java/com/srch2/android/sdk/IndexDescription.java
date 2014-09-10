@@ -69,7 +69,7 @@ final class IndexDescription {
 
     private static final String DEFAULT_VALUE_dataSourceTypeDefault = "0";
     private static final String DEFAULT_VALUE_dataSourceTypeSqlite = "2";
-    private static final String DEFAULT_VALUE_dataSourceTypeJSON = "1";
+
 
 
     final Properties queryProperties = new Properties();
@@ -79,7 +79,7 @@ final class IndexDescription {
     final Properties sqliteDatabaseProperties = new Properties();
 
     static enum IndexableType {
-        Default,
+        Default, // Means this type of SRCH2 index has no connector attached
         Sqlite;
     }
 

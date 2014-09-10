@@ -114,35 +114,23 @@ public abstract class SQLiteIndexable extends IndexableCore {
                     " verify getLongitudeColumnName() return value matches the column in the SQLite " +
                     "table " + getTableName() + " that contains the longitude data.");
         } else if (hasLatitude && hasLongitude) {
-            if (getLongitudeColumnName() == null) {
-                throw new NullPointerException("While generating com.srch2.android.sdk.Schema from SQLite database, " +
-                        "getLongitudeColumnName() returned a null String value while getLatitudeColumnName() did not. Please" +
-                        " verify getLatitudeColumnName() return value matches the column in the SQLite " +
-                        "table " + getTableName() + " that contains the latitude data.");
-            } else if (getLatitudeColumnName() == null) {
-                throw new NullPointerException("While generating com.srch2.android.sdk.Schema from SQLite database, " +
-                        "getLatitudeColumnName() returned a null String value while getLongitudeColumnName() did not. Please" +
-                        " verify getLongitudeColumnName() return value matches the column in the SQLite " +
-                        "table " + getTableName() + " that contains the longitude data.");
-            } else {
-                isProbablyGeoIndex = true;
-            }
+            isProbablyGeoIndex = true;
         }
 
         boolean success = false;
-        Schema s = null;
+        Schema schema = null;
         while (!success) {
             boolean wasLocked = false;
             try {
-                s = resolveSchemaFromSqliteOpenHelper(getTableName(), getSQLiteOpenHelper(), isProbablyGeoIndex);
+                schema = resolveSchemaFromSqliteOpenHelper(getTableName(), getSQLiteOpenHelper(), isProbablyGeoIndex);
             } catch (SQLiteDatabaseLockedException locked) {
                 wasLocked = true;
             }
-            if (s != null && !wasLocked) {
+            if (schema != null && !wasLocked) {
                 success = true;
             }
         }
-        return s;
+        return schema;
     }
 
 
@@ -372,7 +360,7 @@ public abstract class SQLiteIndexable extends IndexableCore {
         TEXT(SchemaType.Searchable),
         INTEGER(SchemaType.RefiningInteger),
         NULL(null),
-        BLOB(null),
+        BLOB(null), // represents a field of raw binary data (media, images, etc)
         REAL(SchemaType.RefiningReal);
 
         static enum SchemaType {
@@ -451,7 +439,7 @@ public abstract class SQLiteIndexable extends IndexableCore {
             if (requestingIndexable != null) {
                 InternalInfoTask iit = new InternalInfoTask(UrlBuilder
                         .getInfoUrl(
-                                SRCH2Engine.conf, requestingIndexable.indexInternal.indexDescription), 400, false);
+                                SRCH2Engine.conf, requestingIndexable.indexInternal.indexDescription), InternalInfoTask.SHORT_CONNECTION_TIMEOUT_MS, false);
                 InternalInfoResponse iir = iit.getInfo();
                 if (iir.isValidInfoResponse) {
                     return iir.numberOfDocumentsInTheIndex;

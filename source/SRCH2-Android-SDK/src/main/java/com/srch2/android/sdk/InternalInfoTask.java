@@ -9,6 +9,8 @@ class InternalInfoTask {
 
     private static final String TAG = "InteralInfoTask";
 
+    static final int SHORT_CONNECTION_TIMEOUT_MS = 250;
+
     /**
      * Has the <b>constant</b> value of 1000 milliseconds, or 1 second.
      */
