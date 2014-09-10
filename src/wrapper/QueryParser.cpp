@@ -435,6 +435,12 @@ void QueryParser::accessControlParser(){
 
 	} else {
 		Logger::debug("acl-id parameter not specified");
+		if(this->container->hasRoleCore){
+			this->isParsedError = true;
+			this->container->messages.push_back(
+					make_pair(MessageError,
+							"roleId parameter not specified"));
+		}
 	}
 }
 
