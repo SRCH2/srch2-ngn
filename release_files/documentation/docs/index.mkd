@@ -39,7 +39,7 @@ the [JSON](http://json.org/) format.
 - Support of control messages (e.g., system status and index serialization)
 - Port-level network security
 - Token-based authorization
-- MongoDB connector, with connectors for other data sources coming soon
+- Connectors to MongoDB and SQLite, with connectors for other data sources coming soon
 
 ##Platforms
 
