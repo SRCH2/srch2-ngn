@@ -767,7 +767,6 @@ unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, Sch
             }
         }
     }
-    Logger::console("                                                     \r");
     Logger::console("Indexed %d / %d records.", indexedRecordsCount, lineCounter);
     Logger::console("Finalizing ...");
     in.close();

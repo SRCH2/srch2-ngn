@@ -2300,7 +2300,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
                   xml_node updateHandlerTag = coreTag.child(updateHandlerString);
                   xml_node updateLogTag = updateHandlerTag.child(updateLogString);
                   if(updateLogTag){
-                      Logger::warn("<updateLog> is present inside core, please move it under <config>");
+                      Logger::warn("<updateLog> should not be inside <core>. Please move it outside <core> and under <config>.");
                       break;
                   }
               }
