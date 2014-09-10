@@ -2295,12 +2295,14 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
 
           //This displays warning message if <updateLog> is present inside <cores>
           xml_node coresTag = configNode.child("cores");
-          for(xml_node coreTag = coresTag.first_child(); coreTag; coreTag = coreTag.next_sibling()){
-              xml_node updateHandlerTag = coreTag.child(updateHandlerString);
-              xml_node updateLogTag = updateHandlerTag.child(updateLogString);
-              if(updateLogTag){
-                  Logger::warn("<updateLog> is present inside core, please move it under <config>");
-                  break;
+          if(coresTag){
+              for(xml_node coreTag = coresTag.first_child(); coreTag; coreTag = coreTag.next_sibling()){
+                  xml_node updateHandlerTag = coreTag.child(updateHandlerString);
+                  xml_node updateLogTag = updateHandlerTag.child(updateLogString);
+                  if(updateLogTag){
+                      Logger::warn("<updateLog> is present inside core, please move it under <config>");
+                      break;
+                  }
               }
           }
       }
