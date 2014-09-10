@@ -24,8 +24,16 @@ namespace instantsearch {
  */
 void  AttributeAccessControl::bulkLoadAclCSV(const std::string& aclLoadFileName) const{
 
-	if (aclLoadFileName == "")
+	if (aclLoadFileName == "") {
+		if (schema->getAclRefiningAttrIdsList().size() > 0 ||
+				schema->getAclSearchableAttrIdsList().size() > 0) {
+			// if there are fields in schema with acl enabled. Then print warning
+			// that bulk load file is not specified.
+			Logger::warn("Attribute acl file for bulk load is not specified!. "
+					"Please use Attribute Acl REST APIs for adding permissions");
+		}
 		return;
+	}
 
 	std::ifstream input(aclLoadFileName.c_str());
 	if (!input.good()) {
@@ -98,8 +106,16 @@ void  AttributeAccessControl::bulkLoadAclJSON(const std::string& aclLoadFileName
  *   Internal API which loads acl JSON file. This API is called from wrapper API bulkLoadAclJSON
  */
 void  AttributeAccessControl::_bulkLoadAclJSON(const std::string& aclLoadFileName) const{
-	if (aclLoadFileName == "")
+	if (aclLoadFileName == "") {
+		if (schema->getAclRefiningAttrIdsList().size() > 0 ||
+				schema->getAclSearchableAttrIdsList().size() > 0) {
+			// if there are fields in schema with acl enabled. Then print warning
+			// that bulk load file is not specified.
+			Logger::warn("Attribute acl file for bulk load is not specified!. "
+					"Please use Attribute Acl REST APIs for adding permissions");
+		}
 		return;
+	}
 
 	std::ifstream input(aclLoadFileName.c_str());
 	if (!input.good()) {

@@ -1927,7 +1927,13 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
     xml_node aclFileNode = schemaNode.child(attributeAclFileString);
     if (aclFileNode && aclFileNode.text()) {
     	string tempString = aclFileNode.text().get();
-    	coreInfo->attrAclFilePath = boost::filesystem::path(getSrch2Home() + tempString).normalize().string();
+    	string attrAclFilePath;
+    	if (coreInfo->getName() == defaultCore) {
+    		attrAclFilePath = getSrch2Home() + tempString;
+    	} else {
+    		attrAclFilePath = getSrch2Home() + "/" + coreInfo->getName() + "/" + tempString;
+    	}
+    	coreInfo->attrAclFilePath = boost::filesystem::path(attrAclFilePath).normalize().string();
     }
 
     /*
