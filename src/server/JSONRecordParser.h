@@ -71,7 +71,7 @@ public:
             Schema * storedAttrSchema,
             const CoreInfo_t *indexDataContainerConf);
 
-    static void addAccessControlsFromFile(srch2is::Indexer *indexer,
+    static void addRecordAclFile(srch2is::Indexer *indexer,
                 const CoreInfo_t *indexDataContainerConf, srch2is::Indexer *roleCoreIndexer);
 };
 

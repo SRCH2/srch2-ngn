@@ -67,9 +67,9 @@ public:
         if (!checkIndexExistence(indexDataConfig)){
         	switch (indexDataConfig->getDataSourceType()) {
         	case srch2http::DATA_SOURCE_JSON_FILE: {
-        		Logger::console("%s: Adding access controls from JSON file...",this->coreName.c_str());
+        		Logger::console("%s: Loading record-based ACL file.",this->coreName.c_str());
 
-        		DaemonDataSource::addAccessControlsFromFile(indexer, indexDataConfig, this->roleCore->indexer);
+        		DaemonDataSource::addRecordAclFile(indexer, indexDataConfig, this->roleCore->indexer);
 
         		indexer->save();
         		Logger::console("Indexes saved.");
