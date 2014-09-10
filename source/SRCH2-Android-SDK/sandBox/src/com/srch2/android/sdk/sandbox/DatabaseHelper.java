@@ -365,6 +365,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
 
     public class SqliteIdx extends SQLiteIndexable {
+
+        SQLiteOpenHelper helper;
+
+        public SqliteIdx(SQLiteOpenHelper h) {
+            helper = h;
+        }
+
         @Override
         public String getIndexName() {
             return SQLiteSchema.TABLE_NAME;
