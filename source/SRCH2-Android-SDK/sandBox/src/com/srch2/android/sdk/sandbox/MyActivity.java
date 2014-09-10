@@ -7,8 +7,10 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ListView;
 import android.widget.Toast;
+import com.srch2.android.sdk.Query;
 import com.srch2.android.sdk.SRCH2Engine;
 import com.srch2.android.sdk.SearchResultsListener;
+import com.srch2.android.sdk.SearchableTerm;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -91,10 +93,12 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
         dbHelper.insertRecords();
     }
 
+    Object o;
+
     public void bar(View v) {
+        o.toString();
 
-
-        Toast.makeText(context, "Record count: " + dbHelper.idx.getRecordCount(), Toast.LENGTH_SHORT).show();
+       // Toast.makeText(context, "Record count: " + dbHelper.idx.getRecordCount(), Toast.LENGTH_SHORT).show();
     }
 
 
@@ -113,7 +117,15 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
 
     @Override
     public void onNewSearchInput(String newSearchText) {
-       SRCH2Engine.searchAllIndexes(newSearchText);
+
+
+
+
+
+        Query q = new Query(new SearchableTerm(newSearchText));
+        q.insideRectangleRegion(0, 0, 100, 100);
+
+        SRCH2Engine.advancedSearchOnAllIndexes(q);
     }
 
     @Override

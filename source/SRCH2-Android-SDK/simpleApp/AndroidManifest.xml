@@ -21,6 +21,9 @@
         <activity android:name="com.srch2.android.sdk.DirtyIndexableTestActivity"
                   android:label="@string/app_name">
         </activity>
+        <activity android:name="com.srch2.android.sdk.DatabaseTestActivity"
+                  android:label="@string/app_name">
+        </activity>
 
 
 

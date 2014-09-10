@@ -43,26 +43,18 @@ public class SRCH2EngineTest {
         Assert.assertEquals(PrepareEngine.musicIndex.getIndexName(), SRCH2Engine.getIndex(PrepareEngine.musicIndex.getIndexName()).getIndexName());
     }
 
-
-    @Test
-    public void getIndexGetsCorrectSqliteIndexable() {
-        SRCH2Engine.setSQLiteIndexables(PrepareEngine.dbIndex);
-        SRCH2Engine.initialize();
-        Assert.assertEquals(PrepareEngine.dbIndex.getIndexName(), SRCH2Engine.getSQLiteIndex(PrepareEngine.dbIndex.getIndexName()).getIndexName());
-    }
-
     @Test(expected = IllegalArgumentException.class)
     public void getIndexThrowsWhenGettingIndexableWhenNameCorrespondsToSqliteIndexable() {
         SRCH2Engine.setIndexables(PrepareEngine.musicIndex);
-        SRCH2Engine.setSQLiteIndexables(PrepareEngine.dbIndex);
+
         SRCH2Engine.initialize();
+        SRCH2Engine.conf.indexableMap.put(PrepareEngine.dbIndex.getIndexName(), PrepareEngine.dbIndex);
         SRCH2Engine.getIndex(PrepareEngine.dbIndex.getIndexName());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void getIndexThrowsWhenGettingSqliteIndexableWhenNameCorrespondsToIndexable() {
         SRCH2Engine.setIndexables(PrepareEngine.musicIndex);
-        SRCH2Engine.setSQLiteIndexables(PrepareEngine.dbIndex);
         SRCH2Engine.initialize();
         SRCH2Engine.getSQLiteIndex(PrepareEngine.musicIndex.getIndexName());
     }

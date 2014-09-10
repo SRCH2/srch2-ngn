@@ -28,7 +28,6 @@ public class PrepareEngine {
         idxs.add(musicIndex);
         idxs.add(movieIndex);
         idxs.add(geoIndex);
-        idxs.add(dbIndex);
         SRCH2Engine.conf = new SRCH2Configuration(idxs);
         SRCH2Engine.conf.setSRCH2Home(DEFAULT_SRCH2HOME_PATH);
         DEFAULT_SRCH2SERVER_PORT = SRCH2Engine.detectFreePort();

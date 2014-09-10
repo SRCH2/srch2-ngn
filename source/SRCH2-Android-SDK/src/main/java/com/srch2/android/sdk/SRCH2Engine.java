@@ -419,11 +419,16 @@ final public class SRCH2Engine {
      */
     public static void onStop(Context context) {
         Cat.d(TAG, "onStop");
+        if (!isStarted) {
+            return;
+        }
         ArrayList<Indexable> dirtyIndexList = new ArrayList<Indexable>();
         for (IndexableCore idx : conf.indexableMap.values()) {
-            if (idx.getClass().isAssignableFrom(Indexable.class)) {
+            if (Indexable.class.isAssignableFrom(idx.getClass())) {
                 Cat.d(TAG, "indexable " + idx.getIndexName() + " was dirty adding to save task");
                 dirtyIndexList.add((Indexable) idx);
+            } else {
+                Cat.d(TAG, "indexable " + idx.getIndexName() + " was not dirty NOT adding to save task");
             }
         }
         if (dirtyIndexList.size() > 0 && !isDebugAndTestingMode) {

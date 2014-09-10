@@ -28,6 +28,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         public static final String COLUMN_AGE = "age";
         public static final String COLUMN_ADDRESS = "address";
         public static final String COLUMN_SALARY = "salary";
+        public static final String COLUMN_LONGITUDE = "longitude";
+        public static final String COLUMN_LATITUDE = "latitude";
     }
 
     public static final String getCreateTableString() {
@@ -37,7 +39,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 SQLiteSchema.COLUMN_AGE + " INTEGER NOT NULL, " +
                 SQLiteSchema.COLUMN_ADDRESS + " TEXT, " +
                 SQLiteSchema.COLUMN_SALARY + " REAL, " +
-                "Blobo BLOB" +
+                "Blobo BLOB, " +
+                SQLiteSchema.COLUMN_LATITUDE + " REAL, " +
+                SQLiteSchema.COLUMN_LONGITUDE + " REAL" +
+
                 " )";
     }
 
@@ -115,6 +120,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 cv.put(SQLiteSchema.COLUMN_NAME, "name " + RandomStringUtil.getRandomString(10));
                 cv.put(SQLiteSchema.COLUMN_ADDRESS, "address " + RandomStringUtil.getRandomString(20));
                 cv.put(SQLiteSchema.COLUMN_SALARY, (double) i);
+                cv.put(SQLiteSchema.COLUMN_LATITUDE, (double) (Math.random() * 50));
+                cv.put(SQLiteSchema.COLUMN_LONGITUDE, (double) (Math.random() * 50));
                 db.insert(SQLiteSchema.TABLE_NAME, null, cv);
             }
         } catch (Exception e) {
@@ -376,6 +383,17 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         @Override
         public String getDatabaseName() {
             return SQLiteSchema.DATABASE_NAME;
+        }
+
+
+        @Override
+        public String getLatitudeColumnName() {
+            return SQLiteSchema.COLUMN_LATITUDE;
+        }
+
+        @Override
+        public String getLongitudeColumnName() {
+            return SQLiteSchema.COLUMN_LONGITUDE;
         }
     }
 

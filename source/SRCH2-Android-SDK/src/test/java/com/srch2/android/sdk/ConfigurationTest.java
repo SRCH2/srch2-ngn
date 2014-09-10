@@ -60,14 +60,6 @@ public class ConfigurationTest {
     }
 
     @Test
-    public void testConfigurationDatabaseIndex() {
-        ArrayList<IndexableCore> idxs = new ArrayList<IndexableCore>();
-        idxs.add(PrepareEngine.dbIndex);
-        SRCH2Configuration config = new SRCH2Configuration(idxs);
-        Assert.assertEquals(config.indexableMap.get(PrepareEngine.DbIndex.INDEX_NAME).indexInternal.indexDescription.type, IndexDescription.IndexableType.Sqlite);
-    }
-
-    @Test
     public void testConfigurationMultipleIndex() {
         ArrayList<IndexableCore> idxs = new ArrayList<IndexableCore>();
         idxs.add(PrepareEngine.geoIndex);
@@ -84,14 +76,13 @@ public class ConfigurationTest {
         ArrayList<IndexableCore> idxs = new ArrayList<IndexableCore>();
         idxs.add(PrepareEngine.geoIndex);
         idxs.add(PrepareEngine.musicIndex);
-        idxs.add(PrepareEngine.dbIndex);
+
         SRCH2Configuration config = new SRCH2Configuration(idxs);
         Assert.assertEquals(config.indexableMap.get(PrepareEngine.geoIndex.getIndexName())
                 .indexInternal.indexDescription.type, IndexDescription.IndexableType.Default);
         Assert.assertEquals(config.indexableMap.get(PrepareEngine.musicIndex.getIndexName())
                 .indexInternal.indexDescription.type, IndexDescription.IndexableType.Default);
-        Assert.assertEquals(config.indexableMap.get(PrepareEngine.dbIndex.getIndexName())
-                .indexInternal.indexDescription.type, IndexDescription.IndexableType.Sqlite);
+
     }
 
     @Test

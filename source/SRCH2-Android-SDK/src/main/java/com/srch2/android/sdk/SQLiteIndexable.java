@@ -47,10 +47,86 @@ public abstract class SQLiteIndexable extends IndexableCore {
 
     final Schema getSchema() {
 
-        if (getTableName() == null || getTableName().length() < 1) {
+        if (getSQLiteOpenHelper() == null) {
+            throw new NullPointerException("While generating com.srch2.android.sdk.Schema from SQLite database, " +
+                    "the return value of getSQLiteOpenHelper() was null. Please provide the instance of the " +
+                    "SQLiteOpenHelper used to manage the database.");
+        }
+
+        if (getDatabaseName() == null) {
+            throw new NullPointerException("While generating com.srch2.android.sdk.Schema from SQLite database, " +
+                    "database name was not found. Please verify the return value of " +
+                    "getDatabaseName() matches that which was passed into the SqliteHelper implementation's constructor.");
+        } else if (getDatabaseName().length() < 1) {
             throw new IllegalArgumentException("While generating com.srch2.android.sdk.Schema from SQLite database, " +
-                    "table name was not found or found to be incorrect. Please verify the return value of " +
+                    "database name was found to be invalid. Please verify the return value of " +
+                    "getTableName() matches that which was passed into the SqliteHelper implementation's constructor.");
+        }
+
+        if (getTableName() == null) {
+            throw new NullPointerException("While generating com.srch2.android.sdk.Schema from SQLite database, " +
+                    "table name was not found. Please verify the return value of " +
                     "getTableName() matches that which was passed into the CREATE table string.");
+        } else if (getTableName().length() < 1) {
+            throw new IllegalArgumentException("While generating com.srch2.android.sdk.Schema from SQLite database, " +
+                    "table name was found to be invalid. Please verify the return value of " +
+                    "getTableName() matches that which was passed into the CREATE table string.");
+        }
+
+
+        String longitudeName = getLongitudeColumnName();
+        String latitudeName = getLatitudeColumnName();
+
+        boolean hasLongitude = false, hasLatitude = false;
+
+        if (longitudeName != null) {
+            if (longitudeName.length() < 1) {
+                throw new IllegalArgumentException("While generating com.srch2.android.sdk.Schema from SQLite database, " +
+                        "getLongitudeColumnName() was found to return a non-null but invalid value. Please verify the value" +
+                        " returned by getLongitudeColumnName() is greater than zero and matches the column in the SQLite" +
+                        "table " + getTableName() + " that contains the longitude data.");
+            } else {
+                hasLongitude = true;
+            }
+        }
+
+        if (latitudeName != null) {
+            if (latitudeName.length() < 1) {
+                throw new IllegalArgumentException("While generating com.srch2.android.sdk.Schema from SQLite database, " +
+                        "getLatitudeColumnName() was found to return a non-null but invalid value. Please verify the value" +
+                        " returned by getLatitudeColumnName() is greater than zero and matches the column in the SQLite" +
+                        "table " + getTableName() + " that contains the latitude data.");
+            } else {
+                hasLatitude = true;
+            }
+        }
+
+        boolean isProbablyGeoIndex = false;
+
+        if (!hasLatitude && hasLongitude) {
+            throw new IllegalArgumentException("While generating com.srch2.android.sdk.Schema from SQLite database, " +
+                    "getLongitudeColumnName() returned a valid String value while getLatitudeColumnName() did not. Please" +
+                    " verify getLatitudeColumnName() return value matches the column in the SQLite " +
+                    "table " + getTableName() + " that contains the latitude data.");
+        } else if (!hasLongitude && hasLatitude) {
+            throw new IllegalArgumentException("While generating com.srch2.android.sdk.Schema from SQLite database, " +
+                    "getLatitudeColumnName() returned a valid String value while getLongitudeColumnName() did not. Please" +
+                    " verify getLongitudeColumnName() return value matches the column in the SQLite " +
+                    "table " + getTableName() + " that contains the longitude data.");
+        } else if (hasLatitude && hasLongitude) {
+            if (getLongitudeColumnName() == null) {
+                throw new NullPointerException("While generating com.srch2.android.sdk.Schema from SQLite database, " +
+                        "getLongitudeColumnName() returned a null String value while getLatitudeColumnName() did not. Please" +
+                        " verify getLatitudeColumnName() return value matches the column in the SQLite " +
+                        "table " + getTableName() + " that contains the latitude data.");
+            } else if (getLatitudeColumnName() == null) {
+                throw new NullPointerException("While generating com.srch2.android.sdk.Schema from SQLite database, " +
+                        "getLatitudeColumnName() returned a null String value while getLongitudeColumnName() did not. Please" +
+                        " verify getLongitudeColumnName() return value matches the column in the SQLite " +
+                        "table " + getTableName() + " that contains the longitude data.");
+            } else {
+                isProbablyGeoIndex = true;
+            }
         }
 
         boolean success = false;
@@ -58,7 +134,7 @@ public abstract class SQLiteIndexable extends IndexableCore {
         while (!success) {
             boolean wasLocked = false;
             try {
-                s = resolveSchemaFromSqliteOpenHelper(getTableName(), getSQLiteOpenHelper());
+                s = resolveSchemaFromSqliteOpenHelper(getTableName(), getSQLiteOpenHelper(), isProbablyGeoIndex);
             } catch (SQLiteDatabaseLockedException locked) {
                 wasLocked = true;
             }
@@ -69,6 +145,16 @@ public abstract class SQLiteIndexable extends IndexableCore {
         return s;
     }
 
+
+    /**
+     * Implementing this method enables the SRCH2 search server to automatically observe data content
+     * of the table that will be used to create and update the index this <code>SQLiteIndexable</code> represents.
+     * <br><br>
+     * The instance of the <code>SQLiteOpenHelper</code> is momentarily used to read the database table
+     * information when {@link SRCH2Engine#initialize()} is called; a reference is not kept: a cursor is obtained
+     * to read the database information, then both the readable database and cursor are closed within milliseconds.
+     * @return the SQLiteOpenHelper used to manage the database
+     */
     public abstract SQLiteOpenHelper getSQLiteOpenHelper();
 
     /**
@@ -90,8 +176,35 @@ public abstract class SQLiteIndexable extends IndexableCore {
      */
     public abstract String getDatabaseName();
 
+    /**
+     * Implementing this method enables the SRCH2 search server to automatically observe data content
+     * of the table that will be used to create and update the index this <code>SQLiteIndexable</code> represents.
+     * <br><br>
+     * This method (and {@link #getLongitudeColumnName()}) must be overridden if the SQLite table contains geodata
+     * that is to be searched on. <b>It should exactly match</b> the value used in the CREATE TABLE string matching
+     * the name of the column that contains the latitude data.
+     * <br><br>
+     * Returning null is equivalent not overriding this method.
+     * @return the name of the column in the SQLite table that contains the latitude data
+     */
+    public String getLatitudeColumnName() { return null; }
 
-    final private Schema resolveSchemaFromSqliteOpenHelper(String tableName, SQLiteOpenHelper mSqliteOpenHelper) {
+
+    /**
+     * Implementing this method enables the SRCH2 search server to automatically observe data content
+     * of the table that will be used to create and update the index this <code>SQLiteIndexable</code> represents.
+     * <br><br>
+     * This method (and {@link #getLatitudeColumnName()}) must be overridden if the SQLite table contains geodata
+     * that is to be searched on. <b>It should exactly match</b> the value used in the CREATE TABLE string matching
+     * the name of the column that contains the longitude data.
+     * <br><br>
+     * Returning null is equivalent not overriding this method.
+     * @return the name of the column in the SQLite table that contains the longitude data
+     */
+    public String getLongitudeColumnName() { return null; }
+
+
+    final private Schema resolveSchemaFromSqliteOpenHelper(String tableName, SQLiteOpenHelper mSqliteOpenHelper, boolean isProbablyGeo) {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
             String databaseNameCheck = mSqliteOpenHelper.getDatabaseName();
@@ -116,6 +229,8 @@ public abstract class SQLiteIndexable extends IndexableCore {
         PrimaryKeyField pkField = null;
         boolean containsPrimaryKey = false;
         boolean containsAtLeastOneSearchableField = false;
+        boolean containsLongitude = false;
+        boolean containsLatitude = false;
 
         try {
             db = mSqliteOpenHelper.getReadableDatabase();
@@ -135,7 +250,7 @@ public abstract class SQLiteIndexable extends IndexableCore {
 
                         // get the name of the column
                         name = c.getString(PRAGMA_COLUMN_INDEX_COLUMN_NAME);
-
+                        Cat.d("SQLITEIndexable", "name of pragmacolumn is " + name);
 
                         // check if it is it the primary key
                         boolean primaryKey = false;
@@ -166,15 +281,28 @@ public abstract class SQLiteIndexable extends IndexableCore {
                                         extraField = Field.createRefiningField(name, Field.Type.INTEGER);
                                         break;
                                     case RefiningReal:
-                                        extraField = Field.createRefiningField(name, Field.Type.FLOAT);
+                                        if (isProbablyGeo) {
+                                            if (!containsLatitude) {
+                                                containsLatitude = name.equals(getLatitudeColumnName());
+                                            }
+                                            if (!containsLongitude) {
+                                                containsLongitude = name.equals(getLongitudeColumnName());
+                                            }
+                                        } else {
+                                            extraField = Field.createRefiningField(name, Field.Type.FLOAT);
+                                        }
                                         break;
                                 }
-                                fields.add(extraField);
+                                if (extraField != null) {
+                                    fields.add(extraField);
+                                }
                             }
                         }
                     }
                 } while (c.moveToNext());
             } else {
+                // This check throws if the sdk is not above ICE_CREAM_SANDWICH since the table won't exist if
+                // the database name is incorrect
                 throw new IllegalStateException("While generating com.srch2.android.sdk.Schema from SQLite table, " +
                         "table was not found. Please verify the return value of getTableName() matches the name of the table" +
                         "as it was entered in the CREATE TABLE string.");
@@ -188,21 +316,57 @@ public abstract class SQLiteIndexable extends IndexableCore {
             }
         }
 
+        boolean isGeoIndex = false;
         if (!containsPrimaryKey) {
             throw new IllegalStateException("While generating com.srch2.android.sdk.Schema from SQLite table " +
-                    tableName.toUpperCase() + ", " +
+                    tableName + ", " +
                     "table did not contain primary key. Table must contain one column that is PRIMARY KEY; please " +
                     "verify CREATE TABLE string contains PRIMARY KEY.");
         }
         if (!containsAtLeastOneSearchableField) {
             throw new IllegalStateException("While generating com.srch2.android.sdk.Schema from SQLite table " +
-                    tableName.toUpperCase() + ", " +
+                    tableName + ", " +
                     "table did not contain at least one searchable field. Table must contain at least one column" +
                     " that is TEXT; please verify CREATE TABLE string contains at least one column of type TEXT.");
         }
+        if (isProbablyGeo && containsLatitude && !containsLongitude) {
+            throw new IllegalStateException("While generating com.srch2.android.sdk.Schema from SQLite table " +
+                    tableName + ", " +
+                    "table contained column containing latitude data but did not contain column containing " +
+                    "longitude data. Please verify getLongitudeColumnName() matches the name of the column" +
+                    "in the CREATE TABLE string that contains the longitude data and is of type REAL.");
+        } else if (isProbablyGeo && !containsLatitude && containsLongitude)  {
+            throw new IllegalStateException("While generating com.srch2.android.sdk.Schema from SQLite table " +
+                    tableName + ", " +
+                    "table contained column containing longitude data but did not contain column containing " +
+                    "latitude data. Please verify getLatitudeColumnName() matches the name of the column" +
+                    "in the CREATE TABLE string that contains the latitude data and is of type REAL.");
+        } else if (isProbablyGeo && !containsLatitude && !containsLongitude) {
+            throw new IllegalStateException("While generating com.srch2.android.sdk.Schema from SQLite table " +
+                    tableName + ", " +
+                    "table did not contain columns corresponding to latitude or longitude data. Please verify" +
+                    " both getLatitudeColumnName() and getLongitudeColumnName() return values matching the " +
+                    "column names in the CREATE TABLE string that correspond to the columns containing the" +
+                    "latitude and longitude data and are of type REAL. Otherwise do not override these" +
+                    "methods--are you sure this table is supposed to represent geodata?");
+        } else if (isProbablyGeo && containsLatitude && containsLongitude) {
+            isGeoIndex = true;
+        }
 
-        return new Schema(pkField, fields.toArray(new Field[fields.size()]));
+        if (isGeoIndex) {
+            Cat.d("SQLITEIndexable", "returning geo index");
+            return new Schema(pkField, getLatitudeColumnName(), getLongitudeColumnName(), fields.toArray(new Field[fields.size()]));
+        } else {
+            Cat.d("SQLITEIndexable", "returning default index");
+            return new Schema(pkField, fields.toArray(new Field[fields.size()]));
+        }
     }
+
+
+
+
+
+
 
     private static enum SQLiteColumnType {
         TEXT(SchemaType.Searchable),
@@ -217,13 +381,13 @@ public abstract class SQLiteIndexable extends IndexableCore {
             RefiningReal;
         }
 
-        public SchemaType schemaType;
+        SchemaType schemaType;
 
         SQLiteColumnType(SchemaType srch2FieldType) {
             schemaType = srch2FieldType;
         }
 
-        public static SQLiteColumnType getType(int type) {
+        static SQLiteColumnType getType(int type) {
             switch (type) {
                 case Cursor.FIELD_TYPE_STRING:
                     return SQLiteColumnType.TEXT;
@@ -240,7 +404,7 @@ public abstract class SQLiteIndexable extends IndexableCore {
             }
         }
 
-        public static SQLiteColumnType getType(String typeName) {
+        static SQLiteColumnType getType(String typeName) {
             if (typeName.equals(SQLiteColumnType.TEXT.name())) {
                 return SQLiteColumnType.TEXT;
             } else if (typeName.equals(SQLiteColumnType.INTEGER.name())) {

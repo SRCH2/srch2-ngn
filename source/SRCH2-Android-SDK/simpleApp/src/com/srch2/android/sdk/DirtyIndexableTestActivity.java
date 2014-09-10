@@ -92,7 +92,7 @@ public class DirtyIndexableTestActivity extends TestableActivity {
         assertTrue(SRCH2Engine.conf.indexableMap.get(DumbIndex.INDEX_NAME).indexInternal.isDirty.get());
         onStopAndWaitForNotIsReady(this, 30000);
         assertFalse(SRCH2Engine.isReady());
-        sleep(3000);
+        sleep(30000);
         assertFalse(SRCH2Engine.conf.indexableMap.get(DumbIndex.INDEX_NAME).indexInternal.isDirty.get());
 
 

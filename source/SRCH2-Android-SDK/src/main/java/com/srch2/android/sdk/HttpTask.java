@@ -108,20 +108,16 @@ abstract class HttpTask implements Runnable {
         if (!isExecuting || callableToExecute == null) {
             return null;
         }
-
+        // throw it on the search task pool since its fast and searches are fast
         if (callableToExecute.getClass() == SQLiteIndexable.GetRecordCountTask.class) {
-            if (controlTaskExecutor != null) {
-                return controlTaskExecutor.submit(callableToExecute);
+            if (searchTaskExecutor != null) {
+                return searchTaskExecutor.submit(callableToExecute);
             }
         }
-
         return null;
     }
 
-
-
     static void addToQueue(HttpTask taskToExecute) {
-
         int taskId = -1;
         final Class originatingTaskClass = taskToExecute.getClass();
         if (originatingTaskClass == SearchTask.class
