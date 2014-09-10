@@ -44,6 +44,7 @@
 #include <string>
 #include <cstring>
 #include <vector>
+#include <algorithm>
 
 using namespace std;
 
@@ -599,6 +600,52 @@ bool checkResults(QueryResults *queryResults, unsigned numberofHits ,const vecto
     return returnvalue;
 }
 
+bool checkResultsOrderIndependent(QueryResults *queryResults, unsigned numberofHits ,const vector<unsigned> &recordIDs)
+{
+    bool returnvalue = false;
+
+    if (numberofHits != queryResults->getNumberOfResults()) {
+        Logger::debug("%u | %d", numberofHits, queryResults->getNumberOfResults());
+        for (unsigned resultCounter = 0;
+                        resultCounter < queryResults->getNumberOfResults(); resultCounter++ ) {
+                Logger::debug("%u", (unsigned)atoi(queryResults->getRecordId(resultCounter).c_str()));
+        }
+        return false;
+    } else {
+        returnvalue = true;
+        for (unsigned resultCounter = 0;
+                resultCounter < queryResults->getNumberOfResults(); resultCounter++ )
+        {
+            vector<string> matchingKeywords;
+            vector<unsigned> editDistances;
+            vector<string>::iterator it1;
+            vector<unsigned>::iterator it2;
+
+            queryResults->getMatchingKeywords(resultCounter, matchingKeywords);
+            queryResults->getEditDistances(resultCounter, editDistances);
+
+            bool hasElement = false;
+            for(unsigned i = 0; i < recordIDs.size(); ++i){
+            	if((unsigned)atoi(queryResults->getRecordId(resultCounter).c_str()) == recordIDs[i]){
+            		hasElement = true;
+            		break;
+            	}
+            }
+
+            if(hasElement)
+            {
+                returnvalue = true;
+            }
+            else
+            {
+            	cout<<atoi(queryResults->getRecordId(resultCounter).c_str())<<endl;
+                return false;
+            }
+        }
+    }
+    return returnvalue;
+}
+
 bool checkOutput(QueryResults *queryResults, unsigned numberofHits, bool isStemmed)
 {
     //cout << numberofHits << " | " << queryResults->getNumberOfResults() << endl;
@@ -920,7 +967,7 @@ bool ping_WithGeo(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, stri
 
     LogicalPlan * logicalPlan = prepareLogicalPlanForGeoTest(query , NULL, 0, resultCount, false, srch2::instantsearch::SearchTypeTopKQuery);
     queryEvaluator->search(logicalPlan , queryResults);
-    bool returnvalue =  checkResults(queryResults, numberofHits, recordIDs);
+    bool returnvalue =  checkResultsOrderIndependent(queryResults, numberofHits, recordIDs);
     //printResults(queryResults);
     //cout << "-------------------------" << endl;
     queryResults->printStats();
