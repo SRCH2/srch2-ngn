@@ -799,7 +799,11 @@ void ShardManager::resolve(MergeNotification * mergeNotification){
 	MergeNotification::ACK * ack = new MergeNotification::ACK();
 	ack->setSrc(NodeOperationId(ShardManager::getCurrentNodeId()));
 	ack->setDest(mergeNotification->getSrc());
-	send(ack);
+	if(ack->getDest().nodeId == ShardManager::getCurrentNodeId()){
+		stateMachine->handle(ack);
+	}else{
+		send(ack);
+	}
 	delete ack;
 }
 
