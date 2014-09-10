@@ -18,10 +18,10 @@
 
     <maxSearchThreads>2</maxSearchThreads>
 
-    <cores defaultCoreName="Product">
-            <core name="Product">
-                <dataFile>Product.json</dataFile>
-                <dataDir>productData</dataDir>
+    <cores defaultCoreName="product">
+            <core name="product">
+                <dataFile>product.json</dataFile>
+                <dataDir>product-data</dataDir>
                 <dataSourceType>1</dataSourceType>
                 <indexConfig>
                     <indexType>0</indexType>
@@ -53,11 +53,14 @@
                 <schema>
                     <fields>
 			<field name="pid" type="text"/>
-      			<field name="name" type="text" indexed="true" acl="true"/>
-       			<field name="description" type="text" indexed="true" acl="true"/>
+      			<field name="name" type="text" indexed="true"
+      			acl="ture"/>
+       			<field name="description" type="text"
+      			indexed="true" acl="true"/>
        			<field name="price" type="integer" indexed="false" required="true" refining="true"/>
       			<field name="manufacturer" type="text" indexed="true" refining="true"/>
-       			<field name="state" type="text" refining="true" indexed="false" acl="true"/>
+       			<field name="state" type="text"
+      			refining="true" indexed="false" acl="true"/>
                     </fields>
 
                     <uniqueKey>pid</uniqueKey>
@@ -70,7 +73,7 @@
                     </facetFields>
 
                 </schema>
-		<attributeAclFile>./attribute-acl-data.json</attributeAclFile>
+		<attributeAclFile>./attribute-acl-product-user.json</attributeAclFile>
                 <updatehandler>
                     <maxDocs>15000000</maxDocs>
                     <maxMemory>10000000</maxMemory>
@@ -85,9 +88,9 @@
                 </updatehandler>
             </core>
 
-	    <core name="User">
-                <dataFile>User.json</dataFile>
-                <dataDir>userData</dataDir>
+	    <core name="user">
+                <dataFile>user.json</dataFile>
+                <dataDir>user-data</dataDir>
                 <dataSourceType>1</dataSourceType>
                 <indexConfig>
                     <indexType>0</indexType>
@@ -141,10 +144,10 @@
 
     <access-controls>
         <access-control>
-            <resourceCore>Product</resourceCore>
-     	    <roleCore>User</roleCore>
+            <resourceCore>product</resourceCore>
+     	    <roleCore>user</roleCore>
             <aclDataFile>record-acl-product-user.json</aclDataFile>
-   </access-control>
-</access-controls>
+        </access-control>
+    </access-controls>
 
 </config>
