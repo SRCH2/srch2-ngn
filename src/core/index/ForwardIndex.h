@@ -87,16 +87,16 @@ struct NewKeywordIdKeywordOffsetPairGreaterThan {
 
 /*
  *   this class keeps the id of roles that have access to a record
- *   we keep an object of this class in forwardlist for each record
+ *   we keep an object of this class in forward list for each record
  */
-class RoleAccessList{
+class RecordAcl{
 private:
 	vector<string> roles;
 	mutable boost::shared_mutex mutexRW;
 
 public:
-	RoleAccessList(){};
-	~RoleAccessList(){};
+	RecordAcl(){};
+	~RecordAcl(){};
 
 	// this function will return false if this roleId already exists
 	bool appendRole(string &roleId){
@@ -439,27 +439,27 @@ public:
     		vector<uint8_t>& synonymBitMap) const;
 
     bool accessibleByRole(string &roleId){
-    	return this->roleAccessList.hasRole(roleId);
+    	return this->recordAcl.hasRole(roleId);
     };
 
     void appendRolesToResource(vector<string> &roleIds){
     	for (unsigned i = 0 ; i < roleIds.size() ; i++){
-    		this->roleAccessList.appendRole(roleIds[i]);
+    		this->recordAcl.appendRole(roleIds[i]);
     	}
     }
 
     void deleteRolesFromResource(vector<string> &roleIds){
     	for (unsigned i = 0 ; i < roleIds.size() ; i++){
-    		this->roleAccessList.deleteRole(roleIds[i]);
+    		this->recordAcl.deleteRole(roleIds[i]);
     	}
     }
 
     void deleteRoleFromResource(const string &roleId){
-    	this->roleAccessList.deleteRole(roleId);
+    	this->recordAcl.deleteRole(roleId);
     }
 
-    RoleAccessList* getAccessList(){
-    	return &(this->roleAccessList);
+    RecordAcl* getAccessList(){
+    	return &(this->recordAcl);
     }
 
 private:
@@ -476,7 +476,7 @@ private:
         ar & this->synonymBitMapSize;
         ar & this->charLenIndexSize;
         ar & this->dataSize;
-        ar & this->roleAccessList;
+        ar & this->recordAcl;
         if (this->inMemoryData.get() == NULL)
         	this->inMemoryDataLen = 0;
         ar & this->inMemoryDataLen;
@@ -508,7 +508,7 @@ private:
     std::string externalRecordId;
     boost::shared_ptr<const char> inMemoryData;
     unsigned inMemoryDataLen;
-    RoleAccessList roleAccessList;
+    RecordAcl recordAcl;
 
 
     /*
@@ -702,7 +702,7 @@ public:
 
     bool deleteRoleFromResource(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView, const string& resourcePrimaryKeyID, const string &roleId);
 
-    RoleAccessList* getRecordAccessList(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView, const string& resourcePrimaryKeyID);
+    RecordAcl* getRecordAccessList(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView, const string& resourcePrimaryKeyID);
 
     /**
      * Set the deletedFlag on the forwardList, representing record deletion.

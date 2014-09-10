@@ -173,12 +173,12 @@ bool isSortedAlphabetically(
 	return true;
 }
 
-INDEXWRITE_RETVAL IndexData::_aclEditRecordAccessList(const std::string& resourcePrimaryKeyID,
+INDEXWRITE_RETVAL IndexData::_aclModifyRecordAccessList(const std::string& resourcePrimaryKeyID,
 		vector<string> &roleIds, RecordAclCommandType commandType) {
 
 	shared_ptr<vectorview<ForwardListPtr> >  forwardListDirectoryReadView;
 	this->forwardIndex->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
-	RoleAccessList* accessList = this->forwardIndex->getRecordAccessList(forwardListDirectoryReadView, resourcePrimaryKeyID);
+	RecordAcl* accessList = this->forwardIndex->getRecordAccessList(forwardListDirectoryReadView, resourcePrimaryKeyID);
 
 	switch (commandType){
 	case AddRoles:

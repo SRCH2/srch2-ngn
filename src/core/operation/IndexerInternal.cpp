@@ -67,11 +67,11 @@ INDEXWRITE_RETVAL IndexReaderWriter::addRecord(const Record *record, Analyzer* a
     return returnValue;
 }
 
-INDEXWRITE_RETVAL IndexReaderWriter::aclModifyRoles(const std::string &resourcePrimaryKeyID, vector<string> &roleIds, RecordAclCommandType commandType)
+INDEXWRITE_RETVAL IndexReaderWriter::aclRecordModifyRoles(const std::string &resourcePrimaryKeyID, vector<string> &roleIds, RecordAclCommandType commandType)
 {
 	pthread_mutex_lock(&lockForWriters);
 
-	INDEXWRITE_RETVAL returnValue = this->index->_aclEditRecordAccessList(resourcePrimaryKeyID, roleIds, commandType);
+	INDEXWRITE_RETVAL returnValue = this->index->_aclModifyRecordAccessList(resourcePrimaryKeyID, roleIds, commandType);
 
 	// By editing the access list of a record the result of a search could change
 	// So we need to clear the cache.

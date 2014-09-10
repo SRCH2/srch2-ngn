@@ -477,7 +477,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record,
 
 // this function finds roleId in the query
 // and return false if there is not roleId in the query
-// sample: {"pid" : "234", ..... , “roleId”: ["33", "45"]}
+// sample: {"pid" : "234", ..... , ���roleId���: ["33", "45"]}
 //
 bool JSONRecordParser::_extractRoleIds(vector<string> &roleIds, const Json::Value &root,
     		const CoreInfo_t *indexDataContainerConf, std::stringstream &error){
@@ -497,7 +497,7 @@ bool JSONRecordParser::_extractRoleIds(vector<string> &roleIds, const Json::Valu
 
 // this function finds resourceID and roleId in the query
 // and return false if there is not roleId or resourceId in the query
-// sample: {“resourceId”: “1234", “roleId”: ["33", "45"]}
+// sample: {���resourceId���: ���1234", ���roleId���: ["33", "45"]}
 //
 bool JSONRecordParser::_extractResourceAndRoleIds(std::vector<string> &roleIds, string& resourcePrimaryKeyID, const Json::Value &root, const CoreInfo_t *indexDataContainerConf, std::stringstream &error){
 	if (root.type() != Json::objectValue)
@@ -533,7 +533,7 @@ bool JSONRecordParser::_extractResourceAndRoleIds(std::vector<string> &roleIds, 
 
 // this function extracts the role ids from a JSON object
 // and returns false if parsing the json object was not successful
-// sample:  {“resourceId”: “1234", “roleId”: ["33", "45"]}
+// sample:  {���resourceId���: ���1234", ���roleId���: ["33", "45"]}
 bool JSONRecordParser::getAclInfoFromJSON(vector<string> &roleIds, string &primaryKeyID,
     		const string& inputLine, const CoreInfo_t *indexDataContainerConf, std::stringstream &error){
 	string::const_iterator end_it = utf8::find_invalid(inputLine.begin(), inputLine.end());
@@ -778,8 +778,8 @@ unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, Sch
 }
 
 // Each line of the file is like this:
-//  {“resourceId”: “1234", “roleId”: ["33", "45"]}
-void DaemonDataSource::addAccessControlsFromFile(srch2is::Indexer *indexer,
+//  {"resourceId": "1234", "roleId": ["33", "45"]}
+void DaemonDataSource::addRecordAclFile(srch2is::Indexer *indexer,
                 const CoreInfo_t *indexDataContainerConf, srch2is::Indexer *roleCoreIndexer){
 	AccessControlInfo* accessControl = indexDataContainerConf->getAccessControlInfo();
 	if(accessControl == NULL)
@@ -788,7 +788,7 @@ void DaemonDataSource::addAccessControlsFromFile(srch2is::Indexer *indexer,
 	string filePath = accessControl->aclDataFileName;
 	ifstream in(filePath.c_str());
 	if (in.fail()){
-		Logger::error("Access-Control DataSource file not found at: %s", filePath.c_str());
+		Logger::error("Record-based ACL file not found at: %s", filePath.c_str());
 		return;
 	}
 
@@ -841,7 +841,7 @@ void DaemonDataSource::addAccessControlsFromFile(srch2is::Indexer *indexer,
 					}
 				}
 				if(roleIdsExist){
-					indexer->aclModifyRoles(resourcePrimaryKeyID, roleIds, srch2::instantsearch::AddRoles);
+					indexer->aclRecordModifyRoles(resourcePrimaryKeyID, roleIds, srch2::instantsearch::AddRoles);
 					indexedRecordsCount++;
 				}
 			}

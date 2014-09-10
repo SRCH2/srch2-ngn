@@ -170,7 +170,7 @@ const char* const ConfigManager::snippetSize = "snippetsize";
 const char* const ConfigManager::multipleAccessControlString = "access-controls";
 const char* const ConfigManager::resourceCore = "resourcecore";
 const char* const ConfigManager::roleCore = "rolecore";
-const char* const ConfigManager::accessControlDataFile = "acldatafile";
+const char* const ConfigManager::recordAclFile = "recordaclfile";
 const char* const ConfigManager::aclRoleId = "roleId";
 const char* const ConfigManager::aclResourceId = "resourceId";
 
@@ -902,7 +902,7 @@ void ConfigManager::parseSingleAccessControl(const xml_node &parentNode,
 			}
 			AccessControlInfo* newAccessControlInfo = new AccessControlInfo(resourceCoreName, roleCoreName);
 			// 3- extract the name of the data file for bulk load -->    <aclDataFile> data.json </aclDataFile>
-			xml_node dataFileNode = parentNode.child(accessControlDataFile);
+			xml_node dataFileNode = parentNode.child(recordAclFile);
 			if(dataFileNode && dataFileNode.text()){
 				newAccessControlInfo->aclDataFileName = srch2Home + string("")
                             + (*resourceIt).second->getName() + string("/") + string(dataFileNode.text().get());
@@ -1927,7 +1927,13 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
     xml_node aclFileNode = schemaNode.child(attributeAclFileString);
     if (aclFileNode && aclFileNode.text()) {
     	string tempString = aclFileNode.text().get();
-    	coreInfo->attrAclFilePath = boost::filesystem::path(getSrch2Home() + tempString).normalize().string();
+    	string attrAclFilePath;
+    	if (coreInfo->getName() == defaultCore) {
+    		attrAclFilePath = getSrch2Home() + tempString;
+    	} else {
+    		attrAclFilePath = getSrch2Home() + "/" + coreInfo->getName() + "/" + tempString;
+    	}
+    	coreInfo->attrAclFilePath = boost::filesystem::path(attrAclFilePath).normalize().string();
     }
 
     /*

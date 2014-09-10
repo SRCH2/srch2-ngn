@@ -26,24 +26,26 @@ control:
 A simple way to do record-based access control 
 is to introduce a multi-valued attribute to a resource core to
 include the information about roles who can access each record.  This
-approach is known to be [slow and inefficient](http://stackoverflow.com/questions/9222835/solr-permissions-filtering-results-depending-on-access-rights), and not acceptable for 
-large amounts of information or very dynamic ACL changes.  To solve this problem, SRCH2 adopts an
-advanced implementation to deliver higher performance.
+approach is known to be [slow and
+inefficient](http://stackoverflow.com/questions/9222835/solr-permissions-filtering-results-depending-on-access-rights),
+and not acceptable for large amounts of information or very dynamic
+ACL changes.  To solve this problem, SRCH2 adopts an advanced
+implementation to deliver higher performance.
 
 In this documentation we use the following example to explain how to
 use SRCH2 to do access control:
 
 <ul>
- <li> <b>Product(pid, name, description, price, manufacturer,
+ <li> <b>product(pid, name, description, price, manufacturer,
  state)</b>: "pid" is the primary key;
- <li> <b>User(uid, name)</b>: "uid" is the primary key.
+ <li> <b>user(uid, name)</b>: "uid" is the primary key.
 </ul>
 
 By doing access control, we can allow a user to access certain
-records and certain attributes in the <tt>Product</tt> table.  The following
+records and certain attributes in the <tt>product</tt> table.  The following
 are sample records in the two cores:
 
-<b>Product.json</b>
+<b>product.json</b>
 
 ```json
 {"pid" : "p501", "name" : "laptop", "description" : "Inspiron with Windows", "price" : 600, "manufacturer" : "Dell", "state" : "Texas"}
@@ -51,39 +53,41 @@ are sample records in the two cores:
 {"pid" : "p503", "name" : "phone", "description" : "iPhone 5", "price" : 500, "manufacturer" : "Apple", "state" : "California"}
 ```
 
-<b>User.json</b>
+<b>user.json</b>
 ```json
 {"uid" : "u25", "name" : "Alice"}
 {"uid" : "u26", "name" : "Bob"}
 {"uid" : "u27", "name" : "Cathy"}
 {"uid" : "u28", "name" : "Donald"}
 {"uid" : "u29", "name" : "Eric"}
-
 ```
+
+These files are provided under the
+[example-demo/acl](../example-demo/acl) folder.
 
 ## 1. Record-Based
 
 ###1.1 Configuration File
 
-In the configuration file, we want to tell the engine to use <tt>Product</tt>
-as the resource core and <tt>User</tt> as the role core. To specify
+In the configuration file, we want to tell the engine to use <tt>product</tt>
+as the resource core and <tt>user</tt> as the role core. To specify
 this relationship we use an <i>access-control</i> tag as shown below:
 
 ```
 <cores>
- <core name="Product">
+ <core name="product">
    ...
  </core>
 
- <core name="User">
+ <core name="user">
  </core>
 <cores>
 
 <access-controls>
   <access-control>
-     <resourceCore>Product</resourceCore>
-     <roleCore>User</roleCore>
-     <aclDataFile>record-acl-product-user.json</aclDataFile>
+     <resourceCore>product</resourceCore>
+     <roleCore>user</roleCore>
+     <recordAclFile>record-acl-product-user.json</recordAclFile>
    </access-control>
 </access-controls>
 
@@ -93,11 +97,11 @@ We can have multiple <i>access-control</i> tags under
 <i>access-controls</i> if we want to specify many ACL pairs of
 cores.
 
-Under the <i>aclDataFile</i> tag, there is a data file
+Under the <i>recordAclFile</i> tag, there is a data file
 <tt>record-acl-product-user.json</tt>, which includes the initial ACL
 information to be loaded by the engine.  Each line includes an primary
-id of the <tt>Product</tt> core and an array of ids of the
-<tt>User</tt> core. The following are example records:
+id of the <tt>product</tt> core and an array of ids of the
+<tt>user</tt> core. The following are example records:
 
 ```json
 {"resourceId" : "p501" , "roleId" : ["u25", "u26"]}
@@ -124,11 +128,12 @@ a user with the id "u26". The engine returns product "p502"
 only.  It will not return product "p503", even though it has
 the keyword "phone", since it cannot be accessed by this user.
 In general, the engine ignores records that cannot
-be accessed by this role. 
+be accessed by this role. Notice that the core name "product" 
+is case sensitive.
 
 ###1.3 Insert Records with ACL
 
-When we insert a record to the resource core <tt>Product</tt>, we can
+When we insert a record to the resource core <tt>product</tt>, we can
 optionally also include ids of roles that can access this record.  For instance,
 consider the following query:
 
@@ -218,13 +223,13 @@ be accessed by a role.  Here is how it works.
 
 In the running example, suppose we want to do access control on the
 attributes <tt>name</tt>, <tt>description</tt>, and <tt>state</tt> of
-the <tt>Product</tt> core.  In the configuration file, we need to add 
+the <tt>product</tt> core.  In the configuration file, we need to add 
 the tag <tt>acl="true"</tt> to these attributes:
 
 ```xml
 <cores>
  ...
- <core name="Product"> 
+ <core name="product"> 
   <schema>
     <fields>
        <field name="pid" type="text"/>
@@ -246,14 +251,14 @@ they can be accessible by all roles, and we cannot do access control
 on them.
 
 We can also specify a file with initial attribute ACL information for
-the <tt>Product</tt> records:
+the <tt>product</tt> records:
 
 ```xml
- <core name="Product"> 
+ <core name="product"> 
   <schema>
      ...
-  </schema>
   <attributeAclFile>./attribute-acl-data.json</attributeAclFile>
+  </schema>
  </core>
 ```
 
