@@ -87,7 +87,7 @@ this relationship we use an <i>access-control</i> tag as shown below:
   <access-control>
      <resourceCore>product</resourceCore>
      <roleCore>user</roleCore>
-     <aclDataFile>record-acl-product-user.json</aclDataFile>
+     <recordAclFile>record-acl-product-user.json</recordAclFile>
    </access-control>
 </access-controls>
 
@@ -97,7 +97,7 @@ We can have multiple <i>access-control</i> tags under
 <i>access-controls</i> if we want to specify many ACL pairs of
 cores.
 
-Under the <i>aclDataFile</i> tag, there is a data file
+Under the <i>recordAclFile</i> tag, there is a data file
 <tt>record-acl-product-user.json</tt>, which includes the initial ACL
 information to be loaded by the engine.  Each line includes an primary
 id of the <tt>product</tt> core and an array of ids of the
@@ -257,8 +257,8 @@ the <tt>product</tt> records:
  <core name="product"> 
   <schema>
      ...
-  </schema>
   <attributeAclFile>./attribute-acl-data.json</attributeAclFile>
+  </schema>
  </core>
 ```
 

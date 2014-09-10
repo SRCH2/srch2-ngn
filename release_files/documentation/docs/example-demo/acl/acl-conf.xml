@@ -54,7 +54,7 @@
                     <fields>
 			<field name="pid" type="text"/>
       			<field name="name" type="text" indexed="true"
-      			acl="ture"/>
+      			acl="true"/>
        			<field name="description" type="text"
       			indexed="true" acl="true"/>
        			<field name="price" type="integer" indexed="false" required="true" refining="true"/>
@@ -71,9 +71,8 @@
                         <facetField name="price"  facetType="range" facetStart="100" facetEnd="2000"
                             facetGap="10"/>
                     </facetFields>
-
+                    <attributeAclFile>./attribute-acl-product-user.json</attributeAclFile>
                 </schema>
-		<attributeAclFile>./attribute-acl-product-user.json</attributeAclFile>
                 <updatehandler>
                     <maxDocs>15000000</maxDocs>
                     <maxMemory>10000000</maxMemory>
@@ -146,7 +145,7 @@
         <access-control>
             <resourceCore>product</resourceCore>
      	    <roleCore>user</roleCore>
-            <aclDataFile>record-acl-product-user.json</aclDataFile>
+            <recordAclFile>record-acl-product-user.json</recordAclFile>
         </access-control>
     </access-controls>
 
