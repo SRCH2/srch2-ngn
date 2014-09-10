@@ -69,6 +69,14 @@
                         <facetField name="price"  facetType="range" facetStart="100" facetEnd="2000"
                             facetGap="10"/>
                     </facetFields>
+                    
+                    <types>
+                        <fieldType name="text_en">
+                            <analyzer>
+                                <filter name="protectedKeyWordsFilter" words="srch2_protected_words.txt" />
+                            </analyzer>
+                        </fieldType>
+                    </types>
 
                 </schema>
 		<attributeAclFile>./attribute-acl-data.json</attributeAclFile>
@@ -79,10 +87,6 @@
                         <mergeEveryNSeconds>10</mergeEveryNSeconds>
                         <mergeEveryMWrites>10</mergeEveryMWrites>
                     </mergePolicy>
-                    <updateLog>
-                        <logLevel>3</logLevel>
-                        <accessLogFile>srch2-log.txt</accessLogFile>
-                    </updateLog>
                 </updatehandler>
             </core>
 
@@ -123,6 +127,14 @@
                     </fields>
 
                     <uniqueKey>uid</uniqueKey>
+                   
+                    <types>
+                        <fieldType name="text_en">
+                            <analyzer>
+                                <filter name="protectedKeyWordsFilter" words="srch2_protected_words.txt" />
+                            </analyzer>
+                        </fieldType>
+                    </types>                 
                 </schema>
                 <updatehandler>
                     <maxDocs>15000000</maxDocs>
@@ -131,13 +143,8 @@
                         <mergeEveryNSeconds>10</mergeEveryNSeconds>
                         <mergeEveryMWrites>10</mergeEveryMWrites>
                     </mergePolicy>
-                    <updateLog>
-                        <logLevel>3</logLevel>
-                        <accessLogFile>srch2-log.txt</accessLogFile>
-                    </updateLog>
                 </updatehandler>
             </core>
-
     </cores>
 
     <access-controls>
@@ -147,5 +154,10 @@
             <aclDataFile>record-acl-product-user.json</aclDataFile>
    </access-control>
 </access-controls>
+
+    <updateLog>
+        <logLevel>3</logLevel>
+        <accessLogFile>srch2-log.txt</accessLogFile>
+    </updateLog>   
 
 </config>
