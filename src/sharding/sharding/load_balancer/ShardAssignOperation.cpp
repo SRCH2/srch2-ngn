@@ -1,12 +1,12 @@
 #include "ShardAssignOperation.h"
 
 #include "core/util/SerializationHelper.h"
-#include "src/core/util/Assert.h"
-#include "sharding/configuration/ShardingConstants.h"
+#include "core/util/Assert.h"
+#include "LoadBalancingStartOperation.h"
+#include "../../configuration/ShardingConstants.h"
 #include "../metadata_manager/ResourceLocks.h"
 #include "../metadata_manager/Cluster_Writeview.h"
 #include "../ShardManager.h"
-#include "LoadBalancingStartOperation.h"
 #include "../metadata_manager/DataShardInitializer.h"
 
 namespace srch2is = srch2::instantsearch;
@@ -17,7 +17,7 @@ namespace httpwrapper {
 
 ShardAssignOperation::ShardAssignOperation(const unsigned operationId, const ClusterShardId & unassignedShard):OperationState(operationId),shardId(shardId){
 	this->lockOperation = NULL;
-	this->lockOperationResult = new SerialLockResultStatus();
+	this->lockOperationResult = new AtomicLockOperationResult();
 	this->commitOperation = NULL;
 	this->releaseOperation = NULL;
 }
@@ -45,7 +45,7 @@ OperationState * ShardAssignOperation::acquireLocks(){
 	ResourceLockRequest * resourceLockRequest = new ResourceLockRequest();
 	resourceLockRequest->requestBatch = lockBatch;
 	resourceLockRequest->isBlocking = false;
-	lockOperation = OperationState::startOperation(new SerialLockOperation(this->getOperationId(), resourceLockRequest, this->lockOperationResult));
+	lockOperation = OperationState::startOperation(new AtomicLockOperation(this->getOperationId(), resourceLockRequest, this->lockOperationResult));
 	if(lockOperation == NULL){
 		if(this->lockOperationResult->grantedFlag == false){
 			return LoadBalancingStartOperation::finalizeLoadBalancing();
@@ -98,7 +98,7 @@ OperationState * ShardAssignOperation::commit(){
 	ShardAssignChange * shardAssignChange = new ShardAssignChange(shardId, ShardManager::getCurrentNodeId(), 0);
 	shardAssignChange->setPhysicalShard(physicalShard);
 
-	commitOperation = new CommitOperation(this->getOperationId(), vector<NodeId>(), shardAssignChange);
+	commitOperation = new AtomicCommitOperation(this->getOperationId(), vector<NodeId>(), shardAssignChange);
 	commitOperation = OperationState::startOperation(commitOperation);
 	if(commitOperation == NULL){
 		return release();
@@ -196,7 +196,7 @@ OperationState * ShardAssignOperation::release(){
 	ResourceLockRequest * resourceLockRequest = new ResourceLockRequest();
 	resourceLockRequest->requestBatch = releaseBatch;
 	resourceLockRequest->isBlocking = true;
-	releaseOperation = new SerialLockOperation(this->getOperationId(), resourceLockRequest);
+	releaseOperation = new AtomicLockOperation(this->getOperationId(), resourceLockRequest);
 	releaseOperation = OperationState::startOperation(releaseOperation);
 	if(releaseOperation == NULL){
 		return LoadBalancingStartOperation::finalizeLoadBalancing();

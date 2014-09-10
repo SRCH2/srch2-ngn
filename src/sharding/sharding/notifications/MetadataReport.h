@@ -2,8 +2,8 @@
 #define __SHARDING_SHARDING_METADATA_REPORT_H__
 
 #include "Notification.h"
-#include "core/util/SerializationHelper.h"
 #include "../metadata_manager/Cluster_Writeview.h"
+#include "core/util/SerializationHelper.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;

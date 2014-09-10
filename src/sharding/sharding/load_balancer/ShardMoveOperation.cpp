@@ -1,8 +1,8 @@
 #include "ShardMoveOperation.h"
 #include "core/util/SerializationHelper.h"
-#include "src/core/util/Assert.h"
-#include "src/core/util/Logger.h"
-#include "sharding/configuration/ShardingConstants.h"
+#include "core/util/Assert.h"
+#include "core/util/Logger.h"
+#include "../../configuration/ShardingConstants.h"
 #include "../metadata_manager/ResourceLocks.h"
 #include "../metadata_manager/Cluster_Writeview.h"
 #include "../ShardManager.h"
@@ -21,7 +21,7 @@ ShardMoveOperation::ShardMoveOperation(const unsigned operationId, const NodeId 
 	OperationState(operationId),shardId(moveShardId){
 	this->srcAddress = NodeOperationId(srcNodeId);
 	this->lockOperation = NULL;
-	this->lockOperationResult = new SerialLockResultStatus();
+	this->lockOperationResult = new AtomicLockOperationResult();
 	this->commitOperation = NULL;
 	this->releaseOperation = NULL;
 	this->connectedFlag = false;
@@ -75,7 +75,7 @@ OperationState * ShardMoveOperation::acquireLocks(){
 	ResourceLockRequest * resourceLockRequest = new ResourceLockRequest();
 	resourceLockRequest->requestBatch = lockBatch;
 	resourceLockRequest->isBlocking = false;
-	lockOperation = OperationState::startOperation(new SerialLockOperation(this->getOperationId(), resourceLockRequest, this->lockOperationResult));
+	lockOperation = OperationState::startOperation(new AtomicLockOperation(this->getOperationId(), resourceLockRequest, this->lockOperationResult));
 	if(lockOperation == NULL){
 		if(this->lockOperationResult->grantedFlag == false){
 			return abort();
@@ -142,7 +142,7 @@ OperationState * ShardMoveOperation::commit(){
 	// prepare the shard change
 	ShardMoveChange * shardMoveChange = new ShardMoveChange(shardId, srcAddress.nodeId, ShardManager::getCurrentNodeId());
 	shardMoveChange->setPhysicalShard(physicalShard);
-	commitOperation = new CommitOperation(this->getOperationId(), vector<NodeId>(), shardMoveChange);
+	commitOperation = new AtomicCommitOperation(this->getOperationId(), vector<NodeId>(), shardMoveChange);
 	commitOperation = OperationState::startOperation(commitOperation);
 	if(commitOperation == NULL){
 		return release();
@@ -265,7 +265,7 @@ OperationState * ShardMoveOperation::release(){
 	ResourceLockRequest * resourceLockRequest = new ResourceLockRequest();
 	resourceLockRequest->requestBatch = releaseBatch;
 	resourceLockRequest->isBlocking = true;
-	releaseOperation = new SerialLockOperation(this->getOperationId(), resourceLockRequest);
+	releaseOperation = new AtomicLockOperation(this->getOperationId(), resourceLockRequest);
 	releaseOperation = OperationState::startOperation(releaseOperation);
 	if(releaseOperation == NULL){
 		return finish();
@@ -334,7 +334,7 @@ OperationState * ShardMoveSrcOperation::compensate(){
 	ShardAssignChange * shardAssignChange = new ShardAssignChange(shardId, ShardManager::getCurrentNodeId(), 0);
 	shardAssignChange->setPhysicalShard(physicalShard);
 
-	compensateOperation = new CommitOperation(this->getOperationId(), vector<NodeId>(), shardAssignChange);
+	compensateOperation = new AtomicCommitOperation(this->getOperationId(), vector<NodeId>(), shardAssignChange);
 	compensateOperation = OperationState::startOperation(compensateOperation);
 	if(compensateOperation == NULL){
 		return release();
@@ -360,7 +360,7 @@ OperationState * ShardMoveSrcOperation::release(){
 	ResourceLockRequest * resourceLockRequest = new ResourceLockRequest();
 	resourceLockRequest->requestBatch = releaseBatch;
 	resourceLockRequest->isBlocking = true;
-	releaseOperation = new SerialLockOperation(this->getOperationId(), resourceLockRequest);
+	releaseOperation = new AtomicLockOperation(this->getOperationId(), resourceLockRequest);
 	releaseOperation = OperationState::startOperation(releaseOperation);
 	if(releaseOperation == NULL){
 		return NULL;

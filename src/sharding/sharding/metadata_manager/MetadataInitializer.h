@@ -1,10 +1,10 @@
 #ifndef __SHARDING_SHARDING_NODE_INITIALIZER_H__
 #define __SHARDING_SHARDING_NODE_INITIALIZER_H__
 
-#include "sharding/configuration/ShardingConstants.h"
-#include "sharding/configuration/ConfigManager.h"
 #include "Shard.h"
 #include "DataShardInitializer.h"
+#include "../../configuration/ShardingConstants.h"
+#include "../../configuration/ConfigManager.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;

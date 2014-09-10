@@ -2,7 +2,7 @@
 #define __SHARDING_SHARDING_LOCKING_NOTIFICATION_H__
 
 #include "Notification.h"
-#include "sharding/configuration/ShardingConstants.h"
+#include "../../configuration/ShardingConstants.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;

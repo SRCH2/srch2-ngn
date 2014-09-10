@@ -189,6 +189,7 @@ static const struct portMap_t {
 		{ srch2http::ResetLoggerPort, "resetlogger" },
 		{ srch2http::CommitPort, "commit" },
 		{ srch2http::MergePort, "merge" },
+		{ srch2http::ShutdownPort, "shutdown" },
 		{ srch2http::EndOfPortType, NULL },
 };
 
@@ -360,7 +361,8 @@ static void cb_save(evhttp_request *req, void *arg) {
 		return;
 
 	try {
-		dpExternalAndCoreId->dpExternal->externalSerializeIndexCommand(req, dpExternalAndCoreId->coreId);
+//		dpExternalAndCoreId->dpExternal->externalSerializeIndexCommand(req, dpExternalAndCoreId->coreId);
+		srch2http::ShardManager::getShardManager()->save(req);
 	} catch (exception& e) {
 		// exception caught
 		Logger::error(e.what());
@@ -402,6 +404,29 @@ static void cb_resetLogger(evhttp_request *req, void *arg) {
 
 	try {
 		dpExternalAndCoreId->dpExternal->externalResetLogCommand(req, dpExternalAndCoreId->coreId);
+	} catch (exception& e) {
+		// exception caught
+		Logger::error(e.what());
+		srch2http::HTTPRequestHandler::handleException(req);
+	}
+}
+
+/**
+ *  'cluster shutdown' callback function
+ *  @param req evhttp request object
+ *  @param arg optional argument
+ */
+static void cb_shutdown(evhttp_request *req, void *arg) {
+
+	evhttp_add_header(req->output_headers, "Content-Type",
+			"application/json; charset=UTF-8");
+
+	if(!checkOperationPermission(req, 0, srch2http::ShutdownPort))
+		return;
+
+	try {
+//		dpExternalAndCoreId->dpExternal->externalResetLogCommand(req, dpExternalAndCoreId->coreId);
+		srch2http::ShardManager::getShardManager()->shutdown();
 	} catch (exception& e) {
 		// exception caught
 		Logger::error(e.what());
@@ -744,6 +769,7 @@ static const struct UserRequestAttributes_t {
 		{ "/save", srch2http::SavePort, cb_save },
 		{ "/export", srch2http::ExportPort, cb_export },
 		{ "/resetLogger", srch2http::ResetLoggerPort, cb_resetLogger },
+		{ "/shutdown", srch2http::ShutdownPort, cb_shutdown },
 		{ NULL, srch2http::EndOfPortType, NULL }
 };
 typedef unsigned CoreId;//TODO is it needed ? if not let's delete it.

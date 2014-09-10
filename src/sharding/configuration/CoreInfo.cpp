@@ -169,6 +169,7 @@ void CoreInfo_t::setPort(PortType_t portType, unsigned short portNumber)
     case SavePort:
     case ExportPort:
     case ResetLoggerPort:
+    case ShutdownPort:
         ports[portType] = portNumber;
         break;
 

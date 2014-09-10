@@ -39,7 +39,7 @@ NewNodeLockOperation::NewNodeLockOperation(const unsigned & operationId):Operati
 		lockRequests->requestBatch.push_back(new SingleResourceLockRequest(id,
 				NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()), lockTypes[id]));
 	}
-
+	lockRequests->isBlocking = true;
 	this->lastShardLockRepository = NULL; // this will set when we get ACKs
 	this->nodeIndex = 0;
 	this->newNodeLockNotification = NULL;

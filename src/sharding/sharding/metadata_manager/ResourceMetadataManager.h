@@ -2,18 +2,19 @@
 #define __SHARDING_SHARDING_RESOURCE_METADATA_MANAGER_H__
 
 
-#include "sharding/configuration/ConfigManager.h"
-#include "sharding/configuration/ShardingConstants.h"
+#include "Cluster.h"
+#include "Cluster_Writeview.h"
+
 #include "../notifications/Notification.h"
 #include "../notifications/CommitNotification.h"
 #include "../notifications/MetadataReport.h"
-#include "Cluster.h"
-#include "Cluster_Writeview.h"
 #include "../ShardManager.h"
+#include "../../configuration/ConfigManager.h"
+#include "../../configuration/ShardingConstants.h"
+
 #include <boost/shared_ptr.hpp>
 #include <boost/serialization/shared_ptr.hpp>
 #include <pthread.h>
-
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -44,6 +45,10 @@ public:
 		ShardManager::getShardManager()->send(ack);
 		delete ack;
 	}
+
+
+	void resolve(ConfigManager * confManager, SaveMetadataNotification * saveDataNotification);
+
 
 	void resolve(MetadataReport::REQUEST * readRequest){
 		MetadataReport * report = new MetadataReport(this->writeview);

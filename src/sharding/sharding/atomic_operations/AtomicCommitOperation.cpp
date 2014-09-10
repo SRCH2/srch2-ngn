@@ -1,11 +1,11 @@
-#include "CommitOperation.h"
+#include "AtomicCommitOperation.h"
 
 #include "core/util/SerializationHelper.h"
-#include "src/core/util/Assert.h"
-#include "metadata_manager/Shard.h"
-#include "metadata_manager/Node.h"
-#include "./metadata_manager/Cluster_Writeview.h"
-#include "./ShardManager.h"
+#include "core/util/Assert.h"
+#include "../metadata_manager/Shard.h"
+#include "../metadata_manager/Node.h"
+#include "../metadata_manager/Cluster_Writeview.h"
+#include "../ShardManager.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -14,7 +14,7 @@ namespace srch2 {
 namespace httpwrapper {
 
 
-CommitOperation::CommitOperation(const unsigned & operationId,
+AtomicCommitOperation::AtomicCommitOperation(const unsigned & operationId,
 		const vector<NodeId> & exceptions, MetadataChange * metadataChange):OperationState(operationId){
 	ASSERT(metadataChange != NULL);
 	this->metadataChange = metadataChange;
@@ -28,7 +28,7 @@ CommitOperation::CommitOperation(const unsigned & operationId,
 	}
 }
 
-CommitOperation::CommitOperation(const unsigned & operationId,
+AtomicCommitOperation::AtomicCommitOperation(const unsigned & operationId,
 		const NodeId & exception, MetadataChange * metadataChange):OperationState(operationId){
 	ASSERT(metadataChange != NULL);
 	this->metadataChange = metadataChange;
@@ -42,20 +42,20 @@ CommitOperation::CommitOperation(const unsigned & operationId,
 	}
 }
 
-CommitOperation::CommitOperation(const unsigned & operationId,
+AtomicCommitOperation::AtomicCommitOperation(const unsigned & operationId,
 		MetadataChange * metadataChange, const vector<NodeId> & participants):OperationState(operationId){
 	ASSERT(metadataChange != NULL);
 	this->metadataChange = metadataChange;
 	this->participants = participants;
 }
 
-CommitOperation::~CommitOperation(){
+AtomicCommitOperation::~AtomicCommitOperation(){
 	if(metadataChange != NULL){
 		delete metadataChange;
 	}
 }
 
-OperationState * CommitOperation::entry(){
+OperationState * AtomicCommitOperation::entry(){
 
 	if(participants.size() == 0){
 		// no participant exists
@@ -90,7 +90,7 @@ OperationState * CommitOperation::entry(){
 	return NULL;
 }
 
-OperationState * CommitOperation::handle(NodeFailureNotification * nodeFailure){
+OperationState * AtomicCommitOperation::handle(NodeFailureNotification * nodeFailure){
 	if(nodeFailure == NULL){
 		ASSERT(false);
 		return this;
@@ -116,7 +116,7 @@ OperationState * CommitOperation::handle(NodeFailureNotification * nodeFailure){
 }
 
 // returns false when it's done.
-OperationState * CommitOperation::handle(CommitNotification::ACK * commitAck){
+OperationState * AtomicCommitOperation::handle(CommitNotification::ACK * commitAck){
 
 	if(! doesExpect(commitAck)){
 		ASSERT(false);
@@ -142,7 +142,7 @@ OperationState * CommitOperation::handle(CommitNotification::ACK * commitAck){
 	}
 	return NULL;
 }
-bool CommitOperation::doesExpect(CommitNotification::ACK * inputNotification) const{
+bool AtomicCommitOperation::doesExpect(CommitNotification::ACK * inputNotification) const{
 	if(inputNotification == NULL){
 		ASSERT(false);
 		return false;
@@ -156,10 +156,10 @@ bool CommitOperation::doesExpect(CommitNotification::ACK * inputNotification) co
 	return false;
 }
 
-string CommitOperation::getOperationName() const {
+string AtomicCommitOperation::getOperationName() const {
 	return "commit_operation";
 };
-string CommitOperation::getOperationStatus() const {
+string AtomicCommitOperation::getOperationStatus() const {
 	stringstream ss;
 	ss << "Metadata change : " ;
 	if(metadataChange == NULL){

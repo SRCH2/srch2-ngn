@@ -1,4 +1,5 @@
 #include "ResourceMetadataManager.h"
+#include "MetadataInitializer.h"
 #include "core/util/Assert.h"
 #include <iostream>
 
@@ -14,6 +15,27 @@ ResourceMetadataManager::ResourceMetadataManager(){
 
 	writeview = NULL;
 }
+
+void ResourceMetadataManager::resolve(ConfigManager * confManager, SaveMetadataNotification * saveDataNotification){
+	if(saveDataNotification == NULL){
+		ASSERT(false);
+		return;
+	}
+	if(writeview != NULL){
+		MetadataInitializer metadataInitializer(confManager, this);
+		metadataInitializer.saveToDisk(writeview->clusterName);
+	}else{
+		ASSERT(false);
+	}
+
+	// reply ack
+	SaveMetadataNotification::ACK * ack = new SaveMetadataNotification::ACK();
+	ack->setSrc(NodeOperationId(ShardManager::getCurrentNodeId()));
+	ack->setDest(saveDataNotification->getSrc());
+	ShardManager::getShardManager()->send(ack);
+	delete ack;
+}
+
 void ResourceMetadataManager::commitClusterMetadata(ClusterResourceMetadata_Readview * newReadview){
     pthread_spin_lock(&m_spinlock);
     // set readview pointer to the new copy of writeview

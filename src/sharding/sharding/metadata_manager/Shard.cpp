@@ -1,8 +1,8 @@
 
 #include "Shard.h"
 
-#include "src/core/util/SerializationHelper.h"
-#include "sharding/util/FramedPrinter.h"
+#include "../../util/FramedPrinter.h"
+#include "core/util/SerializationHelper.h"
 #include "server/Srch2Server.h"
 #include <sstream>
 

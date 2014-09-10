@@ -1,8 +1,8 @@
 #ifndef __SHARDING_SHARDING_STATE_H__
 #define __SHARDING_SHARDING_STATE_H__
 
-#include "notifications/Notification.h"
 #include "ShardManager.h"
+#include "./notifications/Notification.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;

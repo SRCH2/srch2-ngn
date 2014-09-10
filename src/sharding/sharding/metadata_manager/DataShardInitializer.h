@@ -1,12 +1,12 @@
 #ifndef __SHARDING_SHARDING_DATA_SHARD_INITIALIZER_H__
 #define __SHARDING_SHARDING_DATA_SHARD_INITIALIZER_H__
 
-#include "sharding/configuration/CoreInfo.h"
-#include "server/Srch2Server.h"
 #include "Shard.h"
-#include "core/util/Logger.h"
-#include "../ShardManager.h"
 #include "Cluster_Writeview.h"
+#include "../ShardManager.h"
+#include "../../configuration/CoreInfo.h"
+#include "server/Srch2Server.h"
+#include "core/util/Logger.h"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/serialization/shared_ptr.hpp>

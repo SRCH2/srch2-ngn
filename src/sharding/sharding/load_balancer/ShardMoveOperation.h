@@ -8,8 +8,8 @@
 #include "../notifications/LockingNotification.h"
 #include "../metadata_manager/Shard.h"
 #include "../metadata_manager/Cluster_Writeview.h"
-#include "../SerialLockOperation.h"
-#include "../CommitOperation.h"
+#include "../atomic_operations/AtomicLockOperation.h"
+#include "../atomic_operations/AtomicCommitOperation.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -42,7 +42,7 @@ private:
 	bool connectedFlag;
 
 	OperationState * lockOperation;
-	SerialLockResultStatus * lockOperationResult;
+	AtomicLockOperationResult * lockOperationResult;
 	OperationState * commitOperation;
 	OperationState * releaseOperation;
 	LocalPhysicalShard physicalShard;

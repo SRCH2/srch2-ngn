@@ -2,12 +2,12 @@
 #define __SHARDING_SHARDING_CLUSTER_WRITEVIEW_H__
 
 
-#include "sharding/configuration/ShardingConstants.h"
 #include "Shard.h"
-#include "core/util/SerializationHelper.h"
-#include "src/core/util/Assert.h"
-#include "sharding/configuration/CoreInfo.h"
 #include "Cluster.h"
+#include "core/util/SerializationHelper.h"
+#include "core/util/Assert.h"
+#include "../../configuration/CoreInfo.h"
+#include "../../configuration/ShardingConstants.h"
 
 #include <iostream>
 #include <fstream>

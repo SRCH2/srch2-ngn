@@ -1,11 +1,11 @@
 #ifndef __SHARDING_CONFIGURATION_NODE_H__
 #define __SHARDING_CONFIGURATION_NODE_H__
 
-#include <instantsearch/Constants.h>
-#include "src/wrapper/WrapperConstants.h"
 #include "../../configuration/ShardingConstants.h"
 #include "src/core/util/Assert.h"
 #include "src/core/util/Logger.h"
+#include "src/wrapper/WrapperConstants.h"
+#include <instantsearch/Constants.h>
 
 #include <vector>
 #include <string>

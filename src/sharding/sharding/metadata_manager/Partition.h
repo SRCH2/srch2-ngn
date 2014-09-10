@@ -4,8 +4,8 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/shared_mutex.hpp>
 
-#include "sharding/configuration/ShardingConstants.h"
 #include "Shard.h"
+#include "../../configuration/ShardingConstants.h"
 #include "core/util/Assert.h"
 
 

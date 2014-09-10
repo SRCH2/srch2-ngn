@@ -3,19 +3,19 @@
 
 #include "Shard.h"
 #include "Node.h"
-#include "../../configuration/CoreInfo.h"
 #include "Partition.h"
+#include "../../configuration/CoreInfo.h"
+#include "../../configuration/ShardingConstants.h"
 
-#include "sharding/configuration/ShardingConstants.h"
-#include "src/wrapper/WrapperConstants.h"
-#include "src/core/util/Assert.h"
-#include "src/core/util/mypthread.h"
+#include "wrapper/WrapperConstants.h"
+#include "core/util/Assert.h"
+#include "core/util/mypthread.h"
+#include "core/util/Logger.h"
 
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/serialization/shared_ptr.hpp>
-#include "src/core/util/Logger.h"
 #include <string>
 #include <vector>
 #include <map>

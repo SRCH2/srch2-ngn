@@ -2,12 +2,12 @@
 #define __SHARDING_SHARDING_METADATA_MANAGER_H__
 
 
-#include "State.h"
-#include "./notifications/Notification.h"
-#include "sharding/configuration/ShardingConstants.h"
-#include "./notifications/CommitNotification.h"
-#include "./metadata_manager/ResourceMetadataChange.h"
-#include "metadata_manager/ResourceMetadataManager.h"
+#include "../State.h"
+#include "../notifications/Notification.h"
+#include "../../configuration/ShardingConstants.h"
+#include "../notifications/CommitNotification.h"
+#include "../metadata_manager/ResourceMetadataChange.h"
+#include "../metadata_manager/ResourceMetadataManager.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -16,13 +16,13 @@ namespace srch2 {
 namespace httpwrapper {
 
 
-class CommitOperation : public OperationState{
+class AtomicCommitOperation : public OperationState{
 public:
 
-	CommitOperation(const unsigned & operationId, const vector<NodeId> & exceptions, MetadataChange * metadataChange);
-	CommitOperation(const unsigned & operationId, const NodeId & exception, MetadataChange * metadataChange);
-	CommitOperation(const unsigned & operationId, MetadataChange * metadataChange, const vector<NodeId> & participants);
-	~CommitOperation();
+	AtomicCommitOperation(const unsigned & operationId, const vector<NodeId> & exceptions, MetadataChange * metadataChange);
+	AtomicCommitOperation(const unsigned & operationId, const NodeId & exception, MetadataChange * metadataChange);
+	AtomicCommitOperation(const unsigned & operationId, MetadataChange * metadataChange, const vector<NodeId> & participants);
+	~AtomicCommitOperation();
 
 	OperationState * entry();
 

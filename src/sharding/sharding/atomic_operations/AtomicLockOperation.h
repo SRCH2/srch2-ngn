@@ -1,10 +1,10 @@
-#ifndef __SHARDING_SHARDING_SERIAL_LOCK_OPERATION_H__
-#define __SHARDING_SHARDING_SERIAL_LOCK_OPERATION_H__
+#ifndef __SHARDING_SHARDING_ATOMIC_LOCK_OPERATION_H__
+#define __SHARDING_SHARDING_ATOMIC_LOCK_OPERATION_H__
 
-#include "State.h"
-#include "notifications/Notification.h"
-#include "metadata_manager/ResourceLocks.h"
-#include "sharding/configuration/ShardingConstants.h"
+#include "../State.h"
+#include "../notifications/Notification.h"
+#include "../metadata_manager/ResourceLocks.h"
+#include "../../configuration/ShardingConstants.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -15,21 +15,21 @@ namespace httpwrapper {
 // Must be used for Lock and Upgrade
 // it does the work in the order of nodes.
 
-struct SerialLockResultStatus{
-	SerialLockResultStatus(){
+struct AtomicLockOperationResult{
+	AtomicLockOperationResult(){
 		grantedFlag = false;
 	}
 	bool grantedFlag;
 };
 
-class SerialLockOperation : public OperationState{
+class AtomicLockOperation : public OperationState{
 public:
-	SerialLockOperation(const unsigned & operationId, ResourceLockRequest * lockRequests,
-			SerialLockResultStatus * resultStatus = NULL);
-	SerialLockOperation(const unsigned & operationId, const vector<NodeId> & participants,
-			ResourceLockRequest * lockRequests, SerialLockResultStatus * resultStatus = NULL);
+	AtomicLockOperation(const unsigned & operationId, ResourceLockRequest * lockRequests,
+			AtomicLockOperationResult * resultStatus = NULL);
+	AtomicLockOperation(const unsigned & operationId, const vector<NodeId> & participants,
+			ResourceLockRequest * lockRequests, AtomicLockOperationResult * resultStatus = NULL);
 
-	~SerialLockOperation(){
+	~AtomicLockOperation(){
 		delete lockRequests;
 	}
 	OperationState * entry();
@@ -61,7 +61,7 @@ private:
 	vector<NodeId> participantNodes;
 	ResourceLockRequest * lockRequests;
 	unsigned nodeIndex;
-	SerialLockResultStatus * resultStatus;
+	AtomicLockOperationResult * resultStatus;
 
 	OperationState * askNextNode(const NodeId & targetNodeId);
 
@@ -82,4 +82,4 @@ private:
 }
 
 
-#endif // __SHARDING_SHARDING_SERIAL_LOCK_OPERATION_H__
+#endif // __SHARDING_SHARDING_ATOMIC_LOCK_OPERATION_H__

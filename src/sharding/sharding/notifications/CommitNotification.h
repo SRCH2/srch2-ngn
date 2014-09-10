@@ -3,8 +3,8 @@
 
 
 #include "Notification.h"
-#include "core/util/SerializationHelper.h"
 #include "../metadata_manager/ResourceMetadataChange.h"
+#include "core/util/SerializationHelper.h"
 
 
 namespace srch2is = srch2::instantsearch;

@@ -1,7 +1,8 @@
 #include "ClusterOperationContainer.h"
 
+#include "../util/FramedPrinter.h"
+
 #include "core/util/Assert.h"
-#include "sharding/util/FramedPrinter.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
