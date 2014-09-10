@@ -25,6 +25,7 @@ the [JSON](http://json.org/) format.
 - Stemming and stop words
 - Phrase search (e.g., "new york")
 - Rich data types (e.g., text, int, float, and date)
+- Chinese tokenization
 - Attribute-based search
 - Sorting (e.g., "price < 20")
 - Geo search
@@ -39,6 +40,7 @@ the [JSON](http://json.org/) format.
 - Support of control messages (e.g., system status and index serialization)
 - Port-level network security
 - Token-based authorization
+- Access control (record based and attribute based)
 - Connectors to MongoDB and SQLite, with connectors for other data sources coming soon
 
 ##Platforms
