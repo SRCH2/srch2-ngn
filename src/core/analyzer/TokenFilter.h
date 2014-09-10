@@ -23,6 +23,12 @@ public:
         delete tokenStream;
     }
 
+    virtual void clearState() {
+        // clear the state of the filter in the upstream
+        if (this->tokenStream != NULL)
+            this->tokenStream->clearState();
+    }
+
 protected:
     // a linker to a TokenFilter or a Tokenizer
     TokenStream* tokenStream;
