@@ -979,6 +979,151 @@ void HTTPRequestHandler::aclEditRolesOfRecord(evhttp_request *req, Srch2Server *
     }
 }
 
+void HTTPRequestHandler::aclModifyRecordsOfRoles(evhttp_request *req, Srch2Server *server, srch2::instantsearch::RecordAclCommandType commandType){
+
+	Json::Value response(Json::objectValue);
+	bool isSuccess = true;
+	Json::Value edit_responses(Json::arrayValue);
+
+	if(server->roleCore != NULL){ // this core has a role core
+
+		size_t length = EVBUFFER_LENGTH(req->input_buffer);
+
+		if (length == 0) {
+			isSuccess = false;
+			response[JSON_MESSAGE] = "http body is empty";
+			Logger::warn("http body is empty");
+		}
+
+		const char *post_data = (char *) EVBUFFER_DATA(req->input_buffer);
+
+		// Parse example data
+		Json::Value root;
+		Json::Reader reader;
+		bool parseSuccess = reader.parse(post_data, root, false);
+
+		if (parseSuccess == false) {
+			isSuccess = false;
+			response[JSON_MESSAGE] = "JSON object parsing error";
+			Logger::warn("JSON object parse error");
+		}else{
+			if(root.type() == Json::arrayValue) { // The input is an array of JSON objects.
+				vector<string> resourceIds;
+				vector<string> removedIds;
+				string removedRoleIds = "";
+				for ( int index = 0; index < root.size(); ++index ) {
+					Json::Value defaultValueToReturn = Json::Value("");
+					const Json::Value doc = root.get(index,
+							defaultValueToReturn);
+					string roleID;
+					std::stringstream log_str;
+					// extract all the role ids from the query
+					if( JSONRecordParser::_extractRoleAndResourceIds(resourceIds, roleID, doc, server->indexDataConfig, log_str) ){
+						// check that the core should have a record with this id
+						INDEXLOOKUP_RETVAL returnValue = server->roleCore->indexer->lookupRecord(roleID);
+						if(returnValue == LU_ABSENT_OR_TO_BE_DELETED){
+							Logger::error(
+									"error: %s does not have any record with this primary key.",server->getCoreName().c_str());
+							response[JSON_MESSAGE] = "error:" + server->roleCore->getCoreName() + " does not have any record with this primary key.";
+							bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
+									global_customized_writer.write(response));
+							return;
+						}
+
+						for(vector<string>::iterator i = resourceIds.begin() ; i != resourceIds.end() ; ){
+							returnValue = server->indexer->lookupRecord(*i);
+							if(returnValue == LU_ABSENT_OR_TO_BE_DELETED){
+								// there is no record in role core with this id
+								// we should remove this id from roleIds
+								removedIds.push_back(*i);
+								i = resourceIds.erase(i);
+							}else{
+								++i;
+							}
+						}
+
+						for(unsigned i = 0 ; i < removedIds.size() ; ++i){
+							removedRoleIds = removedRoleIds + ", " + removedIds[i];
+						}
+
+						if(removedIds.size() != 0){
+							log_str << "Warning: No record in " + server->getCoreName() + " with these primary keys: [" << removedRoleIds << "]";
+						}
+
+						if(resourceIds.size() != 0){
+							log_str << global_customized_writer.write(IndexWriteUtil::_aclModifyRecordsOfRole(server->indexer, roleID, resourceIds, commandType));
+						}
+					}
+
+					resourceIds.clear();
+					removedIds.clear();
+					removedRoleIds = "";
+					edit_responses[index] = log_str.str();
+				}
+			}else{ // The input is only one JSON object.
+				const Json::Value doc = root;
+				vector<string> resourceIds;
+				vector<string> removedIds;
+				string removedRoleIds = "";
+				string roleID;
+				std::stringstream log_str;
+				// extract all the role ids from the query
+				if( JSONRecordParser::_extractRoleAndResourceIds(resourceIds, roleID, doc, server->indexDataConfig, log_str) ){
+					// check that the role core should have all the records with these role ids
+					INDEXLOOKUP_RETVAL returnValue = server->roleCore->indexer->lookupRecord(roleID);
+					if(returnValue == LU_ABSENT_OR_TO_BE_DELETED){
+						Logger::error(
+								"error: %s does not have any record with this primary key.",server->getCoreName().c_str());
+						response[JSON_MESSAGE] = "error:" + server->roleCore->getCoreName() + " does not have any record with this primary key.";
+						bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
+								global_customized_writer.write(response));
+						return;
+					}
+					for(vector<string>::iterator i = resourceIds.begin() ; i != resourceIds.end() ; ){
+						INDEXLOOKUP_RETVAL returnValue = server->indexer->lookupRecord(*i);
+						if(returnValue == LU_ABSENT_OR_TO_BE_DELETED){
+							// there is no record in role core with this id
+							// we should remove this id from roleIds
+							removedIds.push_back(*i);
+							i = resourceIds.erase(i);
+						}else{
+							++i;
+						}
+					}
+
+					for(unsigned i = 0 ; i < removedIds.size() ; ++i){
+						removedRoleIds = removedRoleIds + ", " + removedIds[i];
+					}
+
+					if(removedIds.size() != 0){
+						log_str << "Warning: No record in " + server->getCoreName() + " with these primary keys: [" << removedRoleIds << "]";
+					}
+
+					if(resourceIds.size() != 0){
+						log_str << global_customized_writer.write(IndexWriteUtil::_aclModifyRecordsOfRole(server->indexer, roleID, resourceIds, commandType));
+					}
+				}
+				edit_responses.append(log_str.str());
+			}
+		}
+
+	}else{
+		Logger::error(
+				"error: %s does not have any role core.",server->getCoreName().c_str());
+		response[JSON_MESSAGE] = "error:" + server->getCoreName() + " does not have any role core.";
+		bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
+				global_customized_writer.write(response));
+		return;
+	}
+
+	response[JSON_LOG] = edit_responses;
+    if (isSuccess){
+        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", global_customized_writer.write(response));
+    } else {
+        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "BAD REQUEST", global_customized_writer.write(response));
+    }
+}
+
 // overwrites role ids in a record's access list
 // example : Suppose we have a resource core called "product" with a primary key attribute called "pid then the query is like:
 // curl "http://localhost:8081/product/aclRecordRoleAdd" -i -X PUT -d '{“pid”: “1234", “roleId”: ["33", "45"]}'
@@ -1001,6 +1146,20 @@ void HTTPRequestHandler::aclAppendRolesToRecord(evhttp_request *req, Srch2Server
 //
 void HTTPRequestHandler::aclDeleteRolesFromRecord(evhttp_request *req, Srch2Server *server){
 	aclEditRolesOfRecord(req, server, srch2::instantsearch::DeleteRoles);
+}
+
+
+
+void HTTPRequestHandler::aclAddRecordsToRole(evhttp_request *req, Srch2Server *server){
+	aclModifyRecordsOfRoles(req, server, srch2::instantsearch::AddRoles);
+}
+
+void HTTPRequestHandler::aclAppendRecordsToRole(evhttp_request *req, Srch2Server *server){
+	aclModifyRecordsOfRoles(req, server, srch2::instantsearch::AppendRoles);
+}
+
+void HTTPRequestHandler::aclDeleteRecordsFromRole(evhttp_request *req, Srch2Server *server){
+	aclModifyRecordsOfRoles(req, server, srch2::instantsearch::DeleteRoles);
 }
 
 void HTTPRequestHandler::updateCommand(evhttp_request *req,

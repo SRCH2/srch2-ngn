@@ -340,6 +340,48 @@ Json::Value IndexWriteUtil::_aclEditRoles(Indexer *indexer,
 	return response;
 }
 
+
+Json::Value IndexWriteUtil::_aclModifyRecordsOfRole(Indexer *indexer, string &roleId,
+		vector<string> &resourceIds, srch2::instantsearch::RecordAclCommandType commandType) {
+
+	Json::Value response(Json::objectValue);
+	vector<string> roleIds;
+	roleIds.push_back(roleId);
+	srch2::instantsearch::INDEXWRITE_RETVAL ret;
+	for(unsigned i = 0 ; i < resourceIds.size(); ++i){
+		ret = indexer->aclModifyRoles(resourceIds[i], roleIds, commandType);
+		switch(ret){
+		case srch2::instantsearch::OP_SUCCESS:
+
+			break;
+		case srch2::instantsearch::OP_FAIL:
+			"No record with this primary key: "+resourceIds[i]+" ";
+			break;
+		}
+	}
+	response[c_action_acl] = c_success;
+
+	switch (commandType) {
+	case srch2::instantsearch::AddRoles:
+		response[c_detail] = " Resource ids added successfully";
+		break;
+	case srch2::instantsearch::AppendRoles:
+		response[c_detail] = " Resource ids appended successfully";
+		break;
+	case srch2::instantsearch::DeleteRoles:
+		response[c_detail] = " Resource ids deleted successfully";
+		break;
+	default:
+		ASSERT(false);
+		break;
+	};
+	return response;
+
+}
+
+
+
+
 void IndexWriteUtil::_deleteRoleRecord(Indexer *resourceIndexer, std::string rolePrimaryKeyName, const evkeyvalq &headers){
 
  	const char *pKeyParamName = evhttp_find_header(&headers, rolePrimaryKeyName.c_str());

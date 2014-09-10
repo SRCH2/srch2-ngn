@@ -51,6 +51,9 @@ class HTTPRequestHandler
         static void aclAddRolesToRecord(evhttp_request *req, Srch2Server *server);
         static void aclAppendRolesToRecord(evhttp_request *req, Srch2Server *server);
         static void aclDeleteRolesFromRecord(evhttp_request *req, Srch2Server *server);
+        static void aclAddRecordsToRole(evhttp_request *req, Srch2Server *server);
+        static void aclAppendRecordsToRole(evhttp_request *req, Srch2Server *server);
+        static void aclDeleteRecordsFromRole(evhttp_request *req, Srch2Server *server);
 
 
 	private:
@@ -102,6 +105,7 @@ class HTTPRequestHandler
 		// this function first, checks that all the role ids exist then it add them to record object
 		static void addRoleIdsToRecord(vector<string> &roleIds, Srch2Server* server, evhttp_request *req, Record* record, std::stringstream &log_str);
 		static void aclEditRolesOfRecord(evhttp_request *req, Srch2Server *server, srch2::instantsearch::RecordAclCommandType commandType);
+		static void aclModifyRecordsOfRoles(evhttp_request *req, Srch2Server *server, srch2::instantsearch::RecordAclCommandType commandType);
 
 };
 

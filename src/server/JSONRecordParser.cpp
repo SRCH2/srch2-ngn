@@ -531,6 +531,43 @@ bool JSONRecordParser::_extractResourceAndRoleIds(std::vector<string> &roleIds, 
 	return true;
 }
 
+
+// this function finds resourceIDs and roleId in the query
+// and return false if there is not roleId or resourceId in the query
+// sample: {“roleId”: “1234", “resourceId”: ["33", "45"]}
+//
+bool JSONRecordParser::_extractRoleAndResourceIds(std::vector<string> &resourceIds, string& rolePrimaryKeyID, const Json::Value &root, const CoreInfo_t *indexDataContainerConf, std::stringstream &error){
+	if (root.type() != Json::objectValue)
+	{
+		error << "\nFailed to parse JSON.";
+		return false;// Raise Error
+	}
+	string aclRoleIdName = ConfigManager::getRoleId();
+
+    string roleprimaryKeyName = ConfigManager::getResourceId();
+
+    std::vector<string> stringValues;
+
+    getJsonValueString(root, aclRoleIdName, stringValues, "resourceId");
+
+    if (!stringValues.empty() && stringValues.at(0).compare("") != 0) {
+        string primaryKeyStringValue = stringValues.at(0);
+        // trim to avoid any mismatch due to leading and trailing white space
+        boost::algorithm::trim(primaryKeyStringValue);
+        rolePrimaryKeyID = primaryKeyStringValue.c_str();
+
+    } else {
+        error << "\nFailed to parse JSON - No roleId found.";
+        return false; // Raise Error
+    }
+
+	if(!getJsonValueString(root, roleprimaryKeyName, resourceIds, "roleId")){
+		return false;
+	}
+
+	return true;
+}
+
 // this function extracts the role ids from a JSON object
 // and returns false if parsing the json object was not successful
 // sample:  {“resourceId”: “1234", “roleId”: ["33", "45"]}
