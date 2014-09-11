@@ -560,10 +560,24 @@ span the entire facetGap. Also all facet fields must be declared in a
 
 ###11.6. Analyzer
 
-The parameters contained in this tag configure the analyzer to be used by the engine.<br>
+The parameters contained in this tag configure the analyzer to be used by the engine. 
+Currently we support English-like languages and Chinese.  We can specify
+which language to use by setting <code>fieldType name="text_standard"</code>
+or <code>fieldType name="text_chinese"</code> correspondingly.  For example,
+the following configuration specifies the standard analyzer:
 ```
 <types>
-  <fieldType name="text_en">
+  <fieldType name="text_standard">
+    <analyzer>
+    ...
+    </analyzer>
+  </fieldType>
+</types>
+```
+And the following configuration specifies the Chinese analyzer:
+```
+<types>
+  <fieldType name="text_chinese" dictionary="/relativ/path/to/srch2home/srch2_dictionary_zh_cn.bin">
     <analyzer>
     ...
     </analyzer>
@@ -637,6 +651,25 @@ This example will allow a search on "L'Absinthe" to match and return a record wi
 Note that whitespace characters will also be considered word delimiters and are not permitted in this field.
 
 The [advanced example](../example-demo/srch2-config-advanced.xml) provides an example of allowing Twitter-hashtag-like terms to be queried.
+
+###11.6.6 Chinese Dictionary 
+
+If we want to use the Chinese analyzer by setting <code>fieldType
+name="text_chinese"</code>, then we should also provide the path of a Chinese
+dictionary (relative to the <code>srch2Home</code> folder) for the
+engine to use to tokenize records and queries. 
+The following is an example:
+```
+ <fieldType name="text_chinese" dictionary="/relativ/path/to/srch2home/srch2_dictionary_zh_cn.bin">
+```
+
+For example, the engine can tokenize the string "海边城市" (meaning
+"ocean cities" in English) into "海边" ("ocean") and "城市"
+("cities").  If the user doesn't provide the dictionary file, the
+engine will treat each Chinese character as a separate keyword. For
+instance, the string "海边城市" will be tokenized as "海","边","城",
+and "市".  The SRCH2 Chinese dictionary is a binary file named as
+"srch2_dictionary_zh_cn.bin" inside the "srch2_data" folder. 
 
 ##12. Logging
 

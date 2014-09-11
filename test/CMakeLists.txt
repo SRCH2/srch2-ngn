@@ -68,8 +68,8 @@ ADD_TEST(QueryEvaluator_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/QueryEvaluat
 ADD_TEST(Trie_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Trie_Test "--verbose")
 
 ADD_TEST(Analyzer_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Analyzer_Test "--verbose")
-SET_TESTS_PROPERTIES(Analyzer_Test PROPERTIES ENVIRONMENT "dataDir=${CMAKE_SOURCE_DIR}/test/core/unit/test_data/analyzer")
-    
+SET_TESTS_PROPERTIES(Analyzer_Test PROPERTIES ENVIRONMENT "dataDir=${CMAKE_SOURCE_DIR}/test/core/unit/test_data/analyzer;cnDictBuilder=${CMAKE_BINARY_DIR}/utilities/dictionary-builder/DictionaryBuilder;cnDictTxt=${CMAKE_SOURCE_DIR}/utilities/dictionary-builder/data/chinese.dict")
+
 ADD_TEST(AttributedBasedSearch_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/AttributedBasedSearch_Test "--verbose")
 SET_TESTS_PROPERTIES(AttributedBasedSearch_Test
   PROPERTIES ENVIRONMENT "index_dir=${UNIT_TEST_INDEX_DIR}attr_based_search/")

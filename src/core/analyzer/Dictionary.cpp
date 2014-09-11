@@ -37,7 +37,7 @@ bool Dictionary::saveDict(const string &dictFilePath){
     return true;
 }
 
-short Dictionary::getFreq(const vector<CharType> &buffer, unsigned istart, unsigned length){
+short Dictionary::getFreq(const vector<CharType> &buffer, unsigned istart, unsigned length) const{
     if (length < 1 || istart + length > buffer.size()){
         return INVALID_WORD_FREQ;
     }
@@ -46,7 +46,7 @@ short Dictionary::getFreq(const vector<CharType> &buffer, unsigned istart, unsig
     return getFreq(utf8String);
 }
 
-short Dictionary::getFreq(const string &utf8String){
+short Dictionary::getFreq(const string &utf8String) const{
     WordFrequencyMap::const_iterator it = mWordFrequencyMap.find(utf8String);
     if ( it == mWordFrequencyMap.end()){
         return INVALID_WORD_FREQ;
