@@ -214,7 +214,7 @@ public:
 
 	void fixAfterDiskLoad(Cluster_Writeview * newWrireview);
 
-	unsigned getLocalNodeTotalLoad(){
+	double getLocalNodeTotalLoad(){
 		return localClusterDataShards.size()+localNodeDataShards.size();
 	}
 
