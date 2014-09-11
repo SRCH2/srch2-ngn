@@ -184,12 +184,6 @@ void IndexData::getReadView(IndexReadStateSharedPtr_Token &readToken)
     this->readCounter->increment();
 }
 
-/// Add a record
-INDEXWRITE_RETVAL IndexData::_addRecord(const Record *record, Analyzer *analyzer)
-{
-    return _addRecordWithoutLock(record, analyzer);
-}
-
 INDEXWRITE_RETVAL IndexData::_aclEditRecordAccessList(const std::string& resourcePrimaryKeyID,
 		vector<string> &roleIds, RecordAclCommandType commandType) {
 
