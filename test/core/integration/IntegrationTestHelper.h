@@ -600,9 +600,8 @@ bool checkResults(QueryResults *queryResults, unsigned numberofHits ,const vecto
     return returnvalue;
 }
 
-bool checkResultsOrderIndependent(QueryResults *queryResults, unsigned numberofHits ,const vector<unsigned> &recordIDs)
-{
-    bool returnvalue = false;
+bool checkResultsAsSets(QueryResults *queryResults, unsigned numberofHits ,const vector<unsigned> &recordIDs){
+    bool returnValue = false;
 
     if (numberofHits != queryResults->getNumberOfResults()) {
         Logger::debug("%u | %d", numberofHits, queryResults->getNumberOfResults());
@@ -612,10 +611,9 @@ bool checkResultsOrderIndependent(QueryResults *queryResults, unsigned numberofH
         }
         return false;
     } else {
-        returnvalue = true;
+        returnValue = true;
         for (unsigned resultCounter = 0;
-                resultCounter < queryResults->getNumberOfResults(); resultCounter++ )
-        {
+                resultCounter < queryResults->getNumberOfResults(); resultCounter++ ){
             vector<string> matchingKeywords;
             vector<unsigned> editDistances;
             vector<string>::iterator it1;
@@ -626,24 +624,22 @@ bool checkResultsOrderIndependent(QueryResults *queryResults, unsigned numberofH
 
             bool hasElement = false;
             for(unsigned i = 0; i < recordIDs.size(); ++i){
-            	if((unsigned)atoi(queryResults->getRecordId(resultCounter).c_str()) == recordIDs[i]){
+
+            	if(static_cast<unsigned int>(strtoul(queryResults->getRecordId(resultCounter).c_str(), NULL, 10)) == recordIDs[i]){
             		hasElement = true;
             		break;
             	}
             }
 
-            if(hasElement)
-            {
-                returnvalue = true;
+            if(hasElement){
+                returnValue = true;
             }
-            else
-            {
-            	cout<<atoi(queryResults->getRecordId(resultCounter).c_str())<<endl;
+            else{
                 return false;
             }
         }
     }
-    return returnvalue;
+    return returnValue;
 }
 
 bool checkOutput(QueryResults *queryResults, unsigned numberofHits, bool isStemmed)
@@ -967,7 +963,7 @@ bool ping_WithGeo(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, stri
 
     LogicalPlan * logicalPlan = prepareLogicalPlanForGeoTest(query , NULL, 0, resultCount, false, srch2::instantsearch::SearchTypeTopKQuery);
     queryEvaluator->search(logicalPlan , queryResults);
-    bool returnvalue =  checkResultsOrderIndependent(queryResults, numberofHits, recordIDs);
+    bool returnvalue =  checkResultsAsSets(queryResults, numberofHits, recordIDs);
     //printResults(queryResults);
     //cout << "-------------------------" << endl;
     queryResults->printStats();
