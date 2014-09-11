@@ -318,11 +318,16 @@ int TrieNode::findLowerBoundChildNodePositionByMinId(unsigned minId) const
 }
 
 void TrieNode::resetCopyFlag(){
-	// We don't need concurrency control for this flag since the flag is only used by writers (not readers), and there can be only one writer in the system at any time."
+	// We don't need concurrency control for this flag, since the
+	// flag is only used by writers (not readers), and there can
+	// be only one writer in the system at any time. 
 	this->isCopy = false;
-	// If one child has isCopy == false, then all the nodes under that subtrie should have isCopy == false.
-	// The reason is that trie nodes were copied starting from the root during insertions, and it's impossible to have
-	// a trie node with isCopy == true while its parent has isCopy == false.
+	// If one child has isCopy == false, then all the nodes under
+	// that subtrie should have isCopy == false. 
+	// The reason is that trie nodes were copied starting from the
+	// root during insertions, and it's impossible to have 
+	// a trie node with isCopy == true while its parent has isCopy
+	// == false. 
 	for(unsigned i = 0; i < this->childrenPointerList.size() ; i++){
 		if(this->childrenPointerList[i] != NULL && this->childrenPointerList[i]->isCopy == true){
 			this->childrenPointerList[i]->resetCopyFlag();
@@ -475,7 +480,8 @@ void Trie::addKeyword_SetPrevIdNexIdByPathTrace(vector<TrieNode* > &pathTrace,
         // This block of code is used to get the nextKeywordID
 
         // Corner case: an already existing trie node is made into a terminal node.
-        // For example, say "cats" keyword is already in Trie and we add "cat". No new trie nodes are created by we
+        // For example, say "cats" keyword is already in Trie and we
+        // add "cat". No new trie nodes are created by we 
         // make an existing trienode into a terminal node.
         if (!isNewTrieNode) {
             unsigned pathTraceIterator = pathTrace.size() - 1;
@@ -748,7 +754,9 @@ unsigned Trie::addKeyword_ThreadSafe(const std::vector<CharType> &keyword, unsig
             // clone a new trie node
             TrieNode *childNode = nodeCopy->getChild(childPosition);
 
-            if(childNode->isCopy){ // If the child node is already copy, we don't need to copy it again during the new insertion.
+	    // If the child node is already a copy from the read view,
+	    // we don't need to copy it again during the new insertion. 
+            if(childNode->isCopy){
             	childNodeCopy = childNode;
             }else{
             	childNodeCopy = new TrieNode(childNode, true);
@@ -1507,7 +1515,7 @@ void Trie::merge(const InvertedIndex * invertedIndex ,
 		const unsigned totalNumberOfRecords  , bool updateHistogram)
 {
 
-	// We change the isFlag of the nodes in the write view.
+	// We change the isCopy of the nodes in the write view.
 	this->root_writeview->resetCopyFlag();
 	// if it's the time for updating histogram (because we don't do it for all merges, it's for example every 10 merges)
 	// then update the histogram information in Trie.
@@ -1545,7 +1553,7 @@ void Trie::commit()
     ASSERT(commited == false);
     // we remove the old readview's root first
     delete this->root_readview->root;
-    // We change the isFlag of the nodes in the write view.
+    // We change the isCopy of the nodes in the write view.
     this->root_writeview->resetCopyFlag();
     this->root_readview->root = root_writeview;
     // We create a new write view's root by copying the root of the read review

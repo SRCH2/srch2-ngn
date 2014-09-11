@@ -168,7 +168,7 @@ public:
     std::vector<TrieNode*> childrenPointerList;
 
     // We use this flag for concurrency control.  When we have already made a copy of this node
-    // during an insertion, we don't need to copy it again for future insertions  During the merge,
+    // during an insertion, we don't need to copy it again for future insertions.  During the merge,
     // we need to change this flag to false.
     bool isCopy;
 
@@ -447,7 +447,7 @@ public:
 
     int findLowerBoundChildNodePositionByMinId(unsigned minId) const;
 
-    // Reset the isCopy flag of this node and those its sub-trie to false.
+    // Reset the isCopy flag of this node and those in its sub-trie to false.
     void resetCopyFlag();
 
 };
