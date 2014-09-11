@@ -435,6 +435,8 @@ void QueryParser::accessControlParser(){
 
 	} else {
 		Logger::debug("acl-id parameter not specified");
+		// if this core has a roleCore it is necessary to specify roleId in
+		// the query otherwise all the records are private.
 		if(this->container->hasRoleCore){
 			this->isParsedError = true;
 			this->container->messages.push_back(
