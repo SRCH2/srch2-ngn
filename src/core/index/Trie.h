@@ -167,9 +167,9 @@ public:
     TrieNode *rightMostDescendant;
     std::vector<TrieNode*> childrenPointerList;
 
-    // we use this flag for concurrency control. so when we made a copy of this node for example
-    // for insertion we don't need to copy it again for next insertions. and in the merge we change
-    // this flag to false;
+    // We use this flag for concurrency control.  When we have already made a copy of this node
+    // during an insertion, we don't need to copy it again for future insertions  During the merge,
+    // we need to change this flag to false.
     bool isCopy;
 
     // The following functions are used to get/set the leftInsertCounter and
@@ -254,9 +254,9 @@ private:
 public:
     TrieNode(bool create_root);
 
-    TrieNode(int depth, CharType character);
+    TrieNode(int depth, CharType character, bool isCopy = false);
 
-    TrieNode(const TrieNode *src);
+    TrieNode(const TrieNode *src, bool isCopy = false);
 
     ~TrieNode();
 
@@ -447,6 +447,7 @@ public:
 
     int findLowerBoundChildNodePositionByMinId(unsigned minId) const;
 
+    // Reset the isCopy flag of this node and those its sub-trie to false.
     void resetCopyFlag();
 
 };

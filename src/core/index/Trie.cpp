@@ -74,7 +74,7 @@ TrieNode::TrieNode(bool create_root)
     this->isCopy = false;
 }
 
-TrieNode::TrieNode(int depth, CharType character)
+TrieNode::TrieNode(int depth, CharType character, bool isCopy)
 {
     this->leftMostDescendant = NULL;
     this->rightMostDescendant = NULL;
@@ -90,10 +90,10 @@ TrieNode::TrieNode(int depth, CharType character)
     this->insertCounters = 0;
     this->setLeftInsertCounter(1); // default values: 1
     this->setRightInsertCounter(1);
-    this->isCopy = false;
+    this->isCopy = isCopy;
 }
 
-TrieNode::TrieNode(const TrieNode *src)
+TrieNode::TrieNode(const TrieNode *src, bool isCopy)
 {
     this->character = src->character;
     this->id = src->id;
@@ -109,7 +109,7 @@ TrieNode::TrieNode(const TrieNode *src)
     this->insertCounters = 0;
     this->setLeftInsertCounter(src->getLeftInsertCounter());
     this->setRightInsertCounter(src->getRightInsertCounter());
-    this->isCopy = src->isCopy;
+    this->isCopy = isCopy;
 }
 
 TrieNode::~TrieNode()
@@ -318,7 +318,11 @@ int TrieNode::findLowerBoundChildNodePositionByMinId(unsigned minId) const
 }
 
 void TrieNode::resetCopyFlag(){
+	// We don't need concurrency control for this flag since the flag is only used by writers (not readers), and there can be only one writer in the system at any time."
 	this->isCopy = false;
+	// If one child has isCopy == false, then all the nodes under that subtrie should have isCopy == false.
+	// The reason is that trie nodes were copied starting from the root during insertions, and it's impossible to have
+	// a trie node with isCopy == true while its parent has isCopy == false.
 	for(unsigned i = 0; i < this->childrenPointerList.size() ; i++){
 		if(this->childrenPointerList[i] != NULL && this->childrenPointerList[i]->isCopy == true){
 			this->childrenPointerList[i]->resetCopyFlag();
@@ -744,11 +748,10 @@ unsigned Trie::addKeyword_ThreadSafe(const std::vector<CharType> &keyword, unsig
             // clone a new trie node
             TrieNode *childNode = nodeCopy->getChild(childPosition);
 
-            if(childNode->isCopy){
+            if(childNode->isCopy){ // If the child node is already copy, we don't need to copy it again during the new insertion.
             	childNodeCopy = childNode;
             }else{
-            	childNodeCopy = new TrieNode(childNode);
-            	childNodeCopy->isCopy = true;
+            	childNodeCopy = new TrieNode(childNode, true);
             	oldToNewTrieNodeMap[childNode] = childNodeCopy; // remember the mapping
             	nodeCopy->setChild(childPosition, childNodeCopy);
 
@@ -758,8 +761,7 @@ unsigned Trie::addKeyword_ThreadSafe(const std::vector<CharType> &keyword, unsig
 
         } else {
             // create a TrieNode with terminal flag set to false.
-            childNodeCopy = new TrieNode(depthCounter, (CharType) *charTypeIterator);
-            childNodeCopy->isCopy = true;
+            childNodeCopy = new TrieNode(depthCounter, (CharType) *charTypeIterator, true);
             nodeCopy->addChild(-childPosition-1, childNodeCopy);
             isNewTrieNode = true;
         }
@@ -1505,6 +1507,7 @@ void Trie::merge(const InvertedIndex * invertedIndex ,
 		const unsigned totalNumberOfRecords  , bool updateHistogram)
 {
 
+	// We change the isFlag of the nodes in the write view.
 	this->root_writeview->resetCopyFlag();
 	// if it's the time for updating histogram (because we don't do it for all merges, it's for example every 10 merges)
 	// then update the histogram information in Trie.
@@ -1542,6 +1545,7 @@ void Trie::commit()
     ASSERT(commited == false);
     // we remove the old readview's root first
     delete this->root_readview->root;
+    // We change the isFlag of the nodes in the write view.
     this->root_writeview->resetCopyFlag();
     this->root_readview->root = root_writeview;
     // We create a new write view's root by copying the root of the read review
