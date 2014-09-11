@@ -68,7 +68,7 @@ public:
 	void resolveSMNodeFailure(const NodeId failedNodeId);
 
 	void resolve(SaveDataNotification * saveDataNotif);
-
+	void resolve(SaveMetadataNotification * saveDataNotif);
 	void resolve(MergeNotification * mergeNotification);
 
 	// getter functions

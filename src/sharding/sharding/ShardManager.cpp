@@ -676,7 +676,7 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 				break;
 			}
 
-			metadataManager->resolve(configManager, saveMetadataNotif);
+			this->resolve(saveMetadataNotif);
 			delete saveMetadataNotif;
 			break;
 		}
@@ -823,7 +823,27 @@ void ShardManager::resolve(SaveDataNotification * saveDataNotif){
 	SaveDataNotification::ACK * ack = new SaveDataNotification::ACK();
 	ack->setSrc(NodeOperationId(ShardManager::getCurrentNodeId()));
 	ack->setDest(saveDataNotif->getSrc());
-	send(ack);
+	if(ack->getDest().nodeId == ShardManager::getCurrentNodeId()){
+		this->stateMachine->handle(ack);
+	}else{
+		send(ack);
+	}
+	delete ack;
+}
+
+void ShardManager::resolve(SaveMetadataNotification * saveDataNotif){
+
+	this->metadataManager->resolve(this->getConfigManager(), saveDataNotif);
+
+	// reply ack
+	SaveMetadataNotification::ACK * ack = new SaveMetadataNotification::ACK();
+	ack->setSrc(NodeOperationId(ShardManager::getCurrentNodeId()));
+	ack->setDest(saveDataNotif->getSrc());
+	if(ack->getDest().nodeId == ShardManager::getCurrentNodeId()){
+		this->stateMachine->handle(saveDataNotif);
+	}else{
+		send(ack);
+	}
 	delete ack;
 }
 

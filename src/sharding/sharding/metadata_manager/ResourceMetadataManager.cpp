@@ -27,13 +27,6 @@ void ResourceMetadataManager::resolve(ConfigManager * confManager, SaveMetadataN
 	}else{
 		ASSERT(false);
 	}
-
-	// reply ack
-	SaveMetadataNotification::ACK * ack = new SaveMetadataNotification::ACK();
-	ack->setSrc(NodeOperationId(ShardManager::getCurrentNodeId()));
-	ack->setDest(saveDataNotification->getSrc());
-	ShardManager::getShardManager()->send(ack);
-	delete ack;
 }
 
 void ResourceMetadataManager::commitClusterMetadata(ClusterResourceMetadata_Readview * newReadview){
