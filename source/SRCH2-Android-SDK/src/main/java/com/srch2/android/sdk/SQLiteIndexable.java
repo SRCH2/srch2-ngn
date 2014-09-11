@@ -149,6 +149,7 @@ public abstract class SQLiteIndexable extends IndexableCore {
 
     public int getColumnBoostValue(String textTypeColumnName) { return 1; }
 
+    public boolean getColumnIsHighlighted(String textTypeColumnName) { return false; }
 
     /**
      * Implementing this method enables the SRCH2 search server to automatically observe data content
@@ -300,6 +301,15 @@ public abstract class SQLiteIndexable extends IndexableCore {
                                                 boostValue = 100;
                                             }
                                             extraField = Field.createSearchableField(name, boostValue);
+
+                                            if (getColumnIsHighlighted(name)) {
+                                                extraField.enableHighlighting();
+                                            }
+
+                                            if (!containsAtLeastOneSearchableField) {
+                                                containsAtLeastOneSearchableField = true;
+                                            }
+
                                             if (!containsAtLeastOneSearchableField) {
                                                 containsAtLeastOneSearchableField = true;
                                             }
