@@ -402,6 +402,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         public String getLongitudeColumnName() {
             return SQLiteSchema.COLUMN_LONGITUDE;
         }
+
+        @Override
+        public void onIndexReady() {
+            super.onIndexReady();
+        }
     }
 
 }

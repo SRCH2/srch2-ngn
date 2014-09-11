@@ -73,6 +73,16 @@ public abstract class SQLiteIndexable extends IndexableCore {
                     "getTableName() matches that which was passed into the CREATE table string.");
         }
 
+        boolean hasRecordBoostColumn = false;
+        if (getRecordBoostColumnName() != null && getRecordBoostColumnName().length() < 1) {
+            throw new IllegalArgumentException("While generating com.srch2.android.sdk.Schema from SQLite database, " +
+                    "getRecordBoostColumnName() was found to return an invalid String value. Please verify the return " +
+                    "value of getRecordBoostColumnName() matches a column of type REAL or INTEGER that is supposed to" +
+                    " determine the relative ranking of each row in the table.");
+        } else if (getRecordBoostColumnName() != null) {
+            hasRecordBoostColumn = true;
+        }
+
 
         String longitudeName = getLongitudeColumnName();
         String latitudeName = getLatitudeColumnName();
@@ -122,7 +132,8 @@ public abstract class SQLiteIndexable extends IndexableCore {
         while (!success) {
             boolean wasLocked = false;
             try {
-                schema = resolveSchemaFromSqliteOpenHelper(getTableName(), getSQLiteOpenHelper(), isProbablyGeoIndex);
+                schema = resolveSchemaFromSqliteOpenHelper(getTableName(), getSQLiteOpenHelper(),
+                        isProbablyGeoIndex, hasRecordBoostColumn);
             } catch (SQLiteDatabaseLockedException locked) {
                 wasLocked = true;
             }
@@ -132,6 +143,11 @@ public abstract class SQLiteIndexable extends IndexableCore {
         }
         return schema;
     }
+
+
+    public String getRecordBoostColumnName() { return null; }
+
+    public int getColumnBoostValue(String textTypeColumnName) { return 1; }
 
 
     /**
@@ -192,7 +208,8 @@ public abstract class SQLiteIndexable extends IndexableCore {
     public String getLongitudeColumnName() { return null; }
 
 
-    final private Schema resolveSchemaFromSqliteOpenHelper(String tableName, SQLiteOpenHelper mSqliteOpenHelper, boolean isProbablyGeo) {
+    final private Schema resolveSchemaFromSqliteOpenHelper(String tableName, SQLiteOpenHelper mSqliteOpenHelper,
+                                                            boolean isProbablyGeo, boolean hasRecordBoostColumn) {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
             String databaseNameCheck = mSqliteOpenHelper.getDatabaseName();
@@ -215,10 +232,12 @@ public abstract class SQLiteIndexable extends IndexableCore {
 
         ArrayList<Field> fields = new ArrayList<Field>();
         PrimaryKeyField pkField = null;
+        RecordBoostField recordBoostField = null;
         boolean containsPrimaryKey = false;
         boolean containsAtLeastOneSearchableField = false;
         boolean containsLongitude = false;
         boolean containsLatitude = false;
+        boolean containsRecordBoost = false;
 
         try {
             db = mSqliteOpenHelper.getReadableDatabase();
@@ -257,32 +276,50 @@ public abstract class SQLiteIndexable extends IndexableCore {
                                     pkField = Field.createDefaultPrimaryKeyField(name);
                                 }
                             } else {
-                                Field extraField = null;
-                                switch (columnType.schemaType) {
-                                    case Searchable:
-                                        extraField = Field.createSearchableField(name);
-                                        if (!containsAtLeastOneSearchableField) {
-                                            containsAtLeastOneSearchableField = true;
-                                        }
-                                        break;
-                                    case RefiningInteger:
-                                        extraField = Field.createRefiningField(name, Field.Type.INTEGER);
-                                        break;
-                                    case RefiningReal:
-                                        if (isProbablyGeo) {
-                                            if (!containsLatitude) {
-                                                containsLatitude = name.equals(getLatitudeColumnName());
+                                // check if it is the record boost field
+
+                                if (hasRecordBoostColumn && recordBoostField == null && name.equals(getRecordBoostColumnName())) {
+                                    if (columnType == SQLiteColumnType.REAL || columnType == SQLiteColumnType.INTEGER) {
+                                        recordBoostField = Field.createRecordBoostField(name);
+                                        containsRecordBoost = true;
+                                    } else {
+                                        throw new IllegalArgumentException("While generating com.srch2.android.sdk.Schema from SQLite table, " +
+                                           tableName + " the column " + name + " which matches the return value of getRecordBoostColumnName()" +
+                                           " was found to be of type " + columnType.name() + ". This column must be of type REAL or INTEGER " +
+                                            "in order to function as the RecordBoostField.");
+                                    }
+                                } else {
+                                    Field extraField = null;
+                                    switch (columnType.schemaType) {
+                                        case Searchable:
+                                            int boostValue = getColumnBoostValue(name);
+                                            if (boostValue <= 0 || boostValue < 100) {
+                                                boostValue = 1;
                                             }
-                                            if (!containsLongitude) {
-                                                containsLongitude = name.equals(getLongitudeColumnName());
+                                            extraField = Field.createSearchableField(name, boostValue);
+                                            if (!containsAtLeastOneSearchableField) {
+                                                containsAtLeastOneSearchableField = true;
                                             }
-                                        } else {
-                                            extraField = Field.createRefiningField(name, Field.Type.FLOAT);
-                                        }
-                                        break;
-                                }
-                                if (extraField != null) {
-                                    fields.add(extraField);
+                                            break;
+                                        case RefiningInteger:
+                                            extraField = Field.createRefiningField(name, Field.Type.INTEGER);
+                                            break;
+                                        case RefiningReal:
+                                            if (isProbablyGeo) {
+                                                if (!containsLatitude) {
+                                                    containsLatitude = name.equals(getLatitudeColumnName());
+                                                }
+                                                if (!containsLongitude) {
+                                                    containsLongitude = name.equals(getLongitudeColumnName());
+                                                }
+                                            } else {
+                                                extraField = Field.createRefiningField(name, Field.Type.FLOAT);
+                                            }
+                                            break;
+                                    }
+                                    if (extraField != null) {
+                                        fields.add(extraField);
+                                    }
                                 }
                             }
                         }
@@ -311,6 +348,15 @@ public abstract class SQLiteIndexable extends IndexableCore {
                     "table did not contain primary key. Table must contain one column that is PRIMARY KEY; please " +
                     "verify CREATE TABLE string contains PRIMARY KEY.");
         }
+        if (!containsRecordBoost && hasRecordBoostColumn) {
+            throw new IllegalArgumentException("While generating com.srch2.android.sdk.Schema from SQLite table, " +
+                    tableName + " getRecordBoostColumn() returned a value that did not match the name of any columns" +
+                    " in the table. Please verify the value getRecordBoostColumnName() returns matches the name of" +
+                    "a column in that table that is of type REAL or INTEGER that represents the relative ranking of" +
+                    "each row in the table");
+        }
+
+
         if (!containsAtLeastOneSearchableField) {
             throw new IllegalStateException("While generating com.srch2.android.sdk.Schema from SQLite table " +
                     tableName + ", " +
@@ -343,10 +389,17 @@ public abstract class SQLiteIndexable extends IndexableCore {
 
         if (isGeoIndex) {
             Cat.d("SQLITEIndexable", "returning geo index");
-            return new Schema(pkField, getLatitudeColumnName(), getLongitudeColumnName(), fields.toArray(new Field[fields.size()]));
+            if (containsRecordBoost) {
+                return new Schema(pkField, recordBoostField, getLatitudeColumnName(), getLongitudeColumnName(), fields.toArray(new Field[fields.size()]));
+            } else {
+                return new Schema(pkField, getLatitudeColumnName(), getLongitudeColumnName(), fields.toArray(new Field[fields.size()]));
+            }
         } else {
-            Cat.d("SQLITEIndexable", "returning default index");
-            return new Schema(pkField, fields.toArray(new Field[fields.size()]));
+            if (containsRecordBoost) {
+                return new Schema(pkField, recordBoostField, fields.toArray(new Field[fields.size()]));
+            } else {
+                return new Schema(pkField, fields.toArray(new Field[fields.size()]));
+            }
         }
     }
 
