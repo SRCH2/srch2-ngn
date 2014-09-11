@@ -104,6 +104,10 @@ public:
     }
 
     void getForwardIndex_ReadView(shared_ptr<vectorview<ForwardListPtr> > & readView){
+	// We need to get the read view from this->indexReadToken
+	// instead of calling this->getTrie()->getTrieRootNode_ReadView()
+	// since the latter may give a read view that is different from
+	// the one we got when the search started.
     	readView = this->indexReadToken.forwardIndexReadViewSharedPtr;
     }
 

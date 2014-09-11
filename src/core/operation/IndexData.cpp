@@ -173,6 +173,8 @@ bool isSortedAlphabetically(
 	return true;
 }
 
+// Get the read views of different indexes so that we can use the same, consistent
+// read view for each of them during the lifecycle of a search process.
 void IndexData::getReadView(IndexReadStateSharedPtr_Token &readToken)
 {
     this->trie->getTrieRootNode_ReadView(readToken.trieRootNodeSharedPtr);
