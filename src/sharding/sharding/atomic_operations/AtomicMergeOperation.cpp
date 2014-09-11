@@ -40,7 +40,10 @@ OperationState * AtomicMergeOperation::entry(){
 	for(map<NodeId, bool>::const_iterator nodesStatusItr = nodesStatus.begin(); nodesStatusItr != nodesStatus.end(); ++nodesStatusItr){
 		if(nodesStatusItr->first == writeview->currentNodeId){ // save the data of this node
 			pthread_t localMergeThread;
-		    if (pthread_create(&localMergeThread, NULL, localMerge , notif) != 0){
+			MergeNotification * localNotif = new MergeNotification();
+			localNotif->setSrc(NodeOperationId(writeview->currentNodeId, this->getOperationId()));
+			localNotif->setDest(NodeOperationId(nodesStatusItr->first));
+		    if (pthread_create(&localMergeThread, NULL, localMerge , localNotif) != 0){
 		        // Logger::console("Cannot create thread for handling local message");
 		        perror("Cannot create thread for handling local message");
 		        return NULL;
@@ -131,6 +134,7 @@ void * AtomicMergeOperation::localMerge(void * arg){
 	MergeNotification * mergeNotif = (MergeNotification *) arg;
 	boost::unique_lock<boost::mutex> lock(ShardManager::getShardManager()->shardManagerGlobalMutex);
 	ShardManager::getShardManager()->resolve(mergeNotif);
+	delete mergeNotif;
 	return NULL;
 }
 
