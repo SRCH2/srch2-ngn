@@ -130,9 +130,7 @@ public class IdxTwo extends Indexable {
     @Override
     public void onIndexReady() {
         super.onIndexReady();
-        if (getRecordCount() == 0) {
-            insert(getRecords());
-        }
+
     }
 
     @Override

@@ -1,22 +1,14 @@
 package com.srch2.android.sdk.sandbox;
 
 import android.content.Context;
-import android.os.Handler;
-import android.os.Message;
 import android.text.Html;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
-import com.srch2.android.sdk.SearchResultsListener;
-import org.json.JSONObject;
 
-import java.lang.ref.WeakReference;
-import java.net.HttpURLConnection;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 public class SearchResultsAdapter extends BaseAdapter {
 
@@ -47,17 +39,12 @@ public class SearchResultsAdapter extends BaseAdapter {
 
     private ArrayList<SearchResultItem> mSearchResults;
     private LayoutInflater mLayoutInflater;
-    private SearchResultsUiHandler mSearchResultsUiHandler;
 
-    public SearchResultsListener getSearchResultsListener() {
-        return mSearchResultsUiHandler;
-    }
 
     public SearchResultsAdapter(Context context) {
         mLayoutInflater = (LayoutInflater) context
                 .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         mSearchResults = new ArrayList<SearchResultItem>();
-        mSearchResultsUiHandler = new SearchResultsUiHandler(this);
     }
 
     public void clearDisplayedSearchResults() {
@@ -121,75 +108,5 @@ public class SearchResultsAdapter extends BaseAdapter {
         }
     }
 
-    private static class SearchResultsUiHandler extends Handler implements
-            SearchResultsListener {
 
-        // Since the SearchResultsListener callback method onNewSearchResults(...)
-        // is executed off the Ui thread, it is implemented in a handler that will
-        // pass the search results of this callback to the Ui thread: specifically,
-        // to the SearchResultsAdapter so they can be displayed to the user.
-
-        private static final int MESSAGE_WHAT_PUBLISH_NEW_RESULTS = 001;
-        private static final int MESSAGE_WHAT_PUBLISH_NO_NEW_RESULTS = 002;
-
-        private WeakReference<SearchResultsAdapter> mSearchResultsAdapterWeakReference;
-
-        public SearchResultsUiHandler(SearchResultsAdapter searchResultsAdapter) {
-            mSearchResultsAdapterWeakReference = new WeakReference<SearchResultsAdapter>(
-                    searchResultsAdapter);
-        }
-
-        @Override
-        public void handleMessage(Message msg) {
-
-            SearchResultsAdapter searchResultAdapter = mSearchResultsAdapterWeakReference
-                    .get();
-
-            if (searchResultAdapter != null) {
-                switch (msg.what) {
-                    case MESSAGE_WHAT_PUBLISH_NEW_RESULTS:
-                        ArrayList<SearchResultItem> newResults = null;
-                        try {
-                            newResults = (ArrayList<SearchResultItem>) msg.obj;
-                        } catch (ClassCastException oops) {
-                        }
-
-                        if (newResults != null) {
-                            searchResultAdapter
-                                    .updateDisplayedSearchResults(newResults);
-                        }
-                        return;
-                    case MESSAGE_WHAT_PUBLISH_NO_NEW_RESULTS:
-                        searchResultAdapter.clearDisplayedSearchResults();
-                        return;
-                }
-            }
-        }
-
-        @Override
-        public void onNewSearchResults(int httpResponseCode,
-                                       String jsonResponse,
-                                       HashMap<String, ArrayList<JSONObject>> resultRecordMap) {
-            if (httpResponseCode == HttpURLConnection.HTTP_OK) {
-
-                Log.d(MyActivity.S2_TAG.concat("search results"), jsonResponse);
-
-                ArrayList<SearchResultItem> newResults = new ArrayList<SearchResultItem>();
-
-                ArrayList<JSONObject> movieResults = resultRecordMap
-                        .get(Idx.INDEX_NAME);
-                if (movieResults != null && movieResults.size() > 0) {
-                    ArrayList<SearchResultItem> results = Idx.wrap(movieResults);
-                    if (results != null) {
-                        newResults.addAll(results);
-                    }
-                }
-                sendMessage(Message
-                        .obtain(this,
-                                newResults.size() > 0 ? MESSAGE_WHAT_PUBLISH_NEW_RESULTS
-                                        : MESSAGE_WHAT_PUBLISH_NO_NEW_RESULTS,
-                                newResults));
-            }
-        }
-    }
 }

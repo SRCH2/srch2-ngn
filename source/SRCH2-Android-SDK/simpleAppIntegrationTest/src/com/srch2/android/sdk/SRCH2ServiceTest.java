@@ -20,7 +20,7 @@ public class SRCH2ServiceTest extends ServiceTestCase<SRCH2Service> {
         super.setUp();
         DumbIndex index = new DumbIndex();
         SRCH2Engine.setIndexables(index);
-        SRCH2Engine.initialize();
+        SRCH2Engine.onStart();
         SRCH2Engine.initializeConfiguration(getContext());
         SRCH2Engine.registerReciever(getContext());
         Intent i = new Intent(getContext(), SRCH2Service.class);

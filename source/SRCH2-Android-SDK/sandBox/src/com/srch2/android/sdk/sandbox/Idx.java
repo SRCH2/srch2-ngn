@@ -95,7 +95,7 @@ public class Idx extends Indexable {
         return records;
     }
 
-    static public ArrayList<SearchResultsAdapter.SearchResultItem> wrap(ArrayList<JSONObject> jsonResultsToWrap) {
+    public ArrayList<SearchResultsAdapter.SearchResultItem> wrap(ArrayList<JSONObject> jsonResultsToWrap) {
         ArrayList<SearchResultsAdapter.SearchResultItem> newResults = new ArrayList<SearchResultsAdapter.SearchResultItem>();
         for (JSONObject jsonObject : jsonResultsToWrap) {
             Log.d("SEARCH RESULT OBJECT", jsonObject.toString());
@@ -130,9 +130,7 @@ public class Idx extends Indexable {
     @Override
     public void onIndexReady() {
         super.onIndexReady();
-        if (getRecordCount() == 0) {
-            insert(getRecords());
-        }
+
     }
 
     @Override

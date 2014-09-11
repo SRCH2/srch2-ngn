@@ -30,7 +30,7 @@ public abstract class TestableActivity extends Activity {
     }
 
     void onStartAndWaitForIsReady(Context context,  int stopWaitingAfterDelayTime) {
-        SRCH2Engine.onStart(context);
+        SRCH2Engine.onResume(context);
         int timeSum = 0;
         while (true) {
             if (SRCH2Engine.isReady()) {
@@ -45,7 +45,7 @@ public abstract class TestableActivity extends Activity {
     }
 
     void onStopAndWaitForNotIsReady(Context context, int stopWaitingAfterDelayTime) {
-        SRCH2Engine.onStop(context);
+        SRCH2Engine.onPause(context);
         int timeSum = 0;
         while (true) {
             if (!SRCH2Engine.isReady()) {

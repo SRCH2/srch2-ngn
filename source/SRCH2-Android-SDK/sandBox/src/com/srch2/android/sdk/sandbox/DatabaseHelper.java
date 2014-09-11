@@ -5,11 +5,11 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.os.SystemClock;
 import android.util.Log;
-import com.srch2.android.sdk.Field;
-import com.srch2.android.sdk.PrimaryKeyField;
+import com.srch2.android.sdk.Indexable;
 import com.srch2.android.sdk.SQLiteIndexable;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 
@@ -18,6 +18,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public SqliteIdx idx;
     public static final String TAG = "s2sb:: Sandbox-Database";
+
+
+    public SqliteIdx getIndexable() { return idx; }
 
     public static class SQLiteSchema {
         public static final String DATABASE_NAME = "demo";
@@ -50,7 +53,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         super(context, SQLiteSchema.DATABASE_NAME, null, SQLiteSchema.DATABASE_VERSION); // assuming version will never change,
         SQLiteDatabase db = getReadableDatabase();
 
-        idx = new SqliteIdx();
+        idx = new SqliteIdx(this);
 
         db.close();
 
@@ -58,7 +61,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     }
 
-    SQLiteOpenHelper getSelf() { return this; }
 
     @Override
     public void onCreate(SQLiteDatabase db) {
@@ -150,221 +152,59 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
 
-    public void doPragma() {
-
-        SQLiteDatabase db = null;
-        Cursor c = null;
-
-        try {
-            db = getReadableDatabase();
-            c = db.rawQuery("PRAGMA table_info(" + SQLiteSchema.TABLE_NAME + ")", null);
-            if (c.moveToFirst()) {
-                int i = 0;
-
-                Log.d("sqlite", "$$$$$$$$$$$$$$$$$$$$$$ PRINTING PRAGMA INFO $$$$$$$$$$$$$$$$$$$$$$END");
-
-                do {
-
-                    Log.d("sqlite", "i@" + i);
-                    int columnCount = c.getColumnCount();
-                    for (int j = 0; j < columnCount; ++j) {
-
-                        Log.d("sqlite", "j@" + j + " name [" + c.getColumnName(j) + "] type [" +
-                                SQLiteColumnType.getType(c.getType(j)).name() + "] val [" + c.getString(j) + "]");
-
-                    }
-                    ++i;
-                    Log.d("sqlite", "---------------------------------------------------------");
 
 
 
 
-                } while (c.moveToNext());
-                Log.d("sqlite", "$$$$$$$$$$$$$$$$$$$$$$ END OF PRINTING PRAGMA INFO $$$$$$$$$$$$$$$$$$$$$$");
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static public ArrayList<SearchResultsAdapter.SearchResultItem> wrap(ArrayList<JSONObject> jsonResultsToWrap) {
+        ArrayList<SearchResultsAdapter.SearchResultItem> newResults = new ArrayList<SearchResultsAdapter.SearchResultItem>();
+        for (JSONObject jsonObject : jsonResultsToWrap) {
+            Log.d("SEARCH RESULT OBJECT", jsonObject.toString());
+            SearchResultsAdapter.SearchResultItem searchResult = null;
+            try {
+
+                JSONObject originalRecord = jsonObject.getJSONObject(Indexable.SEARCH_RESULT_JSON_KEY_RECORD);
+
+                String title = originalRecord.getString(DatabaseHelper.SQLiteSchema.COLUMN_NAME);
+
+                Log.d("Highlight", "title is " + title);
+
+                if (title == null) {
+                    title =  "null title";
+                }
+
+                searchResult = new SearchResultsAdapter.SearchResultItem(title, " ", " ");
+            } catch (JSONException oops) {
+                oops.printStackTrace();
+                continue;
             }
 
-        } finally {
-            if (db != null) db.close();
-            if (c != null) c.close();
+            if (searchResult != null) {
+                newResults.add(searchResult);
+            }
         }
-
-
-
+        return newResults;
     }
 
 
-    public void resolveSchemaFromPragma(SQLiteOpenHelper mSqliteOpenHelper) {
-
-        long t = SystemClock.uptimeMillis();
-
-        final int PRAGMA_COLUMN_INDEX_COLUMN_INDEX = 0;
-        final int PRAGMA_COLUMN_INDEX_COLUMN_NAME = 1;
-        final int PRAGMA_COLUMN_INDEX_COLUMN_TYPE = 2;
-        final int PRAGMA_COLUMN_INDEX_COLUMN_IS_NOT_NULL = 3;
-        final int PRAGMA_COLUMN_INDEX_COLUMN_DEFAULT_VALUE = 4;
-        final int PRAGMA_COLUMN_INDEX_COLUMN_IS_PRIMARY_KEY = 5;
-
-        SQLiteDatabase db = null;
-        Cursor c = null;
-
-        ArrayList<Field> fields = new ArrayList<Field>();
-        PrimaryKeyField pkField = null;
-        boolean containsPrimaryKey = false;
-        boolean containsAtLeastOneSearchableField = false;
-
-        try {
-            db = getReadableDatabase();
-            c = db.rawQuery("PRAGMA table_info(" + SQLiteSchema.TABLE_NAME + ")", null);
-            if (c.moveToFirst()) {
-                // each row represents a column in the table we do the pragma info on
-                // each column in this row represents data about that table column
-                // (see PRAMGA_COLUMN_INDEX_* above)
-                do {
-                    String name = null;
-
-                    // first get the type of the this column: skip if blob (media) or null
-                    // note we are comparing the value for the table column's type NOT getting the
-                    // type of the column in the cursor
-                    SQLiteColumnType columnType = SQLiteColumnType.getType(c.getString(PRAGMA_COLUMN_INDEX_COLUMN_TYPE));
-                    if (columnType != SQLiteColumnType.BLOB && columnType != SQLiteColumnType.NULL) {
-
-                        // get the name of the column
-                        name = c.getString(PRAGMA_COLUMN_INDEX_COLUMN_NAME);
-
-
-                        // check if it is it the primary key
-                        boolean primaryKey = false;
-                        if (pkField == null) {
-                            primaryKey = c.getInt(PRAGMA_COLUMN_INDEX_COLUMN_IS_PRIMARY_KEY) == 1;
-                            containsPrimaryKey = primaryKey;
-                        }
-
-                        if (name != null) {
-                            if (primaryKey) {
-                                if (columnType.schemaType == SQLiteColumnType.SchemaType.Searchable) {
-                                    pkField = Field.createSearchablePrimaryKeyField(name);
-                                }
-                            } else {
-                                Field extraField = null;
-                                switch (columnType.schemaType) {
-                                    case Searchable:
-                                        extraField = Field.createSearchableField(name);
-                                        break;
-                                    case RefiningInteger:
-                                        extraField = Field.createRefiningField(name, Field.Type.INTEGER);
-                                        break;
-                                    case RefiningReal:
-                                        extraField = Field.createRefiningField(name, Field.Type.FLOAT);
-                                        break;
-                                }
-                                fields.add(extraField);
-                            }
-                        }
-                    }
-                } while (c.moveToNext());
-            }
-        } finally {
-            if (db != null) {
-                db.close();
-            }
-            if (c != null) {
-                c.close();
-            }
-        }
-
-        if (!containsPrimaryKey) {
-            throw new IllegalStateException("While generating com.srch2.android.sdk.Schema from SQLite table, " +
-                    "table did not contain primary key. Table must contain one column that is PRIMARY KEY");
-        }
-        if (!containsAtLeastOneSearchableField) {
-            throw new IllegalStateException("While generating com.srch2.android.sdk.Schema from SQLite table, " +
-                    "table did not contain at least one searchable field. Table must contain at least one column" +
-                    " that is TEXT.");
-        }
-
-
-        long e = SystemClock.uptimeMillis() - t;
-        Log.d("sqlite", "generating schema took " + e);
-    }
-
-    static enum SQLiteColumnType {
-        TEXT(SchemaType.Searchable),
-        INTEGER(SchemaType.RefiningInteger),
-        NULL(null),
-        BLOB(null),
-        REAL(SchemaType.RefiningReal);
-
-        static enum SchemaType {
-            Searchable,
-            RefiningInteger,
-            RefiningReal;
-        }
-
-        public SchemaType schemaType;
-
-        SQLiteColumnType(SchemaType srch2FieldType) {
-            schemaType = srch2FieldType;
-        }
-
-        public static SQLiteColumnType getType(int type) {
-            switch (type) {
-                case Cursor.FIELD_TYPE_STRING:
-                    return SQLiteColumnType.TEXT;
-                case Cursor.FIELD_TYPE_FLOAT:
-                    return SQLiteColumnType.REAL;
-                case Cursor.FIELD_TYPE_INTEGER:
-                    return SQLiteColumnType.INTEGER;
-                case Cursor.FIELD_TYPE_NULL:
-                    return SQLiteColumnType.NULL;
-                case Cursor.FIELD_TYPE_BLOB:
-                    return SQLiteColumnType.BLOB;
-                default:
-                    return SQLiteColumnType.NULL;
-            }
-        }
-
-        public static SQLiteColumnType getType(String typeName) {
-            if (typeName.equals(SQLiteColumnType.TEXT.name())) {
-                return SQLiteColumnType.TEXT;
-            } else if (typeName.equals(SQLiteColumnType.INTEGER.name())) {
-                return SQLiteColumnType.INTEGER;
-            } else if (typeName.equals(SQLiteColumnType.REAL.name())) {
-                return SQLiteColumnType.REAL;
-            } else if (typeName.equals(SQLiteColumnType.NULL.name())) {
-                return SQLiteColumnType.NULL;
-            } else if (typeName.equals(SQLiteColumnType.BLOB.name())) {
-                return SQLiteColumnType.BLOB;
-            } else {
-                return SQLiteColumnType.NULL;
-            }
-        }
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    public class SqliteIdx extends SQLiteIndexable {
+    public static class SqliteIdx extends SQLiteIndexable {
 
         SQLiteOpenHelper helper;
 
@@ -379,7 +219,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         @Override
         public SQLiteOpenHelper getSQLiteOpenHelper() {
-            return getSelf();
+            return helper;
         }
 
         @Override
@@ -401,6 +241,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         @Override
         public String getLongitudeColumnName() {
             return SQLiteSchema.COLUMN_LONGITUDE;
+        }
+
+
+        @Override
+        public String getRecordBoostColumnName() {
+            return SQLiteSchema.COLUMN_SALARY;
         }
 
         @Override

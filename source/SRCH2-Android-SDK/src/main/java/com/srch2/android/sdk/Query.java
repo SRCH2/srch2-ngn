@@ -137,7 +137,7 @@ final public class Query {
     }
 
     /**
-     * Creates a query doing a filtered search. To initialize this kind of query, specify a filter
+     * Creates a query doing a filtered search. To onResume this kind of query, specify a filter
      * that will restrict the set of records returned by using the conditionality of
      * <code>fields[fieldName].value == equalToValue</code>.
      * <br><br>

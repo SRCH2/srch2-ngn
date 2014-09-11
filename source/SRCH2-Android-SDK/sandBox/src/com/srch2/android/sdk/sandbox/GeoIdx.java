@@ -1,5 +1,6 @@
 package com.srch2.android.sdk.sandbox;
 
+import android.util.Log;
 import com.srch2.android.sdk.Field;
 import com.srch2.android.sdk.Indexable;
 import com.srch2.android.sdk.PrimaryKeyField;
@@ -7,6 +8,8 @@ import com.srch2.android.sdk.Schema;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.ArrayList;
 
 /**
  * Created by ashton on 8/22/2014.
@@ -88,5 +91,37 @@ public class GeoIdx extends Indexable {
         PrimaryKeyField pk = Field.createDefaultPrimaryKeyField(INDEX_FIELD_PK);
         Field f = Field.createSearchableField(INDEX_FIELD_NAME);
         return Schema.createGeoSchema(pk, INDEX_FIELD_LATITUDE, INDEX_FIELD_LONGITUDE, f);
+    }
+
+    static public ArrayList<SearchResultsAdapter.SearchResultItem> wrap(ArrayList<JSONObject> jsonResultsToWrap) {
+        ArrayList<SearchResultsAdapter.SearchResultItem> newResults = new ArrayList<SearchResultsAdapter.SearchResultItem>();
+        for (JSONObject jsonObject : jsonResultsToWrap) {
+            Log.d("SEARCH RESULT OBJECT", jsonObject.toString());
+            SearchResultsAdapter.SearchResultItem searchResult = null;
+            try {
+
+                JSONObject originalRecord = jsonObject.getJSONObject(Indexable.SEARCH_RESULT_JSON_KEY_RECORD);
+
+                JSONObject highlightRecord = jsonObject.getJSONObject(Indexable.SEARCH_RESULT_JSON_KEY_HIGHLIGHTED);
+
+                String title = highlightRecord.getString(INDEX_NAME);
+
+                Log.d("Highlight", "title is " + title);
+
+                if (title == null) {
+                    title =  "null title";
+                }
+
+                searchResult = new SearchResultsAdapter.SearchResultItem(title, " ", " ");
+            } catch (JSONException oops) {
+                oops.printStackTrace();
+                continue;
+            }
+
+            if (searchResult != null) {
+                newResults.add(searchResult);
+            }
+        }
+        return newResults;
     }
 }

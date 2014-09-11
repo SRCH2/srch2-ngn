@@ -153,7 +153,7 @@ public class DatabaseTestActivity extends TestableActivity {
         FieldBoostDbHelper h = new FieldBoostDbHelper(getApplicationContext());
         FieldBoostIndex i = new FieldBoostIndex(h, FieldBoostIndex.FieldBoostTestMode.DoNotOverride);
         SRCH2Engine.setSQLiteIndexables(i);
-        SRCH2Engine.initialize();
+        SRCH2Engine.onStart();
         String configFile = SRCH2Configuration.generateConfigurationFileString(SRCH2Engine.conf);
         int start = configFile.indexOf("<fieldBoost>");
         int end = configFile.indexOf("</fieldBoost>");
@@ -178,7 +178,7 @@ public class DatabaseTestActivity extends TestableActivity {
         FieldBoostDbHelper h = new FieldBoostDbHelper(getApplicationContext());
         FieldBoostIndex i = new FieldBoostIndex(h, FieldBoostIndex.FieldBoostTestMode.OverrideWithOutOfRangeValues);
         SRCH2Engine.setSQLiteIndexables(i);
-        SRCH2Engine.initialize();
+        SRCH2Engine.onStart();
         String configFile = SRCH2Configuration.generateConfigurationFileString(SRCH2Engine.conf);
         int start = configFile.indexOf("<fieldBoost>");
         int end = configFile.indexOf("</fieldBoost>");
@@ -203,7 +203,7 @@ public class DatabaseTestActivity extends TestableActivity {
         FieldBoostDbHelper h = new FieldBoostDbHelper(getApplicationContext());
         FieldBoostIndex i = new FieldBoostIndex(h, FieldBoostIndex.FieldBoostTestMode.OverrideInOrder);
         SRCH2Engine.setSQLiteIndexables(i);
-        SRCH2Engine.initialize();
+        SRCH2Engine.onStart();
         String configFile = SRCH2Configuration.generateConfigurationFileString(SRCH2Engine.conf);
         int start = configFile.indexOf("<fieldBoost>");
         int end = configFile.indexOf("</fieldBoost>");
@@ -229,7 +229,7 @@ public class DatabaseTestActivity extends TestableActivity {
         RecordBoostDbHelper h = new RecordBoostDbHelper(getApplicationContext(), RecordBoostDbIndex.RecordBoostTestMode.NoRecordBoost);
         RecordBoostDbIndex i = new RecordBoostDbIndex(h, RecordBoostDbIndex.RecordBoostTestMode.NoRecordBoost);
         SRCH2Engine.setSQLiteIndexables(i);
-        SRCH2Engine.initialize();
+        SRCH2Engine.onStart();
         String configFile = SRCH2Configuration.generateConfigurationFileString(SRCH2Engine.conf);
         assertTrue(!configFile.contains("<recordBoostField>"));
     }
@@ -239,7 +239,7 @@ public class DatabaseTestActivity extends TestableActivity {
         RecordBoostDbHelper h = new RecordBoostDbHelper(getApplicationContext(), RecordBoostDbIndex.RecordBoostTestMode.Valid);
         RecordBoostDbIndex i = new RecordBoostDbIndex(h, RecordBoostDbIndex.RecordBoostTestMode.Valid);
         SRCH2Engine.setSQLiteIndexables(i);
-        SRCH2Engine.initialize();
+        SRCH2Engine.onStart();
         String configFile = SRCH2Configuration.generateConfigurationFileString(SRCH2Engine.conf);
 
         assertTrue(configFile.contains("<recordBoostField>" + RecordBoostDbHelper.COLUMN_RECORD_BOOST + "</recordBoostField>"));
@@ -252,7 +252,7 @@ public class DatabaseTestActivity extends TestableActivity {
         SRCH2Engine.setSQLiteIndexables(i);
         boolean test = false;
         try {
-            SRCH2Engine.initialize();
+            SRCH2Engine.onStart();
         } catch (IllegalArgumentException e) {
             test = true;
         }
@@ -265,7 +265,7 @@ public class DatabaseTestActivity extends TestableActivity {
         SRCH2Engine.setSQLiteIndexables(i);
         boolean test = false;
         try {
-            SRCH2Engine.initialize();
+            SRCH2Engine.onStart();
         } catch (IllegalArgumentException e) {
             test = true;
         }
@@ -278,7 +278,7 @@ public class DatabaseTestActivity extends TestableActivity {
         SRCH2Engine.setSQLiteIndexables(i);
         boolean test = false;
         try {
-            SRCH2Engine.initialize();
+            SRCH2Engine.onStart();
         } catch (IllegalArgumentException e) {
             test = true;
         }
@@ -291,7 +291,7 @@ public class DatabaseTestActivity extends TestableActivity {
         SRCH2Engine.setSQLiteIndexables(i);
         boolean wasInvalid = false;
         try {
-            SRCH2Engine.initialize();
+            SRCH2Engine.onStart();
         } catch (IllegalStateException e) {
             wasInvalid = true;
         }
@@ -304,7 +304,7 @@ public class DatabaseTestActivity extends TestableActivity {
         SRCH2Engine.setSQLiteIndexables(i);
         boolean wasInvalid = false;
         try {
-            SRCH2Engine.initialize();
+            SRCH2Engine.onStart();
         } catch (IllegalStateException e) {
             wasInvalid = true;
         }
@@ -317,7 +317,7 @@ public class DatabaseTestActivity extends TestableActivity {
         SRCH2Engine.setSQLiteIndexables(dbIndex);
         boolean wasInvalid = false;
         try {
-            SRCH2Engine.initialize();
+            SRCH2Engine.onStart();
         } catch (IllegalStateException e) {
             wasInvalid = true;
         }
@@ -330,7 +330,7 @@ public class DatabaseTestActivity extends TestableActivity {
         SRCH2Engine.setSQLiteIndexables(dbIndex);
         boolean wasInvalid = false;
         try {
-            SRCH2Engine.initialize();
+            SRCH2Engine.onStart();
         } catch (IllegalStateException e) {
             wasInvalid = true;
         }
@@ -343,7 +343,7 @@ public class DatabaseTestActivity extends TestableActivity {
         SRCH2Engine.setSQLiteIndexables(dbIndex);
         boolean wasInvalid = false;
         try {
-            SRCH2Engine.initialize();
+            SRCH2Engine.onStart();
         } catch (IllegalStateException e) {
             wasInvalid = true;
         }
@@ -356,7 +356,7 @@ public class DatabaseTestActivity extends TestableActivity {
         SRCH2Engine.setSQLiteIndexables(dbIndex);
         boolean wasInvalid = false;
         try {
-            SRCH2Engine.initialize();
+            SRCH2Engine.onStart();
         } catch (IllegalArgumentException e) {
             wasInvalid = true;
         }
@@ -369,7 +369,7 @@ public class DatabaseTestActivity extends TestableActivity {
         SRCH2Engine.setSQLiteIndexables(dbIndex);
         boolean wasInvalid = false;
         try {
-            SRCH2Engine.initialize();
+            SRCH2Engine.onStart();
         } catch (IllegalArgumentException e) {
             wasInvalid = true;
         }
@@ -380,7 +380,7 @@ public class DatabaseTestActivity extends TestableActivity {
         dbHelper = new DbHelper(getApplicationContext(), DbIndex.GeoFailureMode.GeoValid);
         dbIndex = new DbIndex(SQLiteSchema.DATABASE_NAME, SQLiteSchema.TABLE_NAME, dbHelper, DbIndex.GeoFailureMode.GeoValid);
         SRCH2Engine.setSQLiteIndexables(dbIndex);
-        SRCH2Engine.initialize();
+        SRCH2Engine.onStart();
         onStartAndWaitForIsReady(this, 60000);
         assertTrue(SRCH2Engine.isReady());
         dbHelper.insertRecords();
@@ -395,7 +395,7 @@ public class DatabaseTestActivity extends TestableActivity {
         dbHelper = new DbHelper(getApplicationContext(), DbIndex.GeoFailureMode.NotGeo);
         dbIndex = new DbIndex(SQLiteSchema.DATABASE_NAME, SQLiteSchema.TABLE_NAME, dbHelper, DbIndex.GeoFailureMode.NotGeo);
         SRCH2Engine.setSQLiteIndexables(dbIndex);
-        SRCH2Engine.initialize();
+        SRCH2Engine.onStart();
         onStartAndWaitForIsReady(this, 60000);
         assertTrue(SRCH2Engine.isReady());
         sleep(5000);
@@ -410,7 +410,7 @@ public class DatabaseTestActivity extends TestableActivity {
         SRCH2Engine.setSQLiteIndexables(dbIndex);
         boolean wasNull = false;
         try {
-            SRCH2Engine.initialize();
+            SRCH2Engine.onStart();
         } catch (NullPointerException npe) {
             wasNull = true;
         }
@@ -423,7 +423,7 @@ public class DatabaseTestActivity extends TestableActivity {
         SRCH2Engine.setSQLiteIndexables(dbIndex);
         boolean wasNull = false;
         try {
-            SRCH2Engine.initialize();
+            SRCH2Engine.onStart();
         } catch (NullPointerException npe) {
             wasNull = true;
         }
@@ -436,7 +436,7 @@ public class DatabaseTestActivity extends TestableActivity {
         SRCH2Engine.setSQLiteIndexables(dbIndex);
         boolean wasNull = false;
         try {
-            SRCH2Engine.initialize();
+            SRCH2Engine.onStart();
         } catch (NullPointerException npe) {
             wasNull = true;
         }
@@ -449,7 +449,7 @@ public class DatabaseTestActivity extends TestableActivity {
         SRCH2Engine.setSQLiteIndexables(dbIndex);
         boolean wasInvalid = false;
         try {
-            SRCH2Engine.initialize();
+            SRCH2Engine.onStart();
         } catch (IllegalArgumentException npe) {
             wasInvalid = true;
         }
@@ -462,7 +462,7 @@ public class DatabaseTestActivity extends TestableActivity {
         SRCH2Engine.setSQLiteIndexables(dbIndex);
         boolean wasInvalid = false;
         try {
-            SRCH2Engine.initialize();
+            SRCH2Engine.onStart();
         } catch (IllegalArgumentException npe) {
             wasInvalid = true;
         }

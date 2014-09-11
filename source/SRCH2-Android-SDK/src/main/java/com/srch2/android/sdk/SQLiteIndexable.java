@@ -39,8 +39,8 @@ import java.util.concurrent.ExecutionException;
  * value this method will return will be updated each time the SRCH2 search server comes online and each time an
  * insert, upsert or delete occurs in the original SQLite database table.
  * Note it can return {@link #INDEX_RECORD_COUNT_NOT_SET} if the SRCH2 search server
- * is not online such as when {@link com.srch2.android.sdk.SRCH2Engine#initialize()}
- * has been called but {@link com.srch2.android.sdk.SRCH2Engine#onStart(android.content.Context)} has not yet been
+ * is not online such as when {@link com.srch2.android.sdk.SRCH2Engine#onStart()}
+ * has been called but {@link com.srch2.android.sdk.SRCH2Engine#onResume(android.content.Context)} has not yet been
  * called).
  */
 public abstract class SQLiteIndexable extends IndexableCore {
@@ -155,7 +155,7 @@ public abstract class SQLiteIndexable extends IndexableCore {
      * of the table that will be used to create and update the index this <code>SQLiteIndexable</code> represents.
      * <br><br>
      * The instance of the <code>SQLiteOpenHelper</code> is momentarily used to read the database table
-     * information when {@link SRCH2Engine#initialize()} is called; a reference is not kept: a cursor is obtained
+     * information when {@link SRCH2Engine#onStart()} is called; a reference is not kept: a cursor is obtained
      * to read the database information, then both the readable database and cursor are closed within milliseconds.
      * @return the SQLiteOpenHelper used to manage the database
      */

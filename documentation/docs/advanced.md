@@ -624,8 +624,8 @@ overridden; however by doing so the properties set during the construction of an
 corresponding to the *RecordBoostField* and the *boost* argument of the *Field.getSearchableString(String name, int boost)* 
 can be set for this *SQLiteIndexable*.
 
-If *getRecordBoostColumnName()* is overridden it must correspond to the name of a column that is of type *REAL* and should
-contain non-negative values less than one hundred. Here the column named score is used as the *RecordBoostField* which will
+If *getRecordBoostColumnName()* is overridden it must correspond to the name of a column that is of type *REAL* or *FLOAT* and should
+contain positive values less than 100 and greater than or equal to 1. Here the column named score is used as the *RecordBoostField* which will
 set the relative rank of each row or record as it is returned as a search result. 
 
 During the resolution of the schema for the index this *SQLiteIndexable* represents, the *SRCH2Engine* will call 

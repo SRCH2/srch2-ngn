@@ -45,13 +45,13 @@ public class CrudTestActivity extends TestableActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        Log.d(TAG, "onStart");
+        Log.d(TAG, "onResume");
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        Log.d(TAG, "onStop");
+        Log.d(TAG, "onPause");
     }
 
     @Override
@@ -79,17 +79,17 @@ public class CrudTestActivity extends TestableActivity {
     public void initializeSRCH2Engine() {
         deleteSrch2Files();
         SRCH2Engine.setIndexables(mIndex1, mIndex2, mIndexGeo);
-        SRCH2Engine.initialize();
+        SRCH2Engine.onStart();
         SRCH2Engine.setSearchResultsListener(mResultListener);
         SRCH2Engine.setAutomatedTestingMode(true);
     }
 
     public void callSRCH2EngineStart() {
-        SRCH2Engine.onStart(this);
+        SRCH2Engine.onResume(this);
     }
 
     public void callSRCH2EngineStop() {
-        SRCH2Engine.onStop(this);
+        SRCH2Engine.onPause(this);
     }
 
     private void reset() {

@@ -85,7 +85,7 @@ abstract class IndexableCore {
      * The default value of this method, if not overridden, is ten.
      * <br><br>
      * This method will cause an <code>IllegalArgumentException</code> to be thrown when calling
-     * {@link SRCH2Engine#initialize()} and passing this
+     * {@link SRCH2Engine#onStart()} and passing this
      * <code>Indexable</code> or <code>SQLiteIndexable</code> if the returned value
      *  is less than one.
      * @return the number of results to return per search
@@ -107,7 +107,7 @@ abstract class IndexableCore {
      * The default value of this method, if not overridden, is 0.65.
      * <br><br>
      * This method will cause an <code>IllegalArgumentException</code> to be thrown when calling
-     * {@link SRCH2Engine#initialize()} and passing this <code>Indexable</code> or
+     * {@link SRCH2Engine#onStart()} and passing this <code>Indexable</code> or
      * <code>SQLiteIndexable</code> if the
      * value returned is less than zero or greater than one.
      * @return the fuzziness similarity ratio to match against search keywords against
@@ -164,7 +164,7 @@ abstract class IndexableCore {
 
     /**
      * Callback executed very shortly after the call to
-     * {@link com.srch2.android.sdk.SRCH2Engine#onStart(android.content.Context)} is made:
+     * {@link com.srch2.android.sdk.SRCH2Engine#onResume(android.content.Context)} is made:
      * when the SRCH2 search server is initialized by the <code>SRCH2Engine</code> (by the method just
      * mentioned), it will load each index into memory; this can take anywhere from a couple of milliseconds
      * to three seconds (depending on the number of records, how much data each record contains, and the

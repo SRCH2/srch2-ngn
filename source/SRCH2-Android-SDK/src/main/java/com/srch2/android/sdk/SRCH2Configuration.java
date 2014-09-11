@@ -132,7 +132,7 @@ final class SRCH2Configuration {
 
     void validateSRCH2Index(IndexableCore indexable, Schema idxSchema) {
         if (indexable == null) {
-            throw new NullPointerException("Cannot initialize the SRCH2Engine when a null Indexable is passed.");
+            throw new NullPointerException("Cannot onResume the SRCH2Engine when a null Indexable is passed.");
         }
         IndexDescription.throwIfNonValidIndexName(indexable.getIndexName());
 

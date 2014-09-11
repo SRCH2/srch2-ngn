@@ -28,7 +28,7 @@ public class LifeCycleTestActivity extends TestableActivity {
         index = new DumbIndex();
         searchResultsCallback = new SearchResultsCallback();
         SRCH2Engine.setIndexables(index);
-        SRCH2Engine.initialize();
+        SRCH2Engine.onStart();
         SRCH2Engine.setSearchResultsListener(searchResultsCallback);
     }
 

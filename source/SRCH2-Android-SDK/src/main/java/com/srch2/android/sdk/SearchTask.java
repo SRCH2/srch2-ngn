@@ -48,7 +48,17 @@ class SearchTask extends HttpTask.SearchHttpTask {
                     Cat.d(TAG, "corename about to parse is " + coreName);
 
                     JSONObject o = root.getJSONObject(coreNodes.getString(j));
-                    JSONArray nodes = o.getJSONArray("results");
+
+                    JSONArray nodes = null;
+                    try {
+                       nodes = o.getJSONArray("results");
+                    } catch (JSONException noResults) {
+                        // ignore
+                    }
+
+                    if (nodes == null) {
+                        continue;
+                    }
 
                     ArrayList<JSONObject> records = new ArrayList<JSONObject>();
 
@@ -99,57 +109,61 @@ class SearchTask extends HttpTask.SearchHttpTask {
                 Cat.ex(TAG, "while parsing records JSONException", ignore);
             }
         } else {
-
             ArrayList<JSONObject> recordResults = new ArrayList<JSONObject>();
             try {
                 JSONObject root = new JSONObject(json);
-                JSONArray nodes = root.getJSONArray("results");
+                JSONArray nodes = null;
+                try {
+                    nodes = root.getJSONArray("results");
+                } catch (JSONException noResults) {
+                    // ignore
+                }
+                if (nodes != null) {
+                    for (int i = 0; i < nodes.length(); ++i) {
+                        try {
+                            JSONObject resultNodes = (JSONObject) nodes.get(i);
+                            JSONObject record = resultNodes.getJSONObject("record");
 
-                for (int i = 0; i < nodes.length(); ++i) {
-                    try {
-                        JSONObject resultNodes = (JSONObject) nodes.get(i);
-                        JSONObject record = resultNodes.getJSONObject("record");
+                            JSONObject newRecord = new JSONObject();
+                            newRecord.put(Indexable.SEARCH_RESULT_JSON_KEY_RECORD, record);
 
-                        JSONObject newRecord = new JSONObject();
-                        newRecord.put(Indexable.SEARCH_RESULT_JSON_KEY_RECORD, record);
-
-                        if (resultNodes.has("snippet")) {
-                            boolean highlightingNotEmpty = true;
-                            JSONObject snippet = null;
-                            try {
-                                snippet = resultNodes.getJSONObject("snippet");
-                            } catch (JSONException eee) {
-                                highlightingNotEmpty = false;
-                            }
-
-                            if (highlightingNotEmpty && snippet != null && snippet.length() > 0) {
-
-                                Iterator<String> snippetKeys = snippet.keys();
-                                while (snippetKeys.hasNext()) {
-                                    String key = snippetKeys.next();
-                                    String highlight = null;
-                                    try {
-                                        highlight = snippet.getString(key);
-                                    } catch (JSONException highlighterOops) {
-                                        continue;
-                                    }
-
-                                    if (highlight != null) {
-                                        highlight = highlight.replace("\\/", "/");
-                                        highlight = highlight.replace("\\\"", "\"");
-                                        highlight = highlight.substring(2, highlight.length() - 2);
-                                        snippet.put(key, highlight);
-                                    }
+                            if (resultNodes.has("snippet")) {
+                                boolean highlightingNotEmpty = true;
+                                JSONObject snippet = null;
+                                try {
+                                    snippet = resultNodes.getJSONObject("snippet");
+                                } catch (JSONException eee) {
+                                    highlightingNotEmpty = false;
                                 }
-                                newRecord.put(Indexable.SEARCH_RESULT_JSON_KEY_HIGHLIGHTED, snippet);
+
+                                if (highlightingNotEmpty && snippet != null && snippet.length() > 0) {
+
+                                    Iterator<String> snippetKeys = snippet.keys();
+                                    while (snippetKeys.hasNext()) {
+                                        String key = snippetKeys.next();
+                                        String highlight = null;
+                                        try {
+                                            highlight = snippet.getString(key);
+                                        } catch (JSONException highlighterOops) {
+                                            continue;
+                                        }
+
+                                        if (highlight != null) {
+                                            highlight = highlight.replace("\\/", "/");
+                                            highlight = highlight.replace("\\\"", "\"");
+                                            highlight = highlight.substring(2, highlight.length() - 2);
+                                            snippet.put(key, highlight);
+                                        }
+                                    }
+                                    newRecord.put(Indexable.SEARCH_RESULT_JSON_KEY_HIGHLIGHTED, snippet);
+                                }
                             }
+                            recordResults.add(newRecord);
+
+                        } catch (Exception e) {
+                            Cat.ex(TAG, "while parsing records", e);
                         }
-                        recordResults.add(newRecord);
-
-                    } catch (Exception e) {
-                        Cat.ex(TAG, "while parsing records", e);
                     }
-
                 }
             } catch (JSONException ignore) {
             }

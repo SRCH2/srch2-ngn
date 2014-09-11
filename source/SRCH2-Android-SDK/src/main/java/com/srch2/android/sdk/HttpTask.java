@@ -462,18 +462,18 @@ abstract class HttpTask implements Runnable {
 	 * for some reason
 	 * 
 	 * // Wrapper class for controlling execution of tasks to be executed. Users
-	 * of this class <b>must</b> call <code>onStart()</code> and
-	 * <code>onStop()</code>. Users should // also obtain an instance of this
+	 * of this class <b>must</b> call <code>onResume()</code> and
+	 * <code>onPause()</code>. Users should // also obtain an instance of this
 	 * class by calling <code>HttpTask.getHttpTaskExecutor()</code>. static
 	 * class HttpTaskExecutor { private boolean isExecuting = false; private
 	 * ExecutorService controlTaskExecutor; private ExecutorService
 	 * searchTaskExecutor;
 	 * 
-	 * synchronized void onStart() { isExecuting = true; controlTaskExecutor =
+	 * synchronized void onResume() { isExecuting = true; controlTaskExecutor =
 	 * Executors.newFixedThreadPool(1); searchTaskExecutor =
 	 * Executors.newFixedThreadPool(1); }
 	 * 
-	 * synchronized void onStop() { isExecuting = false;
+	 * synchronized void onPause() { isExecuting = false;
 	 * controlTaskExecutor.shutdown(); searchTaskExecutor.shutdown(); }
 	 * 
 	 * synchronized protected void executeTask(HttpTask taskToExecte) { if

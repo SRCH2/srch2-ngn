@@ -6,11 +6,8 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ListView;
-import android.widget.Toast;
-import com.srch2.android.sdk.Query;
 import com.srch2.android.sdk.SRCH2Engine;
 import com.srch2.android.sdk.SearchResultsListener;
-import com.srch2.android.sdk.SearchableTerm;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -27,48 +24,45 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
     public IdxTwo indexTwo;
     public GeoIdx geoIndex;
     public Context context;
-
     DatabaseHelper dbHelper;
-
-
     SearchResults sr;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        getActionBar().hide();
+        Log.d("s2sdk::Sandbox", "onCreate------------------------------------------!!!");
         context = this;
         setContentView(R.layout.activity_my);
         searchResultsListView = (ListView) findViewById(R.id.lv);
         resultsAdapter = new SearchResultsAdapter(this);
         searchResultsListView.setAdapter(resultsAdapter);
 
+        //index = new Idx();
+        //indexTwo = new IdxTwo();
 
-
-
-
-        index = new Idx();
-        indexTwo = new IdxTwo();
-        geoIndex = new GeoIdx();
 
         dbHelper = new DatabaseHelper(this);
-        dbHelper.insertRecords();
-
-
-        SRCH2Engine.setSQLiteIndexables(dbHelper.idx);
-        SRCH2Engine.initialize();
-
-
 
 
 
         sr = new SearchResults();
-        SRCH2Engine.setSearchResultsListener(sr, true);
-        SRCH2Engine.setAutomatedTestingMode(true);
+
 
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.d("s2sdk::Sandbox", "onStart------------------------------------------!!!");
 
-
+        SRCH2Engine.setAutomatedTestingMode(true);
+        SRCH2Engine.setSearchResultsListener(sr, true);
+       // SRCH2Engine.setIndexables(index);
+        SRCH2Engine.setSQLiteIndexables(dbHelper.idx);
+        SRCH2Engine.onStart();
+    }
 
     class SearchResults implements SearchResultsListener {
         @Override
@@ -76,43 +70,78 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
 
             Log.d(S2_TAG.concat("SEARCHRESULTS"), "response is [" + JSONResponse + "]");
 
-            int count = 0;
 
+            ArrayList<SearchResultsAdapter.SearchResultItem> items = new ArrayList<SearchResultsAdapter.SearchResultItem>();
 
-            for (ArrayList<JSONObject> results : resultMap.values()) {
-                for (JSONObject jo : results) {
-                    ++count;
-                }
+            ArrayList<JSONObject> idxResults = resultMap.get(Idx.INDEX_NAME);
+            if (idxResults != null && index != null) {
+                items.addAll(index.wrap(idxResults));
             }
-            Log.d(S2_TAG.concat("MyActivity"), "onnewsearchresults " + count);
-            Toast.makeText(context, "result count: " + count, Toast.LENGTH_LONG).show();
+
+            ArrayList<JSONObject> idx2Results = resultMap.get(IdxTwo.INDEX_NAME);
+            if (idx2Results != null && indexTwo != null) {
+                items.addAll(indexTwo.wrap(idx2Results));
+            }
+
+
+            ArrayList<JSONObject> dbResults = resultMap.get(DatabaseHelper.SQLiteSchema.TABLE_NAME);
+            if (dbResults != null && dbHelper != null) {
+                items.addAll(dbHelper.wrap(dbResults));
+            }
+
+
+            resultsAdapter.updateDisplayedSearchResults(items);
+
         }
     }
 
     public void foo(View v) {
-        dbHelper.insertRecords();
+
+
     }
 
-    Object o;
 
     public void bar(View v) {
-        o.toString();
 
-       // Toast.makeText(context, "Record count: " + dbHelper.idx.getRecordCount(), Toast.LENGTH_SHORT).show();
+        Thread t = new Thread( new Runnable() {
+            @Override
+            public void run() {
+                if (dbHelper != null) {
+                    dbHelper.insertRecords();
+                }
+                if (index != null) {
+                    index.insert(index.getRecords());
+                }
+                if (indexTwo != null) {
+                    indexTwo.insert(indexTwo.getRecords());
+                }
+            }
+        });
+        t.start();
     }
 
 
     @Override
     protected void onResume() {
         super.onResume();
-        SRCH2Engine.onStart(this);
+        Log.d("s2sdk::Sandbox", "onResume------------------------------------------!!!");
+        SRCH2Engine.onResume(this);
         InstantSearchEditText.checkIfSearchInputShouldOpenSoftKeyboard(this, (InstantSearchEditText) findViewById(R.id.et_instant_search_input));
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        SRCH2Engine.onStop(this);
+
+        Log.d("s2sdk::Sandbox", "onPause------------------------------------------!!!");
+        SRCH2Engine.onPause(this);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Log.d("s2sdk::Sandbox", "onStop------------------------------------------!!!");
+        SRCH2Engine.onStop();
     }
 
     @Override
@@ -122,10 +151,8 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
 
 
 
-        Query q = new Query(new SearchableTerm(newSearchText));
-        q.insideRectangleRegion(0, 0, 100, 100);
 
-        SRCH2Engine.advancedSearchOnAllIndexes(q);
+        SRCH2Engine.searchAllIndexes(newSearchText);
     }
 
     @Override
