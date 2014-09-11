@@ -194,7 +194,7 @@ void * AtomicSaveOperation::localSaveData(void * arg){
 void * AtomicSaveOperation::localSaveMetadata(void * arg){
 	SaveMetadataNotification * saveNotif = (SaveMetadataNotification *)arg;
 	boost::unique_lock<boost::mutex> lock(ShardManager::getShardManager()->shardManagerGlobalMutex);
-	ShardManager::getShardManager()->getMetadataManager()->resolve(ShardManager::getShardManager()->getConfigManager(),saveNotif);
+	ShardManager::getShardManager()->resolve(saveNotif);
 	return NULL;
 }
 
