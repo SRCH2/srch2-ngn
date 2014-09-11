@@ -27,7 +27,7 @@ void  AttributeAccessControl::bulkLoadAttributeAclCSV(const std::string& aclLoad
 		_bulkLoadAttributeAclCSV(aclLoadFileName);
 	}catch(exception& exception) {
 		Logger::error(exception.what());
-		Logger::error("Attribute acl csv bulk load was not successful. Please check JSON file.");
+		Logger::error("Attribute acl csv bulk load was not successful. Please check CSV file.");
 	}
 }
 /*
