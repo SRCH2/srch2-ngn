@@ -17,7 +17,6 @@ namespace srch2
 namespace instantsearch
 {
 
-
 bool FilterQueryOperator::open(QueryEvaluatorInternal * queryEvaluatorInternal, PhysicalPlanExecutionParameters & params){
 	ASSERT(this->getPhysicalPlanOptimizationNode()->getChildrenCount() == 1);
 	this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->open(queryEvaluatorInternal, params);
@@ -32,7 +31,7 @@ PhysicalPlanRecordItem * FilterQueryOperator::getNext(const PhysicalPlanExecutio
 		}
 		Schema * schema = queryEvaluatorInternal->getSchema();
 		ForwardIndex * forwardIndex = queryEvaluatorInternal->getForwardIndex();
-		if(doPass(schema, forwardIndex, nextRecord)){
+		if(hasAccessToRecord(forwardIndex, nextRecord->getRecordId()) && doPass(schema, forwardIndex, nextRecord)){
 			return nextRecord;
 		}
 	}
@@ -47,7 +46,11 @@ bool FilterQueryOperator::close(PhysicalPlanExecutionParameters & params){
 }
 
 string FilterQueryOperator::toString(){
-	string result = "filterQueryOperator" + this->filterQueryEvaluator->toString() ;
+	string result;
+	if(this->filterQueryEvaluator != NULL)
+		result = "filterQueryOperator" + this->filterQueryEvaluator->toString() + this->roleId ;
+	else
+		result = this->roleId;
 	if(this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode() != NULL){
 		result += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->toString();
 	}
@@ -59,11 +62,15 @@ bool FilterQueryOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificat
 }
 FilterQueryOperator::~FilterQueryOperator(){}
 
-FilterQueryOperator::FilterQueryOperator(RefiningAttributeExpressionEvaluator * filterQueryEvaluator) {
+FilterQueryOperator::FilterQueryOperator(RefiningAttributeExpressionEvaluator * filterQueryEvaluator, string &roleId) {
 	this->filterQueryEvaluator = filterQueryEvaluator;
+	this->roleId = roleId;
 }
 
 bool FilterQueryOperator::doPass(Schema * schema, ForwardIndex * forwardIndex ,PhysicalPlanRecordItem * record){
+	// Because we use this operator for filters and for access control. When we just have access control the filter query evaluator is NULL
+	if(this->filterQueryEvaluator == NULL) // filterQueryEvaluator is null. So we don't have any filter
+		return true;
     // fetch the names and ids of non searchable attributes from schema
     vector<string> attributes;
     for(map<string,unsigned>::const_iterator attr = schema->getRefiningAttributes()->begin();
@@ -94,6 +101,17 @@ bool FilterQueryOperator::doPass(Schema * schema, ForwardIndex * forwardIndex ,P
     }
     return this->filterQueryEvaluator->evaluate(valuesForEvaluation);
 }
+
+bool FilterQueryOperator::hasAccessToRecord(ForwardIndex * forwardIndex, unsigned recordId){
+	if(roleId == "") // it means that we don't have any access control check
+		return true;
+
+	shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
+	forwardIndex->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
+
+	return this->queryEvaluatorInternal->getForwardIndex()->hasAccessToForwardList(forwardListDirectoryReadView, recordId, this->roleId);
+}
+
 // The cost of open of a child is considered only once in the cost computation
 // of parent open function.
 PhysicalPlanCost FilterQueryOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params) {

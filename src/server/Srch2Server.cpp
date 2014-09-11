@@ -3,8 +3,21 @@
 #include <syslog.h>
 #include "Srch2Server.h"
 #include "util/RecordSerializerUtil.h"
+#include "operation/AttributeAccessControl.h"
+#include <sys/statvfs.h>
+
 namespace srch2 {
 namespace httpwrapper {
+
+//Helper function to calculate size of the file
+namespace {
+    ifstream::pos_type getFileSize(const char* filename) {
+        std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
+        ifstream::pos_type size = in.tellg();
+        in.close();
+        return size;
+    }
+}
 
 const char *HTTPServerEndpoints::index_search_url = "/srch2/search";
 const char *HTTPServerEndpoints::index_info_url = "/srch2/info";
@@ -92,6 +105,7 @@ const char *HTTPServerEndpoints::ajax_delete_fail_500 =
                 "Content-Type: application/x-javascript\r\n"
                 "\r\n";
 
+
 bool Srch2Server::checkIndexExistence(const CoreInfo_t *indexDataConfig) {
     const string &directoryName = indexDataConfig->getIndexPath();
     if (!checkDirExistence(
@@ -170,7 +184,6 @@ void Srch2Server::createAndBootStrapIndexer() {
     else
         indexCreateOrLoad = srch2http::INDEXCREATE;
     Schema * storedAttrSchema = Schema::create();
-
     // Create a schema to the data source definition in the Srch2ServerConf
     srch2is::Schema *schema = JSONRecordParser::createAndPopulateSchema(
             indexDataConfig);
@@ -187,36 +200,62 @@ void Srch2Server::createAndBootStrapIndexer() {
                 indexer->getSchema());
         switch (indexDataConfig->getDataSourceType()) {
         case srch2http::DATA_SOURCE_JSON_FILE: {
+
+            //check file size in KB
+            unsigned fileSize = getFileSize(indexDataConfig->getDataFilePath().c_str());
+            //Logger::console("The size of the data file is %lu KB", fileSize/(1024));
+
+            struct statvfs *buff;
+            if (!(buff = (struct statvfs *) malloc(sizeof(struct statvfs)))) {
+                Logger::error("Failed to allocate memory to buffer.");
+            } else {
+                //We check the space available for the disk where srch2Home is set
+                if (statvfs(indexDataConfig->getSrch2Home().c_str(), buff) < 0) {
+                    Logger::warn("Failed to calculate free disk space, statvfs() failed.");
+                } else {
+                    //Logger::console("The number of free blocks on disk is %lu", buff->f_bfree);
+                    //Logger::console("The size of each block is %lu bytes", buff->f_bsize);
+                    //Logger::console("The total size of free disk space is %lu KB", (buff->f_bfree * buff->f_bsize) / (1024));
+
+                    //calculate free disk space. (No. of free blocks * block size) KB
+                    unsigned long freeDiskSpace = (buff->f_bfree * buff->f_bsize) / (1024);
+
+                    //Display warning if free disk space is less than twice the size of file
+                    if (freeDiskSpace < (2 * fileSize)) {
+                        Logger::warn("The system may not have enough disk space to serialize the indexes for the given json file.");
+                    }
+                }
+                free(buff);
+            }
+
             // Create from JSON and save to index-dir
-            Logger::console("Creating indexes from JSON file...");
+            Logger::console("%s: Creating indexes from JSON file...",this->coreName.c_str());
             unsigned indexedCounter = DaemonDataSource::createNewIndexFromFile(
                     indexer, storedAttrSchema, indexDataConfig);
+
             /*
              *  commit the indexes once bulk load is done and then save it to the disk only
              *  if number of indexed record is > 0.
              */
             indexer->commit();
-            if (indexedCounter > 0) {
+
+            // Load ACL list from disk
+            indexer->getAttributeAcl().bulkLoadAclJSON(indexDataConfig->getAttibutesAclFile());
+            /*
+             *  if the roleCore is null it means that this core doesn't have any access control
+             *  so we can save it now.
+             *  otherwise first we should read the data for acl and we will save this core after that.
+             */
+            if (indexedCounter > 0 && this->roleCore == NULL) {
                 indexer->save();
                 Logger::console("Indexes saved.");
             }
             break;
         }
-#ifndef ANDROID
-        case srch2http::DATA_SOURCE_MONGO_DB: {
-            Logger::console("Creating indexes from a MongoDb instance...");
-            unsigned indexedCounter = MongoDataSource::createNewIndexes(indexer,
-                    indexDataConfig);
-            indexer->commit();
-            if (indexedCounter > 0) {
-                indexer->save();
-                Logger::console("Indexes saved.");
-            }
-            break;
-        }
-#endif
         default: {
             indexer->commit();
+            // Load ACL list from disk
+            indexer->getAttributeAcl().bulkLoadAclJSON(indexDataConfig->getAttibutesAclFile());
             Logger::console("Creating new empty index");
         }
         };

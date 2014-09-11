@@ -38,6 +38,7 @@ typedef enum {
     KeywordSimilarityThreshold,
     KeywordBoostLevel,
     FieldFilter,
+    AccessControl,
     QueryPrefixCompleteFlag,
     IsPhraseKeyword,
     IsDebugEnabled,
@@ -86,7 +87,7 @@ typedef enum {
 typedef enum {
 	DATA_SOURCE_NOT_SPECIFIED,
 	DATA_SOURCE_JSON_FILE,
-	DATA_SOURCE_MONGO_DB
+	DATA_SOURCE_DATABASE
 } DataSourceType;
 
 }

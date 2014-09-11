@@ -36,7 +36,7 @@
 #include "RegexConstants.h"
 #include "util/Assert.h"
 #include "util/DateAndTimeHandler.h"
-
+#include "operation/AttributeAccessControl.h"
 
 using namespace std;
 using srch2::instantsearch::TypedValue;
@@ -56,7 +56,8 @@ public:
     std::vector<std::pair<MessageType, string> > *messages;
     virtual bool parse(string &expressionString) = 0;
 
-    virtual bool validate(const Schema & schema) = 0;
+    virtual bool validate(const Schema & schema, const string& aclRoleValue,
+    		const AttributeAccessControl& attributeAcl) = 0;
 
     virtual bool evaluate(
             std::map<std::string, TypedValue> & nonSearchableAttributeValues)= 0;
@@ -121,11 +122,17 @@ public:
         return doParse(input, re, output);
     }
 
-    bool validate(const Schema & schema) {
+    bool validate(const Schema & schema, const string& aclRoleValue,
+    		const AttributeAccessControl& attributeAcl) {
         //1. Check to make sure attributeName is a non-searchable attribute
         int attributeId = schema.getRefiningAttributeId(attributeName);
         if (attributeId < 0)
             return false;
+
+        // check whether the attribute is accessible for current role.
+        if (!attributeAcl.isRefiningFieldAccessibleForRole(aclRoleValue, attributeName))
+        	return false;
+
         //2. Check to make sure lower and upper values are consistent with the type
         FilterType attributeType = schema.getTypeOfRefiningAttribute(
                 attributeId);
@@ -279,11 +286,16 @@ public:
         return doParse(input, re, output);
     }
 
-    bool validate(const Schema & schema) {
+    bool validate(const Schema & schema, const string& aclRoleValue,
+    		const AttributeAccessControl& attributeAcl) {
         //1. Check to make sure attributeName is a non-searchable attribute
         int attributeId = schema.getRefiningAttributeId(attributeName);
         if (attributeId < 0)
             return false;
+
+        // check whether the attribute is accessible for current role.
+        if (!attributeAcl.isRefiningFieldAccessibleForRole(aclRoleValue, attributeName))
+        	return false;
 
         //2. Check the value to be consistent with type
         FilterType attributeType = schema.getTypeOfRefiningAttribute(
@@ -394,7 +406,8 @@ public:
         return doParse(input, re, output);
     }
 
-    bool validate(const Schema & schema) {
+    bool validate(const Schema & schema, const string& aclRoleValue,
+    		const AttributeAccessControl& attributeAcl) {
         // insert non-searchable attribute names to the symbol table and let
         // exprtk library do the validation
 
@@ -405,6 +418,12 @@ public:
                 nonSearchableAttributes->begin();
                 nonSearchableAttribute != nonSearchableAttributes->end();
                 ++nonSearchableAttribute) {
+
+        	// check whether the attribute is accessible for current role. The last parameter is false
+        	// to indicate that the field is refining.
+            if (!attributeAcl.isRefiningFieldAccessibleForRole(aclRoleValue, nonSearchableAttribute->first))
+            	continue;
+
             // Since we only accept integer, long float and double as non-searchable attributes
             // this if-else statement only inserts these non-searchable-attributes into
             // the symbol table. This symbol table is passed to exprtk library.
@@ -506,10 +525,10 @@ public:
         return false;
     }
 
-    bool validate(const Schema & schema) {
+    bool validate(const Schema & schema, const string& aclRole, const AttributeAccessControl& attributeAcl) {
         for (std::vector<QueryExpression *>::iterator criterion = expressions
                 .begin(); criterion != expressions.end(); ++criterion) {
-            if (!(*criterion)->validate(schema)) {
+            if (!(*criterion)->validate(schema, aclRole, attributeAcl)) {
                 return false;
             }
         }

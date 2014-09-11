@@ -73,7 +73,7 @@ TARGET_LINK_LIBRARIES(QueryEvaluator_Test ${UNIT_TEST_LIBS})
 LIST(APPEND UNIT_TESTS QueryEvaluator_Test)
 
 ADD_EXECUTABLE(Licensing_Test Licensing_Test.cpp)
-TARGET_LINK_LIBRARIES(Licensing_Test ${UNIT_TEST_LIBS})
+TARGET_LINK_LIBRARIES(Licensing_Test ${UNIT_TEST_LIBS} ${crypto_LIBRARY} ${CMAKE_REQUIRED_LIBRARIES} )
 LIST(APPEND UNIT_TESTS Licensing_Test)
 	
 ADD_EXECUTABLE(Normalizer_Test Normalizer_Test.cpp)
@@ -139,6 +139,10 @@ LIST(APPEND UNIT_TESTS RandomAccessVerificationOr_Test)
 ADD_EXECUTABLE(RandomAccessVerificationNot_Test physical_plan/RandomAccessVerificationNot_Test.cpp)
 TARGET_LINK_LIBRARIES(RandomAccessVerificationNot_Test ${UNIT_TEST_LIBS})  
 LIST(APPEND UNIT_TESTS RandomAccessVerificationNot_Test)
+
+ADD_EXECUTABLE(RecordBasedAccessControl_Test RecordBasedAccessControl_Test.cpp)
+TARGET_LINK_LIBRARIES(RecordBasedAccessControl_Test ${UNIT_TEST_LIBS})  
+LIST(APPEND UNIT_TESTS RecordBasedAccessControl_Test)
 
 ADD_CUSTOM_TARGET(build_unit_test ALL DEPENDS ${UNIT_TESTS} )
 ADD_DEPENDENCIES(build_unit_test srch2_core)

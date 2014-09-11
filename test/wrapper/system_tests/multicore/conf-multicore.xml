@@ -61,6 +61,7 @@
 
                     <queryResponseWriter>
                         <responseFormat>1</responseFormat>
+                        <responseContent type="0"></responseContent>
                     </queryResponseWriter>
                 </query>
                 <schema>
@@ -84,7 +85,7 @@
                     </facetFields>
 
                     <types>
-                        <fieldType name="text_en">
+                        <fieldType name="text_standard">
                             <analyzer>
                                 <filter name="PorterStemFilter" dictionary="" />
                                 <filter name="StopFilter" words="stop-words.txt" />
@@ -169,7 +170,7 @@
                     </facetFields>
 
                     <types>
-                        <fieldType name="text_en">
+                        <fieldType name="text_standard">
                             <analyzer>
                                 <filter name="PorterStemFilter" dictionary="" />
                                 <filter name="StopFilter" words="stop-words.txt" />
@@ -452,7 +453,7 @@
                 </facetFields>
 
                 <types>
-                    <fieldType name="text_en">
+                    <fieldType name="text_standard">
                         <analyzer>
                             <!--
                                 Stemmer
@@ -602,7 +603,7 @@
         </facetFields>
 
         <types>
-            <fieldType name="text_en">
+            <fieldType name="text_standard">
                 <analyzer>
                     <filter name="PorterStemFilter" dictionary="" />
                     <filter name="StopFilter" words="stop-words2.txt" />
@@ -685,30 +686,6 @@
             <mergeEveryNSeconds>10</mergeEveryNSeconds>
             <mergeEveryMWrites>100</mergeEveryMWrites>
         </mergePolicy>
-
-
-        <updateLog>
-            <!-- 
-                Log Level
-                Optional
-
-                Log level
-                    0 SILENT
-                    1 ERROR
-                    2 WARN
-                    3 INFO
-                Defaults to 3 INFO
-            -->
-            <logLevel>3</logLevel>
-
-            <!--
-                Access Log File
-                Required
-
-                Path to Access Log File
-            -->
-            <accessLogFile>../coreGeoData/geolog.txt</accessLogFile>
-        </updateLog>
 
     </updatehandler>
 
@@ -798,7 +775,7 @@
 
 
       <types>
-          <fieldType name="text_en">
+          <fieldType name="text_standard">
               <analyzer>
                   <!--
                 Stemmer
@@ -836,7 +813,31 @@
 </types>
     </schema>
 
-</core>
+    </core>
 
     </cores>
+
+        <updateLog>
+            <!-- 
+                Log Level
+                Optional
+
+                Log level
+                    0 SILENT
+                    1 ERROR
+                    2 WARN
+                    3 INFO
+                Defaults to 3 INFO
+            -->
+            <logLevel>3</logLevel>
+
+            <!--
+                Access Log File
+                Required
+
+                Path to Access Log File
+            -->
+            <accessLogFile>geolog.txt</accessLogFile>
+        </updateLog>
+        
 </config>

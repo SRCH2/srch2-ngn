@@ -13,6 +13,7 @@
 # search for 'wonderful' to see if all the new records are returned
 
 import os, time, sys, commands, urllib2, signal
+import json
 
 sys.path.insert(0, 'srch2lib')
 import test_lib
@@ -52,7 +53,29 @@ class InsertTester:
         curlCommand = 'curl -s http://localhost:' + str(port) + '/search?q=' + query
         os.popen(curlCommand)
 
+def verify_insert_response(expectedResponse, actualOutput):
+    actualOutput = actualOutput.splitlines()[-1]
+    actualJson = json.loads(actualOutput)
+    expectJson = json.loads(expectedResponse)
+    actualJson = actualJson['log']
 
+    for eachInsertResult in actualJson:
+        match = True 
+        for key in expectJson:
+            if expectJson[key] != eachInsertResult[key]:
+                match = False
+                continue
+        if match:
+            return True
+    return False
+
+def verify_search_rid(expectedRID, actualOutput):
+    actualOutput = actualOutput.splitlines()[-1]
+    print "ACT:" , actualOutput
+    print "EXP:" , expectedRID
+    return expectedRID in actualOutput
+
+    
 if __name__ == '__main__':
 
     binary_path = sys.argv[1]
@@ -68,25 +91,26 @@ if __name__ == '__main__':
     # test 1, insert a record that already exists
     command1 = 'curl "http://localhost:' + str(port) + '/docs" -i -X PUT -d ' + '\'{"id":"101","post_type_id":"2","parent_id":"6272262","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"3","view_count":"0","body":"february monday","owner_user_id":"356674","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"NULL","favorite_count":"NULL"}\'';
     status1, output1 = commands.getstatusoutput(command1)
+
     #print 'output1 --- ' + str(output1) + "\n-----------------";
-    flag = str(output1).find('{"rid":"101","insert":"failed","reason":"The record with same primary key already exists"}');
+    expect = '{"rid":"101","insert":"failed","reason":"The record with same primary key already exists"}';
     #print flag
-    assert flag > -1, 'Error, rid 101 is not updated correctly!'
+    assert verify_insert_response(expect, output1), 'Error, rid 101 is not updated correctly!'
 
     # test 2, insert a record that doesn't exist
     command3 = 'curl "http://localhost:' + str(port) + '/docs" -i -X PUT -d ' + '\'{"id":"111","post_type_id":"2","parent_id":"6272262","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"3","view_count":"0","body":"december","owner_user_id":"356674","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"NULL","favorite_count":"NULL"}\'';
 
     status3, output3 = commands.getstatusoutput(command3)
     #print 'output3 -----' + output3 + '\n-----------------'
-    flag = str(output3).find('{"rid":"111","insert":"success"}');
-    assert flag > -1, 'Error, rid 111 is not updated correctly!'
+    expect = '{"rid":"111","insert":"success"}';
+    assert verify_insert_response(expect, output3), 'Error, rid 111 is not updated correctly!'
 
     time.sleep(1.5)
     command4 = 'curl -i http://localhost:' + str(port) + '/search?q=december'
     status4, output4 = commands.getstatusoutput(command4)
     #print 'output4 -----' + output4 + '\n----------------'
-    flag = str(output4).find('"id":"111"')
-    assert flag > -1, 'Error, rid 111 is not updated correctly!'
+    expect = '"id":"111"'
+    assert verify_search_rid(expect, output4) , 'Error, rid 111 is not updated correctly!'
 
 
     # test 3, upsert multiple records, some exsit some don't
@@ -94,30 +118,36 @@ if __name__ == '__main__':
 
     status5, output5 = commands.getstatusoutput(command5)
     #print 'output5 -----' + output5 + '\n-----------------'
-    flag = str(output5).find('{"rid":"102","insert":"failed","reason":"The record with same primary key already exists"}');
-    assert flag > -1, 'Error, rid 102 is not updated correctly!'
-    flag = str(output5).find('{"rid":"103","insert":"failed","reason":"The record with same primary key already exists"}');
-    assert flag > -1, 'Error, rid 103 is not updated correctly!'
-    flag = str(output5).find('{"rid":"115","insert":"success"}');
-    assert flag > -1, 'Error, rid 115 is not updated correctly!'
-    flag = str(output5).find('{"rid":"116","insert":"success"}');
-    assert flag > -1, 'Error, rid 116 is not updated correctly!'
+    expect = '{"rid":"102","insert":"failed","reason":"The record with same primary key already exists"}';
+    assert verify_insert_response(expect, output5), 'Error, rid 102 is not updated correctly!'
+    expect = '{"rid":"103","insert":"failed","reason":"The record with same primary key already exists"}';
+    assert verify_insert_response(expect, output5), 'Error, rid 103 is not updated correctly!'
+    expect = '{"rid":"115","insert":"success"}';
+    assert verify_insert_response(expect, output5), 'Error, rid 115 is not updated correctly!'
+    expect = '{"rid":"116","insert":"success"}';
+    assert verify_insert_response(expect, output5), 'Error, rid 116 is not updated correctly!'
 
 
     time.sleep(1.5)
     command6 = 'curl -i http://localhost:' + str(port) + '/search?q=wonderful'
     status6, output6 = commands.getstatusoutput(command6)
     #print 'output4 -----' + output4 + '\n----------------'
-    flag = str(output6).find('"id":"115"')
-    assert flag > -1, 'Error, rid 115 is not updated correctly!'
-    flag = str(output6).find('"id":"116"')
-    assert flag > -1, 'Error, rid 116 is not updated correctly!'
+    expect = '"id":"115"'
+    assert verify_search_rid(expect, output6), 'Error, rid 115 is not updated correctly!'
+    expect = '"id":"116"'
+    assert verify_search_rid(expect, output6), 'Error, rid 116 is not updated correctly!'
 
 
     time.sleep(3)
     tester.killServer()
 
     print '=====================Batch Insert Test Passed!=========================='
+
+    #The test "batch insert" may take time to close the SRCH2 engine. 
+    #If the engine is still running, starting another engine on the same port could cause error.
+    #So we sleep several seconds to wait for the engine to shut down completely.
+    time.sleep(3)
+
     os._exit(0)
 
 

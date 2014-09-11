@@ -1,4 +1,4 @@
-site_name: Docs (4.4.0)
+site_name: Docs (4.4.1)
 
 pages:
     - [index.mkd, Home]
@@ -6,10 +6,11 @@ pages:
     - [configuration.mkd, Configuration]
     - [restful-search.mkd, 'API', Search]
     - [restful-insert-update-delete.mkd, 'API', Update]
-    - [restful-control.mkd,'API', Control]
+    - [restful-control.mkd, 'API', Control]
     - [ranking.mkd, Ranking]
     - [geo.mkd, Geo]
-    - [mongodb.mkd, Mongodb]
+    - [acl.mkd, ACL]
+    - [databases.mkd, Databases]
 
 theme_dir : './srch2-theme'
 

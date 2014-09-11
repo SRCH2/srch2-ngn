@@ -18,7 +18,6 @@
 #include "util/Logger.h"
 #include "util/FileOps.h"
 #include "index/IndexUtil.h"
-#include "MongodbAdapter.h"
 #include <string>
 #include <vector>
 #include <iostream>
@@ -39,6 +38,8 @@ class Srch2Server {
 public:
     Indexer *indexer;
     const CoreInfo_t *indexDataConfig;
+    Srch2Server* roleCore;
+    vector<Srch2Server*> resourceCores;
     /* Fields used only for stats */
     time_t stat_starttime; /* Server start time */
     long long stat_numcommands; /* Number of processed commands */
@@ -54,11 +55,33 @@ public:
     Srch2Server() {
         this->indexer = NULL;
         this->indexDataConfig = NULL;
+        this->roleCore = NULL;
     }
 
     void init(const ConfigManager *config) {
         indexDataConfig = config->getCoreInfo(getCoreName());
         createAndBootStrapIndexer();
+    }
+
+    void initAccessControls(){
+        if (!checkIndexExistence(indexDataConfig)){
+        	switch (indexDataConfig->getDataSourceType()) {
+        	case srch2http::DATA_SOURCE_JSON_FILE: {
+        		Logger::console("%s: Adding access controls from JSON file...",this->coreName.c_str());
+
+        		DaemonDataSource::addAccessControlsFromFile(indexer, indexDataConfig, this->roleCore->indexer);
+
+        		indexer->save();
+        		Logger::console("Indexes saved.");
+
+        		break;
+        	}
+        	default: {
+
+        		break;
+        	}
+        	};
+        }
     }
 
     // Check if index files already exist.

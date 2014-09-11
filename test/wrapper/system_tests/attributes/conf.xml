@@ -114,16 +114,7 @@
           <mergeEveryMWrites>10</mergeEveryMWrites>
 
         </mergePolicy>
-         
-         
-        <updateLog>
-
-            <logLevel>3</logLevel>
-                         
-            <accessLogFile>./data/attributes/srch2-log.txt</accessLogFile>
-
-        </updateLog>
-     
+              
     </updatehandler>
 
     <schema name="SRCH2" version="3">
@@ -840,7 +831,7 @@
         </facetFields>
         
         <types>
-          <fieldType name="text_en">
+          <fieldType name="text_standard">
               <analyzer>
 
                   <filter name="PorterStemFilter" dictionary="" />
@@ -853,4 +844,13 @@
           </fieldType>
        </types>
     </schema>
+    
+    <updateLog>
+
+        <logLevel>3</logLevel>
+                         
+        <accessLogFile>./data/attributes/srch2-log.txt</accessLogFile>
+
+    </updateLog>  
+    
 </config>

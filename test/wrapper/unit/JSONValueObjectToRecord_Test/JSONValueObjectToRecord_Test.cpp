@@ -39,7 +39,6 @@ bool testRecord(const string& jsonRecord, const bool expectedResult,
     //Parse JSON string to JSON object
     Json::Value root;
     Json::Reader reader;
-    Json::FastWriter writer;
     stringstream log_str;
 
     bool parseSuccess = reader.parse(jsonRecord, root, false);
@@ -77,7 +76,7 @@ bool testRecord(const string& jsonRecord, const bool expectedResult,
         return false == expectedResult;
     }
     return JSONRecordParser::_JSONValueObjectToRecord(record,
-            writer.write(root), root, indexDataConfig, log_str, recSerializer)
+            root, indexDataConfig, log_str, recSerializer)
             == expectedResult;
 }
 
@@ -362,7 +361,7 @@ int main(int argc, char **argv) {
     //Doing preparation for the tests.
     string configFile(string(getenv("srch2_config_file")) + "/conf.xml");
 
-    CoreInfo_t* indexDataConfig;
+    CoreInfo_t* indexDataConfig = NULL;
     stringstream log_str;
 
     ConfigManager * conf = new ConfigManager(configFile);

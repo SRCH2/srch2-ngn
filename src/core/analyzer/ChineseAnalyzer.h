@@ -11,12 +11,11 @@ namespace instantsearch{
 class ChineseAnalyzer: public AnalyzerInternal{
 public:
     // We do not need the English stemmer for the Chinese analyzer
-    ChineseAnalyzer(const std::string &dictFile,
+    ChineseAnalyzer(const ChineseDictionaryContainer* chineseDictionaryContainer,
                     const StopWordContainer *stopWords,
                     const ProtectedWordsContainer *protectedWords,
                     const SynonymContainer *synonyms,
                     const std::string &delimiters);
-    ChineseAnalyzer(const ChineseAnalyzer &analyzer);
 
     TokenStream *createOperatorFlow();
 
@@ -26,7 +25,7 @@ public:
     	delete this->tokenStream;
     }
 private:
-    const std::string mDictFilePath;
+    const ChineseDictionaryContainer* mChineseDictionaryContainer;
 };
 
 }

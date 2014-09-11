@@ -38,6 +38,7 @@ public:
 	boost = 1;
 	isMultiValued = false;
 	highlight = false;
+	isAclEnabled = false;
     }
     SearchableAttributeInfoContainer(const string & name,
             srch2::instantsearch::FilterType type,
@@ -46,7 +47,8 @@ public:
 				     const unsigned offset,
 				     const unsigned boost,
 				     const bool isMultiValued,
-				     bool highlight = false){
+				     bool highlight = false,
+				     bool isAclEnabled = false){
         this->attributeName = name;
         this->attributeType = type;
         this->required = required;
@@ -55,6 +57,7 @@ public:
         this->boost = boost;
         this->isMultiValued = isMultiValued;
         this->highlight = highlight;
+        this->isAclEnabled = isAclEnabled;
     }
     // NO GETTER OR SETTERS ARE IMPLEMENTED FOR THESE MEMBERS
     // BECAUSE THIS CLASS IS MEANT TO BE A VERY SIMPLE CONTAINER WHICH ONLY CONTAINS THE
@@ -67,6 +70,7 @@ public:
     unsigned boost;
     bool isMultiValued;
     bool highlight;
+    bool isAclEnabled;
 };
 
 class RefiningAttributeInfoContainer {
@@ -83,12 +87,14 @@ public:
 				   srch2::instantsearch::FilterType type,
 				   const string & defaultValue,
 				   const bool required,
-				   const bool isMultiValued){
+				   const bool isMultiValued,
+				   const bool isAclEnabled){
         this->attributeName = name;
 	this->attributeType = type;
 	this->defaultValue = defaultValue;
 	this->required = required;
 	this->isMultiValued = isMultiValued;
+	this->isAclEnabled = isAclEnabled;
     }
     // NO GETTER OR SETTERS ARE IMPLEMENTED FOR THESE MEMBERS
     // BECAUSE THIS CLASS IS MEANT TO BE A VERY SIMPLE CONTAINER WHICH ONLY CONTAINS THE
@@ -98,6 +104,7 @@ public:
     string defaultValue;
     bool required;
     bool isMultiValued;
+    bool isAclEnabled;
 };
 
 class CoreInfo_t;
@@ -111,14 +118,14 @@ struct CoreConfigParseState_t {
     vector<bool> searchableAttributesRequiredFlagVector;
     vector<string> searchableAttributesDefaultVector;
     vector<bool> searchableAttributesIsMultiValued;
+    vector<bool> searchableAttributesAclFlags;
     vector<bool> searchableAttributesHighlight;
-
     CoreConfigParseState_t() : hasLatitude(false), hasLongitude(false) {};
 };
 
 // enum to allow loop iteration over listening ports
 enum PortType_t {
-    SearchPort,
+    SearchPort = 0,
     SuggestPort,
     InfoPort,
     DocsPort,
@@ -126,6 +133,14 @@ enum PortType_t {
     SavePort,
     ExportPort,
     ResetLoggerPort,
+    SearchAllPort,
+    ShutDownAllPort,
+    AttributeAclAdd,
+    AttributeAclAppend,
+    AttributeAclDelete,
+    RecordAclAdd,
+    RecordAclAppend,
+    RecordAclDelete,
     EndOfPortType // stop value - not valid (also used to indicate all/default ports)
 };
 
@@ -151,6 +166,7 @@ private:
     string srch2Home;
 
     unsigned int numberOfThreads;
+    unsigned int heartBeatTimer;
 
     // <config><keywordPopularitythreshold>
     unsigned keywordPopularityThreshold;
@@ -236,7 +252,7 @@ protected:
     // parsing helper functions for modularity
     void parseIndexConfig(const xml_node &indexConfigNode, CoreInfo_t *coreInfo, map<string, unsigned> &boostsMap, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
-    void parseMongoDb(const xml_node &mongoDbNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+    void parseDbParameters(const xml_node &dbNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
     //CoreConfigParseState_t argument is added to parseQuery function because coreInfo's searchableAttributesInfo is not populated when this function is called, it is required to check responseContent
     void parseQuery(CoreConfigParseState_t *coreParseState, const xml_node &queryNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
@@ -244,6 +260,10 @@ protected:
     void parseSingleCore(const xml_node &parentNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
     void parseMultipleCores(const xml_node &coresNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+
+    void parseSingleAccessControl(const xml_node &parentNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+
+    void parseAccessControls(const xml_node &accessControlsNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
     // parse all data source settings (can handle multiple cores or default/no core)
     void parseDataConfiguration(const xml_node &configNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
@@ -255,21 +275,46 @@ protected:
     
     void parseSchema(const xml_node &schemaNode, CoreConfigParseState_t *coreParseState, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
-    bool setSearchableRefiningFromIndexedAttribute(const xml_node &field, bool &isSearchable, bool &isRefining, std::stringstream &parseError, bool &configSuccess);
+    bool setSearchableRefiningFromIndexedAttribute(const xml_node &field,
+            bool &isSearchable, bool &isRefining, std::stringstream &parseError,
+            bool &configSuccess, CoreInfo_t *coreInfo);
 
-    bool setSearchableAndRefining(const xml_node &field, bool &isSearchable, bool &isRefining, std::stringstream &parseError, bool &configSuccess);
+    bool setSearchableAndRefining(const xml_node &field, bool &isSearchable,
+            bool &isRefining, std::stringstream &parseError,
+            bool &configSuccess, CoreInfo_t *coreInfo);
 
-    bool setFieldFlagsFromFile(const xml_node &field, bool &isMultiValued, bool &isSearchable, bool &isRefining, bool &isHighlightEnabled, std::stringstream &parseError, bool &configSuccess);
+    bool setFieldFlagsFromFile(const xml_node &field, bool &isMultiValued, bool &isSearchable,
+    		bool &isRefining, bool &isHighlightEnabled, bool & isAclEnabled,
+    		std::stringstream &parseError, bool &configSuccess,
+    		CoreInfo_t *coreInfo);
 
-    bool setCoreParseStateVector(bool isSearchable, bool isRefining, bool isMultiValued, bool isHighlightEnabled, CoreConfigParseState_t *coreParseState, CoreInfo_t *coreInfo, std::stringstream &parseError, const xml_node &field);
+    bool setCoreParseStateVector(bool isSearchable, bool isRefining, bool isMultiValued,
+    		bool isHighlightEnabled, bool isAclEnabled, CoreConfigParseState_t *coreParseState,
+    		CoreInfo_t *coreInfo, std::stringstream &parseError, const xml_node &field);
 
-    bool setRefiningStateVectors(const xml_node &field, bool isMultiValued, bool isRefining, vector<string> &RefiningFieldsVector, vector<srch2::instantsearch::FilterType> &RefiningFieldTypesVector, vector<bool> &RefiningAttributesRequiredFlagVector, vector<string> &RefiningAttributesDefaultVector, vector<bool> &RefiningAttributesIsMultiValued, std::stringstream &parseError);
+    bool setRefiningStateVectors(const xml_node &field, bool isMultiValued,
+    		bool isRefining, vector<string> &RefiningFieldsVector,
+    		vector<srch2::instantsearch::FilterType> &RefiningFieldTypesVector,
+    		vector<bool> &RefiningAttributesRequiredFlagVector,
+    		vector<string> &RefiningAttributesDefaultVector,
+    		vector<bool> &RefiningAttributesIsMultiValued,
+    		vector<bool> &refiningAttributesAclEnabledFlags, bool isAclEnabled,
+    		std::stringstream &parseError, CoreInfo_t *coreInfo);
 
     void parseFacetFields(const xml_node &schemaNode, CoreInfo_t *coreInfo, std::stringstream &parseError);
 
     void parseSchemaType(const xml_node &childNode, CoreInfo_t *coreInfo, std::stringstream &parseWarnings);
 
 
+    void setUpStemmer(CoreInfo_t *coreInfo, const xml_node &field, std::stringstream &parseWarnings);
+    
+    void setUpChineseDictionary(CoreInfo_t * coreInfo, string &dictionaryPath, std::stringstream &parseWarnings);
+    void setUpStopword(CoreInfo_t *coreInfo, const xml_node &field, std::stringstream &parseWarnings);
+    void setUpProtectedWord(CoreInfo_t *coreInfo, const xml_node &field, std::stringstream &parseWarnings);
+    void setUpSynonym(CoreInfo_t *coreInfo, const xml_node &field, std::stringstream &parseWarnings);
+    void setUpRecordSpecialCharacters(CoreInfo_t *coreInfo, const xml_node &field);
+    void setUpEnglishAnalyzer(CoreInfo_t * coreInfo, const xml_node &childNodeTemp, std::stringstream &parseWarnings);
+    void setUpChineseAnalyzer(CoreInfo_t * coreInfo, string& dictionaryPath, const xml_node &childNodeTemp, std::stringstream &parseWarnings);
 public:
     ConfigManager(const string& configfile);
     virtual ~ConfigManager();
@@ -295,7 +340,6 @@ public:
     //const vector<unsigned>* getAttributesBoosts() const;
     const std::string& getAttributeRecordBoostName(const string &coreName) const;
     //string getDefaultAttributeRecordBoost() const;
-
     const std::string& getRecordAllowedSpecialCharacters(const string &coreName) const;
     int getSearchType(const string &coreName) const;
     int getIsPrimSearchable(const string &coreName) const;
@@ -316,6 +360,8 @@ public:
     unsigned getKeywordPopularityThreshold() const ;
 
     unsigned int getNumberOfThreads() const;
+
+    unsigned int getHeartBeatTimer() const;
 
     const std::string& getAttributeStringForMySQLQuery() const;
 
@@ -345,13 +391,10 @@ public:
     //loadConfigFile should not exit the engine, hence bool is returned to indicate if engine should exit or not. Also it is helpful in ctest cases.
     bool loadConfigFile() ;
 
-    // Mongo related getter/setter
-    const string& getMongoServerHost(const string &coreName) const;
-    const string& getMongoServerPort(const string &coreName) const;
-    const string& getMongoDbName(const string &coreName) const;
-    const string& getMongoCollection (const string &coreName) const;
-    const unsigned getMongoListenerWaitTime (const string &coreName) const;
-    const unsigned getMongoListenerMaxRetryCount(const string &coreName) const;
+    // Database related getter/setter
+    const map<string,string> * getDbParameters(const string &coreName) const;
+    const string& getDatabaseSharedLibraryName(const string &coreName) const;
+    const string& getDatabaseSharedLibraryPath(const string &coreName) const;
 
     const unsigned getGetAllResultsNumberOfResultsThreshold() const {
     	return this->getAllResultsNumberOfResultsThreshold;
@@ -380,6 +423,14 @@ public:
 
     static void setAuthorizationKey(string &key);
 
+    static const char* getRoleId(){
+    	return aclRoleId;
+    }
+
+    static const char* getResourceId(){
+    	return aclResourceId;
+    }
+
 private:
 
 // configuration file tag and attribute names for ConfigManager
@@ -387,12 +438,17 @@ private:
     static const char* const accessLogFileString;
     static const char* const analyzerString;
     static const char* const cacheSizeString;
-    static const char* const collectionString;
     static const char* const configString;
     static const char* const dataDirString;
     static const char* const dataFileString;
     static const char* const dataSourceTypeString;
-    static const char* const dbString;
+    static const char* const dbKeyString;
+    static const char* const dbKeyValuesString;
+    static const char* const dbKeyValueString;
+    static const char* const dbParametersString;
+    static const char* const dbSharedLibraryPathString;
+    static const char* const dbSharedLibraryNameString;
+    static const char* const dbValueString;
     static const char* const defaultString;
     static const char* const defaultQueryTermBoostString;
     static const char* const dictionaryString;
@@ -400,6 +456,7 @@ private:
     static const char* const enableCharOffsetIndexString;
     static const char* const expandString;
     static const char* const facetEnabledString;
+    static const char* const attributeAclFileString;
     static const char* const facetEndString;
     static const char* const facetFieldString;
     static const char* const facetFieldsString;
@@ -413,9 +470,9 @@ private:
     static const char* const fieldTypeString;
     static const char* const filterString;
     static const char* const fuzzyMatchPenaltyString;
-    static const char* const hostString;
     static const char* const indexConfigString;
     static const char* const indexedString;
+    static const char* const aclString;
     static const char* const multiValuedString;
     static const char* const indexTypeString;
     //static const char* const licenseFileString;
@@ -427,15 +484,13 @@ private:
     static const char* const logLevelString;
     static const char* const maxDocsString;
     static const char* const maxMemoryString;
-    static const char* const maxRetryOnFailureString;
     static const char* const maxSearchThreadsString;
     static const char* const mergeEveryMWritesString;
     static const char* const mergeEveryNSecondsString;
     static const char* const mergePolicyString;
-    static const char* const mongoDbString;
     static const char* const nameString;
-    static const char* const portString;
     static const char* const porterStemFilterString;
+    static const char* const tokenizerFilterString;
     static const char* const prefixMatchPenaltyString;
     static const char* const queryString;
     static const char* const queryResponseWriterString;
@@ -461,6 +516,7 @@ private:
     static const char* const synonymFilterString;
     static const char* const synonymsString;
     static const char* const textEnString;
+    static const char* const textZhString;
     static const char* const typeString;
     static const char* const typesString;
     static const char* const uniqueKeyString;
@@ -495,19 +551,39 @@ private:
     static const char* const fuzzyTagPost;
     static const char* const snippetSize;
 
+    static const char* const multipleAccessControlString;
+    static const char* const resourceCore;
+    static const char* const roleCore;
+    static const char* const accessControlDataFile;
+    static const char* const aclRoleId;
+    static const char* const aclResourceId;
+
     static const char* const defaultFuzzyPreTag;
     static const char* const defaultFuzzyPostTag;
     static const char* const defaultExactPreTag;
     static const char* const defaultExactPostTag;
 
+    static const char* const heartBeatTimerTag;
+public:
+    static const char* const defaultCore;
+};
 
+class AccessControlInfo{
+public:
+	string resourceCoreName;
+	string roleCoreName;
+	string aclDataFileName;
+	AccessControlInfo(string &resourceCoreName, string &roleCoreName){
+		this->resourceCoreName = resourceCoreName;
+		this->roleCoreName = roleCoreName;
+	};
 };
 
 // definitions for data source(s) (srch2Server objects within one HTTP server)
 class CoreInfo_t {
 
 public:
-    CoreInfo_t(class ConfigManager *manager) : configManager(manager) {};
+    CoreInfo_t(class ConfigManager *manager) : configManager(manager), accessControlInfo(NULL) {};
     CoreInfo_t(const CoreInfo_t &src);
 
     friend class ConfigManager;
@@ -524,13 +600,15 @@ public:
     // THIS FUNCTION IS JUST FOR WRAPPER TEST
     void setDataFilePath(const string& path);
 
-    const string &getMongoServerHost() const { return mongoHost; }
-    const string &getMongoServerPort() const { return mongoPort; }
-    const string &getMongoDbName() const { return mongoDbName; }
-    const string &getMongoCollection() const { return mongoCollection; }
-    unsigned getMongoListenerWaitTime() const { return mongoListenerWaitTime; }
-    unsigned getMongoListenerMaxRetryOnFailure() const { return mongoListenerMaxRetryOnFailure; }
-    unsigned getMongoListenerMaxRetryCount() const { return mongoListenerMaxRetryOnFailure; }
+    const map<string, string> * getDbParameters() const {
+        return &dbParameters;
+    }
+    const string& getDatabaseSharedLibraryPath() const {
+        return dbSharedLibraryPath;
+    }
+    const string& getDatabaseSharedLibraryName() const {
+        return dbSharedLibraryName;
+    }
 
     int getIndexType() const { return indexType; }
     int getSearchType() const { return searchType; }
@@ -563,6 +641,7 @@ public:
     bool getSupportSwapInEditDistance() const
         { return supportSwapInEditDistance; }
     bool getSupportAttributeBasedSearch() const { return supportAttributeBasedSearch; }
+    void setSupportAttributeBasedSearch(bool flag) { supportAttributeBasedSearch = flag; }
     unsigned getQueryTermBoost() const { return queryTermBoost; }
     int getOrdering() const { return configManager->getOrdering(); }
 
@@ -591,6 +670,9 @@ public:
     const string &getProtectedWordsFilePath() const { return protectedWordsFilePath; }
     const string& getRecordAllowedSpecialCharacters() const
         { return allowedRecordTokenizerCharacters; }
+    AnalyzerType getAnalyzerType() const { return analyzerType; }
+
+    const string& getChineseDictionaryPath() const { return chineseDictionaryFilePath;}
 
     uint32_t getDocumentLimit() const;
     uint64_t getMemoryLimit() const;
@@ -652,6 +734,17 @@ public:
     unsigned short getPort(PortType_t portType) const;
     void setPort(PortType_t portType, unsigned short portNumber);
 
+    AccessControlInfo* getAccessControlInfo() const{
+    	return this->accessControlInfo;
+    }
+
+    void setAccessControlInfo(AccessControlInfo* accessControlInfo){
+    	this->accessControlInfo = accessControlInfo;
+    }
+
+    const std::string& getAttibutesAclFile() const {
+    	return attrAclFilePath;
+    }
 
 protected:
     string name; // of core
@@ -665,15 +758,10 @@ protected:
     string dataFile;
     string dataFilePath;
 
-    // mongo db related settings
-    string mongoHost;
-    string mongoPort;
-    string mongoDbName;
-    string mongoCollection;
-    unsigned mongoListenerWaitTime;
-
-    // stores the value of maximum allowed retries when MongoDB listener encounters some problem.
-    unsigned mongoListenerMaxRetryOnFailure;
+    // database related settings
+    map<string, string>  dbParameters;
+    string dbSharedLibraryName;
+    string dbSharedLibraryPath;
 
     int isPrimSearchable;
 
@@ -747,6 +835,10 @@ protected:
     bool synonymKeepOrigFlag;
     std::string stopFilterFilePath;
     std::string protectedWordsFilePath;
+    std::string attrAclFilePath;
+
+    AnalyzerType analyzerType;
+    std::string chineseDictionaryFilePath;
 
     // characters to specially treat as part of words, and not as a delimiter
     std::string allowedRecordTokenizerCharacters;
@@ -771,6 +863,9 @@ protected:
 
     // array of local HTTP ports (if any) index by port type enum
     vector<unsigned short> ports;
+
+    // keep the access control info for this core
+    AccessControlInfo* accessControlInfo;
 
 };
 

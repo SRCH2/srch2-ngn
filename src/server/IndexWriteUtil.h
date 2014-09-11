@@ -3,7 +3,7 @@
 #ifndef _INDEXWRITEUTIL_H_
 #define _INDEXWRITEUTIL_H_
 
-#include "json/json.h"
+#include "json/value.h"
 #include "JSONRecordParser.h"
 #include "ConfigManager.h"
 #include "AnalyzerFactory.h"
@@ -20,239 +20,23 @@ namespace httpwrapper
 
 struct IndexWriteUtil
 {
-    static void _insertCommand(Indexer *indexer, const CoreInfo_t *indexDataContainerConf, const Json::Value &root, Record *record, std::stringstream &log_str)
-    {
-    	Schema * storedSchema = Schema::create();
-    	RecordSerializerUtil::populateStoredSchema(storedSchema, indexer->getSchema());
-    	RecordSerializer recSerializer = RecordSerializer(*storedSchema);
-    	Json::FastWriter writer;
-    	if(JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root, indexDataContainerConf, log_str, recSerializer) == false){
-    		log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"failed\"}";
-    		delete storedSchema;
-    		return;
-    	}
-    	//add the record to the index
+    static Json::Value _insertCommand(Indexer *indexer, const CoreInfo_t *indexDataContainerConf, const Json::Value &root, Record *record);
 
-    	if ( indexer->getNumberOfDocumentsInIndex() < indexDataContainerConf->getDocumentLimit() )
-    	{
-    		// Do NOT delete analyzer because it is thread specific. It will be reused for
-    		// search/update/delete operations.
-            srch2::instantsearch::Analyzer * analyzer = AnalyzerFactory::getCurrentThreadAnalyzerWithSynonyms(indexDataContainerConf);
-    		srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->addRecord(record, analyzer);
+     static Json::Value _deleteCommand(Indexer *indexer, const CoreInfo_t *indexDataContainerConf, const Json::Value &root);
 
-    		switch( ret )
-			{
-				case srch2::instantsearch::OP_SUCCESS:
-				{
-					log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"success\"}";
-					break;
-				}
-				case srch2::instantsearch::OP_FAIL:
-				{
-					log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"failed\",\"reason\":\"The record with same primary key already exists\"}";
-					break;
-				}
-			};
-    	}
-    	else
-    	{
-    		log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"failed\",\"reason\":\"document limit reached. Email support@srch2.com for account upgrade.\"}";
-    	}
-    	delete storedSchema;
-    	//std::cout << "INSERT request received. New number of documents = " << indexer->getNumberOfDocumentsInIndex() << "; Limit = " << indexDataContainerConf->getDocumentLimit() << "." << std::endl;
-    }
+    static Json::Value _deleteCommand_QueryURI(Indexer *indexer, const CoreInfo_t *indexDataContainerConf, const evkeyvalq &headers);
 
-    static void _deleteCommand(Indexer *indexer, const CoreInfo_t *indexDataContainerConf, const Json::Value &root, std::stringstream &log_str)
-    {
-    	//set the primary key of the record we want to delete
-    	std::string primaryKeyName = indexDataContainerConf->getPrimaryKey();
-    	const std::string primaryKeyStringValue = root.get(primaryKeyName, "NULL" ).asString();
+    static Json::Value _updateCommand(Indexer *indexer, const CoreInfo_t *indexDataContainerConf, const evkeyvalq &headers, const Json::Value &root, Record *record);
 
-    	log_str << "{\"rid\":\"" << primaryKeyStringValue << "\",\"delete\":\"";
+    static Json::Value _saveCommand(Indexer *indexer);
 
-    	if (primaryKeyStringValue.compare("NULL") != 0)
-    	{
-    		//delete the record from the index
+    static Json::Value _exportCommand(Indexer *indexer, const char* exportedDataFileName);
 
-    		switch(indexer->deleteRecord(primaryKeyStringValue))
-    		{
-				case OP_FAIL:
-    		    {
-    		    	log_str << "failed\",\"reason\":\"no record with given primary key\"}";
-    		    	break;
-    		    }
-    		    default: // OP_SUCCESS.
-    		    {
-    		    	log_str << "success\"}";
-    		    }
-			};
-    	}
-    	else
-    	{
-    		log_str << "failed\",\"reason\":\"no record with given primary key\"}";
-    	}
+    static Json::Value _commitCommand(Indexer *indexer, const CoreInfo_t *indexDataContainerConf, const uint64_t offset);
 
-    }
+    static Json::Value _aclEditRoles(Indexer *indexer, string &primaryKeyID, vector<string> &roleIds, srch2::instantsearch::RecordAclCommandType commandType);
 
-    static void _deleteCommand_QueryURI(Indexer *indexer, const CoreInfo_t *indexDataContainerConf, const evkeyvalq &headers, std::stringstream &log_str)
-	{
-		//set the primary key of the record we want to delete
-    	std::string primaryKeyName = indexDataContainerConf->getPrimaryKey();
-
-    	const char *pKeyParamName = evhttp_find_header(&headers, primaryKeyName.c_str());
-
-		if (pKeyParamName)
-		{
-			size_t sz;
-			char *pKeyParamName_cstar = evhttp_uridecode(pKeyParamName, 0, &sz);
-
-			//std::cout << "[" << termBoostsParamName_cstar << "]" << std::endl;
-			const std::string primaryKeyStringValue = string(pKeyParamName_cstar);
-			free(pKeyParamName_cstar);
-
-			log_str << "{\"rid\":\"" << primaryKeyStringValue << "\",\"delete\":\"";
-
-			//delete the record from the index
-			switch(indexer->deleteRecord(primaryKeyStringValue))
-			{
-				case OP_FAIL:
-				{
-					log_str << "failed\",\"reason\":\"no record with given primary key\"}";
-					break;
-				}
-				default: // OP_SUCCESS.
-				{
-					log_str << "success\"}";
-				}
-			};
-		}
-		else
-		{
-            log_str << "{\"rid\":\"NULL\",\"delete\":\"failed\",\"reason\":\"no record with given primary key\"}";
-		}
-	}
-
-    static void _updateCommand(Indexer *indexer, const CoreInfo_t *indexDataContainerConf, const evkeyvalq &headers, const Json::Value &root, Record *record, std::stringstream &log_str)
-    {
-        /// step 1, delete old record
-
-		//set the primary key of the record we want to delete
-    	std::string primaryKeyName = indexDataContainerConf->getPrimaryKey();
-
-        unsigned deletedInternalRecordId;
-        std::string primaryKeyStringValue;
-
-        Schema * storedSchema = Schema::create();
-        RecordSerializerUtil::populateStoredSchema(storedSchema, indexer->getSchema());
-        RecordSerializer recSerializer = RecordSerializer(*storedSchema);
-    	Json::FastWriter writer;
-    	bool parseJson = JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root,
-    			indexDataContainerConf, log_str, recSerializer);
-    	delete storedSchema;
-        if(parseJson == false) {
-            log_str << "failed\",\"reason\":\"parse: The record is not in a correct json format\",";
-            return;
-        }
-
-    	primaryKeyStringValue = record->getPrimaryKey();
-		log_str << "{\"rid\":\"" << primaryKeyStringValue << "\",\"update\":\"";
-
-		//delete the record from the index
-		bool recordExisted = false;
-		switch(indexer->deleteRecordGetInternalId(primaryKeyStringValue, deletedInternalRecordId))
-		{
-			case srch2::instantsearch::OP_FAIL:
-			{
-				// record to update doesn't exit, will insert it
-				break;
-			}
-			default: // OP_SUCCESS.
-			{
-			    recordExisted = true;
-			}
-		};
-
-
-        /// step 2, insert new record
-
-    	//add the record to the index
-
-    	if ( indexer->getNumberOfDocumentsInIndex() < indexDataContainerConf->getDocumentLimit() )
-    	{
-    		// Do NOT delete analyzer because it is thread specific. It will be reused for
-    		// search/update/delete operations.
-            Analyzer* analyzer = AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf);
-    		srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->addRecord(record, analyzer);
-    		switch( ret )
-			{
-				case srch2::instantsearch::OP_SUCCESS:
-				{
-					if (recordExisted)
-					  log_str << "Existing record updated successfully\"}";
-					else
-					  log_str << "New record inserted successfully\"}";
-
-					return;
-				}
-				case srch2::instantsearch::OP_FAIL:
-				{
-					log_str << "failed\",\"reason\":\"insert: The record with same primary key already exists\",";
-					break;
-				}
-			};
-    	}
-    	else
-    	{
-    		log_str << "failed\",\"reason\":\"insert: Document limit reached. Email support@srch2.com for account upgrade.\",";
-    	}
-
-        /// reaching here means the insert failed, need to resume the deleted old record
-        
-        srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->recoverRecord(primaryKeyStringValue, deletedInternalRecordId);
-
-        switch ( ret )
-        {
-            case srch2::instantsearch::OP_FAIL:
-            {
-                log_str << "\"resume\":\"no record with given primary key\"}";
-                break;
-            }
-            default: // OP_SUCCESS.
-            {
-                log_str << "\"resume\":\"success\"}";
-            }
-        };
-    }
-
-    static void _saveCommand(Indexer *indexer, std::stringstream &log_str)
-    {
-    	indexer->save();
-	    log_str << "{\"save\":\"success\"}";
-    }
-
-    // save the exported data to exported_data.json
-    static void _exportCommand(Indexer *indexer, const char* exportedDataFileName, std::stringstream &log_str)
-    {
-        indexer->exportData(exportedDataFileName);
-        log_str << "{\"export\":\"success\"}";
-    }
-
-    static void _commitCommand(Indexer *indexer, const CoreInfo_t *indexDataContainerConf, const uint64_t offset, std::stringstream &log_str)
-    {
-    	//commit the index.
-    	if ( indexer->commit() == srch2::instantsearch::OP_SUCCESS)
-    	{
-	  
-	  // do not save indexes to disk since we can always rebuild them from
-	  // indexer->save();
-	  log_str << "{\"commit\":\"success\"}";
-    	}
-    	else
-    	{
-    		log_str << "{\"commit\":\"failed\"}";
-    	}
-    }
-
+    static void _deleteRoleRecord(Indexer *resourceIndexer, std::string rolePrimaryKeyName, const evkeyvalq &headers);
 };
 
 }}

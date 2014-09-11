@@ -48,6 +48,7 @@ private:
 	unsigned HighlightRecCount;
 	std::string uncompressedInMemoryRecordString;
     std::map<string, vector<unsigned> *> prefixToCompleteStore;
+    string aclRoleValue;
 };
 
 } /* namespace httpwrapper */

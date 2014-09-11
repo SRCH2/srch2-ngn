@@ -1,0 +1,4 @@
+Hospital||{"category": "mental Health Services Services Hospital", "id": "1", "name": "Men & Women Ctr"}
+vitamin||{"category": "vitamin Food & Beverages Retail Goods Specialty", "id": "2", "name": "Moondog Visions"}
+Professional||{"category": "repair Professional Services Computer Services", "id": "3", "name": "Polarbytes"}
+tackle||{"category": "tackle parts fishing Shopping Retail Goods Bicycles & Sporting Goods", "id": "5", "name": "TAKU Reel Repair"}

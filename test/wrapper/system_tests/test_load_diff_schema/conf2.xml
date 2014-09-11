@@ -298,30 +298,6 @@
           <mergeEveryMWrites>100</mergeEveryMWrites>
         </mergePolicy>
          
-         
-        <updateLog>
-            <!-- 
-                Log Level
-                Optional
-                 
-                Log level
-                    0 SILENT
-                    1 ERROR
-                    2 WARN
-                    3 INFO
-                Defaults to 3 INFO
-            -->
-            <logLevel>2</logLevel>
-                         
-            <!--
-                Access Log File
-                Required
-                 
-                Path to Access Log File
-            -->
-            <accessLogFile>./data/test_load_diff_schema/log.txt</accessLogFile>
-        </updateLog>
-     
     </updatehandler>
 
 	<schema>
@@ -407,7 +383,7 @@
 	  
 	  
 	  <types>
-	    <fieldType name="text_en">
+	    <fieldType name="text_standard">
 		<analyzer>
 		    <!--
 		        Stemmer
@@ -444,6 +420,30 @@
 	    </fieldType>
 	 </types>
 	</schema>
+	
+	    <updateLog>
+            <!-- 
+                Log Level
+                Optional
+                 
+                Log level
+                    0 SILENT
+                    1 ERROR
+                    2 WARN
+                    3 INFO
+                Defaults to 3 INFO
+            -->
+            <logLevel>2</logLevel>
+
+            <!--
+                Access Log File
+                Required
+                 
+                Path to Access Log File
+            -->
+            <accessLogFile>./data/test_load_diff_schema/log.txt</accessLogFile>
+    </updateLog>
+	
 </config>
  
 

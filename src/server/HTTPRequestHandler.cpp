@@ -6,6 +6,8 @@
 #include <sstream>
 #include <string>
 #include <set>
+//#include <sys/signal.h>
+#include <signal.h>
 
 #include "thirdparty/snappy-1.0.4/snappy.h"
 #include "util/Logger.h"
@@ -29,6 +31,7 @@
 #include "util/RecordSerializer.h"
 #include "util/RecordSerializerUtil.h"
 
+
 #define SEARCH_TYPE_OF_RANGE_QUERY_WITHOUT_KEYWORDS 2
 
 namespace srch2is = srch2::instantsearch;
@@ -46,72 +49,95 @@ namespace {
     static const pair<string, string> global_internal_record("srch2_internal_record_123456789", "record");
     static const pair<string, string> global_internal_snippet("srch2_internal_snippet_123456789", "snippet");
     static const pair<string, string> internal_data[] = { global_internal_record, global_internal_snippet};
+
+    // The below objects are used to format the global_customized_writer. 
+    // This global_customized_writer is created once and then can be used multiple times.
     static const vector<pair<string, string> > global_internal_skip_tags(internal_data, internal_data+2);    
-}
+    static const CustomizableJsonWriter global_customized_writer (&global_internal_skip_tags);
+    static const char * JSON_MESSAGE = "message";
+    static const char * JSON_LOG= "log";
+    static const char * HTTP_INVALID_REQUEST_MESSAGE = "The request has an invalid or missing argument. See Srch2 API documentation for details.";
 
-/**
- * Create evbuffer. If failed, send 503 response.
- * @param req request
- * @return buffer
- */
-evbuffer *create_buffer(evhttp_request *req) {
-    evbuffer *buf = evbuffer_new();
-    if (!buf) {
-        fprintf(stderr, "Failed to create response buffer\n");
-        evhttp_send_reply(req, HTTP_SERVUNAVAIL,
-                "Failed to create response buffer", NULL);
-        return NULL;
+    /**
+     * Create evbuffer. If failed, send 503 response.
+     * @param req request
+     * @return buffer
+     */
+    evbuffer *create_buffer(evhttp_request *req) {
+        evbuffer *buf = evbuffer_new();
+        if (!buf) {
+            fprintf(stderr, "Failed to create response buffer\n");
+            evhttp_send_reply(req, HTTP_SERVUNAVAIL,
+                    "Failed to create response buffer", NULL);
+            return NULL;
+        }
+        return buf;
     }
-    return buf;
-}
 
-void bmhelper_check_add_callback(evbuffer *buf, const evkeyvalq &headers,
-        const string &out_payload) {
-    const char *jsonpCallBack = evhttp_find_header(&headers,
-            URLParser::jsonpCallBackName);
-    if (jsonpCallBack) {
-        size_t sz;
-        char *jsonpCallBack_cstar = evhttp_uridecode(jsonpCallBack, 0, &sz);
-        //std::cout << "[" << jsonpCallBack_cstar << "]" << std::endl;
+    // The below functions are the helper functions to format the HTTP response
+    void bmhelper_check_add_callback(evbuffer *buf, const evkeyvalq &headers,
+            const string &out_payload) {
+        const char *jsonpCallBack = evhttp_find_header(&headers,
+                URLParser::jsonpCallBackName);
+        if (jsonpCallBack) {
+            size_t sz;
+            char *jsonpCallBack_cstar = evhttp_uridecode(jsonpCallBack, 0, &sz);
+            //std::cout << "[" << jsonpCallBack_cstar << "]" << std::endl;
 
-        evbuffer_add_printf(buf, "%s(%s)", jsonpCallBack_cstar,
-                out_payload.c_str());
+            evbuffer_add_printf(buf, "%s(%s)", jsonpCallBack_cstar,
+                    out_payload.c_str());
 
-        // libevent uses malloc for memory allocation. Hence, use free
-        free(jsonpCallBack_cstar);
-    } else {
-        evbuffer_add_printf(buf, "%s", out_payload.c_str());
+            // libevent uses malloc for memory allocation. Hence, use free
+            free(jsonpCallBack_cstar);
+        } else {
+            evbuffer_add_printf(buf, "%s", out_payload.c_str());
+        }
+    }
+
+    void bmhelper_add_content_length(evhttp_request *req, evbuffer *buf) {
+        size_t length = EVBUFFER_LENGTH(buf);
+        std::stringstream length_str;
+        length_str << length;
+        evhttp_add_header(req->output_headers, "Content-Length",
+                length_str.str().c_str());
+    }
+
+    void bmhelper_evhttp_send_reply(evhttp_request *req, int code,
+            const char *reason, const string &out_payload,
+            const evkeyvalq &headers) {
+        evbuffer *returnbuffer = create_buffer(req);
+        bmhelper_check_add_callback(returnbuffer, headers, out_payload);
+        bmhelper_add_content_length(req, returnbuffer);
+        evhttp_send_reply(req, code, reason, returnbuffer);
+        evbuffer_free(returnbuffer);
+    }
+
+    void bmhelper_evhttp_send_reply(evhttp_request *req, int code,
+            const char *reason, const string &out_payload) {
+        evbuffer *returnbuffer = create_buffer(req);
+
+        evbuffer_add_printf(returnbuffer, "%s", out_payload.c_str());
+        bmhelper_add_content_length(req, returnbuffer);
+
+        evhttp_send_reply(req, code, reason, returnbuffer);
+        evbuffer_free(returnbuffer);
+    }
+
+    void response_to_invalid_request (evhttp_request *req, Json::Value &response){
+        response["error"] = HTTP_INVALID_REQUEST_MESSAGE;
+        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST", global_customized_writer.write(response));
+        Logger::error(HTTP_INVALID_REQUEST_MESSAGE);
+    }
+
+    // This helper function is to wrap a Json::Value into a Json::Array and then return the later object.
+    Json::Value wrap_with_json_array(Json::Value value){
+        Json::Value array(Json::arrayValue);
+        array.append(value);
+        return array;
     }
 }
 
-void bmhelper_add_content_length(evhttp_request *req, evbuffer *buf) {
-    size_t length = EVBUFFER_LENGTH(buf);
-    std::stringstream length_str;
-    length_str << length;
-    evhttp_add_header(req->output_headers, "Content-Length",
-            length_str.str().c_str());
-}
 
-void bmhelper_evhttp_send_reply(evhttp_request *req, int code,
-        const char *reason, const string &out_payload,
-        const evkeyvalq &headers) {
-    evbuffer *returnbuffer = create_buffer(req);
-    bmhelper_check_add_callback(returnbuffer, headers, out_payload);
-    bmhelper_add_content_length(req, returnbuffer);
-    evhttp_send_reply(req, code, reason, returnbuffer);
-    evbuffer_free(returnbuffer);
-}
-
-void bmhelper_evhttp_send_reply(evhttp_request *req, int code,
-        const char *reason, const string &out_payload) {
-    evbuffer *returnbuffer = create_buffer(req);
-
-    evbuffer_add_printf(returnbuffer, "%s", out_payload.c_str());
-    bmhelper_add_content_length(req, returnbuffer);
-
-    evhttp_send_reply(req, code, reason, returnbuffer);
-    evbuffer_free(returnbuffer);
-}
 void HTTPRequestHandler::cleanAndAppendToBuffer(const string& in, string& out) {
 	unsigned inLen = in.length();
 	unsigned inIdx = 0;
@@ -154,7 +180,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
         const CoreInfo_t *indexDataConfig,
         const QueryResults *queryResults, const Query *query,
         const Indexer *indexer, const unsigned start, const unsigned end,
-        const unsigned retrievedResults, const string & message,
+        const unsigned retrievedResults, const string& aclRoleId, const string & message,
         const unsigned ts1, struct timespec &tstart, struct timespec &tend ,
         const vector<RecordSnippet>& recordSnippets, unsigned hlTime, bool onlyFacets) {
 
@@ -164,6 +190,15 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
     unsigned resultFound = retrievedResults;
     (*root)["searcher_time"] = ts1;
     clock_gettime(CLOCK_REALTIME, &tstart);
+
+    vector<string> attributesToReturnFromQuery = queryPlan.getAttrToReturn();
+    vector<string> *attributesToReturnFromQueryPtr;
+
+    if (attributesToReturnFromQuery.size() != 0)
+      attributesToReturnFromQueryPtr = &attributesToReturnFromQuery;
+    else
+     attributesToReturnFromQueryPtr = NULL;
+
 
     if(onlyFacets == false){ // We send the matching records only if "facet != only".
         (*root)["results"].resize(end - start);
@@ -183,25 +218,45 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
                         - queryResults->getResultScore(i).getFloatTypedValue()); //the actual distance between the point of record and the center point of the range
                 if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_STORED_ATTR){
                     string sbuffer;
-                    genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i), sbuffer);
+                    //This case executes when all the attributes are to be returned. However we let the user
+                    //override if field list parameter is given in query
+                    genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
+                            sbuffer, attributesToReturnFromQueryPtr, aclRoleId);
                     // The class CustomizableJsonWriter allows us to
                     // attach the data string to the JSON tree without parsing it.
                     (*root)["results"][counter][global_internal_record.first] = sbuffer;
                 } else if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SELECTED_ATTR){
                 	string sbuffer;
                 	const vector<string> *attrToReturn = indexDataConfig->getAttributesToReturn();
+
+                	//Return the attributes specified in the config file
+                	//If query has field list parameter we override attrToReturn using the attributes from query
+                	//otherwise we use attributes mentioned in config file
+                	if(attributesToReturnFromQuery.size() > 0){
+                	    attrToReturn = attributesToReturnFromQueryPtr;
+                	}
+
                 	genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-                			sbuffer, attrToReturn);
+                	                            sbuffer, attrToReturn, aclRoleId);
+
                 	// The class CustomizableJsonWriter allows us to
                 	// attach the data string to the JSON tree without parsing it.
                 	(*root)["results"][counter][global_internal_record.first] = sbuffer;
+                }else{
+                    //Return the attributes specified explicitly in the query otherwise no attributes are returned
+                    string stringBuffer;
+                    if(attributesToReturnFromQuery.size() > 0){
+                        genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
+                                stringBuffer, attributesToReturnFromQueryPtr, aclRoleId);
+                        (*root)["results"][counter][global_internal_record.first] = stringBuffer;
+                    }
+
                 }
                 ++counter;
             }
 
         } else // the query is including keywords:(1)only keywords (2)keywords+geo
         {
-
             for (unsigned i = start; i < end; ++i) {
             	unsigned internalRecordId = queryResults->getInternalRecordId(i);
             	StoredRecordBuffer inMemoryData = indexer->getInMemoryData(internalRecordId);
@@ -235,22 +290,42 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
                 if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_STORED_ATTR) {
                     unsigned internalRecordId = queryResults->getInternalRecordId(i);
                     string sbuffer;
+
+                    //This case executes when all the attributes are to be returned. However we let the user
+                    //override if field list parameter is given in query
                     genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-                    		 sbuffer);
+                                                sbuffer, attributesToReturnFromQueryPtr, aclRoleId);
+
                     // The class CustomizableJsonWriter allows us to
                     // attach the data string to the JSON tree without parsing it.
                     (*root)["results"][counter][global_internal_record.first] = sbuffer;
                 } else if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SELECTED_ATTR){
                 	unsigned internalRecordId = queryResults->getInternalRecordId(i);
-                	string sbuffer;
-                	const vector<string> *attrToReturn = indexDataConfig->getAttributesToReturn();
-                	genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-                			sbuffer, attrToReturn);
+                    string sbuffer;
+                    const vector<string> *attrToReturn = indexDataConfig->getAttributesToReturn();
+
+                    //Return the attributes specified in the config file
+                    //If query has field list parameter we override attrToReturn using the attributes from query
+                    //otherwise we use attributes mentioned in config file
+                    if(attributesToReturnFromQuery.size() > 0){
+                        attrToReturn = attributesToReturnFromQueryPtr;
+                    }
+
+                    genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
+                                                sbuffer, attrToReturn, aclRoleId);
+
                 	// The class CustomizableJsonWriter allows us to
                 	// attach the data string to the JSON tree without parsing it.
                 	(*root)["results"][counter][global_internal_record.first] = sbuffer;
+                }else{
+                    //Return the attributes specified explicitly in the query otherwise no attributes are returned
+                    string stringBuffer;
+                    if(attributesToReturnFromQuery.size() > 0){
+                        genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
+                                stringBuffer, attributesToReturnFromQueryPtr, aclRoleId);
+                        (*root)["results"][counter][global_internal_record.first] = stringBuffer;
+                    }
                 }
-
                 string sbuffer = string();
                 sbuffer.reserve(1024);  //<< TODO: set this to max allowed snippet len
                 genSnippetJSONString(i, start, recordSnippets, sbuffer, queryResults);
@@ -401,6 +476,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printOneResultRetrievedById(e
         const CoreInfo_t *indexDataConfig,
         const QueryResults *queryResults,
         const srch2is::Indexer *indexer,
+        const string & aclRoleId,
         const string & message,
         const unsigned ts1,
         struct timespec &tstart, struct timespec &tend){
@@ -408,6 +484,14 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printOneResultRetrievedById(e
     boost::shared_ptr<Json::Value> root(new Json::Value());
     // For logging
     string logQueries;
+
+    vector<string> attributesToReturnFromQuery = queryPlan.getAttrToReturn();
+    vector<string> *attributesToReturnFromQueryPtr;
+
+    if (attributesToReturnFromQuery.size() != 0)
+      attributesToReturnFromQueryPtr = &attributesToReturnFromQuery;
+    else
+      attributesToReturnFromQueryPtr = NULL;
 
     (*root)["searcher_time"] = ts1;
     (*root)["results"].resize(queryResults->getNumberOfResults());
@@ -428,17 +512,38 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printOneResultRetrievedById(e
         if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_STORED_ATTR) {
             unsigned internalRecordId = queryResults->getInternalRecordId(i);
             string sbuffer;
-            genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i), sbuffer);
+
+            //This case executes when all the attributes are to be returned. However we let the user
+            //override if field list parameter is given in query
+            genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
+                    sbuffer, attributesToReturnFromQueryPtr, aclRoleId);
+
             (*root)["results"][counter][global_internal_record.first] = sbuffer;
         } else if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SELECTED_ATTR){
-        	unsigned internalRecordId = queryResults->getInternalRecordId(i);
-        	string sbuffer;
-        	const vector<string> *attrToReturn = indexDataConfig->getAttributesToReturn();
-        	genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-        			sbuffer, attrToReturn);
-        	// The class CustomizableJsonWriter allows us to
-        	// attach the data string to the JSON tree without parsing it.
-        	(*root)["results"][counter][global_internal_record.first] = sbuffer;
+            unsigned internalRecordId = queryResults->getInternalRecordId(i);
+            string sbuffer;
+            const vector<string> *attrToReturn = indexDataConfig->getAttributesToReturn();
+
+            //Return the attributes specified in the config file
+            //If query has field list parameter we override attrToReturn using the attributes from query
+            //otherwise we use attributes mentioned in config file
+            if(attributesToReturnFromQuery.size() > 0){
+                attrToReturn = attributesToReturnFromQueryPtr;
+            }
+            genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
+                                        sbuffer, attrToReturn, aclRoleId);
+
+            // The class CustomizableJsonWriter allows us to
+            // attach the data string to the JSON tree without parsing it.
+            (*root)["results"][counter][global_internal_record.first] = sbuffer;
+        }else{
+            //Return the attributes specified explicitly in the query otherwise no attributes are returned
+            string stringBuffer;
+            if(attributesToReturnFromQuery.size() > 0){
+                genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
+                        stringBuffer, attributesToReturnFromQueryPtr, aclRoleId);
+                (*root)["results"][counter][global_internal_record.first] = stringBuffer;
+            }
         }
         ++counter;
     }
@@ -461,15 +566,51 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printOneResultRetrievedById(e
 }
 
 void HTTPRequestHandler::genRecordJsonString(const srch2is::Indexer *indexer, StoredRecordBuffer buffer,
-		const string& extrnalRecordId, string& sbuffer){
+		const string& extrnalRecordId, string& sbuffer, const string& aclRoleId){
 	genRecordJsonString(indexer, buffer, extrnalRecordId,
-	                    		 sbuffer, NULL);
+	                    		 sbuffer, NULL, aclRoleId);
 }
 void HTTPRequestHandler::genRecordJsonString(const srch2is::Indexer *indexer, StoredRecordBuffer buffer,
-		const string& externalRecordId, string& sbuffer, const vector<string>* attrToReturn){
+		const string& externalRecordId, string& sbuffer, const vector<string>* attrToReturn,
+		const string& aclRoleId){
+
+	vector<string>  accessibleAttrsList;
+	// perform access control check on fields to be returned to a user.
+	if (attrToReturn == NULL) {
+		// attributes to return are not specified. Hence, Go over the fields in the schema and check
+		// whether they are accessible for a given role id.
+
+		const Schema *schema = indexer->getSchema();
+		std::map<std::string, unsigned>::const_iterator iter =
+				schema->getSearchableAttribute().begin();
+		// 1. Searchable fields in schema
+		for ( ; iter != schema->getSearchableAttribute().end(); iter++) {
+			if (indexer->getAttributeAcl().isSearchableFieldAccessibleForRole(aclRoleId, iter->first)) {
+				accessibleAttrsList.push_back(iter->first);
+			}
+		}
+		// 2. Refining fields in schema
+		iter = schema->getRefiningAttributes()->begin();
+		for ( ; iter != schema->getRefiningAttributes()->end(); iter++) {
+			if (indexer->getAttributeAcl().isRefiningFieldAccessibleForRole(aclRoleId, iter->first)) {
+				accessibleAttrsList.push_back(iter->first);
+			}
+		}
+
+	} else {
+		// if attributes to returned are specified then verify whether these attributes are accessible
+		for (unsigned i = 0; i < attrToReturn->size(); ++i) {
+			const string & fieldName = attrToReturn->operator[](i);
+			if (indexer->getAttributeAcl().isRefiningFieldAccessibleForRole(aclRoleId, fieldName) ||
+			    indexer->getAttributeAcl().isSearchableFieldAccessibleForRole(aclRoleId, fieldName)) {
+				accessibleAttrsList.push_back(fieldName);
+			}
+		}
+	}
 	Schema * storedSchema = Schema::create();
 	RecordSerializerUtil::populateStoredSchema(storedSchema, indexer->getSchema());
-	RecordSerializerUtil::convertCompactToJSONString(storedSchema, buffer, externalRecordId, sbuffer, attrToReturn);
+	RecordSerializerUtil::convertCompactToJSONString(storedSchema, buffer, externalRecordId, sbuffer,
+			&accessibleAttrsList);
 	delete storedSchema;
 }
 
@@ -547,13 +688,15 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
         Srch2Server *server) {
     /* Yes, we are expecting a post request */
 
+    Json::Value response(Json::objectValue);
+    bool isSuccess = true;
     switch (req->type) {
     case EVHTTP_REQ_PUT: {
         size_t length = EVBUFFER_LENGTH(req->input_buffer);
 
         if (length == 0) {
-            bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "BAD REQUEST",
-                    "{\"message\":\"http body is empty\"}");
+            isSuccess = false;
+            response[JSON_MESSAGE] = "http body is empty";
             Logger::warn("http body is empty");
             break;
         }
@@ -562,7 +705,6 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
 
         //std::cout << "length:[" << length << "][" << string(post_data) << "]" << std::endl;
 
-        std::stringstream log_str;
 
         // Parse example data
         Json::Value root;
@@ -570,77 +712,310 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
         bool parseSuccess = reader.parse(post_data, root, false);
 
         if (parseSuccess == false) {
-            log_str << "JSON object parse error";
+            isSuccess = false;
+            response[JSON_MESSAGE] = "JSON object parsing error";
+            Logger::warn("JSON object parse error");
+            break;
         } else {
             Record *record = new Record(server->indexer->getSchema());
 
+            Json::Value insert_responses(Json::arrayValue);
+            // append to each response
             if(root.type() == Json::arrayValue) { // The input is an array of JSON objects.
                 // Iterates over the sequence elements.
+                insert_responses.resize(root.size());
                 for ( int index = 0; index < root.size(); ++index ) {
                     Json::Value defaultValueToReturn = Json::Value("");
                     const Json::Value doc = root.get(index,
                                                 defaultValueToReturn);
 
-                    IndexWriteUtil::_insertCommand(server->indexer,
-                            server->indexDataConfig, doc, record, log_str);
-                    record->clear();
+                    vector<string> roleIds;
+                    // check if there is roleId in the query or not
+					std::stringstream log_str;
+                    if( JSONRecordParser::_extractRoleIds(roleIds, doc, server->indexDataConfig, log_str) ){
+                    	if(server->roleCore != NULL){
+                    		// add role ids to the record object
+                    		 addRoleIdsToRecord(roleIds, server, req, record, log_str);
+                    	}else{
+                    		Logger::error(
+                    				"error: %s does not have any role core.",server->getCoreName().c_str());
+                    		response[JSON_MESSAGE] = "error:" + server->getCoreName() + " does not have any role core.";
+                    		response[JSON_LOG] = log_str.str();
+                    		bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
+                    				global_customized_writer.write(response));
+                    		return;
+                    	}
+                    }
 
-                    if (index < root.size() - 1)
-                        log_str << ",";
+                    Json::Value each_response = IndexWriteUtil::_insertCommand(server->indexer,
+                                                server->indexDataConfig, doc, record );
+                    each_response["acl_log"] = log_str.str();
+                    insert_responses[index] = each_response;
+
+                    record->clear();
                 }
             } else {  // only one json object needs to be inserted
                 const Json::Value doc = root;
-                IndexWriteUtil::_insertCommand(server->indexer,
-                        server->indexDataConfig, doc, record, log_str);
+                vector<string> roleIds;
+				std::stringstream log_str;
+                // check if there is roleId in the query or not
+                if( JSONRecordParser::_extractRoleIds(roleIds, doc, server->indexDataConfig, log_str) ){
+                	if(server->roleCore != NULL){
+                		// add role ids to the record object
+                		addRoleIdsToRecord(roleIds, server, req, record, log_str);
+
+                	}else{
+                		Logger::error(
+                				"error: %s does not have any role core.",server->getCoreName().c_str());
+                		response[JSON_MESSAGE] = "error:" + server->getCoreName() + " does not have any role core.";
+                		response[JSON_LOG] = log_str.str();
+                		bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
+                				global_customized_writer.write(response));
+                		return;
+                	}
+                }
+
+                Json::Value each_response = IndexWriteUtil::_insertCommand(server->indexer,
+                        server->indexDataConfig, doc, record);
+                each_response["acl_log"] = log_str.str();
+                insert_responses.append(each_response);
+
                 record->clear();
             }
             delete record;
+            response[JSON_LOG] = insert_responses;
+            response[JSON_MESSAGE] = "The insert was processed successfully";
         }
-        //std::cout << log_str.str() << std::endl;
-        Logger::info("%s", log_str.str().c_str());
-
-        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
-                "{\"message\":\"The batch was processed successfully\",\"log\":["
-                        + log_str.str() + "]}\n");
+        Logger::info("%s", global_customized_writer.write(response).c_str());
         break;
     }
     case EVHTTP_REQ_DELETE: {
-        std::stringstream log_str;
 
         evkeyvalq headers;
         evhttp_parse_query(req->uri, &headers);
 
-        IndexWriteUtil::_deleteCommand_QueryURI(server->indexer,
-                server->indexDataConfig, headers, log_str);
+        // if this core is a role core we should delete this record's id from the permissionMap of the resource cores
+        for(unsigned i = 0 ; i < server->resourceCores.size() ; ++i ){
+        	IndexWriteUtil::_deleteRoleRecord(server->resourceCores[i]->indexer, server->indexDataConfig->getPrimaryKey(), headers);
+        }
 
-        Logger::info("%s", log_str.str().c_str());
-        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
-                "{\"message\":\"The batch was processed successfully\",\"log\":["
-                        + log_str.str() + "]}\n");
+        Json::Value deleteResponse = IndexWriteUtil::_deleteCommand_QueryURI(server->indexer,
+                server->indexDataConfig, headers);
+        response[JSON_MESSAGE] = "The delete was processed successfully";
+        response[JSON_LOG] = wrap_with_json_array(deleteResponse);
 
+        Logger::info("%s", global_customized_writer.write(response).c_str());
         // Free the objects
         evhttp_clear_headers(&headers);
         break;
     }
     default: {
-        Logger::error(
-                "error: The request has an invalid or missing argument. See Srch2 API documentation for details");
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
-                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
+        response_to_invalid_request(req, response);
+        return;
     }
     };
+
+    if (isSuccess){
+        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", global_customized_writer.write(response));
+    } else {
+        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "BAD REQUEST", global_customized_writer.write(response));
+    }
+
+}
+
+// This function first checks if all the role ids exist, then adds them to the record object
+void HTTPRequestHandler::addRoleIdsToRecord(vector<string> &roleIds, Srch2Server* server, evhttp_request *req, Record* record, std::stringstream &log_str){
+	vector<string> removedIds;
+	for(vector<string>::iterator i = roleIds.begin() ; i != roleIds.end() ; ){
+		INDEXLOOKUP_RETVAL returnValue = server->roleCore->indexer->lookupRecord(*i);
+		if(returnValue == LU_ABSENT_OR_TO_BE_DELETED){
+			// there is no record in role core with this id
+			// we should remove this id from roleIds
+			removedIds.push_back(*i);
+			i = roleIds.erase(i);
+		}else{
+			// there is a record in role core with this id
+			// we should add this id to the record's roleids
+			record->addRoleId(*i);
+			++i;
+		}
+
+	}
+	string removedRoleIds = "";
+	for(unsigned i = 0 ; i < removedIds.size() ; ++i){
+		removedRoleIds = removedRoleIds + ", " + removedIds[i];
+	}
+
+	if(removedIds.size() != 0){
+		log_str << "Warning: No record in " + server->roleCore->getCoreName() + " with these primary keys: [" << removedRoleIds << "]";
+	}
+}
+
+// this function gets the acl command and does the appropriate operations
+// the acl command could be add, append or delete
+void HTTPRequestHandler::aclEditRolesOfRecord(evhttp_request *req, Srch2Server *server, srch2::instantsearch::RecordAclCommandType commandType){
+
+	Json::Value response(Json::objectValue);
+	bool isSuccess = true;
+	Json::Value edit_responses(Json::arrayValue);
+
+	if(server->roleCore != NULL){ // this core has a role core
+
+		size_t length = EVBUFFER_LENGTH(req->input_buffer);
+
+		if (length == 0) {
+			isSuccess = false;
+			response[JSON_MESSAGE] = "http body is empty";
+			Logger::warn("http body is empty");
+		}
+
+		const char *post_data = (char *) EVBUFFER_DATA(req->input_buffer);
+
+		// Parse example data
+		Json::Value root;
+		Json::Reader reader;
+		bool parseSuccess = reader.parse(post_data, root, false);
+
+		if (parseSuccess == false) {
+			isSuccess = false;
+			response[JSON_MESSAGE] = "JSON object parsing error";
+			Logger::warn("JSON object parse error");
+		}else{
+			if(root.type() == Json::arrayValue) { // The input is an array of JSON objects.
+				vector<string> roleIds;
+				vector<string> removedIds;
+				string removedRoleIds = "";
+				for ( int index = 0; index < root.size(); ++index ) {
+					Json::Value defaultValueToReturn = Json::Value("");
+					const Json::Value doc = root.get(index,
+							defaultValueToReturn);
+					string primaryKeyID;
+					std::stringstream log_str;
+					// extract all the role ids from the query
+					if( JSONRecordParser::_extractResourceAndRoleIds(roleIds, primaryKeyID, doc, server->indexDataConfig, log_str) ){
+						// check that the role core should have all the records with these role ids
+						for(vector<string>::iterator i = roleIds.begin() ; i != roleIds.end() ; ){
+							INDEXLOOKUP_RETVAL returnValue = server->roleCore->indexer->lookupRecord(*i);
+							if(returnValue == LU_ABSENT_OR_TO_BE_DELETED){
+								// there is no record in role core with this id
+								// we should remove this id from roleIds
+								removedIds.push_back(*i);
+								i = roleIds.erase(i);
+							}else{
+								++i;
+							}
+						}
+
+						for(unsigned i = 0 ; i < removedIds.size() ; ++i){
+							removedRoleIds = removedRoleIds + ", " + removedIds[i];
+						}
+
+						if(removedIds.size() != 0){
+							log_str << "Warning: No record in " + server->roleCore->getCoreName() + " with these primary keys: [" << removedRoleIds << "]";
+						}
+
+						if(roleIds.size() != 0){
+							log_str << global_customized_writer.write(IndexWriteUtil::_aclEditRoles(server->indexer, primaryKeyID, roleIds, commandType));
+						}
+					}
+
+					roleIds.clear();
+					removedIds.clear();
+					removedRoleIds = "";
+					edit_responses[index] = log_str.str();
+				}
+			}else{ // The input is only one JSON object.
+				const Json::Value doc = root;
+				vector<string> roleIds;
+				vector<string> removedIds;
+				string removedRoleIds = "";
+				string primaryKeyID;
+				std::stringstream log_str;
+				// extract all the role ids from the query
+				if( JSONRecordParser::_extractResourceAndRoleIds(roleIds, primaryKeyID, doc, server->indexDataConfig, log_str) ){
+					// check that the role core should have all the records with these role ids
+					for(vector<string>::iterator i = roleIds.begin() ; i != roleIds.end() ; ){
+						INDEXLOOKUP_RETVAL returnValue = server->roleCore->indexer->lookupRecord(*i);
+						if(returnValue == LU_ABSENT_OR_TO_BE_DELETED){
+							// there is no record in role core with this id
+							// we should remove this id from roleIds
+							removedIds.push_back(*i);
+							i = roleIds.erase(i);
+						}else{
+							++i;
+						}
+					}
+
+					for(unsigned i = 0 ; i < removedIds.size() ; ++i){
+						removedRoleIds = removedRoleIds + ", " + removedIds[i];
+					}
+
+					if(removedIds.size() != 0){
+						log_str << "Warning: No record in " + server->roleCore->getCoreName() + " with these primary keys: [" << removedRoleIds << "]";
+					}
+
+					if(roleIds.size() != 0){
+						log_str << global_customized_writer.write(IndexWriteUtil::_aclEditRoles(server->indexer, primaryKeyID, roleIds, commandType));
+					}
+				}
+				edit_responses.append(log_str.str());
+			}
+		}
+
+	}else{
+		Logger::error(
+				"error: %s does not have any role core.",server->getCoreName().c_str());
+		response[JSON_MESSAGE] = "error:" + server->getCoreName() + " does not have any role core.";
+		bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
+				global_customized_writer.write(response));
+		return;
+	}
+
+	response[JSON_LOG] = edit_responses;
+    if (isSuccess){
+        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", global_customized_writer.write(response));
+    } else {
+        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "BAD REQUEST", global_customized_writer.write(response));
+    }
+}
+
+// overwrites role ids in a record's access list
+// example : Suppose we have a resource core called "product" with a primary key attribute called "pid then the query is like:
+// curl "http://localhost:8081/product/aclRecordRoleAdd" -i -X PUT -d '{“pid”: “1234", “roleId”: ["33", "45"]}'
+//
+void HTTPRequestHandler::aclAddRolesToRecord(evhttp_request *req, Srch2Server *server){
+	aclEditRolesOfRecord(req, server, srch2::instantsearch::AddRoles);
+}
+
+// add role ids to a record
+// example : Suppose we have a resource core called "product" with a primary key attribute called "pid then the query is like:
+// curl "http://localhost:8081/product/aclRecordRoleAppend" -i -X PUT -d '{“pid”: “1234", “roleId”: ["33", "45"]}'
+//
+void HTTPRequestHandler::aclAppendRolesToRecord(evhttp_request *req, Srch2Server *server){
+	aclEditRolesOfRecord(req, server, srch2::instantsearch::AppendRoles);
+}
+
+// delete role ids from a records access list
+// example : Suppose we have a resource core called "product" with a primary key attribute called "pid then the query is like:
+// curl "http://localhost:8081/product/aclRecordRoleDelete" -i -X PUT -d '{“pid”: “1234", “roleId”: ["33", "45"]}'
+//
+void HTTPRequestHandler::aclDeleteRolesFromRecord(evhttp_request *req, Srch2Server *server){
+	aclEditRolesOfRecord(req, server, srch2::instantsearch::DeleteRoles);
 }
 
 void HTTPRequestHandler::updateCommand(evhttp_request *req,
         Srch2Server *server) {
     /* Yes, we are expecting a post request */
+
+    Json::Value response(Json::objectValue);
+    bool isSuccess = true;
     switch (req->type) {
     case EVHTTP_REQ_PUT: {
         size_t length = EVBUFFER_LENGTH(req->input_buffer);
 
         if (length == 0) {
-            bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "BAD REQUEST",
-                    "{\"message\":\"http body is empty\"}");
+            isSuccess = false;
+            response[JSON_MESSAGE] = "http body is empty";
             Logger::warn("http body is empty");
             break;
         }
@@ -649,105 +1024,90 @@ void HTTPRequestHandler::updateCommand(evhttp_request *req,
 
         //std::cout << "length:[" << length << "][" << string(post_data) << "]" << std::endl;
 
-        std::stringstream log_str;
-
         // Parse example data
         Json::Value root;
         Json::Reader reader;
         bool parseSuccess = reader.parse(post_data, root, false);
 
         if (parseSuccess == false) {
-            log_str << "JSON object parse error";
+            isSuccess = false;
+            response[JSON_MESSAGE] = "JSON object parse error";
+            Logger::warn( response[JSON_MESSAGE].asCString());
         } else {
             evkeyvalq headers;
             evhttp_parse_query(req->uri, &headers);
             Record *record = new Record(server->indexer->getSchema());
 
+            Json::Value update_responses(Json::arrayValue);
             if (root.type() == Json::arrayValue) {
                 //the record parameter is an array of json objects
+                update_responses.resize(root.size());
                 for(Json::UInt index = 0; index < root.size(); index++) {
                     Json::Value defaultValueToReturn = Json::Value("");
                     const Json::Value doc = root.get(index,
                                                 defaultValueToReturn);
 
-                    IndexWriteUtil::_updateCommand(server->indexer,
-                            server->indexDataConfig, headers, doc, record,
-                            log_str);
+                    update_responses[index] = 
+                        IndexWriteUtil::_updateCommand(server->indexer,
+                            server->indexDataConfig, headers, doc, record);
 
                     record->clear();
-
-                    if (index < root.size() - 1)
-                        log_str << ",";
                 }
             } else {
                 // the record parameter is a single json object
                 const Json::Value doc = root;
-
-                IndexWriteUtil::_updateCommand(server->indexer,
-                        server->indexDataConfig, headers, doc, record,
-                        log_str);
-
+                update_responses.append(IndexWriteUtil::_updateCommand(server->indexer,
+                        server->indexDataConfig, headers, doc, record));
                 record->clear();
             }
 
             delete record;
             evhttp_clear_headers(&headers);
+            response[JSON_LOG] = update_responses;
+            response[JSON_MESSAGE] = "The update was processed successfully";
         }
-        //std::cout << log_str.str() << std::endl;
-        Logger::info("%s", log_str.str().c_str());
-
-        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
-                "{\"message\":\"The batch was processed successfully\",\"log\":["
-                        + log_str.str() + "]}\n");
-
+        Logger::info("%s", global_customized_writer.write(response).c_str());
         break;
     }
     default: {
-        Logger::error(
-                "The request has an invalid or missing argument. See Srch2 API documentation for details");
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
-                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
+        response_to_invalid_request(req, response);
+        return;
     }
     };
+
+    if (isSuccess){
+        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", global_customized_writer.write(response));
+    } else {
+        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "BAD REQUEST", global_customized_writer.write(response));
+    }
 }
 
 void HTTPRequestHandler::saveCommand(evhttp_request *req, Srch2Server *server) {
     /* Yes, we are expecting a post request */
+    Json::Value response(Json::objectValue);
     switch (req->type) {
     case EVHTTP_REQ_PUT: {
-        std::stringstream log_str;
-        IndexWriteUtil::_saveCommand(server->indexer, log_str);
+        response[JSON_LOG] = wrap_with_json_array( IndexWriteUtil::_saveCommand(server->indexer));
+        response[JSON_MESSAGE] = "The indexes have been saved to disk successfully";
 
-        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
-                "{\"message\":\"The indexes have been saved to disk successfully\", \"log\":["
-                        + log_str.str() + "]}\n");
-        Logger::info("%s", log_str.str().c_str());
+        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", global_customized_writer.write(response));
+        Logger::info("%s", response[JSON_MESSAGE].asString().c_str());
         break;
     }
     default: {
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
-                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
-        Logger::error(
-                "The request has an invalid or missing argument. See Srch2 API documentation for details");
+        response_to_invalid_request(req, response);
+        return;
     }
     };
 }
 
 void HTTPRequestHandler::shutdownCommand(evhttp_request *req, const CoreNameServerMap_t *coreNameServerMap){
     /* Yes, we are expecting a post request */
+    Json::Value response(Json::objectValue);
     switch (req->type) {
     case EVHTTP_REQ_PUT: {
         // graceful shutdown
         // since the main process is catching the kill signal, we can simply send the kill to itself
-#ifdef ANDROID
-        // The kill signal seems not catchable under Android. We need to save the index first
-        for( CoreNameServerMap_t::const_iterator it = coreNameServerMap->begin(); 
-            it != coreNameServerMap->end(); ++it){
-            std::stringstream log_str;
-            IndexWriteUtil::_saveCommand(it->second->indexer, log_str);
-            Logger::info("%s", log_str.str().c_str());
-        }
-#endif
         bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
                 "{\"message\":\"Bye\"}\n");
         Logger::info("Server is shuting down");
@@ -755,10 +1115,8 @@ void HTTPRequestHandler::shutdownCommand(evhttp_request *req, const CoreNameServ
         break;
     }
     default: {
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
-                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
-        Logger::error(
-                "The request has an invalid or missing argument. See Srch2 API documentation for details");
+        response_to_invalid_request(req, response);
+        return;
     }
     };
 }
@@ -770,6 +1128,7 @@ void HTTPRequestHandler::shutdownCommand(evhttp_request *req, const CoreNameServ
 // The purpose of this function is to let srch2 engine point to the new-created logger file "logger.txt"
 void HTTPRequestHandler::resetLoggerCommand(evhttp_request *req, Srch2Server *server) {
     //  TODO: we will need to consider concurrency control next.
+    Json::Value response(Json::objectValue);
     switch(req->type) {
     case EVHTTP_REQ_PUT: {
         // create a FILE* pointer to point to the new logger file "logger.txt"
@@ -777,25 +1136,23 @@ void HTTPRequestHandler::resetLoggerCommand(evhttp_request *req, Srch2Server *se
                     "a");
 
         if (logFile == NULL) {
+            response[JSON_MESSAGE] = "The logger file repointing failed. Could not create a new logger file";
+            response[JSON_LOG] = wrap_with_json_array( server->indexDataConfig->getHTTPServerAccessLogFile());
+
             Logger::error("Reopen Log file %s failed.",
                     server->indexDataConfig->getHTTPServerAccessLogFile().c_str());
-            bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "REQUEST FAILED",
-                "{\"message\":\"The logger file repointing failed. Could not create new logger file\", \"log\":\""
-                         + server->indexDataConfig->getHTTPServerAccessLogFile() + "\"}\n");
+            bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "REQUEST FAILED", global_customized_writer.write(response));
         } else {
             FILE * oldLogger = Logger::swapLoggerFile(logFile);
             fclose(oldLogger);
-            bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
-                "{\"message\":\"The logger file repointing succeeded\", \"log\":\""
-                         + server->indexDataConfig->getHTTPServerAccessLogFile() + "\"}\n");
+            response[JSON_MESSAGE] = "The logger file repointing succeeded";
+            response[JSON_LOG] = wrap_with_json_array(server->indexDataConfig->getHTTPServerAccessLogFile());
+            bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", global_customized_writer.write(response));
         }
         break;
     }
     default: {
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
-                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
-        Logger::error(
-                "The request has an invalid or missing argument. See Srch2 API documentation for details");
+        response_to_invalid_request(req, response);
     }
     };
 }
@@ -804,6 +1161,7 @@ void HTTPRequestHandler::resetLoggerCommand(evhttp_request *req, Srch2Server *se
 // exportCommand: if search-response-format is 0 or 2, we keep the compressed Json data in Forward Index, we can uncompress the data and export to a file
 void HTTPRequestHandler::exportCommand(evhttp_request *req, Srch2Server *server) {
     /* Yes, we are expecting a post request */
+    Json::Value response(Json::objectValue);
     switch (req->type) {
     case EVHTTP_REQ_PUT: {
         // if search-response-format is 0 or 2
@@ -816,29 +1174,24 @@ void HTTPRequestHandler::exportCommand(evhttp_request *req, Srch2Server *server)
                 if(checkDirExistence(exportedDataFileName)){
                     exportedDataFileName = "export_data.json";
                 }
-                IndexWriteUtil::_exportCommand(server->indexer, exportedDataFileName, log_str);
+                Json::Value export_response = IndexWriteUtil::_exportCommand(server->indexer, exportedDataFileName);
 
-                bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
-                        "{\"message\":\"The indexed data has been exported to the file "+ string(exportedDataFileName) +" successfully.\", \"log\":["
-                                + log_str.str() + "]}\n");
-                Logger::info("%s", log_str.str().c_str());
+                response[JSON_MESSAGE] ="The indexed data has been exported to the file "+ string(exportedDataFileName) +" successfully."; 
+                response[JSON_LOG] = wrap_with_json_array(export_response);
+                std::string str_response = global_customized_writer.write( response);
+                bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", str_response);
+                Logger::info("%s", str_response.c_str());
             }else {
-                bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
-                        "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
-                Logger::error(
-                        "The request has an invalid or missing argument. See Srch2 API documentation for details");
+                response_to_invalid_request(req, response);
             }
         } else{
-            bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
-                    "{\"message\":\"The indexed data failed to export to disk, The request need to set search-response-format to be 0 or 2\"}\n");
+            response[JSON_MESSAGE] = "The indexed data failed to export to disk, The request need to set search-response-format to be 0 or 2";
+            bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", global_customized_writer.write(response));
         }
         break;
     }
     default: {
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
-                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
-        Logger::error(
-                "The request has an invalid or missing argument. See Srch2 API documentation for details");
+        response_to_invalid_request(req, response);
     }
     };
 }
@@ -848,10 +1201,19 @@ void HTTPRequestHandler::infoCommand(evhttp_request *req, Srch2Server *server,
     evkeyvalq headers;
     evhttp_parse_query(req->uri, &headers);
 
-    string combinedInfo = "{" + server->indexer->getIndexHealth() + ", "
-        + "\"version\":\"" + versioninfo + "\"}";
+    const char* c_key = "engine_status";
+    Json::Value response(Json::objectValue);
+    Json::Value root;
+    Json::Reader reader;
+    bool parseSuccess = reader.parse(server->indexer->getIndexHealth(), root);
+    if (parseSuccess){
+        response[c_key] = root[c_key];
+    } else {
+        response[c_key] = server->indexer->getIndexHealth();
+    }
+    response["version"] = versioninfo;
 
-    bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", combinedInfo, headers);
+    bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", global_customized_writer.write(response) , headers);
     evhttp_clear_headers(&headers);
 }
 
@@ -860,12 +1222,11 @@ void HTTPRequestHandler::lookupCommand(evhttp_request *req,
     evkeyvalq headers;
     evhttp_parse_query(req->uri, &headers);
 
+    Json::Value response(Json::objectValue);
     const CoreInfo_t *indexDataContainerConf = server->indexDataConfig;
     string primaryKeyName = indexDataContainerConf->getPrimaryKey();
     const char *pKeyParamName = evhttp_find_header(&headers,
             primaryKeyName.c_str());
-
-    std::stringstream response_msg;
 
     if (pKeyParamName) {
         size_t sz;
@@ -874,30 +1235,31 @@ void HTTPRequestHandler::lookupCommand(evhttp_request *req,
         const std::string primaryKeyStringValue = string(pKeyParamName_cstar);
         delete pKeyParamName_cstar;
 
-        response_msg << "{\"rid\":\"" << primaryKeyStringValue
-                << "\",\"lookup\":\"";
+        response["rid"] = primaryKeyStringValue;
 
         //lookup the record on the index
+        const string LOG = "lookup";
         switch (server->indexer->lookupRecord(primaryKeyStringValue)) {
         case srch2is::LU_ABSENT_OR_TO_BE_DELETED: {
-            response_msg << "absent or to be deleted\"}";
+            response[LOG] = "absent or to be deleted";
             break;
         }
         case srch2is::LU_TO_BE_INSERTED: {
-            response_msg << "to be inserted\"}";
+            response[LOG] = "to be inserted";
             break;
         }
         default: // LU_PRESENT_IN_READVIEW_AND_WRITEVIEW
         {
-            response_msg << "present in readview and writeview\"}";
+            response[LOG] = "present in readview and writeview";
         }
         };
     } else {
-        response_msg
-                << "{\"rid\":\"NULL\",\"lookup\":\"failed\",\"reason\":\"no record with given primary key\"}";
+        response["rid"] = "NULL";
+        response["lookup"] = "failed";
+        response["reason"] = "no record with given primary key";
     }
 
-    bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", response_msg.str(), headers);
+    bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", global_customized_writer.write(response), headers);
     evhttp_clear_headers(&headers);
 }
 
@@ -916,17 +1278,154 @@ void decodeAmpersand(const char *uri, unsigned len, string& decodeUri) {
 	}
 }
 
+/*
+ *   Wrapper layer API to handle ACL operations such as insert, delete, and append.
+ *   example url :
+ *   http://<ip>:<port>/aclAttributeRoleAppend -X PUT -d { "attributes": "f1,f2", "roleId": "r1"}
+ *   http://<ip>:<port>/aclAttributeRoleAdd -X PUT -d { "attributes": "f1,f2", "roleId": "r2"}
+ *   http://<ip>:<port>/aclAttributeRoleDelete -X PUT -d { "attributes": "f2", "roleId": "r2"}
+ */
+void HTTPRequestHandler::attributeAclModify(evhttp_request *req, Srch2Server *server) {
+	Json::Value response(Json::objectValue);
+	switch (req->type) {
+	    case EVHTTP_REQ_PUT: {
+	        size_t length = EVBUFFER_LENGTH(req->input_buffer);
+
+	        if (length == 0) {
+	            bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "BAD REQUEST",
+	                    "{\"message\":\"http body is empty\"}");
+	            Logger::warn("http body is empty");
+	            break;
+	        }
+
+	        // Identify the type of access control request.
+	        // req->uri should be "/aclAttributeRoleDelete" or "/aclAttributeRoleAppend"
+	        // or "/aclAttributeRoleAdd" for default core
+	        // Otherwise it should be /corename/aclAttributeRoleDelete etc.
+	        string uriString = req->uri;
+	        string apiName;
+	        AclActionType action;
+	        string corename = server->getCoreName();
+	        if (corename == ConfigManager::defaultCore) {
+	        	corename.clear();
+	        } else {
+	        	corename = "/" + corename;
+	        }
+	        if (uriString == corename + "/aclAttributeRoleAdd") {
+	        	action = ACL_ADD;
+	        	apiName = "aclAttributeRoleAdd";
+	        }
+	        else if (uriString == corename + "/aclAttributeRoleDelete") {
+	        	apiName = "aclAttributeRoleDelete";
+	        	action = ACL_DELETE;
+	        }
+	        else if (uriString == corename + "/aclAttributeRoleAppend") {
+	        	apiName = "aclAttributeRoleAppend";
+	        	action = ACL_APPEND;
+	        }
+	        else {
+	        	stringstream log_str;
+	        	log_str << "Error: Invalid access control HTTP request ='" << uriString << "'";
+	        	response[JSON_LOG] = log_str.str();
+	        	response[JSON_MESSAGE] = "The request was NOT processed successfully";
+	        	bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID DATA",
+	        			global_customized_writer.write(response));
+	        	Logger::info("%s", global_customized_writer.write(response).c_str());
+	        	return;
+	        }
+	        // get input JSON
+	        const char *post_data = (char *) EVBUFFER_DATA(req->input_buffer);
+
+	        std::stringstream log_str;
+	        Json::Value root;
+	        Json::Reader reader;
+	        bool parseSuccess = reader.parse(post_data, root, false);
+	        bool error = false;
+        	Json::Value aclAttributeResponses(Json::arrayValue);
+	        if (parseSuccess == false) {
+	            log_str << "API : "<< apiName << ", Error: JSON object parse error";
+	            response[JSON_LOG] = log_str.str();
+	            response[JSON_MESSAGE] = "The request was NOT processed successfully";
+	            bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID DATA",
+	            		global_customized_writer.write(response));
+	            Logger::info("%s", global_customized_writer.write(response).c_str());
+	            return;
+	        } else {
+	        	const AttributeAccessControl& attrAcl = server->indexer->getAttributeAcl();
+	        	if (root.type() == Json::arrayValue) {
+	        		aclAttributeResponses.resize(root.size());
+	        		//the record parameter is an array of json objects
+	        		for(Json::UInt index = 0; index < root.size(); index++) {
+	        			Json::Value defaultValueToReturn = Json::Value("");
+	        			const Json::Value doc = root.get(index,
+	        					defaultValueToReturn);
+
+	        			bool  status = attrAcl.processSingleJSONAttributeAcl(doc, action, apiName,
+	        					aclAttributeResponses[index]);
+	        			if (status == false) {
+	        				error = true;
+	        				break;
+	        			} else {
+	        				// if the response is empty then add success message.
+	        				if (aclAttributeResponses[index].asString().size() == 0){
+	        					stringstream ss;
+	        					ss << "API : " << apiName << ", Success";
+	        					aclAttributeResponses[index] = ss.str();
+	        				}
+	        			}
+	        		}
+	        	} else {
+	        		aclAttributeResponses.resize(1);
+	        		// the record parameter is a single json object
+	        		const Json::Value doc = root;
+	        		bool  status = attrAcl.processSingleJSONAttributeAcl(doc, action, apiName,
+	        				aclAttributeResponses[0]);
+	        		if (status == false) {
+	        			error = true;
+	        		} else {
+	        			// if the response is empty then add success message.
+	        			if (aclAttributeResponses[0].asString().size() == 0){
+	        				stringstream ss;
+	        				ss << "API : " << apiName << ", Success";
+	        				aclAttributeResponses[0] = ss.str();
+	        			}
+	        		}
+	        	}
+	        }
+
+	        if (!error) {
+	        	response[JSON_LOG] = aclAttributeResponses;
+	        	response[JSON_MESSAGE] = "The batch was processed successfully";
+	        	bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
+	        			global_customized_writer.write(response));
+	        } else {
+	        	response[JSON_LOG] = aclAttributeResponses;
+	        	response[JSON_MESSAGE] = "The request was NOT processed successfully";
+	        	bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID DATA",
+	        			global_customized_writer.write(response));
+	        }
+	        Logger::info("%s", global_customized_writer.write(response).c_str());
+	        break;
+	    }
+	    default:
+	    	response_to_invalid_request(req, response);
+
+	}
+}
+
 void HTTPRequestHandler::searchCommand(evhttp_request *req,
         Srch2Server *server) {
     evkeyvalq headers;
+
     std::stringstream errorStream;
     boost::shared_ptr<Json::Value> root = doSearchOneCore( req, server, &headers, errorStream );
 
     if (root ){
-        CustomizableJsonWriter writer (&global_internal_skip_tags);
-        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", writer.write(*root), headers);
+        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", global_customized_writer.write(*root), headers);
     } else{
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request", errorStream.str(), headers);
+        Json::Value errorResponse(Json::objectValue);
+        errorResponse["error"] = errorStream.str();
+        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request", global_customized_writer.write(errorResponse), headers);
     }
     evhttp_clear_headers(&headers);
 }
@@ -936,6 +1435,10 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
 
     boost::shared_ptr<Json::Value> root;
     ParsedParameterContainer paramContainer;
+
+    if(server->roleCore != NULL){
+    	paramContainer.hasRoleCore = true;
+    }
 
 //    string decodedUri;
 //    decodeAmpersand(req->uri, strlen(req->uri), decodedUri);
@@ -966,7 +1469,8 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
     const CoreInfo_t *indexDataContainerConf = server->indexDataConfig;
     //2. validate the query
     QueryValidator qv(*(server->indexer->getSchema()),
-            *(server->indexDataConfig), &paramContainer);
+            *(server->indexDataConfig), &paramContainer,
+            server->indexer->getAttributeAcl());
 
     bool valid = qv.validate();
 
@@ -979,7 +1483,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
     QueryRewriter qr(server->indexDataConfig,
             *(server->indexer->getSchema()),
             *(AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf)),
-            &paramContainer);
+            &paramContainer, server->indexer->getAttributeAcl());
     LogicalPlan logicalPlan;
     if(qr.rewrite(logicalPlan) == false){
         // if the query is not valid, print the error message to the response
@@ -1042,7 +1546,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
                 indexDataContainerConf, finalResults, logicalPlan.getExactQuery(),
                 server->indexer, logicalPlan.getOffset(),
                 finalResults->getNumberOfResults(),
-                finalResults->getNumberOfResults(),
+                finalResults->getNumberOfResults(), paramContainer.roleId,
                 paramContainer.getMessageString(), ts1, tstart, tend, highlightInfo, hlTime,
                 paramContainer.onlyFacets);
 
@@ -1060,7 +1564,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
                     indexDataContainerConf, finalResults,
                     logicalPlan.getExactQuery(), server->indexer,
                     logicalPlan.getOffset(), finalResults->getNumberOfResults(),
-                    finalResults->getNumberOfResults(),
+                    finalResults->getNumberOfResults(), paramContainer.roleId,
                     paramContainer.getMessageString(), ts1, tstart, tend , highlightInfo, hlTime,
                     paramContainer.onlyFacets);
         } else { // Case where you have return 10,20, but we got only 0,25 results and so return 10,20
@@ -1069,7 +1573,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
                     logicalPlan.getExactQuery(), server->indexer,
                     logicalPlan.getOffset(),
                     logicalPlan.getOffset() + logicalPlan.getNumberOfResultsToRetrieve(),
-                    finalResults->getNumberOfResults(),
+                    finalResults->getNumberOfResults(), paramContainer.roleId,
                     paramContainer.getMessageString(), ts1, tstart, tend, highlightInfo, hlTime,
                     paramContainer.onlyFacets);
         }
@@ -1082,6 +1586,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
                 indexDataContainerConf,
                 finalResults ,
                 server->indexer ,
+                paramContainer.roleId,
                 paramContainer.getMessageString() ,
                 ts1, tstart , tend);
         break;
@@ -1104,27 +1609,28 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
 void HTTPRequestHandler::searchAllCommand(evhttp_request *req, const CoreNameServerMap_t * coreNameServerMap){
 
     evkeyvalq headers;
-    Json::Value root;
-    std::stringstream errorStream;
+    Json::Value root(Json::objectValue);
     int cSuccess = 0;
     for( CoreNameServerMap_t::const_iterator it = coreNameServerMap->begin(); 
             it != coreNameServerMap->end(); ++it){
-        errorStream << "core " << it->first << ":";
+        std::stringstream errorStream;
         boost::shared_ptr<Json::Value> subRoot = doSearchOneCore( req, it->second, &headers, errorStream );
-        errorStream << std::endl;
+        Json::Value errorResponse(Json::objectValue);
+        errorResponse["error"] = errorStream.str();
 
         if (subRoot ){
             root[it->first] = *subRoot;
             cSuccess +=1;
+        } else {
+            root[it->first] = errorResponse;
         }
     }
 
     //We return SUCCESS as long as one of the cores succeeds.
     if (cSuccess > 0){
-        CustomizableJsonWriter writer (&global_internal_skip_tags);
-        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", writer.write(root), headers);
+        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", global_customized_writer.write(root), headers);
     } else {
-        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request", errorStream.str(), headers);
+        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request", global_customized_writer.write(root), headers);
     }
     evhttp_clear_headers(&headers);
 }
@@ -1142,6 +1648,7 @@ void HTTPRequestHandler::suggestCommand(evhttp_request *req, Srch2Server *server
     evkeyvalq headers;
     evhttp_parse_query(req->uri, &headers);
 
+    Json::Value response(Json::objectValue);
     QueryParser qp(headers);
 
     string keyword;
@@ -1169,8 +1676,9 @@ void HTTPRequestHandler::suggestCommand(evhttp_request *req, Srch2Server *server
 
     if(! isSyntaxValid){
         // if the query is not valid, print the error message to the response
+        response["error"] = messagesString;
         bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "Bad Request",
-                messagesString, headers);
+                global_customized_writer.write(response), headers);
         return;
     }
 
