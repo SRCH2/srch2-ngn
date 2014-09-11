@@ -840,7 +840,7 @@ void ShardManager::resolve(SaveMetadataNotification * saveDataNotif){
 	ack->setSrc(NodeOperationId(ShardManager::getCurrentNodeId()));
 	ack->setDest(saveDataNotif->getSrc());
 	if(ack->getDest().nodeId == ShardManager::getCurrentNodeId()){
-		this->stateMachine->handle(saveDataNotif);
+		this->stateMachine->handle(ack);
 	}else{
 		send(ack);
 	}
