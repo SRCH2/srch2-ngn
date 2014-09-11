@@ -29,7 +29,7 @@
     <ping>
         <ping-interval>2</ping-interval>
 
-        <ping-timeout>8</ping-timeout>
+        <ping-timeout>15</ping-timeout>
         <retry-count>3</retry-count>
     </ping>    
     <transport>
