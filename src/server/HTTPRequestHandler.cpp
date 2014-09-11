@@ -979,13 +979,16 @@ void HTTPRequestHandler::aclEditRolesOfRecord(evhttp_request *req, Srch2Server *
     }
 }
 
+
+// gets the acl command from the role view and modifies the access list.
+// curl "http://localhost:8081/product/AclAddRecordsForRoles" -i -X PUT -d '{"roleId": “1234", “resourceId”: ["33", "45"]}'
 void HTTPRequestHandler::aclModifyRecordsOfRoles(evhttp_request *req, Srch2Server *server, srch2::instantsearch::RecordAclCommandType commandType){
 
 	Json::Value response(Json::objectValue);
 	bool isSuccess = true;
-	Json::Value edit_responses(Json::arrayValue);
+	Json::Value responceOfAction(Json::arrayValue);
 
-	if(server->roleCore != NULL){ // this core has a role core
+	if(server->roleCore != NULL){ // this resource core has a role core
 
 		size_t length = EVBUFFER_LENGTH(req->input_buffer);
 
@@ -1017,7 +1020,9 @@ void HTTPRequestHandler::aclModifyRecordsOfRoles(evhttp_request *req, Srch2Serve
 							defaultValueToReturn);
 					string roleID;
 					std::stringstream log_str;
-					// extract all the role ids from the query
+					// 1- extract roleId and resourceIds from the request
+					// 2- check that a record with this roleId exists in the roleCore or not
+					// 3- check that records with these resourceIds exist in the resourceCore or not
 					if( JSONRecordParser::_extractRoleAndResourceIds(resourceIds, roleID, doc, server->indexDataConfig, log_str) ){
 						// check that the core should have a record with this id
 						INDEXLOOKUP_RETVAL returnValue = server->roleCore->indexer->lookupRecord(roleID);
@@ -1058,7 +1063,7 @@ void HTTPRequestHandler::aclModifyRecordsOfRoles(evhttp_request *req, Srch2Serve
 					resourceIds.clear();
 					removedIds.clear();
 					removedRoleIds = "";
-					edit_responses[index] = log_str.str();
+					responceOfAction[index] = log_str.str();
 				}
 			}else{ // The input is only one JSON object.
 				const Json::Value doc = root;
@@ -1103,7 +1108,7 @@ void HTTPRequestHandler::aclModifyRecordsOfRoles(evhttp_request *req, Srch2Serve
 						log_str << global_customized_writer.write(IndexWriteUtil::_aclModifyRecordsOfRole(server->indexer, roleID, resourceIds, commandType));
 					}
 				}
-				edit_responses.append(log_str.str());
+				responceOfAction.append(log_str.str());
 			}
 		}
 
@@ -1116,7 +1121,7 @@ void HTTPRequestHandler::aclModifyRecordsOfRoles(evhttp_request *req, Srch2Serve
 		return;
 	}
 
-	response[JSON_LOG] = edit_responses;
+	response[JSON_LOG] = responceOfAction;
     if (isSuccess){
         bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", global_customized_writer.write(response));
     } else {
@@ -1128,7 +1133,7 @@ void HTTPRequestHandler::aclModifyRecordsOfRoles(evhttp_request *req, Srch2Serve
 // example : Suppose we have a resource core called "product" with a primary key attribute called "pid then the query is like:
 // curl "http://localhost:8081/product/aclRecordRoleAdd" -i -X PUT -d '{“pid”: “1234", “roleId”: ["33", "45"]}'
 //
-void HTTPRequestHandler::aclAddRolesToRecord(evhttp_request *req, Srch2Server *server){
+void HTTPRequestHandler::aclAddRolesForRecord(evhttp_request *req, Srch2Server *server){
 	aclEditRolesOfRecord(req, server, srch2::instantsearch::AddRoles);
 }
 
@@ -1136,7 +1141,7 @@ void HTTPRequestHandler::aclAddRolesToRecord(evhttp_request *req, Srch2Server *s
 // example : Suppose we have a resource core called "product" with a primary key attribute called "pid then the query is like:
 // curl "http://localhost:8081/product/aclRecordRoleAppend" -i -X PUT -d '{“pid”: “1234", “roleId”: ["33", "45"]}'
 //
-void HTTPRequestHandler::aclAppendRolesToRecord(evhttp_request *req, Srch2Server *server){
+void HTTPRequestHandler::aclAppendRolesForRecord(evhttp_request *req, Srch2Server *server){
 	aclEditRolesOfRecord(req, server, srch2::instantsearch::AppendRoles);
 }
 
@@ -1144,21 +1149,21 @@ void HTTPRequestHandler::aclAppendRolesToRecord(evhttp_request *req, Srch2Server
 // example : Suppose we have a resource core called "product" with a primary key attribute called "pid then the query is like:
 // curl "http://localhost:8081/product/aclRecordRoleDelete" -i -X PUT -d '{“pid”: “1234", “roleId”: ["33", "45"]}'
 //
-void HTTPRequestHandler::aclDeleteRolesFromRecord(evhttp_request *req, Srch2Server *server){
+void HTTPRequestHandler::aclDeleteRolesForRecord(evhttp_request *req, Srch2Server *server){
 	aclEditRolesOfRecord(req, server, srch2::instantsearch::DeleteRoles);
 }
 
 
 
-void HTTPRequestHandler::aclAddRecordsToRole(evhttp_request *req, Srch2Server *server){
+void HTTPRequestHandler::aclAddRecordsForRole(evhttp_request *req, Srch2Server *server){
 	aclModifyRecordsOfRoles(req, server, srch2::instantsearch::AddRoles);
 }
 
-void HTTPRequestHandler::aclAppendRecordsToRole(evhttp_request *req, Srch2Server *server){
+void HTTPRequestHandler::aclAppendRecordsForRole(evhttp_request *req, Srch2Server *server){
 	aclModifyRecordsOfRoles(req, server, srch2::instantsearch::AppendRoles);
 }
 
-void HTTPRequestHandler::aclDeleteRecordsFromRole(evhttp_request *req, Srch2Server *server){
+void HTTPRequestHandler::aclDeleteRecordsForRole(evhttp_request *req, Srch2Server *server){
 	aclModifyRecordsOfRoles(req, server, srch2::instantsearch::DeleteRoles);
 }
 

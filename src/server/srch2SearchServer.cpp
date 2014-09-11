@@ -337,12 +337,12 @@ static bool checkOperationPermission(evhttp_request *req, Srch2Server *srch2Serv
         { srch2http::AttributeAclAdd, "aclAttributeRoleAdd" },
         { srch2http::AttributeAclDelete, "aclAttributeRoleDelete" },
         { srch2http::AttributeAclAppend, "aclAttributeRoleAppend" },
-        { srch2http::RecordAclAdd, "aclRecordRoleAdd"},
-        { srch2http::RecordAclAppend, "aclRecordRoleAppend"},
-        { srch2http::RecordAclDelete, "aclRecordRoleDelete"},
-        { srch2http::RoleAclAdd, "aclRoleAddRecord"},
-        { srch2http::RoleAclAppend, "aclRoleAppendRecord"},
-        { srch2http::RoleAclDelete, "aclRoleDeleteRecord"},
+        { srch2http::AclAddRolesForRecords, "AclAddRolesForRecords"},
+        { srch2http::AclAppendRolesForRecords, "AclAppendRolesForRecords"},
+        { srch2http::AclDeleteRolesForRecords, "AclDeleteRolesForRecords"},
+        { srch2http::AclAddRecordsForRoles, "AclAddRecordsForRoles"},
+        { srch2http::AclAppendRecordsForRoles, "AclAppendRecordsForRoles"},
+        { srch2http::AclDeleteRecordsForRoles, "AclDeleteRecordsForRoles"},
         { srch2http::EndOfPortType, NULL },
     };
 
@@ -434,23 +434,23 @@ static void cb_single_core_operator_route(evhttp_request *req, void *arg){
             case srch2http::AttributeAclAppend:
             	HTTPRequestHandler::attributeAclModify(req, srch2Server);
             	break;
-            case srch2http::RecordAclAdd:
-            	HTTPRequestHandler::aclAddRolesToRecord(req, srch2Server);
+            case srch2http::AclAddRolesForRecords:
+            	HTTPRequestHandler::aclAddRolesForRecord(req, srch2Server);
             	break;
-            case srch2http::RecordAclAppend:
-            	HTTPRequestHandler::aclAppendRolesToRecord(req, srch2Server);
+            case srch2http::AclAppendRolesForRecords:
+            	HTTPRequestHandler::aclAppendRolesForRecord(req, srch2Server);
             	break;
-            case srch2http::RecordAclDelete:
-            	HTTPRequestHandler::aclDeleteRolesFromRecord(req, srch2Server);
+            case srch2http::AclDeleteRolesForRecords:
+            	HTTPRequestHandler::aclDeleteRolesForRecord(req, srch2Server);
             	break;
-            case srch2http::RoleAclAdd:
-            	HTTPRequestHandler::aclAddRecordsToRole(req, srch2Server);
+            case srch2http::AclAddRecordsForRoles:
+            	HTTPRequestHandler::aclAddRecordsForRole(req, srch2Server);
             	break;
-            case srch2http::RoleAclAppend:
-            	HTTPRequestHandler::aclAppendRecordsToRole(req, srch2Server);
+            case srch2http::AclAppendRecordsForRoles:
+            	HTTPRequestHandler::aclAppendRecordsForRole(req, srch2Server);
             	break;
-            case srch2http::RoleAclDelete:
-            	HTTPRequestHandler::aclDeleteRecordsFromRole(req, srch2Server);
+            case srch2http::AclDeleteRecordsForRoles:
+            	HTTPRequestHandler::aclDeleteRecordsForRole(req, srch2Server);
             	break;
             default:
                 cb_notfound(req, srch2Server);
@@ -870,12 +870,12 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
             { "/aclAttributeRoleAdd", srch2http::AttributeAclAdd, cb_single_core_operator_route },
             { "/aclAttributeRoleDelete", srch2http::AttributeAclDelete, cb_single_core_operator_route },
             { "/aclAttributeRoleAppend", srch2http::AttributeAclAppend, cb_single_core_operator_route },
-            { "/aclRecordRoleAdd", srch2http::RecordAclAdd, cb_single_core_operator_route},
-            { "/aclRecordRoleAppend", srch2http::RecordAclAppend, cb_single_core_operator_route},
-            { "/aclRecordRoleDelete", srch2http::RecordAclDelete, cb_single_core_operator_route},
-            { "/aclRoleAddRecord", srch2http::RoleAclAdd, cb_single_core_operator_route},
-            { "/aclRoleAppendRecord", srch2http::RoleAclAppend, cb_single_core_operator_route},
-            { "/aclRoleDeleteRecord", srch2http::RoleAclDelete, cb_single_core_operator_route},
+            { "/AclAddRolesForRecords", srch2http::AclAddRolesForRecords, cb_single_core_operator_route},
+            { "/AclAppendRolesForRecords", srch2http::AclAppendRolesForRecords, cb_single_core_operator_route},
+            { "/AclDeleteRolesForRecords", srch2http::AclDeleteRolesForRecords, cb_single_core_operator_route},
+            { "/AclAddRecordsForRoles", srch2http::AclAddRecordsForRoles, cb_single_core_operator_route},
+            { "/AclAppendRecordsForRoles", srch2http::AclAppendRecordsForRoles, cb_single_core_operator_route},
+            { "/AclDeleteRecordsForRoles", srch2http::AclDeleteRecordsForRoles, cb_single_core_operator_route},
             { NULL, srch2http::EndOfPortType, NULL }
         };
 

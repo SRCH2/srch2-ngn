@@ -284,12 +284,12 @@ Json::Value IndexWriteUtil::_aclEditRoles(Indexer *indexer,
 		srch2::instantsearch::RecordAclCommandType commandType) {
 
 	Json::Value response(Json::objectValue);
-	srch2::instantsearch::INDEXWRITE_RETVAL ret = indexer->aclModifyRoles(
+	srch2::instantsearch::INDEXWRITE_RETVAL returnValue = indexer->aclModifyRoles(
 			primaryKeyID, roleIds, commandType);
 
 	switch (commandType) {
 	case srch2::instantsearch::AddRoles:
-		switch (ret) {
+		switch (returnValue) {
 		case srch2::instantsearch::OP_SUCCESS:
 			response[c_action_acl] = c_success;
 			response[c_detail] = " Role id added successfully";
@@ -304,7 +304,7 @@ Json::Value IndexWriteUtil::_aclEditRoles(Indexer *indexer,
 		;
 		break;
 	case srch2::instantsearch::AppendRoles:
-		switch (ret) {
+		switch (returnValue) {
 		case srch2::instantsearch::OP_SUCCESS:
 			response[c_action_acl] = c_success;
 			response[c_detail] = " Role id appended successfully";
@@ -319,7 +319,7 @@ Json::Value IndexWriteUtil::_aclEditRoles(Indexer *indexer,
 		;
 		break;
 	case srch2::instantsearch::DeleteRoles:
-		switch (ret) {
+		switch (returnValue) {
 		case srch2::instantsearch::OP_SUCCESS:
 			response[c_action_acl] = c_success;
 			response[c_detail] = " Role id deleted successfully";
@@ -347,15 +347,14 @@ Json::Value IndexWriteUtil::_aclModifyRecordsOfRole(Indexer *indexer, string &ro
 	Json::Value response(Json::objectValue);
 	vector<string> roleIds;
 	roleIds.push_back(roleId);
-	srch2::instantsearch::INDEXWRITE_RETVAL ret;
+	srch2::instantsearch::INDEXWRITE_RETVAL returnValue;
 	for(unsigned i = 0 ; i < resourceIds.size(); ++i){
-		ret = indexer->aclModifyRoles(resourceIds[i], roleIds, commandType);
-		switch(ret){
+		returnValue = indexer->aclModifyRoles(resourceIds[i], roleIds, commandType);
+		switch(returnValue){
 		case srch2::instantsearch::OP_SUCCESS:
-
 			break;
 		case srch2::instantsearch::OP_FAIL:
-			"No record with this primary key: "+resourceIds[i]+" ";
+			"No record with this primary key: " + resourceIds[i] + " ";
 			break;
 		}
 	}
@@ -376,11 +375,7 @@ Json::Value IndexWriteUtil::_aclModifyRecordsOfRole(Indexer *indexer, string &ro
 		break;
 	};
 	return response;
-
 }
-
-
-
 
 void IndexWriteUtil::_deleteRoleRecord(Indexer *resourceIndexer, std::string rolePrimaryKeyName, const evkeyvalq &headers){
 
