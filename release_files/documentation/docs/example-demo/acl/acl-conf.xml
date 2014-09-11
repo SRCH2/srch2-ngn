@@ -21,7 +21,7 @@
     <cores defaultCoreName="product">
             <core name="product">
                 <dataFile>product.json</dataFile>
-                <dataDir>product-data</dataDir>
+                <dataDir>product-indexes</dataDir>
                 <dataSourceType>1</dataSourceType>
                 <indexConfig>
                     <indexType>0</indexType>
@@ -94,7 +94,7 @@
 
 	    <core name="user">
                 <dataFile>user.json</dataFile>
-                <dataDir>user-data</dataDir>
+                <dataDir>user-indexes</dataDir>
                 <dataSourceType>1</dataSourceType>
                 <indexConfig>
                     <indexType>0</indexType>

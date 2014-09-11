@@ -20,16 +20,27 @@ namespace instantsearch {
  *   This API loads acl csv file and should be called during engine's boot up.
  *   The format of ACL file is
  *   role_id , attribute1, attribute 2 , ....
- *
+ *   This API is exception safe.
  */
-void  AttributeAccessControl::bulkLoadAclCSV(const std::string& aclLoadFileName) const{
+void  AttributeAccessControl::bulkLoadAttributeAclCSV(const std::string& aclLoadFileName) const{
+	try {
+		_bulkLoadAttributeAclCSV(aclLoadFileName);
+	}catch(exception& exception) {
+		Logger::error(exception.what());
+		Logger::error("Attribute acl csv bulk load was not successful. Please check JSON file.");
+	}
+}
+/*
+ *   Internal API which loads acl CSV file. This API is called from wrapper API bulkLoadAttributeAclCSV
+ */
+void  AttributeAccessControl::_bulkLoadAttributeAclCSV(const std::string& aclLoadFileName) const{
 
 	if (aclLoadFileName == "") {
 		if (schema->getAclRefiningAttrIdsList().size() > 0 ||
 				schema->getAclSearchableAttrIdsList().size() > 0) {
 			// if there are fields in schema with acl enabled. Then print warning
 			// that bulk load file is not specified.
-			Logger::warn("Attribute acl file for bulk load is not specified!. "
+			Logger::warn("Attribute acl CSV file for bulk load is not specified!. "
 					"Please use Attribute Acl REST APIs for adding permissions");
 		}
 		return;
@@ -37,11 +48,11 @@ void  AttributeAccessControl::bulkLoadAclCSV(const std::string& aclLoadFileName)
 
 	std::ifstream input(aclLoadFileName.c_str());
 	if (!input.good()) {
-		Logger::warn("The attribute acl file = \"%s\" could not be opened.",
+		Logger::warn("The attribute acl CSV file = \"%s\" could not be opened.",
 				aclLoadFileName.c_str());
 		return;
 	}
-	Logger::info("Loading attributes acl file %s", aclLoadFileName.c_str());
+	Logger::console("Loading attributes CSV acl file %s", aclLoadFileName.c_str());
 	std::string line;
 	unsigned lineCount = 0;
 	while (getline(input, line)) {
@@ -94,24 +105,24 @@ void  AttributeAccessControl::bulkLoadAclCSV(const std::string& aclLoadFileName)
  *   { "roleId" : ["role_id1", "role_id2"] , attributes : ["attribute1", "attribute 2" , .... ] }
  *   This API is exception safe.
  */
-void  AttributeAccessControl::bulkLoadAclJSON(const std::string& aclLoadFileName) const{
+void  AttributeAccessControl::bulkLoadAttributeAclJSON(const std::string& aclLoadFileName) const{
 	try{
-		_bulkLoadAclJSON(aclLoadFileName);
+		_bulkLoadAttributeAclJSON(aclLoadFileName);
 	} catch (exception& ex) {
 		Logger::error(ex.what());
-		Logger::error("Attribute acl bulk load was not successful. Please check JSON file.");
+		Logger::error("Attribute acl JSON bulk load was not successful. Please check JSON file.");
 	}
 }
 /*
- *   Internal API which loads acl JSON file. This API is called from wrapper API bulkLoadAclJSON
+ *   Internal API which loads acl JSON file. This API is called from wrapper API bulkLoadAttributeAclJSON
  */
-void  AttributeAccessControl::_bulkLoadAclJSON(const std::string& aclLoadFileName) const{
+void  AttributeAccessControl::_bulkLoadAttributeAclJSON(const std::string& aclLoadFileName) const{
 	if (aclLoadFileName == "") {
 		if (schema->getAclRefiningAttrIdsList().size() > 0 ||
 				schema->getAclSearchableAttrIdsList().size() > 0) {
 			// if there are fields in schema with acl enabled. Then print warning
 			// that bulk load file is not specified.
-			Logger::warn("Attribute acl file for bulk load is not specified!. "
+			Logger::warn("Attribute acl JSON file for bulk load is not specified!. "
 					"Please use Attribute Acl REST APIs for adding permissions");
 		}
 		return;
@@ -119,11 +130,11 @@ void  AttributeAccessControl::_bulkLoadAclJSON(const std::string& aclLoadFileNam
 
 	std::ifstream input(aclLoadFileName.c_str());
 	if (!input.good()) {
-		Logger::warn("The attribute acl file = \"%s\" could not be opened.",
+		Logger::warn("The attribute acl JSON file = \"%s\" could not be opened.",
 				aclLoadFileName.c_str());
 		return;
 	}
-	Logger::info("Loading attributes acl file %s", aclLoadFileName.c_str());
+	Logger::console("Loading attributes acl JSON file %s", aclLoadFileName.c_str());
 	std::string line;
 	unsigned lineCount = 0;
 	bool isArrayOfJsonRecords = false;
