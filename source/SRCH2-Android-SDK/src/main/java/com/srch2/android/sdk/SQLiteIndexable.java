@@ -293,8 +293,11 @@ public abstract class SQLiteIndexable extends IndexableCore {
                                     switch (columnType.schemaType) {
                                         case Searchable:
                                             int boostValue = getColumnBoostValue(name);
-                                            if (boostValue <= 0 || boostValue < 100) {
+                                            if (boostValue < 1) {
                                                 boostValue = 1;
+                                            }
+                                            if (boostValue > 100) {
+                                                boostValue = 100;
                                             }
                                             extraField = Field.createSearchableField(name, boostValue);
                                             if (!containsAtLeastOneSearchableField) {
