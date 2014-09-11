@@ -644,6 +644,22 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 			delete saveDataNotif;
 			break;
 		}
+		case ShardingSaveDataACKMessageType:
+		{
+			SaveDataNotification::ACK * saveDataNotif =
+					ShardingNotification::deserializeAndConstruct<SaveDataNotification::ACK>(Message::getBodyPointerFromMessagePointer(msg));
+			Logger::debug("%s | .", saveDataNotif->getDescription().c_str());
+			if(saveDataNotif->isBounced()){
+				Logger::debug("==> Bounced.");
+				ASSERT(false);
+				delete saveDataNotif;
+				break;
+			}
+
+			this->stateMachine->handle(saveDataNotif);
+			delete saveDataNotif;
+			break;
+		}
 		case ShardingSaveMetadataMessageType:
 		{
 			SaveMetadataNotification * saveMetadataNotif =
@@ -664,6 +680,22 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 			delete saveMetadataNotif;
 			break;
 		}
+		case ShardingSaveMetadataACKMessageType:
+		{
+			SaveMetadataNotification::ACK * saveMetadataNotif =
+					ShardingNotification::deserializeAndConstruct<SaveMetadataNotification::ACK>(Message::getBodyPointerFromMessagePointer(msg));
+			Logger::debug("%s | .", saveMetadataNotif->getDescription().c_str());
+			if(saveMetadataNotif->isBounced()){
+				Logger::debug("==> Bounced.");
+				ASSERT(false);
+				delete saveMetadataNotif;
+				break;
+			}
+
+			this->stateMachine->handle(saveMetadataNotif);
+			delete saveMetadataNotif;
+			break;
+		}
 		case ShardingMergeMessageType:
 		{
 			MergeNotification * mergeNotification =
@@ -679,6 +711,21 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 				break;
 			}
 			this->resolve(mergeNotification);
+			delete mergeNotification;
+			break;
+		}
+		case ShardingMergeACKMessageType:
+		{
+			MergeNotification::ACK * mergeNotification =
+					ShardingNotification::deserializeAndConstruct<MergeNotification::ACK>(Message::getBodyPointerFromMessagePointer(msg));
+			if(mergeNotification->isBounced()){
+				Logger::debug("==> Bounced.");
+				ASSERT(false);
+				delete mergeNotification;
+				break;
+			}
+
+			this->stateMachine->handle(mergeNotification);
 			delete mergeNotification;
 			break;
 		}
