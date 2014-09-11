@@ -36,7 +36,10 @@ OperationState * AtomicSaveOperation::entry(){
 	for(map<NodeId, bool>::const_iterator nodesStatusItr = nodesStatus.begin(); nodesStatusItr != nodesStatus.end(); ++nodesStatusItr){
 		if(nodesStatusItr->first == writeview->currentNodeId){ // save the data of this node
 			pthread_t localSaveThread;
-		    if (pthread_create(&localSaveThread, NULL, localSaveData , notif) != 0){
+			SaveDataNotification * localNotif = new SaveDataNotification();
+			localNotif->setSrc(NodeOperationId(writeview->currentNodeId, this->getOperationId()));
+			localNotif->setDest(NodeOperationId(nodesStatusItr->first));
+		    if (pthread_create(&localSaveThread, NULL, localSaveData , localNotif) != 0){
 		        // Logger::console("Cannot create thread for handling local message");
 		        perror("Cannot create thread for handling local message");
 		        return NULL;
@@ -82,7 +85,10 @@ OperationState * AtomicSaveOperation::saveMetadata(){
 	for(map<NodeId, bool>::const_iterator nodesStatusItr = nodesStatus.begin(); nodesStatusItr != nodesStatus.end(); ++nodesStatusItr){
 		if(nodesStatusItr->first == writeview->currentNodeId){ // save the data of this node
 			pthread_t localSaveThread;
-		    if (pthread_create(&localSaveThread, NULL, localSaveMetadata , notif) != 0){
+			SaveMetadataNotification * localNotif = new SaveMetadataNotification();
+			localNotif->setSrc(NodeOperationId(writeview->currentNodeId, this->getOperationId()));
+			localNotif->setDest(NodeOperationId(nodesStatusItr->first));
+		    if (pthread_create(&localSaveThread, NULL, localSaveMetadata , localNotif) != 0){
 		        // Logger::console("Cannot create thread for handling local message");
 		        perror("Cannot create thread for handling local message");
 		        return NULL;
@@ -187,6 +193,7 @@ void * AtomicSaveOperation::localSaveData(void * arg){
 	SaveDataNotification * saveNotif = (SaveDataNotification *)arg;
 	boost::unique_lock<boost::mutex> lock(ShardManager::getShardManager()->shardManagerGlobalMutex);
 	ShardManager::getShardManager()->resolve(saveNotif);
+	delete saveNotif;
 	return NULL;
 }
 
@@ -195,6 +202,7 @@ void * AtomicSaveOperation::localSaveMetadata(void * arg){
 	SaveMetadataNotification * saveNotif = (SaveMetadataNotification *)arg;
 	boost::unique_lock<boost::mutex> lock(ShardManager::getShardManager()->shardManagerGlobalMutex);
 	ShardManager::getShardManager()->resolve(saveNotif);
+	delete saveNotif;
 	return NULL;
 }
 
