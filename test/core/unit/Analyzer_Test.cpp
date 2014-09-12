@@ -1185,9 +1185,9 @@ int buildChineseDictionary(const string & builder, const string & textFile, cons
     Logger::debug("outputBin: %s", outputBin.c_str());
     struct stat stResult;
     if ( stat(builder.c_str(), &stResult) != 0){
-        Logger::warn("utility bin not found, the test will not rebuild the ChineseDictionary.%s"
+        Logger::error("utility bin not found, the test will not rebuild the ChineseDictionary.%s"
                 , outputBin.c_str());
-        return 0;
+        return -1;
     }
     string command = builder + " " + textFile + " " + outputBin;
     int ret = system(command.c_str());
