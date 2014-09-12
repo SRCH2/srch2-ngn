@@ -1,0 +1,6 @@
+#In this test case, multiple threads will query one node, make sure to disable killServers()
+A||start
+E||start
+F||start
+A||bulkInsertFromBeginning||./dataIntensive/stackoverflow-1M-A.json||1||50
+A||stressQuery||./dataIntensive/1-term-prefix.csv

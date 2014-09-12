@@ -1,0 +1,27 @@
+#Migration from (A,B,C) to (D,E,F)
+A||start
+B||start
+C||start
+-||sleep||10
+A||bulkInsertFromBeginning||./dataIntensive/stackoverflow-1M-A.json||1||50
+B||bulkInsertFromBeginning||./dataIntensive/stackoverflow-1M-B.json||1||50
+C||bulkInsertFromBeginning||./dataIntensive/stackoverflow-1M-C.json||1||50
+A||kill
+-||sleep||10
+B||kill
+D||start
+E||start
+F||start
+-||sleep||10
+D||bulkInsertFromBeginning||./dataIntensive/stackoverflow-1M-D.json||1||50
+E||bulkInsertFromBeginning||./dataIntensive/stackoverflow-1M-E.json||1||50
+F||bulkInsertFromBeginning||./dataIntensive/stackoverflow-1M-F.json||1||50
+-||sleep||10
+C||kill
+-||sleep||10
+D||info||"docs_in_index":"300"
+E||info||"docs_in_index":"300"
+F||info||"docs_in_index":"300"
+D||kill
+E||kill
+F||kill

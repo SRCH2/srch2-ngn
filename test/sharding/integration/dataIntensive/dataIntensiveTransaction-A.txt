@@ -1,0 +1,26 @@
+#It tests bulk insertion of data in different nodes. Nodes are started in the beginning and killed in the end.
+A||start
+B||start
+C||start
+D||start
+E||start
+F||start
+-||sleep||10
+A||bulkInsertFromBeginning||./dataIntensive/stackoverflow-1M-A.json||1||50
+B||bulkInsertFromBeginning||./dataIntensive/stackoverflow-1M-B.json||1||50
+C||bulkInsertFromBeginning||./dataIntensive/stackoverflow-1M-C.json||1||50
+D||bulkInsertFromBeginning||./dataIntensive/stackoverflow-1M-D.json||1||50
+E||bulkInsertFromBeginning||./dataIntensive/stackoverflow-1M-E.json||1||50
+F||bulkInsertFromBeginning||./dataIntensive/stackoverflow-1M-F.json||1||50
+A||info||"docs_in_index":"50"
+B||info||"docs_in_index":"50"
+C||info||"docs_in_index":"50"
+D||info||"docs_in_index":"50"
+E||info||"docs_in_index":"50"
+F||info||"docs_in_index":"50"
+A||kill
+B||kill
+C||kill
+D||kill
+E||kill
+F||kill

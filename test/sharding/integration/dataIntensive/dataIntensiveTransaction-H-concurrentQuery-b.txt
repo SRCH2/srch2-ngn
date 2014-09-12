@@ -1,0 +1,3 @@
+#In this test case, multiple threads will query one node, make sure to disable killServers()
+A||sleep||100
+A||stressQuery||./dataIntensive/1-term-prefix.csv

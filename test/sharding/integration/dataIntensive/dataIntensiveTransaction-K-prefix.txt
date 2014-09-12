@@ -1,0 +1,16 @@
+#This tests the prefix query
+A||start
+D||start
+-||sleep||10
+A||bulkInsert||./dataIntensive/stackoverflow-1M-A.json||2||50
+D||query||q=aaaa*||"id":"1" "id":"2" "id":"3" "id":"4" "id":"5"
+D||query||q=aaaaaa%20AND%201111*||"id":"1" "id":"2" "id":"3" "id":"4" "id":"5"
+D||query||q=aaaaaa%20AND%20111111%20AND%20zzzz*||"id":"1" "id":"2" "id":"3" "id":"4" "id":"5"
+D||query||q=cccc*||"id":"11" "id":"12" "id":"13" "id":"14" "id":"15"
+D||query||q=cccccc%20AND%203333*||"id":"11" "id":"12" "id":"13" "id":"14" "id":"15"
+D||query||q=cccccc%20AND%20333333%20AND%20xxxx*||"id":"11" "id":"12" "id":"13" "id":"14" "id":"15"
+D||query||q=eee*||"id":"21" "id":"22" "id":"23" "id":"24" "id":"25"
+D||query||q=eeeeee%20AND%20555*||"id":"21" "id":"22" "id":"23" "id":"24" "id":"25"
+D||query||q=eeeeee%20AND%20555555%20AND%20vvvv*||"id":"21" "id":"22" "id":"23" "id":"24" "id":"25"
+A||kill
+D||kill
