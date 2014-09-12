@@ -200,6 +200,13 @@ public:
 };
 
 
+class ShutdownNotification : public ShardingNotification {
+public:
+	ShardingMessageType messageType() const {
+		return ShardingShutdownMessageType;
+	}
+};
+
 }
 }
 

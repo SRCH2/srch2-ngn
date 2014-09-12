@@ -27,6 +27,7 @@ public:
 
 	// initialize class members
 	ClusterSaveOperation(evhttp_request *req);
+	ClusterSaveOperation(unsigned operationId);
 	~ClusterSaveOperation();
 
 	/*
@@ -109,6 +110,9 @@ private:
 	OperationState * saveOperation;
 	OperationState * releaseOperation;
 
+
+	bool releaseFlag;
+	bool printFlag;
 
 	bool isInStartingPhase() const;
 	bool isInLockingPhase() const;

@@ -71,6 +71,7 @@ enum ShardingMessageType{
     ShardingSaveMetadataMessageType,
     ShardingSaveMetadataACKMessageType,
     ShardingMergeMessageType,
+    ShardingShutdownMessageType,
     ShardingMergeACKMessageType,
     // just notifications
     ShardingMMNotificationMessageType,

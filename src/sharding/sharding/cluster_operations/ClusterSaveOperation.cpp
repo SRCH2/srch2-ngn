@@ -1,8 +1,8 @@
 
 
 #include "ClusterSaveOperation.h"
-#include "./ResourceLocks.h"
-#include "./ResourceMetadataManager.h"
+#include "../metadata_manager/ResourceLocks.h"
+#include "../metadata_manager/ResourceMetadataManager.h"
 #include "../atomic_operations/AtomicLockOperation.h"
 #include "../atomic_operations/AtomicMergeOperation.h"
 #include "../atomic_operations/AtomicSaveOperation.h"
@@ -21,7 +21,20 @@ ClusterSaveOperation::ClusterSaveOperation(evhttp_request *req):OperationState(O
 	this->mergeOperation = NULL;
 	this->saveOperation = NULL;
 	this->releaseOperation = NULL;
+	this->releaseFlag = true;
+	this->printFlag = true;
 }
+
+ClusterSaveOperation::ClusterSaveOperation(unsigned operationId):OperationState(operationId){
+	this->req = NULL;
+	this->lockOperation = NULL;
+	this->mergeOperation = NULL;
+	this->saveOperation = NULL;
+	this->releaseOperation = NULL;
+	this->releaseFlag = false;
+	this->printFlag = false;
+}
+
 // initialize class members
 ClusterSaveOperation::~ClusterSaveOperation(){}
 
@@ -183,9 +196,14 @@ OperationState * ClusterSaveOperation::handle(SaveMetadataNotification::ACK * ac
 
 // releases the locks on all resources
 OperationState * ClusterSaveOperation::release(){
+
 	if(isInLockingPhase() || isInMergingPhase() || isInSavingPhase() || isInReleasingPhase()){
 		ASSERT(false);
 		return this;
+	}
+
+	if(! releaseFlag ){
+		return finalize();
 	}
 
 	Cluster_Writeview * writeview = ShardManager::getWriteview();
@@ -215,8 +233,10 @@ OperationState * ClusterSaveOperation::release(){
  * and return NULL to finish this transaction.
  */
 OperationState * ClusterSaveOperation::finalize(){
-    bmhelper_evhttp_send_reply2(req, HTTP_OK, "OK",
-            "{\"message\":\"The cluster state was saved.\"}\n");
+	if(printFlag){
+		bmhelper_evhttp_send_reply2(req, HTTP_OK, "OK",
+				"{\"message\":\"The cluster state was saved.\"}\n");
+	}
     return NULL;
 }
 
