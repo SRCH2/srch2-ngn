@@ -288,7 +288,7 @@ Json::Value IndexWriteUtil::_aclRecordModifyRoles(Indexer *indexer,
 			primaryKeyID, roleIds, commandType);
 
 	switch (commandType) {
-	case srch2::instantsearch::AddRoles:
+	case srch2::instantsearch::Acl_Record_Add:
 		switch (returnValue) {
 		case srch2::instantsearch::OP_SUCCESS:
 			response[c_action_acl] = c_success;
@@ -303,7 +303,7 @@ Json::Value IndexWriteUtil::_aclRecordModifyRoles(Indexer *indexer,
 		}
 		;
 		break;
-	case srch2::instantsearch::AppendRoles:
+	case srch2::instantsearch::Acl_Record_Append:
 		switch (returnValue) {
 		case srch2::instantsearch::OP_SUCCESS:
 			response[c_action_acl] = c_success;
@@ -318,7 +318,7 @@ Json::Value IndexWriteUtil::_aclRecordModifyRoles(Indexer *indexer,
 		}
 		;
 		break;
-	case srch2::instantsearch::DeleteRoles:
+	case srch2::instantsearch::Acl_Record_Delete:
 		switch (returnValue) {
 		case srch2::instantsearch::OP_SUCCESS:
 			response[c_action_acl] = c_success;
@@ -345,6 +345,10 @@ Json::Value IndexWriteUtil::_aclModifyRecordsOfRole(Indexer *indexer, string &ro
 		vector<string> &resourceIds, srch2::instantsearch::RecordAclCommandType commandType) {
 
 	Json::Value response(Json::objectValue);
+	if(commandType == Acl_Record_Add){
+		indexer->deleteRoleRecord(roleId);
+		commandType = Acl_Record_Append;
+	}
 	vector<string> roleIds;
 	roleIds.push_back(roleId);
 	srch2::instantsearch::INDEXWRITE_RETVAL returnValue;
@@ -361,13 +365,13 @@ Json::Value IndexWriteUtil::_aclModifyRecordsOfRole(Indexer *indexer, string &ro
 	response[c_action_acl] = c_success;
 
 	switch (commandType) {
-	case srch2::instantsearch::AddRoles:
+	case srch2::instantsearch::Acl_Record_Add:
 		response[c_detail] = " Resource ids added successfully";
 		break;
-	case srch2::instantsearch::AppendRoles:
+	case srch2::instantsearch::Acl_Record_Append:
 		response[c_detail] = " Resource ids appended successfully";
 		break;
-	case srch2::instantsearch::DeleteRoles:
+	case srch2::instantsearch::Acl_Record_Delete:
 		response[c_detail] = " Resource ids deleted successfully";
 		break;
 	default:

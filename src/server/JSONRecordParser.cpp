@@ -875,7 +875,7 @@ void DaemonDataSource::addRecordAclFile(srch2is::Indexer *indexer,
 					}
 				}
 				if(roleIdsExist){
-					indexer->aclRecordModifyRoles(resourcePrimaryKeyID, roleIds, srch2::instantsearch::AddRoles);
+					indexer->aclRecordModifyRoles(resourcePrimaryKeyID, roleIds, srch2::instantsearch::Acl_Record_Add);
 					indexedRecordsCount++;
 				}
 			}
