@@ -1,0 +1,478 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+    Configuration file for SRCH2 search server. Please email
+    contact@srch2.com if you have questions.
+    In this documment, "attribute" and "field" are used interchangeably.
+    Calvin's ip address is 128.195.185.134
+    Dilbert's ip address is 128.195.185.107
+-->
+ 
+<config>
+    <!--
+        SRCH2 Home directory 
+        Required
+         
+        This directory is going to be your srch2 home's directory.
+        All other paths HAVE to be reletive to this path.
+        For Example:
+            To have "/usr/share/srch2/" as srch2 home directory, you should have the following line
+            <srch2Home>/usr/share/srch2/</srch2Home>
+             
+        All other paths in this conif file have to be relative to this path.
+        For Example:
+            If your data file is inside srch2 home directory, having the following absolute path
+            "/usr/share/srch2/data/sample-data.json"
+            In this config file it should be as "data/sample-data.json"
+    -->
+    <!-- <srch2Home>./</srch2Home>-->
+    <cluster-name>SRCH2_Cluster</cluster-name>
+    <srch2Home>./</srch2Home>
+
+    <ping>
+        <ping-interval>2</ping-interval>
+        <ping-timeout>8</ping-timeout>
+        <retry-count>3</retry-count>
+    </ping> 
+
+    <transport>
+        <port>4006</port>
+        <ipaddress>128.195.185.107</ipaddress>
+    </transport>
+    
+    <WellKnownHosts>128.195.185.134:4001</WellKnownHosts>
+    <listeningHostname>128.195.185.107</listeningHostname>
+    <listeningPort>7006</listeningPort>
+    
+    <!--
+        License Key File
+        Required
+         
+        Email contact@srch2.com to get a key file.  
+        Make sure to set the variable to the SRCH2 license key file.
+    -->
+    <licenseFile>../../wrapper/conf/srch2_license_key.txt</licenseFile> 
+   
+   
+    <!--
+        Hostname and Port Number
+        Required
+         
+        Hostname and port number of the server. Make sure the port is open.
+    -->
+
+        <cores defaultCoreName="core1">
+        <core name="core1">
+        <multiple-data-file>json1.json,json2.json</multiple-data-file>
+        <coreId>1</coreId>
+        <core-number_of_shards>4</core-number_of_shards>
+        <core-number_of_replicas>2</core-number_of_replicas>
+
+    <!--
+        Index Directoy Path
+        Required
+     
+        The file path to the folder where we store serialized index files.
+        REQUIRED, when "index-load-or-create" is set to 1.
+    -->
+    <dataDir>./data/2n-insertA-queryB/</dataDir>
+     
+    <!--
+        Data File
+        Required if "indexLoadCreate" is set to 0
+         
+        Path for a data file to be loaded. The file must be in the json format.
+        REQUIRED, when "index-load-or-create" is set to 0.
+    -->
+    <dataFile>./input-data/empty-data.json</dataFile>
+     
+    <!--
+	Maximum Number of Threads
+	Optional
+	
+	Number of threads that serve the requests.
+	Defaults to 1
+    -->
+    <maxSearchThreads>2</maxSearchThreads>
+     
+         
+    <indexConfig>
+         
+        <!--
+            Index Type
+            Required
+             
+                0: Text Index
+                1: Geo+Text Index
+        -->
+        <indexType>0</indexType>
+        
+		<!--
+            0: don't support swap operation in edit distance
+            1: support swap operation in edit distance
+            default value is true
+        -->
+        <supportSwapInEditDistance>false</supportSwapInEditDistance> 
+         
+        <!--
+            Boost Values
+            Optional
+         
+            Boost values for searchable attributes. A boost value is in the range [1,100].
+            If the value is outside the range, it will be set to 100. 
+            Specify the boost values as comma separated entries. 
+            For Example, the boosts for three searchable attributes can be specified as
+                <fieldBoost>relevance^10 name^7 title</fieldBoost>
+                - fields are sparated by one space
+                - if you do not provide any value for a field, it will be considered as 1
+        -->
+        <fieldBoost></fieldBoost>
+         
+         
+        <!-- 
+            Record Boost Field
+            Optional
+             
+            Attribute used as the boost value of a record.
+            Need to be float type in the json objects in the data file.
+        -->
+        <recordBoostField>relevance</recordBoostField>
+         
+         
+        <!--
+            Default Query Term Boost
+            Optional
+             
+            Default query term boost
+            Defaults to 1
+        -->
+        <defaultQueryTermBoost>1</defaultQueryTermBoost>
+        <enablePositionIndex>1</enablePositionIndex>
+        <enableCharOffsetIndex>1</enableCharOffsetIndex>
+
+    </indexConfig>
+  
+  
+  
+  
+    <query>
+        <!-- 
+            Ranking Algorithm
+         
+         
+            The following comments and parameters are related to ranking.  
+            Please see http://www.srch2.com/download.html for ranking-related information
+            #record-score-expression=doc_boost+(1/(doc_length+1))
+            record-score-expression=idf_score*doc_boost
+        -->
+        <rankingAlgorithm>
+            <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
+        </rankingAlgorithm>
+ 
+        <!--
+            Query Term Fuzzy Penalty
+            Optional
+             
+            Defaults to 1
+        -->
+        <fuzzyMatchPenalty>0.5</fuzzyMatchPenalty>
+         
+        <!--
+            Query Term Length Boost
+            Optional
+             
+            Defaults to 0.5
+        -->
+        <queryTermLengthBoost>0.5</queryTermLengthBoost>
+         
+         
+        <!--
+            Prefix Match Penalty
+            Optional
+             
+            Penalty for a prefix match.  This value is used to multiply the score of record for a term.
+            The value should be in the range of 0 to 1
+            Defaults to 0.95
+        -->
+        <prefixMatchPenalty>0.95</prefixMatchPenalty>
+ 
+        <!--
+            Cache Size
+            Optional
+             
+            Number of bytes in the cache. It should be in the range [50MB, 500MB].
+            Its default value is 50MB.
+        -->
+        <cacheSize>65536000</cacheSize>
+        <!--
+            Rows
+            Optional
+             
+            Number of results to retrieve
+            Defaults to 10.
+        -->
+        <rows>10</rows>
+        <!--
+            Field Based Search
+            Optional
+             
+            Flag to indicate whether the attribute-based search is supported.
+                0 - Disable
+                1 - Enable
+            Note that to support field-based search, the number of searchable attributes cannot be bigger than 31.
+        -->
+        <fieldBasedSearch>0</fieldBasedSearch>
+         
+         
+        <!-- 
+            Searcher Type
+            Optional
+         
+            in the query result
+                0 if topk,
+                1 if advanced
+             
+            Defaults to 0
+        -->
+        <searcherType>0</searcherType>
+         
+        <!--
+            Query Term Match Type
+            Optional
+             
+            0: exact match
+            1: fuzzy match
+            Defaults to 0
+        -->
+        <queryTermFuzzyType>0</queryTermFuzzyType>
+         
+                     
+             
+        <!--
+            Query Term Type
+            Optional
+             
+                     
+            0: a term is treated as a prefix;
+            1: a term is treated as a complete term;
+            Defaults to 0
+        -->
+        <queryTermPrefixType>0</queryTermPrefixType>
+ 
+         
+        <queryResponseWriter>
+            <!--
+                Response Format
+                Optional
+                 
+                0: JSON
+                1: JSONP           
+                Defaults to 0
+            -->
+            <responseFormat>0</responseFormat>
+             
+             
+            <!--
+                Response Content
+                Optionl
+                 
+                 
+                Format of each json search response.
+                You should set the type by one of the following options:
+                    0: format "rid,edit_dist,matching_prefix,in_memory_record";
+                    1: format "rid,edit_dist,matching_prefix".
+                    2: format "rid,edit_dist,matching_prefix,feilds_to_return".
+                Defaults to 0
+                It is REQUIRED to set fields_to_return if search-response-format=2
+                These are attributes returned to the user.
+                For Example:
+                    <responseContent type="2">lat,lng</responseContent>
+            -->
+            <responseContent type="0"></responseContent>
+             
+        </queryResponseWriter>
+    </query>
+  
+    <updatehandler>
+        <!--
+            Maximum Number of Documents
+            Required
+             
+            Maximum number of records that can be inserted into the engine.
+            The number depends on the size of each record and the available memory
+         -->
+        <maxDocs>15000000</maxDocs>
+ 
+        <!--
+            Maximum Number of Documents
+            Required
+             
+            Maximum size of memory that can be used.
+        -->
+        <maxMemory>100000</maxMemory>
+             
+        <!--
+            Merge Policies
+            Required
+             
+            mergeEveryNSeconds:
+            The number of seconds after which newly inserted/deleted records are merged into the indexes.
+            Its minimum value is 10 (seconds).
+            mergeEveryMWrites:
+            The number of write operations after which newly inserted/deleted records are merged into the indexes.
+        -->
+        <mergePolicy>
+          <mergeEveryNSeconds>10</mergeEveryNSeconds>
+          <mergeEveryMWrites>100</mergeEveryMWrites>
+        </mergePolicy>
+         
+         
+        <updateLog>
+            <!-- 
+                Log Level
+                Optional
+                 
+                Log level
+                    0 SILENT
+                    1 ERROR
+                    2 WARN
+                    3 INFO
+                Defaults to 3 INFO
+            -->
+            <logLevel>3</logLevel>
+                         
+            <!--
+                Access Log File
+                Required
+                 
+                Path to Access Log File
+            -->
+            <accessLogFile>./logs-16/log.txt</accessLogFile>
+        </updateLog>
+     
+    </updatehandler>
+
+	<schema>
+	  
+	 <fields>
+	   <!--
+		Fields
+		Required
+		 
+		Fields we want to search on in addition to the primary key.
+	     
+		"name" : is the name of the field
+		"type" : is the type of the field. Supported types are:
+		    - Text
+		    - location_longtitude (For Geo search)
+		    - location_latitude (For Geo search)
+		    - integer
+		    - float
+		    - time
+		     
+		"indexed" : If you want to search on a field, indexed should be true. A field can only be used for sort, filtering 
+					and facet if its 'indexed' property is false. If you need a field to be used in keyword search AND also
+					for sort,filter and facet, you should include two instances of the field one with indexed="true" (for
+					keyword search) and one with indexed="false" (for sort and facet). 
+		"default" : The default value which is used if this field is empty.
+		"required": The flag which indicates whether this field can be empty or not. It is false by default.
+		 
+		Note:
+		    - If you want to have geo search, you should have two fields with the types of ocation_latitude and location_longtitude.
+		    Make sure to set both latitude and longitude.
+		    - The values of these geo fields should be float in the JSON (input) file.
+		    - Primary key is optional to be included here. It can be included here to set its indexed property to true.
+		    Type is always text for primary key, it is required and there is no need for default value. If primary key is included
+		    here and indexed="false" it will be also used for sort,filtering and facet.
+		    - 
+	   -->
+           <field name="category" type="text" indexed="true" highlight="true" />
+           <field name="name" type="text" indexed="true" highlight="true" />
+	 
+       </fields>
+	 
+	 <!--
+		Primary Key
+		Required
+		 
+		Primary key attribute of the data
+		 
+		Note:
+		- If the "indexed" value of your primary key field is true, it will be a searchable field too.
+	 -->
+	 <uniqueKey>id</uniqueKey>
+	     
+	  <!--
+	  		Facet enabled flag
+	  		Indicates whether faceted search is allowed or not.
+	  		
+	  		Note:
+	  		- values are false (disabled) and true (enabled)
+	  		- By default it is disabled.
+	  -->
+	  <facetEnabled>true</facetEnabled>
+	  
+	  <facetFields>
+		  <!--
+		  		Facet fields
+		  		Required if facet is enabled.
+		  		
+		  		name: The name of the field which is used for this facet.
+		  		facetType: Facet type which is Categorical or Range. Enter "cateorical" or "range"
+		  		facetStart: The start point of making range facets. REQUIRED for range facets. The value will 
+		  		be ignored for categorical facets.
+		  		facetEnd: The end point of making range facets. REQUIRED for range facets. The value will 
+		  		be ignored for categorical facets.
+		  	    facetGap: The gap used for making range facets. REQUIRED for range facets. The value will 
+		  		be ignored for categorical facets.	  		
+		  		Note:
+		  		- All facetFields must be declared in fields tag as well (with indexed="false")
+		  -->
+	  	  <facetField name="likes" facetType="range" facetStart="0" facetEnd="50" facetGap="10" />
+		  <facetField name="model" facetType="categorical" />
+		  <facetField name="price" facetType="range" facetStart="0" facetEnd="100" facetGap="10" />
+	  </facetFields>
+	  
+	  
+	  <types>
+	    <fieldType name="text_en">
+		<analyzer>
+		    <!--
+		        Stemmer
+		        Optional
+		         
+		        Enable/Disabling the stemmer By providing "dictionary" file.
+		        For Example:
+		            Disable Stemmer: <filter name="PorterStemFilter" dictionary="" />
+		    -->
+		    <filter name="PorterStemFilter" dictionary="" />
+		     
+		    <!--
+		        Stop Word Filter
+		        Optional
+		         
+		        Enable/Disabling the Stop Word Filter By providing "words" file.
+		        For Example:
+		            Disable Stop Word Filter: <filter name="StopFilter" words="" />
+		    -->
+		    <filter name="StopFilter" words="" />
+		     
+		    <!--
+		        Synonym Filter
+		        Optional
+		         
+		        Enable/Disabling the Synonym Filter By providing "synonym" file.
+		        For Example:
+		            Disable Synonym Filter: <filter name="SynonymFilter" synonyms=""  expand="true"/>
+		        To keep the original word in this filter, set the "expand" attribute as "True"
+		        Otherwise set it as "False"
+		    -->
+		    <filter name="SynonymFilter" synonyms=""  expand="true"/>      
+		</analyzer>
+	    </fieldType>
+	 </types>
+	</schema>
+      </core>
+    </cores>
+</config>
+ 
+
