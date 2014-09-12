@@ -13,8 +13,6 @@ final class SRCH2Configuration {
 
     static final String TAG = "SRCH2Configuration";
 
-    static final String tab = "    ";
-    static final String tabtab = "        ";
 
     static final String SRCH2_HOME_FOLDER_DEFAULT_NAME = "srch2/";
     static final String HOSTNAME = "127.0.0.1";
@@ -228,15 +226,15 @@ final class SRCH2Configuration {
         String defaultIndexName = conf.indexableMap.values().iterator().next().getIndexName();
         StringBuilder configurationXML = new StringBuilder()
             .append("<config>\n\n")
-            .append(tab).append("<srch2Home>").append(conf.fullPathOfSRCH2home).append("</srch2Home>\n")
+            .append(IndexDescription.TAB_SINGLE).append("<srch2Home>").append(conf.fullPathOfSRCH2home).append("</srch2Home>\n")
             .append(conf.getAuthorizationKeyConfigurationNode())
-            .append(tab).append("<listeningHostname>").append(HOSTNAME).append("</listeningHostname>\n")
-            .append(tab).append("<listeningPort>").append(conf.getPort()).append("</listeningPort>\n")
-            .append(tab).append("<heartBeatTimer>")
+            .append(IndexDescription.TAB_SINGLE).append("<listeningHostname>").append(HOSTNAME).append("</listeningHostname>\n")
+            .append(IndexDescription.TAB_SINGLE).append("<listeningPort>").append(conf.getPort()).append("</listeningPort>\n")
+            .append(IndexDescription.TAB_SINGLE).append("<heartBeatTimer>")
                         .append(String.valueOf(IPCConstants.HEART_BEAT_SERVER_CORE_SHUTDOWN_DELAY_SECONDS))
             .append("</heartBeatTimer>\n")
-            .append(tab).append("<maxSearchThreads>").append(conf.maxSearchThreads).append("</maxSearchThreads>\n")
-            .append(tab).append("<cores defaultCoreName=\"").append(defaultIndexName).append("\">\n\n");
+            .append(IndexDescription.TAB_SINGLE).append("<maxSearchThreads>").append(conf.maxSearchThreads).append("</maxSearchThreads>\n")
+            .append(IndexDescription.TAB_SINGLE).append("<cores defaultCoreName=\"").append(defaultIndexName).append("\">\n\n");
 
         for (IndexableCore idxable : conf.indexableMap.values()) {
             configurationXML.append(idxable.indexInternal.getConf().indexStructureToXML()).append("\n");
@@ -244,19 +242,19 @@ final class SRCH2Configuration {
         }
 
         configurationXML
-            .append(tab)
+            .append(IndexDescription.TAB_SINGLE)
                 .append("</cores>\n")
-            .append(tab)
+            .append(IndexDescription.TAB_SINGLE)
                 .append("<updateLog>\n")
-            .append(tabtab)
+            .append(IndexDescription.TAB_DOUBLE)
                 .append("<logLevel>")
                     .append(DEFAULT_VALUE_logLevel)
                 .append("</logLevel>\n")
-            .append(tabtab)
+            .append(IndexDescription.TAB_DOUBLE)
                 .append("<accessLogFile>")
                     .append(DEFAULT_VALUE_accessLogFile)
                 .append("</accessLogFile>\n")
-            .append(tab)
+            .append(IndexDescription.TAB_SINGLE)
                 .append("</updateLog>\n")
             .append("</config>\n");
         return configurationXML.toString();
@@ -267,7 +265,7 @@ final class SRCH2Configuration {
         if (authorizationKey == null) {
             authorizationKey = generateAuthorizationKey();
         }
-        auth.append(tab)
+        auth.append(IndexDescription.TAB_SINGLE)
                 .append("<authorization-key>").append(this.authorizationKey).append("</authorization-key>\n");
         return auth.toString();
 

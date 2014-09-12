@@ -3,7 +3,6 @@ package com.srch2.android.sdk;
 import android.util.Log;
 
 abstract class IndexableCore {
-
     /**
      * If returned from {@link #getRecordCount()} indicates this value has not yet been set.
      * <br><br>
@@ -43,6 +42,7 @@ abstract class IndexableCore {
      * Has the <b>constant</b> value of <code>0.65</code>.
      */
     public static final float DEFAULT_FUZZINESS_SIMILARITY_THRESHOLD = 0.65f;
+
 
     IndexInternal indexInternal;
 

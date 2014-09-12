@@ -6,20 +6,33 @@ import java.util.Locale;
  * Represents an attribute of the index. An index is described by its schema, and the schema consists of fields. If
  * an index is compared to the table of an SQLite database, a field is comparable to the column of that table. Each
  * field must be associated with a type--whether it is textual, numerical or geographical--and is identified by
- * the value set when constructing the field as its <code>fieldName</code>. Fields can be searchable, refining,
- * searchable and refining, or geographical. Searchable fields are those whose data associated with the field is
- * matched against the keywords of the search input during a search--they are also textual in type; refining fields,
- * on the other hand, are not matched against the key words of the search input, but are used to do advanced search
- * functionality such as limiting the range of the search results or to do post-processing operations. Geographical
- * fields can be used to do geo-searches.
+ * the value set when constructing the field as its {@code fieldName}.
  * <br><br>
- * Fields are used when constructing an {@link Schema} in the
- * {@link Indexable} implementation
- * of the method {@link Indexable#getSchema()}. They should not be constructed or used otherwise.
+ * Fields can be: <br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;searchable<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;refining<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;searchable and refining<br><br>
+ * Searchable fields are those whose data associated with the field is
+ * matched against the keywords of the search input; their type is {@link com.srch2.android.sdk.Field.Type#TEXT}.
+ * Refining fields,
+ * on the other hand, are not matched against the key words of the search input, but are used to do advanced search
+ * functionality such as limiting the range of the search results or to do post-processing operations such as
+ * version control.
+ * <br><br>
+ * Additionally there are two special cases of the field class:<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;{@link com.srch2.android.sdk.PrimaryKeyField}<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;{@link com.srch2.android.sdk.RecordBoostField}<br><br>
+ * A {@code PrimaryKeyField} is necessary to create a schema and is the unique handle by which records can be
+ * retrieved and deleted. A {@code RecordBoostField} is used to configure the schema to specify the field that
+ * contains data defining the score of each record relative to other records.
+ * <br><br>
+ * Fields can be obtained from the static factory methods such as {@link #createSearchableField(String)},
+ * {@link #createDefaultPrimaryKeyField(String)}, and {@link #createRecordBoostField(String)} and should only be
+ * used when constructing an {@link Schema} in an {@link Indexable} implementation
+ * of the method {@link Indexable#getSchema()}.
  */
 final public class Field {
 
-    static final String tttt = "                    ";
 
     enum FacetType {
         CATEGORICAL, RANGE
@@ -40,7 +53,7 @@ final public class Field {
     /**
      * Defines the default boost value that searchable fields who boost values are not otherwise set will have.
      * <br><br>
-     * Has the <bold>constant</bold> value of <code>1</code>.
+     * Constant Value: {@value}
      */
     static final public int DEFAULT_BOOST_VALUE = 1;
     final String name;
@@ -96,7 +109,7 @@ final public class Field {
      * the data of this field can be used to filter or sort on search results.
      * <br><br>
      * This method will throw an exception if the value of
-     * <code>fieldName</code> is null or has a length less than one.
+     * {@code fieldName} is null or has a length less than one.
      *
      * @param fieldName the name identifying the primary key field
      * @return the {@link PrimaryKeyField}
@@ -112,15 +125,15 @@ final public class Field {
      * Whenever a search on the index, the data of this primary key field will also be
      * returned with the search results.
      * <br><br>
-     * The value of the <code>boost</code> argument will be used to calculate the score of the of search
+     * The value of the {@code boost} argument will be used to calculate the score of the of search
      * results, making this field proportionally more or less relevant than other searchable fields. By
      * default this value is set to one.
      * <br><br>
      * This method will throw an exceptions if the value passed for
-     * <code>boost</code> is less than one or greater than one hundred; or if the value of
-     * <code>fieldName</code> is null or has a length less than one.
+     * {@code boost} is less than one or greater than one hundred; or if the value of
+     * {@code fieldName} is null or has a length less than one.
      *
-     * @param fieldName the name identifying the primary key field.
+     * @param fieldName the name identifying the primary key field
      * @param boost the value to assign to the relevance of this field, relative to other searchable fields
      * @return the {@link PrimaryKeyField}
      */
@@ -134,7 +147,7 @@ final public class Field {
      * returned with the search results whenever a search is performed.
      * <br><br>
      * This method will throw an exception if the value of
-     * <code>fieldName</code> is null or has a length less than one.
+     * {@code fieldName} is null or has a length less than one.
      *
      * @param fieldName the name identifying the field
      * @return the {@link PrimaryKeyField}
@@ -154,7 +167,7 @@ final public class Field {
      * should never be set to zero, which will render the record unavailable to search results.
      * <br><br>
      * This method will throw an exception if the value of
-     * <code>fieldName</code> is null or has a length less than one.
+     * {@code fieldName} is null or has a length less than one.
      *
      * @param fieldName the name identifying the record boost field
      * @return the {@link RecordBoostField}
@@ -169,13 +182,13 @@ final public class Field {
      * on the index whose schema includes this field is searched. The data of this field will also be
      * returned with the search results whenever a search is performed.
      * <br><br>
-     * The value of the <code>boost</code> argument will be used to calculate the score of the of search
+     * The value of the {@code boost} argument will be used to calculate the score of the of search
      * results, making this field proportionally more or less relevant than other searchable fields. By
      * default this value is set to one.
      * <br><br>
      * This method will throw an exceptions if the value passed for
-     * <code>boost</code> is less than one or greater than one hundred; or if the value of
-     * <code>fieldName</code> is null or has a length less than one.
+     * {@code boost} is less than one or greater than one hundred; or if the value of
+     * {@code fieldName} is null or has a length less than one.
      *
      * @param fieldName the name identifying the field
      * @param boost the value to assign to the relevance of this field, relative to other searchable fields
@@ -197,7 +210,7 @@ final public class Field {
      * returned with the search results whenever a search is performed.
      * <br><br>
      * This method will throw an exception if the value of
-     * <code>fieldName</code> is null or has a length less than one.
+     * {@code fieldName} is null or has a length less than one.
      *
      * @param fieldName the name identifying the field
      * @return the searchable field
@@ -209,21 +222,18 @@ final public class Field {
     /**
      * Static factory method for obtaining a refining field.
      * Data associated with this field must be have a type specified by the value of
-     * <code>fieldType</code>. The data of this field will be
+     * {@code fieldType}. The data of this field will be
      * returned with the search results whenever a search is performed, but it will not be
-     * matched against the key words of the search input. Using the <code>Query</code> class
+     * matched against the key words of the search input. Using the {@code Query} class
      * the data of this field can be used to filter search results, however, such as in limiting
      * the range of values if the field type is numerical.
      * <br><br>
      * This method will throw an exception if the value of
-     * <code>fieldName</code> is null or has a length less than one; or if the
-     * value of <code>fieldType</code> is null.
+     * {@code fieldName} is null or has a length less than one; or if the
+     * value of {@code fieldType} is null.
      *
      * @param fieldName the name identifying the field
-     * @param fieldType the type of the field (Field.FieldType.TEXT,
-     *                  Field.FieldType.INTEGER, Field.FieldType.FLOAT,
-     *                  Field.FieldType.TIME, Field.FieldType.LOCATION_LONGITUDE,
-     *                  Field.FieldType.LOCATION_LATITUDE)
+     * @param fieldType the type of the field
      * @return the refining field
      */
     public static Field createRefiningField(String fieldName, Type fieldType) {
@@ -238,12 +248,12 @@ final public class Field {
      * of one. The searchable field can only be textual type.
      * The data associated with this field will be matched against the
      * search input during a search, can also be used to support advanced
-     * search features with the <code>Query</code> class such as limiting the
+     * search features with the {@code Query} class such as limiting the
      * range of the search results, and can also be used to do post-processing
      * operations on the search results.
      * <br><br>
      * This method will throw an exception if the value of
-     * <code>fieldName</code> is null or has a length less than one.
+     * {@code fieldName} is null or has a length less than one.
      *
      * @param fieldName the name identifying the field
      * @return the refining and searchable field
@@ -259,17 +269,17 @@ final public class Field {
      * of one. The searchable field can only be textual type.
      * The data associated with this field will be matched against the
      * search input during a search, can also be used to support advanced
-     * search features with the <code>Query</code> class such as limiting the
+     * search features with the {@code Query} class such as limiting the
      * range of the search results, and can also be used to do post-processing
      * operations on the search results.
      * <br><br>
-     * The value of the <code>boost</code> argument will be used to calculate the score of the of search
+     * The value of the {@code boost} argument will be used to calculate the score of the of search
      * results, making this field proportionally more or less relevant than other searchable fields. By
      * default this value is set to one.
      * <br><br>
      * This method will throw an exceptions if the value passed for
-     * <code>boost</code> is less than one or greater than one hundred; or if the value of
-     * <code>fieldName</code> is null or has a length less than one.
+     * {@code boost} is less than one or greater than one hundred; or if the value of
+     * {@code fieldName} is null or has a length less than one.
      *
      * @param fieldName the name identifying the field
      * @param boost     the value to assign to the relevance of this field, relative to other searchable fields
@@ -313,7 +323,7 @@ final public class Field {
      * {@link Highlighter} for
      * more details.
      * <br><br>
-     * This method returns the <code>Field</code> itself so that it can have
+     * This method returns the {@code Field} itself so that it can have
      * these calls cascaded.
      *
      * @return the corresponding field for cascading method calls
@@ -354,7 +364,7 @@ final public class Field {
         StringBuilder fieldXML = new StringBuilder();
 
         if (field.isRecordBoostField) {
-            fieldXML.append(tttt)
+            fieldXML.append(IndexDescription.TAB_QUINTUPLE)
                     .append("<field name=\"").append(field.name)
                     .append("\" type=\"")
                     .append(field.type.name().toLowerCase(Locale.ENGLISH))
@@ -365,14 +375,14 @@ final public class Field {
                     .append(field.required).append("\"/>\n");
         } else if (field.type == InternalType.LOCATION_LATITUDE
                 || field.type == InternalType.LOCATION_LONGITUDE) {
-            fieldXML.append(tttt)
+            fieldXML.append(IndexDescription.TAB_QUINTUPLE)
                     .append("<field name=\"").append(field.name)
                     .append("\" type=\"")
                     .append(field.type.name().toLowerCase(Locale.ENGLISH))
                     .append("\" indexed=\"false\" />\n");
         } else {
             if (field.highlight) {
-                fieldXML.append(tttt)
+                fieldXML.append(IndexDescription.TAB_QUINTUPLE)
                         .append("<field name=\"").append(field.name).append("\"")
                         .append(" type=\"").append(field.type.name().toLowerCase(Locale.ENGLISH)).append("\"")
                         .append(" indexed=\"").append("true").append("\"")
@@ -380,7 +390,7 @@ final public class Field {
                         .append(" required=\"").append(field.required).append("\"/>")
                         .append("\n");
             } else {
-                fieldXML.append(tttt)
+                fieldXML.append(IndexDescription.TAB_QUINTUPLE)
                         .append("<field name=\"").append(field.name).append("\"")
                         .append(" type=\"").append(field.type.name().toLowerCase(Locale.ENGLISH)).append("\"")
                         .append(" searchable=\"").append(field.searchable).append("\"")

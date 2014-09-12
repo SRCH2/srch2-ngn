@@ -74,14 +74,14 @@ public class QueryTest {
         Query q8 = new Query(box[0], box[1], box[2], box[3]);
         Assert.assertEquals("lblat=100.0&lblong=200.0&rtlat=-100.0&rtlong=-200.0", q8.toString());
 
-        Query q88 = new Query(new SearchableTerm("cameron")).insideRectangleRegion(box[0],box[1],box[2],box[3]);
+        Query q88 = new Query(new SearchableTerm("cameron")).insideRectangle(box[0], box[1], box[2], box[3]);
         Assert.assertEquals("q=cameron&lblat=100.0&lblong=200.0&rtlat=-100.0&rtlong=-200.0", q88.toString());
 
         double [] circle = { 111.0, 222.0, 50.0};
         Query q9 = new Query(circle[0], circle[1], circle[2]);
         Assert.assertEquals("clat=111.0&clong=222.0&radius=50.0", q9.toString());
 
-        Query q99 = new Query(new SearchableTerm("cameron")).insideCircleRegion(circle[0],circle[1],circle[2]);
+        Query q99 = new Query(new SearchableTerm("cameron")).insideCircle(circle[0], circle[1], circle[2]);
         Assert.assertEquals("q=cameron&clat=111.0&clong=222.0&radius=50.0", q99.toString());
 
     }
@@ -194,7 +194,7 @@ public class QueryTest {
                 "q=girardelli&start=0&rows=20&lblat=61.2&lblong=-149.9&rtlat=61.22&rtlong=-149.7",
                 new Query(new SearchableTerm("girardelli")).pagingStartFrom(0)
                         .pagingSize(20)
-                        .insideRectangleRegion(61.20, -149.90, 61.22, -149.70)
+                        .insideRectangle(61.20, -149.90, 61.22, -149.70)
                         .toString());
     }
 

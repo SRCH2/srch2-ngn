@@ -6,11 +6,11 @@ import java.util.Properties;
 
 final class IndexDescription {
 
-    static final String tMinus = "    ";
-    static final String t = "        ";
-    static final String tt = "            ";
-    static final String ttt = "                ";
-    static final String tttt = "                    ";
+    static final String TAB_SINGLE = "    ";
+    static final String TAB_DOUBLE = "        ";
+    static final String TAB_TRIPLE = "            ";
+    static final String TAB_QUADRUPLE = "                ";
+    static final String TAB_QUINTUPLE = "                    ";
 
     private static final String RECORD_SCORE_EXPRESSION = "recordScoreExpression";
     private static final String FUZZY_MATCH_PENALTY = "fuzzyMatchPenalty";
@@ -224,19 +224,19 @@ final class IndexDescription {
 
 
         StringBuilder core = new StringBuilder()
-            .append(t)
+            .append(TAB_DOUBLE)
                 .append("<core name=\"")
                     .append(coreProperties.getProperty(INDEX_NAME))
                 .append("\">\n")/*
-            .append(tt) ONLY USED FOR JSON LEAVE OUT FOR NOW
+            .append(TAB_TRIPLE) ONLY USED FOR JSON LEAVE OUT FOR NOW
                 .append("<dataFile>")
                     .append(coreProperties.getProperty(DATA_FILE))
                 .append("</dataFile>\n")*/
-            .append(tt)
+            .append(TAB_TRIPLE)
                 .append("<dataDir>")
                     .append(coreProperties.getProperty(DATA_DIR))
                 .append("</dataDir>\n")
-            .append(tt)
+            .append(TAB_TRIPLE)
                 .append("<dataSourceType>")
                     .append(coreProperties.getProperty(DATA_SOURCE_TYPE))
                 .append("</dataSourceType>\n\n");
@@ -247,116 +247,116 @@ final class IndexDescription {
 /* SQLITE CONFIGURATION NODE END */
 /* INDEX CONFIGURATION NODE START */
             core
-            .append(tt)
+            .append(TAB_TRIPLE)
                 .append("<indexConfig>\n")
-            .append(ttt)
+            .append(TAB_QUADRUPLE)
                 .append("<supportSwapInEditDistance>")
                     .append(indexProperties.getProperty(SUPPORT_SWAP_IN_EDIT_DISTANCE))
                 .append("</supportSwapInEditDistance>\n")
-            .append(ttt)
+            .append(TAB_QUADRUPLE)
                 .append("<fieldBoost>")
                     .append(indexProperties.getProperty(FIELD_BOOST))
                 .append("</fieldBoost>\n");
 
         if (schema != null && schema.recordBoostKey != null) {
             core
-            .append(ttt)
+            .append(TAB_QUADRUPLE)
                 .append("<recordBoostField>")
                     .append(indexProperties.getProperty(RECORD_BOOST_FIELD))
                 .append("</recordBoostField>\n");
         }
         core
-            .append(ttt)
+            .append(TAB_QUADRUPLE)
                 .append("<defaultQueryTermBoost>")
                     .append(indexProperties.getProperty(DEFAULT_QUERY_TERM_BOOST))
                 .append("</defaultQueryTermBoost>\n")
-            .append(ttt)
+            .append(TAB_QUADRUPLE)
                 .append("<enablePositionIndex>")
                     .append(indexProperties.getProperty(ENABLE_POSITION_INDEX))
                 .append("</enablePositionIndex>\n")
-            .append(tt)
+            .append(TAB_TRIPLE)
                 .append("</indexConfig>\n\n")
 /* INDEX CONFIGURATION NODE END */
 /* QUERY CONFIGURATION NODE START */
-            .append(tt)
+            .append(TAB_TRIPLE)
                 .append("<query>\n")
-            .append(ttt)
+            .append(TAB_QUADRUPLE)
                 .append("<rankingAlgorithm>\n")
-            .append(tttt)
+            .append(TAB_QUINTUPLE)
                 .append("<recordScoreExpression>")
                     .append(queryProperties.getProperty(RECORD_SCORE_EXPRESSION))
                 .append("</recordScoreExpression>\n")
-            .append(ttt)
+            .append(TAB_QUADRUPLE)
                 .append("</rankingAlgorithm>\n")
-            .append(ttt)
+            .append(TAB_QUADRUPLE)
                 .append("<fuzzyMatchPenalty>")
                     .append(queryProperties.getProperty(FUZZY_MATCH_PENALTY))
                 .append("</fuzzyMatchPenalty>\n")
-            .append(ttt)
+            .append(TAB_QUADRUPLE)
                 .append("<queryTermSimilarityThreshold>")
                     .append(queryProperties.getProperty(QUERY_TERM_SIMILARITY_THRESHOLD))
                 .append("</queryTermSimilarityThreshold>\n")
-            .append(ttt)
+            .append(TAB_QUADRUPLE)
                 .append("<prefixMatchPenalty>")
                     .append(queryProperties.getProperty(PREFIX_MATCH_PENALTY))
                 .append("</prefixMatchPenalty>\n")
-            .append(ttt)
+            .append(TAB_QUADRUPLE)
                 .append("<cacheSize>")
                     .append(queryProperties.getProperty(CACHE_SIZE))
                 .append("</cacheSize>\n")
-            .append(ttt)
+            .append(TAB_QUADRUPLE)
                 .append("<rows>")
                     .append(queryProperties.getProperty(ROWS))
                 .append("</rows>\n")
-            .append(ttt)
+            .append(TAB_QUADRUPLE)
                 .append("<fieldBasedSearch>")
                     .append(queryProperties.getProperty(FIELD_BASED_SEARCH))
                 .append("</fieldBasedSearch>\n")
-            .append(ttt)
+            .append(TAB_QUADRUPLE)
                 .append("<searcherType>")
                     .append(queryProperties.getProperty(SEARCHER_TYPE))
                 .append("</searcherType>\n")
-            .append(ttt)
+            .append(TAB_QUADRUPLE)
                 .append("<queryTermFuzzyType>")
                     .append(queryProperties.getProperty(QUERY_TERM_FUZZY_TYPE))
                 .append("</queryTermFuzzyType>\n")
-            .append(ttt)
+            .append(TAB_QUADRUPLE)
                 .append("<queryTermPrefixType>")
                     .append(queryProperties.getProperty(QUERY_TERM_PREFIX_TYPE))
                 .append("</queryTermPrefixType>\n")
-            .append(ttt)
+            .append(TAB_QUADRUPLE)
                 .append("<queryResponseWriter>\n")
-            .append(tttt)
+            .append(TAB_QUINTUPLE)
                 .append("<responseFormat>")
                     .append(queryProperties.getProperty(RESPONSE_FORMAT))
                 .append("</responseFormat>\n")
-            .append(ttt)
+            .append(TAB_QUADRUPLE)
                 .append("</queryResponseWriter>\n")
-            .append(ttt)
+            .append(TAB_QUADRUPLE)
                 .append("<highlighter>\n")
-            .append(tttt)
+            .append(TAB_QUINTUPLE)
                 .append("<snippetSize>")
                     .append(250)
                 .append("</snippetSize>\n")
-            .append(tttt)
+            .append(TAB_QUINTUPLE)
                 .append("<fuzzyTagPre value = \'")
                     .append(queryProperties.get("fuzzyPreTag"))
                 .append("\'></fuzzyTagPre>\n")
-            .append(tttt)
+            .append(TAB_QUINTUPLE)
                 .append("<fuzzyTagPost value = \'")
                     .append(queryProperties.get("fuzzyPostTag"))
                 .append("\'></fuzzyTagPost>\n")
-            .append(tttt)
+            .append(TAB_QUINTUPLE)
                 .append("<exactTagPre value = \'")
                     .append(queryProperties.get("exactPreTag"))
                 .append("\'></exactTagPre>\n")
-            .append(tttt)
+            .append(TAB_QUINTUPLE)
                 .append("<exactTagPost value = \'")
                     .append(queryProperties.get("exactPostTag"))
                 .append("\'></exactTagPost>\n")
-            .append(ttt)
+            .append(TAB_QUADRUPLE)
                 .append("</highlighter>\n")
-            .append(tt)
+            .append(TAB_TRIPLE)
                 .append("</query>\n\n");
 /* QUERY CONFIGURATION NODE END */
 
@@ -367,80 +367,80 @@ final class IndexDescription {
 
 /* UPDATE CONFIGURATION NODE START */
         core
-            .append(tt)
+            .append(TAB_TRIPLE)
                 .append("<updatehandler>\n")
-            .append(ttt)
+            .append(TAB_QUADRUPLE)
                 .append("<maxDocs>")
                     .append(updateProperties.getProperty(MAX_DOCS))
                 .append("</maxDocs>\n")
-            .append(ttt)
+            .append(TAB_QUADRUPLE)
                 .append("<maxMemory>")
                     .append(updateProperties.getProperty(MAX_MEMORY))
                 .append("</maxMemory>\n")
-            .append(ttt)
+            .append(TAB_QUADRUPLE)
                 .append("<mergePolicy>\n")
-            .append(tttt)
+            .append(TAB_QUINTUPLE)
                 .append("<mergeEveryNSeconds>")
                     .append(updateProperties.getProperty(MERGE_EVERY_N_SECONDS))
                 .append("</mergeEveryNSeconds>\n")
-            .append(tttt)
+            .append(TAB_QUINTUPLE)
                 .append("<mergeEveryMWrites>")
                     .append(updateProperties.getProperty(MERGE_EVERY_M_WRITES))
                 .append("</mergeEveryMWrites>\n")
-            .append(ttt)
+            .append(TAB_QUADRUPLE)
                 .append("</mergePolicy>\n")
-            .append(tt)
+            .append(TAB_TRIPLE)
                 .append("</updatehandler>\n")
 /* UPDATE CONFIGURATION NODE END */
-            .append(t)
+            .append(TAB_DOUBLE)
                 .append("</core>\n");
         return core.toString();
     }
 
     String schemaToXml() {
         StringBuilder schemaXML = new StringBuilder()
-            .append(tt)
+            .append(TAB_TRIPLE)
                 .append("<schema>\n")
-            .append(ttt)
+            .append(TAB_QUADRUPLE)
                 .append("<fields>\n");
 
         for (Field field : schema.fields) {
             schemaXML.append(Field.toXML(field));
         }
         schemaXML
-            .append(ttt)
+            .append(TAB_QUADRUPLE)
                 .append("</fields>\n")
-            .append(ttt)
+            .append(TAB_QUADRUPLE)
                 .append("<uniqueKey>")
                     .append(schema.uniqueKey)
                 .append("</uniqueKey>\n")
 /* ADDING FACETS */
                 .append(facetToXML())
 /* DEFAULT CONFIGURATION FOR SCHEMA */
-            .append(ttt)
+            .append(TAB_QUADRUPLE)
                 .append("<types>\n")
-            .append(tttt)
+            .append(TAB_QUINTUPLE)
                 .append("<fieldType name=\"text_en\">\n")
-            .append(tttt).append(tMinus)
+            .append(TAB_QUINTUPLE).append(TAB_SINGLE)
                 .append("<analyzer>\n")
-            .append(tttt).append(t)
+            .append(TAB_QUINTUPLE).append(TAB_DOUBLE)
                 .append("<filter name=\"PorterStemFilter\" dictionary=\"\" />\n")
-            .append(tttt).append(t)
+            .append(TAB_QUINTUPLE).append(TAB_DOUBLE)
                 .append("<filter name=\"StopFilter\" words=\"stop-words.txt\" />\n")
-            .append(tttt).append(tMinus)
+            .append(TAB_QUINTUPLE).append(TAB_SINGLE)
                 .append("</analyzer>\n")
-            .append(tttt)
+            .append(TAB_QUINTUPLE)
                 .append("</fieldType>\n")
-            .append(ttt)
+            .append(TAB_QUADRUPLE)
                 .append("</types>\n")
-            .append(tt)
+            .append(TAB_TRIPLE)
                 .append("</schema>\n\n");
         return schemaXML.toString();
     }
 
     String facetToXML() {
         StringBuilder facetNodeXML = new StringBuilder()
-            .append(ttt)
+            .append(TAB_QUADRUPLE)
                 .append("<facetEnabled>")
                     .append(schema.facetEnabled)
                 .append("</facetEnabled>\n");
@@ -455,7 +455,7 @@ final class IndexDescription {
                     switch (f.facetType) {
                         case CATEGORICAL:
                             facetFieldsXML
-                                    .append(tttt).append(t)
+                                    .append(TAB_QUINTUPLE).append(TAB_DOUBLE)
                                         .append("<facetField name=\"")
                                             .append(f.name)
                                     .append("\" facetType=\"categorical\"/>\n");
@@ -463,7 +463,7 @@ final class IndexDescription {
                         case RANGE:
                         default:
                             facetFieldsXML
-                                    .append(tttt).append(t)
+                                    .append(TAB_QUINTUPLE).append(TAB_DOUBLE)
                                         .append("<facetField name=\"")
                                         .append(f.name)
                                         .append("\" facetType=\"range\" facetStart=\"")
@@ -475,10 +475,10 @@ final class IndexDescription {
                 }
             }
             facetNodeXML
-                    .append(tttt)
+                    .append(TAB_QUINTUPLE)
                         .append("<facetFields>\n")
                             .append(facetFieldsXML)
-                    .append(tttt)
+                    .append(TAB_QUINTUPLE)
                         .append("</facetFields>\n");
         }
         return facetNodeXML.toString();
@@ -486,19 +486,19 @@ final class IndexDescription {
 
     String sqliteDatabaseParametersToXML() {
         StringBuilder sb = new StringBuilder()
-                .append(t)
+                .append(TAB_DOUBLE)
                 .append("<dbParameters>\n")
-                .append(tt)
+                .append(TAB_TRIPLE)
                 .append("<dbSharedLibraryPath>")
                 .append(sqliteDatabaseProperties.getProperty(DB_SHARED_LIBRARY_PATH))
                 .append("</dbSharedLibraryPath>\n")
-                .append(tt)
+                .append(TAB_TRIPLE)
                 .append("<dbSharedLibraryName>")
                 .append(sqliteDatabaseProperties.get(DB_SHARED_LIBRARY_NAME))
                 .append("</dbSharedLibraryName>\n")
-                .append(tt)
+                .append(TAB_TRIPLE)
                 .append("<dbKeyValues>\n")
-                .append(ttt)
+                .append(TAB_QUADRUPLE)
                 .append("<dbKeyValue key=\"db\" value=\"" +
                         sqliteDatabaseProperties.getProperty(DB_DATABASE_NAME) + "\" />\n")
                 .append("<dbKeyValue key=\"dbPath\" value=\"" +
@@ -509,9 +509,9 @@ final class IndexDescription {
                         sqliteDatabaseProperties.getProperty(DB_LISTENER_WAIT_TIME) + "\"/>\n")
                 .append("<dbKeyValue key=\"maxRetryOnFailure\" value=\"" +
                         sqliteDatabaseProperties.getProperty(DB_MAX_RETRY_ON_FAILURE) + "\"/>\n")
-                .append(tt)
+                .append(TAB_TRIPLE)
                 .append("</dbKeyValues>\n")
-                .append(t)
+                .append(TAB_DOUBLE)
                 .append("</dbParameters>\n");
         return sb.toString();
     }

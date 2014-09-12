@@ -1,18 +1,27 @@
 package com.srch2.android.sdk;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 
 /**
  * Defines an index's structure such as its data fields. If an index is like an SQLite database table, the schema
  * is the table structure and its fields are the columns of that table. The fields of a schema must be named and
- * typed; they can also have additional properties such as highlighting and facet. See {@link Field}
- * for more information.
+ * typed. Each schema must must always be created with a {@link com.srch2.android.sdk.PrimaryKeyField}; a
+ * {@link com.srch2.android.sdk.RecordBoostField} is optional; and each schema must contain at least one
+ * searchable field.
  * <br><br>
- * A schema <b>should only</b> be constructed when returning from the <code>Indexable</code> implementation of
- * {@link Indexable#getSchema()}.
+ * Two types of schema's can be constructed: those that support geo-search and those that do not. A 'normal' or
+ * default schema can be obtained from the static factory method {@link #createSchema(PrimaryKeyField, Field...)}.
+ * A schema supporting geo-search can be obtained from the static factory method
+ * {@link #createGeoSchema(PrimaryKeyField, String, String, Field...)}; when creating such a index, two fields
+ * will always be named 'latitude' and 'longitude' from which the geo-search will use data to filter and rank
+ * the search results.
  * <br><br>
  * A schema <b>should never</b> be initialized with null field values or duplicated fields.
+ * <br><br>
+ * A schema should only be constructed when returning from the {@code Indexable} implementation of
+ * {@link Indexable#getSchema()}.
+ * <br><br>
+ * Schemas are automatically generated for instances of {@link com.srch2.android.sdk.SQLiteIndexable}.
  */
 public final class Schema {
 
@@ -81,7 +90,7 @@ public final class Schema {
      * Defines the structure of an index's data fields. If an index is like a table in the SQLite database,
      * the schema is the table structure and its fields are the columns of that table. This method should
      * only be called when
-     * returning the from the <code>Indexable</code> implementation of the method
+     * returning the from the {@code Indexable} implementation of the method
      * {@link Indexable#getSchema()}.
      * <br><br>
      * The first argument <b>should always</b> be the primary key field, which can be used to
@@ -91,8 +100,7 @@ public final class Schema {
      * The remaining set of arguments are the rest of the schema's fields as they are defined
      * for the index. They can be passed in any order.
      * <br><br>
-     * A schema initialized with null field values will cause an exception to be thrown when
-     * {@link SRCH2Engine#initialize(Indexable, Indexable...)} is called.
+     * A schema initialized with null field values will cause an exception.
      * @param primaryKeyField the field which will be the primary key of the index's schema
      * @param remainingField  the set of any other fields needed to define the schema
      */
@@ -106,7 +114,7 @@ public final class Schema {
      * the schema is the table structure and its fields are the columns of that table. This
      * method should
      * only be called when
-     * returning the from the <code>Indexable</code> implementation of the method
+     * returning the from the {@code Indexable} implementation of the method
      * {@link Indexable#getSchema()}.
      * <br><br>
      * The first argument <b>should always</b> be the primary key field, which can be used to
@@ -120,8 +128,7 @@ public final class Schema {
      * The remaining set of arguments are the rest of the schema's fields as they are defined
      * for the index. They can be passed in any order.
      * <br><br>
-     * A schema initialized with null field values will cause an exception to be thrown when
-     * {@link SRCH2Engine#initialize(Indexable, Indexable...)} is called.
+     * A schema initialized with null field values will cause an exception.
      * @param primaryKeyField the field which will be the primary key of the index's schema
      * @param recordBoostField the field which will define the score or boost value to assign to the record
      * @param remainingField  the set of any other fields needed to define the schema
@@ -152,11 +159,11 @@ public final class Schema {
 
 
     /**
-     * Defines the structure of an index's data fields that is to include geosearch capability. If an index
+     * Defines the structure of an index's data fields that is to include geo-search capability. If an index
      * is like a table in the SQLite database,
      * the schema is the table structure and its fields are the columns of that table. This method should
      * only be called when
-     * returning the from the <code>Indexable</code> implementation of the method
+     * returning the from the {@code Indexable} implementation of the method
      * {@link Indexable#getSchema()}.
      * <br><br>
      * The first argument <b>should always</b> be the primary key field, which can be used to
@@ -169,8 +176,7 @@ public final class Schema {
      * The remaining set of arguments are the rest of the schema's fields as they are defined
      * for the index. They can be passed in any order.
      * <br><br>
-     * A schema initialized with null field values will cause an exception to be thrown when
-     * {@link SRCH2Engine#initialize(Indexable, Indexable...)} is called.
+     * A schema initialized with null field values will cause an exception.
      * @param primaryKeyField the field which will be the primary key of the index's schema
      * @param latitudeFieldName the field which will be the latitude field of the index's schema
      * @param longitudeFieldName the field which will be the longitude field of the index's schema
@@ -184,13 +190,13 @@ public final class Schema {
 
 
     /**
-     * Defines the structure of an index's data fields that is to include geosearch capability  with one field
+     * Defines the structure of an index's data fields that is to include geo-search capability  with one field
      * specified as the record
      * boost field. If an index
      * is like a table in the SQLite database,
      * the schema is the table structure and its fields are the columns of that table. This method should
      * only be called when
-     * returning the from the <code>Indexable</code> implementation of the method
+     * returning the from the {@code Indexable} implementation of the method
      * {@link Indexable#getSchema()}.
      * <br><br>
      * The first argument <b>should always</b> be the primary key field, which can be used to
@@ -207,8 +213,7 @@ public final class Schema {
      * The remaining set of arguments are the rest of the schema's fields as they are defined
      * for the index. They can be passed in any order.
      * <br><br>
-     * A schema initialized with null field values will cause an exception to be thrown when
-     * {@link SRCH2Engine#initialize(Indexable, Indexable...)} is called.
+     * A schema initialized with null field values will cause an exception.
      * @param primaryKeyField the field which will be the primary key of the index's schema
      * @param recordBoostField the field which will define the score or boost value to assign to the record
      * @param latitudeFieldName the field which will be the latitude field of the index's schema

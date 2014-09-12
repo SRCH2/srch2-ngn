@@ -12,30 +12,23 @@ import java.util.HashMap;
  * containing the results of the search. The RESTful response literal can be inspected by evaluating the
  * <code>String JSONResponse</code> to view the results of a search; in addition, this RESTful response
  * literal is parsed and the specific records of the search are parsed and put into the map
- * <code>HashMap resultRecordMap</code>. This map contains as its keys the names of the indexes (as set by the
- * return value
- * of
- * {@link Indexable#getIndexName() and {@link SQLiteIndexable#getIndexName()}}) mapped to an <code>ArrayList</code>
+ * <code>HashMap resultRecordMap</code>. This map contains as its keys the names of the indexes mapped to an
+ * <code>ArrayList</code>
  * of the parsed <code>JSONObject</code>
- * records. If the search that was performed is specific to a single index, this map will only contain one key--
- * the name of that index searched; otherwise the map will contain results for all the indexes (such as when
- * {@link SRCH2Engine#searchAllIndexes(String)} is called). If there are no results for a given
- * search input, the map will be <b>non-null</b> but contain no values for each index name key.
+ * records.
  * <br><br>
  * This callback can be registered by calling {@link SRCH2Engine#setSearchResultsListener(SearchResultsListener)}
+ * or passing it in when calling
+ * {@link com.srch2.android.sdk.SRCH2Engine#onResume(android.content.Context, SearchResultsListener, boolean)}
  * and can be reset at any time. It is not necessary to register an implementation
- * of <code>SearchResultsListener</code> but it is the only way through this API to recieve search results.
+ * of <code>SearchResultsListener</code> but it is the only way through this API to receive search results.
  * <br><br>
- * Whenever {@link #onNewSearchResults(int, String, java.util.HashMap)} is executed, it will always occur off of the Ui thread so
- * for results to be displayed to the user they must be pushed to the Ui thread first. Implementing this
- * interface on subclass of {@link android.os.Handler} is one way to do this. Starting any intensive
- * execution from the implementation of this callback's method is highly discouraged as it could block
- * subsequent search tasks performed by the SRCH2Engine; however simple post-processing should not cause
- * any blocking.
+ * The method {@link #onNewSearchResults(int, String, java.util.HashMap)} will be executed <b>off of the Ui
+ * thread</b> by default, but can be do so by passing <b>true</b> when setting the <code>SearchResultListener</code>
+ * instance when calling
+ * {@link com.srch2.android.sdk.SRCH2Engine#setSearchResultsListener(SearchResultsListener, boolean)}.
  */
 public interface SearchResultsListener {
-
-
 
     /**
      * Called whenever the SRCH2 search server finishing processing a search request. The response of the
@@ -45,10 +38,10 @@ public interface SearchResultsListener {
      * <code>resultRecordMap</code>.
      * <br><br>
      * This map contains as its keys the names of the indexes (as set by the return value
-     * of the
-     * {@link Indexable#getIndexName() and {@link SQLiteIndexable#getIndexName()}}) mapped to an <code>ArrayList</code>
+     * of
+     * {@link Indexable#getIndexName()} and {@link SQLiteIndexable#getIndexName()}}) mapped to an <code>ArrayList</code>
      * of the parsed <code>JSONObject</code>
-     * records. Each <code>JSONObject</code> <b>will always have one key by the name of 'record'</b> which will contain have
+     * records. Each <code>JSONObject</code> <b>will always have one key by the name of 'record'</b> which will have
      * as its set of keys the
      * field names as they were defined in the schema returned
      * from {@link Indexable#getSchema()} or {@link SQLiteIndexable#getSchema()} in order to retrieve the corresponding
@@ -58,12 +51,19 @@ public interface SearchResultsListener {
      * The highlighted text will be formatted according to the configuration of the {@link com.srch2.android.sdk.Highlighter}
      * returned from {@link Indexable#getHighlighter()} or {@link SQLiteIndexable#getHighlighter()}.
      * <br><br>
-     * If the search that was performed is specific to a single index, this map will only contain one key--
-     * the name of that index searched; otherwise the map will contain results for all the indexes (such as when
+     * If the search that was performed is specific to a single index, this map will only contain one key:
+     * the name of searched index; otherwise the map will contain results for all the indexes (such as when
      * {@link SRCH2Engine#searchAllIndexes(String)} is called).
      * <br><br>
      * If there are no results for a given
-     * search input, the map will be <b>non-null</b> but contain no values for each index name key.
+     * search input, the map will be <b>non-null</b> but each <code>ArrayList&lt;JSONObject&gt;</code> will
+     * be of size 0.
+     * <br><br>
+     * The method {@link #onNewSearchResults(int, String, java.util.HashMap)} will be executed <b>off of the Ui
+     * thread</b> by default, but can be do so by passing <b>true</b> when setting the <code>SearchResultListener</code>
+     * instance when calling
+     * {@link com.srch2.android.sdk.SRCH2Engine#setSearchResultsListener(SearchResultsListener, boolean)}.
+     *
      * @param HTTPResponseCode the HTTP response code as it was returned by the SRCH2 search server
      * @param JSONResponse the RESTful response as it was returned by the SRCH2 search server
      * @param resultMap a parsing of the <code>JSONResponse</code> that maps the names of indexes to the

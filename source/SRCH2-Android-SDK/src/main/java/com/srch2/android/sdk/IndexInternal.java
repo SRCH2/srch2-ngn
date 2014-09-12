@@ -103,7 +103,6 @@ final class IndexInternal {
 
     void search(String searchInput) {
         if (SRCH2Engine.validateSearchInput(searchInput)) {
-            SRCH2Engine.checkConfIsNullThrowIfIs();
             searchInput = formatDefaultQueryURL(searchInput);
             // if (this.indexDescription.isGeoIndex()) {
             // //searchInput += formatDefaultGeoCircle();
@@ -116,7 +115,6 @@ final class IndexInternal {
         if (query == null) {
             return;
         }
-        SRCH2Engine.checkConfIsNullThrowIfIs();
         String queryString = query.toString();
         searchRawString(queryString);
     }

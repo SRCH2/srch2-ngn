@@ -4,20 +4,28 @@ package com.srch2.android.sdk;
  * Defines how the search results of a search on a particular index can be formatted to reflect the search input.
  * The SRCH2 search server can generate output that reflects the current search input by inserting leading and
  * trailing tags around the substring of text that matches for any field data value against the search input.
- * For instance, if the search input is 'Joh' and this results in record with a field whose data is 'John Smith',
- * if highlighting was enabled for this field (see {@link Field#enableHighlighting()}), then the SRCH2 search
- * server will produce in addition to the the original record a highlighted snippet. It will be of the form
- * 'PRETAG|matching-text|POSTTAG' and is available for each highlighted field for each record in the search results
- * (see {@link com.srch2.android.sdk.SearchResultsListener#onNewSearchResults(int, String, java.util.HashMap)} for
- * more details). In this case, if matching against exact text and applying a bold HTML tag, the output would be
- * '&lt;b&gt;Jo&lt;/b&gt;n Smith' or (visually, '<b>Jo</b>hn Smith').
+ * <br><br>
+ * For instance, for a field with highlighting enabled, if the search input is 'Joh' and the the search results
+ * include a record with data for that field has the value 'John Smith', then the SRCH2 search
+ * server will produce a highlighted snippet for this field in the search results. This snippet will take the form
+ * 'PRETAG|matching-text|POSTTAG'. To enable highlighting for a field call
+ * {@link com.srch2.android.sdk.Field#enableHighlighting()}
+ * when creating the schema for the <code>Indexable</code> or by overriding
+ * {@link com.srch2.android.sdk.SQLiteIndexable#getColumnIsHighlighted(String)}
+ * and passing the name of the column to highlight for the <code>SQLiteIndexable</code>.
+ * <br><br>
+ * For the example of 'Joh' matching against 'John Smith', since 'Joh' is an exact substring of 'John', the
+ * default highlighter would apply bold tags around the exact matching text. Thus the highlighted snippet
+ * would look like:
+ * <br><br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;&lt;b&gt;Jo&lt;/b&gt;n Smith (or visually, <b>Jo</b>hn Smith)
  * <br><br>
  * Highlighting is applied per index and the same for all highlighted fields in that index's schema. It can be
  * differentiated between exact and fuzzy text matches. <b>By default</b> if a field has highlighting enabled,
  * it will be formatted according to the HTML bold tag. This can be used with {@link android.text.Html#fromHtml(String)}
  * and a {@link android.widget.TextView} such as <code>mTextView.setText(Html.fromHtml(mHighlightedString))</code>.
  * <br><br>
- * Highlighting does not have to be based on HTML tags: it can be whatever is useful.
+ * Highlighting does not have to be based on HTML tags, it can be whatever is useful.
  * <br><br>
  * Highlighting pre and post script for exact and fuzzy text matching <b>must never contain</b> single quotes. All
  * special characters should also be escaped.
@@ -60,9 +68,10 @@ public class Highlighter {
      * matches: exact or fuzzy text matches can be made bold, italicized, or colorized. For example, using the
      * method {@link com.srch2.android.sdk.Highlighter.SimpleHighlighter#formatExactTextMatches(boolean, boolean)} with
      * the values <b>true</b> and <b>false</b> will set the output of the SRCH2 highlighter to make all exact text
-     * matches bold: if the search input were 'Jo' matching a textual value of 'John' , the output of the highlighting
-     * function will be '<b>Jo</b>n' (technically it would be
-     * '&lt;b&gt;Jo&lt;/b&gt;n' without the auto-formatting of the javadoc's html).
+     * matches bold: if the search input were 'Jo' matching a textual value of 'John', the output of the highlighting
+     * function will be:
+     * <br><br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;&lt;b&gt;Jo&lt;/b&gt;n (or visually, <b>Jo</b>n)
      * <br><br>
      * The <code>SimpleHighlighter</code> uses HTML tags to format the output so it is recommended to use the
      * highlighting output with the
@@ -84,8 +93,9 @@ public class Highlighter {
         /**
          * Sets the formatting for exact text matches for being bold, italicized and colorized. That is, if the
          * search input is 'Jo' and the highlighted field data that matches for this search is 'John Smith'
-         * then the output, if bold is set true and italics false, would be '<b>Jo</b>hn Smith' (or
-         * '&lt;b&gt;Jo&lt;/b&gt;n Smith' literally). Being bold and italicized is not mutually exclusive.
+         * then the output, if bold is set true and italics false, would be:
+         * <br><br>
+         * &nbsp;&nbsp;&nbsp;&nbsp;&lt;b&gt;Jo&lt;/b&gt;hn (or visually, <b>Jo</b>hn)
          * <br><br>
          * Note this formatting occurs by HTML tagging, thus {@link android.text.Html#fromHtml(String)} must be
          * used when using the highlighted output in a <code>TextView</code>.
@@ -107,9 +117,14 @@ public class Highlighter {
 
         /**
          * Sets the formatting for exact text matches for being bold and italicized. That is, if the
-         * search input is 'Jo' and the highlighted field data that matches for this search is 'John Smith'
-         * then the output, if bold is set true and italics false, would be '<b>Jo</b>hn Smith' (or
-         * '&lt;b&gt;Jo&lt;/b&gt;n Smith' literally). Being bold and italicized is not mutually exclusive.
+         * search input is 'Jo' and the highlighted field data that matches for this search is 'John'
+         * then the output, if bold is set true and italics false, would be:
+         * <br><br>
+         * &nbsp;&nbsp;&nbsp;&nbsp;&lt;b&gt;Jo&lt;/b&gt;hn (or visually, <b>Jo</b>hn)
+         * <br><br>
+         * Note this formatting occurs by HTML tagging, thus {@link android.text.Html#fromHtml(String)} must be
+         * used when using the highlighted output in a <code>TextView</code>.
+         * <br><br>
          * @param bold whether to make the exact matching text bold
          * @param italic whether to make the exact matching text italicized
          * @return this highlighter
@@ -122,9 +137,10 @@ public class Highlighter {
 
         /**
          * Sets the formatting for fuzzy text matches for being bold, italicized and colorized. That is, if the
-         * search input is 'Jon' and the highlighted field data that matches for this search is 'John Smith'
-         * then the output, if bold is set true and italics false, would be '<b>Jo</b>hn Smith' (or
-         * '&lt;b&gt;Jo&lt;/b&gt;n Smith' literally). Being bold and italicized is not mutually exclusive.
+         * search input is 'Jon' and the highlighted field data that matches for this search is 'John'
+         * then the output, if bold is set true and italics false, would be:
+         * <br><br>
+         * &nbsp;&nbsp;&nbsp;&nbsp;&lt;b&gt;Jo&lt;/b&gt;hn (or visually, <b>Jo</b>hn)
          * <br><br>
          * Note this formatting occurs by HTML tagging, thus {@link android.text.Html#fromHtml(String)} must be
          * used when using the highlighted output in a <code>TextView</code>.
@@ -146,10 +162,13 @@ public class Highlighter {
 
         /**
          * Sets the formatting for exact fuzzy matches for being bold and italicized. That is, if the
-         * search input is 'Jon' and the highlighted field data that matches for this search is 'John Smith'
-         * then the output, if bold is set true and italics false, would be '<b>Jo</b>hn Smith' (or
-         * '&lt;b&gt;Jo&lt;/b&gt;n Smith' literally). Being bold and italicized is not mutually exclusive.
+         * search input is 'Jon' and the highlighted field data that matches for this search is 'John'
+         * then the output, if bold is set true and italics false, would be:
          * <br><br>
+         * &nbsp;&nbsp;&nbsp;&nbsp;&lt;b&gt;Jo&lt;/b&gt;hn (or visually, <b>Jo</b>hn)
+         * <br><br>
+         * Note this formatting occurs by HTML tagging, thus {@link android.text.Html#fromHtml(String)} must be
+         * used when using the highlighted output in a <code>TextView</code>.
          * @param bold whether to make the exact matching text bold
          * @param italic whether to make the exact matching text italicized
          * @return this highlighter
@@ -161,7 +180,7 @@ public class Highlighter {
         }
     }
 
-    protected Highlighter(String exactPreTag, String exactPostTag, String fuzzyPreTag, String fuzzyPostTag) {
+    Highlighter(String exactPreTag, String exactPostTag, String fuzzyPreTag, String fuzzyPostTag) {
         checkHighlightingTags("fuzzyPreTag", fuzzyPreTag);
         checkHighlightingTags("fuzzyPostTag", fuzzyPostTag);
         checkHighlightingTags("exactPreTag", exactPreTag);
@@ -179,8 +198,14 @@ public class Highlighter {
      * <code>exactPostTag</code> will be the leading and trailing tags of the substring of the search input keyword that
      * matches exactly: if the search input were 'Joh' matching a textual value of 'John' and the values of
      * <code>exactPreTag</code> and <code>exactPostTag</code> supplied to this method where &lt;b&gt; and &lt;/b&gt;,
-     * respectively, the output of the highlighting function would be '<b>Joh</b>n' (technically it would be
-     * '&lt;b&gt;Joh&lt;/b&gt;n' without the auto-formatting of the javadoc's html).
+     * respectively, the output of the highlighting function would be:
+     * <br><br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;&lt;b&gt;Joh&lt;/b&gt;n (or visually, <b>Joh</b>n)
+     * <br><br>
+     * Or, more generally if <code>exactPreTag</code> and <code>exactPostTag</code> are set as !PRE-EXACT! and !POST-EXACT!,
+     * the output would be:
+     * <br><br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;!PRE-EXACT!Joh!POST-EXACT!n
      * <br><br>
      * Thus by setting these values and enabling highlighting on a searchable field will cause search results to
      * be automatically formatted indicating the match between the current user's search input and every highlighted
@@ -193,7 +218,9 @@ public class Highlighter {
      * <b>If this method is not called when some schema's fields have {@link Field#enableHighlighting()} set</b>, the default
      * behavior of the highlighter will be to bold matching text.
      * <br><br>
-     * This method will throw exceptions if any of the arguments are null or empty strings.
+     * This method will throw exceptions if any of the arguments are null or empty strings, or if the value of any
+     * of the arguments
+     * contain the single quote character.
      * @param fuzzyPreTag specifies the tag value to be prefixed to a fuzzy keyword match
      * @param fuzzyPostTag specifies the tag value to be suffixed to a fuzzy keyword match
      * @param exactPreTag specifies the tag value to be prefixed to an exact keyword match
@@ -208,9 +235,10 @@ public class Highlighter {
      * matches: exact or fuzzy text matches can be made bold, italicized, or colorized. For example, using the
      * method {@link com.srch2.android.sdk.Highlighter.SimpleHighlighter#formatExactTextMatches(boolean, boolean)} with
      * the values <b>true</b> and <b>false</b> will set the output of the SRCH2 highlighter to make all exact text
-     * matches bold: if the search input were 'Jo' matching a textual value of 'John' , the output of the highlighting
-     * function will be '<b>Jo</b>n' (technically it would be
-     * '&lt;b&gt;Jo&lt;/b&gt;n' without the auto-formatting of the javadoc's html).
+     * matches bold. If the search input were 'Jo' matching a textual value of 'John', the output of the highlighting
+     * function would be:
+     * <br><br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;&lt;b&gt;Jo&lt;/b&gt;hn (or visually, <b>Jo</b>hn)
      * <br><br>
      * The <code>SimpleHighlighter</code> uses HTML tags to format the output so it is recommended to use the
      * highlighting output with the
@@ -294,7 +322,7 @@ public class Highlighter {
         highlightFuzzyPostTag = fuzzyPostTag;
     }
 
-    protected void checkHighlightingTags(String nameOfVariable, String tagToCheck) {
+    void checkHighlightingTags(String nameOfVariable, String tagToCheck) {
         if (tagToCheck == null) {
             throw new NullPointerException("Highlighter tag \'" + nameOfVariable + "\' cannot be null");
         } else if (tagToCheck.length() < 1) {
@@ -304,7 +332,7 @@ public class Highlighter {
         }
     }
 
-    protected String checkHexColorValue(String whichTextToMatch, String hexColorValue) {
+    String checkHexColorValue(String whichTextToMatch, String hexColorValue) {
         if (hexColorValue != null && hexColorValue.length() > 1 && hexColorValue.charAt(0) == '#') {
             // strips the leading # if present
             hexColorValue = hexColorValue.substring(1, hexColorValue.length());

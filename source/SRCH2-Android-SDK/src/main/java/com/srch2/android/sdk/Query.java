@@ -5,7 +5,7 @@ import com.srch2.android.sdk.Filter.BooleanOperation;
 import java.util.ArrayList;
 
 /**
- * Formulation of an advanced search. Users of the SRCH2 Android SDK can invoke this class
+ * Formulates an advanced search. Users of the SRCH2 Android SDK can invoke this class
  * to create advanced searches that enable operations above and beyond the basic default
  * search performed.
  */
@@ -29,8 +29,8 @@ final public class Query {
 
 
     /**
-     * Creates a query from a {@link SearchableTerm} or
-     * {@link SearchableTerm.CompositeTerm};
+     * Creates a basic query initialized with a {@link SearchableTerm} or
+     * {@link SearchableTerm.CompositeTerm}.
      *
      * @param term {@link SearchableTerm} or
      * {@link SearchableTerm.CompositeTerm}
@@ -42,25 +42,20 @@ final public class Query {
     }
 
     /**
-     * Creates a query doing a proximity search. The SRCH2 search server
+     * Creates a query configured to do a proximity search. The SRCH2 search server
      * supports finding words that are within a
      * specified proximity.
      * <br><br>
      * For example, the following query searches for records with the keywords
-     * "saving" and "ryan" within 1 word
-     * <br><br>
-     * <pre>
-     * <code> Query("saving", "ryan", 1)</code>
-     * </pre>
-     * <br><br>
-     * (that is, either zero or one word separates them) of each other in a
-     * document.
+     * "saving" and "ryan" within a single word distance:
+     * <br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;{@code Query("saving", "ryan", 1) }
      * <br><br>
      * <b>Note</b> that a proximity search does not support edit-distance-based fuzzy
-     * match, i.e., we do not allow typos in the keywords in the quotes.
+     * match: i.e. typos are not recognized in the term's keywords.
      * <br><br>
      * This method will throw exceptions if the term arguments passed have values that
-     * are null or have a length less than one; or if the value of <code>distance</code>
+     * are null or have a length less than one; or if the value of {@code distance}
      * is less than one.
      */
     public Query(String term1, String term2, int distance) {
@@ -75,12 +70,14 @@ final public class Query {
     }
 
     /**
-     * FIXME: current M1 has bug on this, wait for the new versoin engine
-     * Create a GeoLocation search query by specify a bounding box.
-     * It will return all the result inside that box region
-     *
-     * If user need to filter the result by keyword, you can try to create
-     * a normal search query and call the {@link #insideRectangleRegion(double, double, double, double)}
+     * Creates a query configured to do a geo-search within an rectangular region.
+     * <br><br>
+     * Equivalent to calling {@link #insideRectangle(double, double, double, double)}, but the
+     * search results will contain all results within the region without matching against
+     * any keywords.
+     * <br><br>
+     * If the search also needs to be filtered by keyword, create
+     * a normal search query and call the {@link #insideRectangle(double, double, double, double)}
      * method.
      *
      * @param leftBottomLatitude the left bottom point's latitude value
@@ -88,7 +85,7 @@ final public class Query {
      * @param rightTopLatitude  the right top point's latitude value
      * @param rightTopLongitude the right top point's longitude value
      */
-    Query(double leftBottomLatitude,
+    public Query(double leftBottomLatitude,
                  double leftBottomLongitude,
                  double rightTopLatitude,
                  double rightTopLongitude) {
@@ -102,19 +99,21 @@ final public class Query {
     }
 
     /**
-     * FIXME: current M1 has bug on this, wait for the new versoin engine
-     * Get the GeoLocation search query by specify a center point and a radius.
-     * It will return all the result inside that circle region
-     *
-     * If user need to filter the result by keyword, you can try to create
-     * a normal search query and call the {@link #insideCircleRegion(double, double, double)}
+     * Creates a query configured to do a geo-search within a radius around a center point.
+     * <br><br>
+     * Equivalent to calling {@link #insideCircle(double, double, double)}, but the
+     * search results will contain all results within the region without matching against
+     * any keywords.
+     * <br><br>
+     * If the search also needs to be filtered by keyword, create
+     * a normal search query and call the {@link #insideCircle(double, double, double)}
      * method.
      *
      * @param centerLatitude the center point's latitude value
      * @param centerLongitude the center point's longitude value
      * @param radius the radius value of the search area
      */
-    Query(double centerLatitude,
+    public Query(double centerLatitude,
                  double centerLongitude, double radius) {
         this.term = null;
         this.proximitySentence = null;
@@ -137,15 +136,15 @@ final public class Query {
     }
 
     /**
-     * Creates a query doing a filtered search. To onResume this kind of query, specify a filter
+     * Creates a query configured to do a filtered search. To construct this kind of query, specify a filter
      * that will restrict the set of records returned by using the conditionality of
-     * <code>fields[fieldName].value == equalToValue</code>.
+     * {@code fields[fieldName].value == equalToValue}.
      * <br><br>
      * This method will throw exceptions if the term arguments passed have values that
-     * are null or have a length less than one; or if the value of <code>distance</code>
+     * are null or have a length less than one; or if the value of {@code distance}
      * is less than one.
      * @param fieldName the specific field to evaluate
-     * @param equalToValue the value to equate the <code>fieldName</code> to
+     * @param equalToValue the value to equate the {@code fieldName} to
      */
     public Query filterByFieldEqualsTo(String fieldName, String equalToValue) {
         checkNoEmptyString(fieldName, "fieldName is invalid");
@@ -156,11 +155,9 @@ final public class Query {
     }
 
     /**
-     * It allows us to match records whose field value starts from
-     * a specified lower bound.
-     *
-     * @param fieldName  the specific field.
-     * @param startValue the startValue (inclusive).
+     * Matches records whose field value starts from a specified lower bound.
+     * @param fieldName the field to filter on
+     * @param startValue the value (inclusive) to match the filter against
      * @return this
      */
     public Query filterByFieldStartsFrom(String fieldName, String startValue) {
@@ -172,11 +169,9 @@ final public class Query {
     }
 
     /**
-     * It allows us to match records whose field value ends at a
-     * specified upper bound.
-     *
-     * @param fieldName the specific field.
-     * @param endValue  the endValue (inclusive).
+     * Matches records whose field value ends at a specified upper bound.
+     * @param fieldName  the field to filter on
+     * @param endValue  the value (inclusive) to match the filter against
      * @return this
      */
     public Query filterByFieldEndsTo(String fieldName, String endValue) {
@@ -188,12 +183,11 @@ final public class Query {
     }
 
     /**
-     * It allows us to match records whose field value is between a
-     * specified lower bound and upper bound (both inclusive)
-     *
+     * Match records whose field value is between a
+     * specified lower bound and upper bound (both inclusive).
      * @param fieldName  the specific field.
-     * @param startValue the startValue (inclusive).
-     * @param endValue   the endValue (inclusive).
+     * @param startValue the value (inclusive) to match the filter against
+     * @param endValue   the value (inclusive) to match the filter against
      * @return this
      */
     public Query filterByFieldInRange(String fieldName, String startValue,
@@ -211,7 +205,6 @@ final public class Query {
      * The engine supports specifying boolean expressions as filters For
      * example, the user can submit the "log(year) + 5 > log(2003)" as a
      * expression to the engine using the boolean filter
-     *
      * @param booleanExpression expression to evaluate
      * @return this
      */
@@ -223,10 +216,11 @@ final public class Query {
     }
 
     /**
+     * Compounds filters of a query by ANDing them.
+     * <br><br>
      * Note: the engine supports only one kind of boolean operator (OR or AND)
      * between all the filter terms. This function is set to connect all the
-     * filters using <code>AND</code> operator
-     *
+     * filters using <code>AND</code> operator.
      * @return this
      */
     public Query setFilterRelationAND() {
@@ -235,10 +229,11 @@ final public class Query {
     }
 
     /**
+     * Compounds filters of a query by ORing them.
+     * <br><br>
      * Note: the engine supports only one kind of boolean operator (OR or AND)
      * between all the filter terms. This function is set to connect all the
-     * filters using <code>OR</code> operator
-     *
+     * filters using <code>OR</code> operator.
      * @return this
      */
     public Query setFilterRelationOR() {
@@ -261,12 +256,14 @@ final public class Query {
     }
 
     /**
-     * The engine's default behavior is to sort the results using a descending
+     * Creates a query configured to sort the search results of that query
+     * by the specified field(s). Equivalent to the SQLite parameter {@code ORDER BY}.
+     * <br><br>
+     * The SRCH2 search server's default behavior is to sort the results using descending
      * order by the overall score of each record. The user can specify sorting
      * by other fields.
-     * <p/>
-     * @param field1 the first field
-     * @param restFields the rest of the fields
+     * @param field1 the first field to order by
+     * @param restFields the rest of the fields to order by
      * @return this
      */
     public Query sortOnFields(String field1, String... restFields) {
@@ -285,9 +282,8 @@ final public class Query {
     }
 
     /**
-     * It specifies the order in which the result set should be sorted. This order is valid for all the
-     * fields specified in the sort parameter.
-     *
+     * Specifies the ordering to be ascending. This ordering is valid for all the
+     * fields specified in the sort parameter. Equivalent to the SQLite parameter {@code ASC}.
      * @return this
      */
     public Query orderByAscending() {
@@ -296,9 +292,8 @@ final public class Query {
     }
 
     /**
-     * It specifies the order in which the result set should be sorted. Engine by
-     * default uses "desc" (descending) order. This order is valid for all the
-     * fields specified in the sort parameter.
+     * Specifies the ordering to be descending. This ordering is valid for all the
+     * fields specified in the sort parameter. Equivalent to the SQLite parameter {@code DESC}.
      *
      * @return this
      */
@@ -308,10 +303,10 @@ final public class Query {
     }
 
     /**
-     * It is the offset in the complete result set of the query, where the set
-     * of returned records should begin. The default value is 0
+     * Sets the offset of records returned in the complete search result set: ie, where the set
+     * of returned records should begin. The default value is 0.
      *
-     * @param startOffset specify the start offset of the result
+     * @param startOffset the start offset of the result set
      * @return this
      */
     public Query pagingStartFrom(int startOffset) {
@@ -320,10 +315,9 @@ final public class Query {
     }
 
     /**
-     * It indicates the number of records to return from the complete result
-     * set.
+     * Sets the number of records to return from the complete search result set.
      *
-     * @param sizePerPage specify how many result within one search response
+     * @param sizePerPage how many results to return per search
      * @return this
      */
     public Query pagingSize(int sizePerPage) {
@@ -332,17 +326,18 @@ final public class Query {
     }
 
     /**
-     * Get the GeoLocation search by specify a bounding box. <br>
+     * Configures the query to do a geo-search bounded by a rectangle region of
+     * the specified coordinates.
      *
-     * @param leftBottomLatitude the left bottom point's latitude value
-     * @param leftBottomLongitude the left bottom point's longitude value
-     * @param rightTopLatitude  the right top point's latitude value
-     * @param rightTopLongitude the right top point's longitude value
+     * @param leftBottomLatitude the left bottom latitude value
+     * @param leftBottomLongitude the left bottom longitude value
+     * @param rightTopLatitude  the right top latitude value
+     * @param rightTopLongitude the right top longitude value
      * @return this
      */
-    public Query insideRectangleRegion(double leftBottomLatitude,
-                                       double leftBottomLongitude, double rightTopLatitude,
-                                       double rightTopLongitude) {
+    public Query insideRectangle(double leftBottomLatitude,
+                                 double leftBottomLongitude, double rightTopLatitude,
+                                 double rightTopLongitude) {
         this.geoPosition.clear();
         this.geoPosition.add(leftBottomLatitude);
         this.geoPosition.add(leftBottomLongitude);
@@ -353,15 +348,16 @@ final public class Query {
     }
 
     /**
-     * Get the GeoLocation search by specify a center point and a radius. <br>
+     * Configures the query to do a geo-search bounded by a circular region of
+     * the specified radius and center coordinate.
      *
-     * @param centerLatitude the center point's latitude value
-     * @param centerLongitude the center point's longitude value
-     * @param radius the radius value of the search area
+     * @param centerLatitude the center latitude value
+     * @param centerLongitude the center longitude value
+     * @param radius the radius to search within
      * @return this
      */
-    public Query insideCircleRegion(double centerLatitude,
-                                    double centerLongitude, double radius) {
+    public Query insideCircle(double centerLatitude,
+                              double centerLongitude, double radius) {
         this.geoPosition.clear();
         this.geoPosition.add(centerLatitude);
         this.geoPosition.add(centerLongitude);
