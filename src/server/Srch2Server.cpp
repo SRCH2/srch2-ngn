@@ -3,9 +3,15 @@
 #include <syslog.h>
 #include "Srch2Server.h"
 #include "util/RecordSerializerUtil.h"
+#include "operation/AttributeAccessControl.h"
+
 #ifndef ANDROID
-#include <sys/statvfs.h>
+#   include <sys/statvfs.h>
+#else
+#   include <sys/vfs.h>
+#   define statvfs statfs
 #endif
+
 
 namespace srch2 {
 namespace httpwrapper {
